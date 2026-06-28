@@ -1,0 +1,195 @@
+/* ============================================================================
+   sector_cycles.css — Sector Cycle Intelligence · deltas over cycle.css
+   ----------------------------------------------------------------------------
+   This page reuses the WHOLE cycle.css design system (.cyc-* + .mmc-*). Only the
+   net-new chrome lives here: the Price↔Cycle mode + Log/Linear scale segmented
+   controls, peak/trough legend glyphs, the focused-sector narrative timeline, the
+   cross-sector leadership rail, and the clickable narrative bands.
+   ========================================================================== */
+
+/* Opaque page canvas — theme.css paints its site-wide "aurora" backdrop OVER an
+   expected body { background:var(--bg) }, so the page must set it (robust in any
+   browser regardless of the default canvas colour). */
+body { background: var(--bg); color: var(--text); }
+
+/* ---- section tabs: Sector ETFs vs Thematic Baskets (two independent views) -- */
+.sc-tabs { display: inline-flex; gap: 4px; background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 13px; padding: 4px; margin: 8px 2px 2px; }
+.sc-tab { font-size: 13.5px; font-weight: 700; color: var(--muted); background: transparent; border: 0;
+  border-radius: 10px; padding: 8px 17px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+  transition: color .18s, background .18s, box-shadow .18s, transform .1s; }
+.sc-tab i { font-style: normal; font-size: 11px; font-weight: 700; color: var(--muted); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 999px; padding: 1px 7px; }
+.sc-tab:hover { color: var(--text); }
+.sc-tab:active { transform: translateY(1px); }
+.sc-tab.on { color: var(--text); background: var(--panel);
+  box-shadow: 0 1px 2px rgba(0,0,0,.22), 0 3px 12px color-mix(in srgb, var(--link) 16%, transparent); }
+.sc-tab.on i { color: var(--link); border-color: color-mix(in srgb, var(--link) 42%, var(--line)); }
+
+/* chart empty-state hint (baskets section with nothing selected yet) */
+.sc-chartwrap { position: relative; }
+.sc-chart-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  pointer-events: none; color: var(--muted); font-size: 13.5px; line-height: 1.6; text-align: center; padding: 0 26px; }
+.sc-chart-hint[hidden] { display: none; }
+
+/* ---- a bigger, dominant hero chart ------------------------------------- */
+#sc-chart { width: 100%; height: 500px; }
+@media (min-width: 881px) { #sc-chart { height: 600px; } }
+@media (min-width: 1400px) { #sc-chart { height: 660px; } }
+@media (max-width: 880px) { #sc-chart { height: 380px; } }
+/* let the hero breathe + lift the chart inside its card */
+.sc-page .cyc-hero { padding: 18px 18px 12px; }
+
+/* ---- segmented controls (scale + mode) — premium pill switch ------------ */
+.sc-ctrl-group { display: inline-flex; align-items: center; gap: 8px; }
+.sc-modes, .sc-scale { display: inline-flex; align-items: center; gap: 3px; background: var(--panel2);
+  border: 1px solid var(--line); border-radius: 10px; padding: 3px; box-shadow: inset 0 1px 2px rgba(0,0,0,.18); }
+html[data-theme="light"] .sc-modes, html[data-theme="light"] .sc-scale { box-shadow: inset 0 1px 2px rgba(20,30,50,.05); }
+.sc-mbtn, .sc-sbtn { font-size: 12px; font-weight: 650; letter-spacing: .01em; color: var(--muted); background: transparent;
+  border: 0; border-radius: 7px; padding: 5px 13px; cursor: pointer; white-space: nowrap;
+  transition: color .18s, background .18s, box-shadow .18s, transform .1s; }
+.sc-mbtn:hover, .sc-sbtn:hover { color: var(--text); }
+.sc-mbtn:active, .sc-sbtn:active { transform: translateY(1px); }
+.sc-mbtn.on, .sc-sbtn.on { color: #fff;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--link) 90%, #fff 10%), var(--link));
+  box-shadow: 0 1px 2px rgba(0,0,0,.28), 0 2px 10px color-mix(in srgb, var(--link) 36%, transparent); }
+html[data-theme="light"] .sc-mbtn.on, html[data-theme="light"] .sc-sbtn.on { color: #fff; }
+/* scale is meaningless in cycle-position mode → dim + lock, but keep its footprint (no layout shift) */
+.sc-scale.disabled { opacity: .4; filter: saturate(.35); pointer-events: none; }
+
+/* ---- "where they stand" phase chips — reactive like the sector chips ---- */
+.sc-page .cyc-gchip { transition: color .18s, background .2s, border-color .2s, box-shadow .2s, transform .14s var(--ease); }
+.sc-page .cyc-gchip:not(.on) { opacity: .62; }
+.sc-page .cyc-gchip:not(.on):hover { opacity: 1; transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--ph, var(--muted)) 60%, var(--line));
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--ph, var(--muted)) 22%, transparent); }
+.sc-page .cyc-gchip.on { color: #fff; opacity: 1; transform: translateY(-1px);
+  background: color-mix(in srgb, var(--ph, var(--link)) 86%, #000 6%);
+  border-color: var(--ph, var(--link));
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--ph, var(--link)) 36%, transparent); }
+html[data-theme="light"] .sc-page .cyc-gchip.on { color: #fff; }
+.sc-page .cyc-gchip.on .gdot { background: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, #fff 32%, transparent); }
+.sc-page .cyc-gchip.on i { opacity: .95; color: #fff; }
+
+/* legend peak/trough glyphs */
+.cyc-legend .lm { width: 0; height: 0; }
+.cyc-legend .lm-pk { border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--warn); }
+.cyc-legend .lm-tr { border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid var(--up); }
+
+/* the price-mode markers (peaks/troughs) always show for the focused line; the
+   mm_charts CSS only reveals peak/trough glyphs on focus — exactly what we want. */
+.sc-page .mmc-series.is-focus .mmc-mk-peak, .sc-page .mmc-series.is-focus .mmc-mk-trough { opacity: 1; }
+
+/* clickable narrative bands (focused sector, price mode) */
+.sc-page .mmc-vband { cursor: pointer; transition: opacity .2s ease; }
+.sc-page .mmc-vband:hover { opacity: .2 !important; }
+.sc-page .mmc-vlabel { cursor: pointer; }
+
+/* ---- focus panel: leadership + turns/legs timeline ---------------------- */
+.sc-pos { display: flex; align-items: center; gap: 10px; margin: 2px 0 4px; }
+.sc-pos-bar { flex: 1; height: 7px; border-radius: 99px; background: linear-gradient(90deg,
+  color-mix(in srgb, var(--up) 40%, transparent), color-mix(in srgb, var(--muted) 30%, transparent),
+  color-mix(in srgb, var(--warn) 55%, transparent)); position: relative; border: 1px solid var(--line); }
+.sc-pos-dot { position: absolute; top: 50%; width: 13px; height: 13px; border-radius: 50%; background: var(--c, var(--link));
+  transform: translate(-50%, -50%); box-shadow: 0 0 0 3px var(--panel), 0 0 12px color-mix(in srgb, var(--c, var(--link)) 60%, transparent); }
+.sc-pos-lab { font-size: 10.5px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* turns/legs timeline — each clickable leg reveals its narrative below */
+.sc-legs { display: flex; flex-direction: column; gap: 5px; max-height: 320px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
+.sc-leg { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 9px;
+  background: var(--panel2); border: 1px solid var(--line); border-left: 3px solid var(--lc, var(--muted));
+  border-radius: 9px; padding: 7px 11px; cursor: pointer; transition: border-color .16s, background .16s, transform .12s; }
+.sc-leg:hover { border-color: color-mix(in srgb, var(--c, var(--link)) 45%, var(--line)); transform: translateX(2px); }
+.sc-leg.open { border-color: color-mix(in srgb, var(--c, var(--link)) 60%, var(--line));
+  background: color-mix(in srgb, var(--c, var(--link)) 8%, var(--panel2)); }
+.sc-leg-k { font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px;
+  white-space: nowrap; }
+.sc-leg-k.up { color: var(--up); background: color-mix(in srgb, var(--up) 15%, transparent); }
+.sc-leg-k.down { color: var(--down); background: color-mix(in srgb, var(--down) 15%, transparent); }
+.sc-leg-t { font-size: 12px; font-weight: 600; color: var(--text); min-width: 0; }
+.sc-leg-t .sc-leg-dt { color: var(--muted); font-weight: 500; font-size: 11px; }
+.sc-leg-m { font-size: 11px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sc-leg-body { font-size: 12.5px; line-height: 1.55; color: var(--text); padding: 2px 4px 8px; display: none; }
+.sc-leg-body.show { display: block; }
+.sc-leg-body .sc-drv { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.sc-leg-body .sc-drv span { font-size: 10.5px; color: var(--muted); background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 999px; padding: 2px 8px; }
+.sc-leg-pending { font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+/* leadership rail */
+.sc-lead { display: flex; flex-direction: column; gap: 5px; }
+.sc-lead-row { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 9px; font-size: 12px; }
+.sc-lead-rk { font-size: 11px; font-weight: 800; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.sc-lead-nm { display: inline-flex; align-items: center; gap: 7px; color: var(--text); font-weight: 600; cursor: pointer; }
+.sc-lead-nm .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--muted)); flex: none; }
+.sc-lead-nm:hover { color: var(--link); }
+.sc-lead-rs { font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sc-lead-rs.pos { color: var(--up); }
+.sc-lead-rs.neg { color: var(--down); }
+
+/* scorecard header: keep the (sometimes long) phase badge from overlapping the
+   (sometimes 2-line) sector name — let the name column flex/shrink, tags stay top-right */
+.sc-page .cc-id { flex: 1 1 auto; min-width: 0; }
+.sc-page .cc-nm { overflow-wrap: anywhere; }
+.cc-tags { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex: none; }
+.sc-page .cc-phase { font-size: 10px; }
+
+/* Cards read by CYCLE PHASE, not by the (rainbow) per-ETF accent — only the small
+   identity dot keeps the ETF colour, so the grid groups visually by where each
+   sector sits. --ph = phase hue, --c = ETF accent. */
+.sc-page .cyc-card::before { background: var(--ph, var(--c)); }
+.sc-page .cyc-card::after { background: radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--ph, var(--c)) 13%, transparent), transparent 55%); }
+.sc-page .cyc-card:hover { border-color: color-mix(in srgb, var(--ph) 48%, var(--line));
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--ph) 18%, transparent); }
+.sc-page .cyc-card.lit { border-color: var(--ph);
+  box-shadow: 0 0 0 1px var(--ph), 0 14px 38px color-mix(in srgb, var(--ph) 26%, transparent); }
+.sc-page .cc-leg-bar i { background: linear-gradient(90deg, color-mix(in srgb, var(--ph) 48%, transparent), var(--ph)); }
+
+/* a basket card that's currently overlaid on the chart gets a phase-coloured ring */
+.sc-page .cyc-card.sel { box-shadow: 0 0 0 1.5px var(--ph), 0 8px 24px color-mix(in srgb, var(--ph) 16%, transparent); }
+.sc-page .cyc-card.sel.lit { box-shadow: 0 0 0 1px var(--ph), 0 14px 38px color-mix(in srgb, var(--ph) 26%, transparent); }
+
+/* BUY / SELL transition badge — washed-out + curling up = BUY, stretched + rolling = SELL */
+.cc-sig { font-size: 11px; font-weight: 800; letter-spacing: .07em; padding: 2px 9px; border-radius: 6px; color: #fff; line-height: 1.45; }
+.cc-sig.buy { background: var(--up); box-shadow: 0 2px 9px color-mix(in srgb, var(--up) 48%, transparent); }
+.cc-sig.sell { background: var(--down); box-shadow: 0 2px 9px color-mix(in srgb, var(--down) 48%, transparent); }
+
+/* keep the detail underbar a stable height so clicking a scorecard (which swaps the
+   default↔focus panel above it) never shifts the page / the cards below it */
+@media (min-width: 881px) { .sc-page .cyc-detail { min-height: 366px; } }
+
+/* ---- thematic baskets rail (Phase 2) — collapsible, category-grouped ----- */
+.sc-baskets { margin: 0 2px 12px; }
+.sc-bask-head { display: flex; align-items: center; gap: 9px; width: 100%; cursor: pointer; text-align: left;
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 11px; padding: 9px 13px;
+  color: var(--text); font-size: 13px; font-weight: 650; transition: border-color .18s, background .18s; }
+.sc-bask-head:hover { border-color: color-mix(in srgb, var(--link) 40%, var(--line)); }
+.sc-bask-ic { font-size: 14px; }
+.sc-bask-title { font-weight: 700; }
+.sc-bask-n { font-size: 11px; font-weight: 700; color: var(--muted); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 999px; padding: 1px 8px; }
+.sc-bask-sel { font-size: 11.5px; font-weight: 700; color: var(--link); }
+.sc-bask-hint { margin-left: auto; font-size: 11px; color: var(--muted); opacity: .8; }
+.sc-bask-caret { font-size: 11px; color: var(--muted); transition: transform .22s var(--ease); margin-left: 4px; }
+.sc-baskets.open .sc-bask-caret { transform: rotate(180deg); }
+.sc-bask-panel { max-height: 0; overflow: hidden; opacity: 0;
+  transition: max-height .32s var(--ease), opacity .25s ease, padding .25s var(--ease); }
+.sc-baskets.open .sc-bask-panel { max-height: 60vh; overflow-y: auto; opacity: 1; padding: 12px 4px 2px; scrollbar-width: thin; }
+.sc-bask-cat { margin-bottom: 12px; }
+.sc-bask-cath { font-size: 10px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; color: var(--muted);
+  margin: 0 0 7px 2px; }
+.sc-bask-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sc-bchip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text);
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px 5px 8px; cursor: pointer;
+  white-space: nowrap; transition: transform .16s var(--ease), background .18s, border-color .18s, box-shadow .18s, opacity .18s; }
+.sc-bchip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; }
+.sc-bchip .sc-bdot { width: 6px; height: 6px; border-radius: 50%; flex: none; opacity: .92; }
+.sc-bchip:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--c) 55%, var(--line));
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--c) 22%, transparent); }
+.sc-bchip.on { color: #fff; background: color-mix(in srgb, var(--c) 88%, #000 6%); border-color: var(--c);
+  box-shadow: 0 3px 14px color-mix(in srgb, var(--c) 34%, transparent); }
+html[data-theme="light"] .sc-bchip.on { color: #fff; }
+.sc-bchip.on .dot { background: #fff; }
+.sc-bchip.foc { box-shadow: 0 0 0 2px var(--c), 0 3px 14px color-mix(in srgb, var(--c) 36%, transparent); }
+.sc-bchip.gdim { opacity: .3; }
+.sc-bchip.gdim:hover { opacity: .82; }

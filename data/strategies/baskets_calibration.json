@@ -1,0 +1,558 @@
+{
+  "schema": "baskets_calibration.v1",
+  "region": "us",
+  "generated_at": "2026-06-21T10:03:03.884612+00:00",
+  "fwd_horizons_d": [
+    21,
+    63
+  ],
+  "step_d": 5,
+  "dd_risk": -0.08,
+  "proxy": {
+    "universe": "proxy_spdr_sectors",
+    "n_assets": 11,
+    "span": [
+      "1998-12-22",
+      "2026-06-18"
+    ],
+    "n_steps": 1332,
+    "labels": {
+      "emerging": {
+        "n": 1422,
+        "n_days": 861,
+        "rel21_med_pct": -0.1,
+        "rel63_med_pct": -0.2,
+        "dd21_med_pct": -1.89,
+        "dd63_med_pct": -3.5,
+        "p_dd21_lt_risk": 0.103,
+        "kind": "continuation",
+        "car_metric": "fwd_rel_21d",
+        "mean_pct": -0.09,
+        "t_hac": -0.645,
+        "p_hac": 0.519,
+        "hit": 0.488,
+        "t_n": 861,
+        "measurable": false,
+        "verdict": "not_measurable",
+        "bh_q": 0.6488,
+        "bh_reject": false
+      },
+      "dominant": {
+        "n": 47,
+        "n_days": 35,
+        "rel21_med_pct": -0.41,
+        "rel63_med_pct": 0.32,
+        "dd21_med_pct": -3.62,
+        "dd63_med_pct": -5.22,
+        "p_dd21_lt_risk": 0.191,
+        "kind": "continuation",
+        "car_metric": "fwd_rel_21d",
+        "mean_pct": 1.14,
+        "t_hac": 0.86,
+        "p_hac": 0.3896,
+        "hit": 0.447,
+        "t_n": 35,
+        "measurable": false,
+        "verdict": "not_measurable",
+        "bh_q": 0.6488,
+        "bh_reject": false
+      },
+      "fading": {
+        "n": 252,
+        "n_days": 230,
+        "rel21_med_pct": 0.2,
+        "rel63_med_pct": 0.49,
+        "dd21_med_pct": -2.48,
+        "dd63_med_pct": -4.34,
+        "p_dd21_lt_risk": 0.115,
+        "kind": "risk",
+        "car_metric": "fwd_dd_21d",
+        "mean_pct": -3.74,
+        "t_hac": -9.65,
+        "p_hac": 0.0,
+        "hit": 0.115,
+        "t_n": 230,
+        "measurable": true,
+        "verdict": "measurable_edge",
+        "bh_q": 0.0,
+        "bh_reject": true
+      },
+      "deteriorating": {
+        "n": 3959,
+        "n_days": 1270,
+        "rel21_med_pct": -0.07,
+        "rel63_med_pct": 0.12,
+        "dd21_med_pct": -2.27,
+        "dd63_med_pct": -3.83,
+        "p_dd21_lt_risk": 0.126,
+        "kind": "risk",
+        "car_metric": "fwd_dd_21d",
+        "mean_pct": -3.61,
+        "t_hac": -15.472,
+        "p_hac": 0.0,
+        "hit": 0.126,
+        "t_n": 1270,
+        "measurable": true,
+        "verdict": "measurable_edge",
+        "bh_q": 0.0,
+        "bh_reject": true
+      },
+      "neutral": {
+        "n": 7064,
+        "n_days": 1316,
+        "rel21_med_pct": -0.04,
+        "rel63_med_pct": -0.09,
+        "dd21_med_pct": -2.03,
+        "dd63_med_pct": -3.77,
+        "p_dd21_lt_risk": 0.102,
+        "kind": "continuation",
+        "car_metric": "fwd_rel_21d",
+        "mean_pct": 0.02,
+        "t_hac": 0.25,
+        "p_hac": 0.8026,
+        "hit": 0.494,
+        "t_n": 1316,
+        "measurable": false,
+        "verdict": "not_measurable",
+        "bh_q": 0.8026,
+        "bh_reject": false
+      }
+    },
+    "rank_ic": {
+      "21d": {
+        "mean_ic": -0.0295,
+        "ic_vol": 0.3952,
+        "ic_ir": -0.075,
+        "ic_ir_ann": -0.527,
+        "t_hac": -1.363,
+        "p_hac": 0.1728,
+        "hit": 0.46,
+        "n": 500
+      },
+      "63d": {
+        "mean_ic": -0.041,
+        "ic_vol": 0.3933,
+        "ic_ir": -0.104,
+        "ic_ir_ann": -0.737,
+        "t_hac": -2.027,
+        "p_hac": 0.0427,
+        "hit": 0.454,
+        "n": 500
+      }
+    },
+    "trend_gate_drawdown": {
+      "above_dd21_med_pct": -1.92,
+      "below_dd21_med_pct": -2.89,
+      "shallower_when_above": true,
+      "n_above": 9151,
+      "n_below": 3593
+    },
+    "alert_gate": {
+      "risk": {
+        "n": 12744,
+        "outcome": "fwd_dd21<-8%",
+        "base_rate": 0.11,
+        "reliability": {
+          "brier": 0.1779,
+          "base_brier": 0.0982,
+          "skill_score": -0.812,
+          "reliability": [
+            {
+              "bin": "0.0-0.1",
+              "n": 3037,
+              "pred": 0.013,
+              "obs": 0.074
+            },
+            {
+              "bin": "0.1-0.2",
+              "n": 759,
+              "pred": 0.152,
+              "obs": 0.067
+            },
+            {
+              "bin": "0.2-0.3",
+              "n": 2510,
+              "pred": 0.253,
+              "obs": 0.124
+            },
+            {
+              "bin": "0.3-0.4",
+              "n": 2398,
+              "pred": 0.355,
+              "obs": 0.097
+            },
+            {
+              "bin": "0.4-0.5",
+              "n": 1258,
+              "pred": 0.437,
+              "obs": 0.139
+            },
+            {
+              "bin": "0.5-0.6",
+              "n": 1517,
+              "pred": 0.57,
+              "obs": 0.139
+            },
+            {
+              "bin": "0.6-0.7",
+              "n": 714,
+              "pred": 0.645,
+              "obs": 0.168
+            },
+            {
+              "bin": "0.7-0.8",
+              "n": 284,
+              "pred": 0.738,
+              "obs": 0.127
+            },
+            {
+              "bin": "0.8-0.9",
+              "n": 151,
+              "pred": 0.852,
+              "obs": 0.185
+            },
+            {
+              "bin": "0.9-1.0",
+              "n": 116,
+              "pred": 0.937,
+              "obs": 0.147
+            }
+          ],
+          "n": 12744,
+          "base_rate": 0.11
+        },
+        "platt": {
+          "a": 0.076,
+          "b": -1.947,
+          "brier_recal": 0.0976
+        },
+        "skill_recal": 0.006,
+        "gate": {
+          "min_confidence": 0.6,
+          "precision_oos": 0.142,
+          "recall_oos": 0.139,
+          "lift_oos": 1.29,
+          "lift_ci": [
+            1.12,
+            1.46
+          ],
+          "n_fired_oos": 1777,
+          "k_folds": 5
+        },
+        "gate_rejected": null,
+        "verdict": "calibratable"
+      },
+      "entry": {
+        "n": 12744,
+        "outcome": "fwd_rel21>0",
+        "base_rate": 0.493,
+        "reliability": {
+          "brier": 0.3065,
+          "base_brier": 0.25,
+          "skill_score": -0.226,
+          "reliability": [
+            {
+              "bin": "0.0-0.1",
+              "n": 350,
+              "pred": 0.009,
+              "obs": 0.471
+            },
+            {
+              "bin": "0.1-0.2",
+              "n": 57,
+              "pred": 0.147,
+              "obs": 0.526
+            },
+            {
+              "bin": "0.2-0.3",
+              "n": 3376,
+              "pred": 0.299,
+              "obs": 0.496
+            },
+            {
+              "bin": "0.3-0.4",
+              "n": 690,
+              "pred": 0.351,
+              "obs": 0.493
+            },
+            {
+              "bin": "0.4-0.5",
+              "n": 766,
+              "pred": 0.441,
+              "obs": 0.539
+            },
+            {
+              "bin": "0.5-0.6",
+              "n": 3252,
+              "pred": 0.592,
+              "obs": 0.49
+            },
+            {
+              "bin": "0.6-0.7",
+              "n": 2194,
+              "pred": 0.674,
+              "obs": 0.487
+            },
+            {
+              "bin": "0.7-0.8",
+              "n": 552,
+              "pred": 0.749,
+              "obs": 0.551
+            },
+            {
+              "bin": "0.8-0.9",
+              "n": 436,
+              "pred": 0.848,
+              "obs": 0.454
+            },
+            {
+              "bin": "0.9-1.0",
+              "n": 1071,
+              "pred": 0.984,
+              "obs": 0.468
+            }
+          ],
+          "n": 12744,
+          "base_rate": 0.493
+        },
+        "platt": {
+          "a": -0.01,
+          "b": -0.023,
+          "brier_recal": 0.2499
+        },
+        "skill_recal": 0.0,
+        "gate": null,
+        "gate_rejected": {
+          "min_confidence": 0.35,
+          "precision_oos": 0.485,
+          "recall_oos": 0.511,
+          "lift_oos": 0.98,
+          "lift_ci": [
+            0.96,
+            1.0
+          ],
+          "n_fired_oos": 6506,
+          "k_folds": 5
+        },
+        "verdict": "weak_separation"
+      }
+    }
+  },
+  "sizing": {
+    "universe": "proxy_spdr_sectors",
+    "span": [
+      "1998-12-22",
+      "2026-06-18"
+    ],
+    "verdict": "display_only",
+    "default": {
+      "vol_win": 40,
+      "target_mult": 0.85,
+      "cap": 1.0,
+      "floor": 0.0
+    },
+    "best_cfg": [
+      60,
+      0.7,
+      1.0
+    ],
+    "n_trials": 80,
+    "cost_bps": 10.0,
+    "dsr": 0.7748,
+    "dsr_verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+    "vt": {
+      "sharpe": 0.593,
+      "maxdd_pct": -21.7,
+      "cagr": 5.83,
+      "avg_gross": 0.67,
+      "turnover_yr": 5.66
+    },
+    "base": {
+      "sharpe": 0.556,
+      "maxdd_pct": -33.9,
+      "cagr": 7.05
+    },
+    "brake": {
+      "sharpe": 0.502
+    },
+    "beats_brake": true,
+    "dd_reduction_ci": {
+      "dd_reduction_pp_ci": [
+        1.0,
+        7.5,
+        17.2
+      ],
+      "favorable": true,
+      "excludes_0": true,
+      "n": 6914
+    },
+    "block_bootstrap": {
+      "sharpe_ci": [
+        0.26,
+        0.59,
+        0.93
+      ],
+      "maxdd_ci_pct": [
+        -39.6,
+        -23.7,
+        -15.5
+      ],
+      "sharpe_gt0_prob": 1.0,
+      "block": 21,
+      "B": 4000,
+      "n": 6914
+    },
+    "split_half": {
+      "pre2013": {
+        "dd_better_pp": 12.2,
+        "sharpe_edge": 0.14
+      },
+      "post2013": {
+        "dd_better_pp": 2.8,
+        "sharpe_edge": -0.14
+      }
+    },
+    "dd_cut_both_halves": true,
+    "loo_crisis": {
+      "gfc_2008": 19.1,
+      "covid_2020": 12.2,
+      "bear_2022": 12.2
+    },
+    "regime_throttle": {
+      "verdict": "display_only",
+      "floor": 0.4,
+      "dd_reduction_vs_vt_ci": {
+        "dd_reduction_pp_ci": [
+          -5.1,
+          1.6,
+          7.1
+        ],
+        "favorable": false,
+        "excludes_0": false,
+        "n": 6914
+      },
+      "sharpe": 0.566,
+      "maxdd_pct": -21.9
+    }
+  },
+  "ranking_ab": {
+    "universe": "proxy_spdr_sectors",
+    "n_trials": 9,
+    "total": {
+      "sharpe": 0.556,
+      "maxdd_pct": -33.9,
+      "skew": -0.43,
+      "cagr": 7.05
+    },
+    "residual": {
+      "sharpe": 0.549,
+      "maxdd_pct": -33.8,
+      "skew": -0.47,
+      "cagr": 6.86
+    },
+    "dd_reduction_vs_total_ci": {
+      "dd_reduction_pp_ci": [
+        -3.5,
+        0.5,
+        4.4
+      ],
+      "favorable": false,
+      "excludes_0": false,
+      "n": 6914
+    },
+    "verdict": "not_additive_descriptive"
+  },
+  "rollover_fit": {
+    "universe": "proxy_spdr_sectors",
+    "n": 12832,
+    "n_trials": 12,
+    "base_rate": 0.11,
+    "legs": [
+      "rs_pctile>=0.8",
+      "rolling_over",
+      "decel<-0.4",
+      "below_50d",
+      "5d_rel<-1%&rs>0.7"
+    ],
+    "hand_weights": [
+      0.3,
+      0.25,
+      0.2,
+      0.15,
+      0.1
+    ],
+    "fitted_weights": [
+      0.294,
+      0.0,
+      0.0,
+      0.859,
+      0.005
+    ],
+    "wired_weights": [
+      0.254,
+      0.0,
+      0.0,
+      0.742,
+      0.004
+    ],
+    "oos_lift_hand": 1.08,
+    "oos_lift_fitted": 1.32,
+    "reliability_skill": -0.898,
+    "verdict": "ship_fitted_weights"
+  },
+  "verdict": {
+    "emerging": {
+      "verdict": "not_measurable",
+      "t_hac": -0.645,
+      "mean_pct": -0.09,
+      "n": 1422
+    },
+    "fading": {
+      "verdict": "measurable_edge",
+      "t_hac": -9.65,
+      "mean_pct": -3.74,
+      "n": 252
+    },
+    "deteriorating": {
+      "verdict": "measurable_edge",
+      "t_hac": -15.472,
+      "mean_pct": -3.61,
+      "n": 3959
+    },
+    "dominant": {
+      "verdict": "not_measurable",
+      "t_hac": 0.86,
+      "mean_pct": 1.14,
+      "n": 47
+    },
+    "cross_sectional_momentum": {
+      "mean_ic_21d": -0.0295,
+      "verdict": "no_return_edge"
+    },
+    "trend_gate": {
+      "verdict": "drawdown_control",
+      "above_dd21_med_pct": -1.92,
+      "below_dd21_med_pct": -2.89,
+      "shallower_when_above": true,
+      "n_above": 9151,
+      "n_below": 3593
+    },
+    "alert_firing_gate": {
+      "risk": {
+        "min_confidence": 0.6,
+        "precision_oos": 0.142,
+        "recall_oos": 0.139,
+        "lift_oos": 1.29,
+        "lift_ci": [
+          1.12,
+          1.46
+        ],
+        "n_fired_oos": 1777,
+        "k_folds": 5
+      },
+      "entry": null,
+      "note": "Fire the alert only above the OUT-OF-SAMPLE min_confidence (a None gate means the lift CI did not clear 1.0 \u2014 keep firing but DON'T claim added precision). Display the Platt-recalibrated probability as the confidence number; show sub-threshold firings with a low-confidence badge (audit trail preserved)."
+    },
+    "GO": true
+  }
+}

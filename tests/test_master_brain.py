@@ -66,6 +66,36 @@ def test_gather_state_reads_present_skips_missing():
         assert state["macro"]["quad"] == "Q1"
         assert state["forex"]["regime"] == "US growth premium"
         assert "china" not in state and "hk" not in state    # missing files skipped, no crash
+        assert "desk_track_records" not in state             # no desk tracks present → omitted
+
+
+def test_gather_state_reads_back_desk_track_records():
+    """The macro Brain ingests the Phase-C desks' measured hit-rates (close the loop)."""
+    with tempfile.TemporaryDirectory() as d:
+        root = pathlib.Path(d)
+        (root / "data" / "regime").mkdir(parents=True)
+        (root / "data" / "regime" / "latest.json").write_text(json.dumps(MACRO))
+        (root / "data" / "ai_desk").mkdir(parents=True)
+        (root / "data" / "ai_desk" / "track_record.json").write_text(json.dumps({
+            "scored_total": 12, "open": 3, "overall": {"hit_rate": 0.42, "dir_accuracy": 0.5},
+            "calibration_note": "12 scored, hit-rate 0.42."}))
+        (root / "data" / "policy_intent").mkdir(parents=True)
+        (root / "data" / "policy_intent" / "track_record.json").write_text(json.dumps({
+            "scored_total": 0, "open": 5, "overall": {"hit_rate": None}}))
+        state = mb.gather_state(root)
+        tr = state["desk_track_records"]
+        assert tr["ai_desk"]["hit_rate"] == 0.42 and tr["ai_desk"]["scored"] == 12
+        assert tr["ai_desk"]["note"].startswith("12 scored")
+        assert tr["policy_intent"]["hit_rate"] is None       # cold desk surfaced, not dropped
+        assert "altdata" not in tr                            # absent file → omitted, no crash
+
+
+def test_desk_track_records_degrades_on_garbage():
+    with tempfile.TemporaryDirectory() as d:
+        root = pathlib.Path(d)
+        (root / "data" / "ai_desk").mkdir(parents=True)
+        (root / "data" / "ai_desk" / "track_record.json").write_text("{not json")
+        assert mb._desk_track_records(root) == {}             # never raises
 
 
 def test_synthesize_stubbed_parses_fields():

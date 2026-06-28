@@ -1,0 +1,705 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>China News Feed - Macro Dashboard</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  
+  body { padding-bottom:52px; }
+  @media(min-width:1180px){ body{ padding-left:max(18px,calc((100vw - 1216px)/2)); padding-right:max(18px,calc((100vw - 1216px)/2)); } }
+  .shell { max-width:1180px; margin:0 auto; }
+  .hero { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr); gap:18px; margin:24px 0 16px; align-items:start; }
+  .hero-main,.side,.card,.rail-card,.empty { background:var(--panel); border:1px solid var(--line); border-radius:8px; box-shadow:var(--card-shadow); }
+  .hero-main { min-height:0; padding:24px; display:flex; flex-direction:column; position:relative; overflow:hidden; }
+  .hero-main:before { content:''; position:absolute; inset:0 0 auto; height:5px; background:linear-gradient(90deg,#d04545,var(--warn),var(--link)); }
+  .eyebrow { display:flex; gap:8px; flex-wrap:wrap; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.12em; font-weight:800; margin:0 0 14px; }
+  html[data-lang="zh"] .eyebrow { letter-spacing:0; }
+  .live { width:7px; height:7px; border-radius:50%; background:var(--up); box-shadow:0 0 0 4px color-mix(in srgb,var(--up) 14%,transparent); align-self:center; }
+  .hero h1 { font-size:36px; line-height:1.04; margin:0 0 12px; letter-spacing:0; }
+  .hero h1 a { color:var(--text); }
+  .hero h1 a:hover { color:var(--link); }
+  .dek { color:var(--muted); font-size:14.5px; max-width:72ch; margin:0; }
+  .meta,.intel { display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin-top:16px; }
+  .chip { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); border-radius:999px; padding:5px 10px; font-size:11.5px; color:var(--muted); background:var(--panel2); }
+  .chip b { color:var(--text); }
+  .theme { --c:var(--link); color:color-mix(in srgb,var(--c) 82%,var(--text)); border-color:color-mix(in srgb,var(--c) 40%,var(--line)); background:color-mix(in srgb,var(--c) 12%,var(--panel)); }
+  .th-monetary{--c:#7aa7e0}.th-inflation{--c:#e08b45}.th-growth{--c:#9cbf5a}.th-credit{--c:#a78bfa}.th-fiscal{--c:#e0a030}.th-policy{--c:#d04545}.th-markets{--c:#45b873}.th-macro{--c:var(--muted)}
+  .imp-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 48%,var(--line)); }
+  .imp-medium { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 48%,var(--line)); }
+  .tk { color:var(--link); border-color:color-mix(in srgb,var(--link) 42%,var(--line)); }
+  .read { margin-left:auto; color:var(--link); font-size:12px; font-weight:800; }
+  .side { padding:16px; display:grid; gap:12px; align-content:start; }
+  .tile { display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center; padding:13px 14px; border:1px solid var(--line); border-radius:8px; background:var(--panel2); }
+  .tile .k { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.08em; }
+  .tile .v { font-size:18px; font-weight:760; margin-top:2px; }
+  .tile .s { color:var(--muted); font-size:11.5px; }
+  .tile .num { font-size:26px; font-weight:850; font-variant-numeric:tabular-nums; }
+  .layout { display:grid; grid-template-columns:minmax(0,1fr) 328px; gap:18px; align-items:start; }
+  .toolbar { position:sticky; top:0; z-index:5; display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:12px 0 14px; background:linear-gradient(180deg,var(--bg) 72%,transparent); }
+  .search { position:relative; flex:1 1 260px; min-width:210px; }
+  .search input { width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:8px; padding:10px 12px 10px 34px; outline:none; font-size:13px; }
+  .search input:focus { border-color:var(--link); box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 16%,transparent); }
+  .search .mag { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); }
+  .filters { display:flex; flex-wrap:wrap; gap:6px; }
+  .fbtn { border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:999px; padding:7px 10px; font-size:11.5px; cursor:pointer; }
+  .fbtn:hover,.fbtn.on { color:var(--text); border-color:var(--link); background:color-mix(in srgb,var(--link) 10%,var(--panel)); }
+  .count { color:var(--muted); font-size:12px; margin-left:auto; white-space:nowrap; }
+  .feed { display:grid; gap:10px; }
+  .card { display:grid; grid-template-columns:86px minmax(0,1fr); overflow:hidden; color:var(--text); transition:transform .16s,border-color .16s,box-shadow .16s; }
+  .card:hover { transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--line)); box-shadow:0 14px 30px -18px color-mix(in srgb,var(--link) 50%,transparent); }
+  .rank { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:2px; min-height:112px; background:var(--panel2); border-right:1px solid var(--line); color:var(--muted); }
+  .rank b { color:var(--link); font-size:11px; letter-spacing:.08em; }
+  .rank span { font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
+  .body { padding:14px 16px; min-width:0; }
+  .top { display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin-bottom:8px; }
+  .title { font-size:17px; line-height:1.28; font-weight:730; margin:0; color:var(--text); }
+  .card:hover .title { color:var(--link); }
+  .summary { color:var(--muted); font-size:12.5px; margin:8px 0 0; }
+  .rail { display:grid; gap:12px; position:sticky; top:12px; }
+  .rail-card { padding:15px; }
+  .rail-card h2 { margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
+  .line { display:flex; gap:9px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--line); }
+  .line:last-child { border-bottom:0; }
+  .date { flex:0 0 74px; color:var(--muted); font-size:11.5px; font-variant-numeric:tabular-nums; }
+  .main { min-width:0; font-size:12.5px; }
+  .tag { display:inline-flex; min-width:45px; justify-content:center; padding:2px 7px; border-radius:6px; border:1px solid var(--line); color:var(--link); font-size:10.5px; font-weight:800; margin-right:5px; }
+  .empty { padding:34px 28px; text-align:center; }
+  .empty h2 { font-size:21px; color:var(--text); text-transform:none; letter-spacing:0; margin:0 0 8px; }
+  .empty p,.disc { color:var(--muted); }
+  .disc { font-size:11.5px; line-height:1.55; margin:14px 0 0; }
+  .hidden { display:none !important; }
+  @media(max-width:900px){ .hero,.layout{grid-template-columns:1fr}.hero-main{min-height:0}.hero h1{font-size:28px}.rail{position:static} }
+  @media(max-width:560px){ .hero-main{padding:20px 16px}.card{grid-template-columns:1fr}.rank{min-height:auto;flex-direction:row;justify-content:flex-start;padding:8px 14px;border-right:0;border-bottom:1px solid var(--line)}.toolbar{position:static} }
+
+</style>
+
+</head>
+<body>
+
+
+<nav class="site-nav">
+  
+
+
+    <div class="nav-links">
+    
+    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMIND</span>
+    </a>
+    
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="sector_heatmap.html">🔥 <span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span><span class="d"><span class="l-en">All 503 names · market-cap treemap · click for our read</span><span class="l-zh">全部503只 · 市值树图 · 点击查看研判</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="news.html">🗞️ <span class="l-en">News</span><span class="l-zh">新闻</span><span class="d"><span class="l-en">Macro · markets · sectors · baskets · China</span><span class="l-zh">宏观 · 大盘 · 板块 · 篮子 · 中国</span></span></a>
+        <a href="whitehouse.html">🏛️ <span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></a>
+        <a href="special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></a>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="china_sector_desk.html">🧭 <span class="l-en">Sector Desk</span><span class="l-zh">行业桌面</span><span class="d"><span class="l-en">GS-style sector indices · live · pathway</span><span class="l-zh">GS式行业指数 · 实时 · 路径</span></span></a>
+        <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
+        <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">News & Intelligence</span><span class="l-zh">新闻与情报</span><span class="d"><span class="l-en">Multi-source news tape · media sentiment</span><span class="l-zh">多源新闻脉搏 · 媒体情绪</span></span></a>
+        <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+        <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+        <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+        <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+        <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intelligence_hub.html">🛰️ <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></a>
+        <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
+        <a href="policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
+        <a href="alt_data.html">📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span><span class="d"><span class="l-en">Signal intelligence · convergence · influence graph · actionable</span><span class="l-zh">信号情报 · 汇聚 · 影响力图谱 · 可操作</span></span></a>
+        <a href="congress_trades.html">🏛️ <span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span><span class="d"><span class="l-en">Politician disclosures · half-year watchlist · scored to copy</span><span class="l-zh">政界披露 · 半年观察清单 · 评分跟单</span></span></a>
+        <a href="foresight.html">🔮 <span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × revisions · the next DRAM</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期修正 · 下一个 DRAM</span></span></a>
+        <a href="radar.html">🛰️ <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></a>
+        <a href="demand.html">🧭 <span class="l-en">Demand Desk</span><span class="l-zh">需求台</span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></a>
+        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
+        <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
+        <a href="transmission.html">🔀 <span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></a>
+        <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
+        <a href="cycle.html">🔄 <span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span><span class="d"><span class="l-en">Where every boom-bust cycle sits — history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></a>
+        <a href="markets.html">🌐 <span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></a>
+        <a href="sector_cycles.html">🧭 <span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock — phase · turns · the story</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点 · 背后故事</span></span></a>
+        <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
+      </div>
+    </div>
+  </div>
+  
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…"
+      data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="mastermind.html">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+
+<main class="shell">
+  <section class="hero">
+    <article class="hero-main">
+      <div>
+        <p class="eyebrow"><span class="live"></span><span class="l-en">China News Intelligence</span><span class="l-zh">中国新闻情报流</span><span></span></p>
+        
+        <h1><a href="https://www.cnstock.com/commonDetail/734410" target="_blank" rel="noopener"><span class="l-en">证监会：五方面推动资本市场法治协同建设</span><span class="l-zh">证监会：五方面推动资本市场法治协同建设</span></a></h1>
+        
+        <p class="dek"><span class="l-en">Chinese-native financial media, official policy pages, Eastmoney flashes and global wire normalized into importance, channel and market-proxy tags.</span><span class="l-zh">中文财经媒体、官方政策页面、东方财富快讯与全球新闻线被统一为重要性、传导通道与市场代理标签。</span></p>
+        
+        
+      </div>
+      <div>
+        <div class="meta">
+          
+          
+          <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+          <span class="chip"><b>上海证券报</b> · china_native</span>
+          <span class="chip imp-high"><b>82</b>/100 high</span>
+          <a class="read" href="https://www.cnstock.com/commonDetail/734410" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读来源</span></a>
+          
+        </div>
+        
+        <div class="intel"><span class="chip">markets</span><span class="chip tk">512880.SS</span></div>
+        
+      </div>
+    </article>
+    <aside class="side">
+      <div class="tile">
+        <div><div class="k"><span class="l-en">Official Policy Tone</span><span class="l-zh">官方政策基调</span></div><div class="v"><span class="l-en">supportive / pro-growth lean</span><span class="l-zh">偏积极 / 稳增长</span></div><div class="s"><span class="l-en">CCTV 新闻联播 z-score</span><span class="l-zh">央视新闻联播 z 分数</span></div></div>
+        <div class="num">+1.5</div>
+      </div>
+      <div class="tile">
+        <div><div class="k"><span class="l-en">Official Sources</span><span class="l-zh">官方来源</span></div><div class="v">127 <span class="l-en">items</span><span class="l-zh">条</span></div><div class="s"><span class="l-en">PBoC · NBS · MOF</span><span class="l-zh">央行 · 统计局 · 财政部</span></div></div>
+        <div class="num">127</div>
+      </div>
+      <div class="tile">
+        <div><div class="k"><span class="l-en">Native + Global Wire</span><span class="l-zh">中文源 + 全球新闻线</span></div><div class="v">423 <span class="l-en">items</span><span class="l-zh">条</span></div><div class="s"><span class="l-en">Yicai · STCN · CNStock · SCMP · Caixin</span><span class="l-zh">第一财经 · 证券时报 · 上海证券报 · SCMP · 财新</span></div></div>
+        <div class="num">423</div>
+      </div>
+      <div class="tile">
+        <div><div class="k"><span class="l-en">Kept Feed</span><span class="l-zh">保留新闻</span></div><div class="v">18 <span class="l-en">kept</span><span class="l-zh">保留</span></div><div class="s">18/630 <span class="l-en">raw candidates</span><span class="l-zh">原始候选</span></div></div>
+        <div class="num">18</div>
+      </div>
+      <div class="tile">
+        <div><div class="k"><span class="l-en">Intelligence Mix</span><span class="l-zh">情报结构</span></div><div class="v">8 <span class="l-en">high impact</span><span class="l-zh">高影响</span></div><div class="s">markets</div></div>
+        <div class="num">64</div>
+      </div>
+    </aside>
+  </section>
+
+  <section class="layout">
+    <div>
+      <div class="toolbar">
+        <div class="search"><span class="mag">⌕</span><input id="q" type="search" autocomplete="off" placeholder="Search China headlines, channels or tickers..." data-ph-en="Search China headlines, channels or tickers..." data-ph-zh="搜索中国头条、通道或标的..."></div>
+        <div class="filters" id="filters">
+          <button class="fbtn on" data-theme="all"><span class="l-en">All</span><span class="l-zh">全部</span></button>
+          <button class="fbtn" data-importance="high"><span class="l-en">High impact</span><span class="l-zh">高影响</span></button>
+          <button class="fbtn" data-theme="monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></button><button class="fbtn" data-theme="inflation"><span class="l-en">Inflation</span><span class="l-zh">物价</span></button><button class="fbtn" data-theme="growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></button><button class="fbtn" data-theme="credit"><span class="l-en">Credit</span><span class="l-zh">信用</span></button><button class="fbtn" data-theme="fiscal"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></button><button class="fbtn" data-theme="policy"><span class="l-en">Policy</span><span class="l-zh">政策</span></button><button class="fbtn" data-theme="politics"><span class="l-en">Politics</span><span class="l-zh">政治/地缘</span></button><button class="fbtn" data-theme="tech"><span class="l-en">Tech</span><span class="l-zh">科技</span></button><button class="fbtn" data-theme="markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></button><button class="fbtn" data-theme="macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></button>
+        </div>
+        <span class="count" id="count"></span>
+      </div>
+      
+      <div class="feed" id="feed">
+        
+        <a class="card" href="https://www.scmp.com/economy/china-economy/article/3358231/chinas-xi-joins-leadership-blitz-hub-visits-fact-finding-push-gdp-release?utm_source=rss_feed" target="_blank" rel="noopener"
+           data-theme="growth" data-importance="high" data-search="china’s xi joins leadership blitz of hub visits in fact-finding push before gdp release 中国习近平带领高层密集调研，gdp发布前开展实地摸底 china’s top leadership launched an expansive sweep of the nation’s agricultural, industrial and tech hubs this week, gathering “frontline” data ahead of a crucial gdp release in mid-july and a high-stakes politburo meeting at the month’s end.
+on wednesday, president xi jinping conducted a field trip to dezhou, an agrarian city in the northern shandong province, where he visited cornfields and a village. during the tour, he highlighted the need to enhance production and yield to guarantee food... 中国最高领导层本周对全国农业、工业及科技中心展开大规模调研，在7月中旬关键gdp数据发布及月底政治局会议前收集一线实情。周三，国家主席习近平赴山东省北部农业城市德州进行实地考察。 scmp - china economy industrial ">
+          <div class="rank"><b>#2</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+              <span class="chip"><b>SCMP - China Economy</b> · global_wire</span>
+              <span class="chip imp-high"><b>82</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">China’s Xi joins leadership blitz of hub visits in fact-finding push before GDP release</span><span class="l-zh">中国习近平带领高层密集调研，GDP发布前开展实地摸底</span></h2>
+            <p class="summary"><span class="l-en">China’s top leadership launched an expansive sweep of the nation’s agricultural, industrial and tech hubs this week, gathering “frontline” data ahead of a crucial GDP release in mid-July and a high-stakes Politburo meeting at the month’s end.
+On Wednesday, President Xi Jinping conducted a field trip to Dezhou, an agrarian city in the northern Shandong province, where he visited cornfields and a village. During the tour, he highlighted the need to enhance production and yield to guarantee food...</span><span class="l-zh">中国最高领导层本周对全国农业、工业及科技中心展开大规模调研，在7月中旬关键GDP数据发布及月底政治局会议前收集一线实情。周三，国家主席习近平赴山东省北部农业城市德州进行实地考察。</span></p>
+            <div class="intel"><span class="chip">industrial</span><span class="chip">tier-1 China wire</span><span class="chip">tier-1 China macro term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://www.cnstock.com/commonDetail/734685" target="_blank" rel="noopener"
+           data-theme="credit" data-importance="high" data-search="财政部再发50亿欧元主权债券 人民币资产“圈粉”全球 要闻 · 人民币资产 16小时前 财政部再发50亿欧元主权债券 人民币资产“圈粉”全球 要闻 · 人民币资产 16小时前   上海证券报 fiscal_trade yuan cny 512880.ss">
+          <div class="rank"><b>#3</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-credit"><span class="l-en">Credit</span><span class="l-zh">信用</span></span>
+              <span class="chip"><b>上海证券报</b> · china_native</span>
+              <span class="chip imp-high"><b>68</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">财政部再发50亿欧元主权债券 人民币资产“圈粉”全球 要闻 · 人民币资产 16小时前</span><span class="l-zh">财政部再发50亿欧元主权债券 人民币资产“圈粉”全球 要闻 · 人民币资产 16小时前</span></h2>
+            
+            <div class="intel"><span class="chip">fiscal_trade</span><span class="chip">yuan</span><span class="chip tk">CNY</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">tier-1 China macro term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://www.stcn.com/article/detail/3982696.html" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="high" data-search="史上最重！证监会对私募机构玖瀛资产、腾创投资开出近6000万元罚单 史上最重！证监会对私募机构玖瀛资产、腾创投资开出近6000万元罚单   证券时报 markets 512880.ss">
+          <div class="rank"><b>#4</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="chip"><b>证券时报</b> · china_native</span>
+              <span class="chip imp-high"><b>68</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">史上最重！证监会对私募机构玖瀛资产、腾创投资开出近6000万元罚单</span><span class="l-zh">史上最重！证监会对私募机构玖瀛资产、腾创投资开出近6000万元罚单</span></h2>
+            
+            <div class="intel"><span class="chip">markets</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">tier-1 China macro term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://www.cnstock.com/topicDetail/130765" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="high" data-search="上证观察家 | 统筹制度联动 提升资本市场服务效能 上证观察家 | 统筹制度联动 提升资本市场服务效能   上海证券报 markets 510300.ss 512880.ss">
+          <div class="rank"><b>#5</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="chip"><b>上海证券报</b> · china_native</span>
+              <span class="chip imp-high"><b>68</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">上证观察家 | 统筹制度联动 提升资本市场服务效能</span><span class="l-zh">上证观察家 | 统筹制度联动 提升资本市场服务效能</span></h2>
+            
+            <div class="intel"><span class="chip">markets</span><span class="chip tk">510300.SS</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">tier-1 China macro term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://www.cnstock.com/commonDetail/734741" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="high" data-search="中国证监会严肃查处私募基金玖瀛资产、腾创投资违法违规案件 快讯 · 私募基金 16小时前 中国证监会严肃查处私募基金玖瀛资产、腾创投资违法违规案件 快讯 · 私募基金 16小时前   上海证券报 markets 512880.ss">
+          <div class="rank"><b>#6</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="chip"><b>上海证券报</b> · china_native</span>
+              <span class="chip imp-high"><b>68</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">中国证监会严肃查处私募基金玖瀛资产、腾创投资违法违规案件 快讯 · 私募基金 16小时前</span><span class="l-zh">中国证监会严肃查处私募基金玖瀛资产、腾创投资违法违规案件 快讯 · 私募基金 16小时前</span></h2>
+            
+            <div class="intel"><span class="chip">markets</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">tier-1 China macro term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://www.cnstock.com/commonDetail/734570" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="high" data-search="经济热点问答｜西方资本市场ai概念股缘何大涨大跌 国际 · ai泡沫 21小时前 经济热点问答｜西方资本市场ai概念股缘何大涨大跌 国际 · ai泡沫 21小时前   上海证券报 tech_policy 512880.ss">
+          <div class="rank"><b>#7</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="chip"><b>上海证券报</b> · china_native</span>
+              <span class="chip imp-high"><b>68</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">经济热点问答｜西方资本市场AI概念股缘何大涨大跌 国际 · AI泡沫 21小时前</span><span class="l-zh">经济热点问答｜西方资本市场AI概念股缘何大涨大跌 国际 · AI泡沫 21小时前</span></h2>
+            
+            <div class="intel"><span class="chip">tech_policy</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">tier-1 China macro term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://www.yicai.com/news/103249312.html" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium" data-search="稳外资15条发布；汽车消费迎全链条新政丨一周热点回顾 其他热点还有：两部门推动猪价尽快回到合理水平；自动驾驶首个全球技术法规获批发布。 56分钟前 稳外资15条发布；汽车消费迎全链条新政丨一周热点回顾 其他热点还有：两部门推动猪价尽快回到合理水平；自动驾驶首个全球技术法规获批发布。 56分钟前   第一财经 consumer ">
+          <div class="rank"><b>#8</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="chip"><b>第一财经</b> · china_native</span>
+              <span class="chip imp-medium"><b>66</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">稳外资15条发布；汽车消费迎全链条新政丨一周热点回顾 其他热点还有：两部门推动猪价尽快回到合理水平；自动驾驶首个全球技术法规获批发布。 56分钟前</span><span class="l-zh">稳外资15条发布；汽车消费迎全链条新政丨一周热点回顾 其他热点还有：两部门推动猪价尽快回到合理水平；自动驾驶首个全球技术法规获批发布。 56分钟前</span></h2>
+            
+            <div class="intel"><span class="chip">consumer</span><span class="chip">native Chinese financial source</span><span class="chip">market-sensitive term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://www.stcn.com/article/detail/3983444.html" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium" data-search="国家统计局：1—5月份全国规模以上工业企业利润增长18.8% 国家统计局：1—5月份全国规模以上工业企业利润增长18.8%   证券时报 industrial 512880.ss">
+          <div class="rank"><b>#9</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="chip"><b>证券时报</b> · china_native</span>
+              <span class="chip imp-medium"><b>60</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">国家统计局：1—5月份全国规模以上工业企业利润增长18.8%</span><span class="l-zh">国家统计局：1—5月份全国规模以上工业企业利润增长18.8%</span></h2>
+            
+            <div class="intel"><span class="chip">industrial</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">market-sensitive term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://www.stcn.com/article/detail/3983465.html" target="_blank" rel="noopener"
+           data-theme="fiscal" data-importance="medium" data-search="特朗普威胁对欧洲国家征收100%报复性关税 特朗普威胁对欧洲国家征收100%报复性关税   证券时报 fiscal_trade 512880.ss">
+          <div class="rank"><b>#10</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-fiscal"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
+              <span class="chip"><b>证券时报</b> · china_native</span>
+              <span class="chip imp-medium"><b>60</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">特朗普威胁对欧洲国家征收100%报复性关税</span><span class="l-zh">特朗普威胁对欧洲国家征收100%报复性关税</span></h2>
+            
+            <div class="intel"><span class="chip">fiscal_trade</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">tier-1 China macro term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://www.stcn.com/article/detail/3983456.html" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium" data-search="国家统计局：1—5月份有色金属冶炼和压延加工业利润同比增长117.1% 国家统计局：1—5月份有色金属冶炼和压延加工业利润同比增长117.1%   证券时报 industrial 512880.ss 512400.ss">
+          <div class="rank"><b>#11</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="chip"><b>证券时报</b> · china_native</span>
+              <span class="chip imp-medium"><b>60</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">国家统计局：1—5月份有色金属冶炼和压延加工业利润同比增长117.1%</span><span class="l-zh">国家统计局：1—5月份有色金属冶炼和压延加工业利润同比增长117.1%</span></h2>
+            
+            <div class="intel"><span class="chip">industrial</span><span class="chip tk">512880.SS</span><span class="chip tk">512400.SS</span><span class="chip">native Chinese financial source</span><span class="chip">market-sensitive term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://www.stcn.com/article/detail/3983446.html" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium" data-search="国家统计局：1—5月份规模以上工业企业实现营业收入56.55万亿元，同比增长5.5% 国家统计局：1—5月份规模以上工业企业实现营业收入56.55万亿元，同比增长5.5%   证券时报 industrial 512880.ss">
+          <div class="rank"><b>#12</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="chip"><b>证券时报</b> · china_native</span>
+              <span class="chip imp-medium"><b>60</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">国家统计局：1—5月份规模以上工业企业实现营业收入56.55万亿元，同比增长5.5%</span><span class="l-zh">国家统计局：1—5月份规模以上工业企业实现营业收入56.55万亿元，同比增长5.5%</span></h2>
+            
+            <div class="intel"><span class="chip">industrial</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">market-sensitive term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://www.pbc.gov.cn/en/3688110/3688172/2026/2026062316090452082/index.html" target="_blank" rel="noopener"
+           data-theme="monetary" data-importance="medium" data-search="heads of relevant departments of the pboc and the csrc answer press questions on the upcoming launch of 5-year rmb treasury bond futures in hong kong 中国人民银行与证监会相关部门负责人就即将在香港推出5年期人民币国债期货答记者问   pboc pboc_liquidity yuan cny">
+          <div class="rank"><b>#13</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+              <span class="chip"><b>PBoC</b> · official</span>
+              <span class="chip imp-medium"><b>62</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">Heads of Relevant Departments of the PBOC and the CSRC Answer Press Questions on the Upcoming Launch of 5-Year RMB Treasury Bond Futures in Hong Kong</span><span class="l-zh">中国人民银行与证监会相关部门负责人就即将在香港推出5年期人民币国债期货答记者问</span></h2>
+            
+            <div class="intel"><span class="chip">pboc_liquidity</span><span class="chip">yuan</span><span class="chip tk">CNY</span><span class="chip">official policy source</span><span class="chip">tier-1 China macro term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://www.stats.gov.cn/english/PressRelease/202606/t20260611_1963929.html" target="_blank" rel="noopener"
+           data-theme="inflation" data-importance="high" data-search="industrial producer price indexes in may 2026 2026年5月工业生产者出厂价格指数   nbs industrial ">
+          <div class="rank"><b>#14</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-inflation"><span class="l-en">Inflation</span><span class="l-zh">物价</span></span>
+              <span class="chip"><b>NBS</b> · official</span>
+              <span class="chip imp-high"><b>68</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">Industrial Producer Price Indexes in May 2026</span><span class="l-zh">2026年5月工业生产者出厂价格指数</span></h2>
+            
+            <div class="intel"><span class="chip">industrial</span><span class="chip">official policy source</span><span class="chip">tier-1 China macro term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://www.yicai.com/news/103249336.html" target="_blank" rel="noopener"
+           data-theme="fiscal" data-importance="medium" data-search="国务院部署下一步财政工作：加快发债，储备政策适时推出 国务院关于2025年中央决算的报告明确财政六大重点工作 37分钟前 国务院部署下一步财政工作：加快发债，储备政策适时推出 国务院关于2025年中央决算的报告明确财政六大重点工作 37分钟前   第一财经 fiscal_trade ">
+          <div class="rank"><b>#15</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-fiscal"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
+              <span class="chip"><b>第一财经</b> · china_native</span>
+              <span class="chip imp-medium"><b>60</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">国务院部署下一步财政工作：加快发债，储备政策适时推出 国务院关于2025年中央决算的报告明确财政六大重点工作 37分钟前</span><span class="l-zh">国务院部署下一步财政工作：加快发债，储备政策适时推出 国务院关于2025年中央决算的报告明确财政六大重点工作 37分钟前</span></h2>
+            
+            <div class="intel"><span class="chip">fiscal_trade</span><span class="chip">native Chinese financial source</span><span class="chip">tier-1 China macro term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://finance.eastmoney.com/a/202606273785483747.html" target="_blank" rel="noopener"
+           data-theme="monetary" data-importance="medium" data-search="欧洲央行执委施纳贝尔表示 欧洲央行料将进一步加息 欧洲央行执委施纳贝尔表示 欧洲央行料将进一步加息 欧洲央行执委施纳贝尔表示，欧洲央行料将进一步加息。 欧洲央行执委施纳贝尔表示，欧洲央行料将进一步加息。 eastmoney pboc_liquidity ">
+          <div class="rank"><b>#16</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+              <span class="chip"><b>Eastmoney</b> · domestic_wire</span>
+              <span class="chip imp-medium"><b>51</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">欧洲央行执委施纳贝尔表示 欧洲央行料将进一步加息</span><span class="l-zh">欧洲央行执委施纳贝尔表示 欧洲央行料将进一步加息</span></h2>
+            <p class="summary"><span class="l-en">欧洲央行执委施纳贝尔表示，欧洲央行料将进一步加息。</span><span class="l-zh">欧洲央行执委施纳贝尔表示，欧洲央行料将进一步加息。</span></p>
+            <div class="intel"><span class="chip">pboc_liquidity</span><span class="chip">domestic flash wire</span><span class="chip">tier-1 China macro term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://finance.eastmoney.com/a/202606273785484057.html" target="_blank" rel="noopener"
+           data-theme="monetary" data-importance="medium" data-search="欧洲央行执委施纳贝尔表示 预计油价将持续走高 能源冲击对欧元区打击尤为严重 欧洲央行执委施纳贝尔表示 预计油价将持续走高 能源冲击对欧元区打击尤为严重 欧洲央行执委施纳贝尔表示，预计油价将持续走高，能源冲击对欧元区打击尤为严重。 欧洲央行执委施纳贝尔表示，预计油价将持续走高，能源冲击对欧元区打击尤为严重。 eastmoney pboc_liquidity ">
+          <div class="rank"><b>#17</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+              <span class="chip"><b>Eastmoney</b> · domestic_wire</span>
+              <span class="chip imp-medium"><b>51</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">欧洲央行执委施纳贝尔表示 预计油价将持续走高 能源冲击对欧元区打击尤为严重</span><span class="l-zh">欧洲央行执委施纳贝尔表示 预计油价将持续走高 能源冲击对欧元区打击尤为严重</span></h2>
+            <p class="summary"><span class="l-en">欧洲央行执委施纳贝尔表示，预计油价将持续走高，能源冲击对欧元区打击尤为严重。</span><span class="l-zh">欧洲央行执委施纳贝尔表示，预计油价将持续走高，能源冲击对欧元区打击尤为严重。</span></p>
+            <div class="intel"><span class="chip">pboc_liquidity</span><span class="chip">domestic flash wire</span><span class="chip">tier-1 China macro term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://www.yicai.com/topic/102990833/" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium" data-search="盘前点金｜研判主题机会 挖掘潜力个股 每日盘前，为您抢先捕捉关键讯息（①最新券商观点；②高关注题材；③财经要闻重点；④潜力标的挖掘），助您从容开启交易日！ 01-07 10:02 盘前点金｜研判主题机会 挖掘潜力个股 每日盘前，为您抢先捕捉关键讯息（①最新券商观点；②高关注题材；③财经要闻重点；④潜力标的挖掘），助您从容开启交易日！ 01-07 10:02   第一财经 markets 512880.ss">
+          <div class="rank"><b>#18</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="chip"><b>第一财经</b> · china_native</span>
+              <span class="chip imp-medium"><b>54</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">盘前点金｜研判主题机会 挖掘潜力个股 每日盘前，为您抢先捕捉关键讯息（①最新券商观点；②高关注题材；③财经要闻重点；④潜力标的挖掘），助您从容开启交易日！ 01-07 10:02</span><span class="l-zh">盘前点金｜研判主题机会 挖掘潜力个股 每日盘前，为您抢先捕捉关键讯息（①最新券商观点；②高关注题材；③财经要闻重点；④潜力标的挖掘），助您从容开启交易日！ 01-07 10:02</span></h2>
+            
+            <div class="intel"><span class="chip">markets</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">dashboard core theme</span></div>
+          </div>
+        </a>
+        
+      </div>
+      <div class="empty hidden" id="none"><h2><span class="l-en">No stories match that view.</span><span class="l-zh">没有符合当前视图的新闻。</span></h2><p><span class="l-en">Clear search or switch back to All themes.</span><span class="l-zh">清空搜索或切回全部主题。</span></p></div>
+      
+      <p class="disc"><span class="l-en">Context only — not a signal. The policy-tone read is a z-score of a crude lexicon proxy on the CCTV 新闻联播 broadcast (relative, never an absolute sentiment); the headlines are deterministically filtered (macro themes only, each tagged) Eastmoney flash-wire items. Nothing here is an input to any score, signal, regime or allocation, and the mechanical model never sees it.</span><span class="l-zh">仅作背景，非信号。政策基调读数是对央视《新闻联播》文本的粗略词典代理的 z 标准化（相对值，并非绝对情绪）；头条为东方财富快讯经确定性筛选（仅宏观主题，逐条标注）的条目。这里没有任何内容会进入任何评分、信号、区制或配置，机械模型也从不读取它们。</span></p>
+    </div>
+
+    <aside class="rail">
+      <section class="rail-card">
+        <h2><span class="l-en">Feed intelligence</span><span class="l-zh">新闻情报</span></h2>
+        <div class="line"><div class="date"><span class="l-en">Read</span><span class="l-zh">读数</span></div><div class="main">8 high-impact China items; dominant channel markets; source mix china_native:13, official:2, domestic_wire:2</div></div>
+        <div class="line"><div class="date"><span class="l-en">Channels</span><span class="l-zh">通道</span></div><div class="main"><span class="tag">markets</span><span class="tag">industrial</span><span class="tag">fiscal_trade</span><span class="tag">pboc_liquidity</span><span class="tag">yuan</span></div></div>
+        <div class="line"><div class="date"><span class="l-en">Tickers</span><span class="l-zh">标的</span></div><div class="main"><span class="tag">512880.SS</span><span class="tag">CNY</span><span class="tag">510300.SS</span><span class="tag">512400.SS</span></div></div>
+        <div class="line"><div class="date"><span class="l-en">Sources</span><span class="l-zh">来源</span></div><div class="main"><span class="tag">china_native 13</span><span class="tag">official 2</span><span class="tag">domestic_wire 2</span><span class="tag">global_wire 1</span></div></div>
+      </section>
+
+      <section class="rail-card">
+        <h2><span class="l-en">China high-impact calendar</span><span class="l-zh">中国高影响日程</span></h2>
+        
+        <div class="line"><div class="date">Tue Jun 30</div><div class="main"><span class="tag">PMI</span><span class="l-en">NBS PMI (mfg + non-mfg)</span><span class="l-zh">国家统计局 PMI（制造业＋非制造业）</span></div></div>
+        
+        <div class="line"><div class="date">Tue Jul 7</div><div class="main"><span class="tag">TRADE</span><span class="l-en">Customs trade (exports/imports)</span><span class="l-zh">海关进出口数据</span></div></div>
+        
+        <div class="line"><div class="date">Thu Jul 9</div><div class="main"><span class="tag">CPI</span><span class="l-en">CPI (consumer prices)</span><span class="l-zh">CPI（居民消费价格）</span></div></div>
+        
+        <div class="line"><div class="date">Thu Jul 9</div><div class="main"><span class="tag">PPI</span><span class="l-en">PPI (producer prices)</span><span class="l-zh">PPI（工业生产者价格）</span></div></div>
+        
+        <div class="line"><div class="date">Fri Jul 10</div><div class="main"><span class="tag">CREDIT</span><span class="l-en">Money supply, RMB loans & TSF</span><span class="l-zh">货币供应、人民币贷款与社融</span></div></div>
+        
+      </section>
+      <section class="rail-card">
+        <h2><span class="l-en">All scheduled catalysts</span><span class="l-zh">全部排定催化</span></h2>
+        
+        <div class="line"><div class="date">2026-06-30</div><div class="main"><span class="tag">PMI</span><span class="l-en">NBS PMI (mfg + non-mfg)</span><span class="l-zh">国家统计局 PMI（制造业＋非制造业）</span></div></div>
+        
+        <div class="line"><div class="date">2026-07-01</div><div class="main"><span class="tag">CAIXIN_M</span><span class="l-en">Caixin Manufacturing PMI</span><span class="l-zh">财新制造业 PMI</span></div></div>
+        
+        <div class="line"><div class="date">2026-07-03</div><div class="main"><span class="tag">CAIXIN_S</span><span class="l-en">Caixin Services PMI</span><span class="l-zh">财新服务业 PMI</span></div></div>
+        
+        <div class="line"><div class="date">2026-07-07</div><div class="main"><span class="tag">TRADE</span><span class="l-en">Customs trade (exports/imports)</span><span class="l-zh">海关进出口数据</span></div></div>
+        
+        <div class="line"><div class="date">2026-07-07</div><div class="main"><span class="tag">FXRES</span><span class="l-en">FX reserves (SAFE)</span><span class="l-zh">外汇储备（外管局）</span></div></div>
+        
+        <div class="line"><div class="date">2026-07-09</div><div class="main"><span class="tag">CPI</span><span class="l-en">CPI (consumer prices)</span><span class="l-zh">CPI（居民消费价格）</span></div></div>
+        
+        <div class="line"><div class="date">2026-07-09</div><div class="main"><span class="tag">PPI</span><span class="l-en">PPI (producer prices)</span><span class="l-zh">PPI（工业生产者价格）</span></div></div>
+        
+        <div class="line"><div class="date">2026-07-10</div><div class="main"><span class="tag">CREDIT</span><span class="l-en">Money supply, RMB loans & TSF</span><span class="l-zh">货币供应、人民币贷款与社融</span></div></div>
+        
+      </section>
+      
+      <section class="rail-card">
+        <h2><span class="l-en">Policy-tone provenance</span><span class="l-zh">政策基调来源</span></h2>
+        <div class="line"><div class="date">2026-06-27</div><div class="main"><span class="l-en">Tone z-score</span><span class="l-zh">基调 z 分数</span> <b>+1.46</b> · 15<span class="l-en">d series</span><span class="l-zh">天序列</span></div></div>
+      </section>
+      
+    </aside>
+  </section>
+</main>
+
+
+<footer class="rfoot">
+  <span class="l-en">Research Reports are read-only analysis for informational purposes only — not investment advice. Figures are point-in-time and may be revised.</span><span class="l-zh">研究报告仅为信息性分析，不构成投资建议。数据为特定时点快照，可能被修订。</span>
+</footer>
+
+<script>
+(function(){
+  var feed=document.getElementById('feed');
+  var rows=feed ? Array.prototype.slice.call(feed.querySelectorAll('.card')) : [];
+  var q=document.getElementById('q'), filters=document.getElementById('filters'), count=document.getElementById('count'), none=document.getElementById('none');
+  var theme='all', importance='all', term='';
+  function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+  function sync(){ if(q) q.placeholder=isZh()?(q.getAttribute('data-ph-zh')||''):(q.getAttribute('data-ph-en')||''); }
+  function apply(){
+    var shown=0;
+    rows.forEach(function(r){
+      var okTheme=theme==='all'||r.getAttribute('data-theme')===theme;
+      var okImp=importance==='all'||r.getAttribute('data-importance')===importance;
+      var okQ=!term||(r.getAttribute('data-search')||'').indexOf(term)>=0;
+      var show=okTheme&&okImp&&okQ;
+      r.classList.toggle('hidden',!show);
+      if(show) shown++;
+    });
+    if(none) none.classList.toggle('hidden', shown>0 || rows.length===0);
+    if(count) count.textContent=isZh()?(shown+' 条'):(shown+(shown===1?' story':' stories'));
+  }
+  if(q) q.addEventListener('input',function(){term=(q.value||'').trim().toLowerCase();apply();});
+  if(filters) filters.addEventListener('click',function(e){
+    var b=e.target.closest('.fbtn'); if(!b) return;
+    Array.prototype.forEach.call(filters.querySelectorAll('.fbtn'),function(x){x.classList.remove('on');});
+    b.classList.add('on'); theme=b.getAttribute('data-theme')||'all'; importance=b.getAttribute('data-importance')||'all'; apply();
+  });
+  document.addEventListener('langchange',function(){sync();apply();});
+  sync(); apply();
+})();
+</script>
+
+<script src="theme.js"></script>
+<script defer data-whb data-root="" src="wh_banner.js"></script>
+</body>
+</html>

@@ -23,6 +23,14 @@ html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsof
 body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:20}
+/* One-row section menu (re-fix on current main): full-bleed the sticky bar to the
+   same ~1500 rail the macro family uses on >=701px, so the 8-dropdown menu fits one
+   row. The page body keeps its 1180 rail; the <=700px hamburger is untouched. */
+@media (min-width:701px){
+  .topbar{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
+    padding-left:max(40px,calc((100vw - 1500px)/2));
+    padding-right:max(40px,calc((100vw - 1500px)/2));}
+}
 .nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
 a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
 a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
@@ -127,7 +135,7 @@ html[data-theme="dark"] .factchip{background:var(--grid)}
   <div class="topbar">
       {% include "_navlinks.html.j2" %}
     <div class="nav-ctrls">
-      <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+      <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
       <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
       <div class="lang-toggle" role="group" aria-label="Language">
         <span class="pill"></span>

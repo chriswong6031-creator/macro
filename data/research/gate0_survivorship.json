@@ -1,0 +1,1674 @@
+{
+  "meta": {
+    "horizon": 63,
+    "start": "1998-01-01",
+    "eras": [
+      "1998-2007",
+      "2008-2015",
+      "2016-2020",
+      "2021-2026"
+    ],
+    "coverage": {
+      "roster": 2589,
+      "with_prices": 1696,
+      "dead_total": 1083,
+      "dead_with_prices": 199,
+      "evaluated_names": 1656,
+      "clip": [
+        -0.9,
+        2.0
+      ]
+    },
+    "note": "name-level generalization + PIT survivorship test of the ETF-validated engine.sector_signals state machine"
+  },
+  "results": {
+    "BIASED": {
+      "1998-2007": {
+        "BELOW_TREND": {
+          "exc_med": 0.772,
+          "exc_mean": 2.458,
+          "hit": 52.0,
+          "abs_med": 3.117,
+          "abs_hit": 57.4,
+          "n": 164781
+        },
+        "TOPPING": {
+          "exc_med": 1.845,
+          "exc_mean": 3.561,
+          "hit": 55.8,
+          "abs_med": 2.965,
+          "abs_hit": 58.8,
+          "n": 63515
+        },
+        "BUY_PARTIAL": {
+          "exc_med": 1.09,
+          "exc_mean": 2.585,
+          "hit": 53.4,
+          "abs_med": 2.474,
+          "abs_hit": 57.2,
+          "n": 41821
+        },
+        "EXTENDED": {
+          "exc_med": 1.618,
+          "exc_mean": 3.354,
+          "hit": 55.1,
+          "abs_med": 2.914,
+          "abs_hit": 58.7,
+          "n": 59048
+        },
+        "NEUTRAL": {
+          "exc_med": 1.314,
+          "exc_mean": 2.869,
+          "hit": 54.1,
+          "abs_med": 2.502,
+          "abs_hit": 57.4,
+          "n": 83574
+        },
+        "SETUP_BUY": {
+          "exc_med": 1.352,
+          "exc_mean": 2.844,
+          "hit": 54.3,
+          "abs_med": 2.466,
+          "abs_hit": 57.3,
+          "n": 17856
+        },
+        "SELL": {
+          "exc_med": 1.424,
+          "exc_mean": 4.251,
+          "hit": 54.8,
+          "abs_med": 2.283,
+          "abs_hit": 56.7,
+          "n": 6006
+        },
+        "BUY": {
+          "exc_med": 1.481,
+          "exc_mean": 3.116,
+          "hit": 54.8,
+          "abs_med": 3.307,
+          "abs_hit": 59.7,
+          "n": 4778
+        },
+        "AVOID_SIDE": {
+          "exc_med": 1.728,
+          "exc_mean": 3.498,
+          "hit": 55.4,
+          "abs_med": 2.909,
+          "abs_hit": 58.6,
+          "n": 128569
+        },
+        "BUY_SIDE": {
+          "exc_med": 1.198,
+          "exc_mean": 2.696,
+          "hit": 53.8,
+          "abs_med": 2.542,
+          "abs_hit": 57.4,
+          "n": 64455
+        }
+      },
+      "ALL": {
+        "BELOW_TREND": {
+          "exc_med": 0.408,
+          "exc_mean": 1.914,
+          "hit": 51.1,
+          "abs_med": 3.96,
+          "abs_hit": 59.4,
+          "n": 602115
+        },
+        "TOPPING": {
+          "exc_med": 0.24,
+          "exc_mean": 1.374,
+          "hit": 50.8,
+          "abs_med": 2.985,
+          "abs_hit": 59.2,
+          "n": 239796
+        },
+        "BUY_PARTIAL": {
+          "exc_med": -0.025,
+          "exc_mean": 1.053,
+          "hit": 49.9,
+          "abs_med": 2.806,
+          "abs_hit": 58.4,
+          "n": 144212
+        },
+        "EXTENDED": {
+          "exc_med": 0.168,
+          "exc_mean": 1.281,
+          "hit": 50.6,
+          "abs_med": 2.921,
+          "abs_hit": 59.1,
+          "n": 215460
+        },
+        "NEUTRAL": {
+          "exc_med": 0.021,
+          "exc_mean": 1.113,
+          "hit": 50.1,
+          "abs_med": 2.805,
+          "abs_hit": 58.5,
+          "n": 290550
+        },
+        "SETUP_BUY": {
+          "exc_med": 0.075,
+          "exc_mean": 1.266,
+          "hit": 50.2,
+          "abs_med": 2.802,
+          "abs_hit": 58.3,
+          "n": 61596
+        },
+        "SELL": {
+          "exc_med": -0.311,
+          "exc_mean": 1.237,
+          "hit": 49.0,
+          "abs_med": 2.181,
+          "abs_hit": 56.7,
+          "n": 21456
+        },
+        "BUY": {
+          "exc_med": 0.613,
+          "exc_mean": 1.579,
+          "hit": 52.0,
+          "abs_med": 3.647,
+          "abs_hit": 60.7,
+          "n": 17174
+        },
+        "AVOID_SIDE": {
+          "exc_med": 0.184,
+          "exc_mean": 1.326,
+          "hit": 50.6,
+          "abs_med": 2.92,
+          "abs_hit": 59.0,
+          "n": 476712
+        },
+        "BUY_SIDE": {
+          "exc_med": 0.049,
+          "exc_mean": 1.152,
+          "hit": 50.2,
+          "abs_med": 2.863,
+          "abs_hit": 58.5,
+          "n": 222982
+        }
+      },
+      "2008-2015": {
+        "BELOW_TREND": {
+          "exc_med": 1.232,
+          "exc_mean": 2.901,
+          "hit": 53.6,
+          "abs_med": 4.271,
+          "abs_hit": 59.9,
+          "n": 161573
+        },
+        "EXTENDED": {
+          "exc_med": 0.331,
+          "exc_mean": 0.913,
+          "hit": 51.3,
+          "abs_med": 3.004,
+          "abs_hit": 60.3,
+          "n": 62003
+        },
+        "TOPPING": {
+          "exc_med": 0.422,
+          "exc_mean": 1.097,
+          "hit": 51.6,
+          "abs_med": 3.178,
+          "abs_hit": 60.8,
+          "n": 67946
+        },
+        "NEUTRAL": {
+          "exc_med": 0.277,
+          "exc_mean": 0.971,
+          "hit": 51.1,
+          "abs_med": 3.261,
+          "abs_hit": 60.8,
+          "n": 82650
+        },
+        "BUY_PARTIAL": {
+          "exc_med": 0.351,
+          "exc_mean": 1.035,
+          "hit": 51.2,
+          "abs_med": 3.134,
+          "abs_hit": 60.1,
+          "n": 40797
+        },
+        "SETUP_BUY": {
+          "exc_med": 0.375,
+          "exc_mean": 1.197,
+          "hit": 51.5,
+          "abs_med": 3.287,
+          "abs_hit": 60.3,
+          "n": 16366
+        },
+        "SELL": {
+          "exc_med": -0.07,
+          "exc_mean": 0.503,
+          "hit": 49.7,
+          "abs_med": 2.684,
+          "abs_hit": 59.2,
+          "n": 5869
+        },
+        "BUY": {
+          "exc_med": 0.844,
+          "exc_mean": 1.539,
+          "hit": 53.0,
+          "abs_med": 3.718,
+          "abs_hit": 61.6,
+          "n": 5044
+        },
+        "AVOID_SIDE": {
+          "exc_med": 0.36,
+          "exc_mean": 0.988,
+          "hit": 51.4,
+          "abs_med": 3.074,
+          "abs_hit": 60.5,
+          "n": 135818
+        },
+        "BUY_SIDE": {
+          "exc_med": 0.393,
+          "exc_mean": 1.119,
+          "hit": 51.4,
+          "abs_med": 3.211,
+          "abs_hit": 60.3,
+          "n": 62207
+        }
+      },
+      "2016-2020": {
+        "NEUTRAL": {
+          "exc_med": -0.054,
+          "exc_mean": 1.038,
+          "hit": 49.8,
+          "abs_med": 3.6,
+          "abs_hit": 61.0,
+          "n": 57832
+        },
+        "BELOW_TREND": {
+          "exc_med": 0.532,
+          "exc_mean": 2.245,
+          "hit": 51.5,
+          "abs_med": 6.571,
+          "abs_hit": 66.0,
+          "n": 124171
+        },
+        "EXTENDED": {
+          "exc_med": -0.036,
+          "exc_mean": 0.942,
+          "hit": 49.9,
+          "abs_med": 3.978,
+          "abs_hit": 62.4,
+          "n": 45328
+        },
+        "TOPPING": {
+          "exc_med": 0.245,
+          "exc_mean": 1.365,
+          "hit": 50.8,
+          "abs_med": 4.185,
+          "abs_hit": 62.9,
+          "n": 54311
+        },
+        "SELL": {
+          "exc_med": -0.503,
+          "exc_mean": 0.6,
+          "hit": 48.3,
+          "abs_med": 2.374,
+          "abs_hit": 57.8,
+          "n": 4884
+        },
+        "BUY_PARTIAL": {
+          "exc_med": -0.174,
+          "exc_mean": 0.761,
+          "hit": 49.3,
+          "abs_med": 3.66,
+          "abs_hit": 61.6,
+          "n": 27850
+        },
+        "SETUP_BUY": {
+          "exc_med": -0.212,
+          "exc_mean": 1.106,
+          "hit": 49.2,
+          "abs_med": 3.554,
+          "abs_hit": 61.4,
+          "n": 12316
+        },
+        "BUY": {
+          "exc_med": 0.686,
+          "exc_mean": 1.341,
+          "hit": 51.9,
+          "abs_med": 4.402,
+          "abs_hit": 64.2,
+          "n": 3382
+        },
+        "AVOID_SIDE": {
+          "exc_med": 0.085,
+          "exc_mean": 1.146,
+          "hit": 50.3,
+          "abs_med": 4.016,
+          "abs_hit": 62.4,
+          "n": 104523
+        },
+        "BUY_SIDE": {
+          "exc_med": -0.131,
+          "exc_mean": 0.904,
+          "hit": 49.5,
+          "abs_med": 3.69,
+          "abs_hit": 61.7,
+          "n": 43548
+        }
+      },
+      "2021-2026": {
+        "NEUTRAL": {
+          "exc_med": -2.122,
+          "exc_mean": -0.852,
+          "hit": 44.0,
+          "abs_med": 1.751,
+          "abs_hit": 54.9,
+          "n": 66494
+        },
+        "TOPPING": {
+          "exc_med": -2.072,
+          "exc_mean": -0.842,
+          "hit": 43.8,
+          "abs_med": 1.378,
+          "abs_hit": 53.9,
+          "n": 54024
+        },
+        "BUY_PARTIAL": {
+          "exc_med": -1.852,
+          "exc_mean": -0.585,
+          "hit": 44.5,
+          "abs_med": 1.895,
+          "abs_hit": 55.2,
+          "n": 33744
+        },
+        "EXTENDED": {
+          "exc_med": -1.675,
+          "exc_mean": -0.434,
+          "hit": 45.0,
+          "abs_med": 1.69,
+          "abs_hit": 54.9,
+          "n": 49081
+        },
+        "SETUP_BUY": {
+          "exc_med": -1.731,
+          "exc_mean": -0.398,
+          "hit": 44.9,
+          "abs_med": 1.773,
+          "abs_hit": 54.8,
+          "n": 15058
+        },
+        "SELL": {
+          "exc_med": -3.068,
+          "exc_mean": -1.039,
+          "hit": 41.3,
+          "abs_med": 1.155,
+          "abs_hit": 52.7,
+          "n": 4697
+        },
+        "BUY": {
+          "exc_med": -0.944,
+          "exc_mean": -0.015,
+          "hit": 47.4,
+          "abs_med": 2.939,
+          "abs_hit": 57.8,
+          "n": 3970
+        },
+        "BELOW_TREND": {
+          "exc_med": -1.071,
+          "exc_mean": -0.002,
+          "hit": 47.2,
+          "abs_med": 2.319,
+          "abs_hit": 55.7,
+          "n": 151590
+        },
+        "AVOID_SIDE": {
+          "exc_med": -1.942,
+          "exc_mean": -0.665,
+          "hit": 44.3,
+          "abs_med": 1.509,
+          "abs_hit": 54.3,
+          "n": 107802
+        },
+        "BUY_SIDE": {
+          "exc_med": -1.747,
+          "exc_mean": -0.489,
+          "hit": 44.8,
+          "abs_med": 1.937,
+          "abs_hit": 55.3,
+          "n": 52772
+        }
+      }
+    },
+    "PIT": {
+      "1998-2007": {
+        "BELOW_TREND": {
+          "exc_med": 0.42,
+          "exc_mean": 1.4,
+          "hit": 51.2,
+          "abs_med": 2.594,
+          "abs_hit": 56.3,
+          "n": 49276
+        },
+        "TOPPING": {
+          "exc_med": 1.028,
+          "exc_mean": 1.777,
+          "hit": 53.8,
+          "abs_med": 2.448,
+          "abs_hit": 58.1,
+          "n": 19298
+        },
+        "BUY_PARTIAL": {
+          "exc_med": 0.741,
+          "exc_mean": 1.237,
+          "hit": 52.8,
+          "abs_med": 2.334,
+          "abs_hit": 57.4,
+          "n": 12477
+        },
+        "EXTENDED": {
+          "exc_med": 0.83,
+          "exc_mean": 1.82,
+          "hit": 53.2,
+          "abs_med": 2.529,
+          "abs_hit": 58.3,
+          "n": 17691
+        },
+        "NEUTRAL": {
+          "exc_med": 0.673,
+          "exc_mean": 1.379,
+          "hit": 52.5,
+          "abs_med": 2.074,
+          "abs_hit": 56.9,
+          "n": 24729
+        },
+        "SETUP_BUY": {
+          "exc_med": 0.895,
+          "exc_mean": 1.471,
+          "hit": 53.4,
+          "abs_med": 2.016,
+          "abs_hit": 57.0,
+          "n": 5010
+        },
+        "SELL": {
+          "exc_med": -0.016,
+          "exc_mean": 2.019,
+          "hit": 49.9,
+          "abs_med": 1.582,
+          "abs_hit": 55.8,
+          "n": 1631
+        },
+        "BUY": {
+          "exc_med": 1.065,
+          "exc_mean": 1.251,
+          "hit": 54.2,
+          "abs_med": 3.327,
+          "abs_hit": 61.0,
+          "n": 1423
+        },
+        "AVOID_SIDE": {
+          "exc_med": 0.883,
+          "exc_mean": 1.807,
+          "hit": 53.4,
+          "abs_med": 2.441,
+          "abs_hit": 58.1,
+          "n": 38620
+        },
+        "BUY_SIDE": {
+          "exc_med": 0.81,
+          "exc_mean": 1.3,
+          "hit": 53.1,
+          "abs_med": 2.318,
+          "abs_hit": 57.6,
+          "n": 18910
+        }
+      },
+      "ALL": {
+        "BELOW_TREND": {
+          "exc_med": -0.266,
+          "exc_mean": 0.691,
+          "hit": 49.2,
+          "abs_med": 3.565,
+          "abs_hit": 58.9,
+          "n": 323601
+        },
+        "TOPPING": {
+          "exc_med": -0.447,
+          "exc_mean": 0.152,
+          "hit": 48.4,
+          "abs_med": 2.637,
+          "abs_hit": 58.6,
+          "n": 129695
+        },
+        "BUY_PARTIAL": {
+          "exc_med": -0.672,
+          "exc_mean": -0.176,
+          "hit": 47.6,
+          "abs_med": 2.548,
+          "abs_hit": 58.0,
+          "n": 75863
+        },
+        "EXTENDED": {
+          "exc_med": -0.431,
+          "exc_mean": 0.168,
+          "hit": 48.5,
+          "abs_med": 2.647,
+          "abs_hit": 58.6,
+          "n": 115029
+        },
+        "NEUTRAL": {
+          "exc_med": -0.759,
+          "exc_mean": -0.174,
+          "hit": 47.4,
+          "abs_med": 2.494,
+          "abs_hit": 58.0,
+          "n": 151919
+        },
+        "SETUP_BUY": {
+          "exc_med": -0.594,
+          "exc_mean": 0.052,
+          "hit": 47.8,
+          "abs_med": 2.441,
+          "abs_hit": 57.8,
+          "n": 32344
+        },
+        "SELL": {
+          "exc_med": -1.187,
+          "exc_mean": -0.198,
+          "hit": 45.7,
+          "abs_med": 1.873,
+          "abs_hit": 56.0,
+          "n": 11216
+        },
+        "BUY": {
+          "exc_med": 0.22,
+          "exc_mean": 0.403,
+          "hit": 50.7,
+          "abs_med": 3.732,
+          "abs_hit": 61.2,
+          "n": 9074
+        },
+        "AVOID_SIDE": {
+          "exc_med": -0.474,
+          "exc_mean": 0.144,
+          "hit": 48.3,
+          "abs_med": 2.606,
+          "abs_hit": 58.5,
+          "n": 255940
+        },
+        "BUY_SIDE": {
+          "exc_med": -0.589,
+          "exc_mean": -0.068,
+          "hit": 47.9,
+          "abs_med": 2.623,
+          "abs_hit": 58.2,
+          "n": 117281
+        }
+      },
+      "2008-2015": {
+        "BELOW_TREND": {
+          "exc_med": 0.63,
+          "exc_mean": 1.351,
+          "hit": 52.2,
+          "abs_med": 3.485,
+          "abs_hit": 59.2,
+          "n": 63251
+        },
+        "EXTENDED": {
+          "exc_med": 0.36,
+          "exc_mean": 0.484,
+          "hit": 51.6,
+          "abs_med": 3.127,
+          "abs_hit": 62.2,
+          "n": 27841
+        },
+        "TOPPING": {
+          "exc_med": 0.298,
+          "exc_mean": 0.52,
+          "hit": 51.2,
+          "abs_med": 3.181,
+          "abs_hit": 62.3,
+          "n": 30694
+        },
+        "NEUTRAL": {
+          "exc_med": 0.007,
+          "exc_mean": 0.198,
+          "hit": 50.0,
+          "abs_med": 3.278,
+          "abs_hit": 62.1,
+          "n": 35971
+        },
+        "BUY_PARTIAL": {
+          "exc_med": 0.258,
+          "exc_mean": 0.379,
+          "hit": 51.0,
+          "abs_med": 3.314,
+          "abs_hit": 62.2,
+          "n": 17747
+        },
+        "SETUP_BUY": {
+          "exc_med": 0.327,
+          "exc_mean": 0.734,
+          "hit": 51.5,
+          "abs_med": 3.475,
+          "abs_hit": 62.5,
+          "n": 7041
+        },
+        "SELL": {
+          "exc_med": -0.442,
+          "exc_mean": -0.293,
+          "hit": 48.2,
+          "abs_med": 2.503,
+          "abs_hit": 59.7,
+          "n": 2809
+        },
+        "BUY": {
+          "exc_med": 1.305,
+          "exc_mean": 1.128,
+          "hit": 55.8,
+          "abs_med": 4.598,
+          "abs_hit": 65.6,
+          "n": 2194
+        },
+        "AVOID_SIDE": {
+          "exc_med": 0.293,
+          "exc_mean": 0.466,
+          "hit": 51.2,
+          "abs_med": 3.125,
+          "abs_hit": 62.1,
+          "n": 61344
+        },
+        "BUY_SIDE": {
+          "exc_med": 0.375,
+          "exc_mean": 0.533,
+          "hit": 51.5,
+          "abs_med": 3.467,
+          "abs_hit": 62.5,
+          "n": 26982
+        }
+      },
+      "2016-2020": {
+        "NEUTRAL": {
+          "exc_med": -0.533,
+          "exc_mean": 0.064,
+          "hit": 48.1,
+          "abs_med": 3.301,
+          "abs_hit": 60.6,
+          "n": 33222
+        },
+        "BELOW_TREND": {
+          "exc_med": -0.052,
+          "exc_mean": 1.484,
+          "hit": 49.9,
+          "abs_med": 6.411,
+          "abs_hit": 65.8,
+          "n": 77009
+        },
+        "EXTENDED": {
+          "exc_med": -0.371,
+          "exc_mean": 0.332,
+          "hit": 48.6,
+          "abs_med": 3.659,
+          "abs_hit": 61.8,
+          "n": 26699
+        },
+        "TOPPING": {
+          "exc_med": 0.145,
+          "exc_mean": 0.936,
+          "hit": 50.5,
+          "abs_med": 4.05,
+          "abs_hit": 63.0,
+          "n": 32317
+        },
+        "SELL": {
+          "exc_med": -0.536,
+          "exc_mean": 0.259,
+          "hit": 47.9,
+          "abs_med": 2.256,
+          "abs_hit": 57.4,
+          "n": 2745
+        },
+        "BUY_PARTIAL": {
+          "exc_med": -0.649,
+          "exc_mean": -0.263,
+          "hit": 47.4,
+          "abs_med": 3.272,
+          "abs_hit": 60.6,
+          "n": 16070
+        },
+        "SETUP_BUY": {
+          "exc_med": -0.662,
+          "exc_mean": 0.076,
+          "hit": 47.1,
+          "abs_med": 3.2,
+          "abs_hit": 60.4,
+          "n": 7050
+        },
+        "BUY": {
+          "exc_med": -0.077,
+          "exc_mean": 0.295,
+          "hit": 49.5,
+          "abs_med": 3.837,
+          "abs_hit": 62.6,
+          "n": 1989
+        },
+        "AVOID_SIDE": {
+          "exc_med": -0.117,
+          "exc_mean": 0.645,
+          "hit": 49.6,
+          "abs_med": 3.792,
+          "abs_hit": 62.2,
+          "n": 61761
+        },
+        "BUY_SIDE": {
+          "exc_med": -0.614,
+          "exc_mean": -0.124,
+          "hit": 47.5,
+          "abs_med": 3.313,
+          "abs_hit": 60.7,
+          "n": 25109
+        }
+      },
+      "2021-2026": {
+        "NEUTRAL": {
+          "exc_med": -2.329,
+          "exc_mean": -1.204,
+          "hit": 43.3,
+          "abs_med": 1.556,
+          "abs_hit": 54.5,
+          "n": 57997
+        },
+        "TOPPING": {
+          "exc_med": -2.297,
+          "exc_mean": -1.283,
+          "hit": 43.0,
+          "abs_med": 1.174,
+          "abs_hit": 53.5,
+          "n": 47386
+        },
+        "BUY_PARTIAL": {
+          "exc_med": -2.2,
+          "exc_mean": -1.059,
+          "hit": 43.4,
+          "abs_med": 1.602,
+          "abs_hit": 54.4,
+          "n": 29569
+        },
+        "EXTENDED": {
+          "exc_med": -1.883,
+          "exc_mean": -0.821,
+          "hit": 44.4,
+          "abs_med": 1.525,
+          "abs_hit": 54.4,
+          "n": 42798
+        },
+        "SETUP_BUY": {
+          "exc_med": -1.973,
+          "exc_mean": -0.859,
+          "hit": 44.1,
+          "abs_med": 1.505,
+          "abs_hit": 54.2,
+          "n": 13243
+        },
+        "SELL": {
+          "exc_med": -3.217,
+          "exc_mean": -1.339,
+          "hit": 40.8,
+          "abs_med": 1.05,
+          "abs_hit": 52.4,
+          "n": 4031
+        },
+        "BUY": {
+          "exc_med": -1.098,
+          "exc_mean": -0.341,
+          "hit": 46.8,
+          "abs_med": 2.836,
+          "abs_hit": 57.8,
+          "n": 3468
+        },
+        "BELOW_TREND": {
+          "exc_med": -1.243,
+          "exc_mean": -0.336,
+          "hit": 46.7,
+          "abs_med": 2.301,
+          "abs_hit": 55.8,
+          "n": 134065
+        },
+        "AVOID_SIDE": {
+          "exc_med": -2.15,
+          "exc_mean": -1.075,
+          "hit": 43.5,
+          "abs_med": 1.322,
+          "abs_hit": 53.8,
+          "n": 94215
+        },
+        "BUY_SIDE": {
+          "exc_med": -2.058,
+          "exc_mean": -0.948,
+          "hit": 43.9,
+          "abs_med": 1.668,
+          "abs_hit": 54.6,
+          "n": 46280
+        }
+      }
+    },
+    "SURV_WIN": {
+      "1998-2007": {
+        "BELOW_TREND": {
+          "exc_med": 0.549,
+          "exc_mean": 1.124,
+          "hit": 51.6,
+          "abs_med": 2.844,
+          "abs_hit": 57.1,
+          "n": 43481
+        },
+        "TOPPING": {
+          "exc_med": 1.084,
+          "exc_mean": 1.761,
+          "hit": 54.2,
+          "abs_med": 2.472,
+          "abs_hit": 58.4,
+          "n": 17628
+        },
+        "BUY_PARTIAL": {
+          "exc_med": 0.806,
+          "exc_mean": 1.326,
+          "hit": 53.1,
+          "abs_med": 2.366,
+          "abs_hit": 57.8,
+          "n": 11402
+        },
+        "EXTENDED": {
+          "exc_med": 0.864,
+          "exc_mean": 1.76,
+          "hit": 53.5,
+          "abs_med": 2.564,
+          "abs_hit": 58.8,
+          "n": 16190
+        },
+        "NEUTRAL": {
+          "exc_med": 0.742,
+          "exc_mean": 1.386,
+          "hit": 52.8,
+          "abs_med": 2.115,
+          "abs_hit": 57.2,
+          "n": 22685
+        },
+        "SETUP_BUY": {
+          "exc_med": 0.96,
+          "exc_mean": 1.57,
+          "hit": 53.8,
+          "abs_med": 2.086,
+          "abs_hit": 57.5,
+          "n": 4468
+        },
+        "SELL": {
+          "exc_med": 0.071,
+          "exc_mean": 1.826,
+          "hit": 50.1,
+          "abs_med": 1.597,
+          "abs_hit": 56.4,
+          "n": 1432
+        },
+        "BUY": {
+          "exc_med": 1.13,
+          "exc_mean": 2.096,
+          "hit": 54.6,
+          "abs_med": 3.692,
+          "abs_hit": 61.8,
+          "n": 1286
+        },
+        "AVOID_SIDE": {
+          "exc_med": 0.929,
+          "exc_mean": 1.763,
+          "hit": 53.7,
+          "abs_med": 2.478,
+          "abs_hit": 58.5,
+          "n": 35250
+        },
+        "BUY_SIDE": {
+          "exc_med": 0.894,
+          "exc_mean": 1.447,
+          "hit": 53.4,
+          "abs_med": 2.382,
+          "abs_hit": 58.0,
+          "n": 17156
+        }
+      },
+      "ALL": {
+        "BELOW_TREND": {
+          "exc_med": -0.209,
+          "exc_mean": 0.685,
+          "hit": 49.4,
+          "abs_med": 3.693,
+          "abs_hit": 59.4,
+          "n": 310766
+        },
+        "TOPPING": {
+          "exc_med": -0.443,
+          "exc_mean": 0.126,
+          "hit": 48.4,
+          "abs_med": 2.655,
+          "abs_hit": 58.7,
+          "n": 126357
+        },
+        "BUY_PARTIAL": {
+          "exc_med": -0.661,
+          "exc_mean": -0.149,
+          "hit": 47.6,
+          "abs_med": 2.587,
+          "abs_hit": 58.2,
+          "n": 73851
+        },
+        "EXTENDED": {
+          "exc_med": -0.418,
+          "exc_mean": 0.146,
+          "hit": 48.5,
+          "abs_med": 2.67,
+          "abs_hit": 58.8,
+          "n": 111989
+        },
+        "NEUTRAL": {
+          "exc_med": -0.75,
+          "exc_mean": -0.161,
+          "hit": 47.5,
+          "abs_med": 2.524,
+          "abs_hit": 58.2,
+          "n": 148048
+        },
+        "SETUP_BUY": {
+          "exc_med": -0.593,
+          "exc_mean": 0.028,
+          "hit": 47.8,
+          "abs_med": 2.474,
+          "abs_hit": 57.9,
+          "n": 31397
+        },
+        "SELL": {
+          "exc_med": -1.202,
+          "exc_mean": -0.291,
+          "hit": 45.7,
+          "abs_med": 1.878,
+          "abs_hit": 56.0,
+          "n": 10849
+        },
+        "BUY": {
+          "exc_med": 0.236,
+          "exc_mean": 0.59,
+          "hit": 50.8,
+          "abs_med": 3.791,
+          "abs_hit": 61.5,
+          "n": 8820
+        },
+        "AVOID_SIDE": {
+          "exc_med": -0.467,
+          "exc_mean": 0.117,
+          "hit": 48.3,
+          "abs_med": 2.626,
+          "abs_hit": 58.6,
+          "n": 249195
+        },
+        "BUY_SIDE": {
+          "exc_med": -0.579,
+          "exc_mean": -0.043,
+          "hit": 47.9,
+          "abs_med": 2.66,
+          "abs_hit": 58.4,
+          "n": 114068
+        }
+      },
+      "2008-2015": {
+        "BELOW_TREND": {
+          "exc_med": 0.783,
+          "exc_mean": 1.401,
+          "hit": 52.8,
+          "abs_med": 3.709,
+          "abs_hit": 60.1,
+          "n": 59135
+        },
+        "EXTENDED": {
+          "exc_med": 0.41,
+          "exc_mean": 0.53,
+          "hit": 51.8,
+          "abs_med": 3.177,
+          "abs_hit": 62.5,
+          "n": 26893
+        },
+        "TOPPING": {
+          "exc_med": 0.323,
+          "exc_mean": 0.516,
+          "hit": 51.3,
+          "abs_med": 3.206,
+          "abs_hit": 62.5,
+          "n": 29660
+        },
+        "NEUTRAL": {
+          "exc_med": 0.046,
+          "exc_mean": 0.275,
+          "hit": 50.2,
+          "abs_med": 3.323,
+          "abs_hit": 62.3,
+          "n": 34850
+        },
+        "BUY_PARTIAL": {
+          "exc_med": 0.279,
+          "exc_mean": 0.432,
+          "hit": 51.1,
+          "abs_med": 3.353,
+          "abs_hit": 62.4,
+          "n": 17172
+        },
+        "SETUP_BUY": {
+          "exc_med": 0.372,
+          "exc_mean": 0.696,
+          "hit": 51.7,
+          "abs_med": 3.541,
+          "abs_hit": 62.7,
+          "n": 6793
+        },
+        "SELL": {
+          "exc_med": -0.402,
+          "exc_mean": -0.261,
+          "hit": 48.3,
+          "abs_med": 2.532,
+          "abs_hit": 60.1,
+          "n": 2689
+        },
+        "BUY": {
+          "exc_med": 1.402,
+          "exc_mean": 1.433,
+          "hit": 56.3,
+          "abs_med": 4.778,
+          "abs_hit": 66.3,
+          "n": 2115
+        },
+        "AVOID_SIDE": {
+          "exc_med": 0.329,
+          "exc_mean": 0.487,
+          "hit": 51.4,
+          "abs_med": 3.168,
+          "abs_hit": 62.4,
+          "n": 59242
+        },
+        "BUY_SIDE": {
+          "exc_med": 0.404,
+          "exc_mean": 0.582,
+          "hit": 51.7,
+          "abs_med": 3.531,
+          "abs_hit": 62.8,
+          "n": 26080
+        }
+      },
+      "2016-2020": {
+        "NEUTRAL": {
+          "exc_med": -0.493,
+          "exc_mean": 0.122,
+          "hit": 48.3,
+          "abs_med": 3.34,
+          "abs_hit": 60.8,
+          "n": 32760
+        },
+        "BELOW_TREND": {
+          "exc_med": 0.003,
+          "exc_mean": 1.542,
+          "hit": 50.0,
+          "abs_med": 6.497,
+          "abs_hit": 66.1,
+          "n": 75110
+        },
+        "EXTENDED": {
+          "exc_med": -0.347,
+          "exc_mean": 0.297,
+          "hit": 48.7,
+          "abs_med": 3.683,
+          "abs_hit": 61.9,
+          "n": 26321
+        },
+        "TOPPING": {
+          "exc_med": 0.18,
+          "exc_mean": 0.917,
+          "hit": 50.7,
+          "abs_med": 4.088,
+          "abs_hit": 63.1,
+          "n": 31873
+        },
+        "SELL": {
+          "exc_med": -0.512,
+          "exc_mean": 0.106,
+          "hit": 47.9,
+          "abs_med": 2.239,
+          "abs_hit": 57.4,
+          "n": 2713
+        },
+        "BUY_PARTIAL": {
+          "exc_med": -0.608,
+          "exc_mean": -0.192,
+          "hit": 47.6,
+          "abs_med": 3.328,
+          "abs_hit": 60.8,
+          "n": 15846
+        },
+        "SETUP_BUY": {
+          "exc_med": -0.666,
+          "exc_mean": 0.059,
+          "hit": 47.0,
+          "abs_med": 3.196,
+          "abs_hit": 60.4,
+          "n": 6945
+        },
+        "BUY": {
+          "exc_med": -0.086,
+          "exc_mean": 0.293,
+          "hit": 49.4,
+          "abs_med": 3.837,
+          "abs_hit": 62.5,
+          "n": 1965
+        },
+        "AVOID_SIDE": {
+          "exc_med": -0.085,
+          "exc_mean": 0.613,
+          "hit": 49.7,
+          "abs_med": 3.823,
+          "abs_hit": 62.3,
+          "n": 60907
+        },
+        "BUY_SIDE": {
+          "exc_med": -0.589,
+          "exc_mean": -0.083,
+          "hit": 47.6,
+          "abs_med": 3.347,
+          "abs_hit": 60.8,
+          "n": 24756
+        }
+      },
+      "2021-2026": {
+        "NEUTRAL": {
+          "exc_med": -2.321,
+          "exc_mean": -1.193,
+          "hit": 43.3,
+          "abs_med": 1.563,
+          "abs_hit": 54.6,
+          "n": 57753
+        },
+        "TOPPING": {
+          "exc_med": -2.289,
+          "exc_mean": -1.264,
+          "hit": 43.0,
+          "abs_med": 1.188,
+          "abs_hit": 53.5,
+          "n": 47196
+        },
+        "BUY_PARTIAL": {
+          "exc_med": -2.181,
+          "exc_mean": -1.037,
+          "hit": 43.5,
+          "abs_med": 1.627,
+          "abs_hit": 54.5,
+          "n": 29431
+        },
+        "EXTENDED": {
+          "exc_med": -1.878,
+          "exc_mean": -0.803,
+          "hit": 44.4,
+          "abs_med": 1.528,
+          "abs_hit": 54.4,
+          "n": 42585
+        },
+        "SETUP_BUY": {
+          "exc_med": -1.957,
+          "exc_mean": -0.854,
+          "hit": 44.1,
+          "abs_med": 1.511,
+          "abs_hit": 54.2,
+          "n": 13191
+        },
+        "SELL": {
+          "exc_med": -3.251,
+          "exc_mean": -1.334,
+          "hit": 40.7,
+          "abs_med": 0.992,
+          "abs_hit": 52.3,
+          "n": 4015
+        },
+        "BUY": {
+          "exc_med": -1.095,
+          "exc_mean": -0.317,
+          "hit": 46.8,
+          "abs_med": 2.871,
+          "abs_hit": 57.8,
+          "n": 3454
+        },
+        "BELOW_TREND": {
+          "exc_med": -1.201,
+          "exc_mean": -0.26,
+          "hit": 46.8,
+          "abs_med": 2.348,
+          "abs_hit": 55.9,
+          "n": 133040
+        },
+        "AVOID_SIDE": {
+          "exc_med": -2.144,
+          "exc_mean": -1.058,
+          "hit": 43.5,
+          "abs_med": 1.332,
+          "abs_hit": 53.9,
+          "n": 93796
+        },
+        "BUY_SIDE": {
+          "exc_med": -2.047,
+          "exc_mean": -0.93,
+          "hit": 43.9,
+          "abs_med": 1.683,
+          "abs_hit": 54.7,
+          "n": 46076
+        }
+      }
+    },
+    "DEAD_WIN": {
+      "1998-2007": {
+        "BELOW_TREND": {
+          "exc_med": -0.803,
+          "exc_mean": 3.476,
+          "hit": 48.2,
+          "abs_med": 0.0,
+          "abs_hit": 50.0,
+          "n": 5795
+        },
+        "TOPPING": {
+          "exc_med": 0.137,
+          "exc_mean": 1.946,
+          "hit": 50.4,
+          "abs_med": 1.816,
+          "abs_hit": 54.7,
+          "n": 1670
+        },
+        "NEUTRAL": {
+          "exc_med": -0.249,
+          "exc_mean": 1.3,
+          "hit": 49.3,
+          "abs_med": 1.295,
+          "abs_hit": 53.4,
+          "n": 2044
+        },
+        "EXTENDED": {
+          "exc_med": 0.103,
+          "exc_mean": 2.471,
+          "hit": 50.2,
+          "abs_med": 1.711,
+          "abs_hit": 53.5,
+          "n": 1501
+        },
+        "SETUP_BUY": {
+          "exc_med": -0.148,
+          "exc_mean": 0.657,
+          "hit": 49.8,
+          "abs_med": 0.916,
+          "abs_hit": 52.2,
+          "n": 542
+        },
+        "BUY_PARTIAL": {
+          "exc_med": -0.076,
+          "exc_mean": 0.288,
+          "hit": 49.5,
+          "abs_med": 1.818,
+          "abs_hit": 53.5,
+          "n": 1075
+        },
+        "SELL": {
+          "exc_med": -0.332,
+          "exc_mean": 3.405,
+          "hit": 48.2,
+          "abs_med": 1.163,
+          "abs_hit": 51.8,
+          "n": 199
+        },
+        "BUY": {
+          "exc_med": 0.384,
+          "exc_mean": -6.678,
+          "hit": 50.4,
+          "abs_med": 1.249,
+          "abs_hit": 53.3,
+          "n": 137
+        },
+        "AVOID_SIDE": {
+          "exc_med": 0.061,
+          "exc_mean": 2.266,
+          "hit": 50.1,
+          "abs_med": 1.715,
+          "abs_hit": 54.0,
+          "n": 3370
+        },
+        "BUY_SIDE": {
+          "exc_med": -0.074,
+          "exc_mean": -0.142,
+          "hit": 49.7,
+          "abs_med": 1.309,
+          "abs_hit": 53.1,
+          "n": 1754
+        }
+      },
+      "ALL": {
+        "BELOW_TREND": {
+          "exc_med": -2.084,
+          "exc_mean": 0.835,
+          "hit": 45.2,
+          "abs_med": 0.0,
+          "abs_hit": 48.3,
+          "n": 12835
+        },
+        "TOPPING": {
+          "exc_med": -0.679,
+          "exc_mean": 1.136,
+          "hit": 47.6,
+          "abs_med": 1.745,
+          "abs_hit": 54.8,
+          "n": 3338
+        },
+        "NEUTRAL": {
+          "exc_med": -1.216,
+          "exc_mean": -0.67,
+          "hit": 46.1,
+          "abs_med": 1.122,
+          "abs_hit": 53.2,
+          "n": 3871
+        },
+        "EXTENDED": {
+          "exc_med": -0.841,
+          "exc_mean": 0.998,
+          "hit": 47.3,
+          "abs_med": 1.625,
+          "abs_hit": 53.9,
+          "n": 3040
+        },
+        "SETUP_BUY": {
+          "exc_med": -0.726,
+          "exc_mean": 0.866,
+          "hit": 48.2,
+          "abs_med": 1.572,
+          "abs_hit": 54.3,
+          "n": 947
+        },
+        "BUY_PARTIAL": {
+          "exc_med": -1.287,
+          "exc_mean": -1.175,
+          "hit": 46.6,
+          "abs_med": 0.963,
+          "abs_hit": 51.7,
+          "n": 2012
+        },
+        "SELL": {
+          "exc_med": -0.686,
+          "exc_mean": 2.556,
+          "hit": 47.1,
+          "abs_med": 1.665,
+          "abs_hit": 53.7,
+          "n": 367
+        },
+        "BUY": {
+          "exc_med": -1.559,
+          "exc_mean": -6.092,
+          "hit": 48.0,
+          "abs_med": 1.329,
+          "abs_hit": 52.4,
+          "n": 254
+        },
+        "AVOID_SIDE": {
+          "exc_med": -0.755,
+          "exc_mean": 1.151,
+          "hit": 47.4,
+          "abs_med": 1.694,
+          "abs_hit": 54.4,
+          "n": 6745
+        },
+        "BUY_SIDE": {
+          "exc_med": -1.211,
+          "exc_mean": -0.962,
+          "hit": 47.2,
+          "abs_med": 1.185,
+          "abs_hit": 52.5,
+          "n": 3213
+        }
+      },
+      "2008-2015": {
+        "NEUTRAL": {
+          "exc_med": -1.348,
+          "exc_mean": -2.182,
+          "hit": 44.6,
+          "abs_med": 1.462,
+          "abs_hit": 54.6,
+          "n": 1121
+        },
+        "BUY": {
+          "exc_med": -2.874,
+          "exc_mean": -7.022,
+          "hit": 43.0,
+          "abs_med": -0.35,
+          "abs_hit": 46.8,
+          "n": 79
+        },
+        "BUY_PARTIAL": {
+          "exc_med": -0.8,
+          "exc_mean": -1.194,
+          "hit": 47.5,
+          "abs_med": 1.561,
+          "abs_hit": 53.4,
+          "n": 575
+        },
+        "BELOW_TREND": {
+          "exc_med": -2.521,
+          "exc_mean": 0.632,
+          "hit": 44.5,
+          "abs_med": -0.874,
+          "abs_hit": 45.9,
+          "n": 4116
+        },
+        "EXTENDED": {
+          "exc_med": -1.015,
+          "exc_mean": -0.825,
+          "hit": 45.4,
+          "abs_med": 1.6,
+          "abs_hit": 55.2,
+          "n": 948
+        },
+        "TOPPING": {
+          "exc_med": -0.623,
+          "exc_mean": 0.639,
+          "hit": 47.6,
+          "abs_med": 2.104,
+          "abs_hit": 56.6,
+          "n": 1034
+        },
+        "SETUP_BUY": {
+          "exc_med": -1.647,
+          "exc_mean": 1.784,
+          "hit": 46.0,
+          "abs_med": 2.184,
+          "abs_hit": 57.3,
+          "n": 248
+        },
+        "SELL": {
+          "exc_med": -1.179,
+          "exc_mean": -1.006,
+          "hit": 45.8,
+          "abs_med": 0.801,
+          "abs_hit": 51.7,
+          "n": 120
+        },
+        "BUY_SIDE": {
+          "exc_med": -1.275,
+          "exc_mean": -0.886,
+          "hit": 46.7,
+          "abs_med": 1.597,
+          "abs_hit": 53.9,
+          "n": 902
+        },
+        "AVOID_SIDE": {
+          "exc_med": -0.861,
+          "exc_mean": -0.115,
+          "hit": 46.5,
+          "abs_med": 1.86,
+          "abs_hit": 55.7,
+          "n": 2102
+        }
+      },
+      "2016-2020": {
+        "BELOW_TREND": {
+          "exc_med": -2.746,
+          "exc_mean": -0.805,
+          "hit": 43.9,
+          "abs_med": 2.326,
+          "abs_hit": 54.2,
+          "n": 1899
+        },
+        "TOPPING": {
+          "exc_med": -2.163,
+          "exc_mean": 2.29,
+          "hit": 40.5,
+          "abs_med": 2.017,
+          "abs_hit": 56.5,
+          "n": 444
+        },
+        "BUY_PARTIAL": {
+          "exc_med": -5.111,
+          "exc_mean": -5.278,
+          "hit": 36.6,
+          "abs_med": -0.63,
+          "abs_hit": 46.0,
+          "n": 224
+        },
+        "EXTENDED": {
+          "exc_med": -1.742,
+          "exc_mean": 2.75,
+          "hit": 41.8,
+          "abs_med": 1.994,
+          "abs_hit": 55.6,
+          "n": 378
+        },
+        "NEUTRAL": {
+          "exc_med": -2.712,
+          "exc_mean": -4.002,
+          "hit": 38.5,
+          "abs_med": 0.52,
+          "abs_hit": 50.9,
+          "n": 462
+        },
+        "SETUP_BUY": {
+          "exc_med": -0.171,
+          "exc_mean": 1.217,
+          "hit": 48.6,
+          "abs_med": 3.428,
+          "abs_hit": 61.9,
+          "n": 105
+        },
+        "SELL": {
+          "exc_med": -1.467,
+          "exc_mean": 13.228,
+          "hit": 46.9,
+          "abs_med": 3.78,
+          "abs_hit": 59.4,
+          "n": 32
+        },
+        "BUY": {
+          "exc_med": 2.186,
+          "exc_mean": 0.48,
+          "hit": 58.3,
+          "abs_med": 3.834,
+          "abs_hit": 70.8,
+          "n": 24
+        },
+        "AVOID_SIDE": {
+          "exc_med": -1.926,
+          "exc_mean": 2.904,
+          "hit": 41.3,
+          "abs_med": 2.039,
+          "abs_hit": 56.2,
+          "n": 854
+        },
+        "BUY_SIDE": {
+          "exc_med": -2.301,
+          "exc_mean": -2.955,
+          "hit": 41.6,
+          "abs_med": 1.036,
+          "abs_hit": 52.4,
+          "n": 353
+        }
+      },
+      "2021-2026": {
+        "BUY": {
+          "exc_med": -11.284,
+          "exc_mean": -6.379,
+          "hit": 35.7,
+          "abs_med": -2.849,
+          "abs_hit": 42.9,
+          "n": 14
+        },
+        "EXTENDED": {
+          "exc_med": -2.415,
+          "exc_mean": -4.376,
+          "hit": 45.1,
+          "abs_med": -0.94,
+          "abs_hit": 48.8,
+          "n": 213
+        },
+        "TOPPING": {
+          "exc_med": -5.225,
+          "exc_mean": -5.98,
+          "hit": 40.5,
+          "abs_med": -2.892,
+          "abs_hit": 41.6,
+          "n": 190
+        },
+        "NEUTRAL": {
+          "exc_med": -4.401,
+          "exc_mean": -3.917,
+          "hit": 40.6,
+          "abs_med": -0.889,
+          "abs_hit": 49.6,
+          "n": 244
+        },
+        "BELOW_TREND": {
+          "exc_med": -9.089,
+          "exc_mean": -10.243,
+          "hit": 33.2,
+          "abs_med": -7.111,
+          "abs_hit": 37.9,
+          "n": 1025
+        },
+        "BUY_PARTIAL": {
+          "exc_med": -8.392,
+          "exc_mean": -5.833,
+          "hit": 36.2,
+          "abs_med": -3.041,
+          "abs_hit": 40.6,
+          "n": 138
+        },
+        "SETUP_BUY": {
+          "exc_med": -4.058,
+          "exc_mean": -2.05,
+          "hit": 40.4,
+          "abs_med": -1.66,
+          "abs_hit": 46.2,
+          "n": 52
+        },
+        "SELL": {
+          "exc_med": -0.133,
+          "exc_mean": -2.634,
+          "hit": 43.8,
+          "abs_med": 4.492,
+          "abs_hit": 81.2,
+          "n": 16
+        },
+        "BUY_SIDE": {
+          "exc_med": -7.621,
+          "exc_mean": -4.906,
+          "hit": 37.3,
+          "abs_med": -2.754,
+          "abs_hit": 42.2,
+          "n": 204
+        },
+        "AVOID_SIDE": {
+          "exc_med": -3.311,
+          "exc_mean": -5.037,
+          "hit": 43.0,
+          "abs_med": -1.185,
+          "abs_hit": 46.8,
+          "n": 419
+        }
+      }
+    }
+  }
+}

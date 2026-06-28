@@ -1,0 +1,26 @@
+{
+  "_note": "Curated Drugs@FDA sponsor_name token -> ticker map for the openFDA approval channel (collectors/openfda.py). The token is matched as an exact phrase: sponsor_name:\"<token>\" (openFDA stores SHORT uppercase applicant names, e.g. 'LILLY', 'NOVO NORDISK', 'GENENTECH'). Fills the healthcare blind spot Quiver/contracts cannot see: new-drug (ORIG/AP) approvals and label expansions (SUPPL/EFFICACY/AP). Clinical-stage names (VKTX/GPCR/ALT/SRRK) are kept so their FIRST approval fires the channel; they simply return nothing until then. Payers (UNH/ELV/CI/HUM/CNC/CVS) make no drugs -> intentionally absent (openFDA is structurally blind to them). ADRs map to the US-listed ticker.",
+  "sponsors": {
+    "LLY": "LILLY",
+    "NVO": "NOVO NORDISK",
+    "PFE": "PFIZER",
+    "AMGN": "AMGEN",
+    "AZN": "ASTRAZENECA",
+    "RHHBY": "GENENTECH",
+    "ABBV": "ABBVIE",
+    "BMY": "BRISTOL",
+    "GILD": "GILEAD",
+    "BIIB": "BIOGEN",
+    "NVS": "NOVARTIS",
+    "SNY": "SANOFI",
+    "MRK": "MERCK SHARP DOHME",
+    "JNJ": "JANSSEN",
+    "VRTX": "VERTEX PHARMACEUTICALS",
+    "REGN": "REGENERON",
+    "GSK": "GLAXOSMITHKLINE",
+    "VKTX": "VIKING THERAPEUTICS",
+    "GPCR": "STRUCTURE THERAPEUTICS",
+    "ALT": "ALTIMMUNE",
+    "SRRK": "SCHOLAR ROCK"
+  }
+}

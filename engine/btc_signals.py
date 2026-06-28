@@ -402,9 +402,59 @@ def drawdown_brake(alloc: pd.Series, ret: pd.Series, cfg: dict) -> pd.Series:
     return pd.Series(out, index=alloc.index)
 
 
+def bottom_pressure(price: pd.DataFrame) -> pd.Series:
+    """Causal 0..1 BOTTOM-detector gauge from price only (close + OHLC) — a weighted
+    confluence of the markers that empirically mark BTC washout lows (research:
+    signal_engine/REVERSE_ENGINEERING.md): multi-timeframe StochRSI OVERSOLD breadth
+    (daily / 3-day / weekly all <20 -> the strongest tell, ~4x bottom odds), deep
+    drawdown from recent highs, low RSI, low position in range, capitulation (elevated
+    realized vol + a sharp down-thrust), and a long lower wick. No look-ahead: every
+    term uses only data up to t (higher-TF terms = the last COMPLETED bar via resample
+    + forward-fill). Returns a Series on the daily index in [0, 1]."""
+    c = price["close"].astype(float)
+    h = price["high"].astype(float) if "high" in price else c
+    l = price["low"].astype(float) if "low" in price else c
+    o = price["open"].astype(float) if "open" in price else c
+    idx = c.index
+
+    def _srsi_k(s: pd.Series, n: int = 14, sm: int = 3) -> pd.Series:
+        r = _rsi(s, n)
+        lo, hi = r.rolling(n).min(), r.rolling(n).max()
+        raw = ((r - lo) / (hi - lo).replace(0, np.nan) * 100).fillna(50.0)
+        return raw.rolling(sm).mean()
+
+    kD = _srsi_k(c)
+    k3 = _srsi_k(c.resample("3D").last()).reindex(idx, method="ffill")
+    kW = _srsi_k(c.resample("W").last()).reindex(idx, method="ffill")
+    n_os = (kD < 20).astype(int) + (k3 < 20).astype(int) + (kW < 20).astype(int)
+
+    dd20 = c / c.rolling(20, min_periods=5).max() - 1.0
+    dd50 = c / c.rolling(50, min_periods=10).max() - 1.0
+    rsid = _rsi(c, 14)
+    lo20, hi20 = l.rolling(20, min_periods=5).min(), h.rolling(20, min_periods=5).max()
+    rngpos = (c - lo20) / (hi20 - lo20).replace(0, np.nan) * 100
+    rv = c.pct_change().rolling(14, min_periods=5).std()
+    rv_pct = rv.rolling(180, min_periods=30).rank(pct=True)
+    roc5 = c / c.shift(5) - 1.0
+    capit = (rv_pct > 0.65) & (roc5 < -0.08)
+    rng = (h - l).replace(0, np.nan)
+    lwick = (pd.concat([o, c], axis=1).min(axis=1) - l) / rng
+
+    terms = [
+        ((n_os >= 2), 0.8), ((n_os >= 3), 1.6),          # MTF StochRSI oversold breadth
+        ((dd20 <= -0.12), 1.4), ((dd50 <= -0.22), 1.0),  # deep drawdown
+        ((rsid < 40), 1.0), ((rngpos < 25), 1.0),        # oversold / low in range
+        (capit, 1.2), ((lwick > 0.5), 0.6),              # capitulation / rejection wick
+    ]
+    total = sum(w for _, w in terms)
+    score = sum(cond.astype(float).fillna(0.0) * w for cond, w in terms) / total
+    return score.clip(0.0, 1.0).fillna(0.0).rename("bottom_pressure")
+
+
 def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
                val: pd.DataFrame | None = None,
-               close: pd.Series | None = None) -> pd.DataFrame:
+               close: pd.Series | None = None,
+               bottom_sig: pd.Series | None = None) -> pd.DataFrame:
     """Strategy grids on (momentum, risk) -> {0, 0.5, 1.0}, then Point-4 sizing:
     a CONTINUOUS conviction multiplier scales the grid (EDGE sizes larger than a LEAN
     than a TOSS-UP — size BY conviction, not just label it) and, when `close` is given,
@@ -431,6 +481,13 @@ def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
         deep_value, overvalued = dv.fillna(False), ov.fillna(False)
     conv_on = cfg.get("conviction_sizing", True)
     brake_on = cfg.get("drawdown_brake", True) and close is not None
+    overlay_on = cfg.get("bottom_overlay", True) and bottom_sig is not None
+    if overlay_on:
+        b_thr = float(cfg.get("bottom_thr", 0.45))
+        b_boost = float(cfg.get("bottom_boost", 0.40))
+        b_cap = float(cfg.get("bottom_cap", 1.0))
+        # 0 below the threshold, ramps to 1 at full bottom pressure
+        b_strength = ((bottom_sig.reindex(mom.index) - b_thr) / max(1.0 - b_thr, 1e-9)).clip(0.0, 1.0).fillna(0.0)
     # directional-confidence proxy (the dashboard's regime-cell p_bull isn't a
     # historical series, so reuse cycle_position — momentum carries direction, risk
     # drags it); fill the warm-up gap with a coin-flip (sizes the floor, never NaN).
@@ -448,7 +505,11 @@ def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
             raw = raw * conviction_multiplier(score, cfg)     # size by conviction (magnitude only)
         if brake_on:
             raw = drawdown_brake(raw, ret, cfg)               # cap risk while underwater
-        out[f"alloc_{name}"] = raw.clip(0.0, 1.0)
+        if overlay_on:
+            # add size at washout bottoms the brake would otherwise sit out (magnitude
+            # only; never reduces exposure). cap=1.0 -> no leverage.
+            raw = (raw + b_boost * b_strength).clip(0.0, b_cap)
+        out[f"alloc_{name}"] = raw.clip(lower=0.0)
     return out
 
 
@@ -1472,6 +1533,31 @@ def macro_overlay(inputs: dict, cfg: dict) -> pd.DataFrame:
         out["dxy"] = dxy
         drivers["dxy"] = -np.tanh(dxy.pct_change(cfg["dxy_roc_window_d"]) / cfg["dxy_roc_scale"])
 
+    # Tier-3 curve regime + Fed path — emitted as oriented {-2..+2} sub-scores for the
+    # macro-regime composite (engine/btc_regime). DELIBERATELY NOT folded into
+    # macro_score: the calibrated score stays unchanged; these are display-only.
+    spread, us10, dff = s("spread_2s10s"), s("us10y"), s("fed_funds")
+    if spread is not None and us10 is not None:
+        cw = cfg.get("curve_chg_window_d", 20)
+        steepening = spread.diff(cw) > 0          # term spread widening
+        bull = us10.diff(cw) < 0                   # long-end yields falling = "bull"
+        cs = pd.Series(np.nan, index=idx)
+        cs[bull & steepening] = 2                  # bull steepening — recovery fuel (best)
+        cs[bull & ~steepening] = 1                 # bull flattening — mixed-positive
+        cs[~bull & steepening] = -1                # bear steepening — ambiguous
+        cs[~bull & ~steepening] = -2               # bear flattening — worst (Fed choking)
+        out["curve_score"] = cs.where(spread.diff(cw).notna() & us10.diff(cw).notna())
+    if dff is not None:
+        fw = cfg.get("fed_chg_window_d", 60)
+        d_fed = dff.diff(fw)                        # <0 easing (bullish), >0 hiking (bearish)
+        fs = pd.Series(np.nan, index=idx)
+        fs[d_fed.notna()] = 0.0
+        fs[d_fed < -0.25] = 1                       # cutting
+        fs[d_fed < -0.75] = 2                       # cutting fast / post-pivot
+        fs[d_fed > 0.25] = -1                       # hiking
+        fs[d_fed > 0.75] = -2                       # hiking fast
+        out["fed_score"] = fs
+
     if drivers:
         dd = pd.DataFrame(drivers)
         w = cfg["weights"]
@@ -1574,9 +1660,12 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     at = attention(inputs, cfg.get("attention", {}))
     tf = taker_flow(inputs, cfg.get("taker_flow", {}))
     # Tier-1b: blend the confirmed valuation tails into allocation (gated by the
-    # allocation backtest below). `close` enables the ENFORCED drawdown brake live.
+    # allocation backtest below). `close` enables the ENFORCED drawdown brake live;
+    # `bottom_sig` re-adds size at washout lows the brake would otherwise sit out.
+    bp = bottom_pressure(inputs["price"])
     al = allocation(mom["momentum"], rk["risk_index"], cfg["allocation"], va,
-                    close=inputs["price"]["close"])
+                    close=inputs["price"]["close"], bottom_sig=bp)
+    al["bottom_pressure"] = bp
 
     out = pd.concat([inputs["price"][["close"]], mom, rk, bf, st, gg, al,
                      va, mn, cb, ex, op, lv, ma, oc, ef, im, cc, cp, po, xa, bh, gl, sc, cm, fc,

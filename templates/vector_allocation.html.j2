@@ -117,7 +117,7 @@ html[data-theme="dark"] .rchip{background:var(--grid)}
   <div class="wrap" style="display:flex;align-items:center;justify-content:space-between;padding-top:0;padding-bottom:0;border:none;margin:0 auto">
   {% include "_navlinks.html.j2" %}
     <div class="nav-ctrls">
-      <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+      <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
       <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
       <div class="lang-toggle" role="group" aria-label="Language">
         <span class="pill"></span>
@@ -169,23 +169,27 @@ html[data-theme="dark"] .rchip{background:var(--grid)}
     </div>
   </div>
 
-  {# forward cones strip #}
+  {# forward cones strip — what BTC did next, on days like today #}
   {% if cones and cones.ok and cones.horizons %}
+  {% macro sgncol(v) %}{{ 'var(--bull)' if (v is not none and v > 0) else ('var(--bear)' if (v is not none and v < 0) else 'var(--muted)') }}{% endmacro %}
   <div class="card" style="margin-top:18px">
-    <h3 style="margin-bottom:6px">{{ t('Forward outlook · regime-conditioned','前瞻展望 · 按格局') }} <span class="faint" style="font-size:12px;font-weight:600">{{ cones.regime or '' }}</span></h3>
+    <h3 style="margin-bottom:4px">{{ t('What BTC did next · on days like today','类似今日的历史日 · BTC 后续走势') }} <span class="faint" style="font-size:12px;font-weight:600">{{ cones.regime or t('all history','全历史') }}</span></h3>
+    <div class="sub faint" style="margin:0 0 10px;font-size:12px">{{ t('Realized spread of BTC returns over the next 7 / 30 / 90 days, measured on past days whose regime matched today — median = the typical outcome, p25→p75 = the middle 50%. History, not a forecast.','历史上与今日格局相同的交易日，BTC 在随后 7 / 30 / 90 天的实际收益分布 —— 中位数 = 典型结果，p25→p75 = 中间 50%。是历史，不是预测。') }}</div>
     <table style="width:100%;border-collapse:collapse;font-size:13px">
-      <tr style="color:var(--muted);font-size:11px;text-transform:uppercase"><td style="padding:5px 4px">{{ t('Horizon','周期') }}</td><td style="text-align:right">p25</td><td style="text-align:right">{{ t('median','中位') }}</td><td style="text-align:right">p75</td><td style="text-align:right">P↑</td><td style="text-align:right">{{ t('avg dip','常见回撤') }}</td></tr>
+      <tr style="color:var(--muted);font-size:11px;text-transform:uppercase"><td style="padding:5px 4px">{{ t('Horizon','周期') }}</td><td style="text-align:right">p25</td><td style="text-align:right">{{ t('median','中位') }}</td><td style="text-align:right">p75</td><td style="text-align:right">{{ t('odds ↑','上涨概率') }}</td><td style="text-align:right">{{ t('avg dip','常见回撤') }}</td></tr>
       {% for k in ['7d','30d','90d'] %}{% set h = cones.horizons.get(k) %}{% if h and h.p50 is not none %}
-      <tr style="border-top:1px solid var(--grid)"{% if h.thin %} style="opacity:.6"{% endif %}>
+      {% set edge = ((h.p_up - h.base_up) * 100) if (h.p_up is not none and h.base_up is not none) else 0 %}
+      {% set oddscol = 'var(--muted)' if (h.thin or edge|abs < 5) else ('var(--bull)' if edge >= 5 else 'var(--bear)') %}
+      <tr style="border-top:1px solid var(--grid){% if h.thin %};opacity:.6{% endif %}">
         <td style="padding:7px 4px;font-weight:700;color:var(--ink)">{{ k }}{% if h.thin %} <span class="faint" style="font-weight:400">{{ t('thin','样本少') }}</span>{% endif %}</td>
-        <td style="text-align:right;color:var(--bear)">{{ '%+0.0f'|format(h.p25) }}%</td>
-        <td style="text-align:right;color:{{ 'var(--bull)' if h.p50>=0 else 'var(--bear)' }};font-weight:700">{{ '%+0.0f'|format(h.p50) }}%</td>
-        <td style="text-align:right;color:var(--bull)">{{ '%+0.0f'|format(h.p75) }}%</td>
-        <td style="text-align:right"><b style="color:{{ 'var(--muted)' if h.thin else ('var(--bull)' if h.p_up>=h.base_up else 'var(--bear)') }}">{{ (h.p_up*100)|round|int }}%</b> <span class="faint">/ {{ (h.base_up*100)|round|int }}%</span></td>
+        <td style="text-align:right;color:{{ sgncol(h.p25) }}">{{ '%+0.0f'|format(h.p25) }}%</td>
+        <td style="text-align:right;color:{{ sgncol(h.p50) }};font-weight:700">{{ '%+0.0f'|format(h.p50) }}%</td>
+        <td style="text-align:right;color:{{ sgncol(h.p75) }}">{{ '%+0.0f'|format(h.p75) }}%</td>
+        <td style="text-align:right"><b style="color:{{ oddscol }}">{{ (h.p_up*100)|round|int }}%</b> <span class="faint">{{ t('vs','对比') }} {{ (h.base_up*100)|round|int }}%</span></td>
         <td style="text-align:right;color:var(--bear)">{{ h.dd_avg }}%</td>
       </tr>{% endif %}{% endfor %}
     </table>
-    <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Empirical forward-return distribution on days that shared the current regime (zero fitted weights). P↑ vs the all-history base rate. Drawdown leads tactically; direction is a call only at the measured extremes.','历史上处于当前格局之日的实测前瞻收益分布（无拟合权重）。P↑ 对比全样本基准。战术上以回撤为先；方向仅在实测极值处才作判断。') }}</div>
+    <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Empirical, zero fitted weights. p25/p75 colored by their own sign; “odds ↑” is the up-rate vs the all-history base rate and tints only when it clears base by more than ±5 pts — otherwise direction is a coin-flip and only the size of the move (and the avg dip) matters.','实证，无拟合权重。p25/p75 按自身符号着色；“上涨概率”为相对全样本基准的上涨频率，仅当超出基准 ±5 个百分点以上才着色 —— 否则方向接近抛硬币，只看波动幅度（及常见回撤）。') }}</div>
   </div>
   {% endif %}
   {% endif %}

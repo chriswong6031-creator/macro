@@ -14,6 +14,7 @@ Usage: python -m scripts.build_stock_library
 from __future__ import annotations
 
 import json
+import math
 import logging
 import os
 import sys
@@ -29,10 +30,19 @@ from engine.conditions import sector_macro_beta  # noqa: E402
 from engine.cycles import analyze, market_vix_context  # noqa: E402
 from engine.extension import extension_signals  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
-from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
+from engine.setups import (  # noqa: E402
+    ALIGN_MIN_KEEP, US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer)
 from engine import stock_score  # noqa: E402
+from engine import entry_signal  # noqa: E402
+from engine import risk_sizing  # noqa: E402 — vol-managed inverse-vol sizing (the validated Sharpe lever)
+from engine import dispersion  # noqa: E402 — cross-sectional dispersion regime (selection-gross dial)
+from engine import stock_view  # noqa: E402
 from engine import stock_macro_sensitivity as macro_sens  # noqa: E402
+from engine import pullback_zone  # noqa: E402
 from engine import dannytrades_chip as dt_chip  # noqa: E402
+from engine import stock_technicals  # noqa: E402  — richer OHLCV-aware technical snapshot
+from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole
+from engine import gex_confirm  # noqa: E402  — dealer-gamma verifier/confirmer
 from engine import demand_chain as dchain  # noqa: E402
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
@@ -80,6 +90,19 @@ def current_macro() -> float | None:
     return float(v) if isinstance(v, (int, float)) else None
 
 
+def current_vol_regime() -> dict | None:
+    """The live INDEX vol-regime snapshot (engine.vol_regime -> site/vol/regime.json, mirrored
+    to regime/latest.json['vol_regime']). Threaded into analyze() as a UNIFORM, subtract-only
+    sizing caution on buy setups when the regime is a risk-off kill-switch state. None when
+    unavailable so the ladder simply omits the vol-regime context (behaviour unchanged)."""
+    try:
+        from engine import vol_regime
+        snap = vol_regime.published_snapshot()
+        return snap or None
+    except Exception:  # noqa: BLE001 — additive context, never fatal
+        return None
+
+
 OPTIONABLE_GEX = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "AMD",
                   "NFLX", "AVGO", "CRM", "ORCL", "ADBE", "QCOM", "MU", "INTC",
                   "PLTR", "COIN", "SMCI", "MRVL", "JPM", "BAC", "XOM", "WMT", "LLY"]
@@ -108,6 +131,64 @@ def _optionable_gex() -> dict:
             log.debug("per-stock gex %s skipped: %s", t, e)
     log.info("per-stock GEX: %d/%d optionable names", len(out), len(OPTIONABLE_GEX))
     return out
+
+
+def _load_gex_board(site: Path) -> dict:
+    """The pre-built per-symbol dealer-gamma payloads (site/gex/<SYM>.json) — RICHER than the
+    live compute_gex path: they carry call/put walls + the vol_hole state + consistent units,
+    for the curated optionable universe. Read once; graceful (absent dir => {}). These feed the
+    GEX verifier/confirmer (engine.gex_confirm) and enrich the per-stock gex chip."""
+    out: dict = {}
+    gdir = site / "gex"
+    if not gdir.exists():
+        return out
+    for fp in gdir.glob("*.json"):
+        sym = fp.stem
+        if sym == "index":
+            continue
+        try:
+            payload = json.loads(fp.read_text())
+            if (payload.get("summary") or {}).get("tier") not in (None, "no_options"):
+                out[sym] = payload
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.debug("gex board %s unreadable: %s", sym, e)
+    log.info("GEX board: %d per-symbol payloads loaded for the confirmer", len(out))
+    return out
+
+
+def _flat_gex_from_board(payload: dict) -> dict:
+    """A stock.html-compatible flat gex dict from the rich board payload. CRUCIAL: stock.html
+    multiplies iv30 by 100 (expects a DECIMAL), but the board stores iv30 as a PERCENT — so we
+    convert it back to decimal here (the iv30 unit-mismatch fix), and ADD the walls + vol_hole
+    that the lighter compute_gex path never produced (never touching the keys stock.html reads)."""
+    s = payload.get("summary") or {}
+    iv = s.get("iv30")
+    return {
+        "gamma_regime": s.get("regime"), "regime": s.get("regime"),
+        "net_gex_bn": s.get("net_gex_bn"),
+        "gamma_flip": s.get("gamma_flip"), "dist_to_flip_pct": s.get("dist_to_flip_pct"),
+        "iv30": (round(iv / 100.0, 4) if iv is not None else None),   # PERCENT -> DECIMAL
+        "call_wall": s.get("call_wall"), "put_wall": s.get("put_wall"),
+        "tier": s.get("tier"), "n_strikes": s.get("n_strikes"),
+        "rr_25d": s.get("rr_25d"),
+        "vol_hole": payload.get("vol_hole"),
+    }
+
+
+def _next_monthly_opex_days() -> int | None:
+    """Calendar days to the next monthly options expiry (3rd Friday) — feeds the GEX confirmer's
+    pre-OPEX suppression (charm/vanna flows dominate the last 2 sessions)."""
+    import datetime as _dt
+
+    def third_friday(y: int, m: int) -> "_dt.date":
+        d = _dt.date(y, m, 1)
+        return d + _dt.timedelta(days=(4 - d.weekday()) % 7 + 14)
+    today = _dt.date.today()
+    tf = third_friday(today.year, today.month)
+    if tf < today:
+        ny, nm = (today.year + 1, 1) if today.month == 12 else (today.year, today.month + 1)
+        tf = third_friday(ny, nm)
+    return (tf - today).days
 
 
 def current_vix_context() -> dict | None:
@@ -244,7 +325,8 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
          min_days: int = 300, allow_limited: bool = False,
          macro_frame=None, ant_gate: dict | None = None,
          breadth: pd.Series | None = None,
-         name_dir_inputs: dict | None = None) -> dict | None:
+         name_dir_inputs: dict | None = None,
+         vol_regime: dict | None = None) -> dict | None:
     c = close.dropna()
     # The cycle ladder itself needs ~260 sessions (engine/cycles), so 300 is a
     # conservative margin for the broad library. Curated single-stock extras
@@ -264,7 +346,8 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     # US net-liquidity is a single macro regime that applies to every US-listed
     # name — and to crypto (BTC tracks it) — so the same live label conditions all.
     res = analyze(c, high, kind=kind, liquidity=liquidity,
-                  macro_drag=macro_drag, macro_beta=macro_beta, vix_ctx=vix_ctx)
+                  macro_drag=macro_drag, macro_beta=macro_beta, vix_ctx=vix_ctx,
+                  vol_regime=vol_regime)
     if not res.get("ladder"):
         return _limited_rec(ticker, c, name, sector) if allow_limited else None
     month = int(c.index.max().month)
@@ -418,11 +501,12 @@ EXTRAS_MIN_DAYS = 252
 
 
 def _winit(liq, drag, bench, a_days, a_max, vctx, extras=frozenset(),
-           macro_frame=None, ant_gate=None, breadth=None, name_dir_inputs=None) -> None:
+           macro_frame=None, ant_gate=None, breadth=None, name_dir_inputs=None,
+           vol_regime=None) -> None:
     _SHARED.update(liquidity=liq, macro_drag=drag, bench=bench,
                    alert_days=a_days, alert_max=a_max, vix_ctx=vctx, extras=extras,
                    macro_frame=macro_frame, ant_gate=ant_gate, breadth=breadth,
-                   name_dir_inputs=name_dir_inputs)
+                   name_dir_inputs=name_dir_inputs, vol_regime=vol_regime)
 
 
 def _one_task(item):
@@ -441,7 +525,8 @@ def _one_task(item):
                     alert_max=_SHARED.get("alert_max", 50), vix_ctx=_SHARED.get("vix_ctx"),
                     min_days=min_days, allow_limited=is_extra,
                     macro_frame=_SHARED.get("macro_frame"), ant_gate=_SHARED.get("ant_gate"),
-                    breadth=_SHARED.get("breadth"), name_dir_inputs=_SHARED.get("name_dir_inputs"))
+                    breadth=_SHARED.get("breadth"), name_dir_inputs=_SHARED.get("name_dir_inputs"),
+                    vol_regime=_SHARED.get("vol_regime"))
     except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
         log.debug("library %s failed: %s", ticker, e)
         return None
@@ -497,6 +582,21 @@ def _basket_tailwind_map() -> dict[str, dict]:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("basket tailwind map unavailable (%s)", e)
     return out
+
+
+def _json_safe(o):
+    """Recursively replace non-finite floats (NaN/Inf) with None so the emitted JSON is
+    RFC-compliant. Python's json writes a bare ``NaN`` token otherwise, which strict /
+    JS (JSON.parse) consumers reject; here a stray NaN (e.g. a name's factor_z) used to
+    leak into us_standouts.json. Pairs with allow_nan=False to also fail loudly if a
+    non-finite slips through a non-float path."""
+    if isinstance(o, float):
+        return o if math.isfinite(o) else None
+    if isinstance(o, dict):
+        return {k: _json_safe(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [_json_safe(v) for v in o]
+    return o
 
 
 def _basket_membership_map() -> dict[str, list[dict]]:
@@ -558,9 +658,50 @@ def _spotlight_context() -> dict:
                 "name": row.get("name")}
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("spotlight sector stage table unavailable (%s)", e)
-    log.info("spotlight context: %d scored themes · %d sector stages",
-             len(theme_by_id), len(sector_by_etf))
-    return {"theme_by_id": theme_by_id, "sector_by_etf": sector_by_etf, "unmapped": set()}
+    alloc_by_id = _basket_alloc_map(theme_by_id)
+    log.info("spotlight context: %d scored themes · %d sector stages · %d basket alloc states",
+             len(theme_by_id), len(sector_by_etf), len(alloc_by_id))
+    return {"theme_by_id": theme_by_id, "sector_by_etf": sector_by_etf,
+            "alloc_by_id": alloc_by_id, "unmapped": set()}
+
+
+def _basket_alloc_map(theme_by_id: dict) -> dict:
+    """Per-basket ALLOCATION / absolute-trend-gate state, keyed by slug, for the VALIDATED
+    scored de-risk (engine.stock_score._basket_risk). Recomputed in-process via
+    engine.narrative_rotation so it never depends on allocation.json being on disk (the
+    rotation/allocation build runs AFTER this in the pipeline). Merges the theme-scoring
+    label/reco for context. Best-effort: {} if the rotation can't be built."""
+    out: dict[str, dict] = {}
+    try:
+        from engine import narrative_rotation as nr
+        rot = nr.compute_narrative_rotation("us") or {}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("basket alloc map unavailable (%s)", e)
+        return out
+    book = {w.get("id"): w
+            for w in ((rot.get("allocation") or {}).get("weights") or [])}
+    for r in (rot.get("ranks") or []):
+        sid = r.get("id")
+        if not sid:
+            continue
+        gate = r.get("gate") or {}
+        dur = r.get("durability") or {}
+        cr = r.get("crowding") or {}
+        w = book.get(sid) or {}
+        th = theme_by_id.get(sid) or {}
+        out[sid] = {
+            "rank": r.get("rank"), "score": r.get("score"),
+            "eligible": bool(r.get("eligible")),
+            "above_trend": bool(gate.get("above_200dma")),
+            "ret_12m": gate.get("ret_12m"),
+            "durability_bar": dur.get("bar"),
+            "crowded": bool(w.get("crowded") if w else cr.get("crowded")),
+            "book_wt": w.get("weight"),
+            "label": th.get("label"), "reco": th.get("reco"),
+            "name": th.get("name") or r.get("name"), "name_zh": th.get("name_zh"),
+            "signal_grade": (th.get("signal_strength") or {}).get("grade"),
+        }
+    return out
 
 
 def _spotlight_for(sector: str | None, memberships: list[dict] | None,
@@ -587,8 +728,10 @@ def main() -> int:
     liq = current_liquidity()
     drag = current_macro()
     vctx = current_vix_context()
-    log.info("net-liquidity regime for library: %s · macro-risk: %s · VIX: %s",
-             liq or "unknown", "—" if drag is None else f"{drag:.2f}", vctx or "n/a")
+    vreg = current_vol_regime()
+    log.info("net-liquidity regime for library: %s · macro-risk: %s · VIX: %s · vol-regime: %s",
+             liq or "unknown", "—" if drag is None else f"{drag:.2f}", vctx or "n/a",
+             (vreg or {}).get("regime") or "n/a")
     # benchmark for per-ticker relative-strength alerts + the feed window/caps
     spy = store.read("yahoo", "SPY")
     bench = spy["close"] if spy is not None else None
@@ -672,6 +815,8 @@ def main() -> int:
     factor_z: dict[str, float] = {}
     sue_z: dict[str, float] = {}
     insider_map: dict[str, dict] = {}
+    _factor_legs: dict[str, dict] = {}          # per-ticker value/quality/profitability (composite)
+    _sectors: dict[str, str] = {}               # for sector-neutral combination
     fp = site / "factordata" / "factors.json"
     if fp.exists():
         try:
@@ -682,6 +827,10 @@ def main() -> int:
                     factor_z[_r["ticker"]] = _r["composite"]
                 if _r.get("sue") is not None:
                     sue_z[_r["ticker"]] = _r["sue"]
+                _factor_legs[_r["ticker"]] = {k: _r.get(k) for k in
+                                              ("value", "quality", "profitability")}
+                if _r.get("sector"):
+                    _sectors[_r["ticker"]] = _r["sector"]
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("factors.json unreadable (%s)", e)
     isp = site / "factordata" / "insider_signals.json"
@@ -699,8 +848,22 @@ def main() -> int:
             smart_money = (json.loads(smp.read_text()) or {}).get("by_ticker", {})
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("smartmoney.json unreadable (%s)", e)
-    # per-stock dealer-gamma (DISPLAY-ONLY, gated from the score by validate_gex)
-    gex_by_ticker = _optionable_gex()
+    # per-stock 13D/G beneficial-ownership regime (activist 13D + 13G→13D flip = signal;
+    # custodian/index 13G = aggregation NOISE). Reads the sweep cache directly. CONTEXT.
+    beneficial_ownership: dict[str, dict] = {}
+    try:
+        from engine.beneficial_ownership import load_regime
+        beneficial_ownership = load_regime()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("beneficial_ownership regime unreadable (%s)", e)
+    # per-stock dealer-gamma (DISPLAY-ONLY, gated from the score by validate_gex). PRIMARY =
+    # the pre-built site/gex board payloads (rich: walls + vol_hole + consistent units), which
+    # already cover the curated optionable universe. The live compute_gex path is only used as a
+    # cold-start fallback when the board dir is entirely absent (a fresh checkout before the first
+    # gex build) — it is skipped whenever the board has any payload, to avoid the slow Cboe fetch.
+    gex_board = _load_gex_board(site)
+    gex_by_ticker = _optionable_gex() if not gex_board else {}
+    opex_days = _next_monthly_opex_days()
     # contrarian crowding/fragility flags (DISPLAY-ONLY, gated OUT of the score by
     # scripts/fund_crowding_phase0.py — short interest has no PIT history to validate).
     # Computed once over the whole panel; graceful (absent feed => {} => no chip).
@@ -781,6 +944,34 @@ def main() -> int:
             log.warning("revisions latest.parquet unreadable (%s)", e)
     log.info("revision-momentum: %d names with a cross-sectional z%s", len(revision_z),
              " · GATE GO → board ranks by EDGE" if gate_go else "")
+    # ---- Decorrelated cross-sectional COMPOSITE (engine/composite_score) ----------
+    # The Fundamental-Law lever: a sector-neutral, equal-weight blend of the DECORRELATED
+    # return-predictive legs (momentum + value + quality + profitability + revisions). Our
+    # probe measured these legs are near-uncorrelated (so they stack, ~1.42x single-leg IC).
+    # A transparent CONTEXT score beside conviction — never a per-name verdict (cross-sectional
+    # edge only). Reversal (net-of-cost mirage) + low-vol (a sizing lever) deliberately excluded.
+    composite_pt: dict[str, dict] = {}
+    try:
+        from engine import composite_score
+        _legrows = {}
+        for _t in set(_factor_legs) | set(alpha_pt) | set(revision_z):
+            _fl = _factor_legs.get(_t) or {}
+            _legrows[_t] = {"momentum": (alpha_pt.get(_t) or {}).get("alpha"),
+                            "value": _fl.get("value"), "quality": _fl.get("quality"),
+                            "profitability": _fl.get("profitability"),
+                            "revisions": revision_z.get(_t)}
+        if _legrows:
+            _comp = composite_score.build(pd.DataFrame(_legrows).T, _sectors)
+            if not _comp.empty:
+                for _t, _row in _comp.iterrows():
+                    composite_pt[_t] = {"z": _row["composite"], "n_legs": int(_row["n_legs"]),
+                                        "legs": {c[:-2]: round(float(_row[c]), 2)
+                                                 for c in _comp.columns
+                                                 if c.endswith("_z") and pd.notna(_row[c])}}
+                log.info("decorrelated composite: %d names (mean %.1f legs)",
+                         len(composite_pt), _comp["n_legs"].mean())
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("composite score failed (%s)", e)
     # Customer-demand chains (engine/demand_chain) — the L2 "independent observable"
     # leg of the Demand Context panel: aggregate spender capex/revenue from OTHER
     # companies' SEC filings is the forward-demand pool for each beneficiary cohort
@@ -851,6 +1042,8 @@ def main() -> int:
     # writes — deferred so the display score can be the WITHIN-MARKET percentile of the
     # composite z (set once all names are profiled), not a per-name logistic skin.
     profiles: dict[str, dict] = {}
+    entry_sig: dict[str, dict] = {}             # entry-timing gauge per name (board rows)
+    risk_sig: dict[str, dict] = {}              # vol-managed sizing per name (board rows)
     disp_map: dict[str, dict] = {}              # price / off-high / sparkline per name
     to_write: list[tuple[str, dict]] = []
     uni = universe()
@@ -859,9 +1052,22 @@ def main() -> int:
     # parabolic/stretched penalty in stock_score._axis_entry that was dead on this board
     # (every standout previously carried ext=None, so a +35%-over-200dma chase got no brake).
     ext_map, lottery_map = {}, {}
+    disp_regime, regime_gross = None, 1.0
     try:
         _ext_closes = pd.concat({t: c for (t, c, *_rest) in uni}, axis=1).sort_index()
         ext_map = extension_signals(_ext_closes)
+        # cross-sectional DISPERSION regime — the dial for WHEN selection pays (high
+        # dispersion => selection earns more => take more gross on the cross-sectional book).
+        # Computed ONCE over the whole-universe return panel; feeds per-name vol-managed sizing.
+        try:
+            disp_regime = dispersion.assess(_ext_closes.pct_change(fill_method=None).tail(280))
+            if disp_regime:
+                regime_gross = disp_regime["gross_mult"]
+                log.info("dispersion regime: %s (pctile %s, avg_corr %s) -> gross x%.2f",
+                         disp_regime["state"], disp_regime.get("dispersion_pctile"),
+                         disp_regime.get("avg_corr"), regime_gross)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("dispersion regime failed (%s)", e)
         # recent single-day MAX return % over the last 21d — the lottery/spike penalty (T5):
         # a top name with a radioactive one-day pop (>~18%) has a NEGATIVE fwd median + ~2x DD.
         lottery_map = (_ext_closes.pct_change().tail(21).max() * 100.0).round(2).to_dict()
@@ -910,7 +1116,7 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("name-direction inputs unavailable (%s)", e)
     _winit(liq, drag, bench, a_days, a_max, vctx, extra_set,
-           ant_macro, ant_gate, ant_breadth, name_dir_inputs)  # also primes the serial path
+           ant_macro, ant_gate, ant_breadth, name_dir_inputs, vreg)  # also primes the serial path
     workers = _library_workers()
     recs: list[dict | None] | None = None
     if workers > 1 and len(uni) > 50:
@@ -919,7 +1125,8 @@ def main() -> int:
             t0 = time.time()
             with ProcessPoolExecutor(max_workers=workers, initializer=_winit,
                                      initargs=(liq, drag, bench, a_days, a_max, vctx, extra_set,
-                                               ant_macro, ant_gate, ant_breadth)) as ex:
+                                               ant_macro, ant_gate, ant_breadth,
+                                               name_dir_inputs, vreg)) as ex:
                 recs = list(ex.map(_one_task, uni, chunksize=8))
             log.info("stock library: analysed %d names in %.0fs (%d processes)",
                      len(uni), time.time() - t0, workers)
@@ -956,8 +1163,45 @@ def main() -> int:
                 cand.append(sc)
         if smart_money.get(ticker):
             rec["smart_money"] = smart_money[ticker]
-        if gex_by_ticker.get(ticker):
+        if beneficial_ownership.get(ticker):
+            rec["beneficial_ownership"] = beneficial_ownership[ticker]
+        # ---- richer OHLCV technical snapshot + single-stock volatility black hole ------
+        # Supersede the thin close-only snapshot with the research-vetted read (ATR/ADX/
+        # squeeze/volume where full OHLCV exists; momentum / 52w-proximity / realized-vol
+        # percentile everywhere). The OHLCV names also get the price-based vol-squeeze state.
+        # Read store("stocks") ONCE here and reuse it for the DannyTrades chip below.
+        # Graceful: any failure leaves the thin snapshot in place.
+        _ohlcv = None
+        try:
+            _ohlcv = store.read("stocks", ticker)
+            if _ohlcv is not None and {"high", "low", "volume"} <= set(_ohlcv.columns):
+                rich = stock_technicals.snapshot(_ohlcv["close"], _ohlcv["high"],
+                                                 _ohlcv["low"], _ohlcv["volume"], bench=bench)
+                sq = vol_squeeze.assess(_ohlcv["close"], _ohlcv["high"],
+                                        _ohlcv["low"], _ohlcv["volume"])
+            else:
+                rich = stock_technicals.snapshot(close, bench=bench)
+                sq = vol_squeeze.assess(close)
+            rec["tech"] = {**(rec.get("tech") or {}), **rich}
+            if sq:
+                rec["vol_squeeze"] = sq
+        except Exception as e:  # noqa: BLE001 — additive; the thin snapshot is already on rec
+            log.warning("tech/squeeze enrich for %s failed (%s)", ticker, e)
+        # ---- dealer-gamma join (RICH board payload) + the GEX verifier/confirmer -------
+        # Prefer the pre-built site/gex payload (call/put walls + vol_hole + correct units);
+        # fall back to the live compute_gex summary. _flat_gex_from_board keeps stock.html's
+        # gex chip working (and fixes the iv30 decimal/percent mismatch).
+        _gp = gex_board.get(ticker)
+        if _gp:
+            rec["gex"] = _flat_gex_from_board(_gp)
+            _gc = gex_confirm.assess(_gp, opex_days=opex_days)
+            if _gc:
+                rec["gex_confirm"] = _gc
+        elif gex_by_ticker.get(ticker):
             rec["gex"] = gex_by_ticker[ticker]
+            _gc = gex_confirm.assess(gex_by_ticker[ticker], opex_days=opex_days)
+            if _gc:
+                rec["gex_confirm"] = _gc
         if fragility_map.get(ticker):
             rec["fragility"] = fragility_map[ticker]
         if bsk_mem.get(ticker):
@@ -995,18 +1239,75 @@ def main() -> int:
         if ext_map.get(ticker):
             rec["ext"] = ext_map[ticker]            # re-arms the parabolic/stretched entry brake
         spot = _spotlight_for(sector, bsk_mem.get(ticker), spotlight_ctx)
+        # primary narrative basket = the spotlight theme (strongest tilt the name belongs to);
+        # attach its allocation/trend-gate state for the validated size de-risk + Mastermind.
+        _alloc_by_id = spotlight_ctx.get("alloc_by_id") or {}
+        _bslug = ((spot or {}).get("theme") or {}).get("slug")
+        if not _bslug and bsk_mem.get(ticker):
+            # spotlight neutral but the name IS in basket(s): attach its best-ranked (most
+            # in-favor) narrative so Mastermind + the de-blur still see it (de-risk stays inert
+            # unless that basket is itself below-trend / deteriorating).
+            _cands = [m.get("slug") for m in bsk_mem[ticker] if m.get("slug") in _alloc_by_id]
+            if _cands:
+                _bslug = min(_cands, key=lambda s: (_alloc_by_id[s].get("rank") or 999))
+        _balloc = _alloc_by_id.get(_bslug) if _bslug else None
+        if _balloc:
+            rec["basket_alloc"] = {**_balloc, "slug": _bslug}
         norm = stock_score.normalize_rec(
             rec, "US", sue=sue_z.get(ticker), sue_fresh_days=sue_fresh.get(ticker),
             insider_bps=ins_bps, revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker),
-            spotlight=spot, lottery_max=lottery_map.get(ticker), earnings_days=_edays(ticker))
+            spotlight=spot, basket_alloc=rec.get("basket_alloc"),
+            lottery_max=lottery_map.get(ticker), earnings_days=_edays(ticker))
         prof = stock_score.conviction_profile(
             norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go,
                              "regime": {"calm": calm}, "risk_overlay": risk_overlay})
         rec["conviction"] = prof
+        # ---- Risk-based sizing (engine/risk_sizing) — the VALIDATED Sharpe lever ----
+        # Vol-managed inverse-vol size: bet LESS on high-vol names, MORE on calm ones,
+        # scaled by the dispersion regime. This is HOW MUCH to own (risk), orthogonal to
+        # the conviction score (WHAT to own) and the entry gauge (WHEN). Mastermind + the
+        # board multiply the conviction-base size by `size_mult`.
+        try:
+            rs = risk_sizing.assess(close, regime_gross=regime_gross)
+            if rs:
+                rec["risk_sizing"] = rs
+                if isinstance(prof, dict) and isinstance(prof.get("size"), dict):
+                    prof["size"]["vol_mult"] = rs["size_mult"]      # additive, never overrides
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("risk-sizing for %s failed (%s)", ticker, e)
+        if composite_pt.get(ticker):                # decorrelated cross-sectional composite (context)
+            rec["composite"] = composite_pt[ticker]
+        # ---- Entry-timing gauge (engine/entry_signal) — the SECOND gauge ------
+        # Conviction answers "own it?"; this answers "buy now / at what price / when?".
+        # A structured plan (status, buy zone $, don't-chase line, stop, horizon read)
+        # so an extended leader reads "wait — accumulate ~$X", never "99 · Buy Now".
+        try:
+            es = entry_signal.assess(close, high, rec)
+            if es:
+                rec["entry_signal"] = es
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("entry-signal for %s failed (%s)", ticker, e)
+        # ---- Pullback buy-zone (display-only) ---------------------------------
+        # turn an "Extended — don't chase" verdict into a concrete level: the rising 50d /
+        # the out-of-chase line for a timeable leader, or a "this is a chase, the reset is X%
+        # lower" read for a parabolic blow-off. Pure price math off rec['tech'] + the grade;
+        # self-gates (returns None) for anything not in don't-chase territory.
+        try:
+            pz = pullback_zone.compute(
+                rec.get("tech"), (rec.get("ext") or {}).get("grade"),
+                downtrend=((rec.get("ladder") or {}).get("dir") == "down"))
+            if pz:
+                rec["pullback_zone"] = pz
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("pullback-zone for %s failed (%s)", ticker, e)
         # 4H intraday available? (Polygon hourly store -> site/intraday/<T>.json). stock.html
         # passes this to the chart so the 4H button only appears where data actually exists.
         rec["has_intraday"] = 1 if (config.data_dir() / "intraday" / f"{ticker}.parquet").exists() else 0
         profiles[ticker] = prof
+        if rec.get("entry_signal"):
+            entry_sig[ticker] = rec["entry_signal"]    # attached to standout rows below
+        if rec.get("risk_sizing"):
+            risk_sig[ticker] = rec["risk_sizing"]      # attached to standout rows below
         # ---- Macro sensitivity (display-only, never scored) -------------------
         # rate-beta tier + duration bucket + live-regime head/tailwind + inflation
         # label. Uses the archetype merged from fpanels above + the shared context.
@@ -1031,7 +1332,6 @@ def main() -> int:
         # extension flag (decile Spearman −0.88) + whale-fade; needs full OHLCV+volume
         # (data/stocks names only — others silently skip). See research/DANNYTRADES_PHASE0.md.
         try:
-            _ohlcv = store.read("stocks", ticker)
             if _ohlcv is not None and {"low", "volume"} <= set(_ohlcv.columns):
                 dtc = dt_chip.assess(_ohlcv["close"], _ohlcv.get("high"),
                                      _ohlcv.get("low"), _ohlcv.get("volume"))
@@ -1062,6 +1362,10 @@ def main() -> int:
     # rec['conviction'] is the SAME object, so the per-stock JSONs pick it up below).
     stock_score.attach_panel_scores(profiles)
     for safe, rec in to_write:
+        # canonical render model (engine/stock_view) — built AFTER attach_panel_scores so
+        # the view's score/band match the final within-market percentile. Additive: the
+        # shared stockview.js renders rec["view"]; legacy panels still read rec.* directly.
+        rec["view"] = stock_view.build_view(rec, "US")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
     # flush the accruing ladder-transition log in one idempotent, atomic write
     try:
@@ -1106,37 +1410,86 @@ def main() -> int:
                   if p.get("composite_z") is not None and t in row_by_t]
         scored.sort(key=lambda kv: -(kv[1]["composite_z"]))
         # ENTRY-QUALITY GATE (China's discipline, T4-validated: poor-entry top-momentum names
-        # realize -0.7pp/mo and a -58% vs -41% worst drawdown). A name is BUYABLE only if its
-        # cycle/extension does NOT block (downtrend / parabolic / over-extended chase like CASY)
-        # AND its entry is constructive (entry_z > 0; an ABSENT entry is not "poor", so it
-        # stays). Strong-but-not-buyable names go to a WATCH list ("leaders — wait for a
-        # pullback") so they are surfaced honestly, never sold as buys.
-        def _buyable(p):
+        # realize -0.7pp/mo and a -58% vs -41% worst drawdown) AND the new BOTTOMING-ALIGNMENT
+        # gate. A name is BUYABLE only if its cycle/extension does NOT block (downtrend /
+        # parabolic / over-extended chase) AND its entry is constructive (entry_z > 0) AND its
+        # weekly/3-day/daily are ALIGNED to the upside (engine.cycles.mtf_alignment: weekly
+        # not-falling + 3-day nearing a bullish cross + daily just-crossed/about-to) — so a
+        # mid-weekly-bear falling knife with a strong event EDGE can no longer top the board.
+        # NEAR-aligned names backfill (tagged) only when too few are fully aligned; the buy
+        # list is ranked by alignment score first, then the Conviction composite. Strong-but-
+        # unaligned names (wrong tape / weekly still falling) drop to the WATCH strip.
+        def _entry_ok(p):
             if p.get("cycle_blocked"):
                 return False
             ez = ((p.get("axes") or {}).get("entry") or {}).get("z")
             return ez is None or ez > 0
-        buyable = [(t, p) for t, p in scored if _buyable(p)]
+
+        def _atier(p):
+            a = p.get("alignment") or {}
+            return "aligned" if a.get("aligned") else ("near" if a.get("near") else None)
+
+        def _asort(tp):
+            _t, p, _tier = tp
+            a = p.get("alignment") or {}
+            return ((a.get("score") or 0.0), (p.get("composite_z") or 0.0))
+
+        elig = [(t, p, _atier(p)) for t, p in scored if _entry_ok(p) and _atier(p)]
+        aligned = sorted([x for x in elig if x[2] == "aligned"], key=_asort, reverse=True)
+        near = sorted([x for x in elig if x[2] == "near"], key=_asort, reverse=True)
+        buyable = (aligned if len(aligned) >= ALIGN_MIN_KEEP
+                   else aligned + near[: ALIGN_MIN_KEEP - len(aligned)])
+        buy_ids = {t for t, _, _ in buyable}
         watch = [(t, p) for t, p in scored
-                 if not _buyable(p) and (p.get("composite_z") or 0) > 0]
-        wide = {"as_of": alpha_asof, "rank_by": ("edge-validated" if gate_go else "conviction"),
-                "gate_go": gate_go,
-                "buy": [row_by_t[t] for t, _ in buyable[:120]],
+                 if t not in buy_ids and (p.get("composite_z") or 0) > 0]
+
+        def _tag(t, tier):
+            r = row_by_t[t]
+            r["align_tier"] = tier
+            return r
+        wide = {"as_of": alpha_asof, "rank_by": "bottoming-alignment", "gate_go": gate_go,
+                "buy": [_tag(t, tier) for t, _, tier in buyable[:120]],
                 "watch": [row_by_t[t] for t, _ in watch[:24]],
                 "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else []}
-        eligible = sum(1 for _, p in buyable if (p.get("composite_z") or 0) > 0)
+        eligible = len(aligned)
         for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
+            if entry_sig.get(t):
+                r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
+            if risk_sig.get(t):
+                r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
+            if composite_pt.get(t):
+                r["composite"] = composite_pt[t]     # the decorrelated cross-sectional composite
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
             if demand_chip.get(t):                 # L2 demand-divergence flag for the board chip
                 r["demand"] = demand_chip[t]
         wide["eligible"] = eligible
         wide["universe"] = len(cand)
+        if disp_regime:                            # selection-regime gross dial (board + bot)
+            wide["dispersion_regime"] = disp_regime
         (site / "factordata" / "us_standouts.json").write_text(
-            json.dumps(wide, separators=(",", ":"), default=str))
+            json.dumps(_json_safe(wide), separators=(",", ":"), default=str, allow_nan=False))
         log.info("wrote us_standouts.json (%d buy · rank_by=%s · %d eligible / %d universe)",
                  len(wide["buy"]), wide["rank_by"], eligible, len(cand))
+        # forward shadow book — freeze the live score at build time so it can be graded on
+        # REALIZED forward returns later (engine/shadow_book; research/MEASUREMENT_FLOOR.md).
+        # Additive + display-only + append-only; never fatal.
+        try:
+            from engine import shadow_book as _sb
+            _asof = wide.get("as_of")
+            if _asof:
+                def _reg(c):
+                    rg = (c or {}).get("regime")
+                    return rg.get("state") if isinstance(rg, dict) else None
+                _recs = [{"ticker": r.get("ticker"), "score": (r.get("conviction") or {}).get("score"),
+                          "percentile": (r.get("conviction") or {}).get("score"),
+                          "regime": _reg(r.get("conviction"))}
+                         for b in ("buy", "watch", "laggards") for r in wide.get(b, [])]
+                _n = _sb.snapshot(_asof, [r for r in _recs if r["score"] is not None])
+                log.info("shadow book: snapshotted %d frozen scores for %s", _n, _asof)
+        except Exception as e:  # noqa: BLE001
+            log.debug("shadow snapshot skipped (%s)", e)
     # multi-timeframe Bottom-Confidence per-band held-rate (stock.html shows the
     # measured "this band held the low ~N%" line; see research/BOTTOM_CONFIDENCE.md)
     bccal = config.data_dir() / "regime" / "bottom_confidence_calibration.json"

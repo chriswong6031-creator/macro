@@ -125,7 +125,7 @@
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+    <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
     </button>
@@ -213,6 +213,31 @@
     '每个父级主题最多持有 1 个，避免组合沦为同一笔交易的四种说法。被替换（仍在趋势中，仅排序较低）') }}: {% for x in d.allocation.de_overlapped %}<span class="chip">{{ x.name }}</span>{% endfor %}</p>
   {% endif %}
 </div>
+
+{% if d.allocation.vol_overlay %}
+{% set vo = d.allocation.vol_overlay %}
+{% set ddci = vo.measured.dd_reduction_pp_ci or [None, None, None] %}
+<!-- ============ 01a DE-RISK OVERLAY (calibrated vol-target) ============ -->
+<h2><span class="idx">⚖</span>{{ t('Optional de-risk overlay', '可选降风险叠加') }}
+  <span class="chip">{{ t('backtested · offered, not forced', '已回测 · 可选而非强制') if not vo.applied else t('backtested · applied', '已回测 · 已应用') }}</span></h2>
+<div class="panel">
+  <div class="gauge" style="margin-bottom:8px">
+    <div class="gz"><div class="k">{{ t('Book vol now', '当前组合波动') }}</div><div class="v">{{ (vo.book_vol_ann*100)|round|int }}%</div></div>
+    <div class="gz"><div class="k">{{ t('Suggested scale', '建议缩放') }}</div><div class="v">{{ (vo.scalar*100)|round|int }}%</div></div>
+    <div class="gz"><div class="k">{{ t('Gross after', '叠加后净敞口') }}</div><div class="v">{{ (vo.gross_after*100)|round|int }}%</div></div>
+    <div class="gz"><div class="k">{{ t('→ cash', '→ 现金') }}</div><div class="v">{{ (vo.cash_after*100)|round|int }}%</div></div>
+  </div>
+  <p class="tagline"><span class="l-en">{{ vo.note_en }}</span><span class="l-zh">{{ vo.note_zh }}</span></p>
+  <p class="tagline" style="margin-top:6px;opacity:.8">🔬 {{ t('Measured on the 27y US clean-sector proxy (cited cross-market — the signal logic is shared, not re-validated per region)', '基于27年美国干净行业代理实测（跨市场引用 — 信号逻辑共享，未按地区单独验证）') }}:
+    {{ t('max-drawdown reduction', '最大回撤降低') }} {{ ddci[1] if ddci[1] is not none else '—' }}pp
+    {{ t('CI', '区间') }} [{{ ddci[0] if ddci[0] is not none else '—' }}, {{ ddci[2] if ddci[2] is not none else '—' }}],
+    {{ t('beats a trend-only brake', '优于纯趋势刹车') }}: {{ '✓' if vo.measured.beats_trend_brake else '—' }},
+    DSR {{ vo.measured.dsr }} ({{ vo.measured.n_trials }} {{ t('configs', '配置') }}).
+    {{ t('Grade', '评级') }}: <b>{{ vo.measured.verdict }}</b> —
+    {{ t('it cuts drawdown but does not raise Sharpe enough to clear the multiple-testing bar, so it stays a suggestion.',
+         '降低回撤但夏普提升不足以通过多重检验门槛，故仅作为建议。') }}</p>
+</div>
+{% endif %}
 
 <!-- ============ 01b PLAYBOOK: BUY & SELL ENTRIES ============ -->
 <h2><span class="idx">★</span>🎯 {{ t('Buy & sell entries — the playbook', '买卖入场 — 操作手册') }}

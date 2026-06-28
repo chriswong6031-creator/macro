@@ -24,7 +24,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import i18n  # noqa: E402
 from engine import stock_score  # noqa: E402
+from engine import stock_technicals  # noqa: E402  — richer close-only technical snapshot
+from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
+from engine import stock_view  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
+from engine.setups import ALIGN_MIN_KEEP  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
 from scripts.build_hk import tv_symbol  # noqa: E402
@@ -206,6 +210,26 @@ def chart_series(close: pd.Series, n: int = 504) -> dict:
             "c": [round(float(v), 3) for v in c.values]}
 
 
+def _safe(ticker: str) -> str:
+    return ticker.replace("=", "_").replace("^", "_")
+
+
+def _write_verified_index(outdir: Path, index: list[dict]) -> list[dict]:
+    """Write search manifest rows only when the matching detail JSON exists."""
+    verified, missing = [], []
+    for row in index:
+        t = row.get("t")
+        if t and (outdir / f"{_safe(t)}.json").exists():
+            verified.append(row)
+        elif t:
+            missing.append(t)
+    if missing:
+        log.warning("hk library: dropped %d index rows without detail JSON (%s%s)",
+                    len(missing), ", ".join(missing[:8]), "..." if len(missing) > 8 else "")
+    (outdir / "index.json").write_text(json.dumps(verified))
+    return verified
+
+
 def current_liquidity() -> str | None:
     """The live HK DUAL-liquidity regime ("expanding"/"contracting"/"neutral") the HK
     engine last classified (hk_regime/latest.json `liquidity_overlay` — PBoC M2 +
@@ -232,10 +256,21 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
         return None
     month = int(c.index.max().month)
     seas = seasonality(c)
+    # RICH close-only technicals (engine.stock_technicals: momentum / 52w-high proximity / BBWP /
+    # HVP / RSI / MA regime), superseding the thin snapshot. The single-stock volatility black hole
+    # is added too — all best-effort so a thin/odd series never breaks the build.
+    try:
+        _tech = stock_technicals.snapshot(c)
+    except Exception:  # noqa: BLE001 — fall back to the thin snapshot
+        _tech = snapshot(c)
+    try:
+        _sq = vol_squeeze.assess(c)
+    except Exception:  # noqa: BLE001
+        _sq = None
     return {
         "ticker": ticker, "name": name, "sector": sector, "tv": tv_symbol(ticker),
         "asof": str(c.index.max().date()), "history_days": int(len(c)),
-        "tech": snapshot(c),
+        "tech": _tech, "vol_squeeze": _sq,
         "season_this": season_line(seas, month),
         "season_next": season_line(seas, month % 12 + 1),
         "season_this_zh": season_line(seas, month, zh=True),
@@ -253,19 +288,25 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     hy = hk["yahoo"]
     names = hk.get("names", {})
 
-    # curated constituents from the breadth close cache (~3y window) + their sector
+    # Curated constituents + their sector. Prefer the deep HK search close panel when
+    # available; the breadth cache can be shallow for newly added/late-refreshed names,
+    # which made valid HK tickers show up as "not in library".
     cache = config.data_dir() / "hk_breadth" / "_closes_cache.parquet"
     cons = config.data_dir() / "hk_breadth" / "constituents.parquet"
-    if cache.exists() and cons.exists():
-        closes = pd.read_parquet(cache)
+    deep = config.data_dir() / "hk_search" / "closes_deep.parquet"
+    if cons.exists() and (cache.exists() or deep.exists()):
+        closes = pd.read_parquet(cache) if cache.exists() else pd.DataFrame()
+        deep_closes = pd.read_parquet(deep) if deep.exists() else pd.DataFrame()
         meta = pd.read_parquet(cons)
-        for t in closes.columns:
+        tickers = list(dict.fromkeys([*deep_closes.columns, *closes.columns]))
+        for t in tickers:
             if t in seen or t not in meta.index:
                 continue
             nm = str(meta.loc[t, "name"])
             if nm == t:  # parquet name is just the ticker — use the config display name
                 nm = names.get(t, t)
-            out.append((t, closes[t], None, nm, str(meta.loc[t, "sector"])))
+            series = deep_closes[t] if t in deep_closes.columns else closes[t]
+            out.append((t, series, None, nm, str(meta.loc[t, "sector"])))
             seen.add(t)
     else:
         log.warning("hk breadth close cache missing — library covers indices/ETFs only")
@@ -458,7 +499,7 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     the verdict never says "Buy". Board is ranked by the gated conviction composite and
     split buy / watch (strong-but-blocked) / laggards. Returns a setups-shaped dict."""
     from collections import defaultdict
-    from engine import extension as ext_eng
+    from engine import dispersion, entry_signal, extension as ext_eng, risk_sizing
     from engine import hk_ah, hk_southbound_stocks, hk_stock_signals
 
     rows = ((scoreboard or {}).get("modes") or {}).get("all") or []
@@ -529,6 +570,19 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     tickers = [e["ticker"] for e in enriched]
     closes = _closes_matrix()
     factor = _factor_ret()
+    # cross-sectional DISPERSION regime — the dial for WHEN selection pays, computed ONCE over
+    # the whole-universe HK return panel (mirrors build_stock_library). Feeds per-name
+    # vol-managed sizing (engine/risk_sizing). Strictly additive; absence => gross x1.0.
+    disp_regime, regime_gross = None, 1.0
+    if closes is not None:
+        try:
+            disp_regime = dispersion.assess(closes.pct_change(fill_method=None).tail(280))
+            if disp_regime:
+                regime_gross = disp_regime["gross_mult"]
+                log.info("hk dispersion regime: %s (pctile %s) -> gross x%.2f",
+                         disp_regime["state"], disp_regime.get("dispersion_pctile"), regime_gross)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("hk dispersion regime failed (%s)", e)
     betas_pt = {r["ticker"]: {"role": r.get("role"), "tilt": r.get("tilt"), "beta": r.get("beta")}
                 for r in rows}
     betas = {t: v["beta"] for t, v in betas_pt.items() if v.get("beta") is not None}
@@ -576,7 +630,39 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                              "regime": {"calm": calm}})
         profiles[t] = prof
         e["conviction"] = prof
-    stock_score.attach_panel_scores(profiles)        # within-market percentile display score
+        # ---- the two propagated engine gauges (US-parity), HK market ----------
+        # close Series for the vol / entry engines: the curated close matrix (proper
+        # date-indexed Series) preferred, else the per-stock chart closes. Both are
+        # pure / point-in-time; every compute is try/except so a bad name never breaks
+        # the build and an absent gauge just leaves the card unchanged.
+        close_s = None
+        try:
+            if closes is not None and t in closes.columns:
+                close_s = closes[t].dropna()
+            if (close_s is None or len(close_s) < 60):
+                ch = (rec.get("chart") or {}).get("c") or []
+                if len(ch) >= 60:
+                    close_s = pd.Series([float(x) for x in ch if x is not None])
+        except Exception:  # noqa: BLE001 — additive, never fatal
+            close_s = None
+        if close_s is not None and len(close_s) >= 60:
+            # ⚖ vol-managed inverse-vol sizing — HOW MUCH to own (risk), orthogonal to the
+            # conviction score (WHAT) and the entry gauge (WHEN). Pure-vol, scaled by the
+            # dispersion regime. Always computable when there's enough history.
+            try:
+                rs = risk_sizing.assess(close_s, regime_gross=regime_gross)
+                if rs:
+                    e["risk_sizing"] = rs
+            except Exception as ex:  # noqa: BLE001 — additive, never fatal
+                log.debug("hk risk-sizing for %s failed (%s)", t, ex)
+            # entry-timing gauge — when & at what price to buy (reads rec['ladder']).
+            try:
+                es = entry_signal.assess(close_s, None, rec)
+                if es:
+                    e["entry_signal"] = es
+            except Exception as ex:  # noqa: BLE001 — additive, never fatal
+                log.debug("hk entry-signal for %s failed (%s)", t, ex)
+    stock_score.attach_panel_scores(profiles, "HK")  # within-market percentile display score (rank-framed)
     # patch the (now percentile-scored) conviction + HK-native legs back into each per-stock
     # JSON so hk_lookup.html renders the identical hero + flow/value chips.
     for e in enriched:
@@ -588,6 +674,10 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             rec["ah_value"] = e["ah_value"]
         if e.get("edge_basis"):
             rec["edge"] = {"z": e.get("edge_z"), "basis": e["edge_basis"], "regime": risk_state}
+        if e.get("risk_sizing"):
+            rec["risk_sizing"] = e["risk_sizing"]    # vol-managed sizing for hk_lookup
+        if e.get("entry_signal"):
+            rec["entry_signal"] = e["entry_signal"]  # entry-timing gauge for hk_lookup
         try:
             fp.write_text(json.dumps(rec, default=str))
         except Exception:  # noqa: BLE001 — additive, never fatal
@@ -605,18 +695,38 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         z = c.get("composite_z")
         return z if z is not None else -9.0
 
-    def buyable(e: dict) -> bool:
+    def _entry_ok(e: dict) -> bool:
         c = e.get("conviction") or {}
         if c.get("cycle_blocked"):
             return False
         ez = (c.get("axes") or {}).get("entry", {}).get("z")
         return ez is None or ez > -0.1
 
+    def _atier(e: dict):
+        a = (e.get("conviction") or {}).get("alignment") or {}
+        return "aligned" if a.get("aligned") else ("near" if a.get("near") else None)
+
+    def _ascore(e: dict):
+        a = (e.get("conviction") or {}).get("alignment") or {}
+        return ((a.get("score") or 0.0), comp(e))
+
     ranked = sorted(enriched, key=comp, reverse=True)
-    buys = [e for e in ranked if buyable(e)][:n_buy]
+    # BOTTOMING-ALIGNMENT gate (the HK parallel of the US/CN fix): a name is BUYABLE only
+    # when its weekly/3-day/daily are aligned to the upside (engine.cycles.mtf_alignment) —
+    # weekly not-falling + 3-day nearing a bullish cross + daily just-crossed/about-to — so a
+    # mid-weekly-bear name the southbound crowd is accumulating into a fall (or a cheaper-and-
+    # cheaper A/H value leg) can no longer be sold as a buy. NEAR-aligned names backfill only
+    # when too few are fully aligned; aligned names rank by alignment score then conviction.
+    elig = [e for e in ranked if _entry_ok(e) and _atier(e)]
+    aligned = sorted([e for e in elig if _atier(e) == "aligned"], key=_ascore, reverse=True)
+    near = sorted([e for e in elig if _atier(e) == "near"], key=_ascore, reverse=True)
+    buys = (aligned if len(aligned) >= ALIGN_MIN_KEEP
+            else aligned + near[: ALIGN_MIN_KEEP - len(aligned)])[:n_buy]
+    for e in buys:
+        e["align_tier"] = _atier(e)
     buy_keys = {id(e) for e in buys}
-    # strong-but-blocked names (good edge, wrong tape / extended) -> a WATCH strip, not the
-    # buy list — the honest "wait for a base" demotion the old board lacked.
+    # strong-but-unaligned names (good edge, weekly still falling / unconfirmed) -> a WATCH
+    # strip, not the buy list — the honest "wait for the weekly to turn" demotion.
     watch = [e for e in ranked if id(e) not in buy_keys and comp(e) > 0.2][:8]
     laggards = sorted(enriched, key=comp)[:n_lag]
 
@@ -634,8 +744,10 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
            "calm": calm, "cohort": cohort or None,
            "buy": buys, "watch": watch, "laggards": laggards,
            "southbound_summary": hk_southbound_stocks.market_summary(),
-           "eligible": sum(1 for e in enriched if comp(e) > 0),
+           "eligible": len(aligned),
            "universe": len(enriched)}
+    if disp_regime:                                  # selection-regime gross dial (board context)
+        out["dispersion_regime"] = disp_regime
     # persist the artifact so a transient build failure leaves a stale-but-present board.
     try:
         fdir = site / "factordata"
@@ -678,6 +790,22 @@ def main(betas: dict | None = None) -> dict | None:
 
     liq = current_liquidity()
     log.info("hk dual-liquidity regime for library: %s", liq or "unknown")
+
+    # HSI benchmark close for the anticipation cone's relative leg (the HK market proxy).
+    try:
+        _hsi = store.read("hk", "^HSI")
+        _hsi_close = _hsi["close"] if _hsi is not None and "close" in _hsi.columns else None
+    except Exception:  # noqa: BLE001
+        _hsi_close = None
+    # hoist the anticipation engine + its gate ONCE (the cone is close-driven; the gate read would
+    # otherwise repeat per name). None-safe: if the engine is unavailable, the cone is simply skipped.
+    try:
+        from engine.anticipation import anticipate as _anticipate, load_gate as _load_gate
+        _ant_gate = _load_gate("US")
+    except Exception:  # noqa: BLE001
+        _anticipate = None
+        _ant_gate = None
+
     index, built, failed = [], 0, 0
     price_by: dict[str, float] = {}
     uni = universe()
@@ -688,7 +816,17 @@ def main(betas: dict | None = None) -> dict | None:
             continue
         if beta_pt.get(ticker):             # additive: absent => no global-beta panel
             rec["global_beta"] = beta_pt[ticker]
-        safe = ticker.replace("=", "_").replace("^", "_")
+        # forward anticipation cone (close-only) — feeds the risk-shape entry tilt + favourable-cone
+        # note in the shared engine; best-effort (skips quietly on thin history).
+        if _anticipate is not None:
+            try:
+                _ant = _anticipate(close.dropna(), bench=_hsi_close, asset_class="hk_equity",
+                                   gate=_ant_gate)
+                if _ant:
+                    rec["anticipation"] = _ant
+            except Exception:  # noqa: BLE001 — additive cone, never fatal
+                pass
+        safe = _safe(ticker)
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
         if rec.get("global_beta", {}).get("beta") is not None:
@@ -703,7 +841,7 @@ def main(betas: dict | None = None) -> dict | None:
         from engine import hk_fundamentals
         fmap = hk_fundamentals.build_all(price_by)
         for ticker, fund in fmap.items():
-            safe = ticker.replace("=", "_").replace("^", "_")
+            safe = _safe(ticker)
             fp = outdir / f"{safe}.json"
             if not fp.exists():
                 continue
@@ -730,7 +868,7 @@ def main(betas: dict | None = None) -> dict | None:
         from engine import hk_ah
         ah = hk_ah.ah_by_ticker()
         for ticker, blk in ah.items():
-            safe = ticker.replace("=", "_").replace("^", "_")
+            safe = _safe(ticker)
             fp = outdir / f"{safe}.json"
             if not fp.exists():
                 continue
@@ -744,7 +882,21 @@ def main(betas: dict | None = None) -> dict | None:
             log.info("hk A/H premium: attached to %d dual-listed names", len(ah))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("hk A/H premium attach failed (%s); skipping", e)
-    (outdir / "index.json").write_text(json.dumps(index))
+    # canonical render model (engine/stock_view) — ONE final pass over every per-stock JSON,
+    # AFTER all patches (conviction + global_beta + fundamentals + A/H premium) have landed,
+    # so the view's country_slot picks up global_beta + ah_premium. Additive + degrade-never.
+    for fp in outdir.glob("*.json"):
+        if fp.name in ("index.json", "calibration.json"):
+            continue
+        try:
+            rec = json.loads(fp.read_text())
+            if "ladder" not in rec:
+                continue
+            rec["view"] = stock_view.build_view(rec, "HK")
+            fp.write_text(json.dumps(rec, default=str))
+        except Exception:  # noqa: BLE001 — never fatal
+            continue
+    index = _write_verified_index(outdir, index)
     cal = config.data_dir() / "hk_regime" / "ladder_calibration.json"
     if cal.exists():
         (outdir / "calibration.json").write_text(cal.read_text())

@@ -1,7 +1,7 @@
 name: daily
 on:
   schedule:
-    - cron: "40 22 * * 1-5"   # 22:40 UTC weekdays, after US close; off-hour minute avoids scheduler congestion
+    - cron: "40 22 * * *"   # 22:40 UTC every day, after the US close (16:00 ET = 20:00/21:00 UTC across DST); off-hour minute avoids scheduler congestion
   workflow_dispatch:
 
 permissions:
@@ -10,7 +10,14 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pipeline
+  # Daily runs in its OWN lane so a long-running backfill / weekly job can never
+  # queue-cancel or starve the daily data refresh (the bug: a 2-3h special-sits
+  # backfill held the shared "pipeline" lane and the data on the site froze for
+  # hours while feature deploys kept happening). Every push step in this workflow
+  # uses a rebase-retry loop, so running concurrently with a batch job is race-safe.
+  # cancel-in-progress stays false: a queued daily still runs (two simultaneous
+  # dailies would simply dedup to the latest).
+  group: pipeline-daily
   cancel-in-progress: false
 
 jobs:
@@ -81,6 +88,12 @@ jobs:
           POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}   # massive.com options-OI accrual (GEX foundation)
           MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}   # accepted alias (same key, prior .env name)
           QUIVER_API_KEY: ${{ secrets.QUIVER_API_KEY }}     # Quiver alt-data suite (collectors/quiver.py); absent -> 'blocked', non-fatal
+          GRANTS_GOV_API_KEY: ${{ secrets.GRANTS_GOV_API_KEY }}  # Simpler Grants.gov pre-award FOA flow (collectors/grants_gov.py); free Login.gov key; absent -> 'blocked', non-fatal
+          FDA_API_KEY: ${{ secrets.FDA_API_KEY }}           # openFDA higher rate limit (collectors/openfda.py); OPTIONAL — keyless works at 1k/day
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}                 # Hugging Face higher rate limit (collectors/huggingface.py); OPTIONAL — anon tier suffices
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}   # Finnhub analyst/insider-MSPR/earnings trio (collectors/finnhub_altdata.py); free tier; FINNHUB_KEY also accepted
+          SAM_API_KEY: ${{ secrets.SAM_API_KEY }}           # SAM.gov pre-award solicitations (collectors/sam_gov.py); free key (entity reg); absent -> 'blocked', non-fatal
+          GITHUB_TOKEN: ${{ github.token }}                 # GitHub star velocity (collectors/github_repos.py); the auto-injected workflow token reads public-repo metadata at 1000/hr — no new secret needed
         run: |
           if [ -n "$FRED_API_KEY" ]; then echo "::notice::FRED_API_KEY present — using official API"; else echo "::warning::FRED_API_KEY ABSENT — check repo Settings > Secrets and variables > Actions > Repository secrets"; fi
           python -m scripts.collect
@@ -107,7 +120,7 @@ jobs:
     needs: collect
     if: always()            # a scraper failure must still produce a dashboard from cached data
     runs-on: ubuntu-latest
-    timeout-minutes: 70     # moving the ~22m factor-series walk to its own job (below) helped, but the ~15 remaining sequential builders still stretch to ~40m+ on congested 2-core runners (measured engine=42m on a heavily-loaded runner) — so the cap needs real headroom or the job gets cancelled mid-build. residual-alpha measured ~1s (never the bottleneck the old comment guessed). Follow-up to genuinely speed this up: parallelise the regional dashboard builders.
+    timeout-minutes: 120    # was 70 — observed the job hitting exactly 70m on a congested runner and getting CANCELLED at the special-situations step (~step 30 of 50), AFTER it had successfully rebuilt every page (china/gex/vol-regime/etc.) but BEFORE the "commit engine outputs" step (50). Because pages.yml deploys the COMMITTED main tree, a skipped commit means the fresh build never lands and the live site serves a stale dashboard (missing nav links, new heroes, new JSON) until a run happens to finish under the cap. 120m gives real headroom to always reach the commit. residual-alpha measured ~1s (never the bottleneck the old comment guessed). DONE: the ~22 regional/desk builders between build_site and the hub now run as parallel independent clusters (the "regional + desk builders (parallelised)" step) instead of serially — band wall-clock dropped from ~75m to ~its longest single cluster (special-situations' ~28m EDGAR sweep, now the long pole). Next lever if more is needed: speed up that EDGAR sweep.
     steps:
       - uses: actions/checkout@v4
         with:
@@ -198,6 +211,11 @@ jobs:
           # needs the DeepSeek key here too — not only on the master_brain step below.
           # No-op (degrades to neutral) when the secret is absent.
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          # Live intraday layer: set repo VARIABLE LIVE_QUOTES_WORKER_URL (Settings ->
+          # Secrets and variables -> Actions -> Variables) to your deployed Cloudflare
+          # quotes-worker URL to turn ON browser live prices — build_site bakes it into
+          # site/live_config.js. Empty -> live layer stays dormant (no-op). No code edit needed.
+          LIVE_QUOTES_WORKER_URL: ${{ vars.LIVE_QUOTES_WORKER_URL }}
         run: |
           set +e
           # Marker for the libraries-rebuild guard further down. The four non-US search
@@ -240,100 +258,120 @@ jobs:
           # collect job's committed data/quiver/* (no API key needed here); returns 0 on error.
           run_py "alternative data desk (build_alt_data)" scripts.build_alt_data
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
+          # Impulse Tracker — AFTER build_site (a US-stocks sibling page): writes impulse.html +
+          # factordata/impulse.json from the breadth close/volume caches + the regime read
+          # (engine.run, above). Reactive early-ignition momentum screen; display/context only.
+          # Reads only committed/cached data; returns 0 on error so it can never break the site.
+          run_py "impulse tracker (build_impulse)" scripts.build_impulse
           # Congressional / politician disclosed-trades desk — AFTER build_alt_data (refreshes
           # data/quiver/congress.parquet) + build_site (refreshes per-name stockdata + regime +
           # allocation that the watchlist scores against). Reads only committed data; returns 0 on error.
           run_py "congressional trades desk (build_congress)" scripts.build_congress
+          # Thematic Foresight Desk — AFTER build_site (regime latest.json carries the
+          # dislocation entry-overlay) + the engines' bottleneck/revision/demand leaves.
+          # Reads only committed data; returns 0 on error.
+          run_py "thematic foresight desk (build_foresight)" scripts.build_foresight
           exit 0
-      - name: build china a-share dashboard
-        # after build_site, before build_vector (which writes the landing hub last):
-        # writes china.html + china_regime/latest.json so the hub picks up the China
-        # card. Self-sufficient; returns 0 on any error (can't break the macro/vector site).
-        run: python -m scripts.build_china
-      - name: build hong kong / hang seng dashboard
-        # after build_site/build_china, before build_vector (which writes the hub
-        # last): writes hk.html + hk_regime/latest.json so the hub picks up the
-        # Hong Kong card. Self-sufficient; returns 0 on any engine error.
-        run: python -m scripts.build_hk
-      - name: build commodity vector dashboard
-        # after build_site/build_china, before build_vector (which writes the hub
-        # last): writes commodities.html + commodity/latest.json so the hub picks up
-        # the Commodity card. Self-sufficient; returns 0 on any engine error.
-        run: python -m scripts.build_commodities
-      - name: build strategic reserves dashboard
-        # after build_commodities, before build_vector (which writes the hub last):
-        # writes spr.html + spr/latest.json (hub card). Reads the live EIA SPR series +
-        # JODI national crude stocks + curated reserve table. Returns 0 on any error.
-        run: python -m scripts.build_spr
-      - name: build forex vector dashboard
-        # after build_commodities, before build_vector (which writes the hub last):
-        # writes forex.html + forex/latest.json so the hub picks up the Forex card.
-        # Self-sufficient; returns 0 on any engine error.
-        run: python -m scripts.build_forex
-      - name: build bonds & bond-health dashboard
-        # after build_site/build_forex, before build_vector (which writes the hub
-        # last): writes bonds.html + bonds/latest.json (hub card) + bonds/
-        # bond_health.json (the cross-asset AI signal vector). Reuses the macro
-        # feature frame + conditions layer; returns 0 on any engine error.
-        run: python -m scripts.build_bonds
-      - name: discovery leaderboard (build_discovery)
-        # after build_site (reads site/factordata/alpha.json) and build_forex,
-        # before build_vector (which writes the hub last): writes the discovery
-        # leaderboard. Self-sufficient; returns 0 on any engine error.
-        run: python -m scripts.build_discovery
-      - name: GEX magnets board (build_gex_board)
-        # after build_site; live Cboe chains -> site/gex.html. Self-sufficient (returns 0 on engine error).
-        run: python -m scripts.build_gex_board
-      - name: factor seasonality (build_seasonality)
-        # after build_site, before build_vector: reads data/french/factors.parquet
-        # (Ken French monthly factors, collected in the collect job) and writes
-        # seasonality.html + factordata/factor_seasonality.json. Standalone; returns 0
-        # on any error (can't break the macro/vector site).
-        run: python -m scripts.build_seasonality
-      - name: thematic baskets (build_baskets)
-        # after build_site, before build_vector: reads data/baskets/membership.json +
-        # the price caches + SPY and writes baskets.html + basketdata/baskets.json.
-        # Standalone; returns 0 on any error.
-        run: python -m scripts.build_baskets
-      - name: methodology page (build_methodology)
-        # after build_site/build_factor_series/build_baskets: documents the construction +
-        # injects a few live stats from the JSONs. Standalone; returns 0 on any error.
-        run: python -m scripts.build_methodology || echo "methodology skipped (additive)"
-      - name: research reports section (build_reports)
-        # registry-driven static blog/article section -> site/reports.html + one page per
-        # report (templates/report_*.html.j2). Depends on no live JSON; additive, returns 0.
-        run: python -m scripts.build_reports || echo "reports skipped (additive)"
-      - name: policy intent desk (LLM realpolitik leans + scorer; gated, resilient)
-        # BEFORE build_policy_watch so the page picks up site/policy_intent.json. Reads
-        # data/policy/intel.json + latest.json -> dated falsifiable leans (proxy vs SPY)
-        # in data/policy_intent/theses.jsonl, then scores past-due leans. NO-OP unless
-        # config policy_intent_desk.enabled AND DEEPSEEK_API_KEY are set. Never aborts.
+      - name: regional + desk builders (parallelised — independent clusters, barrier before the hub)
+        # The ~22 builders between build_site and the landing hub split into mutually
+        # INDEPENDENT clusters (each internally ordered by its own data deps). They used
+        # to run strictly serially (~75 min of wall-clock); here each cluster runs in the
+        # background and we barrier (`wait`) before build_vector, which reads every
+        # cluster's latest.json. That collapses the band to ~its longest single cluster
+        # (special-situations' EDGAR sweep, ~28 min) instead of the serial sum. Every
+        # builder stays individually resilient via brun(): a non-zero exit is annotated
+        # (::error::) and appended to the run summary with its traceback, but NEVER aborts
+        # the job — so the site still deploys and one broken builder can't 404 the
+        # dashboard. Each builder owns its OWN scratch files ($ART/<slug>.{log,rc,sec}) so
+        # the parallel subshells never write the same file; output is replayed GROUPED + in
+        # a stable order AFTER the barrier (never interleaved) and per-builder wall-times go
+        # to the step summary. Builders read build_site's output (spine, above) + the
+        # collect job's data; the only cross-builder reads are kept INSIDE one cluster
+        # (news after baskets; crossasset/transmission after commodity/forex/bonds;
+        # policy_watch after policy_intent). special_situations stays IN this job (not a
+        # sibling job like factor_series) because it writes a PAGE + hub card that must be
+        # in THIS run's deploy artifact — it is event-driven, so a one-run lag is wrong.
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          MASSIVE_S3_ENDPOINT: ${{ secrets.MASSIVE_S3_ENDPOINT }}
+          MASSIVE_S3_ACCESS_KEY_ID: ${{ secrets.MASSIVE_S3_ACCESS_KEY_ID }}
+          MASSIVE_S3_SECRET_ACCESS_KEY: ${{ secrets.MASSIVE_S3_SECRET_ACCESS_KEY }}
+          MASSIVE_S3_BUCKET: ${{ secrets.MASSIVE_S3_BUCKET }}
         run: |
           set +e
-          python -m engine.policy_intent_desk > /tmp/pid.log 2>&1; rc=$?
-          cat /tmp/pid.log
-          [ "$rc" -ne 0 ] && echo "::warning title=policy_intent_desk::rc=$rc (non-fatal)"
+          ART=/tmp/band; rm -rf "$ART"; mkdir -p "$ART"
+          # brun <slug> <label> <module> [args…] — run one builder resiliently into its
+          # OWN scratch files (never shared across the parallel subshells), recording the
+          # exit code + wall-seconds. Output (incl. stderr) is buffered, replayed later.
+          brun() {
+            local slug="$1" label="$2" mod="$3"; shift 3
+            local t0 t1 rc
+            t0=$(date +%s)
+            { echo "$label"; python -m "$mod" "$@" 2>&1; } > "$ART/$slug.log"; rc=$?
+            t1=$(date +%s)
+            echo "$rc"          > "$ART/$slug.rc"
+            echo "$((t1 - t0))" > "$ART/$slug.sec"
+          }
+          # --- clusters: each internally ORDERED by its data deps; clusters mutually independent ---
+          cl_markets() {
+            brun commodities  "build commodity vector (build_commodities)"         scripts.build_commodities
+            brun spr          "build strategic reserves (build_spr)"               scripts.build_spr
+            brun forex        "build forex vector (build_forex)"                   scripts.build_forex
+            brun bonds        "build bonds & bond-health (build_bonds)"            scripts.build_bonds
+            brun crossasset   "cross-asset vector (build_crossasset)"              scripts.build_crossasset
+            brun transmission "rate & inflation transmission (build_transmission)" scripts.build_transmission
+            brun discovery    "discovery leaderboard (build_discovery)"            scripts.build_discovery
+          }
+          cl_china() { brun china "build china a-share dashboard (build_china)" scripts.build_china; brun china_sector_desk "build china sector desk (build_china_sector_desk)" scripts.build_china_sector_desk; brun china_sector_cyc "china sector cycles (build_china_sector_cycles)" scripts.build_china_sector_cycles; brun china_sector_central "china sector central intelligence (build_china_sector_central)" scripts.build_china_sector_central; }
+          cl_hk()    { brun hk    "build hong kong / hang seng (build_hk)"      scripts.build_hk; }
+          cl_gex() {
+            brun gex_board    "GEX magnets board (build_gex_board)"        scripts.build_gex_board
+            brun vol_regime   "index vol-regime (build_vol_regime)"        scripts.build_vol_regime
+            brun options_flow "options flow desk (build_options_flow)"     scripts.build_options_flow
+            brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
+          }
+          cl_baskets() {
+            brun baskets     "thematic baskets (build_baskets)"        scripts.build_baskets
+            brun news        "news suite (build_news)"                 scripts.build_news
+            brun methodology "methodology page (build_methodology)"    scripts.build_methodology
+          }
+          cl_special() { brun special "special situations desk (build_special_situations)" scripts.build_special_situations; }
+          cl_misc() {
+            brun seasonality   "factor seasonality (build_seasonality)"      scripts.build_seasonality
+            brun reports       "research reports section (build_reports)"     scripts.build_reports
+            brun cycle         "cycle intelligence page (build_cycle)"        scripts.build_cycle
+            brun sectorcyc     "sector cycle intelligence (build_sector_cycles)" scripts.build_sector_cycles
+            brun policy_intent "policy intent desk (policy_intent_desk)"      engine.policy_intent_desk
+            brun policy_watch  "fed & policy watch (build_policy_watch)"      scripts.build_policy_watch
+            brun index_changes "S&P index changes (build_index_changes)"     scripts.build_index_changes
+          }
+          # launch every cluster concurrently, then barrier before the hub (build_vector, below)
+          cl_markets & cl_china & cl_hk & cl_gex & cl_baskets & cl_special & cl_misc &
+          wait
+          # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
+          #     nothing interleaves), surface failures as annotations, summarise wall-times ---
+          ORDER="china hk commodities spr forex bonds crossasset transmission discovery gex_board vol_regime options_flow options_skew baskets news methodology seasonality reports policy_intent policy_watch special index_changes"
+          echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
+          for slug in $ORDER; do
+            [ -f "$ART/$slug.log" ] || continue
+            label=$(head -n1 "$ART/$slug.log")
+            rc=$(cat "$ART/$slug.rc" 2>/dev/null || echo "?")
+            sec=$(cat "$ART/$slug.sec" 2>/dev/null || echo "?")
+            echo "::group::$label  [${sec}s, rc=$rc]"
+            tail -n +2 "$ART/$slug.log"
+            echo "::endgroup::"
+            echo "- ${label} — ${sec}s (rc=${rc})" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$rc" != "0" ] && [ "$rc" != "?" ]; then
+              echo "::error title=${label} failed (rc=${rc})::$(tail -n 2 "$ART/$slug.log" | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ ${label} failed (rc=${rc})"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 40 "$ART/$slug.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
           exit 0
-      - name: fed & policy watch (build_policy_watch)
-        # realpolitik Fed + Administration intel page -> site/policy_watch.html from the
-        # curated data/policy/intel.json substrate (falsifiable prediction ledger + rotation
-        # map) + the intent-desk output. Display/context-only; additive, returns 0 on any error.
-        run: python -m scripts.build_policy_watch || echo "policy watch skipped (additive)"
-      - name: cross-asset vector (build_crossasset)
-        # after the commodity/forex/bonds pages, before build_vector (hub last):
-        # TSMOM trend + intermarket ratios + correlation regime over keyless
-        # price stores -> site/crossasset.html + data/crossasset/latest.json.
-        # Self-sufficient; returns 0 on any engine error.
-        run: python -m scripts.build_crossasset
-      - name: rate & inflation transmission (build_transmission)
-        # after build_site (engine.run already wrote the latest.json block) and the
-        # cross-asset/bonds pages: recomputes the display-only transmission read and
-        # renders site/transmission.html + data/transmission/latest.json. Reads the
-        # MEASURED coefficient matrix (data/transmission/calibration.json, refreshed
-        # weekly by calibrate_rate_inflation). Self-sufficient; returns 0 on any error.
-        run: python -m scripts.build_transmission
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes
@@ -341,6 +379,17 @@ jobs:
         # signals); returns 0 even if the crypto engine errors, so it can never
         # break the macro site.
         run: python -m scripts.build_vector
+      - name: master brain scorer (durability loop; deterministic, resilient)
+        # Grades the brain's own past-due cross-asset leans in data/master_brain/theses.jsonl
+        # against realized closes (reuses engine.desk_scorer) -> data/master_brain/
+        # {scored.jsonl,track_record.json}. Runs BEFORE the master_brain generator so today's
+        # brief reflects the freshest track record. Deterministic, no API key, never aborts.
+        run: |
+          set +e
+          python -m engine.master_brain_scorer > /tmp/mb_score.log 2>&1; rc=$?
+          cat /tmp/mb_score.log
+          [ "$rc" -ne 0 ] && echo "::warning title=master_brain_scorer::rc=$rc (non-fatal)"
+          exit 0
       - name: master brain (multi-lens LLM synthesis; default-off, resilient)
         # Runs LAST among the builders — it reads EVERY dashboard's latest.json
         # (macro/china/hk/commodity/forex + BTC) plus the catalyst digest, and writes
@@ -429,6 +478,37 @@ jobs:
           cat /tmp/nbrain.log
           [ "$rc" -ne 0 ] && echo "::warning title=narrative_brain::rc=$rc (non-fatal)"
           exit 0
+      - name: Risk Brain (Claude/Opus daily drawdown-risk officer; context-only, resilient)
+        # Reads the engine's own deterministic risk stack (data/regime/latest.json.risk_state,
+        # site/riskdata/mtf_monitor.json, GEX, baskets, narrative rotation, standouts) and writes
+        # a FALSIFIABLE risk read + a CODE-clamped de-risk DIRECTIVE (site/riskdata/risk_brain.json)
+        # + appends data/risk_brain/theses.jsonl. Runs AFTER build_site/build_baskets so its evidence
+        # exists. Claude via the OAuth token / ANTHROPIC_API_KEY fallback. NO-OP unless
+        # risk_brain.enabled AND a token is set. Context-only; never aborts.
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set +e
+          python -m engine.risk_brain > /tmp/rbrain.log 2>&1; rc=$?
+          cat /tmp/rbrain.log
+          [ "$rc" -ne 0 ] && echo "::warning title=risk_brain::rc=$rc (non-fatal)"
+          exit 0
+      - name: Risk Radar self-correction (Opus reviews graded mistakes -> bounded recalibration)
+        # Reads the radar's realized forward-outcome scorecard (data/risk_radar/forward_log.jsonl),
+        # lets Opus propose calibration nudges to cut false positives + catch misses, CLAMPS them and
+        # applies ONLY if a do-no-harm backtest confirms F1 improves (full + 2020) without breaking the
+        # evidence gate. Writes data/risk_radar/calibration.json + review_log.jsonl. NO-OP unless
+        # risk_radar_review.enabled AND a token is set AND >=30 calls graded. Never aborts.
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set +e
+          python -m engine.risk_radar_review > /tmp/rrev.log 2>&1; rc=$?
+          cat /tmp/rrev.log
+          [ "$rc" -ne 0 ] && echo "::warning title=risk_radar_review::rc=$rc (non-fatal)"
+          exit 0
       - name: Radar + Brain ledger scorer (grade the falsifiable theses vs SPY; context-only)
         # Grades data/{radar,narrative_brain}/theses.jsonl once each check_by passes (reuses
         # engine.ai_desk_scorer) -> track_record.json + a site copy. Idempotent; context-only
@@ -439,11 +519,80 @@ jobs:
           cat /tmp/radar_score.log
           [ "$rc" -ne 0 ] && echo "::warning title=radar_scorer::rc=$rc (non-fatal)"
           exit 0
+      - name: Calibration Hub (unified self-improvement observability; display-only)
+        # Consolidates every Phase-C desk's track_record + the Trial Ledger into one
+        # surface (data/calibration/summary.json + site/calibration.html). Runs after the
+        # deterministic scorers so it reads fresh track records; never feeds a score.
+        run: python -m scripts.build_calibration || true
+      - name: Alt-Data Brain (Claude-Opus convergence analyst; actionable + falsifiable)
+        # Reads the deterministic weighted-convergence substrate + influence graph (written by
+        # build_alt_data above) as an evidence pack and writes an ACTIONABLE scored read
+        # (action/conviction/direction + a falsifiable thesis graded vs SPY) -> site/altdata/
+        # brain.json + data/altdata/brain_theses.jsonl, then re-runs build_alt_data to re-emit
+        # mastermind.json + re-render alt_data.html with the fresh read. Claude via the user's
+        # Claude-Code OAuth token (Bearer + oauth beta), ANTHROPIC_API_KEY fallback — the SAME
+        # auth as the Narrative Brain step (the build_alt_data step above only carries the
+        # DeepSeek key, so the Opus/Haiku calls must run HERE). NO-OP unless altdata_brain.enabled
+        # AND a token is set. A hard CODE clamp blocks ACCUMULATE on an extended name; never aborts.
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set +e
+          python -m engine.altdata_brain > /tmp/altbrain.log 2>&1; rc=$?
+          cat /tmp/altbrain.log
+          # re-emit the Mastermind feed + re-render the page with the fresh Opus read
+          python -m scripts.build_alt_data > /tmp/altbrain_render.log 2>&1
+          tail -3 /tmp/altbrain_render.log
+          [ "$rc" -ne 0 ] && echo "::warning title=altdata_brain::rc=$rc (non-fatal)"
+          exit 0
+      - name: radar upgrade (build_radar_plus + IC)
+        # ADDITIVE Phase-2 radar: enrich site/basketdata/radar.json with edge_score +
+        # cross-source confirmation legs (alt/flows/options) + regime + decay (no edits to
+        # the radar kernel), emit site/basketdata/radar_ticker.json (per-name divergence),
+        # accrue the edge-snapshot IC ledger, then re-render radar.html with the mounts.
+        # Runs after build_baskets (radar.json) + build_alt_data + the Alt-Data Brain, and
+        # BEFORE build_intelligence (which absorbs radar_ticker.json). Resilient.
+        run: |
+          set +e
+          python -m scripts.build_radar_plus > /tmp/radarplus.log 2>&1; tail -4 /tmp/radarplus.log
+          python -m scripts.build_radar_ic   > /tmp/radaric.log   2>&1; tail -3 /tmp/radaric.log
+          python -m scripts.build_radar_page  > /tmp/radarpage.log 2>&1; tail -1 /tmp/radarpage.log
+          exit 0
+      - name: unified intelligence bundle (build_intelligence)
+        # AFTER build_news (news/by_ticker.json) + build_alt_data + the Alt-Data Brain re-emit
+        # (altdata/mastermind.json) + build_radar_plus (radar_ticker.json): merges all per-ticker
+        # facets — news flow + alt-data signal + radar divergence + factor buy-board — into ONE
+        # site/intelligence/by_ticker.json (v2) the Mastermind bot pulls. Facts side by side,
+        # never pre-blended. No keys needed; pure JSON merge; never aborts.
+        run: python -m scripts.build_intelligence || echo "intelligence skipped (additive)"
+      - name: brain briefing tunnel (build_briefing)
+        # AFTER build_intelligence: reduces the per-ticker bundle to a RANKED, brain-facing
+        # triage — site/intelligence/briefing.json — that the Mastermind brain (Claude Opus)
+        # pulls once per cycle: priority queue (confidence × strength), the demand-vs-supply
+        # divergence subset, and a regime/catalyst macro frame. Pure; resilient; never aborts.
+        run: python -m scripts.build_briefing || echo "briefing skipped (additive)"
+      - name: Intelligence Hub (build_intel_hub)
+        # AFTER build_intelligence + build_briefing + build_policy_watch + build_radar_plus:
+        # fuses ALL FIVE desks (news · alt-data · radar · buy-board · policy) into one central
+        # command — site/intel_hub/hub.json + site/intelligence_hub.html — with cross-source
+        # confirmation, composite conviction (docked by an unanswered falsifier), 2nd/3rd-order
+        # flags (stealth_accumulation / early_edge / crowded_top / …), and the sector heat.
+        # The US analogue of the China intel hub; pure, resilient, never aborts.
+        run: python -m scripts.build_intel_hub || echo "intel hub skipped (additive)"
       - name: AI Daily Brief page (build_aibrief)
         # consolidated page (site/aibrief.html) surfacing the three client-fetched AI
         # briefs (master/china/btc) as toggle tabs. Pure render — order-independent;
         # resilient (returns 0). Replaces the retired deterministic daily_brief.
         run: python -m scripts.build_aibrief
+      - name: Mastermind snapshot page (build_mastermind)
+        # static page (site/mastermind.html) that renders a daily snapshot of the LOCAL
+        # Mastermind AI paper-trading desk. Pure chrome — the data (site/mastermind/
+        # mastermind_snapshot.json) is pushed out-of-band twice a day by the local
+        # Mastermind server (the cloud build can't reach localhost); mastermind.js fetches
+        # it client-side and degrades to "snapshot pending" when absent. Order-independent;
+        # resilient (returns 0).
+        run: python -m scripts.build_mastermind
       - name: AI Desk page (build_ai_desk_page)
         # static page (site/ai_desk.html) surfacing the accountable analyst desk
         # (site/ai_desk.json: falsifiable leans + dissent + falsifier + track record +
@@ -501,7 +650,30 @@ jobs:
         # backwards = lookahead). Lossless via a snapshot_json column. Display/research-
         # only, never read back into a score; the script always exits 0.
         run: python -m scripts.archive_signals || true
+      - name: signal sanity (correctness tripwire — warn mode)
+        if: always()   # validate whatever DID build, even if an earlier optional builder failed
+        # The CORRECTNESS dead-man's switch over the per-ticker boards BOTH books select from
+        # (coverage floor / score-column degeneracy / content-freeze / staleness / drift — see
+        # engine/signal_sanity.py). Liveness (healthcheck) catches "pipeline stopped"; this catches
+        # "pipeline ran and published WRONG numbers". WARN mode: it annotates, writes
+        # reports/signal-sanity.md, updates the rolling baseline, and pings Telegram/Discord on a
+        # trip, but never blocks the build (|| true). Opt-in deploy-gating (skip the commit when it
+        # trips) is a deliberate follow-up — keep the daily commit unconditional for now.
+        run: python -m scripts.signal_sanity || true
+      - name: White House Watch — re-render page + inject site-wide alert banner
+        # PAGE-ONLY here: re-render site/wh_banner.json + site/whitehouse.html from the
+        # already-committed ledger (no feed poll, no Opus call, no ledger/state writes) — the
+        # hourly `whitehouse-sentinel` workflow is the SOLE brain-caller / ledger-writer, so
+        # the two workflows can never race to append-then-clobber an alert. Then inject the
+        # alert-ticker <script> into EVERY generated page (depth-aware, idempotent) so the
+        # banner shows site-wide. MUST be the last page-mutating step so no later builder
+        # strips the tag. Resilient: rc 10 = "changed" (the desk's success signal, not an
+        # error); each script leaves prior output in place on any real failure.
+        run: |
+          python -m scripts.build_whitehouse --page-only; rc=$?; [ $rc -eq 0 ] || [ $rc -eq 10 ] || echo "whitehouse desk skipped (additive)"
+          python -m scripts.inject_wh_banner || echo "banner inject skipped (additive)"
       - name: commit engine outputs
+        if: always()   # commit the freshly-built pages even if a LATER optional builder times out or is cancelled. pages.yml deploys the COMMITTED main tree, so a skipped commit = stale live site. The builders are individually resilient (each leaves the prior page in place on its own error), so partial output is never broken — committing what built beats shipping nothing.
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
@@ -511,6 +683,10 @@ jobs:
           # them — same as the force-tracked stock-search libraries. -f overrides the
           # ignore; || true so an empty/absent dir (feature off) never fails the commit.
           git add -f site/stockbrief 2>/dev/null || true
+          # China stock-search library: gitignored like the other markets' libraries —
+          # force-add it so the committed-tree deploy ships every indexed A-share detail
+          # JSON, not just the old tracked subset.
+          git add -f site/chinastockdata 2>/dev/null || true
           # Canada stock-search library: gitignored like the other markets' libraries,
           # but (unlike them) force-added here so the committed-tree deploy ships it —
           # otherwise canada_stock.html's search 404s on canadastockdata/index.json.

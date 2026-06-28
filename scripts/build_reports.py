@@ -52,6 +52,29 @@ def _tag(key: str, en: str, zh: str) -> dict:
 # ---------------------------------------------------------------------------
 REPORTS: list[dict] = [
     {
+        "slug": "report_bessent_jun24",
+        "template": "report_bessent_jun24.html.j2",
+        "date": "2026-06-24",
+        "read_min": 12,
+        "title_en": "The Bessent Bridge",
+        "title_zh": "贝森特之桥",
+        "dek_en": "One week after the Warsh Shock, the hawkish reset has done the Fed's "
+                  "tightening for it — gold under $4,000, the dollar at a 13-month high, and "
+                  "the AI-and-semis leadership that led all year finally cracked. Then the "
+                  "Treasury Secretary said the quiet part out loud: you can have a strong "
+                  "dollar while the Fed cuts. A decode of the staged sequence — setup, not "
+                  "destination — and where the debasement trade bottoms.",
+        "dek_zh": "沃什冲击一周后，鹰派重置已替美联储完成了紧缩 —— 黄金跌破4000美元、美元创13个月新高、"
+                  "今年全程领涨的AI与半导体板块终于裂开。随后，财长道出了潜台词：美联储降息时也能维持"
+                  "强势美元。解码这套分阶段的序列 —— 是铺垫，而非终点 —— 以及去货币化交易将在何处筑底。",
+        "tags": [
+            _tag("fed", "Fed", "美联储"),
+            _tag("rates", "Rates", "利率"),
+            _tag("crypto", "Crypto", "加密"),
+            _tag("macro", "Macro", "宏观"),
+        ],
+    },
+    {
         "slug": "report_warsh_fomc",
         "template": "report_warsh_fomc.html.j2",
         "date": "2026-06-17",

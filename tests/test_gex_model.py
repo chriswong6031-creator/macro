@@ -13,7 +13,8 @@ import pandas as pd
 import pytest
 
 from engine.greeks import bs_greeks
-from engine.gex_model import build_model, volatility_hole
+from engine.gex_model import (build_model, directional_tilt, iv_rank,
+                              risk_reversal, volatility_hole)
 
 SPOT = 100.0
 EXPIRY_DAYS = (12, 26, 54)            # three listed expiries
@@ -130,6 +131,11 @@ def test_empty_chain_returns_none():
     assert build_model(_chain(), 0.0, {"q": 0.0}) is None
 
 
+def test_build_model_requires_expiry():
+    # expiry is required (every per-expiry view groups by it) — no expiry → None, not a crash
+    assert build_model(_chain().drop(columns=["expiry"]), SPOT, {"q": 0.0}) is None
+
+
 # --------------------------------------------------------------------------- #
 # volatility hole — the dealer-gamma compression band
 # --------------------------------------------------------------------------- #
@@ -205,3 +211,96 @@ def test_vol_hole_degrades_without_spot_or_move():
     # no expected move → σ-distances are None, so no "coiled" call, falls to in-hole
     vh = volatility_hole(_summary(), {"daily_pct": None, "weekly_pct": None}, CF)
     assert vh["to_upper_sigma"] is None and vh["state"] == "IN_HOLE"
+
+
+# --------------------------------------------------------------------------- #
+# scored levels — words + strength bands
+# --------------------------------------------------------------------------- #
+def test_level_strength_bands_present_and_banded():
+    s = build_model(_chain(), SPOT, {"q": 0.0})["summary"]
+    # the heavy planted call wall should score strong-ish and be a hard (isolated) line
+    assert s["call_wall_strength"] is not None and 0 <= s["call_wall_strength"] <= 100
+    assert s["call_wall_band"] in ("very_strong", "strong", "moderate", "weak", "faint")
+    assert s["call_wall_hard"] is True                       # 60k OI dwarfs neighbours
+    assert s["call_wall_dist_sigma"] is not None
+    assert s["flip_band"] in ("very_strong", "strong", "moderate", "weak", "faint", None)
+    # a much heavier wall must not score weaker than a lighter one (monotonic in share)
+    c = _chain()
+    c.loc[c["is_call"] & (c["K"] == CALL_WALL), "oi"] *= 6
+    s2 = build_model(c, SPOT, {"q": 0.0})["summary"]
+    assert s2["call_wall_strength"] >= s["call_wall_strength"]
+
+
+# --------------------------------------------------------------------------- #
+# 25Δ risk reversal / skew
+# --------------------------------------------------------------------------- #
+def test_risk_reversal_downside_skew_reads_fear():
+    # the synthetic chain has mild DOWNSIDE skew (puts richer) → rr25 > 0 → "fear"
+    s = build_model(_chain(), SPOT, {"q": 0.0})["summary"]
+    rr = s["skew"]
+    assert rr is not None and rr["rr25"] is not None
+    assert rr["rr25"] > 0 and rr["tone"] == "fear"
+    assert rr["horizon"] == "days_weeks"
+
+
+def test_risk_reversal_none_on_thin_smile():
+    # too few strikes to interpolate the 25Δ wings → None, no crash
+    thin = pd.DataFrame([dict(K=100.0, T=0.1, iv=0.3, oi=10.0, is_call=True,
+                              expiry=pd.Timestamp(date.today()) + timedelta(days=36))])
+    assert risk_reversal(thin, SPOT, 0.3, {}) is None
+
+
+# --------------------------------------------------------------------------- #
+# IV rank — short-window percentile
+# --------------------------------------------------------------------------- #
+def test_iv_rank_short_window_flag_and_percentile():
+    hist = [{"iv30": v} for v in range(10, 30)]              # 20 points 10..29 (percent)
+    r = iv_rank(40.0, hist)                                  # today above all → ~100
+    assert r["rank_pct"] == 100 and r["band"] == "rich" and r["low_confidence"] is False
+    short = iv_rank(40.0, hist[:8])                          # < 20 days → low confidence
+    assert short["low_confidence"] is True and short["n_days"] == 8
+    assert iv_rank(40.0, [{"iv30": 20.0}] * 3) is None       # < 5 points → None
+    assert iv_rank(None, hist) is None
+
+
+# --------------------------------------------------------------------------- #
+# directional tilt — timeframed legs + honest synthesis
+# --------------------------------------------------------------------------- #
+def _tsum(**kw):
+    base = dict(spot=100.0, regime="long", max_pain=120.0, charm_net_sign=-1, tier="full")
+    return {**base, **kw}
+
+
+_TEM = {"weekly_pct": 3.0, "front": {"days": 5}}
+
+
+def test_tilt_charm_alone_never_headlines_a_direction():
+    # charm is weak + ~one-signed: a charm-only chain must read BALANCED, not down
+    t = directional_tilt(_tsum(), _TEM, {"tone": "balanced"}, {})
+    assert t["read"] == "balanced" and t["headline"] is None
+    assert any(l["signal"] == "charm" for l in t["legs"])
+
+
+def test_tilt_skew_drives_headline_and_horizon():
+    up = directional_tilt(_tsum(), _TEM, {"tone": "greed", "rr25": -4.0}, {})
+    assert up["read"] == "agree_up"
+    assert up["headline"]["signal"] == "skew" and up["headline"]["horizon"] == "days_weeks"
+    dn = directional_tilt(_tsum(), _TEM, {"tone": "fear", "rr25": 4.0}, {})
+    assert dn["read"] == "agree_down" and dn["headline"]["dir"] == "down"
+
+
+def test_tilt_pin_suppressed_in_short_gamma():
+    near = _tsum(max_pain=101.0)                             # price right by max-pain
+    calm = directional_tilt(near, _TEM, {"tone": "balanced"}, {})
+    assert any(l["signal"] == "pin" for l in calm["legs"]) and calm["read"] == "pinned"
+    jumpy = directional_tilt({**near, "regime": "short"}, _TEM, {"tone": "balanced"}, {})
+    assert not any(l["signal"] == "pin" for l in jumpy["legs"])   # no pin in short gamma
+    assert jumpy["read"] == "volatile"
+
+
+def test_tilt_in_build_model_payload():
+    m = build_model(_chain(), SPOT, {"q": 0.0})
+    assert "tilt" in m and "legs" in m["tilt"] and "read" in m["tilt"]
+    assert m["tilt"]["confidence"] in ("low", "med", "high")
+    for leg in m["tilt"]["legs"]:
+        assert leg["horizon"] in ("intraday_days", "into_expiry", "days_weeks", "days_regime")

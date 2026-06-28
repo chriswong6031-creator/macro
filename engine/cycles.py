@@ -217,7 +217,7 @@ def cycle_state(close: pd.Series, high: pd.Series | None = None,
 
     # candidate for the NEXT cycle low: the lowest bar of the recent decline.
     # Only meaningful once the cycle is old enough that a new low is due.
-    cand_day = cand_price = cand_swing = cand_age = None
+    cand_day = cand_price = cand_swing = cand_age = cand_depth_pct = None
     if dc_day >= dc_band[0] - 10:
         recent = c.iloc[-25:]
         cand_ts = recent.idxmin()
@@ -230,6 +230,16 @@ def cycle_state(close: pd.Series, high: pd.Series | None = None,
             cand_swing = bool((c.loc[cand_ts:].iloc[1:] > bar_high).any())
         else:
             cand_swing = False
+        # depth of the candidate pullback = decline from the local swing-high in the
+        # ~3 weeks BEFORE the low to the low itself. A genuine daily-cycle low is a
+        # real correction (several %); a 1-2% wobble near the highs is a continuation,
+        # not a fresh cycle — this depth lets the ladder tell the two apart so a
+        # stretched up-trend can't masquerade as a "fresh buy" (the TTWO/ECG case).
+        pre = c.loc[:cand_ts]
+        if len(pre) >= 2:
+            swing_hi = float(pre.iloc[-15:].max())
+            if swing_hi > 0:
+                cand_depth_pct = round(100.0 * (swing_hi - cand_price) / swing_hi, 1)
 
     # translation of the LAST COMPLETED cycle
     translation = None
@@ -291,7 +301,7 @@ def cycle_state(close: pd.Series, high: pd.Series | None = None,
         "dc_day": dc_day, "dc_band": dc_band, "dc_early": dc_early, "dc_phase": dc_phase,
         "last_dcl": str(last_dcl.date()), "dcl_price": round(dcl_price, 2),
         "cand_dcl": cand_day, "cand_price": round(cand_price, 2) if cand_price else None,
-        "cand_swing": cand_swing, "cand_age": cand_age,
+        "cand_swing": cand_swing, "cand_age": cand_age, "cand_depth_pct": cand_depth_pct,
         "translation": translation, "failed_cycle": failed, "failed_age": failed_age,
         "swing_low": swing_low, "above_ma10": above_ma10, "ma10_rising": ma10_rising,
         "ic_week": ic_week, "ic_band": ic_band_w, "ic_phase": ic_phase, "ic_failed": ic_failed,
@@ -519,6 +529,12 @@ def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
     """Actionable timing call + a rough days-to-entry estimate from cycle
     position and the MACD cross trajectory. Clearly an estimate, ranged."""
     d = mtf.get("D", {})
+    _d3, _wk = mtf.get("3D", {}), mtf.get("W", {})
+    # belt-and-suspenders cycle-top guard: a higher-timeframe momentum down-cross
+    # (3-day/weekly) means even a daily TURN SIGNALED is NOT a 'now' half-buy — it
+    # is a wait. The state machine already routes most tops to TOP WATCH; this keeps
+    # entry_timing self-consistent for any TURN SIGNALED that still reaches here.
+    htf_rollover = bool(_d3.get("macd_cross_dn") or _wk.get("macd_cross_dn"))
     lo_band, hi_band = cyc.get("dc_band", DC_BAND)
     dc = cyc.get("dc_day", 0)
     btc = d.get("macd_bars_to_cross")
@@ -534,6 +550,15 @@ def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
                            f"止损设于 {inval} 下方。在周线确认前并非投资性买入；多数最终失败，"
                            "少数则开启新周期。"}
     if state == "FRESH BUY":
+        if cyc.get("dc_phase") == "stretched":
+            # the count is stretched well past the band — an UNCONFIRMED new cycle, not a
+            # fresh low to chase 'now'. Buy on confirmation (the ECG day-93 case).
+            return {"tag": "BUY SOON", "tag_zh": "即将买入", "urgency": "imminent", "days_lo": 1, "days_hi": 5,
+                    "text": ("A daily turn fired off a real pullback, but the cycle count is stretched "
+                             "well past its usual window — treat it as an unconfirmed new cycle and buy "
+                             "on confirmation (a higher low holding + the weekly turning up), not here."),
+                    "text_zh": ("日线已在一次真实回调后转向，但周期天数已远超通常窗口——"
+                                "应视为未确认的新周期，请在确认后买入（更高低点站稳 + 周线转向），而非此处。")}
         return {"tag": "BUY NOW", "tag_zh": "立即买入", "urgency": "now",
                 "text": "Confirmed cycle low — the entry window is open now, "
                         f"with a clear exit if it closes back below {cyc.get('cand_price') or cyc.get('dcl_price')}.",
@@ -547,7 +572,26 @@ def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
         # here (it's already above), which is the lag the SNDK case exposed.
         # (a) Swing low printed but not yet reclaimed → the genuine "buy on the
         # reclaim" case, where that copy is correct.
-        if cyc.get("above_ma10"):
+        if cyc.get("above_ma10") and htf_rollover:
+            return {"tag": "WAIT", "tag_zh": "等待", "urgency": "soon",
+                    "text": ("The daily turn is in, but a higher timeframe (3-day/weekly) "
+                             "momentum just crossed down — don't add into a rolling-over higher "
+                             "timeframe. Wait for it to stabilise or for the next daily cycle low."),
+                    "text_zh": ("日线已转向，但更高周期（3 日/周线）动量刚刚向下交叉——"
+                                "不要在更高周期掉头时加仓。等待其企稳，或等待下一个日线周期低点。")}
+        if cyc.get("above_ma10") and cyc.get("dc_phase") == "stretched":
+            # a reclaim THIS far past the cycle band is an unconfirmed new cycle, not a
+            # 'now' buy — the daily count is too stretched to trust the low yet, so call
+            # it on-confirmation (BUY SOON) rather than half-size now (the ECG day-93 case).
+            return {"tag": "BUY SOON", "tag_zh": "即将买入", "urgency": "imminent", "days_lo": 1, "days_hi": 5,
+                    "text": ("The daily turn is in off a real pullback, but the cycle count is "
+                             "stretched well past its usual window — so this is an UNCONFIRMED new "
+                             "cycle, not a fresh low yet. Buy on confirmation (a higher low + the "
+                             "weekly turning up), not here."),
+                    "text_zh": ("日线已在一次真实回调后转向，但周期天数已远超通常窗口——"
+                                "因此这是未确认的新周期，尚非全新低点。请在确认后买入"
+                                "（更高的低点 + 周线转向），而非此处。")}
+        if cyc.get("above_ma10") and not htf_rollover:
             cl = cyc.get("cand_price") or cyc.get("dcl_price")
             age = cyc.get("cand_age")
             ago = f" ~{age} day(s) ago" if age else ""
@@ -689,7 +733,8 @@ def regime_state(cyc: dict, mtf: dict) -> dict:
 
 def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
                  liquidity: str | None = None,
-                 macro_drag: float | None = None, macro_beta: float = 0.0) -> dict:
+                 macro_drag: float | None = None, macro_beta: float = 0.0,
+                 vol_regime: dict | None = None) -> dict:
     """Combine cycle position + multi-timeframe indicators into one state,
     with a plain next-step line. The higher-timeframe regime (weekly + 3-day +
     investor cycle) gates and can RE-LABEL the daily signal: a daily buy setup
@@ -714,6 +759,26 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
     late = cyc["dc_phase"] in ("approaching_band", "in_band", "stretched")
     # a late-cycle decline hunts the NEXT low via the candidate trough
     cand_confirmed = bool(late and cyc.get("cand_swing") and cyc["above_ma10"])
+
+    # ── Cycle-top guard (engine v2): multi-timeframe momentum-rollover signal ────
+    # The macd_curl_dn / macd_cross_dn / macd_approaching_dn flags (D/3D/W) were
+    # COMPUTED but never read by the buy logic, so a late name whose momentum was
+    # already rolling over still printed FRESH BUY / BUY NOW (HWM day-35, RSI 62,
+    # daily curl-down — 62% of live 'now' calls were late/stretched). This boolean
+    # feeds the extension/late-cross gate below, which reroutes such names to TOP
+    # WATCH ('don't chase'). Kept as a single chokepoint so the rich gate copy and
+    # the extended_gate=True entry flag stay consistent.
+    _d3, _wk = mtf.get("3D", {}), mtf.get("W", {})
+    _rsi_d = d.get("rsi14") or 50
+    htf_rollover = bool(_d3.get("macd_cross_dn") or _wk.get("macd_cross_dn"))
+    daily_rollover = bool(d.get("macd_cross_dn") or d.get("macd_curl_dn")
+                          or d.get("macd_approaching_dn"))
+    # Balanced veto (user-tuned): a real momentum turn-down that should stop a fresh
+    # 'now' buy — a higher-TF down-cross, a confirmed daily down-cross with a firm RSI,
+    # or any daily roll-over while the name is already late in its cycle.
+    rollover_veto = bool(htf_rollover
+                         or (d.get("macd_cross_dn") and _rsi_d >= 60)
+                         or (daily_rollover and late))
 
     if cyc["failed_cycle"] and not cyc["above_ma10"]:
         state = "DECLINE"
@@ -779,7 +844,9 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
                   f"（约第 {lo_b}-{hi_b} 天，现为第 {cyc['dc_day']} 天）。")
     elif cyc["swing_low"] and cyc["dc_day"] <= dc_early and cyc["above_ma10"] \
             and (d.get("macd_cross_up") or d.get("macd_pos")):
-        state = "FRESH BUY" if weekly_ok else "TURN SIGNALED"
+        # even a fresh daily low is only a PARTIAL buy when a higher timeframe is
+        # rolling over (3-day/weekly down-cross) — demote to TURN SIGNALED, not 'now'.
+        state = "FRESH BUY" if (weekly_ok and not htf_rollover) else "TURN SIGNALED"
         why = (f"New daily cycle, day {cyc['dc_day']}: swing low in, price back above the "
                "10-day average, daily momentum positive"
                + (" — and the weekly timeframe agrees." if weekly_ok else
@@ -893,8 +960,9 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
     rsi_d = d.get("rsi14") or 50
     rsi_3 = t3.get("rsi14") or 50
     rsi_w = w.get("rsi14") or 50
+    overbought_late = rsi_d > 70 or (rsi_3 > 70 and rsi_w > 70)
     if state in ("FRESH BUY", "TURN SIGNALED") and cyc.get("above_ma10") \
-            and (rsi_d > 70 or (rsi_3 > 70 and rsi_w > 70)):
+            and (overbought_late or rollover_veto):
         extended_gate = True
         state = "TOP WATCH"
         cl = cyc.get("cand_price") or cyc.get("dcl_price")
@@ -902,18 +970,29 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
         ago = f" ~{age} day(s) ago" if age else ""
         ago_zh = f"约 {age} 天前" if age else "近期"
         ref = f" @ {cl}" if cl else ""
-        hot = f"daily RSI {rsi_d:.0f}"
-        hot_zh = f"日线 RSI {rsi_d:.0f}"
-        if rsi_3 > 70 and rsi_w > 70:
-            hot += f", 3-day {rsi_3:.0f} & weekly {rsi_w:.0f}"
-            hot_zh += f"、3 日 {rsi_3:.0f} 与周线 {rsi_w:.0f}"
+        # adapt the caveat to WHY the chase fired: overbought, or momentum rolling over
+        # (the HWM case: late in the cycle with the daily MACD already curling down).
+        if overbought_late:
+            hot = f"daily RSI {rsi_d:.0f}"
+            hot_zh = f"日线 RSI {rsi_d:.0f}"
+            if rsi_3 > 70 and rsi_w > 70:
+                hot += f", 3-day {rsi_3:.0f} & weekly {rsi_w:.0f}"
+                hot_zh += f"、3 日 {rsi_3:.0f} 与周线 {rsi_w:.0f}"
+            caveat, caveat_zh = f"overbought ({hot})", f"已超买（{hot_zh}）"
+        else:
+            tf_word = ("the 3-day/weekly momentum has crossed down" if htf_rollover
+                       else "the daily momentum is already rolling over")
+            tf_word_zh = ("3 日/周线动量已向下交叉" if htf_rollover
+                          else "日线动量已开始掉头向下")
+            caveat = f"momentum is fading — {tf_word}"
+            caveat_zh = f"动量正在衰竭——{tf_word_zh}"
         why = (f"A daily bottoming setup did fire (swing low in, momentum turned up), but it's "
                f"LATE — price is already extended above the cycle low (formed{ago}{ref}) and "
-               f"overbought ({hot}). A momentum cross is a LAGGING confirmation: after a vertical "
+               f"{caveat}. A momentum cross is a LAGGING confirmation: after a vertical "
                "run it only triggers once the move is mature, so the bottoming entry has already "
                "passed. This is a chase, not a fresh buy.")
         why_zh = (f"日线筑底形态确实已经触发（摆动低点出现、动量转向上行），但为时已晚——"
-                  f"价格已显著高于周期低点（{ago_zh}形成{ref}）且已超买（{hot_zh}）。"
+                  f"价格已显著高于周期低点（{ago_zh}形成{ref}）且{caveat_zh}。"
                   "动量交叉属于滞后确认：在垂直拉升之后，只有当走势已经成熟时才会触发，"
                   "因此筑底入场早已错过。这是追高，而非新的买入。")
         nxt = ("Don't initiate here. Wait for a pullback toward the 10-day average — or the next "
@@ -1019,6 +1098,43 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
                              "在此环境下买入形态历史上回撤更深，因此应要求更多确认并降低仓位。"
                              "这是风险/仓位提示，并非预测。")
 
+    # ── Index vol-regime (risk-OFF sizing caution) ───────────────────────────
+    # When the validated INDEX vol-regime (engine.vol_regime -> site/vol/regime.json) is in a
+    # risk-off KILL-SWITCH state (warning / backwardation-stress: VIX/VIX3M backwardation +
+    # bond-vol stress + a thin vol-risk-premium), shave conviction on FRESH BUY / TURN SIGNALED
+    # only. UNIFORM (index-level, like LIQ_HEADWIND — every name shares the same market vol
+    # regime), SUBTRACT-ONLY, buy-setup-only. The continuous SCORED composite deepens the cut
+    # only when its gate is open (vol_regime['scored_active']); otherwise the published STATE
+    # label alone drives a bounded caution. Drawdown/sizing caution, NOT a forecast.
+    vr_effect = None
+    vr_pen = 0
+    vr_line = vr_line_zh = ""
+    _vr = vol_regime if isinstance(vol_regime, dict) else None
+    _vro = (config.load()["engine"].get("vol_regime_overlay") or {})
+    vr_on = bool(_vr and _vro.get("enabled", True))
+    vr_state = (_vr or {}).get("regime")
+    if vr_on and state in LIQ_NUDGE_STATES and vr_state in ("warning", "backwardation-stress"):
+        _rhead = float(_vro.get("ladder_headwind", 7))
+        sev = 1.0 if vr_state == "backwardation-stress" else 0.6     # warning is the milder state
+        # gate-open scored composite (risk-off) deepens the caution, capped so it never exceeds 1.5x
+        sc = (_vr or {}).get("scored_score")
+        if (_vr or {}).get("scored_active") and sc is not None and float(sc) < 0:
+            sev = min(sev * (1.0 + abs(float(sc))), 1.5)
+        vr_pen = int(round(_rhead * sev))
+        if vr_pen > 0:
+            score -= vr_pen
+            vr_effect = "headwind"
+            _sn = "backwardation-stress" if vr_state == "backwardation-stress" else "warning"
+            vr_line = ("Vol-regime headwind: the index vol-regime is risk-off "
+                       f"({_sn} — term-structure backwardation / bond-vol stress), so market-wide "
+                       "drawdown risk is elevated. Buy setups here have historically taken deeper "
+                       "dips — demand extra confirmation and smaller size. A risk/sizing caution, "
+                       "not a forecast.")
+            vr_line_zh = ("波动率状态逆风：指数波动率处于风险偏离状态"
+                          f"（{_sn}——期限结构倒挂/债券波动率承压），全市场回撤风险升高。"
+                          "此环境下买入形态历史上回撤更深——应要求更多确认并降低仓位。"
+                          "这是风险/仓位提示，并非预测。")
+
     disp = STATE_DISPLAY[state]
     plain = cycle_plain(cyc)
     entry = entry_timing(state, cyc, mtf)
@@ -1027,9 +1143,9 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
         # read "don't chase", not the generic TOP WATCH "take profits"
         entry = {"tag": "DON'T CHASE", "tag_zh": "勿追高", "urgency": "caution",
                  "text": ("You missed the bottoming entry — the low already formed and price is now "
-                          f"extended and overbought ({hot}). Don't chase; wait for a pullback to the "
+                          f"extended ({caveat}). Don't chase; wait for a pullback to the "
                           "10-day average or the next cycle low. Hold if already long."),
-                 "text_zh": (f"已错过筑底入场——低点已经形成，目前价格已拉伸且超买（{hot_zh}）。"
+                 "text_zh": (f"已错过筑底入场——低点已经形成，目前价格已拉伸（{caveat_zh}）。"
                              "不要追高；等待回调至 10 日均线或下一个周期低点。若已持有则继续持有。")}
 
     # ── Two-axis summary: TACTICAL (this daily state) vs REGIME (bigger picture),
@@ -1134,7 +1250,11 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
             "macro_effect": macro_effect, "macro_pen": macro_pen,
             "macro_drag": (round(float(macro_drag), 3) if macro_on else None),
             "macro_beta": (float(macro_beta) if macro_on else 0.0),
-            "macro_line": macro_line, "macro_line_zh": macro_line_zh}
+            "macro_line": macro_line, "macro_line_zh": macro_line_zh,
+            "vol_regime_state": (vr_state if vr_on else None),
+            "vol_regime_effect": vr_effect, "vol_regime_pen": vr_pen,
+            "vol_regime_scored_active": bool((_vr or {}).get("scored_active")),
+            "vol_regime_line": vr_line, "vol_regime_line_zh": vr_line_zh}
 
 
 # ----------------------------------------------------- signal age / strength ----
@@ -1512,6 +1632,270 @@ def _tf_turning_up(s: dict) -> bool:
                 or s.get("macd_approaching_up") or s.get("stoch_cross_up"))
 
 
+# ----- multi-timeframe BOTTOMING ALIGNMENT (the standout-strip selection gate) ----
+# This is the SELECTION gate for the standout boards (US/CA/CN/HK). Its job is a
+# low-risk SWING entry (1-3 month horizon), so it REWARDS EARLINESS + an OVERSOLD
+# ORIGIN and EXCLUDES the extended chase — the opposite of the prior version, whose
+# _ALIGN_PHASE_VAL peaked at `rising` (already-running) and so put the LATE, mid-rally
+# names at the top of the board. The states, ranked best-first:
+#   * PRIME (the prize): weekly STILL in its bear leg but RECOVERING (histogram curling
+#     back up from below zero = `bear_recovering`), OR basing/turning, + the 3-day just
+#     turning up FROM A LOW + the daily just crossing. The "best combination."
+#   * ARMED: a fresh 3-day turn-from-low + a daily trigger, but the weekly has already
+#     turned up (rising) — a good entry, just later than PRIME.
+#   * APPROACHING (= `near`, backfill only, never a confirmed buy): weekly OK and ONE
+#     lower timeframe turning, but not all three confirmed. Fills the strip when fresh
+#     entries are thin so it is never bare — clearly tagged, still no falling knife.
+#   * EXCLUDED -> watch: weekly still falling / a deep knife / a bad cycle state, or
+#     OVEREXTENDED (3D/daily StochRSI overbought, daily RSI hot, or far above the 200dma)
+#     — the "already ran" names, surfaced honestly as "wait for a pullback".
+# The 3-day "fresh from oversold" leg uses StochRSI crossing up from < stoch_oversold
+# (default 25, the user's line) recomputed from the 3-day spark_stoch — NOT the engine's
+# hardwired 20-line stoch_cross_up primitive, which other consumers depend on. Display-
+# tier: a calibrated cycle read, never a validated probability; it gates WHICH names show.
+
+# Tunables live in config.yml engine.entry_gate; the constants here are the fallbacks
+# (so a missing block can never crash a legacy caller). Read once at import.
+def _entry_gate_cfg() -> dict:
+    try:
+        return (config.load().get("engine") or {}).get("entry_gate") or {}
+    except Exception:  # noqa: BLE001 — config unavailable at import in some test paths
+        return {}
+
+
+_EG = _entry_gate_cfg()
+_EG_STOCH_OS = float(_EG.get("stoch_oversold", 25.0))               # 3D StochRSI "from oversold" line
+_EG_STOCH_OB = float(_EG.get("stoch_overbought", 80.0))            # 3D/daily StochRSI overbought = chase
+_EG_DAILY_RSI_MAX = float(_EG.get("daily_rsi_extension_cap", 62.0))  # daily RSI14 hotter than this = too late
+_EG_STRETCH_BLOCK = float(_EG.get("stretch_block_pct", 30.0))     # % over 200dma = overextended chase
+_EG_APPROACH_DAYS = int(_EG.get("approach_days", 2))               # 3D "about to cross" ETA cap (trading days)
+
+# how good each leg is, for the in-tier rank (earliness/oversold-origin weighted, NOT
+# lateness): a weekly bear-recovering + a 3D StochRSI-from-oversold turn score highest.
+_WEEKLY_PHASE_VAL = {"bear_recovering": 1.0, "basing": 0.85, "turning": 0.7,
+                     "rising": 0.35, "rolling": 0.1, "falling": 0.0, "unknown": 0.0}
+_T3_TRIG_VAL = {"stoch_os": 1.0, "macd_trough": 0.85, "approaching": 0.55, None: 0.0}
+_DAILY_TRIG_VAL = {"crossed": 1.0, "imminent": 0.8, "early": 0.45, None: 0.0}
+# tier offsets keep PRIME above ARMED above APPROACHING when sorting the strip by score
+_TIER_BASE = {"PRIME": 200.0, "ARMED": 100.0, "APPROACHING": 0.0}
+_WEEKLY_PRIME = {"bear_recovering", "basing", "turning"}            # early-enough for PRIME
+_WEEKLY_OK = {"bear_recovering", "basing", "turning", "rising"}     # eligible at all (not falling/topping)
+# ladder states that are structurally NOT a bottoming entry (a falling knife or a top)
+# — excluded from alignment regardless of a one-bar daily up-tick.
+_ALIGN_BAD_STATES = {"DECLINE", "ROLLING OVER", "TOP WATCH", "COUNTERTREND BOUNCE"}
+_ALIGN_KNIFE_BLOCK = 0.7        # washout knife severity that HARD-excludes a name
+_ALIGN_DAILY_MAX_DAYS = 2       # "daily about to cross in 1-2 days"
+_ALIGN_RSI_EXTENDED = 68.0      # _daily_trigger "early" ceiling (overextension handled separately)
+
+
+def _hist_falling(spark, bars: int = 3) -> bool:
+    """True if a MACD histogram is strictly DECLINING over the last `bars` steps —
+    the 'below zero AND still dropping' bear-leg tell that the realized/approaching
+    down-cross flags miss (those only fire above zero). `spark` = a _tf_state
+    spark_hist (most-recent last)."""
+    h = [x for x in (spark or []) if x is not None]
+    if len(h) < bars + 1:
+        return False
+    seg = h[-(bars + 1):]
+    return all(seg[i] < seg[i - 1] for i in range(1, len(seg)))
+
+
+def _weekly_bear_recovering(w: dict) -> bool:
+    """The user's "best combination" weekly leg: MACD STILL bearish (histogram below
+    zero) but RECOVERING — curling up off the trough, approaching the zero-cross, or the
+    histogram rising while still negative ("about to re-enter / already re-entering").
+    macd_curl_up / macd_approaching_up already encode "below zero and turning up"; the
+    spark arm catches a multi-bar recovery the single-bar flags can miss."""
+    if not w or w.get("macd_pos") or w.get("macd_cross_dn"):
+        return False
+    if w.get("macd_curl_up") or w.get("macd_approaching_up"):
+        return True
+    sp = [x for x in (w.get("spark_hist") or []) if x is not None]
+    return bool(len(sp) >= 3 and sp[-1] < 0 and sp[-1] > sp[-2] > sp[-3])
+
+
+def _tf_phase(s: dict, weekly: bool = False) -> str:
+    """Classify one timeframe's MACD posture for the bottoming screen:
+    ``rising`` (above zero, healthy) · ``rolling`` (above zero but topping) ·
+    ``turning`` (below zero, first hint of an up-turn) · ``basing`` (below zero,
+    flat near a low) · ``falling`` (below zero AND still dropping, or a fresh
+    down-cross) · ``unknown`` (no data).
+
+    With ``weekly=True`` a below-zero-but-RECOVERING weekly returns ``bear_recovering``
+    (the earliest, best swing-entry context — see _weekly_bear_recovering); every other
+    call is unchanged, so the daily/3-day classification and existing callers are byte-
+    identical."""
+    if not s:
+        return "unknown"
+    if s.get("macd_pos"):
+        return "rolling" if (s.get("macd_cross_dn") or s.get("macd_curl_dn")) else "rising"
+    if s.get("macd_cross_dn"):
+        return "falling"
+    if weekly and _weekly_bear_recovering(s):
+        return "bear_recovering"
+    if (s.get("macd_cross_up") or s.get("macd_curl_up")
+            or s.get("macd_approaching_up") or s.get("stoch_cross_up")):
+        return "turning"
+    if _hist_falling(s.get("spark_hist")):
+        return "falling"
+    return "basing"
+
+
+def _daily_trigger(d: dict) -> str | None:
+    """The daily entry trigger: ``crossed`` (just crossed up) / ``imminent`` (<=N
+    days to a bullish cross) / ``early`` (already crossed and rising but NOT
+    extended) / None. Encodes "just crossed or about to in 1-2 days, ok if a bit
+    started"."""
+    if not d:
+        return None
+    if d.get("macd_cross_up"):
+        return "crossed"
+    dtc = d.get("macd_days_to_cross")          # 0 is a valid ETA (crosses ~this bar), not "missing"
+    if d.get("macd_approaching_up") and dtc is not None and dtc <= _ALIGN_DAILY_MAX_DAYS:
+        return "imminent"
+    rsi = d.get("rsi14")                        # guard falsy-zero: an absent RSI is unknown, not 50
+    if (d.get("macd_pos") and not d.get("macd_cross_dn") and not d.get("macd_curl_dn")
+            and (rsi is None or rsi <= _ALIGN_RSI_EXTENDED)):
+        return "early"
+    return None
+
+
+def _three_day_fresh(t3: dict) -> str | None:
+    """The 3-day ENTRY trigger — a fresh turn up FROM A LOW (the user's core rule).
+    Returns the strongest matching reason or None:
+      * ``macd_trough`` — MACD just crossed / curled up from below zero;
+      * ``stoch_os``    — StochRSI just popped up from < stoch_oversold (default 25),
+                          recomputed from the 3-day spark_stoch (NOT the 20-line primitive);
+      * ``approaching`` — MACD about to cross up (still below zero) — "right about to cross".
+    None when the 3-day is NOT turning up from a low (e.g. already rising mid-rally), so
+    an extended name can never read as a fresh entry."""
+    if not t3:
+        return None
+    if t3.get("macd_cross_up") or t3.get("macd_curl_up"):
+        return "macd_trough"
+    sp = [x for x in (t3.get("spark_stoch") or []) if x is not None]
+    if len(sp) >= 2 and sp[-1] >= _EG_STOCH_OS and any(v < _EG_STOCH_OS for v in sp[-4:-1]):
+        return "stoch_os"
+    if t3.get("macd_approaching_up") and not t3.get("macd_pos"):
+        return "approaching"
+    return None
+
+
+def _overextended(mtf: dict, ext_pct: float | None = None) -> bool:
+    """True when the move has ALREADY run — the "awful entry" the board must exclude:
+    3-day OR daily StochRSI overbought (> stoch_overbought), daily RSI14 hotter than the
+    extension cap, or price far above the 200-day (ext_pct >= stretch_block). ext_pct (%
+    over the 200dma) is supplied by analyze(); the oscillator legs work without it, so
+    callers that don't pass it still get the StochRSI/RSI brakes."""
+    d = mtf.get("D") or {}
+    for tf in (d, mtf.get("3D") or {}):
+        st = tf.get("stoch")
+        if st is not None and st > _EG_STOCH_OB:
+            return True
+    rsi = d.get("rsi14")
+    if rsi is not None and rsi > _EG_DAILY_RSI_MAX:
+        return True
+    return bool(ext_pct is not None and ext_pct >= _EG_STRETCH_BLOCK)
+
+
+def mtf_alignment(mtf: dict, cyc: dict | None = None, lad: dict | None = None,
+                  wo: dict | None = None, ext_pct: float | None = None) -> dict:
+    """Weekly + 3-Day + Daily bottoming-ALIGNMENT verdict for the standout strip.
+
+    Tiers, best-first (``tier``; ``aligned``/``near`` kept for the existing
+    setups.alignment_gate contract — aligned == PRIME|ARMED, near == APPROACHING):
+      * ``PRIME`` — weekly bear_recovering/basing/turning + a FRESH 3-day turn from a low
+        (_three_day_fresh) + a daily trigger, not overextended/blocked. The best entry.
+      * ``ARMED`` — same fresh 3-day + daily, but the weekly has already turned up (rising).
+      * ``APPROACHING`` (=near, BACKFILL only) — weekly OK + one lower timeframe turning,
+        not all three confirmed; fills the strip when fresh entries are thin.
+      * excluded -> watch: weekly falling / deep knife / bad cycle state / OVEREXTENDED.
+
+    ``score`` = tier offset + a 0-100 ``quality`` (earliness/oversold-origin weighted,
+    knife-tempered) so PRIME > ARMED > APPROACHING when the strip sorts by score.
+    Returns {} when there is no daily timeframe."""
+    D = mtf.get("D") or {}
+    if not D:
+        return {}
+    W, T3 = mtf.get("W") or {}, mtf.get("3D") or {}
+    wph, t3ph, dph = _tf_phase(W, weekly=True), _tf_phase(T3), _tf_phase(D)
+    have_tf = bool(W) and bool(T3)             # need weekly + 3-day to judge alignment
+
+    t3_trig = _three_day_fresh(T3)             # fresh turn from a low (None = already running)
+    t3_fresh = t3_trig is not None
+    trigger = _daily_trigger(D)
+    daily_ok = trigger is not None
+    weekly_ok = wph in _WEEKLY_OK
+    over = _overextended(mtf, ext_pct)
+
+    knife = float((wo or {}).get("knife", 0.0))
+    state = (lad or {}).get("state")
+    blocked = ((knife >= _ALIGN_KNIFE_BLOCK) or (state in _ALIGN_BAD_STATES)
+               or (wph == "falling"))
+
+    tier = None
+    if have_tf and not blocked and not over:
+        if weekly_ok and t3_fresh and daily_ok:
+            tier = "PRIME" if wph in _WEEKLY_PRIME else "ARMED"
+        elif weekly_ok and (t3_fresh or daily_ok):
+            tier = "APPROACHING"
+    aligned = tier in ("PRIME", "ARMED")
+    near = tier == "APPROACHING"
+
+    quality = round(100.0 * (0.42 * _WEEKLY_PHASE_VAL.get(wph, 0.0)
+                             + 0.30 * _T3_TRIG_VAL[t3_trig]
+                             + 0.28 * _DAILY_TRIG_VAL[trigger])
+                    * (1.0 - 0.45 * min(knife, 1.0)), 1)
+    score = round(_TIER_BASE.get(tier, 0.0) + quality, 1)
+
+    # human-readable entry label + a one-line "why" (EN + 中文)
+    _t3_en = {"stoch_os": "3D StochRSI crossed up from oversold",
+              "macd_trough": "3D MACD turned up from below zero",
+              "approaching": "3D MACD about to cross up", None: None}
+    _t3_zh = {"stoch_os": "3日 StochRSI 从超卖上穿",
+              "macd_trough": "3日 MACD 在零轴下方上拐", "approaching": "3日 MACD 临近上穿", None: None}
+    _wk_en = {"bear_recovering": "weekly histogram recovering (still bearish)",
+              "basing": "weekly basing", "turning": "weekly turning up",
+              "rising": "weekly uptrend", "rolling": "weekly rolling over",
+              "falling": "weekly still falling", "unknown": ""}
+    _wk_zh = {"bear_recovering": "周线柱状图回升（仍偏熊）", "basing": "周线筑底",
+              "turning": "周线转向", "rising": "周线上行", "rolling": "周线走弱",
+              "falling": "周线仍下行", "unknown": ""}
+    if over:
+        entry_tier, entry_tier_zh = "Extended — wait", "已过热 — 等回调"
+        reason = "Already extended (overbought / far above the 200-day) — wait for a pullback"
+        reason_zh = "已过热（超买／远高于200日均线）— 等待回调"
+    elif tier:
+        entry_tier = {"PRIME": "Prime entry", "ARMED": "Entry armed",
+                      "APPROACHING": "Approaching — early"}[tier]
+        entry_tier_zh = {"PRIME": "黄金入场", "ARMED": "入场就绪",
+                         "APPROACHING": "临近 — 偏早"}[tier]
+        reason = "; ".join(x for x in (_t3_en.get(t3_trig), _wk_en.get(wph)) if x) or None
+        reason_zh = "；".join(x for x in (_t3_zh.get(t3_trig), _wk_zh.get(wph)) if x) or None
+    else:
+        entry_tier = entry_tier_zh = reason = reason_zh = None
+
+    dtxt = {"crossed": "crossed up", "imminent": "≈ cross", "early": "rising",
+            None: "—"}[trigger]
+    t3txt = {"stoch_os": "oversold↑", "macd_trough": "turn↑",
+             "approaching": "≈cross", None: "·"}[t3_trig]
+    line = f"Weekly {wph.replace('_', ' ')} · 3-Day {t3txt} · Daily {dtxt}"
+    line_zh = (f"周线{_wk_zh.get(wph) or '—'} · "
+               f"3日{ {'stoch_os':'超卖上穿','macd_trough':'上拐','approaching':'临近','·':'·'}.get(t3txt, t3txt) } · "
+               f"日线{ {'crossed up':'已上穿','≈ cross':'临近上穿','rising':'上行','—':'—'}[dtxt] }")
+    return {
+        "aligned": aligned, "near": near, "tier": tier, "score": score, "quality": quality,
+        "entry_tier": entry_tier, "entry_tier_zh": entry_tier_zh,
+        "reason": reason, "reason_zh": reason_zh,
+        "weekly": wph, "three_day": t3ph, "daily": dph,
+        "weekly_ok": weekly_ok, "three_day_ok": t3_fresh, "three_day_trigger": t3_trig,
+        "daily_ok": daily_ok, "daily_trigger": trigger, "overextended": over,
+        "days_to_cross": D.get("macd_days_to_cross"),
+        "knife": round(knife, 2), "have_tf": have_tf, "blocked": blocked,
+        "line": line, "line_zh": line_zh,
+    }
+
+
 # ----- washout / knife-risk (Phase 2) -----
 # MEASURED, counter-intuitively (research/BOTTOM_CONFIDENCE.md, 68,916 evals): a
 # deep stretch BELOW the 200-day + a VIX panic is NOT a higher-confidence bottom —
@@ -1642,7 +2026,7 @@ def bottom_confidence_fields(bc: dict) -> dict:
 def analyze(close: pd.Series, high: pd.Series | None = None,
             kind: str = "equity", liquidity: str | None = None,
             macro_drag: float | None = None, macro_beta: float = 0.0,
-            vix_ctx: dict | None = None) -> dict:
+            vix_ctx: dict | None = None, vol_regime: dict | None = None) -> dict:
     """`liquidity` = live US net-liquidity regime ("expanding"/"contracting"/
     "neutral", from engine.regime.liquidity_overlay), threaded into the ladder as
     an orthogonal macro conviction modifier. None => no liquidity context (keeps
@@ -1652,13 +2036,18 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
     (this name's sector sensitivity, engine.conditions.sector_macro_beta) add a
     risk-OFF, subtract-only, buy-setup-only conviction penalty for macro-sensitive
     names. `vix_ctx` = market panic context (engine.cycles.market_vix_context) used
-    by the Phase-2 washout knife-risk temper on Bottom Confidence. Defaults keep
-    every existing caller unchanged."""
+    by the Phase-2 washout knife-risk temper on Bottom Confidence.
+
+    `vol_regime` = the published INDEX vol-regime snapshot (engine.vol_regime.published_snapshot:
+    {regime, scored_score, scored_active, vol_target_scalar, ...}). In a risk-off kill-switch
+    regime it adds a UNIFORM, subtract-only, buy-setup-only sizing caution (deepened only when its
+    validation gate is open). Defaults keep every existing caller unchanged."""
     cyc = cycle_state(close, high, kind)
     mtf = mtf_snapshot(close, kind)
     early = early_signals(close, cyc, mtf)
     lad = ladder_state(cyc, mtf, early, liquidity=liquidity,
-                       macro_drag=macro_drag, macro_beta=macro_beta)
+                       macro_drag=macro_drag, macro_beta=macro_beta, vol_regime=vol_regime)
+    wo = washout(close, cyc, vix_ctx) if cyc else {}
     if lad:
         age = signal_age(close, lad["state"], high, kind)
         if age:
@@ -1667,11 +2056,21 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
         eq = entry_quality(close, cyc, mtf, early, regime, state=lad["state"])
         if eq:
             lad.update(entry_quality_fields(eq, state=lad["state"]))
-            wo = washout(close, cyc, vix_ctx)
             bc = bottom_confidence(mtf, eq, lad["state"], wo=wo)
             if bc:
                 lad.update(bottom_confidence_fields(bc))
                 lad["bottom_confidence"] = bc["score"]
+        # multi-timeframe bottoming-alignment gate — the standout-strip SELECTION
+        # filter (weekly bear-recovering/basing + 3-day fresh-from-oversold + daily just-
+        # crossed/about), excluding the overextended chase, so a mid-weekly-bear falling
+        # knife OR an already-run leader can no longer be surfaced as a buy card.
+        cc = close.dropna()
+        ext_pct = None
+        if len(cc) >= 200:
+            sma200 = float(cc.iloc[-200:].mean())
+            if sma200:
+                ext_pct = (float(cc.iloc[-1]) / sma200 - 1.0) * 100.0
+        lad["alignment"] = mtf_alignment(mtf, cyc, lad, wo=wo, ext_pct=ext_pct)
     return {"cycle": cyc, "mtf": mtf, "early": early, "ladder": lad}
 
 

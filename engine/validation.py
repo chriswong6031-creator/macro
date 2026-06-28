@@ -34,7 +34,9 @@ EULER_GAMMA = 0.5772156649015329
 # allocation backtest core (turnover-scaled transaction cost)
 # --------------------------------------------------------------------------- #
 def backtest_core(close: pd.Series, alloc: pd.Series, cost_bps: float = 0.0,
-                  cash_yield: pd.Series | None = None) -> dict:
+                  cash_yield: pd.Series | None = None, *,
+                  dollar_adv: pd.Series | None = None, aum_usd: float | None = None,
+                  impact_eta: float = 0.1, vol_window: int = 21) -> dict:
     """Next-bar allocation engine with a one-way transaction cost.
 
     `cost_bps` is the ONE-WAY cost (spread + fee/slippage) in basis points,
@@ -53,11 +55,31 @@ def backtest_core(close: pd.Series, alloc: pd.Series, cost_bps: float = 0.0,
     matching the close-to-close return that also spans the weekend; a >100%
     position pays no phantom rebate (clip lower=0). Default None keeps the
     BTC/commodity/forex callers (where flat = uninvested cash) byte-identical.
+
+    SQUARE-ROOT MARKET IMPACT (optional, capacity realism — roadmap Phase 3). A flat
+    bps can't tell a $5M microcap trade from a $9k mega-cap one. Pass `dollar_adv`
+    (the asset's dollar ADV series, e.g. (close*volume).rolling(21).median()) and a
+    portfolio `aum_usd` to ADD an Almgren-style impact term on top of the linear
+    `cost_bps`: impact_rate = impact_eta · σ · √(participation), with
+    participation = traded$/ADV$ = (aum_usd·|Δpos|)/ADV$ and σ the trailing per-bar
+    return vol. Cost grows with √AUM, so net Sharpe degrades as size rises — the
+    basis of `capacity_curve`. Both None (default) → the legacy flat-cost path,
+    byte-identical for every existing caller.
     """
     ret = close.pct_change().fillna(0)
     pos = alloc.shift(1).reindex(ret.index).ffill().fillna(0)   # act next bar
     turnover = pos.diff().abs().fillna(0.0)                      # |Δpos|, day-1 ramp from 0
-    cost = (cost_bps / 1e4) * turnover
+    if dollar_adv is not None and aum_usd:
+        # per-bar impact rate (fraction of traded notional), added to the linear cost
+        sigma = ret.rolling(vol_window).std()
+        sigma = sigma.fillna(sigma.median()).fillna(0.0)
+        adv = dollar_adv.reindex(ret.index).ffill()
+        traded_usd = float(aum_usd) * turnover
+        participation = (traded_usd / adv.where(adv > 0)).clip(lower=0.0).fillna(0.0)
+        impact_rate = impact_eta * sigma * np.sqrt(participation)
+        cost = (cost_bps / 1e4 + impact_rate) * turnover
+    else:
+        cost = (cost_bps / 1e4) * turnover
     if cash_yield is not None:
         days = pd.Series(ret.index, index=ret.index).diff().dt.days.fillna(0).clip(lower=0)
         rf = (cash_yield.reindex(ret.index).ffill().fillna(0.0) / 100.0) * (days / 365.0)
@@ -70,6 +92,70 @@ def backtest_core(close: pd.Series, alloc: pd.Series, cost_bps: float = 0.0,
     years = (close.index[-1] - close.index[0]).days / 365.25
     return {"ret": ret, "pos": pos, "turnover": turnover,
             "gross": gross, "net": net, "hold": hold, "years": years}
+
+
+def dollar_adv(close: pd.Series, volume: pd.Series, window: int = 21) -> pd.Series:
+    """Rolling-median dollar average daily volume — the ADV$ denominator of the
+    participation rate. Median (not mean) so a single block print doesn't inflate
+    capacity. `volume` is share volume; close*volume is dollar volume."""
+    return (close * volume).rolling(window, min_periods=max(2, window // 2)).median()
+
+
+def _ann_sharpe(r: pd.Series, ppy: int = 252) -> float:
+    r = r.dropna()
+    if len(r) < 3:
+        return float("nan")
+    sd = r.std(ddof=1)
+    return float(r.mean() / sd * np.sqrt(ppy)) if sd else float("nan")
+
+
+def capacity_curve(close: pd.Series, alloc: pd.Series, adv_usd: pd.Series,
+                   aum_grid: list[float], *, cost_bps: float = 0.0,
+                   impact_eta: float = 0.1, cash_yield: pd.Series | None = None,
+                   ppy: int = 252) -> dict:
+    """Net annualized Sharpe of an allocation as a function of deployed AUM, under
+    the square-root impact model — the honest answer to "how much money can this
+    signal hold?".
+
+    Returns the per-AUM curve plus an UNAMBIGUOUS capacity verdict:
+      * `economic`    — gross Sharpe ≥ buy & hold (is there any edge to deploy at all?).
+        When False, capacity is meaningless: the signal does not beat buy & hold even
+        costless, so `capacity_usd` is None and `verdict="no_edge"`.
+      * `capacity_usd`— the largest grid AUM whose NET Sharpe still beats buy & hold.
+      * `grid_capped` — net Sharpe still beats buy & hold at the LARGEST grid AUM, i.e.
+        true capacity exceeds the grid (`verdict="exceeds_grid"`), distinct from no_edge.
+    Gross Sharpe (AUM-independent) and the buy&hold Sharpe anchor the read."""
+    bh = _ann_sharpe(close.pct_change(), ppy)
+    gross = _ann_sharpe(backtest_core(close, alloc, cost_bps=cost_bps,
+                                      cash_yield=cash_yield)["gross"], ppy)
+    grid = sorted(aum_grid)
+    curve, capacity = [], None
+    for aum in grid:
+        bt = backtest_core(close, alloc, cost_bps=cost_bps, cash_yield=cash_yield,
+                           dollar_adv=adv_usd, aum_usd=aum, impact_eta=impact_eta)
+        ns = _ann_sharpe(bt["net"], ppy)
+        # mean participation on rebalancing bars (where turnover>0)
+        part = bt["turnover"]
+        traded = aum * part
+        adv = adv_usd.reindex(bt["turnover"].index).ffill()
+        pr = (traded / adv.where(adv > 0)).replace([np.inf, -np.inf], np.nan)
+        mean_part = float(pr[part > 0].mean()) if (part > 0).any() else 0.0
+        row = {"aum_usd": float(aum), "net_sharpe": ns,
+               "mean_participation": round(mean_part, 4) if mean_part == mean_part else None,
+               "ann_cost_drag": round(float((bt["gross"] - bt["net"]).mean() * ppy), 4)}
+        curve.append(row)
+        if ns == ns and bh == bh and ns >= bh:
+            capacity = float(aum)
+    economic = bool(gross == gross and bh == bh and gross >= bh)
+    grid_capped = bool(capacity is not None and capacity >= grid[-1])
+    verdict = ("no_edge" if not economic else
+               "exceeds_grid" if grid_capped else
+               "capped" if capacity is not None else "no_edge")
+    return {"buyhold_sharpe": round(bh, 3) if bh == bh else None,
+            "gross_sharpe": round(gross, 3) if gross == gross else None,
+            "impact_eta": impact_eta, "cost_bps": cost_bps,
+            "economic": economic, "grid_capped": grid_capped, "verdict": verdict,
+            "capacity_usd": capacity, "curve": curve}
 
 
 # --------------------------------------------------------------------------- #
@@ -129,13 +215,36 @@ def ret_moments(r: pd.Series):
 _ret_moments = ret_moments
 
 
-def deflated_sharpe(sr_daily, skew, kurt, T, n_trials, sr_variance=None,
-                    trading_year: float = 252) -> dict | None:
-    """DSR for a strategy selected as the best of `n_trials` configs.
+def deflated_sharpe(sr_daily, skew, kurt, T, n_trials=None, sr_variance=None,
+                    trading_year: float = 252, *, ledger=None,
+                    family: str | None = None) -> dict | None:
+    """DSR for a strategy selected as the best of N tried configs.
     `sr_daily` = its per-period Sharpe; `sr_variance` = cross-trial variance of the
     per-period Sharpes (if None, fall back to the SR-estimator's own variance as a
     conservative proxy). `trading_year` only scales the *_annual report fields — the
-    DSR probability itself is annualization-invariant."""
+    DSR probability itself is annualization-invariant.
+
+    N (the multiple-testing count) comes from ONE of two sources:
+
+    * `n_trials` (int) — the legacy path: the caller asserts the count. This is the
+      p-hacking surface (a caller can lowball it), so new code should NOT use it; the
+      `tests/test_no_literal_ntrials.py` ratchet blocks new literal callers.
+    * `ledger=` + `family=` — the honest path: N is the count of DISTINCT configs the
+      Trial Ledger recorded for `family` AT GENERATION, which the caller cannot
+      understate. Pass a `engine.trial_ledger.TrialLedger` (duck-typed: anything with
+      an `effective_n(family)` method works).
+
+    Exactly one of {`n_trials`, `ledger`} must be given; passing both is a ValueError."""
+    if (ledger is not None) and (n_trials is not None):
+        raise ValueError(
+            "deflated_sharpe: pass EITHER a literal n_trials OR a ledger= handle, "
+            "not both — they are two ways to set the same N")
+    if ledger is not None:
+        n_trials = ledger.effective_n(family)
+    elif n_trials is None:
+        raise ValueError(
+            "deflated_sharpe requires the multiple-testing N: pass ledger= (honest, "
+            "counted at generation) or n_trials= (legacy literal)")
     if sr_daily is None or T is None or T < 3 or skew is None or kurt is None:
         return None
     var_scaler = 1.0 - skew * sr_daily + ((kurt - 1.0) / 4.0) * sr_daily * sr_daily
@@ -200,6 +309,85 @@ def fold_robust(full_sign: int, fold_signs: list, want: int) -> bool:
     return full_sign == want and flip == 0 and agree >= max(1, len(nz) - 1)
 
 
+# --------------------------------------------------------------------------- #
+# Combinatorial Purged CV + Probability of Backtest Overfitting (López de Prado,
+# AFML ch.11-12; Bailey-Borwein-LdP-Zhu 2014). The P3/P4 anti-overfit core: judge a
+# strategy on a DISTRIBUTION of backtest paths (not one number) and on how likely the
+# in-sample-best config is overfit. Pure numpy; the symmetric purge mirrors the geometry
+# already proven in engine.meta_label._train_events (purge BOTH sides of each test block).
+# --------------------------------------------------------------------------- #
+def cpcv_paths(n_obs: int, n_groups: int = 6, k_test: int = 2, embargo: int = 0) -> list:
+    """Combinatorial Purged Cross-Validation splits. Partition `n_obs` ordered observations
+    into `n_groups` contiguous groups; for EVERY C(n_groups, k_test) choice of test groups,
+    train = all other observations with a SYMMETRIC purge — drop training rows within
+    `embargo` of each test block on BOTH sides (a forward label of length `embargo` near a
+    boundary would otherwise leak across it). Returns a list of (train_idx, test_idx) int
+    arrays — C(n_groups, k_test) backtest PATHS, so a strategy yields a performance
+    distribution, not a single (cherry-pickable) number. Empty list on degenerate inputs."""
+    from itertools import combinations
+    n_obs = int(n_obs)
+    if n_groups < 2 or k_test < 1 or k_test >= n_groups or n_obs < n_groups:
+        return []
+    bounds = np.linspace(0, n_obs, n_groups + 1).astype(int)
+    out = []
+    for combo in combinations(range(n_groups), k_test):
+        test_idx = np.concatenate([np.arange(bounds[g], bounds[g + 1]) for g in combo])
+        test_set = set(int(i) for i in test_idx)
+        purged = set()
+        for g in combo:                                       # symmetric purge + embargo
+            lo, hi = int(bounds[g]), int(bounds[g + 1])
+            purged.update(range(max(0, lo - embargo), lo))
+            purged.update(range(hi, min(n_obs, hi + embargo)))
+        train_idx = np.array([i for i in range(n_obs)
+                              if i not in test_set and i not in purged], dtype=int)
+        out.append((train_idx, test_idx))
+    return out
+
+
+def prob_backtest_overfitting(perf, n_splits: int = 16) -> dict | None:
+    """Probability of Backtest Overfitting via Combinatorial Symmetric Cross-Validation.
+    `perf` is a (T_obs x N_configs) matrix of per-observation performance (e.g. daily returns)
+    for the N candidate configs you searched. Split T into `n_splits` (even) contiguous
+    sub-periods; for every way to pick n_splits/2 as in-sample (IS) and the complement as
+    out-of-sample (OOS): take the IS-best config and find its OOS RANK among all configs;
+    PBO = the fraction of combinations where the IS-best lands BELOW the OOS median (logit<0).
+    High PBO (→1) means picking the in-sample winner is selection over noise — the strategy
+    family is overfit. Returns {pbo, n_combos, median_logit} or None on degenerate input."""
+    from itertools import combinations
+    M = np.asarray(perf, dtype=float)
+    if M.ndim != 2 or M.shape[1] < 2:
+        return None
+    T, N = M.shape
+    S = int(n_splits) - (int(n_splits) % 2)                   # force even
+    if S < 2 or T < S:
+        return None
+    bounds = np.linspace(0, T, S + 1).astype(int)
+    blocks = [np.arange(bounds[i], bounds[i + 1]) for i in range(S)]
+
+    def _ir(rows):                                            # information ratio per config
+        sub = M[rows]
+        mu = sub.mean(axis=0)
+        sd = sub.std(axis=0, ddof=1)
+        return np.where(sd > 0, mu / sd, 0.0)
+
+    logits = []
+    half = S // 2
+    for combo in combinations(range(S), half):
+        comp = [i for i in range(S) if i not in combo]
+        is_perf = _ir(np.concatenate([blocks[i] for i in combo]))
+        oos_perf = _ir(np.concatenate([blocks[i] for i in comp]))
+        n_star = int(np.argmax(is_perf))                      # IS-best config
+        rank = int(oos_perf.argsort().argsort()[n_star])      # 0=worst .. N-1=best OOS
+        omega = (rank + 1) / (N + 1)
+        omega = min(max(omega, 1e-6), 1 - 1e-6)
+        logits.append(math.log(omega / (1 - omega)))
+    if not logits:
+        return None
+    arr = np.array(logits)
+    return {"pbo": round(float((arr < 0).mean()), 4), "n_combos": int(arr.size),
+            "median_logit": round(float(np.median(arr)), 4)}
+
+
 def _sharpe(r, ann: int) -> float:
     sd = float(np.std(r))
     return float(np.mean(r) / sd * math.sqrt(ann)) if sd else float("nan")
@@ -236,6 +424,50 @@ def block_bootstrap_ci(returns, block: int = 21, B: int = 5000, seed: int = 7,
         return [round(float(np.percentile(a, p)) * mul, nd) for p in (2.5, 50, 97.5)]
     return {"sharpe_ci": q(sh), "maxdd_ci_pct": q(dd, 100.0, 1),
             "sharpe_gt0_prob": round(float(np.mean(sh > 0)), 3),
+            "block": block, "B": B, "n": n}
+
+
+def _calmar(r, ann: int) -> float:
+    """CAGR / |maxDD| from a daily return array. Tail/capital-efficiency metric — the
+    honest yardstick for a subtract-only sizing overlay (Sharpe alone is gamed by the
+    leverage effect of vol-targeting)."""
+    r = np.asarray(r, float)
+    n = len(r)
+    if n < 2:
+        return float("nan")
+    cagr = float(np.prod(1.0 + r) ** (ann / n) - 1.0)
+    dd = abs(_maxdd(r))
+    return cagr / dd if dd > 1e-9 else float("nan")
+
+
+def paired_delta_ci(a, b, block: int = 21, B: int = 5000, seed: int = 13, ann: int = 252) -> dict:
+    """Paired circular-block bootstrap of strategy A's outperformance over B. Resamples the
+    TWO net-return series on the SAME block indices each draw — preserving their (usually
+    high) correlation — then returns the 2.5/50/97.5 CI of Δsharpe and Δcalmar (A − B). "A
+    adds value over B" ONLY when the CI excludes 0; bootstrapping each leg separately and
+    eyeballing whether the intervals overlap is the wrong (far too lenient) test. The right
+    comparison for two strategies on the same book (Ledoit-Wolf / DeMiguel paired test)."""
+    a = (a.dropna() if hasattr(a, "dropna") else pd.Series(a).dropna())
+    b = pd.Series(b).reindex(a.index).fillna(0.0)
+    ra, rb = a.to_numpy(float), b.to_numpy(float)
+    n = len(ra)
+    if n < max(block * 3, 60):
+        return {}
+    rng = np.random.default_rng(seed)
+    nb = int(np.ceil(n / block))
+    grid = np.arange(block)
+    ds = np.empty(B); dc = np.empty(B)
+    for k in range(B):
+        starts = rng.integers(0, n, nb)
+        idx = (starts[:, None] + grid[None, :]).ravel()[:n] % n
+        sa, sb = ra[idx], rb[idx]
+        ds[k] = _sharpe(sa, ann) - _sharpe(sb, ann)
+        dc[k] = _calmar(sa, ann) - _calmar(sb, ann)
+    def q(arr):
+        return [round(float(np.percentile(arr, p)), 3) for p in (2.5, 50, 97.5)]
+    dsq, dcq = q(ds), q(dc)
+    return {"delta_sharpe_ci": dsq, "delta_calmar_ci": dcq,
+            "sharpe_better": bool(dsq[0] > 0), "calmar_better": bool(dcq[0] > 0),
             "block": block, "B": B, "n": n}
 
 
@@ -283,6 +515,71 @@ def platt_fit(p, y, iters: int = 400, lr: float = 0.2, l2: float = 1.0) -> dict:
         b -= lr * float(np.mean(f - y))
     f = 1.0 / (1.0 + np.exp(-(a * z + b)))
     return {"a": round(a, 3), "b": round(b, 3), "brier_recal": round(float(np.mean((f - y) ** 2)), 4)}
+
+
+def expected_calibration_error(p, y, n_bins: int = 10) -> dict:
+    """Expected Calibration Error — the binned gap between stated confidence and observed
+    frequency for forecasts p∈[0,1] vs binary y. ECE = Σ_b (n_b/N)·|conf_b − acc_b|; MCE =
+    max_b |conf_b − acc_b|. ECE→0 means '70% really means ~70%'. Rising ECE is the earliest
+    decay alarm for a probabilistic signal (recession probit, bottom_radar ladder). {} on thin N."""
+    p = np.asarray(p, float)
+    y = np.asarray(y, float)
+    m = np.isfinite(p) & np.isfinite(y)
+    p, y = p[m], y[m]
+    if len(p) < 30:
+        return {}
+    edges = np.linspace(0, 1, n_bins + 1)
+    N = len(p)
+    ece, mce = 0.0, 0.0
+    for i in range(n_bins):
+        lo, hi = edges[i], edges[i + 1]
+        sel = (p >= lo) & (p <= hi) if i == n_bins - 1 else (p >= lo) & (p < hi)
+        nb = int(sel.sum())
+        if nb == 0:
+            continue
+        gap = abs(float(p[sel].mean()) - float(y[sel].mean()))
+        ece += (nb / N) * gap
+        mce = max(mce, gap)
+    return {"ece": round(ece, 4), "mce": round(mce, 4), "n": int(N)}
+
+
+def isotonic_calibration(p, y) -> dict:
+    """Isotonic (monotone) recalibration via Pool-Adjacent-Violators — fits a non-decreasing
+    score→probability map with NO functional form (unlike Platt's sigmoid), so it corrects an
+    arbitrarily-shaped miscalibration when N is ample. Returns {x, y_cal, n, ece_before,
+    ece_after}; feed `model` + new scores to `apply_calibration`. {} on thin N (use platt_fit)."""
+    p = np.asarray(p, float)
+    y = np.asarray(y, float)
+    m = np.isfinite(p) & np.isfinite(y)
+    p, y = p[m], y[m]
+    if len(p) < 30:
+        return {}
+    order = np.argsort(p, kind="mergesort")
+    xs, ys = p[order], y[order].astype(float)
+    blocks: list = []                                # [mean, weight, count]
+    for v in ys:
+        blocks.append([float(v), 1.0, 1])
+        while len(blocks) >= 2 and blocks[-2][0] > blocks[-1][0]:
+            m2, w2, c2 = blocks.pop()
+            m1, w1, c1 = blocks.pop()
+            nw = w1 + w2
+            blocks.append([(m1 * w1 + m2 * w2) / nw, nw, c1 + c2])
+    fitted = np.array([blk[0] for blk in blocks for _ in range(blk[2])], dtype=float)
+    model = {"x": xs.tolist(), "y_cal": fitted.tolist(), "n": int(len(p))}
+    model["ece_before"] = expected_calibration_error(p, y).get("ece")
+    model["ece_after"] = expected_calibration_error(apply_calibration(model, p), y).get("ece")
+    return model
+
+
+def apply_calibration(model: dict, p_new) -> "np.ndarray":
+    """Map new scores through a fitted isotonic `model` (step function = last x ≤ p_new)."""
+    x = np.asarray(model.get("x", []), float)
+    yc = np.asarray(model.get("y_cal", []), float)
+    pn = np.asarray(p_new, float)
+    if x.size == 0:
+        return pn
+    idx = np.clip(np.searchsorted(x, pn, side="right") - 1, 0, len(yc) - 1)
+    return yc[idx]
 
 
 def vif(df) -> dict:
@@ -505,3 +802,61 @@ def clark_west(realized, forecast, bench=None, hac_lags: int = 4) -> dict:
                  (1.0 - nw["p"] / 2.0 if t is not None else None))
     return {"cw_t": t, "cw_p": round(one_sided, 4) if one_sided is not None else None,
             "mean_adj": nw.get("mean"), "n": int(len(r))}
+
+
+# --------------------------------------------------------------------------- #
+# INCREMENTAL IC — the institutional honesty test. rank_ic measures a signal's RAW
+# correlation with forward returns, which conflates genuine information with repackaged
+# common-factor exposure (a momentum signal "predicts" partly because it IS momentum). The
+# institutional question is the INCREMENTAL IC: after neutralizing the signal cross-section
+# against the factors you already own (market beta, size, sector, momentum, low-vol), does
+# any independent forecasting power survive? cross_sectional_resid does the one-date
+# neutralization (OLS residual); the per-date residual ICs then feed ic_summary exactly like
+# raw ICs, so the whole HAC-t / BH-FDR gauntlet applies to the HARDER, honest number.
+# --------------------------------------------------------------------------- #
+def cross_sectional_resid(signal, loadings):
+    """Residualize one cross-section of `signal` (ticker->value) against `loadings`
+    (DataFrame ticker x factor) by OLS with an intercept — the part of the signal
+    ORTHOGONAL to the factors you already own. Standardizes the loadings so scale is
+    irrelevant; returns NaN-free residuals on the jointly-present names (>= 5, else empty)."""
+    s = pd.Series(signal).dropna()
+    X = pd.DataFrame(loadings).reindex(s.index)
+    j = pd.concat([s.rename("_y"), X], axis=1).dropna()
+    if len(j) < 5 or j.shape[1] < 2:
+        return pd.Series(dtype=float)
+    y = j["_y"].to_numpy(float)
+    cols = [c for c in j.columns if c != "_y"]
+    Z = j[cols].to_numpy(float)
+    sd = Z.std(axis=0, ddof=0)
+    sd[sd == 0] = 1.0
+    Z = (Z - Z.mean(axis=0)) / sd                       # standardize loadings
+    A = np.column_stack([np.ones(len(y)), Z])           # + intercept
+    beta, *_ = np.linalg.lstsq(A, y, rcond=None)
+    resid = y - A @ beta
+    return pd.Series(resid, index=j.index)
+
+
+def incremental_ic(signal_by_date: dict, fwd_by_date: dict, loadings_by_date: dict,
+                   periods_per_year: int = 12) -> dict:
+    """Raw vs factor-NEUTRALIZED rank-IC across a rebalance grid. `*_by_date` map a date
+    to a cross-section (signal Series / forward-return Series / loadings DataFrame). Returns
+    raw and incremental ic_summary blocks + the mean-IC delta — the share of a signal's edge
+    that is NOT just repackaged factor exposure. A signal whose IC collapses to ~0 after
+    neutralization carries no independent information, however good its raw IC looked."""
+    raw_ics, inc_ics = [], []
+    for d, sig in signal_by_date.items():
+        fwd = fwd_by_date.get(d)
+        if fwd is None or sig is None or len(sig) == 0:
+            continue
+        raw_ics.append(rank_ic(sig, fwd))
+        load = loadings_by_date.get(d)
+        if load is not None and len(load):
+            resid = cross_sectional_resid(sig, load)
+            if len(resid):
+                inc_ics.append(rank_ic(resid, fwd))
+    raw = ic_summary(raw_ics, periods_per_year=periods_per_year)
+    inc = ic_summary(inc_ics, periods_per_year=periods_per_year)
+    rm, im = raw.get("mean_ic"), inc.get("mean_ic")
+    return {"raw": raw, "incremental": inc,
+            "ic_delta": round(im - rm, 4) if (rm is not None and im is not None) else None,
+            "surviving_frac": round(im / rm, 3) if (rm not in (None, 0) and im is not None) else None}

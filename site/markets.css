@@ -1,0 +1,118 @@
+/* ============================================================================
+   markets.css — Global Market Cycles · additions on top of cycle.css
+   New components only: the NOW-snapshot ranking + dispersion, the valuation
+   scatter, scorecard stat chips, tooltip level rows, and source links. Shares
+   all theme tokens + the cyc-* shell from cycle.css.
+   ========================================================================== */
+
+/* ---- two-up: snapshot ranking + valuation map --------------------------- */
+.mkt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; align-items: start; }
+.mkt-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--rad, 16px);
+  padding: 16px 16px 14px; box-shadow: var(--card-shadow); position: relative; overflow: hidden; }
+.mkt-phd { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.mkt-phd h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 0; }
+.mkt-phd-sub { font-size: 11px; color: var(--muted); opacity: .85; }
+.mkt-sort { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.snap-sortb.on { color: var(--text); border-color: color-mix(in srgb, var(--link) 50%, var(--line)); background: var(--panel); }
+
+/* ---- snapshot ranking (lollipop rows) ----------------------------------- */
+.mkt-snap { display: flex; flex-direction: column; gap: 6px; }
+.snap-row { --c: var(--link); display: grid; grid-template-columns: 96px 1fr 46px auto; align-items: center; gap: 10px;
+  background: transparent; border: 1px solid transparent; border-radius: 9px; padding: 4px 7px; cursor: pointer;
+  text-align: left; transition: background .16s, border-color .16s; width: 100%; }
+.snap-row:hover { background: var(--panel2); border-color: var(--line); }
+.snap-row.lit { background: color-mix(in srgb, var(--c) 12%, transparent); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); }
+.snap-name { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.snap-name .snap-d { flex: none; }
+.snap-d { width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex: none; box-shadow: 0 0 8px color-mix(in srgb, var(--c) 55%, transparent); }
+.snap-track { position: relative; height: 8px; background: var(--panel2); border: 1px solid var(--line); border-radius: 99px; }
+.snap-fill { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, color-mix(in srgb, var(--c) 35%, transparent), var(--c)); }
+.snap-dot { position: absolute; top: 50%; width: 11px; height: 11px; border-radius: 50%; background: var(--c);
+  border: 2px solid var(--panel); transform: translate(-50%, -50%); box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 40%, transparent); }
+.snap-val { font-size: 12px; font-weight: 700; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
+.snap-phase { --ph: var(--muted); font-size: 9.5px; font-weight: 700; letter-spacing: .02em; padding: 2px 7px; border-radius: 999px; white-space: nowrap;
+  color: var(--ph); background: color-mix(in srgb, var(--ph) 15%, transparent); border: 1px solid color-mix(in srgb, var(--ph) 34%, transparent); }
+
+/* ---- dispersion strip --------------------------------------------------- */
+.mkt-dispersion { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line); }
+.disp-cell { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.disp-k { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.disp-v { font-size: 17px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; margin: 1px 0; letter-spacing: -.01em; }
+.disp-n { font-size: 10.5px; color: var(--muted); line-height: 1.3; }
+
+/* ---- valuation scatter -------------------------------------------------- */
+.mkt-scatter { width: 100%; min-height: 360px; }
+.sc-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.sc-quad { font-size: 9.5px; fill: var(--muted); opacity: .55; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+.sc-axl { font-size: 10px; fill: var(--muted); opacity: .9; }
+.sc-tick { font-size: 9.5px; fill: var(--muted); }
+.sc-lab { font-size: 11px; font-weight: 700; }
+.sc-pt circle { transition: opacity .25s ease; }
+.sc-pt.dim { opacity: .28; }
+.sc-pt.dim .sc-lab { opacity: .4; }
+.sc-pt.lit circle { stroke: var(--text); stroke-width: 2.5; }
+.sc-empty { color: var(--muted); font-size: 12px; padding: 24px; text-align: center; }
+
+/* ---- scorecard stat chips (valuation lens on each card) ----------------- */
+.cc-stats { display: flex; flex-wrap: wrap; gap: 5px; margin: 1px 0 9px; }
+.cc-stat { display: inline-flex; flex-direction: column; align-items: center; background: var(--panel2);
+  border: 1px solid var(--line); border-radius: 7px; padding: 3px 7px 2px; min-width: 0; }
+.cc-stat b { font-size: 12px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.15; }
+.cc-stat i { font-size: 8.5px; font-style: normal; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.cc-stat.neg b { color: color-mix(in srgb, var(--down) 86%, var(--text)); }
+.cc-stat.pos b { color: color-mix(in srgb, var(--up) 84%, var(--text)); }
+
+/* ---- hero tooltip: real level + event rows ------------------------------ */
+.mmc-tip-lv { font-size: 12.5px; font-weight: 700; color: var(--text); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.mmc-tip-ev { font-size: 10.5px; color: var(--muted); margin-top: 1px; max-width: 190px; line-height: 1.3; }
+
+/* ---- source links in the focus panel ------------------------------------ */
+.cyc-src { margin-top: 9px; font-size: 10.5px; color: var(--muted); line-height: 1.6; }
+.cyc-src a { color: var(--link); text-decoration: none; margin-right: 9px; white-space: nowrap; }
+.cyc-src a:hover { text-decoration: underline; }
+
+/* ---- responsive --------------------------------------------------------- */
+@media (max-width: 880px) {
+  .mkt-grid { grid-template-columns: 1fr; gap: 14px; }
+  .snap-row { grid-template-columns: 84px 1fr 42px auto; gap: 8px; }
+  .mkt-dispersion { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .disp-v { font-size: 15px; }
+}
+@media (max-width: 460px) {
+  .mkt-dispersion { grid-template-columns: 1fr; }
+}
+
+/* ---- convergence legend swatch + timeline zones ------------------------- */
+.cyc-legend .lv { width: 16px; height: 9px; border-radius: 2px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--warn) 60%, transparent), color-mix(in srgb, var(--up) 60%, transparent)); }
+.mmc-vband { transition: opacity .3s ease; }
+.mmc-vlabel rect { filter: drop-shadow(0 1px 2px rgba(0,0,0,.28)); }
+.mmc-vlabel:hover rect { opacity: 1; }
+
+/* ---- compact focus panel (markets carries more content than cycle) ------ */
+.cyc-panels { padding: 15px 16px; }
+.cyc-arche { font-size: 12px; line-height: 1.5; margin: 0 0 9px; }
+.cyc-fhead { margin-bottom: 9px; }
+.cyc-lbl { margin-bottom: 7px; }
+.cyc-lbl-mt { margin-top: 13px; }
+.cyc-facts { margin-bottom: 0; }
+.cyc-facts .f { padding: 7px 10px; }
+.cyc-facts .fv { font-size: 13px; }
+.cyc-read p, .cyc-fals p { font-size: 12.5px; line-height: 1.5; }
+.cyc-read, .cyc-fals, .cyc-drivers { margin-bottom: 11px; }
+.cyc-fals { padding: 9px 11px; }
+.cyc-drivers ul { margin: 0; padding-left: 16px; }
+.cyc-drivers li { font-size: 12px; line-height: 1.45; margin-bottom: 2px; }
+.cyc-valbox { margin-bottom: 11px; }
+.cyc-valbox p { font-size: 12px; line-height: 1.5; color: var(--muted); margin: 0; }
+.cyc-regnote { font-size: 11.5px; line-height: 1.5; padding-top: 9px; }
+.cyc-src { margin-top: 7px; }
+@media (min-width: 881px) {
+  .cyc-panel.show { column-gap: 24px; row-gap: 0; }
+  .cyc-grp-full { margin-bottom: 6px; }
+  /* uneven focus columns: narrow data rail, wide narrative, medium side —
+     so the long "read" wraps shorter and the three columns balance */
+  .mkt-col-data { grid-column: span 3; }
+  .mkt-col-read { grid-column: span 5; }
+  .mkt-col-side { grid-column: span 4; }
+}

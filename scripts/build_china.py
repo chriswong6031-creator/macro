@@ -30,7 +30,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_china")
 
 ASSETS = ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
-          "charts.js", "tablesort.js", "aibrief.js")
+          "charts.js", "tablesort.js", "aibrief.js", "stockview.js")
 
 
 def _range_selector() -> dict:
@@ -59,6 +59,15 @@ PLOT_LAYOUT = dict(
 
 def _chart_html(fig: go.Figure) -> str:
     return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+
+def _load_json(path: Path) -> dict | None:
+    try:
+        if path.exists():
+            return json.loads(path.read_text())
+    except Exception as e:  # noqa: BLE001 — persisted artifacts are fallback-only
+        log.warning("fallback JSON unreadable (%s): %s", path, e)
+    return None
 
 
 def _chart_regime(px: pd.Series, hist: pd.DataFrame, days: int = 3650) -> str:
@@ -744,6 +753,18 @@ def main() -> int:
             log.error("china scoreboard build failed (%s); skipping", e)
             vm["scoreboard"] = None
 
+        factordata = site / "factordata"
+        if not (vm.get("setups") or {}).get("buy"):
+            fallback = _load_json(factordata / "china_standouts.json")
+            if fallback and fallback.get("buy"):
+                vm["setups"] = fallback
+                log.info("using persisted china_standouts.json fallback (%d buy)", len(fallback["buy"]))
+        if not ((vm.get("scoreboard") or {}).get("modes")):
+            fallback = _load_json(factordata / "china_scoreboard.json")
+            if fallback and fallback.get("modes"):
+                vm["scoreboard"] = fallback
+                log.info("using persisted china_scoreboard.json fallback")
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n
@@ -760,6 +781,15 @@ def main() -> int:
             if src.exists():
                 (site / a).write_text(src.read_text())
         log.info("wrote %s/china.html (%d KB, %d sectors)", site, len(html) // 1024, len(vm["sectors"]))
+
+        # Dedicated China news intelligence feed. Same display-only payload as the
+        # China dashboard section, expanded into a searchable/filtered news surface.
+        try:
+            news_html = env.get_template("china_news.html.j2").render(**vm, mode="macro")
+            (site / "china_news.html").write_text(news_html)
+            log.info("wrote %s/china_news.html (%d KB)", site, len(news_html) // 1024)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china news page render failed (%s); skipping", e)
 
         # A-share Stock Dashboard — same VM, the "looking for stocks" half.
         html_st = tmpl.render(**vm, mode="stocks")
@@ -797,6 +827,31 @@ def main() -> int:
             _build_sector_pages(env)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china sector pages build failed (%s); skipping", e)
+
+        # China Intelligence surfaces (News powerhouse → Policy Watch → Alt-Data →
+        # Divergence Radar) + the transmission bus that bundles them for the future
+        # China Mastermind. Each is additive + None-safe; standalone pages built here so
+        # the daily China build refreshes them. See research/CHINA_INTEL_POWERHOUSE.md.
+        for _name, _mod, _fn in (
+            # predictive validation FIRST — earns the signal weights altdata + analysis read
+            ("china validation", "engine.china_validation", "validate_all"),
+            ("china news powerhouse", "scripts.build_china_news", "build"),
+            ("china policy watch", "scripts.build_china_policy_watch", "build"),
+            ("china alt-data desk", "scripts.build_china_altdata", "build"),
+            ("china divergence radar", "scripts.build_china_radar", "build"),
+            # central-intelligence synthesis MUST run after the surfaces, before the hub/bus
+            ("china central analysis", "scripts.build_china_synthesis", "build"),
+        ):
+            try:
+                import importlib
+                getattr(importlib.import_module(_mod), _fn)()
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.error("%s build failed (%s); skipping", _name, e)
+        try:
+            from scripts.build_china_intel import build as _build_china_intel
+            _build_china_intel()      # fan-in 4 surfaces + analysis + hub for the China Mastermind
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china intel hub/bus build failed (%s); skipping", e)
     except Exception as e:  # noqa: BLE001
         log.error("china page render failed (%s); skipping", e)
         return 0

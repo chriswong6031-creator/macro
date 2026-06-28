@@ -251,6 +251,15 @@
   .nb-cscore.band-neutral { color: var(--muted); }
   .nb-cscore.band-low { color: var(--down); border-color: color-mix(in srgb, var(--down) 35%, var(--line)); }
   .nb-verdict { font-size: 10.5px; font-weight: 700; line-height: 1.25; color: var(--text); }
+  /* multi-timeframe bottoming-alignment chip (weekly+3d+daily turning up) */
+  .nb-align { display: flex; align-items: center; gap: 5px; margin: 3px 0 1px; min-width: 0;
+              font-size: 9.5px; font-weight: 700; letter-spacing: .01em;
+              padding: 2px 7px; border-radius: 7px; border: 1px solid var(--line);
+              color: var(--up); background: color-mix(in srgb, var(--up) 9%, var(--panel)); }
+  .nb-align.nba-near { color: var(--warn); background: color-mix(in srgb, var(--warn) 9%, var(--panel)); }
+  .nb-align .nba-line { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nb-align .nba-tag { margin-left: auto; flex: none; font-size: 8px; font-weight: 800;
+                       text-transform: uppercase; letter-spacing: .04em; opacity: .85; }
   .nb-axes { display: flex; gap: 4px; margin-top: 3px; }
   .nb-ax { flex: 1; }
   .nb-ax .axl { font-size: 8px; color: var(--muted); letter-spacing: .03em; }
@@ -261,6 +270,38 @@
   .nb-cau span { font-size: 8.5px; font-weight: 700; padding: 0 4px; border-radius: 6px;
                  color: var(--warn); background: color-mix(in srgb, var(--warn) 13%, var(--panel)); }
   .nb-tier { font-size: 8px; color: var(--muted); margin-top: 3px; letter-spacing: .02em; }
+  /* volatility black hole + honesty notes (HK overhaul, China-parity) */
+  .nb-vf { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+  .nb-vchip { font-size: 8.5px; font-weight: 800; padding: 0 5px; border-radius: 6px; border: 1px solid var(--line);
+              color: var(--muted); white-space: nowrap; }
+  .vf-coil { color: var(--link); border-color: color-mix(in srgb, var(--link) 38%, var(--line));
+             background: color-mix(in srgb, var(--link) 10%, var(--panel)); }
+  .vf-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, var(--line)); }
+  .vf-down { color: var(--down); border-color: color-mix(in srgb, var(--down) 40%, var(--line)); }
+  .vf-exp { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
+  .nb-note { font-size: 8.5px; line-height: 1.3; margin-top: 3px; padding: 2px 5px; border-radius: 6px;
+             color: var(--muted); background: color-mix(in srgb, var(--text) 4%, var(--panel)); }
+  .nb-note-anticipation { color: var(--link); background: color-mix(in srgb, var(--link) 8%, var(--panel)); }
+  /* ⚖ vol-managed size chip + compact entry-timing chip (US-parity gauges) */
+  .nb-size { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap;
+             padding: 0 5px; border-radius: 7px; color: var(--muted);
+             background: var(--panel); border: 1px solid var(--line); }
+  .nb-size.sz-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line)); }
+  .nb-size.sz-dn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 42%, var(--line)); }
+  .nb-entry { display: flex; align-items: center; gap: 5px; margin-top: 4px; padding: 3px 6px;
+              border-radius: 7px; border-left: 3px solid var(--muted);
+              background: color-mix(in srgb, var(--text) 4%, var(--panel)); }
+  .nbe-buy_now, .nbe-partial { border-left-color: var(--up); }
+  .nbe-buy_soon, .nbe-watch { border-left-color: var(--g-cold); }
+  .nbe-wait_pullback, .nbe-hold { border-left-color: var(--warn); }
+  .nbe-extended, .nbe-topping { border-left-color: var(--warn); }
+  .nbe-exit, .nbe-avoid, .nbe-blocked { border-left-color: var(--down); }
+  .nbe-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex: none; }
+  .nbe-dot.a3 { background: var(--up); } .nbe-dot.a2 { background: var(--g-cold); }
+  .nbe-dot.a1 { background: var(--warn); } .nbe-dot.a0 { background: var(--down); }
+  .nbe-status { font-size: 9px; font-weight: 800; color: var(--text); line-height: 1.2; }
+  .nbe-zone { margin-left: auto; font-size: 9px; font-weight: 700; color: var(--muted);
+              font-variant-numeric: tabular-nums; white-space: nowrap; }
 
   /* ---- US/China-parity panels ported to HK (dial / bignum / alerts / risk gauges) ---- */
   .dial { position: relative; height: 9px; border-radius: 5px; margin: 6px 0 3px;
@@ -383,7 +424,7 @@
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+    <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
     </button>
@@ -487,10 +528,10 @@
   {% if mode == 'stocks' and setups and setups.buy %}
   <div class="panel span12" id="standouts">
     <h2>{{ t('⚡ Top conviction — the HK Stock Desk', '⚡ 最高确信 — 港股研判台') }}
-      <span class="note" style="text-transform:none">· {{ t('southbound flow + A/H value + beta-neutral RS · regime-conditioned', '南向资金 + A/H 价值 + 贝塔中性相对强度 · 随周期调整') }}</span>
-      {{ help("The HK names ranked by a UNIFIED, regime-conditioned conviction that fuses HK's three HONEST structural edges — NOT a raw relative-strength sort (that just re-discovered global-risk beta and crowned an outlier). Each card's EDGE axis is the fused z of: <b>southbound smart-money flow</b> (the mainland Connect crowd, HK's dominant marginal buyer, adding to this name), <b>A/H value</b> (its HK-listed H line cheap vs its mainland A twin), and <b>beta-neutral relative strength</b> (real leadership once global-risk beta is stripped). The live risk state re-weights the blend. Ranked by the GATED conviction composite, split into a BUY strip (a constructive entry) and a WATCH strip (strong edge but the cycle/extension blocks it — wait for a base). HK has <b>no selection alpha</b>, so the verdict never says 'Buy' and the trust tier reads 'screen' — a positioning / flow screen to size and confirm, not a validated buy list.", "按统一的、随周期调整的确信度排序的港股 —— 而非原始相对强度排序（那只是在重新发现全球风险贝塔并捧出一个离群股）。每张卡片的 EDGE 轴是三条诚实结构性优势的融合 z：<b>南向资金</b>（内地港股通这一主力边际买家在加仓该股）、<b>A/H 价值</b>（其港股 H 相对 A 股孪生便宜）、以及<b>贝塔中性相对强度</b>（剥离全球风险贝塔后的真实领先）。实时风险状态重新加权各腿。按门控后的确信度综合排序，分为买入区（入场点建设性）与观察区（优势强但周期／拉伸阻挡 —— 等待筑底）。香港<b>无选股阿尔法</b>，故结论永不显示“买入”、信任等级为“筛选” —— 用于定仓与确认的资金筛选，而非已验证买入清单。") }}
+      <span class="note" style="text-transform:none">· {{ t('cycle-aligned bottoming · southbound flow + A/H value + beta-neutral RS', '周期共振筑底 · 南向资金 + A/H 价值 + 贝塔中性相对强度') }}</span>
+      {{ help("The HK names that pass a MULTI-TIMEFRAME BOTTOMING-ALIGNMENT gate first — weekly momentum NOT still falling (basing / turning / rising — never mid weekly bear), 3-day at or nearing a bullish cross, daily just crossed or about to — so a name the southbound crowd is accumulating INTO a fall (or a cheaper-and-cheaper A/H value leg) can no longer be sold as a buy. Survivors are then ranked by HK's three HONEST structural edges (the EDGE axis): <b>southbound smart-money flow</b> (the mainland Connect crowd, HK's dominant marginal buyer), <b>A/H value</b> (its H line cheap vs its A twin), and <b>beta-neutral relative strength</b> (leadership once global-risk beta is stripped). A 🟡 <b>near-aligned</b> tag marks a backfill name (weekly OK + one lower timeframe turning, not all three confirmed) shown only when too few are fully aligned. Strong-but-unaligned leaders sit in the WATCH strip below (wait for the weekly to turn). HK has <b>no selection alpha</b>, so the verdict never says 'Buy' and the trust tier reads 'screen' — a positioning / flow screen to size and confirm, not a validated buy list.", "先通过<b>多周期共振筑底</b>门槛的港股 —— 周线动量不再下行（筑底／转向／上行，绝非周线空头段）、3日处于或临近看多交叉、日线刚上穿或即将上穿 —— 因此被南向资金在下跌中加仓的个股（或越来越便宜的 A/H 价值腿）不再被当作买入。通过者再按香港三条诚实结构性优势（EDGE 轴）排序：<b>南向资金</b>（内地港股通主力边际买家）、<b>A/H 价值</b>（H 相对 A 便宜）、<b>贝塔中性相对强度</b>（剥离全球风险贝塔后的领先）。🟡 <b>临近共振</b>标记为补位项（周线合格＋某一较低周期转向，三周期未全部确认），仅在充分共振名称过少时显示。强但未共振的领涨股置于下方观察区（等待周线转向）。香港<b>无选股阿尔法</b>，故结论永不显示“买入”、信任等级为“筛选”。") }}
     </h2>
-    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Ranked by the unified, regime-conditioned conviction (southbound flow + A/H value + beta-neutral relative strength). Each card shows the four-axis profile — <b>EDGE</b> is the fused HK signal — plus the mainland-flow and A/H-value chips. The cycle state caps every verdict; HK has no selection alpha so it never says "Buy".', '按统一的、随周期调整的确信度排序（南向资金 + A/H 价值 + 贝塔中性相对强度）。每张卡片展示四轴画像 —— <b>EDGE</b> 为融合后的香港信号 —— 并附内地资金与 A/H 价值标签。周期状态封顶每个结论；香港无选股阿尔法，故永不显示“买入”。') }}</p>
+    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Names whose weekly, 3-day and daily cycles are aligned to the upside, then ranked by the unified HK conviction (southbound flow + A/H value + beta-neutral relative strength). Each card shows the four-axis profile — <b>EDGE</b> is the fused HK signal — plus the mainland-flow and A/H-value chips. The cycle state caps every verdict; HK has no selection alpha so it never says "Buy". A 🟡 near-aligned card is an unconfirmed backfill.', '周线、3日与日线周期同向上行的个股，再按统一港股确信度排序（南向资金 + A/H 价值 + 贝塔中性相对强度）。每张卡片展示四轴画像 —— <b>EDGE</b> 为融合后的香港信号 —— 并附内地资金与 A/H 价值标签。周期状态封顶每个结论；香港无选股阿尔法，故永不显示“买入”。🟡 临近共振卡片为未确认的补位项。') }}</p>
     <div class="nbgrid" data-showmore="12">
     {% for n in setups.buy %}
       {% set _d = n.dir or 'caution' %}
@@ -499,7 +540,7 @@
         <div class="nb-top">
           <span class="nb-tk">{{ n.ticker }}</span>
           <span class="nb-nm">{{ n.name }}</span>
-          {% if n.price is not none %}<span class="nb-px">{{ '%.2f'|format(n.price) }}</span>{% endif %}
+          {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="hk">{{ '%.2f'|format(n.price) }}</span>{% endif %}
         </div>
         <div class="nb-sub">{% if n.sector %}<span>{{ t(n.sector, n.sector_zh or n.sector) }}</span>{% endif %}{% if n.off_high is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
         {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
@@ -508,6 +549,18 @@
           {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Unified Conviction score — within-market percentile (display skin, not a probability). HK has no validated selection edge — this is a screen. · 统一确信度分 — 市场内百分位（展示，非概率）。香港无经验证的选股优势 — 这是筛选。">{{ c.score }}</span>{% endif %}
           <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
         </div>
+        {% set al = c.alignment %}
+        {% if al and al.line %}
+        {# multi-timeframe ENTRY gate (engine.cycles.mtf_alignment): a low-risk SWING entry
+           must be a FRESH turn from a low — weekly bear-recovering/basing + 3-day cross from
+           oversold (<25) + daily just-crossed. 🟢 Prime/Armed = confirmed; 🟡 Approaching =
+           early backfill (not yet a buy). The reason states WHY it qualifies. #}
+        <div class="nb-align{{ ' nba-near' if n.align_tier == 'near' else '' }}" title="{{ al.line }} · {{ al.line_zh }}">
+          <span class="nba-mark">{{ '🟡' if n.align_tier == 'near' else '🟢' }}</span>
+          <span class="nba-line"><span class="l-en">{{ al.reason or al.line }}</span><span class="l-zh">{{ al.reason_zh or al.line_zh }}</span></span>
+          {% if al.entry_tier %}<span class="nba-tag">{{ t(al.entry_tier, al.entry_tier_zh) }}</span>{% endif %}
+        </div>
+        {% endif %}
         <div class="nb-axes">
           {% for ax, lbl, lbl_zh in [('selection','EDGE','优势'),('entry','ENT','入场'),('tailwind','TWD','顺风'),('quality','QUAL','质量')] %}
           {% set a = c.axes[ax] %}
@@ -518,8 +571,22 @@
           {% endfor %}
         </div>
         {% endif %}
+        {% set es = n.entry_signal %}
+        {% if es and es.status %}
+        {# ENTRY-timing gauge (US-parity gauge 2): buy now / wait for the pullback / extended,
+           with the buy-zone price. Compact HK skin — the WHEN/AT-WHAT-PRICE the conviction
+           score must never be mistaken for. #}
+        <div class="nb-entry nbe-{{ es.status }}" title="Entry timing — when & at what price to buy, separate from the conviction score (own-it) and the size chip (how much). · 入场择时 — 何时、以何价买入，与确信度（是否持有）和仓位（持仓量）相互独立。">
+          <span class="nbe-dot a{{ es.act_level }}"></span>
+          <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
+          {% if es.buy_zone and es.buy_zone.high is not none %}
+          <span class="nbe-zone" title="{{ t('Buy zone', '买入区') }}">{{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–{{ '%.2f'|format(es.buy_zone.high) }}{% endif %}{% if es.buy_zone.pct_from_spot is not none %} ({{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%){% endif %}</span>
+          {% endif %}
+        </div>
+        {% endif %}
         <div class="nb-bot">
           {% if n.label %}<span class="nb-state">{{ td(n.label) }}</span>{% endif %}
+          {% set _rs = n.risk_sizing %}{% if _rs and _rs.size_mult is not none %}<span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×{{ _rs.size_mult }} of the conviction-base size (forecast vol {{ _rs.vol_ann_pct }}% · inverse-vol ×{{ _rs.inv_vol_mult }} · regime ×{{ _rs.regime_gross }}). HOW MUCH to own — separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。决定持仓量，与选股（确信度）和择时（入场）相互独立。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>{% endif %}
         </div>
         {% if n.alpha is not none or n.alpha_entry %}
         <div class="nb-alpha">
@@ -541,7 +608,14 @@
         </div>
         {% endif %}
         {% if c %}
+        {# volatility black hole (vol_squeeze) chip #}
+        {% set _vs = c.vol_squeeze %}
+        {% if _vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION'] %}
+        <div class="nb-vf">
+          <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" title="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %} — {{ _vs.caveat }} | 波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Coiled','蓄势') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Vol expansion','波动扩张') }}{% endif %}</span>
+        </div>{% endif %}
         {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span class="l-en">⚠ {{ cau }}</span><span class="l-zh">⚠ {{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span>{% endfor %}</div>{% endif %}
+        {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
         <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
         {% endif %}
       </a>
@@ -698,6 +772,17 @@
     </div>
     {% if latest.confirming %}<p class="note" style="margin:14px 0 0;padding-top:11px;border-top:1px solid var(--hair);text-transform:none">{{ t('Confirming', '确认') }}: {{ latest.confirming|join(', ') }}{% if latest.contradicting %} · {{ t('Contradicting', '矛盾') }}: {{ latest.contradicting|join(', ') }}{% endif %}</p>{% endif %}
   </div>
+
+  {# AI Daily Brief — the single in-page doorway to the cross-asset LLM synthesis
+     (aibrief.html). Replaces the old inline AI Master Brief panel. #}
+  <a class="panel span12 aibrief-card" href="aibrief.html">
+    <span class="abc-ic">🧠</span>
+    <span class="abc-mid">
+      <span class="abc-tit">{{ t('AI Daily Brief · China & cross-asset synthesis', 'AI 每日简报 · 中国与跨资产综合') }}</span>
+      <span class="abc-sub muted sm">{{ t('AI reads the Hong Kong & China dashboards in one place — regime, where signals conflict, the policy/liquidity thesis and what to watch. Research context only, never a signal.', 'AI 在一处解读中港看板 — 周期、信号冲突、政策／流动性假设与后续关注。仅供研究参考，绝非交易信号。') }}</span>
+    </span>
+    <span class="abc-go">→</span>
+  </a>
 
   <!-- ===================== MAJOR HK INDICES — HEALTH & MOMENTUM (merged) ===================== -->
   {% if index_health or benchmark %}
@@ -1103,17 +1188,6 @@
       <a href="hk_stocks.html" style="color:var(--link);font-weight:600">{{ t('HK Stock Desk', '港股研判台') }}</a>.</p>
   </div>
   {% endif %}
-
-  <!-- ===================== AI MASTER BRIEF (China & HK synthesis) ===================== -->
-  {# Client-fetched from china_brief.json (engine/master_brain.py covers China + HK);
-     hidden until a usable brief loads. Research context only — never a signal. #}
-  <div class="panel span12 ai-brief" id="hk-brief" data-brief-src="china_brief.json" style="display:none">
-    <h2>🧠 {{ t('AI Master Brief · China & HK synthesis', 'AI 主脑简报 · 中港综合') }}
-      {{ help('An AI-generated synthesis of the Hong-Kong & China dashboards, with US macro, the dollar, global liquidity and commodities as backdrop. RESEARCH CONTEXT only — it narrates the regime, flags where signals conflict and tests the policy/liquidity thesis; it never feeds a score, signal or allocation. Can be wrong or overconfident — verify against the underlying panels.', 'AI 对中港看板的综合分析，以美国宏观、美元、全球流动性与商品为背景。仅供研究参考 — 它解读周期、标注信号冲突并检验政策／流动性假设，绝不参与任何评分、信号或仓位。可能出错或过度自信，请对照各底层面板核实。') }}
-    </h2>
-    <div data-brief-body class="muted sm"></div>
-  </div>
-  <script src="aibrief.js"></script>
 
   {% endif %}{# /mode != stocks — macro group 1 (hero, index health, global risk overlay) #}
 

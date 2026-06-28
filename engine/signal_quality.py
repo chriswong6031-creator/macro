@@ -16,15 +16,15 @@ EXITS — the mechanical sell/cut stay the SIMPLE validated baseline (oscillator
 trailing stops as REPLACEMENTS and they did NOT generalize: on the held-out US panel the
 best (close<EMA8) improved drawdown on only ~58-69% of names and the joint drawdown-AND-
 capture gate was ~37-43% — below the pre-committed 70%. So per the kill rule we ship the
-simpler baseline (this echoes the §5 killed regime-router: drawdown control is an ENTRY
-problem). The one robust finding: a close-below-EMA8 breach is a TAIL-risk protector
-(rescues drawdown on 81-92% of the deepest-drawdown-quartile names across two windows, at
-some capture cost). We surface it ONLY as a display-only `risk_flags` date list + current
-`trail_breach`/`trail_stop` state fields — kept OUT of the validated trade-marker stream,
-never an auto-sell, never per-ticker, never routed. EMA8 is
-CLOSE-ONLY by construction, so the flag needs no high/low and works identically on the
-close-only names (Tencent 0700.HK, BABA) — that, plus simplicity and the better tail, is
-why we chose it over a high/low Chandelier ATR.
+simpler baseline (this echoes the CHARTER §5 killed regime-router: drawdown control is an
+ENTRY problem, not an exit-routing one). The one robust finding: a close-below-EMA8 breach
+is a TAIL-risk protector (rescues drawdown on 81-92% of the deepest-drawdown-quartile names
+across two windows, at some capture cost). We surface it ONLY as a display-only `risk_flags`
+date list + current `trail_breach`/`trail_stop` state fields — kept OUT of the validated
+trade-marker stream, never an auto-sell, never per-ticker, never routed. EMA8 is CLOSE-ONLY
+by construction, so the flag needs no high/low and works identically on the close-only names
+(Tencent 0700.HK, BABA) — that, plus simplicity and the better tail, is why we chose it over
+a high/low Chandelier ATR.
 """
 from __future__ import annotations
 

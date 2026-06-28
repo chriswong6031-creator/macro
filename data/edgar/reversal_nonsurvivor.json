@@ -1,0 +1,70 @@
+{
+  "verdict": "NO-GO",
+  "decision": "CLOSE THE BOOK \u2014 residual reversal is net-NEGATIVE after cost on BOTH the survivor (-2.45%/yr) and the non-survivor (-2.68%/yr) S&P 500 universe, both insignificant; survivorship makes it worse (drag 0.23%/yr) and that is only a LOWER bound \u2014 the worst losers are unrecoverable. No tradeable edge: do not give reversal an entry tilt.",
+  "lookback_d": 21,
+  "fwd_d": 21,
+  "rebalance": "monthly",
+  "span": "1996-01-31..2026-04-30",
+  "rebalances": 364,
+  "names_total": 829,
+  "survivors": 753,
+  "delisted_recovered": 76,
+  "delisted_unrecoverable": 373,
+  "survivor_panel": {
+    "ic": {
+      "mean_ic": 0.0035,
+      "ic_vol": 0.1529,
+      "ic_ir": 0.023,
+      "ic_ir_ann": 0.079,
+      "t_hac": 0.44,
+      "p_hac": 0.6599,
+      "hit": 0.503,
+      "n": 364
+    },
+    "median_breadth": 325,
+    "gross": {
+      "ann_pct": -1.04,
+      "sharpe_ann": -0.077,
+      "t_hac": -0.434,
+      "dsr": 0.0699,
+      "n": 364
+    },
+    "net_10bps": {
+      "ann_pct": -2.45,
+      "sharpe_ann": -0.181,
+      "t_hac": -1.026,
+      "dsr": 0.0198,
+      "n": 364
+    }
+  },
+  "nonsurvivor_panel": {
+    "ic": {
+      "mean_ic": 0.0026,
+      "ic_vol": 0.1499,
+      "ic_ir": 0.018,
+      "ic_ir_ann": 0.061,
+      "t_hac": 0.338,
+      "p_hac": 0.7351,
+      "hit": 0.5,
+      "n": 364
+    },
+    "median_breadth": 335,
+    "gross": {
+      "ann_pct": -1.27,
+      "sharpe_ann": -0.095,
+      "t_hac": -0.542,
+      "dsr": 0.0572,
+      "n": 364
+    },
+    "net_10bps": {
+      "ann_pct": -2.68,
+      "sharpe_ann": -0.2,
+      "t_hac": -1.143,
+      "dsr": 0.0152,
+      "n": 364
+    }
+  },
+  "survivorship_drag_pct_per_yr": 0.23,
+  "price_span": "1962-01-02..2026-06-19",
+  "caveat": "Yahoo close prices, $5 price floor + \u00b150% monthly-return clip (robust to the noisy free-source delisted data). Only 76 genuinely-delisted names recovered vs 373 unrecoverable \u2014 and Yahoo retains the BENIGN exits (acquisitions/demotions) while dropping the MALIGNANT ones (bankruptcies, true ~-100% blow-ups). So the non-survivor panel still omits the worst losers: the measured drag is a LOWER bound and the clip flatters reversal \u2014 a NO-GO here is only stronger. A definitive deep test needs CRSP delisting returns. Universe = S&P 500 PIT."
+}

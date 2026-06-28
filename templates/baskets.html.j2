@@ -234,6 +234,12 @@
   .anrow .rn { font-weight:650; white-space:nowrap; }
   .anwhy { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ansc { font-variant-numeric:tabular-nums; font-weight:700; }
+  /* vol-regime sizing transparency chip (honest drawdown-control read; hidden when calm) */
+  .rs-chip { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 12px; margin:4px 0 10px; }
+  .rs-head { display:flex; align-items:baseline; gap:8px; }
+  .rs-ic { font-size:14px; } .rs-main { font-size:13px; } .rs-main b { font-variant-numeric:tabular-nums; }
+  .rs-decomp { margin-top:3px; font-variant-numeric:tabular-nums; }
+  .rs-note { margin-top:4px; font-style:italic; line-height:1.45; }
 </style>
 </head>
 <body>
@@ -250,7 +256,7 @@
       <button class="bell-btn" id="bell-btn" aria-label="Theme alerts" title="Theme rotation alerts">🔔<span class="bell-badge" id="bell-badge"></span></button>
       <div class="bell-menu" id="bell-menu" role="menu"></div>
     </div>
-    <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+    <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
     </button>
@@ -273,6 +279,22 @@
       '精选主题股票篮子 — 每次成分调整均注明日期与理由；等权重、按月再平衡、调整间买入持有。若有相近行业 ETF，则按日交叉验证。仅作监测/结构参考，并非买入清单。') }}</p>
   </header>
 
+  {# Risk-state de-risk strip (engine/risk_state.py) — only when drawdown risk is elevated.
+     Frames this leadership-driven page: de-gross + favor good entries over chasing leaders
+     (sizing, not selection). Rendered server-side from latest.json.risk_state. #}
+  {% if risk_state %}
+  {% set rscol = 'var(--act)' if risk_state.state=='risk-off' else ('var(--orange)' if risk_state.state=='elevated' else 'var(--warn)') %}
+  <div class="panel pad" style="border-left:4px solid {{ rscol }};border-radius:0;margin-top:10px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+      <b style="color:{{ rscol }}">⚠️ {{ t('Market risk state', '市场风险状态') }}: {{ t(risk_state.label_en, risk_state.label_zh) }} · {{ risk_state.score|round|int }}/100</b>
+      <span class="muted" style="font-size:12px">{{ t('suggested gross', '建议总仓位') }} ×{{ '%.2f'|format(risk_state.gross_factor) }}</span>
+    </div>
+    <div class="muted" style="font-size:12.5px;margin-top:5px">{{ t(
+      'Drawdown risk is elevated — this leadership-driven page is for structure, not a buy list. De-gross and favor good entries (multi-timeframe bottoming alignment) over chasing extended leaders.',
+      '回撤风险偏高 — 本页以龙头为主，仅供结构参考而非买入清单。降低总仓位，择优入场（多周期筑底对齐）而非追逐已延展的龙头。') }}{% if risk_state.cap_leadership %} {{ t('Leadership chases are capped at this risk level.', '当前风险水平下，追逐龙头的仓位被上限约束。') }}{% endif %}</div>
+  </div>
+  {% endif %}
+
   <!-- prevailing-narrative scorecard → the Narrative Rotation playbook (filled client-side) -->
   <section id="nr-scorecard" data-alloc="allocation.json" data-page="allocation.html"></section>
 
@@ -282,6 +304,7 @@
     <p class="sub">{{ t(
       'The executional shortlist — themes with a clean entry to buy or add right now, and themes to reduce or avoid. Click any theme to see the specific stocks to act on. If nothing has a clean entry, the right move is patience.',
       '可执行清单 — 当前具备干净入场点、值得买入或加仓的主题，以及应减仓或回避的主题。点击任一主题可查看应操作的具体个股。若无干净入场点，最佳操作是耐心等待。') }}</p>
+    <div id="regime-sizing-chip"></div>
     <div id="actnow"></div>
   </section>
 
@@ -656,10 +679,14 @@ function themeCard(t){
   const b=t.breadth||{}, im=t.impulse||{}, tx=t.textures||{};
   const ba=tx.bull_age||{}, ob=tx.overbought||{}, ce=tx.clean_entry||{}, rr=tx.rollover_risk||{};
   const top=(t.leadership&&t.leadership.top)||[];
+  const ss=t.signal_strength||null;
   const obc = ob.value>=0.6?'neg':ob.value>=0.35?'warn':'';
   const flags=[];
   if(ce.flag) flags.push(`<span class="tflag up">✦ ${L('clean entry','干净入场')}</span>`);
   if(rr.band==='high'||rr.band==='elevated') flags.push(`<span class="tflag ${rr.band==='high'?'dn':'wn'}">⚠ ${L('roll-over','回落风险')}</span>`);
+  // backtested signal-strength chip — the validated risk reads stand out; title is plain
+  // English (never L() inside an attribute — it leaks span markup into the tooltip text).
+  if(ss&&ss.grade==='backtested') flags.push(`<span class="tflag dn" title="${esc(ss.en||'')} (HAC t ${ss.t_hac}, n ${ss.n})">🔬 ${L('backtested risk','已回测风险')}</span>`);
   const bullPill = ba.in_bull
     ? `🐂 ${ba.approx_months!=null?ba.approx_months+'mo':''} ${L(ba.stage||'','')||esc(ba.stage_zh||'')}`
     : `🐻 ${L('downtrend','下行')}`;
@@ -700,6 +727,7 @@ function themeCard(t){
     </div>
     <details><summary>${L('why &amp; components','理由与分项')}</summary>
       <div class="why">${L(esc(t.reco_why_en),esc(t.reco_why_zh))}</div>
+      ${ss?`<div class="why" style="opacity:.82">${L('Signal grade','信号评级')}: <b>${esc(ss.grade)}</b> — ${L(esc(ss.en||''),esc(ss.zh||''))}</div>`:''}
       ${compLegend(t.components)}
       ${top.length?`<div class="why">${L('leaders','领涨')}: ${top.map(x=>esc(x.ticker)).join(', ')}${t.leadership.breadth==='narrow'?' ⚠':''}</div>`:''}
     </details>
@@ -710,7 +738,18 @@ function renderThemeDesk(){
   const sec=document.getElementById('theme-desk-section');
   if(!THEME||!(THEME.themes||[]).length){ if(sec) sec.style.display='none'; return; }
   document.getElementById('theme-desk').innerHTML=(THEME.themes||[]).map(themeCard).join('');
-  const d=THEME.disclaimer||{}; document.getElementById('theme-disclaimer').innerHTML=L(esc(d.en||''),esc(d.zh||''));
+  const d=THEME.disclaimer||{};
+  // cite the backtest verdict (scripts.calibrate_baskets, 27y SPDR-sector proxy)
+  const cal=THEME.signal_calibration||{};
+  let calNote='';
+  if(cal&&cal.alert_firing_gate){
+    const ic=(cal.cross_sectional_momentum||{}).mean_ic_21d;
+    const nbt=(THEME.themes||[]).filter(t=>(t.signal_strength||{}).grade==='backtested').length;
+    calNote=' '+L(
+      esc(`Backtested on 27y of clean sector history: risk labels (fading/deteriorating) precede deeper forward drawdowns; entry labels show no forward-return edge (rank-IC ≈ ${ic==null?'~0':ic}). The 🔬 chip marks the ${nbt} theme(s) carrying a backtested risk read now.`),
+      esc(`基于27年干净行业历史回测：风险标签（走弱/退潮）领先于更深的前向回撤；入场标签无前向收益优势（rank-IC≈${ic==null?'~0':ic}）。🔬 标记当前 ${nbt} 个带有已回测风险信号的主题。`));
+  }
+  document.getElementById('theme-disclaimer').innerHTML=L(esc(d.en||''),esc(d.zh||''))+calNote;
   decorateRealActivity();
 }
 // Display-only: stamp each theme card with the Divergence Radar real-activity read
@@ -771,6 +810,31 @@ function renderActNow(){
   document.getElementById('actnow').innerHTML=`<div class="anwrap">
     <div class="ancol"><h4 class="anh buy">✅ ${L('Buy / add now','现在买入 / 加仓')} <span class="muted sm">(${buys.length})</span></h4>${buys.length?buys.map(row).join(''):`<div class="muted sm" style="padding:10px 2px">${L('Nothing has a clean entry right now — patience.','当前无干净入场点 — 耐心等待。')}</div>`}</div>
     <div class="ancol"><h4 class="anh red">🔻 ${L('Reduce / avoid','减仓 / 回避')} <span class="muted sm">(${red.length})</span></h4>${red.length?red.map(row).join(''):`<div class="muted sm" style="padding:10px 2px">${L('none','无')}</div>`}</div>
+  </div>`;
+}
+// Honest TRANSPARENCY chip: shows WHY basket gross is trimmed (the live vol-regime sizing
+// overlay). Subtract-only — shows NOTHING when calm (no "100% — calm" noise). Deliberately a
+// drawdown-control transparency read, NOT a performance claim: the backtest (PR #428) found the
+// drawdown value is mechanical vol-targeting; the regime layer adds no measured edge, so the
+// decomposition leads with vol-target and the note says so. Never implies the overlay lifts returns.
+function renderRegimeSizing(){
+  const host=document.getElementById('regime-sizing-chip'); if(!host) return;
+  const rs=THEME&&THEME.regime_sizing;
+  if(!rs||!rs.active||(rs.gross_scalar||1)>=1.0){ host.innerHTML=''; return; }   // inert when calm
+  const pct=Math.round((rs.gross_scalar||1)*100);
+  const mech=Math.round((rs.mech_scalar||1)*100), reg=Math.round((rs.regime_caution||1)*100), sc=Math.round((rs.scored_cut||1)*100);
+  let decomp=`${L('vol-target','波动率目标')} ${mech}%`;
+  if(reg<100) decomp+=` × ${L('regime','状态')} ${reg}%`;
+  if(sc<100) decomp+=` × ${L('scored','评分')} ${sc}%`;
+  decomp+=` = ${pct}%`;
+  const demoted=(THEME.themes||[]).filter(t=>t&&t.regime_demoted).length;
+  const sev=((rs.regime_caution||1)<1)?'var(--down)':'var(--warn)';
+  const regLbl={'backwardation-stress':L('backwardation stress','现货溢价倒挂压力'),'warning':L('fragility building','脆弱性上升')}[rs.regime];
+  host.innerHTML=`<div class="rs-chip" style="border-left:3px solid ${sev}">
+    <div class="rs-head"><span class="rs-ic">⚠</span>
+      <span class="rs-main">${L('Vol-regime is trimming basket gross to','波动率状态正将篮子总仓位缩减至')} <b>${pct}%</b>${regLbl?' — '+regLbl:''}</span></div>
+    <div class="rs-decomp muted sm">${decomp}${demoted?` · ${demoted} ${L('theme(s) stood down to hold','个主题被下调为持有')}`:''}</div>
+    <div class="rs-note muted xs">${L('Drawdown-control sizing — mechanical vol-targeting is the validated lever; the regime layer is a subtract-only risk read. NOT a return forecast, never lifts a score or rank.','回撤控制仓位 — 机械波动率目标是经验证的杠杆；状态层为仅做减法的风险读数。并非收益预测，绝不抬高评分或排名。')}</div>
   </div>`;
 }
 function renderConcentration(){
@@ -892,7 +956,7 @@ function renderBell(){
 
 function boot(){
   document.getElementById('asof').textContent=BASKETS.as_of||'—';
-  renderActNow(); renderMacroCtx(); renderThemeDesk(); renderConcentration(); renderRotation(); renderScorecards(); renderBell();
+  renderActNow(); renderRegimeSizing(); renderMacroCtx(); renderThemeDesk(); renderConcentration(); renderRotation(); renderScorecards(); renderBell();
   renderStory();
   renderTabs(document.getElementById('btbl-mode'), TBL_MODES, btblMode, v=>{ btblMode=v; localStorage.setItem('fw-btbl-mode',v); renderBTable(); });
   renderTabs(document.getElementById('chart-modes'), [['rel','vs S&P 500'],['abs','Absolute']], chartMode, v=>{ chartMode=v; renderChart(); });

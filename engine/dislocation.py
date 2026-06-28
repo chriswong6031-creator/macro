@@ -436,6 +436,12 @@ def snapshot(f: pd.DataFrame, conditions: dict | None = None,
     return {
         "asof": str(asof.date()) if asof is not None else None,
         "verdict": verdict,                       # calm | buyable_washout | stand_aside | unknown
+        # lead/lag honesty (research/RISK_FLIP_2026-06-22.md): dislocation_active is a
+        # pure OR of REALIZED stress triggers (VIX>30 / SPY-dd<=-10% / VRP>0.90 /
+        # backwardation) — it cannot fire until price/vol has already broken. A
+        # coincident gauge; never an early warning. Downstream should weight leading
+        # gauges over this for timing.
+        "lead_lag": "coincident",
         "headline": headline,
         "fed_put": not put_absent,
         "put_state": "put-absent" if put_absent else "put-present",

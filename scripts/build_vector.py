@@ -203,12 +203,21 @@ def alloc_sizing(last: pd.Series, eq: pd.Series, acfg: dict) -> dict:
     thr, decay = float(acfg.get("dd_threshold", 0.25)), float(acfg.get("dd_decay", 1.0))
     floor = float(acfg.get("dd_floor", 0.40))
     cap = min(1.0, max(floor, 1.0 - decay * max(0.0, (-dd) - thr)))
+    # bottom-detector overlay (adds size at washout lows the brake would otherwise sit out)
+    b_thr = float(acfg.get("bottom_thr", 0.30))
+    b_boost = float(acfg.get("bottom_boost", 0.40))
+    bp = float(last.get("bottom_pressure")) if pd.notna(last.get("bottom_pressure")) else 0.0
+    b_strength = max(0.0, min(1.0, (bp - b_thr) / max(1.0 - b_thr, 1e-9)))
+    b_add = b_boost * b_strength if acfg.get("bottom_overlay", True) else 0.0
     return {
         "tier": btc_signals.conviction_tier(cp, acfg),
         "mult": round(float(btc_signals.conviction_multiplier(cp, acfg)), 2),
         "brake_active": bool(cap < 0.999),
         "brake_cap": round(100 * cap),
         "dd": round(100 * dd),
+        "bottom_pressure": round(100 * bp),
+        "bottom_active": bool(b_add > 0.005),
+        "bottom_add": round(100 * b_add),
     }
 
 
@@ -1063,7 +1072,10 @@ def home_alert_feed() -> list[dict]:
                 "link": link, "tier": v["tier"],
                 "edge": v["edge_en"], "edge_zh": v.get("edge_zh") or v["edge_en"],
                 "cta": "Open scorecard →", "cta_zh": "打开记分卡 →",
-                "dedupe": r["message"],
+                # dedupe on the plain-English CONCEPT (the headline), NOT the full message:
+                # two GEX-flip alerts that differ only by an embedded number (net -4bn vs
+                # -9bn) must collapse to one card, not stack as near-identical duplicates.
+                "dedupe": v["icon"] + " " + v["plain_en"],
             })
     except Exception as e:  # noqa: BLE001
         log.warning("home feed: macro alerts unavailable (%s)", e)
@@ -1141,6 +1153,36 @@ def _when_zh(ts: pd.Timestamp, date_only: bool) -> str:
 # strings; per-build data (regimes, prices, alerts) is injected via .replace(). All
 # bilingual text is literal <span class="l-en/l-zh"> pairs (theme.css toggles them).
 # --------------------------------------------------------------------------- #
+# Crafted Mastermind "M" brand glyph — a gradient squircle tile (blue→indigo→violet
+# with a top sheen + inner rim light) carrying an ascending market-peak "M" with a
+# soft emboss. Improved from the original Mastermind app mark. Kept BYTE-FOR-BYTE in
+# sync with the nav-bar copy in templates/_site_nav.html.j2 (.nav-brand). CSS sizes it
+# via `.hub-logo .brand-glyph`; the width/height attrs are only a no-CSS fallback.
+_BRAND_MARK_SVG = (
+    '<svg class="brand-glyph" width="64" height="64" viewBox="0 0 40 40" '
+    'xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+    '<defs>'
+    '<linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">'
+    '<stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>'
+    '<stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>'
+    '<linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">'
+    '<stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>'
+    '<radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">'
+    '<stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>'
+    '<linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">'
+    '<stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>'
+    '</defs>'
+    '<rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>'
+    '<rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>'
+    '<rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>'
+    '<rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>'
+    '<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">'
+    '<path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>'
+    '<path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>'
+    '</g></svg>'
+)
+
+
 _GLOBE_HUB_CSS = r"""<style>
 html{overflow-x:hidden}
 
@@ -1150,22 +1192,43 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
  padding:22px 20px 56px;position:relative;overflow-x:hidden}
 .wrap{width:100%;max-width:1180px;display:flex;flex-direction:column}
 .hub-top{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:10px}
-.h{text-align:center;margin:6px 0 20px}
+.h{text-align:center;margin:6px 0 22px;position:relative;isolation:isolate}
+/* a soft, feathered radial --bg scrim sits BEHIND the hero text (own stacking
+   context via isolation) so the bright sun/moon disc never washes the headline
+   out. Radial + fully transparent edges = no hard rectangular line across the body. */
+.h::before{content:'';position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);z-index:-1;pointer-events:none;
+ width:min(720px,94%);height:128%;
+ background:radial-gradient(58% 54% at 50% 50%,color-mix(in srgb,var(--bg) 74%,transparent),color-mix(in srgb,var(--bg) 32%,transparent) 52%,transparent 76%)}
 .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--muted);
  background:color-mix(in srgb,var(--panel) 64%,transparent);border:1px solid var(--line);padding:6px 14px;border-radius:999px;
  margin-bottom:14px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .eyebrow .live{width:7px;height:7px;border-radius:50%;background:#22c55e;
  box-shadow:0 0 0 0 color-mix(in srgb,#22c55e 55%,transparent);animation:livepulse 2.4s ease-out infinite}
 @keyframes livepulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,#22c55e 55%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
-.h h1{font-size:clamp(30px,4.4vw,46px);font-weight:800;letter-spacing:-.035em;line-height:1.05;margin:0 0 9px;
- background:linear-gradient(176deg,var(--text) 28%,color-mix(in srgb,var(--text) 52%,var(--muted)));
+.h h1{font-size:clamp(31px,4.6vw,48px);font-weight:800;letter-spacing:-.035em;line-height:1.04;margin:0 0 10px;
+ background:linear-gradient(176deg,var(--text) 24%,color-mix(in srgb,var(--text) 56%,var(--muted)));
  -webkit-background-clip:text;background-clip:text;color:transparent;
- /* a soft --bg halo on the glyphs keeps the headline legible over the sun/moon
-    WITHOUT any rectangular scrim that would cut a line across the body */
- filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 14px var(--bg)) drop-shadow(0 0 26px var(--bg))}
+ /* legibility over the disc comes from BOTH the soft radial scrim on .h::before AND
+    this multi-layer --bg glyph halo — belt and braces, no hard scrim edge */
+ filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 12px var(--bg)) drop-shadow(0 0 26px var(--bg)) drop-shadow(0 0 46px var(--bg))}
 html[data-lang="zh"] .h h1{letter-spacing:0}
-.h p{color:var(--muted);font-size:clamp(14px,2vw,16px);margin:0 auto;max-width:560px;line-height:1.5;text-wrap:balance;
- text-shadow:0 1px 2px var(--bg),0 0 10px var(--bg),0 0 20px var(--bg)}
+/* ===== brand lockup — the crafted Mastermind “M” glyph + the MASTERMIND wordmark,
+   standing in for the old plain-text title. The container drops the gradient-text
+   treatment (it would clip the SVG); the wordmark span keeps it. ===== */
+/* display:flex (block-level), NOT inline-flex — the preceding .eyebrow is itself
+   inline-flex, so an inline-flex h1 would share its line and sit off-centre. A
+   block-level flex takes its own line and centres the glyph+wordmark via justify. */
+.h h1.hub-logo{display:flex;align-items:center;justify-content:center;gap:clamp(12px,1.7vw,19px);
+ background:none;-webkit-text-fill-color:currentColor;color:var(--text);filter:none}
+.h h1.hub-logo .brand-glyph{width:clamp(48px,6.4vw,66px);height:clamp(48px,6.4vw,66px);flex:none;
+ filter:drop-shadow(0 6px 18px rgba(40,56,128,.42)) drop-shadow(0 1px 2px var(--bg)) drop-shadow(0 0 18px var(--bg)) drop-shadow(0 0 34px var(--bg))}
+.h h1.hub-logo .logo-word{font-family:Inter,-apple-system,"Segoe UI",sans-serif;font-weight:900;letter-spacing:.015em;-webkit-text-fill-color:transparent;
+ background:linear-gradient(176deg,var(--text) 24%,color-mix(in srgb,var(--text) 56%,var(--muted)));
+ -webkit-background-clip:text;background-clip:text;color:transparent;
+ filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 12px var(--bg)) drop-shadow(0 0 26px var(--bg)) drop-shadow(0 0 46px var(--bg))}
+@media(max-width:520px){.h h1.hub-logo{gap:11px}.h h1.hub-logo .brand-glyph{width:44px;height:44px}}
+.h p{color:color-mix(in srgb,var(--text) 72%,var(--muted));font-size:clamp(14px,2vw,16px);margin:0 auto;max-width:548px;line-height:1.55;text-wrap:balance;
+ text-shadow:0 1px 2px var(--bg),0 0 8px var(--bg),0 0 18px var(--bg),0 0 30px var(--bg)}
 
 /* ===== glass + accent primitives ===== */
 .glass{position:relative;border-radius:16px;overflow:hidden;isolation:isolate;
@@ -1176,39 +1239,14 @@ html[data-theme="light"] .glass{background:color-mix(in srgb,var(--panel) 90%,tr
  border-color:color-mix(in srgb,var(--line) 92%,transparent);
  box-shadow:0 1px 0 color-mix(in srgb,#fff 60%,transparent),0 6px 20px -14px rgba(20,30,50,.16)}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.glass{background:color-mix(in srgb,var(--panel) 96%,transparent)}}
+/* one radius for every glass surface on the hub — out-specifies theme.css's
+   `html body .card{border-radius:12px}` so cards match the clock, alerts + tooltip */
+.wrap .glass{border-radius:16px}
 .acc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;z-index:2;
  background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 22%,transparent));
  transform:scaleX(0);transform-origin:left;transition:transform .3s cubic-bezier(.2,.7,.3,1)}
 .acc::after{content:'';position:absolute;inset:0;z-index:-1;opacity:0;
  background:radial-gradient(360px 180px at 100% 0%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 68%);transition:opacity .25s ease}
-
-/* ===== state band: compact risk pulse + synthesis (slim, one row) ===== */
-.state{--accent:#416aec;display:flex;align-items:center;gap:22px;padding:15px 20px;margin-bottom:22px;flex-wrap:wrap}
-.state-wash{position:absolute;inset:0;z-index:-1;background:radial-gradient(520px 200px at 0% 0%,color-mix(in srgb,#416aec 10%,transparent),transparent 70%)}
-.pulse{flex:0 0 auto;display:flex;flex-direction:column;gap:7px;min-width:230px}
-.pulse-head{display:flex;align-items:baseline;gap:9px}
-.pulse-eye{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-html[data-lang="zh"] .pulse-eye{letter-spacing:0}
-.pulse-num{font-size:26px;font-weight:800;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--text)}
-.pulse-band{font-size:11.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:2px 8px;border-radius:6px;
- color:color-mix(in srgb,var(--warn) 86%,var(--text));background:color-mix(in srgb,var(--warn) 14%,var(--panel2));border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
-.pulse-band.tone-off{color:color-mix(in srgb,var(--act) 86%,var(--text));background:color-mix(in srgb,var(--act) 13%,var(--panel2));border-color:color-mix(in srgb,var(--act) 22%,transparent)}
-.pulse-band.tone-on{color:color-mix(in srgb,var(--ok) 86%,var(--text));background:color-mix(in srgb,var(--ok) 13%,var(--panel2));border-color:color-mix(in srgb,var(--ok) 22%,transparent)}
-.pulse-track{position:relative;height:8px;border-radius:999px;background:linear-gradient(90deg,var(--act),var(--warn) 42%,#14b8a6 72%,var(--ok));opacity:.92}
-.pulse-mark{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--text);border:3px solid var(--panel);
- transform:translate(-50%,-50%);box-shadow:0 1px 5px rgba(0,0,0,.35)}
-.pulse-ticks{display:flex;justify-content:space-between;font-size:9.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
-html[data-lang="zh"] .pulse-ticks{letter-spacing:0}
-.state-mid{flex:1;min-width:280px;display:flex;flex-direction:column;gap:6px;border-left:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding-left:22px}
-.state-synth{font-size:13.5px;color:var(--muted);line-height:1.5}
-.state-synth b{color:var(--text);font-weight:700}
-.state-alert{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--text);text-decoration:none;width:fit-content}
-.state-alert .sa-dot{width:7px;height:7px;border-radius:50%;background:var(--act);flex:none}
-.state-alert .sa-txt{color:var(--muted)}
-.state-alert b{font-weight:600}
-.state-alert .sa-go{color:var(--link);font-weight:700;white-space:nowrap}
-.state-alert:hover .sa-go{text-decoration:underline}
-@media(max-width:760px){.state-mid{border-left:none;padding-left:0;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding-top:12px}}
 
 /* ===== section labels ===== */
 .band{display:flex;align-items:center;gap:11px;margin:0 2px 13px}
@@ -1290,9 +1328,6 @@ html[data-lang="zh"] .sb-tx b{letter-spacing:0}
 .ha-when{font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap}
 .ha-detail{padding:0 0 12px 22px;font-size:12.5px;color:var(--text);line-height:1.55}
 .ha-detail a{font-weight:700;color:var(--link)}
-.ha-what{margin:6px 0 7px;padding-top:7px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);font-size:12px;color:var(--muted);line-height:1.5}
-.ha-edge{margin:3px 0 7px;font-size:11.5px;color:var(--text)}
-.ha-edge b{color:var(--muted);font-weight:600}
 .al-more{display:block;text-align:center;padding:11px 0 6px;font-size:12.5px;font-weight:700;color:var(--link);text-decoration:none}
 .al-more:hover{text-decoration:underline}
 
@@ -1300,7 +1335,8 @@ html[data-lang="zh"] .sb-tx b{letter-spacing:0}
 .site-footer .made{display:block;font-size:13.5px;font-weight:700;color:var(--text);letter-spacing:.2px}
 .site-footer .dev{display:block;margin-top:1px;font-size:12px;color:var(--muted)}
 .foot{margin-top:18px;color:var(--muted);font-size:12px;text-align:center}
-a:focus-visible,.links a:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:8px}
+a:focus-visible,.links a:focus-visible,.ha-item summary:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:8px}
+::selection{background:color-mix(in srgb,var(--link) 26%,transparent)}
 
 @keyframes smReveal{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
 .reveal{animation:smReveal .45s cubic-bezier(.2,.7,.3,1) both}
@@ -1354,6 +1390,7 @@ a:focus-visible,.links a:focus-visible{outline:2px solid var(--link);outline-off
 .gd-bar::before{content:'';position:absolute;left:50%;top:-2px;width:1px;height:9px;background:color-mix(in srgb,var(--line) 90%,transparent)}
 .gd-bar i{position:absolute;top:0;height:100%;border-radius:999px}
 .gd-tip-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:7px;color:var(--text)}
+.gd-tip-row .gd-tip-k{width:auto;min-width:58px}  /* let "Confidence" size to its word (gi rows keep the fixed 58px) so the dots aren't crammed against it */
 .gd-dots{letter-spacing:1px;color:var(--info)}
 .gd-lim{font-size:10px;font-weight:700;color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,var(--panel2));padding:1px 6px;border-radius:5px}
 .gd-tip-idx{display:flex;align-items:center;gap:8px;font-size:12.5px;padding-top:8px;border-top:1px solid var(--line);margin-bottom:7px}
@@ -1376,7 +1413,7 @@ a:focus-visible,.links a:focus-visible{outline:2px solid var(--link);outline-off
 .gd-sm{width:26px;height:16px;display:block}
 .gd-r-main{flex:1;display:flex;flex-direction:column;min-width:0;gap:1px}
 .gd-r-idx{font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gd-r-px{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.gd-r-px{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .gd-r-px em{font-style:normal;font-weight:700}
 .gd-r-state{display:flex;flex-direction:column;align-items:flex-end;gap:1px;text-align:right;flex:none}
 .gd-r-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
@@ -1444,6 +1481,11 @@ html[data-lang="zh"] .gd-r-cd .l-zh,html[data-lang="zh"] .gd-r-txt .l-zh{display
 @media (prefers-reduced-motion: reduce){
  #sky-sun,#sky-moon{transition:none}
  #sky-sun::before,#sky-sun::after,#sky-moon::after{animation:none}}
+/* market clock — live index level (.nb-px) + % change (.nb-chg) patched in place
+   by live.js; theme the change color (live.js ships a generic green/red) */
+.gd-clock .nb-chg.up{color:var(--up)}
+.gd-clock .nb-chg.down{color:var(--down)}
+.gd-clock .nb-chg.stale{color:var(--muted)}
 </style>"""
 
 _GLOBE_DECK_DOM = r"""<section class="globe-deck command" aria-label="Global macro regime globe">
@@ -1465,6 +1507,11 @@ _GLOBE_DECK_DOM = r"""<section class="globe-deck command" aria-label="Global mac
 
 _GQUAD_ZH = {"Goldilocks": "理想增长", "Reflation": "再通胀", "Stagflation": "滞胀",
              "Growth scare": "增长恐慌", "Growth-scare": "增长恐慌", "Deflation": "通缩"}
+# regime name -> quadrant colour class, so the commodity pill is tinted by regime
+# (q1 growth+/infl- · q2 growth+/infl+ · q3 growth-/infl+ · q4 growth-/infl-) exactly
+# like the market cards, instead of the flat default accent.
+_GQUAD_CLS = {"Goldilocks": "q1", "Reflation": "q2", "Stagflation": "q3",
+              "Growth scare": "q4", "Growth-scare": "q4", "Deflation": "q4"}
 _GQCLS = {"Q1": "q1", "Q2": "q2", "Q3": "q3", "Q4": "q4"}
 _EZ_MEMBERS = ["AUT", "BEL", "CYP", "EST", "FIN", "FRA", "DEU", "GRC", "IRL", "ITA",
                "LVA", "LTU", "LUX", "MLT", "NLD", "PRT", "SVK", "SVN", "ESP", "HRV"]
@@ -1474,23 +1521,23 @@ _ISO_NUM = {"USA": "840", "CAN": "124", "CHN": "156", "JPN": "392", "KOR": "410"
             "NLD": "528", "PRT": "620", "SVK": "703", "SVN": "705", "ESP": "724", "HRV": "191"}
 _GMETA = {
     "US": dict(iso3="USA", kind="country", flag="🇺🇸", name_en="United States", name_zh="美国",
-               idx_en="S&P 500", idx_zh="标普500", pq="data/yahoo/_GSPC.parquet", tz="America/New_York", open="09:30", close="16:00", lunch=None, href="macro.html"),
+               idx_en="S&P 500", idx_zh="标普500", yahoo="^GSPC", pq="data/yahoo/_GSPC.parquet", tz="America/New_York", open="09:30", close="16:00", lunch=None, href="macro.html"),
     "CA": dict(iso3="CAN", kind="country", flag="🇨🇦", name_en="Canada", name_zh="加拿大",
-               idx_en="S&P/TSX", idx_zh="标普/TSX", pq="data/canada/_GSPTSE.parquet", tz="America/Toronto", open="09:30", close="16:00", lunch=None, href="canada.html"),
+               idx_en="S&P/TSX", idx_zh="标普/TSX", yahoo="^GSPTSE", pq="data/canada/_GSPTSE.parquet", tz="America/Toronto", open="09:30", close="16:00", lunch=None, href="canada.html"),
     "CN": dict(iso3="CHN", kind="country", flag="🇨🇳", name_en="China", name_zh="中国",
-               idx_en="Shanghai Comp", idx_zh="上证综指", pq="data/china/000001.SS.parquet", tz="Asia/Shanghai", open="09:30", close="15:00", lunch=["11:30", "13:00"], href="china.html"),
+               idx_en="Shanghai Comp", idx_zh="上证综指", yahoo="000001.SS", pq="data/china/000001.SS.parquet", tz="Asia/Shanghai", open="09:30", close="15:00", lunch=["11:30", "13:00"], href="china.html"),
     "HK": dict(iso3=None, kind="marker", marker=[114.17, 22.32], flag="🇭🇰", name_en="Hong Kong", name_zh="香港",
-               idx_en="Hang Seng", idx_zh="恒生指数", pq="data/hk/_HSI.parquet", tz="Asia/Hong_Kong", open="09:30", close="16:00", lunch=["12:00", "13:00"], href="hk.html"),
+               idx_en="Hang Seng", idx_zh="恒生指数", yahoo="^HSI", pq="data/hk/_HSI.parquet", tz="Asia/Hong_Kong", open="09:30", close="16:00", lunch=["12:00", "13:00"], href="hk.html"),
     "JP": dict(iso3="JPN", kind="country", flag="🇯🇵", name_en="Japan", name_zh="日本",
-               idx_en="Nikkei 225", idx_zh="日経225", pq="data/intl/_N225.parquet", tz="Asia/Tokyo", open="09:00", close="15:00", lunch=["11:30", "12:30"], href="intl.html"),
+               idx_en="Nikkei 225", idx_zh="日経225", yahoo="^N225", pq="data/intl/_N225.parquet", tz="Asia/Tokyo", open="09:00", close="15:00", lunch=["11:30", "12:30"], href="intl.html"),
     "KR": dict(iso3="KOR", kind="country", flag="🇰🇷", name_en="South Korea", name_zh="韩国",
-               idx_en="KOSPI", idx_zh="韩国综合", pq="data/intl/_KS11.parquet", tz="Asia/Seoul", open="09:00", close="15:30", lunch=None, href="intl.html"),
+               idx_en="KOSPI", idx_zh="韩国综合", yahoo="^KS11", pq="data/intl/_KS11.parquet", tz="Asia/Seoul", open="09:00", close="15:30", lunch=None, href="intl.html"),
     "TW": dict(iso3="TWN", kind="country", flag="🇹🇼", name_en="Taiwan", name_zh="台湾",
-               idx_en="TAIEX", idx_zh="加权指数", pq="data/intl/_TWII.parquet", tz="Asia/Taipei", open="09:00", close="13:30", lunch=None, href="intl.html"),
+               idx_en="TAIEX", idx_zh="加权指数", yahoo="^TWII", pq="data/intl/_TWII.parquet", tz="Asia/Taipei", open="09:00", close="13:30", lunch=None, href="intl.html"),
     "GB": dict(iso3="GBR", kind="country", flag="🇬🇧", name_en="United Kingdom", name_zh="英国",
-               idx_en="FTSE 100", idx_zh="富时100", pq="data/intl/_FTSE.parquet", tz="Europe/London", open="08:00", close="16:30", lunch=None, href="intl.html"),
+               idx_en="FTSE 100", idx_zh="富时100", yahoo="^FTSE", pq="data/intl/_FTSE.parquet", tz="Europe/London", open="08:00", close="16:30", lunch=None, href="intl.html"),
     "EZ": dict(iso3=None, kind="bloc", ez_members=_EZ_MEMBERS, flag="🇪🇺", name_en="Eurozone", name_zh="欧元区",
-               idx_en="EuroStoxx 50", idx_zh="欧洲斯托克50", pq="data/intl/_STOXX50E.parquet", tz="Europe/Berlin", open="09:00", close="17:30", lunch=None, href="intl.html"),
+               idx_en="EuroStoxx 50", idx_zh="欧洲斯托克50", yahoo="^STOXX50E", pq="data/intl/_STOXX50E.parquet", tz="Europe/Berlin", open="09:00", close="17:30", lunch=None, href="intl.html"),
 }
 _GRISK = {"q1": ("calm — low macro stress", "平静 — 宏观压力低"),
           "q2": ("moderate — reflationary", "中等 — 再通胀"),
@@ -1570,7 +1617,7 @@ def _globe_markets() -> list:
             "data_limited": data_limited, "recession": recession, "drawdown_risk": drawdown,
             "risk_text_en": rt_en, "risk_text_zh": rt_zh, "macro_asof": asof,
             "index_name_en": m["idx_en"], "index_name_zh": m["idx_zh"],
-            "index_price": price, "index_chg_pct": chg,
+            "index_sym": m["yahoo"], "index_price": price, "index_chg_pct": chg,
             "tz": m["tz"], "open": m["open"], "close": m["close"], "lunch": m["lunch"], "href": m["href"],
         })
     for r in rows:
@@ -1645,8 +1692,10 @@ def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watch
     bd_bar = ('<div class="bar b-health"><i style="width:' + str(b_score) + '%"></i></div>') if b_score is not None else ""
     bd_pill = (_bi("Health " + str(b_score) + " · " + (b_phase or "late"), "健康 " + str(b_score) + " · " + ("晚期" if str(b_phase).startswith("late") else b_phase))) if b_score is not None else _bi("Bond health", "债券健康")
     bd = bd_bar + '<div class="chips"><span class="pill">' + bd_pill + '</span></div>'
-    com_q = _quad_cls(name=(commodities or {}).get("label", "")) if "_quad_cls" in globals() else ""
-    com = ('<div class="chips"><span class="pill ' + com_q + '">' + _bi((commodities or {}).get("label", "—"), (commodities or {}).get("label", "—"))
+    com_label = (commodities or {}).get("label", "—")
+    com_q = _GQUAD_CLS.get(com_label, "")   # tint the pill by regime quadrant (was a no-op guard)
+    # zh users previously saw the English regime word ("Goldilocks") — translate it
+    com = ('<div class="chips"><span class="pill ' + com_q + '">' + _bi(com_label, _GQUAD_ZH.get(com_label, com_label))
            + '</span>' + ('<span class="pill">' + _bi("Favored: " + fav, "偏好：" + fav) + '</span>' if fav else "") + '</div>')
     fx = '<div class="chips"><span class="pill">' + _bi((forex or {}).get("label", "—") + ((" · " + fx_risk) if fx_risk else ""), (forex or {}).get("label", "—") + ((" · " + fx_risk) if fx_risk else "")) + '</span></div>'
     xa = '<div class="chips"><span class="pill">' + _bi((crossasset or {}).get("regime", "—") + ((" · " + ca_corr) if ca_corr else ""), (crossasset or {}).get("regime", "—") + ((" · " + ca_corr) if ca_corr else "")) + '</span></div>'
@@ -1736,10 +1785,10 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
     head = (HUB_MARKER + "\n"
             '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-            '<title>Market Intelligence</title>\n'
+            '<title>MASTERMIND</title>\n'
             "<script>try{var h=new Date().getHours(),tod=(h>=7&&h<19)?'light':'dark',t=localStorage.getItem('theme'),a=localStorage.getItem('themeAuto');if(!t||a){t=tod;localStorage.setItem('theme',t);localStorage.setItem('themeAuto','1');}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>\n"
             '<link rel="stylesheet" href="theme.css">\n'
-            '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">\n'
+            '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">\n'
             + _GLOBE_HUB_CSS + "</head><body>")
 
     body = (
@@ -1772,10 +1821,10 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         '</div>'
         '<header class="h"><span class="eyebrow"><span class="live"></span>'
         + _bi("Live · zero-cost data engine · updated " + built, "实时 · 零成本数据引擎 · 更新于 " + built)
-        + '</span><h1>' + _bi("Market Intelligence", "市场情报") + '</h1>'
+        + '</span><h1 class="hub-logo">' + _BRAND_MARK_SVG
+        + '<span class="logo-word">MASTERMIND</span></h1>'
         '<p>' + _bi("Regime dashboards across every major asset class — one mechanical, backtested engine.",
                     "覆盖各大类资产的市场周期仪表盘——一套机械化、经回测的引擎。") + '</p></header>'
-        '<div class="band"><h2>' + _bi("Global macro regime", "全球宏观周期") + '</h2><span class="ln"></span></div>'
         + globe_deck + markets + vectors + alerts_html
         + '<div class="foot">' + _bi("Built " + built + " · mechanical, backtested, free public data · not investment advice",
                                       "生成于 " + built + " · 机械化 · 经回测 · 免费公开数据 · 非投资建议") + '</div>'
@@ -1789,6 +1838,10 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         '<script defer src="globe-deck.js"></script>'
         '<script defer src="sky.js"></script>'
         '<script src="theme.js"></script>'
+        # live-price layer (progressive enhancement) — patches the Market clock's
+        # .nb-px/.nb-chg index rows; no-ops when no Worker/snapshot URL is configured.
+        '<script src="live_config.js"></script>'
+        '<script src="live.js"></script>'
         '</body></html>'
     )
     return head + body
@@ -2051,7 +2104,7 @@ def main() -> int:
 
     eq = alloc_equity(close, sig["alloc_optimal"])
     hodl = (1 + close.pct_change().fillna(0)).cumprod()
-    sizing = alloc_sizing(last, eq, config.load()["vector"]["allocation"])
+    asizing = alloc_sizing(last, eq, config.load()["vector"]["allocation"])  # conviction/brake/bottom-overlay decomposition
     cards = {v: scorecard(close, sig[f"alloc_{v}"])
              for v in ("conservative", "moderate", "aggressive", "optimal")}
 
@@ -2134,6 +2187,69 @@ def main() -> int:
         log.warning("master signal synthesis failed (%s)", e)
         master = {"ok": False}
 
+    # Five-tier macro-regime composite (engine/btc_regime.py). DISPLAY-ONLY — the P0
+    # kill-test showed it does NOT beat the hand-tuned allocator OOS, so it never sizes;
+    # it is a transparent, falsifiable avoidance instrument. Never break the build.
+    try:
+        from engine import btc_regime
+        regime = btc_regime.compute(sig, calib)
+    except Exception as e:  # noqa: BLE001 — the regime scorecard is optional
+        log.warning("regime composite failed (%s)", e)
+        regime = {"ok": False}
+    if regime.get("ok"):           # P3 falsifier: re-validate the impulse legs + refresh the gate
+        try:                       # BEFORE the radar leg below, so it reads a fresh verdict
+            from engine import btc_impulse_radar_backtest
+            _gv = btc_impulse_radar_backtest.validate(sig)
+            if _gv.get("ok"):
+                btc_impulse_radar_backtest.write_gate(_gv)
+        except Exception as _ge:   # noqa: BLE001 — falsifier is additive
+            log.warning("impulse falsifier skipped (%s)", _ge)
+    if regime.get("ok"):           # deferred CONTEXT legs (display-only; each degrades to ok:False)
+        legs = {}
+        for _mod, _key in (("btc_netliq", "netliq"), ("btc_leverage_cascade", "leverage"),
+                           ("btc_impulse_radar", "impulse_radar"),
+                           ("btc_intraday_cvd", "intraday_cvd"),
+                           ("btc_dat", "dat"), ("etf_perfund", "etf_perfund")):
+            try:
+                _m = __import__(f"engine.{_mod}", fromlist=["x"])
+                if _mod == "etf_perfund":
+                    legs[_key] = _m.read_perfund()
+                elif _mod == "btc_dat":               # reads a manual json drop + parquet close, not the df
+                    legs[_key] = _m.compute()
+                else:
+                    legs[_key] = _m.compute(sig)       # btc_netliq / cascade / impulse_radar take the df
+            except Exception as _le:  # noqa: BLE001 — context legs are optional
+                legs[_key] = {"ok": False, "reason": f"{type(_le).__name__}"}
+        regime["context_legs"] = legs
+        _cvd = legs.get("intraday_cvd") or {}      # LOUD alarm if the hourly aggressor-CVD
+        if _cvd.get("ok") and _cvd.get("stale"):   # feed silently freezes (audit HIGH) — shows
+            log.warning("::warning:: intraday aggressor-CVD STALE — okx hourly lags %s h behind "  # in the daily run summary
+                        "the live reference; the feed has STOPPED accruing — check OKX rubik 1H",
+                        _cvd.get("hours_behind_ref"))
+        if _cvd.get("ok") and _cvd.get("gap_detected"):
+            log.warning("::warning:: intraday aggressor-CVD: unbackfillable >30d gap in the hourly "
+                        "history — cumsum restarted after the gap")
+        try:                       # P3 forward-outcome ledger: stamp today + grade matured rows
+            from engine import btc_impulse_ledger
+            btc_impulse_ledger.stamp(legs.get("impulse_radar"), sig)
+            regime["impulse_ledger"] = btc_impulse_ledger.grade(sig)
+        except Exception as _il:   # noqa: BLE001 — ledger is additive
+            log.warning("impulse ledger skipped (%s)", _il)
+    if regime.get("ok"):           # accrue the falsifiable forward ledger (context-only, separate)
+        try:
+            from engine import btc_regime_ledger
+            btc_regime_ledger.stamp(regime)
+            btc_regime_ledger.falsifier_status()          # writes regime_falsifiers.json
+            regime["ledger"] = btc_regime_ledger.render_summary()
+        except Exception as le:    # noqa: BLE001 — ledger is optional / may not exist yet
+            log.warning("regime ledger failed (%s)", le)
+    if regime.get("ok"):           # persist the COMPLETE scorecard (legs + ledger included)
+        try:
+            (config.data_dir() / "vector" / "regime_latest.json").write_text(
+                json.dumps(regime, default=str, separators=(",", ":")))
+        except Exception as we:    # noqa: BLE001
+            log.warning("regime persist failed (%s)", we)
+
     # Forward-return CONES (empirical, regime-conditioned) + the RECOMMENDATION engine —
     # the command-center decision layer (engine/btc_recommend.py). Never break the build.
     try:
@@ -2206,7 +2322,7 @@ def main() -> int:
         "alt_leader": last.get("alt_cycle_leader", "BTC"),
         "market_mode": last["market_mode"],
         "alloc_pct": round(100 * last["alloc_optimal"]),
-        "alloc_sizing": sizing,
+        "alloc_sizing": asizing,
         # ---- accuracy-upgrade layers (Tier 1/1b/2) ----
         "composite_state": last.get("composite_state", "NEUTRAL"),
         "composite_context": last.get("composite_context", ""),
@@ -2405,6 +2521,7 @@ def main() -> int:
         },
         "breadth": breadth,
         "master": master,
+        "regime": regime,
         "cones": cones,
         "rec": recommendation,
         "newf": newf,

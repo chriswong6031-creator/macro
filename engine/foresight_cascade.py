@@ -1,0 +1,257 @@
+"""Foresight Cascade — the per-theme STAGE machine of the Thematic Foresight Desk
+(research/THEMATIC_FORESIGHT_DESK.md). v1 = T1 (bottleneck) x T4 (revision breadth).
+
+The desk's one number is not a score, it is a STAGE — where the leading edge of a theme
+is right now — because that is what tells you whether there is edge REMAINING:
+
+  PRECIPICE   bottleneck TIGHT + revision breadth FLAT/low      -> early; thesis; size small
+              (the June-2024 HBM state: supply sold out, estimates not yet moving)
+  BROADENING  bottleneck TIGHT + breadth RISING/positive        -> revision wave underway; runway confirmed
+  RE-RATING   breadth already broad/high                        -> late; await dislocation, do NOT chase
+  GLUT-RISK   bottleneck LOOSE while estimates still high        -> supply catching up; exit clock
+  WATCH       neither firing                                    -> nothing here yet
+
+Entry is NOT decided here. Detection tells you WHAT and THAT IT'S DURABLE; it does not tell
+you WHEN to pay up. The buy is deferred to the dislocation/anticipation overlay (wired in
+Phase 1) — 13D was right and ~9 months early, and the real HBM entry was the early-2025
+tariff flush, not the day estimates ticked up. DISPLAY-ONLY; ranks by EDGE REMAINING
+(PRECIPICE first), per the house convention that elevated agreement is late, not better.
+"""
+from __future__ import annotations
+
+import json
+import logging
+from datetime import datetime, timezone
+
+from lib import config
+
+log = logging.getLogger(__name__)
+
+TIGHT_BANDS = {"TIGHT", "SOLD_OUT"}
+LOOSE_BANDS = {"LOOSE"}
+BROAD_HI = 0.50            # breadth above this = revisions already broad (late)
+_STAGE_RANK = {"PRECIPICE": 0, "BROADENING": 1, "RE-RATING": 2, "GLUT-RISK": 3,
+               "WATCH": 4, "UNKNOWN": 5}
+
+
+GLUT_BANDS = {"GLUT_FORMING", "GLUT"}
+
+
+def _stage(bn: dict | None, rv: dict | None, glut_band: str | None = None) -> tuple[str, str]:
+    """Return (stage, rationale). Honest about missing tiers."""
+    band = (bn or {}).get("band")
+    tight = band in TIGHT_BANDS
+    loose = band in LOOSE_BANDS
+    bn_known = bn is not None and band not in (None, "AWAITING_DATA")
+
+    breadth = (rv or {}).get("breadth")
+    lvl = (rv or {}).get("level_state")
+    flat = lvl == "FLAT_LOW" or (breadth is not None and abs(breadth) < 0.10)
+    positive = breadth is not None and breadth > 0
+    broad_hi = breadth is not None and breadth > BROAD_HI
+    rv_known = rv is not None and breadth is not None
+    glut_on = glut_band in GLUT_BANDS
+
+    if not bn_known and not rv_known and not glut_on:
+        return "UNKNOWN", "no bottleneck or revision data for this theme"
+    # exit-risk takes precedence: supply catching up while estimates are still elevated is
+    # the moment to trim, regardless of how tight supply WAS
+    if glut_on and (positive or broad_hi):
+        return "GLUT-RISK", (f"glut {glut_band.lower().replace('_', ' ')} (supply catching up) "
+                             "while estimates still high — trim / exit clock")
+    if not bn_known:
+        # revisions only — can flag late-ness, cannot confirm the durable thesis
+        if broad_hi:
+            return "RE-RATING", "revisions already broad (bottleneck unknown) — likely late"
+        if flat:
+            return "WATCH", "revisions flat (bottleneck unknown)"
+        return "WATCH", "revisions present (bottleneck unknown)"
+
+    # bottleneck known
+    if tight and rv_known and flat:
+        return "PRECIPICE", "supply TIGHT while revisions not yet firing — the early state"
+    if tight and rv_known and broad_hi:
+        return "RE-RATING", "supply TIGHT but revisions already broad — runway maturing, do not chase"
+    if tight and positive:
+        return "BROADENING", "supply TIGHT and revisions rising — runway confirmed"
+    if tight:
+        return "PRECIPICE", "supply TIGHT, revisions undetermined — treat as early"
+    if loose and positive:
+        return "GLUT-RISK", "supply loosening while estimates still high — exit clock"
+    return "WATCH", "supply not tight; nothing actionable yet"
+
+
+THESIS_STAGES = {"PRECIPICE", "BROADENING"}
+BUYABLE_VERDICTS = {"buyable_washout"}
+
+
+def _dislocation_context() -> dict | None:
+    """Read the existing dislocation gate (engine/dislocation.py) for the entry overlay.
+    Degrades to None if latest.json absent."""
+    p = config.data_dir() / "regime" / "latest.json"
+    if not p.exists():
+        return None
+    try:
+        d = json.loads(p.read_text()).get("dislocation")
+    except Exception:  # noqa: BLE001
+        return None
+    if not isinstance(d, dict):
+        return None
+    return {"active": bool(d.get("active")), "headline": d.get("headline"),
+            "verdict": d.get("verdict"), "state": d.get("state") or d.get("verdict")}
+
+
+def _entry(stage: str, disloc: dict | None) -> tuple[bool, str]:
+    """Entry overlay — detection tells you WHAT/that-it's-durable; the BUY waits for a
+    dislocation/flush. 13D was right & ~9mo early; the real HBM entry was the early-2025
+    tariff flush. So entry_ready only when a thesis-stage theme meets an active buyable
+    dislocation."""
+    if stage not in THESIS_STAGES:
+        if stage == "RE-RATING":
+            return False, "late — revisions already broad; do not chase, wait for a reset"
+        return False, "not a thesis stage — no entry"
+    if not disloc:
+        return False, "thesis intact — await a dislocation/flush to enter (no signal wired)"
+    if disloc.get("verdict") in BUYABLE_VERDICTS or disloc.get("active"):
+        return True, "ENTRY WINDOW — thesis stage + active dislocation (buy the flush, not the pop)"
+    return False, "thesis intact — await a dislocation/flush to enter"
+
+
+def compute_foresight_cascade(bottleneck: dict | None = None,
+                              revisions: dict | None = None,
+                              demand: dict | None = None,
+                              glut: dict | None = None,
+                              write_ledger: bool = True) -> dict | None:
+    """Combine T1 (bottleneck) x T2 (demand) x T4 (revisions) x exit-risk (glut) into a
+    per-theme stage + entry overlay. Computes any input not supplied."""
+    if bottleneck is None:
+        try:
+            from engine.bottleneck import compute_bottleneck
+            bottleneck = compute_bottleneck(write_ledger=False)
+        except Exception as e:  # noqa: BLE001
+            log.warning("cascade: bottleneck failed: %s", e)
+            bottleneck = None
+    if revisions is None:
+        try:
+            from engine.theme_revisions import compute_theme_revisions
+            revisions = compute_theme_revisions(write_ledger=False)
+        except Exception as e:  # noqa: BLE001
+            log.warning("cascade: theme_revisions failed: %s", e)
+            revisions = None
+    if demand is None:
+        try:
+            from engine.demand_capex import compute_demand_capex
+            demand = compute_demand_capex()
+        except Exception as e:  # noqa: BLE001
+            log.warning("cascade: demand_capex failed: %s", e)
+            demand = None
+    if glut is None:
+        try:
+            from engine.glut_watch import compute_glut_watch
+            glut = compute_glut_watch(demand=demand, write_ledger=False)
+        except Exception as e:  # noqa: BLE001
+            log.warning("cascade: glut_watch failed: %s", e)
+            glut = None
+
+    bn_themes = (bottleneck or {}).get("themes") or {}
+    rv_themes = (revisions or {}).get("themes") or {}
+    dm_themes = (demand or {}).get("themes") or {}
+    gl_themes = (glut or {}).get("themes") or {}
+    keys = set(bn_themes) | set(rv_themes) | set(dm_themes)
+    if not keys:
+        return None
+    disloc = _dislocation_context()
+
+    rows = []
+    for k in keys:
+        bn, rv, dm, gl = bn_themes.get(k), rv_themes.get(k), dm_themes.get(k), gl_themes.get(k)
+        gband = (gl or {}).get("band")
+        stage, rationale = _stage(bn, rv, gband)
+        # demand is a LEADING confirmation/conviction modifier on the rationale, not a
+        # stage-changer (the stage is bottleneck x revision x exit-risk; demand reinforces)
+        dband = (dm or {}).get("demand_band")
+        if dm and stage in THESIS_STAGES and dband in ("ACCELERATING", "STEADY"):
+            rationale += f" · customer capex {dband.lower()} (+{(dm.get('capex_yoy') or 0):.0f}% YoY) confirms demand"
+        elif dm and dband in ("COOLING", "CONTRACTING") and stage != "GLUT-RISK":
+            rationale += f" · CAUTION: customer capex {dband.lower()}"
+        entry_ready, entry_note = _entry(stage, disloc)
+        rows.append({
+            "theme": k,
+            "name": (rv or bn or dm or {}).get("name", k),
+            "stage": stage,
+            "rationale": rationale,
+            "entry_ready": entry_ready,
+            "entry_note": entry_note,
+            "bottleneck_band": (bn or {}).get("band"),
+            "tightness": (bn or {}).get("tightness"),
+            "bottleneck_regime": (bn or {}).get("regime"),
+            "demand_band": dband,
+            "demand_strength": (dm or {}).get("strength"),
+            "capex_yoy": (dm or {}).get("capex_yoy"),
+            "revision_breadth": (rv or {}).get("breadth"),
+            "revision_level": (rv or {}).get("level_state"),
+            "broadening_state": (rv or {}).get("broadening_state"),
+            "est_drift_90d": (rv or {}).get("est_drift_90d"),
+            "glut_band": gband,
+            "glut_score": (gl or {}).get("glut_score"),
+        })
+    # rank by edge remaining (stage), then surface AI-capex beneficiaries, then by the
+    # sharpest physical/estimate read available (tightness if known, else revision breadth)
+    def _key(r):
+        sharp = r["tightness"] if r["tightness"] is not None else (r["revision_breadth"] or -9)
+        return (_STAGE_RANK.get(r["stage"], 9), 0 if r["demand_band"] else 1, -sharp)
+    rows.sort(key=_key)
+
+    payload = {
+        "asof": (revisions or {}).get("asof") or (bottleneck or {}).get("asof"),
+        "n_themes": len(rows),
+        "themes": rows,
+        "dislocation": disloc,
+        "demand_pool": {"bn": (demand or {}).get("pool_bn"), "yoy": (demand or {}).get("pool_yoy"),
+                        "trend": (demand or {}).get("pool_trend")} if demand else None,
+        "note": ("display-only; STAGE = where the leading edge is. T1 bottleneck LEADS, T2 "
+                 "demand confirms, T4 revisions confirm, exit-risk caps the late ones; the "
+                 "0-100 score ranks edge+quality. ENTRY is deferred to the dislocation overlay."),
+    }
+    # Phase-5 investability rubric: annotate each row with a 0-100 score and re-rank by it
+    # (additive — the cascade is unchanged if scoring fails).
+    try:
+        from engine.foresight_score import annotate
+        payload = annotate(payload) or payload
+    except Exception as e:  # noqa: BLE001
+        log.warning("cascade scoring failed: %s", e)
+    if write_ledger:
+        try:
+            _append_ledger(payload)
+        except Exception as e:  # noqa: BLE001
+            log.warning("cascade ledger append failed: %s", e)
+    return payload
+
+
+def _append_ledger(payload: dict) -> None:
+    """Append-only: one row per (theme, asof) for PRECIPICE/BROADENING flags — the
+    actionable thesis stages, graded forward against basket return + drawdown."""
+    d = config.data_dir() / "foresight"
+    d.mkdir(parents=True, exist_ok=True)
+    p = d / "log.jsonl"
+    seen = set()
+    if p.exists():
+        for line in p.read_text().splitlines():
+            try:
+                e = json.loads(line)
+                seen.add((e.get("theme"), e.get("asof")))
+            except Exception:  # noqa: BLE001
+                continue
+    ts = datetime.now(timezone.utc).isoformat()
+    asof = payload.get("asof")
+    lines = []
+    for r in payload["themes"]:
+        if r["stage"] not in ("PRECIPICE", "BROADENING") or (r["theme"], asof) in seen:
+            continue
+        lines.append(json.dumps({
+            "theme": r["theme"], "asof": asof, "ts": ts, "stage": r["stage"],
+            "bottleneck_band": r["bottleneck_band"], "revision_breadth": r["revision_breadth"],
+        }, separators=(",", ":")))
+    if lines:
+        with p.open("a") as fh:
+            fh.write("\n".join(lines) + "\n")

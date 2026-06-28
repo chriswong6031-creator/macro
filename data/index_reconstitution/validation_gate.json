@@ -1,0 +1,282 @@
+{
+  "schema": "index_reconstitution.gate.v1",
+  "generated_at": "2026-06-21 13:57 UTC",
+  "window_start": "2019-01-01",
+  "recent_start": "2023-01-01",
+  "scored": false,
+  "add_scored": false,
+  "del_scored": false,
+  "weight": 0.0,
+  "results": {
+    "add": {
+      "n": 1541,
+      "pre_runup": {
+        "n": 1254,
+        "n_months": 88,
+        "mean_abn": 0.0204,
+        "median_abn": 0.0104,
+        "hit_rate": 0.559,
+        "hac_t": 4.5,
+        "p": 0.0
+      },
+      "post": {
+        "5": {
+          "n": 1309,
+          "n_months": 88,
+          "mean_abn": -0.0001,
+          "median_abn": -0.0017,
+          "hit_rate": 0.477,
+          "hac_t": 0.81,
+          "p": 0.4202
+        },
+        "10": {
+          "n": 1309,
+          "n_months": 88,
+          "mean_abn": -0.0053,
+          "median_abn": -0.0102,
+          "hit_rate": 0.413,
+          "hac_t": 0.63,
+          "p": 0.5303
+        },
+        "21": {
+          "n": 1305,
+          "n_months": 87,
+          "mean_abn": -0.0073,
+          "median_abn": -0.0136,
+          "hit_rate": 0.438,
+          "hac_t": -0.53,
+          "p": 0.5988
+        }
+      },
+      "post_recent_21": {
+        "n": 466,
+        "n_months": 39,
+        "mean_abn": -0.0014,
+        "median_abn": -0.005,
+        "hit_rate": 0.479,
+        "hac_t": -0.78,
+        "p": 0.434
+      }
+    },
+    "delete": {
+      "n": 952,
+      "pre_runup": {
+        "n": 536,
+        "n_months": 80,
+        "mean_abn": -0.019,
+        "median_abn": -0.0166,
+        "hit_rate": 0.394,
+        "hac_t": -2.0,
+        "p": 0.0453
+      },
+      "post": {
+        "5": {
+          "n": 563,
+          "n_months": 83,
+          "mean_abn": 0.0081,
+          "median_abn": 0.0017,
+          "hit_rate": 0.508,
+          "hac_t": 2.14,
+          "p": 0.0325
+        },
+        "10": {
+          "n": 563,
+          "n_months": 83,
+          "mean_abn": 0.0069,
+          "median_abn": 0.0003,
+          "hit_rate": 0.501,
+          "hac_t": 2.11,
+          "p": 0.0349
+        },
+        "21": {
+          "n": 560,
+          "n_months": 82,
+          "mean_abn": 0.0139,
+          "median_abn": 0.0032,
+          "hit_rate": 0.511,
+          "hac_t": 1.75,
+          "p": 0.0802
+        }
+      },
+      "post_recent_21": {
+        "n": 323,
+        "n_months": 37,
+        "mean_abn": 0.0025,
+        "median_abn": 0.0049,
+        "hit_rate": 0.52,
+        "hac_t": 1.02,
+        "p": 0.3066
+      }
+    }
+  },
+  "add_by_index_post21": {
+    "sp500": {
+      "n": 151,
+      "n_months": 69,
+      "mean_abn": -0.0079,
+      "median_abn": -0.0111,
+      "hit_rate": 0.457,
+      "hac_t": -0.41,
+      "p": 0.6823
+    },
+    "sp400": {
+      "n": 288,
+      "n_months": 83,
+      "mean_abn": 0.0161,
+      "median_abn": 0.0031,
+      "hit_rate": 0.517,
+      "hac_t": 1.09,
+      "p": 0.2743
+    },
+    "sp600": {
+      "n": 866,
+      "n_months": 73,
+      "mean_abn": -0.0151,
+      "median_abn": -0.018,
+      "hit_rate": 0.408,
+      "hac_t": -1.27,
+      "p": 0.2021
+    }
+  },
+  "runup_alive": true,
+  "announce": {
+    "window": [
+      -5,
+      0
+    ],
+    "all_cohorts": {
+      "n": 1270,
+      "n_months": 88,
+      "mean_abn": 0.0126,
+      "median_abn": 0.0083,
+      "hit_rate": 0.565,
+      "hac_t": 5.52,
+      "p": 0.0
+    },
+    "pure_gross": {
+      "n": 902,
+      "n_months": 86,
+      "mean_abn": 0.0161,
+      "median_abn": 0.0108,
+      "hit_rate": 0.582,
+      "hac_t": 4.59,
+      "p": 0.0
+    },
+    "pure_gross_recent": {
+      "n": 270,
+      "n_months": 40,
+      "mean_abn": 0.0204,
+      "median_abn": 0.0201,
+      "hit_rate": 0.663,
+      "hac_t": 5.05,
+      "p": 0.0
+    },
+    "migration_gross": {
+      "n": 348,
+      "n_months": 73,
+      "mean_abn": 0.0023,
+      "median_abn": 0.0006,
+      "hit_rate": 0.509,
+      "hac_t": 1.09,
+      "p": 0.2741
+    },
+    "pure_by_index": {
+      "sp500": {
+        "n": 77,
+        "n_months": 51,
+        "mean_abn": 0.0119,
+        "median_abn": 0.0088,
+        "hit_rate": 0.571,
+        "hac_t": 1.24,
+        "p": 0.216
+      },
+      "sp400": {
+        "n": 164,
+        "n_months": 67,
+        "mean_abn": 0.0192,
+        "median_abn": 0.0164,
+        "hit_rate": 0.64,
+        "hac_t": 2.48,
+        "p": 0.0131
+      },
+      "sp600": {
+        "n": 661,
+        "n_months": 71,
+        "mean_abn": 0.0158,
+        "median_abn": 0.0092,
+        "hit_rate": 0.569,
+        "hac_t": 5.22,
+        "p": 0.0
+      }
+    },
+    "pure_net_by_index": {
+      "sp500": {
+        "n": 77,
+        "n_months": 51,
+        "mean_abn": 0.0099,
+        "median_abn": 0.0068,
+        "hit_rate": 0.545,
+        "hac_t": 1.05,
+        "p": 0.293
+      },
+      "sp400": {
+        "n": 164,
+        "n_months": 67,
+        "mean_abn": 0.0132,
+        "median_abn": 0.0104,
+        "hit_rate": 0.598,
+        "hac_t": 1.96,
+        "p": 0.0498
+      },
+      "sp600": {
+        "n": 661,
+        "n_months": 71,
+        "mean_abn": 0.0038,
+        "median_abn": -0.0028,
+        "hit_rate": 0.477,
+        "hac_t": 4.13,
+        "p": 0.0
+      }
+    },
+    "net_cost_assumed": {
+      "sp500": 0.002,
+      "sp400": 0.006,
+      "sp600": 0.012
+    },
+    "cohort_counts": {
+      "pure": 1140,
+      "migration": 381,
+      "readd": 20
+    }
+  },
+  "announce_gross_scored": true,
+  "announce_net_scored": false,
+  "announce_tiers": {
+    "sp500": false,
+    "sp400": true,
+    "sp600": true
+  },
+  "min_events": 40,
+  "t_bar": 2.0,
+  "note": "PURE/net-new ADD announcement\u2192effective [-5,0] run-up is real & recent (+0.0161, t=4.59; recent t=5.05); migrations are ~0 (t=1.09) \u2014 so screen to PURE adds. BUT net of small-cap cost the TYPICAL name loses (sp600 net median=-0.0028, hit=0.477) \u2192 a NET-OF-COST MIRAGE. Leg ships DISPLAY-ONLY context (fresh pure-add catalysts), scoring gate CLOSED; the net edge lives only in the announcement-overnight gap, which needs intraday opens to validate.",
+  "overnight": {
+    "n": 897,
+    "window": [
+      -5,
+      0
+    ],
+    "overnight_logsum": {
+      "mean": 0.0141,
+      "share": 1.04,
+      "hac_t": 5.22
+    },
+    "intraday_logsum": {
+      "mean": -0.0006,
+      "share": -0.04,
+      "hac_t": 0.11
+    },
+    "overnight_dominated": true,
+    "gross_only": true,
+    "note": "the pure-add run-up is OVERNIGHT-dominated (GROSS) \u2014 it accrues in the close\u2192open gaps, not intraday. Capturing it would need a close-buy/open-sell execution on the live announcement feed (forward accrual); the open-auction spread + impact on these small-cap names is UNMODELED, so this overnight figure is a GROSS UPPER BOUND, not a net edge"
+  }
+}

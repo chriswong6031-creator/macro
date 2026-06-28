@@ -20,6 +20,35 @@ from lib import config, store
 log = logging.getLogger(__name__)
 
 
+def freshness_stamp(asof, now=None, max_age_sessions: int = 1) -> dict:
+    """PIT freshness/staleness stamp for the contract (research/RISK_FLIP_2026-06-22.md).
+
+    On 2026-06-22 the downstream bot consumed a 2026-06-18 contract through the whole
+    session — Juneteenth (Fri 06-19) + the weekend meant no newer session existed, and
+    the daily build only lands post-close (22:40 UTC), yet latest.json carried NO
+    freshness stamp, so a 4-calendar-day-old read was treated as a live all-clear. This
+    stamps asof + build wall-clock + session age so a consumer can DISCOUNT a stale
+    contract. PURE (now injectable for tests). `age_sessions` is a holiday-agnostic
+    weekday count — coarse, and it errs toward flagging stale. Degrade-never-raise."""
+    if now is None:
+        now = pd.Timestamp.now(tz="UTC").tz_localize(None)
+    asof_d, now_d = pd.Timestamp(asof).normalize(), pd.Timestamp(now).normalize()
+    age_days = max(0, int((now_d - asof_d).days))
+    age_sessions = (max(0, len(pd.bdate_range(asof_d, now_d)) - 1)
+                    if now_d >= asof_d else 0)
+    return {
+        "asof": str(pd.Timestamp(asof).date()),
+        "built_at": pd.Timestamp(now).isoformat(timespec="seconds") + "Z",
+        "age_days": age_days,
+        "age_sessions": age_sessions,
+        "max_age_sessions": int(max_age_sessions),
+        "stale": bool(age_sessions > int(max_age_sessions)),
+        "note": ("contract asof vs build time; the daily build lands post-close "
+                 "(22:40 UTC) so a consumer reading intraday should expect asof = "
+                 "prior session — recompute age against built_at at read time."),
+    }
+
+
 def confirming_contradicting(regime: pd.DataFrame, asof: pd.Timestamp) -> tuple[list, list]:
     row = regime.loc[asof]
     confirming, contradicting = [], []
@@ -98,6 +127,16 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("conditions layer failed: %s", e)
         latest["conditions"] = None
+    # Business-cycle model: Conference-Board-style Leading / Coincident / Lagging tiers
+    # kept SEPARATE so the lead-lag SEQUENCE is legible (where conditions.recession_risk
+    # blends them). Reads the FRED/price store directly; additive, never fatal.
+    # See engine/business_cycle.py + reports/business-cycle-validation.md.
+    try:
+        from engine.business_cycle import business_cycle_snapshot
+        latest["business_cycle"] = business_cycle_snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("business-cycle layer failed: %s", e)
+        latest["business_cycle"] = None
     # Catalyst tone (LLM Tier-A): a DIGEST of the most recent public catalyst (FOMC
     # statement) as honest CONTEXT only. Default-off LEAF (engine/catalyst_tone.py);
     # None when disabled or nothing recent. NEVER enters the deterministic scoring path.
@@ -127,6 +166,19 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("cross-asset layer failed: %s", e)
         latest["cross_asset"] = None
+    # Whole-market dealer-gamma vol regime: are dealers SHORT gamma (hedging WITH price
+    # -> moves amplify, the air-pocket precondition) or LONG (pinning / vol suppressed)?
+    # The SAME deriver that renders the dashboard banner (engine.market_gamma.view, used
+    # by scripts/build_site.py) so the contract and the FE can NEVER drift. STEADY-STATE
+    # — reports the standing regime every build, unlike the episodic gex_flip_cross alert
+    # that fires only on a crossing. Additive leaf (engine/market_gamma.py): reads the
+    # validated index GEX store (cboe/gex) and degrades to None if it is missing/empty.
+    try:
+        from engine.market_gamma import snapshot as market_gamma_snapshot
+        latest["market_gamma"] = market_gamma_snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("market-gamma layer failed: %s", e)
+        latest["market_gamma"] = None
     # Market-driver attribution: WHICH cross-asset force is moving the tape this
     # week (Fed repricing / real-rate / USD / credit / liquidity / China / oil /
     # AI-semis / crypto) + evidence + invalidation. Deterministic fingerprints over
@@ -198,6 +250,20 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("rate/inflation transmission layer failed: %s", e)
         latest["rate_inflation_transmission"] = None
+    # YIELD-CURVE analytics (research/YIELD_CURVE_ENGINE.md): the unified interest-rate
+    # read — shape (level/slope/curvature + the Litterman-Scheinkman PCA variance), every
+    # canonical slope + its momentum, the bull/bear × steepener/flattener regime with its
+    # Fed-cycle phase and asset map, the recession dashboard (near-term forward spread +
+    # NY-Fed probit + un-inversion + TP-adjusted), forward rates with carry/roll-down, and
+    # four typed signal families (core-macro / sector / stock-factor / market-tendency).
+    # DISPLAY-ONLY leaf (engine/yield_curve.py) reusing the bond-engine curve primitives;
+    # the scored-leg gate found NO curve leg robust enough to score. Never fatal.
+    try:
+        from engine.yield_curve import snapshot as yield_curve_snapshot
+        latest["yield_curve"] = yield_curve_snapshot(f)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("yield-curve layer failed: %s", e)
+        latest["yield_curve"] = None
     # Turning-point fragility meta-layer (engine/turning_point.py): reads ACROSS the
     # leaves above (cross_asset / market_drivers / conditions / dislocation / fed_path)
     # and raises a DISPLAY-ONLY caution when the tape is a one-factor macro-shock
@@ -214,6 +280,45 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("turning-point layer failed: %s", e)
         latest["turning_point"] = None
+    # Thematic Foresight Desk (research/THEMATIC_FORESIGHT_DESK.md): anticipate themes at
+    # the "precipice of induction" — physical-supply TIGHTNESS (T1, engine/bottleneck.py,
+    # the LEADING thesis) x revision-breadth BROADENING (T4, engine/theme_revisions.py, the
+    # CONFIRMATION gauge) -> a per-theme STAGE (PRECIPICE / BROADENING / RE-RATING /
+    # GLUT-RISK) ranked by edge remaining. DISPLAY-ONLY leaves; entry is deferred to the
+    # dislocation overlay (13D was right & ~9mo early). Each writes its own append-only
+    # forward-grading ledger. Never scored, never an MRS leg, never fatal.
+    try:
+        from engine.theme_revisions import compute_theme_revisions
+        latest["theme_revisions"] = compute_theme_revisions()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("theme-revisions layer failed: %s", e)
+        latest["theme_revisions"] = None
+    try:
+        from engine.bottleneck import compute_bottleneck
+        latest["bottleneck"] = compute_bottleneck()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("bottleneck layer failed: %s", e)
+        latest["bottleneck"] = None
+    try:
+        from engine.demand_capex import compute_demand_capex
+        latest["demand_capex"] = compute_demand_capex()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("demand-capex layer failed: %s", e)
+        latest["demand_capex"] = None
+    try:
+        from engine.glut_watch import compute_glut_watch
+        latest["glut_watch"] = compute_glut_watch(demand=latest.get("demand_capex"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("glut-watch layer failed: %s", e)
+        latest["glut_watch"] = None
+    try:
+        from engine.foresight_cascade import compute_foresight_cascade
+        latest["foresight_cascade"] = compute_foresight_cascade(
+            latest.get("bottleneck"), latest.get("theme_revisions"),
+            latest.get("demand_capex"), latest.get("glut_watch"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("foresight-cascade layer failed: %s", e)
+        latest["foresight_cascade"] = None
     # Cross-asset confirmation: does the leading-family complex (BONDS + FX) CONFIRM
     # or DIVERGE from the equity/macro regime computed above? Reads the two dedicated
     # dashboards' contracts (data/bonds/bond_health.json, data/forex/latest.json) — whose
@@ -241,6 +346,49 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("macro-risk score failed: %s", e)
         latest["macro_risk"] = None
+    # Mirror the published INDEX vol-regime snapshot into latest.json so the per-stock ladder
+    # + downstream consumers read it without re-deriving it. build_vol_regime publishes
+    # site/vol/regime.json (this reads the freshest available; ~1 day lag on a fresh checkout —
+    # acceptable for a slow-moving, subtract-only risk caution). Additive, never fatal.
+    try:
+        from engine import vol_regime as _vr
+        latest["vol_regime"] = _vr.published_snapshot() or None
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("vol-regime mirror failed: %s", e)
+        latest["vol_regime"] = None
+    # Fused equity-internal RISK STATE (engine/risk_state.py): the loud, EARLY
+    # drawdown-risk gauge that leads the credit-weighted macro_risk above. Fuses the
+    # orphaned detectors (complacency/hidden-fragility, breadth divergence, dealer GEX
+    # posture, vol structure, HY/HYG-TLT credit, turning-point, cross-asset) into one
+    # top-level state the brain can act on. Reads only the already-assembled `latest`
+    # + a prior-build GEX read + HYG/TLT — runs AFTER macro_risk so it can anchor on it,
+    # BEFORE the playbook so conclusions can read it. Additive, never fatal.
+    try:
+        from engine.risk_state import snapshot as risk_state_snapshot
+        latest["risk_state"] = risk_state_snapshot(latest)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("risk-state failed: %s", e)
+        latest["risk_state"] = None
+    # Risk Radar v2 (engine/risk_radar.py): the EVIDENCE-GATED, regime-typed, genuinely-leading
+    # successor to risk_state — scare-typed sub-scores (credit/rates/bubble/growth + vol display-
+    # only) built ONLY from signals that pass the strict day-level-lift backtest gate, loud+early,
+    # with each alert carrying its measured lift/lead. Primary top-level risk read for the brain.
+    # Additive, never fatal. See research/RISK_ENGINE_V2_FINDINGS.md.
+    try:
+        from engine.risk_radar import snapshot as risk_radar_snapshot
+        latest["risk_radar"] = risk_radar_snapshot()
+        # Self-auditing forward-outcome log (engine/risk_radar_audit.py): log today's read, grade
+        # matured past reads vs the realized SPY path, attach the rolling realized-accuracy
+        # scorecard. Feeds the Opus self-correction loop. Additive, never fatal.
+        try:
+            from engine import risk_radar_audit as _rra
+            if latest["risk_radar"]:
+                latest["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(latest["risk_radar"])
+        except Exception as e:  # noqa: BLE001
+            log.warning("risk-radar audit failed: %s", e)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("risk-radar failed: %s", e)
+        latest["risk_radar"] = None
     # Vol-Shock Risk Predictor (engine/vol_shock_scorecard.py): ONE forward 0-100
     # caution gauge that FUSES the fast/LEADING precursors which flash before a vol
     # shock (cross-asset concentration, dealer short-gamma, VIX term inversion,
@@ -263,10 +411,18 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal
         log.error("playbook failed: %s", e)
         latest["playbook"] = None
+    # Freshness / staleness guard — see freshness_stamp(). Additive, never fatal.
+    try:
+        max_age = int((config.load().get("engine", {}).get("freshness", {}) or {})
+                      .get("max_age_sessions", 1))
+        latest["freshness"] = freshness_stamp(asof, max_age_sessions=max_age)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("freshness stamp failed: %s", e)
     # MTF confluence buy-filter (entry-QUALITY / RISK signal) — DISPLAY-ONLY leaf for the
     # Mastermind brain. NOT alpha; see research/signal_engine/CHARTER.md (§2, §7). Loads the
     # precomputed snapshot from scripts/build_signal_quality.py so heavy compute never slows
-    # this build. Validated: buy-filter cut avg maxDD -23.7%->-15.5% across 110 held-out names.
+    # this build. The brain (engine/master_brain.py) consumes it as an entry-quality breadth
+    # calibration check; validated buy-filter cut avg maxDD -23.7%->-15.5% across 110 names.
     try:
         _sq = config.data_dir() / "signal_archive" / "mtf_signals_latest.json"
         latest["mtf_signals"] = json.loads(_sq.read_text()) if _sq.exists() else None

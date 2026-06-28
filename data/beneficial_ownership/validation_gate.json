@@ -1,0 +1,97 @@
+{
+  "schema": "activist_ownership.gate.v1",
+  "generated_at": "2026-06-21 12:08 UTC",
+  "rule_date": "2024-02-05",
+  "n_activist_13d": 890,
+  "n_passive_13g_ctrl": 600,
+  "scored": false,
+  "lead_horizon": null,
+  "weight": 0.0,
+  "activist_13d": {
+    "5": {
+      "n": 865,
+      "n_months": 29,
+      "mean_abn": -0.0074,
+      "median_abn": -0.0082,
+      "hit_rate": 0.423,
+      "monthly_mean": -0.0101,
+      "hac_t": -1.63,
+      "p": 0.103
+    },
+    "10": {
+      "n": 861,
+      "n_months": 29,
+      "mean_abn": -0.0093,
+      "median_abn": -0.0153,
+      "hit_rate": 0.4,
+      "monthly_mean": -0.0209,
+      "hac_t": -1.2,
+      "p": 0.2298
+    },
+    "21": {
+      "n": 853,
+      "n_months": 28,
+      "mean_abn": -0.0091,
+      "median_abn": -0.0327,
+      "hit_rate": 0.377,
+      "monthly_mean": -0.0052,
+      "hac_t": -0.49,
+      "p": 0.6242
+    },
+    "63": {
+      "n": 763,
+      "n_months": 26,
+      "mean_abn": 0.1414,
+      "median_abn": -0.072,
+      "hit_rate": 0.354,
+      "monthly_mean": 0.1883,
+      "hac_t": 1.19,
+      "p": 0.2345
+    }
+  },
+  "passive_13g": {
+    "5": {
+      "n": 592,
+      "n_months": 29,
+      "mean_abn": -0.0085,
+      "median_abn": -0.0058,
+      "hit_rate": 0.444,
+      "monthly_mean": -0.0104,
+      "hac_t": -1.71,
+      "p": 0.0869
+    },
+    "10": {
+      "n": 591,
+      "n_months": 29,
+      "mean_abn": -0.019,
+      "median_abn": -0.019,
+      "hit_rate": 0.387,
+      "monthly_mean": -0.0221,
+      "hac_t": -2.39,
+      "p": 0.017
+    },
+    "21": {
+      "n": 587,
+      "n_months": 28,
+      "mean_abn": -0.0185,
+      "median_abn": -0.0235,
+      "hit_rate": 0.395,
+      "monthly_mean": -0.0161,
+      "hac_t": -1.15,
+      "p": 0.2503
+    },
+    "63": {
+      "n": 479,
+      "n_months": 26,
+      "mean_abn": -0.0717,
+      "median_abn": -0.0607,
+      "hit_rate": 0.313,
+      "monthly_mean": -0.0447,
+      "hac_t": -1.32,
+      "p": 0.1861
+    }
+  },
+  "min_events": 40,
+  "t_bar": 2.0,
+  "note": "post-2024 activist-13D drift NOT robustly significant on the covered panel \u2192 display-only confirmer ('measuring')"
+}

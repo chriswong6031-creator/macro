@@ -63,6 +63,9 @@ QUIVER_PRIOR_D = 60      # (NOT YoY: those tables don't have a year of history y
 SOURCES: list[dict] = [
     {"name": "usaspending", "kind": "wide", "group": "usaspending", "series": "obligations",
      "weight": 1.0, "signed": False, "min_base": 10e6, "label_en": "Federal contracts", "label_zh": "联邦合同"},
+    {"name": "usaspending_assistance", "kind": "wide", "group": "usaspending", "series": "grants_loans",
+     "weight": 0.85, "signed": False, "min_base": 5e6, "recent_months": 6, "seasonal": False,
+     "label_en": "Federal grants/loans", "label_zh": "联邦补助/贷款"},
     {"name": "quiver_govcontract", "kind": "quiver", "dataset": "govcontracts",
      "date": ["Date", "action_date"], "value": ["Amount"], "signed": False, "min_prior": 5e5,
      "weight": 1.0, "label_en": "Gov contracts (Quiver)", "label_zh": "政府合同"},
@@ -72,6 +75,16 @@ SOURCES: list[dict] = [
     {"name": "lobbying_ramp", "kind": "quiver", "dataset": "lobbying",
      "date": ["Date"], "value": ["Amount"], "signed": False, "min_prior": 5e4,
      "weight": 0.7, "label_en": "Lobbying ramp", "label_zh": "游说支出"},
+    {"name": "edgar_8k_velocity", "kind": "theme_event", "group": "edgar", "series": "material_8k_velocity",
+     "min_prior": 1.0, "weight": 0.45, "label_en": "8-K material events", "label_zh": "重大事件公告"},
+    # Grants.gov pre-award FOA flow (gated: needs GRANTS_GOV_API_KEY -> collector emits the
+    # parquet; absent -> theme_event loader returns None and the source is silently skipped).
+    {"name": "grants_foa", "kind": "theme_event", "group": "grants_gov", "series": "foa_velocity",
+     "min_prior": 1.0, "weight": 0.45, "label_en": "Federal grant FOAs", "label_zh": "联邦资助公告"},
+    # SAM.gov pre-award contract OPPORTUNITIES by NAICS (gated: needs SAM_API_KEY -> collector
+    # emits the parquet; absent -> theme_event loader returns None and the source is skipped).
+    {"name": "sam_presolicitation", "kind": "theme_event", "group": "sam_gov", "series": "opp_velocity",
+     "min_prior": 1.0, "weight": 0.5, "label_en": "Pre-award solicitations", "label_zh": "招标预告"},
 ]
 
 
@@ -90,20 +103,30 @@ def robust_z(values: list[float]) -> list[float]:
 
 
 def source_accel(wide: pd.DataFrame, covered: list[str], *, signed: bool = False,
-                 min_base: float = MIN_BASE_USD) -> dict | None:
-    """Self-referential YoY change for one source over a basket's covered members.
-    Unsigned (spend): accel = recent3m / same-3m-a-year-ago, metric = log(accel).
-    Signed (net flows that can be negative): metric = (recent - prior) / scale, accel = None."""
+                 min_base: float = MIN_BASE_USD, recent_months: int = RECENT_MONTHS,
+                 seasonal: bool = True) -> dict | None:
+    """Self-referential change for one source over a basket's covered members.
+    Unsigned (spend): accel = recent / prior, metric = log(accel).
+    Signed (net flows that can be negative): metric = (recent - prior) / scale, accel = None.
+
+    seasonal=True (federal CONTRACTS): prior = the SAME `recent_months` a year ago (kills the
+    federal fiscal-year-end seasonality + award-posting lag). seasonal=False (lumpy/episodic
+    GRANTS): prior = the immediately-preceding `recent_months` (sequential) — grants are
+    one-off events with no clean YoY base, so a year-ago window is usually empty."""
     cols = [c for c in covered if c in wide.columns]
     if len(cols) < MIN_COVERED:
         return None
     monthly = wide[cols].sum(axis=1, min_count=1).dropna().sort_index()
     if LAG_MONTHS:
         monthly = monthly.iloc[:-LAG_MONTHS] if len(monthly) > LAG_MONTHS else monthly.iloc[:0]
-    if len(monthly) < RECENT_MONTHS + YOY_LAG:
+    need = recent_months + (YOY_LAG if seasonal else recent_months)
+    if len(monthly) < need:
         return None
-    recent = float(monthly.iloc[-RECENT_MONTHS:].sum())
-    prior = float(monthly.iloc[-(RECENT_MONTHS + YOY_LAG):-YOY_LAG].sum())
+    recent = float(monthly.iloc[-recent_months:].sum())
+    if seasonal:
+        prior = float(monthly.iloc[-(recent_months + YOY_LAG):-YOY_LAG].sum())
+    else:
+        prior = float(monthly.iloc[-2 * recent_months:-recent_months].sum())
     if signed:
         scale = max(abs(prior), abs(recent), min_base, 1.0)
         metric = (recent - prior) / scale
@@ -147,6 +170,38 @@ def _load_quiver(src: dict, sources_data: dict | None) -> pd.DataFrame | None:
         return _ok(altdata._read(src["dataset"]))
     except Exception:  # noqa: BLE001
         return None
+
+
+def _load_theme_event(src: dict, sources_data: dict | None) -> pd.DataFrame | None:
+    """Load a 'theme_event' source: a small PRE-AGGREGATED per-basket frame the collector
+    itself produced (basket_id -> recent_count / prior_count [+ optional covered/n_members]).
+    Used for theme-level observables that have NO per-ticker breakdown — federal grant FOAs
+    keyed by CFDA, SEC 8-K material-event counts per basket, etc. The collector did the
+    member->basket roll-up, so the fuser just reads counts. Injectable (hermetic)."""
+    df = sources_data.get(src["name"]) if sources_data is not None else None
+    if df is None and sources_data is None:
+        try:
+            p = config.data_dir() / src["group"] / f"{src['series']}.parquet"
+            df = pd.read_parquet(p) if p.exists() else None
+        except Exception:  # noqa: BLE001
+            return None
+    if df is None or df.empty:
+        return None
+    if "basket_id" in df.columns:
+        df = df.set_index("basket_id")
+    return df
+
+
+def _load_for(src: dict, sources_data: dict | None) -> pd.DataFrame | None:
+    """Dispatch a source to its loader by `kind` ('wide' | 'quiver' | 'theme_event')."""
+    kind = src.get("kind")
+    if kind == "wide":
+        return _load_source(src, sources_data)
+    if kind == "quiver":
+        return _load_quiver(src, sources_data)
+    if kind == "theme_event":
+        return _load_theme_event(src, sources_data)
+    return None
 
 
 def _quiver_basket_metric(src: dict, members: list[str], *, today=None,
@@ -199,6 +254,41 @@ def _quiver_basket_metric(src: dict, members: list[str], *, today=None,
             "metric": float(metric), "n_covered": len(covered), "covered": covered}
 
 
+def _theme_event_metric(src: dict, bid: str, *, frame: pd.DataFrame | None) -> dict | None:
+    """Per-basket COUNT accel from a pre-aggregated theme_event frame (the collector already
+    rolled members up to the basket). recent_count vs prior_count over the collector's window.
+    Counts, not dollars: a new-from-nothing burst (prior 0, recent>0) reads as strong accel
+    (clamped); both-zero is SILENT (None, not a spurious negative). Unsigned only."""
+    if frame is None or frame.empty or bid not in frame.index:
+        return None
+    row = frame.loc[bid]
+
+    def _num(col):
+        try:
+            v = float(row.get(col))
+            return v if np.isfinite(v) else 0.0
+        except (TypeError, ValueError):
+            return 0.0
+
+    recent, prior = _num("recent_count"), _num("prior_count")
+    if recent <= 0 and prior <= 0:
+        return None  # no activity either window — silent on the diagonal
+    floor = float(src.get("min_prior", 1.0))            # avoid /0 + tiny-denom blow-ups
+    accel = float(np.clip(recent / max(prior, floor), *ACCEL_CLAMP))
+    covered = []
+    cov = row.get("covered") if "covered" in frame.columns else None
+    if isinstance(cov, str) and cov:
+        covered = [c for c in cov.split(",") if c]
+    try:
+        n_cov = int(row.get("n_members")) if "n_members" in frame.columns else len(covered)
+    except (TypeError, ValueError):
+        n_cov = len(covered)
+    return {"accel": round(accel, 3), "recent_3m_usd": None, "base_3m_usd": None,
+            "metric": float(np.log(accel)) if accel > 0 else 0.0,
+            "recent_count": int(recent), "prior_count": int(prior),
+            "n_covered": max(n_cov, int(recent)), "covered": covered}
+
+
 def compute_real_activity(baskets_payload: dict, *, sources_data: dict | None = None,
                           root=None, news: bool = True, today=None) -> dict:
     """Per-basket fused real-activity observable. Returns {basket_id: {...}} for every
@@ -208,10 +298,10 @@ def compute_real_activity(baskets_payload: dict, *, sources_data: dict | None = 
     if not baskets:
         return {}
 
-    # pass 1 — per-basket, per-source raw metrics. Preload each source once: 'wide' sources
-    # are date-indexed store frames (YoY); 'quiver' sources are main's event tables (recent window).
-    loaded = {src["name"]: (_load_source(src, sources_data) if src["kind"] == "wide"
-                            else _load_quiver(src, sources_data)) for src in SOURCES}
+    # pass 1 — per-basket, per-source raw metrics. Preload each source once by kind: 'wide'
+    # sources are date-indexed store frames (YoY); 'quiver' sources are main's event tables
+    # (recent window); 'theme_event' sources are pre-aggregated per-basket count frames.
+    loaded = {src["name"]: _load_for(src, sources_data) for src in SOURCES}
     events = None
     if news:
         try:
@@ -229,7 +319,11 @@ def compute_real_activity(baskets_payload: dict, *, sources_data: dict | None = 
             if data is None:
                 continue
             if src["kind"] == "wide":
-                acc = source_accel(data, members, signed=src["signed"], min_base=src["min_base"])
+                acc = source_accel(data, members, signed=src["signed"], min_base=src["min_base"],
+                                   recent_months=src.get("recent_months", RECENT_MONTHS),
+                                   seasonal=src.get("seasonal", True))
+            elif src["kind"] == "theme_event":
+                acc = _theme_event_metric(src, bid, frame=data)
             else:
                 acc = _quiver_basket_metric(src, members, today=today, event_df=data)
             if acc is not None:

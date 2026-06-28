@@ -8,7 +8,7 @@
    hub. Loaded here (theme.css is linked by every page) and applied to <body>
    below so the whole site shares one font; each page keeps its own
    font-size/line-height. */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 :root {
   --bg: #0f1115; --panel: #181b21; --panel2: #1e222a; --text: #d7dce3;
   --muted: #8b93a1; --line: #2a2f3a;
@@ -277,6 +277,23 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
   align-items: center; column-gap: 12px; row-gap: 9px; margin: 0 0 16px; }
 .site-nav .nav-links { grid-column: 1; grid-row: 1; display: flex; flex-wrap: wrap;
   align-items: center; gap: 3px; min-width: 0; }
+/* ── Brand lockup — the crafted Mastermind “M” logomark + MASTERMIND wordmark, the
+   first item in the shared _navlinks list, pinned at the head of the menu bar and
+   linking Home. The wordmark collapses on phones (≤560px); the full “Market
+   Intelligence” lockup also lives on the landing hero. */
+.site-nav .nav-brand { display: inline-flex; align-items: center; gap: 8px; flex: none;
+  padding: 3px 10px 3px 4px; margin: 0 6px 0 0; border-radius: 11px; text-decoration: none;
+  transition: background .18s, transform .16s ease; }
+.site-nav .nav-brand:hover { background: color-mix(in srgb, var(--link) 11%, transparent);
+  transform: translateY(-1px); }
+.site-nav .nav-brand .brand-glyph { width: 29px; height: 29px; display: block; flex: none;
+  filter: drop-shadow(0 2px 6px rgba(40,56,128,.34)); }
+/* weight 900 (Inter Black — loaded via the @import at the top) + tight tracking so the
+   wordmark reads as heavy as the logo glyph; line-height:1 so the all-caps ink centres
+   on the glyph (the inherited 1.5 line-height left the caps sitting visibly high). */
+.site-nav .nav-brand .brand-word { font-family: Inter, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 13.5px; font-weight: 900; letter-spacing: .07em; line-height: 1;
+  color: var(--text); white-space: nowrap; }
 .site-nav a.nav-link { padding: 7px 11px; border-radius: 9px; font-size: 13.5px;
   font-weight: 500; color: var(--muted); text-decoration: none; white-space: nowrap;
   transition: color .18s, background .18s; }
@@ -418,6 +435,20 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
   transform: translateY(-1px); box-shadow: 0 5px 14px -5px color-mix(in srgb, var(--link) 42%, transparent); }
 .nav-ctrls .ai-brief-link:active { transform: translateY(0); box-shadow: none; }
 .nav-ctrls .ai-brief-link.active { background: var(--link); border-color: var(--link); color: #fff; }
+
+/* AI Daily Brief entry card — the single in-page doorway to the cross-asset LLM
+   synthesis page (aibrief.html). Replaces the old inline AI Master Brief panel on the
+   macro / China / Hong Kong / Bitcoin dashboards. Rendered as a clickable .panel/.card. */
+.aibrief-card { display: flex; align-items: center; gap: 14px; text-decoration: none;
+  color: inherit; border-left: 3px solid var(--link); cursor: pointer;
+  transition: border-color .15s, transform .16s ease, box-shadow .18s ease; }
+.aibrief-card:hover { transform: translateY(-1px);
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--link) 42%, transparent); }
+.aibrief-card .abc-ic { font-size: 30px; line-height: 1; flex: none; }
+.aibrief-card .abc-mid { flex: 1; min-width: 0; }
+.aibrief-card .abc-tit { display: block; font-size: 16px; font-weight: 700; }
+.aibrief-card .abc-sub { display: block; margin-top: 2px; }
+.aibrief-card .abc-go { font-size: 22px; font-weight: 700; color: var(--link); flex: none; }
 
 /* animated dark / light switch — slides on html[data-theme] */
 .theme-switch { width: 56px; height: 27px; border-radius: 999px; background: var(--panel2);
@@ -638,6 +669,7 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   .nav-search { grid-column: 1; grid-row: 3; }
   .site-nav a.nav-link { padding: 6px 8px; font-size: 12.5px; }
   .site-nav .nav-ctrls { gap: 7px; }
+  .site-nav .nav-brand .brand-word { display: none; }  /* phones: keep the menu compact, glyph only */
 }
 
 /* ---- Time-machine warning chips: hover definition popover ------------------ */

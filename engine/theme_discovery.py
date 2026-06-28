@@ -111,11 +111,13 @@ def _recent_ipos(lookback_d: int, asof: pd.Timestamp) -> set[str]:
         return set()
 
 
-def _names_sectors_from_parquet(rel: str) -> dict[str, tuple[str, str]]:
-    """Build {TICKER: (name, sector)} from a regional search members.parquet. The ticker is
-    the index (or a 'ticker'/'symbol' column); name prefers an English/display name, sector
-    falls back to '—' when the column is absent. Best-effort; never raises."""
-    out: dict[str, tuple[str, str]] = {}
+def _names_sectors_from_parquet(rel: str) -> dict[str, tuple[str, str, str]]:
+    """Build {TICKER: (name, sector, name_zh)} from a regional search members.parquet. The
+    ticker is the index (or a 'ticker'/'symbol' column); `name` prefers an English/display
+    name; `name_zh` carries the native (e.g. Chinese) name when the cache has one, so CJK
+    markets can render full local names ('' otherwise). sector falls back to '—' when absent.
+    Names are kept full (no truncation). Best-effort; never raises."""
+    out: dict[str, tuple[str, str, str]] = {}
     try:
         p = config.data_dir() / rel
         if not p.exists():
@@ -123,23 +125,27 @@ def _names_sectors_from_parquet(rel: str) -> dict[str, tuple[str, str]]:
         df = pd.read_parquet(p)
         tcol = next((c for c in ("ticker", "symbol", "code") if c in df.columns), None)
         ncol = next((c for c in ("name_en", "name", "name_zh") if c in df.columns), None)
+        zcol = "name_zh" if "name_zh" in df.columns else None
         scol = "sector" if "sector" in df.columns else None
         for idx, row in df.iterrows():
             t = str(row[tcol] if tcol else idx).upper()
             name = str(row[ncol]) if ncol and pd.notna(row.get(ncol)) else t
+            name_zh = str(row[zcol]) if zcol and pd.notna(row.get(zcol)) else ""
             sec = str(row[scol]) if scol and pd.notna(row.get(scol)) else "—"
-            out.setdefault(t, (name[:24], sec or "—"))
+            out.setdefault(t, (name, sec or "—", name_zh))
     except Exception as e:  # noqa: BLE001
         log.warning("theme_discovery: members parquet %s unreadable (%s)", rel, e)
     return out
 
 
-def _universe(region: str) -> tuple[pd.DataFrame | None, dict[str, tuple[str, str]]]:
-    """Return (closes [Date × ticker], {TICKER: (name, sector)}) for a region, or (None, {})."""
+def _universe(region: str) -> tuple[pd.DataFrame | None, dict[str, tuple[str, str, str]]]:
+    """Return (closes [Date × ticker], {TICKER: (name, sector, name_zh)}) for a region, or
+    (None, {}). name_zh is '' where the market has no native name (e.g. US)."""
     if region == "us":
         try:
             from engine.equity_factors import _closes, _names_sectors
-            return _closes(), {str(k).upper(): v for k, v in (_names_sectors() or {}).items()}
+            return _closes(), {str(k).upper(): (v[0], v[1], "")
+                               for k, v in (_names_sectors() or {}).items()}
         except Exception as e:  # noqa: BLE001
             log.warning("theme_discovery: US universe load failed (%s)", e)
             return None, {}
@@ -231,7 +237,7 @@ def discover_candidates(region: str = "us", root=None, cfg: dict | None = None,
             overlap = sum(1 for g in grp if g in members) / len(grp)
             if overlap > c["max_basket_overlap"]:
                 continue
-            secs = Counter(ns.get(g, (g, "—"))[1] for g in grp)
+            secs = Counter(ns.get(g, (g, "—", ""))[1] for g in grp)
             top_sec, top_n = secs.most_common(1)[0]
             top_share = top_n / len(grp)
             if not has_sectors:
@@ -246,8 +252,9 @@ def discover_candidates(region: str = "us", root=None, cfg: dict | None = None,
             ipo_hits = [g for g in grp if g in ipos]
             # recent EW momentum (context only)
             mom = float((1.0 + sub.mean(axis=1)).prod() - 1.0)
-            names = [{"ticker": g, "name": ns.get(g, (g, ""))[0][:24],
-                      "sector": ns.get(g, (g, "—"))[1]} for g in grp]
+            names = [{"ticker": g, "name": ns.get(g, (g, "—", ""))[0],
+                      "name_zh": ns.get(g, (g, "—", ""))[2],
+                      "sector": ns.get(g, (g, "—", ""))[1]} for g in grp]
             names.sort(key=lambda x: x["ticker"])
             cands.append({
                 "n": len(grp), "cohesion": round(cohesion, 3),

@@ -59,17 +59,21 @@ def _last(s: pd.Series | None) -> float | None:
     return float(s.iloc[-1]) if len(s) else None
 
 
-def _ann_monthly_pct(s: pd.Series, smooth_months: int) -> pd.Series:
-    """Annualize a monthly %-change series after smoothing over N distinct
-    monthly prints. The daily feature frame carries each month's value
-    forward-filled, so we de-duplicate to the actual monthly observations
-    before the rolling mean, then re-broadcast onto the daily index."""
+def _smooth_annual_rate(s: pd.Series, smooth_months: int) -> pd.Series:
+    """Smooth an ALREADY-annualized monthly rate over N distinct monthly prints.
+
+    The Atlanta-Fed sticky/flexible CPI inputs (FRED STICKCPIM157SFRBATL /
+    FLEXCPIM157SFRBATL) are published as 'Percent Change at Annual Rate' — i.e.
+    ALREADY annual-rate (~2-6%). They must NOT be re-annualized (a prior version
+    applied ((1+x/100)**12-1)*100, which turned 3.2% into ~46%). The daily feature
+    frame carries each month's value forward-filled, so we de-duplicate to the actual
+    monthly observations, take the rolling mean, then re-broadcast onto the daily
+    index — units unchanged."""
     monthly = s.dropna()
     # collapse consecutive identical ffilled values to one print per monthly change
     distinct = monthly[monthly.ne(monthly.shift())]
     sm = distinct.rolling(smooth_months, min_periods=1).mean()
-    ann = ((1.0 + sm / 100.0) ** 12 - 1.0) * 100.0
-    return ann.reindex(s.index).ffill()
+    return sm.reindex(s.index).ffill()
 
 
 # --- conditions time series (for charts + alerts) ----------------------------
@@ -416,6 +420,8 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
         "cp_bill_spread_pctile": cpbill_p,
         "cp_stress": (None if cp_p is None else
                       ("acute" if cp_p >= acute_p else ("elevated" if cp_p >= elevated_p else "normal"))),
+        # lead/lag honesty: OFR FSI is a coincident gauge (see evidence below).
+        "lead_lag": "coincident",
         "evidence": ("OFR Financial Stress Index: a daily 33-variable global stress gauge with "
                      "functional (credit / equity valuation / safe assets / funding / volatility) "
                      "and regional (US / other-advanced / EM) decomposition. A coincident gauge — "
@@ -495,13 +501,13 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
     flex = _col(f, "flex_cpi")
     inflation = {}
     if sticky is not None:
-        sa = _ann_monthly_pct(sticky, sm)
+        sa = _smooth_annual_rate(sticky, sm)
         inflation["sticky_ann"] = _last(sa)
         prev = sa.dropna()
         inflation["sticky_trend"] = (
             "accelerating" if len(prev) > 70 and prev.iloc[-1] > prev.iloc[-65] else "cooling")
     if flex is not None:
-        inflation["flexible_ann"] = _last(_ann_monthly_pct(flex, sm))
+        inflation["flexible_ann"] = _last(_smooth_annual_rate(flex, sm))
     inflation["median_cpi"] = _last(_col(f, "median_cpi"))
     inflation["umich_1y_exp"] = _last(_col(f, "umich_infl_exp"))
     if "sticky_ann" in inflation and "flexible_ann" in inflation \
@@ -527,6 +533,8 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
         "vix_term_state": (None if vix_term is None else
                            ("backwardation (stress)" if vix_term >= cfg["term_structure"]["backwardation_ratio"]
                             else "contango (calm)")),
+        # lead/lag honesty: a VIX/VIX3M level read — the most coincident vol gauge.
+        "vix_term_lead_lag": "coincident",
         "skew": g("skew"),
         "skew_pctile": g("skew_pctile"),
         "stock_bond_corr": sb,
@@ -548,19 +556,36 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
     }
 
     # drawdown-risk gauge (MEASURED §6: >=80 -> P(>=10% dd/63d) ~45% vs 13% base)
+    # HONESTY (research/RISK_FLIP_2026-06-22.md): this is a SLOW macro/credit
+    # composite (recession_risk, NFCI, EBP, HY OAS) — it LAGS price. The low-band
+    # dd10 figure equals the UNCONDITIONAL base rate, so a "low" read here is NOT a
+    # forward all-clear on price/vol risk (which the leading gauges carry). The
+    # conditional probability only carries information in the elevated/high/extreme
+    # bands. Tagged lagging + relabelled so consumers don't read 8% as "calm".
     dcfg = cfg["drawdown_risk"]
     dr = g("drawdown_risk")
+    dr_band = (None if dr is None else
+               ("extreme" if dr >= dcfg["extreme"] else
+                ("high" if dr >= dcfg["high"] else
+                 ("elevated" if dr >= dcfg["elevated"] else "low"))))
     drawdown = {
         "score": dr,
-        "band": (None if dr is None else
-                 ("extreme" if dr >= dcfg["extreme"] else
-                  ("high" if dr >= dcfg["high"] else
-                   ("elevated" if dr >= dcfg["elevated"] else "low")))),
-        # measured P(>=10% drawdown in 63d) per band (this engine's own backtest)
+        "band": dr_band,
+        # measured P(>=10% drawdown in 63d) per band (this engine's own backtest);
+        # in the LOW band this equals base_rate_pct (no edge) — see is_base_rate.
         "dd10_prob_pct": (None if dr is None else
                           (38 if dr >= dcfg["extreme"] else (36 if dr >= dcfg["high"]
                            else (26 if dr >= dcfg["elevated"] else 8)))),
         "base_rate_pct": 8,
+        # lead/lag honesty: slow macro/credit composite, lags price.
+        "lead_lag": "lagging",
+        "basis": "macro/credit composite (recession_risk, NFCI, EBP, HY OAS)",
+        # the dd10 probability is only informative above the low band; in the low
+        # band it is the unconditional base rate, NOT a forward all-clear.
+        "is_base_rate": bool(dr_band == "low"),
+        "dd10_prob_informative": bool(dr_band is not None and dr_band != "low"),
+        "label": "Macro/credit drawdown pressure (lagging)",
+        "label_zh": "宏观/信用回撤压力（滞后）",
     }
 
     # capitulation gauge (MEASURED §6: fired -> mean-reversion bounce)
@@ -624,6 +649,21 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
         "breadth_above200_pctile": b2p,
         "credit_widen": bool(credit_widen),
         "hy_oas_chg_21d_bp": None if hychg is None else round(hychg * 100, 0),
+        # lead/lag honesty: breadth divergence (calm tape, thinning internals) is a
+        # forward fragility tell — the leading member of this gauge.
+        "lead_lag": "leading",
+        # PROMOTION (research/RISK_FLIP_2026-06-22.md): breadth_div is the one gauge
+        # that perceived 2026-06-22's fragility. Surface it as a ONE-WAY risk-OFF
+        # caution the downstream bot can honour — it ONLY ever raises caution, never
+        # signals all-clear, and it STILL does not feed recession_risk / drawdown_risk
+        # / RORO / MRS / any axis (the validated quad firewall is preserved).
+        "breadth_div_caution": breadth_div,
+        "caution": breadth_div,
+        "caution_reason": ("breadth divergence: index near its high while %>200dma is "
+                           "weak (a thinning tape — fewer names carrying the index)")
+                          if breadth_div else None,
+        "caution_reason_zh": ("广度背离：指数接近高点但200日均线上方占比偏弱（量能变薄——"
+                              "推动指数的个股减少）") if breadth_div else None,
     }
 
     return {

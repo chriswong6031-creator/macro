@@ -1,0 +1,26 @@
+{
+  "signal": {
+    "roc_threshold": -1.25,
+    "diffusion_max": 50.0,
+    "min_consecutive_m": 3,
+    "lookahead_window_m": 18,
+    "max_lead_window_m": 24
+  },
+  "measured": {
+    "operating_point": {
+      "roc_threshold": -1.25,
+      "diffusion_max": 50.0,
+      "min_consecutive_m": 3
+    },
+    "calibration_window": "1985-01-01..present (revised data, 1m publication lag)",
+    "endo_recessions": 3,
+    "endo_caught": 3,
+    "false_positives": 3,
+    "mean_lead_months": 5.7,
+    "median_lead_months": 7.0,
+    "pit_era_caught": 2,
+    "pit_era_recessions": 2,
+    "pit_era_false_positives": 2,
+    "caveat": "Revised data for the leading legs (no local ALFRED key) \u2014 leads are an upper bound. Effective N ~3 endogenous recessions in the PIT era. COVID-2020 is exogenous and excluded from lead stats."
+  }
+}

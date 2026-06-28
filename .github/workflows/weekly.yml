@@ -10,13 +10,15 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pipeline
+  # Serialized batch lane shared with backfill / special-sits-backfill. daily has its own
+  # "pipeline-daily" lane, so weekly never blocks (and is never blocked by) the daily refresh.
+  group: pipeline-batch
   cancel-in-progress: false
 
 jobs:
   weekly-report:
     runs-on: ubuntu-latest
-    timeout-minutes: 45     # weekly does collectors + all calibrations + every dashboard build
+    timeout-minutes: 120    # weekly does collectors + all calibrations + every dashboard build; 45m was too tight on congested 2-core runners
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -53,6 +55,8 @@ jobs:
         # calibration just leaves last week's (stale) calibration in place.
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          # see daily.yml: turns ON browser live prices when the repo var is set.
+          LIVE_QUOTES_WORKER_URL: ${{ vars.LIVE_QUOTES_WORKER_URL }}
         run: |
           set +e
           run_py() {
@@ -67,6 +71,37 @@ jobs:
             fi
           }
           run_py "weekly collectors" scripts.collect --only cot,sentiment_naaim,sentiment_aaii,fundamentals,stock_fundamentals
+          # Phase-1+ survivorship de-bias, CIK long tail: lift the dead names that
+          # company_tickers.json/Polygon can't reach (acquired/renamed → dropped from the
+          # current ticker map) via the windowed EDGAR full-text crawl (efts.sec.gov +
+          # data.sec.gov submissions confirm). Resolve-only + drip-capped (~200 tickers
+          # /run, SEC-paced); resilient (efts 5xx retry next run). Runs FIRST so newly
+          # resolved CIKs feed the companyfacts pull below in the same run. Honest,
+          # partial yield by design — see data/edgar/_dead_name_coverage.json fts_funnel.
+          run_py "dead-name CIK crawl (EDGAR full-text)" scripts.build_dead_name_fundamentals --resolve-only --fts-max 200
+          # Phase-1B survivorship de-bias: resolve dead S&P names -> CIK (needs
+          # www.sec.gov/Polygon, reachable from CI; cached) + drip companyfacts into
+          # data/edgar/dead_name_panel.parquet stamped with the true filed date.
+          # Resilient (run_py tolerates SEC hiccups); ~200 filers/run accrue coverage.
+          run_py "dead-name fundamentals (de-bias)" scripts.build_dead_name_fundamentals --max-new 200
+          # Phase-1A dead-name PRICES: recover delisted daily closes (Stooq/Polygon,
+          # reachable from CI; yfinance ~0) so the merged panel can compute dead-name
+          # forward returns. Resilient + drip-capped; nothing depends on it.
+          run_py "dead-name prices (de-bias)" scripts.build_dead_name_prices --max-new 150
+          # Phase-1A+ bankruptcy tail: classify each dead CIK acquisition/bankruptcy/
+          # unknown from its 8-K Item 1.03 (data.sec.gov, reachable everywhere) and
+          # impute a −100% terminal close for flagged bankruptcies that have a price
+          # anchor, so the leak-free backtest realizes the wipe instead of a survivorship
+          # gap. Resilient + drip-capped; softens the price-coverage residual-bias caveat.
+          run_py "dead-name bankruptcy imputation (8-K 1.03)" scripts.build_dead_name_delisting --max-new 200
+          # De-biased factor IC scorecard over the survivor+dead MERGED universe ->
+          # data/edgar/ic_scorecard_debiased.json. Self-gating (equals the survivor
+          # scorecard until dead-name prices accrue); never clobbers ic_scorecard.json.
+          run_py "de-biased IC scorecard" scripts.factor_ic_scorecard --debiased --horizon 63
+          # Phase-4 breadth honesty: leak-free PIT IC test of the new fundamental-trend
+          # legs -> BH-FDR + VIF prune + inverse-corr shrinkage -> data/strategies/
+          # signal_factory.json. Ledger-logged (idempotent — dedups by config).
+          run_py "signal factory (breadth honesty)" scripts.signal_factory
           run_py "recalibrate (macro)" scripts.recalibrate
           run_py "regime engine (engine.run)" engine.run
           run_py "S&P allocation vector (build_spvector)" scripts.build_spvector
@@ -112,9 +147,9 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/ reports/ site/
-          # Canada / International / US stock-search libraries are gitignored — force-add
-          # so the committed-tree deploy ships them (otherwise canada_stock.html,
-          # intl_stock.html and stock.html search 404 on their index/detail JSON). See daily.yml.
+          # Stock-search libraries are gitignored — force-add so the committed-tree
+          # deploy ships their index/detail JSON. See daily.yml.
+          git add -f site/chinastockdata 2>/dev/null || true
           git add -f site/canadastockdata 2>/dev/null || true
           git add -f site/intlstockdata 2>/dev/null || true
           git add -f site/stockdata 2>/dev/null || true

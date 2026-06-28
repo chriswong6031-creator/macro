@@ -132,7 +132,8 @@ def test_convergence_scores_distinct_channels():
     rows = altdata.convergence(signals)
     assert rows and rows[0]["ticker"] == "EFX"
     assert rows[0]["score"] == 3
-    assert set(rows[0]["channel_list"]) == {"congress_buy", "gov_contract", "trump_buy"}
+    assert rows[0]["weighted_score"] > 0
+    assert set(rows[0]["channel_list"]) == {"congress_buy", "gov_contract", "trump"}
 
 
 def test_convergence_ignores_single_channel():

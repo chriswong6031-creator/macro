@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" class="cyc-page">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Global Market Cycles — Mastermind</title>
+<meta name="description" content="Nine national equity-market cycles on one clock — the US, UK, Europe, Japan, China, Hong Kong, Taiwan, India and Canada overlaid on real web-sourced data: observed history, valuations, and where each market sits in its bull/bear lifespan.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="cycle.css">
+<link rel="stylesheet" href="markets.css?v=4">
+</head>
+<body>
+<nav class="site-nav" style="max-width:1320px;margin:0 auto;padding:11px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+  <a class="nav-brand" href="index.html" style="font-weight:800;letter-spacing:-.02em;font-size:16px;color:var(--text);text-decoration:none">MASTERMIND</a>
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <a class="nav-link" href="macro.html">📊 <span class="l-en">Macro</span><span class="l-zh">宏观</span></a>
+    <a class="nav-link" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span></a>
+    <a class="nav-link" href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">前瞻</span></a>
+    <a class="nav-link" href="cycle.html">🔄 <span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智库</span></a>
+    <a class="nav-link active" href="markets.html">🌐 <span class="l-en">Market Cycles</span><span class="l-zh">市场周期</span></a>
+  </div>
+  <div class="nav-ctrls" style="margin-left:auto;display:flex;gap:8px;align-items:center">
+    <button class="lang-btn" type="button">中文</button>
+    <button class="theme-btn" type="button">☀️ Light</button>
+  </div>
+</nav>
+
+<div class="cyc-wrap">
+  <header class="cyc-hd">
+    <div class="ht">
+      <div class="cyc-kicker"><span class="hb"></span> <span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></div>
+      <h1 class="cyc-title"><span class="l-en">Where every market stands</span><span class="l-zh">各市场所处位置</span></h1>
+      <p class="cyc-sub"><span class="l-en">Nine national equity markets on one clock — the US, UK, Europe, Japan, China, Hong Kong,
+        Taiwan, India and Canada, each plotted on real, web-sourced data. The y-axis is <b>how far each index has
+        retraced from its all-time high</b>: high = at the highs (extended), low = washed-out. Observed history
+        (solid) and a regime-conditioned projection (dashed, with an uncertainty cone), plus valuations — so you see
+        not just <em>when</em> in the cycle each market sits, but how <em>cheap or rich</em> it is there.</span><span class="l-zh">九个国家股市同框 —— 美国、英国、欧洲、日本、中国、香港、台湾、印度与加拿大，全部基于真实的网络数据。纵轴表示<b>每个指数距其历史高点回撤了多少</b>：越高=越接近高点（拉伸），越低=超卖。实线为已发生的历史，虚线（含不确定性锥形）为情景预测，并附估值 —— 让你不仅看到每个市场处于周期的<em>哪个阶段</em>，还能看到它在该位置是<em>便宜还是昂贵</em>。</span></p>
+    </div>
+    <div class="cyc-ctrls">
+      <span class="cyc-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> <span id="cyc-asof">…</span></span>
+    </div>
+  </header>
+
+  <section class="cyc-stage">
+    <div class="cyc-hero">
+      <div class="cyc-hero-hd">
+        <h2><span class="l-en">Cross-market overlay</span><span class="l-zh">跨市场叠加</span></h2>
+        <div class="cyc-hero-tools">
+          <div class="cyc-legend">
+            <span><i class="ls"></i> <span class="l-en">History</span><span class="l-zh">历史</span></span>
+            <span><i class="lp"></i> <span class="l-en">Projection</span><span class="l-zh">预测</span></span>
+            <span><i class="lc"></i> <span class="l-en">Uncertainty</span><span class="l-zh">不确定性</span></span>
+            <span><i class="lv"></i> <span class="l-en">Convergence</span><span class="l-zh">共振拐点</span></span>
+          </div>
+          <div class="cyc-zoom" id="cyc-zoom" aria-label="Zoom"></div>
+        </div>
+      </div>
+      <div class="cyc-groups" id="cyc-groups" aria-label="Group filter"></div>
+      <div class="cyc-chips" id="cyc-chips" aria-label="Market toggles"></div>
+      <div id="cyc-chart" data-h="452" role="img" aria-label="Cross-market overlay chart"></div>
+    </div>
+
+    <aside class="cyc-detail" id="cyc-detail">
+      <div class="cyc-handle" id="cyc-handle" aria-hidden="true"></div>
+      <div class="cyc-panels">
+        <div class="cyc-panel show" id="cyc-panel-default"></div>
+        <div class="cyc-panel" id="cyc-panel-focus"></div>
+      </div>
+    </aside>
+  </section>
+
+  <section class="mkt-grid">
+    <div class="mkt-panel">
+      <div class="mkt-phd">
+        <h2><span class="l-en">Where they stand today</span><span class="l-zh">今日所处位置</span></h2>
+        <div class="mkt-sort" id="mkt-snap-sort" aria-label="Sort"></div>
+      </div>
+      <div class="mkt-snap" id="mkt-snap" aria-label="Cycle-position ranking"></div>
+      <div class="mkt-dispersion" id="mkt-dispersion"></div>
+    </div>
+    <div class="mkt-panel">
+      <div class="mkt-phd">
+        <h2><span class="l-en">Valuation map</span><span class="l-zh">估值地图</span></h2>
+        <span class="mkt-phd-sub"><span class="l-en">forward P/E × cycle position — cheap·washed-out ↘ rich·at-highs</span><span class="l-zh">预期市盈率 × 周期位置 —— 便宜·超卖 ↘ 贵·高位</span></span>
+      </div>
+      <div class="mkt-scatter" id="mkt-scatter" role="img" aria-label="Valuation versus cycle-position scatter"></div>
+    </div>
+  </section>
+
+  <div class="cyc-cards-hd">
+    <h2><span class="l-en">Market scorecards</span><span class="l-zh">市场记分卡</span></h2>
+    <span class="sub"><span class="l-en">Tap any card — or its line on the chart — to focus it</span><span class="l-zh">点击任意卡片（或图中曲线）以聚焦</span></span>
+  </div>
+  <div class="cyc-cards" id="cyc-cards"></div>
+</div>
+
+<script src="markets_i18n.js?v=2"></script>
+<script src="markets_data.js?v=2"></script>
+<script src="mm_charts.js?v=2"></script>
+<script src="markets_app.js?v=6"></script>
+<script>try{document.getElementById('cyc-asof').textContent=(window.MARKET_META||{}).asOf||'';}catch(e){}</script>
+<script src="theme.js"></script>
+<script defer data-whb data-root="" src="wh_banner.js"></script>
+</body>
+</html>

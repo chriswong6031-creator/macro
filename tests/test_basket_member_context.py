@@ -111,6 +111,58 @@ def test_theme_rows_leader_vs_chase_split():
     assert row["median_ext"] == pytest.approx(29.0, abs=0.1)
 
 
+def _piecewise(p0, p10, p20):
+    """21-bar series: linear p0→p10 over the first 10 bars, p10→p20 over the last 10."""
+    import numpy as _np
+    return list(_np.linspace(p0, p10, 11)) + list(_np.linspace(p10, p20, 11))[1:]
+
+
+def _catchup_fixture():
+    # hot theme (4 extended leaders) + TURN: a laggard over 20d (lowest ret20) that has TURNED UP
+    # over the last 10d (highest ret10) — the catch-up setup.
+    idx = pd.date_range("2024-01-01", periods=21, freq="B")
+    closes = pd.DataFrame({
+        "A": list(np.linspace(100, 130, 21)),   # leaders: steady climbers
+        "B": list(np.linspace(100, 128, 21)),
+        "C": list(np.linspace(100, 126, 21)),
+        "D": list(np.linspace(100, 124, 21)),
+        "TURN": _piecewise(100, 92, 108),        # dipped then ripped: low 20d (+8%), high 10d (+17%)
+    }, index=idx)
+    ext = {"A": 40.0, "B": 38.0, "C": 35.0, "D": 33.0, "TURN": 5.0}   # TURN barely over its 200d
+    ext_sig = {t: {"ext": e, "ext_z": 0.0, "grade": "steady", "near_52wh": 0.9}
+               for t, e in ext.items()}
+    b = {"id": "ct", "name": "Catch-up theme", "members": [
+        {"ticker": t, "name": t, "added": "2020-01-01"} for t in ext]}
+    return closes, ext_sig, b, idx.max()
+
+
+def test_catch_up_laggard_turning_up():
+    closes, ext_sig, b, last = _catchup_fixture()
+    row = bmc._theme_rows(closes, ext_sig, "ct", b, last)
+    assert row is not None and row["hot"] is True
+    bands = {m["ticker"]: m["band"] for m in row["members"]}
+    assert bands["TURN"] == "catch_up"                     # laggard over 20d, leads over 10d → catch-up
+    # the four extended names are leaders/extended (none mis-read as laggard/catch-up)
+    assert all(bands[t] in ("leader", "extended") for t in ("A", "B", "C", "D"))
+    assert "leader" in bands.values()                      # the top-RS extended names DO lead
+    assert row["n_catchup"] == 1
+    turn = next(m for m in row["members"] if m["ticker"] == "TURN")
+    assert turn["band_en"] == "Laggard turning up · catch-up" and turn["tone"] == "pos"
+    assert turn["rs_rank"] <= bmc.LAG_RANK and turn["rs_fast_rank"] >= bmc.TURN_RANK
+
+
+def test_catch_up_needs_a_hot_theme():
+    # same TURN profile but a FLAT theme (low ext everywhere) → not hot → no catch-up upgrade
+    closes, _ext_sig, b, last = _catchup_fixture()
+    flat = {t: {"ext": 3.0, "ext_z": 0.0, "grade": "steady", "near_52wh": 0.6}
+            for t in ("A", "B", "C", "D", "TURN")}
+    row = bmc._theme_rows(closes, flat, "ct", b, last)
+    assert row is not None and row["hot"] is False
+    bands = {m["ticker"]: m["band"] for m in row["members"]}
+    assert "catch_up" not in bands.values()
+    assert row["n_catchup"] == 0
+
+
 def test_theme_rows_too_thin_returns_none():
     closes, ext_sig, b, last = _theme_fixture()
     b2 = {"id": "t2", "name": "Thin", "members": b["members"][:3]}   # only 3 < MIN_MEMBERS

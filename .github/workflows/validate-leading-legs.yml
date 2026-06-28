@@ -1,0 +1,65 @@
+name: validate-leading-legs
+# Periodic re-validation of the Intelligence Hub "leading legs" whose gates would
+# otherwise be frozen manual artifacts. Each validator backfills its own history
+# (EDGAR full-index / S&P PIT membership / GEX chain snapshots) + forward returns
+# (yfinance) and rewrites its gate JSON + human report. The discovery legs read those
+# gates at build time, so a regime shift can promote a leg from "measuring" to scored
+# (or demote it) without a code change. Heavy + network-bound → monthly, not daily.
+on:
+  schedule:
+    - cron: "0 6 1 * *"        # 06:00 UTC on the 1st of each month
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: validate-leading-legs
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: activist-13D event study (validate_activist_ownership)
+        # EDGAR full-index 13D/13G backfill (post-2024 regime) + yfinance target prices ->
+        # data/beneficial_ownership/validation_gate.json + report. Non-fatal on net errors.
+        run: python scripts/validate_activist_ownership.py || true
+      - name: index-reconstitution event study (validate_index_reconstitution)
+        # S&P PIT add/delete events + yfinance -> data/index_reconstitution/validation_gate.json.
+        run: python scripts/validate_index_reconstitution.py || true
+      - name: single-name skew validation (validate_options_skew)
+        # reads the accruing skew ledger/chains -> data/options_skew/validation_gate.json.
+        run: python scripts/validate_options_skew.py || true
+      - name: BTC impulse-radar leg falsifier (btc_impulse_radar_backtest)
+        # re-derive each act-tier impulse leg's leak-free edge vs its pre-registered
+        # floor -> data/vector/impulse_legs_gate.json. The radar reads this gate and
+        # AUTO-DEMOTES a leg that stops leading. Non-fatal: graceful demote is the
+        # production mechanism; a non-zero exit just surfaces loudly in the logs.
+        run: python -m engine.btc_impulse_radar_backtest || echo "::warning::an impulse act-leg failed the falsifier (auto-demoted in the gate)"
+      - name: commit gates + reports
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # commit ONLY the small verdict artifacts — never the multi-MB price/backfill caches
+          git add -f data/beneficial_ownership/validation_gate.json \
+                     data/index_reconstitution/validation_gate.json \
+                     data/options_skew/validation_gate.json \
+                     data/vector/impulse_legs_gate.json \
+                     reports/activist-ownership-validation.md \
+                     reports/index-reconstitution-validation.md 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no gate changes"; exit 0; fi
+          git commit -m "validate: refresh leading-leg gates $(date -u +%F)"
+          for i in 1 2 3; do
+            if git pull --rebase -X theirs origin main && git push; then exit 0; fi
+            git rebase --abort 2>/dev/null || true
+            sleep $((i * 7))
+          done
+          echo "::warning::could not push gate refresh (non-fatal)"

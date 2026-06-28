@@ -73,6 +73,15 @@
   .nb-cscore.band-neutral { color:var(--muted); }
   .nb-cscore.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,var(--line)); }
   .nb-verdict { font-size:10.5px; font-weight:700; line-height:1.25; color:var(--text); }
+  /* multi-timeframe ENTRY-gate chip (engine.cycles.mtf_alignment) — mirrors US/CN/HK */
+  .nb-align { display:flex; align-items:center; gap:5px; margin:3px 0 1px; min-width:0;
+              font-size:9.5px; font-weight:700; letter-spacing:.01em; padding:2px 7px;
+              border-radius:7px; border:1px solid var(--line);
+              color:var(--up); background:color-mix(in srgb,var(--up) 9%,var(--panel)); }
+  .nb-align.nba-near { color:var(--warn); background:color-mix(in srgb,var(--warn) 9%,var(--panel)); }
+  .nb-align .nba-line { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .nb-align .nba-tag { margin-left:auto; flex:none; font-size:8px; font-weight:800;
+                       text-transform:uppercase; letter-spacing:.04em; opacity:.85; }
   .nb-axes { display:flex; gap:4px; margin-top:3px; }
   .nb-ax { flex:1; }
   .nb-ax .axl { font-size:8px; color:var(--muted); letter-spacing:.03em; }
@@ -83,6 +92,47 @@
   .nb-cau span { font-size:8.5px; font-weight:700; padding:0 4px; border-radius:6px;
                  color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
   .nb-tier { font-size:8px; color:var(--muted); margin-top:3px; letter-spacing:.02em; }
+  /* volatility black hole chip + honesty notes (Canada overhaul, mirrors china.html) */
+  .nb-vf { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
+  .nb-vchip { font-size:8.5px; font-weight:800; padding:0 5px; border-radius:6px; border:1px solid var(--line);
+              color:var(--muted); white-space:nowrap; }
+  .vf-coil { color:var(--link); border-color:color-mix(in srgb,var(--link) 38%,var(--line));
+             background:color-mix(in srgb,var(--link) 10%,var(--panel)); }
+  .vf-up { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line)); }
+  .vf-down { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
+  .vf-exp { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
+  .nb-note { font-size:8.5px; line-height:1.3; margin-top:3px; padding:2px 5px; border-radius:6px;
+             color:var(--muted); background:color-mix(in srgb,var(--text) 4%,var(--panel)); }
+  .nb-note-anticipation { color:var(--link); background:color-mix(in srgb,var(--link) 8%,var(--panel)); }
+  /* ---- vol-managed size chip + entry-timing gauge (mirrors the US standout card) ---- */
+  .nb-bot { display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin-top:4px; font-size:10px; }
+  .nb-size { font-size:9.5px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap;
+             padding:0 5px; border-radius:6px; border:1px solid var(--line); color:var(--muted); }
+  .nb-size.sz-up { color:var(--up); border-color:color-mix(in srgb,var(--up) 38%,var(--line));
+                   background:color-mix(in srgb,var(--up) 10%,var(--panel)); }
+  .nb-size.sz-dn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 42%,var(--line));
+                   background:color-mix(in srgb,var(--warn) 10%,var(--panel)); }
+  .nb-entry { margin:5px 0 1px; padding:5px 7px; border-radius:8px; border-left:3px solid var(--muted);
+              background:color-mix(in srgb,var(--text) 4%,var(--panel)); }
+  .nbe-buy_now, .nbe-partial { border-left-color:var(--up);
+              background:color-mix(in srgb,var(--up) 7%,var(--panel)); }
+  .nbe-buy_soon, .nbe-watch { border-left-color:var(--g-cold); }
+  .nbe-wait_pullback, .nbe-hold { border-left-color:var(--warn); }
+  .nbe-extended, .nbe-topping { border-left-color:var(--warn);
+              background:color-mix(in srgb,var(--warn) 7%,var(--panel)); }
+  .nbe-exit, .nbe-avoid, .nbe-blocked { border-left-color:var(--down);
+              background:color-mix(in srgb,var(--down) 7%,var(--panel)); }
+  .nbe-head { display:flex; align-items:center; gap:5px; }
+  .nbe-dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex:none; }
+  .nbe-dot.a3 { background:var(--up); box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 22%,transparent); }
+  .nbe-dot.a2 { background:var(--g-cold); }
+  .nbe-dot.a1 { background:var(--warn); }
+  .nbe-dot.a0 { background:var(--down); }
+  .nbe-status { font-size:10px; font-weight:800; color:var(--text); line-height:1.2; }
+  .nbe-zone { display:flex; align-items:baseline; gap:5px; margin-top:3px; }
+  .nbe-lbl { color:var(--muted); font-size:8px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+  .nbe-px { font-weight:800; font-size:11px; color:var(--text); font-variant-numeric:tabular-nums; }
+  .nbe-pct { color:var(--muted); font-size:9px; font-variant-numeric:tabular-nums; }
   .ab { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
   .abcol h3 { font-size:12px; margin:0 0 6px; text-transform:uppercase; letter-spacing:.04em; }
   .abcol .it { font-size:12.5px; padding:3px 0; border-bottom:1px solid var(--line); }
@@ -297,7 +347,7 @@
 {% if mode == 'stocks' and setups and setups.buy %}
 <div class="panel">
   <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
-    {% if setups.eligible is defined %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ setups.buy|length }} {{ t('of', '/') }} {{ setups.eligible }} {{ t('cleared the +0.5 α floor · each card carries the unified Conviction profile (cycle state caps the verdict)', '只通过 +0.5 α 门槛 · 每张卡片附带统一确信度画像（周期状态会封顶结论）') }}</span>{% endif %}
+    {% if setups.eligible is defined %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ setups.buy|length }} {{ t('shown ·', '已显示 ·') }} {{ setups.eligible }} {{ t('cycle-aligned across weekly · 3-day · daily (bottoming, not a falling knife) · each card carries the unified Conviction profile (cycle state caps the verdict)', '在周线·3日·日线上周期共振（筑底，而非接飞刀）· 每张卡片附带统一确信度画像（周期状态会封顶结论）') }}</span>{% endif %}
     {{ help('Large-cap TSX names ranked by the VALIDATED sector-neutral residual-momentum leg (α, the positive-IC selection leg), with the cycle entry shown as timing context. Alpha-led like the US (Canada is momentum-persistent). Each card then carries the unified Conviction profile: four transparent axes (selection / entry / tailwind / quality) and one honest verdict. The price-cycle state is a HARD modifier — a name in a downtrend or topping can never read \'Buy\', it reads \'strong name, wrong tape\' — so this card and the stock\'s own page never disagree. The 0-100 score is a within-market percentile DISPLAY skin (not a probability). On Canada the selection leg is weak positive-IC CONTEXT and the axis weights are an unvalidated prior — the trust badge says so. Context, not personalized advice.', '按已验证的板块中性残差动量腿（α，正 IC 选股腿）排名的大盘 TSX 个股，并以周期入场作为时机背景。与美国一样采用 α 主导（加拿大动量具持续性）。每张卡片再附带统一确信度画像：四条透明维度（选股／入场／顺风／质量）与一个诚实结论。价格周期状态是硬性修正项——处于下行或做顶的个股永远不会显示"买入"，而显示"强势但趋势不利"——因此该卡片与个股自身页面永不矛盾。0-100 分是市场内百分位的展示皮肤（非概率）。在加拿大，选股腿为弱正 IC 背景，维度权重为未经验证的先验——信任徽标已注明。仅作背景，非个性化建议。') }}
   </h2>
   <div class="cards" data-showmore="12">
@@ -321,6 +371,18 @@
         {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">{{ c.score }}</span>{% endif %}
         <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
       </div>
+      {% set al = c.alignment %}
+      {% if al and al.line %}
+      {# multi-timeframe ENTRY gate (engine.cycles.mtf_alignment): a low-risk SWING entry
+         must be a FRESH turn from a low — weekly bear-recovering/basing + 3-day cross from
+         oversold (<25) + daily just-crossed. 🟢 Prime/Armed = confirmed; 🟡 Approaching =
+         early backfill (not yet a buy). The reason states WHY it qualifies. #}
+      <div class="nb-align{{ ' nba-near' if s.align_tier == 'near' else '' }}" title="{{ al.line }} · {{ al.line_zh }}">
+        <span class="nba-mark">{{ '🟡' if s.align_tier == 'near' else '🟢' }}</span>
+        <span class="nba-line"><span class="l-en">{{ al.reason or al.line }}</span><span class="l-zh">{{ al.reason_zh or al.line_zh }}</span></span>
+        {% if al.entry_tier %}<span class="nba-tag">{{ t(al.entry_tier, al.entry_tier_zh) }}</span>{% endif %}
+      </div>
+      {% endif %}
       <div class="nb-axes">
         {% for ax, lbl, lbl_zh in [('selection','SEL','选股'),('entry','ENT','入场'),('tailwind','TWD','顺风'),('quality','QUAL','质量')] %}
         {% set a = c.axes[ax] %}
@@ -330,7 +392,40 @@
         </div>
         {% endfor %}
       </div>
+      {# ENTRY-timing gauge (gauge 2): buy now / wait for the pullback / extended, with the
+         actual buy-zone price + cycle position. WHEN/AT-WHAT-PRICE — never the conviction score. #}
+      {% set es = s.entry_signal %}
+      {% if es %}
+      <div class="nb-entry nbe-{{ es.status }}" title="ENTRY timing (gauge 2) — when & at what price to buy. {{ es.action }}">
+        <div class="nbe-head">
+          <span class="nbe-dot a{{ es.act_level }}"></span>
+          <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
+        </div>
+        {% if es.buy_zone and es.buy_zone.high is not none %}
+        <div class="nbe-zone">
+          <span class="nbe-lbl">{{ t('Buy zone', '买入区') }}</span>
+          <span class="nbe-px">${{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–${{ '%.2f'|format(es.buy_zone.high) }}{% endif %}</span>
+          {% if es.buy_zone.pct_from_spot is not none %}<span class="nbe-pct">{{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%</span>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+      {# vol-managed inverse-vol SIZE chip (engine/risk_sizing) — HOW MUCH to own (risk),
+         separate from the conviction score (WHAT) and the entry gauge (WHEN). #}
+      {% set _rs = s.risk_sizing %}
+      {% if _rs and _rs.size_mult is not none %}
+      <div class="nb-bot">
+        <span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×{{ _rs.size_mult }} of the conviction-base size (forecast vol {{ _rs.vol_ann_pct }}% · inverse-vol ×{{ _rs.inv_vol_mult }} · regime ×{{ _rs.regime_gross }}). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>
+      </div>
+      {% endif %}
+      {# volatility black hole (vol_squeeze) chip #}
+      {% set _vs = c.vol_squeeze %}
+      {% if _vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION'] %}
+      <div class="nb-vf">
+        <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" title="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %} — {{ _vs.caveat }} | 波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Coiled','蓄势') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Vol expansion','波动扩张') }}{% endif %}</span>
+      </div>{% endif %}
       {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span class="l-en">⚠ {{ cau }}</span><span class="l-zh">⚠ {{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span>{% endfor %}</div>{% endif %}
+      {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
       <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
       {% endif %}
     </div>

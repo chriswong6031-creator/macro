@@ -1,0 +1,249 @@
+{% extends "report_base.html.j2" %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+{% set CN = china_news or {} %}
+{% set news = CN.news or {} %}
+{% set heads = news.headlines if news and news.headlines else [] %}
+{% set SYN = (news.synthesis if news and news.synthesis else {}) %}
+{% set SYN_CHANNELS = (SYN.top_channels if SYN.top_channels else []) %}
+{% set SYN_TICKERS = (SYN.top_tickers if SYN.top_tickers else []) %}
+{% set SYN_SOURCES = (SYN.source_mix if SYN.source_mix else []) %}
+{% set feature = heads[0] if heads else none %}
+
+{% block title %}China News Feed - Macro Dashboard{% endblock %}
+
+{% block base_css %}
+  body { padding-bottom:52px; }
+  @media(min-width:1180px){ body{ padding-left:max(18px,calc((100vw - 1216px)/2)); padding-right:max(18px,calc((100vw - 1216px)/2)); } }
+  .shell { max-width:1180px; margin:0 auto; }
+  .hero { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr); gap:18px; margin:24px 0 16px; align-items:start; }
+  .hero-main,.side,.card,.rail-card,.empty { background:var(--panel); border:1px solid var(--line); border-radius:8px; box-shadow:var(--card-shadow); }
+  .hero-main { min-height:0; padding:24px; display:flex; flex-direction:column; position:relative; overflow:hidden; }
+  .hero-main:before { content:''; position:absolute; inset:0 0 auto; height:5px; background:linear-gradient(90deg,#d04545,var(--warn),var(--link)); }
+  .eyebrow { display:flex; gap:8px; flex-wrap:wrap; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.12em; font-weight:800; margin:0 0 14px; }
+  html[data-lang="zh"] .eyebrow { letter-spacing:0; }
+  .live { width:7px; height:7px; border-radius:50%; background:var(--up); box-shadow:0 0 0 4px color-mix(in srgb,var(--up) 14%,transparent); align-self:center; }
+  .hero h1 { font-size:36px; line-height:1.04; margin:0 0 12px; letter-spacing:0; }
+  .hero h1 a { color:var(--text); }
+  .hero h1 a:hover { color:var(--link); }
+  .dek { color:var(--muted); font-size:14.5px; max-width:72ch; margin:0; }
+  .meta,.intel { display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin-top:16px; }
+  .chip { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); border-radius:999px; padding:5px 10px; font-size:11.5px; color:var(--muted); background:var(--panel2); }
+  .chip b { color:var(--text); }
+  .theme { --c:var(--link); color:color-mix(in srgb,var(--c) 82%,var(--text)); border-color:color-mix(in srgb,var(--c) 40%,var(--line)); background:color-mix(in srgb,var(--c) 12%,var(--panel)); }
+  .th-monetary{--c:#7aa7e0}.th-inflation{--c:#e08b45}.th-growth{--c:#9cbf5a}.th-credit{--c:#a78bfa}.th-fiscal{--c:#e0a030}.th-policy{--c:#d04545}.th-markets{--c:#45b873}.th-macro{--c:var(--muted)}
+  .imp-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 48%,var(--line)); }
+  .imp-medium { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 48%,var(--line)); }
+  .tk { color:var(--link); border-color:color-mix(in srgb,var(--link) 42%,var(--line)); }
+  .read { margin-left:auto; color:var(--link); font-size:12px; font-weight:800; }
+  .side { padding:16px; display:grid; gap:12px; align-content:start; }
+  .tile { display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center; padding:13px 14px; border:1px solid var(--line); border-radius:8px; background:var(--panel2); }
+  .tile .k { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.08em; }
+  .tile .v { font-size:18px; font-weight:760; margin-top:2px; }
+  .tile .s { color:var(--muted); font-size:11.5px; }
+  .tile .num { font-size:26px; font-weight:850; font-variant-numeric:tabular-nums; }
+  .layout { display:grid; grid-template-columns:minmax(0,1fr) 328px; gap:18px; align-items:start; }
+  .toolbar { position:sticky; top:0; z-index:5; display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:12px 0 14px; background:linear-gradient(180deg,var(--bg) 72%,transparent); }
+  .search { position:relative; flex:1 1 260px; min-width:210px; }
+  .search input { width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:8px; padding:10px 12px 10px 34px; outline:none; font-size:13px; }
+  .search input:focus { border-color:var(--link); box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 16%,transparent); }
+  .search .mag { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); }
+  .filters { display:flex; flex-wrap:wrap; gap:6px; }
+  .fbtn { border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:999px; padding:7px 10px; font-size:11.5px; cursor:pointer; }
+  .fbtn:hover,.fbtn.on { color:var(--text); border-color:var(--link); background:color-mix(in srgb,var(--link) 10%,var(--panel)); }
+  .count { color:var(--muted); font-size:12px; margin-left:auto; white-space:nowrap; }
+  .feed { display:grid; gap:10px; }
+  .card { display:grid; grid-template-columns:86px minmax(0,1fr); overflow:hidden; color:var(--text); transition:transform .16s,border-color .16s,box-shadow .16s; }
+  .card:hover { transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--line)); box-shadow:0 14px 30px -18px color-mix(in srgb,var(--link) 50%,transparent); }
+  .rank { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:2px; min-height:112px; background:var(--panel2); border-right:1px solid var(--line); color:var(--muted); }
+  .rank b { color:var(--link); font-size:11px; letter-spacing:.08em; }
+  .rank span { font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
+  .body { padding:14px 16px; min-width:0; }
+  .top { display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin-bottom:8px; }
+  .title { font-size:17px; line-height:1.28; font-weight:730; margin:0; color:var(--text); }
+  .card:hover .title { color:var(--link); }
+  .summary { color:var(--muted); font-size:12.5px; margin:8px 0 0; }
+  .rail { display:grid; gap:12px; position:sticky; top:12px; }
+  .rail-card { padding:15px; }
+  .rail-card h2 { margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
+  .line { display:flex; gap:9px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--line); }
+  .line:last-child { border-bottom:0; }
+  .date { flex:0 0 74px; color:var(--muted); font-size:11.5px; font-variant-numeric:tabular-nums; }
+  .main { min-width:0; font-size:12.5px; }
+  .tag { display:inline-flex; min-width:45px; justify-content:center; padding:2px 7px; border-radius:6px; border:1px solid var(--line); color:var(--link); font-size:10.5px; font-weight:800; margin-right:5px; }
+  .empty { padding:34px 28px; text-align:center; }
+  .empty h2 { font-size:21px; color:var(--text); text-transform:none; letter-spacing:0; margin:0 0 8px; }
+  .empty p,.disc { color:var(--muted); }
+  .disc { font-size:11.5px; line-height:1.55; margin:14px 0 0; }
+  .hidden { display:none !important; }
+  @media(max-width:900px){ .hero,.layout{grid-template-columns:1fr}.hero-main{min-height:0}.hero h1{font-size:28px}.rail{position:static} }
+  @media(max-width:560px){ .hero-main{padding:20px 16px}.card{grid-template-columns:1fr}.rank{min-height:auto;flex-direction:row;justify-content:flex-start;padding:8px 14px;border-right:0;border-bottom:1px solid var(--line)}.toolbar{position:static} }
+{% endblock %}
+
+{% block content %}
+<main class="shell">
+  <section class="hero">
+    <article class="hero-main">
+      <div>
+        <p class="eyebrow"><span class="live"></span>{{ t('China News Intelligence', '中国新闻情报流') }}<span>{{ asof or '' }}</span></p>
+        {% if feature %}
+        <h1><a href="{{ feature.url }}" target="_blank" rel="noopener"><span class="l-en">{{ feature.title }}</span><span class="l-zh">{{ feature.title_zh or feature.title }}</span></a></h1>
+        {% if feature.summary %}
+        <p class="dek"><span class="l-en">{{ feature.summary }}</span><span class="l-zh">{{ feature.summary_zh or feature.summary }}</span></p>
+        {% else %}
+        <p class="dek">{{ t('Chinese-native financial media, official policy pages, Eastmoney flashes and global wire normalized into importance, channel and market-proxy tags.',
+          '中文财经媒体、官方政策页面、东方财富快讯与全球新闻线被统一为重要性、传导通道与市场代理标签。') }}</p>
+        {% endif %}
+        {% else %}
+        <h1>{{ t('China macro tape is quiet right now.', '当前中国宏观新闻流较安静。') }}</h1>
+        <p class="dek">{{ t('The feed is ready, but this pull did not produce kept stories. Policy tone and scheduled catalysts remain live.',
+          '新闻流已就绪，但本次抓取没有保留条目。政策基调与排定催化仍保持更新。') }}</p>
+        {% endif %}
+      </div>
+      <div>
+        <div class="meta">
+          {% if feature %}
+          {% set tl = CN.theme_label.get(feature.theme, [feature.theme, feature.theme]) %}
+          <span class="chip theme th-{{ feature.theme }}">{{ t(tl[0], tl[1]) }}</span>
+          <span class="chip"><b>{{ feature.source_name or 'source' }}</b>{% if feature.source_tier %} · {{ feature.source_tier }}{% endif %}</span>
+          <span class="chip imp-{{ feature.importance }}"><b>{{ feature.importance_score }}</b>/100 {{ feature.importance }}</span>
+          <a class="read" href="{{ feature.url }}" target="_blank" rel="noopener">{{ t('Read source', '阅读来源') }}</a>
+          {% else %}
+          <span class="chip">{{ t('Status', '状态') }}: {{ news.degraded_reason or t('waiting for headlines', '等待头条') }}</span>
+          {% endif %}
+        </div>
+        {% if feature and (feature.channels or feature.tickers) %}
+        <div class="intel">{% for c in feature.channels[:5] %}<span class="chip">{{ c }}</span>{% endfor %}{% for tk in feature.tickers[:7] %}<span class="chip tk">{{ tk }}</span>{% endfor %}</div>
+        {% endif %}
+      </div>
+    </article>
+    <aside class="side">
+      <div class="tile">
+        <div><div class="k">{{ t('Official Policy Tone', '官方政策基调') }}</div><div class="v">{% if CN.tone %}{{ t(CN.tone.label_en, CN.tone.label_zh) }}{% else %}{{ t('Unavailable', '暂无') }}{% endif %}</div><div class="s">{{ t('CCTV 新闻联播 z-score', '央视新闻联播 z 分数') }}</div></div>
+        <div class="num">{% if CN.tone %}{{ '%+.1f'|format(CN.tone.z) }}{% else %}-{% endif %}</div>
+      </div>
+      <div class="tile">
+        <div><div class="k">{{ t('Official Sources', '官方来源') }}</div><div class="v">{{ news.n_official or 0 }} {{ t('items', '条') }}</div><div class="s">{{ t('PBoC · NBS · MOF', '央行 · 统计局 · 财政部') }}</div></div>
+        <div class="num">{{ news.n_official or 0 }}</div>
+      </div>
+      <div class="tile">
+        <div><div class="k">{{ t('Native + Global Wire', '中文源 + 全球新闻线') }}</div><div class="v">{{ (news.n_news_rss or 0) + (news.n_wire or 0) }} {{ t('items', '条') }}</div><div class="s">{{ t('Yicai · STCN · CNStock · SCMP · Caixin', '第一财经 · 证券时报 · 上海证券报 · SCMP · 财新') }}</div></div>
+        <div class="num">{{ (news.n_news_rss or 0) + (news.n_wire or 0) }}</div>
+      </div>
+      <div class="tile">
+        <div><div class="k">{{ t('Kept Feed', '保留新闻') }}</div><div class="v">{{ heads|length }} {{ t('kept', '保留') }}</div><div class="s">{{ news.n_kept or 0 }}/{{ news.n_raw or 0 }} {{ t('raw candidates', '原始候选') }}</div></div>
+        <div class="num">{{ heads|length }}</div>
+      </div>
+      <div class="tile">
+        <div><div class="k">{{ t('Intelligence Mix', '情报结构') }}</div><div class="v">{{ SYN.high_impact_count or 0 }} {{ t('high impact', '高影响') }}</div><div class="s">{% if SYN.dominant_channel %}{{ SYN.dominant_channel }}{% elif SYN.dominant_theme %}{{ SYN.dominant_theme }}{% else %}{{ t('awaiting signal', '等待信号') }}{% endif %}</div></div>
+        <div class="num">{% if SYN.avg_importance %}{{ SYN.avg_importance|round|int }}{% else %}-{% endif %}</div>
+      </div>
+    </aside>
+  </section>
+
+  <section class="layout">
+    <div>
+      <div class="toolbar">
+        <div class="search"><span class="mag">⌕</span><input id="q" type="search" autocomplete="off" placeholder="Search China headlines, channels or tickers..." data-ph-en="Search China headlines, channels or tickers..." data-ph-zh="搜索中国头条、通道或标的..."></div>
+        <div class="filters" id="filters">
+          <button class="fbtn on" data-theme="all">{{ t('All', '全部') }}</button>
+          <button class="fbtn" data-importance="high">{{ t('High impact', '高影响') }}</button>
+          {% for key, labels in CN.theme_label.items() %}<button class="fbtn" data-theme="{{ key }}">{{ t(labels[0], labels[1]) }}</button>{% endfor %}
+        </div>
+        <span class="count" id="count"></span>
+      </div>
+      {% if heads %}
+      <div class="feed" id="feed">
+        {% for h in heads[1:] %}
+        <a class="card" href="{{ h.url or '#' }}" target="_blank" rel="noopener"
+           data-theme="{{ h.theme }}" data-importance="{{ h.importance }}" data-search="{{ (h.title ~ ' ' ~ (h.title_zh or '') ~ ' ' ~ h.summary ~ ' ' ~ (h.summary_zh or '') ~ ' ' ~ h.source_name ~ ' ' ~ h.channels|join(' ') ~ ' ' ~ h.tickers|join(' '))|lower }}">
+          <div class="rank"><b>#{{ loop.index + 1 }}</b><span>{{ t('story', '条目') }}</span></div>
+          <div class="body">
+            <div class="top">
+              {% set tl = CN.theme_label.get(h.theme, [h.theme, h.theme]) %}
+              <span class="chip theme th-{{ h.theme }}">{{ t(tl[0], tl[1]) }}</span>
+              <span class="chip"><b>{{ h.source_name or 'source' }}</b>{% if h.source_tier %} · {{ h.source_tier }}{% endif %}</span>
+              <span class="chip imp-{{ h.importance }}"><b>{{ h.importance_score }}</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></h2>
+            {% if h.summary %}<p class="summary"><span class="l-en">{{ h.summary }}</span><span class="l-zh">{{ h.summary_zh or h.summary }}</span></p>{% endif %}
+            <div class="intel">{% for c in h.channels[:5] %}<span class="chip">{{ c }}</span>{% endfor %}{% for tk in h.tickers[:7] %}<span class="chip tk">{{ tk }}</span>{% endfor %}{% for r in h.importance_reasons[:2] %}<span class="chip">{{ r }}</span>{% endfor %}</div>
+          </div>
+        </a>
+        {% else %}
+        <div class="empty"><h2>{{ t('Only one story passed the filter.', '仅一条新闻通过筛选。') }}</h2><p>{{ t('The lead story above is the full filtered feed for this run.', '上方主新闻即本次完整筛选结果。') }}</p></div>
+        {% endfor %}
+      </div>
+      <div class="empty hidden" id="none"><h2>{{ t('No stories match that view.', '没有符合当前视图的新闻。') }}</h2><p>{{ t('Clear search or switch back to All themes.', '清空搜索或切回全部主题。') }}</p></div>
+      {% else %}
+      <div class="empty"><h2>{{ t('No filtered China headlines on this pull.', '本次抓取暂无筛选中国头条。') }}</h2><p>{{ t('This can happen when official pages are quiet, the Eastmoney fetch is unavailable, or no macro-relevant item cleared the gate.', '当官方页面安静、东方财富抓取不可用，或没有宏观相关条目通过筛选时会出现这种情况。') }}</p></div>
+      {% endif %}
+      {% if CN.disclaimer %}<p class="disc">{{ t(CN.disclaimer, CN.disclaimer_zh) }}</p>{% endif %}
+    </div>
+
+    <aside class="rail">
+      <section class="rail-card">
+        <h2>{{ t('Feed intelligence', '新闻情报') }}</h2>
+        {% if SYN.read %}<div class="line"><div class="date">{{ t('Read', '读数') }}</div><div class="main">{{ SYN.read }}</div></div>{% endif %}
+        <div class="line"><div class="date">{{ t('Channels', '通道') }}</div><div class="main">{% for c in SYN_CHANNELS[:5] %}<span class="tag">{{ c.name }}</span>{% else %}{{ t('No channel cluster yet', '暂无通道聚类') }}{% endfor %}</div></div>
+        <div class="line"><div class="date">{{ t('Tickers', '标的') }}</div><div class="main">{% for tk in SYN_TICKERS[:7] %}<span class="tag">{{ tk.ticker }}</span>{% else %}{{ t('No proxy tags yet', '暂无代理标的') }}{% endfor %}</div></div>
+        <div class="line"><div class="date">{{ t('Sources', '来源') }}</div><div class="main">{% for s in SYN_SOURCES[:4] %}<span class="tag">{{ s.tier }} {{ s.count }}</span>{% else %}{{ t('No source mix yet', '暂无来源结构') }}{% endfor %}</div></div>
+      </section>
+
+      <section class="rail-card">
+        <h2>{{ t('China high-impact calendar', '中国高影响日程') }}</h2>
+        {% for s in event_strip %}
+        <div class="line"><div class="date">{{ s.dow }} {{ s.md }}{% if s.time %}<br>{{ s.time }}{% endif %}</div><div class="main"><span class="tag">{{ s.type }}</span>{{ t(s.name_en, s.name_zh) }}</div></div>
+        {% else %}<p class="mut">{{ t('No top-tier China prints in the window.', '窗口内无一线中国数据。') }}</p>{% endfor %}
+      </section>
+      <section class="rail-card">
+        <h2>{{ t('All scheduled catalysts', '全部排定催化') }}</h2>
+        {% for c in calendar[:10] %}
+        <div class="line"><div class="date">{{ c.date }}</div><div class="main"><span class="tag">{{ c.type }}</span>{{ t(c.name_en, c.name_zh) }}</div></div>
+        {% else %}<p class="mut">{{ t('No scheduled catalysts in the window.', '窗口内无排定催化。') }}</p>{% endfor %}
+      </section>
+      {% if CN.tone %}
+      <section class="rail-card">
+        <h2>{{ t('Policy-tone provenance', '政策基调来源') }}</h2>
+        <div class="line"><div class="date">{{ CN.tone.asof }}</div><div class="main">{{ t('Tone z-score', '基调 z 分数') }} <b>{{ '%+.2f'|format(CN.tone.z) }}</b> · {{ CN.tone.n_days }}{{ t('d series', '天序列') }}</div></div>
+      </section>
+      {% endif %}
+    </aside>
+  </section>
+</main>
+{% endblock %}
+
+{% block body_scripts %}
+<script>
+(function(){
+  var feed=document.getElementById('feed');
+  var rows=feed ? Array.prototype.slice.call(feed.querySelectorAll('.card')) : [];
+  var q=document.getElementById('q'), filters=document.getElementById('filters'), count=document.getElementById('count'), none=document.getElementById('none');
+  var theme='all', importance='all', term='';
+  function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+  function sync(){ if(q) q.placeholder=isZh()?(q.getAttribute('data-ph-zh')||''):(q.getAttribute('data-ph-en')||''); }
+  function apply(){
+    var shown=0;
+    rows.forEach(function(r){
+      var okTheme=theme==='all'||r.getAttribute('data-theme')===theme;
+      var okImp=importance==='all'||r.getAttribute('data-importance')===importance;
+      var okQ=!term||(r.getAttribute('data-search')||'').indexOf(term)>=0;
+      var show=okTheme&&okImp&&okQ;
+      r.classList.toggle('hidden',!show);
+      if(show) shown++;
+    });
+    if(none) none.classList.toggle('hidden', shown>0 || rows.length===0);
+    if(count) count.textContent=isZh()?(shown+' 条'):(shown+(shown===1?' story':' stories'));
+  }
+  if(q) q.addEventListener('input',function(){term=(q.value||'').trim().toLowerCase();apply();});
+  if(filters) filters.addEventListener('click',function(e){
+    var b=e.target.closest('.fbtn'); if(!b) return;
+    Array.prototype.forEach.call(filters.querySelectorAll('.fbtn'),function(x){x.classList.remove('on');});
+    b.classList.add('on'); theme=b.getAttribute('data-theme')||'all'; importance=b.getAttribute('data-importance')||'all'; apply();
+  });
+  document.addEventListener('langchange',function(){sync();apply();});
+  sync(); apply();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,314 @@
+/* ============================================================================
+   cycle.css — Cycle Intelligence Dashboard · design system
+   Builds on theme.css tokens (--bg/--panel/--panel2/--text/--muted/--line/
+   --warn/--up/--down/--link, dark default + light override). Each cycle owns an
+   accent passed as --c; tints derive via color-mix so they adapt to the theme.
+   ========================================================================== */
+
+.cyc-page { --c: var(--link); --rad: 16px; --ease: cubic-bezier(.22,.61,.36,1); }
+.cyc-wrap { max-width: 1320px; margin: 0 auto; padding: 0 22px 72px; }
+
+/* nav layout (desktop horizontal; theme.js collapses it under 700px) */
+.site-nav .nav-links { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.site-nav .nav-link { font-size: 13.5px; color: var(--muted); text-decoration: none; padding: 6px 11px; border-radius: 9px; transition: color .16s, background .16s; }
+.site-nav .nav-link:hover { color: var(--text); background: var(--panel); }
+.site-nav .nav-link.active { color: var(--text); background: var(--panel); }
+.nav-ctrls .theme-btn, .nav-ctrls .lang-btn { font-size: 12.5px; padding: 6px 11px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; }
+
+/* ---- header -------------------------------------------------------------- */
+.cyc-hd { display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap; padding: 26px 2px 20px; }
+.cyc-hd .ht { flex: 1 1 auto; min-width: 240px; }
+.cyc-kicker { font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--muted); display: flex; align-items: center; gap: 9px; }
+.cyc-kicker .hb { width: 7px; height: 7px; border-radius: 50%; background: var(--up);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--up) 60%, transparent); animation: cyc-hb 2.6s ease-in-out infinite; }
+@keyframes cyc-hb { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
+.cyc-title { font-size: clamp(30px, 4.4vw, 46px); font-weight: 800; letter-spacing: -.025em; margin: 8px 0 6px;
+  line-height: 1.02; background: linear-gradient(92deg, var(--text), color-mix(in srgb, var(--text) 55%, var(--link)));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.cyc-sub { font-size: 15px; color: var(--muted); max-width: 64ch; line-height: 1.5; }
+.cyc-ctrls { display: flex; align-items: center; gap: 8px; }
+.cyc-asof { font-size: 12px; color: var(--muted); padding: 6px 11px; border: 1px solid var(--line);
+  border-radius: 999px; background: var(--panel); font-variant-numeric: tabular-nums; }
+
+/* ---- stage: hero ON TOP, detail as a full-width underbar BELOW ------------
+   The chart gets the full width; the detail panel is a fixed in-flow underbar
+   directly beneath it (its content flows into columns on desktop). On mobile the
+   underbar becomes a draggable bottom sheet (see the responsive block). */
+.cyc-stage { display: grid; grid-template-columns: 1fr; gap: 18px; align-items: start; }
+
+.cyc-hero { background: var(--panel); border: 1px solid var(--line); border-radius: var(--rad);
+  padding: 16px 16px 8px; position: relative; overflow: hidden;
+  box-shadow: var(--card-shadow); }
+.cyc-hero::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 120px; pointer-events: none;
+  background: radial-gradient(120% 90% at 50% -30%, color-mix(in srgb, var(--link) 9%, transparent), transparent 70%); }
+.cyc-hero-hd { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; position: relative; }
+.cyc-hero-hd h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 0; }
+.cyc-legend { display: flex; gap: 14px; font-size: 11px; color: var(--muted); flex-wrap: wrap; }
+.cyc-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.cyc-legend .ls { width: 18px; height: 0; border-top: 2px solid currentColor; color: var(--text); opacity: .8; }
+.cyc-legend .lp { width: 18px; height: 0; border-top: 2px dashed currentColor; color: var(--text); opacity: .7; }
+.cyc-legend .lc { width: 14px; height: 9px; border-radius: 2px; background: color-mix(in srgb, var(--text) 16%, transparent); }
+
+/* hero tools row (legend + zoom controls), wraps on small screens */
+.cyc-hero-tools { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* zoom controls — presets + reset (reset appears only when zoomed) */
+.cyc-zoom { display: inline-flex; align-items: center; gap: 4px; }
+.cyc-zhint { font-size: 10.5px; color: var(--muted); opacity: .75; margin-right: 3px; letter-spacing: .02em; }
+.cyc-zbtn { font-size: 11.5px; font-weight: 600; color: var(--muted); background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 7px; padding: 4px 9px; cursor: pointer; transition: color .16s, border-color .16s, transform .1s; }
+.cyc-zbtn:hover { color: var(--text); border-color: color-mix(in srgb, var(--link) 50%, var(--line)); }
+.cyc-zbtn:active { transform: translateY(1px); }
+.cyc-zreset { display: none; color: var(--link); border-color: color-mix(in srgb, var(--link) 40%, var(--line)); }
+.cyc-zoom.zoomed .cyc-zreset { display: inline-flex; }
+
+/* group filter — declutter the overlay by asset family */
+.cyc-groups { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; padding: 2px 2px 11px; }
+.cyc-glabel { font-size: 10.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); opacity: .8; margin-right: 2px; }
+.cyc-gchip { font-size: 12px; font-weight: 600; color: var(--muted); background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 999px; padding: 4px 11px; cursor: pointer; transition: all .18s var(--ease); display: inline-flex; align-items: center; gap: 5px; }
+.cyc-gchip i { font-style: normal; font-size: 10px; font-weight: 700; opacity: .6; }
+.cyc-gchip:hover { color: var(--text); }
+.cyc-gchip.on { color: var(--text); background: var(--panel); border-color: color-mix(in srgb, var(--ph, var(--text)) 45%, var(--line)); }
+.cyc-gchip:not(.on) { opacity: .5; }
+.cyc-gchip .gdot { width: 8px; height: 8px; border-radius: 50%; background: var(--ph, var(--muted)); flex: none; }
+.cyc-gchip:not(.on) .gdot { background: var(--muted); }
+
+/* "Select all" reset — pushed to the right; glows when a phase filter is active */
+.cyc-gall { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600;
+  color: var(--muted); background: var(--panel2); border: 1px solid var(--line); border-radius: 999px;
+  padding: 5px 13px; cursor: pointer; transition: color .2s, border-color .2s, background .2s, box-shadow .2s, transform .12s; }
+.cyc-gall .ga-dots { display: inline-flex; gap: 2px; }
+.cyc-gall .ga-dots i { width: 5px; height: 5px; border-radius: 50%; opacity: .85; transition: transform .2s var(--ease); }
+.cyc-gall:hover { color: var(--text); transform: translateY(-1px); }
+.cyc-gall:hover .ga-dots i { transform: scale(1.18); }
+.cyc-gall:active { transform: translateY(0); }
+.cyc-gall.active { color: var(--link); background: color-mix(in srgb, var(--link) 12%, var(--panel2));
+  border-color: color-mix(in srgb, var(--link) 52%, var(--line)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--link) 22%, transparent), 0 4px 14px color-mix(in srgb, var(--link) 18%, transparent); }
+.cyc-gall:not(.active) .ga-dots i:nth-child(n) { filter: saturate(.55); }
+
+/* phase-filtered out: DIM in place (never display:none — that collapses the
+   layout and shifts the chart). Chips dim but stay clickable (clicking still
+   focuses, which re-reveals that line). */
+.cyc-chip.gdim { opacity: .28; }
+.cyc-chip.gdim:hover { opacity: .7; }
+
+/* hover x-axis date pill (month/year) */
+.mmc-xlabel { pointer-events: none; }
+.mmc-xlabel rect { filter: drop-shadow(0 1px 2px rgba(0,0,0,.25)); }
+
+/* brush rectangle (shift+drag zoom-select) */
+.mmc-brush { pointer-events: none; }
+
+/* chip row */
+.cyc-chips { display: flex; gap: 7px; overflow-x: auto; padding: 2px 2px 12px; scrollbar-width: thin; position: relative;
+  -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+.cyc-chips::-webkit-scrollbar { height: 6px; }
+.cyc-chips::-webkit-scrollbar-thumb { background: var(--line); border-radius: 99px; }
+.cyc-chip { --c: var(--link); flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12.5px; font-weight: 600; color: var(--text); background: var(--panel2);
+  border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px 6px 9px; cursor: pointer;
+  transition: all .22s var(--ease); white-space: nowrap; scroll-snap-align: start; }
+.cyc-chip .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex: none;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--c) 50%, transparent); transition: box-shadow .22s ease; }
+.cyc-chip:hover { border-color: color-mix(in srgb, var(--c) 55%, var(--line)); transform: translateY(-1px); }
+.cyc-chip.on { color: #fff; background: color-mix(in srgb, var(--c) 88%, #000 6%);
+  border-color: var(--c); box-shadow: 0 4px 16px color-mix(in srgb, var(--c) 34%, transparent); }
+html[data-theme="light"] .cyc-chip.on { color: #fff; }
+.cyc-chip.on .dot { background: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, #fff 30%, transparent); }
+.cyc-chip.off { opacity: .5; }
+.cyc-chip.off:hover { opacity: 1; }
+
+#cyc-chart { width: 100%; height: 452px; }
+
+/* ---- chart engine styling (mm_charts) ----------------------------------- */
+.mmc-series { transition: opacity .4s var(--ease); }
+.mmc-series .mmc-hist, .mmc-series .mmc-proj { stroke-opacity: .68; transition: stroke-width .25s ease, stroke-opacity .3s ease; }
+.mmc-series.is-dim { opacity: .12; }
+/* when nothing is focused, soften lines so the now-dots + TODAY column lead */
+.mmc-series.is-focus .mmc-hist, .mmc-series.is-focus .mmc-proj { stroke-width: 3.2px; stroke-opacity: 1; }
+.mmc-series .mmc-mk-peak, .mmc-series .mmc-mk-trough { opacity: 0; transition: opacity .3s ease; pointer-events: none; }
+.mmc-series.is-focus .mmc-mk-peak, .mmc-series.is-focus .mmc-mk-trough { opacity: .92; }
+.mmc-has-focus .mmc-cone { opacity: .05; }
+.mmc-series.is-focus .mmc-cone { opacity: .18 !important; }
+.mmc-now-ring { animation: cyc-ring 3.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes cyc-ring { 0%,100% { opacity: .5 } 50% { opacity: .12 } }
+.mmc-band-lab { text-transform: uppercase; letter-spacing: .1em; font-weight: 600; opacity: .7; }
+
+.mmc-tip { background: color-mix(in srgb, var(--panel) 94%, transparent); backdrop-filter: blur(8px);
+  border: 1px solid var(--line); border-radius: 11px; padding: 9px 11px; min-width: 130px;
+  box-shadow: var(--popover-shadow); font-size: 12px; }
+.mmc-tip-h { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13px; color: var(--text); }
+.mmc-tip-h .dot { width: 9px; height: 9px; border-radius: 50%; }
+.mmc-tip-yr { color: var(--muted); font-size: 11px; margin-top: 3px; font-variant-numeric: tabular-nums; }
+.mmc-tip-z { color: var(--text); font-size: 12px; margin-top: 4px; }
+.mmc-tip-ph { color: var(--muted); font-size: 11px; margin-top: 3px; }
+
+/* ---- detail panel (underbar desktop / sheet mobile) --------------------- */
+.cyc-detail { background: var(--panel); border: 1px solid var(--line); border-radius: var(--rad);
+  position: static; box-shadow: var(--card-shadow); }
+.cyc-handle { display: none; }
+.cyc-panels { position: relative; padding: 18px; }
+.cyc-panel { position: absolute; inset: 18px; opacity: 0; visibility: hidden; transform: translateY(8px);
+  transition: opacity .34s var(--ease), transform .34s var(--ease); pointer-events: none; }
+.cyc-panel.show { position: relative; inset: auto; opacity: 1; visibility: visible; transform: none; pointer-events: auto; }
+.cyc-grp { margin-bottom: 18px; }
+.cyc-grp:last-child { margin-bottom: 0; }
+.cyc-grp-full .cyc-lbl, .cyc-grp-3 .cyc-lbl { margin-bottom: 9px; }
+
+.cyc-lbl { font-size: 11px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; color: var(--muted); margin-bottom: 9px; }
+.cyc-lbl.mt { margin-top: 22px; }
+
+/* default panel — regime + map + how-to */
+.rg-head { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; margin-bottom: 8px; }
+.rg-label { font-size: 19px; font-weight: 800; letter-spacing: -.01em; color: var(--text); }
+.rg-sub { font-size: 12px; color: var(--warn); font-weight: 600; }
+.rg-headline { font-size: 13px; line-height: 1.55; color: var(--muted); margin: 0 0 14px; }
+.rg-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.rg-stat { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 9px; }
+.rg-k { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.rg-v { font-size: 16px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; margin: 1px 0; }
+.rg-n { font-size: 10px; color: var(--muted); line-height: 1.25; }
+.rg-tilt { font-size: 12.5px; line-height: 1.55; color: var(--muted); border-left: 2px solid color-mix(in srgb, var(--warn) 60%, transparent);
+  padding-left: 11px; margin: 4px 0 0; }
+
+.xc-map { display: flex; flex-direction: column; gap: 11px; }
+.xc-row .xc-rh { font-size: 12px; font-weight: 700; color: var(--text); display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.xc-row .xc-rh span { font-size: 10.5px; font-weight: 500; color: var(--muted); }
+.xc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mini-chip { --c: var(--link); display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600;
+  color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 999px;
+  padding: 4px 10px 4px 8px; cursor: pointer; transition: all .18s var(--ease); }
+.mini-chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.mini-chip:hover { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, var(--panel2)); transform: translateY(-1px); }
+
+.cyc-how { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+.cyc-how li { font-size: 12.5px; line-height: 1.5; color: var(--muted); padding-left: 18px; position: relative; }
+.cyc-how li::before { content: ""; position: absolute; left: 2px; top: 7px; width: 7px; height: 7px; border-radius: 2px;
+  background: color-mix(in srgb, var(--link) 70%, transparent); }
+.cyc-how b { color: var(--text); font-weight: 700; }
+
+/* focus panel */
+.cyc-back { font-size: 12px; font-weight: 600; color: var(--muted); background: var(--panel2);
+  border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; cursor: pointer; margin-bottom: 14px;
+  transition: all .18s ease; }
+.cyc-back:hover { color: var(--text); border-color: var(--line2, var(--muted)); transform: translateX(-2px); }
+.cyc-fhead { --c: var(--link); border-left: 3px solid var(--c); padding-left: 12px; margin-bottom: 13px; }
+.cyc-ftitle { font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: var(--text); line-height: 1.1; }
+.cyc-fsub { font-size: 12px; color: var(--muted); margin: 2px 0 9px; }
+.cyc-fchips { display: flex; flex-wrap: wrap; gap: 7px; }
+.cyc-pchip { font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+  color: var(--ph, var(--muted)); background: color-mix(in srgb, var(--ph, var(--muted)) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ph, var(--muted)) 40%, transparent); }
+.cyc-tchip { font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); }
+.cyc-tchip.t-up { color: var(--up); background: color-mix(in srgb, var(--up) 14%, transparent); border-color: color-mix(in srgb, var(--up) 38%, transparent); }
+.cyc-tchip.t-down { color: var(--down); background: color-mix(in srgb, var(--down) 14%, transparent); border-color: color-mix(in srgb, var(--down) 38%, transparent); }
+.cyc-tchip.t-mix { color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); border-color: color-mix(in srgb, var(--warn) 38%, transparent); }
+.cyc-tchip.t-na { color: var(--muted); }
+.cyc-arche { font-size: 12.5px; line-height: 1.55; color: var(--muted); margin: 0 0 14px; }
+.cyc-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line);
+  border-radius: 11px; overflow: hidden; margin-bottom: 14px; }
+.cyc-facts .f { background: var(--panel); padding: 9px 11px; }
+.cyc-facts .fk { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.cyc-facts .fv { font-size: 14px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.cyc-read, .cyc-fals, .cyc-drivers { margin-bottom: 13px; }
+.cyc-read p, .cyc-fals p { font-size: 13px; line-height: 1.58; color: var(--text); margin: 0; }
+.cyc-fals { background: color-mix(in srgb, var(--down) 8%, transparent); border: 1px solid color-mix(in srgb, var(--down) 26%, transparent);
+  border-radius: 11px; padding: 11px 13px; }
+.cyc-fals .cyc-lbl { color: color-mix(in srgb, var(--down) 80%, var(--muted)); }
+.cyc-fals p { color: var(--muted); font-size: 12.5px; }
+.cyc-drivers ul { margin: 0; padding-left: 17px; }
+.cyc-drivers li { font-size: 12.5px; line-height: 1.5; color: var(--muted); margin-bottom: 3px; }
+.cyc-regnote { font-size: 12px; line-height: 1.5; color: var(--muted); font-style: italic;
+  border-top: 1px solid var(--line); padding-top: 11px; }
+
+/* ---- scorecard grid ------------------------------------------------------ */
+.cyc-cards-hd { display: flex; align-items: baseline; gap: 10px; margin: 30px 2px 14px; }
+.cyc-cards-hd h2 { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 0; }
+.cyc-cards-hd .sub { font-size: 12px; color: var(--muted); }
+.cyc-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 14px; }
+.cyc-card { --c: var(--link); background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  padding: 14px 15px 12px; cursor: pointer; position: relative; overflow: hidden;
+  transition: transform .26s var(--ease), box-shadow .26s var(--ease), border-color .26s var(--ease), opacity .26s var(--ease); }
+.cyc-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--c); opacity: .85; }
+.cyc-card::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--c) 12%, transparent), transparent 55%); opacity: 0; transition: opacity .3s ease; }
+.cyc-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--c) 45%, var(--line));
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--c) 18%, transparent); }
+.cyc-card.lit { border-color: var(--c); box-shadow: 0 0 0 1px var(--c), 0 14px 38px color-mix(in srgb, var(--c) 26%, transparent); transform: translateY(-2px); }
+.cyc-card.lit::after { opacity: 1; }
+.cyc-card.dim { opacity: .52; }
+.cyc-card.dim:hover { opacity: 1; }
+/* phase-filtered-out cards: dim + shuffled below (via inline `order`), not removed */
+.cyc-card.gdim { opacity: .4; }
+.cyc-card.gdim:hover { opacity: .85; }
+.cyc-card.lit { opacity: 1; }   /* focus always wins over a filter-dim */
+.cc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 9px; }
+.cc-id { display: flex; align-items: flex-start; gap: 9px; min-width: 0; }
+.cc-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--c); margin-top: 3px; flex: none;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--c) 60%, transparent); }
+.cc-nm { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.15; letter-spacing: -.01em; }
+.cc-px { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.25; }
+.cc-phase { --ph: var(--muted); flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: .02em; padding: 3px 8px; border-radius: 999px;
+  color: var(--ph); background: color-mix(in srgb, var(--ph) 15%, transparent); border: 1px solid color-mix(in srgb, var(--ph) 34%, transparent); white-space: nowrap; }
+.cc-spark { height: 56px; margin: 9px -4px 8px; }
+.cc-meta { display: flex; flex-direction: column; gap: 8px; }
+.cc-leg-bar { height: 5px; border-radius: 99px; background: var(--panel2); overflow: hidden; border: 1px solid var(--line); }
+.cc-leg-bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, color-mix(in srgb, var(--c) 55%, transparent), var(--c)); transition: width .6s var(--ease); }
+.cc-leg-lab { font-size: 10.5px; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+.cc-next { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--text); flex-wrap: wrap; }
+.cc-arrow { color: var(--c); font-size: 11px; }
+.cc-tilt { margin-left: auto; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); }
+.cc-tilt.t-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 36%, transparent); }
+.cc-tilt.t-down { color: var(--down); border-color: color-mix(in srgb, var(--down) 36%, transparent); }
+.cc-tilt.t-mix { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 36%, transparent); }
+.cc-tilt.t-na { color: var(--muted); }
+
+/* ---- desktop: full-width chart + the detail underbar flows into columns --- */
+@media (min-width: 881px) {
+  #cyc-chart { height: 484px; }
+  .cyc-detail { overflow: hidden; }
+  .cyc-panel.show { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: 30px; row-gap: 2px; align-items: start; }
+  .cyc-grp { margin-bottom: 0; }
+  .cyc-grp-full { grid-column: span 12; margin-bottom: 8px; }
+  .cyc-grp-full .cyc-arche, .cyc-grp-full .rg-headline { max-width: 92ch; }
+  .cyc-grp-3 { grid-column: span 4; }
+  /* hairline dividers between the three content columns */
+  .cyc-grp-3 + .cyc-grp-3 { position: relative; }
+  .cyc-grp-3 + .cyc-grp-3::before { content: ""; position: absolute; left: -15px; top: 1px; bottom: 1px;
+    width: 1px; background: var(--line); }
+  .cyc-back { margin-bottom: 10px; }
+  .cyc-fhead { display: inline-block; margin-right: 18px; }
+}
+
+/* ---- responsive: mobile = full-width hero + bottom sheet ----------------- */
+@media (max-width: 880px) {
+  .cyc-wrap { padding: 0 14px 120px; }
+  .cyc-stage { grid-template-columns: 1fr; gap: 14px; }
+  #cyc-chart { height: 340px; }
+  /* half-screen sheet so the cycle chart stays visible above it */
+  .cyc-detail { position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 40;
+    border-radius: 18px 18px 0 0; border-bottom: none; transform: translateY(calc(100% - 126px));
+    transition: transform .4s var(--ease); height: 52vh; max-height: 52vh; display: flex; flex-direction: column;
+    box-shadow: 0 -12px 40px rgba(0,0,0,.34); }
+  .cyc-detail.expanded { transform: translateY(0); }
+  .cyc-handle { display: flex; align-items: center; justify-content: center; padding: 10px 0 6px; cursor: grab; flex: none; touch-action: none; }
+  .cyc-handle::before { content: ""; width: 40px; height: 4px; border-radius: 99px; background: var(--line2, var(--muted)); opacity: .6; }
+  .cyc-panels { overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; padding-top: 4px; }
+  .cyc-panel { position: relative; inset: auto; }
+  .cyc-panel:not(.show) { display: none; }
+  .rg-stats { grid-template-columns: repeat(3, 1fr); }
+  .cyc-cards { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .cyc-card { padding: 12px 12px 10px; }
+  .cc-spark { height: 46px; }
+}
+@media (max-width: 460px) {
+  .cyc-cards { grid-template-columns: 1fr 1fr; }
+  .cc-px { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyc-page *, .mmc-series, .cyc-card, .cyc-panel { transition: none !important; animation: none !important; }
+}

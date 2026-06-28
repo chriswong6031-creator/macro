@@ -12,7 +12,7 @@
 <style>
   /* ---------- shared Research-Reports chrome ---------- */
   * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:0 18px 60px; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
   @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
   a { color:var(--link); text-decoration:none; }
   .wrap { max-width:1060px; margin:0 auto; }
@@ -37,26 +37,7 @@
 {% block head_extra %}{% endblock %}
 </head>
 <body>
-<nav class="site-nav">
-    {% include "_navlinks.html.j2" %}
-  <div class="nav-search">
-    <span class="mag">🔎</span>
-    <input type="text" autocomplete="off" aria-label="Search stocks"
-      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
-    <div class="nav-sugg"></div>
-  </div>
-  <div class="nav-ctrls">
-    <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
-    <button class="theme-switch" aria-label="Toggle dark / light mode">
-      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
-    </button>
-    <div class="lang-toggle" role="group" aria-label="Language">
-      <span class="pill"></span>
-      <span class="opt en-opt" data-l="en">EN</span>
-      <span class="opt zh-opt" data-l="zh">中文</span>
-    </div>
-  </div>
-</nav>
+{% include "_site_nav.html.j2" %}
 
 {% block content %}{% endblock %}
 

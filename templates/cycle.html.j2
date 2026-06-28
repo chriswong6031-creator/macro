@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" class="cyc-page">
+{# Cycle Intelligence — flagship cross-cycle dashboard. Bespoke SVG charts via the
+   reusable mm_charts.js engine (NOT Plotly). Data + logic + styles are committed
+   site/ assets (cycle_data.js / cycle_app.js / cycle.css / mm_charts.js); this
+   template only owns the page shell + the shared nav include, rendered by
+   scripts/build_cycle.py into site/cycle.html. #}
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Cycle Intelligence — Mastermind</title>
+<meta name="description" content="Fifteen boom-bust cycles on one clock — observed history and regime-conditioned projections, so you can see exactly where each asset sits in its lifespan.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="cycle.css">
+</head>
+<body>
+<nav class="site-nav" style="max-width:1320px;margin:0 auto;padding:11px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+  <a class="nav-brand" href="index.html" style="font-weight:800;letter-spacing:-.02em;font-size:16px;color:var(--text);text-decoration:none">MASTERMIND</a>
+  {% include "_navlinks.html.j2" %}
+  <div class="nav-ctrls" style="margin-left:auto;display:flex;gap:8px;align-items:center">
+    <button class="lang-btn" type="button">中文</button>
+    <button class="theme-btn" type="button">☀️ Light</button>
+  </div>
+</nav>
+
+<div class="cyc-wrap">
+  <header class="cyc-hd">
+    <div class="ht">
+      <div class="cyc-kicker"><span class="hb"></span> <span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></div>
+      <h1 class="cyc-title"><span class="l-en">Where every cycle stands</span><span class="l-zh">每个周期所处的位置</span></h1>
+      <p class="cyc-sub"><span class="l-en">Two dozen boom-bust cycles on one clock — observed history (solid) and
+        regime-conditioned projections (dashed, with an uncertainty cone), so you can see exactly where each asset sits
+        in its lifespan, and how they line up against each other.</span><span class="l-zh">二十多个繁荣—萧条周期同处一张时钟之上——已观测的历史（实线）与受宏观状态条件约束的推演（虚线，含不确定性锥），让你清楚看到每类资产在其生命周期中所处的位置，以及彼此之间的排布。</span></p>
+    </div>
+    <div class="cyc-ctrls">
+      <span class="cyc-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> <span id="cyc-asof">…</span></span>
+    </div>
+  </header>
+
+  <section class="cyc-stage">
+    <div class="cyc-hero">
+      <div class="cyc-hero-hd">
+        <h2><span class="l-en">Cross-cycle overlay</span><span class="l-zh">跨周期叠加</span></h2>
+        <div class="cyc-hero-tools">
+          <div class="cyc-legend">
+            <span><i class="ls"></i> <span class="l-en">History</span><span class="l-zh">历史</span></span>
+            <span><i class="lp"></i> <span class="l-en">Projection</span><span class="l-zh">推演</span></span>
+            <span><i class="lc"></i> <span class="l-en">Uncertainty</span><span class="l-zh">不确定性</span></span>
+          </div>
+          <div class="cyc-zoom" id="cyc-zoom" aria-label="Zoom"></div>
+        </div>
+      </div>
+      <div class="cyc-groups" id="cyc-groups" aria-label="Group filter"></div>
+      <div class="cyc-chips" id="cyc-chips" aria-label="Cycle toggles"></div>
+      <div id="cyc-chart" data-h="452" role="img" aria-label="Cross-cycle overlay chart"></div>
+    </div>
+
+    <aside class="cyc-detail" id="cyc-detail">
+      <div class="cyc-handle" id="cyc-handle" aria-hidden="true"></div>
+      <div class="cyc-panels">
+        <div class="cyc-panel show" id="cyc-panel-default"></div>
+        <div class="cyc-panel" id="cyc-panel-focus"></div>
+      </div>
+    </aside>
+  </section>
+
+  <div class="cyc-cards-hd">
+    <h2><span class="l-en">Cycle scorecards</span><span class="l-zh">周期记分卡</span></h2>
+    <span class="sub"><span class="l-en">Tap any card — or its line on the chart — to focus it</span><span class="l-zh">点按任意卡片（或图中其曲线）以聚焦</span></span>
+  </div>
+  <div class="cyc-cards" id="cyc-cards"></div>
+</div>
+
+<script src="cycle_data.js"></script>
+<script src="mm_charts.js"></script>
+<script src="cycle_i18n.js"></script>
+<script src="cycle_app.js"></script>
+<script>try{document.getElementById('cyc-asof').textContent=(window.CYCLE_META||{}).asOf||'';}catch(e){}</script>
+<script src="theme.js"></script>
+</body>
+</html>

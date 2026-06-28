@@ -11,6 +11,28 @@ storage:
   reports_dir: reports
   run_status_file: data/run_status.json
 
+signal_sanity:
+  # Output-board correctness tripwire (engine/signal_sanity.py + scripts/signal_sanity.py):
+  # validates the per-ticker boards both books select from. Default = WARN (annotate +
+  # report + notify); opt-in block-mode (Actions var SIGNAL_SANITY_BLOCK=true) can gate
+  # the daily commit. Complements the collect-time INPUT audit (run_quality_audits).
+  stale_days: 5          # board as_of older than now by this many days → warn (absolute)
+  rel_stale_days: 2      # board lags the freshest sibling by this many days → warn (relative)
+  max_drift_pct: 0.5     # primary-score mean moved > this fraction vs prior vintage → warn
+  min_pop: 8             # min records in a subset before judging a column degenerate
+  require_all: true      # a missing required board is a hard failure
+  baseline_file: signal_sanity/baseline.jsonl   # rolling per-vintage stats (under data/)
+  # coverage floors — below these a board is almost certainly broken. NOTE: standouts is
+  # a BUY-board whose count is market-volatile (~25-60), so its floor is a genuine-break
+  # threshold (near-empty), not a "healthy day" count.
+  floors:
+    standouts: 10
+    briefing: 8
+    radar: 40
+    altdata: 8
+    news: 100
+    intel_hub: 8
+
 # -----------------------------------------------------------------------------
 # Collectors
 # -----------------------------------------------------------------------------
@@ -42,6 +64,14 @@ fred:
   # Needs FRED_API_KEY (fredgraph has no vintages). vintage_series defaults to the
   # revision-prone set in collectors/fred.py:DEFAULT_VINTAGE_SERIES; override here.
   vintage_realtime_start: "1997-01-01"   # FRED's real-time archive begins ~1997
+  # Point-in-time set: DEFAULT_VINTAGE_SERIES (collectors/fred.py) PLUS the revision-
+  # prone business-cycle hard-data legs, so a FRED_API_KEY run (CI) auto-upgrades the
+  # recession backtest to full point-in-time. Market/rate legs (MPRIME, USREC) are not
+  # revised and stay out. NFCI family stays out (re-revises all history, API times out).
+  vintage_series: [PAYEMS, INDPRO, M2SL, WEI, GDPNOW, RECPROUSM156N, THREEFYTP10,
+    SAHMREALTIME, STICKCPIM157SFRBATL, CORESTICKM157SFRBATL, FLEXCPIM157SFRBATL,
+    MEDCPIM158SFRBCLE, STLFSI4, UMCSENT, MICH,
+    AWHMAN, ICSA, PERMIT, NEWORDER, W875RX1, CMRMTSPL, UEMPMEAN, ISRATIO, BUSLOANS, CUSR0000SAS]
   series:
     rates:
       DGS2: us2y
@@ -164,6 +194,27 @@ fred:
       FEDTARMD: fed_dot_median    # FOMC SEP median projection of the fed funds rate (year-end, % annual; quarterly)
       DFEDTARU: fed_target_upper  # fed funds target range — UPPER limit (daily, 2008-12->)
       DFEDTARL: fed_target_lower  # fed funds target range — LOWER limit (daily)
+    # --- Business-cycle model (research/BUSINESS_CYCLE_MODEL.md) — Conference-Board
+    # style Leading / Coincident / Lagging tiers. All free on FRED (keyless CSV OK).
+    # PAYEMS+INDPRO reused from econ_confirm; SPY (yahoo), spread_10y3m (curve),
+    # hy_oas (credit) and umich_sentiment (survey) are reused leading legs too, so
+    # only the genuinely-missing components are declared here.
+    cycle_leading:
+      AWHMAN: mfg_hours             # avg weekly hours, manufacturing (leads hiring/firing)
+      ICSA: initial_claims          # initial jobless claims (weekly; INVERTED in engine)
+      PERMIT: building_permits      # new private housing units authorized (thousands)
+      NEWORDER: cap_goods_orders    # new orders, nondefense capital goods ex-aircraft ($M)
+    cycle_coincident:
+      W875RX1: real_income_ex_transfer  # real personal income less transfer payments ($bn)
+      CMRMTSPL: mfg_trade_sales         # real manufacturing & trade industries sales ($M)
+    cycle_lagging:
+      UEMPMEAN: unemp_duration      # avg (mean) duration of unemployment, weeks (INVERTED)
+      ISRATIO: inventory_sales      # total business inventories-to-sales ratio (INVERTED)
+      BUSLOANS: ci_loans            # commercial & industrial loans ($bn)
+      MPRIME: prime_rate            # bank prime loan rate (%)
+      CUSR0000SAS: cpi_services     # CPI for services (lagging-inflation leg)
+    cycle_truth:
+      USREC: nber_recession         # NBER recession indicator (1=recession) — validation ground truth
     # --- Forex Vector (research/FOREX_DASHBOARD.md) — all keyless via FRED ---------
     fx_rates:                     # daily FX reference rates (H.10) — cross-check + deep history
       DEXUSEU: fx_eur_usd         # USD per EUR  (EUR base, NOT inverted)
@@ -206,6 +257,30 @@ fred:
       RBMXBIS: reer_mx
       RBBRBIS: reer_br
       RBCNBIS: reer_cn
+    bottleneck:                   # supply-chain / capacity-cycle nowcast (engine/bottleneck.py;
+      # research/THEMATIC_FORESIGHT_DESK.md T1). Physical-tightness legs: cap-U high+rising,
+      # inv/sales falling, unfilled-orders/shipments rising, industry PPI accelerating,
+      # regional-Fed delivery-times & prices-received. Per-NAICS where a clean series exists;
+      # economy-wide context otherwise. All keyless-CSV reachable; all live-verified.
+      TCU: cap_u_total            # capacity utilization, total index
+      MCUMFN: cap_u_mfg           # cap-U manufacturing (NAICS)
+      CAPUTLG3344S: cap_u_semi    # cap-U semis & electronic component (NAICS 3344) — the HBM bucket
+      CAPUTLG334S: cap_u_electronics  # cap-U computer & electronic product (NAICS 334)
+      CAPUTLG331S: cap_u_metal    # cap-U primary metal (NAICS 331) — steel/aluminium/copper
+      CAPUTLG211S: cap_u_oilgas   # cap-U oil & gas extraction (NAICS 211)
+      IPG3344S: ip_semi           # industrial production, semis (NAICS 3344)
+      CAPG3344S: capacity_semi    # industrial capacity LEVEL, semis (production>capacity = squeeze)
+      ISRATIO: inv_sales_total    # total business inventories/sales (the headline)
+      MNFCTRIRSA: inv_sales_mfg   # manufacturing inventories/sales
+      AMTMUO: unfilled_orders     # mfrs' unfilled orders, total mfg — the backlog headline
+      AMTMVS: shipments_total     # value of shipments, total mfg (backlog denominator)
+      DGORDER: new_orders_durable # new orders, durable goods (headline)
+      NEWORDER: new_orders_capex  # new orders, nondefense cap goods ex-aircraft (capex proxy)
+      PCU334413334413: ppi_semi   # PPI semiconductor & related device mfg (the memory pricing proxy)
+      PCU331110331110: ppi_steel  # PPI iron & steel mills
+      DTCISA156MSFRBPHI: deliv_time_philly  # Philly Fed current delivery time, % increases
+      DTMUAMFRBDAL: deliv_time_dallas       # Dallas Fed current delivery time diffusion
+      PFGIUAMFRBDAL: prices_recv_dallas     # Dallas Fed prices received (pricing-power leg)
 
 yahoo:
   retries: 3
@@ -249,6 +324,15 @@ cboe:
   # SKEW = option-implied tail/crash pricing (CBOE CDN serves a clean daily CSV
   # back to 1990 — no API key). Used by engine/conditions.py as a tail-risk gauge.
   skew_url: https://cdn.cboe.com/api/global/us_indices/daily_prices/SKEW_History.csv
+  # VVIX = vol-of-vol (implied vol of VIX options), keyless daily CSV back to 2006/2007.
+  # One fetch carries the whole history (backfill + accrual in one shot). Feeds the
+  # engine/vol_regime VVIX-VIX decoupling / peak-fear leg (retires the short yahoo _VVIX).
+  vvix_url: https://cdn.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv
+  # VIX-futures settlement (collectors/cboe_vix_futures.py): one keyless CSV/date via the
+  # www endpoint serves the FULL VX board. We persist both the front contract (sanitizer)
+  # and the standard-monthly M1..M6 curve (vix_curve) — the latter FORWARD-ACCRUING only
+  # (no bulk history), so curve slope/carry validates in ~12 months. Defaults live in code:
+  # vix_backfill_days=45, vix_recent_days=6, vix_request_pace_s=0.4.
   gex:
     contract_multiplier: 100
     pct_move: 0.01               # GEX expressed per 1% move
@@ -267,10 +351,22 @@ polygon:
   retries: 3
   max_pages: 40                  # snapshot pagination cap per underlying (250/page)
   request_timeout: 60
+  workers: 5                     # per-symbol snapshot concurrency (massive.com-safe ceiling
+                                 # ~5-6; the broad universe is ~2 I/O calls/name, so threads
+                                 # cut a ~16-min serial run to ~3-4 min). 1 => serial.
   gex:
-    # mirror the Cboe GEX universe (collectors/cboe.DEFAULT_GEX_SYMBOLS) so the two
-    # sources are directly comparable. SPX excluded: index spot (I:SPX) is not entitled.
+    # ANCHORS — the index-ETF gamma backbone + mega-caps that must always be snapshot
+    # (mirror collectors/cboe.DEFAULT_GEX_SYMBOLS so the two sources stay comparable).
+    # SPX excluded: index spot (I:SPX) is not entitled.
     symbols: [SPY, QQQ, IWM, DIA, NVDA, AAPL, TSLA, AMD, META, MSFT]
+    # ALSO snapshot every ACTIVE single name in the thematic baskets we trade
+    # (data/baskets/membership.json) so the per-name flow / positioning / GEX reads cover
+    # the whole optionable set, not just the 10 anchors. Resolved by engine.options_universe.
+    # Pure additional massive.com REST calls on the existing entitlement (NO new cost); the
+    # daily raw-chain parquet (committed by build_polygon_gex) grows ~linearly with the
+    # universe, so max_underlyings bounds storage/runtime. Set include_baskets:false to revert.
+    include_baskets: true
+    max_underlyings: 360         # safety cap on total underlyings per build (anchors kept first)
     strike_window_pct: 0.30      # keep contracts within +/-30% of spot (gamma lives here)
     max_expiry_days: 400         # ~13 months; covers the engine's 365d window + buffer
     contract_multiplier: 100
@@ -286,6 +382,39 @@ polygon:
     sleep: 0.06                  # polite pacing between per-ticker aggregate calls
   # per-underlying dividend yields for the compute_gex summary (single names -> 0)
   div_yield: {SPY: 0.013, QQQ: 0.006, IWM: 0.013, DIA: 0.018}
+
+live:
+  # Live intraday overlay (display + Mastermind feed). It recomputes ONLY the cheap
+  # price-sensitive "fast leaves" (technicals + a divergence check vs the nightly
+  # anticipation cone) from a live last-price. The slow-brain scores
+  # (regime / conviction / GTAA allocation) stay NIGHTLY by design — intraday noise
+  # must not whipsaw a hysteresis-gated regime. Runs on a SEPARATE intraday cron,
+  # never inside the ~45-min daily build. Graceful no-op when no quote source is
+  # reachable: the overlay still emits, every leg marked stale, consumers fall back
+  # to the nightly baseline. See scripts/build_live_overlay.py + engine/live_overlay.py.
+  enabled: true
+  poll_seconds: 60             # advisory cadence for the intraday cron / browser poll
+  stale_after_min: 20          # a quote older than this is flagged stale (fall back to baseline)
+  max_chg_pct: 35              # single-session |move| beyond this = bad print -> stale (limit-move guard)
+  max_universe: 150            # cap the fast loop (rate limits + wall-clock)
+  us_source: polygon           # polygon (entitled snapshot) -> yahoo spark fallback
+  intl_source: yahoo           # yahoo spark (keyless) for CN/HK/CA/commodities/crypto
+  top_conviction_n: 60         # also include the top-N US names by |conviction| from the search index
+  universe_extra: []           # optional extra tickers beyond Mastermind assets + top US conviction
+  market_context: [SPY, QQQ, "^VIX"]   # cheap live macro read emitted in overlay.market (VIX gets a band)
+  # The deployed Cloudflare Worker the browser live.js calls (Phase 3, worker/quotes.worker.js).
+  # Empty string = no Worker; live.js then falls back to the static snapshot below.
+  # Override without a commit via the GitHub repo VARIABLE LIVE_QUOTES_WORKER_URL.
+  quotes_worker_url: ""
+  # Keyless, no-deploy live path: the GitHub Action .github/workflows/live-quotes.yml
+  # runs scripts/build_live_quotes every ~10 min during market hours and force-pushes
+  # quotes.json to a single-commit `live-data` branch; the browser live.js fetches it
+  # from raw.githubusercontent (CORS '*', ~5-min CDN cache) when no Worker is set.
+  # Override via the repo VARIABLE LIVE_QUOTES_SNAPSHOT_URL. Empty = no snapshot.
+  snapshot_url: "https://raw.githubusercontent.com/chriswong6031-creator/macro/live-data/quotes.json"
+  # Extra symbols to always include in the snapshot universe (beyond the CORE
+  # index/futures set + every data-sym the built site emits).
+  snapshot_extra: []
 
 fedboard:
   # Excess Bond Premium (Gilchrist-Zakrajšek): the component of corporate credit
@@ -368,7 +497,7 @@ smart_money:
   # www.sec.gov/Archives ENFORCES SEC fair-access: the UA must carry a real
   # contact email or it 403s (data.sec.gov is laxer). Set this to YOUR email.
   user_agent: "Macro Dashboard 13F research longr2512@gmail.com"
-  history_quarters: 2          # snapshots kept per fund for the live quarter diff
+  history_quarters: 6          # snapshots kept per fund — 2 for the live quarter diff + deeper history for the multi-quarter accumulation trend (engine/smart_money.accumulation_trend)
   backfill_quarters: 8         # --full-history depth
   panel_top_n: 12              # holders shown per stock panel
   funds:
@@ -394,6 +523,24 @@ engine_equity_factors:
   # leadership read: which factor's top-quintile has been beating its bottom-
   # quintile over this trailing window (a coarse "what's working now" gauge).
   leadership_window_d: 63
+
+impulse:
+  # Impulse Tracker (engine/impulse.py → scripts/build_impulse.py → impulse.html):
+  # a reactive EARLY-IGNITION screen. All keys are OPTIONAL — engine.impulse.
+  # ImpulseConfig defaults apply when omitted; only override to retune. The gates
+  # encode the product rule: a name stays in the BUY lane only while the move is
+  # young (small recent run-up, not stretched above its moving averages). Display/
+  # context only; never a scored input elsewhere (short-horizon direction is a
+  # coin-flip + momentum is regime-switched — see engine/velocity.py honesty gate).
+  accel_early_z: 0.5        # accel_z above this = acceleration is meaningfully up
+  vol_confirm: 1.05         # 3d/20d volume ratio above this = participation waking up
+  rvol_confirm: 1.30        # OR relative-volume above this confirms
+  runup_extended: 0.22      # 20d run-up at/above this = already ran (no entry)
+  runup_early_max: 0.15     # BUY lane keeps the recent run-up below this
+  ext50_extended: 0.20      # >20% above the 50d avg = stretched
+  ext200_extended: 0.40     # >40% above the 200d avg = a sustained runner, demote
+  trend_hard_down: -1.5     # slope_z below this = active down-trend → never a buy
+  min_dollar_vol: 3000000   # liquidity floor on 20d average dollar volume ($)
 
 engine_residual_alpha:
   # Sector-neutral residual-momentum leg (research/RESIDUAL_ALPHA_MOMENTUM.md).
@@ -916,6 +1063,20 @@ deribit:
   term_tenors_d: [7, 30, 90, 180]   # ATM IV term-structure standardized tenors
   skew_target_d: 30                 # 25-delta skew/RR measured at the ~30d expiry
 
+btc_impulse_radar:
+  # Forward IMPULSE-PRESSURE radar (engine/btc_impulse_radar.py) — DISPLAY-ONLY.
+  # Legs = adversarially-verified LEADING precursors only (see
+  # research/VECTOR_IMPULSE_PREDICTION.md). Each fires on a leak-free threshold
+  # cross and DECAYS to quiet; context legs cannot exceed `coiled` (only an
+  # act-tier cross reaches warning/trigger). All keys optional — in-code defaults
+  # apply when absent.
+  enabled: true
+  horizon_days: 6        # decay lookback for a leg's most-recent fire
+  cbp_z_w: 90            # causal z window — Coinbase premium (D1 context)
+  dvol_z_w: 60           # causal z window — DVOL intraday range (D2 act)
+  sopr_z_w: 90           # causal z window — aggregate SOPR (D3 down / U1 up act)
+  pctile_w: 252          # causal trailing-percentile window — OI / vol-of-vol fuel
+
 farside:
   # Farside Investors — the canonical FREE daily US spot-Bitcoin-ETF flow table,
   # per fund + total, in US$m, since the 2024-01-11 launch (parens = outflow, "-" =
@@ -963,6 +1124,16 @@ breadth:
   lookback_days_live: 1100        # ~3y: 200DMA/NH-NL plus cycle analysis for stock search
   ma_windows: [50, 200]
   nhnl_window: 252
+  # Repair known-bad Wikipedia symbols before they reach the universe. The list is
+  # community-edited and intermittently ships a plausible-but-wrong ticker —
+  # vandalism (Marsh & McLennan as the non-existent "MRSH") or a stale pre-rename
+  # ticker (Fiserv as "FISV", renamed "FI" in 2023). Map bad -> real current
+  # ticker; pricing is best-effort (an unpriceable repaired symbol is skipped, no
+  # worse than the garbage it replaced, and it builds once the feed serves it).
+  # Extend as the "constituents churn" / "dropping non-ticker row" log surfaces more.
+  ticker_fixups:
+    MRSH: MMC     # Marsh & McLennan — page vandalised to a non-existent symbol
+    FISV: FI      # Fiserv — page shows the pre-2023 ticker
 
 # Small-cap participation, computed exactly like S&P 500 breadth but over the
 # S&P SmallCap 600 — a free, well-defined small-cap universe (Wikipedia, same
@@ -1081,6 +1252,91 @@ stock_search:
     # DXYZ (Destiny Tech100) is a closed-end fund whose top holding is SpaceX —
     # kept alongside the now-public SPCX as a diversified pre-IPO/space proxy.
     - DXYZ   # Destiny Tech100 (holds SpaceX)
+    # ---- Off-index BASKET members (added 2026-06-21) ---------------------------
+    # Thematic small/mid-caps + foreign listings that curated baskets reference but
+    # the S&P-1500 pipeline never built, so their members rendered "thin / not in
+    # library" and stock.html#<T> 404'd. All are liquid US lines > $100M mcap
+    # (smallest enCore ~$320M). A handful (MMC, HEI, LNG, FI, DKNG, POOL) ARE
+    # economically S&P 500 but don't resolve through the Wikipedia constituents
+    # table (garbled/aliased ticker, e.g. Marsh shows as "MRSH"), so they ride the
+    # extras hook here too. universe()'s `seen` set dedups, so this is a no-op for
+    # any name the index already resolves.
+    # Uranium & nuclear fuel cycle
+    - CCJ    # Cameco
+    - UEC    # Uranium Energy
+    - UUUU   # Energy Fuels
+    - NXE    # NexGen Energy
+    - DNN    # Denison Mines
+    - URG    # Ur-Energy
+    - EU     # enCore Energy
+    - UROY   # Uranium Royalty
+    - LEU    # Centrus Energy
+    - ASPI   # ASP Isotopes
+    - NNE    # NANO Nuclear Energy
+    # Quantum computing
+    - IONQ   # IonQ
+    - QBTS   # D-Wave Quantum
+    - QUBT   # Quantum Computing Inc.
+    - RGTI   # Rigetti Computing
+    - QNT    # Quantinuum
+    - INFQ   # Infleqtion
+    # AI neoclouds / bitcoin-miner compute
+    - APLD   # Applied Digital
+    - BTDR   # Bitdeer Technologies
+    - CIFR   # Cipher Mining
+    - CORZ   # Core Scientific
+    - HUT    # Hut 8
+    - WULF   # TeraWulf
+    # Space economy
+    - BKSY   # BlackSky Technology
+    - FLY    # Firefly Aerospace
+    - KRMN   # Karman Holdings
+    - MDA    # MDA Space
+    - PL     # Planet Labs
+    - RDW    # Redwire
+    # Critical minerals / rare earth / antimony
+    - ALM    # Almonty Industries
+    - CRML   # Critical Metals
+    - LAC    # Lithium Americas
+    - NB     # NioCorp Developments
+    - PPTA   # Perpetua Resources
+    - SGML   # Sigma Lithium
+    - UAMY   # United States Antimony
+    - USAR   # USA Rare Earth
+    # Obesity / GLP-1 & biotech
+    - ALT    # Altimmune
+    - AZN    # AstraZeneca (ADR)
+    - GPCR   # Structure Therapeutics
+    - NVO    # Novo Nordisk (ADR)
+    - RHHBY  # Roche Holding (ADR)
+    - SRRK   # Scholar Rock
+    - VKTX   # Viking Therapeutics
+    # Semiconductors (off-index / foreign)
+    - CBRS   # Cerebras Systems
+    - CRDO   # Credo Technology
+    - NVMI   # Nova
+    # Software / cyber / AI apps
+    - HUBS   # HubSpot
+    - MDB    # MongoDB
+    - PCOR   # Procore Technologies
+    - SNOW   # Snowflake
+    - TEAM   # Atlassian
+    - TENB   # Tenable
+    - ZS     # Zscaler
+    - NET    # Cloudflare
+    - SOUN   # SoundHound AI
+    # Fintech / payments
+    - FI     # Fiserv
+    - UPST   # Upstart
+    # Index names that don't resolve through the constituents pipeline
+    - MMC    # Marsh & McLennan
+    - HEI    # HEICO
+    - LNG    # Cheniere Energy
+    - DKNG   # DraftKings
+    - POOL   # Pool Corp
+    - OSCR   # Oscar Health
+    # Crypto ETF basket member (fund, not a company — bare "ETF / macro" label)
+    - ETHA   # iShares Ethereum Trust ETF
   # ticker -> {name, sector} for the single-stock extras above. build_stock_library
   # reads this so the search index shows the company + its GICS sector instead of
   # "<ticker> / ETF / macro". A ticker present in extra_tickers but missing here
@@ -1161,6 +1417,71 @@ stock_search:
     IREN: {name: "IREN (Iris Energy)", sector: "Information Technology"}
     SPCX: {name: "SpaceX", sector: "Industrials"}
     DXYZ: {name: "Destiny Tech100 (holds SpaceX)", sector: "Financials"}
+    # ---- Off-index basket members (added 2026-06-21) ----
+    CCJ:   {name: "Cameco", sector: "Energy"}
+    UEC:   {name: "Uranium Energy", sector: "Energy"}
+    UUUU:  {name: "Energy Fuels", sector: "Energy"}
+    NXE:   {name: "NexGen Energy", sector: "Energy"}
+    DNN:   {name: "Denison Mines", sector: "Energy"}
+    URG:   {name: "Ur-Energy", sector: "Energy"}
+    EU:    {name: "enCore Energy", sector: "Energy"}
+    UROY:  {name: "Uranium Royalty", sector: "Energy"}
+    LEU:   {name: "Centrus Energy", sector: "Energy"}
+    ASPI:  {name: "ASP Isotopes", sector: "Materials"}
+    NNE:   {name: "NANO Nuclear Energy", sector: "Industrials"}
+    IONQ:  {name: "IonQ", sector: "Information Technology"}
+    QBTS:  {name: "D-Wave Quantum", sector: "Information Technology"}
+    QUBT:  {name: "Quantum Computing Inc.", sector: "Information Technology"}
+    RGTI:  {name: "Rigetti Computing", sector: "Information Technology"}
+    QNT:   {name: "Quantinuum", sector: "Information Technology"}
+    INFQ:  {name: "Infleqtion", sector: "Information Technology"}
+    APLD:  {name: "Applied Digital", sector: "Information Technology"}
+    BTDR:  {name: "Bitdeer Technologies (ADR)", sector: "Information Technology"}
+    CIFR:  {name: "Cipher Mining", sector: "Information Technology"}
+    CORZ:  {name: "Core Scientific", sector: "Information Technology"}
+    HUT:   {name: "Hut 8", sector: "Information Technology"}
+    WULF:  {name: "TeraWulf", sector: "Information Technology"}
+    BKSY:  {name: "BlackSky Technology", sector: "Industrials"}
+    FLY:   {name: "Firefly Aerospace", sector: "Industrials"}
+    KRMN:  {name: "Karman Holdings", sector: "Industrials"}
+    MDA:   {name: "MDA Space", sector: "Industrials"}
+    PL:    {name: "Planet Labs", sector: "Industrials"}
+    RDW:   {name: "Redwire", sector: "Industrials"}
+    ALM:   {name: "Almonty Industries", sector: "Materials"}
+    CRML:  {name: "Critical Metals", sector: "Materials"}
+    LAC:   {name: "Lithium Americas", sector: "Materials"}
+    NB:    {name: "NioCorp Developments", sector: "Materials"}
+    PPTA:  {name: "Perpetua Resources", sector: "Materials"}
+    SGML:  {name: "Sigma Lithium", sector: "Materials"}
+    UAMY:  {name: "United States Antimony", sector: "Materials"}
+    USAR:  {name: "USA Rare Earth", sector: "Materials"}
+    ALT:   {name: "Altimmune", sector: "Health Care"}
+    AZN:   {name: "AstraZeneca (ADR)", sector: "Health Care"}
+    GPCR:  {name: "Structure Therapeutics", sector: "Health Care"}
+    NVO:   {name: "Novo Nordisk (ADR)", sector: "Health Care"}
+    RHHBY: {name: "Roche Holding (ADR)", sector: "Health Care"}
+    SRRK:  {name: "Scholar Rock", sector: "Health Care"}
+    VKTX:  {name: "Viking Therapeutics", sector: "Health Care"}
+    CBRS:  {name: "Cerebras Systems", sector: "Information Technology"}
+    CRDO:  {name: "Credo Technology", sector: "Information Technology"}
+    NVMI:  {name: "Nova", sector: "Information Technology"}
+    HUBS:  {name: "HubSpot", sector: "Information Technology"}
+    MDB:   {name: "MongoDB", sector: "Information Technology"}
+    PCOR:  {name: "Procore Technologies", sector: "Information Technology"}
+    SNOW:  {name: "Snowflake", sector: "Information Technology"}
+    TEAM:  {name: "Atlassian", sector: "Information Technology"}
+    TENB:  {name: "Tenable", sector: "Information Technology"}
+    ZS:    {name: "Zscaler", sector: "Information Technology"}
+    NET:   {name: "Cloudflare", sector: "Information Technology"}
+    SOUN:  {name: "SoundHound AI", sector: "Information Technology"}
+    FI:    {name: "Fiserv", sector: "Financials"}
+    UPST:  {name: "Upstart Holdings", sector: "Financials"}
+    MMC:   {name: "Marsh & McLennan", sector: "Financials"}
+    HEI:   {name: "HEICO", sector: "Industrials"}
+    LNG:   {name: "Cheniere Energy", sector: "Energy"}
+    DKNG:  {name: "DraftKings", sector: "Consumer Discretionary"}
+    POOL:  {name: "Pool Corp", sector: "Consumer Discretionary"}
+    OSCR:  {name: "Oscar Health", sector: "Health Care"}
 
 watchlist:
   enabled: true                   # client-side holdings watchlist page (needs stock_search)
@@ -1324,6 +1645,18 @@ engine:
       Utilities: -0.29
       Health Care: -0.46
 
+  # --- Bottoming-ENTRY gate (engine.cycles.mtf_alignment): the standout-strip selection
+  # prerequisite. A name is only a BUY when its multi-timeframe MACD/StochRSI is turning
+  # up FROM A LOW (a low-risk SWING entry), never mid-rally. These tune that read; the
+  # engine carries the same values as fallbacks so a missing block can't break a build.
+  entry_gate:
+    stoch_oversold: 25            # 3D StochRSI must originate from < this (the "from the bottom" line)
+    stoch_overbought: 80          # 3D/daily StochRSI above this = already run (excluded -> watch)
+    daily_rsi_extension_cap: 62   # daily RSI14 hotter than this = too late for an early entry
+    approach_days: 2              # daily "about to cross" ETA cap (trading days)
+    stretch_block_pct: 30         # % over the 200dma = overextended chase (excluded -> watch)
+    align_min_keep: 10            # never-empty backfill floor: keep >= this many before relaxing to APPROACHING
+
   # --- Macro-risk overlay: make aggregate macro risk a DETERMINISTIC, risk-OFF-
   # only factor in sector heat + per-stock buy-setup conviction. MRS (macro-risk
   # score, 0..1) is a pure function of the already-persisted conditions/regime legs
@@ -1348,6 +1681,56 @@ engine:
                              # small, intentional overlap, not double-counting noise.
       transition: 0.25
 
+  # --- Fused equity-internal RISK STATE (engine/risk_state.py). The loud, EARLY
+  # drawdown-risk gauge that LEADS the credit-weighted macro_risk above by fusing the
+  # orphaned positioning/vol/breadth detectors. Inverse weighting of MRS: leading legs
+  # dominate, slow credit/recession legs are light. Conjunction-based early warning,
+  # NOT validated alpha; de-risk response is sizing only. See research/RISK_LAYER_DESIGN.md.
+  # All keys optional — engine/risk_state.py bakes in these same defaults.
+  risk_state:
+    weights:
+      complacency: 1.0       # hidden-fragility conjunction (keystone leg)
+      breadth_div: 0.9       # index near highs while %>200dma weak
+      dealer_gamma: 0.9      # dealer short-gamma / below flip / vol-hole
+      technical: 0.8         # major indexes rolling over/breaking down (mtf_monitor)
+      extension: 0.8         # parabolic / cohort-stretch froth (optional leg)
+      vol_structure: 0.7     # backwardation (stress) or rich-VRP+calm (complacency)
+      credit: 0.6            # HY OAS 21d widening + HYG-TLT rolling down
+      turning_point: 0.4     # cross-leaf fragility meta-state
+      cross_asset: 0.3       # bonds/fx not confirming an equity calm
+      macro_backdrop: 0.3    # the validated credit/recession MRS, as a light anchor
+    bands:                   # score (0-100) -> state cutoffs
+      neutral: 20.0
+      caution: 40.0
+      elevated: 60.0
+      risk_off: 80.0
+    conjunction:             # the loud part: >=2 LEADING legs firing hard floors the
+      threshold: 0.6         # state, so a few screaming legs aren't averaged to silence
+      floor_2: caution       # >=2 hot leading legs -> at least caution
+      floor_3: elevated      # >=3 hot leading legs -> at least elevated (fires the alert)
+    alert_from: elevated     # state at/above which the loud banner + alert fire
+    hyg_tlt_scale: 0.04      # HYG/TLT 20d drop that maps to full credit-ETF intensity
+    gross:                   # subtract-only gross multiplier per state — the SIZING response
+      caution: 0.90          # (de-gross + favor entries over chasing leaders), never selection
+      elevated: 0.78
+      risk_off: 0.60
+      floor: 0.50            # never de-gross below this
+
+  # --- Vol-regime SUBTRACT-ONLY sizing overlay. Lets the validated index vol-regime
+  # (engine/vol_regime.py -> site/vol/regime.json) actually move money as a gross/sizing
+  # caution in the baskets, per-stock ladder and Mastermind lenses. Drawdown / capital-
+  # efficiency, NEVER alpha; never lifts rank/selection. The MECHANICAL vol-target leg is
+  # always-on (a sizing rule, not a forecast); the REGIME-STATE caution fires on the
+  # published kill-switch label; the continuous SCORED composite only deepens the cut when
+  # data/vol_regime/gate.json is open (validate-first firewall). See engine/vol_regime.sizing_overlay.
+  vol_regime_overlay:
+    enabled: true            # global kill-switch (false => overlay is a no-op everywhere)
+    gross_floor: 0.40        # never cut a consumer's gross below this (don't de-risk to ~0)
+    warning_haircut: 0.85    # gross factor when regime == "warning"
+    stress_haircut: 0.70     # gross factor when regime == "backwardation-stress" (kill-switch)
+    scored_extra: 0.20       # extra cut scaled by |scored_score|, ONLY when the gate is open
+    use_vol_target: true     # apply the mechanical vol-target scalar min(.,1.0) (always-on)
+    ladder_headwind: 7       # max per-stock buy-setup ladder penalty (<= LIQ_HEADWIND=12)
   # --- Vol-Shock Risk Predictor (engine/vol_shock_scorecard.py). DISPLAY-ONLY /
   # validation-accruing: one forward 0-100 caution gauge fusing the LEADING vol-shock
   # precursors, with per-factor points that sum to the headline. Mirrors the in-code
@@ -1505,6 +1888,36 @@ engine:
         max_tokens: 1500
         headlines_n: 12              # recent headline titles handed to the model
 
+  # --- Business-cycle model (engine/business_cycle.py). ADDITIVE — a Conference-
+  # Board-style Leading/Coincident/Lagging decomposition that keeps the three tiers
+  # SEPARATE so the lead-lag SEQUENCE (leading rolls over -> coincident peaks ->
+  # lagging confirms) is readable, unlike the conditions recession_risk which blends
+  # them into one score. Each tier = causal inverse-vol-standardized monthly
+  # contributions (the CB standardization), cumulated to an index; the recession
+  # signal is the CB "3 D's" (depth+duration via the 6-month momentum, diffusion via
+  # breadth). The roc_threshold is in THIS index's own units — CALIBRATED by
+  # scripts/validate_business_cycle.py against NBER dates (point-in-time where ALFRED
+  # vintages exist), NOT CB's -4.3% (a different index's scaling). See
+  # research/BUSINESS_CYCLE_MODEL.md. Effective N is tiny (~3 PIT recessions) — the
+  # measured lead/false-positive stats are shipped WITH the signal, never implied.
+  business_cycle:
+    z_lookback_m: 120               # rolling window (months) for causal leg standardization (~10y)
+    z_min_months: 36                # a leg must have this many months before it contributes
+    roc_window_m: 6                 # the CB "6-month change" horizon (red line)
+    trend_smooth_m: 6               # blue line = EMA span (months) over the 6-month momentum
+    diffusion_window_m: 6           # breadth horizon: share of legs rising over this window
+    rebase: 100.0                   # index level rebased to this at first valid month
+    signal:                         # CB 3 D's — CALIBRATED (scripts/validate_business_cycle.py
+                                    # writes the live operating point to the calibration JSON,
+                                    # which WINS over these defaults; kept in sync here).
+                                    # 1985+: 3/3 endogenous recessions caught, 3 false alarms in
+                                    # 40y (1995/2002/2022 growth scares), ~7-month median lead.
+      roc_threshold: -1.25          # leading 6-month momentum below this = depth+duration (index units)
+      diffusion_max: 50.0           # leading 6-month diffusion at/below this = broad weakening (CB-canonical)
+      min_consecutive_m: 3          # both conditions must hold this many months (whipsaw filter)
+      lookahead_window_m: 18        # a fire is a true positive if an NBER recession starts within this
+      max_lead_window_m: 24         # a recession is "caught" if the signal fired within this many months before its peak
+
 # -----------------------------------------------------------------------------
 # Alerts (Phase 3 — rules defined now, wired after validation checkpoint)
 # -----------------------------------------------------------------------------
@@ -1530,6 +1943,10 @@ alerts:
   ebp_widening_z: 2.0                 # EBP 1-month change this many sigma = credit risk-off
   drawdown_risk_high: 80              # macro-stress gauge crossing into the high band (P(dd) ~36%)
   capitulation_strong: 2              # capitulation gauge >= this (stacked) = contrarian bounce watch
+  # --- fused equity-internal RISK STATE (engine/risk_state.py) alerts ---
+  risk_state_elevated: true          # fire when the core risk-state crosses into elevated (>=60)
+  hidden_fragility: true             # fire when complacency crosses into watch/hidden-fragility (calm + weak)
+  breadth_divergence: true           # fire when index near 1y high while %>200dma turns weak
   # --- per-ticker / per-ETF alert feed (engine/ticker_alerts.py) ---
   ticker_timeline_days: 120           # window shown in each ticker / ETF alert feed
   ticker_max_events: 50               # cap on events kept per feed (most-recent-first)
@@ -1729,6 +2146,19 @@ transmission:
   scored_legs:
     real_rate_shock: false           # real10y_chg63 -> MRS (DIRECTIONAL only, not robust)
     sticky_inflation: false          # corepce_gap -> MRS
+
+# =============================================================================
+# YIELD-CURVE analytics (engine/yield_curve.py) — the unified, theory-grounded
+# interest-rate read surfaced on the transmission page + emitted dashboard-wide
+# (latest.json["yield_curve"]). DISPLAY-ONLY: reuses the bond-engine curve primitives
+# (probit / near-term forward spread / move taxonomy / un-inversion) and the
+# transmission IC matrix; the scored-leg gate found NO curve leg robust enough to score.
+yield_curve:
+  enabled: true
+  regime_window_d: 21                # ~1mo window for the bull/bear × steep/flat classification
+  neutral_funds: 2.5                 # ~nominal-neutral funds anchor (r* ~0.5% + 2% target) for the Wright policy-stance read
+  # (the percentile / momentum / PCA windows are engine constants — PCTILE_LOOKBACK 1260,
+  #  MOM_WINDOW 63, PCA_WINDOW 1260 — documented in engine/yield_curve.py.)
 
 # =============================================================================
 # Treasury auction RESULTS (collectors/treasury_auctions.py + engine/treasury_supply.py)
@@ -1962,10 +2392,18 @@ commodity_news:
 macro_news:
   enabled: true                   # MASTER SWITCH for the GDELT fetch + LLM brief
   lang: eng
-  window_days: 2                  # fetch the last N days of macro news
+  window_days: 4                  # fetch the last N days of macro news
   max_records: 200                # candidates pulled from GDELT before filtering
-  max_show: 10                    # headlines shown after filtering
+  max_show: 18                    # headlines shown after filtering
+  min_importance_score: 34        # drops official/wire plumbing that is not macro-relevant
   min_request_interval_s: 6       # GDELT pacing
+  gdelt_attempts: 2
+  gdelt_timeout_s: 15
+  use_official_feeds: true        # BEA/BLS/Census/Fed/TreasuryDirect/SEC RSS bundle
+  use_official_pages: true        # Treasury/BEA/Census pages where RSS coverage is patchy
+  use_news_feeds: true            # stock-wire + market RSS (CNBC/MarketWatch/SA/Benzinga/WSJ/Yahoo/NPR)
+  news_window_days: 5
+  official_window_days: 45
   cache_dir: data/macro/news_cache
   cache_ttl_hours: 12
   catalysts_horizon_days: 14
@@ -2018,8 +2456,18 @@ china_news:
   request_pace_s: 0.4             # collector: politeness pause between CCTV day-page fetches
   tone_window: 90                 # engine: z-score window (trading days) for the policy-tone
   tone_smooth: 5                  # engine: rolling-mean smoothing of the sparse daily tone
-  max_records: 60                 # Eastmoney flashes pulled before the macro-theme gate
-  max_show: 12                    # macro headlines shown after filtering
+  max_records: 80                 # Eastmoney flashes pulled before the macro-theme gate
+  max_show: 18                    # macro headlines shown after filtering
+  min_importance_score: 34        # keeps official/global-wire context but drops weak filler
+  use_official_pages: true        # PBoC/NBS/MOF/State Council/CSRC/SAFE/MOFCOM pages
+  use_news_feeds: true            # SCMP/Nikkei RSS direct media leg
+  use_news_pages: true            # Chinese-native pages (Yicai/STCN/CNStock/Sina/Eastmoney) + Caixin
+  use_wire_gdelt: true            # Reuters/FT/SCMP/Caixin-style global wire via GDELT
+  news_window_days: 7
+  wire_window_days: 5
+  wire_max_records: 180
+  wire_attempts: 2
+  wire_timeout_s: 12
   cache_dir: data/china_news/flash_cache
   cache_ttl_hours: 12
   # OPTIONAL AI brief — the only AI; off even if a key is present. Provider-agnostic
@@ -2028,6 +2476,79 @@ china_news:
   llm_model: deepseek-chat
   base_url: https://api.deepseek.com/anthropic   # omit / null for native Anthropic
   api_key_env: DEEPSEEK_API_KEY
+
+# China News powerhouse — multi-source wire + PIT event bus + media-sentiment
+# (engine/china_news_intel.py + collectors/china_news_wire.py). The China sibling of
+# news_vector: a first-print, point-in-time, keep-FIRST headline log across several free
+# wires + EN state RSS, theme-gated + scheduled-ref stamped, plus a media-sentiment index
+# (CCTV tone blended with a daily multi-source wire tone). CONTEXT-ONLY, never scored.
+# See research/CHINA_INTEL_POWERHOUSE.md §1.
+china_news_intel:
+  enabled: true                   # MASTER SWITCH for the multi-source headline fetch + accrual
+  wire_sources:                   # akshare flash endpoints tried in order (each degrades)
+    - stock_info_global_em
+    - stock_info_global_sina
+    - stock_info_global_ths
+    - stock_info_global_futu
+  rss_sources:                    # keyless English state-wire RSS (stdlib XML parse)
+    - https://english.news.cn/rss/businessrss.xml
+    - https://www.chinadaily.com.cn/rss/bizchina_rss.xml
+  max_per_source: 60              # raw items pulled per wire before the theme gate
+  max_show: 14                    # headlines shown in the feed after filtering
+  sentiment_window: 90            # z-score window (days) for the media-sentiment index
+  sentiment_smooth: 5             # rolling-mean smoothing of the blended daily tone
+  cache_dir: data/china_news/intel_cache
+  cache_ttl_hours: 6
+  # OPTIONAL AI brief — same provider stack as china_news; off even with a key.
+  llm_brief: false
+  llm_model: deepseek-chat
+  base_url: https://api.deepseek.com/anthropic
+  api_key_env: DEEPSEEK_API_KEY
+
+# =============================================================================
+# Financial / sector / Mag-7 / thematic-basket news (engine/financial_news.py) — the
+# flagship feed for the Research → News page. A LEAF: imports only lib.config +
+# engine.news_common; nothing in scoring imports it. Ticker-TAGGED corpus from
+# Polygon (+ Finnhub market/company) routed into Mag-7 / sector-ETF / basket /
+# per-ticker sections via the entity map, plus keyless GDELT thematic queries per
+# sector. Ranked by the transparent engine.news_common.quality_score; never scored.
+# Keys reused from the daily build: POLYGON_API_KEY / MASSIVE_API_KEY, FINNHUB_KEY.
+# =============================================================================
+financial_news:
+  enabled: true                   # MASTER SWITCH for the financial-news feed
+  window_days: 3                  # how far back to pull ticker-tagged news
+  cache_dir: data/financial_news/cache
+  cache_ttl_hours: 12
+  gdelt: true                     # keyless GDELT thematic supplement (market + 11 sectors)
+  gdelt_window_days: 2
+  gdelt_max_records: 40
+  finnhub_company: true           # per-Mag7 company-news (7 extra Finnhub calls)
+  include_quiver: true            # fold the Quiver /quivernews tail into the one news surface
+  quiver_max: 60                  # most-recent Quiver press-release rows to fold in
+  # per-section display caps (after dedup + quality rank)
+  top_market: 18
+  top_sector: 8
+  top_mag7: 6
+  top_basket: 8
+  top_ticker: 6
+
+# =============================================================================
+# News LLM processor (engine/news_llm.py) — OPTIONAL cheap batch summaries + an
+# "importance" re-rank layered on top of the deterministic quality score. It never
+# gates a headline in/out and feeds NO score. Provider order: Claude Haiku via the
+# subscription OAuth token (CLAUDE_CODE_OAUTH_TOKEN), then Claude Haiku via
+# ANTHROPIC_API_KEY, then DeepSeek V4-Flash via DEEPSEEK_API_KEY. Degrades to a
+# no-op pass-through whenever no credential is present.
+# =============================================================================
+news_llm:
+  enabled: true                   # try to enrich; auto no-op when no key present
+  provider_order: [oauth, anthropic, deepseek]
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
+  deepseek_key_env: DEEPSEEK_API_KEY
+  anthropic_model: claude-haiku-4-5
+  deepseek_model: deepseek-chat
+  batch_size: 12                  # headlines summarised per model call
+  max_batches: 16                 # hard cap on model calls per build (cost guard)
 
 # =============================================================================
 # Company-profile translation (engine/translate.py + scripts/translate_profiles.py).
@@ -2049,6 +2570,24 @@ profile_translation:
   batch_size: 20                  # blurbs per request (short text; JSON-array contract, validated)
   max_chars: 600                  # truncate pathologically long blurbs before sending
   max_tokens: 4000                # response cap per batch
+
+# =============================================================================
+# News headline translation (engine/news_translate.py)
+# Build-time, cached Simplified-Chinese translation for sourced English headlines.
+# Static pages cannot safely call an API from the browser, so this runs only during
+# local renders / daily workflows and degrades to English when unkeyed or rate-limited.
+# =============================================================================
+news_translation:
+  enabled: true
+  provider: deepseek
+  model: deepseek-chat
+  base_url: https://api.deepseek.com/anthropic
+  api_key_env: DEEPSEEK_API_KEY
+  batch_size: 16
+  max_chars: 360
+  max_tokens: 3000
+  cache_dir: data/news_translation/cache
+
 # Catalyst tone — market/regime narrative DIGEST (LLM Tier A; engine/catalyst_tone.py).
 # LEAF · DEFAULT-OFF · CONTEXT-ONLY. Digests ONE public document (FOMC text, a
 # regulatory release, dislocation-day catalyst text) into a typed tone/guidance/
@@ -2150,6 +2689,99 @@ narrative_brain:
   max_tokens: 6000
   horizon_d: 21                  # trading-day horizon for the falsifiable proxy-vs-SPY check
   rel_threshold: 0.05            # ±5% proxy-vs-SPY = the wrong-way threshold
+
+# Risk Brain — daily Claude/Opus DRAWDOWN-RISK officer over the deterministic risk stack
+# (engine/risk_brain.py). LEAF · CONTEXT-ONLY · DEGRADE-NEVER-RAISE. Reads the engine's own
+# outputs (risk_state, mtf_monitor, GEX, breadth, baskets, rotation, standouts), writes
+# site/riskdata/risk_brain.json (a Mastermind contract artifact). The de-risk DIRECTIVE is a
+# SIZING posture clamped in code to be no LESS cautious than the engine; never stock selection.
+risk_brain:
+  enabled: true                  # MASTER SWITCH (no-op anyway without a token)
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN   # Claude-Code OAuth (Bearer + oauth beta header)
+  api_key_env: ANTHROPIC_API_KEY             # fallback if no OAuth token
+  model: claude-opus-4-8         # deep daily risk reasoning
+  interval_days: 1
+  max_tokens: 5000
+  max_gross_tilt: 0.5            # cap on the subtract-only gross reduction the directive can imply
+  horizon_d: 21                  # trading-day horizon for the falsifiable drawdown thesis
+  dd_threshold_pct: 5.0          # the SPY drawdown the elevated-state thesis is graded on
+
+# Risk Radar self-correction loop (engine/risk_radar_review.py). Opus reviews the radar's graded
+# MISTAKES (false positives + missed drawdowns) and proposes calibration nudges to cut FPs + catch
+# misses. TWO guards: a CODE clamp (bands +/-12 & ordered, leg thr_pct in [0.80,0.97], prob_cal in
+# [0,0.6] & monotonic, alert_from >= caution) AND a do-no-harm BACKTEST gate (apply only if
+# historical alert F1 improves full+2020 without breaking the evidence gate). Default-off w/o token.
+risk_radar_review:
+  enabled: true                  # MASTER SWITCH (no-op without a token)
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
+  api_key_env: ANTHROPIC_API_KEY
+  model: claude-opus-4-8
+  interval_days: 7               # retune weekly (needs matured outcomes)
+  max_tokens: 4000
+  min_graded: 30                 # don't retune until >=30 calls have been graded
+  band_max_delta: 12.0           # bands may move at most this far from the baked default
+
+# =============================================================================
+# White House Watch — primary-source policy monitor + Claude-Opus alert desk
+# (engine/whitehouse_feed.py + engine/whitehouse_brain.py + scripts/build_whitehouse.py).
+# LEAF · CONTEXT-ONLY · DEGRADE-NEVER-RAISE. The hourly `whitehouse-sentinel` workflow
+# polls the White House RSS feeds; each NEW announcement is judged by the Opus brain for
+# market significance. An activated alert drives the site-wide ticker banner
+# (site/wh_banner.json → templates/wh_banner.js) and a report on site/whitehouse.html
+# (implications · sector head/tailwinds · the names most exposed). Nothing here feeds a
+# score, size or allocation. AUTH order: Claude-Code OAuth (Opus) → ANTHROPIC_API_KEY
+# (Opus) → DeepSeek reasoning (so CI still runs without the subscription token).
+# =============================================================================
+whitehouse:
+  enabled: true                   # MASTER SWITCH — no-op anyway without a provider
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN   # the "Opus brain via the CLI" (Bearer + oauth beta)
+  api_key_env: ANTHROPIC_API_KEY             # direct-API fallback
+  deepseek_key_env: DEEPSEEK_API_KEY         # last-resort reasoning fallback (CI without the token)
+  deepseek_base_url: https://api.deepseek.com/anthropic
+  opus_model: claude-opus-4-8     # the significance + report model
+  deepseek_model: deepseek-v4-pro
+  provider_order: [oauth, anthropic, deepseek]
+  max_tokens: 4000
+  min_importance: 60              # importance floor (0-100) below which NO banner activates
+  max_banner_days: 7             # hard ceiling on how long a banner stays live
+  max_tickers: 8                 # cap named beneficiaries per alert (honesty over breadth)
+  max_sectors: 6
+  max_new_per_run: 6             # cap brain calls per sentinel run (cost guard)
+  max_banner_alerts: 6           # cap LIVE banners on the scrolling ticker (readability)
+
+# =============================================================================
+# Alt-Data Brain — Claude-Opus convergence analyst for the Signal Intelligence desk
+# (engine/altdata_brain.py). Reads the deterministic weighted-convergence substrate +
+# the influence graph as an EVIDENCE PACK and emits an ACTIONABLE scored axis (action /
+# conviction / direction + a FALSIFIABLE thesis graded vs SPY) that the Mastermind bot
+# consumes. Runs in its OWN gated daily step (after build_alt_data) with the OAuth token,
+# then re-renders the page. No-op without a token. A hard CODE clamp prevents ACCUMULATE
+# on an extended name. Haiku does the cheap high-volume tagging (influence.extract below).
+# =============================================================================
+altdata_brain:
+  enabled: true                  # MASTER SWITCH (no-op anyway without a token)
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN   # Claude-Code OAuth (Bearer + oauth beta header)
+  api_key_env: ANTHROPIC_API_KEY             # fallback if no OAuth token
+  models:
+    reasoning: claude-opus-4-8      # the cross-signal convergence reasoning (deep)
+    tagging: claude-haiku-4-5-20251001   # cheap high-volume tagging (influence extractor)
+  interval_days: 1
+  max_clusters: 12               # cap the per-day clusters reasoned over (cost + focus)
+  max_tokens: 8000
+  horizon_d: 63                  # ~3 trading months — alt-data flow is medium-horizon
+  rel_threshold: 0.05            # ±5% name-vs-SPY = the wrong-way threshold
+  min_weighted: 0.9             # weighted-convergence floor to enter the evidence pack
+
+# Influence graph — multi-actor affiliation graph (engine/influence). The curated seed
+# (data/altdata/influence_seed.json) is always on; the LLM extractor that GROWS it from
+# news is gated + default-off (cheap Haiku tagging via the OAuth path).
+influence:
+  extract:
+    extract: false               # MASTER SWITCH for the LLM edge extractor (default off)
+    oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
+    api_key_env: ANTHROPIC_API_KEY
+    model: claude-haiku-4-5-20251001
+    news_limit: 50
 
 # =============================================================================
 # Stock desk — accountable AI JUDGMENT layer on the US standout top-picks
@@ -2381,6 +3013,66 @@ forex:
       enter_pct: {EURUSD: 1.5, USDJPY: 2.0, GBPUSD: 1.8, AUDUSD: 2.0, USDCAD: 1.5, USDCHF: 1.8, USDMXN: 3.0, USDBRL: 3.5, USDCNH: 1.2}
 
   # ---------------------------------------------------------------------------
+  # FX STRESS & REGIME RADAR — read the JOINT configuration of currency moves
+  # (velocity + level) to NAME the macro scenario (carry unwind / dollar tightening /
+  # EM crisis / safe-haven flight / reflation / intervention) and attach an HONEST,
+  # EMPIRICAL probability = a PAST-TENSE conditional base rate, NEVER a forecast:
+  # P(adverse forward move | stress intensity >= today's), with the unconditional base
+  # rate, sample n (+ overlap-deflated n_eff=n/N) and a Wilson 95% CI on both. Strictly
+  # causal (intensity uses only data <= t; forward label is (t,t+N]); DISPLAY-ONLY,
+  # never scored / never fed to a conviction/allocation. See engine/forex_regime.py.
+  # ---------------------------------------------------------------------------
+  regime:
+    enabled: true
+    add_drivers:                    # extra series the radar needs (folded into drivers)
+      move: [yahoo, "_MOVE"]        # ICE BofA MOVE bond-vol index (data/yahoo/_MOVE.parquet, 2002->)
+    z_lookback_d: 252               # causal z baseline window (moments shift(1)-ed to exclude t)
+    z_min_periods: 60
+    ewma_halflife_d: 20             # velocity vol normalizer (EWMA realized vol)
+    squash: {z_lo: 0.5, z_hi: 3.0}  # leg sub-intensity ramp (fire threshold ~0.6, saturates ~1.5x)
+    probability:
+      n_min_eff: 9                  # n_eff below this -> suppress the %, show words instead
+      wilson_z: 1.96                # 95% Wilson score interval
+      overlap_deflate: true         # n_eff = n_raw / N (one independent obs per N-day window)
+    kinematics:
+      lit_windows_d: [1, 5, 20]     # literal % moves shown per currency
+      rvol_window_d: 20
+      rvol_pctile_lookback_d: 504
+    scenarios:                      # per-scenario: forward horizon + adverse-outcome theta + leg weights
+      carry_unwind:
+        min_legs: 3
+        theta: {carry_dd: -0.06, spy_dd: -0.08, vix_level: 35}
+        weights: {funder_5d_z: 1.0, carry_5d_z: 1.0, funder_minus_carry: 1.5,
+                  carry_resid_corr: 0.75, dvix_z: 0.75, jpy_accel_z: 1.0}
+      dollar_wrecking_ball:
+        min_legs: 3
+        theta: {eem_dd: -0.08, emoas_bp: 75}
+        weights: {bdxy_20d_z: 1.0, bdxy_pctile: 1.0, usd_up_breadth: 1.5,
+                  adv_vs_em_usd: 1.0, dreal_20d_z: 0.5, dnfci_20d_z: 0.75}
+      em_crisis_capital_flight:
+        min_legs: 3
+        illustrative: true          # managed USD/CNH truncation
+        theta: {em_resid_dd: -0.08, emoas_bp: 150}
+        weights: {em_resid_10d_z: 1.0, em_minus_adv_z: 1.5, emoas_d5_z: 1.0,
+                  cnh_basis: 0.75, em_fx_drawdown: 0.5, eem_10d_z: 0.75}
+      haven_flight_risk_off:
+        min_legs: 3
+        theta: {spy_dd: -0.10, vix_level: 35, hyoas_bp: 150}
+        weights: {haven_5d_z: 1.0, risk_dn_breadth: 1.5, vol_spike: 1.0,
+                  hy_d5_z: 1.0, growth_scare: 0.75, gold_minus_spy: 0.5}
+      reflation_risk_on:
+        min_legs: 3
+        theta: {risk_reversal: -0.06}
+        weights: {risk_20d_z: 1.0, risk_minus_funder: 1.5, commodity_tailwind: 0.75,
+                  credit_vol_compress: 0.75, dbe_20d_z: 0.5, low_resid_corr: 0.5}
+      intervention_risk:
+        min_legs: 2
+        illustrative: true          # MoF/SNB intervention truncates the distribution
+        theta: {usdjpy_1d_gap: -0.025}
+        weights: {usdjpy_velocity: 1.5, usdjpy_level: 1.0, usdjpy_persistence: 1.0,
+                  snb_cnh_strain: 0.5, rate_diff_context: 0.5}
+
+  # ---------------------------------------------------------------------------
   # DOLLAR DESK — a deepened, multi-signal read of the master variable (broad USD).
   # ALL DISPLAY-ONLY / never scored: FX violates UIP, the dollar move is often the
   # tightening itself (coincident), and every forex conviction backtest fails the
@@ -2568,6 +3260,21 @@ vector:
     dd_threshold: 0.25           # no brake until the strategy is >25% below its equity high-water mark
     dd_decay: 1.0                # cut the cap by this per unit of drawdown beyond the threshold
     dd_floor: 0.40               # never cap exposure below this fraction (keep a core position)
+    # Bottom-detector overlay (validation: reports/btc-vector-optimal-phase0.md). The
+    # drawdown brake de-risks the allocation to ~cash THROUGH a crash, so it misses the
+    # washout LOW. This adds exposure back when a multi-timeframe BOTTOM signal (StochRSI-
+    # oversold breadth + deep drawdown + capitulation, all causal/close+OHLC) is strong ->
+    # better entry prices. +15.6% final return at flat Sharpe; the SCORED gates (DSR /
+    # bootstrap / split-half / leave-one-crisis-out / beats-200dma) all still pass.
+    # Applied AFTER the brake (the brake protects on the way down, this re-engages at the low).
+    bottom_overlay: true         # add size at washout bottoms the brake would otherwise miss
+    bottom_boost: 0.40           # max allocation added at full bottom pressure
+    bottom_cap: 1.0              # clip after the boost (1.0 = no leverage; >1 = lever the washout buy)
+    bottom_thr: 0.30             # bottom-pressure (0..1) must exceed this before any boost is applied
+    # ^ tuned (sweep on the engine bottom_pressure): boost 0.4 / cap 1.0 / thr 0.30 lifts
+    #   final return +15.6% (final/HODL 1.21->1.40, CAGR 61.5->63.5%) at FLAT Sharpe
+    #   (1.439->1.435) and MaxDD -41.2% (still 2.0x shallower than HODL -83.8%). Higher
+    #   boost reaches +22% but only by adding risk (Sharpe down, DD -48%) -> not taken.
     # ^ tuned (sweep, reports/vector-calibration.md): conviction sizing is the value
     #   driver (lifts Sharpe/Sortino/DSR AND MaxDD); the brake is the costly safety
     #   leg, so it is GENTLE — keeps ~all of the conviction risk-adjusted gain while
@@ -2859,6 +3566,21 @@ vector:
     soleth_slope_d: 56            # 8-week SOL/ETH slope
     soleth_pctile_d: 730          # 2y SOL/ETH percentile (SOL-USD ~2020->)
 
+  # Macro-regime composite deferred CONTEXT legs (engine/btc_netliq, etf_perfund,
+  # btc_dat, btc_leverage_cascade). All DISPLAY-ONLY — they never size or gate.
+  btc_netliq:
+    enabled: true
+    yoy_window_d: 252             # YoY ROC lookback for the Howell net-liquidity stack
+  btc_etf_perfund:
+    scrape_enabled: false         # Farside per-fund scrape OFF by default (read-only otherwise)
+    url: "https://farside.co.uk/bitcoin-etf-flow-all-data/"
+  btc_dat:
+    json_path: "data/dat_holdings.json"   # manual 8-K-sourced MSTR/DAT drop (NOT 13F)
+    margin_haircut: 0.78          # forced-sell trigger ~ avg_cost x this (≈ -22%)
+  btc_leverage_cascade:
+    high_funding_annual_pct: 50   # annualized funding above this = "high"
+    sustain_days: 3               # consecutive days of high funding to flag a cascade
+
   calibration:
     start_date: "2015-01-01"      # price-signal backtests (Yahoo BTC 2014-09->)
     split_date: "2021-01-01"      # split-half robustness boundary
@@ -3118,6 +3840,29 @@ china:
     min_mktcap_yi: 30               # liquidity floor (亿 RMB total market cap)
     history_period: "5y"            # yfinance close history per name (engine needs >=300 rows)
     enrich_per_run: 120             # max NEW yfinance get_info name/sector lookups per nightly run
+    # Hand-picked individual A-shares kept SEARCHABLE even though they sit BELOW the Sina
+    # top-800 / CSI300+CSI1000 cutoff (small/mid-caps a user explicitly wants in the
+    # analyzer). The China mirror of stock_search.extra_tickers/extra_names — kept OUT of
+    # china.constituents so the calibrated breadth/regime engine is never perturbed. The
+    # seeded name_en/name_zh/sector win over (and skip) yfinance get_info, which mislabels
+    # small caps — e.g. it tags 旗天科技 "Healthcare" from its stale 华谊嘉信 marketing
+    # identity. A name needs >=300 trading days of close history to actually build.
+    extra_tickers:
+      - "300061.SZ"                 # 旗天科技 Qitian Technology — digital marketing + fintech (ChiNext)
+      - "688508.SS"                 # 芯朋微 Wuxi Chipown Micro-electronics
+      - "300580.SZ"                 # 贝斯特 Wuxi Best Precision Machinery
+      - "688049.SS"                 # 炬芯科技 Actions Technology
+      - "300470.SZ"                 # 中密控股 Sinoseal Holding
+      - "688609.SS"                 # 九联科技 Unionman Technology
+      - "301531.SZ"                 # 春光集团 (very recent IPO — gated out until >=300d history)
+    extra_names:                    # ticker: {name_en, name_zh, sector, mktcap_yi(亿, optional)}
+      "300061.SZ": {name_en: "Qitian Technology Group Co., Ltd.", name_zh: "旗天科技", sector: "Technology", mktcap_yi: 47}
+      "688508.SS": {name_en: "Wuxi Chipown Micro-electronics", name_zh: "芯朋微", sector: "Technology", mktcap_yi: 108}
+      "300580.SZ": {name_en: "Wuxi Best Precision Machinery", name_zh: "贝斯特", sector: "Industrials", mktcap_yi: 92}
+      "688049.SS": {name_en: "Actions Technology", name_zh: "炬芯科技", sector: "Technology", mktcap_yi: 75}
+      "300470.SZ": {name_en: "Sinoseal Holding", name_zh: "中密控股", sector: "Industrials", mktcap_yi: 59}
+      "688609.SS": {name_en: "Unionman Technology", name_zh: "九联科技", sector: "Technology", mktcap_yi: 56}
+      "301531.SZ": {name_en: "Shandong Chunguang Technology Group", name_zh: "春光集团", sector: "Industrials", mktcap_yi: 148}
     # CSI index constituent lists unioned into the search universe (via akshare).
     # Stocks already in the Sina top-800 are deduplicated; extras get mktcap_yi=30 placeholder.
     index_constituents:
@@ -3221,7 +3966,7 @@ hk:
   # ADDS genuinely-liquid HSI / HSCEI / HSTECH constituents (cross-sectional reads
   # simply widen to whatever resolves). Every added ticker is a real, liquid .HK line.
   sectors:
-    "Internet & Tech":      {tv: "HKEX:700",  members: ["0700.HK","9988.HK","3690.HK","9618.HK","1810.HK","9888.HK","1024.HK","0992.HK","0981.HK","9999.HK","0285.HK","2382.HK","0241.HK","1347.HK","0268.HK","0772.HK","9698.HK","9626.HK","0780.HK","3888.HK","1833.HK"]}
+    "Internet & Tech":      {tv: "HKEX:700",  members: ["0700.HK","9988.HK","3690.HK","9618.HK","1810.HK","9888.HK","1024.HK","0992.HK","0981.HK","9999.HK","0285.HK","2382.HK","0241.HK","1347.HK","0268.HK","0772.HK","9698.HK","9626.HK","0780.HK","3888.HK","1833.HK","0100.HK"]}
     "Financials & Banks":   {tv: "HKEX:1398", members: ["1398.HK","0939.HK","3988.HK","0005.HK","2388.HK","3328.HK","1288.HK","3968.HK","1658.HK","0011.HK","2888.HK","6818.HK","0998.HK","1359.HK","3618.HK"]}
     "Insurance":            {tv: "HKEX:2318", members: ["2318.HK","1299.HK","2628.HK","2601.HK","0966.HK","1336.HK","6060.HK","2378.HK"]}
     "Energy":               {tv: "HKEX:883",  members: ["0883.HK","0857.HK","0386.HK","1088.HK","0934.HK","1898.HK","0902.HK","2883.HK","1816.HK","0135.HK","3800.HK"]}
@@ -3246,6 +3991,7 @@ hk:
     "1024.HK": Kuaishou
     "0992.HK": Lenovo
     "0981.HK": SMIC
+    "0100.HK": MiniMax
     "1398.HK": ICBC
     "0939.HK": China Construction Bank
     "3988.HK": Bank of China
@@ -3572,6 +4318,23 @@ canada:
       us_10y: DGS10                # US 10Y
     statcan_latest_n: 240          # months of history per StatsCan vector
 
+  # -- Insider transactions (SEDI via yfinance) — display-only context ---------
+  # SEDI (Canada's insider-filing system) has no free machine-readable feed and is
+  # CAPTCHA-walled; every paid vendor's insider product is US-SEC-only. The one free
+  # programmatic path is yfinance get_insider_transactions() (undocumented Yahoo
+  # quoteSummary endpoint) — SEDI-sourced dated filings for many .TO names, no key.
+  # We keep only PERSONAL OPEN-MARKET trades ("Acquisition/Disposition in the public
+  # market"), dropping issuer buybacks and option exercises, and summarise the net
+  # buy/sell lean over a trailing window. CONTEXT, NOT a validated signal (SEDI lags
+  # the trade by up to ~5 days; TSX insider breadth is thin). engine/canada_insider.py
+  # drips it into data/canada_insider/ (freshness-cached), like fetch_earnings.
+  insider:
+    enabled: true
+    window_days: 180        # trailing window for the net buy/sell lean
+    max_new_per_build: 40   # yfinance drip cap per run (freshness-cached 12d)
+    recent_n: 6             # rows in the recent-filings table
+    min_shares: 0           # drop trades below this share count (0 = keep all)
+
   # -- Breadth / drill-down universe: curated large-cap TSX names by sector -----
   # Doubles as breadth denominator + per-sector drill-down + stock-search seed.
   # Verified .TO symbols (dash convention for class/unit shares: GIB-A, RCI-B,
@@ -3885,3 +4648,47 @@ intl:
     rates:                          # rates / curve / carry desk (engine.intl_rates)
       carry_anchor: us_10y          # carry = country 10y - US 10y
       liquidity_impulse_w: [13, 52] # ECB balance-sheet 13/52-week % change
+
+special_situations:                # event-driven Special Situations desk (display-only leaf; SCORED=False)
+  enabled: true                    # deterministic collector/engine on; LLM summary is the separate llm_brief flag
+  user_agent: "Macro Dashboard special-situations research longr2512@gmail.com"  # SEC fair-access (email required for www.sec.gov)
+  retries: 3
+  backfill_days: 7                 # on first run / large gap, how many days of daily-index to sweep
+  market_cap_floor_musd: 100       # keep covered companies >= $100M (decision 2026-06-20)
+  market_cap_floor_high_conf_musd: 25  # relaxed floor for HIGH-confidence situations only
+                                       # (structured/LLM-verified/digest) — captures the
+                                       # small-cap activist/take-private niche (decision 2026-06-21)
+  eight_k_items:                   # special-situations 8-K items (others discarded)
+    ["1.01", "1.02", "1.03", "2.01", "3.01", "5.02", "8.01"]
+  # LLM 88-word summary touchpoint — ON (DeepSeek; key via DEEPSEEK_API_KEY secret).
+  # Generates summaries ONLY for EDGAR-only situations lacking a digest summary,
+  # cached per situation id (pays once per new situation). No-op if the key is absent.
+  llm_brief: true
+  llm_model: "deepseek-chat"
+  api_key_env: "DEEPSEEK_API_KEY"
+  llm_base_url: "https://api.deepseek.com/anthropic"
+  llm_min_confidence: "medium"
+  # Per-build work caps — the daily build chips the historical backlog (~23k deferred
+  # filings) a bounded slice at a time so one run can never stall the whole engine job.
+  # Progress persists in events.parquet (committed), so the backlog converges over days
+  # and steady-state only touches new filings. Raise these (or call the collector funcs
+  # with a high `limit` in a one-off workflow_dispatch) to burn the backlog down faster.
+  text_per_build: 1500             # keyword pre-filter doc fetches per build (cheap, SEC-paced)
+  classify_per_build: 150          # P1.1 LLM category-verify calls per build
+  summary_per_build: 200           # P1.3 LLM summary calls per build
+  filer_per_build: 250             # P3.2 13D cover-page fetches per build
+  # P2.1 newswire lane — catches the form-absent categories (Strategic Reviews, Capital
+  # Returns, Deal Terminations, Divestitures). ON: the name_resolver now maps the company in
+  # a headline to its ticker (Google-News headlines lack "(NASDAQ: XYZ)" tags), so the lane
+  # yields real items (live sample: ROKU/PayPal strategic reviews, Yum divestiture, buybacks).
+  # display-only, low-confidence; deduped by (ticker, category) on the desk.
+  newswire: true
+  # Phase 4 international lanes — UK (LSE/RNS) + Canada (TSX). Both use the intl classifier +
+  # name_resolver (UK/CA names now resolve via the stock-search libraries).
+  # CANADA is ON: it adds a direct GlobeNewswire-Canada RSS source on top of Google-News,
+  # strictly gated (spam/French filtered, must classify AND resolve a .TO ticker). LOW yield —
+  # there is no clean free Canadian special-situations feed (SEDAR+ direct is ToS/CAPTCHA-
+  # barred), so this captures the occasional real TSX deal PR; precision-gated, never noisy.
+  # UK stays OFF: no direct RNS feed wired yet, and Google-News alone yields ~0 (feed recall).
+  intl_uk: false
+  intl_canada: true

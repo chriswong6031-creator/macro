@@ -152,6 +152,9 @@ def snapshot() -> dict:
     return {
         "asof": str(aligned.index[-1].date()),
         "verdict": verdict,                 # diversified | converging | concentrated | unknown
+        # Pre-baked one-liner so a naive consumer can't reduce this leaf to a bare ratio.
+        "summary": (f"{verdict.upper()} · {round(ar_pctile, 2)} 5y-pctile"
+                    if ar_pctile is not None else verdict.upper()),
         "headline": headline,
         "window_d": window,
         "markets": list(corr.columns),

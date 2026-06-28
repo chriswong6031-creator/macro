@@ -638,4 +638,3 @@ python3 research/signal_engine/tuning_stops.py --stop 0.05 --dump research/signa
 #   (every candidate is <50% at both stops); median per-name stop-Δ must be NEGATIVE (it is +ve everywhere)
 # subpanel stability: run per odd/even ticker half at --stop 0.05; base3d is 38.3/38.3, candidate signs must agree
 ```
-

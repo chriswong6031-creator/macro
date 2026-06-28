@@ -147,12 +147,23 @@ def main() -> int:
     # from the BASKETS metadata (thesis/members/rationale/perf/changelog/reference).
     chart = data.pop("chart")
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    # Risk-state de-risk strip (engine/risk_state.py): when drawdown risk is elevated, the
+    # leadership-driven baskets/rotation surface should DOWN-SIZE and favor good entries over
+    # chasing extended leaders — sizing, not selection. Read-only from latest.json; never fatal.
+    risk_state = None
+    try:
+        rs = json.loads((config.data_dir() / "regime" / "latest.json").read_text()).get("risk_state")
+        if rs and rs.get("state") in ("caution", "elevated", "risk-off"):
+            risk_state = rs
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("baskets risk-state read failed: %s", e)
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     html = env.get_template("baskets.html.j2").render(
         baskets_json=json.dumps(data, separators=(",", ":")),
         chart_json=json.dumps(chart, separators=(",", ":")),
         theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
         flow=flow,
+        risk_state=risk_state,
         generated_utc=built)
     (site / "baskets.html").write_text(html)
     # PER-THEME DETAIL PAGES (one site/basket/<id>.html each) — needs `data` (with

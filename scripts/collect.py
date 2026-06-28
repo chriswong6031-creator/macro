@@ -13,6 +13,7 @@ import argparse
 import logging
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from datetime import datetime, timezone
 
@@ -23,6 +24,59 @@ from lib import store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 log = logging.getLogger("collect")
+
+
+# Pure-REST collectors that are SAFE to run CONCURRENTLY. Verified by the collector
+# audit: no akshare (segfaults under threads) and no yfinance (self-parallelizes and
+# gets Yahoo-banned under an outer pool). The VALUE is the upstream HOST GROUP — members
+# of the same group share one upstream host, so they run SERIALLY within the group (SEC
+# fair-access <10 req/s across *.sec.gov; a single Quiver API host with no internal rate
+# limit; CFTC); distinct groups run in PARALLEL. Each adapter writes its OWN per-source
+# parquet and run_adapter only READS the shared status (written once, at the end), so the
+# concurrency is write-safe. Everything NOT listed here stays in the serial loop —
+# akshare china/hk, yfinance *_prices/*_universe/breadth, the crypto pullers, and
+# canada_macro (multi-host incl. sandbox-unreachable FRED).
+_QUIVER_KEYS = (
+    "quiver_congress", "quiver_senate", "quiver_house", "quiver_lobbying",
+    "quiver_govcontracts", "quiver_offexchange", "quiver_insiders", "quiver_flights",
+    "quiver_patents", "quiver_wsb", "quiver_twitter", "quiver_sec13f",
+    "quiver_sec13f_changes", "quiver_cnbc", "quiver_spacs", "quiver_trump",
+    "quiver_corpdonors", "quiver_news", "quiver_congressholdings", "quiver_bills",
+    "quiver_appratings", "quiver_watchlist",
+)
+_CONCURRENT_HOSTS: dict[str, str] = {
+    # SEC EDGAR — fair-access <10 req/s shared across data.sec.gov / www.sec.gov / efts.sec.gov
+    "edgar_8k": "sec", "edgar_13f": "sec", "edgar_trumpflow": "sec",
+    "beneficial_ownership": "sec",
+    # Quiver — single API host (api.quiverquant.com), no internal pacing
+    **{k: "quiver" for k in _QUIVER_KEYS},
+    # CFTC — publicreporting.cftc.gov / www.cftc.gov
+    "cot": "cftc",
+    # fully-independent distinct hosts — each its own group (runs fully in parallel)
+    "worldbank": "worldbank", "eia": "eia", "usaspending": "usaspending",
+    "prediction_markets": "polymarket", "treasury_auctions": "treasurydirect",
+    "jodi": "jodi", "french": "french", "frbsf_sentiment": "frbsf",
+    "bis": "bis", "uncertainty_indices": "uncertainty",
+}
+
+
+def _run_one(key: str, cls, full_history: bool):
+    """Run a single adapter through the circuit-breaker runner. Returns (result, secs)
+    or None if the adapter couldn't even be constructed. Pure per-source work — no
+    shared mutable state — so it is safe to call from a worker thread."""
+    log.info("=== running %s ===", key)
+    try:
+        adapter = cls()
+    except Exception as e:  # noqa: BLE001
+        log.error("init %s failed: %s", key, e)
+        return None
+    t0 = time.perf_counter()
+    res = run_adapter(adapter, full_history=full_history)
+    dt = time.perf_counter() - t0
+    res.source = key
+    log.info("%s -> %s (%d rows, last %s) [%.1fs]%s", key, res.status, res.rows,
+             res.last_date, dt, f" err={res.error}" if res.error else "")
+    return res, round(dt, 1)
 
 
 def all_adapters() -> dict:
@@ -40,7 +94,8 @@ def all_adapters() -> dict:
         ("cboe_putcall", "collectors.cboe", "PutCallAdapter"),
         ("cboe_gex", "collectors.cboe", "GexAdapter"),
         ("cboe_skew", "collectors.cboe_indices", "CboeSkewAdapter"),   # tail-risk index (research/QUANT_FACTOR_EXPANSION.md)
-        ("cboe_vix_futures", "collectors.cboe_vix_futures", "CboeVixFuturesAdapter"),  # front VX settle -> VIX thin-quote sanitizer (engine/dislocation.py)
+        ("cboe_vvix", "collectors.cboe_indices", "CboeVvixAdapter"),   # vol-of-vol 2006+ -> engine/vol_regime VVIX-VIX leg (research/VOL_REGIME_DATA_ACCRUAL.md)
+        ("cboe_vix_futures", "collectors.cboe_vix_futures", "CboeVixFuturesAdapter"),  # front VX settle (sanitizer) + full M1..M6 curve (forward-accruing; research/VOL_REGIME_DATA_ACCRUAL.md)
         ("fedboard_ebp", "collectors.fedboard", "EbpAdapter"),         # Excess Bond Premium (credit risk-appetite)
         ("sovereign", "collectors.sovereign", "SovereignAdapter"),     # ECB euro-area + JGB sovereign yields (Bonds Phase 5)
         ("frbsf_sentiment", "collectors.frbsf", "NewsSentimentAdapter"),  # SF Fed Daily News Sentiment (real-activity nowcast)
@@ -62,9 +117,22 @@ def all_adapters() -> dict:
         ("fundamentals", "collectors.fundamentals", "FundamentalsAdapter"),
         ("stock_fundamentals", "collectors.sector_holdings", "StockFundamentalsAdapter"),
         ("edgar_13f", "collectors.edgar_13f", "Edgar13FAdapter"),  # curated super-investor 13F holdings (smart money)
+        ("openfigi", "collectors.openfigi", "OpenFigiAdapter"),    # keyless CUSIP->ticker master -> unhides foreign/ADR 13F lines (engine/smart_money.full_cusip_map)
         ("ofr", "collectors.ofr", "OfrAdapter"),                   # OFR short-term funding monitor (repo/SOFR plumbing)
         ("prediction_markets", "collectors.prediction_markets", "PredictionMarketsAdapter"),  # Polymarket macro-event odds
-        ("usaspending", "collectors.usaspending", "UsaspendingAdapter"),  # federal contract obligations/mo per curated federally-exposed ticker -> Divergence Radar (engine/radar.py)
+        ("usaspending", "collectors.usaspending", "UsaspendingAdapter"),  # federal contract obligations + ASSISTANCE grants/loans per curated ticker -> Divergence Radar + gov_grant convergence channel
+        # Beyond-Quiver alt-data/divergence sources (keyless except grants_gov; all degrade gracefully)
+        ("edgar_8k", "collectors.edgar_8k", "Edgar8KAdapter"),     # SEC 8-K material-event velocity (theme_event radar leg) + per-ticker material_8k convergence channel
+        ("beneficial_ownership", "collectors.beneficial_ownership", "BeneficialOwnershipAdapter"),  # keyless SC 13D/13G sweep + filer enrichment -> per-ticker ownership-regime (engine/beneficial_ownership.py)
+        ("openfda", "collectors.openfda", "OpenFdaAdapter"),       # Drugs@FDA approvals/label-expansions -> fda_approval/fda_label_expansion channels (healthcare blind spot)
+        ("huggingface", "collectors.huggingface", "HuggingFaceAdapter"),  # HF model-download velocity -> hf_model_momentum channel (AI adoption blind spot)
+        ("grants_gov", "collectors.grants_gov", "GrantsGovAdapter"),      # Simpler Grants.gov pre-award FOA flow (theme_event radar leg); GATED on free GRANTS_GOV_API_KEY -> 'blocked' without it
+        ("clinicaltrials", "collectors.clinicaltrials", "ClinicalTrialsAdapter"),  # keyless ClinicalTrials.gov Phase-3 starts/halts -> clinical_phase3_start channel
+        ("finnhub_altdata", "collectors.finnhub_altdata", "FinnhubAltdataAdapter"),  # analyst trends + insider MSPR + earnings surprises (existing FINNHUB key) -> 3 convergence channels
+        ("finra_short_volume", "collectors.finra_short_volume", "FinraShortVolumeAdapter"),  # keyless daily consolidated short-VOLUME (fresher than bi-monthly short interest) -> stock-page short_flow confirmer
+        ("polygon_news", "collectors.polygon_news", "PolygonNewsAdapter"),  # Polygon news-sentiment roll-up (existing POLYGON key) -> news_sentiment channel
+        ("github_repos", "collectors.github_repos", "GithubReposAdapter"),  # GitHub star velocity (optional GITHUB_TOKEN) -> github_momentum channel
+        ("sam_gov", "collectors.sam_gov", "SamGovAdapter"),               # SAM.gov pre-award solicitations by NAICS (theme_event radar leg); GATED on SAM_API_KEY -> 'blocked' without it
         ("bis", "collectors.bis", "BisAdapter"),                   # BIS global credit-cycle (credit-gap + DSR)
         ("treasury_auctions", "collectors.treasury_auctions", "TreasuryAuctionsAdapter"),  # TreasuryDirect auction RESULTS -> supply-absorption panel (display-only)
         # China A-share dashboard — see research/CHINA_DATA_AUDIT.md
@@ -78,7 +146,13 @@ def all_adapters() -> dict:
         ("china_qvix", "collectors.china_qvix", "ChinaQvixAdapter"),           # 300/50ETF option-implied vol ("China VIX") — fear/euphoria + drawdown
         ("china_credit", "collectors.china_credit", "ChinaCreditAdapter"),     # 社融 TSF (mofcom, legacy-SSL)
         ("china_property", "collectors.china_property", "ChinaPropertyAdapter"),  # 70-city price breadth + climate + CGB + rebar/iron-ore
+        ("china_pboc", "collectors.china_pboc", "ChinaPbocAdapter"),           # PBoC corridor legs: FX reserves+gold / repo fixings FR007 / USD-CNY ref (engine/china_policy_watch.py)
+        ("china_yield_spread", "collectors.china_yield_spread", "ChinaYieldSpreadAdapter"),  # CN vs US sovereign curve + slope + CN-US spread — ACCRUING (no engine consumer yet)
+        ("china_cgb_curve", "collectors.china_cgb_curve", "ChinaCgbCurveAdapter"),  # full CGB term structure — ACCRUING (no engine consumer yet)
+        ("china_a_valuation", "collectors.china_a_valuation", "ChinaAValuationAdapter"),  # whole-A median PE/PB + 10y/all percentiles (hub valuation anchor / anti-chase)
+        ("china_sectors", "collectors.china_sectors", "ChinaSectorsAdapter"),  # Shenwan (申万) L1 industry indices — authoritative deep sector history (1999/2014->) for the Sector Desk + pathway engine (free analogue of the GS China sector baskets)
         ("china_news", "collectors.china_news", "ChinaNewsAdapter"),           # CCTV 新闻联播 official policy-tone series (keyless; display-only news/sentiment panel)
+        ("china_news_wire", "collectors.china_news_wire", "ChinaNewsWireAdapter"),  # multi-source flash-wire daily tone -> media-sentiment index (engine/china_news_intel.py)
         # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md
         # (macro reused from china_macro; flows reused from china_connect/china_flows)
         ("hk_prices", "collectors.hk_prices", "HkPriceAdapter"),
@@ -246,29 +320,53 @@ def main() -> int:
 
     results = []
     timings: dict[str, float] = {}
-    for key, cls in registry.items():
-        log.info("=== running %s ===", key)
-        try:
-            adapter = cls()
-        except Exception as e:  # noqa: BLE001
-            log.error("init %s failed: %s", key, e)
+
+    # SERIAL phase — everything that is NOT a proven-independent pure-REST source stays
+    # here, in registry order, exactly as before: the akshare adapters (segfault under
+    # threads), the yfinance pullers (*_prices/*_universe/breadth — already parallelise
+    # internally; an outer pool stacks Yahoo concurrency into throttle/ban territory),
+    # and canada_macro (multi-host). store.upsert writes ONE parquet per source, so the
+    # only thing that must stay single-writer is same-file writes — which can't happen
+    # across distinct sources. Runs first so config/imports are warm before the pool.
+    serial_keys = [k for k in registry if k not in _CONCURRENT_HOSTS]
+    for key in serial_keys:
+        out = _run_one(key, registry[key], args.full_history)
+        if out is None:
             continue
-        t0 = time.perf_counter()
-        res = run_adapter(adapter, full_history=args.full_history)
-        dt = time.perf_counter() - t0
-        timings[key] = round(dt, 1)
-        res.source = key
+        res, dt = out
         results.append(res)
-        log.info("%s -> %s (%d rows, last %s) [%.1fs]%s", key, res.status, res.rows,
-                 res.last_date, dt, f" err={res.error}" if res.error else "")
+        timings[key] = dt
+
+    # CONCURRENT phase — pure-REST sources grouped by upstream HOST (see _CONCURRENT_HOSTS).
+    # ONE task per host-group runs its members SERIALLY (shared host / rate ceiling: SEC
+    # <10 req/s, the single Quiver API host, CFTC); the GROUPS run in PARALLEL (distinct
+    # hosts). One-task-per-group means no locks are needed and no host is ever hit
+    # concurrently. Wall-clock collapses from the serial sum of these sources to the
+    # slowest single host-group (the Quiver chain). This is the "thread only the
+    # proven-heavy, proven-independent sources" cut the serial loop's note called for.
+    concurrent_keys = [k for k in registry if k in _CONCURRENT_HOSTS]
+    if concurrent_keys:
+        groups: dict[str, list[str]] = {}
+        for k in concurrent_keys:
+            groups.setdefault(_CONCURRENT_HOSTS[k], []).append(k)
+
+        def _run_group(keys: list[str]) -> list:
+            out = []
+            for k in keys:                       # serial WITHIN a host group
+                r = _run_one(k, registry[k], args.full_history)
+                if r is not None:
+                    out.append(r)
+            return out
+
+        log.info("collect: running %d REST sources across %d host-groups in parallel",
+                 len(concurrent_keys), len(groups))
+        with ThreadPoolExecutor(max_workers=min(len(groups), 16)) as ex:
+            for grp_results in ex.map(_run_group, list(groups.values())):
+                for res, dt in grp_results:
+                    results.append(res)
+                    timings[res.source] = dt
 
     # Per-adapter wall-clock: the EVIDENCE for safely targeting the next collect cut.
-    # The top-level loop stays SERIAL on purpose — 14 akshare adapters segfault under
-    # threads (see akshare notes) and the yfinance pullers (china/hk_prices, *_universe)
-    # already parallelise internally via threads=True / their own ThreadPoolExecutor, so
-    # an outer pool would stack Yahoo concurrency into throttle/ban territory while
-    # store.upsert writes parquet non-atomically. So MEASURE first, then thread only the
-    # proven-heavy, proven-independent sources (or raise the existing internal pools).
     if timings:
         slow = sorted(timings.items(), key=lambda kv: kv[1], reverse=True)
         log.info("collect timing total %.0fs · slowest: %s", sum(timings.values()),

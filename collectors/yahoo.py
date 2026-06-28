@@ -59,8 +59,38 @@ class YahooAdapter(Adapter):
                         frames[t] = sub
                 except KeyError:
                     log.warning("yahoo: no data for %s", t)
+        # Stooq fallback for searchable single stocks Yahoo refused this run.
+        extras = config.load().get("stock_search", {}).get("extra_tickers", []) or []
+        self._fill_missing_extras(frames, extras)
         if len(frames) < len(tickers) * 0.7:
             raise RuntimeError(f"yahoo returned only {len(frames)}/{len(tickers)} tickers")
+        return frames
+
+    def _fill_missing_extras(self, frames: dict[str, pd.DataFrame],
+                             extras: list[str]) -> dict[str, pd.DataFrame]:
+        """Best-effort Stooq backfill for extra_tickers Yahoo returned no data for.
+
+        Yahoo intermittently 404s live large-caps (e.g. Marsh MMC, Fiserv FI —
+        served only under stale symbols); without a fallback they never reach the
+        store and drop out of the library. Bounded to the extra_tickers set (plain
+        US symbols Stooq's ``.us`` feed understands, not crypto/futures/indices)
+        and never fatal — Stooq is IP-gated, so a block just leaves the name
+        missing, no worse than before."""
+        missing = [t for t in extras if not str(t).startswith("^") and t not in frames]
+        if not missing:
+            return frames
+        from lib import stooq
+        recovered = []
+        for t in missing:
+            s = stooq.stooq_daily(t)
+            if s is not None and not s.empty:
+                frames[t] = s
+                recovered.append(t)
+        if recovered:
+            log.info("yahoo: Stooq fallback recovered %d name(s): %s", len(recovered), recovered)
+        still = [t for t in missing if t not in frames]
+        if still:
+            log.warning("yahoo: no data from Yahoo or Stooq for %s", still)
         return frames
 
     def _download(self, batch: list[str], period: str) -> pd.DataFrame:

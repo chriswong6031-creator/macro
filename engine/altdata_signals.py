@@ -22,94 +22,47 @@ import logging
 from datetime import datetime, timezone
 
 from lib import config
-from engine import altdata_picks
+from engine import altdata_models as models
 
 log = logging.getLogger(__name__)
 
 
-def _slot(by: dict, tk) -> dict | None:
-    tk = (str(tk).strip() if tk is not None else "")
-    if not tk or tk.lower() in ("nan", "none", "n/a"):
-        return None
-    return by.setdefault(tk, {"ticker": tk, "channels": []})
+def build(feed: dict, affiliations: dict | None = None) -> dict:
+    """Invert feed['signals'] into one weighted record per ticker and persist it.
 
-
-def build(feed: dict) -> dict:
-    """Invert feed['signals'] into a per-ticker dict and persist it."""
+    Delegates to the single weighted kernel (``altdata_models.channel_records``) so this
+    substrate and the cross-sectional ``altdata.convergence`` display never diverge.
+    ``convergence_score`` = distinct-channel COUNT (kept for the ledger + downstream
+    back-compat); ``weighted_score`` ranks by channel QUALITY. ``affiliations`` (optional,
+    {ticker: detail} from the influence graph) adds the 'affiliation' channel so a
+    qualitative actor→name edge converges with the hard feeds.
+    """
     s = (feed or {}).get("signals", {})
+    recs = models.channel_records(s, affiliations=affiliations)
     by: dict[str, dict] = {}
-
-    for r in s.get("political", {}).get("buys", []):
-        rec = _slot(by, r.get("ticker"))
-        if rec:
-            rec["congress_net"] = r.get("net")
-            rec["congress_members"] = r.get("members")
-            rec["channels"].append("congress_buy")
-    for r in s.get("gov_contracts", []):
-        rec = _slot(by, r.get("ticker"))
-        if rec:
-            rec["gov_contract_usd_30d"] = r.get("total_usd")
-            rec["channels"].append("gov_contract")
-    for r in s.get("lobbying", []):
-        rec = _slot(by, r.get("ticker"))
-        if rec:
-            rec["lobbying_usd"] = r.get("spend_usd")
-            rec["channels"].append("lobbying")
-    for r in s.get("insiders", {}).get("buys", []):
-        rec = _slot(by, r.get("ticker"))
-        if rec:
-            rec["insider_net_usd"] = r.get("net_usd")
-            rec["channels"].append("insider_buy")
-    for r in s.get("offexchange", []):
-        if r.get("lean") == "accumulation":
-            rec = _slot(by, r.get("ticker"))
-            if rec:
-                rec["dpi_lean"] = "accumulation"
-                rec["channels"].append("darkpool_accum")
-    for r in s.get("inst_13f", {}).get("adds", [])[:15]:
-        rec = _slot(by, r.get("ticker"))
-        if rec and "13f_add" not in rec["channels"]:
-            rec["channels"].append("13f_add")
-    for r in s.get("cnbc", []):
-        if (r.get("Direction") or "").lower() in ("buy", "final trade"):
-            rec = _slot(by, r.get("Ticker"))
-            if rec and "cnbc_pick" not in rec["channels"]:
-                rec["channels"].append("cnbc_pick")
-    for r in s.get("trump", []):
-        # skip passive / broad holdings (ETFs, index, money-market) — a Vanguard-ETF buy
-        # is portfolio plumbing, not a conviction signal, so it must not create a channel
-        if r.get("side") and not altdata_picks.is_passive(r.get("company"), r.get("ticker")):
-            rec = _slot(by, r.get("ticker"))
-            if rec:
-                rec["trump_side"] = r.get("side")
-                # a single 'trump' channel — a buy+sell round-trip on one name is one
-                # source of conviction, not two (avoid a false 2-channel convergence)
-                if "trump" not in rec["channels"]:
-                    rec["channels"].append("trump")
-    # donors recorded but NOT a convergence channel (too broad)
-    for r in s.get("corporate_donors", []):
-        rec = _slot(by, r.get("ticker"))
-        if rec:
-            rec["donor_usd"] = r.get("total_usd")
-
-    for rec in by.values():
-        rec["channels"] = sorted(set(rec["channels"]))
-        rec["convergence_score"] = len(rec["channels"])
-        rec["trump_linked"] = any(c.startswith("trump") for c in rec["channels"])
+    for tk, r in recs.items():
+        chans = r.get("channels", [])
+        rec = {k: v for k, v in r.items() if k not in ("channel_detail", "count")}
+        rec["convergence_score"] = r.get("count", len(chans))
+        rec["trump_linked"] = any(str(c).startswith("trump") for c in chans)
+        rec["affiliated"] = "affiliation" in chans
+        by[tk] = rec
 
     now = datetime.now(timezone.utc)
     out = {
-        "schema": "altdata.by_ticker.v1",
+        "schema": "altdata.by_ticker.v2",
         "as_of": (feed or {}).get("as_of") or now.date().isoformat(),
         "generated_utc": now.isoformat(),
         "n_tickers": len(by),
-        "note": "Display/context-only per-ticker alt-data rollup. convergence_score = "
-                "distinct independent channels; donors excluded from the score.",
+        "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct "
+                "independent channels (count); weighted_score ranks by channel quality. "
+                "Donors / position-size recorded as context, never a voting channel.",
         "tickers": by,
     }
     _write(out)
-    log.info("altdata by_ticker: %d tickers, %d with convergence>=2",
-             len(by), sum(1 for r in by.values() if r["convergence_score"] >= 2))
+    log.info("altdata by_ticker: %d tickers, %d with convergence>=2 (max weighted %.2f)",
+             len(by), sum(1 for r in by.values() if r["convergence_score"] >= 2),
+             max((r["weighted_score"] for r in by.values()), default=0.0))
     return out
 
 
@@ -133,14 +86,36 @@ def load() -> dict:
 # Display-only per-stock chip derived from a by_ticker record (used by the US stock page,
 # mirroring stock_macro_sensitivity). Keeps by_ticker.json itself lean.
 _CH = {
-    "congress_buy":  ("Congress buying", "国会买入"),
-    "insider_buy":   ("Insider buying", "内部人买入"),
-    "gov_contract":  ("Gov contracts", "政府合同"),
-    "lobbying":      ("Lobbying", "游说"),
-    "darkpool_accum": ("Dark-pool accumulation", "暗池吸筹"),
-    "13f_add":       ("13F adds", "机构加仓"),
-    "cnbc_pick":     ("CNBC pick", "CNBC推荐"),
-    "trump":         ("Donald Trump trade", "特朗普交易"),
+    "congress_buy":      ("Congress buying", "国会买入"),
+    "congress_cluster":  ("Congress cluster-buy", "国会集群买入"),
+    "insider_buy":       ("Insider buying", "内部人买入"),
+    "insider_cluster":   ("Insider cluster-buy", "内部人集群买入"),
+    "gov_contract":      ("Gov contracts", "政府合同"),
+    "gov_contract_accel": ("Gov contracts accelerating", "政府合同加速"),
+    "gov_grant":         ("Federal grant/loan", "联邦补助/贷款"),
+    "gov_grant_accel":   ("Federal grants accelerating", "联邦补助加速"),
+    "lobbying":          ("Lobbying", "游说"),
+    "lobbying_spike":    ("Lobbying spike", "游说激增"),
+    "fda_approval":      ("FDA approval", "FDA批准"),
+    "fda_label_expansion": ("FDA label expansion", "FDA适应症扩展"),
+    "material_8k":       ("Material 8-K cluster", "重大8-K集群"),
+    "darkpool_accum":    ("Dark-pool accumulation", "暗池吸筹"),
+    "13f_add":           ("13F adds", "机构加仓"),
+    "smart_money_13f":   ("Smart-money 13F add", "聪明钱13F加仓"),
+    "cnbc_pick":         ("CNBC pick", "CNBC推荐"),
+    "trump":             ("Donald Trump trade", "特朗普交易"),
+    "affiliation":       ("Influence-graph link", "影响力图谱关联"),
+    "app_demand":        ("App-store demand", "应用商店需求"),
+    "patent_cluster":    ("Patent cluster", "专利集群"),
+    "retail_buzz":       ("Retail buzz", "散户热度"),
+    "hf_model_momentum": ("AI model adoption", "AI模型采用"),
+    "unusual_options":   ("Unusual options flow", "异常期权流"),
+    "analyst_upgrade_cluster": ("Analyst upgrades", "分析师上调"),
+    "insider_mspr":      ("Insider sentiment", "内部人情绪"),
+    "earnings_beat":     ("Earnings beat", "财报超预期"),
+    "news_sentiment":    ("Bullish news flow", "看多新闻流"),
+    "clinical_phase3_start": ("Phase-3 trial start", "三期试验启动"),
+    "github_momentum":   ("Developer adoption", "开发者采用"),
 }
 
 
@@ -181,7 +156,9 @@ def chip(rec: dict | None) -> dict | None:
         "headline": head,
         "detail": {"en": "; ".join(en_bits) or "alt-data signal present",
                    "zh": "；".join(zh_bits) or "存在替代数据信号"},
-        "caveat": {"en": "Public-record alt-data flow — display-only, never scored. Convergence is "
-                         "unusual activity, not a validated forward edge.",
-                   "zh": "公开记录替代数据流——仅供展示、不计入评分。汇聚为异常活动，非已验证的前瞻优势。"},
+        "caveat": {"en": "Public-record alt-data convergence — the unusual-activity layer. Graded "
+                         "vs SPY in the Signal Intelligence ledger; weight by that track record, "
+                         "not a standalone trade signal.",
+                   "zh": "公开记录替代数据汇聚——异常活动层。在信号情报战绩中对标普评分；据该战绩权衡，"
+                         "而非独立交易信号。"},
     }

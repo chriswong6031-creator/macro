@@ -75,6 +75,18 @@
   .lad { display:inline-block; padding:2px 8px; border-radius:9px; font-weight:700; font-size:11px;
          background:color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel)); color:color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
   .lad.up { --c:var(--up); } .lad.down { --c:var(--down); } .lad.flat { --c:var(--muted); }
+  /* volatility black hole chip + forward-cone honesty note on each standout card (China-parity) */
+  .nb-vf { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
+  .nb-vchip { font-size:8.5px; font-weight:800; padding:0 5px; border-radius:6px; border:1px solid var(--line);
+              color:var(--muted); white-space:nowrap; }
+  .vf-coil { color:var(--link); border-color:color-mix(in srgb,var(--link) 38%,var(--line));
+             background:color-mix(in srgb,var(--link) 10%,var(--panel)); }
+  .vf-up { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line)); }
+  .vf-down { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
+  .vf-exp { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
+  .nb-note { font-size:8.5px; line-height:1.3; margin-top:4px; padding:2px 5px; border-radius:6px;
+             color:var(--muted); background:color-mix(in srgb,var(--text) 4%,var(--panel)); }
+  .nb-note-anticipation { color:var(--link); background:color-mix(in srgb,var(--link) 8%,var(--panel)); }
   table.sb { border-collapse:collapse; width:100%; font-size:12.5px; }
   table.sb th, table.sb td { padding:5px 9px; border-bottom:1px solid var(--line); text-align:right; }
   table.sb td.l, table.sb th.l { text-align:left; } table.sb th { color:var(--muted); font-weight:600; }
@@ -576,9 +588,17 @@
       {% if b.spark_svg %}{{ b.spark_svg|safe }}{% endif %}
       <div class="row small" style="gap:10px;margin-top:5px">
         {% if b.alpha is defined and b.alpha is not none %}<span>α <b>{{ '%+.2f'|format(b.alpha) }}</b></span>{% endif %}
-        {% if b.price is not none %}<span class="muted">{{ b.price }}</span>{% endif %}
+        {% if b.price is not none %}<span class="nb-px muted" data-sym="{{ b.ticker }}" data-mkt="intl">{{ b.price }}</span>{% endif %}
         {% if b.off_high is not none %}<span class="muted">{{ '%.0f'|format(b.off_high) }}% {{ t('off high', '距高') }}</span>{% endif %}
       </div>
+      {# volatility black hole (vol_squeeze) chip — single-stock vol black hole, close-only #}
+      {% set _vs = b.vol_squeeze %}
+      {% if _vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION'] %}
+      <div class="nb-vf">
+        <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" title="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %} — {{ _vs.caveat }} | 波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Coiled','蓄势') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Vol expansion','波动扩张') }}{% endif %}</span>
+      </div>{% endif %}
+      {# forward-cone honesty note (favourable risk SHAPE the factor axes don't price) #}
+      {% if b.notes %}{% for nt in b.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
     </a>
     {% endfor %}
   </div>

@@ -133,6 +133,26 @@ REGISTRY: list[dict] = [
          extra=[("hi-tercile uplift", "+11.7pp"), ("MOVE leg IC", "0.168 (confirmed)")]),
 
     # ---- CONFIRMER / CONTEXT ------------------------------------------------
+    _row("Cross-sectional momentum / trend  (dual-panel re-validation)",
+         "横截面动量／趋势（双面板复验）", "US S&P (deep)", "confirmer",
+         why="Independent dual-panel, sector- & market-neutral forward-IC re-measurement of the "
+             "momentum/trend cohort (mom_12_1, ma200_slope, volscaled_mom). Robust on the 64y "
+             "deep panel — t_HAC ≈ 3, sign-stable across 4 sub-periods AND across panels — but "
+             "FAILS the Deflated-Sharpe multiple-testing gate (best DSR 0.47<0.90), so it is a "
+             "CONTEXT tilt, not a standalone sizer. Reproduces the live model's calibration: "
+             "stock_score weights momentum at the 0.10 context weight, regime-scaled (0.28 calm / "
+             "0.04 stress). Reversal legs flip sign (fragile / panel-artifact); the prior "
+             "survivor-panel 'mean-reversion dominates' read was a survivorship artifact.",
+         why_zh="对动量/趋势组（mom_12_1、ma200_slope、volscaled_mom）的独立双面板、行业与市场中性前瞻 IC 复测。"
+                "在 64 年深度面板稳健（t_HAC≈3，四个子区间及跨面板符号一致），但未通过紧缩夏普多重检验门槛"
+                "（最佳 DSR 0.47<0.90）→ 仅为背景倾斜，非独立定仓。复现实盘校准：stock_score 以 0.10 背景权重"
+                "按régime缩放（平稳 0.28／承压 0.04）。反转腿符号翻转（脆弱/面板假象）。",
+         source="STRATEGY_LAB_VALIDATION.md", horizon="63d / monthly",
+         ic=0.033, ic_ir=0.17, t_hac=3.01, dsr=0.47, hit=0.588, n=767,
+         fdr_survivor=False, wired="stock_score selection (regime-scaled context weight)",
+         extra=[("ma200_slope IC-IR", "0.191 (t 3.29)"), ("volscaled_mom IC-IR", "0.165"),
+                ("crowding fwd-MAE p10", "−23.7% top-decile vs −19.5% rest → drawdown risk"),
+                ("21d extension legs", "live_dist_50dma t −5.1 (don't-chase)")]),
     _row("Insider buying  net_usd_mcap | SN  (mid-cap)",
          "内部人买入 net_usd_mcap | SN（中小盘）", "US S&P1500", "confirmer",
          why="The ONLY cross-sectional stock factor that survives BH-FDR in the leak-free PIT "
@@ -227,6 +247,22 @@ REGISTRY: list[dict] = [
                 ("caveat", "tight fires ~5% days, 0 post-2012")]),
 
     # ---- DISPLAY-ONLY -------------------------------------------------------
+    _row("Impulse Tracker (early-ignition screen)",
+         "冲量追踪（早期点火扫描）", "US S&P1500", "display",
+         why="A reactive screen for price/volume velocity + acceleration that surfaces names "
+             "whose impulse is JUST firing while an entry still exists (small recent run-up, not "
+             "stretched), and demotes names that already ran. Honest status: NOT a validated "
+             "alpha and no P(up) is claimed — short-horizon direction is a measured coin-flip "
+             "(engine/velocity.py) and momentum's edge is regime-switched (decays in stress), so "
+             "this is a timing/context narrowing tool, regime-flagged, never a scored input. The "
+             "ranking composite is fixed and legible (no learned weights); a forward Phase-0 "
+             "(rank-IC / DSR on the early-ignition gate) is the open path to earning a tier.",
+         why_zh="对价格/成交量的速度与加速度进行灵敏扫描，捕捉冲量刚刚点火、入场窗口仍开（近期涨幅小、未拉伸）的个股，"
+                "并对已大涨的个股降权。诚实定位：并非经验证的阿尔法，也不给出涨跌概率——短周期方向接近抛硬币"
+                "（engine/velocity.py），且动量优势随市场状态切换（承压时衰减），故仅为缩小关注范围的时机/背景工具，"
+                "标注市场状态，绝不作为评分输入。排序合成固定可读（无学习权重）；前向 Phase-0 验证是其升级路径。",
+         source="engine/impulse.py (unvalidated; forward Phase-0 pending)", horizon="1-5d",
+         wired="impulse.html (display/context only)"),
     _row("US residual-alpha momentum (ranking)",
          "美国残差Alpha动量（排名）", "US S&P1500", "display",
          why="Positive but weak IC that FAILS BH-FDR (q=0.40) and the backtest Sharpe is "

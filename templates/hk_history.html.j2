@@ -49,14 +49,15 @@
 </style>
 </head>
 <body>
+  {% set nav_search_lib = 'hkstockdata/index.json' %}
+  {% set nav_search_target = 'hk_lookup.html' %}
+  {% set nav_search_placeholder_en = 'Search any HK stock, sector, or index…' %}
+  {% set nav_search_placeholder_zh = '搜索任意港股、板块或指数…' %}
+  {% include "_site_nav.html.j2" %}
   <div class="panel">
     <div class="topline">
       <h1>{{ t('Hong Kong regime history', '香港周期历史') }}</h1>
       <span class="muted">{{ t('data through', '数据截至') }} {{ latest.date }}</span>
-      <span style="flex:1"></span>
-      <a class="navbtn" href="hk.html">{{ t('← Back to Hong Kong dashboard', '← 返回香港仪表盘') }}</a>
-      <button class="lang-btn">中文</button>
-      <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
     </div>
   </div>
 

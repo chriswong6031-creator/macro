@@ -131,6 +131,26 @@ def _load_short() -> pd.DataFrame | None:
     return df if not df.empty else None
 
 
+def _load_short_volume() -> dict[str, dict]:
+    """Per-ticker daily short-flow confirmer (keyless FINRA daily volume).
+    Empty dict when the panel is absent — positioning degrades gracefully."""
+    try:
+        from engine import short_volume
+        return short_volume.signal_map()
+    except Exception:  # noqa: BLE001 — never break panels over a context chip
+        return {}
+
+
+def _load_analyst_revisions() -> dict[str, dict]:
+    """Per-ticker analyst revision-momentum (Finnhub recommendation snapshots).
+    Empty dict without a FINNHUB feed — the analyst panel degrades gracefully."""
+    try:
+        from engine import analyst_revisions
+        return analyst_revisions.revision_map()
+    except Exception:  # noqa: BLE001 — never break panels over a context chip
+        return {}
+
+
 def _mcap_map(facts: dict) -> dict[str, float]:
     """ticker -> market cap (USD) from the factor table's mktcap_bn, for sizing the
     insider net flow as a % of cap."""
@@ -964,7 +984,7 @@ def _factors(t, fac, facts, M) -> dict | None:
     }
 
 
-def _positioning(t, f, short, insider) -> dict | None:
+def _positioning(t, f, short, insider, short_flow=None) -> dict | None:
     block: dict = {}
     sh = _num(f.get("shares"))
     if short is not None and t in short.index:
@@ -976,20 +996,51 @@ def _positioning(t, f, short, insider) -> dict | None:
             "si_change_pct": _r(sr.get("si_change_pct"), 1),
             "settlement": str(sr.get("settlement_date")) if sr.get("settlement_date") is not None else None,
         }
+    # Fresher than the bi-monthly settlement: daily off-exchange short flow.
+    # A CONTEXT confirmer (trend_pp = recent vs trailing short-ratio, in pts),
+    # never a scored factor — see engine/short_volume.py.
+    if short_flow:
+        block["short_flow"] = {
+            "short_ratio_pct": _r((short_flow.get("short_ratio") or 0) * 100, 1),
+            "trend_pp": _r(short_flow.get("trend_pp"), 2),
+            "n_days": short_flow.get("n_days"),
+            "asof": short_flow.get("asof"),
+        }
     if insider:
         block["insider"] = insider
     return block or None
 
 
-def _analyst(t, deep) -> dict | None:
-    """Phase 1: only the deep-set yfinance snapshot carries forward P/E and a few
-    market ratios. Consensus ratings & price targets are not collected yet → the
-    page shows an honest 'deep-set only / not wired' stub. (Phase-2 tiered.)"""
+def _revision_block(rev: dict | None) -> dict | None:
+    """Analyst revision-MOMENTUM (the change in consensus), the part that carries
+    signal — the consensus level is kept only as labelled context. Phase-2 free
+    read off the Finnhub recommendation snapshots (engine/analyst_revisions.py)."""
+    if not rev:
+        return None
+    return {
+        "direction": rev.get("direction"),            # upgrading / downgrading / stable
+        "delta": rev.get("revision_delta"),           # net-buy change = the SIGNAL
+        "consensus_pct": rev.get("consensus_pct"),    # LEVEL = context only
+        "n_analysts": rev.get("n_analysts"),
+        "n_periods": rev.get("n_periods"),
+        "asof": rev.get("latest_period"),
+    }
+
+
+def _analyst(t, deep, rev=None) -> dict | None:
+    """Forward P/E + market ratios from the deep yfinance snapshot, plus analyst
+    revision-MOMENTUM (Phase 2). Consensus ratings & price targets remain unwired
+    (Finnhub-Premium/Benzinga, out of scope), so the revision delta — the part the
+    literature says actually predicts — is what we surface."""
     d = deep or {}
     fwd = d.get("fwd_pe")
+    revision = _revision_block(rev)
     if not d:
-        return {"tier": "lite", "rating": None, "target": None}
-    return {
+        out = {"tier": "lite", "rating": None, "target": None}
+        if revision:
+            out["revision"] = revision
+        return out
+    out = {
         "tier": "deep",
         "forward_pe": _r(fwd, 1) if fwd else None,
         "pe_yf": _r(d.get("pe"), 1) if d.get("pe") else None,
@@ -998,6 +1049,9 @@ def _analyst(t, deep) -> dict | None:
         "div_yield": _r(d.get("div_yield"), 2) if d.get("div_yield") is not None else None,
         "rating": None, "target": None,
     }
+    if revision:
+        out["revision"] = revision
+    return out
 
 
 def panels() -> dict[str, dict]:
@@ -1011,6 +1065,8 @@ def panels() -> dict[str, dict]:
     facts = _load_factors()
     table = facts["table"]
     short = _load_short()
+    short_flow = _load_short_volume()
+    analyst_rev = _load_analyst_revisions()
     insider = _load_insider(facts)
     deep = _load_deep()
     profiles = _load_profiles()
@@ -1036,8 +1092,8 @@ def panels() -> dict[str, dict]:
             "valuation": _valuation(t, f, fac, M, deep.get(t)),
             "financials": fin,
             "factors": _factors(t, fac, facts, M),
-            "positioning": _positioning(t, f, short, insider.get(t)),
-            "analyst": _analyst(t, deep.get(t)),
+            "positioning": _positioning(t, f, short, insider.get(t), short_flow.get(str(t))),
+            "analyst": _analyst(t, deep.get(t), analyst_rev.get(str(t))),
             # SUE earnings-momentum z lives in the factors table (the canonical home
             # of every factor leg, written by equity_factors just before this runs);
             # surface it on the Earnings panel since it IS an earnings read.

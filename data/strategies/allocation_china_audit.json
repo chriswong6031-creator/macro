@@ -1,0 +1,313 @@
+{
+  "schema": "allocation_china_audit.v1",
+  "generated_at": "2026-06-28T01:47:03.197364+00:00",
+  "cost_bps": 10.0,
+  "train_test_split": "2018-12-31",
+  "universes": {
+    "shenwan": {
+      "n_assets": 31,
+      "span": [
+        "1999-12-30",
+        "2026-06-26"
+      ],
+      "contaminated": false,
+      "rank_ic": {
+        "1m": {
+          "mean_ic": 0.0239,
+          "median_ic": 0.0353,
+          "t_hac": 0.93,
+          "hit": 0.551,
+          "n": 196,
+          "train_ic": 0.0199,
+          "test_ic": 0.0334,
+          "sign_stable": true,
+          "perm_p": 0.09
+        },
+        "3m": {
+          "mean_ic": 0.0392,
+          "median_ic": 0.0706,
+          "t_hac": 1.49,
+          "hit": 0.595,
+          "n": 195,
+          "train_ic": 0.0375,
+          "test_ic": 0.0433,
+          "sign_stable": true
+        },
+        "6m": {
+          "mean_ic": 0.0829,
+          "median_ic": 0.1059,
+          "t_hac": 2.19,
+          "hit": 0.603,
+          "n": 194,
+          "train_ic": 0.0789,
+          "test_ic": 0.093,
+          "sign_stable": true
+        },
+        "6m_nonoverlap": {
+          "mean_ic": 0.0557,
+          "t_hac": 0.88,
+          "n": 33
+        }
+      },
+      "lead_lag": {
+        "-6": 0.1667,
+        "-5": 0.1393,
+        "-4": 0.1318,
+        "-3": 0.1491,
+        "-2": 0.3475,
+        "-1": 0.3787,
+        "0": 0.5075,
+        "1": 0.0239,
+        "2": 0.0411,
+        "3": 0.029,
+        "4": 0.0401,
+        "5": 0.0424,
+        "6": 0.0507
+      },
+      "book_by_hold": {
+        "hold_1m": {
+          "engine_top4_dual": {
+            "cagr": 0.0071,
+            "sharpe": 0.13,
+            "max_dd": -0.635,
+            "calmar": 0.01,
+            "n_months": 318,
+            "dsr": 0.216,
+            "ir_vs_bench": -0.23,
+            "worst_decile_ret": -0.0673,
+            "avg_cash": 0.597
+          },
+          "top4_rel_nogate": {
+            "cagr": 0.0131,
+            "sharpe": 0.17,
+            "max_dd": -0.5458,
+            "calmar": 0.02,
+            "n_months": 318,
+            "dsr": 0.279,
+            "ir_vs_bench": -0.18,
+            "worst_decile_ret": -0.0889
+          }
+        },
+        "hold_3m": {
+          "engine_top4_dual": {
+            "cagr": 0.0322,
+            "sharpe": 0.27,
+            "max_dd": -0.5244,
+            "calmar": 0.06,
+            "n_months": 318,
+            "dsr": 0.479,
+            "ir_vs_bench": -0.11,
+            "worst_decile_ret": -0.0508,
+            "avg_cash": 0.568
+          },
+          "top4_rel_nogate": {
+            "cagr": 0.0347,
+            "sharpe": 0.27,
+            "max_dd": -0.5007,
+            "calmar": 0.07,
+            "n_months": 318,
+            "dsr": 0.466,
+            "ir_vs_bench": -0.07,
+            "worst_decile_ret": -0.0744
+          }
+        },
+        "hold_6m": {
+          "engine_top4_dual": {
+            "cagr": 0.029,
+            "sharpe": 0.25,
+            "max_dd": -0.4623,
+            "calmar": 0.06,
+            "n_months": 318,
+            "dsr": 0.434,
+            "ir_vs_bench": -0.12,
+            "worst_decile_ret": -0.0547,
+            "avg_cash": 0.561
+          },
+          "top4_rel_nogate": {
+            "cagr": 0.03,
+            "sharpe": 0.25,
+            "max_dd": -0.5446,
+            "calmar": 0.06,
+            "n_months": 318,
+            "dsr": 0.42,
+            "ir_vs_bench": -0.1,
+            "worst_decile_ret": -0.08
+          }
+        }
+      },
+      "baselines": {
+        "ew_buyhold": {
+          "cagr": 0.0659,
+          "sharpe": 0.37,
+          "max_dd": -0.6871,
+          "calmar": 0.1,
+          "n_months": 318,
+          "dsr": 0.676,
+          "ir_vs_bench": 0.27,
+          "worst_decile_ret": -0.1212
+        },
+        "shanghai_composite_buyhold": {
+          "cagr": 0.0416,
+          "sharpe": 0.29,
+          "max_dd": -0.7097,
+          "calmar": 0.06,
+          "n_months": 318,
+          "dsr": 0.511
+        }
+      }
+    },
+    "baskets": {
+      "n_assets": 22,
+      "span": [
+        "2021-06-15",
+        "2026-06-26"
+      ],
+      "contaminated": true,
+      "rank_ic": {
+        "1m": {
+          "mean_ic": 0.0861,
+          "median_ic": 0.1152,
+          "t_hac": 1.72,
+          "hit": 0.769,
+          "n": 26,
+          "train_ic": null,
+          "test_ic": 0.0861,
+          "sign_stable": false,
+          "perm_p": 0.019
+        },
+        "3m": {
+          "mean_ic": 0.0643,
+          "median_ic": 0.048,
+          "t_hac": 1.17,
+          "hit": 0.56,
+          "n": 25,
+          "train_ic": null,
+          "test_ic": 0.0643,
+          "sign_stable": false
+        },
+        "6m": {
+          "mean_ic": 0.1421,
+          "median_ic": 0.1886,
+          "t_hac": 2.3,
+          "hit": 0.708,
+          "n": 24,
+          "train_ic": null,
+          "test_ic": 0.1421,
+          "sign_stable": false
+        },
+        "6m_nonoverlap": {
+          "mean_ic": 0.1623,
+          "t_hac": null,
+          "n": 4
+        }
+      },
+      "lead_lag": {
+        "-6": 0.0871,
+        "-5": 0.0777,
+        "-4": 0.1064,
+        "-3": 0.1789,
+        "-2": 0.3219,
+        "-1": 0.4102,
+        "0": 0.4712,
+        "1": 0.0861,
+        "2": -0.0067,
+        "3": 0.0719,
+        "4": 0.038,
+        "5": 0.0632,
+        "6": 0.0732
+      },
+      "book_by_hold": {
+        "hold_1m": {
+          "engine_top4_dual": {
+            "cagr": 0.1186,
+            "sharpe": 0.74,
+            "max_dd": -0.1378,
+            "calmar": 0.86,
+            "n_months": 60,
+            "dsr": 0.809,
+            "ir_vs_bench": 0.49,
+            "worst_decile_ret": -0.0002,
+            "avg_cash": 0.575
+          },
+          "top4_rel_nogate": {
+            "cagr": 0.1383,
+            "sharpe": 0.8,
+            "max_dd": -0.118,
+            "calmar": 1.17,
+            "n_months": 60,
+            "dsr": 0.847,
+            "ir_vs_bench": 0.59,
+            "worst_decile_ret": -0.0002
+          }
+        },
+        "hold_3m": {
+          "engine_top4_dual": {
+            "cagr": 0.1515,
+            "sharpe": 0.91,
+            "max_dd": -0.1683,
+            "calmar": 0.9,
+            "n_months": 60,
+            "dsr": 0.718,
+            "ir_vs_bench": 0.65,
+            "worst_decile_ret": -0.028,
+            "avg_cash": 0.55
+          },
+          "top4_rel_nogate": {
+            "cagr": 0.1368,
+            "sharpe": 0.83,
+            "max_dd": -0.1683,
+            "calmar": 0.81,
+            "n_months": 60,
+            "dsr": 0.667,
+            "ir_vs_bench": 0.59,
+            "worst_decile_ret": -0.028
+          }
+        },
+        "hold_6m": {
+          "engine_top4_dual": {
+            "cagr": 0.1132,
+            "sharpe": 0.67,
+            "max_dd": -0.1683,
+            "calmar": 0.67,
+            "n_months": 60,
+            "dsr": 0.546,
+            "ir_vs_bench": 0.47,
+            "worst_decile_ret": -0.0282,
+            "avg_cash": 0.6
+          },
+          "top4_rel_nogate": {
+            "cagr": 0.1132,
+            "sharpe": 0.67,
+            "max_dd": -0.1683,
+            "calmar": 0.67,
+            "n_months": 60,
+            "dsr": 0.546,
+            "ir_vs_bench": 0.47,
+            "worst_decile_ret": -0.0282
+          }
+        }
+      },
+      "baselines": {
+        "ew_buyhold": {
+          "cagr": 0.1415,
+          "sharpe": 0.74,
+          "max_dd": -0.191,
+          "calmar": 0.74,
+          "n_months": 60,
+          "dsr": 0.629,
+          "ir_vs_bench": 1.42,
+          "worst_decile_ret": -0.0829
+        },
+        "shanghai_composite_buyhold": {
+          "cagr": 0.0232,
+          "sharpe": 0.22,
+          "max_dd": -0.2339,
+          "calmar": 0.1,
+          "n_months": 60,
+          "dsr": 0.171
+        }
+      },
+      "warning": "HINDSIGHT-curated membership + ~5y + 22 names \u2014 underpowered & survivorship-biased. Context only, never a validation."
+    }
+  }
+}

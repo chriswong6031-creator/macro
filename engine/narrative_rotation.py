@@ -522,8 +522,10 @@ def allocate(preps: list[dict], ranks: dict, crowd: dict, rot: dict,
              "val_state": ranks[b].get("val_state")}
             for b in sorted(top, key=lambda x: ranks[x]["rank"])]
     cash = round(max(0.0, 1.0 - sum(s["weight"] for s in sugg)), 3)   # exact remainder of the rounded book
+    vol_overlay = _vol_overlay(top, weights, byid)                    # calibrated de-risk overlay (optional)
     return {"weights": sugg, "cash": cash,
             "n_held": len(top), "crash_overlay": crash,
+            "vol_overlay": vol_overlay,
             "de_overlapped": deoverlapped,
             "rule": (f"Equal-weight the top-{N_HOLD} themes above their own 200d trend "
                      "(the validated dual-momentum book), DE-OVERLAPPED to at most "
@@ -562,6 +564,82 @@ def _validation_meta(fname: str = "thematic_rotation_phase0.json") -> dict:
         return json.loads(p.read_text()) if p.exists() else {}
     except Exception:  # noqa: BLE001
         return {}
+
+
+def _sizing_calibration() -> dict:
+    """The book-level vol-target SIZING verdict from scripts.calibrate_baskets (the 27y
+    SPDR-sector proxy). Display-framed; the signal LOGIC is shared cross-region so the
+    US-proxy verdict is cited cross-market (as the phase0 already is). {} if absent."""
+    try:
+        p = config.data_dir() / "strategies" / "baskets_calibration.json"
+        d = json.loads(p.read_text()) if p.exists() else {}
+        return d.get("sizing", {}) if isinstance(d, dict) else {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _vol_overlay(top: list, weights: dict, byid: dict) -> dict | None:
+    """Book-level realized-vol-target DE-RISK overlay (Moreira-Muir), display-framed. Reads
+    the calibrated `sizing` block: when the proxy backtest graded it calibratable/display_only
+    it scales the whole book by clip(target_vol / trailing book-vol, floor, cap) — a pure
+    DRAWDOWN lever (the proxy showed ~7pp shallower MaxDD, beats a trend-only brake, but NO
+    Sharpe lift), residual gross to cash. `applied` is True only when calibratable; otherwise
+    it is OFFERED with its measured provenance, never forced onto the default book. Wires the
+    previously-vestigial LEV_CAP (gross ceiling) + MAX_CASH (de-risk floor). None if absent."""
+    cal = _sizing_calibration()
+    if not cal or cal.get("verdict") not in ("calibratable", "display_only") or not top:
+        return None
+    d = cal.get("default") or {}
+    vol_win = int(d.get("vol_win", VOL_WIN_D))
+    target_mult = float(d.get("target_mult", 0.85))
+    cap = min(float(d.get("cap", LEV_CAP)), LEV_CAP)               # wire LEV_CAP as the hard gross ceiling
+    floor = float(d.get("floor", 0.0))
+    cols = {bid: byid[bid]["lvl"].pct_change() for bid in top if bid in byid}
+    w0 = {bid: float(weights.get(bid, 0.0)) for bid in top}
+    gross0 = sum(w0.values())
+    if not cols or gross0 <= 0:
+        return None
+    book = pd.DataFrame(cols)
+    book_ret = (book * pd.Series(w0)).sum(axis=1) / gross0          # weighted book return
+    bv = (book_ret.rolling(vol_win).std() * np.sqrt(252)).dropna()
+    if bv.shape[0] <= vol_win:
+        return None
+    book_vol = float(bv.iloc[-1])
+    # RELATIVE target = target_mult x the book's own trailing-median vol — computed with the
+    # EXACT same rolling form as scripts.calibrate_baskets._book_voltarget so the live scalar
+    # reproduces the backtested one (no faithfulness drift).
+    med = bv.rolling(756, min_periods=252).median().iloc[-1]
+    target = target_mult * float(med) if pd.notna(med) else None
+    if not book_vol or not np.isfinite(book_vol) or not target:
+        return None
+    # floor matches the BACKTEST (SZ_FLOOR) so the measured DD-reduction applies to what we
+    # show; the de-risk-only property comes from cap<=1.0, not the floor. (MAX_CASH governs
+    # the rotation cash escape, not this overlay — flooring here would weaken the validated cut.)
+    scalar = float(np.clip(target / book_vol, floor, cap))
+    derisked = {bid: round(weights[bid] * scalar, 3) for bid in weights}
+    new_gross = round(sum(derisked.values()), 3)
+    ddci = (cal.get("dd_reduction_ci") or {}).get("dd_reduction_pp_ci") or [None, None, None]
+    med = ddci[1]
+    return {
+        "applied": cal.get("verdict") == "calibratable",
+        "scalar": round(scalar, 3), "target_vol": target, "vol_win": vol_win, "cap": cap,
+        "book_vol_ann": round(book_vol, 3),
+        "gross_before": round(gross0, 3), "gross_after": new_gross,
+        "cash_after": round(max(0.0, 1.0 - new_gross), 3),
+        "weights": [{"id": b, "name": byid[b]["name"], "name_zh": byid[b].get("name_zh", byid[b]["name"]),
+                     "weight": derisked[b]} for b in top],
+        "measured": {"verdict": cal.get("verdict"), "dd_reduction_pp_ci": ddci,
+                     "beats_trend_brake": cal.get("beats_brake"), "dsr": cal.get("dsr"),
+                     "n_trials": cal.get("n_trials")},
+        "note_en": (f"Optional de-risk overlay — scale the book toward a ~{int(target * 100)}% vol "
+                    f"target. Backtested on 27y of clean sector history it cut max-drawdown by "
+                    f"~{med}pp (CI {ddci}) and beat a trend-only brake, but it does NOT lift Sharpe "
+                    f"(you trade CAGR for a shallower drawdown) — so it is OFFERED, not forced."),
+        "note_zh": (f"可选降风险叠加 — 将组合缩放至约 {int(target * 100)}% 波动率目标。在27年干净行业历史回测中，"
+                    f"最大回撤降低约 {med}pp（区间 {ddci}），并优于纯趋势刹车；但不提升夏普（以CAGR换取更浅回撤）"
+                    f"— 故为可选项而非强制。"),
+        "directional": False,
+    }
 
 
 def _ai_handoff(rot: dict) -> dict:

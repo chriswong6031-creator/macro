@@ -1,16 +1,16 @@
 {
   "schema": "ai_desk_track_record.v1",
-  "as_of": "2026-06-20",
-  "scored_total": 0,
-  "open": 10,
+  "as_of": "2026-06-28",
+  "scored_total": 1,
+  "open": 17,
   "unscored_soft": 0,
   "expired": 0,
   "overall": {
-    "n": 0,
+    "n": 1,
     "hits": 0,
-    "misses": 0,
-    "hit_rate": null,
-    "dir_accuracy": null
+    "misses": 1,
+    "hit_rate": 0.0,
+    "dir_accuracy": 0.0
   },
   "by_conviction": {
     "high": {
@@ -28,11 +28,11 @@
       "dir_accuracy": null
     },
     "low": {
-      "n": 0,
+      "n": 1,
       "hits": 0,
-      "misses": 0,
-      "hit_rate": null,
-      "dir_accuracy": null
+      "misses": 1,
+      "hit_rate": 0.0,
+      "dir_accuracy": 0.0
     }
   },
   "by_kind": {
@@ -44,14 +44,25 @@
       "dir_accuracy": null
     },
     "level": {
-      "n": 0,
+      "n": 1,
       "hits": 0,
-      "misses": 0,
-      "hit_rate": null,
-      "dir_accuracy": null
+      "misses": 1,
+      "hit_rate": 0.0,
+      "dir_accuracy": 0.0
     }
   },
-  "calibration_note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does.",
-  "calibration_note_zh": "\u5c1a\u65e0\u5224\u65ad\u88ab\u8bc4\u5206 \u2014\u2014 \u5f85\u9996\u6279\u6838\u67e5\u65e5\u5230\u671f\u540e\u5f00\u59cb\u7d2f\u79ef\u6218\u7ee9\uff1b\u5728\u6b64\u4e4b\u524d\u7f6e\u4fe1\u4fdd\u6301\u514b\u5236\u3002",
-  "recent": []
+  "by_regime": {},
+  "calibration_note": "1 scored, hit-rate 0.0 (directional accuracy 0.0). Sample is tiny \u2014 treat conviction as provisional and lean low.",
+  "recent": [
+    {
+      "id": "2026-06-15-3",
+      "subject": "VIX",
+      "lean": "fade-fear",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": 0.2031,
+      "check_by": "2026-06-24"
+    }
+  ],
+  "calibration_note_zh": "\u5df2\u8bc4\u5206 1 \u6761\uff0c\u547d\u4e2d\u7387 0.0\uff08\u65b9\u5411\u51c6\u786e\u7387 0.0\uff09\u3002\u6837\u672c\u6781\u5c0f \u2014\u2014 \u5c06\u7f6e\u4fe1\u89c6\u4e3a\u6682\u5b9a\u5e76\u4fdd\u6301\u504f\u4f4e\u3002"
 }

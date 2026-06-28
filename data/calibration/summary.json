@@ -1,0 +1,120 @@
+{
+  "schema": "calibration_hub.v1",
+  "as_of": "2026-06-28",
+  "desks": [
+    {
+      "name": "AI Desk",
+      "slug": "ai_desk",
+      "scored": 1,
+      "open": 17,
+      "hit_rate": 0.0,
+      "dir_accuracy": 0.0,
+      "conviction_monotone": null,
+      "regimes": [],
+      "health": "cold",
+      "health_note": "only 1 scored \u2014 check-by windows still maturing; treat as provisional"
+    },
+    {
+      "name": "Policy Intent",
+      "slug": "policy_intent",
+      "scored": 0,
+      "open": 7,
+      "hit_rate": null,
+      "dir_accuracy": null,
+      "conviction_monotone": null,
+      "regimes": [],
+      "health": "cold",
+      "health_note": "only 0 scored \u2014 check-by windows still maturing; treat as provisional"
+    },
+    {
+      "name": "Alt-Data Brain",
+      "slug": "altdata",
+      "scored": 0,
+      "open": 103,
+      "hit_rate": null,
+      "dir_accuracy": null,
+      "conviction_monotone": null,
+      "regimes": [],
+      "health": "cold",
+      "health_note": "only 0 scored \u2014 check-by windows still maturing; treat as provisional"
+    },
+    {
+      "name": "Divergence Radar",
+      "slug": "radar",
+      "scored": 0,
+      "open": 64,
+      "hit_rate": null,
+      "dir_accuracy": null,
+      "conviction_monotone": null,
+      "regimes": [],
+      "health": "cold",
+      "health_note": "only 0 scored \u2014 check-by windows still maturing; treat as provisional"
+    },
+    {
+      "name": "Stock Desk",
+      "slug": "stock_desk",
+      "scored": 0,
+      "open": 58,
+      "hit_rate": null,
+      "dir_accuracy": null,
+      "conviction_monotone": null,
+      "regimes": [],
+      "health": "cold",
+      "health_note": "only 0 scored \u2014 check-by windows still maturing; treat as provisional"
+    },
+    {
+      "name": "Demand Chain",
+      "slug": "demand_chain",
+      "scored": 0,
+      "open": 7,
+      "hit_rate": null,
+      "dir_accuracy": null,
+      "conviction_monotone": null,
+      "regimes": [],
+      "health": "cold",
+      "health_note": "only 0 scored \u2014 check-by windows still maturing; treat as provisional"
+    }
+  ],
+  "loops": {
+    "total": 6,
+    "live": 0,
+    "cold": 6
+  },
+  "trial_ledger": {
+    "families": [
+      {
+        "family": "china_validation",
+        "itemized": 0,
+        "declared": 24,
+        "effective_n": 24
+      },
+      {
+        "family": "signal_factory",
+        "itemized": 5,
+        "declared": 0,
+        "effective_n": 5
+      },
+      {
+        "family": "incremental_ic:fip_continuity",
+        "itemized": 4,
+        "declared": 0,
+        "effective_n": 4
+      },
+      {
+        "family": "incremental_ic:mom_12_1",
+        "itemized": 4,
+        "declared": 0,
+        "effective_n": 4
+      },
+      {
+        "family": "incremental_ic:near_52w_high",
+        "itemized": 4,
+        "declared": 0,
+        "effective_n": 4
+      }
+    ],
+    "total_families": 5,
+    "total_effective_n": 41
+  },
+  "summary_note": "0/6 desk loops live; 6 still cold (windows maturing). Display-only \u2014 track records calibrate conviction, never size a position."
+}

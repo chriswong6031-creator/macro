@@ -53,6 +53,30 @@
               border-radius:8px; background:color-mix(in srgb,var(--link) 14%,var(--panel2));
               color:var(--link); border:1px solid color-mix(in srgb,var(--link) 30%,var(--line)); }
   .fnd-desc { font-size:13px; color:var(--text); margin:9px 0 4px; line-height:1.55; }
+  /* ---- unified Conviction Profile hero (mirrors stock.html) ---- */
+  .conv { margin:8px 0 4px; padding:11px 13px; border-radius:11px; background:var(--panel2);
+          border:1px solid var(--line); }
+  .cv-head { display:flex; align-items:center; gap:11px; }
+  .cv-score { font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; min-width:48px;
+              text-align:center; padding:3px 9px; border-radius:10px; border:1px solid var(--line); }
+  .cv-score.band-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line));
+                        background:color-mix(in srgb,var(--up) 12%,var(--panel)); }
+  .cv-score.band-constructive { color:var(--g-cold); border-color:color-mix(in srgb,var(--g-cold) 40%,var(--line)); }
+  .cv-score.band-neutral { color:var(--muted); }
+  .cv-score.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
+  .cv-verdict { font-size:15px; font-weight:800; line-height:1.25; }
+  .cv-tier { font-size:11px; color:var(--muted); margin-top:1px; }
+  .cv-axes { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:9px; }
+  .cax { font-size:10.5px; }
+  .cax .caxl { color:var(--muted); display:block; }
+  .cax .caxbar { display:block; height:5px; border-radius:3px; background:var(--line); margin:2px 0; overflow:hidden; }
+  .cax .caxf { display:block; height:100%; background:var(--g-cold); border-radius:3px; }
+  .cax.cax-na .caxf { background:transparent; }
+  .cax .caxv { font-weight:700; font-variant-numeric:tabular-nums; }
+  .cv-cau { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .cv-cau .ccau { font-size:11px; font-weight:700; padding:1px 7px; border-radius:7px;
+                  color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
+  .cv-note { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5; }
   .fnd-grid { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 4px; }
   .fnd-chip { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:5px 10px; font-size:12px; min-width:78px; }
   .fnd-chip .k { color:var(--muted); font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; }
@@ -104,9 +128,410 @@
            background:color-mix(in srgb, var(--g-cold) 14%, var(--panel2));
            border-left:3px solid var(--g-cold); font-size:13px; color:var(--text); }
   #result { display:none; }
+  /* ---- hover tooltips (the ? help icons) — section prose condensed into hover boxes ---- */
+  .help { display:inline-flex; align-items:center; justify-content:center;
+          width:15px; height:15px; border-radius:50%; border:1px solid var(--muted);
+          color:var(--muted); font-size:10px; font-weight:600; cursor:help;
+          position:relative; vertical-align:middle; margin-left:5px; flex:none;
+          text-transform:none; letter-spacing:normal; }
+  .help .tip { display:none; position:absolute; bottom:150%; left:50%;
+               transform:translateX(-50%); width:300px;
+               background:var(--panel); border:1px solid var(--line);
+               padding:10px 12px; border-radius:9px; z-index:60; font-size:12px;
+               line-height:1.5; color:var(--text); text-align:left; font-weight:400;
+               text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow);
+               pointer-events:none; white-space:normal; }
+  .help:hover .tip { display:block; }
+  th .help .tip, .help.below .tip { bottom:auto; top:150%; }
+  .help.edge-right .tip { left:auto; right:0; transform:none; }
+  .help.edge-left .tip { left:0; right:auto; transform:none; }
+  .tip b { color:var(--text); }
+  /* ===================== HYBRID PAGE POLISH (Refined base + Fintech finish) =====================
+     Mirrors the US analyzer: soft cards, sentence-case headings, tabular numerics. */
+  #result .panel { border-radius:16px; padding:18px 20px; box-shadow:0 1px 0 rgba(255,255,255,.025);
+                   margin-bottom:16px; font-variant-numeric:tabular-nums; }
+  h2 { font-size:15px; text-transform:none; letter-spacing:0; font-weight:650; color:var(--text);
+       margin:0 0 13px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; line-height:1.3; }
+  #r_summary { display:none; }
+  #r_cal tr.cal-cur td { background:color-mix(in srgb, var(--warn) 13%, transparent); }
+  #r_cal tr.cal-cur td:first-child { box-shadow:inset 3px 0 var(--warn); font-weight:700; }
+  .cal-here { color:var(--warn); font-size:11px; font-weight:700; margin-left:8px; white-space:nowrap; }
+/* _stock_decision.css.j2 — styling for the shared stockview.js decision-first layout.
+   Included inside each analyzer's <style> block. Theme-var routed; directional tones use
+   --up/--down (which intentionally swap under html[data-lang="zh"] red=up), while caution /
+   conflict / falsifier colors are pinned to --warn so their meaning never inverts. */
+
+/* ---- Layer 1: the decision band ---- */
+.sv-decision { margin: 10px 0 6px; }
+.sv-verdict-band {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 12px 14px; border-radius: 12px;
+  background: var(--panel2); border: 1px solid var(--line);
+}
+.sv-state-conflict .sv-verdict-band { border-color: var(--warn); }
+
+/* ---- Two-lane decision: THE NAME (what) · ACT NOW (when/how much) ---- */
+.sv-verdict-grid {
+  display: grid; grid-template-columns: minmax(150px, 0.8fr) 1.2fr; gap: 12px;
+}
+.sv-lane {
+  padding: 12px 14px; border-radius: 12px;
+  background: var(--panel2); border: 1px solid var(--line);
+}
+.sv-state-conflict .sv-lane-act { border-color: var(--warn); }
+.sv-lane-name {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+}
+.sv-lane-h {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted); margin-bottom: 2px;
+}
+.sv-lane-name .sv-lane-h { align-self: center; }
+.sv-rank-note {
+  font-size: 11px; color: var(--muted); cursor: help;
+  border-bottom: 1px dotted var(--line);
+}
+/* the ACT-NOW verb — the one buy-frame instruction, color = meaning (pinned). */
+.sv-action {
+  display: inline-block; font-size: 22px; font-weight: 800; line-height: 1;
+  padding: 6px 14px; border-radius: 10px; letter-spacing: .02em; margin-bottom: 2px;
+}
+.sv-act-go { color: #fff; background: var(--up); }
+.sv-act-wait { color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, var(--panel)); border: 1px solid var(--warn); }
+.sv-act-avoid { color: #fff; background: var(--down); }
+.sv-act-screen { color: var(--text); background: var(--panel); border: 1px solid var(--line); }
+.sv-act-why { margin-top: 4px; }
+/* the BRIDGE — reconciles a strong rank with a "don't buy now" action. */
+.sv-bridge {
+  margin: 10px 0 2px; padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, var(--panel));
+  border: 1px solid var(--warn);
+}
+.sv-gauge {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 96px; padding: 6px 12px; border-radius: 10px; color: #fff;
+  background: var(--muted);
+}
+.sv-band-high { background: var(--up); }
+.sv-band-constructive { background: color-mix(in srgb, var(--up) 62%, var(--panel)); }
+.sv-band-neutral { background: var(--muted); }
+.sv-band-low { background: var(--down); }
+.sv-band-word { font-weight: 700; font-size: 13px; line-height: 1.1; text-align: center; }
+.sv-score { font-size: 20px; font-weight: 800; margin-top: 2px; }
+.sv-score small { font-size: 11px; font-weight: 600; opacity: .8; }
+.sv-verdict-text { flex: 1; min-width: 200px; }
+.sv-headline { font-size: 18px; font-weight: 750; line-height: 1.25; color: var(--text); }
+.sv-gloss { font-size: 13px; color: var(--muted); margin-top: 3px; }
+.sv-trust {
+  font-size: 11.5px; padding: 4px 9px; border-radius: 999px;
+  background: var(--panel); border: 1px solid var(--line); color: var(--muted);
+  align-self: flex-start; white-space: nowrap;
+}
+
+.sv-timing { font-size: 13px; color: var(--text); margin: 8px 2px 0; }
+.sv-timing-lbl { color: var(--muted); font-weight: 600; }
+.sv-dot { color: var(--muted); }
+.sv-tag {
+  font-weight: 700; padding: 1px 7px; border-radius: 6px;
+  background: var(--panel2); border: 1px solid var(--line);
+}
+.sv-urg-now, .sv-urg-imminent { color: var(--up); border-color: var(--up); }
+.sv-urg-caution { color: var(--warn); border-color: var(--warn); }
+.sv-urg-exit, .sv-urg-avoid { color: var(--down); border-color: var(--down); }
+.sv-cap { color: var(--warn); font-size: 12px; }
+
+.sv-size { display: flex; align-items: center; gap: 8px; margin: 8px 2px 0; font-size: 13px; }
+.sv-size-lbl { color: var(--muted); font-weight: 600; }
+.sv-size-pct { font-weight: 800; font-size: 15px; color: var(--text); }
+.sv-size-avoid { color: var(--down); }
+.sv-size-full, .sv-size-three-quarter { color: var(--up); }
+.sv-size-bk { color: var(--muted); font-size: 12px; }
+.sv-regime { margin: 8px 2px 0; font-size: 12px; color: var(--muted); font-style: italic; }
+
+/* ---- Layer 1b: fingerprint ---- */
+.sv-fingerprint {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0;
+}
+.sv-axis { min-width: 0; }
+.sv-axis-top { display: flex; justify-content: space-between; align-items: baseline; gap: 4px; }
+.sv-axis-lbl { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-axis-pct { font-size: 13px; font-weight: 700; color: var(--text); }
+.sv-axis-na { font-size: 11px; color: var(--muted); }
+.sv-axis-bar { height: 6px; border-radius: 3px; background: var(--panel2); margin-top: 3px; overflow: hidden; }
+.sv-axis-fill { display: block; height: 100%; background: var(--link); border-radius: 3px; }
+.sv-axis-warn .sv-axis-fill { background: var(--warn); }
+
+/* ---- Layer 1c: honesty row ---- */
+.sv-conflict {
+  margin: 8px 0 6px; padding: 6px 10px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, var(--panel));
+  border: 1px solid var(--warn);
+}
+.sv-conflict-p { font-weight: 700; }
+.sv-honesty { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 8px 0; }
+.sv-col { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.sv-col-h { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 4px; }
+.sv-why .sv-col-h { color: var(--up); }
+.sv-flip .sv-col-h { color: var(--warn); }
+.sv-list { margin: 0; padding-left: 16px; font-size: 13px; line-height: 1.5; }
+.sv-list li { margin: 1px 0; }
+.sv-fl-high { color: var(--down); font-weight: 600; }
+.sv-empty { font-size: 12.5px; color: var(--muted); margin: 2px 0; }
+
+/* ---- Layer 2: evidence lanes ---- */
+.sv-sec-h { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 14px 0 6px; }
+.sv-evidence { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.sv-dim {
+  background: var(--panel2); border: 1px solid var(--line); border-left-width: 3px;
+  border-radius: 8px; padding: 7px 10px; min-width: 0;
+}
+.sv-dim-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.sv-dim-val { font-size: 13.5px; font-weight: 650; color: var(--text); margin-top: 1px; }
+.sv-dim-gloss { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.35; }
+.sv-t-good { border-left-color: var(--up); }
+.sv-t-bad { border-left-color: var(--down); }
+.sv-t-warn { border-left-color: var(--warn); }
+.sv-t-neutral { border-left-color: var(--muted); }
+
+/* ---- Layer 2b: country slot cards ---- */
+.sv-country { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin: 10px 0; }
+.sv-card { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; }
+.sv-card-h { font-size: 12.5px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+.sv-crow { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 1px 0; }
+.sv-ck { color: var(--muted); }
+.sv-cv { font-weight: 650; color: var(--text); }
+.sv-c-up { color: var(--up); }
+.sv-c-down { color: var(--down); }
+.sv-cfoot { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.4; }
+
+/* ---- Deep-layer collapsed disclosure groups ---- */
+.sv-group { margin: 0; border-top: 1px solid var(--line); }
+.sv-group > summary {
+  cursor: pointer; list-style: none; padding: 12px 2px; font-size: 12.5px; font-weight: 700;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .04em;
+  display: flex; align-items: center; gap: 8px;
+}
+.sv-group > summary::-webkit-details-marker { display: none; }
+.sv-group > summary::before { content: "▸"; color: var(--muted); transition: transform .15s; }
+.sv-group[open] > summary::before { transform: rotate(90deg); }
+.sv-group > summary:hover { color: var(--text); }
+.sv-group .panel { margin-top: 8px; }
+/* the deep-detail disclosure on the header card (cycle & timing) */
+.sv-deep > summary { cursor: pointer; font-size: 12.5px; color: var(--muted); padding: 6px 0; }
+.sv-deep > summary:hover { color: var(--text); }
+
+@media (max-width: 560px) {
+  .sv-verdict-grid { grid-template-columns: 1fr; }
+  .sv-lane-name { flex-direction: row; flex-wrap: wrap; justify-content: flex-start; text-align: left; }
+  .sv-fingerprint { grid-template-columns: repeat(2, 1fr); }
+  .sv-honesty { grid-template-columns: 1fr; }
+  .sv-headline { font-size: 17px; }
+  .sv-score { font-size: 32px; }
+  .sv-action { font-size: 22px; }
+}
+
+/* ===========================================================================
+   HYBRID POLISH — Refined base + Fintech finish. Big hero numbers, soft
+   borderless inner blocks, per-section accent rails. Shared by all 5 markets.
+   =========================================================================== */
+.sv-verdict-grid { gap: 16px; grid-template-columns: minmax(165px, .78fr) 1.22fr; align-items: stretch; }
+.sv-lane { border: none; background: var(--panel2); border-radius: 14px; padding: 16px; }
+.sv-lane-name { justify-content: center; gap: 7px; }
+.sv-state-conflict .sv-lane-act { border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line)); }
+.sv-gauge { min-width: 118px; padding: 12px 16px; border-radius: 14px; }
+.sv-band-word { font-size: 14px; }
+.sv-score { font-size: 38px; letter-spacing: -.015em; margin-top: 3px; }
+.sv-score small { font-size: 13px; }
+.sv-action { font-size: 26px; padding: 9px 18px; border-radius: 13px; margin-bottom: 0; }
+.sv-act-why { margin-top: 10px; }
+.sv-headline { font-size: 19px; font-weight: 700; }
+.sv-bridge { border-radius: 13px; padding: 10px 14px; font-weight: 650; }
+.sv-trust { align-self: center; }
+.sv-rank-note { border-bottom: 1px dotted var(--muted); }
+/* evidence + country cards: borderless, softer */
+.sv-evidence .sv-dim { border-radius: 11px; }
+.sv-card { border: none; border-radius: 13px; padding: 12px 14px; }
+/* section group headers: sentence-case, larger, with a per-domain accent rail */
+.sv-group { border-top: none; }
+.sv-group > summary {
+  font-size: 13.5px; text-transform: none; letter-spacing: 0; font-weight: 650;
+  color: var(--text); padding: 13px 14px; margin: 6px 0 0;
+  border-left: 3px solid var(--muted); border-radius: 0;
+  background: color-mix(in srgb, var(--panel2) 60%, transparent);
+}
+.sv-group > summary:hover { background: var(--panel2); }
+#result > details:nth-of-type(1) > summary { border-left-color: #8b5cf6; }
+#result > details:nth-of-type(2) > summary { border-left-color: var(--up); }
+#result > details:nth-of-type(3) > summary { border-left-color: var(--link); }
+#result > details:nth-of-type(4) > summary { border-left-color: var(--muted); }
 </style>
 </head>
 <body>
+  
+  
+  
+  
+  
+
+<nav class="site-nav">
+  
+
+
+    <div class="nav-links">
+    
+    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMIND</span>
+    </a>
+    
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="sector_heatmap.html">🔥 <span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span><span class="d"><span class="l-en">All 503 names · market-cap treemap · click for our read</span><span class="l-zh">全部503只 · 市值树图 · 点击查看研判</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="news.html">🗞️ <span class="l-en">News</span><span class="l-zh">新闻</span><span class="d"><span class="l-en">Macro · markets · sectors · baskets · China</span><span class="l-zh">宏观 · 大盘 · 板块 · 篮子 · 中国</span></span></a>
+        <a href="whitehouse.html">🏛️ <span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></a>
+        <a href="special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></a>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="china_sector_desk.html">🧭 <span class="l-en">Sector Desk</span><span class="l-zh">行业桌面</span><span class="d"><span class="l-en">GS-style sector indices · live · pathway</span><span class="l-zh">GS式行业指数 · 实时 · 路径</span></span></a>
+        <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
+        <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">News & Intelligence</span><span class="l-zh">新闻与情报</span><span class="d"><span class="l-en">Multi-source news tape · media sentiment</span><span class="l-zh">多源新闻脉搏 · 媒体情绪</span></span></a>
+        <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+        <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+        <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+        <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+        <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intelligence_hub.html">🛰️ <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></a>
+        <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
+        <a href="policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
+        <a href="alt_data.html">📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span><span class="d"><span class="l-en">Signal intelligence · convergence · influence graph · actionable</span><span class="l-zh">信号情报 · 汇聚 · 影响力图谱 · 可操作</span></span></a>
+        <a href="congress_trades.html">🏛️ <span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span><span class="d"><span class="l-en">Politician disclosures · half-year watchlist · scored to copy</span><span class="l-zh">政界披露 · 半年观察清单 · 评分跟单</span></span></a>
+        <a href="foresight.html">🔮 <span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × revisions · the next DRAM</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期修正 · 下一个 DRAM</span></span></a>
+        <a href="radar.html">🛰️ <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></a>
+        <a href="demand.html">🧭 <span class="l-en">Demand Desk</span><span class="l-zh">需求台</span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></a>
+        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
+        <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
+        <a href="transmission.html">🔀 <span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></a>
+        <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
+        <a href="cycle.html">🔄 <span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span><span class="d"><span class="l-en">Where every boom-bust cycle sits — history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></a>
+        <a href="markets.html">🌐 <span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></a>
+        <a href="sector_cycles.html">🧭 <span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock — phase · turns · the story</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点 · 背后故事</span></span></a>
+        <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
+      </div>
+    </div>
+  </div>
+  
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
+  <div class="nav-search" data-lib="intlstockdata/index.json" data-target="intl_stock.html">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any JP / KR / TW / UK / EU stock…"
+      data-ph-zh="搜索任意日 / 韩 / 台 / 英 / 欧股票…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="mastermind.html">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
   <div class="panel">
     <div class="topline">
       <h1>🔎 <span class="l-en">International analyzer</span><span class="l-zh">国际个股分析</span></h1>
@@ -114,81 +539,88 @@
         <input id="q" placeholder="Search any JP / KR / TW / UK / EU stock… (e.g. Toyota, Samsung, TSMC, Shell, ASML)" autocomplete="off">
         <div id="sugg"></div>
       </div>
-      <a class="navbtn" href="intl_stocks.html"><span class="l-en">← International</span><span class="l-zh">← 国际</span></a>
-      <a class="navbtn" href="index.html"><span class="l-en">🏠 Home</span><span class="l-zh">🏠 首页</span></a>
-      <button class="lang-btn">中文</button>
-      <button class="theme-btn">☀️ <span class="l-en">Light</span><span class="l-zh">浅色</span></button>
     </div>
-    <p class="muted" style="margin:8px 0 0"><span class="l-en">Every name gets the same treatment as the sector board:
-      cycle position (daily + weekly), three-timeframe momentum, a clear entry/exit call, sector-neutral
-      relative strength, and descriptive fundamentals. Library refreshes nightly; covers the top constituents of Japan / South Korea / Taiwan / the UK / Europe and
-      large-caps, the sector ETFs and the broad indices.</span><span class="l-zh">每个标的都享有与板块面板相同的分析：周期位置（日线＋周线）、三周期动量、明确的进出场判断、
-      板块中性相对强度，以及描述性基本面。标的库每晚刷新，覆盖日／韩／台／英／欧的主要成分股与板块。</span></p>
   </div>
 
   <div id="result">
     <div class="panel">
       <div class="topline">
         <h1 id="r_name"></h1>
+        <span id="r_live_px" class="nb-px" data-mkt="intl" style="display:none;font-weight:800;font-size:17px;margin-left:2px"></span>
         <span id="r_state" class="state"></span>
         <span id="r_eq" class="eqbadge" style="display:none"></span>
         <span style="flex:1"></span>
         <span id="r_asof" class="muted"></span>
       </div>
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
-      <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
-      <p id="r_age" class="agewhen" style="display:none"></p>
-      <ul id="r_points" class="points"></ul>
-      <div id="r_cyclebox" class="cyclebox"></div>
-      <p id="r_flags" class="neg" style="margin:4px 0"></p>
-      <details><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
+      <!-- ===== Decision-first layout (shared stockview.js renders rec.view) ===== -->
+      <div id="sv-decision"></div>
+      <div id="sv-fingerprint"></div>
+      <div id="sv-honesty"></div>
+      <!-- ===== Cycle & timing detail (deep layer, collapsed) ===== -->
+      <details class="sv-deep"><summary><span class="l-en">Cycle &amp; timing detail</span><span class="l-zh">周期与时机详情</span></summary>
+        <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
+        <p id="r_age" class="agewhen" style="display:none"></p>
+        <ul id="r_points" class="points"></ul>
+        <div id="r_cyclebox" class="cyclebox"></div>
+        <p id="r_flags" class="neg" style="margin:4px 0"></p>
+        <p class="muted" id="r_why" style="margin:6px 0"></p>
+      </details>
     </div>
-    <div class="panel">
-      <h2><span class="l-en">Momentum across timeframes</span><span class="l-zh">跨周期动量</span></h2>
-      <div id="r_mtf"></div>
+    <!-- ===== Evidence lanes + country slot (Layer 2, shared stockview.js) ===== -->
+    <div id="sv-evidence"></div>
+    <div id="sv-country"></div>
+    <details class="sv-group"><summary><span class="l-en">📊 Fundamentals, analyst &amp; positioning</span><span class="l-zh">📊 基本面、分析师与持仓</span></summary>
+    <!-- legacy conviction panel — populated only as a FALLBACK if stockview.js fails -->
+    <div class="panel" id="r_conviction_panel" style="display:none">
+      <h2><span class="l-en">Conviction profile</span><span class="l-zh">确信度画像</span> <span class="note" style="text-transform:none">· <span class="l-en">unified verdict — cycle caps it</span><span class="l-zh">统一结论 — 周期封顶</span></span></h2>
+      <div id="r_conviction" class="conv"></div>
     </div>
     <div class="panel" id="r_alpha_panel" style="display:none">
-      <h2><span class="l-en">Relative strength</span><span class="l-zh">相对强度</span> <span class="note" style="text-transform:none">· <span class="l-en">sector-neutral residual</span><span class="l-zh">板块中性残差</span></span></h2>
+      <h2><span class="l-en">Relative strength</span><span class="l-zh">相对强度</span> <span class="note" style="text-transform:none">· <span class="l-en">sector-neutral residual</span><span class="l-zh">板块中性残差</span></span><span class="help">?<span class="tip"><span class="l-en">This name's return with its MARKET and SECTOR beta removed — sector-neutral residual relative strength (12-1 month); <b>alpha z</b> ranks it vs the whole cross-section of its own market. This is the positive-IC SELECTION leg (international developed/EM markets are momentum-persistent like the US). The entry tag is the timing context: <b>pullback</b> = a leader on a recent dip (the constructive entry); <b>extended</b> = just spiked (chase risk). Context, not a personalized buy signal.</span><span class="l-zh">本股票剔除其市场与板块贝塔后的收益 — 板块中性残差相对强度（12-1 个月）；<b>alpha z</b> 为相对其所在市场横截面的排名。这是正 IC 的<b>选股腿</b>（国际发达／新兴市场与美国一样动量具持续性）。入场标记为时机背景：<b>pullback</b>＝近期回调的领先股（建设性入场）；<b>extended</b>＝刚急涨（追高风险）。仅作背景，非个性化买入信号。</span></span></span></h2>
       <div id="r_alpha" class="mtf"></div>
-      <p class="muted" style="font-size:12px; margin-top:8px"><span class="l-en">This name's return with its MARKET and SECTOR beta removed — sector-neutral residual relative strength (12-1 month); <b>alpha z</b> ranks it vs the whole cross-section of its own market. This is the positive-IC SELECTION leg (Canada is momentum-persistent like the US). The entry tag is the timing context: <b>pullback</b> = a leader on a recent dip (the constructive entry); <b>extended</b> = just spiked (chase risk). Context, not a personalized buy signal.</span><span class="l-zh">本股票剔除其市场与板块贝塔后的收益 — 板块中性残差相对强度（12-1 个月）；<b>alpha z</b> 为相对其所在市场横截面的排名。这是正 IC 的<b>选股腿</b>（加拿大与美国一样动量具持续性）。入场标记为时机背景：<b>pullback</b>＝近期回调的领先股（建设性入场）；<b>extended</b>＝刚急涨（追高风险）。仅作背景，非个性化买入信号。</span></p>
     </div>
     <div class="panel" id="r_fund_panel" style="display:none">
-      <h2><span class="l-en">Fundamentals</span><span class="l-zh">基本面</span> <span class="note" style="text-transform:none">· <span class="l-en">context, not a signal</span><span class="l-zh">背景，而非信号</span></span></h2>
+      <h2><span class="l-en">Fundamentals</span><span class="l-zh">基本面</span> <span class="note" style="text-transform:none">· <span class="l-en">context, not a signal</span><span class="l-zh">背景，而非信号</span></span><span class="help">?<span class="tip"><span class="l-en">Descriptive valuation, profitability and dividends (from yfinance) — a backdrop to read ALONGSIDE the cycle / relative-strength signals, NOT a buy ranking. "Cheap vs sector" is not validated as a cross-sectional edge here. Fundamentals refresh on a slower cadence than price.</span><span class="l-zh">描述性的估值、盈利与分红（来自 yfinance）—— 作为与周期／相对强度信号并读的背景，而非买入排序。"相对板块便宜"在此并未被验证为有效的横截面优势。基本面的更新频率慢于价格。</span></span></span></h2>
       <div id="r_fund"></div>
-      <p class="muted" style="font-size:12px; margin-top:10px"><span class="l-en">Descriptive valuation, profitability and dividends (from yfinance) — a backdrop to read ALONGSIDE the cycle / relative-strength signals, NOT a buy ranking. "Cheap vs sector" is not validated as a cross-sectional edge here. Fundamentals refresh on a slower cadence than price.</span><span class="l-zh">描述性的估值、盈利与分红（来自 yfinance）—— 作为与周期／相对强度信号并读的背景，而非买入排序。"相对板块便宜"在此并未被验证为有效的横截面优势。基本面的更新频率慢于价格。</span></p>
     </div>
     <div class="panel" id="r_analyst_panel" style="display:none">
-      <h2>👔 <span class="l-en">Analyst &amp; estimates</span><span class="l-zh">分析师与预期</span> <span class="note" style="text-transform:none">· <span class="l-en">sell-side consensus</span><span class="l-zh">卖方一致预期</span></span></h2>
+      <h2>👔 <span class="l-en">Analyst &amp; estimates</span><span class="l-zh">分析师与预期</span> <span class="note" style="text-transform:none">· <span class="l-en">sell-side consensus</span><span class="l-zh">卖方一致预期</span></span><span class="help">?<span class="tip"><span class="l-en">yfinance sell-side aggregate: the consensus rating, mean price target with its high/low range, the implied upside vs the current price, and coverage breadth. Sell-side opinion shown as coverage context, NOT an endorsement — a target is a forecast, not a validated edge.</span><span class="l-zh">yfinance 卖方汇总：一致评级、目标价中位及其高/低区间、相对现价的隐含上行空间，以及覆盖广度。卖方观点仅作覆盖背景，并非推荐——目标价是预测，并非有效优势。</span></span></span></h2>
       <div id="r_analyst"></div>
-      <p class="muted" style="font-size:12px; margin-top:10px"><span class="l-en">yfinance sell-side aggregate: the consensus rating, mean price target with its high/low range, the implied upside vs the current price, and coverage breadth. Sell-side opinion shown as coverage context, NOT an endorsement — a target is a forecast, not a validated edge.</span><span class="l-zh">yfinance 卖方汇总：一致评级、目标价中位及其高/低区间、相对现价的隐含上行空间，以及覆盖广度。卖方观点仅作覆盖背景，并非推荐——目标价是预测，并非有效优势。</span></p>
     </div>
     <div class="panel" id="r_earn_panel" style="display:none">
       <h2>📅 <span class="l-en">Earnings</span><span class="l-zh">财报</span></h2>
       <div id="r_earn"></div>
     </div>
     <div class="panel" id="r_pos_panel" style="display:none">
-      <h2><span class="l-en">Positioning</span><span class="l-zh">持仓与做空</span> <span class="note" style="text-transform:none">· <span class="l-en">short interest &amp; ownership</span><span class="l-zh">空头与持股结构</span></span></h2>
+      <h2><span class="l-en">Positioning</span><span class="l-zh">持仓与做空</span> <span class="note" style="text-transform:none">· <span class="l-en">short interest &amp; ownership</span><span class="l-zh">空头与持股结构</span></span><span class="help">?<span class="tip"><span class="l-en">Short interest (shares short + days-to-cover) and insider / institutional ownership, from yfinance. The keyless free read — SEDI Form-4-style insider transactions and IIROC short-interest detail are not machine-readable. Heavy or rising short interest is a caution; high institutional ownership is crowding context. Descriptive, not a signal.</span><span class="l-zh">空头（做空股数＋回补天数）与内部人／机构持股，来自 yfinance。免密钥的免费读法——SEDI 式内部人交易与 IIROC 空头明细不可机读。高或上升的空头是警示；高机构持股是拥挤背景。描述性，非信号。</span></span></span></h2>
       <div id="r_pos"></div>
-      <p class="muted" style="font-size:12px; margin-top:10px"><span class="l-en">Short interest (shares short + days-to-cover) and insider / institutional ownership, from yfinance. The keyless free read — SEDI Form-4-style insider transactions and IIROC short-interest detail are not machine-readable. Heavy or rising short interest is a caution; high institutional ownership is crowding context. Descriptive, not a signal.</span><span class="l-zh">空头（做空股数＋回补天数）与内部人／机构持股，来自 yfinance。免密钥的免费读法——SEDI 式内部人交易与 IIROC 空头明细不可机读。高或上升的空头是警示；高机构持股是拥挤背景。描述性，非信号。</span></p>
     </div>
     <div class="panel" id="r_cbeta_panel" style="display:none">
-      <h2><span class="l-en">Commodity exposure</span><span class="l-zh">商品敞口</span> <span class="note" style="text-transform:none">· <span class="l-en">oil / gold / loonie beta</span><span class="l-zh">原油／黄金／加元贝塔</span></span></h2>
+      <h2><span class="l-en">Factor exposure</span><span class="l-zh">因子敞口</span> <span class="note" style="text-transform:none">· <span class="l-en">commodity / FX beta</span><span class="l-zh">商品／汇率贝塔</span></span><span class="help">?<span class="tip"><span class="l-en">This name's sensitivity to oil (WTI), gold and its local currency, with the broad market removed (orthogonal betas) — the dimension that separates commodity- and FX-exposed names. An energy producer loads on oil, a miner on gold, a bank reads near-zero (market-driven). The "primary driver" is the largest commodity/FX leg; <b>fit R²</b> is how much of the daily move these factors plus the market explain. Descriptive exposure for sizing and pairing, NOT a forecast or a buy signal.</span><span class="l-zh">本股票对原油（WTI）、黄金与本地货币的敏感度，已剔除大盘（正交贝塔）—— 这是区分商品与汇率敞口个股的维度。能源生产商对原油敏感，矿企对黄金敏感，银行接近零（由大盘驱动）。"主要驱动"为最大的商品／汇率腿；<b>拟合R²</b>表示这些因子加大盘能解释日内波动的比例。仅作仓位与配对的描述性敞口，并非预测或买入信号。</span></span></span></h2>
       <div id="r_cbeta" class="mtf"></div>
-      <p class="muted" style="font-size:12px; margin-top:8px"><span class="l-en">This name's sensitivity to oil (WTI), gold and the loonie (CAD), with the broad market removed (orthogonal betas) — the dimension that actually separates TSX names, since the Composite is ~70% Energy / Materials / Financials. An energy producer loads on oil, a miner on gold, a bank reads near-zero (market-driven). The "primary driver" is the largest commodity/FX leg; <b>fit R²</b> is how much of the daily move these factors plus the market explain. Descriptive exposure for sizing and pairing, NOT a forecast or a buy signal.</span><span class="l-zh">本股票对原油（WTI）、黄金与加元（CAD）的敏感度，已剔除大盘（正交贝塔）—— 这是真正区分 TSX 个股的维度，因为综合指数约70%为能源／材料／金融。能源生产商对原油敏感，矿企对黄金敏感，银行接近零（由大盘驱动）。"主要驱动"为最大的商品／汇率腿；<b>拟合R²</b>表示这些因子加大盘能解释日内波动的比例。仅作仓位与配对的描述性敞口，并非预测或买入信号。</span></p>
+    </div>
+    </details>
+    <details class="sv-group"><summary><span class="l-en">📈 Momentum, chart &amp; history</span><span class="l-zh">📈 动量、图表与历史</span></summary>
+    <div class="panel">
+      <h2><span class="l-en">Momentum across timeframes</span><span class="l-zh">跨周期动量</span></h2>
+      <div id="r_mtf"></div>
     </div>
     <div class="panel">
       <h2><span class="l-en">Chart</span><span class="l-zh">图表</span></h2>
       <div id="tvbox"></div>
     </div>
     <div class="panel" id="r_cal_panel" style="display:none">
-      <h2><span class="l-en">How much to trust the state — measured on TSX history</span><span class="l-zh">这个状态有多可信 — 基于TSX历史实测</span></h2>
+      <h2><span class="l-en">How much to trust the state — measured on its market's history</span><span class="l-zh">这个状态有多可信 — 基于该市场历史实测</span><span class="help">?<span class="tip"><span class="l-en">These names drift up over a month from every state; the spread between states is small. Use the state for <b>structure</b> (cycle position, confirmation checklist, invalidation level) and size positions instead of seeking certainty. <b>Typical dip</b> = median worst drop over the next month; <b>bad-case dip</b> = the worst 1-in-10 month (10th percentile).</span><span class="l-zh">从任何状态出发，这些个股在一个月内都倾向于上涨；各状态之间的差距很小。请把状态用于<b>结构判断</b>（周期位置、确认清单、失效价位）并据此控制仓位，而非追求确定性。<b>典型回撤</b> = 未来一个月最大跌幅中位数；<b>最坏回撤</b> = 十分之一的最差月份（第10百分位）。</span></span></span></h2>
       <table id="r_cal"></table>
-      <p class="muted" style="font-size:12px; margin-top:8px"><span class="l-en">These names drift up over a month from every state; the spread between states is small. Use the state for <b>structure</b> (cycle position, confirmation checklist, invalidation level) and size positions instead of seeking certainty. <b>Typical dip</b> = median worst drop over the next month; <b>bad-case dip</b> = the worst 1-in-10 month (10th percentile).</span><span class="l-zh">从任何状态出发，这些个股在一个月内都倾向于上涨；各状态之间的差距很小。请把状态用于<b>结构判断</b>（周期位置、确认清单、失效价位）并据此控制仓位，而非追求确定性。<b>典型回撤</b> = 未来一个月最大跌幅中位数；<b>最坏回撤</b> = 十分之一的最差月份（第10百分位）。</span></p>
     </div>
+    </details>
+    <p class="muted sv-method" style="font-size:11.5px;margin:14px 2px 0"><span class="l-en">How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation.</span><span class="l-zh">如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅为研究性背景展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。</span></p>
   </div>
 
 <script src="lightweight-charts-v5.js"></script>
 <script src="chart.js"></script>
+<script src="stockview.js"></script>
 <script>
 (function () {
   var idx = [], cal = null, sel = -1, items = [];
@@ -196,7 +628,7 @@
   function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
   var T = {
     en: { asof: 'data through', notlib: 'NOT IN LIBRARY',
-          notlibmsg: 'Not in the nightly library (curated TSX large-caps + sector ETFs + indices). Add it in config.yml → canada.constituents.',
+          notlibmsg: 'Not in the nightly library (curated JP/KR/TW/UK/EU large-caps + sector ETFs + indices). Add it in config.yml → intl.constituents.',
           season: 'Seasonality', failed: '⚠ Failed cycle — price is below the low that started this cycle; the larger trend is usually rolling over.',
           next: 'Next:', ph: 'Search any JP / KR / TW / UK / EU stock…',
           th_state: 'state', th_n: 'samples', th_up: 'up next month', th_avg: 'avg next month',
@@ -211,7 +643,7 @@
           cb_oil: 'Oil β', cb_gold: 'Gold β', cb_cad: 'CAD β', cb_primary: 'primary driver',
           cb_fit: 'fit R²', cb_none: 'market-driven · no commodity tilt' },
     zh: { asof: '数据截至', notlib: '不在库中',
-          notlibmsg: '不在每晚更新的标的库中（精选 TSX 大盘股 ＋ 板块 ETF ＋ 指数）。可在 config.yml → canada.constituents 添加。',
+          notlibmsg: '不在每晚更新的标的库中（精选 日/韩/台/英/欧 大盘股 ＋ 板块 ETF ＋ 指数）。可在 config.yml → intl.constituents 添加。',
           season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
           next: '下一步：', ph: '搜索任意 日/韩/台/英/欧 个股…',
           th_state: '状态', th_n: '样本数', th_up: '下月上涨', th_avg: '下月均值',
@@ -299,18 +731,75 @@
       document.getElementById('r_state').className = 'state';
       document.getElementById('r_entry').style.display = 'none';
       document.getElementById('r_points').innerHTML = '';
+      document.getElementById('r_conviction_panel').style.display = 'none';
       document.getElementById('r_cyclebox').innerHTML = L('notlibmsg');
     });
+  }
+
+  // unified Conviction Profile hero — renders the SAME block as the standout card on
+  // intl_stocks.html, so the dashboard and this page can never structurally disagree.
+  // The cycle ladder above is the calibrated short-term timing read; conviction blends
+  // it with the relative-strength / theme read and is shown as context (the cycle caps
+  // the verdict). Intl selection is weak positive-IC context — the trust tier says so.
+  var CAX_LABELS = { selection: ['Selection', '选股'], entry: ['Entry', '入场'],
+                     tailwind: ['Tailwind', '顺风'], quality: ['Quality', '质量'] };
+  function renderConviction(d) {
+    var panel = document.getElementById('r_conviction_panel');
+    var box = document.getElementById('r_conviction'), c = d.conviction;
+    if (!box || !panel) return;
+    if (!c) { panel.style.display = 'none'; return; }
+    var tt = c.trust_tier || {};
+    var ax = ['selection', 'entry', 'tailwind', 'quality'].map(function (k) {
+      var a = (c.axes && c.axes[k]) || {}, lab = CAX_LABELS[k], pct = a.pct;
+      return '<div class="cax' + (pct == null ? ' cax-na' : '') + '"><span class="caxl">' +
+        lz(lab[0], lab[1]) + '</span><span class="caxbar"><span class="caxf" style="width:' +
+        (pct == null ? 0 : pct) + '%"></span></span><span class="caxv">' +
+        (pct == null ? '—' : pct) + '</span></div>';
+    }).join('');
+    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g,
+      function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]; }); };
+    var cau = (c.cautions || []).map(function (x, i) {
+      return '<span class="ccau">⚠ ' + esc(lz(x, (c.cautions_zh || [])[i] || x)) + '</span>'; }).join('');
+    box.innerHTML =
+      '<div class="cv-head">' +
+        (c.score != null ? '<span class="cv-score band-' + c.band + '">' + c.score + '</span>' : '') +
+        '<div class="cv-vtext"><div class="cv-verdict">' + lz(c.verdict, c.verdict_zh) + '</div>' +
+        '<div class="cv-tier">' + lz(tt.en, tt.zh) + '</div></div></div>' +
+      '<div class="cv-axes">' + ax + '</div>' +
+      (cau ? '<div class="cv-cau">' + cau + '</div>' : '') +
+      '<div class="cv-note">' + lz(
+        'Conviction blends a calibrated short-term timing read (the cycle above) with the relative-strength / theme read — context, not a probability. On international names the selection leg is weak positive-IC context and the axis weights are an unvalidated prior; there is no validated quality leg, so that axis is shown absent (never neutral). The cycle state caps the verdict: a downtrend never reads “Buy”.',
+        '确信度融合了已校准的短期择时读数（上方周期）与相对强度／主题读数——作为情境，而非概率。在国际个股上，选股腿为弱正 IC 背景，维度权重为未经验证的先验；并无经验证的质量腿，故该维度显示为缺失（绝非中性）。周期状态会封顶结论：下行趋势永不显示“买入”。') + '</div>';
+    panel.style.display = 'block';
+  }
+
+  // Live header price chip (local currency, no '$' prefix). Set the canonical
+  // symbol + a baked last price, reveal it, and ask live.js to refresh it now.
+  function liveHeaderPx(d) {
+    var lp = document.getElementById('r_live_px');
+    if (!lp) return;
+    var px = d && d.tech && d.tech.price;
+    if (px == null) { lp.style.display = 'none'; lp.removeAttribute('data-sym'); return; }
+    lp.setAttribute('data-sym', d.ticker);
+    lp.textContent = Number(px).toFixed(2);                // baked; live.js overwrites
+    lp.style.display = '';
+    if (window.LiveQuotes && window.LiveQuotes.refresh) window.LiveQuotes.refresh();
   }
 
   function render(d) {
     document.getElementById('result').style.display = 'block';
     document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
+    liveHeaderPx(d);
     var st = document.getElementById('r_state');
     st.textContent = dlabel(d.ladder.state) || d.ladder.label;
     st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
     document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
     document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
+
+    // Unified decision-first layout from the canonical view-model (engine/stock_view).
+    // Replaces the separate conviction / relative-strength / commodity panels with ONE
+    // decision band + fingerprint + honesty row + evidence lanes + country slot.
+    var svOk = !!(window.SV && d.view && window.SV.mount(d));
 
     var e = d.ladder.entry || {};
     var eb = document.getElementById('r_entry');
@@ -351,11 +840,14 @@
 
     document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
+    if (!svOk) renderConviction(d);
     window.renderMTF(document.getElementById('r_mtf'), d.mtf);
 
-    // Alpha vs sector — sector-neutral residual momentum (additive; absent on ETFs/indices)
+    // Alpha vs sector — now folded into evidence.rel_strength; render the legacy panel
+    // only as a fallback when the shared view-model didn't mount.
     var ap = document.getElementById('r_alpha_panel'), a = d.alpha;
-    if (a && a.alpha != null) {
+    if (svOk) { ap.style.display = 'none'; }
+    else if (a && a.alpha != null) {
       var AE = {pullback:['pullback','回调买点'], extended:['extended','急涨偏热'],
                 intact:['intact','趋势完好'], laggard:['laggard','落后'], neutral:['neutral','中性']};
       var sgn = function (x, n) { return (x >= 0 ? '+' : '') + (x == null ? '—' : x.toFixed(n)); };
@@ -462,19 +954,23 @@
     var calEl = document.getElementById('r_cal_panel');
     if (cal) {
       var cs = '<tr><th>' + L('th_state') + '</th><th>' + L('th_n') + '</th><th>' + L('th_up') + '</th><th>' + L('th_avg') + '</th><th>' + L('th_dipm') + '</th><th>' + L('th_dipb') + '</th></tr>';
+      var _curCal = (d.ladder && d.ladder.state) || null;
       Object.keys(cal).forEach(function (s) {
+        if (!DISP[s]) return;
         var cv = cal[s];
         var dipMed = cv.dd_med_pct != null ? cv.dd_med_pct + '%' : '—';
         var dipBad = cv.dd_p10_pct != null ? cv.dd_p10_pct + '%' : '—';
-        cs += '<tr><td><span class="state st-' + s.replace(/ /g, '_') + '">' + disp(s) + '</span></td><td>' + cv.n + '</td><td>' + cv.hit_pct + '%</td><td class="' + (cv.avg_fwd_pct > 0 ? 'pos' : 'neg') + '">' + cv.avg_fwd_pct + '%</td><td class="neg">' + dipMed + '</td><td class="neg">' + dipBad + '</td></tr>';
+        var _cur = (s === _curCal); cs += '<tr class="' + (_cur ? 'cal-cur' : '') + '"><td><span class="state st-' + s.replace(/ /g, '_') + '">' + disp(s) + '</span>' + (_cur ? ' <span class="cal-here">▸ ' + (lang() === 'zh' ? '当前状态' : 'you are here') + '</span>' : '') + '</td><td>' + cv.n + '</td><td>' + cv.hit_pct + '%</td><td class="' + (cv.avg_fwd_pct > 0 ? 'pos' : 'neg') + '">' + cv.avg_fwd_pct + '%</td><td class="neg">' + dipMed + '</td><td class="neg">' + dipBad + '</td></tr>';
       });
       document.getElementById('r_cal').innerHTML = cs;
       calEl.style.display = 'block';
     } else { calEl.style.display = 'none'; }
 
-    // Commodity exposure — oil / gold / CAD betas, market-removed (additive; absent on ETFs)
+    // Commodity / FX exposure — now a country_slot card (commodity_beta) in the shared view;
+    // render the legacy panel only as a fallback when the view-model didn't mount.
     var cbEl = document.getElementById('r_cbeta_panel'), fb = d.factor_beta;
-    if (fb && (fb.oil != null || fb.gold != null || fb.cad != null)) {
+    if (svOk) { cbEl.style.display = 'none'; }
+    else if (fb && (fb.oil != null || fb.gold != null || fb.cad != null)) {
       var bstat = function (lab, x) {
         if (x == null) return '';
         return '<span>' + lab + ' <b class="' + (x >= 0 ? 'pos' : 'neg') + '">' + (x >= 0 ? '+' : '') + x.toFixed(2) + '</b></span>';
@@ -493,6 +989,15 @@
       try { window.StockChart.mount(document.getElementById('tvbox'), d.ticker, {name: d.name, ohlcDir: 'intlohlc'}); }
       catch (e) { /* chart is garnish */ }
     }
+    hideEmptyGroups();
+  }
+  function hideEmptyGroups() {
+    document.querySelectorAll('.sv-group').forEach(function (g) {
+      var panels = g.querySelectorAll('.panel');
+      var anyVisible = false;
+      panels.forEach(function (p) { if (p.style.display !== 'none') anyVisible = true; });
+      g.style.display = (panels.length && !anyVisible) ? 'none' : '';
+    });
   }
   document.addEventListener('themechange', function () {
     var h = (location.hash || '').slice(1); if (h) load(decodeURIComponent(h));
@@ -504,10 +1009,24 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
-<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-20 04:15 UTC UTC · <span class="l-en">charts by TradingView · top constituents of JP/KR/TW/UK/EU, not exhaustive</span><span class="l-zh">图表由 TradingView 提供 · 日/韩/台/英/欧主要成分股，非全市场</span></p>
+<script>
+  // keep tooltips on-screen: flip below near the top, anchor to the nearest side near edges
+  document.addEventListener('mouseover', function (e) {
+    var h = e.target.closest('.help'); if (!h) return;
+    var r = h.getBoundingClientRect();
+    h.classList.toggle('below', r.top < 340);
+    var tip = h.querySelector('.tip');
+    var half = ((tip && tip.offsetWidth) || 300) / 2 + 16;
+    h.classList.remove('edge-right', 'edge-left');
+    if (r.left + r.width / 2 + half > window.innerWidth) h.classList.add('edge-right');
+    else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
+  });
+</script>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-28 00:11 UTC UTC · <span class="l-en">charts by TradingView · top constituents of JP/KR/TW/UK/EU, not exhaustive</span><span class="l-zh">图表由 TradingView 提供 · 日/韩/台/英/欧主要成分股，非全市场</span></p>
 <footer class="site-footer">
   <span class="made"><span class="l-en">Made with ❤️ for global markets</span><span class="l-zh">用 ❤️ 为全球市场制作</span></span>
   <span class="dev"><span class="l-en">Developed by</span><span class="l-zh">开发者</span> Chris Wong</span>
 </footer>
+<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

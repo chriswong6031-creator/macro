@@ -55,6 +55,25 @@ def check_health(status: dict, now: datetime, max_age_hours: float = 96.0,
             "age_hours": None if age_h is None else round(age_h, 1), "tripped": tripped}
 
 
+def check_signal_sanity(now: datetime, cfg: dict | None = None) -> dict:
+    """CORRECTNESS companion to check_health (liveness). Validates the committed per-ticker
+    boards both books select from — coverage / score-degeneracy / staleness — so the heartbeat
+    also fails on a SILENT signal break, not only a dead pipeline. Returns the same
+    {ok, fail_reasons, warnings} shape. Degrade-never-raise: any error here degrades to a single
+    warning so a bug in the correctness add-on can never take the liveness probe down with it.
+    (Freeze/drift need the rolling baseline and are owned by scripts/signal_sanity.py in the daily
+    build; here we pass no prior, so those naturally no-op.)"""
+    try:
+        from engine import signal_sanity as ss  # stdlib-only; engine/__init__.py is empty
+        if cfg is None:
+            cfg = (config.load().get("signal_sanity", {}) or {})
+        site = config.ROOT / config.load()["storage"]["site_dir"]
+        report = ss.evaluate_all(ss.load_payloads(site), None, now=now, cfg=cfg)
+        return {k: report[k] for k in ("ok", "fail_reasons", "warnings")}
+    except Exception as e:  # noqa: BLE001 — never let the correctness add-on break liveness
+        return {"ok": True, "fail_reasons": [], "warnings": [f"signal_sanity check skipped: {e!r}"]}
+
+
 def _notify(report: dict) -> None:
     """Best-effort outbound alert reusing the existing notifier (Telegram/Discord);
     silent if the secrets aren't set. The non-zero exit is the primary signal."""
@@ -69,16 +88,24 @@ def _notify(report: dict) -> None:
 
 def main() -> int:
     cfg = (config.load().get("healthcheck", {}) or {})
+    now = datetime.now(timezone.utc)
     p = config.data_dir() / "run_status.json"
     if not p.exists():
         print("::error::no run_status.json — pipeline has never completed")
         return 1
     status = json.loads(p.read_text())
-    report = check_health(status, datetime.now(timezone.utc),
+    report = check_health(status, now,
                           max_age_hours=float(cfg.get("max_age_hours", 96)),
                           breaker_trip=int(cfg.get("breaker_trip", 3)),
                           broad_outage=int(cfg.get("broad_outage", 8)))
-    print(f"last_run age: {report['age_hours']}h | circuit-broken: {report['tripped'] or 'none'}")
+    # Fold in the CORRECTNESS tripwire (silent-breakage), not just liveness. Merges into the
+    # same warnings/fail_reasons → ::error::/::warning:: + _notify + non-zero-exit machinery.
+    sanity = check_signal_sanity(now)
+    report["fail_reasons"] = report["fail_reasons"] + sanity["fail_reasons"]
+    report["warnings"] = report["warnings"] + sanity["warnings"]
+    report["ok"] = report["ok"] and sanity["ok"]
+    print(f"last_run age: {report['age_hours']}h | circuit-broken: {report['tripped'] or 'none'} "
+          f"| signals: {'ok' if sanity['ok'] else 'FAIL'}")
     for w in report["warnings"]:
         print(f"::warning::{w}")
     if report["ok"]:

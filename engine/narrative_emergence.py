@@ -175,7 +175,8 @@ def _recommended(cand: dict, ext: dict, top_n: int = 5) -> tuple[list[dict], flo
             stretched += 1
         glabel = GRADES.get(g, GRADES["na"])
         rows.append({
-            "ticker": t, "name": m.get("name") or t, "sector": m.get("sector"),
+            "ticker": t, "name": m.get("name") or t, "name_zh": m.get("name_zh") or "",
+            "sector": m.get("sector"),
             "grade": g, "grade_en": glabel[0], "grade_zh": glabel[1], "grade_css": glabel[2],
             "ext": e.get("ext"), "ext_z": e.get("ext_z"), "near_52wh": e.get("near_52wh"),
             "_rank": _ENTRY_RANK.get(g, 0.5),

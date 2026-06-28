@@ -230,19 +230,25 @@ def build() -> str:
 
     P = M._prices()
     regime = M.regime_state(P)                  # live credit/vol/margin de-risk layer (once)
-    cards = []
+    cards, ress = [], []
     for pk in ("conservative", "moderate", "aggressive"):
         res = M.backtest(pk, P)
         if res.get("error"):
             continue
         cards.append(_rich_card(pk, res))
+        ress.append(res)                        # keep alloc/asof for the emit contract
         html = env.get_template("mastermind_detail.html.j2").render(
             **_detail_vm(pk, res, built, regime), C=C)
         (site / f"strategy_cnmm_{pk}.html").write_text(html)
 
-    snap = {"n": len(cards), "built": built,
+    asof = next((r.get("asof") for r in ress if r.get("asof")), None)
+    snap = {"schema": "china_masterminds.latest.v2", "n": len(cards), "built": built,
+            "asof": asof, "stale_after_min": 1440,
             "cards": [{"key": c["key"], "name": c["name_en"], "cagr": c["cagr"],
-                       "sharpe": c["sharpe"], "maxdd": c["maxdd"]} for c in cards]}
+                       "sharpe": c["sharpe"], "maxdd": c["maxdd"],
+                       "asof": r.get("asof"), "gross_now": r.get("gross_now"),
+                       "alloc": r.get("alloc", [])}
+                      for c, r in zip(cards, ress)]}
     snap_dir = config.data_dir() / "china_regime"
     snap_dir.mkdir(parents=True, exist_ok=True)
     (snap_dir / "china_masterminds_latest.json").write_text(json.dumps(snap, indent=2))

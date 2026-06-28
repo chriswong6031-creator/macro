@@ -251,6 +251,20 @@ def _closes(universe: str = "broad") -> pd.DataFrame:
         out = pd.read_parquet(p)
         out.index = pd.to_datetime(out.index)
         return out.loc[:, ~out.columns.duplicated()].sort_index()
+    if universe == "debiased":
+        # survivor breadth closes + recovered DEAD-name closes (Phase 1A). Self-gating:
+        # when dead-price coverage is ~0 this returns exactly the broad cache, so the
+        # de-biased scorecard equals the survivor one until CI accrues delisted prices.
+        base = _closes("broad")
+        try:
+            from collectors.edgar_deadname_prices import dead_name_closes
+            dead = dead_name_closes()
+        except Exception:  # noqa: BLE001 — additive, never fatal
+            dead = pd.DataFrame()
+        if dead.empty:
+            return base
+        out = pd.concat([base, dead], axis=1)            # dead names are new columns
+        return out.loc[:, ~out.columns.duplicated()].sort_index()
     frames = []
     for grp in _UNIVERSE_GROUPS.get(universe, _UNIVERSE_GROUPS["broad"]):
         p = config.data_dir() / grp / "_closes_cache.parquet"
@@ -306,8 +320,19 @@ def compute_factors(asof=None, universe: str = "broad") -> dict | None:
         fund = pd.read_parquet(fpath)
     else:
         from collectors.edgar import as_of_cross_section
+        # de-biased mode: draw the PIT cross-section from the survivor+dead MERGED
+        # panel (Phase 1B). Self-gating — dead rows without a recovered price are
+        # dropped downstream, so when price coverage is ~0 this equals the survivor
+        # cross-section and grows honest as CI accrues dead-name prices.
+        merged = None
+        if universe == "debiased":
+            try:
+                from collectors.edgar_deadnames import merged_panel
+                merged = merged_panel()
+            except Exception:  # noqa: BLE001 — additive, never fatal
+                merged = None
         try:
-            fund = as_of_cross_section(asof)
+            fund = as_of_cross_section(asof, merged)
         except Exception as e:  # noqa: BLE001 — no panel yet
             log.warning("equity_factors: point-in-time panel unavailable (%s)", e)
             return None
@@ -380,10 +405,12 @@ def compute_factors(asof=None, universe: str = "broad") -> dict | None:
     raw["low_vol"] = -_winsor_z(d["vol"], cap)
     raw["low_beta"] = -_winsor_z(d["beta"], cap)
     # positioning: FINRA short interest (high days-to-cover / short % = bearish).
-    # OMITTED for the deep-history universe: FINRA SI has no point-in-time panel, so
-    # reusing the latest snapshot at a 2013 rebalance would be look-ahead. The live
-    # (asof=None) page and the shallow backtest keep the current snapshot as before.
-    si = None if universe == "deep" else _short_interest()
+    # OMITTED for the deep-history universe AND for ANY point-in-time run (asof set):
+    # FINRA SI has no point-in-time panel, so reusing the latest snapshot at a 2013
+    # rebalance would be look-ahead — it would contaminate the historical IC scorecard
+    # (factor_ic_scorecard runs universe='broad' WITH asof on a grid back to 2011).
+    # Only the LIVE (asof=None) page keeps the current snapshot.
+    si = None if (universe == "deep" or asof is not None) else _short_interest()
     if si is not None:
         dtc = si["days_to_cover"].reindex(d.index)
         si_pct = si["short_shares"].reindex(d.index) / d["shares"].where(d["shares"] > 0)

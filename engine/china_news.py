@@ -31,42 +31,160 @@ Nothing here ever feeds a score, signal, regime or allocation. See the
 """
 from __future__ import annotations
 
+import html
 import json
 import logging
 import re
-from datetime import date, datetime, timezone
+import xml.etree.ElementTree as ET
+from collections import Counter
+from datetime import date, datetime, timedelta, timezone
+from urllib.parse import urljoin
 
 from lib import config, store
 
 log = logging.getLogger(__name__)
 
 SCHEMA = "china_news.v1"
+GDELT_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
 
 # Chinese macro-theme keyword buckets — used to gate + TAG each flash headline
 # (deterministic classification; first bucket with a hit wins). Tuned for the
 # Eastmoney 全球财经快讯 tape.
 MACRO_THEMES: dict[str, list[str]] = {
     "monetary": ["央行", "人民银行", "降准", "降息", "加息", "利率", "LPR", "MLF",
-                 "逆回购", "流动性", "货币政策", "公开市场"],
-    "inflation": ["CPI", "PPI", "物价", "通胀", "通缩", "通货膨胀"],
+                 "逆回购", "流动性", "货币政策", "公开市场", "PBOC", "People's Bank",
+                 "central bank", "monetary policy", "reserve requirement", "RRR",
+                 "open market", "loan prime rate"],
+    "inflation": ["CPI", "PPI", "物价", "通胀", "通缩", "通货膨胀",
+                  "inflation", "consumer price", "producer price", "deflation"],
     "growth": ["GDP", "经济增长", "PMI", "制造业", "工业增加值", "复苏", "放缓",
-               "衰退", "增速", "经济数据"],
+               "衰退", "增速", "经济数据", "China economy", "economic growth",
+               "retail sales", "industrial output", "fixed asset", "Caixin PMI",
+               "official PMI", "slowdown", "recovery"],
     "credit": ["社融", "社会融资", "信贷", "贷款", "债券", "国债", "收益率", "违约",
-               "信用", "城投"],
+               "信用", "城投", "credit", "new loans", "aggregate financing",
+               "total social financing", "bond", "yield", "LGFV", "debt"],
     "fiscal": ["财政", "专项债", "减税", "退税", "关税", "贸易", "出口", "进口",
-               "制裁", "财政部"],
+               "制裁", "财政部", "fiscal", "special bond", "exports", "imports",
+               "tariff", "trade", "sanction", "Ministry of Finance", "MOFCOM"],
     "policy": ["国常会", "政治局", "发改委", "稳增长", "稳经济", "房地产", "楼市",
-               "监管", "改革", "政策", "国务院"],
-    "markets": ["A股", "股市", "沪深", "上证", "创业板", "北交所", "证监会", "退市",
-                "IPO", "北向", "外资", "南向"],
+               "监管", "改革", "政策", "国务院", "State Council", "Politburo",
+               "stimulus", "property support", "real estate policy", "NDRC",
+               "reform", "policy support"],
+    "politics": ["习近平", "总书记", "中央", "中美", "外交", "地缘", "台海", "台湾",
+                 "国安", "一带一路", "反腐", "人大", "两会", "拜登", "特朗普", "白宫",
+                 "出口管制", "实体清单"],
+    "tech": ["科技", "半导体", "芯片", "人工智能", "算力", "软件", "互联网", "新能源车",
+             "电动车", "光伏", "锂电", "5G", "大模型", "国产替代", "华为", "数据中心",
+             "云计算", "机器人", "智能驾驶"],
+    "markets": ["A股", "股市", "沪深", "上证", "创业板", "科创板", "北交所", "证监会",
+                "退市", "IPO", "北向", "外资", "南向", "板块", "龙头", "涨停", "跌停",
+                "业绩", "财报", "回购", "减持", "增持", "券商", "基金", "新股",
+                "A-shares", "A shares",
+                "Chinese stocks", "CSI 300", "Shanghai Composite", "CSRC",
+                "capital market", "yuan", "renminbi", "上市公司", "个股", "股票",
+                "公司公告", "停牌", "复牌", "并购", "重组", "研报"],
 }
 # theme display labels (EN, ZH)
 THEME_LABEL: dict[str, tuple[str, str]] = {
     "monetary": ("PBoC", "央行"), "inflation": ("Inflation", "物价"),
     "growth": ("Growth", "增长"), "credit": ("Credit", "信用"),
     "fiscal": ("Fiscal/Trade", "财政/贸易"), "policy": ("Policy", "政策"),
+    "politics": ("Politics", "政治/地缘"), "tech": ("Tech", "科技"),
     "markets": ("Markets", "市场"), "macro": ("Macro", "宏观"),
 }
+
+OFFICIAL_PAGES = [
+    {"name": "PBoC", "url": "https://www.pbc.gov.cn/en/3688006/index.html", "theme": "monetary", "tier": "official"},
+    {"name": "NBS", "url": "https://www.stats.gov.cn/english/PressRelease/", "theme": "growth", "tier": "official"},
+    {"name": "MOF", "url": "https://www.mof.gov.cn/en/news/", "theme": "fiscal", "tier": "official"},
+    {"name": "State Council", "url": "https://english.www.gov.cn/policies/latestreleases/", "theme": "policy", "tier": "official"},
+    {"name": "SCIO", "url": "https://english.scio.gov.cn/pressroom/index.htm", "theme": "policy", "tier": "official"},
+    {"name": "NDRC", "url": "https://en.ndrc.gov.cn/news/pressreleases/", "theme": "policy", "tier": "official"},
+    {"name": "CSRC", "url": "https://www.csrc.gov.cn/csrc_en/", "theme": "markets", "tier": "official"},
+    {"name": "SAFE", "url": "https://www.safe.gov.cn/en/SAFENews/index.html", "theme": "markets", "tier": "official"},
+    {"name": "MOFCOM", "url": "https://english.mofcom.gov.cn/", "theme": "fiscal", "tier": "official"},
+]
+
+WIRE_SOURCES = [
+    "reuters.com", "bloomberg.com", "ft.com", "wsj.com", "cnbc.com",
+    "scmp.com", "caixinglobal.com", "nikkei.com", "asia.nikkei.com",
+    "apnews.com", "marketwatch.com", "barrons.com", "spglobal.com",
+    "yicaiglobal.com", "chinadaily.com.cn", "cgtn.com", "english.news.cn",
+    "globaltimes.cn",
+]
+
+NEWS_FEEDS = [
+    {"name": "SCMP - China Economy", "url": "https://www.scmp.com/rss/318421/feed", "domain": "scmp.com", "theme": "growth", "source": "news_rss", "tier": "global_wire"},
+    {"name": "SCMP - China", "url": "https://www.scmp.com/rss/4/feed", "domain": "scmp.com", "theme": "macro", "source": "news_rss", "tier": "global_wire"},
+    {"name": "SCMP - Business", "url": "https://www.scmp.com/rss/92/feed", "domain": "scmp.com", "theme": "markets", "source": "news_rss", "tier": "global_wire"},
+    {"name": "Nikkei Asia", "url": "https://asia.nikkei.com/rss/feed/nar", "domain": "asia.nikkei.com", "theme": "macro", "source": "news_rss", "tier": "global_wire"},
+]
+
+NEWS_PAGES = [
+    {"name": "第一财经", "url": "https://www.yicai.com/news/", "domain": "yicai.com", "theme": "markets", "source": "cn_news_page", "tier": "china_native", "source_lang": "zh"},
+    {"name": "证券时报", "url": "https://www.stcn.com/", "domain": "stcn.com", "theme": "markets", "source": "cn_news_page", "tier": "china_native", "source_lang": "zh"},
+    {"name": "上海证券报", "url": "https://www.cnstock.com/", "domain": "cnstock.com", "theme": "markets", "source": "cn_news_page", "tier": "china_native", "source_lang": "zh"},
+    {"name": "新浪财经股票", "url": "https://finance.sina.com.cn/stock/", "domain": "finance.sina.com.cn", "theme": "markets", "source": "cn_news_page", "tier": "china_native", "source_lang": "zh"},
+    {"name": "东方财富股票", "url": "https://stock.eastmoney.com/", "domain": "stock.eastmoney.com", "theme": "markets", "source": "cn_news_page", "tier": "china_native", "source_lang": "zh"},
+    {"name": "Caixin Global - Economy", "url": "https://www.caixinglobal.com/economy/", "theme": "growth", "source": "news_page", "tier": "global_wire"},
+    {"name": "Caixin Global - Business", "url": "https://www.caixinglobal.com/business-and-tech/", "theme": "markets", "source": "news_page", "tier": "global_wire"},
+    {"name": "Caixin Global - China", "url": "https://www.caixinglobal.com/china/", "theme": "macro", "source": "news_page", "tier": "global_wire"},
+]
+
+GDELT_QUERY_TERMS = [
+    '"China economy"', '"Chinese economy"', "PBOC", '"People\'s Bank of China"',
+    "yuan", "renminbi", '"China property"', '"China real estate"',
+    '"China stimulus"', '"China exports"', '"China imports"', '"China inflation"',
+    '"China CPI"', '"China PPI"', '"China PMI"', '"A-shares"', '"Chinese stocks"',
+    '"CSI 300"', '"China credit"', '"total social financing"', '"new loans"',
+    "NDRC", "CSRC", "MOFCOM",
+]
+
+CHANNEL_KEYWORDS: dict[str, list[str]] = {
+    "pboc_liquidity": ["央行", "人民银行", "PBOC", "People's Bank", "逆回购", "MLF", "LPR", "降准", "降息", "open market", "liquidity"],
+    "credit_impulse": ["社融", "社会融资", "信贷", "贷款", "credit", "financing", "financial statistics"],
+    "property": ["房地产", "楼市", "房价", "commercial residential", "property", "real estate"],
+    "consumer": ["消费", "零售", "CPI", "consumer", "retail"],
+    "industrial": ["工业", "制造业", "PMI", "industrial", "manufacturing", "production"],
+    "fiscal_trade": ["财政", "专项债", "出口", "进口", "关税", "trade", "tariff", "mof"],
+    "markets": ["A股", "沪深", "上证", "创业板", "证监会", "IPO", "capital market", "securities"],
+    "yuan": ["人民币", "汇率", "离岸", "中间价", "yuan", "renminbi", "rmb", "exchange rate"],
+    "tech_policy": ["半导体", "芯片", "人工智能", "AI", "算力", "technology", "semiconductor"],
+    "commodities": ["铜", "煤", "钢", "原油", "稀土", "commodity", "production materials"],
+}
+
+TICKER_RULES: list[tuple[str, list[str]]] = [
+    ("510300.SS", ["沪深300", "csi 300", "a股", "a-share", "上证", "capital market"]),
+    ("ASHR", ["a-share", "a shares", "a股", "沪深"]),
+    ("CNYA", ["china a shares", "a-share", "a shares", "msci china a"]),
+    ("MCHI", ["china equities", "chinese equities", "msci china"]),
+    ("FXI", ["h-shares", "hong kong listed", "中国股票"]),
+    ("2800.HK", ["hang seng", "hong kong stocks", "hsi"]),
+    ("2822.HK", ["china a50", "ftse china a50", "a50"]),
+    ("KWEB", ["互联网", "platform", "internet", "e-commerce"]),
+    ("CNY", ["人民币", "yuan", "renminbi", "rmb", "汇率"]),
+    ("CNH", ["离岸", "offshore yuan"]),
+    ("CBON", ["china bond", "chinese bond", "government bond", "国债", "收益率"]),
+    ("512800.SS", ["银行", "banks", "lending", "贷款"]),
+    ("512880.SS", ["证券", "券商", "broker", "securities"]),
+    ("512200.SS", ["房地产", "property", "real estate", "房价"]),
+    ("512760.SS", ["半导体", "semiconductor", "chip"]),
+    ("515030.SS", ["新能源车", "ev", "battery", "电池"]),
+    ("512400.SS", ["有色", "metals", "copper", "rare earth", "稀土"]),
+]
+
+HIGH_IMPACT_TERMS = [
+    "央行", "人民银行", "降准", "降息", "LPR", "MLF", "社融", "社会融资", "信贷",
+    "GDP", "PMI", "CPI", "PPI", "政治局", "国常会", "财政", "专项债",
+    "房地产", "房价", "证监会", "资本市场", "关税", "制裁",
+    "pboc", "financial statistics", "gdp", "pmi", "consumer price", "producer price",
+    "monetary policy", "fiscal", "property", "capital market",
+]
+MEDIUM_IMPACT_TERMS = [
+    "出口", "进口", "制造业", "工业", "消费", "零售", "外资", "北向", "南向",
+    "open market", "trade", "industrial", "retail", "production", "prices",
+]
 
 DISCLAIMER_TEXT = (
     "Context only — not a signal. The policy-tone read is a z-score of a crude "
@@ -160,10 +278,162 @@ def classify_theme(text: str) -> str | None:
     """Macro theme a flash matches (first bucket with a keyword hit), or None when it
     matches no macro keyword (-> dropped). PURE."""
     blob = text or ""
+    low = blob.lower()
     for theme, kws in MACRO_THEMES.items():
-        if any(k in blob for k in kws):
+        if any(_has_term(blob, low, k) for k in kws):
             return theme
     return None
+
+
+def _has_term(blob: str, low: str, term: str) -> bool:
+    if not term:
+        return False
+    if any(ord(ch) > 127 for ch in term):
+        return term in blob
+    if term != term.lower() and term in blob:
+        return True
+    t = term.lower()
+    if re.fullmatch(r"[a-z0-9]{1,3}", t):
+        return re.search(rf"\b{re.escape(t)}\b", low) is not None
+    return t in low
+
+
+def _channels(text: str) -> list[str]:
+    blob = text or ""
+    low = blob.lower()
+    out = []
+    for ch, kws in CHANNEL_KEYWORDS.items():
+        if any(_has_term(blob, low, k) for k in kws):
+            out.append(ch)
+    return out
+
+
+def _ticker_hits(text: str) -> list[dict]:
+    blob = text or ""
+    low = blob.lower()
+    out: list[dict] = []
+    for tk, kws in TICKER_RULES:
+        hit = next((k for k in kws if _has_term(blob, low, k)), "")
+        if hit:
+            out.append({"ticker": tk, "reason": hit})
+    return out[:7]
+
+
+def _tickers(text: str) -> list[str]:
+    return [h["ticker"] for h in _ticker_hits(text)]
+
+
+def _source_weight(source_tier: str = "", source_name: str = "", source: str = "") -> tuple[int, str]:
+    blob = f"{source_tier} {source_name} {source}".lower()
+    if source_tier == "official" or source == "official":
+        return 18, "official policy source"
+    if source_tier == "china_native" or source == "cn_news_page":
+        return 24, "native Chinese financial source"
+    if "reuters" in blob or "bloomberg" in blob or "ft.com" in blob or "caixin" in blob or "scmp" in blob:
+        return 12, "tier-1 China wire"
+    if source_tier in {"wire", "global_wire"} or source in {"gdelt", "news_rss", "news_page"}:
+        return 9, "global wire source"
+    if source_tier == "domestic_wire" or source == "eastmoney":
+        return 7, "domestic flash wire"
+    return 0, ""
+
+
+def _parse_dt(value: str) -> datetime | None:
+    if not value:
+        return None
+    raw = value.strip()
+    for fmt in ("%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            dt = datetime.strptime(raw.replace("Z", "+0000"), fmt)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt.astimezone(timezone.utc)
+        except Exception:  # noqa: BLE001
+            pass
+    try:
+        dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _freshness_points(value: str) -> int:
+    dt = _parse_dt(value)
+    if not dt:
+        return 0
+    age_h = max(0.0, (datetime.now(timezone.utc) - dt).total_seconds() / 3600)
+    if age_h <= 8:
+        return 7
+    if age_h <= 24:
+        return 5
+    if age_h <= 72:
+        return 3
+    if age_h <= 168:
+        return 1
+    return 0
+
+
+def _importance(title: str, summary: str = "", theme: str = "macro", source_tier: str = "",
+                source_name: str = "", source: str = "") -> tuple[int, str, list[str]]:
+    blob = f"{title} {summary}"
+    low = blob.lower()
+    score = 22
+    reasons: list[str] = []
+    sw, source_reason = _source_weight(source_tier, source_name, source)
+    if sw:
+        score += sw
+        reasons.append(source_reason)
+    hi = [k for k in HIGH_IMPACT_TERMS if _has_term(blob, low, k)]
+    med = [k for k in MEDIUM_IMPACT_TERMS if _has_term(blob, low, k)]
+    if hi:
+        score += min(42, 14 * len(hi))
+        reasons.append("tier-1 China macro term")
+    if med:
+        score += min(18, 6 * len(med))
+        reasons.append("market-sensitive term")
+    if theme in {"monetary", "credit", "policy", "markets", "growth", "inflation"}:
+        score += 8
+        reasons.append("dashboard core theme")
+    if theme == "macro" and not hi and not med:
+        score -= 8
+        reasons.append("low title-level China macro specificity")
+    score = max(0, min(100, score))
+    band = "high" if score >= 68 else "medium" if score >= 48 else "low"
+    return score, band, reasons or ["context"]
+
+
+def enrich_item(h: dict) -> dict:
+    title = h.get("title", "")
+    summary = h.get("summary", "")
+    theme = h.get("theme") or classify_theme(f"{title} {summary}") or "macro"
+    source_tier = h.get("source_tier") or ("official" if h.get("source") == "official" else "wire")
+    score, band, reasons = _importance(title, summary, theme, source_tier, h.get("source_name", ""), h.get("source", ""))
+    text = f"{title} {summary} {h.get('source_name','')}"
+    ticker_hits = _ticker_hits(text)
+    channels = _channels(text) or ([theme] if theme != "macro" else [])
+    native_bonus = 8 if h.get("source_lang") == "zh" or h.get("source") in {"eastmoney", "cn_news_page"} else 0
+    intel = max(0, min(100, score + _freshness_points(h.get("time", "")) + native_bonus + (4 if len(channels) >= 2 else 0) + (3 if ticker_hits else 0)))
+    out = dict(h)
+    out.update({
+        "theme": theme,
+        "importance_score": score,
+        "intelligence_score": intel,
+        "importance": band,
+        "importance_reasons": reasons,
+        "channels": channels,
+        "tickers": [hit["ticker"] for hit in ticker_hits],
+        "ticker_reasons": {hit["ticker"]: hit["reason"] for hit in ticker_hits},
+        "related_tickers": ticker_hits,
+        "source_tier": source_tier,
+        "source_lang": h.get("source_lang", "zh" if h.get("source") == "eastmoney" else "en"),
+    })
+    if out.get("source_lang") == "zh":
+        out.setdefault("title_zh", title)
+        if summary:
+            out.setdefault("summary_zh", summary)
+    return out
 
 
 def _norm_title(t: str) -> str:
@@ -175,22 +445,101 @@ def filter_flashes(items: list[dict], cfg: dict | None = None) -> list[dict]:
     dedup -> recency rank -> top-N. PURE (takes {title,summary,url,time} dicts)."""
     cfg = cfg or {}
     top_n = int(cfg.get("max_show", 12))
+    min_score = int(cfg.get("min_importance_score", 34))
     kept: list[dict] = []
     seen: set[str] = set()
     for a in items:
         title = (a.get("title") or "").strip()
         summary = (a.get("summary") or "").strip()
         theme = classify_theme(title + " " + summary)
-        if theme is None:
+        trusted_context = a.get("source_tier") in {"official", "wire", "global_wire", "china_native"} or a.get("source") in {"official", "gdelt", "news_rss", "news_page", "cn_news_page"}
+        if theme is None and not trusted_context:
             continue                                   # non-macro flash -> dropped
+        theme = theme or a.get("theme") or "macro"
         key = _norm_title(title)
         if not key or key in seen:
             continue                                   # dedup
+        source = a.get("source", "eastmoney")
+        default_tier = "domestic_wire" if source == "eastmoney" else "china_native" if source == "cn_news_page" else "wire"
+        enriched = enrich_item({"title": title, "summary": summary, "url": a.get("url", ""),
+                     "time": a.get("time", ""), "theme": theme,
+                     "source": source,
+                     "source_name": a.get("source_name", "Eastmoney"),
+                     "source_lang": a.get("source_lang", "zh" if source in {"eastmoney", "cn_news_page"} else "en"),
+                     "source_tier": a.get("source_tier", default_tier)})
+        if enriched.get("importance_score", 0) < min_score:
+            continue
         seen.add(key)
-        kept.append({"title": title, "summary": summary, "url": a.get("url", ""),
-                     "time": a.get("time", ""), "theme": theme})
-    kept.sort(key=lambda h: h.get("time", ""), reverse=True)   # newest first
+        kept.append(enriched)
+    kept.sort(key=lambda h: (
+        int(h.get("intelligence_score", h.get("importance_score", 0)) or 0),
+        int(h.get("importance_score", 0) or 0),
+        _parse_dt(h.get("time", "")) or datetime.min.replace(tzinfo=timezone.utc),
+    ), reverse=True)
     return kept[:top_n]
+
+
+def _synthesis(headlines: list[dict]) -> dict:
+    """Holistic feed texture for the China dashboard/Mastermind hand-off. Pure
+    summary of already-filtered context news; never a scoring input."""
+    if not headlines:
+        return {
+            "high_impact_count": 0, "top_channels": [], "top_tickers": [],
+            "top_themes": [], "source_mix": [], "dominant_channel": "",
+            "read": "No high-signal China macro tape passed the current filter.",
+        }
+    channels = Counter(c for h in headlines for c in (h.get("channels") or []))
+    tickers = Counter(t for h in headlines for t in (h.get("tickers") or []))
+    themes = Counter(h.get("theme", "macro") for h in headlines)
+    sources = Counter(h.get("source_tier", "unknown") for h in headlines)
+    high = sum(1 for h in headlines if h.get("importance") == "high")
+    dom_channel = channels.most_common(1)[0][0] if channels else ""
+    dom_theme = themes.most_common(1)[0][0] if themes else "macro"
+    read = f"{high} high-impact China items; dominant channel {dom_channel or dom_theme}; source mix " \
+           + ", ".join(f"{k}:{v}" for k, v in sources.most_common(3))
+    return {
+        "high_impact_count": high,
+        "avg_importance": round(sum(float(h.get("importance_score", 0) or 0) for h in headlines) / len(headlines), 1),
+        "top_channels": [{"name": k, "count": v} for k, v in channels.most_common(7)],
+        "top_tickers": [{"ticker": k, "count": v} for k, v in tickers.most_common(9)],
+        "top_themes": [{"theme": k, "count": v} for k, v in themes.most_common(7)],
+        "source_mix": [{"tier": k, "count": v} for k, v in sources.most_common(5)],
+        "dominant_channel": dom_channel,
+        "dominant_theme": dom_theme,
+        "read": read,
+    }
+
+
+def _attach_translations(headlines: list[dict], cfg: dict | None = None) -> list[dict]:
+    if not headlines:
+        return headlines
+    try:
+        from engine import news_translate
+        titles = [h.get("title", "") for h in headlines]
+        summaries = [h.get("summary", "") for h in headlines]
+        title_zh = news_translate.translate_to_zh(titles)
+        nonempty_summaries = [s for s in summaries if s]
+        summary_zh = news_translate.translate_to_zh(nonempty_summaries)
+        si = 0
+        out = []
+        for h, tz, s in zip(headlines, title_zh, summaries, strict=False):
+            hh = dict(h)
+            if tz:
+                hh["title_zh"] = tz
+            elif hh.get("source_lang") == "zh":
+                hh["title_zh"] = hh.get("title", "")
+            if s:
+                sz = summary_zh[si] if si < len(summary_zh) else None
+                si += 1
+                if sz:
+                    hh["summary_zh"] = sz
+                elif hh.get("source_lang") == "zh":
+                    hh["summary_zh"] = s
+            out.append(hh)
+        return out
+    except Exception as e:  # noqa: BLE001
+        log.warning("china news translation skipped: %s", e)
+        return headlines
 
 
 def _cache_path(cfg: dict, d: date):
@@ -198,6 +547,79 @@ def _cache_path(cfg: dict, d: date):
     cdir = config.ROOT / cfg.get("cache_dir", "data/china_news/flash_cache")
     Path(cdir).mkdir(parents=True, exist_ok=True)
     return Path(cdir) / f"flash_{d.isoformat()}.json"
+
+
+def _official_cache_path(cfg: dict, d: date):
+    from pathlib import Path
+    cdir = config.ROOT / cfg.get("official_cache_dir", "data/china_news/official_cache")
+    Path(cdir).mkdir(parents=True, exist_ok=True)
+    return Path(cdir) / f"official_v2_{d.isoformat()}.json"
+
+
+def _wire_cache_path(cfg: dict, d: date):
+    from pathlib import Path
+    cdir = config.ROOT / cfg.get("wire_cache_dir", "data/china_news/wire_cache")
+    Path(cdir).mkdir(parents=True, exist_ok=True)
+    return Path(cdir) / f"gdelt_v2_{d.isoformat()}.json"
+
+
+def _news_cache_path(cfg: dict, d: date):
+    from pathlib import Path
+    cdir = config.ROOT / cfg.get("news_cache_dir", "data/china_news/news_rss_cache")
+    Path(cdir).mkdir(parents=True, exist_ok=True)
+    return Path(cdir) / f"news_rss_v2_{d.isoformat()}.json"
+
+
+def _local(tag: str) -> str:
+    return tag.split("}")[-1].lower()
+
+
+def _xml_text(el, *names: str) -> str:
+    wanted = {n.lower() for n in names}
+    for child in el:
+        if _local(child.tag) in wanted and child.text:
+            return html.unescape(child.text.strip())
+    return ""
+
+
+def _parse_feed_date(s: str) -> str:
+    if not s:
+        return ""
+    try:
+        from email.utils import parsedate_to_datetime
+        dt = parsedate_to_datetime(s)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc).isoformat()
+    except Exception:  # noqa: BLE001
+        return _parse_dateish(s) or s
+
+
+def _parse_news_feed(xml_text: str, feed: dict) -> list[dict]:
+    root = ET.fromstring(xml_text)
+    nodes = [el for el in root.iter() if _local(el.tag) in {"item", "entry"}]
+    out: list[dict] = []
+    for it in nodes[:35]:
+        title = _xml_text(it, "title")
+        link = _xml_text(it, "link")
+        if not link:
+            for child in it:
+                if _local(child.tag) == "link":
+                    link = child.attrib.get("href", "")
+                    break
+        summary = _xml_text(it, "description", "summary")
+        when = _parse_feed_date(_xml_text(it, "pubDate", "updated", "published", "date"))
+        if not title:
+            continue
+        out.append({
+            "title": title, "summary": summary, "url": urljoin(feed["url"], link),
+            "time": when, "theme": classify_theme(f"{title} {summary}") or feed.get("theme") or "macro",
+            "source": feed.get("source", "news_rss"),
+            "source_name": feed.get("name", "News RSS"),
+            "source_tier": feed.get("tier", "global_wire"),
+            "source_lang": feed.get("source_lang", "en"),
+        })
+    return out
 
 
 # akshare column -> our field (fuzzy; akshare occasionally renames)
@@ -254,6 +676,257 @@ def _fetch_flashes(cfg: dict, today: date | None = None) -> tuple[list[dict], st
     return items, reason
 
 
+def _parse_dateish(text: str) -> str:
+    if not text:
+        return ""
+    m = re.search(r"(20\d{2})[-/.年](\d{1,2})[-/.月](\d{1,2})", text)
+    if not m:
+        m = re.search(r"(20\d{2})(\d{2})(\d{2})", text)
+    if not m:
+        return text.strip()
+    y, mo, da = [int(x) for x in m.groups()]
+    try:
+        return date(y, mo, da).isoformat()
+    except Exception:  # noqa: BLE001
+        return text.strip()
+
+
+def _fetch_official_pages(cfg: dict, today: date | None = None) -> tuple[list[dict], str | None]:
+    today = today or date.today()
+    cache = _official_cache_path(cfg, today)
+    ttl = cfg.get("official_cache_ttl_hours", cfg.get("cache_ttl_hours", 12)) * 3600
+    if cache.exists():
+        try:
+            if datetime.now(timezone.utc).timestamp() - cache.stat().st_mtime < ttl:
+                blob = json.loads(cache.read_text())
+                return blob.get("items", []), blob.get("degraded_reason")
+        except Exception:  # noqa: BLE001
+            pass
+    pages = cfg.get("official_pages") or OFFICIAL_PAGES
+    items: list[dict] = []
+    failures = 0
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        for page in pages:
+            try:
+                r = requests.get(page["url"], timeout=15,
+                                 headers={"User-Agent": "macro-dashboard/1.0 (research)"})
+                if r.status_code != 200:
+                    failures += 1
+                    continue
+                soup = BeautifulSoup(r.text, "html.parser")
+                for a in soup.find_all("a", href=True):
+                    title = re.sub(r"^\s*\d+\.?", "", " ".join(a.get_text(" ", strip=True).split()))
+                    if len(title) < 8:
+                        continue
+                    if title.lower() in {"latest releases", "release calendar", "international cooperation", "understanding statistics"}:
+                        continue
+                    href = urljoin(page["url"], a["href"])
+                    nearby = " ".join([title, a.parent.get_text(" ", strip=True) if a.parent else ""])
+                    when = _parse_dateish(nearby)
+                    has_iso_date = bool(when and re.match(r"20\d{2}-\d{2}-\d{2}", when))
+                    if when and re.match(r"20\d{2}-\d{2}-\d{2}", when):
+                        try:
+                            if date.fromisoformat(when) < today - timedelta(days=int(cfg.get("official_window_days", 45))):
+                                continue
+                        except Exception:  # noqa: BLE001
+                            pass
+                    title_theme = classify_theme(title)
+                    if not title_theme and not has_iso_date:
+                        continue
+                    theme = title_theme or page.get("theme") or "macro"
+                    items.append({"title": title, "summary": "", "url": href, "time": when,
+                                  "theme": theme, "source": "official",
+                                  "source_name": page.get("name", "Official"),
+                                  "source_tier": page.get("tier", "official")})
+            except Exception:  # noqa: BLE001
+                failures += 1
+    except Exception:  # noqa: BLE001
+        failures = len(pages)
+    reason = "official_fetch_error" if failures == len(pages) and not items else None
+    try:
+        cache.write_text(json.dumps({"items": items, "degraded_reason": reason}, ensure_ascii=False))
+    except Exception:  # noqa: BLE001
+        pass
+    return items, reason
+
+
+def _fetch_news_pages(cfg: dict, today: date | None = None) -> tuple[list[dict], int]:
+    today = today or date.today()
+    pages = cfg.get("news_pages") or NEWS_PAGES
+    items: list[dict] = []
+    failures = 0
+    window_days = int(cfg.get("news_window_days", cfg.get("wire_window_days", 5)))
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        for page in pages:
+            try:
+                r = requests.get(page["url"], timeout=12,
+                                 headers={"User-Agent": "macro-dashboard/1.0 (research)"})
+                if r.status_code != 200:
+                    failures += 1
+                    continue
+                soup = BeautifulSoup(r.text, "html.parser")
+                domain = page.get("domain") or re.sub(r"^www\.", "", re.sub(r"^https?://", "", page["url"]).split("/")[0]).lower()
+                source_lang = page.get("source_lang", "en")
+                added = 0
+                for a in soup.find_all("a", href=True):
+                    title = " ".join(a.get_text(" ", strip=True).split())
+                    if len(title) < 12:
+                        continue
+                    href = urljoin(page["url"], a["href"])
+                    if domain and domain not in href:
+                        continue
+                    when = _parse_dateish(f"{title} {href}")
+                    if when:
+                        try:
+                            if date.fromisoformat(when) < today - timedelta(days=window_days):
+                                continue
+                        except Exception:  # noqa: BLE001
+                            pass
+                    theme = classify_theme(title) or page.get("theme") or "macro"
+                    if source_lang != "zh" and theme == "macro" and "china" not in title.lower() and not when:
+                        continue
+                    items.append({"title": title, "summary": "", "url": href, "time": when,
+                                  "theme": theme, "source": page.get("source", "news_page"),
+                                  "source_name": page.get("name", "News page"),
+                                  "source_tier": page.get("tier", "global_wire"),
+                                  "source_lang": source_lang})
+                    added += 1
+                    if added >= int(cfg.get("news_page_max_per_source", 45)):
+                        break
+            except Exception:  # noqa: BLE001
+                failures += 1
+    except Exception:  # noqa: BLE001
+        failures = len(pages)
+    return items, failures
+
+
+def _fetch_news_feeds(cfg: dict, today: date | None = None) -> tuple[list[dict], str | None]:
+    """Direct China-focused media RSS/pages. This is the non-GDELT wire fallback:
+    SCMP/Nikkei feeds and Caixin pages, still filtered by the deterministic gate."""
+    today = today or date.today()
+    cache = _news_cache_path(cfg, today)
+    ttl = cfg.get("news_cache_ttl_hours", cfg.get("cache_ttl_hours", 12)) * 3600
+    if cache.exists():
+        try:
+            if datetime.now(timezone.utc).timestamp() - cache.stat().st_mtime < ttl:
+                blob = json.loads(cache.read_text())
+                return blob.get("items", []), blob.get("degraded_reason")
+        except Exception:  # noqa: BLE001
+            pass
+    feeds = cfg.get("news_feeds") or NEWS_FEEDS
+    items: list[dict] = []
+    failures = 0
+    window_days = int(cfg.get("news_window_days", cfg.get("wire_window_days", 5)))
+    try:
+        import requests
+        for feed in feeds:
+            try:
+                r = requests.get(feed["url"], timeout=10,
+                                 headers={"User-Agent": "macro-dashboard/1.0 (research)"})
+                if r.status_code != 200:
+                    failures += 1
+                    continue
+                for item in _parse_news_feed(r.text, feed):
+                    dt = _parse_dt(item.get("time", ""))
+                    if dt and dt.date() < today - timedelta(days=window_days):
+                        continue
+                    items.append(item)
+            except Exception:  # noqa: BLE001
+                failures += 1
+    except Exception:  # noqa: BLE001
+        failures = len(feeds)
+    page_items, page_failures = _fetch_news_pages(cfg, today) if cfg.get("use_news_pages", True) else ([], 0)
+    items.extend(page_items)
+    failures += page_failures
+    total_sources = len(feeds) + (len(cfg.get("news_pages") or NEWS_PAGES) if cfg.get("use_news_pages", True) else 0)
+    reason = "news_rss_fetch_error" if failures == total_sources and not items else None
+    try:
+        cache.write_text(json.dumps({"items": items, "degraded_reason": reason}, ensure_ascii=False))
+    except Exception:  # noqa: BLE001
+        pass
+    return items, reason
+
+
+def _gdelt_query(cfg: dict) -> str:
+    terms = cfg.get("wire_query_terms") or GDELT_QUERY_TERMS
+    # Query is intentionally broad; source allowlist + deterministic macro theme
+    # gate below do the precision work.
+    return "(" + " OR ".join(terms) + f") sourcelang:{cfg.get('wire_lang', 'eng')}"
+
+
+def _fetch_wire_gdelt(cfg: dict, today: date | None = None) -> tuple[list[dict], str | None]:
+    """Global reputable-source China macro wire via GDELT. This fills the gap between
+    official releases and Eastmoney flashes: Reuters/FT/SCMP/Caixin-style market
+    interpretation. Best-effort, cached, never raises."""
+    today = today or date.today()
+    cache = _wire_cache_path(cfg, today)
+    ttl = cfg.get("wire_cache_ttl_hours", cfg.get("cache_ttl_hours", 12)) * 3600
+    if cache.exists():
+        try:
+            if datetime.now(timezone.utc).timestamp() - cache.stat().st_mtime < ttl:
+                blob = json.loads(cache.read_text())
+                return blob.get("items", []), blob.get("degraded_reason")
+        except Exception:  # noqa: BLE001
+            pass
+
+    win = int(cfg.get("wire_window_days", cfg.get("window_days", 4)))
+    end = datetime(today.year, today.month, today.day, 23, 59, 59)
+    start = end - timedelta(days=win)
+    params = {"query": _gdelt_query(cfg), "mode": "artlist", "format": "json",
+              "maxrecords": str(cfg.get("wire_max_records", 160)), "sort": "datedesc",
+              "startdatetime": start.strftime("%Y%m%d%H%M%S"),
+              "enddatetime": end.strftime("%Y%m%d%H%M%S")}
+    items: list[dict] = []
+    reason: str | None = None
+    allow = [s.lower() for s in (cfg.get("wire_sources") or WIRE_SOURCES)]
+    try:
+        import time
+
+        import requests
+        r = None
+        attempts = max(1, int(cfg.get("wire_attempts", 2)))
+        timeout_s = max(5, int(cfg.get("wire_timeout_s", 12)))
+        for attempt in range(attempts):
+            r = requests.get(GDELT_URL, params=params, timeout=timeout_s,
+                             headers={"User-Agent": "macro-dashboard/1.0 (research)"})
+            if r.status_code == 429 and attempt < attempts - 1:
+                time.sleep(max(6, cfg.get("min_request_interval_s", 6)) * (attempt + 1))
+                continue
+            break
+        if r is None or r.status_code != 200 or "json" not in r.headers.get("Content-Type", ""):
+            reason = "wire_rate_limited" if (r is not None and r.status_code == 429) else "wire_fetch_error"
+        else:
+            for a in (r.json().get("articles", []) or []):
+                dom = (a.get("domain") or "").lower()
+                if allow and not any(s in dom for s in allow):
+                    continue
+                title = a.get("title", "")
+                sd = a.get("seendate", "")
+                try:
+                    when = datetime.strptime(sd, "%Y%m%dT%H%M%SZ").replace(
+                        tzinfo=timezone.utc).isoformat()
+                except (ValueError, TypeError):
+                    when = sd
+                items.append({"title": title, "summary": "", "url": a.get("url", ""),
+                              "time": when, "theme": classify_theme(title) or "macro",
+                              "source": "gdelt", "source_name": dom or "GDELT",
+                              "source_tier": "wire"})
+            if not items:
+                reason = "wire_no_headlines"
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_news gdelt wire fetch failed (%s)", e)
+        reason = "wire_fetch_error"
+    try:
+        cache.write_text(json.dumps({"items": items, "degraded_reason": reason}, ensure_ascii=False))
+    except Exception:  # noqa: BLE001
+        pass
+    return items, reason
+
+
 def flash_headlines(today: date | None = None) -> dict | None:
     """Filtered, theme-tagged, deduped recent macro flashes. None when the master
     switch is off. Never raises."""
@@ -261,11 +934,22 @@ def flash_headlines(today: date | None = None) -> dict | None:
     if not cfg.get("enabled", False):
         return None
     raw, reason = _fetch_flashes(cfg, today)
-    kept = filter_flashes(raw, cfg)
-    return {"schema": SCHEMA, "is_context_only": True, "source": "eastmoney_global_em",
+    official, official_reason = _fetch_official_pages(cfg, today) if cfg.get("use_official_pages", True) else ([], None)
+    news_rss, news_reason = _fetch_news_feeds(cfg, today) if cfg.get("use_news_feeds", True) else ([], None)
+    wire, wire_reason = _fetch_wire_gdelt(cfg, today) if cfg.get("use_wire_gdelt", True) else ([], None)
+    kept = _attach_translations(filter_flashes(official + news_rss + wire + raw, cfg), cfg)
+    synth = _synthesis(kept)
+    return {"schema": SCHEMA, "is_context_only": True, "source": "official_pages+news_rss+gdelt_wire+eastmoney_global_em",
             "fetched_at": datetime.now(timezone.utc).isoformat(),
-            "headlines": kept, "n_raw": len(raw), "n_kept": len(kept),
-            "degraded_reason": reason if not kept else None}
+            "headlines": kept, "n_raw": len(raw) + len(official) + len(news_rss) + len(wire), "n_eastmoney": len(raw),
+            "n_official": len(official), "n_news_rss": len(news_rss), "n_wire": len(wire),
+            "n_total_candidates": len(raw) + len(official) + len(news_rss) + len(wire),
+            "n_kept": len(kept),
+            "n_high_impact": synth.get("high_impact_count", 0),
+            "top_channels": synth.get("top_channels", []),
+            "top_tickers": synth.get("top_tickers", []),
+            "synthesis": synth,
+            "degraded_reason": (reason or official_reason or news_reason or wire_reason) if not kept else None}
 
 
 # --------------------------------------------------------------------------- #

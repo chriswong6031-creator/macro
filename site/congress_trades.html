@@ -10,7 +10,7 @@
 <style>
   /* ---------- shared Research-Reports chrome ---------- */
   * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:0 18px 60px; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
   @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
   a { color:var(--link); text-decoration:none; }
   .wrap { max-width:1060px; margin:0 auto; }
@@ -72,21 +72,50 @@
 
 </head>
 <body>
+
+
 <nav class="site-nav">
-    
+  
 
 
     <div class="nav-links">
-    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    
+    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMIND</span>
+    </a>
+    
     <div class="nav-dd">
       <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
         <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="sector_heatmap.html">🔥 <span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span><span class="d"><span class="l-en">All 503 names · market-cap treemap · click for our read</span><span class="l-zh">全部503只 · 市值树图 · 点击查看研判</span></span></a>
         <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
         <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
         <a href="news.html">🗞️ <span class="l-en">News</span><span class="l-zh">新闻</span><span class="d"><span class="l-en">Macro · markets · sectors · baskets · China</span><span class="l-zh">宏观 · 大盘 · 板块 · 篮子 · 中国</span></span></a>
+        <a href="whitehouse.html">🏛️ <span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></a>
         <a href="special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></a>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
@@ -100,6 +129,7 @@
         <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
         <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
         <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="china_sector_desk.html">🧭 <span class="l-en">Sector Desk</span><span class="l-zh">行业桌面</span><span class="d"><span class="l-en">GS-style sector indices · live · pathway</span><span class="l-zh">GS式行业指数 · 实时 · 路径</span></span></a>
         <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
         <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
         <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -166,25 +196,33 @@
         <a href="policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
         <a href="alt_data.html">📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span><span class="d"><span class="l-en">Signal intelligence · convergence · influence graph · actionable</span><span class="l-zh">信号情报 · 汇聚 · 影响力图谱 · 可操作</span></span></a>
         <a href="congress_trades.html">🏛️ <span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span><span class="d"><span class="l-en">Politician disclosures · half-year watchlist · scored to copy</span><span class="l-zh">政界披露 · 半年观察清单 · 评分跟单</span></span></a>
+        <a href="foresight.html">🔮 <span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × revisions · the next DRAM</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期修正 · 下一个 DRAM</span></span></a>
         <a href="radar.html">🛰️ <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></a>
         <a href="demand.html">🧭 <span class="l-en">Demand Desk</span><span class="l-zh">需求台</span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></a>
         <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
         <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
         <a href="transmission.html">🔀 <span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></a>
         <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
+        <a href="cycle.html">🔄 <span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span><span class="d"><span class="l-en">Where every boom-bust cycle sits — history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></a>
+        <a href="markets.html">🌐 <span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></a>
+        <a href="sector_cycles.html">🧭 <span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock — phase · turns · the story</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点 · 背后故事</span></span></a>
         <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
         <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
       </div>
     </div>
   </div>
+  
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
-      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+      placeholder="Search any stock, ETF, commodity or crypto…"
+      data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
+    <a class="ai-brief-link" href="mastermind.html">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
     </button>
@@ -203,18 +241,18 @@
   <p class="cg-sub"><span class="l-en">Every member of the U.S. House and Senate must disclose their stock trades (the STOCK Act). We pull those filings from Quiver Quantitative and turn them into a copy-signal watchlist: a ticker joins the moment a member discloses a trade in it and stays ~6 months from its latest disclosure before falling off. Names disclosed by more — and bipartisan — members rank as more important. Each name is then scored on the politician cluster, the engine technical read, and a sector/theme buyable-zone gate. The cluster generates the idea; the engine confirms it — a heavily-bought name that is extended or rolling over is high-interest but not "act now." Display / research only.</span><span class="l-zh">美国国会参众两院议员必须披露其股票交易（STOCK 法案）。我们从 Quiver Quantitative 获取这些申报，转化为可跟单的观察清单：一旦有议员披露某标的交易，它即进入清单，并从最近一次披露起保留约 6 个月后移出。被更多议员（尤其两党共同）披露的名字更重要。随后按政界集群、引擎技术面与板块/主题可买区间评分。集群产生想法，引擎负责确认——被大量买入但已过度拉升或走弱的名字关注度高，但并非"现在就买"。仅供展示/研究。</span></p>
   <div class="cg-meta">
     <span class="chip tag-event">Quiver Quantitative</span>
-    <span class="chip"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-06-18</span>
+    <span class="chip"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-06-24</span>
     <span class="chip"><span class="l-en">Window</span><span class="l-zh">窗口</span> 182d</span>
-    <span class="chip">955 <span class="l-en">disclosures tracked</span><span class="l-zh">累计披露</span></span>
+    <span class="chip">961 <span class="l-en">disclosures tracked</span><span class="l-zh">累计披露</span></span>
     <a class="chip feedlink" href="altdata/feed.json">🧠 <span class="l-en">Brain feed (JSON)</span><span class="l-zh">大脑数据流 (JSON)</span></a>
   </div>
 </section>
 
 <div class="cg-stats">
-  <div class="cg-stat"><div class="k"><span class="l-en">Watchlist</span><span class="l-zh">观察标的</span></div><div class="v">362</div></div>
+  <div class="cg-stat"><div class="k"><span class="l-en">Watchlist</span><span class="l-zh">观察标的</span></div><div class="v">364</div></div>
   <div class="cg-stat"><div class="k"><span class="l-en">Important</span><span class="l-zh">重点</span></div><div class="v">76</div></div>
   <div class="cg-stat"><div class="k"><span class="l-en">Bipartisan</span><span class="l-zh">两党</span></div><div class="v">16</div></div>
-  <div class="cg-stat"><div class="k"><span class="l-en">Act-now</span><span class="l-zh">现在可买</span></div><div class="v">33</div></div>
+  <div class="cg-stat"><div class="k"><span class="l-en">Act-now</span><span class="l-zh">现在可买</span></div><div class="v">45</div></div>
 </div>
 
 
@@ -237,30 +275,11 @@
   
     <tr>
       <td class="mut2">1</td>
-      <td><span class="tk">NVDA</span><div class="mut2" style="font-size:10.5px">Nvidia Corp</div></td>
-      <td><span class="cg-score"><span class="cg-bar hi"><i style="width:69.5%"></i></span><span class="cg-num">70</span></span></td>
-      <td class="num"><span class="cg-num">67</span></td>
-      <td class="num"><span class="cg-num">78</span></td>
-      <td class="num"><span class="cg-num">62</span></td>
-      <td class="num"><span class="r-pos">3B</span> / <span class="r-neg">7S</span></td>
-      <td><b class="cg-num">9</b>
-          <span class="cg-mem D" title="Senate · 2 disclosure(s) · $183,001">Sheldon Whitehouse ▼</span><span class="cg-mem R" title="Senate · 1 disclosure(s) · $175,000">Markwayne Mullin ▲</span><span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">Matthew Robert Van Epps ▼</span><span class="mut2" style="font-size:10.5px">+6</span></td>
-      <td>
-        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">2</td>
       <td><span class="tk">CARR</span><div class="mut2" style="font-size:10.5px">Carrier Global</div></td>
-      <td><span class="cg-score"><span class="cg-bar hi"><i style="width:68.6%"></i></span><span class="cg-num">69</span></span></td>
+      <td><span class="cg-score"><span class="cg-bar hi"><i style="width:71.4%"></i></span><span class="cg-num">71</span></span></td>
       <td class="num"><span class="cg-num">58</span></td>
       <td class="num"><span class="cg-num">75</span></td>
-      <td class="num"><span class="cg-num">76</span></td>
+      <td class="num"><span class="cg-num">88</span></td>
       <td class="num"><span class="r-pos">3B</span></td>
       <td><b class="cg-num">2</b>
           <span class="cg-mem R" title="House · 2 disclosure(s) · $40,501">Maria Elvira Salazar ▲</span><span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Rick Larsen ▲</span></td>
@@ -274,9 +293,9 @@
     </tr>
   
     <tr>
-      <td class="mut2">3</td>
+      <td class="mut2">2</td>
       <td><span class="tk">WAB</span><div class="mut2" style="font-size:10.5px">Wabtec</div></td>
-      <td><span class="cg-score"><span class="cg-bar hi"><i style="width:67.8%"></i></span><span class="cg-num">68</span></span></td>
+      <td><span class="cg-score"><span class="cg-bar hi"><i style="width:67.7%"></i></span><span class="cg-num">68</span></span></td>
       <td class="num"><span class="cg-num">38</span></td>
       <td class="num"><span class="cg-num">87</span></td>
       <td class="num"><span class="cg-num">88</span></td>
@@ -293,10 +312,29 @@
     </tr>
   
     <tr>
+      <td class="mut2">3</td>
+      <td><span class="tk">IBM</span><div class="mut2" style="font-size:10.5px">IBM</div></td>
+      <td><span class="cg-score"><span class="cg-bar hi"><i style="width:66.8%"></i></span><span class="cg-num">67</span></span></td>
+      <td class="num"><span class="cg-num">64</span></td>
+      <td class="num"><span class="cg-num">73</span></td>
+      <td class="num"><span class="cg-num">62</span></td>
+      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">3S</span></td>
+      <td><b class="cg-num">4</b>
+          <span class="cg-mem D" title="House · 2 disclosure(s) · $65,001">Gilbert Cisneros ▼</span><span class="cg-mem R" title="House · 1 disclosure(s) · $32,500">Maria Elvira Salazar ▲</span><span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">Matthew Robert Van Epps ▼</span><span class="mut2" style="font-size:10.5px">+1</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
+      </td>
+      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
+    </tr>
+  
+    <tr>
       <td class="mut2">4</td>
       <td><span class="tk">HUBB</span><div class="mut2" style="font-size:10.5px">Hubbell Incorporated</div></td>
-      <td><span class="cg-score"><span class="cg-bar hi"><i style="width:67.0%"></i></span><span class="cg-num">67</span></span></td>
-      <td class="num"><span class="cg-num">47</span></td>
+      <td><span class="cg-score"><span class="cg-bar hi"><i style="width:66.8%"></i></span><span class="cg-num">67</span></span></td>
+      <td class="num"><span class="cg-num">46</span></td>
       <td class="num"><span class="cg-num">75</span></td>
       <td class="num"><span class="cg-num">88</span></td>
       <td class="num"><span class="r-pos">5B</span></td>
@@ -313,27 +351,8 @@
   
     <tr>
       <td class="mut2">5</td>
-      <td><span class="tk">ETN</span><div class="mut2" style="font-size:10.5px">Eaton Corp Plc</div></td>
-      <td><span class="cg-score"><span class="cg-bar hi"><i style="width:66.6%"></i></span><span class="cg-num">67</span></span></td>
-      <td class="num"><span class="cg-num">51</span></td>
-      <td class="num"><span class="cg-num">69</span></td>
-      <td class="num"><span class="cg-num">88</span></td>
-      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">1S</span></td>
-      <td><b class="cg-num">3</b>
-          <span class="cg-mem D" title="Senate · 1 disclosure(s) · $75,000">John Hickenlooper ▲</span><span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Elizabeth Fletcher ▼</span><span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">John Boozman ▲</span></td>
-      <td>
-        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
-      </td>
-      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">6</td>
       <td><span class="tk">PH</span><div class="mut2" style="font-size:10.5px">Parker Hannifin</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:65.6%"></i></span><span class="cg-num">66</span></span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:65.4%"></i></span><span class="cg-num">65</span></span></td>
       <td class="num"><span class="cg-num">43</span></td>
       <td class="num"><span class="cg-num">75</span></td>
       <td class="num"><span class="cg-num">88</span></td>
@@ -350,82 +369,45 @@
     </tr>
   
     <tr>
-      <td class="mut2">7</td>
-      <td><span class="tk">ANET</span><div class="mut2" style="font-size:10.5px">Arista Networks</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:65.1%"></i></span><span class="cg-num">65</span></span></td>
-      <td class="num"><span class="cg-num">35</span></td>
+      <td class="mut2">6</td>
+      <td><span class="tk">URI</span><div class="mut2" style="font-size:10.5px">United Rentals</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:64.4%"></i></span><span class="cg-num">64</span></span></td>
+      <td class="num"><span class="cg-num">40</span></td>
       <td class="num"><span class="cg-num">75</span></td>
-      <td class="num"><span class="cg-num">100</span></td>
+      <td class="num"><span class="cg-num">88</span></td>
       <td class="num"><span class="r-pos">1B</span></td>
       <td><b class="cg-num">1</b>
-          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">John Boozman ▲</span></td>
+          <span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">Maria Elvira Salazar ▲</span></td>
       <td>
         <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
         
         
         
+      </td>
+      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">7</td>
+      <td><span class="tk">PG</span><div class="mut2" style="font-size:10.5px">Procter + Gamble Co/The</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:64.3%"></i></span><span class="cg-num">64</span></span></td>
+      <td class="num"><span class="cg-num">66</span></td>
+      <td class="num"><span class="cg-num">69</span></td>
+      <td class="num"><span class="cg-num">56</span></td>
+      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">2S</span></td>
+      <td><b class="cg-num">4</b>
+          <span class="cg-mem R" title="House · 1 disclosure(s) · $32,500">Richard W. Allen ▼</span><span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Lloyd Doggett ▲</span><span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">David J. Taylor ▲</span><span class="mut2" style="font-size:10.5px">+1</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
       </td>
       <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
     </tr>
   
     <tr>
       <td class="mut2">8</td>
-      <td><span class="tk">CHRW</span><div class="mut2" style="font-size:10.5px">C.H. Robinson</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:64.8%"></i></span><span class="cg-num">65</span></span></td>
-      <td class="num"><span class="cg-num">31</span></td>
-      <td class="num"><span class="cg-num">87</span></td>
-      <td class="num"><span class="cg-num">88</span></td>
-      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">3S</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 5 disclosure(s) · $64,502">April Mcclain Delaney ▲</span></td>
-      <td>
-        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">9</td>
-      <td><span class="tk">FCX</span><div class="mut2" style="font-size:10.5px">Freeport Mcmoran Inc</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:64.3%"></i></span><span class="cg-num">64</span></span></td>
-      <td class="num"><span class="cg-num">42</span></td>
-      <td class="num"><span class="cg-num">87</span></td>
-      <td class="num"><span class="cg-num">68</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Josh Gottheimer ▲</span></td>
-      <td>
-        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">10</td>
-      <td><span class="tk">LLY</span><div class="mut2" style="font-size:10.5px">Eli Lilly + Co</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:64.2%"></i></span><span class="cg-num">64</span></span></td>
-      <td class="num"><span class="cg-num">74</span></td>
-      <td class="num"><span class="cg-num">78</span></td>
-      <td class="num"><span class="cg-num">29</span></td>
-      <td class="num"><span class="r-pos">4B</span> / <span class="r-neg">2S</span></td>
-      <td><b class="cg-num">5</b>
-          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $32,500">Markwayne Mullin ▲</span><span class="cg-mem I" title="Senate · 2 disclosure(s) · $16,001">Angus King ▼</span><span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">Byron Donalds ▲</span><span class="mut2" style="font-size:10.5px">+2</span></td>
-      <td>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">11</td>
       <td><span class="tk">VSEC</span><div class="mut2" style="font-size:10.5px">VSE Corporation</div></td>
       <td><span class="cg-score"><span class="cg-bar mid"><i style="width:63.5%"></i></span><span class="cg-num">64</span></span></td>
       <td class="num"><span class="cg-num">38</span></td>
@@ -444,7 +426,26 @@
     </tr>
   
     <tr>
-      <td class="mut2">12</td>
+      <td class="mut2">9</td>
+      <td><span class="tk">KO</span><div class="mut2" style="font-size:10.5px">Coca Cola Co/The</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:63.2%"></i></span><span class="cg-num">63</span></span></td>
+      <td class="num"><span class="cg-num">57</span></td>
+      <td class="num"><span class="cg-num">75</span></td>
+      <td class="num"><span class="cg-num">56</span></td>
+      <td class="num"><span class="r-pos">2B</span></td>
+      <td><b class="cg-num">2</b>
+          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $32,500">Markwayne Mullin ▲</span><span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Lloyd Doggett ▲</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
+      </td>
+      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">10</td>
       <td><span class="tk">SWK</span><div class="mut2" style="font-size:10.5px">Stanley Black &amp; Decker</div></td>
       <td><span class="cg-score"><span class="cg-bar mid"><i style="width:62.5%"></i></span><span class="cg-num">62</span></span></td>
       <td class="num"><span class="cg-num">36</span></td>
@@ -463,7 +464,7 @@
     </tr>
   
     <tr>
-      <td class="mut2">13</td>
+      <td class="mut2">11</td>
       <td><span class="tk">DE</span><div class="mut2" style="font-size:10.5px">Deere + Co</div></td>
       <td><span class="cg-score"><span class="cg-bar mid"><i style="width:62.5%"></i></span><span class="cg-num">62</span></span></td>
       <td class="num"><span class="cg-num">36</span></td>
@@ -482,9 +483,104 @@
     </tr>
   
     <tr>
+      <td class="mut2">12</td>
+      <td><span class="tk">HON</span><div class="mut2" style="font-size:10.5px">Honeywell International In</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:62.2%"></i></span><span class="cg-num">62</span></span></td>
+      <td class="num"><span class="cg-num">35</span></td>
+      <td class="num"><span class="cg-num">75</span></td>
+      <td class="num"><span class="cg-num">88</span></td>
+      <td class="num"><span class="r-pos">1B</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem I" title="Senate · 1 disclosure(s) · $8,000">Angus King ▲</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">13</td>
+      <td><span class="tk">RVTY</span><div class="mut2" style="font-size:10.5px">Revvity</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:61.6%"></i></span><span class="cg-num">62</span></span></td>
+      <td class="num"><span class="cg-num">46</span></td>
+      <td class="num"><span class="cg-num">75</span></td>
+      <td class="num"><span class="cg-num">68</span></td>
+      <td class="num"><span class="r-pos">2B</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem D" title="House · 2 disclosure(s) · $40,501">Gilbert Cisneros ▲</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
+    </tr>
+  
+    <tr>
       <td class="mut2">14</td>
+      <td><span class="tk">ETN</span><div class="mut2" style="font-size:10.5px">Eaton Corp Plc</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:61.6%"></i></span><span class="cg-num">62</span></span></td>
+      <td class="num"><span class="cg-num">51</span></td>
+      <td class="num"><span class="cg-num">65</span></td>
+      <td class="num"><span class="cg-num">74</span></td>
+      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">1S</span></td>
+      <td><b class="cg-num">3</b>
+          <span class="cg-mem D" title="Senate · 1 disclosure(s) · $75,000">John Hickenlooper ▲</span><span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Elizabeth Fletcher ▼</span><span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">John Boozman ▲</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
+      </td>
+      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">15</td>
+      <td><span class="tk">XLP</span><div class="mut2" style="font-size:10.5px">Consumer Staples</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:61.6%"></i></span><span class="cg-num">62</span></span></td>
+      <td class="num"><span class="cg-num">36</span></td>
+      <td class="num"><span class="cg-num">87</span></td>
+      <td class="num"><span class="cg-num">68</span></td>
+      <td class="num"><span class="r-pos">1B</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $32,500">Tommy Tuberville ▲</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">16</td>
+      <td><span class="tk">ADI</span><div class="mut2" style="font-size:10.5px">Analog Devices</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:61.2%"></i></span><span class="cg-num">61</span></span></td>
+      <td class="num"><span class="cg-num">47</span></td>
+      <td class="num"><span class="cg-num">60</span></td>
+      <td class="num"><span class="cg-num">86</span></td>
+      <td class="num"><span class="r-pos">1B</span> / <span class="r-neg">2S</span></td>
+      <td><b class="cg-num">3</b>
+          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Josh Gottheimer ▲</span><span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">Thomas H. Kean Jr ▼</span><span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">Shelley Moore Capito ▼</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">17</td>
       <td><span class="tk">PKG</span><div class="mut2" style="font-size:10.5px">Packaging Corporation of A</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:61.4%"></i></span><span class="cg-num">61</span></span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:61.1%"></i></span><span class="cg-num">61</span></span></td>
       <td class="num"><span class="cg-num">45</span></td>
       <td class="num"><span class="cg-num">75</span></td>
       <td class="num"><span class="cg-num">68</span></td>
@@ -501,10 +597,29 @@
     </tr>
   
     <tr>
-      <td class="mut2">15</td>
-      <td><span class="tk">SARO</span><div class="mut2" style="font-size:10.5px">StandardAero</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:61.1%"></i></span><span class="cg-num">61</span></span></td>
-      <td class="num"><span class="cg-num">45</span></td>
+      <td class="mut2">18</td>
+      <td><span class="tk">AMGN</span><div class="mut2" style="font-size:10.5px">Amgen Inc</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:60.9%"></i></span><span class="cg-num">61</span></span></td>
+      <td class="num"><span class="cg-num">44</span></td>
+      <td class="num"><span class="cg-num">75</span></td>
+      <td class="num"><span class="cg-num">68</span></td>
+      <td class="num"><span class="r-pos">1B</span> / <span class="r-neg">1S</span></td>
+      <td><b class="cg-num">2</b>
+          <span class="cg-mem R" title="House · 1 disclosure(s) · $32,500">Maria Elvira Salazar ▼</span><span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">David J. Taylor ▲</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">19</td>
+      <td><span class="tk">CSW</span><div class="mut2" style="font-size:10.5px">CSW Industrials, Inc.</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:60.8%"></i></span><span class="cg-num">61</span></span></td>
+      <td class="num"><span class="cg-num">44</span></td>
       <td class="num"><span class="cg-num">70</span></td>
       <td class="num"><span class="cg-num">74</span></td>
       <td class="num"><span class="r-pos">1B</span></td>
@@ -520,28 +635,29 @@
     </tr>
   
     <tr>
-      <td class="mut2">16</td>
-      <td><span class="tk">PG</span><div class="mut2" style="font-size:10.5px">Procter + Gamble Co/The</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:60.5%"></i></span><span class="cg-num">60</span></span></td>
-      <td class="num"><span class="cg-num">66</span></td>
-      <td class="num"><span class="cg-num">75</span></td>
-      <td class="num"><span class="cg-num">31</span></td>
-      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">2S</span></td>
-      <td><b class="cg-num">4</b>
-          <span class="cg-mem R" title="House · 1 disclosure(s) · $32,500">Richard W. Allen ▼</span><span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Lloyd Doggett ▲</span><span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">David J. Taylor ▲</span><span class="mut2" style="font-size:10.5px">+1</span></td>
+      <td class="mut2">20</td>
+      <td><span class="tk">SARO</span><div class="mut2" style="font-size:10.5px">StandardAero</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:60.8%"></i></span><span class="cg-num">61</span></span></td>
+      <td class="num"><span class="cg-num">44</span></td>
+      <td class="num"><span class="cg-num">70</span></td>
+      <td class="num"><span class="cg-num">74</span></td>
+      <td class="num"><span class="r-pos">1B</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▲</span></td>
       <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
         
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
+        
+        
       </td>
-      <td class="mut2" style="font-size:11.5px">mixed / unconfirmed</td>
+      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
     </tr>
   
     <tr>
-      <td class="mut2">17</td>
+      <td class="mut2">21</td>
       <td><span class="tk">AXP</span><div class="mut2" style="font-size:10.5px">American Express Co</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:60.4%"></i></span><span class="cg-num">60</span></span></td>
-      <td class="num"><span class="cg-num">66</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:60.1%"></i></span><span class="cg-num">60</span></span></td>
+      <td class="num"><span class="cg-num">65</span></td>
       <td class="num"><span class="cg-num">75</span></td>
       <td class="num"><span class="cg-num">31</span></td>
       <td class="num"><span class="r-pos">3B</span> / <span class="r-neg">1S</span></td>
@@ -556,34 +672,15 @@
     </tr>
   
     <tr>
-      <td class="mut2">18</td>
-      <td><span class="tk">TEL</span><div class="mut2" style="font-size:10.5px">TE Connectivity</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:60.2%"></i></span><span class="cg-num">60</span></span></td>
-      <td class="num"><span class="cg-num">45</span></td>
-      <td class="num"><span class="cg-num">59</span></td>
-      <td class="num"><span class="cg-num">86</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▲</span></td>
-      <td>
-        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">19</td>
-      <td><span class="tk">HON</span><div class="mut2" style="font-size:10.5px">Honeywell International In</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:60.1%"></i></span><span class="cg-num">60</span></span></td>
-      <td class="num"><span class="cg-num">35</span></td>
-      <td class="num"><span class="cg-num">69</span></td>
+      <td class="mut2">22</td>
+      <td><span class="tk">CLH</span><div class="mut2" style="font-size:10.5px">Clean Harbors</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:59.9%"></i></span><span class="cg-num">60</span></span></td>
+      <td class="num"><span class="cg-num">19</span></td>
+      <td class="num"><span class="cg-num">87</span></td>
       <td class="num"><span class="cg-num">88</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
+      <td class="num"><span class="r-pos">0B</span> / <span class="r-neg">2S</span></td>
       <td><b class="cg-num">1</b>
-          <span class="cg-mem I" title="Senate · 1 disclosure(s) · $8,000">Angus King ▲</span></td>
+          <span class="cg-mem D" title="House · 2 disclosure(s) · $16,001">April Mcclain Delaney ▼</span></td>
       <td>
         <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
         
@@ -594,9 +691,85 @@
     </tr>
   
     <tr>
-      <td class="mut2">20</td>
-      <td><span class="tk">TDG</span><div class="mut2" style="font-size:10.5px">TransDigm Group</div></td>
+      <td class="mut2">23</td>
+      <td><span class="tk">UPS</span><div class="mut2" style="font-size:10.5px">United Parcel Service</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:59.7%"></i></span><span class="cg-num">60</span></span></td>
+      <td class="num"><span class="cg-num">35</span></td>
+      <td class="num"><span class="cg-num">78</span></td>
+      <td class="num"><span class="cg-num">74</span></td>
+      <td class="num"><span class="r-pos">1B</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">Katie Britt ▲</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">24</td>
+      <td><span class="tk">RTX</span><div class="mut2" style="font-size:10.5px">Rtx Corp</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:59.5%"></i></span><span class="cg-num">60</span></span></td>
+      <td class="num"><span class="cg-num">36</span></td>
+      <td class="num"><span class="cg-num">75</span></td>
+      <td class="num"><span class="cg-num">76</span></td>
+      <td class="num"><span class="r-pos">1B</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $32,500">Markwayne Mullin ▲</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">25</td>
+      <td><span class="tk">BIIB</span><div class="mut2" style="font-size:10.5px">Biogen</div></td>
       <td><span class="cg-score"><span class="cg-bar mid"><i style="width:59.4%"></i></span><span class="cg-num">59</span></span></td>
+      <td class="num"><span class="cg-num">48</span></td>
+      <td class="num"><span class="cg-num">75</span></td>
+      <td class="num"><span class="cg-num">56</span></td>
+      <td class="num"><span class="r-pos">3B</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem R" title="House · 3 disclosure(s) · $91,002">Maria Elvira Salazar ▲</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">26</td>
+      <td><span class="tk">AEP</span><div class="mut2" style="font-size:10.5px">American Electric Power</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:59.2%"></i></span><span class="cg-num">59</span></span></td>
+      <td class="num"><span class="cg-num">45</span></td>
+      <td class="num"><span class="cg-num">69</span></td>
+      <td class="num"><span class="cg-num">68</span></td>
+      <td class="num"><span class="r-pos">1B</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">David J. Taylor ▲</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">27</td>
+      <td><span class="tk">TDG</span><div class="mut2" style="font-size:10.5px">TransDigm Group</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:59.2%"></i></span><span class="cg-num">59</span></span></td>
       <td class="num"><span class="cg-num">48</span></td>
       <td class="num"><span class="cg-num">70</span></td>
       <td class="num"><span class="cg-num">62</span></td>
@@ -613,29 +786,46 @@
     </tr>
   
     <tr>
-      <td class="mut2">21</td>
-      <td><span class="tk">CSW</span><div class="mut2" style="font-size:10.5px">CSW Industrials, Inc.</div></td>
+      <td class="mut2">28</td>
+      <td><span class="tk">TCBI</span><div class="mut2" style="font-size:10.5px">Texas Capital Bancshares</div></td>
       <td><span class="cg-score"><span class="cg-bar mid"><i style="width:59.0%"></i></span><span class="cg-num">59</span></span></td>
-      <td class="num"><span class="cg-num">45</span></td>
-      <td class="num"><span class="cg-num">64</span></td>
-      <td class="num"><span class="cg-num">74</span></td>
+      <td class="num"><span class="cg-num">44</span></td>
+      <td class="num"><span class="cg-num">87</span></td>
+      <td class="num"><span class="cg-num">43</span></td>
       <td class="num"><span class="r-pos">1B</span></td>
       <td><b class="cg-num">1</b>
           <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▲</span></td>
       <td>
-        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
         
         
         
       </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
+      <td class="mut2" style="font-size:11.5px">mixed / unconfirmed</td>
     </tr>
   
     <tr>
-      <td class="mut2">22</td>
+      <td class="mut2">29</td>
+      <td><span class="tk">EA</span><div class="mut2" style="font-size:10.5px">Electronic Arts Inc</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:59.0%"></i></span><span class="cg-num">59</span></span></td>
+      <td class="num"><span class="cg-num">44</span></td>
+      <td class="num"><span class="cg-num">87</span></td>
+      <td class="num"><span class="cg-num">43</span></td>
+      <td class="num"><span class="r-pos">1B</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▲</span></td>
+      <td>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">mixed / unconfirmed</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">30</td>
       <td><span class="tk">BWXT</span><div class="mut2" style="font-size:10.5px">BWX Technologies</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:58.5%"></i></span><span class="cg-num">58</span></span></td>
-      <td class="num"><span class="cg-num">48</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:58.3%"></i></span><span class="cg-num">58</span></span></td>
+      <td class="num"><span class="cg-num">47</span></td>
       <td class="num"><span class="cg-num">60</span></td>
       <td class="num"><span class="cg-num">74</span></td>
       <td class="num"><span class="r-pos">4B</span></td>
@@ -651,72 +841,73 @@
     </tr>
   
     <tr>
-      <td class="mut2">23</td>
-      <td><span class="tk">MMM</span><div class="mut2" style="font-size:10.5px">3M</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:58.1%"></i></span><span class="cg-num">58</span></span></td>
-      <td class="num"><span class="cg-num">25</span></td>
-      <td class="num"><span class="cg-num">75</span></td>
-      <td class="num"><span class="cg-num">88</span></td>
-      <td class="num"><span class="r-pos">0B</span> / <span class="r-neg">2S</span></td>
-      <td><b class="cg-num">2</b>
-          <span class="cg-mem D" title="Senate · 1 disclosure(s) · $75,000">Tina Smith ▼</span><span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Josh Gottheimer ▼</span></td>
+      <td class="mut2">31</td>
+      <td><span class="tk">CHRW</span><div class="mut2" style="font-size:10.5px">C.H. Robinson</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:57.8%"></i></span><span class="cg-num">58</span></span></td>
+      <td class="num"><span class="cg-num">30</span></td>
+      <td class="num"><span class="cg-num">78</span></td>
+      <td class="num"><span class="cg-num">74</span></td>
+      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">3S</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem D" title="House · 5 disclosure(s) · $64,502">April Mcclain Delaney ▲</span></td>
       <td>
         <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
         
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">32</td>
+      <td><span class="tk">XLU</span><div class="mut2" style="font-size:10.5px">Utilities</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:57.5%"></i></span><span class="cg-num">58</span></span></td>
+      <td class="num"><span class="cg-num">36</span></td>
+      <td class="num"><span class="cg-num">75</span></td>
+      <td class="num"><span class="cg-num">68</span></td>
+      <td class="num"><span class="r-pos">1B</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $32,500">Tommy Tuberville ▲</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        
         
       </td>
       <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
     </tr>
   
     <tr>
-      <td class="mut2">24</td>
-      <td><span class="tk">GOOGL</span><div class="mut2" style="font-size:10.5px">Alphabet Inc Cl A</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:58.0%"></i></span><span class="cg-num">58</span></span></td>
-      <td class="num"><span class="cg-num">66</span></td>
-      <td class="num"><span class="cg-num">78</span></td>
-      <td class="num"><span class="cg-num">17</span></td>
-      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">7S</span></td>
-      <td><b class="cg-num">7</b>
-          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $175,000">Markwayne Mullin ▲</span><span class="cg-mem R" title="House · 3 disclosure(s) · $48,502">David J. Taylor ▲</span><span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">Matthew Robert Van Epps ▼</span><span class="mut2" style="font-size:10.5px">+4</span></td>
-      <td>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">25</td>
-      <td><span class="tk">GS</span><div class="mut2" style="font-size:10.5px">Goldman Sachs Group Inc</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:58.0%"></i></span><span class="cg-num">58</span></span></td>
-      <td class="num"><span class="cg-num">52</span></td>
+      <td class="mut2">33</td>
+      <td><span class="tk">SHW</span><div class="mut2" style="font-size:10.5px">Sherwin Williams Co/The</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:57.1%"></i></span><span class="cg-num">57</span></span></td>
+      <td class="num"><span class="cg-num">35</span></td>
       <td class="num"><span class="cg-num">75</span></td>
-      <td class="num"><span class="cg-num">43</span></td>
-      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">4S</span></td>
-      <td><b class="cg-num">3</b>
-          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $3,000,000">David H. McCormick ▼</span><span class="cg-mem R" title="Senate · 3 disclosure(s) · $97,502">Markwayne Mullin ▼</span><span class="cg-mem D" title="House · 2 disclosure(s) · $40,501">Josh Gottheimer ▲</span></td>
+      <td class="num"><span class="cg-num">68</span></td>
+      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">1S</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem R" title="House · 3 disclosure(s) · $48,502">Maria Elvira Salazar ▼</span></td>
       <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
         
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
+        
+        
       </td>
-      <td class="mut2" style="font-size:11.5px">mixed / unconfirmed</td>
+      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
     </tr>
   
     <tr>
-      <td class="mut2">26</td>
-      <td><span class="tk">URI</span><div class="mut2" style="font-size:10.5px">United Rentals</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:57.9%"></i></span><span class="cg-num">58</span></span></td>
-      <td class="num"><span class="cg-num">41</span></td>
-      <td class="num"><span class="cg-num">66</span></td>
-      <td class="num"><span class="cg-num">74</span></td>
+      <td class="mut2">34</td>
+      <td><span class="tk">AMCR</span><div class="mut2" style="font-size:10.5px">Amcor</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:56.6%"></i></span><span class="cg-num">57</span></span></td>
+      <td class="num"><span class="cg-num">46</span></td>
+      <td class="num"><span class="cg-num">70</span></td>
+      <td class="num"><span class="cg-num">54</span></td>
       <td class="num"><span class="r-pos">1B</span></td>
       <td><b class="cg-num">1</b>
-          <span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">Maria Elvira Salazar ▲</span></td>
+          <span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">Thomas H. Kean Jr ▲</span></td>
       <td>
-        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
         
         
         
@@ -725,29 +916,10 @@
     </tr>
   
     <tr>
-      <td class="mut2">27</td>
-      <td><span class="tk">NOVT</span><div class="mut2" style="font-size:10.5px">Novanta</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:56.7%"></i></span><span class="cg-num">57</span></span></td>
-      <td class="num"><span class="cg-num">45</span></td>
-      <td class="num"><span class="cg-num">66</span></td>
-      <td class="num"><span class="cg-num">62</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▲</span></td>
-      <td>
-        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">28</td>
+      <td class="mut2">35</td>
       <td><span class="tk">AIT</span><div class="mut2" style="font-size:10.5px">Applied Industrial Technol</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:56.7%"></i></span><span class="cg-num">57</span></span></td>
-      <td class="num"><span class="cg-num">11</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:56.6%"></i></span><span class="cg-num">57</span></span></td>
+      <td class="num"><span class="cg-num">10</span></td>
       <td class="num"><span class="cg-num">87</span></td>
       <td class="num"><span class="cg-num">88</span></td>
       <td class="num"><span class="r-pos">0B</span> / <span class="r-neg">2S</span></td>
@@ -763,28 +935,28 @@
     </tr>
   
     <tr>
-      <td class="mut2">29</td>
-      <td><span class="tk">CASY</span><div class="mut2" style="font-size:10.5px">Casey&#39;s</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:56.6%"></i></span><span class="cg-num">57</span></span></td>
-      <td class="num"><span class="cg-num">38</span></td>
-      <td class="num"><span class="cg-num">87</span></td>
-      <td class="num"><span class="cg-num">43</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Rick Larsen ▲</span></td>
+      <td class="mut2">36</td>
+      <td><span class="tk">V</span><div class="mut2" style="font-size:10.5px">Visa Inc Class A Shares</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:56.2%"></i></span><span class="cg-num">56</span></span></td>
+      <td class="num"><span class="cg-num">55</span></td>
+      <td class="num"><span class="cg-num">75</span></td>
+      <td class="num"><span class="cg-num">31</span></td>
+      <td class="num"><span class="r-pos">3B</span> / <span class="r-neg">1S</span></td>
+      <td><b class="cg-num">4</b>
+          <span class="cg-mem D" title="House · 1 disclosure(s) · $75,000">Jonathan Jackson ▼</span><span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">David J. Taylor ▲</span><span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">John Boozman ▲</span><span class="mut2" style="font-size:10.5px">+1</span></td>
       <td>
         
-        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
         
       </td>
       <td class="mut2" style="font-size:11.5px">mixed / unconfirmed</td>
     </tr>
   
     <tr>
-      <td class="mut2">30</td>
+      <td class="mut2">37</td>
       <td><span class="tk">PNC</span><div class="mut2" style="font-size:10.5px">PNC Financial Services</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:56.3%"></i></span><span class="cg-num">56</span></span></td>
-      <td class="num"><span class="cg-num">38</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:56.2%"></i></span><span class="cg-num">56</span></span></td>
+      <td class="num"><span class="cg-num">37</span></td>
       <td class="num"><span class="cg-num">87</span></td>
       <td class="num"><span class="cg-num">43</span></td>
       <td class="num"><span class="r-pos">1B</span></td>
@@ -799,66 +971,66 @@
     </tr>
   
     <tr>
-      <td class="mut2">31</td>
-      <td><span class="tk">LUV</span><div class="mut2" style="font-size:10.5px">Southwest Airlines</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:55.9%"></i></span><span class="cg-num">56</span></span></td>
-      <td class="num"><span class="cg-num">22</span></td>
-      <td class="num"><span class="cg-num">82</span></td>
-      <td class="num"><span class="cg-num">74</span></td>
-      <td class="num"><span class="r-pos">0B</span> / <span class="r-neg">1S</span></td>
+      <td class="mut2">38</td>
+      <td><span class="tk">MIDD</span><div class="mut2" style="font-size:10.5px">Middleby</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:55.7%"></i></span><span class="cg-num">56</span></span></td>
+      <td class="num"><span class="cg-num">19</span></td>
+      <td class="num"><span class="cg-num">75</span></td>
+      <td class="num"><span class="cg-num">88</span></td>
+      <td class="num"><span class="r-pos">0B</span> / <span class="r-neg">2S</span></td>
       <td><b class="cg-num">1</b>
-          <span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">Matthew Robert Van Epps ▼</span></td>
+          <span class="cg-mem D" title="House · 2 disclosure(s) · $16,001">April Mcclain Delaney ▼</span></td>
       <td>
         <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
         
         
         
       </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
+      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
     </tr>
   
     <tr>
-      <td class="mut2">32</td>
-      <td><span class="tk">UPS</span><div class="mut2" style="font-size:10.5px">United Parcel Service</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:55.6%"></i></span><span class="cg-num">56</span></span></td>
-      <td class="num"><span class="cg-num">35</span></td>
-      <td class="num"><span class="cg-num">66</span></td>
-      <td class="num"><span class="cg-num">74</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">Katie Britt ▲</span></td>
-      <td>
-        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">33</td>
-      <td><span class="tk">HLT</span><div class="mut2" style="font-size:10.5px">Hilton Worldwide Holdings </div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:55.4%"></i></span><span class="cg-num">55</span></span></td>
+      <td class="mut2">39</td>
+      <td><span class="tk">WPC</span><div class="mut2" style="font-size:10.5px">W. P. Carey</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:55.0%"></i></span><span class="cg-num">55</span></span></td>
       <td class="num"><span class="cg-num">36</span></td>
-      <td class="num"><span class="cg-num">87</span></td>
-      <td class="num"><span class="cg-num">43</span></td>
+      <td class="num"><span class="cg-num">78</span></td>
+      <td class="num"><span class="cg-num">54</span></td>
       <td class="num"><span class="r-pos">1B</span></td>
       <td><b class="cg-num">1</b>
-          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $32,500">Markwayne Mullin ▲</span></td>
+          <span class="cg-mem D" title="Senate · 1 disclosure(s) · $32,500">Gary Peters ▲</span></td>
       <td>
         
         
         
       </td>
-      <td class="mut2" style="font-size:11.5px">mixed / unconfirmed</td>
+      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
     </tr>
   
     <tr>
-      <td class="mut2">34</td>
+      <td class="mut2">40</td>
+      <td><span class="tk">ANET</span><div class="mut2" style="font-size:10.5px">Arista Networks</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:54.9%"></i></span><span class="cg-num">55</span></span></td>
+      <td class="num"><span class="cg-num">34</span></td>
+      <td class="num"><span class="cg-num">56</span></td>
+      <td class="num"><span class="cg-num">86</span></td>
+      <td class="num"><span class="r-pos">1B</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">John Boozman ▲</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">41</td>
       <td><span class="tk">INDB</span><div class="mut2" style="font-size:10.5px">Independent Bank Corp.</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:55.1%"></i></span><span class="cg-num">55</span></span></td>
-      <td class="num"><span class="cg-num">45</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:54.8%"></i></span><span class="cg-num">55</span></span></td>
+      <td class="num"><span class="cg-num">44</span></td>
       <td class="num"><span class="cg-num">75</span></td>
       <td class="num"><span class="cg-num">43</span></td>
       <td class="num"><span class="r-pos">1B</span></td>
@@ -873,136 +1045,9 @@
     </tr>
   
     <tr>
-      <td class="mut2">35</td>
-      <td><span class="tk">XLV</span><div class="mut2" style="font-size:10.5px">Health Care</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:55.0%"></i></span><span class="cg-num">55</span></span></td>
-      <td class="num"><span class="cg-num">36</span></td>
-      <td class="num"><span class="cg-num">78</span></td>
-      <td class="num"><span class="cg-num">54</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $32,500">Tommy Tuberville ▲</span></td>
-      <td>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">36</td>
-      <td><span class="tk">AMCR</span><div class="mut2" style="font-size:10.5px">Amcor</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:54.8%"></i></span><span class="cg-num">55</span></span></td>
-      <td class="num"><span class="cg-num">47</span></td>
-      <td class="num"><span class="cg-num">64</span></td>
-      <td class="num"><span class="cg-num">54</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">Thomas H. Kean Jr ▲</span></td>
-      <td>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">37</td>
-      <td><span class="tk">APG</span><div class="mut2" style="font-size:10.5px">APi Group</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:54.8%"></i></span><span class="cg-num">55</span></span></td>
-      <td class="num"><span class="cg-num">38</span></td>
-      <td class="num"><span class="cg-num">60</span></td>
-      <td class="num"><span class="cg-num">74</span></td>
-      <td class="num"><span class="r-pos">2B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem R" title="Senate · 2 disclosure(s) · $65,001">Markwayne Mullin ▲</span></td>
-      <td>
-        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">38</td>
-      <td><span class="tk">SPG</span><div class="mut2" style="font-size:10.5px">Simon Property Group Inc</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:54.7%"></i></span><span class="cg-num">55</span></span></td>
-      <td class="num"><span class="cg-num">44</span></td>
-      <td class="num"><span class="cg-num">75</span></td>
-      <td class="num"><span class="cg-num">43</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 1 disclosure(s) · $32,500">Jonathan Jackson ▲</span></td>
-      <td>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">mixed / unconfirmed</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">39</td>
-      <td><span class="tk">KO</span><div class="mut2" style="font-size:10.5px">Coca Cola Co/The</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:54.7%"></i></span><span class="cg-num">55</span></span></td>
-      <td class="num"><span class="cg-num">58</span></td>
-      <td class="num"><span class="cg-num">78</span></td>
-      <td class="num"><span class="cg-num">17</span></td>
-      <td class="num"><span class="r-pos">2B</span></td>
-      <td><b class="cg-num">2</b>
-          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $32,500">Markwayne Mullin ▲</span><span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Lloyd Doggett ▲</span></td>
-      <td>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">40</td>
-      <td><span class="tk">XLP</span><div class="mut2" style="font-size:10.5px">Consumer Staples</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:54.7%"></i></span><span class="cg-num">55</span></span></td>
-      <td class="num"><span class="cg-num">36</span></td>
-      <td class="num"><span class="cg-num">77</span></td>
-      <td class="num"><span class="cg-num">54</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $32,500">Tommy Tuberville ▲</span></td>
-      <td>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">41</td>
-      <td><span class="tk">XLU</span><div class="mut2" style="font-size:10.5px">Utilities</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:54.7%"></i></span><span class="cg-num">55</span></span></td>
-      <td class="num"><span class="cg-num">36</span></td>
-      <td class="num"><span class="cg-num">77</span></td>
-      <td class="num"><span class="cg-num">54</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $32,500">Tommy Tuberville ▲</span></td>
-      <td>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
       <td class="mut2">42</td>
       <td><span class="tk">JPM</span><div class="mut2" style="font-size:10.5px">Jpmorgan Chase + Co</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:54.6%"></i></span><span class="cg-num">55</span></span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:54.4%"></i></span><span class="cg-num">54</span></span></td>
       <td class="num"><span class="cg-num">44</span></td>
       <td class="num"><span class="cg-num">75</span></td>
       <td class="num"><span class="cg-num">43</span></td>
@@ -1019,14 +1064,14 @@
   
     <tr>
       <td class="mut2">43</td>
-      <td><span class="tk">RTX</span><div class="mut2" style="font-size:10.5px">Rtx Corp</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:54.2%"></i></span><span class="cg-num">54</span></span></td>
-      <td class="num"><span class="cg-num">36</span></td>
-      <td class="num"><span class="cg-num">70</span></td>
-      <td class="num"><span class="cg-num">62</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
+      <td><span class="tk">APG</span><div class="mut2" style="font-size:10.5px">APi Group</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:53.7%"></i></span><span class="cg-num">54</span></span></td>
+      <td class="num"><span class="cg-num">38</span></td>
+      <td class="num"><span class="cg-num">57</span></td>
+      <td class="num"><span class="cg-num">74</span></td>
+      <td class="num"><span class="r-pos">2B</span></td>
       <td><b class="cg-num">1</b>
-          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $32,500">Markwayne Mullin ▲</span></td>
+          <span class="cg-mem R" title="Senate · 2 disclosure(s) · $65,001">Markwayne Mullin ▲</span></td>
       <td>
         <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
         
@@ -1038,14 +1083,14 @@
   
     <tr>
       <td class="mut2">44</td>
-      <td><span class="tk">EME</span><div class="mut2" style="font-size:10.5px">Emcor</div></td>
+      <td><span class="tk">GEN</span><div class="mut2" style="font-size:10.5px">Gen Digital</div></td>
       <td><span class="cg-score"><span class="cg-bar mid"><i style="width:53.2%"></i></span><span class="cg-num">53</span></span></td>
-      <td class="num"><span class="cg-num">19</span></td>
-      <td class="num"><span class="cg-num">77</span></td>
+      <td class="num"><span class="cg-num">40</span></td>
+      <td class="num"><span class="cg-num">53</span></td>
       <td class="num"><span class="cg-num">74</span></td>
-      <td class="num"><span class="r-pos">0B</span> / <span class="r-neg">1S</span></td>
+      <td class="num"><span class="r-pos">1B</span></td>
       <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">April Mcclain Delaney ▼</span></td>
+          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▲</span></td>
       <td>
         <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
         
@@ -1057,33 +1102,50 @@
   
     <tr>
       <td class="mut2">45</td>
-      <td><span class="tk">ITW</span><div class="mut2" style="font-size:10.5px">Illinois Tool Works</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:52.5%"></i></span><span class="cg-num">52</span></span></td>
-      <td class="num"><span class="cg-num">11</span></td>
-      <td class="num"><span class="cg-num">75</span></td>
-      <td class="num"><span class="cg-num">88</span></td>
-      <td class="num"><span class="r-pos">0B</span> / <span class="r-neg">1S</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">Shelley Moore Capito ▼</span></td>
+      <td><span class="tk">SBUX</span><div class="mut2" style="font-size:10.5px">Starbucks Corp</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:52.9%"></i></span><span class="cg-num">53</span></span></td>
+      <td class="num"><span class="cg-num">29</span></td>
+      <td class="num"><span class="cg-num">87</span></td>
+      <td class="num"><span class="cg-num">43</span></td>
+      <td class="num"><span class="r-pos">0B</span> / <span class="r-neg">3S</span></td>
+      <td><b class="cg-num">3</b>
+          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">James E. Banks ▼</span><span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">Shelley Moore Capito ▼</span><span class="cg-mem D" title="Senate · 1 disclosure(s) · $8,000">Sheldon Whitehouse ▼</span></td>
       <td>
-        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
         
-        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
         
       </td>
-      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
+      <td class="mut2" style="font-size:11.5px">mixed / unconfirmed</td>
     </tr>
   
     <tr>
       <td class="mut2">46</td>
-      <td><span class="tk">APO</span><div class="mut2" style="font-size:10.5px">Apollo Global Management</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:51.2%"></i></span><span class="cg-num">51</span></span></td>
-      <td class="num"><span class="cg-num">41</span></td>
-      <td class="num"><span class="cg-num">69</span></td>
+      <td><span class="tk">KHC</span><div class="mut2" style="font-size:10.5px">Kraft Heinz</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:52.3%"></i></span><span class="cg-num">52</span></span></td>
+      <td class="num"><span class="cg-num">44</span></td>
+      <td class="num"><span class="cg-num">61</span></td>
+      <td class="num"><span class="cg-num">54</span></td>
+      <td class="num"><span class="r-pos">1B</span> / <span class="r-neg">1S</span></td>
+      <td><b class="cg-num">2</b>
+          <span class="cg-mem D" title="Senate · 1 disclosure(s) · $8,000">Gary Peters ▲</span><span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▼</span></td>
+      <td>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">47</td>
+      <td><span class="tk">C</span><div class="mut2" style="font-size:10.5px">Citigroup Inc</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:52.2%"></i></span><span class="cg-num">52</span></span></td>
+      <td class="num"><span class="cg-num">38</span></td>
+      <td class="num"><span class="cg-num">75</span></td>
       <td class="num"><span class="cg-num">43</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
+      <td class="num"><span class="r-pos">2B</span></td>
       <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▲</span></td>
+          <span class="cg-mem R" title="Senate · 2 disclosure(s) · $65,001">Markwayne Mullin ▲</span></td>
       <td>
         
         
@@ -1093,9 +1155,81 @@
     </tr>
   
     <tr>
-      <td class="mut2">47</td>
+      <td class="mut2">48</td>
+      <td><span class="tk">NEE</span><div class="mut2" style="font-size:10.5px">Nextera Energy Inc</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:51.5%"></i></span><span class="cg-num">52</span></span></td>
+      <td class="num"><span class="cg-num">38</span></td>
+      <td class="num"><span class="cg-num">65</span></td>
+      <td class="num"><span class="cg-num">54</span></td>
+      <td class="num"><span class="r-pos">1B</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Rick Larsen ▲</span></td>
+      <td>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">49</td>
+      <td><span class="tk">ARE</span><div class="mut2" style="font-size:10.5px">Alexandria Real Estate Equ</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:51.3%"></i></span><span class="cg-num">51</span></span></td>
+      <td class="num"><span class="cg-num">40</span></td>
+      <td class="num"><span class="cg-num">62</span></td>
+      <td class="num"><span class="cg-num">54</span></td>
+      <td class="num"><span class="r-pos">1B</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▲</span></td>
+      <td>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">50</td>
+      <td><span class="tk">GS</span><div class="mut2" style="font-size:10.5px">Goldman Sachs Group Inc</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:51.1%"></i></span><span class="cg-num">51</span></span></td>
+      <td class="num"><span class="cg-num">52</span></td>
+      <td class="num"><span class="cg-num">66</span></td>
+      <td class="num"><span class="cg-num">29</span></td>
+      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">4S</span></td>
+      <td><b class="cg-num">3</b>
+          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $3,000,000">David H. McCormick ▼</span><span class="cg-mem R" title="Senate · 3 disclosure(s) · $97,502">Markwayne Mullin ▼</span><span class="cg-mem D" title="House · 2 disclosure(s) · $40,501">Josh Gottheimer ▲</span></td>
+      <td>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
+      </td>
+      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">51</td>
+      <td><span class="tk">FCX</span><div class="mut2" style="font-size:10.5px">Freeport Mcmoran Inc</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:51.1%"></i></span><span class="cg-num">51</span></span></td>
+      <td class="num"><span class="cg-num">42</span></td>
+      <td class="num"><span class="cg-num">60</span></td>
+      <td class="num"><span class="cg-num">54</span></td>
+      <td class="num"><span class="r-pos">1B</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Josh Gottheimer ▲</span></td>
+      <td>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">52</td>
       <td><span class="tk">KRE</span><div class="mut2" style="font-size:10.5px">KRE</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:51.2%"></i></span><span class="cg-num">51</span></span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:51.1%"></i></span><span class="cg-num">51</span></span></td>
       <td class="num"><span class="cg-num">9</span></td>
       <td class="num"><span class="cg-num">87</span></td>
       <td class="num"><span class="cg-num">68</span></td>
@@ -1112,15 +1246,34 @@
     </tr>
   
     <tr>
-      <td class="mut2">48</td>
-      <td><span class="tk">AVGO</span><div class="mut2" style="font-size:10.5px">Broadcom Inc</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:50.3%"></i></span><span class="cg-num">50</span></span></td>
-      <td class="num"><span class="cg-num">28</span></td>
+      <td class="mut2">53</td>
+      <td><span class="tk">ITW</span><div class="mut2" style="font-size:10.5px">Illinois Tool Works</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:50.4%"></i></span><span class="cg-num">50</span></span></td>
+      <td class="num"><span class="cg-num">11</span></td>
+      <td class="num"><span class="cg-num">69</span></td>
+      <td class="num"><span class="cg-num">88</span></td>
+      <td class="num"><span class="r-pos">0B</span> / <span class="r-neg">1S</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">Shelley Moore Capito ▼</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">54</td>
+      <td><span class="tk">PWR</span><div class="mut2" style="font-size:10.5px">Quanta Services</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:50.2%"></i></span><span class="cg-num">50</span></span></td>
+      <td class="num"><span class="cg-num">35</span></td>
       <td class="num"><span class="cg-num">51</span></td>
-      <td class="num"><span class="cg-num">86</span></td>
-      <td class="num"><span class="r-pos">1B</span> / <span class="r-neg">2S</span></td>
-      <td><b class="cg-num">2</b>
-          <span class="cg-mem R" title="Senate · 2 disclosure(s) · $16,001">Shelley Moore Capito ▼</span><span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">David J. Taylor ▼</span></td>
+      <td class="num"><span class="cg-num">74</span></td>
+      <td class="num"><span class="r-pos">0B</span> / <span class="r-neg">4S</span></td>
+      <td><b class="cg-num">3</b>
+          <span class="cg-mem D" title="House · 2 disclosure(s) · $40,501">April Mcclain Delaney ▼</span><span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Dwight Evans ▼</span><span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Elizabeth Fletcher ▼</span></td>
       <td>
         <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
         
@@ -1131,10 +1284,29 @@
     </tr>
   
     <tr>
-      <td class="mut2">49</td>
+      <td class="mut2">55</td>
+      <td><span class="tk">EME</span><div class="mut2" style="font-size:10.5px">Emcor</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:50.1%"></i></span><span class="cg-num">50</span></span></td>
+      <td class="num"><span class="cg-num">19</span></td>
+      <td class="num"><span class="cg-num">69</span></td>
+      <td class="num"><span class="cg-num">74</span></td>
+      <td class="num"><span class="r-pos">0B</span> / <span class="r-neg">1S</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">April Mcclain Delaney ▼</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">56</td>
       <td><span class="tk">MRVL</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:50.2%"></i></span><span class="cg-num">50</span></span></td>
-      <td class="num"><span class="cg-num">51</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:50.0%"></i></span><span class="cg-num">50</span></span></td>
+      <td class="num"><span class="cg-num">50</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="r-pos">2B</span></td>
@@ -1149,28 +1321,47 @@
     </tr>
   
     <tr>
-      <td class="mut2">50</td>
-      <td><span class="tk">GOOG</span><div class="mut2" style="font-size:10.5px">Alphabet Inc Cl C</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:50.2%"></i></span><span class="cg-num">50</span></span></td>
-      <td class="num"><span class="cg-num">39</span></td>
+      <td class="mut2">57</td>
+      <td><span class="tk">UNP</span><div class="mut2" style="font-size:10.5px">Union Pacific Corp</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:50.0%"></i></span><span class="cg-num">50</span></span></td>
+      <td class="num"><span class="cg-num">11</span></td>
       <td class="num"><span class="cg-num">78</span></td>
-      <td class="num"><span class="cg-num">29</span></td>
-      <td class="num"><span class="r-pos">1B</span> / <span class="r-neg">1S</span></td>
-      <td><b class="cg-num">2</b>
-          <span class="cg-mem D" title="Senate · 1 disclosure(s) · $8,000">John Fetterman ▲</span><span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">Katie Britt ▼</span></td>
+      <td class="num"><span class="cg-num">74</span></td>
+      <td class="num"><span class="r-pos">0B</span> / <span class="r-neg">2S</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem R" title="Senate · 2 disclosure(s) · $16,001">John Boozman ▼</span></td>
       <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
         
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        
         
       </td>
       <td class="mut2" style="font-size:11.5px">constructive pullback</td>
     </tr>
   
     <tr>
-      <td class="mut2">51</td>
+      <td class="mut2">58</td>
+      <td><span class="tk">TPR</span><div class="mut2" style="font-size:10.5px">Tapestry, Inc.</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:49.6%"></i></span><span class="cg-num">50</span></span></td>
+      <td class="num"><span class="cg-num">21</span></td>
+      <td class="num"><span class="cg-num">87</span></td>
+      <td class="num"><span class="cg-num">43</span></td>
+      <td class="num"><span class="r-pos">0B</span> / <span class="r-neg">1S</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem R" title="House · 1 disclosure(s) · $32,500">Matthew Robert Van Epps ▼</span></td>
+      <td>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">mixed / unconfirmed</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">59</td>
       <td><span class="tk">XFIV</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:49.9%"></i></span><span class="cg-num">50</span></span></td>
-      <td class="num"><span class="cg-num">50</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:49.6%"></i></span><span class="cg-num">50</span></span></td>
+      <td class="num"><span class="cg-num">49</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="r-pos">2B</span></td>
@@ -1185,46 +1376,65 @@
     </tr>
   
     <tr>
-      <td class="mut2">52</td>
-      <td><span class="tk">FCFS</span><div class="mut2" style="font-size:10.5px">FirstCash</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:49.8%"></i></span><span class="cg-num">50</span></span></td>
-      <td class="num"><span class="cg-num">38</span></td>
-      <td class="num"><span class="cg-num">78</span></td>
-      <td class="num"><span class="cg-num">29</span></td>
-      <td class="num"><span class="r-pos">2B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem R" title="Senate · 2 disclosure(s) · $65,001">Markwayne Mullin ▲</span></td>
-      <td>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">53</td>
-      <td><span class="tk">NEE</span><div class="mut2" style="font-size:10.5px">Nextera Energy Inc</div></td>
+      <td class="mut2">60</td>
+      <td><span class="tk">VZ</span><div class="mut2" style="font-size:10.5px">Verizon Communications Inc</div></td>
       <td><span class="cg-score"><span class="cg-bar mid"><i style="width:49.6%"></i></span><span class="cg-num">50</span></span></td>
-      <td class="num"><span class="cg-num">38</span></td>
-      <td class="num"><span class="cg-num">77</span></td>
+      <td class="num"><span class="cg-num">57</span></td>
+      <td class="num"><span class="cg-num">56</span></td>
       <td class="num"><span class="cg-num">29</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Rick Larsen ▲</span></td>
+      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">3S</span></td>
+      <td><b class="cg-num">5</b>
+          <span class="cg-mem D" title="House · 1 disclosure(s) · $175,000">Jennifer Mcclellan ▼</span><span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▲</span><span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">Lloyd K. Smucker ▼</span><span class="mut2" style="font-size:10.5px">+2</span></td>
       <td>
         
-        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
         
       </td>
       <td class="mut2" style="font-size:11.5px">constructive pullback</td>
     </tr>
   
     <tr>
-      <td class="mut2">54</td>
+      <td class="mut2">61</td>
+      <td><span class="tk">CTVA</span><div class="mut2" style="font-size:10.5px">Corteva Inc</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:49.4%"></i></span><span class="cg-num">49</span></span></td>
+      <td class="num"><span class="cg-num">15</span></td>
+      <td class="num"><span class="cg-num">75</span></td>
+      <td class="num"><span class="cg-num">68</span></td>
+      <td class="num"><span class="r-pos">0B</span> / <span class="r-neg">1S</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem D" title="Senate · 1 disclosure(s) · $32,500">Gary Peters ▼</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">62</td>
+      <td><span class="tk">AMZN</span><div class="mut2" style="font-size:10.5px">Amazon.Com Inc</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:49.0%"></i></span><span class="cg-num">49</span></span></td>
+      <td class="num"><span class="cg-num">79</span></td>
+      <td class="num"><span class="cg-num">37</span></td>
+      <td class="num"><span class="cg-num">17</span></td>
+      <td class="num"><span class="r-pos">4B</span> / <span class="r-neg">3S</span></td>
+      <td><b class="cg-num">6</b>
+          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $175,000">Markwayne Mullin ▲</span><span class="cg-mem D" title="House · 2 disclosure(s) · $16,001">Gilbert Cisneros ▲</span><span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">Matthew Robert Van Epps ▼</span><span class="mut2" style="font-size:10.5px">+3</span></td>
+      <td>
+        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
+        <span class="cg-flag bip"><span class="l-en">bipartisan</span><span class="l-zh">两党</span></span>
+      </td>
+      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">63</td>
       <td><span class="tk">XTWO</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:49.2%"></i></span><span class="cg-num">49</span></span></td>
-      <td class="num"><span class="cg-num">48</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.9%"></i></span><span class="cg-num">49</span></span></td>
+      <td class="num"><span class="cg-num">47</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="r-pos">2B</span></td>
@@ -1239,10 +1449,10 @@
     </tr>
   
     <tr>
-      <td class="mut2">55</td>
+      <td class="mut2">64</td>
       <td><span class="tk">GIGB</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:49.1%"></i></span><span class="cg-num">49</span></span></td>
-      <td class="num"><span class="cg-num">48</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.8%"></i></span><span class="cg-num">49</span></span></td>
+      <td class="num"><span class="cg-num">47</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="r-pos">4B</span></td>
@@ -1257,9 +1467,27 @@
     </tr>
   
     <tr>
-      <td class="mut2">56</td>
+      <td class="mut2">65</td>
+      <td><span class="tk">HLT</span><div class="mut2" style="font-size:10.5px">Hilton Worldwide Holdings </div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.8%"></i></span><span class="cg-num">49</span></span></td>
+      <td class="num"><span class="cg-num">36</span></td>
+      <td class="num"><span class="cg-num">78</span></td>
+      <td class="num"><span class="cg-num">29</span></td>
+      <td class="num"><span class="r-pos">1B</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $32,500">Markwayne Mullin ▲</span></td>
+      <td>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">66</td>
       <td><span class="tk">CMBS</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:49.0%"></i></span><span class="cg-num">49</span></span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.6%"></i></span><span class="cg-num">49</span></span></td>
       <td class="num"><span class="cg-num">47</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
@@ -1275,47 +1503,10 @@
     </tr>
   
     <tr>
-      <td class="mut2">57</td>
-      <td><span class="tk">CLH</span><div class="mut2" style="font-size:10.5px">Clean Harbors</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:49.0%"></i></span><span class="cg-num">49</span></span></td>
-      <td class="num"><span class="cg-num">19</span></td>
-      <td class="num"><span class="cg-num">65</span></td>
-      <td class="num"><span class="cg-num">74</span></td>
-      <td class="num"><span class="r-pos">0B</span> / <span class="r-neg">2S</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 2 disclosure(s) · $16,001">April Mcclain Delaney ▼</span></td>
-      <td>
-        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">58</td>
-      <td><span class="tk">V</span><div class="mut2" style="font-size:10.5px">Visa Inc Class A Shares</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:49.0%"></i></span><span class="cg-num">49</span></span></td>
-      <td class="num"><span class="cg-num">56</span></td>
-      <td class="num"><span class="cg-num">64</span></td>
-      <td class="num"><span class="cg-num">17</span></td>
-      <td class="num"><span class="r-pos">3B</span> / <span class="r-neg">1S</span></td>
-      <td><b class="cg-num">4</b>
-          <span class="cg-mem D" title="House · 1 disclosure(s) · $75,000">Jonathan Jackson ▼</span><span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">David J. Taylor ▲</span><span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">John Boozman ▲</span><span class="mut2" style="font-size:10.5px">+1</span></td>
-      <td>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">59</td>
+      <td class="mut2">67</td>
       <td><span class="tk">TLH</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.8%"></i></span><span class="cg-num">49</span></span></td>
-      <td class="num"><span class="cg-num">47</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.5%"></i></span><span class="cg-num">48</span></span></td>
+      <td class="num"><span class="cg-num">46</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="r-pos">2B</span></td>
@@ -1330,10 +1521,10 @@
     </tr>
   
     <tr>
-      <td class="mut2">60</td>
+      <td class="mut2">68</td>
       <td><span class="tk">IEF</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.8%"></i></span><span class="cg-num">49</span></span></td>
-      <td class="num"><span class="cg-num">47</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.5%"></i></span><span class="cg-num">48</span></span></td>
+      <td class="num"><span class="cg-num">46</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="r-pos">2B</span></td>
@@ -1348,10 +1539,10 @@
     </tr>
   
     <tr>
-      <td class="mut2">61</td>
+      <td class="mut2">69</td>
       <td><span class="tk">GBIL</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.7%"></i></span><span class="cg-num">49</span></span></td>
-      <td class="num"><span class="cg-num">47</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.4%"></i></span><span class="cg-num">48</span></span></td>
+      <td class="num"><span class="cg-num">46</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="r-pos">1B</span></td>
@@ -1366,10 +1557,10 @@
     </tr>
   
     <tr>
-      <td class="mut2">62</td>
+      <td class="mut2">70</td>
       <td><span class="tk">SCHP</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.7%"></i></span><span class="cg-num">49</span></span></td>
-      <td class="num"><span class="cg-num">47</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.4%"></i></span><span class="cg-num">48</span></span></td>
+      <td class="num"><span class="cg-num">46</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="r-pos">1B</span></td>
@@ -1384,10 +1575,10 @@
     </tr>
   
     <tr>
-      <td class="mut2">63</td>
+      <td class="mut2">71</td>
       <td><span class="tk">LPLA</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.7%"></i></span><span class="cg-num">49</span></span></td>
-      <td class="num"><span class="cg-num">47</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.4%"></i></span><span class="cg-num">48</span></span></td>
+      <td class="num"><span class="cg-num">46</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="r-pos">6B</span></td>
@@ -1402,45 +1593,9 @@
     </tr>
   
     <tr>
-      <td class="mut2">64</td>
-      <td><span class="tk">VZ</span><div class="mut2" style="font-size:10.5px">Verizon</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.7%"></i></span><span class="cg-num">49</span></span></td>
-      <td class="num"><span class="cg-num">57</span></td>
-      <td class="num"><span class="cg-num">53</span></td>
-      <td class="num"><span class="cg-num">29</span></td>
-      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">3S</span></td>
-      <td><b class="cg-num">5</b>
-          <span class="cg-mem D" title="House · 1 disclosure(s) · $175,000">Jennifer Mcclellan ▼</span><span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▲</span><span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">Lloyd K. Smucker ▼</span><span class="mut2" style="font-size:10.5px">+2</span></td>
-      <td>
-        
-        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">65</td>
-      <td><span class="tk">CVS</span><div class="mut2" style="font-size:10.5px">CVS Health</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.7%"></i></span><span class="cg-num">49</span></span></td>
-      <td class="num"><span class="cg-num">35</span></td>
-      <td class="num"><span class="cg-num">78</span></td>
-      <td class="num"><span class="cg-num">29</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">John Boozman ▲</span></td>
-      <td>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">constructive pullback</td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">66</td>
+      <td class="mut2">72</td>
       <td><span class="tk">GIL</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.6%"></i></span><span class="cg-num">49</span></span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.3%"></i></span><span class="cg-num">48</span></span></td>
       <td class="num"><span class="cg-num">46</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
@@ -1456,9 +1611,9 @@
     </tr>
   
     <tr>
-      <td class="mut2">67</td>
+      <td class="mut2">73</td>
       <td><span class="tk">FSV</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.5%"></i></span><span class="cg-num">48</span></span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.2%"></i></span><span class="cg-num">48</span></span></td>
       <td class="num"><span class="cg-num">46</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
@@ -1474,28 +1629,47 @@
     </tr>
   
     <tr>
-      <td class="mut2">68</td>
-      <td><span class="tk">AEP</span><div class="mut2" style="font-size:10.5px">American Electric Power</div></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.4%"></i></span><span class="cg-num">48</span></span></td>
-      <td class="num"><span class="cg-num">46</span></td>
-      <td class="num"><span class="cg-num">65</span></td>
+      <td class="mut2">74</td>
+      <td><span class="tk">WFC</span><div class="mut2" style="font-size:10.5px">Wells Fargo + Co</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.2%"></i></span><span class="cg-num">48</span></span></td>
+      <td class="num"><span class="cg-num">41</span></td>
+      <td class="num"><span class="cg-num">70</span></td>
       <td class="num"><span class="cg-num">29</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">David J. Taylor ▲</span></td>
+      <td class="num"><span class="r-pos">2B</span> / <span class="r-neg">1S</span></td>
+      <td><b class="cg-num">3</b>
+          <span class="cg-mem R" title="House · 1 disclosure(s) · $32,500">Lloyd K. Smucker ▼</span><span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">A. Mitchell Jr. McConnell ▲</span><span class="cg-mem R" title="Senate · 1 disclosure(s) · $8,000">John Boozman ▲</span></td>
       <td>
         
-        
+        <span class="cg-flag imp"><span class="l-en">important</span><span class="l-zh">重点</span></span>
         
       </td>
       <td class="mut2" style="font-size:11.5px">constructive pullback</td>
     </tr>
   
     <tr>
-      <td class="mut2">69</td>
+      <td class="mut2">75</td>
+      <td><span class="tk">BMY</span><div class="mut2" style="font-size:10.5px">Bristol Myers Squibb</div></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.1%"></i></span><span class="cg-num">48</span></span></td>
+      <td class="num"><span class="cg-num">20</span></td>
+      <td class="num"><span class="cg-num">75</span></td>
+      <td class="num"><span class="cg-num">56</span></td>
+      <td class="num"><span class="r-pos">0B</span> / <span class="r-neg">1S</span></td>
+      <td><b class="cg-num">1</b>
+          <span class="cg-mem R" title="House · 1 disclosure(s) · $32,500">Mike Kelly ▼</span></td>
+      <td>
+        <span class="cg-flag act"><span class="l-en">act now</span><span class="l-zh">现在</span></span>
+        
+        
+        
+      </td>
+      <td class="mut2" style="font-size:11.5px">uptrend confirmed, sector leading</td>
+    </tr>
+  
+    <tr>
+      <td class="mut2">76</td>
       <td><span class="tk">W</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.4%"></i></span><span class="cg-num">48</span></span></td>
-      <td class="num"><span class="cg-num">46</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.1%"></i></span><span class="cg-num">48</span></span></td>
+      <td class="num"><span class="cg-num">45</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="r-pos">3B</span></td>
@@ -1510,10 +1684,10 @@
     </tr>
   
     <tr>
-      <td class="mut2">70</td>
+      <td class="mut2">77</td>
       <td><span class="tk">FMAO</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.4%"></i></span><span class="cg-num">48</span></span></td>
-      <td class="num"><span class="cg-num">46</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.1%"></i></span><span class="cg-num">48</span></span></td>
+      <td class="num"><span class="cg-num">45</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="r-pos">2B</span></td>
@@ -1528,141 +1702,15 @@
     </tr>
   
     <tr>
-      <td class="mut2">71</td>
-      <td><span class="tk">PCVX</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.2%"></i></span><span class="cg-num">48</span></span></td>
-      <td class="num"><span class="cg-num">46</span></td>
-      <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
-      <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
-      <td class="num"><span class="r-pos">2B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 2 disclosure(s) · $16,001">Gilbert Cisneros ▲</span></td>
-      <td>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">— <span style="font-size:10px">(<span class="l-en">no engine coverage</span><span class="l-zh">无引擎覆盖</span>)</span></td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">72</td>
-      <td><span class="tk">BBIO</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.2%"></i></span><span class="cg-num">48</span></span></td>
-      <td class="num"><span class="cg-num">46</span></td>
-      <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
-      <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
-      <td class="num"><span class="r-pos">2B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 2 disclosure(s) · $16,001">Gilbert Cisneros ▲</span></td>
-      <td>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">— <span style="font-size:10px">(<span class="l-en">no engine coverage</span><span class="l-zh">无引擎覆盖</span>)</span></td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">73</td>
-      <td><span class="tk">SFTBF</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.1%"></i></span><span class="cg-num">48</span></span></td>
-      <td class="num"><span class="cg-num">45</span></td>
-      <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
-      <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▲</span></td>
-      <td>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">— <span style="font-size:10px">(<span class="l-en">no engine coverage</span><span class="l-zh">无引擎覆盖</span>)</span></td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">74</td>
-      <td><span class="tk">PWP</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.1%"></i></span><span class="cg-num">48</span></span></td>
-      <td class="num"><span class="cg-num">45</span></td>
-      <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
-      <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▲</span></td>
-      <td>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">— <span style="font-size:10px">(<span class="l-en">no engine coverage</span><span class="l-zh">无引擎覆盖</span>)</span></td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">75</td>
-      <td><span class="tk">ARQT</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.1%"></i></span><span class="cg-num">48</span></span></td>
-      <td class="num"><span class="cg-num">45</span></td>
-      <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
-      <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▲</span></td>
-      <td>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">— <span style="font-size:10px">(<span class="l-en">no engine coverage</span><span class="l-zh">无引擎覆盖</span>)</span></td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">76</td>
-      <td><span class="tk">BEP</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.1%"></i></span><span class="cg-num">48</span></span></td>
-      <td class="num"><span class="cg-num">45</span></td>
-      <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
-      <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem R" title="House · 1 disclosure(s) · $8,000">Maria Elvira Salazar ▲</span></td>
-      <td>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">— <span style="font-size:10px">(<span class="l-en">no engine coverage</span><span class="l-zh">无引擎覆盖</span>)</span></td>
-    </tr>
-  
-    <tr>
-      <td class="mut2">77</td>
-      <td><span class="tk">TOELF</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.1%"></i></span><span class="cg-num">48</span></span></td>
-      <td class="num"><span class="cg-num">45</span></td>
-      <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
-      <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
-      <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▲</span></td>
-      <td>
-        
-        
-        
-      </td>
-      <td class="mut2" style="font-size:11.5px">— <span style="font-size:10px">(<span class="l-en">no engine coverage</span><span class="l-zh">无引擎覆盖</span>)</span></td>
-    </tr>
-  
-    <tr>
       <td class="mut2">78</td>
-      <td><span class="tk">DCO</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.1%"></i></span><span class="cg-num">48</span></span></td>
+      <td><span class="tk">PCVX</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:47.9%"></i></span><span class="cg-num">48</span></span></td>
       <td class="num"><span class="cg-num">45</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
+      <td class="num"><span class="r-pos">2B</span></td>
       <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▲</span></td>
+          <span class="cg-mem D" title="House · 2 disclosure(s) · $16,001">Gilbert Cisneros ▲</span></td>
       <td>
         
         
@@ -1673,14 +1721,14 @@
   
     <tr>
       <td class="mut2">79</td>
-      <td><span class="tk">BNPQF</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.1%"></i></span><span class="cg-num">48</span></span></td>
+      <td><span class="tk">BBIO</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:47.9%"></i></span><span class="cg-num">48</span></span></td>
       <td class="num"><span class="cg-num">45</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
-      <td class="num"><span class="r-pos">1B</span></td>
+      <td class="num"><span class="r-pos">2B</span></td>
       <td><b class="cg-num">1</b>
-          <span class="cg-mem D" title="House · 1 disclosure(s) · $8,000">Gilbert Cisneros ▲</span></td>
+          <span class="cg-mem D" title="House · 2 disclosure(s) · $16,001">Gilbert Cisneros ▲</span></td>
       <td>
         
         
@@ -1691,9 +1739,9 @@
   
     <tr>
       <td class="mut2">80</td>
-      <td><span class="tk">THLEF</span></td>
-      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:48.1%"></i></span><span class="cg-num">48</span></span></td>
-      <td class="num"><span class="cg-num">45</span></td>
+      <td><span class="tk">SFTBF</span></td>
+      <td><span class="cg-score"><span class="cg-bar mid"><i style="width:47.8%"></i></span><span class="cg-num">48</span></span></td>
+      <td class="num"><span class="cg-num">44</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="mut2" title="no engine coverage">—</span></td>
       <td class="num"><span class="r-pos">1B</span></td>
@@ -1708,7 +1756,7 @@
     </tr>
   
   </tbody></table>
-  <p class="mut2" style="font-size:11px;margin-top:9px"><span class="l-en">Cluster = distinct members · recency-weighted net-buy · disclosed size · freshness (bipartisan bonus). Technical & Zone are read from each name's own conviction + sector/theme signals; a hard engine veto (cycle-blocked / parabolic) floors the technical score and removes "act now". Showing the top 80 of 362 in-window names.</span><span class="l-zh">集群 = 不同议员数 · 时间加权净买入 · 披露规模 · 新鲜度（两党加成）。技术面与区间取自各标的自身的信念与板块/主题信号；引擎硬否决（周期受阻/抛物线拉升）会压低技术分并取消"现在可买"。显示窗口内前 80 个（共 362 个）。</span></p>
+  <p class="mut2" style="font-size:11px;margin-top:9px"><span class="l-en">Cluster = distinct members · recency-weighted net-buy · disclosed size · freshness (bipartisan bonus). Technical & Zone are read from each name's own conviction + sector/theme signals; a hard engine veto (cycle-blocked / parabolic) floors the technical score and removes "act now". Showing the top 80 of 364 in-window names.</span><span class="l-zh">集群 = 不同议员数 · 时间加权净买入 · 披露规模 · 新鲜度（两党加成）。技术面与区间取自各标的自身的信念与板块/主题信号；引擎硬否决（周期受阻/抛物线拉升）会压低技术分并取消"现在可买"。显示窗口内前 80 个（共 364 个）。</span></p>
   
 </div>
 
@@ -1727,6 +1775,72 @@
     <th class="num"><span class="l-en">vs SPY</span><span class="l-zh">相对标普</span></th>
     <th><span class="l-en">Traded</span><span class="l-zh">交易日</span></th>
   </tr></thead><tbody>
+  
+    <tr>
+      <td class="num mut2">2026-06-24</td>
+      <td>Dwight Evans <span class="cg-mem D">D</span></td>
+      <td class="mut2">House</td>
+      <td><span class="side-chip sell">SELL</span></td>
+      <td><span class="tk">INTC</span> <span class="mut2" style="font-size:10.5px">Intel Corp</span></td>
+      <td class="num">$1,001–$15,000</td>
+      <td class="num r-pos">+22.8%</td>
+      <td class="num mut2">2026-06-10</td>
+    </tr>
+  
+    <tr>
+      <td class="num mut2">2026-06-24</td>
+      <td>Dwight Evans <span class="cg-mem D">D</span></td>
+      <td class="mut2">House</td>
+      <td><span class="side-chip sell">SELL</span></td>
+      <td><span class="tk">GD</span> <span class="mut2" style="font-size:10.5px">General Dynamics</span></td>
+      <td class="num">$1,001–$15,000</td>
+      <td class="num r-neg">-0.2%</td>
+      <td class="num mut2">2026-06-10</td>
+    </tr>
+  
+    <tr>
+      <td class="num mut2">2026-06-23</td>
+      <td>Nancy Pelosi <span class="cg-mem D">D</span></td>
+      <td class="mut2">House</td>
+      <td><span class="side-chip buy">BUY</span></td>
+      <td><span class="tk">UBER</span> <span class="mut2" style="font-size:10.5px">Uber Technologies Inc</span></td>
+      <td class="num">$500,001–$1,000,000</td>
+      <td class="num r-pos">+8.1%</td>
+      <td class="num mut2">2026-05-29</td>
+    </tr>
+  
+    <tr>
+      <td class="num mut2">2026-06-23</td>
+      <td>Nancy Pelosi <span class="cg-mem D">D</span></td>
+      <td class="mut2">House</td>
+      <td><span class="side-chip buy">BUY</span></td>
+      <td><span class="tk">INTC</span> <span class="mut2" style="font-size:10.5px">Intel Corp</span></td>
+      <td class="num">$1,000,001–$5,000,000</td>
+      <td class="num r-pos">+19.4%</td>
+      <td class="num mut2">2026-05-29</td>
+    </tr>
+  
+    <tr>
+      <td class="num mut2">2026-06-19</td>
+      <td>Jared Moskowitz <span class="cg-mem D">D</span></td>
+      <td class="mut2">House</td>
+      <td><span class="side-chip buy">BUY</span></td>
+      <td><span class="tk">GILD</span> <span class="mut2" style="font-size:10.5px">Gilead Sciences Inc</span></td>
+      <td class="num">$1,001–$15,000</td>
+      <td class="num r-neg">-10.7%</td>
+      <td class="num mut2">2026-05-06</td>
+    </tr>
+  
+    <tr>
+      <td class="num mut2">2026-06-19</td>
+      <td>Jared Moskowitz <span class="cg-mem D">D</span></td>
+      <td class="mut2">House</td>
+      <td><span class="side-chip sell">SELL</span></td>
+      <td><span class="tk">COR</span> <span class="mut2" style="font-size:10.5px">Cencora</span></td>
+      <td class="num">$1,001–$15,000</td>
+      <td class="num r-pos">+6.1%</td>
+      <td class="num mut2">2026-05-06</td>
+    </tr>
   
     <tr>
       <td class="num mut2">2026-06-18</td>
@@ -2212,72 +2326,6 @@
       <td class="num mut2">2026-05-12</td>
     </tr>
   
-    <tr>
-      <td class="num mut2">2026-06-12</td>
-      <td>Julie Johnson <span class="cg-mem D">D</span></td>
-      <td class="mut2">House</td>
-      <td><span class="side-chip sell">SELL</span></td>
-      <td><span class="tk">ACN</span> <span class="mut2" style="font-size:10.5px">Accenture</span></td>
-      <td class="num">$1,001–$15,000</td>
-      <td class="num r-neg">-26.0%</td>
-      <td class="num mut2">2026-05-12</td>
-    </tr>
-  
-    <tr>
-      <td class="num mut2">2026-06-11</td>
-      <td>Gary Peters <span class="cg-mem D">D</span></td>
-      <td class="mut2">Senate</td>
-      <td><span class="side-chip buy">BUY</span></td>
-      <td><span class="tk">KHC</span> <span class="mut2" style="font-size:10.5px">Kraft Heinz</span></td>
-      <td class="num">$1,001–$15,000</td>
-      <td class="num r-neg">-3.8%</td>
-      <td class="num mut2">2026-05-21</td>
-    </tr>
-  
-    <tr>
-      <td class="num mut2">2026-06-11</td>
-      <td>Mike Kelly <span class="cg-mem R">R</span></td>
-      <td class="mut2">House</td>
-      <td><span class="side-chip sell">SELL</span></td>
-      <td><span class="tk">CMCSA</span> <span class="mut2" style="font-size:10.5px">Comcast</span></td>
-      <td class="num">$1,001–$15,000</td>
-      <td class="num r-neg">-16.8%</td>
-      <td class="num mut2">2026-05-07</td>
-    </tr>
-  
-    <tr>
-      <td class="num mut2">2026-06-11</td>
-      <td>Mike Kelly <span class="cg-mem R">R</span></td>
-      <td class="mut2">House</td>
-      <td><span class="side-chip sell">SELL</span></td>
-      <td><span class="tk">BMY</span> <span class="mut2" style="font-size:10.5px">Bristol Myers Squibb</span></td>
-      <td class="num">$15,001–$50,000</td>
-      <td class="num r-neg">-6.3%</td>
-      <td class="num mut2">2026-05-07</td>
-    </tr>
-  
-    <tr>
-      <td class="num mut2">2026-06-10</td>
-      <td>John Mcguire <span class="cg-mem R">R</span></td>
-      <td class="mut2">House</td>
-      <td><span class="side-chip buy">BUY</span></td>
-      <td><span class="tk">META</span> <span class="mut2" style="font-size:10.5px">Meta Platforms Inc Cla</span></td>
-      <td class="num">$1,001–$15,000</td>
-      <td class="num r-neg">-6.9%</td>
-      <td class="num mut2">2026-06-04</td>
-    </tr>
-  
-    <tr>
-      <td class="num mut2">2026-06-10</td>
-      <td>John Mcguire <span class="cg-mem R">R</span></td>
-      <td class="mut2">House</td>
-      <td><span class="side-chip sell">SELL</span></td>
-      <td><span class="tk">DELL</span> <span class="mut2" style="font-size:10.5px">Dell Technologies</span></td>
-      <td class="num">$1,001–$15,000</td>
-      <td class="num r-neg">-1.8%</td>
-      <td class="num mut2">2026-06-04</td>
-    </tr>
-  
   </tbody></table>
   
 </div>
@@ -2288,5 +2336,6 @@
 </footer>
 
 <script src="theme.js"></script>
+<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

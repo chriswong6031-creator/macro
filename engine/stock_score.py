@@ -44,11 +44,12 @@ import numpy as np
 import pandas as pd
 
 from engine import i18n as _i18n  # bilingual glossary for caution labels
+from engine import valuation as _valuation  # forward-aware non-veto valuation haircut
 
 # ----------------------------------------------------------------------------
 # market constants
 # ----------------------------------------------------------------------------
-MARKETS = ("US", "CN", "HK", "CA")
+MARKETS = ("US", "CN", "HK", "CA", "INTL")
 
 # fallback on-card label for the EDGE axis per market (see _sel_kind for the dynamic,
 # leg-aware label). v2: the US/CA EDGE leads with the event-evidence core (insider net-buying
@@ -61,6 +62,9 @@ _SEL_KIND = {
     "CA": ("event edge", "事件驱动优势"),
     "CN": ("mean-reversion", "均值回归"),
     "HK": ("flow · value · exposure", "资金 · 价值 · 敞口"),
+    # Intl (ex-US developed/EM ADRs) has no event feeds either — same residual-momentum
+    # prior as the TSX, framed as an unvalidated context leg (see trust_tier / _axis_selection).
+    "INTL": ("residual momentum", "残差动量"),
 }
 
 # EDGE evidence weights (US/CA). The SHALLOW 2023-2025 audit ranked SUE first (IC .039, lone
@@ -74,7 +78,17 @@ _SEL_KIND = {
 # leg that actually survives FDR. Revision is literature-strong; residual momentum is light,
 # regime-scaled context. None is a standalone alpha -> this is a DISPLAY/confluence composite,
 # never a validated sizer. Renormalized over whichever legs are present per name.
-_EDGE_W = {"insider": 0.40, "sue": 0.30, "revision": 0.20, "mom": 0.10}
+# v2.2 (de-anchored from the AVGO/NVDA two-name calibration): the prior v2.1 reweight set SUE 0.18
+# / revision 0.32 by rebuilding until two NAMED tickers cleared a target band — a single-name fit.
+# Re-derived here from the IC EVIDENCE ALONE: SUE's cross-sectional edge is ~ZERO on deep PIT
+# history (reports/sue-deep-history-phase0.md, IC .039->.0005, HAC t 0.06, L/S Sharpe ~0) and the
+# repo's own verdict DEMOTES SUE scored->display/confirmer. So SUE drops to a light CONFIRMER FLOOR
+# (0.10, not scored alpha), and the freed weight goes to INSIDER (the lone borderline FDR survivor),
+# which takes the clear top weight (0.50). Analyst REVISIONS stay a strong co-lead at their prior
+# level (0.30 — deliberately NOT raised, since raising them would just re-boost the same two names);
+# momentum stays the light, regime-scaled context leg (0.10). Calibrated to the IC hierarchy, not to
+# any ticker's score. Sums to 1.0; renormalized over whichever legs are present.
+_EDGE_W = {"insider": 0.50, "sue": 0.10, "revision": 0.30, "mom": 0.10}
 
 # REGIME-CONDITIONAL momentum weight (research/STOCK_CONVICTION_V2 §3 + the regime audit in
 # scripts/conviction_v2_regime.py). The deep+PIT S&P panel (2008-2026, 63d) shows residual
@@ -153,6 +167,10 @@ def trust_tier(market: str, gate_go: bool = False) -> dict:
         # no event feeds on the TSX -> residual-momentum prior, never claimed as validated.
         return {"tier": "context", "en": "Residual-momentum prior — unvalidated, not a standalone edge",
                 "zh": "残差动量先验 — 未验证，非独立超额收益", "css": "tt-context"}
+    if m == "INTL":
+        # no ex-US event feeds either -> same residual-momentum prior as the TSX.
+        return {"tier": "context", "en": "Residual-momentum prior (ex-US) — unvalidated, not a standalone edge",
+                "zh": "残差动量先验（非美股）— 未验证，非独立超额收益", "css": "tt-context"}
     # US — v2 EDGE = event-evidence signals. Insider net-buying is the lone (borderline)
     # cross-sectional FDR survivor; SUE's cross-sectional edge COLLAPSED on deep history
     # (reports/sue-deep-history-phase0.md) so it is kept as PEAD context, not a validated leg;
@@ -174,6 +192,7 @@ _WEIGHT_PRIOR = {
     "CA": {"selection": 0.45, "entry": 0.18, "tailwind": 0.12, "quality": 0.25},
     "CN": {"selection": 0.42, "entry": 0.25, "tailwind": 0.13, "quality": 0.20},
     "HK": {"selection": 0.35, "entry": 0.25, "tailwind": 0.20, "quality": 0.20},
+    "INTL": {"selection": 0.45, "entry": 0.18, "tailwind": 0.12, "quality": 0.25},
 }
 
 # cycle states that BLOCK a buy verb + cap the entry axis (research §6.3).
@@ -182,6 +201,7 @@ _BLOCK_URGENCY = {"exit", "avoid"}
 
 _PARABOLIC = "parabolic"
 _ENTRY_CAP_Z = -0.2          # entry axis cannot exceed this when cycle-blocked
+_ENTRY_CONFIRM_CAP = 0.5     # max |additive nudge| from the technical confirmers (trend/squeeze/GEX)
 _AXIS_Z_CLIP = 3.0
 
 
@@ -262,7 +282,7 @@ def _edge_basis(rec: dict, market: str) -> list[dict]:
         a = _f(rec.get("alpha")); add("alpha", float(np.clip(a, -3, 3)) if a is not None else None)
     elif m == "CN":
         add("rev_z", _f(rec.get("rev_z"))); add("revision", _f(rec.get("revision_z"))); add("alpha", _f(rec.get("alpha")))
-    elif m == "CA":
+    elif m in ("CA", "INTL"):
         add("alpha", _f(rec.get("alpha")))
     else:
         add("rs", _f(rec.get("rs_z")) if _f(rec.get("rs_z")) is not None else _f(rec.get("alpha")))
@@ -311,9 +331,9 @@ def _axis_selection(rec: dict, market: str, calm: float | None = None) -> tuple[
         num = sum(ew[k] * v for k, v in legs.items())
         den = max(sum(ew[k] for k in legs), 0.5)   # confidence floor (see above)
         return _clipz(num / den), present
-    if m == "CA":
-        # Canada has NO event feeds (no EDGAR / Form-4 / revision data on the TSX), so
-        # residual momentum is its best-available selection leg — kept at full strength and
+    if m in ("CA", "INTL"):
+        # Canada/Intl have NO event feeds (no EDGAR / Form-4 / revision data ex-US), so
+        # residual momentum is the best-available selection leg — kept at full strength and
         # framed as an UNVALIDATED prior (gate stays NEUTRAL; the board keeps the alpha rank).
         z = _f(rec.get("alpha"))
         if z is not None:
@@ -427,6 +447,39 @@ _OOP_SIZE_MAX = 0.5       # max risk_total contribution from the out-of-play siz
 # still what the display chip + the out-of-play size trim read (those are deliberately legible).
 _SPOTLIGHT_LEG_GAIN = 0.4
 
+# VALIDATED scored de-risk from the name's primary NARRATIVE BASKET (allocation trend-gate).
+# The narrative-rotation backtest (27y, clean sectors) found the ONE repeatable edge is
+# DRAWDOWN control via the absolute-trend gate — momentum RANK is ~0 alpha. So a name whose
+# basket is BELOW its long trend (or fading/deteriorating) is SIZED DOWN; a crowded basket is
+# capped. Subtract-only: this NEVER re-ranks selection, only the suggested size (the honest
+# "lean into the trending narratives, de-risk the broken ones" the user asked for).
+_BASKET_RISK_MAX = 0.5    # max risk_total contribution from a below-trend / deteriorating basket
+
+
+def _basket_risk(rec: dict) -> tuple[float, dict | None]:
+    """(haircut in [0, _BASKET_RISK_MAX], bilingual caution|None) from rec['basket_alloc']."""
+    ba = rec.get("basket_alloc")
+    if not ba:
+        return 0.0, None
+    label = (ba.get("label") or "").lower()
+    below = (ba.get("above_trend") is False) or (ba.get("eligible") is False)
+    nm = ba.get("name") or "its narrative basket"
+    if below:
+        return _BASKET_RISK_MAX, {
+            "en": f"Narrative basket ({nm}) is below its long-term trend — validated drawdown "
+                  "gate: size down (the AI-buildout tape is rewarding leaders, not this one).",
+            "zh": f"所属叙事篮子（{ba.get('name_zh') or nm}）已跌破长期趋势 — 已验证的回撤门槛：减小仓位。"}
+    if label in ("fading", "deteriorating"):
+        zh = "衰退" if label == "fading" else "恶化"
+        return _BASKET_RISK_MAX * 0.7, {
+            "en": f"Narrative basket ({nm}) is {label} — validated risk gate: trim / size down.",
+            "zh": f"所属叙事篮子（{ba.get('name_zh') or nm}）正在{zh} — 已验证风险门槛：减仓。"}
+    if ba.get("crowded"):
+        return _BASKET_RISK_MAX * 0.4, {
+            "en": f"Narrative basket ({nm}) is crowded / extended — cap size, don't add aggressively.",
+            "zh": f"所属叙事篮子（{ba.get('name_zh') or nm}）拥挤／过度拉伸 — 控制仓位，勿激进加仓。"}
+    return 0.0, None
+
 
 def _eff_spotlight(rec: dict, *, blocked: bool = False) -> dict | None:
     """The spotlight tilt AS IT ENTERS THE SCORE: a positive theme/sector tailwind is
@@ -531,9 +584,21 @@ def _risk_idio(rec: dict) -> tuple[float, dict]:
     lm = _f(rec.get("lottery_max"))
     if lm is not None:
         comps["lottery"] = _clip01((lm - _LOTTERY_WARN) / (_LOTTERY_HARD - _LOTTERY_WARN))
-    gx = (rec.get("gex") or {}).get("gamma_regime")
-    if gx in ("short", "long"):
-        comps["gex"] = 0.6 if gx == "short" else 0.0
+    # GEX as a REALIZED-VOL / gap-risk read (distinct from the directional confirmer): short
+    # gamma or a vol-hole EXPANSION = amplified moves = higher gap risk; a deep long-gamma pin =
+    # suppressed vol = low risk; a coiled band is armed gap risk. Reads the joined confirmer
+    # levels (rich), else the raw gamma sign (back-compat). A neutral regime is no longer silent.
+    _gc_lv = (rec.get("gex_confirm") or {}).get("levels") or {}
+    _regime = _gc_lv.get("regime") or (rec.get("gex") or {}).get("gamma_regime")
+    _vh = _gc_lv.get("vol_hole_state")
+    if _vh == "EXPANSION" or _regime == "short":
+        comps["gex"] = 0.6
+    elif _vh in ("COILED_UP", "COILED_DOWN"):
+        comps["gex"] = 0.4
+    elif _regime == "long":
+        comps["gex"] = 0.1
+    elif _regime is not None or _vh is not None:
+        comps["gex"] = 0.3
     if rec.get("fragility"):
         comps["fragility"] = 0.5
     if not comps:
@@ -565,8 +630,15 @@ _PCT_BUCKET = {0: "avoid", 25: "quarter", 50: "half", 75: "three-quarter", 100: 
 # itself implies, even when the name's risk budget alone would allow more. This is
 # the contradiction users hit: "Suggested size · Full size 100%" beside a
 # "HALF SIZE" entry tag. Subtract-only, like every other size gate here.
+# Keyed on the entry TAG (not urgency — urgency is many-to-one over cap tiers: 'now' spans both
+# the uncapped BUY NOW and the capped HALF SIZE, 'caution' spans TAKE PROFITS/DON'T CHASE/etc., so
+# an urgency key would either cap full-size buys or miss DON'T CHASE). Every cap SUBTRACTS from full;
+# BUY NOW/HOLD are intentionally uncapped (full conviction), SELL-REDUCE/AVOID size to 0 via the
+# blocked gate. "DON'T CHASE" is the extension-gate override tag (engine/cycles.py:1028) — a
+# missed-entry chase that is NOT cycle-blocked, so without an explicit cap its risk budget could
+# read fuller than the timing warrants. (See test_entry_size_cap_covers_all_tags.)
 _ENTRY_SIZE_CAP = {"HALF SIZE": 50, "BUY SOON": 50, "WATCH": 50, "WAIT": 25,
-                   "TAKE PROFITS": 25, "UNCONFIRMED — HIGH RISK": 25}
+                   "TAKE PROFITS": 25, "UNCONFIRMED — HIGH RISK": 25, "DON'T CHASE": 25}
 
 
 def _suggested_size(risk_total: float, *, blocked: bool, market: str,
@@ -598,38 +670,119 @@ def _suggested_size(risk_total: float, *, blocked: bool, market: str,
     return out
 
 
+# ---- bounded technical CONFIRMERS for the entry axis (display/verifier, small by design) ----
+# These are NOT selection alpha — they sharpen the ENTRY (timing) ONLY, only where the data
+# exists, and never rescue a blocked name (the cycle/extension block cap still binds). Kept
+# deliberately small so a confirmer can only NUDGE conviction, never manufacture it — the
+# GEX / volatility-black-hole confirmer doctrine (research/US_STOCKS_OVERHAUL §3).
+def _trend_quality_tilt(tech: dict | None) -> float | None:
+    """ADX-confirmed trend quality: a strong directional trend supports the entry; a choppy,
+    no-trend tape damps it. Needs ADX (OHLC names) → None for close-only names."""
+    if not tech:
+        return None
+    adx = _f(tech.get("adx14"))
+    if adx is not None and adx >= 25.0:
+        d = tech.get("adx_trend")
+        if d == "up":
+            return 0.25
+        if d == "down":
+            return -0.25
+    chop = _f(tech.get("chop14"))
+    if chop is not None and chop >= 61.8:      # high choppiness = no trend = damp the entry
+        return -0.15
+    return None
+
+
+def _vol_squeeze_tilt(vs: dict | None) -> float | None:
+    """The single-stock volatility black hole as a TIMING tilt. Phase-0 (reports/
+    US_STOCKS_SIGNALS_PHASE0.md) found the BARE squeeze has NO forward-move edge — only a
+    VOLUME-CONFIRMED break is directional — so a still-coiled name gets NO tilt (display only);
+    the tilt rewards a confirmed upside break / penalises a downside break, with late expansion
+    a mild caution."""
+    if not vs:
+        return None
+    state = vs.get("state")
+    if state == "FIRED_UP":
+        return 0.4 if vs.get("volume_confirmed") else 0.2
+    if state == "FIRED_DOWN":
+        return -0.4
+    if state == "EXPANSION":
+        return -0.15
+    return None                       # COILED / COMPRESSED / NONE -> display only, no entry tilt
+
+
+def _gex_confirm_tilt(gc: dict | None) -> float | None:
+    """Dealer-gamma confirmer as a bounded entry tilt: CONFIRM nudges up, CAUTION nudges down,
+    NEUTRAL/absent is no tilt. Bounded so options positioning can only verify, never pick."""
+    if not gc:
+        return None
+    v = gc.get("verdict")
+    if v == "confirm":
+        return 0.3
+    if v == "caution":
+        return -0.3
+    return None
+
+
 def _axis_entry(rec: dict) -> tuple[float | None, list[str], bool]:
-    """Entry/timing axis + whether the cycle/extension BLOCKS a buy (caps the axis)."""
+    """Entry/timing axis + whether the cycle/extension BLOCKS a buy (caps the axis).
+
+    Three-tier aggregation (the dilution fix): the BASE timing tilts (urgency, pullback tag,
+    drawdown-from-high, RSI band) are AVERAGED; the bounded technical CONFIRMERS (trend-quality,
+    vol-squeeze, GEX) are ADDED as one clipped ±0.5 nudge (so a CONFIRM always lifts and a
+    CAUTION always trims, never diluted by — and never dominating — the base); the HARD penalties
+    (own-history extension grade, the absolute over-200dma stretch, the radioactive one-day
+    spike) are SUMMED on top, so a real penalty is never averaged away by a good urgency read."""
     present: list[str] = []
     lad = rec.get("ladder") or {}
     entry = (lad.get("entry") or {})
     tech = rec.get("tech") or {}
     ext = rec.get("ext") or {}
 
-    parts: list[float | None] = []
+    base: list[float] = []
     urg = entry.get("urgency")
     if urg in _URG_Z:
-        parts.append(_URG_Z[urg]); present.append("urgency")
+        base.append(_URG_Z[urg]); present.append("urgency")
     tag = rec.get("alpha_entry")
     if tag in _ENTRY_TAG_Z:
-        parts.append(_ENTRY_TAG_Z[tag]); present.append("pullback/extended")
+        base.append(_ENTRY_TAG_Z[tag]); present.append("pullback/extended")
     dh = _drawdown_hump(_f(tech.get("off_52w_high_pct")))
     if dh is not None:
-        parts.append(dh); present.append("off-high")
+        base.append(dh); present.append("off-high")
     rb = _rsi_band(_f(tech.get("rsi14")))
     if rb is not None:
-        parts.append(rb); present.append("rsi")
+        base.append(rb); present.append("rsi")
+
+    # bounded technical CONFIRMERS — one clipped additive nudge (never the selection edge)
+    conf = 0.0
+    tq = _trend_quality_tilt(tech)
+    if tq is not None:
+        conf += tq; present.append("trend-quality")
+    vq = _vol_squeeze_tilt(rec.get("vol_squeeze"))
+    if vq is not None:
+        conf += vq; present.append("vol-squeeze")
+    gq = _gex_confirm_tilt(rec.get("gex_confirm"))
+    if gq is not None:
+        conf += gq; present.append("options")
+    # NOTE: the forward-cone risk SHAPE (anticipation asymmetry) is deliberately NOT a scored entry
+    # confirmer. It was added under the AVGO/NVDA alignment work but routes an explicitly "NO-GO for
+    # size" / coin-flip-direction signal into the decision; it now lives ONLY as a display-only
+    # honesty note in conviction_profile (surfacing a favourable cone without moving the score).
+    conf = float(np.clip(conf, -_ENTRY_CONFIRM_CAP, _ENTRY_CONFIRM_CAP))
+
+    hard: list[float] = []
     grade = ext.get("grade")
     if grade in _EXT_PENALTY:               # own-history extension PENALTY (never a positive add)
-        parts.append(_EXT_PENALTY[grade]); present.append("extension")
+        hard.append(_EXT_PENALTY[grade]); present.append("extension")
     sp = _stretch_penalty(_f(tech.get("pct_vs_200dma")))   # absolute distance above the 200dma
     if sp is not None and sp < 0:
-        parts.append(sp); present.append("over-200dma")
+        hard.append(sp); present.append("over-200dma")
     lp = _lottery_penalty(rec)                             # recent radioactive one-day spike
     if lp < 0:
-        parts.append(lp); present.append("lottery-spike")
+        hard.append(lp); present.append("lottery-spike")
 
-    z = _mean_avail(parts)
+    _has = bool(base) or conf != 0.0 or bool(hard)
+    z = ((_mean_avail(base) or 0.0) + conf + sum(hard)) if _has else None
     # hard-block: downtrend / topping / exit / avoid / parabolic / OVER-EXTENDED (a chase)
     state = (lad.get("state") or "").upper()
     blocked = (state in _CYCLE_BLOCK_STATES or urg in _BLOCK_URGENCY
@@ -675,13 +828,17 @@ def _axis_quality(rec: dict, market: str) -> tuple[float | None, list[str], dict
     present: list[str] = []
     parts: list[float | None] = []
 
-    # prefer a precomputed orthogonal composite; else mean of the durable factor legs
-    # (profitability first — gross profitability is the validated durability proxy).
+    # prefer a precomputed orthogonal composite; else mean of the DURABILITY legs only.
+    # FIX (AVGO/NVDA alignment): the fallback used to average in `value` (cheapness) and
+    # `low_vol` (the low-volatility anomaly) — neither is durability. Blending them mis-scored
+    # expensive, volatile GROWTH LEADERS (AVGO, NVDA) on the quality axis for being correctly
+    # expensive/volatile (a value/vol read leaking into 'will the business survive'). The axis
+    # now uses only profitability + the quality (ROE/accruals/leverage) composite, matching the
+    # docstring's stated DURABILITY intent. (value/low_vol still live in the factor board.)
     qc = _f(rec.get("quality_context_z"))
     if qc is None:
         fac = rec.get("factor") or {}
-        qc = _mean_avail([_f(fac.get(k)) for k in
-                          ("profitability", "quality", "value", "low_vol")])
+        qc = _mean_avail([_f(fac.get(k)) for k in ("profitability", "quality")])
     if qc is not None:
         parts.append(float(np.clip(qc, -3, 3))); present.append("factors")
 
@@ -718,7 +875,8 @@ def _tier(z: float | None) -> str:
 
 
 def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
-            risk_stress: float = 0.0) -> dict:
+            risk_stress: float = 0.0, valuation: dict | None = None,
+            validated: bool = False) -> dict:
     """Map the axes + cycle state to a single honest headline verb (EN + 中文),
     plus drivers/cautions. First-match-wins; the cycle block and accounting/parabolic
     flags OVERRIDE any 'Buy' wording so a card never says BUY next to EXIT. A stressed
@@ -763,6 +921,12 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
              else "extended over 200dma — chasing",
              f"高于200日均线 +{_pv:.0f}% — 追高" if _pv is not None
              else "高于200日均线 — 追高")
+    # forward-aware valuation caveat — a non-veto chip, never a blocking verb. Only
+    # the 'extreme' tail trips watch (and trailing-only names are light-touch), so a
+    # growth leader cheap on forward earnings (NVDA) never reads 'expensive'.
+    if valuation and valuation.get("watch"):
+        _cau(f"richly valued — {valuation.get('note')}",
+             f"估值偏高 — {valuation.get('note_zh') or valuation.get('note')}")
     _risk_veto = (risk_stress >= _RISK_VETO_STRESS and _aggressiveness(rec) >= 0.5)
     if _risk_veto:
         _cau("stressed tape — size down / confirm", "盘面承压 — 减仓／确认")
@@ -839,8 +1003,18 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
             _cau("weak fundamentals", "基本面偏弱")
             return _v("Leader · weak fundamentals — higher-risk",
                       "领先 · 基本面偏弱 — 风险偏高", drivers, cautions)
-        return _v("High-conviction — leader with a good entry",
-                  "高确信 — 领先且入场点良好", drivers, cautions)
+        if acct == "watch":                    # an accounting WATCH never reads a clean high-conviction
+            return _v("Leader · accounting watch — confirm before adding",
+                      "领先 · 财务质量关注 — 加仓前先确认", drivers, cautions)
+        # Two-gauge wording: the conviction verb describes OWNERSHIP quality only —
+        # the entry-timing claim ("good entry") now lives on the separate Entry gauge,
+        # so this no longer mislabels a leader-with-a-bad-entry. And it is
+        # VALIDATION-GATED: until the time-machine proves forward edge, it reads
+        # 'high-confluence (context)', not the over-confident 'high-conviction'.
+        if validated:
+            return _v("High-conviction leader", "高确信 领先", drivers, cautions)
+        return _v("High-confluence leader (context)",
+                  "高共振 领先（参考）", drivers, cautions)
     if sel_t == "high" and ent is None:        # absent entry data is NOT 'poor entry'
         return _v("Leader · entry unknown — confirm timing",
                   "领先 · 入场时机未知 — 请确认", drivers, cautions)
@@ -868,14 +1042,26 @@ _BANDS = [(80, "high", "High conviction", "高确信"),
           (40, "neutral", "Neutral", "中性"),
           (0, "low", "Low", "偏弱")]
 
+# NON-US single-stock score is a WITHIN-MARKET percentile RANK (score_percentiles), so the band
+# word must read as a RANK, never absolute conviction — otherwise the card shows "96/100 High
+# conviction" next to an independently-derived "Neutral — no clear edge" verdict (the A-share
+# complaint). Same band KEYS (so the CSS colour is unchanged), rank-framed WORDS. US keeps its
+# absolute words (it has the name-rank lane + the rank honesty-note below).
+_BANDS_RANK = [(80, "high", "Top rank", "板内领先"),
+               (60, "constructive", "Upper rank", "板内偏上"),
+               (40, "neutral", "Mid-pack", "板内居中"),
+               (0, "low", "Lower rank", "板内偏弱")]
 
-def _band(score: int | None) -> dict:
+
+def _band(score: int | None, market: str = "US") -> dict:
     if score is None:
         return {"band": "na", "en": "—", "zh": "—"}
-    for lo, key, en, zh in _BANDS:
+    bands = _BANDS if (market or "US").upper() == "US" else _BANDS_RANK
+    for lo, key, en, zh in bands:
         if score >= lo:
             return {"band": key, "en": en, "zh": zh}
-    return {"band": "low", "en": "Low", "zh": "偏弱"}
+    lo, key, en, zh = bands[-1]
+    return {"band": "low", "en": en, "zh": zh}
 
 
 def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> dict:
@@ -901,6 +1087,16 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         rec = {**rec, "spotlight": eff_sp}
     tw_z, tw_present = _axis_tailwind(rec)
     q_z, q_present, q_flags = _axis_quality(rec, m)
+    # forward-aware valuation: a SUBTRACT-ONLY haircut on the quality axis (never a
+    # bonus, never a veto). Keys on FORWARD P/E where present so a growth leader cheap
+    # on forward earnings (NVDA ~16x fwd) is NOT penalized for a rich trailing multiple.
+    val = _valuation.read(rec)
+    if val:
+        q_z = _valuation.apply_haircut(q_z, val)
+        if q_z is not None:
+            q_present = q_present or ["valuation"]
+            if "valuation" not in q_present:
+                q_present = [*q_present, "valuation"]
 
     axes = {
         "selection": {"z": sel_z, "pct": _logistic_0_100(sel_z), "present": sel_present,
@@ -949,7 +1145,12 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
                 if (sp_z is not None and sp_z < -_OOP_KNEE) else 0.0)
     if oop_risk > 0:
         idio_comps = {**(idio_comps or {}), "out_of_play": round(oop_risk, 2)}
-    risk_total = max(idio, stress * _aggressiveness(rec), event, oop_risk)
+    # VALIDATED narrative-basket trend-gate de-risk (subtract-only; never re-ranks selection):
+    # a name whose basket is below its long trend / fading / deteriorating is sized down.
+    basket_hc, basket_cau = _basket_risk(rec)
+    if basket_hc > 0:
+        idio_comps = {**(idio_comps or {}), "basket_trend": round(basket_hc, 2)}
+    risk_total = max(idio, stress * _aggressiveness(rec), event, oop_risk, basket_hc)
 
     # score: prefer the within-market percentile passed by the panel builder; else
     # the logistic skin (per-name fallback, flagged approximate).
@@ -958,8 +1159,44 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         score = _logistic_0_100(comp_z)
     score = int(round(score)) if score is not None else None
 
-    vb = verdict(axes, rec, m, cycle_blocked=blocked, risk_stress=stress)
-    band = _band(score)
+    vb = verdict(axes, rec, m, cycle_blocked=blocked, risk_stress=stress,
+                 valuation=val, validated=bool(ctx.get("gate_go")))
+    if basket_cau:                       # surface the validated basket-trend de-risk as a caution
+        vb["cautions"].append(basket_cau["en"])
+        vb["cautions_zh"].append(basket_cau["zh"])
+    band = _band(score, m)
+
+    # --- honesty NOTES (AVGO/NVDA alignment): make the two places a user gets confused explicit.
+    notes: list[dict] = []
+    # (1) the SCORE is a within-board PERCENTILE rank; the VERDICT is an absolute-tier read. When a
+    # name ranks top-of-board (band high/constructive) but the verb isn't "high-conviction" (its
+    # selection z hasn't cleared the absolute bar — the NVDA 97-vs-"Constructive" case), say so, so
+    # "97" is never misread as an absolute 97/100 conviction.
+    # Fires when a top-of-board RANK is NOT a clean high-conviction buy: either the selection
+    # z hasn't cleared the absolute bar (NVDA-97-vs-Constructive), OR the cycle blocks a buy
+    # (a high-selection name in a bad tape — the exact case this used to exclude).
+    if band["band"] in ("high", "constructive") and score is not None \
+            and (_tier(sel_z) not in ("high",) or blocked):
+        notes.append({
+            "kind": "rank",
+            "en": "Score is a within-board percentile RANK (top of today's board), not an absolute "
+                  "0-100 conviction — the verdict reflects the absolute read"
+                  + (", which here BLOCKS a buy (wait for a base)." if blocked else "."),
+            "zh": "评分为板内百分位排名（今日榜单靠前），并非绝对的 0-100 确信度——结论反映绝对读数"
+                  + ("，此处结论为暂不买入（等待筑底）。" if blocked else "。")})
+    # (2) the forward risk-cone is favourable but the conviction score is muted — surface the
+    # 'high upside / low downside' the factor axes don't capture (the AVGO complaint).
+    _ah = ((rec.get("anticipation") or {}).get("horizons") or {}).get("medium") or {}
+    _aidx = _f((rec.get("anticipation") or {}).get("anticipation_index"))
+    _mfe, _dd = _f(_ah.get("mfe_med")), _f(_ah.get("dd_avg"))
+    if (_aidx is not None and _aidx >= 65 and not _ah.get("thin") and _mfe and _dd and _dd != 0
+            and (_mfe / abs(_dd)) >= 1.5 and (score is None or score < 65)):
+        notes.append({
+            "kind": "anticipation",
+            "en": f"Forward risk cone is favourable (≈{_mfe:.0f}% median upside vs ≈{abs(_dd):.0f}% "
+                  "average drawdown) — a constructive risk SHAPE the factor axes don't price.",
+            "zh": f"前瞻风险锥形态有利（中位上行约 {_mfe:.0f}% 对平均回撤约 {abs(_dd):.0f}%）——"
+                  "因子维度未计入的有利风险形态。"})
 
     # provenance — what is present vs missing, never read missing as neutral.
     all_legs = {"selection": sel_present, "entry": ent_present,
@@ -986,11 +1223,33 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         "drivers": vb["drivers"], "cautions": vb["cautions"],
         "cautions_zh": vb["cautions_zh"],
         "trust_tier": trust_tier(m, bool(ctx.get("gate_go"))),
+        # validation status the card badge + Mastermind gating key on: 'positive_ic'
+        # once the time-machine proves forward edge (gate GO), else 'neutral_ic' — the
+        # honest "ensemble context, not a validated probability" state (P4 sets this).
+        "validation_status": "positive_ic" if ctx.get("gate_go") else "neutral_ic",
         "regime": _regime_tilt(m, calm),
         "spotlight": eff_sp,          # theme+sector narrative tilt (display chip + tailwind leg)
+        # primary NARRATIVE BASKET allocation/trend-gate state — de-blurs GICS for the card AND
+        # for Mastermind (it sees "Memory leadership, in book" vs "Non-AI Software, below-trend"),
+        # and drove the validated size de-risk above (idio_comps.basket_trend).
+        "basket_alloc": rec.get("basket_alloc"),
         "axes": axes,
+        # the two new VERIFIERS, surfaced for the card chips (display; they also fed a small
+        # bounded tilt into the entry axis above — never the selection rank).
+        "gex_confirm": rec.get("gex_confirm"),
+        "vol_squeeze": rec.get("vol_squeeze"),
+        "notes": notes or None,       # honesty notes: percentile-rank caveat + favourable-cone read
         "n_axes": n_axes,
         "cycle_blocked": blocked,
+        # multi-timeframe bottoming-ALIGNMENT (engine.cycles.mtf_alignment) — the
+        # standout-strip selection gate: aligned = weekly not-falling + 3-day nearing
+        # a bullish cross + daily just-crossed/about-to. Surfaced here so every board's
+        # rows carry it via the attached conviction (display chip + the buyable filter).
+        "alignment": (rec.get("ladder") or {}).get("alignment"),
+        "valuation_band": (val or {}).get("band"),
+        "valuation_watch": bool((val or {}).get("watch")),
+        "valuation_note": (val or {}).get("note"),
+        "valuation_note_zh": (val or {}).get("note_zh"),
         "provenance": {"present": present, "n_axes": n_axes,
                        "as_of": ctx.get("as_of"),
                        "uncalibrated": not bool(ctx.get("gate_go"))},
@@ -1040,7 +1299,7 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
                   quality_context_z: float | None = None,
                   fund_priors_z: float | None = None,
                   sector_rs: dict | None = None, basket: dict | None = None,
-                  spotlight: dict | None = None,
+                  spotlight: dict | None = None, basket_alloc: dict | None = None,
                   asym: dict | None = None, ext: dict | None = None,
                   lottery_max: float | None = None,
                   earnings_days: float | None = None) -> dict:
@@ -1065,6 +1324,7 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
         "tech": record.get("tech") or {},
         "ext": ext if ext is not None else record.get("ext"),
         "sector_rs": sector_rs, "basket": basket, "spotlight": spotlight,
+        "basket_alloc": basket_alloc,      # primary-basket allocation/trend-gate state (validated de-risk)
         "factor": {"value": legs.get("value"), "profitability": legs.get("profitability"),
                    "quality": legs.get("quality"), "low_vol": legs.get("low_vol")} if legs else None,
         "quality_context_z": quality_context_z,
@@ -1074,14 +1334,25 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
         "fund_priors": {"z": fund_priors_z} if fund_priors_z is not None else None,
         "asym": asym,                      # downside-asymmetry DISPLAY read (risk shape, not scored)
         "accounting": record.get("accounting_quality"),
+        # dealer-gamma + single-stock volatility black hole — VERIFIERS/CONFIRMERS (display +
+        # bounded entry-timing tilt, never selection alpha). Previously `gex` was dropped here,
+        # so the idio GEX leg was dead — these passthroughs revive + extend it.
+        "gex": record.get("gex"),
+        "gex_confirm": record.get("gex_confirm"),
+        "vol_squeeze": record.get("vol_squeeze"),
+        # forward anticipation cone — its risk-SHAPE asymmetry feeds a bounded entry tilt + a
+        # display note (the 'high upside / low downside' the score used to ignore); direction is
+        # never bet (p_up ~ coin-flip).
+        "anticipation": record.get("anticipation"),
     }
 
 
-def attach_panel_scores(profiles: dict[str, dict]) -> None:
+def attach_panel_scores(profiles: dict[str, dict], market: str = "US") -> None:
     """Given {ticker: conviction_block} for ONE market, set each block's display
     ``score`` to the within-market cross-sectional percentile of its ``composite_z``
     (the honest, comparable-within-market skin) and refresh the band. Mutates in
-    place. Blocks with no composite keep their per-name logistic fallback."""
+    place. Blocks with no composite keep their per-name logistic fallback. ``market``
+    selects the band wording — non-US gets rank-framed words (the score IS a rank)."""
     zs = {t: b.get("composite_z") for t, b in profiles.items()
           if b.get("composite_z") is not None}
     if len(zs) < 5:
@@ -1091,5 +1362,5 @@ def attach_panel_scores(profiles: dict[str, dict]) -> None:
     for t, p in pct.items():
         blk = profiles[t]
         blk["score"] = int(p)
-        bnd = _band(int(p))
+        bnd = _band(int(p), market)
         blk["band"], blk["band_en"], blk["band_zh"] = bnd["band"], bnd["en"], bnd["zh"]

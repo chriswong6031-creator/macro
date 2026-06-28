@@ -32,6 +32,7 @@ import pandas as pd
 from engine import equity_alloc as ea
 from engine import strategies as S
 from engine.validation import backtest_core, deflated_sharpe, ret_moments
+from engine.trial_ledger import TrialLedger
 from lib import config
 
 COST_BPS = 3.0
@@ -117,7 +118,14 @@ def _evaluate(bench: pd.Series, alloc: pd.Series, cash: pd.Series, split: str,
         loco[cname] = round(_sharpe(net[mask]) - _sharpe(hold[mask]), 2)
     ddci = paired_dd_reduction_ci(net, hold)
     mom = ret_moments(net)
-    dsr = deflated_sharpe(mom[0], mom[1], mom[2], mom[3], N_TRIALS_HONEST, trading_year=TY) if mom else None
+    if mom:
+        _led = TrialLedger()      # honest-N via the ledger (P3): declared pre-registered budget
+        _led.log_declared_budget(N_TRIALS_HONEST, family="tactical",
+                                 reason="pre-registered variant configs tried (calibrate_tactical)")
+        dsr = deflated_sharpe(mom[0], mom[1], mom[2], mom[3], ledger=_led, family="tactical",
+                              trading_year=TY)
+    else:
+        dsr = None
     return {"score": s, "halves": halves, "loco": loco, "ddci": ddci, "dsr": dsr,
             "beats_baseline": s["sharpe"] >= base_sharpe}
 

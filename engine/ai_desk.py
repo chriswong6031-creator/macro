@@ -125,6 +125,13 @@ def _read_json(path):
         return None
 
 
+def _regime_label(root) -> str | None:
+    """The canonical macro regime quad at log time, stamped on each thesis so the Phase-C
+    scorer can report hit-rate per regime. Thin alias over the shared engine.regime_label."""
+    from engine.regime_label import quad_label
+    return quad_label(root)
+
+
 def _brief_age_days(prev) -> float | None:
     """Age in days of a previously-generated desk note from its `generated_at`. None
     when missing/unparseable (→ treat as DUE). Drives the regenerate-every-N-days gate."""
@@ -586,6 +593,7 @@ def _append_ledger(brief: dict, root) -> None:
         d = Path(root) / "data" / "ai_desk"
         d.mkdir(parents=True, exist_ok=True)
         asof = brief.get("state_asof")
+        regime = _regime_label(root)
         with open(d / "theses.jsonl", "a") as fh:
             for t in theses:
                 check = (t.get("falsifier") or {}).get("check") or {}
@@ -595,6 +603,7 @@ def _append_ledger(brief: dict, root) -> None:
                     "conviction": t["conviction"], "horizon_d": t["horizon_d"],
                     "falsifier": t["falsifier"], "check_by": t["check_by"],
                     "entry_levels": _entry_levels(check, asof, root),
+                    "regime": regime,            # macro regime at log time → by_regime track record
                     "status": "open", "scored_at": None, "outcome": None, "realized": None,
                 }
                 fh.write(json.dumps(row, default=str) + "\n")

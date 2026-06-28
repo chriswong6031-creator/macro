@@ -404,6 +404,8 @@ def asset_vm(asset: str, df: pd.DataFrame, calib: dict, drivers: dict | None = N
     vm = {
         "key": asset, "label": META[asset]["label"], "zh": META[asset]["zh"],
         "unit": META[asset]["unit"], "price": _r(close.iloc[-1], 2), "chg": chg,
+        # canonical front-month futures symbol so live.js refreshes the price tile
+        "sym": {"gold": "GC=F", "silver": "SI=F", "copper": "HG=F", "oil": "CL=F"}.get(asset),
         "alloc_pct": alloc_pct, "market_mode": last.get("market_mode", "—"),
         "risk_on": risk_on, "risk_index": _r(last.get("risk_index"), 0),
         "risk_word": "Calm" if risk_on else "Elevated",

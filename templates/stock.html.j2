@@ -159,6 +159,10 @@
   table { border-collapse:collapse; width:100%; font-size:13px; }
   th,td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
   th { color:var(--muted); font-weight:500; }
+  /* trust-the-state: flag the row matching the live cycle state */
+  #r_cal tr.cal-cur td { background:color-mix(in srgb, var(--warn) 13%, transparent); }
+  #r_cal tr.cal-cur td:first-child { box-shadow:inset 3px 0 var(--warn); font-weight:700; }
+  .cal-here { color:var(--warn); font-size:11px; font-weight:700; margin-left:8px; white-space:nowrap; }
   #result { display:none; }
   #stock-brief { border-left:3px solid var(--link); }
   #stock-brief h2 { color:var(--link); }
@@ -232,6 +236,31 @@
   .cv-score.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
   .cv-verdict { font-size:15px; font-weight:800; line-height:1.25; }
   .cv-tier { font-size:11px; color:var(--muted); margin-top:1px; }
+  /* ENTRY-timing gauge (the second gauge) on the detail conviction hero */
+  .cv-entry { margin:10px 0 2px; padding:8px 10px; border-radius:10px; background:var(--panel);
+              border:1px solid var(--line); border-left:4px solid var(--muted); }
+  .cv-entry.nbe-buy_now, .cv-entry.nbe-partial { border-left-color:var(--up);
+              background:color-mix(in srgb,var(--up) 8%,var(--panel)); }
+  .cv-entry.nbe-buy_soon, .cv-entry.nbe-watch { border-left-color:var(--g-cold); }
+  .cv-entry.nbe-wait_pullback, .cv-entry.nbe-hold { border-left-color:var(--warn); }
+  .cv-entry.nbe-extended, .cv-entry.nbe-topping { border-left-color:var(--warn);
+              background:color-mix(in srgb,var(--warn) 9%,var(--panel)); }
+  .cv-entry.nbe-exit, .cv-entry.nbe-avoid, .cv-entry.nbe-blocked { border-left-color:var(--down);
+              background:color-mix(in srgb,var(--down) 8%,var(--panel)); }
+  .cv-ehead { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:800; }
+  .cv-entry .nbe-dot { width:9px; height:9px; border-radius:50%; background:var(--muted); flex:none; }
+  .cv-entry .nbe-dot.a3 { background:var(--up); box-shadow:0 0 0 4px color-mix(in srgb,var(--up) 22%,transparent); }
+  .cv-entry .nbe-dot.a2 { background:var(--g-cold); }
+  .cv-entry .nbe-dot.a1 { background:var(--warn); }
+  .cv-entry .nbe-dot.a0 { background:var(--down); }
+  .cv-ezone { font-size:12px; margin-top:5px; font-variant-numeric:tabular-nums; }
+  .cv-ezone span { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.04em; }
+  .cv-ecyc { font-size:10.5px; color:var(--muted); margin-top:3px; font-variant-numeric:tabular-nums; }
+  .cv-etext { font-size:11px; margin-top:5px; line-height:1.35; }
+  .cv-val { font-size:10px; font-weight:700; padding:1px 6px; border-radius:7px; margin-left:6px;
+            color:var(--muted); background:var(--panel); border:1px solid var(--line); }
+  .cv-val.val-extreme, .cv-val.val-stretched { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
+  .cv-val.val-cheap { color:var(--up); border-color:color-mix(in srgb,var(--up) 32%,var(--line)); }
   .cv-axes { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:9px; }
   .cax { font-size:10.5px; }
   .cax .caxl { color:var(--muted); display:block; }
@@ -256,6 +285,21 @@
   .cv-size .cv-szk { color:var(--muted); text-transform:uppercase; letter-spacing:.04em; font-size:10px; }
   .cv-size .cv-szv { font-weight:800; }
   .cv-size .cv-szt { color:var(--muted); font-weight:600; font-size:10.5px; }
+  /* pullback buy-zone: actionable companion to an "Extended — don't chase" verdict (display-only) */
+  .pz { margin-top:9px; padding:9px 11px; border-radius:9px; border:1px solid var(--line);
+        border-left-width:3px; }
+  .pz-acc { background:color-mix(in srgb,var(--up) 8%,var(--panel)); border-left-color:var(--up); }
+  .pz-chase { background:color-mix(in srgb,var(--down) 8%,var(--panel)); border-left-color:var(--down); }
+  .pz-h { font-size:11px; font-weight:800; letter-spacing:.03em; text-transform:uppercase;
+          display:flex; align-items:center; gap:6px; }
+  .pz-acc .pz-h { color:var(--up); } .pz-chase .pz-h { color:var(--down); }
+  .pz-head { font-size:12.5px; color:var(--text); line-height:1.5; margin:5px 0 7px; }
+  .pz-lvls { display:flex; flex-wrap:wrap; gap:7px; }
+  .pz-lvl { font-size:11.5px; border:1px solid var(--line); background:var(--panel2);
+            border-radius:7px; padding:3px 8px; display:inline-flex; align-items:baseline; gap:6px; }
+  .pz-lvl b { font-variant-numeric:tabular-nums; }
+  .pz-lvl .pz-pull { font-weight:700; font-variant-numeric:tabular-nums; color:var(--down); }
+  .pz-lvl em { color:var(--muted); font-style:normal; }
   .cv-regime.rg-calm { color:var(--up); background:color-mix(in srgb,var(--up) 11%,var(--panel));
                        border-color:color-mix(in srgb,var(--up) 30%,var(--line)); }
   .cv-regime.rg-stress { color:var(--warn); background:color-mix(in srgb,var(--warn) 12%,var(--panel));
@@ -369,41 +413,100 @@
   .aq-foot { color:var(--muted); font-size:11px; margin:9px 0 0; font-style:italic; }
   @media (max-width:560px){ .aq-read{ grid-template-columns:14px 1fr; }
     .aq-read .aqk{ font-weight:700; } .aq-read .aqd{ grid-column:1 / -1; padding-left:23px; } }
+
+  /* ===================== HYBRID PAGE POLISH (Refined base + Fintech finish) =====================
+     Soft cards, cleaner sentence-case headings, tabular numerics. Section-specific card
+     rebuilds layer on top of this base. */
+  #result .panel { border-radius:16px; padding:18px 20px; box-shadow:0 1px 0 rgba(255,255,255,.025);
+                   margin-bottom:16px; font-variant-numeric:tabular-nums; }
+  h2 { font-size:15px; text-transform:none; letter-spacing:0; font-weight:650; color:var(--text);
+       margin:0 0 13px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; line-height:1.3; }
+  /* the daily/weekly summary line duplicates the decision gloss + timing line — drop it */
+  #r_summary { display:none; }
+  /* Demand context — verdict + two-tile comparator (market-priced vs independent) */
+  #r_demand .dc-verdict { display:flex; align-items:baseline; gap:10px; font-size:17px; font-weight:700;
+    padding:10px 14px; border-radius:12px; margin-bottom:12px; }
+  #r_demand .dc-vq { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .dcv-up { color:var(--up); background:color-mix(in srgb,var(--up) 12%,transparent); }
+  .dcv-risk { color:var(--down); background:color-mix(in srgb,var(--down) 12%,transparent); }
+  .dcv-mut { color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,transparent); }
+  #r_demand .dc-cmp { display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:stretch; }
+  #r_demand .dc-cmp-solo { grid-template-columns:1fr; }
+  #r_demand .dc-tile { background:var(--panel2); border-radius:12px; padding:13px 15px; }
+  #r_demand .dc-tt { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px; }
+  #r_demand .dc-big { font-size:28px; font-weight:800; line-height:1; }
+  #r_demand .dc-big small { display:block; font-size:11px; font-weight:500; color:var(--muted); margin-top:4px; }
+  #r_demand .dc-rows { margin-top:11px; display:flex; flex-direction:column; gap:6px; }
+  #r_demand .dc-rows > div { display:flex; justify-content:space-between; font-size:13px; }
+  #r_demand .dc-rows span { color:var(--muted); }
+  #r_demand .dc-mid { display:flex; align-items:center; }
+  #r_demand .dc-div { font-size:11px; font-weight:800; letter-spacing:.07em; writing-mode:vertical-rl;
+    transform:rotate(180deg); border-radius:7px; padding:9px 4px; }
+  .dcd-up { color:var(--up); border:1px solid color-mix(in srgb,var(--up) 40%,transparent); }
+  .dcd-risk { color:var(--down); border:1px solid color-mix(in srgb,var(--down) 40%,transparent); }
+  .dcd-mut { color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 40%,transparent); }
+  #r_demand .dc-capex { margin-top:11px; font-size:12.5px; color:var(--muted); }
+  #r_demand .dc-capex b { color:var(--up); }
+  #r_demand .dc-arr { color:var(--muted); font-style:normal; margin:0 3px; }
+  #r_demand .dc-hz { margin-top:7px; font-size:11.5px; color:var(--muted); }
+  #r_demand .dc-tags { margin-top:9px; display:flex; gap:5px; flex-wrap:wrap; }
+  #r_demand .dc-tag { font-size:11px; color:var(--muted); background:var(--panel); border:1px solid var(--line);
+    padding:2px 8px; border-radius:6px; }
+  #r_demand .dc-foot { margin:12px 0 0; font-size:12px; color:var(--muted); line-height:1.55; }
+  @media (max-width:620px){ #r_demand .dc-cmp { grid-template-columns:1fr; }
+    #r_demand .dc-mid { justify-content:center; } #r_demand .dc-div { writing-mode:horizontal-tb; transform:none; } }
+  /* Financials & growth — revenue combo chart + quarterly EPS-surprise bars */
+  #r_multiyear .fc-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:4px; }
+  #r_multiyear .fc-box { background:var(--panel2); border-radius:12px; padding:12px 14px; }
+  #r_multiyear .fc-lbl { display:flex; justify-content:space-between; font-size:12px; margin-bottom:8px; }
+  #r_multiyear .fc-lbl span:first-child { color:var(--muted); }
+  #r_multiyear .fc-svg { width:100%; height:108px; display:block; }
+  #r_multiyear .fc-bars rect { fill:color-mix(in srgb,var(--link) 52%,transparent); }
+  #r_multiyear .fc-line { fill:none; stroke:var(--up); stroke-width:2; }
+  #r_multiyear .fc-pts circle { fill:var(--up); }
+  #r_multiyear .fc-ax { stroke:var(--line); }
+  #r_multiyear .sp-pos { fill:color-mix(in srgb,var(--up) 55%,transparent); }
+  #r_multiyear .sp-neg { fill:color-mix(in srgb,var(--down) 55%,transparent); }
+  #r_multiyear .fc-v { fill:var(--muted); font-size:9px; text-anchor:middle; }
+  #r_multiyear .fc-x { fill:var(--muted); font-size:9px; text-anchor:middle; }
+  @media (max-width:620px){ #r_multiyear .fc-grid { grid-template-columns:1fr; } }
+  /* Factor fingerprint — standout headline */
+  #panel_fac .fac-standout { font-size:13.5px; margin:0 0 13px; line-height:1.55; }
+  #panel_fac .fac-standout .fs-lbl { color:var(--muted); font-weight:600; }
+  #panel_fac .fac-standout .dot { color:var(--muted); margin:0 2px; }
+  /* Earnings — event bar + beat streak + forward revisions */
+  #panel_earn .earnhdr { font-size:13px; margin-bottom:8px; }
+  #panel_earn .earndays { font-weight:700; color:var(--up); }
+  #panel_earn .earn-chips { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:8px 0; font-size:13px; }
+  #panel_earn .earn-fwd { margin-top:10px; background:var(--panel2); border-radius:11px; padding:11px 13px; }
+  #panel_earn .earn-fwd-h { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+  #panel_earn .earn-fwd-row { display:flex; flex-wrap:wrap; gap:8px; font-size:13px; align-items:center; }
+  #panel_earn .earn-fwd-row .dot { color:var(--muted); }
+  /* GEX — vol "hole" strip */
+  #panel_gex .gex-hole { margin:8px 0 2px; font-size:12.5px; color:var(--text);
+    background:var(--panel2); border-radius:10px; padding:8px 12px; }
+  #panel_gex .gex-hole b { color:var(--warn); }
+  /* Super-investors — fund grade + per-row as-of + holders trend sparkline */
+  #panel_smartmoney .sm-grade { display:inline-block; font-size:10px; font-weight:800; padding:0 5px; border-radius:5px; vertical-align:middle; }
+  #panel_smartmoney .sm-gA { color:var(--up); background:color-mix(in srgb,var(--up) 16%,transparent); }
+  #panel_smartmoney .sm-gB { color:var(--warn); background:color-mix(in srgb,var(--warn) 16%,transparent); }
+  #panel_smartmoney .sm-gC, #panel_smartmoney .sm-gD, #panel_smartmoney .sm-gF { color:var(--muted); background:var(--panel2); }
+  #panel_smartmoney .sm-asof { font-size:11px; color:var(--muted); }
+  #panel_smartmoney .sm-trend { display:flex; align-items:center; gap:8px; font-size:12.5px; margin:0 0 11px; flex-wrap:wrap; }
+  #panel_smartmoney .sm-spark { width:66px; height:18px; flex:none; }
+  #panel_smartmoney .sm-spark polyline { fill:none; stroke:var(--link); stroke-width:1.5; }
+{% include "_stock_decision.css.j2" %}
 </style>
 </head>
 <body>
-<nav class="site-nav">
-    {% include "_navlinks.html.j2" %}
-  <div class="nav-search">
-    <span class="mag">🔎</span>
-    <input type="text" autocomplete="off" aria-label="Search stocks"
-      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
-    <div class="nav-sugg"></div>
-  </div>
-  <div class="nav-ctrls">
-    <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
-    <button class="theme-switch" aria-label="Toggle dark / light mode">
-      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
-    </button>
-    <div class="lang-toggle" role="group" aria-label="Language">
-      <span class="pill"></span>
-      <span class="opt en-opt" data-l="en">EN</span>
-      <span class="opt zh-opt" data-l="zh">中文</span>
-    </div>
-  </div>
-</nav>
-  <div class="panel">
-    <div class="topline">
-      <h1>🔎 {{ t('Stock analyzer', '个股分析') }}</h1>
-    </div>
-    <p class="muted" style="margin:8px 0 0">{{ t('Search any stock, ETF, commodity or crypto in the bar above to analyze it — the same treatment as the sector pages: cycle position (daily + weekly), three-timeframe momentum, a clear entry/exit call, and the measured track record.',
-      '在上方搜索栏输入任意股票、ETF、大宗商品或加密货币即可分析 — 与板块页面相同：周期位置（日线＋周线）、三周期动量、明确的进出场判断，以及实测历史表现。') }}</p>
-  </div>
+{% include "_site_nav.html.j2" %}
+  <p id="intro-prompt" class="muted" style="margin:4px 2px 14px;font-size:13.5px">🔎 {{ t('Search any stock, ETF, commodity or crypto in the bar above.', '在上方搜索任意股票、ETF、大宗商品或加密货币。') }}</p>
 
   <div id="result">
     <div class="panel">
       <div class="topline">
         <h1 id="r_name"></h1>
+        <span id="r_live_px" class="nb-px" data-mkt="us" style="display:none;font-weight:800;font-size:17px;margin-left:2px"></span>
         <span id="r_state" class="state"></span>
         <span id="r_eq" class="eqbadge" style="display:none"></span>
         <span id="r_archetype" class="arch" style="display:none"></span>
@@ -420,25 +523,29 @@
         <span id="r_asof" class="muted"></span>
       </div>
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
-      <div id="r_glance" class="glance" style="display:none"></div>
-      <!-- unified Conviction Profile hero — the SAME block the standout card shows -->
-      <div id="r_conviction" class="conv" style="display:none"></div>
-      <!-- bold VERDICT + at-a-glance SIGNAL STRIP (replace the thin entry bar) -->
-      <div id="r_verdict" class="verdict"></div>
-      <div id="r_sigstrip" class="sigstrip"></div>
-      <!-- bottom-confidence box (multi-TF, bottoming states only) -->
-      <div id="r_bc" class="bcbox" style="display:none"></div>
-      <p id="r_age" class="agewhen" style="display:none"></p>
-      <p id="r_early" class="early" style="display:none"></p>
-      <p id="r_macro" class="macro-caution" style="display:none"></p>
-      <div id="r_macrosens" class="macro-sens" style="display:none"></div>
+      <!-- ===== Decision-first layout (shared stockview.js renders rec.view) ===== -->
+      <div id="sv-decision"></div>
+      <div id="sv-fingerprint"></div>
+      <div id="sv-honesty"></div>
+      <!-- alt-data convergence — a live deep-context panel (not a fallback) -->
       <div id="r_altdata" class="macro-sens" style="display:none"></div>
-      <div id="r_dtcontra" class="dt-contra" style="display:none"></div>
-      <ul id="r_points" class="points"></ul>
-      <div id="r_cyclebox" class="cyclebox"></div>
-      <p id="r_flags" class="neg" style="margin:4px 0"></p>
-      <details><summary>{{ t('full reasoning', '完整推理') }}</summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
+      <!-- ===== Cycle & timing detail (deep layer, collapsed) ===== -->
+      <details class="sv-deep"><summary>{{ t('Cycle &amp; timing detail', '周期与时机详情') }}</summary>
+        <div id="r_bc" class="bcbox" style="display:none"></div>
+        <p id="r_age" class="agewhen" style="display:none"></p>
+        <p id="r_early" class="early" style="display:none"></p>
+        <p id="r_macro" class="macro-caution" style="display:none"></p>
+        <ul id="r_points" class="points"></ul>
+        <div id="r_cyclebox" class="cyclebox"></div>
+        <p id="r_flags" class="neg" style="margin:4px 0"></p>
+        <p class="muted" id="r_why" style="margin:6px 0"></p>
+      </details>
     </div>
+    <!-- ===== Evidence lanes + country slot (Layer 2, shared stockview.js) ===== -->
+    <div id="sv-evidence"></div>
+    <div id="sv-country"></div>
+    <!-- ===== Deep layer — collapsed disclosure groups (off the glance path) ===== -->
+    <details class="sv-group"><summary>{{ t('🔮 Outlook &amp; AI view', '🔮 前瞻与 AI 观点') }}</summary>
     <div class="panel" id="panel_anticipation" style="display:none">
       <h2>🔮 {{ t('Anticipation — multi-horizon outcome cone', '预判 — 多周期结果锥') }}
         <a href="anticipation.html" class="muted" style="font-size:12px;font-weight:400;margin-left:6px">{{ t('all assets →', '全部标的 →') }}</a></h2>
@@ -456,7 +563,8 @@
       <h2>🧠 {{ t('AI brief — research context', 'AI 简报 — 研究背景') }}</h2>
       <div id="stock-brief-body"></div>
     </div>
-
+    </details>
+    <details class="sv-group"><summary>{{ t('📊 Fundamentals &amp; financials', '📊 基本面与财务') }}</summary>
     <!-- ===== Fundamentals suite (Phase 1: surface what we already compute) ===== -->
     <div class="panel" id="panel_profile" style="display:none">
       <h2>🏢 {{ t('Business profile', '公司概况') }}</h2>
@@ -509,6 +617,7 @@
       <h2>🧬 {{ t('Factor fingerprint', '因子指纹') }}
         {{ help('Where this name sits on the canonical smart-beta factors versus the S&P 1500 cross-section (winsorized z-scores; 0 = average, +2 = top of the pack, bars right of centre = attractive). These are RELATIVE RANKS lagged to the latest filing — context, not a validated alpha and not a quality verdict.',
           '该标的在标普1500横截面上各经典smart-beta因子的位置（缩尾z分数；0＝平均，+2＝领先，条形位于中线右侧＝有吸引力）。这些是滞后至最新财报的相对排名——仅供参考，并非已验证的超额收益或质量结论。') }}</h2>
+      <div id="r_fac_standout" class="fac-standout"></div>
       <div class="facwrap">
         <div id="r_radar" class="radarbox"></div>
         <div id="r_zbars" class="zbars"></div>
@@ -522,7 +631,8 @@
           "该股票剔除其市场与板块贝塔后的收益 —— 12-1 个月的板块中性残差动量。“阿尔法 z”是其在整个标普1500横截面中的排名（0＝平均，+2＝领先）；“板块排名”是其在 GICS 同业中的位次；“特异收益”为年化的剔除贝塔后收益。入场标签标记领跑股是刚急涨（“extended”＝短期反转风险）还是处于近期回调（“pullback”＝较佳入场）。第 0 阶段验证为温和、随周期衰减的优势 —— 仅为选股参考，并非独立买入信号。") }}</h2>
       <div id="r_alpha"></div>
     </div>
-
+    </details>
+    <details class="sv-group"><summary>{{ t('🏦 Options, positioning &amp; ownership', '🏦 期权、持仓与机构') }}</summary>
     <div class="panel" id="panel_gex" style="display:none">
       <h2>🎯 {{ t('Options &amp; dealer gamma (GEX)', '期权与做市商Gamma') }}</h2>
       <div id="r_gex"></div>
@@ -541,7 +651,7 @@
     </div>
 
     <div class="panel" id="panel_flow" style="display:none">
-      <h2>🐳 {{ t('Institutional flow — funds buying / selling this', '机构资金流 — 哪些基金在买卖它') }}
+      <h2>🐳 {{ t('Thematic-fund flow — curated ETF baskets', '主题基金流 — 精选ETF篮子') }}
         {{ help("Which curated thematic/industry funds (SPDR sector, Global X) and actively managed funds (ARK) have been accumulating or trimming this stock, with mechanical creation/redemption flow and price moves stripped out. Conviction = the percentage POINTS of the fund's weight the manager actually committed. A real add from a sector specialist is a meaningful vote of confidence; pair it with the analyst & filings panels above. From the 🐳 Real fund moves board.",
           "哪些精选的主题／行业基金（SPDR 板块、Global X）与主动管理基金（ARK）一直在增持或减持该股，已剔除机械性的申购／赎回资金流与价格变动。信念 = 经理人实际投入的基金权重百分点。来自板块专业基金的真实增持是有意义的信心投票；请与上方的分析师与申报面板结合参考。数据来自 🐳 基金真实动作 看板。") }}</h2>
       <div id="r_flow"></div>
@@ -560,19 +670,20 @@
           "哪些精选的超级投资者基金（伯克希尔、潘兴广场、Scion、Baupost、Viking、老虎环球等）在最新的 SEC 13F 表中报告持有该股，以及相对上一季度是新建仓／加仓／减持／清仓。信念 = 该持仓在该基金所报美股组合中的占比。13F 为季度申报，约有 45 天滞后 —— 仅含美股多头持仓（≥1亿美元），不含空头、期权细节或非美持仓；CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。") }}</h2>
       <div id="r_smartmoney"></div>
     </div>
-
-    <div class="panel" id="panel_mtf">
-      <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
-      <div id="r_mtf"></div>
-    </div>
+    </details>
+    <details class="sv-group"><summary>{{ t('📈 Momentum, chart &amp; history', '📈 动量、图表与历史') }}</summary>
     <div class="panel">
       <h2>{{ t('Chart', '图表') }}</h2>
       <div id="tvbox"></div>
     </div>
+    <div class="panel" id="panel_mtf">
+      <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
+      <div id="r_mtf"></div>
+    </div>
+    </details>
+    <!-- Trust-the-state: standalone, always-open panel at the page bottom (per revamp) -->
     <div class="panel" id="panel_cal">
-      <h2>{{ t('How much to trust the state — measured 2000→2026', '这个状态有多可信 — 实测 2000→2026') }}</h2>
-      <table id="r_cal"></table>
-      <p class="muted" style="font-size:12px; margin-top:8px">{{ t(
+      <h2>{{ t('How much to trust the state — measured 2000→2026', '这个状态有多可信 — 实测 2000→2026') }}{{ help(
         'Stocks drift up over a month from
         every state (the market\'s long upward bias); the spread between states is small, and the
         "scary" states measured slightly better forward returns — markets mean-revert and full
@@ -587,12 +698,17 @@
         <b>结构判断</b>（周期位置、确认清单、失效价位）并据此控制仓位，而非追求确定性。
         <b>典型回撤</b> = 未来一个月最大跌幅的中位数；<b>最坏回撤</b> = 十分之一的最差月份（第10百分位）—
         对于未确认转向这类风险状态，回撤视角比平均收益更重要，因为危险在于过程，而非终点。（基于股票的一个月
-        周期实测 — 加密货币的尾部更肥，故请将其视为风险下限。）') }}</p>
+        周期实测 — 加密货币的尾部更肥，故请将其视为风险下限。）') }}</h2>
+      <table id="r_cal"></table>
     </div>
+    <p class="muted sv-method" style="font-size:11.5px;margin:14px 2px 0">{{ t(
+      'How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation.',
+      '如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅为研究性背景展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。') }}</p>
   </div>
 
 <script src="lightweight-charts-v5.js"></script>
 <script src="chart.js"></script>
+<script src="stockview.js"></script>
 <script src="stockbrief.js"></script>
 <script src="aidesk_lean.js"></script>
 <script>
@@ -788,31 +904,7 @@
   // Macro sensitivity chip (engine/stock_macro_sensitivity.py) — rate-beta tier +
   // duration bucket + live-regime head/tailwind + inflation label. Display-only, never
   // scored; every render carries the mandatory single-name-noise caveat.
-  function renderMacroSens(d) {
-    var box = el('r_macrosens'), ms = d.macro_sensitivity;
-    if (!box) return;
-    if (!ms) { box.style.display = 'none'; return; }
-    box.className = 'macro-sens' + (ms.regime ? ' ms-' + ms.regime : '');
-    var ttl = lang() === 'zh' ? '宏观敏感性' : 'Macro sensitivity';
-    var chips = [];
-    chips.push('<span class="ms-chip ms-' + ms.duration + '">' +
-      lz(ms.duration_label.en, ms.duration_label.zh) + '</span>');
-    var betaTxt = (ms.rate_beta >= 0 ? '+' : '') + ms.rate_beta.toFixed(2) +
-      (ms.rate_beta_se != null ? ' ± ' + ms.rate_beta_se.toFixed(2) : '');
-    chips.push('<span class="ms-chip ms-tier-' + ms.tier + '">' +
-      (lang() === 'zh' ? '利率beta' : 'Rate β') + ' <b>' + betaTxt + '</b> · ' +
-      lz(ms.tier_label.en, ms.tier_label.zh) + '</span>');
-    chips.push('<span class="ms-chip ms-' + ms.inflation + '">' +
-      lz(ms.inflation_label.en, ms.inflation_label.zh) + '</span>');
-    box.innerHTML =
-      '<div class="ms-head"><span class="ms-ttl">' + ttl + '</span>' +
-        esc(lz(ms.headline.en, ms.headline.zh)) + '</div>' +
-      '<div class="ms-chips">' + chips.join('') + '</div>' +
-      '<div class="muted" style="font-size:12px;margin-top:5px">' +
-        esc(lz(ms.detail.en, ms.detail.zh)) + '</div>' +
-      '<div class="ms-cav">' + esc(lz(ms.caveat.en, ms.caveat.zh)) + '</div>';
-    box.style.display = 'block';
-  }
+
 
   // Alt-data convergence chip (engine/altdata_signals.chip) — politician / insider /
   // government-contract / Trump flow lit on this name. Display-only, never scored.
@@ -842,24 +934,7 @@
   // survived the phase-0 gate, both INVERSE of his usual framing: a high composite =
   // extended/fade (decile Spearman −0.88), and rising "whale accumulation" precedes
   // under-performance. Display-only, never scored; validated stats live in the caveat.
-  function renderDtContra(d) {
-    var box = el('r_dtcontra'), dc = d.dt_contra;
-    if (!box) return;
-    if (!dc) { box.style.display = 'none'; return; }
-    box.className = 'dt-contra' + (dc.state !== 'neutral' ? ' dtc-' + dc.state : '');
-    var ttl = lang() === 'zh' ? 'DannyTrades 逆向' : 'DannyTrades contrarian';
-    var chips = (dc.chips || []).map(function (c) {
-      return '<span class="dtc-chip ' + c.cls + '">' + esc(lz(c.label.en, c.label.zh)) + '</span>';
-    }).join('');
-    box.innerHTML =
-      '<div class="dtc-head"><span class="dtc-ttl">' + ttl + '</span>' +
-        esc(lz(dc.headline.en, dc.headline.zh)) + '</div>' +
-      '<div class="dtc-chips">' + chips + '</div>' +
-      '<div class="muted" style="font-size:12px;margin-top:5px">' +
-        esc(lz(dc.detail.en, dc.detail.zh)) + '</div>' +
-      '<div class="dtc-cav">' + esc(lz(dc.caveat.en, dc.caveat.zh)) + '</div>';
-    box.style.display = 'block';
-  }
+
 
   // Demand Context (Phase 0) — the L0/L1/L2 framing. Trailing (delivered) ·
   // Consensus (already priced) · Independent observable (variant — not yet measured).
@@ -869,104 +944,104 @@
   // memory demand-desk-divergence.
   function renderDemandContext(d) {
     var box = el('r_demand'); if (!box) return;
-    var prof = d.profile, val = d.valuation, fin = d.financials, an = d.analyst, ev = d.earnings || {}, rv = d.revisions;
+    var val = d.valuation, fin = d.financials, an = d.analyst, ev = d.earnings || {}, rv = d.revisions || {};
     var dch = d.demand_chain;
-    var isEquity = !!(prof || val || fin || d.factors);
-    // Show for equities, OR for any name carrying a demand-chain signal even without
-    // full SEC fundamentals (recent AI IPOs / foreign filers — exactly where the
-    // forward-demand read matters most). Hide only when there's nothing to say.
+    var isEquity = !!(d.profile || val || fin || d.factors);
     if (!isEquity && !(dch && dch.headline)) { show('panel_demand', false); return; }
-    var r1 = function (n) { return n == null ? null : (Math.round(n * 10) / 10); };
-    function sg(n, suf) {            // signed, rounded, colour-classed chip value
-      if (n == null) return null;
+    function sgB(n, suf) {
+      if (n == null) return '<b class="muted">—</b>';
       var c = n > 0 ? 'pos' : n < 0 ? 'neg' : 'muted';
-      return '<span class="' + c + '">' + (n > 0 ? '+' : '') + (Math.round(n * 10) / 10) + (suf || '') + '</span>';
+      return '<b class="' + c + '">' + (n > 0 ? '+' : '') + (Math.round(n * 10) / 10) + (suf || '') + '</b>';
     }
-    function chip(lab, v, cls) {
-      return v == null ? '' : '<span class="dc-chip' + (cls ? ' ' + cls : '') + '"><span class="dc-ck">' +
-        lab + '</span><span class="dc-cv">' + v + '</span></span>';
+    var fpe = (val && val.forward_pe != null) ? val.forward_pe : (an && an.forward_pe != null ? an.forward_pe : null);
+    // market-bought (consensus) tile rows
+    var mrows = [];
+    if (rv.net_up_30d != null) mrows.push('<div><span>' + lz('Upgrades 30d', '30天上调') + '</span>' + sgB(rv.net_up_30d) + '</div>');
+    if (rv.est_chg_30d != null) mrows.push('<div><span>' + lz('Est. drift 30d', '预期漂移30天') + '</span>' + sgB(rv.est_chg_30d, '%') + '</div>');
+    if (ev.summary && ev.summary.total) mrows.push('<div><span>' + lz('Beat rate', '超预期率') + '</span><b>' + ev.summary.beats + '/' + ev.summary.total + '</b></div>');
+    if (rv.n_analysts != null) mrows.push('<div><span>' + lz('Analysts', '分析师') + '</span><b>' + Math.round(rv.n_analysts) + '</b></div>');
+    var mtile = '<div class="dc-tile"><div class="dc-tt">' + lz('What the market has bought', '市场已买入的') + '</div>' +
+      (fpe != null ? '<div class="dc-big">' + fpe.toFixed(1) + '×<small>' + lz('forward P/E', '前瞻市盈率') + '</small></div>'
+                   : '<div class="dc-big muted">—<small>' + lz('no forward P/E', '无前瞻市盈') + '</small></div>') +
+      '<div class="dc-rows">' + mrows.join('') + '</div></div>';
+
+    if (!(dch && dch.headline)) {
+      // No management-independent chain for this name -> show only the priced side + an honest note.
+      box.innerHTML = '<div class="dc-cmp dc-cmp-solo">' + mtile + '</div>' +
+        '<p class="dc-foot">' + lz('Only the consensus (already-priced) view is available — no management-independent forward-demand read yet, so this can\'t say the rally is under-priced.',
+          '仅有共识（已计入价格）视角——尚无不依赖管理层的前瞻需求读数，故无法判断涨势是否被低估。') + '</p>';
+      show('panel_demand', true); return;
     }
-    // L1 — Trailing (delivered): demand that already converted to financials
-    var t1 = [];
-    if (fin) {
-      t1.push(chip(lz('Revenue growth','营收增长'), sg(fin.rev_growth, '%')));
-      t1.push(chip(lz('Net income growth','净利润增长'), sg(fin.ni_growth, '%')));
-      t1.push(chip(lz('Net margin','净利率'), fin.net_margin == null ? null : r1(fin.net_margin) + '%'));
-      t1.push(chip(lz('ROE','净资产收益率'), fin.roe == null ? null : r1(fin.roe) + '%'));
-    }
-    t1 = t1.filter(Boolean);
-    if (!t1.length) t1 = ['<span class="dc-na">' + lz('no SEC filing data yet','暂无SEC财报数据') + '</span>'];
-    // L2 — Consensus (already in the price): the forward view the market has bought
-    var t2 = [], fpe = (val && val.forward_pe != null) ? val.forward_pe : (an && an.forward_pe != null ? an.forward_pe : null);
-    t2.push(chip(lz('Forward P/E','前瞻市盈率'), fpe == null ? null : fpe.toFixed(1) + '×', 'dc-priced'));
-    t2.push(chip(lz('Next-Q est. EPS','下季预期EPS'), ev.eps_forecast == null ? null : '$' + ev.eps_forecast + (ev.next_date ? ' · ' + esc(ev.next_date) : ''), 'dc-priced'));
-    if (rv) {
-      t2.push(chip(lz('Net upgrades 30d','30天净上调'), sg(rv.net_up_30d), 'dc-priced'));
-      t2.push(chip(lz('Revision breadth','评级调整广度'), rv.breadth == null ? null : sg(Math.round(rv.breadth * 100) / 100), 'dc-priced'));
-      t2.push(chip(lz('Est. drift 30d','预期漂移30天'), sg(rv.est_chg_30d, '%'), 'dc-priced'));
-      t2.push(chip(lz('Est. drift 90d','预期漂移90天'), sg(rv.est_chg_90d, '%'), 'dc-priced'));
-      t2.push(chip(lz('Analysts','分析师数'), rv.n_analysts == null ? null : Math.round(rv.n_analysts), 'dc-priced'));
-    }
-    t2.push(chip(lz('SUE (earnings momentum)','SUE 盈利动量'), ev.sue_z == null ? null : sg(Math.round(ev.sue_z * 100) / 100), 'dc-priced'));
-    t2.push(chip(lz('Beat rate','超预期率'), (ev.summary && ev.summary.total) ? (ev.summary.beats + '/' + ev.summary.total) : null, 'dc-priced'));
-    t2 = t2.filter(Boolean);
-    if (!t2.length) t2 = ['<span class="dc-na">' + lz('no consensus / estimate data for this name','该标的暂无共识／预期数据') + '</span>'];
-    // L3 — Independent observable (variant?): the customer-capex demand chain
-    // (engine/demand_chain) for AI-infra names (Phase 1); honest placeholder
-    // otherwise. The whole point: a MANAGEMENT-INDEPENDENT forward-demand read.
-    var t3;
-    if (dch && dch.headline) {
-      var DIVMAP = {
-        ahead_of_consensus: { cls:'dc-div-up',   en:'AHEAD OF CONSENSUS', zh:'领先共识' },
-        consensus_at_risk:  { cls:'dc-div-risk', en:'CONSENSUS AT RISK',  zh:'共识承压' },
-        aligned:            { cls:'dc-div-mut',  en:'IN THE PRICE',       zh:'已计入价格' },
-        signal_only:        { cls:'dc-div-mut',  en:'SIGNAL ONLY',        zh:'仅信号' } };
-      var dm = DIVMAP[dch.divergence] || DIVMAP.signal_only;
-      var ser = (dch.series || []).slice(-3).map(function (p) {
-        return '<span class="dc-chip">FY' + (p[0] % 100) + ' <span class="dc-cv">$' + p[1] + 'B</span></span>';
-      }).join('<span class="dc-arrow">→</span>');
-      // accountability line (leading chains only): this divergence call is logged to
-      // a falsifiable ledger (engine/demand_ledger) and scored forward vs SPY.
-      var led = dch.ledger, ledLine = '';
-      if (led) {
-        if (led.scored > 0) {
-          ledLine = '<div class="dc-ledger">📒 ' + lz('Variant calls scored so far: ','已评分的变体判断：') +
-            led.hits + '/' + led.scored + lz(' hit','命中') +
-            (led.hit_rate != null ? ' (' + Math.round(led.hit_rate * 100) + '%)' : '') +
-            (led.open ? ' · ' + led.open + lz(' open','个未结') : '') + '</div>';
-        } else {
-          ledLine = '<div class="dc-ledger">📒 ' + lz('Being scored forward vs SPY — ','正在对 SPY 前向评分——') +
-            (led.open || 0) + lz(' open variant call(s)','个未结变体判断') +
-            (led.since ? ' ' + lz('since ','自 ') + led.since : '') + '</div>';
-        }
-      }
-      t3 = '<div><span class="dc-badge ' + dm.cls + '">' + lz(dm.en, dm.zh) + '</span></div>' +
-        '<div class="dc-chainhead">' + esc(lz(dch.headline.en, dch.headline.zh)) + '</div>' +
-        '<div class="dc-vals" style="margin:7px 0">' + ser + '</div>' +
-        '<div class="dc-chainread">' + esc(lz(dch.read.en, dch.read.zh)) + '</div>' +
-        ledLine +
-        '<div class="dc-cav">' + esc(lz(dch.caveat.en, dch.caveat.zh)) + '</div>';
-    } else {
-      t3 = '<span class="dc-na">' + lz(
-        'Not yet measured for this name. This is where a management-independent read on forward demand — bookings / backlog &amp; RPO, customer-capex (e.g. hyperscaler → semis), hiring &amp; web-traffic — is flagged ONLY where it diverges from the consensus above. Live now for the AI-infrastructure chain; expanding from there.',
-        '该标的尚未度量。此处放置不依赖管理层口径的前瞻需求读数——订单/在手订单与RPO、客户资本开支（如云厂商→半导体）、招聘与网站流量——且仅在其与上方共识背离时标记。AI 基础设施链已上线，后续扩展。') + '</span>';
-    }
-    var row = function (cls, n, lab, sub, body) {
-      return '<div class="dc-row ' + cls + '"><div class="dc-rl"><span class="dc-rn">' + n + '</span>' +
-        '<span class="dc-lab">' + lab + '</span><span class="dc-sub">' + sub + '</span></div>' +
-        '<div class="dc-vals">' + body + '</div></div>';
+
+    var VMAP = {
+      ahead_of_consensus: { v: lz('Possibly under-priced', '可能被低估'), cls: 'dcv-up', div: lz('DIVERGE', '背离'), dcls: 'dcd-up' },
+      consensus_at_risk:  { v: lz('Price at risk', '价格承压'),           cls: 'dcv-risk', div: lz('DIVERGE', '背离'), dcls: 'dcd-risk' },
+      aligned:            { v: lz('Already in the price', '已计入价格'), cls: 'dcv-mut', div: lz('AGREE', '一致'),  dcls: 'dcd-mut' },
+      signal_only:        { v: lz('Can\'t tell yet', '尚难判断'),          cls: 'dcv-mut', div: lz('?', '?'),        dcls: 'dcd-mut' }
     };
-    var foot = dch && dch.headline ? lz(
-      'Row 3 is an INDEPENDENT customer-demand read (the spenders\' own filings, not this company\'s guidance). Where it diverges from row 2 is where the rally may be mis-priced; where they agree, the demand is already in the price.',
-      '第3行是独立的客户需求读数（来自买方自身财报，而非本公司指引）。它与第2行背离之处，正是涨势可能被错误定价之处；二者一致时，需求已计入价格。') : lz(
-      'Rows 1–2 are backward-looking truth and already-priced consensus. Until row 3 is populated, this panel can only tell you what is already in the price — not that the rally is under-priced.',
-      '第1–2行是滞后的事实与已被定价的共识。在第3行填充之前，本面板只能告诉你价格里已包含什么——而非涨势是否被低估。');
+    var vm = VMAP[dch.divergence] || VMAP.signal_only;
+    var ser = (dch.series || []).slice(-3).map(function (pt) { return 'FY' + (pt[0] % 100) + ' <b>$' + pt[1] + 'B</b>'; }).join(' <i class="dc-arr">→</i> ');
+    var hz = dch.horizon_d ? '<div class="dc-hz">' + lz('leads ~' + Math.max(1, Math.round(dch.horizon_d / 63)) + ' qtrs', '领先约' + Math.max(1, Math.round(dch.horizon_d / 63)) + '季') + '</div>' : '';
+    var tags = (dch.spenders || []).slice(0, 5).map(function (t) { return '<span class="dc-tag">' + esc(t) + '</span>'; }).join('');
+    var itile = '<div class="dc-tile"><div class="dc-tt">' + lz('Independent demand read', '独立需求读数') + '</div>' +
+      '<div class="dc-big pos">' + (dch.yoy_pct > 0 ? '+' : '') + Math.round(dch.yoy_pct) + '%<small>' + esc(lz('customer capex YoY', '客户资本开支同比')) + '</small></div>' +
+      '<div class="dc-capex">' + ser + '</div>' + hz + '<div class="dc-tags">' + tags + '</div></div>';
+
+    var cav = '<span class="help">?<span class="tip"><span class="l-en">' + esc(dch.caveat.en) + '</span><span class="l-zh">' + esc(dch.caveat.zh || dch.caveat.en) + '</span></span></span>';
     box.innerHTML =
-      row('dc-l1', '1', lz('Trailing','历史'), lz('demand already delivered — backward-looking','已兑现的需求——本质滞后'), t1.join('')) +
-      row('dc-l2', '2', lz('Consensus','共识'), lz('already in the price — agreeing is exposure, not edge','已计入价格——认同只是敞口而非优势'), t2.join('')) +
-      row('dc-l3', '3', lz('Independent observable','独立观测'), lz('the only layer that can say a rally is MIS-priced','唯一能判断涨势被错误定价的层次'), t3) +
-      '<p class="dc-foot">' + foot + '</p>';
+      '<div class="dc-verdict ' + vm.cls + '"><span class="dc-vq">' + lz('Is the rally priced?', '涨势是否已被定价？') + '</span>' + vm.v + '</div>' +
+      '<div class="dc-cmp">' + mtile +
+        '<div class="dc-mid"><span class="dc-div ' + vm.dcls + '">' + vm.div + '</span></div>' + itile + '</div>' +
+      '<p class="dc-foot">' + esc(lz(dch.read.en, dch.read.zh)) + ' ' + cav + '</p>';
     show('panel_demand', true);
+  }
+
+  // Revenue combo (annual bars + YoY% line) + quarterly EPS-surprise bars. The diluted-EPS
+  // series is deliberately NOT charted: it is as-reported, not split-adjusted across years.
+  function finCharts(my, surprises) {
+    var W = 320, H = 108, pad = 6;
+    var yrs = my.years, rev = (my.revenue || []).map(function (v) { return v == null ? null : v / 1e9; });
+    var n = yrs.length, gap = (W - 2 * pad) / n, bw = gap * 0.58;
+    var maxR = Math.max.apply(null, rev.filter(function (x) { return x != null; })) || 1;
+    var bars = '', yoy = [];
+    for (var i = 0; i < n; i++) {
+      var x = pad + gap * i + gap * 0.21, h = rev[i] != null ? (rev[i] / maxR) * (H - 22) : 0;
+      bars += '<rect x="' + x.toFixed(1) + '" y="' + (H - 16 - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="2"/>';
+      yoy.push((i > 0 && rev[i] != null && rev[i - 1]) ? (rev[i] / rev[i - 1] - 1) * 100 : null);
+    }
+    var yv = yoy.filter(function (x) { return x != null; });
+    var ymin = Math.min.apply(null, yv), ymax = Math.max.apply(null, yv), pts = [];
+    for (var j = 0; j < n; j++) {
+      if (yoy[j] == null) { pts.push(null); continue; }
+      var lx = pad + gap * j + gap * 0.5;
+      var ly = ymax === ymin ? (H - 16) / 2 : (H - 20) - ((yoy[j] - ymin) / (ymax - ymin)) * (H - 36);
+      pts.push(lx.toFixed(1) + ',' + ly.toFixed(1));
+    }
+    var dots = pts.filter(Boolean).map(function (pp) { var c = pp.split(','); return '<circle cx="' + c[0] + '" cy="' + c[1] + '" r="2.4"/>'; }).join('');
+    var xl = yrs.map(function (y, k) { return '<text x="' + (pad + gap * k + gap * 0.5).toFixed(1) + '" y="' + (H - 3) + '" class="fc-x">FY' + (y % 100) + '</text>'; }).join('');
+    var revBox = '<div class="fc-box"><div class="fc-lbl"><span>' + lz('Revenue ($B)', '营收（十亿）') + '</span>' +
+      (my.rev_cagr != null ? '<span class="pos">' + (my.rev_cagr > 0 ? '+' : '') + Math.round(my.rev_cagr) + '%/yr</span>' : '') + '</div>' +
+      '<svg viewBox="0 0 ' + W + ' ' + H + '" class="fc-svg" preserveAspectRatio="none"><g class="fc-bars">' + bars + '</g>' +
+      '<polyline class="fc-line" points="' + pts.filter(Boolean).join(' ') + '"/><g class="fc-pts">' + dots + '</g>' +
+      '<text x="' + (pad + gap * (n - 1) + gap * 0.5).toFixed(1) + '" y="10" class="fc-v">$' + Math.round(rev[n - 1]) + 'B</text>' + xl + '</svg></div>';
+
+    var epsBox = '';
+    if (surprises && surprises.length) {
+      var sv = surprises.slice().reverse(), m = sv.length, sgap = (W - 2 * pad) / m, sbw = sgap * 0.5;
+      var maxS = Math.max.apply(null, sv.map(function (s2) { return Math.abs(s2.surprise_pct || 0); })) || 1, sb = '', sl = '', sx = '';
+      for (var k = 0; k < m; k++) {
+        var s3 = sv[k], bx = pad + sgap * k + sgap * 0.25, hh = (Math.abs(s3.surprise_pct || 0) / maxS) * (H - 30), pos = (s3.surprise_pct || 0) >= 0;
+        sb += '<rect class="' + (pos ? 'sp-pos' : 'sp-neg') + '" x="' + bx.toFixed(1) + '" y="' + (H - 16 - hh).toFixed(1) + '" width="' + sbw.toFixed(1) + '" height="' + hh.toFixed(1) + '" rx="2"/>';
+        sl += '<text x="' + (bx + sbw / 2).toFixed(1) + '" y="' + (H - 19 - hh).toFixed(1) + '" class="fc-v">' + (pos ? '+' : '') + s3.surprise_pct + '%</text>';
+        sx += '<text x="' + (bx + sbw / 2).toFixed(1) + '" y="' + (H - 3) + '" class="fc-x">' + esc((s3.qtr || '').split(' ')[0]) + '</text>';
+      }
+      var tr = '';
+      if (m >= 4) { var e0 = (sv[0].surprise_pct + sv[1].surprise_pct) / 2, e1 = (sv[m - 1].surprise_pct + sv[m - 2].surprise_pct) / 2;
+        tr = e1 > e0 + 0.5 ? lz('beats accelerating', '超预期扩大') : e1 < e0 - 0.5 ? lz('beats shrinking', '超预期收窄') : lz('beats steady', '超预期平稳'); }
+      epsBox = '<div class="fc-box"><div class="fc-lbl"><span>' + lz('EPS surprise', 'EPS超预期') + '</span><span class="pos">' + tr + '</span></div>' +
+        '<svg viewBox="0 0 ' + W + ' ' + H + '" class="fc-svg" preserveAspectRatio="none"><line x1="0" y1="' + (H - 16) + '" x2="' + W + '" y2="' + (H - 16) + '" class="fc-ax"/><g>' + sb + '</g>' + sl + sx + '</svg></div>';
+    }
+    return '<div class="fc-grid">' + revBox + epsBox + '</div>';
   }
 
   function renderFundamentals(d) {
@@ -1000,9 +1075,10 @@
         chips.push(gchip(LF('verdict'), '<span class="cvchip band-' + _cv.band + '">' + _cv.score + '</span>'));
       else chips.push(gchip(LF('verdict'), '<span class="muted">' + LF('na') + '</span>', true));
     }
-    var glance = el('r_glance');
-    if (chips.length) { glance.innerHTML = chips.join(''); glance.style.display = 'flex'; }
-    else glance.style.display = 'none';
+    // The at-a-glance chips (quality grade / valuation / shareholder-yld / next-earnings /
+    // the "Master verdict" dup of conviction.score) are now fully covered by the unified
+    // decision band + evidence lanes — keep r_glance retired so nothing is restated.
+    var glance = el('r_glance'); if (glance) glance.style.display = 'none';
 
     if (prof) {
       el('r_profile_desc').textContent = lz(prof.description, prof.description_zh) || LF('building');
@@ -1029,16 +1105,8 @@
       // multi-year trend (SEC companyfacts) — sparklines + CAGR; falls back to the
       // single-year rows below when companyfacts hasn't been collected for this name
       var my = fin.multiyear;
-      if (my && my.years && my.years.length >= 2) {
-        var yspan = ' <span class="muted">(FY' + my.years[0] + '–' + my.years[my.years.length-1] + ')</span>';
-        var mrows = [
-          myRow(lz('Revenue','营收'), my.revenue, fmtNum, my.rev_cagr),
-          myRow(lz('Net margin','净利率'), my.net_margin, function (x){ return x.toFixed(1)+'%'; }, null),
-          myRow(lz('Diluted EPS','摊薄EPS'), my.eps, function (x){ return '$'+x.toFixed(2); }, my.eps_cagr),
-          myRow(lz('Free cash flow','自由现金流'), my.fcf, fmtNum, null)
-        ].join('');
-        el('r_multiyear').innerHTML = '<div class="myhdr">' + lz('Multi-year trend','多年趋势') + yspan + '</div>' + mrows;
-      } else { el('r_multiyear').innerHTML = ''; }
+      el('r_multiyear').innerHTML = (my && my.years && my.years.length >= 2)
+        ? finCharts(my, (d.earnings || {}).surprises) : '';
 
       el('r_finrows').innerHTML = FROWS.map(function (r) {
         return finrow(lz(r.en, r.zh), r.get(fin), r.fmt, r.chg ? r.chg(fin) : null, r.spark ? r.spark(fin) : null);
@@ -1084,49 +1152,38 @@
     } else show('panel_aq', false);
 
     if (d.earnings) {
-      var ev = d.earnings, eh = '';
+      var ev = d.earnings, eh = '', rv2 = d.revisions || {};
+      // EVENT BAR — countdown to the next report, or fall back to the last reported quarter.
       if (ev.next_date) {
         var days = Math.ceil((new Date(ev.next_date + 'T00:00:00') - new Date()) / 86400000);
-        var when = days < 0 ? lz('reported','已公布') : days === 0 ? lz('today','今天')
-                 : (lz('in','还有') + ' ' + days + lz('d','天'));
+        var when = days < 0 ? lz('reported','已公布') : days === 0 ? lz('today','今天') : (lz('in','还有') + ' ' + days + lz('d','天'));
         var tm = ev.next_time ? ' · ' + ev.next_time : '';
         var est = ev.eps_forecast != null ? ' · ' + lz('est EPS','预期EPS') + ' $' + ev.eps_forecast : '';
-        eh += '<div class="earnhdr"><span class="earndays">' + when + '</span> <span class="muted">' +
-              lz('next earnings','下次财报') + ' ' + ev.next_date + tm + est + '</span></div>';
+        eh += '<div class="earnhdr"><span class="earndays">' + when + '</span> <span class="muted">' + lz('next earnings','下次财报') + ' ' + ev.next_date + tm + est + '</span></div>';
+      } else if (ev.surprises && ev.surprises.length) {
+        eh += '<div class="earnhdr"><span class="muted">' + lz('Next date TBD · last reported','下次待定 · 最近一期') + ' ' + esc(ev.surprises[0].qtr || '') + '</span></div>';
       }
+      // BEAT STREAK (+ optional SUE)
       if (ev.summary) {
-        var su = ev.summary, bc = (su.beats >= Math.ceil(su.total*0.75)) ? 'var(--up)'
-                : (su.beats <= Math.floor(su.total*0.25)) ? 'var(--down)' : 'var(--muted)';
+        var su = ev.summary, bc = (su.beats >= Math.ceil(su.total*0.75)) ? 'var(--up)' : (su.beats <= Math.floor(su.total*0.25)) ? 'var(--down)' : 'var(--muted)';
         var strk = su.streak >= 2 ? ' · ' + su.streak + lz('-streak','连') : '';
-        eh += '<div style="margin:6px 0"><span class="hchip" style="color:'+bc+';background:color-mix(in srgb,'+bc+' 14%,transparent)">' +
-              lz('beat','超预期') + ' ' + su.beats + '/' + su.total + strk + '</span> <span class="muted">' +
-              lz('avg surprise','平均超预期') + ' ' + (su.avg_surprise > 0 ? '+' : '') + su.avg_surprise + '%</span></div>';
+        eh += '<div class="earn-chips"><span class="hchip" style="color:'+bc+';background:color-mix(in srgb,'+bc+' 14%,transparent)">' + lz('beat','超预期') + ' ' + su.beats + '/' + su.total + strk + '</span> <span class="muted">' + lz('avg surprise','平均超预期') + ' ' + (su.avg_surprise > 0 ? '+' : '') + su.avg_surprise + '%</span>';
+        if (ev.sue_z != null) { var sz = ev.sue_z, sc3 = sz>=0.5?'var(--up)':sz<=-0.5?'var(--down)':'var(--muted)';
+          eh += ' <span class="hchip" title="'+esc(LF('suehelp'))+'" style="color:'+sc3+';background:color-mix(in srgb,'+sc3+' 14%,transparent)">'+lz('SUE','SUE')+' '+(sz>0?'+':'')+sz.toFixed(2)+'</span>'; }
+        eh += '</div>';
       }
-      if (ev.sue_z != null) {
-        // SUE earnings-momentum z — the validated post-earnings-drift leg (factors.json
-        // table 'sue'; survives the leak-free FDR scorecard). title via LF() not the t()
-        // macro — a span pair would break the attribute.
-        var sz = ev.sue_z;
-        var sc = sz >= 0.5 ? 'var(--up)' : sz <= -0.5 ? 'var(--down)' : 'var(--muted)';
-        eh += '<div style="margin:6px 0"><span class="hchip" title="' + esc(LF('suehelp')) +
-              '" style="color:'+sc+';background:color-mix(in srgb,'+sc+' 14%,transparent)">' +
-              lz('earnings momentum (SUE)','盈利动量 (SUE)') + ' ' + (sz > 0 ? '+' : '') + sz.toFixed(2) +
-              '</span> <span class="muted">' + LF('suevs') + '</span></div>';
+      // FORWARD REVISIONS — where consensus is heading (the actionable, forward-looking part).
+      if (rv2 && (rv2.n_analysts != null || rv2.est_chg_30d != null)) {
+        var _esg = function(n,suf){ if(n==null)return ''; var c=n>0?'pos':n<0?'neg':'muted'; return '<b class="'+c+'">'+(n>0?'+':'')+(Math.round(n*10)/10)+(suf||'')+'</b>'; };
+        var fr = [];
+        if (rv2.n_analysts != null) fr.push('<span>' + Math.round(rv2.n_analysts) + ' ' + lz('analysts','分析师') + '</span>');
+        if (rv2.net_up_30d != null) fr.push('<span>' + lz('net upgrades','净上调') + ' ' + _esg(rv2.net_up_30d) + ' <span class="muted">(30d)</span></span>');
+        if (rv2.est_chg_30d != null) fr.push('<span>' + lz('est drift','预期漂移') + ' ' + _esg(rv2.est_chg_30d,'%') + ' <span class="muted">(30d)</span></span>');
+        if (rv2.est_chg_90d != null) fr.push('<span>' + _esg(rv2.est_chg_90d,'%') + ' <span class="muted">(90d)</span></span>');
+        eh += '<div class="earn-fwd"><div class="earn-fwd-h">' + lz('Where estimates are heading','预期走向') + '</div><div class="earn-fwd-row">' + fr.join(' <span class="dot">·</span> ') + '</div></div>';
       }
-      if (ev.surprises && ev.surprises.length) {
-        var er = ev.surprises.map(function (s) {
-          var sp = s.surprise_pct;
-          return '<tr><td>' + (s.qtr || '') + '</td><td>' + (s.eps != null ? '$'+s.eps : '—') +
-                 '</td><td>' + (s.consensus != null ? '$'+s.consensus : '—') + '</td><td class="' +
-                 (sp > 0 ? 'pos' : sp < 0 ? 'neg' : '') + '">' + (sp != null ? (sp>0?'+':'')+sp+'%' : '—') + '</td></tr>';
-        }).join('');
-        eh += '<table class="earntbl"><tr><th>' + lz('quarter','季度') + '</th><th>' + lz('actual','实际') +
-              '</th><th>' + lz('est','预期') + '</th><th>' + lz('surprise','超预期') + '</th></tr>' + er + '</table>';
-      }
-      el('r_earn').innerHTML = eh || ('<div class="stub">' + LF('earnsoon') + '</div>');
-      show('panel_earn', true);
-    } else if (isEquity) {
-      el('r_earn').innerHTML = '<div class="stub">' + LF('earnsoon') + '</div>'; show('panel_earn', true);
+      if (eh) { el('r_earn').innerHTML = eh; show('panel_earn', true); }
+      else show('panel_earn', false);          // no data → hide, don't show a "coming soon" stub
     } else show('panel_earn', false);
 
     if (fac) {
@@ -1137,6 +1194,24 @@
         if (z != null) zb.push(zbar(lz(ZL[k][0], ZL[k][1]), z));
       });
       el('r_zbars').innerHTML = zb.join('');
+      // STANDOUT: name the most extreme factor tilts by percentile vs the S&P 1500 cross-section.
+      function _phi(z){ var t=1/(1+0.2316419*Math.abs(z)), dd=0.3989423*Math.exp(-z*z/2),
+        pp=dd*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274)))); return z>0?1-pp:pp; }
+      function _pw(z){ return 'P'+Math.max(1,Math.min(99,Math.round(_phi(z)*100))); }
+      var _legs = fac.legs || {};
+      var _ext = Object.keys(ZL).filter(function(k){return _legs[k]!=null;})
+        .map(function(k){return {k:k, z:_legs[k]};})
+        .sort(function(a,b){return Math.abs(b.z)-Math.abs(a.z);})
+        .filter(function(o){return Math.abs(o.z)>=1.5;}).slice(0,3);
+      if (_ext.length) {
+        var _parts = _ext.map(function(o){
+          var cls = o.z>0 ? 'pos' : 'neg';
+          return '<b class="'+cls+'">'+lz(ZL[o.k][0],ZL[o.k][1])+' '+_pw(o.z)+'</b>';
+        });
+        el('r_fac_standout').innerHTML = '<span class="fs-lbl">'+lz('Stands out','突出之处')+':</span> '+_parts.join(' <span class="dot">·</span> ');
+      } else {
+        el('r_fac_standout').innerHTML = '<span class="muted">'+lz('No extreme factor tilt — a balanced profile vs the index.','无极端因子倾斜——相对指数画像均衡。')+'</span>';
+      }
       var sc = fac.fundamental_score;
       el('r_fac_score').innerHTML = (sc == null) ? ''
         : (LF('scorelab') + ': <b>' + (sc > 0 ? '+' : '') + sc + '</b> / ±100 — ' + LF('compos') +
@@ -1180,19 +1255,16 @@
       show('panel_pos', true);
     } else show('panel_pos', false);
 
-    if (isEquity) {
-      var ah;
-      if (an && an.tier === 'deep') {
-        var ar = [];
-        if (an.forward_pe != null) ar.push(kvRow(LF('fwdpe'), an.forward_pe.toFixed(1) + '×', false));
-        if (an.pe_yf != null) ar.push(kvRow(LF('peyf'), an.pe_yf.toFixed(1) + '×', false));
-        if (an.profit_margin != null) ar.push(kvRow(LF('pmargin'), an.profit_margin.toFixed(1) + '%', false));
-        if (an.roe != null) ar.push(kvRow(LF('roe'), an.roe.toFixed(1) + '%', false));
-        if (an.div_yield != null) ar.push(kvRow(LF('dyield'), an.div_yield.toFixed(2) + '%', false));
-        ah = (ar.length ? '<div class="posbox">' + ar.join('') + '</div>' : '') + '<p class="srcline">' + LF('deeponly') + '</p>';
-      } else { ah = '<div class="stub">' + LF('deeponly') + '</div>'; }
-      el('r_analyst').innerHTML = ah;
-      show('panel_analyst', true);
+    if (isEquity && an && an.tier === 'deep') {
+      var ar = [];
+      if (an.forward_pe != null) ar.push(kvRow(LF('fwdpe'), an.forward_pe.toFixed(1) + '×', false));
+      if (an.pe_yf != null) ar.push(kvRow(LF('peyf'), an.pe_yf.toFixed(1) + '×', false));
+      if (an.profit_margin != null) ar.push(kvRow(LF('pmargin'), an.profit_margin.toFixed(1) + '%', false));
+      if (an.roe != null) ar.push(kvRow(LF('roe'), an.roe.toFixed(1) + '%', false));
+      if (an.div_yield != null) ar.push(kvRow(LF('dyield'), an.div_yield.toFixed(2) + '%', false));
+      // show the figures we have; no "coming in a later phase" stub. Hide if none.
+      if (ar.length) { el('r_analyst').innerHTML = '<div class="posbox">' + ar.join('') + '</div>'; show('panel_analyst', true); }
+      else show('panel_analyst', false);
     } else show('panel_analyst', false);
   }
   // internal state -> friendly "LABEL · ACTION" (mirrors engine/cycles.STATE_DISPLAY)
@@ -1237,13 +1309,7 @@
     if (dd) return lang() === 'zh' ? (dd.action_zh || dd.action) : dd.action;
     return lz(l.action, l.action_zh); }
 
-  function renderVerdict(d) {
-    var e = d.ladder.entry || {}, v = el('r_verdict');
-    v.className = 'verdict urg-' + (e.urgency || 'hold');
-    v.innerHTML = '<span class="v-act">' + esc(ladderAction(d.ladder)) + '</span>' +
-      '<span class="v-tag">' + esc(lz(e.tag, e.tag_zh)) + '</span>' +
-      '<span class="v-text">' + esc(lz(e.text, e.text_zh)) + '</span>';
-  }
+
 
   // unified Conviction Profile hero — renders the SAME block as the standout card,
   // so the dashboard and this page can never structurally disagree. The cycle ladder
@@ -1251,99 +1317,13 @@
   // long-term quality read and is shown as context (the cycle caps the verdict).
   var CAX_LABELS = { selection: ['Selection', '选股'], entry: ['Entry', '入场'],
                      tailwind: ['Tailwind', '顺风'], quality: ['Quality', '质量'] };
-  function renderConviction(d) {
-    var box = el('r_conviction'), c = d.conviction;
-    if (!box) return;
-    if (!c) { box.style.display = 'none'; return; }
-    var tt = c.trust_tier || {};
-    var ax = ['selection', 'entry', 'tailwind', 'quality'].map(function (k) {
-      var a = (c.axes && c.axes[k]) || {}, lab = CAX_LABELS[k], pct = a.pct;
-      return '<div class="cax' + (pct == null ? ' cax-na' : '') + '"><span class="caxl">' +
-        lz(lab[0], lab[1]) + '</span><span class="caxbar"><span class="caxf" style="width:' +
-        (pct == null ? 0 : pct) + '%"></span></span><span class="caxv">' +
-        (pct == null ? '—' : pct) + '</span></div>';
-    }).join('');
-    var cau = (c.cautions || []).map(function (x, i) {
-      return '<span class="ccau">⚠ ' + esc(lz(x, (c.cautions_zh || [])[i] || x)) + '</span>'; }).join('');
-    // EDGE basis — which legs are firing + how strong, each tagged validated / literature /
-    // context / screen, so a user (and the AI layer) sees WHY the edge score is what it is.
-    var TIER_C = { validated: 'var(--up)', literature: 'var(--g-cold)',
-                   context: 'var(--muted)', screen: 'var(--warn)' };
-    var bl = (c.axes && c.axes.selection && c.axes.selection.basis) || [];
-    var basis = bl.map(function (b) {
-      var col = TIER_C[b.tier] || 'var(--muted)';
-      // earnings-surprise recency (display only — the SUE leg is scored flat): show how many
-      // days ago the filing landed, so a fresh beat reads as fresh without re-weighting it.
-      var fr = (b.fresh_days != null) ? ' <span class="cv-fresh">· ' + b.fresh_days + 'd</span>' : '';
-      return '<span class="cv-bchip" style="color:' + col + ';border-color:color-mix(in srgb,' +
-        col + ' 35%,var(--line))" title="' + esc(b.tier) + (b.fresh_days != null ? ' · filed ' + b.fresh_days + 'd ago' : '') + '">' +
-        esc(lz(b.label, b.label_zh)) + ' ' + (b.z >= 0 ? '+' : '') + b.z + fr + '</span>';
-    }).join('');
-    // regime tilt banner — which way the live tape is currently weighting the edge
-    // (calm/risk-on up-weights trend momentum; stress lets the earnings edge lead). The
-    // validated regime-conditional weighting (research/STOCK_CONVICTION_V2 §3).
-    var rg = c.regime;
-    var rgbar = rg ? '<div class="cv-regime ' + esc(rg.css || '') + '"><span class="cv-rgdot"></span>' +
-      esc(lz(rg.en, rg.zh)) + '</div>' : '';
-    // SUGGESTED POSITION SIZE (T5) — risk-budgeting guide scaled by 1/risk, NOT an alpha bet.
-    var SZ = { full: ['var(--up)', 'Full size', '足额仓位'],
-               'three-quarter': ['var(--g-cold)', '¾ size', '3/4 仓位'],
-               half: ['var(--muted)', '½ size', '半仓'],
-               quarter: ['var(--warn)', '¼ size', '1/4 仓位'],
-               avoid: ['var(--down)', 'Avoid — not a buy', '回避 — 非买入'] };
-    var sz = c.size, szbar = '';
-    if (sz && SZ[sz.bucket]) {
-      var sc = SZ[sz.bucket], rk = (c.risk && c.risk.components) ? Object.keys(c.risk.components)
-        .filter(function (k) { return c.risk.components[k] >= 0.4; }) : [];
-      szbar = '<div class="cv-size" style="color:' + sc[0] + '"><span class="cv-szk">' +
-        lz('Suggested size', '建议仓位') + '</span><span class="cv-szv">' + esc(lz(sc[1], sc[2])) +
-        (sz.pct != null && sz.bucket !== 'avoid' ? ' · ' + sz.pct + '%' : '') + '</span>' +
-        // when the cycle/timing read holds the size below what risk alone allows, say so —
-        // otherwise a HALF SIZE entry beside a "Full size" budget reads as a contradiction.
-        (sz.capped_by_entry ? '<span class="cv-szt">' + lz('held to entry conviction', '按入场信心封顶') + '</span>' :
-          rk.length ? '<span class="cv-szt">' + lz('risk: ', '风险: ') + rk.join(', ') + '</span>' :
-          (sz.tier === 'context' ? '<span class="cv-szt">' + lz('risk-budget guide', '风险预算参考') + '</span>' : '')) +
-        '</div>';
-    }
-    box.innerHTML =
-      '<div class="cv-head">' +
-        (c.score != null ? '<span class="cv-score band-' + c.band + '">' + c.score + '</span>' : '') +
-        '<div class="cv-vtext"><div class="cv-verdict">' + esc(lz(c.verdict, c.verdict_zh)) + '</div>' +
-        '<div class="cv-tier">' + esc(lz(tt.en, tt.zh)) + '</div></div></div>' +
-      (basis ? '<div class="cv-basis"><span class="cv-blab">' + lz('edge basis', '优势构成') +
-        '</span>' + basis + '</div>' : '') +
-      rgbar + szbar +
-      '<div class="cv-axes">' + ax + '</div>' +
-      (cau ? '<div class="cv-cau">' + cau + '</div>' : '') +
-      '<div class="cv-note">' + lz(
-        'Conviction blends a calibrated short-term timing read (the cycle below) with an uncalibrated long-term quality read — context, not a probability. The cycle state caps the verdict: a downtrend never reads “Buy”.',
-        '确信度融合了已校准的短期择时读数（下方周期）与未校准的长期质量读数——作为情境，而非概率。周期状态会封顶结论：下行趋势永不显示“买入”。') + '</div>';
-    box.style.display = '';
-  }
+
 
   function sigchip(cls, k, val, sub) {
     return '<div class="sigchip ' + cls + '"><span class="sc-k">' + k + '</span>' +
       '<span class="sc-v">' + val + '</span>' + (sub ? '<span class="sc-s">' + sub + '</span>' : '') + '</div>';
   }
-  function renderSignalStrip(d) {
-    var tech = d.tech || {}, m = (d.mtf && d.mtf.D) || {}, cy = d.cycle || {}, c = [];
-    var ab = tech.above200;
-    c.push(sigchip(ab ? 'up' : 'down', lz('Trend', '趋势'), (ab ? '▲' : '▼') + ' 200d',
-      tech.pct_vs_200dma != null ? (tech.pct_vs_200dma > 0 ? '+' : '') + tech.pct_vs_200dma + '%' : ''));
-    var mp = m.macd_pos, arr = m.macd_cross_up ? ' ↑' : m.macd_cross_dn ? ' ↓' : '';
-    c.push(sigchip(mp ? 'up' : 'down', lz('Momentum', '动量'), 'MACD ' + (mp ? '＋' : '－') + arr, lz('daily', '日线')));
-    // RSI / Stoch extremes are context (caution), not a directional call — colour
-    // them amber so the meaning doesn't invert under the zh red=up swap
-    var r = tech.rsi14, rc = (r != null && (r >= 70 || r <= 30)) ? 'warn' : 'neutral';
-    c.push(sigchip(rc, 'RSI', r != null ? Math.round(r) : '—',
-      (r != null && r >= 70) ? lz('overbought', '超买') : (r != null && r <= 30) ? lz('oversold', '超卖') : lz('neutral', '中性')));
-    var sv = m.stoch, sc = (sv != null && (sv >= 80 || sv <= 20)) ? 'warn' : 'neutral';
-    c.push(sigchip(sc, 'Stoch', sv != null ? Math.round(sv) : '—', lz('StochRSI', '随机RSI')));
-    var dd = cy.dc_day, band = cy.dc_band, due = (dd != null && band && dd >= band[0]);
-    c.push(sigchip(due ? 'warn' : 'neutral', lz('Cycle', '周期'), lz('Day', '第') + ' ' + (dd != null ? dd : '—'),
-      band ? lz('of', '/') + ' ' + band[0] + '–' + band[1] : ''));
-    el('r_sigstrip').innerHTML = c.join('');
-  }
+
 
   var afCtl;  // floating-popover controller (assigned below); lets render() close it
   var AF_FILTERS = [['all', 'All', '全部'], ['signal', 'Signal', '信号'], ['trend', 'Trend', '趋势'],
@@ -1455,9 +1435,6 @@
       document.getElementById('r_name').textContent = t;
       document.getElementById('r_state').textContent = L('notlib');
       document.getElementById('r_state').className = 'state';
-      document.getElementById('r_verdict').innerHTML = '';
-      document.getElementById('r_sigstrip').innerHTML = '';
-      document.getElementById('r_conviction').style.display = 'none';   // never show a prior ticker's profile
       document.getElementById('r_afbtn').style.display = 'none';
       if (afCtl) afCtl.close();
       document.getElementById('r_points').innerHTML = '';
@@ -1537,15 +1514,26 @@
       gchip(lz('regime', '体制'), '<span class="' + rc + '">' + reg + '</span>'),
       gchip(lz('net GEX', '净GEX'), '<span class="' + ((g.net_gex_bn || 0) >= 0 ? 'pos' : 'neg') + '">' + (g.net_gex_bn >= 0 ? '+' : '') + gx(g.net_gex_bn, 2) + ' $bn</span>'),
       gchip(lz('gamma flip', 'Gamma翻转'), gx(g.gamma_flip, 2) + (g.dist_to_flip_pct != null ? ' <span class="muted">(' + (g.dist_to_flip_pct >= 0 ? '+' : '') + gx(g.dist_to_flip_pct, 1) + '%)</span>' : '')),
-      gchip(lz('magnets', '磁吸'), '↑ ' + gx(g.magnet_up, 2) + ' · ↓ ' + gx(g.magnet_down, 2)),
+      gchip(lz('walls', '墙位'), (g.call_wall != null || g.put_wall != null)
+        ? '<span class="pos">↑ ' + gx(g.call_wall, 0) + '</span> · <span class="neg">↓ ' + gx(g.put_wall, 0) + '</span>' : LF('na')),
       gchip('IV30', g.iv30 != null ? gx(g.iv30 * 100, 1) + '%' : LF('na')),
-      gchip(lz('put/call OI', '认沽/认购OI'), gx(g.put_call_oi_ratio, 2))
+      gchip(lz('25Δ skew', '25Δ偏斜'), g.rr_25d != null
+        ? '<span class="' + (g.rr_25d > 0 ? 'pos' : 'neg') + '">' + (g.rr_25d > 0 ? '+' : '') + gx(g.rr_25d, 1) + '</span>'
+        : (g.put_call_oi_ratio != null ? gx(g.put_call_oi_ratio, 2) : LF('na')))
     ];
+    // vol "hole" — price pinned between the call/put walls (mean-revert zone)
+    var hole = '';
+    if (g.vol_hole && g.vol_hole.state === 'IN_HOLE' && g.vol_hole.lower != null) {
+      var vh = g.vol_hole;
+      hole = '<div class="gex-hole">⊟ ' + lz('Pinned in a vol “hole” between walls', '被夹在波动“空洞”墙位之间') +
+        ' <b>' + Math.round(vh.lower) + '</b>–<b>' + Math.round(vh.upper) + '</b>' +
+        (vh.compression ? ' <span class="muted">· ' + esc(vh.compression) + '</span>' : '') + '</div>';
+    }
     var conf = (g.tier === 'thin_chain' || (g.top_oi_share != null && g.top_oi_share > 0.35))
       ? '<div style="margin:6px 0 2px"><span class="alpha-entry ae-laggard">' + lz('sign-assumption: low confidence', '符号假设：低置信') + '</span></div>' : '';
-    el('r_gex').innerHTML = '<div class="glance">' + chips.join('') + '</div>' + conf +
-      '<p class="srcline">' + lz('Dealer-gamma LEVELS from Cboe delayed chains — daily, not live flow. A vol-regime + levels map (long-gamma → pins/mean-reverts; short-gamma → trends/amplifies), NOT directional and NOT in this stock’s score. The dealer long-call/short-put sign is an assumption — fragile for single names.',
-        '来自 Cboe 延迟期权链的做市商Gamma价位 — 每日、非实时流动。波动率体制+价位地图，无方向性且不计入本股评分。做市商符号为假设，对个股脆弱。') + '</p>';
+    el('r_gex').innerHTML = '<div class="glance">' + chips.join('') + '</div>' + hole + conf +
+      '<p class="srcline">' + lz('Cboe delayed chains (daily, not live flow) — a vol-regime + levels map, never directional and not in this stock’s score.',
+        'Cboe 延迟期权链（每日、非实时）— 波动率体制+价位地图，无方向性，不计入本股评分。') + '</p>';
     show('panel_gex', true);
   }
 
@@ -1608,21 +1596,47 @@
       var pct = (h.pct_portfolio == null) ? '—' : Number(h.pct_portfolio).toFixed(1) + '%';
       var chg = (h.shares_change_pct == null) ? (h.action === 'new' ? lz('new', '新') : '—')
         : (h.shares_change_pct >= 0 ? '+' : '') + Number(h.shares_change_pct).toFixed(0) + '%';
-      return '<tr><td><b>' + h.fund + '</b> <span class="muted">' + (h.fund_name || '') + '</span></td>' +
-        '<td' + col + '>' + dir + '</td>' +
+      var grade = h.fund_grade ? ' <span class="sm-grade sm-g' + esc(h.fund_grade) + '" title="' + lz('backtest fund-quality grade', '回测基金质量评级') + '">' + esc(h.fund_grade) + '</span>' : '';
+      var asof = h.period_end ? ' <span class="sm-asof">· ' + esc(h.period_end) + '</span>' : '';
+      return '<tr><td><b>' + h.fund + '</b>' + grade + ' <span class="muted">' + (h.fund_name || '') + '</span></td>' +
+        '<td' + col + '>' + dir + asof + '</td>' +
         '<td' + R + '><b>' + pct + '</b></td>' +
         '<td class="muted"' + R + '>' + chg + '</td></tr>';
     }).join('');
-    el('r_smartmoney').innerHTML = head + vipline + '<table>' + th + rows + '</table>' +
+    var trendLine = '';
+    if (s.trend && s.trend.holders_series && s.trend.holders_series.length >= 2) {
+      var tr = s.trend, hs = tr.holders_series, mx = Math.max.apply(null, hs), mn = Math.min.apply(null, hs), TW = 66, TH = 18;
+      var tpts = hs.map(function (v, i) { var x = (i / (hs.length - 1)) * TW; var y = mx === mn ? TH / 2 : TH - 2 - ((v - mn) / (mx - mn)) * (TH - 4); return x.toFixed(0) + ',' + y.toFixed(0); }).join(' ');
+      var tdir = tr.direction === 'accumulating' ? 'pos' : tr.direction === 'distributing' ? 'neg' : 'muted';
+      trendLine = '<div class="sm-trend"><svg viewBox="0 0 ' + TW + ' ' + TH + '" class="sm-spark" preserveAspectRatio="none"><polyline points="' + tpts + '"/></svg>' +
+        '<b class="' + tdir + '">' + lz(tr.direction || '', tr.direction === 'accumulating' ? '增持中' : tr.direction === 'distributing' ? '减持中' : '') + '</b> ' +
+        '<span class="muted">' + (tr.value_change_pct != null ? (tr.value_change_pct > 0 ? '+' : '') + Math.round(tr.value_change_pct) + '% $ · ' : '') +
+        tr.holders_first + '→' + tr.holders_last + ' ' + lz('holders', '持有人') + ' / ' + tr.n_quarters + 'Q</span></div>';
+    }
+    el('r_smartmoney').innerHTML = head + vipline + trendLine + '<table>' + th + rows + '</table>' +
       '<p class="srcline">' + lz(
-        '13F-HR holdings are filed quarterly with a ~45-day lag — a stale, partial picture of long-only US equity stakes ≥ $100M, with no shorts, options detail, or non-US positions. CUSIPs are name-matched to tickers, so some lines may be missing. Context on who holds this, NOT a buy list or a real-time signal.',
-        '13F-HR 持仓为季度申报，约有 45 天滞后 —— 仅为美股多头持仓（≥1亿美元）的陈旧且不完整快照，不含空头、期权细节或非美持仓。CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。') + '</p>';
+        '13F filed quarterly, ~45-day lag — long-only US stakes ≥ $100M only (no shorts/options/non-US). Context on who holds it, not a real-time signal.',
+        '13F 季度申报、约45天滞后 —— 仅美股多头持仓（≥1亿美元，不含空头／期权／非美）。仅作「谁持有」背景，非实时信号。') + '</p>';
     show('panel_smartmoney', true);
+  }
+
+  // Live header price chip: set the canonical symbol + a baked last price, reveal
+  // it, and ask live.js to refresh it now (this SPA re-renders on hashchange).
+  function liveHeaderPx(d) {
+    var lp = document.getElementById('r_live_px');
+    if (!lp) return;
+    var px = d && d.tech && d.tech.price;
+    if (px == null) { lp.style.display = 'none'; lp.removeAttribute('data-sym'); return; }
+    lp.setAttribute('data-sym', d.ticker);
+    lp.textContent = '$' + Number(px).toFixed(2);          // baked; live.js overwrites
+    lp.style.display = '';
+    if (window.LiveQuotes && window.LiveQuotes.refresh) window.LiveQuotes.refresh();
   }
 
   function render(d) {
     document.getElementById('result').style.display = 'block';
     document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
+    liveHeaderPx(d);
     if (d.limited) { renderLimited(d); return; }
     // a full record may follow a limited one — re-show the panels it hid
     ['panel_mtf', 'panel_cal'].forEach(function (id) { var e = document.getElementById(id); if (e) e.style.display = ''; });
@@ -1632,9 +1646,15 @@
     document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
     document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
 
-    renderConviction(d);
-    renderVerdict(d);
-    renderSignalStrip(d);
+    // Unified decision-first layout from the canonical view-model (engine/stock_view).
+    // The shared renderer replaces the four competing top-line verdicts + the macro-sens
+    // and dt-contra heroes with ONE decision band + fingerprint + honesty row + evidence
+    // lanes. Falls back to the legacy heroes only if stockview.js failed to load.
+    if (!(window.SV && d.view && window.SV.mount(d))) {
+      var _sd = document.getElementById('sv-decision');
+      if (_sd) _sd.innerHTML = '<div class="panel"><p class="muted">' +
+        lz('Could not render the analysis — please refresh.', '无法渲染分析——请刷新页面。') + '</p></div>';
+    }
     renderAlertFeed(d);
 
     var ageEl = document.getElementById('r_age');
@@ -1712,9 +1732,9 @@
     var macro = document.getElementById('r_macro');
     if (d.ladder.macro_line) { macro.textContent = '⚠ ' + lz(d.ladder.macro_line, d.ladder.macro_line_zh); macro.style.display = 'block'; }
     else { macro.style.display = 'none'; }
-    renderMacroSens(d);
-    renderAltData(d);
-    renderDtContra(d);
+    // (macro-sensitivity + dt-contra now fold into the view-model: evidence.macro +
+    //  falsifiers — rendered by SV.mount above; the legacy renders run only on fallback.)
+    renderAltData(d);   // alt-data is a deep context panel (not a competing verdict)
 
     document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
@@ -1723,11 +1743,18 @@
     var cs = '<tr><th>' + L('th_state') + '</th><th>' + L('th_n') + '</th><th>' + L('th_up') +
              '</th><th>' + L('th_avg') + '</th><th>' + L('th_dipm') + '</th><th>' + L('th_dipb') + '</th></tr>';
     if (cal) {
+      // Current cycle state (raw internal key, e.g. 'TOP WATCH') — used to flag "you are here".
+      var curState = (d.ladder && d.ladder.state) || null;
+      var curLabel = (curState && DISP[curState]) ? disp(curState) : null;
       Object.keys(cal).forEach(function (s) {
+        if (!DISP[s]) return;   // canonical display states only — drop raw research sub-buckets
         var v = cal[s];
         var dipMed = v.dd_med_pct != null ? v.dd_med_pct + '%' : '—';
         var dipBad = v.dd_p10_pct != null ? v.dd_p10_pct + '%' : '—';
-        cs += '<tr><td><span class="state st-' + s.replace(/ /g, '_') + '">' + disp(s) + '</span></td><td>' +
+        var isCur = (s === curState) || (curLabel && disp(s) === curLabel);
+        var here = isCur ? ' <span class="cal-here">▸ ' + (lang() === 'zh' ? '当前状态' : 'you are here') + '</span>' : '';
+        cs += '<tr class="cal-row' + (isCur ? ' cal-cur' : '') + '"><td><span class="state st-' +
+              s.replace(/ /g, '_') + '">' + disp(s) + '</span>' + here + '</td><td>' +
               v.n + '</td><td>' + v.hit_pct + '%</td><td class="' +
               (v.avg_fwd_pct > 0 ? 'pos' : 'neg') + '">' + v.avg_fwd_pct + '%</td>' +
               '<td class="neg">' + dipMed + '</td><td class="neg">' + dipBad + '</td></tr>';
@@ -1738,11 +1765,23 @@
     renderFundamentals(d);
     renderDemandContext(d);
     renderFundFlow(d);
-    renderAlpha(d);
-    renderFragility(d);
+    // (relative-strength → evidence.rel_strength; fragility → falsifiers — both in SV.mount.
+    //  The standalone alpha/fragility panels are retired to avoid restating the same read.)
     renderSmartMoney(d);
 
     tvLoad(d);
+    hideEmptyGroups();
+  }
+
+  // A deep-layer disclosure group whose panels all came back empty (no data for this
+  // name) shouldn't show a dangling section header — hide it.
+  function hideEmptyGroups() {
+    document.querySelectorAll('.sv-group').forEach(function (g) {
+      var panels = g.querySelectorAll('.panel');
+      var anyVisible = false;
+      panels.forEach(function (p) { if (p.style.display !== 'none') anyVisible = true; });
+      g.style.display = (panels.length && !anyVisible) ? 'none' : '';
+    });
   }
 
   // Bespoke chart loader, shared by the full and limited views. Replaces the old
@@ -1768,8 +1807,6 @@
     st.className = 'state';
     document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
     document.getElementById('r_summary').textContent = '';
-    document.getElementById('r_verdict').innerHTML = '';
-    document.getElementById('r_sigstrip').innerHTML = '';
     document.getElementById('r_points').innerHTML = '';
     document.getElementById('r_flags').textContent = '';
     document.getElementById('r_why').textContent = '';

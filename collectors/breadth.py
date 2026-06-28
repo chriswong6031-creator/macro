@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import io
 import logging
+import re
 import time
 
 import pandas as pd
@@ -25,6 +26,11 @@ from collectors.base import Adapter
 from lib import config
 
 log = logging.getLogger(__name__)
+
+# A real US listing symbol: a letter, then up to 5 more letters/digits/dashes
+# (class shares like BRK-B after the .->- swap). Anything else in the Symbol
+# column is vandalism / footnote junk and must not enter the universe.
+_TICKER_RE = re.compile(r"^[A-Z][A-Z0-9-]{0,5}$")
 
 
 class BreadthAdapter(Adapter):
@@ -44,21 +50,63 @@ class BreadthAdapter(Adapter):
             if "Symbol" in t.columns:
                 t = t.rename(columns={"Symbol": "symbol", "Security": "name",
                                       "GICS Sector": "sector"})
-                t["symbol"] = t["symbol"].str.replace(".", "-", regex=False)  # BRK.B -> BRK-B
-                return t[["symbol", "name", "sector"]]
+                return self._repair(t[["symbol", "name", "sector"]])
         raise ValueError("constituents table not found on Wikipedia page")
+
+    def _repair(self, members: pd.DataFrame) -> pd.DataFrame:
+        """Clean a freshly-scraped constituents table before it becomes the universe.
+
+        Wikipedia is community-edited and intermittently ships a *plausible-looking*
+        but wrong symbol — vandalism (Marsh & McLennan shown as the non-existent
+        "MRSH") or a stale pre-rename ticker (Fiserv as "FISV", renamed "FI" in
+        2023) — plus the occasional non-ticker junk cell. Left unrepaired those
+        silently drop the real name from the searchable universe and can mint a
+        bogus page for the garbage symbol. This normalises symbols, drops
+        non-ticker junk, and applies the config ``ticker_fixups`` repair map
+        (bad -> real current ticker). Pure + logged; never raises."""
+        df = members.copy()
+        df["symbol"] = (df["symbol"].astype(str).str.strip().str.upper()
+                        .str.replace(".", "-", regex=False))         # BRK.B -> BRK-B
+        # drop non-ticker junk (vandalism, footnote artefacts) before it poisons ratios
+        ok = df["symbol"].str.match(_TICKER_RE)
+        if not ok.all():
+            log.warning("%s constituents: dropping %d non-ticker row(s): %s",
+                        self.name, int((~ok).sum()), df.loc[~ok, "symbol"].tolist()[:10])
+            df = df[ok]
+        # repair known-bad symbols (vandalism / stale renames) -> the real ticker
+        fixups = {str(k).strip().upper(): str(v).strip().upper()
+                  for k, v in (self.cfg.get("ticker_fixups") or {}).items()}
+        if fixups:
+            hit = df["symbol"].isin(fixups)
+            if hit.any():
+                log.info("%s constituents: repaired %d Wikipedia ticker(s): %s",
+                         self.name, int(hit.sum()),
+                         {s: fixups[s] for s in sorted(df.loc[hit, "symbol"].unique())})
+                df["symbol"] = df["symbol"].map(lambda s: fixups.get(s, s))
+        # a repair can collide with an already-correct row -> keep one
+        df = df.drop_duplicates(subset="symbol", keep="first").reset_index(drop=True)
+        return df[["symbol", "name", "sector"]]
 
     def _download_closes(self, tickers: list[str], period: str) -> pd.DataFrame:
         bs = self.ycfg["batch_size"]
         parts: list[pd.DataFrame] = []
+        # ADDITIVE OHLCV capture: yfinance already downloads high/low/volume — keep them
+        # (instead of discarding all but Close) so the stock library can compute
+        # volume-based signals (engine/bottom_radar) for the full universe, not just the
+        # ~114 deep names. Stashed on self for fetch() to cache; never affects closes.
+        extras: dict[str, list] = {"high": [], "low": [], "volume": []}
         for i in range(0, len(tickers), bs):
             batch = tickers[i:i + bs]
             for attempt in range(self.ycfg["retries"]):
                 try:
                     df = yf.download(batch, period=period, auto_adjust=True,
                                      progress=False, group_by="column", threads=True)
-                    closes = df["Close"] if "Close" in df.columns.get_level_values(0) else df
-                    parts.append(closes)
+                    lvl0 = (df.columns.get_level_values(0)
+                            if isinstance(df.columns, pd.MultiIndex) else df.columns)
+                    parts.append(df["Close"] if "Close" in lvl0 else df)
+                    for k, F in (("high", "High"), ("low", "Low"), ("volume", "Volume")):
+                        if F in lvl0:
+                            extras[k].append(df[F])
                     break
                 except Exception as e:  # noqa: BLE001
                     wait = self.ycfg["backoff_base_s"] * (2 ** attempt)
@@ -67,9 +115,13 @@ class BreadthAdapter(Adapter):
             time.sleep(1)
         if not parts:
             raise RuntimeError("no constituent closes downloaded")
-        wide = pd.concat(parts, axis=1)
-        wide = wide.loc[:, ~wide.columns.duplicated()]
-        return wide.sort_index()
+
+        def _wide(plist: list) -> pd.DataFrame:
+            w = pd.concat(plist, axis=1)
+            return w.loc[:, ~w.columns.duplicated()].sort_index()
+
+        self._last_extras = {k: _wide(v) for k, v in extras.items() if v}
+        return _wide(parts)
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         members = self.constituents_checked(self.constituents())
@@ -100,8 +152,34 @@ class BreadthAdapter(Adapter):
         self.cache_path.parent.mkdir(parents=True, exist_ok=True)
         if not full_history:
             closes.to_parquet(self.cache_path)
-        # constituents list is reference data, not a time series — written directly
-        members.set_index("symbol").to_parquet(self.cache_path.parent / "constituents.parquet")
+            # ADDITIVE: persist the OHLCV extras the download already captured, with the
+            # SAME tail-refresh + window logic as closes. Never fatal — breadth itself
+            # only needs closes; the stock library falls back to close-only when absent.
+            try:
+                cutoff_e = closes.index.max() - pd.Timedelta(days=self.cfg["lookback_days_live"] + 30)
+                for k, w in (getattr(self, "_last_extras", {}) or {}).items():
+                    ep = self.cache_path.parent / f"_{k}_cache.parquet"
+                    if ep.exists():
+                        w = w.combine_first(pd.read_parquet(ep))
+                    w[w.index >= cutoff_e].to_parquet(ep)
+            except Exception as e:  # noqa: BLE001
+                log.warning("breadth OHLCV extras cache failed (%s) — volume signals close-only", e)
+        # constituents list is reference data, not a time series — written directly.
+        # Log membership churn vs the prior committed list so a vandalised / partial
+        # scrape that silently drops real members is visible in the run output.
+        cpath = self.cache_path.parent / "constituents.parquet"
+        try:
+            if cpath.exists():
+                prior = set(pd.read_parquet(cpath).index)
+                new = set(members["symbol"])
+                added, dropped = new - prior, prior - new
+                if added or dropped:
+                    log.info("%s constituents churn: +%d -%d (added %s; dropped %s)",
+                             self.name, len(added), len(dropped),
+                             sorted(added)[:8], sorted(dropped)[:8])
+        except Exception as e:  # noqa: BLE001 — observability only, never fatal
+            log.warning("%s constituents churn log failed (%s)", self.name, e)
+        members.set_index("symbol").to_parquet(cpath)
 
         return {"breadth": self.compute(closes)}
 

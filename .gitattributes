@@ -1,0 +1,6 @@
+# White House alert ledger is append-only and id-deduped on read (build_whitehouse
+# ._load_ledger keeps the last row per id), so the correct conflict resolution is a
+# UNION of both sides — never "keep only mine". The hourly sentinel is the sole writer,
+# but this guarantees no alert row can be silently dropped even on an unexpected
+# concurrent push.
+data/whitehouse/alerts.jsonl merge=union

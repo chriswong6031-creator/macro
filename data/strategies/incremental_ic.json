@@ -1,0 +1,205 @@
+{
+  "schema": "incremental_ic.v1",
+  "generated_utc": "2026-06-21T10:36:21+00:00",
+  "universe": {
+    "n_names": 110,
+    "source": "data/stocks (survivor mega-caps)",
+    "survivorship": "BIASED \u2014 incremental IC is itself an OPTIMISTIC bound; the trustworthy content is the RELATIVE raw->incremental collapse"
+  },
+  "neutralized_against": [
+    "market_beta",
+    "size(log $vol)",
+    "mom_12_1",
+    "low_vol"
+  ],
+  "fwd_horizons": [
+    21,
+    63
+  ],
+  "rebalance_days": 21,
+  "results": {
+    "mom_12_1": {
+      "h21": {
+        "raw": {
+          "mean_ic": 0.0345,
+          "ic_vol": 0.2564,
+          "ic_ir": 0.135,
+          "ic_ir_ann": 0.466,
+          "t_hac": 3.809,
+          "p_hac": 0.0001,
+          "hit": 0.562,
+          "n": 758
+        },
+        "incremental": {
+          "mean_ic": 0.0259,
+          "ic_vol": 0.2139,
+          "ic_ir": 0.121,
+          "ic_ir_ann": 0.42,
+          "t_hac": 3.3,
+          "p_hac": 0.001,
+          "hit": 0.549,
+          "n": 758
+        },
+        "ic_delta": -0.0086,
+        "surviving_frac": 0.751
+      },
+      "h63": {
+        "raw": {
+          "mean_ic": 0.042,
+          "ic_vol": 0.2587,
+          "ic_ir": 0.162,
+          "ic_ir_ann": 0.563,
+          "t_hac": 2.962,
+          "p_hac": 0.0031,
+          "hit": 0.578,
+          "n": 758
+        },
+        "incremental": {
+          "mean_ic": 0.0325,
+          "ic_vol": 0.2149,
+          "ic_ir": 0.151,
+          "ic_ir_ann": 0.524,
+          "t_hac": 2.743,
+          "p_hac": 0.0061,
+          "hit": 0.549,
+          "n": 758
+        },
+        "ic_delta": -0.0095,
+        "surviving_frac": 0.774
+      }
+    },
+    "near_52w_high": {
+      "h21": {
+        "raw": {
+          "mean_ic": -0.0155,
+          "ic_vol": 0.2508,
+          "ic_ir": -0.062,
+          "ic_ir_ann": -0.214,
+          "t_hac": -1.879,
+          "p_hac": 0.0603,
+          "hit": 0.475,
+          "n": 758
+        },
+        "incremental": {
+          "mean_ic": -0.0352,
+          "ic_vol": 0.1793,
+          "ic_ir": -0.196,
+          "ic_ir_ann": -0.679,
+          "t_hac": -5.288,
+          "p_hac": 0.0,
+          "hit": 0.408,
+          "n": 758
+        },
+        "ic_delta": -0.0197,
+        "surviving_frac": 2.271
+      },
+      "h63": {
+        "raw": {
+          "mean_ic": -0.0123,
+          "ic_vol": 0.2442,
+          "ic_ir": -0.05,
+          "ic_ir_ann": -0.174,
+          "t_hac": -0.989,
+          "p_hac": 0.3227,
+          "hit": 0.487,
+          "n": 758
+        },
+        "incremental": {
+          "mean_ic": -0.0297,
+          "ic_vol": 0.1766,
+          "ic_ir": -0.168,
+          "ic_ir_ann": -0.583,
+          "t_hac": -3.271,
+          "p_hac": 0.0011,
+          "hit": 0.42,
+          "n": 758
+        },
+        "ic_delta": -0.0174,
+        "surviving_frac": 2.415
+      }
+    },
+    "fip_continuity": {
+      "h21": {
+        "raw": {
+          "mean_ic": 0.0103,
+          "ic_vol": 0.2012,
+          "ic_ir": 0.051,
+          "ic_ir_ann": 0.178,
+          "t_hac": 1.382,
+          "p_hac": 0.1669,
+          "hit": 0.521,
+          "n": 758
+        },
+        "incremental": {
+          "mean_ic": -0.0025,
+          "ic_vol": 0.1673,
+          "ic_ir": -0.015,
+          "ic_ir_ann": -0.051,
+          "t_hac": -0.396,
+          "p_hac": 0.6918,
+          "hit": 0.488,
+          "n": 758
+        },
+        "ic_delta": -0.0128,
+        "surviving_frac": -0.243
+      },
+      "h63": {
+        "raw": {
+          "mean_ic": 0.0175,
+          "ic_vol": 0.1992,
+          "ic_ir": 0.088,
+          "ic_ir_ann": 0.304,
+          "t_hac": 1.646,
+          "p_hac": 0.0997,
+          "hit": 0.542,
+          "n": 758
+        },
+        "incremental": {
+          "mean_ic": -0.005,
+          "ic_vol": 0.1683,
+          "ic_ir": -0.029,
+          "ic_ir_ann": -0.102,
+          "t_hac": -0.592,
+          "p_hac": 0.554,
+          "hit": 0.483,
+          "n": 758
+        },
+        "ic_delta": -0.0225,
+        "surviving_frac": -0.286
+      }
+    }
+  },
+  "incremental_fdr": {
+    "fip_continuity:h21": {
+      "p": 0.6918,
+      "q": 0.6918,
+      "reject": false
+    },
+    "fip_continuity:h63": {
+      "p": 0.554,
+      "q": 0.6648,
+      "reject": false
+    },
+    "mom_12_1:h63": {
+      "p": 0.0061,
+      "q": 0.0092,
+      "reject": true
+    },
+    "near_52w_high:h63": {
+      "p": 0.0011,
+      "q": 0.0022,
+      "reject": true
+    },
+    "mom_12_1:h21": {
+      "p": 0.001,
+      "q": 0.0022,
+      "reject": true
+    },
+    "near_52w_high:h21": {
+      "p": 0.0,
+      "q": 0.0,
+      "reject": true
+    }
+  },
+  "trial_ledger": "data/trial_ledger.jsonl"
+}

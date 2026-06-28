@@ -41,10 +41,13 @@ function themeCard(t){
   const b=t.breadth||{}, im=t.impulse||{}, tx=t.textures||{};
   const ba=tx.bull_age||{}, ob=tx.overbought||{}, ce=tx.clean_entry||{}, rr=tx.rollover_risk||{};
   const top=(t.leadership&&t.leadership.top)||[];
+  const ss=t.signal_strength||null;
   const obc = ob.value>=0.6?'neg':ob.value>=0.35?'warn':'';
   const flags=[];
   if(ce.flag) flags.push(`<span class="tflag up">✦ ${L('clean entry','干净入场')}</span>`);
   if(rr.band==='high'||rr.band==='elevated') flags.push(`<span class="tflag ${rr.band==='high'?'dn':'wn'}">⚠ ${L('roll-over','回落风险')}</span>`);
+  // backtested signal-strength chip — title is plain English (never L() inside an attr).
+  if(ss&&ss.grade==='backtested') flags.push(`<span class="tflag dn" title="${esc(ss.en||'')} (HAC t ${ss.t_hac}, n ${ss.n})">🔬 ${L('backtested risk','已回测风险')}</span>`);
   const bullPill = ba.in_bull
     ? `🐂 ${ba.approx_months!=null?ba.approx_months+'mo':''} ${L(ba.stage||'','')||esc(ba.stage_zh||'')}`
     : `🐻 ${L('downtrend','下行')}`;
@@ -74,6 +77,7 @@ function themeCard(t){
     </div>
     <details><summary>${L('why &amp; components','理由与分项')}</summary>
       <div class="why">${L(esc(t.reco_why_en),esc(t.reco_why_zh))}</div>
+      ${ss?`<div class="why" style="opacity:.82">${L('Signal grade','信号评级')}: <b>${esc(ss.grade)}</b> — ${L(esc(ss.en||''),esc(ss.zh||''))}</div>`:''}
       ${compLegend(t.components)}
       ${top.length?`<div class="why">${L('leaders','领涨')}: ${top.map(x=>esc(x.ticker)).join(', ')}${t.leadership.breadth==='narrow'?' ⚠':''}</div>`:''}
     </details>

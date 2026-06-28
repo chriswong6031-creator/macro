@@ -25,6 +25,12 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import stock_score  # noqa: E402
+from engine import stock_technicals  # noqa: E402  — richer close-only technical snapshot
+from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
+from engine import stock_view  # noqa: E402
+from engine import entry_signal  # noqa: E402 — entry-timing gauge (WHEN to buy)
+from engine import risk_sizing  # noqa: E402 — vol-managed inverse-vol sizing (the validated Sharpe lever)
+from engine import dispersion  # noqa: E402 — cross-sectional dispersion regime (selection-gross dial)
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
 from engine.setups import CA_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
@@ -155,10 +161,21 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
         return None
     month = int(c.index.max().month)
     seas = seasonality(c)
+    # RICH close-only technicals (engine.stock_technicals: momentum / 52w-high proximity / BBWP /
+    # HVP / RSI / MA regime) supersede the thin close-only snapshot; the single-stock volatility
+    # black hole is added too — both best-effort so a thin/odd series never breaks the build.
+    try:
+        _tech = stock_technicals.snapshot(c)
+    except Exception:  # noqa: BLE001 — fall back to the thin snapshot
+        _tech = snapshot(c)
+    try:
+        _sq = vol_squeeze.assess(c)
+    except Exception:  # noqa: BLE001
+        _sq = None
     return {
         "ticker": ticker, "name": name, "sector": sector, "tv": tv_symbol(ticker),
         "asof": str(c.index.max().date()), "history_days": int(len(c)),
-        "tech": snapshot(c),
+        "tech": _tech, "vol_squeeze": _sq,
         "season_this": season_line(seas, month),
         "season_next": season_line(seas, month % 12 + 1),
         "season_this_zh": season_line(seas, month, zh=True),
@@ -350,6 +367,21 @@ def main(alpha: dict | None = None) -> dict | None:
     log.info("canada library: net-liquidity overlay %s · basket-tailwind names %d",
              liq or "unknown", len(basket_tw))
 
+    # forward anticipation cone — hoist the engine + its gate ONCE (the cone is close-driven and the
+    # S&P/TSX benchmark close is read once for the residual-alpha leg; both reads would otherwise repeat
+    # per name). None-safe: if the engine is unavailable, the cone is simply skipped for every name.
+    try:
+        from engine.anticipation import anticipate as _anticipate, load_gate as _load_gate
+        _ant_gate = _load_gate("US")
+    except Exception:  # noqa: BLE001
+        _anticipate = None
+        _ant_gate = None
+    try:
+        _tsx = store.read("canada", TSX_INDEX)
+        _tsx_close = _tsx["close"] if (_tsx is not None and "close" in _tsx.columns) else None
+    except Exception:  # noqa: BLE001
+        _tsx_close = None
+
     # refresh yfinance fundamentals up front (best-effort, capped) so pretty company
     # display names + the fundamentals panel are available for THIS run's records.
     from engine import canada_fundamentals
@@ -363,6 +395,14 @@ def main(alpha: dict | None = None) -> dict | None:
         canada_fundamentals.fetch_earnings([t for t, *_ in uni], max_new=40)
     except Exception as e:  # noqa: BLE001
         log.warning("canada earnings fetch failed (%s)", e)
+    # insider transactions drip (SEDI via yfinance get_insider_transactions for .TO
+    # names) — same up-front, capped, freshness-cached best-effort pattern. The per-
+    # stock 👤 panel reads what's been collected. CONTEXT, not a signal.
+    from engine import canada_insider
+    try:
+        canada_insider.fetch_insider([t for t, *_ in uni], max_new=40)
+    except Exception as e:  # noqa: BLE001
+        log.warning("canada insider fetch failed (%s)", e)
     names_map = canada_fundamentals.display_names()
     # fold the pretty display-name remap into the universe up front so the parallel
     # analyze() fan-out (and the serial post-loop) carry the final name unchanged.
@@ -374,6 +414,23 @@ def main(alpha: dict | None = None) -> dict | None:
     # Mirrors build_stock_library (US).
     profiles: dict[str, dict] = {}
     to_write: dict[str, tuple[str, dict]] = {}   # ticker -> (safe, rec)
+    entry_sig: dict[str, dict] = {}              # entry-timing gauge per name (board rows)
+    risk_sig: dict[str, dict] = {}               # vol-managed sizing per name (board rows)
+    # cross-sectional DISPERSION regime — the dial for WHEN selection pays (high
+    # dispersion => take more gross on the cross-sectional book). Computed ONCE over the
+    # whole-universe return panel; feeds per-name vol-managed sizing as `regime_gross`.
+    # Mirrors build_stock_library (US). Best-effort: a thin panel just leaves gross=1.0.
+    disp_regime, regime_gross = None, 1.0
+    try:
+        _ext_closes = pd.concat({t: c for (t, c, *_rest) in uni}, axis=1).sort_index()
+        disp_regime = dispersion.assess(_ext_closes.pct_change(fill_method=None).tail(280))
+        if disp_regime:
+            regime_gross = disp_regime["gross_mult"]
+            log.info("canada dispersion regime: %s (pctile %s, avg_corr %s) -> gross x%.2f",
+                     disp_regime["state"], disp_regime.get("dispersion_pctile"),
+                     disp_regime.get("avg_corr"), regime_gross)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("canada dispersion regime failed (%s)", e)
     recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
@@ -391,9 +448,42 @@ def main(alpha: dict | None = None) -> dict | None:
         # HARD verb modifier (a downtrend caps the entry axis and forbids a Buy verb).
         # Canada carries no validated cross-sectional quality leg (no SUE/insider/factor
         # composite), so the quality axis is simply absent — never read as neutral.
+        # forward anticipation cone (close-only) — feeds the risk-shape entry tilt + favourable-cone
+        # note in the shared engine; best-effort (skips quietly on thin history).
+        if _anticipate is not None:
+            try:
+                _ant = _anticipate(close.dropna(), bench=_tsx_close, asset_class="ca_equity",
+                                   gate=_ant_gate)
+                if _ant:
+                    rec["anticipation"] = _ant
+            except Exception:  # noqa: BLE001 — additive cone, never fatal
+                pass
         norm = stock_score.normalize_rec(rec, "CA", basket=basket_tw.get(ticker))
         prof = stock_score.conviction_profile(norm, "CA", ctx={"as_of": (alpha or {}).get("as_of"), "gate_go": gate_go})
         rec["conviction"] = prof
+        # ---- Risk-based sizing (engine/risk_sizing) — the VALIDATED Sharpe lever ----
+        # Vol-managed inverse-vol size: bet LESS on high-vol names, MORE on calm ones,
+        # scaled by the dispersion regime. HOW MUCH to own (risk), orthogonal to the
+        # conviction score (WHAT) and the entry gauge (WHEN). Pure-vol; high is None on CA.
+        try:
+            rs = risk_sizing.assess(close, regime_gross=regime_gross)
+            if rs:
+                rec["risk_sizing"] = rs
+                risk_sig[ticker] = rs                            # attached to board rows below
+                if isinstance(prof, dict) and isinstance(prof.get("size"), dict):
+                    prof["size"]["vol_mult"] = rs["size_mult"]   # additive, never overrides
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("risk-sizing for %s failed (%s)", ticker, e)
+        # ---- Entry-timing gauge (engine/entry_signal) — the SECOND gauge ------------
+        # Conviction answers "own it?"; this answers "buy now / at what price / when?".
+        # Reads the already-calibrated rec['ladder']/cycle; high is None on CA (close-only).
+        try:
+            es = entry_signal.assess(close, high, rec)
+            if es:
+                rec["entry_signal"] = es
+                entry_sig[ticker] = es                           # attached to board rows below
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("entry-signal for %s failed (%s)", ticker, e)
         profiles[ticker] = prof
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write[ticker] = (safe, rec)           # deferred: write after percentile scoring
@@ -406,8 +496,9 @@ def main(alpha: dict | None = None) -> dict | None:
 
     # within-market percentile display score (mutates each conviction block in place;
     # rec['conviction'] is the SAME object, so the per-stock JSONs pick it up below).
-    stock_score.attach_panel_scores(profiles)
+    stock_score.attach_panel_scores(profiles, "CA")
     for safe, rec in to_write.values():
+        rec["view"] = stock_view.build_view(rec, "CA")   # canonical render model (rebuilt below once factor_beta lands)
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
 
     # descriptive FUNDAMENTALS (yfinance get_info: valuation + forward-val + sell-side
@@ -424,6 +515,11 @@ def main(alpha: dict | None = None) -> dict | None:
         earn = canada_fundamentals.earnings_map()
     except Exception as e:  # noqa: BLE001
         log.warning("canada earnings unavailable (%s)", e)
+    insiders: dict[str, dict] = {}
+    try:
+        insiders = canada_insider.insider_map()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("canada insider unavailable (%s)", e)
     # commodity / FX factor betas — the TSX-differentiated exposure read (oil / gold / CAD,
     # market-controlled). Pure function of the close panel + the macro factor levels.
     betas: dict[str, dict] = {}
@@ -436,7 +532,7 @@ def main(alpha: dict | None = None) -> dict | None:
             closes_fb, canada_overlay.factor_series(), market=market_fb)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("canada factor beta unavailable (%s)", e)
-    for ticker in set(fmap) | set(earn) | set(betas):
+    for ticker in set(fmap) | set(earn) | set(betas) | set(insiders):
         patch: dict = {}
         if fmap.get(ticker):
             patch["fundamentals"] = fmap[ticker]
@@ -444,6 +540,8 @@ def main(alpha: dict | None = None) -> dict | None:
             patch["earnings"] = earn[ticker]
         if betas.get(ticker):
             patch["factor_beta"] = betas[ticker]
+        if insiders.get(ticker):
+            patch["insider"] = insiders[ticker]
         if not patch:
             continue
         safe = ticker.replace("=", "_").replace("^", "_")
@@ -453,6 +551,7 @@ def main(alpha: dict | None = None) -> dict | None:
         try:
             rec = json.loads(fp.read_text())
             rec.update(patch)
+            rec["view"] = stock_view.build_view(rec, "CA")   # rebuild so the commodity_beta card appears
             fp.write_text(json.dumps(rec, default=str))
         except Exception:  # noqa: BLE001
             continue
@@ -460,8 +559,8 @@ def main(alpha: dict | None = None) -> dict | None:
     for idx in index:
         if idx["t"] in fset:
             idx["f"] = 1
-    log.info("canada context attached: fund %d · earnings %d · factor-beta %d",
-             len(fmap), len(earn), len(betas))
+    log.info("canada context attached: fund %d · earnings %d · factor-beta %d · insider %d",
+             len(fmap), len(earn), len(betas), len(insiders))
     (outdir / "index.json").write_text(json.dumps(index))
     # Bespoke chart OHLC (close-only area series) read by canada_stock.html's chart.js —
     # pure serialisation of canada_search closes; never break the library over the garnish.
@@ -479,22 +578,26 @@ def main(alpha: dict | None = None) -> dict | None:
 
     # cross-sectional alpha-led "Top setups" — selection (alpha) × timing (cycle)
     setups = None
+    # BOTTOMING-ALIGNMENT gate (mirrors the US/CN/HK fix): the buy shortlist is gated on
+    # multi-timeframe alignment (weekly not-falling + 3-day nearing a bullish cross + daily
+    # just-crossed/about-to) so a mid-weekly-bear falling knife is kept off the strip;
+    # within aligned names the validated alpha leg is the ranking tiebreaker.
+    align_map = {t: (p or {}).get("alignment") for t, p in profiles.items()}
     if cand:
-        # alpha-led (rank_by="alpha"): like the US, Canada residual momentum is the
-        # positive-IC selection leg; cycle timing is displayed context, not the sort key.
         # n_buy generous (100) so the Stock Dashboard's "show more" can reveal the full
-        # bench. The SHIPPED rank stays the VALIDATED alpha leg — the Conviction composite
-        # rides as the displayed profile/verdict on each card, never as the sort key.
+        # bench. The Conviction composite rides as the displayed profile/verdict per card.
         as_of = (alpha or {}).get("as_of")
-        eligible = sum(1 for s, r in cand if (r.get("alpha") or 0) >= 0.5)
-        setups = rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100)
+        eligible = sum(1 for _s, r in cand
+                       if (align_map.get(r.get("ticker")) or {}).get("aligned"))
+        setups = rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100,
+                             align_map=align_map)
         # attach the unified Conviction Profile to every shipped row (the dashboard card
         # and the name's own page then render the SAME block — never disagree).
         for r in setups["buy"] + setups.get("laggards", []):
             t = r.get("ticker")
             if profiles.get(t):
                 r["conviction"] = profiles[t]
-        setups["eligible"] = eligible        # how many cleared the +0.5 alpha floor
+        setups["eligible"] = eligible        # how many passed the alignment gate
         setups["universe"] = len(cand)
         (site / "factordata").mkdir(parents=True, exist_ok=True)
         (site / "factordata" / "canada_setups.json").write_text(
@@ -504,13 +607,20 @@ def main(alpha: dict | None = None) -> dict | None:
         # Ranked by the validated alpha leg; enriched with price/off-high/sparkline + the
         # Conviction profile; eligible = how many cleared the +0.5 alpha floor.
         wide = compute_canada_standouts(
-            rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100, n_lag=12))
+            rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100, n_lag=12,
+                        align_map=align_map))
         for r in wide["buy"] + wide.get("laggards", []):
             t = r.get("ticker")
             if r.get("conviction") is None and profiles.get(t):
                 r["conviction"] = profiles[t]
-        wide["eligible"] = eligible          # how many cleared the +0.5 alpha floor
+            if entry_sig.get(t):
+                r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
+            if risk_sig.get(t):
+                r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
+        wide["eligible"] = eligible          # how many passed the alignment gate
         wide["universe"] = len(cand)
+        if disp_regime:                      # selection-regime gross dial (board + bot)
+            wide["dispersion_regime"] = disp_regime
         (site / "factordata" / "canada_standouts.json").write_text(
             json.dumps(wide, separators=(",", ":"), default=str))
         log.info("wrote canada_standouts.json (%d buy of %d eligible / %d universe)",

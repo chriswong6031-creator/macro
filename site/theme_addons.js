@@ -137,34 +137,38 @@
   // ---- Within-theme leaders : leader (extended WITH theme) vs chase (beyond it) -----
   function renderMembers(mc) {
     if (!mc || !mc.themes || !mc.themes.length) return "";
-    // lead with the themes that have actually run hot AND carry a leader/chase split to show
+    // lead with the themes that have actually run hot AND carry something actionable to show
     var hot = mc.themes.filter(function (t) {
-      return t.hot && (t.n_leaders || t.n_beyond);
+      return t.hot && (t.n_leaders || t.n_beyond || t.n_catchup);
     }).slice(0, 8);
     if (!hot.length) return "";
     function pill(m) {
       var col = toneVar(m.tone);
       var rel = m.ext_rel == null ? "" : (m.ext_rel >= 0 ? "+" : "") + num(m.ext_rel, 1) + "pp vs theme median";
-      var rs = m.rs_rank == null ? "" : " · RS " + Math.round(m.rs_rank * 100) + "%ile in theme";
-      var cls = m.band === "leader" ? "ta-mc-lead" : (m.band === "beyond" ? "ta-mc-chase" : "");
-      return '<span class="ta-pill ' + cls + '" title="' + esc(rel + rs) + '">' +
+      var rs = m.rs_rank == null ? "" : " · 20d RS " + Math.round(m.rs_rank * 100) + "%ile in theme";
+      var rsf = m.rs_fast_rank == null ? "" : " · 10d RS " + Math.round(m.rs_fast_rank * 100) + "%ile";
+      var cls = m.band === "leader" ? "ta-mc-lead" : m.band === "catch_up" ? "ta-mc-catch"
+        : m.band === "beyond" ? "ta-mc-chase" : "";
+      return '<span class="ta-pill ' + cls + '" title="' + esc(rel + rs + rsf) + '">' +
         "<b>" + esc(m.ticker) + "</b> " +
         '<span style="color:' + col + '">' + (m.ext == null ? "—" : (m.ext >= 0 ? "+" : "") + num(m.ext, 0) + "%") + "</span> " +
         '<em>' + bi(m.band_en, m.band_zh) + "</em></span>";
     }
     var blocks = hot.map(function (t) {
       var mem = t.members || [];
-      // lead with the names you CAN still time (leaders), then the chase list (capped so a
-      // parabolic theme doesn't become a wall of red), then a few mid-pack extended names.
+      // actionable first: leaders you can time + laggards turning up (the rotation entry when the
+      // leaders are gone); then the capped chase list; then a few mid-pack extended names.
       var leaders = mem.filter(function (m) { return m.band === "leader"; });
+      var catchup = mem.filter(function (m) { return m.band === "catch_up"; });
       var beyond = mem.filter(function (m) { return m.band === "beyond"; });
       var ext = mem.filter(function (m) { return m.band === "extended"; });
       var BC = 6, shownBeyond = beyond.slice(0, BC);
-      var pills = leaders.map(pill).join("") + shownBeyond.map(pill).join("") +
+      var pills = leaders.map(pill).join("") + catchup.map(pill).join("") + shownBeyond.map(pill).join("") +
         (beyond.length > BC ? '<span class="ta-pill ta-mc-more">+' + (beyond.length - BC) + " " + bi("more chasing", "更多追高") + "</span>" : "") +
         ext.slice(0, 3).map(pill).join("");
       var sub = [];
       if (t.n_leaders) sub.push(t.n_leaders + " " + bi("lead", "领涨"));
+      if (t.n_catchup) sub.push(t.n_catchup + " " + bi("turning up", "转强"));
       if (t.n_beyond) sub.push(t.n_beyond + " " + bi("chasing", "追高"));
       return '<div class="ta-mc-theme"><div class="ta-mc-h"><b>' + bi(t.name, t.name_zh) + "</b>" +
         '<span class="ta-dim"> · ' + bi("typical", "典型") + " " + (t.median_ext >= 0 ? "+" : "") + num(t.median_ext, 0) + "% " +
@@ -172,11 +176,12 @@
         '<div class="ta-strip">' + pills + "</div></div>";
     }).join("");
     var explain = bi(
-      "When a theme runs hot the whole basket is extended, so the absolute 'don't-chase' brake fires on the theme's LEADER as readily as on a name that idiosyncratically spiked. This splits them: a LEADER is extended in-line with its theme and leads it on relative strength — the trade is to wait for a pullback, not to veto it; a name flagged CHASING is stretched far BEYOND its cohort (or parabolic vs its own history). Cohort context for the per-name flag — never scored.",
-      "当一个主题走热时，整个篮子都处于延展状态，于是绝对的“勿追高”刹车会像对待异常急涨的个股一样，对主题的领涨股同样触发。本面板将二者区分：领涨股的延展与主题同步且相对强度领先 —— 应等回调再进，而非否决；被标记为“追高”的个股则远超其同侪（或相对自身历史已呈抛物线）。仅为个股信号提供同侪背景，从不计分。");
+      "When a theme runs hot the whole basket is extended, so the absolute 'don't-chase' brake fires on the theme's LEADER as readily as on a name that idiosyncratically spiked. This splits them: a LEADER is extended in-line with its theme and leads it on relative strength — the trade is to wait for a pullback, not to veto it; a name flagged CHASING is stretched far BEYOND its cohort (or parabolic vs its own history). And when the leaders' entry is gone, a TURNING-UP laggard — one that lagged the theme but whose relative strength has turned up over the last 10 days, with room left — is the rotation-down-the-quality-ladder alternative. Cohort context for the per-name flag — never scored.",
+      "当一个主题走热时，整个篮子都处于延展状态，于是绝对的“勿追高”刹车会像对待异常急涨的个股一样，对主题的领涨股同样触发。本面板将二者区分：领涨股的延展与主题同步且相对强度领先 —— 应等回调再进，而非否决；被标记为“追高”的个股则远超其同侪（或相对自身历史已呈抛物线）。而当领涨股的入场点已过，一只“转强”的落后股 —— 此前跑输主题、但近10个交易日相对强度已转升、且仍有空间 —— 便是沿质量梯队向下轮动的替代入场。仅为个股信号提供同侪背景，从不计分。");
     return sect("🏁", "Within-theme leaders", "主题内领涨", null, null,
       '<p class="ta-explain">' + explain + "</p>" +
       '<div class="ta-mc-legend"><span class="ta-mc-key ta-mc-lead">' + bi("leader · wait for pullback", "领涨 · 等回调") +
+      '</span><span class="ta-mc-key ta-mc-catch">' + bi("turning up · catch-up laggard", "转强 · 补涨落后股") +
       '</span><span class="ta-mc-key ta-mc-chase">' + bi("chasing · extended beyond theme", "追高 · 超出主题") + "</span></div>" +
       '<div class="ta-mc">' + blocks + "</div>");
   }
@@ -218,8 +223,10 @@
       "#theme-addons .ta-mc-key{display:inline-flex;align-items:center;gap:5px}" +
       "#theme-addons .ta-mc-key::before{content:'';width:9px;height:9px;border-radius:2px;border:1.5px solid var(--line)}" +
       "#theme-addons .ta-mc-key.ta-mc-lead::before{border-color:var(--up)}" +
+      "#theme-addons .ta-mc-key.ta-mc-catch::before{border-color:var(--link)}" +
       "#theme-addons .ta-mc-key.ta-mc-chase::before{border-color:var(--down)}" +
       "#theme-addons .ta-pill.ta-mc-lead{border-color:var(--up)}" +
+      "#theme-addons .ta-pill.ta-mc-catch{border-color:var(--link)}" +
       "#theme-addons .ta-pill.ta-mc-chase{border-color:var(--down)}" +
       "@media(max-width:640px){#theme-addons .ta-ext-row{grid-template-columns:minmax(84px,1.2fr) 1.5fr 44px 70px}#theme-addons .ta-ext-par{display:none}}" +
       "</style>";

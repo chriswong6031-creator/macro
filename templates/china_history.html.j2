@@ -49,14 +49,15 @@
 </style>
 </head>
 <body>
+  {% set nav_search_lib = 'chinastockdata/index.json' %}
+  {% set nav_search_target = 'china_lookup.html' %}
+  {% set nav_search_placeholder_en = 'Search any A-share, sector ETF, or index…' %}
+  {% set nav_search_placeholder_zh = '搜索任意 A 股、板块 ETF 或指数…' %}
+  {% include "_site_nav.html.j2" %}
   <div class="panel">
     <div class="topline">
       <h1>{{ t('China A-share regime history', '中国A股周期历史') }}</h1>
       <span class="muted">{{ t('data through', '数据截至') }} {{ latest.date }}</span>
-      <span style="flex:1"></span>
-      <a class="navbtn" href="china.html">{{ t('← Back to China dashboard', '← 返回中国仪表盘') }}</a>
-      <button class="lang-btn">中文</button>
-      <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
     </div>
   </div>
 

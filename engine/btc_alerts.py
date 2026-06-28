@@ -35,7 +35,9 @@ ANCHOR = {"risk_regime": "#risk", "structure_shift": "#structure",
           "momentum_trigger": "#momentum", "allocation_change": "#allocation",
           "fundamentals": "#bfi", "leadership": "#crossasset",
           "market_mode": "#allocation", "risk_extreme": "#risk",
-          "flash_crash": "#flash"}
+          "flash_crash": "#flash",
+          "impulse_warn_down": "#impulse", "impulse_trigger_down": "#impulse",
+          "impulse_warn_up": "#impulse", "oi_crowding_derisk": "#leverage"}
 
 # Chinese for the finite state-word vocabulary that gets interpolated into alert
 # headlines/details (kept in step with engine/i18n.py's LEX). The site ships both
@@ -52,6 +54,16 @@ _ZH = {"High Risk": "高风险", "Low Risk": "低风险",
 def _z(word: str) -> str:
     """Chinese for a finite-vocab state word, else the English itself."""
     return _ZH.get(word, _ZH.get(str(word).strip(), word))
+
+
+def _f(v):
+    """NaN-safe float (None on NaN/non-numeric) — used by the radar/leverage emitters."""
+    try:
+        if v is None or (isinstance(v, float) and np.isnan(v)):
+            return None
+        return float(v)
+    except (TypeError, ValueError):
+        return None
 
 # Conviction layer — every alert carries `tier` (act > watch > context, for
 # prioritisation) plus `edge`/`forward` notes derived from the real backtest in
@@ -74,6 +86,11 @@ CONVICTION = {
     "allocation_change":{"tier": "watch",   "signal": None,         "whipsaw": None},
     "market_mode":      {"tier": "context", "signal": None,         "whipsaw": "market_mode"},
     "leadership":       {"tier": "context", "signal": None,         "whipsaw": "alt_cycle_leader"},
+    # forward impulse radar (engine/btc_impulse_radar.py) — act-tier LEADING crosses
+    "impulse_warn_down":   {"tier": "act",   "signal": None, "whipsaw": None},
+    "impulse_trigger_down":{"tier": "act",   "signal": None, "whipsaw": None},
+    "impulse_warn_up":     {"tier": "act",   "signal": None, "whipsaw": None},
+    "oi_crowding_derisk":  {"tier": "watch", "signal": None, "whipsaw": None},
 }
 _CALIB_CACHE: dict = {}
 
@@ -148,6 +165,27 @@ def _conviction(type_: str) -> dict:
     elif type_ == "flash_crash":
         edge = "Real-time risk event — act on it, don't wait for confirmation."
         edge_zh = "实时风险事件 — 应立即行动，无需等待确认。"
+    elif type_ in ("impulse_warn_down", "impulse_trigger_down"):
+        edge = ("Forward de-risk window from a verified LEADING precursor cross "
+                "(impulse radar). Holdout-validated, leak-free; act early — the "
+                "edge decays in ~2-4 days. BLIND to slow/options-calm flushes "
+                "(e.g. it did NOT lead the 2026-06-24 cascade).")
+        edge_zh = ("来自经验证的领先前兆突破的前瞻减仓窗口（脉冲雷达）。"
+                   "已通过留出样本、无前视；应尽早行动 — 优势在约 2-4 天内衰减。"
+                   "对缓慢/期权平静式下跌无效（例如未能领先 2026-06-24 的下跌）。")
+    elif type_ == "impulse_warn_up":
+        edge = ("Capitulation wash-out (SOPR). REACTIVE — fires AFTER a deep drop "
+                "and leads the BOUNCE by ~2d; it is NOT a pre-emptive bottom call.")
+        edge_zh = ("投降式洗盘（SOPR）。反应式 — 在大幅下跌之后触发，"
+                   "领先反弹约 2 天；并非提前抄底信号。")
+    elif type_ == "oi_crowding_derisk":
+        edge = ("OI-crowding de-risk nudge — funding-INDEPENDENT (breaks the "
+                "cascade AND-gate). LOW-CONVICTION: open interest is anti-predictive "
+                "standalone (measured lift ~0.36) — a 'fuel building' context flag, "
+                "not a validated crash call.")
+        edge_zh = ("持仓拥挤减仓提示 — 与资金费率无关（突破连环清算的与门）。"
+                   "低信心：未平仓合约单独使用为反向指标（实测 lift 约 0.36）— "
+                   "仅为“燃料堆积”背景标记，而非经验证的下跌信号。")
     wk = c["whipsaw"]
     if wk:
         w = (cal.get("whipsaw", {}) or {}).get(wk, {})
@@ -301,6 +339,96 @@ def risk_extreme_events(sig: pd.DataFrame, cfg: dict) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- #
+# forward IMPULSE-RADAR events — act-tier LEADING precursor crosses (up & down)
+# --------------------------------------------------------------------------- #
+def _onsets(s: pd.Series):
+    """Index positions where a boolean series transitions False -> True."""
+    b = s.fillna(False).astype(bool)
+    return b.index[b & ~b.shift(1, fill_value=False)]
+
+
+def impulse_radar_events(sig: pd.DataFrame) -> list[dict]:
+    """One act-tier event per fresh act-leg cross from engine/btc_impulse_radar.
+    D2 (DVOL jolt) / D3 (SOPR spike) -> down warning; both co-firing -> down
+    trigger; U1 (SOPR capitulation) -> reactive up/bounce. Idempotent (recomputed
+    from history; deduped by id). Degrades to [] if the radar can't build."""
+    try:
+        from engine import btc_impulse_radar
+        fires = btc_impulse_radar.fire_series(sig)
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        return []
+    if fires is None or fires.empty:
+        return []
+    close = sig["close"]
+    out: list[dict] = []
+    META = {
+        "d2": ("impulse_warn_down", "high", "Down-impulse pressure: vol-of-vol jolt",
+               "DVOL intraday-range spike (z≥2) — the options market is repricing risk.",
+               "下行脉冲压力：波动率跳升", "DVOL 日内振幅骤升（z≥2）— 期权市场正在重新定价风险。"),
+        "d3": ("impulse_warn_down", "high", "Down-impulse pressure: SOPR profit-take spike",
+               "Aggregate SOPR profit-taking spike (z≥2) while price is up — top-exhaustion tell.",
+               "下行脉冲压力：SOPR 获利了结骤升", "价格上涨之际总体 SOPR 获利了结骤升（z≥2）— 顶部衰竭信号。"),
+        "u1": ("impulse_warn_up", "medium", "Capitulation wash-out — bounce setup",
+               "Aggregate SOPR capitulation (z≤−1.5) after a deep drop — reactive bounce setup.",
+               "投降式洗盘 — 反弹布局", "深跌之后总体 SOPR 投降（z≤−1.5）— 反应式反弹布局。"),
+    }
+    for leg in ("d2", "d3", "u1"):
+        if leg not in fires.columns:
+            continue
+        type_, sev, head, det, head_zh, det_zh = META[leg]
+        for ts in _onsets(fires[leg]):
+            px = _f(close.get(ts, float("nan")))
+            pxs = f" BTC ${px:,.0f}." if px is not None else ""
+            out.append(_ev(type_, ts, sev, head, f"{det}{pxs}",
+                           {"leg": leg, "price": round(px) if px is not None else None}, leg,
+                           headline_zh=head_zh, detail_zh=f"{det_zh}{pxs}"))
+    # trigger: D2 AND D3 co-fire the same day (the loud one)
+    if "d2" in fires.columns and "d3" in fires.columns:
+        both = fires["d2"].fillna(False) & fires["d3"].fillna(False)
+        for ts in _onsets(both):
+            px = _f(close.get(ts, float("nan")))
+            pxs = f" BTC ${px:,.0f}." if px is not None else ""
+            out.append(_ev("impulse_trigger_down", ts, "high",
+                           "Down-impulse TRIGGER: vol-jolt + SOPR spike",
+                           f"Two independent leading precursors crossed together.{pxs}",
+                           {"price": round(px) if px is not None else None}, "d2d3",
+                           headline_zh="下行脉冲触发：波动跳升 + SOPR 骤升",
+                           detail_zh=f"两个独立的领先前兆同时突破。{pxs}"))
+    return out
+
+
+def leverage_derisk_events(sig: pd.DataFrame) -> list[dict]:
+    """OI-crowding de-risk nudge (watch-tier) — funding-INDEPENDENT, breaks the
+    cascade AND-gate (the leg that was silent into 2026-06-24). Emits on the OI
+    state transitioning INTO elevated/stretched. Low-conviction by construction."""
+    try:
+        from engine import btc_leverage_cascade
+        oi = btc_leverage_cascade.oi_state_series(sig)
+    except Exception:  # noqa: BLE001
+        return []
+    if oi is None or oi.empty:
+        return []
+    crowded = oi.isin(["elevated", "stretched"])
+    close = sig["close"]
+    out: list[dict] = []
+    for ts in _onsets(crowded):
+        state = oi.get(ts, "elevated")
+        px = _f(close.get(ts, float("nan")))
+        pxs = f" BTC ${px:,.0f}." if px is not None else ""
+        word = "stretched" if state == "stretched" else "elevated"
+        word_zh = "极度拥挤" if state == "stretched" else "偏高"
+        out.append(_ev("oi_crowding_derisk", ts, "medium",
+                       "OI crowding building — de-risk context",
+                       f"Open interest crossed into {word} (funding-independent). "
+                       f"Leverage fuel loading, not a crash call.{pxs}",
+                       {"oi_state": state, "price": round(px) if px is not None else None}, word,
+                       headline_zh="持仓拥挤升高 — 减仓背景",
+                       detail_zh=f"未平仓合约升至{word_zh}（与资金费率无关）。"
+                                 f"杠杆燃料堆积，并非下跌信号。{pxs}"))
+    return out
+
+
+# --------------------------------------------------------------------------- #
 # flash-crash state machine (hourly, price-only)
 # --------------------------------------------------------------------------- #
 def flash_crash_states(hourly: pd.DataFrame, cfg: dict) -> pd.Series:
@@ -405,6 +533,7 @@ def compute_all_events(sig: pd.DataFrame | None = None) -> list[dict]:
         sig = store.read("vector", "signals")
         sig.index = pd.to_datetime(sig.index)
     events = daily_state_events(sig) + risk_extreme_events(sig, cfg)
+    events += impulse_radar_events(sig) + leverage_derisk_events(sig)
     events += flash_events(store.read("coinbase", "btc_hourly"), cfg)
     # merge with any sentinel-appended events newer than what we can derive
     existing = load_events()

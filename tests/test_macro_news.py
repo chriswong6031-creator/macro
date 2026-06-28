@@ -41,7 +41,7 @@ def test_filter_headlines_pipeline():
     kept = mn.filter_headlines(arts, {"max_show": 10})
     assert len(kept) == 3                                                # junk + aggregator-noise + dup removed
     assert {h["theme"] for h in kept} == {"inflation", "labor", "macro"}
-    assert kept[0]["domain"] == "reuters.com"                            # newest first
+    assert kept[0]["importance_score"] >= kept[-1]["importance_score"]    # intelligence-ranked, not newest-first
     assert all("theme" in h and h["url"] is not None for h in kept)
 
 
@@ -53,6 +53,120 @@ def test_filter_respects_custom_sources_and_cap():
     ]
     kept = mn.filter_headlines(arts, {"sources": ["example-blog.com"], "max_show": 2})
     assert len(kept) == 2                                                # allowlisted + capped
+
+
+def test_enriched_headline_importance_channels_and_tickers():
+    arts = [{
+        "title": "Federal Reserve rate decision lifts Treasury yields and bank stocks",
+        "domain": "federalreserve.gov",
+        "source": "official",
+        "source_name": "Federal Reserve",
+        "source_tier": "official",
+        "seendate": "2026-06-18T10:00:00+00:00",
+        "url": "https://example.com",
+    }]
+    kept = mn.filter_headlines(arts, {"max_show": 5})
+    h = kept[0]
+    assert h["importance"] == "high"
+    assert h["importance_score"] >= 70
+    assert "rates" in h["channels"]
+    assert "IEF" in h["tickers"] or "XLF" in h["tickers"]
+    assert h["related_tickers"]
+    assert h["source_tier"] == "official"
+
+
+def test_sec_regulatory_noise_is_deboosted():
+    arts = [{
+        "title": "SEC announces administrative proceeding and settles charges against issuer",
+        "domain": "sec.gov",
+        "source": "official",
+        "source_name": "SEC - Press Releases",
+        "source_tier": "official",
+        "seendate": "2026-06-18T10:00:00+00:00",
+        "url": "https://example.com",
+    }, {
+        "title": "CPI inflation report lifts Treasury yields",
+        "domain": "bls.gov",
+        "source": "official",
+        "source_name": "BLS - CPI",
+        "source_tier": "official",
+        "seendate": "2026-06-18T09:00:00+00:00",
+        "url": "https://example.com/cpi",
+    }]
+    kept = mn.filter_headlines(arts, {"max_show": 5})
+    assert [h["source_name"] for h in kept] == ["BLS - CPI"]
+
+
+def test_macro_synthesis_summarizes_channels_and_tickers():
+    heads = mn.filter_headlines([{
+        "title": "Federal Reserve rate decision lifts Treasury yields and bank stocks",
+        "domain": "federalreserve.gov",
+        "source": "official",
+        "source_name": "Federal Reserve",
+        "source_tier": "official",
+        "seendate": "2026-06-18T10:00:00+00:00",
+        "url": "https://example.com",
+    }], {"max_show": 5})
+    syn = mn._synthesis(heads)
+    assert syn["high_impact_count"] == 1
+    assert syn["top_channels"]
+    assert syn["top_tickers"]
+
+
+def test_stock_wire_qualitative_news_outranks_macro_prints():
+    arts = [{
+        "title": "Micron earnings are a must-watch event as profit growth accelerates",
+        "domain": "marketwatch.com",
+        "source": "news_rss",
+        "source_name": "MarketWatch - Top Stories",
+        "source_tier": "stock_wire",
+        "theme": "earnings",
+        "seendate": "2026-06-18T09:00:00+00:00",
+        "url": "https://example.com/mu",
+    }, {
+        "title": "CPI for all items rises 0.5% in May",
+        "domain": "bls.gov",
+        "source": "official",
+        "source_name": "BLS - CPI",
+        "source_tier": "official",
+        "theme": "inflation",
+        "seendate": "2026-06-18T10:00:00+00:00",
+        "url": "https://example.com/cpi",
+    }]
+    kept = mn.filter_headlines(arts, {"max_show": 5})
+    assert kept[0]["theme"] == "earnings"
+    assert "MU" in kept[0]["tickers"]
+
+
+def test_official_pages_drop_dateless_treasury_nav_chrome(monkeypatch):
+    """Treasury list pages are scraped anchor-by-anchor; nav / section chrome
+    ('Internal Revenue Service (IRS)', 'Revenue Proposals' from the Green Book
+    sidebar) carries no date and must be dropped even though 'revenue' hands it an
+    'earnings' theme — while a dated real release survives."""
+    import requests
+    html = (
+        "<html><body><ul>"
+        "<li><a href='/news/press-releases/jy9999'>Treasury Sanctions Network "
+        "Financing Illicit Trade</a> 06/20/2026</li>"
+        "<li><a href='/policy-issues/tax-policy/revenue-proposals'>Revenue Proposals</a></li>"
+        "<li><a href='/about/internal-revenue-service'>Internal Revenue Service (IRS)</a></li>"
+        "</ul></body></html>")
+
+    class _Resp:
+        status_code = 200
+        text = html
+
+    monkeypatch.setattr(requests, "get", lambda *a, **k: _Resp())
+    items, _ = mn._fetch_official_pages({
+        "official_pages": [{"name": "Treasury - Press Releases",
+                            "url": "https://home.treasury.gov/news/press-releases",
+                            "theme": "fiscal", "tier": "official"}],
+        "official_window_days": 3650,
+    }, date(2026, 6, 22))
+    titles = [i["title"] for i in items]
+    assert any("Treasury Sanctions" in t for t in titles)               # dated release kept
+    assert "Revenue Proposals" not in titles                            # nav chrome dropped
+    assert "Internal Revenue Service (IRS)" not in titles
 
 
 def test_upcoming_catalysts_shape():

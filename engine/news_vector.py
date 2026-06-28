@@ -72,6 +72,13 @@ NARRATIVE_THEMES: dict[str, list[str]] = {
     "growth": ["gdp", "recession", "economic growth", "slowdown", "manufacturing",
                "soft landing", "hard landing", "contraction"],
     "fiscal": ["debt ceiling", "government shutdown", "fiscal", "budget deal", "default"],
+    "ai_tech": ["artificial intelligence", " ai ", "data center", "data centre",
+                "large language model", "openai", "anthropic", "nvidia", "gpu",
+                "cloud computing", "chip", "antitrust"],
+    "energy": ["opec", "crude oil", "oil price", "natural gas", "lng", "power grid",
+               "electricity demand", "uranium", "nuclear power"],
+    "markets": ["stock market", "wall street", "s&p 500", "nasdaq", "selloff",
+                "record high", "bear market", "bull market", "credit spread", "ipo"],
 }
 
 # top-tier wire services -> source_tier 1 (a deterministic credibility proxy; the
@@ -247,7 +254,8 @@ def _scheduled_map(today: date, back: int = 3, fwd: int = 3,
 # --------------------------------------------------------------------------- #
 _QUERY_CORE = ['tariffs', '"trade war"', 'sanctions', 'iran', 'israel', 'ukraine',
                'ceasefire', '"export controls"', 'semiconductor', '"federal reserve"',
-               'inflation', 'recession']
+               'inflation', 'recession', '"artificial intelligence"', '"data center"',
+               '"stock market"', '"oil price"', 'antitrust']
 
 
 def _query(cfg: dict) -> str:
