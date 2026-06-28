@@ -160,6 +160,9 @@ th,td{{padding:8px 10px;border-bottom:1px solid #ececec;text-align:left;vertical
 th{{color:#8B8D98;font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.04em}}
 .chips{{display:flex;gap:1.5rem;margin:1rem 0}}.chip b{{font-size:24px;font-weight:500}}
 @media(prefers-color-scheme:dark){{body{{background:#16171a;color:#e8e8e8}}th,td{{border-color:#2a2b2f}}}}
+/* phone: the multi-column tables are wider than the screen — let each scroll
+   horizontally within the page instead of pushing the whole page sideways. */
+@media(max-width:700px){{table{{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}}.chips{{flex-wrap:wrap;gap:1rem}}}}
 </style></head><body>
 <h1>Calibration Hub</h1>
 <div class="sub">The self-improving AI suite, made visible · as of {s['as_of']} · display-only</div>
