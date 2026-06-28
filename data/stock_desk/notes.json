@@ -1,7 +1,7 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-06-26",
-  "generated_at": "2026-06-28T19:30:46.968859+00:00",
+  "generated_at": "2026-06-28T21:53:31.066479+00:00",
   "degraded": null,
   "notes": [
     {
@@ -9,28 +9,28 @@
       "ticker": "IRT",
       "name": "IRT Living",
       "lean": "constructive",
-      "conviction": "medium",
-      "horizon_d": 30,
-      "thesis": "Strong upward revisions (z=2.63) anchor the event-edge selection, and the trend is intact above rising 10-dma; entry checks (vol-squeeze, off-high, RSI) are supportive.",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Analyst revisions (z=2.63) are the strongest validated selection leg supporting price continuity, and the technical ladder remains in a healthy uptrend; however, the edge is contextual, not standalone, and contracting macro liquidity tempers conviction.",
       "evidence": [
-        "selection axis z=1.16, revisions z=2.63",
-        "board price 16.91, rally on, HOLD, above 50dma and 200dma",
-        "entry axis z=0.16, off-high -3.6%, RSI 61 not overbought",
-        "cycle not blocked, daily phase mid"
+        "selection.revision z=2.63 (literature-tier)",
+        "ladder_state=RALLY ON (UPTREND, HOLD)",
+        "entry.urgency=hold, off-high -3.6%, RSI 61",
+        "verdict=High-confluence leader (context)"
       ],
-      "dissent": "Short-term momentum (alpha z=-1.31) is cold; revisions alone may not sustain the uptrend if wider market liquidity contracts further.",
+      "dissent": "Negative momentum context (alpha z=-1.31) and US net liquidity contraction could stall the rally, especially with the cycle in mid-phase.",
       "falsifier": {
-        "text": "The 10-day moving average is violated to the downside and revisions start declining.",
+        "text": "If the 10-day moving average turns down and price closes below it, breaking the daily trend structure.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "IRT",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 30
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-08-07",
+      "check_by": "2026-07-24",
       "engine_verdict": "High-confluence leader (context)"
     },
     {
@@ -39,23 +39,23 @@
       "name": "Yelp, Inc.",
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 21,
-      "thesis": "Verdict is neutral; the selection z-score is negative (-0.35) with weak SUE and negative momentum, and the quality factor is not enough to generate an edge relative to the S&P 500.",
+      "horizon_d": 20,
+      "thesis": "The engine\u2019s verdict of 'no clear edge' is warranted: the event-edge composite is negative (selection z=-0.35), SUE is -0.54, and the fresh-buy ladder signal lacks a validated selection tailwind, despite high factor quality.",
       "evidence": [
-        "verdict: Neutral \u2014 no clear edge",
-        "selection z=-0.35, SUE z=-0.54 (27d fresh), alpha z=-1.25",
-        "tailwind negative (-0.32)",
-        "board FRESH BUY but price below 50dma and 200dma, off -31.9% from high"
+        "verdict=Neutral \u2014 no clear edge",
+        "selection.sue z=-0.54 (validated-tier, negative)",
+        "selection.alpha z=-1.25 (context, negative)",
+        "quality.factors z=2.66 (84 pct, but not a standalone edge)"
       ],
-      "dissent": "High quality (z=2.66, clean accounting) and low market cap could attract value buyers if narrative shifts.",
+      "dissent": "The stock is testing below both the 50-dma and 200-dma after a deep drawdown (-31.9% from 52w high); a mean-reversion bounce could occur, but the fundamental catalyst is absent.",
       "falsifier": {
-        "text": "SUE and revisions turn convincingly positive (z > 0.5 each) and price closes above the 50dma for three consecutive days.",
+        "text": "If price closes below the recent swing low of $21.84 (2026-05-21), signaling the cycle low has failed and the rally attempt is invalidated.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-07-27",
+      "check_by": "2026-07-24",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
@@ -64,27 +64,27 @@
       "name": "Stewart Information Services Corporation",
       "lean": "constructive",
       "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "Modest event-edge from revisions (z=0.72) and flat SUE, with the price in an uptrend above moving averages; but the accounting watch flag and late investor phase warrant low conviction.",
+      "horizon_d": 20,
+      "thesis": "The base-building verdict is supported by a mildly positive selection axis (revisions z=0.72) and an intact uptrend ladder, but the 'accounting watch' quality flag demands caution.",
       "evidence": [
-        "verdict: Constructive \u2014 building a base",
-        "selection z=0.44, revisions z=0.72, SUE near 0",
-        "board RALLY ON, HOLD, price 68.68 above 50/200dma",
-        "cautions: accounting watch"
+        "verdict=Constructive \u2014 building a base",
+        "selection.revision z=0.72 (literature-tier)",
+        "ladder_state=RALLY ON (UPTREND, HOLD)",
+        "quality.flags.accounting=watch"
       ],
-      "dissent": "Accounting concerns (accruals -0.305) could mask deteriorating fundamentals; quality composite is weak (z=-0.31).",
+      "dissent": "Accounting flag suggests earnings quality risk; the investor cycle is late and net liquidity is contracting, increasing vulnerability to a false breakout.",
       "falsifier": {
-        "text": "Stock breaks below the 50-day moving average and the revisions z-score drops below zero.",
+        "text": "If the stock breaks below the 200-dma (~$68.34) and falls beneath the prior swing low, the constructive base-building scenario is off.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "STC",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 30
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-08-07",
+      "check_by": "2026-07-24",
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
@@ -92,58 +92,57 @@
       "ticker": "ULS",
       "name": "UL Solutions",
       "lean": "constructive",
-      "conviction": "medium",
-      "horizon_d": 30,
-      "thesis": "A fresh earnings-surprise catalyst (SUE z=1.22) and strong revisions (z=1.12) combine with a turn\u2011signaled daily cycle and clean quality factors, offering a constructive backdrop against a mixed tape.",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "A robust selection edge (SUE z=1.22, revisions z=1.12) combined with a bottoming technical pattern ('TURN SIGNALED') creates a plausible base-building setup; the turn remains contingent on the weekly timeframe confirming.",
       "evidence": [
-        "verdict: Constructive \u2014 building a base",
-        "selection z=0.95, SUE 1.22, revisions 1.12, alpha 0.47",
-        "board TURN SIGNALED, BUY SOON, price 99.05 above 50dma",
-        "quality z=0.89, accounting clean",
-        "entry z=0.85 with urgency"
+        "verdict=Constructive \u2014 building a base",
+        "selection.sue z=1.22 (validated-tier, positive)",
+        "selection.revision z=1.12 (literature-tier)",
+        "ladder_state=TURN SIGNALED (BOTTOMING, BUY SOON)"
       ],
-      "dissent": "The price is still off its 52-week high only 5.4%, and the bigger picture is mixed; a failed bounce could trap early buyers in a head-fake.",
+      "dissent": "Net income growth is flat (-0.3% y/y), macro risk is elevated for this macro-sensitive name, and the weekly trend has not yet turned up, so the bottoming could fail quickly.",
       "falsifier": {
-        "text": "Price trades below the recent swing low at 89.7 and the 10-day moving average turns down.",
+        "text": "If price closes below the most recent swing low of $89.70 (2026-06-23), the bottoming signal is invalidated.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "ULS",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 30
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-08-07",
+      "check_by": "2026-07-24",
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
       "id": "2026-06-26-DINO-5",
       "ticker": "DINO",
       "name": "HF Sinclair",
-      "lean": "constructive",
-      "conviction": "medium",
-      "horizon_d": 30,
-      "thesis": "Strong event-edge from revisions (z=2.15) and positive SUE supports the uptrend; the entry pullback is orderly, but the energy basket deterioration is a headwind that tempers conviction.",
+      "lean": "cautious",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "While the selection axis is exceptionally strong (revisions z=2.15, SUE z=0.92), the validated 'Narrative basket (US Energy Complex) deteriorating' risk gate forces a cautious stance; sector headwinds can overwhelm stock-level signals.",
       "evidence": [
-        "verdict: High-confluence leader (context)",
-        "selection z=1.57, revisions 2.15, SUE 0.92",
-        "board RALLY ON, HOLD, price above 50/200dma, RSI 51",
-        "cautions: Narrative basket (US Energy Complex) deteriorating"
+        "verdict=High-confluence leader (context)",
+        "cautions: 'Narrative basket (US Energy Complex) is deteriorating \u2014 validated risk gate'",
+        "selection.revision z=2.15 (literature-tier)",
+        "selection.sue z=0.92 (validated-tier)"
       ],
-      "dissent": "If the energy complex sell-off accelerates, even strong company\u2011specific revisions could be overwhelmed by sector\u2011wide derating.",
+      "dissent": "The energy sector narrative deterioration is a validated risk signal; combined with contracting macro liquidity and a mixed weekly picture, the stock could reverse sharply if the sector sell-off intensifies.",
       "falsifier": {
-        "text": "Crude oil (WTI) closes below $55/bbl and DINO breaks below its 50-day moving average with downward revisions.",
+        "text": "If the Energy Select Sector SPDR (XLE) closes below its 200-day moving average and DINO simultaneously breaks below $65 (near the recent swing low), the cautious lean is confirmed as too optimistic.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "DINO",
           "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 30
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-08-07",
+      "check_by": "2026-07-24",
       "engine_verdict": "High-confluence leader (context)"
     },
     {
@@ -152,28 +151,27 @@
       "name": "VF Corporation",
       "lean": "constructive",
       "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "Positive revisions (z=0.89) and modest alpha support the uptrend, but the stock is 19% below its 52-week high and the macro backdrop is mixed; entry factors are only mildly supportive.",
+      "horizon_d": 20,
+      "thesis": "The base-building verdict is supported by positive revisions (z=0.89) and a rally-on ladder above the 200-dma, but the mixed weekly regime and negative tailwind axis limit the edge.",
       "evidence": [
-        "verdict: Constructive \u2014 building a base",
-        "selection z=0.71, revisions 0.89, alpha 0.56",
-        "board RALLY ON, HOLD, price 17.37 above 200dma but below 50dma",
-        "entry z=0.40 with pullback/extended flag",
-        "tailwind negative (-0.32)"
+        "verdict=Constructive \u2014 building a base",
+        "selection.revision z=0.89 (literature-tier)",
+        "ladder_state=RALLY ON (UPTREND, HOLD)",
+        "entry.off-high -19.0%, entry.pullback/extended present"
       ],
-      "dissent": "Persistent weakness below the 50-day moving average and negative tailwind could signal a failing cycle; the name lacks a fresh earnings catalyst (no SUE leg).",
+      "dissent": "Consumer discretionary faces macro liquidity contraction and a negative tailwind axis (spotlight z=-0.32); the stock remains 19% below its 52-week high, and the rally could falter near the declining 50-dma.",
       "falsifier": {
-        "text": "Price closes below the 200-day moving average and the daily MACD turns negative again.",
+        "text": "If price closes below the rising 10-day moving average and the MACD line crosses back below its signal line, the constructive base turns into a failed rally.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "VFC",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 30
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-08-07",
+      "check_by": "2026-07-24",
       "engine_verdict": "Constructive \u2014 building a base"
     }
   ],
