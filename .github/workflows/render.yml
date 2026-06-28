@@ -146,13 +146,15 @@ jobs:
               templates/gex.html.j2|scripts/build_gex_board.py|scripts/build_options_flow.py|scripts/build_options_skew.py|scripts/build_vol_regime.py) echo gex;;
               templates/baskets.html.j2|templates/methodology.html.j2|scripts/build_baskets.py|scripts/build_methodology.py) echo baskets;;
               templates/dashboard.html.j2|templates/stock.html.j2|scripts/build_site.py) echo macro;;
-              *) echo all;;
+              templates/*|scripts/build_*.py|config.yml|lib/*) echo all;;
+              *) echo skip;;
             esac
           }
           REGIONS=""
           while IFS= read -r f; do
             [ -z "$f" ] && continue
             r=$(region_of "$f")
+            [ "$r" = "skip" ] && continue   # build output (site/), data/, engine/, app/ — not a scope input
             case " $REGIONS " in *" $r "*) ;; *) REGIONS="$REGIONS $r";; esac
           done <<< "$FILES"
           REGIONS=$(echo $REGIONS | xargs)
