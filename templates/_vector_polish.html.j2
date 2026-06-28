@@ -60,8 +60,10 @@ html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-men
    `.site-nav` so the `.topbar` pages that also include this partial keep their
    own inline nav untouched. The fly-out + hover polish above still apply. The
    `≤700px` mobile hamburger is injected later by theme.js and wins on order. */
-.site-nav{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:9px}
-.site-nav .nav-links{grid-column:1;grid-row:1;display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}
+.site-nav{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:9px;max-width:1500px;margin-left:auto;margin-right:auto}
+/* menu on its own first row (one line); search + controls share row two — holds the bar to two rows */
+.site-nav .nav-links{grid-column:1 / -1;grid-row:1;display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}
+.site-nav .nav-search{grid-column:1;grid-row:2;max-width:480px}
 /* MASTERMIND brand lockup — covers the .site-nav (migrated) and legacy .topbar nav (mirrors theme.css; --blue stands in for the macro --link). */
 .site-nav .nav-brand,.topbar .nav-brand{display:inline-flex;align-items:center;gap:8px;flex:none;padding:3px 10px 3px 4px;margin:0 6px 0 0;border-radius:11px;text-decoration:none;transition:background .18s,transform .16s ease}
 .site-nav .nav-brand:hover,.topbar .nav-brand:hover{background:color-mix(in srgb,var(--blue) 11%,transparent);transform:translateY(-1px)}
@@ -77,7 +79,7 @@ html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-men
 .site-nav .nav-dd:hover>.nav-dd-menu,.site-nav .nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
 .site-nav .nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
 .site-nav .nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
-.site-nav .nav-ctrls{grid-column:2;grid-row:1;justify-self:end;align-self:center;display:flex;align-items:center;gap:10px}
+.site-nav .nav-ctrls{grid-column:2;grid-row:2;justify-self:end;align-self:center;display:flex;align-items:center;gap:10px}
 .site-nav .nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;cursor:pointer}
 .site-nav .nav-ctrls .ai-brief-link.active{background:var(--blue);border-color:var(--blue);color:#fff}
 .site-nav .theme-switch{width:56px;height:27px;border-radius:999px;background:var(--card);border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}

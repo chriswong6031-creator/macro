@@ -273,9 +273,18 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
    right-hand column that NEVER moves — the links wrap inside the left column and
    the search drops to a full-width row below, so switching language (which
    changes link-text widths) can't shift the toggles around. */
+/* max-width + auto margins pin the bar to ONE consistent width on every page
+   (matching .site-footer and the vector family's 1500px nav) — full-width macro
+   dashboards and 1180px reading pages no longer make the menu jump width as you
+   navigate between them. Below 1500px the cap is inert, so laptops see no change. */
 .site-nav { display: grid; grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center; column-gap: 12px; row-gap: 9px; margin: 0 0 16px; }
-.site-nav .nav-links { grid-column: 1; grid-row: 1; display: flex; flex-wrap: wrap;
+  align-items: center; column-gap: 12px; row-gap: 9px; margin: 0 auto 16px;
+  max-width: 1500px; }
+/* the menu owns the full first row on its own (one clean line); the search +
+   the Mastermind/Terminal/⚙ cluster share the second row. Keeping the links off
+   the controls' column is what holds the bar to TWO rows — 7 dropdowns + brand
+   no longer get squeezed into wrapping a third row beside the pills. */
+.site-nav .nav-links { grid-column: 1 / -1; grid-row: 1; display: flex; flex-wrap: wrap;
   align-items: center; gap: 3px; min-width: 0; }
 /* ── Brand lockup — the crafted Mastermind “M” logomark + MASTERMIND wordmark, the
    first item in the shared _navlinks list, pinned at the head of the menu bar and
@@ -356,7 +365,7 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
 }
 
 /* global stock search */
-.nav-search { grid-column: 1 / -1; grid-row: 2; position: relative; min-width: 0; max-width: 480px; }
+.nav-search { grid-column: 1; grid-row: 2; position: relative; min-width: 0; max-width: 480px; }
 .nav-search .mag { position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
   font-size: 12px; opacity: .65; pointer-events: none; }
 .nav-search input { width: 100%; box-sizing: border-box; padding: 8px 12px 8px 32px;
@@ -423,8 +432,8 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
 .tbl-filter .cnt { font-size: 12px; font-weight: 600; color: var(--muted);
   font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-.site-nav .nav-ctrls { grid-column: 2; grid-row: 1; justify-self: end; align-self: start;
-  margin-top: 2px; display: flex; align-items: center; gap: 10px; }
+.site-nav .nav-ctrls { grid-column: 2; grid-row: 2; justify-self: end; align-self: center;
+  display: flex; align-items: center; gap: 10px; }
 
 /* static AI Daily Brief entry — pinned in the nav-ctrls cluster beside the theme +
    language toggles, so it never scrolls with the main menu */
