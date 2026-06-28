@@ -27,6 +27,86 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_sector_central")
 
 
+def _fmt_money_mn(v: float | None) -> str:
+    """$ millions -> human string: 1234 -> +$1.2B, -87 -> -$87M, None -> —."""
+    import math
+    if v is None or (isinstance(v, float) and math.isnan(v)):
+        return "—"
+    sign = "+" if v >= 0 else "−"
+    a = abs(v)
+    if a >= 1000:
+        return f"{sign}${a / 1000:.1f}B"
+    return f"{sign}${a:.0f}M"
+
+
+def _flows_section_html() -> str | None:
+    """Server-rendered 'Where sector-ETF money is flowing' board: a multi-window
+    (1D/3D/1W/2W/1M) flow heatmap across the 11 sector SPDRs, sorted by the widest
+    window, with a net-of-complex row. Replaces the day-by-day grid that used to
+    live on us_stocks.html. Returns None until flow history exists."""
+    from collectors.sponsors import sector_flow_periods
+    from engine.i18n import t
+    from engine.playbook import SECTOR_NAMES
+    data = sector_flow_periods()
+    if not data or not data.get("rows"):
+        return None
+    labels = data["labels"]
+    rows = data["rows"]
+    net = data["net"]
+    # per-window max-abs for the heat tint (the net row is excluded so one big
+    # complex-wide window doesn't wash every cell out)
+    maxabs = {lbl: max((abs(r["vals"].get(lbl) or 0.0) for r in rows), default=0.0)
+              for lbl in labels}
+    widest = labels[-1]
+    rows = sorted(rows, key=lambda r: -(r["vals"].get(widest) or 0.0))
+
+    def cell(v: float | None, lbl: str) -> str:
+        if v is None:
+            return "<td class='scf-c muted'>—</td>"
+        cls = "pos" if v >= 0 else "neg"
+        m = maxabs.get(lbl) or 0.0
+        inten = min(1.0, abs(v) / m) if m else 0.0
+        var = "--up" if v >= 0 else "--down"
+        bg = (f"background:color-mix(in srgb, var({var}) "
+              f"{6 + inten * 46:.0f}%, transparent)") if inten > 0.02 else ""
+        return f"<td class='scf-c {cls}' style='{bg}'>{_fmt_money_mn(v)}</td>"
+
+    head = "<th class='scf-s'>" + str(t("sector", "板块")) + "</th>" + "".join(
+        f"<th class='scf-c'>{lbl}</th>" for lbl in labels)
+    body = []
+    for r in rows:
+        name = SECTOR_NAMES.get(r["ticker"], r["ticker"])
+        label = (f"<b>{r['ticker']}</b> <span class='muted'>"
+                 f"{t(name, name)}</span>")
+        body.append("<tr><td class='scf-s'>" + label + "</td>"
+                    + "".join(cell(r["vals"].get(lbl), lbl) for lbl in labels)
+                    + "</tr>")
+    net_cells = "".join(cell(net.get(lbl), lbl) for lbl in labels)
+    body.append("<tr class='scf-net'><td class='scf-s'><b>"
+                + str(t("Net · 11 sector ETFs", "净额 · 11 个板块 ETF"))
+                + "</b></td>" + net_cells + "</tr>")
+    note = t(
+        f"As of {data['asof']} · net creation/redemption flow (ΔShares × NAV) "
+        f"summed over each window · positive = money in. Windows cap at the "
+        f"{data['depth']} trading days collected so far (history builds from "
+        f"June 2026), so the wider windows can coincide until more accrues. "
+        f"Display-only.",
+        f"截至 {data['asof']} · 各时间窗内份额申购／赎回净额（份额变动 × 资产净值）"
+        f"求和 · 正值 = 资金流入。各窗口取目前已采集的 {data['depth']} 个交易日"
+        f"（历史自 2026 年 6 月起累积），故在数据充足前较宽的窗口可能重合。仅作展示。")
+    return (
+        "<div class='scc-section-h' id='sc-flows'>"
+        "<h2><span class='l-en'>Where sector-ETF money is flowing</span>"
+        "<span class='l-zh'>板块 ETF 资金流向何处</span></h2>"
+        "<span class='scc-section-sub'><span class='l-en'>Multi-day "
+        "creation/redemption flow across the 11 sector SPDRs — read the rotation, "
+        "not the daily noise</span><span class='l-zh'>覆盖 11 个板块 SPDR 的多日"
+        "申购／赎回资金流 — 看轮动趋势，而非单日噪声</span></span></div>"
+        "<div class='scf-wrap'><table class='scf'><thead><tr>" + head
+        + "</tr></thead><tbody>" + "".join(body) + "</tbody></table>"
+        "<p class='muted sm' style='margin:8px 2px 0'>" + str(note) + "</p></div>")
+
+
 def main() -> int:
     root = config.ROOT
     site = root / config.load()["storage"]["site_dir"]
@@ -66,7 +146,12 @@ def main() -> int:
     except Exception:  # noqa: BLE001 — degrade to English-only rather than crash the build
         env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
     try:
-        html = env.get_template("sector_central.html.j2").render()
+        flows_html = _flows_section_html()
+    except Exception as e:  # noqa: BLE001 — additive embed, never fatal
+        log.warning("sector_central: flow board failed (%s)", e)
+        flows_html = None
+    try:
+        html = env.get_template("sector_central.html.j2").render(flows_html=flows_html)
         (site / "sector_central.html").write_text(html, encoding="utf-8")
     except Exception as e:  # noqa: BLE001 — a template error must NOT abort the daily engine job
         # The CI step that runs this is a bare `run:` (its claim "the builder returns 0 on any

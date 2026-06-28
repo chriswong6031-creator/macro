@@ -2572,33 +2572,32 @@
 
   <!-- ===================== MARKET BREADTH ===================== -->
   {% if breadth_panel %}
-  <div class="panel span12" id="breadth">
-    <h2>{{ t('Market breadth — how many stocks are actually participating', '市场广度 — 究竟有多少股票在参与') }}
+  <div class="panel span6" id="breadth">
+    <h2>{{ t('Market breadth — who is participating', '市场广度 — 谁在参与') }}
       {{ help("Breadth across the full S&P Composite 1500 (large = S&P 500, mid = S&P 400, small = S&P 600): how many stocks are advancing, how many hold above their 50- and 200-day lines, and net new 52-week highs. A strong index riding on a shrinking number of stocks is fragile — broad participation confirms a move, thinning breadth is an early warning. The % above the 50-day line also feeds the regime model's growth axis, so this is the same breadth the model reads, just made legible.", "覆盖整个标普综合 1500（大盘 = 标普500、中盘 = 标普400、小盘 = 标普600）的广度：多少股票上涨、多少守在其 50 日与 200 日均线之上，以及净创 52 周新高。指数走强却只靠越来越少的股票支撑则脆弱 — 广泛参与确认走势，广度变薄是早期预警。高于 50 日线的占比也进入周期模型的增长轴，因此这与模型读取的是同一广度，只是更直观。") }}
     </h2>
-    <p class="{{ breadth_panel.comp.tone }}" style="margin:0 2px 12px; font-size:14px; line-height:1.5">
+    <p class="{{ breadth_panel.comp.tone }}" style="margin:0 2px 10px; font-size:12.5px; line-height:1.5">
       {{ t('Participation looks', '参与度看起来') }} <b>{{ breadth_panel.comp.label }}</b> —
-      <b>{{ "%.0f" | format(breadth_panel.comp.pa50) }}%</b> {{ t('of the 1,500 are above their 50-day line', '的 1500 只股票高于其 50 日均线') }},
-      <b>{{ "%.0f" | format(breadth_panel.comp.pa200) }}%</b> {{ t('above their 200-day', '高于其 200 日均线') }};
-      {{ t('net new 52-week highs', '净创 52 周新高') }} <b>{{ "%+d" | format(breadth_panel.comp.net_nh) }}</b>.
-      <span class="muted">{{ breadth_panel.comp.verdict }}.</span>
+      <b>{{ "%.0f" | format(breadth_panel.comp.pa50) }}%</b> {{ t('of the 1,500 above their 50-day', '的 1500 只高于 50 日均线') }},
+      <b>{{ "%.0f" | format(breadth_panel.comp.pa200) }}%</b> {{ t('above their 200-day', '高于 200 日均线') }};
+      {{ t('net new highs', '净新高') }} <b>{{ "%+d" | format(breadth_panel.comp.net_nh) }}</b>.
     </p>
     <table>
       <tr>
         <th class="l">{{ t('size tier', '规模层级') }}</th>
-        <th class="l" style="min-width:170px">{{ t('advancing vs declining', '上涨对下跌') }}</th>
-        <th>{{ t('&gt; 50-day', '&gt; 50 日') }}</th>
-        <th>{{ t('&gt; 200-day', '&gt; 200 日') }}</th>
-        <th>{{ t('net new highs', '净新高') }}
+        <th class="l">{{ t('adv / dec', '涨／跌') }}</th>
+        <th>{{ t('&gt;50d', '&gt;50日') }}</th>
+        <th>{{ t('&gt;200d', '&gt;200日') }}</th>
+        <th>{{ t('net NH', '净新高') }}
           {{ help("52-week highs minus 52-week lows today. Positive = expansion (healthy); negative = more stocks making new lows than highs (deteriorating).", "今日创 52 周新高减去创 52 周新低的数量。正 = 扩张（健康）；负 = 创新低的股票多于创新高（恶化）。") }}
         </th>
       </tr>
       {% for tier in breadth_panel.tiers %}
       <tr>
-        <td class="l"><b>{{ tier.label }}</b> <span class="muted">{{ tier.univ }}</span></td>
+        <td class="l"><b>{{ tier.label }}</b> <span class="muted" style="font-size:11px">{{ tier.univ }}</span></td>
         <td class="l">
-          <span class="pos">{{ tier.adv }}</span> <span class="muted">/</span> <span class="neg">{{ tier.dec }}</span>
-          {% if tier.adv_pct is not none %}<span class="bbar" title="{{ '%.0f' | format(tier.adv_pct) }}% advancing"><i style="width:{{ tier.adv_pct | round(0) }}%; background:var(--up)"></i><i style="width:{{ (100 - tier.adv_pct) | round(0) }}%; background:var(--down)"></i></span>{% endif %}
+          <span class="pos">{{ tier.adv }}</span><span class="muted">/</span><span class="neg">{{ tier.dec }}</span>
+          {% if tier.adv_pct is not none %}<span class="bbar" style="width:54px" title="{{ '%.0f' | format(tier.adv_pct) }}% advancing"><i style="width:{{ tier.adv_pct | round(0) }}%; background:var(--up)"></i><i style="width:{{ (100 - tier.adv_pct) | round(0) }}%; background:var(--down)"></i></span>{% endif %}
         </td>
         <td class="{{ 'pos' if tier.pa50 >= 50 else 'neg' }}">{{ "%.0f" | format(tier.pa50) }}%</td>
         <td class="{{ 'pos' if (tier.pa200 or 0) >= 50 else 'neg' }}">{% if tier.pa200 is not none %}{{ "%.0f" | format(tier.pa200) }}%{% else %}—{% endif %}</td>
@@ -2606,7 +2605,7 @@
       </tr>
       {% endfor %}
     </table>
-    <p class="muted" style="margin:8px 2px 0; font-size:11px">{{ t('As of', '截至') }} {{ breadth_panel.asof }} · {{ t('daily breadth across S&P 1500 constituents', '覆盖标普 1500 成分股的每日广度') }}</p>
+    <p class="muted" style="margin:8px 2px 0; font-size:11px">{{ breadth_panel.comp.verdict }} · {{ t('as of', '截至') }} {{ breadth_panel.asof }}</p>
   </div>
   {% endif %}
 
@@ -2620,8 +2619,6 @@
     <details class="jarg" style="margin-top:0">
     <summary>{{ t('Show market internals — McClellan, breadth thrust, highs/lows, divergence','展开市场内部 — 麦克莱伦、广度推力、新高新低、背离') }}</summary>
     <p class="{{ adv_breadth.headline.tone }}" style="margin:10px 2px 14px; font-size:14px; line-height:1.5">
-    <details class="jarg"><summary>{{ t('Show market internals — McClellan, breadth thrust, highs/lows, divergence','展开市场内部 — 麦克莱伦、广度推力、新高新低、背离') }}</summary>
-    <p class="{{ adv_breadth.headline.tone }}" style="margin:0 2px 14px; font-size:14px; line-height:1.5">
       {{ t('The internals read', '内部结构读数为') }} <b>{{ adv_breadth.headline.label }}</b> —
       <span class="muted">{{ adv_breadth.headline.verdict }}.</span>
     </p>
@@ -2739,56 +2736,6 @@
   </div>
   {% endif %}
 
-  <!-- ===================== SECTOR BOTTOM RADAR ===================== -->
-  {% if sector_radar and sector_radar.washed %}
-  <div class="panel span12" id="sector-bottom-radar">
-    <h2>{{ t('Sector Bottom Radar — washout durability, not rotation', '板块见底雷达 — 错杀的持久性，而非轮动') }}
-      {{ help("The buy-side complement to the heat board below. It runs the SAME validated 'Bottom Confidence' score we compute per stock (walk-forward calibrated monotone on 69k evals) on each sector ETF: how DURABLE a washing-out sector's low looks — high = the kind of selloff whose low has historically held with a SHALLOWER drawdown — discounted when the turn isn't confirmed on the weekly/monthly and when price is a deep falling-knife below its 200-day. The whole board is then conditioned by the index Fed-put gate: in a put-absent regime (recession or inflation-locked Fed) the same washout signals kept falling in 2000/2008/2022. This is a RISK / DURABILITY read, NOT a return forecast and NOT alpha — it trades some of the explosive bounce for a much higher chance the low holds. The heat board describes what's already hot (and late); this finds where a durable low may be forming. Validated in research/SECTOR_BOTTOM_RADAR.md.", "下方热度榜的买方补充。它在每个板块 ETF 上运行与个股相同的、经验证的「见底信心」分数（经 6.9 万次步进式校准、单调有效）：衡量一个正被错杀的板块其低点有多持久——分数越高，代表这类抛售的低点历史上更易守住、回撤更浅——当周线／月线尚未确认转向、或价格深跌破 200 日线（接飞刀）时会打折。整个看板再由指数层面的美联储托底闸门来条件化：在托底缺位（衰退或通胀锁死）的格局下，同类超卖信号在 2000／2008／2022 年持续下跌。这是风险／持久性读数，并非收益预测、也非超额收益——它以让出部分爆发式反弹，换取低点守住的更高概率。热度榜描述的是已经火热（且偏晚）的板块；本雷达则寻找可能正在形成的持久低点。验证见 research/SECTOR_BOTTOM_RADAR.md。") }}
-    </h2>
-    <p class="{{ 'neg' if sector_radar.put_absent else 'pos' }}" style="margin:0 2px 12px; font-size:13.5px; line-height:1.5">
-      <b>{{ t('Macro gate', '宏观闸门') }}:</b> {{ sector_radar.macro_banner }}
-    </p>
-    <div style="overflow-x:auto">
-    <table style="min-width:680px">
-      <tr>
-        <th class="l">{{ t('sector', '板块') }}</th>
-        <th class="l" style="min-width:150px">{{ t('bottom confidence', '见底信心') }} <span class="help">?<span class="tip">
-          <span class="l-en"><b>Bottom Confidence</b> 0-100 — how durable, low-drawdown this sector's low looks. <b>Measured (sector ETFs, 1998-2026):</b> sectors scoring 60+ held their cycle low ~79% of the time vs ~34% at 0-20, with a shallower drawdown tail. Higher = a more durable low, <i>not</i> a bigger bounce (the deepest washouts bounce hardest but rarely hold). Risk/durability, never a return forecast.</span>
-          <span class="l-zh"><b>见底信心</b> 0-100 — 衡量该板块的低点有多持久、回撤有多浅。<b>实测（板块 ETF，1998-2026）：</b>得分 60+ 的板块约 79% 守住其周期低点，而 0-20 区间仅约 34%，且回撤尾部更浅。分数越高代表低点越持久，<i>而非</i>反弹更大（最深的错杀反弹最猛，却很少守住）。这是风险／持久性，绝非收益预测。</span>
-        </span></span></th>
-        <th>{{ t('verdict', '判定') }}</th>
-        <th class="l">{{ t('members washed / turning', '成分股超卖／转向') }} {{ help("Live breadth confirmer: of the sector's S&P 500 members, the share below their 200-day (washed out) and, of those, the share reclaiming their 10-day (turning up). Displayed context only — the breadth cache is ~1y deep so this leg is not deep-backtested and never enters the score.", "实时宽度确认：在该板块的标普500成分股中，跌破 200 日线（超卖）的比例，以及其中已收复 10 日线（转向）的比例。仅作背景参考——宽度缓存约 1 年深度，该项未经深度回测，且不计入分数。") }}</th>
-        <th class="l">{{ t('read', '解读') }}</th>
-      </tr>
-      {% for r in sector_radar.washed %}
-      <tr>
-        <td class="l"><b>{{ td(r.name) }}</b> <span class="muted" style="font-size:11px">{{ r.ticker }}</span></td>
-        <td class="l" data-sort="{{ r.bc_pct }}">
-          {% if r.bottom_confidence is not none %}
-          <span class="help">
-            <span style="display:inline-flex;align-items:center;gap:7px">
-              <span style="display:inline-block;width:60px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:{{ r.bc_pct }}%;background:{{ r.v_color }}"></i></span>
-              <b>{{ r.bc_pct }}</b>
-              {% if r.bc_grade_t %}<span class="muted" style="font-size:11px">{{ r.bc_grade_t }}</span>{% endif %}
-            </span>
-            {% if r.bc_line %}<span class="tip"><span class="l-en">{{ r.bc_line }}{% if r.bc_knife_line %}<br>{{ r.bc_knife_line }}{% endif %}</span><span class="l-zh">{{ r.bc_line_zh or r.bc_line }}{% if r.bc_knife_line_zh %}<br>{{ r.bc_knife_line_zh }}{% endif %}</span></span>{% endif %}
-          </span>
-          {% else %}<span class="muted">—</span>{% endif %}
-        </td>
-        <td><span class="pill {{ r.v_tone }}" style="border-color:{{ r.v_color }};color:{{ r.v_color }}">{{ r.v_pill }}</span></td>
-        <td class="l muted" style="font-size:12px">{% if r.breadth_str %}{{ r.breadth_str }}{% else %}—{% endif %}</td>
-        <td class="l muted" style="font-size:12px;max-width:340px">{{ r.label_t }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-    </div>
-    <p class="muted" style="margin:8px 2px 0; font-size:11px">
-      {{ t('Risk / durability read — confirm into stabilization, do not anticipate the exact low. Not alpha.', '风险／持久性读数 — 确认企稳后再介入，勿预判精确低点。非超额收益。') }}
-      <a href="#sectors" style="margin-left:6px">{{ t('rotation context ↓', '轮动背景 ↓') }}</a>
-    </p>
-  </div>
-  {% endif %}
-
   <!-- ============ SECTOR BUY/SELL SETUPS — confluence engine ============ -->
   {% if sector_setups %}
   <div class="panel span12" id="sectors">
@@ -2850,16 +2797,6 @@
       {% for r in sector_setups.sectors %}
       <tr>
         <td class="l"><a href="sectors/{{ r.ticker }}.html"><b>{{ r.ticker }}</b></a> <span class="muted">{{ td(r.name) }}</span>
-          {% if r.rate_inflation and r.rate_inflation.any_shown %}{% set ri = r.rate_inflation %}
-          {% set _ric = {'neg':'var(--down)','pos':'var(--up)','muted':'var(--muted)'} %}
-          <div style="display:flex;flex-wrap:wrap;gap:3px 7px;margin-top:3px">
-            {% for ch in [ri.rate, ri.inflation] if ch.show %}
-            <span class="help" style="width:auto;height:auto;border:none;margin:0;cursor:help">
-              <span style="font-size:10.5px;font-weight:700;line-height:1.4;color:{{ _ric[ch.tone] }}">{{ ch.arrow }} {{ t(ch.chip.en, ch.chip.zh) }}</span>
-              <span class="tip">{{ t(ch.tip.en, ch.tip.zh) }}</span>
-            </span>
-            {% endfor %}
-          </div>{% endif %}
         </td>
         <td class="l" data-sort="{{ r.priority }}">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -2945,14 +2882,7 @@
       <p class="muted">{{ t('No significant manager moves in the current window (needs a few trading days of snapshots).', '当前窗口内无显著的经理人动作（需要数个交易日的快照）。') }}</p>
     {% endif %}
 
-    <h2 style="margin-top:16px">{{ t('Where ETF money is flowing', 'ETF 资金流向何处') }}
-      {{ help("Daily money in/out of each sector's main ETF, from share creations/redemptions (ΔShares × price). Positive = money entering. History builds from June 2026.", "每个板块主力 ETF 的每日资金进出，来自份额的申购／赎回（份额变动 × 价格）。正值 = 资金进入。历史自 2026 年 6 月起累积。") }}
-    </h2>
-    {% if flows_html %}
-      {{ flows_html | safe }}
-    {% else %}
-      <p class="muted">{{ t('Collecting — needs at least two daily snapshots per fund.', '采集中 — 每只基金至少需要两个每日快照。') }}</p>
-    {% endif %}
+    <p class="muted" style="font-size:12px;margin-top:10px">{{ t('Looking for where sector-ETF money is rotating (1D / 3D / 1W / 2W / 1M creation-redemption flow)? It now lives on', '想看板块 ETF 资金的轮动去向（1D / 3D / 1W / 2W / 1M 申购赎回资金流）？已移至') }} <a href="sector_central.html#sc-flows">{{ t('Sector Central', '行业中枢') }} →</a></p>
   </div>
 
   {% endif %}{# /mode != macro — accumulation + holdings/flows #}

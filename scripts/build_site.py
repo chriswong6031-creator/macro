@@ -1302,7 +1302,6 @@ def sector_setup_view(latest: dict, timing: dict | None = None) -> dict | None:
         month = pd.Timestamp(latest["date"]).month if latest.get("date") else None
         for r in bd["sectors"]:
             st = stages.get(r["ticker"], {})
-            r["rate_inflation"] = st.get("rate_inflation")  # display-only macro overlay (from playbook stages)
             r["verdict"] = T(r["label"], r["label_zh"])
             r["action_txt"] = T(r["action"], r["action_zh"])
             r["signal_txt"] = T(ssig.signal_line(r), ssig.signal_line(r, zh=True))
@@ -1335,49 +1334,6 @@ def sector_setup_view(latest: dict, timing: dict | None = None) -> dict | None:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("sector setup view failed: %s", e)
         return None
-
-
-# --- Sector Bottom Radar (engine/sector_bottom) -------------------------------
-# The per-sector complement to the Heat Board's RRG rotation stages: the VALIDATED
-# per-stock Bottom Confidence machinery pointed at each sector ETF + the washout
-# knife temper, conditioned by the index Fed-put gate. Phase-0 in
-# scripts/sector_bottom_phase0.py (research/SECTOR_BOTTOM_RADAR.md). Display-only.
-_RADAR_SECTORS = ["XLK", "XLF", "XLE", "XLV", "XLI", "XLY", "XLP", "XLU", "XLB",
-                  "XLRE", "XLC", "SMH"]
-# S&P-constituent GICS label -> SPDR ETF, for the live member-breadth confirmer
-_GICS_TO_ETF = {
-    "Information Technology": "XLK", "Financials": "XLF", "Energy": "XLE",
-    "Health Care": "XLV", "Industrials": "XLI", "Consumer Discretionary": "XLY",
-    "Consumer Staples": "XLP", "Utilities": "XLU", "Materials": "XLB",
-    "Real Estate": "XLRE", "Communication Services": "XLC",
-}
-# verdict -> (en pill, zh pill, colour var, tone class)
-_RADAR_VERDICT = {
-    "buyable_washout": ("buyable washout", "可买入错杀", "var(--up)", "pos"),
-    "washout_forming": ("washout forming", "错杀形成中", "var(--orange)", "warn"),
-    "falling_knife": ("falling knife", "接飞刀", "var(--down)", "neg"),
-    "knife_regime": ("knife regime", "接飞刀格局", "var(--down)", "neg"),
-}
-
-
-def _sector_member_breadth() -> dict:
-    """{ETF -> engine.sector_bottom.member_breadth} from the S&P 500 breadth close
-    cache (LIVE confirmer only — the cache is ~1y deep, so this leg is NOT
-    deep-backtested; it is displayed context, never folded into the score)."""
-    from engine import sector_bottom as sb
-    out: dict = {}
-    try:
-        cons = pd.read_parquet(config.data_dir() / "breadth" / "constituents.parquet")
-        closes = pd.read_parquet(config.data_dir() / "breadth" / "_closes_cache.parquet")
-    except Exception:  # noqa: BLE001 — confirmer is optional
-        return out
-    for gics, etf in _GICS_TO_ETF.items():
-        members = [t for t in cons.index[cons["sector"] == gics] if t in closes.columns]
-        if members:
-            b = sb.member_breadth(closes[members])
-            if b:
-                out[etf] = b
-    return out
 
 
 def _vol_shock_view(latest: dict, event_risk: dict | None) -> dict | None:
@@ -1413,71 +1369,6 @@ def _froth_fragility_view(latest: dict) -> dict | None:
         return None
 
 
-def sector_bottom_view(latest: dict) -> dict | None:
-    """Sector Bottom Radar for the US-stocks dashboard: the validated per-sector
-    Bottom Confidence + washout (engine.sector_bottom) conditioned by the index
-    Fed-put gate (latest['dislocation']). Returns the radar payload enriched for the
-    template, or None on any shortfall. Additive / display-only; never fatal."""
-    from engine import sector_bottom as sb
-    from engine.cycles import market_vix_context
-    from engine.playbook import SECTOR_NAMES
-    try:
-        disl = latest.get("dislocation") or {}
-        put_absent = disl.get("put_state") == "put-absent"
-        vp = config.data_dir() / "yahoo" / "_VIX.parquet"
-        vctx = market_vix_context(pd.read_parquet(vp)["close"]) if vp.exists() else None
-        reads: dict = {}
-        for t in _RADAR_SECTORS:
-            p = config.data_dir() / "yahoo" / f"{t}.parquet"
-            if not p.exists():
-                continue
-            df = pd.read_parquet(p)
-            reads[t] = sb.sector_read(df["close"], df.get("high"), vctx)
-        if not reads:
-            return None
-        rad = sb.radar(reads, names=SECTOR_NAMES, put_absent=put_absent,
-                       macro_headline=disl.get("headline"),
-                       breadth=_sector_member_breadth())
-        # presentation enrichment (the engine stays pure)
-        washed = []
-        for r in rad["sectors"]:
-            if r["verdict"] == "trend":
-                continue
-            pill_en, pill_zh, color, tone = _RADAR_VERDICT[r["verdict"]]
-            r["v_pill"] = T(pill_en, pill_zh)
-            r["v_color"] = color
-            r["v_tone"] = tone
-            bc = r.get("bottom_confidence")
-            r["bc_pct"] = int(round(bc)) if bc is not None else 0
-            r["label_t"] = T(r["label"], r["label_zh"])
-            if r.get("bc_grade"):
-                r["bc_grade_t"] = T(r["bc_grade"], r.get("bc_grade_zh") or r["bc_grade"])
-            b = r.get("breadth") or {}
-            if b:
-                r["breadth_str"] = T(
-                    f"{round(b['washed_out_share'] * 100)}% washed out · "
-                    f"{round(b['turning_share'] * 100)}% turning",
-                    f"{round(b['washed_out_share'] * 100)}% 超卖 · "
-                    f"{round(b['turning_share'] * 100)}% 转向")
-            washed.append(r)
-        rad["washed"] = washed
-        rad["macro_banner"] = T(
-            ("Index Fed-put is ABSENT — knife regime. The same washout signals kept falling in "
-             "2000 / 2008 / 2022; treat sector lows as stand-aside until the macro put returns."
-             if put_absent else
-             "Index Fed-put is INTACT — buyable-washout regime. Sector lows that score well are "
-             "favoured to hold with a shallower drawdown; confirm into stabilization, don't anticipate."),
-            ("指数层面美联储托底缺位——接飞刀格局。2000／2008／2022 年同类超卖信号持续下跌；"
-             "在宏观托底恢复前，板块低点以观望为主。"
-             if put_absent else
-             "指数层面美联储托底仍在——可买入错杀格局。评分较高的板块低点更倾向于守住且回撤更浅；"
-             "确认企稳后再介入，勿抢跑。"))
-        return rad
-    except Exception as e:  # noqa: BLE001 — additive panel, never fatal
-        log.error("sector bottom radar failed: %s", e)
-        return None
-
-
 def holdings_rows() -> list[dict]:
     """Compact teaser for the dashboard's "real fund moves" panel: the top
     conviction-ranked ACCUMULATION decisions across the thematic/active fund
@@ -1503,12 +1394,16 @@ def holdings_rows() -> list[dict]:
 def accumulation_rows() -> list[dict]:
     """Decomposed sector-ETF accumulation signals for the dashboard panel: each
     holding's weight change split into a price part and a residual ('active'), with
-    the stock's cycle state attached. See engine/holdings_signals.py."""
-    from engine.holdings_signals import all_accumulation_signals
+    the stock's cycle state attached. See engine/holdings_signals.py.
+
+    Uses ``top_sector_residuals`` (the strongest residual movers, no alert gate) so
+    the panel is always populated — on passive SPDRs the residual is tiny by
+    construction and the thresholded list is almost always empty."""
+    from engine.holdings_signals import top_sector_residuals
     from engine.playbook import SECTOR_NAMES
     n = config.load()["holdings_signals"].get("panel_top_n", 12)
     rows = []
-    for s in all_accumulation_signals()[:n]:
+    for s in top_sector_residuals(n):
         rows.append({
             "fund": s["fund"], "sector": SECTOR_NAMES.get(s["fund"], s["fund"]),
             "ticker": s["ticker"], "name": s["name"],
@@ -2964,7 +2859,6 @@ def main() -> int:
         breadth_panel=breadth_scorecard(),
         adv_breadth=advanced_breadth_view(f),    # Advanced Breadth tracker (us_stocks page)
         sector_setups=sector_setup_view(latest, sector_timing),  # PRIMARY confluence board
-        sector_radar=sector_bottom_view(latest),   # Sector Bottom Radar (us_stocks page)
         generated_utc=generated,
         chart_liquidity=chart_liquidity(f),
         chart_credit_breadth=chart_credit_breadth(f),
