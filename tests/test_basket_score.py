@@ -49,6 +49,22 @@ def test_clean_entry_flag_requires_not_extended():
     assert on["directional"] is False
 
 
+def test_clean_entry_vetoed_on_breaking_backdrop():
+    # REGRESSION (cn_banks etc.): accel + not-extended + RSI room alone must NOT advertise a
+    # "clean entry" when the tape is BREAKING — collapsed breadth, net new lows, or hard decel.
+    lvl = _ramp(slope=0.0015)
+    fp = {"accel_z": 0.8, "rs_pctile": 0.3}        # accelerating + not extended
+    # collapsed breadth (pct50 < 0.4) → no clean entry
+    assert bs.clean_entry(lvl, fp, {"pct50": 0.0, "nh": 0, "nl": 7}, 55)["flag"] is False
+    # net new lows → no clean entry even with ok pct50
+    assert bs.clean_entry(lvl, fp, {"pct50": 0.55, "nh": 0, "nl": 3}, 55)["flag"] is False
+    # hard down-acceleration → no clean entry
+    assert bs.clean_entry(lvl, {"accel_z": -0.8, "rs_pctile": 0.3},
+                          {"pct50": 0.6, "nh": 2, "nl": 0}, 55)["flag"] is False
+    # healthy, broad, turning up → still a clean entry (cn_brokers-style early entry)
+    assert bs.clean_entry(lvl, fp, {"pct50": 0.6, "nh": 3, "nl": 0}, 55)["flag"] is True
+
+
 def test_rollover_risk_rises_with_extension_and_decel():
     lvl = _ramp(slope=0.0015)
     hi = bs.rollover_risk(lvl, {"rs_pctile": 0.92, "accel_z": -0.6},
