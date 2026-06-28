@@ -277,6 +277,13 @@
       <div class="d">{{ t('MSFT · GOOGL · AMZN · META · ORCL — the forward-demand engine that leads AI-beneficiary revenue ~2–4 quarters', 'MSFT · GOOGL · AMZN · META · ORCL — 领先 AI 受益方营收约2–4个季度的前瞻需求引擎') }} · <b>{{ demand_pool.trend or '—' }}</b></div>
     </div>
     {% endif %}
+    {% if power and power.band and power.band != 'AWAITING_DATA' %}
+    <div class="fx-bn" style="--c:{{ 'var(--g-hot)' if power.band in ('TIGHT','SOLD_OUT') else ('var(--warn)' if power.band=='TIGHTENING' else 'var(--muted)') }}">
+      <div class="k">{{ t('Power-cluster physical (electricity scarcity)', '电力集群物理（电力短缺）') }}</div>
+      <div class="v">{{ power.band.replace('_',' ') }}{% if power.tightness is not none %} · {{ '%+.2f'|format(power.tightness) }}{% endif %}</div>
+      <div class="d">{{ t('Data-center / grid / nuclear / solar — demand growth + utility capacity-utilization + electricity price', '数据中心/电网/核电/光伏——需求增长＋公用事业产能利用率＋电价') }}{% if power.regime %} · <b>{{ t('regime on', '机制触发') }}</b>{% endif %}</div>
+    </div>
+    {% endif %}
     {% set don = dislocation and (dislocation.active or dislocation.verdict == 'buyable_washout') %}
     <div class="fx-bn {{ 'entry-on' if don else 'entry-off' }}">
       <div class="k">{{ t('Entry overlay (dislocation gate)', '入场叠加（错位闸门）') }}</div>

@@ -51,6 +51,21 @@ def test_cross_surface_corroboration():
     assert it["n_signals"] >= 3                               # physical + 2 cross-surface
 
 
+def test_power_scarcity_supplies_physical_surface():
+    # a power-cluster theme whose FRED semis/metals bottleneck is AWAITING gets its PHYSICAL
+    # surface (and physical gate) from a TIGHT electricity-scarcity read instead.
+    cascade = _cas([{"theme": "data_center_power", "name": "DCP", "stage": "PRECIPICE",
+                     "bottleneck_band": "AWAITING_DATA", "revision_breadth": 0.05,
+                     "score_detail": {"physical_confirmed": False}}])
+    power = {"band": "TIGHT", "themes": {"data_center_power": {}}}
+    out = cv.compute_convergence(cascade, power_scarcity=power)
+    it = out["ranked"][0]
+    assert "physical" in it["signals"] and it["physical_confirmed"] is True
+    # without a TIGHT power read, no physical surface
+    out2 = cv.compute_convergence(cascade, power_scarcity={"band": "LOOSE", "themes": {"data_center_power": {}}})
+    assert "physical" not in out2["ranked"][0]["signals"]
+
+
 def test_none_on_empty():
     assert cv.compute_convergence(None) is None
     assert cv.compute_convergence({"themes": []}) is None

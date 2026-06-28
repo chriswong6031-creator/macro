@@ -281,8 +281,14 @@ fred:
       DTCISA156MSFRBPHI: deliv_time_philly  # Philly Fed current delivery time, % increases
       DTMUAMFRBDAL: deliv_time_dallas       # Dallas Fed current delivery time diffusion
       PFGIUAMFRBDAL: prices_recv_dallas     # Dallas Fed prices received (pricing-power leg)
-
-yahoo:
+    power:                        # electricity scarcity for the POWER cluster (engine/power_scarcity.py;
+      # the physical correlate the semis/metals bottleneck can't give data-center-power / grid /
+      # nuclear / solar). Keyless FRED; engine uses the first candidate per leg that resolves.
+      IPG2211S: ip_electric_power     # IP: electric power generation (NAICS 2211) — demand/output
+      IPUTIL: ip_utilities            # IP: utilities (broader fallback)
+      CAPUTLG2211S: cap_u_utilities   # cap-U electric power generation
+      WPU0543: ppi_electric_power     # PPI: electric power
+      APU000072610: price_electricity # avg retail electricity price (US city avg, per kWh)
   retries: 3
   backoff_base_s: 5
   batch_size: 80

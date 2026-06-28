@@ -105,10 +105,17 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("subsector_scan failed (non-fatal): %s", e)
         subsectors = None
+    # power-cluster physical read (electricity scarcity) — feeds the convergence physical gate
+    try:
+        from engine.power_scarcity import compute_power_scarcity
+        power = compute_power_scarcity(write_ledger=True)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("power_scarcity failed (non-fatal): %s", e)
+        power = None
     # Convergence ("neural web"): fuse every leaf into one heating-up read
     try:
         from engine.foresight_convergence import compute_convergence
-        convergence = compute_convergence(cascade, emergence, subsectors)
+        convergence = compute_convergence(cascade, emergence, subsectors, power)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("convergence failed (non-fatal): %s", e)
         convergence = None
@@ -157,6 +164,7 @@ def main() -> int:
             emergence=emergence,
             subsectors=subsectors,
             convergence=convergence,
+            power=power,
             analyst=analyst,
             monitor=monitor,
             asof=cascade.get("asof"),
