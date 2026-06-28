@@ -67,19 +67,29 @@ _DATE_OFFSETS: dict[str, pd.DateOffset] = {
     "1Y": pd.DateOffset(years=1),
 }
 
-# 11 GICS sectors -> Chinese labels (the index-level groups; sub-industry labels
-# stay English, as is conventional for granular GICS strings).
+# Sector -> Chinese labels (the index-level groups; sub-industry labels stay
+# English, as is conventional for granular industry strings). Both the Finviz
+# sector vocabulary (used by the heatmap when an industry map is supplied) and
+# the legacy GICS names are covered so either classification renders bilingually.
 SECTOR_ZH: dict[str, str] = {
+    # Finviz sector vocabulary (primary)
+    "Technology": "信息技术",
+    "Communication Services": "通信服务",
+    "Healthcare": "医疗保健",
+    "Financial": "金融",
+    "Consumer Cyclical": "非必需消费",
+    "Consumer Defensive": "必需消费",
+    "Industrials": "工业",
+    "Energy": "能源",
+    "Utilities": "公用事业",
+    "Real Estate": "房地产",
+    "Basic Materials": "材料",
+    # Legacy GICS names (fallback when no industry map)
     "Information Technology": "信息技术",
     "Financials": "金融",
     "Health Care": "医疗保健",
     "Consumer Discretionary": "非必需消费",
-    "Communication Services": "通信服务",
-    "Industrials": "工业",
     "Consumer Staples": "必需消费",
-    "Energy": "能源",
-    "Utilities": "公用事业",
-    "Real Estate": "房地产",
     "Materials": "材料",
 }
 
@@ -87,16 +97,24 @@ SECTOR_ZH: dict[str, str] = {
 # offline market-cap proxy across sectors so Tech's block dwarfs Utilities like
 # it should. Superseded entirely whenever real caps are supplied.
 _SECTOR_INDEX_WEIGHT: dict[str, float] = {
+    # Finviz sector vocabulary (primary)
+    "Technology": 30.0,
+    "Financial": 14.0,
+    "Healthcare": 10.0,
+    "Consumer Cyclical": 10.5,
+    "Communication Services": 9.5,
+    "Industrials": 9.0,
+    "Consumer Defensive": 5.5,
+    "Energy": 3.2,
+    "Utilities": 2.5,
+    "Real Estate": 2.2,
+    "Basic Materials": 1.9,
+    # Legacy GICS names (fallback)
     "Information Technology": 32.0,
     "Financials": 13.5,
     "Health Care": 10.0,
     "Consumer Discretionary": 10.0,
-    "Communication Services": 9.5,
-    "Industrials": 8.5,
     "Consumer Staples": 5.5,
-    "Energy": 3.2,
-    "Utilities": 2.5,
-    "Real Estate": 2.2,
     "Materials": 1.9,
 }
 
@@ -264,11 +282,16 @@ def build_heatmap(
     rows: list[dict] = []
     for sym, row in constituents.iterrows():
         sector = str(row.get("sector") or "").strip()
+        sub = sector
+        # An industry map supplies the Finviz sector + sub-industry (subsector).
+        # The Finviz sector overrides the GICS sector so the treemap groups the
+        # way the reference heatmaps do (e.g. V/MA land in Financial, not Tech).
+        fin = industry_map.get(sym) if industry_map else None
+        if fin:
+            sector = str(fin.get("sector") or sector).strip() or sector
+            sub = str(fin.get("sub_industry") or fin.get("industry") or sector).strip() or sector
         if not sector:
             continue
-        sub = sector
-        if industry_map and sym in industry_map:
-            sub = str(industry_map[sym].get("sub_industry") or sector).strip() or sector
         rows.append({
             "t": sym,
             "name": str(row.get("name") or sym),
