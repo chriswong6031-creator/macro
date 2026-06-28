@@ -31,12 +31,14 @@ def _track_record() -> dict:
     """Read the three append-only forward-grading ledgers for the track-record panel.
     Honest: these only began accruing recently, so this is a 'flags logged, grading forward'
     counter, not a hit-rate yet."""
-    out = {"foresight": 0, "bottleneck": 0, "glut": 0, "revisions": 0, "recent": []}
+    out = {"foresight": 0, "bottleneck": 0, "glut": 0, "revisions": 0, "guidance": 0,
+           "recent": []}
     d = config.data_dir()
     for key, rel in (("foresight", "foresight/log.jsonl"),
                      ("bottleneck", "bottleneck/log.jsonl"),
                      ("glut", "glut_watch/log.jsonl"),
-                     ("revisions", "themes/revisions_log.jsonl")):
+                     ("revisions", "themes/revisions_log.jsonl"),
+                     ("guidance", "guidance_gap/log.jsonl")):
         p = d / rel
         if not p.exists():
             continue
@@ -51,6 +53,14 @@ def _track_record() -> dict:
 
 
 def main() -> int:
+    # T3 drip: refresh the guidance-language 8-K cache (keyless EDGAR FTS, drip + cached,
+    # network failure non-fatal) so engine/guidance_gap.py reads a fresh parquet. Mirrors
+    # scripts/build_theme_addons.py dripping edgar_fts for the T1 bottleneck leg.
+    try:
+        from collectors.edgar_guidance import fetch_guidance_hits
+        fetch_guidance_hits()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("edgar_guidance drip failed (non-fatal): %s", e)
     try:
         from engine.foresight_cascade import compute_foresight_cascade
         # write_ledger=True so the daily build accrues the forward-grading record (deduped by
