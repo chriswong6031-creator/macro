@@ -1,14 +1,31 @@
 #!/usr/bin/env bash
-# Refresh the served site to the latest main, then reload Caddy.
-# Installed as /usr/local/bin/macro-update by setup.sh; run by cron (nightly) or by hand.
+# Pull-IF-CHANGED refresh of the served site. Installed as /usr/local/bin/macro-update
+# by setup.sh; run by a FREQUENT cron (every few min) + by hand. Cheap no-op when main
+# hasn't moved, so it's safe to run often — that's what makes mastermind-x.com track
+# main within minutes (the render.yml express lane + the nightly both land here fast)
+# instead of waiting on a once-a-night pull.
 set -euo pipefail
 APP_DIR="/opt/macro"
-git -C "$APP_DIR" fetch --depth 1 origin main
-git -C "$APP_DIR" reset --hard FETCH_HEAD
-# Propagate any Caddyfile change from the repo. Validate BEFORE reloading so a bad
-# config can never take the site down on the unattended nightly cron.
-install -m 0644 "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile
-caddy validate --config /etc/caddy/Caddyfile && { systemctl reload caddy 2>/dev/null || systemctl restart caddy; }
-# Pick up any app/ code changes in the FastAPI service (if deployed).
-systemctl is-enabled macro-api >/dev/null 2>&1 && systemctl restart macro-api || true
-echo "macro-update $(date -u +%FT%TZ) -> $(git -C "$APP_DIR" rev-parse --short HEAD)"
+
+git -C "$APP_DIR" fetch --depth 1 -q origin main
+OLD=$(git -C "$APP_DIR" rev-parse HEAD)
+NEW=$(git -C "$APP_DIR" rev-parse FETCH_HEAD)
+[ "$OLD" = "$NEW" ] && exit 0   # nothing new — cheap no-op (frequent-cron safe)
+
+CHANGED=$(git -C "$APP_DIR" diff --name-only "$OLD" "$NEW" 2>/dev/null || true)
+git -C "$APP_DIR" reset --hard -q FETCH_HEAD
+
+# Caddyfile: reinstall + validate + reload ONLY when it actually changed (a bad
+# config can never take the site down — reload is gated on `caddy validate`).
+if ! cmp -s "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile; then
+	install -m 0644 "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile
+	caddy validate --config /etc/caddy/Caddyfile && { systemctl reload caddy 2>/dev/null || systemctl restart caddy; }
+fi
+
+# macro-api: restart ONLY when its own code changed (avoid blipping /api on every
+# site/ render commit).
+if echo "$CHANGED" | grep -qE '^app/(main\.py|requirements\.txt|__init__\.py)$'; then
+	systemctl is-enabled macro-api >/dev/null 2>&1 && systemctl restart macro-api || true
+fi
+
+echo "macro-update $(date -u +%FT%TZ) ${OLD:0:8}..$(git -C "$APP_DIR" rev-parse --short HEAD)"

@@ -49,15 +49,17 @@ ufw allow 80/tcp >/dev/null
 ufw allow 443/tcp >/dev/null
 ufw --force enable >/dev/null
 
-log "[6/6] enable Caddy + nightly pull cron"
+log "[6/6] enable Caddy + fast pull-if-changed cron"
 systemctl enable caddy >/dev/null 2>&1 || true
 systemctl restart caddy
 install -m 0755 "$APP_DIR/app/deploy/update.sh" /usr/local/bin/macro-update
-# Refresh the served site nightly, after the 22:40 UTC build lands (~23:30 UTC, weekdays).
-# `|| true`: on a box with no crontab yet, `crontab -l`+`grep -v` both "fail" on empty
-# input and would abort under `set -e -o pipefail` before the echo — keep them harmless.
+# Track main within minutes: pull-if-changed every 3 min (cheap no-op when unchanged),
+# so render.yml's fast template renders AND the nightly data build reach the domain
+# quickly — instead of a once-a-night pull. `|| true`: on a box with no crontab yet,
+# `crontab -l`+`grep -v` both "fail" on empty input and would abort under
+# `set -e -o pipefail` before the echo — keep them harmless.
 { crontab -l 2>/dev/null | grep -v 'macro-update' || true ; \
-  echo "30 23 * * 1-5 /usr/local/bin/macro-update >> /var/log/macro-update.log 2>&1" ; } | crontab -
+  echo "*/3 * * * * /usr/local/bin/macro-update >> /var/log/macro-update.log 2>&1" ; } | crontab -
 
 log "DONE — Caddy serving https://$DOMAIN from $APP_DIR/site"
 log "HEAD: $(git -C "$APP_DIR" rev-parse --short HEAD)"
