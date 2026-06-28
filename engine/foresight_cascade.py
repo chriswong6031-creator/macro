@@ -247,6 +247,13 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         payload = annotate(payload) or payload
     except Exception as e:  # noqa: BLE001
         log.warning("cascade scoring failed: %s", e)
+    # Phase-D sizing & staged-exit posture overlay (runs AFTER scoring — it reads the score).
+    # Additive: the cascade is unchanged if sizing fails.
+    try:
+        from engine.foresight_sizing import annotate_sizing
+        payload = annotate_sizing(payload) or payload
+    except Exception as e:  # noqa: BLE001
+        log.warning("cascade sizing failed: %s", e)
     if write_ledger:
         try:
             _append_ledger(payload)
