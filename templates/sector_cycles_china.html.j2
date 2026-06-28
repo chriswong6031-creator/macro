@@ -20,16 +20,7 @@
 <link rel="stylesheet" href="sector_cycles.css">
 </head>
 <body>
-<nav class="site-nav" style="max-width:1320px;margin:0 auto;padding:11px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-  <a class="nav-brand" href="index.html" style="font-weight:800;letter-spacing:-.02em;font-size:16px;color:var(--text);text-decoration:none">MASTERMIND</a>
-  {% include "_navlinks.html.j2" %}
-  <div class="nav-ctrls" style="margin-left:auto;display:flex;gap:8px;align-items:center">
-    <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
-    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
-    <button class="lang-btn" type="button">中文</button>
-    <button class="theme-btn" type="button">☀️ Light</button>
-  </div>
-</nav>
+{% include "_site_nav.html.j2" %}
 
 <div class="cyc-wrap">
   <header class="cyc-hd">
