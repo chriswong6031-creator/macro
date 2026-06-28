@@ -1,54 +1,76 @@
-"""Reusable WALK-FORWARD validation harness for the signal engine.
+"""Reusable WALK-FORWARD validation harness for the signal engine — STOP-AWARE.
 
-> READ research/signal_engine/CHARTER.md FIRST. This harness exists to enforce its
-> §3 (metrics + validation discipline) and to make its §4 tripwires impossible to
-> trip by accident. In one sentence: **this judges signals on RISK (drawdown,
-> shake-outs, loss size, entry quality) — NEVER on total return or beat-buy-&-hold.**
+> READ research/signal_engine/CHARTER.md FIRST (§2 lens, §3 metrics, §4 tripwires).
 
-What it gives you (the six components asked for):
+WHAT THIS JUDGES — AND WHY IT IS DIFFERENT FROM THE OLD HARNESS
+--------------------------------------------------------------
+The owner trades **with a stop-loss** (default ≤ −5%). A *bad entry* is therefore one
+that gets **faked out and stopped out** before the move it was trying to catch. So the
+ONE metric that matters for entry quality is the **stop-out / shake-out rate**: the
+fraction of taken entries that hit the stop. LOWER is better.
 
+This is a deliberate correction. A PRIOR harness scored the **loose-hold max drawdown**
+of a position carried with NO stop (the "−23.7% → −15.5% max-DD" headline). That number
+conflates *entry quality* with *exit policy* — it is the drawdown of a strategy nobody
+runs. Two positions can have the same loose-hold max-DD yet wildly different stop-out
+behaviour, and the owner only ever experiences the stopped version. So we simulate every
+trade **AS TRADED, WITH THE STOP**:
+
+    enter on the (leak-free) signal  ->  exit at the ≤ stop_pct stop  OR  the validated
+    exit signal (confluence SELL* / fast-reversal cut), whichever comes first  ->  re-buy
+    on the next reversal signal.
+
+and we judge on stop-out rate + the realised per-trade loss distribution UNDER that stop
++ entry efficiency. Total return AND loose-hold max-DD are carried only as clearly
+labelled CONTEXT fields and can never enter a verdict (charter §4 tripwire #1).
+
+THE SIX COMPONENTS THE TASK ASKS FOR
+------------------------------------
   1. PURGED / EMBARGOED WALK-FORWARD.  Expanding train [0:Ti], test [Ti:Ti+test_len],
-     rolled by `step`, with a `purge` gap between train and test and an `embargo` after
-     test — so no test bar's information bleeds into a neighbouring split. No look-ahead.
+     rolled by `step`, with a `purge` gap before each test and an `embargo` after it, so
+     no test bar's information bleeds into a neighbouring split.  (`make_windows`.)
 
-  2. LEAK-FREE CROSS-GRID MAPPING (for multi-timeframe variants).  A TF bar's close is
-     only KNOWN on the last daily date inside its bin (resample labels the bin's LEFT
-     edge), so every TF bar is mapped to its true known-date and FILLED on the first
-     daily close strictly AFTER that date.  Mirrors how confluence.py resamples with
-     '3B' and re-uses tuning_harness.py's tf_bars/to_daily so 2D vs 3D compare fairly.
+  2. LEAK-FREE MULTI-TIMEFRAME BAR -> DAILY MAPPING.  A 3D (or N-day) bar's close is only
+     KNOWN on the last daily date inside its bin — `resample("NB")` labels the bin's LEFT
+     edge, which can sit 2-4 calendar days BEFORE that close.  Every TF bar is mapped to
+     its true known-date and fired on the first daily bar STRICTLY AFTER it.  The whole
+     trade simulation then runs on the DAILY grid so a ≤ stop_pct stop is checked every
+     day (a 3D-only sim would step over intraday shake-outs).  (`tf_bars`, `to_daily`,
+     `_daily_events_after`.)
 
-  3. RISK METRICS SUITE.  max drawdown, shake-out rate %, avg loss size, per-trade
-     expectancy, win rate.  Total return is carried ONLY as a clearly-labelled context
-     field (`captured`) and is NEVER used in any verdict (charter §4 tripwire #1).
+  3. AS-TRADED-WITH-STOP METRICS.  stop_out_rate (PRIMARY), realised-loss distribution
+     under the stop, avg loss size, entry efficiency, per-trade expectancy, win rate.
+     NOT total return, NOT loose-hold max-DD.  (`simulate_trades`, `trade_metrics`.)
 
-  4. CROSS-SECTIONAL AGGREGATOR.  Percentile stats across the whole panel (110+ names)
-     and the **% of names improved vs baseline** — never just a pooled mean (§3).
+  4. CROSS-SECTIONAL AGGREGATOR.  Percentile stats of the metric across 110+ names AND
+     the **% of names improved vs baseline** — never just a pooled mean.  (`cross_section`.)
 
-  5. OVERFIT GUARD.  In-sample vs out-of-sample comparison (a deflated-Sharpe-style
-     decay flag, deflated for the number of trials searched) plus the pre-committed
-     KILL RULE: reject an addition if <70% of held-out names improve on drawdown,
-     and ship the simpler baseline instead (§3).
+  5. OVERFIT GUARD.  In-sample vs out-of-sample decay flag + the pre-committed KILL RULE:
+     reject unless >= 70% of HELD-OUT names improve on the stop-based metric, deflated for
+     the number of trials searched.  (`overfit_guard`, `kill_rule`.)
 
-  6. PER-TRIAL JSON LOGS to data/signal_archive/wf_<run_id>.json.
+  6. PER-TRIAL JSON LOGS to data/signal_archive/wf_<run_id>.json.  (`_write_log`.)
 
 Interface (the contract):
 
     walk_forward(signal_fn, panel, cfg, baseline_fn=None, ...) -> {by_ticker, pooled, overfit_flags}
 
-  * signal_fn / baseline_fn : a SIGNAL CALLABLE.  Two accepted shapes —
-      - simple:  fn(close: pd.Series, high=None, low=None) -> pd.Series[bool]
-                 (daily BUY events on the daily index; the harness pairs them with a
-                  default confluence exit and a leak-free next-daily-close fill.)
-      - rich:    fn(close, high=None, low=None) -> pd.DataFrame[close, buy, exit]
-                 (buy/exit/close on ANY eval grid — e.g. the native 3D grid; the
-                  harness simulates on the returned grid.  Use this for a faithful
-                  3D reproduction.)
-  * panel : {ticker: DataFrame with at least 'close' (and optionally 'high','low')}.
-  * cfg   : {train_len, test_len, step, purge, embargo}  (lengths in EVAL-GRID bars).
+  * signal_fn / baseline_fn : a SIGNAL CALLABLE.  daily close -> daily buy events.
+      - simple:  fn(close, high=None, low=None) -> pd.Series[bool]   (daily BUY events;
+                 paired with the default confluence exit + the panel's daily high/low.)
+      - rich:    fn(close, high=None, low=None) -> pd.DataFrame with daily-indexed
+                 boolean 'buy' and (optional) 'exit' columns.  Use this to supply your
+                 own exit; close/high/low for the stop ALWAYS come from `panel` so the
+                 stop is checked on real daily bars.
+  * panel : {ticker: DataFrame with 'close' (and ideally 'high','low' for an intraday
+            stop; close-only names fall back to a close-based stop).}
+  * cfg   : {train_len, test_len, step, purge, embargo, stop_pct=-0.05}.  Window lengths
+            are in DAILY bars (the sim grid); stop_pct is the stop (negative).
 
-Gold-standard self-test:  `python3 walk_forward.py --gold`  runs the validated
-confluence buy-filter on data/stocks/ and confirms it recovers the published result
-(avg maxDD -23.7% -> -15.5%, shallower on ~84% of names; matches test_buyfilter.py).
+Gold-standard self-test:  `python3 walk_forward.py --gold`
+  Runs the validated buy-filter (engine/signal_quality / diagnose_v2.refined_buy) against
+  raw confluence buys on data/stocks/ and confirms the FILTER REDUCES THE STOP-OUT RATE
+  (the honest, as-traded restatement of the old loose-hold "−23.7 -> −15.5" headline).
 """
 from __future__ import annotations
 
@@ -65,7 +87,7 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-# same-dir siblings (confluence.py, diagnose_v2.py, ...) — mirror how test_buyfilter imports
+# same-dir siblings (confluence.py, diagnose_v2.py, ...) — mirror test_buyfilter's import path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 warnings.filterwarnings("ignore")
@@ -75,31 +97,37 @@ ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "data" / "stocks"
 ARCHIVE = ROOT / "data" / "signal_archive"
 
-# Entries are counted from here (matches confluence.py / test_buyfilter.py SINCE).
-SINCE = pd.Timestamp("2023-06-01")
-SHAKE = 0.08          # shake-out = a trade that went >= -8% underwater from entry before exit
-MIN_DECAY_TRADES = 3  # a name must trade >= this in BOTH is & oos to enter the decay population
+# Entries are counted from here.  Long window on purpose: stop-out rate is a per-trade
+# rate and needs many trades per name for the cross-sectional %-improved read to mean
+# anything (charter §3: generalisation is the verdict, not a handful of names).
+SINCE = pd.Timestamp("2010-01-01")
+STOP_PCT = -0.05          # the owner's default stop; a trade hitting this = a stop-out
+EFF_WIN = 21              # daily bars forward used to score entry efficiency (~1 month)
+MIN_DECAY_TRADES = 3      # a name must trade >= this in BOTH is & oos to enter the decay pop
 
-# Default purged/embargoed walk-forward config, in EVAL-GRID bars (3D bars by default).
-DEFAULT_CFG = {"train_len": 60, "test_len": 40, "step": 40, "purge": 3, "embargo": 3}
+# Default purged/embargoed walk-forward config, in DAILY bars (the simulation grid).
+DEFAULT_CFG = {"train_len": 378, "test_len": 189, "step": 189,
+               "purge": 5, "embargo": 5, "stop_pct": STOP_PCT}
 
 # --- metric direction + verdict policy (mechanical enforcement of charter §3/§4) -----
-# A "verdict" metric is one that decides SHIP/REJECT.  TOTAL RETURN IS BANNED from any
-# verdict (charter §4 tripwire #1: never judge on return / beat-buy-&-hold); it survives
-# only as the labelled context field `captured`.
-_RETURN_LIKE = {"captured", "cap"}
-# higher value == better.  max_dd/avg_loss are negative, so "less negative" == higher == better.
-_HIGHER_BETTER = {"max_dd", "avg_loss", "expectancy", "win_rate", "captured"}
+# A "verdict" metric decides SHIP/REJECT.  TOTAL RETURN and BOTH max-DD flavours are BANNED
+# from any verdict: return is the §4 tripwire #1; the max-DD metrics are what this harness
+# exists to retire (they conflate entry quality with exit policy — see the module header).
+_CONTEXT_ONLY = {"captured", "cap", "strat_max_dd", "nostop_max_dd", "mae_med", "mfe_med"}
+# higher value == better (avg_loss/worst_loss/expectancy are SIGNED; "less negative" == higher).
+_HIGHER_BETTER = {"avg_loss", "worst_loss", "expectancy", "win_rate"}
 # lower value == better.
-_LOWER_BETTER = {"shake_rate", "n_trades"}
+_LOWER_BETTER = {"stop_out_rate", "entry_eff", "n_trades", "frac_below_stop"}
 
 
 def _check_verdict_metric(metric: str) -> None:
-    """Refuse to render a verdict on total return — makes the §4 tripwire un-trippable."""
-    if metric in _RETURN_LIKE:
+    """Refuse to render a verdict on a context-only metric — makes the §4 tripwire (and
+    the max-DD mistake this harness corrects) un-trippable by construction."""
+    if metric in _CONTEXT_ONLY:
         raise ValueError(
-            f"metric={metric!r} is TOTAL RETURN — banned from any verdict (charter §4 #1). "
-            "This is a RISK harness: judge on max_dd / avg_loss / shake_rate / expectancy.")
+            f"metric={metric!r} is CONTEXT-ONLY (total return / max-DD): banned from any "
+            "verdict.  This is an AS-TRADED-WITH-STOP risk harness — judge on "
+            "stop_out_rate / avg_loss / expectancy / win_rate / entry_eff.")
 
 
 def _is_better(treat: float, base: float, metric: str) -> bool:
@@ -111,14 +139,21 @@ def _is_better(treat: float, base: float, metric: str) -> bool:
     raise ValueError(f"unknown metric {metric!r}: add it to _HIGHER_BETTER/_LOWER_BETTER")
 
 
-# ============================================================ cross-grid utils
-# Re-used verbatim from tuning_harness.py so the leak-free TF->daily mapping is the
-# SAME tested code (component 2).  A TF bar is labelled by its bin's LEFT edge but is
-# only KNOWN on the last daily date in the bin; we map by that known date and fill on
-# the first daily bar strictly after it.
+# Lock the metric directions so a future edit can't silently invert a verdict (the audit
+# caught worst_loss mis-signed here): less-negative loss is better; lower stop-out is better.
+assert _is_better(-5.0, -6.0, "worst_loss"), "worst_loss: less-negative must be better"
+assert _is_better(-3.0, -4.0, "avg_loss"), "avg_loss: less-negative must be better"
+assert _is_better(38.0, 39.0, "stop_out_rate"), "stop_out_rate: lower must be better"
+assert not _is_better(40.0, 39.0, "stop_out_rate"), "stop_out_rate: higher must be worse"
+
+
+# ============================================================ cross-grid utils (comp. 2)
+# Leak-free TF -> daily mapping.  A TF bar is labelled by its bin's LEFT edge but is only
+# KNOWN on the last daily date in the bin; we map by that known date and fire on the first
+# daily bar STRICTLY AFTER it.
 def tf_bars(daily: pd.Series, n: int):
-    """resample to n-business-day bars (faithful) and return, per bar, the true daily
-    date its close became known (resample labels the bin's LEFT edge)."""
+    """resample to n-business-day bars (faithful to confluence.py) and return, per bar,
+    the true daily date its close became known."""
     if n == 1:
         return daily.copy(), pd.Series(daily.index, index=daily.index)
     s = daily.resample(f"{n}B").last().dropna()
@@ -129,103 +164,204 @@ def tf_bars(daily: pd.Series, n: int):
     return s, pd.Series(pd.to_datetime(known.values), index=known.index)
 
 
-def to_daily(tf_series: pd.Series, known: pd.Series, daily_index: pd.DatetimeIndex,
-             how: str = "ffill") -> pd.Series:
-    """Map a TF-bar series onto the daily index by its KNOWN date (leak-free).
-    how='ffill' -> state held until the next bar; how='event' -> True only on the first
-    daily bar on/after each known date where the TF value is True."""
-    kd = pd.Series(tf_series.to_numpy(), index=pd.to_datetime(known.to_numpy()))
-    kd = kd[~kd.index.duplicated(keep="last")].sort_index()
-    if how == "ffill":
-        return kd.reindex(daily_index, method="ffill")
+def _daily_events_after(known_dates, daily_index: pd.DatetimeIndex) -> pd.Series:
+    """Place a True on the first daily bar STRICTLY AFTER each known date (leak-free).
+    `known_dates` is an iterable of timestamps (the true known-dates of the TF bars whose
+    signal is True).  Strictly-after (searchsorted side='right') because a known date is
+    itself a real daily close — you can only act on the NEXT bar, never that same close."""
     out = pd.Series(False, index=daily_index)
-    pos = daily_index.searchsorted(kd.index, side="left")
-    for p, v in zip(pos, kd.to_numpy()):
-        if v and p < len(daily_index):
+    kd = pd.DatetimeIndex(pd.to_datetime(list(known_dates))).dropna()
+    if len(kd) == 0:
+        return out
+    for p in daily_index.searchsorted(kd, side="right"):
+        if 0 <= p < len(daily_index):
             out.iloc[p] = True
     return out
 
 
-# ============================================================ core trade sim
-def simulate_trades(close: np.ndarray, buy: np.ndarray, exit_: np.ndarray, *,
-                    fill_lag: int = 1, start_idx: int = 0, close_open: bool = False):
-    """Trade-LEVEL simulation, grid-agnostic (component-3 substrate).
+def to_daily(tf_series: pd.Series, known: pd.Series, daily_index: pd.DatetimeIndex,
+             how: str = "event") -> pd.Series:
+    """Map a TF-bar boolean/value series onto the daily index by its KNOWN date.
+    how='event' -> True only on the first daily bar STRICTLY AFTER each known date where
+    the TF value is True (the leak-free entry/exit fill).  how='ffill' -> state held from
+    the bar after its known date until the next (for regime flags)."""
+    kd = pd.Series(tf_series.to_numpy(), index=pd.to_datetime(known.to_numpy()))
+    kd = kd[~kd.index.duplicated(keep="last")].sort_index()
+    if how == "ffill":
+        shifted = pd.Series(kd.to_numpy(), index=kd.index)
+        # advance each known date to the first daily bar strictly after it, then ffill
+        pos = daily_index.searchsorted(shifted.index, side="right")
+        out = pd.Series(np.nan, index=daily_index, dtype="float64")
+        for p, v in zip(pos, shifted.to_numpy()):
+            if 0 <= p < len(daily_index):
+                out.iloc[p] = float(v)
+        return out.ffill()
+    true_known = kd.index[kd.to_numpy().astype(bool)]
+    return _daily_events_after(true_known, daily_index)
 
-    Long/flat as the owner trades it: when flat, enter on a buy event; when long, exit
-    on an exit event.  Fill at `fill_lag` bars after the signal bar (next bar's close,
-    conservative, no look-ahead).  Equity is marked-to-market every bar while long.
 
-    This loop is a faithful generalisation of test_buyfilter.py's `sim`: equity curve
-    seeded at 1.0, one mark per bar, entries gated to >= start_idx, and (by default)
-    an open position at the end is NOT booked as a closed trade — only the equity curve
-    carries it (so drawdown still reflects it).  validated at fill_lag=1.
+# ============================================================ core trade sim (comp. 3)
+def simulate_trades(close: np.ndarray, high: np.ndarray | None, low: np.ndarray | None,
+                    buy: np.ndarray, exit_: np.ndarray, *, stop_pct: float = STOP_PCT,
+                    start_idx: int = 0, eff_win: int = EFF_WIN, close_open: bool = False,
+                    no_stop: bool = False):
+    """AS-TRADED-WITH-STOP daily simulation (the substrate for every metric).
 
-    Returns (curve: np.ndarray length len(close), trades: list[dict]).
-    Each trade dict: entry_i, exit_i, ret, mae (max adverse excursion from entry).
+    Long/flat exactly as the owner trades it:
+      * FLAT  : enter on a daily buy event (fill at that bar's CLOSE — the event already
+                sits on the first daily bar after the signal's known date, so the close is
+                leak-free).  Stop checking begins the NEXT bar.
+      * LONG  : each bar, FIRST test the stop intraday (low <= stop level, or close if no
+                low) -> a STOP-OUT, filled at the stop level (or the bar high on a
+                gap-through); ELSE test the exit event (confluence SELL*/cut) -> exit at the
+                bar CLOSE.  Re-buy on the next event.
+
+    A stop hit takes precedence over a same-bar exit signal (the stop is intraday, the
+    signal is end-of-bar).  `no_stop=True` disables the stop entirely (hold to the signal
+    exit) — used to compute the CONTEXT-ONLY no-stop loose-hold drawdown that the stop-out
+    metric exists to debunk.  An open position at series end is booked only if close_open.
+
+    Returns (curve, trades).  The equity `curve` (length n) is reconstructed from the booked
+    trades so it realises at each entry/exit FILL with no one-bar mark-to-market drift; it
+    feeds the CONTEXT-ONLY drawdown/return, never the stop-out verdict (which is read from
+    `trades`).  Each trade dict carries: entry_i, exit_i, ret, exit_reason
+    ('stop'|'signal'|'eod'), mae, mfe, entry_eff (0=bought the local low .. 1=the local high
+    over eff_win bars), below_stop (realised return worse than stop_pct -> a gap-through).
     """
     n = len(close)
+    has_lo = low is not None
+    has_hi = high is not None
     pos = 0
-    ep = None          # entry price
-    e_fill = None      # entry fill index (for MAE)
+    ep = None            # entry price
+    e_i = None           # entry bar index
     trades: list[dict] = []
-    eq = 1.0
-    curve = [1.0]
     for i in range(n - 1):
-        if pos == 1:
-            eq *= close[i + 1] / close[i]
-        curve.append(eq)
         if pos == 0:
             if i < start_idx:
                 continue
-            if buy[i] and i + fill_lag < n:
-                pos, e_fill = 1, i + fill_lag
-                ep = close[e_fill]
-        elif exit_[i] and i + fill_lag < n:
-            x_fill = i + fill_lag
-            seg = close[e_fill:x_fill + 1]
-            mae = float(seg.min()) / ep - 1.0 if len(seg) else 0.0
-            trades.append({"entry_i": e_fill, "exit_i": x_fill,
-                           "ret": close[x_fill] / ep - 1.0, "mae": mae})
+            if buy[i]:
+                pos, e_i, ep = 1, i, float(close[i])
+            continue
+        if i <= e_i:                                    # never act on the entry bar itself
+            continue
+        # --- LONG: stop first (intraday), then the exit signal (end of bar) ---
+        if not no_stop:
+            stop_lvl = ep * (1.0 + stop_pct)
+            bar_low = float(low[i]) if has_lo else float(close[i])
+            if has_lo and np.isnan(bar_low):            # missing low -> fall back to close
+                bar_low = float(close[i])
+            if bar_low <= stop_lvl:                      # STOP-OUT
+                # Normal intraday touch fills at the stop level; a bar that GAPS THROUGH
+                # (whole range below the stop, high < stop) can only fill below it -> use the
+                # bar high, so the realised loss can exceed the stop (gap risk -> below_stop).
+                bar_high = float(high[i]) if has_hi else float(close[i])
+                if has_hi and np.isnan(bar_high):
+                    bar_high = float(close[i])
+                xp = min(stop_lvl, bar_high)
+                trades.append(_mk_trade(e_i, i, ep, xp, "stop", close, high, low,
+                                        stop_pct, eff_win))
+                pos = 0
+                continue
+        if exit_[i]:                                     # validated SELL*/cut -> exit at close
+            trades.append(_mk_trade(e_i, i, ep, float(close[i]), "signal", close, high, low,
+                                    stop_pct, eff_win))
             pos = 0
-    if close_open and pos == 1 and e_fill is not None:
-        seg = close[e_fill:]
-        mae = float(seg.min()) / ep - 1.0 if len(seg) else 0.0
-        trades.append({"entry_i": e_fill, "exit_i": n - 1,
-                       "ret": close[-1] / ep - 1.0, "mae": mae})
-    return np.asarray(curve), trades
+    if close_open and pos == 1 and e_i is not None:
+        trades.append(_mk_trade(e_i, n - 1, ep, float(close[-1]), "eod", close, high, low,
+                                stop_pct, eff_win))
+    return _equity_curve(close, trades), trades
 
 
-def trade_metrics(curve: np.ndarray, trades: list[dict]) -> dict:
-    """The RISK metrics suite (component 3).  Primary = max drawdown; then shake-out
-    rate, avg loss, per-trade expectancy, win rate.  `captured` (total return) is
-    context ONLY and must never enter a verdict (charter §4)."""
+def _equity_curve(close: np.ndarray, trades: list[dict]) -> np.ndarray:
+    """Reconstruct the long/flat equity curve (length n) from booked trades: flat (constant)
+    out of the market, marked-to-market on closes while long, REALISED at each entry/exit
+    fill.  Decoupled from the trade state machine so it can't drift the booked trades, and
+    correct at both trade boundaries (the inline running-product version credited the
+    entry-bar move late and the exit-bar move one bar too far)."""
+    n = len(close)
+    curve = np.ones(n)
+    eq, last = 1.0, 0
+    for t in trades:
+        e, x = t["entry_i"], t["exit_i"]
+        ep = float(close[e])
+        xp = ep * (1.0 + t["ret"])                       # exit FILL (stop level / close / gap)
+        curve[last:e + 1] = eq                           # out of market up to & incl. entry bar
+        for j in range(e + 1, x):                        # intra-trade mark-to-market on closes
+            curve[j] = eq * float(close[j]) / ep
+        eq *= xp / ep                                    # realise at the exit fill
+        curve[x] = eq
+        last = x
+    curve[last:] = eq
+    return curve
+
+
+def _mk_trade(e_i, x_i, ep, xp, reason, close, high, low, stop_pct, eff_win) -> dict:
+    """Build one trade record incl. excursions and entry efficiency."""
+    has_lo, has_hi = low is not None, high is not None
+    seg_lo = (low if has_lo else close)[e_i + 1:x_i + 1]
+    seg_hi = (high if has_hi else close)[e_i + 1:x_i + 1]
+    mae = (float(np.min(seg_lo)) / ep - 1.0) if len(seg_lo) else 0.0
+    mfe = (float(np.max(seg_hi)) / ep - 1.0) if len(seg_hi) else 0.0
+    # entry efficiency over a FORWARD window from entry (post-hoc diagnostic, not a trade
+    # input): where in [local low, local high] did the entry land?  0 = bought the low.
+    w_lo = (low if has_lo else close)[e_i:min(e_i + eff_win, len(close))]
+    w_hi = (high if has_hi else close)[e_i:min(e_i + eff_win, len(close))]
+    lo_v, hi_v = (float(np.min(w_lo)), float(np.max(w_hi))) if len(w_lo) else (ep, ep)
+    eff = ((ep - lo_v) / (hi_v - lo_v)) if hi_v > lo_v else 0.0
+    ret = xp / ep - 1.0
+    return {"entry_i": int(e_i), "exit_i": int(x_i), "ret": ret, "exit_reason": reason,
+            "mae": mae, "mfe": mfe, "entry_eff": float(np.clip(eff, 0.0, 1.0)),
+            "below_stop": bool(ret < stop_pct - 1e-9)}
+
+
+def trade_metrics(curve: np.ndarray, trades: list[dict], stop_pct: float = STOP_PCT,
+                  nostop_curve: np.ndarray | None = None) -> dict:
+    """The AS-TRADED-WITH-STOP metrics suite (component 3).
+
+    PRIMARY  : stop_out_rate (% of trades exited by the stop — lower is better).
+    risk     : avg_loss, worst_loss, frac_below_stop (gap-through rate), entry_eff.
+    quality  : expectancy, win_rate.
+    CONTEXT  : captured (total compounded return), strat_max_dd (the WITH-STOP strategy
+               equity drawdown) and nostop_max_dd (the RETIRED no-stop loose-hold drawdown —
+               the metric whose "win" the stop-out rate debunks).  All labelled, never a
+               verdict (charter §4 / module header)."""
     if len(curve):
-        dd = float((curve / np.maximum.accumulate(curve) - 1.0).min())
+        strat_dd = float((curve / np.maximum.accumulate(curve) - 1.0).min())
         cap = float(curve[-1] - 1.0)
     else:
-        dd, cap = 0.0, 0.0
+        strat_dd, cap = 0.0, 0.0
+    nostop_dd = strat_dd
+    if nostop_curve is not None and len(nostop_curve):
+        nostop_dd = float((nostop_curve / np.maximum.accumulate(nostop_curve) - 1.0).min())
+    base = {"n_trades": 0, "stop_out_rate": 0.0, "avg_loss": 0.0, "worst_loss": 0.0,
+            "frac_below_stop": 0.0, "entry_eff": 0.0, "expectancy": 0.0, "win_rate": 0.0,
+            "mae_med": 0.0, "mfe_med": 0.0, "captured": 100 * cap,
+            "strat_max_dd": 100 * strat_dd, "nostop_max_dd": 100 * nostop_dd}
     if not trades:
-        return {"n_trades": 0, "max_dd": 100 * dd, "shake_rate": 0.0, "avg_loss": 0.0,
-                "expectancy": 0.0, "win_rate": 0.0, "captured": 100 * cap}
+        return base
     r = np.array([t["ret"] for t in trades])
-    mae = np.array([t["mae"] for t in trades])
+    stops = np.array([t["exit_reason"] == "stop" for t in trades])
     losses = r[r < 0]
-    return {
+    base.update({
         "n_trades": len(trades),
-        "max_dd": 100 * dd,                                            # PRIMARY (risk)
-        "shake_rate": 100 * float((mae <= -SHAKE).mean()),            # entry-quality risk
+        "stop_out_rate": 100 * float(stops.mean()),                       # PRIMARY
         "avg_loss": 100 * float(losses.mean()) if len(losses) else 0.0,
+        "worst_loss": 100 * float(r.min()),
+        "frac_below_stop": 100 * float(np.mean([t["below_stop"] for t in trades])),  # gap risk
+        "entry_eff": float(np.median([t["entry_eff"] for t in trades])),
         "expectancy": 100 * float(r.mean()),
         "win_rate": 100 * float((r > 0).mean()),
-        "captured": 100 * cap,                                        # CONTEXT ONLY
-    }
+        "mae_med": 100 * float(np.median([t["mae"] for t in trades])),
+        "mfe_med": 100 * float(np.median([t["mfe"] for t in trades])),
+    })
+    return base
 
 
 # ============================================================ signal resolution
 def default_confluence_exit(daily: pd.Series) -> pd.Series:
-    """Shared daily exit for SIMPLE-mode signal callables: the baseline 3D oscillator
-    SELL/cut, mapped to the daily grid by known date (leak-free).  Identical for every
-    variant so only ENTRY timing differs.  (Same construction as tuning_harness.common_exit.)"""
+    """Shared daily exit for SIMPLE-mode callables: the baseline 3D oscillator SELL/cut
+    (exit_rules.fixed_exit == CS|revSell), mapped to the daily grid by known date so the
+    ONLY thing that differs between variants is ENTRY timing."""
     from confluence import compute_signals
     sig = compute_signals(daily)
     if sig.empty:
@@ -237,59 +373,40 @@ def default_confluence_exit(daily: pd.Series) -> pd.Series:
     return to_daily(ev, kn, daily.index, "event")
 
 
-def _events_to_grid(daily_events: pd.Series, target_index: pd.DatetimeIndex) -> pd.Series:
-    """Place each daily True event on the FIRST target-grid bar on/after its known date
-    (leak-free).  Used when a rich-mode frame OMITS 'exit' and the eval grid is coarser
-    than daily: ffill-reindexing a sparse daily event series onto a coarse grid would
-    silently DROP most events (the True bars rarely coincide with a coarse bar), so we
-    align by event date instead — lossless and never earlier than the known date."""
-    out = pd.Series(False, index=target_index)
-    if daily_events is None or not bool(daily_events.any()):
-        return out
-    ev_dates = pd.DatetimeIndex(daily_events.index[daily_events.to_numpy().astype(bool)])
-    for p in target_index.searchsorted(ev_dates, side="left"):
-        if p < len(target_index):
-            out.iloc[p] = True
-    return out
-
-
 def _resolve(result, daily: pd.Series, exit_default: pd.Series):
-    """Normalise a signal-callable return into (close, buy, exit) on a common grid.
-    Series -> SIMPLE mode (daily buy events + default exit).  DataFrame -> RICH mode."""
+    """Normalise a signal-callable return into daily (buy, exit) boolean series on the
+    daily index.  close/high/low for the stop ALWAYS come from the panel (see walk_forward),
+    never from the callable — so the stop is always checked on real daily bars."""
     if isinstance(result, pd.DataFrame):
         if "buy" not in result.columns:
             raise ValueError("rich signal frame must have a 'buy' column")
-        close = result["close"] if "close" in result.columns else daily.reindex(result.index)
-        buy = result["buy"].astype(bool)
+        buy = result["buy"].reindex(daily.index).fillna(False).astype(bool)
         if "exit" in result.columns:
-            ex = result["exit"].astype(bool)
-        else:                                      # default exit, event-aligned to this grid
-            ex = _events_to_grid(exit_default, result.index)
-        return close.astype(float), buy, ex
-    # Series == simple mode (daily grid; default exit is already daily -> identity reindex)
+            ex = result["exit"].reindex(daily.index).fillna(False).astype(bool)
+        else:
+            ex = exit_default.reindex(daily.index).fillna(False).astype(bool)
+        return buy, ex
     buy = result.reindex(daily.index).fillna(False).astype(bool)
-    return daily.astype(float), buy, exit_default.reindex(daily.index).fillna(False).astype(bool)
+    return buy, exit_default.reindex(daily.index).fillna(False).astype(bool)
 
 
 def _start_index(idx: pd.DatetimeIndex, since: pd.Timestamp) -> int:
     return int((idx < since).sum())
 
 
-# ============================================================ walk-forward splits
+# ============================================================ walk-forward splits (comp. 1)
 def make_windows(n: int, start_idx: int, cfg: dict):
-    """Purged/embargoed expanding walk-forward splits over EVAL-GRID bar indices
-    (component 1).  Returns list of (train_lo, train_hi, test_lo, test_hi) where
-    train=[train_lo:train_hi] is purged (train_hi = Ti - purge), test=[test_lo:test_hi].
-    Consecutive test blocks are separated by an `embargo` gap (step is floored at
-    test_len + embargo so test windows can never overlap).
+    """Purged/embargoed expanding walk-forward splits over DAILY bar indices.
+    Returns (train_lo, train_hi, test_lo, test_hi): train=[0:Ti-purge], test=[Ti:Ti+test_len];
+    consecutive test blocks separated by `embargo` (step floored at test_len+embargo so test
+    windows never overlap).
 
-    NOTE on the train bounds: the harness evaluates GLOBALLY-COMPUTED, CAUSAL signals
-    (every indicator at bar t uses only data <= t), so a value is identical whether
-    computed on [0:t] or the full series — there is nothing to re-fit per window, and
-    OOS-ness comes from (a) causal indicators, (b) entries MASKED to test-window bars,
-    (c) leak-free fills.  The train_lo/train_hi bounds are therefore the documented
-    seam for a FUTURE fitted-signal refit hook; they are intentionally not consumed by
-    the non-fitted path.  Do NOT add a per-ticker P&L-fitted refit here (charter §4)."""
+    The signals here are GLOBALLY-COMPUTED CAUSAL functions (every indicator at bar t uses
+    only data <= t), so a value is identical computed on [0:t] or the full series — nothing
+    is re-fit per window.  OOS-ness comes from (a) causal indicators, (b) entries MASKED to
+    test-window bars, (c) leak-free fills.  train_lo/train_hi are the documented seam for a
+    FUTURE fitted-signal refit hook; the non-fitted path does not consume them.  Do NOT add
+    a per-ticker P&L-fitted refit here (charter §4)."""
     train_len = int(cfg.get("train_len", DEFAULT_CFG["train_len"]))
     test_len = int(cfg.get("test_len", DEFAULT_CFG["test_len"]))
     step = int(cfg.get("step", DEFAULT_CFG["step"]))
@@ -299,114 +416,112 @@ def make_windows(n: int, start_idx: int, cfg: dict):
     ti = max(start_idx + train_len, train_len)
     while ti + 1 < n:
         test_lo, test_hi = ti, min(ti + test_len, n)
-        if test_hi - test_lo < 5:                  # too small to be meaningful
+        if test_hi - test_lo < 10:                 # too small to be meaningful (daily bars)
             break
-        train_lo, train_hi = 0, max(ti - purge, 0)
-        windows.append((train_lo, train_hi, test_lo, test_hi))
+        windows.append((0, max(ti - purge, 0), test_lo, test_hi))
         ti += max(step, test_len + embargo)        # embargo gap between test blocks
     return windows
 
 
 # ============================================================ per-ticker eval
-def _eval_one(close: pd.Series, buy: pd.Series, ex: pd.Series, start_idx: int, cfg: dict):
-    """Evaluate one (close, buy, exit) frame: full-sample, walk-forward OOS (stitched
-    over purged/embargoed test windows) and the in-sample burn-in region."""
+def _eval_one(close, high, low, buy, ex, start_idx, cfg):
+    """Evaluate one (close, buy, exit) frame on the daily grid: full-sample, walk-forward
+    OOS (stitched over purged/embargoed test windows), and the in-sample burn-in region.
+    OOS/IS are each ONE continuous sim with ENTRIES masked to the relevant bars (exits
+    always allowed) so a trade spanning a boundary is booked exactly once."""
     c = close.to_numpy(float)
+    h = high.to_numpy(float) if high is not None else None
+    lo = low.to_numpy(float) if low is not None else None
     b = buy.to_numpy(bool)
     x = ex.to_numpy(bool)
     n = len(c)
+    sp = float(cfg.get("stop_pct", STOP_PCT))
 
-    # ---- FULL SAMPLE (reproduces test_buyfilter.py: entries from SINCE, no close-out)
-    curve, trades = simulate_trades(c, b, x, start_idx=start_idx, close_open=False)
-    full = trade_metrics(curve, trades)
+    def _view(mask):
+        bb = b if mask is None else (b & mask)
+        curve, trades = simulate_trades(c, h, lo, bb, x, stop_pct=sp, start_idx=start_idx)
+        ns_curve, _ = simulate_trades(c, h, lo, bb, x, stop_pct=sp, start_idx=start_idx,
+                                      no_stop=True)            # context-only loose-hold DD
+        return trade_metrics(curve, trades, sp, nostop_curve=ns_curve)
 
-    # ---- WALK-FORWARD splits.  OOS and IS are each ONE continuous sim over the full
-    # series with entries MASKED to the relevant bars (exits always allowed, no close-out).
-    # A position spanning a window boundary is therefore booked exactly once (no per-window
-    # double-counting) and drawdown is read off a single continuous equity curve.
     windows = make_windows(n, start_idx, cfg)
     first_test_lo = windows[0][2] if windows else n
-
     oos_mask = np.zeros(n, bool)
-    for (_tr_lo, _tr_hi, te_lo, te_hi) in windows:   # train bounds intentionally unused (see make_windows)
+    for (_t0, _t1, te_lo, te_hi) in windows:
         oos_mask[te_lo:te_hi] = True
-    oc, ot = simulate_trades(c, b & oos_mask, x, start_idx=start_idx, close_open=False)
-    oos = trade_metrics(oc, ot)
-
     is_mask = np.zeros(n, bool)
-    is_mask[start_idx:first_test_lo] = True          # pre-first-test burn-in (the only non-OOS span)
-    ic, it = simulate_trades(c, b & is_mask, x, start_idx=start_idx, close_open=False)
-    is_ = trade_metrics(ic, it)
-    return {"full": full, "oos": oos, "is": is_, "n_windows": len(windows)}
+    is_mask[start_idx:first_test_lo] = True
+    return {"full": _view(None), "oos": _view(oos_mask), "is": _view(is_mask),
+            "n_windows": len(windows)}
 
 
-# ============================================================ cross-section
+# ============================================================ cross-section (comp. 4)
 _PCTS = (10, 25, 50, 75, 90)
+_CONTEXT_MEANS = ("stop_out_rate", "avg_loss", "worst_loss", "frac_below_stop",
+                  "entry_eff", "expectancy", "win_rate", "n_trades",
+                  "captured", "strat_max_dd", "nostop_max_dd")
 
 
-def cross_section(by_ticker: dict, view: str, metric: str = "max_dd") -> dict:
-    """Cross-sectional aggregator (component 4): percentile distribution of `metric`
-    for treatment and baseline + the % of names improved (never just a pooled mean).
-    Improvement direction is metric-aware (`_is_better`), not a 2-name special case."""
+def cross_section(by_ticker: dict, view: str, metric: str = "stop_out_rate") -> dict:
+    """Percentile distribution of `metric` for treatment and baseline + the % of names
+    improved (metric-aware direction).  A name only counts toward frac_improved if BOTH
+    arms actually traded in this view (n_trades>0) — a zero-trade name has a degenerate
+    0.0 metric that is neither an improvement nor a regression."""
     _check_verdict_metric(metric)
-    treat, base = [], []
-    improved = 0
-    names = []
+    treat, base, names, improved, comparable = [], [], [], 0, 0
     for t, d in by_ticker.items():
         tv = d["treat"][view].get(metric)
-        bv = d["base"][view].get(metric) if d.get("base") else None
         if tv is None:
             continue
         treat.append(tv)
         names.append(t)
-        if bv is not None:
+        if d.get("base") is not None:
+            bv = d["base"][view].get(metric)
+            if bv is None:
+                continue
+            if d["treat"][view]["n_trades"] > 0 and d["base"][view]["n_trades"] > 0:
+                comparable += 1
+                improved += int(_is_better(tv, bv, metric))
             base.append(bv)
-            improved += int(_is_better(tv, bv, metric))
-    treat = np.array(treat, float)
 
     def _pcts(a):
+        a = np.asarray(a, float)
         if not len(a):
             return {}
         return {f"p{p}": float(np.percentile(a, p)) for p in _PCTS} | {"mean": float(a.mean())}
 
-    out = {
-        "view": view, "metric": metric, "n_names": len(treat),
-        "treat": _pcts(treat),
-        # context: the other risk metrics' panel means (treatment), labelled, no verdict
-        "treat_means": {k: float(np.mean([by_ticker[n]["treat"][view].get(k, 0.0) for n in names]))
-                        for k in ("max_dd", "shake_rate", "avg_loss", "expectancy",
-                                  "win_rate", "n_trades", "captured")},
-    }
+    out = {"view": view, "metric": metric, "n_names": len(treat), "treat": _pcts(treat),
+           "treat_means": {k: float(np.mean([by_ticker[nm]["treat"][view].get(k, 0.0)
+                                             for nm in names])) for k in _CONTEXT_MEANS}}
     if base:
-        out["base"] = _pcts(np.array(base, float))
-        out["frac_improved"] = float(improved / len(base))
+        out["base"] = _pcts(base)
+        out["base_means"] = {k: float(np.mean([by_ticker[nm]["base"][view].get(k, 0.0)
+                                               for nm in names if by_ticker[nm].get("base")]))
+                             for k in _CONTEXT_MEANS}
+        out["n_comparable"] = comparable
+        out["frac_improved"] = float(improved / comparable) if comparable else None
     return out
 
 
-# ============================================================ overfit guard
+# ============================================================ overfit guard (comp. 5)
 def _mt_bump(n_trials: int) -> float:
-    """Deflated-Sharpe-style multiple-testing bump on the fraction-improved bar: more
-    configs searched -> a higher OOS bar to clear, so a lucky best-of-n can't pass."""
+    """Deflated-Sharpe-style multiple-testing bump on the OOS bar: more configs searched
+    -> a higher bar, so a lucky best-of-n can't pass.  Capped so it never demands >90%."""
     if n_trials <= 1:
         return 0.0
-    return min(0.20, 0.05 * np.log2(n_trials))   # capped so it never demands >90%
+    return min(0.20, 0.05 * np.log2(n_trials))
 
 
-def overfit_guard(by_ticker: dict, n_trials: int = 1, metric: str = "max_dd",
+def overfit_guard(by_ticker: dict, n_trials: int = 1, metric: str = "stop_out_rate",
                   min_frac: float = 0.70) -> dict:
-    """In-sample vs out-of-sample decay flag + the pre-committed KILL RULE (component 5).
-
-    The headline read is `frac_improved_oos` (all names with a baseline).  The IS->OOS
-    decay is computed on a LIKE-FOR-LIKE population — names that actually traded
-    (>= MIN_DECAY_TRADES) in BOTH the is and oos views, for BOTH arms — so the burn-in's
-    many zero-trade (degenerate maxDD=0) names can't skew it.  For a non-fitted signal
-    (n_trials=1) the decay is a drift smell only; the real search-overfitting guard is
-    the multiple-testing `deflated_bar` driven by n_trials (deflated-Sharpe analogue)."""
+    """IS vs OOS decay flag + the pre-committed KILL RULE.  The IS->OOS decay is computed on
+    a LIKE-FOR-LIKE population (names that traded >= MIN_DECAY_TRADES in BOTH views for BOTH
+    arms) so burn-in zero-trade names can't skew it.  For a non-fitted signal (n_trials=1)
+    the decay is a drift smell only; the real search guard is the n_trials-driven bar."""
     _check_verdict_metric(metric)
     cs_oos = cross_section(by_ticker, "oos", metric)
     cs_full = cross_section(by_ticker, "full", metric)
     bar = min_frac + _mt_bump(n_trials)
-
     comparable = [t for t, d in by_ticker.items() if d.get("base") and min(
         d["treat"]["is"]["n_trades"], d["base"]["is"]["n_trades"],
         d["treat"]["oos"]["n_trades"], d["base"]["oos"]["n_trades"]) >= MIN_DECAY_TRADES]
@@ -423,12 +538,12 @@ def overfit_guard(by_ticker: dict, n_trials: int = 1, metric: str = "max_dd",
     return {
         "metric": metric, "n_trials": n_trials,
         "frac_improved_full": cs_full.get("frac_improved"),
-        "frac_improved_oos": cs_oos.get("frac_improved"),     # headline OOS read (all names)
+        "frac_improved_oos": cs_oos.get("frac_improved"),      # headline OOS read (all names)
         "decay_population": len(comparable),
-        "frac_improved_is": frac_is,                          # like-for-like (comparable names)
+        "frac_improved_is": frac_is,                           # like-for-like
         "frac_improved_oos_comparable": frac_oos_cmp,
         "is_oos_decay": decay,
-        "decay_flag": (decay is not None and decay > 0.20),   # large IS->OOS drop = overfit smell
+        "decay_flag": (decay is not None and decay > 0.20),
         "decay_note": ("drift smell on names traded in both windows; for n_trials=1 this is "
                        "informational — the search guard is deflated_bar (raises with n_trials)."),
         "deflated_bar": bar,
@@ -436,10 +551,10 @@ def overfit_guard(by_ticker: dict, n_trials: int = 1, metric: str = "max_dd",
     }
 
 
-def kill_rule(by_ticker: dict, view: str = "oos", metric: str = "max_dd",
+def kill_rule(by_ticker: dict, view: str = "oos", metric: str = "stop_out_rate",
               min_frac: float = 0.70) -> dict:
     """Pre-committed kill rule (charter §3): SHIP only if >= min_frac of held-out names
-    improve on drawdown; otherwise REJECT and ship the simpler baseline."""
+    improve on the stop-based metric; otherwise REJECT and ship the simpler baseline."""
     _check_verdict_metric(metric)
     cs = cross_section(by_ticker, view, metric)
     frac = cs.get("frac_improved")
@@ -453,37 +568,35 @@ def kill_rule(by_ticker: dict, view: str = "oos", metric: str = "max_dd",
 # ============================================================ the public entry
 def walk_forward(signal_fn, panel: dict, cfg: dict | None = None, *,
                  baseline_fn=None, since: pd.Timestamp = SINCE, n_trials: int = 1,
-                 metric: str = "max_dd", run_id: str | None = None,
+                 metric: str = "stop_out_rate", run_id: str | None = None,
                  tag: str = "wf", log: bool = True) -> dict:
     """Run the harness over a panel.  Returns {run_id, config, by_ticker, pooled,
-    overfit_flags}.  See module docstring for the signal-callable contract."""
+    overfit_flags}.  See the module header for the signal-callable contract."""
     _check_verdict_metric(metric)
     cfg = {**DEFAULT_CFG, **(cfg or {})}
     by_ticker: dict = {}
-    dropped: dict = {}                              # ticker -> reason (expected skip vs ERROR)
+    dropped: dict = {}
     for t, df in panel.items():
         try:
             daily = df["close"].dropna()
             if len(daily) < 400:
                 dropped[t] = f"skip: thin history ({len(daily)} daily bars < 400)"
                 continue
-            high = df["high"].dropna() if "high" in df.columns else None
-            low = df["low"].dropna() if "low" in df.columns else None
+            # high/low reindexed onto the SAME daily index as close (the sim grid)
+            high = df["high"].reindex(daily.index) if "high" in df.columns else None
+            low = df["low"].reindex(daily.index) if "low" in df.columns else None
             exit_default = default_confluence_exit(daily)
 
-            tc, tb, tx = _resolve(signal_fn(daily, high, low), daily, exit_default)
-            if len(tc) == 0:
-                dropped[t] = "skip: empty signal frame"
-                continue
-            start_idx = _start_index(tc.index, since)
-            treat = _eval_one(tc, tb, tx, start_idx, cfg)
+            tb, tx = _resolve(signal_fn(daily, high, low), daily, exit_default)
+            si = _start_index(daily.index, since)
+            treat = _eval_one(daily, high, low, tb, tx, si, cfg)
 
             base = None
             if baseline_fn is not None:
-                bc, bb, bx = _resolve(baseline_fn(daily, high, low), daily, exit_default)
-                base = _eval_one(bc, bb, bx, _start_index(bc.index, since), cfg)
+                bb, bx = _resolve(baseline_fn(daily, high, low), daily, exit_default)
+                base = _eval_one(daily, high, low, bb, bx, si, cfg)
             by_ticker[t] = {"treat": treat, "base": base}
-        except Exception as e:                     # surfaced, NOT silently swallowed
+        except Exception as e:
             dropped[t] = f"ERROR: {type(e).__name__}: {e}"
             continue
 
@@ -510,8 +623,7 @@ def _make_run_id(tag: str, cfg: dict) -> str:
 
 
 def _write_log(run_id: str, result: dict) -> Path:
-    """Per-trial JSON log to data/signal_archive/wf_<run_id>.json (component 6).
-    Stores compact per-ticker metrics + pooled + flags (drops bulky intermediates)."""
+    """Per-trial JSON log to data/signal_archive/wf_<run_id>.json (component 6)."""
     ARCHIVE.mkdir(parents=True, exist_ok=True)
     compact = {
         "run_id": run_id, "config": result["config"], "since": result["since"],
@@ -527,42 +639,89 @@ def _write_log(run_id: str, result: dict) -> Path:
 
 
 # ============================================================ gold-standard self-test
-# The validated confluence buy-filter, expressed as RICH-mode signal callables that
-# reproduce test_buyfilter.py EXACTLY: native 3D grid, enter on CB|revBuy (optionally
-# filtered by refined_buy), exit on CS|revSell, fill at the next 3D close.
+# The validated buy-filter vs raw confluence buys, as DAILY rich-mode callables.  Both
+# arms share the SAME exit (CS|revSell) and the SAME stop, so the ONLY difference is which
+# entries are taken — exactly the experiment the task asks for.
 #
-# FAITHFUL-REPRODUCTION CAVEAT (intentional): this mirrors the VALIDATED keeper as-is,
-# including refined_buy's reclaim-and-hold peek at i+1/i+2 and divergence_at's centered
-# swing pivots (a high at h is confirmed only at h+2).  That is a property of the rule
-# the charter says to reproduce — NOT a harness bug — and is exactly why --gold recovers
-# -23.7 -> -15.5 / 84%.  Production handles the last-bars confirmation lag separately
-# (engine/signal_quality._buy_filter returns "pending").  NEW signals must use
-# forward-only confirmed pivots (charter §3); do not copy the gold path's repaint.
-def _gold_frame(daily: pd.Series, filtered: bool) -> pd.DataFrame:
+# LEAK-FREE ENTRY TIMING (the subtle part):
+#   * RAW buy at 3D bar i (CB|revBuy) is known at bar i's close -> enter on the first daily
+#     bar after bar i's known date.
+#   * FILTERED "take" needs the reclaim-and-hold confirmation, which peeks at bar i+1 (trend)
+#     or i+2 (counter-trend below-200 & weekly-down).  That verdict is only KNOWN at the
+#     confirmation bar's close, so a take enters on the first daily bar after the CONFIRMATION
+#     bar's known date — later and at a higher (held) price than the raw buy.  That delay is
+#     part of the filter's mechanism (it buys only after the entry bar holds), so including it
+#     is faithful, not a penalty.  block/pending -> no entry.
+_SIG_CACHE: dict = {}                                 # gold-path memo (compute_signals is heavy)
+
+
+def _cached_signals(daily: pd.Series):
     from confluence import compute_signals
-    from diagnose_tencent_baba import swing_points, divergence_at
-    from diagnose_v2 import refined_buy
-    sig = compute_signals(daily)
+    key = (len(daily), float(daily.iloc[0]), float(daily.iloc[-1]),
+           int(daily.index[0].value), int(daily.index[-1].value))
+    hit = _SIG_CACHE.get(key)
+    if hit is None:
+        sig = compute_signals(daily)
+        if not sig.empty:
+            sig = sig.dropna(subset=["macd", "sig", "k", "d", "rsi14"])
+        _, kn = tf_bars(daily, 3)
+        hit = (sig, kn.reindex(sig.index) if not sig.empty else kn)
+        _SIG_CACHE[key] = hit
+    return hit
+
+
+def _gold_daily_frame(daily: pd.Series, mode: str) -> pd.DataFrame:
+    """mode in {'raw','filtered','selection'}.
+      raw       — every CB|revBuy, entered after bar i's known date (the baseline).
+      filtered  — only filter-graded TAKE buys, entered after the i+1/i+2 CONFIRMATION bar's
+                  known date (LEAK-FREE, the actually-tradeable filter — buys later/higher).
+      selection — the SAME take subset as 'filtered' but entered at bar i like raw.  This is
+                  NOT leak-free / NOT tradeable (the take verdict isn't known at bar i); it is
+                  an ATTRIBUTION diagnostic only, to separate the filter's SELECTION effect
+                  from its buy-later/higher timing cost.  Never a verdict."""
+    from buy_filters import swing_highs, bearish_divergence, reclaim_and_hold
+    sig, kn = _cached_signals(daily)
     if sig.empty:
-        return pd.DataFrame(columns=["close", "buy", "exit"])
-    sig = sig.dropna(subset=["macd", "sig", "k", "d", "rsi14"])
+        z = pd.Series(False, index=daily.index)
+        return pd.DataFrame({"buy": z, "exit": z})
     c, macd, n = sig["close"], sig["macd"], len(sig)
-    cand = (sig["CB"] | sig["revBuy"]).to_numpy()
-    buy = cand.copy()
-    if filtered:
-        hi, lo = swing_points(c)
-        for i in np.where(cand)[0]:
-            buy[i] = refined_buy(i, sig, divergence_at(i, c, macd, hi, lo), n)[0] == "TAKE"
-    return pd.DataFrame({"close": c.to_numpy(float), "buy": buy,
-                         "exit": (sig["CS"] | sig["revSell"]).to_numpy()}, index=sig.index)
+    raw = (sig["CB"] | sig["revBuy"]).to_numpy()
+    exit_known = kn[(sig["CS"] | sig["revSell"]).to_numpy()].dropna()
+    exit_daily = _daily_events_after(exit_known.values, daily.index)
+
+    if mode == "raw":
+        buy_daily = _daily_events_after(kn[raw].dropna().values, daily.index)
+        return pd.DataFrame({"buy": buy_daily, "exit": exit_daily})
+
+    hi = swing_highs(c)
+    buy_known = []
+    for i in np.where(raw)[0]:
+        if bearish_divergence(i, c, macd, hi):
+            continue                                  # veto -> block
+        ok, _ = reclaim_and_hold(i, sig, n)
+        if ok is not True:
+            continue                                  # block or pending -> no take
+        if mode == "selection":                       # same entry bar as raw (attribution)
+            buy_known.append(kn.iloc[i])
+            continue
+        below = (not bool(sig["above200"].iloc[i])) and (not bool(sig["w_bull"].iloc[i]))
+        conf_bar = i + 2 if below else i + 1          # bar at which the take is KNOWN
+        if conf_bar < n and pd.notna(kn.iloc[conf_bar]):
+            buy_known.append(kn.iloc[conf_bar])
+    buy_daily = _daily_events_after([k for k in buy_known if pd.notna(k)], daily.index)
+    return pd.DataFrame({"buy": buy_daily, "exit": exit_daily})
 
 
-def gold_signal_fn(close, high=None, low=None):     # filtered (treatment)
-    return _gold_frame(close, filtered=True)
+def gold_signal_fn(close, high=None, low=None):      # filtered (treatment, tradeable)
+    return _gold_daily_frame(close, "filtered")
 
 
-def gold_baseline_fn(close, high=None, low=None):    # raw confluence buys (baseline)
-    return _gold_frame(close, filtered=False)
+def gold_baseline_fn(close, high=None, low=None):     # raw confluence buys (baseline)
+    return _gold_daily_frame(close, "raw")
+
+
+def gold_selection_fn(close, high=None, low=None):    # take-subset, raw entry (attribution)
+    return _gold_daily_frame(close, "selection")
 
 
 def _load_panel(tickers=None) -> dict:
@@ -576,42 +735,80 @@ def _load_panel(tickers=None) -> dict:
 
 
 def run_gold(verbose: bool = True) -> dict:
-    """Reproduce the published buy-filter result through the harness and check it."""
+    """Confirm the buy-filter REDUCES the stop-out rate vs raw confluence buys."""
     panel = _load_panel()
     res = walk_forward(gold_signal_fn, panel, DEFAULT_CFG,
-                       baseline_fn=gold_baseline_fn, tag="gold")
+                       baseline_fn=gold_baseline_fn, tag="gold", metric="stop_out_rate")
     cs = res["pooled"]["full"]
-    raw_dd = np.mean([d["base"]["full"]["max_dd"] for d in res["by_ticker"].values()])
-    flt_dd = cs["treat"]["mean"]
-    frac = cs["frac_improved"]
-    raw_wr = np.mean([d["base"]["full"]["win_rate"] for d in res["by_ticker"].values()])
-    flt_wr = np.mean([d["treat"]["full"]["win_rate"] for d in res["by_ticker"].values()])
-    raw_al = np.mean([d["base"]["full"]["avg_loss"] for d in res["by_ticker"].values()])
-    flt_al = np.mean([d["treat"]["full"]["avg_loss"] for d in res["by_ticker"].values()])
-    raw_n = np.mean([d["base"]["full"]["n_trades"] for d in res["by_ticker"].values()])
-    flt_n = np.mean([d["treat"]["full"]["n_trades"] for d in res["by_ticker"].values()])
+    bt = res["by_ticker"]
+
+    def _avg(arm, view, k):
+        return float(np.mean([d[arm][view][k] for d in bt.values() if d.get(arm)]))
+
+    def _tw(arm):                                       # trade-weighted pooled stop-out rate
+        num = sum(d[arm]["full"]["stop_out_rate"] * d[arm]["full"]["n_trades"]
+                  for d in bt.values() if d.get(arm))
+        den = sum(d[arm]["full"]["n_trades"] for d in bt.values() if d.get(arm))
+        return num / den if den else float("nan")
+
+    raw_so, flt_so = _avg("base", "full", "stop_out_rate"), _avg("treat", "full", "stop_out_rate")
+    raw_tw, flt_tw = _tw("base"), _tw("treat")
+    frac = cs.get("frac_improved")
     if verbose:
-        print(f"\nGOLD-STANDARD REPRODUCTION  (run_id={res['run_id']}, n={res['n_names']} names)")
-        print(f"  avg maxDD:   RAW {raw_dd:6.1f}  ->  FILTERED {flt_dd:6.1f}   "
-              f"(filter shallower on {100*frac:.0f}% of names)")
-        print(f"  avg WR%:     RAW {raw_wr:6.0f}  ->  FILTERED {flt_wr:6.0f}")
-        print(f"  avg loss%:   RAW {raw_al:6.1f}  ->  FILTERED {flt_al:6.1f}")
-        print(f"  avg trades:  RAW {raw_n:6.1f}  ->  FILTERED {flt_n:6.1f}")
-        print(f"\n  TARGET (test_buyfilter.py):  -23.7 -> -15.5, shallower on 84%")
-        ok = (abs(raw_dd - (-23.7)) < 0.6 and abs(flt_dd - (-15.5)) < 0.6
-              and abs(100 * frac - 84) < 3)
-        print(f"  RESULT: {'✅ REPRODUCED' if ok else '❌ MISMATCH — harness is wrong'}")
-        print(f"\n  walk-forward OOS read (the real generalisation verdict):")
+        print(f"\nGOLD-STANDARD — does the buy-filter cut the STOP-OUT rate?  "
+              f"(run_id={res['run_id']}, n={res['n_names']} names, stop={DEFAULT_CFG['stop_pct']:.0%})")
+        print(f"  {'metric (full sample)':28s}{'RAW buys':>12s}{'FILTERED':>12s}")
+        print("  " + "-" * 52)
+        rows = [("stop-out rate %  (PRIMARY)", "stop_out_rate", False),
+                ("avg loss %", "avg_loss", False),
+                ("worst trade %", "worst_loss", False),
+                ("% trades below stop (gap)", "frac_below_stop", False),
+                ("entry efficiency (0=low)", "entry_eff", False),
+                ("expectancy %", "expectancy", False),
+                ("win rate %", "win_rate", False),
+                ("trades / name", "n_trades", False),
+                ("[ctx] captured %", "captured", True),
+                ("[ctx] with-stop strat max-DD %", "strat_max_dd", True),
+                ("[ctx] no-stop loose-hold max-DD %", "nostop_max_dd", True)]
+        for lbl, k, _ctx in rows:
+            print(f"  {lbl:30s}{_avg('base','full',k):>11.2f}{_avg('treat','full',k):>11.2f}")
+        print("  " + "-" * 52)
+        print(f"  per-name stop-out (mean):    raw {raw_so:.1f}%  -> filtered {flt_so:.1f}%  "
+              f"(filter lower on {100*frac:.0f}% of {cs.get('n_comparable')} comparable names)")
+        print(f"  trade-weighted pooled:       raw {raw_tw:.1f}%  -> filtered {flt_tw:.1f}%")
+        ok = (flt_so < raw_so) and (frac is not None and frac >= 0.70)
+        print(f"  RESULT @ {DEFAULT_CFG['stop_pct']:.0%} stop: "
+              f"{'✅ FILTER REDUCES STOP-OUTS (ship)' if ok else '⚠️ does NOT clear the 70% bar -> ship the simpler baseline'}")
         ko = res["overfit_flags"]
-        print(f"    frac improved  full={ko['frac_improved_full']}  is={ko['frac_improved_is']}  "
-              f"oos={ko['frac_improved_oos']}")
+        print(f"\n  walk-forward OOS (the real generalisation verdict):")
+        print(f"    frac improved  full={_fmt(ko['frac_improved_full'])}  "
+              f"is={_fmt(ko['frac_improved_is'])}  oos={_fmt(ko['frac_improved_oos'])}")
         print(f"    decay_flag={ko['decay_flag']}   kill_rule={ko['kill_rule']['verdict']}")
+        print(f"\n  log: data/signal_archive/wf_{res['run_id']}.json")
+
+        # --- ATTRIBUTION (non-tradeable): does the take-SUBSET reduce stop-outs when entered
+        # at the SAME bar/price as raw?  Isolates selection from the buy-later/higher timing. ---
+        sel = walk_forward(gold_selection_fn, panel, DEFAULT_CFG, baseline_fn=gold_baseline_fn,
+                           tag="goldsel", metric="stop_out_rate", log=False)
+        scs = sel["pooled"]["full"]
+        sel_so = float(np.mean([d["treat"]["full"]["stop_out_rate"]
+                                for d in sel["by_ticker"].values() if d.get("treat")]))
+        print(f"\n  ATTRIBUTION (NON-tradeable diagnostic — selection at raw entry bar):")
+        print(f"    stop-out rate: raw {raw_so:.1f}% -> selection-only {sel_so:.1f}% "
+              f"-> tradeable-filtered {flt_so:.1f}%")
+        print(f"    selection-only lowers stop-out on {100*scs.get('frac_improved'):.0f}% of names "
+              f"(vs {100*frac:.0f}% for the tradeable filter)")
+        print(f"    => the gap between selection-only and tradeable isolates the buy-later/higher cost.")
     return res
 
 
+def _fmt(x):
+    return "n/a" if x is None else f"{x:.2f}"
+
+
 def main():
-    ap = argparse.ArgumentParser(description="Signal-engine walk-forward harness.")
-    ap.add_argument("--gold", action="store_true", help="run the gold-standard reproduction")
+    ap = argparse.ArgumentParser(description="Signal-engine STOP-AWARE walk-forward harness.")
+    ap.add_argument("--gold", action="store_true", help="run the gold-standard stop-out test")
     a = ap.parse_args()
     if a.gold:
         run_gold()
