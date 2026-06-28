@@ -34,6 +34,7 @@ from engine import dispersion  # noqa: E402 — cross-sectional dispersion regim
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
 from engine.setups import CA_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
+from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's alpha/alignment gate)
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
 
@@ -432,10 +433,15 @@ def main(alpha: dict | None = None) -> dict | None:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("canada dispersion regime failed (%s)", e)
     recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
+    sig_verdict: dict[str, dict] = {}       # owner's confluence T1->T4 cascade verdict per name
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
             continue
+        # COMBINE: confluence cascade computed alongside the alpha/alignment gate — additive.
+        # It NEVER changes eligibility (alpha floor + alignment stay the inclusion gate); it only
+        # adds the per-card tier badge and re-ranks WITHIN the existing buy list (below).
+        sig_verdict[ticker] = signal_gate.gate(ticker, close)
         if alpha_pt.get(ticker):
             rec["alpha"] = alpha_pt[ticker]
             sc = _setup_score(rec)
@@ -609,8 +615,21 @@ def main(alpha: dict | None = None) -> dict | None:
         wide = compute_canada_standouts(
             rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100, n_lag=12,
                         align_map=align_map))
+        # COMBINE re-rank: keep the alpha/alignment inclusion, order WITHIN each alignment tier by
+        # the owner's weighted cascade blend (setup-score percentile lifted by the T1->T4 weight).
+        # Weightless names keep their rank. Eligibility/membership UNCHANGED.
+        import bisect as _bisect
+        _scores = sorted((r.get("setup") or 0.0) for r in wide["buy"])
+        _bn = len(_scores) or 1
+
+        def _combine_key(r):
+            w = (sig_verdict.get(r.get("ticker")) or {}).get("weight") or 0.0
+            pct = _bisect.bisect_right(_scores, r.get("setup") or 0.0) / _bn
+            return (0 if r.get("align_tier") == "aligned" else 1, -(pct + 0.5 * w))
+        wide["buy"] = sorted(wide["buy"], key=_combine_key)
         for r in wide["buy"] + wide.get("laggards", []):
             t = r.get("ticker")
+            r["signal"] = signal_gate.compact(sig_verdict.get(t))   # confluence T1->T4 tier badge
             if r.get("conviction") is None and profiles.get(t):
                 r["conviction"] = profiles[t]
             if entry_sig.get(t):

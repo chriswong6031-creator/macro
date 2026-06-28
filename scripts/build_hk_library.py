@@ -29,6 +29,7 @@ from engine import vol_squeeze  # noqa: E402  — single-stock volatility black 
 from engine import stock_view  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.setups import ALIGN_MIN_KEEP  # noqa: E402
+from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's gate)
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
 from scripts.build_hk import tv_symbol  # noqa: E402
@@ -604,6 +605,7 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     basket_tw = _basket_tailwind_map()
     fund_priors = _fund_priors_map()
     profiles: dict[str, dict] = {}
+    sig_verdict: dict[str, dict] = {}       # owner's confluence T1->T4 cascade per name (COMBINE)
     for e in enriched:
         t = e["ticker"]
         rec = e["_rec"]
@@ -646,6 +648,11 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         except Exception:  # noqa: BLE001 — additive, never fatal
             close_s = None
         if close_s is not None and len(close_s) >= 60:
+            # COMBINE: owner's confluence T1->T4 cascade — additive badge only; never gates inclusion.
+            try:
+                sig_verdict[t] = signal_gate.gate(t, close_s)
+            except Exception as ex:  # noqa: BLE001 — additive, never fatal
+                log.debug("hk signal-gate for %s failed (%s)", t, ex)
             # ⚖ vol-managed inverse-vol sizing — HOW MUCH to own (risk), orthogonal to the
             # conviction score (WHAT) and the entry gauge (WHEN). Pure-vol, scaled by the
             # dispersion regime. Always computable when there's enough history.
@@ -722,8 +729,21 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     near = sorted([e for e in elig if _atier(e) == "near"], key=_ascore, reverse=True)
     buys = (aligned if len(aligned) >= ALIGN_MIN_KEEP
             else aligned + near[: ALIGN_MIN_KEEP - len(aligned)])[:n_buy]
+    # COMBINE re-rank: keep the aligned-above-near inclusion, order WITHIN each tier by the owner's
+    # weighted cascade blend (conviction composite percentile lifted by the T1->T4 weight). Names
+    # with no verdict keep their conviction rank (weight 0 = no boost). Inclusion is UNCHANGED.
+    import bisect as _bisect
+    _czs = sorted(comp(e) for e in buys)
+    _bn = len(_czs) or 1
+
+    def _combine_key(e):
+        w = (sig_verdict.get(e["ticker"]) or {}).get("weight") or 0.0
+        pct = _bisect.bisect_right(_czs, comp(e)) / _bn
+        return (0 if _atier(e) == "aligned" else 1, -(pct + 0.5 * w))
+    buys = sorted(buys, key=_combine_key)
     for e in buys:
         e["align_tier"] = _atier(e)
+        e["signal"] = signal_gate.compact(sig_verdict.get(e["ticker"]))   # confluence T1->T4 badge
     buy_keys = {id(e) for e in buys}
     # strong-but-unaligned names (good edge, weekly still falling / unconfirmed) -> a WATCH
     # strip, not the buy list — the honest "wait for the weekly to turn" demotion.
