@@ -39,7 +39,6 @@ fi
 test -f "$APP_DIR/site/index.html" || { log "FATAL: $APP_DIR/site/index.html missing after clone"; exit 1; }
 
 log "[4/6] install + validate Caddyfile"
-mkdir -p /var/log/caddy
 install -m 0644 "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile
 caddy fmt --overwrite /etc/caddy/Caddyfile || true
 caddy validate --config /etc/caddy/Caddyfile
