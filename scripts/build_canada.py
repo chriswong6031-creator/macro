@@ -414,6 +414,12 @@ def main() -> int:
                 _div = bool(_px is not None and len(_px) > 21 and len(_b) > 21
                             and _b.iloc[-1] < _b.iloc[-22] and _px.iloc[-1] > _px.iloc[-22])
                 latest["conditions"]["breadth"] = {"above200_pctile": _pctile, "div": _div}
+            # external-driver Risk Radar (engine/risk_radar_intl.py: US rate shocks, dollar
+            # strength + breadth — the TSX is the least US-coupled of the three, so this is the
+            # lightest read). Populated BEFORE market_state so CA_PROFILE.radar_override surfaces
+            # it. None-safe; display-only.
+            from engine import risk_radar_intl as _rri
+            latest["risk_radar"] = _rri.snapshot(_rri.CA_PROFILE)
             vm["market_state"] = _ms.market_state_snapshot(
                 latest, _f, latest.get("alerts") or [], profile=CA_PROFILE)
         except Exception as e:  # noqa: BLE001 — additive panel, never fatal

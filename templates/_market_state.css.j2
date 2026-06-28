@@ -14,14 +14,14 @@
   /* base = mobile: one tight stack (radar → eyebrow → verdict/evidence → tape →
      divider → backdrop). At >=1100px it promotes to the side-by-side grid. */
   .cmd-hero .ms-front.ms { display: flex; flex-direction: column; gap: 14px; }
-  .cmd-hero .ms-front > .ms-radar, .cmd-hero .ms-front > .ms-head { margin: 0; }
+  .cmd-hero .ms-front > .rrx, .cmd-hero .ms-front > .ms-head { margin: 0; }
   .cmd-hero .ms-front > .ms-top, .cmd-hero .ms-front > .ms-tape { margin-top: 0; }
   .cmd-hero .ms-front > .ms-divider { margin: 4px 0 0; }
   @media (min-width: 1100px) {
     .cmd-hero .ms-front.ms { display: grid; gap: 0 30px; align-items: start;
       grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
       grid-template-areas: "radar radar" "head head" "state hero" "tape tape"; }
-    .cmd-hero .ms-front > .ms-radar { grid-area: radar; margin-bottom: 12px; }
+    .cmd-hero .ms-front > .rrx { grid-area: radar; margin-bottom: 12px; }
     .cmd-hero .ms-front > .ms-head { grid-area: head; }
     .cmd-hero .ms-front > .ms-top { grid-area: state; margin-top: 14px; }
     .cmd-hero .ms-front > .ms-tape { grid-area: tape; }
@@ -35,19 +35,9 @@
     .cmd-hero .ms-front > .hero-bar .hero-vitals { grid-column: 1 / -1; gap: 12px 18px; }
   }
 
-  /* Risk-Radar banner (only renders for markets that have one) */
-  .cmd-hero .ms-radar { display: flex; align-items: center; gap: 11px; flex-wrap: wrap;
-    padding: 9px 13px; border-radius: 10px; font-size: 12.5px; line-height: 1.35;
-    background: color-mix(in srgb, var(--rc) 8%, var(--panel2));
-    border: var(--rule) solid color-mix(in srgb, var(--rc) 28%, var(--hair)); border-left: 3px solid var(--rc); }
-  .cmd-hero .ms-radar.loud { background: color-mix(in srgb, var(--rc) 14%, var(--panel2)); }
-  .cmd-hero .ms-radar .msr-ic { font-size: 17px; line-height: 1; flex: none; }
-  .cmd-hero .ms-radar .msr-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 240px; }
-  .cmd-hero .ms-radar .msr-tit { font-weight: 600; color: var(--ink-2); }
-  .cmd-hero .ms-radar .msr-tit b { font-family: var(--num); }
-  .cmd-hero .ms-radar .msr-odds { font-size: 11px; color: var(--ink-3); }
-  .cmd-hero .ms-radar .msr-odds b { font-family: var(--num); color: var(--ink-2); }
-  .cmd-hero .ms-radar .msr-do { font-size: 11.5px; color: var(--ink-2); max-width: 34ch; }
+  /* Risk Radar — the shared .rrx card (engine/risk_radar_intl.py feeds it on these
+     boards). Same markup + CSS as the US Macro/Stocks pages; global theme tokens only. */
+{% include "_risk_radar_card.css.j2" %}
 
   /* header strip */
   .cmd-hero .ms-head { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; margin: 0 0 4px; }

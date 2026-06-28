@@ -1,0 +1,116 @@
+{# ============================================================================
+   SHARED Risk Radar card (.rrx) — the one redesigned alert used on BOTH the US
+   Macro / US-Stocks pages (engine/risk_radar.py) AND the China / HK / Canada
+   home-page Market-State boards (engine/risk_radar_intl.py). Import it:
+
+       {% import "_risk_radar_card.html.j2" as rrc %}
+       {{ rrc.risk_radar_card(rd, scares) }}
+
+   It is self-contained (defines its own t()/help() so imported macros resolve),
+   token-only with an inline --rc state accent so it renders identically in the
+   page-macro, page-stocks, and china/hk/canada scopes. The matching CSS lives in
+   _risk_radar_card.css.j2 (included by dashboard.html.j2 + _market_state.css.j2).
+   ============================================================================ #}
+{% macro help(en, zh='') -%}
+<span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{# plain-English name for a raw radar firing-leg code (US engine/risk_radar.py keys +
+   the international engine/risk_radar_intl.py keys) so the evidence reads like English,
+   not engine internals. #}
+{% macro rr_leg(leg) -%}
+{%- set m = {
+  'credit_oas_roc':   ('HY credit spreads widening','高收益利差走阔'),
+  'credit_hyg_tlt':   ('HY bonds lagging Treasuries','高收益债跑输国债'),
+  'rates_move':       ('Bond-market volatility (MOVE)','债市波动率（MOVE）'),
+  'rates_realrate':   ('Real yields jumping','实际利率跳升'),
+  'bubble_ext':       ('S&P stretched vs 200-day','标普超买（>200日线）'),
+  'bubble_leadership':('Narrow leadership (semis)','领涨过窄（半导体）'),
+  'growth_defensives':('Defensives outperforming','防御股跑赢'),
+  'growth_cyc_def':   ('Cyclicals fading vs defensives','周期股弱于防御'),
+  'vol_term':         ('VIX term-structure stress','VIX 期限结构紧张'),
+  'vol_putcall':      ('Put/call skew','认沽/认购偏斜'),
+  'vol_gex':          ('Dealer gamma (GEX)','做市商 Gamma'),
+  'us_rate_2y':       ('US 2-year yield jump','美债2年利率跳升'),
+  'us_rate_10y':      ('US 10-year yield jump','美债10年利率跳升'),
+  'us_real_rate':     ('US real yield jump','美债实际利率跳升'),
+  'us_cn_diff':       ('US–China yield gap widening','中美利差走阔'),
+  'usd_cnh':          ('Yuan depreciation (USD/CNH)','人民币贬值'),
+  'usd_strength':     ('US dollar strength','美元走强'),
+  'cn_breadth':       ('A-share breadth < 200-day','A股广度跌破200日'),
+  'ca_breadth':       ('TSX breadth < 200-day','多指广度跌破200日'),
+} -%}{%- set p = m.get(leg, (leg, leg)) -%}{{ t(p[0], p[1]) }}
+{%- endmacro %}
+{# The card itself. Built only from a radar (rd = market_state.radar) + its scares.
+   Replaces the old cramped "Pullback odds · 5d.. 10d.. 21d.." text run with an
+   escalating odds ramp drawn against the normal base rate, a state-coloured header,
+   compact threat meters + plain-English evidence, and the action line. #}
+{% macro risk_radar_card(rd, scares) -%}
+{%- set rc = 'var(--act)' if rd.state=='risk-off' else ('var(--orange)' if rd.state=='elevated' else ('var(--warn)' if rd.state=='caution' else ('var(--info)' if rd.state=='watch' else 'var(--ok)'))) -%}
+{%- set ic = '🛑' if rd.state=='risk-off' else ('🚨' if rd.state=='elevated' else ('⚠️' if rd.state=='caution' else ('👀' if rd.state=='watch' else '✅'))) -%}
+{%- set base = rd.dd_base if (rd.dd_base and rd.dd_base.h21 is not none) else {'h5':0.036,'h10':0.086,'h21':0.178} -%}
+{%- set hmax = (rd.dd21 / 0.82) if (rd.dd21 is not none and rd.dd21 > 0) else 0.25 -%}
+<div class="rrx rrx-{{ rd.state }}{{ ' rrx-loud' if rd.is_loud }}" style="--rc:{{ rc }}">
+  <div class="rrx-hd">
+    <span class="rrx-ic">{{ ic }}</span>
+    <div class="rrx-id">
+      <div class="rrx-ttl">{{ t('Risk Radar','风险雷达') }}
+        <span class="rrx-badge">{{ t(rd.state|upper, rd.state_zh) }}{% if rd.top_score is not none %} · {{ rd.top_score }}/100{% endif %}</span>
+        {{ help('A leading drawdown-risk gauge, built only from signals that passed a strict backtest. It watches the kinds of stress that actually lead this market\'s drawdowns and stays quiet until the broad market is actually breaking. It measures the ODDS of a pullback, not the direction — use it to size down, never to pick stocks. Every call is graded afterwards and the gauge is re-tuned from its own misses.', '领先的回撤风险指标，仅由通过严格回测的信号构成。它监测真正领先本市场回撤的压力类型，在大盘真正破位前保持沉默。它衡量回撤的“概率”而非方向——用于降低仓位，绝非选股。每次判断事后都会被评判，并据其失误自我再校准。') }}
+      </div>
+      {% if rd.label_en %}<div class="rrx-dom">{{ t(rd.label_en, rd.label_zh) }}</div>{% endif %}
+      {% if rd.amp and rd.amp > 0 %}<div class="rrx-amp">▲ {{ t('Amplified','放大') }} — <span class="l-en">{{ rd.amp_flags_en|join(' · ') }}</span><span class="l-zh">{{ rd.amp_flags_zh|join(' · ') }}</span></div>{% endif %}
+    </div>
+    {% if rd.gross is not none and rd.gross < 1 %}<div class="rrx-gross"><span class="gv">×{{ '%.2f'|format(rd.gross) }}</span><span class="gn">{{ t('gross','建议仓位') }}</span></div>{% endif %}
+  </div>
+
+  {% if rd.dd21 is not none %}
+  <div class="rrx-odds">
+    <div class="rrx-odds-l">
+      <div class="rrx-cap">{{ t('Pullback odds','回撤概率') }} <span class="rrx-cap-sub">{{ t('≥5% drop · escalating','≥5% · 递增') }}</span></div>
+      <div class="rrx-big">{{ (rd.dd21*100)|round|int }}<span class="pct">%</span><span class="rrx-hz">{{ t('within 21 days','21 日内') }}</span></div>
+      <div class="rrx-vsn">{% if rd.dd_lift is not none %}<b>{{ rd.dd_lift }}×</b> {% endif %}{{ t('vs normal','对比常态') }} {{ (base.h21*100)|round|int }}%</div>
+    </div>
+    <div class="rrx-ramp">
+      {% for h in [ ('5d','5日',rd.dd5,base.h5), ('10d','10日',rd.dd10,base.h10), ('21d','21日',rd.dd21,base.h21) ] %}
+      {%- set odd = h[2] if h[2] is not none else 0 -%}
+      {%- set bs = h[3] if h[3] is not none else 0 -%}
+      <div class="rrx-col{{ ' is-hd' if loop.last }}">
+        <span class="rrx-v">{{ (odd*100)|round|int }}%</span>
+        <div class="rrx-tk">
+          <div class="rrx-norm" style="height:{{ [(bs/hmax*100)|round|int, 2]|max }}%"></div>
+          <div class="rrx-fill" style="height:{{ [(odd/hmax*100)|round|int, 6]|max }}%"></div>
+        </div>
+        <span class="rrx-hl">{{ t(h[0], h[1]) }}</span>
+      </div>
+      {% endfor %}
+      <span class="rrx-leg"><span class="rrx-leg-n"></span>{{ t('normal','常态') }}</span>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if scares %}
+  <div class="rrx-threats">
+    {% for s in scares %}{% if s.score is not none %}
+    {%- set sb = 'var(--act)' if s.band=='risk-off' else ('var(--orange)' if s.band=='elevated' else ('var(--warn)' if s.band=='caution' else ('var(--info)' if s.band=='watch' else 'var(--muted)'))) -%}
+    {%- set dom = (s.label_en == rd.label_en) -%}
+    {%- set dim = (s.tier == 'B') -%}
+    <span class="rrx-th{{ ' dom' if dom }}{{ ' dim' if dim }}" style="--sb:{{ sb }}">
+      <span class="rrx-th-n">{{ t(s.label_en, s.label_zh) }}</span>
+      <span class="rrx-meter">{% for i in range(10) %}<i class="{{ 'on' if i < (s.score/10)|round(0,'floor')|int }}"></i>{% endfor %}</span>
+      <b class="rrx-th-s">{{ s.score|round|int }}</b>{% if dim %}<span class="rrx-tag">{{ t('display','仅展示') }}</span>{% endif %}
+    </span>
+    {% endif %}{% endfor %}
+  </div>
+  {% for s in scares %}{% if s.label_en == rd.label_en and s.firing_legs %}
+  <div class="rrx-ev"><span class="rrx-ev-k">{{ t('Leading','领先信号') }}</span>{% for l in s.firing_legs[:2] %}{% if not loop.first %} · {% endif %}{{ rr_leg(l.leg) }} <span class="rrx-ev-p">{{ (l.pctile*100)|round|int }}th{% if l.confirmed %} ✓{% endif %}</span>{% endfor %}</div>
+  {% endif %}{% endfor %}
+  {% endif %}
+
+  {% if rd.is_loud and rd.do_en %}
+  <div class="rrx-do"><span class="rrx-do-k">{{ t('Do','应对') }}</span>{{ t(rd.do_en, rd.do_zh) }}</div>
+  {% endif %}
+</div>
+{%- endmacro %}
