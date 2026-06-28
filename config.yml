@@ -1968,6 +1968,35 @@ validation:
   forward_return_window_d: 60
 
 # =============================================================================
+# Data-quality audit suite (scripts/audit_prices · audit_macro · audit_universe),
+# run at the END of scripts/collect.py. DETERMINISTIC rule-based checks only (no ML);
+# READ-ONLY over the data stores (every audit only writes data/quality/*_audit.json,
+# committed so the trend is visible run-over-run). The governance gate aborts the
+# collect (RuntimeError) if more than `abort_fail_pct` of ANY universe fails, and
+# merely warns+logs in the `warn_fail_pct`..`abort_fail_pct` band. Soft issues
+# (big single-day moves, macro z-outliers, staleness) are logged FLAGS, never fails.
+# =============================================================================
+quality:
+  # --- price stores (audit_prices) ---
+  price_max_gap_days: 4          # > this many BUSINESS days between consecutive bars = a hole (fail; tolerates holidays)
+  price_move_alert_pct: 20       # |single-day % move| beyond this = FLAG only (log, never fail)
+  price_recent_days: 120         # gap + big-move checks look only at the last N calendar days. The stores are
+                                 # append-only, so a NEW hole can only appear at the recent edge; this keeps
+                                 # immutable deep-history exchange closures (9/11, Hurricane Sandy) from
+                                 # false-failing the gate every run, and makes a flagged gap actionable.
+  # --- macro series (audit_macro: data/fred · data/china_macro · data/eia) ---
+  macro_revision_alert_pct: 5    # a SETTLED historical value changing by more than this vs the prior-run baseline = fail
+  macro_stale_days: 45           # last observation older than this (+ the series cadence) = stale FLAG
+  macro_outlier_z: 5             # |z| of the latest change beyond this = FLAG only (log, never fail)
+  # --- configured universe (audit_universe: config.yml sector/basket/intl lists) ---
+  universe_min_bars: 250         # a configured ticker with fewer rows is flagged "short"
+  # --- governance gate (collect.py) ---
+  abort_fail_pct: 5              # > this % of a universe failing aborts the collect run
+  warn_fail_pct: 1               # 1-5% only warns + logs
+  # --- alerting ---
+  email_alerts: false            # NEVER email — deterministic file + conspicuous log only (no email infra is wired)
+
+# =============================================================================
 # Commodity Vector (Section 5). Self-contained block, like `vector:`. Core four —
 # gold, silver, oil (WTI), copper. Price + COT already collected 1995/2000-> and
 # macro drivers come from the shared FRED/Yahoo store (see

@@ -70,6 +70,17 @@ jobs:
           path: data/intraday
           key: intraday-${{ github.run_id }}
           restore-keys: intraday-
+      - name: restore data-quality revision baselines
+        # The end-of-collect audit (scripts/audit_macro) needs the PRIOR run's macro values to
+        # detect backwards-revisions. The baselines are a daily-changing full copy of the macro
+        # series — pure machine state — so they are cached cross-run (like the breadth caches),
+        # not committed, to keep the repo from bloating. Absent on the first run => the audit just
+        # seeds them (no detection that day) and revision-checking is active from the next run.
+        uses: actions/cache@v4
+        with:
+          path: data/quality/baselines
+          key: quality-baselines-${{ github.run_id }}
+          restore-keys: quality-baselines-
       - name: run collectors (graceful degradation — never fails the build on one source)
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
@@ -150,6 +161,45 @@ jobs:
           path: data/intraday
           key: intraday-engine-${{ github.run_id }}
           restore-keys: intraday-
+      - name: MTF buy-filter signals + §7 contract gate (build_signal_quality → validate_signals)
+        # Compute the per-ticker chart markers (site/signals/<T>.json) + the brain leaf
+        # (data/signal_archive/mtf_signals_latest.json), THEN validate both against
+        # research/signal_engine/SCHEMA.json — the §7 signal→chart contract, the single source of
+        # truth shared verbatim with the charting app. Runs BEFORE the regime engine so a clean,
+        # freshly written leaf is what engine.run loads into latest["mtf_signals"].
+        #
+        # ABORT-THE-WRITE, NOT-THE-DEPLOY: a contract drift/malformed write must NOT ship, but —
+        # like every other builder here — must NOT 404 the dashboard either. So on a validation
+        # failure we QUARANTINE the bad write (restore the last-good committed leaf; drop the
+        # untracked per-ticker files so the chart safe-degrades to no-markers) and surface a loud
+        # red ::error:: annotation + run-summary, then exit 0 so the deploy continues. The bad
+        # write never reaches main (leaf reverted, per-ticker files gone) and the violation is
+        # recorded in the committed data/quality/signals_audit.json. The HARD red gate for
+        # contract-breaking PRs lives in ci.yml (signal-contract job) where blocking is safe.
+        # Compute is cheap (reads the committed data/stocks/*.parquet deep-history panel).
+        run: |
+          set +e
+          echo "::group::build + validate MTF signals"
+          python -m scripts.build_signal_quality > /tmp/sigq.log 2>&1; bq=$?
+          cat /tmp/sigq.log
+          if [ "$bq" -ne 0 ]; then
+            echo "::error title=build_signal_quality failed (rc=$bq)::signal compute failed — leaf left at last-good"
+          fi
+          python -m scripts.validate_signals > /tmp/sigv.log 2>&1; vrc=$?
+          cat /tmp/sigv.log
+          echo "::endgroup::"
+          if [ "$vrc" -ne 0 ]; then
+            # Discard the drifted/malformed write so neither the commit-to-main nor the Pages
+            # artifact can ship it. Leaf is tracked -> restore last-good; per-ticker files are
+            # untracked -> remove (chart renders no markers until the next clean run).
+            git checkout -- data/signal_archive/mtf_signals_latest.json 2>/dev/null || true
+            rm -f site/signals/*.json 2>/dev/null || true
+            echo "::error title=signal §7 contract gate FAILED::malformed/drifted signal write discarded (last-good leaf restored); see data/quality/signals_audit.json"
+            { echo "### ❌ signal §7 contract gate failed — bad write discarded";
+              echo '<details><summary>validator output</summary>'; echo; echo '```';
+              tail -n 40 /tmp/sigv.log; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit 0
       - name: run regime engine + build dashboard + daily brief (resilient)
         # Self-diagnosing + deploy-resilient: each builder runs isolated; a failure
         # is surfaced as a ::error:: annotation (readable on the run page + via the
@@ -653,9 +703,10 @@ jobs:
           # deploy ships no price data and every stock chart renders empty.
           git add -f site/ohlc 2>/dev/null || true
           # Non-US bespoke chart OHLC (built by build_{china,canada,intl}_library): same
-          # gitignore + force-add situation as their stockdata libraries (HK needs none —
-          # its per-stock JSON carries the chart series inline).
-          git add -f site/chinaohlc site/canadaohlc site/intlohlc 2>/dev/null || true
+          # gitignore + force-add situation as their stockdata libraries. HK now also ships
+          # reconstructed candles (build_hk_library -> build_chart_data.build_hk -> site/hkohlc),
+          # imputed from its close-only per-stock JSON so the chart draws candlesticks.
+          git add -f site/chinaohlc site/canadaohlc site/intlohlc site/hkohlc 2>/dev/null || true
           # US 4H intraday chart data (built by build_site -> build_chart_data.emit_intraday
           # from the cached data/intraday) — gitignored, force-add so the deploy ships it.
           git add -f site/intraday 2>/dev/null || true

@@ -900,6 +900,17 @@ def main(betas: dict | None = None) -> dict | None:
     cal = config.data_dir() / "hk_regime" / "ladder_calibration.json"
     if cal.exists():
         (outdir / "calibration.json").write_text(cal.read_text())
+
+    # reconstructed candlesticks for the bespoke chart: HK is close-only, so build a
+    # conservative OHLC band (engine.ohlc_reconstruct) from each per-stock `chart`
+    # series -> site/hkohlc/<T>.json. hk_lookup.html prefers these candles, falling
+    # back to its inline close line if absent. Additive; never fatal to the build.
+    try:
+        from scripts.build_chart_data import build_hk
+        log.info("hk chart data: %d reconstructed-candle files", build_hk(site))
+    except Exception as e:  # noqa: BLE001 — chart garnish must never break the library
+        log.warning("hk reconstructed candles skipped (%s)", e)
+
     log.info("hk library: %d analyzed, %d skipped (thin history)", built, failed)
     return betas
 

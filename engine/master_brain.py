@@ -669,6 +669,7 @@ def _desk_track_records(root) -> dict:
     return out
 
 
+
 # --------------------------------------------------------------------------- #
 # entry-quality breadth — the MTF confluence buy-filter leaf, aggregated into a
 # RISK / ENTRY-QUALITY breadth CALIBRATION check for the brain. This is the seam
