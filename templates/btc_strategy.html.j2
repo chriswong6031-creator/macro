@@ -97,9 +97,9 @@
 
     <div class="phase {{ 'bull' if phase.state=='BULL' else 'bear' }}">
       <span class="badge">{{ phase.state }}</span>
-      <span class="meta">{{ t('Day','第') }} <b>{{ phase.days_in }}</b> {{ t('of cycle leg','天') }} · <b>{{ phase.pct }}%</b> {{ t('through','已完成') }}</span>
+      <span class="meta"><b>{{ phase.pct }}%</b> {{ t('through the current phase','当前阶段已完成') }}</span>
       <div class="bar"><i style="width:{{ phase.pct }}%"></i></div>
-      <span class="meta">{{ t('Next','下一个') }} <b>{{ phase.next_kind }}</b> ≈ <b>{{ phase.months_to }}</b> {{ t('mo','月') }} ({{ phase.next_date }})</span>
+      <span class="meta">{{ t('Next projected','下一预测') }} <b>{{ phase.next_kind }}</b> ≈ <b>{{ phase.months_to }}</b> {{ t('mo','月') }} ({{ phase.next_date }})</span>
     </div>
   </header>
 
@@ -167,7 +167,7 @@
         <div class="sub" style="font-size:12px;color:var(--muted);margin-top:8px">{{ t('Includes ~10%/yr borrow cost on the levered portion + margin liquidation when position equity hits zero.','含杠杆部分约10%/年借贷成本，及保证金归零时强平。') }}</div>
       </div>
       <div class="card">
-        <h3>{{ t('Cycle pivots (chained 1064 / 364)','周期拐点（链式 1064 / 364）') }}</h3>
+        <h3>{{ t('Cycle pivots · projected','周期拐点 · 预测') }}</h3>
         <table class="dt">
           <thead><tr><th>{{ t('Date','日期') }}</th><th>{{ t('Pivot','拐点') }}</th><th>{{ t('BTC','BTC') }}</th></tr></thead>
           <tbody>
@@ -198,7 +198,7 @@
   {% endfor %}
 
   <div class="sub" style="color:var(--muted);font-size:12px;margin-top:26px;line-height:1.6">
-    {{ t('Backtests use real daily BTC closes from 2014-09. Pivots for the 4-Year Cycle are projected walk-forward by fixed day-counts from the 2015 bottom — not placed with hindsight. Past performance is not indicative of future results. Not financial advice.','回测使用 2014-09 起的真实 BTC 日收盘价。四年周期拐点由 2015 年底部按固定天数前向推算，非事后标注。过往表现不代表未来。非投资建议。') }}
+    {{ t('Backtests use real daily BTC closes from 2014-09. Cycle pivots are projected walk-forward by our proprietary cycle timer — not placed with hindsight. Both strategies stand aside through US midterm-election years until the vote. Past performance is not indicative of future results. Not financial advice.','回测使用 2014-09 起的真实 BTC 日收盘价。周期拐点由我们专有的周期计时器前向推算，非事后标注。两种策略在美国中期选举年均回避至投票前后。过往表现不代表未来。非投资建议。') }}
   </div>
 </div>
 
