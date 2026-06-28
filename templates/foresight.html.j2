@@ -28,6 +28,28 @@
   .fx-sub b { color:var(--text); font-weight:700; }
   .fx-asof { color:var(--muted); font-size:11.5px; margin-top:8px; }
 
+  /* convergence "neural web" board */
+  .fx-web { border:1px solid var(--line); border-left:5px solid var(--down); border-radius:14px;
+            background:var(--panel); padding:15px 17px; margin:16px 0 6px; }
+  .fx-web-h { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .fx-web-t { font-size:16px; font-weight:800; }
+  .fx-web-sub { font-size:11px; color:var(--muted); }
+  .fx-web-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+  .fx-hot { border:1px solid var(--line); border-left:4px solid var(--c,var(--down)); border-radius:11px;
+            background:var(--panel2); padding:11px 13px; }
+  .fx-hot-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .fx-hot-nm { font-size:14px; font-weight:800; }
+  .fx-hot-heat { font-size:19px; font-weight:800; color:var(--down); font-variant-numeric:tabular-nums; }
+  .fx-hot-sig { display:flex; flex-wrap:wrap; gap:4px; margin:7px 0; }
+  .fx-sig { font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:5px; color:var(--down);
+            background:color-mix(in srgb,var(--down) 12%,transparent); text-transform:capitalize; }
+  .fx-hot-meta { font-size:10.5px; color:var(--muted); }
+  .fx-web-none { font-size:12.5px; color:var(--muted); line-height:1.55; }
+  .fx-web-partial { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+  .fx-pc { font-size:11px; padding:4px 10px; border-radius:8px; background:var(--panel2); border:1px solid var(--line);
+           color:var(--muted); cursor:help; } .fx-pc b { color:var(--text); }
+  .fx-web-foot { font-size:10px; color:var(--muted); margin-top:11px; line-height:1.5; font-style:italic; }
+
   /* macro banners (demand pool + entry/dislocation) */
   .fx-banners { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0 8px; }
   @media(max-width:680px){ .fx-banners{ grid-template-columns:1fr; } }
@@ -181,6 +203,39 @@
       '在主题处于<b>诱发临界点</b>时提前布局，在盈利预期普遍上修<b>之前</b>转化为决策。物理供给紧张（T1）<b>领先</b>预期修正；客户资本开支（T2）与预期上修广度（T4）<b>确认</b>；买点交由错位回调触发。范例：2024年6月 13D 的 HBM/DRAM 判断——售罄、集中、被低估，正确且早约9个月。') }}</p>
     <div class="fx-asof">{{ t('Revisions as of', '预期数据截至') }} {{ asof or '—' }} · {{ t('generated', '生成于') }} {{ generated_utc }}</div>
   </header>
+
+  {# ---- CONVERGENCE: the "what's heating up early" board (the neural web) ---- #}
+  {% if convergence and convergence.ranked %}
+  <div class="fx-web">
+    <div class="fx-web-h">
+      <span class="fx-web-t">🔥 {{ t('What\'s heating up early', '正在早期升温的') }}</span>
+      <span class="fx-web-sub">{{ t('independent leading surfaces converging', '独立领先面在何处共振') }} · {{ t('max', '最多') }} {{ convergence.max_signals }}</span>
+    </div>
+    {% if convergence.heating_up %}
+    <div class="fx-web-grid">
+      {% for it in convergence.heating_up %}
+      <div class="fx-hot stg-{{ it.stage }}">
+        <div class="fx-hot-top"><span class="fx-hot-nm">{{ it.name }}</span><span class="fx-hot-heat">{{ (it.heat*100)|round|int }}</span></div>
+        <div class="fx-hot-sig">{% for s in it.signals %}<span class="fx-sig">{{ s.replace('_',' ') }}</span>{% endfor %}</div>
+        <div class="fx-hot-meta">{{ it.n_signals }}/{{ convergence.max_signals }} {{ t('surfaces', '面') }} · {{ t('earliness', '早期度') }} {{ (it.earliness*100)|round|int }}%{% if it.physical_confirmed %} · ✅ {{ t('physical', '物理') }}{% endif %}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="fx-web-none">{{ t(
+      'Nothing is converging hot right now — no theme pairs multiple independent leading surfaces with an un-priced (early) revision read and a physical correlate. That is an honest read, not a gap: when the leading signals genuinely stack up early, they surface here first. Top partial convergences below.',
+      '目前没有强共振——没有任何主题同时具备多个独立领先面、尚未被定价（早期）的预期读数与物理佐证。这是诚实读数而非缺漏：当领先信号真正在早期叠加时，会首先在此出现。下方为当前部分共振。') }}</div>
+    <div class="fx-web-partial">
+      {% for it in convergence.ranked[:6] %}{% if it.n_signals >= 1 %}
+      <span class="fx-pc" title="{{ it.signals|join(', ') }}"><b>{{ it.name }}</b> · {{ it.n_signals }} {{ t('surface', '面') }}{{ 's' if it.n_signals > 1 else '' }} · {{ t('heat', '热度') }} {{ (it.heat*100)|round|int }}</span>
+      {% endif %}{% endfor %}
+    </div>
+    {% endif %}
+    <div class="fx-web-foot">{{ t(
+      'HEAT = independent leading surfaces (physical bottleneck · demand · guidance · insider/award · subsector scarcity · discovery echo) converging on one theme, weighted by earliness (inverse to how priced the revisions already are) and gated by a physical correlate. Multi-surface agreement raises precision; earliness keeps it ahead of the crowd. Not a return forecast — forward-graded like every leg.',
+      '热度＝独立领先面（物理瓶颈·需求·指引·内部人/中标·子行业短缺·发现回声）在单一主题上的共振，按早期度（与预期被定价程度相反）加权，并以物理佐证为门槛。多面一致提升精度；早期度使其领先人群。非收益预测——与每条腿一样前瞻评分。') }}</div>
+  </div>
+  {% endif %}
 
   {# ---- macro banners: the demand pool + the entry gate ---- #}
   <div class="fx-banners">
