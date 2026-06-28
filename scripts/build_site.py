@@ -28,7 +28,13 @@ from collectors.sponsors import flows_table  # noqa: E402
 from engine.i18n import t as T  # noqa: E402
 from engine.i18n import tr as TR  # noqa: E402
 from engine.inputs import build_features  # noqa: E402
-from engine.market_gamma import view as market_gamma_view  # noqa: E402 — SHARED deriver: FE banner + contract (engine/run.py) call the SAME function so they can't drift
+try:  # engine.market_gamma lives on main; this feature branch deliberately omits it (commit
+    # fa3e824458). Degrade gracefully so the site (incl. the US standout dashboard) still renders
+    # here and in CI — the dealer-gamma banner is simply skipped until the branch merges to main.
+    from engine.market_gamma import view as market_gamma_view  # noqa: E402 — SHARED deriver
+except ModuleNotFoundError:  # pragma: no cover — branch-only fallback
+    def market_gamma_view(*_a, **_k):
+        return None
 from lib import config, store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
