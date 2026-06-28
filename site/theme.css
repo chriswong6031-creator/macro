@@ -435,6 +435,11 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
   transform: translateY(-1px); box-shadow: 0 5px 14px -5px color-mix(in srgb, var(--link) 42%, transparent); }
 .nav-ctrls .ai-brief-link:active { transform: translateY(0); box-shadow: none; }
 .nav-ctrls .ai-brief-link.active { background: var(--link); border-color: var(--link); color: #fff; }
+/* Terminal entry — the live Mastermind Terminal (app.mastermind-x.com), pinned
+   beside the Mastermind button. Same pill, link-accented border/text so it reads
+   as the one outbound door to the live app. */
+.nav-ctrls .ai-brief-link.terminal-link { border-color: color-mix(in srgb, var(--link) 50%, var(--line)); color: var(--link); }
+.nav-ctrls .ai-brief-link.terminal-link:hover { background: var(--link); border-color: var(--link); color: #fff; }
 
 /* AI Daily Brief entry card — the single in-page doorway to the cross-asset LLM
    synthesis page (aibrief.html). Replaces the old inline AI Master Brief panel on the
@@ -764,3 +769,15 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
    Canada / Intl) regardless of which generator emitted it (engine.stock_score or
    scripts.build_intl_library._cone_note). The sibling 'rank' note is unaffected. */
 .nb-note-anticipation { display: none !important; }
+
+/* ---- confluence buy-gate tier badge (owner's T1->T4 cascade, _sig_badge.html.j2) ---- */
+.sig-gate { display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:600;
+  line-height:1; padding:2px 7px; border-radius:999px; white-space:nowrap;
+  background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
+  color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text));
+  border: 1px solid color-mix(in srgb, var(--c, var(--muted)) 34%, transparent); }
+.sig-gate.sig-take { --c: var(--ok); }
+.sig-gate.sig-pending { --c: var(--warn); }
+.sig-gate.sig-early { --c: var(--muted); }
+.sig-gate .sig-w { font-size:9.5px; font-weight:700; letter-spacing:.2px; opacity:.7;
+  padding-left:3px; border-left:1px solid color-mix(in srgb, var(--c, var(--muted)) 30%, transparent); }

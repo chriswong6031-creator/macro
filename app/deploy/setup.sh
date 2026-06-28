@@ -61,6 +61,9 @@ install -m 0755 "$APP_DIR/app/deploy/update.sh" /usr/local/bin/macro-update
 { crontab -l 2>/dev/null | grep -v 'macro-update' || true ; \
   echo "*/3 * * * * /usr/local/bin/macro-update >> /var/log/macro-update.log 2>&1" ; } | crontab -
 
+# Rotate the cron + Caddy logs so they can never fill the droplet disk.
+install -m 0644 "$APP_DIR/app/deploy/logrotate-macro-vps" /etc/logrotate.d/macro-vps 2>/dev/null || true
+
 log "DONE — Caddy serving https://$DOMAIN from $APP_DIR/site"
 log "HEAD: $(git -C "$APP_DIR" rev-parse --short HEAD)"
 systemctl --no-pager status caddy | head -4 || true
