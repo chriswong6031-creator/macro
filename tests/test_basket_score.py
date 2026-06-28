@@ -91,6 +91,28 @@ def test_act_now_stocks_gated_by_theme_health():
         assert r["status"] == "theme_out_of_favour" and r["buys"] == [] and r["note_en"]
 
 
+def test_act_now_constructive_label_below_200d_not_vetoed():
+    # REGRESSION (cn_brokers): an EMERGING / DOMINANT theme freshly turning up off a base is
+    # still below its slow 200d SMA (in_bull False). The engine's own constructive label must
+    # NOT be overridden into a self-contradicting "out of favour (emerging)" — it proceeds to
+    # per-member gating and surfaces members with an open entry.
+    members = [
+        {"symbol": "AAA", "conviction": {"score": 83, "verdict": "Neutral", "cycle_blocked": False,
+                                         "entry_pct": 0.5, "entry": {"status": "buy_now", "act_level": 3}}},
+    ]
+    for lbl in ("emerging", "dominant"):
+        r = bs.act_now_stocks(members, {"label": lbl, "reco": "hold",
+                                        "textures": {"bull_age": {"in_bull": False}}})
+        assert r["status"] == "ok", lbl
+        assert [x["symbol"] for x in r["buys"]] == ["AAA"], lbl
+    # a NEUTRAL theme below its 200d still reads as a downtrend, and the reason never echoes a
+    # constructive lifecycle label (no more "out of favour (emerging)").
+    nr = bs.act_now_stocks(members, {"label": "neutral", "reco": "hold",
+                                     "textures": {"bull_age": {"in_bull": False}}})
+    assert nr["status"] == "theme_out_of_favour"
+    assert "downtrend" in nr["note_en"] and "emerging" not in nr["note_en"]
+
+
 def test_act_now_no_clean_entries():
     # healthy theme but no member is a buy → honest 'no clean entry', not a forced pick
     members = [{"symbol": "X", "conviction": {"score": 40, "verdict": "Neutral — no edge", "cycle_blocked": False, "entry_pct": 0.5}}]
