@@ -246,6 +246,26 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     }
 
 
+def _overlay_deep_ohlc(out: list[tuple], group: str, min_rows: int = 300) -> int:
+    """Upgrade names to the deep per-name OHLC store (data/<group>/<ticker>.parquet —
+    real high/low + decades of history from collectors/hk_stock_prices.py) wherever the
+    nightly collector has backfilled them, replacing the ~3y close-only breadth-cache
+    series (which carry high=None). Mirrors how build_stock_library sources US names
+    from data/stocks. Names not yet in the store keep their cache series, so this is a
+    pure, NON-REGRESSING upgrade that fills in as the store grows (the seed ships ~12
+    names; nightly backfills the rest). See research/signal_engine/MULTICOUNTRY_DATA.md."""
+    n = 0
+    for i, (t, _close, _high, name, sector) in enumerate(out):
+        df = store.read(group, t)
+        if df is None or "close" not in df.columns or len(df["close"].dropna()) < min_rows:
+            continue
+        out[i] = (t, df["close"], df.get("high"), name, sector)
+        n += 1
+    if n:
+        log.info("hk library: upgraded %d names to the deep OHLC store (%s)", n, group)
+    return n
+
+
 def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     """(ticker, close, high|None, name, sector) for everything analyzable."""
     out: list[tuple] = []
@@ -282,6 +302,7 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
             continue
         out.append((t, df["close"], None, nm, sec))
         seen.add(t)
+    _overlay_deep_ohlc(out, "hk_stocks")   # prefer real-OHLC deep store where backfilled
     return out
 
 
