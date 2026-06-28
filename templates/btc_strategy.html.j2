@@ -1,0 +1,217 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTC Strategy · Bitcoin Vector</title>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px 70px}
+  .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:10px 0;margin-bottom:8px;background:var(--bg);border-bottom:1px solid var(--line)}
+  .nav-ctrls{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .ai-brief-link{font-size:13px;color:var(--muted);text-decoration:none;white-space:nowrap}
+  .ai-brief-link:hover{color:var(--text)}
+  header.hd{padding:18px 0 8px}
+  .h1{font-size:30px;font-weight:800;margin:0;letter-spacing:-.01em}
+  .asof{color:var(--muted);font-size:13px;margin-top:2px}
+  .px{font-variant-numeric:tabular-nums;font-weight:700}
+  /* phase banner */
+  .phase{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:14px 0 6px;padding:12px 16px;
+    border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+  .phase.bull{border-color:color-mix(in srgb,var(--up) 45%,var(--line));background:color-mix(in srgb,var(--up) 8%,var(--panel))}
+  .phase.bear{border-color:color-mix(in srgb,var(--down) 45%,var(--line));background:color-mix(in srgb,var(--down) 8%,var(--panel))}
+  .phase .badge{font-weight:800;font-size:14px;padding:4px 12px;border-radius:8px}
+  .phase.bull .badge{background:var(--up);color:#04210f}
+  .phase.bear .badge{background:var(--down);color:#2a0606}
+  .phase .meta{font-size:13.5px;color:var(--text)}
+  .phase .meta b{font-variant-numeric:tabular-nums}
+  .bar{flex:1;min-width:140px;height:8px;border-radius:6px;background:var(--panel2);overflow:hidden}
+  .bar>i{display:block;height:100%}
+  .phase.bull .bar>i{background:var(--up)} .phase.bear .bar>i{background:var(--down)}
+  /* tabs */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 14px}
+  .tabbtn{padding:9px 18px;font:inherit;font-size:14px;font-weight:700;border:1px solid var(--line);
+    background:var(--panel);color:var(--muted);border-radius:10px;cursor:pointer;transition:.15s}
+  .tabbtn .tg{font-size:11px;font-weight:600;color:var(--muted);margin-left:8px}
+  .tabbtn.on{background:var(--panel2);color:var(--text);border-color:var(--muted)}
+  .tabbtn.on .tg{color:var(--text)}
+  /* cards + grid */
+  .grid{display:grid;gap:16px}.cols-4{grid-template-columns:repeat(4,1fr)}.cols-2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:860px){.cols-4{grid-template-columns:repeat(2,1fr)}.cols-2{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card h3{margin:0 0 10px;font-size:15px;font-weight:700}
+  .thesis{color:var(--text);font-size:14.5px;line-height:1.6;margin:0 0 16px;padding:14px 16px;
+    border-left:3px solid var(--accent,#f2a900);background:var(--panel);border-radius:0 10px 10px 0}
+  .score .k{font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:var(--muted)}
+  .score .v{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:4px}
+  .score .sub{font-size:12px;color:var(--muted);margin-top:3px}
+  .win{color:var(--up)} .lose{color:var(--down)}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:8px}
+  .legend i{display:inline-block;width:12px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+  table.dt{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+  table.dt th{text-align:left;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;
+    letter-spacing:.04em;padding:6px 8px;border-bottom:1px solid var(--line)}
+  table.dt td{padding:7px 8px;border-bottom:1px solid var(--line)}
+  table.dt tr:last-child td{border-bottom:none}
+  .blown td{color:var(--down)}
+  .pillk{font-weight:700;padding:2px 8px;border-radius:6px;font-size:12px}
+  .pillk.b{background:color-mix(in srgb,var(--up) 16%,var(--panel));color:var(--up)}
+  .pillk.s{background:color-mix(in srgb,var(--down) 16%,var(--panel));color:var(--down)}
+  ul.rules,ul.caveats{margin:6px 0 0;padding-left:18px}
+  ul.rules li{margin:5px 0;font-size:14px}
+  ul.caveats li{margin:6px 0;font-size:13px;color:var(--muted)}
+  .caveat{border-color:color-mix(in srgb,var(--down) 30%,var(--line))}
+  .caveat h3{color:var(--down)}
+  .future td{opacity:.6;font-style:italic}
+  .stack{display:flex;flex-direction:column;gap:16px;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    {% include "_navlinks.html.j2" %}
+    <div class="nav-ctrls">
+      <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
+      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+
+  <header class="hd">
+    <h1 class="h1">₿ {{ t('BTC Strategy', 'BTC策略') }}</h1>
+    <div class="asof">{{ t('Backtested cycle strategies · select a strategy below', '回测周期策略 · 在下方选择策略') }}
+      · {{ as_of }} · BTC <span class="px">${{ "{:,.0f}".format(btc_price) }}</span>
+      <span class="{{ 'win' if btc_chg>=0 else 'lose' }}">{{ "%+.1f"|format(btc_chg) }}%</span></div>
+
+    <div class="phase {{ 'bull' if phase.state=='BULL' else 'bear' }}">
+      <span class="badge">{{ phase.state }}</span>
+      <span class="meta">{{ t('Day','第') }} <b>{{ phase.days_in }}</b> {{ t('of cycle leg','天') }} · <b>{{ phase.pct }}%</b> {{ t('through','已完成') }}</span>
+      <div class="bar"><i style="width:{{ phase.pct }}%"></i></div>
+      <span class="meta">{{ t('Next','下一个') }} <b>{{ phase.next_kind }}</b> ≈ <b>{{ phase.months_to }}</b> {{ t('mo','月') }} ({{ phase.next_date }})</span>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist">
+    {% for s in strategies %}
+    <button class="tabbtn {{ 'on' if loop.first }}" data-tab="{{ s.id }}" role="tab">{{ s.name }}<span class="tg">{{ s.tag }}</span></button>
+    {% endfor %}
+  </div>
+
+  {% for s in strategies %}
+  <section data-tab-panel="{{ s.id }}" style="display:{{ 'block' if loop.first else 'none' }}">
+    <div class="thesis" style="--accent:{{ '#f2a900' if s.id=='cycle' else '#5aa7ff' }}">{{ s.thesis }}</div>
+
+    <div class="grid cols-4">
+      <div class="card score">
+        <div class="k">{{ t('Total return','总回报') }}</div>
+        <div class="v {{ 'win' if s.metrics.total>=hodl.total else 'lose' }}">{{ "{:,.0f}".format(s.metrics.total) }}×</div>
+        <div class="sub">{{ t('buy &amp; hold','买入持有') }} {{ "{:,.0f}".format(hodl.total) }}×</div>
+      </div>
+      <div class="card score">
+        <div class="k">CAGR</div>
+        <div class="v {{ 'win' if s.metrics.cagr>=hodl.cagr else 'lose' }}">{{ "%.0f"|format(s.metrics.cagr) }}%</div>
+        <div class="sub">{{ t('buy &amp; hold','买入持有') }} {{ "%.0f"|format(hodl.cagr) }}%</div>
+      </div>
+      <div class="card score">
+        <div class="k">{{ t('Sharpe','夏普') }}</div>
+        <div class="v {{ 'win' if s.metrics.sharpe>=hodl.sharpe else 'lose' }}">{{ "%.2f"|format(s.metrics.sharpe) }}</div>
+        <div class="sub">{{ t('buy &amp; hold','买入持有') }} {{ "%.2f"|format(hodl.sharpe) }}</div>
+      </div>
+      <div class="card score">
+        <div class="k">{{ t('Max drawdown','最大回撤') }}</div>
+        <div class="v {{ 'win' if s.metrics.maxdd>=hodl.maxdd else 'lose' }}">{{ "%.0f"|format(s.metrics.maxdd) }}%</div>
+        <div class="sub">{{ t('buy &amp; hold','买入持有') }} {{ "%.0f"|format(hodl.maxdd) }}% · {{ t('in mkt','在场') }} {{ "%.0f"|format(s.metrics.timein) }}%</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>{{ t('Equity curve — $1 grown, log scale','净值曲线 — $1 增长，对数刻度') }}</h3>
+      {{ s.svg|safe }}
+      <div class="legend">
+        <span><i style="background:{{ '#f2a900' if s.id=='cycle' else '#5aa7ff' }}"></i>{{ s.name }}</span>
+        <span><i style="background:var(--muted)"></i>{{ t('Buy &amp; hold','买入持有') }}</span>
+        <span>{{ t('Calmar','卡玛') }} {{ "%.2f"|format(s.metrics.calmar) }}</span>
+      </div>
+    </div>
+
+    {% if s.id=='cycle' %}
+    <div class="grid cols-2" style="margin-top:16px">
+      <div class="card">
+        <h3>{{ t('Leverage — honest outcomes','杠杆 — 真实结果') }}</h3>
+        <table class="dt">
+          <thead><tr><th>{{ t('Leverage','杠杆') }}</th><th>{{ t('Total','总计') }}</th><th>CAGR</th><th>{{ t('Max DD','最大回撤') }}</th><th></th></tr></thead>
+          <tbody>
+          {% for r in s.leverage %}
+          <tr class="{{ 'blown' if r.blown }}">
+            <td><b>{{ r.lev }}×</b></td>
+            <td>{{ "$0" if r.blown else "{:,.0f}×".format(r.total) }}</td>
+            <td>{{ "%.0f"|format(r.cagr) }}%</td>
+            <td>{{ "%.0f"|format(r.maxdd) }}%</td>
+            <td>{{ r.note }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        <div class="sub" style="font-size:12px;color:var(--muted);margin-top:8px">{{ t('Includes ~10%/yr borrow cost on the levered portion + margin liquidation when position equity hits zero.','含杠杆部分约10%/年借贷成本，及保证金归零时强平。') }}</div>
+      </div>
+      <div class="card">
+        <h3>{{ t('Cycle pivots (chained 1064 / 364)','周期拐点（链式 1064 / 364）') }}</h3>
+        <table class="dt">
+          <thead><tr><th>{{ t('Date','日期') }}</th><th>{{ t('Pivot','拐点') }}</th><th>{{ t('BTC','BTC') }}</th></tr></thead>
+          <tbody>
+          {% for p in s.pivots %}
+          <tr class="{{ 'future' if p.future }}">
+            <td>{{ p.date }}</td>
+            <td><span class="pillk {{ 'b' if p.is_bottom else 's' }}">{{ p.kind }}</span></td>
+            <td>{{ ('$%s'|format("{:,.0f}".format(p.price))) if p.price else t('projected','预测') }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="grid cols-2 stack">
+      <div class="card">
+        <h3>{{ t('How it works','运作方式') }}</h3>
+        <ul class="rules">{% for r in s.rules %}<li>{{ r }}</li>{% endfor %}</ul>
+      </div>
+      <div class="card caveat">
+        <h3>⚠ {{ t('Honest caveats','诚实警示') }}</h3>
+        <ul class="caveats">{% for c in s.caveats %}<li>{{ c }}</li>{% endfor %}</ul>
+      </div>
+    </div>
+  </section>
+  {% endfor %}
+
+  <div class="sub" style="color:var(--muted);font-size:12px;margin-top:26px;line-height:1.6">
+    {{ t('Backtests use real daily BTC closes from 2014-09. Pivots for the 4-Year Cycle are projected walk-forward by fixed day-counts from the 2015 bottom — not placed with hindsight. Past performance is not indicative of future results. Not financial advice.','回测使用 2014-09 起的真实 BTC 日收盘价。四年周期拐点由 2015 年底部按固定天数前向推算，非事后标注。过往表现不代表未来。非投资建议。') }}
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.tabbtn').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.tabbtn').forEach(function(x){x.classList.remove('on');});
+      this.classList.add('on');
+      var tab=this.getAttribute('data-tab');
+      document.querySelectorAll('[data-tab-panel]').forEach(function(p){
+        p.style.display = p.getAttribute('data-tab-panel')===tab ? 'block':'none';
+      });
+    });
+  });
+</script>
+<script src="theme.js"></script>
+</body></html>
