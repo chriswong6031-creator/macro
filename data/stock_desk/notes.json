@@ -1,7 +1,7 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-06-26",
-  "generated_at": "2026-06-27T14:04:19.507586+00:00",
+  "generated_at": "2026-06-28T00:21:18.183181+00:00",
   "degraded": null,
   "notes": [
     {
@@ -9,18 +9,17 @@
       "ticker": "PRDO",
       "name": "Perdoceo Education Corp.",
       "lean": "constructive",
-      "conviction": "medium",
+      "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Validated SUE and rising revisions provide an event-driven earnings edge, while the entry setup is not extended \u2013 the base-building dynamics outweigh a bearish macro backdrop.",
+      "thesis": "PRDO shows a building base with a validated SUE (z=0.77) and positive estimate revisions, supported by the event-edge insider-buying context; however, the daily rally is counter-trend against a bearish bigger picture and contracting liquidity, so any relative outperformance is likely modest.",
       "evidence": [
-        "SUE z=0.77 (validated, 27 days fresh)",
-        "revisions z=0.9 (literature)",
-        "entry z=0.4, not blocked",
-        "verdict: Constructive \u2014 building a base (band high)"
+        "Validated SUE leg z=0.77, fresh 27 days",
+        "Revision leg z=0.9 (literature)",
+        "Constructive verdict, high band, entry not blocked"
       ],
-      "dissent": "The broader picture is bearish (left-translated prior cycle, macro liquidity contracting) and the tailwind axis is negative, which could stall the rally.",
+      "dissent": "The bearish macro regime and left-translated prior cycle suggest the rally may fail, and negative tailwind (z=-0.32) signals headwinds.",
       "falsifier": {
-        "text": "PRDO breaks below the swing low that started the current rally (near $30) and the SUE signal expires without follow-through, proving the edge was temporary.",
+        "text": "If PRDO closes below its 10-day moving average after failing to hold above the recent swing low, the base-building thesis is invalid.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "PRDO",
@@ -40,16 +39,15 @@
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Earnings-surprise and revision factors support a modest edge, though weak residual momentum and below-average quality make it a lower-conviction constructive case.",
+      "thesis": "STRA benefits from an insider-buying context and positive estimate revisions, though the SUE signal is modest (z=0.2); the stock is building a base in a mixed regime, with the daily uptrend intact but no clear bigger-picture trend.",
       "evidence": [
-        "SUE z=0.2 (validated)",
-        "revisions z=0.7 (literature)",
-        "entry z=0.4, not blocked",
-        "verdict: Constructive \u2014 building a base (band constructive)"
+        "Constructive verdict, building base",
+        "Revision leg z=0.7",
+        "Entry axis z=0.4, not blocked"
       ],
-      "dissent": "Residual momentum is negative (alpha z -0.44) and the quality axis reads low, suggesting the stock may struggle to build on any fundamental strength.",
+      "dissent": "Weak SUE signal and negative momentum leg (z=-0.44) suggest the selection alpha is fragile; macro liquidity contraction further caps upside.",
       "falsifier": {
-        "text": "STRA closes below its 200-DMA and the SUE advantage fades in the next earnings cycle, undermining the earnings-edge thesis.",
+        "text": "If STRA breaks below its 50-day moving average (near $78.30) on increased volume, the base-building thesis is likely wrong.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "STRA",
@@ -69,16 +67,15 @@
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "No validated edge is present; only context-level residual momentum supports the name, while the engine\u2019s neutral verdict and the bearish bigger picture warrant a wait-and-see stance.",
+      "thesis": "No clear edge is present; the only detectable factor is residual momentum in a context tier, while quality is poor and the stock is in a bearish counter-trend rally, making risk/reward unappealing relative to the S&P 500.",
       "evidence": [
-        "verdict: Neutral \u2014 no clear edge",
-        "selection only alpha (context) z=0.6, no SUE/revisions",
-        "price below 50-DMA and 200-DMA",
-        "cycle left-translated, investor phase late"
+        "Neutral verdict, no clear edge",
+        "Only momentum leg present (context tier, z=0.6)",
+        "Bearish bigger-picture regime, left-translated cycle"
       ],
-      "dissent": "Extremely low short interest and a potential mean-reversion bounce from oversold conditions could produce a sharp relief rally relative to the S&P 500.",
+      "dissent": "The positive entry axis and off-high price could spark a bounce, but that alone lacks a validated driver.",
       "falsifier": {
-        "text": "TR surges above its 200-DMA on heavy volume and enters a right-translated cycle, showing that the neutral call under-estimated the reversal potential.",
+        "text": "If TR makes a new 20-day high on strong volume and the weekly MACD turns positive, the neutral stance would be challenged.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -92,28 +89,27 @@
       "ticker": "COKE",
       "name": "Coca-Cola Consolidated",
       "lean": "constructive",
-      "conviction": "medium",
-      "horizon_d": 15,
-      "thesis": "A strong residual-momentum burst (z 1.13) and a with-trend fresh buy entry make this a high-conviction base-building setup, albeit with macro headwinds.",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "COKE's fresh buy signal within a bullish weekly regime, off-high pullback, and favorable quality factors support a constructive stance, though the only alpha driver is residual momentum (context-only) and macro liquidity contraction is a headwind.",
       "evidence": [
-        "ladder: FRESH BUY, action BUY NOW",
-        "alpha (residual momentum) z=1.13 (context)",
-        "entry z=0.48, not blocked; quality axis positive",
-        "verdict: Constructive \u2014 building a base (band high)"
+        "Fresh Buy ladder state, with-trend bullish",
+        "Entry axis z=0.48, vol squeeze present",
+        "Constructive verdict, high band"
       ],
-      "dissent": "US net liquidity is contracting and the stock is still well off its 52-week high; a momentum reversal could quickly invalidate the constructive call.",
+      "dissent": "The lack of a validated SUE or revision edge and heavy reliance on momentum (z=1.13 but context tier) means failure could occur if the trend stalls, especially given the macro tax.",
       "falsifier": {
-        "text": "COKE breaks below the swing low at $170.27 and daily momentum turns negative, proving the fresh buy signal was a false start.",
+        "text": "If COKE fails to hold above the 10-day moving average and RSI drops below 50, the fresh-buy signal is invalid.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "COKE",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 15
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-07-17",
+      "check_by": "2026-07-24",
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
@@ -121,18 +117,17 @@
       "ticker": "ELS",
       "name": "Equity Lifestyle Properties",
       "lean": "cautious",
-      "conviction": "medium",
+      "conviction": "low",
       "horizon_d": 20,
-      "thesis": "A cluster of negative selection signals (validated SUE and declining revisions) drives relative weakness, overriding a positive tailwind and a still-intact uptrend.",
+      "thesis": "ELS exhibits consistent negative edge across earnings surprise, revisions, and momentum, with a weak selection axis (z=-0.89); while the tailwind is slightly positive, the relative weakness label warrants caution relative to the S&P 500.",
       "evidence": [
-        "verdict: Lagging \u2014 relative weakness (band low)",
-        "SUE z=-0.48 (validated)",
-        "revisions z=-1.19 (literature)",
-        "selection z=-0.89 overall"
+        "Verdict: Lagging \u2014 relative weakness",
+        "Negative SUE (z=-0.48) and revisions (z=-1.19)",
+        "Selection axis z=-0.89"
       ],
-      "dissent": "The real-estate tailwind and a bullish weekly structure could trigger a catch-up trade, especially if the spot-light factor attracts inflows.",
+      "dissent": "The stock remains above both 50- and 200-day MAs, and the bullish cycle structure could reverse the weakness if the macro outlook improves.",
       "falsifier": {
-        "text": "ELS breaks above its 52-week high and the next SUE print turns significantly positive, rendering the relative-weakness thesis obsolete.",
+        "text": "If ELS closes above its 52-week high with a positive revision cycle (EPS estimates rising), the lagging thesis is negated.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "ELS",
@@ -152,16 +147,15 @@
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "A very strong SUE (z 1.18) is offset by sharply negative revisions and an accounting watch; the mixed signal leaves no clear edge, consistent with the engine\u2019s neutral verdict.",
+      "thesis": "YUM has a strong recent SUE (z=1.18) but it is offset by negative estimate revisions and an accounting watch flag, leaving no clear overall edge; the stock trades in a mixed trend, so we expect performance in line with the S&P 500.",
       "evidence": [
-        "verdict: Neutral \u2014 no clear edge",
-        "SUE z=1.18 (validated) but revisions z=-0.74 (literature)",
-        "accounting flag: watch",
-        "cycle left-translated, investor phase overdue"
+        "Neutral verdict",
+        "SUE z=1.18 vs revision z=-0.74 offset",
+        "Accounting watch caution"
       ],
-      "dissent": "If the revisions trend turns positive and the accounting concern is cleared, YUM could convert a powerful SUE into sustained outperformance.",
+      "dissent": "If the strong earnings surprise eventually translates into upward revisions, the stock could break out of its mixed trend and outperform.",
       "falsifier": {
-        "text": "YUM\u2019s next earnings release sends SUE higher and the revisions trajectory flips positive, proving the neutral stance overly cautious.",
+        "text": "If YUM's revision leg turns positive (z>0) and the stock takes out its 52-week high, the neutral view is too pessimistic.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
