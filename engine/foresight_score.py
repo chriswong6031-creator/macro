@@ -63,6 +63,15 @@ def _acceleration(r: dict) -> float:
     # on an already-hot theme). NEUTRAL / absent never moves the axis.
     guband = r.get("guidance_band")
     base += {"BROAD-RAISE": 0.10, "RAISING": 0.06, "CUTTING": -0.15}.get(guband, 0.0)
+    # Leading alt-data confirmers (insider clusters / award accel) — INVERSE-TO-BREADTH and
+    # CORRELATION-PENALIZED: a confirmer while revisions are still flat is a pre-revision tell;
+    # the same confirmer once breadth is broad is just crowding, so the bonus scales to ~0 as
+    # breadth rises and is capped (the channels are partly one 'informed attention' factor).
+    n_conf = r.get("n_altdata_leading") or 0
+    if n_conf:
+        breadth = r.get("revision_breadth") or 0.0
+        inv = max(0.0, 1.0 - max(0.0, breadth))
+        base += min(0.12, 0.05 * n_conf) * inv
     return round(_clamp(base, 0.0, 1.0), 3)
 
 

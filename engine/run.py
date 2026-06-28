@@ -318,11 +318,17 @@ def run() -> dict:
         log.error("guidance-gap layer failed: %s", e)
         latest["guidance_gap"] = None
     try:
+        from engine.altdata_confirmers import compute_altdata_confirmers
+        latest["altdata_confirmers"] = compute_altdata_confirmers()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("altdata-confirmers layer failed: %s", e)
+        latest["altdata_confirmers"] = None
+    try:
         from engine.foresight_cascade import compute_foresight_cascade
         latest["foresight_cascade"] = compute_foresight_cascade(
             latest.get("bottleneck"), latest.get("theme_revisions"),
             latest.get("demand_capex"), latest.get("glut_watch"),
-            latest.get("guidance_gap"))
+            latest.get("guidance_gap"), latest.get("altdata_confirmers"))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("foresight-cascade layer failed: %s", e)
         latest["foresight_cascade"] = None

@@ -133,6 +133,13 @@
   .sz-HOLD, .sz-WATCH { --pc:var(--muted); }
   .sz-TRIM, .sz-EXIT { --pc:var(--down); }
 
+  /* per-card alt-data confirmer chip */
+  .fx-conf { display:inline-flex; align-items:center; gap:5px; margin:9px 8px 0 0; font-size:11px; font-weight:700;
+             padding:5px 11px; border-radius:8px; cursor:help; color:var(--muted);
+             border:1px solid var(--line); background:var(--panel2); }
+  .fx-conf.lit { color:var(--info); border-color:color-mix(in srgb,var(--info) 38%,transparent);
+                 background:color-mix(in srgb,var(--info) 10%,var(--panel)); }
+
   /* discovery panel */
   .fx-disco { border-left:5px solid var(--info); }
   .fx-disco-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(248px,1fr)); gap:11px; margin-top:4px; }
@@ -264,6 +271,7 @@
 
       <p class="why">{{ r.rationale }}</p>
       {% if r.size_band %}<span class="fx-size sz-{{ r.size_band }}" title="{{ r.size_note }}">⚖ {{ r.size_band }}</span>{% endif %}
+      {% if r.altdata_summary %}<span class="fx-conf{{ ' lit' if r.n_altdata_leading else '' }}" title="{{ (r.altdata_members or [])|join(', ') }}">🛰 {{ r.altdata_summary }}</span>{% endif %}
       <span class="fx-entry {{ 'ready' if r.entry_ready else '' }}">{{ '✅' if r.entry_ready else '⏳' }} {{ r.entry_note }}</span>
       {% if r.glut_band in ('GLUT_FORMING', 'GLUT') %}<span class="fx-exit">⚠️ {{ t('exit-risk', '退出风险') }}: {{ r.glut_band.replace('_',' ')|lower }}{% if r.glut_score is not none %} ({{ '%+.2f'|format(r.glut_score) }}){% endif %}</span>{% endif %}
       {% if r.score_detail and r.score_detail.caps %}<div class="fx-cap">⚑ {{ t('score capped', '评分受限') }}: {{ r.score_detail.caps|join(' · ') }}</div>{% endif %}

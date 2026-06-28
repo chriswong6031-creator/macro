@@ -101,6 +101,28 @@ def test_guidance_confirms_without_changing_stage():
     assert r["score_detail"]["axes"]["acceleration"] >= 0.5   # T3 raise lifts acceleration
 
 
+def test_altdata_confirmers_inverse_to_breadth():
+    # leading alt-data confirmers reinforce an EARLY (thesis-stage) theme's rationale + score,
+    # but on a LATE (broad-revisions) theme they are crowding -> NOT added to the rationale.
+    bn = {"themes": {"a": {"name": "A", "band": "TIGHT", "tightness": 0.9, "regime": True}}}
+    conf = {"themes": {"a": {"name": "A", "n_leading": 2, "leading_members": ["MU", "WDC"],
+                             "summary": "2 insider clusters · 1 gov-award accel"}}}
+    early = fc.compute_foresight_cascade(
+        bottleneck=bn, revisions={"themes": {"a": {"name": "A", "breadth": 0.05, "level_state": "FLAT_LOW"}}},
+        demand={"themes": {}}, glut={"themes": {}}, guidance={"themes": {}}, confirmers=conf, write_ledger=False)
+    r = early["themes"][0]
+    assert r["stage"] == "PRECIPICE" and r["n_altdata_leading"] == 2
+    assert "alt-data confirms" in r["rationale"]
+
+    late = fc.compute_foresight_cascade(
+        bottleneck=bn, revisions={"themes": {"a": {"name": "A", "breadth": 0.9, "level_state": "POSITIVE"}}},
+        demand={"themes": {}}, glut={"themes": {}}, guidance={"themes": {}}, confirmers=conf, write_ledger=False)
+    r2 = late["themes"][0]
+    assert r2["stage"] == "RE-RATING"
+    assert "alt-data confirms" not in r2["rationale"]              # crowding, not a tell, when broad
+    assert r["score_detail"]["axes"]["acceleration"] > r2["score_detail"]["axes"]["acceleration"]
+
+
 def test_glut_overrides_to_exit_risk():
     # a forming glut while estimates are still broad -> GLUT-RISK (exit clock) takes precedence
     bottleneck = {"themes": {"a": {"name": "A", "band": "TIGHT", "tightness": 0.9}}}

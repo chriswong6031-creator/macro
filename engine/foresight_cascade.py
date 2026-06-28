@@ -122,9 +122,13 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
                               demand: dict | None = None,
                               glut: dict | None = None,
                               guidance: dict | None = None,
+                              confirmers: dict | None = None,
                               write_ledger: bool = True) -> dict | None:
     """Combine T1 (bottleneck) x T2 (demand) x T3 (guidance) x T4 (revisions) x exit-risk
     (glut) into a per-theme stage + entry overlay. Computes any input not supplied.
+
+    `confirmers` = leading alt-data confirmers (insider clusters / award accel) — short-lead,
+    inverse-to-breadth, never a stage-changer.
 
     T3 guidance is a LEADING confirmer on the rationale + a score input, never a
     stage-changer (the stage stays T1 x T4 x exit-risk)."""
@@ -163,12 +167,20 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         except Exception as e:  # noqa: BLE001
             log.warning("cascade: guidance_gap failed: %s", e)
             guidance = None
+    if confirmers is None:
+        try:
+            from engine.altdata_confirmers import compute_altdata_confirmers
+            confirmers = compute_altdata_confirmers()
+        except Exception as e:  # noqa: BLE001
+            log.warning("cascade: altdata_confirmers failed: %s", e)
+            confirmers = None
 
     bn_themes = (bottleneck or {}).get("themes") or {}
     rv_themes = (revisions or {}).get("themes") or {}
     dm_themes = (demand or {}).get("themes") or {}
     gl_themes = (glut or {}).get("themes") or {}
     gd_themes = (guidance or {}).get("themes") or {}
+    cd_themes = (confirmers or {}).get("themes") or {}
     keys = set(bn_themes) | set(rv_themes) | set(dm_themes)
     if not keys:
         return None
@@ -177,7 +189,7 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
     rows = []
     for k in keys:
         bn, rv, dm, gl = bn_themes.get(k), rv_themes.get(k), dm_themes.get(k), gl_themes.get(k)
-        gd = gd_themes.get(k)
+        gd, cd = gd_themes.get(k), cd_themes.get(k)
         gband = (gl or {}).get("band")
         stage, rationale = _stage(bn, rv, gband)
         # demand is a LEADING confirmation/conviction modifier on the rationale, not a
@@ -196,6 +208,12 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
                           "firm(s) pre-signaling above consensus (leads the revision)")
         elif gd and guband == "CUTTING" and stage != "GLUT-RISK":
             rationale += f" · CAUTION: {gd.get('n_cutters', 0)} firm(s) cutting guidance"
+        # leading alt-data confirmers (insider clusters / award accel) — INVERSE-TO-BREADTH:
+        # only a tell while the theme is still early (a thesis stage); once revisions are broad
+        # the same activity is just crowding, so it is NOT added to a late theme's rationale.
+        cd_leading = (cd or {}).get("n_leading") or 0
+        if cd and cd_leading and stage in THESIS_STAGES:
+            rationale += f" · alt-data confirms (pre-revision): {cd.get('summary')}"
         entry_ready, entry_note = _entry(stage, disloc)
         rows.append({
             "theme": k,
@@ -218,6 +236,9 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
             "guidance_net": (gd or {}).get("net"),
             "guidance_raisers": (gd or {}).get("n_raisers"),
             "guidance_cutters": (gd or {}).get("n_cutters"),
+            "altdata_summary": (cd or {}).get("summary"),
+            "n_altdata_leading": cd_leading,
+            "altdata_members": (cd or {}).get("leading_members"),
             "glut_band": gband,
             "glut_score": (gl or {}).get("glut_score"),
         })
