@@ -461,6 +461,20 @@
   // tablesort (theme.js loads first) so the filter box lands above the wrapper, and again on
   // load for any JS-rendered tables. Skips tooltip / nav tables and anything already wrapped.
   function wrapTables(root) {
+    // The self-contained pages (.topbar / strategy-detail family) don't link
+    // theme.css, so the .tbl-scroll wrapper added below would have NO scroll
+    // styling and a wide table would bleed past the viewport on mobile. Inject the
+    // rule from here (idempotent) so the wrapper this function creates always
+    // scrolls, mirroring theme.css. --line falls back to the vector palette's
+    // --grid, then a hard colour, so the scrollbar styles on every palette.
+    if (!document.getElementById('tbl-scroll-css')) {
+      var ts = document.createElement('style');
+      ts.id = 'tbl-scroll-css';
+      ts.textContent = '.tbl-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}'
+        + '.tbl-scroll::-webkit-scrollbar{height:6px}'
+        + '.tbl-scroll::-webkit-scrollbar-thumb{background:var(--line,var(--grid,#2a2f3a));border-radius:6px}';
+      document.head.appendChild(ts);
+    }
     (root || document).querySelectorAll('table').forEach(function (t) {
       if (t.closest('.tbl-scroll')) return;                       // already wrapped
       if (t.closest('.tip, .help, .site-nav, .topbar, .nav-links, .nav-dd-menu')) return;
