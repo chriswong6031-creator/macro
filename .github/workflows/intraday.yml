@@ -1,0 +1,55 @@
+name: intraday-bars
+# Hourly Polygon STANDARD (15-MIN DELAYED) US hourly-bar refresh into the
+# data/intraday/<T>.parquet store. APPEND-ONLY / KEY-DEDUPED: each run extends the
+# per-ticker parquet via a small incremental window (see scripts/build_polygon_intraday).
+# The store is gitignored + persisted cross-run via actions/cache under the SAME
+# `intraday-` namespace the daily pipeline uses, so the next daily/engine build picks up
+# the freshest bars and re-emits site/intraday/<T>.json. Separate from the ~45-min daily
+# pipeline (its own concurrency group) so it never contends with it. NOT real-time.
+on:
+  schedule:
+    # ~hourly during US market hours + the 15-min delayed tail (covers EST & EDT).
+    # 13:00–21:00 UTC weekdays = 08:00–16:00 ET (EST) / 09:00–17:00 ET (EDT).
+    # NOTE: GitHub only runs `schedule:` triggers from the DEFAULT branch (main). This
+    # cron stays dormant until the branch reaches main; use workflow_dispatch until then.
+    - cron: "35 13-21 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      lookback_days:
+        description: "cold-start lookback when no prior file (default 5)"
+        required: false
+        default: "5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: intraday          # distinct from the daily pipeline's 'pipeline' group
+  cancel-in-progress: true # a slow run is superseded by the next hourly tick
+
+jobs:
+  bars:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      # Warm-start from the most recent intraday cache (daily collect OR a prior hourly
+      # run) via the shared `intraday-` restore-key prefix, then save a fresh entry so
+      # the store accrues forward run-over-run.
+      - name: restore intraday store cache
+        uses: actions/cache@v4
+        with:
+          path: data/intraday
+          key: intraday-${{ github.run_id }}
+          restore-keys: intraday-
+      - name: accrue Polygon hourly bars (15-min delayed, incremental append)
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}   # server-side only — never shipped to the browser
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}   # accepted alias (same key, prior .env name)
+        run: |
+          python -m scripts.build_polygon_intraday --lookback-days "${{ github.event.inputs.lookback_days || '5' }}"

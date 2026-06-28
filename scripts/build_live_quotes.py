@@ -160,6 +160,7 @@ def to_worker_quotes(raw: dict) -> dict:
             "prevClose": prev,
             "changePct": chg,
             "currency": q.get("currency"),
+            "delayMin": q.get("delay_min"),     # measured age of THIS quote (honest, per-symbol)
         }
     return out
 
@@ -167,6 +168,7 @@ def to_worker_quotes(raw: dict) -> dict:
 def build(site_dir: Path, *, offline: bool = False, extra: list[str] | None = None,
           cap: int = 800) -> dict:
     now = datetime.now(timezone.utc)
+    lcfg = config.load().get("live") or {}
     universe = build_universe(site_dir, extra=extra, cap=cap)
     diag: dict = {}
     raw = live_quotes.fetch_quotes(universe, offline=offline, diag=diag)
@@ -181,6 +183,11 @@ def build(site_dir: Path, *, offline: bool = False, extra: list[str] | None = No
             "resolved": len(quotes),
             "polygon_status": diag.get("polygon_status"),
             "offline": bool(offline),
+            # HONEST: this snapshot is ~15-min DELAYED (Polygon Standard / Yahoo spark),
+            # not real-time. delayed_min=0 only after a real-time/websocket upgrade.
+            "delayed_min": int(lcfg.get("delayed_min", 0)),
+            "feed": str(lcfg.get("feed_label", "") or ""),
+            "realtime": int(lcfg.get("delayed_min", 0)) == 0,
         },
     }
 
