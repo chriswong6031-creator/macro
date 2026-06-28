@@ -1,0 +1,985 @@
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Capital Flow Velocity — China & Hong Kong</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#285FFF; --indigo:#4559DC; --ink:#0B1733; --text:#344054; --muted:#6F6F6F;
+  --faint:#A0A0A0; --red:#D30B0B; --amber:#F5AD42; --grid:#EAECF0; --card:#FFFFFF;
+  --bg:#F7F8FA; --green:#1FA971;
+}
+*{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px 60px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:20}
+.nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
+a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
+.nav-dd{position:relative;display:inline-flex}
+.nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
+.nav-dd:hover>a.nav-link .caret,.nav-dd:focus-within>a.nav-link .caret{transform:rotate(180deg)}
+.nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
+.nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;background:var(--card);border:1px solid var(--grid);border-radius:13px;box-shadow:0 12px 34px rgba(16,24,40,.14);padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s;z-index:70}
+.nav-dd:hover>.nav-dd-menu,.nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
+.nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
+.nav-dd-menu a:hover,.nav-dd-menu a.active{background:#eef1f6;color:var(--ink)}
+.nav-sub{display:block}.nav-sub .nav-dd-menu{top:-6px;left:calc(100% + 6px)}
+.nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
+.nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;text-decoration:none;transition:border-color .15s,color .15s}
+.nav-ctrls .ai-brief-link:hover{border-color:var(--blue);color:var(--blue)}
+.lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
+.lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
+html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
+.lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
+html:not([data-lang="zh"]) .lang-toggle .en-opt{color:#fff}
+html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
+.theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
+.theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
+.theme-switch .ic.sun{right:8px}.theme-switch .ic.moon{left:8px}
+.theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
+.theme-switch .knob::before{content:"☀️"}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280}
+html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{background:#222732}
+html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{background:#222732}
+html[data-theme="dark"] .lang-toggle{background:#222732}
+html[data-theme="dark"] .theme-switch{background:#222732}
+html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
+html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
+.h1{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin:6px 0 4px}
+.intro{color:var(--muted);font-size:14.5px;max-width:920px;margin-bottom:6px}
+.note{border-left:3px solid var(--blue);padding:8px 0 8px 14px;margin:14px 0 4px;color:var(--text);font-size:13px;max-width:960px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin:12px 0 2px;font-size:12px;color:var(--muted)}
+.legend b{color:var(--ink)}
+.sec-h{display:flex;align-items:baseline;gap:12px;margin:36px 0 4px;flex-wrap:wrap}
+.sec-h h2{font-size:21px;font-weight:800;color:var(--ink);margin:0;letter-spacing:-.02em}
+.sec-h .sub{color:var(--muted);font-size:13px}
+.chg{font-variant-numeric:tabular-nums;font-weight:700}
+.chg.pos{color:var(--green)} .chg.neg{color:var(--red)} .chg.na{color:var(--faint);font-weight:400}
+html[data-lang="zh"] .chg.pos{color:var(--red)} html[data-lang="zh"] .chg.neg{color:var(--green)}
+/* ---- aggregate channel cards ---- */
+.vgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:14px}
+@media(max-width:880px){.vgrid{grid-template-columns:1fr}}
+.vcard{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:20px;position:relative}
+.vcard.frozen{opacity:.86}
+.vcard-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:2px}
+.vcard-top h3{font-size:17px;font-weight:800;color:var(--ink);margin:0;letter-spacing:-.01em}
+.asof{margin-left:auto;font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.vstate{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid var(--grid);color:var(--text);white-space:nowrap}
+.vstate.in{border-color:#1FA971;color:#1FA971;background:color-mix(in srgb,#1FA971 10%,transparent)}
+.vstate.out{border-color:var(--red);color:var(--red);background:color-mix(in srgb,var(--red) 10%,transparent)}
+.vstate.mid{border-color:var(--amber);color:var(--amber);background:color-mix(in srgb,var(--amber) 9%,transparent)}
+html[data-lang="zh"] .vstate.in{border-color:var(--red);color:var(--red);background:color-mix(in srgb,var(--red) 10%,transparent)}
+html[data-lang="zh"] .vstate.out{border-color:#1FA971;color:#1FA971;background:color-mix(in srgb,#1FA971 10%,transparent)}
+.vrow{display:flex;gap:8px;margin:14px 0 6px;flex-wrap:wrap}
+.vchip{flex:1;min-width:84px;background:var(--bg);border-radius:11px;padding:9px 11px;text-align:center}
+html[data-theme="dark"] .vchip{background:var(--grid)}
+.vchip .k{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700}
+.vchip .v{font-size:18px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+.vmeta{display:flex;align-items:center;gap:12px;margin-top:10px;color:var(--muted);font-size:12px;flex-wrap:wrap}
+.vmeta .sp{color:var(--blue);flex:none}
+.frozen-banner{margin-top:12px;font-size:12px;color:var(--amber);border:1px dashed color-mix(in srgb,var(--amber) 50%,var(--grid));border-radius:10px;padding:9px 12px;line-height:1.5}
+/* ---- tables ---- */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px}
+@media(max-width:900px){.two{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--grid);border-radius:16px;overflow:hidden}
+.panel-h{padding:12px 16px;border-bottom:1px solid var(--grid);font-size:13px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px}
+.tbl-wrap{overflow-x:auto}
+table.board{border-collapse:collapse;width:100%;font-size:13px}
+table.board th,table.board td{padding:8px 12px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--grid)}
+table.board th{font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--card)}
+table.board th:first-child,table.board td:first-child{text-align:left}
+table.board tbody tr:last-child td{border-bottom:none}
+table.board tbody tr:hover td{background:color-mix(in srgb,var(--blue) 6%,transparent)}
+.snm{font-weight:700;color:var(--ink)} .snm small{color:var(--faint);font-weight:400;font-size:11px;margin-left:5px}
+.tk{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--muted)}
+.full table.board{min-width:980px}
+.cat{font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;background:var(--bg);border:1px solid var(--grid);color:var(--muted)}
+html[data-theme="dark"] .cat{background:var(--grid)}
+.spark{display:block;color:var(--blue)}
+.foot{margin-top:42px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7;max-width:1000px}
+.foot b{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+      
+
+
+    <div class="nav-links">
+    
+    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMIND</span>
+    </a>
+    
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="impulse.html">🚀 <span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span><span class="d"><span class="l-en">Early-ignition momentum · velocity · acceleration</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></a>
+        <a href="sector_heatmap.html">🔥 <span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span><span class="d"><span class="l-en">All 503 names · market-cap treemap · click for our read</span><span class="l-zh">全部503只 · 市值树图 · 点击查看研判</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="news.html">🗞️ <span class="l-en">News</span><span class="l-zh">新闻</span><span class="d"><span class="l-en">Macro · markets · sectors · baskets · China</span><span class="l-zh">宏观 · 大盘 · 板块 · 篮子 · 中国</span></span></a>
+        <a href="whitehouse.html">🏛️ <span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></a>
+        <a href="special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></a>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">One gated-confluence read per sector · reasoning · graded</span><span class="l-zh">每行业门控共振研判 · 推理链 · 自评分</span></span></a>
+        <a href="china_sector_desk.html">🧭 <span class="l-en">Sector Desk</span><span class="l-zh">行业桌面</span><span class="d"><span class="l-en">GS-style sector indices · live · pathway</span><span class="l-zh">GS式行业指数 · 实时 · 路径</span></span></a>
+        <a href="sector_cycles_china.html">🌀 <span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span><span class="d"><span class="l-en">Every sector & theme on one cycle clock · turns · forecast odds</span><span class="l-zh">各板块与主题同框 · 拐点 · 前瞻概率</span></span></a>
+        <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
+        <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">News & Intelligence</span><span class="l-zh">新闻与情报</span><span class="d"><span class="l-en">Multi-source news tape · media sentiment</span><span class="l-zh">多源新闻脉搏 · 媒体情绪</span></span></a>
+        <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+        <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+        <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Big-money flow into names &amp; sectors · velocity · accel</span><span class="l-zh">主力资金流入个股与板块 · 流速 · 加速度</span></span></a>
+        <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+        <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Southbound + A-share big-money velocity</span><span class="l-zh">南向 + A股主力资金流速</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+        <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+            <a href="btc_strategy.html">🎛️ <span class="l-en">BTC Strategy</span><span class="l-zh">BTC策略</span><span class="d"><span class="l-en">Cycle vs risk-allocation · backtested</span><span class="l-zh">周期 vs 风险配置 · 已回测</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intelligence_hub.html">🛰️ <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></a>
+        <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
+        <a href="policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
+        <a href="alt_data.html">📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span><span class="d"><span class="l-en">Signal intelligence · convergence · influence graph · actionable</span><span class="l-zh">信号情报 · 汇聚 · 影响力图谱 · 可操作</span></span></a>
+        <a href="congress_trades.html">🏛️ <span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span><span class="d"><span class="l-en">Politician disclosures · half-year watchlist · scored to copy</span><span class="l-zh">政界披露 · 半年观察清单 · 评分跟单</span></span></a>
+        <a href="foresight.html">🔮 <span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × revisions · the next DRAM</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期修正 · 下一个 DRAM</span></span></a>
+        <a href="radar.html">🛰️ <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></a>
+        <a href="demand.html">🧭 <span class="l-en">Demand Desk</span><span class="l-zh">需求台</span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></a>
+        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
+        <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
+        <a href="transmission.html">🔀 <span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></a>
+        <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
+        <a href="cycle.html">🔄 <span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span><span class="d"><span class="l-en">Where every boom-bust cycle sits — history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></a>
+        <a href="markets.html">🌐 <span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></a>
+        <a href="sector_cycles.html">🧭 <span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock — phase · turns · the story</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点 · 背后故事</span></span></a>
+        <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
+      </div>
+    </div>
+  </div>
+  
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
+    <div class="nav-ctrls">
+      <a class="ai-brief-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span></a>
+      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="h1">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span></div>
+  <div class="intro"><span class="l-en">How fast — and accelerating — big money is moving into China &amp; Hong Kong names and sectors. Built from the net-flow series the dashboard already collects: the Stock-Connect channels, the Tushare 主力 (super-large + large order) weekly grid, the Dragon-Tiger institutional seats, and mainland southbound holdings.</span><span class="l-zh">大资金流入中国与香港个股、板块的速度与加速度。数据源自仪表盘既有的净流向序列：沪深港通通道、Tushare 主力（超大单+大单）周度网格、龙虎榜机构席位、以及内地南向持仓。</span></div>
+
+  <div class="note"><span class="l-en">Display-only positioning lens — flow is <b>never</b> scored into an allocation signal (per-name fund-flow tested at rank-IC ≈ 0). <b>Velocity</b> = the standardized recent net-flow rate (t-stat of the cumulative-flow drift vs its own volatility); <b>acceleration</b> = its 2nd derivative. + reads as money flowing IN.</span><span class="l-zh">仅供定位参考——资金流向<b>从不</b>计入配置信号（个股资金流经检验 rank-IC ≈ 0）。<b>流速</b>＝标准化的近期净流入率（累计流向漂移相对自身波动的 t 值）；<b>加速度</b>＝其二阶导。正值代表资金流入。</span></div>
+
+  
+  
+  <div class="sec-h"><h2>🛰️ <span class="l-en">Stock-Connect Channels</span><span class="l-zh">沪深港通通道</span></h2>
+    <span class="sub"><span class="l-en">whole-channel flow · daily 1w / 1m / 3m velocity</span><span class="l-zh">整体通道资金 · 日度 1周 / 1月 / 3月流速</span></span></div>
+  <div class="vgrid">
+    
+    <div class="vcard ">
+      <div class="vcard-top">
+        <h3><span class="l-en">Southbound — mainland money into HK</span><span class="l-zh">南向 · 内地资金入港</span></h3>
+        
+<span class="vstate in"><span class="l-en">accelerating in</span><span class="l-zh">加速流入</span></span>
+        <span class="asof"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-06-26</span>
+      </div>
+      
+      <div class="vrow">
+        
+        <div class="vchip"><div class="k">1w</div><div class="v"><span class="chg pos">+0.39σ</span></div></div>
+        
+        <div class="vchip"><div class="k">1m</div><div class="v"><span class="chg pos">+0.87σ</span></div></div>
+        
+        <div class="vchip"><div class="k">3m</div><div class="v"><span class="chg pos">+1.06σ</span></div></div>
+        
+      </div>
+      <div class="vmeta">
+        <span><span class="l-en">~1m net</span><span class="l-zh">近1月净额</span> <b class="chg pos">+41.0 <span class="l-en">¥B</span><span class="l-zh">亿元×10</span></b></span>
+        <span><span class="l-en">up-days (20)</span><span class="l-zh">上涨日(20)</span> <b>10/20</b></span>
+        <span class="sp"><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,5.6 4.0,2.0 5.9,8.0 7.9,14.2 9.9,16.0 11.8,20.1 13.8,4.2 15.8,10.7 17.7,18.9 19.7,13.8 21.7,14.2 23.6,18.7 25.6,23.4 27.6,21.6 29.5,12.1 31.5,13.8 33.5,21.3 35.4,12.6 37.4,19.7 39.4,9.4 41.3,18.2 43.3,14.5 45.3,14.8 47.2,9.9 49.2,13.0 51.2,10.4 53.1,12.6 55.1,5.4 57.1,9.3 59.0,10.7 61.0,14.6 62.9,5.6 64.9,9.7 66.9,10.7 68.8,14.5 70.8,15.2 72.8,18.6 74.7,20.6 76.7,26.0 78.7,24.6 80.6,22.6 82.6,25.9 84.6,23.9 86.5,21.7 88.5,18.9 90.5,18.1 92.4,18.8 94.4,21.7 96.4,19.2 98.3,17.8 100.3,15.9 102.3,23.5 104.2,19.7 106.2,21.2 108.2,25.4 110.1,25.3 112.1,19.7 114.1,14.1 116.0,14.5 118.0,17.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></span>
+      </div>
+      
+    </div>
+    
+    <div class="vcard frozen">
+      <div class="vcard-top">
+        <h3><span class="l-en">Northbound — foreign money into A-shares</span><span class="l-zh">北向 · 外资入A股</span></h3>
+        <span class="vstate mid"><span class="l-en">frozen</span><span class="l-zh">已停更</span></span>
+        <span class="asof"><span class="l-en">as of</span><span class="l-zh">截至</span> 2024-08-16</span>
+      </div>
+      
+      <div class="vmeta" style="margin-top:8px"><span class="sp"><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.1 4.0,3.2 5.9,2.0 7.9,4.0 9.9,3.4 11.8,7.9 13.8,11.9 15.8,9.7 17.7,11.0 19.7,11.7 21.7,9.4 23.6,11.3 25.6,11.5 27.6,11.3 29.5,11.2 31.5,13.5 33.5,17.1 35.4,18.8 37.4,19.9 39.4,21.6 41.3,20.9 43.3,20.1 45.3,21.4 47.2,20.8 49.2,23.8 51.2,23.0 53.1,22.5 55.1,23.1 57.1,24.7 59.0,24.1 61.0,26.0 62.9,22.9 64.9,21.7 66.9,20.3 68.8,18.4 70.8,18.0 72.8,17.9 74.7,19.3 76.7,17.5 78.7,18.1 80.6,17.7 82.6,18.5 84.6,18.2 86.5,19.2 88.5,17.0 90.5,19.1 92.4,18.4 94.4,14.0 96.4,14.3 98.3,14.4 100.3,13.8 102.3,18.1 104.2,18.2 106.2,18.6 108.2,20.9 110.1,20.4 112.1,20.3 114.1,20.0 116.0,17.7 118.0,17.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></span><span><span class="l-en">20d-cum net, through freeze</span><span class="l-zh">20日累计净额，至停更</span></span></div>
+      <div class="frozen-banner">⚠ <span class="l-en">Aggregate northbound net disclosure ended 19 Aug 2024 (Stock Connect home-market rule) — historical only, no live velocity.</span><span class="l-zh">北向资金净额披露于2024年8月19日停止（互联互通本地市场规则）——仅历史，无实时流速。</span></div>
+      
+    </div>
+    
+  </div>
+  
+
+  
+  
+  
+  <div class="sec-h"><h2>🧭 <span class="l-en">A-Share Sector Flow Velocity</span><span class="l-zh">A股板块资金流速</span></h2>
+    <span class="sub"><span class="l-en">22 curated sectors · equal-weight main-money net-rate · weekly · as of</span><span class="l-zh">22个精选板块 · 等权主力净占比 · 周度 · 截至</span> 2026-06-12</span></div>
+  <div class="panel full">
+  <div class="tbl-wrap">
+    <table class="board" id="sectortbl">
+      <thead><tr>
+        <th data-c="0"><span class="l-en">Sector</span><span class="l-zh">板块</span></th>
+        <th data-c="1"><span class="l-en">Category</span><span class="l-zh">类别</span></th>
+        <th data-c="2"><span class="l-en">Members</span><span class="l-zh">成分</span></th>
+        <th data-c="3"><span class="l-en">4wk net-rate</span><span class="l-zh">4周净占比</span></th>
+        <th data-c="4"><span class="l-en">Velocity</span><span class="l-zh">流速</span></th>
+        <th data-c="5"><span class="l-en">Accel</span><span class="l-zh">加速度</span></th>
+        <th data-c="6"><span class="l-en">State</span><span class="l-zh">状态</span></th>
+        <th data-c="7"><span class="l-en">Flow trend</span><span class="l-zh">流向趋势</span></th>
+      </tr></thead>
+      <tbody>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Banks</span><span class="l-zh">银行</span></td>
+          <td><span class="cat"><span class="l-en">Financials &amp; Value</span><span class="l-zh">Financials &amp; Value</span></span></td>
+          <td>18</td>
+          <td><span class="chg pos">+5.5%</span></td>
+          <td><span class="chg pos">+2.33σ</span></td>
+          <td><span class="chg pos">+0.489</span></td>
+          <td style="text-align:left">
+<span class="vstate in"><span class="l-en">accelerating in</span><span class="l-zh">加速流入</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,4.2 4.3,3.3 6.5,2.4 8.8,2.6 11.1,3.8 13.4,2.0 15.6,3.2 17.9,4.7 20.2,7.2 22.5,8.5 24.7,6.9 27.0,6.6 29.3,5.0 31.6,5.8 33.8,3.3 36.1,2.6 38.4,7.7 40.7,6.4 42.9,11.4 45.2,11.0 47.5,11.5 49.8,13.7 52.0,13.2 54.3,11.0 56.6,9.6 58.9,12.1 61.1,14.5 63.4,18.1 65.7,17.2 68.0,19.7 70.2,18.3 72.5,19.9 74.8,19.9 77.1,20.1 79.3,20.7 81.6,21.7 83.9,22.5 86.2,21.6 88.4,23.3 90.7,21.4 93.0,24.6 95.3,24.5 97.5,26.0 99.8,22.9 102.1,22.4 104.4,23.3 106.6,24.5 108.9,25.6 111.2,23.2 113.5,20.4 115.7,18.7 118.0,16.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Rare Earth & Magnets</span><span class="l-zh">稀土永磁</span></td>
+          <td><span class="cat"><span class="l-en">Cyclicals &amp; Resources</span><span class="l-zh">Cyclicals &amp; Resources</span></span></td>
+          <td>9</td>
+          <td><span class="chg pos">+2.2%</span></td>
+          <td><span class="chg pos">+0.69σ</span></td>
+          <td><span class="chg pos">+0.613</span></td>
+          <td style="text-align:left">
+<span class="vstate in"><span class="l-en">accelerating in</span><span class="l-zh">加速流入</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,3.2 4.3,2.0 6.5,2.5 8.8,3.6 11.1,3.4 13.4,3.8 15.6,3.6 17.9,4.5 20.2,4.8 22.5,5.9 24.7,5.8 27.0,7.6 29.3,8.1 31.6,9.7 33.8,10.8 36.1,11.3 38.4,13.3 40.7,15.0 42.9,14.8 45.2,15.6 47.5,16.5 49.8,15.8 52.0,16.2 54.3,17.3 56.6,17.3 58.9,17.8 61.1,17.3 63.4,18.1 65.7,18.1 68.0,19.1 70.2,19.9 72.5,19.3 74.8,19.1 77.1,19.1 79.3,20.2 81.6,19.7 83.9,21.0 86.2,21.8 88.4,21.7 90.7,22.8 93.0,22.9 95.3,23.4 97.5,22.3 99.8,23.0 102.1,23.1 104.4,24.5 106.6,25.7 108.9,26.0 111.2,25.4 113.5,25.9 115.7,25.6 118.0,24.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Industrial Metals</span><span class="l-zh">有色金属</span></td>
+          <td><span class="cat"><span class="l-en">Cyclicals &amp; Resources</span><span class="l-zh">Cyclicals &amp; Resources</span></span></td>
+          <td>13</td>
+          <td><span class="chg pos">+2.4%</span></td>
+          <td><span class="chg pos">+0.68σ</span></td>
+          <td><span class="chg pos">+0.407</span></td>
+          <td style="text-align:left">
+<span class="vstate in"><span class="l-en">accelerating in</span><span class="l-zh">加速流入</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.0 4.3,2.0 6.5,2.8 8.8,3.2 11.1,2.8 13.4,2.5 15.6,3.0 17.9,4.8 20.2,5.6 22.5,7.1 24.7,6.6 27.0,7.3 29.3,9.2 31.6,9.4 33.8,10.6 36.1,10.2 38.4,10.9 40.7,12.2 42.9,11.4 45.2,11.3 47.5,12.1 49.8,11.4 52.0,11.4 54.3,11.3 56.6,11.7 58.9,12.4 61.1,12.2 63.4,12.7 65.7,12.3 68.0,12.4 70.2,12.6 72.5,11.9 74.8,13.2 77.1,12.9 79.3,14.6 81.6,15.1 83.9,17.6 86.2,17.4 88.4,18.7 90.7,19.9 93.0,21.1 95.3,20.6 97.5,20.7 99.8,20.2 102.1,21.4 104.4,22.9 106.6,23.0 108.9,25.6 111.2,23.9 113.5,24.1 115.7,26.0 118.0,23.7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Innovative Pharma & CXO</span><span class="l-zh">创新药与CXO</span></td>
+          <td><span class="cat"><span class="l-en">Healthcare</span><span class="l-zh">医疗</span></span></td>
+          <td>14</td>
+          <td><span class="chg pos">+1.5%</span></td>
+          <td><span class="chg pos">+0.67σ</span></td>
+          <td><span class="chg pos">+0.400</span></td>
+          <td style="text-align:left">
+<span class="vstate in"><span class="l-en">accelerating in</span><span class="l-zh">加速流入</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.5 4.3,2.1 6.5,2.1 8.8,3.8 11.1,3.0 13.4,2.1 15.6,2.1 17.9,2.5 20.2,2.6 22.5,2.4 24.7,2.0 27.0,2.7 29.3,4.2 31.6,5.2 33.8,5.8 36.1,6.4 38.4,7.4 40.7,8.6 42.9,8.2 45.2,7.5 47.5,8.4 49.8,8.8 52.0,9.4 54.3,8.7 56.6,11.2 58.9,10.9 61.1,12.3 63.4,13.1 65.7,14.4 68.0,15.9 70.2,17.0 72.5,17.6 74.8,18.1 77.1,18.0 79.3,18.0 81.6,17.9 83.9,18.4 86.2,20.2 88.4,20.9 90.7,20.8 93.0,22.1 95.3,21.4 97.5,22.6 99.8,23.3 102.1,24.7 104.4,23.9 106.6,24.9 108.9,25.8 111.2,26.0 113.5,25.3 115.7,25.2 118.0,24.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Brokers & Securities</span><span class="l-zh">券商</span></td>
+          <td><span class="cat"><span class="l-en">Financials &amp; Value</span><span class="l-zh">Financials &amp; Value</span></span></td>
+          <td>15</td>
+          <td><span class="chg pos">+0.0%</span></td>
+          <td><span class="chg pos">+0.01σ</span></td>
+          <td><span class="chg pos">+0.277</span></td>
+          <td style="text-align:left">
+<span class="vstate mid"><span class="l-en">balanced</span><span class="l-zh">均衡</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.1 4.3,2.0 6.5,2.5 8.8,2.8 11.1,2.2 13.4,2.3 15.6,2.1 17.9,2.8 20.2,3.0 22.5,3.6 24.7,3.3 27.0,3.2 29.3,4.2 31.6,4.7 33.8,5.6 36.1,5.7 38.4,7.0 40.7,8.1 42.9,9.7 45.2,9.3 47.5,10.9 49.8,10.3 52.0,10.9 54.3,11.8 56.6,12.2 58.9,12.8 61.1,14.2 63.4,14.7 65.7,14.0 68.0,14.3 70.2,14.8 72.5,15.0 74.8,15.4 77.1,15.7 79.3,16.2 81.6,17.1 83.9,17.8 86.2,18.5 88.4,19.5 90.7,20.1 93.0,21.6 95.3,22.2 97.5,23.0 99.8,23.3 102.1,23.9 104.4,23.5 106.6,24.2 108.9,25.3 111.2,26.0 113.5,25.5 115.7,26.0 118.0,25.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Gold Miners</span><span class="l-zh">黄金</span></td>
+          <td><span class="cat"><span class="l-en">Cyclicals &amp; Resources</span><span class="l-zh">Cyclicals &amp; Resources</span></span></td>
+          <td>6</td>
+          <td><span class="chg neg">-0.1%</span></td>
+          <td><span class="chg neg">-0.04σ</span></td>
+          <td><span class="chg pos">+0.058</span></td>
+          <td style="text-align:left">
+<span class="vstate mid"><span class="l-en">balanced</span><span class="l-zh">均衡</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.9 4.3,2.1 6.5,2.0 8.8,2.7 11.1,3.5 13.4,2.6 15.6,2.2 17.9,3.5 20.2,3.0 22.5,3.5 24.7,4.3 27.0,5.7 29.3,7.5 31.6,7.3 33.8,8.4 36.1,7.7 38.4,9.3 40.7,8.8 42.9,8.9 45.2,8.9 47.5,9.6 49.8,8.0 52.0,8.8 54.3,10.0 56.6,9.3 58.9,9.9 61.1,10.6 63.4,11.0 65.7,11.1 68.0,11.9 70.2,12.6 72.5,11.9 74.8,13.1 77.1,13.4 79.3,13.4 81.6,13.8 83.9,17.3 86.2,17.3 88.4,17.9 90.7,19.3 93.0,21.4 95.3,19.8 97.5,21.6 99.8,22.4 102.1,22.1 104.4,23.9 106.6,23.0 108.9,24.9 111.2,24.2 113.5,24.6 115.7,26.0 118.0,25.0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Insurers</span><span class="l-zh">保险</span></td>
+          <td><span class="cat"><span class="l-en">Financials &amp; Value</span><span class="l-zh">Financials &amp; Value</span></span></td>
+          <td>5</td>
+          <td><span class="chg neg">-0.6%</span></td>
+          <td><span class="chg neg">-0.22σ</span></td>
+          <td><span class="chg neg">-0.217</span></td>
+          <td style="text-align:left">
+<span class="vstate mid"><span class="l-en">balanced</span><span class="l-zh">均衡</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,7.6 4.3,5.8 6.5,5.8 8.8,5.0 11.1,4.0 13.4,3.4 15.6,2.2 17.9,3.2 20.2,4.6 22.5,5.1 24.7,2.8 27.0,2.0 29.3,3.7 31.6,4.7 33.8,4.8 36.1,5.2 38.4,8.8 40.7,8.7 42.9,11.3 45.2,10.1 47.5,10.9 49.8,11.7 52.0,12.0 54.3,11.2 56.6,12.2 58.9,12.9 61.1,13.9 63.4,13.7 65.7,12.6 68.0,13.8 70.2,14.9 72.5,16.2 74.8,17.3 77.1,17.0 79.3,17.0 81.6,17.1 83.9,17.1 86.2,18.3 88.4,19.4 90.7,19.6 93.0,22.1 95.3,22.7 97.5,23.5 99.8,22.2 102.1,21.7 104.4,21.7 106.6,22.1 108.9,24.4 111.2,25.2 113.5,26.0 115.7,25.8 118.0,24.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">SOE Blue Chips (中特估)</span><span class="l-zh">中特估·央企</span></td>
+          <td><span class="cat"><span class="l-en">Financials &amp; Value</span><span class="l-zh">Financials &amp; Value</span></span></td>
+          <td>16</td>
+          <td><span class="chg neg">-0.5%</span></td>
+          <td><span class="chg neg">-0.35σ</span></td>
+          <td><span class="chg pos">+0.621</span></td>
+          <td style="text-align:left">
+<span class="vstate mid"><span class="l-en">balanced</span><span class="l-zh">均衡</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.2 4.3,2.8 6.5,3.1 8.8,2.6 11.1,2.5 13.4,2.0 15.6,2.7 17.9,3.3 20.2,2.8 22.5,2.6 24.7,2.2 27.0,2.4 29.3,3.6 31.6,4.7 33.8,4.8 36.1,6.0 38.4,7.6 40.7,8.1 42.9,8.7 45.2,9.0 47.5,9.0 49.8,8.9 52.0,9.1 54.3,9.4 56.6,9.3 58.9,9.6 61.1,10.5 63.4,11.6 65.7,11.7 68.0,12.6 70.2,13.3 72.5,13.7 74.8,14.3 77.1,15.9 79.3,16.6 81.6,16.5 83.9,17.9 86.2,18.5 88.4,19.0 90.7,20.1 93.0,20.9 95.3,21.4 97.5,21.5 99.8,22.4 102.1,22.9 104.4,23.3 106.6,24.5 108.9,24.9 111.2,26.0 113.5,25.8 115.7,25.5 118.0,25.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Baijiu / Liquor</span><span class="l-zh">白酒</span></td>
+          <td><span class="cat"><span class="l-en">Consumer &amp; Brands</span><span class="l-zh">Consumer &amp; Brands</span></span></td>
+          <td>7</td>
+          <td><span class="chg neg">-1.3%</span></td>
+          <td><span class="chg neg">-0.41σ</span></td>
+          <td><span class="chg pos">+0.267</span></td>
+          <td style="text-align:left">
+<span class="vstate mid"><span class="l-en">balanced</span><span class="l-zh">均衡</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.0 4.3,2.7 6.5,3.6 8.8,4.1 11.1,4.5 13.4,5.2 15.6,5.2 17.9,6.5 20.2,5.8 22.5,5.9 24.7,5.3 27.0,5.6 29.3,5.0 31.6,5.0 33.8,5.0 36.1,5.3 38.4,6.5 40.7,7.5 42.9,8.7 45.2,8.2 47.5,8.6 49.8,9.9 52.0,10.2 54.3,10.3 56.6,11.1 58.9,11.4 61.1,13.0 63.4,12.7 65.7,13.4 68.0,14.6 70.2,15.7 72.5,15.8 74.8,16.4 77.1,16.9 79.3,17.5 81.6,18.3 83.9,18.3 86.2,19.4 88.4,20.5 90.7,20.0 93.0,21.4 95.3,21.6 97.5,22.3 99.8,21.9 102.1,22.4 104.4,22.9 106.6,23.7 108.9,25.0 111.2,26.0 113.5,25.2 115.7,25.8 118.0,25.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Consumer Electronics</span><span class="l-zh">消费电子</span></td>
+          <td><span class="cat"><span class="l-en">Technology &amp; AI</span><span class="l-zh">Technology &amp; AI</span></span></td>
+          <td>15</td>
+          <td><span class="chg neg">-0.9%</span></td>
+          <td><span class="chg neg">-0.44σ</span></td>
+          <td><span class="chg pos">+0.256</span></td>
+          <td style="text-align:left">
+<span class="vstate mid"><span class="l-en">balanced</span><span class="l-zh">均衡</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,3.2 4.3,3.5 6.5,4.1 8.8,3.4 11.1,2.8 13.4,2.5 15.6,2.0 17.9,2.7 20.2,3.2 22.5,4.0 24.7,4.3 27.0,4.5 29.3,5.0 31.6,4.4 33.8,6.6 36.1,7.6 38.4,7.9 40.7,9.1 42.9,10.1 45.2,9.5 47.5,10.0 49.8,9.9 52.0,10.4 54.3,9.9 56.6,11.5 58.9,10.8 61.1,12.2 63.4,13.6 65.7,13.5 68.0,12.9 70.2,13.7 72.5,13.8 74.8,13.2 77.1,13.1 79.3,14.4 81.6,15.1 83.9,15.8 86.2,17.1 88.4,18.5 90.7,18.9 93.0,21.0 95.3,22.1 97.5,22.7 99.8,23.0 102.1,23.4 104.4,24.9 106.6,24.7 108.9,25.2 111.2,23.6 113.5,25.2 115.7,25.9 118.0,26.0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Food & Beverage</span><span class="l-zh">食品饮料</span></td>
+          <td><span class="cat"><span class="l-en">Consumer &amp; Brands</span><span class="l-zh">Consumer &amp; Brands</span></span></td>
+          <td>11</td>
+          <td><span class="chg neg">-0.9%</span></td>
+          <td><span class="chg neg">-0.62σ</span></td>
+          <td><span class="chg neg">-0.051</span></td>
+          <td style="text-align:left">
+<span class="vstate out"><span class="l-en">accelerating out</span><span class="l-zh">加速流出</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,3.0 4.3,2.1 6.5,2.6 8.8,2.3 11.1,2.0 13.4,3.3 15.6,4.0 17.9,4.8 20.2,3.8 22.5,5.0 24.7,5.2 27.0,6.0 29.3,5.6 31.6,6.1 33.8,7.2 36.1,7.5 38.4,9.3 40.7,10.5 42.9,11.9 45.2,11.4 47.5,12.5 49.8,12.6 52.0,12.8 54.3,13.7 56.6,14.0 58.9,14.7 61.1,16.2 63.4,16.5 65.7,17.0 68.0,17.9 70.2,18.2 72.5,18.4 74.8,18.7 77.1,19.3 79.3,19.6 81.6,20.1 83.9,19.9 86.2,20.8 88.4,20.7 90.7,21.0 93.0,23.0 95.3,22.5 97.5,23.5 99.8,24.5 102.1,23.9 104.4,23.5 106.6,24.4 108.9,24.9 111.2,26.0 113.5,25.3 115.7,25.8 118.0,25.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Battery & Lithium</span><span class="l-zh">锂电池</span></td>
+          <td><span class="cat"><span class="l-en">New Energy &amp; Autos</span><span class="l-zh">New Energy &amp; Autos</span></span></td>
+          <td>17</td>
+          <td><span class="chg neg">-1.5%</span></td>
+          <td><span class="chg neg">-0.64σ</span></td>
+          <td><span class="chg pos">+0.153</span></td>
+          <td style="text-align:left">
+<span class="vstate out"><span class="l-en">outflow easing</span><span class="l-zh">流出趋缓</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.8 4.3,3.3 6.5,3.5 8.8,2.9 11.1,2.0 13.4,3.7 15.6,2.8 17.9,3.9 20.2,3.3 22.5,4.1 24.7,4.1 27.0,5.5 29.3,5.8 31.6,6.1 33.8,7.3 36.1,8.2 38.4,9.6 40.7,10.4 42.9,10.6 45.2,11.1 47.5,12.9 49.8,11.8 52.0,11.5 54.3,12.8 56.6,13.2 58.9,13.8 61.1,15.8 63.4,16.2 65.7,15.5 68.0,15.7 70.2,16.6 72.5,16.8 74.8,17.0 77.1,16.5 79.3,17.6 81.6,17.0 83.9,17.8 86.2,18.7 88.4,18.2 90.7,18.8 93.0,19.1 95.3,19.6 97.5,19.6 99.8,19.3 102.1,19.0 104.4,20.0 106.6,22.2 108.9,23.3 111.2,23.4 113.5,24.6 115.7,26.0 118.0,24.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Robotics & Automation</span><span class="l-zh">机器人与自动化</span></td>
+          <td><span class="cat"><span class="l-en">Advanced Manufacturing</span><span class="l-zh">Advanced Manufacturing</span></span></td>
+          <td>11</td>
+          <td><span class="chg neg">-1.9%</span></td>
+          <td><span class="chg neg">-0.67σ</span></td>
+          <td><span class="chg pos">+0.029</span></td>
+          <td style="text-align:left">
+<span class="vstate out"><span class="l-en">outflow easing</span><span class="l-zh">流出趋缓</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.0 4.3,2.5 6.5,4.3 8.8,4.3 11.1,2.8 13.4,4.6 15.6,3.5 17.9,3.3 20.2,5.3 22.5,6.3 24.7,6.2 27.0,7.9 29.3,7.5 31.6,8.6 33.8,8.9 36.1,10.3 38.4,8.6 40.7,9.8 42.9,10.4 45.2,9.2 47.5,8.9 49.8,8.7 52.0,10.3 54.3,11.9 56.6,13.1 58.9,12.6 61.1,14.1 63.4,14.1 65.7,14.9 68.0,15.4 70.2,16.5 72.5,15.8 74.8,14.5 77.1,14.3 79.3,14.6 81.6,13.9 83.9,13.3 86.2,15.8 88.4,17.6 90.7,17.5 93.0,19.2 95.3,20.3 97.5,23.3 99.8,22.5 102.1,24.2 104.4,26.0 106.6,25.0 108.9,23.6 111.2,22.9 113.5,25.4 115.7,24.4 118.0,25.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Coal</span><span class="l-zh">煤炭</span></td>
+          <td><span class="cat"><span class="l-en">Cyclicals &amp; Resources</span><span class="l-zh">Cyclicals &amp; Resources</span></span></td>
+          <td>10</td>
+          <td><span class="chg neg">-2.0%</span></td>
+          <td><span class="chg neg">-0.68σ</span></td>
+          <td><span class="chg pos">+0.055</span></td>
+          <td style="text-align:left">
+<span class="vstate out"><span class="l-en">outflow easing</span><span class="l-zh">流出趋缓</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.0 4.3,2.4 6.5,3.9 8.8,4.4 11.1,5.2 13.4,6.5 15.6,7.6 17.9,9.7 20.2,6.9 22.5,6.5 24.7,5.9 27.0,5.8 29.3,7.7 31.6,9.6 33.8,11.7 36.1,12.3 38.4,12.0 40.7,12.6 42.9,13.6 45.2,13.3 47.5,16.1 49.8,16.5 52.0,14.8 54.3,16.0 56.6,15.9 58.9,17.2 61.1,17.5 63.4,17.4 65.7,17.4 68.0,18.4 70.2,20.3 72.5,21.5 74.8,21.5 77.1,21.2 79.3,21.8 81.6,22.1 83.9,22.9 86.2,22.7 88.4,23.5 90.7,25.5 93.0,24.8 95.3,24.6 97.5,22.5 99.8,24.7 102.1,23.3 104.4,23.4 106.6,24.9 108.9,23.9 111.2,23.4 113.5,22.1 115.7,24.0 118.0,26.0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Home Appliances</span><span class="l-zh">家电</span></td>
+          <td><span class="cat"><span class="l-en">Consumer &amp; Brands</span><span class="l-zh">Consumer &amp; Brands</span></span></td>
+          <td>8</td>
+          <td><span class="chg neg">-0.9%</span></td>
+          <td><span class="chg neg">-0.73σ</span></td>
+          <td><span class="chg neg">-0.158</span></td>
+          <td style="text-align:left">
+<span class="vstate out"><span class="l-en">accelerating out</span><span class="l-zh">加速流出</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,4.4 4.3,4.6 6.5,4.1 8.8,3.2 11.1,2.2 13.4,2.8 15.6,2.0 17.9,2.1 20.2,4.0 22.5,5.6 24.7,6.5 27.0,6.9 29.3,6.4 31.6,5.0 33.8,7.5 36.1,8.0 38.4,9.6 40.7,10.7 42.9,13.6 45.2,13.8 47.5,14.6 49.8,14.3 52.0,15.0 54.3,14.8 56.6,15.0 58.9,14.8 61.1,15.3 63.4,15.1 65.7,15.5 68.0,18.3 70.2,19.7 72.5,18.3 74.8,17.5 77.1,18.5 79.3,18.3 81.6,17.8 83.9,17.0 86.2,19.1 88.4,20.5 90.7,21.9 93.0,24.1 95.3,25.5 97.5,25.8 99.8,25.1 102.1,24.8 104.4,25.3 106.6,25.4 108.9,24.8 111.2,25.1 113.5,25.8 115.7,25.5 118.0,26.0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Medical Devices & TCM</span><span class="l-zh">医疗器械与中药</span></td>
+          <td><span class="cat"><span class="l-en">Healthcare</span><span class="l-zh">医疗</span></span></td>
+          <td>13</td>
+          <td><span class="chg neg">-1.9%</span></td>
+          <td><span class="chg neg">-0.88σ</span></td>
+          <td><span class="chg neg">-0.103</span></td>
+          <td style="text-align:left">
+<span class="vstate out"><span class="l-en">accelerating out</span><span class="l-zh">加速流出</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.0 4.3,2.4 6.5,2.8 8.8,2.9 11.1,2.5 13.4,3.3 15.6,2.8 17.9,3.8 20.2,3.4 22.5,3.8 24.7,3.8 27.0,4.0 29.3,4.0 31.6,4.7 33.8,5.1 36.1,6.2 38.4,7.3 40.7,8.8 42.9,9.6 45.2,9.2 47.5,10.1 49.8,10.9 52.0,11.3 54.3,11.4 56.6,12.6 58.9,13.3 61.1,14.1 63.4,15.1 65.7,15.3 68.0,16.4 70.2,17.0 72.5,16.6 74.8,16.6 77.1,16.8 79.3,17.6 81.6,18.3 83.9,18.9 86.2,19.8 88.4,20.4 90.7,20.2 93.0,21.8 95.3,22.5 97.5,23.0 99.8,23.0 102.1,22.9 104.4,23.5 106.6,23.4 108.9,24.6 111.2,25.9 113.5,25.6 115.7,26.0 118.0,25.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Solar / Photovoltaics</span><span class="l-zh">光伏</span></td>
+          <td><span class="cat"><span class="l-en">New Energy &amp; Autos</span><span class="l-zh">New Energy &amp; Autos</span></span></td>
+          <td>15</td>
+          <td><span class="chg neg">-2.7%</span></td>
+          <td><span class="chg neg">-1.32σ</span></td>
+          <td><span class="chg pos">+0.130</span></td>
+          <td style="text-align:left">
+<span class="vstate out"><span class="l-en">outflow easing</span><span class="l-zh">流出趋缓</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.0 4.3,2.5 6.5,3.2 8.8,3.0 11.1,2.7 13.4,3.5 15.6,2.7 17.9,4.3 20.2,3.9 22.5,3.2 24.7,3.0 27.0,3.7 29.3,4.2 31.6,4.7 33.8,5.5 36.1,6.7 38.4,7.6 40.7,8.2 42.9,7.9 45.2,7.7 47.5,9.2 49.8,7.4 52.0,6.5 54.3,8.1 56.6,8.8 58.9,9.0 61.1,10.2 63.4,11.3 65.7,11.3 68.0,11.5 70.2,12.8 72.5,14.6 74.8,14.2 77.1,12.9 79.3,14.1 81.6,14.0 83.9,15.9 86.2,16.3 88.4,15.9 90.7,17.2 93.0,17.7 95.3,19.4 97.5,20.2 99.8,21.0 102.1,21.5 104.4,22.6 106.6,23.1 108.9,24.0 111.2,23.5 113.5,25.0 115.7,26.0 118.0,25.7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Autos & NEV Makers</span><span class="l-zh">汽车整车</span></td>
+          <td><span class="cat"><span class="l-en">New Energy &amp; Autos</span><span class="l-zh">New Energy &amp; Autos</span></span></td>
+          <td>16</td>
+          <td><span class="chg neg">-2.3%</span></td>
+          <td><span class="chg neg">-1.45σ</span></td>
+          <td><span class="chg pos">+0.392</span></td>
+          <td style="text-align:left">
+<span class="vstate out"><span class="l-en">outflow easing</span><span class="l-zh">流出趋缓</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.4 4.3,2.6 6.5,3.4 8.8,3.6 11.1,2.9 13.4,2.7 15.6,2.3 17.9,2.0 20.2,2.1 22.5,3.1 24.7,3.4 27.0,3.4 29.3,3.8 31.6,4.5 33.8,5.0 36.1,5.5 38.4,6.3 40.7,7.5 42.9,7.2 45.2,6.2 47.5,6.7 49.8,6.6 52.0,7.5 54.3,8.2 56.6,8.9 58.9,9.1 61.1,10.3 63.4,10.9 65.7,11.7 68.0,12.6 70.2,13.6 72.5,13.9 74.8,13.9 77.1,14.0 79.3,15.0 81.6,15.6 83.9,16.1 86.2,17.1 88.4,17.9 90.7,17.7 93.0,18.7 95.3,19.3 97.5,20.5 99.8,21.7 102.1,23.0 104.4,24.3 106.6,24.1 108.9,24.3 111.2,24.1 113.5,25.0 115.7,25.8 118.0,26.0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Defense & Aerospace</span><span class="l-zh">军工航天</span></td>
+          <td><span class="cat"><span class="l-en">Advanced Manufacturing</span><span class="l-zh">Advanced Manufacturing</span></span></td>
+          <td>14</td>
+          <td><span class="chg neg">-3.0%</span></td>
+          <td><span class="chg neg">-1.55σ</span></td>
+          <td><span class="chg neg">-0.176</span></td>
+          <td style="text-align:left">
+<span class="vstate out"><span class="l-en">accelerating out</span><span class="l-zh">加速流出</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.2 4.3,2.0 6.5,3.1 8.8,3.6 11.1,3.9 13.4,4.2 15.6,4.5 17.9,5.3 20.2,5.7 22.5,5.6 24.7,6.0 27.0,7.1 29.3,8.0 31.6,9.0 33.8,9.9 36.1,10.9 38.4,12.2 40.7,12.8 42.9,12.5 45.2,12.9 47.5,13.8 49.8,14.2 52.0,14.7 54.3,15.5 56.6,15.4 58.9,16.4 61.1,17.8 63.4,17.9 65.7,18.3 68.0,18.1 70.2,17.9 72.5,18.2 74.8,18.6 77.1,18.6 79.3,19.4 81.6,20.0 83.9,20.0 86.2,19.8 88.4,20.6 90.7,21.1 93.0,21.6 95.3,22.1 97.5,22.5 99.8,22.7 102.1,23.5 104.4,23.9 106.6,23.5 108.9,24.4 111.2,24.9 113.5,25.6 115.7,26.0 118.0,25.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">AI Compute & Optics</span><span class="l-zh">AI算力与光模块</span></td>
+          <td><span class="cat"><span class="l-en">Technology &amp; AI</span><span class="l-zh">Technology &amp; AI</span></span></td>
+          <td>17</td>
+          <td><span class="chg neg">-3.2%</span></td>
+          <td><span class="chg neg">-1.62σ</span></td>
+          <td><span class="chg pos">+0.205</span></td>
+          <td style="text-align:left">
+<span class="vstate out"><span class="l-en">outflow easing</span><span class="l-zh">流出趋缓</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.0 4.3,2.6 6.5,3.6 8.8,4.3 11.1,4.1 13.4,4.8 15.6,3.7 17.9,3.1 20.2,3.7 22.5,3.6 24.7,4.0 27.0,2.4 29.3,3.0 31.6,3.8 33.8,5.4 36.1,7.0 38.4,6.9 40.7,7.7 42.9,9.0 45.2,9.0 47.5,9.1 49.8,9.4 52.0,10.0 54.3,10.7 56.6,10.9 58.9,10.3 61.1,10.8 63.4,11.7 65.7,10.7 68.0,11.2 70.2,12.7 72.5,13.2 74.8,13.1 77.1,15.1 79.3,14.8 81.6,14.6 83.9,14.8 86.2,15.3 88.4,16.2 90.7,16.2 93.0,18.1 95.3,18.9 97.5,19.2 99.8,19.5 102.1,20.9 104.4,21.9 106.6,22.5 108.9,23.7 111.2,23.3 113.5,24.8 115.7,26.0 118.0,26.0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></td>
+          <td><span class="cat"><span class="l-en">Technology &amp; AI</span><span class="l-zh">Technology &amp; AI</span></span></td>
+          <td>22</td>
+          <td><span class="chg neg">-4.0%</span></td>
+          <td><span class="chg neg">-2.02σ</span></td>
+          <td><span class="chg neg">-0.056</span></td>
+          <td style="text-align:left">
+<span class="vstate out"><span class="l-en">accelerating out</span><span class="l-zh">加速流出</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.0 4.3,2.2 6.5,3.9 8.8,4.1 11.1,3.7 13.4,3.9 15.6,3.3 17.9,4.0 20.2,3.9 22.5,4.1 24.7,4.4 27.0,3.4 29.3,4.5 31.6,4.4 33.8,6.1 36.1,7.5 38.4,8.1 40.7,9.2 42.9,9.0 45.2,9.2 47.5,9.9 49.8,10.9 52.0,11.6 54.3,12.8 56.6,14.6 58.9,14.5 61.1,15.2 63.4,15.8 65.7,15.6 68.0,15.5 70.2,16.0 72.5,16.3 74.8,15.0 77.1,15.4 79.3,15.8 81.6,15.4 83.9,15.4 86.2,16.5 88.4,17.6 90.7,17.4 93.0,19.1 95.3,19.8 97.5,20.0 99.8,19.6 102.1,20.3 104.4,21.0 106.6,22.4 108.9,22.9 111.2,22.7 113.5,24.4 115.7,26.0 118.0,26.0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+        <tr>
+          <td class="snm"><span class="l-en">Software & AI Apps</span><span class="l-zh">软件与AI应用</span></td>
+          <td><span class="cat"><span class="l-en">Technology &amp; AI</span><span class="l-zh">Technology &amp; AI</span></span></td>
+          <td>15</td>
+          <td><span class="chg neg">-4.0%</span></td>
+          <td><span class="chg neg">-2.45σ</span></td>
+          <td><span class="chg neg">-0.185</span></td>
+          <td style="text-align:left">
+<span class="vstate out"><span class="l-en">accelerating out</span><span class="l-zh">加速流出</span></span></td>
+          <td><svg class="spark " viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="2.0,2.1 4.3,2.0 6.5,3.0 8.8,3.3 11.1,2.8 13.4,3.4 15.6,3.1 17.9,2.7 20.2,3.3 22.5,3.6 24.7,4.1 27.0,4.3 29.3,4.6 31.6,5.0 33.8,6.0 36.1,6.8 38.4,7.0 40.7,8.1 42.9,8.0 45.2,7.9 47.5,8.6 49.8,9.3 52.0,10.1 54.3,11.3 56.6,12.2 58.9,13.1 61.1,14.6 63.4,15.2 65.7,15.6 68.0,16.1 70.2,16.3 72.5,16.0 74.8,16.6 77.1,16.3 79.3,17.1 81.6,17.8 83.9,18.5 86.2,19.8 88.4,19.6 90.7,20.0 93.0,21.3 95.3,21.8 97.5,22.2 99.8,22.3 102.1,23.0 104.4,23.7 106.6,23.7 108.9,24.3 111.2,24.8 113.5,25.5 115.7,26.0 118.0,26.0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></td>
+        </tr>
+      
+      </tbody>
+    </table>
+  </div>
+  </div>
+  <div class="legend"><span class="l-en">Per-sector big-money flow = equal-weight member main-money net-rate, ranked by 4-week velocity.</span><span class="l-zh">板块主力资金＝等权成分股主力净占比，按4周流速排序。</span></div>
+  
+
+  
+  
+  
+  <div class="sec-h"><h2>📈 <span class="l-en">A-Share Names — Big-Money Velocity</span><span class="l-zh">A股个股 — 主力流速</span></h2>
+    <span class="sub"><span class="l-en">ranked across</span><span class="l-zh">排序范围</span> 1473 <span class="l-en">names · weekly · as of</span><span class="l-zh">只 · 周度 · 截至</span> 2026-06-12</span></div>
+  <div class="two">
+    <div class="panel">
+      <div class="panel-h">🟢 <span class="l-en">Accelerating IN — strongest inflow velocity</span><span class="l-zh">加速流入 — 流速最强</span></div>
+      <div class="tbl-wrap"><table class="board">
+        <thead><tr><th><span class="l-en">Name</span><span class="l-zh">名称</span></th><th><span class="l-en">4wk net</span><span class="l-zh">4周净占比</span></th><th><span class="l-en">Velocity</span><span class="l-zh">流速</span></th><th><span class="l-en">Accel</span><span class="l-zh">加速度</span></th></tr></thead>
+        <tbody>
+        
+          <tr><td class="snm">源杰科技 <span class="tk">688498.SS</span></td>
+            <td><span class="chg pos">+0.7%</span></td><td><span class="chg pos">+4.51σ</span></td>
+            <td><span class="chg pos">+0.640</span></td></tr>
+        
+          <tr><td class="snm">新凤鸣 <span class="tk">603225.SS</span></td>
+            <td><span class="chg pos">+7.9%</span></td><td><span class="chg pos">+3.38σ</span></td>
+            <td><span class="chg pos">+0.007</span></td></tr>
+        
+          <tr><td class="snm">交通银行 <span class="tk">601328.SS</span></td>
+            <td><span class="chg pos">+9.2%</span></td><td><span class="chg pos">+2.70σ</span></td>
+            <td><span class="chg pos">+0.321</span></td></tr>
+        
+          <tr><td class="snm">工商银行 <span class="tk">601398.SS</span></td>
+            <td><span class="chg pos">+8.5%</span></td><td><span class="chg pos">+2.60σ</span></td>
+            <td><span class="chg pos">+0.248</span></td></tr>
+        
+          <tr><td class="snm">山东钢铁 <span class="tk">600022.SS</span></td>
+            <td><span class="chg pos">+6.3%</span></td><td><span class="chg pos">+2.57σ</span></td>
+            <td><span class="chg pos">+0.295</span></td></tr>
+        
+          <tr><td class="snm">南京银行 <span class="tk">601009.SS</span></td>
+            <td><span class="chg pos">+8.3%</span></td><td><span class="chg pos">+2.46σ</span></td>
+            <td><span class="chg pos">+0.312</span></td></tr>
+        
+          <tr><td class="snm">百利天恒 <span class="tk">688506.SS</span></td>
+            <td><span class="chg pos">+7.1%</span></td><td><span class="chg pos">+2.39σ</span></td>
+            <td><span class="chg pos">+0.763</span></td></tr>
+        
+          <tr><td class="snm">步步高 <span class="tk">002251.SZ</span></td>
+            <td><span class="chg pos">+16.6%</span></td><td><span class="chg pos">+2.36σ</span></td>
+            <td><span class="chg pos">+0.929</span></td></tr>
+        
+          <tr><td class="snm">招金黄金 <span class="tk">000506.SZ</span></td>
+            <td><span class="chg pos">+12.2%</span></td><td><span class="chg pos">+2.28σ</span></td>
+            <td><span class="chg pos">+0.720</span></td></tr>
+        
+          <tr><td class="snm">台华新材 <span class="tk">603055.SS</span></td>
+            <td><span class="chg pos">+6.7%</span></td><td><span class="chg pos">+2.23σ</span></td>
+            <td><span class="chg pos">+0.645</span></td></tr>
+        
+          <tr><td class="snm">柏楚电子 <span class="tk">688188.SS</span></td>
+            <td><span class="chg pos">+7.8%</span></td><td><span class="chg pos">+2.22σ</span></td>
+            <td><span class="chg pos">+0.565</span></td></tr>
+        
+          <tr><td class="snm">邮储银行 <span class="tk">601658.SS</span></td>
+            <td><span class="chg pos">+10.4%</span></td><td><span class="chg pos">+2.21σ</span></td>
+            <td><span class="chg pos">+0.413</span></td></tr>
+        
+          <tr><td class="snm">大秦铁路 <span class="tk">601006.SS</span></td>
+            <td><span class="chg pos">+9.6%</span></td><td><span class="chg pos">+2.16σ</span></td>
+            <td><span class="chg neg">-0.056</span></td></tr>
+        
+          <tr><td class="snm">铜陵有色 <span class="tk">000630.SZ</span></td>
+            <td><span class="chg pos">+15.5%</span></td><td><span class="chg pos">+2.16σ</span></td>
+            <td><span class="chg pos">+0.312</span></td></tr>
+        
+        </tbody></table></div>
+    </div>
+    <div class="panel">
+      <div class="panel-h">🔴 <span class="l-en">Accelerating OUT — strongest outflow velocity</span><span class="l-zh">加速流出 — 流出最强</span></div>
+      <div class="tbl-wrap"><table class="board">
+        <thead><tr><th><span class="l-en">Name</span><span class="l-zh">名称</span></th><th><span class="l-en">4wk net</span><span class="l-zh">4周净占比</span></th><th><span class="l-en">Velocity</span><span class="l-zh">流速</span></th><th><span class="l-en">Accel</span><span class="l-zh">加速度</span></th></tr></thead>
+        <tbody>
+        
+          <tr><td class="snm">木林森 <span class="tk">002745.SZ</span></td>
+            <td><span class="chg neg">-8.3%</span></td><td><span class="chg neg">-3.87σ</span></td>
+            <td><span class="chg pos">+0.104</span></td></tr>
+        
+          <tr><td class="snm">兰石重装 <span class="tk">603169.SS</span></td>
+            <td><span class="chg neg">-8.7%</span></td><td><span class="chg neg">-3.86σ</span></td>
+            <td><span class="chg neg">-0.175</span></td></tr>
+        
+          <tr><td class="snm">全志科技 <span class="tk">300458.SZ</span></td>
+            <td><span class="chg neg">-8.9%</span></td><td><span class="chg neg">-3.75σ</span></td>
+            <td><span class="chg neg">-0.249</span></td></tr>
+        
+          <tr><td class="snm">金宏气体 <span class="tk">688106.SS</span></td>
+            <td><span class="chg neg">-11.3%</span></td><td><span class="chg neg">-3.73σ</span></td>
+            <td><span class="chg neg">-0.699</span></td></tr>
+        
+          <tr><td class="snm">景嘉微 <span class="tk">300474.SZ</span></td>
+            <td><span class="chg neg">-12.5%</span></td><td><span class="chg neg">-3.69σ</span></td>
+            <td><span class="chg neg">-0.361</span></td></tr>
+        
+          <tr><td class="snm">城地香江 <span class="tk">603887.SS</span></td>
+            <td><span class="chg neg">-11.4%</span></td><td><span class="chg neg">-3.28σ</span></td>
+            <td><span class="chg neg">-0.527</span></td></tr>
+        
+          <tr><td class="snm">纳芯微 <span class="tk">688052.SS</span></td>
+            <td><span class="chg neg">-7.2%</span></td><td><span class="chg neg">-3.28σ</span></td>
+            <td><span class="chg neg">-0.623</span></td></tr>
+        
+          <tr><td class="snm">索菲亚 <span class="tk">002572.SZ</span></td>
+            <td><span class="chg neg">-7.7%</span></td><td><span class="chg neg">-3.26σ</span></td>
+            <td><span class="chg neg">-0.350</span></td></tr>
+        
+          <tr><td class="snm">东方国信 <span class="tk">300166.SZ</span></td>
+            <td><span class="chg neg">-8.4%</span></td><td><span class="chg neg">-3.22σ</span></td>
+            <td><span class="chg neg">-0.193</span></td></tr>
+        
+          <tr><td class="snm">四维图新 <span class="tk">002405.SZ</span></td>
+            <td><span class="chg neg">-8.9%</span></td><td><span class="chg neg">-3.09σ</span></td>
+            <td><span class="chg neg">-0.061</span></td></tr>
+        
+          <tr><td class="snm">星宸科技 <span class="tk">301536.SZ</span></td>
+            <td><span class="chg neg">-8.5%</span></td><td><span class="chg neg">-3.06σ</span></td>
+            <td><span class="chg neg">-0.461</span></td></tr>
+        
+          <tr><td class="snm">先导基电 <span class="tk">600641.SS</span></td>
+            <td><span class="chg neg">-7.2%</span></td><td><span class="chg neg">-3.06σ</span></td>
+            <td><span class="chg neg">-0.632</span></td></tr>
+        
+          <tr><td class="snm">伊戈尔 <span class="tk">002922.SZ</span></td>
+            <td><span class="chg neg">-7.3%</span></td><td><span class="chg neg">-2.97σ</span></td>
+            <td><span class="chg neg">-0.214</span></td></tr>
+        
+          <tr><td class="snm">鼎龙股份 <span class="tk">300054.SZ</span></td>
+            <td><span class="chg neg">-6.2%</span></td><td><span class="chg neg">-2.93σ</span></td>
+            <td><span class="chg neg">-0.427</span></td></tr>
+        
+        </tbody></table></div>
+    </div>
+  </div>
+  <div class="legend"><span class="l-en">主力 net-rate (super-large + large orders); velocity = standardized 4-week inflow rate, acceleration = its trend.</span><span class="l-zh">主力净占比（超大单+大单）；流速＝标准化4周流入率，加速度＝其趋势。</span></div>
+  
+
+  
+  
+  
+  <div class="sec-h"><h2>🏛️ <span class="l-en">A-Share Institutional Seats</span><span class="l-zh">A股机构席位</span></h2>
+    <span class="sub"><span class="l-en">Dragon-Tiger 机构专用 net buys · recent window · as of</span><span class="l-zh">龙虎榜机构专用净买入 · 近期窗口 · 截至</span> 2026-06-28</span></div>
+  <div class="two">
+    <div class="panel">
+      <div class="panel-h">🟢 <span class="l-en">Institutions bought</span><span class="l-zh">机构买入</span></div>
+      <div class="tbl-wrap"><table class="board">
+        <thead><tr><th><span class="l-en">Name</span><span class="l-zh">名称</span></th><th><span class="l-en">Inst net</span><span class="l-zh">机构净额</span></th><th><span class="l-en">Seats B/S</span><span class="l-zh">买/卖席</span></th></tr></thead>
+        <tbody>
+        
+          <tr><td class="snm">旭光电子 <span class="tk">600353.SS</span></td>
+            <td><span class="chg pos">+30.27亿</span></td>
+            <td>2/3</td></tr>
+        
+          <tr><td class="snm">聚辰股份 <span class="tk">688123.SS</span></td>
+            <td><span class="chg pos">+14.11亿</span></td>
+            <td>4/2</td></tr>
+        
+          <tr><td class="snm">云南锗业 <span class="tk">002428.SZ</span></td>
+            <td><span class="chg pos">+9.78亿</span></td>
+            <td>9/6</td></tr>
+        
+          <tr><td class="snm">TCL科技 <span class="tk">000100.SZ</span></td>
+            <td><span class="chg pos">+8.96亿</span></td>
+            <td>4/4</td></tr>
+        
+          <tr><td class="snm">银之杰 <span class="tk">300085.SZ</span></td>
+            <td><span class="chg pos">+7.69亿</span></td>
+            <td>9/6</td></tr>
+        
+          <tr><td class="snm">德明利 <span class="tk">001309.SZ</span></td>
+            <td><span class="chg pos">+5.19亿</span></td>
+            <td>4/5</td></tr>
+        
+          <tr><td class="snm">中国巨石 <span class="tk">600176.SS</span></td>
+            <td><span class="chg pos">+4.96亿</span></td>
+            <td>1/0</td></tr>
+        
+          <tr><td class="snm">广合科技 <span class="tk">001389.SZ</span></td>
+            <td><span class="chg pos">+4.84亿</span></td>
+            <td>5/7</td></tr>
+        
+          <tr><td class="snm">TCL中环 <span class="tk">002129.SZ</span></td>
+            <td><span class="chg pos">+4.75亿</span></td>
+            <td>5/4</td></tr>
+        
+          <tr><td class="snm">招商轮船 <span class="tk">601872.SS</span></td>
+            <td><span class="chg pos">+4.55亿</span></td>
+            <td>2/0</td></tr>
+        
+          <tr><td class="snm">风华高科 <span class="tk">000636.SZ</span></td>
+            <td><span class="chg pos">+4.45亿</span></td>
+            <td>4/3</td></tr>
+        
+          <tr><td class="snm">中京电子 <span class="tk">002579.SZ</span></td>
+            <td><span class="chg pos">+4.42亿</span></td>
+            <td>8/7</td></tr>
+        
+        </tbody></table></div>
+    </div>
+    <div class="panel">
+      <div class="panel-h">🔴 <span class="l-en">Institutions sold</span><span class="l-zh">机构卖出</span></div>
+      <div class="tbl-wrap"><table class="board">
+        <thead><tr><th><span class="l-en">Name</span><span class="l-zh">名称</span></th><th><span class="l-en">Inst net</span><span class="l-zh">机构净额</span></th><th><span class="l-en">Seats B/S</span><span class="l-zh">买/卖席</span></th></tr></thead>
+        <tbody>
+        
+          <tr><td class="snm">汇成股份 <span class="tk">688403.SS</span></td>
+            <td><span class="chg neg">-5.13亿</span></td>
+            <td>1/2</td></tr>
+        
+          <tr><td class="snm">北大荒 <span class="tk">600598.SS</span></td>
+            <td><span class="chg neg">-4.70亿</span></td>
+            <td>0/4</td></tr>
+        
+          <tr><td class="snm">国际复材 <span class="tk">301526.SZ</span></td>
+            <td><span class="chg neg">-3.81亿</span></td>
+            <td>3/4</td></tr>
+        
+          <tr><td class="snm">香农芯创 <span class="tk">300475.SZ</span></td>
+            <td><span class="chg neg">-3.29亿</span></td>
+            <td>4/4</td></tr>
+        
+          <tr><td class="snm">烽火通信 <span class="tk">600498.SS</span></td>
+            <td><span class="chg neg">-2.71亿</span></td>
+            <td>0/1</td></tr>
+        
+          <tr><td class="snm">兴业银锡 <span class="tk">000426.SZ</span></td>
+            <td><span class="chg neg">-2.36亿</span></td>
+            <td>2/3</td></tr>
+        
+          <tr><td class="snm">铜陵有色 <span class="tk">000630.SZ</span></td>
+            <td><span class="chg neg">-2.35亿</span></td>
+            <td>1/3</td></tr>
+        
+          <tr><td class="snm">华盛昌 <span class="tk">002980.SZ</span></td>
+            <td><span class="chg neg">-2.34亿</span></td>
+            <td>3/5</td></tr>
+        
+          <tr><td class="snm">麦捷科技 <span class="tk">300319.SZ</span></td>
+            <td><span class="chg neg">-2.28亿</span></td>
+            <td>3/4</td></tr>
+        
+          <tr><td class="snm">中鼎股份 <span class="tk">000887.SZ</span></td>
+            <td><span class="chg neg">-2.22亿</span></td>
+            <td>3/2</td></tr>
+        
+          <tr><td class="snm">银轮股份 <span class="tk">002126.SZ</span></td>
+            <td><span class="chg neg">-2.17亿</span></td>
+            <td>3/4</td></tr>
+        
+          <tr><td class="snm">广发证券 <span class="tk">000776.SZ</span></td>
+            <td><span class="chg neg">-1.76亿</span></td>
+            <td>1/1</td></tr>
+        
+        </tbody></table></div>
+    </div>
+  </div>
+  <div class="legend"><span class="l-en">Dragon-Tiger (龙虎榜) 机构专用 institutional-seat net buys over the recent abnormal-volume window — anonymous seats, context not attribution.</span><span class="l-zh">龙虎榜机构专用席位近期净买入（异动窗口）——匿名席位，仅作背景参考。</span></div>
+  
+
+  
+  
+  
+  <div class="sec-h"><h2>🇭🇰 <span class="l-en">Hong Kong — Southbound per-name</span><span class="l-zh">香港 — 南向个股</span></h2>
+    <span class="sub"><span class="l-en">mainland Connect crowd · as of</span><span class="l-zh">内地南向资金 · 截至</span> 2026-06-26</span></div>
+  
+  <div class="frozen-banner" style="color:var(--blue);border-color:color-mix(in srgb,var(--blue) 45%,var(--grid));max-width:960px">
+    ⏳ <span class="l-en">Multi-horizon velocity unlocks as the daily holdings history deepens</span><span class="l-zh">多周期流速随每日持仓历史积累解锁</span>
+    — <span class="l-en">depth</span><span class="l-zh">深度</span> 6/8 <span class="l-en">days. Showing the 5-day accumulation board for now.</span><span class="l-zh">日。当前显示5日累积看板。</span>
+  </div>
+  
+  <div class="two">
+    <div class="panel">
+      <div class="panel-h">🟢 <span class="l-en">Mainland accumulating</span><span class="l-zh">内地加仓</span></div>
+      <div class="tbl-wrap"><table class="board">
+        <thead><tr><th><span class="l-en">Name</span><span class="l-zh">名称</span></th><th><span class="l-en">5d hold Δ</span><span class="l-zh">5日持仓Δ</span></th><th><span class="l-en">Own %</span><span class="l-zh">持股%</span></th><th><span class="l-en">Hold</span><span class="l-zh">持仓</span></th></tr></thead>
+        <tbody>
+        
+          <tr><td class="snm">建滔集团 <span class="tk">0148.HK</span></td>
+            <td><span class="chg pos">+40.2%</span></td><td>25.7</td>
+            <td>HK$36.4B</td></tr>
+        
+          <tr><td class="snm">晋景新能 <span class="tk">1783.HK</span></td>
+            <td><span class="chg pos">+36.8%</span></td><td>3.5</td>
+            <td>HK$0.6B</td></tr>
+        
+          <tr><td class="snm">建滔积层板 <span class="tk">1888.HK</span></td>
+            <td><span class="chg pos">+32.9%</span></td><td>17.0</td>
+            <td>HK$52.8B</td></tr>
+        
+          <tr><td class="snm">威胜控股 <span class="tk">3393.HK</span></td>
+            <td><span class="chg pos">+32.6%</span></td><td>3.9</td>
+            <td>HK$0.8B</td></tr>
+        
+          <tr><td class="snm">九方智投控股 <span class="tk">9636.HK</span></td>
+            <td><span class="chg pos">+22.3%</span></td><td>16.8</td>
+            <td>HK$2.4B</td></tr>
+        
+          <tr><td class="snm">药明合联 <span class="tk">2268.HK</span></td>
+            <td><span class="chg pos">+19.4%</span></td><td>12.6</td>
+            <td>HK$8.8B</td></tr>
+        
+        </tbody></table></div>
+    </div>
+    <div class="panel">
+      <div class="panel-h">🔴 <span class="l-en">Mainland distributing</span><span class="l-zh">内地减仓</span></div>
+      <div class="tbl-wrap"><table class="board">
+        <thead><tr><th><span class="l-en">Name</span><span class="l-zh">名称</span></th><th><span class="l-en">5d hold Δ</span><span class="l-zh">5日持仓Δ</span></th><th><span class="l-en">Own %</span><span class="l-zh">持股%</span></th><th><span class="l-en">Hold</span><span class="l-zh">持仓</span></th></tr></thead>
+        <tbody>
+        
+          <tr><td class="snm">滔搏 <span class="tk">6110.HK</span></td>
+            <td><span class="chg neg">-31.8%</span></td><td>7.3</td>
+            <td>HK$0.8B</td></tr>
+        
+          <tr><td class="snm">恒大物业 <span class="tk">6666.HK</span></td>
+            <td><span class="chg neg">-29.7%</span></td><td>17.1</td>
+            <td>HK$1.4B</td></tr>
+        
+          <tr><td class="snm">万国黄金集团 <span class="tk">3939.HK</span></td>
+            <td><span class="chg neg">-27.3%</span></td><td>12.0</td>
+            <td>HK$4.1B</td></tr>
+        
+          <tr><td class="snm">舜宇光学科技 <span class="tk">2382.HK</span></td>
+            <td><span class="chg neg">-25.8%</span></td><td>14.7</td>
+            <td>HK$9.8B</td></tr>
+        
+          <tr><td class="snm">江西铜业股份 <span class="tk">0358.HK</span></td>
+            <td><span class="chg neg">-24.3%</span></td><td>15.9</td>
+            <td>HK$6.9B</td></tr>
+        
+          <tr><td class="snm">中国黄金国际 <span class="tk">2099.HK</span></td>
+            <td><span class="chg neg">-23.6%</span></td><td>22.3</td>
+            <td>HK$10.3B</td></tr>
+        
+        </tbody></table></div>
+    </div>
+  </div>
+  <div class="legend"><span class="l-en">Southbound holdings are mainland money via Connect (a flow confirmer, not a standalone signal). Per HK name: how much of it the mainland Connect crowd holds (% of free float) and whether it is ADDING (5-/10-day change in holding value). HK's dominant marginal buyer — a flow confirmer for sizing, not a standalone alpha.</span><span class="l-zh">南向持仓为内地经互联互通的资金（资金确认项，非独立信号）。</span></div>
+  
+
+  <div class="foot">
+    <b><span class="l-en">Sources</span><span class="l-zh">数据来源</span>:</b>
+    <span class="l-en">Stock-Connect channels — Eastmoney RPT_MUTUAL_DEAL_HISTORY (southbound live to date; northbound aggregate net discontinued 2024-08-16). A-share name/sector flow — Tushare moneyflow_dc 主力 weekly grid (data/tushare/flow_hist). Institutional seats — Eastmoney 龙虎榜 (data/china_lhb). HK southbound — Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS (data/hk_southbound).</span><span class="l-zh">沪深港通——东方财富 RPT_MUTUAL_DEAL_HISTORY（南向实时；北向整体净额于2024-08-16停更）。A股个股/板块资金——Tushare moneyflow_dc 主力周度网格。机构席位——东方财富龙虎榜。南向——东方财富 RPT_MUTUAL_STOCK_HOLDRANKS。</span><br>
+    <b><span class="l-en">Method</span><span class="l-zh">方法</span>:</b>
+    <span class="l-en">Velocity = slope_z of cumulative net-flow (drift ÷ its own volatility); acceleration = the trailing slope of that velocity. All causal & point-in-time. This is descriptive positioning context, not investment advice.</span><span class="l-zh">流速＝累计净流向的 slope_z（漂移 ÷ 自身波动）；加速度＝该流速的滚动斜率。全部为因果、时点对齐。仅为描述性定位背景，非投资建议。</span>
+    · <span class="l-en">Built</span><span class="l-zh">构建于</span> 2026-06-28 05:25 UTC
+  </div>
+</div>
+<script>
+(function(){
+  // click-to-sort numeric columns on the sector table
+  var tbl=document.getElementById('sectortbl'); if(!tbl) return;
+  tbl.querySelectorAll('th').forEach(function(th,i){
+    th.addEventListener('click',function(){
+      var rows=Array.from(tbl.tBodies[0].rows), asc=th._asc=!th._asc;
+      rows.sort(function(a,b){
+        var x=parseFloat((a.cells[i].textContent||'').replace(/[^0-9.\-]/g,'')),
+            y=parseFloat((b.cells[i].textContent||'').replace(/[^0-9.\-]/g,''));
+        if(isNaN(x)&&isNaN(y))return 0; if(isNaN(x))return 1; if(isNaN(y))return -1;
+        return asc?x-y:y-x;
+      });
+      rows.forEach(function(r){tbl.tBodies[0].appendChild(r);});
+    });
+  });
+})();
+</script>
+<script src="theme.js"></script>
+</body></html>
