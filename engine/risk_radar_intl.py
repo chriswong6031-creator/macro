@@ -31,14 +31,16 @@ own history; the de-risk response is SIZING, not selection. All signals are caus
 """
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from engine.indicators import pct_rank_window
-from lib import store
+from lib import config, store
 
 log = logging.getLogger(__name__)
 
@@ -157,16 +159,38 @@ def _last(s: pd.Series | None):
     return float(s.iloc[-1]) if len(s) else None
 
 
-def _probs(profile: "RadarProfile", state: str) -> dict:
-    cal, base = profile.prob_cal, profile.prob_base
-    out = {h: cal[h].get(state, base[h]) for h in ("h5", "h10", "h21")}
+def _calib(profile: "RadarProfile", root=None) -> dict:
+    """Per-market calibration = the baked profile surface, OPTIONALLY overlaid by the bounded
+    tuner (data/risk_radar_intl/<key>_calibration.json, engine/risk_radar_intl_tune.py). The
+    overlay may adjust the prob surface only (the displayed odds become measured from the
+    radar's own track record); the bands stay structural. Absent file ⇒ baked defaults."""
+    cal = {"prob_cal": {h: dict(v) for h, v in profile.prob_cal.items()},
+           "prob_base": dict(profile.prob_base), "bands": dict(profile.bands)}
+    try:
+        base = config.data_dir() if root is None else (Path(root) / "data")
+        p = base / "risk_radar_intl" / f"{profile.key}_calibration.json"
+        if p.exists():
+            ov = json.loads(p.read_text())
+            for h, d in (ov.get("prob_cal") or {}).items():
+                if h in cal["prob_cal"]:
+                    cal["prob_cal"][h].update({k: float(v) for k, v in d.items()})
+            if ov.get("prob_base"):
+                cal["prob_base"].update({k: float(v) for k, v in ov["prob_base"].items()})
+    except Exception as e:  # noqa: BLE001
+        log.warning("risk_radar_intl calib overlay(%s) failed: %s", profile.key, e)
+    return cal
+
+
+def _probs(cal: dict, state: str) -> dict:
+    pc, base = cal["prob_cal"], cal["prob_base"]
+    out = {h: pc[h].get(state, base[h]) for h in ("h5", "h10", "h21")}
     out["base_h5"], out["base_h10"], out["base_h21"] = base["h5"], base["h10"], base["h21"]
     out["lift_h21"] = round(out["h21"] / base["h21"], 2) if base["h21"] else None
     out["measure"] = ">=5% index pullback within h business days (measured on this market's own history)"
     return out
 
 
-def compute(profile: "RadarProfile") -> dict:
+def compute(profile: "RadarProfile", root=None) -> dict:
     """Live calibrated radar snapshot for `profile`. Reads the store; never raises a useful
     payload away. Returns the (risk_radar_intl.v1) dict the market-state radar mapping consumes."""
     null = {"schema": "risk_radar_intl.v1", "state": None, "market": profile.key,
@@ -178,6 +202,7 @@ def compute(profile: "RadarProfile") -> dict:
     sub = _sub_legs(idx, profile)
     if not sub:
         return null
+    cal = _calib(profile, root)          # baked surface + the tuner's overlay, if any
 
     # composite-leg latest percentiles + series (the calibrated structure)
     comp_last: dict[str, float] = {}
@@ -208,7 +233,7 @@ def compute(profile: "RadarProfile") -> dict:
     # tiers still show, but the loud banner waits for the broad tape to confirm.
     ma = B.rolling(200, min_periods=120).mean()
     below = bool(B.iloc[-1] < ma.iloc[-1]) if ma.dropna().size else False
-    state_ungated = _band(top * 100 if top is not None else None, profile.bands)
+    state_ungated = _band(top * 100 if top is not None else None, cal["bands"])
     state = state_ungated
     if not below and _STATE_ORDER.index(state) > _STATE_ORDER.index("caution"):
         state = "caution"
@@ -249,7 +274,7 @@ def compute(profile: "RadarProfile") -> dict:
         "dominant_label_en": dom_en,
         "dominant_label_zh": dom_zh,
         "scares": scares,
-        "drawdown_prob": _probs(profile, state),
+        "drawdown_prob": _probs(cal, state),
         "gross_factor": _GROSS.get(state, 1.0),
         "conjunction": bool(nhot >= 2),
         "context_gate": {"met": below, "below_200dma": below},
@@ -259,10 +284,10 @@ def compute(profile: "RadarProfile") -> dict:
     }
 
 
-def snapshot(profile: "RadarProfile") -> dict:
+def snapshot(profile: "RadarProfile", root=None) -> dict:
     """IO wrapper the build persists to latest['risk_radar']. Never raises."""
     try:
-        return compute(profile)
+        return compute(profile, root)
     except Exception as e:  # noqa: BLE001
         log.error("risk_radar_intl(%s) failed: %s", getattr(profile, "key", "?"), e)
         return {"schema": "risk_radar_intl.v1", "state": None,

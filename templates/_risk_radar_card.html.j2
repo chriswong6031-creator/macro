@@ -112,5 +112,12 @@
   {% if rd.is_loud and rd.do_en %}
   <div class="rrx-do"><span class="rrx-do-k">{{ t('Do','应对') }}</span>{{ t(rd.do_en, rd.do_zh) }}</div>
   {% endif %}
+
+  {# self-audit line — only on the international radars (rd.forward_log set by
+     engine/risk_radar_intl_audit). Every call is logged + graded vs the realized index path;
+     the radar earns the right to move the verdict only once its own record clears the bar. #}
+  {% if rd.forward_log %}{% set fl = rd.forward_log %}
+  <div class="rrx-audit"><span class="rrx-audit-k">🧾 {{ t('Self-audit','自审') }}</span>{% if fl.n_graded and fl.n_graded > 0 %}{{ fl.n_graded }} {{ t('graded','已评分') }}{% if fl.force_lift is not none %} · <b>{{ fl.force_lift }}×</b> {{ t('vs base rate','对比基准') }}{% endif %} · {% if fl.can_force %}{{ t('moving the verdict','参与定调') }} ✓{% else %}{{ t('display-only','仅展示') }}{% endif %}{% else %}{{ t('accruing — grades begin once calls mature (~21 trading days)','积累中 — 约21个交易日后开始评分') }}{% endif %}</div>
+  {% endif %}
 </div>
 {%- endmacro %}

@@ -16,7 +16,7 @@ a transparent blend of what has already turned. Pure functions, never raise.
 from __future__ import annotations
 
 from engine.market_state import (MarketProfile, _clamp, _component, _metric, _num,
-                                 _radar_override_display)
+                                 _radar_override_intl)
 
 # the broad A-share tape — Shanghai Composite, CSI 300 (the benchmark), Shenzhen Component
 _CN_INDICES = (
@@ -150,7 +150,7 @@ CN_PROFILE = MarketProfile(
     indices=_CN_INDICES,
     tape_noun_en="China indices", tape_noun_zh="A股指数",
     component_readers=(_cn_risk, _cn_vol, _cn_breadth, _cn_liquidity, _cn_stress),
-    radar_override=_radar_override_display,         # validated external-driver radar (risk_radar_intl.CN)
+    radar_override=_radar_override_intl,         # validated external-driver radar (risk_radar_intl.CN)
     overrides=frozenset(),                          # uncalibrated gauges → no hard verdict forcing
     caveat_en=("Display-only and lighter than the US read: China has no leading Risk Radar, no "
                "VIX term structure (QVIX + margin froth stand in), no HY credit spread, and the "

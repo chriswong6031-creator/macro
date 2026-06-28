@@ -17,7 +17,7 @@ the HKD peg), which the RORO composite already captures. Pure functions, never r
 from __future__ import annotations
 
 from engine.market_state import (MarketProfile, _clamp, _component, _metric, _num,
-                                 _radar_override_display)
+                                 _radar_override_intl)
 
 # the broad HK tape — Hang Seng, HSCEI (H-shares), HS TECH (3033.HK proxy)
 _HK_INDICES = (
@@ -154,7 +154,7 @@ HK_PROFILE = MarketProfile(
     indices=_HK_INDICES,
     tape_noun_en="HK indices", tape_noun_zh="港股指数",
     component_readers=(_hk_risk, _hk_vol, _hk_breadth, _hk_liquidity, _hk_stress),
-    radar_override=_radar_override_display,         # external-driver radar (risk_radar_intl.HK, recent-era)
+    radar_override=_radar_override_intl,         # external-driver radar (risk_radar_intl.HK, recent-era)
     overrides=frozenset(),                          # uncalibrated gauges → no hard verdict forcing
     caveat_en=("Display-only and lighter than the US read: HK has no leading Risk Radar, no VIX "
                "term structure (VHSI stands in), and the downturn gauges are uncalibrated. HK is "
