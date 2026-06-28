@@ -17,7 +17,7 @@ uncalibrated; no leading radar; no hard verdict overrides. Pure functions, never
 from __future__ import annotations
 
 from engine.market_state import (MarketProfile, _clamp, _component, _metric, _num,
-                                 _radar_override_display)
+                                 _radar_override_intl)
 
 # the broad TSX tape — the Composite plus its two structural pillars
 _CA_INDICES = (
@@ -138,7 +138,7 @@ CA_PROFILE = MarketProfile(
     indices=_CA_INDICES,
     tape_noun_en="TSX segments", tape_noun_zh="TSX 板块",
     component_readers=(_ca_risk, _ca_vol, _ca_breadth, _ca_liquidity, _ca_stress),
-    radar_override=_radar_override_display,         # external-driver radar (risk_radar_intl.CA, emerging)
+    radar_override=_radar_override_intl,         # external-driver radar (risk_radar_intl.CA, emerging)
     overrides=frozenset(),                          # uncalibrated gauges → no hard verdict forcing
     caveat_en=("Display-only and lighter than the US read: Canada has no leading Risk Radar and "
                "no domestic volatility index (the US VIX stands in for cross-asset fear), and the "

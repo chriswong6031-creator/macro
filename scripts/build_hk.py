@@ -673,6 +673,15 @@ def main() -> int:
             # HK_PROFILE.radar_override surfaces it. None-safe; display-only.
             from engine import risk_radar_intl as _rri
             latest["risk_radar"] = _rri.snapshot(_rri.HK_PROFILE)
+            # forward-grade self-audit + bounded auto-tune (vs realized HSI path); hard-forces the
+            # verdict only once HK's own log validates (can_force). Display-only until then.
+            try:
+                from engine import risk_radar_intl_audit as _rra, risk_radar_intl_tune as _rrt
+                latest["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(latest["risk_radar"], _rri.HK_PROFILE)
+                latest["risk_radar"]["can_force"] = bool(latest["risk_radar"]["forward_log"].get("can_force"))
+                _rrt.tune(_rri.HK_PROFILE)
+            except Exception as _e:  # noqa: BLE001
+                log.warning("hk risk-radar audit/tune failed (%s); skipping", _e)
             vm["market_state"] = _ms.market_state_snapshot(
                 latest, _f, latest.get("alerts") or [], profile=HK_PROFILE)
         except Exception as e:  # noqa: BLE001 — additive panel, never fatal

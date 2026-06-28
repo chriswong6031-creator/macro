@@ -657,6 +657,16 @@ def main() -> int:
             # on the board. None-safe; display-only (does not force the verdict).
             from engine import risk_radar_intl as _rri
             latest["risk_radar"] = _rri.snapshot(_rri.CN_PROFILE)
+            # forward-grade self-audit + bounded auto-tune: log+grade today's call against the
+            # realized SHCOMP path, attach the scorecard, and let the radar hard-force the verdict
+            # ONLY once its own log validates (can_force). Display-only until then. Never fatal.
+            try:
+                from engine import risk_radar_intl_audit as _rra, risk_radar_intl_tune as _rrt
+                latest["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(latest["risk_radar"], _rri.CN_PROFILE)
+                latest["risk_radar"]["can_force"] = bool(latest["risk_radar"]["forward_log"].get("can_force"))
+                _rrt.tune(_rri.CN_PROFILE)
+            except Exception as _e:  # noqa: BLE001
+                log.warning("china risk-radar audit/tune failed (%s); skipping", _e)
             vm["market_state"] = _ms.market_state_snapshot(
                 latest, _f, latest.get("alerts") or [], profile=CN_PROFILE)
         except Exception as e:  # noqa: BLE001 — additive panel, never fatal

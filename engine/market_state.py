@@ -462,18 +462,43 @@ def _radar_to_rd(rr: dict) -> dict:
         # carried so the board can pass ms.radar.scares to the card (the US page passes
         # latest.risk_radar.scares separately, so this is harmless duplication there).
         "scares": rr.get("scares") or [],
+        # the radar's own forward-grade scorecard (engine/risk_radar_intl_audit) — drives the
+        # card's "self-audit" line. None on the US radar (which logs via market_state_audit).
+        "forward_log": rr.get("forward_log"),
         "amp": 0, "amp_keys": [], "amp_flags_en": [], "amp_flags_zh": [],
         "severe_gated": False, "ceiling": None,
     }
 
 
-def _radar_override_display(latest: dict, overrides: list) -> dict:
-    """Display-only radar mapping for markets that HAVE a calibrated radar but not yet the
-    amplification + forward-grade auto-tune loop the US one carries (China/HK/Canada, fed by
-    engine/risk_radar_intl.py). It renders the card from latest['risk_radar'] but NEVER forces
-    the verdict (ceiling stays None, no override note appended) — honest until each market's
-    radar accrues its own graded track record."""
-    return _radar_to_rd(latest.get("risk_radar") or {})
+# Base score ceilings the intl radar applies ONLY once its own graded log validates it. No
+# corroborator multiplier — China/HK/Canada lack the US conditions gauges (complacency /
+# systemic_stress / turning_point), so radar intensity alone caps the verdict.
+_RADAR_INTL_CEIL = {"caution": 56, "elevated": 38, "risk-off": 26}
+_RADAR_MARKET = {"cn": ("China", "中国"), "hk": ("Hong Kong", "香港"), "ca": ("Canada", "加拿大")}
+
+
+def _radar_override_intl(latest: dict, overrides: list) -> dict:
+    """Radar mapping for the China/HK/Canada radars (engine/risk_radar_intl.py). Always renders
+    the .rrx card from latest['risk_radar']; HARD-FORCES the Market-State verdict (caps the
+    score) ONLY once that market's own forward-grade log has matured and cleared the bar
+    (rr['can_force'], set by engine/risk_radar_intl_audit.scorecard). Until then it is pure
+    display — accountable by construction, never trusted on faith."""
+    rr = latest.get("risk_radar") or {}
+    out = _radar_to_rd(rr)
+    state = rr.get("state")
+    if rr.get("can_force") and state in ("caution", "elevated", "risk-off"):
+        ceil = _RADAR_INTL_CEIL.get(state)
+        out["ceiling"] = ceil
+        mkt_en, mkt_zh = _RADAR_MARKET.get(rr.get("market"), ("", ""))
+        if ceil is not None and ceil < 42:
+            overrides.append({"kind": "radar",
+                "note_en": f"Forced to Risk-off by the {mkt_en} Risk Radar (validated track record).",
+                "note_zh": f"由经验证的{mkt_zh}风险雷达强制为「避险」。"})
+        else:
+            overrides.append({"kind": "radar",
+                "note_en": "Capped at Mixed by the Risk Radar (validated track record).",
+                "note_zh": "由经验证的风险雷达封顶为「混合」。"})
+    return out
 
 
 def _radar_override(latest: dict, overrides: list) -> dict:
