@@ -787,3 +787,35 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
 .sig-gate.sig-early { --c: var(--muted); }
 .sig-gate .sig-w { font-size:9.5px; font-weight:700; letter-spacing:.2px; opacity:.7;
   padding-left:3px; border-left:1px solid color-mix(in srgb, var(--c, var(--muted)) 30%, transparent); }
+
+/* ---- Collapsible "Show more" lists (buy/add & reduce/avoid columns) -------------------
+   Keeps long action lists short: 7 rows on a wide screen, 5 on a narrow one, the rest behind
+   a Show more / Show less toggle. Markup: a column with class .lst-wrap containing a
+   .lst-collapse.is-collapsed wrapper around the rows and a sibling .lst-more <button>.
+   theme.js flips .is-collapsed + aria-expanded on click. Row hiding is plain :nth-child;
+   only the button's visibility uses :has() (so it surfaces just when rows are actually
+   hidden) — degrades to an always-shown button if :has() is unsupported, which is harmless. */
+.lst-collapse.is-collapsed > :nth-child(n+8) { display:none; }
+@media (max-width:680px) { .lst-collapse.is-collapsed > :nth-child(n+6) { display:none; } }
+.lst-more { display:block; width:100%; margin-top:8px; padding:6px 10px;
+  font: inherit; font-size:12px; font-weight:600; color:var(--muted); text-align:center;
+  background:var(--panel2); border:1px solid var(--line); border-radius:8px; cursor:pointer; }
+.lst-more:hover { color:var(--text); border-color:var(--muted); }
+.lst-more .lm-hide { display:none; }
+.lst-more[aria-expanded="true"] .lm-show { display:none; }
+.lst-more[aria-expanded="true"] .lm-hide { display:inline; }
+/* on wide screens, hide the button unless an 8th row exists (nothing hidden at ≤7 rows) */
+@media (min-width:681px) {
+  .lst-wrap:has(.lst-collapse) > .lst-more { display:none; }
+  .lst-wrap:has(.lst-collapse > :nth-child(8)) > .lst-more { display:block; }
+}
+
+/* Tighter 6-row variant (.lst-cap6) — same plumbing, but caps at 6 on EVERY width.
+   Used by the HOLD / avoid action column, which stacks the most sectors + baskets. The
+   6th-child override beats the shared 5-on-mobile rule above; the :has() gate re-enables
+   the button at a 7th row (the shared rule above would otherwise wait for an 8th). */
+.lst-collapse.lst-cap6.is-collapsed > :nth-child(n+7) { display:none; }
+@media (max-width:680px) { .lst-collapse.lst-cap6.is-collapsed > :nth-child(6) { display:flex; } }
+@media (min-width:681px) {
+  .lst-wrap:has(.lst-collapse.lst-cap6 > :nth-child(7)) > .lst-more { display:block; }
+}

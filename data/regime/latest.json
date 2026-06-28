@@ -4235,24 +4235,15 @@
     "kind": "fomc_statement",
     "doc_id": "fomc_2026-06-17",
     "asof": "2026-06-17",
-    "tone_score": 0.1,
-    "guidance_direction": "on_hold",
+    "tone_score": 0.0,
+    "guidance_direction": "unknown",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
-    "confidence": "medium",
+    "confidence": "low",
     "confidence_gated": false,
     "dropped_fields": [],
-    "evidence": [
-      {
-        "field": "tone_score",
-        "quote_span": "inflation remains elevated relative to the Committee's 2 percent goal"
-      },
-      {
-        "field": "guidance_direction",
-        "quote_span": "maintain the target range"
-      }
-    ],
-    "degraded_reason": null,
+    "evidence": [],
+    "degraded_reason": "stop_max_tokens",
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
   "dislocation": {
@@ -4757,7 +4748,7 @@
   },
   "fed_path": {
     "asof": "2026-06-26",
-    "built": "2026-06-28T10:46:09.794005+00:00",
+    "built": "2026-06-28T16:36:42.544435+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -4819,17 +4810,15 @@
     "label_zh": "\u9e70\u6d3e",
     "color": "down",
     "implied_cuts_12m": -1.0,
-    "guidance": "on_hold",
+    "guidance": "unknown",
     "market_vs_fed_bp": 9.0,
     "market_vs_fed_en": "market \u2248 the Fed",
     "market_vs_fed_zh": "\u5e02\u573a\u4e0e\u7f8e\u8054\u50a8\u57fa\u672c\u4e00\u81f4",
     "drivers_en": [
-      "market prices ~1.0 hike(s) over 12m",
-      "statement guidance on-hold"
+      "market prices ~1.0 hike(s) over 12m"
     ],
     "drivers_zh": [
-      "\u5e02\u573a\u8ba1\u5165\u672a\u676512\u4e2a\u6708\u7ea61.0\u6b21\u52a0\u606f",
-      "\u58f0\u660e\u6307\u5f15\u6309\u5175\u4e0d\u52a8"
+      "\u5e02\u573a\u8ba1\u5165\u672a\u676512\u4e2a\u6708\u7ea61.0\u6b21\u52a0\u606f"
     ],
     "is_context_only": true,
     "phase0": "display-only \u2014 never scored",
@@ -6908,7 +6897,7 @@
           {
             "ticker": "CEG",
             "breadth": 0.25,
-            "est_chg_90d": -0.6,
+            "est_chg_90d": -2.6,
             "n_analysts": 8
           },
           {
@@ -7179,7 +7168,7 @@
         "name": "Cybersecurity",
         "breadth": 0.539,
         "level_state": "POSITIVE",
-        "est_drift_90d": 1.19,
+        "est_drift_90d": 1.11,
         "net_up_total": 107.0,
         "breadth_accel": null,
         "broadening_state": "INSUFFICIENT_HISTORY",
@@ -7208,7 +7197,7 @@
           {
             "ticker": "CRWD",
             "breadth": 0.67,
-            "est_chg_90d": 1.2,
+            "est_chg_90d": 1.1,
             "n_analysts": 42
           },
           {
@@ -7346,7 +7335,7 @@
           {
             "ticker": "CMC",
             "breadth": -0.33,
-            "est_chg_90d": -5.3,
+            "est_chg_90d": -0.9,
             "n_analysts": 3
           },
           {
@@ -7478,7 +7467,7 @@
           {
             "ticker": "COIN",
             "breadth": -0.33,
-            "est_chg_90d": -19.6,
+            "est_chg_90d": -16.6,
             "n_analysts": 15
           },
           {
@@ -7540,7 +7529,7 @@
           {
             "ticker": "BSX",
             "breadth": -0.87,
-            "est_chg_90d": -4.8,
+            "est_chg_90d": -4.9,
             "n_analysts": 15
           },
           {
@@ -7682,7 +7671,7 @@
           {
             "ticker": "CF",
             "breadth": 1.0,
-            "est_chg_90d": 46.4,
+            "est_chg_90d": 38.9,
             "n_analysts": 5
           }
         ]
@@ -7788,7 +7777,7 @@
           {
             "ticker": "D",
             "breadth": 1.0,
-            "est_chg_90d": -0.4,
+            "est_chg_90d": -0.1,
             "n_analysts": 4
           }
         ]
@@ -8256,6 +8245,7 @@
     },
     "note": "display-only; exit-risk mirror of the bottleneck. Buy the bottleneck, exit before the glut. GLUT_FORMING/GLUT = trim / exit clock, never a sized signal."
   },
+  "guidance_gap": null,
   "foresight_cascade": {
     "asof": "2026-06-28",
     "n_themes": 18,
@@ -8277,6 +8267,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 27.7,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": "AWAITING_DATA",
         "glut_score": null,
         "score": 50.0,
@@ -8297,6 +8291,15 @@
           ],
           "verdict": "watch",
           "physical_confirmed": false
+        },
+        "size_band": "HOLD",
+        "size_note": "late \u2014 revisions already broad; hold, no add, trim on strength",
+        "derisk": false,
+        "size_mult": 0.25,
+        "size_detail": {
+          "band": "HOLD",
+          "derisk": false,
+          "note": "late \u2014 revisions already broad; hold, no add, trim on strength"
         }
       },
       {
@@ -8316,6 +8319,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 17.73,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": "AWAITING_DATA",
         "glut_score": null,
         "score": 50.0,
@@ -8336,6 +8343,15 @@
           ],
           "verdict": "watch",
           "physical_confirmed": false
+        },
+        "size_band": "HOLD",
+        "size_note": "late \u2014 revisions already broad; hold, no add, trim on strength",
+        "derisk": false,
+        "size_mult": 0.25,
+        "size_detail": {
+          "band": "HOLD",
+          "derisk": false,
+          "note": "late \u2014 revisions already broad; hold, no add, trim on strength"
         }
       },
       {
@@ -8355,6 +8371,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 9.39,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": "AWAITING_DATA",
         "glut_score": null,
         "score": 50.0,
@@ -8375,6 +8395,15 @@
           ],
           "verdict": "watch",
           "physical_confirmed": false
+        },
+        "size_band": "HOLD",
+        "size_note": "late \u2014 revisions already broad; hold, no add, trim on strength",
+        "derisk": false,
+        "size_mult": 0.25,
+        "size_detail": {
+          "band": "HOLD",
+          "derisk": false,
+          "note": "late \u2014 revisions already broad; hold, no add, trim on strength"
         }
       },
       {
@@ -8394,6 +8423,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 9.67,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": "AWAITING_DATA",
         "glut_score": null,
         "score": 50.0,
@@ -8414,6 +8447,15 @@
           ],
           "verdict": "watch",
           "physical_confirmed": false
+        },
+        "size_band": "HOLD",
+        "size_note": "late \u2014 revisions already broad; hold, no add, trim on strength",
+        "derisk": false,
+        "size_mult": 0.25,
+        "size_detail": {
+          "band": "HOLD",
+          "derisk": false,
+          "note": "late \u2014 revisions already broad; hold, no add, trim on strength"
         }
       },
       {
@@ -8433,6 +8475,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 0.07,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": "AWAITING_DATA",
         "glut_score": null,
         "score": 45.0,
@@ -8454,6 +8500,15 @@
           ],
           "verdict": "watch",
           "physical_confirmed": false
+        },
+        "size_band": "WATCH",
+        "size_note": "nothing actionable yet",
+        "derisk": false,
+        "size_mult": 0.1,
+        "size_detail": {
+          "band": "WATCH",
+          "derisk": false,
+          "note": "nothing actionable yet"
         }
       },
       {
@@ -8473,6 +8528,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 1.97,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": null,
         "glut_score": null,
         "score": 45.0,
@@ -8494,6 +8553,15 @@
           ],
           "verdict": "watch",
           "physical_confirmed": false
+        },
+        "size_band": "WATCH",
+        "size_note": "nothing actionable yet",
+        "derisk": false,
+        "size_mult": 0.1,
+        "size_detail": {
+          "band": "WATCH",
+          "derisk": false,
+          "note": "nothing actionable yet"
         }
       },
       {
@@ -8513,6 +8581,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": -0.02,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": null,
         "glut_score": null,
         "score": 45.0,
@@ -8534,6 +8606,15 @@
           ],
           "verdict": "watch",
           "physical_confirmed": false
+        },
+        "size_band": "WATCH",
+        "size_note": "nothing actionable yet",
+        "derisk": false,
+        "size_mult": 0.1,
+        "size_detail": {
+          "band": "WATCH",
+          "derisk": false,
+          "note": "nothing actionable yet"
         }
       },
       {
@@ -8553,6 +8634,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": -0.57,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": null,
         "glut_score": null,
         "score": 45.0,
@@ -8574,6 +8659,15 @@
           ],
           "verdict": "watch",
           "physical_confirmed": false
+        },
+        "size_band": "WATCH",
+        "size_note": "nothing actionable yet",
+        "derisk": false,
+        "size_mult": 0.1,
+        "size_detail": {
+          "band": "WATCH",
+          "derisk": false,
+          "note": "nothing actionable yet"
         }
       },
       {
@@ -8593,6 +8687,10 @@
         "revision_level": "FLAT_LOW",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": -2.01,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": null,
         "glut_score": null,
         "score": 45.0,
@@ -8614,6 +8712,15 @@
           ],
           "verdict": "watch",
           "physical_confirmed": false
+        },
+        "size_band": "WATCH",
+        "size_note": "nothing actionable yet",
+        "derisk": false,
+        "size_mult": 0.1,
+        "size_detail": {
+          "band": "WATCH",
+          "derisk": false,
+          "note": "nothing actionable yet"
         }
       },
       {
@@ -8633,6 +8740,10 @@
         "revision_level": "FLAT_LOW",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": -0.33,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": null,
         "glut_score": null,
         "score": 45.0,
@@ -8654,6 +8765,15 @@
           ],
           "verdict": "watch",
           "physical_confirmed": false
+        },
+        "size_band": "WATCH",
+        "size_note": "nothing actionable yet",
+        "derisk": false,
+        "size_mult": 0.1,
+        "size_detail": {
+          "band": "WATCH",
+          "derisk": false,
+          "note": "nothing actionable yet"
         }
       },
       {
@@ -8673,6 +8793,10 @@
         "revision_level": "NEGATIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": -7.01,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": null,
         "glut_score": null,
         "score": 45.0,
@@ -8694,6 +8818,15 @@
           ],
           "verdict": "watch",
           "physical_confirmed": false
+        },
+        "size_band": "WATCH",
+        "size_note": "nothing actionable yet",
+        "derisk": false,
+        "size_mult": 0.1,
+        "size_detail": {
+          "band": "WATCH",
+          "derisk": false,
+          "note": "nothing actionable yet"
         }
       },
       {
@@ -8713,6 +8846,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 7.89,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": "AWAITING_DATA",
         "glut_score": null,
         "score": 44.7,
@@ -8733,6 +8870,15 @@
           ],
           "verdict": "watch",
           "physical_confirmed": false
+        },
+        "size_band": "WATCH",
+        "size_note": "nothing actionable yet",
+        "derisk": false,
+        "size_mult": 0.1,
+        "size_detail": {
+          "band": "WATCH",
+          "derisk": false,
+          "note": "nothing actionable yet"
         }
       },
       {
@@ -8752,6 +8898,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 0.68,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": null,
         "glut_score": null,
         "score": 43.8,
@@ -8772,6 +8922,15 @@
           ],
           "verdict": "watch",
           "physical_confirmed": false
+        },
+        "size_band": "WATCH",
+        "size_note": "nothing actionable yet",
+        "derisk": false,
+        "size_mult": 0.1,
+        "size_detail": {
+          "band": "WATCH",
+          "derisk": false,
+          "note": "nothing actionable yet"
         }
       },
       {
@@ -8790,7 +8949,11 @@
         "revision_breadth": 0.539,
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 1.19,
+        "est_drift_90d": 1.11,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": null,
         "glut_score": null,
         "score": 41.2,
@@ -8811,6 +8974,15 @@
           ],
           "verdict": "watch",
           "physical_confirmed": false
+        },
+        "size_band": "HOLD",
+        "size_note": "late \u2014 revisions already broad; hold, no add, trim on strength",
+        "derisk": false,
+        "size_mult": 0.25,
+        "size_detail": {
+          "band": "HOLD",
+          "derisk": false,
+          "note": "late \u2014 revisions already broad; hold, no add, trim on strength"
         }
       },
       {
@@ -8830,6 +9002,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 0.72,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": null,
         "glut_score": null,
         "score": 41.0,
@@ -8850,6 +9026,15 @@
           ],
           "verdict": "watch",
           "physical_confirmed": false
+        },
+        "size_band": "HOLD",
+        "size_note": "late \u2014 revisions already broad; hold, no add, trim on strength",
+        "derisk": false,
+        "size_mult": 0.25,
+        "size_detail": {
+          "band": "HOLD",
+          "derisk": false,
+          "note": "late \u2014 revisions already broad; hold, no add, trim on strength"
         }
       },
       {
@@ -8869,6 +9054,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 5.16,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": "AWAITING_DATA",
         "glut_score": null,
         "score": 40.6,
@@ -8889,6 +9078,15 @@
           ],
           "verdict": "watch",
           "physical_confirmed": false
+        },
+        "size_band": "HOLD",
+        "size_note": "late \u2014 revisions already broad; hold, no add, trim on strength",
+        "derisk": false,
+        "size_mult": 0.25,
+        "size_detail": {
+          "band": "HOLD",
+          "derisk": false,
+          "note": "late \u2014 revisions already broad; hold, no add, trim on strength"
         }
       },
       {
@@ -8908,6 +9106,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 1.62,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": null,
         "glut_score": null,
         "score": 38.9,
@@ -8928,6 +9130,15 @@
           ],
           "verdict": "low / late",
           "physical_confirmed": false
+        },
+        "size_band": "HOLD",
+        "size_note": "late \u2014 revisions already broad; hold, no add, trim on strength",
+        "derisk": false,
+        "size_mult": 0.25,
+        "size_detail": {
+          "band": "HOLD",
+          "derisk": false,
+          "note": "late \u2014 revisions already broad; hold, no add, trim on strength"
         }
       },
       {
@@ -8947,6 +9158,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 4.57,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
         "glut_band": null,
         "glut_score": null,
         "score": 36.9,
@@ -8967,6 +9182,15 @@
           ],
           "verdict": "low / late",
           "physical_confirmed": false
+        },
+        "size_band": "HOLD",
+        "size_note": "late \u2014 revisions already broad; hold, no add, trim on strength",
+        "derisk": false,
+        "size_mult": 0.25,
+        "size_detail": {
+          "band": "HOLD",
+          "derisk": false,
+          "note": "late \u2014 revisions already broad; hold, no add, trim on strength"
         }
       }
     ],
@@ -8981,9 +9205,18 @@
       "yoy": 69.0,
       "trend": "accelerating"
     },
-    "note": "display-only; STAGE = where the leading edge is. T1 bottleneck LEADS, T2 demand confirms, T4 revisions confirm, exit-risk caps the late ones; the 0-100 score ranks edge+quality. ENTRY is deferred to the dislocation overlay.",
-    "scored": true
+    "note": "display-only; STAGE = where the leading edge is. T1 bottleneck LEADS, T2 demand confirms, T3 guidance pre-signals the revision, T4 revisions confirm, exit-risk caps the late ones; the 0-100 score ranks edge+quality. ENTRY is deferred to the dislocation overlay.",
+    "scored": true,
+    "sizing": {
+      "n_constructive": 0,
+      "n_capex_linked": 0,
+      "effective_note": "no constructive themes",
+      "concentration_flag": false,
+      "derisk_themes": [],
+      "n_derisk": 0
+    }
   },
+  "theme_emergence": null,
   "cross_asset_confirm": {
     "verdict": "diverge",
     "verdict_zh": "\u80cc\u79bb",
@@ -9598,6 +9831,322 @@
     "outcome_label_zh": "10 \u65e5\u5185\u6807\u666e\u56de\u64a4 \u2264 \u22125% \u6216 VIX \u65e5\u5185\u9ad8\u70b9 \u2265 1.4 \u500d",
     "disclaimer": "Display-only / validation-accruing \u2014 a FORWARD vol-shock RISK gauge fused from leading precursors, NOT an alpha signal. It feeds no score and no allocation; each firing is logged and graded on forward data.",
     "disclaimer_zh": "\u4ec5\u4f9b\u5c55\u793a\uff0f\u6b63\u5728\u79ef\u7d2f\u9a8c\u8bc1\u2014\u2014\u7531\u9886\u5148\u524d\u5146\u878d\u5408\u800c\u6210\u7684\u300c\u524d\u77bb\u6027\u6ce2\u52a8\u51b2\u51fb\u98ce\u9669\u300d\u8ba1\uff0c\u5e76\u975e\u9009\u80a1\u4fe1\u53f7\u3002\u4e0d\u8ba1\u5165\u4efb\u4f55\u8bc4\u5206\u6216\u4ed3\u4f4d\uff1b\u6bcf\u6b21\u89e6\u53d1\u5747\u4f1a\u8bb0\u5f55\u5e76\u4ee5\u672a\u6765\u6570\u636e\u8bc4\u5206\u3002"
+  },
+  "froth_fragility": {
+    "asof": "2026-06-26",
+    "headline": 40.6,
+    "band": "watch",
+    "band_zh": "\u5173\u6ce8",
+    "quadrant": "narrowing_top",
+    "quadrant_en": "Euphoric, leaders distributing under a held index \u2014 narrowing-top risk",
+    "quadrant_zh": "\u6b23\u559c\uff0c\u4f46\u9f99\u5934\u5728\u88ab\u6258\u4f4f\u7684\u6307\u6570\u4e0b\u6d3e\u53d1\u2014\u2014\u9876\u90e8\u6536\u7a84\u98ce\u9669",
+    "face_a": {
+      "score": 44.5,
+      "n_available": 1,
+      "thin": false,
+      "legs": [
+        {
+          "key": "A4_parab",
+          "label": "Semis/AI parabolicity (blow-off breadth)",
+          "label_zh": "\u534a\u5bfc\u4f53/AI \u629b\u7269\u5e7f\u5ea6",
+          "value": 10.0,
+          "sub": 44.5,
+          "weight": 1.0,
+          "available": true,
+          "scored": true,
+          "points": 44.5,
+          "note": "10% of the semis/AI cohort parabolic (euphoria cooled / cooling)",
+          "note_zh": "10% \u534a\u5bfc\u4f53/AI \u6210\u5206\u80a1\u629b\u7269\u5316\uff08\u72c2\u70ed\u5df2\u964d\u6e29\uff0f\u6b63\u5728\u964d\u6e29\uff09",
+          "color": "#5a9bd4",
+          "pill": null,
+          "thin": false
+        },
+        {
+          "key": "A2_naaim",
+          "label": "Manager exposure (NAAIM) \u2014 context",
+          "label_zh": "\u7ba1\u7406\u4eba\u4ed3\u4f4d\uff08NAAIM\uff09",
+          "value": null,
+          "sub": null,
+          "weight": 0.0,
+          "available": false,
+          "scored": false,
+          "points": null,
+          "note": "NAAIM mid/high \u2014 high exposure is trend-following, scored 0",
+          "note_zh": "NAAIM \u4e2d/\u9ad8\u2014\u2014\u9ad8\u4ed3\u4f4d\u5c5e\u8d8b\u52bf\u8ddf\u968f\uff0c\u8ba1 0",
+          "color": "#888",
+          "pill": "context",
+          "thin": false
+        },
+        {
+          "key": "A1_putcall",
+          "label": "Equity put/call froth",
+          "label_zh": "\u80a1\u7968\u770b\u8dcc/\u770b\u6da8\u6bd4",
+          "value": 1.2,
+          "sub": null,
+          "weight": 0.0,
+          "available": false,
+          "scored": false,
+          "points": null,
+          "note": "equity put/call 1.2 (low = call-buying froth) \u00b7 young series, scored 0",
+          "note_zh": "\u80a1\u7968\u770b\u8dcc/\u770b\u6da8 1.2\uff08\u4f4e=\u770b\u6da8\u4e70\u76d8\u72c2\u70ed\uff09\u00b7 \u6570\u636e\u5c1a\u77ed\uff0c\u8ba1 0",
+          "color": "#888",
+          "pill": "accruing",
+          "thin": false
+        },
+        {
+          "key": "A3_news",
+          "label": "News bull-ratio (cohort)",
+          "label_zh": "\u65b0\u95fb\u770b\u591a\u6bd4\u4f8b",
+          "value": 0.59,
+          "sub": null,
+          "weight": 0.0,
+          "available": false,
+          "scored": false,
+          "points": null,
+          "note": "cohort news bull-ratio 0.59 \u00b7 young series, scored 0",
+          "note_zh": "\u6210\u5206\u65b0\u95fb\u770b\u591a\u6bd4 0.59 \u00b7 \u6570\u636e\u5c1a\u77ed\uff0c\u8ba1 0",
+          "color": "#888",
+          "pill": "accruing",
+          "thin": false
+        },
+        {
+          "key": "A5_rr",
+          "label": "Index put-skew (hedging bid) \u2014 context",
+          "label_zh": "\u6307\u6570\u770b\u8dcc\u504f\u5ea6",
+          "value": 0.004,
+          "sub": null,
+          "weight": 0.0,
+          "available": false,
+          "scored": false,
+          "points": null,
+          "note": "index put-skew 0.004 (put_iv \u2212 call_iv) \u00b7 hedging-bid context, scored 0",
+          "note_zh": "\u6307\u6570\u770b\u8dcc\u504f\u5ea6 0.004\uff08\u770b\u8dccIV \u2212 \u770b\u6da8IV\uff09\u00b7 \u5bf9\u51b2\u4e70\u76d8\u80cc\u666f\uff0c\u8ba1 0",
+          "color": "#888",
+          "pill": "accruing",
+          "thin": false
+        },
+        {
+          "key": "A6_crypto",
+          "label": "Crypto Fear & Greed (cross-asset)",
+          "label_zh": "\u52a0\u5bc6\u6050\u60e7\u8d2a\u5a6a",
+          "value": 18,
+          "sub": null,
+          "weight": 0.0,
+          "available": false,
+          "scored": false,
+          "points": null,
+          "note": "crypto Fear&Greed 18 (fear) \u00b7 cross-asset confirm, scored 0",
+          "note_zh": "\u52a0\u5bc6\u6050\u60e7\u8d2a\u5a6a 18\uff08\u6050\u60e7\uff09\u00b7 \u8de8\u8d44\u4ea7\u786e\u8ba4\uff0c\u8ba1 0",
+          "color": "#888",
+          "pill": "accruing",
+          "thin": false
+        }
+      ],
+      "low_naaim_flag": false
+    },
+    "face_b": {
+      "score": 37.1,
+      "n_available": 5,
+      "legs": [
+        {
+          "key": "B_stealth",
+          "label": "Stealth distribution",
+          "label_zh": "\u6f5c\u4f0f\u6d3e\u53d1",
+          "value": 25.0,
+          "sub": 25.0,
+          "weight": 0.28,
+          "available": true,
+          "scored": true,
+          "points": 7.0,
+          "note": "1/5 stealth legs lit",
+          "note_zh": "1/5 \u6f5c\u4f0f\u817f\u70b9\u4eae",
+          "color": "#5a9bd4",
+          "pill": null,
+          "thin": false
+        },
+        {
+          "key": "B1_ad_div",
+          "label": "A/D line non-confirmation",
+          "label_zh": "\u6da8\u8dcc\u7ebf\u672a\u786e\u8ba4",
+          "value": null,
+          "sub": 0.0,
+          "weight": 0.22,
+          "available": true,
+          "scored": true,
+          "points": 0.0,
+          "note": "A/D line confirming the tape",
+          "note_zh": "\u6da8\u8dcc\u7ebf\u786e\u8ba4\u884c\u60c5",
+          "color": "#5a9bd4",
+          "pill": null,
+          "thin": false
+        },
+        {
+          "key": "B2_pct200_div",
+          "label": "% > 200dma divergence",
+          "label_zh": "200\u65e5\u5747\u7ebf\u4e0a\u65b9\u5360\u6bd4\u80cc\u79bb",
+          "value": null,
+          "sub": 7.2,
+          "weight": 0.13,
+          "available": true,
+          "scored": true,
+          "points": 0.9,
+          "note": "65% > 200dma, down 6pp from 6mo peak while index 96% of highs",
+          "note_zh": "65% \u9ad8\u4e8e 200 \u65e5\u7ebf\uff0c\u8f83\u534a\u5e74\u5cf0\u503c\u964d 6pp\uff0c\u800c\u6307\u6570\u5904\u4e8e\u9ad8\u70b9 96%",
+          "color": "#5a9bd4",
+          "pill": null,
+          "thin": false
+        },
+        {
+          "key": "B_leaddist",
+          "label": "Leadership distribution (generals retreating)",
+          "label_zh": "\u9f99\u5934\u6d3e\u53d1\uff08\u5c06\u5e05\u64a4\u9000\uff09",
+          "value": -0.182,
+          "sub": 67.4,
+          "weight": 0.24,
+          "available": true,
+          "scored": true,
+          "points": 16.2,
+          "note": "median mega-cap leader -18% off its 52wk-high vs index -4% (+14pp gap; 7/7 below 50dma) \u2014 generals retreating under a held index",
+          "note_zh": "\u9f99\u5934\u4e2d\u4f4d\u8f83 52 \u5468\u9ad8\u70b9\u56de\u64a4 -18%\uff0c\u6307\u6570\u4ec5 -4%\uff08\u5dee +14 \u4e2a\u767e\u5206\u70b9\uff1b7/7 \u8dcc\u7834 50 \u65e5\u7ebf\uff09\u2014\u2014\u5c06\u5e05\u5728\u88ab\u6258\u4f4f\u7684\u6307\u6570\u4e0b\u64a4\u9000",
+          "color": "#e0a030",
+          "pill": null,
+          "thin": false
+        },
+        {
+          "key": "B4_absorption",
+          "label": "Cross-asset absorption",
+          "label_zh": "\u8de8\u8d44\u4ea7\u5438\u6536\u6bd4",
+          "value": 0.96,
+          "sub": 100.0,
+          "weight": 0.13,
+          "available": true,
+          "scored": true,
+          "points": 13.0,
+          "note": "cross-asset absorption 96% of 5y \u2014 markets tightly coupled",
+          "note_zh": "\u8de8\u8d44\u4ea7\u5438\u6536\u6bd4\u5904\u4e8e 5 \u5e74 96% \u5206\u4f4d\u2014\u2014\u5e02\u573a\u9ad8\u5ea6\u8026\u5408",
+          "color": "#d04545",
+          "pill": null,
+          "thin": false
+        },
+        {
+          "key": "B3_med_dd",
+          "label": "Median-member drawdown vs index",
+          "label_zh": "\u6210\u5206\u4e2d\u4f4d\u56de\u64a4 vs \u6307\u6570",
+          "value": -0.182,
+          "sub": null,
+          "weight": 0.0,
+          "available": false,
+          "scored": false,
+          "points": null,
+          "note": "median leader -18% off 52wk-high (index -4%)",
+          "note_zh": "\u9f99\u5934\u4e2d\u4f4d\u8f83 52 \u5468\u9ad8\u70b9\u56de\u64a4 -18%\uff08\u6307\u6570 -4%\uff09",
+          "color": "#888",
+          "pill": "context",
+          "thin": false
+        },
+        {
+          "key": "B5_rsp_spy",
+          "label": "Equal-weight vs cap-weight (RSP/SPY) \u2014 context",
+          "label_zh": "\u7b49\u6743 vs \u5e02\u503c\u6743\uff08RSP/SPY\uff09",
+          "value": 0.0,
+          "sub": null,
+          "weight": 0.0,
+          "available": false,
+          "scored": false,
+          "points": null,
+          "note": "equal-weight deeply lagging cap-weight \u2014 narrow leadership (context, not a trigger)",
+          "note_zh": "\u7b49\u6743\u8fdc\u843d\u540e\u5e02\u503c\u6743\u2014\u2014\u9886\u5bfc\u9762\u6536\u7a84\uff08\u80cc\u666f\uff0c\u975e\u89e6\u53d1\u4fe1\u53f7\uff09",
+          "color": "#888",
+          "pill": "context",
+          "thin": false
+        },
+        {
+          "key": "B7_complacency",
+          "label": "Complacency (hidden fragility)",
+          "label_zh": "\u81ea\u6ee1\uff08\u9690\u6027\u8106\u5f31\uff09",
+          "value": "watch",
+          "sub": null,
+          "weight": 0.0,
+          "available": false,
+          "scored": false,
+          "points": null,
+          "note": "complacency: watch (display-only, never scored)",
+          "note_zh": "\u81ea\u6ee1\uff1awatch\uff08\u4ec5\u5c55\u793a\uff0c\u4ece\u4e0d\u8bc4\u5206\uff09",
+          "color": "#888",
+          "pill": "context",
+          "thin": false
+        }
+      ],
+      "leaddist_sub": 0.6738598752039527,
+      "leaders_dist": true
+    },
+    "stealth": {
+      "score": 25.0,
+      "gated": true,
+      "gate_state": "armed",
+      "n_lit": 1,
+      "n_available": 5,
+      "stealth_fire": false,
+      "escalation": null,
+      "vix_decomp": "avg leader vol \u224837% \u00d7 \u221a0.34 \u21d2 leadership-index vol ~22% \u2014 the cap-weighted index (and VIX) stays calm because the leaders offset each other; it re-inflates violently if \u03c1 snaps back toward 1. (Conditional fragility, not a dated top.)",
+      "headline_note": "1/5 stealth legs lit",
+      "headline_note_zh": "1/5 \u6f5c\u4f0f\u817f\u70b9\u4eae",
+      "legs": [
+        {
+          "key": "S2_breadth",
+          "label": "Breadth negative under a pinned tape",
+          "lit": false,
+          "available": true,
+          "weight": 0.25,
+          "note": "breadth confirming",
+          "color": "#5a9bd4"
+        },
+        {
+          "key": "S3_leaders",
+          "label": "Leaders rolling one-by-one",
+          "lit": true,
+          "available": true,
+          "weight": 0.25,
+          "note": "7 of 7 leaders below their 50dma (and rising) while the index holds \u2014 generals retreating under a pinned tape",
+          "color": "#d04545"
+        },
+        {
+          "key": "S4_corr",
+          "label": "Correlation down / dispersion up",
+          "lit": false,
+          "available": true,
+          "weight": 0.2,
+          "note": "correlation/dispersion not in distribution regime",
+          "color": "#5a9bd4"
+        },
+        {
+          "key": "S5_defensives",
+          "label": "Defensives bid under the surface",
+          "lit": false,
+          "available": true,
+          "weight": 0.2,
+          "note": "no defensive rotation under the surface",
+          "color": "#5a9bd4"
+        },
+        {
+          "key": "S6_vix",
+          "label": "VIX asleep vs internal dispersion",
+          "lit": false,
+          "available": true,
+          "weight": 0.1,
+          "note": "VIX not masking (or internals not yet lit)",
+          "color": "#5a9bd4"
+        }
+      ]
+    },
+    "stealth_fire": false,
+    "unwind_risk": false,
+    "low_naaim_flag": false,
+    "alert": true,
+    "provisional": true,
+    "disclaimer": "Display-only / validation-accruing \u2014 a FORWARD top-risk gauge fusing retail euphoria with hidden-distribution precursors, NOT an alpha signal. Edge is MODEST and LOUD+EARLY by design (weeks-to-months lead, real false positives ~30-45% at h21). It feeds no score and no allocation; the only sanctioned response is SIZING (de-risk), never selection. Each firing is logged and graded on forward QQQ/SMH drawdown + VIX jump.",
+    "disclaimer_zh": "\u4ec5\u4f9b\u5c55\u793a\uff0f\u6b63\u5728\u79ef\u7d2f\u9a8c\u8bc1\u2014\u2014\u878d\u5408\u96f6\u552e\u6b23\u559c\u4e0e\u9690\u6027\u6d3e\u53d1\u524d\u5146\u7684\u300c\u524d\u77bb\u6027\u9876\u90e8\u98ce\u9669\u300d\u8ba1\uff0c\u5e76\u975e\u9009\u80a1\u4fe1\u53f7\u3002\u6309\u8bbe\u8ba1\u504f\u65e9\u4e14\u54cd\u4eae\uff08\u63d0\u524d\u6570\u5468\u81f3\u6570\u6708\uff0ch21 \u8bef\u62a5\u7ea6 30-45%\uff09\u3002\u4e0d\u8ba1\u5165\u4efb\u4f55\u8bc4\u5206\u6216\u4ed3\u4f4d\uff1b\u552f\u4e00\u88ab\u8bb8\u53ef\u7684\u56de\u5e94\u662f\u51cf\u4ed3\uff08\u964d\u4f4e\u98ce\u9669\uff09\uff0c\u7edd\u975e\u9009\u80a1\u3002\u6bcf\u6b21\u89e6\u53d1\u90fd\u4f1a\u8bb0\u5f55\u5e76\u4ee5\u672a\u6765 QQQ/SMH \u56de\u64a4\u4e0e VIX \u8df3\u5347\u8bc4\u5206\u3002",
+    "provisional_note": "Face-B led; A4 / Stealth forward record still accruing \u2014 read the firing as early & uncertain, not validated."
   },
   "playbook": {
     "headline": "Goldilocks \u2014 growth improving while inflation cools. Posture: CAREFUL \u2014 reduce size, tighten stops, let cash build.",
@@ -11910,7 +12459,7 @@
   },
   "freshness": {
     "asof": "2026-06-26",
-    "built_at": "2026-06-28T10:46:12Z",
+    "built_at": "2026-06-28T16:36:45Z",
     "age_days": 2,
     "age_sessions": 0,
     "max_age_sessions": 1,

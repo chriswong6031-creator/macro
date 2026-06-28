@@ -124,6 +124,44 @@
              border:1px solid color-mix(in srgb,var(--down) 40%,transparent);
              background:color-mix(in srgb,var(--down) 11%,var(--panel)); }
 
+  /* sizing & concentration banner */
+  .fx-sizing { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:10px 0 2px;
+               padding:9px 14px; border:1px solid var(--line); border-radius:11px; background:var(--panel2);
+               border-left:5px solid var(--info); font-size:12px; }
+  .fx-sizing.concentrated { border-left-color:var(--warn); }
+  .fx-sizing-k { font-weight:800; letter-spacing:.04em; text-transform:uppercase; font-size:10.5px; color:var(--muted); }
+  .fx-sizing-v { color:var(--text); }
+  .fx-sizing.concentrated .fx-sizing-v { color:var(--warn); font-weight:600; }
+  .fx-sizing-derisk { margin-left:auto; font-weight:800; color:var(--down); }
+
+  /* per-card posture chip */
+  .fx-size { display:inline-flex; align-items:center; gap:5px; margin:9px 8px 0 0; font-size:11.5px;
+             font-weight:800; letter-spacing:.03em; padding:5px 11px; border-radius:8px; cursor:help;
+             border:1px solid color-mix(in srgb,var(--pc,var(--muted)) 40%,transparent);
+             background:color-mix(in srgb,var(--pc,var(--muted)) 12%,var(--panel)); color:var(--pc,var(--text)); }
+  .sz-ADD, .sz-CORE { --pc:var(--up); }
+  .sz-STARTER { --pc:var(--info); }
+  .sz-HOLD, .sz-WATCH { --pc:var(--muted); }
+  .sz-TRIM, .sz-EXIT { --pc:var(--down); }
+
+  /* discovery panel */
+  .fx-disco { border-left:5px solid var(--info); }
+  .fx-disco-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(248px,1fr)); gap:11px; margin-top:4px; }
+  .fx-cand { border:1px solid var(--line); border-radius:11px; background:var(--panel2); padding:11px 13px; }
+  .fx-cand-h { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .fx-cand-nm { font-size:13.5px; font-weight:800; line-height:1.2; }
+  .fx-cand-sic { font-size:10px; font-weight:700; color:var(--muted); }
+  .fx-cand-vel { font-size:10px; font-weight:800; color:var(--up); margin-left:auto; }
+  .fx-cand-meta { font-size:11.5px; color:var(--muted); margin:6px 0 7px; }
+  .fx-cand-meta b { color:var(--info); }
+  .fx-cand-tickers { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:7px; }
+  .fx-tk { font-size:10.5px; font-weight:700; padding:2px 6px; border-radius:5px; background:var(--panel);
+           border:1px solid var(--line); color:var(--text); }
+  .fx-cand-lang { display:flex; flex-wrap:wrap; gap:4px; }
+  .fx-ph { font-size:10px; font-style:italic; color:var(--info); padding:1px 5px; border-radius:5px;
+           background:color-mix(in srgb,var(--info) 10%,transparent); }
+  .fx-disco-foot { font-size:10.5px; color:var(--muted); margin-top:11px; line-height:1.5; font-style:italic; }
+
 </style>
 
 </head>
@@ -169,11 +207,8 @@
         <div class="nav-dd nav-sub">
           <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
-            <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">One gated-confluence read per sector · reasoning · graded</span><span class="l-zh">每行业门控共振研判 · 推理链 · 自评分</span></span></a>
-            <a href="sector_cycles.html">🌀 <span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock — phase · turns</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></a>
-            <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
-            <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
-            <a href="sector_heatmap.html">🔥 <span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span><span class="d"><span class="l-en">All 503 names · market-cap treemap · click for our read</span><span class="l-zh">全部503只 · 市值树图 · 点击查看研判</span></span></a>
+            <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
           </div>
         </div>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -190,11 +225,8 @@
         <div class="nav-dd nav-sub">
           <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
-            <a href="sector_central_china.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">One gated-confluence read per sector · reasoning · graded</span><span class="l-zh">每行业门控共振研判 · 推理链 · 自评分</span></span></a>
-            <a href="china_sector_desk.html">🧭 <span class="l-en">Sector Desk</span><span class="l-zh">行业桌面</span><span class="d"><span class="l-en">GS-style sector indices · live · pathway</span><span class="l-zh">GS式行业指数 · 实时 · 路径</span></span></a>
-            <a href="sector_cycles_china.html">🌀 <span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span><span class="d"><span class="l-en">Every sector & theme on one cycle clock · turns · forecast odds</span><span class="l-zh">各板块与主题同框 · 拐点 · 前瞻概率</span></span></a>
-            <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
-            <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+            <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
           </div>
         </div>
         <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -285,6 +317,7 @@
         <a href="markets.html">🌐 <span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></a>
         <a href="sector_cycles.html">🧭 <span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock — phase · turns · the story</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点 · 背后故事</span></span></a>
         <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="macro_signals.html">🧮 <span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span><span class="d"><span class="l-en">Raw macro data — cycle · conditions · liquidity · positioning</span><span class="l-zh">宏观原始数据 — 周期 · 条件 · 流动性 · 持仓</span></span></a>
         <a href="impulse.html">🚀 <span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span><span class="d"><span class="l-en">Early-ignition momentum · velocity · acceleration</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></a>
         <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
       </div>
@@ -321,7 +354,7 @@
     <div class="fx-eyebrow">🔮 <span class="l-en">Thematic Foresight Desk</span><span class="l-zh">主题前瞻台</span></div>
     <h1><span class="l-en">Catch the theme before the revisions explode</span><span class="l-zh">在盈利预期爆发前抓住主题</span></h1>
     <p class="fx-sub"><span class="l-en">Anticipate themes at the <b>precipice of induction</b> and convert them to calls <b>before</b> estimate revisions broaden. Physical-supply tightness (T1) <b>leads</b> the revision; customer capex (T2) and revision-breadth (T4) <b>confirm</b>; the buy is deferred to a dislocation. Worked case: the June-2024 13D HBM/DRAM call — <i>sold out, concentrated, underpriced</i>, right and ~9 months early.</span><span class="l-zh">在主题处于<b>诱发临界点</b>时提前布局，在盈利预期普遍上修<b>之前</b>转化为决策。物理供给紧张（T1）<b>领先</b>预期修正；客户资本开支（T2）与预期上修广度（T4）<b>确认</b>；买点交由错位回调触发。范例：2024年6月 13D 的 HBM/DRAM 判断——售罄、集中、被低估，正确且早约9个月。</span></p>
-    <div class="fx-asof"><span class="l-en">Revisions as of</span><span class="l-zh">预期数据截至</span> 2026-06-28 · <span class="l-en">generated</span><span class="l-zh">生成于</span> 2026-06-28 11:13 UTC</div>
+    <div class="fx-asof"><span class="l-en">Revisions as of</span><span class="l-zh">预期数据截至</span> 2026-06-28 · <span class="l-en">generated</span><span class="l-zh">生成于</span> 2026-06-28 17:02 UTC</div>
   </header>
 
   
@@ -351,12 +384,21 @@
   </div>
 
   
+  
+  <div class="fx-sizing ">
+    <span class="fx-sizing-k">⚖ <span class="l-en">Sizing & concentration</span><span class="l-zh">仓位与集中度</span></span>
+    <span class="fx-sizing-v">no constructive themes</span>
+    
+  </div>
+  
+
+  
   <details class="fx-legend">
     <summary><span class="l-en">How to read the cascade</span><span class="l-zh">如何解读级联</span></summary>
     <div class="fx-flow">
       <b><span class="l-en">The cascade, by lead time</span><span class="l-zh">按领先时间排列的级联</span>:</b>
-      <b>T1 <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></b><span class="arr">→</span><b>T2 <span class="l-en">Demand</span><span class="l-zh">需求</span></b><span class="arr">→</span><b>T4 <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></b><span class="arr">→</span><b><span class="l-en">Entry (dislocation)</span><span class="l-zh">入场（错位）</span></b>.
-      <span class="l-en">Bottleneck LEADS; demand & revisions CONFIRM; entry is timed separately.</span><span class="l-zh">瓶颈领先；需求与预期确认；入场单独择时。</span>
+      <b>T1 <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></b><span class="arr">→</span><b>T2 <span class="l-en">Demand</span><span class="l-zh">需求</span></b><span class="arr">→</span><b>T3 <span class="l-en">Guidance</span><span class="l-zh">指引</span></b><span class="arr">→</span><b>T4 <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></b><span class="arr">→</span><b><span class="l-en">Entry (dislocation)</span><span class="l-zh">入场（错位）</span></b>.
+      <span class="l-en">Bottleneck LEADS; demand & guidance pre-signal; revisions CONFIRM; entry is timed separately.</span><span class="l-zh">瓶颈领先；需求与指引预示；预期确认；入场单独择时。</span>
     </div>
     <div class="fx-leg-grid">
       <div class="fx-leg-item"><b style="color:var(--info)">PRECIPICE</b> — <span class="mut"><span class="l-en">supply tight, revisions not yet firing — early, highest edge remaining</span><span class="l-zh">供给紧张、预期尚未启动——早期，剩余优势最大</span></span></div>
@@ -392,6 +434,11 @@
           <div class="lv">ACCELERATING</div>
           <div class="ld"><span class="l-en">customer capex</span><span class="l-zh">客户资本开支</span> +69% YoY</div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">no 8-K guidance</span><span class="l-zh">无8-K指引</span></div>
+        </div>
         <div class="fx-leg hot">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">+0.95</div>
@@ -400,6 +447,7 @@
       </div>
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
+      <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -409,7 +457,7 @@
       <div class="row1">
         
         <span class="fx-score sc-watch"
-              title="magnitude 1.0 · acceleration 0.75 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.17 · purity 0.6 · timing 0.35">
+              title="magnitude 1.0 · acceleration 0.81 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.17 · purity 0.6 · timing 0.35">
           <span class="s">50</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
         </span>
         <span class="nm">Semiconductor Equipment (WFE)</span>
@@ -429,6 +477,11 @@
           <div class="ld"><span class="l-en">customer capex</span><span class="l-zh">客户资本开支</span> +69% YoY</div>
         </div>
         <div class="fx-leg hot">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">RAISING</div>
+          <div class="ld">2 <span class="l-en">raising</span><span class="l-zh">上调</span></div>
+        </div>
+        <div class="fx-leg hot">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">+0.93</div>
           <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +18%</div>
@@ -436,6 +489,7 @@
       </div>
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
+      <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -464,6 +518,11 @@
           <div class="lv">ACCELERATING</div>
           <div class="ld"><span class="l-en">customer capex</span><span class="l-zh">客户资本开支</span> +69% YoY</div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">no 8-K guidance</span><span class="l-zh">无8-K指引</span></div>
+        </div>
         <div class="fx-leg hot">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">+0.83</div>
@@ -472,6 +531,7 @@
       </div>
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
+      <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -500,6 +560,11 @@
           <div class="lv">ACCELERATING</div>
           <div class="ld"><span class="l-en">customer capex</span><span class="l-zh">客户资本开支</span> +69% YoY</div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">NEUTRAL</div>
+          <div class="ld">1 <span class="l-en">raising</span><span class="l-zh">上调</span></div>
+        </div>
         <div class="fx-leg hot">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">+0.63</div>
@@ -508,6 +573,7 @@
       </div>
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
+      <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -536,6 +602,11 @@
           <div class="lv">ACCELERATING</div>
           <div class="ld"><span class="l-en">customer capex</span><span class="l-zh">客户资本开支</span> +69% YoY</div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">NEUTRAL</div>
+          <div class="ld">1 <span class="l-en">raising</span><span class="l-zh">上调</span></div>
+        </div>
         <div class="fx-leg hot">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">+0.38</div>
@@ -544,6 +615,7 @@
       </div>
 
       <p class="why">revisions present (bottleneck unknown)</p>
+      <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
@@ -572,6 +644,11 @@
           <div class="lv">ACCELERATING</div>
           <div class="ld"><span class="l-en">customer capex</span><span class="l-zh">客户资本开支</span> +69% YoY</div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">NEUTRAL</div>
+          <div class="ld">1 <span class="l-en">raising</span><span class="l-zh">上调</span></div>
+        </div>
         <div class="fx-leg hot">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">+0.13</div>
@@ -580,6 +657,7 @@
       </div>
 
       <p class="why">revisions present (bottleneck unknown)</p>
+      <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
@@ -608,6 +686,11 @@
           <div class="lv">—</div>
           <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">no 8-K guidance</span><span class="l-zh">无8-K指引</span></div>
+        </div>
         <div class="fx-leg hot">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">+0.15</div>
@@ -616,6 +699,7 @@
       </div>
 
       <p class="why">revisions present (bottleneck unknown)</p>
+      <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
@@ -644,6 +728,11 @@
           <div class="lv">—</div>
           <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">NEUTRAL</div>
+          <div class="ld">1 <span class="l-en">raising</span><span class="l-zh">上调</span></div>
+        </div>
         <div class="fx-leg hot">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">+0.15</div>
@@ -652,6 +741,7 @@
       </div>
 
       <p class="why">revisions present (bottleneck unknown)</p>
+      <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
@@ -680,14 +770,20 @@
           <div class="lv">—</div>
           <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">no 8-K guidance</span><span class="l-zh">无8-K指引</span></div>
+        </div>
         <div class="fx-leg info">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">+0.02</div>
-          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> -2%</div>
+          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> -1%</div>
         </div>
       </div>
 
       <p class="why">revisions flat (bottleneck unknown)</p>
+      <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
@@ -716,6 +812,11 @@
           <div class="lv">—</div>
           <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">no 8-K guidance</span><span class="l-zh">无8-K指引</span></div>
+        </div>
         <div class="fx-leg info">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">-0.01</div>
@@ -724,6 +825,7 @@
       </div>
 
       <p class="why">revisions flat (bottleneck unknown)</p>
+      <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
@@ -733,7 +835,7 @@
       <div class="row1">
         
         <span class="fx-score sc-watch"
-              title="magnitude 0.23 · acceleration 0.5 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.95 · purity 0.5 · timing 0.4">
+              title="magnitude 0.2 · acceleration 0.5 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.95 · purity 0.5 · timing 0.4">
           <span class="s">45</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
         </span>
         <span class="nm">Solar</span>
@@ -752,14 +854,20 @@
           <div class="lv">—</div>
           <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">no 8-K guidance</span><span class="l-zh">无8-K指引</span></div>
+        </div>
         <div class="fx-leg cool">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">-0.34</div>
-          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> -7%</div>
+          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> -5%</div>
         </div>
       </div>
 
       <p class="why">revisions present (bottleneck unknown)</p>
+      <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
@@ -788,6 +896,11 @@
           <div class="lv">—</div>
           <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">no 8-K guidance</span><span class="l-zh">无8-K指引</span></div>
+        </div>
         <div class="fx-leg hot">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">+0.38</div>
@@ -796,6 +909,7 @@
       </div>
 
       <p class="why">revisions present (bottleneck unknown)</p>
+      <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -824,6 +938,11 @@
           <div class="lv">—</div>
           <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">no 8-K guidance</span><span class="l-zh">无8-K指引</span></div>
+        </div>
         <div class="fx-leg hot">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">+0.37</div>
@@ -832,6 +951,7 @@
       </div>
 
       <p class="why">revisions present (bottleneck unknown)</p>
+      <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -860,6 +980,11 @@
           <div class="lv">—</div>
           <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">no 8-K guidance</span><span class="l-zh">无8-K指引</span></div>
+        </div>
         <div class="fx-leg hot">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">+0.54</div>
@@ -868,6 +993,7 @@
       </div>
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
+      <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -896,6 +1022,11 @@
           <div class="lv">—</div>
           <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">no 8-K guidance</span><span class="l-zh">无8-K指引</span></div>
+        </div>
         <div class="fx-leg hot">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">+0.55</div>
@@ -904,6 +1035,7 @@
       </div>
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
+      <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -932,6 +1064,11 @@
           <div class="lv">—</div>
           <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">no 8-K guidance</span><span class="l-zh">无8-K指引</span></div>
+        </div>
         <div class="fx-leg hot">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">+0.58</div>
@@ -940,6 +1077,7 @@
       </div>
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
+      <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -968,14 +1106,20 @@
           <div class="lv">—</div>
           <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">NEUTRAL</div>
+          <div class="ld">1 <span class="l-en">raising</span><span class="l-zh">上调</span></div>
+        </div>
         <div class="fx-leg hot">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">+0.71</div>
-          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +2%</div>
+          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +1%</div>
         </div>
       </div>
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
+      <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -1004,6 +1148,11 @@
           <div class="lv">—</div>
           <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
         </div>
+        <div class="fx-leg mute">
+          <div class="lk">T3 · <span class="l-en">Guidance</span><span class="l-zh">业绩指引</span></div>
+          <div class="lv">NEUTRAL</div>
+          <div class="ld">1 <span class="l-en">raising</span><span class="l-zh">上调</span></div>
+        </div>
         <div class="fx-leg hot">
           <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
           <div class="lv">+0.85</div>
@@ -1012,12 +1161,80 @@
       </div>
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
+      <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
     </article>
     
   </div>
+
+  
+  
+  <div class="fx-panel fx-disco">
+    <h2>🛰️ <span class="l-en">Discovery — bottlenecks forming outside the tracked themes</span><span class="l-zh">发现——在已跟踪主题之外正在形成的瓶颈</span></h2>
+    <div class="sub"><span class="l-en">The cascade above can only <b>confirm</b> the 18 themes we already named. This layer is how the desk answers <i>"what should I be looking at that I'm not?"</i> — it sweeps physical-scarcity language across <b>all</b> of EDGAR and surfaces industries where a cluster of <b>un-tracked</b> companies is independently reporting "on allocation / extended lead times / record backlog". Each is a <b>candidate on probation</b> — never a buy, never auto-added; it earns a tracked slot only when a physical correlate fires. The pre-13D discovery state.</span><span class="l-zh">上方级联只能<b>确认</b>已命名的18个主题。本层回答<i>“我还应该关注什么却没关注？”</i>——扫描整个 EDGAR 的物理短缺用语，找出一批<b>未跟踪</b>公司在同一行业里独立报告“配额／交期拉长／创纪录在手订单”的行业。每个都是<b>观察期候选</b>——绝非买入、不自动纳入；只有物理佐证出现才升级为正式主题。即13D之前的发现状态。</span></div>
+    <div class="fx-disco-grid">
+      
+      <div class="fx-cand">
+        <div class="fx-cand-h">
+          <span class="fx-cand-nm">Semiconductors &amp; Related Devices</span>
+          <span class="fx-cand-sic">SIC 3674</span>
+          <span class="fx-cand-vel">▲ +6 <span class="l-en">filers vs prior</span><span class="l-zh">较前期增加</span></span>
+        </div>
+        <div class="fx-cand-meta"><b>10</b> <span class="l-en">un-tracked filers flagging scarcity</span><span class="l-zh">家未跟踪公司报告短缺</span> · 3 <span class="l-en">already tracked</span><span class="l-zh">已跟踪</span></div>
+        <div class="fx-cand-tickers"><span class="fx-tk">ALAB</span><span class="fx-tk">CBRS</span><span class="fx-tk">CRDO</span><span class="fx-tk">CRUS</span><span class="fx-tk">KOPN</span><span class="fx-tk">MCHP</span><span class="fx-tk">MRVL</span><span class="fx-tk">MX</span><span class="fx-tk">PRSO</span><span class="fx-tk">SMTK</span></div>
+        <div class="fx-cand-lang"><span class="fx-ph">“allocate supply”</span><span class="fx-ph">“capacity constrained”</span><span class="fx-ph">“constrained capacity”</span><span class="fx-ph">“extended lead times”</span><span class="fx-ph">“on allocation”</span><span class="fx-ph">“supply constrained”</span><span class="fx-ph">“tight supply”</span><span class="fx-ph">“unable to meet demand”</span></div>
+      </div>
+      
+      <div class="fx-cand">
+        <div class="fx-cand-h">
+          <span class="fx-cand-nm">Guided Missiles &amp; Space Vehicles &amp; Parts</span>
+          <span class="fx-cand-sic">SIC 3760</span>
+          <span class="fx-cand-vel">▲ +3 <span class="l-en">filers vs prior</span><span class="l-zh">较前期增加</span></span>
+        </div>
+        <div class="fx-cand-meta"><b>4</b> <span class="l-en">un-tracked filers flagging scarcity</span><span class="l-zh">家未跟踪公司报告短缺</span></div>
+        <div class="fx-cand-tickers"><span class="fx-tk">FLY</span><span class="fx-tk">MNTS</span><span class="fx-tk">RKLB</span><span class="fx-tk">YSS</span></div>
+        <div class="fx-cand-lang"><span class="fx-ph">“capacity constrained”</span><span class="fx-ph">“on allocation”</span><span class="fx-ph">“record backlog”</span><span class="fx-ph">“sold out”</span><span class="fx-ph">“supply constrained”</span></div>
+      </div>
+      
+      <div class="fx-cand">
+        <div class="fx-cand-h">
+          <span class="fx-cand-nm">Pharmaceutical Preparations</span>
+          <span class="fx-cand-sic">SIC 2834</span>
+          
+        </div>
+        <div class="fx-cand-meta"><b>4</b> <span class="l-en">un-tracked filers flagging scarcity</span><span class="l-zh">家未跟踪公司报告短缺</span></div>
+        <div class="fx-cand-tickers"><span class="fx-tk">APVO</span><span class="fx-tk">HIND</span><span class="fx-tk">HYPD</span><span class="fx-tk">ONC</span></div>
+        <div class="fx-cand-lang"><span class="fx-ph">“capacity constrained”</span><span class="fx-ph">“on allocation”</span><span class="fx-ph">“sold out”</span><span class="fx-ph">“supply constrained”</span></div>
+      </div>
+      
+      <div class="fx-cand">
+        <div class="fx-cand-h">
+          <span class="fx-cand-nm">Services-Computer Processing &amp; Data Preparation</span>
+          <span class="fx-cand-sic">SIC 7374</span>
+          <span class="fx-cand-vel">▲ +2 <span class="l-en">filers vs prior</span><span class="l-zh">较前期增加</span></span>
+        </div>
+        <div class="fx-cand-meta"><b>3</b> <span class="l-en">un-tracked filers flagging scarcity</span><span class="l-zh">家未跟踪公司报告短缺</span></div>
+        <div class="fx-cand-tickers"><span class="fx-tk">BRUN</span><span class="fx-tk">MOVE</span><span class="fx-tk">SHAZ</span></div>
+        <div class="fx-cand-lang"><span class="fx-ph">“capacity constrained”</span><span class="fx-ph">“longer lead times”</span><span class="fx-ph">“sold out”</span><span class="fx-ph">“supply constrained”</span></div>
+      </div>
+      
+      <div class="fx-cand">
+        <div class="fx-cand-h">
+          <span class="fx-cand-nm">Surgical &amp; Medical Instruments &amp; Apparatus</span>
+          <span class="fx-cand-sic">SIC 3841</span>
+          
+        </div>
+        <div class="fx-cand-meta"><b>3</b> <span class="l-en">un-tracked filers flagging scarcity</span><span class="l-zh">家未跟踪公司报告短缺</span></div>
+        <div class="fx-cand-tickers"><span class="fx-tk">APYX</span><span class="fx-tk">GCTK</span><span class="fx-tk">IVF</span></div>
+        <div class="fx-cand-lang"><span class="fx-ph">“capacity constrained”</span><span class="fx-ph">“on allocation”</span><span class="fx-ph">“supply constrained”</span></div>
+      </div>
+      
+    </div>
+    <div class="fx-disco-foot"><span class="l-en">Candidates are ranked by number of un-tracked filers, then by filer-growth velocity. Polysemy-prone domains (real estate, finance, retail) are excluded, and a cluster must use at least one manufacturing-specific phrase. Forward-graded forward like every other leg.</span><span class="l-zh">候选按未跟踪公司数排序，再按公司增长速度排序。已排除易混淆领域（房地产、金融、零售），且每个集群至少须含一个制造业专用用语。与其他每条腿一样进行前瞻评分。</span></div>
+  </div>
+  
 
   
   <div class="fx-panel">
@@ -1028,6 +1245,8 @@
       <span class="chip2"><b>0</b> <span class="l-en">bottleneck regimes</span><span class="l-zh">瓶颈机制</span></span>
       <span class="chip2"><b>0</b> <span class="l-en">glut flags</span><span class="l-zh">过剩标记</span></span>
       <span class="chip2"><b>36</b> <span class="l-en">revision reads</span><span class="l-zh">预期读数</span></span>
+      <span class="chip2"><b>0</b> <span class="l-en">guidance tilts</span><span class="l-zh">指引倾向</span></span>
+      <span class="chip2"><b>5</b> <span class="l-en">discovery candidates</span><span class="l-zh">发现候选</span></span>
       
     </div>
     
@@ -1041,7 +1260,7 @@
 
   <div class="fx-panel">
     <h2><span class="l-en">Methodology & honesty</span><span class="l-zh">方法与诚实声明</span></h2>
-    <p class="fx-meth"><span class="l-en"><b>Display-only.</b> Nothing here is a scored signal or a sized position. <b>Bottleneck (T1)</b> reads free FRED capacity / inventory / orders / industry-PPI + SEC EDGAR "sold out / on allocation" language; it is the leading thesis and shows <i>AWAITING</i> until the FRED series collect. <b>Demand (T2)</b> projects the hyperscaler-capex pool onto AI-beneficiary themes (capex leads beneficiary revenue ~2–4 quarters). <b>Revisions (T4)</b> roll per-name analyst EPS-revision breadth up to the theme — the confirmation gauge, never the entry. The desk is a <b>watchlist-builder / thesis-confirmer, not an entry-timer</b>: 13D was right and ~9 months early, so the BUY is deferred to the dislocation overlay (buy the flush, not the pop). <b>Exit-risk (glut)</b> inverts the bottleneck — capacity rolling over, inventories restocking, pricing fading, and capacity expanding to chase the shortage — and takes precedence over a late read: a forming glut while estimates are still high is the trim/exit clock. No point-dates; turn-detection is measured coincident, so hazard reads are banded.</span><span class="l-zh"><b>仅供展示。</b>此处任何内容都不是评分信号或仓位。<b>瓶颈（T1）</b>读取免费的 FRED 产能/库存/订单/行业 PPI ＋ SEC EDGAR “售罄/配额”用语；它是领先论点，在 FRED 序列采集前显示<i>待采集</i>。<b>需求（T2）</b>将云厂商资本开支池投射到 AI 受益主题（资本开支领先受益方营收约2–4个季度）。<b>预期修正（T4）</b>将个股分析师 EPS 上修广度汇总到主题层——确认指标，绝非入场点。本台是<b>观察名单构建器／论点确认器，而非择时器</b>：13D 正确但早约9个月，故买点交由错位叠加（买回调，不买冲高）。<b>退出风险（过剩）</b>与瓶颈相反——产能见顶回落、库存回补、定价走弱、产能为追赶短缺而扩张——并优先于偏晚读数：预期仍高而过剩正在形成即为减仓／退出倒计时。不给精确日期；拐点检测为同步指标，故风险读数以区间呈现。</span></p>
+    <p class="fx-meth"><span class="l-en"><b>Display-only.</b> Nothing here is a scored signal or a sized position. <b>Bottleneck (T1)</b> reads free FRED capacity / inventory / orders / industry-PPI + SEC EDGAR "sold out / on allocation" language; it is the leading thesis and shows <i>AWAITING</i> until the FRED series collect. <b>Demand (T2)</b> projects the hyperscaler-capex pool onto AI-beneficiary themes (capex leads beneficiary revenue ~2–4 quarters). <b>Guidance (T3)</b> reads free SEC EDGAR 8-K "raising / lowering guidance" language — management pre-signaling that leads the consensus revision by days-to-weeks (≥2 filers to call a tilt; a coarse directional band, not a numeric beat/miss — the numeric gap vs whisper is the paid upgrade). <b>Revisions (T4)</b> roll per-name analyst EPS-revision breadth up to the theme — the confirmation gauge, never the entry. The desk is a <b>watchlist-builder / thesis-confirmer, not an entry-timer</b>: 13D was right and ~9 months early, so the BUY is deferred to the dislocation overlay (buy the flush, not the pop). <b>Exit-risk (glut)</b> inverts the bottleneck — capacity rolling over, inventories restocking, pricing fading, and capacity expanding to chase the shortage — and takes precedence over a late read: a forming glut while estimates are still high is the trim/exit clock. No point-dates; turn-detection is measured coincident, so hazard reads are banded.</span><span class="l-zh"><b>仅供展示。</b>此处任何内容都不是评分信号或仓位。<b>瓶颈（T1）</b>读取免费的 FRED 产能/库存/订单/行业 PPI ＋ SEC EDGAR “售罄/配额”用语；它是领先论点，在 FRED 序列采集前显示<i>待采集</i>。<b>需求（T2）</b>将云厂商资本开支池投射到 AI 受益主题（资本开支领先受益方营收约2–4个季度）。<b>指引（T3）</b>读取免费的 SEC EDGAR 8-K “上调／下调业绩指引”用语——管理层预先释放信号，领先市场一致预期修正数日至数周（需≥2家公司方可判定倾向；为粗略方向区间，而非精确超预期幅度——与whisper对比的数值缺口为付费升级）。<b>预期修正（T4）</b>将个股分析师 EPS 上修广度汇总到主题层——确认指标，绝非入场点。本台是<b>观察名单构建器／论点确认器，而非择时器</b>：13D 正确但早约9个月，故买点交由错位叠加（买回调，不买冲高）。<b>退出风险（过剩）</b>与瓶颈相反——产能见顶回落、库存回补、定价走弱、产能为追赶短缺而扩张——并优先于偏晚读数：预期仍高而过剩正在形成即为减仓／退出倒计时。不给精确日期；拐点检测为同步指标，故风险读数以区间呈现。</span></p>
   </div>
 
 </div>

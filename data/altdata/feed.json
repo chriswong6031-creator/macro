@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-28T10:46:21.568019+00:00",
+  "generated_utc": "2026-06-28T17:43:58.468145+00:00",
   "as_of": "2026-06-28",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -9,7 +9,7 @@
       "emoji": "\ud83d\udfe5",
       "label_en": "Donald Trump trades",
       "label_zh": "\u7279\u6717\u666e\u4ea4\u6613",
-      "rows": 397,
+      "rows": 408,
       "last_seen": "2026-05-13",
       "recent": [
         {
@@ -23,6 +23,66 @@
           "_first_seen": "2026-06-20T00:51:48.398221+00:00"
         },
         {
+          "Ticker": "AAPL",
+          "Company": "APPLE INC UNSOLICITED",
+          "Transaction": "Purchase",
+          "Amount": "$1,000,001 - $5,000,000",
+          "Filed": "2026-05-13",
+          "Traded": "2026-03-02",
+          "ExcessReturn": "3.7815889980951214",
+          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
+        },
+        {
+          "Ticker": null,
+          "Company": "EVEREST REINSURANCE GR F",
+          "Transaction": "Sale",
+          "Amount": "$1,001 - $15,000",
+          "Filed": "2026-05-13",
+          "Traded": "2026-01-12",
+          "ExcessReturn": null,
+          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
+        },
+        {
+          "Ticker": null,
+          "Company": "SCHWAB GOVERNMENT MONEY FUND",
+          "Transaction": "Sale",
+          "Amount": "$1,001 - $15,000",
+          "Filed": "2026-05-13",
+          "Traded": "2026-02-13",
+          "ExcessReturn": null,
+          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
+        },
+        {
+          "Ticker": null,
+          "Company": "STATE STREET ENRGY SLECT SEC SPDR ETF",
+          "Transaction": "Sale",
+          "Amount": "$1,001 - $15,000",
+          "Filed": "2026-05-13",
+          "Traded": "2026-03-04",
+          "ExcessReturn": null,
+          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
+        },
+        {
+          "Ticker": "MMM",
+          "Company": "3M CO",
+          "Transaction": "Sale",
+          "Amount": "$1,001 - $15,000",
+          "Filed": "2026-05-13",
+          "Traded": "2026-03-26",
+          "ExcessReturn": "-4.22196790254873",
+          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
+        },
+        {
+          "Ticker": "ETN",
+          "Company": "EATON CORP PLC",
+          "Transaction": "Purchase",
+          "Amount": "$1,000,001 - $5,000,000",
+          "Filed": "2026-05-13",
+          "Traded": "2026-03-17",
+          "ExcessReturn": "4.564327117203224",
+          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
+        },
+        {
           "Ticker": null,
           "Company": "Invesco Premier U.S. Government Money Market Portfolio Investor Class 5 - Frac.000 Solicited Order Discretion Exercised",
           "Transaction": "Sale",
@@ -30,6 +90,16 @@
           "Filed": "2026-05-13",
           "Traded": "2026-03-06",
           "ExcessReturn": null,
+          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
+        },
+        {
+          "Ticker": "GOGO",
+          "Company": "GOGO INC",
+          "Transaction": "Sale",
+          "Amount": "$1,001 - $15,000",
+          "Filed": "2026-05-13",
+          "Traded": "2026-01-26",
+          "ExcessReturn": "-33.015986710095135",
           "_first_seen": "2026-06-21T15:27:35.947483+00:00"
         },
         {
@@ -63,16 +133,6 @@
           "_first_seen": "2026-06-21T15:27:35.947483+00:00"
         },
         {
-          "Ticker": "AAPL",
-          "Company": "APPLE INC UNSOLICITED",
-          "Transaction": "Purchase",
-          "Amount": "$1,000,001 - $5,000,000",
-          "Filed": "2026-05-13",
-          "Traded": "2026-03-02",
-          "ExcessReturn": "3.7815889980951214",
-          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
-        },
-        {
           "Ticker": "GPN",
           "Company": "GLOBAL PMTS INC",
           "Transaction": "Sale",
@@ -80,6 +140,16 @@
           "Filed": "2026-05-13",
           "Traded": "2026-03-26",
           "ExcessReturn": "-20.173669564933117",
+          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
+        },
+        {
+          "Ticker": null,
+          "Company": "Krz & Co Inc Com Solicited Order Discretion Exercised",
+          "Transaction": "Sale",
+          "Amount": "$1,001 - $15,000",
+          "Filed": "2026-05-13",
+          "Traded": "2026-03-27",
+          "ExcessReturn": null,
           "_first_seen": "2026-06-21T15:27:35.947483+00:00"
         },
         {
@@ -185,81 +255,11 @@
         {
           "Ticker": null,
           "Company": "SCHWAB GOVERNMENT MONEY FUND",
-          "Transaction": "Purchase",
-          "Amount": "$1,001 - $15,000",
-          "Filed": "2026-05-13",
-          "Traded": "2026-01-22",
-          "ExcessReturn": null,
-          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
-        },
-        {
-          "Ticker": null,
-          "Company": "EVEREST REINSURANCE GR F",
-          "Transaction": "Purchase",
-          "Amount": "$1,001 - $15,000",
-          "Filed": "2026-05-13",
-          "Traded": "2026-03-23",
-          "ExcessReturn": null,
-          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
-        },
-        {
-          "Ticker": "AMD",
-          "Company": "ADVANCED MICRO DEVICES INC",
-          "Transaction": "Purchase",
-          "Amount": "$1,001 - $15,000",
-          "Filed": "2026-05-13",
-          "Traded": "2026-02-19",
-          "ExcessReturn": "155.13672329867262",
-          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
-        },
-        {
-          "Ticker": null,
-          "Company": "COTERRA ENERGY INC",
-          "Transaction": "Purchase",
-          "Amount": "$1,001 - $15,000",
-          "Filed": "2026-05-13",
-          "Traded": "2026-03-23",
-          "ExcessReturn": null,
-          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
-        },
-        {
-          "Ticker": null,
-          "Company": "STATE STR CORP",
-          "Transaction": "Purchase",
-          "Amount": "$1,001 - $15,000",
-          "Filed": "2026-05-13",
-          "Traded": "2026-03-23",
-          "ExcessReturn": null,
-          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
-        },
-        {
-          "Ticker": null,
-          "Company": "BAXTER INTL INC",
-          "Transaction": "Purchase",
-          "Amount": "$1,001 - $15,000",
-          "Filed": "2026-05-13",
-          "Traded": "2026-01-23",
-          "ExcessReturn": null,
-          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
-        },
-        {
-          "Ticker": "GOGO",
-          "Company": "GOGO INC",
           "Transaction": "Sale",
           "Amount": "$1,001 - $15,000",
           "Filed": "2026-05-13",
-          "Traded": "2026-01-26",
-          "ExcessReturn": "-33.015986710095135",
-          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
-        },
-        {
-          "Ticker": "ETN",
-          "Company": "EATON CORP PLC",
-          "Transaction": "Purchase",
-          "Amount": "$1,000,001 - $5,000,000",
-          "Filed": "2026-05-13",
-          "Traded": "2026-03-17",
-          "ExcessReturn": "4.564327117203224",
+          "Traded": "2026-01-13",
+          "ExcessReturn": null,
           "_first_seen": "2026-06-21T15:27:35.947483+00:00"
         }
       ]
@@ -4460,62 +4460,80 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 457,
+      "rows": 465,
       "last_seen": "2026-06-28",
       "recent": [
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Laurel+M.+Lee+Lost+an+Estimated+%24457.7K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Representative Laurel M. Lee Lost an Estimated $457.7K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Representative Laurel M. Lee</strong> lost <strong>$457.7K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Laurel M. Lee Net Worth</h2><p>Q\u2026",
-          "image": "https://www.quiverquant.com/images/L000597_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+          "url": "https://www.quiverquant.com/news/Nebius+Group+Stock+%28NBIS%29+Opinions+on+AI+Infrastructure+Expansion",
+          "time": "2026-06-28 14:03:33",
+          "headline": "Nebius Group Stock (NBIS) Opinions on AI Infrastructure Expansion",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Nvidia Partnership Boost:</strong> Market observers on social media highlighted Nebius Group's new physical AI Living Lab initiative with Nvidia, positioning the firm to suppo\u2026",
+          "image": "https://www.quiverquant.com/images/nbis_rect_new.png",
+          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ron+Wyden+Lost+an+Estimated+%24333.5K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator Ron Wyden Lost an Estimated $333.5K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator Ron Wyden</strong> lost <strong>$333.5K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Ron Wyden Net Worth</h2><p>Quiver Quantitative est\u2026",
-          "image": "https://www.quiverquant.com/images/W000779_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+          "url": "https://www.quiverquant.com/news/Infleqtion+Stock+%28INFQ%29+Opinions+on+Quantum+Computing+Developments",
+          "time": "2026-06-28 14:03:33",
+          "headline": "Infleqtion Stock (INFQ) Opinions on Quantum Computing Developments",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Analyst rating sparks interest:</strong> Recent coverage from Wedbush has highlighted Infleqtion's potential in quantum technologies, with a price target suggesting notable up\u2026",
+          "image": "https://www.quiverquant.com/images/infq_rect_new.png",
+          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+John+W.+Hickenlooper+Lost+an+Estimated+%24370.5K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator John W. Hickenlooper Lost an Estimated $370.5K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator John W. Hickenlooper</strong> lost <strong>$370.5K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator John W. Hickenlooper Net Worth</h2><p>Q\u2026",
-          "image": "https://www.quiverquant.com/images/H000273_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+          "url": "https://www.quiverquant.com/news/Wolfspeed+Stock+%28WOLF%29+Opinions+on+AI+Data+Center+Opportunities",
+          "time": "2026-06-28 14:03:33",
+          "headline": "Wolfspeed Stock (WOLF) Opinions on AI Data Center Opportunities",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Restructuring boost:</strong> Social media chatter highlights Wolfspeed's recent prepackaged debt restructuring that delivered over a billion dollars in liquidity. Analysts on\u2026",
+          "image": "https://www.quiverquant.com/images/wolf_rect_new.png",
+          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Jacky+Rosen+Lost+an+Estimated+%24129.2K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator Jacky Rosen Lost an Estimated $129.2K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator Jacky Rosen</strong> lost <strong>$129.2K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Jacky Rosen Net Worth</h2><p>Quiver Quantitative\u2026",
-          "image": "https://www.quiverquant.com/images/R000608_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+          "url": "https://www.quiverquant.com/news/Prairie+Operating+Co.+Stock+%28PROP%29+Opinions+on+Energy+Sector+Dynamics+and+Dilution+Concerns",
+          "time": "2026-06-28 14:03:33",
+          "headline": "Prairie Operating Co. Stock (PROP) Opinions on Energy Sector Dynamics and Dilution Concerns",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Energy fundamentals spark debate:</strong> Social media users highlight Prairie Operating Co.'s substantial proven oil reserves valued at over $1 billion against a modest mark\u2026",
+          "image": "https://www.quiverquant.com/images/prop_rect_new.png",
+          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Mike+Kelly+Lost+an+Estimated+%24215.6K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Representative Mike Kelly Lost an Estimated $215.6K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Representative Mike Kelly</strong> lost <strong>$215.6K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Mike Kelly Net Worth</h2><p>Quiver \u2026",
-          "image": "https://www.quiverquant.com/images/K000376_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+          "url": "https://www.quiverquant.com/news/Micron+Technology+Stock+%28MU%29+Opinions+on+Recent+Earnings+and+AI+Demand+Surge",
+          "time": "2026-06-28 14:03:33",
+          "headline": "Micron Technology Stock (MU) Opinions on Recent Earnings and AI Demand Surge",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings Beat:</strong> Social media discussions centered on Micron Technology's recent quarterly results that exceeded expectations, with observers noting robust demand for h\u2026",
+          "image": "https://www.quiverquant.com/images/mu_rect_new.png",
+          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Katie+Boyd+Britt+Lost+an+Estimated+%24366.4K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator Katie Boyd Britt Lost an Estimated $366.4K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator Katie Boyd Britt</strong> lost <strong>$366.4K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Katie Boyd Britt Net Worth</h2><p>Quiver Qu\u2026",
-          "image": "https://www.quiverquant.com/images/B001319_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+          "url": "https://www.quiverquant.com/news/AST+SpaceMobile+Stock+%28ASTS%29+Opinions+on+Satellite+Deployment+Progress",
+          "time": "2026-06-28 14:03:33",
+          "headline": "AST SpaceMobile Stock (ASTS) Opinions on Satellite Deployment Progress",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Satellite Progress:</strong> Market participants are closely tracking the latest orbital data for AST SpaceMobile's satellites, noting reduced drag and steady unfolding that p\u2026",
+          "image": "https://www.quiverquant.com/images/asts_rect_new.png",
+          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/The+Trade+Desk+Stock+%28TTD%29+Opinions+on+Large+Insider+Purchase",
+          "time": "2026-06-28 14:03:33",
+          "headline": "The Trade Desk Stock (TTD) Opinions on Large Insider Purchase",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Insider Purchase Spotlight:</strong> Social media discussions have centered on a notably large open-market insider purchase at The Trade Desk, with observers highlighting its \u2026",
+          "image": "https://www.quiverquant.com/images/ttd_rect_new.png",
+          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/BigBear.ai+Stock+%28BBAI%29+Opinions+on+Recent+Price+Movements+and+Dilution",
+          "time": "2026-06-28 14:03:33",
+          "headline": "BigBear.ai Stock (BBAI) Opinions on Recent Price Movements and Dilution",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Recent price movements:</strong> Social media discussions highlight that BigBear.ai shares faced downward pressure this week, settling near critical weekly support levels amid\u2026",
+          "image": "https://www.quiverquant.com/images/bbai_rect_new.png",
+          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Thomas+R.+Suozzi+Lost+an+Estimated+%24759.3K+in+the+Stock+Market+Last+Month",
@@ -4524,15 +4542,6 @@
           "category": "congress_trades_automated",
           "summary": "<p><strong>Representative Thomas R. Suozzi</strong> lost <strong>$759.3K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Thomas R. Suozzi Net Worth</h\u2026",
           "image": "https://www.quiverquant.com/images/S001201_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Lisa+Blunt+Rochester+Lost+an+Estimated+%24124.0K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator Lisa Blunt Rochester Lost an Estimated $124.0K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator Lisa Blunt Rochester</strong> lost <strong>$124.0K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Lisa Blunt Rochester Net Worth</h2><p>Q\u2026",
-          "image": "https://www.quiverquant.com/images/B001303_congress.png",
           "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
@@ -4545,21 +4554,75 @@
           "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+J.+French+Hill+Made+an+Estimated+%24312.7K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Representative J. French Hill Made an Estimated $312.7K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Representative J. French Hill</strong> made <strong>$312.7K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative J. French Hill Net Worth</h2><p\u2026",
-          "image": "https://www.quiverquant.com/images/H001072_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Mikie+Sherrill+Lost+an+Estimated+%24121.1K+in+the+Stock+Market+Last+Month",
           "time": "2026-06-28 03:00:29",
           "headline": "Net Worth Update: Representative Mikie Sherrill Lost an Estimated $121.1K in the Stock Market Last Month",
           "category": "congress_trades_automated",
           "summary": "<p><strong>Representative Mikie Sherrill</strong> lost <strong>$121.1K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Mikie Sherrill Net Worth</h2><p\u2026",
           "image": "https://www.quiverquant.com/images/S001207_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Lisa+Blunt+Rochester+Lost+an+Estimated+%24124.0K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator Lisa Blunt Rochester Lost an Estimated $124.0K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Lisa Blunt Rochester</strong> lost <strong>$124.0K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Lisa Blunt Rochester Net Worth</h2><p>Q\u2026",
+          "image": "https://www.quiverquant.com/images/B001303_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+John+W.+Hickenlooper+Lost+an+Estimated+%24370.5K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator John W. Hickenlooper Lost an Estimated $370.5K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator John W. Hickenlooper</strong> lost <strong>$370.5K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator John W. Hickenlooper Net Worth</h2><p>Q\u2026",
+          "image": "https://www.quiverquant.com/images/H000273_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Katie+Boyd+Britt+Lost+an+Estimated+%24366.4K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator Katie Boyd Britt Lost an Estimated $366.4K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Katie Boyd Britt</strong> lost <strong>$366.4K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Katie Boyd Britt Net Worth</h2><p>Quiver Qu\u2026",
+          "image": "https://www.quiverquant.com/images/B001319_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Mike+Kelly+Lost+an+Estimated+%24215.6K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Representative Mike Kelly Lost an Estimated $215.6K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Mike Kelly</strong> lost <strong>$215.6K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Mike Kelly Net Worth</h2><p>Quiver \u2026",
+          "image": "https://www.quiverquant.com/images/K000376_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Jacky+Rosen+Lost+an+Estimated+%24129.2K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator Jacky Rosen Lost an Estimated $129.2K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Jacky Rosen</strong> lost <strong>$129.2K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Jacky Rosen Net Worth</h2><p>Quiver Quantitative\u2026",
+          "image": "https://www.quiverquant.com/images/R000608_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ron+Wyden+Lost+an+Estimated+%24333.5K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator Ron Wyden Lost an Estimated $333.5K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Ron Wyden</strong> lost <strong>$333.5K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Ron Wyden Net Worth</h2><p>Quiver Quantitative est\u2026",
+          "image": "https://www.quiverquant.com/images/W000779_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+J.+French+Hill+Made+an+Estimated+%24312.7K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Representative J. French Hill Made an Estimated $312.7K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative J. French Hill</strong> made <strong>$312.7K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative J. French Hill Net Worth</h2><p\u2026",
+          "image": "https://www.quiverquant.com/images/H001072_congress.png",
           "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
@@ -4572,66 +4635,12 @@
           "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ron+Johnson+Lost+an+Estimated+%24524.6K+in+the+Stock+Market+Last+Month",
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Laurel+M.+Lee+Lost+an+Estimated+%24457.7K+in+the+Stock+Market+Last+Month",
           "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator Ron Johnson Lost an Estimated $524.6K in the Stock Market Last Month",
+          "headline": "Net Worth Update: Representative Laurel M. Lee Lost an Estimated $457.7K in the Stock Market Last Month",
           "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator Ron Johnson</strong> lost <strong>$524.6K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Ron Johnson Net Worth</h2><p>Quiver Quantitative\u2026",
-          "image": "https://www.quiverquant.com/images/J000293_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+David+Kustoff+Lost+an+Estimated+%24245.3K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Representative David Kustoff Lost an Estimated $245.3K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Representative David Kustoff</strong> lost <strong>$245.3K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative David Kustoff Net Worth</h2><p>Q\u2026",
-          "image": "https://www.quiverquant.com/images/K000392_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Darrell+Issa+Made+an+Estimated+%24686.9K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Representative Darrell Issa Made an Estimated $686.9K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Representative Darrell Issa</strong> made <strong>$686.9K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Darrell Issa Net Worth</h2><p>Qui\u2026",
-          "image": "https://www.quiverquant.com/images/I000056_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Scott+Franklin+Lost+an+Estimated+%24571.5K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Representative Scott Franklin Lost an Estimated $571.5K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Representative Scott Franklin</strong> lost <strong>$571.5K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Scott Franklin Net Worth</h2><p\u2026",
-          "image": "https://www.quiverquant.com/images/F000472_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Mitch+McConnell+Lost+an+Estimated+%24434.3K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator Mitch McConnell Lost an Estimated $434.3K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator Mitch McConnell</strong> lost <strong>$434.3K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Mitch McConnell Net Worth</h2><p>Quiver Quan\u2026",
-          "image": "https://www.quiverquant.com/images/M000355_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Tim+Sheehy+Lost+an+Estimated+%248.4M+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator Tim Sheehy Lost an Estimated $8.4M in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator Tim Sheehy</strong> lost <strong>$8.4M</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Tim Sheehy Net Worth</h2><p>Quiver Quantitative est\u2026",
-          "image": "https://www.quiverquant.com/images/S001232_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Gilbert+Ray+Cisneros%2C+Jr.+Lost+an+Estimated+%24177.2K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Representative Gilbert Ray Cisneros, Jr. Lost an Estimated $177.2K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Representative Gilbert Ray Cisneros, Jr.</strong> lost <strong>$177.2K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Gilbert Ray Cisneros\u2026",
-          "image": "https://www.quiverquant.com/images/C001123_congress.png",
+          "summary": "<p><strong>Representative Laurel M. Lee</strong> lost <strong>$457.7K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Laurel M. Lee Net Worth</h2><p>Q\u2026",
+          "image": "https://www.quiverquant.com/images/L000597_congress.png",
           "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
@@ -4644,49 +4653,40 @@
           "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Plaskett+Responds+to+Supreme+Court+Ruling+on+Haitian+TPS+Protections",
-          "time": "2026-06-27 22:19:49",
-          "headline": "Press Release: Plaskett Responds to Supreme Court Ruling on Haitian TPS Protections",
-          "category": "legislation_automated",
-          "summary": "<p>Plaskett criticizes a Supreme Court ruling ending TPS protections for Haitian and Syrian nationals and urges Senate action.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,\u2026",
-          "image": "https://www.quiverquant.com/images/P000610_congress.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Gilbert+Ray+Cisneros%2C+Jr.+Lost+an+Estimated+%24177.2K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Representative Gilbert Ray Cisneros, Jr. Lost an Estimated $177.2K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Gilbert Ray Cisneros, Jr.</strong> lost <strong>$177.2K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Gilbert Ray Cisneros\u2026",
+          "image": "https://www.quiverquant.com/images/C001123_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Troy+Carter+Responds+to+Soot+Pollution+Ruling",
-          "time": "2026-06-27 20:19:53",
-          "headline": "Press Release: Troy Carter Responds to Soot Pollution Ruling",
-          "category": "legislation_automated",
-          "summary": "<p>Congressman Carter supports a court ruling upholding soot pollution standards, citing public health benefits and economic concerns.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(\u2026",
-          "image": "https://www.quiverquant.com/images/C001125_congress.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Tim+Sheehy+Lost+an+Estimated+%248.4M+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator Tim Sheehy Lost an Estimated $8.4M in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Tim Sheehy</strong> lost <strong>$8.4M</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Tim Sheehy Net Worth</h2><p>Quiver Quantitative est\u2026",
+          "image": "https://www.quiverquant.com/images/S001232_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Western+Digital+Stock+%28WDC%29+Opinions+on+Recent+Semiconductor+Market+Volatility",
-          "time": "2026-06-27 17:32:47",
-          "headline": "Western Digital Stock (WDC) Opinions on Recent Semiconductor Market Volatility",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Year-to-Date Surge:</strong> Social media conversations emphasize Western Digital's standout 240% gain in 2026, ranking it among leading technology names driven by robust memo\u2026",
-          "image": "https://www.quiverquant.com/images/wdc_rect_new.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ron+Johnson+Lost+an+Estimated+%24524.6K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator Ron Johnson Lost an Estimated $524.6K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Ron Johnson</strong> lost <strong>$524.6K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Ron Johnson Net Worth</h2><p>Quiver Quantitative\u2026",
+          "image": "https://www.quiverquant.com/images/J000293_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Redwire+Stock+%28RDW%29+Opinions+on+Space+Sector+Dynamics",
-          "time": "2026-06-27 17:32:47",
-          "headline": "Redwire Stock (RDW) Opinions on Space Sector Dynamics",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Space sector momentum:</strong> Investors on social media have highlighted Redwire's revenue growth and expanding backlog amid broader interest in space infrastructure plays. \u2026",
-          "image": "https://www.quiverquant.com/images/rdw_rect_new.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Constellation+Energy+Stock+%28CEG%29+Opinions+on+AI+Data+Center+Power+Demand",
-          "time": "2026-06-27 17:32:47",
-          "headline": "Constellation Energy Stock (CEG) Opinions on AI Data Center Power Demand",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">AI Power Demand:</strong> Social media chatter highlights Constellation Energy's role in supplying reliable nuclear power to meet surging needs from data centers. Investors po\u2026",
-          "image": "https://www.quiverquant.com/images/ceg_rect_new.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Scott+Franklin+Lost+an+Estimated+%24571.5K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Representative Scott Franklin Lost an Estimated $571.5K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Scott Franklin</strong> lost <strong>$571.5K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Scott Franklin Net Worth</h2><p\u2026",
+          "image": "https://www.quiverquant.com/images/F000472_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         }
       ]
     },
@@ -5212,258 +5212,258 @@
       "emoji": "\ud83d\udcf1",
       "label_en": "App ratings",
       "label_zh": "\u5e94\u7528\u8bc4\u5206",
-      "rows": 27406,
-      "last_seen": "2026-06-27",
+      "rows": 28783,
+      "last_seen": "2026-06-28",
       "recent": [
         {
-          "Ticker": "VRML",
-          "App": "Vermillion State Bank",
-          "Created": "2017-11-08",
-          "Publisher": "Vermillion State Bank",
-          "Rating": "4.86933",
-          "Count": "1102",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
+          "Ticker": "TNDM",
+          "App": "Tandem t:slim Mobile App",
+          "Created": "2020-07-07",
+          "Publisher": "Tandem Diabetes Care, Inc.",
+          "Rating": "3.09207",
+          "Count": "2107",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         },
         {
-          "Ticker": "GIGM",
-          "App": "New TW MJ",
-          "Created": "2013-01-08",
-          "Publisher": "Hoshin GigaMedia Center Inc., FunTown Branch.",
-          "Rating": "3.5",
+          "Ticker": "FRG",
+          "App": "Round Table Pizza Rewards",
+          "Created": "2019-11-06",
+          "Publisher": "Global Franchise Group LLC",
+          "Rating": "4.601",
+          "Count": "11434",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "CZFC",
+          "App": "Citizens First Bank Mobile",
+          "Created": "2014-06-29",
+          "Publisher": "Citizens First Bank Florida",
+          "Rating": "4.81716",
+          "Count": "3369",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "CYBR",
+          "App": "Idira Mobile",
+          "Created": "2019-09-29",
+          "Publisher": "CYBERARK SOFTWARE INC.",
+          "Rating": "2.80769",
+          "Count": "26",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "CY",
+          "App": "Cypress\u00ae BLE-Beacon\u2122",
+          "Created": "2016-05-19",
+          "Publisher": "Cypress Semiconductor",
+          "Rating": "1.0",
+          "Count": "1",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "FRO",
+          "App": "Frontline Education",
+          "Created": "2017-02-07",
+          "Publisher": "Frontline Technologies Group LLC",
+          "Rating": "4.74486",
+          "Count": "78439",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "FRME",
+          "App": "First Merchants Retirement App",
+          "Created": "2020-05-13",
+          "Publisher": "First Merchants Corporation",
+          "Rating": "1.875",
           "Count": "8",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         },
         {
-          "Ticker": "GH",
-          "App": "Guardant Health Portal",
-          "Created": "2016-09-16",
-          "Publisher": "Guardant Health, Inc",
-          "Rating": "2.25",
-          "Count": "4",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
+          "Ticker": "FRME",
+          "App": "First Merchants Mobile App",
+          "Created": "2015-07-19",
+          "Publisher": "First Merchants Corporation",
+          "Rating": "4.74864",
+          "Count": "28302",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         },
         {
-          "Ticker": "GGG",
-          "App": "Graco Auto Lube",
-          "Created": "2019-12-08",
-          "Publisher": "Graco Inc.",
-          "Rating": "4.33333",
-          "Count": "6",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
+          "Ticker": "FRGI",
+          "App": "Pollo Tropical",
+          "Created": "2014-03-01",
+          "Publisher": "Fiesta Restaurant Group, Inc",
+          "Rating": "4.80905",
+          "Count": "42682",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         },
         {
-          "Ticker": "GGG",
-          "App": "Graco BlueLink",
-          "Created": "2019-01-25",
-          "Publisher": "Graco Inc.",
-          "Rating": "3.66667",
-          "Count": "3",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
+          "Ticker": "FRG",
+          "App": "Master Pizza",
+          "Created": "2015-09-19",
+          "Publisher": "Master Pizza Franchise Group, LLC",
+          "Rating": "4.07527",
+          "Count": "93",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         },
         {
-          "Ticker": "GGG",
-          "App": "Graco Sales Book",
-          "Created": "2015-09-14",
-          "Publisher": "Graco Inc.",
-          "Rating": "4.7",
-          "Count": "10",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
+          "Ticker": "FORR",
+          "App": "Forrester Events App",
+          "Created": "2023-03-08",
+          "Publisher": "Forrester Research",
+          "Rating": "4.0",
+          "Count": "5",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         },
         {
-          "Ticker": "GE",
-          "App": "Portland General Electric",
-          "Created": "2019-10-05",
-          "Publisher": "Portland General Electric Company",
-          "Rating": "4.15993",
+          "Ticker": "D",
+          "App": "Dominion Energy Credit Union",
+          "Created": "2012-10-09",
+          "Publisher": "Dominion Energy Credit Union",
+          "Rating": "4.09144",
+          "Count": "514",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "FOLD",
+          "App": "MyDay \u2013 Galafold\u00ae (migalastat)",
+          "Created": "2021-07-02",
+          "Publisher": "Amicus Therapeutics, Inc.",
+          "Rating": "5.0",
+          "Count": "1",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "FNKO",
+          "App": "Funko",
+          "Created": "2017-09-21",
+          "Publisher": "Funko LLC",
+          "Rating": "2.77022",
           "Count": "544",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         },
         {
-          "Ticker": "GE",
-          "App": "General Electric Credit Union",
-          "Created": "2017-07-03",
-          "Publisher": "General Electric Credit Union",
-          "Rating": "4.77973",
-          "Count": "7123",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
+          "Ticker": "FLXS",
+          "App": "FlexSync",
+          "Created": "2024-04-10",
+          "Publisher": "FLEXSTEEL INDUSTRIES, INC.",
+          "Rating": "3.35",
+          "Count": "20",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         },
         {
-          "Ticker": "GDOT",
-          "App": "Walmart MoneyCard\u00ae",
-          "Created": "2025-05-17",
-          "Publisher": "Green Dot Corporation",
-          "Rating": "4.17889",
-          "Count": "6389",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
+          "Ticker": "FLXS",
+          "App": "MyRecline by Flexsteel",
+          "Created": "2017-08-04",
+          "Publisher": "FLEXSTEEL INDUSTRIES, INC.",
+          "Rating": "3.06977",
+          "Count": "43",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         },
         {
-          "Ticker": "GDOT",
-          "App": "Amazon Flex Debit Card",
-          "Created": "2020-11-02",
-          "Publisher": "Green Dot Corporation",
-          "Rating": "4.72047",
-          "Count": "10582",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
+          "Ticker": "FLS",
+          "App": "IPS Mobile Insight",
+          "Created": "2017-08-31",
+          "Publisher": "FLOWSERVE CORPORATION",
+          "Rating": "4.0",
+          "Count": "4",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         },
         {
-          "Ticker": "GDOT",
-          "App": "Green Dot - Mobile Banking",
-          "Created": "2011-05-17",
-          "Publisher": "Green Dot Corporation",
-          "Rating": "3.43187",
-          "Count": "11904",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
+          "Ticker": "FLS",
+          "App": "Flowserve Events",
+          "Created": "2020-01-16",
+          "Publisher": "FLOWSERVE CORPORATION",
+          "Rating": "5.0",
+          "Count": "1",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         },
         {
-          "Ticker": "GDDY",
-          "App": "GoDaddy: Websites & Marketing",
-          "Created": "2012-07-05",
-          "Publisher": "GoDaddy Mobile LLC",
-          "Rating": "4.82878",
-          "Count": "106420",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
+          "Ticker": "FLNT",
+          "App": "Fluent Home",
+          "Created": "2016-03-26",
+          "Publisher": "Fluent Home LLC",
+          "Rating": "4.3936",
+          "Count": "813",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         },
         {
-          "Ticker": "GCP",
-          "App": "Adfil\u00aeStrux",
-          "Created": "2019-12-13",
-          "Publisher": "GCP Applied Technologies Inc.",
+          "Ticker": "FLNT",
+          "App": "Fluent Forever - Language App",
+          "Created": "2019-04-08",
+          "Publisher": "Fluent Forever Inc",
+          "Rating": "3.7219",
+          "Count": "1201",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "CZR",
+          "App": "Caesars Rewards Resort Offers",
+          "Created": "2013-12-19",
+          "Publisher": "Caesars Entertainment Corporation",
+          "Rating": "4.78507",
+          "Count": "182120",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "DAC",
+          "App": "Danaos Info@Gate On The Go!",
+          "Created": "2019-09-23",
+          "Publisher": "Danaos Management Consultants S.A.",
           "Rating": "0.0",
           "Count": "0",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         },
         {
-          "Ticker": "GCO",
-          "App": "Journeys Sales Meeting",
-          "Created": "2016-02-16",
-          "Publisher": "Genesco Inc.",
-          "Rating": "2.8",
+          "Ticker": "CMBM",
+          "App": "cnArcher",
+          "Created": "2018-08-17",
+          "Publisher": "Cambium Networks LTD",
+          "Rating": "3.66667",
+          "Count": "3",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "DBD",
+          "App": "DN Visualizer - AR",
+          "Created": "2021-06-28",
+          "Publisher": "Diebold Nixdorf Incorporated",
+          "Rating": "5.0",
+          "Count": "10",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "DGII",
+          "App": "Digi XBee Mobile",
+          "Created": "2018-11-16",
+          "Publisher": "Digi International Inc",
+          "Rating": "3.0",
           "Count": "5",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
-        },
-        {
-          "Ticker": "GCI",
-          "App": "Cincinnati Sports",
-          "Created": "2010-09-23",
-          "Publisher": "Gannett",
-          "Rating": "4.53852",
-          "Count": "4063",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
-        },
-        {
-          "Ticker": "GCI",
-          "App": "The Detroit News: Local News",
-          "Created": "2014-09-19",
-          "Publisher": "Gannett",
-          "Rating": "4.54614",
-          "Count": "7185",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
-        },
-        {
-          "Ticker": "GCI",
-          "App": "Milwaukee Journal Sentinel",
-          "Created": "2012-05-22",
-          "Publisher": "Gannett",
-          "Rating": "4.34449",
-          "Count": "5736",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
-        },
-        {
-          "Ticker": "GCI",
-          "App": "azcentral",
-          "Created": "2014-03-11",
-          "Publisher": "Gannett",
-          "Rating": "4.34722",
-          "Count": "6572",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
-        },
-        {
-          "Ticker": "GCI",
-          "App": "Detroit Free Press: Freep",
-          "Created": "2014-09-18",
-          "Publisher": "Gannett",
-          "Rating": "4.57247",
-          "Count": "12617",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
-        },
-        {
-          "Ticker": "GAIA",
-          "App": "Gaia On The Go",
-          "Created": "2011-12-21",
-          "Publisher": "Gaia Interactive Inc.",
-          "Rating": "1.66209",
-          "Count": "364",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
-        },
-        {
-          "Ticker": "GAIA",
-          "App": "Gaia: Streaming Consciousness",
-          "Created": "2014-02-27",
-          "Publisher": "Gaia, Inc",
-          "Rating": "4.83068",
-          "Count": "138852",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
-        },
-        {
-          "Ticker": "GABC",
-          "App": "German American Mobile Banking",
-          "Created": "2014-02-10",
-          "Publisher": "German American Bancorp, Inc.",
-          "Rating": "4.79106",
-          "Count": "9443",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
-        },
-        {
-          "Ticker": "FWRD",
-          "App": "Forward Ten4",
-          "Created": "2020-08-24",
-          "Publisher": "Forward Air Corporation",
-          "Rating": "2.44444",
-          "Count": "18",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
-        },
-        {
-          "Ticker": "FVRR",
-          "App": "Fiverr - Freelance Services",
-          "Created": "2011-12-11",
-          "Publisher": "Fiverr International Ltd.",
-          "Rating": "4.91718",
-          "Count": "567627",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
-        },
-        {
-          "Ticker": "FUNC",
-          "App": "First United Mobile Banking",
-          "Created": "2012-04-10",
-          "Publisher": "First United Bank and Trust Company",
-          "Rating": "4.82367",
-          "Count": "431",
-          "Time": "2026-06-27",
-          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         }
       ]
     },
@@ -15606,11 +15606,11 @@
       },
       {
         "ticker": "CCO",
-        "category": "Acquisitions",
-        "confidence": "high",
+        "category": "Other",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Other"
       },
       {
         "ticker": "CVW",
@@ -16510,14 +16510,6 @@
       },
       {
         "ticker": "2175",
-        "category": "Activist Campaigns",
-        "confidence": "high",
-        "activist": true,
-        "filer": null,
-        "detail": "Activist Campaigns"
-      },
-      {
-        "ticker": "SABR",
         "category": "Activist Campaigns",
         "confidence": "high",
         "activist": true,
@@ -18445,6 +18437,14 @@
         "detail": "Activist Campaigns"
       },
       {
+        "ticker": "WEX",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "AUROPHARMA",
         "category": "Capital Returns",
         "confidence": "high",
@@ -19645,6 +19645,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "RBA",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "00852",
         "category": "Acquisitions",
         "confidence": "high",
@@ -19806,11 +19814,11 @@
       },
       {
         "ticker": "ORIS",
-        "category": "Delistings",
-        "confidence": "high",
+        "category": "Capital Returns",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Capital Returns"
       },
       {
         "ticker": "QVCGA",
@@ -20510,11 +20518,11 @@
       },
       {
         "ticker": "SANA",
-        "category": "Other",
-        "confidence": "high",
+        "category": "Capital Returns",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Other"
+        "detail": "Capital Returns"
       },
       {
         "ticker": "AZUL",
@@ -20758,6 +20766,14 @@
       },
       {
         "ticker": "JPASSOCIAT",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "NBIX",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -21363,6 +21379,14 @@
         "activist": false,
         "filer": null,
         "detail": "Strategic Reviews"
+      },
+      {
+        "ticker": "QNCX",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "ROOT",
@@ -23027,6 +23051,14 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "SSP",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
       },
       {
         "ticker": "LEE",
@@ -25869,6 +25901,14 @@
         "detail": "M&A / Divestitures"
       },
       {
+        "ticker": "CLH",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "CLRO",
         "category": "Delistings",
         "confidence": "high",
@@ -25939,6 +25979,14 @@
         "activist": false,
         "filer": null,
         "detail": "M&A / Divestitures"
+      },
+      {
+        "ticker": "JFB",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "JCI",
@@ -27134,11 +27182,11 @@
       },
       {
         "ticker": "EMBC",
-        "category": "Management Changes",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Management Changes"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "FOOD",
@@ -34901,6 +34949,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "STRD",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "PGIM",
         "category": "Issuer Tenders",
         "confidence": "high",
@@ -35045,6 +35101,22 @@
         "detail": "Going-Private"
       },
       {
+        "ticker": "CDW",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "RAL",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "BKKT-WT",
         "category": "Other",
         "confidence": "high",
@@ -35091,6 +35163,22 @@
         "activist": false,
         "filer": null,
         "detail": "SPACs"
+      },
+      {
+        "ticker": "IRHOU",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
+        "ticker": "MCFT",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "MAPSW",
@@ -35147,6 +35235,14 @@
         "activist": false,
         "filer": null,
         "detail": "Divestitures"
+      },
+      {
+        "ticker": "IRAB-WT",
+        "category": "Deal Terminations",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Deal Terminations"
       },
       {
         "ticker": "LEXX",
@@ -35357,6 +35453,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "MDXH",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "VCIG",
         "category": "Acquisitions",
         "confidence": "medium",
@@ -35421,6 +35525,14 @@
         "detail": "Going-Private"
       },
       {
+        "ticker": "XP",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "LNAI",
         "category": "Delistings",
         "confidence": "high",
@@ -35469,6 +35581,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "MMYT",
+        "category": "Issuer Tenders",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Issuer Tenders"
+      },
+      {
         "ticker": "AON",
         "category": "Delistings",
         "confidence": "high",
@@ -35491,6 +35611,14 @@
         "activist": false,
         "filer": null,
         "detail": "Going-Private"
+      },
+      {
+        "ticker": "BAYAR",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
       },
       {
         "ticker": "BFRGW",
@@ -35645,6 +35773,14 @@
         "detail": "Other"
       },
       {
+        "ticker": "SYAXF",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "HCWB",
         "category": "Delistings",
         "confidence": "high",
@@ -35667,6 +35803,22 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "MSPRZ",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "NXB",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "KTTAW",
@@ -35699,6 +35851,14 @@
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
+      },
+      {
+        "ticker": "SB-PD",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
       },
       {
         "ticker": "ATRA",
@@ -35869,6 +36029,30 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "GLOB",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "CIB",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "TSMWF",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "ZTEK",
         "category": "Other",
         "confidence": "high",
@@ -35891,6 +36075,14 @@
         "activist": false,
         "filer": null,
         "detail": "SPACs"
+      },
+      {
+        "ticker": "SND",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "TETUF",
@@ -36045,6 +36237,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "ZYME",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "BZFDW",
         "category": "Other",
         "confidence": "high",
@@ -36083,6 +36283,14 @@
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
+      },
+      {
+        "ticker": "SSRGF",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
       },
       {
         "ticker": "RBOTW",
@@ -36317,6 +36525,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "LBRDP",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "LGVN",
         "category": "Delistings",
         "confidence": "high",
@@ -36326,11 +36542,11 @@
       },
       {
         "ticker": "FTW-WT",
-        "category": "Delistings",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "SYBT",
@@ -36419,6 +36635,14 @@
         "activist": false,
         "filer": null,
         "detail": "Divestitures"
+      },
+      {
+        "ticker": "CURI",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "ETS",
@@ -36557,6 +36781,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "FRGT",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "GTEC",
         "category": "Delistings",
         "confidence": "high",
@@ -36645,6 +36877,14 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "AVX",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "ALSWF",
         "category": "SPACs",
         "confidence": "high",
@@ -36667,6 +36907,22 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "DCX",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "UCAR",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "CAPNU",
@@ -36694,11 +36950,11 @@
       },
       {
         "ticker": "FFAIW",
-        "category": "Delistings",
-        "confidence": "high",
+        "category": "Capital Returns",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Capital Returns"
       },
       {
         "ticker": "IPST",
@@ -36821,6 +37077,22 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "FORTY",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "GAMB",
+        "category": "Restructuring",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Restructuring"
+      },
+      {
         "ticker": "QTEXW",
         "category": "Capital Returns",
         "confidence": "medium",
@@ -36851,6 +37123,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "SGBAF",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "COLAR",
@@ -37037,6 +37317,14 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "POET",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "TNMWF",
         "category": "Delistings",
         "confidence": "high",
@@ -37147,6 +37435,22 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "INVZ",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "HTCO",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "SAIHW",
@@ -37693,6 +37997,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "SNDK",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "SDSTW",
         "category": "Delistings",
         "confidence": "high",
@@ -37789,6 +38101,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "GIII",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "GME-WT",
         "category": "Acquisitions",
         "confidence": "medium",
@@ -37803,6 +38123,14 @@
         "activist": false,
         "filer": null,
         "detail": "Divestitures"
+      },
+      {
+        "ticker": "BLSH",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "DAIO",
@@ -37893,12 +38221,28 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "GPATW",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
         "ticker": "ECCV",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "PMMBF",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "SVA",
@@ -37965,12 +38309,28 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "TNRSF",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "PMI",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "SAGU-WT",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "SNYR",
@@ -37997,6 +38357,14 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "BQ",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "CRBD",
         "category": "Acquisitions",
         "confidence": "high",
@@ -38005,9 +38373,73 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "TKPHF",
+        "ticker": "FNV",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "HAO",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "ORLA",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "SMFNF",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "VNET",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "ACVA",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "AAOI",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "ALLO",
         "category": "Other",
         "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "ARMP",
+        "category": "Other",
+        "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Other"
@@ -38021,7 +38453,79 @@
         "detail": "Activist Campaigns"
       },
       {
+        "ticker": "FGMCR",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
+        "ticker": "IBEX",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "LVS",
+        "category": "Capital Returns",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "LEAT",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "NKSH",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "NBBK",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "NVTS",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "ELAB",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "SHC",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "OTAI-UN",
         "category": "Other",
         "confidence": "high",
         "activist": false,
@@ -38035,14 +38539,6 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
-      },
-      {
-        "ticker": "FGMCR",
-        "category": "SPACs",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "SPACs"
       },
       {
         "ticker": "YGMZF",
@@ -38061,12 +38557,100 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "RCAT",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "BRPSF",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "GAERF",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "GHRS",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "ITRG",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "NMG",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "TUYA",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "AEP",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "BRUNW",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "JBTM",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "MAIA",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "QXL",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "GLW",
@@ -38077,6 +38661,78 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "BLDP",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "BBAR",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "BMM",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "EPWKF",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "MBFJF",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "NCI",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "SVM",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "COLB",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "DK",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "GCTK",
         "category": "Delistings",
         "confidence": "high",
@@ -38085,7 +38741,15 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "NNE",
+        "ticker": "MNST",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "NHC",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -38101,12 +38765,100 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "SLXNW",
+        "category": "Capital Returns",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "VACI-WT",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
+        "ticker": "VWAVW",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "KSCP",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "DTST",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "ANTA",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "BRSYF",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "EVGN",
+        "category": "Deal Terminations",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Deal Terminations"
+      },
+      {
+        "ticker": "PLTYF",
+        "category": "Liquidations",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Liquidations"
+      },
+      {
+        "ticker": "TCMEF",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "AKAM",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "AORT",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "GUACU",
@@ -38125,7 +38877,87 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "EZPW",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "FOXOW",
+        "category": "Restructuring",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Restructuring"
+      },
+      {
+        "ticker": "FLUX",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "HYEX",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "IBRX",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "LGNYZ",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "LIFX",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "ONTO",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "SSEAR",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "SCCE",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "SLNCF",
         "category": "Other",
         "confidence": "high",
         "activist": false,
@@ -38149,14 +38981,6 @@
         "detail": "Other"
       },
       {
-        "ticker": "ANTA",
-        "category": "Other",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Other"
-      },
-      {
         "ticker": "ARCXF",
         "category": "Divestitures",
         "confidence": "high",
@@ -38173,12 +38997,92 @@
         "detail": "Other"
       },
       {
+        "ticker": "SAM",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "BFC",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "ETSS-WT",
         "category": "SPACs",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "SPACs"
+      },
+      {
+        "ticker": "AGM-PI",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "HWCPZ",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "KMT",
+        "category": "Issuer Tenders",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Issuer Tenders"
+      },
+      {
+        "ticker": "KRP",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "NXL",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "PNSB",
+        "category": "Rights Offerings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Rights Offerings"
+      },
+      {
+        "ticker": "PLMKU",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
+        "ticker": "BIOE",
+        "category": "Acquisitions",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "VAL-WT",
@@ -38195,14 +39099,6 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
-      },
-      {
-        "ticker": "AKAM",
-        "category": "Capital Returns",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Capital Returns"
       },
       {
         "ticker": "CTRE",
@@ -38235,14 +39131,6 @@
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
-      },
-      {
-        "ticker": "RCAT",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "SCKT",
@@ -38307,22 +39195,6 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
-      },
-      {
-        "ticker": "ORLA",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
-        "ticker": "SVM",
-        "category": "Other",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Other"
       },
       {
         "ticker": "YSG",
@@ -38637,14 +39509,6 @@
         "detail": "Capital Returns"
       },
       {
-        "ticker": "BRPSF",
-        "category": "Other",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Other"
-      },
-      {
         "ticker": "HKIT",
         "category": "Other",
         "confidence": "high",
@@ -38667,14 +39531,6 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
-      },
-      {
-        "ticker": "PLTYF",
-        "category": "Liquidations",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Liquidations"
       },
       {
         "ticker": "TGB",
@@ -38845,14 +39701,6 @@
         "detail": "Capital Returns"
       },
       {
-        "ticker": "KMT",
-        "category": "Issuer Tenders",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Issuer Tenders"
-      },
-      {
         "ticker": "MIRA",
         "category": "Other",
         "confidence": "high",
@@ -38862,14 +39710,6 @@
       },
       {
         "ticker": "MYRG",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
-        "ticker": "NHC",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -39101,14 +39941,6 @@
         "detail": "Capital Returns"
       },
       {
-        "ticker": "MBFJF",
-        "category": "Capital Returns",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Capital Returns"
-      },
-      {
         "ticker": "MAXNQ",
         "category": "Delistings",
         "confidence": "high",
@@ -39165,6 +39997,14 @@
         "detail": "Other"
       },
       {
+        "ticker": "NNE",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "NEOVW",
         "category": "Capital Returns",
         "confidence": "high",
@@ -39213,14 +40053,6 @@
         "detail": "Other"
       },
       {
-        "ticker": "BMM",
-        "category": "Other",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Other"
-      },
-      {
         "ticker": "CCJ",
         "category": "Other",
         "confidence": "medium",
@@ -39243,14 +40075,6 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
-      },
-      {
-        "ticker": "SMFNF",
-        "category": "Capital Returns",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Capital Returns"
       },
       {
         "ticker": "BBDC",
@@ -39411,14 +40235,6 @@
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
-      },
-      {
-        "ticker": "EPWKF",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
       },
       {
         "ticker": "GOOGN",
@@ -39669,14 +40485,6 @@
         "detail": "Other"
       },
       {
-        "ticker": "VWAVW",
-        "category": "Other",
-        "confidence": "medium",
-        "activist": false,
-        "filer": null,
-        "detail": "Other"
-      },
-      {
         "ticker": "HNVR",
         "category": "Acquisitions",
         "confidence": "high",
@@ -39707,6 +40515,14 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "TKPHF",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "TRIB",
@@ -39901,14 +40717,6 @@
         "detail": "Capital Returns"
       },
       {
-        "ticker": "BLDP",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "GDTC",
         "category": "Acquisitions",
         "confidence": "high",
@@ -39976,14 +40784,6 @@
         "ticker": "HSCSW",
         "category": "Acquisitions",
         "confidence": "medium",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
-        "ticker": "KRP",
-        "category": "Acquisitions",
-        "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
@@ -40845,14 +41645,14 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17597,
-        "wow_pct": 0.89,
+        "stars": 17609,
+        "wow_pct": 0.96,
         "hot": true
       },
       {
         "ticker": "NET",
-        "stars": 14645,
-        "wow_pct": 0.42,
+        "stars": 14646,
+        "wow_pct": 0.43,
         "hot": true
       },
       {
@@ -40863,13 +41663,13 @@
       },
       {
         "ticker": "AMD",
-        "stars": 6655,
-        "wow_pct": 0.21,
+        "stars": 6656,
+        "wow_pct": 0.23,
         "hot": true
       },
       {
         "ticker": "MSFT",
-        "stars": 186982,
+        "stars": 186990,
         "wow_pct": 0.21,
         "hot": true
       },
@@ -40881,19 +41681,19 @@
       },
       {
         "ticker": "GOOGL",
-        "stars": 196081,
+        "stars": 196084,
         "wow_pct": 0.15,
         "hot": true
       },
       {
         "ticker": "META",
-        "stars": 246268,
+        "stars": 246272,
         "wow_pct": 0.12,
         "hot": true
       },
       {
         "ticker": "U",
-        "stars": 19521,
+        "stars": 19520,
         "wow_pct": 0.12,
         "hot": true
       },
@@ -40905,19 +41705,19 @@
       },
       {
         "ticker": "MDB",
-        "stars": 28407,
-        "wow_pct": 0.1,
+        "stars": 28406,
+        "wow_pct": 0.09,
+        "hot": false
+      },
+      {
+        "ticker": "PLTR",
+        "stars": 21870,
+        "wow_pct": 0.09,
         "hot": false
       },
       {
         "ticker": "GTLB",
         "stars": 24474,
-        "wow_pct": 0.08,
-        "hot": false
-      },
-      {
-        "ticker": "PLTR",
-        "stars": 21868,
         "wow_pct": 0.08,
         "hot": false
       },
@@ -40929,8 +41729,8 @@
       },
       {
         "ticker": "CRM",
-        "stars": 11241,
-        "wow_pct": 0.03,
+        "stars": 11242,
+        "wow_pct": 0.04,
         "hot": false
       },
       {
@@ -41635,6 +42435,72 @@
         "excess_return": null
       },
       {
+        "ticker": "AAPL",
+        "company": "APPLE INC UNSOLICITED",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 3000000.0,
+        "amount": "$1,000,001 - $5,000,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-02",
+        "excess_return": 3.7815889980951214
+      },
+      {
+        "ticker": null,
+        "company": "EVEREST REINSURANCE GR F",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
+        "filed": "2026-05-13",
+        "traded": "2026-01-12",
+        "excess_return": null
+      },
+      {
+        "ticker": null,
+        "company": "SCHWAB GOVERNMENT MONEY FUND",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
+        "filed": "2026-05-13",
+        "traded": "2026-02-13",
+        "excess_return": null
+      },
+      {
+        "ticker": null,
+        "company": "STATE STREET ENRGY SLECT SEC SPDR ETF",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-04",
+        "excess_return": null
+      },
+      {
+        "ticker": "MMM",
+        "company": "3M CO",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-26",
+        "excess_return": -4.22196790254873
+      },
+      {
+        "ticker": "ETN",
+        "company": "EATON CORP PLC",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 3000000.0,
+        "amount": "$1,000,001 - $5,000,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-17",
+        "excess_return": 4.564327117203224
+      },
+      {
         "ticker": null,
         "company": "Invesco Premier U.S. Government Money Market Portfolio Investor Class 5 - Frac.000 Solicited Order Discretion Exercised",
         "side": "sell",
@@ -41644,6 +42510,17 @@
         "filed": "2026-05-13",
         "traded": "2026-03-06",
         "excess_return": null
+      },
+      {
+        "ticker": "GOGO",
+        "company": "GOGO INC",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
+        "filed": "2026-05-13",
+        "traded": "2026-01-26",
+        "excess_return": -33.015986710095135
       },
       {
         "ticker": "CMCSA",
@@ -41679,17 +42556,6 @@
         "excess_return": null
       },
       {
-        "ticker": "AAPL",
-        "company": "APPLE INC UNSOLICITED",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 3000000.0,
-        "amount": "$1,000,001 - $5,000,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-02",
-        "excess_return": 3.7815889980951214
-      },
-      {
         "ticker": "GPN",
         "company": "GLOBAL PMTS INC",
         "side": "sell",
@@ -41699,6 +42565,17 @@
         "filed": "2026-05-13",
         "traded": "2026-03-26",
         "excess_return": -20.173669564933117
+      },
+      {
+        "ticker": null,
+        "company": "Krz & Co Inc Com Solicited Order Discretion Exercised",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-27",
+        "excess_return": null
       },
       {
         "ticker": null,
@@ -41813,112 +42690,134 @@
       {
         "ticker": null,
         "company": "SCHWAB GOVERNMENT MONEY FUND",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-01-22",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "EVEREST REINSURANCE GR F",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-23",
-        "excess_return": null
-      },
-      {
-        "ticker": "AMD",
-        "company": "ADVANCED MICRO DEVICES INC",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-02-19",
-        "excess_return": 155.13672329867262
-      },
-      {
-        "ticker": null,
-        "company": "COTERRA ENERGY INC",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-23",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "STATE STR CORP",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-23",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "BAXTER INTL INC",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-01-23",
-        "excess_return": null
-      },
-      {
-        "ticker": "GOGO",
-        "company": "GOGO INC",
         "side": "sell",
         "transaction": "Sale",
         "est_usd": 8000.0,
         "amount": "$1,001 - $15,000",
         "filed": "2026-05-13",
-        "traded": "2026-01-26",
-        "excess_return": -33.015986710095135
+        "traded": "2026-01-13",
+        "excess_return": null
       },
       {
-        "ticker": "ETN",
-        "company": "EATON CORP PLC",
+        "ticker": "TDG",
+        "company": "TRANSDIGM GROUP INC",
         "side": "buy",
         "transaction": "Purchase",
         "est_usd": 3000000.0,
         "amount": "$1,000,001 - $5,000,000",
         "filed": "2026-05-13",
-        "traded": "2026-03-17",
-        "excess_return": 4.564327117203224
+        "traded": "2026-02-10",
+        "excess_return": -6.6446963394476155
       },
       {
         "ticker": null,
-        "company": "ADTALEN GLOBAL ED INC",
+        "company": "Ishares Tr Russell 1000 Etf E1774634153032-00500 Average Unit Price Transaction Your Broker Acted As Agent",
         "side": "buy",
         "transaction": "Purchase",
-        "est_usd": 32500.0,
-        "amount": "$15,001 - $50,000",
+        "est_usd": 3000000.0,
+        "amount": "$1,000,001 - $5,000,000",
         "filed": "2026-05-13",
-        "traded": "2026-01-30",
+        "traded": "2026-03-27",
         "excess_return": null
       },
       {
-        "ticker": "MMM",
-        "company": "3M CO",
+        "ticker": null,
+        "company": "Bank Amor Corp Com Solicited Order Discretion Exercised",
         "side": "sell",
         "transaction": "Sale",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
+        "est_usd": 32500.0,
+        "amount": "$15,001 - $50,000",
         "filed": "2026-05-13",
-        "traded": "2026-03-26",
-        "excess_return": -4.22196790254873
+        "traded": "2026-03-27",
+        "excess_return": null
+      },
+      {
+        "ticker": "NVDA",
+        "company": "NVIDIA CORP UNSOLICITED",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 750000.0,
+        "amount": "$500,001 - $1,000,000",
+        "filed": "2026-05-13",
+        "traded": "2026-01-06",
+        "excess_return": 4.583991985381757
+      },
+      {
+        "ticker": "ACN",
+        "company": "ACCENTURE PLC",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 750000.0,
+        "amount": "$500,001 - $1,000,000",
+        "filed": "2026-05-13",
+        "traded": "2026-02-10",
+        "excess_return": -54.75709406874111
+      },
+      {
+        "ticker": null,
+        "company": "MOOG INC CLASS A",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 175000.0,
+        "amount": "$100,001 - $250,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-23",
+        "excess_return": null
+      },
+      {
+        "ticker": "PTC",
+        "company": "PTC INC",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 3000000.0,
+        "amount": "$1,000,001 - $5,000,000",
+        "filed": "2026-05-13",
+        "traded": "2026-02-10",
+        "excess_return": -37.37178357735294
+      },
+      {
+        "ticker": "COST",
+        "company": "COSTCO WHOLESALE CORP NEW",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 3000000.0,
+        "amount": "$1,000,001 - $5,000,000",
+        "filed": "2026-05-13",
+        "traded": "2026-02-10",
+        "excess_return": -9.928287855888904
+      },
+      {
+        "ticker": null,
+        "company": "CRH PUBLIC LIMITED CO F",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 75000.0,
+        "amount": "$50,001 - $100,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-18",
+        "excess_return": null
+      },
+      {
+        "ticker": null,
+        "company": "CARNIVAL CORP PAIRED CTF 1 COM CARNI",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 75000.0,
+        "amount": "$50,001 - $100,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-17",
+        "excess_return": null
+      },
+      {
+        "ticker": null,
+        "company": "ISHARES GOLD ETF",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 75000.0,
+        "amount": "$50,001 - $100,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-04",
+        "excess_return": null
       },
       {
         "ticker": "DEI",
@@ -41943,17 +42842,6 @@
         "excess_return": null
       },
       {
-        "ticker": null,
-        "company": "Bank Amor Corp Com Solicited Order Discretion Exercised",
-        "side": "sell",
-        "transaction": "Sale",
-        "est_usd": 32500.0,
-        "amount": "$15,001 - $50,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-27",
-        "excess_return": null
-      },
-      {
         "ticker": "JBL",
         "company": "JABIL INC",
         "side": "buy",
@@ -41963,6 +42851,17 @@
         "filed": "2026-05-13",
         "traded": "2026-02-10",
         "excess_return": 35.73013321158341
+      },
+      {
+        "ticker": null,
+        "company": "CREDIT ACCEPT CORP MICH",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
+        "filed": "2026-05-13",
+        "traded": "2026-01-12",
+        "excess_return": null
       },
       {
         "ticker": null,
@@ -42076,113 +42975,91 @@
       },
       {
         "ticker": null,
-        "company": "CREDIT ACCEPT CORP MICH",
-        "side": "sell",
-        "transaction": "Sale",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-01-12",
-        "excess_return": null
-      },
-      {
-        "ticker": "TDG",
-        "company": "TRANSDIGM GROUP INC",
+        "company": "SCHWAB GOVERNMENT MONEY FUND",
         "side": "buy",
         "transaction": "Purchase",
-        "est_usd": 3000000.0,
-        "amount": "$1,000,001 - $5,000,000",
-        "filed": "2026-05-13",
-        "traded": "2026-02-10",
-        "excess_return": -6.6446963394476155
-      },
-      {
-        "ticker": null,
-        "company": "Krz & Co Inc Com Solicited Order Discretion Exercised",
-        "side": "sell",
-        "transaction": "Sale",
         "est_usd": 8000.0,
         "amount": "$1,001 - $15,000",
         "filed": "2026-05-13",
-        "traded": "2026-03-27",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "SCHWAB GOVERNMENT MONEY FUND",
-        "side": "sell",
-        "transaction": "Sale",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-01-13",
+        "traded": "2026-01-22",
         "excess_return": null
       },
       {
         "ticker": null,
         "company": "EVEREST REINSURANCE GR F",
-        "side": "sell",
-        "transaction": "Sale",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-01-12",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "SCHWAB GOVERNMENT MONEY FUND",
-        "side": "sell",
-        "transaction": "Sale",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-02-13",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "STATE STREET ENRGY SLECT SEC SPDR ETF",
-        "side": "sell",
-        "transaction": "Sale",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-04",
-        "excess_return": null
-      },
-      {
-        "ticker": "HPQ",
-        "company": "HP INC",
         "side": "buy",
         "transaction": "Purchase",
         "est_usd": 8000.0,
         "amount": "$1,001 - $15,000",
         "filed": "2026-05-13",
-        "traded": "2026-01-23",
-        "excess_return": 12.60289505793755
-      },
-      {
-        "ticker": null,
-        "company": "ADELA INC",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 32500.0,
-        "amount": "$15,001 - $50,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-04",
+        "traded": "2026-03-23",
         "excess_return": null
       },
       {
-        "ticker": "MTZ",
-        "company": "Mastec Inc Com Solicited Order Discretion Exercised Allocated Order Your Broker Acted As Agent",
+        "ticker": "AMD",
+        "company": "ADVANCED MICRO DEVICES INC",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
+        "filed": "2026-05-13",
+        "traded": "2026-02-19",
+        "excess_return": 155.13672329867262
+      },
+      {
+        "ticker": null,
+        "company": "ONITY ELECTRONICS INC COMMON STOCK",
         "side": "buy",
         "transaction": "Purchase",
         "est_usd": 175000.0,
         "amount": "$100,001 - $250,000",
         "filed": "2026-05-13",
-        "traded": "2026-02-02",
-        "excess_return": 47.329419346489786
+        "traded": "2026-02-10",
+        "excess_return": null
+      },
+      {
+        "ticker": "UBER",
+        "company": "UBER TECHNOLOGIES INC",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-17",
+        "excess_return": -19.228371021184625
+      },
+      {
+        "ticker": null,
+        "company": "STE SRT CNSR STPLS SLCT SEC SPDR ETF",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 75000.0,
+        "amount": "$50,001 - $100,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-04",
+        "excess_return": null
+      },
+      {
+        "ticker": null,
+        "company": "FIRST INST BANCSYSTEM I CLASS A",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 75000.0,
+        "amount": "$50,001 - $100,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-04",
+        "excess_return": null
+      },
+      {
+        "ticker": "TXN",
+        "company": "TEXAS INSTRS INC",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 3000000.0,
+        "amount": "$1,000,001 - $5,000,000",
+        "filed": "2026-05-13",
+        "traded": "2026-01-12",
+        "excess_return": 63.34227702281731
       },
       {
         "ticker": "TT",
@@ -42197,90 +43074,13 @@
       },
       {
         "ticker": null,
-        "company": "VANGUARD INTERMEDIATE-TERM CORPORATE BOND INDEX FUN",
+        "company": "STATE STRT INDSTL SLCT SCTR SPDR ETF",
         "side": "buy",
         "transaction": "Purchase",
         "est_usd": 75000.0,
         "amount": "$50,001 - $100,000",
         "filed": "2026-05-13",
         "traded": "2026-03-04",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "CARNIVAL CORP PAIRED CTF 1 COM CARNI",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 75000.0,
-        "amount": "$50,001 - $100,000",
-        "filed": "2026-05-13",
-        "traded": "2026-02-10",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "STATE STREET CONSUMER STAPLES SELECT SECTOR SPDR ETF",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 175000.0,
-        "amount": "$100,001 - $250,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-10",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "STATE STREET FINANCIAL SELECT SECTOR SPDR ETF",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 175000.0,
-        "amount": "$100,001 - $250,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-10",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "ONITY ELECTRONICS INC COMMON STOCK",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 175000.0,
-        "amount": "$100,001 - $250,000",
-        "filed": "2026-05-13",
-        "traded": "2026-02-10",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "ISHARES GSCI COMMODITY DYNAMIC ROLL STRATEGY ETF",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 175000.0,
-        "amount": "$100,001 - $250,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-04",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "ISHARES GOLD TRUST",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 175000.0,
-        "amount": "$100,001 - $250,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-10",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "INVESCO QQQ TR",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 175000.0,
-        "amount": "$100,001 - $250,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-10",
         "excess_return": null
       }
     ],
@@ -42378,46 +43178,60 @@
     ],
     "news": [
       {
-        "headline": "Net Worth Update: Representative Laurel M. Lee Lost an Estimated $457.7K in the Stock Market Last Month",
+        "headline": "Nebius Group Stock (NBIS) Opinions on AI Infrastructure Expansion",
         "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Laurel+M.+Lee+Lost+an+Estimated+%24457.7K+in+the+Stock+Market+Last+Month"
+        "category": "discussion_automated",
+        "time": "2026-06-28 14:03:33",
+        "url": "https://www.quiverquant.com/news/Nebius+Group+Stock+%28NBIS%29+Opinions+on+AI+Infrastructure+Expansion"
       },
       {
-        "headline": "Net Worth Update: Senator Ron Wyden Lost an Estimated $333.5K in the Stock Market Last Month",
+        "headline": "Infleqtion Stock (INFQ) Opinions on Quantum Computing Developments",
         "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ron+Wyden+Lost+an+Estimated+%24333.5K+in+the+Stock+Market+Last+Month"
+        "category": "discussion_automated",
+        "time": "2026-06-28 14:03:33",
+        "url": "https://www.quiverquant.com/news/Infleqtion+Stock+%28INFQ%29+Opinions+on+Quantum+Computing+Developments"
       },
       {
-        "headline": "Net Worth Update: Senator John W. Hickenlooper Lost an Estimated $370.5K in the Stock Market Last Month",
+        "headline": "Wolfspeed Stock (WOLF) Opinions on AI Data Center Opportunities",
         "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+John+W.+Hickenlooper+Lost+an+Estimated+%24370.5K+in+the+Stock+Market+Last+Month"
+        "category": "discussion_automated",
+        "time": "2026-06-28 14:03:33",
+        "url": "https://www.quiverquant.com/news/Wolfspeed+Stock+%28WOLF%29+Opinions+on+AI+Data+Center+Opportunities"
       },
       {
-        "headline": "Net Worth Update: Senator Jacky Rosen Lost an Estimated $129.2K in the Stock Market Last Month",
+        "headline": "Prairie Operating Co. Stock (PROP) Opinions on Energy Sector Dynamics and Dilution Concerns",
         "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Jacky+Rosen+Lost+an+Estimated+%24129.2K+in+the+Stock+Market+Last+Month"
+        "category": "discussion_automated",
+        "time": "2026-06-28 14:03:33",
+        "url": "https://www.quiverquant.com/news/Prairie+Operating+Co.+Stock+%28PROP%29+Opinions+on+Energy+Sector+Dynamics+and+Dilution+Concerns"
       },
       {
-        "headline": "Net Worth Update: Representative Mike Kelly Lost an Estimated $215.6K in the Stock Market Last Month",
+        "headline": "Micron Technology Stock (MU) Opinions on Recent Earnings and AI Demand Surge",
         "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Mike+Kelly+Lost+an+Estimated+%24215.6K+in+the+Stock+Market+Last+Month"
+        "category": "discussion_automated",
+        "time": "2026-06-28 14:03:33",
+        "url": "https://www.quiverquant.com/news/Micron+Technology+Stock+%28MU%29+Opinions+on+Recent+Earnings+and+AI+Demand+Surge"
       },
       {
-        "headline": "Net Worth Update: Senator Katie Boyd Britt Lost an Estimated $366.4K in the Stock Market Last Month",
+        "headline": "AST SpaceMobile Stock (ASTS) Opinions on Satellite Deployment Progress",
         "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Katie+Boyd+Britt+Lost+an+Estimated+%24366.4K+in+the+Stock+Market+Last+Month"
+        "category": "discussion_automated",
+        "time": "2026-06-28 14:03:33",
+        "url": "https://www.quiverquant.com/news/AST+SpaceMobile+Stock+%28ASTS%29+Opinions+on+Satellite+Deployment+Progress"
+      },
+      {
+        "headline": "The Trade Desk Stock (TTD) Opinions on Large Insider Purchase",
+        "ticker": null,
+        "category": "discussion_automated",
+        "time": "2026-06-28 14:03:33",
+        "url": "https://www.quiverquant.com/news/The+Trade+Desk+Stock+%28TTD%29+Opinions+on+Large+Insider+Purchase"
+      },
+      {
+        "headline": "BigBear.ai Stock (BBAI) Opinions on Recent Price Movements and Dilution",
+        "ticker": null,
+        "category": "discussion_automated",
+        "time": "2026-06-28 14:03:33",
+        "url": "https://www.quiverquant.com/news/BigBear.ai+Stock+%28BBAI%29+Opinions+on+Recent+Price+Movements+and+Dilution"
       },
       {
         "headline": "Net Worth Update: Representative Thomas R. Suozzi Lost an Estimated $759.3K in the Stock Market Last Month",
@@ -42427,25 +43241,11 @@
         "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Thomas+R.+Suozzi+Lost+an+Estimated+%24759.3K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Net Worth Update: Senator Lisa Blunt Rochester Lost an Estimated $124.0K in the Stock Market Last Month",
-        "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Lisa+Blunt+Rochester+Lost+an+Estimated+%24124.0K+in+the+Stock+Market+Last+Month"
-      },
-      {
         "headline": "Net Worth Update: Senator Mark R. Warner Made an Estimated $263.4K in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
         "time": "2026-06-28 03:00:29",
         "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Mark+R.+Warner+Made+an+Estimated+%24263.4K+in+the+Stock+Market+Last+Month"
-      },
-      {
-        "headline": "Net Worth Update: Representative J. French Hill Made an Estimated $312.7K in the Stock Market Last Month",
-        "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+J.+French+Hill+Made+an+Estimated+%24312.7K+in+the+Stock+Market+Last+Month"
       },
       {
         "headline": "Net Worth Update: Representative Mikie Sherrill Lost an Estimated $121.1K in the Stock Market Last Month",
@@ -42455,6 +43255,55 @@
         "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Mikie+Sherrill+Lost+an+Estimated+%24121.1K+in+the+Stock+Market+Last+Month"
       },
       {
+        "headline": "Net Worth Update: Senator Lisa Blunt Rochester Lost an Estimated $124.0K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Lisa+Blunt+Rochester+Lost+an+Estimated+%24124.0K+in+the+Stock+Market+Last+Month"
+      },
+      {
+        "headline": "Net Worth Update: Senator John W. Hickenlooper Lost an Estimated $370.5K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+John+W.+Hickenlooper+Lost+an+Estimated+%24370.5K+in+the+Stock+Market+Last+Month"
+      },
+      {
+        "headline": "Net Worth Update: Senator Katie Boyd Britt Lost an Estimated $366.4K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Katie+Boyd+Britt+Lost+an+Estimated+%24366.4K+in+the+Stock+Market+Last+Month"
+      },
+      {
+        "headline": "Net Worth Update: Representative Mike Kelly Lost an Estimated $215.6K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Mike+Kelly+Lost+an+Estimated+%24215.6K+in+the+Stock+Market+Last+Month"
+      },
+      {
+        "headline": "Net Worth Update: Senator Jacky Rosen Lost an Estimated $129.2K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Jacky+Rosen+Lost+an+Estimated+%24129.2K+in+the+Stock+Market+Last+Month"
+      },
+      {
+        "headline": "Net Worth Update: Senator Ron Wyden Lost an Estimated $333.5K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ron+Wyden+Lost+an+Estimated+%24333.5K+in+the+Stock+Market+Last+Month"
+      },
+      {
+        "headline": "Net Worth Update: Representative J. French Hill Made an Estimated $312.7K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+J.+French+Hill+Made+an+Estimated+%24312.7K+in+the+Stock+Market+Last+Month"
+      },
+      {
         "headline": "Net Worth Update: Senator Sheldon Whitehouse Lost an Estimated $1.1M in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
@@ -42462,60 +43311,11 @@
         "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Sheldon+Whitehouse+Lost+an+Estimated+%241.1M+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Net Worth Update: Senator Ron Johnson Lost an Estimated $524.6K in the Stock Market Last Month",
+        "headline": "Net Worth Update: Representative Laurel M. Lee Lost an Estimated $457.7K in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
         "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ron+Johnson+Lost+an+Estimated+%24524.6K+in+the+Stock+Market+Last+Month"
-      },
-      {
-        "headline": "Net Worth Update: Representative David Kustoff Lost an Estimated $245.3K in the Stock Market Last Month",
-        "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+David+Kustoff+Lost+an+Estimated+%24245.3K+in+the+Stock+Market+Last+Month"
-      },
-      {
-        "headline": "Net Worth Update: Representative Darrell Issa Made an Estimated $686.9K in the Stock Market Last Month",
-        "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Darrell+Issa+Made+an+Estimated+%24686.9K+in+the+Stock+Market+Last+Month"
-      },
-      {
-        "headline": "Net Worth Update: Representative Scott Franklin Lost an Estimated $571.5K in the Stock Market Last Month",
-        "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Scott+Franklin+Lost+an+Estimated+%24571.5K+in+the+Stock+Market+Last+Month"
-      },
-      {
-        "headline": "Net Worth Update: Senator Mitch McConnell Lost an Estimated $434.3K in the Stock Market Last Month",
-        "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Mitch+McConnell+Lost+an+Estimated+%24434.3K+in+the+Stock+Market+Last+Month"
-      },
-      {
-        "headline": "Net Worth Update: Senator Tim Sheehy Lost an Estimated $8.4M in the Stock Market Last Month",
-        "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Tim+Sheehy+Lost+an+Estimated+%248.4M+in+the+Stock+Market+Last+Month"
-      },
-      {
-        "headline": "Net Worth Update: Representative Gilbert Ray Cisneros, Jr. Lost an Estimated $177.2K in the Stock Market Last Month",
-        "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Gilbert+Ray+Cisneros%2C+Jr.+Lost+an+Estimated+%24177.2K+in+the+Stock+Market+Last+Month"
-      },
-      {
-        "headline": "Net Worth Update: Representative Daniel Meuser Lost an Estimated $134.7K in the Stock Market Last Month",
-        "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Daniel+Meuser+Lost+an+Estimated+%24134.7K+in+the+Stock+Market+Last+Month"
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Laurel+M.+Lee+Lost+an+Estimated+%24457.7K+in+the+Stock+Market+Last+Month"
       }
     ],
     "wsb": [
@@ -42851,10 +43651,10 @@
       {
         "ticker": "UBER",
         "rating": 4.84,
-        "reviews": 29437696,
-        "apps": 6,
+        "reviews": 29425408,
+        "apps": 5,
         "top_app": "Uber - Request a ride",
-        "review_velocity": 21826.0,
+        "review_velocity": -12288.0,
         "lean": "strong"
       },
       {
@@ -42863,52 +43663,34 @@
         "reviews": 25644366,
         "apps": 5,
         "top_app": "Google Drive",
-        "review_velocity": 21375.0,
-        "lean": "strong"
-      },
-      {
-        "ticker": "MSFT",
-        "rating": 4.77,
-        "reviews": 19684388,
-        "apps": 8,
-        "top_app": "Microsoft Outlook",
-        "review_velocity": 12418.0,
-        "lean": "strong"
-      },
-      {
-        "ticker": "WMT",
-        "rating": 4.82,
-        "reviews": 18461149,
-        "apps": 5,
-        "top_app": "Walmart: Shopping & Savings",
-        "review_velocity": 22832.0,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
         "ticker": "LYFT",
         "rating": 4.91,
-        "reviews": 17620676,
-        "apps": 3,
+        "reviews": 17618910,
+        "apps": 2,
         "top_app": "Lyft",
-        "review_velocity": 12263.0,
+        "review_velocity": -1766.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "MSFT",
+        "rating": 4.78,
+        "reviews": 15760998,
+        "apps": 4,
+        "top_app": "Microsoft Outlook",
+        "review_velocity": -3923390.0,
         "lean": "strong"
       },
       {
         "ticker": "SBUX",
         "rating": 4.89,
-        "reviews": 8087971,
-        "apps": 4,
+        "reviews": 8087339,
+        "apps": 2,
         "top_app": "Starbucks",
-        "review_velocity": 10177.0,
-        "lean": "strong"
-      },
-      {
-        "ticker": "Z",
-        "rating": 4.8,
-        "reviews": 7628813,
-        "apps": 4,
-        "top_app": "Zillow Real Estate & Rentals",
-        "review_velocity": 264.0,
+        "review_velocity": -632.0,
         "lean": "strong"
       },
       {
@@ -42917,7 +43699,7 @@
         "reviews": 7200639,
         "apps": 2,
         "top_app": "Etsy: Shop Home, Style & More",
-        "review_velocity": 3186.0,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -42926,16 +43708,16 @@
         "reviews": 7086612,
         "apps": 1,
         "top_app": "Southwest Airlines: Travel App",
-        "review_velocity": 3422.0,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
         "ticker": "DAL",
         "rating": 4.85,
-        "reviews": 7005978,
-        "apps": 3,
+        "reviews": 7005915,
+        "apps": 1,
         "top_app": "Fly Delta",
-        "review_velocity": -30.0,
+        "review_velocity": -63.0,
         "lean": "strong"
       },
       {
@@ -42944,16 +43726,16 @@
         "reviews": 7055690,
         "apps": 4,
         "top_app": "Shop: All your favorite brands",
-        "review_velocity": 4113.0,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
         "ticker": "NFLX",
         "rating": 4.75,
-        "reviews": 6762562,
-        "apps": 2,
+        "reviews": 6762324,
+        "apps": 1,
         "top_app": "Netflix",
-        "review_velocity": 13691.0,
+        "review_velocity": -238.0,
         "lean": "strong"
       },
       {
@@ -42962,7 +43744,7 @@
         "reviews": 5693333,
         "apps": 1,
         "top_app": "Pinterest",
-        "review_velocity": 2327.0,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -42971,7 +43753,7 @@
         "reviews": 5746645,
         "apps": 1,
         "top_app": "The Roku App (Official)",
-        "review_velocity": 9302.0,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -42980,7 +43762,25 @@
         "reviews": 5847768,
         "apps": 1,
         "top_app": "Snapchat",
-        "review_velocity": 2569.0,
+        "review_velocity": 0.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "EBAY",
+        "rating": 4.82,
+        "reviews": 5015950,
+        "apps": 2,
+        "top_app": "eBay online shopping & selling",
+        "review_velocity": 0.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "BAC",
+        "rating": 4.81,
+        "reviews": 5033970,
+        "apps": 3,
+        "top_app": "Bank of America Mobile Banking",
+        "review_velocity": 128.0,
         "lean": "strong"
       }
     ],
@@ -44373,7 +45173,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.89% stars \u00b7 hf_model_momentum: +6.7% model downloads \u00b7 patent_cluster: 48 grants, 11 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.96% stars \u00b7 hf_model_momentum: +6.7% model downloads \u00b7 patent_cluster: 48 grants, 11 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "GOOGL",
@@ -44400,7 +45200,7 @@
           "gov_contract",
           "patent_cluster"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,684,388 reviews \u00b7 github_momentum: +0.21% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 97 grants, 20 IPC classes"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.78\u2605 \u00d7 15,760,998 reviews \u00b7 github_momentum: +0.21% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 97 grants, 20 IPC classes"
       },
       {
         "ticker": "HOOD",
@@ -44448,7 +45248,7 @@
           "special_situation",
           "trump"
         ],
-        "why": "congress_buy: 2 member(s) net +12 \u00b7 github_momentum: +0.21% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations \u00b7 trump: ADVANCED MICRO DEVICES INC"
+        "why": "congress_buy: 2 member(s) net +12 \u00b7 github_momentum: +0.23% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations \u00b7 trump: ADVANCED MICRO DEVICES INC"
       },
       {
         "ticker": "DELL",
@@ -44569,6 +45369,27 @@
         "why": "gov_grant: $6,316,036 federal grant/loan \u00b7 patent_cluster: 113 grants, 27 IPC classes \u00b7 special_situation: Other Situations"
       },
       {
+        "ticker": "TXN",
+        "score": 3,
+        "weighted_score": 1.3,
+        "channel_list": [
+          "patent_cluster",
+          "special_situation",
+          "trump"
+        ],
+        "why": "patent_cluster: 44 grants, 22 IPC classes \u00b7 special_situation: M&A / Divestitures \u00b7 trump: TEXAS INSTRS INC"
+      },
+      {
+        "ticker": "CDW",
+        "score": 2,
+        "weighted_score": 1.3,
+        "channel_list": [
+          "gov_contract_accel",
+          "special_situation"
+        ],
+        "why": "gov_contract_accel: $17,605,361, 3.9x accel \u00b7 special_situation: Capital Returns"
+      },
+      {
         "ticker": "BWXT",
         "score": 3,
         "weighted_score": 1.2,
@@ -44619,26 +45440,6 @@
           "fda_label_expansion"
         ],
         "why": "clinical_phase3_start: 3 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: PERJETA"
-      },
-      {
-        "ticker": "BMY",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion"
-        ],
-        "why": "clinical_phase3_start: 1 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: ONUREG"
-      },
-      {
-        "ticker": "SNPS",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "activist_13d",
-          "trump"
-        ],
-        "why": "activist_13d: 13D activist campaign \u00b7 trump: SYNOPSYS INC COM"
       }
     ]
   }

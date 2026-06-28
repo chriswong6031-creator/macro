@@ -128,9 +128,11 @@ function renderActNow(){
       <span class="anwhy muted sm">${esc((x.reasons||[]).join(' · '))}</span>
       <span class="ansc">${x.score}</span></a>`;};
   const buys=a.buy||[], red=a.reduce||[];
+  const moreBtn=n=>n>5?`<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">${L('Show more','显示更多')} ▾</span><span class="lm-hide">${L('Show less','收起')} ▴</span></button>`:'';
+  const anCol=(cls,head,arr,empty)=>`<div class="ancol lst-wrap"><h4 class="anh ${cls}">${head} <span class="muted sm">(${arr.length})</span></h4>${arr.length?`<div class="anlist lst-collapse is-collapsed">${arr.map(row).join('')}</div>${moreBtn(arr.length)}`:`<div class="muted sm" style="padding:10px 2px">${empty}</div>`}</div>`;
   document.getElementById('actnow').innerHTML=`<div class="anwrap">
-    <div class="ancol"><h4 class="anh buy">✅ ${L('Buy / add now','现在买入 / 加仓')} <span class="muted sm">(${buys.length})</span></h4>${buys.length?buys.map(row).join(''):`<div class="muted sm" style="padding:10px 2px">${L('Nothing has a clean entry right now — patience.','当前无干净入场点 — 耐心等待。')}</div>`}</div>
-    <div class="ancol"><h4 class="anh red">🔻 ${L('Reduce / avoid','减仓 / 回避')} <span class="muted sm">(${red.length})</span></h4>${red.length?red.map(row).join(''):`<div class="muted sm" style="padding:10px 2px">${L('none','无')}</div>`}</div>
+    ${anCol('buy',`✅ ${L('Buy / add now','现在买入 / 加仓')}`,buys,L('Nothing has a clean entry right now — patience.','当前无干净入场点 — 耐心等待。'))}
+    ${anCol('red',`🔻 ${L('Reduce / avoid','减仓 / 回避')}`,red,L('none','无'))}
   </div>`;
 }
 function renderConcentration(){

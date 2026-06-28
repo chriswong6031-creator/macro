@@ -43,24 +43,24 @@
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.4194,
-      "chg": 2.1,
+      "quote": 1.419,
+      "chg": 2.0,
       "action": "LONG",
-      "score": 29.5
+      "score": 29.4
     },
     "USDMXN": {
       "label": "USD/MXN",
       "quote": 17.499,
-      "chg": 0.8,
-      "action": "SHORT",
-      "score": -23.9
+      "chg": 1.2,
+      "action": "FLAT",
+      "score": -18.0
     },
     "USDBRL": {
       "label": "USD/BRL",
-      "quote": 5.1704,
-      "chg": 1.8,
+      "quote": 5.169,
+      "chg": 2.1,
       "action": "FLAT",
-      "score": 11.1
+      "score": 7.0
     },
     "USDCNH": {
       "label": "USD/CNH",
@@ -115,10 +115,10 @@
     "dominant": null,
     "active": [],
     "intensity": {
-      "carry_unwind": 13.0,
+      "carry_unwind": 13.2,
       "dollar_wrecking_ball": 36.8,
       "em_crisis_capital_flight": 8.0,
-      "haven_flight_risk_off": 9.6,
+      "haven_flight_risk_off": 9.8,
       "reflation_risk_on": 0,
       "intervention_risk": 21.6
     }

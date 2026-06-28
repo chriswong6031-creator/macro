@@ -1609,3 +1609,4 @@
 {"date":"2026-06-28","kind":"ticker","subject":"ECL","ticker":"ECL","edge_score":5,"state":"NEGATIVE_DIVERGENCE"}
 {"date":"2026-06-28","kind":"ticker","subject":"AMCR","ticker":"AMCR","edge_score":5,"state":"NEGATIVE_DIVERGENCE"}
 {"date":"2026-06-28","kind":"ticker","subject":"NEE","ticker":"NEE","edge_score":3,"state":"POSITIVE_DIVERGENCE"}
+{"date":"2026-06-28","kind":"ticker","subject":"AAPL","ticker":"AAPL","edge_score":0,"state":"CONFIRMED_UP"}

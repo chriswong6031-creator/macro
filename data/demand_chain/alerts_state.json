@@ -2,6 +2,7 @@
   "ACLS": "ahead_of_consensus",
   "ADBE": "ahead_of_consensus",
   "CARR": "consensus_at_risk",
+  "CEG": "ahead_of_consensus",
   "CLSK": "ahead_of_consensus",
   "LII": "consensus_at_risk",
   "MAS": "consensus_at_risk",

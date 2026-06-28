@@ -978,6 +978,17 @@
       setFocus(h);
     }, 350);
   }
+  // public hook: let a host page (e.g. Sector Central) focus the embedded overlay on a
+  // sector/basket by id, switching family + scrolling the chart into view. Returns false
+  // if the id is unknown so the caller can fall back to a normal link.
+  window.SectorCyclesFocus = function (id) {
+    if (!id || !byId[id]) return false;
+    switchFamily(byId[id].kind === "basket" ? "baskets" : "sectors");
+    setFocus(id);
+    var ch = document.getElementById("sc-chart");
+    if (ch && ch.scrollIntoView) ch.scrollIntoView({ behavior: "smooth", block: "center" });
+    return true;
+  };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
 })();

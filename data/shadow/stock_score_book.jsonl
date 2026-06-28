@@ -1006,3 +1006,4 @@
 {"date": "2026-06-26", "ticker": "TGTX", "score": 1.0, "percentile": 1.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-06-26", "ticker": "LBRT", "score": 99.0, "percentile": 99.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-06-26", "ticker": "CARG", "score": 98.0, "percentile": 98.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-26", "ticker": "CENX", "score": 98.0, "percentile": 98.0, "regime": "mixed", "horizons": [21, 63, 126]}

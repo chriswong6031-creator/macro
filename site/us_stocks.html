@@ -6,6 +6,8 @@
 
 
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -95,6 +97,33 @@
   .muted { color: var(--muted); }
   .chart { width: 100%; }
   .topline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+
+  /* US Stocks header — Risk Radar alert (rendered only when the radar fires; see #stocks-header).
+     Self-contained on the GLOBAL theme vars, because the macro .ms-radar styling lives in the
+     page-macro scope which doesn't apply here. --rc = the band colour, set inline. */
+  .rr-alert { display: flex; align-items: center; gap: 11px; flex-wrap: wrap;
+              margin: 12px 0 2px; padding: 9px 13px; border-radius: 10px;
+              border: 1px solid color-mix(in srgb, var(--rc) 55%, var(--line));
+              background: color-mix(in srgb, var(--rc) 12%, var(--panel2));
+              animation: rrApulse 2.2s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .rr-alert { animation: none;
+              box-shadow: 0 0 0 1px color-mix(in srgb, var(--rc) 40%, transparent); } }
+  @keyframes rrApulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rc) 34%, transparent); }
+                        50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--rc) 7%, transparent); } }
+  .rr-alert .rra-ic { font-size: 17px; line-height: 1; flex: none; }
+  .rr-alert .rra-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 240px; }
+  .rr-alert .rra-tit { font-weight: 600; color: var(--text); }
+  .rr-alert .rra-tit b { font-weight: 800; }
+  .rr-alert .rra-odds { font-size: 11px; color: var(--muted); }
+  .rr-alert .rra-odds b { color: var(--text); }
+  .rr-alert .rra-do { font-size: 11.5px; color: var(--text); max-width: 36ch; }
+  @media (max-width: 760px) { .rr-alert .rra-do { max-width: none; flex: 1 1 100%; } }
+  .rr-alert .rra-scares { display: flex; flex-wrap: wrap; align-items: center; gap: 5px;
+              flex: 1 1 100%; margin-top: 3px; font-size: 11px; color: var(--muted); }
+  .rr-alert .rra-scare { border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px;
+              color: var(--text); background: var(--panel); }
+  .rr-alert .rra-more { margin-left: auto; color: var(--link); font-weight: 700; font-size: 11.5px;
+              white-space: nowrap; }
 
   .help { display: inline-flex; align-items: center; justify-content: center;
           width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
@@ -1000,11 +1029,8 @@
         <div class="nav-dd nav-sub">
           <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
-            <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">One gated-confluence read per sector · reasoning · graded</span><span class="l-zh">每行业门控共振研判 · 推理链 · 自评分</span></span></a>
-            <a href="sector_cycles.html">🌀 <span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock — phase · turns</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></a>
-            <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
-            <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
-            <a href="sector_heatmap.html">🔥 <span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span><span class="d"><span class="l-en">All 503 names · market-cap treemap · click for our read</span><span class="l-zh">全部503只 · 市值树图 · 点击查看研判</span></span></a>
+            <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
           </div>
         </div>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -1021,11 +1047,8 @@
         <div class="nav-dd nav-sub">
           <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
-            <a href="sector_central_china.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">One gated-confluence read per sector · reasoning · graded</span><span class="l-zh">每行业门控共振研判 · 推理链 · 自评分</span></span></a>
-            <a href="china_sector_desk.html">🧭 <span class="l-en">Sector Desk</span><span class="l-zh">行业桌面</span><span class="d"><span class="l-en">GS-style sector indices · live · pathway</span><span class="l-zh">GS式行业指数 · 实时 · 路径</span></span></a>
-            <a href="sector_cycles_china.html">🌀 <span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span><span class="d"><span class="l-en">Every sector & theme on one cycle clock · turns · forecast odds</span><span class="l-zh">各板块与主题同框 · 拐点 · 前瞻概率</span></span></a>
-            <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
-            <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+            <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
           </div>
         </div>
         <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -1116,6 +1139,7 @@
         <a href="markets.html">🌐 <span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></a>
         <a href="sector_cycles.html">🧭 <span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock — phase · turns · the story</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点 · 背后故事</span></span></a>
         <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="macro_signals.html">🧮 <span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span><span class="d"><span class="l-en">Raw macro data — cycle · conditions · liquidity · positioning</span><span class="l-zh">宏观原始数据 — 周期 · 条件 · 流动性 · 持仓</span></span></a>
         <a href="impulse.html">🚀 <span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span><span class="d"><span class="l-en">Early-ignition momentum · velocity · acceleration</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></a>
         <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
       </div>
@@ -1150,9 +1174,28 @@
   <div class="panel span12" id="stocks-header">
     <div class="topline">
       <h1>🇺🇸 <span class="l-en">US Stock Dashboard</span><span class="l-zh">美国个股看板</span></h1>
-      <span class="badge quad-Q1"><span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></span>
-      <span class="badge" style="background:var(--panel2);color:var(--text)"><span class="l-en">CAREFUL</span><span class="l-zh">谨慎</span></span>
+      <span style="display:inline-flex;align-items:center">
+        <span class="badge quad-Q1"><span class="l-en">Regime</span><span class="l-zh">周期</span>: <span class="l-en">Goldilocks</span><span class="l-zh">理想增长</span></span><span class="help">?<span class="tip"><span class="l-en">The macro / economic regime (growth × inflation quadrant) the whole page is filtered by — it describes the ECONOMY, not today's tape, so it shifts slowly. Use it for which sectors & factors are favoured, not for market timing. For whether the market itself is turning over, watch the Risk Radar alert — it appears right below only when it actually fires.</span><span class="l-zh">整页据以过滤的宏观／经济周期（增长×通胀象限）— 它描述的是经济，而非今日盘面，因此变化缓慢。用于判断哪些板块与因子占优，而非择时。市场本身是否转向，请看下方的风险雷达提示 — 它仅在真正触发时才显示。</span></span></span>
+      </span>
+      <span style="display:inline-flex;align-items:center">
+        <span class="badge" style="background:var(--panel2);color:var(--text)"><span class="l-en">Posture</span><span class="l-zh">姿态</span>: <span class="l-en">CAREFUL</span><span class="l-zh">谨慎</span></span><span class="help">?<span class="tip"><span class="l-en">How to TRADE the current regime — a defensive → aggressive stance dial (Defensive · Careful · Neutral · Constructive · Aggressive) set by the playbook. “Careful” means lean cautious: favour quality and good entries, keep gross moderate. It sizes risk; it is not a buy/sell or stock-selection call. The full dial with its reasoning lives on the Macro dashboard.</span><span class="l-zh">如何“交易”当前周期 — 一个防御→进取的姿态刻度（防御·谨慎·中性·建设性·进取），由策略手册设定。“谨慎”意为偏审慎：偏好质量与好的入场点，总仓位保持适中。它用于调整风险敞口，并非买卖或选股建议。完整刻度及其推理见宏观看板。</span></span></span>
+      </span>
     </div>
+    
+    
+    
+    
+    <div class="rr-alert" style="--rc:var(--warn)">
+      <span class="rra-ic">⚠️</span>
+      <span class="rra-main">
+        <span class="rra-tit"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span> · <b style="color:var(--warn)"><span class="l-en">CAUTION</span><span class="l-zh">警戒</span> 91/100</b> — <span class="l-en">Growth scare / defensive rotation</span><span class="l-zh">增长恐慌/防御轮动</span><span class="help">?<span class="tip"><span class="l-en">A leading drawdown-risk gauge, built only from signals that passed a strict backtest. It watches five kinds of stress (credit, rates, bubble, growth, volatility) and stays quiet until the broad market is actually breaking — so it appears here only when it fires (caution or worse). It measures the ODDS of a pullback, not the direction. Use it to size down, never to pick stocks. Full per-leg detail on the Macro Signals page.</span><span class="l-zh">领先的回撤风险指标，仅由通过严格回测的信号构成。它监测五类压力（信用、利率、泡沫、增长、波动），在大盘真正破位前保持沉默 — 因此仅在触发（警戒或更高）时于此显示。它衡量回撤的“概率”而非方向。用它来降低仓位，绝非选股。完整分项见宏观信号页。</span></span></span></span>
+        <span class="rra-odds"><span class="l-en">Pullback odds (≥5%)</span><span class="l-zh">回撤概率（≥5%）</span> · 5d 4% · 10d 10% · <b>21d 19%</b></span>
+        <span class="rra-scares"><span class="l-en">Stress:</span><span class="l-zh">压力来源：</span><span class="rra-scare" style="border-color:var(--down)"><span class="l-en">Growth scare / defensive rotation</span><span class="l-zh">增长恐慌/防御轮动</span> <b style="color:var(--down)">91</b></span><span class="rra-scare" style="border-color:var(--warn)"><span class="l-en">Credit stress</span><span class="l-zh">信用压力</span> <b style="color:var(--warn)">68</b></span><span class="rra-scare" style="border-color:var(--muted)"><span class="l-en">Volatility event</span><span class="l-zh">波动率事件</span> <b style="color:var(--muted)">58</b></span><span class="rra-scare" style="border-color:var(--muted)"><span class="l-en">Bubble / blow-off unwind</span><span class="l-zh">泡沫/见顶回吐</span> <b style="color:var(--muted)">38</b></span></span>
+      </span>
+      <span class="rra-do"><b><span class="l-en">Do</span><span class="l-zh">应对</span>:</b> <span class="l-en">Trim chasing; favour good entries over extended leaders.</span><span class="l-zh">减少追高；择优入场而非追逐已延展的龙头。</span> · <span class="l-en">gross</span><span class="l-zh">仓位</span> ×0.90</span>
+      <a class="rra-more" href="macro_signals.html"><span class="l-en">full radar →</span><span class="l-zh">完整雷达 →</span></a>
+    </div>
+    
     <p class="muted" style="margin:6px 0 0"><span class="l-en">Where to look for stocks — standouts, sector rotation, factor tilts and real fund flows, filtered by the current macro regime.</span><span class="l-zh">在哪里找股票 — 精选个股、板块轮动、因子倾斜与基金真实资金流，按当前宏观周期过滤。</span>
       <a href="macro.html" style="color:var(--link);font-weight:600">← <span class="l-en">Macro regime dashboard</span><span class="l-zh">宏观周期看板</span></a></p>
   </div>
@@ -1213,8 +1256,10 @@
           <a class="actitem ai-theme" href="basket/semicap_equipment.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Semiconductor Equipment (WFE)</span><span class="l-zh">半导体设备（晶圆厂设备）</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
       </div>
-      <div class="actcol act-hold">
+      <div class="actcol act-hold lst-wrap">
         <div class="acth">⚪ <span class="l-en">HOLD / avoid</span><span class="l-zh">持有／回避</span></div>
+        
+        <div class="lst-collapse lst-cap6 is-collapsed">
         
           <a class="actitem ai-theme" href="basket/big_pharma.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></b><span class="ai-lens" title="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast · 领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
@@ -1271,6 +1316,10 @@
         
           <a class="actitem" href="sectors/XLY.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></b> <span class="muted"><span class="l-en">wait</span><span class="l-zh">等待</span></span></a>
         
+        </div>
+        
+        <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button>
+        
       </div>
     </div>
     
@@ -1291,7 +1340,7 @@
       
       
       
-      <div class="nb-disp disp-neutral" title="Cross-sectional dispersion regime — the dial for WHEN stock-selection pays. When names fan out (high dispersion / low pairwise correlation) selection earns the most and the book takes more gross (×1.0); a macro-driven tape (low dispersion / high correlation) mutes it (de-gross to cash). Dispersion percentile 0.64 · avg pairwise corr 0.18. Sizes SELECTION conviction; never market direction. · 横截面离散度状态 — 选股何时有效的拨盘。">
+      <div class="nb-disp disp-neutral" title="Cross-sectional dispersion regime — the dial for WHEN stock-selection pays. When names fan out (high dispersion / low pairwise correlation) selection earns the most and the book takes more gross (×1.0); a macro-driven tape (low dispersion / high correlation) mutes it (de-gross to cash). Dispersion percentile 0.65 · avg pairwise corr 0.18. Sizes SELECTION conviction; never market direction. · 横截面离散度状态 — 选股何时有效的拨盘。">
         <span class="disp-ic">⚖️</span>
         <b><span class="l-en">Mixed selection backdrop</span><span class="l-zh">选股环境中性</span></b>
         <span class="disp-meta"><span class="l-en">gross</span><span class="l-zh">总仓</span> ×1.0 · <span class="l-en">avg corr</span><span class="l-zh">平均相关</span> 0.18</span>
@@ -1845,6 +1894,7 @@
             
             <span class="nb-vchip vf-neutral" title="Options check (dealer gamma) — negative-gamma tape — dealer hedging amplifies the move (fuel for a breakout) · call wall 72.5 · flip 71.45 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 负 Gamma 行情 — 做市商对冲放大波动（利于突破） · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">· <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">neutral</span><span class="l-zh">中性</span></span>
             
+            <span class="nb-vchip vf-caution" title="Options IV lean — Cremers-Weinbaum call−put implied-vol spread — puts richer than calls by -9.9 vol pts vs peers — protection strongly bid · Cremers-Weinbaum call−put IV spread (matched strikes, ~30d, OI-weighted). Calls richer than puts = informed bullish lean; puts richer = protection bid. A CROSS-SECTIONAL context read — dividends/borrow can bias the level, the feed is delayed EOD, and it is DISPLAY-ONLY until the forward-IC gate validates. It can amplify or caution a long the price thesis already likes, never create a buy. | 期权隐含波动率偏向 — Cremers-Weinbaum 看涨−看跌隐含波动率价差 — 看跌比看涨贵 -9.9 个波动点（相对同业） — 保护性看跌被大力买入 · Cremers-Weinbaum 看涨−看跌隐含波动率价差（同行权价配对，约30天，按未平仓量加权）。看涨比看跌更贵 = 知情资金偏多；看跌更贵 = 买入保护。这是横截面参考读数 — 股息/借券成本会扰动水平，数据为延迟收盘，且在前瞻IC验证通过前仅作展示。它只能放大或警示价格逻辑本已看好的多头，绝不制造买入信号。">↓ <span class="l-en">IV lean</span><span class="l-zh">IV偏向</span> <span class="l-en">down</span><span class="l-zh">偏空</span></span>
             
           </div>
           
@@ -2166,6 +2216,7 @@
             
             <span class="nb-vchip vf-neutral" title="Options check (dealer gamma) — long-gamma — dealer hedging dampens the move · call wall 50.0 · flip 44.4 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 多头 Gamma — 做市商对冲抑制波动 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">· <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">neutral</span><span class="l-zh">中性</span></span>
             
+            <span class="nb-vchip vf-confirm" title="Options IV lean — Cremers-Weinbaum call−put implied-vol spread — calls richer than puts by +3.1 vol pts vs peers — strong informed bullish lean · Cremers-Weinbaum call−put IV spread (matched strikes, ~30d, OI-weighted). Calls richer than puts = informed bullish lean; puts richer = protection bid. A CROSS-SECTIONAL context read — dividends/borrow can bias the level, the feed is delayed EOD, and it is DISPLAY-ONLY until the forward-IC gate validates. It can amplify or caution a long the price thesis already likes, never create a buy. | 期权隐含波动率偏向 — Cremers-Weinbaum 看涨−看跌隐含波动率价差 — 看涨比看跌贵 +3.1 个波动点（相对同业） — 知情资金强烈偏多 · Cremers-Weinbaum 看涨−看跌隐含波动率价差（同行权价配对，约30天，按未平仓量加权）。看涨比看跌更贵 = 知情资金偏多；看跌更贵 = 买入保护。这是横截面参考读数 — 股息/借券成本会扰动水平，数据为延迟收盘，且在前瞻IC验证通过前仅作展示。它只能放大或警示价格逻辑本已看好的多头，绝不制造买入信号。">↑ <span class="l-en">IV lean</span><span class="l-zh">IV偏向</span> <span class="l-en">up</span><span class="l-zh">偏多</span></span>
             
             <span class="nb-vchip vf-exp" title="Volatility black hole · BBWP 94.0 — Volatility is already elevated — realized vol sits in the top fifth of the past year, so the move is underway, not loading. This is the opposite of a coiled squeeze: the quiet entry is already gone. A late / heads-up read, never a standalone signal. | 波动黑洞 — 波动率已处于高位 — 实现波动率位于过去一年前五分之一，行情已在进行，而非蓄势。这与压缩蓄势相反：安静的入场点已过。属偏晚的提示读数，绝非独立信号。">💥 <span class="l-en">Already moving</span><span class="l-zh">已在异动</span></span>
           </div>
@@ -2520,113 +2571,6 @@
       
         
         
-        <a class="nbcard nb-up" href="stock.html#ENOV">
-          <div class="nb-top">
-            <span class="nb-tk">ENOV</span>
-            <span class="nb-nm">Enovis</span>
-            <span class="sig-gate sig-early" title="2D-MACD pre-cross advance-warning. ONE door — confirm sector/leadership + your stop before acting. · mixed · 2026-06-25 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">⋯ <span class="l-en">approaching</span><span class="l-zh">临近</span></span>
-            <span class="nb-px" data-sym="ENOV" data-mkt="us">$22.71</span>
-          </div>
-          
-          
-          
-            
-            
-            
-            
-          <div class="nb-sub">
-            <span class="nb-spot spot-up" title="Theme/sector spotlight tilt (×1.15) — a small narrative nudge to rank; never overrides extension or risk vetoes. Sector: Health Care — leading."><span>🔥</span><span class="sp-tag l-en">Health Care</span><span class="sp-tag l-zh">Health Care</span><span>▲</span></span>
-            
-            <span class="nb-offh">-36.8% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span>
-          </div>
-          
-          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,29.4 3.8,37.2 7.6,37.8 11.4,32.5 15.2,29.4 19.0,33.1 22.9,32.5 26.7,33.7 30.5,27.3 34.3,26.3 38.1,24.2 41.9,22.0 45.7,20.8 49.5,19.7 53.3,20.3 57.1,14.7 61.0,15.0 64.8,27.6 68.6,27.5 72.4,32.2 76.2,25.8 80.0,23.6 83.8,29.3 87.6,33.8 91.4,29.1 95.2,28.2 99.0,29.6 102.9,25.7 106.7,22.0 110.5,10.1 114.3,13.7 118.1,22.4 121.9,16.4 125.7,17.8 129.5,15.7 133.3,24.8 137.1,20.1 141.0,17.5 144.8,14.0 148.6,23.3 152.4,25.3 156.2,24.9 160.0,30.7 163.8,31.1 167.6,32.9 171.4,37.8 175.2,36.6 179.0,38.5 182.9,32.0 186.7,27.4 190.5,27.9 194.3,26.5 198.1,36.4 201.9,40.7 205.7,37.3 209.5,41.4 213.3,38.4 217.1,42.0 221.0,36.4 224.8,39.8 228.6,40.5 232.4,39.4 236.2,36.2 240.0,32.7 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,29.4 3.8,37.2 7.6,37.8 11.4,32.5 15.2,29.4 19.0,33.1 22.9,32.5 26.7,33.7 30.5,27.3 34.3,26.3 38.1,24.2 41.9,22.0 45.7,20.8 49.5,19.7 53.3,20.3 57.1,14.7 61.0,15.0 64.8,27.6 68.6,27.5 72.4,32.2 76.2,25.8 80.0,23.6 83.8,29.3 87.6,33.8 91.4,29.1 95.2,28.2 99.0,29.6 102.9,25.7 106.7,22.0 110.5,10.1 114.3,13.7 118.1,22.4 121.9,16.4 125.7,17.8 129.5,15.7 133.3,24.8 137.1,20.1 141.0,17.5 144.8,14.0 148.6,23.3 152.4,25.3 156.2,24.9 160.0,30.7 163.8,31.1 167.6,32.9 171.4,37.8 175.2,36.6 179.0,38.5 182.9,32.0 186.7,27.4 190.5,27.9 194.3,26.5 198.1,36.4 201.9,40.7 205.7,37.3 209.5,41.4 213.3,38.4 217.1,42.0 221.0,36.4 224.8,39.8 228.6,40.5 232.4,39.4 236.2,36.2 240.0,32.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="32.7" r="2.6" fill="var(--up)"/></svg>
-          
-          <div class="nb-conv">
-            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">87</span>
-            <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
-            
-          </div>
-          
-          
-          
-          <div class="nb-align" title="Weekly rising · 3-Day turn↑ · Daily crossed up · 周线周线上行 · 3日turn↑ · 日线已上穿">
-            <span class="nba-mark">🟢</span>
-            <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly uptrend</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线上行</span></span>
-            <span class="nba-tag"><span class="l-en">Entry armed</span><span class="l-zh">入场就绪</span></span>
-          </div>
-          
-          
-          
-          <div class="nb-entry nbe-partial" title="ENTRY timing (gauge 2) — when & at what price to buy. The daily turn is already in — a low formed ~6 day(s) ago @ 20.85 and price is back above the 10-day average. What's missing is the weekly timeframe confirming, so this is a partial-conviction entry available now, not a pending trigger: take a half position here, or wait for the weekly to turn.">
-            <div class="nbe-head">
-              <span class="nbe-dot a3"></span>
-              <span class="nbe-status"><span class="l-en">Partial entry — half size now</span><span class="l-zh">部分入场 — 当前可建半仓</span></span>
-            </div>
-            
-            <div class="nbe-zone">
-              <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-              <span class="nbe-px">$21.65–$22.71</span>
-              <span class="nbe-pct">-2.3%</span>
-            </div>
-            
-            
-            <div class="nbe-cyc">
-              <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 40<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
-              <span class="nbe-bar"><span class="nbe-bf" style="width:95%"></span></span>
-              
-            </div>
-            
-          </div>
-          
-          <div class="nb-axes">
-            
-            
-            <div class="nb-ax" title="SEL 51/100">
-              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-              <div class="axt"><div class="axf" style="width:51%"></div></div>
-            </div>
-            
-            
-            <div class="nb-ax" title="ENT 57/100">
-              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-              <div class="axt"><div class="axf" style="width:57%"></div></div>
-            </div>
-            
-            
-            <div class="nb-ax" title="TWD 55/100">
-              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-              <div class="axt"><div class="axf" style="width:55%"></div></div>
-            </div>
-            
-            
-            <div class="nb-ax" title="QUAL 55/100">
-              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-              <div class="axt"><div class="axf" style="width:55%"></div></div>
-            </div>
-            
-          </div>
-          
-          <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.0</span><span class="nbb nbb-validated">insider +0.1</span></div>
-          
-          
-          
-          
-          
-          <div class="nb-bot">
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page. · 行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -0.82</span>
-            <span class="nb-rk">#135/168</span>
-            <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.56 of the conviction-base size (forecast vol 39.4% · inverse-vol ×0.56 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.56×</span>
-            
-          </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
-          
-          
-          
-        </a>
-      
-        
-        
         <a class="nbcard nb-up" href="stock.html#SXT">
           <div class="nb-top">
             <span class="nb-tk">SXT</span>
@@ -2736,6 +2680,113 @@
           <div class="nb-cau"><span class="l-en">⚠ weak fundamentals</span><span class="l-zh">⚠ 基本面偏弱</span></div>
           
           <div class="nb-note nb-note-anticipation"><span class="l-en">ℹ Forward risk cone is favourable (≈10% median upside vs ≈6% average drawdown) — a constructive risk SHAPE the factor axes don't price.</span><span class="l-zh">ℹ 前瞻风险锥形态有利（中位上行约 10% 对平均回撤约 6%）——因子维度未计入的有利风险形态。</span></div>
+          
+        </a>
+      
+        
+        
+        <a class="nbcard nb-up" href="stock.html#ENOV">
+          <div class="nb-top">
+            <span class="nb-tk">ENOV</span>
+            <span class="nb-nm">Enovis</span>
+            <span class="sig-gate sig-early" title="2D-MACD pre-cross advance-warning. ONE door — confirm sector/leadership + your stop before acting. · mixed · 2026-06-25 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">⋯ <span class="l-en">approaching</span><span class="l-zh">临近</span></span>
+            <span class="nb-px" data-sym="ENOV" data-mkt="us">$22.71</span>
+          </div>
+          
+          
+          
+            
+            
+            
+            
+          <div class="nb-sub">
+            <span class="nb-spot spot-up" title="Theme/sector spotlight tilt (×1.15) — a small narrative nudge to rank; never overrides extension or risk vetoes. Sector: Health Care — leading."><span>🔥</span><span class="sp-tag l-en">Health Care</span><span class="sp-tag l-zh">Health Care</span><span>▲</span></span>
+            
+            <span class="nb-offh">-36.8% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span>
+          </div>
+          
+          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,29.4 3.8,37.2 7.6,37.8 11.4,32.5 15.2,29.4 19.0,33.1 22.9,32.5 26.7,33.7 30.5,27.3 34.3,26.3 38.1,24.2 41.9,22.0 45.7,20.8 49.5,19.7 53.3,20.3 57.1,14.7 61.0,15.0 64.8,27.6 68.6,27.5 72.4,32.2 76.2,25.8 80.0,23.6 83.8,29.3 87.6,33.8 91.4,29.1 95.2,28.2 99.0,29.6 102.9,25.7 106.7,22.0 110.5,10.1 114.3,13.7 118.1,22.4 121.9,16.4 125.7,17.8 129.5,15.7 133.3,24.8 137.1,20.1 141.0,17.5 144.8,14.0 148.6,23.3 152.4,25.3 156.2,24.9 160.0,30.7 163.8,31.1 167.6,32.9 171.4,37.8 175.2,36.6 179.0,38.5 182.9,32.0 186.7,27.4 190.5,27.9 194.3,26.5 198.1,36.4 201.9,40.7 205.7,37.3 209.5,41.4 213.3,38.4 217.1,42.0 221.0,36.4 224.8,39.8 228.6,40.5 232.4,39.4 236.2,36.2 240.0,32.7 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,29.4 3.8,37.2 7.6,37.8 11.4,32.5 15.2,29.4 19.0,33.1 22.9,32.5 26.7,33.7 30.5,27.3 34.3,26.3 38.1,24.2 41.9,22.0 45.7,20.8 49.5,19.7 53.3,20.3 57.1,14.7 61.0,15.0 64.8,27.6 68.6,27.5 72.4,32.2 76.2,25.8 80.0,23.6 83.8,29.3 87.6,33.8 91.4,29.1 95.2,28.2 99.0,29.6 102.9,25.7 106.7,22.0 110.5,10.1 114.3,13.7 118.1,22.4 121.9,16.4 125.7,17.8 129.5,15.7 133.3,24.8 137.1,20.1 141.0,17.5 144.8,14.0 148.6,23.3 152.4,25.3 156.2,24.9 160.0,30.7 163.8,31.1 167.6,32.9 171.4,37.8 175.2,36.6 179.0,38.5 182.9,32.0 186.7,27.4 190.5,27.9 194.3,26.5 198.1,36.4 201.9,40.7 205.7,37.3 209.5,41.4 213.3,38.4 217.1,42.0 221.0,36.4 224.8,39.8 228.6,40.5 232.4,39.4 236.2,36.2 240.0,32.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="32.7" r="2.6" fill="var(--up)"/></svg>
+          
+          <div class="nb-conv">
+            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">87</span>
+            <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+            
+          </div>
+          
+          
+          
+          <div class="nb-align" title="Weekly rising · 3-Day turn↑ · Daily crossed up · 周线周线上行 · 3日turn↑ · 日线已上穿">
+            <span class="nba-mark">🟢</span>
+            <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly uptrend</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线上行</span></span>
+            <span class="nba-tag"><span class="l-en">Entry armed</span><span class="l-zh">入场就绪</span></span>
+          </div>
+          
+          
+          
+          <div class="nb-entry nbe-partial" title="ENTRY timing (gauge 2) — when & at what price to buy. The daily turn is already in — a low formed ~6 day(s) ago @ 20.85 and price is back above the 10-day average. What's missing is the weekly timeframe confirming, so this is a partial-conviction entry available now, not a pending trigger: take a half position here, or wait for the weekly to turn.">
+            <div class="nbe-head">
+              <span class="nbe-dot a3"></span>
+              <span class="nbe-status"><span class="l-en">Partial entry — half size now</span><span class="l-zh">部分入场 — 当前可建半仓</span></span>
+            </div>
+            
+            <div class="nbe-zone">
+              <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+              <span class="nbe-px">$21.65–$22.71</span>
+              <span class="nbe-pct">-2.3%</span>
+            </div>
+            
+            
+            <div class="nbe-cyc">
+              <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 40<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
+              <span class="nbe-bar"><span class="nbe-bf" style="width:95%"></span></span>
+              
+            </div>
+            
+          </div>
+          
+          <div class="nb-axes">
+            
+            
+            <div class="nb-ax" title="SEL 51/100">
+              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+              <div class="axt"><div class="axf" style="width:51%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="ENT 57/100">
+              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+              <div class="axt"><div class="axf" style="width:57%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="TWD 55/100">
+              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+              <div class="axt"><div class="axf" style="width:55%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="QUAL 55/100">
+              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+              <div class="axt"><div class="axf" style="width:55%"></div></div>
+            </div>
+            
+          </div>
+          
+          <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.0</span><span class="nbb nbb-validated">insider +0.1</span></div>
+          
+          
+          
+          
+          
+          <div class="nb-bot">
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page. · 行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -0.82</span>
+            <span class="nb-rk">#135/168</span>
+            <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.56 of the conviction-base size (forecast vol 39.4% · inverse-vol ×0.56 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.56×</span>
+            
+          </div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
+          
+          
           
         </a>
       
@@ -2872,7 +2923,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,26.9 3.8,25.9 7.6,26.3 11.4,27.4 15.2,26.2 19.0,26.1 22.9,21.7 26.7,23.3 30.5,27.1 34.3,13.4 38.1,10.1 41.9,11.7 45.7,11.8 49.5,12.4 53.3,12.1 57.1,14.2 61.0,16.8 64.8,19.9 68.6,20.0 72.4,17.4 76.2,20.9 80.0,21.9 83.8,21.6 87.6,25.9 91.4,19.2 95.2,23.2 99.0,28.3 102.9,26.5 106.7,23.8 110.5,26.0 114.3,28.2 118.1,34.5 121.9,34.3 125.7,36.5 129.5,36.4 133.3,34.5 137.1,28.9 141.0,30.1 144.8,25.0 148.6,25.4 152.4,26.8 156.2,28.8 160.0,33.0 163.8,34.8 167.6,38.3 171.4,41.1 175.2,40.5 179.0,42.0 182.9,39.4 186.7,36.1 190.5,36.1 194.3,37.0 198.1,34.6 201.9,33.7 205.7,27.9 209.5,28.3 213.3,32.6 217.1,38.2 221.0,35.8 224.8,35.4 228.6,33.4 232.4,33.8 236.2,32.3 240.0,30.3 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,26.9 3.8,25.9 7.6,26.3 11.4,27.4 15.2,26.2 19.0,26.1 22.9,21.7 26.7,23.3 30.5,27.1 34.3,13.4 38.1,10.1 41.9,11.7 45.7,11.8 49.5,12.4 53.3,12.1 57.1,14.2 61.0,16.8 64.8,19.9 68.6,20.0 72.4,17.4 76.2,20.9 80.0,21.9 83.8,21.6 87.6,25.9 91.4,19.2 95.2,23.2 99.0,28.3 102.9,26.5 106.7,23.8 110.5,26.0 114.3,28.2 118.1,34.5 121.9,34.3 125.7,36.5 129.5,36.4 133.3,34.5 137.1,28.9 141.0,30.1 144.8,25.0 148.6,25.4 152.4,26.8 156.2,28.8 160.0,33.0 163.8,34.8 167.6,38.3 171.4,41.1 175.2,40.5 179.0,42.0 182.9,39.4 186.7,36.1 190.5,36.1 194.3,37.0 198.1,34.6 201.9,33.7 205.7,27.9 209.5,28.3 213.3,32.6 217.1,38.2 221.0,35.8 224.8,35.4 228.6,33.4 232.4,33.8 236.2,32.3 240.0,30.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="30.3" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-low" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">36</span>
+            <span class="nb-cscore band-low" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">35</span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
             
           </div>
@@ -4054,6 +4105,7 @@
             
             <span class="nb-vchip vf-caution" title="Options check (dealer gamma) — deep long-gamma (+3.5% over the flip) — dealers pin & fade breakouts · call wall 185.0 · flip 174.35 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +3.5%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">⚠ <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">caution</span><span class="l-zh">警示</span></span>
             
+            <span class="nb-vchip vf-confirm" title="Options IV lean — Cremers-Weinbaum call−put implied-vol spread — calls richer than puts by +7.2 vol pts vs peers — strong informed bullish lean · Cremers-Weinbaum call−put IV spread (matched strikes, ~30d, OI-weighted). Calls richer than puts = informed bullish lean; puts richer = protection bid. A CROSS-SECTIONAL context read — dividends/borrow can bias the level, the feed is delayed EOD, and it is DISPLAY-ONLY until the forward-IC gate validates. It can amplify or caution a long the price thesis already likes, never create a buy. | 期权隐含波动率偏向 — Cremers-Weinbaum 看涨−看跌隐含波动率价差 — 看涨比看跌贵 +7.2 个波动点（相对同业） — 知情资金强烈偏多 · Cremers-Weinbaum 看涨−看跌隐含波动率价差（同行权价配对，约30天，按未平仓量加权）。看涨比看跌更贵 = 知情资金偏多；看跌更贵 = 买入保护。这是横截面参考读数 — 股息/借券成本会扰动水平，数据为延迟收盘，且在前瞻IC验证通过前仅作展示。它只能放大或警示价格逻辑本已看好的多头，绝不制造买入信号。">↑ <span class="l-en">IV lean</span><span class="l-zh">IV偏向</span> <span class="l-en">up</span><span class="l-zh">偏多</span></span>
             
           </div>
           
@@ -4094,7 +4146,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,42.0 3.8,35.5 7.6,37.0 11.4,31.7 15.2,33.1 19.0,33.7 22.9,36.9 26.7,36.3 30.5,32.4 34.3,31.0 38.1,33.1 41.9,27.7 45.7,25.4 49.5,24.1 53.3,19.8 57.1,18.2 61.0,17.8 64.8,25.9 68.6,10.1 72.4,12.5 76.2,12.6 80.0,14.3 83.8,13.8 87.6,16.3 91.4,26.9 95.2,29.3 99.0,31.4 102.9,30.5 106.7,27.6 110.5,18.1 114.3,16.6 118.1,20.3 121.9,21.1 125.7,20.0 129.5,19.7 133.3,20.3 137.1,19.5 141.0,16.9 144.8,14.2 148.6,17.9 152.4,16.5 156.2,17.5 160.0,19.6 163.8,20.0 167.6,21.2 171.4,22.4 175.2,25.0 179.0,21.3 182.9,17.2 186.7,19.8 190.5,17.7 194.3,13.1 198.1,17.2 201.9,20.4 205.7,19.1 209.5,19.5 213.3,22.0 217.1,25.3 221.0,23.0 224.8,29.0 228.6,26.1 232.4,23.6 236.2,22.1 240.0,19.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,42.0 3.8,35.5 7.6,37.0 11.4,31.7 15.2,33.1 19.0,33.7 22.9,36.9 26.7,36.3 30.5,32.4 34.3,31.0 38.1,33.1 41.9,27.7 45.7,25.4 49.5,24.1 53.3,19.8 57.1,18.2 61.0,17.8 64.8,25.9 68.6,10.1 72.4,12.5 76.2,12.6 80.0,14.3 83.8,13.8 87.6,16.3 91.4,26.9 95.2,29.3 99.0,31.4 102.9,30.5 106.7,27.6 110.5,18.1 114.3,16.6 118.1,20.3 121.9,21.1 125.7,20.0 129.5,19.7 133.3,20.3 137.1,19.5 141.0,16.9 144.8,14.2 148.6,17.9 152.4,16.5 156.2,17.5 160.0,19.6 163.8,20.0 167.6,21.2 171.4,22.4 175.2,25.0 179.0,21.3 182.9,17.2 186.7,19.8 190.5,17.7 194.3,13.1 198.1,17.2 201.9,20.4 205.7,19.1 209.5,19.5 213.3,22.0 217.1,25.3 221.0,23.0 224.8,29.0 228.6,26.1 232.4,23.6 236.2,22.1 240.0,19.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="19.8" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">53</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">54</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -4241,9 +4293,9 @@
           <div class="nb-axes">
             
             
-            <div class="nb-ax" title="SEL 42/100">
+            <div class="nb-ax" title="SEL 41/100">
               <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-              <div class="axt"><div class="axf" style="width:42%"></div></div>
+              <div class="axt"><div class="axf" style="width:41%"></div></div>
             </div>
             
             
@@ -4316,7 +4368,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,33.0 3.8,36.7 7.6,39.0 11.4,32.5 15.2,31.4 19.0,30.1 22.9,30.6 26.7,31.3 30.5,29.9 34.3,28.9 38.1,29.2 41.9,26.5 45.7,23.8 49.5,23.1 53.3,18.4 57.1,15.9 61.0,15.0 64.8,16.4 68.6,10.1 72.4,16.0 76.2,16.4 80.0,16.9 83.8,25.4 87.6,21.2 91.4,18.0 95.2,24.6 99.0,25.9 102.9,23.5 106.7,24.7 110.5,26.9 114.3,32.9 118.1,33.9 121.9,33.7 125.7,32.6 129.5,32.2 133.3,32.3 137.1,29.9 141.0,29.3 144.8,31.1 148.6,33.4 152.4,31.8 156.2,30.4 160.0,28.0 163.8,26.4 167.6,25.7 171.4,19.0 175.2,16.8 179.0,14.0 182.9,10.1 186.7,13.4 190.5,18.7 194.3,18.0 198.1,13.6 201.9,14.2 205.7,17.1 209.5,40.0 213.3,40.3 217.1,38.8 221.0,41.2 224.8,42.0 228.6,40.9 232.4,38.0 236.2,35.9 240.0,34.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,33.0 3.8,36.7 7.6,39.0 11.4,32.5 15.2,31.4 19.0,30.1 22.9,30.6 26.7,31.3 30.5,29.9 34.3,28.9 38.1,29.2 41.9,26.5 45.7,23.8 49.5,23.1 53.3,18.4 57.1,15.9 61.0,15.0 64.8,16.4 68.6,10.1 72.4,16.0 76.2,16.4 80.0,16.9 83.8,25.4 87.6,21.2 91.4,18.0 95.2,24.6 99.0,25.9 102.9,23.5 106.7,24.7 110.5,26.9 114.3,32.9 118.1,33.9 121.9,33.7 125.7,32.6 129.5,32.2 133.3,32.3 137.1,29.9 141.0,29.3 144.8,31.1 148.6,33.4 152.4,31.8 156.2,30.4 160.0,28.0 163.8,26.4 167.6,25.7 171.4,19.0 175.2,16.8 179.0,14.0 182.9,10.1 186.7,13.4 190.5,18.7 194.3,18.0 198.1,13.6 201.9,14.2 205.7,17.1 209.5,40.0 213.3,40.3 217.1,38.8 221.0,41.2 224.8,42.0 228.6,40.9 232.4,38.0 236.2,35.9 240.0,34.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="34.2" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">48</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">47</span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
             
           </div>
@@ -4469,9 +4521,9 @@
           <div class="nb-axes">
             
             
-            <div class="nb-ax" title="SEL 42/100">
+            <div class="nb-ax" title="SEL 41/100">
               <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-              <div class="axt"><div class="axf" style="width:42%"></div></div>
+              <div class="axt"><div class="axf" style="width:41%"></div></div>
             </div>
             
             
@@ -4675,9 +4727,9 @@
           <div class="nb-axes">
             
             
-            <div class="nb-ax" title="SEL 37/100">
+            <div class="nb-ax" title="SEL 36/100">
               <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-              <div class="axt"><div class="axf" style="width:37%"></div></div>
+              <div class="axt"><div class="axf" style="width:36%"></div></div>
             </div>
             
             
@@ -4965,7 +5017,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.0 3.8,42.0 7.6,40.0 11.4,37.3 15.2,36.9 19.0,35.9 22.9,37.8 26.7,36.8 30.5,34.5 34.3,37.0 38.1,37.6 41.9,35.0 45.7,32.7 49.5,27.3 53.3,27.4 57.1,28.5 61.0,25.6 64.8,25.1 68.6,24.8 72.4,29.8 76.2,29.3 80.0,27.5 83.8,27.9 87.6,26.5 91.4,27.5 95.2,26.1 99.0,20.6 102.9,21.9 106.7,22.5 110.5,21.6 114.3,23.5 118.1,22.8 121.9,20.1 125.7,19.5 129.5,10.2 133.3,10.2 137.1,10.4 141.0,12.8 144.8,13.7 148.6,12.8 152.4,19.2 156.2,23.3 160.0,24.7 163.8,25.0 167.6,21.2 171.4,19.5 175.2,22.3 179.0,26.3 182.9,25.7 186.7,27.1 190.5,28.2 194.3,28.5 198.1,29.5 201.9,28.5 205.7,28.7 209.5,26.0 213.3,17.7 217.1,18.9 221.0,12.1 224.8,11.9 228.6,10.1 232.4,14.2 236.2,12.4 240.0,12.6 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.0 3.8,42.0 7.6,40.0 11.4,37.3 15.2,36.9 19.0,35.9 22.9,37.8 26.7,36.8 30.5,34.5 34.3,37.0 38.1,37.6 41.9,35.0 45.7,32.7 49.5,27.3 53.3,27.4 57.1,28.5 61.0,25.6 64.8,25.1 68.6,24.8 72.4,29.8 76.2,29.3 80.0,27.5 83.8,27.9 87.6,26.5 91.4,27.5 95.2,26.1 99.0,20.6 102.9,21.9 106.7,22.5 110.5,21.6 114.3,23.5 118.1,22.8 121.9,20.1 125.7,19.5 129.5,10.2 133.3,10.2 137.1,10.4 141.0,12.8 144.8,13.7 148.6,12.8 152.4,19.2 156.2,23.3 160.0,24.7 163.8,25.0 167.6,21.2 171.4,19.5 175.2,22.3 179.0,26.3 182.9,25.7 186.7,27.1 190.5,28.2 194.3,28.5 198.1,29.5 201.9,28.5 205.7,28.7 209.5,26.0 213.3,17.7 217.1,18.9 221.0,12.1 224.8,11.9 228.6,10.1 232.4,14.2 236.2,12.4 240.0,12.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="12.6" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-low" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">6</span>
+            <span class="nb-cscore band-low" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">5</span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
             
           </div>
@@ -5195,16 +5247,6 @@
   
   
 
-  <!-- ======================= NOW ======================= -->
-  
-  
-
-  
-
-  
-  
-
-  
 
   
   <!-- ===================== US EQUITY SIZE & STYLE ===================== -->
@@ -5247,33 +5289,32 @@
 
   <!-- ===================== MARKET BREADTH ===================== -->
   
-  <div class="panel span12" id="breadth">
-    <h2><span class="l-en">Market breadth — how many stocks are actually participating</span><span class="l-zh">市场广度 — 究竟有多少股票在参与</span>
+  <div class="panel span6" id="breadth">
+    <h2><span class="l-en">Market breadth — who is participating</span><span class="l-zh">市场广度 — 谁在参与</span>
       <span class="help">?<span class="tip"><span class="l-en">Breadth across the full S&P Composite 1500 (large = S&P 500, mid = S&P 400, small = S&P 600): how many stocks are advancing, how many hold above their 50- and 200-day lines, and net new 52-week highs. A strong index riding on a shrinking number of stocks is fragile — broad participation confirms a move, thinning breadth is an early warning. The % above the 50-day line also feeds the regime model's growth axis, so this is the same breadth the model reads, just made legible.</span><span class="l-zh">覆盖整个标普综合 1500（大盘 = 标普500、中盘 = 标普400、小盘 = 标普600）的广度：多少股票上涨、多少守在其 50 日与 200 日均线之上，以及净创 52 周新高。指数走强却只靠越来越少的股票支撑则脆弱 — 广泛参与确认走势，广度变薄是早期预警。高于 50 日线的占比也进入周期模型的增长轴，因此这与模型读取的是同一广度，只是更直观。</span></span></span>
     </h2>
-    <p class="pos" style="margin:0 2px 12px; font-size:14px; line-height:1.5">
+    <p class="pos" style="margin:0 2px 10px; font-size:12.5px; line-height:1.5">
       <span class="l-en">Participation looks</span><span class="l-zh">参与度看起来</span> <b><span class="l-en">broad</span><span class="l-zh">广泛</span></b> —
-      <b>70%</b> <span class="l-en">of the 1,500 are above their 50-day line</span><span class="l-zh">的 1500 只股票高于其 50 日均线</span>,
-      <b>69%</b> <span class="l-en">above their 200-day</span><span class="l-zh">高于其 200 日均线</span>;
-      <span class="l-en">net new 52-week highs</span><span class="l-zh">净创 52 周新高</span> <b>+228</b>.
-      <span class="muted"><span class="l-en">The advance is well-supported across the full 1,500</span><span class="l-zh">上涨在整个 1500 只股票中获得良好支撑</span>.</span>
+      <b>70%</b> <span class="l-en">of the 1,500 above their 50-day</span><span class="l-zh">的 1500 只高于 50 日均线</span>,
+      <b>69%</b> <span class="l-en">above their 200-day</span><span class="l-zh">高于 200 日均线</span>;
+      <span class="l-en">net new highs</span><span class="l-zh">净新高</span> <b>+228</b>.
     </p>
     <table>
       <tr>
         <th class="l"><span class="l-en">size tier</span><span class="l-zh">规模层级</span></th>
-        <th class="l" style="min-width:170px"><span class="l-en">advancing vs declining</span><span class="l-zh">上涨对下跌</span></th>
-        <th><span class="l-en">&gt; 50-day</span><span class="l-zh">&gt; 50 日</span></th>
-        <th><span class="l-en">&gt; 200-day</span><span class="l-zh">&gt; 200 日</span></th>
-        <th><span class="l-en">net new highs</span><span class="l-zh">净新高</span>
+        <th class="l"><span class="l-en">adv / dec</span><span class="l-zh">涨／跌</span></th>
+        <th><span class="l-en">&gt;50d</span><span class="l-zh">&gt;50日</span></th>
+        <th><span class="l-en">&gt;200d</span><span class="l-zh">&gt;200日</span></th>
+        <th><span class="l-en">net NH</span><span class="l-zh">净新高</span>
           <span class="help">?<span class="tip"><span class="l-en">52-week highs minus 52-week lows today. Positive = expansion (healthy); negative = more stocks making new lows than highs (deteriorating).</span><span class="l-zh">今日创 52 周新高减去创 52 周新低的数量。正 = 扩张（健康）；负 = 创新低的股票多于创新高（恶化）。</span></span></span>
         </th>
       </tr>
       
       <tr>
-        <td class="l"><b><span class="l-en">Large cap</span><span class="l-zh">大盘</span></b> <span class="muted">S&P 500</span></td>
+        <td class="l"><b><span class="l-en">Large cap</span><span class="l-zh">大盘</span></b> <span class="muted" style="font-size:11px">S&P 500</span></td>
         <td class="l">
-          <span class="pos">322</span> <span class="muted">/</span> <span class="neg">178</span>
-          <span class="bbar" title="64% advancing"><i style="width:64.0%; background:var(--up)"></i><i style="width:36.0%; background:var(--down)"></i></span>
+          <span class="pos">322</span><span class="muted">/</span><span class="neg">178</span>
+          <span class="bbar" style="width:54px" title="64% advancing"><i style="width:64.0%; background:var(--up)"></i><i style="width:36.0%; background:var(--down)"></i></span>
         </td>
         <td class="pos">64%</td>
         <td class="pos">65%</td>
@@ -5281,10 +5322,10 @@
       </tr>
       
       <tr>
-        <td class="l"><b><span class="l-en">Mid cap</span><span class="l-zh">中盘</span></b> <span class="muted">S&P 400</span></td>
+        <td class="l"><b><span class="l-en">Mid cap</span><span class="l-zh">中盘</span></b> <span class="muted" style="font-size:11px">S&P 400</span></td>
         <td class="l">
-          <span class="pos">263</span> <span class="muted">/</span> <span class="neg">136</span>
-          <span class="bbar" title="66% advancing"><i style="width:66.0%; background:var(--up)"></i><i style="width:34.0%; background:var(--down)"></i></span>
+          <span class="pos">263</span><span class="muted">/</span><span class="neg">136</span>
+          <span class="bbar" style="width:54px" title="66% advancing"><i style="width:66.0%; background:var(--up)"></i><i style="width:34.0%; background:var(--down)"></i></span>
         </td>
         <td class="pos">68%</td>
         <td class="pos">69%</td>
@@ -5292,10 +5333,10 @@
       </tr>
       
       <tr>
-        <td class="l"><b><span class="l-en">Small cap</span><span class="l-zh">小盘</span></b> <span class="muted">S&P 600</span></td>
+        <td class="l"><b><span class="l-en">Small cap</span><span class="l-zh">小盘</span></b> <span class="muted" style="font-size:11px">S&P 600</span></td>
         <td class="l">
-          <span class="pos">452</span> <span class="muted">/</span> <span class="neg">148</span>
-          <span class="bbar" title="75% advancing"><i style="width:75.0%; background:var(--up)"></i><i style="width:25.0%; background:var(--down)"></i></span>
+          <span class="pos">452</span><span class="muted">/</span><span class="neg">148</span>
+          <span class="bbar" style="width:54px" title="75% advancing"><i style="width:75.0%; background:var(--up)"></i><i style="width:25.0%; background:var(--down)"></i></span>
         </td>
         <td class="pos">75%</td>
         <td class="pos">72%</td>
@@ -5303,7 +5344,7 @@
       </tr>
       
     </table>
-    <p class="muted" style="margin:8px 2px 0; font-size:11px"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-06-26 · <span class="l-en">daily breadth across S&P 1500 constituents</span><span class="l-zh">覆盖标普 1500 成分股的每日广度</span></p>
+    <p class="muted" style="margin:8px 2px 0; font-size:11px"><span class="l-en">The advance is well-supported across the full 1,500</span><span class="l-zh">上涨在整个 1500 只股票中获得良好支撑</span> · <span class="l-en">as of</span><span class="l-zh">截至</span> 2026-06-26</p>
   </div>
   
 
@@ -5317,8 +5358,6 @@
     <details class="jarg" style="margin-top:0">
     <summary><span class="l-en">Show market internals — McClellan, breadth thrust, highs/lows, divergence</span><span class="l-zh">展开市场内部 — 麦克莱伦、广度推力、新高新低、背离</span></summary>
     <p class="pos" style="margin:10px 2px 14px; font-size:14px; line-height:1.5">
-    <details class="jarg"><summary><span class="l-en">Show market internals — McClellan, breadth thrust, highs/lows, divergence</span><span class="l-zh">展开市场内部 — 麦克莱伦、广度推力、新高新低、背离</span></summary>
-    <p class="pos" style="margin:0 2px 14px; font-size:14px; line-height:1.5">
       <span class="l-en">The internals read</span><span class="l-zh">内部结构读数为</span> <b><span class="l-en">firm</span><span class="l-zh">稳健</span></b> —
       <span class="muted"><span class="l-en">the internals are confirming the tape — broad participation and positive momentum</span><span class="l-zh">内部结构在确认盘面 — 参与广泛、动量为正</span>.</span>
     </p>
@@ -5436,170 +5475,6 @@
   </div>
   
 
-  <!-- ===================== SECTOR BOTTOM RADAR ===================== -->
-  
-  <div class="panel span12" id="sector-bottom-radar">
-    <h2><span class="l-en">Sector Bottom Radar — washout durability, not rotation</span><span class="l-zh">板块见底雷达 — 错杀的持久性，而非轮动</span>
-      <span class="help">?<span class="tip"><span class="l-en">The buy-side complement to the heat board below. It runs the SAME validated 'Bottom Confidence' score we compute per stock (walk-forward calibrated monotone on 69k evals) on each sector ETF: how DURABLE a washing-out sector's low looks — high = the kind of selloff whose low has historically held with a SHALLOWER drawdown — discounted when the turn isn't confirmed on the weekly/monthly and when price is a deep falling-knife below its 200-day. The whole board is then conditioned by the index Fed-put gate: in a put-absent regime (recession or inflation-locked Fed) the same washout signals kept falling in 2000/2008/2022. This is a RISK / DURABILITY read, NOT a return forecast and NOT alpha — it trades some of the explosive bounce for a much higher chance the low holds. The heat board describes what's already hot (and late); this finds where a durable low may be forming. Validated in research/SECTOR_BOTTOM_RADAR.md.</span><span class="l-zh">下方热度榜的买方补充。它在每个板块 ETF 上运行与个股相同的、经验证的「见底信心」分数（经 6.9 万次步进式校准、单调有效）：衡量一个正被错杀的板块其低点有多持久——分数越高，代表这类抛售的低点历史上更易守住、回撤更浅——当周线／月线尚未确认转向、或价格深跌破 200 日线（接飞刀）时会打折。整个看板再由指数层面的美联储托底闸门来条件化：在托底缺位（衰退或通胀锁死）的格局下，同类超卖信号在 2000／2008／2022 年持续下跌。这是风险／持久性读数，并非收益预测、也非超额收益——它以让出部分爆发式反弹，换取低点守住的更高概率。热度榜描述的是已经火热（且偏晚）的板块；本雷达则寻找可能正在形成的持久低点。验证见 research/SECTOR_BOTTOM_RADAR.md。</span></span></span>
-    </h2>
-    <p class="pos" style="margin:0 2px 12px; font-size:13.5px; line-height:1.5">
-      <b><span class="l-en">Macro gate</span><span class="l-zh">宏观闸门</span>:</b> <span class="l-en">Index Fed-put is INTACT — buyable-washout regime. Sector lows that score well are favoured to hold with a shallower drawdown; confirm into stabilization, don&#39;t anticipate.</span><span class="l-zh">指数层面美联储托底仍在——可买入错杀格局。评分较高的板块低点更倾向于守住且回撤更浅；确认企稳后再介入，勿抢跑。</span>
-    </p>
-    <div style="overflow-x:auto">
-    <table style="min-width:680px">
-      <tr>
-        <th class="l"><span class="l-en">sector</span><span class="l-zh">板块</span></th>
-        <th class="l" style="min-width:150px"><span class="l-en">bottom confidence</span><span class="l-zh">见底信心</span> <span class="help">?<span class="tip">
-          <span class="l-en"><b>Bottom Confidence</b> 0-100 — how durable, low-drawdown this sector's low looks. <b>Measured (sector ETFs, 1998-2026):</b> sectors scoring 60+ held their cycle low ~79% of the time vs ~34% at 0-20, with a shallower drawdown tail. Higher = a more durable low, <i>not</i> a bigger bounce (the deepest washouts bounce hardest but rarely hold). Risk/durability, never a return forecast.</span>
-          <span class="l-zh"><b>见底信心</b> 0-100 — 衡量该板块的低点有多持久、回撤有多浅。<b>实测（板块 ETF，1998-2026）：</b>得分 60+ 的板块约 79% 守住其周期低点，而 0-20 区间仅约 34%，且回撤尾部更浅。分数越高代表低点越持久，<i>而非</i>反弹更大（最深的错杀反弹最猛，却很少守住）。这是风险／持久性，绝非收益预测。</span>
-        </span></span></th>
-        <th><span class="l-en">verdict</span><span class="l-zh">判定</span></th>
-        <th class="l"><span class="l-en">members washed / turning</span><span class="l-zh">成分股超卖／转向</span> <span class="help">?<span class="tip"><span class="l-en">Live breadth confirmer: of the sector's S&P 500 members, the share below their 200-day (washed out) and, of those, the share reclaiming their 10-day (turning up). Displayed context only — the breadth cache is ~1y deep so this leg is not deep-backtested and never enters the score.</span><span class="l-zh">实时宽度确认：在该板块的标普500成分股中，跌破 200 日线（超卖）的比例，以及其中已收复 10 日线（转向）的比例。仅作背景参考——宽度缓存约 1 年深度，该项未经深度回测，且不计入分数。</span></span></span></th>
-        <th class="l"><span class="l-en">read</span><span class="l-zh">解读</span></th>
-      </tr>
-      
-      <tr>
-        <td class="l"><b><span class="l-en">Materials</span><span class="l-zh">原材料</span></b> <span class="muted" style="font-size:11px">XLB</span></td>
-        <td class="l" data-sort="55">
-          
-          <span class="help">
-            <span style="display:inline-flex;align-items:center;gap:7px">
-              <span style="display:inline-block;width:60px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:55%;background:var(--up)"></i></span>
-              <b>55</b>
-              <span class="muted" style="font-size:11px"><span class="l-en">solid</span><span class="l-zh">稳健</span></span>
-            </span>
-            <span class="tip"><span class="l-en">Daily ✗ · 3-Day ✓ · Weekly ✓ · Monthly ✗</span><span class="l-zh">日线 ✗ · 3日 ✓ · 周线 ✓ · 月线 ✗</span></span>
-          </span>
-          
-        </td>
-        <td><span class="pill pos" style="border-color:var(--up);color:var(--up)"><span class="l-en">buyable washout</span><span class="l-zh">可买入错杀</span></span></td>
-        <td class="l muted" style="font-size:12px"><span class="l-en">31% washed out · 50% turning</span><span class="l-zh">31% 超卖 · 50% 转向</span></td>
-        <td class="l muted" style="font-size:12px;max-width:340px"><span class="l-en">Buyable-washout setup — a durable, lower-drawdown sector low is favored (macro put intact). Confirm into stabilization; don&#39;t anticipate.</span><span class="l-zh">可买入错杀——倾向于持久、低回撤的板块低点（宏观托底仍在）。确认企稳后再介入，勿抢跑。</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><b><span class="l-en">Financials</span><span class="l-zh">金融</span></b> <span class="muted" style="font-size:11px">XLF</span></td>
-        <td class="l" data-sort="38">
-          
-          <span class="help">
-            <span style="display:inline-flex;align-items:center;gap:7px">
-              <span style="display:inline-block;width:60px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:38%;background:var(--orange)"></i></span>
-              <b>38</b>
-              <span class="muted" style="font-size:11px"><span class="l-en">solid</span><span class="l-zh">稳健</span></span>
-            </span>
-            <span class="tip"><span class="l-en">Daily ✗ · 3-Day ✗ · Weekly ✗ · Monthly ✓</span><span class="l-zh">日线 ✗ · 3日 ✗ · 周线 ✗ · 月线 ✓</span></span>
-          </span>
-          
-        </td>
-        <td><span class="pill warn" style="border-color:var(--orange);color:var(--orange)"><span class="l-en">washout forming</span><span class="l-zh">错杀形成中</span></span></td>
-        <td class="l muted" style="font-size:12px"><span class="l-en">40% washed out · 43% turning</span><span class="l-zh">40% 超卖 · 43% 转向</span></td>
-        <td class="l muted" style="font-size:12px;max-width:340px"><span class="l-en">Washout forming, turn not yet confirmed — durability still low; wait for the hook.</span><span class="l-zh">错杀形成中，转向尚未确认——持久性仍低；等待企稳信号。</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><b><span class="l-en">Technology</span><span class="l-zh">科技</span></b> <span class="muted" style="font-size:11px">XLK</span></td>
-        <td class="l" data-sort="32">
-          
-          <span class="help">
-            <span style="display:inline-flex;align-items:center;gap:7px">
-              <span style="display:inline-block;width:60px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:32%;background:var(--orange)"></i></span>
-              <b>32</b>
-              <span class="muted" style="font-size:11px"><span class="l-en">light</span><span class="l-zh">偏弱</span></span>
-            </span>
-            <span class="tip"><span class="l-en">Daily ✗ · 3-Day ✗ · Weekly ✗ · Monthly ✓</span><span class="l-zh">日线 ✗ · 3日 ✗ · 周线 ✗ · 月线 ✓</span></span>
-          </span>
-          
-        </td>
-        <td><span class="pill warn" style="border-color:var(--orange);color:var(--orange)"><span class="l-en">washout forming</span><span class="l-zh">错杀形成中</span></span></td>
-        <td class="l muted" style="font-size:12px"><span class="l-en">37% washed out · 58% turning</span><span class="l-zh">37% 超卖 · 58% 转向</span></td>
-        <td class="l muted" style="font-size:12px;max-width:340px"><span class="l-en">Washout forming, turn not yet confirmed — durability still low; wait for the hook.</span><span class="l-zh">错杀形成中，转向尚未确认——持久性仍低；等待企稳信号。</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><b><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></b> <span class="muted" style="font-size:11px">SMH</span></td>
-        <td class="l" data-sort="18">
-          
-          <span class="help">
-            <span style="display:inline-flex;align-items:center;gap:7px">
-              <span style="display:inline-block;width:60px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:18%;background:var(--orange)"></i></span>
-              <b>18</b>
-              <span class="muted" style="font-size:11px"><span class="l-en">light</span><span class="l-zh">偏弱</span></span>
-            </span>
-            <span class="tip"><span class="l-en">Daily ✗ · 3-Day ✗ · Weekly ✗ · Monthly ✗</span><span class="l-zh">日线 ✗ · 3日 ✗ · 周线 ✗ · 月线 ✗</span></span>
-          </span>
-          
-        </td>
-        <td><span class="pill warn" style="border-color:var(--orange);color:var(--orange)"><span class="l-en">washout forming</span><span class="l-zh">错杀形成中</span></span></td>
-        <td class="l muted" style="font-size:12px">—</td>
-        <td class="l muted" style="font-size:12px;max-width:340px"><span class="l-en">Washout forming, turn not yet confirmed — durability still low; wait for the hook.</span><span class="l-zh">错杀形成中，转向尚未确认——持久性仍低；等待企稳信号。</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><b><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></b> <span class="muted" style="font-size:11px">XLY</span></td>
-        <td class="l" data-sort="18">
-          
-          <span class="help">
-            <span style="display:inline-flex;align-items:center;gap:7px">
-              <span style="display:inline-block;width:60px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:18%;background:var(--orange)"></i></span>
-              <b>18</b>
-              <span class="muted" style="font-size:11px"><span class="l-en">light</span><span class="l-zh">偏弱</span></span>
-            </span>
-            <span class="tip"><span class="l-en">Daily ✓ · 3-Day ✓ · Weekly ✗ · Monthly ✗</span><span class="l-zh">日线 ✓ · 3日 ✓ · 周线 ✗ · 月线 ✗</span></span>
-          </span>
-          
-        </td>
-        <td><span class="pill warn" style="border-color:var(--orange);color:var(--orange)"><span class="l-en">washout forming</span><span class="l-zh">错杀形成中</span></span></td>
-        <td class="l muted" style="font-size:12px"><span class="l-en">47% washed out · 59% turning</span><span class="l-zh">47% 超卖 · 59% 转向</span></td>
-        <td class="l muted" style="font-size:12px;max-width:340px"><span class="l-en">Washout forming, turn not yet confirmed — durability still low; wait for the hook.</span><span class="l-zh">错杀形成中，转向尚未确认——持久性仍低；等待企稳信号。</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><b><span class="l-en">Communications</span><span class="l-zh">通讯</span></b> <span class="muted" style="font-size:11px">XLC</span></td>
-        <td class="l" data-sort="2">
-          
-          <span class="help">
-            <span style="display:inline-flex;align-items:center;gap:7px">
-              <span style="display:inline-block;width:60px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:2%;background:var(--orange)"></i></span>
-              <b>2</b>
-              <span class="muted" style="font-size:11px"><span class="l-en">minimal</span><span class="l-zh">微弱</span></span>
-            </span>
-            <span class="tip"><span class="l-en">Daily ✓ · 3-Day ✗ · Weekly ✗ · Monthly ✗</span><span class="l-zh">日线 ✓ · 3日 ✗ · 周线 ✗ · 月线 ✗</span></span>
-          </span>
-          
-        </td>
-        <td><span class="pill warn" style="border-color:var(--orange);color:var(--orange)"><span class="l-en">washout forming</span><span class="l-zh">错杀形成中</span></span></td>
-        <td class="l muted" style="font-size:12px"><span class="l-en">64% washed out · 29% turning</span><span class="l-zh">64% 超卖 · 29% 转向</span></td>
-        <td class="l muted" style="font-size:12px;max-width:340px"><span class="l-en">Washout forming, turn not yet confirmed — durability still low; wait for the hook.</span><span class="l-zh">错杀形成中，转向尚未确认——持久性仍低；等待企稳信号。</span></td>
-      </tr>
-      
-      <tr>
-        <td class="l"><b><span class="l-en">Energy</span><span class="l-zh">能源</span></b> <span class="muted" style="font-size:11px">XLE</span></td>
-        <td class="l" data-sort="1">
-          
-          <span class="help">
-            <span style="display:inline-flex;align-items:center;gap:7px">
-              <span style="display:inline-block;width:60px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:1%;background:var(--orange)"></i></span>
-              <b>1</b>
-              <span class="muted" style="font-size:11px"><span class="l-en">minimal</span><span class="l-zh">微弱</span></span>
-            </span>
-            <span class="tip"><span class="l-en">Daily ✓ · 3-Day ✗ · Weekly ✗ · Monthly ✗</span><span class="l-zh">日线 ✓ · 3日 ✗ · 周线 ✗ · 月线 ✗</span></span>
-          </span>
-          
-        </td>
-        <td><span class="pill warn" style="border-color:var(--orange);color:var(--orange)"><span class="l-en">washout forming</span><span class="l-zh">错杀形成中</span></span></td>
-        <td class="l muted" style="font-size:12px"><span class="l-en">10% washed out · 100% turning</span><span class="l-zh">10% 超卖 · 100% 转向</span></td>
-        <td class="l muted" style="font-size:12px;max-width:340px"><span class="l-en">Washout forming, turn not yet confirmed — durability still low; wait for the hook.</span><span class="l-zh">错杀形成中，转向尚未确认——持久性仍低；等待企稳信号。</span></td>
-      </tr>
-      
-    </table>
-    </div>
-    <p class="muted" style="margin:8px 2px 0; font-size:11px">
-      <span class="l-en">Risk / durability read — confirm into stabilization, do not anticipate the exact low. Not alpha.</span><span class="l-zh">风险／持久性读数 — 确认企稳后再介入，勿预判精确低点。非超额收益。</span>
-      <a href="#sectors" style="margin-left:6px"><span class="l-en">rotation context ↓</span><span class="l-zh">轮动背景 ↓</span></a>
-    </p>
-  </div>
-  
-
   <!-- ============ SECTOR BUY/SELL SETUPS — confluence engine ============ -->
   
   <div class="panel span12" id="sectors">
@@ -5661,7 +5536,6 @@
       
       <tr>
         <td class="l"><a href="sectors/XLRE.html"><b>XLRE</b></a> <span class="muted"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span>
-          
         </td>
         <td class="l" data-sort="2">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5685,21 +5559,6 @@
       
       <tr>
         <td class="l"><a href="sectors/XLP.html"><b>XLP</b></a> <span class="muted"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></span>
-          
-          
-          <div style="display:flex;flex-wrap:wrap;gap:3px 7px;margin-top:3px">
-            
-            <span class="help" style="width:auto;height:auto;border:none;margin:0;cursor:help">
-              <span style="font-size:10.5px;font-weight:700;line-height:1.4;color:var(--down)">▼ <span class="l-en">Rate headwind</span><span class="l-zh">利率逆风</span></span>
-              <span class="tip"><span class="l-en">Rate channel: measured headwind right now (net -0.09; strong measured sensitivity, rate-sensitive). Dominant driver: us2y − funds (cut/hike pricing), forward IC -0.07 (DIRECTIONAL), currently +1.8σ. Display-only — never scored.</span><span class="l-zh">利率通道：当前实测为逆风（净值 -0.09；利率敏感，可测敏感度强）。主导驱动：2年期−联邦基金（降/加息定价），前瞻IC -0.07（方向性），当前 +1.8σ。仅供展示，从不计分。</span></span>
-            </span>
-            
-            <span class="help" style="width:auto;height:auto;border:none;margin:0;cursor:help">
-              <span style="font-size:10.5px;font-weight:700;line-height:1.4;color:var(--down)">▼ <span class="l-en">Inflation headwind</span><span class="l-zh">通胀逆风</span></span>
-              <span class="tip"><span class="l-en">Inflation channel: measured headwind right now (net -0.16; strong measured sensitivity, inflation-pressured). Dominant driver: Expectations wedge (mkt − model), forward IC +0.13 (DIRECTIONAL), currently -1.7σ. Display-only — never scored.</span><span class="l-zh">通胀通道：当前实测为逆风（净值 -0.16；受通胀压制，可测敏感度强）。主导驱动：预期缺口（市场−模型），前瞻IC +0.13（方向性），当前 -1.7σ。仅供展示，从不计分。</span></span>
-            </span>
-            
-          </div>
         </td>
         <td class="l" data-sort="2">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5723,16 +5582,6 @@
       
       <tr>
         <td class="l"><a href="sectors/XLE.html"><b>XLE</b></a> <span class="muted"><span class="l-en">Energy</span><span class="l-zh">能源</span></span>
-          
-          
-          <div style="display:flex;flex-wrap:wrap;gap:3px 7px;margin-top:3px">
-            
-            <span class="help" style="width:auto;height:auto;border:none;margin:0;cursor:help">
-              <span style="font-size:10.5px;font-weight:700;line-height:1.4;color:var(--muted)">· <span class="l-en">Rate-sensitive</span><span class="l-zh">利率敏感</span></span>
-              <span class="tip"><span class="l-en">Rate channel: measured neutral right now (net -0.03; strong measured sensitivity, rate-sensitive). Dominant driver: Real 10y — 63d change (speed), forward IC -0.11 (CONFIRMED), currently +0.8σ. Display-only — never scored.</span><span class="l-zh">利率通道：当前实测为中性（净值 -0.03；利率敏感，可测敏感度强）。主导驱动：实际10年期收益率—63日变动（速度），前瞻IC -0.11（已确认），当前 +0.8σ。仅供展示，从不计分。</span></span>
-            </span>
-            
-          </div>
         </td>
         <td class="l" data-sort="2">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5756,21 +5605,6 @@
       
       <tr>
         <td class="l"><a href="sectors/XLK.html"><b>XLK</b></a> <span class="muted"><span class="l-en">Technology</span><span class="l-zh">科技</span></span>
-          
-          
-          <div style="display:flex;flex-wrap:wrap;gap:3px 7px;margin-top:3px">
-            
-            <span class="help" style="width:auto;height:auto;border:none;margin:0;cursor:help">
-              <span style="font-size:10.5px;font-weight:700;line-height:1.4;color:var(--down)">▼ <span class="l-en">Rate headwind</span><span class="l-zh">利率逆风</span></span>
-              <span class="tip"><span class="l-en">Rate channel: measured headwind right now (net -0.19; strong measured sensitivity, rate-sensitive). Dominant driver: us2y − funds (cut/hike pricing), forward IC -0.17 (DIRECTIONAL), currently +1.8σ. Display-only — never scored.</span><span class="l-zh">利率通道：当前实测为逆风（净值 -0.19；利率敏感，可测敏感度强）。主导驱动：2年期−联邦基金（降/加息定价），前瞻IC -0.17（方向性），当前 +1.8σ。仅供展示，从不计分。</span></span>
-            </span>
-            
-            <span class="help" style="width:auto;height:auto;border:none;margin:0;cursor:help">
-              <span style="font-size:10.5px;font-weight:700;line-height:1.4;color:var(--down)">▼ <span class="l-en">Inflation headwind</span><span class="l-zh">通胀逆风</span></span>
-              <span class="tip"><span class="l-en">Inflation channel: measured headwind right now (net -0.12; strong measured sensitivity, inflation-pressured). Dominant driver: Core PCE YoY − 2% target, forward IC -0.14 (CONFIRMED), currently +2.2σ. Display-only — never scored.</span><span class="l-zh">通胀通道：当前实测为逆风（净值 -0.12；受通胀压制，可测敏感度强）。主导驱动：核心PCE同比−2%目标，前瞻IC -0.14（已确认），当前 +2.2σ。仅供展示，从不计分。</span></span>
-            </span>
-            
-          </div>
         </td>
         <td class="l" data-sort="5">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5794,21 +5628,6 @@
       
       <tr>
         <td class="l"><a href="sectors/XLB.html"><b>XLB</b></a> <span class="muted"><span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
-          
-          
-          <div style="display:flex;flex-wrap:wrap;gap:3px 7px;margin-top:3px">
-            
-            <span class="help" style="width:auto;height:auto;border:none;margin:0;cursor:help">
-              <span style="font-size:10.5px;font-weight:700;line-height:1.4;color:var(--down)">▼ <span class="l-en">Rate headwind</span><span class="l-zh">利率逆风</span></span>
-              <span class="tip"><span class="l-en">Rate channel: measured headwind right now (net -0.18; strong measured sensitivity, rate-sensitive). Dominant driver: us2y − funds (cut/hike pricing), forward IC -0.18 (CONFIRMED), currently +1.8σ. Display-only — never scored.</span><span class="l-zh">利率通道：当前实测为逆风（净值 -0.18；利率敏感，可测敏感度强）。主导驱动：2年期−联邦基金（降/加息定价），前瞻IC -0.18（已确认），当前 +1.8σ。仅供展示，从不计分。</span></span>
-            </span>
-            
-            <span class="help" style="width:auto;height:auto;border:none;margin:0;cursor:help">
-              <span style="font-size:10.5px;font-weight:700;line-height:1.4;color:var(--down)">▼ <span class="l-en">Inflation headwind</span><span class="l-zh">通胀逆风</span></span>
-              <span class="tip"><span class="l-en">Inflation channel: measured headwind right now (net -0.12; strong measured sensitivity, inflation-pressured). Dominant driver: Core PCE YoY − 2% target, forward IC -0.14 (CONFIRMED), currently +2.2σ. Display-only — never scored.</span><span class="l-zh">通胀通道：当前实测为逆风（净值 -0.12；受通胀压制，可测敏感度强）。主导驱动：核心PCE同比−2%目标，前瞻IC -0.14（已确认），当前 +2.2σ。仅供展示，从不计分。</span></span>
-            </span>
-            
-          </div>
         </td>
         <td class="l" data-sort="5">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5832,7 +5651,6 @@
       
       <tr>
         <td class="l"><a href="sectors/XLI.html"><b>XLI</b></a> <span class="muted"><span class="l-en">Industrials</span><span class="l-zh">工业</span></span>
-          
         </td>
         <td class="l" data-sort="7">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5856,21 +5674,6 @@
       
       <tr>
         <td class="l"><a href="sectors/XLV.html"><b>XLV</b></a> <span class="muted"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></span>
-          
-          
-          <div style="display:flex;flex-wrap:wrap;gap:3px 7px;margin-top:3px">
-            
-            <span class="help" style="width:auto;height:auto;border:none;margin:0;cursor:help">
-              <span style="font-size:10.5px;font-weight:700;line-height:1.4;color:var(--muted)">· <span class="l-en">Rate-sensitive</span><span class="l-zh">利率敏感</span></span>
-              <span class="tip"><span class="l-en">Rate channel: measured neutral right now (net -0.04; moderate measured sensitivity, rate-sensitive). Dominant driver: TP-adjusted 2s10s curve, forward IC +0.04 (DIRECTIONAL), currently -1.8σ. Display-only — never scored.</span><span class="l-zh">利率通道：当前实测为中性（净值 -0.04；利率敏感，可测敏感度中等）。主导驱动：期限溢价调整后的2-10年曲线，前瞻IC +0.04（方向性），当前 -1.8σ。仅供展示，从不计分。</span></span>
-            </span>
-            
-            <span class="help" style="width:auto;height:auto;border:none;margin:0;cursor:help">
-              <span style="font-size:10.5px;font-weight:700;line-height:1.4;color:var(--down)">▼ <span class="l-en">Inflation headwind</span><span class="l-zh">通胀逆风</span></span>
-              <span class="tip"><span class="l-en">Inflation channel: measured headwind right now (net -0.33; strong measured sensitivity, inflation-pressured). Dominant driver: Core PCE YoY − 2% target, forward IC -0.19 (CONFIRMED), currently +2.2σ. Display-only — never scored.</span><span class="l-zh">通胀通道：当前实测为逆风（净值 -0.33；受通胀压制，可测敏感度强）。主导驱动：核心PCE同比−2%目标，前瞻IC -0.19（已确认），当前 +2.2σ。仅供展示，从不计分。</span></span>
-            </span>
-            
-          </div>
         </td>
         <td class="l" data-sort="7">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5894,16 +5697,6 @@
       
       <tr>
         <td class="l"><a href="sectors/XLU.html"><b>XLU</b></a> <span class="muted"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span>
-          
-          
-          <div style="display:flex;flex-wrap:wrap;gap:3px 7px;margin-top:3px">
-            
-            <span class="help" style="width:auto;height:auto;border:none;margin:0;cursor:help">
-              <span style="font-size:10.5px;font-weight:700;line-height:1.4;color:var(--muted)">· <span class="l-en">Inflation-helped</span><span class="l-zh">受益于通胀</span></span>
-              <span class="tip"><span class="l-en">Inflation channel: measured neutral right now (net -0.02; strong measured sensitivity, inflation-helped). Dominant driver: 10y breakeven — 63d change, forward IC +0.06 (DIRECTIONAL), currently -0.9σ. Display-only — never scored.</span><span class="l-zh">通胀通道：当前实测为中性（净值 -0.02；受益于通胀，可测敏感度强）。主导驱动：10年期盈亏平衡—63日变动，前瞻IC +0.06（方向性），当前 -0.9σ。仅供展示，从不计分。</span></span>
-            </span>
-            
-          </div>
         </td>
         <td class="l" data-sort="7">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5927,21 +5720,6 @@
       
       <tr>
         <td class="l"><a href="sectors/XLF.html"><b>XLF</b></a> <span class="muted"><span class="l-en">Financials</span><span class="l-zh">金融</span></span>
-          
-          
-          <div style="display:flex;flex-wrap:wrap;gap:3px 7px;margin-top:3px">
-            
-            <span class="help" style="width:auto;height:auto;border:none;margin:0;cursor:help">
-              <span style="font-size:10.5px;font-weight:700;line-height:1.4;color:var(--muted)">· <span class="l-en">Rate-sensitive</span><span class="l-zh">利率敏感</span></span>
-              <span class="tip"><span class="l-en">Rate channel: measured neutral right now (net -0.04; strong measured sensitivity, rate-sensitive). Dominant driver: TP-adjusted 2s10s curve, forward IC -0.14 (CONFIRMED), currently -1.8σ. Display-only — never scored.</span><span class="l-zh">利率通道：当前实测为中性（净值 -0.04；利率敏感，可测敏感度强）。主导驱动：期限溢价调整后的2-10年曲线，前瞻IC -0.14（已确认），当前 -1.8σ。仅供展示，从不计分。</span></span>
-            </span>
-            
-            <span class="help" style="width:auto;height:auto;border:none;margin:0;cursor:help">
-              <span style="font-size:10.5px;font-weight:700;line-height:1.4;color:var(--down)">▼ <span class="l-en">Inflation headwind</span><span class="l-zh">通胀逆风</span></span>
-              <span class="tip"><span class="l-en">Inflation channel: measured headwind right now (net -0.15; strong measured sensitivity, inflation-pressured). Dominant driver: Core PCE YoY − 2% target, forward IC -0.12 (CONFIRMED), currently +2.2σ. Display-only — never scored.</span><span class="l-zh">通胀通道：当前实测为逆风（净值 -0.15；受通胀压制，可测敏感度强）。主导驱动：核心PCE同比−2%目标，前瞻IC -0.12（已确认），当前 +2.2σ。仅供展示，从不计分。</span></span>
-            </span>
-            
-          </div>
         </td>
         <td class="l" data-sort="8">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5965,7 +5743,6 @@
       
       <tr>
         <td class="l"><a href="sectors/XLY.html"><b>XLY</b></a> <span class="muted"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></span>
-          
         </td>
         <td class="l" data-sort="10">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5989,7 +5766,6 @@
       
       <tr>
         <td class="l"><a href="sectors/XLC.html"><b>XLC</b></a> <span class="muted"><span class="l-en">Communications</span><span class="l-zh">通讯</span></span>
-          
         </td>
         <td class="l" data-sort="10">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -6017,7 +5793,6 @@
   
   
 
-  
 
   
   <!-- ======================= ACCUMULATION WATCH ======================= -->
@@ -6026,7 +5801,150 @@
       <span class="help">?<span class="tip"><span class="l-en">Each sector SPDR's top-10 weights, with each holding's weight change split into the part explained by the stock's own price move and a residual ('active' = weight that grew MORE than price alone). A large positive residual = real buying flowed into the name beyond market drift. HONEST CAVEAT: these SPDRs are PASSIVE index funds, so the residual is index reconstitution / float-weight flow (forced index-fund buying), NOT a discretionary manager's conviction — that reading comes with the active funds in the planned top-200 page. The technical column shows the stock's own cycle state; ✅ marks accumulation that also has a forming buy setup. Thresholds are uncalibrated until more snapshot history accumulates.</span><span class="l-zh">每只板块 SPDR 的前十大权重；每只持仓的权重变动被拆分为“由个股自身价格变动解释的部分”与“残差”（“主动”=权重增长超过价格涨幅的部分）。较大的正残差=除市场漂移外确有真实买盘流入该股。诚实提示：这些 SPDR 是被动指数基金，故残差代表指数再平衡／流通权重调整带来的资金流（被动强制买入），并非主动经理的信念——后者要等到计划中的前 200 ETF 页面里的主动基金。技术面列显示个股自身的周期状态；✅ 表示增持同时出现了正在形成的买入形态。在积累更多快照历史前，阈值尚未校准。</span></span></span>
     </h2>
     
-      <p class="muted"><span class="l-en">Building — needs at least two daily holdings snapshots per fund (collection began 2026-06-11). Decomposed accumulation signals appear once a second snapshot lands.</span><span class="l-zh">构建中 — 每只基金至少需要两个每日持仓快照（采集自 2026-06-11 开始）。第二个快照落地后将显示拆解后的增持信号。</span></p>
+      <table>
+        <tr>
+          <th class="l"><span class="l-en">sector</span><span class="l-zh">板块</span></th>
+          <th class="l"><span class="l-en">stock</span><span class="l-zh">个股</span></th>
+          <th><span class="l-en">raw Δwt</span><span class="l-zh">原始权重Δ</span></th>
+          <th><span class="l-en">active Δwt</span><span class="l-zh">主动权重Δ</span></th>
+          <th><span class="l-en">est. flow</span><span class="l-zh">估算资金流</span></th>
+          <th class="l"><span class="l-en">technical</span><span class="l-zh">技术面</span></th>
+        </tr>
+        
+        <tr>
+          <td class="l muted">XLE · <span class="l-en">Energy</span><span class="l-zh">能源</span></td>
+          <td class="l"><a href="stock.html#XOM"><b>XOM</b></a> <span class="muted">Exxon Mobil Corp</span></td>
+          <td class="neg">-0.19pp</td>
+          <td class="pos"><b>+0.15pp</b></td>
+          <td class="muted">+$53M</td>
+          <td class="l">
+            <span class="pill st-DECLINE"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span>
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l muted">XLE · <span class="l-en">Energy</span><span class="l-zh">能源</span></td>
+          <td class="l"><a href="stock.html#CVX"><b>CVX</b></a> <span class="muted">Chevron Corp</span></td>
+          <td class="neg">-0.24pp</td>
+          <td class="pos"><b>+0.11pp</b></td>
+          <td class="muted">+$40M</td>
+          <td class="l">
+            <span class="pill st-DECLINE"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span>
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l muted">XLRE · <span class="l-en">Real Estate</span><span class="l-zh">房地产</span></td>
+          <td class="l"><a href="stock.html#WELL"><b>WELL</b></a> <span class="muted">Welltower Inc</span></td>
+          <td class="pos">+0.66pp</td>
+          <td class="pos"><b>+0.10pp</b></td>
+          <td class="muted">+$8M</td>
+          <td class="l">
+            <span class="pill st-RALLY_ON"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span> ✅
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l muted">XLRE · <span class="l-en">Real Estate</span><span class="l-zh">房地产</span></td>
+          <td class="l"><a href="stock.html#PLD"><b>PLD</b></a> <span class="muted">Prologis Inc</span></td>
+          <td class="neg">-0.14pp</td>
+          <td class="pos"><b>+0.09pp</b></td>
+          <td class="muted">+$7M</td>
+          <td class="l">
+            <span class="pill st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span> ✅
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l muted">XLV · <span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td>
+          <td class="l"><a href="stock.html#LLY"><b>LLY</b></a> <span class="muted">Eli Lilly + Co</span></td>
+          <td class="neg">-0.22pp</td>
+          <td class="pos"><b>+0.08pp</b></td>
+          <td class="muted">+$33M</td>
+          <td class="l">
+            <span class="pill st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span>
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l muted">XLP · <span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td>
+          <td class="l"><a href="stock.html#WMT"><b>WMT</b></a> <span class="muted">Walmart Inc</span></td>
+          <td class="neg">-0.21pp</td>
+          <td class="pos"><b>+0.08pp</b></td>
+          <td class="muted">+$11M</td>
+          <td class="l">
+            <span class="pill st-ROLLING_OVER"><span class="l-en">TOPPING</span><span class="l-zh">做顶中</span></span>
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l muted">XLU · <span class="l-en">Utilities</span><span class="l-zh">公用事业</span></td>
+          <td class="l"><a href="stock.html#NEE"><b>NEE</b></a> <span class="muted">Nextera Energy Inc</span></td>
+          <td class="neg">-0.17pp</td>
+          <td class="pos"><b>+0.08pp</b></td>
+          <td class="muted">+$19M</td>
+          <td class="l">
+            <span class="pill st-RALLY_ON"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span> ✅
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l muted">XLY · <span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td>
+          <td class="l"><a href="stock.html#AMZN"><b>AMZN</b></a> <span class="muted">Amazon.Com Inc</span></td>
+          <td class="neg">-0.88pp</td>
+          <td class="pos"><b>+0.07pp</b></td>
+          <td class="muted">+$16M</td>
+          <td class="l">
+            <span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span>
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l muted">XLP · <span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td>
+          <td class="l"><a href="stock.html#COST"><b>COST</b></a> <span class="muted">Costco Wholesale Corp</span></td>
+          <td class="neg">-0.15pp</td>
+          <td class="pos"><b>+0.07pp</b></td>
+          <td class="muted">+$10M</td>
+          <td class="l">
+            <span class="pill st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span> ✅
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l muted">XLRE · <span class="l-en">Real Estate</span><span class="l-zh">房地产</span></td>
+          <td class="l"><a href="stock.html#EQIX"><b>EQIX</b></a> <span class="muted">Equinix Inc</span></td>
+          <td class="neg">-0.15pp</td>
+          <td class="pos"><b>+0.07pp</b></td>
+          <td class="muted">+$5M</td>
+          <td class="l">
+            <span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span>
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l muted">XLP · <span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td>
+          <td class="l"><a href="stock.html#PG"><b>PG</b></a> <span class="muted">Procter + Gamble Co/The</span></td>
+          <td class="neg">-0.14pp</td>
+          <td class="pos"><b>+0.06pp</b></td>
+          <td class="muted">+$9M</td>
+          <td class="l">
+            <span class="pill st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span> ✅
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="l muted">XLY · <span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td>
+          <td class="l"><a href="stock.html#TSLA"><b>TSLA</b></a> <span class="muted">Tesla Inc</span></td>
+          <td class="neg">-0.57pp</td>
+          <td class="pos"><b>+0.06pp</b></td>
+          <td class="muted">+$13M</td>
+          <td class="l">
+            <span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span>
+          </td>
+        </tr>
+        
+      </table>
+      <p class="muted" style="font-size:12px;margin-top:8px"><span class="l-en">“Active Δwt” strips out price: it is the percentage points of weight a name gained beyond what its own price move explains. On passive index ETFs this captures index reconstitution / float-weight flow, not a manager’s discretion. The estimated $ flow applies the active Δwt to the fund’s AUM and is approximate.</span><span class="l-zh">“主动权重Δ”已剔除价格因素：它是个股权重增长中超出其自身价格涨幅所能解释的百分点。在被动指数 ETF 上，这反映的是指数再平衡／流通权重调整带来的资金流，而非经理人的主动决策。估算的美元资金流是将“主动权重Δ”乘以基金 AUM 得出的近似值。</span></p>
     
   </div>
 
@@ -6127,12 +6045,7 @@
       </table>
     
 
-    <h2 style="margin-top:16px"><span class="l-en">Where ETF money is flowing</span><span class="l-zh">ETF 资金流向何处</span>
-      <span class="help">?<span class="tip"><span class="l-en">Daily money in/out of each sector's main ETF, from share creations/redemptions (ΔShares × price). Positive = money entering. History builds from June 2026.</span><span class="l-zh">每个板块主力 ETF 的每日资金进出，来自份额的申购／赎回（份额变动 × 价格）。正值 = 资金进入。历史自 2026 年 6 月起累积。</span></span></span>
-    </h2>
-    
-      <table><tr><th class='l'>date</th><th>Materials</th><th>Communications</th><th>Energy</th><th>Financials</th><th>Industrials</th><th>Technology</th><th>Consumer Staples</th><th>Real Estate</th><th>Utilities</th><th>Health Care</th><th>Consumer Discretionary</th></tr><tr><td class='l muted'>2026-06-10</td><td class='pos'>+$27M</td><td class='neg'>−$89M</td><td class='pos'>+$17M</td><td class='pos'>+$91M</td><td class='pos'>+$61M</td><td class='pos'>+$289M</td><td class='pos'>+$21M</td><td class='pos'>+$12M</td><td class='pos'>+$31M</td><td class='pos'>+$55M</td><td class='neg'>−$0M</td></tr><tr><td class='l muted'>2026-06-12</td><td class='neg'>−$82M</td><td class='pos'>+$15M</td><td class='pos'>+$151M</td><td class='neg'>−$419M</td><td class='pos'>+$70M</td><td class='neg'>−$397M</td><td class='pos'>+$77M</td><td class='pos'>+$97M</td><td class='pos'>+$171M</td><td class='pos'>+$152M</td><td class='neg'>−$100M</td></tr><tr><td class='l muted'>2026-06-15</td><td class='pos'>+$148M</td><td class='pos'>+$12M</td><td class='pos'>+$58M</td><td class='pos'>+$316M</td><td class='pos'>+$197M</td><td class='neg'>−$13M</td><td class='neg'>−$46M</td><td class='pos'>+$0M</td><td class='pos'>+$51M</td><td class='pos'>+$9M</td><td class='pos'>+$13M</td></tr><tr><td class='l muted'>2026-06-16</td><td class='pos'>+$168M</td><td class='pos'>+$96M</td><td class='neg'>−$193M</td><td class='pos'>+$139M</td><td class='pos'>+$331M</td><td class='neg'>−$15M</td><td class='neg'>−$185M</td><td class='neg'>−$3M</td><td class='neg'>−$125M</td><td class='neg'>−$32M</td><td class='neg'>−$7M</td></tr><tr><td class='l muted'>2026-06-17</td><td class='pos'>+$42M</td><td class='neg'>−$125M</td><td class='neg'>−$167M</td><td class='pos'>+$220M</td><td class='pos'>+$316M</td><td class='pos'>+$8.9B</td><td class='neg'>−$100M</td><td class='pos'>+$14M</td><td class='neg'>−$15M</td><td class='neg'>−$67M</td><td class='pos'>+$1M</td></tr><tr><td class='l muted'>2026-06-18</td><td class='pos'>+$47M</td><td class='neg'>−$116M</td><td class='pos'>+$284M</td><td class='pos'>+$96M</td><td class='pos'>+$108M</td><td class='neg'>−$619M</td><td class='neg'>−$187M</td><td class='neg'>−$1M</td><td class='neg'>−$134M</td><td class='neg'>−$69M</td><td class='pos'>+$65M</td></tr><tr><td class='l muted'>2026-06-22</td><td class='neg'>−$49M</td><td class='neg'>−$84M</td><td class='neg'>−$420M</td><td class='neg'>−$933M</td><td class='neg'>−$173M</td><td class='neg'>−$9.3B</td><td class='neg'>−$91M</td><td class='pos'>+$77M</td><td class='pos'>+$42M</td><td class='neg'>−$538M</td><td class='neg'>−$214M</td></tr><tr><td class='l muted'>2026-06-23</td><td class='pos'>+$46M</td><td class='neg'>−$32M</td><td class='pos'>+$50M</td><td class='pos'>+$111M</td><td class='pos'>+$205M</td><td class='pos'>+$172M</td><td class='pos'>+$76M</td><td class='pos'>+$7M</td><td class='pos'>+$139M</td><td class='pos'>+$243M</td><td class='pos'>+$131M</td></tr><tr><td class='l muted'>2026-06-24</td><td class='neg'>−$51M</td><td class='neg'>−$186M</td><td class='neg'>−$221M</td><td class='neg'>−$458M</td><td class='neg'>−$334M</td><td class='pos'>+$86M</td><td class='neg'>−$100M</td><td class='neg'>−$54M</td><td class='neg'>−$53M</td><td class='neg'>−$76M</td><td class='neg'>−$264M</td></tr><tr><td class='l muted'>2026-06-25</td><td class='pos'>+$21M</td><td class='neg'>−$329M</td><td class='pos'>+$293M</td><td class='pos'>+$451M</td><td class='pos'>+$84M</td><td class='pos'>+$386M</td><td class='pos'>+$231M</td><td class='pos'>+$27M</td><td class='pos'>+$136M</td><td class='pos'>+$350M</td><td class='pos'>+$137M</td></tr></table>
-    
+    <p class="muted" style="font-size:12px;margin-top:10px"><span class="l-en">Looking for where sector-ETF money is rotating (1D / 3D / 1W / 2W / 1M creation-redemption flow)? It now lives on</span><span class="l-zh">想看板块 ETF 资金的轮动去向（1D / 3D / 1W / 2W / 1M 申购赎回资金流）？已移至</span> <a href="sector_central.html#sc-flows"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> →</a></p>
   </div>
 
   
@@ -6144,7 +6057,7 @@
   // keep tooltips on-screen: open downward near the top, and anchor to the
   // nearest side when close to the left/right viewport edges
   document.addEventListener('mouseover', function (e) {
-    var h = e.target.closest('.help, .hovchart');
+    var h = e.target.closest('.help, .hovchart, .msr-scare');
     if (!h) return;
     var r = h.getBoundingClientRect();
     var tip = h.querySelector('.tip');

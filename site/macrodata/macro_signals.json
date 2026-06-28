@@ -1,6 +1,6 @@
 {
   "date": "2026-06-26",
-  "generated_utc": "2026-06-28 12:43",
+  "generated_utc": "2026-06-28 16:37",
   "business_cycle": {
     "available": true,
     "asof": "2026-06-30",
@@ -4125,7 +4125,7 @@
       "smart_money_lean": "bearish",
       "cot_washed_out": false,
       "cot_crowded_long": false,
-      "insider_breadth": -0.649,
+      "insider_breadth": -0.621,
       "price_up": true
     }
   },
