@@ -34,6 +34,21 @@
 {%- if vel>=0.5 and seat.dir=='buy' -%}conf-buy{%- elif vel<=-0.5 and seat.dir=='sell' -%}conf-sell{%- elif (vel>=0.5 and seat.dir=='sell') or (vel<=-0.5 and seat.dir=='buy') -%}conf-diverge{%- endif -%}
 {%- endif -%}
 {%- endmacro %}
+{# one member sub-row — reused by every sector drill-down AND the "All names" leaderboard,
+   so a name renders identically wherever it appears (flow vel + ticker-joined inst seat). #}
+{% macro memberrow(m, sbt, sid, i, show=False) -%}
+{% set seat = sbt.get(m.ticker) %}{% set cc = confcls(m.vel, seat) %}
+<tr class="mrow {{ cc }}{{ ' show' if show }}" data-sector="{{ sid }}">
+  <td class="mname snm">{% if cc %}<i class="cdot {{ cc }}"></i> {% endif %}{{ m.name or m.ticker }}<span class="tk">{{ m.ticker }}</span></td>
+  <td>{% if seat %}<span class="seat {{ seat.dir }}" title="Dragon-Tiger institutional-seat net (机构专用)">🏛 {{ '%+.1f'|format(seat.inst_net_yi) }}亿 <span class="ss">{{ seat.n_buy }}/{{ seat.n_sell }}</span></span>{% endif %}</td>
+  <td></td>
+  <td>{{ rate(m.rate_4wk) }}</td>
+  <td style="text-align:center">{{ vbar(m.vel, 'sm', i) }}</td>
+  <td>{{ accel(m.accel) }}</td>
+  <td style="text-align:left">{{ vstate(m.state, m.state_zh, m.vel) }}</td>
+  <td></td>
+</tr>
+{%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -163,6 +178,9 @@ table.board tbody tr:last-child td{border-bottom:none}
 .sector-row:hover td{background:color-mix(in srgb,var(--blue) 6%,transparent)}
 .chev{display:inline-flex;width:16px;justify-content:center;color:var(--muted);transition:transform .2s;font-size:10px}
 .sector-row.open .chev{transform:rotate(90deg);color:var(--blue)}
+.sector-row.allnames td{background:color-mix(in srgb,var(--blue) 8%,var(--card));font-weight:700}
+.sector-row.allnames td:first-child{box-shadow:inset 3px 0 0 var(--blue)}
+.lead-tag{font-size:11px;color:var(--muted);font-weight:600}
 .snm{font-weight:700;color:var(--ink)}
 .tk{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--faint);margin-left:6px}
 .cat{font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;background:var(--bg);border:1px solid var(--grid);color:var(--muted)}
@@ -285,6 +303,20 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           <th class="nos">{{ t('Flow trend','流向趋势') }}</th>
         </tr></thead>
         <tbody>
+        {# universe-wide leaderboard — pinned, default-expanded pseudo-sector (the global
+           "biggest movers across all names" view, alongside the attributable sector drill-downs) #}
+        {% if snap.ashare_names %}
+        {% set leaders = (snap.ashare_names.inflow[:10] + snap.ashare_names.outflow[:10])|sort(attribute='vel', reverse=true) %}
+        <tr class="sector-row allnames open" data-sector="__all__" aria-expanded="true">
+          <td class="snm"><span class="chev">▸</span> 🏆 {{ t('All A-share names','全市场A股') }}</td>
+          <td><span class="cat">{{ t('universe','全域') }}</span></td>
+          <td>{{ snap.ashare_names.n }}</td>
+          <td></td><td></td><td></td>
+          <td style="text-align:left"><span class="lead-tag">{{ t('top inflow &amp; outflow','领涨与领跌') }}</span></td>
+          <td></td>
+        </tr>
+        {% for m in leaders %}{{ memberrow(m, sbt, '__all__', loop.index, show=True) }}{% endfor %}
+        {% endif %}
         {% for r in s.rows %}
           {% set has_members = r.members and r.members|length %}
           <tr class="sector-row{{ ' nodrill' if not has_members }}" data-sector="{{ r.id }}" aria-expanded="false">
@@ -305,20 +337,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
             <td style="text-align:center">{{ vbar(r.vel, 'sm') }}</td>
             <td></td><td></td><td></td>
           </tr>
-          {% for m in r.members %}
-          {% set seat = sbt.get(m.ticker) %}
-          {% set cc = confcls(m.vel, seat) %}
-          <tr class="mrow {{ cc }}" data-sector="{{ r.id }}">
-            <td class="mname snm">{% if cc %}<i class="cdot {{ cc }}"></i> {% endif %}{{ m.name or m.ticker }}<span class="tk">{{ m.ticker }}</span></td>
-            <td>{% if seat %}<span class="seat {{ seat.dir }}" title="Dragon-Tiger institutional-seat net (机构专用)">🏛 {{ '%+.1f'|format(seat.inst_net_yi) }}亿 <span class="ss">{{ seat.n_buy }}/{{ seat.n_sell }}</span></span>{% endif %}</td>
-            <td></td>
-            <td>{{ rate(m.rate_4wk) }}</td>
-            <td style="text-align:center">{{ vbar(m.vel, 'sm', loop.index) }}</td>
-            <td>{{ accel(m.accel) }}</td>
-            <td style="text-align:left">{{ vstate(m.state, m.state_zh, m.vel) }}</td>
-            <td></td>
-          </tr>
-          {% endfor %}
+          {% for m in r.members %}{{ memberrow(m, sbt, r.id, loop.index) }}{% endfor %}
           {% endif %}
         {% endfor %}
         </tbody>
@@ -413,13 +432,15 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           if(rw.classList.contains('mrow')){ if(cur) cur.kids.push(rw); }
           else { cur={head:rw,kids:[]}; groups.push(cur); }
         });
-        groups.sort(function(a,b){
+        var pin=groups.filter(function(g){return g.head.getAttribute('data-sector')==='__all__';});
+        var rest=groups.filter(function(g){return g.head.getAttribute('data-sector')!=='__all__';});
+        rest.sort(function(a,b){
           var x=parseFloat((a.head.cells[ci].textContent||'').replace(/[^0-9.\-]/g,'')),
               y=parseFloat((b.head.cells[ci].textContent||'').replace(/[^0-9.\-]/g,''));
           if(isNaN(x)&&isNaN(y))return 0; if(isNaN(x))return 1; if(isNaN(y))return -1;
           return asc?x-y:y-x;
         });
-        groups.forEach(function(g){ body.appendChild(g.head); g.kids.forEach(function(k){body.appendChild(k);}); });
+        pin.concat(rest).forEach(function(g){ body.appendChild(g.head); g.kids.forEach(function(k){body.appendChild(k);}); });
       });
     });
   });
