@@ -2588,6 +2588,21 @@ def main() -> int:
     _ab = config.ROOT / "templates" / "aibrief.js"
     if _ab.exists():
         (site / "aibrief.js").write_text(_ab.read_text())
+    # build_intl is ~50% of this builder's wall-time (its own ~1000-name library + serial
+    # tail) yet is independent of every other hook below: it reads the committed intl_search
+    # cache, and only build_crossmarket / build_landing consume its output. Launch it as a
+    # background SUBPROCESS now so it runs CONCURRENTLY with the rest of the hooks (a clean
+    # 2-way split that ~halves this builder; a fresh subprocess — NOT a pool worker — so its
+    # own internal ProcessPool is unaffected) and join it just before the cross-market +
+    # landing steps that read it. Best-effort: a launch failure is logged, never fatal —
+    # mirrors the in-process try/except it replaces (the old _build_intl.main() call below).
+    import subprocess
+    try:
+        _intl_proc = subprocess.Popen([sys.executable, "-m", "scripts.build_intl"],
+                                      cwd=str(config.ROOT))
+    except Exception as e:  # noqa: BLE001
+        log.error("international dashboard subprocess launch failed (%s)", e)
+        _intl_proc = None
     try:
         build_allocation_page(env, site, sig, cards, mtf_a, verdict,
                               master=master, recommend_d=recommendation, cones=cones,
@@ -2652,14 +2667,7 @@ def main() -> int:
         _build_canada.main()
     except Exception as e:  # noqa: BLE001
         log.error("canada dashboard (via build_vector) failed (%s)", e)
-    try:  # International comparative dashboard (JP/KR/TW/UK/EU) — same hook pattern as
-          # build_canada (PAT lacks `workflow` scope for a dedicated daily.yml step), built
-          # here to render the standalone intl.html. Self-sufficient + returns 0.
-          # TODO: promote to a proper daily.yml `build_intl` step once a workflow token exists.
-        from scripts import build_intl as _build_intl
-        _build_intl.main()
-    except Exception as e:  # noqa: BLE001
-        log.error("international dashboard (via build_vector) failed (%s)", e)
+    # (build_intl ran concurrently as the background subprocess launched above; joined below.)
     try:  # China A-share thematic baskets page — like build_canada, no dedicated daily.yml
           # step yet (PAT lacks `workflow` scope), so it is built here off the china_search
           # cache that the collectors already refresh. Self-sufficient + returns 0; additive.
@@ -2691,6 +2699,15 @@ def main() -> int:
         _build_baskets_intl.main()
     except Exception as e:  # noqa: BLE001
         log.error("intl baskets (via build_vector) failed (%s)", e)
+    # join the background build_intl before crossmarket (which cross-references every market's
+    # theme_intel, intl included) and build_landing (which reads intl's committed state).
+    if _intl_proc is not None:
+        try:
+            _rc = _intl_proc.wait()
+            if _rc != 0:
+                log.error("international dashboard (subprocess) exited rc=%s", _rc)
+        except Exception as e:  # noqa: BLE001
+            log.error("international dashboard join failed (%s)", e)
     try:  # cross-market narrative cross-reference — runs LAST, after every market's theme_intel is
           # built, so the per-theme "same narrative elsewhere" chip has complete data to fetch.
         from scripts import build_crossmarket as _build_crossmarket
