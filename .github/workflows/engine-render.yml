@@ -216,6 +216,7 @@ jobs:
               brun vol_regime   "index vol-regime (build_vol_regime)"        scripts.build_vol_regime
               brun options_flow "options flow desk (build_options_flow)"     scripts.build_options_flow
               brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
+              brun options_ivspread "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
             }
             cl_baskets() {
               brun baskets     "thematic baskets (build_baskets)"        scripts.build_baskets
@@ -237,7 +238,7 @@ jobs:
             }
             cl_markets & cl_china & cl_hk & cl_gex & cl_baskets & cl_misc &
             wait
-            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery vol_regime options_flow options_skew baskets news methodology seasonality reports policy_watch index_changes"
+            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery vol_regime options_flow options_skew options_ivspread baskets news methodology seasonality reports policy_watch index_changes"
             echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
             for slug in $ORDER; do
               [ -f "$ART/$slug.log" ] || continue
@@ -302,6 +303,7 @@ jobs:
               run_py "index vol-regime (build_vol_regime)"      scripts.build_vol_regime
               run_py "options flow desk (build_options_flow)"   scripts.build_options_flow
               run_py "single-name IV skew (build_options_skew)" scripts.build_options_skew
+              run_py "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
               hub ;;
             baskets)
               run_py "thematic baskets (build_baskets)"     scripts.build_baskets

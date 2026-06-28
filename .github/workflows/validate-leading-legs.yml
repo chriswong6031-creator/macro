@@ -38,6 +38,10 @@ jobs:
       - name: single-name skew validation (validate_options_skew)
         # reads the accruing skew ledger/chains -> data/options_skew/validation_gate.json.
         run: python scripts/validate_options_skew.py || true
+      - name: single-name IV-spread validation (validate_options_ivspread)
+        # Cremers-Weinbaum call−put IV spread; reads the accruing ivspread ledger/chains ->
+        # data/options_ivspread/validation_gate.json (POSITIVE-sign cross-sectional predictor).
+        run: python scripts/validate_options_ivspread.py || true
       - name: BTC impulse-radar leg falsifier (btc_impulse_radar_backtest)
         # re-derive each act-tier impulse leg's leak-free edge vs its pre-registered
         # floor -> data/vector/impulse_legs_gate.json. The radar reads this gate and
@@ -52,6 +56,7 @@ jobs:
           git add -f data/beneficial_ownership/validation_gate.json \
                      data/index_reconstitution/validation_gate.json \
                      data/options_skew/validation_gate.json \
+                     data/options_ivspread/validation_gate.json \
                      data/vector/impulse_legs_gate.json \
                      reports/activist-ownership-validation.md \
                      reports/index-reconstitution-validation.md 2>/dev/null || true
