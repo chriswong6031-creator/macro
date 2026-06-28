@@ -26,7 +26,17 @@
     "robotics_automation",
     "semicap_equipment",
     "space_economy",
-    "travel"
+    "travel",
+    "us_sector_discretionary",
+    "us_sector_energy",
+    "us_sector_financials",
+    "us_sector_health",
+    "us_sector_industrials",
+    "us_sector_materials",
+    "us_sector_realestate",
+    "us_sector_staples",
+    "us_sector_tech",
+    "us_sector_utilities"
   ],
   "held": [
     "memory_storage",
@@ -69,6 +79,17 @@
     "semicap_equipment": "Semiconductor Equipment (WFE)",
     "space_economy": "Space Economy",
     "travel": "Travel & Experiences",
-    "uranium_miners": "Uranium & Nuclear Fuel"
+    "uranium_miners": "Uranium & Nuclear Fuel",
+    "us_sector_comm": "Communication Services (Equal-Weight)",
+    "us_sector_discretionary": "Consumer Discretionary (Equal-Weight)",
+    "us_sector_energy": "Energy (Equal-Weight)",
+    "us_sector_financials": "Financials (Equal-Weight)",
+    "us_sector_health": "Health Care (Equal-Weight)",
+    "us_sector_industrials": "Industrials (Equal-Weight)",
+    "us_sector_materials": "Materials (Equal-Weight)",
+    "us_sector_realestate": "Real Estate (Equal-Weight)",
+    "us_sector_staples": "Consumer Staples (Equal-Weight)",
+    "us_sector_tech": "Technology (Equal-Weight)",
+    "us_sector_utilities": "Utilities (Equal-Weight)"
   }
 }

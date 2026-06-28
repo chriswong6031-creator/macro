@@ -65,6 +65,13 @@
   .urg-exit { border-left-color:var(--down); }
   .urg-avoid .entrytag, .urgpill.urg-avoid { background:color-mix(in srgb,var(--down) 30%,var(--panel)); color:var(--text); }
   .urg-avoid { border-left-color:var(--down); }
+  /* glance-level two-timeframe synthesis sentence, sits right under the verdict */
+  .synthesis { margin:8px 0 4px; padding:9px 13px; border-radius:9px; font-size:13.5px; line-height:1.5;
+               background:color-mix(in srgb, var(--link) 9%, var(--panel2)); border-left:3px solid var(--link); }
+  /* context-indicator chip: factual extreme, NOT an alarm — neutral so it can't compete with the verdict */
+  .sigchip.ctx { border-color:var(--line); }
+  .sigchip.ctx .sc-v, .sigchip.ctx .sc-s { color:var(--muted); }
+  .sigstrip-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin:8px 0 4px; }
   .points { margin:6px 0; padding-left:18px; } .points li { margin:2px 0; }
   .points.sm { font-size:12.5px; }
   .cyclebox { margin:8px 0; padding:9px 12px; border-radius:9px; background:var(--panel2);
@@ -138,6 +145,7 @@
         <a href="../macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
         <a href="../news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="../us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="../impulse.html">🚀 <span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span><span class="d"><span class="l-en">Early-ignition momentum · velocity · acceleration</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></a>
         <a href="../sector_heatmap.html">🔥 <span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span><span class="d"><span class="l-en">All 503 names · market-cap treemap · click for our read</span><span class="l-zh">全部503只 · 市值树图 · 点击查看研判</span></span></a>
         <a href="../baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
         <a href="../allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
@@ -156,7 +164,9 @@
         <a href="../china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
         <a href="../china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
         <a href="../china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="../sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">One gated-confluence read per sector · reasoning · graded</span><span class="l-zh">每行业门控共振研判 · 推理链 · 自评分</span></span></a>
         <a href="../china_sector_desk.html">🧭 <span class="l-en">Sector Desk</span><span class="l-zh">行业桌面</span><span class="d"><span class="l-en">GS-style sector indices · live · pathway</span><span class="l-zh">GS式行业指数 · 实时 · 路径</span></span></a>
+        <a href="../sector_cycles_china.html">🌀 <span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span><span class="d"><span class="l-en">Every sector & theme on one cycle clock · turns · forecast odds</span><span class="l-zh">各板块与主题同框 · 拐点 · 前瞻概率</span></span></a>
         <a href="../baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
         <a href="../allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
         <a href="../china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -201,6 +211,7 @@
           <div class="nav-dd-menu" role="menu">
             <a href="../vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
             <a href="../vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+            <a href="../btc_strategy.html">🎛️ <span class="l-en">BTC Strategy</span><span class="l-zh">BTC策略</span><span class="d"><span class="l-en">Cycle vs risk-allocation · backtested</span><span class="l-zh">周期 vs 风险配置 · 已回测</span></span></a>
           </div>
         </div>
         <div class="nav-dd nav-sub">
@@ -680,6 +691,9 @@
     </div>
     
     
+    
+    
+    <div class="sigstrip-label"><span class="l-en">Indicators · context — already weighed into the verdict above</span><span class="l-zh">指标 · 参考 — 已计入上方研判</span></div>
     <div class="sigstrip">
       
       <div class="sigchip up">
@@ -694,24 +708,26 @@
         <span class="sc-s"><span class="l-en">daily</span><span class="l-zh">日线</span></span>
       </div>
       
-      <div class="sigchip neutral">
+      <div class="sigchip ctx">
         <span class="sc-k">RSI</span>
         <span class="sc-v">58</span>
-        <span class="sc-s"><span class="l-en">neutral</span><span class="l-zh">中性</span></span>
+        <span class="sc-s"><span class="l-en">mid</span><span class="l-zh">中性</span></span>
       </div>
       
-      <div class="sigchip warn">
+      <div class="sigchip ctx">
         <span class="sc-k">Stoch</span>
         <span class="sc-v">82</span>
         <span class="sc-s"><span class="l-en">StochRSI</span><span class="l-zh">随机RSI</span></span>
       </div>
       
-      <div class="sigchip neutral">
+      <div class="sigchip ctx">
         <span class="sc-k"><span class="l-en">Cycle</span><span class="l-zh">周期</span></span>
         <span class="sc-v"><span class="l-en">Day</span><span class="l-zh">第</span> 26</span>
         <span class="sc-s"><span class="l-en">of</span><span class="l-zh">/</span> 36–42</span>
       </div>
     </div>
+    
+    
     <p class="agewhen"><span class="l-en">⏱ UPTREND signal triggered 10 trading days ago (~2026-06-11), switching from TOPPING. Signal strength: moderate (score +60/100).</span><span class="l-zh">⏱ 上涨趋势信号于 10 个交易日前触发（约 2026-06-11），自做顶中切换而来。 信号强度：中等（评分 +60/100）。</span></p>
     
     
@@ -1353,6 +1369,5 @@
   <span class="made">Made with ❤️ in Canada</span>
   <span class="dev">Developed by Chris Wong</span>
 </footer>
-<script defer data-whb data-root="../" src="../wh_banner.js"></script>
 </body>
 </html>

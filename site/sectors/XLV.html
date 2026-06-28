@@ -65,6 +65,13 @@
   .urg-exit { border-left-color:var(--down); }
   .urg-avoid .entrytag, .urgpill.urg-avoid { background:color-mix(in srgb,var(--down) 30%,var(--panel)); color:var(--text); }
   .urg-avoid { border-left-color:var(--down); }
+  /* glance-level two-timeframe synthesis sentence, sits right under the verdict */
+  .synthesis { margin:8px 0 4px; padding:9px 13px; border-radius:9px; font-size:13.5px; line-height:1.5;
+               background:color-mix(in srgb, var(--link) 9%, var(--panel2)); border-left:3px solid var(--link); }
+  /* context-indicator chip: factual extreme, NOT an alarm — neutral so it can't compete with the verdict */
+  .sigchip.ctx { border-color:var(--line); }
+  .sigchip.ctx .sc-v, .sigchip.ctx .sc-s { color:var(--muted); }
+  .sigstrip-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin:8px 0 4px; }
   .points { margin:6px 0; padding-left:18px; } .points li { margin:2px 0; }
   .points.sm { font-size:12.5px; }
   .cyclebox { margin:8px 0; padding:9px 12px; border-radius:9px; background:var(--panel2);
@@ -138,6 +145,7 @@
         <a href="../macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
         <a href="../news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="../us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="../impulse.html">🚀 <span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span><span class="d"><span class="l-en">Early-ignition momentum · velocity · acceleration</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></a>
         <a href="../sector_heatmap.html">🔥 <span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span><span class="d"><span class="l-en">All 503 names · market-cap treemap · click for our read</span><span class="l-zh">全部503只 · 市值树图 · 点击查看研判</span></span></a>
         <a href="../baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
         <a href="../allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
@@ -156,7 +164,9 @@
         <a href="../china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
         <a href="../china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
         <a href="../china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="../sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">One gated-confluence read per sector · reasoning · graded</span><span class="l-zh">每行业门控共振研判 · 推理链 · 自评分</span></span></a>
         <a href="../china_sector_desk.html">🧭 <span class="l-en">Sector Desk</span><span class="l-zh">行业桌面</span><span class="d"><span class="l-en">GS-style sector indices · live · pathway</span><span class="l-zh">GS式行业指数 · 实时 · 路径</span></span></a>
+        <a href="../sector_cycles_china.html">🌀 <span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span><span class="d"><span class="l-en">Every sector & theme on one cycle clock · turns · forecast odds</span><span class="l-zh">各板块与主题同框 · 拐点 · 前瞻概率</span></span></a>
         <a href="../baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
         <a href="../allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
         <a href="../china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -201,6 +211,7 @@
           <div class="nav-dd-menu" role="menu">
             <a href="../vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
             <a href="../vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+            <a href="../btc_strategy.html">🎛️ <span class="l-en">BTC Strategy</span><span class="l-zh">BTC策略</span><span class="d"><span class="l-en">Cycle vs risk-allocation · backtested</span><span class="l-zh">周期 vs 风险配置 · 已回测</span></span></a>
           </div>
         </div>
         <div class="nav-dd nav-sub">
@@ -262,8 +273,8 @@
   <div class="panel">
     <div class="topline">
       <h1><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span> <span class="muted">(XLV)</span></h1>
-      <span class="state st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span>
-      <span class="eqbadge eq-flat"><span class="l-en">Entry</span><span class="l-zh">入场</span> · -12 <span class="eqg"><span class="l-en">minimal</span><span class="l-zh">minimal</span></span></span><span class="help">?<span class="tip"><span class="l-en">How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">衡量当前入场的时机与风险——贴近周期高点、动量新近转向、且顺势。实测：贴近枢轴的入场，其回撤比远离枢轴的追高者约小 30%——这是风险控制，并非收益预测。</span></span></span>
+      <span class="state st-RALLY_ON"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
+      <span class="eqbadge eq-up"><span class="l-en">Entry</span><span class="l-zh">入场</span> ▲ +64 <span class="eqg"><span class="l-en">strong</span><span class="l-zh">strong</span></span></span><span class="help">?<span class="tip"><span class="l-en">How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.</span><span class="l-zh">衡量当前入场的时机与风险——贴近周期低点、动量新近转向、且顺势。实测：贴近枢轴的入场，其回撤比远离枢轴的追高者约小 30%——这是风险控制，并非收益预测。</span></span></span>
       <span style="flex:1"></span>
       <span class="af-wrap">
         <button class="af-toggle" id="af-btn" type="button" aria-label="Toggle alert feed" aria-expanded="false" aria-controls="af-feed">🔔 <span><span class="l-en">Alerts</span><span class="l-zh">警报</span></span><span class="af-badge">40</span> <span class="af-caret">▾</span></button>
@@ -273,10 +284,10 @@
             <button class="af-x" id="af-close" type="button" aria-label="Close">✕</button></div>
           <div class="af-body">
             
-            <div class="af-pin dir-caution">
+            <div class="af-pin dir-up">
               <div class="af-pin-h"><span class="af-pin-tag"><span class="l-en">Current signal</span><span class="l-zh">当前信号</span></span>
-                <span class="af-pin-title"><span class="l-en">BUY ZONE → NEARING A HIGH</span><span class="l-zh">买入区 → 接近高点</span></span></div>
-              <p class="af-pin-d"><span class="l-en">TAKE PROFITS. A daily bottoming setup did fire (swing low in, momentum turned up), but it&#39;s LATE — price is already extended above the cycle low (formed ~17 day(s) ago @ 145.76) and overbought (daily RSI 72). A momentum cross is a LAGGING confirmation: after a vertical run it only triggers once the move is mature, so the bottoming entry has already passed. This is a chase, not a fresh buy. Last cycle was left-translated (topped early) — a bearish structural tell</span><span class="l-zh">止盈。日线筑底形态确实已经触发（摆动低点出现、动量转向上行），但为时已晚——价格已显著高于周期低点（约 17 天前形成 @ 145.76）且已超买（日线 RSI 72）。动量交叉属于滞后确认：在垂直拉升之后，只有当走势已经成熟时才会触发，因此筑底入场早已错过。这是追高，而非新的买入。 上一周期为左移结构（见顶偏早）——属于看空的结构性信号</span></p>
+                <span class="af-pin-title"><span class="l-en">BUY ZONE → UPTREND</span><span class="l-zh">买入区 → 上涨趋势</span></span></div>
+              <p class="af-pin-d"><span class="l-en">HOLD. The weekly (investor-cycle) momentum just crossed UP while price holds its 10-day average — the start of a new multi-month up-leg. A daily-overbought print here is the launch thrust, not a top, so this is a HOLD / ride, not a take-profit. The daily can still dip to its 10-day average (normal) — but the bigger investor cycle is early, with room left. Last cycle was left-translated (topped early) — a bearish structural tell</span><span class="l-zh">持有。周线（投资者周期）动量刚刚向上交叉，且价格守住 10 日均线——这是新的多月上行段的起点。此处日线超买只是启动推力、并非见顶，因此应持有 / 顺势，而非止盈。日线仍可能回踩 10 日均线（属正常）——但更大的投资者周期尚处早期，仍有空间。 上一周期为左移结构（见顶偏早）——属于看空的结构性信号</span></p>
             </div>
             
             <div class="af-filters">
@@ -937,13 +948,18 @@
     </div>
     
     
-    <div class="verdict urg-caution">
-      <span class="v-act"><span class="l-en">TAKE PROFITS</span><span class="l-zh">止盈</span></span>
-      <span class="v-tag"><span class="l-en">DON&#39;T CHASE</span><span class="l-zh">勿追高</span></span>
-      <span class="v-text"><span class="l-en">You missed the bottoming entry — the low already formed and price is now extended (overbought (daily RSI 72)). Don't chase; wait for a pullback to the 10-day average or the next cycle low. Hold if already long.</span><span class="l-zh">已错过筑底入场——低点已经形成，目前价格已拉伸（已超买（日线 RSI 72））。不要追高；等待回调至 10 日均线或下一个周期低点。若已持有则继续持有。</span></span>
+    <div class="verdict urg-hold">
+      <span class="v-act"><span class="l-en">HOLD</span><span class="l-zh">持有</span></span>
+      <span class="v-tag"><span class="l-en">HOLD</span><span class="l-zh">持有</span></span>
+      <span class="v-text"><span class="l-en">Trend intact — hold. Late in the cycle, so don't add here; a pullback is due.</span><span class="l-zh">趋势完好——持有。已处周期晚期，此处不宜加仓；回调即将到来。</span></span>
     </div>
     
     
+    <p class="synthesis">🧭 <span class="l-en">Daily is hot (RSI 72, day 40/42 — a dip is normal soon), but the weekly investor cycle just turned up — so this is HOLD / ride a new up-leg, not take-profits.</span><span class="l-zh">日线偏热（RSI 72，周期第 40 天——短期回调属正常），但周线投资者周期刚刚向上转向——因此应持有 / 顺势新上行段，而非止盈。</span></p>
+    
+    
+    
+    <div class="sigstrip-label"><span class="l-en">Indicators · context — already weighed into the verdict above</span><span class="l-zh">指标 · 参考 — 已计入上方研判</span></div>
     <div class="sigstrip">
       
       <div class="sigchip up">
@@ -958,33 +974,48 @@
         <span class="sc-s"><span class="l-en">daily</span><span class="l-zh">日线</span></span>
       </div>
       
-      <div class="sigchip warn">
+      <div class="sigchip ctx">
         <span class="sc-k">RSI</span>
         <span class="sc-v">72</span>
-        <span class="sc-s"><span class="l-en">overbought</span><span class="l-zh">超买</span></span>
+        <span class="sc-s"><span class="l-en">high</span><span class="l-zh">偏高</span></span>
       </div>
       
-      <div class="sigchip warn">
+      <div class="sigchip ctx">
         <span class="sc-k">Stoch</span>
         <span class="sc-v">87</span>
         <span class="sc-s"><span class="l-en">StochRSI</span><span class="l-zh">随机RSI</span></span>
       </div>
       
-      <div class="sigchip warn">
+      <div class="sigchip ctx">
         <span class="sc-k"><span class="l-en">Cycle</span><span class="l-zh">周期</span></span>
         <span class="sc-v"><span class="l-en">Day</span><span class="l-zh">第</span> 40</span>
         <span class="sc-s"><span class="l-en">of</span><span class="l-zh">/</span> 36–42</span>
       </div>
     </div>
-    <p class="agewhen"><span class="l-en">⏱ NEARING A HIGH signal just triggered today (fresh cross from BUY ZONE). Signal strength: mild (score -20/100).</span><span class="l-zh">⏱ 接近高点信号于今日刚刚触发（全新交叉，自买入区翻转）。 信号强度：温和（评分 -20/100）。</span></p>
+    
+    
+    
+    <div class="ri-strip" style="margin:10px 0 0;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px">
+      <span class="muted" style="font-weight:700"><span class="l-en">Rate & inflation</span><span class="l-zh">利率与通胀</span>
+        <span class="help">?<span class="tip"><span class="l-en">Per-channel rate / inflation headwind or tailwind this sector faces RIGHT NOW — the MEASURED cross-asset transmission coefficient (split-half forward IC) times the current driver state, split into a rate channel (real-rate speed, curve, policy pricing) and an inflation channel (breakevens, core-PCE gap, re-acceleration, expectations). DISPLAY-ONLY: it is never part of the heat or cycle score — the foundation's scored-leg gate found no rate/inflation leg robust enough to time returns. A 'regime-dependent' tag means the sector's link to that channel is only context-conditional (CONTEXT) on a forward-IC basis, so no robust headwind/tailwind is claimed.</span><span class="l-zh">该板块当前在利率／通胀两个通道上面临的逆风或顺风 —— 实测的跨资产传导系数（分半前瞻IC）乘以当前驱动状态，分为利率通道（实际利率速度、曲线、政策定价）与通胀通道（盈亏平衡、核心PCE缺口、再加速、预期）。仅供展示：绝不计入热度或周期分数 —— 基础层的可计分腿检验未发现足够稳健以择时回报的利率/通胀腿。“依赖状态”标签表示在前瞻IC基础上该板块与该通道的关联仅在特定市场状态下成立（CONTEXT），因此不主张稳健的逆风/顺风。</span></span></span>
+      </span>
+      
+      <span style="border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-weight:600;color:var(--muted)">· <span class="l-en">Rate-sensitive</span><span class="l-zh">利率敏感</span><span class="muted" style="font-weight:400;font-size:11px"> · <span class="l-en">TP-adjusted 2s10s curve</span><span class="l-zh">期限溢价调整后的2-10年曲线</span> IC +0.04</span></span>
+      
+      <span style="border:1px solid var(--line);border-radius:6px;padding:2px 8px;font-weight:600;color:var(--down)">▼ <span class="l-en">Inflation headwind</span><span class="l-zh">通胀逆风</span><span class="muted" style="font-weight:400;font-size:11px"> · <span class="l-en">Core PCE YoY − 2% target</span><span class="l-zh">核心PCE同比−2%目标</span> IC -0.19</span></span>
+      
+    </div>
+    <p class="muted" style="margin:4px 0 0;font-size:11px"><span class="l-en">This sector currently shows a measured but quiet rate link and a measured inflation headwind. These are measured forward-IC coefficients shown as context — display-only, never folded into the heat score (the scored-leg gate found no robust rate/inflation timing leg).</span><span class="l-zh">该板块当前呈现可测但平静的利率关联与实测通胀逆风。这些是作为背景展示的实测前瞻IC系数 —— 仅供展示，绝不计入热度分数（可计分腿检验未发现稳健的利率/通胀择时腿）。</span></p>
+    
+    <p class="agewhen"><span class="l-en">⏱ UPTREND signal just triggered today (fresh cross from BUY ZONE). Signal strength: moderate (score +45/100).</span><span class="l-zh">⏱ 上涨趋势信号于今日刚刚触发（全新交叉，自买入区翻转）。 信号强度：中等（评分 +45/100）。</span></p>
     
     
     <ul class="points">
-      <li><span class="l-en">Bigger picture is bullish (with-trend for a daily long)</span><span class="l-zh">大局为看多（对日线多头而言属顺势）</span></li><li><span class="l-en">Macro: US net liquidity contracting — caution on the odds</span><span class="l-zh">宏观：美国净流动性收缩——对概率属需谨慎</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Back above the 10-day average, and it's turning up</span><span class="l-zh">重新站上 10 日均线之上，且均线开始向上</span></li><li><span class="l-en">Daily momentum just crossed up</span><span class="l-zh">日线动量刚刚向上交叉</span></li><li><span class="l-en">Prior cycle topped early (a tiring-trend hint)</span><span class="l-zh">上一周期见顶偏早（趋势走弱的暗示）</span></li>
+      <li><span class="l-en">Bigger picture is bullish (with-trend for a daily long)</span><span class="l-zh">大局为看多（对日线多头而言属顺势）</span></li><li><span class="l-en">Macro: US net liquidity contracting — caution on the odds</span><span class="l-zh">宏观：美国净流动性收缩——对概率属需谨慎</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li><li><span class="l-en">Back above the 10-day average, and it's turning up</span><span class="l-zh">重新站上 10 日均线之上，且均线开始向上</span></li><li><span class="l-en">Daily momentum just crossed up</span><span class="l-zh">日线动量刚刚向上交叉</span></li>
     </ul>
     
     <div class="cyclebox">
-      <div><b>📅 <span class="l-en">Daily cycle: day 40 of a typical 36–42 trading days</span><span class="l-zh">日线周期：第 40 天，典型周期为 36–42 个交易日</span></b> — <span class="l-en">inside the window where a low is due</span><span class="l-zh">处于低点应当出现的时间窗口内</span>
+      <div><b>📅 <span class="l-en">Daily cycle: day 40 of a typical 36–42 trading days</span><span class="l-zh">日线周期：第 40 天，典型周期为 36–42 个交易日</span></b> — <span class="l-en">inside the typical low-timing window — a dip is more likely from here, though the trend can keep running</span><span class="l-zh">处于典型的低点时间窗口内——从此处回调概率更高，但趋势仍可能延续</span>
         <span class="help">?<span class="tip"><span class="l-en">The DAILY cycle is the short rhythm — equities tend to bottom every ~36-42 trading days. 'Day N' counts trading days since the last daily low. Past ~42 (overdue) means a fresh low could come any day.</span><span class="l-zh">日线周期是短节奏 — 股市通常每约 36-42 个交易日筑底一次。“第 N 天”指自上次日线低点以来的交易日数。超过约 42 天（已逾期）意味着新低随时可能出现。</span></span></span></div>
       <div><b>🗓 <span class="l-en">Weekly (investor) cycle: week 13 of a typical 16–26 weeks</span><span class="l-zh">周线（投资者）周期：第 13 周，典型周期为 16–26 周</span></b> — <span class="l-en">mid — the bigger up-leg is maturing</span><span class="l-zh">中期——更大的上行段正在成熟</span>
         <span class="help">?<span class="tip"><span class="l-en">The WEEKLY (investor) cycle is the bigger rhythm — ~16-26 weeks, containing several daily cycles. It sets the tide the daily cycles swim in; early weeks = more upside room, late weeks = treat rallies cautiously.</span><span class="l-zh">周线（投资者）周期是更大的节奏 — 约 16-26 周，包含数个日线周期。它决定了日线周期所处的大势；早期周次=上行空间更大，晚期周次=对反弹保持谨慎。</span></span></span></div>
@@ -992,7 +1023,7 @@
     </div>
     
     <details style="margin-top:8px"><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary>
-      <p class="muted" style="margin:6px 0"><span class="l-en">A daily bottoming setup did fire (swing low in, momentum turned up), but it's LATE — price is already extended above the cycle low (formed ~17 day(s) ago @ 145.76) and overbought (daily RSI 72). A momentum cross is a LAGGING confirmation: after a vertical run it only triggers once the move is mature, so the bottoming entry has already passed. This is a chase, not a fresh buy. Last cycle was left-translated (topped early) — a bearish structural tell.</span><span class="l-zh">日线筑底形态确实已经触发（摆动低点出现、动量转向上行），但为时已晚——价格已显著高于周期低点（约 17 天前形成 @ 145.76）且已超买（日线 RSI 72）。动量交叉属于滞后确认：在垂直拉升之后，只有当走势已经成熟时才会触发，因此筑底入场早已错过。这是追高，而非新的买入。 上一周期为左移结构（见顶偏早）——属于看空的结构性信号。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Don't initiate here. Wait for a pullback toward the 10-day average — or the next daily-cycle low to set up — for a lower-risk entry; hold if you're already long.</span><span class="l-zh">此处不宜建仓。等待回调至 10 日均线附近——或下一个日线周期低点构筑成形——以获得风险更低的入场；若已持有则可继续持有。</span></p>
+      <p class="muted" style="margin:6px 0"><span class="l-en">The weekly (investor-cycle) momentum just crossed UP while price holds its 10-day average — the start of a new multi-month up-leg. A daily-overbought print here is the launch thrust, not a top, so this is a HOLD / ride, not a take-profit. The daily can still dip to its 10-day average (normal) — but the bigger investor cycle is early, with room left. Last cycle was left-translated (topped early) — a bearish structural tell.</span><span class="l-zh">周线（投资者周期）动量刚刚向上交叉，且价格守住 10 日均线——这是新的多月上行段的起点。此处日线超买只是启动推力、并非见顶，因此应持有 / 顺势，而非止盈。日线仍可能回踩 10 日均线（属正常）——但更大的投资者周期尚处早期，仍有空间。 上一周期为左移结构（见顶偏早）——属于看空的结构性信号。</span> <span class="l-en">Next:</span><span class="l-zh">下一步：</span> <span class="l-en">Hold / ride the fresh weekly up-leg; add on pullbacks toward the 10-day average rather than chasing the thrust. First warning would be the weekly momentum rolling back over.</span><span class="l-zh">持有 / 顺应新的周线上行段；在回踩 10 日均线时加仓，而非追高推力。首个预警将是周线动量重新掉头向下。</span></p>
     </details>
   </div>
 
@@ -1003,10 +1034,10 @@
       <span class="help">?<span class="tip"><span class="l-en">The validated buy/sell engine that drives the main-dashboard Sector setups board (research/SECTOR_CONFLUENCE.md): a confluence of MACD + StochRSI crossovers on the 3-day chart, with the daily as the early trigger, gated by the 200-day trend. Extended (RSI>70 / StochRSI>80) is never a fresh buy. The base rate is the MEASURED forward-63-day excess vs SPY for this state. Risk/timing read, not a forecast.</span><span class="l-zh">驱动主看板「板块买卖配置」的已验证买卖引擎（research/SECTOR_CONFLUENCE.md）：3 日图上 MACD + StochRSI 交叉的共振，日线作为早期触发，以 200 日趋势把关。过热（RSI>70／StochRSI>80）绝不视为新买点。基础概率为该状态实测的未来 63 日对 SPY 超额。风险/择时读数，非预测。</span></span></span>
     </h2>
     <p style="margin:6px 0">
-      <span class="state" style="border:1px solid var(--orange);color:var(--orange);padding:2px 9px;border-radius:7px;font-weight:700"><span class="l-en">EXTENDED</span><span class="l-zh">过热</span></span>
+      <span class="state" style="border:1px solid var(--link);color:var(--link);padding:2px 9px;border-radius:7px;font-weight:700"><span class="l-en">RIDING</span><span class="l-zh">顺势</span></span>
       <span class="muted" style="margin-left:8px"><span class="l-en">setup</span><span class="l-zh">预备</span></span>
     </p>
-    <p style="margin:4px 0"><span class="l-en">Overbought and still rising — late; hold/trim, don't chase.</span><span class="l-zh">超买且仍在上行——已晚；持有/减仓，勿追。</span></p>
+    <p style="margin:4px 0"><span class="l-en">Overbought, but the weekly (investor) cycle just turned up — early in a new up-leg, so hold / add on dips, not a top.</span><span class="l-zh">虽已超买，但周线（投资者）周期刚刚向上转向——处于新上行段早期，因此应持有／回调加仓，而非见顶。</span></p>
     <p class="muted" style="font-size:12.5px;margin:6px 0 0">
       <span class="l-en">3-day signal</span><span class="l-zh">3 日信号</span>: <span class="l-en">daily turning up</span><span class="l-zh">日线转上</span> ·
       RSI 67 · Stoch 86 ·
@@ -1591,6 +1622,5 @@
   <span class="made">Made with ❤️ in Canada</span>
   <span class="dev">Developed by Chris Wong</span>
 </footer>
-<script defer data-whb data-root="../" src="../wh_banner.js"></script>
 </body>
 </html>

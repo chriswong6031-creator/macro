@@ -296,3 +296,14 @@
 {"date": "2026-06-28", "basket": "insurance", "state": "QUIET"}
 {"date": "2026-06-28", "basket": "power_grid", "state": "QUIET"}
 {"date": "2026-06-28", "basket": "space_economy", "state": "QUIET"}
+{"date": "2026-06-28", "basket": "us_sector_discretionary", "state": "POSITIVE_DIVERGENCE"}
+{"date": "2026-06-28", "basket": "us_sector_utilities", "state": "POSITIVE_DIVERGENCE"}
+{"date": "2026-06-28", "basket": "us_sector_tech", "state": "CONFIRMED_UP"}
+{"date": "2026-06-28", "basket": "us_sector_comm", "state": "CONFIRMED_DOWN"}
+{"date": "2026-06-28", "basket": "us_sector_energy", "state": "QUIET"}
+{"date": "2026-06-28", "basket": "us_sector_realestate", "state": "QUIET"}
+{"date": "2026-06-28", "basket": "us_sector_health", "state": "QUIET"}
+{"date": "2026-06-28", "basket": "us_sector_staples", "state": "QUIET"}
+{"date": "2026-06-28", "basket": "us_sector_industrials", "state": "QUIET"}
+{"date": "2026-06-28", "basket": "us_sector_materials", "state": "QUIET"}
+{"date": "2026-06-28", "basket": "us_sector_financials", "state": "QUIET"}
