@@ -287,7 +287,7 @@
   {% for r in d.ranks %}
   {% set du = r.durability %}{% set cr = r.crowding %}
   <tr class="{{ '' if r.eligible else 'inelig' }}">
-    <td><b><a class="tlink" href="{{ BASKETS_PAGE }}#b-{{ r.id }}">{{ t(r.name, r.name_zh) }}<span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
+    <td><b><a class="tlink" href="{% if d.region == 'us' %}basket/{{ r.id }}.html{% else %}{{ BASKETS_PAGE }}#b-{{ r.id }}{% endif %}">{{ t(r.name, r.name_zh) }}<span class="jump" title="Open theme detail">↗</span></a></b>
       {% if r.rank==1 %}<span class="stage lead">{{ t('LEADER', '领跑') }}</span>{% endif %}
       {% if r.val_upgrade %}<span class="stage" style="color:var(--up)" title="real-activity radar: activity ahead of price">🛰️ {{ t('activity ⬆', '活动领先⬆') }}</span>
       {% elif r.val_state == 'fading' %}<span class="stage" style="color:var(--warn)" title="real-activity radar: activity behind price">🛰️ {{ t('fading', '退潮') }}</span>{% endif %}
