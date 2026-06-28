@@ -291,5 +291,21 @@ def test_signal_line_describes_fired_crosses():
     assert isinstance(line_zh, str) and len(line_zh) > 0
 
 
+def test_weekly_riding_override_only_rescues_extended_on_a_fresh_weekly_cross():
+    """An EXTENDED (overbought-still-rising) read is relabeled RIDING ONLY when the weekly just
+    crossed up and the weekly isn't itself overbought — so the confluence panel agrees with the
+    cycles-ladder RALLY ON instead of crying 'don't chase' (the XLV 2026-06 fix). Keeps the state
+    KEY EXTENDED (caller's job) so the measured base rate is unchanged."""
+    ov = ss._weekly_riding_override("EXTENDED", weekly_fresh_up=True, weekly_not_hot=True)
+    assert ov and ov["label_en"] == "RIDING" and ov["side"] == "neutral"
+    # no fresh weekly cross → a genuine extended top stands
+    assert ss._weekly_riding_override("EXTENDED", weekly_fresh_up=False, weekly_not_hot=True) is None
+    # weekly already overbought → not early, no rescue
+    assert ss._weekly_riding_override("EXTENDED", weekly_fresh_up=True, weekly_not_hot=False) is None
+    # only EXTENDED is carved out — a confirmed TOPPING/SELL (real down-cross) is never rescued
+    for st in ("TOPPING", "SELL", "BUY", "NEUTRAL", "BELOW_TREND"):
+        assert ss._weekly_riding_override(st, weekly_fresh_up=True, weekly_not_hot=True) is None
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))

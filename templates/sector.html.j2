@@ -69,6 +69,13 @@
   .urg-exit { border-left-color:var(--down); }
   .urg-avoid .entrytag, .urgpill.urg-avoid { background:color-mix(in srgb,var(--down) 30%,var(--panel)); color:var(--text); }
   .urg-avoid { border-left-color:var(--down); }
+  /* glance-level two-timeframe synthesis sentence, sits right under the verdict */
+  .synthesis { margin:8px 0 4px; padding:9px 13px; border-radius:9px; font-size:13.5px; line-height:1.5;
+               background:color-mix(in srgb, var(--link) 9%, var(--panel2)); border-left:3px solid var(--link); }
+  /* context-indicator chip: factual extreme, NOT an alarm — neutral so it can't compete with the verdict */
+  .sigchip.ctx { border-color:var(--line); }
+  .sigchip.ctx .sc-v, .sigchip.ctx .sc-s { color:var(--muted); }
+  .sigstrip-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin:8px 0 4px; }
   .points { margin:6px 0; padding-left:18px; } .points li { margin:2px 0; }
   .points.sm { font-size:12.5px; }
   .cyclebox { margin:8px 0; padding:9px 12px; border-radius:9px; background:var(--panel2);
@@ -183,8 +190,14 @@
       <span class="v-tag">{{ td(e.tag) }}</span>
       <span class="v-text">{{ t(e.text, e.text_zh) }}</span>
     </div>
-    {# ---- at-a-glance signal-chip strip (from the same tech/mtf/cycle data) ---- #}
+    {# ---- glance-level SYNTHESIS: reconciles daily-vs-weekly so the context chips below
+       can't read as a contradiction (emitted by the engine on the weekly-cross rescue) ---- #}
+    {% if s.ladder.synthesis_line %}
+    <p class="synthesis">🧭 {{ t(s.ladder.synthesis_line, s.ladder.synthesis_line_zh) }}</p>
+    {% endif %}
+    {# ---- at-a-glance signal-chip strip — CONTEXT only (already weighed into the verdict) ---- #}
     {% set tech = s.tech or {} %}{% set d = (s.mtf or {}).get('D') or {} %}
+    <div class="sigstrip-label">{{ t('Indicators · context — already weighed into the verdict above', '指标 · 参考 — 已计入上方研判') }}</div>
     <div class="sigstrip">
       {% set ab = tech.above200 %}
       <div class="sigchip {{ 'up' if ab else 'down' }}">
@@ -199,19 +212,19 @@
         <span class="sc-s">{{ t('daily','日线') }}</span>
       </div>
       {% set r = tech.rsi14 %}
-      <div class="sigchip {{ 'warn' if (r is not none and (r>=70 or r<=30)) else 'neutral' }}">
+      <div class="sigchip ctx">
         <span class="sc-k">RSI</span>
         <span class="sc-v">{{ r|round(0)|int if r is not none else '—' }}</span>
-        <span class="sc-s">{{ t('overbought','超买') if (r is not none and r>=70) else (t('oversold','超卖') if (r is not none and r<=30) else t('neutral','中性')) }}</span>
+        <span class="sc-s">{{ t('high','偏高') if (r is not none and r>=70) else (t('low','偏低') if (r is not none and r<=30) else t('mid','中性')) }}</span>
       </div>
       {% set sv = d.stoch %}
-      <div class="sigchip {{ 'warn' if (sv is not none and (sv>=80 or sv<=20)) else 'neutral' }}">
+      <div class="sigchip ctx">
         <span class="sc-k">Stoch</span>
         <span class="sc-v">{{ sv|round(0)|int if sv is not none else '—' }}</span>
         <span class="sc-s">{{ t('StochRSI','随机RSI') }}</span>
       </div>
       {% set dd = s.cycle.dc_day %}{% set band = s.cycle.dc_band %}
-      <div class="sigchip {{ 'warn' if (dd is not none and band and dd >= band[0]) else 'neutral' }}">
+      <div class="sigchip ctx">
         <span class="sc-k">{{ t('Cycle','周期') }}</span>
         <span class="sc-v">{{ t('Day','第') }} {{ dd }}</span>
         <span class="sc-s">{% if band %}{{ t('of','/') }} {{ band[0] }}–{{ band[1] }}{% endif %}</span>
