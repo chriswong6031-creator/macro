@@ -1050,26 +1050,55 @@
   body.page-macro .ms-alerts .ct{font-family:var(--num);font-weight:700;color:var(--ink-1)}
   body.page-macro .ms-alerts .ct.is-zero{color:var(--ink-3)}
 
+  /* ===== FRONT BOARD — Market State (left) + Macro Backdrop (right), side by side =====
+     Base = mobile: one tight stack (radar → eyebrow → verdict/evidence → tape → divider →
+     backdrop). At >=901px it promotes to a grid: radar + eyebrow span the top, the tape spans
+     the bottom, Market State sits left (~60%) and the Macro Backdrop right (~40%). The .ms
+     class is only present when market_state exists, so the grid never triggers on the
+     (already mode-gated) empty case. */
+  body.page-macro .ms-front.ms{display:flex;flex-direction:column;gap:14px;margin-top:14px}
+  body.page-macro .ms-front>.ms-radar{margin:0}
+  body.page-macro .ms-front>.ms-head{margin:0}
+  body.page-macro .ms-front>.ms-top{margin-top:0}
+  body.page-macro .ms-front>.ms-tape{margin-top:0}
+  body.page-macro .ms-front>.ms-divider{margin:4px 0 0}
+  @media(min-width:1100px){
+    body.page-macro .ms-front.ms{display:grid;gap:0 30px;align-items:start;
+      grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);
+      grid-template-areas:"radar radar" "head head" "state hero" "tape tape"}
+    body.page-macro .ms-front>.ms-radar{grid-area:radar;margin-bottom:12px}
+    body.page-macro .ms-front>.ms-head{grid-area:head}
+    body.page-macro .ms-front>.ms-top{grid-area:state;margin-top:14px}
+    body.page-macro .ms-front>.ms-tape{grid-area:tape}
+    body.page-macro .ms-front>.ms-divider{display:none}
+    /* the backdrop, recomposed for the narrow right column: [locator | regime] on top,
+       the four vitals as a 2×2 strip beneath — never the wide 3-up desktop layout */
+    body.page-macro .ms-front>.hero-bar{grid-area:hero;margin-top:14px;padding-left:30px;
+      border-left:var(--rule) solid var(--hair);grid-template-columns:auto minmax(0,1fr);gap:12px 18px}
+    body.page-macro .ms-front>.hero-bar .hero-main{grid-column:2;border:0;padding:0}
+    body.page-macro .ms-front>.hero-bar .hero-vitals{grid-column:1/-1;gap:12px 18px}
+  }
+
   /* top: verdict | evidence */
-  body.page-macro .ms-top{display:grid;grid-template-columns:minmax(0,310px) minmax(0,1fr);margin-top:16px}
-  body.page-macro .ms-verdict{padding-right:30px;border-right:var(--rule) solid var(--hair)}
-  body.page-macro .ms-evidence{padding-left:30px;min-width:0}
+  body.page-macro .ms-top{display:grid;grid-template-columns:minmax(0,236px) minmax(0,1fr);margin-top:16px}
+  body.page-macro .ms-verdict{padding-right:22px;border-right:var(--rule) solid var(--hair)}
+  body.page-macro .ms-evidence{padding-left:22px;min-width:0}
   @media(max-width:760px){
     body.page-macro .ms-top{grid-template-columns:1fr}
-    body.page-macro .ms-verdict{padding:0 0 18px;border-right:0;border-bottom:var(--rule) solid var(--hair-strong)}
-    body.page-macro .ms-evidence{padding:18px 0 0}
+    body.page-macro .ms-verdict{padding:0 0 16px;border-right:0;border-bottom:var(--rule) solid var(--hair-strong)}
+    body.page-macro .ms-evidence{padding:16px 0 0}
   }
 
   /* verdict column */
   body.page-macro .v-label{font-family:var(--num);font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
     color:var(--ink-3);margin:0 0 9px}
-  body.page-macro .v-word{font-size:50px;line-height:.92;font-weight:800;letter-spacing:-.025em;margin:0;color:var(--ms-c);
+  body.page-macro .v-word{font-size:40px;line-height:.94;font-weight:800;letter-spacing:-.025em;margin:0;color:var(--ms-c);
     display:flex;align-items:center;gap:.2em}
-  body.page-macro .v-word .arr{font-family:var(--num);font-size:.38em;font-weight:700;transform:translateY(-.04em)}
+  body.page-macro .v-word .arr{font-family:var(--num);font-size:.42em;font-weight:700;transform:translateY(-.04em)}
   html[data-lang="zh"] body.page-macro .v-word{letter-spacing:0}
-  @media(max-width:760px){body.page-macro .v-word{font-size:44px}}
-  body.page-macro .v-scorerow{display:flex;align-items:baseline;gap:7px;margin-top:15px}
-  body.page-macro .v-score{font-family:var(--num);font-size:38px;font-weight:700;line-height:1;letter-spacing:-.02em;color:var(--ink-1)}
+  @media(max-width:560px){body.page-macro .v-word{font-size:34px}}
+  body.page-macro .v-scorerow{display:flex;align-items:baseline;gap:7px;margin-top:11px}
+  body.page-macro .v-score{font-family:var(--num);font-size:30px;font-weight:700;line-height:1;letter-spacing:-.02em;color:var(--ink-1)}
   body.page-macro .v-outof{font-family:var(--num);font-size:13px;color:var(--ink-3)}
   body.page-macro .v-meter{margin-top:12px;height:6px;border-radius:3px;position:relative;overflow:hidden;
     background:linear-gradient(90deg,
@@ -1080,7 +1109,7 @@
     box-shadow:0 0 0 2px var(--panel)}
   body.page-macro .v-scale{display:flex;justify-content:space-between;margin-top:6px;font-family:var(--num);font-size:9.5px;
     letter-spacing:.02em;color:var(--ink-3)}
-  body.page-macro .v-thesis{margin:17px 0 0;font-size:13.5px;line-height:1.5;color:var(--ink-1)}
+  body.page-macro .v-thesis{margin:12px 0 0;font-size:12.5px;line-height:1.45;color:var(--ink-1)}
   body.page-macro .v-flip{margin:13px 0 0;padding:8px 11px;border-left:2px solid var(--warn);
     background:color-mix(in srgb,var(--warn) 7%,transparent);font-size:12px;line-height:1.45;color:var(--ink-2)}
   body.page-macro .v-override{margin:10px 0 0;display:flex;align-items:flex-start;gap:7px;padding:8px 11px;border-radius:7px;
@@ -1119,52 +1148,57 @@
   .heads-up a.hu-chip:hover{border-color:var(--hc)}
   .heads-up .hu-chip b{font-family:ui-monospace,"SF Mono",monospace}
 
-  /* evidence matrix — one expandable row per factor */
+  /* evidence matrix — one tight row per factor (arrow · title · bar · score). The short read
+     and the metric tags live in a hover popup anchored to the dotted-underlined title; there
+     is no inline description and no expand/collapse. */
   body.page-macro .e-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 2px}
   body.page-macro .e-title{font-family:var(--num);font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
     color:var(--ink-3);margin:0}
   body.page-macro .e-cols{font-family:var(--num);font-size:9.5px;letter-spacing:.06em;color:var(--ink-3)}
-  body.page-macro .ms-f{border-top:var(--rule) solid var(--hair)}
+  body.page-macro .ms-f{border-top:var(--rule) solid var(--hair);display:grid;align-items:center;
+    grid-template-columns:14px minmax(0,1fr) 70px 28px;column-gap:11px;padding:6px 3px}
   body.page-macro .ms-f.tone-good{--ft:var(--up)}
   body.page-macro .ms-f.tone-warn{--ft:var(--warn)}
   body.page-macro .ms-f.tone-bad{--ft:var(--down)}
   body.page-macro .ms-f.tone-flat{--ft:var(--ink-3)}
-  body.page-macro .ms-f>summary{list-style:none;cursor:pointer;display:grid;align-items:center;
-    grid-template-columns:13px minmax(0,1fr) 110px 38px 12px;column-gap:14px;padding:10px 4px}
-  body.page-macro .ms-f>summary::-webkit-details-marker{display:none}
-  body.page-macro .ms-f>summary:hover{background:color-mix(in srgb,var(--panel2) 55%,transparent)}
-  body.page-macro .ms-f>summary:focus-visible{outline:2px solid var(--info);outline-offset:-2px;border-radius:4px}
-  body.page-macro .f-dir{font-family:var(--num);font-size:12px;line-height:1;text-align:center;color:var(--ft)}
-  body.page-macro .f-main{min-width:0}
-  body.page-macro .f-name{display:block;font-size:13px;font-weight:600;color:var(--ink-1)}
-  body.page-macro .f-read{display:block;font-size:11.5px;line-height:1.35;color:var(--ink-3);margin-top:2px;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  body.page-macro .f-dir{font-family:var(--num);font-size:11px;line-height:1;text-align:center;color:var(--ft)}
+  /* the title IS the hover target: reuse the .help/.tip machinery but strip the 15px ?-circle
+     down to plain dotted-underlined text (overflow:visible so the popup is never clipped) */
+  body.page-macro .f-name.help{position:relative;display:block;min-width:0;width:auto;height:auto;
+    border:0;border-radius:0;margin:0;overflow:visible;cursor:help}
+  body.page-macro .f-name .f-txt{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    font-size:12.5px;font-weight:600;color:var(--ink-1);
+    text-decoration:underline dotted color-mix(in srgb,var(--ink-3) 55%,transparent);text-underline-offset:3px}
+  body.page-macro .f-name.help:hover .f-txt{text-decoration-color:var(--ink-2)}
+  html[data-lang="zh"] body.page-macro .f-name .f-txt{text-underline-offset:2px}
+  body.page-macro .f-name .tip{width:248px;font-weight:400}
+  body.page-macro .f-tipread{display:block;color:var(--ink-1);line-height:1.45;margin-bottom:7px}
+  body.page-macro .f-tipmetrics{display:flex;flex-wrap:wrap;gap:6px 7px}
   body.page-macro .f-tone{height:4px;border-radius:2px;background:var(--panel2);overflow:hidden}
   body.page-macro .f-tone i{display:block;height:100%;border-radius:2px;background:var(--ft)}
-  body.page-macro .f-score{font-family:var(--num);font-size:16px;font-weight:700;text-align:right;line-height:1;color:var(--ft)}
-  body.page-macro .f-chev{font-family:var(--num);font-size:11px;color:var(--ink-3);transition:transform .16s ease;text-align:center}
-  body.page-macro .ms-f[open]>summary .f-chev{transform:rotate(90deg)}
-  body.page-macro .f-metrics{display:flex;flex-wrap:wrap;gap:6px 7px;padding:2px 0 11px 27px}
+  body.page-macro .f-score{font-family:var(--num);font-size:15px;font-weight:700;text-align:right;line-height:1;color:var(--ft)}
   body.page-macro .ms-metric{display:inline-flex;align-items:baseline;gap:6px;padding:3px 9px;background:var(--tile);
     border:var(--rule) solid var(--hair);border-radius:6px;font-size:11px;color:var(--ink-3)}
   body.page-macro .ms-metric b{font-family:var(--num);font-weight:700;color:var(--ink-1)}
   @media(max-width:760px){
-    body.page-macro .ms-f>summary{grid-template-columns:13px minmax(0,1fr) 64px 34px 12px;column-gap:10px}
-    body.page-macro .f-read{white-space:normal}
+    body.page-macro .ms-f{grid-template-columns:14px minmax(0,1fr) 72px 26px;column-gap:9px}
+  }
+  @media(max-width:560px){
+    body.page-macro .f-score{font-size:14px}
   }
 
   /* multi-timeframe tape — the technical detail behind the Trend factor */
-  body.page-macro .ms-tape{margin-top:22px;padding-top:16px;border-top:var(--rule) solid var(--hair-strong)}
+  body.page-macro .ms-tape{margin-top:16px;padding-top:13px;border-top:var(--rule) solid var(--hair-strong)}
   body.page-macro .tape-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px}
   body.page-macro .tape-title{display:inline-flex;align-items:center;gap:7px;font-family:var(--num);font-size:10px;font-weight:700;
     letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin:0}
   body.page-macro .tape-sub{font-family:var(--num);font-size:9.5px;letter-spacing:.04em;color:var(--ink-3)}
   body.page-macro table.ms-tapetbl{width:100%;border-collapse:collapse}
   body.page-macro table.ms-tapetbl th{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);
-    text-align:center;padding:7px 6px;border-bottom:var(--rule) solid var(--hair)}
+    text-align:center;padding:6px 6px;border-bottom:var(--rule) solid var(--hair)}
   body.page-macro table.ms-tapetbl th.l,body.page-macro table.ms-tapetbl td.l{text-align:left}
   body.page-macro table.ms-tapetbl th.r,body.page-macro table.ms-tapetbl td.r{text-align:right}
-  body.page-macro table.ms-tapetbl td{padding:9px 6px;border-bottom:var(--rule) solid var(--hair)}
+  body.page-macro table.ms-tapetbl td{padding:6px 6px;border-bottom:var(--rule) solid var(--hair)}
   body.page-macro table.ms-tapetbl tr:last-child td{border-bottom:0}
   body.page-macro .t-inst{font-size:13px;font-weight:600;color:var(--ink-1)}
   body.page-macro .ms-cell2{display:inline-flex;align-items:baseline;gap:6px;justify-content:center;font-family:var(--num)}
@@ -1185,7 +1219,6 @@
   body.page-macro .ms-divider::after{content:"";flex:1;height:1px;background:var(--hair)}
   html[data-lang="zh"] body.page-macro .ms-divider,html[data-lang="zh"] body.page-macro .tape-title,
   html[data-lang="zh"] body.page-macro .ms-eyebrow{letter-spacing:0}
-  @media(prefers-reduced-motion:reduce){body.page-macro .f-chev{transition:none}}
 
   /* ===== fired-alerts drawer (pure-CSS toggle via #ms-alerts-toggle) ===== */
   body.page-macro .ms-drawer{display:none}
@@ -1232,8 +1265,13 @@
     {% set MS = market_state %}
     {% set _va = {'green':'▲','yellow':'▶','red':'▼'}.get(MS.color, '▶') %}
     {% set _nalerts = (alerts|length if alerts else 0) + (1 if (latest.dislocation and latest.dislocation.dislocation_active) else 0) %}
-    {# ===== MARKET STATE command-center — the first read: what kind of market is this? ===== #}
-    <div class="ms ms-{{ MS.color }}">
+    {% endif %}
+    {# ===== ONE side-by-side command board: Market State (left) + Macro Backdrop (right).
+       Radar banner + eyebrow span the full width across the top; the multi-timeframe tape
+       spans the full width across the bottom. The whole region is macro-only (gated by
+       mode != 'stocks' above), so the wrapper carries the .ms colour scope when present. ===== #}
+    <div class="ms-front{% if market_state %} ms ms-{{ market_state.color }}{% endif %}">
+    {% if market_state %}
       {# Risk Radar banner — promoted from lower on the page. When it is at caution or
          worse it has already CAPPED/FORCED the verdict above (engine/market_state.py),
          so the dial, label and this banner always agree. #}
@@ -1273,20 +1311,21 @@
           {% if MS.flip_en %}<p class="v-flip">{{ t(MS.flip_en, MS.flip_zh) }}</p>{% endif %}
         </section>
 
-        {# RIGHT — the evidence: the six factors behind the verdict; click any for its metrics #}
+        {# RIGHT — the evidence: six factors, one tight row each (arrow · title · bar · score).
+           The short read + the metric tags live in a hover popup anchored to the TITLE — it
+           reuses the .help/.tip machinery (no ? glyph; the dotted-underlined title is the target). #}
         <section class="ms-evidence">
           <div class="e-head"><p class="e-title">{{ t('Evidence · six factors','依据 · 六大因子') }}</p><span class="e-cols">{{ t('tone · score','信号 · 评分') }}</span></div>
           {% for c in MS.components %}
-          <details class="ms-f tone-{{ c.tone }}">
-            <summary>
-              <span class="f-dir">{{ c.arrow }}</span>
-              <span class="f-main"><span class="f-name">{{ t(c.label_en, c.label_zh) }}</span><span class="f-read">{{ t(c.read_en, c.read_zh) }}</span></span>
-              <span class="f-tone"><i style="width:{{ c.score }}%"></i></span>
-              <span class="f-score">{{ c.score }}</span>
-              <span class="f-chev">›</span>
-            </summary>
-            {% if c.metrics %}<div class="f-metrics">{% for m in c.metrics %}<span class="ms-metric">{{ t(m.k_en, m.k_zh) }} <b>{{ m.v }}</b></span>{% endfor %}</div>{% endif %}
-          </details>
+          <div class="ms-f tone-{{ c.tone }}">
+            <span class="f-dir">{{ c.arrow }}</span>
+            <span class="f-name help"><span class="f-txt">{{ t(c.label_en, c.label_zh) }}</span><span class="tip">
+              <span class="f-tipread">{{ t(c.read_en, c.read_zh) }}</span>
+              {% if c.metrics %}<span class="f-tipmetrics">{% for m in c.metrics %}<span class="ms-metric">{{ t(m.k_en, m.k_zh) }} <b>{{ m.v }}</b></span>{% endfor %}</span>{% endif %}
+            </span></span>
+            <span class="f-tone"><i style="width:{{ c.score }}%"></i></span>
+            <span class="f-score">{{ c.score }}</span>
+          </div>
           {% endfor %}
         </section>
       </div>
@@ -1295,13 +1334,13 @@
       {# the multi-timeframe tape — the broad US market across four horizons #}
       <section class="ms-tape">
         <div class="tape-head">
-          <p class="tape-title">{{ t('Multi-timeframe tape · the broad US market','多周期趋势 · 美股大盘') }}{{ help("How the broad US market is trending across four timeframes — Daily, 3-Day, Weekly and Monthly — for the S&P 500, Nasdaq 100 and Russell 2000. ▲ = up (MACD positive and RSI ≥ 50), ▼ = down, ▶ = mixed. The right-hand verdict is the confluence across timeframes. When short timeframes turn up while long ones stay down, it is an unconfirmed turn — confirmation comes when the weekly aligns.", "美股大盘在四个周期（日、3日、周、月）上的趋势 — 标普500、纳指100、罗素2000。▲＝上行（MACD 为正且 RSI ≥ 50），▼＝下行，▶＝分化。右侧为多周期合流结论。当短周期转强而长周期仍弱时，是未确认的转向 — 待周线对齐方为确认。") }}</p>
+          <p class="tape-title">{{ t('Multi-timeframe tape · the broad US market','多周期趋势 · 美股大盘') }}{{ help("How the broad US market is trending across four timeframes — 1D (daily), 3D, 7D (weekly) and 30D (monthly) — for the S&P 500, Nasdaq 100 and Russell 2000. ▲ = up (MACD positive and RSI ≥ 50), ▼ = down, ▶ = mixed. The right-hand verdict is the confluence across timeframes. When short timeframes turn up while long ones stay down, it is an unconfirmed turn — confirmation comes when the 7D aligns.", "美股大盘在四个周期（1D 日线、3D、7D 周线、30D 月线）上的趋势 — 标普500、纳指100、罗素2000。▲＝上行（MACD 为正且 RSI ≥ 50），▼＝下行，▶＝分化。右侧为多周期合流结论。当短周期转强而长周期仍弱时，是未确认的转向 — 待 7D 对齐方为确认。") }}</p>
           <span class="tape-sub">{{ t('arrow · RSI','箭头 · RSI') }}</span>
         </div>
         <table class="ms-tapetbl">
           <thead><tr>
             <th class="l">{{ t('Index','指数') }}</th>
-            <th>{{ t('Daily','日') }}</th><th>3D</th><th>{{ t('Weekly','周') }}</th><th>{{ t('Monthly','月') }}</th>
+            <th>1D</th><th>3D</th><th>7D</th><th>30D</th>
             <th class="r">{{ t('Confluence','合流') }}</th>
           </tr></thead>
           <tbody>
@@ -1318,7 +1357,6 @@
         </table>
       </section>
       {% endif %}
-    </div>
 
     <div class="ms-divider">{{ t('Macro backdrop — the growth × inflation regime','宏观背景 — 增长 × 通胀周期') }}</div>
     {% endif %}{# /market_state #}
@@ -1498,6 +1536,7 @@
         </div>
       </div>
     </div>
+    </div>{# /.ms-front — close the side-by-side board #}
     <details class="howto">
       <summary>{{ t('New here? How to read this page in 60 seconds', '初次访问？60 秒读懂本页') }}</summary>
       <div>
