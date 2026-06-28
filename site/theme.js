@@ -237,9 +237,20 @@
       ".site-nav.has-nav-toggle .nav-toggle{order:1}",
       ".site-nav.has-nav-toggle .nav-ctrls{order:2;margin-left:auto;margin-top:0}",
       ".site-nav.has-nav-toggle .nav-search{order:3;width:100%;max-width:none}",
+      /* keep the right-hand controls INSIDE the viewport: the Mastermind / Terminal
+         pills + theme + language toggles together overflowed a phone row, clipping
+         the language toggle off the right edge. Let the cluster wrap and right-align
+         so it can never spill past the screen. */
+      ".has-nav-toggle .nav-ctrls{flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:8px;min-width:0;max-width:100%}",
+      ".has-nav-toggle .nav-ctrls>*{flex:none}",
       /* the collapsible link panel (shared by both families) */
       ".has-nav-toggle .nav-links{display:none;position:absolute;top:100%;left:8px;right:8px;z-index:1000;box-sizing:border-box;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:1px;margin-top:8px;padding:8px;border-radius:14px;background:var(--panel,var(--card));border:1px solid var(--line,var(--grid));box-shadow:0 18px 44px rgba(16,24,40,.30);max-height:78vh;overflow-y:auto;overflow-x:hidden}",
       ".has-nav-toggle.nav-open .nav-links{display:flex}",
+      /* the brand / home lockup is the first row of the open panel — present it as a
+         titled menu header (wordmark shown even on phones, where the bar hides it)
+         with a divider, instead of a lone floating glyph. */
+      ".has-nav-toggle .nav-links .nav-brand{display:flex;width:100%;align-items:center;gap:9px;margin:0 0 4px;padding:4px 10px 12px;border-bottom:1px solid var(--line,var(--grid))}",
+      ".has-nav-toggle .nav-links .nav-brand .brand-word{display:inline!important;font-size:14px}",
       ".has-nav-toggle .nav-links a.nav-link{display:block;width:100%;padding:11px 12px;font-size:15px;border-radius:9px;white-space:normal}",
       /* nested fly-outs: accordion on mobile (tap parent → toggle open class) */
       ".has-nav-toggle .nav-links .nav-dd{display:block;width:100%}",
@@ -257,6 +268,13 @@
       ".has-nav-toggle .nav-links .nav-sub>a.nav-sub-trig .caret-r{margin-left:auto;display:inline-block;transition:transform .2s}",
       ".has-nav-toggle .nav-links .nav-sub.open>a.nav-sub-trig .caret-r{transform:rotate(90deg)}",
       ".has-nav-toggle .nav-links .nav-sub::after{display:none}",
+    "}",
+    "@media (max-width:560px){",
+      /* phone: collapse the Mastermind / Terminal cross-app pills to their icons so
+         the whole control row (hamburger + app pills + theme + language) fits on a
+         single line — matching the width where the brand wordmark already hides. */
+      ".has-nav-toggle .nav-ctrls .ai-brief-link{padding:6px 10px}",
+      ".has-nav-toggle .nav-ctrls .ai-brief-link .l-en,.has-nav-toggle .nav-ctrls .ai-brief-link .l-zh{display:none}",
     "}"
   ].join('');
 
