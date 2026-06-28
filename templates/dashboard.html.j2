@@ -2699,6 +2699,7 @@
           <div class="nb-top">
             <span class="nb-tk">{{ n.ticker }}</span>
             <span class="nb-nm">{{ n.name }}</span>
+            {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
             {% if n.get('price') is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="us">${{ '%.2f'|format(n.price) }}</span>{% endif %}
           </div>
           {# Context line LEADS with the specific narrative basket (de-blurs "Technology"

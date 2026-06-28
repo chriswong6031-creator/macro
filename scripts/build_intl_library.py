@@ -29,6 +29,7 @@ from engine.cycles import analyze  # noqa: E402
 from engine.intl_stocks import compute_intl_alpha, panel  # noqa: E402
 from engine.setups import rank_setups, setup_score  # noqa: E402
 from engine import stock_score  # noqa: E402
+from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's inclusion gate)
 from engine import stock_view  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -261,11 +262,16 @@ def main(alpha: dict | None = None) -> dict | None:
                     str(m["flag"]), str(m["market"])))
     recs = _analyze_universe(uni)           # parallel analyze() fan-out (order-preserving)
     profiles: dict[str, dict] = {}
+    sig_verdict: dict[str, dict] = {}       # owner's confluence T1->T4 cascade verdict per name
     to_write: list[tuple[str, dict]] = []
     for (ticker, close, name, sector, flag, market), rec in zip(uni, recs):
         if rec is None:
             failed += 1
             continue
+        # COMBINE: confluence cascade computed alongside the residual-alpha selection — additive.
+        # It NEVER changes eligibility (the rank_setups alpha floor stays the inclusion gate); it
+        # only adds the per-card tier badge and re-ranks WITHIN setups["buy"] below.
+        sig_verdict[ticker] = signal_gate.gate(ticker, close)
         if alpha_pt.get(ticker):
             rec["alpha"] = alpha_pt[ticker]
             sc = setup_score(rec, alpha_weight=INTL_ALPHA_WEIGHT)
@@ -323,6 +329,7 @@ def main(alpha: dict | None = None) -> dict | None:
         setups = rank_setups(cand, as_of=(alpha or {}).get("as_of"), rank_by="alpha", n_buy=60)
         for r in (setups.get("buy") or []):
             t = r["ticker"]
+            r["signal"] = signal_gate.compact(sig_verdict.get(t))   # confluence T1->T4 tier badge
             if t in members.index:
                 r["flag"] = str(members.loc[t, "flag"])
                 r["market"] = str(members.loc[t, "market"])
@@ -348,6 +355,12 @@ def main(alpha: dict | None = None) -> dict | None:
                 col = ("var(--up)" if r.get("dir") == "up" else
                        "var(--down)" if r.get("dir") == "down" else "var(--muted)")
                 r["spark_svg"] = _spark_svg(s, color=col)
+        # COMBINE re-rank: keep the SAME buy names (alpha floor unchanged), order by the owner's
+        # weighted cascade blend — alpha base lifted by the T1->T4 weight. Weightless names sink to
+        # their alpha rank. Intl has no alignment tiers, so blend_sorted (no tier split) is faithful.
+        setups["buy"] = signal_gate.blend_sorted(
+            setups.get("buy") or [], base_of=lambda r: r.get("alpha"),
+            verdict_of=lambda r: sig_verdict.get(r.get("ticker")))
         (site / "factordata").mkdir(parents=True, exist_ok=True)
         (site / "factordata" / "intl_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))

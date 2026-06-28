@@ -13,6 +13,7 @@ Usage: python -m scripts.build_stock_library
 """
 from __future__ import annotations
 
+import bisect
 import json
 import math
 import logging
@@ -26,6 +27,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import ticker_alerts  # noqa: E402
+from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's gate)
 from engine.conditions import sector_macro_beta  # noqa: E402
 from engine.cycles import analyze, market_vix_context  # noqa: E402
 from engine.extension import extension_signals  # noqa: E402
@@ -1138,10 +1140,15 @@ def main() -> int:
         recs = [_one_task(item) for item in uni]
         log.info("stock library: analysed %d names in %.0fs (serial)", len(uni), time.time() - t0)
 
+    sig_verdict: dict[str, dict] = {}   # owner's confluence cascade verdict per name (T1->T4)
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
             continue
+        # COMBINE: the confluence T1->T4 cascade is computed alongside main's bottoming-alignment
+        # gate. It NEVER changes which names are eligible (alignment stays the inclusion gate) —
+        # it only adds the per-card tier badge and re-ranks WITHIN the aligned set (below).
+        sig_verdict[ticker] = signal_gate.gate(ticker, close)
         if fpanels.get(ticker):
             rec.update(fpanels[ticker])
         if flows.get(ticker):
@@ -1439,6 +1446,19 @@ def main() -> int:
         near = sorted([x for x in elig if x[2] == "near"], key=_asort, reverse=True)
         buyable = (aligned if len(aligned) >= ALIGN_MIN_KEEP
                    else aligned + near[: ALIGN_MIN_KEEP - len(aligned)])
+        # COMBINE re-rank: keep main's aligned-above-near inclusion, but order WITHIN each
+        # alignment tier by the owner's confluence weighted blend (conviction percentile +
+        # 0.5 * cascade weight) so the strongest confluence entries (T1>T2>T3>T4) rise. Names
+        # with no confluence verdict keep their conviction rank (weight 0 = no boost, not buried).
+        _czs = sorted((p.get("composite_z") or 0.0) for _t, p, _ti in buyable)
+        _bn = len(_czs) or 1
+
+        def _combine_key(x):
+            t, p, tier = x
+            w = (sig_verdict.get(t) or {}).get("weight") or 0.0
+            pct = bisect.bisect_right(_czs, p.get("composite_z") or 0.0) / _bn
+            return (0 if tier == "aligned" else 1, -(pct + 0.5 * w))
+        buyable = sorted(buyable, key=_combine_key)
         buy_ids = {t for t, _, _ in buyable}
         watch = [(t, p) for t, p in scored
                  if t not in buy_ids and (p.get("composite_z") or 0) > 0]
@@ -1455,6 +1475,7 @@ def main() -> int:
         for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
+            r["signal"] = signal_gate.compact(sig_verdict.get(t))   # confluence T1->T4 tier badge
             if entry_sig.get(t):
                 r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
             if risk_sig.get(t):
