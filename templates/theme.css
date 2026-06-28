@@ -809,3 +809,13 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   .lst-wrap:has(.lst-collapse) > .lst-more { display:none; }
   .lst-wrap:has(.lst-collapse > :nth-child(8)) > .lst-more { display:block; }
 }
+
+/* Tighter 6-row variant (.lst-cap6) — same plumbing, but caps at 6 on EVERY width.
+   Used by the HOLD / avoid action column, which stacks the most sectors + baskets. The
+   6th-child override beats the shared 5-on-mobile rule above; the :has() gate re-enables
+   the button at a 7th row (the shared rule above would otherwise wait for an 8th). */
+.lst-collapse.lst-cap6.is-collapsed > :nth-child(n+7) { display:none; }
+@media (max-width:680px) { .lst-collapse.lst-cap6.is-collapsed > :nth-child(6) { display:flex; } }
+@media (min-width:681px) {
+  .lst-wrap:has(.lst-collapse.lst-cap6 > :nth-child(7)) > .lst-more { display:block; }
+}
