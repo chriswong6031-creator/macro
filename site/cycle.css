@@ -384,6 +384,50 @@ html[data-theme="light"] .cyc-chip.on { color: #fff; }
   .sc-china .nav-brand { display: none; }
 }
 
+/* ---- China mobile: Series picker — curate exactly which lines are on the chart ----
+   The 31-chip horizontal rail is replaced by a single "Series (n)" trigger that opens a
+   searchable, phase-grouped multi-select bottom sheet. All .sc-china / mobile-injected. */
+@media (max-width: 880px) {
+  .sc-china #sc-chips .cyc-chip { display: none; }   /* rail chips → the picker replaces them */
+  .sc-china .sc-series-btn { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px;
+    min-height: 42px; white-space: nowrap; cursor: pointer; font-size: 12.5px; font-weight: 700;
+    color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; }
+  .sc-china .sc-series-btn .sc-series-n { font-size: 11px; font-weight: 800; color: var(--link);
+    background: color-mix(in srgb, var(--link) 14%, transparent); border-radius: 999px; padding: 1px 8px; min-width: 18px; text-align: center; }
+  .sc-china .sc-series-btn .sc-series-car { color: var(--muted); font-size: 11px; }
+}
+/* the picker overlay is created (mobile only) on the body — a bottom-sheet modal */
+.sc-series-ov { position: fixed; inset: 0; z-index: 70; display: none; }
+.sc-series-ov.open { display: block; }
+.sc-series-ov .sc-series-back { position: absolute; inset: 0; background: rgba(0,0,0,.5); opacity: 0;
+  transition: opacity .3s var(--ease); }
+.sc-series-ov.open .sc-series-back { opacity: 1; }
+.sc-series-panel { position: absolute; left: 0; right: 0; bottom: 0; max-height: 88vh; display: flex; flex-direction: column;
+  background: var(--panel); border-radius: 18px 18px 0 0; border: 1px solid var(--line); border-bottom: 0;
+  box-shadow: 0 -14px 44px rgba(0,0,0,.42); transform: translateY(100%); transition: transform .4s var(--ease); }
+.sc-series-ov.open .sc-series-panel { transform: translateY(0); }
+.sc-series-hd { display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px; }
+.sc-series-ttl { font-size: 15px; font-weight: 800; color: var(--text); }
+.sc-series-done { margin-left: auto; min-height: 40px; padding: 0 18px; border: 0; cursor: pointer; border-radius: 999px;
+  font-size: 13px; font-weight: 750; color: #fff; background: var(--link); }
+.sc-series-tools { display: flex; align-items: center; gap: 8px; padding: 4px 16px 10px; }
+.sc-series-search { flex: 1 1 auto; min-width: 0; min-height: 42px; padding: 0 14px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--panel2); color: var(--text); font-size: 14px; }
+.sc-series-act { min-height: 42px; padding: 0 13px; border: 1px solid var(--line); background: var(--panel2); color: var(--link);
+  border-radius: 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.sc-series-list { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 2px 8px 22px; }
+.sc-series-grp { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 13px 8px 5px; }
+.sc-series-row { display: flex; align-items: center; gap: 11px; width: 100%; min-height: 48px; padding: 6px 8px; cursor: pointer;
+  border-radius: 12px; background: none; border: 0; text-align: left; }
+.sc-series-row:active { background: var(--panel2); }
+.sc-series-row .sc-ck { width: 22px; height: 22px; flex: none; border-radius: 7px; border: 2px solid var(--line);
+  display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; opacity: 0; transition: opacity .12s; }
+.sc-series-row.on .sc-ck { background: var(--link); border-color: var(--link); opacity: 1; }
+.sc-series-row .sc-sdot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--c, var(--muted)); }
+.sc-series-row .sc-nm { flex: 1 1 auto; min-width: 0; font-size: 14px; font-weight: 600; color: var(--text); }
+.sc-series-row .sc-rs { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 30px; text-align: right; }
+.sc-series-row.sc-hidden { display: none; }
+
 @media (prefers-reduced-motion: reduce) {
   .cyc-page *, .mmc-series, .cyc-card, .cyc-panel { transition: none !important; animation: none !important; }
 }
