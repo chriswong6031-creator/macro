@@ -563,6 +563,19 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
         mrs_series = None
     heat_cal = calibrate(closes, regime, macro_series=mrs_series)
 
+    # Per-sector RATE / INFLATION transmission overlay — DISPLAY-ONLY context, never
+    # part of the heat score below (the score's only macro leg stays the fixed
+    # config.confluence.sector_macro_beta table via _score_components). This adds the
+    # measured per-channel rate/inflation headwind/tailwind each sector faces right
+    # now (engine/sector_rate_inflation.py, on the transmission calibration). Additive
+    # — absent/empty => recs simply carry no rate_inflation field.
+    ri_map: dict[str, dict] = {}
+    try:
+        from engine.sector_rate_inflation import sector_channels
+        ri_map = sector_channels(f)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("sector rate/inflation overlay failed: %s", e)
+
     aligned = set(prefs.get(quad, [])) & set(stages.index)
 
     # --- enrich each sector with technicals, seasonality, heat, trigger gap ----
@@ -580,6 +593,7 @@ def build_playbook(f: pd.DataFrame, regime: pd.DataFrame, closes: pd.DataFrame,
         band = band_for(heat["score"])
         cal = heat_cal.get(band)
         rec = {**row.to_dict(), "ticker": t, **{f"tech_{k}": v for k, v in tech.items()},
+               "rate_inflation": ri_map.get(t),  # display-only macro overlay (never in heat)
                "heat": heat["score"], "heat_parts": heat, "heat_band": band,
                "heat_label": HEAT_BANDS[band][0], "heat_note": HEAT_BANDS[band][1],
                "heat_note_zh": HEAT_BANDS_ZH[band][1],

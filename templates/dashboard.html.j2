@@ -3328,7 +3328,18 @@
       </tr>
       {% for r in sector_setups.sectors %}
       <tr>
-        <td class="l"><a href="sectors/{{ r.ticker }}.html"><b>{{ r.ticker }}</b></a> <span class="muted">{{ td(r.name) }}</span></td>
+        <td class="l"><a href="sectors/{{ r.ticker }}.html"><b>{{ r.ticker }}</b></a> <span class="muted">{{ td(r.name) }}</span>
+          {% if r.rate_inflation and r.rate_inflation.any_shown %}{% set ri = r.rate_inflation %}
+          {% set _ric = {'neg':'var(--down)','pos':'var(--up)','muted':'var(--muted)'} %}
+          <div style="display:flex;flex-wrap:wrap;gap:3px 7px;margin-top:3px">
+            {% for ch in [ri.rate, ri.inflation] if ch.show %}
+            <span class="help" style="width:auto;height:auto;border:none;margin:0;cursor:help">
+              <span style="font-size:10.5px;font-weight:700;line-height:1.4;color:{{ _ric[ch.tone] }}">{{ ch.arrow }} {{ t(ch.chip.en, ch.chip.zh) }}</span>
+              <span class="tip">{{ t(ch.tip.en, ch.tip.zh) }}</span>
+            </span>
+            {% endfor %}
+          </div>{% endif %}
+        </td>
         <td class="l" data-sort="{{ r.priority }}">
           <span style="display:inline-flex;align-items:center;gap:6px">
             <span class="pill" style="border:1px solid {{ r.color }};color:{{ r.color }};background:transparent;font-weight:700">{{ r.verdict }}</span>
