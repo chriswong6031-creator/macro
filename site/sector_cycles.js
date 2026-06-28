@@ -1229,6 +1229,32 @@
     document.body.style.overflow = "";
   }
 
+  /* ---- full-screen chart (China mobile): the inline chart is short and yields vertical
+     scroll to the page; full-screen fills the viewport where there's no page to trap, so
+     the chart reverts to rich one-finger panning (touch-action:none). ⤢ ⇄ ✕. */
+  function mountChartFsBtn() {
+    if (!isCnMobile()) return;
+    var wrap = document.querySelector(".sc-chartwrap");
+    if (!wrap || wrap.querySelector(".sc-chart-fs-btn")) return;
+    var btn = el("button", "sc-chart-fs-btn"); btn.type = "button";
+    btn.setAttribute("aria-label", "Toggle full-screen chart");   // icon is language-neutral; no bilingual text in attrs
+    btn.innerHTML = "⤢";
+    btn.addEventListener("click", function () { toggleChartFs(); });
+    wrap.appendChild(btn);
+  }
+  function toggleChartFs(force) {
+    var wrap = document.querySelector(".sc-chartwrap");
+    if (!wrap) return;
+    var on = typeof force === "boolean" ? force : !wrap.classList.contains("sc-fs");
+    wrap.classList.toggle("sc-fs", on);
+    var btn = wrap.querySelector(".sc-chart-fs-btn");
+    if (btn) btn.innerHTML = on ? "✕" : "⤢";
+    document.body.style.overflow = on ? "hidden" : "";
+    var sv = document.querySelector("#sc-chart svg");
+    if (sv) sv.style.touchAction = on ? "none" : "pan-y";   // full-screen: 1-finger pan; inline: yield to page scroll
+    if (heroChart) heroChart.resize();                       // re-measure to the new clientHeight
+  }
+
   /* ---- lang/theme re-render --------------------------------------------- */
   function rerender() {
     var savedFocus = state.focus, savedPhase = {};
@@ -1250,8 +1276,11 @@
     mountChips(); mountBaskets();
     wireFamily(); applyFamilyDisplay();                            // sectors section active; baskets hidden
     mountHero(); wireControls(); syncHeroControls(); buildGroups(); buildDefaultPanel(); mountCards(); initSheet();
-    initMobileChrome();
+    initMobileChrome(); mountChartFsBtn();
     document.addEventListener("langchange", rerender);
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { var w = document.querySelector(".sc-chartwrap.sc-fs"); if (w) toggleChartFs(false); }
+    });
     var h = (location.hash || "").replace("#", "");
     if (h && byId[h]) setTimeout(function () {
       if (byId[h].kind === "basket") switchFamily("baskets");
