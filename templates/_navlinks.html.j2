@@ -60,9 +60,16 @@
       <div class="nav-dd-menu" role="menu">
         <a href="{{ NP }}macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation · nowcast', '周期 · 增长 · 通胀 · 即时预测') }}</span></a>
         <a href="{{ NP }}us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
-        <a href="{{ NP }}sector_heatmap.html">🔥 {{ t('Sector Heatmap', '板块热力图') }}<span class="d">{{ t('All 503 names · market-cap treemap · click for our read', '全部503只 · 市值树图 · 点击查看研判') }}</span></a>
-        <a href="{{ NP }}baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
-        <a href="{{ NP }}allocation.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="{{ NP }}sector_central.html">🧠 {{ t('Sector Central', '行业中枢') }} <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="{{ NP }}sector_central.html">🧠 {{ t('Sector Central', '行业中枢') }}<span class="d">{{ t('One gated-confluence read per sector · reasoning · graded', '每行业门控共振研判 · 推理链 · 自评分') }}</span></a>
+            <a href="{{ NP }}sector_cycles.html">🌀 {{ t('Sector Cycles', '板块周期') }}<span class="d">{{ t('Every US sector ETF on one cycle clock — phase · turns', '美股各板块同框 · 阶段 · 拐点') }}</span></a>
+            <a href="{{ NP }}baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
+            <a href="{{ NP }}allocation.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
+            <a href="{{ NP }}sector_heatmap.html">🔥 {{ t('Sector Heatmap', '板块热力图') }}<span class="d">{{ t('All 503 names · market-cap treemap · click for our read', '全部503只 · 市值树图 · 点击查看研判') }}</span></a>
+          </div>
+        </div>
         <a href="{{ NP }}strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
         <a href="{{ NP }}news.html">📰 {{ t('News Feed', '新闻流') }}<span class="d">{{ t('Macro headlines · catalysts · sentiment', '宏观头条 · 日程 · 情绪') }}</span></a>
         <a href="{{ NP }}alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>

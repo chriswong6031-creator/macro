@@ -178,6 +178,10 @@ jobs:
 
           hub() { run_py "bitcoin vector + landing hub (build_vector)" scripts.build_vector; }
 
+          # US Sector Central hub — reads baskets.json + sector_cycles_data.js + the heatmap json
+          # (all committed or freshly rebuilt by band/spine). Call AFTER band so its deps exist.
+          central() { run_py "US sector central intelligence (build_sector_central)" scripts.build_sector_central; }
+
           # ---- the parallel regional/desk band (mirrors daily, MINUS special-sits) ----
           band() {
             local ART=/tmp/band; rm -rf "$ART"; mkdir -p "$ART"
@@ -215,13 +219,14 @@ jobs:
             cl_misc() {
               brun seasonality   "factor seasonality (build_seasonality)"      scripts.build_seasonality
               brun reports       "research reports section (build_reports)"     scripts.build_reports
+              brun sectorcyc     "sector cycle intelligence (build_sector_cycles)" scripts.build_sector_cycles
               brun policy_intent "policy intent desk (policy_intent_desk)"      engine.policy_intent_desk
               brun policy_watch  "fed & policy watch (build_policy_watch)"      scripts.build_policy_watch
               brun index_changes "S&P index changes (build_index_changes)"     scripts.build_index_changes
             }
             cl_markets & cl_china & cl_hk & cl_gex & cl_baskets & cl_misc &
             wait
-            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery gex_board vol_regime options_flow options_skew baskets news methodology seasonality reports policy_intent policy_watch index_changes"
+            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery gex_board vol_regime options_flow options_skew baskets news methodology seasonality reports sectorcyc policy_intent policy_watch index_changes"
             echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
             for slug in $ORDER; do
               [ -f "$ART/$slug.log" ] || continue
@@ -266,9 +271,9 @@ jobs:
 
           case "$SCOPE" in
             all)
-              spine; band; hub; us_pages; libs ;;
+              spine; band; central; hub; us_pages; libs ;;
             macro)
-              spine; hub; us_pages ;;
+              spine; hub; us_pages; central ;;
             china)
               run_py "build china a-share dashboard (build_china)" scripts.build_china; hub ;;
             hk)
@@ -295,7 +300,7 @@ jobs:
               run_py "radar upgrade (build_radar_plus)"     scripts.build_radar_plus
               run_py "radar IC ledger (build_radar_ic)"     scripts.build_radar_ic
               run_py "radar page (build_radar_page)"        scripts.build_radar_page
-              hub ;;
+              central; hub ;;
             *)
               echo "::error::unknown scope '$SCOPE'"; exit 1 ;;
           esac
