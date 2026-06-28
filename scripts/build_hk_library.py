@@ -24,6 +24,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import i18n  # noqa: E402
 from engine import stock_score  # noqa: E402
+from engine import name_score  # noqa: E402  — per-name POTENTIAL (buy-readiness) score
+from engine import name_score_grader  # noqa: E402
 from engine import stock_technicals  # noqa: E402  — richer close-only technical snapshot
 from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
 from engine import stock_view  # noqa: E402
@@ -691,6 +693,7 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             except Exception as ex:  # noqa: BLE001 — additive, never fatal
                 log.debug("hk entry-signal for %s failed (%s)", t, ex)
     stock_score.attach_panel_scores(profiles, "HK")  # within-market percentile display score (rank-framed)
+    _hkcalls = []  # POTENTIAL-score forward-grading calls, flushed after the patch loop
     # patch the (now percentile-scored) conviction + HK-native legs back into each per-stock
     # JSON so hk_lookup.html renders the identical hero + flow/value chips.
     for e in enriched:
@@ -706,6 +709,24 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             rec["risk_sizing"] = e["risk_sizing"]    # vol-managed sizing for hk_lookup
         if e.get("entry_signal"):
             rec["entry_signal"] = e["entry_signal"]  # entry-timing gauge for hk_lookup
+        # ---- POTENTIAL score (engine/name_score, HK) — front-running buy-readiness -------
+        # HK has no validated cross-sectional name edge (RS is a SCREEN), so edge_mult=1:
+        # the score is pure cycle-trigger timing × washout — front-running, not a buy claim.
+        try:
+            rec.setdefault("ticker", e["ticker"])
+            _hkpot = name_score.potential_score(rec, market="HK")
+            _hc = rec.get("conviction") or {}
+            if _hc and _hkpot:
+                _hc["potential"] = _hkpot
+                _hc["rank_pctile"] = _hc.get("score")
+                _hc["score"] = _hkpot["score"]
+                _hc["band"], _hc["band_en"], _hc["band_zh"] = _hkpot["band"], _hkpot["band_en"], _hkpot["band_zh"]
+                _hn = _hc.get("notes")
+                if _hn:
+                    _hc["notes"] = [n for n in _hn if n.get("kind") != "rank"] or None
+                _hkcalls.append({**_hkpot["call"], "level": (rec.get("tech") or {}).get("price")})
+        except Exception as ex:  # noqa: BLE001 — additive, never fatal
+            log.debug("hk potential score for %s failed (%s)", e.get("ticker"), ex)
         try:
             fp.write_text(json.dumps(rec, default=str))
         except Exception:  # noqa: BLE001 — additive, never fatal
@@ -716,6 +737,13 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         if row is not None:
             row["conv"] = profiles[e["ticker"]].get("score")
             row["edge_z"] = e.get("edge_z")
+
+    try:
+        if _hkcalls:
+            name_score_grader.append_name_calls(_hkcalls, market="HK",
+                                                asof=str(pd.Timestamp.utcnow().date()))
+    except Exception as ex:  # noqa: BLE001 — grading is additive, never fatal
+        log.debug("hk name-score grader append failed (%s)", ex)
 
     # ---- rank by the GATED conviction composite, split buy / watch / laggards ----
     def comp(e: dict) -> float:

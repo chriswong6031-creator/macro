@@ -25,6 +25,8 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import stock_score  # noqa: E402
+from engine import name_score  # noqa: E402  — per-name POTENTIAL (buy-readiness) score
+from engine import name_score_grader  # noqa: E402
 from engine import stock_technicals  # noqa: E402  — richer close-only technical snapshot
 from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
 from engine import stock_view  # noqa: E402
@@ -490,6 +492,17 @@ def main(alpha: dict | None = None) -> dict | None:
                 entry_sig[ticker] = es                           # attached to board rows below
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("entry-signal for %s failed (%s)", ticker, e)
+        # ---- POTENTIAL score (engine/name_score, CA) — front-running buy-readiness ----
+        # Cycle-trigger timing blended with CA's residual-momentum prior (its best-available
+        # selection leg). Overrides the displayed score after panel scoring below.
+        try:
+            rec.setdefault("ticker", ticker)
+            _sel_z = ((prof.get("axes") or {}).get("selection") or {}).get("z")
+            rec["conviction"]["potential"] = name_score.potential_score(
+                rec, market="CA", edge_z=_sel_z,
+                regime_stress=float((prof.get("risk") or {}).get("macro_stress") or 0.0))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("CA potential score for %s failed (%s)", ticker, e)
         profiles[ticker] = prof
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write[ticker] = (safe, rec)           # deferred: write after percentile scoring
@@ -503,6 +516,28 @@ def main(alpha: dict | None = None) -> dict | None:
     # within-market percentile display score (mutates each conviction block in place;
     # rec['conviction'] is the SAME object, so the per-stock JSONs pick it up below).
     stock_score.attach_panel_scores(profiles, "CA")
+    # CA DISPLAYED score = the POTENTIAL (buy-readiness), not the comp-z percentile (kept as
+    # rank_pctile). Front-running timing that still respects the residual-momentum prior.
+    _cacalls = []
+    for _safe, _rec in to_write.values():
+        _c = _rec.get("conviction") or {}
+        _pot = _c.get("potential")
+        if not _pot:
+            continue
+        _c["rank_pctile"] = _c.get("score")
+        _c["score"] = _pot["score"]
+        _c["band"], _c["band_en"], _c["band_zh"] = _pot["band"], _pot["band_en"], _pot["band_zh"]
+        _notes = _c.get("notes")
+        if _notes:
+            _c["notes"] = [n for n in _notes if n.get("kind") != "rank"] or None
+        if _pot.get("call"):
+            _cacalls.append({**_pot["call"], "level": (_rec.get("tech") or {}).get("price")})
+    try:
+        if _cacalls:
+            name_score_grader.append_name_calls(_cacalls, market="CA",
+                                                asof=str(pd.Timestamp.utcnow().date()))
+    except Exception as e:  # noqa: BLE001 — grading is additive, never fatal
+        log.warning("CA name-score grader append failed (%s)", e)
     for safe, rec in to_write.values():
         rec["view"] = stock_view.build_view(rec, "CA")   # canonical render model (rebuilt below once factor_beta lands)
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
