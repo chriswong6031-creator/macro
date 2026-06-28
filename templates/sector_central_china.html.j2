@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en" class="scc-page">
+{# China Sector Central Intelligence — the Phase-2 consolidation. Renders engine.china_sector_central:
+   a regime-gated confluence read per sector/basket with a reasoning trace + the honest forward
+   odds + a self-grader. Data is emitted by scripts/build_china_sector_central.py as
+   sector_central_china_data.js (window.SECTOR_CENTRAL). Self-contained inline style + render. #}
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>China Sector Central Intelligence — Mastermind</title>
+<meta name="description" content="One regime-gated confluence read per China sector & theme: where we are (cycle state), what's next (evidence-gated conditional odds), gated by the validated credit/vol/margin regime, confirmed by momentum & flow — with a transparent reasoning trace and a self-grader.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.55 Inter, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; }
+  a { color: inherit; text-decoration: none; }
+  .scc-wrap { max-width: 1320px; margin: 0 auto; padding: 16px 22px 60px; }
+  .scc-hd { margin: 14px 0 6px; }
+  .scc-kick { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .scc-title { font-size: clamp(22px, 3vw, 34px); font-weight: 800; letter-spacing: -.02em; margin: 4px 0 6px; }
+  .scc-sub { color: var(--muted); max-width: 90ch; font-size: 13.5px; }
+  .scc-asof { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+  /* provenance */
+  .scc-prov { display: flex; gap: 11px; align-items: flex-start; margin: 12px 0; padding: 10px 13px;
+    border: 1px solid color-mix(in srgb, var(--warn) 32%, var(--line)); border-radius: 11px;
+    background: color-mix(in srgb, var(--warn) 6%, var(--panel)); }
+  .scc-prov-chip { flex: 0 0 auto; font-size: 11px; font-weight: 800; letter-spacing: .05em; color: var(--warn);
+    border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line)); border-radius: 7px; padding: 3px 8px; white-space: nowrap; }
+  .scc-prov p { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5; } .scc-prov b { color: var(--text); }
+  /* regime banner */
+  .regime { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 10px; margin: 14px 0; }
+  @media (max-width: 880px) { .regime { grid-template-columns: 1fr 1fr; } }
+  .rg-cell { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: var(--panel); }
+  .rg-cell.lead { border-width: 1.5px; }
+  .rg-k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .rg-v { font-size: 19px; font-weight: 760; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .rg-d { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+  .rg-on { color: var(--up); } .rg-off { color: var(--down); } .rg-mix { color: var(--warn); }
+  .rg-bar { height: 7px; border-radius: 5px; margin-top: 7px; overflow: hidden; background: var(--line); }
+  .rg-bar i { display: block; height: 100%; }
+  /* sub-dashboard rail */
+  .scc-rail { display: flex; gap: 9px; flex-wrap: wrap; margin: 6px 0 16px; }
+  .scc-rail a { font-size: 12.5px; border: 1px solid var(--line); border-radius: 9px; padding: 7px 12px;
+    background: var(--panel2, var(--panel)); transition: border-color .15s; }
+  .scc-rail a:hover { border-color: var(--muted); }
+  /* tabs */
+  .scc-tabs { display: flex; gap: 8px; margin: 6px 0 14px; }
+  .scc-tab { font-size: 13px; font-weight: 600; border: 1px solid var(--line); border-radius: 9px; padding: 7px 14px;
+    background: transparent; color: var(--muted); cursor: pointer; }
+  .scc-tab.on { color: var(--text); background: var(--panel); border-color: var(--muted); }
+  /* board */
+  .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 13px; }
+  .card { border: 1px solid var(--line); border-left: 4px solid var(--c, var(--muted)); border-radius: 13px;
+    padding: 13px 15px; background: var(--panel); }
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .card-nm { font-size: 15.5px; font-weight: 720; } .card-sub { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+  .conv { text-align: right; flex: 0 0 auto; }
+  .conv-badge { font-size: 11.5px; font-weight: 800; letter-spacing: .03em; padding: 3px 9px; border-radius: 7px; }
+  .conv-score { font-size: 23px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.05; margin-top: 3px; }
+  .conv-sub { font-size: 10.5px; color: var(--muted); }
+  .tier-up { color: var(--up); background: color-mix(in srgb, var(--up) 14%, transparent); border: 1px solid color-mix(in srgb, var(--up) 40%, var(--line)); }
+  .tier-down { color: var(--down); background: color-mix(in srgb, var(--down) 14%, transparent); border: 1px solid color-mix(in srgb, var(--down) 40%, var(--line)); }
+  .tier-flat { color: var(--muted); background: var(--panel2, transparent); border: 1px solid var(--line); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 9px 0; }
+  .chip2 { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px; }
+  .chip2 b { color: var(--text); font-variant-numeric: tabular-nums; }
+  .chip2.early { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); }
+  .fwd { font-size: 12px; margin: 8px 0; padding: 8px 10px; border-radius: 9px;
+    background: color-mix(in srgb, var(--link) 6%, var(--panel2, var(--panel))); border: 1px solid color-mix(in srgb, var(--link) 22%, var(--line)); }
+  .fwd b { font-variant-numeric: tabular-nums; }
+  .trace { margin: 8px 0 0; display: flex; flex-direction: column; gap: 5px; }
+  .tr-row { display: flex; gap: 8px; align-items: baseline; font-size: 12px; }
+  .tr-dot { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; }
+  .tr-validated { background: var(--link); } .tr-confirmer { background: var(--warn); } .tr-display { background: var(--muted); }
+  .tr-layer { font-weight: 650; flex: 0 0 88px; } .tr-txt { color: var(--muted); }
+  .conflu { font-size: 10.5px; color: var(--muted); margin-top: 8px; }
+  .conflu b.high { color: var(--up); } .conflu b.moderate { color: var(--warn); } .conflu b\.low\/mixed { color: var(--muted); }
+  /* grader */
+  .grader { margin-top: 26px; border: 1px solid var(--line); border-radius: 13px; padding: 14px 16px; background: var(--panel); }
+  .grader h2 { font-size: 15px; margin: 0 0 4px; }
+  .gr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
+  .gr-cell { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--panel2, transparent); }
+  .muted { color: var(--muted); } .sm { font-size: 12px; }
+  footer { color: var(--muted); font-size: 11.5px; margin-top: 30px; border-top: 1px solid var(--line); padding-top: 12px; max-width: 95ch; }
+</style>
+</head>
+<body>
+<nav class="site-nav" style="max-width:1320px;margin:0 auto;padding:11px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+  <a class="nav-brand" href="index.html" style="font-weight:800;letter-spacing:-.02em;font-size:16px;color:var(--text)">MASTERMIND</a>
+  {% include "_navlinks.html.j2" %}
+  <div class="nav-ctrls" style="margin-left:auto;display:flex;gap:8px;align-items:center">
+    <button class="lang-btn" type="button">中文</button>
+    <button class="theme-btn" type="button">☀️ Light</button>
+  </div>
+</nav>
+
+<div class="scc-wrap">
+  <header class="scc-hd">
+    <div class="scc-kick"><span class="l-en">China Sector Central Intelligence</span><span class="l-zh">中国行业中枢情报</span> 🇨🇳</div>
+    <h1 class="scc-title"><span class="l-en">One read per sector — gated, confluent, graded</span><span class="l-zh">每个行业一个研判 — 门控 · 共振 · 可评分</span></h1>
+    <p class="scc-sub"><span class="l-en">Every China sector & theme fused into one conviction read: <b>where we are</b> (cycle state) and
+      <b>what's next</b> (evidence-gated conditional odds) LEAD; the <b>validated credit/vol/margin regime GATES</b> it; momentum, flow & crowding
+      CONFIRM and size — never override. Each card shows its reasoning trace; every dated call is logged and graded.</span><span class="l-zh">将每个中国行业与主题融合为一个信念研判：<b>当前位置</b>（周期状态）与<b>未来倾向</b>（经证据门槛的条件概率）主导；
+      经验证的<b>信用/波动率/融资体制进行门控</b>；动量、资金流与拥挤度仅作确认与定仓，绝不反转。每张卡片展示其推理链；每个带日期的判断都会被记录并评分。</span></p>
+    <div class="scc-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> <b id="scc-asof">…</b></div>
+  </header>
+
+  <div class="scc-prov">
+    <span class="scc-prov-chip">⚗︎ <span class="l-en">EXPERIMENTAL</span><span class="l-zh">实验性</span></span>
+    <p><span class="l-en"><b>Honest by construction.</b> The audit (<i>research/ALLOCATION_CHINA_AUDIT.md</i>) proved China momentum/rotation is a
+      CONFIRMER with no forward alpha — so it can only confirm and size here, never score. The only <b>validated</b> inputs (blue dots) are the
+      regime de-risk anchor and the pathway conditional odds; everything else is confirmer (amber) or display (grey). Not investment advice.</span><span class="l-zh"><b>诚实构建。</b>
+      审计（<i>research/ALLOCATION_CHINA_AUDIT.md</i>）证明中国动量/轮动是确认器、无前瞻超额收益——故此处仅作确认与定仓，绝不计分。唯一<b>经验证</b>（蓝点）的输入是体制降险锚与路径条件概率；
+      其余为确认器（黄点）或展示（灰点）。非投资建议。</span></p>
+  </div>
+
+  <div id="regime" class="regime"></div>
+  <div class="scc-rail">
+    <a href="sector_cycles_china.html">🌀 <span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span> →</a>
+    <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span> →</a>
+    <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span> →</a>
+    <a href="china_sector_desk.html">🧭 <span class="l-en">Sector Desk</span><span class="l-zh">行业桌面</span> →</a>
+  </div>
+
+  <div class="scc-tabs">
+    <button class="scc-tab on" data-fam="sectors"><span class="l-en">Shenwan Sectors</span><span class="l-zh">申万行业</span> <i id="n-sec"></i></button>
+    <button class="scc-tab" data-fam="baskets"><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span> <i id="n-bsk"></i></button>
+  </div>
+  <div id="board" class="board"></div>
+
+  <div id="grader" class="grader" hidden></div>
+
+  <footer>
+    <span class="l-en">Read-only analytics — not investment advice. Conviction is a gated-confluence read: the validated credit/vol/margin regime and the
+      pathway conditional odds lead and gate; momentum, flow and crowding are capped context. Forward odds are conditional probabilities with confidence
+      intervals, not forecasts. The grader measures realized accuracy as it accrues.</span><span class="l-zh">只读分析 — 非投资建议。信念为门控共振研判：经验证的信用/波动率/融资体制与路径条件概率主导并门控；
+      动量、资金流与拥挤度为受限背景。前瞻概率为带置信区间的条件概率，而非预测。评分器随数据累积衡量已实现准确度。</span>
+  </footer>
+</div>
+
+<script src="sector_central_china_data.js"></script>
+<script>
+(function(){
+  "use strict";
+  var D = window.SECTOR_CENTRAL; if (!D) return;
+  var M = D.market || {}, GR = D.grader || {};
+  function lang(){ return document.documentElement.getAttribute("data-lang") === "zh" ? "zh" : "en"; }
+  function L(en, zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+  var asof=document.getElementById('scc-asof'); if(asof) asof.textContent=D.as_of||'';
+  document.getElementById('n-sec').textContent=(D.sectors||[]).length;
+  document.getElementById('n-bsk').textContent=(D.baskets||[]).length;
+
+  /* ---- regime banner ---- */
+  function regimeBanner(){
+    var risk=M.risk_on, tone=(risk==null)?'mix':(risk>0.15?'on':risk<-0.15?'off':'mix');
+    var toneCls={on:'rg-on',off:'rg-off',mix:'rg-mix'}[tone];
+    var dr=M.derisk_blended, drPct=dr!=null?Math.round(dr*100):null;
+    var flow=M.flow||{}, tv=flow.turnover||{}, sb=flow.southbound||{}, mg=flow.margin||{};
+    var cells=[];
+    cells.push('<div class="rg-cell lead"><div class="rg-k">'+L('Regime gate','体制门控')+' · '+L('validated','已验证')+'</div>'+
+      '<div class="rg-v '+toneCls+'">'+esc(M.state_en||'—')+'</div>'+
+      '<div class="rg-bar"><i style="width:'+(drPct!=null?drPct:50)+'%;background:'+(tone==='off'?'var(--down)':tone==='on'?'var(--up)':'var(--muted)')+'"></i></div>'+
+      '<div class="rg-d">'+L('de-risk','降险')+' '+(dr!=null?dr:'—')+' · '+L('gate ×','门控 ×')+(M.gate_factor!=null?M.gate_factor:'—')+'</div></div>');
+    cells.push('<div class="rg-cell"><div class="rg-k">'+L('Quad','象限')+'</div>'+
+      '<div class="rg-v">'+esc(M.quad_name||M.quad||'—')+'</div>'+
+      '<div class="rg-d">'+L('growth','增长')+' '+(M.growth_score!=null?M.growth_score:'—')+' · '+L('infl','通胀')+' '+(M.inflation_score!=null?M.inflation_score:'—')+'</div></div>');
+    cells.push('<div class="rg-cell"><div class="rg-k">'+L('PBoC liquidity','央行流动性')+'</div>'+
+      '<div class="rg-v" style="font-size:16px">'+esc(M.liquidity||'—')+'</div>'+
+      '<div class="rg-d">'+L('turnover','成交')+' '+(tv.turnover_t!=null?tv.turnover_t+'T ('+esc(tv.band||'')+')':'—')+'</div></div>');
+    cells.push('<div class="rg-cell"><div class="rg-k">'+L('Flow & froth','资金与拥挤')+' · '+L('display','展示')+'</div>'+
+      '<div class="rg-v" style="font-size:15px">'+(sb.net!=null?(sb.net>0?'+':'')+sb.net+' '+L('SB','南向'):'—')+'</div>'+
+      '<div class="rg-d">'+L('margin','融资')+' '+(mg.pctile!=null?mg.pctile+'%ile':'—')+' · '+L('valn froth','估值拥挤')+' '+(flow.froth_anchor!=null?Math.round(flow.froth_anchor)+'%ile':'—')+'</div></div>');
+    document.getElementById('regime').innerHTML=cells.join('');
+  }
+
+  /* ---- conviction card ---- */
+  function card(s){
+    var c=s.conviction||{}, cy=s.cycle||{}, dir=c.dir||'flat';
+    var nm = lang()==='zh' && s.name_zh ? s.name_zh : s.name;
+    var sub = (s.kind==='basket' ? (s.etf_proxy?esc(s.etf_proxy)+' · ':'') : (esc(s.shenwan_code||'')+' · ')) + esc(lang()==='zh'?(s.group_zh||s.group):s.group);
+    var chips=[];
+    if(cy.phase) chips.push('<span class="chip2">'+esc(cy.phaseLabel||cy.phase)+'</span>');
+    if(cy.pos!=null) chips.push('<span class="chip2">'+L('pos','位置')+' <b>'+Math.round(cy.pos)+'</b></span>');
+    if(cy.rs_rank) chips.push('<span class="chip2">RS <b>#'+cy.rs_rank+'</b></span>');
+    if(c.confluence) chips.push('<span class="chip2">'+L('confluence','共振')+' <b>'+c.confluence.agree+'/'+c.confluence.of+'</b></span>');
+    if(c.early) chips.push('<span class="chip2 early">'+L('early','偏早')+'</span>');
+    // forward odds (validated pathway)
+    var f=s.forward, fwdHtml='';
+    if(f && f.cond_rate!=null){
+      fwdHtml='<div class="fwd">'+L('Forward odds','前瞻概率')+': <b>'+Math.round(f.cond_rate*100)+'%</b> '+
+        L('forward-','未来')+f.h+L('m positive','个月上涨')+' '+L('vs','基准')+' '+Math.round(f.base_rate*100)+'% '+
+        '<span class="muted">(CI '+Math.round((f.ci_lo||0)*100)+'–'+Math.round((f.ci_hi||0)*100)+'%, n='+f.n+')</span></div>';
+    }
+    // reasoning trace
+    var trace=(s.reasoning||[]).map(function(r){
+      return '<div class="tr-row"><span class="tr-dot tr-'+esc(r.tier)+'"></span>'+
+        '<span class="tr-layer">'+esc(r.layer)+'</span>'+
+        '<span class="tr-txt">'+L(esc(r.en),esc(r.zh||r.en))+'</span></div>';
+    }).join('');
+    var link = 'sector_cycles_china.html#'+esc(s.id);
+    return '<article class="card" style="--c:'+esc(s.accent||'var(--muted)')+'">'+
+      '<div class="card-top"><div><div class="card-nm">'+esc(nm)+'</div><div class="card-sub">'+sub+'</div></div>'+
+        '<div class="conv"><span class="conv-badge tier-'+dir+'">'+L(esc(c.label_en),esc(c.label_zh||c.label_en))+'</span>'+
+        '<div class="conv-score">'+c.score+'</div><div class="conv-sub">'+L('conviction','信念')+'</div></div></div>'+
+      '<div class="chips">'+chips.join('')+'</div>'+ fwdHtml +
+      '<div class="trace">'+trace+'</div>'+
+      '<div class="conflu">'+L('confluence','共振度')+': <b class="'+esc((c.confluence||{}).label||'')+'">'+esc((c.confluence||{}).label||'—')+'</b> · '+
+        '<a href="'+link+'" style="color:var(--link)">'+L('open cycle →','打开周期 →')+'</a></div>'+
+    '</article>';
+  }
+  var fam='sectors';
+  function renderBoard(){
+    var list = fam==='baskets' ? (D.baskets||[]) : (D.sectors||[]);
+    document.getElementById('board').innerHTML = list.map(card).join('');
+  }
+
+  /* ---- grader scorecard ---- */
+  function renderGrader(){
+    var el=document.getElementById('grader');
+    if(!GR || !GR.available){ el.hidden=false; el.innerHTML='<h2>'+L('Self-grader','自评分器')+'</h2><div class="muted sm">'+
+      L('Accruing — dated calls are logged and will be graded against realized forward returns as time passes ('+(GR.n_calls||0)+' calls logged).',
+        '累积中 — 带日期的判断已记录，将随时间推移对照已实现的前瞻收益进行评分（已记录 '+(GR.n_calls||0)+' 个判断）。')+'</div>'; return; }
+    var bh=GR.by_horizon||{}, cells=[];
+    ['21d','63d','126d'].forEach(function(k){
+      var h=bh[k]; if(!h) return;
+      if(h.dir_hit_rate==null){ cells.push('<div class="gr-cell"><div class="rg-k">'+k+'</div><div class="muted sm">'+L('accruing','累积中')+' (n='+(h.n||0)+')</div></div>'); return; }
+      cells.push('<div class="gr-cell"><div class="rg-k">'+k+' · n='+h.n+'</div>'+
+        '<div class="rg-v" style="font-size:16px">'+Math.round(h.dir_hit_rate*100)+'% '+L('hit','命中')+'</div>'+
+        '<div class="rg-d">'+L('rank-IC','秩相关')+' '+(h.rank_ic!=null?h.rank_ic:'—')+' · '+L('excess','超额')+' '+(h.mean_excess_vs_bench!=null?(h.mean_excess_vs_bench*100).toFixed(1)+'%':'—')+'</div></div>');
+    });
+    el.hidden=false;
+    el.innerHTML='<h2>'+L('Self-grader — measured accuracy','自评分器 — 已衡量准确度')+'</h2>'+
+      '<div class="muted sm">'+L('Realized directional hit-rate, cross-sectional rank-IC and excess-vs-benchmark of the conviction calls, by horizon. Sparse until it accrues; never fed back into the live score.',
+        '按时间跨度衡量信念判断的已实现方向命中率、横截面秩相关与超越基准的超额收益。数据累积前较稀疏；绝不回灌入实时评分。')+'</div>'+
+      '<div class="gr-grid">'+(cells.join('')||'<div class="muted sm">'+L('accruing','累积中')+'</div>')+'</div>';
+  }
+
+  function boot(){
+    regimeBanner(); renderBoard(); renderGrader();
+    document.querySelectorAll('.scc-tab').forEach(function(t){
+      t.addEventListener('click', function(){
+        fam=t.getAttribute('data-fam');
+        document.querySelectorAll('.scc-tab').forEach(function(x){ x.classList.toggle('on', x===t); });
+        renderBoard();
+      });
+    });
+    document.addEventListener('langchange', function(){ regimeBanner(); renderBoard(); renderGrader(); });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+})();
+</script>
+<script src="theme.js"></script>
+</body>
+</html>
