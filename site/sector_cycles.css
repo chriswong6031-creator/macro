@@ -191,8 +191,21 @@ html[data-theme="light"] .sc-page .cyc-gchip.on { color: #fff; }
 html[data-theme="light"] .sc-bchip.on { color: #fff; }
 .sc-bchip.on .dot { background: #fff; }
 .sc-bchip.foc { box-shadow: 0 0 0 2px var(--c), 0 3px 14px color-mix(in srgb, var(--c) 36%, transparent); }
-.sc-bchip.gdim { opacity: .3; }
-.sc-bchip.gdim:hover { opacity: .82; }
+
+/* "Where they stand" facet filter: off-phase selector items are removed entirely
+   (not greyed), so the chip rail / card grid shows only the active facet's members. */
+.sc-page .cyc-chip.sc-hide,
+.sc-page .sc-bchip.sc-hide,
+.sc-page .cyc-card.sc-hide,
+.sc-page .sc-bask-cat.sc-hide { display: none !important; }
+
+/* screen-reader-only live region that announces the filtered selector count */
+.sc-page .sc-sr-status { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* empty-state note for a "Where they stand" row kept visible with no members
+   (Prime entry is always shown, even when nothing qualifies). */
+.sc-page .xc-empty { font-size: 11.5px; color: var(--muted); font-style: italic; opacity: .85; padding: 2px 2px 1px; }
 
 /* ============================================================================
    China Sector Cycles — additive elements (provenance frame, washout↔euphoria
