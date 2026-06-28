@@ -612,7 +612,7 @@
         {% set _vs = c.vol_squeeze %}
         {% if _vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION'] %}
         <div class="nb-vf">
-          <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" title="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %} — {{ _vs.caveat }} | 波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Coiled','蓄势') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>
+          <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" title="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %} — {{ _vs.caveat }} | 波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Move loading','蓄势待发') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>
         </div>{% endif %}
         {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span class="l-en">⚠ {{ cau }}</span><span class="l-zh">⚠ {{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span>{% endfor %}</div>{% endif %}
         {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
