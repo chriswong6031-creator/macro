@@ -580,7 +580,7 @@
           <span class="nbe-dot a{{ es.act_level }}"></span>
           <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
           {% if es.buy_zone and es.buy_zone.high is not none %}
-          <span class="nbe-zone" title="{{ t('Buy zone', '买入区') }}">{{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–{{ '%.2f'|format(es.buy_zone.high) }}{% endif %}{% if es.buy_zone.pct_from_spot is not none %} ({{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%){% endif %}</span>
+          <span class="nbe-zone" title="Buy zone · 买入区">{{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–{{ '%.2f'|format(es.buy_zone.high) }}{% endif %}{% if es.buy_zone.pct_from_spot is not none %} ({{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%){% endif %}</span>
           {% endif %}
         </div>
         {% endif %}
