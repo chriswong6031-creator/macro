@@ -23,6 +23,14 @@
 mastermind-x.com, www.mastermind-x.com {
 	root * /opt/macro/site
 	encode zstd gzip
+
+	# Interim private-beta gate (single shared credential) — REPLACED by Supabase
+	# product login in Slice 2. bcrypt(cost 14) of a 24-char random password;
+	# the plaintext is delivered out-of-band and rotatable via `caddy hash-password`.
+	basic_auth {
+		beta $2a$14$xP/vuIXBK.YRZc4HQw/4uOEp4DoarTKLJR/iRUBBY0OaTpnIMT4gq
+	}
+
 	file_server {
 		index index.html
 	}
