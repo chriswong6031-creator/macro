@@ -204,6 +204,55 @@ def test_no_lookahead_smoke() -> None:
     assert np.allclose(overlap.values, trunc.reindex(overlap.index).values, atol=1e-6)
 
 
+def test_us_election_date() -> None:
+    # first Tuesday AFTER the first Monday of November
+    assert S._us_election_date(2014) == pd.Timestamp("2014-11-04")
+    assert S._us_election_date(2018) == pd.Timestamp("2018-11-06")
+    assert S._us_election_date(2022) == pd.Timestamp("2022-11-08")
+    assert S._us_election_date(2026) == pd.Timestamp("2026-11-03")
+    assert S._us_election_date(2030) == pd.Timestamp("2030-11-05")
+
+
+def test_midterm_blackout_windows() -> None:
+    idx = pd.date_range("2021-01-01", "2027-12-31", freq="D")
+    g = S.midterm_blackout(idx, {"enabled": True})
+    # 2022 midterm year: blackout from Jan 1 until the Nov 8 vote, then clear
+    assert g.loc["2022-01-01"] and g.loc["2022-06-30"] and g.loc["2022-11-07"]
+    assert not g.loc["2022-11-08"] and not g.loc["2022-12-31"]
+    # 2026 midterm year: blackout until the Nov 3 vote
+    assert g.loc["2026-01-01"] and g.loc["2026-10-31"]
+    assert not g.loc["2026-11-03"] and not g.loc["2026-11-04"]
+    # non-midterm years are never gated (2021 odd, 2024 presidential, 2023/2025/2027)
+    for y in ("2021", "2023", "2024", "2025", "2027"):
+        assert not g.loc[y].any()
+    # disabled / missing config -> never gated
+    assert not S.midterm_blackout(idx, {"enabled": False}).any()
+    assert not S.midterm_blackout(idx, None).any()
+    # buy_lead_days releases the gate earlier
+    g14 = S.midterm_blackout(idx, {"enabled": True, "buy_lead_days": 14})
+    assert not g14.loc["2022-10-26"] and g.loc["2022-10-26"]
+
+
+def test_allocation_midterm_gate_forces_flat() -> None:
+    # an invest-everything setup (strong momentum, zero risk) spanning the 2022 midterm
+    # year: the gate must force 0 through the year, then release the grid at the vote.
+    idx = pd.date_range("2022-01-01", "2023-06-30", freq="D")
+    mom = pd.Series(1.0, index=idx)
+    risk = pd.Series(0.0, index=idx)
+    base = {**config.load()["vector"]["allocation"],
+            "conviction_sizing": False, "drawdown_brake": False, "bottom_overlay": False}
+    gated = S.allocation(mom, risk, {**base, "midterm_gate": {"enabled": True}})
+    ungated = S.allocation(mom, risk, {**base, "midterm_gate": {"enabled": False}})
+    # ungated would be fully invested the whole time
+    assert (ungated["alloc_optimal"] > 0).all()
+    # gated: flat through the blackout, invested again after the Nov 8 2022 vote
+    assert gated["alloc_optimal"].loc["2022-01-01":"2022-11-07"].eq(0.0).all()
+    assert (gated["alloc_optimal"].loc["2022-11-08":] > 0).all()
+    # the gate is the FINAL word — applies to every variant, not just optimal
+    for c in gated.columns:
+        assert gated[c].loc["2022-06-01":"2022-10-31"].eq(0.0).all()
+
+
 if __name__ == "__main__":
     for fn in [test_momentum_bounds_and_direction, test_risk_index_range_and_regime,
                test_hysteresis_reduces_flips, test_allocation_base_grid_preserved,
@@ -214,6 +263,9 @@ if __name__ == "__main__":
                test_cycle_phase_clock_status_invalidation_and_overdue,
                test_cycle_phase_clock_config_locks_1064_364,
                test_cycle_phase_clock_no_lookahead,
+               test_us_election_date,
+               test_midterm_blackout_windows,
+               test_allocation_midterm_gate_forces_flat,
                test_no_lookahead_smoke]:
         fn()
         print(f"PASS {fn.__name__}")

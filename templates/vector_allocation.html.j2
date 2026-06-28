@@ -134,8 +134,15 @@ html[data-theme="dark"] .rchip{background:var(--grid)}
   <div class="h1">{{ t('How much Bitcoin — and Ethereum — to hold right now','当前应配置多少比特币 — 以及以太坊') }}</div>
   <div class="sub" style="margin-bottom:18px">{{ t('As of','截至') }} {{ as_of }} · BTC {{ '$%s'|format('{:,.0f}'.format(price)) }}</div>
 
+  {% if midterm and midterm.active %}
+  <div style="margin:0 0 18px;padding:13px 15px;border:1px solid var(--warn);border-radius:12px;background:color-mix(in srgb, var(--warn) 10%, transparent)">
+    <div style="font-weight:700;font-size:14px;color:var(--warn)">⏳ {{ t('Proprietary cycle timer · holding cash','专有周期计时器 · 持有现金') }}</div>
+    <div class="sub" style="margin-top:5px;font-size:13px">{{ t('Our cycle timing flags this as a stay-out window for BTC, so the strategy is overridden to 0% (100% cash) and the tactical recommendation below is paused. It re-engages around','我们的周期择时判定当前为 BTC 的回避窗口，因此策略被覆盖为 0%（100% 现金），下方战术建议暂停。将在以下时间前后重新参与') }} <b>{{ midterm.release or '—' }}</b>.</div>
+  </div>
+  {% endif %}
+
   <!-- ===== ALLOCATION DESK · the decision (shared with the Vector command center) ===== -->
-  {% if rec and rec.ok %}
+  {% if rec and rec.ok and not (midterm and midterm.active) %}
   {% set rt = rec.tone %}{% set L = rec.levels %}
   <div class="grid cols-2">
     <div class="card deck t-{{ rt }}">
