@@ -112,6 +112,24 @@
              padding:5px 11px; border-radius:8px; color:var(--down);
              border:1px solid color-mix(in srgb,var(--down) 40%,transparent);
              background:color-mix(in srgb,var(--down) 11%,var(--panel)); }
+
+  /* discovery panel */
+  .fx-disco { border-left:5px solid var(--info); }
+  .fx-disco-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(248px,1fr)); gap:11px; margin-top:4px; }
+  .fx-cand { border:1px solid var(--line); border-radius:11px; background:var(--panel2); padding:11px 13px; }
+  .fx-cand-h { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .fx-cand-nm { font-size:13.5px; font-weight:800; line-height:1.2; }
+  .fx-cand-sic { font-size:10px; font-weight:700; color:var(--muted); }
+  .fx-cand-vel { font-size:10px; font-weight:800; color:var(--up); margin-left:auto; }
+  .fx-cand-meta { font-size:11.5px; color:var(--muted); margin:6px 0 7px; }
+  .fx-cand-meta b { color:var(--info); }
+  .fx-cand-tickers { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:7px; }
+  .fx-tk { font-size:10.5px; font-weight:700; padding:2px 6px; border-radius:5px; background:var(--panel);
+           border:1px solid var(--line); color:var(--text); }
+  .fx-cand-lang { display:flex; flex-wrap:wrap; gap:4px; }
+  .fx-ph { font-size:10px; font-style:italic; color:var(--info); padding:1px 5px; border-radius:5px;
+           background:color-mix(in srgb,var(--info) 10%,transparent); }
+  .fx-disco-foot { font-size:10.5px; color:var(--muted); margin-top:11px; line-height:1.5; font-style:italic; }
 {% endblock %}
 
 {% block content %}
@@ -212,6 +230,31 @@
     {% endfor %}
   </div>
 
+  {# ---- DISCOVERY: bottlenecks forming OUTSIDE the tracked themes ---- #}
+  {% if emergence and emergence.candidates %}
+  <div class="fx-panel fx-disco">
+    <h2>🛰️ {{ t('Discovery — bottlenecks forming outside the tracked themes', '发现——在已跟踪主题之外正在形成的瓶颈') }}</h2>
+    <div class="sub">{{ t(
+      'The cascade above can only <b>confirm</b> the 18 themes we already named. This layer is how the desk answers <i>"what should I be looking at that I\'m not?"</i> — it sweeps physical-scarcity language across <b>all</b> of EDGAR and surfaces industries where a cluster of <b>un-tracked</b> companies is independently reporting "on allocation / extended lead times / record backlog". Each is a <b>candidate on probation</b> — never a buy, never auto-added; it earns a tracked slot only when a physical correlate fires. The pre-13D discovery state.',
+      '上方级联只能<b>确认</b>已命名的18个主题。本层回答<i>“我还应该关注什么却没关注？”</i>——扫描整个 EDGAR 的物理短缺用语，找出一批<b>未跟踪</b>公司在同一行业里独立报告“配额／交期拉长／创纪录在手订单”的行业。每个都是<b>观察期候选</b>——绝非买入、不自动纳入；只有物理佐证出现才升级为正式主题。即13D之前的发现状态。') }}</div>
+    <div class="fx-disco-grid">
+      {% for c in emergence.candidates %}
+      <div class="fx-cand">
+        <div class="fx-cand-h">
+          <span class="fx-cand-nm">{{ c.sic_desc }}</span>
+          <span class="fx-cand-sic">SIC {{ c.sic }}</span>
+          {% if c.velocity and c.velocity > 0 %}<span class="fx-cand-vel">▲ +{{ c.velocity }} {{ t('filers vs prior', '较前期增加') }}</span>{% endif %}
+        </div>
+        <div class="fx-cand-meta"><b>{{ c.n_new_filers }}</b> {{ t('un-tracked filers flagging scarcity', '家未跟踪公司报告短缺') }}{% if c.n_known_filers %} · {{ c.n_known_filers }} {{ t('already tracked', '已跟踪') }}{% endif %}</div>
+        <div class="fx-cand-tickers">{% for tk in c.new_filers %}<span class="fx-tk">{{ tk }}</span>{% endfor %}</div>
+        <div class="fx-cand-lang">{% for p in c.phrases %}<span class="fx-ph">“{{ p }}”</span>{% endfor %}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="fx-disco-foot">{{ t('Candidates are ranked by number of un-tracked filers, then by filer-growth velocity. Polysemy-prone domains (real estate, finance, retail) are excluded, and a cluster must use at least one manufacturing-specific phrase. Forward-graded forward like every other leg.', '候选按未跟踪公司数排序，再按公司增长速度排序。已排除易混淆领域（房地产、金融、零售），且每个集群至少须含一个制造业专用用语。与其他每条腿一样进行前瞻评分。') }}</div>
+  </div>
+  {% endif %}
+
   {# ---- forward-graded track record ---- #}
   <div class="fx-panel">
     <h2>{{ t('Forward-graded track record', '前瞻评分记录') }}</h2>
@@ -222,6 +265,7 @@
       <span class="chip2"><b>{{ track.glut }}</b> {{ t('glut flags', '过剩标记') }}</span>
       <span class="chip2"><b>{{ track.revisions }}</b> {{ t('revision reads', '预期读数') }}</span>
       <span class="chip2"><b>{{ track.guidance }}</b> {{ t('guidance tilts', '指引倾向') }}</span>
+      <span class="chip2"><b>{{ track.emergence }}</b> {{ t('discovery candidates', '发现候选') }}</span>
       {% for e in track.recent %}<span class="chip2">{{ e.theme }} · <b>{{ e.stage }}</b> · {{ e.asof }}</span>{% endfor %}
     </div>
     {% if grade %}

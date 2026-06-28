@@ -32,13 +32,14 @@ def _track_record() -> dict:
     Honest: these only began accruing recently, so this is a 'flags logged, grading forward'
     counter, not a hit-rate yet."""
     out = {"foresight": 0, "bottleneck": 0, "glut": 0, "revisions": 0, "guidance": 0,
-           "recent": []}
+           "emergence": 0, "recent": []}
     d = config.data_dir()
     for key, rel in (("foresight", "foresight/log.jsonl"),
                      ("bottleneck", "bottleneck/log.jsonl"),
                      ("glut", "glut_watch/log.jsonl"),
                      ("revisions", "themes/revisions_log.jsonl"),
-                     ("guidance", "guidance_gap/log.jsonl")):
+                     ("guidance", "guidance_gap/log.jsonl"),
+                     ("emergence", "theme_emergence/log.jsonl")):
         p = d / rel
         if not p.exists():
             continue
@@ -61,6 +62,14 @@ def main() -> int:
         fetch_guidance_hits()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("edgar_guidance drip failed (non-fatal): %s", e)
+    # Discovery drip: market-wide scarcity-language sweep + SIC enrichment (keyless, drip +
+    # cached, bounded) so engine/theme_emergence.py can surface bottlenecks forming OUTSIDE
+    # the tracked themes — the desk's answer to "what should I be looking at that I'm not?"
+    try:
+        from collectors.edgar_emergence import fetch_emergence_hits
+        fetch_emergence_hits()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("edgar_emergence drip failed (non-fatal): %s", e)
     try:
         from engine.foresight_cascade import compute_foresight_cascade
         # write_ledger=True so the daily build accrues the forward-grading record (deduped by
@@ -80,6 +89,14 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("foresight grader failed (non-fatal): %s", e)
         grade_summary = None
+
+    # Discovery: candidate emerging bottlenecks forming outside the tracked themes
+    try:
+        from engine.theme_emergence import compute_theme_emergence
+        emergence = compute_theme_emergence(write_ledger=True)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("theme_emergence failed (non-fatal): %s", e)
+        emergence = None
 
     themes = cascade.get("themes", [])
     stage_counts = {s: 0 for s in STAGE_ORDER}
@@ -108,6 +125,7 @@ def main() -> int:
             dislocation=cascade.get("dislocation"),
             track=_track_record(),
             grade=grade_summary,
+            emergence=emergence,
             asof=cascade.get("asof"),
             generated_utc=built,
             nav_prefix="",
