@@ -105,6 +105,13 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("subsector_scan failed (non-fatal): %s", e)
         subsectors = None
+    # Convergence ("neural web"): fuse every leaf into one heating-up read
+    try:
+        from engine.foresight_convergence import compute_convergence
+        convergence = compute_convergence(cascade, emergence, subsectors)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("convergence failed (non-fatal): %s", e)
+        convergence = None
 
     themes = cascade.get("themes", [])
     stage_counts = {s: 0 for s in STAGE_ORDER}
@@ -135,6 +142,7 @@ def main() -> int:
             grade=grade_summary,
             emergence=emergence,
             subsectors=subsectors,
+            convergence=convergence,
             asof=cascade.get("asof"),
             generated_utc=built,
             nav_prefix="",

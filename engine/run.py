@@ -350,6 +350,17 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("subsector-scan layer failed: %s", e)
         latest["subsector_scan"] = None
+    # Convergence ("neural web"): fuse the cascade + discovery + subsector radar into one
+    # heating-up read — how many INDEPENDENT leading surfaces converge on a theme, weighted by
+    # earliness. The single "what to investigate before the crowd" board. DISPLAY-ONLY.
+    try:
+        from engine.foresight_convergence import compute_convergence
+        latest["foresight_convergence"] = compute_convergence(
+            latest.get("foresight_cascade"), latest.get("theme_emergence"),
+            latest.get("subsector_scan"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("convergence layer failed: %s", e)
+        latest["foresight_convergence"] = None
     # Cross-asset confirmation: does the leading-family complex (BONDS + FX) CONFIRM
     # or DIVERGE from the equity/macro regime computed above? Reads the two dedicated
     # dashboards' contracts (data/bonds/bond_health.json, data/forex/latest.json) — whose
