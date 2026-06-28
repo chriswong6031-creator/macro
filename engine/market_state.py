@@ -513,20 +513,21 @@ def _radar_override(latest: dict, overrides: list) -> dict:
     out.update(amp=amp, amp_keys=keys, amp_flags_en=flags_en, amp_flags_zh=flags_zh,
                severe_gated=severe_gated, ceiling=ceiling)
 
-    sc = f" ({out['top_score']}/100)" if out["top_score"] is not None else ""
-    amp_en = (f" amplified by {amp} corroborating risk signal{'s' if amp != 1 else ''}"
-              if amp else "")
-    amp_zh = f"，并由 {amp} 个佐证风险信号放大" if amp else ""
+    # The Risk Radar banner rendered directly ABOVE this verdict already states the radar's
+    # name, gated state, score and amp-flag breakdown. So the override note here stays lean —
+    # it only explains the CONSEQUENCE (forced / capped) plus the severe-but-gated nuance the
+    # banner doesn't surface. Restating "Risk Radar {state} ({score}/100) amplified by N…"
+    # duplicated the banner headline word-for-word.
     sev_en = " (underlying read already risk-off)" if severe_gated else ""
     sev_zh = "（底层读数已为避险）" if severe_gated else ""
     if ceiling < 42:
         overrides.append({"kind": "radar",
-            "note_en": f"Risk Radar {state}{sc}{sev_en}{amp_en} — forced to Risk-off.",
-            "note_zh": f"风险雷达{_RADAR_ZH.get(state, state)}{sc}{sev_zh}{amp_zh} — 强制为「避险」。"})
+            "note_en": f"Forced to Risk-off by the Risk Radar above{sev_en}.",
+            "note_zh": f"由上方风险雷达强制为「避险」{sev_zh}。"})
     else:
         overrides.append({"kind": "radar",
-            "note_en": f"Risk Radar {state}{sc}{amp_en} — capped at Mixed.",
-            "note_zh": f"风险雷达{_RADAR_ZH.get(state, state)}{sc}{amp_zh} — 已封顶为「混合」。"})
+            "note_en": "Capped at Mixed by the Risk Radar above.",
+            "note_zh": "由上方风险雷达封顶为「混合」。"})
     return out
 
 
