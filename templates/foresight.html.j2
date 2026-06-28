@@ -150,6 +150,17 @@
   .fx-ph { font-size:10px; font-style:italic; color:var(--info); padding:1px 5px; border-radius:5px;
            background:color-mix(in srgb,var(--info) 10%,transparent); }
   .fx-disco-foot { font-size:10.5px; color:var(--muted); margin-top:11px; line-height:1.5; font-style:italic; }
+
+  /* subsector radar table */
+  .fx-radar-tbl { width:100%; border-collapse:collapse; font-size:12px; margin-top:6px; }
+  .fx-radar-tbl th { text-align:left; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
+                     color:var(--muted); padding:5px 8px; border-bottom:1px solid var(--line); }
+  .fx-radar-tbl th.num, .fx-radar-tbl td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .fx-radar-tbl td { padding:6px 8px; border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent); }
+  .fx-rstage { font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:6px; color:var(--c,var(--muted));
+               background:color-mix(in srgb,var(--c,var(--muted)) 14%,var(--panel)); }
+  .fx-rsub { font-weight:700; } .fx-rsec { font-size:10px; color:var(--muted); }
+  .fx-rscar { font-weight:800; color:var(--g-hot); cursor:help; }
 {% endblock %}
 
 {% block content %}
@@ -285,6 +296,35 @@
   </div>
   {% endif %}
 
+  {# ---- SUBSECTOR RADAR: the cascade signature over all 113 Finviz sub-industries ---- #}
+  {% if subsectors and subsectors.subsectors %}
+  <div class="fx-panel fx-radar">
+    <h2>📡 {{ t('Subsector radar — the whole S&P 500 at sub-industry granularity', '子行业雷达——以子行业粒度覆盖整个标普500') }}</h2>
+    <div class="sub">{{ t(
+      'The cascade runs the same <b>bottleneck × revision</b> signature over all <b>113 Finviz sub-industries</b> (503 names), not just the 18 curated themes — so you can see, market-wide, <b>where supply scarcity and estimate revisions are aligning</b>. The bottleneck here is a <b>text-only proxy</b> (EDGAR scarcity language), not FRED-confirmed — a screen to investigate, not a confirmed thesis.',
+      '级联将同一<b>瓶颈 × 预期修正</b>信号运行于全部<b>113个 Finviz 子行业</b>（503只成分股），而不仅是18个精选主题——从而在全市场范围看到<b>供给短缺与盈利预期在何处共振</b>。此处瓶颈为<b>纯文本代理</b>（EDGAR 短缺用语），非 FRED 确认——是待查筛选，而非确认论点。') }}
+      <b>{{ subsectors.n_scarcity_aligned }}</b> / {{ subsectors.all_count }} {{ t('scanned sub-industries currently pair scarcity language with their revision read.', '个已扫描子行业当前将短缺用语与其预期读数配对。') }}</div>
+    <table class="fx-radar-tbl">
+      <thead><tr>
+        <th>{{ t('Stage', '阶段') }}</th><th>{{ t('Sub-industry', '子行业') }}</th>
+        <th class="num">{{ t('Breadth', '广度') }}</th><th class="num">{{ t('90d drift', '90日漂移') }}</th>
+        <th class="num">{{ t('Scarcity', '短缺') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for r in subsectors.subsectors %}
+      <tr>
+        <td><span class="fx-rstage stg-{{ r.stage }}">{{ r.stage }}</span></td>
+        <td><span class="fx-rsub">{{ r.sub_industry }}</span> <span class="fx-rsec">{{ r.sector }}</span></td>
+        <td class="num">{% if r.breadth is not none %}{{ '%+.2f'|format(r.breadth) }}{% else %}—{% endif %}</td>
+        <td class="num">{% if r.est_drift_90d is not none %}{{ '%+.0f'|format(r.est_drift_90d) }}%{% else %}—{% endif %}</td>
+        <td class="num">{% if r.n_scarcity %}<span class="fx-rscar" title="{{ r.scarcity_members|join(', ') }}">{{ r.n_scarcity }}🔥</span>{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
   {# ---- forward-graded track record ---- #}
   <div class="fx-panel">
     <h2>{{ t('Forward-graded track record', '前瞻评分记录') }}</h2>
@@ -296,6 +336,7 @@
       <span class="chip2"><b>{{ track.revisions }}</b> {{ t('revision reads', '预期读数') }}</span>
       <span class="chip2"><b>{{ track.guidance }}</b> {{ t('guidance tilts', '指引倾向') }}</span>
       <span class="chip2"><b>{{ track.emergence }}</b> {{ t('discovery candidates', '发现候选') }}</span>
+      <span class="chip2"><b>{{ track.subsector }}</b> {{ t('subsector flags', '子行业标记') }}</span>
       {% for e in track.recent %}<span class="chip2">{{ e.theme }} · <b>{{ e.stage }}</b> · {{ e.asof }}</span>{% endfor %}
     </div>
     {% if grade %}

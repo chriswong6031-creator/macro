@@ -32,14 +32,15 @@ def _track_record() -> dict:
     Honest: these only began accruing recently, so this is a 'flags logged, grading forward'
     counter, not a hit-rate yet."""
     out = {"foresight": 0, "bottleneck": 0, "glut": 0, "revisions": 0, "guidance": 0,
-           "emergence": 0, "recent": []}
+           "emergence": 0, "subsector": 0, "recent": []}
     d = config.data_dir()
     for key, rel in (("foresight", "foresight/log.jsonl"),
                      ("bottleneck", "bottleneck/log.jsonl"),
                      ("glut", "glut_watch/log.jsonl"),
                      ("revisions", "themes/revisions_log.jsonl"),
                      ("guidance", "guidance_gap/log.jsonl"),
-                     ("emergence", "theme_emergence/log.jsonl")):
+                     ("emergence", "theme_emergence/log.jsonl"),
+                     ("subsector", "subsector_scan/log.jsonl")):
         p = d / rel
         if not p.exists():
             continue
@@ -97,6 +98,13 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("theme_emergence failed (non-fatal): %s", e)
         emergence = None
+    # Subsector radar: the cascade signature over all 113 Finviz sub-industries
+    try:
+        from engine.subsector_scan import compute_subsector_scan
+        subsectors = compute_subsector_scan(write_ledger=True)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("subsector_scan failed (non-fatal): %s", e)
+        subsectors = None
 
     themes = cascade.get("themes", [])
     stage_counts = {s: 0 for s in STAGE_ORDER}
@@ -126,6 +134,7 @@ def main() -> int:
             track=_track_record(),
             grade=grade_summary,
             emergence=emergence,
+            subsectors=subsectors,
             asof=cascade.get("asof"),
             generated_utc=built,
             nav_prefix="",

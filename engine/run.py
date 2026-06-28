@@ -335,6 +335,15 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("theme-emergence layer failed: %s", e)
         latest["theme_emergence"] = None
+    # Subsector radar: the cascade signature (text scarcity x revision breadth) over all 113
+    # Finviz sub-industries — systematic coverage of the known S&P 500 at sub-industry
+    # granularity, complementing the 18 curated themes + the small-cap discovery layer.
+    try:
+        from engine.subsector_scan import compute_subsector_scan
+        latest["subsector_scan"] = compute_subsector_scan()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("subsector-scan layer failed: %s", e)
+        latest["subsector_scan"] = None
     # Cross-asset confirmation: does the leading-family complex (BONDS + FX) CONFIRM
     # or DIVERGE from the equity/macro regime computed above? Reads the two dedicated
     # dashboards' contracts (data/bonds/bond_health.json, data/forex/latest.json) — whose
