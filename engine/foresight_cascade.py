@@ -299,6 +299,9 @@ def _append_ledger(payload: dict) -> None:
                 continue
     ts = datetime.now(timezone.utc).isoformat()
     asof = payload.get("asof")
+    # snapshot theme membership AT FLAG TIME so the grader can grade the basket point-in-time
+    # (not today's config, which may have added winners after the fact).
+    cfg_themes = (config.load() or {}).get("themes") or {}
     lines = []
     for r in payload["themes"]:
         if r["stage"] not in ("PRECIPICE", "BROADENING") or (r["theme"], asof) in seen:
@@ -306,6 +309,7 @@ def _append_ledger(payload: dict) -> None:
         lines.append(json.dumps({
             "theme": r["theme"], "asof": asof, "ts": ts, "stage": r["stage"],
             "bottleneck_band": r["bottleneck_band"], "revision_breadth": r["revision_breadth"],
+            "members": (cfg_themes.get(r["theme"]) or {}).get("tickers") or [],
         }, separators=(",", ":")))
     if lines:
         with p.open("a") as fh:

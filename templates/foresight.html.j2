@@ -422,7 +422,7 @@
   {# ---- forward-graded track record ---- #}
   <div class="fx-panel">
     <h2>{{ t('Forward-graded track record', '前瞻评分记录') }}</h2>
-    <div class="sub">{{ t('Every PRECIPICE / BROADENING flag is logged with a timestamp and graded forward against the basket\'s realized return — the desk\'s own hit-rate is measured, public, and immutable. The ledgers began accruing recently, so this is a flags-logged counter, not a hit-rate yet.', '每个 PRECIPICE / BROADENING 标记都带时间戳记录，并对篮子的实际收益进行前瞻评分——本台自身命中率可测量、公开且不可篡改。账本近期才开始累计，目前为标记计数，尚非命中率。') }}</div>
+    <div class="sub">{{ t('Every PRECIPICE / BROADENING flag is logged at fire time and graded forward vs SPY — <b>survivorship-free</b> (delisted members counted at their loss), on <b>point-in-time</b> basket membership, with a <b>Wilson 95% CI</b> and a <b>Benjamini-Hochberg FDR</b> gate so a small lucky sample can\'t read as edge. The ledgers began accruing recently, so until flags mature this is a flags-logged counter, never a fabricated hit-rate.', '每个 PRECIPICE / BROADENING 标记在触发时记录并对标普前瞻评分——<b>免幸存者偏差</b>（退市成分按其亏损计入）、采用<b>时点</b>篮子成分，并附<b>Wilson 95%置信区间</b>与<b>Benjamini-Hochberg FDR</b>门槛，使小样本的侥幸不会被读作优势。账本近期才开始累计，标记成熟前仅为计数，绝非编造命中率。') }}</div>
     <div class="fx-rec">
       <span class="chip2"><b>{{ track.foresight }}</b> {{ t('cascade flags', '级联标记') }}</span>
       <span class="chip2"><b>{{ track.bottleneck }}</b> {{ t('bottleneck regimes', '瓶颈机制') }}</span>
@@ -436,9 +436,11 @@
     {% if grade %}
     <div class="fx-rec" style="margin-top:9px">
       {% if grade.n_graded and grade.n_graded > 0 %}
+        {% if grade.pooled_hit_rate is not none %}<span class="chip2"><b>{{ t('pooled', '合计') }}</b> {{ (grade.pooled_hit_rate*100)|round|int }}% ({{ grade.n_graded }}){% if grade.pooled_ci95 %} · {{ t('95% CI', '95%置信') }} {{ (grade.pooled_ci95[0]*100)|round|int }}–{{ (grade.pooled_ci95[1]*100)|round|int }}%{% endif %}</span>{% endif %}
         {% for stage, b in grade.by_stage.items() %}{% if b.n %}
         <span class="chip2"><b>{{ stage }}</b> {{ t('hit-rate', '命中率') }} {{ (b.hit_rate*100)|round|int }}% ({{ b.hits }}/{{ b.n }}) · {{ t('excess', '超额') }} {{ '%+.1f'|format(b.avg_excess_pct) }}%</span>
         {% endif %}{% endfor %}
+        <span class="chip2">✅ <b>{{ grade.n_significant_fdr }}</b> {{ t('themes significant at FDR', '主题在FDR下显著') }} {{ (grade.fdr_q*100)|round|int }}%</span>
       {% else %}
         <span class="chip2">⏳ {{ t('accruing', '累计中') }} — <b>{{ grade.n_pending }}</b> {{ t('flags pending, graded forward over ~3mo vs SPY', '个标记待评分，约3个月后对标普前瞻评分') }}</span>
       {% endif %}
