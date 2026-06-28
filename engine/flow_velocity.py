@@ -216,28 +216,38 @@ def _name_map() -> dict[str, str]:
     return out
 
 
-def ashare_name_velocity(wide: pd.DataFrame | None = None, top: int = 14) -> dict | None:
-    if wide is None:
-        wide = _flow_panel()
-    if wide is None:
-        return None
+def _name_kinetics_map(wide: pd.DataFrame) -> dict[str, dict]:
+    """ticker → kinetics record, computed ONCE over the whole 主力 panel and shared by the
+    name leaderboard AND the sector drill-down — so a name's velocity is identical wherever it
+    appears (the datasets 'breathe together'). Skips names too short to score."""
     names = _name_map()
-    rows = []
+    out: dict[str, dict] = {}
     for tk in wide.columns:
         kin = _kinetics(wide[tk], _WK)
         if not kin or kin["vel_primary"] is None:
             continue
         rate = pd.to_numeric(wide[tk], errors="coerce").dropna()
-        rows.append({
+        out[tk] = {
             "ticker": tk, "name": names.get(tk),
             "vel": kin["vel_primary"], "accel": kin["accel"],
             "rate_now": round(float(rate.iloc[-1]), 1) if len(rate) else None,
             "rate_4wk": round(float(rate.tail(4).mean()), 1) if len(rate) >= 4 else None,
             "state": kin["state"], "state_zh": kin["state_zh"],
-        })
-    if len(rows) < 10:
+        }
+    return out
+
+
+def ashare_name_velocity(wide: pd.DataFrame | None = None, kmap: dict | None = None,
+                         top: int = 14) -> dict | None:
+    if wide is None:
+        wide = _flow_panel()
+    if wide is None:
         return None
-    df = pd.DataFrame(rows)
+    if kmap is None:
+        kmap = _name_kinetics_map(wide)
+    if len(kmap) < 10:
+        return None
+    df = pd.DataFrame(list(kmap.values()))
     inflow = df.sort_values("vel", ascending=False).head(top).to_dict("records")
     outflow = df.sort_values("vel").head(top).to_dict("records")
     return {"cadence": "weekly", "as_of": str(wide.index.max().date()),
@@ -247,11 +257,15 @@ def ashare_name_velocity(wide: pd.DataFrame | None = None, top: int = 14) -> dic
             "inflow": inflow, "outflow": outflow}
 
 
-def ashare_sector_velocity(wide: pd.DataFrame | None = None) -> dict | None:
+def ashare_sector_velocity(wide: pd.DataFrame | None = None, kmap: dict | None = None,
+                           seats_by_ticker: dict | None = None) -> dict | None:
     if wide is None:
         wide = _flow_panel()
     if wide is None:
         return None
+    if kmap is None:
+        kmap = _name_kinetics_map(wide)
+    seats_by_ticker = seats_by_ticker or {}
     try:
         from engine.baskets_china import _membership
         mem = _membership()
@@ -271,6 +285,11 @@ def ashare_sector_velocity(wide: pd.DataFrame | None = None) -> dict | None:
         kin = _kinetics(sect_flow, _WK)
         if not kin or kin["vel_primary"] is None:
             continue
+        # drill-down members: the sector's biggest movers (either direction), reusing the
+        # SAME shared kinetics so a member's velocity matches the name leaderboard exactly.
+        mem_recs = sorted((kmap[t] for t in cols if t in kmap),
+                          key=lambda r: -abs(r["vel"]))[:8]
+        inst_attention = sum(1 for t in cols if t in seats_by_ticker)
         rows.append({
             "id": bid, "name": b.get("name"), "name_zh": b.get("name_zh"),
             "category": b.get("category"), "n_members": len(cols),
@@ -278,57 +297,19 @@ def ashare_sector_velocity(wide: pd.DataFrame | None = None) -> dict | None:
             "rate_4wk": round(float(sect_flow.tail(4).mean()), 1),
             "state": kin["state"], "state_zh": kin["state_zh"],
             "spark": _spark(_series_tail(sect_flow.cumsum(), 52)),
+            "members": mem_recs, "inst_attention": inst_attention,
         })
     if len(rows) < 4:
         return None
     rows.sort(key=lambda r: (r["vel"] is None, -(r["vel"] or 0)))
     return {"cadence": "weekly", "as_of": str(wide.index.max().date()),
             "n": len(rows), "primary": _WK["primary"],
-            "note": "Per-sector big-money flow = equal-weight member main-money net-rate, ranked by 4-week velocity.",
-            "note_zh": "板块主力资金＝等权成分股主力净占比，按4周流速排序。",
+            "note": "Per-sector big-money flow = equal-weight member main-money net-rate, ranked by 4-week velocity. Expand a sector for its biggest-moving member names.",
+            "note_zh": "板块主力资金＝等权成分股主力净占比，按4周流速排序。展开板块查看流向最强的成分股。",
             "rows": rows}
 
 
-# ── 4) A-share Dragon-Tiger institutional seats (snapshot, not velocity) ───────
-def ashare_inst_seats(top: int = 12) -> dict | None:
-    """Closest free *institution-level* A-share read: net buys by 机构专用 seats on the
-    Dragon-Tiger board over its recent window. A snapshot of where institutional seats
-    showed up — anonymous, so context not attribution. Display-only."""
-    p = config.data_dir() / "china_lhb" / "detail.parquet"
-    if not p.exists():
-        return None
-    try:
-        df = pd.read_parquet(p)
-    except Exception as e:  # noqa: BLE001
-        log.debug("china_lhb unreadable (%s)", e)
-        return None
-    need = {"ticker", "name", "inst_net_buy_yi"}
-    if not need.issubset(df.columns):
-        return None
-    d = df.copy()
-    d["inst_net_buy_yi"] = pd.to_numeric(d["inst_net_buy_yi"], errors="coerce")
-    d = d[d["inst_net_buy_yi"].abs() > 0].dropna(subset=["inst_net_buy_yi"])
-    if len(d) < 4:
-        return None
-
-    def rows(frame):
-        out = []
-        for _, r in frame.iterrows():
-            out.append({"ticker": r["ticker"], "name": r.get("name"),
-                        "inst_net_yi": round(float(r["inst_net_buy_yi"]), 2),
-                        "n_buy": int(r.get("n_inst_buy") or 0),
-                        "n_sell": int(r.get("n_inst_sell") or 0)})
-        return out
-    buy = d.sort_values("inst_net_buy_yi", ascending=False).head(top)
-    sell = d.sort_values("inst_net_buy_yi").head(top)
-    asof = str(d["asof"].iloc[0]) if "asof" in d.columns and len(d) else None
-    return {"as_of": asof, "n": int(len(d)),
-            "note": "Dragon-Tiger (龙虎榜) 机构专用 institutional-seat net buys over the recent abnormal-volume window — anonymous seats, context not attribution.",
-            "note_zh": "龙虎榜机构专用席位近期净买入（异动窗口）——匿名席位，仅作背景参考。",
-            "buying": rows(buy), "selling": rows(sell)}
-
-
-# ── 5) HK southbound per-name (accruing → velocity when deep enough) ──────────
+# ── 4) HK southbound per-name (accruing → velocity when deep enough) ──────────
 def hk_name_flow() -> dict | None:
     """Mainland's per-name southbound positioning. The daily holdings history is still
     shallow, so we show the accumulation board now and compute net-share-flow VELOCITY
@@ -365,26 +346,64 @@ def hk_name_flow() -> dict | None:
 
 
 # ── public snapshot ───────────────────────────────────────────────────────────
+def _seats_by_ticker() -> dict[str, dict]:
+    """ticker → institutional-seat read (net ¥亿, seat counts, buy/sell dir) for the FULL
+    Dragon-Tiger detail (every active 机构专用 name, not just a top-N), joined onto the sector
+    member rows in the template so confluence covers the whole flow×seats overlap. The
+    confluence (flow vs seat agreement) is a pure render-time CLASS, never a stored or
+    manufactured score — the display-only honesty gate."""
+    p = config.data_dir() / "china_lhb" / "detail.parquet"
+    if not p.exists():
+        return {}
+    try:
+        d = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_lhb unreadable (%s)", e)
+        return {}
+    if not {"ticker", "inst_net_buy_yi"}.issubset(d.columns):
+        return {}
+    d = d.copy()
+    d["inst_net_buy_yi"] = pd.to_numeric(d["inst_net_buy_yi"], errors="coerce")
+    d = d[d["inst_net_buy_yi"].abs() > 0].dropna(subset=["inst_net_buy_yi"])
+    out: dict[str, dict] = {}
+    for _, r in d.iterrows():
+        inv = float(r["inst_net_buy_yi"])
+        out[r["ticker"]] = {"inst_net_yi": round(inv, 2),
+                            "n_buy": int(r.get("n_inst_buy") or 0),
+                            "n_sell": int(r.get("n_inst_sell") or 0),
+                            "dir": "buy" if inv > 0 else "sell"}
+    return out
+
+
 def snapshot() -> dict | None:
-    """Assemble the whole flow-velocity desk. Each panel is independently None-safe; the
-    desk renders as long as ANY panel resolves."""
+    """Assemble the whole flow-velocity desk. Each panel is independently None-safe; the desk
+    renders as long as ANY content panel resolves. The per-name kinetics is computed ONCE and
+    shared by the name leaderboard and the sector drill-down; institutional seats are joined
+    by ticker so sectors → names → seats are one connected dataset."""
     wide = _flow_panel()
+    kmap = _name_kinetics_map(wide) if wide is not None else {}
+    seats_by_ticker = _seats_by_ticker()
+    aggregate = aggregate_velocity()
     panels = {
-        "aggregate": aggregate_velocity(),
-        "ashare_names": ashare_name_velocity(wide),
-        "ashare_sectors": ashare_sector_velocity(wide),
-        "ashare_seats": ashare_inst_seats(),
+        "aggregate": aggregate,
+        "ashare_names": ashare_name_velocity(wide, kmap=kmap),
+        "ashare_sectors": ashare_sector_velocity(wide, kmap=kmap, seats_by_ticker=seats_by_ticker),
         "hk_names": hk_name_flow(),
+        "seats_by_ticker": seats_by_ticker,
     }
-    if not any(panels.values()):
+    content = ("aggregate", "ashare_names", "ashare_sectors", "hk_names")
+    if not any(panels.get(k) for k in content):
         return None
+    sb_vel = next((c.get("vel_primary") for c in (aggregate or [])
+                   if c.get("key") == "southbound"), None)
+    panels["sb_vel_primary"] = sb_vel
     asof = None
     for k in ("ashare_names", "ashare_sectors"):
         if panels.get(k):
             asof = panels[k].get("as_of")
             break
-    if asof is None and panels.get("aggregate"):
-        asof = panels["aggregate"][0].get("as_of")
+    if asof is None and aggregate:
+        asof = aggregate[0].get("as_of")
     panels["as_of"] = asof
     panels["note"] = ("Display-only positioning lens — flow is never scored into an "
                       "allocation signal. Velocity = standardized net-flow rate; "
@@ -406,14 +425,21 @@ if __name__ == "__main__":
             print(f"  A-share names: {nm['n']} ranked; top inflow:")
             for r in nm["inflow"][:5]:
                 print(f"    {r['ticker']:>10} {str(r.get('name')):<8} vel={r['vel']} accel={r['accel']} ({r['state']})")
+        sbt = snap.get("seats_by_ticker") or {}
+        print(f"  seats_by_ticker: {len(sbt)} names joinable for confluence")
         sec = snap.get("ashare_sectors")
         if sec:
-            print(f"  sectors: {sec['n']} ranked; top:")
-            for r in sec["rows"][:5]:
-                print(f"    {str(r['name']):<22} vel={r['vel']} accel={r['accel']} ({r['state']})")
-        seats = snap.get("ashare_seats")
-        if seats:
-            print(f"  inst seats: {seats['n']} names; top buy {seats['buying'][0]['ticker']} {seats['buying'][0]['inst_net_yi']}亿")
+            print(f"  sectors: {sec['n']} ranked; top (with drill-down + confluence):")
+            for r in sec["rows"][:4]:
+                print(f"    {str(r['name']):<22} vel={r['vel']} accel={r['accel']} inst_attn={r.get('inst_attention')} ({r['state']})")
+                for m in (r.get("members") or [])[:3]:
+                    seat = sbt.get(m["ticker"])
+                    conf = ""
+                    if seat:
+                        agree = (m["vel"] >= 0.5 and seat["dir"] == "buy") or (m["vel"] <= -0.5 and seat["dir"] == "sell")
+                        div = (m["vel"] >= 0.5 and seat["dir"] == "sell") or (m["vel"] <= -0.5 and seat["dir"] == "buy")
+                        conf = f"  🏛️{seat['dir']} {seat['inst_net_yi']}亿 {'✅CONFLUENCE' if agree else '⚠️DIVERGE' if div else '·'}"
+                    print(f"        {m['ticker']:>10} {str(m.get('name')):<8} vel={m['vel']}{conf}")
         hk = snap.get("hk_names")
         if hk:
             print(f"  HK southbound: depth={hk.get('depth')} ready={hk.get('vel_ready')} n_sized={hk.get('n_sized')}")
