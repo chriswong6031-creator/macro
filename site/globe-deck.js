@@ -489,9 +489,11 @@
     return '<svg viewBox="0 0 32 20" class="gd-sm"><path d="M' + (18) + ' 5a5 5 0 1 0 0 10 6 6 0 0 1 0-10z" fill="var(--muted)"/></svg>';
   }
   var rowEls = {};
+  // markets shown on the globe but intentionally hidden from the market-clock list
+  var CLOCK_HIDE = { TW: 1, GB: 1 };
   function buildSidebar() {
     var ul = stage.parentNode.querySelector(".gd-clock ul"); if (!ul) return;
-    DATA.slice().forEach(function (m) {
+    DATA.slice().filter(function (m) { return !CLOCK_HIDE[m.cc]; }).forEach(function (m) {
       var li = document.createElement("li"); li.className = "gd-row"; li.tabIndex = 0; li.setAttribute("data-cc", m.cc);
       li.innerHTML =
         '<span class="gd-r-sm"></span>' +
