@@ -30,6 +30,11 @@ jobs:
       # last-good site live instead of shipping a broken page. See PRs #152/#155.
       - name: guard — inline JS must parse
         run: python3 scripts/check_inline_js.py site
+      # Guard: refuse to deploy if the shared nav menu jams against the viewport
+      # top on any page (a page that zeroed its body top padding). Keeps the
+      # last-good site live instead of shipping a "menu with no padding". See PR #471.
+      - name: guard — nav menu must keep a top gap
+        run: python3 scripts/check_nav_gap.py site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site/
