@@ -361,6 +361,21 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("convergence layer failed: %s", e)
         latest["foresight_convergence"] = None
+    # LLM analyst reasoning over the convergence (graceful no-op without a credential) +
+    # deterministic thesis monitor (fires THESIS-BROKEN when that convergence decays).
+    try:
+        from engine.foresight_analyst import compute_foresight_analyst
+        latest["foresight_analyst"] = compute_foresight_analyst(
+            latest.get("foresight_convergence"), latest.get("foresight_cascade"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("foresight-analyst layer failed: %s", e)
+        latest["foresight_analyst"] = None
+    try:
+        from engine.thesis_monitor import compute_thesis_monitor
+        latest["thesis_monitor"] = compute_thesis_monitor(latest.get("foresight_convergence"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("thesis-monitor layer failed: %s", e)
+        latest["thesis_monitor"] = None
     # Cross-asset confirmation: does the leading-family complex (BONDS + FX) CONFIRM
     # or DIVERGE from the equity/macro regime computed above? Reads the two dedicated
     # dashboards' contracts (data/bonds/bond_health.json, data/forex/latest.json) — whose
