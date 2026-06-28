@@ -171,6 +171,9 @@ def _flat_gex_from_board(payload: dict) -> dict:
         "gamma_flip": s.get("gamma_flip"), "dist_to_flip_pct": s.get("dist_to_flip_pct"),
         "iv30": (round(iv / 100.0, 4) if iv is not None else None),   # PERCENT -> DECIMAL
         "call_wall": s.get("call_wall"), "put_wall": s.get("put_wall"),
+        # magnets + spot feed the Phase-3a posture/levels/pin narrative in stock.html.j2
+        "magnet_up": s.get("magnet_up"), "magnet_down": s.get("magnet_down"),
+        "spot": s.get("spot"),
         "tier": s.get("tier"), "n_strikes": s.get("n_strikes"),
         "rr_25d": s.get("rr_25d"),
         "vol_hole": payload.get("vol_hole"),
@@ -1209,6 +1212,10 @@ def main() -> int:
             _gc = gex_confirm.assess(gex_by_ticker[ticker], opex_days=opex_days)
             if _gc:
                 rec["gex_confirm"] = _gc
+        # OPEX-pin caution chip in stock.html.j2 reads g.opex_days (calendar days to the
+        # next monthly expiry — no feed). DISPLAY-ONLY, never in the score.
+        if rec.get("gex") is not None and opex_days is not None:
+            rec["gex"]["opex_days"] = opex_days
         if fragility_map.get(ticker):
             rec["fragility"] = fragility_map[ticker]
         if bsk_mem.get(ticker):
