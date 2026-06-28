@@ -257,6 +257,10 @@ jobs:
           # data/altdata/alerts.jsonl when build_site assembles the Alert Center. Reads the
           # collect job's committed data/quiver/* (no API key needed here); returns 0 on error.
           run_py "alternative data desk (build_alt_data)" scripts.build_alt_data
+          # 13F Smart-Money Trade Tracker — grades curated super-investor 13F moves by
+          # SPY-relative forward return (engine.manager_trades). Reads the committed
+          # data/smart_money/* snapshots + the breadth/yahoo price caches; returns 0 on error.
+          run_py "13F smart-money tracker (build_smart_money)" scripts.build_smart_money
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
           # Impulse Tracker — AFTER build_site (a US-stocks sibling page): writes impulse.html +
           # factordata/impulse.json from the breadth close/volume caches + the regime read

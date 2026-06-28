@@ -511,6 +511,15 @@ smart_money:
   history_quarters: 6          # snapshots kept per fund — 2 for the live quarter diff + deeper history for the multi-quarter accumulation trend (engine/smart_money.accumulation_trend)
   backfill_quarters: 8         # --full-history depth
   panel_top_n: 12              # holders shown per stock panel
+  # 13F Smart-Money TRADE TRACKER (engine/manager_trades.py + scripts/build_smart_money.py)
+  # — grades each fund's new/add/trim/exit moves by SPY-relative forward return from the
+  # public filing date. Track record / CONTEXT only, never wired into a score.
+  tracker:
+    horizon_days: 63           # fixed-window leg (≈ one quarter of sessions) for the apples-to-apples skill metric
+    min_conviction_pct: 1.0    # a move must be ≥ this % of the book to make the best/worst boards (filters rounding lots)
+    board_top_n: 25            # rows on the best-trades / worst-trades boards
+    featured_funds: [appaloosa]            # pinned "follow closely" — surfaced/starred on the leaderboard (Tepper)
+    featured_pair: [appaloosa, pershing]   # marquee head-to-head: Tepper's semis rotation vs Ackman's Mag-7 concentration
   funds:
     berkshire:   {cik: 1067983, name: "Berkshire Hathaway (Buffett)"}
     scion:       {cik: 1649339, name: "Scion Asset Mgmt (Burry)"}
