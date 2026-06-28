@@ -272,7 +272,7 @@ jobs:
             brun transmission "rate & inflation transmission (build_transmission)" scripts.build_transmission
             brun discovery    "discovery leaderboard (build_discovery)"            scripts.build_discovery
           }
-          cl_china() { brun china "build china a-share dashboard (build_china)" scripts.build_china; brun china_sector_desk "build china sector desk (build_china_sector_desk)" scripts.build_china_sector_desk; }
+          cl_china() { brun china "build china a-share dashboard (build_china)" scripts.build_china; brun china_sector_desk "build china sector desk (build_china_sector_desk)" scripts.build_china_sector_desk; brun china_sector_cyc "china sector cycles (build_china_sector_cycles)" scripts.build_china_sector_cycles; }
           cl_hk()    { brun hk    "build hong kong / hang seng (build_hk)"      scripts.build_hk; }
           cl_gex() {
             brun gex_board    "GEX magnets board (build_gex_board)"        scripts.build_gex_board

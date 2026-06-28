@@ -26,6 +26,11 @@
   /* ---- i18n (EN default, 中文 when <html data-lang="zh">) ----------------- */
   function curLang() { return document.documentElement.getAttribute("data-lang") === "zh" ? "zh" : "en"; }
   function L(en, zh) { return curLang() === "zh" ? (zh || en) : en; }
+  // benchmark label for the RS read — data-driven (US "SPY"; China "SHCOMP"/上证综指).
+  // US emits no benchmark_zh, so keep its zh label "标普" (byte-identical to the pre-refactor page).
+  function benchLabel() { var en = META.benchmark || "SPY"; return L(en, META.benchmark_zh || (en === "SPY" ? "标普" : en)); }
+  // "YYYY-MM" -> decimal year (for the forecast band guides)
+  function ymToX(t) { if (!t) return null; var p = String(t).split("-"); return (+p[0]) + ((+p[1] || 1) - 1) / 12; }
 
   var byId = {};
   ALL.forEach(function (s) { byId[s.id] = s; });
@@ -222,12 +227,27 @@
   function focusBands() {
     if (!state.focus) return [];
     var s = byId[state.focus]; if (!s) return [];
-    return legsOf(s).filter(function (g) { return g.narr; }).map(function (g) {
+    var out = legsOf(s).filter(function (g) { return g.narr; }).map(function (g) {
       var col = g.dir === "up" ? "var(--up)" : "var(--down)";
       var t = nz(g.narr, "title");
       return { x0: g.x0, x1: g.x1, cx: (g.x0 + g.x1) / 2, color: col, opacity: 0.06,
                label: t ? trim(t, 22) : null, labelY: 11, title: t || "" };
     });
+    // prominent projected next-turn band (the "forecast point") — drawn in the series accent
+    // as a shaded IQR band + a dashed central line, only when it falls in the visible domain.
+    // Gated on META.forecastPoint so US (no flag) is unaffected.
+    if (META.forecastPoint && s.proj && s.proj.central_x != null) {
+      var p = s.proj, ar = p.nextTurn === "peak" ? "▲" : "▼";
+      var lo = ymToX(p.low), hi = ymToX(p.high), cx = p.central_x;
+      if (cx <= META.xDomain[1] + 0.02) {
+        out.push({ x0: (lo != null ? Math.max(lo, META.today) : cx),
+                   x1: (hi != null ? Math.min(hi, META.xDomain[1]) : cx),
+                   cx: cx, color: s.accent, opacity: 0.12, labelY: 11,
+                   label: L("PROJ ", "推演 ") + ar + L(" · rhythm", " · 节奏"),
+                   title: L("Projected next turn ~", "推演下一拐点 ~") + fmtMon(p.central) + L(" — typical rhythm, not a backtested forecast", " — 典型节奏，非回测预测") });
+      }
+    }
+    return out;
   }
   function trim(t, n) { return t.length > n ? t.slice(0, n - 1) + "…" : t; }
 
@@ -584,6 +604,76 @@
     def.classList.remove("show"); foc.classList.add("show");
   }
 
+  // washout↔euphoria state signature (the Phase-0-stable read) — rendered when present
+  function signatureHTML(s) {
+    var sig = s.now && s.now.signature;
+    if (!sig || sig.score == null) return "";
+    var sc2 = Math.round(sig.score);
+    var col = sc2 <= 20 ? "var(--up)" : sc2 >= 80 ? "var(--down)" : "var(--muted)";
+    var detail = [];
+    if (sig.dist_200d_pct != null) detail.push(L("vs 200d ", "距200日 ") + (sig.dist_200d_pct >= 0 ? "+" : "") + sig.dist_200d_pct + "%");
+    if (sig.drawdown_pct != null) detail.push(L("drawdown ", "回撤 ") + sig.drawdown_pct + "%");
+    return '<div class="sc-sig">' +
+      '<div class="sc-sig-row"><span class="sc-sig-k">' + L("Washout ↔ Euphoria", "超卖 ↔ 过热") + '</span>' +
+        '<span class="sc-sig-v" style="color:' + col + '">' + sc2 + '/100 · ' + L(sig.label, sig.label_zh || sig.label) + '</span></div>' +
+      '<div class="sc-sig-bar"><i style="width:' + clamp(sc2, 2, 100) + '%"></i></div>' +
+      (detail.length ? '<div class="sc-sig-d">' + detail.join(" · ") + '</div>' : "") +
+    '</div>';
+  }
+
+  // prominent projected next-turn card (the user-requested "best-guess point", honestly framed).
+  // Gated on META.forecastPoint (China); without the flag (US) it renders the original compact
+  // regnote unchanged, so the US page is byte-identical to before.
+  function forecastCardHTML(s) {
+    var p = s.proj; if (!p || !p.central) return "";
+    if (!META.forecastPoint) {
+      return '<div class="cyc-regnote">' + L("Projected next " + p.nextTurn + " ≈ " + fmtMon(p.central) + " (" + fmtMon(p.low) + "–" + fmtMon(p.high) + "), from this sector’s own median half-cycle. A timing estimate, not a guarantee.",
+        "预计下次" + (p.nextTurn === "peak" ? "顶部" : "底部") + "约在 " + fmtMon(p.central) + "（" + fmtMon(p.low) + "–" + fmtMon(p.high) + "），基于该板块自身的中位半周期。仅为时间估计。") + '</div>';
+    }
+    var up = p.nextTurn === "peak", ar = up ? "▲" : "▼";
+    var band = (p.low && p.high) ? (fmtMon(p.low) + " – " + fmtMon(p.high)) : "";
+    var lenVal = p.period_yrs ? (p.period_yrs.median + L(" yr", " 年")) : "—";
+    return '<div class="sc-fcast ' + (up ? "pk" : "tr") + '">' +
+      '<div class="sc-fcast-hd"><span class="sc-fcast-ar">' + ar + '</span>' +
+        '<span class="sc-fcast-k">' + L("Projected next " + (up ? "peak" : "trough"), "推演下一" + (up ? "顶部" : "底部")) + '</span></div>' +
+      '<div class="sc-fcast-date">' + fmtMon(p.central) + '</div>' +
+      (band ? '<div class="sc-fcast-band">' + L("typical range ", "典型区间 ") + band + '</div>' : "") +
+      '<div class="sc-fcast-note">' + L("From this series’ own median half-cycle (" + lenVal + ") — a timing RHYTHM, not a backtested forecast.",
+        "基于该序列自身的中位半周期（" + lenVal + "）——属时间节奏，并非回测预测。") + '</div>' +
+    '</div>';
+  }
+
+  function _pwNarr(pw) { return curLang() === "zh" ? (pw.narrative_zh || pw.narrative_en || "") : (pw.narrative_en || ""); }
+  function _pwCaveat(pw) { return curLang() === "zh" ? (pw.caveat_zh || pw.caveat_en || "") : (pw.caveat_en || ""); }
+  // evidence-gated conditional forward odds (the 4 GS sectors only) — Wilson-CI conditioning,
+  // never a buy signal. Rendered only when the record carries a `pathway` block.
+  function pathwayHTML(s) {
+    var pw = s.pathway; if (!pw) return "";
+    var cond = pw.conditional || {}, h = cond.h6 || cond.h3 || null, setup = pw.setup || {};
+    var legs = setup.legs || [];
+    var odds = "";
+    if (h) {
+      var pr = Math.round(h.cond_rate * 100), base = Math.round(h.base_rate * 100), hz = h.h || 6;
+      var ci = Math.round(h.ci_lo * 100) + "–" + Math.round(h.ci_hi * 100) + "%";
+      var liftCls = h.lift > 0.03 ? "t-up" : h.lift < -0.03 ? "t-down" : "t-mix";
+      odds = '<div class="sc-pw-odds"><div class="sc-pw-big ' + liftCls + '">' + pr + '%</div>' +
+        '<div class="sc-pw-meta"><div class="sc-pw-line">' + L("forward-" + hz + "m positive", "未来" + hz + "个月上涨") + '</div>' +
+        '<div class="sc-pw-sub">' + L("vs ", "基准 ") + base + L("% base", "%") + ' · ' + L("CI ", "置信 ") + ci + ' · n=' + h.n + '</div></div></div>';
+    }
+    var legChips = legs.slice(0, 4).map(function (lg) {
+      var cls = lg.stance === "bullish" ? "pw-bull" : lg.stance === "bearish" ? "pw-bear" : "pw-neu";
+      return '<span class="sc-pw-leg ' + cls + '">' + L(lg.label_en, lg.label_zh) + '</span>';
+    }).join("");
+    return '<div class="cyc-grp cyc-grp-3 sc-pathway">' +
+      '<div class="cyc-lbl">' + L("Evidence-gated forward odds", "经证据门槛的前瞻概率") +
+        ' <span class="sc-pw-badge" title="' + L("conditional · display-only", "条件化 · 仅展示") + '">⚗︎</span></div>' +
+      odds +
+      (legChips ? '<div class="sc-pw-legs"><span class="sc-pw-legk">' + L("Lead cluster now", "当前领先因子") + '</span>' + legChips + '</div>' : "") +
+      (_pwNarr(pw) ? '<p class="sc-pw-narr">' + _pwNarr(pw) + '</p>' : "") +
+      (_pwCaveat(pw) ? '<p class="sc-pw-caveat">' + _pwCaveat(pw) + '</p>' : "") +
+    '</div>';
+  }
+
   function focusHTML(s) {
     var nw = s.now, ph = PHASES[nw.phase] || {}, tilt = tiltOf(s);
     function fact(k, v) { return '<div class="f"><div class="fk">' + k + '</div><div class="fv">' + v + '</div></div>'; }
@@ -617,20 +707,21 @@
         '<div class="cyc-lbl">' + L("Where it stands", "所处位置") + '</div>' +
         '<div class="sc-pos"><div class="sc-pos-bar"><div class="sc-pos-dot" style="--c:' + s.accent + ';left:' + clamp(nw.pos, 2, 98) + '%"></div></div></div>' +
         '<div class="sc-pos-lab">' + posLab + '</div>' +
+        signatureHTML(s) +
         '<div class="cyc-facts" style="margin-top:12px">' +
           fact(L("Last trough", "上次底部"), fmtMon(nw.lastTrough)) +
           fact(L("Last peak", "上次顶部"), fmtMon(nw.lastPeak)) +
           fact(L("Next " + ((s.proj || {}).nextTurn || "turn"), "下次" + ((s.proj || {}).nextTurn === "peak" ? "顶部" : "底部")), s.proj ? fmtMon(s.proj.central) : "—") +
           fact(L("Typical ½-cycle", "典型半周期"), lenVal) +
-          fact(L("RS vs SPY (63d)", "相对标普(63日)"), rsVal) +
+          fact(L("RS vs ", "相对") + benchLabel() + L(" (63d)", "(63日)"), rsVal) +
           fact(L("6y change", "6年涨跌"), (nw.ret_win_pct >= 0 ? "+" : "") + nw.ret_win_pct + "%") +
         '</div>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
         readHTML +
-        ((s.proj && s.proj.central) ? ('<div class="cyc-regnote">' + L("Projected next " + s.proj.nextTurn + " ≈ " + fmtMon(s.proj.central) + " (" + fmtMon(s.proj.low) + "–" + fmtMon(s.proj.high) + "), from this sector’s own median half-cycle. A timing estimate, not a guarantee.",
-          "预计下次" + (s.proj.nextTurn === "peak" ? "顶部" : "底部") + "约在 " + fmtMon(s.proj.central) + "（" + fmtMon(s.proj.low) + "–" + fmtMon(s.proj.high) + "），基于该板块自身的中位半周期。仅为时间估计。") + '</div>') : '') +
+        forecastCardHTML(s) +
       '</div>' +
+      pathwayHTML(s) +
       '<div class="cyc-grp cyc-grp-3">' +
         '<div class="cyc-lbl">' + L("Cycle legs — tap for the story", "周期区段 — 点击查看故事") + '</div>' +
         '<div class="sc-legs">' + legsHTML(s) + '</div>' +
@@ -720,7 +811,7 @@
         '</div>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
-        '<div class="cyc-lbl">' + L("Leadership · RS vs SPY (63d)", "领涨 · 相对标普(63日)") + '</div>' +
+        '<div class="cyc-lbl">' + L("Leadership · RS vs ", "领涨 · 相对") + benchLabel() + L(" (63d)", "(63日)") + '</div>' +
         '<div class="sc-lead">' + leadRows + '</div>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +

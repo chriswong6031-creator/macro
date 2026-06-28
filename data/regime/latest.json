@@ -4236,14 +4236,19 @@
     "doc_id": "fomc_2026-06-17",
     "asof": "2026-06-17",
     "tone_score": 0.0,
-    "guidance_direction": "unknown",
+    "guidance_direction": "on_hold",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
-    "confidence": "low",
+    "confidence": "medium",
     "confidence_gated": false,
     "dropped_fields": [],
-    "evidence": [],
-    "degraded_reason": "stop_max_tokens",
+    "evidence": [
+      {
+        "field": "guidance_direction",
+        "quote_span": "maintain the target range"
+      }
+    ],
+    "degraded_reason": null,
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
   "dislocation": {
@@ -4748,7 +4753,7 @@
   },
   "fed_path": {
     "asof": "2026-06-26",
-    "built": "2026-06-27T13:15:15.967709+00:00",
+    "built": "2026-06-27T23:29:51.783059+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -4810,15 +4815,17 @@
     "label_zh": "\u9e70\u6d3e",
     "color": "down",
     "implied_cuts_12m": -1.0,
-    "guidance": "unknown",
+    "guidance": "on_hold",
     "market_vs_fed_bp": 9.0,
     "market_vs_fed_en": "market \u2248 the Fed",
     "market_vs_fed_zh": "\u5e02\u573a\u4e0e\u7f8e\u8054\u50a8\u57fa\u672c\u4e00\u81f4",
     "drivers_en": [
-      "market prices ~1.0 hike(s) over 12m"
+      "market prices ~1.0 hike(s) over 12m",
+      "statement guidance on-hold"
     ],
     "drivers_zh": [
-      "\u5e02\u573a\u8ba1\u5165\u672a\u676512\u4e2a\u6708\u7ea61.0\u6b21\u52a0\u606f"
+      "\u5e02\u573a\u8ba1\u5165\u672a\u676512\u4e2a\u6708\u7ea61.0\u6b21\u52a0\u606f",
+      "\u58f0\u660e\u6307\u5f15\u6309\u5175\u4e0d\u52a8"
     ],
     "is_context_only": true,
     "phase0": "display-only \u2014 never scored",
@@ -11038,7 +11045,7 @@
   },
   "freshness": {
     "asof": "2026-06-26",
-    "built_at": "2026-06-27T13:15:18Z",
+    "built_at": "2026-06-27T23:29:54Z",
     "age_days": 1,
     "age_sessions": 0,
     "max_age_sessions": 1,

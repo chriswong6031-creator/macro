@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-06-27T13:58:12.991848+00:00",
-  "as_of": "2026-06-27",
+  "generated_utc": "2026-06-28T00:16:12.457993+00:00",
+  "as_of": "2026-06-28",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -9,7 +9,7 @@
       "emoji": "\ud83d\udfe5",
       "label_en": "Donald Trump trades",
       "label_zh": "\u7279\u6717\u666e\u4ea4\u6613",
-      "rows": 388,
+      "rows": 397,
       "last_seen": "2026-05-13",
       "recent": [
         {
@@ -23,10 +23,70 @@
           "_first_seen": "2026-06-20T00:51:48.398221+00:00"
         },
         {
-          "Ticker": "RALw",
-          "Company": "RALLIANT CORP",
+          "Ticker": null,
+          "Company": "Invesco Premier U.S. Government Money Market Portfolio Investor Class 5 - Frac.000 Solicited Order Discretion Exercised",
+          "Transaction": "Sale",
+          "Amount": "$1,001 - $15,000",
+          "Filed": "2026-05-13",
+          "Traded": "2026-03-06",
+          "ExcessReturn": null,
+          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
+        },
+        {
+          "Ticker": "CMCSA",
+          "Company": "COMCAST CORP NEW CLASS A",
           "Transaction": "Purchase",
-          "Amount": "$15,001 - $50,000",
+          "Amount": "$1,000,001 - $5,000,000",
+          "Filed": "2026-05-13",
+          "Traded": "2026-01-12",
+          "ExcessReturn": "-30.23474035615918",
+          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
+        },
+        {
+          "Ticker": null,
+          "Company": "SCHWAB GOVERNMENT MONEY FUND",
+          "Transaction": "Sale",
+          "Amount": "$1,001 - $15,000",
+          "Filed": "2026-05-13",
+          "Traded": "2026-02-24",
+          "ExcessReturn": null,
+          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
+        },
+        {
+          "Ticker": null,
+          "Company": "SCHWAB GOVERNMENT MONEY FUND",
+          "Transaction": "Sale",
+          "Amount": "$1,001 - $15,000",
+          "Filed": "2026-05-13",
+          "Traded": "2026-01-22",
+          "ExcessReturn": null,
+          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
+        },
+        {
+          "Ticker": "AAPL",
+          "Company": "APPLE INC UNSOLICITED",
+          "Transaction": "Purchase",
+          "Amount": "$1,000,001 - $5,000,000",
+          "Filed": "2026-05-13",
+          "Traded": "2026-03-02",
+          "ExcessReturn": "3.7815889980951214",
+          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
+        },
+        {
+          "Ticker": "GPN",
+          "Company": "GLOBAL PMTS INC",
+          "Transaction": "Sale",
+          "Amount": "$1,001 - $15,000",
+          "Filed": "2026-05-13",
+          "Traded": "2026-03-26",
+          "ExcessReturn": "-20.173669564933117",
+          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
+        },
+        {
+          "Ticker": null,
+          "Company": "BAXTER INTL INC",
+          "Transaction": "Sale",
+          "Amount": "$1,001 - $15,000",
           "Filed": "2026-05-13",
           "Traded": "2026-03-04",
           "ExcessReturn": null,
@@ -183,83 +243,23 @@
           "_first_seen": "2026-06-21T15:27:35.947483+00:00"
         },
         {
-          "Ticker": "HPQ",
-          "Company": "HP INC",
-          "Transaction": "Purchase",
+          "Ticker": "GOGO",
+          "Company": "GOGO INC",
+          "Transaction": "Sale",
           "Amount": "$1,001 - $15,000",
           "Filed": "2026-05-13",
-          "Traded": "2026-01-23",
-          "ExcessReturn": "12.60289505793755",
-          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
-        },
-        {
-          "Ticker": null,
-          "Company": "ADTALEN GLOBAL ED INC",
-          "Transaction": "Purchase",
-          "Amount": "$15,001 - $50,000",
-          "Filed": "2026-05-13",
-          "Traded": "2026-01-30",
-          "ExcessReturn": null,
-          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
-        },
-        {
-          "Ticker": null,
-          "Company": "ADELA INC",
-          "Transaction": "Purchase",
-          "Amount": "$15,001 - $50,000",
-          "Filed": "2026-05-13",
-          "Traded": "2026-03-04",
-          "ExcessReturn": null,
-          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
-        },
-        {
-          "Ticker": null,
-          "Company": "COMSTOCK RES INC",
-          "Transaction": "Purchase",
-          "Amount": "$15,001 - $50,000",
-          "Filed": "2026-05-13",
-          "Traded": "2026-03-30",
-          "ExcessReturn": null,
+          "Traded": "2026-01-26",
+          "ExcessReturn": "-33.015986710095135",
           "_first_seen": "2026-06-21T15:27:35.947483+00:00"
         },
         {
           "Ticker": "ETN",
-          "Company": "EATON CORP PLC F",
+          "Company": "EATON CORP PLC",
           "Transaction": "Purchase",
-          "Amount": "$1,001 - $15,000",
+          "Amount": "$1,000,001 - $5,000,000",
           "Filed": "2026-05-13",
           "Traded": "2026-03-17",
           "ExcessReturn": "4.564327117203224",
-          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
-        },
-        {
-          "Ticker": null,
-          "Company": "BLACKSTONE MTG TR INC REIT",
-          "Transaction": "Purchase",
-          "Amount": "$15,001 - $50,000",
-          "Filed": "2026-05-13",
-          "Traded": "2026-01-26",
-          "ExcessReturn": null,
-          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
-        },
-        {
-          "Ticker": null,
-          "Company": "BAXTER INTL INC",
-          "Transaction": "Sale",
-          "Amount": "$1,001 - $15,000",
-          "Filed": "2026-05-13",
-          "Traded": "2026-03-04",
-          "ExcessReturn": null,
-          "_first_seen": "2026-06-21T15:27:35.947483+00:00"
-        },
-        {
-          "Ticker": "GPN",
-          "Company": "GLOBAL PMTS INC",
-          "Transaction": "Sale",
-          "Amount": "$1,001 - $15,000",
-          "Filed": "2026-05-13",
-          "Traded": "2026-03-26",
-          "ExcessReturn": "-20.173669564933117",
           "_first_seen": "2026-06-21T15:27:35.947483+00:00"
         }
       ]
@@ -4460,233 +4460,233 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 408,
+      "rows": 437,
       "last_seen": "2026-06-27",
       "recent": [
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Jared+Huffman+Responds+to+Trump+Administration+Religious+Liberty+Commission+Report",
-          "time": "2026-06-27 02:19:57",
-          "headline": "Press Release: Jared Huffman Responds to Trump Administration Religious Liberty Commission Report",
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Plaskett+Responds+to+Supreme+Court+Ruling+on+Haitian+TPS+Protections",
+          "time": "2026-06-27 22:19:49",
+          "headline": "Press Release: Plaskett Responds to Supreme Court Ruling on Haitian TPS Protections",
           "category": "legislation_automated",
-          "summary": "<p>Rep. Huffman condemns a Trump commission report he says threatens church-state separation and First Amendment religious freedom.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189\u2026",
-          "image": "https://www.quiverquant.com/images/H001068_congress.png",
-          "_first_seen": "2026-06-27T10:21:48.854124+00:00"
+          "summary": "<p>Plaskett criticizes a Supreme Court ruling ending TPS protections for Haitian and Syrian nationals and urges Senate action.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,\u2026",
+          "image": "https://www.quiverquant.com/images/P000610_congress.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+SEC.+AND+CHIEF+LEGAL+OFFICER+of+%24NTRA+Sells+1%2C200+Shares",
-          "time": "2026-06-27 01:16:01",
-          "headline": "Insider Sale: SEC. AND CHIEF LEGAL OFFICER of $NTRA Sells 1,200 Shares",
-          "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1857843/Daniel-Rabinowitz\">DANIEL RABINOWITZ</a>, the SEC. AND CHIEF LEGAL OFFICER of <a href=\"https://www.quiverquant.com/stock/NTRA/\">$NTRA</a>, sold 1,200 shares of \u2026",
-          "image": "https://www.quiverquant.com/images/ntra_rect_new.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Steube%2C+Thompson+Introduce+Military+Survivor+Financial+Relief+Bill",
-          "time": "2026-06-27 00:20:01",
-          "headline": "Press Release: Steube, Thompson Introduce Military Survivor Financial Relief Bill",
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Troy+Carter+Responds+to+Soot+Pollution+Ruling",
+          "time": "2026-06-27 20:19:53",
+          "headline": "Press Release: Troy Carter Responds to Soot Pollution Ruling",
           "category": "legislation_automated",
-          "summary": "<p>Bipartisan bill seeks to give surviving military families more time for tax-advantaged financial decisions after a service member's death.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"colo\u2026",
-          "image": "https://www.quiverquant.com/images/S001214_congress.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
+          "summary": "<p>Congressman Carter supports a court ruling upholding soot pollution standards, citing public health benefits and economic concerns.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(\u2026",
+          "image": "https://www.quiverquant.com/images/C001125_congress.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+John+Larson+Files+Amendment+to+Block+Pentagon+Name+Change+Proposal",
-          "time": "2026-06-27 00:20:01",
-          "headline": "Press Release: John Larson Files Amendment to Block Pentagon Name Change Proposal",
+          "url": "https://www.quiverquant.com/news/Circle+Stock+%28CRCL%29+Opinions+on+USDC+Adoption+and+Recent+Volatility",
+          "time": "2026-06-27 17:32:47",
+          "headline": "Circle Stock (CRCL) Opinions on USDC Adoption and Recent Volatility",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Market Volatility Focus:</strong> Social media chatter centers on Circle's recent share price pullback to the $69 range, with analysts noting it aligns closely with key suppor\u2026",
+          "image": "https://www.quiverquant.com/images/crcl_rect_new.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Redwire+Stock+%28RDW%29+Opinions+on+Space+Sector+Dynamics",
+          "time": "2026-06-27 17:32:47",
+          "headline": "Redwire Stock (RDW) Opinions on Space Sector Dynamics",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Space sector momentum:</strong> Investors on social media have highlighted Redwire's revenue growth and expanding backlog amid broader interest in space infrastructure plays. \u2026",
+          "image": "https://www.quiverquant.com/images/rdw_rect_new.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Shopify+Stock+%28SHOP%29+Opinions+on+Trustpilot+Integration",
+          "time": "2026-06-27 17:32:47",
+          "headline": "Shopify Stock (SHOP) Opinions on Trustpilot Integration",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Trustpilot Partnership:</strong> Social media users highlighted Shopify's new integration with Trustpilot, set to launch June 29, as a strategic move to embed verified custome\u2026",
+          "image": "https://www.quiverquant.com/images/shop_rect_new.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/POET+Technologies+Stock+%28POET%29+Opinions+on+Recent+Price+Consolidation",
+          "time": "2026-06-27 17:32:47",
+          "headline": "POET Technologies Stock (POET) Opinions on Recent Price Consolidation",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Price Consolidation:</strong> Social media chatter centers on POET Technologies shares holding steady near $10 following a sharp retreat from earlier peaks. Observers note lig\u2026",
+          "image": "https://www.quiverquant.com/images/poet_rect_new.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Microsoft+Stock+%28MSFT%29+Opinions+on+AI+Capital+Expenditure+Worries",
+          "time": "2026-06-27 17:32:47",
+          "headline": "Microsoft Stock (MSFT) Opinions on AI Capital Expenditure Worries",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Stock Hits Lows:</strong> Microsoft shares have fallen sharply this year amid broader market scrutiny of technology valuations. Traders note the stock trading near multi-month\u2026",
+          "image": "https://www.quiverquant.com/images/msft_rect_new.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Western+Digital+Stock+%28WDC%29+Opinions+on+Recent+Semiconductor+Market+Volatility",
+          "time": "2026-06-27 17:32:47",
+          "headline": "Western Digital Stock (WDC) Opinions on Recent Semiconductor Market Volatility",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Year-to-Date Surge:</strong> Social media conversations emphasize Western Digital's standout 240% gain in 2026, ranking it among leading technology names driven by robust memo\u2026",
+          "image": "https://www.quiverquant.com/images/wdc_rect_new.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Eli+Lilly+Stock+%28LLY%29+Opinions+on+Analyst+Notes+Amid+Obesity+Drug+Shifts",
+          "time": "2026-06-27 17:32:47",
+          "headline": "Eli Lilly Stock (LLY) Opinions on Analyst Notes Amid Obesity Drug Shifts",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Analyst Upgrades:</strong> Recent analyst commentary has highlighted renewed confidence in Eli Lilly, with Cantor Fitzgerald reiterating an Overweight rating and a price targe\u2026",
+          "image": "https://www.quiverquant.com/images/lly_rect_new.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Constellation+Energy+Stock+%28CEG%29+Opinions+on+AI+Data+Center+Power+Demand",
+          "time": "2026-06-27 17:32:47",
+          "headline": "Constellation Energy Stock (CEG) Opinions on AI Data Center Power Demand",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">AI Power Demand:</strong> Social media chatter highlights Constellation Energy's role in supplying reliable nuclear power to meet surging needs from data centers. Investors po\u2026",
+          "image": "https://www.quiverquant.com/images/ceg_rect_new.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Brian+Mast+Highlights+Defense+and+Water+Priorities+in+Weekly+Update",
+          "time": "2026-06-27 16:19:52",
+          "headline": "Press Release: Brian Mast Highlights Defense and Water Priorities in Weekly Update",
           "category": "legislation_automated",
-          "summary": "<p>Rep. Larson proposed an NDAA amendment to block a Pentagon renaming plan, citing taxpayer costs and unnecessary spending.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,24\u2026",
-          "image": "https://www.quiverquant.com/images/L000557_congress.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24OVLY+Sells+375+Shares",
-          "time": "2026-06-26 23:30:49",
-          "headline": "Insider Sale: Director at $OVLY Sells 375 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>Don Barton, a director at <a href=\"https://www.quiverquant.com/stock/OVLY/\">$OVLY</a>, sold 375 shares of the company on 06-26-2026 for an estimated <strong>$12,472</strong>. We received data on the trade from a re\u2026",
-          "image": "https://www.quiverquant.com/images/ovly_rect_new.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+See+Remarks+of+%24STUB+Sells+25%2C080+Shares",
-          "time": "2026-06-26 23:30:49",
-          "headline": "Insider Sale: See Remarks of $STUB Sells 25,080 Shares",
-          "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/2059741/Nayaab-Islam\">Nayaab Islam</a>, the See Remarks of <a href=\"https://www.quiverquant.com/stock/STUB/\">$STUB</a>, sold 25,080 shares of the company on 06-26-2026 \u2026",
-          "image": "https://www.quiverquant.com/images/stub_rect_new.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/XMax+Inc.+Announces+Up+to+%2425+Million+in+AI+API+Agreements+and+First+GPU-as-a-Service+Contract",
-          "time": "2026-06-26 23:10:20",
-          "headline": "XMax Inc. Announces Up to $25 Million in AI API Agreements and First GPU-as-a-Service Contract",
-          "category": "press_release_summary",
-          "summary": "<p>XMax Inc. announced $25 million in AI service agreements and entered GPU-as-a-Service, expanding its AI business and infrastructure offerings.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>XMax Inc. has a\u2026",
-          "image": "https://www.quiverquant.com/images/xmax_rect_new.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2480%2C000+of+ALIBABA+GROUP+HOLDING+LIMITED+lobbying+was+just+disclosed",
-          "time": "2026-06-26 23:01:58",
-          "headline": "Lobbying Update: $80,000 of ALIBABA GROUP HOLDING LIMITED lobbying was just disclosed",
-          "category": "lobbying_automated",
-          "summary": "<p>$80,000 of ALIBABA GROUP HOLDING LIMITED lobbying was just disclosed, from Q2 of 2026, in a new Lobbying Disclosure Act filing.</p><p>This included lobbying on issues like:</p><p>\"Education about expanding US expor\u2026",
-          "image": "https://www.quiverquant.com/images/baba_rect_new.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Cartesian+Growth+Corporation+IV+Closes+%24275+Million+Initial+Public+Offering+of+Units",
-          "time": "2026-06-26 22:40:19",
-          "headline": "Cartesian Growth Corporation IV Closes $275 Million Initial Public Offering of Units",
-          "category": "press_release_summary",
-          "summary": "<p>Cartesian Growth Corporation IV closed its IPO, raising $275 million with units trading on Nasdaq under symbol CGCFU.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Cartesian Growth Corporation IV has comp\u2026",
-          "image": "https://www.quiverquant.com/images/cgcfu_rect_new.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Qorvo%2C+Inc.+%28%24QRVO%29+President+and+CEO+2026+Pay+Revealed",
-          "time": "2026-06-26 22:25:17",
-          "headline": "Qorvo, Inc. ($QRVO) President and CEO 2026 Pay Revealed",
-          "category": "insiders_automated",
-          "summary": "<p>We estimate that the President and CEO of Qorvo, Inc. ($QRVO), Robert A. Bruggeworth, received a compensation of <strong>$13,551,627</strong> in 2026. This is an increase of 3.28% from an estimated <strong>$13,106,\u2026",
-          "image": "https://www.quiverquant.com/images/qrvo_rect_new.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Reservoir+Media%2C+Inc.+%28%24RSVR%29+CEO+2026+Pay+Revealed",
-          "time": "2026-06-26 22:25:17",
-          "headline": "Reservoir Media, Inc. ($RSVR) CEO 2026 Pay Revealed",
-          "category": "insiders_automated",
-          "summary": "<p>We estimate that the CEO of Reservoir Media, Inc. ($RSVR), Golnar Khosrowshahi, received a compensation of <strong>$1,594,984</strong> in 2026. This is an increase of 1.02% from an estimated <strong>$1,578,649</str\u2026",
-          "image": "https://www.quiverquant.com/images/rsvr_rect_new.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/CORVEL+CORP+%28%24CRVL%29+CEO+2026+Pay+Revealed",
-          "time": "2026-06-26 22:25:17",
-          "headline": "CORVEL CORP ($CRVL) CEO 2026 Pay Revealed",
-          "category": "insiders_automated",
-          "summary": "<p>We estimate that the CEO of CORVEL CORP ($CRVL), Michael G. Combs, received a compensation of <strong>$1,285,043</strong> in 2026. This is an increase of 7.27% from an estimated <strong>$1,191,679</strong> in 2025.\u2026",
-          "image": "https://www.quiverquant.com/images/crvl_rect_new.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/J+M+SMUCKER+Co+%28%24SJM%29+CEO%2C+President+and+COB+2026+Pay+Revealed",
-          "time": "2026-06-26 22:25:17",
-          "headline": "J M SMUCKER Co ($SJM) CEO, President and COB 2026 Pay Revealed",
-          "category": "insiders_automated",
-          "summary": "<p>We estimate that the CEO, President and COB of J M SMUCKER Co ($SJM), Mark Smucker, received a compensation of <strong>$10,935,216</strong> in 2026. This is a decrease of -0.38% from an estimated <strong>$10,976,38\u2026",
-          "image": "https://www.quiverquant.com/images/sjm_rect_new.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Spectrum+Brands+Holdings%2C+Inc.+%28%24SPB%29+CEO+2025+Pay+Revealed",
-          "time": "2026-06-26 22:25:17",
-          "headline": "Spectrum Brands Holdings, Inc. ($SPB) CEO 2025 Pay Revealed",
-          "category": "insiders_automated",
-          "summary": "<p>We estimate that the CEO of Spectrum Brands Holdings, Inc. ($SPB), David M. Maura, received a compensation of <strong>$8,757,036</strong> in 2025. This is a decrease of -20.79% from an estimated <strong>$10,577,798\u2026",
-          "image": "https://www.quiverquant.com/images/spb_rect_new.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Amata+Meets+with+Agriculture+Secretary+Rollins+to+Discuss+Farm+Bill+and+Food+Security",
-          "time": "2026-06-26 22:21:04",
-          "headline": "Press Release: Amata Meets with Agriculture Secretary Rollins to Discuss Farm Bill and Food Security",
-          "category": "legislation_automated",
-          "summary": "<p>Amata met with USDA Secretary Rollins to discuss farm policy, funding, and American Samoa\u2019s food security role.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Amata\u2026",
-          "image": "https://www.quiverquant.com/images/R000600_congress.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Vince+Fong+Announces+CMS+Approval+of+California+Hospital+Funding+Plan",
-          "time": "2026-06-26 22:21:04",
-          "headline": "Press Release: Vince Fong Announces CMS Approval of California Hospital Funding Plan",
-          "category": "legislation_automated",
-          "summary": "<p>Congressman Fong says CMS approved California\u2019s hospital funding proposal, boosting hospitals statewide with about $5.9 billion in net benefits.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style\u2026",
-          "image": "https://www.quiverquant.com/images/F000480_congress.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Foushee-Led+AI+Measures+Advance+Through+House+Science+Committee",
-          "time": "2026-06-26 22:21:04",
-          "headline": "Press Release: Foushee-Led AI Measures Advance Through House Science Committee",
-          "category": "legislation_automated",
-          "summary": "<p>Foushee says House committee advanced bipartisan bills on AI labeling, frontier safety, and data center resource standards.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,\u2026",
-          "image": "https://www.quiverquant.com/images/F000477_congress.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Lori+Trahan+Supports+Bipartisan+KIDS+Act+Advancement",
-          "time": "2026-06-26 22:21:04",
-          "headline": "Press Release: Lori Trahan Supports Bipartisan KIDS Act Advancement",
-          "category": "legislation_automated",
-          "summary": "<p>Trahan supports a bipartisan child online safety bill, calling it a workable compromise to protect children.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Trahan b\u2026",
-          "image": "https://www.quiverquant.com/images/T000482_congress.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Thompson+Introduces+Bill+to+Extend+Benefits+Timeline+for+Military+Survivors",
-          "time": "2026-06-26 22:21:04",
-          "headline": "Press Release: Mike Thompson Introduces Bill to Extend Benefits Timeline for Military Survivors",
-          "category": "legislation_automated",
-          "summary": "<p>Bipartisan lawmakers introduced a bill to extend military survivor benefit deadlines, giving grieving families more time for financial decisions.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong styl\u2026",
-          "image": "https://www.quiverquant.com/images/T000460_congress.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Brian+Mast+backs+SAFE+Banking+Act+for+state-legal+cannabis+businesses",
-          "time": "2026-06-26 22:21:04",
-          "headline": "Press Release: Brian Mast backs SAFE Banking Act for state-legal cannabis businesses",
-          "category": "legislation_automated",
-          "summary": "<p>Brian Mast argues federally protected banking access should extend to state-legal cannabis businesses to improve safety and equal treatment.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"co\u2026",
+          "summary": "<p>Congressman Brian Mast highlights defense bill amendments and clean-water efforts, including military leave and Everglades-related water quality issues.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><stro\u2026",
           "image": "https://www.quiverquant.com/images/M001199_congress.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Pettersen+Seeks+Answers+Over+EPA+Region+8+Emergency+Communication+Concerns",
-          "time": "2026-06-26 22:21:04",
-          "headline": "Press Release: Pettersen Seeks Answers Over EPA Region 8 Emergency Communication Concerns",
+          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Daniel+S.+Goldman+introduces+H.R.+9349%3A+Voting+Systems+Protection+Act",
+          "time": "2026-06-27 15:42:28",
+          "headline": "New Bill: Representative Daniel S. Goldman introduces H.R. 9349: Voting Systems Protection Act",
           "category": "legislation_automated",
-          "summary": "<p>Pettersen and Colorado Democrats question EPA emergency preparedness after reported communication failures and safety protocol lapses in Denver.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style\u2026",
-          "image": "https://www.quiverquant.com/images/P000620_congress.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
+          "summary": "<p>We have received text from H.R. 9349: Voting Systems Protection Act. This bill was received on 2026-06-18, and currently has 8 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This bill would place ne\u2026",
+          "image": "https://www.quiverquant.com/images/G000599_congress.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Lou+Correa+Introduces+Bill+to+Create+Support+Dog+Pilot+Program+for+CBP+Workers",
-          "time": "2026-06-26 22:21:04",
-          "headline": "Press Release: Lou Correa Introduces Bill to Create Support Dog Pilot Program for CBP Workers",
+          "url": "https://www.quiverquant.com/news/New+Bill%3A+Senator+Sheldon+Whitehouse+introduces+S.+4819%3A+Lifeline+for+First+Responders+Act",
+          "time": "2026-06-27 15:42:28",
+          "headline": "New Bill: Senator Sheldon Whitehouse introduces S. 4819: Lifeline for First Responders Act",
           "category": "legislation_automated",
-          "summary": "<p>Correa and Joyce propose a pilot program to train shelter dogs as support canines for CBP frontline personnel.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Bill i\u2026",
-          "image": "https://www.quiverquant.com/images/C001110_congress.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
+          "summary": "<p>We have received text from S. 4819: Lifeline for First Responders Act. This bill was received on 2026-06-17, and currently has 9 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This bill would create\u2026",
+          "image": "https://www.quiverquant.com/images/W000802_congress.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Garamendi+Joins+Lawmakers+Opposing+Proposed+Changes+to+Federal+Health+Research+Grant+Process",
-          "time": "2026-06-26 22:21:04",
-          "headline": "Press Release: Garamendi Joins Lawmakers Opposing Proposed Changes to Federal Health Research Grant Process",
+          "url": "https://www.quiverquant.com/news/New+Bill%3A+Senator+Mazie+K.+Hirono+introduces+S.+4859%3A+Pell+Grant+Preservation+and+Expansion+Act+of+2026",
+          "time": "2026-06-27 15:42:28",
+          "headline": "New Bill: Senator Mazie K. Hirono introduces S. 4859: Pell Grant Preservation and Expansion Act of 2026",
           "category": "legislation_automated",
-          "summary": "<p>Garamendi and 125 lawmakers oppose proposed Trump administration changes to NIH grant reviews, warning of politicized health research.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: r\u2026",
-          "image": "https://www.quiverquant.com/images/G000559_congress.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
+          "summary": "<p>We have received text from S. 4859: Pell Grant Preservation and Expansion Act of 2026. This bill was received on 2026-06-23, and currently has 28 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This \u2026",
+          "image": "https://www.quiverquant.com/images/H001042_congress.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+House+Passes+Don+Davis-Led+Bill+to+Reform+Disaster+Loan+Oversight",
-          "time": "2026-06-26 22:21:04",
-          "headline": "Press Release: House Passes Don Davis-Led Bill to Reform Disaster Loan Oversight",
+          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Judy+Chu+introduces+H.R.+9400%3A+American+Rescuers+of+the+Holocaust+Congressional+Gold+Medal+Act+of+2026",
+          "time": "2026-06-27 15:42:28",
+          "headline": "New Bill: Representative Judy Chu introduces H.R. 9400: American Rescuers of the Holocaust Congressional Gold Medal Act of 2026",
           "category": "legislation_automated",
-          "summary": "<p>House passes bipartisan bill to strengthen oversight and financial safeguards for SBA disaster loans.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">House passes Da\u2026",
-          "image": "https://www.quiverquant.com/images/D000230_congress.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
+          "summary": "<p>We have received text from H.R. 9400: American Rescuers of the Holocaust Congressional Gold Medal Act of 2026. This bill was received on 2026-06-23, and currently has 18 cosponsors.</p><p>Here is a short summary of\u2026",
+          "image": "https://www.quiverquant.com/images/C001080_congress.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24AVGO+Sells+30%2C456+Shares",
-          "time": "2026-06-26 22:16:38",
-          "headline": "Insider Sale: Director at $AVGO Sells 30,456 Shares",
-          "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1201633/Henry-Samueli\">HENRY SAMUELI</a>, a director at <a href=\"https://www.quiverquant.com/stock/AVGO/\">$AVGO</a>, sold 30,456 shares of the company on 06-24-2026 for\u2026",
-          "image": "https://www.quiverquant.com/images/avgo_rect_new.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
+          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Sam+Liccardo+introduces+H.R.+9438%3A+Supporting+Knowledge+through+Industry-Led+Learning+Act",
+          "time": "2026-06-27 15:42:28",
+          "headline": "New Bill: Representative Sam Liccardo introduces H.R. 9438: Supporting Knowledge through Industry-Led Learning Act",
+          "category": "legislation_automated",
+          "summary": "<p>We have received text from H.R. 9438: Supporting Knowledge through Industry-Led Learning Act. This bill was received on 2026-06-24, and currently has 1 cosponsor.</p><p>Here is a short summary of the bill:</p><p>\n \u2026",
+          "image": "https://www.quiverquant.com/images/L000607_congress.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Don+Bacon+introduces+H.R.+9417%3A+Artemis+II+Congressional+Gold+Medal+Act",
+          "time": "2026-06-27 15:42:28",
+          "headline": "New Bill: Representative Don Bacon introduces H.R. 9417: Artemis II Congressional Gold Medal Act",
+          "category": "legislation_automated",
+          "summary": "<p>We have received text from H.R. 9417: Artemis II Congressional Gold Medal Act. This bill was received on 2026-06-24, and currently has 3 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This bill woul\u2026",
+          "image": "https://www.quiverquant.com/images/B001298_congress.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Mark+Pocan+introduces+H.R.+9414%3A+Pell+Grant+Preservation+and+Expansion+Act+of+2026",
+          "time": "2026-06-27 15:42:28",
+          "headline": "New Bill: Representative Mark Pocan introduces H.R. 9414: Pell Grant Preservation and Expansion Act of 2026",
+          "category": "legislation_automated",
+          "summary": "<p>We have received text from H.R. 9414: Pell Grant Preservation and Expansion Act of 2026. This bill was received on 2026-06-23, and currently has 40 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n Thi\u2026",
+          "image": "https://www.quiverquant.com/images/P000607_congress.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Steven+Horsford+introduces+H.R.+9352%3A+AI-Related+Job+Impacts+Clarity+Act",
+          "time": "2026-06-27 15:42:28",
+          "headline": "New Bill: Representative Steven Horsford introduces H.R. 9352: AI-Related Job Impacts Clarity Act",
+          "category": "legislation_automated",
+          "summary": "<p>We have received text from H.R. 9352: AI-Related Job Impacts Clarity Act. This bill was received on 2026-06-18, and currently has 2 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This bill would req\u2026",
+          "image": "https://www.quiverquant.com/images/H001066_congress.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Shontel+M.+Brown+introduces+H.R.+9423%3A+Organic+Imports+Verification+Act+of+2026",
+          "time": "2026-06-27 15:42:28",
+          "headline": "New Bill: Representative Shontel M. Brown introduces H.R. 9423: Organic Imports Verification Act of 2026",
+          "category": "legislation_automated",
+          "summary": "<p>We have received text from H.R. 9423: Organic Imports Verification Act of 2026. This bill was received on 2026-06-24, and currently has 1 cosponsor.</p><p>Here is a short summary of the bill:</p><p>\n This bill woul\u2026",
+          "image": "https://www.quiverquant.com/images/B001313_congress.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Bill%3A+Senator+Edward+J.+Markey+introduces+S.+4864%3A+Providing+Understanding+of+Paraprofessionals+in+Learning+Act",
+          "time": "2026-06-27 15:42:28",
+          "headline": "New Bill: Senator Edward J. Markey introduces S. 4864: Providing Understanding of Paraprofessionals in Learning Act",
+          "category": "legislation_automated",
+          "summary": "<p>We have received text from S. 4864: Providing Understanding of Paraprofessionals in Learning Act. This bill was received on 2026-06-23, and currently has 2 cosponsors.</p><p>Here is a short summary of the bill:</p>\u2026",
+          "image": "https://www.quiverquant.com/images/M000133_congress.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Bill%3A+Senator+Ben+Ray+Lujan+introduces+S.+4860%3A+Cultivating+Horticultural+Innovation+in+Local+Economies+Act+of+2026",
+          "time": "2026-06-27 15:42:28",
+          "headline": "New Bill: Senator Ben Ray Lujan introduces S. 4860: Cultivating Horticultural Innovation in Local Economies Act of 2026",
+          "category": "legislation_automated",
+          "summary": "<p>We have received text from S. 4860: Cultivating Horticultural Innovation in Local Economies Act of 2026. This bill was received on 2026-06-23, and currently has 9 cosponsors.</p><p>Here is a short summary of the bi\u2026",
+          "image": "https://www.quiverquant.com/images/L000570_congress.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Henry+C.+%22Hank%22+Johnson%2C+Jr.+introduces+H.R.+9408%3A+Open+Meetings+Act+of+2026",
+          "time": "2026-06-27 15:42:28",
+          "headline": "New Bill: Representative Henry C. \"Hank\" Johnson, Jr. introduces H.R. 9408: Open Meetings Act of 2026",
+          "category": "legislation_automated",
+          "summary": "<p>We have received text from H.R. 9408: Open Meetings Act of 2026. This bill was received on 2026-06-23, and currently has 6 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This bill would require the\n\u2026",
+          "image": "https://www.quiverquant.com/images/J000288_congress.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Bill%3A+Senator+Ted+Cruz+introduces+S.+4863%3A+Save+Our+Shrimpers+Act",
+          "time": "2026-06-27 15:42:28",
+          "headline": "New Bill: Senator Ted Cruz introduces S. 4863: Save Our Shrimpers Act",
+          "category": "legislation_automated",
+          "summary": "<p>We have received text from S. 4863: Save Our Shrimpers Act. This bill was received on 2026-06-23, and currently has 3 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This bill would direct the U.S. T\u2026",
+          "image": "https://www.quiverquant.com/images/C001098_congress.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Summer+L.+Lee+introduces+H.R.+9437%3A+Right+to+Vote+Act",
+          "time": "2026-06-27 15:42:28",
+          "headline": "New Bill: Representative Summer L. Lee introduces H.R. 9437: Right to Vote Act",
+          "category": "legislation_automated",
+          "summary": "<p>We have received text from H.R. 9437: Right to Vote Act. This bill was received on 2026-06-24, and currently has 23 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This bill would create a new federa\u2026",
+          "image": "https://www.quiverquant.com/images/L000602_congress.png",
+          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
         }
       ]
     },
@@ -5212,28 +5212,38 @@
       "emoji": "\ud83d\udcf1",
       "label_en": "App ratings",
       "label_zh": "\u5e94\u7528\u8bc4\u5206",
-      "rows": 25579,
-      "last_seen": "2026-06-26",
+      "rows": 27406,
+      "last_seen": "2026-06-27",
       "recent": [
         {
-          "Ticker": "FISV",
-          "App": "Chairman\u2019s Club Fiserv App",
-          "Created": "2023-04-26",
-          "Publisher": "Fiserv, Inc",
-          "Rating": "0.0",
-          "Count": "0",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Ticker": "VRML",
+          "App": "Vermillion State Bank",
+          "Created": "2017-11-08",
+          "Publisher": "Vermillion State Bank",
+          "Rating": "4.86933",
+          "Count": "1102",
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GIGM",
-          "App": "TAIWAN MAHJONG HD",
-          "Created": "2011-03-26",
+          "App": "New TW MJ",
+          "Created": "2013-01-08",
           "Publisher": "Hoshin GigaMedia Center Inc., FunTown Branch.",
-          "Rating": "4.05084",
-          "Count": "59",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Rating": "3.5",
+          "Count": "8",
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
+        },
+        {
+          "Ticker": "GH",
+          "App": "Guardant Health Portal",
+          "Created": "2016-09-16",
+          "Publisher": "Guardant Health, Inc",
+          "Rating": "2.25",
+          "Count": "4",
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GGG",
@@ -5242,8 +5252,8 @@
           "Publisher": "Graco Inc.",
           "Rating": "4.33333",
           "Count": "6",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GGG",
@@ -5252,8 +5262,8 @@
           "Publisher": "Graco Inc.",
           "Rating": "3.66667",
           "Count": "3",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GGG",
@@ -5262,68 +5272,68 @@
           "Publisher": "Graco Inc.",
           "Rating": "4.7",
           "Count": "10",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GE",
           "App": "Portland General Electric",
           "Created": "2019-10-05",
           "Publisher": "Portland General Electric Company",
-          "Rating": "4.1578",
-          "Count": "545",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Rating": "4.15993",
+          "Count": "544",
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GE",
           "App": "General Electric Credit Union",
           "Created": "2017-07-03",
           "Publisher": "General Electric Credit Union",
-          "Rating": "4.78001",
-          "Count": "7105",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Rating": "4.77973",
+          "Count": "7123",
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GDOT",
           "App": "Walmart MoneyCard\u00ae",
           "Created": "2025-05-17",
           "Publisher": "Green Dot Corporation",
-          "Rating": "4.17882",
-          "Count": "6375",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Rating": "4.17889",
+          "Count": "6389",
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GDOT",
           "App": "Amazon Flex Debit Card",
           "Created": "2020-11-02",
           "Publisher": "Green Dot Corporation",
-          "Rating": "4.71908",
-          "Count": "10551",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Rating": "4.72047",
+          "Count": "10582",
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GDOT",
           "App": "Green Dot - Mobile Banking",
           "Created": "2011-05-17",
           "Publisher": "Green Dot Corporation",
-          "Rating": "3.43222",
-          "Count": "11899",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Rating": "3.43187",
+          "Count": "11904",
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GDDY",
           "App": "GoDaddy: Websites & Marketing",
           "Created": "2012-07-05",
           "Publisher": "GoDaddy Mobile LLC",
-          "Rating": "4.82883",
-          "Count": "106412",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Rating": "4.82878",
+          "Count": "106420",
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GCP",
@@ -5332,8 +5342,8 @@
           "Publisher": "GCP Applied Technologies Inc.",
           "Rating": "0.0",
           "Count": "0",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GCO",
@@ -5342,8 +5352,8 @@
           "Publisher": "Genesco Inc.",
           "Rating": "2.8",
           "Count": "5",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5352,8 +5362,8 @@
           "Publisher": "Gannett",
           "Rating": "4.53852",
           "Count": "4063",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5362,8 +5372,8 @@
           "Publisher": "Gannett",
           "Rating": "4.54614",
           "Count": "7185",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5372,28 +5382,28 @@
           "Publisher": "Gannett",
           "Rating": "4.34449",
           "Count": "5736",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GCI",
           "App": "azcentral",
           "Created": "2014-03-11",
           "Publisher": "Gannett",
-          "Rating": "4.34734",
-          "Count": "6570",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Rating": "4.34722",
+          "Count": "6572",
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GCI",
           "App": "Detroit Free Press: Freep",
           "Created": "2014-09-18",
           "Publisher": "Gannett",
-          "Rating": "4.57253",
-          "Count": "12616",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Rating": "4.57247",
+          "Count": "12617",
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GAIA",
@@ -5402,28 +5412,28 @@
           "Publisher": "Gaia Interactive Inc.",
           "Rating": "1.66209",
           "Count": "364",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GAIA",
           "App": "Gaia: Streaming Consciousness",
           "Created": "2014-02-27",
           "Publisher": "Gaia, Inc",
-          "Rating": "4.83076",
-          "Count": "138818",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Rating": "4.83068",
+          "Count": "138852",
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "GABC",
           "App": "German American Mobile Banking",
           "Created": "2014-02-10",
           "Publisher": "German American Bancorp, Inc.",
-          "Rating": "4.79135",
-          "Count": "9437",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Rating": "4.79106",
+          "Count": "9443",
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "FWRD",
@@ -5432,8 +5442,8 @@
           "Publisher": "Forward Air Corporation",
           "Rating": "2.44444",
           "Count": "18",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "FVRR",
@@ -5441,9 +5451,9 @@
           "Created": "2011-12-11",
           "Publisher": "Fiverr International Ltd.",
           "Rating": "4.91718",
-          "Count": "567576",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Count": "567627",
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         },
         {
           "Ticker": "FUNC",
@@ -5452,18 +5462,8 @@
           "Publisher": "First United Bank and Trust Company",
           "Rating": "4.82367",
           "Count": "431",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
-        },
-        {
-          "Ticker": "FUNC",
-          "App": "First United Bank (TX)",
-          "Created": "2014-02-28",
-          "Publisher": "First United Bank, TX",
-          "Rating": "4.70625",
-          "Count": "800",
-          "Time": "2026-06-26",
-          "_first_seen": "2026-06-27T02:07:01.337454+00:00"
+          "Time": "2026-06-27",
+          "_first_seen": "2026-06-27T23:19:17.221565+00:00"
         }
       ]
     },
@@ -6210,7 +6210,7 @@
         "total_usd": 83791637.0,
         "contracts": 35,
         "agencies": 2,
-        "accel_x": 17.47,
+        "accel_x": 17.49,
         "top_agency": "Department of Veterans Affairs"
       },
       {
@@ -6234,7 +6234,7 @@
         "total_usd": 40884749.0,
         "contracts": 15,
         "agencies": 4,
-        "accel_x": 2.06,
+        "accel_x": 2.07,
         "top_agency": "Department of Commerce"
       },
       {
@@ -6258,7 +6258,7 @@
         "total_usd": 14715128.0,
         "contracts": 10,
         "agencies": 5,
-        "accel_x": 0.58,
+        "accel_x": 0.6,
         "top_agency": "Department of Defense"
       },
       {
@@ -6495,19 +6495,9 @@
         "items": "1.01, 2.03, 5.02, 7.01, 8.01"
       },
       {
-        "ticker": "BLD",
-        "count": 4,
-        "items": "1.01, 8.01"
-      },
-      {
         "ticker": "GOOGL",
         "count": 4,
         "items": "1.01, 5.02, 7.01, 8.01"
-      },
-      {
-        "ticker": "AAL",
-        "count": 3,
-        "items": "1.01, 2.03, 5.02, 7.01"
       },
       {
         "ticker": "ASPI",
@@ -6525,6 +6515,11 @@
         "items": "7.01, 8.01"
       },
       {
+        "ticker": "BLD",
+        "count": 3,
+        "items": "1.01, 8.01"
+      },
+      {
         "ticker": "CIFR",
         "count": 3,
         "items": "1.01, 2.03, 7.01, 8.01"
@@ -6538,11 +6533,6 @@
         "ticker": "DELL",
         "count": 3,
         "items": "1.01, 2.03, 8.01"
-      },
-      {
-        "ticker": "DKNG",
-        "count": 3,
-        "items": "5.02, 7.01"
       },
       {
         "ticker": "FITB",
@@ -6570,19 +6560,9 @@
         "items": "5.02, 7.01, 8.01"
       },
       {
-        "ticker": "KEY",
-        "count": 3,
-        "items": "7.01, 8.01"
-      },
-      {
         "ticker": "NEE",
         "count": 3,
         "items": "8.01"
-      },
-      {
-        "ticker": "NNE",
-        "count": 3,
-        "items": "1.01, 2.01, 5.02, 7.01, 8.01"
       },
       {
         "ticker": "QBTS",
@@ -6593,6 +6573,26 @@
         "ticker": "SMCI",
         "count": 3,
         "items": "1.01, 7.01, 8.01"
+      },
+      {
+        "ticker": "WRB",
+        "count": 3,
+        "items": "1.01, 2.03, 5.02, 8.01"
+      },
+      {
+        "ticker": "AAL",
+        "count": 2,
+        "items": "5.02, 7.01"
+      },
+      {
+        "ticker": "ALGT",
+        "count": 2,
+        "items": "7.01, 8.01"
+      },
+      {
+        "ticker": "ALK",
+        "count": 2,
+        "items": "5.02, 7.01"
       }
     ],
     "special_situations": [
@@ -35789,6 +35789,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "EHLD",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "HBCYF",
         "category": "Delistings",
         "confidence": "high",
@@ -37349,6 +37357,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "RANGR",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "CLIK",
         "category": "Acquisitions",
         "confidence": "high",
@@ -37813,6 +37829,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "SVA",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "UZD",
         "category": "Divestitures",
         "confidence": "high",
@@ -38077,6 +38101,46 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "SLMT",
+        "category": "Activist Campaigns",
+        "confidence": "high",
+        "activist": true,
+        "filer": null,
+        "detail": "Activist Campaigns"
+      },
+      {
+        "ticker": "HUBCZ",
+        "category": "Delistings",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "LFS",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "ORLA",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "SVM",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "AMT",
         "category": "Other",
         "confidence": "medium",
@@ -38293,14 +38357,6 @@
         "detail": "Other"
       },
       {
-        "ticker": "SLMT",
-        "category": "Activist Campaigns",
-        "confidence": "high",
-        "activist": true,
-        "filer": null,
-        "detail": "Activist Campaigns"
-      },
-      {
         "ticker": "HKIT",
         "category": "Other",
         "confidence": "high",
@@ -38331,14 +38387,6 @@
         "activist": false,
         "filer": null,
         "detail": "Liquidations"
-      },
-      {
-        "ticker": "SVM",
-        "category": "Other",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Other"
       },
       {
         "ticker": "TGB",
@@ -39133,14 +39181,6 @@
         "detail": "Other"
       },
       {
-        "ticker": "LFS",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "NIPG",
         "category": "Acquisitions",
         "confidence": "high",
@@ -39379,14 +39419,6 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
-      },
-      {
-        "ticker": "ORLA",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "SKK",
@@ -40368,6 +40400,12 @@
         "hot": true
       },
       {
+        "ticker": "NEE",
+        "bull_ratio": 0.8,
+        "articles": 50,
+        "hot": true
+      },
+      {
         "ticker": "DRS",
         "bull_ratio": 0.79,
         "articles": 19,
@@ -40401,12 +40439,6 @@
         "ticker": "URI",
         "bull_ratio": 0.77,
         "articles": 31,
-        "hot": true
-      },
-      {
-        "ticker": "AMAT",
-        "bull_ratio": 0.76,
-        "articles": 50,
         "hot": true
       }
     ],
@@ -40533,8 +40565,8 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17576,
-        "wow_pct": 0.82,
+        "stars": 17587,
+        "wow_pct": 0.88,
         "hot": true
       },
       {
@@ -40557,26 +40589,26 @@
       },
       {
         "ticker": "MSFT",
-        "stars": 186844,
+        "stars": 186845,
         "wow_pct": 0.15,
         "hot": true
       },
       {
         "ticker": "ESTC",
-        "stars": 77170,
-        "wow_pct": 0.12,
+        "stars": 77174,
+        "wow_pct": 0.13,
         "hot": true
       },
       {
         "ticker": "U",
-        "stars": 19517,
-        "wow_pct": 0.11,
+        "stars": 19519,
+        "wow_pct": 0.12,
         "hot": true
       },
       {
         "ticker": "MDB",
-        "stars": 28405,
-        "wow_pct": 0.1,
+        "stars": 28407,
+        "wow_pct": 0.11,
         "hot": false
       },
       {
@@ -40599,14 +40631,14 @@
       },
       {
         "ticker": "META",
-        "stars": 246137,
+        "stars": 246135,
         "wow_pct": 0.07,
         "hot": false
       },
       {
         "ticker": "PLTR",
-        "stars": 21860,
-        "wow_pct": 0.05,
+        "stars": 21865,
+        "wow_pct": 0.07,
         "hot": false
       },
       {
@@ -41323,12 +41355,78 @@
         "excess_return": null
       },
       {
-        "ticker": "RALw",
-        "company": "RALLIANT CORP",
+        "ticker": null,
+        "company": "Invesco Premier U.S. Government Money Market Portfolio Investor Class 5 - Frac.000 Solicited Order Discretion Exercised",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-06",
+        "excess_return": null
+      },
+      {
+        "ticker": "CMCSA",
+        "company": "COMCAST CORP NEW CLASS A",
         "side": "buy",
         "transaction": "Purchase",
-        "est_usd": 32500.0,
-        "amount": "$15,001 - $50,000",
+        "est_usd": 3000000.0,
+        "amount": "$1,000,001 - $5,000,000",
+        "filed": "2026-05-13",
+        "traded": "2026-01-12",
+        "excess_return": -30.23474035615918
+      },
+      {
+        "ticker": null,
+        "company": "SCHWAB GOVERNMENT MONEY FUND",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
+        "filed": "2026-05-13",
+        "traded": "2026-02-24",
+        "excess_return": null
+      },
+      {
+        "ticker": null,
+        "company": "SCHWAB GOVERNMENT MONEY FUND",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
+        "filed": "2026-05-13",
+        "traded": "2026-01-22",
+        "excess_return": null
+      },
+      {
+        "ticker": "AAPL",
+        "company": "APPLE INC UNSOLICITED",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 3000000.0,
+        "amount": "$1,000,001 - $5,000,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-02",
+        "excess_return": 3.7815889980951214
+      },
+      {
+        "ticker": "GPN",
+        "company": "GLOBAL PMTS INC",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-26",
+        "excess_return": -20.173669564933117
+      },
+      {
+        "ticker": null,
+        "company": "BAXTER INTL INC",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
         "filed": "2026-05-13",
         "traded": "2026-03-04",
         "excess_return": null
@@ -41499,15 +41597,26 @@
         "excess_return": null
       },
       {
-        "ticker": "HPQ",
-        "company": "HP INC",
-        "side": "buy",
-        "transaction": "Purchase",
+        "ticker": "GOGO",
+        "company": "GOGO INC",
+        "side": "sell",
+        "transaction": "Sale",
         "est_usd": 8000.0,
         "amount": "$1,001 - $15,000",
         "filed": "2026-05-13",
-        "traded": "2026-01-23",
-        "excess_return": 12.60289505793755
+        "traded": "2026-01-26",
+        "excess_return": -33.015986710095135
+      },
+      {
+        "ticker": "ETN",
+        "company": "EATON CORP PLC",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 3000000.0,
+        "amount": "$1,000,001 - $5,000,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-17",
+        "excess_return": 4.564327117203224
       },
       {
         "ticker": null,
@@ -41521,21 +41630,32 @@
         "excess_return": null
       },
       {
-        "ticker": null,
-        "company": "ADELA INC",
-        "side": "buy",
-        "transaction": "Purchase",
+        "ticker": "MMM",
+        "company": "3M CO",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 8000.0,
+        "amount": "$1,001 - $15,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-26",
+        "excess_return": -4.22196790254873
+      },
+      {
+        "ticker": "DEI",
+        "company": "DOUGLAS EMMETT INC REIT",
+        "side": "sell",
+        "transaction": "Sale",
         "est_usd": 32500.0,
         "amount": "$15,001 - $50,000",
         "filed": "2026-05-13",
-        "traded": "2026-03-04",
-        "excess_return": null
+        "traded": "2026-01-26",
+        "excess_return": 3.1985721990260005
       },
       {
         "ticker": null,
-        "company": "COMSTOCK RES INC",
-        "side": "buy",
-        "transaction": "Purchase",
+        "company": "FIRST INST BANC SYSTEM I CLASS A",
+        "side": "sell",
+        "transaction": "Sale",
         "est_usd": 32500.0,
         "amount": "$15,001 - $50,000",
         "filed": "2026-05-13",
@@ -41543,67 +41663,56 @@
         "excess_return": null
       },
       {
-        "ticker": "ETN",
-        "company": "EATON CORP PLC F",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-17",
-        "excess_return": 4.564327117203224
-      },
-      {
         "ticker": null,
-        "company": "BLACKSTONE MTG TR INC REIT",
-        "side": "buy",
-        "transaction": "Purchase",
+        "company": "Bank Amor Corp Com Solicited Order Discretion Exercised",
+        "side": "sell",
+        "transaction": "Sale",
         "est_usd": 32500.0,
         "amount": "$15,001 - $50,000",
         "filed": "2026-05-13",
-        "traded": "2026-01-26",
+        "traded": "2026-03-27",
         "excess_return": null
       },
       {
-        "ticker": null,
-        "company": "BAXTER INTL INC",
-        "side": "sell",
-        "transaction": "Sale",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-04",
-        "excess_return": null
-      },
-      {
-        "ticker": "GPN",
-        "company": "GLOBAL PMTS INC",
-        "side": "sell",
-        "transaction": "Sale",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-26",
-        "excess_return": -20.173669564933117
-      },
-      {
-        "ticker": "AAPL",
-        "company": "APPLE INC UNSOLICITED",
+        "ticker": "JBL",
+        "company": "JABIL INC",
         "side": "buy",
         "transaction": "Purchase",
         "est_usd": 3000000.0,
         "amount": "$1,000,001 - $5,000,000",
         "filed": "2026-05-13",
-        "traded": "2026-03-02",
-        "excess_return": 3.7815889980951214
+        "traded": "2026-02-10",
+        "excess_return": 35.73013321158341
       },
       {
         "ticker": null,
-        "company": "Krz & Co Inc Com Solicited Order Discretion Exercised",
+        "company": "BLACKSTONE MTG TR INC REIT",
         "side": "sell",
         "transaction": "Sale",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
+        "est_usd": 32500.0,
+        "amount": "$15,001 - $50,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-30",
+        "excess_return": null
+      },
+      {
+        "ticker": "LRN",
+        "company": "STRIDE INC",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 32500.0,
+        "amount": "$15,001 - $50,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-30",
+        "excess_return": -19.788330494368154
+      },
+      {
+        "ticker": null,
+        "company": "Core Group Inc Cl A Solicited Order Discretion Exercised",
+        "side": "sell",
+        "transaction": "Sale",
+        "est_usd": 32500.0,
+        "amount": "$15,001 - $50,000",
         "filed": "2026-05-13",
         "traded": "2026-03-27",
         "excess_return": null
@@ -41709,13 +41818,13 @@
       },
       {
         "ticker": null,
-        "company": "SCHWAB GOVERNMENT MONEY FUND",
+        "company": "Krz & Co Inc Com Solicited Order Discretion Exercised",
         "side": "sell",
         "transaction": "Sale",
         "est_usd": 8000.0,
         "amount": "$1,001 - $15,000",
         "filed": "2026-05-13",
-        "traded": "2026-01-13",
+        "traded": "2026-03-27",
         "excess_return": null
       },
       {
@@ -41726,7 +41835,7 @@
         "est_usd": 8000.0,
         "amount": "$1,001 - $15,000",
         "filed": "2026-05-13",
-        "traded": "2026-01-22",
+        "traded": "2026-01-13",
         "excess_return": null
       },
       {
@@ -41763,114 +41872,103 @@
         "excess_return": null
       },
       {
-        "ticker": "MMM",
-        "company": "3M CO",
-        "side": "sell",
-        "transaction": "Sale",
+        "ticker": "HPQ",
+        "company": "HP INC",
+        "side": "buy",
+        "transaction": "Purchase",
         "est_usd": 8000.0,
         "amount": "$1,001 - $15,000",
         "filed": "2026-05-13",
-        "traded": "2026-03-26",
-        "excess_return": -4.22196790254873
+        "traded": "2026-01-23",
+        "excess_return": 12.60289505793755
       },
       {
-        "ticker": "ETN",
-        "company": "EATON CORP PLC",
+        "ticker": null,
+        "company": "ADELA INC",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 32500.0,
+        "amount": "$15,001 - $50,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-04",
+        "excess_return": null
+      },
+      {
+        "ticker": "MTZ",
+        "company": "Mastec Inc Com Solicited Order Discretion Exercised Allocated Order Your Broker Acted As Agent",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 175000.0,
+        "amount": "$100,001 - $250,000",
+        "filed": "2026-05-13",
+        "traded": "2026-02-02",
+        "excess_return": 47.329419346489786
+      },
+      {
+        "ticker": "TT",
+        "company": "TRANE TECHNOLOGIES PLC SHS",
         "side": "buy",
         "transaction": "Purchase",
         "est_usd": 3000000.0,
         "amount": "$1,000,001 - $5,000,000",
         "filed": "2026-05-13",
         "traded": "2026-03-17",
-        "excess_return": 4.564327117203224
+        "excess_return": 2.322442024833207
       },
       {
         "ticker": null,
-        "company": "Invesco Premier U.S. Government Money Market Portfolio Investor Class 5 - Frac.000 Solicited Order Discretion Exercised",
-        "side": "sell",
-        "transaction": "Sale",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-06",
-        "excess_return": null
-      },
-      {
-        "ticker": "GOGO",
-        "company": "GOGO INC",
-        "side": "sell",
-        "transaction": "Sale",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-01-26",
-        "excess_return": -33.015986710095135
-      },
-      {
-        "ticker": "CMCSA",
-        "company": "COMCAST CORP NEW CLASS A",
+        "company": "VANGUARD INTERMEDIATE-TERM CORPORATE BOND INDEX FUN",
         "side": "buy",
         "transaction": "Purchase",
-        "est_usd": 3000000.0,
-        "amount": "$1,000,001 - $5,000,000",
+        "est_usd": 75000.0,
+        "amount": "$50,001 - $100,000",
         "filed": "2026-05-13",
-        "traded": "2026-01-12",
-        "excess_return": -30.23474035615918
-      },
-      {
-        "ticker": null,
-        "company": "SCHWAB GOVERNMENT MONEY FUND",
-        "side": "sell",
-        "transaction": "Sale",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-02-24",
+        "traded": "2026-03-04",
         "excess_return": null
       },
       {
         "ticker": null,
-        "company": "QNTY ELECTRONICS INC UNSOLICITED",
+        "company": "CARNIVAL CORP PAIRED CTF 1 COM CARNI",
         "side": "buy",
         "transaction": "Purchase",
-        "est_usd": 32500.0,
-        "amount": "$15,001 - $50,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-11",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "STATE STREET CORP UNSOLICITED",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 32500.0,
-        "amount": "$15,001 - $50,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-23",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "Ishares Tr Russell 1000 Etf E1774634153032-00500 Average Unit Price Transaction Your Broker Acted As Agent",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 3000000.0,
-        "amount": "$1,000,001 - $5,000,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-27",
-        "excess_return": null
-      },
-      {
-        "ticker": "MSI",
-        "company": "MOTOROLA SOLUTIONS INC",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 3000000.0,
-        "amount": "$1,000,001 - $5,000,000",
+        "est_usd": 75000.0,
+        "amount": "$50,001 - $100,000",
         "filed": "2026-05-13",
         "traded": "2026-02-10",
-        "excess_return": -13.734102573021262
+        "excess_return": null
+      },
+      {
+        "ticker": null,
+        "company": "STATE STREET CONSUMER STAPLES SELECT SECTOR SPDR ETF",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 175000.0,
+        "amount": "$100,001 - $250,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-10",
+        "excess_return": null
+      },
+      {
+        "ticker": null,
+        "company": "STATE STREET FINANCIAL SELECT SECTOR SPDR ETF",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 175000.0,
+        "amount": "$100,001 - $250,000",
+        "filed": "2026-05-13",
+        "traded": "2026-03-10",
+        "excess_return": null
+      },
+      {
+        "ticker": null,
+        "company": "ONITY ELECTRONICS INC COMMON STOCK",
+        "side": "buy",
+        "transaction": "Purchase",
+        "est_usd": 175000.0,
+        "amount": "$100,001 - $250,000",
+        "filed": "2026-05-13",
+        "traded": "2026-02-10",
+        "excess_return": null
       },
       {
         "ticker": null,
@@ -41903,72 +42001,6 @@
         "amount": "$100,001 - $250,000",
         "filed": "2026-05-13",
         "traded": "2026-03-10",
-        "excess_return": null
-      },
-      {
-        "ticker": "TT",
-        "company": "TRANE TECHNOLOGIES PLC F",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 8000.0,
-        "amount": "$1,001 - $15,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-17",
-        "excess_return": 2.322442024833207
-      },
-      {
-        "ticker": null,
-        "company": "STATE STREET CONSUMER DISCRETIONARY SELECT SECTOR SPDR ETF",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 175000.0,
-        "amount": "$100,001 - $250,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-10",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "STATE STREET COMMUNICATION SERVICES SELECT SECTOR SPDR ETF",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 175000.0,
-        "amount": "$100,001 - $250,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-10",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "STATE STREET HEALTH CARE SELECT SECTOR SPDR ETF",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 175000.0,
-        "amount": "$100,001 - $250,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-10",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "STATE STRT HLTH CRE SLT SEC SPDR ETF",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 175000.0,
-        "amount": "$100,001 - $250,000",
-        "filed": "2026-05-13",
-        "traded": "2026-03-04",
-        "excess_return": null
-      },
-      {
-        "ticker": null,
-        "company": "Ishares Tr Russell 2000 Etf Solicited Order Discretion Exercised Allocated Order Your Broker Acted As Agent",
-        "side": "buy",
-        "transaction": "Purchase",
-        "est_usd": 175000.0,
-        "amount": "$100,001 - $250,000",
-        "filed": "2026-05-13",
-        "traded": "2026-02-02",
         "excess_return": null
       }
     ],
@@ -42066,144 +42098,144 @@
     ],
     "news": [
       {
-        "headline": "Press Release: Jared Huffman Responds to Trump Administration Religious Liberty Commission Report",
+        "headline": "Press Release: Plaskett Responds to Supreme Court Ruling on Haitian TPS Protections",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-27 02:19:57",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Jared+Huffman+Responds+to+Trump+Administration+Religious+Liberty+Commission+Report"
+        "time": "2026-06-27 22:19:49",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Plaskett+Responds+to+Supreme+Court+Ruling+on+Haitian+TPS+Protections"
       },
       {
-        "headline": "Insider Sale: SEC. AND CHIEF LEGAL OFFICER of $NTRA Sells 1,200 Shares",
-        "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-27 01:16:01",
-        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+SEC.+AND+CHIEF+LEGAL+OFFICER+of+%24NTRA+Sells+1%2C200+Shares"
-      },
-      {
-        "headline": "Press Release: Steube, Thompson Introduce Military Survivor Financial Relief Bill",
+        "headline": "Press Release: Troy Carter Responds to Soot Pollution Ruling",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-27 00:20:01",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Steube%2C+Thompson+Introduce+Military+Survivor+Financial+Relief+Bill"
+        "time": "2026-06-27 20:19:53",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Troy+Carter+Responds+to+Soot+Pollution+Ruling"
       },
       {
-        "headline": "Press Release: John Larson Files Amendment to Block Pentagon Name Change Proposal",
+        "headline": "Circle Stock (CRCL) Opinions on USDC Adoption and Recent Volatility",
+        "ticker": null,
+        "category": "discussion_automated",
+        "time": "2026-06-27 17:32:47",
+        "url": "https://www.quiverquant.com/news/Circle+Stock+%28CRCL%29+Opinions+on+USDC+Adoption+and+Recent+Volatility"
+      },
+      {
+        "headline": "Redwire Stock (RDW) Opinions on Space Sector Dynamics",
+        "ticker": null,
+        "category": "discussion_automated",
+        "time": "2026-06-27 17:32:47",
+        "url": "https://www.quiverquant.com/news/Redwire+Stock+%28RDW%29+Opinions+on+Space+Sector+Dynamics"
+      },
+      {
+        "headline": "Shopify Stock (SHOP) Opinions on Trustpilot Integration",
+        "ticker": null,
+        "category": "discussion_automated",
+        "time": "2026-06-27 17:32:47",
+        "url": "https://www.quiverquant.com/news/Shopify+Stock+%28SHOP%29+Opinions+on+Trustpilot+Integration"
+      },
+      {
+        "headline": "POET Technologies Stock (POET) Opinions on Recent Price Consolidation",
+        "ticker": null,
+        "category": "discussion_automated",
+        "time": "2026-06-27 17:32:47",
+        "url": "https://www.quiverquant.com/news/POET+Technologies+Stock+%28POET%29+Opinions+on+Recent+Price+Consolidation"
+      },
+      {
+        "headline": "Microsoft Stock (MSFT) Opinions on AI Capital Expenditure Worries",
+        "ticker": null,
+        "category": "discussion_automated",
+        "time": "2026-06-27 17:32:47",
+        "url": "https://www.quiverquant.com/news/Microsoft+Stock+%28MSFT%29+Opinions+on+AI+Capital+Expenditure+Worries"
+      },
+      {
+        "headline": "Western Digital Stock (WDC) Opinions on Recent Semiconductor Market Volatility",
+        "ticker": null,
+        "category": "discussion_automated",
+        "time": "2026-06-27 17:32:47",
+        "url": "https://www.quiverquant.com/news/Western+Digital+Stock+%28WDC%29+Opinions+on+Recent+Semiconductor+Market+Volatility"
+      },
+      {
+        "headline": "Eli Lilly Stock (LLY) Opinions on Analyst Notes Amid Obesity Drug Shifts",
+        "ticker": null,
+        "category": "discussion_automated",
+        "time": "2026-06-27 17:32:47",
+        "url": "https://www.quiverquant.com/news/Eli+Lilly+Stock+%28LLY%29+Opinions+on+Analyst+Notes+Amid+Obesity+Drug+Shifts"
+      },
+      {
+        "headline": "Constellation Energy Stock (CEG) Opinions on AI Data Center Power Demand",
+        "ticker": null,
+        "category": "discussion_automated",
+        "time": "2026-06-27 17:32:47",
+        "url": "https://www.quiverquant.com/news/Constellation+Energy+Stock+%28CEG%29+Opinions+on+AI+Data+Center+Power+Demand"
+      },
+      {
+        "headline": "Press Release: Brian Mast Highlights Defense and Water Priorities in Weekly Update",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-27 00:20:01",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+John+Larson+Files+Amendment+to+Block+Pentagon+Name+Change+Proposal"
+        "time": "2026-06-27 16:19:52",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Brian+Mast+Highlights+Defense+and+Water+Priorities+in+Weekly+Update"
       },
       {
-        "headline": "Insider Sale: Director at $OVLY Sells 375 Shares",
-        "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-26 23:30:49",
-        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24OVLY+Sells+375+Shares"
-      },
-      {
-        "headline": "Insider Sale: See Remarks of $STUB Sells 25,080 Shares",
-        "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-26 23:30:49",
-        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+See+Remarks+of+%24STUB+Sells+25%2C080+Shares"
-      },
-      {
-        "headline": "XMax Inc. Announces Up to $25 Million in AI API Agreements and First GPU-as-a-Service Contract",
-        "ticker": null,
-        "category": "press_release_summary",
-        "time": "2026-06-26 23:10:20",
-        "url": "https://www.quiverquant.com/news/XMax+Inc.+Announces+Up+to+%2425+Million+in+AI+API+Agreements+and+First+GPU-as-a-Service+Contract"
-      },
-      {
-        "headline": "Lobbying Update: $80,000 of ALIBABA GROUP HOLDING LIMITED lobbying was just disclosed",
-        "ticker": null,
-        "category": "lobbying_automated",
-        "time": "2026-06-26 23:01:58",
-        "url": "https://www.quiverquant.com/news/Lobbying+Update%3A+%2480%2C000+of+ALIBABA+GROUP+HOLDING+LIMITED+lobbying+was+just+disclosed"
-      },
-      {
-        "headline": "Cartesian Growth Corporation IV Closes $275 Million Initial Public Offering of Units",
-        "ticker": null,
-        "category": "press_release_summary",
-        "time": "2026-06-26 22:40:19",
-        "url": "https://www.quiverquant.com/news/Cartesian+Growth+Corporation+IV+Closes+%24275+Million+Initial+Public+Offering+of+Units"
-      },
-      {
-        "headline": "Qorvo, Inc. ($QRVO) President and CEO 2026 Pay Revealed",
-        "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-26 22:25:17",
-        "url": "https://www.quiverquant.com/news/Qorvo%2C+Inc.+%28%24QRVO%29+President+and+CEO+2026+Pay+Revealed"
-      },
-      {
-        "headline": "Reservoir Media, Inc. ($RSVR) CEO 2026 Pay Revealed",
-        "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-26 22:25:17",
-        "url": "https://www.quiverquant.com/news/Reservoir+Media%2C+Inc.+%28%24RSVR%29+CEO+2026+Pay+Revealed"
-      },
-      {
-        "headline": "CORVEL CORP ($CRVL) CEO 2026 Pay Revealed",
-        "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-26 22:25:17",
-        "url": "https://www.quiverquant.com/news/CORVEL+CORP+%28%24CRVL%29+CEO+2026+Pay+Revealed"
-      },
-      {
-        "headline": "J M SMUCKER Co ($SJM) CEO, President and COB 2026 Pay Revealed",
-        "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-26 22:25:17",
-        "url": "https://www.quiverquant.com/news/J+M+SMUCKER+Co+%28%24SJM%29+CEO%2C+President+and+COB+2026+Pay+Revealed"
-      },
-      {
-        "headline": "Spectrum Brands Holdings, Inc. ($SPB) CEO 2025 Pay Revealed",
-        "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-26 22:25:17",
-        "url": "https://www.quiverquant.com/news/Spectrum+Brands+Holdings%2C+Inc.+%28%24SPB%29+CEO+2025+Pay+Revealed"
-      },
-      {
-        "headline": "Press Release: Amata Meets with Agriculture Secretary Rollins to Discuss Farm Bill and Food Security",
+        "headline": "New Bill: Representative Daniel S. Goldman introduces H.R. 9349: Voting Systems Protection Act",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-26 22:21:04",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Amata+Meets+with+Agriculture+Secretary+Rollins+to+Discuss+Farm+Bill+and+Food+Security"
+        "time": "2026-06-27 15:42:28",
+        "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Daniel+S.+Goldman+introduces+H.R.+9349%3A+Voting+Systems+Protection+Act"
       },
       {
-        "headline": "Press Release: Vince Fong Announces CMS Approval of California Hospital Funding Plan",
+        "headline": "New Bill: Senator Sheldon Whitehouse introduces S. 4819: Lifeline for First Responders Act",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-26 22:21:04",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Vince+Fong+Announces+CMS+Approval+of+California+Hospital+Funding+Plan"
+        "time": "2026-06-27 15:42:28",
+        "url": "https://www.quiverquant.com/news/New+Bill%3A+Senator+Sheldon+Whitehouse+introduces+S.+4819%3A+Lifeline+for+First+Responders+Act"
       },
       {
-        "headline": "Press Release: Foushee-Led AI Measures Advance Through House Science Committee",
+        "headline": "New Bill: Senator Mazie K. Hirono introduces S. 4859: Pell Grant Preservation and Expansion Act of 2026",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-26 22:21:04",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Foushee-Led+AI+Measures+Advance+Through+House+Science+Committee"
+        "time": "2026-06-27 15:42:28",
+        "url": "https://www.quiverquant.com/news/New+Bill%3A+Senator+Mazie+K.+Hirono+introduces+S.+4859%3A+Pell+Grant+Preservation+and+Expansion+Act+of+2026"
       },
       {
-        "headline": "Press Release: Lori Trahan Supports Bipartisan KIDS Act Advancement",
+        "headline": "New Bill: Representative Judy Chu introduces H.R. 9400: American Rescuers of the Holocaust Congressional Gold Medal Act of 2026",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-26 22:21:04",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Lori+Trahan+Supports+Bipartisan+KIDS+Act+Advancement"
+        "time": "2026-06-27 15:42:28",
+        "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Judy+Chu+introduces+H.R.+9400%3A+American+Rescuers+of+the+Holocaust+Congressional+Gold+Medal+Act+of+2026"
       },
       {
-        "headline": "Press Release: Mike Thompson Introduces Bill to Extend Benefits Timeline for Military Survivors",
+        "headline": "New Bill: Representative Sam Liccardo introduces H.R. 9438: Supporting Knowledge through Industry-Led Learning Act",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-26 22:21:04",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Thompson+Introduces+Bill+to+Extend+Benefits+Timeline+for+Military+Survivors"
+        "time": "2026-06-27 15:42:28",
+        "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Sam+Liccardo+introduces+H.R.+9438%3A+Supporting+Knowledge+through+Industry-Led+Learning+Act"
       },
       {
-        "headline": "Press Release: Brian Mast backs SAFE Banking Act for state-legal cannabis businesses",
+        "headline": "New Bill: Representative Don Bacon introduces H.R. 9417: Artemis II Congressional Gold Medal Act",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-26 22:21:04",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Brian+Mast+backs+SAFE+Banking+Act+for+state-legal+cannabis+businesses"
+        "time": "2026-06-27 15:42:28",
+        "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Don+Bacon+introduces+H.R.+9417%3A+Artemis+II+Congressional+Gold+Medal+Act"
+      },
+      {
+        "headline": "New Bill: Representative Mark Pocan introduces H.R. 9414: Pell Grant Preservation and Expansion Act of 2026",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-06-27 15:42:28",
+        "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Mark+Pocan+introduces+H.R.+9414%3A+Pell+Grant+Preservation+and+Expansion+Act+of+2026"
+      },
+      {
+        "headline": "New Bill: Representative Steven Horsford introduces H.R. 9352: AI-Related Job Impacts Clarity Act",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-06-27 15:42:28",
+        "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Steven+Horsford+introduces+H.R.+9352%3A+AI-Related+Job+Impacts+Clarity+Act"
+      },
+      {
+        "headline": "New Bill: Representative Shontel M. Brown introduces H.R. 9423: Organic Imports Verification Act of 2026",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-06-27 15:42:28",
+        "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Shontel+M.+Brown+introduces+H.R.+9423%3A+Organic+Imports+Verification+Act+of+2026"
       }
     ],
     "wsb": [
@@ -42539,136 +42571,136 @@
       {
         "ticker": "UBER",
         "rating": 4.84,
-        "reviews": 29415870,
+        "reviews": 29437696,
         "apps": 6,
         "top_app": "Uber - Request a ride",
-        "review_velocity": 0.0,
+        "review_velocity": 21826.0,
         "lean": "strong"
       },
       {
         "ticker": "GOOGL",
         "rating": 4.71,
-        "reviews": 25622991,
+        "reviews": 25644366,
         "apps": 5,
         "top_app": "Google Drive",
-        "review_velocity": 0.0,
+        "review_velocity": 21375.0,
         "lean": "strong"
       },
       {
         "ticker": "MSFT",
         "rating": 4.77,
-        "reviews": 19671970,
+        "reviews": 19684388,
         "apps": 8,
         "top_app": "Microsoft Outlook",
-        "review_velocity": 0.0,
+        "review_velocity": 12418.0,
         "lean": "strong"
       },
       {
         "ticker": "WMT",
         "rating": 4.82,
-        "reviews": 18438317,
+        "reviews": 18461149,
         "apps": 5,
         "top_app": "Walmart: Shopping & Savings",
-        "review_velocity": 23.0,
+        "review_velocity": 22832.0,
         "lean": "strong"
       },
       {
         "ticker": "LYFT",
         "rating": 4.91,
-        "reviews": 17608413,
+        "reviews": 17620676,
         "apps": 3,
         "top_app": "Lyft",
-        "review_velocity": 0.0,
+        "review_velocity": 12263.0,
         "lean": "strong"
       },
       {
         "ticker": "SBUX",
         "rating": 4.89,
-        "reviews": 8077794,
+        "reviews": 8087971,
         "apps": 4,
         "top_app": "Starbucks",
-        "review_velocity": 0.0,
+        "review_velocity": 10177.0,
         "lean": "strong"
       },
       {
         "ticker": "Z",
         "rating": 4.8,
-        "reviews": 7628549,
+        "reviews": 7628813,
         "apps": 4,
         "top_app": "Zillow Real Estate & Rentals",
-        "review_velocity": 0.0,
+        "review_velocity": 264.0,
         "lean": "strong"
       },
       {
         "ticker": "ETSY",
         "rating": 4.92,
-        "reviews": 7197453,
+        "reviews": 7200639,
         "apps": 2,
         "top_app": "Etsy: Shop Home, Style & More",
-        "review_velocity": 60.0,
+        "review_velocity": 3186.0,
         "lean": "strong"
       },
       {
         "ticker": "LUV",
         "rating": 4.84,
-        "reviews": 7083190,
+        "reviews": 7086612,
         "apps": 1,
         "top_app": "Southwest Airlines: Travel App",
-        "review_velocity": 0.0,
+        "review_velocity": 3422.0,
         "lean": "strong"
       },
       {
         "ticker": "DAL",
         "rating": 4.85,
-        "reviews": 7006008,
+        "reviews": 7005978,
         "apps": 3,
         "top_app": "Fly Delta",
-        "review_velocity": 0.0,
+        "review_velocity": -30.0,
         "lean": "strong"
       },
       {
         "ticker": "SHOP",
         "rating": 4.81,
-        "reviews": 7051577,
+        "reviews": 7055690,
         "apps": 4,
         "top_app": "Shop: All your favorite brands",
-        "review_velocity": 35.0,
+        "review_velocity": 4113.0,
         "lean": "strong"
       },
       {
         "ticker": "NFLX",
         "rating": 4.75,
-        "reviews": 6748871,
+        "reviews": 6762562,
         "apps": 2,
         "top_app": "Netflix",
-        "review_velocity": 0.0,
+        "review_velocity": 13691.0,
         "lean": "strong"
       },
       {
         "ticker": "PINS",
         "rating": 4.78,
-        "reviews": 5691006,
+        "reviews": 5693333,
         "apps": 1,
         "top_app": "Pinterest",
-        "review_velocity": 0.0,
+        "review_velocity": 2327.0,
         "lean": "strong"
       },
       {
         "ticker": "ROKU",
         "rating": 4.74,
-        "reviews": 5737343,
+        "reviews": 5746645,
         "apps": 1,
         "top_app": "The Roku App (Official)",
-        "review_velocity": 0.0,
+        "review_velocity": 9302.0,
         "lean": "strong"
       },
       {
         "ticker": "SNAP",
         "rating": 4.51,
-        "reviews": 5845199,
+        "reviews": 5847768,
         "apps": 1,
         "top_app": "Snapchat",
-        "review_velocity": 0.0,
+        "review_velocity": 2569.0,
         "lean": "strong"
       }
     ],
@@ -44061,7 +44093,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.82% stars \u00b7 hf_model_momentum: +6.1% model downloads \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.88% stars \u00b7 hf_model_momentum: +6.1% model downloads \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "GOOGL",
@@ -44074,7 +44106,7 @@
           "material_8k",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,622,991 reviews \u00b7 hf_model_momentum: +4.5% model downloads \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,644,366 reviews \u00b7 hf_model_momentum: +4.5% model downloads \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "MSFT",
@@ -44087,7 +44119,7 @@
           "gov_contract",
           "patent_cluster"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,671,970 reviews \u00b7 github_momentum: +0.15% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 70 grants, 18 IPC classes"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,684,388 reviews \u00b7 github_momentum: +0.15% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 70 grants, 18 IPC classes"
       },
       {
         "ticker": "HOOD",
@@ -44170,7 +44202,7 @@
           "material_8k",
           "special_situation"
         ],
-        "why": "darkpool_accum: DPI 0.366 \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 5.02, 7.01) \u00b7 special_situation: Divestitures"
+        "why": "darkpool_accum: DPI 0.366 \u00b7 material_8k: 2 material 8-Ks (items 5.02, 7.01) \u00b7 special_situation: Divestitures"
       },
       {
         "ticker": "AZN",
@@ -44278,6 +44310,17 @@
         "why": "activist_13d: 13D activist campaign \u00b7 congress_buy: 1 member(s) net +8 \u00b7 news_sentiment: 0.84 bullish news (43 art)"
       },
       {
+        "ticker": "NEE",
+        "score": 3,
+        "weighted_score": 1.15,
+        "channel_list": [
+          "material_8k",
+          "news_sentiment",
+          "special_situation"
+        ],
+        "why": "material_8k: 3 material 8-Ks (items 8.01) \u00b7 news_sentiment: 0.8 bullish news (50 art) \u00b7 special_situation: Acquisitions"
+      },
+      {
         "ticker": "ETN",
         "score": 3,
         "weighted_score": 1.1,
@@ -44317,16 +44360,6 @@
           "fda_label_expansion"
         ],
         "why": "clinical_phase3_start: 3 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: PERJETA"
-      },
-      {
-        "ticker": "BMY",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion"
-        ],
-        "why": "clinical_phase3_start: 1 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: ONUREG"
       }
     ]
   }

@@ -84,6 +84,20 @@ def main() -> int:
         bench_en="CSI 300", bench_zh="沪深300",
         generated_utc=built)
     (site / "baskets_china.html").write_text(html)
+    # attach each basket's cycle record (engine.china_sector_cycles, written by
+    # scripts.build_china_sector_cycles) so the per-theme page can draw a cyclical mini-chart.
+    # Optional + ordering-safe: absent map (cycles not built yet) simply omits the chart.
+    try:
+        cyc_map_p = site / "chinasectordata" / "sector_cycles_basket_map.json"
+        if cyc_map_p.exists():
+            cyc_map = json.loads(cyc_map_p.read_text())
+            for b in data.get("baskets", []):
+                cyc = cyc_map.get(b.get("id"))
+                if cyc:
+                    b["cycle"] = cyc
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("china baskets cycle-map attach failed: %s", e)
+
     # per-theme detail pages (site/basket_china/<id>.html) + the shared desk renderer
     try:
         from scripts.build_theme_detail import build_detail_pages
