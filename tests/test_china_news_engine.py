@@ -229,6 +229,40 @@ def test_clean_title_strips_breadcrumb_and_relative_time() -> None:
     assert cn._clean_title("") == ""
 
 
+def test_decode_page_honors_document_charset() -> None:
+    # sina's finance pages are served `text/html` with NO HTTP charset, so requests
+    # falls back to ISO-8859-1 and r.text mojibakes the CJK (健康中国 -> "å¥åº·ä¸­å½").
+    zh = "健康中国 上海自贸 央行开展逆回购操作释放流动性"
+    mojibake = "健康中国".encode("utf-8").decode("latin-1")   # the exact reported garbage
+    # UTF-8 page, header omits the charset -> must sniff the <meta charset>
+    utf8 = ('<html><head><meta charset="utf-8"></head><body>'
+            + zh + "</body></html>").encode("utf-8")
+    assert zh in cn._decode_page(utf8, "text/html")
+    assert mojibake not in cn._decode_page(utf8, "text/html")
+    # GB2312/GBK page (the charset the task cites) round-trips via the gb18030 superset
+    gbk = ('<html><head><meta http-equiv="Content-Type" '
+           'content="text/html; charset=gb2312"></head><body>'
+           + zh + "</body></html>").encode("gb18030")
+    assert zh in cn._decode_page(gbk, "text/html")
+    # an explicit HTTP charset wins over the document
+    assert zh in cn._decode_page(zh.encode("utf-8"), "text/html; charset=utf-8")
+    # unknown/garbage encoding degrades to replacement chars, never raises
+    assert isinstance(cn._decode_page(b"\xff\xfe plain", "text/html; charset=bogus-enc"), str)
+
+
+def test_concept_nav_links_dropped() -> None:
+    # vip.stock.finance.sina.com.cn/mkt/#chgn_* / #gn_* are board-nav hubs, not stories
+    assert cn._is_concept_nav_link("https://vip.stock.finance.sina.com.cn/mkt/#chgn_jkzg")
+    assert cn._is_concept_nav_link("https://vip.stock.finance.sina.com.cn/mkt/#gn_shzm")
+    assert cn._is_concept_nav_link("http://vip.stock.finance.sina.com.cn/mkt#hangye_ZB01")
+    # real sina news stories and the section landing page are kept
+    assert not cn._is_concept_nav_link(
+        "https://finance.sina.com.cn/stock/relnews/cn/2026-06-28/doc-abc.shtml")
+    assert not cn._is_concept_nav_link("https://finance.sina.com.cn/stock/")
+    assert not cn._is_concept_nav_link("https://vip.stock.finance.sina.com.cn/mkt/#")  # no real board
+    assert not cn._is_concept_nav_link("not a url")
+
+
 def test_panel_importable() -> None:
     # the build_china entrypoint just calls cn.panel(); make sure it exists/imports
     assert callable(cn.panel) and callable(cn.policy_tone) and callable(cn.flash_headlines)
@@ -249,6 +283,8 @@ if __name__ == "__main__":
         test_parse_dateish_never_echoes_raw_input,
         test_enriched_time_is_clean_for_native_scraped_item,
         test_clean_title_strips_breadcrumb_and_relative_time,
+        test_decode_page_honors_document_charset,
+        test_concept_nav_links_dropped,
         test_panel_importable,
     ]
     for fn in tests:
