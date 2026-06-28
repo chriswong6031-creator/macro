@@ -1,36 +1,36 @@
 {
   "schema": "ss_backtest_priors.v1",
   "is_context_only": true,
-  "generated_at": "2026-06-22 02:08 UTC",
-  "n_situations": 1789,
+  "generated_at": "2026-06-28 12:54 UTC",
+  "n_situations": 1810,
   "entry": "first close after digest date",
   "by_category": {
+    "Acquisitions": {
+      "n": 278,
+      "med_ret_20d_pct": 0.4,
+      "win_20d_pct": 58.0,
+      "med_excess_20d_pct": -3.9,
+      "med_ret_60d_pct": 4.2
+    },
     "Activist Campaigns": {
-      "n": 276,
+      "n": 277,
       "med_ret_20d_pct": 0.0,
       "win_20d_pct": 50.0,
       "med_excess_20d_pct": -3.3,
-      "med_ret_60d_pct": -1.8
-    },
-    "Acquisitions": {
-      "n": 273,
-      "med_ret_20d_pct": 0.5,
-      "win_20d_pct": 59.0,
-      "med_excess_20d_pct": -4.0,
-      "med_ret_60d_pct": 2.0
+      "med_ret_60d_pct": 0.9
     },
     "Strategic Reviews": {
-      "n": 197,
-      "med_ret_20d_pct": -2.5,
+      "n": 201,
+      "med_ret_20d_pct": -2.3,
       "win_20d_pct": 39.0,
-      "med_excess_20d_pct": -4.1,
-      "med_ret_60d_pct": -5.9
+      "med_excess_20d_pct": -4.0,
+      "med_ret_60d_pct": -6.0
     },
     "Restructuring": {
-      "n": 189,
-      "med_ret_20d_pct": -3.5,
+      "n": 190,
+      "med_ret_20d_pct": -3.7,
       "win_20d_pct": 40.0,
-      "med_excess_20d_pct": -2.5,
+      "med_excess_20d_pct": -2.8,
       "med_ret_60d_pct": -3.6
     },
     "M&A / Divestitures": {
@@ -41,10 +41,10 @@
       "med_ret_60d_pct": -4.1
     },
     "Divestitures": {
-      "n": 126,
-      "med_ret_20d_pct": 3.2,
+      "n": 130,
+      "med_ret_20d_pct": 3.4,
       "win_20d_pct": 60.0,
-      "med_excess_20d_pct": -3.2,
+      "med_excess_20d_pct": -2.1,
       "med_ret_60d_pct": 2.0
     },
     "Other Situations": {
@@ -54,6 +54,13 @@
       "med_excess_20d_pct": 0.2,
       "med_ret_60d_pct": 0.5
     },
+    "Going-Private": {
+      "n": 69,
+      "med_ret_20d_pct": 0.5,
+      "win_20d_pct": 68.0,
+      "med_excess_20d_pct": -3.4,
+      "med_ret_60d_pct": null
+    },
     "Other": {
       "n": 67,
       "med_ret_20d_pct": 4.9,
@@ -62,24 +69,17 @@
       "med_ret_60d_pct": null
     },
     "Spin-Offs": {
-      "n": 65,
+      "n": 66,
       "med_ret_20d_pct": 2.8,
-      "win_20d_pct": 64.0,
-      "med_excess_20d_pct": -2.5,
-      "med_ret_60d_pct": -2.5
-    },
-    "Going-Private": {
-      "n": 65,
-      "med_ret_20d_pct": 0.5,
-      "win_20d_pct": 65.0,
-      "med_excess_20d_pct": -3.6,
-      "med_ret_60d_pct": null
+      "win_20d_pct": 63.0,
+      "med_excess_20d_pct": -0.2,
+      "med_ret_60d_pct": 3.1
     },
     "Capital Returns": {
       "n": 51,
-      "med_ret_20d_pct": 3.4,
-      "win_20d_pct": 74.0,
-      "med_excess_20d_pct": 0.7,
+      "med_ret_20d_pct": 2.8,
+      "win_20d_pct": 70.0,
+      "med_excess_20d_pct": -0.1,
       "med_ret_60d_pct": -28.7
     },
     "SPACs": {
@@ -115,7 +115,7 @@
       "med_ret_20d_pct": 0.5,
       "win_20d_pct": 53.0,
       "med_excess_20d_pct": -8.4,
-      "med_ret_60d_pct": 11.8
+      "med_ret_60d_pct": 12.7
     },
     "Rights Offerings": {
       "n": 14,
@@ -187,18 +187,18 @@
       "med_excess_20d_pct": -1.4,
       "med_ret_60d_pct": 4.2
     },
+    "Litigation Outcomes": {
+      "n": 2,
+      "med_ret_20d_pct": null,
+      "win_20d_pct": null,
+      "med_excess_20d_pct": null,
+      "med_ret_60d_pct": null
+    },
     "New SpinCos": {
       "n": 2,
       "med_ret_20d_pct": 3.1,
       "win_20d_pct": 50.0,
       "med_excess_20d_pct": -5.8,
-      "med_ret_60d_pct": null
-    },
-    "Litigation Outcomes": {
-      "n": 1,
-      "med_ret_20d_pct": null,
-      "win_20d_pct": null,
-      "med_excess_20d_pct": null,
       "med_ret_60d_pct": null
     },
     "Relistings": {
