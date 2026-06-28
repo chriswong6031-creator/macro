@@ -84,13 +84,24 @@
   }
   function rgb(c) { return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
   function isLightTheme() { return document.documentElement.getAttribute('data-theme') === 'light'; }
+  function relLum(c) {   // WCAG relative luminance (gamma-correct, unlike a flat rgb average)
+    function f(v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+    return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]);
+  }
+  function contrast(a, b) {   // WCAG contrast ratio between two rgb triples
+    var la = relLum(a), lb = relLum(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+  }
+  var FG_DARK = [16, 21, 28], FG_LIGHT = [244, 247, 251];   // #10151c / #f4f7fb
   function fgFor(c) {
-    // Dark theme: white on every tile (deep palette). Light theme: dark text on
-    // the pale/medium bins, white only on the strongest saturated tiles — the
-    // conventional light-heatmap look (TradingView / Finviz light).
+    // Dark theme: white on every tile (deep palette).
     if (!isLightTheme()) return '#f4f7fb';
-    var lum = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
-    return lum > 150 ? '#10151c' : '#f4f7fb';
+    // Light theme: pick the text colour with the higher WCAG contrast against the
+    // tile — biased slightly toward white so the deepest red/green keep the
+    // conventional white-on-saturated look (TradingView / Finviz light). The 10%
+    // bias is what flips the bright mid/strong GREEN bins to dark text: white on
+    // them only scores ~2.8:1 (unreadable) while dark scores ~6:1.
+    return contrast(c, FG_DARK) > contrast(c, FG_LIGHT) * 1.1 ? '#10151c' : '#f4f7fb';
   }
   function neutral() {
     // flat ~0% tile: a dark slate in dark mode, a light gray in light mode so it
