@@ -375,6 +375,25 @@ def _freshness_points(value: str) -> int:
     return 0
 
 
+# A headline's `time` slot must hold ONLY a publish datetime. Some native CN page
+# scrapers concatenate "<title> … <href>" into the date field (see _parse_dateish
+# + _fetch_news_pages), which used to dump a whole headline+URL into .cn-when.
+_TIME_URLISH = re.compile(r"https?://|www\.", re.I)
+
+
+def _clean_time(value: str, title: str = "") -> str:
+    """Guard: a clean publish timestamp, or '' when the field is contaminated.
+    Collapses whitespace and rejects any value that carries the article URL or the
+    headline text (never the title, never a link — just a date/time or nothing)."""
+    s = " ".join(str(value or "").split())
+    if not s or _TIME_URLISH.search(s):
+        return ""
+    t = " ".join(str(title or "").split())
+    if len(t) >= 8 and t[:8] in s:          # headline leaked into the date field
+        return ""
+    return s
+
+
 def _importance(title: str, summary: str = "", theme: str = "macro", source_tier: str = "",
                 source_name: str = "", source: str = "") -> tuple[int, str, list[str]]:
     blob = f"{title} {summary}"
@@ -428,6 +447,7 @@ def enrich_item(h: dict) -> dict:
         "related_tickers": ticker_hits,
         "source_tier": source_tier,
         "source_lang": h.get("source_lang", "zh" if h.get("source") == "eastmoney" else "en"),
+        "time": _clean_time(h.get("time", ""), title),
     })
     if out.get("source_lang") == "zh":
         out.setdefault("title_zh", title)
@@ -683,12 +703,12 @@ def _parse_dateish(text: str) -> str:
     if not m:
         m = re.search(r"(20\d{2})(\d{2})(\d{2})", text)
     if not m:
-        return text.strip()
+        return ""                          # no date -> '' (never echo the raw input)
     y, mo, da = [int(x) for x in m.groups()]
     try:
         return date(y, mo, da).isoformat()
     except Exception:  # noqa: BLE001
-        return text.strip()
+        return ""
 
 
 def _fetch_official_pages(cfg: dict, today: date | None = None) -> tuple[list[dict], str | None]:

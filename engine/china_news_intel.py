@@ -313,6 +313,24 @@ def _hours_since(seendate, now) -> float:
         return 0.0
 
 
+# A publish timestamp must never carry the headline or the article URL — some
+# native CN wires concatenate "<title> … <href>" into the date field.
+_TIME_URLISH = re.compile(r"https?://|www\.", re.I)
+
+
+def _clean_time(value: str, title: str = "") -> str:
+    """Guard: a clean publish timestamp, or '' when the field is contaminated with
+    the article URL or the headline text. Whitespace-collapsed; leaves genuine
+    timestamps (ISO / 'YYYY-MM-DD HH:MM' / RFC822 / 'MM-DD') untouched."""
+    s = " ".join(str(value or "").split())
+    if not s or _TIME_URLISH.search(s):
+        return ""
+    t = " ".join(str(title or "").split())
+    if len(t) >= 8 and t[:8] in s:
+        return ""
+    return s
+
+
 def build_records(articles: list[dict], scheduled: dict[str, str],
                   first_seen_utc: str) -> list[dict]:
     """Raw flashes/RSS items -> theme-gated, basket+ticker-tagged, importance+sentiment-scored
@@ -331,7 +349,7 @@ def build_records(articles: list[dict], scheduled: dict[str, str],
         if not title or eid in seen:
             continue
         seen.add(eid)
-        seendate = a.get("seendate") or a.get("time") or ""
+        seendate = _clean_time(a.get("seendate") or a.get("time") or "", title)
         tier = source_tier(a.get("source", ""), dom)
         baskets = tag_baskets(blob)
         sref = _scheduled_ref_for(str(seendate), scheduled)

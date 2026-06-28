@@ -177,6 +177,20 @@ def test_wire_adapter_registers_without_akshare(monkeypatch):
     assert a.name == "china_news_wire" and a.group == "china_news"
 
 
+def test_build_records_strips_title_and_url_from_seendate():
+    # a native wire that concatenated "<title> <href>" into the date field must not
+    # persist that into seendate; a genuine timestamp must survive untouched.
+    recs = ni.build_records([
+        {"title": "证监会推动资本市场法治协同建设", "summary": "改革", "source": "cnstock",
+         "time": "证监会推动资本市场法治协同建设 https://www.cnstock.com/commonDetail/734410"},
+        {"title": "央行开展逆回购操作投放流动性", "summary": "货币", "source": "em",
+         "time": "2026-06-20 09:00"},
+    ], {}, "2026-06-20T00:00:00+00:00")
+    by_title = {r["title"]: r for r in recs}
+    assert by_title["证监会推动资本市场法治协同建设"]["seendate"] == ""
+    assert by_title["央行开展逆回购操作投放流动性"]["seendate"] == "2026-06-20 09:00"
+
+
 def test_accrue_columns_stable():
     recs = ni.build_records(
         [{"title": "央行降准", "summary": "", "source": "em", "time": "2026-06-20"}],
