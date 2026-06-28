@@ -200,21 +200,21 @@
       "rank": 17
     },
     {
+      "ticker": "GC=F",
+      "rs": 5.61914410288475,
+      "mom_20d_pct": -6.0,
+      "mom_60d_pct": -21.37,
+      "above_200d_trend": false,
+      "pctile_252d": 23.0,
+      "rank": 18
+    },
+    {
       "ticker": "XLE",
       "rs": 0.07385560964325173,
       "mom_20d_pct": -1.69,
       "mom_60d_pct": -21.59,
       "above_200d_trend": true,
       "pctile_252d": 63.5,
-      "rank": 18
-    },
-    {
-      "ticker": "GC=F",
-      "rs": 5.595001311143582,
-      "mom_20d_pct": -6.4,
-      "mom_60d_pct": -21.71,
-      "above_200d_trend": false,
-      "pctile_252d": 21.8,
       "rank": 19
     }
   ],
@@ -259,10 +259,17 @@
     },
     "copper_gold": {
       "level": 0.0015,
-      "chg_20d_pct": 7.98
+      "chg_20d_pct": 8.66
     }
   },
-  "alerts": [],
+  "alerts": [
+    {
+      "rule": "circuit_breaker_open",
+      "severity": "warn",
+      "message": "Source 'fred' marked dead after 3 consecutive failures \u2014 collector skipped until it recovers; affected signals degrade",
+      "message_zh": "\u6570\u636e\u6e90 'fred' \u8fde\u7eed 3 \u6b21\u5931\u8d25\u540e\u88ab\u6807\u8bb0\u4e3a\u4e2d\u65ad \u2014\u91c7\u96c6\u5668\u6682\u505c\u76f4\u81f3\u6062\u590d\uff1b\u76f8\u5173\u4fe1\u53f7\u7f6e\u4fe1\u5ea6\u4e0b\u964d"
+    }
+  ],
   "conditions": {
     "financial_conditions": {
       "nfci": -0.516,
@@ -360,7 +367,7 @@
       "skew_pctile": 0.18055555555555555,
       "stock_bond_corr": 0.6025369609844133,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.16158648612721987,
+      "roro": 0.17172443208502908,
       "roro_state": "neutral",
       "vol_target_scalar": 0.7263553991242478,
       "news_sentiment": 0.03416532650589943,
@@ -422,9 +429,9 @@
     "tiers": {
       "leading": {
         "asof": "2026-06-30",
-        "index": 91.81677804005295,
+        "index": 91.81677804005298,
         "mom6": 0.21178101113352454,
-        "trend": 0.5738914937339371,
+        "trend": 0.5738914937339376,
         "diffusion": 75.0,
         "n_legs": 4,
         "direction": "rising",
@@ -4293,8 +4300,8 @@
   "cross_asset": {
     "asof": "2026-06-26",
     "verdict": "concentrated",
-    "summary": "CONCENTRATED \u00b7 0.97 5y-pctile",
-    "headline": "CONCENTRATED \u2014 3 of 6 markets are one bet (US, Commodities, Dollar). Cross-asset correlation is in the top 3% of its 5y range: stacking these views is doubling one liquidity/risk exposure, not diversifying.",
+    "summary": "CONCENTRATED \u00b7 0.96 5y-pctile",
+    "headline": "CONCENTRATED \u2014 3 of 6 markets are one bet (US, Commodities, Dollar). Cross-asset correlation is in the top 4% of its 5y range: stacking these views is doubling one liquidity/risk exposure, not diversifying.",
     "window_d": 63,
     "markets": [
       "US",
@@ -4304,17 +4311,17 @@
       "Commodities",
       "Dollar"
     ],
-    "absorption_ratio": 0.446,
-    "absorption_pctile_5y": 0.97,
+    "absorption_ratio": 0.442,
+    "absorption_pctile_5y": 0.96,
     "absorption_floor": 0.167,
-    "mean_abs_corr": 0.34,
+    "mean_abs_corr": 0.337,
     "pc1_loadings": {
       "US": 0.53,
-      "Crypto": 0.31,
+      "Crypto": 0.32,
       "China": 0.3,
-      "HK": 0.27,
-      "Commodities": 0.51,
-      "Dollar": 0.45
+      "HK": 0.26,
+      "Commodities": 0.5,
+      "Dollar": 0.46
     },
     "dominant_cluster": [
       "US",
@@ -4335,7 +4342,7 @@
       {
         "a": "US",
         "b": "Commodities",
-        "corr": 0.6
+        "corr": 0.58
       },
       {
         "a": "Commodities",
@@ -4349,7 +4356,7 @@
         "Crypto": 0.47,
         "China": 0.29,
         "HK": 0.25,
-        "Commodities": 0.6,
+        "Commodities": 0.58,
         "Dollar": 0.61
       },
       "Crypto": {
@@ -4365,7 +4372,7 @@
         "Crypto": -0.1,
         "China": 1.0,
         "HK": 0.65,
-        "Commodities": 0.36,
+        "Commodities": 0.34,
         "Dollar": 0.06
       },
       "HK": {
@@ -4373,14 +4380,14 @@
         "Crypto": -0.13,
         "China": 0.65,
         "HK": 1.0,
-        "Commodities": 0.3,
+        "Commodities": 0.29,
         "Dollar": 0.0
       },
       "Commodities": {
-        "US": 0.6,
+        "US": 0.58,
         "Crypto": 0.29,
-        "China": 0.36,
-        "HK": 0.3,
+        "China": 0.34,
+        "HK": 0.29,
         "Commodities": 1.0,
         "Dollar": 0.56
       },
@@ -4410,7 +4417,7 @@
     "confidence": "high",
     "confidence_zh": "\u9ad8",
     "strength": 2.18,
-    "dominance_ratio": 1.74,
+    "dominance_ratio": 1.83,
     "agreement": 1.0,
     "runner_up": "china_stimulus",
     "runner_up_label": "China stimulus",
@@ -4440,7 +4447,7 @@
     ],
     "invalidation": "Fades if semis RS reverses and the rest of the equity-leadership fingerprint stops confirming.",
     "invalidation_zh": "\u82e5\u534a\u5bfc\u4f53\u76f8\u5bf9\u5f3a\u5ea6\u53cd\u8f6c\u3001\u4e14\u80a1\u7968\u9886\u6da8\u6307\u7eb9\u5176\u4f59\u817f\u505c\u6b62\u786e\u8ba4\uff0c\u6b64\u5224\u8bfb\u5c06\u6d88\u9000\u3002",
-    "absorption_pctile": 0.96,
+    "absorption_pctile": 0.95,
     "scores": [
       {
         "driver": "ai_semis",
@@ -4456,8 +4463,8 @@
         "label": "China stimulus",
         "label_zh": "\u4e2d\u56fd\u523a\u6fc0",
         "family": "china",
-        "projection": -1.25,
-        "strength": 1.25,
+        "projection": -1.19,
+        "strength": 1.19,
         "direction": "China risk-off \u2014 A-shares/HK & copper lead down"
       },
       {
@@ -4479,15 +4486,6 @@
         "direction": "credit spreads widening \u2014 stress"
       },
       {
-        "driver": "usd_shock",
-        "label": "USD shock",
-        "label_zh": "\u7f8e\u5143\u51b2\u51fb",
-        "family": "fx",
-        "projection": 0.79,
-        "strength": 0.79,
-        "direction": "dollar surging \u2014 squeeze, commodities & EM pressured"
-      },
-      {
         "driver": "oil_shock",
         "label": "Oil shock",
         "label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
@@ -4497,22 +4495,31 @@
         "direction": "oil collapsing \u2014 energy lags, breakevens down"
       },
       {
-        "driver": "fed_repricing",
-        "label": "Fed repricing",
-        "label_zh": "\u7f8e\u8054\u50a8\u91cd\u5b9a\u4ef7",
-        "family": "rates",
-        "projection": -0.68,
-        "strength": 0.68,
-        "direction": "dovish repricing \u2014 cuts priced in, front-end down"
+        "driver": "usd_shock",
+        "label": "USD shock",
+        "label_zh": "\u7f8e\u5143\u51b2\u51fb",
+        "family": "fx",
+        "projection": 0.73,
+        "strength": 0.73,
+        "direction": "dollar surging \u2014 squeeze, commodities & EM pressured"
       },
       {
         "driver": "real_rate_shock",
         "label": "Real-rate shock",
         "label_zh": "\u5b9e\u9645\u5229\u7387\u51b2\u51fb",
         "family": "rates",
-        "projection": 0.63,
-        "strength": 0.63,
+        "projection": 0.6,
+        "strength": 0.6,
         "direction": "real yields rising \u2014 restrictive, gold & duration hit"
+      },
+      {
+        "driver": "fed_repricing",
+        "label": "Fed repricing",
+        "label_zh": "\u7f8e\u8054\u50a8\u91cd\u5b9a\u4ef7",
+        "family": "rates",
+        "projection": -0.44,
+        "strength": 0.44,
+        "direction": "dovish repricing \u2014 cuts priced in, front-end down"
       },
       {
         "driver": "liquidity_impulse",
@@ -4528,7 +4535,7 @@
   },
   "portfolio": {
     "asof": "2026-06-26",
-    "headline": "Equal-weighting all 6 market views puts 36% of portfolio RISK in one market (vs 17% if truly balanced); ERC rebalances to ~equal risk (heaviest weight: Dollar 0.435). Diversification ratio 1.68.",
+    "headline": "Equal-weighting all 6 market views puts 36% of portfolio RISK in one market (vs 17% if truly balanced); ERC rebalances to ~equal risk (heaviest weight: Dollar 0.434). Diversification ratio 1.68.",
     "risk_budget": {
       "window_d": 126,
       "markets": [
@@ -4552,8 +4559,8 @@
         "risk_contrib": {
           "US": 0.125,
           "Crypto": 0.362,
-          "China": 0.098,
-          "HK": 0.103,
+          "China": 0.097,
+          "HK": 0.102,
           "Commodities": 0.282,
           "Dollar": 0.031
         },
@@ -4574,24 +4581,24 @@
         "risk_contrib": {
           "US": 0.201,
           "Crypto": 0.117,
-          "China": 0.159,
+          "China": 0.158,
           "HK": 0.155,
-          "Commodities": 0.204,
-          "Dollar": 0.165
+          "Commodities": 0.203,
+          "Dollar": 0.166
         },
         "port_vol_ann": 0.089,
         "diversification_ratio": 1.64,
-        "max_risk_contrib": 0.204
+        "max_risk_contrib": 0.203
       },
       "erc": {
         "scheme": "erc",
         "weights": {
           "US": 0.145,
           "Crypto": 0.069,
-          "China": 0.149,
+          "China": 0.15,
           "HK": 0.135,
           "Commodities": 0.066,
-          "Dollar": 0.435
+          "Dollar": 0.434
         },
         "risk_contrib": {
           "US": 0.167,
@@ -4748,7 +4755,7 @@
   },
   "fed_path": {
     "asof": "2026-06-26",
-    "built": "2026-06-28T04:21:56.374590+00:00",
+    "built": "2026-06-28T05:50:26.714005+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -6808,7 +6815,7 @@
     "defer_to": null,
     "drivers": {
       "one_factor": true,
-      "absorption_pctile": 0.97,
+      "absorption_pctile": 0.96,
       "macro_shock": false,
       "primary": "ai_semis",
       "primary_label": "AI / semis",
@@ -9124,7 +9131,7 @@
     "state": "caution",
     "label_en": "Caution",
     "label_zh": "\u7559\u610f",
-    "headline_en": "Caution: fragility building (40/100). Drivers: SPX: dealers short gamma; net GEX -24.1bn; spot below gamma flip, complacency=watch (steep contango, HY widening), HY OAS +6bp/21d; HYG/TLT -2.2%/20d.",
+    "headline_en": "Caution: fragility building (40/100). Drivers: SPX: dealers short gamma; net GEX -27.7bn; spot below gamma flip, complacency=watch (steep contango, HY widening), HY OAS +6bp/21d; HYG/TLT -2.2%/20d.",
     "headline_zh": "\u7559\u610f\uff1a\u8106\u5f31\u6027\u4e0a\u5347\uff0840/100\uff09\u3002",
     "drivers": [
       {
@@ -9132,7 +9139,7 @@
         "intensity": 1.0,
         "weight": 0.9,
         "contribution": 0.9,
-        "detail_en": "SPX: dealers short gamma; net GEX -24.1bn; spot below gamma flip",
+        "detail_en": "SPX: dealers short gamma; net GEX -27.7bn; spot below gamma flip",
         "detail_zh": "\u505a\u5e02\u5546Gamma"
       },
       {
@@ -9214,7 +9221,7 @@
         "intensity": 1.0,
         "weight": 0.9,
         "contribution": 0.9,
-        "detail_en": "SPX: dealers short gamma; net GEX -24.1bn; spot below gamma flip",
+        "detail_en": "SPX: dealers short gamma; net GEX -27.7bn; spot below gamma flip",
         "detail_zh": "\u505a\u5e02\u5546Gamma"
       },
       "technical": {
@@ -9421,7 +9428,7 @@
     }
   },
   "vol_shock": {
-    "score": 57.1,
+    "score": 56.8,
     "score_int": 57,
     "band": "elevated",
     "band_zh": "\u5347\u9ad8",
@@ -9432,23 +9439,23 @@
         "key": "concentration",
         "label": "Cross-asset concentration",
         "label_zh": "\u8de8\u8d44\u4ea7\u96c6\u4e2d\u5ea6",
-        "value": 0.97,
+        "value": 0.96,
         "weight": 1.0,
         "available": true,
-        "sub": 97.0,
+        "sub": 96.0,
         "note": "cross-asset moves compound (top-of-range absorption)",
         "note_zh": "\u8de8\u8d44\u4ea7\u4e0b\u632b\u76f8\u4e92\u53e0\u52a0\uff08\u5438\u6536\u6bd4\u7387\u5904\u4e8e\u9ad8\u4f4d\uff09",
         "color": "#d04545",
-        "points": 16.2
+        "points": 16.1
       },
       {
         "key": "dealer_gamma",
         "label": "Dealer gamma (short-gamma fragility)",
         "label_zh": "\u505a\u5e02\u5546 Gamma\uff08\u7a7a\u5934\u8106\u5f31\uff09",
-        "value": "short \u00b7 -0.65% to flip",
+        "value": "short \u00b7 -0.69% to flip",
         "weight": 1.0,
         "available": true,
-        "sub": 94.6,
+        "sub": 94.2,
         "note": "dealers short gamma \u2014 they amplify moves",
         "note_zh": "\u505a\u5e02\u5546\u6301\u7a7a\u5934 Gamma\u2014\u2014\u4f1a\u653e\u5927\u6ce2\u52a8",
         "color": "#d04545",
@@ -9484,12 +9491,12 @@
         "key": "put_call",
         "label": "Put/call positioning",
         "label_zh": "\u770b\u8dcc/\u770b\u6da8\u6301\u4ed3",
-        "value": 0.82,
+        "value": 0.83,
         "weight": 0.175,
         "available": true,
-        "sub": 17.6,
-        "note": "protective put-buying (fearful) \u00b7 young series (n=17), down-weighted",
-        "note_zh": "protective put-buying (fearful) \u00b7 young series (n=17), down-weighted",
+        "sub": 16.7,
+        "note": "protective put-buying (fearful) \u00b7 young series (n=18), down-weighted",
+        "note_zh": "protective put-buying (fearful) \u00b7 young series (n=18), down-weighted",
         "color": "#5a9bd4",
         "points": 0.5
       },
@@ -11734,17 +11741,17 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4078.7,
+        "price": 4096.3,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -8.4,
-        "pct_vs_200dma": -8.5,
-        "rsi14": 37.0,
+        "pct_vs_50dma": -8.0,
+        "pct_vs_200dma": -8.1,
+        "rsi14": 38.0,
         "macd_pos": false,
-        "off_52w_high_pct": -23.3,
-        "season_this": "Jun: -0.9% avg, up 42% of years (n=26)",
-        "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.9%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -12.4
+        "off_52w_high_pct": -23.0,
+        "season_this": "Jun: -0.8% avg, up 42% of years (n=26)",
+        "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.8%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
+        "mom_60d_pct": -12.0
       },
       {
         "ticker": "CL=F",
@@ -11764,17 +11771,17 @@
       {
         "ticker": "HG=F",
         "name": "Copper",
-        "price": 6.14,
+        "price": 6.21,
         "above50": false,
         "above200": true,
-        "pct_vs_50dma": -1.9,
-        "pct_vs_200dma": 8.9,
-        "rsi14": 44.0,
+        "pct_vs_50dma": -0.9,
+        "pct_vs_200dma": 10.1,
+        "rsi14": 47.0,
         "macd_pos": false,
-        "off_52w_high_pct": -7.6,
+        "off_52w_high_pct": -6.7,
         "season_this": "Jun: -0.6% avg, up 54% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.6%\uff0c54% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": 10.0
+        "mom_60d_pct": 11.2
       },
       {
         "ticker": "DX-Y.NYB",
@@ -11865,7 +11872,7 @@
   },
   "freshness": {
     "asof": "2026-06-26",
-    "built_at": "2026-06-28T04:21:58Z",
+    "built_at": "2026-06-28T05:50:29Z",
     "age_days": 2,
     "age_sessions": 0,
     "max_age_sessions": 1,

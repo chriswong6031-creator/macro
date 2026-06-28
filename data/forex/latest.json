@@ -1,5 +1,5 @@
 {
-  "date": "Jun 27, 2026",
+  "date": "Jun 28, 2026",
   "regime": "US growth premium",
   "favored": [
     "USD"
@@ -18,7 +18,7 @@
       "quote": 1.3198,
       "chg": -1.9,
       "action": "FLAT",
-      "score": 14.2
+      "score": 14.3
     },
     "USDJPY": {
       "label": "USD/JPY",
@@ -37,16 +37,16 @@
     "AUDUSD": {
       "label": "AUD/USD",
       "quote": 0.6901,
-      "chg": -3.3,
+      "chg": -3.2,
       "action": "SHORT",
-      "score": -32.5
+      "score": -35.2
     },
     "USDCAD": {
       "label": "USD/CAD",
       "quote": 1.4194,
-      "chg": 2.2,
+      "chg": 2.1,
       "action": "LONG",
-      "score": 27.2
+      "score": 29.5
     },
     "USDMXN": {
       "label": "USD/MXN",
@@ -118,7 +118,7 @@
       "carry_unwind": 13.0,
       "dollar_wrecking_ball": 36.8,
       "em_crisis_capital_flight": 8.0,
-      "haven_flight_risk_off": 10.8,
+      "haven_flight_risk_off": 9.6,
       "reflation_risk_on": 0,
       "intervention_risk": 21.6
     }

@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-28T04:59:46.259832+00:00",
+  "generated_utc": "2026-06-28T06:33:05.957366+00:00",
   "as_of": "2026-06-28",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -3658,258 +3658,258 @@
       "emoji": "\ud83d\udd2c",
       "label_en": "US patents",
       "label_zh": "\u7f8e\u56fd\u4e13\u5229",
-      "rows": 1865,
-      "last_seen": "2026-06-16",
+      "rows": 2772,
+      "last_seen": "2026-06-23",
       "recent": [
         {
-          "Date": "2026-06-16",
-          "IPC": "h04l027/26",
-          "Title": "spectrum mode determination for convergent digital radio",
+          "Date": "2026-06-23",
+          "IPC": "g01n030/60",
+          "Title": "filter assemblies, depth indicators, torque-limiting fittings, torque-indicating fittings, and systems incorporating the same",
           "Claims": "20.0",
-          "Abstract": "aspects of this disclosure relate to determining a spectrum mode of a convergent digital radio signal. the convergent digital radio signal can be filtered by a plurality of filters. correlation coefficients can be gen\u2026",
-          "Ticker": "SWKS",
-          "PatentNumber": "12659214",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+          "Abstract": "in some examples, a filter assembly may include a filter including a first gasket having a first channel adjacent to a first side of the filter and a second gasket having a second channel adjacent to a second side of \u2026",
+          "Ticker": "A",
+          "PatentNumber": "12663403",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
         },
         {
-          "Date": "2026-06-16",
-          "IPC": "g06f011/34",
-          "Title": "simulating task scheduling",
+          "Date": "2026-06-23",
+          "IPC": "g06k007/10",
+          "Title": "radio frequency identifier tag unit operation",
           "Claims": "20.0",
-          "Abstract": "apparatuses, systems, and techniques to schedule one or more workloads to one or more computers by comparing one or more performance metrics of the one or more workloads to be performed using one or more computers wit\u2026",
-          "Ticker": "NVDA",
-          "PatentNumber": "12657106",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+          "Abstract": "in some aspects, a reader may transmit, to one or more radio frequency identifier (rfid) tags, a continuous wave in accordance with a unit operation, wherein the unit operation is associated with one or more of an amo\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12664380",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
         },
         {
-          "Date": "2026-06-16",
-          "IPC": "g06f001/26",
-          "Title": "cold data storage energy consumption evaluation and response",
-          "Claims": "20.0",
-          "Abstract": "various mechanisms and workflows are described that can utilize power and/or carbon footprint-based metrics to manage storage unit usage and/or configuration, which can provide a more efficient and environmentally fri\u2026",
-          "Ticker": "NTAP",
-          "PatentNumber": "12656844",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+          "Date": "2026-06-23",
+          "IPC": "g06t011/60",
+          "Title": "synchronizing image signal processor and image sensor configurations",
+          "Claims": "17.0",
+          "Abstract": "this disclosure provides systems, methods, and devices for image signal processing that support synchronizing configurations between an image sensor and an image signal processor (isp). in a first aspect, a method of \u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12664703",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
         },
         {
-          "Date": "2026-06-16",
-          "IPC": "g06f003/06",
-          "Title": "coalescing multiple small writes to large files or multiple writes to a number of small files to generate larger compressible chunks for inline compression",
-          "Claims": "14.0",
-          "Abstract": "systems and methods for coalescing writes to facilitate generation of larger compression groups for use during inline compression are provided. according to one embodiment, inline compression performed by a storage sy\u2026",
-          "Ticker": "NTAP",
-          "PatentNumber": "12656949",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
-        },
-        {
-          "Date": "2026-06-16",
-          "IPC": "g06f009/48",
-          "Title": "management and orchestration of microservices",
-          "Claims": "20.0",
-          "Abstract": "techniques are provided for microservices management and orchestration. a chart package is selectively retrieved from a chart repository based upon the chart package corresponding to a set of services to host within a\u2026",
-          "Ticker": "NTAP",
-          "PatentNumber": "12657051",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
-        },
-        {
-          "Date": "2026-06-16",
-          "IPC": "g06f011/00",
-          "Title": "persistent memory file system reconciliation",
-          "Claims": "20.0",
-          "Abstract": "techniques are provided for persistent memory file system reconciliation. as part of the persistent memory file system reconciliation, high level file system metadata associated with a persistent memory file system of\u2026",
-          "Ticker": "NTAP",
-          "PatentNumber": "12657088",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
-        },
-        {
-          "Date": "2026-06-16",
-          "IPC": "g06f021/56",
-          "Title": "ransomware detection training using variable levels of encryption",
-          "Claims": "20.0",
-          "Abstract": "described herein are systems, methods, and software to provide ransomware detection using variable levels of encryption. in one implementation, a computing device identifies a set of files, wherein the set of files ea\u2026",
-          "Ticker": "NTAP",
-          "PatentNumber": "12657299",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
-        },
-        {
-          "Date": "2026-06-16",
-          "IPC": "g06f021/53",
-          "Title": "file system access during runtime of a portable executable program",
-          "Claims": "21.0",
-          "Abstract": "the technology disclosed herein enables access to a file system by a portable executable program. in a particular example, a method includes, in a host executing the portable executable program, recognizing the portab\u2026",
-          "Ticker": "NTAP",
-          "PatentNumber": "12657285",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
-        },
-        {
-          "Date": "2026-06-16",
-          "IPC": "h04b001/40",
-          "Title": "promoting coexistence of multiple radio systems through the mitigation of desensitization and intermodulation effects",
-          "Claims": "12.0",
-          "Abstract": "introduced here are approaches to mitigating the desensitization and intermodulation effects that can affect telecommunication performance of multiband electronic devices. specifically, the present disclosure outlines\u2026",
-          "Ticker": "NTGR",
-          "PatentNumber": "12658955",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
-        },
-        {
-          "Date": "2026-06-16",
-          "IPC": "c12q001/68",
-          "Title": "methods for simultaneous amplification of target loci",
+          "Date": "2026-06-23",
+          "IPC": "g06t001/60",
+          "Title": "multi-context dynamic line buffer management for image processing",
           "Claims": "19.0",
-          "Abstract": "the invention provides methods for simultaneously amplifying multiple nucleic acid regions of interest in one reaction volume as well as methods for selecting a library of primers for use in such amplification methods\u2026",
-          "Ticker": "NTRA",
-          "PatentNumber": "12655483",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+          "Abstract": "a system comprises an image signal processor (isp). the isp is a discrete hardware unit and includes a line buffer, a memory controller, and one or more image processors. the memory controller is configured to allocat\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12664605",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
         },
         {
-          "Date": "2026-06-16",
-          "IPC": "a61n001/36",
-          "Title": "systems and methods for determining transducer locations for delivering tumor treating fields using an initial estimate",
+          "Date": "2026-06-23",
+          "IPC": "g06n003/065",
+          "Title": "compute in memory-based machine learning accelerator architecture",
+          "Claims": "30.0",
+          "Abstract": "certain aspects of the present disclosure provide techniques for processing machine learning model data with a machine learning task accelerator, including: configuring one or more signal processing units (spus) of th\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12664414",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
+        },
+        {
+          "Date": "2026-06-23",
+          "IPC": "g06n003/048",
+          "Title": "instruction set architecture for implementing linear activation functions in neural networks",
           "Claims": "20.0",
-          "Abstract": "a computer-implemented method for selecting at least one transducer location for delivering ttfields to a subject, the method including: obtaining a three-dimensional model of the subject, the model including voxels; \u2026",
-          "Ticker": "NVCR",
-          "PatentNumber": "12654007",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+          "Abstract": "this application is directed to using a single instruction to initiate a sequence of computational operations related to a neural network activation function. an electronic device receives a single instruction to appl\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12664399",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
         },
         {
-          "Date": "2026-06-16",
-          "IPC": "g06t001/20",
-          "Title": "storage of transformed tensor in a cache",
+          "Date": "2026-06-23",
+          "IPC": "g06t011/60",
+          "Title": "content adaptation system",
+          "Claims": "30.0",
+          "Abstract": "systems and techniques are provided for adapting digital content. for example, a process can include obtaining a digital content comprising a default configuration for outputting the digital content to a device; outpu\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12664223",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
+        },
+        {
+          "Date": "2026-06-23",
+          "IPC": "g06f001/00",
+          "Title": "platform skin temperature management in computer systems",
           "Claims": "20.0",
-          "Abstract": "apparatuses, systems, and techniques to perform a tensor prefetch instruction to cause one or more tensors to be transformed and stored into one or more caches. in at least one embodiment, one or more circuits of a gp\u2026",
-          "Ticker": "NVDA",
-          "PatentNumber": "12657024",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+          "Abstract": "aspects of the disclosure are directed to a thermal management system for a computer system. in accordance with one aspect, the disclosure includes generating a transfer function representation of a relationship betwe\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12663851",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
         },
         {
-          "Date": "2026-06-16",
-          "IPC": "h04w076/28",
-          "Title": "discontinuous communication pattern adjustment",
-          "Claims": "19.0",
-          "Abstract": "apparatuses, systems, and techniques to adjust one or more discontinuous wireless communication patterns. in at least one embodiment, a processor includes one or more circuits to use one or more neural networks to adj\u2026",
-          "Ticker": "NVDA",
-          "PatentNumber": "12660036",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
-        },
-        {
-          "Date": "2026-06-16",
-          "IPC": "g06t005/00",
-          "Title": "temporal image blending using one or more neural networks",
+          "Date": "2026-06-23",
+          "IPC": "g01s003/46",
+          "Title": "resolving aoa ambiguity based on rotation of user equipment",
           "Claims": "20.0",
-          "Abstract": "apparatuses, systems, and techniques are presented to reconstruct one or more images. in at least one embodiment, one or more objects in an image are caused to be generated based, at least in part, on applying one or \u2026",
-          "Ticker": "NVDA",
-          "PatentNumber": "12657655",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+          "Abstract": "a method for determining a true phase difference of arrival (pdoa), includes: determining a plurality of candidate unwrapped pdoas for a signal transmitted by a target object and received by at least a first antenna a\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12663498",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
         },
         {
-          "Date": "2026-06-16",
-          "IPC": "g06f013/14",
-          "Title": "low-power frame transmission over a communication interconnect",
-          "Claims": "21.0",
-          "Abstract": "a device includes receiver logic to receive frames over a link, datalink logic to the receiver logic, to process the frames, and control logic coupled to the receiver logic and the datalink logic. the control logic is\u2026",
-          "Ticker": "NVDA",
-          "PatentNumber": "12657150",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+          "Date": "2026-06-23",
+          "IPC": "a61b005/00",
+          "Title": "photoacoustic sensor with light-steering system",
+          "Claims": "24.0",
+          "Abstract": "some disclosed examples involve controlling a light-steering system to direct light emitted by at least a first light source of a light source system to a first plurality of areas of a target object, wherein controlli\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12661012",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
         },
         {
-          "Date": "2026-06-16",
-          "IPC": "h10w090/00",
-          "Title": "semiconductor devices, assemblies, and associated methods",
-          "Claims": "16.0",
-          "Abstract": "a semiconductor device assembly can include an assembly substrate having a top surface with a die stack thereat. the die stack can include a first and a second die, and each dies can include a die substrate with a top\u2026",
-          "Ticker": "MU",
-          "PatentNumber": "12660689",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+          "Date": "2026-06-23",
+          "IPC": "h04w072/00",
+          "Title": "polarization indications for synchronization signal block, coreset, and beam footprint",
+          "Claims": "30.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may receive an indication of a polarization of at least one synchronization signal block (ss\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12665657",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
         },
         {
-          "Date": "2026-06-16",
-          "IPC": "g06f009/30",
-          "Title": "method and apparatus for supporting distributed graphics and compute engines and synchronization in multi-dielet parallel processor architectures\u2014memory barriers",
-          "Claims": "18.0",
-          "Abstract": "this disclosure describes supporting distributed graphics and compute engines in a multi-dielet processor, such as, for example, a multi-dielet graphics processing unit (gpu), architectures and synchronization in such\u2026",
-          "Ticker": "NVDA",
-          "PatentNumber": "12657023",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
-        },
-        {
-          "Date": "2026-06-16",
-          "IPC": "g06n003/08",
-          "Title": "training and deployment of machine learning models",
-          "Claims": "23.0",
-          "Abstract": "apparatuses, systems, and techniques to provisioning of pipelines for efficient training, retraining, configuring, deploying, and using machine learning models for inference in user-specific platforms.",
-          "Ticker": "NVDA",
-          "PatentNumber": "12657452",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
-        },
-        {
-          "Date": "2026-06-16",
-          "IPC": "g06t003/4084",
-          "Title": "fourier transform-based image synthesis using neural networks",
-          "Claims": "36.0",
-          "Abstract": "apparatuses, systems, and techniques to scale textured images using a fourier transform in conjunction with one or more neural networks. in at least one embodiment, a neural network generates an expanded image from an\u2026",
-          "Ticker": "NVDA",
-          "PatentNumber": "12657660",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
-        },
-        {
-          "Date": "2026-06-16",
-          "IPC": "g06t007/50",
-          "Title": "techniques for generating depth maps from videos",
-          "Claims": "20.0",
-          "Abstract": "the disclosed method for generating a first depth map for a first frame of a video includes performing one or more operations to generate a first intermediate depth map based on the first frame and a second frame prec\u2026",
-          "Ticker": "NVDA",
-          "PatentNumber": "12657748",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
-        },
-        {
-          "Date": "2026-06-16",
-          "IPC": "g06t017/05",
-          "Title": "distortion correction for environment visualizations with wide angle views",
-          "Claims": "20.0",
-          "Abstract": "in various examples, a visualization of an environment may be generated using a panini projection that is optimized based on detected scene content. for example, image data of an environment may be perspective project\u2026",
-          "Ticker": "NVDA",
-          "PatentNumber": "12657818",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
-        },
-        {
-          "Date": "2026-06-16",
-          "IPC": "g06t017/05",
-          "Title": "surface estimation",
-          "Claims": "20.0",
-          "Abstract": "in various examples, to support training a deep neural network (dnn) to predict a dense representation of a 3d surface structure of interest, a training dataset is generated using a parametric mathematical modeling. a\u2026",
-          "Ticker": "NVDA",
-          "PatentNumber": "12657819",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
-        },
-        {
-          "Date": "2026-06-16",
-          "IPC": "g06t017/20",
-          "Title": "generative modeling for 3d objects using neural implicit representations",
-          "Claims": "20.0",
-          "Abstract": "approaches presented herein provide systems and methods for generating three-dimensional (3d) objects using compressed data as an input. one or more models may learn from a hash table of latent features to map differe\u2026",
-          "Ticker": "NVDA",
-          "PatentNumber": "12657822",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
-        },
-        {
-          "Date": "2026-06-16",
+          "Date": "2026-06-23",
           "IPC": "h04w024/10",
-          "Title": "wireless signal information transmission",
-          "Claims": "20.0",
-          "Abstract": "apparatuses, systems, and techniques to use a schedule to cause wireless signal information to be transmitted. in at least one embodiment, a processor includes one or more circuits to use a schedule to cause wireless \u2026",
-          "Ticker": "NVDA",
-          "PatentNumber": "12659777",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+          "Title": "criterion-triggered channel state information reporting configuration",
+          "Claims": "12.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may receive information indicating a criterion and a configuration for channel state informa\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12665642",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
         },
         {
-          "Date": "2026-06-16",
-          "IPC": "g06f018/214",
-          "Title": "training a neural network for object detection",
-          "Claims": "34.0",
-          "Abstract": "apparatuses, systems, and techniques to train a neural network using varying levels of supervision. in at least one embodiment, a neural network is trained using a unified task head to facilitate supervision by both w\u2026",
-          "Ticker": "NVDA",
-          "PatentNumber": "12657258",
-          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+          "Date": "2026-06-23",
+          "IPC": "h04l005/00",
+          "Title": "method for defining uplink (ul) transmission timing accuracy",
+          "Claims": "29.0",
+          "Abstract": "certain aspects of the present disclosure provide techniques for wireless communications by a user equipment (ue). the ue detects at least one of a first type of reference signal (rs) or a second type of rs within an \u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12665712",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
+        },
+        {
+          "Date": "2026-06-23",
+          "IPC": "h04l005/00",
+          "Title": "transmission configuration indicator (tci) configuration of a component carrier (cc)",
+          "Claims": "25.0",
+          "Abstract": "aspects of the disclosure are directed to transmission configuration indicator (tci) configuration of a component carrier (cc). for example, aspects are directed to aligning tci configurations and physical cell identi\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12665710",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
+        },
+        {
+          "Date": "2026-06-23",
+          "IPC": "h04l001/1867",
+          "Title": "resource collision indication using feedback",
+          "Claims": "30.0",
+          "Abstract": "methods, systems, and devices for wireless communications are described. some wireless communications system may support sidelink communications between one or more sidelink user equipment (ue). a sidelink ue may rece\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12665707",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
+        },
+        {
+          "Date": "2026-06-23",
+          "IPC": "h04l001/1812",
+          "Title": "hybrid automatic repeat request feedback verification",
+          "Claims": "30.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may transmit hybrid automatic repeat request (harq) feedback for a downlink transmission fro\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12665704",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
+        },
+        {
+          "Date": "2026-06-23",
+          "IPC": "h04l001/08",
+          "Title": "adaptively disabling re-transmission based on experienced delay",
+          "Claims": "30.0",
+          "Abstract": "an apparatus that may be a user equipment (ue) configured to identify that at least one characteristic time associated with a first uplink (ul) transmission is greater than a threshold time and to disable, based on th\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12665703",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
+        },
+        {
+          "Date": "2026-06-23",
+          "IPC": "h04l001/08",
+          "Title": "network coding in automatic receipt request",
+          "Claims": "21.0",
+          "Abstract": "network coding in automatic receipt request (arq) functionality is disclosed. a compatible transmitter configures a new transmission period, in which the set of data for transmission is transmitted, and a retransmissi\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12665702",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
+        },
+        {
+          "Date": "2026-06-23",
+          "IPC": "h04l001/00",
+          "Title": "joint polar encoding of multiple payloads with unequal error protection",
+          "Claims": "12.0",
+          "Abstract": "the aspects described herein may enable an apparatus to jointly encode two or more payloads using a single polar encoder device, while providing unequal error protection for the payloads. the apparatus causes a polar \u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12665700",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
+        },
+        {
+          "Date": "2026-06-23",
+          "IPC": "h04b017/00",
+          "Title": "calibration of non-co-located polarized antenna arrays",
+          "Claims": "30.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a first wireless communication device may transmit, to a second wireless communication device, capability informat\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12665682",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
+        },
+        {
+          "Date": "2026-06-23",
+          "IPC": "h04b007/185",
+          "Title": "event triggered satellite communications",
+          "Claims": "30.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may detect a trigger event associated with a satellite communication link, the trigger event\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12665662",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
+        },
+        {
+          "Date": "2026-06-23",
+          "IPC": "h04w024/10",
+          "Title": "techniques for directional signal strength indication and beam-specific measurement threshold",
+          "Claims": "30.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may receive configuration information for a received signal strength indication (rssi) measu\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12665654",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
+        },
+        {
+          "Date": "2026-06-23",
+          "IPC": "h04w072/51",
+          "Title": "active beam management, configuration, and capability signaling",
+          "Claims": "30.0",
+          "Abstract": "some techniques and apparatuses described herein permit a user equipment (ue) to signal a capability corresponding to a number of active beams (e.g., active uplink beams) to a base station so that the ue may be approp\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12665651",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
+        },
+        {
+          "Date": "2026-06-23",
+          "IPC": "h04b007/06",
+          "Title": "configurations for channel state feedback",
+          "Claims": "30.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a first device may receive a channel state information (csi) feedback configuration comprising an indication to sa\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12665646",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
+        },
+        {
+          "Date": "2026-06-23",
+          "IPC": "h04n021/81",
+          "Title": "dynamic conditional advertisement insertion",
+          "Claims": "13.0",
+          "Abstract": "in one example, a device for retrieving media data includes a memory configured to store media data including advertisement content and main media data, and one or more processors implemented in circuitry and configur\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12666115",
+          "_first_seen": "2026-06-28T05:37:54.610706+00:00"
         }
       ]
     },
@@ -5471,21 +5471,14 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 48100,
+      "rows": 48105,
       "last_seen": "2026-06-28",
       "recent": [
         {
-          "ticker": "COF",
-          "owner_name": "Cetera Investment Advisers",
+          "ticker": "BMY",
+          "owner_name": "Russell Investments Group, Ltd.",
           "owner_title": "Institution",
-          "shares": "240851",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "National Pension Service",
-          "owner_title": "Institution",
-          "shares": "19843319",
+          "shares": "4424999",
           "_collected": "2026-06-28"
         },
         {
@@ -5493,13 +5486,6 @@
           "owner_name": "DEUTSCHE BANK AG\\",
           "owner_title": "Institution",
           "shares": "32308027",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "JANUS HENDERSON GROUP PLC",
-          "owner_title": "Institution",
-          "shares": "32297269",
           "_collected": "2026-06-28"
         },
         {
@@ -5595,9 +5581,37 @@
         },
         {
           "ticker": "AMZN",
+          "owner_name": "Assenagon Asset Management S.A.",
+          "owner_title": "Institution",
+          "shares": "20521783",
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "National Pension Service",
+          "owner_title": "Institution",
+          "shares": "19843319",
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "JANUS HENDERSON GROUP PLC",
+          "owner_title": "Institution",
+          "shares": "32297269",
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AMZN",
           "owner_name": "ARROWSTREET CAPITAL, LIMITED PARTNERSHIP",
           "owner_title": "Institution",
           "shares": "32578171",
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "OSSIAM",
+          "owner_title": "Institution",
+          "shares": "3973284",
           "_collected": "2026-06-28"
         },
         {
@@ -5605,27 +5619,6 @@
           "owner_name": "Fisher Asset Management, LLC",
           "owner_title": "Institution",
           "shares": "34185457",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "UBS Group AG",
-          "owner_title": "Institution",
-          "shares": "34407951",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "Amundi",
-          "owner_title": "Institution",
-          "shares": "53809551",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "Nuveen Asset Management, LLC",
-          "owner_title": "Institution",
-          "shares": "62741520",
           "_collected": "2026-06-28"
         },
         {
@@ -5647,6 +5640,13 @@
           "owner_name": "Nuveen, LLC",
           "owner_title": "Institution",
           "shares": "57301203",
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "Legal & General Group Plc",
+          "owner_title": "Institution",
+          "shares": "55539603",
           "_collected": "2026-06-28"
         }
       ]
@@ -6470,6 +6470,11 @@
     ],
     "material_8k": [
       {
+        "ticker": "NWS",
+        "count": 18,
+        "items": "8.01"
+      },
+      {
         "ticker": "MSTR",
         "count": 6,
         "items": "7.01, 8.01"
@@ -6500,6 +6505,21 @@
         "items": "1.01, 5.02, 7.01, 8.01"
       },
       {
+        "ticker": "JPM",
+        "count": 4,
+        "items": "5.02, 7.01, 8.01"
+      },
+      {
+        "ticker": "XEL",
+        "count": 4,
+        "items": "8.01"
+      },
+      {
+        "ticker": "AES",
+        "count": 3,
+        "items": "1.01, 2.03, 7.01, 8.01"
+      },
+      {
         "ticker": "ASPI",
         "count": 3,
         "items": "1.01, 7.01, 8.01"
@@ -6520,6 +6540,11 @@
         "items": "1.01, 8.01"
       },
       {
+        "ticker": "CASY",
+        "count": 3,
+        "items": "5.02, 7.01, 8.01"
+      },
+      {
         "ticker": "CIFR",
         "count": 3,
         "items": "1.01, 2.03, 7.01, 8.01"
@@ -6535,9 +6560,24 @@
         "items": "1.01, 2.03, 8.01"
       },
       {
+        "ticker": "DTE",
+        "count": 3,
+        "items": "7.01, 8.01"
+      },
+      {
+        "ticker": "FDX",
+        "count": 3,
+        "items": "1.01, 2.01, 5.02, 8.01"
+      },
+      {
         "ticker": "FITB",
         "count": 3,
         "items": "7.01, 8.01"
+      },
+      {
+        "ticker": "FOX",
+        "count": 3,
+        "items": "1.01, 5.02, 7.01"
       },
       {
         "ticker": "HON",
@@ -6553,46 +6593,6 @@
         "ticker": "HUT",
         "count": 3,
         "items": "1.01, 2.03, 7.01, 8.01"
-      },
-      {
-        "ticker": "KDP",
-        "count": 3,
-        "items": "5.02, 7.01, 8.01"
-      },
-      {
-        "ticker": "NEE",
-        "count": 3,
-        "items": "8.01"
-      },
-      {
-        "ticker": "QBTS",
-        "count": 3,
-        "items": "7.01"
-      },
-      {
-        "ticker": "SMCI",
-        "count": 3,
-        "items": "1.01, 7.01, 8.01"
-      },
-      {
-        "ticker": "WRB",
-        "count": 3,
-        "items": "1.01, 2.03, 5.02, 8.01"
-      },
-      {
-        "ticker": "AAL",
-        "count": 2,
-        "items": "5.02, 7.01"
-      },
-      {
-        "ticker": "ALGT",
-        "count": 2,
-        "items": "7.01, 8.01"
-      },
-      {
-        "ticker": "ALK",
-        "count": 2,
-        "items": "5.02, 7.01"
       }
     ],
     "special_situations": [
@@ -18389,6 +18389,14 @@
         "detail": "Tender Offers"
       },
       {
+        "ticker": "ZIM",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "BILL",
         "category": "Activist Campaigns",
         "confidence": "high",
@@ -28621,6 +28629,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "ARCO",
+        "category": "Other Situations",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other Situations"
+      },
+      {
         "ticker": "APWC",
         "category": "Other Situations",
         "confidence": "high",
@@ -31606,14 +31622,6 @@
       },
       {
         "ticker": "0095",
-        "category": "Restructuring",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Restructuring"
-      },
-      {
-        "ticker": "INIKF",
         "category": "Restructuring",
         "confidence": "high",
         "activist": false,
@@ -35349,6 +35357,14 @@
         "detail": "Spin-Offs"
       },
       {
+        "ticker": "GRABW",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "VCIG",
         "category": "Acquisitions",
         "confidence": "medium",
@@ -36173,6 +36189,14 @@
         "detail": "Activist Campaigns"
       },
       {
+        "ticker": "NAAS",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "AACBU",
         "category": "Delistings",
         "confidence": "high",
@@ -36547,6 +36571,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "RKLB",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "WINVW",
@@ -38109,6 +38141,22 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "PSORF",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "AKAM",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "SCKT",
         "category": "Delistings",
         "confidence": "high",
@@ -38435,14 +38483,6 @@
         "activist": false,
         "filer": null,
         "detail": "Divestitures"
-      },
-      {
-        "ticker": "AKAM",
-        "category": "Capital Returns",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Capital Returns"
       },
       {
         "ticker": "AVXL",
@@ -40709,14 +40749,14 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17588,
+        "stars": 17589,
         "wow_pct": 0.84,
         "hot": true
       },
       {
         "ticker": "NET",
-        "stars": 14643,
-        "wow_pct": 0.4,
+        "stars": 14644,
+        "wow_pct": 0.41,
         "hot": true
       },
       {
@@ -40732,15 +40772,15 @@
         "hot": true
       },
       {
-        "ticker": "MSFT",
-        "stars": 186865,
+        "ticker": "ESTC",
+        "stars": 77189,
         "wow_pct": 0.15,
         "hot": true
       },
       {
-        "ticker": "ESTC",
-        "stars": 77187,
-        "wow_pct": 0.14,
+        "ticker": "MSFT",
+        "stars": 186873,
+        "wow_pct": 0.15,
         "hot": true
       },
       {
@@ -40763,7 +40803,7 @@
       },
       {
         "ticker": "GOOGL",
-        "stars": 195965,
+        "stars": 195971,
         "wow_pct": 0.09,
         "hot": false
       },
@@ -40775,8 +40815,8 @@
       },
       {
         "ticker": "META",
-        "stars": 246161,
-        "wow_pct": 0.07,
+        "stars": 246164,
+        "wow_pct": 0.08,
         "hot": false
       },
       {
@@ -42851,93 +42891,93 @@
     "patents": [
       {
         "ticker": "QCOM",
-        "patents": 176,
-        "ipc_classes": 25,
+        "patents": 264,
+        "ipc_classes": 30,
         "sample_title": "modulation and coding scheme table change based on constellation and code rate"
       },
       {
         "ticker": "TSM",
-        "patents": 164,
-        "ipc_classes": 28,
+        "patents": 242,
+        "ipc_classes": 33,
         "sample_title": "backside contact"
       },
       {
         "ticker": "IBM",
-        "patents": 91,
-        "ipc_classes": 26,
+        "patents": 142,
+        "ipc_classes": 32,
         "sample_title": "double-sided integrated circuit with electrostatic guard ring"
       },
       {
         "ticker": "AAPL",
-        "patents": 86,
-        "ipc_classes": 35,
+        "patents": 140,
+        "ipc_classes": 40,
         "sample_title": "method and system for generating at least one image of a real environment"
       },
       {
         "ticker": "INTC",
-        "patents": 71,
-        "ipc_classes": 20,
+        "patents": 113,
+        "ipc_classes": 27,
         "sample_title": "viewport switch latency reduction in live streaming"
       },
       {
         "ticker": "MSFT",
-        "patents": 70,
-        "ipc_classes": 18,
+        "patents": 97,
+        "ipc_classes": 20,
         "sample_title": "cryogenic removal of carbon dioxide from the atmosphere"
       },
       {
         "ticker": "MU",
-        "patents": 66,
-        "ipc_classes": 14,
+        "patents": 90,
+        "ipc_classes": 16,
         "sample_title": "advanced interconnection for wafer on wafer packaging"
       },
       {
-        "ticker": "SONY",
-        "patents": 38,
-        "ipc_classes": 21,
-        "sample_title": "information processing apparatus and information processing method for users at remote locations to communicate naturally"
-      },
-      {
         "ticker": "LPL",
-        "patents": 38,
-        "ipc_classes": 7,
+        "patents": 62,
+        "ipc_classes": 8,
         "sample_title": "display apparatus having a light-emitting device"
       },
       {
+        "ticker": "SONY",
+        "patents": 55,
+        "ipc_classes": 26,
+        "sample_title": "information processing apparatus and information processing method for users at remote locations to communicate naturally"
+      },
+      {
+        "ticker": "HMC",
+        "patents": 49,
+        "ipc_classes": 25,
+        "sample_title": "courteous mode for adjusting vehicle functions"
+      },
+      {
         "ticker": "NVDA",
-        "patents": 36,
-        "ipc_classes": 10,
+        "patents": 48,
+        "ipc_classes": 11,
         "sample_title": "highlight determination using one or more neural networks"
       },
       {
         "ticker": "BA",
-        "patents": 33,
-        "ipc_classes": 26,
+        "patents": 44,
+        "ipc_classes": 34,
         "sample_title": "wind tunnel turbulent airflow laser sensor system"
       },
       {
         "ticker": "TXN",
-        "patents": 32,
-        "ipc_classes": 19,
+        "patents": 44,
+        "ipc_classes": 22,
         "sample_title": "high band-gap devices with a doped high band-gap gate electrode extension"
       },
       {
-        "ticker": "PHG",
-        "patents": 28,
-        "ipc_classes": 13,
-        "sample_title": "method of and system for representing shape of an optical fiber sensor"
+        "ticker": "SLB",
+        "patents": 40,
+        "ipc_classes": 9,
+        "sample_title": "monitoring an industrial facilty employing industrial internet of things (iiot) sensors using a tactical compute application"
       },
       {
         "ticker": "HON",
-        "patents": 26,
-        "ipc_classes": 18,
+        "patents": 37,
+        "ipc_classes": 24,
         "sample_title": "event notification device"
-      },
-      {
-        "ticker": "HMC",
-        "patents": 25,
-        "ipc_classes": 17,
-        "sample_title": "courteous mode for adjusting vehicle functions"
       }
     ],
     "bills": [
@@ -44237,7 +44277,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.84% stars \u00b7 hf_model_momentum: +4.7% model downloads \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.84% stars \u00b7 hf_model_momentum: +4.7% model downloads \u00b7 patent_cluster: 48 grants, 11 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "GOOGL",
@@ -44263,7 +44303,7 @@
           "gov_contract",
           "patent_cluster"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,684,388 reviews \u00b7 github_momentum: +0.15% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 70 grants, 18 IPC classes"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,684,388 reviews \u00b7 github_momentum: +0.15% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 97 grants, 20 IPC classes"
       },
       {
         "ticker": "HOOD",
@@ -44336,17 +44376,6 @@
           "special_situation"
         ],
         "why": "clinical_phase3_start: 6 new Phase-3, 2 halt(s) \u00b7 cnbc_pick: Joe Terranova \u00b7 fda_label_expansion: KEYTRUDA \u00b7 special_situation: Tender Offers"
-      },
-      {
-        "ticker": "AAL",
-        "score": 3,
-        "weighted_score": 1.5,
-        "channel_list": [
-          "darkpool_accum",
-          "material_8k",
-          "special_situation"
-        ],
-        "why": "darkpool_accum: DPI 0.366 \u00b7 material_8k: 2 material 8-Ks (items 5.02, 7.01) \u00b7 special_situation: Divestitures"
       },
       {
         "ticker": "AZN",
@@ -44429,7 +44458,7 @@
           "patent_cluster",
           "special_situation"
         ],
-        "why": "material_8k: 3 material 8-Ks (items 5.02, 7.01, 8.01) \u00b7 patent_cluster: 26 grants, 18 IPC classes \u00b7 special_situation: Spin-Offs"
+        "why": "material_8k: 3 material 8-Ks (items 5.02, 7.01, 8.01) \u00b7 patent_cluster: 37 grants, 24 IPC classes \u00b7 special_situation: Spin-Offs"
       },
       {
         "ticker": "INTC",
@@ -44440,7 +44469,7 @@
           "patent_cluster",
           "special_situation"
         ],
-        "why": "gov_grant: $6,316,036 federal grant/loan \u00b7 patent_cluster: 71 grants, 20 IPC classes \u00b7 special_situation: Other Situations"
+        "why": "gov_grant: $6,316,036 federal grant/loan \u00b7 patent_cluster: 113 grants, 27 IPC classes \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "BWXT",
@@ -44452,17 +44481,6 @@
           "news_sentiment"
         ],
         "why": "activist_13d: 13D activist campaign \u00b7 congress_buy: 1 member(s) net +8 \u00b7 news_sentiment: 0.84 bullish news (43 art)"
-      },
-      {
-        "ticker": "NEE",
-        "score": 3,
-        "weighted_score": 1.15,
-        "channel_list": [
-          "material_8k",
-          "news_sentiment",
-          "special_situation"
-        ],
-        "why": "material_8k: 3 material 8-Ks (items 8.01) \u00b7 news_sentiment: 0.8 bullish news (50 art) \u00b7 special_situation: Acquisitions"
       },
       {
         "ticker": "ETN",
@@ -44504,6 +44522,26 @@
           "fda_label_expansion"
         ],
         "why": "clinical_phase3_start: 3 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: PERJETA"
+      },
+      {
+        "ticker": "BMY",
+        "score": 2,
+        "weighted_score": 1.05,
+        "channel_list": [
+          "clinical_phase3_start",
+          "fda_label_expansion"
+        ],
+        "why": "clinical_phase3_start: 1 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: ONUREG"
+      },
+      {
+        "ticker": "SNPS",
+        "score": 2,
+        "weighted_score": 1.05,
+        "channel_list": [
+          "activist_13d",
+          "trump"
+        ],
+        "why": "activist_13d: 13D activist campaign \u00b7 trump: SYNOPSYS INC COM"
       }
     ]
   }

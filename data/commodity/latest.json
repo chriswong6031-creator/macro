@@ -8,33 +8,33 @@
   "assets": {
     "gold": {
       "label": "Gold",
-      "price": 4078.7,
-      "chg": -8.9,
+      "price": 4096.3,
+      "chg": -8.5,
       "alloc": 0,
       "risk": "Elevated",
       "trend": "up",
       "action": "SELL",
-      "conviction": -14.8
+      "conviction": -14.2
     },
     "silver": {
       "label": "Silver",
-      "price": 59.22,
-      "chg": -21.1,
+      "price": 59.67,
+      "chg": -20.4,
       "alloc": 0,
       "risk": "Elevated",
       "trend": "up",
       "action": "SELL",
-      "conviction": -16.5
+      "conviction": -17.5
     },
     "copper": {
       "label": "Copper",
-      "price": 6.14,
-      "chg": -5.9,
+      "price": 6.21,
+      "chg": -4.9,
       "alloc": 0,
       "risk": "Elevated",
       "trend": "up",
-      "action": "HOLD",
-      "conviction": 1.7
+      "action": "BUY",
+      "conviction": 11.7
     },
     "oil": {
       "label": "Oil \u00b7 WTI",
@@ -44,7 +44,7 @@
       "risk": "Elevated",
       "trend": "up",
       "action": "HOLD",
-      "conviction": -12.5
+      "conviction": -9.4
     }
   }
 }

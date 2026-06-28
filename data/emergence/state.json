@@ -1,9 +1,4 @@
 {
-  "6f1dca330cfc": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Information Technology",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Information Technology",
-    "score": 56.6
-  },
   "7db337a10577": {
     "name_en": "Emerging Information Technology cluster",
     "name_zh": "\u65b0\u5174 Information Technology \u96c6\u7fa4",
@@ -23,6 +18,11 @@
     "name_en": "Emerging Industrials cluster",
     "name_zh": "\u65b0\u5174 Industrials \u96c6\u7fa4",
     "score": 55.2
+  },
+  "ce2a46f158bc": {
+    "name_en": "Emerging Industrials cluster",
+    "name_zh": "\u65b0\u5174 Industrials \u96c6\u7fa4",
+    "score": 57.0
   },
   "f449e2014f48": {
     "name_en": "Cross-sector cluster \u00b7 Information Technology + Consumer Discretionary",
