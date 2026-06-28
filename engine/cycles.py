@@ -1000,6 +1000,39 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
         nxt_zh = ("此处不宜建仓。等待回调至 10 日均线附近——或下一个日线周期低点构筑成形——"
                   "以获得风险更低的入场；若已持有则可继续持有。")
 
+    # ── Fresh weekly (investor-cycle) cross-up VETO on TOP WATCH ─────────────────
+    # TOP WATCH ("nearing a high / take profits") is a DAILY-cycle judgment — daily
+    # overbought (RSI>70), or late in the daily cycle. But the WEEKLY MACD is the
+    # INVESTOR cycle: when it has JUST crossed up AND the weekly itself isn't yet
+    # overbought, that is the START of a new multi-month up-leg, so a daily-overbought
+    # print is the launch thrust, NOT a top. Taking profits into a fresh weekly cross is
+    # the documented failure mode (XLV 2026-06: daily RSI 72 / fresh daily cross, but the
+    # WEEKLY just crossed up at weekly RSI 63 — the rotation leader read TAKE PROFITS).
+    # Reroute to RALLY ON (hold/ride the new leg) — never sell strength early in the
+    # bigger cycle. Mirrors engine.sector_cycles._classify_phase, which already weights a
+    # fresh weekly cross. Narrow by design (a weekly signal-line cross is infrequent), so
+    # it only catches names genuinely turning up on the investor clock while daily-extended.
+    weekly_fresh_up = bool(w.get("macd_cross_up"))
+    weekly_not_hot = (w.get("rsi14") or 50) < 70
+    if state == "TOP WATCH" and weekly_fresh_up and weekly_not_hot \
+            and cyc.get("above_ma10") and early.get("dir") != "down":
+        state = "RALLY ON"
+        extended_gate = False   # a fresh weekly cross makes an overbought daily buy a new-leg
+                                # HOLD, not a chase — clear the gate so entry reads HOLD not "DON'T CHASE"
+        why = ("The weekly (investor-cycle) momentum just crossed UP while price holds its "
+               "10-day average — the start of a new multi-month up-leg. A daily-overbought print "
+               "here is the launch thrust, not a top, so this is a HOLD / ride, not a take-profit. "
+               "The daily can still dip to its 10-day average (normal) — but the bigger investor "
+               "cycle is early, with room left.")
+        why_zh = ("周线（投资者周期）动量刚刚向上交叉，且价格守住 10 日均线——这是新的多月上行段的起点。"
+                  "此处日线超买只是启动推力、并非见顶，因此应持有 / 顺势，而非止盈。"
+                  "日线仍可能回踩 10 日均线（属正常）——但更大的投资者周期尚处早期，仍有空间。")
+        nxt = ("Hold / ride the fresh weekly up-leg; add on pullbacks toward the 10-day average "
+               "rather than chasing the thrust. First warning would be the weekly momentum "
+               "rolling back over.")
+        nxt_zh = ("持有 / 顺应新的周线上行段；在回踩 10 日均线时加仓，而非追高推力。"
+                  "首个预警将是周线动量重新掉头向下。")
+
     score = LADDER_SCORE[state]
     if cyc.get("translation") == "left":
         score -= 10
