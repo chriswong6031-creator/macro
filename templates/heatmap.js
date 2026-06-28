@@ -82,32 +82,38 @@
             Math.round(a[2] * t + b[2] * (1 - t))];
   }
   function rgb(c) { return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
-  function fgFor() {
-    // White labels on every tile, both themes (matches Finviz / TradingView).
-    // The deepened palette below + the tile text-shadow keep white legible even
-    // on the lightest bins, in light mode too.
-    return '#f4f7fb';
+  function isLightTheme() { return document.documentElement.getAttribute('data-theme') === 'light'; }
+  function fgFor(c) {
+    // Dark theme: white on every tile (deep palette). Light theme: dark text on
+    // the pale/medium bins, white only on the strongest saturated tiles — the
+    // conventional light-heatmap look (TradingView / Finviz light).
+    if (!isLightTheme()) return '#f4f7fb';
+    var lum = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    return lum > 150 ? '#10151c' : '#f4f7fb';
   }
   function neutral() {
-    // a desaturated slate for the flat ~0% tile, deep enough that white text
-    // stays legible — a medium slate in light mode, a dark slate in dark mode.
-    return document.documentElement.getAttribute('data-theme') === 'light'
-      ? [99, 108, 124] : [41, 46, 57];
+    // flat ~0% tile: a dark slate in dark mode, a light gray in light mode so it
+    // sits on (not against) the light chrome.
+    return isLightTheme() ? [228, 231, 235] : [41, 46, 57];
   }
   function binPalette() {
     var up = hexToRgb(cssVar('--hm-up-v') || '#1ec173');
     var dn = hexToRgb(cssVar('--hm-dn-v') || '#e8485f');
-    var nu = neutral();
-    var P = {};
-    // deeper mixes so even the level-1 tiles carry enough colour/depth for
-    // white labels (and the brightest bins read a touch richer).
-    P[3] = up; P[2] = mix(up, nu, 0.82); P[1] = mix(up, nu, 0.46);
-    P[0] = nu;
-    P[-1] = mix(dn, nu, 0.46); P[-2] = mix(dn, nu, 0.82); P[-3] = dn;
-    // no-data tile: a muted slate kept deep enough for white text in both themes
-    // (the panel-based mix went too pale in light mode).
-    P.na = document.documentElement.getAttribute('data-theme') === 'light'
-      ? [124, 132, 145] : mix(hexToRgb(cssVar('--panel2') || '#1e222a'), nu, 0.5);
+    var nu = neutral(), P = {};
+    if (isLightTheme()) {
+      // soft, light bins that read as one family with the light chrome; only the
+      // extremes saturate (and pick up white text via fgFor).
+      P[3] = up; P[2] = mix(up, nu, 0.55); P[1] = mix(up, nu, 0.26);
+      P[0] = nu;
+      P[-1] = mix(dn, nu, 0.26); P[-2] = mix(dn, nu, 0.55); P[-3] = dn;
+      P.na = [236, 238, 241];
+    } else {
+      // deep, rich bins for the dark board; white labels throughout.
+      P[3] = up; P[2] = mix(up, nu, 0.82); P[1] = mix(up, nu, 0.46);
+      P[0] = nu;
+      P[-1] = mix(dn, nu, 0.46); P[-2] = mix(dn, nu, 0.82); P[-3] = dn;
+      P.na = mix(hexToRgb(cssVar('--panel2') || '#1e222a'), nu, 0.5);
+    }
     return P;
   }
   function binIndex(pc, edges) {
@@ -836,9 +842,9 @@
     if (document.getElementById('mm-heatmap-style')) return;
     var css = ''
       + ':root{--hm-up-v:#14ad6c;--hm-dn-v:#e4435a;--hm-glass:color-mix(in srgb,var(--panel) 70%,transparent);--hm-edge:color-mix(in srgb,#ffffff 8%,var(--line));--hm-frame:color-mix(in srgb,#000000 38%,var(--bg));}'
-      + 'html[data-theme="light"]{--hm-up-v:#0c8f5b;--hm-dn-v:#d62a3d;--hm-glass:color-mix(in srgb,#ffffff 78%,transparent);--hm-edge:color-mix(in srgb,#0b1830 10%,var(--line));--hm-frame:color-mix(in srgb,#c5ccd6 60%,var(--bg));}'
+      + 'html[data-theme="light"]{--hm-up-v:#1aa869;--hm-dn-v:#d83a48;--hm-glass:color-mix(in srgb,#ffffff 78%,transparent);--hm-edge:color-mix(in srgb,#0b1830 10%,var(--line));--hm-frame:color-mix(in srgb,#dfe3e8 70%,var(--bg));}'
       + 'html[data-lang="zh"]{--hm-up-v:#e4435a;--hm-dn-v:#14ad6c;}'
-      + 'html[data-theme="light"][data-lang="zh"]{--hm-up-v:#d62a3d;--hm-dn-v:#0c8f5b;}'
+      + 'html[data-theme="light"][data-lang="zh"]{--hm-up-v:#d83a48;--hm-dn-v:#1aa869;}'
       + '.hm-scope{font-family:Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;}'
       + '.hm-scope .up{color:var(--up);} .hm-scope .dn{color:var(--down);}'
       // control bar

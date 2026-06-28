@@ -414,6 +414,32 @@ def test_washout_knife_tempers_bottom_confidence() -> None:
     assert market_vix_context(vix)["panic"] is True
 
 
+def test_fresh_weekly_cross_vetoes_take_profits() -> None:
+    """The XLV 2026-06 misfire: a daily-overbought buy that the extension gate would route to
+    TOP WATCH / 'DON'T CHASE' must instead read RALLY ON / HOLD when the WEEKLY (investor-cycle)
+    MACD has JUST crossed up and the weekly itself isn't yet overbought — a fresh weekly cross is
+    the START of a multi-month up-leg, so daily strength is the launch thrust, not a top."""
+    cyc, mtf = _extended_snapshot(72, 66, 63, weekly_cross=True)   # daily 72 hot, weekly 63 + fresh cross
+    lad = ladder_state(cyc, mtf)
+    assert lad["state"] == "RALLY ON", lad["state"]
+    assert lad["entry"]["urgency"] == "hold", lad["entry"]        # board → hold, NOT take_profits
+    assert "investor-cycle" in lad["why"]
+
+
+def test_take_profits_stands_without_a_fresh_weekly_cross() -> None:
+    """No fresh weekly cross → the genuine daily-overbought 'don't chase' read survives."""
+    cyc, mtf = _extended_snapshot(72, 66, 63, weekly_cross=False)
+    lad = ladder_state(cyc, mtf)
+    assert lad["state"] == "TOP WATCH", lad["state"]
+    assert lad["entry"]["urgency"] == "caution", lad["entry"]
+
+
+def test_weekly_cross_while_weekly_overbought_does_not_veto() -> None:
+    """A weekly cross with the weekly already overbought (RSI≥70) is NOT early — no veto."""
+    cyc, mtf = _extended_snapshot(72, 80, 81, weekly_cross=True)   # weekly hot (81)
+    assert ladder_state(cyc, mtf)["state"] == "TOP WATCH"
+
+
 if __name__ == "__main__":
     for fn in [test_trough_spacing, test_translation_right, test_translation_left,
                test_failed_cycle_flag, test_ladder_states_sane, test_decline_on_breakdown,
@@ -430,7 +456,10 @@ if __name__ == "__main__":
                test_turn_signaled_text_not_self_contradictory_above_ma,
                test_eq_freshness_decays_for_a_late_cross,
                test_bottom_confidence_confluence_and_gating,
-               test_washout_knife_tempers_bottom_confidence]:
+               test_washout_knife_tempers_bottom_confidence,
+               test_fresh_weekly_cross_vetoes_take_profits,
+               test_take_profits_stands_without_a_fresh_weekly_cross,
+               test_weekly_cross_while_weekly_overbought_does_not_veto]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all cycle tests passed")
