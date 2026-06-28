@@ -487,6 +487,18 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
 _SHARED: dict = {}
 
 
+def _no_drip() -> bool:
+    """True when RENDER_NO_DRIP=1 — set by the render-only lanes (render.yml /
+    engine-render.yml). Those lanes commit site/ ONLY and DISCARD every data/ write,
+    so the per-build SEC/Wikipedia drip fetches (equity_profile, edgar_rpo,
+    edgar_headcount) below are pure wasted network there: the parquet/JSON they
+    persist is thrown away, and the page still renders from the COMMITTED caches the
+    nightly already advanced. Skipping them restores the lanes' "no network" invariant
+    and removes ~3-4 min of rate-limited SEC fetching from every render. The nightly
+    `daily` (which commits data/) leaves this unset, so the drip still advances there."""
+    return os.environ.get("RENDER_NO_DRIP") == "1"
+
+
 def _library_workers() -> int:
     """Process-pool size for the per-ticker fan-out. Precedence: STOCK_LIB_WORKERS
     env var (ops knob; set 1 to force the serial path) > config stock_search.workers
@@ -780,7 +792,10 @@ def main() -> int:
     try:
         from collectors.equity_profile import fetch_profiles
         cap = config.load().get("equity_profile", {}).get("per_build", 80)
-        fetch_profiles(max_new=cap)
+        if _no_drip():
+            log.info("equity_profile drip skipped (render lane — data/ write discarded)")
+        else:
+            fetch_profiles(max_new=cap)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("equity_profile drip skipped (%s)", e)
     # Fundamental panels (factor fingerprint, trailing valuation, financials,
@@ -1013,7 +1028,10 @@ def main() -> int:
     rpo_by_ticker: dict[str, list[dict]] = {}
     try:                                        # drip RPO for the software universe (cached 25d; like revisions)
         from collectors.edgar_rpo import fetch_rpo
-        fetch_rpo()
+        if _no_drip():
+            log.info("rpo drip skipped (render lane — data/ write discarded)")
+        else:
+            fetch_rpo()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("rpo drip skipped (%s)", e)
     _rpop = config.data_dir() / "edgar" / "rpo.parquet"
@@ -1033,7 +1051,10 @@ def main() -> int:
     headcount_by_ticker: dict[str, list[dict]] = {}
     try:                                        # drip headcount (cached 90d; gentle SEC doc fetch)
         from collectors.edgar_headcount import fetch_headcount
-        fetch_headcount(max_new=10)
+        if _no_drip():
+            log.info("headcount drip skipped (render lane — data/ write discarded)")
+        else:
+            fetch_headcount(max_new=10)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("headcount drip skipped (%s)", e)
     _hcp = config.data_dir() / "edgar" / "headcount.parquet"
