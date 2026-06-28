@@ -13,34 +13,59 @@
   "macro_outlier_z": 5,
   "email_alerts": false
  },
- "n": 533,
+ "n": 902,
  "n_failed": 1,
- "fail_pct": 0.188,
- "n_flags": 54,
+ "fail_pct": 0.111,
+ "n_flags": 67,
  "universes": [
   {
    "name": "stocks",
-   "n": 121,
+   "n": 221,
    "n_failed": 0,
    "fail_pct": 0.0,
-   "n_flags": 1,
+   "n_flags": 6,
    "skipped": false,
    "note": "",
    "failed": [],
    "flags": [
     {
+     "name": "CASY",
+     "kind": "move",
+     "detail": "+20.3% on 2026-06-10"
+    },
+    {
+     "name": "CHTR",
+     "kind": "move",
+     "detail": "-25.5% on 2026-04-24"
+    },
+    {
+     "name": "HON",
+     "kind": "move",
+     "detail": "+100.3% on 2026-06-18"
+    },
+    {
      "name": "INTC",
      "kind": "move",
      "detail": "+23.6% on 2026-04-24"
+    },
+    {
+     "name": "MRVL",
+     "kind": "move",
+     "detail": "+32.5% on 2026-06-02"
+    },
+    {
+     "name": "SNDK",
+     "kind": "move",
+     "detail": "+22.0% on 2026-06-25"
     }
    ]
   },
   {
    "name": "baskets/ohlcv",
-   "n": 412,
+   "n": 681,
    "n_failed": 1,
-   "fail_pct": 0.243,
-   "n_flags": 53,
+   "fail_pct": 0.147,
+   "n_flags": 61,
    "skipped": false,
    "note": "",
    "failed": [
@@ -56,6 +81,11 @@
      "name": "ACLS",
      "kind": "move",
      "detail": "+22.4% on 2026-05-06"
+    },
+    {
+     "name": "AKAM",
+     "kind": "move",
+     "detail": "+26.6% on 2026-05-08"
     },
     {
      "name": "ALHC",
@@ -88,6 +118,21 @@
      "detail": "+21.0% on 2026-05-06"
     },
     {
+     "name": "CASY",
+     "kind": "move",
+     "detail": "+20.3% on 2026-06-10"
+    },
+    {
+     "name": "CDW",
+     "kind": "move",
+     "detail": "-20.3% on 2026-05-06"
+    },
+    {
+     "name": "CHTR",
+     "kind": "move",
+     "detail": "-25.5% on 2026-04-24"
+    },
+    {
      "name": "CIFR",
      "kind": "move",
      "detail": "+23.5% on 2026-05-05"
@@ -116,6 +161,16 @@
      "name": "DVA",
      "kind": "move",
      "detail": "+23.5% on 2026-05-06"
+    },
+    {
+     "name": "FDXF",
+     "kind": "move",
+     "detail": "+22.5% on 2026-05-28"
+    },
+    {
+     "name": "FLEX",
+     "kind": "move",
+     "detail": "+39.7% on 2026-05-06"
     },
     {
      "name": "FLY",
@@ -166,6 +221,11 @@
      "name": "INFQ",
      "kind": "move",
      "detail": "+31.5% on 2026-05-21"
+    },
+    {
+     "name": "INTC",
+     "kind": "move",
+     "detail": "+23.6% on 2026-04-24"
     },
     {
      "name": "INTU",
@@ -286,6 +346,11 @@
      "name": "TEAM",
      "kind": "move",
      "detail": "+29.6% on 2026-05-01"
+    },
+    {
+     "name": "TECH",
+     "kind": "move",
+     "detail": "+20.1% on 2026-06-25"
     },
     {
      "name": "UAMY",

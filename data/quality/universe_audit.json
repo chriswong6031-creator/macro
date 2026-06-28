@@ -16,7 +16,7 @@
  "n": 507,
  "n_failed": 0,
  "fail_pct": 0.0,
- "n_flags": 55,
+ "n_flags": 37,
  "universes": [
   {
    "name": "us_sectors",
@@ -45,16 +45,11 @@
    "n": 134,
    "n_failed": 0,
    "fail_pct": 0.0,
-   "n_flags": 44,
+   "n_flags": 26,
    "skipped": false,
    "note": "",
    "failed": [],
    "flags": [
-    {
-     "name": "A",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
     {
      "name": "AA",
      "kind": "nobars",
@@ -71,17 +66,7 @@
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
     {
-     "name": "BSX",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
      "name": "CENX",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "CF",
      "kind": "nobars",
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
@@ -96,27 +81,12 @@
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
     {
-     "name": "DGX",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "DHR",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
      "name": "ENPH",
      "kind": "nobars",
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
     {
      "name": "ENS",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "EW",
      "kind": "nobars",
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
@@ -131,16 +101,6 @@
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
     {
-     "name": "FSLR",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "IDXX",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
      "name": "ILMN",
      "kind": "nobars",
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
@@ -151,32 +111,12 @@
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
     {
-     "name": "IQV",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
      "name": "ITRI",
      "kind": "nobars",
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
     {
      "name": "KALU",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "LH",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "MDT",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "MOS",
      "kind": "nobars",
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
@@ -201,22 +141,7 @@
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
     {
-     "name": "PNR",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "PODD",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
      "name": "RELY",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "RMD",
      "kind": "nobars",
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
@@ -232,11 +157,6 @@
     },
     {
      "name": "SMG",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "SYK",
      "kind": "nobars",
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
@@ -257,16 +177,6 @@
     },
     {
      "name": "VCYT",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "XYL",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "ZBH",
      "kind": "nobars",
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     }
