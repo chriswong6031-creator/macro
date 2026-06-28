@@ -437,6 +437,7 @@
     srStatus(shownN < act.length ? L(shownN + " of " + act.length + " shown", "已显示 " + shownN + " / " + act.length + " 项") : "");
     updateBasketSel();   // keep the "N on chart" counter honest as the facet narrows
     updateChartHint();
+    updateSeriesCount();  // keep the mobile Series(n) trigger badge honest
     if (heroChart) { heroChart.setHidden(chartHidden); rebuildHero(false); }
   }
   // visually-hidden live region near the phase chips — created once, lazily
@@ -519,6 +520,7 @@
       b.addEventListener("click", function () { toggleFocus(s.id); });
       wrap.appendChild(b);
     });
+    if (isCnMobile()) mountSeriesTrigger();   // mobile: a Series(n) picker replaces the chip rail
   }
   // "Select all visible" for the sector ETFs — sectors are always on the clock
   // (subject to the active "Where they stand" facet), so this just clears any focus
@@ -1110,10 +1112,128 @@
     });
   }
 
+  /* ---- Series picker (China mobile): a searchable, phase-grouped multi-select sheet that
+     curates exactly which sectors are drawn — replaces the 31-chip horizontal rail. It writes
+     the same mobileSel map the focus-default / Show-all path already reads in applyVisibility. */
+  function ensureMobileSel() {
+    if (mobileSel) return;                         // seed from the current conceptual selection
+    var base = mobileShowAll ? null : mobileLeaders();
+    mobileSel = {};
+    activeList().forEach(function (s) { mobileSel[s.id] = mobileShowAll ? true : !!(base && base[s.id]); });
+    mobileShowAll = false;                          // explicit curation supersedes the all/leaders toggle
+  }
+  function mountSeriesTrigger() {
+    var wrap = document.getElementById("sc-chips");
+    if (!wrap || wrap.querySelector(".sc-series-btn")) return;
+    var btn = el("button", "sc-series-btn"); btn.type = "button";
+    btn.setAttribute("aria-haspopup", "dialog");
+    btn.innerHTML = '<span aria-hidden="true">☰</span><span class="l-en">Series</span><span class="l-zh">板块</span>' +
+      '<span class="sc-series-n" id="sc-series-n"></span><span class="sc-series-car" aria-hidden="true">▾</span>';
+    btn.addEventListener("click", openSeriesPicker);
+    var allBtn = wrap.querySelector(".sc-chip-all");
+    if (allBtn && allBtn.nextSibling) wrap.insertBefore(btn, allBtn.nextSibling); else wrap.appendChild(btn);
+    updateSeriesCount();
+  }
+  function updateSeriesCount() {
+    var n = document.getElementById("sc-series-n");
+    if (n) n.textContent = mobileShownCount();
+  }
+  function buildSeriesOverlay() {
+    var ov = document.getElementById("sc-series-ov");
+    if (ov) return ov;
+    ov = el("div", "sc-series-ov"); ov.id = "sc-series-ov";
+    ov.innerHTML =
+      '<div class="sc-series-back"></div>' +
+      '<div class="sc-series-panel" role="dialog" aria-modal="true" aria-label="' + L("Choose sectors", "选择板块") + '">' +
+        '<div class="sc-series-hd"><span class="sc-series-ttl">' + L("Choose sectors", "选择板块") + '</span>' +
+          '<button class="sc-series-done" type="button">' + L("Done", "完成") + '</button></div>' +
+        '<div class="sc-series-tools">' +
+          '<input class="sc-series-search" type="search" placeholder="' + L("Search…", "搜索…") + '" aria-label="' + L("Search sectors", "搜索板块") + '">' +
+          '<button class="sc-series-act" data-act="all" type="button">' + L("All", "全选") + '</button>' +
+          '<button class="sc-series-act" data-act="none" type="button">' + L("Clear", "清空") + '</button>' +
+        '</div>' +
+        '<div class="sc-series-list" id="sc-series-list"></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    ov.querySelector(".sc-series-back").addEventListener("click", closeSeriesPicker);
+    ov.querySelector(".sc-series-done").addEventListener("click", closeSeriesPicker);
+    ov.querySelector(".sc-series-search").addEventListener("input", function () { filterSeriesList(this.value); });
+    ov.querySelectorAll(".sc-series-act").forEach(function (b) {
+      b.addEventListener("click", function () { seriesSelectAll(b.getAttribute("data-act") === "all"); });
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && ov.classList.contains("open")) closeSeriesPicker();
+    });
+    return ov;
+  }
+  function renderSeriesList() {
+    var host = document.getElementById("sc-series-list");
+    if (!host) return;
+    ensureMobileSel();
+    var groups = {};
+    activeList().forEach(function (s) { (groups[s.now.phase] = groups[s.now.phase] || []).push(s); });
+    var order = ["Trough", "Recovery", "Expansion", "Peak", "Downturn"], html = "";
+    order.forEach(function (ph) {
+      var list = (groups[ph] || []).slice().sort(function (a, b) { return (a.now.rs_rank || 99) - (b.now.rs_rank || 99); });
+      if (!list.length) return;
+      html += '<div class="sc-series-grp">' + (PHASE_LAB[ph] ? L(PHASE_LAB[ph][0], PHASE_LAB[ph][1]) : ph) + '</div>';
+      list.forEach(function (s) {
+        html += '<button class="sc-series-row' + (mobileSel[s.id] ? " on" : "") + '" data-id="' + s.id + '" type="button" style="--c:' + s.accent + '">' +
+          '<span class="sc-ck" aria-hidden="true">✓</span><span class="sc-sdot"></span>' +
+          '<span class="sc-nm">' + nm(s) + '</span>' +
+          (s.now.rs_rank ? '<span class="sc-rs">#' + s.now.rs_rank + '</span>' : '') + '</button>';
+      });
+    });
+    host.innerHTML = html;
+    host.querySelectorAll(".sc-series-row").forEach(function (row) {
+      row.addEventListener("click", function () { toggleSeriesItem(row.getAttribute("data-id"), row); });
+    });
+  }
+  function toggleSeriesItem(id, row) {
+    ensureMobileSel();
+    mobileSel[id] = !mobileSel[id];
+    if (row) { row.classList.toggle("on", !!mobileSel[id]); row.setAttribute("aria-pressed", mobileSel[id] ? "true" : "false"); }
+    applyVisibility();
+  }
+  function seriesSelectAll(on) {
+    ensureMobileSel();
+    activeList().forEach(function (s) { mobileSel[s.id] = on; });
+    applyVisibility();
+    renderSeriesList();
+  }
+  function filterSeriesList(q) {
+    q = (q || "").trim().toLowerCase();
+    var host = document.getElementById("sc-series-list");
+    if (!host) return;
+    host.querySelectorAll(".sc-series-row").forEach(function (row) {
+      var s = byId[row.getAttribute("data-id")];
+      var hay = ((s && (s.name + " " + (s.name_zh || "") + " " + (s.ticker || ""))) || "").toLowerCase();
+      row.classList.toggle("sc-hidden", !!q && hay.indexOf(q) < 0);
+    });
+    host.querySelectorAll(".sc-series-grp").forEach(function (g) {
+      var any = false, n = g.nextElementSibling;
+      while (n && n.classList && n.classList.contains("sc-series-row")) { if (!n.classList.contains("sc-hidden")) any = true; n = n.nextElementSibling; }
+      g.style.display = any ? "" : "none";
+    });
+  }
+  function openSeriesPicker() {
+    var ov = buildSeriesOverlay();
+    renderSeriesList();
+    var s = ov.querySelector(".sc-series-search"); if (s) s.value = "";
+    document.body.style.overflow = "hidden";
+    ov.classList.add("open");
+  }
+  function closeSeriesPicker() {
+    var ov = document.getElementById("sc-series-ov");
+    if (ov) ov.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+
   /* ---- lang/theme re-render --------------------------------------------- */
   function rerender() {
     var savedFocus = state.focus, savedPhase = {};
     PHASE_FILTER.forEach(function (p) { savedPhase[p.key] = phaseState[p.key]; });
+    var ovEl = document.getElementById("sc-series-ov"); if (ovEl) ovEl.remove();   // rebuild picker chrome in the new language
     mountChips(); mountBaskets(); applyFamilyDisplay(); mountCards(); buildDefaultPanel(); buildZoom(); buildGroups();
     PHASE_FILTER.forEach(function (p) { phaseState[p.key] = savedPhase[p.key]; });
     syncGroups();
