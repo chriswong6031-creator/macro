@@ -91,7 +91,6 @@ def main() -> None:
         note += " [intraday-derived close, ~15-min delayed — research hook]"
     (arch / "mtf_signals_latest.json").write_text(json.dumps({
         "asof": asof, "tf": "3D", "universe": "us_deep",
-        "source": "intraday_delayed" if args.intraday else "daily_adjusted",
         "note": note,
         "signals": snap,
     }, indent=1))
