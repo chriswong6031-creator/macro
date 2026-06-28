@@ -4,4 +4,5 @@
 # needs them.
 fastapi>=0.115,<1.0
 uvicorn[standard]>=0.30
-PyJWT>=2.8
+# Auth is secretless (verifies tokens via Supabase /auth/v1/user using stdlib
+# urllib) — no JWT library needed.
