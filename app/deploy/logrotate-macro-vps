@@ -1,7 +1,7 @@
 # Rotate the VPS cron logs so they can never fill the droplet disk.
 # Installed to /etc/logrotate.d/macro-vps by setup.sh. `copytruncate` so the cron
 # `>>` appenders (macro-update / macro-live / terminal-data) keep writing without a restart.
-/var/log/macro-update.log /var/log/live-overlay.log /var/log/terminal-data.log /var/log/caddy/*.log {
+/var/log/macro-update.log /var/log/live-overlay.log /var/log/terminal-data.log /var/log/firewall.log /var/log/caddy/*.log {
     weekly
     rotate 4
     compress

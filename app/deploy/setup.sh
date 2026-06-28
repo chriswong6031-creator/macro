@@ -64,6 +64,10 @@ install -m 0755 "$APP_DIR/app/deploy/update.sh" /usr/local/bin/macro-update
 # Rotate the cron + Caddy logs so they can never fill the droplet disk.
 install -m 0644 "$APP_DIR/app/deploy/logrotate-macro-vps" /etc/logrotate.d/macro-vps 2>/dev/null || true
 
+# Lock the web origin to Cloudflare IPs only (close the direct-to-origin bypass). Fail-open:
+# a CF-fetch failure leaves provisioning intact rather than blocking the deploy.
+bash "$APP_DIR/app/deploy/firewall-cloudflare.sh" || log "firewall step skipped (non-fatal)"
+
 log "DONE — Caddy serving https://$DOMAIN from $APP_DIR/site"
 log "HEAD: $(git -C "$APP_DIR" rev-parse --short HEAD)"
 systemctl --no-pager status caddy | head -4 || true
