@@ -459,8 +459,10 @@ function renderEntries(){
       <span class="pn">${L(esc(x.name),esc(x.name_zh))}</span><span class="pw">${x.score}</span></a>`); }); }
   (alloc.weights||[]).filter(w=>w.crowded).forEach(w=>sell.push(`<div class="prow"><span class="pverb" style="color:var(--warn);border-color:var(--warn)">${L('SIZE DOWN','降仓')}</span><span class="pn">${L(esc(w.name),esc(w.name_zh))}</span><span class="pw">${L('crowded','拥挤')}</span></div>`));
   if(!sell.length) sell.push(`<div class="muted" style="padding:10px 2px;font-size:12px">${L('Nothing flagged to reduce right now.','当前无需减仓的标的。')}</div>`);
-  el.innerHTML=`<div class="pcol"><h4 class="buy">✅ ${L('Add / hold now','现在加仓 / 持有')} <span class="muted" style="font-size:11px">(${buy.length})</span></h4>${buy.join('')||('<div class="muted" style="padding:10px 2px;font-size:12px">'+L('No themes above trend — sit in cash.','无主题处于趋势上方 — 持有现金。')+'</div>')}</div>
-    <div class="pcol"><h4 class="sell">🔻 ${L('Reduce / avoid','减仓 / 回避')} <span class="muted" style="font-size:11px">(${sell.length})</span></h4>${sell.join('')}</div>`;
+  const moreBtn=n=>n>5?`<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">${L('Show more','显示更多')} ▾</span><span class="lm-hide">${L('Show less','收起')} ▴</span></button>`:'';
+  const pCol=(cls,head,arr,empty)=>`<div class="pcol lst-wrap"><h4 class="${cls}">${head} <span class="muted" style="font-size:11px">(${arr.length})</span></h4>${arr.length?`<div class="plist lst-collapse is-collapsed">${arr.join('')}</div>${moreBtn(arr.length)}`:empty}</div>`;
+  el.innerHTML=pCol('buy',`✅ ${L('Add / hold now','现在加仓 / 持有')}`,buy,'<div class="muted" style="padding:10px 2px;font-size:12px">'+L('No themes above trend — sit in cash.','无主题处于趋势上方 — 持有现金。')+'</div>')
+    +pCol('sell',`🔻 ${L('Reduce / avoid','减仓 / 回避')}`,sell,'');
 }
 
 function renderRiskTime(){

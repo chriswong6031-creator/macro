@@ -147,14 +147,22 @@ def main() -> int:
     # from the BASKETS metadata (thesis/members/rationale/perf/changelog/reference).
     chart = data.pop("chart")
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    # Risk-state de-risk strip (engine/risk_state.py): when drawdown risk is elevated, the
-    # leadership-driven baskets/rotation surface should DOWN-SIZE and favor good entries over
-    # chasing extended leaders — sizing, not selection. Read-only from latest.json; never fatal.
+    # Risk strip (top of page): the headline mirrors the canonical Market Risk Radar
+    # (engine/risk_radar.py → latest.json.risk_radar) shown identically on macro.html, so the
+    # two pages always agree on the number. The risk_state engine (engine/risk_state.py) supplies
+    # the de-gross SIZING guidance (gross factor / leadership cap) — the leadership-driven
+    # baskets surface should DOWN-SIZE and favor good entries, not chase extended leaders.
+    # Read-only from latest.json; never fatal. Both surfaced only at caution or worse.
     risk_state = None
+    risk_radar = None
     try:
-        rs = json.loads((config.data_dir() / "regime" / "latest.json").read_text()).get("risk_state")
+        _latest = json.loads((config.data_dir() / "regime" / "latest.json").read_text())
+        rs = _latest.get("risk_state")
         if rs and rs.get("state") in ("caution", "elevated", "risk-off"):
             risk_state = rs
+        rr = _latest.get("risk_radar")
+        if rr and rr.get("state") in ("caution", "elevated", "risk-off"):
+            risk_radar = rr
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("baskets risk-state read failed: %s", e)
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
@@ -164,6 +172,7 @@ def main() -> int:
         theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
         flow=flow,
         risk_state=risk_state,
+        risk_radar=risk_radar,
         generated_utc=built)
     (site / "baskets.html").write_text(html)
     # PER-THEME DETAIL PAGES (one site/basket/<id>.html each) — needs `data` (with
