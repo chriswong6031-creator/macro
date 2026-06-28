@@ -450,10 +450,6 @@
   }
   function hideTip() { if (selected) return; tip.hidden = true; }
   function fmt(v) { return v == null ? "—" : (v >= 0 ? "+" : "") + v.toFixed(2); }
-  // anchor a transient hover preview to a clock row: the sidebar hugs the right edge,
-  // so showTip's overflow-flip naturally lands the popup on the open (left) side
-  function showRowTip(m, li) { var r = li.getBoundingClientRect(); showTip(m, r.left, r.top + r.height / 2); }
-
   // ---- sidebar market clock ------------------------------------------------
   function localParts(tz) {
     var f = new Intl.DateTimeFormat("en-GB", { timeZone: tz, weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false });
@@ -501,19 +497,17 @@
         '<span class="gd-r-px"><span class="nb-px" data-sym="' + (m.index_sym || "") + '" data-mkt="idx">' + (m.index_price || "—") + '</span> ' +
         '<em class="nb-chg ' + ((m.index_chg_pct || 0) >= 0 ? "up" : "down") + '" data-sym="' + (m.index_sym || "") + '">' + ((m.index_chg_pct || 0) >= 0 ? "+" : "") + (m.index_chg_pct == null ? "" : m.index_chg_pct + "%") + '</em></span></span>' +
         '<span class="gd-r-state"><span class="gd-r-stat"><span class="gd-r-dot"></span><span class="gd-r-txt"></span></span><span class="gd-r-cd"></span></span>';
-      // tap (mobile) / click (desktop) toggles a PERSISTENT popup — press again to close
+      // press (tap / click) toggles the popup — press again to close. NEVER on hover.
       li.addEventListener("click", function () { toggleSelect(m); });
-      // desktop only: hovering a row pops a transient preview that drops on mouse-out.
+      // desktop hover only highlights the matching market on the globe — no popup.
       // touch reports pointerType "touch" — skip hover there so the tap-toggle owns it.
       li.addEventListener("pointerenter", function (e) {
         if (e.pointerType === "touch") return;
         hovered = m.cc;
-        if (!selected) showRowTip(m, li);          // don't disturb an already-pinned popup
       });
       li.addEventListener("pointerleave", function (e) {
         if (e.pointerType === "touch") return;
         if (!dragging) hovered = null;
-        if (!selected) hideTip();                  // drop the transient preview on leave
       });
       ul.appendChild(li); rowEls[m.cc] = li;
     });
