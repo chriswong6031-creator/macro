@@ -376,6 +376,14 @@ jobs:
             fi
           done
           exit 0
+      - name: US sector central intelligence (build_sector_central)
+        # The US Sector Central hub fuses the cycle spine + baskets + narrative rotation + heatmap.
+        # It reads baskets.json (cl_baskets) + sector_cycles_data.js (cl_misc → sectorcyc) + the
+        # heatmap json (build_site spine) — those deps live in DIFFERENT parallel clusters, so this
+        # MUST be a serial step AFTER the band `wait` barrier (the US analog of china_sector_central,
+        # which could run inside cl_china only because both its deps lived in that one cluster).
+        # Additive (the builder returns 0 on any failure), so it can never break the deploy.
+        run: python -m scripts.build_sector_central
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes
