@@ -60,6 +60,11 @@ def main() -> int:
         json.dumps(data, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
 
     env = Environment(loader=FileSystemLoader(str(root / "templates")), autoescape=False)
+    try:
+        from engine import i18n
+        env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+    except Exception:  # noqa: BLE001 — degrade to English-only rather than crash the build
+        env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
     html = env.get_template("sector_central.html.j2").render()
     (site / "sector_central.html").write_text(html, encoding="utf-8")
 

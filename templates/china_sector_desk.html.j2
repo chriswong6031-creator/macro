@@ -82,7 +82,10 @@ html[data-lang="zh"] .chg.pos{color:var(--red)} html[data-lang="zh"] .chg.neg{co
 .bbg{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--blue);background:color-mix(in srgb,var(--blue) 12%,transparent);padding:3px 7px;border-radius:6px}
 .lvl{margin-left:auto;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
 .posrow{display:flex;align-items:center;gap:10px;margin:12px 0 6px}
-.posbar{flex:1;height:9px;border-radius:999px;position:relative;background:linear-gradient(90deg,#1FA971,#e0a106,#a855f7)}
+/* cycle-position bar: left = beaten down (near lows → weak) · right = overheated (near highs → strong).
+   colour encodes that standing — red weak / green strong (EN); flipped to match A-share red=up in 中文. */
+.posbar{flex:1;height:9px;border-radius:999px;position:relative;background:linear-gradient(90deg,color-mix(in srgb,var(--red) 62%,transparent),color-mix(in srgb,var(--muted) 22%,transparent),color-mix(in srgb,var(--green) 62%,transparent))}
+html[data-lang="zh"] .posbar{background:linear-gradient(90deg,color-mix(in srgb,var(--green) 62%,transparent),color-mix(in srgb,var(--muted) 22%,transparent),color-mix(in srgb,var(--red) 62%,transparent))}
 .posbar i{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:#fff;border:2.5px solid var(--ink);transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .poslab{font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap}
 .posends{display:flex;justify-content:space-between;font-size:10px;color:var(--faint);margin:-2px 0 8px}
@@ -108,9 +111,12 @@ table.board th{font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;co
 table.board th:first-child,table.board td:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
 table.board tbody tr:hover td{background:color-mix(in srgb,var(--blue) 6%,transparent)}
 .snm{font-weight:700;color:var(--ink)} .snm small{display:block;font-weight:400;color:var(--faint);font-size:10.5px}
+.snm a{color:inherit;text-decoration:none;border-bottom:1px dotted color-mix(in srgb,var(--blue) 45%,transparent);transition:color .15s,border-color .15s}
+.snm a:hover{color:var(--blue);border-bottom-color:var(--blue)}
 .nb-px{font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
 .pill-pos{display:inline-flex;align-items:center;gap:6px}
-.minibar{width:54px;height:7px;border-radius:999px;background:linear-gradient(90deg,#1FA971,#e0a106,#a855f7);position:relative;display:inline-block}
+.minibar{width:60px;height:7px;border-radius:999px;background:linear-gradient(90deg,color-mix(in srgb,var(--red) 55%,transparent),color-mix(in srgb,var(--muted) 20%,transparent),color-mix(in srgb,var(--green) 55%,transparent));position:relative;display:inline-block}
+html[data-lang="zh"] .minibar{background:linear-gradient(90deg,color-mix(in srgb,var(--green) 55%,transparent),color-mix(in srgb,var(--muted) 20%,transparent),color-mix(in srgb,var(--red) 55%,transparent))}
 .minibar i{position:absolute;top:50%;width:9px;height:9px;border-radius:50%;background:#fff;border:2px solid var(--ink);transform:translate(-50%,-50%)}
 .poslbl{font-size:10.5px;color:var(--muted)}
 .cyc{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--bg);border:1px solid var(--grid);color:var(--text)}
@@ -125,6 +131,10 @@ html[data-theme="dark"] .chip{background:var(--grid)}
 .chip b{color:var(--ink);font-variant-numeric:tabular-nums}
 .gate{font-size:11.5px;margin-top:8px;font-weight:600}
 .gate.ok{color:var(--green)} .gate.warn{color:var(--amber)}
+.poskey{margin-top:9px;font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.poskey .pk{display:inline-block;width:18px;height:8px;border-radius:999px;vertical-align:middle}
+.poskey .pk-lo{background:color-mix(in srgb,var(--red) 70%,transparent)} .poskey .pk-hi{background:color-mix(in srgb,var(--green) 70%,transparent)}
+html[data-lang="zh"] .poskey .pk-lo{background:color-mix(in srgb,var(--green) 70%,transparent)} html[data-lang="zh"] .poskey .pk-hi{background:color-mix(in srgb,var(--red) 70%,transparent)}
 .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7;max-width:980px}
 </style>
 </head>
@@ -150,6 +160,56 @@ html[data-theme="dark"] .chip{background:var(--grid)}
 
   <div class="note">{{ t('The GSXAC* tickers are Goldman Sachs proprietary baskets, licensed only through Bloomberg — not redistributable. This desk reconstructs the same exposures from free, keyless data (Shenwan indices + sector ETFs + curated constituents). It is descriptive context, not investment advice.','GSXAC* 代码为高盛专有篮子，仅通过彭博授权，不可再分发。本桌面以免费、无密钥数据（申万指数 + 行业 ETF + 精选成分股）重建相同的敞口。仅为描述性背景，非投资建议。') }}</div>
 
+  <div class="sec-h"><h2>📊 {{ t('Live Sector Board','行业实时看板') }}</h2>
+    <span class="sub">{{ t('all 16 sectors · Shenwan index + live ETF tape · tap a name for its cycle · as of','全部16个行业 · 申万指数 + ETF实时行情 · 点击名称查看周期 · 截至') }} {{ desk.as_of }}</span></div>
+  {% if desk.summary %}
+  <div class="chips">
+    <div class="chipset"><div class="k">🏆 {{ t('RS leaders (60d)','相对强度领先（60日）') }}</div>
+      {% for x in desk.summary.leaders %}<span class="chip">{{ t(x.name, x.name_zh) }} {{ pc(x.rs_60d) }}</span>{% endfor %}</div>
+    <div class="chipset"><div class="k">🐌 {{ t('RS laggards','相对强度落后') }}</div>
+      {% for x in desk.summary.laggards %}<span class="chip">{{ t(x.name, x.name_zh) }} {{ pc(x.rs_60d) }}</span>{% endfor %}</div>
+    <div class="chipset"><div class="k">📉 {{ t('Beaten down · near lows','超跌 · 接近低位') }}</div>
+      {% for x in desk.summary.washed_out %}<span class="chip">{{ t(x.name, x.name_zh) }} <b>{{ x.score|int }}</b></span>{% endfor %}</div>
+    <div class="chipset"><div class="k">📈 {{ t('Overheated · near highs','过热 · 接近高位') }}</div>
+      {% for x in desk.summary.euphoric %}<span class="chip">{{ t(x.name, x.name_zh) }} <b>{{ x.score|int }}</b></span>{% endfor %}</div>
+  </div>
+  {% endif %}
+  <div class="tbl-wrap">
+    <table class="board" id="board">
+      <thead><tr>
+        <th data-c="0">{{ t('Sector','行业') }}</th>
+        <th data-c="1">{{ t('ETF','ETF') }}</th>
+        <th data-c="2">{{ t('Index','指数') }}</th>
+        <th data-c="3">1D</th><th data-c="4">5D</th><th data-c="5">20D</th><th data-c="6">YTD</th>
+        <th data-c="7">{{ t('RS 60d','相对强度60日') }}</th>
+        <th data-c="8">{{ t('Cycle pos.','周期位置') }}</th>
+        <th data-c="9">{{ t('State','状态') }}</th>
+        <th data-c="10">PE</th><th data-c="11">PB</th><th data-c="12">{{ t('Yld','股息') }}</th>
+        <th data-c="13">{{ t('3y trend','3年走势') }}</th>
+        <th data-c="14">{{ t('Last turn','最近拐点') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for s in desk.sectors %}
+        <tr>
+          <td><span class="snm"><a href="sector_central_china.html#{{ s.sw_code }}">{{ t(s.name, s.name_zh) }}</a><small>申万 {{ s.sw_code }} · {{ t('from','起') }} {{ s.history_from }}</small></span></td>
+          <td><span class="nb-px" data-sym="{{ s.live_sym }}" data-mkt="cn">{% if s.etf_last is not none %}{{ '%.3f'|format(s.etf_last) }}{% else %}·{% endif %}</span></td>
+          <td class="val">{{ '%.0f'|format(s.level) }}</td>
+          <td>{{ pc(s.chg_1d) }}</td><td>{{ pc(s.chg_5d) }}</td><td>{{ pc(s.chg_20d) }}</td><td>{{ pc(s.chg_ytd) }}</td>
+          <td>{% if s.rs %}{{ pc(s.rs.mom_60d) }}{% else %}<span class="chg na">·</span>{% endif %}</td>
+          <td><span class="pill-pos">{% if s.position.score is not none %}<span class="minibar"><i style="left:{{ s.position.score }}%"></i></span><span class="poslbl">{{ t(s.position.label, s.position.label_zh) }}</span>{% else %}·{% endif %}</span></td>
+          <td>{% if s.cycle and s.cycle.state %}<span class="cyc">{{ s.cycle.state }}</span>{% else %}<span class="chg na">·</span>{% endif %}</td>
+          <td class="val">{{ s.valuation.pe if s.valuation and s.valuation.pe is not none else '·' }}</td>
+          <td class="val">{{ s.valuation.pb if s.valuation and s.valuation.pb is not none else '·' }}</td>
+          <td class="val">{{ s.valuation.div ~ '%' if s.valuation and s.valuation.div is not none else '·' }}</td>
+          <td><span class="spark" data-key="{{ s.sw_code }}"></span></td>
+          <td class="val">{% if s.last_turn %}{{ t(s.last_turn.kind, '底' if s.last_turn.kind=='bottom' else '顶') }} {{ s.last_turn.date[:7] }}{% else %}·{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="poskey">{{ t('Cycle position','周期位置') }}: <span class="pk pk-lo"></span> {{ t('beaten down (near lows)','超跌（接近低位）') }} → <span class="pk pk-hi"></span> {{ t('overheated (near highs)','过热（接近高位）') }} · {{ t('green = doing well, red = doing poorly','绿=表现强，红=表现弱') }}</div>
+
   {% if pathway and pathway.sectors %}
   <div class="sec-h"><h2>🧭 {{ t('Pathway Desk — GS Sectors','路径桌面 — GS 行业') }}</h2>
     <span class="sub">{{ t('cycle position · major turns · conditional forward tilt','周期位置 · 主要拐点 · 条件化前瞻倾向') }}</span></div>
@@ -165,7 +225,7 @@ html[data-theme="dark"] .chip{background:var(--grid)}
         <span class="poslab">{{ t(s.position.label, s.position.label_zh) }} · {{ s.position.score|int }}/100</span>
         <div class="posbar">{% if s.position.score is not none %}<i style="left:{{ s.position.score }}%"></i>{% endif %}</div>
       </div>
-      <div class="posends"><span>{{ t('washed out','超卖见底') }}</span><span>{{ t('euphoric','过热') }}</span></div>
+      <div class="posends"><span>{{ t('beaten down','深度超跌') }}</span><span>{{ t('overheated','过热') }}</span></div>
       {% if h6 %}
       <div class="cond">
         <div><div class="k">{{ t('Fwd 6m up-rate','未来6月上涨率') }}</div>
@@ -188,57 +248,8 @@ html[data-theme="dark"] .chip{background:var(--grid)}
   {% if gate %}<div class="gate {{ 'ok' if gate.passed else 'warn' }}">{{ '✓' if gate.passed else '⚠' }} {{ t('Evidence gate','证据门槛') }}: {{ t('signature checks pass','特征检验通过') if gate.passed else 'review' }}{% if gate.soft_warnings %} · {{ gate.soft_warnings|length }} {{ t('sign-drift note(s)','符号漂移提示') }}{% endif %}</div>{% endif %}
   {% endif %}
 
-  <div class="sec-h"><h2>📊 {{ t('Live Sector Board','行业实时看板') }}</h2>
-    <span class="sub">{{ t('all 16 sectors · Shenwan index + live ETF tape · as of','全部16个行业 · 申万指数 + ETF实时行情 · 截至') }} {{ desk.as_of }}</span></div>
-  {% if desk.summary %}
-  <div class="chips">
-    <div class="chipset"><div class="k">🏆 {{ t('RS leaders (60d)','相对强度领先（60日）') }}</div>
-      {% for x in desk.summary.leaders %}<span class="chip">{{ t(x.name, x.name_zh) }} {{ pc(x.rs_60d) }}</span>{% endfor %}</div>
-    <div class="chipset"><div class="k">🐌 {{ t('RS laggards','相对强度落后') }}</div>
-      {% for x in desk.summary.laggards %}<span class="chip">{{ t(x.name, x.name_zh) }} {{ pc(x.rs_60d) }}</span>{% endfor %}</div>
-    <div class="chipset"><div class="k">🟢 {{ t('Washed out (bottom-like)','超卖（接近底部）') }}</div>
-      {% for x in desk.summary.washed_out %}<span class="chip">{{ t(x.name, x.name_zh) }} <b>{{ x.score|int }}</b></span>{% endfor %}</div>
-    <div class="chipset"><div class="k">🔴 {{ t('Euphoric (top-like)','过热（接近顶部）') }}</div>
-      {% for x in desk.summary.euphoric %}<span class="chip">{{ t(x.name, x.name_zh) }} <b>{{ x.score|int }}</b></span>{% endfor %}</div>
-  </div>
-  {% endif %}
-  <div class="tbl-wrap">
-    <table class="board" id="board">
-      <thead><tr>
-        <th data-c="0">{{ t('Sector','行业') }}</th>
-        <th data-c="1">{{ t('ETF','ETF') }}</th>
-        <th data-c="2">{{ t('Index','指数') }}</th>
-        <th data-c="3">1D</th><th data-c="4">5D</th><th data-c="5">20D</th><th data-c="6">YTD</th>
-        <th data-c="7">{{ t('RS 60d','相对强度60日') }}</th>
-        <th data-c="8">{{ t('Cycle pos.','周期位置') }}</th>
-        <th data-c="9">{{ t('State','状态') }}</th>
-        <th data-c="10">PE</th><th data-c="11">PB</th><th data-c="12">{{ t('Yld','股息') }}</th>
-        <th data-c="13">{{ t('3y trend','3年走势') }}</th>
-        <th data-c="14">{{ t('Last turn','最近拐点') }}</th>
-      </tr></thead>
-      <tbody>
-      {% for s in desk.sectors %}
-        <tr>
-          <td><span class="snm">{{ t(s.name, s.name_zh) }}<small>申万 {{ s.sw_code }} · {{ t('from','起') }} {{ s.history_from }}</small></span></td>
-          <td><span class="nb-px" data-sym="{{ s.live_sym }}" data-mkt="cn">{% if s.etf_last is not none %}{{ '%.3f'|format(s.etf_last) }}{% else %}·{% endif %}</span></td>
-          <td class="val">{{ '%.0f'|format(s.level) }}</td>
-          <td>{{ pc(s.chg_1d) }}</td><td>{{ pc(s.chg_5d) }}</td><td>{{ pc(s.chg_20d) }}</td><td>{{ pc(s.chg_ytd) }}</td>
-          <td>{% if s.rs %}{{ pc(s.rs.mom_60d) }}{% else %}<span class="chg na">·</span>{% endif %}</td>
-          <td><span class="pill-pos">{% if s.position.score is not none %}<span class="minibar"><i style="left:{{ s.position.score }}%"></i></span><span class="poslbl">{{ t(s.position.label, s.position.label_zh) }}</span>{% else %}·{% endif %}</span></td>
-          <td>{% if s.cycle and s.cycle.state %}<span class="cyc">{{ s.cycle.state }}</span>{% else %}<span class="chg na">·</span>{% endif %}</td>
-          <td class="val">{{ s.valuation.pe if s.valuation and s.valuation.pe is not none else '·' }}</td>
-          <td class="val">{{ s.valuation.pb if s.valuation and s.valuation.pb is not none else '·' }}</td>
-          <td class="val">{{ s.valuation.div ~ '%' if s.valuation and s.valuation.div is not none else '·' }}</td>
-          <td><span class="spark" data-key="{{ s.sw_code }}"></span></td>
-          <td class="val">{% if s.last_turn %}{{ t(s.last_turn.kind, '底' if s.last_turn.kind=='bottom' else '顶') }} {{ s.last_turn.date[:7] }}{% else %}·{% endif %}</td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
   <div class="foot">
-    {{ t('Headline sector series = Shenwan (申万) L1 industry indices (akshare, keyless), deep history to 1999/2014 — the domestic standard and the closest free analogue to the GS China baskets. Intraday ETF tape via live.js. Cycle position = own-history percentile of distance-from-200DMA + drawdown-from-1y-high (the washout↔euphoria signature that was stable across all four GS sectors in Phase 0). The Pathway Desk’s forward tilt is an EMPIRICAL conditional probability over the sign-stable lead cluster (credit / PPI / mean-reversion / breadth) — conditioning context with Wilson confidence intervals, not a point forecast or buy signal. Method: research/CHINA_SECTOR_PATHWAY_PHASE0.md. Built','主线行业序列 = 申万一级行业指数（akshare，无密钥），历史至 1999/2014 年——境内标准，也是 GS 中国篮子最接近的免费替代。日内 ETF 行情经 live.js。周期位置 = 偏离200日均线 + 距一年高点回撤的自身历史分位（在 Phase 0 中四大 GS 行业均稳定的超卖↔过热特征）。路径桌面的前瞻倾向为符号稳定领先因子组合（信用 / PPI / 均值回归 / 广度）的经验条件概率——带 Wilson 置信区间的条件化背景，而非点预测或买卖信号。方法见 research/CHINA_SECTOR_PATHWAY_PHASE0.md。生成于') }} {{ built }}.
+    {{ t('Headline sector series = Shenwan (申万) L1 industry indices (akshare, keyless), deep history to 1999/2014 — the domestic standard and the closest free analogue to the GS China baskets. Intraday ETF tape via live.js. Cycle position = own-history percentile of distance-from-200DMA + drawdown-from-1y-high (the beaten-down↔overheated signature that was stable across all four GS sectors in Phase 0). The Pathway Desk’s forward tilt is an EMPIRICAL conditional probability over the sign-stable lead cluster (credit / PPI / mean-reversion / breadth) — conditioning context with Wilson confidence intervals, not a point forecast or buy signal. Method: research/CHINA_SECTOR_PATHWAY_PHASE0.md. Built','主线行业序列 = 申万一级行业指数（akshare，无密钥），历史至 1999/2014 年——境内标准，也是 GS 中国篮子最接近的免费替代。日内 ETF 行情经 live.js。周期位置 = 偏离200日均线 + 距一年高点回撤的自身历史分位（在 Phase 0 中四大 GS 行业均稳定的超卖↔过热特征）。路径桌面的前瞻倾向为符号稳定领先因子组合（信用 / PPI / 均值回归 / 广度）的经验条件概率——带 Wilson 置信区间的条件化背景，而非点预测或买卖信号。方法见 research/CHINA_SECTOR_PATHWAY_PHASE0.md。生成于') }} {{ built }}.
   </div>
 </div>
 <script>
@@ -246,15 +257,26 @@ html[data-theme="dark"] .chip{background:var(--grid)}
 (function(){
   var desk = {{ desk_json|safe }};
   var dark = document.documentElement.getAttribute('data-theme') !== 'light';
+  var _sid=0;
   function draw(arr){
     if(!arr || arr.length < 2) return '';
-    var w=84, h=22, n=arr.length, mn=Math.min.apply(null,arr), mx=Math.max.apply(null,arr);
+    var w=134, h=38, pad=3, n=arr.length, mn=Math.min.apply(null,arr), mx=Math.max.apply(null,arr);
     var rng=(mx-mn)||1, up=arr[n-1]>=arr[0];
-    var pts=arr.map(function(v,i){return (i/(n-1)*w).toFixed(1)+','+(h-((v-mn)/rng)*h).toFixed(1);}).join(' ');
+    var X=function(i){return (i/(n-1))*(w-2*pad)+pad;};
+    var Y=function(v){return h-pad-((v-mn)/rng)*(h-2*pad);};
+    var pts=arr.map(function(v,i){return X(i).toFixed(1)+','+Y(v).toFixed(1);}).join(' ');
     var col=up?'#1FA971':'#e5484d';
     if(document.documentElement.getAttribute('data-lang')==='zh'){col=up?'#e5484d':'#1FA971';}
+    var gid='spk'+(_sid++);
+    var area=pad+','+(h-pad)+' '+pts+' '+(w-pad)+','+(h-pad);
+    var lx=X(n-1).toFixed(1), ly=Y(arr[n-1]).toFixed(1);
     return '<svg class="spark" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'">'+
-      '<polyline fill="none" stroke="'+col+'" stroke-width="1.4" points="'+pts+'"/></svg>';
+      '<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1">'+
+        '<stop offset="0" stop-color="'+col+'" stop-opacity="0.26"/>'+
+        '<stop offset="1" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs>'+
+      '<polygon points="'+area+'" fill="url(#'+gid+')"/>'+
+      '<polyline fill="none" stroke="'+col+'" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" points="'+pts+'"/>'+
+      '<circle cx="'+lx+'" cy="'+ly+'" r="2.3" fill="'+col+'"/></svg>';
   }
   var byKey={}; (desk.sectors||[]).forEach(function(s){byKey[s.sw_code]=s.spark;});
   document.querySelectorAll('.spark[data-key]').forEach(function(el){

@@ -27,13 +27,6 @@
   .scc-title { font-size: clamp(22px, 3vw, 34px); font-weight: 800; letter-spacing: -.02em; margin: 4px 0 6px; }
   .scc-sub { color: var(--muted); max-width: 92ch; font-size: 13.5px; }
   .scc-asof { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
-  /* provenance */
-  .scc-prov { display: flex; gap: 11px; align-items: flex-start; margin: 12px 0; padding: 10px 13px;
-    border: 1px solid color-mix(in srgb, var(--link) 30%, var(--line)); border-radius: 11px;
-    background: color-mix(in srgb, var(--link) 5%, var(--panel)); }
-  .scc-prov-chip { flex: 0 0 auto; font-size: 11px; font-weight: 800; letter-spacing: .05em; color: var(--link);
-    border: 1px solid color-mix(in srgb, var(--link) 45%, var(--line)); border-radius: 7px; padding: 3px 8px; white-space: nowrap; }
-  .scc-prov p { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.5; } .scc-prov b { color: var(--text); }
   /* regime banner */
   .regime { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 10px; margin: 14px 0; }
   @media (max-width: 880px) { .regime { grid-template-columns: 1fr 1fr; } }
@@ -97,6 +90,15 @@
   /* the embedded overlay reuses cycle.css/.sc-* but lives outside a .cyc-wrap — give the stage a panel frame */
   .scc-cycle { margin: 6px 0; }
   .scc-cycle .cyc-stage { background: var(--panel); border: 1px solid var(--line); border-radius: 13px; padding: 12px 14px; }
+  /* conviction board head + linked toggle (kept prominent so it isn't missed) */
+  .scc-boardhead { margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--line); }
+  .scc-tabs-board { gap: 10px; margin: 10px 0 14px; }
+  .scc-tabs-board .scc-tab { font-size: 13.5px; padding: 9px 16px; border-radius: 10px; border-width: 1.5px; }
+  .scc-tabs-board .scc-tab.on { background: color-mix(in srgb, var(--link) 12%, var(--panel)); border-color: var(--link); color: var(--text); }
+  .scc-tabs-board .scc-tab i { font-style: normal; font-variant-numeric: tabular-nums; color: var(--muted); margin-left: 2px; }
+  /* conviction card name link */
+  .card-nm a { color: inherit; border-bottom: 1px dotted color-mix(in srgb, var(--link) 45%, transparent); transition: color .15s, border-color .15s; }
+  .card-nm a:hover { color: var(--link); border-bottom-color: var(--link); }
   #heatmap-scorecard { margin: 4px 0 8px; }
 </style>
 </head>
@@ -115,7 +117,7 @@
 <div class="scc-wrap">
   <header class="scc-hd">
     <div class="scc-kick"><span class="l-en">US Sector Central Intelligence</span><span class="l-zh">美股行业中枢情报</span> 🇺🇸</div>
-    <h1 class="scc-title"><span class="l-en">One read per sector — gated, confluent, graded</span><span class="l-zh">每个行业一个研判 — 门控 · 共振 · 可评分</span></h1>
+    <h1 class="scc-title"><span class="l-en">Every US sector &amp; theme, in one read</span><span class="l-zh">每个美股行业与主题，一个研判</span></h1>
     <p class="scc-sub"><span class="l-en">Every US sector &amp; theme fused into one conviction read: <b>where we are</b> (cycle state) LEADS;
       the macro regime and the <b>validated absolute-trend drawdown gate</b> GATE it; momentum, heat &amp; crowding CONFIRM and size — never override.
       Each card shows its reasoning trace; every dated call is logged and graded. Baskets, rotation, cycles &amp; the heatmap all live here.</span><span class="l-zh">将每个美股行业与主题融合为一个信念研判：<b>当前位置</b>（周期状态）主导；
@@ -123,28 +125,18 @@
     <div class="scc-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> <b id="scc-asof">…</b></div>
   </header>
 
-  <div class="scc-prov">
-    <span class="scc-prov-chip">⚗︎ <span class="l-en">EXPERIMENTAL</span><span class="l-zh">实验性</span></span>
-    <p><span class="l-en"><b>Honest by construction.</b> The only statistically <b>validated</b> forward signal (blue dots) is the absolute-trend gate's
-      <i>drawdown / staying-power control</i> — above its own 200-day trend &amp; positive 12-month return (<i>data/strategies/thematic_rotation_phase0.json</i>:
-      gate_helps, "validated_risk_control" — no mean-return edge, but materially shallower drawdown). Relative momentum is a <i>focus lens</i> (rank-IC≈0), not alpha — amber.
-      There is no directional odds forecast: intervals &amp; rhythm, not predictions. Not investment advice.</span><span class="l-zh"><b>诚实构建。</b>
-      唯一经统计<b>验证</b>（蓝点）的前瞻信号是绝对趋势门控的<i>回撤/持续性控制</i>——位于自身200日趋势之上且12个月收益为正（<i>data/strategies/thematic_rotation_phase0.json</i>：gate_helps，"validated_risk_control"——无均值收益优势，但回撤显著更浅）。
-      相对动量是<i>聚焦视角</i>（秩相关≈0），非超额——黄点。无方向性概率预测：是区间与节奏，而非预测。非投资建议。</span></p>
-  </div>
-
   <div id="regime" class="regime"></div>
   <div class="scc-rail">
-    <a href="sector_cycles.html">🌀 <span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span> →</a>
-    <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span> →</a>
-    <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span> →</a>
-    <a href="sector_heatmap.html">🔥 <span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span> →</a>
+    <a href="#sc-cyclemap">🌀 <span class="l-en">Cycle map</span><span class="l-zh">周期图谱</span></a>
+    <a href="#sc-board">🧠 <span class="l-en">Conviction board</span><span class="l-zh">信念研判</span></a>
+    <a href="#sc-heatmap">🔥 <span class="l-en">Market heat</span><span class="l-zh">市场热度</span></a>
+    <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets &amp; Rotation</span><span class="l-zh">主题篮子与轮动</span> →</a>
   </div>
 
   {# ===== CYCLE MAP — the sector_cycles overlay, embedded so the hub carries the charting =====
      Reuses sector_cycles.js + mm_charts.js over window.SECTOR_CYCLES (the US cycles data). The
      scorecards (sc-cards) are intentionally omitted — the conviction board below replaces them. #}
-  <section class="scc-cycle cyc-page sc-page">
+  <section class="scc-cycle cyc-page sc-page" id="sc-cyclemap">
     <div class="scc-section-h">
       <h2><span class="l-en">Cycle map — every sector &amp; theme on one clock</span><span class="l-zh">周期图谱 — 各板块与主题同框</span></h2>
       <span class="scc-section-sub"><span class="l-en">Real price (rebased / log) or a 0–100 cycle-position oscillator · auto-detected turns · tap a line to read its legs</span><span class="l-zh">真实价格（再基准化／对数）或 0–100 周期位置振荡器 · 自动识别拐点 · 点击曲线查看区段</span></span>
@@ -194,14 +186,20 @@
     </section>
   </section>
 
-  <div class="scc-tabs">
-    <button class="scc-tab on" data-fam="sectors"><span class="l-en">Sector ETFs</span><span class="l-zh">板块 ETF</span> <i id="n-sec"></i></button>
-    <button class="scc-tab" data-fam="baskets"><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span> <i id="n-bsk"></i></button>
+  <div class="scc-boardhead" id="sc-board">
+    <div class="scc-section-h">
+      <h2><span class="l-en">Conviction board — one gated read per name</span><span class="l-zh">信念研判 — 每个标的一个门控研判</span></h2>
+      <span class="scc-section-sub"><span class="l-en">Pick a universe to read — this switch is linked to the cycle map above.</span><span class="l-zh">选择查看的范围——此切换与上方周期图谱联动。</span></span>
+    </div>
+    <div class="scc-tabs scc-tabs-board" role="tablist" aria-label="Conviction board universe">
+      <button class="scc-tab on" data-fam="sectors"><span class="l-en">🧭 Sector ETFs</span><span class="l-zh">🧭 板块 ETF</span> <i id="n-sec"></i></button>
+      <button class="scc-tab" data-fam="baskets"><span class="l-en">🧺 Thematic Baskets</span><span class="l-zh">🧺 主题篮子</span> <i id="n-bsk"></i></button>
+    </div>
   </div>
   <div id="board" class="board"></div>
 
   {# ===== SECTOR HEATMAP — the compact scorecard, embedded (full treemap stays the subpage) ===== #}
-  <div class="scc-section-h">
+  <div class="scc-section-h" id="sc-heatmap">
     <h2><span class="l-en">Market heat — breadth &amp; cap-weighted moves</span><span class="l-zh">市场热度 — 宽度与市值加权涨跌</span></h2>
     <span class="scc-section-sub"><span class="l-en">Coincident color (display context, capped in the read above) · Expand for the full 503-name treemap</span><span class="l-zh">同步色（展示背景，已在上方研判中受限计入）· 展开查看全部503只树图</span></span>
   </div>
@@ -282,21 +280,43 @@
         '<span class="tr-layer">'+esc(r.layer)+'</span>'+
         '<span class="tr-txt">'+L(esc(r.en),esc(r.zh||r.en))+'</span></div>';
     }).join('');
-    var link = 'sector_cycles.html#'+esc(s.id);
+    // name → its own page: baskets open the dedicated theme page; sectors focus the embedded cycle map.
+    var cycHref = 'sector_cycles.html#'+esc(s.id);
+    var nameHtml = s.kind==='basket'
+      ? '<a href="basket/'+esc(String(s.id).replace(/^b-/,''))+'.html">'+esc(nm)+'</a>'
+      : '<a href="'+cycHref+'" data-focus="'+esc(s.id)+'">'+esc(nm)+'</a>';
     return '<article class="card" style="--c:'+esc(s.accent||'var(--muted)')+'">'+
-      '<div class="card-top"><div><div class="card-nm">'+esc(nm)+'</div><div class="card-sub">'+sub+'</div></div>'+
+      '<div class="card-top"><div><div class="card-nm">'+nameHtml+'</div><div class="card-sub">'+sub+'</div></div>'+
         '<div class="conv"><span class="conv-badge tier-'+dir+'">'+L(esc(c.label_en),esc(c.label_zh||c.label_en))+'</span>'+
         '<div class="conv-score">'+c.score+'</div><div class="conv-sub">'+L('conviction','信念')+'</div></div></div>'+
       '<div class="chips">'+chips.join('')+'</div>'+ fwdHtml +
       '<div class="trace">'+trace+'</div>'+
       '<div class="conflu">'+L('confluence','共振度')+': <b class="'+esc((c.confluence||{}).label||'')+'">'+esc((c.confluence||{}).label||'—')+'</b> · '+
-        '<a href="'+link+'" style="color:var(--link)">'+L('open cycle →','打开周期 →')+'</a></div>'+
+        '<a href="'+cycHref+'" data-focus="'+esc(s.id)+'" style="color:var(--link)">'+L('open cycle →','打开周期 →')+'</a></div>'+
     '</article>';
   }
   var fam='sectors';
   function renderBoard(){
     var list = fam==='baskets' ? (D.baskets||[]) : (D.sectors||[]);
     document.getElementById('board').innerHTML = list.map(card).join('');
+  }
+  /* keep the conviction-board universe toggle linked to the cycle-map family toggle above */
+  function setBoardFam(f){
+    fam=f;
+    document.querySelectorAll('.scc-tab').forEach(function(x){ x.classList.toggle('on', x.getAttribute('data-fam')===f); });
+    renderBoard();
+  }
+  function linkTabs(){
+    document.querySelectorAll('.scc-tab').forEach(function(t){
+      t.addEventListener('click', function(){
+        var f=t.getAttribute('data-fam'); setBoardFam(f);
+        var ct=document.querySelector('#sc-tabs .sc-tab[data-fam="'+f+'"]');   // drive the cycle map too
+        if(ct && !ct.classList.contains('on')) ct.click();
+      });
+    });
+    document.querySelectorAll('#sc-tabs .sc-tab').forEach(function(t){          // and mirror the cycle map back
+      t.addEventListener('click', function(){ setBoardFam(t.getAttribute('data-fam')); });
+    });
   }
 
   /* ---- grader scorecard ---- */
@@ -320,15 +340,14 @@
       '<div class="gr-grid">'+(cells.join('')||'<div class="muted sm">'+L('accruing','累积中')+'</div>')+'</div>';
   }
 
+  function focusDelegate(e){
+    var a=e.target.closest('a[data-focus]'); if(!a) return;
+    var id=a.getAttribute('data-focus');
+    if(window.SectorCyclesFocus && window.SectorCyclesFocus(id)) e.preventDefault();
+  }
   function boot(){
-    regimeBanner(); renderBoard(); renderGrader();
-    document.querySelectorAll('.scc-tab').forEach(function(t){
-      t.addEventListener('click', function(){
-        fam=t.getAttribute('data-fam');
-        document.querySelectorAll('.scc-tab').forEach(function(x){ x.classList.toggle('on', x===t); });
-        renderBoard();
-      });
-    });
+    regimeBanner(); renderBoard(); renderGrader(); linkTabs();
+    var board=document.getElementById('board'); if(board) board.addEventListener('click', focusDelegate);
     document.addEventListener('langchange', function(){ regimeBanner(); renderBoard(); renderGrader(); });
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();

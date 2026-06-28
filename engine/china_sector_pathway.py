@@ -127,8 +127,8 @@ def _position(sw: pd.Series) -> dict:
     score = round(float(np.mean(legs) * 100), 0) if legs else None
     label_en = label_zh = "—"
     if score is not None:
-        bands = [(15, "Washed out", "超卖见底"), (35, "Recovering", "修复中"),
-                 (65, "Mid-cycle", "周期中段"), (85, "Extended", "偏高"), (101, "Euphoric", "过热")]
+        bands = [(15, "Beaten down", "深度超跌"), (35, "Recovering", "修复回升"),
+                 (65, "Mid-cycle", "周期中段"), (85, "Stretched", "走高偏贵"), (101, "Overheated", "过热")]
         for hi, en, zh in bands:
             if score <= hi:
                 label_en, label_zh = en, zh
