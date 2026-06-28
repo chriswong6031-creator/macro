@@ -123,6 +123,26 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
   border-color:color-mix(in srgb,var(--blue) 45%,var(--grid));
   box-shadow:0 14px 30px -16px color-mix(in srgb,var(--blue) 40%,transparent);}
 
+/* AI Daily Brief card — these self-contained pages don't link theme.css, where
+   the .aibrief-card / .abc-* layout lives, so the 🧠 card collapsed to a raw
+   emoji + text run with no flex. Port the layout here (mirrors theme.css) so it
+   lays out; the base .card surface + the a.card:hover above still apply. */
+.aibrief-card{display:flex;align-items:center;gap:14px;text-decoration:none}
+.aibrief-card .abc-ic{font-size:30px;line-height:1;flex:none}
+.aibrief-card .abc-mid{flex:1;min-width:0}
+.aibrief-card .abc-tit{display:block;font-size:16px;font-weight:700;color:var(--ink)}
+.aibrief-card .abc-sub{display:block;margin-top:3px;color:var(--muted);font-size:13px;line-height:1.5}
+.aibrief-card .abc-go{font-size:22px;font-weight:700;color:var(--blue);flex:none}
+
+/* "?" help affordance — a circled question-mark that reveals a plain-language
+   note on hover/focus (native title, bilingual "EN · ZH" like the .tip pattern).
+   Used to lift cryptic micro-copy off the cards without losing the explanation. */
+.qm{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
+  border-radius:50%;border:1px solid var(--faint);color:var(--muted);font-size:10px;
+  font-weight:700;line-height:1;cursor:help;vertical-align:middle;margin-left:5px;
+  user-select:none;transition:border-color .15s ease,color .15s ease}
+.qm:hover,.qm:focus{border-color:var(--blue);color:var(--blue);outline:none}
+
 /* accessible keyboard focus ring */
 :where(.vtm-btn,.tm-btn,.navbtn,.ai-brief-link,a.nav-link,.nav-dd-menu a,.theme-switch,
   .lang-toggle,a.card,a.actitem,a.idx-alloc):focus-visible{
