@@ -406,6 +406,21 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("vol-shock scorecard failed: %s", e)
         latest["vol_shock"] = None
+    # Froth & Fragility (engine/froth_fragility.py): the DISPLAY-ONLY macro top-risk
+    # gauge that measures retail EUPHORIA (semis/AI parabolicity) AND hidden DISTRIBUTION
+    # (the Stealth Distribution sub-score + leadership-distribution + A/D non-confirmation
+    # + absorption) — the two halves a single VIX read cannot see. Runs LAST so it reads
+    # every leaf above (conditions / cross_asset / vol_shock). Feeds NO score, NO
+    # allocation, NO selection — sanctioned response is SIZING only; each firing is logged
+    # + graded on forward QQQ/SMH drawdown + VIX jump. Additive, never fatal.
+    try:
+        from engine import froth_fragility as _ff
+        latest["froth_fragility"] = _ff.snapshot(latest)
+        _ff.append_log(latest["froth_fragility"], latest)
+        _ff.resolve_from_store()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("froth-fragility gauge failed: %s", e)
+        latest["froth_fragility"] = None
     try:
         latest["playbook"] = build_playbook(f, regime, yahoo_closes(), latest)
     except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal

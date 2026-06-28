@@ -1397,6 +1397,22 @@ def _vol_shock_view(latest: dict, event_risk: dict | None) -> dict | None:
         return None
 
 
+def _froth_fragility_view(latest: dict) -> dict | None:
+    """Froth & Fragility gauge (engine.froth_fragility) for the macro page: retail
+    euphoria + hidden-distribution top-risk, with the forward-outcome track record
+    attached. Display-only; never fatal."""
+    try:
+        from engine import froth_fragility as ff
+        snap = ff.snapshot(latest)
+        if snap is None:
+            return None
+        snap["track_record"] = ff.track_record()
+        return snap
+    except Exception as e:  # noqa: BLE001 — additive / display-only, never fatal
+        log.warning("froth-fragility view failed (%s)", e)
+        return None
+
+
 def sector_bottom_view(latest: dict) -> dict | None:
     """Sector Bottom Radar for the US-stocks dashboard: the validated per-sector
     Bottom Confidence + washout (engine.sector_bottom) conditioned by the index
@@ -2976,6 +2992,7 @@ def main() -> int:
         market_state=market_state_view(latest, f),  # Green/Yellow/Red market-state command-center (display-only)
         signal_stack=build_signal_stack(latest),  # consolidated cross-subsystem read (display-only)
         vol_shock=_vol_shock_view(latest, event_risk),  # forward vol-shock risk gauge (display-only)
+        froth_fragility=_froth_fragility_view(latest),  # euphoria + hidden-distribution top-risk gauge (display-only)
     )
     # DEV-ONLY fast-render cache: when MACRO_DUMP_VM is set, pickle the assembled
     # view-model so scripts/render_macro_fast.py can re-render macro.html /
