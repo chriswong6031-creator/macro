@@ -19,12 +19,14 @@ from lib import config
 log = logging.getLogger("build_theme_detail")
 
 # region -> (per-stock conviction dir, output dir under site/, per-stock link base or "").
-# Paths are relative to the detail page (site/<out>/<id>.html). China & HK have no per-stock
-# page (only a board) → empty base renders the ticker plain (no broken link).
+# Paths are relative to the detail page (site/<out>/<id>.html). China & HK route to their
+# single-stock analyzers (china_lookup.html / hk_lookup.html), which load <dir>/<ticker>.json
+# off the URL hash — the same ticker format the membership uses, so the links resolve.
+# An empty base would render the ticker plain (no link) for any market lacking a per-stock page.
 REGIONS = {
     "us":     ("stockdata",        "basket",        "../stock.html#"),
-    "china":  ("chinastockdata",   "basket_china",  ""),
-    "hk":     ("hkstockdata",      "basket_hk",     ""),
+    "china":  ("chinastockdata",   "basket_china",  "../china_lookup.html#"),
+    "hk":     ("hkstockdata",      "basket_hk",     "../hk_lookup.html#"),
     "canada": ("canadastockdata",  "basket_canada", "../canada_stock.html#"),
     "intl":   ("intlstockdata",    "basket_intl",   "../intl_stock.html#"),
 }
