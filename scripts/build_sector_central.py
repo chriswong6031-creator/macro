@@ -65,8 +65,17 @@ def main() -> int:
         env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
     except Exception:  # noqa: BLE001 — degrade to English-only rather than crash the build
         env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
-    html = env.get_template("sector_central.html.j2").render()
-    (site / "sector_central.html").write_text(html, encoding="utf-8")
+    try:
+        html = env.get_template("sector_central.html.j2").render()
+        (site / "sector_central.html").write_text(html, encoding="utf-8")
+    except Exception as e:  # noqa: BLE001 — a template error must NOT abort the daily engine job
+        # The CI step that runs this is a bare `run:` (its claim "the builder returns 0 on any
+        # failure" is only true if main() never raises), so an unguarded render here aborts the
+        # whole engine job → no commit → stale site (this exact `t`-undefined crash, #624→#643).
+        # Degrade: keep the last-good committed sector_central.html (the fresh data JS/JSON written
+        # above still drive the page's runtime content) and return 0 so the rest of the build ships.
+        log.exception("sector_central: page render failed (%s) — keeping last-good HTML", e)
+        return 0
 
     # the page embeds the cycle-map overlay (window.SECTOR_CYCLES) + the heatmap scorecard →
     # ensure their shared assets are present. The cycles DATA (sector_cycles_data.js) is written
