@@ -35,6 +35,8 @@ from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import (  # noqa: E402
     ALIGN_MIN_KEEP, US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer)
 from engine import stock_score  # noqa: E402
+from engine import name_score  # noqa: E402  — per-name POTENTIAL (buy-readiness) score, edge-blended
+from engine import name_score_grader  # noqa: E402  — forward-grades the POTENTIAL score
 from engine import entry_signal  # noqa: E402
 from engine import risk_sizing  # noqa: E402 — vol-managed inverse-vol sizing (the validated Sharpe lever)
 from engine import dispersion  # noqa: E402 — cross-sectional dispersion regime (selection-gross dial)
@@ -1368,6 +1370,18 @@ def main() -> int:
         # 4H intraday available? (Polygon hourly store -> site/intraday/<T>.json). stock.html
         # passes this to the chart so the 4H button only appears where data actually exists.
         rec["has_intraday"] = 1 if (config.data_dir() / "intraday" / f"{ticker}.parquet").exists() else 0
+        # ---- POTENTIAL score (engine/name_score, US) — the displayed buy-readiness ----
+        # Front-running / trend-following timing (cycle trigger × washout) BLENDED with the
+        # US validated EVENT edge (insider / SUE / revisions = the selection-axis z), so a
+        # washed-out turning name WITH insider buying outranks an identical one without —
+        # timing AND alpha, neither at the other's cost. Overrides the displayed score below.
+        try:
+            _sel_z = ((prof.get("axes") or {}).get("selection") or {}).get("z")
+            rec["conviction"]["potential"] = name_score.potential_score(
+                rec, market="US", edge_z=_sel_z,
+                regime_stress=float((prof.get("risk") or {}).get("macro_stress") or 0.0))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("US potential score for %s failed (%s)", ticker, e)
         profiles[ticker] = prof
         if rec.get("entry_signal"):
             entry_sig[ticker] = rec["entry_signal"]    # attached to standout rows below
@@ -1426,6 +1440,33 @@ def main() -> int:
     # within-market percentile display score (mutates the conviction blocks in place;
     # rec['conviction'] is the SAME object, so the per-stock JSONs pick it up below).
     stock_score.attach_panel_scores(profiles)
+    # US DISPLAYED score = the POTENTIAL (buy-readiness, edge-blended), not the comp-z
+    # percentile. Keep the percentile as rank_pctile; drop the now-inaccurate "within-board
+    # RANK" note. The board now ranks by front-running buy-readiness that still respects the
+    # validated event edge (it is blended in), framed as an experimental screen (forward-graded).
+    for _safe, _rec in to_write:
+        _c = _rec.get("conviction") or {}
+        _pot = _c.get("potential")
+        if not _pot:
+            continue
+        _c["rank_pctile"] = _c.get("score")
+        _c["score"] = _pot["score"]
+        _c["band"], _c["band_en"], _c["band_zh"] = _pot["band"], _pot["band_en"], _pot["band_zh"]
+        _notes = _c.get("notes")
+        if _notes:
+            _c["notes"] = [n for n in _notes if n.get("kind") != "rank"] or None
+    try:
+        _asof = str(pd.Timestamp.utcnow().date())
+        _calls = []
+        for _safe, _rec in to_write:
+            _pot = (_rec.get("conviction") or {}).get("potential")
+            if _pot and _pot.get("call"):
+                _calls.append({**_pot["call"], "level": (_rec.get("tech") or {}).get("price")})
+        if _calls:
+            _n = name_score_grader.append_name_calls(_calls, market="US", asof=_asof)
+            log.info("US name-score grader: logged %d calls for %s (ledger=%d)", len(_calls), _asof, _n)
+    except Exception as e:  # noqa: BLE001 — grading is additive, never fatal
+        log.warning("US name-score grader append failed (%s)", e)
     for safe, rec in to_write:
         # canonical render model (engine/stock_view) — built AFTER attach_panel_scores so
         # the view's score/band match the final within-market percentile. Additive: the

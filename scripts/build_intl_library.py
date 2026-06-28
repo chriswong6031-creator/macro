@@ -29,6 +29,8 @@ from engine.cycles import analyze  # noqa: E402
 from engine.intl_stocks import compute_intl_alpha, panel  # noqa: E402
 from engine.setups import rank_setups, setup_score  # noqa: E402
 from engine import stock_score  # noqa: E402
+from engine import name_score  # noqa: E402  — per-name POTENTIAL (buy-readiness) score
+from engine import name_score_grader  # noqa: E402
 from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's inclusion gate)
 from engine import stock_view  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
@@ -296,6 +298,15 @@ def main(alpha: dict | None = None) -> dict | None:
         norm = stock_score.normalize_rec(rec, "INTL")
         rec["conviction"] = stock_score.conviction_profile(
             norm, "INTL", ctx={"as_of": (alpha or {}).get("as_of")})
+        # ---- POTENTIAL score (engine/name_score, INTL) — front-running buy-readiness ----
+        # Cycle-trigger timing blended with the residual-momentum prior. Overridden below.
+        try:
+            rec.setdefault("ticker", ticker)
+            _sel_z = ((rec["conviction"].get("axes") or {}).get("selection") or {}).get("z")
+            rec["conviction"]["potential"] = name_score.potential_score(
+                rec, market="INTL", edge_z=_sel_z)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("INTL potential score for %s failed (%s)", ticker, e)
         profiles[ticker] = rec["conviction"]
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write.append((safe, rec))
@@ -308,6 +319,28 @@ def main(alpha: dict | None = None) -> dict | None:
 
     # within-market percentile display score (mutates each conviction in place), then write
     stock_score.attach_panel_scores(profiles, "INTL")
+    # INTL DISPLAYED score = the POTENTIAL (buy-readiness), not the comp-z percentile (kept
+    # as rank_pctile). Front-running timing that still respects the momentum prior.
+    _icalls = []
+    for _safe, _rec in to_write:
+        _c = _rec.get("conviction") or {}
+        _pot = _c.get("potential")
+        if not _pot:
+            continue
+        _c["rank_pctile"] = _c.get("score")
+        _c["score"] = _pot["score"]
+        _c["band"], _c["band_en"], _c["band_zh"] = _pot["band"], _pot["band_en"], _pot["band_zh"]
+        _notes = _c.get("notes")
+        if _notes:
+            _c["notes"] = [n for n in _notes if n.get("kind") != "rank"] or None
+        if _pot.get("call"):
+            _icalls.append({**_pot["call"], "level": (_rec.get("tech") or {}).get("price")})
+    try:
+        if _icalls:
+            name_score_grader.append_name_calls(_icalls, market="INTL",
+                                                asof=str(pd.Timestamp.utcnow().date()))
+    except Exception as e:  # noqa: BLE001 — grading is additive, never fatal
+        log.warning("INTL name-score grader append failed (%s)", e)
     for safe, rec in to_write:
         rec["view"] = stock_view.build_view(rec, "INTL")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
