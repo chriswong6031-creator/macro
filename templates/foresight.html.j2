@@ -113,6 +113,26 @@
              border:1px solid color-mix(in srgb,var(--down) 40%,transparent);
              background:color-mix(in srgb,var(--down) 11%,var(--panel)); }
 
+  /* sizing & concentration banner */
+  .fx-sizing { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:10px 0 2px;
+               padding:9px 14px; border:1px solid var(--line); border-radius:11px; background:var(--panel2);
+               border-left:5px solid var(--info); font-size:12px; }
+  .fx-sizing.concentrated { border-left-color:var(--warn); }
+  .fx-sizing-k { font-weight:800; letter-spacing:.04em; text-transform:uppercase; font-size:10.5px; color:var(--muted); }
+  .fx-sizing-v { color:var(--text); }
+  .fx-sizing.concentrated .fx-sizing-v { color:var(--warn); font-weight:600; }
+  .fx-sizing-derisk { margin-left:auto; font-weight:800; color:var(--down); }
+
+  /* per-card posture chip */
+  .fx-size { display:inline-flex; align-items:center; gap:5px; margin:9px 8px 0 0; font-size:11.5px;
+             font-weight:800; letter-spacing:.03em; padding:5px 11px; border-radius:8px; cursor:help;
+             border:1px solid color-mix(in srgb,var(--pc,var(--muted)) 40%,transparent);
+             background:color-mix(in srgb,var(--pc,var(--muted)) 12%,var(--panel)); color:var(--pc,var(--text)); }
+  .sz-ADD, .sz-CORE { --pc:var(--up); }
+  .sz-STARTER { --pc:var(--info); }
+  .sz-HOLD, .sz-WATCH { --pc:var(--muted); }
+  .sz-TRIM, .sz-EXIT { --pc:var(--down); }
+
   /* discovery panel */
   .fx-disco { border-left:5px solid var(--info); }
   .fx-disco-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(248px,1fr)); gap:11px; margin-top:4px; }
@@ -167,6 +187,15 @@
     <span class="fx-stage-pill stg-{{ s }}"><span class="dot"></span>{{ s }} <span class="n">{{ stage_counts[s] }}</span></span>
     {% endif %}{% endfor %}
   </div>
+
+  {# ---- sizing & concentration (the posture overlay — where HBM won / ARK lost) ---- #}
+  {% if cascade.sizing %}
+  <div class="fx-sizing {{ 'concentrated' if cascade.sizing.concentration_flag else '' }}">
+    <span class="fx-sizing-k">⚖ {{ t('Sizing & concentration', '仓位与集中度') }}</span>
+    <span class="fx-sizing-v">{{ cascade.sizing.effective_note }}</span>
+    {% if cascade.sizing.n_derisk %}<span class="fx-sizing-derisk">⚠️ {{ cascade.sizing.n_derisk }} {{ t('forced de-risk', '强制减仓') }}</span>{% endif %}
+  </div>
+  {% endif %}
 
   {# ---- reading guide ---- #}
   <details class="fx-legend">
@@ -223,6 +252,7 @@
       </div>
 
       <p class="why">{{ r.rationale }}</p>
+      {% if r.size_band %}<span class="fx-size sz-{{ r.size_band }}" title="{{ r.size_note }}">⚖ {{ r.size_band }}</span>{% endif %}
       <span class="fx-entry {{ 'ready' if r.entry_ready else '' }}">{{ '✅' if r.entry_ready else '⏳' }} {{ r.entry_note }}</span>
       {% if r.glut_band in ('GLUT_FORMING', 'GLUT') %}<span class="fx-exit">⚠️ {{ t('exit-risk', '退出风险') }}: {{ r.glut_band.replace('_',' ')|lower }}{% if r.glut_score is not none %} ({{ '%+.2f'|format(r.glut_score) }}){% endif %}</span>{% endif %}
       {% if r.score_detail and r.score_detail.caps %}<div class="fx-cap">⚑ {{ t('score capped', '评分受限') }}: {{ r.score_detail.caps|join(' · ') }}</div>{% endif %}
