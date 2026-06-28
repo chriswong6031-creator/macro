@@ -1,12 +1,15 @@
 """Build the BTC Strategy page -> site/btc_strategy.html
 
 A selectable scorecard page comparing Bitcoin allocation strategies. Two cores:
-  • BTC 4 Year Cycle Strategy  — 1064-day bull / 364-day bear timing. Long (optionally
-    levered) from each projected cycle bottom for 1064 days to the projected top, then
-    flat through the 364-day bear, repeat. Pivots are CHAINED walk-forward from the first
-    known bottom (2015-01-14) by the fixed day-counts — NOT hindsight-placed.
+  • BTC Cycle Timer Strategy — a proprietary multi-year cycle timer. Long (optionally
+    levered) from each projected cycle bottom through the projected up-phase, then flat
+    through the down-phase, repeat. Pivots are CHAINED walk-forward from the first known
+    bottom by fixed (internal) day-counts — NOT hindsight-placed. The exact day-counts are
+    proprietary and are NOT surfaced on the page.
   • BTC Risk Allocation Strategy — trend (200D) + risk-throttle (350D stretch) managed
     exposure; stays invested in uptrends, de-risks at extremes, exits downtrends.
+Both also stand aside through US midterm-election years until ~the vote (the same gate the
+live Bitcoin Vector allocation uses, engine.btc_signals.midterm_blackout).
 
 Everything is backtested on real daily BTC closes (engine.btc_inputs.load_price, Coinbase
 spliced with Yahoo for the 2014-15 tail). Equity curves are rendered as self-contained
@@ -190,6 +193,23 @@ def main():
     a_cycle = cycle_alloc(close, pivots)
     a_risk = risk_alloc(close)
 
+    # House rule (mirrors the live Bitcoin Vector allocation): stand aside through US
+    # midterm-election years until ~the vote — historically the worst window for BTC. Reuse
+    # the SAME gate the Vector uses so the page and the live engine agree. (For the cycle
+    # timer this is ~a no-op — its down-phase already brackets the midterms — but it adds a
+    # real dodge to the trend/risk strategy.)
+    try:
+        from engine.btc_signals import midterm_blackout
+        from lib import config
+        mg = (config.load().get("vector", {}).get("allocation", {}) or {}).get("midterm_gate") \
+            or {"enabled": True}
+        gate = midterm_blackout(close.index, mg)
+        a_cycle = a_cycle.where(~gate, 0.0)
+        a_risk = a_risk.where(~gate, 0.0)
+        log.info("midterm-election blackout active on %d days", int(gate.sum()))
+    except Exception as e:  # pragma: no cover - never break the page over the overlay
+        log.warning("midterm blackout overlay skipped (%s)", e)
+
     hodl = (1 + close.pct_change().fillna(0)).cumprod()
     eq_cycle = simulate(close, a_cycle, lev=1.0, borrow_apr=0.0)
     eq_risk = simulate(close, a_risk, lev=1.0, borrow_apr=0.0)
@@ -228,8 +248,8 @@ def main():
         "state": "BULL" if is_bull else "BEAR",
         "pct": round(min(max(days_in / span_days, 0), 1) * 100),
         "days_in": days_in,
-        "next_kind": "Top Ω" if nxt[1] == "top" else "Bottom α",
-        "next_date": nxt[0].strftime("%b %d, %Y"),
+        "next_kind": "Top" if nxt[1] == "top" else "Bottom",
+        "next_date": nxt[0].strftime("%b %Y"),
         "days_to": days_to,
         "months_to": round(days_to / 30.4, 1),
     }
@@ -245,8 +265,8 @@ def main():
         pos = min(pos, len(close) - 1)
         price = float(close.iloc[pos]) if d <= today else None
         piv_rows.append({
-            "date": d.strftime("%Y-%m-%d"),
-            "kind": "α bottom" if k == "bottom" else "Ω top",
+            "date": d.strftime("%b %Y"),
+            "kind": "bottom" if k == "bottom" else "top",
             "is_bottom": k == "bottom",
             "price": price,
             "future": d > today,
@@ -255,31 +275,32 @@ def main():
     strategies = [
         {
             "id": "cycle",
-            "name": "BTC 4 Year Cycle Strategy",
-            "tag": "Cycle timing",
-            "thesis": ("Bitcoin's four-year rhythm runs ~1064 days up (trough→peak) then ~364 days "
-                       "down (peak→trough) — 152 vs 52 weeks. Go full risk-on at the projected cycle "
-                       "bottom, ride 1064 days to the projected top, then sit in cash through the "
-                       "364-day bear and re-enter at the next bottom. The bear leg tends to bottom into "
-                       "the US midterms: the post-election fiscal impulse throws off inflation that the "
-                       "Fed tightens into ~18–24 months later, with BTC capitulating in the trough."),
+            "name": "BTC Cycle Timer Strategy",
+            "tag": "Proprietary timing",
+            "thesis": ("Our proprietary multi-year cycle timer: go fully risk-on at each projected "
+                       "cycle bottom, ride the up-phase to the projected top, then sit in cash through "
+                       "the down-phase and re-enter at the next projected bottom. The down-phase has "
+                       "historically bottomed into the US midterm elections — the post-election fiscal "
+                       "impulse throws off inflation the Fed tightens into ~18–24 months later, with BTC "
+                       "capitulating in the trough — so the timer is in cash through midterm years until "
+                       "the vote. The exact timing model is proprietary."),
             "metrics": m_cycle,
             "vs": {kk: m_cycle[kk] - m_hodl[kk] for kk in ("cagr", "sharpe", "maxdd")},
             "svg": svg_cycle,
             "rules": [
-                "Anchor on a confirmed cycle bottom; project every pivot forward by the fixed counts.",
-                "At a projected bottom (α): allocate 100% (optionally leveraged).",
-                "Hold exactly 1064 days to the projected top (Ω) — no mid-cycle trimming.",
-                "At the top: sell to cash. Wait 364 days through the bear.",
+                "Anchor on a confirmed cycle bottom; the timer projects every pivot forward.",
+                "At a projected bottom: allocate 100% (optionally leveraged).",
+                "Hold through the projected up-phase to the projected top — no mid-cycle trimming.",
+                "At the top: sell to cash and sit out the projected down-phase (it bottoms into the US midterms).",
                 "Re-enter at the next projected bottom. Repeat.",
             ],
             "leverage": lev_rows,
             "pivots": piv_rows,
             "caveats": [
-                "Walk-forward, but seeded from ONE known bottom (2015) and only ~3 completed cycles — small sample, high overfitting risk.",
-                "Holds through brutal mid-bull drawdowns (≈ −62% even unlevered, e.g. the 2021 −55% crash).",
+                "Walk-forward, but seeded from one known bottom and only a few completed cycles — small sample, high overfitting risk.",
+                "Holds through brutal mid-cycle drawdowns (≈ −62% even unlevered, e.g. the 2021 −55% crash).",
                 "Leverage is dangerous: 2× ran a −94% drawdown; 3× was LIQUIDATED to $0 by a single ~−37% day (the Mar-2020 COVID crash). Borrow cost (~10%/yr) is included.",
-                "The 4-year rhythm is a historical regularity, not a law — ETF/institutional flows may stretch it; the model also drifts ~30 days/cycle vs the halving clock.",
+                "The cycle is a historical regularity, not a law — ETF/institutional flows may stretch it.",
             ],
         },
         {
@@ -289,7 +310,8 @@ def main():
             "thesis": ("Stay invested while the trend is intact and value is reasonable, de-risk as price "
                        "stretches above its long-term mean, and step aside when the trend breaks. Exposure "
                        "is scaled by a 200-day trend filter and a 350-day stretch throttle rather than by "
-                       "calendar timing — smoother participation across the whole cycle."),
+                       "calendar timing — and, reflecting the house view, it stands aside through US "
+                       "midterm-election years until the vote, the period that has been hardest on BTC."),
             "metrics": m_risk,
             "vs": {kk: m_risk[kk] - m_hodl[kk] for kk in ("cagr", "sharpe", "maxdd")},
             "svg": svg_risk,
@@ -298,12 +320,14 @@ def main():
                 "Risk throttle: 100% when price < 2× the 350-day SMA…",
                 "…60% when 2–3.5×, 30% when > 3.5× (overheated).",
                 "Flat when the 200-day trend breaks down.",
+                "Stand aside (cash) through US midterm-election years until ~election day.",
             ],
             "leverage": None,
             "pivots": None,
             "caveats": [
                 "Trend-following: gives back part of every top and re-enters late after bottoms.",
                 "Parameters (200/350-day, 2×/3.5×) are sensible but not exhaustively tuned.",
+                "The midterm-election blackout is a deterministic calendar rule on only a few cycles of history.",
             ],
         },
     ]
@@ -315,8 +339,6 @@ def main():
         "phase": phase,
         "hodl": m_hodl,
         "strategies": strategies,
-        "bull_days": BULL_DAYS,
-        "bear_days": BEAR_DAYS,
     }
 
     env = Environment(loader=FileSystemLoader(str(ROOT / "templates")),
