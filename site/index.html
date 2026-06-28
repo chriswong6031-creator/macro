@@ -20,7 +20,7 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
    out. Radial + fully transparent edges = no hard rectangular line across the body. */
 .h::before{content:'';position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);z-index:-1;pointer-events:none;
  width:min(720px,94%);height:128%;
- background:radial-gradient(58% 54% at 50% 50%,color-mix(in srgb,var(--bg) 74%,transparent),color-mix(in srgb,var(--bg) 32%,transparent) 52%,transparent 76%)}
+ background:radial-gradient(58% 54% at 50% 50%,color-mix(in srgb,var(--bg) 30%,transparent),color-mix(in srgb,var(--bg) 10%,transparent) 52%,transparent 76%)}
 .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--muted);
  background:color-mix(in srgb,var(--panel) 64%,transparent);border:1px solid var(--line);padding:6px 14px;border-radius:999px;
  margin-bottom:14px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
