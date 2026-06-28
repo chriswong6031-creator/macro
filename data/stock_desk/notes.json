@@ -1,7 +1,7 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-06-26",
-  "generated_at": "2026-06-28T09:26:40.707320+00:00",
+  "generated_at": "2026-06-28T11:54:27.529877+00:00",
   "degraded": null,
   "notes": [
     {
@@ -11,16 +11,16 @@
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Strong analyst revisions (z=2.58) support residual-alpha, and the cycle remains in a confirmed uptrend with no extension risk, allowing a constructive lean despite recent negative price momentum.",
+      "thesis": "The stock holds above its 50/200\u2011day averages in a confirmed uptrend with strong revision momentum (the literature\u2011tier leg with z=2.6), and the entry axis is not blocked, making a lean relative to the S&P 500 constructive despite the macro liquidity headwind.",
       "evidence": [
-        "verdict: High-confluence leader (context)",
-        "revision leg z-score 2.58, highest in the selection axis",
-        "cycle_blocked: false, ladder_state: RALLY ON, holding above rising 10-day average",
-        "entry axis not blocked, off-high only -3.6%"
+        "Deterministic verdict: High-confluence leader (context), cycle not blocked",
+        "Selection axis revision leg z=2.6, alpha leg modestly negative",
+        "Technical: price above 50/200dma, RSI healthy (61), off highs only -3.6%",
+        "Entry axis not blocked, pullback absent"
       ],
-      "dissent": "Revision momentum may already be priced; the negative alpha (momentum) factor suggests fading trend strength, and macro net-liquidity contraction adds headwind.",
+      "dissent": "The cross\u2011sectional rank has no validated forward edge, US net liquidity is contracting, and the momentum leg in the selection axis is deeply negative (z=-1.31), which could signal fading trend strength.",
       "falsifier": {
-        "text": "Daily close below the 10-day moving average and a failed cycle low (price breaks below the most recent swing low) would invalidate the constructive lean.",
+        "text": "If IRT closes below its 10\u2011day moving average (approximately 16.25) on a weekly basis, the constructive lean is invalidated.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "IRT",
@@ -40,15 +40,16 @@
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The engine's verdict is 'Neutral \u2014 no clear edge'; despite a FRESH BUY technical signal, lack of corroboration from earnings surprise, revisions, or momentum leaves no basis for a directional lean.",
+      "thesis": "The engine\u2019s verdict is neutral despite a FRESH BUY ladder signal, because the selection axis is weak (negative SUE and deep negative momentum) and the quality factor alone is insufficient to justify a directional lean in a mixed macro environment.",
       "evidence": [
-        "verdict: Neutral \u2014 no clear edge",
-        "selection axis z-score -0.35, with SUE z=-0.54, revision z=0.19, alpha z=-1.25",
-        "tailwind axis negative (z=-0.32)"
+        "Deterministic verdict: Neutral \u2014 no clear edge",
+        "Selection axis z=-0.35, SUE z=-0.54 (validated but negative), momentum z=-1.25",
+        "Quality axis strong (z=2.66) but not a stand\u2011alone edge",
+        "Macro liquidity contraction and elevated macro risk flagged"
       ],
-      "dissent": "Strong quality factor scores (z=2.66, high accruals and payout) could provide a floor if a quality rotation emerges, but this is not yet reflected in the residual-alpha selection.",
+      "dissent": "The fresh buy signal and high quality metrics (net margin 9.9%, ROE 20.5%) could attract mean\u2011reversion buyers, leading to a short\u2011term rally that outperforms.",
       "falsifier": {
-        "text": "Sustained move above the 50-day moving average accompanied by a rise in the selection axis z-score (e.g., SUE and revisions turning positive) would challenge the neutral stance.",
+        "text": "If YELP clears its 50\u2011day moving average (around $24.75) and holds it for three consecutive days, the neutral thesis would be challenged.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -64,16 +65,16 @@
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The verdict is 'Constructive \u2014 building a base', supported by positive revisions (z=0.70) and a stable uptrend; however, quality concerns (accounting watch, negative factor z) cap conviction.",
+      "thesis": "The stock is building a base with intact rally and positive revisions, but the accounting\u2011watch flag and nearly zero SUE cap the conviction, and the engine\u2019s constructive verdict is tempered by the late investor phase and macro drag.",
       "evidence": [
-        "verdict: Constructive \u2014 building a base",
-        "revision leg z=0.70, selection axis pct 57",
-        "cycle RALLY ON, not extended (off-high -9.6%)",
-        "cautions: 'accounting watch' flagged"
+        "Deterministic verdict: Constructive \u2014 building a base",
+        "Selection axis revision leg z=0.71, SUE near zero (z=0.06)",
+        "Technical: above both moving averages, RSI 58, MACD positive",
+        "Engine caution: accounting watch (quality flags)"
       ],
-      "dissent": "The 'accounting watch' flag and negative quality factor (z=-0.31) signal potential earnings quality issues; if accruals deteriorate further, the base could fail despite revision support.",
+      "dissent": "The accounting watch flags and weak quality axis (z=-0.31) could pre\u2011date a negative earnings event, and the late\u2011cycle investor phase raises mean\u2011reversion risk.",
       "falsifier": {
-        "text": "Price closes below the 10-day average and the quality flag triggers (e.g., accruals z drops below -0.5) would negate the constructive lean.",
+        "text": "If STC closes below its 50\u2011day moving average (around $67.00) and the MACD turns negative, the constructive lean is falsified.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "STC",
@@ -91,28 +92,28 @@
       "ticker": "ULS",
       "name": "UL Solutions",
       "lean": "constructive",
-      "conviction": "medium",
-      "horizon_d": 15,
-      "thesis": "A strong earnings-surprise (SUE z=1.22) and revision (z=1.09) stack combine with a high-quality entry signal at a bottoming turn; risk controls support a base-recovery lean, though the weekly trend is still mixed.",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "A positive earnings\u2011surprise track (SUE z=1.22, validated) and strong revisions combine with a clean quality axis and an improving entry setup, supporting a constructive lean even though the bottoming ladder and mixed macro warrant low conviction.",
       "evidence": [
-        "verdict: Constructive \u2014 building a base",
-        "SUE z=1.22 and revision z=1.09, selection axis pct 64",
-        "entry axis z=0.85, high and not blocked (imminent buy setup)",
-        "quality z=0.89, accounting clean"
+        "Deterministic verdict: Constructive \u2014 building a base",
+        "Validated SUE leg z=1.22, revision z=1.1",
+        "Entry axis z=0.85 with urgency, off\u2011high, and RSI presence",
+        "Quality axis z=0.89, accounting clean"
       ],
-      "dissent": "The daily cycle is stretched and the weekly trend hasn't turned, increasing the risk that the 'bottoming' fails; macro headwinds (liquidity contracting, macro-sensitive name) could stall a bounce.",
+      "dissent": "The weekly trend is still mixed, the MACD is negative, and macro risk is elevated for this macro\u2011sensitive stock, so a failed breakout would reverse the base\u2011building narrative quickly.",
       "falsifier": {
-        "text": "Failure to clear the recent swing high within 10 trading days and a close below the 10-day average (below 89.7 cycle low) would confirm the base formation has failed.",
+        "text": "If ULS falls below its 10\u2011day moving average (near $97) before the weekly MACD turns positive, the constructive lean is invalidated.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "ULS",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 15
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-07-17",
+      "check_by": "2026-07-24",
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
@@ -121,27 +122,27 @@
       "name": "HF Sinclair",
       "lean": "constructive",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Very strong revision momentum (z=2.11) and positive SUE frame a high-confluence selection, but the validated risk gate on the deteriorating US Energy Complex forces a cautious constructive lean.",
+      "horizon_d": 15,
+      "thesis": "The strongest selection axis in the batch (SUE z=0.92, revision z=2.13) supports a constructive lean, but the engine\u2019s explicit warning that the US Energy Complex narrative is deteriorating is a validated risk gate that demands a trimmed horizon and low conviction.",
       "evidence": [
-        "verdict: High-confluence leader (context)",
-        "revision leg z=2.11, SUE z=0.92, alpha z=0.89",
-        "cautions: 'Narrative basket (US Energy Complex) is deteriorating'",
-        "entry axis not blocked, pullback off highs"
+        "Deterministic verdict: High-confluence leader (context) with caution: 'Narrative basket deteriorating'",
+        "Selection axis z=1.56, driven by SUE and revisions",
+        "Entry axis z=0.54, pullback/extended present",
+        "Technical: uptrend, above 50/200dma, RSI 51"
       ],
-      "dissent": "The Energy basket risk is acute; if sector headwinds intensify, even strong stock-level revisions may be overwhelmed, leading to underperformance relative to the S&P 500.",
+      "dissent": "The energy sector narrative is breaking down per the engine\u2019s risk gate, and the stock\u2019s beta amplifies macro liquidity headwinds, potentially swamping the stock\u2011specific earnings edge.",
       "falsifier": {
-        "text": "A close below the 50-day moving average coupled with a further drop in the Energy sector's relative performance would invalidate the constructive lean.",
+        "text": "If the XLE sector ETF closes below its 200\u2011day moving average or DINO breaks below its 50\u2011day moving average (around $67.30), the constructive lean is falsified.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "DINO",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 20
+          "horizon_d": 15
         }
       },
-      "check_by": "2026-07-24",
+      "check_by": "2026-07-17",
       "engine_verdict": "High-confluence leader (context)"
     },
     {
@@ -151,16 +152,16 @@
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Positive revisions (z=0.87) and a deep pullback (-19% from highs) within a base-building cycle offer a constructive setup, though missing quality data and no SUE input keep conviction low.",
+      "thesis": "The revisions leg (z=0.88) and a building base with a healthy entry axis supports a constructive lean, although the absence of a validated SUE leg and a still\u2011mixed weekly structure keep conviction low.",
       "evidence": [
-        "verdict: Constructive \u2014 building a base",
-        "revision leg z=0.87, selection axis pct 61",
-        "entry axis favorable (pullback/extended, z=0.40)",
-        "cycle RALLY ON, not blocked"
+        "Deterministic verdict: Constructive \u2014 building a base",
+        "Selection axis revision leg z=0.88, momentum z=0.56",
+        "Entry axis z=0.40, pullback/extended, off\u2011high, RSI",
+        "Technical: above 200dma, MACD positive"
       ],
-      "dissent": "Without earnings surprise history and quality metrics, the revision signal is less robust; a base that forms after such a large drawdown may be vulnerable to a failed bounce.",
+      "dissent": "The stock trades below its 50\u2011day moving average, and the tailwind axis is negative (z=-0.32), suggesting institutional interest is absent, which could cause the base to fail.",
       "falsifier": {
-        "text": "If price breaks back below the 10-day average and fails to produce a higher swing high within 20 days, the base-building thesis is invalid.",
+        "text": "If VFC closes below its 200\u2011day moving average (around $17.25) on expanding volume, the constructive lean is invalidated.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "VFC",
