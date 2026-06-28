@@ -38,7 +38,7 @@ import re
 import xml.etree.ElementTree as ET
 from collections import Counter
 from datetime import date, datetime, timedelta, timezone
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
 
 from lib import config, store
 
@@ -823,6 +823,53 @@ def _fetch_official_pages(cfg: dict, today: date | None = None) -> tuple[list[di
     return items, reason
 
 
+# native CN portals (notably finance.sina.com.cn) serve `text/html` with NO charset
+# in the HTTP header, so requests falls back to ISO-8859-1 and `r.text` mojibakes
+# every CJK glyph (健康中国 -> "å¥åº·ä¸­å½"). Sniff the in-document <meta charset>
+# instead and decode the raw bytes ourselves.
+_META_CHARSET_RE = re.compile(rb"""<meta[^>]+charset=["']?\s*([a-zA-Z0-9_\-]+)""", re.I)
+
+
+def _decode_page(content: bytes, content_type: str = "") -> str:
+    """Decode fetched HTML bytes honoring the page's real charset.
+
+    Order of preference: an explicit HTTP `charset=`, else the document's
+    `<meta charset>`/`Content-Type` declaration, else UTF-8. gb2312/gbk are decoded
+    as their gb18030 superset so rare glyphs still resolve, and decoding always uses
+    errors='replace' so a bad guess degrades to replacement chars, never an
+    exception. PURE — no network, no requests/bs4 dependency."""
+    enc = None
+    m = re.search(r"charset=([\w\-]+)", content_type or "", re.I)
+    if m:
+        enc = m.group(1)
+    if not enc:
+        mm = _META_CHARSET_RE.search(content[:4096])
+        if mm:
+            enc = mm.group(1).decode("ascii", "ignore")
+    enc = (enc or "utf-8").strip().lower()
+    if enc in {"gb2312", "gbk", "gb-2312"}:
+        enc = "gb18030"   # strict superset; ships with CPython
+    try:
+        return content.decode(enc, errors="replace")
+    except (LookupError, TypeError):
+        return content.decode("utf-8", errors="replace")
+
+
+def _is_concept_nav_link(href: str) -> bool:
+    """Sina concept-/sector-board navigation anchors
+    (vip.stock.finance.sina.com.cn/mkt/#chgn_*, #gn_*) are board hubs, not news
+    stories — their link text is a bare board name (健康中国 / 上海自贸). The page
+    domain `finance.sina.com.cn` is a substring of the vip host, so they sail past
+    the domain filter; drop them explicitly."""
+    try:
+        parts = urlsplit(href)
+    except Exception:  # noqa: BLE001
+        return False
+    return (parts.netloc.lower().startswith("vip.stock.finance.sina.com.cn")
+            and parts.path.rstrip("/").endswith("/mkt")
+            and bool(parts.fragment))
+
+
 def _fetch_news_pages(cfg: dict, today: date | None = None) -> tuple[list[dict], int]:
     today = today or date.today()
     pages = cfg.get("news_pages") or NEWS_PAGES
@@ -839,7 +886,7 @@ def _fetch_news_pages(cfg: dict, today: date | None = None) -> tuple[list[dict],
                 if r.status_code != 200:
                     failures += 1
                     continue
-                soup = BeautifulSoup(r.text, "html.parser")
+                soup = BeautifulSoup(_decode_page(r.content, r.headers.get("Content-Type", "")), "html.parser")
                 domain = page.get("domain") or re.sub(r"^www\.", "", re.sub(r"^https?://", "", page["url"]).split("/")[0]).lower()
                 source_lang = page.get("source_lang", "en")
                 added = 0
@@ -850,6 +897,8 @@ def _fetch_news_pages(cfg: dict, today: date | None = None) -> tuple[list[dict],
                         continue
                     href = urljoin(page["url"], a["href"])
                     if domain and domain not in href:
+                        continue
+                    if _is_concept_nav_link(href):
                         continue
                     when = _parse_dateish(f"{raw_title} {href}")
                     if when:
