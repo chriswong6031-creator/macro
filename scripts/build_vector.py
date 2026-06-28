@@ -1415,13 +1415,13 @@ a:focus-visible,.links a:focus-visible,.ha-item summary:focus-visible{outline:2p
 .gd-r-idx{font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gd-r-px{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .gd-r-px em{font-style:normal;font-weight:700}
-.gd-r-state{display:flex;flex-direction:column;align-items:flex-end;gap:1px;text-align:right;flex:none}
-.gd-r-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.gd-r-state{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right;flex:none}
+.gd-r-stat{display:flex;align-items:center;gap:6px}
+.gd-r-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none}
 .gd-r-dot.on{background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 22%,transparent)}
 .gd-r-dot.off{background:var(--muted)} .gd-r-dot.lunch{background:var(--warn)}
 .gd-r-txt{font-size:11px;font-weight:700;color:var(--text)}
 .gd-r-cd{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
-.gd-r-state{flex-direction:row;align-items:center;gap:7px}
 .gd-asof,.gd-foot{font-size:10px;color:var(--muted);margin:8px 2px 0;line-height:1.4}
 .gd-clock .l-zh{display:none} html[data-lang="zh"] .gd-clock .l-en{display:none} html[data-lang="zh"] .gd-clock .l-zh{display:inline}
 .gd-r-cd .l-zh,.gd-r-txt .l-zh{display:none} html[data-lang="zh"] .gd-r-cd .l-en,html[data-lang="zh"] .gd-r-txt .l-en{display:none}
@@ -1500,7 +1500,7 @@ _GLOBE_DECK_DOM = r"""<section class="globe-deck command" aria-label="Global mac
     <aside class="gd-clock glass" aria-label="Market clock">
       <header><span class="l-en">Market clock</span><span class="l-zh">交易时钟</span> · <time class="gd-utc"></time> UTC</header>
       <ul></ul>
-      <p class="gd-asof"><span class="l-en">Prices as of last build · clocks are live</span><span class="l-zh">价格为上次构建时 · 时钟为实时</span></p>
+      <p class="gd-asof"><span class="l-en">Prices ≈15-min delayed · clocks live</span><span class="l-zh">价格约延迟15分钟 · 时钟实时</span></p>
       <p class="gd-foot"><span class="l-en">Regular sessions; holidays not modeled</span><span class="l-zh">常规交易时段，未计入假期</span></p>
     </aside>
   </section>"""
