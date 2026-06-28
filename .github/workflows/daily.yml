@@ -600,6 +600,16 @@ jobs:
         # backwards = lookahead). Lossless via a snapshot_json column. Display/research-
         # only, never read back into a score; the script always exits 0.
         run: python -m scripts.archive_signals || true
+      - name: signal sanity (correctness tripwire — warn mode)
+        if: always()   # validate whatever DID build, even if an earlier optional builder failed
+        # The CORRECTNESS dead-man's switch over the per-ticker boards BOTH books select from
+        # (coverage floor / score-column degeneracy / content-freeze / staleness / drift — see
+        # engine/signal_sanity.py). Liveness (healthcheck) catches "pipeline stopped"; this catches
+        # "pipeline ran and published WRONG numbers". WARN mode: it annotates, writes
+        # reports/signal-sanity.md, updates the rolling baseline, and pings Telegram/Discord on a
+        # trip, but never blocks the build (|| true). Opt-in deploy-gating (skip the commit when it
+        # trips) is a deliberate follow-up — keep the daily commit unconditional for now.
+        run: python -m scripts.signal_sanity || true
       - name: White House Watch — re-render page + inject site-wide alert banner
         # PAGE-ONLY here: re-render site/wh_banner.json + site/whitehouse.html from the
         # already-committed ledger (no feed poll, no Opus call, no ledger/state writes) — the
