@@ -396,7 +396,9 @@ def _face_a(latest: dict) -> dict:
     legs.append(_display_leg("A2_naaim", "Manager exposure (NAAIM) — context", "管理人仓位（NAAIM）",
                              ("low" if low_naaim else None),
                              "NAAIM low (capitulated) — bottom-tail context, NOT a euphoria score"
-                             if low_naaim else "NAAIM mid/high — high exposure is trend-following, scored 0"))
+                             if low_naaim else "NAAIM mid/high — high exposure is trend-following, scored 0",
+                             "NAAIM 偏低（已割肉）——底部尾部背景，并非欣喜评分"
+                             if low_naaim else "NAAIM 中/高——高仓位属趋势跟随，计 0"))
     legs.append(_display_leg("A1_putcall", "Equity put/call froth", "股票看跌/看涨比",
                              *_putcall_display()))
     legs.append(_display_leg("A3_news", "News bull-ratio (cohort)", "新闻看多比例",
@@ -429,27 +431,29 @@ def _putcall_display() -> tuple:
         df = pd.read_parquet(config.data_dir() / "cboe" / "putcall.parquet")
         s = df["equity_pc_ratio"].dropna()
         if s.empty:
-            return None, "accruing"
+            return None, "accruing", "积累中"
         ma = s.rolling(min(20, len(s)), min_periods=1).mean()
         val = round(float(ma.iloc[-1]), 2)
-        return val, f"equity put/call {val} (low = call-buying froth) · young series, scored 0"
+        return val, f"equity put/call {val} (low = call-buying froth) · young series, scored 0", \
+            f"股票看跌/看涨 {val}（低=看涨买盘狂热）· 数据尚短，计 0"
     except Exception:  # noqa: BLE001
-        return None, "accruing"
+        return None, "accruing", "积累中"
 
 
 def _news_bull_display(closes: pd.DataFrame) -> tuple:
     try:
         df = pd.read_parquet(config.data_dir() / "polygon" / "news_sentiment.parquet")
         if closes is None or closes.empty:
-            return None, "accruing"
+            return None, "accruing", "积累中"
         latest_per = df.sort_values("snapshot_date").groupby("ticker").tail(1)
         sub = latest_per[latest_per["ticker"].isin(list(closes.columns))]
         if sub.empty:
-            return None, "accruing"
+            return None, "accruing", "积累中"
         br = round(float(sub["bull_ratio"].dropna().mean()), 2)
-        return br, f"cohort news bull-ratio {br} · young series, scored 0"
+        return br, f"cohort news bull-ratio {br} · young series, scored 0", \
+            f"成分新闻看多比 {br} · 数据尚短，计 0"
     except Exception:  # noqa: BLE001
-        return None, "accruing"
+        return None, "accruing", "积累中"
 
 
 def _skew_display() -> tuple:
@@ -457,13 +461,14 @@ def _skew_display() -> tuple:
         df = pd.read_parquet(config.data_dir() / "options_skew" / "snapshots.parquet")
         idx = df[df["underlying"].isin(["SPX", "SPY", "QQQ"])]
         if idx.empty:
-            return None, "accruing"
+            return None, "accruing", "积累中"
         latest_day = idx["date"].max()
         row = idx[idx["date"] == latest_day]
         sk = round(float(row["skew"].dropna().mean()), 3)
-        return sk, f"index put-skew {sk} (put_iv − call_iv) · hedging-bid context, scored 0"
+        return sk, f"index put-skew {sk} (put_iv − call_iv) · hedging-bid context, scored 0", \
+            f"指数看跌偏度 {sk}（看跌IV − 看涨IV）· 对冲买盘背景，计 0"
     except Exception:  # noqa: BLE001
-        return None, "accruing"
+        return None, "accruing", "积累中"
 
 
 def _crypto_fg_display() -> tuple:
@@ -471,9 +476,12 @@ def _crypto_fg_display() -> tuple:
         df = pd.read_parquet(config.data_dir() / "sentiment_crypto" / "fear_greed.parquet")
         v = int(df["fear_greed"].dropna().iloc[-1])
         tag = "extreme greed" if v >= 80 else ("greed" if v >= 60 else ("fear" if v <= 40 else "neutral"))
-        return v, f"crypto Fear&Greed {v} ({tag}) · cross-asset confirm, scored 0"
+        tag_zh = {"extreme greed": "极度贪婪", "greed": "贪婪", "fear": "恐惧",
+                  "neutral": "中性"}[tag]
+        return v, f"crypto Fear&Greed {v} ({tag}) · cross-asset confirm, scored 0", \
+            f"加密恐惧贪婪 {v}（{tag_zh}）· 跨资产确认，计 0"
     except Exception:  # noqa: BLE001
-        return None, "accruing"
+        return None, "accruing", "积累中"
 
 
 # --------------------------------------------------------------------------- #
@@ -537,7 +545,7 @@ def _face_b(latest: dict, stealth: dict) -> dict:
     legs.append(_display_leg("B3_med_dd", "Median-member drawdown vs index", "成分中位回撤 vs 指数",
                              *_b3_median_dd(asof, spy)))
     legs.append(_display_leg("B5_rsp_spy", "Equal-weight vs cap-weight (RSP/SPY) — context",
-                             "等权 vs 市值权（RSP/SPY）", *_b5_rsp_spy()))
+                             "等权 vs 市值权（RSP/SPY）", *_b5_rsp_spy(asof)))
     legs.append(_display_leg("B7_complacency", "Complacency (hidden fragility)", "自满（隐性脆弱）",
                              *_b7_complacency(latest)))
 
@@ -643,42 +651,47 @@ def _b3_median_dd(asof, spy) -> tuple:
     try:
         closes = _closes_matrix(_live_members(LEADER_BASKETS), asof, 260)
         if closes.empty or spy is None:
-            return None, "leadership cohort unavailable"
+            return None, "leadership cohort unavailable", "龙头数据不可用"
         off = (closes / closes.rolling(252).max() - 1.0).iloc[-1]
         med = float(off.median())
         idx_off = float(spy.iloc[-1] / spy.rolling(252).max().iloc[-1] - 1.0)
         if med <= -0.15 and idx_off >= -0.03:
             return round(med, 3), (f"median leader {med:.0%} off its 52wk-high while the index is "
-                                   f"only {idx_off:.0%} off — classic stealth distribution")
-        return round(med, 3), f"median leader {med:.0%} off 52wk-high (index {idx_off:.0%})"
+                                   f"only {idx_off:.0%} off — classic stealth distribution"), \
+                (f"龙头中位较 52 周高点回撤 {med:.0%}，而指数仅 {idx_off:.0%}——典型潜伏派发")
+        return round(med, 3), f"median leader {med:.0%} off 52wk-high (index {idx_off:.0%})", \
+            f"龙头中位较 52 周高点回撤 {med:.0%}（指数 {idx_off:.0%}）"
     except Exception:  # noqa: BLE001
-        return None, "median drawdown unavailable"
+        return None, "median drawdown unavailable", "中位回撤不可用"
 
 
-def _b5_rsp_spy() -> tuple:
+def _b5_rsp_spy(asof=None) -> tuple:
     try:
-        rsp, spy = _close("RSP"), _close("SPY")
+        rsp, spy = _close_at("RSP", asof), _close_at("SPY", asof)
         if rsp is None or spy is None:
-            return None, "RSP/SPY unavailable"
+            return None, "RSP/SPY unavailable", "RSP/SPY 不可用"
         ratio = (rsp / spy.reindex(rsp.index)).dropna()
         from engine.indicators import pct_rank_window
         p = pct_rank_window(ratio.rolling(252).mean(), 252 * 5).iloc[-1]
         narrow = bool(p is not None and p == p and p < 0.10)
-        return (round(float(p), 2) if p == p else None), (
-            "equal-weight deeply lagging cap-weight — narrow leadership (context, not a trigger)"
-            if narrow else "breadth of leadership not at a narrow extreme")
+        val = round(float(p), 2) if p == p else None
+        if narrow:
+            return val, "equal-weight deeply lagging cap-weight — narrow leadership (context, not a trigger)", \
+                "等权远落后市值权——领导面收窄（背景，非触发信号）"
+        return val, "breadth of leadership not at a narrow extreme", "领导面广度未达收窄极值"
     except Exception:  # noqa: BLE001
-        return None, "RSP/SPY unavailable"
+        return None, "RSP/SPY unavailable", "RSP/SPY 不可用"
 
 
 def _b7_complacency(latest) -> tuple:
     c = ((latest or {}).get("conditions") or {}).get("complacency") or {}
     st = c.get("state")
     if not st:
-        return None, "complacency unavailable"
-    return st, (f"complacency: {st.replace('_', ' ')}"
-                + (" · breadth diverging" if c.get("breadth_div") else "")
-                + " (display-only, never scored)")
+        return None, "complacency unavailable", "自满数据不可用"
+    div_en = " · breadth diverging" if c.get("breadth_div") else ""
+    div_zh = " · 广度背离" if c.get("breadth_div") else ""
+    return st, f"complacency: {st.replace('_', ' ')}{div_en} (display-only, never scored)", \
+        f"自满：{st.replace('_', ' ')}{div_zh}（仅展示，从不评分）"
 
 
 # --------------------------------------------------------------------------- #
@@ -953,10 +966,10 @@ def _leg(key, label, label_zh, value, sub01, weight, note, note_zh=None, pill=No
             "pill": pill, "thin": bool(thin)}
 
 
-def _display_leg(key, label, label_zh, value, note) -> dict:
+def _display_leg(key, label, label_zh, value, note, note_zh=None) -> dict:
     return {"key": key, "label": label, "label_zh": label_zh, "value": value,
             "sub": None, "weight": 0.0, "available": False, "scored": False,
-            "points": None, "note": note, "note_zh": note, "color": "#888",
+            "points": None, "note": note, "note_zh": note_zh or note, "color": "#888",
             "pill": "accruing" if key.startswith(("A1", "A3", "A5", "A6", "A7")) else "context",
             "thin": False}
 
