@@ -53,10 +53,14 @@ permissions:
 
 concurrency:
   # Its OWN lane, isolated from `pipeline-daily` so a render can never starve (or be
-  # starved by) the nightly. cancel-in-progress: a newer render supersedes an older
-  # in-flight one (you only care about the latest templates going live).
+  # starved by) the nightly.
+  # cancel-in-progress: FALSE — do NOT cancel a render that's already running. With many
+  # sessions merging every few minutes, `true` cancelled 27 of 30 renders (each new push
+  # killed the in-flight one) so the site almost never re-rendered. With `false`, a running
+  # render always FINISHES and ships; GitHub still supersedes redundant *pending* runs
+  # (only the latest queued one runs next), so the site stays current without starving.
   group: pipeline-render
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   render:
