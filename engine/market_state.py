@@ -27,6 +27,7 @@ index tape is read off the feature frame already in memory.
 """
 from __future__ import annotations
 
+import json
 import logging
 
 import numpy as np
@@ -356,6 +357,57 @@ _RADAR_DO = {
     "risk-off": ("Protect capital: raise cash, no new chases.", "保住本金：提高现金、勿追新高。"),
 }
 
+# ---- amplification calibration (per-corroborator pull, in score points) ----------------
+# The confluence multiplier started as a flat 6 pts per corroborator. These are now an
+# OVERLAY that engine/market_state_tune.py rewrites within bounds from the forward-grade
+# scorecard — so a corroborator that reliably precedes drawdowns pulls harder and one that
+# does not gets pruned toward zero, WITHOUT a human re-picking the weights. Absent file =>
+# the original flat-6 behaviour. engine.market_state_tune and the live engine share
+# _ceiling_for so the backtest can never diverge from production.
+CORROBORATORS = ("conjunction", "two_plus_scares", "complacency", "breadth_div",
+                 "drawdown_band", "systemic_stress", "turning_point")
+_DEFAULT_WEIGHTS = {k: 6.0 for k in CORROBORATORS}
+_DEFAULT_CALIB = {"weights": dict(_DEFAULT_WEIGHTS),
+                  "base": {"caution": 56, "elevated": 38, "risk-off": 26},
+                  "severe_bump": 10, "floor": 12}
+_WEIGHT_BOUNDS = (0.0, 12.0)        # 0 = pruned, 12 = double the default pull
+
+
+def _ms_calib(root=None) -> dict:
+    """Read the amplification overlay (data/market_state/calibration.json); fall back to the
+    flat-6 defaults. Never raises — a bad file degrades to defaults."""
+    c = {"weights": dict(_DEFAULT_WEIGHTS), "base": dict(_DEFAULT_CALIB["base"]),
+         "severe_bump": _DEFAULT_CALIB["severe_bump"], "floor": _DEFAULT_CALIB["floor"]}
+    try:
+        from lib import config
+        from pathlib import Path
+        base_dir = config.data_dir() if root is None else (Path(root) / "data")
+        p = base_dir / "market_state" / "calibration.json"
+        if p.exists():
+            ov = json.loads(p.read_text())
+            for k, v in (ov.get("weights") or {}).items():
+                if k in _DEFAULT_WEIGHTS:
+                    c["weights"][k] = float(min(_WEIGHT_BOUNDS[1], max(_WEIGHT_BOUNDS[0], v)))
+            c["base"].update({k: v for k, v in (ov.get("base") or {}).items() if k in c["base"]})
+            for k in ("severe_bump", "floor"):
+                if ov.get(k) is not None:
+                    c[k] = ov[k]
+    except Exception:  # noqa: BLE001
+        pass
+    return c
+
+
+def _ceiling_for(state: str, severe_gated: bool, amp_keys, calib: dict) -> int | None:
+    """The amplified score ceiling for a radar-active state under `calib`. Shared by the live
+    override and the tuner's do-no-harm backtest so they can never disagree. None if calm."""
+    if state not in ("caution", "elevated", "risk-off"):
+        return None
+    base = calib["base"].get(state, _DEFAULT_CALIB["base"][state])
+    if severe_gated:
+        base -= calib.get("severe_bump", 10)
+    pull = sum(calib["weights"].get(k, 6.0) for k in (amp_keys or []))
+    return int(max(calib.get("floor", 12), round(base - pull)))
+
 
 def _radar_override(latest: dict, overrides: list) -> dict:
     """Summarise the Risk Radar (engine/risk_radar.py) for the hero AND, when it is at
@@ -428,10 +480,9 @@ def _radar_override(latest: dict, overrides: list) -> dict:
     severe_gated = state == "caution" and (
         ungated in ("elevated", "risk-off") or (top is not None and top >= 85))
 
-    base = {"caution": 56, "elevated": 38, "risk-off": 26}[state]
-    if severe_gated:
-        base -= 10
-    ceiling = max(12, base - 6 * amp)   # each corroborating signal pulls 6 pts lower
+    # the amplified ceiling, using the (auto-tuned) per-corroborator weights
+    calib = _ms_calib()
+    ceiling = _ceiling_for(state, severe_gated, keys, calib)
 
     out.update(amp=amp, amp_keys=keys, amp_flags_en=flags_en, amp_flags_zh=flags_zh,
                severe_gated=severe_gated, ceiling=ceiling)

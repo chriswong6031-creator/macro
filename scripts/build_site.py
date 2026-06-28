@@ -1756,8 +1756,14 @@ def market_state_view(latest: dict, f: pd.DataFrame) -> dict | None:
             try:
                 from engine import market_state_audit as _msa
                 snap["audit"] = _msa.snapshot_and_grade(snap)
+                # Bounded, do-no-harm auto-calibration (engine/market_state_tune.py): once
+                # enough calls are graded, re-weight / prune the corroborators from their
+                # measured forward lift. Writes the overlay the engine reads NEXT build, so
+                # it never feeds back into the verdict just rendered. Gated + never fatal.
+                from engine import market_state_tune as _mst
+                snap["audit"]["tune"] = _mst.tune()
             except Exception as e:  # noqa: BLE001 — additive, never fatal
-                log.warning("market_state audit failed: %s", e)
+                log.warning("market_state audit/tune failed: %s", e)
         return snap
     except Exception as e:  # noqa: BLE001 — additive panel, never fatal
         log.warning("market_state view failed: %s", e)
