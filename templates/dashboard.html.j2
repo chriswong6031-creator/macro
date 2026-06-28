@@ -153,6 +153,33 @@
   .chart { width: 100%; }
   .topline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
 
+  /* US Stocks header — Risk Radar alert (rendered only when the radar fires; see #stocks-header).
+     Self-contained on the GLOBAL theme vars, because the macro .ms-radar styling lives in the
+     page-macro scope which doesn't apply here. --rc = the band colour, set inline. */
+  .rr-alert { display: flex; align-items: center; gap: 11px; flex-wrap: wrap;
+              margin: 12px 0 2px; padding: 9px 13px; border-radius: 10px;
+              border: 1px solid color-mix(in srgb, var(--rc) 55%, var(--line));
+              background: color-mix(in srgb, var(--rc) 12%, var(--panel2));
+              animation: rrApulse 2.2s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .rr-alert { animation: none;
+              box-shadow: 0 0 0 1px color-mix(in srgb, var(--rc) 40%, transparent); } }
+  @keyframes rrApulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rc) 34%, transparent); }
+                        50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--rc) 7%, transparent); } }
+  .rr-alert .rra-ic { font-size: 17px; line-height: 1; flex: none; }
+  .rr-alert .rra-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 240px; }
+  .rr-alert .rra-tit { font-weight: 600; color: var(--text); }
+  .rr-alert .rra-tit b { font-weight: 800; }
+  .rr-alert .rra-odds { font-size: 11px; color: var(--muted); }
+  .rr-alert .rra-odds b { color: var(--text); }
+  .rr-alert .rra-do { font-size: 11.5px; color: var(--text); max-width: 36ch; }
+  @media (max-width: 760px) { .rr-alert .rra-do { max-width: none; flex: 1 1 100%; } }
+  .rr-alert .rra-scares { display: flex; flex-wrap: wrap; align-items: center; gap: 5px;
+              flex: 1 1 100%; margin-top: 3px; font-size: 11px; color: var(--muted); }
+  .rr-alert .rra-scare { border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px;
+              color: var(--text); background: var(--panel); }
+  .rr-alert .rra-more { margin-left: auto; color: var(--link); font-weight: 700; font-size: 11.5px;
+              white-space: nowrap; }
+
   .help { display: inline-flex; align-items: center; justify-content: center;
           width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
           color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
@@ -1046,9 +1073,31 @@
   <div class="panel span12" id="stocks-header">
     <div class="topline">
       <h1>🇺🇸 {{ t('US Stock Dashboard', '美国个股看板') }}</h1>
-      <span class="badge quad-{{ latest.quad }}">{{ td(latest.quad_name) }}</span>
-      {% if pb and pb.dial %}<span class="badge" style="background:var(--panel2);color:var(--text)">{{ td(pb.dial.posture) }}</span>{% endif %}
+      <span style="display:inline-flex;align-items:center">
+        <span class="badge quad-{{ latest.quad }}">{{ t('Regime', '周期') }}: {{ td(latest.quad_name) }}</span>{{ help("The macro / economic regime (growth × inflation quadrant) the whole page is filtered by — it describes the ECONOMY, not today's tape, so it shifts slowly. Use it for which sectors & factors are favoured, not for market timing. For whether the market itself is turning over, watch the Risk Radar alert — it appears right below only when it actually fires.", "整页据以过滤的宏观／经济周期（增长×通胀象限）— 它描述的是经济，而非今日盘面，因此变化缓慢。用于判断哪些板块与因子占优，而非择时。市场本身是否转向，请看下方的风险雷达提示 — 它仅在真正触发时才显示。") }}
+      </span>
+      {% if pb and pb.dial %}<span style="display:inline-flex;align-items:center">
+        <span class="badge" style="background:var(--panel2);color:var(--text)">{{ t('Posture', '姿态') }}: {{ td(pb.dial.posture) }}</span>{{ help("How to TRADE the current regime — a defensive → aggressive stance dial (Defensive · Careful · Neutral · Constructive · Aggressive) set by the playbook. “Careful” means lean cautious: favour quality and good entries, keep gross moderate. It sizes risk; it is not a buy/sell or stock-selection call. The full dial with its reasoning lives on the Macro dashboard.", "如何“交易”当前周期 — 一个防御→进取的姿态刻度（防御·谨慎·中性·建设性·进取），由策略手册设定。“谨慎”意为偏审慎：偏好质量与好的入场点，总仓位保持适中。它用于调整风险敞口，并非买卖或选股建议。完整刻度及其推理见宏观看板。") }}
+      </span>{% endif %}
     </div>
+    {# Risk Radar alert — ported from macro.html's Market State board. Shown ONLY when the
+       radar is loud (caution/elevated/risk-off → is_loud), i.e. when it actually fires, so it
+       reads as a genuine 'market is turning over' signal rather than permanent chrome. Uses
+       market_state directly (the MS alias is set later, inside the macro-only region). #}
+    {% if market_state and market_state.radar and market_state.radar.is_loud %}
+    {% set rd = market_state.radar %}
+    {% set rdcol = 'var(--down)' if rd.state=='risk-off' else ('var(--orange)' if rd.state=='elevated' else 'var(--warn)') %}
+    <div class="rr-alert" style="--rc:{{ rdcol }}">
+      <span class="rra-ic">{{ '🛑' if rd.state=='risk-off' else ('🚨' if rd.state=='elevated' else '⚠️') }}</span>
+      <span class="rra-main">
+        <span class="rra-tit">{{ t('Risk Radar', '风险雷达') }} · <b style="color:{{ rdcol }}">{{ t(rd.state|upper, rd.state_zh) }}{% if rd.top_score is not none %} {{ rd.top_score }}/100{% endif %}</b>{% if rd.label_en %} — {{ t(rd.label_en, rd.label_zh) }}{% endif %}{{ help("A leading drawdown-risk gauge, built only from signals that passed a strict backtest. It watches five kinds of stress (credit, rates, bubble, growth, volatility) and stays quiet until the broad market is actually breaking — so it appears here only when it fires (caution or worse). It measures the ODDS of a pullback, not the direction. Use it to size down, never to pick stocks. Full per-leg detail on the Macro Signals page.", "领先的回撤风险指标，仅由通过严格回测的信号构成。它监测五类压力（信用、利率、泡沫、增长、波动），在大盘真正破位前保持沉默 — 因此仅在触发（警戒或更高）时于此显示。它衡量回撤的“概率”而非方向。用它来降低仓位，绝非选股。完整分项见宏观信号页。") }}</span>
+        {% if rd.dd21 is not none %}<span class="rra-odds">{{ t('Pullback odds (≥5%)', '回撤概率（≥5%）') }} · 5d {{ (rd.dd5*100)|round|int }}% · 10d {{ (rd.dd10*100)|round|int }}% · <b>21d {{ (rd.dd21*100)|round|int }}%</b></span>{% endif %}
+        {% if latest.risk_radar and latest.risk_radar.scares %}<span class="rra-scares">{{ t('Stress:', '压力来源：') }}{% for s in latest.risk_radar.scares %}{% if s.score is not none and s.score >= 25 %}{% set sb = 'var(--down)' if s.band=='risk-off' else ('var(--orange)' if s.band=='elevated' else ('var(--warn)' if s.band=='caution' else 'var(--muted)')) %}<span class="rra-scare" style="border-color:{{ sb }}">{{ t(s.label_en, s.label_zh) }} <b style="color:{{ sb }}">{{ s.score|round|int }}</b></span>{% endif %}{% endfor %}</span>{% endif %}
+      </span>
+      {% if rd.do_en %}<span class="rra-do"><b>{{ t('Do', '应对') }}:</b> {{ t(rd.do_en, rd.do_zh) }}{% if rd.gross and rd.gross < 1 %} · {{ t('gross', '仓位') }} ×{{ '%.2f'|format(rd.gross) }}{% endif %}</span>{% endif %}
+      <a class="rra-more" href="macro_signals.html">{{ t('full radar →', '完整雷达 →') }}</a>
+    </div>
+    {% endif %}
     <p class="muted" style="margin:6px 0 0">{{ t('Where to look for stocks — standouts, sector rotation, factor tilts and real fund flows, filtered by the current macro regime.', '在哪里找股票 — 精选个股、板块轮动、因子倾斜与基金真实资金流，按当前宏观周期过滤。') }}
       <a href="macro.html" style="color:var(--link);font-weight:600">← {{ t('Macro regime dashboard', '宏观周期看板') }}</a></p>
   </div>
