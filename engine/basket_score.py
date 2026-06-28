@@ -158,7 +158,18 @@ def clean_entry(lvl: pd.Series, fp: dict | None, breadth_d: dict | None,
         recent_dd = s.iloc[-1] / s.iloc[-w:].max() - 1.0
         if -0.08 < recent_dd < -0.004:
             q += 0.10; reasons.append("shallow pullback")
-    return {"flag": bool(q >= 0.6 and not_ext), "quality": round(min(q, 1.0), 3),
+    # BACKDROP VETO — a "clean entry" is by definition a HEALTHY base turning up, so it must
+    # never flag on a BREAKING tape: collapsed breadth (pct50 < 0.4), net new lows, or a hard
+    # down-acceleration. Without this, a deteriorating theme (e.g. cn_banks: breadth 0.0, 7 new
+    # lows) still ticked accel + not-extended + RSI-room to flag YES — advertising a "clean
+    # entry" card on an out-of-favour / AVOID theme. Mirrors theme_scoring._label's `breaking`
+    # so the texture can never contradict the lifecycle verdict. NB: below-200d is NOT a veto —
+    # an EMERGING theme is below its slow trend by construction (see act_now_stocks); breadth /
+    # momentum, not the 200d, separate a real early entry (cn_brokers) from a falling knife.
+    nh, nl = (breadth_d or {}).get("nh", 0), (breadth_d or {}).get("nl", 0)
+    breaking = ((pct50 is not None and pct50 < 0.4) or (nh - nl) < 0
+                or (accel is not None and accel < -0.5))
+    return {"flag": bool(q >= 0.6 and not_ext and not breaking), "quality": round(min(q, 1.0), 3),
             "reasons": reasons[:4], "directional": False}
 
 
