@@ -44,6 +44,7 @@ import json
 from pathlib import Path
 
 from engine.signal_quality import analyze
+from engine import confluence_tiers   # owner's weighted T1->T4 cascade (TIERED_CASCADE.md)
 
 TAKE = "take"
 ANTICIPATION = "anticipation"
@@ -52,9 +53,13 @@ _BUY_TYPES = ("buy", "rebuy")
 # tier sort order: take above every anticipation; within anticipation, a fired-but-pending
 # buy ranks above the pre-cross early warning (it is "more formed"). 0 = best.
 _TIER_ORDER = {(TAKE, None): 0, (ANTICIPATION, "pending"): 1, (ANTICIPATION, "early"): 2}
+# owner's weighted cascade rank (held-out justified, TIERED_CASCADE.md): T1 master .. T4 earliest.
+# pending (3D master forming) sits at 1, between the held take (T1=0) and the 2D-early tiers.
+_CASCADE_RANK = {"T1": 0, "T2": 2, "T3": 3, "T4": 4}
 
 _VERDICT_KEYS = ("eligible", "tier", "sub", "reason", "state", "above200",
-                 "weekly_bull", "early_now", "asof", "last")
+                 "weekly_bull", "early_now", "asof", "last",
+                 "tier_cascade", "weight", "tier_sub", "bars_to_cross")
 
 
 def verdict(result: dict | None) -> dict:
@@ -105,14 +110,35 @@ def gate(ticker: str, daily_close) -> dict:
     except Exception:
         res = None
     v = verdict(res)
+    # ---- owner's WEIGHTED tier cascade (T1 master -> T4 earliest), TIERED_CASCADE.md ----
+    # Extends the take/pending/early leaf: T1 = the validated master (TAKE, or a forming
+    # 'pending' master), T2/T3/T4 = the 2D-MACD-cross / 2D-projected / 2D-projected+2D-stoch
+    # tiers computed close-only here. A T2/T4 name with no take/early still becomes eligible.
+    take_active = (v.get("tier") == TAKE)
+    casc = confluence_tiers.cascade(daily_close, take_active=take_active)
+    tier_c = casc.get("tier")
+    if not tier_c and v.get("sub") == "pending":
+        tier_c = "T1"                         # 3D master forming counts as the T1 tier
+    v["tier_cascade"] = tier_c
+    v["weight"] = confluence_tiers.WEIGHTS.get(tier_c, 0.0)
+    v["tier_sub"] = casc.get("sub")           # deep|shallow (display modifier; equal weight)
+    v["bars_to_cross"] = casc.get("bars_to_cross")
+    if tier_c and not v.get("eligible"):      # T2/T4 extend eligibility beyond take/early
+        v.update(eligible=True, reason=f"tier {tier_c} (weight {v['weight']})")
     v["result"] = res
     return v
 
 
 def tier_rank(v: dict | None) -> int:
-    """Ascending sort rank (0 = best take). Non-eligible / missing sinks to the bottom."""
+    """Ascending sort rank (0 = best). Owner's cascade orders the board: held take (T1)=0,
+    forming master (pending)=1, then T2=2 / T3=3 / T4=4. Non-eligible sinks to the bottom."""
     if not v or not v.get("eligible"):
         return 9
+    tc = v.get("tier_cascade")
+    if tc == "T1" and v.get("sub") == "pending":
+        return 1                              # forming master ranks just below a held take
+    if tc:
+        return _CASCADE_RANK.get(tc, 8)
     return _TIER_ORDER.get((v.get("tier"), v.get("sub")), 8)
 
 
