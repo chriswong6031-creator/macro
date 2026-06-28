@@ -253,13 +253,14 @@
      in the page-macro and page-stocks scopes. The escalating odds ramp replaces
      the old cramped "5d.. 10d.. 21d.." text run. ============================ */
   .rrx { --rc: var(--warn);
-         display: grid; gap: 11px; margin: 12px 0 2px; padding: 13px 15px; border-radius: 12px;
-         background: color-mix(in srgb, var(--rc) 7%, var(--panel2));
-         border: 1px solid color-mix(in srgb, var(--rc) 26%, var(--line));
-         border-left: 3px solid var(--rc); font-size: 12.5px; line-height: 1.4; }
+         display: grid; gap: 12px; margin: 12px 0 2px; padding: 15px 18px; border-radius: 12px;
+         background: var(--panel);
+         border: 1px solid var(--line);
+         border-left: 4px solid var(--rc); font-size: 12.5px; line-height: 1.4;
+         box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4); }
   body.page-macro .ms-front > .rrx { margin: 0 0 14px; }
-  .rrx.rrx-loud { background: color-mix(in srgb, var(--rc) 12%, var(--panel2));
-         box-shadow: 0 0 0 1px color-mix(in srgb, var(--rc) 22%, transparent), 0 10px 30px -14px var(--rc);
+  .rrx.rrx-loud { background: color-mix(in srgb, var(--rc) 4%, var(--panel));
+         box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rc) 20%, transparent), 0 14px 34px -18px color-mix(in srgb, var(--rc) 70%, transparent);
          animation: rrxPulse 2.4s ease-in-out infinite; }
   @keyframes rrxPulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rc) 30%, transparent); }
                         50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--rc) 6%, transparent); } }
@@ -348,6 +349,17 @@
     .rrx .rrx-odds-l { flex: 0 0 auto; }
     .rrx .rrx-ramp { flex: 0 0 auto; width: 100%; max-width: none; justify-content: space-around; }
   }
+  /* phone: collapse to a SIMPLE, STRONG alert — headline + the one number that
+     matters + the action. The ramp, the verbose amplification line and the
+     non-dominant threat meters are desktop-only detail, not a mobile wall. */
+  @media (max-width: 560px) {
+    .rrx { padding: 14px 15px; gap: 10px; }
+    .rrx .rrx-amp, .rrx .rrx-ramp, .rrx .rrx-ev { display: none; }
+    .rrx .rrx-odds { padding: 11px 13px; }
+    .rrx .rrx-big { font-size: 34px; }
+    .rrx .rrx-threats { gap: 5px; }
+    .rrx .rrx-th:not(.dom) { display: none; }
+  }
 
   .help { display: inline-flex; align-items: center; justify-content: center;
           width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
@@ -360,8 +372,9 @@
                z-index: 60; font-size: 12px; line-height: 1.45; color: var(--text);
                text-align: left; font-weight: 400; text-transform: none;
                letter-spacing: normal; box-shadow: var(--popover-shadow);
-               pointer-events: none; white-space: normal; }
-  .help:hover .tip { display: block; }
+               pointer-events: none; white-space: normal;
+               max-height: min(56vh, 360px); overflow-y: auto; overscroll-behavior: contain; }
+  .help:hover .tip, .help.tip-open .tip { display: block; }
   th .help .tip, .help.below .tip { bottom: auto; top: 140%; }
   /* keep tooltips on-screen near the right/left viewport edges */
   .help.edge-right .tip { left: auto; right: 0; transform: none; }
@@ -398,9 +411,12 @@
   .dial .active-CONSTRUCTIVE { background: var(--up); color: #fff; }
   .dial .active-AGGRESSIVE { background: var(--ok); color: #fff; }
   @media (max-width: 520px) { .dial > span { font-size: 8.5px; padding: 5px 1px; } }
-  .reason { margin: 4px 0; padding-left: 24px; position: relative; }
+  .reason { margin: 7px 0; padding-left: 24px; position: relative; line-height: 1.4; }
   .reason b.sig { position: absolute; left: 0; width: 17px; text-align: center;
                   border-radius: 4px; font-size: 12px; }
+  /* lead the bullet with the read; demote the parenthetical stats so it scans */
+  .reason .reason-main { font-weight: 600; color: var(--ink-1, var(--text)); }
+  .reason .reason-det { color: var(--ink-3, var(--muted)); font-size: .92em; }
 
   .card { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
           padding: 10px 12px; margin: 6px 0; }
@@ -1337,7 +1353,7 @@
   @media(min-width:1100px){
     body.page-macro .ms-front.ms{display:grid;gap:0 30px;align-items:start;
       grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);
-      grid-template-areas:"radar radar" "head head" "state hero" "tape tape"}
+      grid-template-areas:"radar radar" "head head" "state hero" "tape hero"}
     body.page-macro .ms-front>.ms-radar{grid-area:radar;margin-bottom:12px}
     body.page-macro .ms-front>.ms-head{grid-area:head}
     body.page-macro .ms-front>.ms-top{grid-area:state;margin-top:14px}
@@ -1382,8 +1398,8 @@
   body.page-macro .v-scale{display:flex;justify-content:space-between;margin-top:6px;font-family:var(--num);font-size:9.5px;
     letter-spacing:.02em;color:var(--ink-3)}
   body.page-macro .v-thesis{margin:12px 0 0;font-size:12.5px;line-height:1.45;color:var(--ink-1)}
-  body.page-macro .v-flip{margin:13px 0 0;padding:8px 11px;border-left:2px solid var(--warn);
-    background:color-mix(in srgb,var(--warn) 7%,transparent);font-size:12px;line-height:1.45;color:var(--ink-2)}
+  body.page-macro .v-flip{margin:12px 0 0;padding:1px 0 1px 11px;border-left:2px solid color-mix(in srgb,var(--warn) 55%,transparent);
+    background:none;font-size:12px;line-height:1.45;color:var(--ink-3)}
   body.page-macro .v-override{margin:10px 0 0;display:flex;align-items:flex-start;gap:7px;padding:8px 11px;border-radius:7px;
     border:var(--rule) solid color-mix(in srgb,var(--act) 38%,var(--hair));background:color-mix(in srgb,var(--act) 11%,transparent);
     font-size:11.5px;line-height:1.4;color:var(--ink-1)}
@@ -1395,15 +1411,19 @@
   /* Heads-up strip — compact live flags (next catalyst / Fed stance / fragility),
      replacing the old full-width Event-Risk + Turning-Point + Fed-reaction panels.
      Global vars only (renders on both the macro and stocks pages). */
-  .heads-up{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
-  .heads-up .hu-label{font-family:ui-monospace,"SF Mono",monospace;font-size:10px;font-weight:700;letter-spacing:.16em;
+  .heads-up{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .heads-up .hu-label{font-family:ui-monospace,"SF Mono",monospace;font-size:10px;font-weight:700;letter-spacing:.18em;
     text-transform:uppercase;color:var(--muted);flex:none}
-  .heads-up .hu-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;
-    font-size:12px;line-height:1.3;color:var(--text);text-decoration:none;
-    background:color-mix(in srgb,var(--hc) 9%,var(--panel2));
-    border:1px solid color-mix(in srgb,var(--hc) 32%,var(--line));border-left:3px solid var(--hc)}
-  .heads-up a.hu-chip:hover{border-color:var(--hc)}
-  .heads-up .hu-chip b{font-family:ui-monospace,"SF Mono",monospace}
+  /* institutional flag: a status dot in the state colour + a clean label —
+     no emoji, no border-left hack, no bubble pill */
+  .heads-up .hu-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 13px;border-radius:9px;
+    font-size:12.5px;line-height:1.3;color:var(--text);text-decoration:none;font-weight:500;
+    background:var(--panel2);border:1px solid var(--line);transition:border-color .14s,box-shadow .14s}
+  .heads-up .hu-chip::before{content:"";width:7px;height:7px;border-radius:50%;flex:none;background:var(--hc);
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--hc) 18%,transparent)}
+  .heads-up a.hu-chip:hover{border-color:color-mix(in srgb,var(--hc) 55%,var(--line));
+    box-shadow:0 4px 14px -8px color-mix(in srgb,var(--hc) 60%,transparent)}
+  .heads-up .hu-chip b{font-family:ui-monospace,"SF Mono",monospace;color:var(--hc)}
 
   /* evidence matrix — one tight row per factor (arrow · title · bar · score). The short read
      and the metric tags live in a hover popup anchored to the dotted-underlined title; there
@@ -1538,7 +1558,7 @@
       <div class="ms-head">
         <span class="ms-eyebrow"><span class="ms-live"></span>{{ t('MARKET STATE','市场状态') }}</span>
         <span class="ms-date">· {{ MS.asof }}</span>
-        {{ help("What kind of market is this RIGHT NOW — a single risk-on/off read that BLENDS the broad-market tape across timeframes, cross-asset risk appetite, the volatility regime, market breadth, Fed liquidity & credit, and the downturn-risk guards into one 0-100 score. GREEN risk-on (≥60) · YELLOW mixed/transition (42–59) · RED risk-off (<42). Confirmation over prediction: every leg reads what has ALREADY turned, not a forecast. A handful of early-warning overrides (an act-level alert, a fresh regime flip, a high/extreme drawdown or acute systemic-stress band) can cap or force the verdict. DISPLAY-ONLY — a synthesis of signals shown elsewhere on this page; it never scores, sizes or feeds the regime engine.", "当前是什么样的市场 — 一个把多周期大盘趋势、跨资产风险偏好、波动率环境、市场广度、联储流动性与信用，以及下行风险护栏融合为一个 0-100 评分的风险偏好读数。绿色＝风险偏好（≥60）·黄色＝混合/转换（42–59）·红色＝避险（<42）。确认优于预测：每条腿读取的是已经转向的东西，而非预测。少数早期预警可封顶或强制结论。仅供展示 — 它是本页其他信号的综合，绝不评分、定仓或进入周期引擎。") }}
+        {{ help("How risk-on or risk-off the market is right now — one 0–100 read blending the tape, cross-asset risk, volatility, breadth, liquidity and downturn guards. ≥60 risk-on · 42–59 mixed · <42 risk-off. It confirms what has already turned; it doesn't forecast.", "市场当前的风险偏好程度 — 0–100 单一读数，融合趋势、跨资产风险、波动率、广度、流动性与下行护栏。≥60 偏好 · 42–59 混合 · <42 避险。它确认已经转向的信号，而非预测。") }}
         <label class="ms-alerts" for="ms-alerts-toggle">
           {% if _nalerts %}<span class="dot"></span>{% endif %}{{ t('Fired alerts','已触发警报') }}
           <span class="ct{{ ' is-zero' if not _nalerts }}">{{ _nalerts }}</span>
@@ -1795,7 +1815,7 @@
         </div>
         {% if pb.dial %}
         <div class="dial">{% for p in ["DEFENSIVE","CAREFUL","NEUTRAL","CONSTRUCTIVE","AGGRESSIVE"] %}<span class="{{ 'active-' + p if pb.dial.posture == p }}">{{ td(p) }}</span>{% endfor %}</div>
-        {% for sign, r_en, r_zh in pb.dial.reasons %}<div class="reason"><b class="sig sig-{{ {'+':'p','-':'m','i':'i'}[sign] }}">{{ {'+':'+','-':'−','i':'i'}[sign] }}</b> {{ t(r_en, r_zh) }}</div>{% endfor %}
+        {% for sign, r_en, r_zh in pb.dial.reasons %}{% set _e = r_en.split(' (', 1) %}{% set _zsep = '（' if '（' in r_zh else ' (' %}{% set _z = r_zh.split(_zsep, 1) %}<div class="reason"><b class="sig sig-{{ {'+':'p','-':'m','i':'i'}[sign] }}">{{ {'+':'+','-':'−','i':'i'}[sign] }}</b><span class="l-en"><b class="reason-main">{{ _e[0] }}</b>{% if _e|length > 1 %}<span class="reason-det"> ({{ _e[1] }}</span>{% endif %}</span><span class="l-zh"><b class="reason-main">{{ _z[0] }}</b>{% if _z|length > 1 %}<span class="reason-det">{{ _zsep }}{{ _z[1] }}</span>{% endif %}</span></div>{% endfor %}
         {% endif %}
         <div style="margin-top:11px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:13px">
           {% if pb.next_list %}<span class="help" style="font-weight:600;color:var(--link);width:auto;height:auto;border:none;margin:0">{{ t("What's likely next",'接下来可能发生什么') }} ▾<span class="tip" style="width:300px;font-weight:400">
@@ -1880,21 +1900,21 @@
   {% set _hu_show = (event_risk and event_risk.show) or (latest.turning_point and latest.turning_point.present) or (latest.fed_stance and latest.fed_stance.stance and latest.fed_stance.stance != 'unknown') %}
   {% if _hu_show %}
   <div class="panel span12 heads-up">
-    <span class="hu-label">⚡ {{ t('Heads-up','提醒') }}</span>
+    <span class="hu-label">{{ t('Heads-up','提醒') }}</span>
     {% if event_risk and event_risk.show %}
     {% set ER = event_risk %}
     {% set erc = 'var(--down)' if ER.fragility.fragile else ('var(--orange)' if ER.vol_tier=='high' else 'var(--warn)') %}
-    <span class="hu-chip" id="event-risk" style="--hc:{{ erc }}">📅 {{ t(ER.headline_en, ER.headline_zh) }}{{ help('A heads-up that a big scheduled event is near — not a buy/sell signal and not a direction call. These days swing both ways, so size positions and set stops for the noise.', '提醒重大日程事件临近 — 既非买卖信号也非方向判断。这类日子常两面波动，请据噪声调整仓位与止损。') }}</span>
+    <span class="hu-chip" id="event-risk" style="--hc:{{ erc }}">{{ t(ER.headline_en, ER.headline_zh) }}{{ help('A heads-up that a big scheduled event is near — not a buy/sell signal and not a direction call. These days swing both ways, so size positions and set stops for the noise.', '提醒重大日程事件临近 — 既非买卖信号也非方向判断。这类日子常两面波动，请据噪声调整仓位与止损。') }}</span>
     {% endif %}
     {% if latest.fed_stance and latest.fed_stance.stance and latest.fed_stance.stance != 'unknown' %}
     {% set FS = latest.fed_stance %}
     {% set fsc = 'var(--down)' if FS.color=='down' else ('var(--up)' if FS.color=='up' else 'var(--muted)') %}
-    <a class="hu-chip" id="fed-stance" href="policy_watch.html" style="--hc:{{ fsc }}">🏛️ {{ t('Fed','美联储') }}: <b style="color:{{ fsc }}">{{ t(FS.label_en, FS.label_zh) }}</b>{{ help('The Fed’s likely next move, read from rate-market pricing plus the latest FOMC guidance. Context only — a market price reacts, it doesn’t forecast. Tap to open Fed &amp; Policy Watch.', '美联储下一步的可能动向，依据利率市场定价与最新 FOMC 指引读出。仅供参考——市场价格是反应而非预测。点击打开美联储与政策观察。') }}</a>
+    <a class="hu-chip" id="fed-stance" href="policy_watch.html" style="--hc:{{ fsc }}">{{ t('Fed','美联储') }}: <b style="color:{{ fsc }}">{{ t(FS.label_en, FS.label_zh) }}</b>{{ help('The Fed’s likely next move, read from rate-market pricing plus the latest FOMC guidance. Context only — a market price reacts, it doesn’t forecast. Tap to open Fed &amp; Policy Watch.', '美联储下一步的可能动向，依据利率市场定价与最新 FOMC 指引读出。仅供参考——市场价格是反应而非预测。点击打开美联储与政策观察。') }}</a>
     {% endif %}
     {% if latest.turning_point and latest.turning_point.present %}
     {% set TP = latest.turning_point %}
     {% set tpc = 'var(--down)' if TP.state=='fragile-structural' else ('var(--muted)' if TP.state=='cooling' else 'var(--orange)') %}
-    <span class="hu-chip" id="turning-point" style="--hc:{{ tpc }}">⚠️ {{ t(TP.headline_en, TP.headline_zh) }}{{ help('A conviction guardrail, not a signal. It flags when the whole market is leaning on one bet and positioning is stretched — the setup that whipsaws on a surprise. It lowers conviction; it never tells you to bet against the move.', '确信度护栏，并非信号。当整个市场押注单一主题且仓位被拉伸时触发——这是意外消息下易剧烈反复的格局。它降低确信度，绝不提示反向押注。') }}</span>
+    <span class="hu-chip" id="turning-point" style="--hc:{{ tpc }}">{{ t(TP.headline_en, TP.headline_zh) }}{{ help('A conviction guardrail, not a signal. It flags when the whole market is leaning on one bet and positioning is stretched — the setup that whipsaws on a surprise. It lowers conviction; it never tells you to bet against the move.', '确信度护栏，并非信号。当整个市场押注单一主题且仓位被拉伸时触发——这是意外消息下易剧烈反复的格局。它降低确信度，绝不提示反向押注。') }}</span>
     {% endif %}
   </div>
   {% endif %}
@@ -3167,6 +3187,24 @@ window.__CHART_SWAP__ = {
 <script src="live_config.js"></script>
 <script src="live.js"></script>
 <script src="heatmap.js"></script>
+<script>
+/* Keep .help tooltips on-screen: flip below the icon when it's near the top of
+   the viewport, and clamp horizontally near the left/right edges. Hover-only,
+   no layout cost until you point at a "?". */
+(function(){
+  function place(h){
+    var r = h.getBoundingClientRect(), vw = window.innerWidth;
+    h.classList.toggle('below', r.top < 240);
+    h.classList.remove('edge-left','edge-right');
+    if (r.left > vw - 170) h.classList.add('edge-right');
+    else if (r.left < 170) h.classList.add('edge-left');
+  }
+  document.addEventListener('pointerover', function(e){
+    var h = e.target.closest && e.target.closest('.help');
+    if (h) place(h);
+  }, true);
+})();
+</script>
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
