@@ -32,11 +32,31 @@
 
   function boot(){
     injectStyle();
-    var root=document.getElementById('rotation-app');
-    if(!root) return;
+    var full=document.getElementById('rotation-app');
+    var strip=document.getElementById('rotation-strip');
+    if(!full && !strip) return;
     fetch(JSON_URL,{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json();})
-      .then(function(d){_data=d; render(root);})
-      .catch(function(){root.innerHTML='<div class="sr-empty">'+L('Could not load rotation data.','无法加载轮动数据。')+'</div>';});
+      .then(function(d){_data=d; if(full)render(full); if(strip)drawStrip(strip);})
+      .catch(function(){ if(full)full.innerHTML='<div class="sr-empty">'+L('Could not load rotation data.','无法加载轮动数据。')+'</div>'; if(strip)strip.style.display='none'; });
+  }
+
+  /* ---------- compact strip (embedded on the heatmap page) ---------- */
+  function drawStrip(el){
+    el.className='sr-scope sr-strip';
+    var m={}; _data.subsectors.forEach(function(s){m[s.key]=s;});
+    function chip(s){var v=s.perf&&s.perf['1W'];var q=QUAD[s.quadrant];
+      return '<a class="srx-chip" href="subsector_rotation.html"><span class="srx-q '+q.cls+'"></span>'
+        +'<b>'+esc(s.name)+'</b><span class="srx-th">'+esc(s.theme)+'</span>'
+        +'<span class="srx-pc '+pcCls(v)+'">'+fmtPc(v)+'</span></a>';}
+    var em=(_data.highlights.emerging||[]).map(function(k){return m[k];}).filter(Boolean).slice(0,5);
+    var fa=(_data.highlights.fading||[]).map(function(k){return m[k];}).filter(Boolean).slice(0,4);
+    el.innerHTML='<div class="srx-hd"><span>🌀 '+L('Subsector rotation','子行业轮动')
+      +'<i>'+L('Finviz broad-universe · velocity','Finviz 全市场 · 速度')+'</i></span>'
+      +'<a class="srx-more" href="subsector_rotation.html">'+L('full rotation map','完整轮动图')+' →</a></div>'
+      +'<div class="srx-cols">'
+      +'<div class="srx-col"><span class="srx-lab up">▲ '+L('Emerging','升温')+'</span>'+em.map(chip).join('')+'</div>'
+      +'<div class="srx-col"><span class="srx-lab dn">▼ '+L('Fading','退潮')+'</span>'+fa.map(chip).join('')+'</div>'
+      +'</div>';
   }
 
   function items(){return _unit==='themes'?_data.themes:_data.subsectors;}
@@ -263,6 +283,12 @@
     +'.sr-tsp-row{display:flex;gap:8px;margin:8px 0 2px;flex-wrap:wrap;} .sr-tsp{display:flex;flex-direction:column;line-height:1.15;} .sr-tsp span{font-size:8.5px;color:var(--muted);} .sr-tsp b{font-size:11px;font-variant-numeric:tabular-nums;}'
     +'.sr-tip-mt{font-size:10.5px;color:var(--muted);margin-top:6px;border-top:1px solid var(--line);padding-top:6px;} .sr-tip-mt b{color:var(--text);font-variant-numeric:tabular-nums;}'
     +'.sr-tip-mem{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px;} .sr-chip{font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--panel2);border:1px solid var(--line);font-variant-numeric:tabular-nums;}'
+    +'.sr-strip{margin:14px 0 0;padding:11px 13px;background:var(--panel);border:1px solid var(--line);border-radius:14px;}'
+    +'.srx-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-weight:800;font-size:13px;color:var(--text);margin-bottom:9px;} .srx-hd i{font-style:normal;font-weight:600;font-size:10.5px;color:var(--muted);margin-left:8px;} .srx-more{font-size:11.5px;font-weight:700;color:var(--link);white-space:nowrap;}'
+    +'.srx-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;} @media (max-width:680px){.srx-cols{grid-template-columns:1fr;}}'
+    +'.srx-col{display:flex;flex-wrap:wrap;align-items:center;gap:6px;} .srx-lab{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-right:2px;} .srx-lab.up{color:var(--up);} .srx-lab.dn{color:var(--down);}'
+    +'.srx-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);} .srx-chip:hover{border-color:color-mix(in srgb,var(--link) 50%,var(--line));} .srx-chip b{font-size:12px;color:var(--text);} .srx-th{font-size:9.5px;color:var(--muted);} .srx-pc{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;}'
+    +'.srx-q{width:7px;height:7px;border-radius:50%;flex:none;} .srx-q.q-lead{background:var(--up);} .srx-q.q-weak{background:var(--warn);} .srx-q.q-impr{background:var(--link);} .srx-q.q-lag{background:var(--down);}'
     +'@media (prefers-reduced-motion:reduce){.sr-tip,.sr-dot{transition:none;}}';
     var st=document.createElement('style'); st.id='sr-style'; st.textContent=c; document.head.appendChild(st);
   }

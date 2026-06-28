@@ -94,6 +94,10 @@ _ALTDATA_TIER = {"convergence": "watch"}
 # Demand-variant divergences (engine.demand_alerts) are display-only / not a buy
 # signal until the forward ledger earns a verdict → context tier only.
 _DEMAND_TIER = {"demand_ahead": "context", "demand_at_risk": "context"}
+# Subsector-rotation flips (engine.subsector_rotation_alerts) ride Finviz's broad
+# numbers and carry no validated forward edge — a rotate-in is the loudest at
+# 'watch'; a leader rolling over is 'context'.
+_ROTATION_TIER = {"rotation_emerging": "watch", "rotation_fading": "context"}
 
 # Source display metadata: label (EN/ZH), icon, and the page each alert deep-links to.
 SOURCES = {
@@ -106,6 +110,7 @@ SOURCES = {
     "emergence": {"label": "Forming Narratives","label_zh": "成形叙事", "icon": "🔥", "page": "baskets.html"},
     "altdata":   {"label": "Alternative Data",  "label_zh": "替代数据",   "icon": "📊", "page": "alt_data.html"},
     "demand":    {"label": "Demand Desk",      "label_zh": "需求台",     "icon": "🧭", "page": "demand.html"},
+    "rotation":  {"label": "Subsector Rotation","label_zh": "子行业轮动", "icon": "🌀", "page": "subsector_rotation.html"},
 }
 
 # Risk-OFF / stress alert families whose sign is unambiguous — only these get a
@@ -396,6 +401,7 @@ def _jsonl_raw(source: str, today: pd.Timestamp, cutoff: pd.Timestamp,
             "themes": "theme_alerts", "emergence": "emergence_alerts",
             "altdata": "altdata_alerts",
             "demand": "demand_alerts",
+            "rotation": "subsector_rotation_alerts",
         }[source]
         m = __import__("engine." + mod, fromlist=[mod])
         for e in m.load_events():
@@ -451,6 +457,7 @@ def build_triage(days: int = 30, today: date | None = None,
     raw += _jsonl_raw("emergence", today_ts, cutoff, _EMERGENCE_TIER)
     raw += _jsonl_raw("altdata", today_ts, cutoff, _ALTDATA_TIER)
     raw += _jsonl_raw("demand", today_ts, cutoff, _DEMAND_TIER)
+    raw += _jsonl_raw("rotation", today_ts, cutoff, _ROTATION_TIER)
 
     enriched: list[dict] = []
     for a in raw:
