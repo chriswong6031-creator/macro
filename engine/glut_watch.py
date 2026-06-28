@@ -171,12 +171,14 @@ def _append_ledger(payload: dict) -> None:
                 continue
     ts = datetime.now(timezone.utc).isoformat()
     asof = payload.get("asof")
+    cfg_themes = (config.load() or {}).get("themes") or {}     # PIT membership snapshot for the grader
     lines = []
     for key, t in payload["themes"].items():
         if t["band"] not in ("GLUT_FORMING", "GLUT") or (key, asof) in seen:
             continue
         lines.append(json.dumps({"theme": key, "asof": asof, "ts": ts, "band": t["band"],
-                                 "glut_score": t["glut_score"], "regime": t["regime"]},
+                                 "glut_score": t["glut_score"], "regime": t["regime"],
+                                 "members": (cfg_themes.get(key) or {}).get("tickers") or []},
                                 separators=(",", ":")))
     if lines:
         with p.open("a") as fh:
