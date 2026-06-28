@@ -87,6 +87,12 @@ FACTORS: list[Factor] = [
            "China", "FXI (China large-cap, US-hours) beyond global beta — China/HK growth exposure."),
     Factor("btc", "yahoo", "BTC-USD", "close", 1,
            "Bitcoin / crypto", "BTC-USD — + beta = crypto / high-risk-appetite exposure."),
+    Factor("gold", "yahoo", "GC=F", "close", 1,
+           "Gold", "Gold futures (GC=F) — + beta = gold / metals & miners exposure; closes the "
+           "metals coverage gap so miners read as the gold bets they are, not low-R² idiosyncratics."),
+    # NB: a high-yield-credit factor (HYG) was evaluated and DROPPED — in an equity universe its
+    # loaders were an incoherent low-beta mix (redundant with market + rates), i.e. it fit noise
+    # rather than a clean credit dimension. Keep the observable set small and clean (overfit guardrail).
 ]
 
 FACTOR_ORDER = [f.key for f in FACTORS]
@@ -107,6 +113,10 @@ FACTOR_CONFIDENCE = {
     "china":  {"tier": "low",    "scope": "low",    "persist": 0.19},   # flat ~0.17 even aggregated
     "usd":    {"tier": "low",    "scope": "low",    "persist": 0.11},
     "btc":    {"tier": "low",    "scope": "low",    "persist": 0.02},
+    # gold (GC=F) is a clean, well-identified factor in-sample (metals/miners R²≈0.60) but has
+    # not yet been through the Phase-0 out-of-sample stability test on this factor set — so it
+    # reads low/untested (persist unmeasured) until that runs, rather than carrying a fabricated number.
+    "gold":   {"tier": "low",    "scope": "low",    "persist": None},
 }
 
 
