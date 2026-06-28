@@ -1302,6 +1302,7 @@ def sector_setup_view(latest: dict, timing: dict | None = None) -> dict | None:
         month = pd.Timestamp(latest["date"]).month if latest.get("date") else None
         for r in bd["sectors"]:
             st = stages.get(r["ticker"], {})
+            r["rate_inflation"] = st.get("rate_inflation")  # display-only macro overlay (from playbook stages)
             r["verdict"] = T(r["label"], r["label_zh"])
             r["action_txt"] = T(r["action"], r["action_zh"])
             r["signal_txt"] = T(ssig.signal_line(r), ssig.signal_line(r, zh=True))
@@ -2110,9 +2111,12 @@ def build_smartmoney_data(site: Path) -> dict | None:
 
 
 def build_sector_pages(env: Environment, site: Path, generated: str,
-                       alpha: dict | None = None, put_absent: bool = False) -> dict:
+                       alpha: dict | None = None, put_absent: bool = False,
+                       rate_infl: dict | None = None) -> dict:
     """Render sectors/<FUND>.html drill-downs; return per-fund timing summary
-    for the heat board."""
+    for the heat board. ``rate_infl`` maps fund -> the display-only per-sector
+    rate/inflation transmission read (engine.sector_rate_inflation), reused from the
+    already-computed playbook stages so it is the single source of truth."""
     import json as _json
 
     from collectors.sector_holdings import latest_fundamentals, latest_top10
@@ -2267,6 +2271,7 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
         s = {"fund": fund, "name": SECTOR_NAMES.get(fund, fund),
              "mtf_json": _json2.dumps(res.get("mtf", {})), **res,
              "holdings": holdings,
+             "rate_infl": (rate_infl or {}).get(fund),  # display-only macro overlay
              "accumulation": accumulation_signals(fund, liquidity=liq,
                                                   macro_drag=drag, macro_beta=beta)}
         if alpha and fund in ETF_GICS:                 # within-sector residual-alpha leaders
@@ -2608,8 +2613,14 @@ def main() -> int:
         log.error("smart-money data failed: %s", e)
     try:
         _put_absent = (latest.get("dislocation") or {}).get("put_state") == "put-absent"
+        # per-fund rate/inflation overlay, reused from the playbook stages already in
+        # latest.json (single source of truth; the playbook computed it once)
+        _ri_by_fund = {st["ticker"]: st.get("rate_inflation")
+                       for st in ((latest.get("playbook") or {}).get("stages") or [])
+                       if st.get("rate_inflation")}
         sector_timing, notable = build_sector_pages(env, site, generated, alpha=alpha_data,
-                                                    put_absent=_put_absent)
+                                                    put_absent=_put_absent,
+                                                    rate_infl=_ri_by_fund)
     except Exception as e:  # noqa: BLE001 — drill-downs are additive, never fatal
         log.error("sector pages failed: %s", e)
     try:
