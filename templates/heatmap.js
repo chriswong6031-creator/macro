@@ -83,8 +83,12 @@
   }
   function rgb(c) { return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
   function fgFor(c) {
+    // Dark theme: white text on every tile (matches Finviz / TradingView, and
+    // reads as one consistent label colour). Light theme: stay contrast-adaptive
+    // so text doesn't vanish on the pale tiles.
+    if (document.documentElement.getAttribute('data-theme') !== 'light') return '#f4f7fb';
     var lum = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
-    return lum > 140 ? '#0b0e13' : '#f4f7fb';
+    return lum > 150 ? '#0b0e13' : '#f4f7fb';
   }
   function neutral() {
     // a desaturated slate between the gauge-mid track and the panel — distinct
@@ -924,7 +928,7 @@
       + '.hm-mem-list{padding:6px;max-height:340px;overflow:hidden;}'
       + '.hm-mem-row{display:flex;align-items:center;gap:8px;padding:3px 6px;border-radius:6px;}'
       + '.hm-mem-row:nth-child(odd){background:color-mix(in srgb,var(--text) 3.5%,transparent);}'
-      + '.hm-mem-pc{font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums;padding:2px 6px;border-radius:5px;min-width:54px;text-align:center;flex:none;}'
+      + '.hm-mem-pc{font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums;padding:2px 6px;border-radius:5px;min-width:54px;text-align:center;flex:none;text-shadow:0 1px 1px rgba(0,0,0,.32);}'
       + '.hm-mem-t{font-size:12px;font-weight:800;color:var(--text);flex:none;min-width:42px;}'
       + '.hm-mem-n{font-size:10.5px;color:var(--muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
       + '.hm-mem-cap{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none;}'
@@ -936,7 +940,7 @@
       + '.hm-sc-exp{margin-left:auto;font:700 12px Inter,sans-serif;color:var(--text);background:var(--panel2);border:1px solid var(--line);padding:6px 12px;border-radius:9px;cursor:pointer;transition:background .15s,border-color .15s;}'
       + '.hm-sc-exp:hover{border-color:color-mix(in srgb,var(--link) 55%,var(--line));background:color-mix(in srgb,var(--link) 10%,var(--panel2));}'
       + '.hm-sc-strip{position:relative;width:100%;border-radius:11px;overflow:hidden;margin-bottom:11px;background:var(--hm-frame);border:1px solid var(--hm-edge);}'
-      + '.hm-sc-tile{position:absolute;border-radius:7px;padding:7px 9px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.25);transition:filter .15s,box-shadow .15s;}'
+      + '.hm-sc-tile{position:absolute;border-radius:7px;padding:7px 9px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.25);transition:filter .15s,box-shadow .15s;text-shadow:0 1px 2px rgba(0,0,0,.3);}'
       + '.hm-sc-tile:hover{filter:brightness(1.08);box-shadow:0 0 0 1.5px rgba(255,255,255,.8);}'
       + '.hm-sc-tile .t1{font-size:11.5px;font-weight:800;line-height:1.1;text-transform:uppercase;letter-spacing:.03em;} .hm-sc-tile .t2{font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;opacity:.92;} .hm-sc-tile .t3{font-size:9px;opacity:.82;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
       + '.hm-sc-foot{display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:11px;}'
