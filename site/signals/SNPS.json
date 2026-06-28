@@ -1,0 +1,1 @@
+{"ticker":"SNPS","asof":"2026-06-18","tf":"3D","state":"short-bias","above200":false,"weekly_bull":false,"trail_stop":473.0491,"trail_breach":true,"markers":[{"date":"2026-04-13","type":"buy","quality":"block","reason":"counter-trend, no 200-reclaim/hold"},{"date":"2026-06-05","type":"sell"}],"risk_flags":["2026-05-28"],"early_markers":["2026-03-05"],"early_now":false}

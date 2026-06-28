@@ -1,0 +1,284 @@
+{
+  "meta": {
+    "span": "2015-01-01..2026-06-21",
+    "rows": 4190,
+    "index_rows": 4080,
+    "split_date": "2021-01-01",
+    "start_date": "2015-01-01",
+    "horizons_d": [
+      30,
+      90,
+      180
+    ],
+    "embargo_d": 180,
+    "cost_bps_one_way": 10.0
+  },
+  "n_trials": 22,
+  "choice_ledger": [
+    {
+      "knob": "Z_WINDOW",
+      "value": 365,
+      "note": "rolling z-score window (days) \u2014 a-priori 365 (\u22481 year)"
+    },
+    {
+      "knob": "z_cut_lo1",
+      "value": 0.5,
+      "note": "score-z lower inner cut-point (\u00b10.5)"
+    },
+    {
+      "knob": "z_cut_hi1",
+      "value": 1.5,
+      "note": "score-z lower outer cut-point (\u00b11.5)"
+    },
+    {
+      "knob": "z_cut_lo2",
+      "value": -0.5,
+      "note": "score-z upper inner cut-point (\u22120.5)"
+    },
+    {
+      "knob": "z_cut_hi2",
+      "value": -1.5,
+      "note": "score-z upper outer cut-point (\u22121.5)"
+    },
+    {
+      "knob": "SLOPE_LB",
+      "value": 20,
+      "note": "slope look-back for _lvl_chg and tail flags (days)"
+    },
+    {
+      "knob": "TREND_MA_D",
+      "value": 200,
+      "note": "trend MA fast period (days) \u2014 200D"
+    },
+    {
+      "knob": "TREND_MA_W",
+      "value": 1400,
+      "note": "trend MA slow period (days) \u2014 ~200W"
+    },
+    {
+      "knob": "HIVIX_Z",
+      "value": 0.5,
+      "note": "VIX-z threshold for HY-OAS credit accelerant (Lee EFM 2026)"
+    },
+    {
+      "knob": "EXPO_KNOT_0",
+      "value": "x=0 y=0.0",
+      "note": "exposure spline knot 0 (x=0\u2192y=0.0)"
+    },
+    {
+      "knob": "EXPO_KNOT_1",
+      "value": "x=10 y=0.0",
+      "note": "exposure spline knot 1 (x=10\u2192y=0.0)"
+    },
+    {
+      "knob": "EXPO_KNOT_2",
+      "value": "x=35 y=0.25",
+      "note": "exposure spline knot 2 (x=35\u2192y=0.25)"
+    },
+    {
+      "knob": "EXPO_KNOT_3",
+      "value": "x=65 y=0.55",
+      "note": "exposure spline knot 3 (x=65\u2192y=0.55)"
+    },
+    {
+      "knob": "EXPO_KNOT_4",
+      "value": "x=90 y=0.9",
+      "note": "exposure spline knot 4 (x=90\u2192y=0.9)"
+    },
+    {
+      "knob": "EXPO_KNOT_5",
+      "value": "x=100 y=1.0",
+      "note": "exposure spline knot 5 (x=100\u2192y=1.0)"
+    },
+    {
+      "knob": "MIN_FACTORS",
+      "value": 6,
+      "note": "minimum live factors before index is considered valid"
+    },
+    {
+      "knob": "PANEL_LOOKBACK",
+      "value": 180,
+      "note": "rolling percentile window for on-chain tail bands (days)"
+    },
+    {
+      "knob": "TAIL_LO",
+      "value": 0.1,
+      "note": "lower tail threshold for on-chain depressed panel"
+    },
+    {
+      "knob": "TAIL_HI",
+      "value": 0.9,
+      "note": "upper tail threshold for on-chain stretched panel"
+    },
+    {
+      "knob": "K_SWEEP_4",
+      "value": 4,
+      "note": "confluence k-of-n tail flag threshold (k=4)"
+    },
+    {
+      "knob": "K_SWEEP_5",
+      "value": 5,
+      "note": "confluence k-of-n tail flag threshold (k=5)"
+    },
+    {
+      "knob": "K_SWEEP_6",
+      "value": 6,
+      "note": "confluence k-of-n tail flag threshold (k=6)"
+    }
+  ],
+  "ic_table": {
+    "h30d": {
+      "full_ic": 0.1216,
+      "pre_ic": 0.1433,
+      "post_ic": 0.0633,
+      "nw_t": 10.029,
+      "nw_p": 0.0,
+      "n_full": 4050,
+      "n_pre": 1902,
+      "n_post": 1998
+    },
+    "h90d": {
+      "full_ic": 0.3052,
+      "pre_ic": 0.2784,
+      "post_ic": 0.267,
+      "nw_t": 8.768,
+      "nw_p": 0.0,
+      "n_full": 3990,
+      "n_pre": 1902,
+      "n_post": 1998
+    },
+    "h180d": {
+      "full_ic": 0.1795,
+      "pre_ic": 0.1204,
+      "post_ic": 0.0933,
+      "nw_t": 7.792,
+      "nw_p": 0.0,
+      "n_full": 3900,
+      "n_pre": 1902,
+      "n_post": 1998
+    },
+    "note": "Time-series rank IC (Spearman between the composite index and the forward h-day return, computed over the full time series). NOT the cross-sectional rank_ic() which is a per-date multi-name tool and the WRONG tool for a single index. Pre-half embargoed by 180 rows to prevent label leakage across the 2021-01-01 split boundary. Newey-West t-stat corrects for serial correlation from overlapping windows."
+  },
+  "leave_one_cycle_out": {
+    "h90d": {
+      "per_cycle": {
+        "2015-2018": {
+          "ic": 0.4015,
+          "n": 1350
+        },
+        "2018-2021": {
+          "ic": -0.0715,
+          "n": 731
+        },
+        "2021-2024": {
+          "ic": 0.3548,
+          "n": 1105
+        },
+        "2024-now": {
+          "ic": 0.1326,
+          "n": 894
+        }
+      },
+      "worst_ic": -0.0715,
+      "best_ic": 0.4015,
+      "note": "Leave-one-cycle-out at horizon 90d: each cycle window held out in turn, IC reported on held-out period. With ~4 cycles the out-of-cycle IC is high-variance; the worst cycle is the honest bar."
+    },
+    "h180d": {
+      "per_cycle": {
+        "2015-2018": {
+          "ic": 0.2353,
+          "n": 1350
+        },
+        "2018-2021": {
+          "ic": -0.2482,
+          "n": 731
+        },
+        "2021-2024": {
+          "ic": 0.1778,
+          "n": 1105
+        },
+        "2024-now": {
+          "ic": -0.0752,
+          "n": 894
+        }
+      },
+      "worst_ic": -0.2482,
+      "best_ic": 0.2353,
+      "note": "Leave-one-cycle-out at horizon 180d: each cycle window held out in turn, IC reported on held-out period. With ~4 cycles the out-of-cycle IC is high-variance; the worst cycle is the honest bar."
+    }
+  },
+  "cpcv": {
+    "mean_ic": 0.2222,
+    "std_ic": 0.1522,
+    "n_paths": 15,
+    "k_folds": 6,
+    "horizon_d": 90,
+    "non_independence_warning": true,
+    "note": "CPCV with k=6 purged folds, C(k,2)=15 test paths at horizon 90d. NON-INDEPENDENT paths on ~3-5 BTC cycles: wide CIs, tight numbers are spurious. Do not trust narrow confidence intervals here."
+  },
+  "allocation_backtest": {
+    "cagr_net": 33.3,
+    "hodl_cagr": 65.2,
+    "sharpe_net": 1.19,
+    "hodl_sharpe": 1.09,
+    "maxdd_pct": -41.1,
+    "hodl_maxdd_pct": -83.8,
+    "time_in_market": 100.0,
+    "cost_bps": 10.0,
+    "sharpe_daily": 0.062055,
+    "skew": -0.1908,
+    "kurt": 19.8505,
+    "n_obs": 4080
+  },
+  "allocation_bootstrap": {
+    "sharpe_ci": [
+      0.57,
+      1.19,
+      1.81
+    ],
+    "maxdd_ci_pct": [
+      -58.4,
+      -37.4,
+      -24.8
+    ],
+    "sharpe_gt0_prob": 1.0,
+    "block": 21,
+    "B": 3000,
+    "n": 4080
+  },
+  "deflated_sharpe": {
+    "dsr": 0.9752,
+    "sr_daily": 0.062055,
+    "sr_annual": 1.19,
+    "sr0_daily": 0.030865,
+    "sr0_annual": 0.59,
+    "n_trials": 22,
+    "T": 4080,
+    "skew": -0.191,
+    "kurt": 19.851,
+    "verdict": "SURVIVES multiple-testing (DSR\u22650.90)",
+    "note": "DSR = P(true Sharpe > 0) deflated for n_trials=22 (machine-counted from choice_ledger), sample length T, skew and kurtosis. Expected result: DSR far below 0.90 \u2014 the composite is display-only by design. This harness exists to measure and document that, not to promote it."
+  },
+  "pit_m2": {
+    "ok": true,
+    "ic_revised_90d": 0.3052,
+    "ic_pit_90d": 0.2827,
+    "delta_ic": -0.0225,
+    "m2_score_shift_days": 4129,
+    "m2_score_shift_pct_of_sample": 99.2,
+    "n_month_ends_walked": 137,
+    "note": "PIT bounded to M2SL (US leg of global_m2_yoy) \u2014 the only leg that is both revision-prone and in the vintage store. Other legs are market data (never revised) or z-scores (self-averaging). PIT can only make the macro IC equal-or-WORSE: revised data reflects information not knowable in real time and is upward-biased. Delta IC = PIT \u2212 revised; negative means PIT is worse (expected)."
+  },
+  "out_of_regime_post2024": {
+    "n": 803,
+    "since": "2024-01-11",
+    "ic_90d": 0.1326,
+    "ic_90d_bootstrap_ci": [
+      -0.097,
+      0.134,
+      0.342
+    ],
+    "note": "Post-2024 (ETF/flow-driven regime) subsample: one partial cycle, un-validatable. The 'etf' leg is tagged context-tier and is REPORT-ONLY \u2014 it can DEMOTE but never PROMOTE the composite. Wide CIs are expected; this block exists to show the honest IC number and interval, not to promote it."
+  },
+  "verdict": "DISPLAY-ONLY \u2014 composite shows no gate-clearing OOS edge (NOTE: unexpected \u2014 re-examine if DSR\u22650.90 AND post IC positive)"
+}

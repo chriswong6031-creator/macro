@@ -1,0 +1,6947 @@
+{
+ "run_id": "gold_20260627_040029_871db3",
+ "config": {
+  "train_len": 60,
+  "test_len": 40,
+  "step": 40,
+  "purge": 3,
+  "embargo": 3
+ },
+ "since": "2023-06-01",
+ "metric": "max_dd",
+ "n_names": 110,
+ "pooled": {
+  "full": {
+   "view": "full",
+   "metric": "max_dd",
+   "n_names": 110,
+   "treat": {
+    "p10": -27.34320748305301,
+    "p25": -20.147882099608236,
+    "p50": -13.412203152282077,
+    "p75": -8.577601651753408,
+    "p90": -5.806344800059828,
+    "mean": -15.538756249782141
+   },
+   "treat_means": {
+    "max_dd": -15.538756249782141,
+    "shake_rate": 17.958874458874455,
+    "avg_loss": -4.100650502756933,
+    "expectancy": 6.326462127888325,
+    "win_rate": 53.082251082251084,
+    "n_trades": 3.2636363636363637,
+    "captured": 18.78491285517909
+   },
+   "base": {
+    "p10": -42.801423517849486,
+    "p25": -29.397392714411414,
+    "p50": -21.76459831860137,
+    "p75": -14.715557838001011,
+    "p90": -11.50074196420565,
+    "mean": -23.716534551125882
+   },
+   "frac_improved": 0.8363636363636363
+  },
+  "oos": {
+   "view": "oos",
+   "metric": "max_dd",
+   "n_names": 110,
+   "treat": {
+    "p10": -20.54177004123009,
+    "p25": -14.072877740277995,
+    "p50": -9.170080022641336,
+    "p75": -5.449551464085806,
+    "p90": -1.6635499952055435,
+    "mean": -10.43679392553598
+   },
+   "treat_means": {
+    "max_dd": -10.43679392553598,
+    "shake_rate": 13.484848484848483,
+    "avg_loss": -3.180573083147115,
+    "expectancy": 3.90680946034563,
+    "win_rate": 45.9090909090909,
+    "n_trades": 2.3545454545454545,
+    "captured": 7.641017036504231
+   },
+   "base": {
+    "p10": -31.72525861059587,
+    "p25": -21.83002628224466,
+    "p50": -14.254151198600967,
+    "p75": -9.921967160880678,
+    "p90": -8.103909073281317,
+    "mean": -17.25843871039633
+   },
+   "frac_improved": 0.8
+  },
+  "is": {
+   "view": "is",
+   "metric": "max_dd",
+   "n_names": 110,
+   "treat": {
+    "p10": -11.573748887617077,
+    "p25": -7.776943223635374,
+    "p50": -2.812700728818446,
+    "p75": 0.0,
+    "p90": 0.0,
+    "mean": -4.571738749283964
+   },
+   "treat_means": {
+    "max_dd": -4.571738749283964,
+    "shake_rate": 7.803030303030303,
+    "avg_loss": -1.697816163564639,
+    "expectancy": 2.614272476442256,
+    "win_rate": 29.621212121212118,
+    "n_trades": 0.8636363636363636,
+    "captured": 2.9537773843831654
+   },
+   "base": {
+    "p10": -18.887438848197174,
+    "p25": -14.323447012677594,
+    "p50": -8.014466299502116,
+    "p75": -4.071177588155423,
+    "p90": -1.899656701634321,
+    "mean": -9.691770376526376
+   },
+   "frac_improved": 0.6727272727272727
+  }
+ },
+ "overfit_flags": {
+  "metric": "max_dd",
+  "n_trials": 1,
+  "frac_improved_full": 0.8363636363636363,
+  "frac_improved_is": 0.6727272727272727,
+  "frac_improved_oos": 0.8,
+  "is_oos_decay": -0.12727272727272732,
+  "decay_flag": false,
+  "deflated_bar": 0.7,
+  "kill_rule": {
+   "verdict": "SHIP",
+   "pass": true,
+   "frac_improved": 0.8,
+   "min_frac": 0.7,
+   "view": "oos"
+  }
+ },
+ "by_ticker": {
+  "AAPL": {
+   "treat": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -31.19108845996483,
+     "shake_rate": 20.0,
+     "avg_loss": 0.0,
+     "expectancy": 5.653860874816705,
+     "win_rate": 100.0,
+     "captured": 31.261067084425086
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -31.19108845996483,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -13.89776204120584,
+     "expectancy": -0.47251468042041794,
+     "win_rate": 66.66666666666666,
+     "captured": -3.027038567486129
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -8.177275353350932,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 4.593617750580625,
+     "win_rate": 100.0,
+     "captured": 9.32889695946557
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -31.19108845996483,
+     "shake_rate": 10.0,
+     "avg_loss": -3.222611730237496,
+     "expectancy": 5.530550609703392,
+     "win_rate": 70.0,
+     "captured": 65.01912924385348
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -31.19108845996482,
+     "shake_rate": 14.285714285714285,
+     "avg_loss": -9.656687657811192,
+     "expectancy": 3.832585771761808,
+     "win_rate": 57.14285714285714,
+     "captured": 23.350324132343147
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -8.177275353350932,
+     "shake_rate": 0.0,
+     "avg_loss": -1.0296101860584495,
+     "expectancy": 2.7192084383676,
+     "win_rate": 66.66666666666666,
+     "captured": 8.203235500065587
+    },
+    "n_windows": 5
+   }
+  },
+  "ABBV": {
+   "treat": {
+    "full": {
+     "n_trades": 2,
+     "max_dd": -3.9249841339639824,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 18.701286686592233,
+     "win_rate": 100.0,
+     "captured": 40.82157655931012
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -3.9249841339639713,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 10.837486181654278,
+     "win_rate": 100.0,
+     "captured": 10.837486181654299
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -1.108247378214311,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 17.727235997309432,
+     "win_rate": 100.0,
+     "captured": 17.727235997309453
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -15.311735992320374,
+     "shake_rate": 0.0,
+     "avg_loss": -1.4951783367314508,
+     "expectancy": 14.422489566823238,
+     "win_rate": 80.0,
+     "captured": 83.90390589515044
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -15.520004290669377,
+     "shake_rate": 25.0,
+     "avg_loss": -3.0285360471728473,
+     "expectancy": 1.8034536316053007,
+     "win_rate": 50.0,
+     "captured": 6.735173308025999
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -4.668636077555933,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 14.142585180176937,
+     "win_rate": 100.0,
+     "captured": 30.156800301331764
+    },
+    "n_windows": 5
+   }
+  },
+  "ABT": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -10.729211851796583,
+     "shake_rate": 0.0,
+     "avg_loss": -2.5962216278270263,
+     "expectancy": -2.5962216278270263,
+     "win_rate": 0.0,
+     "captured": -7.588963737480103
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -5.424272210236669,
+     "shake_rate": 0.0,
+     "avg_loss": -2.6851863824874647,
+     "expectancy": -2.6851863824874647,
+     "win_rate": 0.0,
+     "captured": -5.298812381162021
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -35.359181874206136,
+     "shake_rate": 11.11111111111111,
+     "avg_loss": -3.100709183566843,
+     "expectancy": 2.000765588212898,
+     "win_rate": 44.44444444444444,
+     "captured": -9.010041525811808
+    },
+    "oos": {
+     "n_trades": 8,
+     "max_dd": -34.27537827609567,
+     "shake_rate": 25.0,
+     "avg_loss": -7.566430485439748,
+     "expectancy": -3.8778694826986664,
+     "win_rate": 37.5,
+     "captured": -29.066088712298367
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -7.857208271051541,
+     "shake_rate": 0.0,
+     "avg_loss": -1.8322045528910147,
+     "expectancy": 9.188782081716862,
+     "win_rate": 50.0,
+     "captured": 18.00727986088455
+    },
+    "n_windows": 5
+   }
+  },
+  "AEP": {
+   "treat": {
+    "full": {
+     "n_trades": 2,
+     "max_dd": -13.777314318352218,
+     "shake_rate": 50.0,
+     "avg_loss": 0.0,
+     "expectancy": 4.713374375778512,
+     "win_rate": 100.0,
+     "captured": 9.539654691543365
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -13.777314318352229,
+     "shake_rate": 50.0,
+     "avg_loss": -4.5195450670986625,
+     "expectancy": -1.5557577275631451,
+     "win_rate": 50.0,
+     "captured": -3.175151987997449
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -17.085001673997546,
+     "shake_rate": 22.22222222222222,
+     "avg_loss": -3.9078597795250136,
+     "expectancy": 1.7970037530924237,
+     "win_rate": 55.55555555555556,
+     "captured": 15.736404696147787
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -15.42334829060269,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -4.780373842369601,
+     "expectancy": -0.044706600200331945,
+     "win_rate": 50.0,
+     "captured": -1.0201202397626008
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -16.961960768869176,
+     "shake_rate": 50.0,
+     "avg_loss": -2.9049313290449574,
+     "expectancy": -2.9049313290449574,
+     "win_rate": 0.0,
+     "captured": -5.750452334538602
+    },
+    "n_windows": 5
+   }
+  },
+  "AMAT": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -19.627354352451942,
+     "shake_rate": 25.0,
+     "avg_loss": -7.704404544515514,
+     "expectancy": 1.4486139844772565,
+     "win_rate": 50.0,
+     "captured": 45.781907599119975
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -12.486578491008359,
+     "shake_rate": 25.0,
+     "avg_loss": -7.704404544515514,
+     "expectancy": 11.761612043827466,
+     "win_rate": 50.0,
+     "captured": 45.40136717502643
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -8.656190761372928,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.2617172255577227,
+     "win_rate": 100.0,
+     "captured": 0.2617172255577449
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 7,
+     "max_dd": -27.139895763999753,
+     "shake_rate": 28.57142857142857,
+     "avg_loss": -10.102652905901383,
+     "expectancy": 5.32344047485399,
+     "win_rate": 57.14285714285714,
+     "captured": 88.25170072602388
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -24.112362624698157,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -7.704404544515514,
+     "expectancy": 12.925556878962116,
+     "win_rate": 66.66666666666666,
+     "captured": 91.61784483143653
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -9.59032826363686,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 2.224924318759114,
+     "win_rate": 100.0,
+     "captured": 4.460809698852342
+    },
+    "n_windows": 5
+   }
+  },
+  "AMD": {
+   "treat": {
+    "full": {
+     "n_trades": 1,
+     "max_dd": -13.256890563283797,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 151.61379759339079,
+     "win_rate": 100.0,
+     "captured": 151.61379759339084
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -13.256890563283797,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 151.61379759339079,
+     "win_rate": 100.0,
+     "captured": 151.61379759339084
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -51.395118253321684,
+     "shake_rate": 60.0,
+     "avg_loss": -8.315703535850645,
+     "expectancy": 31.734953657426612,
+     "win_rate": 40.0,
+     "captured": 155.44522505283408
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -49.18967327921489,
+     "shake_rate": 50.0,
+     "avg_loss": -8.26831450880048,
+     "expectancy": 28.694623252662797,
+     "win_rate": 33.33333333333333,
+     "captured": 181.6495608304447
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -10.86687464735192,
+     "shake_rate": 100.0,
+     "avg_loss": -10.866874647351931,
+     "expectancy": -10.866874647351931,
+     "win_rate": 0.0,
+     "captured": -10.86687464735192
+    },
+    "n_windows": 5
+   }
+  },
+  "AMGN": {
+   "treat": {
+    "full": {
+     "n_trades": 1,
+     "max_dd": -6.98575356040263,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 15.763060364641701,
+     "win_rate": 100.0,
+     "captured": 15.763060364641724
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -5.773538162630921,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 20.9362132913119,
+     "win_rate": 100.0,
+     "captured": 20.936213291311923
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -10.181950792003159,
+     "shake_rate": 0.0,
+     "avg_loss": -0.7384074465281443,
+     "expectancy": 12.783642964210953,
+     "win_rate": 83.33333333333334,
+     "captured": 101.89022779368608
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -8.128285347498032,
+     "shake_rate": 0.0,
+     "avg_loss": -0.03849373125972555,
+     "expectancy": 7.7065823583306114,
+     "win_rate": 83.33333333333334,
+     "captured": 54.11597903611592
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -9.996480826169252,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 30.443282312819854,
+     "win_rate": 100.0,
+     "captured": 30.443282312819832
+    },
+    "n_windows": 5
+   }
+  },
+  "AMT": {
+   "treat": {
+    "full": {
+     "n_trades": 1,
+     "max_dd": -7.902174234166703,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 19.129933512309893,
+     "win_rate": 100.0,
+     "captured": 14.479725775126973
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -6.116681398981605,
+     "shake_rate": 0.0,
+     "avg_loss": -3.9034754742832356,
+     "expectancy": 3.3201617436627027,
+     "win_rate": 50.0,
+     "captured": 6.228748880801294
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -25.6987699940858,
+     "shake_rate": 11.11111111111111,
+     "avg_loss": -4.897703802345223,
+     "expectancy": 5.747910361586791,
+     "win_rate": 44.44444444444444,
+     "captured": 46.36684835623826
+    },
+    "oos": {
+     "n_trades": 9,
+     "max_dd": -10.160356671661997,
+     "shake_rate": 0.0,
+     "avg_loss": -2.2081147925479128,
+     "expectancy": 0.9807793168861378,
+     "win_rate": 33.33333333333333,
+     "captured": 8.148721664124526
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -5.734414808331945,
+     "shake_rate": 0.0,
+     "avg_loss": -1.5522020903312783,
+     "expectancy": 14.988992381372308,
+     "win_rate": 50.0,
+     "captured": 29.488572543325798
+    },
+    "n_windows": 5
+   }
+  },
+  "AMZN": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -22.763812390831774,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -8.409534346194658,
+     "expectancy": -3.79294541733588,
+     "win_rate": 33.33333333333333,
+     "captured": -11.882466688875247
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -5.60902242224005,
+     "shake_rate": 0.0,
+     "avg_loss": -2.8449582061733816,
+     "expectancy": -2.8449582061733816,
+     "win_rate": 0.0,
+     "captured": -5.60902242224005
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -5.995179377347338,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 5.440232440381676,
+     "win_rate": 100.0,
+     "captured": 5.440232440381632
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -24.881001437676108,
+     "shake_rate": 20.0,
+     "avg_loss": -8.409534346194658,
+     "expectancy": 1.978509762767806,
+     "win_rate": 60.0,
+     "captured": 7.514292841350967
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -5.60902242224005,
+     "shake_rate": 0.0,
+     "avg_loss": -2.8449582061733816,
+     "expectancy": 4.468733450574234,
+     "win_rate": 60.0,
+     "captured": 22.457056221931015
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -5.995179377347338,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 5.440232440381676,
+     "win_rate": 100.0,
+     "captured": 5.440232440381632
+    },
+    "n_windows": 5
+   }
+  },
+  "APD": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -25.68631395615314,
+     "shake_rate": 25.0,
+     "avg_loss": -3.5710116048428295,
+     "expectancy": -0.294789222077943,
+     "win_rate": 25.0,
+     "captured": -1.8069039489866934
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -23.517967684156027,
+     "shake_rate": 50.0,
+     "avg_loss": -7.786922379625949,
+     "expectancy": 0.8734777732953836,
+     "win_rate": 50.0,
+     "captured": 1.0045598727079774
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -7.6998447723178876,
+     "shake_rate": 0.0,
+     "avg_loss": -2.707147090544504,
+     "expectancy": -2.707147090544504,
+     "win_rate": 0.0,
+     "captured": -2.707147090544515
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -21.59709846602752,
+     "shake_rate": 20.0,
+     "avg_loss": -3.6819066167224115,
+     "expectancy": 0.6915584634546157,
+     "win_rate": 40.0,
+     "captured": 5.236025181078441
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -19.45984734609806,
+     "shake_rate": 14.285714285714285,
+     "avg_loss": -3.3552881778091015,
+     "expectancy": 3.122612434395993,
+     "win_rate": 57.14285714285714,
+     "captured": 22.229883050248866
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -17.21099282012223,
+     "shake_rate": 50.0,
+     "avg_loss": -5.9033049112745655,
+     "expectancy": -5.9033049112745655,
+     "win_rate": 0.0,
+     "captured": -11.560273981944446
+    },
+    "n_windows": 5
+   }
+  },
+  "AVGO": {
+   "treat": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -38.75704646118269,
+     "shake_rate": 60.0,
+     "avg_loss": 0.0,
+     "expectancy": 14.315226822484057,
+     "win_rate": 100.0,
+     "captured": 94.67055314131692
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -22.73189765885939,
+     "shake_rate": 75.0,
+     "avg_loss": -3.377806144138984,
+     "expectancy": 15.597912466797798,
+     "win_rate": 75.0,
+     "captured": 70.29336455846578
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -6.6949228605767015,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 10.732326588636543,
+     "win_rate": 100.0,
+     "captured": 22.156600508921276
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -42.7120241529257,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -3.0947333435657547,
+     "expectancy": 6.936705817021392,
+     "win_rate": 66.66666666666666,
+     "captured": 77.2151978682654
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -22.731897658859413,
+     "shake_rate": 42.857142857142854,
+     "avg_loss": -4.917827759083659,
+     "expectancy": 8.213331240787289,
+     "win_rate": 71.42857142857143,
+     "captured": 61.783460312187
+    },
+    "is": {
+     "n_trades": 4,
+     "max_dd": -6.6949228605767015,
+     "shake_rate": 0.0,
+     "avg_loss": -1.413175328334465,
+     "expectancy": 4.659575630151039,
+     "win_rate": 50.0,
+     "captured": 18.716083760315392
+    },
+    "n_windows": 5
+   }
+  },
+  "AXP": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -8.430526717186194,
+     "shake_rate": 0.0,
+     "avg_loss": -0.4558632552678077,
+     "expectancy": 3.4729582984364646,
+     "win_rate": 66.66666666666666,
+     "captured": 10.416848985779946
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -8.430526717186204,
+     "shake_rate": 0.0,
+     "avg_loss": -0.4558632552678077,
+     "expectancy": 0.0013551304345882365,
+     "win_rate": 50.0,
+     "captured": 0.0006197927106654788
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 1.293545706984145,
+     "win_rate": 100.0,
+     "captured": 1.293545706984145
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -26.850755553578498,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -0.4558632552678077,
+     "expectancy": 6.868547769670082,
+     "win_rate": 83.33333333333334,
+     "captured": 57.89764647491245
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -10.595876392079017,
+     "shake_rate": 0.0,
+     "avg_loss": -0.4558632552678077,
+     "expectancy": 6.2475827278102525,
+     "win_rate": 80.0,
+     "captured": 34.45229332978143
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -3.596923234198357,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 8.668589132430922,
+     "win_rate": 100.0,
+     "captured": 26.651003963389464
+    },
+    "n_windows": 5
+   }
+  },
+  "BA": {
+   "treat": {
+    "full": {
+     "n_trades": 1,
+     "max_dd": -9.01821561419036,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 4.574111892263999,
+     "win_rate": 100.0,
+     "captured": 4.574111892264021
+    },
+    "oos": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -9.01821561419036,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 4.574111892263999,
+     "win_rate": 100.0,
+     "captured": 4.574111892264021
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -32.89864145616524,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -5.491814901553699,
+     "expectancy": 8.619662668070111,
+     "win_rate": 66.66666666666666,
+     "captured": 57.72443821552387
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -13.43033589490017,
+     "shake_rate": 20.0,
+     "avg_loss": -1.4249134723394508,
+     "expectancy": 7.528495999656645,
+     "win_rate": 60.0,
+     "captured": 41.064937031076475
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -17.622126613484024,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 9.030004095601152,
+     "win_rate": 100.0,
+     "captured": 18.67686817759049
+    },
+    "n_windows": 5
+   }
+  },
+  "BAC": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -10.711837791998802,
+     "shake_rate": 0.0,
+     "avg_loss": -1.9430482370631441,
+     "expectancy": -0.5894811857453219,
+     "win_rate": 33.33333333333333,
+     "captured": -1.815102177014738
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -10.711837791998791,
+     "shake_rate": 0.0,
+     "avg_loss": -1.9430482370631441,
+     "expectancy": -1.9430482370631441,
+     "win_rate": 0.0,
+     "captured": -3.851200043841352
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -14.10831113382448,
+     "shake_rate": 0.0,
+     "avg_loss": -1.9430482370631441,
+     "expectancy": 5.695876636616914,
+     "win_rate": 60.0,
+     "captured": 43.839678527357485
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -10.711837791998802,
+     "shake_rate": 0.0,
+     "avg_loss": -1.9430482370631441,
+     "expectancy": 6.389989064246556,
+     "win_rate": 50.0,
+     "captured": 26.377734464094992
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -6.3052423504997845,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 16.512063789110588,
+     "win_rate": 100.0,
+     "captured": 16.51206378911061
+    },
+    "n_windows": 5
+   }
+  },
+  "BKNG": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -18.83484516194023,
+     "shake_rate": 0.0,
+     "avg_loss": -1.8464784757454278,
+     "expectancy": 6.867758236096337,
+     "win_rate": 66.66666666666666,
+     "captured": 23.477994928205213
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -4.744967422773638,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 10.977653355559159,
+     "win_rate": 100.0,
+     "captured": 22.30889678044519
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -3.5881647025772567,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 9.029821419876649,
+     "win_rate": 100.0,
+     "captured": 18.636159159788534
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 7,
+     "max_dd": -25.230261993534064,
+     "shake_rate": 14.285714285714285,
+     "avg_loss": -7.387160682931353,
+     "expectancy": 5.027351106173343,
+     "win_rate": 57.14285714285714,
+     "captured": 34.68568904338587
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -21.858397911156192,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -10.157501786524314,
+     "expectancy": 6.090581624340452,
+     "win_rate": 66.66666666666666,
+     "captured": 33.410475676972126
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -3.5881647025772567,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 9.029821419876649,
+     "win_rate": 100.0,
+     "captured": 18.636159159788534
+    },
+    "n_windows": 5
+   }
+  },
+  "BKR": {
+   "treat": {
+    "full": {
+     "n_trades": 2,
+     "max_dd": -11.889682951540836,
+     "shake_rate": 50.0,
+     "avg_loss": -10.379518138526056,
+     "expectancy": -4.299024323104933,
+     "win_rate": 50.0,
+     "captured": -8.782956595297142
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -2.4502868260303567,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 9.384079221533437,
+     "win_rate": 100.0,
+     "captured": 9.384079221533415
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -10.379518138526056,
+     "shake_rate": 100.0,
+     "avg_loss": -10.379518138526056,
+     "expectancy": -10.379518138526056,
+     "win_rate": 0.0,
+     "captured": -10.379518138526056
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 7,
+     "max_dd": -14.96148602855648,
+     "shake_rate": 14.285714285714285,
+     "avg_loss": -6.382801710332108,
+     "expectancy": 1.74998765013969,
+     "win_rate": 57.14285714285714,
+     "captured": 10.361582515074153
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -12.670412007243325,
+     "shake_rate": 0.0,
+     "avg_loss": -4.384443496235136,
+     "expectancy": 3.693181889539406,
+     "win_rate": 50.0,
+     "captured": 22.455708848648936
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -10.379518138526056,
+     "shake_rate": 100.0,
+     "avg_loss": -10.379518138526056,
+     "expectancy": -10.379518138526056,
+     "win_rate": 0.0,
+     "captured": -10.379518138526056
+    },
+    "n_windows": 5
+   }
+  },
+  "BRK-B": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -5.253442211770865,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 5.621030798744845,
+     "win_rate": 100.0,
+     "captured": 17.355588361705543
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -5.253442211770853,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 1.7728635460764974,
+     "win_rate": 100.0,
+     "captured": 3.5636400888669817
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -2.410171784111015,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 10.985427097310897,
+     "win_rate": 100.0,
+     "captured": 10.98542709731085
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 11,
+     "max_dd": -8.287540313822351,
+     "shake_rate": 0.0,
+     "avg_loss": -1.9262889573654407,
+     "expectancy": 2.5095095172914386,
+     "win_rate": 54.54545454545454,
+     "captured": 29.17021198919305
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -9.704806893771634,
+     "shake_rate": 0.0,
+     "avg_loss": -2.2305597495701006,
+     "expectancy": -0.408362741045606,
+     "win_rate": 42.857142857142854,
+     "captured": -2.947111256467272
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -4.517891729950819,
+     "shake_rate": 0.0,
+     "avg_loss": -1.3101134312606288,
+     "expectancy": 5.456318200805547,
+     "win_rate": 66.66666666666666,
+     "captured": 16.86303021062523
+    },
+    "n_windows": 5
+   }
+  },
+  "C": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -9.404354110474234,
+     "shake_rate": 0.0,
+     "avg_loss": -2.690481909725695,
+     "expectancy": 12.124582703578463,
+     "win_rate": 66.66666666666666,
+     "captured": 43.64958683337128
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -9.40435411047421,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 13.41938210059379,
+     "win_rate": 100.0,
+     "captured": 42.638586843320184
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -6.0587164949580945,
+     "shake_rate": 0.0,
+     "avg_loss": -2.690481909725695,
+     "expectancy": -2.690481909725695,
+     "win_rate": 0.0,
+     "captured": -2.690481909725695
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -16.504041283066407,
+     "shake_rate": 10.0,
+     "avg_loss": -4.141905425341844,
+     "expectancy": 6.4502288978703834,
+     "win_rate": 60.0,
+     "captured": 81.8855482517713
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -9.404354110474223,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 13.12211930443553,
+     "win_rate": 100.0,
+     "captured": 60.083758028108306
+    },
+    "is": {
+     "n_trades": 7,
+     "max_dd": -16.504041283066407,
+     "shake_rate": 14.285714285714285,
+     "avg_loss": -4.141905425341844,
+     "expectancy": 2.329278626488746,
+     "win_rate": 42.857142857142854,
+     "captured": 12.89965326921596
+    },
+    "n_windows": 5
+   }
+  },
+  "CAT": {
+   "treat": {
+    "full": {
+     "n_trades": 1,
+     "max_dd": -5.2787947407300635,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 40.373682162578525,
+     "win_rate": 100.0,
+     "captured": 40.37368216257855
+    },
+    "oos": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -5.045832390181449,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 26.9840519461956,
+     "win_rate": 100.0,
+     "captured": 26.984051946195642
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -12.630612238820548,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -5.156647625138177,
+     "expectancy": 12.635773402050146,
+     "win_rate": 50.0,
+     "captured": 87.61711526476812
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -5.32136667772699,
+     "shake_rate": 0.0,
+     "avg_loss": -2.874128562844254,
+     "expectancy": 6.89761563382045,
+     "win_rate": 25.0,
+     "captured": 24.73742836642481
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -5.045832390181449,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 26.9840519461956,
+     "win_rate": 100.0,
+     "captured": 26.984051946195642
+    },
+    "n_windows": 5
+   }
+  },
+  "CCI": {
+   "treat": {
+    "full": {
+     "n_trades": 1,
+     "max_dd": -20.55161814201285,
+     "shake_rate": 0.0,
+     "avg_loss": -7.3450938801521755,
+     "expectancy": -7.3450938801521755,
+     "win_rate": 0.0,
+     "captured": -9.37334077407288
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -20.55161814201285,
+     "shake_rate": 50.0,
+     "avg_loss": -4.76706366825515,
+     "expectancy": -4.76706366825515,
+     "win_rate": 0.0,
+     "captured": -9.373340774072902
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -29.897498455837624,
+     "shake_rate": 50.0,
+     "avg_loss": -5.600470884636022,
+     "expectancy": 1.179348972273401,
+     "win_rate": 33.33333333333333,
+     "captured": 2.9169704047459666
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -22.386885471770977,
+     "shake_rate": 14.285714285714285,
+     "avg_loss": -3.922794225161741,
+     "expectancy": -0.2884354618470792,
+     "win_rate": 28.57142857142857,
+     "captured": -2.8369035967207967
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -18.84950689358834,
+     "shake_rate": 100.0,
+     "avg_loss": -8.899740094255248,
+     "expectancy": 5.969639909458002,
+     "win_rate": 50.0,
+     "captured": 10.084661208453682
+    },
+    "n_windows": 5
+   }
+  },
+  "CEG": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -17.059239093625354,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": 0.0,
+     "expectancy": 29.490468012471165,
+     "win_rate": 100.0,
+     "captured": 108.63109473285526
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -10.139634128787844,
+     "shake_rate": 0.0,
+     "avg_loss": -1.5682488825813246,
+     "expectancy": 19.479552080418976,
+     "win_rate": 50.0,
+     "captured": 38.32353439959475
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 2.9048530264034422,
+     "win_rate": 100.0,
+     "captured": 2.9048530264034422
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -44.26981504110194,
+     "shake_rate": 83.33333333333334,
+     "avg_loss": -13.660498337461885,
+     "expectancy": 12.675231688856812,
+     "win_rate": 66.66666666666666,
+     "captured": 80.38874439406227
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -31.70780661825685,
+     "shake_rate": 50.0,
+     "avg_loss": -9.629748519168364,
+     "expectancy": 12.110744247857168,
+     "win_rate": 50.0,
+     "captured": 75.26473603917508
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 2.9048530264034422,
+     "win_rate": 100.0,
+     "captured": 2.9048530264034422
+    },
+    "n_windows": 5
+   }
+  },
+  "CL": {
+   "treat": {
+    "full": {
+     "n_trades": 2,
+     "max_dd": -8.029448910505167,
+     "shake_rate": 0.0,
+     "avg_loss": -4.2815820201503545,
+     "expectancy": -1.4701892493837299,
+     "win_rate": 50.0,
+     "captured": -2.9978032275926103
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -8.029448910505154,
+     "shake_rate": 0.0,
+     "avg_loss": -4.2815820201503545,
+     "expectancy": -1.4701892493837299,
+     "win_rate": 50.0,
+     "captured": -2.997803227592588
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -13.298397421152897,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -3.6646937582911967,
+     "expectancy": 3.344717281252476,
+     "win_rate": 50.0,
+     "captured": 19.526002676924925
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -14.416643102935023,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -4.876747513601975,
+     "expectancy": -0.8081454880679073,
+     "win_rate": 33.33333333333333,
+     "captured": -5.440896315861887
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -3.088727204923536,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 15.264393526602294,
+     "win_rate": 100.0,
+     "captured": 15.264393526602294
+    },
+    "n_windows": 5
+   }
+  },
+  "COP": {
+   "treat": {
+    "full": {
+     "n_trades": 1,
+     "max_dd": -9.001145947992894,
+     "shake_rate": 0.0,
+     "avg_loss": -7.525530103649669,
+     "expectancy": -7.525530103649669,
+     "win_rate": 0.0,
+     "captured": -7.525530103649658
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -9.001145947992894,
+     "shake_rate": 0.0,
+     "avg_loss": -7.525530103649669,
+     "expectancy": -7.525530103649669,
+     "win_rate": 0.0,
+     "captured": -7.525530103649658
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -26.95572302210666,
+     "shake_rate": 10.0,
+     "avg_loss": -5.545442892306038,
+     "expectancy": 2.3101337515321627,
+     "win_rate": 40.0,
+     "captured": 17.225050118559125
+    },
+    "oos": {
+     "n_trades": 8,
+     "max_dd": -21.49319839476651,
+     "shake_rate": 12.5,
+     "avg_loss": -4.013397925109017,
+     "expectancy": -0.7233287124012653,
+     "win_rate": 37.5,
+     "captured": -6.531176054834109
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -5.451137248615834,
+     "shake_rate": 0.0,
+     "avg_loss": -4.120162392849913,
+     "expectancy": -4.120162392849913,
+     "win_rate": 0.0,
+     "captured": -4.120162392849924
+    },
+    "n_windows": 5
+   }
+  },
+  "COST": {
+   "treat": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -24.014648579786957,
+     "shake_rate": 40.0,
+     "avg_loss": -6.504515514694023,
+     "expectancy": -4.291726180633891,
+     "win_rate": 20.0,
+     "captured": -20.653193723518392
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -14.606356796242615,
+     "shake_rate": 25.0,
+     "avg_loss": -4.423706524604246,
+     "expectancy": -2.270888085134079,
+     "win_rate": 25.0,
+     "captured": -9.384710521700246
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 11,
+     "max_dd": -32.08500114407607,
+     "shake_rate": 18.181818181818183,
+     "avg_loss": -4.963945866660495,
+     "expectancy": -0.16221071949320645,
+     "win_rate": 36.36363636363637,
+     "captured": -6.575796046524696
+    },
+    "oos": {
+     "n_trades": 8,
+     "max_dd": -22.440012773746197,
+     "shake_rate": 12.5,
+     "avg_loss": -4.30602364404939,
+     "expectancy": -1.959983280926253,
+     "win_rate": 37.5,
+     "captured": -15.421085480929097
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -1.8775490852761423,
+     "shake_rate": 0.0,
+     "avg_loss": -0.4705603614131637,
+     "expectancy": 13.235241607856912,
+     "win_rate": 50.0,
+     "captured": 26.343709343688815
+    },
+    "n_windows": 5
+   }
+  },
+  "CRH": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -18.73349979862016,
+     "shake_rate": 50.0,
+     "avg_loss": -10.764530463075722,
+     "expectancy": 7.613901764178474,
+     "win_rate": 50.0,
+     "captured": 26.213190613320148
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -22.260882688453588,
+     "shake_rate": 50.0,
+     "avg_loss": -7.683839445569562,
+     "expectancy": -5.6048874380958065,
+     "win_rate": 25.0,
+     "captured": -21.14467521386012
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -22.320739870390362,
+     "shake_rate": 40.0,
+     "avg_loss": -8.946859347434737,
+     "expectancy": 5.028817988112226,
+     "win_rate": 40.0,
+     "captured": 19.509355391051187
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -22.260882688453588,
+     "shake_rate": 50.0,
+     "avg_loss": -7.683839445569562,
+     "expectancy": -5.6048874380958065,
+     "win_rate": 25.0,
+     "captured": -21.14467521386012
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   }
+  },
+  "CSCO": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -8.43342514818961,
+     "shake_rate": 0.0,
+     "avg_loss": -4.276727320187729,
+     "expectancy": 5.246399673224181,
+     "win_rate": 50.0,
+     "captured": 20.571599323091625
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -8.874604622691162,
+     "shake_rate": 0.0,
+     "avg_loss": -4.276727320187729,
+     "expectancy": 5.111821268694924,
+     "win_rate": 50.0,
+     "captured": 19.990669929202465
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -15.054671665738628,
+     "shake_rate": 0.0,
+     "avg_loss": -4.099056437361251,
+     "expectancy": 9.286210608071354,
+     "win_rate": 55.55555555555556,
+     "captured": 102.6324014679723
+    },
+    "oos": {
+     "n_trades": 9,
+     "max_dd": -8.874604622691152,
+     "shake_rate": 0.0,
+     "avg_loss": -4.61821394004455,
+     "expectancy": 8.630430589505384,
+     "win_rate": 66.66666666666666,
+     "captured": 94.55943835985259
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -5.044091782039839,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.4964730526940908,
+     "win_rate": 100.0,
+     "captured": 0.4964730526940686
+    },
+    "n_windows": 5
+   }
+  },
+  "CTVA": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -10.975236273310685,
+     "shake_rate": 0.0,
+     "avg_loss": -1.4299666297627966,
+     "expectancy": -0.7026837905591148,
+     "win_rate": 33.33333333333333,
+     "captured": -2.120269951296583
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -10.329711125408148,
+     "shake_rate": 0.0,
+     "avg_loss": -0.3701272849764292,
+     "expectancy": -0.1850636424882146,
+     "win_rate": 0.0,
+     "captured": -0.3701272849763959
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -8.546132991640931,
+     "shake_rate": 0.0,
+     "avg_loss": -2.489805974549164,
+     "expectancy": -2.489805974549164,
+     "win_rate": 0.0,
+     "captured": -2.489805974549175
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 8,
+     "max_dd": -24.058614258022214,
+     "shake_rate": 12.5,
+     "avg_loss": -5.893053473306078,
+     "expectancy": 1.4837475978045689,
+     "win_rate": 37.5,
+     "captured": 6.7386988805574255
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -13.836679777268534,
+     "shake_rate": 0.0,
+     "avg_loss": -0.3701272849764292,
+     "expectancy": 1.3986344385313376,
+     "win_rate": 50.0,
+     "captured": 5.619157624278115
+    },
+    "is": {
+     "n_trades": 4,
+     "max_dd": -24.058614258022214,
+     "shake_rate": 25.0,
+     "avg_loss": -7.5378339141655415,
+     "expectancy": -1.3877628866510143,
+     "win_rate": 25.0,
+     "captured": -8.010568238626492
+    },
+    "n_windows": 5
+   }
+  },
+  "CVX": {
+   "treat": {
+    "full": {
+     "n_trades": 2,
+     "max_dd": -19.25342554138686,
+     "shake_rate": 50.0,
+     "avg_loss": -15.07129142754654,
+     "expectancy": 6.363349593416162,
+     "win_rate": 50.0,
+     "captured": 8.537183010337257
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -20.255058843630415,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -10.404473986446527,
+     "expectancy": -3.9072063095676755,
+     "win_rate": 33.33333333333333,
+     "captured": -13.008373644655414
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -21.75096582399516,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -7.772096056655464,
+     "expectancy": 5.728425795964345,
+     "win_rate": 50.0,
+     "captured": 31.781994331414374
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -20.255058843630415,
+     "shake_rate": 20.0,
+     "avg_loss": -10.404473986446527,
+     "expectancy": -0.35460984023219844,
+     "win_rate": 60.0,
+     "captured": -4.324700358367684
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -6.110555150897412,
+     "shake_rate": 0.0,
+     "avg_loss": -5.4309716098226435,
+     "expectancy": -0.4669565874823034,
+     "win_rate": 50.0,
+     "captured": -1.17814714183887
+    },
+    "n_windows": 5
+   }
+  },
+  "D": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -12.774593455774031,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": 0.0,
+     "expectancy": 4.970499796825956,
+     "win_rate": 100.0,
+     "captured": 15.202692242632377
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -11.715554639470206,
+     "shake_rate": 50.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.27207591493526584,
+     "win_rate": 50.0,
+     "captured": 0.5441518298705317
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 12,
+     "max_dd": -21.77823081320758,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -6.49096174632829,
+     "expectancy": 1.6754790343795696,
+     "win_rate": 75.0,
+     "captured": 19.405075706361984
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -15.743357018816418,
+     "shake_rate": 14.285714285714285,
+     "avg_loss": 0.0,
+     "expectancy": 2.561873984799758,
+     "win_rate": 71.42857142857143,
+     "captured": 19.080493795396624
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -21.77823081320758,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -6.49096174632829,
+     "expectancy": -6.49096174632829,
+     "win_rate": 0.0,
+     "captured": -18.486013219968633
+    },
+    "n_windows": 5
+   }
+  },
+  "DE": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -26.832258995157655,
+     "shake_rate": 25.0,
+     "avg_loss": -2.8238175701590746,
+     "expectancy": 2.9154839575152636,
+     "win_rate": 25.0,
+     "captured": 10.121121642665143
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -12.161347379349973,
+     "shake_rate": 0.0,
+     "avg_loss": -3.8917185381320607,
+     "expectancy": -2.2418604730849223,
+     "win_rate": 33.33333333333333,
+     "captured": -6.722839258962631
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -11.661765788630563,
+     "shake_rate": 0.0,
+     "avg_loss": -0.6880156342131016,
+     "expectancy": -0.6880156342131016,
+     "win_rate": 0.0,
+     "captured": -0.6880156342130572
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 8,
+     "max_dd": -26.369385342505282,
+     "shake_rate": 25.0,
+     "avg_loss": -3.9945205735432343,
+     "expectancy": 1.6403881576945847,
+     "win_rate": 37.5,
+     "captured": 10.962776005871277
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -14.314762720651553,
+     "shake_rate": 0.0,
+     "avg_loss": -3.358910770258472,
+     "expectancy": 0.9999000605292669,
+     "win_rate": 57.14285714285714,
+     "captured": 6.317444139937578
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -16.37911114023015,
+     "shake_rate": 0.0,
+     "avg_loss": -1.8584808668513197,
+     "expectancy": 0.8474242703037538,
+     "win_rate": 33.33333333333333,
+     "captured": 2.331763481645721
+    },
+    "n_windows": 5
+   }
+  },
+  "DIS": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -29.432395918535057,
+     "shake_rate": 25.0,
+     "avg_loss": -4.658525552261356,
+     "expectancy": 11.018837034163012,
+     "win_rate": 50.0,
+     "captured": 45.65997528062971
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -26.75583818414734,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -12.824030246003709,
+     "expectancy": 1.9333107324614092,
+     "win_rate": 33.33333333333333,
+     "captured": -2.1408700024806993
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 15.08589332862449,
+     "win_rate": 100.0,
+     "captured": 15.085893328624511
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 8,
+     "max_dd": -29.432395918535036,
+     "shake_rate": 12.5,
+     "avg_loss": -3.5134088238409777,
+     "expectancy": 6.007161103130937,
+     "win_rate": 37.5,
+     "captured": 50.26752636517722
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -28.502825130487576,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -8.39213178653831,
+     "expectancy": 3.787248786311718,
+     "win_rate": 33.33333333333333,
+     "captured": 12.670716890996214
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -6.130128263791434,
+     "shake_rate": 0.0,
+     "avg_loss": -0.32952636053635853,
+     "expectancy": 8.99610022372192,
+     "win_rate": 66.66666666666666,
+     "captured": 28.737496962144714
+    },
+    "n_windows": 5
+   }
+  },
+  "DLR": {
+   "treat": {
+    "full": {
+     "n_trades": 2,
+     "max_dd": -4.081130418361512,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 2.495591305227185,
+     "win_rate": 100.0,
+     "captured": 5.036304379801293
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -4.081130418361512,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 3.8054764253931506,
+     "win_rate": 100.0,
+     "captured": 3.8054764253931284
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -3.7960612759024626,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 1.1857061850612194,
+     "win_rate": 100.0,
+     "captured": 1.1857061850612416
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 8,
+     "max_dd": -9.08997050259458,
+     "shake_rate": 0.0,
+     "avg_loss": -2.20030568313353,
+     "expectancy": 6.480501623337745,
+     "win_rate": 75.0,
+     "captured": 61.32804382353139
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -7.237750991097791,
+     "shake_rate": 0.0,
+     "avg_loss": -2.038371804966027,
+     "expectancy": 6.057299627046288,
+     "win_rate": 66.66666666666666,
+     "captured": 39.9648915956317
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -3.7960612759024626,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 1.010746402713103,
+     "win_rate": 100.0,
+     "captured": 2.031402779077829
+    },
+    "n_windows": 5
+   }
+  },
+  "DUK": {
+   "treat": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -10.487171815453545,
+     "shake_rate": 20.0,
+     "avg_loss": -2.6349912651556173,
+     "expectancy": 2.8358166261922113,
+     "win_rate": 60.0,
+     "captured": 14.229378472397558
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -4.314293084049625,
+     "shake_rate": 0.0,
+     "avg_loss": -0.8419510153341192,
+     "expectancy": 0.4172751894785054,
+     "win_rate": 33.33333333333333,
+     "captured": 1.2341969952295972
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -10.487171815453545,
+     "shake_rate": 100.0,
+     "avg_loss": -4.428031514977116,
+     "expectancy": -4.428031514977116,
+     "win_rate": 0.0,
+     "captured": -4.428031514977093
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -10.487171815453532,
+     "shake_rate": 0.0,
+     "avg_loss": -0.8419510153341192,
+     "expectancy": 3.7768714244647352,
+     "win_rate": 90.0,
+     "captured": 44.14870771832922
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -4.161818078126689,
+     "shake_rate": 0.0,
+     "avg_loss": -0.8419510153341192,
+     "expectancy": 1.2867904387207438,
+     "win_rate": 66.66666666666666,
+     "captured": 7.8906439967842745
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -10.487171815453532,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 3.7566385738449317,
+     "win_rate": 100.0,
+     "captured": 11.620532305779507
+    },
+    "n_windows": 5
+   }
+  },
+  "EA": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -6.489254632225783,
+     "shake_rate": 0.0,
+     "avg_loss": -1.2686061917276503,
+     "expectancy": 1.9406267637503638,
+     "win_rate": 66.66666666666666,
+     "captured": 5.26607799007881
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -1.7787846679084285,
+     "shake_rate": 0.0,
+     "avg_loss": -0.8926699924010462,
+     "expectancy": -0.8926699924010462,
+     "win_rate": 0.0,
+     "captured": -1.7787846679084285
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -6.489254632225783,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 5.6363905163184125,
+     "win_rate": 100.0,
+     "captured": 5.6363905163184125
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -16.316068636252655,
+     "shake_rate": 0.0,
+     "avg_loss": -3.4365345436497026,
+     "expectancy": 3.10023188757945,
+     "win_rate": 55.55555555555556,
+     "captured": 28.23759838481441
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -13.2227789707974,
+     "shake_rate": 0.0,
+     "avg_loss": -2.292426148831592,
+     "expectancy": 2.364154857013615,
+     "win_rate": 42.857142857142854,
+     "captured": 16.173623682342118
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -16.316068636252655,
+     "shake_rate": 0.0,
+     "avg_loss": -3.817664494047268,
+     "expectancy": -0.6663128239253746,
+     "win_rate": 33.33333333333333,
+     "captured": -2.364175483917763
+    },
+    "n_windows": 5
+   }
+  },
+  "EOG": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -29.891228895728815,
+     "shake_rate": 25.0,
+     "avg_loss": -7.443523510150113,
+     "expectancy": -7.443523510150113,
+     "win_rate": 0.0,
+     "captured": -26.9615703884868
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -27.903877321218317,
+     "shake_rate": 25.0,
+     "avg_loss": -6.759594397326429,
+     "expectancy": -6.759594397326429,
+     "win_rate": 0.0,
+     "captured": -24.891172693563124
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -42.48104335834534,
+     "shake_rate": 30.0,
+     "avg_loss": -8.137241984032304,
+     "expectancy": 0.4896440619801712,
+     "win_rate": 30.0,
+     "captured": -4.919651605872454
+    },
+    "oos": {
+     "n_trades": 9,
+     "max_dd": -42.62860035995985,
+     "shake_rate": 22.22222222222222,
+     "avg_loss": -9.751014149048183,
+     "expectancy": -3.175175654836452,
+     "win_rate": 44.44444444444444,
+     "captured": -28.930916365182625
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -12.480953861647182,
+     "shake_rate": 50.0,
+     "avg_loss": -10.896486965363462,
+     "expectancy": 4.121448187040971,
+     "win_rate": 50.0,
+     "captured": 6.157375963248368
+    },
+    "n_windows": 5
+   }
+  },
+  "EQIX": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -6.622569911360399,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 7.121940777769257,
+     "win_rate": 100.0,
+     "captured": 22.304964564092835
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -6.622569911360399,
+     "shake_rate": 0.0,
+     "avg_loss": -0.1754195866892183,
+     "expectancy": 1.9236779634461354,
+     "win_rate": 66.66666666666666,
+     "captured": 5.779834797728611
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 8,
+     "max_dd": -15.696015379763239,
+     "shake_rate": 0.0,
+     "avg_loss": -3.9779440418406975,
+     "expectancy": 6.7398643153819275,
+     "win_rate": 75.0,
+     "captured": 63.50482133475231
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -15.292766872652274,
+     "shake_rate": 0.0,
+     "avg_loss": -2.7104358901235375,
+     "expectancy": 1.1229782754965576,
+     "win_rate": 50.0,
+     "captured": 6.3920411150845124
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -3.583114024626244,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 5.976147347775862,
+     "win_rate": 100.0,
+     "captured": 12.30943546444756
+    },
+    "n_windows": 5
+   }
+  },
+  "ETN": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -11.705133210892226,
+     "shake_rate": 0.0,
+     "avg_loss": -2.9128515902393515,
+     "expectancy": 9.161332359707286,
+     "win_rate": 66.66666666666666,
+     "captured": 27.082374342307514
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -2.9128515902393404,
+     "shake_rate": 0.0,
+     "avg_loss": -2.9128515902393515,
+     "expectancy": 4.041499303554663,
+     "win_rate": 50.0,
+     "captured": 7.762705809775539
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -21.168857040344037,
+     "shake_rate": 20.0,
+     "avg_loss": -2.59100971123733,
+     "expectancy": 7.854088863560508,
+     "win_rate": 60.0,
+     "captured": 101.47055547987746
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -20.621509533840275,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -4.1832706885468145,
+     "expectancy": 7.995706506151345,
+     "win_rate": 66.66666666666666,
+     "captured": 52.80355924926543
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -3.368929802830356,
+     "shake_rate": 0.0,
+     "avg_loss": -2.9128515902393515,
+     "expectancy": 5.390243069360076,
+     "win_rate": 66.66666666666666,
+     "captured": 16.478263143986972
+    },
+    "n_windows": 5
+   }
+  },
+  "ETR": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -5.777534129456418,
+     "shake_rate": 0.0,
+     "avg_loss": -5.777534129456418,
+     "expectancy": 10.28193955865377,
+     "win_rate": 66.66666666666666,
+     "captured": 31.03422485099494
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 4.165164325386805,
+     "win_rate": 100.0,
+     "captured": 4.165164325386805
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -5.777534129456418,
+     "shake_rate": 0.0,
+     "avg_loss": -5.777534129456418,
+     "expectancy": -5.777534129456418,
+     "win_rate": 0.0,
+     "captured": -5.777534129456418
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -11.07708741624136,
+     "shake_rate": 0.0,
+     "avg_loss": -2.9925259879430732,
+     "expectancy": 5.511756992561474,
+     "win_rate": 80.0,
+     "captured": 62.80136684983732
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -9.842823202297279,
+     "shake_rate": 0.0,
+     "avg_loss": -1.0494070998004368,
+     "expectancy": 2.1205704002735644,
+     "win_rate": 71.42857142857143,
+     "captured": 15.556618899436847
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -7.85584639214818,
+     "shake_rate": 0.0,
+     "avg_loss": -5.777534129456418,
+     "expectancy": -1.0626967846944335,
+     "win_rate": 50.0,
+     "captured": -2.336397236702481
+    },
+    "n_windows": 5
+   }
+  },
+  "EXC": {
+   "treat": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -25.05633698193045,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -5.431504946724777,
+     "expectancy": -1.076102383778571,
+     "win_rate": 33.33333333333333,
+     "captured": -9.778405446953442
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -6.531474654959668,
+     "shake_rate": 0.0,
+     "avg_loss": -1.0653956167392842,
+     "expectancy": -0.03962312857592187,
+     "win_rate": 25.0,
+     "captured": -0.19272277139448235
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -25.05633698193045,
+     "shake_rate": 66.66666666666666,
+     "avg_loss": -7.175389100681073,
+     "expectancy": -7.175389100681073,
+     "win_rate": 0.0,
+     "captured": -20.418761584143073
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 12,
+     "max_dd": -25.885537352950127,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -4.566490277697459,
+     "expectancy": 1.586228797805479,
+     "win_rate": 58.333333333333336,
+     "captured": 15.00067087781991
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -6.531474654959657,
+     "shake_rate": 0.0,
+     "avg_loss": -1.0653956167392842,
+     "expectancy": 0.8358906849810666,
+     "win_rate": 57.14285714285714,
+     "captured": 5.919381473442131
+    },
+    "is": {
+     "n_trades": 5,
+     "max_dd": -25.885537352950127,
+     "shake_rate": 40.0,
+     "avg_loss": -5.658149725907852,
+     "expectancy": -4.416158731513482,
+     "win_rate": 20.0,
+     "captured": -20.86499881769688
+    },
+    "n_windows": 5
+   }
+  },
+  "FCX": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -11.100959801356714,
+     "shake_rate": 0.0,
+     "avg_loss": -3.539627686024832,
+     "expectancy": 3.3356856226604474,
+     "win_rate": 50.0,
+     "captured": 12.793287350613758
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -8.59405821641952,
+     "shake_rate": 0.0,
+     "avg_loss": -4.9787969204934335,
+     "expectancy": 5.147733647399341,
+     "win_rate": 66.66666666666666,
+     "captured": 15.213294737238513
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -11.100959801356714,
+     "shake_rate": 0.0,
+     "avg_loss": -2.100458451556231,
+     "expectancy": -2.100458451556231,
+     "win_rate": 0.0,
+     "captured": -2.100458451556275
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -30.24536169583161,
+     "shake_rate": 20.0,
+     "avg_loss": -5.264675577575777,
+     "expectancy": 5.046975541217993,
+     "win_rate": 50.0,
+     "captured": 49.82106855580133
+    },
+    "oos": {
+     "n_trades": 8,
+     "max_dd": -21.74491139551007,
+     "shake_rate": 12.5,
+     "avg_loss": -4.40184994605319,
+     "expectancy": 8.290070371724704,
+     "win_rate": 50.0,
+     "captured": 77.4940744453896
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -12.924482308058904,
+     "shake_rate": 0.0,
+     "avg_loss": -2.100458451556231,
+     "expectancy": 0.2684911526044831,
+     "win_rate": 50.0,
+     "captured": 0.48158395792865516
+    },
+    "n_windows": 5
+   }
+  },
+  "GE": {
+   "treat": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -9.330832732781925,
+     "shake_rate": 0.0,
+     "avg_loss": -4.106906712632924,
+     "expectancy": 19.55482161210944,
+     "win_rate": 60.0,
+     "captured": 116.35181392495753
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -9.330832732781925,
+     "shake_rate": 0.0,
+     "avg_loss": -4.106906712632924,
+     "expectancy": 5.4622546760390716,
+     "win_rate": 50.0,
+     "captured": 20.963890407103
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -1.8469397928140618,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 20.444330647683117,
+     "win_rate": 100.0,
+     "captured": 20.444330647683206
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -9.816661688937211,
+     "shake_rate": 0.0,
+     "avg_loss": -4.106906712632924,
+     "expectancy": 17.108478475199043,
+     "win_rate": 66.66666666666666,
+     "captured": 172.8173130334218
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -9.331569753218105,
+     "shake_rate": 0.0,
+     "avg_loss": -4.106906712632924,
+     "expectancy": 7.8268525257783,
+     "win_rate": 66.66666666666666,
+     "captured": 52.53416625562337
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -1.8469397928140618,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 20.444330647683117,
+     "win_rate": 100.0,
+     "captured": 20.444330647683206
+    },
+    "n_windows": 5
+   }
+  },
+  "GEV": {
+   "treat": {
+    "full": {
+     "n_trades": 2,
+     "max_dd": -11.536737435533983,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 48.880192180010816,
+     "win_rate": 100.0,
+     "captured": 108.99596647185868
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -11.536737435533961,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 13.303303946621249,
+     "win_rate": 100.0,
+     "captured": 13.303303946621291
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -8.778304829314443,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 84.45708041340039,
+     "win_rate": 100.0,
+     "captured": 84.45708041340043
+    },
+    "n_windows": 2
+   },
+   "base": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -11.536737435533983,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 42.52725213259077,
+     "win_rate": 100.0,
+     "captured": 171.32143117732411
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -11.536737435533961,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 21.562337992185952,
+     "win_rate": 100.0,
+     "captured": 47.091903747606565
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -8.778304829314443,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 84.45708041340039,
+     "win_rate": 100.0,
+     "captured": 84.45708041340043
+    },
+    "n_windows": 2
+   }
+  },
+  "GILD": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -20.321391348660335,
+     "shake_rate": 25.0,
+     "avg_loss": -4.1385065463792134,
+     "expectancy": 5.8892954702414375,
+     "win_rate": 25.0,
+     "captured": 19.483914147375756
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -12.3555397825871,
+     "shake_rate": 50.0,
+     "avg_loss": -5.250391630543527,
+     "expectancy": -5.250391630543527,
+     "win_rate": 0.0,
+     "captured": -10.411193051766743
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -9.308540177651793,
+     "shake_rate": 0.0,
+     "avg_loss": -1.4257381338309505,
+     "expectancy": -1.4257381338309505,
+     "win_rate": 0.0,
+     "captured": -2.8334958526222698
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -16.20410655304819,
+     "shake_rate": 11.11111111111111,
+     "avg_loss": -4.025690521192593,
+     "expectancy": 7.043211209926224,
+     "win_rate": 55.55555555555556,
+     "captured": 68.8962118348229
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -12.3555397825871,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -4.6608482861212694,
+     "expectancy": 0.5287447928254196,
+     "win_rate": 50.0,
+     "captured": 1.9810530068420151
+    },
+    "is": {
+     "n_trades": 4,
+     "max_dd": -9.308540177651793,
+     "shake_rate": 0.0,
+     "avg_loss": -1.5284785580089388,
+     "expectancy": 1.1227410541117033,
+     "win_rate": 50.0,
+     "captured": 4.4092847419396675
+    },
+    "n_windows": 5
+   }
+  },
+  "GOOG": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -28.060159505453107,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": 0.0,
+     "expectancy": 26.203240140638062,
+     "win_rate": 100.0,
+     "captured": 95.55467397587584
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -10.866079404781726,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 16.44156904692794,
+     "win_rate": 100.0,
+     "captured": 57.41841365074145
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -28.06015950545313,
+     "shake_rate": 20.0,
+     "avg_loss": -2.6346862344817534,
+     "expectancy": 14.668069590590136,
+     "win_rate": 60.0,
+     "captured": 85.3655019753459
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -10.866079404781736,
+     "shake_rate": 0.0,
+     "avg_loss": -1.6129826976025496,
+     "expectancy": 13.377289429575399,
+     "win_rate": 80.0,
+     "captured": 84.57695470240694
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   }
+  },
+  "GOOGL": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -28.552261637519283,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": 0.0,
+     "expectancy": 26.228185820883148,
+     "win_rate": 100.0,
+     "captured": 95.52505618874913
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -10.836524985595574,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 16.33962089190773,
+     "win_rate": 100.0,
+     "captured": 56.999747411727085
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -28.552261637519262,
+     "shake_rate": 25.0,
+     "avg_loss": -1.8624884317682056,
+     "expectancy": 19.20551725772031,
+     "win_rate": 75.0,
+     "captured": 91.88342463602545
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -10.836524985595574,
+     "shake_rate": 0.0,
+     "avg_loss": -1.8624884317682056,
+     "expectancy": 13.418715230885873,
+     "win_rate": 80.0,
+     "captured": 84.79401777227496
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   }
+  },
+  "GS": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -9.401113826686537,
+     "shake_rate": 0.0,
+     "avg_loss": -1.488396693394567,
+     "expectancy": 14.572030750220907,
+     "win_rate": 75.0,
+     "captured": 67.03386286079976
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -9.401113826686503,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 16.236994050004494,
+     "win_rate": 100.0,
+     "captured": 33.70038547236878
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -9.34581805729595,
+     "shake_rate": 0.0,
+     "avg_loss": -1.488396693394567,
+     "expectancy": 9.1689767182698,
+     "win_rate": 50.0,
+     "captured": 18.042858696784837
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 7,
+     "max_dd": -11.176782722250689,
+     "shake_rate": 0.0,
+     "avg_loss": -1.754060564698412,
+     "expectancy": 9.925908123221218,
+     "win_rate": 71.42857142857143,
+     "captured": 127.563296396547
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -9.401113826686503,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 16.142540155864747,
+     "win_rate": 100.0,
+     "captured": 79.50908325631542
+    },
+    "is": {
+     "n_trades": 4,
+     "max_dd": -11.176782722250689,
+     "shake_rate": 0.0,
+     "avg_loss": -1.754060564698412,
+     "expectancy": 4.970345561757622,
+     "win_rate": 50.0,
+     "captured": 19.77981560836335
+    },
+    "n_windows": 5
+   }
+  },
+  "HD": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -9.229844792155028,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 5.424627831425358,
+     "win_rate": 100.0,
+     "captured": 17.064055029739333
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -9.229844792155017,
+     "shake_rate": 0.0,
+     "avg_loss": -0.37003581250651396,
+     "expectancy": 2.261370105284359,
+     "win_rate": 33.33333333333333,
+     "captured": 6.729441377418266
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 7,
+     "max_dd": -23.21541084280342,
+     "shake_rate": 14.285714285714285,
+     "avg_loss": -8.37070932046538,
+     "expectancy": 2.5902086313211194,
+     "win_rate": 71.42857142857143,
+     "captured": 16.547153953075956
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -11.555408086685015,
+     "shake_rate": 0.0,
+     "avg_loss": -1.2032922607657341,
+     "expectancy": 0.7032162263198378,
+     "win_rate": 33.33333333333333,
+     "captured": 3.9319484842874397
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -3.124293923803778,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 17.09071110578666,
+     "win_rate": 100.0,
+     "captured": 17.090711105786617
+    },
+    "n_windows": 5
+   }
+  },
+  "HLT": {
+   "treat": {
+    "full": {
+     "n_trades": 7,
+     "max_dd": -13.935907701601424,
+     "shake_rate": 14.285714285714285,
+     "avg_loss": -6.637897931176233,
+     "expectancy": 0.7807590250903924,
+     "win_rate": 57.14285714285714,
+     "captured": 3.721135717663726
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -12.234446740337468,
+     "shake_rate": 0.0,
+     "avg_loss": -2.6315052062837796,
+     "expectancy": 2.9384657521917528,
+     "win_rate": 50.0,
+     "captured": 17.652985640081
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -13.935907701601447,
+     "shake_rate": 11.11111111111111,
+     "avg_loss": -6.637897931176233,
+     "expectancy": 2.1007958171571466,
+     "win_rate": 66.66666666666666,
+     "captured": 17.808182660210868
+    },
+    "oos": {
+     "n_trades": 8,
+     "max_dd": -9.330484607778565,
+     "shake_rate": 0.0,
+     "avg_loss": -2.6315052062837796,
+     "expectancy": 3.2839602525782734,
+     "win_rate": 62.5,
+     "captured": 27.919561158364694
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   }
+  },
+  "HON": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -21.044449320644134,
+     "shake_rate": 66.66666666666666,
+     "avg_loss": -1.528023885572538,
+     "expectancy": 0.5727702621029469,
+     "win_rate": 33.33333333333333,
+     "captured": 1.5889166895019624
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -21.118474885827954,
+     "shake_rate": 50.0,
+     "avg_loss": -1.574593939802138,
+     "expectancy": 2.1064678704137476,
+     "win_rate": 25.0,
+     "captured": 8.081428709859285
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 8,
+     "max_dd": -21.0754818795973,
+     "shake_rate": 25.0,
+     "avg_loss": -2.058570827137376,
+     "expectancy": 1.9127818743584628,
+     "win_rate": 37.5,
+     "captured": 14.400349897389674
+    },
+    "oos": {
+     "n_trades": 8,
+     "max_dd": -21.149478349895546,
+     "shake_rate": 25.0,
+     "avg_loss": -1.3108008874597203,
+     "expectancy": 2.3714070566279206,
+     "win_rate": 37.5,
+     "captured": 19.449661789777583
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -5.142790694307198,
+     "shake_rate": 0.0,
+     "avg_loss": -5.142790694307198,
+     "expectancy": -5.142790694307198,
+     "win_rate": 0.0,
+     "captured": -5.142790694307198
+    },
+    "n_windows": 5
+   }
+  },
+  "INTC": {
+   "treat": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -36.46148449743614,
+     "shake_rate": 66.66666666666666,
+     "avg_loss": -13.235864393328733,
+     "expectancy": 10.184404441704098,
+     "win_rate": 50.0,
+     "captured": 46.88088764294367
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -36.461484497436125,
+     "shake_rate": 50.0,
+     "avg_loss": -21.41203403057277,
+     "expectancy": 11.809750597485975,
+     "win_rate": 50.0,
+     "captured": 32.76661680284614
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -20.267990929838795,
+     "shake_rate": 66.66666666666666,
+     "avg_loss": -9.147779574706716,
+     "expectancy": 1.9579846181385197,
+     "win_rate": 33.33333333333333,
+     "captured": 2.474205442828814
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -55.58665960009761,
+     "shake_rate": 50.0,
+     "avg_loss": -19.440298624220773,
+     "expectancy": 9.145609283429673,
+     "win_rate": 60.0,
+     "captured": 56.88526774786777
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -46.1198436858884,
+     "shake_rate": 28.57142857142857,
+     "avg_loss": -21.41203403057277,
+     "expectancy": 16.57647245109124,
+     "win_rate": 71.42857142857143,
+     "captured": 129.81915701516255
+    },
+    "is": {
+     "n_trades": 4,
+     "max_dd": -19.935244806651898,
+     "shake_rate": 50.0,
+     "avg_loss": -9.147779574706716,
+     "expectancy": 1.5728211297022954,
+     "win_rate": 50.0,
+     "captured": 2.9018617252354995
+    },
+    "n_windows": 5
+   }
+  },
+  "JNJ": {
+   "treat": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -18.238307064690595,
+     "shake_rate": 20.0,
+     "avg_loss": -4.194065886633896,
+     "expectancy": -0.8645985421133018,
+     "win_rate": 20.0,
+     "captured": -9.384107045617796
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -7.401962975226429,
+     "shake_rate": 0.0,
+     "avg_loss": -3.80095347811625,
+     "expectancy": -0.9405812684418813,
+     "win_rate": 25.0,
+     "captured": -4.174501466384372
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -17.315901460670226,
+     "shake_rate": 50.0,
+     "avg_loss": -4.804191989839312,
+     "expectancy": -4.804191989839312,
+     "win_rate": 0.0,
+     "captured": -9.483647658479066
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -18.664394847620834,
+     "shake_rate": 10.0,
+     "avg_loss": -3.9026149450046255,
+     "expectancy": 1.4482239580843381,
+     "win_rate": 50.0,
+     "captured": 8.513942161104215
+    },
+    "oos": {
+     "n_trades": 9,
+     "max_dd": -7.884522605330901,
+     "shake_rate": 0.0,
+     "avg_loss": -3.534917903209073,
+     "expectancy": 0.992679966048963,
+     "win_rate": 44.44444444444444,
+     "captured": 8.234485945057113
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -17.315901460670226,
+     "shake_rate": 50.0,
+     "avg_loss": -4.804191989839312,
+     "expectancy": -4.804191989839312,
+     "win_rate": 0.0,
+     "captured": -9.483647658479066
+    },
+    "n_windows": 5
+   }
+  },
+  "JPM": {
+   "treat": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -9.110315253127633,
+     "shake_rate": 0.0,
+     "avg_loss": -1.9449914636595844,
+     "expectancy": 9.767825067271021,
+     "win_rate": 80.0,
+     "captured": 57.39792279902698
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -9.110315253127654,
+     "shake_rate": 0.0,
+     "avg_loss": -1.9449914636595844,
+     "expectancy": 7.390394014241409,
+     "win_rate": 75.0,
+     "captured": 32.029079689686135
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -2.815340829360713,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 14.455152650342118,
+     "win_rate": 100.0,
+     "captured": 14.455152650342118
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -15.29242056228296,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -3.3767664974237666,
+     "expectancy": 8.138813672643732,
+     "win_rate": 83.33333333333334,
+     "captured": 65.49317919714721
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -9.697392088371226,
+     "shake_rate": 0.0,
+     "avg_loss": -1.237193885807214,
+     "expectancy": 5.094176244080409,
+     "win_rate": 71.42857142857143,
+     "captured": 40.13082113952271
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -2.815340829360713,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 14.455152650342118,
+     "win_rate": 100.0,
+     "captured": 14.455152650342118
+    },
+    "n_windows": 5
+   }
+  },
+  "KO": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -4.820281024012962,
+     "shake_rate": 0.0,
+     "avg_loss": -1.2578793361251783,
+     "expectancy": 2.7200899410565764,
+     "win_rate": 66.66666666666666,
+     "captured": 8.247320006931602
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -4.820281024012962,
+     "shake_rate": 0.0,
+     "avg_loss": -1.2578793361251783,
+     "expectancy": 1.1421470538225065,
+     "win_rate": 50.0,
+     "captured": 2.239737839846123
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 12,
+     "max_dd": -6.3042653252805785,
+     "shake_rate": 0.0,
+     "avg_loss": -1.3349088246139642,
+     "expectancy": 1.906920269459288,
+     "win_rate": 41.66666666666667,
+     "captured": 23.877711985581286
+    },
+    "oos": {
+     "n_trades": 10,
+     "max_dd": -6.165014696139048,
+     "shake_rate": 0.0,
+     "avg_loss": -1.3349088246139642,
+     "expectancy": 0.01231596233799537,
+     "win_rate": 30.0,
+     "captured": -0.11566089216303865
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -3.0461054962861445,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 7.130597491618751,
+     "win_rate": 100.0,
+     "captured": 7.130597491618751
+    },
+    "n_windows": 5
+   }
+  },
+  "LIN": {
+   "treat": {
+    "full": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "oos": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 8,
+     "max_dd": -15.317941440324246,
+     "shake_rate": 12.5,
+     "avg_loss": -3.8934811089896604,
+     "expectancy": 1.5949494890423437,
+     "win_rate": 62.5,
+     "captured": 11.242080798111864
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -14.193539676550381,
+     "shake_rate": 20.0,
+     "avg_loss": -4.7255042129929095,
+     "expectancy": -0.8002897514660591,
+     "win_rate": 60.0,
+     "captured": -4.37705361464128
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -3.8714081809763323,
+     "shake_rate": 0.0,
+     "avg_loss": -0.3329220146581102,
+     "expectancy": 1.8408973287949475,
+     "win_rate": 66.66666666666666,
+     "captured": 5.554073597417242
+    },
+    "n_windows": 5
+   }
+  },
+  "LLY": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -31.066078697851818,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -2.604115066115331,
+     "expectancy": 14.314885627655691,
+     "win_rate": 66.66666666666666,
+     "captured": 63.667553239868546
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -20.55921581929969,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -7.77356120013507,
+     "expectancy": -1.352406625091921,
+     "win_rate": 33.33333333333333,
+     "captured": -5.467791471672245
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -2.3797592238381626,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 15.971731925900068,
+     "win_rate": 100.0,
+     "captured": 15.971731925900045
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -32.89895517347061,
+     "shake_rate": 25.0,
+     "avg_loss": -2.604115066115331,
+     "expectancy": 12.125710828508375,
+     "win_rate": 75.0,
+     "captured": 72.76450097610527
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -26.24519797135154,
+     "shake_rate": 20.0,
+     "avg_loss": -7.568210833758653,
+     "expectancy": 6.394436428501524,
+     "win_rate": 40.0,
+     "captured": 25.669505695654117
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -2.3797592238381626,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 15.971731925900068,
+     "win_rate": 100.0,
+     "captured": 15.971731925900045
+    },
+    "n_windows": 5
+   }
+  },
+  "LOW": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -27.263546147230777,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -18.141928157548215,
+     "expectancy": -0.4966209834141681,
+     "win_rate": 66.66666666666666,
+     "captured": -3.9475774629850524
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -4.399927731036978,
+     "shake_rate": 0.0,
+     "avg_loss": -0.7916377596485336,
+     "expectancy": -0.7916377596485336,
+     "win_rate": 0.0,
+     "captured": -0.7916377596485447
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -28.99900643408969,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -8.693039714321127,
+     "expectancy": 1.5013294421743615,
+     "win_rate": 50.0,
+     "captured": 4.65825507056008
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -10.235809582907606,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -2.708475020368656,
+     "expectancy": 0.4225156612959191,
+     "win_rate": 16.666666666666664,
+     "captured": 1.510591059890909
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -5.798136573017065,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 9.500795314674981,
+     "win_rate": 100.0,
+     "captured": 9.500795314674914
+    },
+    "n_windows": 5
+   }
+  },
+  "LRCX": {
+   "treat": {
+    "full": {
+     "n_trades": 2,
+     "max_dd": -18.87762497946398,
+     "shake_rate": 50.0,
+     "avg_loss": 0.0,
+     "expectancy": 13.623299796655097,
+     "win_rate": 100.0,
+     "captured": 28.962432037762433
+    },
+    "oos": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -18.87762497946398,
+     "shake_rate": 50.0,
+     "avg_loss": -1.9708892481076323,
+     "expectancy": 7.6977723251923145,
+     "win_rate": 50.0,
+     "captured": 15.053271471899677
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -18.87762497946398,
+     "shake_rate": 40.0,
+     "avg_loss": -2.5931086861835984,
+     "expectancy": 11.594116061917934,
+     "win_rate": 80.0,
+     "captured": 67.97972495545983
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -15.345646394676338,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": 0.0,
+     "expectancy": 13.616583207813884,
+     "win_rate": 100.0,
+     "captured": 41.419809925603815
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -18.87762497946398,
+     "shake_rate": 50.0,
+     "avg_loss": -1.9708892481076323,
+     "expectancy": 7.6977723251923145,
+     "win_rate": 50.0,
+     "captured": 15.053271471899677
+    },
+    "n_windows": 5
+   }
+  },
+  "LYV": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -8.105097755546286,
+     "shake_rate": 0.0,
+     "avg_loss": -1.7284143872162039,
+     "expectancy": -1.071830842525645,
+     "win_rate": 33.33333333333333,
+     "captured": -3.209229891047849
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -6.757606932073412,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.2413362468554725,
+     "win_rate": 100.0,
+     "captured": 0.2413362468554503
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -8.105097755546286,
+     "shake_rate": 0.0,
+     "avg_loss": -1.7284143872162039,
+     "expectancy": -1.7284143872162039,
+     "win_rate": 0.0,
+     "captured": -3.4422587199016363
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 7,
+     "max_dd": -15.029251939602817,
+     "shake_rate": 14.285714285714285,
+     "avg_loss": -4.035241345501775,
+     "expectancy": 0.26393518996524123,
+     "win_rate": 42.857142857142854,
+     "captured": 5.572053750873662
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -10.159399036630878,
+     "shake_rate": 0.0,
+     "avg_loss": -2.7815378980783123,
+     "expectancy": 2.5714267731746254,
+     "win_rate": 80.0,
+     "captured": 13.135659698154978
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -15.029251939602817,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -4.453142494642929,
+     "expectancy": -4.453142494642929,
+     "win_rate": 0.0,
+     "captured": -13.003984361823518
+    },
+    "n_windows": 5
+   }
+  },
+  "MA": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -9.55572417743612,
+     "shake_rate": 0.0,
+     "avg_loss": -1.6619306574441883,
+     "expectancy": 5.368363816759799,
+     "win_rate": 66.66666666666666,
+     "captured": 15.956634527549497
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -9.555724177436108,
+     "shake_rate": 0.0,
+     "avg_loss": -1.6619306574441883,
+     "expectancy": -1.6619306574441883,
+     "win_rate": 0.0,
+     "captured": -1.6619306574441883
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -3.028344125815141,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 6.81606457691446,
+     "win_rate": 100.0,
+     "captured": 13.744862666849622
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -12.985828096148888,
+     "shake_rate": 0.0,
+     "avg_loss": -2.9354578789715964,
+     "expectancy": 1.7586513399430515,
+     "win_rate": 50.0,
+     "captured": 9.37931947331403
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -11.019818496439783,
+     "shake_rate": 0.0,
+     "avg_loss": -1.6841913926329695,
+     "expectancy": -1.029101200336473,
+     "win_rate": 20.0,
+     "captured": -5.144047729514034
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -3.028344125815141,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 6.81606457691446,
+     "win_rate": 100.0,
+     "captured": 13.744862666849622
+    },
+    "n_windows": 5
+   }
+  },
+  "MAR": {
+   "treat": {
+    "full": {
+     "n_trades": 2,
+     "max_dd": -12.329960139198048,
+     "shake_rate": 0.0,
+     "avg_loss": -5.268654652449545,
+     "expectancy": -5.268654652449545,
+     "win_rate": 0.0,
+     "captured": -7.855285307698323
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -2.3065345551121275,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 2.67973546053184,
+     "win_rate": 100.0,
+     "captured": 2.67973546053184
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -5.457264847783227,
+     "shake_rate": 0.0,
+     "avg_loss": -5.457264847783216,
+     "expectancy": -5.457264847783216,
+     "win_rate": 0.0,
+     "captured": -5.457264847783227
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -14.566062908936317,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -6.955341014270133,
+     "expectancy": 5.0757534094671435,
+     "win_rate": 50.0,
+     "captured": 32.07655547677852
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -8.216513835388294,
+     "shake_rate": 0.0,
+     "avg_loss": -3.664239970274785,
+     "expectancy": 7.973599955151145,
+     "win_rate": 75.0,
+     "captured": 33.88230896290803
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -6.272454765689684,
+     "shake_rate": 0.0,
+     "avg_loss": -5.457264847783216,
+     "expectancy": 7.322714974242784,
+     "win_rate": 50.0,
+     "captured": 13.548372651911645
+    },
+    "n_windows": 5
+   }
+  },
+  "MCD": {
+   "treat": {
+    "full": {
+     "n_trades": 1,
+     "max_dd": -6.8131567942832705,
+     "shake_rate": 0.0,
+     "avg_loss": -0.48932140874420327,
+     "expectancy": -0.48932140874420327,
+     "win_rate": 0.0,
+     "captured": -0.4893214087442366
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -6.8131567942832705,
+     "shake_rate": 0.0,
+     "avg_loss": -0.48932140874420327,
+     "expectancy": -0.48932140874420327,
+     "win_rate": 0.0,
+     "captured": -0.4893214087442366
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 7,
+     "max_dd": -9.94983225023015,
+     "shake_rate": 0.0,
+     "avg_loss": -1.7746385465018721,
+     "expectancy": 1.8714805924190423,
+     "win_rate": 42.857142857142854,
+     "captured": 10.233203870486406
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -8.233255983357846,
+     "shake_rate": 0.0,
+     "avg_loss": -1.8550896694179289,
+     "expectancy": -0.9968502047249401,
+     "win_rate": 14.285714285714285,
+     "captured": -6.860184243945822
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -1.9021131034518968,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 14.868288982402067,
+     "win_rate": 100.0,
+     "captured": 14.868288982402134
+    },
+    "n_windows": 5
+   }
+  },
+  "MDLZ": {
+   "treat": {
+    "full": {
+     "n_trades": 1,
+     "max_dd": -18.616914470174684,
+     "shake_rate": 100.0,
+     "avg_loss": -13.229293854989733,
+     "expectancy": -13.229293854989733,
+     "win_rate": 0.0,
+     "captured": -13.229293854989754
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -18.616914470174684,
+     "shake_rate": 100.0,
+     "avg_loss": -13.229293854989733,
+     "expectancy": -13.229293854989733,
+     "win_rate": 0.0,
+     "captured": -13.229293854989754
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 8,
+     "max_dd": -30.085973603938122,
+     "shake_rate": 25.0,
+     "avg_loss": -6.12962754410946,
+     "expectancy": -0.8026790118053586,
+     "win_rate": 37.5,
+     "captured": -11.164030434008755
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -26.09165030354701,
+     "shake_rate": 14.285714285714285,
+     "avg_loss": -4.99685701945964,
+     "expectancy": -3.397156418798021,
+     "win_rate": 14.285714285714285,
+     "captured": -22.066518500037024
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -4.402937962359077,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 4.004207853855379,
+     "win_rate": 100.0,
+     "captured": 8.020133034380672
+    },
+    "n_windows": 5
+   }
+  },
+  "META": {
+   "treat": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -26.137274794929322,
+     "shake_rate": 40.0,
+     "avg_loss": -4.86790152872075,
+     "expectancy": 8.767844189534255,
+     "win_rate": 40.0,
+     "captured": 40.486939215810395
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -13.606859531827942,
+     "shake_rate": 50.0,
+     "avg_loss": -3.216853022730004,
+     "expectancy": 3.5033766531895716,
+     "win_rate": 50.0,
+     "captured": 6.677874917149174
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -3.3573370385099444,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 40.33202237151174,
+     "win_rate": 100.0,
+     "captured": 40.33202237151177
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -23.51587428662434,
+     "shake_rate": 30.0,
+     "avg_loss": -3.6238840741819045,
+     "expectancy": 5.258251623809997,
+     "win_rate": 30.0,
+     "captured": 50.209677877962264
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -18.50873236497207,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -4.535385803604855,
+     "expectancy": 1.7115249432000028,
+     "win_rate": 33.33333333333333,
+     "captured": 7.96750020417023
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -8.17172432795269,
+     "shake_rate": 50.0,
+     "avg_loss": -8.17172432795269,
+     "expectancy": 16.080149021779526,
+     "win_rate": 50.0,
+     "captured": 28.864476359470892
+    },
+    "n_windows": 5
+   }
+  },
+  "MNST": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -14.33622722454425,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -6.865338051058262,
+     "expectancy": 2.265875933329227,
+     "win_rate": 33.33333333333333,
+     "captured": 23.409754364085835
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -14.336227224544274,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -12.750983827374608,
+     "expectancy": 8.764316976413532,
+     "win_rate": 66.66666666666666,
+     "captured": 24.630752215493757
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -6.071979035366337,
+     "shake_rate": 0.0,
+     "avg_loss": -0.9796922747419168,
+     "expectancy": -0.9796922747419168,
+     "win_rate": 0.0,
+     "captured": -0.9796922747419279
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 8,
+     "max_dd": -17.98477043118416,
+     "shake_rate": 25.0,
+     "avg_loss": -6.042813448986683,
+     "expectancy": 2.5827941110764834,
+     "win_rate": 50.0,
+     "captured": 39.8055962485399
+    },
+    "oos": {
+     "n_trades": 8,
+     "max_dd": -14.188715215578107,
+     "shake_rate": 12.5,
+     "avg_loss": -8.570656819363009,
+     "expectancy": 6.088445924475627,
+     "win_rate": 75.0,
+     "captured": 54.038195161524236
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -6.071979035366337,
+     "shake_rate": 0.0,
+     "avg_loss": -0.9796922747419168,
+     "expectancy": -0.9796922747419168,
+     "win_rate": 0.0,
+     "captured": -0.9796922747419279
+    },
+    "n_windows": 5
+   }
+  },
+  "MO": {
+   "treat": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -12.70329931797023,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -5.194449032713866,
+     "expectancy": -0.089232708406084,
+     "win_rate": 50.0,
+     "captured": -1.463078448669064
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -7.597144191559469,
+     "shake_rate": 0.0,
+     "avg_loss": -3.4504692081695265,
+     "expectancy": 0.43101834824815777,
+     "win_rate": 50.0,
+     "captured": 1.3933083963573845
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -12.70329931797023,
+     "shake_rate": 100.0,
+     "avg_loss": -8.682408681802546,
+     "expectancy": -8.682408681802546,
+     "win_rate": 0.0,
+     "captured": -8.682408681802567
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 7,
+     "max_dd": -12.70329931797023,
+     "shake_rate": 14.285714285714285,
+     "avg_loss": -5.194449032713866,
+     "expectancy": 1.0977805345182587,
+     "win_rate": 57.14285714285714,
+     "captured": 6.6365185433406415
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -7.597144191559469,
+     "shake_rate": 0.0,
+     "avg_loss": -3.4504692081695265,
+     "expectancy": 1.9887866770113893,
+     "win_rate": 60.0,
+     "captured": 9.727696387859975
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -12.70329931797023,
+     "shake_rate": 100.0,
+     "avg_loss": -8.682408681802546,
+     "expectancy": -8.682408681802546,
+     "win_rate": 0.0,
+     "captured": -8.682408681802567
+    },
+    "n_windows": 5
+   }
+  },
+  "MPC": {
+   "treat": {
+    "full": {
+     "n_trades": 1,
+     "max_dd": -9.290198015389905,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 19.494458836396266,
+     "win_rate": 100.0,
+     "captured": 19.494458836396266
+    },
+    "oos": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -35.661268643613994,
+     "shake_rate": 40.0,
+     "avg_loss": -13.03271914901446,
+     "expectancy": 9.82188390381996,
+     "win_rate": 80.0,
+     "captured": 52.997296701585014
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -24.72376112501046,
+     "shake_rate": 66.66666666666666,
+     "avg_loss": -5.188302134131084,
+     "expectancy": 4.662320048433788,
+     "win_rate": 66.66666666666666,
+     "captured": 13.198575244820221
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -9.242684691669567,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 25.88052625288133,
+     "win_rate": 100.0,
+     "captured": 25.88052625288133
+    },
+    "n_windows": 5
+   }
+  },
+  "MRK": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -7.428476642909409,
+     "shake_rate": 0.0,
+     "avg_loss": -2.7458680446554973,
+     "expectancy": 7.818295249672266,
+     "win_rate": 75.0,
+     "captured": 34.16520764487074
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -6.369498246023841,
+     "shake_rate": 0.0,
+     "avg_loss": -2.7458680446554973,
+     "expectancy": 3.0943955976881194,
+     "win_rate": 66.66666666666666,
+     "captured": 9.165830140849994
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -7.428476642909409,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 17.107041005882873,
+     "win_rate": 100.0,
+     "captured": 17.107041005882785
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -44.4991391211593,
+     "shake_rate": 30.0,
+     "avg_loss": -9.028493842322549,
+     "expectancy": -1.0687650617178845,
+     "win_rate": 40.0,
+     "captured": -16.809263960292665
+    },
+    "oos": {
+     "n_trades": 8,
+     "max_dd": -36.712168471389575,
+     "shake_rate": 37.5,
+     "avg_loss": -7.780369940431198,
+     "expectancy": -2.176066433878031,
+     "win_rate": 37.5,
+     "captured": -19.350539688962666
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -13.160741347075778,
+     "shake_rate": 0.0,
+     "avg_loss": -6.4907571511193085,
+     "expectancy": 5.308141927381782,
+     "win_rate": 50.0,
+     "captured": 9.505907367329236
+    },
+    "n_windows": 5
+   }
+  },
+  "MS": {
+   "treat": {
+    "full": {
+     "n_trades": 2,
+     "max_dd": -5.205014759899374,
+     "shake_rate": 0.0,
+     "avg_loss": -1.7349893458605492,
+     "expectancy": 17.168191458248554,
+     "win_rate": 50.0,
+     "captured": 68.39101787555396
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -5.205014759899374,
+     "shake_rate": 0.0,
+     "avg_loss": -1.7349893458605492,
+     "expectancy": 15.804294304305408,
+     "win_rate": 66.66666666666666,
+     "captured": 52.475927318109015
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -8.737052872918794,
+     "shake_rate": 0.0,
+     "avg_loss": -3.7077506082902834,
+     "expectancy": 7.92279709829284,
+     "win_rate": 60.0,
+     "captured": 76.50060035190138
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -8.386466846080666,
+     "shake_rate": 0.0,
+     "avg_loss": -1.7349893458605492,
+     "expectancy": 12.322573384227283,
+     "win_rate": 75.0,
+     "captured": 55.33852657661089
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -8.737052872918794,
+     "shake_rate": 0.0,
+     "avg_loss": -5.680511870720018,
+     "expectancy": 1.700095975487087,
+     "win_rate": 50.0,
+     "captured": 2.8843614924378924
+    },
+    "n_windows": 5
+   }
+  },
+  "MSFT": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -6.66312003755416,
+     "shake_rate": 0.0,
+     "avg_loss": -1.10856400350244,
+     "expectancy": -0.5441792692916281,
+     "win_rate": 25.0,
+     "captured": -2.1837216703299966
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -6.663120037554126,
+     "shake_rate": 0.0,
+     "avg_loss": -1.10856400350244,
+     "expectancy": -0.5441792692916281,
+     "win_rate": 25.0,
+     "captured": -2.1837216703299633
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -14.028688224741492,
+     "shake_rate": 11.11111111111111,
+     "avg_loss": -3.044613133248447,
+     "expectancy": 4.392800311360071,
+     "win_rate": 33.33333333333333,
+     "captured": 36.43457494029765
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -14.02868822474147,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -2.404907674497153,
+     "expectancy": 4.624463352175812,
+     "win_rate": 33.33333333333333,
+     "captured": 24.856604424443617
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -3.9605907967542042,
+     "shake_rate": 0.0,
+     "avg_loss": -3.5417424113006413,
+     "expectancy": 5.216291382165234,
+     "win_rate": 50.0,
+     "captured": 9.937648162892042
+    },
+    "n_windows": 5
+   }
+  },
+  "MU": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -46.68285297950989,
+     "shake_rate": 66.66666666666666,
+     "avg_loss": -6.458667177991129,
+     "expectancy": 8.929749469748234,
+     "win_rate": 66.66666666666666,
+     "captured": 26.50761831802142
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -45.284384878413654,
+     "shake_rate": 50.0,
+     "avg_loss": -6.458667177991129,
+     "expectancy": 0.6980263646655827,
+     "win_rate": 50.0,
+     "captured": 0.8887425127537929
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -5.018510055574632,
+     "shake_rate": 0.0,
+     "avg_loss": -3.9407073839826556,
+     "expectancy": -3.9407073839826556,
+     "win_rate": 0.0,
+     "captured": -3.9407073839826556
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -46.402595577126284,
+     "shake_rate": 80.0,
+     "avg_loss": -7.470672516075689,
+     "expectancy": 3.610351219964072,
+     "win_rate": 40.0,
+     "captured": 14.232504490256769
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -39.31616270596644,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -6.458667177991129,
+     "expectancy": 4.716154971975817,
+     "win_rate": 66.66666666666666,
+     "captured": 13.598019026644149
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -14.683085476049296,
+     "shake_rate": 50.0,
+     "avg_loss": -7.05796361795138,
+     "expectancy": -7.05796361795138,
+     "win_rate": 0.0,
+     "captured": -13.71495159586168
+    },
+    "n_windows": 5
+   }
+  },
+  "NEE": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -6.985473133888331,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 12.545381320740493,
+     "win_rate": 100.0,
+     "captured": 42.36911098607435
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -6.985473133888331,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 14.31887462838013,
+     "win_rate": 100.0,
+     "captured": 30.6157869304301
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 7,
+     "max_dd": -29.060892967127593,
+     "shake_rate": 28.57142857142857,
+     "avg_loss": -7.5621678246122235,
+     "expectancy": 1.0553532376817982,
+     "win_rate": 42.857142857142854,
+     "captured": 3.4559423686004287
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -12.899471329940237,
+     "shake_rate": 0.0,
+     "avg_loss": -6.422909177349334,
+     "expectancy": 7.404946693136975,
+     "win_rate": 66.66666666666666,
+     "captured": 22.22645356460844
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -29.060892967127593,
+     "shake_rate": 50.0,
+     "avg_loss": -8.09560436342514,
+     "expectancy": -8.09560436342514,
+     "win_rate": 0.0,
+     "captured": -15.926216134401594
+    },
+    "n_windows": 5
+   }
+  },
+  "NEM": {
+   "treat": {
+    "full": {
+     "n_trades": 2,
+     "max_dd": -4.142340571262149,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 15.052040610390948,
+     "win_rate": 100.0,
+     "captured": 31.08363302438184
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -3.446881357577647,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 3.7114609877763494,
+     "win_rate": 100.0,
+     "captured": 3.7114609877763494
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 11,
+     "max_dd": -31.43527200847478,
+     "shake_rate": 18.181818181818183,
+     "avg_loss": -9.884516284170786,
+     "expectancy": 5.104314345800616,
+     "win_rate": 72.72727272727273,
+     "captured": 59.57315271087342
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -7.837066566805739,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 6.446318311271263,
+     "win_rate": 100.0,
+     "captured": 35.26298052397336
+    },
+    "is": {
+     "n_trades": 4,
+     "max_dd": -31.43527200847478,
+     "shake_rate": 50.0,
+     "avg_loss": -9.884516284170786,
+     "expectancy": -7.130859070828347,
+     "win_rate": 25.0,
+     "captured": -26.093044132409904
+    },
+    "n_windows": 5
+   }
+  },
+  "NUE": {
+   "treat": {
+    "full": {
+     "n_trades": 1,
+     "max_dd": -16.811686602149912,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 15.556418800780069,
+     "win_rate": 100.0,
+     "captured": 56.832639358539595
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -5.9733167729697945,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 28.554860644785407,
+     "win_rate": 100.0,
+     "captured": 28.554860644785407
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -4.349598021370838,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 15.556418800780069,
+     "win_rate": 100.0,
+     "captured": 15.556418800780092
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -43.606017802163535,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -9.301774432061084,
+     "expectancy": 3.339032769717229,
+     "win_rate": 55.55555555555556,
+     "captured": 69.32978481062713
+    },
+    "oos": {
+     "n_trades": 8,
+     "max_dd": -36.5631005989645,
+     "shake_rate": 25.0,
+     "avg_loss": -7.489939602300466,
+     "expectancy": 5.392967884057315,
+     "win_rate": 50.0,
+     "captured": 39.885467328045564
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -6.263784509973225,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 12.344285698124535,
+     "win_rate": 100.0,
+     "captured": 26.109207299526528
+    },
+    "n_windows": 5
+   }
+  },
+  "NVDA": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -12.857749409777641,
+     "shake_rate": 0.0,
+     "avg_loss": -1.0917903634295456,
+     "expectancy": 26.645298441464853,
+     "win_rate": 75.0,
+     "captured": 120.8226682630818
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -12.857749409777618,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 8.071573208265148,
+     "win_rate": 100.0,
+     "captured": 16.566799354092222
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -9.724482068093,
+     "shake_rate": 0.0,
+     "avg_loss": -1.0917903634295456,
+     "expectancy": 20.11271271987901,
+     "win_rate": 50.0,
+     "captured": 39.77432805918144
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 8,
+     "max_dd": -12.85774940977763,
+     "shake_rate": 0.0,
+     "avg_loss": -2.7411873788953267,
+     "expectancy": 20.545243155265496,
+     "win_rate": 62.5,
+     "captured": 240.06340396827258
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -12.85774940977763,
+     "shake_rate": 0.0,
+     "avg_loss": -1.0046847334990394,
+     "expectancy": 14.79425897850498,
+     "win_rate": 80.0,
+     "captured": 84.08564734937198
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -9.724482068093,
+     "shake_rate": 0.0,
+     "avg_loss": -1.0917903634295456,
+     "expectancy": 20.11271271987901,
+     "win_rate": 50.0,
+     "captured": 39.77432805918144
+    },
+    "n_windows": 5
+   }
+  },
+  "O": {
+   "treat": {
+    "full": {
+     "n_trades": 1,
+     "max_dd": -2.252345657736221,
+     "shake_rate": 0.0,
+     "avg_loss": -2.252345657736188,
+     "expectancy": -2.252345657736188,
+     "win_rate": 0.0,
+     "captured": -2.252345657736221
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -2.252345657736221,
+     "shake_rate": 0.0,
+     "avg_loss": -2.252345657736188,
+     "expectancy": -2.252345657736188,
+     "win_rate": 0.0,
+     "captured": -2.252345657736221
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -12.304524007881534,
+     "shake_rate": 0.0,
+     "avg_loss": -1.9638018514316635,
+     "expectancy": 1.362430955470221,
+     "win_rate": 44.44444444444444,
+     "captured": 11.835787493259131
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -5.6076371378943275,
+     "shake_rate": 0.0,
+     "avg_loss": -1.479802179623596,
+     "expectancy": -0.00844833133536893,
+     "win_rate": 40.0,
+     "captured": -0.09568048204164903
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -8.590611599769149,
+     "shake_rate": 0.0,
+     "avg_loss": -5.349928689717764,
+     "expectancy": 4.604532154700732,
+     "win_rate": 66.66666666666666,
+     "captured": 13.652221950890864
+    },
+    "n_windows": 5
+   }
+  },
+  "OMC": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -27.20746029517188,
+     "shake_rate": 66.66666666666666,
+     "avg_loss": -9.91376944106546,
+     "expectancy": -9.91376944106546,
+     "win_rate": 0.0,
+     "captured": -27.20746029517188
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -11.952729952292518,
+     "shake_rate": 50.0,
+     "avg_loss": -5.484251284700731,
+     "expectancy": -5.484251284700731,
+     "win_rate": 0.0,
+     "captured": -10.960319586719402
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -15.328848187059895,
+     "shake_rate": 100.0,
+     "avg_loss": -15.328848187059895,
+     "expectancy": -15.328848187059895,
+     "win_rate": 0.0,
+     "captured": -15.328848187059895
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -24.92990285757578,
+     "shake_rate": 30.0,
+     "avg_loss": -8.90848956410852,
+     "expectancy": -1.2345848458592035,
+     "win_rate": 40.0,
+     "captured": -16.160814084625187
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -18.33318994867932,
+     "shake_rate": 28.57142857142857,
+     "avg_loss": -7.308777101085856,
+     "expectancy": -2.044388911854598,
+     "win_rate": 42.857142857142854,
+     "captured": -15.071342685443412
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -16.50904469879452,
+     "shake_rate": 50.0,
+     "avg_loss": -15.328848187059895,
+     "expectancy": 0.3092828613883769,
+     "win_rate": 50.0,
+     "captured": -1.8259891452241939
+    },
+    "n_windows": 5
+   }
+  },
+  "PEP": {
+   "treat": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -14.98662655639863,
+     "shake_rate": 0.0,
+     "avg_loss": -2.6521694104128373,
+     "expectancy": -2.6521694104128373,
+     "win_rate": 0.0,
+     "captured": -14.98662655639863
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -6.473650336007097,
+     "shake_rate": 0.0,
+     "avg_loss": -2.5555902106422668,
+     "expectancy": -2.5555902106422668,
+     "win_rate": 0.0,
+     "captured": -5.101773280711253
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -5.230981502833765,
+     "shake_rate": 0.0,
+     "avg_loss": -5.230981502833776,
+     "expectancy": -2.469269919042655,
+     "win_rate": 50.0,
+     "captured": -4.95383740747487
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 11,
+     "max_dd": -14.930035889375592,
+     "shake_rate": 0.0,
+     "avg_loss": -2.8484462206647616,
+     "expectancy": -0.8470244780170949,
+     "win_rate": 27.27272727272727,
+     "captured": -9.874484797601236
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -8.525344171800686,
+     "shake_rate": 0.0,
+     "avg_loss": -2.6059883749979877,
+     "expectancy": 0.5549964851988132,
+     "win_rate": 40.0,
+     "captured": 2.240019261910753
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -5.690678983571895,
+     "shake_rate": 0.0,
+     "avg_loss": -5.230981502833776,
+     "expectancy": -1.5165618745319929,
+     "win_rate": 66.66666666666666,
+     "captured": -4.584246398523472
+    },
+    "n_windows": 5
+   }
+  },
+  "PFE": {
+   "treat": {
+    "full": {
+     "n_trades": 7,
+     "max_dd": -23.027229841086537,
+     "shake_rate": 0.0,
+     "avg_loss": -4.173486558502567,
+     "expectancy": -3.063915869245396,
+     "win_rate": 14.285714285714285,
+     "captured": -19.90260741482739
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -13.541953028277543,
+     "shake_rate": 0.0,
+     "avg_loss": -3.961595502413462,
+     "expectancy": -2.629944613368192,
+     "win_rate": 33.33333333333333,
+     "captured": -7.750276651900623
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -10.522914354336887,
+     "shake_rate": 0.0,
+     "avg_loss": -4.256947265472865,
+     "expectancy": -4.256947265472865,
+     "win_rate": 0.0,
+     "captured": -8.4088282372751
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -37.580647715815275,
+     "shake_rate": 22.22222222222222,
+     "avg_loss": -4.684239338234204,
+     "expectancy": -3.7644896043973337,
+     "win_rate": 11.11111111111111,
+     "captured": -29.532611711391898
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -25.146188024513805,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -5.116337057224301,
+     "expectancy": -3.355130940927579,
+     "win_rate": 33.33333333333333,
+     "captured": -18.72264384378105
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -18.9757636667959,
+     "shake_rate": 50.0,
+     "avg_loss": -6.852572863227141,
+     "expectancy": -6.852572863227141,
+     "win_rate": 0.0,
+     "captured": -13.235836803639389
+    },
+    "n_windows": 5
+   }
+  },
+  "PG": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -5.80954598568243,
+     "shake_rate": 0.0,
+     "avg_loss": -3.2169095315571736,
+     "expectancy": -0.18934782719078613,
+     "win_rate": 25.0,
+     "captured": -1.3010589487157609
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -5.80954598568243,
+     "shake_rate": 0.0,
+     "avg_loss": -4.7635292790700445,
+     "expectancy": -4.7635292790700445,
+     "win_rate": 0.0,
+     "captured": -4.763529279070067
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -5.376966009165485,
+     "shake_rate": 0.0,
+     "avg_loss": -2.443599657800738,
+     "expectancy": 0.5277664234849877,
+     "win_rate": 33.33333333333333,
+     "captured": 1.3297987362598018
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 13,
+     "max_dd": -13.357147956828141,
+     "shake_rate": 0.0,
+     "avg_loss": -2.1738242509839156,
+     "expectancy": -0.2920564277760722,
+     "win_rate": 23.076923076923077,
+     "captured": -4.622043235763429
+    },
+    "oos": {
+     "n_trades": 8,
+     "max_dd": -14.646754770522652,
+     "shake_rate": 0.0,
+     "avg_loss": -2.3160183989793914,
+     "expectancy": -1.3541229217549189,
+     "win_rate": 12.5,
+     "captured": -10.653364367323315
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -5.376966009165485,
+     "shake_rate": 0.0,
+     "avg_loss": -2.443599657800738,
+     "expectancy": 0.5277664234849877,
+     "win_rate": 33.33333333333333,
+     "captured": 1.3297987362598018
+    },
+    "n_windows": 5
+   }
+  },
+  "PLD": {
+   "treat": {
+    "full": {
+     "n_trades": 2,
+     "max_dd": -11.028687643266933,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 7.424667614324854,
+     "win_rate": 100.0,
+     "captured": 15.251458855849464
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -3.1161443542793155,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 8.223604261828276,
+     "win_rate": 100.0,
+     "captured": 17.029675245370246
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 7,
+     "max_dd": -22.39166031725115,
+     "shake_rate": 14.285714285714285,
+     "avg_loss": -3.181739228482805,
+     "expectancy": 3.8985876242761557,
+     "win_rate": 85.71428571428571,
+     "captured": 30.039451460483967
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -8.545483198071302,
+     "shake_rate": 0.0,
+     "avg_loss": -3.4980849172145554,
+     "expectancy": 4.349933233178828,
+     "win_rate": 66.66666666666666,
+     "captured": 27.758998184994944
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -22.39166031725115,
+     "shake_rate": 50.0,
+     "avg_loss": 0.0,
+     "expectancy": 4.422428099061648,
+     "win_rate": 100.0,
+     "captured": 9.040023879645066
+    },
+    "n_windows": 5
+   }
+  },
+  "PM": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -14.744544048546837,
+     "shake_rate": 0.0,
+     "avg_loss": -2.4669124575771155,
+     "expectancy": -0.7729258668369099,
+     "win_rate": 25.0,
+     "captured": 0.852080946770184
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -8.412001949738613,
+     "shake_rate": 0.0,
+     "avg_loss": -4.877245532114549,
+     "expectancy": 1.2307339032649875,
+     "win_rate": 66.66666666666666,
+     "captured": 3.448877605394851
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -8.161523838650409,
+     "shake_rate": 0.0,
+     "avg_loss": -1.2617459203083992,
+     "expectancy": -1.2617459203083992,
+     "win_rate": 0.0,
+     "captured": -2.51022216841269
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 8,
+     "max_dd": -17.743744040980268,
+     "shake_rate": 0.0,
+     "avg_loss": -3.5990030901727343,
+     "expectancy": 2.4549017430165923,
+     "win_rate": 37.5,
+     "captured": 23.006180735340266
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -10.506994103183809,
+     "shake_rate": 0.0,
+     "avg_loss": -5.97681279771839,
+     "expectancy": 2.261571318402158,
+     "win_rate": 60.0,
+     "captured": 10.251666124703963
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -11.392307768362354,
+     "shake_rate": 0.0,
+     "avg_loss": -2.0137966184756313,
+     "expectancy": -2.0137966184756313,
+     "win_rate": 0.0,
+     "captured": -5.939813127392856
+    },
+    "n_windows": 5
+   }
+  },
+  "PSA": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -16.565248993684143,
+     "shake_rate": 0.0,
+     "avg_loss": -5.07833671902691,
+     "expectancy": 4.2443967666828755,
+     "win_rate": 33.33333333333333,
+     "captured": 12.803960938262149
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -16.565248993684122,
+     "shake_rate": 0.0,
+     "avg_loss": -6.670312203025941,
+     "expectancy": -0.4167478892164844,
+     "win_rate": 66.66666666666666,
+     "captured": -1.5492685636746883
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -7.252892984836956,
+     "shake_rate": 0.0,
+     "avg_loss": -3.4863612350278794,
+     "expectancy": -3.4863612350278794,
+     "win_rate": 0.0,
+     "captured": -3.4863612350279016
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -28.21737657146779,
+     "shake_rate": 22.22222222222222,
+     "avg_loss": -5.391278413882306,
+     "expectancy": -0.3669306328042866,
+     "win_rate": 22.22222222222222,
+     "captured": -5.700883207562002
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -15.455986450035352,
+     "shake_rate": 0.0,
+     "avg_loss": -3.4657671301015602,
+     "expectancy": 0.007876971323117488,
+     "win_rate": 50.0,
+     "captured": -0.42854845418335286
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -19.927142598509118,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -8.006455076134989,
+     "expectancy": -1.4887335628116207,
+     "win_rate": 33.33333333333333,
+     "captured": -5.8280172792294245
+    },
+    "n_windows": 5
+   }
+  },
+  "PSX": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -20.515371882412637,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -4.955412675304882,
+     "expectancy": -4.955412675304882,
+     "win_rate": 0.0,
+     "captured": -14.221960566216085
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -16.75178683432984,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -6.4454030864336485,
+     "expectancy": -3.4082632127410175,
+     "win_rate": 33.33333333333333,
+     "captured": -10.160383449830068
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -45.1540982837766,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -9.906412511208229,
+     "expectancy": -0.221182217787493,
+     "win_rate": 55.55555555555556,
+     "captured": -6.751063517125944
+    },
+    "oos": {
+     "n_trades": 9,
+     "max_dd": -32.482469036481696,
+     "shake_rate": 22.22222222222222,
+     "avg_loss": -8.68436798590315,
+     "expectancy": -2.872838176214459,
+     "win_rate": 44.44444444444444,
+     "captured": -24.44204082741549
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -14.575424103143341,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 7.987927347014501,
+     "win_rate": 100.0,
+     "captured": 16.045721049377182
+    },
+    "n_windows": 5
+   }
+  },
+  "RTX": {
+   "treat": {
+    "full": {
+     "n_trades": 2,
+     "max_dd": -15.93998688533651,
+     "shake_rate": 0.0,
+     "avg_loss": -2.4240606062984726,
+     "expectancy": 14.825862904925923,
+     "win_rate": 50.0,
+     "captured": 29.846639434475275
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -0.6264379408796761,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 2.5158378814385207,
+     "win_rate": 100.0,
+     "captured": 5.06394963345691
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -3.872472448114539,
+     "shake_rate": 0.0,
+     "avg_loss": -2.4240606062984726,
+     "expectancy": -2.4240606062984726,
+     "win_rate": 0.0,
+     "captured": -2.4240606062984726
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -19.347033778525557,
+     "shake_rate": 0.0,
+     "avg_loss": -2.696166334302874,
+     "expectancy": 8.202257041628009,
+     "win_rate": 50.0,
+     "captured": 37.31031609291768
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -18.364760579170515,
+     "shake_rate": 20.0,
+     "avg_loss": -5.247352841686281,
+     "expectancy": -2.064672122378115,
+     "win_rate": 40.0,
+     "captured": -10.46185705829118
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -3.872472448114539,
+     "shake_rate": 0.0,
+     "avg_loss": -2.4240606062984726,
+     "expectancy": 10.485884184109185,
+     "win_rate": 50.0,
+     "captured": 20.404639294530156
+    },
+    "n_windows": 5
+   }
+  },
+  "SATS": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -15.867397340197087,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -3.174202327479473,
+     "expectancy": -3.174202327479473,
+     "win_rate": 0.0,
+     "captured": -9.225607085038522
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -14.372327229183025,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -3.1687097683459453,
+     "expectancy": -0.7297560934239684,
+     "win_rate": 33.33333333333333,
+     "captured": -2.3498062528475083
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 11,
+     "max_dd": -31.387235367521093,
+     "shake_rate": 27.27272727272727,
+     "avg_loss": -3.2468410699475903,
+     "expectancy": 2.917485660564226,
+     "win_rate": 54.54545454545454,
+     "captured": 32.522091325692884
+    },
+    "oos": {
+     "n_trades": 9,
+     "max_dd": -17.75911692330494,
+     "shake_rate": 22.22222222222222,
+     "avg_loss": -3.262254475997856,
+     "expectancy": 4.010313482200842,
+     "win_rate": 55.55555555555556,
+     "captured": 37.95151826009737
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -28.23521137274684,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 2.2472367615017474,
+     "win_rate": 100.0,
+     "captured": 4.524417901788014
+    },
+    "n_windows": 5
+   }
+  },
+  "SBUX": {
+   "treat": {
+    "full": {
+     "n_trades": 2,
+     "max_dd": -24.483717521374093,
+     "shake_rate": 100.0,
+     "avg_loss": -10.175123594642827,
+     "expectancy": -10.175123594642827,
+     "win_rate": 0.0,
+     "captured": -19.3302063652226
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -10.587902631441171,
+     "shake_rate": 100.0,
+     "avg_loss": -8.938572843579994,
+     "expectancy": -8.938572843579994,
+     "win_rate": 0.0,
+     "captured": -8.938572843579973
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 8,
+     "max_dd": -29.292383102040542,
+     "shake_rate": 37.5,
+     "avg_loss": -12.124795334464492,
+     "expectancy": 0.48524294417281594,
+     "win_rate": 50.0,
+     "captured": -4.997338853400313
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -10.587902631441171,
+     "shake_rate": 20.0,
+     "avg_loss": -6.090787080077598,
+     "expectancy": 2.1250586259483706,
+     "win_rate": 40.0,
+     "captured": 9.318394052592339
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -10.045718995689112,
+     "shake_rate": 0.0,
+     "avg_loss": -5.383413220609679,
+     "expectancy": -0.3088249721040548,
+     "win_rate": 50.0,
+     "captured": -0.8742106744928368
+    },
+    "n_windows": 5
+   }
+  },
+  "SHW": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -15.161296238835742,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -6.881360840397788,
+     "expectancy": 1.8359438848978653,
+     "win_rate": 33.33333333333333,
+     "captured": 3.37061547749673
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -8.111327526272238,
+     "shake_rate": 0.0,
+     "avg_loss": -4.577002716348666,
+     "expectancy": 1.455186504141174,
+     "win_rate": 66.66666666666666,
+     "captured": 4.050332367063647
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -27.133558747995366,
+     "shake_rate": 20.0,
+     "avg_loss": -5.7030709601105976,
+     "expectancy": 4.3168447547429984,
+     "win_rate": 40.0,
+     "captured": 15.122518761252923
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -20.723932264196478,
+     "shake_rate": 20.0,
+     "avg_loss": -3.8129644272154075,
+     "expectancy": -0.4992662105748069,
+     "win_rate": 40.0,
+     "captured": -2.967080128902466
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -5.16557859193052,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 19.422883318557616,
+     "win_rate": 100.0,
+     "captured": 19.422883318557616
+    },
+    "n_windows": 5
+   }
+  },
+  "SLB": {
+   "treat": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -50.73978212619045,
+     "shake_rate": 66.66666666666666,
+     "avg_loss": -14.95291563188286,
+     "expectancy": -6.690266899576175,
+     "win_rate": 33.33333333333333,
+     "captured": -38.11911806809587
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -16.210217076399726,
+     "shake_rate": 50.0,
+     "avg_loss": -6.975831353326517,
+     "expectancy": -1.0150161893050487,
+     "win_rate": 50.0,
+     "captured": -4.738896173810914
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -26.000152844259226,
+     "shake_rate": 100.0,
+     "avg_loss": -13.449411840465864,
+     "expectancy": -13.449411840465864,
+     "win_rate": 0.0,
+     "captured": -25.272284370146558
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -58.142686630662375,
+     "shake_rate": 40.0,
+     "avg_loss": -10.607467328173671,
+     "expectancy": -3.2091149010934217,
+     "win_rate": 30.0,
+     "captured": -34.65335372835268
+    },
+    "oos": {
+     "n_trades": 8,
+     "max_dd": -44.80215284841683,
+     "shake_rate": 37.5,
+     "avg_loss": -9.38336738898831,
+     "expectancy": -4.08738007694999,
+     "win_rate": 37.5,
+     "captured": -31.035528069526464
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -27.06374973638993,
+     "shake_rate": 66.66666666666666,
+     "avg_loss": -13.449411840465864,
+     "expectancy": -1.4692541749082113,
+     "win_rate": 33.33333333333333,
+     "captured": -8.46522814719971
+    },
+    "n_windows": 5
+   }
+  },
+  "SO": {
+   "treat": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -12.302952137769918,
+     "shake_rate": 40.0,
+     "avg_loss": -5.548133602871524,
+     "expectancy": 0.08240656182975536,
+     "win_rate": 60.0,
+     "captured": -0.2990243415222027
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -12.564949113085477,
+     "shake_rate": 25.0,
+     "avg_loss": -4.683203898470589,
+     "expectancy": 0.05282177906893448,
+     "win_rate": 50.0,
+     "captured": -0.3298177798699786
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -11.563969231948912,
+     "shake_rate": 100.0,
+     "avg_loss": -8.91272516685907,
+     "expectancy": -8.91272516685907,
+     "win_rate": 0.0,
+     "captured": -8.912725166859081
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 7,
+     "max_dd": -12.302952137769918,
+     "shake_rate": 28.57142857142857,
+     "avg_loss": -5.042338862291077,
+     "expectancy": 1.0758440700831398,
+     "win_rate": 57.14285714285714,
+     "captured": 6.350494581162391
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -16.57819693783633,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -4.46571905935712,
+     "expectancy": -0.373778308550445,
+     "win_rate": 50.0,
+     "captured": -2.8390280907062304
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -11.563969231948912,
+     "shake_rate": 100.0,
+     "avg_loss": -8.91272516685907,
+     "expectancy": -8.91272516685907,
+     "win_rate": 0.0,
+     "captured": -8.912725166859081
+    },
+    "n_windows": 5
+   }
+  },
+  "SPG": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -14.844319697360643,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -8.334400272264652,
+     "expectancy": 7.829142926743744,
+     "win_rate": 66.66666666666666,
+     "captured": 27.158859843032836
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -5.525389225633215,
+     "shake_rate": 0.0,
+     "avg_loss": -2.786654523849197,
+     "expectancy": 0.4052642669326201,
+     "win_rate": 50.0,
+     "captured": 0.7102874694563166
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -2.8100606282761786,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 22.61754057033807,
+     "win_rate": 100.0,
+     "captured": 22.61754057033807
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -14.60365887401559,
+     "shake_rate": 20.0,
+     "avg_loss": -5.271767005636163,
+     "expectancy": 6.600238425744212,
+     "win_rate": 60.0,
+     "captured": 38.92714385576155
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -5.258391915138427,
+     "shake_rate": 0.0,
+     "avg_loss": -2.4978941314284353,
+     "expectancy": 0.7468509654617039,
+     "win_rate": 50.0,
+     "captured": 2.805043846562927
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -2.8100606282761786,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 22.61754057033807,
+     "win_rate": 100.0,
+     "captured": 22.61754057033807
+    },
+    "n_windows": 5
+   }
+  },
+  "SRE": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -5.480778196538861,
+     "shake_rate": 0.0,
+     "avg_loss": -2.139669827710755,
+     "expectancy": 1.76329256142628,
+     "win_rate": 75.0,
+     "captured": 7.12951283984653
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -5.538861886246316,
+     "shake_rate": 0.0,
+     "avg_loss": -2.139669827710755,
+     "expectancy": 0.5530545151633176,
+     "win_rate": 50.0,
+     "captured": 2.1362974247755906
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 12,
+     "max_dd": -14.955674058784963,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -1.6128530530009595,
+     "expectancy": 1.2426721431511902,
+     "win_rate": 66.66666666666666,
+     "captured": 15.45917949335298
+    },
+    "oos": {
+     "n_trades": 8,
+     "max_dd": -11.741306801593076,
+     "shake_rate": 12.5,
+     "avg_loss": -2.780570832590268,
+     "expectancy": 1.094712921848734,
+     "win_rate": 62.5,
+     "captured": 8.660701253384207
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -14.955674058784963,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -0.44513527341165093,
+     "expectancy": -0.09086591249469386,
+     "win_rate": 33.33333333333333,
+     "captured": -0.27752478555588267
+    },
+    "n_windows": 5
+   }
+  },
+  "STLD": {
+   "treat": {
+    "full": {
+     "n_trades": 7,
+     "max_dd": -17.251169522271304,
+     "shake_rate": 28.57142857142857,
+     "avg_loss": -7.808573266270047,
+     "expectancy": -0.32070491980638366,
+     "win_rate": 57.14285714285714,
+     "captured": 19.663491302432412
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -15.177647686677764,
+     "shake_rate": 0.0,
+     "avg_loss": -1.0386023851127968,
+     "expectancy": 7.965499604059262,
+     "win_rate": 75.0,
+     "captured": 33.675800118590395
+    },
+    "is": {
+     "n_trades": 4,
+     "max_dd": -14.429523778927656,
+     "shake_rate": 25.0,
+     "avg_loss": -6.163620238630601,
+     "expectancy": -2.6996782328524733,
+     "win_rate": 25.0,
+     "captured": -10.635876855805847
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 11,
+     "max_dd": -22.6818536047949,
+     "shake_rate": 9.090909090909092,
+     "avg_loss": -4.008896077757344,
+     "expectancy": 1.7831686536468536,
+     "win_rate": 45.45454545454545,
+     "captured": 45.9752963517009
+    },
+    "oos": {
+     "n_trades": 8,
+     "max_dd": -20.82792000616427,
+     "shake_rate": 0.0,
+     "avg_loss": -2.1433829467447945,
+     "expectancy": 6.119737282201182,
+     "win_rate": 50.0,
+     "captured": 54.99938326907026
+    },
+    "is": {
+     "n_trades": 4,
+     "max_dd": -17.117601469676103,
+     "shake_rate": 0.0,
+     "avg_loss": -3.123835706450373,
+     "expectancy": -1.179785966762359,
+     "win_rate": 25.0,
+     "captured": -4.730132692833234
+    },
+    "n_windows": 5
+   }
+  },
+  "TJX": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -6.1545031211373225,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 10.335155837552385,
+     "win_rate": 100.0,
+     "captured": 30.774015688844724
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -4.854282509775276,
+     "shake_rate": 0.0,
+     "avg_loss": -2.296317559001526,
+     "expectancy": 4.5417174989805495,
+     "win_rate": 66.66666666666666,
+     "captured": 13.631854356047324
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -6.1545031211373225,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 13.083594432459368,
+     "win_rate": 100.0,
+     "captured": 13.08359443245941
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 8,
+     "max_dd": -11.947676129020202,
+     "shake_rate": 12.5,
+     "avg_loss": -4.174765033021377,
+     "expectancy": 6.786511886681019,
+     "win_rate": 87.5,
+     "captured": 62.81960382095879
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -9.497596804851371,
+     "shake_rate": 0.0,
+     "avg_loss": -3.2355412960114514,
+     "expectancy": 3.425623822939725,
+     "win_rate": 66.66666666666666,
+     "captured": 21.278765784131437
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -6.1545031211373225,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 9.287401903031512,
+     "win_rate": 100.0,
+     "captured": 19.293251369942578
+    },
+    "n_windows": 5
+   }
+  },
+  "TMO": {
+   "treat": {
+    "full": {
+     "n_trades": 2,
+     "max_dd": -11.567529689010714,
+     "shake_rate": 0.0,
+     "avg_loss": -7.398622349761153,
+     "expectancy": -3.3201946796720563,
+     "win_rate": 50.0,
+     "captured": -6.696488154836366
+    },
+    "oos": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -7.587693509722415,
+     "shake_rate": 0.0,
+     "avg_loss": -7.398622349761153,
+     "expectancy": -7.398622349761153,
+     "win_rate": 0.0,
+     "captured": -7.398622349761164
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -15.810051084879916,
+     "shake_rate": 11.11111111111111,
+     "avg_loss": -5.269946668797817,
+     "expectancy": 1.4544002756720111,
+     "win_rate": 55.55555555555556,
+     "captured": 6.917519823618501
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -12.742914923617022,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -4.302109052334993,
+     "expectancy": -0.8981646657190497,
+     "win_rate": 33.33333333333333,
+     "captured": -6.060818773062349
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -13.443839865460205,
+     "shake_rate": 0.0,
+     "avg_loss": -7.398622349761153,
+     "expectancy": 2.9048851465835024,
+     "win_rate": 66.66666666666666,
+     "captured": 7.765235887981192
+    },
+    "n_windows": 5
+   }
+  },
+  "TSLA": {
+   "treat": {
+    "full": {
+     "n_trades": 1,
+     "max_dd": -16.752666365880597,
+     "shake_rate": 100.0,
+     "avg_loss": -13.88607451100572,
+     "expectancy": -13.88607451100572,
+     "win_rate": 0.0,
+     "captured": -13.88607451100572
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -16.752666365880597,
+     "shake_rate": 100.0,
+     "avg_loss": -13.88607451100572,
+     "expectancy": -13.88607451100572,
+     "win_rate": 0.0,
+     "captured": -13.88607451100572
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -35.374509357766556,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -8.687107090691908,
+     "expectancy": 5.563224123504798,
+     "win_rate": 50.0,
+     "captured": 28.320518778560853
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -22.811967296841217,
+     "shake_rate": 20.0,
+     "avg_loss": -9.760090018844913,
+     "expectancy": 8.557862730467916,
+     "win_rate": 60.0,
+     "captured": 40.41781808057259
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -16.27524581334644,
+     "shake_rate": 0.0,
+     "avg_loss": -6.541141234385894,
+     "expectancy": -6.541141234385894,
+     "win_rate": 0.0,
+     "captured": -6.541141234385906
+    },
+    "n_windows": 5
+   }
+  },
+  "TTWO": {
+   "treat": {
+    "full": {
+     "n_trades": 7,
+     "max_dd": -16.70039093267235,
+     "shake_rate": 14.285714285714285,
+     "avg_loss": -5.9427441654941955,
+     "expectancy": -0.5536585283639777,
+     "win_rate": 57.14285714285714,
+     "captured": -4.6295740695513565
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -14.171398880919917,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -4.3971796426251455,
+     "expectancy": -1.333457212459277,
+     "win_rate": 33.33333333333333,
+     "captured": -8.085168256348185
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -7.80264270740787,
+     "shake_rate": 0.0,
+     "avg_loss": -6.624466931103301,
+     "expectancy": 0.7124534045705566,
+     "win_rate": 66.66666666666666,
+     "captured": 1.7355613801289138
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -22.483620624147548,
+     "shake_rate": 20.0,
+     "avg_loss": -4.528590044415101,
+     "expectancy": -0.2169509623714616,
+     "win_rate": 60.0,
+     "captured": -3.003415243648988
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -23.0220919346535,
+     "shake_rate": 28.57142857142857,
+     "avg_loss": -4.3971796426251455,
+     "expectancy": -1.1037872472173962,
+     "win_rate": 42.857142857142854,
+     "captured": -7.833107874729317
+    },
+    "is": {
+     "n_trades": 5,
+     "max_dd": -7.802642707407859,
+     "shake_rate": 0.0,
+     "avg_loss": -3.455297306140559,
+     "expectancy": 0.713845548862202,
+     "win_rate": 60.0,
+     "captured": 3.187278876447608
+    },
+    "n_windows": 5
+   }
+  },
+  "UBER": {
+   "treat": {
+    "full": {
+     "n_trades": 5,
+     "max_dd": -15.160987830788253,
+     "shake_rate": 20.0,
+     "avg_loss": -4.2301937590995315,
+     "expectancy": 4.512774821616883,
+     "win_rate": 80.0,
+     "captured": 23.225637202162797
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -15.160987830788253,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -2.6380365948568074,
+     "expectancy": 1.7688127708622232,
+     "win_rate": 66.66666666666666,
+     "captured": 5.115055874631835
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -8.659923590310203,
+     "shake_rate": 0.0,
+     "avg_loss": -4.2301937590995315,
+     "expectancy": 6.337789022400536,
+     "win_rate": 50.0,
+     "captured": 11.960431141024785
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 11,
+     "max_dd": -21.230888743587183,
+     "shake_rate": 27.27272727272727,
+     "avg_loss": -5.597636038203159,
+     "expectancy": 1.718205023196291,
+     "win_rate": 54.54545454545454,
+     "captured": 16.004758368807327
+    },
+    "oos": {
+     "n_trades": 10,
+     "max_dd": -18.290635075772443,
+     "shake_rate": 10.0,
+     "avg_loss": -2.243551519211069,
+     "expectancy": 0.6886074096238692,
+     "win_rate": 50.0,
+     "captured": 6.2650757597805695
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -8.659923590310203,
+     "shake_rate": 0.0,
+     "avg_loss": -4.2301937590995315,
+     "expectancy": 6.337789022400536,
+     "win_rate": 50.0,
+     "captured": 11.960431141024785
+    },
+    "n_windows": 5
+   }
+  },
+  "UNH": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -26.919723791139404,
+     "shake_rate": 66.66666666666666,
+     "avg_loss": -9.877784398762406,
+     "expectancy": -9.877784398762406,
+     "win_rate": 0.0,
+     "captured": -6.382533788372213
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -12.248482085657797,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -6.15169977029964,
+     "expectancy": 5.266278050372989,
+     "win_rate": 33.33333333333333,
+     "captured": 12.643108191906038
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 11,
+     "max_dd": -54.16888894646801,
+     "shake_rate": 36.36363636363637,
+     "avg_loss": -9.022140747766755,
+     "expectancy": -5.582697133458154,
+     "win_rate": 27.27272727272727,
+     "captured": -35.07128100123802
+    },
+    "oos": {
+     "n_trades": 10,
+     "max_dd": -42.04796720556306,
+     "shake_rate": 30.0,
+     "avg_loss": -7.309402037452053,
+     "expectancy": -1.379240484413975,
+     "win_rate": 30.0,
+     "captured": -19.221925200009025
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -1.733801228549925,
+     "shake_rate": 0.0,
+     "avg_loss": -1.733801228549925,
+     "expectancy": -1.733801228549925,
+     "win_rate": 0.0,
+     "captured": -1.733801228549925
+    },
+    "n_windows": 5
+   }
+  },
+  "UNP": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -18.055898443316355,
+     "shake_rate": 0.0,
+     "avg_loss": -4.832017485295811,
+     "expectancy": -4.832017485295811,
+     "win_rate": 0.0,
+     "captured": -18.055898443316355
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -14.894550791020267,
+     "shake_rate": 0.0,
+     "avg_loss": -5.204481897880501,
+     "expectancy": -3.903361423410376,
+     "win_rate": 0.0,
+     "captured": -14.894550791020267
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 8,
+     "max_dd": -22.89008575985084,
+     "shake_rate": 0.0,
+     "avg_loss": -4.386682771727348,
+     "expectancy": -0.5393569858243228,
+     "win_rate": 25.0,
+     "captured": -6.000162808284326
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -13.936318638770185,
+     "shake_rate": 0.0,
+     "avg_loss": -4.884463862671554,
+     "expectancy": -1.71529021334293,
+     "win_rate": 28.57142857142857,
+     "captured": -12.052216912213797
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -3.8311098737450866,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 12.988390745167155,
+     "win_rate": 100.0,
+     "captured": 12.988390745167177
+    },
+    "n_windows": 5
+   }
+  },
+  "V": {
+   "treat": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -12.312020752330177,
+     "shake_rate": 0.0,
+     "avg_loss": -2.864554794471228,
+     "expectancy": 0.3340452714438372,
+     "win_rate": 16.666666666666664,
+     "captured": 0.5157037166389822
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -12.312020752330177,
+     "shake_rate": 0.0,
+     "avg_loss": -2.126816938404752,
+     "expectancy": -2.126816938404752,
+     "win_rate": 0.0,
+     "captured": -8.256815402003525
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -7.335674851291096,
+     "shake_rate": 0.0,
+     "avg_loss": -5.8155062187371325,
+     "expectancy": 4.285694794988032,
+     "win_rate": 50.0,
+     "captured": 7.734718769537019
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 12,
+     "max_dd": -17.93899717754981,
+     "shake_rate": 0.0,
+     "avg_loss": -2.8415477357819268,
+     "expectancy": 0.5598160198820941,
+     "win_rate": 33.33333333333333,
+     "captured": 4.561381630553196
+    },
+    "oos": {
+     "n_trades": 9,
+     "max_dd": -17.283071028394094,
+     "shake_rate": 0.0,
+     "avg_loss": -2.2920103112194483,
+     "expectancy": -0.5479973713824544,
+     "win_rate": 22.22222222222222,
+     "captured": -5.577049316537474
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -7.335674851291108,
+     "shake_rate": 0.0,
+     "avg_loss": -5.8155062187371325,
+     "expectancy": 3.5274740925677985,
+     "win_rate": 66.66666666666666,
+     "captured": 9.901299180023514
+    },
+    "n_windows": 5
+   }
+  },
+  "VLO": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -25.32590885624049,
+     "shake_rate": 25.0,
+     "avg_loss": -11.339069069539887,
+     "expectancy": 5.6208918112075485,
+     "win_rate": 75.0,
+     "captured": 21.711449891527025
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -8.038064122431422,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 8.005900660595156,
+     "win_rate": 100.0,
+     "captured": 16.61954553234444
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -2.1090417208644907,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.2556606534388495,
+     "win_rate": 100.0,
+     "captured": 0.2556606534388495
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -47.65660332315639,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -10.11965579736431,
+     "expectancy": -0.4015136735898841,
+     "win_rate": 44.44444444444444,
+     "captured": -9.458019765312287
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -31.882326541647053,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -14.107901562693492,
+     "expectancy": -1.7251467337825677,
+     "win_rate": 66.66666666666666,
+     "captured": -12.474060378021933
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -17.961146855360678,
+     "shake_rate": 0.0,
+     "avg_loss": -3.353294976323251,
+     "expectancy": 3.354795095752705,
+     "win_rate": 66.66666666666666,
+     "captured": 9.646972607089467
+    },
+    "n_windows": 5
+   }
+  },
+  "VMC": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -12.12232607113467,
+     "shake_rate": 0.0,
+     "avg_loss": -1.4832764158010048,
+     "expectancy": 7.927783072575292,
+     "win_rate": 75.0,
+     "captured": 34.668158908996325
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -12.12232607113467,
+     "shake_rate": 0.0,
+     "avg_loss": -1.4832764158010048,
+     "expectancy": 1.8950252559490066,
+     "win_rate": 50.0,
+     "captured": 3.711832497251355
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.8872351067627404,
+     "win_rate": 100.0,
+     "captured": 0.8872351067627404
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -26.39100870439912,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -6.574804122630737,
+     "expectancy": 1.31410461060836,
+     "win_rate": 55.55555555555556,
+     "captured": 8.553833990526671
+    },
+    "oos": {
+     "n_trades": 8,
+     "max_dd": -17.728613129445126,
+     "shake_rate": 12.5,
+     "avg_loss": -3.8090757357964744,
+     "expectancy": -0.05777218371984805,
+     "win_rate": 50.0,
+     "captured": -1.4395255070727142
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.8872351067627404,
+     "win_rate": 100.0,
+     "captured": 0.8872351067627404
+    },
+    "n_windows": 5
+   }
+  },
+  "VST": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -41.50661844401815,
+     "shake_rate": 25.0,
+     "avg_loss": -15.925548719632976,
+     "expectancy": 20.822311033223475,
+     "win_rate": 50.0,
+     "captured": 69.28754272308879
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -19.669808999855277,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -2.2821906486569232,
+     "expectancy": 13.94277059369986,
+     "win_rate": 33.33333333333333,
+     "captured": 39.76569728671966
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -1.0380439203819813,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 5.198631322255065,
+     "win_rate": 100.0,
+     "captured": 5.198631322255065
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -49.301555038439574,
+     "shake_rate": 50.0,
+     "avg_loss": -15.059094349017807,
+     "expectancy": 22.479246876044964,
+     "win_rate": 50.0,
+     "captured": 141.9726510895199
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -30.278503562078253,
+     "shake_rate": 50.0,
+     "avg_loss": -5.963522301700438,
+     "expectancy": 15.592132886078982,
+     "win_rate": 50.0,
+     "captured": 100.05152563514739
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -1.0380439203819813,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 5.198631322255065,
+     "win_rate": 100.0,
+     "captured": 5.198631322255065
+    },
+    "n_windows": 5
+   }
+  },
+  "VTR": {
+   "treat": {
+    "full": {
+     "n_trades": 1,
+     "max_dd": -13.567515741280356,
+     "shake_rate": 0.0,
+     "avg_loss": -6.696015579259084,
+     "expectancy": -6.696015579259084,
+     "win_rate": 0.0,
+     "captured": -6.69601557925904
+    },
+    "oos": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -13.567515741280356,
+     "shake_rate": 0.0,
+     "avg_loss": -6.696015579259084,
+     "expectancy": -6.696015579259084,
+     "win_rate": 0.0,
+     "captured": -6.69601557925904
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -16.58934457140675,
+     "shake_rate": 0.0,
+     "avg_loss": -7.0568498300513145,
+     "expectancy": 9.949857509976878,
+     "win_rate": 66.66666666666666,
+     "captured": 63.18245947415513
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -10.560916388252405,
+     "shake_rate": 0.0,
+     "avg_loss": -4.640250386199318,
+     "expectancy": 5.397909803797809,
+     "win_rate": 60.0,
+     "captured": 26.74218470619143
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -13.567515741280356,
+     "shake_rate": 0.0,
+     "avg_loss": -6.696015579259084,
+     "expectancy": -6.696015579259084,
+     "win_rate": 0.0,
+     "captured": -6.69601557925904
+    },
+    "n_windows": 5
+   }
+  },
+  "WBD": {
+   "treat": {
+    "full": {
+     "n_trades": 2,
+     "max_dd": -15.852678771178773,
+     "shake_rate": 0.0,
+     "avg_loss": -5.687930500380666,
+     "expectancy": 4.4000428080457175,
+     "win_rate": 50.0,
+     "captured": 7.976017328502549
+    },
+    "oos": {
+     "n_trades": 1,
+     "max_dd": -15.852678771178773,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 14.488016116472103,
+     "win_rate": 100.0,
+     "captured": 14.488016116472057
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -13.040391521503924,
+     "shake_rate": 0.0,
+     "avg_loss": -5.687930500380666,
+     "expectancy": -5.687930500380666,
+     "win_rate": 0.0,
+     "captured": -5.6879305003806335
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -38.33241980508462,
+     "shake_rate": 50.0,
+     "avg_loss": -6.506503513833041,
+     "expectancy": 0.7857859495508956,
+     "win_rate": 30.0,
+     "captured": 0.7476093753645108
+    },
+    "oos": {
+     "n_trades": 7,
+     "max_dd": -30.731884710789526,
+     "shake_rate": 57.14285714285714,
+     "avg_loss": -6.9357224761844,
+     "expectancy": 3.5878696561321997,
+     "win_rate": 28.57142857142857,
+     "captured": 15.90190092380681
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -13.533833328486644,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -5.433456107954643,
+     "expectancy": -1.1672556180944058,
+     "win_rate": 33.33333333333333,
+     "captured": -3.9858578392401145
+    },
+    "n_windows": 5
+   }
+  },
+  "WELL": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -6.154868807060754,
+     "shake_rate": 0.0,
+     "avg_loss": -3.7732335565424435,
+     "expectancy": 4.06473910808185,
+     "win_rate": 75.0,
+     "captured": 16.458798082408734
+    },
+    "oos": {
+     "n_trades": 2,
+     "max_dd": -3.407007412021701,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 5.598551866504042,
+     "win_rate": 100.0,
+     "captured": 11.20069091549869
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -3.954475574086558,
+     "shake_rate": 0.0,
+     "avg_loss": -3.7732335565424435,
+     "expectancy": -3.7732335565424435,
+     "win_rate": 0.0,
+     "captured": -3.7732335565424435
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 10,
+     "max_dd": -9.467889628279103,
+     "shake_rate": 0.0,
+     "avg_loss": -2.119125392693486,
+     "expectancy": 1.6897640194628072,
+     "win_rate": 50.0,
+     "captured": 16.93938747896977
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -9.467889628279103,
+     "shake_rate": 0.0,
+     "avg_loss": -3.2195126972450527,
+     "expectancy": 2.6591970119210107,
+     "win_rate": 66.66666666666666,
+     "captured": 7.620570552049988
+    },
+    "is": {
+     "n_trades": 6,
+     "max_dd": -6.267146170864413,
+     "shake_rate": 0.0,
+     "avg_loss": -1.8440285665555944,
+     "expectancy": 0.014160483833880466,
+     "win_rate": 33.33333333333333,
+     "captured": -0.1618330270271917
+    },
+    "n_windows": 5
+   }
+  },
+  "WFC": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -21.110100240284012,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -7.357511489819863,
+     "expectancy": -2.8383315120359893,
+     "win_rate": 33.33333333333333,
+     "captured": -9.202748836267826
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -20.540675807809784,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -7.357511489819863,
+     "expectancy": -1.6204767838002805,
+     "win_rate": 33.33333333333333,
+     "captured": -6.079081264953978
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -20.540675807809805,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -6.975433805356297,
+     "expectancy": 0.499063706353207,
+     "win_rate": 50.0,
+     "captured": 7.280343166745062
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -20.540675807809762,
+     "shake_rate": 33.33333333333333,
+     "avg_loss": -6.975433805356297,
+     "expectancy": -0.09204968435482427,
+     "win_rate": 50.0,
+     "captured": -2.415835033490221
+    },
+    "is": {
+     "n_trades": 1,
+     "max_dd": -7.602449423681968,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 13.718320074693825,
+     "win_rate": 100.0,
+     "captured": 13.718320074693846
+    },
+    "n_windows": 5
+   }
+  },
+  "WMB": {
+   "treat": {
+    "full": {
+     "n_trades": 4,
+     "max_dd": -14.644065154209473,
+     "shake_rate": 25.0,
+     "avg_loss": -4.150689848792988,
+     "expectancy": -0.45087272105278076,
+     "win_rate": 25.0,
+     "captured": -2.629481901360775
+    },
+    "oos": {
+     "n_trades": 4,
+     "max_dd": -14.644065154209473,
+     "shake_rate": 25.0,
+     "avg_loss": -4.150689848792988,
+     "expectancy": -0.45087272105278076,
+     "win_rate": 25.0,
+     "captured": -2.629481901360753
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 6,
+     "max_dd": -14.644065154209486,
+     "shake_rate": 16.666666666666664,
+     "avg_loss": -3.169156748455912,
+     "expectancy": 0.11233348293968788,
+     "win_rate": 33.33333333333333,
+     "captured": -0.22304342246932674
+    },
+    "oos": {
+     "n_trades": 5,
+     "max_dd": -14.644065154209473,
+     "shake_rate": 20.0,
+     "avg_loss": -4.150689848792988,
+     "expectancy": -0.3606981768422246,
+     "win_rate": 20.0,
+     "captured": -2.629481901360753
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   }
+  },
+  "WMT": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -7.069701699501296,
+     "shake_rate": 0.0,
+     "avg_loss": -1.5090003631654136,
+     "expectancy": 3.7669201314688725,
+     "win_rate": 66.66666666666666,
+     "captured": 11.1681532674762
+    },
+    "oos": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "is": {
+     "n_trades": 2,
+     "max_dd": -4.250092531092243,
+     "shake_rate": 0.0,
+     "avg_loss": -1.5090003631654136,
+     "expectancy": 2.409537481752966,
+     "win_rate": 50.0,
+     "captured": 4.723584283845095
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 9,
+     "max_dd": -12.433593528609554,
+     "shake_rate": 0.0,
+     "avg_loss": -3.7172694167361184,
+     "expectancy": 1.9867118222772342,
+     "win_rate": 55.55555555555556,
+     "captured": 17.589280347782356
+    },
+    "oos": {
+     "n_trades": 6,
+     "max_dd": -9.547353148516846,
+     "shake_rate": 0.0,
+     "avg_loss": -2.8000646571693917,
+     "expectancy": 0.8069943013470193,
+     "win_rate": 33.33333333333333,
+     "captured": 4.246893593528811
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -9.168694315160153,
+     "shake_rate": 0.0,
+     "avg_loss": -3.3229631253537564,
+     "expectancy": -0.1059503080120557,
+     "win_rate": 33.33333333333333,
+     "captured": -0.6559886275937066
+    },
+    "n_windows": 5
+   }
+  },
+  "XOM": {
+   "treat": {
+    "full": {
+     "n_trades": 3,
+     "max_dd": -8.436420219673579,
+     "shake_rate": 0.0,
+     "avg_loss": -2.958965353268078,
+     "expectancy": -1.2768632533280346,
+     "win_rate": 33.33333333333333,
+     "captured": -3.906547857909337
+    },
+    "oos": {
+     "n_trades": 3,
+     "max_dd": -8.436420219673568,
+     "shake_rate": 0.0,
+     "avg_loss": -2.958965353268078,
+     "expectancy": -1.2768632533280346,
+     "win_rate": 33.33333333333333,
+     "captured": -3.906547857909315
+    },
+    "is": {
+     "n_trades": 0,
+     "max_dd": 0.0,
+     "shake_rate": 0.0,
+     "avg_loss": 0.0,
+     "expectancy": 0.0,
+     "win_rate": 0.0,
+     "captured": 0.0
+    },
+    "n_windows": 5
+   },
+   "base": {
+    "full": {
+     "n_trades": 13,
+     "max_dd": -22.793336668664953,
+     "shake_rate": 0.0,
+     "avg_loss": -3.231967750965725,
+     "expectancy": 1.939859327619495,
+     "win_rate": 46.15384615384615,
+     "captured": 23.670812593878598
+    },
+    "oos": {
+     "n_trades": 9,
+     "max_dd": -10.914168205863572,
+     "shake_rate": 0.0,
+     "avg_loss": -2.874657226872031,
+     "expectancy": 0.8035277358162859,
+     "win_rate": 55.55555555555556,
+     "captured": 6.912961221612202
+    },
+    "is": {
+     "n_trades": 3,
+     "max_dd": -13.41183749845609,
+     "shake_rate": 0.0,
+     "avg_loss": -4.599056165624793,
+     "expectancy": 0.12227295465366457,
+     "win_rate": 66.66666666666666,
+     "captured": 0.17974350914056192
+    },
+    "n_windows": 5
+   }
+  }
+ }
+}

@@ -1,0 +1,1 @@
+{"ticker":"BAX","asof":"2026-06-18","tf":"3D","state":"mixed","above200":true,"weekly_bull":false,"trail_stop":19.4675,"trail_breach":false,"markers":[{"date":"2026-03-02","type":"sell"},{"date":"2026-04-16","type":"buy","quality":"block","reason":"counter-trend, no 200-reclaim/hold"}],"risk_flags":["2026-02-20","2026-04-29"],"early_markers":[],"early_now":false}

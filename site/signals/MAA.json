@@ -1,0 +1,1 @@
+{"ticker":"MAA","asof":"2026-06-18","tf":"3D","state":"mixed","above200":true,"weekly_bull":false,"trail_stop":133.4825,"trail_breach":true,"markers":[{"date":"2026-04-16","type":"buy","quality":"block","reason":"counter-trend, no 200-reclaim/hold"}],"risk_flags":["2026-02-20","2026-05-12","2026-05-28","2026-06-15"],"early_markers":["2026-03-31"],"early_now":false}

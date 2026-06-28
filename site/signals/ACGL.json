@@ -1,0 +1,1 @@
+{"ticker":"ACGL","asof":"2026-06-18","tf":"3D","state":"mixed","above200":false,"weekly_bull":false,"trail_stop":91.7423,"trail_breach":true,"markers":[{"date":"2026-03-05","type":"sell"},{"date":"2026-04-13","type":"buy","quality":"take","reason":"held confirmation"}],"risk_flags":["2026-03-05","2026-04-29","2026-05-25","2026-06-18"],"early_markers":[],"early_now":false}

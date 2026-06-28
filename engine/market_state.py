@@ -467,6 +467,11 @@ def _radar_override(latest: dict, overrides: list) -> dict:
         "gross": _num(rr.get("gross_factor")),
         "dd5": _num(dp.get("h5")), "dd10": _num(dp.get("h10")), "dd21": _num(dp.get("h21")),
         "dd_lift": _num(dp.get("lift_h21")),
+        # unconditional "normal" base rates per horizon — the reference the radar card draws the
+        # escalating odds against (so a 4% near-term bar can't be misread as "no risk"). Stable
+        # constants from engine/risk_radar._PROB_BASE; template falls back to them on older payloads.
+        "dd_base": {"h5": _num(dp.get("base_h5")), "h10": _num(dp.get("base_h10")),
+                    "h21": _num(dp.get("base_h21"))},
         "is_loud": state in ("caution", "elevated", "risk-off"),
         "amp": 0, "amp_keys": [], "amp_flags_en": [], "amp_flags_zh": [],
         "severe_gated": False, "ceiling": None,
@@ -536,7 +541,8 @@ def _calm_radar() -> dict:
     simply omits the banner ({% if MS.radar.state %})."""
     return {"state": None, "top_score": None, "label_en": "calm", "label_zh": "平静",
             "state_zh": "", "do_en": "", "do_zh": "", "gross": None,
-            "dd5": None, "dd10": None, "dd21": None, "dd_lift": None, "is_loud": False,
+            "dd5": None, "dd10": None, "dd21": None, "dd_lift": None,
+            "dd_base": {"h5": None, "h10": None, "h21": None}, "is_loud": False,
             "amp": 0, "amp_keys": [], "amp_flags_en": [], "amp_flags_zh": [],
             "severe_gated": False, "ceiling": None}
 

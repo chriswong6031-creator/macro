@@ -1,0 +1,1 @@
+{"ticker":"PAYX","asof":"2026-06-18","tf":"3D","state":"mixed","above200":false,"weekly_bull":false,"trail_stop":97.8718,"trail_breach":false,"markers":[{"date":"2026-03-02","type":"buy","quality":"block","reason":"counter-trend, no 200-reclaim/hold"}],"risk_flags":["2026-03-10","2026-04-21","2026-05-04","2026-05-12","2026-06-15"],"early_markers":[],"early_now":false}

@@ -9,6 +9,7 @@ on:
     paths:
       - "site/**"
       - "scripts/check_inline_js.py"
+      - "scripts/check_nav_gap.py"
       - ".github/workflows/ci.yml"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
       # must re-prove the contract still holds (see the signal-contract job below).
@@ -29,6 +30,17 @@ jobs:
       - uses: actions/checkout@v4
       - name: inline JS must parse
         run: python3 scripts/check_inline_js.py site
+
+  nav-gap:
+    # The shared nav menu (.site-nav / vector-family .topbar) has no built-in top
+    # gap — it relies on each page's body top padding. A new page that zeroes its
+    # body padding jams the menu against the viewport top ("menu with no padding").
+    # This catches that regression BEFORE merge instead of after it ships.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: nav menu must keep a top gap
+        run: python3 scripts/check_nav_gap.py site
 
   signal-contract:
     # HARD pre-merge gate for the signal→chart §7 contract (research/signal_engine/SCHEMA.json,

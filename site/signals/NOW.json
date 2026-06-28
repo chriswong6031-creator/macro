@@ -1,0 +1,1 @@
+{"ticker":"NOW","asof":"2026-06-18","tf":"3D","state":"mixed","above200":false,"weekly_bull":false,"trail_stop":102.4051,"trail_breach":true,"markers":[{"date":"2026-02-12","type":"buy","quality":"block","reason":"counter-trend, no 200-reclaim/hold"}],"risk_flags":["2026-03-10","2026-03-18","2026-06-05"],"early_markers":[],"early_now":false}

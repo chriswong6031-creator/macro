@@ -1,0 +1,1 @@
+{"ticker":"CDW","asof":"2026-06-18","tf":"3D","state":"mixed","above200":false,"weekly_bull":false,"trail_stop":127.4361,"trail_breach":false,"markers":[{"date":"2026-05-07","type":"sell"},{"date":"2026-05-28","type":"buy","quality":"block","reason":"veto: bearish divergence"}],"risk_flags":["2026-05-04","2026-06-15"],"early_markers":[],"early_now":false}

@@ -1,0 +1,1 @@
+{"ticker":"GRMN","asof":"2026-06-18","tf":"3D","state":"mixed","above200":true,"weekly_bull":false,"trail_stop":236.2922,"trail_breach":true,"markers":[{"date":"2026-03-26","type":"sell"},{"date":"2026-04-08","type":"rebuy","quality":"take","reason":"held confirmation"}],"risk_flags":["2026-03-10","2026-03-26","2026-04-24"],"early_markers":["2026-06-18"],"early_now":true}

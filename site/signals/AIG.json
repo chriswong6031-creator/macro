@@ -1,0 +1,1 @@
+{"ticker":"AIG","asof":"2026-06-18","tf":"3D","state":"mixed","above200":false,"weekly_bull":false,"trail_stop":74.5811,"trail_breach":true,"markers":[{"date":"2026-02-09","type":"buy","quality":"block","reason":"counter-trend, no 200-reclaim/hold"}],"risk_flags":["2026-03-02","2026-04-21","2026-05-07","2026-06-18"],"early_markers":[],"early_now":false}

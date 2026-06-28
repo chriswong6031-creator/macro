@@ -1,0 +1,1 @@
+{"ticker":"WDAY","asof":"2026-06-18","tf":"3D","state":"mixed","above200":false,"weekly_bull":false,"trail_stop":128.9008,"trail_breach":true,"markers":[{"date":"2026-03-05","type":"buy","quality":"block","reason":"counter-trend, no 200-reclaim/hold"}],"risk_flags":["2026-05-25","2026-06-10"],"early_markers":["2026-02-25"],"early_now":false}

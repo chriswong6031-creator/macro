@@ -1,0 +1,1 @@
+{"ticker":"IBKR","asof":"2026-06-18","tf":"3D","state":"long-bias","above200":true,"weekly_bull":false,"trail_stop":89.7661,"trail_breach":false,"markers":[{"date":"2026-02-20","type":"sell"},{"date":"2026-04-08","type":"buy","quality":"take","reason":"held confirmation"}],"risk_flags":["2026-02-17","2026-05-20"],"early_markers":["2026-03-13"],"early_now":false}

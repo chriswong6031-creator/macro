@@ -1,0 +1,1 @@
+{"ticker":"LH","asof":"2026-06-18","tf":"3D","state":"mixed","above200":false,"weekly_bull":false,"trail_stop":260.3438,"trail_breach":true,"markers":[{"date":"2026-03-10","type":"sell"},{"date":"2026-05-28","type":"buy","quality":"take","reason":"reclaimed 200 & held"}],"risk_flags":["2026-03-05","2026-04-21","2026-06-15"],"early_markers":["2026-03-31"],"early_now":false}

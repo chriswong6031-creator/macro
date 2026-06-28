@@ -1,0 +1,1 @@
+{"ticker":"301602.SZ","asof":"2026-06-16","tf":"3D","state":"mixed","above200":false,"weekly_bull":false,"trail_stop":16.084,"trail_breach":true,"markers":[{"date":"2026-01-02","type":"buy","quality":"block","reason":"counter-trend, no 200-reclaim/hold"},{"date":"2026-02-13","type":"sell"}],"risk_flags":["2026-01-23"],"early_markers":["2026-03-16"],"early_now":false}

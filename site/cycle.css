@@ -8,6 +8,14 @@
 .cyc-page { --c: var(--link); --rad: 16px; --ease: cubic-bezier(.22,.61,.36,1); }
 .cyc-wrap { max-width: 1320px; margin: 0 auto; padding: 0 22px 72px; }
 
+/* The shared menu bar (_site_nav → .site-nav) carries no built-in top gap — it
+   relies on the host page giving <body> a top padding. The pages styled by
+   cycle.css (cycle, markets, sector_central[_china], sector_cycles[_china]) set
+   no body padding, so without this the menu jams against the very top of the
+   viewport — the recurring "menu has no padding" bug. Owning the gap here fixes
+   every cycle.css page at once; the floor is enforced by scripts/check_nav_gap.py. */
+body { margin: 0; padding-top: 24px; }
+
 /* nav layout (desktop horizontal; theme.js collapses it under 700px) */
 .site-nav .nav-links { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
 .site-nav .nav-link { font-size: 13.5px; color: var(--muted); text-decoration: none; padding: 6px 11px; border-radius: 9px; transition: color .16s, background .16s; }

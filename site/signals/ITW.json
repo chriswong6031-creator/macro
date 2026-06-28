@@ -1,0 +1,1 @@
+{"ticker":"ITW","asof":"2026-06-18","tf":"3D","state":"long-bias","above200":true,"weekly_bull":false,"trail_stop":257.7086,"trail_breach":false,"markers":[{"date":"2026-03-05","type":"sell"},{"date":"2026-06-05","type":"buy","quality":"take","reason":"reclaimed 200 & held"}],"risk_flags":["2026-03-02","2026-04-13","2026-04-29"],"early_markers":["2026-04-08"],"early_now":false}

@@ -1,0 +1,1 @@
+{"ticker":"APO","asof":"2026-06-18","tf":"3D","state":"long-bias","above200":true,"weekly_bull":false,"trail_stop":133.3911,"trail_breach":false,"markers":[{"date":"2026-03-23","type":"buy","quality":"block","reason":"counter-trend, no 200-reclaim/hold"}],"risk_flags":["2026-05-28"],"early_markers":["2026-02-04"],"early_now":false}

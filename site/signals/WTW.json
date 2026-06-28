@@ -1,0 +1,1 @@
+{"ticker":"WTW","asof":"2026-06-18","tf":"3D","state":"long-bias","above200":false,"weekly_bull":false,"trail_stop":259.0983,"trail_breach":true,"markers":[{"date":"2026-04-29","type":"sell"},{"date":"2026-06-02","type":"buy","quality":"block","reason":"counter-trend, no 200-reclaim/hold"}],"risk_flags":["2026-04-29","2026-06-15"],"early_markers":[],"early_now":false}
