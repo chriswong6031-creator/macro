@@ -47,10 +47,12 @@ permissions:
 concurrency:
   # Its OWN lane — NEVER shares a group with `pipeline-daily` (so it can't cancel the nightly)
   # nor `pipeline-render` (so a template render and an engine recompute don't kill each other;
-  # both commit site/ with rebase-retry, so a race is safe). A newer engine-render supersedes
-  # an older in-flight one.
+  # both commit site/ with rebase-retry, so a race is safe).
+  # cancel-in-progress: FALSE — a running engine-render always finishes (never starved by the
+  # next engine push); GitHub still supersedes redundant *pending* runs so only the latest
+  # queued recompute runs next. (Same fix as render.yml — `true` starved the lane under bursts.)
   group: pipeline-engine-render
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   engine-render:
