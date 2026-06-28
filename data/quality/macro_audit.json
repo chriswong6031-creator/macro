@@ -1,0 +1,183 @@
+{
+ "asof": "2026-06-27",
+ "audit": "macro",
+ "config": {
+  "price_max_gap_days": 4,
+  "price_move_alert_pct": 20,
+  "price_recent_days": 120,
+  "macro_revision_alert_pct": 5,
+  "macro_stale_days": 45,
+  "universe_min_bars": 250,
+  "abort_fail_pct": 5,
+  "warn_fail_pct": 1,
+  "macro_outlier_z": 5,
+  "email_alerts": false
+ },
+ "n": 140,
+ "n_failed": 0,
+ "fail_pct": 0.0,
+ "n_flags": 25,
+ "universes": [
+  {
+   "name": "fred",
+   "n": 114,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 18,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": [
+    {
+     "name": "CPIAUCSL",
+     "kind": "gap",
+     "detail": "1 recent gap(s) > 45d (largest 61d at 2025-09-01->2025-11-01)"
+    },
+    {
+     "name": "CPILFESL",
+     "kind": "gap",
+     "detail": "1 recent gap(s) > 45d (largest 61d at 2025-09-01->2025-11-01)"
+    },
+    {
+     "name": "CUSR0000SAH1",
+     "kind": "gap",
+     "detail": "1 recent gap(s) > 45d (largest 61d at 2025-09-01->2025-11-01)"
+    },
+    {
+     "name": "CUSR0000SASLE",
+     "kind": "gap",
+     "detail": "1 recent gap(s) > 45d (largest 61d at 2025-09-01->2025-11-01)"
+    },
+    {
+     "name": "ECIALLCIV",
+     "kind": "stale",
+     "detail": "last 2026-01-01, 177d old (cadence ~92d, quarterly)"
+    },
+    {
+     "name": "ECIWAG",
+     "kind": "stale",
+     "detail": "last 2026-01-01, 177d old (cadence ~92d, quarterly)"
+    },
+    {
+     "name": "FEDTARMD",
+     "kind": "gap",
+     "detail": "2 recent gap(s) > 130d (largest 365d at 2026-01-01->2027-01-01)"
+    },
+    {
+     "name": "IR3TIB01GBM156N",
+     "kind": "stale",
+     "detail": "last 2026-01-01, 177d old (cadence ~31d, monthly)"
+    },
+    {
+     "name": "IRLTLT01EZM156N",
+     "kind": "stale",
+     "detail": "last 2026-01-01, 177d old (cadence ~31d, monthly)"
+    },
+    {
+     "name": "M2SL",
+     "kind": "stale",
+     "detail": "last 2026-04-01, 87d old (cadence ~31d, monthly)"
+    },
+    {
+     "name": "MICH",
+     "kind": "stale",
+     "detail": "last 2026-04-01, 87d old (cadence ~31d, monthly)"
+    },
+    {
+     "name": "PCEPI",
+     "kind": "stale",
+     "detail": "last 2026-04-01, 87d old (cadence ~31d, monthly)"
+    },
+    {
+     "name": "PCEPILFE",
+     "kind": "stale",
+     "detail": "last 2026-04-01, 87d old (cadence ~31d, monthly)"
+    },
+    {
+     "name": "RECPROUSM156N",
+     "kind": "stale",
+     "detail": "last 2026-04-01, 87d old (cadence ~31d, monthly)"
+    },
+    {
+     "name": "RIFSPPNA2P2D90NB",
+     "kind": "gap",
+     "detail": "23 recent gap(s) > 3bd (largest 21bd at 2024-12-17->2025-01-15)"
+    },
+    {
+     "name": "RIFSPPNAAD90NB",
+     "kind": "gap",
+     "detail": "22 recent gap(s) > 3bd (largest 29bd at 2025-12-10->2026-01-20)"
+    },
+    {
+     "name": "SAHMREALTIME",
+     "kind": "gap",
+     "detail": "1 recent gap(s) > 45d (largest 61d at 2025-09-01->2025-11-01)"
+    },
+    {
+     "name": "UMCSENT",
+     "kind": "stale",
+     "detail": "last 2026-04-01, 87d old (cadence ~31d, monthly)"
+    }
+   ]
+  },
+  {
+   "name": "china_macro",
+   "n": 13,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 6,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": [
+    {
+     "name": "fai",
+     "kind": "gap",
+     "detail": "2 recent gap(s) > 45d (largest 90d at 2024-12-01->2025-03-01)"
+    },
+    {
+     "name": "indpro",
+     "kind": "gap",
+     "detail": "2 recent gap(s) > 45d (largest 90d at 2024-12-01->2025-03-01)"
+    },
+    {
+     "name": "lpr_rate",
+     "kind": "gap",
+     "detail": "17 recent gap(s) > 3bd (largest 25bd at 2026-01-20->2026-02-24)"
+    },
+    {
+     "name": "retail",
+     "kind": "gap",
+     "detail": "2 recent gap(s) > 45d (largest 90d at 2024-12-01->2025-03-01)"
+    },
+    {
+     "name": "rrr",
+     "kind": "gap",
+     "detail": "1 recent gap(s) > 130d (largest 222d at 2024-09-27->2025-05-07)"
+    },
+    {
+     "name": "rrr",
+     "kind": "stale",
+     "detail": "last 2025-05-07, 416d old (cadence ~70d, quarterly)"
+    }
+   ]
+  },
+  {
+   "name": "eia",
+   "n": 13,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 1,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": [
+    {
+     "name": "spr_stocks",
+     "kind": "zoutlier",
+     "detail": "spr_stocks latest \u0394 z=-7.5"
+    }
+   ]
+  }
+ ]
+}

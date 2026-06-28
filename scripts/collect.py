@@ -227,10 +227,90 @@ def all_adapters() -> dict:
     return registry
 
 
+def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -> dict:
+    """End-of-collection DATA-QUALITY GATE (read-only over the stores; writes only data/quality/*).
+
+    Runs the three deterministic audits — prices, macro, universe — each of which writes its own
+    data/quality/<name>_audit.json (committed, so the trend is visible run-over-run), then enforces
+    the governance thresholds from the config `quality:` block:
+      - any non-skipped universe failing > `abort_fail_pct` (5%) of its members -> RuntimeError (aborts
+        the run; surfaces as a failed CI step) — the ONE place collect.py intentionally exits nonzero;
+      - the `warn_fail_pct`..`abort_fail_pct` band (1-5%) -> warn + log, never fatal;
+      - soft FLAGS (big single-day moves, macro z-outliers, staleness) -> logged, never fatal.
+
+    NEVER emails: the `quality.email_alerts` flag is honored ONLY as a conspicuous log line (no email
+    backend is wired) — results live in data/quality/*_audit.json and this log. Returns a summary dict.
+    audit_fns lets tests inject crafted audit docs to exercise the gate without real corrupt data."""
+    from scripts import audit_common
+    cfg = cfg or audit_common.quality_cfg()
+    if audit_fns is None:
+        from scripts import audit_prices, audit_macro, audit_universe
+        audit_fns = [
+            ("prices", lambda: audit_prices.run(cfg=cfg)),
+            ("macro", lambda: audit_macro.run(cfg=cfg)),
+            ("universe", lambda: audit_universe.run(cfg=cfg)),
+        ]
+
+    docs: list[tuple[str, dict]] = []
+    for name, fn in audit_fns:
+        try:
+            docs.append((name, fn()))
+        except Exception as e:  # noqa: BLE001 — an audit is a safety net; its own crash must not abort the run
+            log.error("[quality] audit %s crashed (non-fatal): %s", name, e)
+
+    # Email policy: deterministic file + conspicuous log; we DO NOT send email.
+    if cfg.get("email_alerts"):
+        log.warning("[quality] !!! quality.email_alerts=true but NO email backend is wired — "
+                    "audit results are FILE + LOG ONLY (data/quality/*_audit.json); no email sent.")
+    else:
+        log.info("[quality] email disabled (quality.email_alerts=false) — "
+                 "results in data/quality/*_audit.json (committed for trend).")
+
+    abort_pct = float(cfg.get("abort_fail_pct", 5.0))
+    warn_pct = float(cfg.get("warn_fail_pct", 1.0))
+    aborts: list[str] = []
+    warns: list[str] = []
+    total_fail = total_n = total_flags = 0
+    for name, doc in docs:
+        total_flags += int(doc.get("n_flags", 0) or 0)
+        for u in doc.get("universes", []):
+            if u.get("skipped"):
+                continue
+            n = int(u.get("n", 0) or 0)
+            if n == 0:
+                continue
+            total_n += n
+            total_fail += int(u.get("n_failed", 0) or 0)
+            fp = float(u.get("fail_pct", 0.0) or 0.0)
+            line = f"{name}/{u.get('name')}: {u.get('n_failed')}/{n} failed ({fp:.1f}%)"
+            if fp > abort_pct:
+                aborts.append(line)
+            elif fp > warn_pct:
+                warns.append(line)
+        if doc.get("n_flags"):
+            log.info("[quality] %s: %d soft flag(s) — logged, non-fatal", name, doc["n_flags"])
+
+    for w in warns:
+        log.warning("[quality] elevated failure rate (%.0f-%.0f%%): %s", warn_pct, abort_pct, w)
+
+    summary = {"audits": len(docs), "n": total_n, "n_failed": total_fail,
+               "n_flags": total_flags, "aborts": aborts, "warns": warns}
+    if aborts:
+        msg = ("[quality] DATA-QUALITY GATE FAILED — >%.0f%% of a universe failed:\n  - %s"
+               % (abort_pct, "\n  - ".join(aborts)))
+        log.error(msg)
+        raise RuntimeError(msg)
+    log.info("[quality] gate passed — %d audit(s), %d/%d members failed, %d soft flag(s); "
+             "0 universes over %.0f%%.", len(docs), total_fail, total_n, total_flags, abort_pct)
+    return summary
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--full-history", action="store_true")
     ap.add_argument("--only", default="")
+    ap.add_argument("--skip-quality", action="store_true",
+                    help="skip the end-of-collection data-quality audit gate")
     args = ap.parse_args()
 
     registry = all_adapters()
@@ -375,6 +455,18 @@ def main() -> int:
 
     ok = sum(1 for r in results if r.status in ("ok", "stale"))
     log.info("collection done: %d/%d sources usable", ok, len(results))
+
+    # End-of-collection DATA-QUALITY GATE. Runs LAST so it audits everything just collected.
+    # Skipped on a partial `--only` run (the universe/macro audits would falsely flag the
+    # sources that run never refreshed) and behind an explicit opt-out. A >5% universe
+    # failure raises RuntimeError here — the intended, conspicuous abort.
+    if args.skip_quality:
+        log.info("[quality] data-quality gate skipped (--skip-quality).")
+    elif args.only:
+        log.info("[quality] data-quality gate skipped on partial --only run (%s).", args.only)
+    else:
+        run_quality_audits()
+
     return 0 if ok > 0 else 1
 
 

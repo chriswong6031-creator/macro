@@ -58,7 +58,27 @@
       '.bchart-full{position:fixed;inset:0;z-index:10000;margin:0;box-sizing:border-box;height:100vh;height:100dvh;background:var(--bg);padding:max(10px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}',
       '.bchart-full .bchart-canvas{flex:1 1 auto;height:auto;overscroll-behavior:contain}',
       'html.bchart-lock,html.bchart-lock body{overflow:hidden!important}',
-      '@media (max-width:640px){.bchart-canvas{--bchart-h:430px}.bchart-msg{--bchart-h:430px}.bchart-chips{margin-left:0}}'
+      // "Last Signals" panel: a collapsible read-out of recent buy/sell/cut/rebuy events
+      // (the §7 signal contract). Theme-aware via CSS vars; pure DOM (no canvas).
+      '.bchart-sig{border:1px solid var(--line);border-radius:12px;background:var(--panel2);overflow:hidden}',
+      '.bchart-sig>summary{list-style:none;cursor:pointer;display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:9px 12px;font:600 12px/1.3 inherit;color:var(--text);-webkit-tap-highlight-color:transparent}',
+      '.bchart-sig>summary::-webkit-details-marker{display:none}',
+      '.bchart-sig>summary .chev{margin-left:auto;color:var(--muted);font-size:11px;transition:transform .15s}',
+      '.bchart-sig[open]>summary .chev{transform:rotate(90deg)}',
+      '.bchart-sig .sig-ctx{display:inline-flex;flex-wrap:wrap;gap:6px}',
+      '.bchart-sig .sig-cx{font:600 10.5px/1.4 inherit;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:3px 7px;background:var(--panel)}',
+      '.bchart-sig .sig-list{list-style:none;margin:0;padding:2px 0 6px;border-top:1px solid var(--line)}',
+      '.bchart-sig .sig-row{display:flex;align-items:baseline;gap:9px;padding:5px 12px;font:500 11.5px/1.45 inherit}',
+      '.bchart-sig .sig-row+.sig-row{border-top:1px solid color-mix(in srgb,var(--line) 50%,transparent)}',
+      '.bchart-sig .sig-g{font-weight:800;width:1.05em;text-align:center;flex:none}',
+      '.bchart-sig .sig-ty{color:var(--text);font-weight:700;min-width:52px;flex:none}',
+      '.bchart-sig .sig-dt{color:var(--muted);font-variant-numeric:tabular-nums;flex:none}',
+      '.bchart-sig .sig-q{font:700 9.5px/1 inherit;letter-spacing:.02em;padding:3px 6px;border-radius:5px;flex:none;text-transform:uppercase}',
+      '.bchart-sig .sig-q.take{color:var(--up);border:1px solid color-mix(in srgb,var(--up) 55%,var(--line))}',
+      '.bchart-sig .sig-q.block{color:var(--muted);border:1px solid var(--line)}',
+      '.bchart-sig .sig-q.pending{color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 55%,var(--line))}',
+      '.bchart-sig .sig-rs{color:var(--muted);margin-left:auto;text-align:right;min-width:0}',
+      '@media (max-width:640px){.bchart-canvas{--bchart-h:430px}.bchart-msg{--bchart-h:430px}.bchart-chips{margin-left:0}.bchart-sig .sig-rs{display:none}}'
     ].join('');
     document.head.appendChild(s);
   }
@@ -252,6 +272,10 @@
     if (this.tf === '4H') this.tf = '1D';      // 4H loads on demand, not at mount
     this.inds = new Set(pr.inds || ['rsi', 'stochrsi']);   // default: RSI + Stoch RSI
     this.ema = pr.ema !== false;               // EMA overlays default on
+    this.showSig = pr.showSig !== false;       // on-chart signal markers default on
+    this.sigOpen = !!pr.sigOpen;               // "Last Signals" panel default collapsed
+    this.signals = null;                       // site/signals/<T>.json (lazy, optional)
+    this._sigPrim = null;                      // attached marker primitive (if any)
     this.rows = null; this.data = null;
     this._onTheme = this.rerender.bind(this);
     this._onLang = this.rebuildUI.bind(this);
@@ -275,6 +299,7 @@
       self.hasVol = self.rows.some(function (r) { return r.v != null && r.v > 0; });
       self.buildUI();
       self.rerender();
+      self.loadSignals();   // lazy-load site/signals/<T>.json (markers + Last Signals panel)
       document.addEventListener('themechange', self._onTheme);
       document.addEventListener('langchange', self._onLang);
       document.addEventListener('keydown', self._onKey);
@@ -323,6 +348,8 @@
       };
       chips.appendChild(b);
     });
+    this.chips = chips;
+    if (this.signals && this.signals.markers && this.signals.markers.length) this.appendSignalsChip();
     bar.appendChild(chips);
     this.bar = bar; this.wrap.appendChild(bar);
 
@@ -389,7 +416,8 @@
     });
   };
   Instance.prototype.persist = function () {
-    savePrefs({ tf: this.tf, inds: Array.from(this.inds), ema: this.ema });
+    savePrefs({ tf: this.tf, inds: Array.from(this.inds), ema: this.ema,
+                showSig: this.showSig, sigOpen: this.sigOpen });
   };
 
   // (re)build the whole chart — cheap (data already in memory) and avoids any
@@ -408,6 +436,7 @@
         try { keepRange = this.chart.timeScale().getVisibleLogicalRange(); } catch (e) {}
       }
       try { this.chart.remove(); } catch (e) {}
+      this._sigPrim = null;   // chart.remove() disposed any attached marker primitive
     }
     this._lastTf = this.tf;
     this.plot.innerHTML = '';
@@ -533,6 +562,7 @@
     }
     this.wireLegend();
     this.updateLegend(null);
+    this.renderSignals();   // (re)attach the signal-marker overlay on top of the fresh chart
   };
 
   function toLine(rows, arr) {
@@ -624,7 +654,10 @@
     var up = r.c >= prev, sgn = up ? 'up' : 'dn';
     var ch = r.c - prev, chp = prev ? (ch / prev * 100) : 0;
     var pp = (this.data.o === 1) ? 2 : 2;
-    var html = '<span class="t">' + this.ticker + '</span> <span class="k">' + fmtTime(r.time) + '</span>';
+    var reconTag = (this.data && this.data.recon)
+      ? ' <span class="k" title="high/low reconstructed from close — not exchange intraday">~recon</span>' : '';
+    var html = '<span class="t">' + this.ticker + '</span>' + reconTag +
+      ' <span class="k">' + fmtTime(r.time) + '</span>';
     if (this.tf === '4H' || this.data.o === 1) {
       html += '<div class="row">O<span class="v"> ' + fnum(r.o, pp) + '</span> H<span class="v"> ' + fnum(r.h, pp) +
               '</span> L<span class="v"> ' + fnum(r.l, pp) + '</span> C<span class="' + sgn + '"> ' + fnum(r.c, pp) + '</span> ' +
@@ -654,6 +687,246 @@
     if (this._io) { try { this._io.disconnect(); } catch (e) {} this._io = null; }
     if (this.chart) { try { this.chart.remove(); } catch (e) {} this.chart = null; }
   };
+
+  // ===========================================================================
+  // Signal markers (the §7 signal->chart contract). The signal engine WRITES
+  // site/signals/<TICKER>.json; the chart READS it here. Display-only — these are
+  // a risk / entry-quality read for the eye and the brain, never a trade trigger.
+  //
+  //   markers[].type:    buy (BUY*) | sell (SELL*) | cut (fast-reversal cut) | rebuy
+  //   markers[].quality: take | block   (on buy/rebuy only, per §7A)
+  //                      ...plus "pending" — emitted by engine/signal_quality.analyze
+  //                      for the last 1-2 unconfirmed bars. §7A's enum does NOT list it,
+  //                      so we render it defensively (dim/dashed) rather than invent a
+  //                      contract; the divergence is a §7 item to raise, not codify.
+  // Rendering (§7): buy=green up-triangle below bar, rebuy=lime up-triangle below,
+  //   sell=red down-triangle above bar, cut=orange X; take=solid, block=hollow.
+  // ===========================================================================
+
+  // first index i with arr[i] >= key. arr holds 'YYYY-MM-DD' strings (sort == chrono).
+  function lowerBound(arr, key) {
+    var lo = 0, hi = arr.length;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (arr[mid] < key) lo = mid + 1; else hi = mid; }
+    return lo;
+  }
+
+  // i18n lexicons (read live lang via tt/lang, like the rest of the chart) ------
+  function lxType(t) {
+    return t === 'buy' ? tt('Buy', '买入') : t === 'sell' ? tt('Sell', '卖出')
+         : t === 'cut' ? tt('Cut', '止损') : t === 'rebuy' ? tt('Re-buy', '回补') : t;
+  }
+  function lxQual(q) {
+    return q === 'take' ? tt('Take', '采纳') : q === 'block' ? tt('Block', '过滤')
+         : q === 'pending' ? tt('Pending', '待定') : q;
+  }
+  function qClass(q) { return q === 'take' ? 'take' : q === 'pending' ? 'pending' : 'block'; }
+  function lxState(s) {
+    return s === 'long-bias' ? tt('Long-bias', '偏多')
+         : s === 'short-bias' ? tt('Short-bias', '偏空') : tt('Mixed', '中性');
+  }
+  function glyphChar(t) { return (t === 'buy' || t === 'rebuy') ? '▲' : t === 'sell' ? '▼' : '✕'; }
+  function glyphVar(t) {
+    return t === 'sell' ? 'var(--down)' : t === 'cut' ? 'var(--warn)'
+         : t === 'rebuy' ? '#7ed957' : 'var(--up)';   // lime has no theme token; literal
+  }
+  var REASON_ZH = {
+    'held confirmation': '确认持稳',
+    'failed reclaim-and-hold': '未能站稳',
+    'veto: bearish divergence': '否决：顶背离',
+    'reclaimed 200 & held': '收复200日并站稳',
+    'counter-trend, no 200-reclaim/hold': '逆势，未收复/站稳200日',
+    'pending confirmation': '待确认'
+  };
+  function lxReason(r) { return lang() === 'zh' ? (REASON_ZH[r] || r) : r; }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  Instance.prototype.loadSignals = function () {
+    var self = this, dir = this.opts.signalsDir || 'signals';
+    fetch(dir + '/' + safeName(this.ticker) + '.json')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j || !j.markers || !j.markers.length) return;   // no file (non-US, or none) -> silent
+        self.signals = j;
+        if (self.chips && !self.chips.querySelector('[data-sig]')) self.appendSignalsChip();
+        self.renderSignals();   // chart already built: attach overlay + panel, no full rebuild
+      })
+      .catch(function () {});   // garnish: a missing/blocked file just means no markers
+  };
+
+  Instance.prototype.appendSignalsChip = function () {
+    if (!this.chips) return;
+    var self = this;
+    var b = document.createElement('button');
+    b.className = 'bchart-chip' + (this.showSig ? ' on' : '');
+    b.dataset.sig = '1';
+    b.textContent = tt('Signals', '信号');
+    b.title = tt('Buy / sell / cut signal markers (display-only)', '买/卖/止损信号标记（仅供参考）');
+    b.onclick = function () {
+      self.showSig = !self.showSig; self.persist();
+      b.classList.toggle('on', self.showSig);
+      self.renderSignals();
+    };
+    this.chips.appendChild(b);
+  };
+
+  // Snap each 3D-bin marker date onto an actual chart bar. The engine bins on a pandas
+  // '3B' fixed business-day grid (label = bin's LEFT edge, may be a holiday); the chart
+  // resamples by floor(i/3) over real sessions — the two never share a phase, so we map
+  // a marker to the bar whose bucket COVERS it (first bar with time >= date) instead of
+  // assuming equality. LWC also requires a marker time to be a real series time.
+  Instance.prototype.mapMarkers = function (rows) {
+    var ms = (this.signals && this.signals.markers) || [];
+    if (!rows.length) return [];
+    var times = rows.map(function (r) { return r.time; });
+    var first = times[0], last = times[times.length - 1];
+    var out = [], stack = {};   // (barTime|side) -> count, to fan overlapping glyphs apart
+    for (var m = 0; m < ms.length; m++) {
+      var d = ms[m].date; if (!d) continue;
+      // The signal history (full parquet, back to the 80s) routinely outruns the chart's
+      // OHLC window (site/ohlc is capped to keep pages light). A marker with no price bar
+      // to sit on can't be drawn — skip it rather than pile every old one onto bar 0.
+      if (d < first || d > last) continue;
+      var idx = lowerBound(times, d);
+      if (idx >= rows.length) idx = rows.length - 1;   // safety: d<=last already guarantees idx<len
+      var bar = rows[idx]; if (!bar) continue;
+      var t = ms[m].type, side = (t === 'buy' || t === 'rebuy') ? 1 : -1;  // +1 below, -1 above
+      var key = bar.time + '|' + side, s = stack[key] || 0; stack[key] = s + 1;
+      out.push({ time: bar.time, lo: bar.l, hi: bar.h, type: t,
+                 quality: ms[m].quality || null, side: side, stack: s });
+    }
+    return out;
+  };
+
+  // (Re)build the on-chart overlay + the Last Signals panel. Always safe to call; never
+  // throws into the chart's paint (markers are garnish — degrade to nothing instead).
+  Instance.prototype.renderSignals = function () {
+    if (this._sigPrim && this.S.price) { try { this.S.price.detachPrimitive(this._sigPrim); } catch (e) {} }
+    this._sigPrim = null;
+    this.buildSignalsPanel();
+    if (!this.chart || !this.S.price || !this.showSig) return;
+    if (!this.signals || !this.signals.markers || !this.signals.markers.length) return;
+    if (this.tf === '4H') return;                                  // intraday axis != daily dates
+    var rows = this.view;
+    if (!rows || !rows.length || typeof rows[0].time !== 'string') return;
+    var mapped = this.mapMarkers(rows);
+    if (!mapped.length) return;
+    var pal = {
+      up: cssVar('--up', '#45b873'), down: cssVar('--down', '#e06464'),
+      warn: cssVar('--warn', '#e0a030'), muted: cssVar('--muted', '#8b93a1'),
+      panel: cssVar('--panel', '#181b21'), lime: '#7ed957'
+    };
+    var prim = makeSignalsOverlay(pal, mapped);
+    try { this.S.price.attachPrimitive(prim); this._sigPrim = prim; } catch (e) { this._sigPrim = null; }
+  };
+
+  Instance.prototype.buildSignalsPanel = function () {
+    if (this.sigPanel && this.sigPanel.parentNode) this.sigPanel.parentNode.removeChild(this.sigPanel);
+    this.sigPanel = null;
+    var sg = this.signals;
+    if (!this.wrap || !sg || !sg.markers || !sg.markers.length) return;
+    var self = this;
+    var det = document.createElement('details');
+    det.className = 'bchart-sig';
+    if (this.sigOpen) det.open = true;
+    det.addEventListener('toggle', function () { self.sigOpen = det.open; self.persist(); });
+    var ctx = '<span class="sig-ctx">' +
+      '<span class="sig-cx">' + esc(lxState(sg.state)) + '</span>' +
+      '<span class="sig-cx">' + (sg.above200 ? tt('Above 200-DMA', '200日上方') : tt('Below 200-DMA', '200日下方')) + '</span>' +
+      '<span class="sig-cx">' + (sg.weekly_bull ? tt('Weekly bull', '周线多头') : tt('Weekly bear', '周线空头')) + '</span></span>';
+    var sum = document.createElement('summary');
+    sum.innerHTML = '<span>' + tt('Last Signals', '近期信号') + '</span>' + ctx + '<span class="chev">▸</span>';
+    det.appendChild(sum);
+    var ul = document.createElement('ul'); ul.className = 'sig-list';
+    sg.markers.slice(-10).reverse().forEach(function (m) {
+      var li = document.createElement('li'); li.className = 'sig-row';
+      li.innerHTML =
+        '<span class="sig-g" style="color:' + glyphVar(m.type) + '">' + glyphChar(m.type) + '</span>' +
+        '<span class="sig-ty">' + esc(lxType(m.type)) + '</span>' +
+        '<span class="sig-dt">' + esc(m.date) + '</span>' +
+        (m.quality ? '<span class="sig-q ' + qClass(m.quality) + '">' + esc(lxQual(m.quality)) + '</span>' : '') +
+        (m.reason ? '<span class="sig-rs">' + esc(lxReason(m.reason)) + '</span>' : '');
+      ul.appendChild(li);
+    });
+    det.appendChild(ul);
+    this.wrap.appendChild(det);
+    this.sigPanel = det;
+  };
+
+  // A v5 series primitive that paints the markers. It plugs into LWC's own render loop
+  // (paneViews -> renderer.draw), so it stays in sync on scroll/zoom WITHOUT us adding a
+  // single scroll listener — and the per-frame cost is just a few culled glyph draws.
+  function makeSignalsOverlay(pal, mapped) {
+    var HW = 5, H = 9, GAP = 9, STEP = 12, XW = 5;   // glyph geometry, in media (CSS) px
+    var prim = {
+      attached: function (p) { prim._chart = p.chart; prim._series = p.series; },
+      detached: function () { prim._chart = null; prim._series = null; },
+      updateAllViews: function () {},
+      paneViews: function () { return [view]; }
+    };
+    var view = { zOrder: function () { return 'top'; }, renderer: function () { return { draw: draw }; } };
+
+    function draw(target) {
+      var chart = prim._chart, series = prim._series;
+      if (!chart || !series) return;
+      var ts = chart.timeScale();
+      try {
+        target.useBitmapCoordinateSpace(function (scope) {
+          var ctx = scope.context, hr = scope.horizontalPixelRatio, vr = scope.verticalPixelRatio;
+          var W = scope.bitmapSize.width, G = { HW: HW, H: H, GAP: GAP, STEP: STEP, XW: XW };
+          for (var i = 0; i < mapped.length; i++) {
+            var m = mapped[i], x = null, y = null;
+            try { x = ts.timeToCoordinate(m.time); } catch (e) {}
+            if (x == null) continue;
+            var xb = x * hr;
+            if (xb < -24 || xb > W + 24) continue;                 // cull off-screen -> cheap
+            try { y = series.priceToCoordinate(m.side > 0 ? m.lo : m.hi); } catch (e) {}
+            if (y == null) continue;
+            drawGlyph(ctx, m, xb, y * vr, hr, vr, pal, G);
+          }
+        });
+      } catch (e) { /* never let a marker bug break the chart */ }
+    }
+    return prim;
+  }
+
+  function drawGlyph(ctx, m, xb, yb, hr, vr, pal, G) {
+    var color = m.type === 'sell' ? pal.down : m.type === 'cut' ? pal.warn
+              : m.type === 'rebuy' ? pal.lime : pal.up;
+    var hollow = (m.type === 'buy' || m.type === 'rebuy') && m.quality !== 'take';
+    var pending = m.quality === 'pending';
+    var off = (G.GAP + m.stack * G.STEP) * vr, hw = G.HW * hr, h = G.H * vr;
+    var xw = G.XW * hr, xy = G.XW * vr;
+    ctx.save();
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.setLineDash([]);
+    if (m.type === 'cut') {                                   // ✕ above the bar
+      var cy = yb - off - xy;
+      ctx.strokeStyle = color; ctx.lineWidth = Math.max(1.4, 1.8 * hr);
+      ctx.beginPath();
+      ctx.moveTo(xb - xw, cy - xy); ctx.lineTo(xb + xw, cy + xy);
+      ctx.moveTo(xb + xw, cy - xy); ctx.lineTo(xb - xw, cy + xy);
+      ctx.stroke(); ctx.restore(); return;
+    }
+    ctx.beginPath();
+    if (m.side > 0) {                                          // ▲ below bar, apex toward bar
+      var ay = yb + off; ctx.moveTo(xb, ay); ctx.lineTo(xb - hw, ay + h); ctx.lineTo(xb + hw, ay + h);
+    } else {                                                   // ▼ above bar, apex toward bar
+      var by = yb - off; ctx.moveTo(xb, by); ctx.lineTo(xb - hw, by - h); ctx.lineTo(xb + hw, by - h);
+    }
+    ctx.closePath();
+    if (hollow) {                                              // block (and pending) = outline
+      ctx.strokeStyle = color; ctx.lineWidth = Math.max(1.3, 1.6 * hr);
+      if (pending) { ctx.setLineDash([3 * hr, 2.4 * hr]); ctx.globalAlpha = 0.6; }   // unconfirmed
+      ctx.stroke();
+    } else {                                                   // take (and bare sell) = filled
+      ctx.fillStyle = color; ctx.fill();
+      ctx.strokeStyle = pal.panel; ctx.lineWidth = Math.max(0.6, 0.8 * hr); ctx.stroke();   // edge
+    }
+    ctx.restore();
+  }
 
   // ---- public API -----------------------------------------------------------
   window.StockChart = {

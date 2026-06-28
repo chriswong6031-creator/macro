@@ -2896,7 +2896,7 @@ def main() -> int:
         chart_vix_term=chart_vix_term(f, _cf),     # VIX level + term-structure ratio
         cross_asset=cross_asset_snap,
         fear_euphoria=fear_euphoria_synthesis(latest, f),
-        regime_snap=_rs_view,                     # velocity complement + triggered AI veto (display-only)
+        regime_snap=_rs_view,
         market_state=market_state_view(latest, f),  # Green/Yellow/Red market-state command-center (display-only)
         signal_stack=build_signal_stack(latest),  # consolidated cross-subsystem read (display-only)
         vol_shock=_vol_shock_view(latest, event_risk),  # forward vol-shock risk gauge (display-only)

@@ -6,7 +6,17 @@ name: ci
 on:
   pull_request:
     branches: [main]
-    paths: ["site/**", "scripts/check_inline_js.py", ".github/workflows/ci.yml"]
+    paths:
+      - "site/**"
+      - "scripts/check_inline_js.py"
+      - ".github/workflows/ci.yml"
+      # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
+      # must re-prove the contract still holds (see the signal-contract job below).
+      - "research/signal_engine/SCHEMA.json"
+      - "scripts/validate_signals.py"
+      - "scripts/build_signal_quality.py"
+      - "engine/signal_quality.py"
+      - "tests/test_validate_signals.py"
   workflow_dispatch:
 
 permissions:
@@ -19,3 +29,22 @@ jobs:
       - uses: actions/checkout@v4
       - name: inline JS must parse
         run: python3 scripts/check_inline_js.py site
+
+  signal-contract:
+    # HARD pre-merge gate for the signal→chart §7 contract (research/signal_engine/SCHEMA.json,
+    # the single source of truth shared with the charting app). A PR that drifts the engine output
+    # from the schema, weakens the validator, or breaks a contract rule fails RED here — the safe
+    # place to block (no deploy to stall). The daily build's gate is deliberately resilient
+    # (discard-bad-write, never 404 the dashboard); this is where blocking has teeth. The test
+    # suite includes an engine-analyze()-conforms-to-schema check that catches forgot-to-update-
+    # the-schema drift without needing data fixtures.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install jsonschema pytest pandas numpy pyyaml
+      - name: signal §7 contract tests
+        run: python -m pytest tests/test_validate_signals.py -q

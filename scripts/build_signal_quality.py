@@ -57,24 +57,36 @@ def main() -> None:
                     close = close.dropna()
                 if close is None or len(close) < 130:
                     close = pd.read_parquet(fp)["close"].dropna()
+                res = analyze(t, close)
             else:
-                close = pd.read_parquet(fp)["close"].dropna()
-            res = analyze(t, close)
+                df = pd.read_parquet(fp)
+                close = df["close"].dropna()
+                # data/stocks carries TRUE intraday high/low — feed them so swing-high &
+                # bearish-divergence read real extremes (close-only names omit them and
+                # fall back to close; see engine.ohlc_reconstruct for the recon path).
+                high = df["high"] if "high" in df.columns else None
+                low = df["low"] if "low" in df.columns else None
+                res = analyze(t, close, high, low)
         except Exception:
             continue
         if not res:
             continue
         (out_sig / f"{t}.json").write_text(json.dumps(res, separators=(",", ":")))
         asof = res["asof"]
+        # `markers` is the validated trade stream only (risk_flag breaches live in their own
+        # res["risk_flags"] list), so the brain's `last` is cleanly the last trade decision.
         snap.append({"ticker": t, "asof": res["asof"], "state": res["state"],
                      "above200": res["above200"], "weekly_bull": res["weekly_bull"],
-                     "trail_breach": res["trail_breach"],
+                     "trail_breach": res["trail_breach"], "trail_stop": res["trail_stop"],
+                     "early_now": res.get("early_now", False),
                      "last": res["markers"][-1] if res["markers"] else None})
 
     note = ("entry-quality RISK signal (display-only, NOT alpha); "
             "see research/signal_engine/CHARTER.md. "
             "Exits are the simple validated baseline (sell=SELL*, cut=fast-reversal). "
-            "trail_breach/trail_stop = close-below-EMA8(3D) tail-risk flag (display-only, NOT a sell).")
+            "trail_breach/trail_stop = close-below-EMA8(3D) tail-risk flag (display-only, NOT a sell). "
+            "early_now / res.early_markers = 2D-MACD pre-cross ADVANCE-WARNING (display-only context, "
+            "NOT a buy and NOT scored; acting early is empirically worse entry quality — see CONFLUENCE_TUNING.md).")
     if args.intraday:
         note += " [intraday-derived close, ~15-min delayed — research hook]"
     (arch / "mtf_signals_latest.json").write_text(json.dumps({

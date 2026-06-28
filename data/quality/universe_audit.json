@@ -1,0 +1,793 @@
+{
+ "asof": "2026-06-27",
+ "audit": "universe",
+ "config": {
+  "price_max_gap_days": 4,
+  "price_move_alert_pct": 20,
+  "price_recent_days": 120,
+  "macro_revision_alert_pct": 5,
+  "macro_stale_days": 45,
+  "universe_min_bars": 250,
+  "abort_fail_pct": 5,
+  "warn_fail_pct": 1,
+  "macro_outlier_z": 5,
+  "email_alerts": false
+ },
+ "n": 506,
+ "n_failed": 0,
+ "fail_pct": 0.0,
+ "n_flags": 138,
+ "universes": [
+  {
+   "name": "us_sectors",
+   "n": 11,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 0,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": []
+  },
+  {
+   "name": "us_etfs",
+   "n": 39,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 0,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": []
+  },
+  {
+   "name": "us_themes",
+   "n": 134,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 45,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": [
+    {
+     "name": "A",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "AA",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "AGCO",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "ATI",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "BSX",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "CENX",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "CF",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "CMC",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "CRS",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "DGX",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "DHR",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "ENPH",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "ENS",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "EW",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "FISV",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "FMC",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "FSLR",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "IDXX",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "ILMN",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "INSP",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "IQV",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "ITRI",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "KALU",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "LH",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "MDT",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "MOS",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "MTRN",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "NEO",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "ORA",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "PAYO",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "PNR",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "PODD",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "RELY",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "RMD",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "RUN",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "SEDG",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "SMG",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "SYK",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "TMDX",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "TNDM",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "TXNM",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "VCYT",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "WCC",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "XYL",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    },
+    {
+     "name": "ZBH",
+     "kind": "nobars",
+     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
+    }
+   ]
+  },
+  {
+   "name": "china_constituents",
+   "n": 82,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 6,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": [
+    {
+     "name": "000069.SZ",
+     "kind": "missing",
+     "detail": "not in data/china_search/closes.parquet (coverage-limited store)"
+    },
+    {
+     "name": "000799.SZ",
+     "kind": "missing",
+     "detail": "not in data/china_search/closes.parquet (coverage-limited store)"
+    },
+    {
+     "name": "002624.SZ",
+     "kind": "missing",
+     "detail": "not in data/china_search/closes.parquet (coverage-limited store)"
+    },
+    {
+     "name": "600038.SS",
+     "kind": "missing",
+     "detail": "not in data/china_search/closes.parquet (coverage-limited store)"
+    },
+    {
+     "name": "600606.SS",
+     "kind": "missing",
+     "detail": "not in data/china_search/closes.parquet (coverage-limited store)"
+    },
+    {
+     "name": "603899.SS",
+     "kind": "missing",
+     "detail": "not in data/china_search/closes.parquet (coverage-limited store)"
+    }
+   ]
+  },
+  {
+   "name": "canada_constituents",
+   "n": 74,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 1,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": [
+    {
+     "name": "NA.TO",
+     "kind": "missing",
+     "detail": "not in data/canada_search/closes.parquet (coverage-limited store)"
+    }
+   ]
+  },
+  {
+   "name": "hk_sectors",
+   "n": 159,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 86,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": [
+    {
+     "name": "0011.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0014.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0101.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0135.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0144.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0151.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0200.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0241.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0257.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0268.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0285.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0316.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0322.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0323.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0345.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0371.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0390.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0392.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0489.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0639.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0656.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0669.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0683.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0763.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0772.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0778.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0780.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0836.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0867.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0884.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0902.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0960.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "0998.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1057.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1066.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1072.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1112.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1113.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1186.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1208.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1209.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1336.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1347.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1359.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1658.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1766.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1799.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1801.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1816.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1833.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1898.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "1958.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "2007.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "2057.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "2150.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "2196.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "2313.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "2333.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "2338.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "2378.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "2382.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "2392.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "2607.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "2688.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "2883.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "2888.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "2899.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "3333.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "3618.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "3692.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "3800.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "3888.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "3968.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "6060.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "6098.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "6618.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "6808.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "6818.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "6969.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "9626.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "9633.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "9698.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "9863.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "9926.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "9961.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    },
+    {
+     "name": "9999.HK",
+     "kind": "missing",
+     "detail": "not in site/hkstockdata (coverage-limited store)"
+    }
+   ]
+  },
+  {
+   "name": "intl_indices",
+   "n": 7,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 0,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": []
+  }
+ ]
+}
