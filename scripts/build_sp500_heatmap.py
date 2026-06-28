@@ -20,7 +20,6 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -51,61 +50,13 @@ def _load_closes() -> pd.DataFrame:
 
 
 def _load_industry_map() -> dict:
-    """ticker -> {'sector': finviz_sector, 'sub_industry': finviz_industry}.
-
-    Prefers the curated Finviz-taxonomy map (``industry_map.json``) that drives
-    the Sector → Subsector grouping; falls back to the legacy GICS sub-industry
-    file when only that is present.
-    """
-    for name in ("industry_map.json", "gics_industry.json"):
-        p = _data("sp500_heatmap", name)
-        if p.exists():
-            try:
-                return json.loads(p.read_text())
-            except Exception as e:  # noqa: BLE001
-                log.warning("industry map %s unreadable: %s", name, e)
-    return {}
-
-
-# Dual-class pairs whose nightly cap (when present) reflects the whole company —
-# the static fallback splits these by float so each tile sizes sensibly.
-_DUAL_CLASS = {"GOOGL", "GOOG", "FOXA", "FOX", "NWSA", "NWS"}
-
-
-def _load_static_caps() -> dict[str, float]:
-    """Curated offline market-cap fallback (USD) for names the nightly records
-    miss. Always overridden by a live/reference cap; only fills gaps."""
-    p = _data("sp500_heatmap", "market_caps_fallback.json")
-    if not p.exists():
-        return {}
-    try:
-        return {str(k).strip().upper(): float(v) for k, v in json.loads(p.read_text()).items() if v}
-    except Exception as e:  # noqa: BLE001
-        log.warning("static caps unreadable: %s", e)
-        return {}
-
-
-def _load_caps_from_stockdata(site: Path, symbols: list[str]) -> dict[str, float]:
-    """Real market caps harvested from the nightly per-stock records
-    (``site/stockdata/<T>.json`` -> profile.mktcap_bn). Offline + leak-free, and
-    keyed to the same names the hover card reads, so the treemap sizes by true
-    market cap without any network. Returns {} if the directory is absent."""
-    sdir = site / "stockdata"
-    if not sdir.exists():
-        return {}
-    caps: dict[str, float] = {}
-    for s in symbols:
-        fp = sdir / f"{str(s).replace('=', '_').replace('^', '_')}.json"
-        if not fp.exists():
-            continue
+    p = _data("sp500_heatmap", "gics_industry.json")
+    if p.exists():
         try:
-            prof = (json.loads(fp.read_text()) or {}).get("profile") or {}
-        except Exception:  # noqa: BLE001
-            continue
-        cap = prof.get("mktcap_bn")
-        if cap is not None and cap == cap and float(cap) > 0:  # finite + positive
-            caps[s] = float(cap) * 1e9
-    return caps
+            return json.loads(p.read_text())
+        except Exception as e:  # noqa: BLE001
+            log.warning("industry map unreadable: %s", e)
+    return {}
 
 
 def _load_sector_weights() -> dict[str, float]:
@@ -133,81 +84,6 @@ def _load_sector_weights() -> dict[str, float]:
             if pd.notna(w):
                 out[t] = float(w)
     return out
-
-
-def _load_weights_by_etf() -> dict[str, dict[str, float]]:
-    """{ETF: {ticker: latest within-sector weight_pct}} — kept per-ETF so a cap
-    proxy can be calibrated against each fund's own scale."""
-    out: dict[str, dict[str, float]] = {}
-    hdir = _data("sector_holdings")
-    if not hdir.exists():
-        return out
-    for fp in sorted(hdir.glob("XL*.parquet")):
-        try:
-            df = pd.read_parquet(fp)
-        except Exception:  # noqa: BLE001
-            continue
-        if df.empty or "ticker" not in df.columns or "weight_pct" not in df.columns:
-            continue
-        if df.index.name is not None or not isinstance(df.index, pd.RangeIndex):
-            try:
-                df = df.loc[[df.index.max()]]
-            except Exception:  # noqa: BLE001
-                pass
-        wmap: dict[str, float] = {}
-        for _, r in df.iterrows():
-            t = str(r["ticker"]).strip().upper().replace(".", "-")
-            w = r.get("weight_pct")
-            if pd.notna(w) and float(w) > 0:
-                wmap[t] = float(w)
-        if wmap:
-            out[fp.stem.upper()] = wmap
-    return out
-
-
-def _complete_caps(caps: dict[str, float], symbols: list[str]) -> dict[str, float]:
-    """Fill missing market caps so every constituent sizes on one real-cap scale.
-
-    Roughly a third of the nightly records carry no ``mktcap_bn``. For those we
-    estimate a cap from the SPDR sector-ETF within-weight, calibrated per fund
-    against the names that *do* have a real cap (cap ≈ k_etf · weight_pct). This
-    keeps mega-caps like V / LLY / XOM / BRK-B sized correctly instead of
-    collapsing to a floor, while real caps win wherever present."""
-    if not caps:
-        return caps
-    weights_by_etf = _load_weights_by_etf()
-    if not weights_by_etf:
-        return caps
-    # per-ETF scale from names with a real cap; global median as a backstop.
-    all_ratios: list[float] = []
-    k_etf: dict[str, float] = {}
-    for etf, wmap in weights_by_etf.items():
-        ratios = [caps[t] / wmap[t] for t in wmap if t in caps and caps[t] > 0]
-        all_ratios.extend(ratios)
-        if ratios:
-            k_etf[etf] = float(np.median(ratios))
-    if not all_ratios:
-        return caps
-    k_global = float(np.median(all_ratios))
-    # best (largest-weight) ETF placement for each missing ticker.
-    filled = dict(caps)
-    n = 0
-    for s in symbols:
-        if filled.get(s, 0) > 0:
-            continue
-        best_w = 0.0
-        best_k = k_global
-        for etf, wmap in weights_by_etf.items():
-            w = wmap.get(s, 0.0)
-            if w > best_w:
-                best_w = w
-                best_k = k_etf.get(etf, k_global)
-        if best_w > 0:
-            filled[s] = best_k * best_w
-            n += 1
-    if n:
-        log.info("cap-completion: estimated %d caps from ETF weights", n)
-    return filled
 
 
 def _load_intraday(symbols: list[str]) -> dict[str, pd.DataFrame]:
@@ -321,21 +197,7 @@ def build(site: Path | None = None, *, live: bool = True,
 
     industry_map = _load_industry_map()
     weights = _load_sector_weights()
-    # Real caps: Polygon reference cache first, else harvest from the nightly
-    # per-stock records (offline-safe). Either gives true market-cap sizing;
-    # the gaps are filled from calibrated ETF weights so every tile sizes on one
-    # scale rather than collapsing to a floor.
-    caps = _load_caps(closes) or _load_caps_from_stockdata(site, symbols)
-    if caps:
-        static = _load_static_caps()
-        if static:
-            for t in symbols:
-                # fill gaps everywhere; force the dual-class split even when the
-                # nightly record carried a whole-company cap for one class.
-                if caps.get(t, 0) <= 0 or t in _DUAL_CLASS:
-                    if t in static:
-                        caps[t] = static[t]
-        caps = _complete_caps(caps, symbols)
+    caps = _load_caps(closes)
     intraday = _load_intraday(symbols)
     live_q = _fetch_live(symbols) if live else {}
 

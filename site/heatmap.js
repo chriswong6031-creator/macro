@@ -1,14 +1,8 @@
 /* heatmap.js — the S&P 500 market heatmap, one shared renderer for three
  * surfaces:
  *   #heatmap-full       → the full squarified treemap (standalone page + the
- *                          expand overlay). Sector → subsector (Finviz industry)
- *                          → stock, sized by market cap, coloured by discrete
- *                          per-timeframe bins. Mirrors the Finviz / TradingView
- *                          institutional map: dense but legible, only the names
- *                          big enough to read carry a label, the rest are pure
- *                          colour. Hover a stock tile for OUR conviction read;
- *                          hover a subsector or sector header for its member
- *                          list; click a tile through to the analyzer.
+ *                          expand overlay). Sector → industry → stock, sized by
+ *                          market cap, coloured by discrete per-timeframe bins.
  *   #heatmap-scorecard  → a compact "market at a glance" card on the dashboard,
  *                          with an Expand button that opens the full map in an
  *                          in-page overlay.
@@ -16,9 +10,12 @@
  *                          sector-grouped list of large rows.
  *
  * Reads marketdata/sp500_heatmap.json (offline-safe daily-close snapshot;
- * splices a live 1D when a feed is connected). Colours are computed from the
- * live CSS theme tokens so a theme/language toggle (incl. the zh red=up
- * convention) recolours instantly. No framework; depends only on theme.js.
+ * splices a live 1D when a feed is connected). The rich hover card lazily
+ * fetches stockdata/<T>.json — OUR conviction read (verdict, 0-100 score,
+ * drivers/cautions, archetype, technicals) — and degrades gracefully when a
+ * name has no nightly record. Colours are computed from the live CSS theme
+ * tokens so a theme/language toggle (incl. the zh red=up convention) recolours
+ * instantly. No framework; depends only on theme.js (toggles).
  *
  * window.MMHeatmap.openOverlay() opens the full map over the current page.
  */
@@ -49,11 +46,10 @@
   }
   function edgeFmt(v) { return v >= 10 ? Math.round(v) : (v >= 1 ? +v.toFixed(1) : +v.toFixed(2)); }
 
-  /* layout metrics (px) */
-  var SEC_HD = 21, SUB_HD = 13, SEC_GAP = 5, SUB_GAP = 3, TILE_GAP = 1.5;
+  var SEC_HD = 20, IND_HD = 12, GAP = 3;
 
   /* ----- small helpers ----- */
-  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function isZh() { return document.documentElement.getAttribute('data-lang') === 'zh'; }
   function L(en, zh) { return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh || en) + '</span>'; }
   function lz(en, zh) { return isZh() && zh ? zh : (en || ''); }
@@ -61,13 +57,6 @@
     if (v == null || isNaN(v)) return '—';
     var a = Math.abs(v), d = a >= 100 ? 0 : (a >= 10 ? 1 : 2);
     return (v > 0 ? '+' : (v < 0 ? '−' : '')) + a.toFixed(d) + '%';
-  }
-  function fmtCap(v) {            // v in USD
-    if (v == null || !isFinite(v) || v <= 0) return '';
-    var bn = v / 1e9;
-    if (bn >= 1000) return '$' + (bn / 1000).toFixed(2) + 'T';
-    if (bn >= 100) return '$' + Math.round(bn) + 'B';
-    return '$' + bn.toFixed(1) + 'B';
   }
   function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
   function hexToRgb(h) {
@@ -82,38 +71,41 @@
             Math.round(a[2] * t + b[2] * (1 - t))];
   }
   function rgb(c) { return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
-  function isLightTheme() { return document.documentElement.getAttribute('data-theme') === 'light'; }
   function fgFor(c) {
-    // Dark theme: white on every tile (deep palette). Light theme: dark text on
-    // the pale/medium bins, white only on the strongest saturated tiles — the
-    // conventional light-heatmap look (TradingView / Finviz light).
-    if (!isLightTheme()) return '#f4f7fb';
     var lum = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
-    return lum > 150 ? '#10151c' : '#f4f7fb';
+    return lum > 142 ? '#0e1217' : '#f6f9fc';
   }
   function neutral() {
-    // flat ~0% tile: a dark slate in dark mode, a light gray in light mode so it
-    // sits on (not against) the light chrome.
-    return isLightTheme() ? [228, 231, 235] : [41, 46, 57];
+    // a desaturated slate between the gauge-mid track and the panel — distinct
+    // from the page background so a flat ~0% tile still reads as a tile.
+    return mix(hexToRgb(cssVar('--g-mid') || '#3a4150'), hexToRgb(cssVar('--panel') || '#181b21'), 0.30);
+  }
+  function computeCap(tiles, tf) {
+    var a = [];
+    (tiles || []).forEach(function (t) { var v = t.perf[tf]; if (v != null && !isNaN(v)) a.push(Math.abs(v)); });
+    if (!a.length) return FLOOR[tf] || 2;
+    a.sort(function (x, y) { return x - y; });
+    return Math.max(FLOOR[tf] || 1, a[Math.floor(a.length * 0.85)] || a[a.length - 1]);
+  }
+  function tileColor(pc, cap) {
+    var nu = neutral();
+    if (pc == null || isNaN(pc)) return mix(hexToRgb(cssVar('--panel2') || '#1e222a'), nu, 0.5);
+    var up = hexToRgb(cssVar('--hm-up-v') || '#1fbf80'), dn = hexToRgb(cssVar('--hm-dn-v') || '#f04e6a');
+    var s = 0.08 + 0.92 * Math.pow(Math.min(1, Math.abs(pc) / cap), 0.8);
+    return mix(pc >= 0 ? up : dn, nu, s);
+  }
+  function logoUrl(t) {
+    return 'https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/' + encodeURIComponent(String(t).toUpperCase()) + '.png';
   }
   function binPalette() {
     var up = hexToRgb(cssVar('--hm-up-v') || '#1ec173');
     var dn = hexToRgb(cssVar('--hm-dn-v') || '#e8485f');
-    var nu = neutral(), P = {};
-    if (isLightTheme()) {
-      // soft, light bins that read as one family with the light chrome; only the
-      // extremes saturate (and pick up white text via fgFor).
-      P[3] = up; P[2] = mix(up, nu, 0.55); P[1] = mix(up, nu, 0.26);
-      P[0] = nu;
-      P[-1] = mix(dn, nu, 0.26); P[-2] = mix(dn, nu, 0.55); P[-3] = dn;
-      P.na = [236, 238, 241];
-    } else {
-      // deep, rich bins for the dark board; white labels throughout.
-      P[3] = up; P[2] = mix(up, nu, 0.82); P[1] = mix(up, nu, 0.46);
-      P[0] = nu;
-      P[-1] = mix(dn, nu, 0.46); P[-2] = mix(dn, nu, 0.82); P[-3] = dn;
-      P.na = mix(hexToRgb(cssVar('--panel2') || '#1e222a'), nu, 0.5);
-    }
+    var nu = neutral();
+    var P = {};
+    P[3] = up; P[2] = mix(up, nu, 0.76); P[1] = mix(up, nu, 0.36);
+    P[0] = nu;
+    P[-1] = mix(dn, nu, 0.36); P[-2] = mix(dn, nu, 0.76); P[-3] = dn;
+    P.na = mix(hexToRgb(cssVar('--panel2') || '#1e222a'), nu, 0.5);
     return P;
   }
   function binIndex(pc, edges) {
@@ -186,30 +178,20 @@
   function sectorAgg(data, tiles, tf) {
     return data.size_basis === 'marketcap' ? weightedPc(tiles, tf) : medianPc(tiles, tf);
   }
-  function breadth(tiles, tf) {
-    var adv = 0, dec = 0;
-    tiles.forEach(function (t) { var v = t.perf[tf]; if (v > 0) adv++; else if (v < 0) dec++; });
-    return { adv: adv, dec: dec };
-  }
   function sectorLabels(data) {
     var m = {}; (data.sectors || []).forEach(function (s) { m[s.key] = { en: s.en, zh: s.zh }; }); return m;
   }
-  /* Finviz sector → short label (en, zh). Legacy GICS keys kept for safety. */
   var SHORT = {
-    'Technology': ['Technology', '信息技术'], 'Communication Services': ['Comm Svcs', '通信服务'],
-    'Healthcare': ['Healthcare', '医疗保健'], 'Financial': ['Financial', '金融'],
-    'Consumer Cyclical': ['Cons Cyclical', '非必需消费'], 'Consumer Defensive': ['Cons Defensive', '必需消费'],
-    'Industrials': ['Industrials', '工业'], 'Energy': ['Energy', '能源'],
-    'Utilities': ['Utilities', '公用事业'], 'Real Estate': ['Real Estate', '房地产'],
-    'Basic Materials': ['Materials', '材料'],
     'Information Technology': ['Tech', '信息技术'], 'Health Care': ['Health', '医疗'],
     'Financials': ['Financials', '金融'], 'Consumer Discretionary': ['Cons Disc', '非必需消费'],
-    'Consumer Staples': ['Staples', '必需消费'], 'Materials': ['Materials', '材料']
+    'Communication Services': ['Comm Svcs', '通信'], 'Industrials': ['Industrials', '工业'],
+    'Consumer Staples': ['Staples', '必需消费'], 'Energy': ['Energy', '能源'],
+    'Utilities': ['Utilities', '公用事业'], 'Real Estate': ['Real Est', '房地产'], 'Materials': ['Materials', '材料']
   };
   function shortSec(name) { return SHORT[name] ? SHORT[name] : [name, name]; }
 
   /* ====================================================================== */
-  /*  STOCK HOVER CARD — our conviction read, lazily fetched, degrades gracefully */
+  /*  HOVER CARD — our conviction read, lazily fetched, degrades gracefully  */
   /* ====================================================================== */
   var _tickerCache = {};
   function fetchTicker(t) {
@@ -222,21 +204,7 @@
       .catch(function () { _tickerCache[t] = null; return null; });
   }
 
-  function positionFloat(el, cx, cy) {
-    // measure once per content change and cache (el._w/_h); a same-content
-    // reposition (cursor sweeping within one tile) then avoids forcing a reflow
-    // by reading offsetWidth/Height on every mousemove.
-    if (!el._w) { el._w = el.offsetWidth; el._h = el.offsetHeight; }
-    var pad = 15, w = el._w, h = el._h;
-    var x = cx + pad, y = cy + pad;
-    if (x + w > window.innerWidth - 8) x = cx - w - pad;
-    if (y + h > window.innerHeight - 8) y = cy - h - pad;
-    el.style.left = Math.max(8, x) + 'px';
-    el.style.top = Math.max(8, y) + 'px';
-  }
-
   var _card = null, _cardFor = null, _cardTimer = null;
-  var _ptrX = null, _ptrY = null;   // latest pointer position (for async re-anchoring)
   function card() {
     if (_card) return _card;
     _card = document.createElement('div');
@@ -253,8 +221,6 @@
     var lab = labs[t.sector] || { en: t.sector, zh: t.sector };
     var cur = t.perf[data._tf];
     var cls = cur == null ? '' : (cur >= 0 ? 'up' : 'dn');
-    var sub = t.industry && t.industry !== t.sector ? ' · ' + esc(t.industry) : '';
-    var cap = fmtCap(t.size);
     var strip = '';
     (data.timeframes || []).forEach(function (tf) {
       var v = t.perf[tf.key];
@@ -265,8 +231,8 @@
     return ''
       + '<div class="hm-c-hd">'
       +   '<div class="hm-c-id"><div class="hm-c-sym">' + esc(t.t) + '</div>'
-      +     '<div class="hm-c-nm">' + esc(t.name) + ' · ' + L(lab.en, lab.zh) + sub + '</div></div>'
-      +   '<div class="hm-c-px"><div class="hm-c-pxv" data-px>' + (cap || '—') + '</div>'
+      +     '<div class="hm-c-nm">' + esc(t.name) + ' · ' + L(lab.en, lab.zh) + '</div></div>'
+      +   '<div class="hm-c-px"><div class="hm-c-pxv" data-px>—</div>'
       +     '<div class="hm-c-chg ' + cls + '">' + fmtPc(cur) + '</div></div>'
       + '</div>'
       + '<div class="hm-c-body" data-body><div class="hm-c-load"><span></span><span></span><span></span></div></div>'
@@ -274,7 +240,6 @@
       + '<div class="hm-c-foot">' + L('View full analysis', '查看完整分析') + ' →</div>';
   }
   function enrichCard(el, data, t, rec) {
-    el._w = 0;                         // card grows with the enriched body → re-measure
     var pxEl = el.querySelector('[data-px]');
     var body = el.querySelector('[data-body]');
     if (!body) return;
@@ -335,92 +300,38 @@
 
     body.innerHTML = h || '<div class="hm-c-stub">' + L('Open the analyzer for the full read.', '打开分析器查看完整解读。') + '</div>';
   }
+  function positionCard(el, cx, cy) {
+    var pad = 16, w = el.offsetWidth, h = el.offsetHeight;
+    var x = cx + pad, y = cy + pad;
+    if (x + w > window.innerWidth - 8) x = cx - w - pad;
+    if (y + h > window.innerHeight - 8) y = cy - h - pad;
+    el.style.left = Math.max(8, x) + 'px';
+    el.style.top = Math.max(8, y) + 'px';
+  }
   function showCard(data, t, cx, cy) {
-    hideMembers();
     var el = card();
     if (_cardFor !== t.t) {
       _cardFor = t.t;
       el.innerHTML = cardBaseHtml(data, t);
-      el._w = 0;                       // content changed → re-measure
       el.classList.add('on');
-      positionFloat(el, cx, cy);
+      positionCard(el, cx, cy);
       clearTimeout(_cardTimer);
       var want = t.t;
       _cardTimer = setTimeout(function () {
         fetchTicker(t.t).then(function (rec) {
           if (_cardFor !== want) return;
           enrichCard(el, data, t, rec);
-          // re-anchor off the latest pointer position (the card grew), not the
-          // stale coords captured when the hover began.
-          positionFloat(el, _ptrX != null ? _ptrX : cx, _ptrY != null ? _ptrY : cy);
+          positionCard(el, cx, cy);
         });
-      }, 110);
+      }, 120);
     } else {
-      positionFloat(el, cx, cy);
+      positionCard(el, cx, cy);
     }
   }
   function hideCard() {
     _cardFor = null; clearTimeout(_cardTimer);
     if (_card) _card.classList.remove('on');
   }
-
-  /* ====================================================================== */
-  /*  GROUP HOVER POPUP — sector / subsector member list (Finviz style)      */
-  /* ====================================================================== */
-  var _mem = null, _memFor = null;
-  function memEl() {
-    if (_mem) return _mem;
-    _mem = document.createElement('div');
-    _mem.className = 'hm-mem';
-    _mem.setAttribute('role', 'tooltip');
-    document.body.appendChild(_mem);
-    return _mem;
-  }
-  function showMembers(data, sectorName, subName, tiles, cx, cy) {
-    hideCard();
-    var key = sectorName + '||' + (subName || '');
-    var el = memEl();
-    if (_memFor !== key) {
-      _memFor = key;
-      var labs = sectorLabels(data);
-      var lab = labs[sectorName] || { en: sectorName, zh: sectorName };
-      var tf = data._tf, edges = edgesFor(tf), pal = binPalette();
-      var agg = sectorAgg(data, tiles, tf);
-      var br = breadth(tiles, tf), tot = Math.max(1, br.adv + br.dec);
-      var ttl = subName
-        ? L(esc(lab.en) + ' <span class="sub">— ' + esc(subName) + '</span>', esc(lab.zh) + ' <span class="sub">— ' + esc(subName) + '</span>')
-        : L(esc(lab.en), esc(lab.zh));
-      var rows = tiles.slice().sort(function (a, b) { return (b.size || 0) - (a.size || 0); });
-      var cap = 18, more = Math.max(0, rows.length - cap);
-      var body = '';
-      rows.slice(0, cap).forEach(function (t) {
-        var pc = t.perf[tf], c = pal[binIndex(pc, edges)];
-        body += '<div class="hm-mem-row">'
-          + '<span class="hm-mem-pc" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
-          + '<span class="hm-mem-t">' + esc(t.t) + '</span>'
-          + '<span class="hm-mem-n">' + esc(t.name) + '</span>'
-          + '<span class="hm-mem-cap">' + fmtCap(t.size) + '</span></div>';
-      });
-      if (more) body += '<div class="hm-mem-more">+' + more + ' ' + L('more', '更多') + '</div>';
-      var aggCls = agg == null ? '' : (agg >= 0 ? 'up' : 'dn');
-      el.innerHTML = ''
-        + '<div class="hm-mem-hd">'
-        +   '<div class="hm-mem-ttl">' + ttl + '</div>'
-        +   '<div class="hm-mem-agg ' + aggCls + '">' + fmtPc(agg) + '</div>'
-        + '</div>'
-        + '<div class="hm-mem-sub">'
-        +   '<span class="hm-mem-ct">' + tiles.length + ' ' + L('names', '只') + '</span>'
-        +   '<span class="hm-mem-br"><i class="up" style="width:' + (100 * br.adv / tot) + '%"></i>'
-        +     '<i class="dn" style="width:' + (100 * br.dec / tot) + '%"></i></span>'
-        +   '<span class="hm-mem-bn"><b class="up">' + br.adv + '▲</b> <b class="dn">' + br.dec + '▼</b></span>'
-        + '</div>'
-        + '<div class="hm-mem-list">' + body + '</div>';
-      el._w = 0;                       // content changed → re-measure
-      el.classList.add('on');
-    }
-    positionFloat(el, cx, cy);
-  }
-  function hideMembers() { _memFor = null; if (_mem) _mem.classList.remove('on'); }
 
   /* ====================================================================== */
   /*  FULL VIEW — controls + treemap (desktop) / sector list (mobile)        */
@@ -435,9 +346,7 @@
       +   '<div class="hm-read"></div>'
       + '</div>'
       + '<div class="hm-sort" role="group" aria-label="Sort"></div>'
-      + '<div class="hm-tm-wrap"><div class="hm-tm"></div></div>'
-      + '<div class="hm-hint">' + L('Hover a sector or subsector header for its members · hover a tile for our read · click through to the analyzer',
-                                    '将鼠标悬停在板块或子行业标题上查看成员 · 悬停方块查看研判 · 点击进入分析器') + '</div>';
+      + '<div class="hm-tm-wrap"><div class="hm-tm"></div></div>';
 
     var tfsEl = root.querySelector('.hm-tfs');
     var legendEl = root.querySelector('.hm-legend');
@@ -445,7 +354,8 @@
     var sortEl = root.querySelector('.hm-sort');
     var wrap = root.querySelector('.hm-tm-wrap');
     var tm = root.querySelector('.hm-tm');
-    var firstLayout = true;
+    var glare = document.createElement('div'); glare.className = 'hm-glare'; wrap.appendChild(glare);
+    var firstLayout = true, glareRAF = 0, lastSectors = null;
     var REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     var TF = data.default_tf || '1D';
@@ -456,7 +366,6 @@
     var SORT = 'cap';
     var tileEls = [];      // {el, pcEl, t}
     var secPc = [];        // {el, tiles}
-    var hier = {};         // sector -> {inds, tiles}
     var mode = null;       // 'tree' | 'list'
     var labs = sectorLabels(data);
 
@@ -492,128 +401,126 @@
       });
     }
     function setTf(key) {
-      if (key === TF) return; TF = key; data._tf = TF;
+      if (key === TF) return; TF = key;
       Array.prototype.forEach.call(tfsEl.children, function (b) {
         b.classList.toggle('on', b.getAttribute('data-tf') === key);
       });
-      hideCard(); hideMembers();
+      data._tf = TF;
       if (mode === 'tree') recolor(); else layoutList();
       updateLegend();
     }
-    function updateLegend() {
-      var e = edgesFor(TF), pal = binPalette();
-      var sw = '';
-      [-3, -2, -1, 0, 1, 2, 3].forEach(function (b) {
-        sw += '<span class="hm-lg-sw" style="background:' + rgb(pal[b]) + '"></span>';
-      });
-      legendEl.innerHTML = '<span class="hm-lg-end">−' + edgeFmt(e[2]) + '%</span>'
-        + '<span class="hm-lg-sws">' + sw + '</span>'
-        + '<span class="hm-lg-end">+' + edgeFmt(e[2]) + '%</span>'
-        + '<span class="hm-lg-step">' + L('bins', '分档') + ' ±' + edgeFmt(e[0]) + '/' + edgeFmt(e[1]) + '/' + edgeFmt(e[2]) + '</span>';
+    function updateLegend(cap) {
+      if (cap == null) cap = computeCap(data.tiles, TF);
+      var nu = rgb(neutral());
+      var dn = rgb(hexToRgb(cssVar('--hm-dn-v') || '#f04e6a'));
+      var up = rgb(hexToRgb(cssVar('--hm-up-v') || '#1fbf80'));
+      var c = cap >= 10 ? Math.round(cap) : cap.toFixed(1);
+      legendEl.innerHTML = '<span class="hm-lg-end">−' + c + '%</span>'
+        + '<span class="hm-lg-bar" style="background:linear-gradient(90deg,' + dn + ',' + nu + ' 50%,' + up + ')"></span>'
+        + '<span class="hm-lg-end">+' + c + '%</span>';
     }
     function updateRead() {
-      var br = breadth(data.tiles, '1D');
+      var tf = TF || '1D', adv = 0, dec = 0, num = 0, den = 0;
+      data.tiles.forEach(function (t) {
+        var v = t.perf[tf]; if (v == null || isNaN(v)) return;
+        if (v > 0) adv++; else if (v < 0) dec++;
+        num += (t.size || 0) * v; den += (t.size || 0);
+      });
+      var agg = den > 0 ? num / den : null, tot = Math.max(1, adv + dec);
       var live = data.source === 'polygon-live';
-      var srcEn = (live ? 'Live · 15-min delayed' : 'Daily close') + ' · ' + (data.asof || '—');
-      var srcZh = (live ? '实时 · 延迟15分钟' : '日线收盘') + ' · ' + (data.asof || '—');
-      readEl.innerHTML = '<span class="hm-dot ' + (live ? 'live' : '') + '"></span>'
-        + '<span class="hm-read-src">' + L(srcEn, srcZh) + '</span>'
-        + '<span class="hm-read-br"><b class="up">' + br.adv + ' ▲</b> <b class="dn">' + br.dec + ' ▼</b></span>';
+      var tfl = (data.timeframes || []).filter(function (x) { return x.key === tf; })[0] || { en: tf, zh: tf };
+      readEl.innerHTML =
+        '<span class="hm-idx ' + (agg == null ? '' : agg >= 0 ? 'up' : 'dn') + '">' + fmtPc(agg) + '</span>'
+        + '<span class="hm-idx-l">' + L(tfl.en, tfl.zh) + '</span>'
+        + '<span class="hm-brbar"><i class="up" style="width:' + (100 * adv / tot).toFixed(1) + '%"></i><i class="dn" style="width:' + (100 * dec / tot).toFixed(1) + '%"></i></span>'
+        + '<span class="hm-brc"><b class="up">' + adv + '</b> / <b class="dn">' + dec + '</b></span>'
+        + '<span class="hm-asof"><span class="hm-dot ' + (live ? 'live' : '') + '"></span>'
+        + L((live ? 'Live' : 'Close') + ' · ' + (data.asof || '—'), (live ? '实时' : '收盘') + ' · ' + (data.asof || '—')) + '</span>';
     }
 
     /* ----- treemap (desktop) ----- */
-    function tileLabel(t, tw, th) {
-      // declutter: only names with a readable footprint carry a label; the
-      // rest are pure colour (Finviz/TradingView behaviour).
-      var pc = t.perf[TF];
-      var showSym = tw >= 26 && th >= 17;
-      var showPc = tw >= 44 && th >= 31;
-      if (!showSym) return '';
-      var symF = Math.max(8.5, Math.min(tw / 3.7, th * 0.52, 22));
-      var pcF = Math.max(8, Math.min(tw / 5.4, th * 0.34, 13));
-      var s = '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(t.t) + '</span>';
-      if (showPc) s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + fmtPc(pc) + '</span>';
-      return s;
-    }
     function layoutTree() {
       mode = 'tree'; root.classList.remove('hm-mobile');
       var animate = firstLayout && !REDUCE; firstLayout = false;
       tileEls = []; secPc = [];
-      var H = Math.max(560, Math.min(window.innerHeight - 140, 1280));
+      var H = Math.max(620, Math.min(window.innerHeight - 110, 1500));
       wrap.style.height = H + 'px'; tm.style.height = H + 'px';
       var W = tm.clientWidth || wrap.clientWidth;
       if (W <= 0) { requestAnimationFrame(layoutTree); return; }
 
-      hier = groupHierarchy(data);
-      var secItems = Object.keys(hier).map(function (k) { return { value: hier[k].value, ref: hier[k] }; });
+      var sectors = groupHierarchy(data); lastSectors = sectors;
+      var secItems = Object.keys(sectors).map(function (k) { return { value: sectors[k].value, ref: sectors[k] }; });
       var secRects = squarify(secItems, 0, 0, W, H);
-      var html = [], si = 0;
+      var html = [], idx = 0;
 
       secRects.forEach(function (sr) {
         var s = sr.ref;
-        var x = sr.x + SEC_GAP / 2, y = sr.y + SEC_GAP / 2, w = sr.w - SEC_GAP, h = sr.h - SEC_GAP;
-        if (w <= 2 || h <= 2) return;
+        var x = sr.x + GAP, y = sr.y + GAP, w = sr.w - 2 * GAP, h = sr.h - 2 * GAP;
+        if (w <= 1 || h <= 1) return;
         var lab = labs[s.name] || { en: s.name, zh: s.name };
-        var hd = (h > 40 && w > 78) ? Math.min(SEC_HD, h * 0.42) : 0;
         html.push('<div class="hm-sec" style="left:' + x + 'px;top:' + y + 'px;width:' + w + 'px;height:' + h + 'px">');
+        var hd = (h > 34 && w > 70) ? Math.min(SEC_HD, h * 0.5) : 0;
         if (hd) {
-          html.push('<div class="hm-sec-hd" data-sec-name="' + esc(s.name) + '" style="height:' + hd + 'px;line-height:' + hd + 'px">'
-            + '<span class="nm">' + L(esc(lab.en), esc(lab.zh)) + '</span>'
-            + (w > 132 ? '<span class="pc" data-secpc="' + si + '"></span>' : '')
-            + '<span class="hm-sec-i">ⓘ</span></div>');
-          secPc.push({ key: si, tiles: s.tiles, show: w > 132, sector: s.name });
+          html.push('<div class="hm-sec-hd" data-sn="' + esc(s.name) + '" style="height:' + hd + 'px;line-height:' + hd + 'px">'
+            + '<span class="nm">' + L(lab.en, lab.zh) + '</span>'
+            + (w > 150 ? '<span class="pc" data-sec="' + idx + '"></span>' : '') + '</div>');
+          secPc.push({ key: idx, tiles: s.tiles, show: w > 150 }); idx++;
         }
-        var innerY = hd, innerH = h - hd;
+        var innerY = y + hd, innerH = h - hd;
         var indItems = Object.keys(s.inds).map(function (k) { return { value: s.inds[k].value, ref: s.inds[k] }; });
         var indRects = squarify(indItems, 0, 0, w, innerH);
         indRects.forEach(function (ir) {
-          var ind = ir.ref;
-          var ix = ir.x + SUB_GAP / 2, iy = innerY + ir.y + SUB_GAP / 2, iw = ir.w - SUB_GAP, ih = ir.h - SUB_GAP;
-          if (iw <= 2 || ih <= 2) return;
-          var shd = (ih > 26 && iw > 48) ? SUB_HD : 0;
-          html.push('<div class="hm-sub" data-sub-sec="' + esc(s.name) + '" data-sub-ind="' + esc(ind.name)
-            + '" style="left:' + ix + 'px;top:' + iy + 'px;width:' + iw + 'px;height:' + ih + 'px">');
-          if (shd) {
-            html.push('<div class="hm-sub-hd" style="height:' + shd + 'px;line-height:' + shd + 'px">'
-              + '<span class="snm">' + esc(ind.name) + '</span></div>');
+          var ind = ir.ref, ix = ir.x, iy = ir.y, iw = ir.w, ih = ir.h;
+          var ihd = (ih > 36 && iw > 64) ? IND_HD : 0;
+          if (ihd) {
+            html.push('<div class="hm-ind-hd" style="left:' + (ix + 2) + 'px;top:' + (innerY - y + iy + 1)
+              + 'px;width:' + (iw - 4) + 'px;height:' + ihd + 'px;line-height:' + ihd + 'px">' + esc(ind.name) + '</div>');
           }
-          var tileTop = shd;
           var tRects = squarify(ind.tiles.map(function (t) { return { value: (t.size || 0.0001), ref: t }; }),
-            0, 0, iw, ih - tileTop);
+            ix, iy + ihd, iw, ih - ihd);
           tRects.forEach(function (tr) {
-            var t = tr.ref;
-            var tw = tr.w - TILE_GAP, th = tr.h - TILE_GAP;
+            var t = tr.ref, tw = tr.w, th = tr.h;
             if (tw < 2 || th < 2) return;
             var cls = 'hm-tile';
-            if (tw >= 96 && th >= 56) cls += ' big';
-            if (tw >= 150 && th >= 104) cls += ' huge';
-            if (animate) cls += ' hm-in';
-            var dly = animate ? ';animation-delay:' + Math.min(tileEls.length * 0.8, 480).toFixed(0) + 'ms' : '';
-            html.push('<div class="' + cls + '" data-i="' + tileEls.length + '" style="left:' + tr.x + 'px;top:'
-              + (tileTop + tr.y) + 'px;width:' + tw + 'px;height:' + th + 'px' + dly + '">'
-              + tileLabel(t, tw, th) + '</div>');
+            if (tw < 42 || th < 23) cls += ' tiny';
+            if (tw < 27 || th < 15) cls += ' micro';
+            var symF = Math.max(7.5, Math.min(tw / 3.7, th * 0.52, 18));
+            var pcF = Math.max(7, Math.min(tw / 5.0, th * 0.4, 12.5));
+            var lsz = (tw >= 72 && th >= 60) ? Math.max(18, Math.min(tw * 0.26, th * 0.30, 46)) : 0;
+            var logo = lsz ? '<img class="hm-logo" alt="" src="' + logoUrl(t.t)
+              + '" onerror="this.style.display=\'none\'" style="width:' + lsz.toFixed(0) + 'px;height:' + lsz.toFixed(0) + 'px">' : '';
+            html.push('<div class="' + cls + '" data-i="' + tileEls.length + '" style="left:' + (tr.x + 1.5) + 'px;top:'
+              + (innerY - y + tr.y + 1.5) + 'px;width:' + Math.max(1, tw - 3) + 'px;height:' + Math.max(1, th - 3) + 'px">'
+              + logo
+              + '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(t.t) + '</span>'
+              + '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px"></span></div>');
             tileEls.push({ t: t });
           });
-          html.push('</div>');  // .hm-sub
         });
-        html.push('</div>');    // .hm-sec
-        si++;
+        html.push('</div>');
       });
       tm.innerHTML = html.join('');
+      // bind element refs
       Array.prototype.forEach.call(tm.querySelectorAll('.hm-tile'), function (el) {
         var rec = tileEls[+el.getAttribute('data-i')];
         rec.el = el; rec.pcEl = el.querySelector('.pc');
       });
-      secPc.forEach(function (sp) { sp.el = sp.show ? tm.querySelector('.pc[data-secpc="' + sp.key + '"]') : null; });
+      secPc.forEach(function (sp) { sp.el = sp.show ? tm.querySelector('.pc[data-sec="' + sp.key + '"]') : null; });
+      Array.prototype.forEach.call(tm.querySelectorAll('.hm-sec-hd'), function (hd) {
+        var sn = hd.getAttribute('data-sn'); if (!sn || !lastSectors[sn]) return;
+        var s = lastSectors[sn], sec = hd.closest('.hm-sec');
+        hd.addEventListener('mousemove', function (e) { e.stopPropagation(); spotlight(sec); hideCard(); showSectorCard(s, e.clientX, e.clientY); });
+        hd.addEventListener('mouseleave', hideSectorCard);
+      });
       recolor();
     }
     function recolor() {
-      var edges = edgesFor(TF), pal = binPalette();
+      var cap = computeCap(data.tiles, TF);
+      updateLegend(cap); updateRead();
       tileEls.forEach(function (rec) {
-        var pc = rec.t.perf[TF], c = pal[binIndex(pc, edges)];
+        var pc = rec.t.perf[TF], c = tileColor(pc, cap);
         rec.el.style.backgroundColor = rgb(c);
         rec.el.style.color = fgFor(c);
-        rec.el.style.setProperty('--tg', 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',.62)');
         if (rec.pcEl) rec.pcEl.textContent = fmtPc(pc);
       });
       secPc.forEach(function (sp) {
@@ -628,19 +535,21 @@
     function layoutList() {
       mode = 'list'; root.classList.add('hm-mobile');
       wrap.style.height = 'auto'; tm.style.height = 'auto';
-      var edges = edgesFor(TF), pal = binPalette();
+      var cap = computeCap(data.tiles, TF);
       var sectors = groupHierarchy(data);
       var secKeys = Object.keys(sectors).sort(function (a, b) { return sectors[b].value - sectors[a].value; });
       var html = [];
       secKeys.forEach(function (k) {
         var s = sectors[k], lab = labs[k] || { en: k, zh: k };
         var agg = sectorAgg(data, s.tiles, TF);
-        var br = breadth(s.tiles, TF), tot = Math.max(1, br.adv + br.dec);
+        var adv = 0, dec = 0;
+        s.tiles.forEach(function (t) { var v = t.perf[TF]; if (v > 0) adv++; else if (v < 0) dec++; });
+        var tot = Math.max(1, adv + dec);
         html.push('<div class="hm-mgrp">'
-          + '<div class="hm-mhd"><span class="nm">' + L(esc(lab.en), esc(lab.zh)) + '</span>'
+          + '<div class="hm-mhd"><span class="nm">' + L(lab.en, lab.zh) + '</span>'
           + '<span class="pc ' + (agg == null ? '' : agg >= 0 ? 'up' : 'dn') + '">' + fmtPc(agg) + '</span>'
-          + '<span class="hm-mbr"><i class="up" style="width:' + (100 * br.adv / tot) + '%"></i>'
-          + '<i class="dn" style="width:' + (100 * br.dec / tot) + '%"></i></span></div>');
+          + '<span class="hm-mbr"><i class="up" style="width:' + (100 * adv / tot) + '%"></i>'
+          + '<i class="dn" style="width:' + (100 * dec / tot) + '%"></i></span></div>');
         var rows = s.tiles.slice().sort(function (a, b) {
           if (SORT === 'az') return a.t < b.t ? -1 : a.t > b.t ? 1 : 0;
           if (SORT === 'move') {
@@ -650,45 +559,82 @@
           return (b.size || 0) - (a.size || 0);
         });
         rows.forEach(function (t) {
-          var pc = t.perf[TF], c = pal[binIndex(pc, edges)];
-          var sub = t.industry && t.industry !== t.sector ? esc(t.industry) : esc(t.name);
+          var pc = t.perf[TF], c = tileColor(pc, cap);
           html.push('<a class="hm-mrow" href="stock.html#' + encodeURIComponent(t.t) + '">'
             + '<span class="hm-mpc" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
-            + '<span class="hm-mid"><b>' + esc(t.t) + '</b><span>' + sub + '</span></span>'
+            + '<span class="hm-mid"><b>' + esc(t.t) + '</b><span>' + esc(t.name) + '</span></span>'
             + '<span class="hm-mgo">›</span></a>');
         });
         html.push('</div>');
       });
       tm.innerHTML = html.join('');
+      updateRead();
     }
 
     /* ----- hover / click on the treemap ----- */
-    // process the latest move; the sector lookup uses the sector NAME stored on
-    // the header (not an index), so a sector that drops its header in a given
-    // layout can never mis-map the popup to a neighbour.
-    function processMove(e) {
-      var tEl = e.target.closest && e.target.closest('.hm-tile');
-      if (tEl) {
-        var rec = tileEls[+tEl.getAttribute('data-i')];
-        if (rec) { showCard(data, rec.t, e.clientX, e.clientY); return; }
-      }
-      var subEl = e.target.closest && e.target.closest('.hm-sub');
-      if (subEl) {
-        var sn = subEl.getAttribute('data-sub-sec'), inn = subEl.getAttribute('data-sub-ind');
-        var grp = hier[sn] && hier[sn].inds[inn];
-        if (grp) { showMembers(data, sn, inn, grp.tiles, e.clientX, e.clientY); return; }
-      }
-      var secEl = e.target.closest && e.target.closest('.hm-sec-hd');
-      if (secEl) {
-        var name = secEl.getAttribute('data-sec-name');
-        if (name && hier[name]) { showMembers(data, name, null, hier[name].tiles, e.clientX, e.clientY); return; }
-      }
-      hideCard(); hideMembers();
+    function onMapLight(e) {
+      if (REDUCE) return;
+      var r = wrap.getBoundingClientRect();
+      var px = e.clientX - r.left, py = e.clientY - r.top;
+      var nx = px / r.width - 0.5, ny = py / r.height - 0.5;
+      if (glareRAF) return;
+      glareRAF = requestAnimationFrame(function () {
+        glareRAF = 0;
+        glare.style.background = 'radial-gradient(280px circle at ' + px.toFixed(0) + 'px ' + py.toFixed(0)
+          + 'px,rgba(255,255,255,.15),rgba(255,255,255,0) 60%)';
+        glare.style.opacity = '1';
+        tm.style.transform = 'perspective(1600px) rotateX(' + (-ny * 3.4).toFixed(2) + 'deg) rotateY('
+          + (nx * 4.2).toFixed(2) + 'deg)';
+      });
+    }
+    function resetMapLight() { glare.style.opacity = '0'; if (!REDUCE) tm.style.transform = ''; }
+    var litSec = null;
+    function spotlight(sec) {
+      if (sec === litSec) return;
+      if (litSec) litSec.classList.remove('hm-lit');
+      litSec = sec;
+      if (sec) { sec.classList.add('hm-lit'); tm.classList.add('hm-dim'); }
+      else tm.classList.remove('hm-dim');
     }
     function onMove(e) {
       if (mode !== 'tree') return;
-      _ptrX = e.clientX; _ptrY = e.clientY;
-      processMove(e);
+      var el = e.target.closest && e.target.closest('.hm-tile');
+      if (!el) { hideCard(); spotlight(null); return; }
+      var rec = tileEls[+el.getAttribute('data-i')];
+      if (!rec) { hideCard(); spotlight(null); return; }
+      spotlight(el.closest('.hm-sec'));
+      showCard(data, rec.t, e.clientX, e.clientY);
+    }
+    var _secCard = null;
+    function secCardEl() {
+      if (_secCard) return _secCard;
+      _secCard = document.createElement('div'); _secCard.className = 'hm-seccard';
+      document.body.appendChild(_secCard); return _secCard;
+    }
+    function hideSectorCard() { if (_secCard) _secCard.classList.remove('on'); }
+    function showSectorCard(s, x, y) {
+      var el = secCardEl();
+      var lab = labs[s.name] || { en: s.name, zh: s.name };
+      var agg = sectorAgg(data, s.tiles, TF), adv = 0, dec = 0;
+      s.tiles.forEach(function (t) { var v = t.perf[TF]; if (v > 0) adv++; else if (v < 0) dec++; });
+      var rows = s.tiles.slice().sort(function (a, b) {
+        var av = a.perf[TF], bv = b.perf[TF];
+        return (bv == null ? -1e9 : bv) - (av == null ? -1e9 : av);
+      }).map(function (t) {
+        var pc = t.perf[TF];
+        return '<span class="hm-sc2-row"><b>' + esc(t.t) + '</b><i class="'
+          + (pc == null ? '' : pc >= 0 ? 'up' : 'dn') + '">' + fmtPc(pc) + '</i></span>';
+      }).join('');
+      el.innerHTML = '<div class="hm-sc2-hd"><span class="nm">' + L(lab.en, lab.zh) + '</span>'
+        + '<span class="pc ' + (agg == null ? '' : agg >= 0 ? 'up' : 'dn') + '">' + fmtPc(agg) + '</span>'
+        + '<span class="br"><b class="up">' + adv + '▲</b> <b class="dn">' + dec + '▼</b> · ' + s.tiles.length + '</span></div>'
+        + '<div class="hm-sc2-grid">' + rows + '</div>';
+      el.classList.add('on');
+      var pad = 16, w = el.offsetWidth, h = el.offsetHeight;
+      var px = x + pad, py = y + pad;
+      if (px + w > window.innerWidth - 8) px = x - w - pad;
+      if (py + h > window.innerHeight - 8) py = Math.max(8, window.innerHeight - h - 8);
+      el.style.left = Math.max(8, px) + 'px'; el.style.top = Math.max(8, py) + 'px';
     }
     function onClick(e) {
       var el = e.target.closest && e.target.closest('.hm-tile');
@@ -697,15 +643,15 @@
       if (rec) window.location.href = 'stock.html#' + encodeURIComponent(rec.t.t);
     }
     tm.addEventListener('mousemove', onMove);
-    tm.addEventListener('mouseleave', function () { hideCard(); hideMembers(); });
+    tm.addEventListener('mouseleave', function () { hideCard(); spotlight(null); });
     tm.addEventListener('click', onClick);
 
-    function layout() { if (isMobile()) layoutList(); else layoutTree(); }
+    function layout() { if (!REDUCE) tm.style.transform = ''; if (isMobile()) layoutList(); else layoutTree(); }
 
     var rt;
-    function onResize() { clearTimeout(rt); rt = setTimeout(function () { hideCard(); hideMembers(); layout(); }, 150); }
-    function onTheme() { hideCard(); hideMembers(); if (mode === 'tree') recolor(); else layoutList(); updateLegend(); updateRead(); }
-    function onLang() { buildTabs(); buildSort(); updateLegend(); updateRead(); hideCard(); hideMembers(); layout(); }
+    function onResize() { clearTimeout(rt); rt = setTimeout(function () { hideCard(); layout(); }, 150); }
+    function onTheme() { hideCard(); if (mode === 'tree') recolor(); else layoutList(); updateLegend(); updateRead(); }
+    function onLang() { buildTabs(); buildSort(); updateLegend(); updateRead(); hideCard(); layout(); }
     window.addEventListener('resize', onResize);
     document.addEventListener('themechange', onTheme);
     document.addEventListener('langchange', onLang);
@@ -718,7 +664,7 @@
         window.removeEventListener('resize', onResize);
         document.removeEventListener('themechange', onTheme);
         document.removeEventListener('langchange', onLang);
-        hideCard(); hideMembers();
+        hideCard();
       }
     };
   }
@@ -727,8 +673,6 @@
   /*  COMPACT SCORECARD (dashboard)                                          */
   /* ====================================================================== */
   function renderScorecard(root, data) {
-    if (root.getAttribute('data-hm-init')) return;   // guard against double-init
-    root.setAttribute('data-hm-init', '1');
     root.classList.add('hm-scope', 'hm-sc');
     var labs = sectorLabels(data);
     var sectors = groupHierarchy(data);
@@ -753,16 +697,16 @@
 
     function paintStrip() {
       var strip = root.querySelector('.hm-sc-strip');
-      var W = strip.clientWidth, H = 100;
+      var W = strip.clientWidth, H = 96;
       if (W <= 0) { requestAnimationFrame(paintStrip); return; }
       strip.style.height = H + 'px';
-      var pal = binPalette(), edges = edgesFor('1D');
+      var cap = computeCap(data.tiles, '1D');
       var items = Object.keys(sectors).map(function (k) { return { value: sectors[k].value, ref: sectors[k] }; });
       var rects = squarify(items, 0, 0, W, H);
       var html = [];
       rects.forEach(function (r) {
         var s = r.ref, agg = sectorAgg(data, s.tiles, '1D');
-        var c = pal[binIndex(agg, edges)], fg = fgFor(c);
+        var c = tileColor(agg, cap), fg = fgFor(c);
         var sl = shortSec(s.name), w = r.w - 3, h = r.h - 3;
         if (w < 2 || h < 2) return;
         var top = s.tiles.slice().sort(function (a, b) { return (b.size || 0) - (a.size || 0); })
@@ -778,10 +722,12 @@
         function (el) { el.addEventListener('click', openOverlay); });
     }
     function paintFoot() {
-      var br = breadth(data.tiles, '1D'), tot = Math.max(1, br.adv + br.dec);
-      root.querySelector('.hm-sc-bar').innerHTML = '<i class="up" style="width:' + (100 * br.adv / tot)
-        + '%"></i><i class="dn" style="width:' + (100 * br.dec / tot) + '%"></i>';
-      root.querySelector('.hm-sc-breadth .cnt').innerHTML = '<b class="up">' + br.adv + '</b> / <b class="dn">' + br.dec + '</b>';
+      var adv = 0, dec = 0;
+      data.tiles.forEach(function (t) { var v = t.perf['1D']; if (v > 0) adv++; else if (v < 0) dec++; });
+      var tot = Math.max(1, adv + dec);
+      root.querySelector('.hm-sc-bar').innerHTML = '<i class="up" style="width:' + (100 * adv / tot)
+        + '%"></i><i class="dn" style="width:' + (100 * dec / tot) + '%"></i>';
+      root.querySelector('.hm-sc-breadth .cnt').innerHTML = '<b class="up">' + adv + '</b> / <b class="dn">' + dec + '</b>';
       var sorted = data.tiles.filter(function (t) { return t.perf['1D'] != null; })
         .sort(function (a, b) { return b.perf['1D'] - a.perf['1D']; });
       var lead = sorted.slice(0, 2), lag = sorted.slice(-2).reverse();
@@ -841,64 +787,71 @@
   function injectStyle() {
     if (document.getElementById('mm-heatmap-style')) return;
     var css = ''
-      + ':root{--hm-up-v:#14ad6c;--hm-dn-v:#e4435a;--hm-glass:color-mix(in srgb,var(--panel) 70%,transparent);--hm-edge:color-mix(in srgb,#ffffff 8%,var(--line));--hm-frame:color-mix(in srgb,#000000 38%,var(--bg));}'
-      + 'html[data-theme="light"]{--hm-up-v:#1aa869;--hm-dn-v:#d83a48;--hm-glass:color-mix(in srgb,#ffffff 78%,transparent);--hm-edge:color-mix(in srgb,#0b1830 10%,var(--line));--hm-frame:color-mix(in srgb,#dfe3e8 70%,var(--bg));}'
-      + 'html[data-lang="zh"]{--hm-up-v:#e4435a;--hm-dn-v:#14ad6c;}'
-      + 'html[data-theme="light"][data-lang="zh"]{--hm-up-v:#d83a48;--hm-dn-v:#1aa869;}'
+      + ':root{--hm-up-v:#1fbf80;--hm-dn-v:#f04e6a;--hm-glass:color-mix(in srgb,var(--panel) 56%,transparent);--hm-edge:color-mix(in srgb,#ffffff 9%,var(--line));--hm-tray:#0a0c11;}'
+      + 'html[data-theme="light"]{--hm-up-v:#12a567;--hm-dn-v:#e23a55;--hm-glass:color-mix(in srgb,#ffffff 66%,transparent);--hm-edge:color-mix(in srgb,#0b1830 9%,var(--line));--hm-tray:#eceff4;}'
+      + 'html[data-lang="zh"]{--hm-up-v:#ea3943;--hm-dn-v:#16c784;}'
+      + 'html[data-theme="light"][data-lang="zh"]{--hm-up-v:#e02d3c;--hm-dn-v:#0fae6e;}'
       + '.hm-scope{font-family:Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;}'
       + '.hm-scope .up{color:var(--up);} .hm-scope .dn{color:var(--down);}'
       // control bar
-      + '.hm-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:12px;padding:8px 12px;border-radius:13px;background:var(--hm-glass);border:1px solid var(--hm-edge);box-shadow:0 2px 10px rgba(0,0,0,.14);}'
-      + '.hm-tfs{display:flex;flex-wrap:wrap;gap:2px;background:color-mix(in srgb,var(--panel2) 60%,transparent);border:1px solid var(--hm-edge);border-radius:10px;padding:3px;}'
-      + '.hm-tf{font:600 12px/1 Inter,sans-serif;color:var(--muted);background:transparent;border:0;padding:6px 10px;border-radius:8px;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap;}'
-      + '.hm-tf:hover:not(.off){color:var(--text);background:color-mix(in srgb,var(--text) 8%,transparent);} .hm-tf.on{background:var(--link);color:#fff;}'
-      + '.hm-tf.off{opacity:.32;cursor:default;}'
+      + '.hm-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:14px;padding:9px 13px;border-radius:15px;background:var(--hm-glass);backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);border:1px solid var(--hm-edge);box-shadow:0 8px 26px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.08);}'
+      + '.hm-tfs{display:flex;flex-wrap:wrap;gap:2px;background:color-mix(in srgb,var(--panel2) 55%,transparent);border:1px solid var(--hm-edge);border-radius:12px;padding:3px;box-shadow:inset 0 1px 4px rgba(0,0,0,.22);}'
+      + '.hm-tf{font:600 12px/1 Inter,sans-serif;color:var(--muted);background:transparent;border:0;padding:6px 11px;border-radius:9px;cursor:pointer;transition:background .18s,color .18s,box-shadow .18s,transform .1s;white-space:nowrap;}'
+      + '.hm-tf:hover:not(.off){color:var(--text);background:color-mix(in srgb,#ffffff 7%,transparent);} .hm-tf:active:not(.off){transform:scale(.95);} .hm-tf.on{background:linear-gradient(180deg,color-mix(in srgb,var(--link) 76%,#ffffff),var(--link));color:#fff;box-shadow:0 3px 11px color-mix(in srgb,var(--link) 45%,transparent),inset 0 1px 0 rgba(255,255,255,.4);}'
+      + '.hm-tf.off{opacity:.3;cursor:default;}'
       + '.hm-legend{display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--muted);}'
-      + '.hm-lg-sws{display:inline-flex;border-radius:4px;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.22);}'
-      + '.hm-lg-sw{width:19px;height:12px;} '
-      + '.hm-lg-end{font-variant-numeric:tabular-nums;font-weight:700;color:var(--text);}'
-      + '.hm-lg-step{color:var(--muted);}'
+      + '.hm-lg-bar{width:148px;height:9px;border-radius:5px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.09);}'
+      + '.hm-lg-end{font-variant-numeric:tabular-nums;font-weight:600;color:var(--muted);font-size:10px;}'
+      + '.hm-idx{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;} .hm-idx.up{color:var(--up);} .hm-idx.dn{color:var(--down);}'
+      + '.hm-idx-l{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}'
+      + '.hm-brbar{width:50px;height:6px;border-radius:3px;overflow:hidden;display:inline-flex;background:var(--panel2);} .hm-brbar i{display:block;height:100%;} .hm-brbar i.up{background:var(--up);} .hm-brbar i.dn{background:var(--down);}'
+      + '.hm-brc{font-size:11px;font-variant-numeric:tabular-nums;color:var(--muted);} .hm-brc b.up{color:var(--up);} .hm-brc b.dn{color:var(--down);}'
+      + '.hm-asof{font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:5px;}'
+      + '.hm-logo{border-radius:5px;object-fit:contain;margin-bottom:3px;background:rgba(255,255,255,.94);padding:2px;box-shadow:0 1px 2px rgba(0,0,0,.28);}'
       + '.hm-grow{flex:1 1 8px;}'
       + '.hm-read{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);flex-wrap:wrap;}'
       + '.hm-read-br{font-variant-numeric:tabular-nums;font-weight:700;}'
       + '.hm-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);display:inline-block;}'
-      + '.hm-dot.live{background:var(--up);box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 24%,transparent);}'
-      + '.hm-sort{display:none;align-items:center;gap:6px;margin:-2px 0 12px;font-size:11px;}'
+      + '.hm-dot.live{background:var(--up);box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 26%,transparent),0 0 12px color-mix(in srgb,var(--up) 70%,transparent);}'
+      + '.hm-sort{display:none;align-items:center;gap:6px;margin:-4px 0 12px;font-size:11px;}'
       + '.hm-sort-lab{color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700;font-size:10px;}'
       + '.hm-sortb{font:600 12px Inter,sans-serif;color:var(--muted);background:var(--panel2);border:1px solid var(--line);padding:5px 11px;border-radius:8px;cursor:pointer;}'
       + '.hm-sortb.on{background:var(--link);border-color:var(--link);color:#fff;}'
-      + '.hm-hint{margin:9px 2px 0;font-size:11px;color:var(--muted);text-align:center;opacity:.85;}'
-      // treemap — flat, crisp, institutional
-      + '.hm-tm-wrap{position:relative;width:100%;border-radius:12px;overflow:hidden;background:var(--hm-frame);border:1px solid var(--hm-edge);box-shadow:0 6px 24px rgba(0,0,0,.22);}'
+      // treemap
+      + '.hm-tm-wrap{position:relative;width:100%;border-radius:14px;overflow:hidden;background:var(--hm-tray);border:1px solid var(--hm-edge);box-shadow:0 10px 30px rgba(0,0,0,.22);}'
       + '.hm-tm{position:relative;width:100%;}'
-      + '@media (prefers-reduced-motion:no-preference){.hm-tile.hm-in{animation:hmtilein .42s cubic-bezier(.2,.7,.3,1) both;}@keyframes hmtilein{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:none;}}}'
-      + '.hm-sec{position:absolute;overflow:hidden;border-radius:7px;background:var(--hm-frame);box-shadow:inset 0 0 0 1px color-mix(in srgb,#ffffff 5%,transparent);}'
-      + '.hm-sec-hd{position:absolute;left:0;top:0;width:100%;display:flex;align-items:center;gap:7px;padding:0 9px;font-weight:800;letter-spacing:.01em;color:var(--text);white-space:nowrap;z-index:5;font-size:12.5px;cursor:help;background:linear-gradient(180deg,color-mix(in srgb,var(--panel2) 80%,transparent),transparent);}'
-      + '.hm-sec-hd .nm{text-transform:uppercase;letter-spacing:.04em;font-size:11.5px;overflow:hidden;text-overflow:ellipsis;}'
-      + '.hm-sec-hd .pc{font-weight:800;font-variant-numeric:tabular-nums;}'
-      + '.hm-sec-hd .hm-sec-i{margin-left:auto;opacity:.4;font-size:11px;}'
-      + '.hm-sec-hd:hover{background:linear-gradient(180deg,color-mix(in srgb,var(--link) 24%,var(--panel2)),transparent);} .hm-sec-hd:hover .hm-sec-i{opacity:.9;}'
-      + '.hm-sub{position:absolute;overflow:hidden;border-radius:5px;box-shadow:inset 0 0 0 1px color-mix(in srgb,#000000 30%,transparent);}'
-      + '.hm-sub-hd{position:absolute;left:0;top:0;width:100%;padding:0 5px;font-size:9px;font-weight:700;color:color-mix(in srgb,var(--text) 66%,transparent);white-space:nowrap;z-index:3;text-transform:uppercase;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;cursor:help;background:color-mix(in srgb,#000000 24%,transparent);}'
-      + '.hm-sub:hover>.hm-sub-hd{color:var(--text);background:color-mix(in srgb,var(--link) 30%,transparent);}'
-      + '.hm-sub-hd .snm{pointer-events:none;}'
-      + '.hm-tile{position:absolute;overflow:hidden;cursor:pointer;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.05;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.28);transition:box-shadow .12s,filter .12s,transform .12s;}'
-      + '.hm-tile.big{border-radius:4px;} .hm-tile.huge{border-radius:6px;}'
-      + '.hm-tile:hover{z-index:8;filter:brightness(1.12) saturate(1.06);box-shadow:0 0 0 1.5px rgba(255,255,255,.92),0 6px 18px rgba(0,0,0,.5),0 0 22px var(--tg);transform:translateY(-1px);}'
-      + '.hm-tile .sym{font-weight:800;letter-spacing:.2px;text-shadow:0 1px 2px rgba(0,0,0,.32);}'
-      + '.hm-tile .pc{font-weight:600;font-variant-numeric:tabular-nums;opacity:.95;margin-top:1px;text-shadow:0 1px 2px rgba(0,0,0,.3);}'
-      // stock hover card
+      + '.hm-glare{display:none;}'
+      + '.hm-sec{transition:opacity .18s ease,filter .18s ease;}'
+      + '.hm-tm.hm-dim .hm-sec:not(.hm-lit){opacity:.32;filter:saturate(.5);}'
+      + '.hm-sec{position:absolute;overflow:hidden;}'
+      + '.hm-sec-hd{position:absolute;left:0;top:0;width:100%;display:flex;align-items:center;gap:7px;padding:0 8px;font-weight:800;letter-spacing:.01em;color:var(--text);white-space:nowrap;pointer-events:auto;cursor:default;z-index:3;font-size:12px;text-shadow:0 1px 3px rgba(0,0,0,.4);}'
+      + '.hm-sec-hd .pc{font-weight:700;font-variant-numeric:tabular-nums;opacity:.95;}'
+      + '.hm-seccard{position:fixed;z-index:1300;left:0;top:0;max-width:min(560px,92vw);background:color-mix(in srgb,var(--panel) 95%,transparent);border:1px solid color-mix(in srgb,var(--text) 16%,var(--line));border-radius:13px;padding:11px 13px;box-shadow:0 18px 46px rgba(0,0,0,.5);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);pointer-events:none;opacity:0;transform:translateY(5px);transition:opacity .14s,transform .14s;}'
+      + '.hm-seccard.on{opacity:1;transform:none;}'
+      + '.hm-sc2-hd{display:flex;align-items:baseline;gap:9px;margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid var(--line);}'
+      + '.hm-sc2-hd .nm{font-size:13.5px;font-weight:800;color:var(--text);} .hm-sc2-hd .pc{font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums;} .hm-sc2-hd .pc.up{color:var(--up);} .hm-sc2-hd .pc.dn{color:var(--down);}'
+      + '.hm-sc2-hd .br{margin-left:auto;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;} .hm-sc2-hd .br .up{color:var(--up);} .hm-sc2-hd .br .dn{color:var(--down);}'
+      + '.hm-sc2-grid{column-count:4;column-gap:18px;} @media (max-width:760px){.hm-sc2-grid{column-count:2;}}'
+      + '.hm-sc2-row{display:flex;justify-content:space-between;gap:12px;font-size:11.5px;padding:2.5px 0;break-inside:avoid;}'
+      + '.hm-sc2-row b{font-weight:700;color:var(--text);} .hm-sc2-row i{font-style:normal;font-variant-numeric:tabular-nums;color:var(--muted);} .hm-sc2-row i.up{color:var(--up);} .hm-sc2-row i.dn{color:var(--down);}'
+      + '.hm-ind-hd{position:absolute;padding:0 4px;font-size:9.5px;font-weight:700;color:color-mix(in srgb,var(--text) 72%,transparent);white-space:nowrap;pointer-events:none;z-index:2;text-transform:uppercase;letter-spacing:.03em;overflow:hidden;text-overflow:ellipsis;}'
+      + '.hm-tile{position:absolute;overflow:hidden;cursor:pointer;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.08;box-shadow:inset 0 1px 0 rgba(255,255,255,.07);transition:filter .12s,box-shadow .12s;}'
+      + '.hm-tile:hover{filter:brightness(1.16) saturate(1.05);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.92);z-index:6;}'
+      + '.hm-tile .sym{font-weight:700;letter-spacing:-.01em;text-shadow:0 1px 2px rgba(0,0,0,.28);}'
+      + '.hm-tile .pc{font-weight:600;font-variant-numeric:tabular-nums;opacity:.95;margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,.3);}'
+      + '.hm-tile.tiny .pc{display:none;} .hm-tile.micro .sym{display:none;}'
+      // hover card
       + '.hm-card{position:fixed;z-index:1200;left:0;top:0;width:300px;max-width:calc(100vw - 16px);'
-      + 'background:color-mix(in srgb,var(--panel) 96%,transparent);border:1px solid color-mix(in srgb,var(--text) 16%,var(--line));'
-      + 'border-radius:13px;padding:13px 14px;box-shadow:0 16px 44px rgba(0,0,0,.5);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);'
-      + 'pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .13s,transform .13s;}'
+      + 'background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid color-mix(in srgb,var(--text) 16%,var(--line));'
+      + 'border-radius:14px;padding:13px 14px;box-shadow:0 18px 46px rgba(0,0,0,.5);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);'
+      + 'pointer-events:none;opacity:0;transform:translateY(5px);transition:opacity .14s,transform .14s;}'
       + '.hm-card.on{opacity:1;transform:none;}'
       + '.hm-card .up{color:var(--up);} .hm-card .dn{color:var(--down);}'
       + '.hm-c-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}'
       + '.hm-c-sym{font-size:18px;font-weight:800;color:var(--text);line-height:1;}'
       + '.hm-c-nm{font-size:10.5px;color:var(--muted);margin-top:3px;line-height:1.3;}'
       + '.hm-c-px{text-align:right;white-space:nowrap;}'
-      + '.hm-c-pxv{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text);}'
+      + '.hm-c-pxv{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text);}'
       + '.hm-c-chg{font-size:11.5px;font-weight:800;font-variant-numeric:tabular-nums;}'
       + '.hm-c-body{margin:9px 0 2px;}'
       + '.hm-c-load{display:flex;gap:5px;padding:4px 0;} .hm-c-load span{width:7px;height:7px;border-radius:50%;background:var(--muted);opacity:.5;animation:hmpulse 1s infinite;}'
@@ -924,35 +877,16 @@
       + '.hm-c-strip{display:flex;flex-wrap:wrap;gap:0;margin-top:11px;padding-top:9px;border-top:1px solid var(--line);}'
       + '.hm-c-m{flex:1 1 16.6%;text-align:center;min-width:34px;} .hm-c-m .k{display:block;font-size:8.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;} .hm-c-m .v{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;}'
       + '.hm-c-foot{margin-top:10px;font-size:11px;font-weight:700;color:var(--link);}'
-      // member popup (sector / subsector)
-      + '.hm-mem{position:fixed;z-index:1200;left:0;top:0;width:286px;max-width:calc(100vw - 16px);background:color-mix(in srgb,var(--panel) 97%,transparent);border:1px solid color-mix(in srgb,var(--text) 16%,var(--line));border-radius:13px;padding:0;box-shadow:0 16px 44px rgba(0,0,0,.5);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .13s,transform .13s;overflow:hidden;}'
-      + '.hm-mem.on{opacity:1;transform:none;}'
-      + '.hm-mem .up{color:var(--up);} .hm-mem .dn{color:var(--down);}'
-      + '.hm-mem-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:11px 13px 4px;}'
-      + '.hm-mem-ttl{font-size:13px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.03em;line-height:1.25;} .hm-mem-ttl .sub{font-weight:700;color:var(--muted);text-transform:none;letter-spacing:0;}'
-      + '.hm-mem-agg{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;}'
-      + '.hm-mem-sub{display:flex;align-items:center;gap:8px;padding:0 13px 9px;font-size:10.5px;color:var(--muted);border-bottom:1px solid var(--line);}'
-      + '.hm-mem-ct{font-weight:700;white-space:nowrap;}'
-      + '.hm-mem-br{flex:1;height:6px;border-radius:3px;overflow:hidden;display:flex;background:var(--panel2);min-width:40px;} .hm-mem-br i{display:block;height:100%;} .hm-mem-br i.up{background:var(--up);} .hm-mem-br i.dn{background:var(--down);}'
-      + '.hm-mem-bn{font-variant-numeric:tabular-nums;white-space:nowrap;} .hm-mem-bn b.up{color:var(--up);} .hm-mem-bn b.dn{color:var(--down);}'
-      + '.hm-mem-list{padding:6px;max-height:340px;overflow:hidden;}'
-      + '.hm-mem-row{display:flex;align-items:center;gap:8px;padding:3px 6px;border-radius:6px;}'
-      + '.hm-mem-row:nth-child(odd){background:color-mix(in srgb,var(--text) 3.5%,transparent);}'
-      + '.hm-mem-pc{font-size:10.5px;font-weight:800;font-variant-numeric:tabular-nums;padding:2px 6px;border-radius:5px;min-width:54px;text-align:center;flex:none;text-shadow:0 1px 1px rgba(0,0,0,.32);}'
-      + '.hm-mem-t{font-size:12px;font-weight:800;color:var(--text);flex:none;min-width:42px;}'
-      + '.hm-mem-n{font-size:10.5px;color:var(--muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
-      + '.hm-mem-cap{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none;}'
-      + '.hm-mem-more{font-size:10.5px;color:var(--muted);text-align:center;padding:5px 0 3px;font-weight:600;}'
       // scorecard
       + '.hm-sc-hd{display:flex;align-items:center;gap:10px;margin-bottom:11px;}'
       + '.hm-sc-tit{font-size:14px;font-weight:800;color:var(--text);}'
       + '.hm-sc-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);}'
       + '.hm-sc-exp{margin-left:auto;font:700 12px Inter,sans-serif;color:var(--text);background:var(--panel2);border:1px solid var(--line);padding:6px 12px;border-radius:9px;cursor:pointer;transition:background .15s,border-color .15s;}'
       + '.hm-sc-exp:hover{border-color:color-mix(in srgb,var(--link) 55%,var(--line));background:color-mix(in srgb,var(--link) 10%,var(--panel2));}'
-      + '.hm-sc-strip{position:relative;width:100%;border-radius:11px;overflow:hidden;margin-bottom:11px;background:var(--hm-frame);border:1px solid var(--hm-edge);}'
-      + '.hm-sc-tile{position:absolute;border-radius:7px;padding:7px 9px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.25);transition:filter .15s,box-shadow .15s;text-shadow:0 1px 2px rgba(0,0,0,.3);}'
-      + '.hm-sc-tile:hover{filter:brightness(1.08);box-shadow:0 0 0 1.5px rgba(255,255,255,.8);}'
-      + '.hm-sc-tile .t1{font-size:11.5px;font-weight:800;line-height:1.1;text-transform:uppercase;letter-spacing:.03em;} .hm-sc-tile .t2{font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;opacity:.92;} .hm-sc-tile .t3{font-size:9px;opacity:.82;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
+      + '.hm-sc-strip{position:relative;width:100%;border-radius:14px;overflow:hidden;margin-bottom:11px;background:radial-gradient(130% 120% at 50% -15%,color-mix(in srgb,var(--panel2) 80%,transparent),var(--panel) 75%);border:1px solid var(--hm-edge);box-shadow:inset 0 0 40px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.05);}'
+      + '.hm-sc-tile{position:absolute;border-radius:9px;padding:7px 9px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;background-image:linear-gradient(177deg,rgba(255,255,255,.18),rgba(255,255,255,.02) 45%,rgba(0,0,0,.16));box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -2px 4px rgba(0,0,0,.18),0 2px 5px rgba(0,0,0,.22);transition:transform .16s cubic-bezier(.2,.7,.3,1),box-shadow .16s,filter .16s;}'
+      + '.hm-sc-tile:hover{transform:translateY(-2px) scale(1.03);filter:brightness(1.08);box-shadow:0 10px 24px rgba(0,0,0,.4),0 0 0 1.5px rgba(255,255,255,.85);}'
+      + '.hm-sc-tile .t1{font-size:11.5px;font-weight:800;line-height:1.1;} .hm-sc-tile .t2{font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;opacity:.92;} .hm-sc-tile .t3{font-size:9px;opacity:.82;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
       + '.hm-sc-foot{display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:11px;}'
       + '.hm-sc-breadth{display:flex;align-items:center;gap:8px;flex:1;min-width:160px;}'
       + '.hm-sc-breadth .lab{color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700;font-size:10px;white-space:nowrap;}'
@@ -962,27 +896,27 @@
       + '.hm-sc-chip{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);} .hm-sc-chip.up{color:var(--up);} .hm-sc-chip.dn{color:var(--down);}'
       // overlay
       + '.hm-ov{position:fixed;inset:0;z-index:1000;display:flex;align-items:stretch;justify-content:center;}'
-      + '.hm-ov-scrim{position:absolute;inset:0;background:rgba(4,6,10,.66);backdrop-filter:blur(6px) saturate(1.1);-webkit-backdrop-filter:blur(6px) saturate(1.1);opacity:0;transition:opacity .3s;}'
+      + '.hm-ov-scrim{position:absolute;inset:0;background:rgba(4,6,10,.66);backdrop-filter:blur(7px) saturate(1.1);-webkit-backdrop-filter:blur(7px) saturate(1.1);opacity:0;transition:opacity .3s;}'
       + '.hm-ov.open .hm-ov-scrim{opacity:1;}'
-      + '.hm-ov-panel{position:relative;margin:auto;width:min(1720px,96vw);height:min(95vh,1340px);background:var(--bg);border:1px solid var(--hm-edge);border-radius:16px;box-shadow:0 40px 120px rgba(0,0,0,.65);display:flex;flex-direction:column;overflow:hidden;opacity:0;transform:translateY(10px) scale(.99);transition:opacity .3s,transform .3s cubic-bezier(.2,.7,.3,1);}'
+      + '.hm-ov-panel{position:relative;margin:auto;width:min(1680px,96vw);height:min(94vh,1280px);background:linear-gradient(180deg,color-mix(in srgb,var(--panel2) 50%,var(--bg)),var(--bg) 58%);border:1px solid var(--hm-edge);border-radius:20px;box-shadow:0 40px 120px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.06);display:flex;flex-direction:column;overflow:hidden;opacity:0;transform:translateY(12px) scale(.985);transition:opacity .3s,transform .3s cubic-bezier(.2,.7,.3,1);}'
       + '.hm-ov.open .hm-ov-panel{opacity:1;transform:none;}'
-      + '.hm-ov-head{display:flex;align-items:center;padding:13px 18px;border-bottom:1px solid var(--line);flex:none;}'
+      + '.hm-ov-head{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);flex:none;}'
       + '.hm-ov-head .t{font-size:15px;font-weight:800;color:var(--text);}'
       + '.hm-ov-x{margin-left:auto;width:32px;height:32px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:14px;cursor:pointer;transition:background .15s;} .hm-ov-x:hover{background:var(--panel);}'
-      + '.hm-ov-body{flex:1;overflow:auto;padding:15px 18px 20px;}'
+      + '.hm-ov-body{flex:1;overflow:auto;padding:16px 18px 22px;}'
       // mobile
       + '.hm-mgrp{margin-bottom:14px;}'
       + '.hm-mhd{display:flex;align-items:center;gap:9px;padding:8px 11px;background:var(--panel2);border:1px solid var(--line);border-radius:10px 10px 0 0;border-bottom:0;}'
-      + '.hm-mhd .nm{font-size:12.5px;font-weight:800;color:var(--text);text-transform:uppercase;letter-spacing:.03em;} .hm-mhd .pc{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;} .hm-mhd .pc.up{color:var(--up);} .hm-mhd .pc.dn{color:var(--down);}'
+      + '.hm-mhd .nm{font-size:12.5px;font-weight:800;color:var(--text);} .hm-mhd .pc{font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums;} .hm-mhd .pc.up{color:var(--up);} .hm-mhd .pc.dn{color:var(--down);}'
       + '.hm-mbr{margin-left:auto;width:58px;height:7px;border-radius:4px;overflow:hidden;display:flex;background:var(--panel);} .hm-mbr i{display:block;height:100%;} .hm-mbr i.up{background:var(--up);} .hm-mbr i.dn{background:var(--down);}'
       + '.hm-mrow{display:flex;align-items:center;gap:11px;padding:11px 12px;border:1px solid var(--line);border-top:0;background:var(--panel);text-decoration:none;}'
       + '.hm-mgrp .hm-mrow:last-child{border-radius:0 0 10px 10px;}'
-      + '.hm-mpc{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;padding:6px 9px;border-radius:9px;min-width:66px;text-align:center;flex:none;text-shadow:0 1px 2px rgba(0,0,0,.3);}'
+      + '.hm-mpc{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;padding:6px 9px;border-radius:9px;min-width:66px;text-align:center;flex:none;background-image:linear-gradient(177deg,rgba(255,255,255,.18),rgba(0,0,0,.16));box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 2px 6px rgba(0,0,0,.25);text-shadow:0 1px 2px rgba(0,0,0,.3);}'
       + '.hm-mid{flex:1;min-width:0;display:flex;flex-direction:column;} .hm-mid b{font-size:14px;font-weight:800;color:var(--text);} .hm-mid span{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
       + '.hm-mgo{color:var(--muted);font-size:20px;font-weight:700;flex:none;}'
-      + '.hm-mobile .hm-legend,.hm-mobile .hm-read-src,.hm-mobile .hm-hint{display:none;} .hm-mobile .hm-sort{display:flex;}'
+      + '.hm-mobile .hm-legend,.hm-mobile .hm-read-src{display:none;} .hm-mobile .hm-sort{display:flex;}'
       // reduced motion
-      + '@media (prefers-reduced-motion: reduce){.hm-tile,.hm-card,.hm-mem,.hm-ov-scrim,.hm-ov-panel{transition:none !important;} .hm-c-load span{animation:none;}}'
+      + '@media (prefers-reduced-motion: reduce){.hm-tile,.hm-card,.hm-ov-scrim,.hm-ov-panel{transition:none !important;} .hm-c-load span{animation:none;}}'
       + '@media (max-width:560px){.hm-bar{gap:8px;} .hm-sc-foot{gap:10px;}}';
     var st = document.createElement('style');
     st.id = 'mm-heatmap-style';
