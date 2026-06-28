@@ -160,10 +160,12 @@ html[data-theme="light"] .sc-page .cyc-gchip.on { color: #fff; }
 
 /* ---- thematic baskets rail (Phase 2) — collapsible, category-grouped ----- */
 .sc-baskets { margin: 0 2px 12px; }
-.sc-bask-head { display: flex; align-items: center; gap: 9px; width: 100%; cursor: pointer; text-align: left;
+/* header is now a flex row: [ collapsible toggle .......... ] [ Select all ] */
+.sc-bask-head { display: flex; align-items: center; gap: 8px; width: 100%; }
+.sc-bask-toggle { display: flex; align-items: center; gap: 9px; flex: 1 1 auto; min-width: 0; cursor: pointer; text-align: left;
   background: var(--panel2); border: 1px solid var(--line); border-radius: 11px; padding: 9px 13px;
   color: var(--text); font-size: 13px; font-weight: 650; transition: border-color .18s, background .18s; }
-.sc-bask-head:hover { border-color: color-mix(in srgb, var(--link) 40%, var(--line)); }
+.sc-bask-toggle:hover { border-color: color-mix(in srgb, var(--link) 40%, var(--line)); }
 .sc-bask-ic { font-size: 14px; }
 .sc-bask-title { font-weight: 700; }
 .sc-bask-n { font-size: 11px; font-weight: 700; color: var(--muted); background: var(--panel); border: 1px solid var(--line);
@@ -266,3 +268,59 @@ html[data-theme="light"] .sc-bchip.on { color: #fff; }
 .sc-pw-caveat { font-size: 10.5px; line-height: 1.45; color: var(--muted); margin: 6px 0 0; font-style: italic; }
 
 @media (max-width: 640px) { .sc-provenance { flex-direction: column; gap: 7px; } }
+
+/* ============================================================================
+   Quick "Select all" pickers + the per-item "open its own page" CTA + mobile
+   hero-control fixes. Button classes are self-contained (work on every page that
+   embeds this chart); the layout/scope tweaks are .sc-page-only so the standalone
+   Cycle Intelligence page (.cyc-page, no .sc-page) is untouched.
+   ========================================================================== */
+
+/* phase "Select all": sit right beside the Where-they-stand chips, not shoved to a 2nd line */
+.sc-page .cyc-gall { margin-left: 4px; }
+
+/* shared look for the sector-rail + basket-rail "Select all" buttons */
+.sc-chip-all, .sc-bask-all { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer;
+  font-size: 12px; font-weight: 700; letter-spacing: .01em; color: var(--link); flex: none;
+  background: color-mix(in srgb, var(--link) 12%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--link) 38%, var(--line)); border-radius: 999px; padding: 5px 12px;
+  transition: transform .14s var(--ease), background .18s, border-color .18s, box-shadow .18s, color .18s; }
+.sc-chip-all:hover, .sc-bask-all:hover { transform: translateY(-1px); color: #fff;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--link) 92%, #fff 8%), var(--link));
+  border-color: var(--link); box-shadow: 0 3px 14px color-mix(in srgb, var(--link) 34%, transparent); }
+.sc-chip-all:active, .sc-bask-all:active { transform: translateY(0); }
+html[data-theme="light"] .sc-chip-all:hover, html[data-theme="light"] .sc-bask-all:hover { color: #fff; }
+.sca-ic { font-size: 11px; opacity: .92; }
+
+/* sector chips rail scrolls horizontally — pin "Select all" to the left so it stays in reach */
+.sc-chip-all { position: sticky; left: 0; z-index: 3;
+  box-shadow: 7px 0 10px -6px color-mix(in srgb, var(--panel) 92%, transparent); }
+
+/* prominent CTA in the focus panel's top-left: open this sector/basket's own page */
+.sc-fhead-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.sc-fhead-top .cyc-back { margin-bottom: 0; }
+.sc-openpage { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; text-decoration: none;
+  font-size: 12.5px; font-weight: 750; letter-spacing: .01em; color: #fff; padding: 7px 15px; border-radius: 10px; border: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--c, var(--link)) 88%, #fff 12%), var(--c, var(--link)));
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--c, var(--link)) 40%, transparent);
+  transition: transform .12s var(--ease), box-shadow .18s, filter .18s; }
+.sc-openpage:hover { transform: translateY(-1px); filter: brightness(1.06);
+  box-shadow: 0 5px 18px color-mix(in srgb, var(--c, var(--link)) 52%, transparent); }
+.sc-openpage:active { transform: translateY(0); }
+html[data-theme="light"] .sc-openpage { color: #fff; }
+.sc-op-ic { font-size: 12px; } .sc-op-ar { font-size: 12px; opacity: .85; }
+
+/* ---- mobile: let the hero controls wrap instead of clipping off the right edge ---- */
+@media (max-width: 880px) {
+  .sc-page .cyc-hero-hd { flex-direction: column; align-items: stretch; gap: 10px; }
+  .sc-page .cyc-hero-tools { justify-content: flex-start; gap: 12px 14px; }
+  .sc-page .sc-ctrl-group { flex-wrap: wrap; gap: 8px; }
+  .sc-page .cyc-zoom { flex-wrap: wrap; }
+  .sc-page .sc-chip-all { padding: 6px 12px; }
+}
+/* hide the rail hint on the narrowest screens; the caret then needs the auto-push the
+   hint was carrying so it stays right-aligned against the "Select all" button */
+@media (max-width: 560px) {
+  .sc-page .sc-bask-hint { display: none; }
+  .sc-page .sc-bask-caret { margin-left: auto; }
+}

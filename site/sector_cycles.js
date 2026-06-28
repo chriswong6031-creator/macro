@@ -19,8 +19,8 @@
   if (!DATA || !DATA.sectors) return;
   var META = DATA.meta, PHASES = DATA.phases, SECTORS = DATA.sectors;
   var BASKETS = DATA.baskets || [];
-  var ALL = SECTORS.concat(BASKETS);            // one chart space; baskets hidden until selected
-  var basketShown = {};                          // basket id -> on the chart? (default false)
+  var ALL = SECTORS.concat(BASKETS);            // one chart space, shared by sectors + baskets
+  var basketShown = {};                          // basket id -> selected/on the chart? (boot selects all)
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
   /* ---- i18n (EN default, 中文 when <html data-lang="zh">) ----------------- */
@@ -356,10 +356,11 @@
   function applyVisibility() {
     var allOff = PHASE_FILTER.every(function (p) { return !phaseState[p.key]; });
     function phaseOK(s) { return allOff || phaseState[s.now.phase]; }
-    // An explicit user pick is never hidden by a facet: the focused item, or a basket
-    // already overlaid on the chart. Without this carve-out a facet could strand a
-    // selection behind display:none — no off-toggle, and a lying "N on chart" counter.
-    function pinned(s) { return s.id === state.focus || (s.kind === "basket" && !!basketShown[s.id]); }
+    // Only the FOCUSED item overrides the facet — the "Where they stand" facet narrows
+    // the (now all-selected-by-default) baskets the same way it narrows sectors, so the
+    // facet stays a real filter. The facet is a reversible VIEW (basketShown persists
+    // underneath), so an off-phase selected basket is never permanently stranded.
+    function pinned(s) { return s.id === state.focus; }
     function keepShown(s) { return phaseOK(s) || pinned(s); }
     // only the ACTIVE family is ever on the chart; sectors obey the phase facet, baskets
     // ride on the chart only when selected — and an explicit pick overrides the facet.
@@ -388,6 +389,7 @@
     // a11y: announce the filtered count for screen readers (silent for sighted users)
     var act = activeList(), shownN = act.filter(keepShown).length;
     srStatus(shownN < act.length ? L(shownN + " of " + act.length + " shown", "已显示 " + shownN + " / " + act.length + " 项") : "");
+    updateBasketSel();   // keep the "N on chart" counter honest as the facet narrows
     updateChartHint();
     if (heroChart) { heroChart.setHidden(chartHidden); rebuildHero(false); }
   }
@@ -408,8 +410,14 @@
     var anyShown = ALL.some(function (s) { return isActive(s) && !chartHidden[s.id]; });
     if (state.family === "baskets" && !anyShown) {
       hint.hidden = false;
-      hint.innerHTML = L("Tap a basket card or chip to chart it — overlay any you like to compare.",
-                         "点击下方任一篮子卡片或标签即可绘制——可叠加多个进行对比。");
+      // baskets are selected by default; if some are still selected the empty chart is the
+      // phase facet's doing (don't tell the user to tap a basket — that would deselect it).
+      var anySel = BASKETS.some(function (b) { return basketShown[b.id]; });
+      hint.innerHTML = anySel
+        ? L("No baskets match this phase — pick another phase or hit <b>Select all</b>.",
+            "该阶段暂无篮子——换一个阶段或点<b>全选</b>。")
+        : L("No baskets on the clock — tap a basket or hit <b>Select all</b> to chart them.",
+            "图中暂无篮子——点击任一篮子或点<b>全选</b>即可绘制。");
     } else { hint.hidden = true; }
   }
   /* ---- section family (Sector ETFs vs Thematic Baskets) ------------------ */
@@ -449,6 +457,13 @@
     var wrap = document.getElementById("sc-chips");
     if (!wrap) return;
     wrap.innerHTML = "";
+    // a pinned "Select all" so the whole sector board can be brought back in one tap
+    var all = el("button", "sc-chip-all");
+    all.setAttribute("type", "button");
+    all.setAttribute("title", L("Show every sector", "显示全部板块"));
+    all.innerHTML = '<span class="sca-ic" aria-hidden="true">✦</span>' + L("Select all", "全选");
+    all.addEventListener("click", selectAllSectors);
+    wrap.appendChild(all);
     SECTORS.forEach(function (s) {
       var b = el("button", "cyc-chip");
       b.setAttribute("data-id", s.id);
@@ -458,9 +473,17 @@
       wrap.appendChild(b);
     });
   }
+  // "Select all" for the sector ETFs — clear any focus and re-show every phase, so all
+  // 11 sectors sit on the clock at once.
+  function selectAllSectors() {
+    PHASE_FILTER.forEach(function (p) { phaseState[p.key] = true; });
+    setFocus(null);
+    syncGroups();
+  }
 
-  /* ---- thematic baskets: a collapsible, category-grouped rail; OFF by
-     default — selecting a basket adds its line to the chart and focuses it ---- */
+  /* ---- thematic baskets: a collapsible, category-grouped rail; all baskets are
+     selected by default — tapping one toggles it off, the "Where they stand" facet
+     narrows the field, and "Select all" brings the whole set back ---- */
   function basketChipHTML(b) {
     return '<button class="sc-bchip' + (basketShown[b.id] ? " on" : "") + '" data-id="' + b.id + '" style="--c:' + b.accent + '">' +
       '<span class="dot"></span><span class="nm">' + shortNm(b) + '</span>' +
@@ -474,31 +497,53 @@
     BASKETS.forEach(function (b) { (byCat[b.group] = byCat[b.group] || []).push(b); });
     var cats = Object.keys(byCat).sort();
     host.innerHTML =
-      '<button class="sc-bask-head" id="sc-bask-head" aria-expanded="false">' +
-        '<span class="sc-bask-ic">🧺</span><span class="sc-bask-title">' + L("Thematic baskets", "主题篮子") + '</span>' +
-        '<span class="sc-bask-n">' + BASKETS.length + '</span>' +
-        '<span class="sc-bask-sel" id="sc-bask-sel"></span>' +
-        '<span class="sc-bask-hint">' + L("select to overlay", "点选叠加到图表") + '</span>' +
-        '<span class="sc-bask-caret">▾</span></button>' +
+      '<div class="sc-bask-head" id="sc-bask-head">' +
+        '<button class="sc-bask-toggle" id="sc-bask-toggle" type="button" aria-expanded="false">' +
+          '<span class="sc-bask-ic" aria-hidden="true">🧺</span><span class="sc-bask-title">' + L("Thematic baskets", "主题篮子") + '</span>' +
+          '<span class="sc-bask-n">' + BASKETS.length + '</span>' +
+          '<span class="sc-bask-sel" id="sc-bask-sel"></span>' +
+          '<span class="sc-bask-hint">' + L("tap to pick", "点选板块") + '</span>' +
+          '<span class="sc-bask-caret" aria-hidden="true">▾</span>' +
+        '</button>' +
+        '<button class="sc-bask-all" id="sc-bask-all" type="button" title="' + L("Chart every basket", "绘制全部篮子") + '">' +
+          '<span class="sca-ic" aria-hidden="true">✦</span>' + L("Select all", "全选") + '</button>' +
+      '</div>' +
       '<div class="sc-bask-panel" id="sc-bask-panel">' +
         cats.map(function (c) {
           return '<div class="sc-bask-cat"><div class="sc-bask-cath">' + grpName(byCat[c][0]) + '</div>' +
             '<div class="sc-bask-chips">' + byCat[c].map(basketChipHTML).join("") + '</div></div>';
         }).join("") +
       '</div>';
-    document.getElementById("sc-bask-head").addEventListener("click", function () {
+    document.getElementById("sc-bask-toggle").addEventListener("click", function () {
       var open = host.classList.toggle("open");
       this.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    document.getElementById("sc-bask-all").addEventListener("click", function (e) {
+      e.stopPropagation(); selectAllBaskets();
     });
     host.querySelectorAll(".sc-bchip").forEach(function (ch) {
       ch.addEventListener("click", function () { toggleBasket(ch.getAttribute("data-id")); });
     });
     updateBasketSel();
   }
+  // "Select all" for the thematic baskets — chart every basket and re-show every phase.
+  function selectAllBaskets() {
+    BASKETS.forEach(function (b) { basketShown[b.id] = true; });
+    PHASE_FILTER.forEach(function (p) { phaseState[p.key] = true; });
+    updateBasketSel();
+    setFocus(null);
+    syncGroups();
+  }
   function updateBasketSel() {
-    var n = BASKETS.filter(function (b) { return basketShown[b.id]; }).length;
+    // honest counter: "N on chart" = selected baskets actually drawn (a "Where they
+    // stand" facet can narrow the selected set; the focused basket always counts).
+    var allOff = PHASE_FILTER.every(function (p) { return !phaseState[p.key]; });
+    var sel = BASKETS.filter(function (b) { return basketShown[b.id]; });
+    var drawn = sel.filter(function (b) { return allOff || phaseState[b.now.phase] || b.id === state.focus; }).length;
     var el2 = document.getElementById("sc-bask-sel");
-    if (el2) el2.textContent = n ? (n + " " + L("on chart", "在图中")) : "";
+    if (el2) el2.textContent = !sel.length ? ""
+      : (drawn < sel.length ? (drawn + " / " + sel.length + " " + L("on chart", "在图中"))
+                            : (sel.length + " " + L("on chart", "在图中")));
     document.querySelectorAll(".sc-bchip").forEach(function (ch) {
       ch.classList.toggle("on", !!basketShown[ch.getAttribute("data-id")]);
     });
@@ -700,6 +745,27 @@
     '</div>';
   }
 
+  // the "open this item's own page" target. US: every sector ETF and basket ETF-proxy has a
+  // single-stock analyzer at stock.html#TICKER (baskets without a proxy fall to the baskets hub).
+  // China (Shenwan indices / A-share baskets have no analyzer) routes to the China Sector Central
+  // hub. Returns null when there's nothing to open (incl. when already embedded in that hub).
+  function sectorPageHref(s) {
+    if (META.region === "china") {
+      // when this same JS is embedded IN the China Sector Central hub, don't render a
+      // button that merely reloads the page you're already on; from the standalone
+      // cycles page, deep-link into the hub and let its boot() focus this item by #id.
+      return /sector_central/.test(location.pathname) ? null : ("sector_central_china.html#" + s.id);
+    }
+    if (s.kind === "basket") return s.etf_proxy ? ("stock.html#" + s.etf_proxy) : "baskets.html";
+    return s.ticker ? ("stock.html#" + s.ticker) : null;
+  }
+  function sectorPageLabel(s) {
+    if (META.region === "china") return L("Open in Sector Central", "在板块中枢查看");
+    if (s.kind === "basket") return s.etf_proxy ? (L("Open ", "查看 ") + s.etf_proxy + L(" page", " 页面"))
+                                                : L("Open baskets hub", "查看篮子中心");
+    return L("Open ", "查看 ") + (s.ticker || "") + L(" page", " 页面");
+  }
+
   function focusHTML(s) {
     var nw = s.now, ph = PHASES[nw.phase] || {}, tilt = tiltOf(s);
     function fact(k, v) { return '<div class="f"><div class="fk">' + k + '</div><div class="fv">' + v + '</div></div>'; }
@@ -717,9 +783,16 @@
       ? (L("Basket", "篮子") + (s.n_members ? " · " + s.n_members + " " + L("names", "只成分") : "") + (s.etf_proxy ? " · " + L("proxy ", "对标 ") + s.etf_proxy : ""))
       : (s.ticker + " · " + grpName(s));
 
+    var pageHref = sectorPageHref(s);
+    var openBtn = pageHref ? ('<a class="sc-openpage" href="' + pageHref + '" style="--c:' + s.accent + '">' +
+        '<span class="sc-op-ic" aria-hidden="true">📄</span><span class="sc-op-tx">' + sectorPageLabel(s) + '</span>' +
+        '<span class="sc-op-ar" aria-hidden="true">↗</span></a>') : '';
     return '' +
       '<div class="cyc-grp cyc-grp-full">' +
-        '<button class="cyc-back">' + (s.kind === "basket" ? L("← All baskets", "← 全部篮子") : L("← All sectors", "← 全部板块")) + '</button>' +
+        '<div class="sc-fhead-top">' +
+          '<button class="cyc-back">' + (s.kind === "basket" ? L("← All baskets", "← 全部篮子") : L("← All sectors", "← 全部板块")) + '</button>' +
+          openBtn +
+        '</div>' +
         '<div class="cyc-fhead" style="--c:' + s.accent + '">' +
           '<div class="cyc-ftitle">' + nm(s) + '</div>' +
           '<div class="cyc-fsub">' + subtitle + (nw.above200d ? L(" · above 200d", " · 200日上") : L(" · below 200d", " · 200日下")) + '</div>' +
@@ -827,8 +900,8 @@
       '<div class="cyc-grp cyc-grp-full">' +
         '<div class="cyc-lbl">' + (baskets ? L("Thematic basket rotation · ", "主题篮子轮动 · ") : L("Sector rotation · ", "板块轮动 · ")) + META.asOf + '</div>' +
         '<p class="rg-headline">' + (baskets
-          ? L("The 34 thematic baskets on the same cycle clock — each an equal-weight index of its members. The chart starts empty; <b>tap any basket</b> (card or chip) to overlay its real price, then read its turning points. Flip to <b>Cycle position</b> to compare them on a 0–100 clock.",
-              "34 个主题篮子同处一张周期时钟——每个均为其成分股的等权指数。图表初始为空；<b>点击任一篮子</b>（卡片或标签）即可叠加其真实价格并查看拐点。切换到<b>周期位置</b>可在 0–100 的时钟上对比。")
+          ? L("All " + BASKETS.length + " thematic baskets start <b>charted together</b> — each an equal-weight index of its members. Use <b>Where they stand</b> or tap a basket to narrow the field, or hit <b>Select all</b> to bring them all back. Flip to <b>Cycle position</b> to compare them on a 0–100 clock.",
+              "全部 " + BASKETS.length + " 个主题篮子<b>默认一同绘制</b>——每个均为其成分股的等权指数。用<b>所处阶段</b>或点击篮子可缩小范围，点<b>全选</b>即可重新全部显示。切换到<b>周期位置</b>可在 0–100 的时钟上对比。")
           : L("Real price on a log axis, every line rebased to 100 at the left edge of the visible window — so <b>zoom to any period</b> and the lines instantly show relative performance from there. Flip to <b>Cycle position</b> to compare sectors on a 0–100 clock. Tap a sector to see its turning points and the story behind each move.",
               "对数坐标下的真实价格，每条线在可见区间的左端再基准化为 100——<b>缩放到任意时段</b>，各线即刻显示自该点起的相对表现。切换到<b>周期位置</b>可在 0–100 的时钟上对比。点按某板块查看其拐点及每段走势背后的故事。")) + '</p>' +
       '</div>' +
@@ -891,8 +964,11 @@
 
   /* ---- boot -------------------------------------------------------------- */
   function boot() {
+    // baskets START all selected (the whole field is charted the moment you open the
+    // Thematic Baskets tab); they're hidden on the chart for now only because the
+    // Sector ETFs tab is the active family at load.
+    BASKETS.forEach(function (b) { basketShown[b.id] = true; chartHidden[b.id] = true; });
     mountChips(); mountBaskets();
-    BASKETS.forEach(function (b) { chartHidden[b.id] = true; });   // baskets off the chart until selected
     wireFamily(); applyFamilyDisplay();                            // sectors section active; baskets hidden
     mountHero(); wireControls(); buildGroups(); buildDefaultPanel(); mountCards(); initSheet();
     document.addEventListener("langchange", rerender);
