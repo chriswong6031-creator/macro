@@ -19,15 +19,23 @@ log = logging.getLogger(__name__)
 
 CIRCUIT_BREAKER_FAILS = 3  # consecutive run failures -> mark dead, skip
 
+# An open breaker is HALF-OPEN, not permanently dead: after this long it lets ONE
+# probe through. A success closes it; a failure re-opens it for another window.
+# Without this an open breaker NEVER retries — the daily/weekly collect never pass
+# --full-history (the only flag that bypassed it), so a single transient trip
+# became a permanent SILENT death (a healthy source stuck "dead" for weeks).
+CIRCUIT_HALF_OPEN_AFTER_H = 20.0   # ~one probe per daily run
+
 
 @dataclass
 class FetchResult:
     source: str
-    status: str            # ok | stale | failed | dead | skipped
+    status: str            # ok | stale | failed | dead | skipped | blocked
     rows: int = 0
     last_date: str | None = None
     error: str | None = None
     notes: list[str] = field(default_factory=list)
+    probed_at: str | None = None   # set when this run was a half-open breaker probe
 
 
 class Adapter:
@@ -109,6 +117,23 @@ def _breaker_state() -> dict:
     return store.read_status().get("circuit_breaker", {})
 
 
+def _probe_state() -> dict:
+    return store.read_status().get("circuit_breaker_probe", {})
+
+
+def _probe_due(last_probe: str | None,
+               cooldown_h: float = CIRCUIT_HALF_OPEN_AFTER_H) -> bool:
+    """True when an open breaker has waited long enough for its next half-open probe."""
+    if not last_probe:
+        return True
+    try:
+        age_h = (datetime.now(timezone.utc)
+                 - datetime.fromisoformat(last_probe)).total_seconds() / 3600.0
+    except (ValueError, TypeError):
+        return True
+    return age_h >= cooldown_h
+
+
 def run_adapter(adapter: Adapter, full_history: bool = False,
                 stale_after_days: int | None = None) -> FetchResult:
     """Execute one adapter with circuit breaker + graceful degradation."""
@@ -116,8 +141,13 @@ def run_adapter(adapter: Adapter, full_history: bool = False,
         stale_after_days = adapter.stale_after_days
     breaker = _breaker_state()
     fails = breaker.get(adapter.name, 0)
+    half_open = False
     if fails >= CIRCUIT_BREAKER_FAILS and not full_history:
-        return FetchResult(adapter.name, "dead", error=f"circuit open ({fails} consecutive failures)")
+        if not _probe_due(_probe_state().get(adapter.name)):
+            return FetchResult(adapter.name, "dead",
+                               error=f"circuit open ({fails} consecutive failures)")
+        half_open = True   # cooldown elapsed -> let ONE probe through to test recovery
+        log.info("adapter %s breaker half-open: probing after %d fails", adapter.name, fails)
 
     try:
         frames = adapter.fetch(full_history=full_history)
@@ -134,22 +164,41 @@ def run_adapter(adapter: Adapter, full_history: bool = False,
             age = (datetime.now(timezone.utc).date() - last.date()).days
             if age > stale_after_days:
                 status = "stale"
-        return FetchResult(adapter.name, status, rows=rows,
-                           last_date=str(last.date()) if last is not None else None)
+        res = FetchResult(adapter.name, status, rows=rows,
+                          last_date=str(last.date()) if last is not None else None)
     except Exception as e:  # noqa: BLE001 — degrade, never crash the run
         if adapter.expected_failure:
             log.info("adapter %s blocked (known): %s", adapter.name, e)
-            return FetchResult(adapter.name, "blocked",
-                               error=adapter.expected_failure)
-        log.error("adapter %s failed: %s\n%s", adapter.name, e, traceback.format_exc(limit=3))
-        return FetchResult(adapter.name, "failed", error=f"{type(e).__name__}: {e}")
+            res = FetchResult(adapter.name, "blocked", error=adapter.expected_failure)
+        else:
+            log.error("adapter %s failed: %s\n%s", adapter.name, e, traceback.format_exc(limit=3))
+            res = FetchResult(adapter.name, "failed", error=f"{type(e).__name__}: {e}")
+    if half_open:
+        res.probed_at = datetime.now(timezone.utc).isoformat()
+    return res
 
 
-def update_breaker(results: list[FetchResult]) -> dict:
+def update_breaker(results: list[FetchResult],
+                   probe_state: dict | None = None) -> tuple[dict, dict]:
+    """Recompute (circuit_breaker, circuit_breaker_probe) after a collect pass.
+
+    A 'failed' increments the breaker; a reachable, definitive outcome
+    ('ok'/'stale'/'blocked') closes it. 'blocked' clears too — it is an
+    expected_failure (a known limitation, not a transient outage), so it must not
+    leave the source wedged 'dead'. The probe map records when a half-open probe was
+    last attempted so an open breaker re-probes at most once per cooldown.
+    """
     breaker = _breaker_state()
+    probe = dict(_probe_state() if probe_state is None else probe_state)
     for r in results:
         if r.status == "failed":
             breaker[r.source] = breaker.get(r.source, 0) + 1
-        elif r.status in ("ok", "stale"):
+        elif r.status in ("ok", "stale", "blocked"):
             breaker[r.source] = 0
-    return breaker
+        # half-open bookkeeping: a recovered/blocked source forgets its probe clock;
+        # a still-failing probe stamps the time so it waits a full cooldown again.
+        if r.status in ("ok", "stale", "blocked"):
+            probe.pop(r.source, None)
+        elif r.probed_at:
+            probe[r.source] = r.probed_at
+    return breaker, probe

@@ -168,20 +168,26 @@ class Edgar13FAdapter(Adapter):
         keep = int(self.cfg.get("history_quarters", 2))
         if full_history:
             keep = max(keep, int(self.cfg.get("backfill_quarters", 8)))
-        ok, errors, written = 0, [], 0
+        processed, wrote, errors, written = 0, 0, [], 0
         for slug, spec in funds.items():
             try:
                 n = self._fetch_fund(slug, spec, keep)
+                processed += 1            # reached + parsed the fund's filing list
                 if n:
-                    ok += 1
+                    wrote += 1
                     written += n
             except Exception as e:  # noqa: BLE001 — one fund must not kill the rest
                 errors.append(f"{slug}: {e}")
                 log.warning("13f %s failed: %s", slug, e)
-        if ok == 0:
-            raise RuntimeError(f"all 13F funds failed/empty: {errors[:5]}")
-        log.info("13f: %d/%d funds ok, %d snapshots written", ok, len(funds), written)
-        s = pd.DataFrame({"funds_ok": [ok]}, index=[pd.Timestamp(date.today())])
+        # Only a TRUE outage (EVERY fund errored) is a failure. "Processed fine,
+        # nothing new to write" is the NORMAL steady state for a quarterly source
+        # with a 45-day filing lag — between windows every snapshot is already on
+        # disk, so written==0 is expected and must NOT trip the breaker.
+        if processed == 0:
+            raise RuntimeError(f"all 13F funds failed: {errors[:5]}")
+        log.info("13f: %d/%d funds processed, %d wrote new (%d snapshots)",
+                 processed, len(funds), wrote, written)
+        s = pd.DataFrame({"funds_ok": [processed]}, index=[pd.Timestamp(date.today())])
         return {"smart_money_runs": s}
 
     # -- per-fund ------------------------------------------------------------- #
