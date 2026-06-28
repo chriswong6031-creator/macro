@@ -150,6 +150,59 @@ def test_row_to_item_column_drift() -> None:
     assert it["title"] == "央行降息" and it["url"] == "x" and it["time"].startswith("2026")
 
 
+def test_clean_time_rejects_title_and_url() -> None:
+    # the two exact contaminated values reported on .cn-when
+    g1 = ("证监会：五方面推动资本市场法治协同建设 "
+          "https://www.cnstock.com/commonDetail/734410")
+    g2 = ('人民币资产"圈粉"全球 财政部再发50亿欧元主权债券 要闻 · 人民币资产 06-27 '
+          "https://www.cnstock.com/commonDetail/735099")
+    assert cn._clean_time(g1, "证监会：五方面推动资本市场法治协同建设") == ""
+    assert cn._clean_time(g2, '人民币资产"圈粉"全球 财政部再发50亿欧元主权债券') == ""
+    # a bare URL with no title context is still rejected
+    assert cn._clean_time("https://www.stcn.com/article/detail/3983723.html") == ""
+    # genuine timestamps survive verbatim (whitespace-collapsed)
+    assert cn._clean_time("2026-06-28 17:04:04") == "2026-06-28 17:04:04"
+    assert cn._clean_time("2026-06-24T11:30:04+00:00") == "2026-06-24T11:30:04+00:00"
+    assert cn._clean_time("2026-06-18") == "2026-06-18"
+    assert cn._clean_time("06-28") == "06-28"
+    assert cn._clean_time("") == ""
+
+
+def test_parse_dateish_never_echoes_raw_input() -> None:
+    # the bug: a title+href with no date used to be returned verbatim into `time`
+    assert cn._parse_dateish("证监会：五方面推动 https://www.cnstock.com/x/1") == ""
+    assert cn._parse_dateish("华泰证券：工业企业利润总体向好 行业分化加剧") == ""
+    # a real date still resolves to a clean ISO day
+    assert cn._parse_dateish("发布于 2026-06-18 09:00 来源：央行") == "2026-06-18"
+    assert cn._parse_dateish("20260611 PPI") == "2026-06-11"
+
+
+def test_enriched_time_is_clean_for_native_scraped_item() -> None:
+    # native-page items historically dumped "<title> <href>" into time
+    items = [{
+        "title": "证监会：五方面推动资本市场法治协同建设",
+        "summary": "",
+        "time": ("证监会：五方面推动资本市场法治协同建设 "
+                 "https://www.cnstock.com/commonDetail/734410"),
+        "url": "https://www.cnstock.com/commonDetail/734410",
+        "source": "cn_news_page", "source_name": "上海证券报",
+        "source_tier": "china_native", "source_lang": "zh",
+    }, {
+        "title": "统计局公布5月PPI同比数据 工业品价格走势",
+        "summary": "",
+        "time": "2026-06-28 17:04:04",
+        "url": "https://finance.eastmoney.com/a/1.html",
+        "source": "eastmoney", "source_name": "Eastmoney",
+        "source_tier": "domestic_wire", "source_lang": "zh",
+    }]
+    kept = {h["url"]: h for h in cn.filter_flashes(items, {"max_show": 12})}
+    scraped = kept["https://www.cnstock.com/commonDetail/734410"]
+    clean = kept["https://finance.eastmoney.com/a/1.html"]
+    assert scraped["time"] == ""                       # no title / URL leaks through
+    assert "http" not in scraped["time"]
+    assert clean["time"] == "2026-06-28 17:04:04"      # real timestamp preserved
+
+
 def test_panel_importable() -> None:
     # the build_china entrypoint just calls cn.panel(); make sure it exists/imports
     assert callable(cn.panel) and callable(cn.policy_tone) and callable(cn.flash_headlines)
@@ -166,6 +219,9 @@ if __name__ == "__main__":
         test_tone_band_thresholds,
         test_tone_stats_numeric,
         test_row_to_item_column_drift,
+        test_clean_time_rejects_title_and_url,
+        test_parse_dateish_never_echoes_raw_input,
+        test_enriched_time_is_clean_for_native_scraped_item,
         test_panel_importable,
     ]
     for fn in tests:
