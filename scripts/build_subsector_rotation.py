@@ -48,6 +48,16 @@ def build(site: Path | None = None, *, generated_utc: str | None = None) -> dict
     log.info("wrote %s — %d subsectors, %d themes (emerging: %s)",
              out, payload["n_subsectors"], payload["n_themes"],
              ", ".join(payload["highlights"]["emerging"][:4]))
+
+    # Change-detection alerts: ping when a subsector rotates in/out (additive).
+    try:
+        from engine import subsector_rotation_alerts
+        fired = subsector_rotation_alerts.rebuild(payload)
+        if fired:
+            log.info("rotation alerts: %d fired (%s)", len(fired),
+                     ", ".join(e["asset"] for e in fired[:5]))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("rotation alerts failed: %s", e)
     return payload
 
 

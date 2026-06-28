@@ -211,6 +211,8 @@
 
   <div id="heatmap-full" data-hm-maps='[{"key":"sp500","icon":"🔥","label_en":"S&amp;P 500","label_zh":"标普500","url":"marketdata/sp500_heatmap.json"},{"key":"themes","icon":"🧭","label_en":"Themes","label_zh":"主题","url":"marketdata/themes_heatmap.json"}]'></div>
 
+  <div id="rotation-strip"></div>
+
   <div class="hm-foot">
     <span class="l-en">Green = up, red = down (inverted in 中文 to the Asian convention); the 1D view bins at ±1/2/3%, longer windows widen the bins so the map stays legible. <b>S&P 500</b> tiles are sized by market cap and computed from adjusted closes; the hover card is our own conviction read (verdict, 0–100 score, drivers and cautions) — research context, never a buy signal. <b>Themes</b> tiles are subsectors sized by member count, coloured by Finviz's subsector move; hovering lists the member tickers with their own moves. Themes data: Finviz themes map.</span><span class="l-zh">绿涨红跌（中文模式按亚洲习惯反转）；1天视图采用 ±1/2/3% 分档，更长周期会拓宽分档以保持可读性。<b>标普500</b> 方块按市值定大小、由复权收盘价计算；悬停卡片为我们自有的研判（结论、0–100 评分、驱动与风险）——仅作研究参考，绝非买入信号。<b>主题</b> 方块为子板块，按成员数量定大小，按 Finviz 子板块涨跌幅着色；悬停可列出成员个股及其涨跌幅。主题数据来源：Finviz 主题图。</span>
   </div>
@@ -223,5 +225,6 @@
 <script src="theme.js"></script>
 <script src="stockdata.js"></script>
 <script src="heatmap.js"></script>
+<script src="subsector_rotation.js"></script>
 </body>
 </html>
