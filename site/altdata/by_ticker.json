@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-06-28",
-  "generated_utc": "2026-06-28T09:19:29.855946+00:00",
+  "generated_utc": "2026-06-28T10:46:32.450154+00:00",
   "n_tickers": 4499,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
@@ -295,7 +295,7 @@
       "gov_contract_usd_30d": 38896013.0,
       "gov_contract_accel": 0.43,
       "wsb_mentions": 91,
-      "github_stars": 21867,
+      "github_stars": 21868,
       "convergence_score": 3,
       "trump_linked": false,
       "affiliated": true
@@ -341,8 +341,8 @@
       "app_rating": 4.77,
       "app_reviews": 19684388,
       "patents": 97,
-      "hf_downloads_30d": 28501499.0,
-      "github_stars": 186922,
+      "hf_downloads_30d": 28416723.0,
+      "github_stars": 186982,
       "congress_position_usd": 192658500.0,
       "convergence_score": 6,
       "trump_linked": false,
@@ -1031,8 +1031,8 @@
       "dpi_lean": "accumulation",
       "patents": 48,
       "wsb_mentions": 207,
-      "hf_downloads_30d": 29763129.0,
-      "github_stars": 17593,
+      "hf_downloads_30d": 30073822.0,
+      "github_stars": 17597,
       "congress_position_usd": 30213000.0,
       "convergence_score": 8,
       "trump_linked": false,
@@ -1078,8 +1078,8 @@
       "material_8k_30d": 4,
       "app_rating": 4.71,
       "app_reviews": 25644366,
-      "hf_downloads_30d": 207877713.0,
-      "github_stars": 196020,
+      "hf_downloads_30d": 207781753.0,
+      "github_stars": 196081,
       "congress_position_usd": 47592000.0,
       "convergence_score": 7,
       "trump_linked": false,
@@ -1093,7 +1093,7 @@
         "special_situation"
       ],
       "weighted_score": 1.3,
-      "hf_downloads_30d": 24222428.0,
+      "hf_downloads_30d": 24309408.0,
       "congress_position_usd": 89239500.0,
       "convergence_score": 3,
       "trump_linked": false,
@@ -1940,7 +1940,7 @@
       ],
       "weighted_score": 0.7,
       "patents": 142,
-      "hf_downloads_30d": 9680678.0,
+      "hf_downloads_30d": 9629527.0,
       "github_stars": 7536,
       "congress_position_usd": 8712000.0,
       "convergence_score": 2,
@@ -1956,7 +1956,7 @@
       "weighted_score": 0.9,
       "patents": 140,
       "wsb_mentions": 36,
-      "hf_downloads_30d": 6191979.0,
+      "hf_downloads_30d": 6206291.0,
       "congress_position_usd": 159930000.0,
       "convergence_score": 2,
       "trump_linked": false,
@@ -2112,7 +2112,7 @@
       ],
       "weighted_score": 0.6,
       "wsb_mentions": 37,
-      "news_bull_ratio": 0.92,
+      "news_bull_ratio": 0.9,
       "convergence_score": 2,
       "trump_linked": false,
       "affiliated": false
@@ -2129,12 +2129,13 @@
     "META": {
       "ticker": "META",
       "channels": [
-        "affiliation"
+        "affiliation",
+        "github_momentum"
       ],
-      "weighted_score": 0.5,
-      "hf_downloads_30d": 90875134.0,
-      "github_stars": 246209,
-      "convergence_score": 1,
+      "weighted_score": 0.8,
+      "hf_downloads_30d": 91024307.0,
+      "github_stars": 246268,
+      "convergence_score": 2,
       "trump_linked": false,
       "affiliated": true
     },
@@ -2144,7 +2145,7 @@
         "special_situation"
       ],
       "weighted_score": 0.4,
-      "hf_downloads_30d": 210161350.0,
+      "hf_downloads_30d": 207611302.0,
       "congress_position_usd": 15948000.0,
       "convergence_score": 1,
       "trump_linked": false,
@@ -2154,7 +2155,7 @@
       "ticker": "CRM",
       "channels": [],
       "weighted_score": 0,
-      "hf_downloads_30d": 6737287.0,
+      "hf_downloads_30d": 6752800.0,
       "github_stars": 11241,
       "congress_position_usd": 28516500.0,
       "convergence_score": 0,
@@ -2738,7 +2739,7 @@
         "github_momentum"
       ],
       "weighted_score": 0.3,
-      "github_stars": 19520,
+      "github_stars": 19521,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false

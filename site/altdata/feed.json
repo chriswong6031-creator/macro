@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-28T09:19:20.832436+00:00",
+  "generated_utc": "2026-06-28T10:46:21.568019+00:00",
   "as_of": "2026-06-28",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -5471,182 +5471,182 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 48106,
+      "rows": 48306,
       "last_seen": "2026-06-28",
       "recent": [
         {
-          "ticker": "BSX",
-          "owner_name": "AustralianSuper Pty Ltd",
+          "ticker": "AES",
+          "owner_name": "Quadrature Capital Ltd",
           "owner_title": "Institution",
-          "shares": "628448",
+          "shares": "213206",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "DEUTSCHE BANK AG\\",
+          "owner_name": "PARNASSUS INVESTMENTS, LLC",
           "owner_title": "Institution",
-          "shares": "32308027",
+          "shares": "7887228",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "WELLS FARGO & COMPANY/MN",
+          "owner_name": "AVIVA PLC",
           "owner_title": "Institution",
-          "shares": "32078451",
+          "shares": "8349689",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Sanders Capital, LLC",
+          "owner_name": "TD ASSET MANAGEMENT INC",
           "owner_title": "Institution",
-          "shares": "29818675",
+          "shares": "8275670",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "BAILLIE GIFFORD & CO",
+          "owner_name": "BANK OF NOVA SCOTIA",
           "owner_title": "Institution",
-          "shares": "29387070",
+          "shares": "8248355",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Swiss National Bank",
+          "owner_name": "PRUDENTIAL FINANCIAL INC",
           "owner_title": "Institution",
-          "shares": "28236000",
+          "shares": "8226360",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "AMERICAN CENTURY COMPANIES INC",
+          "owner_name": "FAYEZ SAROFIM & CO",
           "owner_title": "Institution",
-          "shares": "26600380",
+          "shares": "8084635",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "MASSACHUSETTS FINANCIAL SERVICES CO /MA/",
+          "owner_name": "ProShare Advisors LLC",
           "owner_title": "Institution",
-          "shares": "25952500",
+          "shares": "8030900",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "BANK OF MONTREAL /CAN/",
+          "owner_name": "ALKEON CAPITAL MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "24640996",
+          "shares": "7964931",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Sumitomo Mitsui Trust Group, Inc.",
+          "owner_name": "NEW YORK STATE TEACHERS RETIREMENT SYSTEM",
           "owner_title": "Institution",
-          "shares": "24620350",
+          "shares": "7863287",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "VICTORY CAPITAL MANAGEMENT INC",
+          "owner_name": "WINDACRE PARTNERSHIP LLC",
           "owner_title": "Institution",
-          "shares": "24448590",
+          "shares": "7185100",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "HSBC HOLDINGS PLC",
+          "owner_name": "CITADEL ADVISORS LLC",
           "owner_title": "Institution",
-          "shares": "23474107",
+          "shares": "7692857",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "CALIFORNIA PUBLIC EMPLOYEES RETIREMENT SYSTEM",
+          "owner_name": "CANADA LIFE ASSURANCE Co",
           "owner_title": "Institution",
-          "shares": "21785734",
+          "shares": "7657087",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Mitsubishi UFJ Asset Management Co., Ltd.",
+          "owner_name": "ALTAROCK PARTNERS LP",
           "owner_title": "Institution",
-          "shares": "21415372",
+          "shares": "7567946",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "RAYMOND JAMES FINANCIAL INC",
+          "owner_name": "APG Asset Management N.V.",
           "owner_title": "Institution",
-          "shares": "21213148",
+          "shares": "7547056",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Assenagon Asset Management S.A.",
+          "owner_name": "DnB Asset Management AS",
           "owner_title": "Institution",
-          "shares": "20521783",
+          "shares": "7450247",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "National Pension Service",
+          "owner_name": "SANDS CAPITAL MANAGEMENT, LLC",
           "owner_title": "Institution",
-          "shares": "19843319",
+          "shares": "7440012",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "JANUS HENDERSON GROUP PLC",
+          "owner_name": "Korea Investment CORP",
           "owner_title": "Institution",
-          "shares": "32297269",
+          "shares": "7350766",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "ARROWSTREET CAPITAL, LIMITED PARTNERSHIP",
+          "owner_name": "1832 Asset Management L.P.",
           "owner_title": "Institution",
-          "shares": "32578171",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "Nuveen Asset Management, LLC",
-          "owner_title": "Institution",
-          "shares": "413346",
+          "shares": "8349910",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Fisher Asset Management, LLC",
+          "owner_name": "STIFEL FINANCIAL CORP",
           "owner_title": "Institution",
-          "shares": "34185457",
+          "shares": "8394669",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "WELLINGTON MANAGEMENT GROUP LLP",
+          "owner_name": "Robeco Institutional Asset Management B.V.",
           "owner_title": "Institution",
-          "shares": "62403604",
+          "shares": "8429660",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Invesco Ltd.",
+          "owner_name": "STATE BOARD OF ADMINISTRATION OF FLORIDA RETIREMENT SYSTEM",
           "owner_title": "Institution",
-          "shares": "59604857",
+          "shares": "8502697",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Nuveen, LLC",
+          "owner_name": "VOYA INVESTMENT MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "57301203",
+          "shares": "10011341",
           "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Legal & General Group Plc",
+          "owner_name": "BERKSHIRE HATHAWAY INC",
           "owner_title": "Institution",
-          "shares": "55539603",
+          "shares": "10000000",
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "CIBC Private Wealth Group LLC",
+          "owner_title": "Institution",
+          "shares": "9945180",
           "_collected": "2026-06-28"
         }
       ]
@@ -5655,68 +5655,198 @@
       "emoji": "\ud83d\udcb0",
       "label_en": "Executive comp",
       "label_zh": "\u9ad8\u7ba1\u85aa\u916c",
-      "rows": 917,
-      "last_seen": "2026-06-26",
+      "rows": 936,
+      "last_seen": "2026-06-28",
       "recent": [
         {
-          "ticker": "CMCSA",
-          "name": "Brian L. Roberts",
-          "role": "CEO",
+          "ticker": "AES",
+          "name": "Stephen Coughlin",
+          "role": "EVP & CFO",
           "year": "2022",
-          "total_comp": "32069850.0",
-          "salary": "2500000.0",
-          "bonus": "7500000.0",
-          "_collected": "2026-06-26"
+          "total_comp": "2445980.0",
+          "salary": "580000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
         },
         {
-          "ticker": "CMCSA",
-          "name": "Brian L. Roberts",
+          "ticker": "AES",
+          "name": "Ricardo Falu",
+          "role": "EVP & COO & President New Energy Technologies",
+          "year": "2024",
+          "total_comp": "3175790.0",
+          "salary": "555000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Andr\u00e9s Gluski",
+          "role": "CEO",
+          "year": "2025",
+          "total_comp": "9153896.0",
+          "salary": "1241000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Juan Ignacio Rubiolo",
+          "role": "EVP & COO",
+          "year": "2025",
+          "total_comp": "3323332.0",
+          "salary": "550000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Stephen Coughlin",
+          "role": "EVP & CFO",
+          "year": "2025",
+          "total_comp": "3155414.0",
+          "salary": "645000.0",
+          "bonus": "89010.0",
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Bernerd Da Santos",
+          "role": "EVP & President, US & Renewables",
+          "year": "2025",
+          "total_comp": "2980129.0",
+          "salary": "663000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Andr\u00e9s Gluski",
           "role": "CEO",
           "year": "2024",
-          "total_comp": "33861622.0",
-          "salary": "2500001.0",
-          "bonus": "7500002.0",
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "ASPI",
-          "name": "Paul Mann",
-          "role": "Executive Chairman",
-          "year": "2024",
-          "total_comp": "4767309.0",
-          "salary": "510000.0",
+          "total_comp": "13355284.0",
+          "salary": "1241000.0",
           "bonus": null,
-          "_collected": "2026-06-26"
+          "_collected": "2026-06-28"
         },
         {
-          "ticker": "ASPI",
-          "name": "Heather Kiessling",
-          "role": "CFO",
+          "ticker": "AES",
+          "name": "Juan Ignacio Rubiolo",
+          "role": "EVP & COO",
           "year": "2024",
-          "total_comp": "1712000.0",
-          "salary": "200000.0",
+          "total_comp": "3288327.0",
+          "salary": "550000.0",
           "bonus": null,
-          "_collected": "2026-06-26"
+          "_collected": "2026-06-28"
         },
         {
-          "ticker": "ASPI",
-          "name": "Robert Ainscow",
-          "role": "Interim CEO and COO",
+          "ticker": "AES",
+          "name": "Stephen Coughlin",
+          "role": "EVP & CFO",
           "year": "2024",
-          "total_comp": "1148500.0",
-          "salary": "310000.0",
+          "total_comp": "3215723.0",
+          "salary": "645000.0",
           "bonus": null,
-          "_collected": "2026-06-26"
+          "_collected": "2026-06-28"
         },
         {
-          "ticker": "ASPI",
-          "name": "Heather Kiessling",
-          "role": "CFO",
+          "ticker": "AES",
+          "name": "Ricardo Fal\u00fa",
+          "role": "President",
+          "year": "2024",
+          "total_comp": "3175790.0",
+          "salary": "555000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Ricardo Fal\u00fa",
+          "role": "President",
+          "year": "2025",
+          "total_comp": "2704604.0",
+          "salary": "555000.0",
+          "bonus": "114885.0",
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Bernerd Da Santos",
+          "role": "EVP & President, US & Renewables",
+          "year": "2024",
+          "total_comp": "3093584.0",
+          "salary": "663000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Juan Ignacio Rubiolo",
+          "role": "EVP & COO",
           "year": "2023",
-          "total_comp": null,
-          "salary": null,
+          "total_comp": "3237227.0",
+          "salary": "530000.0",
           "bonus": null,
-          "_collected": "2026-06-26"
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Bernerd Da Santos",
+          "role": "EVP & President, US & Renewables",
+          "year": "2023",
+          "total_comp": "3155786.0",
+          "salary": "644000.0",
+          "bonus": "204470.0",
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Stephen Coughlin",
+          "role": "EVP & CFO",
+          "year": "2023",
+          "total_comp": "3126922.0",
+          "salary": "597000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Andr\u00e9s Gluski",
+          "role": "President & CEO",
+          "year": "2022",
+          "total_comp": "12525258.0",
+          "salary": "1241000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Bernerd Da Santos",
+          "role": "EVP & President, Renewables",
+          "year": "2022",
+          "total_comp": "2845413.0",
+          "salary": "625000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Juan Ignacio Rubiolo",
+          "role": "EVP & President, Energy Infrastructure",
+          "year": "2022",
+          "total_comp": "2744969.0",
+          "salary": "515000.0",
+          "bonus": "321875.0",
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Andr\u00e9s Gluski",
+          "role": "CEO",
+          "year": "2023",
+          "total_comp": "12716194.0",
+          "salary": "1241000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "ASPI",
@@ -5731,20 +5861,10 @@
         {
           "ticker": "ASPI",
           "name": "Robert Ainscow",
-          "role": "Interim CEO and COO",
-          "year": "2023",
-          "total_comp": "249996.0",
-          "salary": "159996.0",
-          "bonus": null,
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "ASPI",
-          "name": "Hendrik Strydom",
-          "role": "CTO",
-          "year": "2023",
-          "total_comp": "122400.0",
-          "salary": "122400.0",
+          "role": "COO",
+          "year": "2022",
+          "total_comp": "1963403.0",
+          "salary": "133333.0",
           "bonus": null,
           "_collected": "2026-06-26"
         },
@@ -5762,151 +5882,31 @@
           "ticker": "ASPI",
           "name": "Hendrik Strydom",
           "role": "CTO",
-          "year": "2022",
-          "total_comp": "1078486.0",
-          "salary": "240000.0",
+          "year": "2023",
+          "total_comp": "122400.0",
+          "salary": "122400.0",
           "bonus": null,
           "_collected": "2026-06-26"
         },
         {
           "ticker": "ASPI",
           "name": "Robert Ainscow",
-          "role": "COO",
-          "year": "2022",
-          "total_comp": "1963403.0",
-          "salary": "133333.0",
+          "role": "Interim CEO and COO",
+          "year": "2023",
+          "total_comp": "249996.0",
+          "salary": "159996.0",
           "bonus": null,
           "_collected": "2026-06-26"
         },
         {
-          "ticker": "CMCSA",
-          "name": "Michael J. Cavanagh",
-          "role": "President",
+          "ticker": "ASPI",
+          "name": "Paul Mann",
+          "role": "Executive Chairman",
           "year": "2024",
-          "total_comp": "28258168.0",
-          "salary": "2500001.0",
-          "bonus": "7500002.0",
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "CMCSA",
-          "name": "Michael J. Cavanagh",
-          "role": "President",
-          "year": "2023",
-          "total_comp": "29580063.0",
-          "salary": "2463846.0",
-          "bonus": "8426353.0",
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "CMCSA",
-          "name": "Michael J. Cavanagh",
-          "role": "President",
-          "year": "2022",
-          "total_comp": "40481722.0",
-          "salary": "2300000.0",
-          "bonus": "6900000.0",
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "CMCSA",
-          "name": "Jennifer Khoury",
-          "role": "CCO",
-          "year": "2023",
-          "total_comp": "5639427.0",
-          "salary": "1494231.0",
-          "bonus": "2555135.0",
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "CMCSA",
-          "name": "Jason S. Armstrong",
-          "role": "CFO",
-          "year": "2024",
-          "total_comp": "15102108.0",
-          "salary": "1996154.0",
-          "bonus": "4351616.0",
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "CMCSA",
-          "name": "Jason S. Armstrong",
-          "role": "CFO",
-          "year": "2023",
-          "total_comp": "11594786.0",
-          "salary": "1789615.0",
-          "bonus": "4528767.0",
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "CMCSA",
-          "name": "Thomas J. Reid",
-          "role": "CLO",
-          "year": "2023",
-          "total_comp": "11180666.0",
-          "salary": "1800080.0",
-          "bonus": "4104182.0",
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "CMCSA",
-          "name": "Brian L. Roberts",
-          "role": "CEO",
-          "year": "2023",
-          "total_comp": "35473666.0",
-          "salary": "2500000.0",
-          "bonus": "8550000.0",
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "CMCSA",
-          "name": "Jennifer Khoury",
-          "role": "CCO",
-          "year": "2024",
-          "total_comp": "5505873.0",
-          "salary": "1500000.0",
-          "bonus": "2452500.0",
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "CMCSA",
-          "name": "Thomas J. Reid",
-          "role": "CLO",
-          "year": "2024",
-          "total_comp": "14127439.0",
-          "salary": "1898079.0",
-          "bonus": "5172264.0",
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "CRH",
-          "name": "Randy Lake",
-          "role": "COO",
-          "year": "2024",
-          "total_comp": "8385336.0",
-          "salary": "1521520.0",
+          "total_comp": "4767309.0",
+          "salary": "510000.0",
           "bonus": null,
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "CRH",
-          "name": "Jim Mintern",
-          "role": "CEO",
-          "year": "2025",
-          "total_comp": "17841808.0",
-          "salary": "1750000.0",
-          "bonus": null,
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "CRH",
-          "name": "Nathan Creech",
-          "role": "President, Americas Division",
-          "year": "2025",
-          "total_comp": "10992579.0",
-          "salary": "1213000.0",
-          "bonus": null,
-          "_collected": "2026-06-24"
+          "_collected": "2026-06-26"
         }
       ]
     }
@@ -6415,56 +6415,56 @@
     "hf": [
       {
         "ticker": "NVDA",
-        "downloads_30d": 29763129.0,
-        "wow_pct": 5.6,
+        "downloads_30d": 30073822.0,
+        "wow_pct": 6.7,
         "hot": true
       },
       {
         "ticker": "GOOGL",
-        "downloads_30d": 207877713.0,
-        "wow_pct": 3.4,
+        "downloads_30d": 207781753.0,
+        "wow_pct": 3.3,
         "hot": true
       },
       {
         "ticker": "META",
-        "downloads_30d": 90875134.0,
-        "wow_pct": 3.0,
-        "hot": false
-      },
-      {
-        "ticker": "BABA",
-        "downloads_30d": 210161350.0,
-        "wow_pct": -0.7,
+        "downloads_30d": 91024307.0,
+        "wow_pct": 3.2,
         "hot": false
       },
       {
         "ticker": "AMZN",
-        "downloads_30d": 24222428.0,
-        "wow_pct": -2.0,
+        "downloads_30d": 24309408.0,
+        "wow_pct": -1.6,
         "hot": false
       },
       {
-        "ticker": "MSFT",
-        "downloads_30d": 28501499.0,
-        "wow_pct": -4.1,
+        "ticker": "BABA",
+        "downloads_30d": 207611302.0,
+        "wow_pct": -1.9,
         "hot": false
       },
       {
         "ticker": "CRM",
-        "downloads_30d": 6737287.0,
+        "downloads_30d": 6752800.0,
+        "wow_pct": -4.2,
+        "hot": false
+      },
+      {
+        "ticker": "MSFT",
+        "downloads_30d": 28416723.0,
         "wow_pct": -4.4,
         "hot": false
       },
       {
         "ticker": "IBM",
-        "downloads_30d": 9680678.0,
-        "wow_pct": -4.7,
+        "downloads_30d": 9629527.0,
+        "wow_pct": -5.2,
         "hot": false
       },
       {
         "ticker": "AAPL",
-        "downloads_30d": 6191979.0,
-        "wow_pct": -11.3,
+        "downloads_30d": 6206291.0,
+        "wow_pct": -11.0,
         "hot": false
       }
     ],
@@ -40578,12 +40578,6 @@
         "hot": true
       },
       {
-        "ticker": "NBIS",
-        "bull_ratio": 0.92,
-        "articles": 50,
-        "hot": true
-      },
-      {
         "ticker": "VST",
         "bull_ratio": 0.92,
         "articles": 50,
@@ -40593,6 +40587,12 @@
         "ticker": "PWR",
         "bull_ratio": 0.91,
         "articles": 33,
+        "hot": true
+      },
+      {
+        "ticker": "NBIS",
+        "bull_ratio": 0.9,
+        "articles": 50,
         "hot": true
       },
       {
@@ -40616,7 +40616,7 @@
       {
         "ticker": "BWXT",
         "bull_ratio": 0.84,
-        "articles": 43,
+        "articles": 44,
         "hot": true
       },
       {
@@ -40845,8 +40845,8 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17593,
-        "wow_pct": 0.87,
+        "stars": 17597,
+        "wow_pct": 0.89,
         "hot": true
       },
       {
@@ -40869,8 +40869,8 @@
       },
       {
         "ticker": "MSFT",
-        "stars": 186922,
-        "wow_pct": 0.18,
+        "stars": 186982,
+        "wow_pct": 0.21,
         "hot": true
       },
       {
@@ -40881,13 +40881,19 @@
       },
       {
         "ticker": "GOOGL",
-        "stars": 196020,
+        "stars": 196081,
+        "wow_pct": 0.15,
+        "hot": true
+      },
+      {
+        "ticker": "META",
+        "stars": 246268,
         "wow_pct": 0.12,
         "hot": true
       },
       {
         "ticker": "U",
-        "stars": 19520,
+        "stars": 19521,
         "wow_pct": 0.12,
         "hot": true
       },
@@ -40904,12 +40910,6 @@
         "hot": false
       },
       {
-        "ticker": "META",
-        "stars": 246209,
-        "wow_pct": 0.09,
-        "hot": false
-      },
-      {
         "ticker": "GTLB",
         "stars": 24474,
         "wow_pct": 0.08,
@@ -40917,7 +40917,7 @@
       },
       {
         "ticker": "PLTR",
-        "stars": 21867,
+        "stars": 21868,
         "wow_pct": 0.08,
         "hot": false
       },
@@ -44373,7 +44373,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.87% stars \u00b7 hf_model_momentum: +5.6% model downloads \u00b7 patent_cluster: 48 grants, 11 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.89% stars \u00b7 hf_model_momentum: +6.7% model downloads \u00b7 patent_cluster: 48 grants, 11 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "GOOGL",
@@ -44387,7 +44387,7 @@
           "material_8k",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,644,366 reviews \u00b7 github_momentum: +0.12% stars \u00b7 hf_model_momentum: +3.4% model downloads \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,644,366 reviews \u00b7 github_momentum: +0.15% stars \u00b7 hf_model_momentum: +3.3% model downloads \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "MSFT",
@@ -44400,7 +44400,7 @@
           "gov_contract",
           "patent_cluster"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,684,388 reviews \u00b7 github_momentum: +0.18% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 97 grants, 20 IPC classes"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,684,388 reviews \u00b7 github_momentum: +0.21% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 97 grants, 20 IPC classes"
       },
       {
         "ticker": "HOOD",
@@ -44577,7 +44577,7 @@
           "congress_buy",
           "news_sentiment"
         ],
-        "why": "activist_13d: 13D activist campaign \u00b7 congress_buy: 1 member(s) net +8 \u00b7 news_sentiment: 0.84 bullish news (43 art)"
+        "why": "activist_13d: 13D activist campaign \u00b7 congress_buy: 1 member(s) net +8 \u00b7 news_sentiment: 0.84 bullish news (44 art)"
       },
       {
         "ticker": "ETN",

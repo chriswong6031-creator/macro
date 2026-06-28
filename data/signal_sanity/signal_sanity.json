@@ -18,14 +18,14 @@
         "as_of": "2026-06-26",
         "n_records": 34,
         "coverage": 34,
-        "fingerprint": "a1a5e50cdc4bb9fc",
+        "fingerprint": "8bb448efc832f7a7",
         "scores": {
           "conviction.composite_z": {
             "n_sub": 34,
             "pop": 34,
             "uniq": 34,
-            "mean": 0.04688235294117647,
-            "std": 0.3999038682061332
+            "mean": 0.04697058823529412,
+            "std": 0.4012013932658728
           },
           "alpha": {
             "n_sub": 34,
@@ -139,29 +139,29 @@
       "fails": [],
       "warns": [],
       "as_of": "2026-06-28",
-      "n": 618,
-      "coverage": 305,
+      "n": 626,
+      "coverage": 306,
       "row": {
         "run_date": "2026-06-28",
         "surface": "news",
         "as_of": "2026-06-28",
-        "n_records": 618,
-        "coverage": 305,
-        "fingerprint": "fa2c4544bcc68ef4",
+        "n_records": 626,
+        "coverage": 306,
+        "fingerprint": "1a7f98eb714fe2c8",
         "scores": {
           "n_recent": {
-            "n_sub": 305,
-            "pop": 305,
+            "n_sub": 306,
+            "pop": 306,
             "uniq": 6,
-            "mean": 1.6557377049180328,
-            "std": 1.2941893582995172
+            "mean": 1.6633986928104576,
+            "std": 1.2989815836914445
           },
           "sentiment_score": {
-            "n_sub": 305,
-            "pop": 305,
+            "n_sub": 306,
+            "pop": 306,
             "uniq": 4,
-            "mean": 0.3622950819672131,
-            "std": 0.7590252451418847
+            "mean": 0.36437908496732024,
+            "std": 0.7586575088745328
           }
         }
       }
@@ -217,5 +217,5 @@
     "intel_hub"
   ],
   "missing": [],
-  "evaluated_at": "2026-06-28T09:20:00.178883+00:00"
+  "evaluated_at": "2026-06-28T11:48:26.117701+00:00"
 }

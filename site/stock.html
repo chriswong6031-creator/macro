@@ -1903,9 +1903,25 @@
     }
     var conf = (g.tier === 'thin_chain' || (g.top_oi_share != null && g.top_oi_share > 0.35))
       ? '<div style="margin:6px 0 2px"><span class="alpha-entry ae-laggard">' + lz('sign-assumption: low confidence', '符号假设：低置信') + '</span></div>' : '';
-    el('r_gex').innerHTML = '<div class="glance">' + chips.join('') + '</div>' + hole + conf +
-      '<p class="srcline">' + lz('Cboe delayed chains (daily, not live flow) — a vol-regime + levels map, never directional and not in this stock’s score.',
-        'Cboe 延迟期权链（每日、非实时）— 波动率体制+价位地图，无方向性，不计入本股评分。') + '</p>';
+    // Phase 3a — actionable interpretation (DISPLAY-ONLY, never in the score):
+    // posture read, support/resistance/flip levels, and an OPEX-pin caution chip.
+    var posture = g.gamma_regime === 'long'
+      ? lz('Long gamma — dealers dampen moves, so it tends to PIN / mean-revert toward the magnets; fading extremes beats chasing breakouts, and tighter stops are reasonable.', '多头Gamma —— 做市商抑制波动，倾向于在磁吸位附近被钉住/均值回归；逢极端回落优于追突破，止损可更紧。')
+      : g.gamma_regime === 'short'
+      ? lz('Short gamma — dealers chase the move, so swings AMPLIFY and trend; breakouts can follow through but whipsaws are larger — give it wider stops.', '空头Gamma —— 做市商追随价格，波动被放大并趋势化；突破可延续但假动作更大 —— 止损宜更宽。')
+      : '';
+    var levels = (g.magnet_up != null || g.magnet_down != null)
+      ? lz('Levels: support ~' + gx(g.magnet_down, 2) + ' · resistance ~' + gx(g.magnet_up, 2) + ' · flip ' + gx(g.gamma_flip, 2) + ' is the regime line (below it → short-gamma / trend).', '价位：支撑 ~' + gx(g.magnet_down, 2) + ' · 阻力 ~' + gx(g.magnet_up, 2) + ' · 翻转位 ' + gx(g.gamma_flip, 2) + ' 为体制分界（其下 → 空头Gamma/趋势）。')
+      : '';
+    var nm = (g.spot != null && g.magnet_up != null && Math.abs(g.spot - g.magnet_up) / g.spot < 0.015) ? g.magnet_up
+           : (g.spot != null && g.magnet_down != null && Math.abs(g.spot - g.magnet_down) / g.spot < 0.015) ? g.magnet_down : null;
+    var pin = (g.opex_days != null && g.opex_days <= 7 && nm != null && g.gamma_regime === 'long')
+      ? '<div style="margin:6px 0 2px"><span class="alpha-entry ae-extended">📌 ' + lz('Pinned into OPEX (' + g.opex_days + 'd) near ' + gx(nm, 2) + ' — expect range-compression; don’t chase a breakout that may just be a pin.', '临近月度到期（' + g.opex_days + '天）且贴近 ' + gx(nm, 2) + ' —— 预期区间收敛；勿追可能只是钉住的突破。') + '</span></div>' : '';
+    el('r_gex').innerHTML = '<div class="glance">' + chips.join('') + '</div>' + hole + conf + pin +
+      (posture ? '<p class="srcline" style="margin-top:8px">' + posture + '</p>' : '') +
+      (levels ? '<p class="srcline">' + levels + '</p>' : '') +
+      '<p class="srcline">' + lz('Cboe delayed chains (daily, not live flow) — a vol-regime + levels map. Context for TIMING and STOPS, never directional and not in this stock’s score.',
+        'Cboe 延迟期权链（每日、非实时）— 波动率体制+价位地图。仅作择时与止损背景，无方向性，不计入本股评分。') + '</p>';
     show('panel_gex', true);
   }
 
@@ -2330,7 +2346,7 @@
   window.addEventListener('hashchange',load); load();
 })();
 </script>
-<p class="muted" style="font-size:12px">Generated 2026-06-28 08:13 UTC · charts rendered in-house with
+<p class="muted" style="font-size:12px">Generated 2026-06-28 10:46 UTC · charts rendered in-house with
 Lightweight Charts™ on our own price data · methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
