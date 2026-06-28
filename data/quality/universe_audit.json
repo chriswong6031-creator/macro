@@ -1,5 +1,5 @@
 {
- "asof": "2026-06-27",
+ "asof": "2026-06-28",
  "audit": "universe",
  "config": {
   "price_max_gap_days": 4,
@@ -13,10 +13,10 @@
   "macro_outlier_z": 5,
   "email_alerts": false
  },
- "n": 506,
+ "n": 507,
  "n_failed": 0,
  "fail_pct": 0.0,
- "n_flags": 138,
+ "n_flags": 55,
  "universes": [
   {
    "name": "us_sectors",
@@ -45,7 +45,7 @@
    "n": 134,
    "n_failed": 0,
    "fail_pct": 0.0,
-   "n_flags": 45,
+   "n_flags": 44,
    "skipped": false,
    "note": "",
    "failed": [],
@@ -261,11 +261,6 @@
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
     {
-     "name": "WCC",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
      "name": "XYL",
      "kind": "nobars",
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
@@ -282,7 +277,7 @@
    "n": 82,
    "n_failed": 0,
    "fail_pct": 0.0,
-   "n_flags": 6,
+   "n_flags": 7,
    "skipped": false,
    "note": "",
    "failed": [],
@@ -294,6 +289,11 @@
     },
     {
      "name": "000799.SZ",
+     "kind": "missing",
+     "detail": "not in data/china_search/closes.parquet (coverage-limited store)"
+    },
+    {
+     "name": "002459.SZ",
      "kind": "missing",
      "detail": "not in data/china_search/closes.parquet (coverage-limited store)"
     },
@@ -338,10 +338,10 @@
   },
   {
    "name": "hk_sectors",
-   "n": 159,
+   "n": 160,
    "n_failed": 0,
    "fail_pct": 0.0,
-   "n_flags": 86,
+   "n_flags": 3,
    "skipped": false,
    "note": "",
    "failed": [],
@@ -352,427 +352,12 @@
      "detail": "not in site/hkstockdata (coverage-limited store)"
     },
     {
-     "name": "0014.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0101.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0135.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0144.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0151.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0200.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0241.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0257.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0268.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0285.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0316.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0322.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0323.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0345.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0371.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0390.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0392.HK",
+     "name": "0100.HK",
      "kind": "missing",
      "detail": "not in site/hkstockdata (coverage-limited store)"
     },
     {
      "name": "0489.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0639.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0656.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0669.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0683.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0763.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0772.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0778.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0780.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0836.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0867.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0884.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0902.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0960.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "0998.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1057.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1066.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1072.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1112.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1113.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1186.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1208.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1209.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1336.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1347.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1359.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1658.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1766.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1799.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1801.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1816.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1833.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1898.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "1958.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "2007.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "2057.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "2150.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "2196.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "2313.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "2333.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "2338.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "2378.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "2382.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "2392.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "2607.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "2688.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "2883.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "2888.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "2899.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "3333.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "3618.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "3692.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "3800.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "3888.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "3968.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "6060.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "6098.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "6618.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "6808.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "6818.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "6969.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "9626.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "9633.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "9698.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "9863.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "9926.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "9961.HK",
-     "kind": "missing",
-     "detail": "not in site/hkstockdata (coverage-limited store)"
-    },
-    {
-     "name": "9999.HK",
      "kind": "missing",
      "detail": "not in site/hkstockdata (coverage-limited store)"
     }
