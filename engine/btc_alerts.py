@@ -535,11 +535,17 @@ def compute_all_events(sig: pd.DataFrame | None = None) -> list[dict]:
     events = daily_state_events(sig) + risk_extreme_events(sig, cfg)
     events += impulse_radar_events(sig) + leverage_derisk_events(sig)
     events += flash_events(store.read("coinbase", "btc_hourly"), cfg)
-    # merge with any sentinel-appended events newer than what we can derive
+    # Merge persisted events the daily rebuild can't reproduce: genuine sentinel alerts
+    # NEWER than the last daily bar (intraday), plus flash-crash history (derived from the
+    # hourly tape, not from `sig`). Everything else is fully recomputed above, so STALE
+    # sig-derived events — e.g. allocation changes left behind by a since-revised rule —
+    # are dropped instead of lingering forever. (recompute wins on id collision.)
     existing = load_events()
     by_id = {e["id"]: e for e in events}
+    last_ts = sig.index[-1].isoformat() if len(sig.index) else ""
     for e in existing:
-        by_id.setdefault(e["id"], e)  # keep sentinel-only events; recompute wins on collision
+        if e.get("ts", "") > last_ts or e.get("type") == "flash_crash":
+            by_id.setdefault(e["id"], e)
     merged = sorted(by_id.values(), key=lambda e: e["ts"], reverse=True)
     for e in merged:  # backfill conviction + zh on older/sentinel events so the log is uniform
         if "tier" not in e or "edge_zh" not in e:

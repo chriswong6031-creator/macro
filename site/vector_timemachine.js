@@ -55,10 +55,10 @@
     'BOTTOM WATCH': { en: 'Bottom watch', zh: '底部观察' },
     'COUNTERTREND BOUNCE': { en: 'Counter-trend bounce', zh: '逆势反弹' }
   };
-  // bottom-anchored 1064/364 cycle phase (the chart's theory) — 2 states only
+  // proprietary cycle-timer phase (internal mechanism withheld) — 2 states only
   var CPHASE = {
-    markup: { en: 'Markup (1064d)', zh: '上涨腿 (1064天)' },
-    markdown: { en: 'Markdown (364d)', zh: '下跌腿 (364天)' }
+    markup: { en: 'Markup', zh: '上涨腿' },
+    markdown: { en: 'Markdown', zh: '下跌腿' }
   };
   var UI = {
     today: { en: 'live · today', zh: '实时 · 今日' },
