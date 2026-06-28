@@ -1170,7 +1170,7 @@
       <span class="ms-eyebrow ms-{{ MS.color }}"><span class="ms-live"></span>{{ t('MARKET STATE','市场状态') }} <span class="num">· {{ MS.asof }}</span></span>
       {{ help("What kind of market is this RIGHT NOW — a single risk-on/off read that BLENDS the broad-market tape across timeframes, cross-asset risk appetite, the volatility regime, market breadth, Fed liquidity & credit, and the downturn-risk guards into one 0-100 score. GREEN risk-on (≥60) · YELLOW mixed/transition (42–59) · RED risk-off (<42). Confirmation over prediction: every leg reads what has ALREADY turned, not a forecast. A handful of early-warning overrides (an act-level alert, a fresh regime flip, a high/extreme drawdown or acute systemic-stress band) can cap or force the verdict. DISPLAY-ONLY — a synthesis of signals shown elsewhere on this page; it never scores, sizes or feeds the regime engine.", "当前是什么样的市场 — 一个把多周期大盘趋势、跨资产风险偏好、波动率环境、市场广度、联储流动性与信用，以及下行风险护栏融合为一个 0-100 评分的风险偏好读数。绿色＝风险偏好（≥60）·黄色＝混合/转换（42–59）·红色＝避险（<42）。确认优于预测：每条腿读取的是已经转向的东西，而非预测。少数早期预警可封顶或强制结论。仅供展示 — 它是本页其他信号的综合，绝不评分、定仓或进入周期引擎。") }}
       {% set _nalerts = (alerts|length if alerts else 0) + (1 if (latest.dislocation and latest.dislocation.dislocation_active) else 0) %}
-      <label class="ms-alerts-btn" for="ms-alerts-toggle" title="{{ t('Open fired-alerts signals','打开已触发警报') }}">
+      <label class="ms-alerts-btn" for="ms-alerts-toggle" title="Open fired-alerts signals · 打开已触发警报">
         <span class="ms-ab-ico">⚠</span>{{ t('Fired alerts','已触发警报') }}
         <span class="ms-ab-count{{ ' is-zero' if _nalerts == 0 }}">{{ _nalerts }}</span>
       </label>
@@ -1186,7 +1186,7 @@
         {% for o in MS.overrides %}<span class="ms-override">⚠ {{ t(o.note_en, o.note_zh) }}</span>{% endfor %}
         {% if MS.flip_en %}<span class="ms-flip">{{ t(MS.flip_en, MS.flip_zh) }}</span>{% endif %}
         <div class="ms-backdrop">
-          <span class="ms-bd-mini" title="{{ t('Macro regime quadrant','宏观周期象限') }}">
+          <span class="ms-bd-mini" title="Macro regime quadrant · 宏观周期象限">
             <i class="{{ 'on' if latest.quad=='Q1' }}" style="--qc:var(--q1)"></i>
             <i class="{{ 'on' if latest.quad=='Q2' }}" style="--qc:var(--q2)"></i>
             <i class="{{ 'on' if latest.quad=='Q4' }}" style="--qc:var(--q4)"></i>
@@ -1438,14 +1438,14 @@
 
     {# ===== fired-alerts drawer — opened by the command-center button ===== #}
     <div class="ms-drawer">
-      <label class="ms-drawer-scrim" for="ms-alerts-toggle" aria-label="{{ t('Close','关闭') }}"></label>
-      <aside class="ms-drawer-panel" role="dialog" aria-modal="true" aria-label="{{ t('Fired alerts','已触发警报') }}">
+      <label class="ms-drawer-scrim" for="ms-alerts-toggle" aria-label="Close · 关闭"></label>
+      <aside class="ms-drawer-panel" role="dialog" aria-modal="true" aria-label="Fired alerts · 已触发警报">
         <div class="ms-drawer-head">
           <div>
             <div class="ms-drawer-title">⚠ {{ t('Fired alerts','已触发警报') }}</div>
             <div class="ms-drawer-sub">{{ t('Alerts are rare by design — they fire only on a change: a level escalating, a crossing, a sign flip. Read every one.','警报刻意稀少 — 仅在发生变化时触发：级别升级、出现交叉、符号翻转。每条都要读。') }}</div>
           </div>
-          <label class="ms-drawer-close" for="ms-alerts-toggle" aria-label="{{ t('Close','关闭') }}" title="{{ t('Close','关闭') }}">×</label>
+          <label class="ms-drawer-close" for="ms-alerts-toggle" aria-label="Close · 关闭" title="Close · 关闭">×</label>
         </div>
         <div class="ms-drawer-body">
           {% if latest.dislocation and latest.dislocation.dislocation_active %}
