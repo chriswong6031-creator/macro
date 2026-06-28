@@ -1,0 +1,2357 @@
+theme,subsector,ticker
+Artificial Intelligence,Compute,NVDA
+Artificial Intelligence,Compute,SMCI
+Artificial Intelligence,Compute,AMD
+Artificial Intelligence,Compute,TSM
+Artificial Intelligence,Compute,AVGO
+Artificial Intelligence,Compute,ARM
+Artificial Intelligence,Compute,ASML
+Artificial Intelligence,Compute,MU
+Artificial Intelligence,Compute,ANET
+Artificial Intelligence,Compute,AMAT
+Artificial Intelligence,Compute,LRCX
+Artificial Intelligence,Compute,KLAC
+Artificial Intelligence,Compute,MRVL
+Artificial Intelligence,Compute,INTC
+Artificial Intelligence,Compute,GOOGL
+Artificial Intelligence,Compute,MSFT
+Artificial Intelligence,Cloud,MSFT
+Artificial Intelligence,Cloud,AMZN
+Artificial Intelligence,Cloud,GOOGL
+Artificial Intelligence,Cloud,ORCL
+Artificial Intelligence,Cloud,SMCI
+Artificial Intelligence,Cloud,EQIX
+Artificial Intelligence,Cloud,DLR
+Artificial Intelligence,Cloud,IBM
+Artificial Intelligence,Cloud,HPE
+Artificial Intelligence,Cloud,DELL
+Artificial Intelligence,Cloud,VRT
+Artificial Intelligence,Models,MSFT
+Artificial Intelligence,Models,GOOGL
+Artificial Intelligence,Models,META
+Artificial Intelligence,Models,NVDA
+Artificial Intelligence,Models,AMZN
+Artificial Intelligence,Models,IBM
+Artificial Intelligence,Models,AI
+Artificial Intelligence,Models,PLTR
+Artificial Intelligence,Models,BIDU
+Artificial Intelligence,Data,SNOW
+Artificial Intelligence,Data,MSFT
+Artificial Intelligence,Data,PLTR
+Artificial Intelligence,Data,AMZN
+Artificial Intelligence,Data,GOOGL
+Artificial Intelligence,Data,MDB
+Artificial Intelligence,Data,AI
+Artificial Intelligence,Data,NVDA
+Artificial Intelligence,Data,CRM
+Artificial Intelligence,Data,INOD
+Artificial Intelligence,Data,SAP
+Artificial Intelligence,Data,NOW
+Artificial Intelligence,Data,DDOG
+Artificial Intelligence,Enterprise,MSFT
+Artificial Intelligence,Enterprise,GOOGL
+Artificial Intelligence,Enterprise,ADBE
+Artificial Intelligence,Enterprise,CRM
+Artificial Intelligence,Enterprise,NOW
+Artificial Intelligence,Enterprise,WDAY
+Artificial Intelligence,Enterprise,SAP
+Artificial Intelligence,Enterprise,PATH
+Artificial Intelligence,Enterprise,ORCL
+Artificial Intelligence,Enterprise,INTU
+Artificial Intelligence,Networking,NVDA
+Artificial Intelligence,Networking,ANET
+Artificial Intelligence,Networking,AVGO
+Artificial Intelligence,Networking,SMCI
+Artificial Intelligence,Networking,MRVL
+Artificial Intelligence,Networking,NET
+Artificial Intelligence,Networking,CSCO
+Artificial Intelligence,Networking,HPE
+Artificial Intelligence,Networking,IBM
+Artificial Intelligence,Networking,MSFT
+Artificial Intelligence,Security,PANW
+Artificial Intelligence,Security,CRWD
+Artificial Intelligence,Security,ZS
+Artificial Intelligence,Security,S
+Artificial Intelligence,Security,FTNT
+Artificial Intelligence,Security,MSFT
+Artificial Intelligence,Security,CHKP
+Artificial Intelligence,Security,CSCO
+Artificial Intelligence,Security,OKTA
+Artificial Intelligence,Edge,QCOM
+Artificial Intelligence,Edge,ARM
+Artificial Intelligence,Edge,AMBA
+Artificial Intelligence,Edge,NXPI
+Artificial Intelligence,Edge,SYNA
+Artificial Intelligence,Edge,AAPL
+Artificial Intelligence,Edge,CEVA
+Artificial Intelligence,Edge,LSCC
+Artificial Intelligence,Edge,INTC
+Artificial Intelligence,Edge,NVDA
+Artificial Intelligence,Edge,AMD
+Artificial Intelligence,Robotics,CGNX
+Artificial Intelligence,Robotics,ROK
+Artificial Intelligence,Robotics,TER
+Artificial Intelligence,Robotics,NVDA
+Artificial Intelligence,Robotics,ISRG
+Artificial Intelligence,Robotics,ZBRA
+Artificial Intelligence,Robotics,HON
+Artificial Intelligence,Robotics,SYM
+Artificial Intelligence,Robotics,PATH
+Artificial Intelligence,Robotics,AMBA
+Artificial Intelligence,Robotics,AVAV
+Artificial Intelligence,Robotics,TSLA
+Artificial Intelligence,Applications,PLTR
+Artificial Intelligence,Applications,AI
+Artificial Intelligence,Applications,BBAI
+Artificial Intelligence,Applications,RXRX
+Artificial Intelligence,Applications,UPST
+Artificial Intelligence,Applications,CRNC
+Artificial Intelligence,Applications,SOUN
+Artificial Intelligence,Applications,CGNX
+Artificial Intelligence,Applications,TSLA
+Artificial Intelligence,Ads & Search,GOOGL
+Artificial Intelligence,Ads & Search,META
+Artificial Intelligence,Ads & Search,AMZN
+Artificial Intelligence,Ads & Search,TTD
+Artificial Intelligence,Ads & Search,MSFT
+Artificial Intelligence,Ads & Search,APP
+Artificial Intelligence,Ads & Search,PINS
+Artificial Intelligence,Ads & Search,SNAP
+Artificial Intelligence,Ads & Search,BIDU
+Artificial Intelligence,Ads & Search,DV
+Artificial Intelligence,Ads & Search,MGNI
+Artificial Intelligence,Ads & Search,PUBM
+Artificial Intelligence,Energy,AMZN
+Artificial Intelligence,Energy,MSFT
+Artificial Intelligence,Energy,GOOGL
+Artificial Intelligence,Energy,D
+Artificial Intelligence,Energy,ORCL
+Artificial Intelligence,Energy,TLN
+Artificial Intelligence,Energy,IBM
+Artificial Intelligence,Energy,TSLA
+Artificial Intelligence,Energy,PWR
+Artificial Intelligence,Energy,BABA
+Artificial Intelligence,Energy,AES
+Artificial Intelligence,Energy,SMR
+Artificial Intelligence,Energy,OKLO
+Artificial Intelligence,AGI,MSFT
+Artificial Intelligence,AGI,GOOGL
+Artificial Intelligence,AGI,META
+Artificial Intelligence,AGI,NVDA
+Artificial Intelligence,AGI,AMZN
+Artificial Intelligence,AGI,AMD
+Artificial Intelligence,AGI,IBM
+Cloud Computing,Hyperscalers,AMZN
+Cloud Computing,Hyperscalers,MSFT
+Cloud Computing,Hyperscalers,GOOGL
+Cloud Computing,Hyperscalers,ORCL
+Cloud Computing,Hyperscalers,IBM
+Cloud Computing,Hyperscalers,BABA
+Cloud Computing,Data Centers,EQIX
+Cloud Computing,Data Centers,DLR
+Cloud Computing,Data Centers,IRM
+Cloud Computing,Data Centers,DBRG
+Cloud Computing,Databases,SNOW
+Cloud Computing,Databases,MDB
+Cloud Computing,Databases,CFLT
+Cloud Computing,Databases,ORCL
+Cloud Computing,Databases,MSFT
+Cloud Computing,Databases,AMZN
+Cloud Computing,Databases,GOOGL
+Cloud Computing,Databases,ESTC
+Cloud Computing,Databases,IBM
+Cloud Computing,DevOps,DDOG
+Cloud Computing,DevOps,GTLB
+Cloud Computing,DevOps,DT
+Cloud Computing,DevOps,CSCO
+Cloud Computing,DevOps,MSFT
+Cloud Computing,DevOps,AMZN
+Cloud Computing,DevOps,ESTC
+Cloud Computing,DevOps,PD
+Cloud Computing,DevOps,GOOGL
+Cloud Computing,DevOps,FROG
+Cloud Computing,DevOps,IBM
+Cloud Computing,DevOps,ORCL
+Cloud Computing,Security,PANW
+Cloud Computing,Security,CRWD
+Cloud Computing,Security,ZS
+Cloud Computing,Security,FTNT
+Cloud Computing,Security,OKTA
+Cloud Computing,Security,MSFT
+Cloud Computing,Security,NET
+Cloud Computing,Security,S
+Cloud Computing,Security,AMZN
+Cloud Computing,Security,GOOGL
+Cloud Computing,Hybrid Cloud,IBM
+Cloud Computing,Hybrid Cloud,MSFT
+Cloud Computing,Hybrid Cloud,HPE
+Cloud Computing,Hybrid Cloud,DELL
+Cloud Computing,Hybrid Cloud,AMZN
+Cloud Computing,Hybrid Cloud,GOOGL
+Cloud Computing,Hybrid Cloud,ORCL
+Cloud Computing,Hybrid Cloud,AVGO
+Cloud Computing,Multi Cloud,NTNX
+Cloud Computing,Multi Cloud,ZS
+Cloud Computing,Multi Cloud,RXT
+Cloud Computing,Multi Cloud,MSFT
+Cloud Computing,Multi Cloud,IBM
+Cloud Computing,Multi Cloud,NET
+Cloud Computing,Multi Cloud,FFIV
+Cloud Computing,Multi Cloud,NOW
+Cloud Computing,Multi Cloud,DDOG
+Cloud Computing,Multi Cloud,ORCL
+Cloud Computing,Serverless,AMZN
+Cloud Computing,Serverless,MSFT
+Cloud Computing,Serverless,GOOGL
+Cloud Computing,Serverless,NET
+Cloud Computing,Serverless,FSLY
+Cloud Computing,Serverless,BABA
+Cloud Computing,Serverless,IBM
+Cloud Computing,PaaS,MSFT
+Cloud Computing,PaaS,GOOGL
+Cloud Computing,PaaS,AMZN
+Cloud Computing,PaaS,DOCN
+Cloud Computing,PaaS,TWLO
+Cloud Computing,PaaS,ORCL
+Cloud Computing,PaaS,CRM
+Cloud Computing,PaaS,IBM
+Cloud Computing,PaaS,TEAM
+Cloud Computing,Hardware,SMCI
+Cloud Computing,Hardware,NVDA
+Cloud Computing,Hardware,DELL
+Cloud Computing,Hardware,HPE
+Cloud Computing,Hardware,ANET
+Cloud Computing,Hardware,CSCO
+Cloud Computing,Hardware,AMD
+Cloud Computing,Hardware,INTC
+Cloud Computing,Hardware,AVGO
+Cloud Computing,Hardware,MRVL
+Cloud Computing,Hardware,VRT
+Cloud Computing,Edge,NET
+Cloud Computing,Edge,AKAM
+Cloud Computing,Edge,FSLY
+Cloud Computing,Edge,ZS
+Cloud Computing,Edge,PANW
+Cloud Computing,Edge,FTNT
+Cloud Computing,Edge,MSFT
+Cloud Computing,Edge,GOOGL
+Cloud Computing,Edge,AMZN
+Cloud Computing,H-SaaS,CRM
+Cloud Computing,H-SaaS,TEAM
+Cloud Computing,H-SaaS,MSFT
+Cloud Computing,H-SaaS,NOW
+Cloud Computing,H-SaaS,ZM
+Cloud Computing,H-SaaS,GOOGL
+Cloud Computing,H-SaaS,HUBS
+Cloud Computing,H-SaaS,ADBE
+Cloud Computing,H-SaaS,INTU
+Cloud Computing,H-SaaS,SHOP
+Cloud Computing,H-SaaS,DOCU
+Cloud Computing,H-SaaS,DBX
+Cloud Computing,H-SaaS,MNDY
+Cloud Computing,H-SaaS,ASAN
+Cloud Computing,H-SaaS,WDAY
+Semiconductors,Compute,NVDA
+Semiconductors,Compute,AMD
+Semiconductors,Compute,INTC
+Semiconductors,Compute,ARM
+Semiconductors,Compute,MRVL
+Semiconductors,Compute,QCOM
+Semiconductors,Compute,AVGO
+Semiconductors,Compute,TSM
+Semiconductors,Memory,MU
+Semiconductors,Memory,WDC
+Semiconductors,Memory,STX
+Semiconductors,Memory,RMBS
+Semiconductors,Analog,TXN
+Semiconductors,Analog,ADI
+Semiconductors,Analog,ON
+Semiconductors,Analog,MPWR
+Semiconductors,Analog,NXPI
+Semiconductors,Analog,MCHP
+Semiconductors,Analog,STM
+Semiconductors,Wireless,QCOM
+Semiconductors,Wireless,SWKS
+Semiconductors,Wireless,QRVO
+Semiconductors,Wireless,AVGO
+Semiconductors,Wireless,MRVL
+Semiconductors,Wireless,NXPI
+Semiconductors,Foundries,TSM
+Semiconductors,Foundries,GFS
+Semiconductors,Foundries,UMC
+Semiconductors,Foundries,INTC
+Semiconductors,Design Tools,SNPS
+Semiconductors,Design Tools,CDNS
+Semiconductors,Design Tools,RMBS
+Semiconductors,Design Tools,PDFS
+Semiconductors,Design Tools,ARM
+Semiconductors,Design Tools,KEYS
+Semiconductors,Lithography,ASML
+Semiconductors,Lithography,AMAT
+Semiconductors,Lithography,LRCX
+Semiconductors,Lithography,KLAC
+Semiconductors,Lithography,ACLS
+Semiconductors,Packaging,TER
+Semiconductors,Packaging,AMKR
+Semiconductors,Packaging,COHU
+Semiconductors,Packaging,FORM
+Semiconductors,Packaging,ASX
+Semiconductors,Packaging,CAMT
+Semiconductors,Next-Gen,WOLF
+Semiconductors,Next-Gen,LSCC
+Semiconductors,Next-Gen,NVTS
+Semiconductors,Next-Gen,STM
+Semiconductors,Next-Gen,ON
+Semiconductors,Next-Gen,POWI
+Semiconductors,Next-Gen,IONQ
+Semiconductors,Next-Gen,MRVL
+Semiconductors,Next-Gen,NVEC
+Semiconductors,Next-Gen,MRAM
+Semiconductors,Next-Gen,SIMO
+Semiconductors,Next-Gen,NVDA
+Semiconductors,Next-Gen,AMD
+Semiconductors,Next-Gen,INTC
+Cybersecurity,ZeroTrust,ZS
+Cybersecurity,ZeroTrust,NET
+Cybersecurity,ZeroTrust,OKTA
+Cybersecurity,ZeroTrust,PANW
+Cybersecurity,ZeroTrust,CRWD
+Cybersecurity,ZeroTrust,MSFT
+Cybersecurity,ZeroTrust,FTNT
+Cybersecurity,ZeroTrust,CSCO
+Cybersecurity,Endpoint,CRWD
+Cybersecurity,Endpoint,S
+Cybersecurity,Endpoint,PANW
+Cybersecurity,Endpoint,MSFT
+Cybersecurity,Endpoint,FTNT
+Cybersecurity,Endpoint,CHKP
+Cybersecurity,Network,PANW
+Cybersecurity,Network,FTNT
+Cybersecurity,Network,CHKP
+Cybersecurity,Network,CSCO
+Cybersecurity,Cloud,PANW
+Cybersecurity,Cloud,ZS
+Cybersecurity,Cloud,CRWD
+Cybersecurity,Cloud,S
+Cybersecurity,Cloud,NET
+Cybersecurity,Cloud,MSFT
+Cybersecurity,Cloud,GOOGL
+Cybersecurity,Cloud,CHKP
+Cybersecurity,Cloud,AMZN
+Cybersecurity,Cloud,QLYS
+Cybersecurity,Cloud,TENB
+Cybersecurity,Identity IAM,OKTA
+Cybersecurity,Identity IAM,MSFT
+Cybersecurity,Identity IAM,SAIL
+Cybersecurity,Identity IAM,PANW
+Cybersecurity,Identity IAM,CSCO
+Cybersecurity,Identity IAM,AVGO
+Cybersecurity,ThreatOps,CRWD
+Cybersecurity,ThreatOps,RPD
+Cybersecurity,ThreatOps,FTNT
+Cybersecurity,ThreatOps,PANW
+Cybersecurity,ThreatOps,ESTC
+Cybersecurity,ThreatOps,NET
+Cybersecurity,SIEM,IBM
+Cybersecurity,SIEM,PANW
+Cybersecurity,SIEM,MSFT
+Cybersecurity,SIEM,CSCO
+Cybersecurity,SIEM,CRWD
+Cybersecurity,SIEM,FTNT
+Cybersecurity,SIEM,RPD
+Cybersecurity,App Security,FFIV
+Cybersecurity,App Security,NET
+Cybersecurity,App Security,PANW
+Cybersecurity,App Security,RPD
+Cybersecurity,App Security,FTNT
+Cybersecurity,App Security,CRWD
+Cybersecurity,App Security,QLYS
+Cybersecurity,App Security,ZS
+Software,OS,MSFT
+Software,OS,AAPL
+Software,OS,GOOGL
+Software,Enterprise,SAP
+Software,Enterprise,ORCL
+Software,Enterprise,WDAY
+Software,Enterprise,MSFT
+Software,Enterprise,CRM
+Software,Enterprise,INTU
+Software,Enterprise,ROP
+Software,CRM,CRM
+Software,CRM,HUBS
+Software,CRM,ADBE
+Software,CRM,BRZE
+Software,CRM,MSFT
+Software,CRM,INTU
+Software,CRM,FRSH
+Software,CRM,ORCL
+Software,CRM,TWLO
+Software,CRM,SAP
+Software,Collaboration,ZM
+Software,Collaboration,MSFT
+Software,Collaboration,TEAM
+Software,Collaboration,RNG
+Software,Collaboration,GOOGL
+Software,Collaboration,CSCO
+Software,Collaboration,CRM
+Software,Collaboration,DOCU
+Software,Collaboration,TWLO
+Software,Gaming,EA
+Software,Gaming,TTWO
+Software,Gaming,RBLX
+Software,Gaming,U
+Software,Gaming,MSFT
+Software,Gaming,SONY
+Software,Gaming,NTES
+Software,E-Commerce,SHOP
+Software,E-Commerce,XYZ
+Software,E-Commerce,MELI
+Software,E-Commerce,AMZN
+Software,E-Commerce,ETSY
+Software,E-Commerce,CPNG
+Software,E-Commerce,EBAY
+Software,E-Commerce,BABA
+Software,E-Commerce,PDD
+Software,E-Commerce,JD
+Software,E-Commerce,WMT
+Software,Design,ADBE
+Software,Design,ADSK
+Software,Design,PTC
+Software,Design,FIG
+Software,Design,BSY
+Software,Design,U
+Software,Design,CDNS
+Software,Design,SNPS
+Software,Design,TRMB
+Software,Security,PANW
+Software,Security,CRWD
+Software,Security,ZS
+Software,Security,OKTA
+Software,Security,S
+Software,Security,FTNT
+Software,Security,MSFT
+Software,Security,CHKP
+Software,Security,NET
+Software,Security,TENB
+Software,Security,QLYS
+Software,Security,CSCO
+Software,Security,AVGO
+Software,Security,IBM
+Software,DevOps,DDOG
+Software,DevOps,DT
+Software,DevOps,GTLB
+Software,DevOps,TEAM
+Software,DevOps,NOW
+Software,DevOps,FROG
+Software,DevOps,PD
+Software,DevOps,ESTC
+Software,DevOps,MSFT
+Software,DevOps,GOOGL
+Software,DevOps,AMZN
+Software,DevOps,CSCO
+Software,Data Analytics,SNOW
+Software,Data Analytics,MSFT
+Software,Data Analytics,PLTR
+Software,Data Analytics,GOOGL
+Software,Data Analytics,MDB
+Software,Data Analytics,ORCL
+Software,Data Analytics,AMZN
+Software,Data Analytics,MSTR
+Software,Data Analytics,ESTC
+Software,Data Analytics,TDC
+Software,Data Analytics,DOMO
+Software,Data Analytics,CSCO
+Software,Data Analytics,IBM
+Software,Data Analytics,CRM
+Software,H-SaaS,MSFT
+Software,H-SaaS,CRM
+Software,H-SaaS,GOOGL
+Software,H-SaaS,NOW
+Software,H-SaaS,ADBE
+Software,H-SaaS,WDAY
+Software,H-SaaS,TEAM
+Software,H-SaaS,ZM
+Software,H-SaaS,HUBS
+Software,H-SaaS,DOCU
+Software,H-SaaS,SAP
+Software,H-SaaS,INTU
+Software,H-SaaS,ORCL
+Software,H-SaaS,SHOP
+Software,V-SaaS,VEEV
+Software,V-SaaS,BLKB
+Software,V-SaaS,TYL
+Software,V-SaaS,GWRE
+Software,V-SaaS,TOST
+Software,V-SaaS,DOCS
+Software,V-SaaS,PCOR
+Software,V-SaaS,APPF
+Software,V-SaaS,COUR
+Software,V-SaaS,PTC
+Hardware,PCs & Devices,AAPL
+Hardware,PCs & Devices,HPQ
+Hardware,PCs & Devices,DELL
+Hardware,PCs & Devices,LOGI
+Hardware,PCs & Devices,INTC
+Hardware,PCs & Devices,AMD
+Hardware,PCs & Devices,QCOM
+Hardware,PCs & Devices,MSFT
+Hardware,PCs & Devices,NVDA
+Hardware,PCs & Devices,STX
+Hardware,Servers,DELL
+Hardware,Servers,HPE
+Hardware,Servers,SMCI
+Hardware,Servers,IBM
+Hardware,Servers,CSCO
+Hardware,Servers,NTAP
+Hardware,Servers,ANET
+Hardware,Networking,CSCO
+Hardware,Networking,ANET
+Hardware,Networking,HPE
+Hardware,Networking,EXTR
+Hardware,Networking,UI
+Hardware,Networking,MRVL
+Hardware,Networking,AVGO
+Hardware,Storage,NTAP
+Hardware,Storage,PSTG
+Hardware,Storage,WDC
+Hardware,Storage,STX
+Hardware,Storage,DELL
+Hardware,Storage,HPE
+Hardware,Storage,SMCI
+Hardware,Data Centers,VRT
+Hardware,Data Centers,ETN
+Hardware,Data Centers,MOD
+Hardware,Data Centers,NVT
+Hardware,Data Centers,SMCI
+Hardware,Data Centers,DELL
+Hardware,Electronics,SONY
+Hardware,Electronics,LOGI
+Hardware,Electronics,AAPL
+Hardware,Electronics,MSFT
+Hardware,Electronics,GRMN
+Hardware,Electronics,HPQ
+Hardware,Electronics,DELL
+Hardware,Gaming,META
+Hardware,Gaming,SONY
+Hardware,Gaming,AAPL
+Hardware,Gaming,IMMR
+Hardware,Gaming,CRSR
+Hardware,Gaming,LOGI
+Hardware,Gaming,TBCH
+Hardware,Gaming,HPQ
+Hardware,Printing,HPQ
+Hardware,Printing,DDD
+Hardware,Printing,SSYS
+Hardware,Printing,XRX
+Hardware,Printing,MTLS
+Hardware,Printing,NNDM
+Hardware,Telecom,ANET
+Hardware,Telecom,NOK
+Hardware,Telecom,ERIC
+Hardware,Telecom,CIEN
+Hardware,Telecom,CSCO
+Hardware,Telecom,LITE
+Hardware,Telecom,APH
+Hardware,Telecom,ADTN
+Hardware,Telecom,VIAV
+Hardware,Telecom,MSI
+Hardware,Telecom,HPE
+Hardware,Industrial IoT,ZBRA
+Hardware,Industrial IoT,HON
+Hardware,Industrial IoT,ROK
+Hardware,Industrial IoT,IOT
+Hardware,Industrial IoT,EMR
+Hardware,Industrial IoT,TRMB
+Hardware,Industrial IoT,ADI
+Hardware,Industrial IoT,TEL
+Hardware,Industrial IoT,PI
+Hardware,Industrial IoT,TXN
+Hardware,Industrial IoT,AME
+Hardware,Next-Gen,NVDA
+Hardware,Next-Gen,IONQ
+Hardware,Next-Gen,ISRG
+Hardware,Next-Gen,QBTS
+Hardware,Next-Gen,RGTI
+Hardware,Next-Gen,AVAV
+Hardware,Next-Gen,KTOS
+Hardware,Next-Gen,MBLY
+Hardware,Next-Gen,AMD
+Hardware,Next-Gen,DDD
+Hardware,Next-Gen,SSYS
+Hardware,Next-Gen,TSLA
+Hardware,Next-Gen,TSM
+Hardware,Next-Gen,AAPL
+Hardware,Next-Gen,ASML
+Quantum Computing,Hardware,IONQ
+Quantum Computing,Hardware,RGTI
+Quantum Computing,Hardware,IBM
+Quantum Computing,Hardware,GOOGL
+Quantum Computing,Hardware,QBTS
+Quantum Computing,Hardware,QUBT
+Quantum Computing,Hardware,HON
+Quantum Computing,Cloud,AMZN
+Quantum Computing,Cloud,MSFT
+Quantum Computing,Cloud,IBM
+Quantum Computing,Cloud,IONQ
+Quantum Computing,Cloud,QBTS
+Quantum Computing,Cloud,GOOGL
+Quantum Computing,Cloud,RGTI
+Quantum Computing,Cloud,NVDA
+Quantum Computing,Software,MSFT
+Quantum Computing,Software,IBM
+Quantum Computing,Software,NVDA
+Quantum Computing,Software,GOOGL
+Quantum Computing,Software,QBTS
+Quantum Computing,Software,IONQ
+Quantum Computing,Software,QUBT
+Quantum Computing,Enabling Tech,KEYS
+Quantum Computing,Enabling Tech,NVDA
+Quantum Computing,Enabling Tech,AMD
+Quantum Computing,Enabling Tech,INTC
+Quantum Computing,Enabling Tech,HON
+Quantum Computing,Enabling Tech,RGTI
+Quantum Computing,Networking,ARQQ
+Quantum Computing,Networking,LAES
+Quantum Computing,Networking,IBM
+Quantum Computing,Networking,MSFT
+Quantum Computing,Networking,NET
+Quantum Computing,Networking,AMZN
+Quantum Computing,Networking,HON
+Quantum Computing,Applications,IBM
+Quantum Computing,Applications,MSFT
+Quantum Computing,Applications,AMZN
+Quantum Computing,Applications,QBTS
+Quantum Computing,Applications,GOOGL
+Quantum Computing,Applications,IONQ
+Quantum Computing,Applications,NVDA
+Quantum Computing,Applications,HON
+Virtual & Augmented Reality,Hardware,META
+Virtual & Augmented Reality,Hardware,AAPL
+Virtual & Augmented Reality,Hardware,VUZI
+Virtual & Augmented Reality,Hardware,QCOM
+Virtual & Augmented Reality,Hardware,KOPN
+Virtual & Augmented Reality,Hardware,MSFT
+Virtual & Augmented Reality,Hardware,LITE
+Virtual & Augmented Reality,Hardware,COHR
+Virtual & Augmented Reality,Hardware,NVDA
+Virtual & Augmented Reality,Hardware,AMD
+Virtual & Augmented Reality,Hardware,HPQ
+Virtual & Augmented Reality,Software,AAPL
+Virtual & Augmented Reality,Software,META
+Virtual & Augmented Reality,Software,MSFT
+Virtual & Augmented Reality,Software,U
+Virtual & Augmented Reality,Software,GOOGL
+Virtual & Augmented Reality,Software,SNAP
+Virtual & Augmented Reality,Software,SONY
+Virtual & Augmented Reality,Applications,RBLX
+Virtual & Augmented Reality,Applications,U
+Virtual & Augmented Reality,Applications,META
+Virtual & Augmented Reality,Applications,MSFT
+Virtual & Augmented Reality,Applications,SNAP
+Virtual & Augmented Reality,Applications,TTWO
+Virtual & Augmented Reality,Applications,EA
+Virtual & Augmented Reality,Applications,AAPL
+Virtual & Augmented Reality,Applications,AXON
+Virtual & Augmented Reality,Applications,ADBE
+Virtual & Augmented Reality,Applications,ADSK
+Virtual & Augmented Reality,Infrastructure,AMZN
+Virtual & Augmented Reality,Infrastructure,MSFT
+Virtual & Augmented Reality,Infrastructure,NVDA
+Virtual & Augmented Reality,Infrastructure,GOOGL
+Virtual & Augmented Reality,Infrastructure,U
+Virtual & Augmented Reality,Infrastructure,QCOM
+Virtual & Augmented Reality,Infrastructure,FSLY
+Virtual & Augmented Reality,Enterprise,PTC
+Virtual & Augmented Reality,Enterprise,MSFT
+Virtual & Augmented Reality,Enterprise,U
+Virtual & Augmented Reality,Enterprise,GGRP
+Virtual & Augmented Reality,Enterprise,TRMB
+Virtual & Augmented Reality,Enterprise,NVDA
+Virtual & Augmented Reality,Enterprise,ADSK
+Virtual & Augmented Reality,Enterprise,AXON
+Biometrics,Hardware,AAPL
+Biometrics,Hardware,QCOM
+Biometrics,Hardware,BKYI
+Biometrics,Hardware,SYNA
+Biometrics,Hardware,GRMN
+Biometrics,Hardware,EVLV
+Biometrics,Hardware,CGNX
+Biometrics,Hardware,AWRE
+Biometrics,Software,MITK
+Biometrics,Software,AUID
+Biometrics,Software,AWRE
+Biometrics,Software,MSFT
+Biometrics,Software,GOOGL
+Biometrics,Software,IDN
+Biometrics,Software,NVDA
+Biometrics,Software,PLTR
+Biometrics,Software,META
+Biometrics,Software,BBAI
+Biometrics,Identity,AWRE
+Biometrics,Identity,YOU
+Biometrics,Identity,MITK
+Biometrics,Identity,BKYI
+Biometrics,Identity,AUID
+Biometrics,Identity,OKTA
+Biometrics,Identity,MSFT
+Biometrics,Identity,AAPL
+Biometrics,Identity,IDN
+Biometrics,Gov & Defense,LDOS
+Biometrics,Gov & Defense,AWRE
+Biometrics,Gov & Defense,MITK
+Biometrics,Gov & Defense,IDN
+Biometrics,Gov & Defense,BKYI
+Biometrics,Gov & Defense,AUID
+Biometrics,Gov & Defense,LHX
+Biometrics,Gov & Defense,SPCB
+Biometrics,Gov & Defense,NOC
+Biometrics,Gov & Defense,ACN
+Biometrics,Gov & Defense,PSN
+Biometrics,Gov & Defense,LMT
+Big Data,Infrastructure,SNOW
+Big Data,Infrastructure,MSFT
+Big Data,Infrastructure,AMZN
+Big Data,Infrastructure,GOOGL
+Big Data,Infrastructure,MDB
+Big Data,Infrastructure,ORCL
+Big Data,Infrastructure,PSTG
+Big Data,Infrastructure,NVDA
+Big Data,Infrastructure,STX
+Big Data,Infrastructure,WDC
+Big Data,Infrastructure,SMCI
+Big Data,Infrastructure,NTAP
+Big Data,Infrastructure,DELL
+Big Data,Infrastructure,HPE
+Big Data,Infrastructure,EQIX
+Big Data,Infrastructure,DLR
+Big Data,Analytics & BI,MSFT
+Big Data,Analytics & BI,CRM
+Big Data,Analytics & BI,DOMO
+Big Data,Analytics & BI,MSTR
+Big Data,Analytics & BI,PLTR
+Big Data,Analytics & BI,TDC
+Big Data,Analytics & BI,SAP
+Big Data,Analytics & BI,CSCO
+Big Data,Analytics & BI,ORCL
+Big Data,Analytics & BI,ESTC
+Big Data,Analytics & BI,DDOG
+Big Data,Providers,SPGI
+Big Data,Providers,RELX
+Big Data,Providers,TRI
+Big Data,Providers,MCO
+Big Data,Providers,MSCI
+Big Data,Providers,VRSK
+Big Data,Providers,EFX
+Big Data,Providers,IQV
+Big Data,Providers,TRU
+Big Data,Providers,ICE
+Big Data,Providers,FDS
+Big Data,Providers,CSGP
+Big Data,AI Platforms,MSFT
+Big Data,AI Platforms,PLTR
+Big Data,AI Platforms,AMZN
+Big Data,AI Platforms,GOOGL
+Big Data,AI Platforms,AI
+Big Data,AI Platforms,CRM
+Big Data,AI Platforms,NVDA
+Big Data,AI Platforms,SAP
+Big Data,AI Platforms,NICE
+Big Data,AI Platforms,NOW
+Big Data,AI Platforms,AMD
+Electric Vehicles,Manufacturers,TSLA
+Electric Vehicles,Manufacturers,RIVN
+Electric Vehicles,Manufacturers,NIO
+Electric Vehicles,Manufacturers,LCID
+Electric Vehicles,Manufacturers,XPEV
+Electric Vehicles,Manufacturers,LI
+Electric Vehicles,Manufacturers,PSNY
+Electric Vehicles,Manufacturers,GM
+Electric Vehicles,Manufacturers,F
+Electric Vehicles,Batteries,ALB
+Electric Vehicles,Batteries,SQM
+Electric Vehicles,Batteries,LAC
+Electric Vehicles,Batteries,QS
+Electric Vehicles,Batteries,SLDP
+Electric Vehicles,Batteries,MP
+Electric Vehicles,Batteries,MVST
+Electric Vehicles,Batteries,SES
+Electric Vehicles,Batteries,ENVX
+Electric Vehicles,Batteries,TE
+Electric Vehicles,Batteries,ABAT
+Electric Vehicles,Charging,CHPT
+Electric Vehicles,Charging,TSLA
+Electric Vehicles,Charging,EVGO
+Electric Vehicles,Charging,BLNK
+Electric Vehicles,Charging,ETN
+Electric Vehicles,Charging,WBX
+Electric Vehicles,Charging,BEEM
+Electric Vehicles,Charging,NEE
+Electric Vehicles,Chips,WOLF
+Electric Vehicles,Chips,ON
+Electric Vehicles,Chips,NVTS
+Electric Vehicles,Chips,STM
+Electric Vehicles,Chips,NXPI
+Electric Vehicles,Chips,NVDA
+Electric Vehicles,Chips,TXN
+Electric Vehicles,Chips,QCOM
+Electric Vehicles,Suppliers,MBLY
+Electric Vehicles,Suppliers,BWA
+Electric Vehicles,Suppliers,APTV
+Electric Vehicles,Suppliers,MGA
+Electric Vehicles,Suppliers,INVZ
+Electric Vehicles,Suppliers,DAN
+Electric Vehicles,Suppliers,NVDA
+Electric Vehicles,Suppliers,LEA
+Electric Vehicles,Suppliers,THRM
+Electric Vehicles,Suppliers,QCOM
+Electric Vehicles,Suppliers,NXPI
+Electric Vehicles,Suppliers,AMBA
+Electric Vehicles,Self-Driving,MBLY
+Electric Vehicles,Self-Driving,NVDA
+Electric Vehicles,Self-Driving,TSLA
+Electric Vehicles,Self-Driving,QCOM
+Electric Vehicles,Self-Driving,AUR
+Electric Vehicles,Self-Driving,INVZ
+Electric Vehicles,Self-Driving,GOOGL
+Electric Vehicles,Self-Driving,HSAI
+Electric Vehicles,Self-Driving,APTV
+Electric Vehicles,Fleets,IOT
+Electric Vehicles,Fleets,NVVE
+Electric Vehicles,Fleets,AIOT
+Electric Vehicles,Fleets,UBER
+Electric Vehicles,Fleets,TRMB
+Electric Vehicles,Fleets,LYFT
+Electric Vehicles,Fleets,BEEM
+Electric Vehicles,Fleets,VZ
+Industrial Automation,Robotics,SYM
+Industrial Automation,Robotics,NVDA
+Industrial Automation,Robotics,ROK
+Industrial Automation,Robotics,NOVT
+Industrial Automation,Robotics,ZBRA
+Industrial Automation,Robotics,TER
+Industrial Automation,Automation,ROK
+Industrial Automation,Automation,EMR
+Industrial Automation,Automation,HON
+Industrial Automation,Automation,ETN
+Industrial Automation,Automation,NOVT
+Industrial Automation,Automation,RRX
+Industrial Automation,Machine Vision,CGNX
+Industrial Automation,Machine Vision,TDY
+Industrial Automation,Machine Vision,ON
+Industrial Automation,Machine Vision,NOVT
+Industrial Automation,Machine Vision,ZBRA
+Industrial Automation,Machine Vision,TXN
+Industrial Automation,Machine Vision,ST
+Industrial Automation,Machine Vision,AMBA
+Industrial Automation,Machine Vision,OUST
+Industrial Automation,Machine Vision,AME
+Industrial Automation,Software,PTC
+Industrial Automation,Software,ADSK
+Industrial Automation,Software,NVDA
+Industrial Automation,Software,BSY
+Industrial Automation,Software,MSFT
+Industrial Automation,Software,SNPS
+Industrial Automation,Software,CDNS
+Industrial Automation,IoT,IOT
+Industrial Automation,IoT,CSCO
+Industrial Automation,IoT,MSFT
+Industrial Automation,IoT,HON
+Industrial Automation,IoT,DGII
+Industrial Automation,IoT,PTC
+Industrial Automation,IoT,ZBRA
+Industrial Automation,IoT,PANW
+Industrial Automation,IoT,ROK
+Industrial Automation,IoT,FTNT
+Industrial Automation,IoT,EMR
+Industrial Automation,Logistics,SYM
+Industrial Automation,Logistics,AMZN
+Industrial Automation,Logistics,MANH
+Industrial Automation,Logistics,FDX
+Industrial Automation,Logistics,UPS
+Industrial Automation,Logistics,ZBRA
+Industrial Automation,Logistics,HON
+Industrial Automation,Logistics,CGNX
+Industrial Automation,Logistics,GXO
+Industrial Automation,Logistics,ROK
+Industrial Automation,Logistics,ORCL
+Industrial Automation,3D Printing,DDD
+Industrial Automation,3D Printing,SSYS
+Industrial Automation,3D Printing,PRLB
+Industrial Automation,3D Printing,MTLS
+Industrial Automation,3D Printing,NNDM
+Industrial Automation,3D Printing,XMTR
+Industrial Automation,3D Printing,GE
+Industrial Automation,3D Printing,CRS
+Defense & Aerospace,Drones,AVAV
+Defense & Aerospace,Drones,KTOS
+Defense & Aerospace,Drones,RTX
+Defense & Aerospace,Drones,RCAT
+Defense & Aerospace,Drones,LHX
+Defense & Aerospace,Drones,LMT
+Defense & Aerospace,Drones,TXT
+Defense & Aerospace,Drones,NOC
+Defense & Aerospace,Drones,ONDS
+Defense & Aerospace,Drones,BA
+Defense & Aerospace,Missiles,RTX
+Defense & Aerospace,Missiles,LMT
+Defense & Aerospace,Missiles,NOC
+Defense & Aerospace,Missiles,LHX
+Defense & Aerospace,Missiles,BWXT
+Defense & Aerospace,Missiles,GD
+Defense & Aerospace,Missiles,BA
+Defense & Aerospace,SpaceTech,RKLB
+Defense & Aerospace,SpaceTech,LMT
+Defense & Aerospace,SpaceTech,IRDM
+Defense & Aerospace,SpaceTech,NOC
+Defense & Aerospace,SpaceTech,VSAT
+Defense & Aerospace,SpaceTech,PL
+Defense & Aerospace,SpaceTech,RTX
+Defense & Aerospace,SpaceTech,LHX
+Defense & Aerospace,SpaceTech,SPIR
+Defense & Aerospace,SpaceTech,AMZN
+Defense & Aerospace,SpaceTech,BKSY
+Defense & Aerospace,CyberDefense,RTX
+Defense & Aerospace,CyberDefense,LHX
+Defense & Aerospace,CyberDefense,LDOS
+Defense & Aerospace,CyberDefense,NOC
+Defense & Aerospace,CyberDefense,CACI
+Defense & Aerospace,CyberDefense,LMT
+Defense & Aerospace,CyberDefense,BAH
+Defense & Aerospace,CyberDefense,MRCY
+Defense & Aerospace,CyberDefense,PLTR
+Defense & Aerospace,CyberDefense,PSN
+Defense & Aerospace,CyberDefense,GD
+Defense & Aerospace,Weapons,LMT
+Defense & Aerospace,Weapons,RTX
+Defense & Aerospace,Weapons,OLN
+Defense & Aerospace,Weapons,GD
+Defense & Aerospace,Weapons,NOC
+Defense & Aerospace,Weapons,LHX
+Defense & Aerospace,Weapons,AVAV
+Defense & Aerospace,Weapons,BA
+Defense & Aerospace,Aviation,LMT
+Defense & Aerospace,Aviation,NOC
+Defense & Aerospace,Aviation,RTX
+Defense & Aerospace,Aviation,GE
+Defense & Aerospace,Aviation,BA
+Defense & Aerospace,Aviation,HEI
+Defense & Aerospace,Aviation,TDG
+Defense & Aerospace,Aviation,TXT
+Defense & Aerospace,Manufacturing,MP
+Defense & Aerospace,Manufacturing,HWM
+Defense & Aerospace,Manufacturing,ATI
+Defense & Aerospace,Manufacturing,BWXT
+Defense & Aerospace,Manufacturing,HXL
+Defense & Aerospace,Manufacturing,CRS
+Defense & Aerospace,Manufacturing,RTX
+Defense & Aerospace,Manufacturing,GE
+Defense & Aerospace,Manufacturing,TDG
+Defense & Aerospace,Manufacturing,NOC
+Defense & Aerospace,Manufacturing,HEI
+Defense & Aerospace,Manufacturing,CW
+Defense & Aerospace,Manufacturing,GD
+Defense & Aerospace,Manufacturing,LMT
+Transportation & Logistics,Rail,UNP
+Transportation & Logistics,Rail,CSX
+Transportation & Logistics,Rail,NSC
+Transportation & Logistics,Rail,CNI
+Transportation & Logistics,Rail,CP
+Transportation & Logistics,Rail,WAB
+Transportation & Logistics,Trucking,ODFL
+Transportation & Logistics,Trucking,SAIA
+Transportation & Logistics,Trucking,XPO
+Transportation & Logistics,Trucking,ARCB
+Transportation & Logistics,Trucking,KNX
+Transportation & Logistics,Trucking,JBHT
+Transportation & Logistics,Trucking,WERN
+Transportation & Logistics,Trucking,TFII
+Transportation & Logistics,Trucking,SNDR
+Transportation & Logistics,Trucking,FDX
+Transportation & Logistics,Trucking,UPS
+Transportation & Logistics,Trucking,LSTR
+Transportation & Logistics,Air Cargo,FDX
+Transportation & Logistics,Air Cargo,UPS
+Transportation & Logistics,Air Cargo,FWRD
+Transportation & Logistics,Air Cargo,UAL
+Transportation & Logistics,Maritime,ZIM
+Transportation & Logistics,Maritime,MATX
+Transportation & Logistics,Maritime,GNK
+Transportation & Logistics,Maritime,SBLK
+Transportation & Logistics,Maritime,DAC
+Transportation & Logistics,Maritime,GSL
+Transportation & Logistics,Maritime,KEX
+Transportation & Logistics,Warehousing,GXO
+Transportation & Logistics,Warehousing,CHRW
+Transportation & Logistics,Warehousing,EXPD
+Transportation & Logistics,Warehousing,MANH
+Transportation & Logistics,Warehousing,HUBG
+Transportation & Logistics,Warehousing,R
+Transportation & Logistics,Warehousing,COLD
+Transportation & Logistics,Warehousing,UPS
+Transportation & Logistics,Warehousing,FWRD
+Transportation & Logistics,Air Travel,DAL
+Transportation & Logistics,Air Travel,UAL
+Transportation & Logistics,Air Travel,AAL
+Transportation & Logistics,Air Travel,LUV
+Transportation & Logistics,Air Travel,ALK
+Transportation & Logistics,Air Travel,ALGT
+Transportation & Logistics,Air Travel,JOBY
+Transportation & Logistics,Air Travel,ACHR
+Transportation & Logistics,Infrastructure,CMI
+Transportation & Logistics,Infrastructure,PCAR
+Transportation & Logistics,Infrastructure,TRMB
+Transportation & Logistics,Infrastructure,CAT
+Transportation & Logistics,Infrastructure,CSX
+Transportation & Logistics,Infrastructure,UNP
+Transportation & Logistics,Infrastructure,MANH
+Transportation & Logistics,Infrastructure,OSK
+Transportation & Logistics,Infrastructure,GE
+Transportation & Logistics,Infrastructure,DE
+Transportation & Logistics,Infrastructure,APTV
+Transportation & Logistics,Infrastructure,WNC
+Transportation & Logistics,Infrastructure,CLNE
+Transportation & Logistics,Infrastructure,TXT
+Transportation & Logistics,Infrastructure,UPS
+Transportation & Logistics,Infrastructure,FDX
+Transportation & Logistics,Next-Gen,UBER
+Transportation & Logistics,Next-Gen,TSLA
+Transportation & Logistics,Next-Gen,RIVN
+Transportation & Logistics,Next-Gen,MBLY
+Transportation & Logistics,Next-Gen,AUR
+Transportation & Logistics,Next-Gen,LYFT
+Transportation & Logistics,Next-Gen,SERV
+Transportation & Logistics,Next-Gen,NVDA
+Transportation & Logistics,Next-Gen,LI
+Transportation & Logistics,Next-Gen,GOOGL
+Transportation & Logistics,Next-Gen,JOBY
+Transportation & Logistics,Next-Gen,LCID
+Transportation & Logistics,Next-Gen,GM
+Space Tech,Launch,RKLB
+Space Tech,Launch,FLY
+Space Tech,Launch,LUNR
+Space Tech,Launch,MNTS
+Space Tech,Launch,LMT
+Space Tech,Launch,NOC
+Space Tech,Launch,BA
+Space Tech,Launch,SPCE
+Space Tech,Launch,VSAT
+Space Tech,Satellites,IRDM
+Space Tech,Satellites,GSAT
+Space Tech,Satellites,VSAT
+Space Tech,Satellites,TSAT
+Space Tech,Satellites,ASTS
+Space Tech,Satellites,SATS
+Space Tech,Data Analytics,PL
+Space Tech,Data Analytics,BKSY
+Space Tech,Data Analytics,SPIR
+Space Tech,Data Analytics,RDW
+Space Tech,Data Analytics,RKLB
+Space Tech,Data Analytics,LDOS
+Space Tech,Defense,NOC
+Space Tech,Defense,LMT
+Space Tech,Defense,LHX
+Space Tech,Defense,RTX
+Space Tech,Defense,KTOS
+Space Tech,Defense,GD
+Space Tech,Defense,RKLB
+Space Tech,Infrastructure,LUNR
+Space Tech,Infrastructure,RDW
+Space Tech,Infrastructure,RKLB
+Space Tech,Infrastructure,SPCE
+Space Tech,Infrastructure,BA
+Robotics,Automation,ROK
+Robotics,Automation,SYM
+Robotics,Automation,CGNX
+Robotics,Automation,EMR
+Robotics,Automation,ZBRA
+Robotics,Automation,HON
+Robotics,Automation,TER
+Robotics,Automation,NVDA
+Robotics,Logistics,SYM
+Robotics,Logistics,AMZN
+Robotics,Logistics,ZBRA
+Robotics,Logistics,CGNX
+Robotics,Logistics,HON
+Robotics,Logistics,TER
+Robotics,Logistics,ROK
+Robotics,AV & Mobility,NVDA
+Robotics,AV & Mobility,MBLY
+Robotics,AV & Mobility,GOOGL
+Robotics,AV & Mobility,TSLA
+Robotics,AV & Mobility,AUR
+Robotics,AV & Mobility,QCOM
+Robotics,AV & Mobility,APTV
+Robotics,Machine Vision,NVDA
+Robotics,Machine Vision,CGNX
+Robotics,Machine Vision,AMBA
+Robotics,Machine Vision,OUST
+Robotics,Machine Vision,ON
+Robotics,Machine Vision,QCOM
+Robotics,Machine Vision,INVZ
+Robotics,Machine Vision,LITE
+Robotics,Machine Vision,ZBRA
+Robotics,Machine Vision,TDY
+Robotics,Machine Vision,LSCC
+Robotics,Medical,ISRG
+Robotics,Medical,SYK
+Robotics,Medical,MDT
+Robotics,Medical,PRCT
+Robotics,Medical,ZBH
+Robotics,Medical,GMED
+Robotics,Medical,JNJ
+Robotics,Medical,ARAY
+Robotics,Consumer,SERV
+Robotics,Consumer,AMZN
+Robotics,Consumer,TSLA
+Robotics,Consumer,YYGH
+Robotics,Consumer,ZBRA
+Robotics,Consumer,PATH
+Robotics,Consumer,AAPL
+Telecommunications,Wireless,VZ
+Telecommunications,Wireless,TMUS
+Telecommunications,Wireless,T
+Telecommunications,Wireless,CMCSA
+Telecommunications,Wireless,CHTR
+Telecommunications,Infrastructure,AMT
+Telecommunications,Infrastructure,CCI
+Telecommunications,Infrastructure,SBAC
+Telecommunications,Infrastructure,GLW
+Telecommunications,Infrastructure,CIEN
+Telecommunications,Infrastructure,CSCO
+Telecommunications,Infrastructure,VISN
+Telecommunications,Infrastructure,MSI
+Telecommunications,Cloud & Edge,AMZN
+Telecommunications,Cloud & Edge,MSFT
+Telecommunications,Cloud & Edge,GOOGL
+Telecommunications,Cloud & Edge,AKAM
+Telecommunications,Cloud & Edge,NET
+Telecommunications,Cloud & Edge,FSLY
+Telecommunications,Cloud & Edge,EQIX
+Telecommunications,Cloud & Edge,VZ
+Telecommunications,Cloud & Edge,T
+Telecommunications,Cloud & Edge,ANET
+Telecommunications,5G,QCOM
+Telecommunications,5G,SWKS
+Telecommunications,5G,AVGO
+Telecommunications,5G,MRVL
+Telecommunications,5G,QRVO
+Telecommunications,5G,ADI
+Telecommunications,5G,INTC
+Telecommunications,Satcom,IRDM
+Telecommunications,Satcom,GSAT
+Telecommunications,Satcom,VSAT
+Telecommunications,Satcom,TSAT
+Telecommunications,Satcom,ASTS
+Telecommunications,Satcom,SATS
+Telecommunications,Satcom,AMZN
+Telecommunications,Enterprise,MSFT
+Telecommunications,Enterprise,ZM
+Telecommunications,Enterprise,RNG
+Telecommunications,Enterprise,CSCO
+Telecommunications,Enterprise,TWLO
+Telecommunications,Enterprise,EGHT
+Telecommunications,Enterprise,CXDO
+Telecommunications,Enterprise,VZ
+Nanotechnology,Materials,MMM
+Nanotechnology,Materials,DD
+Nanotechnology,Materials,PPG
+Nanotechnology,Materials,HON
+Nanotechnology,Materials,NNDM
+Nanotechnology,Materials,NVEC
+Nanotechnology,Medicine,MRNA
+Nanotechnology,Medicine,ARCT
+Nanotechnology,Medicine,LQDA
+Nanotechnology,Medicine,NBTX
+Nanotechnology,Medicine,CLNN
+Nanotechnology,Medicine,PFE
+Nanotechnology,Medicine,JNJ
+Nanotechnology,Medicine,BMY
+Nanotechnology,Medicine,TMO
+Nanotechnology,Medicine,ABT
+Nanotechnology,Medicine,MRK
+Nanotechnology,Medicine,REGN
+Nanotechnology,Electronics,TSM
+Nanotechnology,Electronics,ASML
+Nanotechnology,Electronics,AMAT
+Nanotechnology,Electronics,LRCX
+Nanotechnology,Electronics,INTC
+Nanotechnology,Electronics,KLAC
+Nanotechnology,Electronics,NVDA
+Nanotechnology,Electronics,AMD
+Nanotechnology,Electronics,ATOM
+Nanotechnology,Energy,QS
+Nanotechnology,Energy,FSLR
+Nanotechnology,Energy,SLDP
+Nanotechnology,Energy,DD
+Nanotechnology,Energy,ASPN
+Nanotechnology,Energy,TSLA
+Nanotechnology,Energy,PLUG
+Nanotechnology,Energy,AMAT
+Nanotechnology,Energy,ENPH
+Nanotechnology,Energy,XYL
+Nanotechnology,Energy,ECL
+Nanotechnology,Products,EL
+Nanotechnology,Products,MMM
+Nanotechnology,Products,DD
+Nanotechnology,Products,PG
+Nanotechnology,Products,SEE
+Nanotechnology,Products,CL
+Nanotechnology,Products,NKE
+Nanotechnology,Research Tools,TMO
+Nanotechnology,Research Tools,KLAC
+Nanotechnology,Research Tools,BRKR
+Nanotechnology,Research Tools,AMAT
+Nanotechnology,Research Tools,ONTO
+Nanotechnology,Research Tools,DHR
+Nanotechnology,Research Tools,A
+Nanotechnology,Research Tools,KEYS
+Nanotechnology,Research Tools,VECO
+Internet of Things,Edge Devices,TXN
+Internet of Things,Edge Devices,ADI
+Internet of Things,Edge Devices,NXPI
+Internet of Things,Edge Devices,QCOM
+Internet of Things,Edge Devices,MCHP
+Internet of Things,Edge Devices,GRMN
+Internet of Things,Edge Devices,PI
+Internet of Things,Edge Devices,HON
+Internet of Things,Edge Devices,INTC
+Internet of Things,Edge Devices,LSCC
+Internet of Things,Edge Devices,SMTC
+Internet of Things,Edge Devices,CSCO
+Internet of Things,Networking,VZ
+Internet of Things,Networking,IRDM
+Internet of Things,Networking,T
+Internet of Things,Networking,TMUS
+Internet of Things,Networking,GSAT
+Internet of Things,Networking,VSAT
+Internet of Things,Networking,QCOM
+Internet of Things,Networking,CSCO
+Internet of Things,Networking,SMTC
+Internet of Things,Hardware,NVDA
+Internet of Things,Hardware,INTC
+Internet of Things,Hardware,QCOM
+Internet of Things,Hardware,AMD
+Internet of Things,Hardware,SMCI
+Internet of Things,Hardware,NXPI
+Internet of Things,Hardware,CSCO
+Internet of Things,Software,MSFT
+Internet of Things,Software,AMZN
+Internet of Things,Software,PTC
+Internet of Things,Software,GOOGL
+Internet of Things,Software,IOT
+Internet of Things,Software,IBM
+Internet of Things,Software,PLTR
+Internet of Things,Software,ORCL
+Internet of Things,Software,CSCO
+Internet of Things,Software,DDOG
+Internet of Things,Enterprise,ROK
+Internet of Things,Enterprise,PTC
+Internet of Things,Enterprise,IOT
+Internet of Things,Enterprise,EMR
+Internet of Things,Enterprise,HON
+Internet of Things,Enterprise,CSCO
+Internet of Things,Enterprise,DGII
+Internet of Things,Enterprise,GE
+Internet of Things,Enterprise,CAT
+Internet of Things,Enterprise,AI
+Internet of Things,Security,PANW
+Internet of Things,Security,MSFT
+Internet of Things,Security,FTNT
+Internet of Things,Security,CRWD
+Internet of Things,Security,BB
+Internet of Things,Security,CSCO
+Internet of Things,Security,NET
+Internet of Things,Security,OKTA
+Internet of Things,Security,TENB
+Autonomous Systems,AV & Mobility,MBLY
+Autonomous Systems,AV & Mobility,NVDA
+Autonomous Systems,AV & Mobility,AUR
+Autonomous Systems,AV & Mobility,GOOGL
+Autonomous Systems,AV & Mobility,TSLA
+Autonomous Systems,AV & Mobility,GM
+Autonomous Systems,AV & Mobility,UBER
+Autonomous Systems,Industrial,SYM
+Autonomous Systems,Industrial,ROK
+Autonomous Systems,Industrial,MANH
+Autonomous Systems,Industrial,HON
+Autonomous Systems,Industrial,AMZN
+Autonomous Systems,Industrial,TER
+Autonomous Systems,Industrial,ZBRA
+Autonomous Systems,Industrial,EMR
+Autonomous Systems,Industrial,DE
+Autonomous Systems,Industrial,PATH
+Autonomous Systems,Defense,AVAV
+Autonomous Systems,Defense,LMT
+Autonomous Systems,Defense,NOC
+Autonomous Systems,Defense,KTOS
+Autonomous Systems,Defense,RTX
+Autonomous Systems,Defense,LHX
+Autonomous Systems,Defense,RCAT
+Autonomous Systems,Defense,PLTR
+Autonomous Systems,Defense,BBAI
+Autonomous Systems,Machine Vision,NVDA
+Autonomous Systems,Machine Vision,MBLY
+Autonomous Systems,Machine Vision,AMBA
+Autonomous Systems,Machine Vision,AEVA
+Autonomous Systems,Machine Vision,OUST
+Autonomous Systems,Machine Vision,QCOM
+Autonomous Systems,Machine Vision,ON
+Autonomous Systems,Machine Vision,INVZ
+Autonomous Systems,Machine Vision,AMD
+Autonomous Systems,Machine Vision,CGNX
+Autonomous Systems,Software,NVDA
+Autonomous Systems,Software,MSFT
+Autonomous Systems,Software,AMZN
+Autonomous Systems,Software,GOOGL
+Autonomous Systems,Software,AUR
+Autonomous Systems,Software,PLTR
+Autonomous Systems,Software,MBLY
+Autonomous Systems,Software,QCOM
+Autonomous Systems,Software,ORCL
+Autonomous Systems,Software,AMBA
+Autonomous Systems,Specialized,DE
+Autonomous Systems,Specialized,CAT
+Autonomous Systems,Specialized,TRMB
+Autonomous Systems,Specialized,OII
+Autonomous Systems,Specialized,AGCO
+Autonomous Systems,Specialized,TXT
+Autonomous Systems,Specialized,TDY
+Autonomous Systems,Specialized,KVHI
+E-commerce,Marketplaces,AMZN
+E-commerce,Marketplaces,EBAY
+E-commerce,Marketplaces,WMT
+E-commerce,Marketplaces,ETSY
+E-commerce,Marketplaces,MELI
+E-commerce,Marketplaces,SHOP
+E-commerce,Marketplaces,TGT
+E-commerce,Platforms,SHOP
+E-commerce,Platforms,WIX
+E-commerce,Platforms,PDD
+E-commerce,Platforms,VTEX
+E-commerce,Platforms,XYZ
+E-commerce,Platforms,ADBE
+E-commerce,Platforms,LSPD
+E-commerce,Platforms,CRM
+E-commerce,Ads & Media,AMZN
+E-commerce,Ads & Media,WMT
+E-commerce,Ads & Media,GOOGL
+E-commerce,Ads & Media,TTD
+E-commerce,Ads & Media,CRTO
+E-commerce,Ads & Media,ROKU
+E-commerce,Ads & Media,CART
+E-commerce,Ads & Media,TGT
+E-commerce,Ads & Media,KR
+E-commerce,Ads & Media,DASH
+E-commerce,Ads & Media,MGNI
+E-commerce,Ads & Media,PUBM
+E-commerce,Ads & Media,CVS
+E-commerce,Ads & Media,BBY
+E-commerce,Ads & Media,HD
+E-commerce,Logistics,UPS
+E-commerce,Logistics,FDX
+E-commerce,Logistics,AMZN
+E-commerce,Logistics,GXO
+E-commerce,Logistics,DASH
+E-commerce,Logistics,SYM
+E-commerce,Logistics,MANH
+E-commerce,Logistics,UBER
+E-commerce,Logistics,PLD
+E-commerce,Logistics,HON
+E-commerce,Logistics,TRMB
+E-commerce,Social,META
+E-commerce,Social,PINS
+E-commerce,Social,GOOGL
+E-commerce,Social,AMZN
+E-commerce,Social,SHOP
+E-commerce,Social,SNAP
+E-commerce,Social,ETSY
+E-commerce,Omnichannel,WMT
+E-commerce,Omnichannel,TGT
+E-commerce,Omnichannel,HD
+E-commerce,Omnichannel,BBY
+E-commerce,Omnichannel,KR
+E-commerce,Omnichannel,LULU
+E-commerce,Omnichannel,COST
+E-commerce,Omnichannel,M
+E-commerce,Omnichannel,SHOP
+E-commerce,Grocery,CART
+E-commerce,Grocery,WMT
+E-commerce,Grocery,DASH
+E-commerce,Grocery,KR
+E-commerce,Grocery,AMZN
+E-commerce,Grocery,TGT
+E-commerce,Grocery,ACI
+E-commerce,Grocery,UBER
+E-commerce,Grocery,CPNG
+E-commerce,Grocery,SFM
+E-commerce,Secondhand,EBAY
+E-commerce,Secondhand,TDUP
+E-commerce,Secondhand,REAL
+E-commerce,Secondhand,ETSY
+E-commerce,DTC,CHWY
+E-commerce,DTC,HIMS
+E-commerce,DTC,NKE
+E-commerce,DTC,LULU
+E-commerce,DTC,BIRD
+E-commerce,DTC,LEVI
+E-commerce,DTC,EL
+E-commerce,DTC,WRBY
+Social Media,Networks,META
+Social Media,Networks,RDDT
+Social Media,Networks,SNAP
+Social Media,Networks,PINS
+Social Media,Networks,GOOGL
+Social Media,Networks,MSFT
+Social Media,Visual Content,GOOGL
+Social Media,Visual Content,SNAP
+Social Media,Visual Content,META
+Social Media,Visual Content,PINS
+Social Media,Visual Content,AMZN
+Social Media,Advertising,META
+Social Media,Advertising,GOOGL
+Social Media,Advertising,TTD
+Social Media,Advertising,SNAP
+Social Media,Advertising,PINS
+Social Media,Advertising,RDDT
+Social Media,Advertising,CRTO
+Social Media,Advertising,MGNI
+Social Media,Advertising,DSP
+Social Media,Advertising,DV
+Social Media,Advertising,APP
+Social Media,Gaming,RBLX
+Social Media,Gaming,MSFT
+Social Media,Gaming,AMZN
+Social Media,Gaming,SONY
+Social Media,Gaming,META
+Social Media,Gaming,TTWO
+Social Media,Gaming,U
+Social Media,Niche,MTCH
+Social Media,Niche,BMBL
+Social Media,Niche,RDDT
+Social Media,Niche,MSFT
+Digital Entertainment,Video,NFLX
+Digital Entertainment,Video,GOOGL
+Digital Entertainment,Video,ROKU
+Digital Entertainment,Video,DIS
+Digital Entertainment,Video,AMZN
+Digital Entertainment,Video,PSKY
+Digital Entertainment,Video,WBD
+Digital Entertainment,Music,SPOT
+Digital Entertainment,Music,TME
+Digital Entertainment,Music,AAPL
+Digital Entertainment,Music,SIRI
+Digital Entertainment,Music,AMZN
+Digital Entertainment,Music,GOOGL
+Digital Entertainment,Music,WMG
+Digital Entertainment,Music,SONY
+Digital Entertainment,Gaming,TTWO
+Digital Entertainment,Gaming,EA
+Digital Entertainment,Gaming,MSFT
+Digital Entertainment,Gaming,NTES
+Digital Entertainment,Gaming,RBLX
+Digital Entertainment,Gaming,PLTK
+Digital Entertainment,Gaming,DDI
+Digital Entertainment,Gaming,U
+Digital Entertainment,Infrastructure,NVDA
+Digital Entertainment,Infrastructure,MSFT
+Digital Entertainment,Infrastructure,AMZN
+Digital Entertainment,Infrastructure,AMD
+Digital Entertainment,Infrastructure,AKAM
+Digital Entertainment,Infrastructure,GOOGL
+Digital Entertainment,Infrastructure,NET
+Digital Entertainment,Infrastructure,ANET
+Digital Entertainment,Infrastructure,INTC
+Digital Entertainment,Infrastructure,AVGO
+Digital Entertainment,Infrastructure,U
+Digital Entertainment,Betting,DKNG
+Digital Entertainment,Betting,FLUT
+Digital Entertainment,Betting,GENI
+Digital Entertainment,Betting,SRAD
+Digital Entertainment,Betting,RSI
+Digital Entertainment,Betting,MGM
+Digital Entertainment,Betting,CZR
+Digital Entertainment,Betting,PENN
+Digital Entertainment,Betting,ICE
+Digital Entertainment,Gambling,RSI
+Digital Entertainment,Gambling,DKNG
+Digital Entertainment,Gambling,FLUT
+Digital Entertainment,Gambling,SGHC
+Digital Entertainment,Gambling,MGM
+Digital Entertainment,Gambling,CZR
+Digital Entertainment,Gambling,PENN
+Digital Entertainment,Gambling,BYD
+Digital Entertainment,Gambling,CHDN
+Digital Entertainment,Gambling,BALY
+Digital Entertainment,Gambling,INSE
+Digital Entertainment,Gambling,SRAD
+Real Estate & REITs,IT & Telecom,EQIX
+Real Estate & REITs,IT & Telecom,DLR
+Real Estate & REITs,IT & Telecom,AMT
+Real Estate & REITs,IT & Telecom,CCI
+Real Estate & REITs,IT & Telecom,SBAC
+Real Estate & REITs,IT & Telecom,UNIT
+Real Estate & REITs,IT & Telecom,IRM
+Real Estate & REITs,Warehousing,PLD
+Real Estate & REITs,Warehousing,COLD
+Real Estate & REITs,Warehousing,REXR
+Real Estate & REITs,Warehousing,EGP
+Real Estate & REITs,Warehousing,TRNO
+Real Estate & REITs,Warehousing,STAG
+Real Estate & REITs,Healthcare,WELL
+Real Estate & REITs,Healthcare,VTR
+Real Estate & REITs,Healthcare,HR
+Real Estate & REITs,Healthcare,OHI
+Real Estate & REITs,Healthcare,DOC
+Real Estate & REITs,Healthcare,SBRA
+Real Estate & REITs,Healthcare,MPT
+Real Estate & REITs,Housing,AVB
+Real Estate & REITs,Housing,EQR
+Real Estate & REITs,Housing,INVH
+Real Estate & REITs,Housing,MAA
+Real Estate & REITs,Housing,AMH
+Real Estate & REITs,Housing,SUI
+Real Estate & REITs,Housing,ELS
+Real Estate & REITs,Housing,UMH
+Real Estate & REITs,Tourism,VICI
+Real Estate & REITs,Tourism,HST
+Real Estate & REITs,Tourism,GLPI
+Real Estate & REITs,Tourism,PK
+Real Estate & REITs,Tourism,RHP
+Real Estate & REITs,Tourism,PEB
+Real Estate & REITs,Tourism,LVS
+Real Estate & REITs,Tourism,MAR
+Real Estate & REITs,Tourism,HLT
+Real Estate & REITs,Retail,REG
+Real Estate & REITs,Retail,KIM
+Real Estate & REITs,Retail,ADC
+Real Estate & REITs,Retail,FRT
+Real Estate & REITs,Retail,SKT
+Real Estate & REITs,Retail,BRX
+Real Estate & REITs,Retail,O
+Real Estate & REITs,Retail,PECO
+Real Estate & REITs,Retail,SPG
+Real Estate & REITs,Retail,NNN
+Real Estate & REITs,Retail,MAC
+Real Estate & REITs,Retail,EPRT
+Real Estate & REITs,Retail,KRG
+Real Estate & REITs,Retail,UE
+Real Estate & REITs,Retail,FCPT
+Real Estate & REITs,Office,ARE
+Real Estate & REITs,Office,BXP
+Real Estate & REITs,Office,SLG
+Real Estate & REITs,Office,KRC
+Real Estate & REITs,Office,CUZ
+Real Estate & REITs,Office,VNO
+Real Estate & REITs,Office,HIW
+Consumer Goods,Food,CELH
+Consumer Goods,Food,BYND
+Consumer Goods,Food,HAIN
+Consumer Goods,Food,VITL
+Consumer Goods,Food,UNFI
+Consumer Goods,Food,PEP
+Consumer Goods,Food,GIS
+Consumer Goods,Food,SFM
+Consumer Goods,Food,ADM
+Consumer Goods,Food,KO
+Consumer Goods,Food,MNST
+Consumer Goods,Food,MDLZ
+Consumer Goods,Apparel,NKE
+Consumer Goods,Apparel,LULU
+Consumer Goods,Apparel,DECK
+Consumer Goods,Apparel,LEVI
+Consumer Goods,Apparel,UAA
+Consumer Goods,Apparel,ETSY
+Consumer Goods,Apparel,ANF
+Consumer Goods,Apparel,AMZN
+Consumer Goods,Apparel,SFIX
+Consumer Goods,Apparel,SHOP
+Consumer Goods,Apparel,VFC
+Consumer Goods,Luxury,RACE
+Consumer Goods,Luxury,EL
+Consumer Goods,Luxury,RH
+Consumer Goods,Luxury,RL
+Consumer Goods,Luxury,CPRI
+Consumer Goods,Luxury,TPR
+Consumer Goods,Luxury,LUXE
+Consumer Goods,Luxury,REAL
+Consumer Goods,Luxury,VFC
+Consumer Goods,Luxury,SIG
+Consumer Goods,Farm-Direct,VITL
+Consumer Goods,Farm-Direct,FDP
+Consumer Goods,Farm-Direct,CVGW
+Consumer Goods,Farm-Direct,SFM
+Consumer Goods,Farm-Direct,AMZN
+Consumer Goods,Farm-Direct,UNFI
+Consumer Goods,Farm-Direct,WMT
+Consumer Goods,Farm-Direct,HAIN
+Consumer Goods,Household,ALRM
+Consumer Goods,Household,SONO
+Consumer Goods,Household,AMZN
+Consumer Goods,Household,REZI
+Consumer Goods,Household,SN
+Consumer Goods,Household,WHR
+Consumer Goods,Household,HON
+Consumer Goods,Household,HD
+Consumer Goods,Household,W
+Consumer Goods,Household,TSLA
+Consumer Goods,Secondhand,EBAY
+Consumer Goods,Secondhand,ABNB
+Consumer Goods,Secondhand,CVNA
+Consumer Goods,Secondhand,TDUP
+Consumer Goods,Secondhand,UBER
+Consumer Goods,Secondhand,REAL
+Consumer Goods,Secondhand,RENT
+Consumer Goods,Secondhand,CPRT
+Consumer Goods,Secondhand,ETSY
+Smart Home,Devices,AMZN
+Smart Home,Devices,GOOGL
+Smart Home,Devices,ARLO
+Smart Home,Devices,REZI
+Smart Home,Devices,SONO
+Smart Home,Devices,AAPL
+Smart Home,Devices,WHR
+Smart Home,Devices,ADT
+Smart Home,Devices,HON
+Smart Home,Automation,ALRM
+Smart Home,Automation,REZI
+Smart Home,Automation,GOOGL
+Smart Home,Automation,AMZN
+Smart Home,Automation,AAPL
+Smart Home,Automation,CARR
+Smart Home,Automation,ADT
+Smart Home,Automation,HON
+Smart Home,Automation,ALLE
+Smart Home,Automation,NRG
+Smart Home,Security,ADT
+Smart Home,Security,ALRM
+Smart Home,Security,ARLO
+Smart Home,Security,AMZN
+Smart Home,Security,REZI
+Smart Home,Security,ALLE
+Smart Home,Security,AAPL
+Smart Home,Security,JCI
+Smart Home,Energy,ENPH
+Smart Home,Energy,SEDG
+Smart Home,Energy,ITRI
+Smart Home,Energy,STEM
+Smart Home,Energy,ETN
+Smart Home,Energy,GNRC
+Smart Home,Energy,HON
+Smart Home,Energy,AEIS
+Smart Home,Networking,NTGR
+Smart Home,Networking,UI
+Smart Home,Networking,QCOM
+Smart Home,Networking,AVGO
+Smart Home,Networking,AMZN
+Smart Home,Networking,CMCSA
+Smart Home,Networking,CHTR
+Smart Home,Voice & AI,AMZN
+Smart Home,Voice & AI,GOOGL
+Smart Home,Voice & AI,AAPL
+Smart Home,Voice & AI,SOUN
+Smart Home,Voice & AI,MSFT
+Wearables,Smartwatches,AAPL
+Wearables,Smartwatches,GRMN
+Wearables,Smartwatches,GOOGL
+Wearables,Smartwatches,MASI
+Wearables,Medical,DXCM
+Wearables,Medical,ABT
+Wearables,Medical,IRTC
+Wearables,Medical,MASI
+Wearables,Medical,MDT
+Wearables,Medical,AAPL
+Wearables,Medical,GOOGL
+Wearables,Medical,GEHC
+Wearables,Immersive,QCOM
+Wearables,Immersive,SYNA
+Wearables,Immersive,ADI
+Wearables,Immersive,TXN
+Wearables,Immersive,STM
+Wearables,Immersive,AVGO
+Wearables,Immersive,NXPI
+Wearables,Immersive,ON
+Wearables,Immersive,MCHP
+Wearables,Software,AAPL
+Wearables,Software,GOOGL
+Wearables,Software,GRMN
+Wearables,Software,QCOM
+Wearables,Software,META
+Wearables,Sport,GRMN
+Wearables,Sport,AAPL
+Wearables,Sport,NKE
+Wearables,Sport,PTON
+Wearables,Sport,GOOGL
+Wearables,Sport,UAA
+Wearables,Sport,LULU
+Education Technology,Platforms,COUR
+Education Technology,Platforms,UDMY
+Education Technology,Platforms,DUOL
+Education Technology,Platforms,LRN
+Education Technology,Platforms,SKIL
+Education Technology,Platforms,CHGG
+Education Technology,Workforce,SKIL
+Education Technology,Workforce,UDMY
+Education Technology,Workforce,COUR
+Education Technology,Workforce,CVSA
+Education Technology,Workforce,UTI
+Education Technology,Workforce,DCBO
+Education Technology,Workforce,LINC
+Education Technology,Workforce,PRDO
+Education Technology,Workforce,LAUR
+Education Technology,Workforce,LRN
+Education Technology,Curriculum,PSO
+Education Technology,Curriculum,MH
+Education Technology,Curriculum,WLY
+Education Technology,Curriculum,LRN
+Education Technology,Curriculum,COUR
+Education Technology,Curriculum,BNED
+Education Technology,Curriculum,GHC
+Education Technology,Curriculum,UDMY
+Education Technology,Curriculum,DUOL
+Education Technology,Curriculum,TAL
+Education Technology,Curriculum,CVSA
+Education Technology,Infrastructure,ZM
+Education Technology,Infrastructure,MSFT
+Education Technology,Infrastructure,GOOGL
+Education Technology,Infrastructure,COUR
+Education Technology,Infrastructure,SKIL
+Education Technology,Infrastructure,ADBE
+Education Technology,Infrastructure,LRN
+Education Technology,Infrastructure,CHGG
+Energy Renewable,Solar,FSLR
+Energy Renewable,Solar,ENPH
+Energy Renewable,Solar,SEDG
+Energy Renewable,Solar,CSIQ
+Energy Renewable,Solar,RUN
+Energy Renewable,Solar,BEP
+Energy Renewable,Solar,JKS
+Energy Renewable,Solar,NEE
+Energy Renewable,Solar,NXT
+Energy Renewable,Solar,SPWR
+Energy Renewable,Solar,DQ
+Energy Renewable,Wind,NEE
+Energy Renewable,Wind,BEP
+Energy Renewable,Wind,CWEN
+Energy Renewable,Wind,ENLT
+Energy Renewable,Wind,XIFR
+Energy Renewable,Wind,AES
+Energy Renewable,Wind,CDLR
+Energy Renewable,Wind,GEV
+Energy Renewable,Wind,AMSC
+Energy Renewable,Wind,ACA
+Energy Renewable,Wind,D
+Energy Renewable,Wind,ENB
+Energy Renewable,Hydrogen,PLUG
+Energy Renewable,Hydrogen,BE
+Energy Renewable,Hydrogen,APD
+Energy Renewable,Hydrogen,FCEL
+Energy Renewable,Hydrogen,BLDP
+Energy Renewable,Hydrogen,LIN
+Energy Renewable,Hydrogen,GTLS
+Energy Renewable,Hydrogen,HTOO
+Energy Renewable,Hydrogen,CMI
+Energy Renewable,Geothermal,ORA
+Energy Renewable,Geothermal,CEG
+Energy Renewable,Geothermal,BRK-B
+Energy Renewable,Geothermal,SLB
+Energy Renewable,Utilities,CEG
+Energy Renewable,Utilities,NEE
+Energy Renewable,Utilities,EXC
+Energy Renewable,Utilities,DUK
+Energy Renewable,Utilities,SO
+Energy Renewable,Utilities,CWEN
+Energy Renewable,Utilities,XEL
+Energy Renewable,Utilities,PEG
+Energy Renewable,Utilities,VST
+Energy Renewable,Utilities,PPL
+Energy Renewable,Utilities,AEP
+Energy Renewable,Batteries,FLNC
+Energy Renewable,Batteries,STEM
+Energy Renewable,Batteries,TSLA
+Energy Renewable,Batteries,NRGV
+Energy Renewable,Batteries,EOSE
+Energy Renewable,Batteries,GWH
+Energy Renewable,Batteries,ENPH
+Energy Renewable,Batteries,GNRC
+Energy Renewable,Batteries,NEE
+Energy Renewable,Batteries,ENS
+Energy Renewable,Batteries,VST
+Energy Renewable,Smart Grid,PWR
+Energy Renewable,Smart Grid,ITRI
+Energy Renewable,Smart Grid,ETN
+Energy Renewable,Smart Grid,NEE
+Energy Renewable,Smart Grid,EXC
+Energy Renewable,Smart Grid,NGG
+Energy Renewable,Smart Grid,HUBB
+Energy Renewable,Smart Grid,GEV
+Energy Renewable,Smart Grid,MPWR
+Energy Renewable,Materials,ALB
+Energy Renewable,Materials,FCX
+Energy Renewable,Materials,SQM
+Energy Renewable,Materials,MP
+Energy Renewable,Materials,SCCO
+Energy Renewable,Materials,LAC
+Energy Renewable,Materials,BHP
+Energy Renewable,Materials,RIO
+Energy Renewable,Biofuels,CLNE
+Energy Renewable,Biofuels,DAR
+Energy Renewable,Biofuels,GEVO
+Energy Renewable,Biofuels,OPAL
+Energy Renewable,Biofuels,AMTX
+Energy Renewable,Biofuels,MNTK
+Energy Renewable,Biofuels,VLO
+Energy Renewable,Biofuels,CVX
+Energy Renewable,Biofuels,CLMT
+Energy Renewable,Biofuels,GPRE
+Energy Traditional,Oil Production,COP
+Energy Traditional,Oil Production,EOG
+Energy Traditional,Oil Production,DVN
+Energy Traditional,Oil Production,XOM
+Energy Traditional,Oil Production,CVX
+Energy Traditional,Oil Production,OXY
+Energy Traditional,Oil Production,FANG
+Energy Traditional,Oil Production,SHEL
+Energy Traditional,Oil Production,TTE
+Energy Traditional,Oil Production,APA
+Energy Traditional,Oil Refining,EPD
+Energy Traditional,Oil Refining,ENB
+Energy Traditional,Oil Refining,MPC
+Energy Traditional,Oil Refining,KMI
+Energy Traditional,Oil Refining,WMB
+Energy Traditional,Oil Refining,OKE
+Energy Traditional,Oil Refining,ET
+Energy Traditional,Oil Refining,PSX
+Energy Traditional,Oil Refining,PAA
+Energy Traditional,Oil Refining,VLO
+Energy Traditional,Oil Refining,DINO
+Energy Traditional,Oil Services,SLB
+Energy Traditional,Oil Services,HAL
+Energy Traditional,Oil Services,BKR
+Energy Traditional,Oil Services,FTI
+Energy Traditional,Oil Services,NOV
+Energy Traditional,Oil Services,OII
+Energy Traditional,Oil Services,PTEN
+Energy Traditional,Thermal,CNR
+Energy Traditional,Thermal,ARLP
+Energy Traditional,Thermal,BTU
+Energy Traditional,Thermal,HNRG
+Energy Traditional,Thermal,METC
+Energy Traditional,Thermal,AEP
+Energy Traditional,Thermal,DUK
+Energy Traditional,Thermal,DTE
+Energy Traditional,Thermal,NRG
+Energy Traditional,Thermal,HCC
+Energy Traditional,Thermal,AMR
+Energy Traditional,Nuclear,CEG
+Energy Traditional,Nuclear,BWXT
+Energy Traditional,Nuclear,SMR
+Energy Traditional,Nuclear,OKLO
+Energy Traditional,Nuclear,LEU
+Energy Traditional,Nuclear,CCJ
+Energy Traditional,Nuclear,VST
+Energy Traditional,Nuclear,UEC
+Energy Traditional,Nuclear,NEE
+Energy Traditional,Nuclear,GEV
+Energy Traditional,Majors,SHEL
+Energy Traditional,Majors,TTE
+Energy Traditional,Majors,XOM
+Energy Traditional,Majors,CVX
+Energy Traditional,Majors,BP
+Energy Traditional,Majors,EQNR
+Energy Traditional,Majors,E
+Energy Traditional,Utilities,SO
+Energy Traditional,Utilities,DUK
+Energy Traditional,Utilities,AEP
+Energy Traditional,Utilities,D
+Energy Traditional,Utilities,XEL
+Energy Traditional,Utilities,CEG
+Energy Traditional,Utilities,ETR
+Energy Traditional,Utilities,VST
+Energy Traditional,Utilities,SRE
+Commodities Energy,Oil,XOM
+Commodities Energy,Oil,CVX
+Commodities Energy,Oil,COP
+Commodities Energy,Oil,EOG
+Commodities Energy,Oil,OXY
+Commodities Energy,Oil,FANG
+Commodities Energy,Oil,BP
+Commodities Energy,Oil,SHEL
+Commodities Energy,Oil,DVN
+Commodities Energy,Oil,MPC
+Commodities Energy,Gas & LNG,LNG
+Commodities Energy,Gas & LNG,EQT
+Commodities Energy,Gas & LNG,EXE
+Commodities Energy,Gas & LNG,CQP
+Commodities Energy,Gas & LNG,AR
+Commodities Energy,Gas & LNG,KMI
+Commodities Energy,Gas & LNG,WMB
+Commodities Energy,Gas & LNG,CTRA
+Commodities Energy,Gas & LNG,ET
+Commodities Energy,Gas & LNG,NEXT
+Commodities Energy,Gas & LNG,OKE
+Commodities Energy,Gas & LNG,SRE
+Commodities Energy,Uranium,CCJ
+Commodities Energy,Uranium,UUUU
+Commodities Energy,Uranium,LEU
+Commodities Energy,Uranium,UEC
+Commodities Energy,Uranium,NXE
+Commodities Energy,Uranium,URG
+Commodities Energy,Uranium,DNN
+Commodities Energy,Uranium,BWXT
+Commodities Energy,Uranium,SMR
+Commodities Energy,Biofuels,DAR
+Commodities Energy,Biofuels,AMTX
+Commodities Energy,Biofuels,CLNE
+Commodities Energy,Biofuels,GEVO
+Commodities Energy,Biofuels,OPAL
+Commodities Energy,Biofuels,VLO
+Commodities Energy,Biofuels,CLMT
+Commodities Energy,Biofuels,MNTK
+Commodities Metals,Gold,NEM
+Commodities Metals,Gold,AEM
+Commodities Metals,Gold,WPM
+Commodities Metals,Gold,FNV
+Commodities Metals,Gold,RGLD
+Commodities Metals,Gold,B
+Commodities Metals,Gold,KGC
+Commodities Metals,Gold,GFI
+Commodities Metals,Gold,AU
+Commodities Metals,Gold,PAAS
+Commodities Metals,Gold,CDE
+Commodities Metals,Silver,AG
+Commodities Metals,Silver,EXK
+Commodities Metals,Silver,HL
+Commodities Metals,Silver,PAAS
+Commodities Metals,Silver,SVM
+Commodities Metals,Silver,DVS
+Commodities Metals,Silver,WPM
+Commodities Metals,Precious,NEM
+Commodities Metals,Precious,FNV
+Commodities Metals,Precious,WPM
+Commodities Metals,Precious,AEM
+Commodities Metals,Precious,RGLD
+Commodities Metals,Precious,SBSW
+Commodities Metals,Precious,B
+Commodities Metals,Precious,PAAS
+Commodities Metals,Precious,HL
+Commodities Metals,Precious,TFPM
+Commodities Metals,Precious,MTA
+Commodities Metals,Precious,BVN
+Commodities Metals,Industrial,FCX
+Commodities Metals,Industrial,SCCO
+Commodities Metals,Industrial,NUE
+Commodities Metals,Industrial,STLD
+Commodities Metals,Industrial,AA
+Commodities Metals,Industrial,CMC
+Commodities Metals,Industrial,BHP
+Commodities Metals,Industrial,RIO
+Commodities Metals,Industrial,ERO
+Commodities Metals,Industrial,CLF
+Commodities Metals,Industrial,VALE
+Commodities Metals,Industrial,CENX
+Commodities Metals,Battery,ALB
+Commodities Metals,Battery,SQM
+Commodities Metals,Battery,LAR
+Commodities Metals,Battery,LAC
+Commodities Metals,Battery,SGML
+Commodities Metals,Battery,NMG
+Commodities Metals,Battery,ATLX
+Commodities Metals,Battery,VALE
+Commodities Metals,Battery,TECK
+Commodities Metals,Battery,MP
+Commodities Metals,Battery,WWR
+Commodities Metals,Rare Earth,MP
+Commodities Metals,Rare Earth,IPX
+Commodities Metals,Rare Earth,NB
+Commodities Metals,Rare Earth,USAR
+Commodities Metals,Rare Earth,CTGO
+Commodities Metals,Rare Earth,UUUU
+Commodities Metals,Rare Earth,LXFR
+Commodities Metals,Rare Earth,AREC
+Commodities Metals,Recycling,NUE
+Commodities Metals,Recycling,STLD
+Commodities Metals,Recycling,CMC
+Commodities Metals,Recycling,ABAT
+Commodities Metals,Recycling,LKQ
+Commodities Agriculture,Grains,ADM
+Commodities Agriculture,Grains,BG
+Commodities Agriculture,Grains,AGRO
+Commodities Agriculture,Grains,ANDE
+Commodities Agriculture,Softs,CSAN
+Commodities Agriculture,Softs,DOLE
+Commodities Agriculture,Softs,FDP
+Commodities Agriculture,Softs,AGRO
+Commodities Agriculture,Softs,HSY
+Commodities Agriculture,Softs,SJM
+Commodities Agriculture,Livestock,TSN
+Commodities Agriculture,Livestock,JBS
+Commodities Agriculture,Livestock,PPC
+Commodities Agriculture,Livestock,HRL
+Commodities Agriculture,Livestock,CALM
+Commodities Agriculture,Fertilizers,CTVA
+Commodities Agriculture,Fertilizers,CF
+Commodities Agriculture,Fertilizers,MOS
+Commodities Agriculture,Fertilizers,NTR
+Commodities Agriculture,Fertilizers,FMC
+Commodities Agriculture,Biofuels,GPRE
+Commodities Agriculture,Biofuels,DAR
+Commodities Agriculture,Biofuels,REX
+Commodities Agriculture,Biofuels,AMTX
+Commodities Agriculture,Biofuels,GEVO
+Commodities Agriculture,Biofuels,FF
+Commodities Agriculture,Biofuels,ADM
+Commodities Agriculture,Biofuels,VLO
+Commodities Agriculture,Biofuels,ANDE
+Agriculture & FoodTech,Smart Farming,DE
+Agriculture & FoodTech,Smart Farming,TRMB
+Agriculture & FoodTech,Smart Farming,AGCO
+Agriculture & FoodTech,Smart Farming,CNH
+Agriculture & FoodTech,Smart Farming,LNN
+Agriculture & FoodTech,Smart Farming,UAVS
+Agriculture & FoodTech,Crop Inputs,CTVA
+Agriculture & FoodTech,Crop Inputs,MOS
+Agriculture & FoodTech,Crop Inputs,NTR
+Agriculture & FoodTech,Crop Inputs,CF
+Agriculture & FoodTech,Crop Inputs,FMC
+Agriculture & FoodTech,Crop Inputs,UAN
+Agriculture & FoodTech,Crop Inputs,BIOX
+Agriculture & FoodTech,Crop Inputs,CBUS
+Agriculture & FoodTech,Indoor Farming,LOCL
+Agriculture & FoodTech,Indoor Farming,HYFM
+Agriculture & FoodTech,Indoor Farming,VFF
+Agriculture & FoodTech,Indoor Farming,UGRO
+Agriculture & FoodTech,Alt Protein,BYND
+Agriculture & FoodTech,Alt Protein,OTLY
+Agriculture & FoodTech,Alt Protein,MLEC
+Agriculture & FoodTech,Alt Protein,STKH
+Agriculture & FoodTech,Alt Protein,INGR
+Agriculture & FoodTech,Alt Protein,DNA
+Agriculture & FoodTech,Alt Protein,ADM
+Agriculture & FoodTech,Alt Protein,LSF
+Agriculture & FoodTech,Processing,ADM
+Agriculture & FoodTech,Processing,BG
+Agriculture & FoodTech,Processing,SYY
+Agriculture & FoodTech,Processing,PFGC
+Agriculture & FoodTech,Processing,TSN
+Agriculture & FoodTech,Processing,USFD
+Agriculture & FoodTech,Processing,UNFI
+Agriculture & FoodTech,Processing,DAR
+Agriculture & FoodTech,Processing,ANDE
+Agriculture & FoodTech,Processing,PPC
+Environmental Sustainability,Water,XYL
+Environmental Sustainability,Water,AWK
+Environmental Sustainability,Water,PNR
+Environmental Sustainability,Water,WTRG
+Environmental Sustainability,Water,AWR
+Environmental Sustainability,Water,CWT
+Environmental Sustainability,Water,CWCO
+Environmental Sustainability,Water,MSEX
+Environmental Sustainability,Water,WTS
+Environmental Sustainability,Water,ECL
+Environmental Sustainability,Water,AOS
+Environmental Sustainability,Waste,WM
+Environmental Sustainability,Waste,RSG
+Environmental Sustainability,Waste,WCN
+Environmental Sustainability,Waste,GFL
+Environmental Sustainability,Waste,CLH
+Environmental Sustainability,Waste,CWST
+Environmental Sustainability,Waste,BALL
+Environmental Sustainability,Waste,SON
+Environmental Sustainability,Waste,LNZA
+Environmental Sustainability,Waste,MEG
+Environmental Sustainability,Air Quality,CECO
+Environmental Sustainability,Air Quality,DCI
+Environmental Sustainability,Air Quality,HON
+Environmental Sustainability,Air Quality,ECL
+Environmental Sustainability,Air Quality,CMI
+Environmental Sustainability,Air Quality,GTLS
+Environmental Sustainability,Air Quality,FTEK
+Environmental Sustainability,Air Quality,AME
+Environmental Sustainability,Air Quality,VLTO
+Environmental Sustainability,Air Quality,ERII
+Environmental Sustainability,Climate,LIN
+Environmental Sustainability,Climate,JCI
+Environmental Sustainability,Climate,OXY
+Environmental Sustainability,Climate,ORGN
+Environmental Sustainability,Climate,AES
+Environmental Sustainability,Climate,NEE
+Environmental Sustainability,Climate,BEPC
+Environmental Sustainability,Climate,FSLR
+Environmental Sustainability,Climate,HON
+Environmental Sustainability,Climate,RNW
+Environmental Sustainability,Climate,OC
+Environmental Sustainability,Climate,LNZA
+Environmental Sustainability,Climate,NPWR
+Environmental Sustainability,Agriculture,JCI
+Environmental Sustainability,Agriculture,LIN
+Environmental Sustainability,Agriculture,NEE
+Environmental Sustainability,Agriculture,FSLR
+Environmental Sustainability,Agriculture,ORGN
+Environmental Sustainability,Agriculture,BEPC
+Environmental Sustainability,Agriculture,OXY
+Environmental Sustainability,Agriculture,AES
+Environmental Sustainability,Agriculture,RNW
+Environmental Sustainability,Agriculture,HON
+Environmental Sustainability,Agriculture,OC
+Environmental Sustainability,Agriculture,NPWR
+Environmental Sustainability,Agriculture,LNZA
+Healthcare & Biotech,Next-Gen,MRNA
+Healthcare & Biotech,Next-Gen,BNTX
+Healthcare & Biotech,Next-Gen,CRSP
+Healthcare & Biotech,Next-Gen,NTLA
+Healthcare & Biotech,Next-Gen,BEAM
+Healthcare & Biotech,Next-Gen,VRTX
+Healthcare & Biotech,Next-Gen,ALNY
+Healthcare & Biotech,Next-Gen,REGN
+Healthcare & Biotech,Oncology,BMY
+Healthcare & Biotech,Oncology,MRK
+Healthcare & Biotech,Oncology,GH
+Healthcare & Biotech,Oncology,AZN
+Healthcare & Biotech,Oncology,ILMN
+Healthcare & Biotech,Oncology,BNTX
+Healthcare & Biotech,Oncology,GILD
+Healthcare & Biotech,Oncology,EXEL
+Healthcare & Biotech,Oncology,TNGX
+Healthcare & Biotech,Oncology,ABBV
+Healthcare & Biotech,Oncology,AMGN
+Healthcare & Biotech,Oncology,JNJ
+Healthcare & Biotech,Oncology,PFE
+Healthcare & Biotech,Metabolic,LLY
+Healthcare & Biotech,Metabolic,NVO
+Healthcare & Biotech,Metabolic,VKTX
+Healthcare & Biotech,Metabolic,GPCR
+Healthcare & Biotech,Metabolic,ALT
+Healthcare & Biotech,Metabolic,AMGN
+Healthcare & Biotech,Metabolic,PFE
+Healthcare & Biotech,Metabolic,MRK
+Healthcare & Biotech,Diagnostics,TMO
+Healthcare & Biotech,Diagnostics,ILMN
+Healthcare & Biotech,Diagnostics,GH
+Healthcare & Biotech,Diagnostics,DHR
+Healthcare & Biotech,Diagnostics,NTRA
+Healthcare & Biotech,Diagnostics,EXAS
+Healthcare & Biotech,Diagnostics,TXG
+Healthcare & Biotech,Diagnostics,PACB
+Healthcare & Biotech,Diagnostics,LH
+Healthcare & Biotech,Diagnostics,DGX
+Healthcare & Biotech,Diagnostics,BIO
+Healthcare & Biotech,Diagnostics,QDEL
+Healthcare & Biotech,Genomics,ILMN
+Healthcare & Biotech,Genomics,PACB
+Healthcare & Biotech,Genomics,CRSP
+Healthcare & Biotech,Genomics,NTLA
+Healthcare & Biotech,Genomics,GH
+Healthcare & Biotech,Genomics,TXG
+Healthcare & Biotech,Genomics,TEM
+Healthcare & Biotech,Genomics,TWST
+Healthcare & Biotech,Genomics,TMO
+Healthcare & Biotech,Genomics,VRTX
+Healthcare & Biotech,Genomics,SEER
+Healthcare & Biotech,Genomics,CDNA
+Healthcare & Biotech,Devices,MDT
+Healthcare & Biotech,Devices,ISRG
+Healthcare & Biotech,Devices,SYK
+Healthcare & Biotech,Devices,EW
+Healthcare & Biotech,Devices,BSX
+Healthcare & Biotech,Devices,ABT
+Healthcare & Biotech,Devices,DXCM
+Healthcare & Biotech,Devices,GEHC
+Healthcare & Biotech,Devices,TNDM
+Healthcare & Biotech,Devices,BDX
+Healthcare & Biotech,Devices,RMD
+Healthcare & Biotech,Telemedicine,TDOC
+Healthcare & Biotech,Telemedicine,DXCM
+Healthcare & Biotech,Telemedicine,HIMS
+Healthcare & Biotech,Telemedicine,ABT
+Healthcare & Biotech,Telemedicine,DOCS
+Healthcare & Biotech,Telemedicine,AMWL
+Healthcare & Biotech,Telemedicine,AMZN
+Healthcare & Biotech,Telemedicine,MDT
+Healthcare & Biotech,Telemedicine,AAPL
+Healthcare & Biotech,Telemedicine,PRVA
+Healthcare & Biotech,Telemedicine,LFST
+Healthcare & Biotech,Telemedicine,IRTC
+Healthcare & Biotech,Telemedicine,OSCR
+Healthcare & Biotech,IT & Data,IQV
+Healthcare & Biotech,IT & Data,UNH
+Healthcare & Biotech,IT & Data,VEEV
+Healthcare & Biotech,IT & Data,ORCL
+Healthcare & Biotech,IT & Data,HCAT
+Healthcare & Biotech,IT & Data,HQY
+Healthcare & Biotech,IT & Data,PHR
+Healthcare & Biotech,IT & Data,DOCS
+Healthcare & Biotech,IT & Data,EVH
+Healthcare & Biotech,IT & Data,WAY
+Healthcare & Biotech,IT & Data,OMCL
+Healthcare & Biotech,IT & Data,GDRX
+Healthcare & Biotech,Therapeutics,DFTX
+Healthcare & Biotech,Therapeutics,ATAI
+Healthcare & Biotech,Therapeutics,MESO
+Healthcare & Biotech,Therapeutics,FATE
+Healthcare & Biotech,Therapeutics,CMPS
+Healthcare & Biotech,Therapeutics,SANA
+Healthcare & Biotech,Therapeutics,HELP
+Healthcare & Biotech,Therapeutics,CGC
+Healthcare & Biotech,Therapeutics,TLRY
+Healthcare & Biotech,Therapeutics,CRSP
+Healthcare & Biotech,Therapeutics,GHRS
+Healthcare & Biotech,Therapeutics,JAZZ
+Healthcare & Biotech,Therapeutics,CRON
+Healthcare & Biotech,Therapeutics,GILD
+Aging Population & Longevity,Healthcare,MDT
+Aging Population & Longevity,Healthcare,ABT
+Aging Population & Longevity,Healthcare,ZBH
+Aging Population & Longevity,Healthcare,SYK
+Aging Population & Longevity,Healthcare,GEHC
+Aging Population & Longevity,Healthcare,BSX
+Aging Population & Longevity,Healthcare,DXCM
+Aging Population & Longevity,Healthcare,BAX
+Aging Population & Longevity,Aging Pharma,LLY
+Aging Population & Longevity,Aging Pharma,NVO
+Aging Population & Longevity,Aging Pharma,BIIB
+Aging Population & Longevity,Aging Pharma,PFE
+Aging Population & Longevity,Aging Pharma,JNJ
+Aging Population & Longevity,Aging Pharma,MRK
+Aging Population & Longevity,Aging Pharma,GERN
+Aging Population & Longevity,Aging Pharma,BMY
+Aging Population & Longevity,Aging Pharma,CRSP
+Aging Population & Longevity,Senior Living,WELL
+Aging Population & Longevity,Senior Living,VTR
+Aging Population & Longevity,Senior Living,OHI
+Aging Population & Longevity,Senior Living,NHI
+Aging Population & Longevity,Senior Living,ENSG
+Aging Population & Longevity,Senior Living,BKD
+Aging Population & Longevity,Senior Living,SBRA
+Aging Population & Longevity,Senior Living,EHC
+Aging Population & Longevity,Healthy Aging,ABT
+Aging Population & Longevity,Healthy Aging,HIMS
+Aging Population & Longevity,Healthy Aging,CELH
+Aging Population & Longevity,Healthy Aging,DXCM
+Aging Population & Longevity,Healthy Aging,NUS
+Aging Population & Longevity,Healthy Aging,SFM
+Aging Population & Longevity,Healthy Aging,BODI
+Aging Population & Longevity,Healthy Aging,CHD
+Healthy Food & Nutrition,Alt Protein,BYND
+Healthy Food & Nutrition,Alt Protein,OTLY
+Healthy Food & Nutrition,Alt Protein,STKL
+Healthy Food & Nutrition,Alt Protein,INGR
+Healthy Food & Nutrition,Alt Protein,ADM
+Healthy Food & Nutrition,Alt Protein,GIS
+Healthy Food & Nutrition,Alt Protein,BG
+Healthy Food & Nutrition,Alt Protein,SFM
+Healthy Food & Nutrition,Alt Protein,KHC
+Healthy Food & Nutrition,Alt Protein,KR
+Healthy Food & Nutrition,Retailers,SFM
+Healthy Food & Nutrition,Retailers,NGVC
+Healthy Food & Nutrition,Retailers,AMZN
+Healthy Food & Nutrition,Retailers,KR
+Healthy Food & Nutrition,Retailers,COST
+Healthy Food & Nutrition,Retailers,UNFI
+Healthy Food & Nutrition,Retailers,ACI
+Healthy Food & Nutrition,Retailers,WMT
+Healthy Food & Nutrition,Supplements,HLF
+Healthy Food & Nutrition,Supplements,SMPL
+Healthy Food & Nutrition,Supplements,BRBR
+Healthy Food & Nutrition,Supplements,HLN
+Healthy Food & Nutrition,Supplements,CELH
+Healthy Food & Nutrition,Supplements,NATR
+Healthy Food & Nutrition,Supplements,NUS
+Healthy Food & Nutrition,Supplements,CHD
+Healthy Food & Nutrition,Meal Delivery,DASH
+Healthy Food & Nutrition,Meal Delivery,UBER
+Healthy Food & Nutrition,Meal Delivery,AMZN
+Healthy Food & Nutrition,Meal Delivery,WMT
+Healthy Food & Nutrition,Meal Delivery,KR
+Healthy Food & Nutrition,Meal Delivery,SFM
+FinTech,Payments,V
+FinTech,Payments,MA
+FinTech,Payments,PYPL
+FinTech,Payments,XYZ
+FinTech,Payments,TOST
+FinTech,Payments,FISV
+FinTech,Payments,GPN
+FinTech,Payments,FOUR
+FinTech,Payments,AXP
+FinTech,Payments,AFRM
+FinTech,Payments,ACIW
+FinTech,Payments,DLO
+FinTech,Neobanks,SOFI
+FinTech,Neobanks,NU
+FinTech,Neobanks,XYZ
+FinTech,Neobanks,ALLY
+FinTech,Neobanks,DAVE
+FinTech,Neobanks,MQ
+FinTech,Lending,UPST
+FinTech,Lending,AFRM
+FinTech,Lending,LC
+FinTech,Lending,XYZ
+FinTech,Lending,PYPL
+FinTech,Lending,SOFI
+FinTech,Trading,HOOD
+FinTech,Trading,IBKR
+FinTech,Trading,ETOR
+FinTech,Trading,SCHW
+FinTech,Trading,SOFI
+FinTech,Trading,ORLY
+FinTech,Trading,VIRT
+FinTech,Blockchain,COIN
+FinTech,Blockchain,RIOT
+FinTech,Blockchain,MARA
+FinTech,Blockchain,CLSK
+FinTech,Blockchain,XYZ
+FinTech,Blockchain,MSTR
+FinTech,Blockchain,NVDA
+FinTech,Exchanges,CME
+FinTech,Exchanges,ICE
+FinTech,Exchanges,NDAQ
+FinTech,Exchanges,CBOE
+FinTech,Exchanges,MKTX
+FinTech,Exchanges,TW
+FinTech,Exchanges,COIN
+FinTech,Insurance,LMND
+FinTech,Insurance,ROOT
+FinTech,Insurance,HIPO
+FinTech,Insurance,TRUP
+FinTech,Insurance,OSCR
+FinTech,Insurance,GWRE
+FinTech,Insurance,SLQT
+FinTech,Insurance,EVER
+Crypto & Blockchain,Platforms,COIN
+Crypto & Blockchain,Platforms,HOOD
+Crypto & Blockchain,Platforms,XYZ
+Crypto & Blockchain,Platforms,BKKT
+Crypto & Blockchain,Platforms,PYPL
+Crypto & Blockchain,Infrastructure,XYZ
+Crypto & Blockchain,Infrastructure,IBM
+Crypto & Blockchain,Infrastructure,AMZN
+Crypto & Blockchain,Infrastructure,COIN
+Crypto & Blockchain,Payments,XYZ
+Crypto & Blockchain,Payments,JPM
+Crypto & Blockchain,Payments,PYPL
+Crypto & Blockchain,Payments,V
+Crypto & Blockchain,Payments,MA
+Crypto & Blockchain,Payments,COIN
+Crypto & Blockchain,Enterprise,IBM
+Crypto & Blockchain,Enterprise,ORCL
+Crypto & Blockchain,Enterprise,ACN
+Crypto & Blockchain,Enterprise,MSFT
+Crypto & Blockchain,Enterprise,AMZN
+Crypto & Blockchain,Enterprise,WMT
+Crypto & Blockchain,Enterprise,CRM
+Crypto & Blockchain,Tokenization,BLK
+Crypto & Blockchain,Tokenization,COIN
+Crypto & Blockchain,Tokenization,XYZ
+Crypto & Blockchain,Tokenization,WT
+Crypto & Blockchain,Tokenization,NDAQ
+Crypto & Blockchain,Tokenization,IBM
+Crypto & Blockchain,Tokenization,TROW
+Crypto & Blockchain,Tokenization,MSFT
+Crypto & Blockchain,Mining,MARA
+Crypto & Blockchain,Mining,RIOT
+Crypto & Blockchain,Mining,CLSK
+Crypto & Blockchain,Mining,CORZ
+Crypto & Blockchain,Mining,IREN
+Crypto & Blockchain,Mining,CIFR
+Crypto & Blockchain,Mining,HUT
+Crypto & Blockchain,Mining,BTDR
+Crypto & Blockchain,Mining,COIN

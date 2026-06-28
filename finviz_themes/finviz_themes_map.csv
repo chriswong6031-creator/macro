@@ -1,0 +1,269 @@
+theme,subsector_key,subsector,description,num_members,members
+Artificial Intelligence,aicompute,Compute,Compute & Acceleration,16,NVDA SMCI AMD TSM AVGO ARM ASML MU ANET AMAT LRCX KLAC MRVL INTC GOOGL MSFT
+Artificial Intelligence,aicloud,Cloud,Cloud & Infrastructure,11,MSFT AMZN GOOGL ORCL SMCI EQIX DLR IBM HPE DELL VRT
+Artificial Intelligence,aimodels,Models,Foundation Models & Platforms,9,MSFT GOOGL META NVDA AMZN IBM AI PLTR BIDU
+Artificial Intelligence,aidata,Data,Data Infrastructure & Enablement,13,SNOW MSFT PLTR AMZN GOOGL MDB AI NVDA CRM INOD SAP NOW DDOG
+Artificial Intelligence,aienterprise,Enterprise,Enterprise Productivity & Software Integration,10,MSFT GOOGL ADBE CRM NOW WDAY SAP PATH ORCL INTU
+Artificial Intelligence,ainetworking,Networking,Networking & Systems Optimization,10,NVDA ANET AVGO SMCI MRVL NET CSCO HPE IBM MSFT
+Artificial Intelligence,aisecurity,Security,Cybersecurity,9,PANW CRWD ZS S FTNT MSFT CHKP CSCO OKTA
+Artificial Intelligence,aiedge,Edge,Edge & Embedded Systems,11,QCOM ARM AMBA NXPI SYNA AAPL CEVA LSCC INTC NVDA AMD
+Artificial Intelligence,airobotics,Robotics,Robotics & Automation,12,CGNX ROK TER NVDA ISRG ZBRA HON SYM PATH AMBA AVAV TSLA
+Artificial Intelligence,aiapplications,Applications,"Apps, Domain-Specific AI",9,PLTR AI BBAI RXRX UPST CRNC SOUN CGNX TSLA
+Artificial Intelligence,aiadssearch,Ads & Search,"Ads, Search & Recommendations",12,GOOGL META AMZN TTD MSFT APP PINS SNAP BIDU DV MGNI PUBM
+Artificial Intelligence,aienergy,Energy,Power & Energy Solutions,13,AMZN MSFT GOOGL D ORCL TLN IBM TSLA PWR BABA AES SMR OKLO
+Artificial Intelligence,aiagi,AGI,"AGI, general intelligence",7,MSFT GOOGL META NVDA AMZN AMD IBM
+Cloud Computing,cloudhyperscalers,Hyperscalers,Hyperscalers,6,AMZN MSFT GOOGL ORCL IBM BABA
+Cloud Computing,clouddatacenters,Data Centers,Data Centers,4,EQIX DLR IRM DBRG
+Cloud Computing,clouddatabases,Databases,Data Platforms & Databases,9,SNOW MDB CFLT ORCL MSFT AMZN GOOGL ESTC IBM
+Cloud Computing,clouddevops,DevOps,"DevOps, Observability",12,DDOG GTLB DT CSCO MSFT AMZN ESTC PD GOOGL FROG IBM ORCL
+Cloud Computing,cloudsecurity,Security,Security,10,PANW CRWD ZS FTNT OKTA MSFT NET S AMZN GOOGL
+Cloud Computing,cloudhybridcloud,Hybrid Cloud,Hybrid Cloud,8,IBM MSFT HPE DELL AMZN GOOGL ORCL AVGO
+Cloud Computing,cloudmulticloud,Multi Cloud,Multi-Cloud Management,10,NTNX ZS RXT MSFT IBM NET FFIV NOW DDOG ORCL
+Cloud Computing,cloudserverless,Serverless,Serverless Computing,7,AMZN MSFT GOOGL NET FSLY BABA IBM
+Cloud Computing,cloudpaas,PaaS,"Platforms & Services, PaaS",9,MSFT GOOGL AMZN DOCN TWLO ORCL CRM IBM TEAM
+Cloud Computing,cloudhardware,Hardware,"Hardware, Networking & OEM",11,SMCI NVDA DELL HPE ANET CSCO AMD INTC AVGO MRVL VRT
+Cloud Computing,cloudedge,Edge,"Edge, CDN, Zero-Trust Networking",9,NET AKAM FSLY ZS PANW FTNT MSFT GOOGL AMZN
+Cloud Computing,cloudhsaas,H-SaaS,Horizontal SaaS & Cloud Applications,15,CRM TEAM MSFT NOW ZM GOOGL HUBS ADBE INTU SHOP DOCU DBX MNDY ASAN WDAY
+Semiconductors,semiscompute,Compute,"Logic & CPUs, GPUs, Accelerators",8,NVDA AMD INTC ARM MRVL QCOM AVGO TSM
+Semiconductors,semismemory,Memory,Memory & Storage,4,MU WDC STX RMBS
+Semiconductors,semisanalog,Analog,"Analog, Mixed-Signal & Power Management",7,TXN ADI ON MPWR NXPI MCHP STM
+Semiconductors,semiswireless,Wireless,Wireless & Connectivity,6,QCOM SWKS QRVO AVGO MRVL NXPI
+Semiconductors,semisfoundries,Foundries,Foundries & Manufacturing,4,TSM GFS UMC INTC
+Semiconductors,semisdesigntools,Design Tools,EDA Tools & Design Software,6,SNPS CDNS RMBS PDFS ARM KEYS
+Semiconductors,semislithography,Lithography,"Equipment, Lithography & Deposition",5,ASML AMAT LRCX KLAC ACLS
+Semiconductors,semispackaging,Packaging,"Testing, Packaging & Assembly",6,TER AMKR COHU FORM ASX CAMT
+Semiconductors,semisnextgen,Next-Gen,Emerging Technologies,14,WOLF LSCC NVTS STM ON POWI IONQ MRVL NVEC MRAM SIMO NVDA AMD INTC
+Cybersecurity,cybersecurityzerotrust,ZeroTrust,Zero Trust,8,ZS NET OKTA PANW CRWD MSFT FTNT CSCO
+Cybersecurity,cybersecurityendpoint,Endpoint,Endpoint Security,6,CRWD S PANW MSFT FTNT CHKP
+Cybersecurity,cybersecuritynetwork,Network,Network Security,4,PANW FTNT CHKP CSCO
+Cybersecurity,cybersecuritycloud,Cloud,Cloud Security,11,PANW ZS CRWD S NET MSFT GOOGL CHKP AMZN QLYS TENB
+Cybersecurity,cybersecurityidentityiam,Identity IAM,Identity & Access Management,6,OKTA MSFT SAIL PANW CSCO AVGO
+Cybersecurity,cybersecuritythreatops,ThreatOps,Threat Intelligence,6,CRWD RPD FTNT PANW ESTC NET
+Cybersecurity,cybersecuritysiem,SIEM,Security Information & Event Management,7,IBM PANW MSFT CSCO CRWD FTNT RPD
+Cybersecurity,cybersecurityappsecurity,App Security,Application Security,8,FFIV NET PANW RPD FTNT CRWD QLYS ZS
+Software,softwareos,OS,Operating Systems,3,MSFT AAPL GOOGL
+Software,softwareenterprise,Enterprise,Enterprise Resource Planning & Management,7,SAP ORCL WDAY MSFT CRM INTU ROP
+Software,softwarecrm,CRM,Customer Relationship Management & Marketing,10,CRM HUBS ADBE BRZE MSFT INTU FRSH ORCL TWLO SAP
+Software,softwarecollaboration,Collaboration,Collaboration & Communications,9,ZM MSFT TEAM RNG GOOGL CSCO CRM DOCU TWLO
+Software,softwaregaming,Gaming,Gaming & Platforms,7,EA TTWO RBLX U MSFT SONY NTES
+Software,softwareecommerce,E-Commerce,E-Commerce & Digital Platforms,11,SHOP XYZ MELI AMZN ETSY CPNG EBAY BABA PDD JD WMT
+Software,softwaredesign,Design,"Design, Creativity & Engineering",9,ADBE ADSK PTC FIG BSY U CDNS SNPS TRMB
+Software,softwaresecurity,Security,Cybersecurity,14,PANW CRWD ZS OKTA S FTNT MSFT CHKP NET TENB QLYS CSCO AVGO IBM
+Software,softwaredevops,DevOps,"DevOps, Management & Observability",12,DDOG DT GTLB TEAM NOW FROG PD ESTC MSFT GOOGL AMZN CSCO
+Software,softwaredataanalytics,Data Analytics,Data & Analytics,14,SNOW MSFT PLTR GOOGL MDB ORCL AMZN MSTR ESTC TDC DOMO CSCO IBM CRM
+Software,softwarehsaas,H-SaaS,Horizontal SaaS Platforms,14,MSFT CRM GOOGL NOW ADBE WDAY TEAM ZM HUBS DOCU SAP INTU ORCL SHOP
+Software,softwarevsaas,V-SaaS,Vertical SaaS Platforms,10,VEEV BLKB TYL GWRE TOST DOCS PCOR APPF COUR PTC
+Hardware,hardwarepcsdevices,PCs & Devices,Personal Computing & Devices,10,AAPL HPQ DELL LOGI INTC AMD QCOM MSFT NVDA STX
+Hardware,hardwareservers,Servers,"Servers, OEMs & Enterprise Systems",7,DELL HPE SMCI IBM CSCO NTAP ANET
+Hardware,hardwarenetworking,Networking,Networking Equipment,7,CSCO ANET HPE EXTR UI MRVL AVGO
+Hardware,hardwarestorage,Storage,Storage,7,NTAP PSTG WDC STX DELL HPE SMCI
+Hardware,hardwaredatacenters,Data Centers,Data Center Infrastructure,6,VRT ETN MOD NVT SMCI DELL
+Hardware,hardwareelectronics,Electronics,"Consumer Electronics, Gaming PCs & Consoles",7,SONY LOGI AAPL MSFT GRMN HPQ DELL
+Hardware,hardwaregaming,Gaming,Gaming & Immersive Pheriperals,8,META SONY AAPL IMMR CRSR LOGI TBCH HPQ
+Hardware,hardwareprinting,Printing,Printing & Imaging,6,HPQ DDD SSYS XRX MTLS NNDM
+Hardware,hardwaretelecom,Telecom,Communications & Telecom,11,ANET NOK ERIC CIEN CSCO LITE APH ADTN VIAV MSI HPE
+Hardware,hardwareindustrialiot,Industrial IoT,Industrial & IoT,11,ZBRA HON ROK IOT EMR TRMB ADI TEL PI TXN AME
+Hardware,hardwarenextgen,Next-Gen,Next-Gen & Specialty,15,NVDA IONQ ISRG QBTS RGTI AVAV KTOS MBLY AMD DDD SSYS TSLA TSM AAPL ASML
+Quantum Computing,quantumhardware,Hardware,Hardware Platforms,7,IONQ RGTI IBM GOOGL QBTS QUBT HON
+Quantum Computing,quantumcloud,Cloud,Cloud Ecosystems,8,AMZN MSFT IBM IONQ QBTS GOOGL RGTI NVDA
+Quantum Computing,quantumsoftware,Software,Software & Tools,7,MSFT IBM NVDA GOOGL QBTS IONQ QUBT
+Quantum Computing,quantumenablingtech,Enabling Tech,Enabling Technologies,6,KEYS NVDA AMD INTC HON RGTI
+Quantum Computing,quantumnetworking,Networking,Networking & Security,7,ARQQ LAES IBM MSFT NET AMZN HON
+Quantum Computing,quantumapplications,Applications,Applications,8,IBM MSFT AMZN QBTS GOOGL IONQ NVDA HON
+Virtual & Augmented Reality,varealityhardware,Hardware,Headsets & Hardware,11,META AAPL VUZI QCOM KOPN MSFT LITE COHR NVDA AMD HPQ
+Virtual & Augmented Reality,varealitysoftware,Software,Software Platforms & Operating Systems,7,AAPL META MSFT U GOOGL SNAP SONY
+Virtual & Augmented Reality,varealityapplications,Applications,Content & Applications,11,RBLX U META MSFT SNAP TTWO EA AAPL AXON ADBE ADSK
+Virtual & Augmented Reality,varealityinfrastructure,Infrastructure,Infrastructure & Cloud Rendering,7,AMZN MSFT NVDA GOOGL U QCOM FSLY
+Virtual & Augmented Reality,varealityenterprise,Enterprise,Enterprise & Industrial Solutions,8,PTC MSFT U GGRP TRMB NVDA ADSK AXON
+Biometrics,biometricshardware,Hardware,Biometric Sensors & Hardware,8,AAPL QCOM BKYI SYNA GRMN EVLV CGNX AWRE
+Biometrics,biometricssoftware,Software,Recognition & Analytics,10,MITK AUID AWRE MSFT GOOGL IDN NVDA PLTR META BBAI
+Biometrics,biometricsidentity,Identity,Identity Verification & Security,9,AWRE YOU MITK BKYI AUID OKTA MSFT AAPL IDN
+Biometrics,biometricsgovdefense,Gov & Defense,"Government, Defense & Public Security",12,LDOS AWRE MITK IDN BKYI AUID LHX SPCB NOC ACN PSN LMT
+Big Data,bigdatainfrastructure,Infrastructure,Infrastructure & Storage,16,SNOW MSFT AMZN GOOGL MDB ORCL PSTG NVDA STX WDC SMCI NTAP DELL HPE EQIX DLR
+Big Data,bigdataanalyticsbi,Analytics & BI,Analytics & Business Intelligence,11,MSFT CRM DOMO MSTR PLTR TDC SAP CSCO ORCL ESTC DDOG
+Big Data,bigdataproviders,Providers,"Data Generation, Sourcing & Providers",12,SPGI RELX TRI MCO MSCI VRSK EFX IQV TRU ICE FDS CSGP
+Big Data,bigdataaiplatforms,AI Platforms,AI Platforms & Predictive Analytics,11,MSFT PLTR AMZN GOOGL AI CRM NVDA SAP NICE NOW AMD
+Electric Vehicles,evsmanufacturers,Manufacturers,Manufacturers,9,TSLA RIVN NIO LCID XPEV LI PSNY GM F
+Electric Vehicles,evsbatteries,Batteries,Batteries & Materials,11,ALB SQM LAC QS SLDP MP MVST SES ENVX TE ABAT
+Electric Vehicles,evscharging,Charging,Charging & Infrastructure,8,CHPT TSLA EVGO BLNK ETN WBX BEEM NEE
+Electric Vehicles,evschips,Chips,Auto Semiconductors & Power Electronics,8,WOLF ON NVTS STM NXPI NVDA TXN QCOM
+Electric Vehicles,evssuppliers,Suppliers,Key Suppliers & Autonomy Tech,12,MBLY BWA APTV MGA INVZ DAN NVDA LEA THRM QCOM NXPI AMBA
+Electric Vehicles,evsselfdriving,Self-Driving,Autonomous Driving,9,MBLY NVDA TSLA QCOM AUR INVZ GOOGL HSAI APTV
+Electric Vehicles,evsfleets,Fleets,Fleet Management & Telematics,8,IOT NVVE AIOT UBER TRMB LYFT BEEM VZ
+Industrial Automation,automationrobotics,Robotics,Industrial Robotics & Autonomous Systems,6,SYM NVDA ROK NOVT ZBRA TER
+Industrial Automation,automationautomation,Automation,Factory & Process Automation Systems,6,ROK EMR HON ETN NOVT RRX
+Industrial Automation,automationmachinevision,Machine Vision,Industrial Sensors & Machine Vision,10,CGNX TDY ON NOVT ZBRA TXN ST AMBA OUST AME
+Industrial Automation,automationsoftware,Software,Industrial Software & Digital Twin,7,PTC ADSK NVDA BSY MSFT SNPS CDNS
+Industrial Automation,automationiot,IoT,"Industrial IoT, Connectivity",11,IOT CSCO MSFT HON DGII PTC ZBRA PANW ROK FTNT EMR
+Industrial Automation,automationlogistics,Logistics,Smart Logistics & Warehouse Automation,11,SYM AMZN MANH FDX UPS ZBRA HON CGNX GXO ROK ORCL
+Industrial Automation,automationdprinting,3D Printing,"Additive Manufacturing, 3D Printing",8,DDD SSYS PRLB MTLS NNDM XMTR GE CRS
+Defense & Aerospace,defensedrones,Drones,Drones & Anti-Drone Systems,10,AVAV KTOS RTX RCAT LHX LMT TXT NOC ONDS BA
+Defense & Aerospace,defensemissiles,Missiles,Missile Defense & Long-Range Weapons,7,RTX LMT NOC LHX BWXT GD BA
+Defense & Aerospace,defensespacetech,SpaceTech,Space Technology & Satellite Services,11,RKLB LMT IRDM NOC VSAT PL RTX LHX SPIR AMZN BKSY
+Defense & Aerospace,defensecyberdefense,CyberDefense,Cyber Defense & Electronic Warfare,11,RTX LHX LDOS NOC CACI LMT BAH MRCY PLTR PSN GD
+Defense & Aerospace,defenseweapons,Weapons,Precision Weapons & Ammunition Resupply,8,LMT RTX OLN GD NOC LHX AVAV BA
+Defense & Aerospace,defenseaviation,Aviation,Next-Generation Aircraft & Maintenance,8,LMT NOC RTX GE BA HEI TDG TXT
+Defense & Aerospace,defensemanufacturing,Manufacturing,Secure Defense Supply Chains,14,MP HWM ATI BWXT HXL CRS RTX GE TDG NOC HEI CW GD LMT
+Transportation & Logistics,transportationrail,Rail,Freight Rail & Infrastructure,6,UNP CSX NSC CNI CP WAB
+Transportation & Logistics,transportationtrucking,Trucking,"Trucking, LTL & Ground Freight",12,ODFL SAIA XPO ARCB KNX JBHT WERN TFII SNDR FDX UPS LSTR
+Transportation & Logistics,transportationaircargo,Air Cargo,Air Freight & Express Delivery,4,FDX UPS FWRD UAL
+Transportation & Logistics,transportationmaritime,Maritime,Marine Shipping & Ports,7,ZIM MATX GNK SBLK DAC GSL KEX
+Transportation & Logistics,transportationwarehousing,Warehousing,"Logistics, Warehousing & Supply Chain Solutions",9,GXO CHRW EXPD MANH HUBG R COLD UPS FWRD
+Transportation & Logistics,transportationairtravel,Air Travel,Air Travel & Passenger Transportation,8,DAL UAL AAL LUV ALK ALGT JOBY ACHR
+Transportation & Logistics,transportationinfrastructure,Infrastructure,Infrastructure & Equipment,16,CMI PCAR TRMB CAT CSX UNP MANH OSK GE DE APTV WNC CLNE TXT UPS FDX
+Transportation & Logistics,transportationnextgen,Next-Gen,Urban Mobility & Emerging Transport Tech,13,UBER TSLA RIVN MBLY AUR LYFT SERV NVDA LI GOOGL JOBY LCID GM
+Space Tech,spacelaunch,Launch,Logistics & Launch Services,9,RKLB FLY LUNR MNTS LMT NOC BA SPCE VSAT
+Space Tech,spacesatellites,Satellites,Satellite Networks & Connectivity,6,IRDM GSAT VSAT TSAT ASTS SATS
+Space Tech,spacedataanalytics,Data Analytics,Data Analytics & Earth Observation,6,PL BKSY SPIR RDW RKLB LDOS
+Space Tech,spacedefense,Defense,Defense & Cybersecurity,7,NOC LMT LHX RTX KTOS GD RKLB
+Space Tech,spaceinfrastructure,Infrastructure,Infrastructure & Exploration,5,LUNR RDW RKLB SPCE BA
+Robotics,roboticsautomation,Automation,Industrial Automation,8,ROK SYM CGNX EMR ZBRA HON TER NVDA
+Robotics,roboticslogistics,Logistics,Logistics & Warehouse Robotics,7,SYM AMZN ZBRA CGNX HON TER ROK
+Robotics,roboticsavmobility,AV & Mobility,Autonomous Vehicles & Mobility,7,NVDA MBLY GOOGL TSLA AUR QCOM APTV
+Robotics,roboticsmachinevision,Machine Vision,Sensors & Vision Systems,11,NVDA CGNX AMBA OUST ON QCOM INVZ LITE ZBRA TDY LSCC
+Robotics,roboticsmedical,Medical,Medical & Surgical Robotics,8,ISRG SYK MDT PRCT ZBH GMED JNJ ARAY
+Robotics,roboticsconsumer,Consumer,Service & Consumer Robotics,7,SERV AMZN TSLA YYGH ZBRA PATH AAPL
+Telecommunications,telecomwireless,Wireless,Wireless Networks & Carriers,5,VZ TMUS T CMCSA CHTR
+Telecommunications,telecominfrastructure,Infrastructure,Infrastructure & Equipment,8,AMT CCI SBAC GLW CIEN CSCO VISN MSI
+Telecommunications,telecomcloudedge,Cloud & Edge,Cloud & Edge Connectivity,10,AMZN MSFT GOOGL AKAM NET FSLY EQIX VZ T ANET
+Telecommunications,telecomg,5G,5G Technology & Semiconductors,7,QCOM SWKS AVGO MRVL QRVO ADI INTC
+Telecommunications,telecomsatcom,Satcom,Satellite & Space Communication,7,IRDM GSAT VSAT TSAT ASTS SATS AMZN
+Telecommunications,telecomenterprise,Enterprise,Enterprise & Unified Communications,8,MSFT ZM RNG CSCO TWLO EGHT CXDO VZ
+Nanotechnology,nanotechmaterials,Materials,Nanomaterials & Manufacturing,6,MMM DD PPG HON NNDM NVEC
+Nanotechnology,nanotechmedicine,Medicine,Nanomedicine & Drug Delivery,12,MRNA ARCT LQDA NBTX CLNN PFE JNJ BMY TMO ABT MRK REGN
+Nanotechnology,nanotechelectronics,Electronics,Nanoelectronics & Semiconductors,9,TSM ASML AMAT LRCX INTC KLAC NVDA AMD ATOM
+Nanotechnology,nanotechenergy,Energy,Energy & Environment,11,QS FSLR SLDP DD ASPN TSLA PLUG AMAT ENPH XYL ECL
+Nanotechnology,nanotechproducts,Products,Consumer & Industrial Products,7,EL MMM DD PG SEE CL NKE
+Nanotechnology,nanotechresearchtools,Research Tools,Research Tools & Advanced Instruments,9,TMO KLAC BRKR AMAT ONTO DHR A KEYS VECO
+Internet of Things,iotedgedevices,Edge Devices,Connected Devices & Sensors,12,TXN ADI NXPI QCOM MCHP GRMN PI HON INTC LSCC SMTC CSCO
+Internet of Things,iotnetworking,Networking,Connectivity & Networks,9,VZ IRDM T TMUS GSAT VSAT QCOM CSCO SMTC
+Internet of Things,iothardware,Hardware,Edge Computing & Hardware Infrastructure,7,NVDA INTC QCOM AMD SMCI NXPI CSCO
+Internet of Things,iotsoftware,Software,"Platforms, Software & Analytics",10,MSFT AMZN PTC GOOGL IOT IBM PLTR ORCL CSCO DDOG
+Internet of Things,iotenterprise,Enterprise,Industrial & Enterprise IoT,10,ROK PTC IOT EMR HON CSCO DGII GE CAT AI
+Internet of Things,iotsecurity,Security,Security & Data Management,9,PANW MSFT FTNT CRWD BB CSCO NET OKTA TENB
+Autonomous Systems,autonomousavmobility,AV & Mobility,Vehicles & Mobility,7,MBLY NVDA AUR GOOGL TSLA GM UBER
+Autonomous Systems,autonomousindustrial,Industrial,Industrial & Logistics Automation,10,SYM ROK MANH HON AMZN TER ZBRA EMR DE PATH
+Autonomous Systems,autonomousdefense,Defense,"Aerospace, Defense & Drones",9,AVAV LMT NOC KTOS RTX LHX RCAT PLTR BBAI
+Autonomous Systems,autonomousmachinevision,Machine Vision,Sensors & Perception Systems,10,NVDA MBLY AMBA AEVA OUST QCOM ON INVZ AMD CGNX
+Autonomous Systems,autonomoussoftware,Software,Software & Cloud Infrastructure,10,NVDA MSFT AMZN GOOGL AUR PLTR MBLY QCOM ORCL AMBA
+Autonomous Systems,autonomousspecialized,Specialized,"Maritime, Agriculture & Specialized Autonomy",8,DE CAT TRMB OII AGCO TXT TDY KVHI
+E-commerce,ecommercemarketplaces,Marketplaces,Online Marketplaces,7,AMZN EBAY WMT ETSY MELI SHOP TGT
+E-commerce,ecommerceplatforms,Platforms,Platforms,8,SHOP WIX PDD VTEX XYZ ADBE LSPD CRM
+E-commerce,ecommerceadsmedia,Ads & Media,Retail Media & Advertising,15,AMZN WMT GOOGL TTD CRTO ROKU CART TGT KR DASH MGNI PUBM CVS BBY HD
+E-commerce,ecommercelogistics,Logistics,Logistics & Delivery,11,UPS FDX AMZN GXO DASH SYM MANH UBER PLD HON TRMB
+E-commerce,ecommercesocial,Social,Social & Influencer Commerce,7,META PINS GOOGL AMZN SHOP SNAP ETSY
+E-commerce,ecommerceomnichannel,Omnichannel,"Omnichannel Retailers, Online & Physical Stores",9,WMT TGT HD BBY KR LULU COST M SHOP
+E-commerce,ecommercegrocery,Grocery,Grocery & Local Commerce Platforms,10,CART WMT DASH KR AMZN TGT ACI UBER CPNG SFM
+E-commerce,ecommercesecondhand,Secondhand,"Recommerce, Secondhand Marketplaces",4,EBAY TDUP REAL ETSY
+E-commerce,ecommercedtc,DTC,Direct-to-Consumer,8,CHWY HIMS NKE LULU BIRD LEVI EL WRBY
+Social Media,socialnetworks,Networks,Networks & Communication Platforms,6,META RDDT SNAP PINS GOOGL MSFT
+Social Media,socialvisualcontent,Visual Content,Image & Video Content Platforms,5,GOOGL SNAP META PINS AMZN
+Social Media,socialadvertising,Advertising,Advertising Platforms,11,META GOOGL TTD SNAP PINS RDDT CRTO MGNI DSP DV APP
+Social Media,socialgaming,Gaming,Gaming Platforms,7,RBLX MSFT AMZN SONY META TTWO U
+Social Media,socialniche,Niche,Niche Platforms,4,MTCH BMBL RDDT MSFT
+Digital Entertainment,entertainmentvideo,Video,Video Streaming,7,NFLX GOOGL ROKU DIS AMZN PSKY WBD
+Digital Entertainment,entertainmentmusic,Music,Music & Audio Streaming,8,SPOT TME AAPL SIRI AMZN GOOGL WMG SONY
+Digital Entertainment,entertainmentgaming,Gaming,Game Publishers & Developers,8,TTWO EA MSFT NTES RBLX PLTK DDI U
+Digital Entertainment,entertainmentinfrastructure,Infrastructure,Streaming & Gaming Infrastructure,11,NVDA MSFT AMZN AMD AKAM GOOGL NET ANET INTC AVGO U
+Digital Entertainment,entertainmentbetting,Betting,"Sports Betting, Wagering & Prediction Markets",9,DKNG FLUT GENI SRAD RSI MGM CZR PENN ICE
+Digital Entertainment,entertainmentgambling,Gambling,iGaming & Online Gambling,12,RSI DKNG FLUT SGHC MGM CZR PENN BYD CHDN BALY INSE SRAD
+Real Estate & REITs,realestateittelecom,IT & Telecom,Digital Infrastructure,7,EQIX DLR AMT CCI SBAC UNIT IRM
+Real Estate & REITs,realestatewarehousing,Warehousing,"E-Commerce, Warehousing & Logistics",6,PLD COLD REXR EGP TRNO STAG
+Real Estate & REITs,realestatehealthcare,Healthcare,Healthcare & Senior Living,7,WELL VTR HR OHI DOC SBRA MPT
+Real Estate & REITs,realestatehousing,Housing,"Housing, Urban Living & Demographics",8,AVB EQR INVH MAA AMH SUI ELS UMH
+Real Estate & REITs,realestatetourism,Tourism,"Travel, Leisure & Entertainment Properties",9,VICI HST GLPI PK RHP PEB LVS MAR HLT
+Real Estate & REITs,realestateretail,Retail,Retail & Consumer Real Estate,15,REG KIM ADC FRT SKT BRX O PECO SPG NNN MAC EPRT KRG UE FCPT
+Real Estate & REITs,realestateoffice,Office,Office & Commercial Workspaces,7,ARE BXP SLG KRC CUZ VNO HIW
+Consumer Goods,consumerfood,Food,"Health, Food & Beverages",12,CELH BYND HAIN VITL UNFI PEP GIS SFM ADM KO MNST MDLZ
+Consumer Goods,consumerapparel,Apparel,Apparel & E-Commerce Retail,11,NKE LULU DECK LEVI UAA ETSY ANF AMZN SFIX SHOP VFC
+Consumer Goods,consumerluxury,Luxury,Modern Luxury & Lifestyle,10,RACE EL RH RL CPRI TPR LUXE REAL VFC SIG
+Consumer Goods,consumerfarmdirect,Farm-Direct,Farming & Direct Marketplaces,8,VITL FDP CVGW SFM AMZN UNFI WMT HAIN
+Consumer Goods,consumerhousehold,Household,Smart Homes & Household Products,10,ALRM SONO AMZN REZI SN WHR HON HD W TSLA
+Consumer Goods,consumersecondhand,Secondhand,Resale & Sharing Platforms,9,EBAY ABNB CVNA TDUP UBER REAL RENT CPRT ETSY
+Smart Home,smarthomedevices,Devices,Connected Devices & Appliances,9,AMZN GOOGL ARLO REZI SONO AAPL WHR ADT HON
+Smart Home,smarthomeautomation,Automation,Automation & Control Systems,10,ALRM REZI GOOGL AMZN AAPL CARR ADT HON ALLE NRG
+Smart Home,smarthomesecurity,Security,Security & Monitoring,8,ADT ALRM ARLO AMZN REZI ALLE AAPL JCI
+Smart Home,smarthomeenergy,Energy,Energy & Utilities,8,ENPH SEDG ITRI STEM ETN GNRC HON AEIS
+Smart Home,smarthomenetworking,Networking,Connectivity & Networking,7,NTGR UI QCOM AVGO AMZN CMCSA CHTR
+Smart Home,smarthomevoiceai,Voice & AI,Voice Assistants & AI Integration,5,AMZN GOOGL AAPL SOUN MSFT
+Wearables,wearablessmartwatches,Smartwatches,Smartwatches & Fitness Devices,4,AAPL GRMN GOOGL MASI
+Wearables,wearablesmedical,Medical,Health Monitoring & Medical Devices,8,DXCM ABT IRTC MASI MDT AAPL GOOGL GEHC
+Wearables,wearablesimmersive,Immersive,Audio-Visual Immersive Devices,9,QCOM SYNA ADI TXN STM AVGO NXPI ON MCHP
+Wearables,wearablessoftware,Software,Software & Ecosystems,5,AAPL GOOGL GRMN QCOM META
+Wearables,wearablessport,Sport,"Sports, Fitness & Lifestyle Applications",7,GRMN AAPL NKE PTON GOOGL UAA LULU
+Education Technology,educationplatforms,Platforms,Online Learning Platforms,6,COUR UDMY DUOL LRN SKIL CHGG
+Education Technology,educationworkforce,Workforce,Workforce Training,10,SKIL UDMY COUR CVSA UTI DCBO LINC PRDO LAUR LRN
+Education Technology,educationcurriculum,Curriculum,Digital Curriculum,11,PSO MH WLY LRN COUR BNED GHC UDMY DUOL TAL CVSA
+Education Technology,educationinfrastructure,Infrastructure,Infrastructure,8,ZM MSFT GOOGL COUR SKIL ADBE LRN CHGG
+Energy Renewable,energycleansolar,Solar,Solar,11,FSLR ENPH SEDG CSIQ RUN BEP JKS NEE NXT SPWR DQ
+Energy Renewable,energycleanwind,Wind,Wind,12,NEE BEP CWEN ENLT XIFR AES CDLR GEV AMSC ACA D ENB
+Energy Renewable,energycleanhydrogen,Hydrogen,Hydrogen & Fuel Cells,9,PLUG BE APD FCEL BLDP LIN GTLS HTOO CMI
+Energy Renewable,energycleangeothermal,Geothermal,Geothermal,4,ORA CEG BRK-B SLB
+Energy Renewable,energycleanutilities,Utilities,Utilities & Clean Power Operators,11,CEG NEE EXC DUK SO CWEN XEL PEG VST PPL AEP
+Energy Renewable,energycleanbatteries,Batteries,Batteries & Storage,11,FLNC STEM TSLA NRGV EOSE GWH ENPH GNRC NEE ENS VST
+Energy Renewable,energycleansmartgrid,Smart Grid,Smart Grid & Electrification,9,PWR ITRI ETN NEE EXC NGG HUBB GEV MPWR
+Energy Renewable,energycleanmaterials,Materials,Materials & Critical Metals,8,ALB FCX SQM MP SCCO LAC BHP RIO
+Energy Renewable,energycleanbiofuels,Biofuels,Fuels & Bioenergy,10,CLNE DAR GEVO OPAL AMTX MNTK VLO CVX CLMT GPRE
+Energy Traditional,energybaseoilproduction,Oil Production,Oil & Gas Exploration & Production,10,COP EOG DVN XOM CVX OXY FANG SHEL TTE APA
+Energy Traditional,energybaseoilrefining,Oil Refining,Refining & Midstream Infrastructure,11,EPD ENB MPC KMI WMB OKE ET PSX PAA VLO DINO
+Energy Traditional,energybaseoilservices,Oil Services,Oilfield Services & Equipment,7,SLB HAL BKR FTI NOV OII PTEN
+Energy Traditional,energybasethermal,Thermal,Coal & Thermal Power Generation,11,CNR ARLP BTU HNRG METC AEP DUK DTE NRG HCC AMR
+Energy Traditional,energybasenuclear,Nuclear,Nuclear Power & Advanced Reactors,10,CEG BWXT SMR OKLO LEU CCJ VST UEC NEE GEV
+Energy Traditional,energybasemajors,Majors,Integrated Energy Majors,7,SHEL TTE XOM CVX BP EQNR E
+Energy Traditional,energybaseutilities,Utilities,Utilities & Conventional Power Operators,9,SO DUK AEP D XEL CEG ETR VST SRE
+Commodities Energy,commenergyoil,Oil,Crude Oil,10,XOM CVX COP EOG OXY FANG BP SHEL DVN MPC
+Commodities Energy,commenergygaslng,Gas & LNG,Natural Gas & LNG,12,LNG EQT EXE CQP AR KMI WMB CTRA ET NEXT OKE SRE
+Commodities Energy,commenergyuranium,Uranium,Uranium & Nuclear Fuels,9,CCJ UUUU LEU UEC NXE URG DNN BWXT SMR
+Commodities Energy,commenergybiofuels,Biofuels,Biofuels & Renewable Fuels,8,DAR AMTX CLNE GEVO OPAL VLO CLMT MNTK
+Commodities Metals,commmetalsgold,Gold,Gold,11,NEM AEM WPM FNV RGLD B KGC GFI AU PAAS CDE
+Commodities Metals,commmetalssilver,Silver,Silver,7,AG EXK HL PAAS SVM DVS WPM
+Commodities Metals,commmetalsprecious,Precious,Precious Metals,12,NEM FNV WPM AEM RGLD SBSW B PAAS HL TFPM MTA BVN
+Commodities Metals,commmetalsindustrial,Industrial,Industrial & Base Metals,12,FCX SCCO NUE STLD AA CMC BHP RIO ERO CLF VALE CENX
+Commodities Metals,commmetalsbattery,Battery,Battery & Energy Transition Metals,11,ALB SQM LAR LAC SGML NMG ATLX VALE TECK MP WWR
+Commodities Metals,commmetalsrareearth,Rare Earth,Rare Earth & Strategic Materials,8,MP IPX NB USAR CTGO UUUU LXFR AREC
+Commodities Metals,commmetalsrecycling,Recycling,Recycling & Circular Materials,5,NUE STLD CMC ABAT LKQ
+Commodities Agriculture,commagrigrains,Grains,Grains & Oilseeds,4,ADM BG AGRO ANDE
+Commodities Agriculture,commagrisofts,Softs,Softs & Plantation Crops,6,CSAN DOLE FDP AGRO HSY SJM
+Commodities Agriculture,commagrilivestock,Livestock,Livestock & Animal Protein,5,TSN JBS PPC HRL CALM
+Commodities Agriculture,commagrifertilizers,Fertilizers,"Fertilizers, Crop Inputs & Seeds",5,CTVA CF MOS NTR FMC
+Commodities Agriculture,commagribiofuels,Biofuels,Renewable Fuels & Biofuels,9,GPRE DAR REX AMTX GEVO FF ADM VLO ANDE
+Agriculture & FoodTech,agriculturesmartfarming,Smart Farming,Precision Agriculture & Farm Automation,6,DE TRMB AGCO CNH LNN UAVS
+Agriculture & FoodTech,agriculturecropinputs,Crop Inputs,Agricultural Inputs & Crop Science,8,CTVA MOS NTR CF FMC UAN BIOX CBUS
+Agriculture & FoodTech,agricultureindoorfarming,Indoor Farming,Controlled Environment Agriculture,4,LOCL HYFM VFF UGRO
+Agriculture & FoodTech,agriculturealtprotein,Alt Protein,Alternative Proteins,8,BYND OTLY MLEC STKH INGR DNA ADM LSF
+Agriculture & FoodTech,agricultureprocessing,Processing,Agri-Food Processing & Distribution,10,ADM BG SYY PFGC TSN USFD UNFI DAR ANDE PPC
+Environmental Sustainability,environmentalwater,Water,Water Infrastructure & Treatment,11,XYL AWK PNR WTRG AWR CWT CWCO MSEX WTS ECL AOS
+Environmental Sustainability,environmentalwaste,Waste,Waste Management & Recycling,10,WM RSG WCN GFL CLH CWST BALL SON LNZA MEG
+Environmental Sustainability,environmentalairquality,Air Quality,Clean Technologies & Pollution Control,10,CECO DCI HON ECL CMI GTLS FTEK AME VLTO ERII
+Environmental Sustainability,environmentalclimate,Climate,Climate Technologies & Carbon Solutions,13,LIN JCI OXY ORGN AES NEE BEPC FSLR HON RNW OC LNZA NPWR
+Environmental Sustainability,environmentalagriculture,Agriculture,Sustainable Agriculture & Resource Management,13,JCI LIN NEE FSLR ORGN BEPC OXY AES RNW HON OC NPWR LNZA
+Healthcare & Biotech,healthcarenextgen,Next-Gen,Next-Gen Biotech Platforms,8,MRNA BNTX CRSP NTLA BEAM VRTX ALNY REGN
+Healthcare & Biotech,healthcareoncology,Oncology,Oncology & Precision Cancer Therapeutics,13,BMY MRK GH AZN ILMN BNTX GILD EXEL TNGX ABBV AMGN JNJ PFE
+Healthcare & Biotech,healthcaremetabolic,Metabolic,Metabolic & Cardiometabolic,8,LLY NVO VKTX GPCR ALT AMGN PFE MRK
+Healthcare & Biotech,healthcarediagnostics,Diagnostics,"Diagnostics, Biomarkers & Liquid Biopsy",12,TMO ILMN GH DHR NTRA EXAS TXG PACB LH DGX BIO QDEL
+Healthcare & Biotech,healthcaregenomics,Genomics,Genomics & Personalized Medicine,12,ILMN PACB CRSP NTLA GH TXG TEM TWST TMO VRTX SEER CDNA
+Healthcare & Biotech,healthcaredevices,Devices,Medical Devices & HealthTech Hardware,11,MDT ISRG SYK EW BSX ABT DXCM GEHC TNDM BDX RMD
+Healthcare & Biotech,healthcaretelemedicine,Telemedicine,"Digital Health, Telemedicine & Remote Care",13,TDOC DXCM HIMS ABT DOCS AMWL AMZN MDT AAPL PRVA LFST IRTC OSCR
+Healthcare & Biotech,healthcareitdata,IT & Data,"IT, Services & Data Infrastructure",12,IQV UNH VEEV ORCL HCAT HQY PHR DOCS EVH WAY OMCL GDRX
+Healthcare & Biotech,healthcaretherapeutics,Therapeutics,"Regenerative Medicine, Psychedelics, Cannabis",14,DFTX ATAI MESO FATE CMPS SANA HELP CGC TLRY CRSP GHRS JAZZ CRON GILD
+Aging Population & Longevity,longevityhealthcare,Healthcare,Healthcare & Medical Devices,8,MDT ABT ZBH SYK GEHC BSX DXCM BAX
+Aging Population & Longevity,longevityagingpharma,Aging Pharma,Age-Related Pharmaceuticals & Biotech,9,LLY NVO BIIB PFE JNJ MRK GERN BMY CRSP
+Aging Population & Longevity,longevityseniorliving,Senior Living,Senior Living & Assisted Care,8,WELL VTR OHI NHI ENSG BKD SBRA EHC
+Aging Population & Longevity,longevityhealthyaging,Healthy Aging,Healthy Aging & Nutrition,8,ABT HIMS CELH DXCM NUS SFM BODI CHD
+Healthy Food & Nutrition,nutritionaltprotein,Alt Protein,Plant-Based Foods & Meat Alternatives,10,BYND OTLY STKL INGR ADM GIS BG SFM KHC KR
+Healthy Food & Nutrition,nutritionretailers,Retailers,Organic & Natural Food Retailers,8,SFM NGVC AMZN KR COST UNFI ACI WMT
+Healthy Food & Nutrition,nutritionsupplements,Supplements,Functional & Nutritional Supplements,8,HLF SMPL BRBR HLN CELH NATR NUS CHD
+Healthy Food & Nutrition,nutritionmealdelivery,Meal Delivery,Food Delivery & Meal Kits,6,DASH UBER AMZN WMT KR SFM
+FinTech,fintechpayments,Payments,Digital Payments & Merchant Infrastructure,12,V MA PYPL XYZ TOST FISV GPN FOUR AXP AFRM ACIW DLO
+FinTech,fintechneobanks,Neobanks,Digital Banking & Neobanks,6,SOFI NU XYZ ALLY DAVE MQ
+FinTech,fintechlending,Lending,"Lending, Credit & BNPL",6,UPST AFRM LC XYZ PYPL SOFI
+FinTech,fintechtrading,Trading,Trading Platforms & WealthTech,7,HOOD IBKR ETOR SCHW SOFI ORLY VIRT
+FinTech,fintechblockchain,Blockchain,"Crypto, Blockchain & Tokenization",7,COIN RIOT MARA CLSK XYZ MSTR NVDA
+FinTech,fintechexchanges,Exchanges,Exchanges & Market Infrastructure,7,CME ICE NDAQ CBOE MKTX TW COIN
+FinTech,fintechinsurance,Insurance,InsurTech & Embedded Insurance,8,LMND ROOT HIPO TRUP OSCR GWRE SLQT EVER
+Crypto & Blockchain,blockchainplatforms,Platforms,Cryptocurrency Platforms,5,COIN HOOD XYZ BKKT PYPL
+Crypto & Blockchain,blockchaininfrastructure,Infrastructure,Blockchain Infrastructure,4,XYZ IBM AMZN COIN
+Crypto & Blockchain,blockchainpayments,Payments,Financial Services & Payments,6,XYZ JPM PYPL V MA COIN
+Crypto & Blockchain,blockchainenterprise,Enterprise,Enterprise Blockchain Solutions,7,IBM ORCL ACN MSFT AMZN WMT CRM
+Crypto & Blockchain,blockchaintokenization,Tokenization,Tokenization & Digital Assets,8,BLK COIN XYZ WT NDAQ IBM TROW MSFT
+Crypto & Blockchain,blockchainmining,Mining,Cryptocurrency Mining & Staking,9,MARA RIOT CLSK CORZ IREN CIFR HUT BTDR COIN
