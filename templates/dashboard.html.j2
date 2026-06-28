@@ -2334,43 +2334,16 @@
 
       <!-- factor leadership (cross-sectional equity factors) -->
       {% if factor_leadership %}
-      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px">
-        <div style="font-weight:700;margin-bottom:4px">{{ t('Equity factor leadership', '股票因子领先') }}
-          <span class="help">?<span class="tip">
-            <span class="l-en"><b>Which "style" of stock is winning</b> over the last 63 days. Each badge below is one factor's top-fifth-minus-bottom-fifth return across the S&P 1500 (from SEC fundamentals):</span>
-            <span class="l-zh"><b>哪种"风格"的股票在领先</b>（近 63 日）。下方每个标签是该因子在标普 1500 中顶部五分位减底部五分位的回报（源自 SEC 基本面）：</span>
-            <table class="sigtab">
-              <tr><td><b>Value</b></td><td class="l"><span class="l-en">cheap vs fundamentals</span><span class="l-zh">相对基本面便宜</span></td></tr>
-              <tr><td><b>Quality</b></td><td class="l"><span class="l-en">strong balance sheets</span><span class="l-zh">资产负债表稳健</span></td></tr>
-              <tr><td><b>Profitability</b></td><td class="l"><span class="l-en">high margins / ROE</span><span class="l-zh">高利润率／ROE</span></td></tr>
-              <tr><td><b>Low-vol</b></td><td class="l"><span class="l-en">steady, defensive names</span><span class="l-zh">稳健的防御股</span></td></tr>
-            </table>
-            <span class="lad" style="background:color-mix(in srgb,var(--up) 16%,var(--panel))"><span class="l-en"><b>Quality/profitability leading</b> → risk-on, growth-led tape</span><span class="l-zh"><b>质量／盈利领先</b> → 风险偏好、成长主导</span></span>
-            <span class="lad" style="background:color-mix(in srgb,var(--orange) 16%,var(--panel))"><span class="l-en"><b>Value/low-vol leading</b> → defensive, late-cycle</span><span class="l-zh"><b>价值／低波动领先</b> → 防御、周期晚段</span></span>
-          </span></span>
-          <a href="factors.html" class="muted sm" style="float:right">{{ t('Factors page →', '因子页 →') }}</a></div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:13px;line-height:1.7">
+        <b>{{ t('Equity factor leadership', '股票因子领先') }}</b>
+        {{ help("Which STYLE of stock is winning over the last 63 days — Value (cheap), Quality (strong balance sheets), Profitability (high margins) or Low-vol (defensive). Quality / profitability leading = a risk-on, growth-led tape; value / low-vol leading = defensive, late-cycle. Full breakdown on the Factors page.", "哪种风格的股票在领先（近 63 日）——价值（便宜）、质量（资产负债表稳健）、盈利（高利润率）或低波动（防御）。质量／盈利领先＝风险偏好、成长主导；价值／低波动领先＝防御、周期晚段。完整拆解见因子页。") }}
+        <a href="factors.html" class="muted sm" style="float:right">{{ t('Factors page →', '因子页 →') }}</a>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:5px">
           {% for L in factor_leadership %}
           <span class="badge" style="font-size:11px;border:1px solid var(--line);background:var(--panel);color:{{ 'var(--up)' if L.spread_pct>=0 else 'var(--down)' }}">{{ td(L.label) }} {{ '%+.1f'|format(L.spread_pct) }}%</span>
           {% endfor %}
         </div>
-        {% if ST and ST.tilt %}
-        {% set _yup = ST.yield_chg_1m_bp is not none and ST.yield_chg_1m_bp > 0 %}
-        <div class="muted sm" style="margin-top:7px;padding-top:6px;border-top:1px solid var(--line)">{{ t('Value vs Growth style tilt:', '价值对成长风格倾向：') }}
-          <b style="color:{{ 'var(--up)' if ST.tilt=='value' else ('var(--down)' if ST.tilt=='growth' else 'var(--muted)') }}">{{ t(ST.tilt, {'value':'价值','growth':'成长','neutral':'中性'}.get(ST.tilt, ST.tilt)) }}</b>
-          ({{ t('10y', '十年期') }} {{ '%+.0f'|format(ST.yield_chg_1m_bp) if ST.yield_chg_1m_bp is not none else '—' }}bp/mo)
-          <span class="help">?<span class="tip">
-            <span class="l-en">The 10-year Treasury yield quietly steers which style leads. The relationship is one of the most reliable we measured:</span>
-            <span class="l-zh">十年期国债收益率悄然主导哪种风格领先。这是我们测得最可靠的关系之一：</span>
-            <table class="sigtab">
-              <tr><td><b>10y rising ▲</b></td><td class="l" style="color:var(--up)"><span class="l-en">→ VALUE leads</span><span class="l-zh">→ 价值领先</span></td></tr>
-              <tr><td><b>10y falling ▼</b></td><td class="l" style="color:var(--down)"><span class="l-en">→ GROWTH leads</span><span class="l-zh">→ 成长领先</span></td></tr>
-            </table>
-            <span class="muted" style="font-size:10.5px;display:block">{{ t('Now:', '现在：') }} {{ t('10y', '十年期') }} {{ '%+.0f'|format(ST.yield_chg_1m_bp) if ST.yield_chg_1m_bp is not none else '—' }}bp/mo {% if _yup %}▲{% elif ST.yield_chg_1m_bp is not none and ST.yield_chg_1m_bp < 0 %}▼{% endif %}</span>
-            <span class="l-en" style="display:block;margin-top:4px">MEASURED: value beat growth +0.8%/63d when the 10y rose &gt;10bp/month (t=+3.0), in all four 2000–2026 sub-periods. A tilt, not a trade signal.</span>
-            <span class="l-zh" style="display:block;margin-top:4px">实测：当十年期月内上行 &gt;10bp 时，价值股 63 天内跑赢成长股 +0.8%（t=+3.0），且在 2000–2026 四个子周期中均成立。这是倾向，而非交易信号。</span>
-          </span></span></div>
-        {% endif %}
+        {% if ST and ST.tilt %}<div class="muted sm" style="margin-top:6px">{{ t('Value vs Growth tilt:', '价值对成长倾向：') }} <b style="color:{{ 'var(--up)' if ST.tilt=='value' else ('var(--down)' if ST.tilt=='growth' else 'var(--muted)') }}">{{ t(ST.tilt, {'value':'价值','growth':'成长','neutral':'中性'}.get(ST.tilt, ST.tilt)) }}</b>{% if ST.yield_chg_1m_bp is not none %} <span class="muted">({{ t('10y','十年期') }} {{ '%+.0f'|format(ST.yield_chg_1m_bp) }}bp/mo — {{ t('rising favours value, falling favours growth','上行利好价值、下行利好成长') }})</span>{% endif %}</div>{% endif %}
       </div>
       {% endif %}
 
@@ -2598,10 +2571,9 @@
         <div class="muted sm" style="margin-top:2px">{{ t('Display-only mirror of capitulation — never scored.', '投降指标的纯展示镜像 — 从不评分。') }}</div>
         {% endif %}
 
-        {% if latest.cross_asset and latest.cross_asset.get('absorption_ratio') is not none %}
-        <div class="kv" style="margin-top:8px">{{ t('Cross-asset absorption', '跨资产吸收') }}
-          <b style="float:right">{{ '%.2f'|format(latest.cross_asset.absorption_ratio) }}{% if latest.cross_asset.get('verdict') %} · {{ td(latest.cross_asset.verdict) }}{% endif %}</b></div>
-        {% endif %}
+        {# Cross-asset absorption KV retired — an unexplained 0–1 ratio with no threshold or
+           action; the same cross-asset stress is read more legibly by the OFR systemic-stress
+           channels and the Risk-Radar. #}
       </div>
 
     </div>
