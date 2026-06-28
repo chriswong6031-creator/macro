@@ -31,6 +31,10 @@ mastermind-x.com, www.mastermind-x.com {
 		beta $2a$14$xP/vuIXBK.YRZc4HQw/4uOEp4DoarTKLJR/iRUBBY0OaTpnIMT4gq
 	}
 
+	# Slice 2 backend — FastAPI (macro-api.service) on localhost. Everything under
+	# /api/* is proxied here; the rest is served as static files below.
+	reverse_proxy /api/* 127.0.0.1:8000
+
 	file_server {
 		index index.html
 	}

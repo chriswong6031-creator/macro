@@ -1,0 +1,7 @@
+# macro API (serving tier) — minimal, NOT the heavy engine stack.
+# Keep this lean: the API wraps build artifacts + (later) imports pure engine
+# functions on demand. Heavy deps (pandas/scipy) are only pulled if/when a route
+# needs them.
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30
+PyJWT>=2.8
