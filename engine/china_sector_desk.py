@@ -89,15 +89,15 @@ def _cycle_position(sw: pd.Series) -> dict:
     label_en = label_zh = "—"
     if score is not None:
         if score <= 15:
-            label_en, label_zh = "Washed out", "超卖见底"
+            label_en, label_zh = "Beaten down", "深度超跌"
         elif score <= 35:
-            label_en, label_zh = "Recovering", "修复中"
+            label_en, label_zh = "Recovering", "修复回升"
         elif score <= 65:
             label_en, label_zh = "Mid-cycle", "周期中段"
         elif score <= 85:
-            label_en, label_zh = "Extended", "偏高"
+            label_en, label_zh = "Stretched", "走高偏贵"
         else:
-            label_en, label_zh = "Euphoric", "过热"
+            label_en, label_zh = "Overheated", "过热"
     return {
         "score": score, "label": label_en, "label_zh": label_zh,
         "dist_200d_pct": round(float(dist.iloc[-1] * 100), 1) if not dist.empty else None,
