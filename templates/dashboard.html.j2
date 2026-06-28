@@ -1025,102 +1025,135 @@
   <div class="panel span12" id="regime-radar">
   <input type="checkbox" id="ms-alerts-toggle" class="ms-drawer-cb" hidden aria-hidden="true">
   <style id="ms-css">
-  /* ===== MARKET STATE — fused command-center (DISPLAY-ONLY synthesis) ===== */
-  body.page-macro .ms-green{--ms-c:var(--up)}
-  body.page-macro .ms-yellow{--ms-c:var(--warn)}
-  body.page-macro .ms-red{--ms-c:var(--down)}
-  body.page-macro .ms-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 16px}
-  body.page-macro .ms-eyebrow{font-family:var(--num);font-size:10.5px;font-weight:700;letter-spacing:.14em;
-    text-transform:uppercase;color:var(--ink-3);display:flex;align-items:center;gap:8px}
-  body.page-macro .ms-eyebrow .num{color:var(--ink-2)}
-  body.page-macro .ms-live{width:7px;height:7px;border-radius:50%;background:var(--ms-c,var(--ink-3));
-    box-shadow:0 0 0 3px color-mix(in srgb,var(--ms-c,var(--ink-3)) 20%,transparent)}
-  body.page-macro .ms-alerts-btn{margin-left:auto;display:inline-flex;align-items:center;gap:8px;cursor:pointer;
-    border:var(--rule) solid var(--hair-strong);background:var(--tile);color:var(--ink-1);border-radius:9px;
-    padding:7px 13px;font-size:12.5px;font-weight:700;transition:border-color .16s,box-shadow .16s,transform .16s}
-  body.page-macro .ms-alerts-btn:hover{border-color:color-mix(in srgb,var(--link) 55%,var(--hair));
-    box-shadow:0 5px 16px -7px color-mix(in srgb,var(--link) 50%,transparent);transform:translateY(-1px)}
-  body.page-macro .ms-ab-ico{font-size:14px;line-height:1}
-  body.page-macro .ms-ab-count{font-family:var(--num);font-size:11px;font-weight:800;min-width:19px;height:19px;
-    padding:0 5px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:var(--act);color:#fff}
-  body.page-macro .ms-ab-count.is-zero{background:var(--tile);color:var(--ink-3);border:var(--rule) solid var(--hair)}
+  /* ===== MARKET STATE — command-center (DISPLAY-ONLY synthesis) =====
+     Bloomberg-grade: monochrome by default, colour spent only on signal.
+     Verdict (left) reads in 2s; the six-factor evidence matrix (right) and the
+     multi-timeframe tape say WHY. The macro backdrop quadrant lives below. */
+  body.page-macro .ms{--ms-c:var(--ink-3)}
+  body.page-macro .ms.ms-green{--ms-c:var(--up)}
+  body.page-macro .ms.ms-yellow{--ms-c:var(--warn)}
+  body.page-macro .ms.ms-red{--ms-c:var(--down)}
 
-  body.page-macro .ms-hero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:center}
-  @media(max-width:680px){body.page-macro .ms-hero{grid-template-columns:1fr;gap:18px;justify-items:center;text-align:center}}
-  body.page-macro .ms-dial{--p:50;position:relative;width:142px;height:142px;border-radius:50%;display:grid;place-items:center;flex:none;
-    background:conic-gradient(var(--ms-c) calc(var(--p)*1%), color-mix(in srgb,var(--ms-c) 13%, var(--tile)) 0);
-    box-shadow:0 0 0 1px var(--hair),0 0 34px -6px color-mix(in srgb,var(--ms-c) 52%,transparent);animation:msPulse 4.8s ease-in-out infinite}
-  body.page-macro .ms-dial::before{content:"";position:absolute;inset:13px;border-radius:50%;background:var(--panel);box-shadow:inset 0 0 0 1px var(--hair)}
-  body.page-macro .ms-dial-in{position:relative;text-align:center;line-height:1}
-  body.page-macro .ms-score{font-family:var(--num);font-size:42px;font-weight:800;letter-spacing:-.03em;color:var(--ink-1)}
-  body.page-macro .ms-score-sub{display:block;font-family:var(--num);font-size:9.5px;font-weight:700;letter-spacing:.08em;
-    color:var(--ink-3);text-transform:uppercase;margin-top:3px}
-  @keyframes msPulse{0%,100%{box-shadow:0 0 0 1px var(--hair),0 0 28px -8px color-mix(in srgb,var(--ms-c) 48%,transparent)}
-    50%{box-shadow:0 0 0 1px var(--hair),0 0 42px -2px color-mix(in srgb,var(--ms-c) 60%,transparent)}}
-  @media(prefers-reduced-motion:reduce){body.page-macro .ms-dial{animation:none}}
-  body.page-macro .ms-verdict{display:flex;flex-direction:column;gap:7px;min-width:0}
-  body.page-macro .ms-verdict-word{font-size:36px;font-weight:800;letter-spacing:-.025em;line-height:1;color:var(--ms-c)}
-  html[data-lang="zh"] body.page-macro .ms-verdict-word{letter-spacing:0}
-  body.page-macro .ms-says{font-size:14px;color:var(--ink-2);line-height:1.5;max-width:64ch;margin:0}
-  body.page-macro .ms-flip{font-family:var(--num);font-size:11.5px;color:var(--ink-3);line-height:1.45;letter-spacing:.01em}
-  body.page-macro .ms-override{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--warn);
-    background:color-mix(in srgb,var(--warn) 12%,var(--tile));border:var(--rule) solid color-mix(in srgb,var(--warn) 34%,var(--hair));
-    border-radius:6px;padding:3px 9px;width:max-content;max-width:100%}
-  body.page-macro .ms-backdrop{display:flex;align-items:center;gap:10px;margin-top:4px;padding-top:10px;border-top:var(--rule) solid var(--hair)}
-  body.page-macro .ms-bd-mini{display:grid;grid-template-columns:repeat(2,13px);grid-template-rows:repeat(2,13px);gap:2.5px;flex:none}
-  body.page-macro .ms-bd-mini i{border-radius:3px;background:color-mix(in srgb,var(--qc) 15%,var(--tile));border:var(--rule) solid color-mix(in srgb,var(--qc) 26%,var(--hair))}
-  body.page-macro .ms-bd-mini i.on{background:var(--qc);box-shadow:0 0 8px color-mix(in srgb,var(--qc) 55%,transparent)}
-  body.page-macro .ms-bd-txt{font-size:12px;color:var(--ink-2)}
-  body.page-macro .ms-bd-txt b{color:var(--ink-1);font-weight:700}
+  /* header strip */
+  body.page-macro .ms-head{display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap;margin:0 0 4px}
+  body.page-macro .ms-eyebrow{display:inline-flex;align-items:center;gap:9px;white-space:nowrap;font-family:var(--num);
+    font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-2);margin:0}
+  body.page-macro .ms-live{width:7px;height:7px;border-radius:50%;background:var(--ms-c);flex:none;
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--ms-c) 20%,transparent)}
+  body.page-macro .ms-date{font-family:var(--num);font-size:11px;letter-spacing:.04em;color:var(--ink-3);white-space:nowrap}
+  body.page-macro .ms-alerts{margin-left:auto;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+    border:var(--rule) solid var(--hair-strong);background:transparent;color:var(--ink-2);border-radius:999px;
+    padding:5px 12px;font-size:11.5px;font-weight:600;letter-spacing:.02em;transition:border-color .14s,color .14s}
+  body.page-macro .ms-alerts:hover{border-color:var(--ink-3);color:var(--ink-1)}
+  body.page-macro .ms-alerts .dot{width:6px;height:6px;border-radius:50%;background:var(--act);flex:none}
+  body.page-macro .ms-alerts .ct{font-family:var(--num);font-weight:700;color:var(--ink-1)}
+  body.page-macro .ms-alerts .ct.is-zero{color:var(--ink-3)}
 
-  /* factor rail — the multi-factor early-warning read, condensed */
-  body.page-macro .ms-factors{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin-top:18px}
-  @media(max-width:1080px){body.page-macro .ms-factors{grid-template-columns:repeat(3,1fr)}}
-  @media(max-width:560px){body.page-macro .ms-factors{grid-template-columns:repeat(2,1fr)}}
-  body.page-macro .ms-fac{background:var(--tile);border:var(--rule) solid var(--hair);border-radius:10px;overflow:hidden}
-  body.page-macro .ms-fac>summary{list-style:none;cursor:pointer;padding:10px 11px;display:grid;gap:5px;border-left:3px solid var(--ft,var(--ink-3))}
-  body.page-macro .ms-fac>summary::-webkit-details-marker{display:none}
-  body.page-macro .ms-tone-good{--ft:var(--up)}
-  body.page-macro .ms-tone-bad{--ft:var(--down)}
-  body.page-macro .ms-tone-warn{--ft:var(--warn)}
-  body.page-macro .ms-tone-flat{--ft:var(--ink-3)}
-  body.page-macro .ms-fac-top{display:flex;align-items:baseline;gap:6px}
-  body.page-macro .ms-fac-arrow{font-size:12px;color:var(--ft);font-weight:700;line-height:1}
-  body.page-macro .ms-fac-score{margin-left:auto;font-family:var(--num);font-size:15px;font-weight:800;color:var(--ink-1)}
-  body.page-macro .ms-fac-lbl{font-size:10.5px;font-weight:700;color:var(--ink-2)}
-  body.page-macro .ms-fac-read{font-size:11px;color:var(--ink-3);line-height:1.4;margin:0}
-  body.page-macro .ms-fac[open]>summary{border-bottom:var(--rule) solid var(--hair)}
-  body.page-macro .ms-fac-body{padding:8px 11px 9px}
-  body.page-macro .ms-mrow{display:flex;justify-content:space-between;gap:8px;font-size:11px;padding:3px 0;border-bottom:var(--rule) solid var(--hair)}
-  body.page-macro .ms-mrow:last-child{border-bottom:0}
-  body.page-macro .ms-mrow span{color:var(--ink-3)}
-  body.page-macro .ms-mrow b{color:var(--ink-1);font-family:var(--num);font-weight:700}
+  /* top: verdict | evidence */
+  body.page-macro .ms-top{display:grid;grid-template-columns:minmax(0,310px) minmax(0,1fr);margin-top:16px}
+  body.page-macro .ms-verdict{padding-right:30px;border-right:var(--rule) solid var(--hair)}
+  body.page-macro .ms-evidence{padding-left:30px;min-width:0}
+  @media(max-width:760px){
+    body.page-macro .ms-top{grid-template-columns:1fr}
+    body.page-macro .ms-verdict{padding:0 0 18px;border-right:0;border-bottom:var(--rule) solid var(--hair-strong)}
+    body.page-macro .ms-evidence{padding:18px 0 0}
+  }
 
-  /* multi-timeframe tape — the technical monitor, redrawn as arrows */
-  body.page-macro .ms-tape{margin-top:14px;background:var(--tile);border:var(--rule) solid var(--hair);border-radius:10px;padding:11px 14px}
-  body.page-macro .ms-tape-h{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;letter-spacing:.06em;
-    text-transform:uppercase;color:var(--ink-3);margin-bottom:9px}
-  body.page-macro .ms-tape-row{display:grid;grid-template-columns:120px minmax(0,1fr) 92px;align-items:center;gap:12px;
-    padding:5px 0;border-top:var(--rule) solid var(--hair)}
-  body.page-macro .ms-tape-row.hdr{border-top:0;padding:0 0 2px}
-  body.page-macro .ms-tape-name{font-size:12px;font-weight:700;color:var(--ink-1)}
-  body.page-macro .ms-tape-cells{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-width:300px}
-  body.page-macro .ms-tape-row.hdr .ms-tape-cells>span{font-family:var(--num);font-size:9px;font-weight:700;letter-spacing:.05em;
-    text-transform:uppercase;color:var(--ink-3);text-align:center}
-  body.page-macro .ms-cell{display:flex;flex-direction:column;align-items:center;gap:1px;border-radius:7px;padding:5px 0;
-    background:color-mix(in srgb,var(--cc,var(--ink-3)) 11%,var(--panel));border:var(--rule) solid color-mix(in srgb,var(--cc,var(--ink-3)) 26%,var(--hair))}
-  body.page-macro .ms-cell .a{font-size:13px;font-weight:800;color:var(--cc);line-height:1}
-  body.page-macro .ms-cell .r{font-family:var(--num);font-size:8.5px;color:var(--ink-3)}
-  body.page-macro .ms-cell.ms-good{--cc:var(--up)}
-  body.page-macro .ms-cell.ms-bad{--cc:var(--down)}
-  body.page-macro .ms-cell.ms-flat{--cc:var(--ink-3)}
-  body.page-macro .ms-tape-conf{font-size:11px;font-weight:700;text-align:right;color:var(--ft,var(--ink-3))}
+  /* verdict column */
+  body.page-macro .v-label{font-family:var(--num);font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink-3);margin:0 0 9px}
+  body.page-macro .v-word{font-size:50px;line-height:.92;font-weight:800;letter-spacing:-.025em;margin:0;color:var(--ms-c);
+    display:flex;align-items:center;gap:.2em}
+  body.page-macro .v-word .arr{font-family:var(--num);font-size:.38em;font-weight:700;transform:translateY(-.04em)}
+  html[data-lang="zh"] body.page-macro .v-word{letter-spacing:0}
+  @media(max-width:760px){body.page-macro .v-word{font-size:44px}}
+  body.page-macro .v-scorerow{display:flex;align-items:baseline;gap:7px;margin-top:15px}
+  body.page-macro .v-score{font-family:var(--num);font-size:38px;font-weight:700;line-height:1;letter-spacing:-.02em;color:var(--ink-1)}
+  body.page-macro .v-outof{font-family:var(--num);font-size:13px;color:var(--ink-3)}
+  body.page-macro .v-meter{margin-top:12px;height:6px;border-radius:3px;position:relative;overflow:hidden;
+    background:linear-gradient(90deg,
+      color-mix(in srgb,var(--down) 30%,var(--panel2)) 0 42%,
+      color-mix(in srgb,var(--warn) 30%,var(--panel2)) 42% 60%,
+      color-mix(in srgb,var(--up) 30%,var(--panel2)) 60% 100%)}
+  body.page-macro .v-meter .tick{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ms-c);border-radius:2px;
+    box-shadow:0 0 0 2px var(--panel)}
+  body.page-macro .v-scale{display:flex;justify-content:space-between;margin-top:6px;font-family:var(--num);font-size:9.5px;
+    letter-spacing:.02em;color:var(--ink-3)}
+  body.page-macro .v-thesis{margin:17px 0 0;font-size:13.5px;line-height:1.5;color:var(--ink-1)}
+  body.page-macro .v-flip{margin:13px 0 0;padding:8px 11px;border-left:2px solid var(--warn);
+    background:color-mix(in srgb,var(--warn) 7%,transparent);font-size:12px;line-height:1.45;color:var(--ink-2)}
+  body.page-macro .v-override{margin:10px 0 0;display:flex;align-items:flex-start;gap:7px;padding:8px 11px;border-radius:7px;
+    border:var(--rule) solid color-mix(in srgb,var(--act) 38%,var(--hair));background:color-mix(in srgb,var(--act) 11%,transparent);
+    font-size:11.5px;line-height:1.4;color:var(--ink-1)}
+  body.page-macro .v-override .ic{color:var(--act);flex:none;font-size:12px;line-height:1.3}
 
-  body.page-macro .ms-divider{display:flex;align-items:center;gap:12px;margin:20px 0 6px;font-family:var(--num);
+  /* evidence matrix — one expandable row per factor */
+  body.page-macro .e-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 2px}
+  body.page-macro .e-title{font-family:var(--num);font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink-3);margin:0}
+  body.page-macro .e-cols{font-family:var(--num);font-size:9.5px;letter-spacing:.06em;color:var(--ink-3)}
+  body.page-macro .ms-f{border-top:var(--rule) solid var(--hair)}
+  body.page-macro .ms-f.tone-good{--ft:var(--up)}
+  body.page-macro .ms-f.tone-warn{--ft:var(--warn)}
+  body.page-macro .ms-f.tone-bad{--ft:var(--down)}
+  body.page-macro .ms-f.tone-flat{--ft:var(--ink-3)}
+  body.page-macro .ms-f>summary{list-style:none;cursor:pointer;display:grid;align-items:center;
+    grid-template-columns:13px minmax(0,1fr) 110px 38px 12px;column-gap:14px;padding:10px 4px}
+  body.page-macro .ms-f>summary::-webkit-details-marker{display:none}
+  body.page-macro .ms-f>summary:hover{background:color-mix(in srgb,var(--panel2) 55%,transparent)}
+  body.page-macro .ms-f>summary:focus-visible{outline:2px solid var(--info);outline-offset:-2px;border-radius:4px}
+  body.page-macro .f-dir{font-family:var(--num);font-size:12px;line-height:1;text-align:center;color:var(--ft)}
+  body.page-macro .f-main{min-width:0}
+  body.page-macro .f-name{display:block;font-size:13px;font-weight:600;color:var(--ink-1)}
+  body.page-macro .f-read{display:block;font-size:11.5px;line-height:1.35;color:var(--ink-3);margin-top:2px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  body.page-macro .f-tone{height:4px;border-radius:2px;background:var(--panel2);overflow:hidden}
+  body.page-macro .f-tone i{display:block;height:100%;border-radius:2px;background:var(--ft)}
+  body.page-macro .f-score{font-family:var(--num);font-size:16px;font-weight:700;text-align:right;line-height:1;color:var(--ft)}
+  body.page-macro .f-chev{font-family:var(--num);font-size:11px;color:var(--ink-3);transition:transform .16s ease;text-align:center}
+  body.page-macro .ms-f[open]>summary .f-chev{transform:rotate(90deg)}
+  body.page-macro .f-metrics{display:flex;flex-wrap:wrap;gap:6px 7px;padding:2px 0 11px 27px}
+  body.page-macro .ms-metric{display:inline-flex;align-items:baseline;gap:6px;padding:3px 9px;background:var(--tile);
+    border:var(--rule) solid var(--hair);border-radius:6px;font-size:11px;color:var(--ink-3)}
+  body.page-macro .ms-metric b{font-family:var(--num);font-weight:700;color:var(--ink-1)}
+  @media(max-width:760px){
+    body.page-macro .ms-f>summary{grid-template-columns:13px minmax(0,1fr) 64px 34px 12px;column-gap:10px}
+    body.page-macro .f-read{white-space:normal}
+  }
+
+  /* multi-timeframe tape — the technical detail behind the Trend factor */
+  body.page-macro .ms-tape{margin-top:22px;padding-top:16px;border-top:var(--rule) solid var(--hair-strong)}
+  body.page-macro .tape-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px}
+  body.page-macro .tape-title{display:inline-flex;align-items:center;gap:7px;font-family:var(--num);font-size:10px;font-weight:700;
+    letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3);margin:0}
+  body.page-macro .tape-sub{font-family:var(--num);font-size:9.5px;letter-spacing:.04em;color:var(--ink-3)}
+  body.page-macro table.ms-tapetbl{width:100%;border-collapse:collapse}
+  body.page-macro table.ms-tapetbl th{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);
+    text-align:center;padding:7px 6px;border-bottom:var(--rule) solid var(--hair)}
+  body.page-macro table.ms-tapetbl th.l,body.page-macro table.ms-tapetbl td.l{text-align:left}
+  body.page-macro table.ms-tapetbl th.r,body.page-macro table.ms-tapetbl td.r{text-align:right}
+  body.page-macro table.ms-tapetbl td{padding:9px 6px;border-bottom:var(--rule) solid var(--hair)}
+  body.page-macro table.ms-tapetbl tr:last-child td{border-bottom:0}
+  body.page-macro .t-inst{font-size:13px;font-weight:600;color:var(--ink-1)}
+  body.page-macro .ms-cell2{display:inline-flex;align-items:baseline;gap:6px;justify-content:center;font-family:var(--num)}
+  body.page-macro .ms-cell2 .ar{font-size:11px;line-height:1}
+  body.page-macro .ms-cell2 .rsi{font-size:12.5px;color:var(--ink-2)}
+  body.page-macro .ms-cell2.good,body.page-macro .ms-conf.good{color:var(--up)}
+  body.page-macro .ms-cell2.bad,body.page-macro .ms-conf.bad{color:var(--down)}
+  body.page-macro .ms-cell2.flat,body.page-macro .ms-conf.warn,body.page-macro .ms-conf.flat{color:var(--warn)}
+  body.page-macro .ms-conf{font-size:12px;font-weight:700;white-space:nowrap}
+  @media(max-width:560px){
+    body.page-macro table.ms-tapetbl th,body.page-macro table.ms-tapetbl td{padding-left:3px;padding-right:3px}
+    body.page-macro .ms-cell2 .rsi{display:none}
+  }
+
+  /* divider into the macro-backdrop quadrant locator below */
+  body.page-macro .ms-divider{display:flex;align-items:center;gap:12px;margin:22px 0 6px;font-family:var(--num);
     font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
   body.page-macro .ms-divider::after{content:"";flex:1;height:1px;background:var(--hair)}
-  html[data-lang="zh"] body.page-macro .ms-divider,html[data-lang="zh"] body.page-macro .ms-tape-h,
+  html[data-lang="zh"] body.page-macro .ms-divider,html[data-lang="zh"] body.page-macro .tape-title,
   html[data-lang="zh"] body.page-macro .ms-eyebrow{letter-spacing:0}
+  @media(prefers-reduced-motion:reduce){body.page-macro .f-chev{transition:none}}
 
   /* ===== fired-alerts drawer (pure-CSS toggle via #ms-alerts-toggle) ===== */
   body.page-macro .ms-drawer{display:none}
@@ -1165,80 +1198,79 @@
     } %}
     {% if market_state %}
     {% set MS = market_state %}
+    {% set _va = {'green':'▲','yellow':'▶','red':'▼'}.get(MS.color, '▶') %}
+    {% set _nalerts = (alerts|length if alerts else 0) + (1 if (latest.dislocation and latest.dislocation.dislocation_active) else 0) %}
     {# ===== MARKET STATE command-center — the first read: what kind of market is this? ===== #}
-    <div class="ms-head">
-      <span class="ms-eyebrow ms-{{ MS.color }}"><span class="ms-live"></span>{{ t('MARKET STATE','市场状态') }} <span class="num">· {{ MS.asof }}</span></span>
-      {{ help("What kind of market is this RIGHT NOW — a single risk-on/off read that BLENDS the broad-market tape across timeframes, cross-asset risk appetite, the volatility regime, market breadth, Fed liquidity & credit, and the downturn-risk guards into one 0-100 score. GREEN risk-on (≥60) · YELLOW mixed/transition (42–59) · RED risk-off (<42). Confirmation over prediction: every leg reads what has ALREADY turned, not a forecast. A handful of early-warning overrides (an act-level alert, a fresh regime flip, a high/extreme drawdown or acute systemic-stress band) can cap or force the verdict. DISPLAY-ONLY — a synthesis of signals shown elsewhere on this page; it never scores, sizes or feeds the regime engine.", "当前是什么样的市场 — 一个把多周期大盘趋势、跨资产风险偏好、波动率环境、市场广度、联储流动性与信用，以及下行风险护栏融合为一个 0-100 评分的风险偏好读数。绿色＝风险偏好（≥60）·黄色＝混合/转换（42–59）·红色＝避险（<42）。确认优于预测：每条腿读取的是已经转向的东西，而非预测。少数早期预警可封顶或强制结论。仅供展示 — 它是本页其他信号的综合，绝不评分、定仓或进入周期引擎。") }}
-      {% set _nalerts = (alerts|length if alerts else 0) + (1 if (latest.dislocation and latest.dislocation.dislocation_active) else 0) %}
-      <label class="ms-alerts-btn" for="ms-alerts-toggle" title="Open fired-alerts signals · 打开已触发警报">
-        <span class="ms-ab-ico">⚠</span>{{ t('Fired alerts','已触发警报') }}
-        <span class="ms-ab-count{{ ' is-zero' if _nalerts == 0 }}">{{ _nalerts }}</span>
-      </label>
-    </div>
-
-    <div class="ms-hero ms-{{ MS.color }}">
-      <div class="ms-dial" style="--p:{{ MS.score }}">
-        <div class="ms-dial-in"><span class="ms-score">{{ MS.score }}</span><span class="ms-score-sub">/ 100 · {{ t('risk-on','偏好') }}</span></div>
+    <div class="ms ms-{{ MS.color }}">
+      <div class="ms-head">
+        <span class="ms-eyebrow"><span class="ms-live"></span>{{ t('MARKET STATE','市场状态') }}</span>
+        <span class="ms-date">· {{ MS.asof }}</span>
+        {{ help("What kind of market is this RIGHT NOW — a single risk-on/off read that BLENDS the broad-market tape across timeframes, cross-asset risk appetite, the volatility regime, market breadth, Fed liquidity & credit, and the downturn-risk guards into one 0-100 score. GREEN risk-on (≥60) · YELLOW mixed/transition (42–59) · RED risk-off (<42). Confirmation over prediction: every leg reads what has ALREADY turned, not a forecast. A handful of early-warning overrides (an act-level alert, a fresh regime flip, a high/extreme drawdown or acute systemic-stress band) can cap or force the verdict. DISPLAY-ONLY — a synthesis of signals shown elsewhere on this page; it never scores, sizes or feeds the regime engine.", "当前是什么样的市场 — 一个把多周期大盘趋势、跨资产风险偏好、波动率环境、市场广度、联储流动性与信用，以及下行风险护栏融合为一个 0-100 评分的风险偏好读数。绿色＝风险偏好（≥60）·黄色＝混合/转换（42–59）·红色＝避险（<42）。确认优于预测：每条腿读取的是已经转向的东西，而非预测。少数早期预警可封顶或强制结论。仅供展示 — 它是本页其他信号的综合，绝不评分、定仓或进入周期引擎。") }}
+        <label class="ms-alerts" for="ms-alerts-toggle">
+          {% if _nalerts %}<span class="dot"></span>{% endif %}{{ t('Fired alerts','已触发警报') }}
+          <span class="ct{{ ' is-zero' if not _nalerts }}">{{ _nalerts }}</span>
+        </label>
       </div>
-      <div class="ms-verdict">
-        <span class="ms-verdict-word">{{ t(MS.label_en, MS.label_zh) }}</span>
-        <p class="ms-says">{{ t(MS.headline_en, MS.headline_zh) }}</p>
-        {% for o in MS.overrides %}<span class="ms-override">⚠ {{ t(o.note_en, o.note_zh) }}</span>{% endfor %}
-        {% if MS.flip_en %}<span class="ms-flip">{{ t(MS.flip_en, MS.flip_zh) }}</span>{% endif %}
-        <div class="ms-backdrop">
-          <span class="ms-bd-mini" title="Macro regime quadrant · 宏观周期象限">
-            <i class="{{ 'on' if latest.quad=='Q1' }}" style="--qc:var(--q1)"></i>
-            <i class="{{ 'on' if latest.quad=='Q2' }}" style="--qc:var(--q2)"></i>
-            <i class="{{ 'on' if latest.quad=='Q4' }}" style="--qc:var(--q4)"></i>
-            <i class="{{ 'on' if latest.quad=='Q3' }}" style="--qc:var(--q3)"></i>
-          </span>
-          <span class="ms-bd-txt">{{ t('Macro backdrop','宏观背景') }}: <b>{{ td(latest.quad_name) }}</b> · {{ td(latest.cycle_tag) }}-{{ t('cycle','周期') }} · {{ t('liquidity','流动性') }} {{ td(latest.liquidity_overlay) }}</span>
+
+      <div class="ms-top">
+        {# LEFT — the verdict: what kind of market, in 2 seconds #}
+        <section class="ms-verdict">
+          <p class="v-label">{{ t('Verdict','结论') }}</p>
+          <p class="v-word">{{ t(MS.label_en, MS.label_zh) }}<span class="arr">{{ _va }}</span></p>
+          <div class="v-scorerow"><span class="v-score">{{ MS.score }}</span><span class="v-outof">/ 100</span></div>
+          <div class="v-meter"><span class="tick" style="left:{{ MS.score }}%"></span></div>
+          <div class="v-scale"><span>0</span><span>42</span><span>60</span><span>100</span></div>
+          <p class="v-thesis">{{ t(MS.headline_en, MS.headline_zh) }}</p>
+          {% for o in MS.overrides %}<p class="v-override"><span class="ic">⚠</span>{{ t(o.note_en, o.note_zh) }}</p>{% endfor %}
+          {% if MS.flip_en %}<p class="v-flip">{{ t(MS.flip_en, MS.flip_zh) }}</p>{% endif %}
+        </section>
+
+        {# RIGHT — the evidence: the six factors behind the verdict; click any for its metrics #}
+        <section class="ms-evidence">
+          <div class="e-head"><p class="e-title">{{ t('Evidence · six factors','依据 · 六大因子') }}</p><span class="e-cols">{{ t('tone · score','信号 · 评分') }}</span></div>
+          {% for c in MS.components %}
+          <details class="ms-f tone-{{ c.tone }}">
+            <summary>
+              <span class="f-dir">{{ c.arrow }}</span>
+              <span class="f-main"><span class="f-name">{{ t(c.label_en, c.label_zh) }}</span><span class="f-read">{{ t(c.read_en, c.read_zh) }}</span></span>
+              <span class="f-tone"><i style="width:{{ c.score }}%"></i></span>
+              <span class="f-score">{{ c.score }}</span>
+              <span class="f-chev">›</span>
+            </summary>
+            {% if c.metrics %}<div class="f-metrics">{% for m in c.metrics %}<span class="ms-metric">{{ t(m.k_en, m.k_zh) }} <b>{{ m.v }}</b></span>{% endfor %}</div>{% endif %}
+          </details>
+          {% endfor %}
+        </section>
+      </div>
+
+      {% if MS.mtf and MS.mtf.indices %}
+      {# the multi-timeframe tape — the broad US market across four horizons #}
+      <section class="ms-tape">
+        <div class="tape-head">
+          <p class="tape-title">{{ t('Multi-timeframe tape · the broad US market','多周期趋势 · 美股大盘') }}{{ help("How the broad US market is trending across four timeframes — Daily, 3-Day, Weekly and Monthly — for the S&P 500, Nasdaq 100 and Russell 2000. ▲ = up (MACD positive and RSI ≥ 50), ▼ = down, ▶ = mixed. The right-hand verdict is the confluence across timeframes. When short timeframes turn up while long ones stay down, it is an unconfirmed turn — confirmation comes when the weekly aligns.", "美股大盘在四个周期（日、3日、周、月）上的趋势 — 标普500、纳指100、罗素2000。▲＝上行（MACD 为正且 RSI ≥ 50），▼＝下行，▶＝分化。右侧为多周期合流结论。当短周期转强而长周期仍弱时，是未确认的转向 — 待周线对齐方为确认。") }}</p>
+          <span class="tape-sub">{{ t('arrow · RSI','箭头 · RSI') }}</span>
         </div>
-      </div>
+        <table class="ms-tapetbl">
+          <thead><tr>
+            <th class="l">{{ t('Index','指数') }}</th>
+            <th>{{ t('Daily','日') }}</th><th>3D</th><th>{{ t('Weekly','周') }}</th><th>{{ t('Monthly','月') }}</th>
+            <th class="r">{{ t('Confluence','合流') }}</th>
+          </tr></thead>
+          <tbody>
+          {% for r in MS.mtf.indices %}
+            <tr>
+              <td class="l t-inst">{{ t(r.label_en, r.label_zh) }}</td>
+              {% for tf in ['D','3D','W','M'] %}{% set cell = r.cells[tf] %}
+              <td>{% if cell %}<span class="ms-cell2 {{ cell.tone }}"><span class="ar">{{ cell.arrow }}</span><span class="rsi">{{ cell.rsi|round|int if cell.rsi is not none else '·' }}</span></span>{% else %}<span class="ms-cell2 flat"><span class="ar">·</span></span>{% endif %}</td>
+              {% endfor %}
+              <td class="r"><span class="ms-conf {{ r.tone }}">{{ t(r.confluence_en, r.confluence_zh) }}</span></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </section>
+      {% endif %}
     </div>
-
-    {# the six factors behind the verdict — click any to expand its metrics (absorbs the old Market-Risk-Radar / vol-shock / signal-stack reads) #}
-    {# the six factors behind the verdict — click any to expand its metrics (absorbs the old vol-shock / signal-stack / internals reads) #}
-    <div class="ms-factors">
-      {% for c in MS.components %}
-      <details class="ms-fac ms-tone-{{ c.tone }}">
-        <summary>
-          <div class="ms-fac-top"><span class="ms-fac-arrow">{{ c.arrow }}</span><span class="ms-fac-lbl">{{ t(c.label_en, c.label_zh) }}</span><span class="ms-fac-score">{{ c.score }}</span></div>
-          <p class="ms-fac-read">{{ t(c.read_en, c.read_zh) }}</p>
-        </summary>
-        {% if c.metrics %}
-        <div class="ms-fac-body">
-          {% for m in c.metrics %}<div class="ms-mrow"><span>{{ t(m.k_en, m.k_zh) }}</span><b>{{ m.v }}</b></div>{% endfor %}
-        </div>
-        {% endif %}
-      </details>
-      {% endfor %}
-    </div>
-
-    {% if MS.mtf and MS.mtf.indices %}
-    {# the multi-timeframe technical monitor — redrawn from a dense table into arrows #}
-    <div class="ms-tape">
-      <div class="ms-tape-h">{{ t('Multi-timeframe tape · the broad US market','多周期趋势 · 美股大盘') }}
-        {{ help("How the broad US market is trending across four timeframes — Daily, 3-Day, Weekly and Monthly — for the S&P 500, Nasdaq 100 and Russell 2000. ▲ = up (MACD positive and RSI ≥ 50), ▼ = down, ▶ = mixed. The right-hand verdict is the confluence across timeframes. When short timeframes turn up while long ones stay down, it is an unconfirmed turn — confirmation comes when the weekly aligns.", "美股大盘在四个周期（日、3日、周、月）上的趋势 — 标普500、纳指100、罗素2000。▲＝上行（MACD 为正且 RSI ≥ 50），▼＝下行，▶＝分化。右侧为多周期合流结论。当短周期转强而长周期仍弱时，是未确认的转向 — 待周线对齐方为确认。") }}
-      </div>
-      <div class="ms-tape-row hdr">
-        <span class="ms-tape-name"></span>
-        <span class="ms-tape-cells"><span>{{ t('Daily','日') }}</span><span>3D</span><span>{{ t('Weekly','周') }}</span><span>{{ t('Monthly','月') }}</span></span>
-        <span></span>
-      </div>
-      {% for r in MS.mtf.indices %}
-      <div class="ms-tape-row">
-        <span class="ms-tape-name">{{ t(r.label_en, r.label_zh) }}</span>
-        <span class="ms-tape-cells">
-          {% for tf in ['D','3D','W','M'] %}{% set cell = r.cells[tf] %}
-          {% if cell %}<span class="ms-cell ms-{{ cell.tone }}" title="{{ tf }} · RSI {{ cell.rsi|round|int if cell.rsi is not none else '—' }} · MACD {{ 'positive' if cell.macd_pos else 'negative' }}"><span class="a">{{ cell.arrow }}</span><span class="r">{{ cell.rsi|round|int if cell.rsi is not none else '·' }}</span></span>
-          {% else %}<span class="ms-cell ms-flat"><span class="a">·</span><span class="r"></span></span>{% endif %}{% endfor %}
-        </span>
-        <span class="ms-tape-conf ms-tone-{{ r.tone }}">{{ t(r.confluence_en, r.confluence_zh) }}</span>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
 
     <div class="ms-divider">{{ t('Macro backdrop — the growth × inflation regime','宏观背景 — 增长 × 通胀周期') }}</div>
     {% endif %}{# /market_state #}
