@@ -243,7 +243,30 @@ def lead_lag(sig: dict, ks=range(-6, 7)) -> dict:
 
 
 # ------------------------------------------------------------- book backtest ----
-def _stats(R: pd.Series, bench_m_ret: pd.Series | None = None, n_trials: int = 8) -> dict:
+def _audit_ledger(name: str):
+    """Honest, COUNTED multiple-testing N for the DSR below: an EPHEMERAL Trial Ledger that
+    logs, at generation, the 8 return-series this universe sweeps (3 hold horizons × {gated
+    dual, rel no-gate} + 2 buy-hold baselines) and lets `deflated_sharpe` count them — never a
+    caller-asserted literal that could be lowballed (the keystone ratchet; see
+    research/SELF_IMPROVING_AI_SUITE.md + tests/test_no_literal_ntrials.py). Kept in system
+    temp, out of the production ledger AND the repo tree, so a manual audit never inflates a
+    real family's count nor gets swept into the daily `git add data/`. Returns (ledger, family)."""
+    import tempfile
+    from engine.trial_ledger import TrialLedger
+    fam = f"allocation_china_audit::{name}"
+    path = Path(tempfile.gettempdir()) / f"_alloc_china_audit_{name}.jsonl"
+    if path.exists():
+        path.unlink()
+    led = TrialLedger(path=path, family=fam)
+    grid = [{"book": "dual" if g else "rel", "gate": g, "hold_m": h}
+            for h in (1, 3, 6) for g in (True, False)]
+    grid += [{"book": "ew_buyhold"}, {"book": "shanghai_buyhold"}]
+    led.log_grid(grid, family=fam)                # 8 distinct configs → effective_n == 8
+    return led, fam
+
+
+def _stats(R: pd.Series, bench_m_ret: pd.Series | None = None, *,
+           ledger=None, family: str | None = None) -> dict:
     R = R.dropna()
     if len(R) < 12:
         return {}
@@ -258,7 +281,9 @@ def _stats(R: pd.Series, bench_m_ret: pd.Series | None = None, n_trials: int = 8
     try:
         from engine.validation import deflated_sharpe
         sr_m = R.mean() / R.std() if R.std() > 0 else 0.0
-        dsr = deflated_sharpe(sr_m, float(R.skew()), float(R.kurtosis() + 3.0), len(R), n_trials, trading_year=TY)
+        # N is COUNTED from the Trial Ledger at generation, not a caller-asserted literal.
+        dsr = deflated_sharpe(sr_m, float(R.skew()), float(R.kurtosis() + 3.0), len(R),
+                              ledger=ledger, family=family, trading_year=TY)
         if dsr is not None:
             out["dsr"] = round(float(dsr.get("dsr", dsr) if isinstance(dsr, dict) else dsr), 3)
     except Exception:  # noqa: BLE001
@@ -324,6 +349,7 @@ def run_universe(name: str, P: pd.DataFrame, bench_daily: pd.Series, contaminate
     sig = build_signals(P, bench_daily)
     bench_m_ret = sig["bench_m"].pct_change()
     ew = P.resample("ME").last().pct_change().mean(axis=1)
+    led, fam = _audit_ledger(name)        # counted multiple-testing N shared by every DSR below
     ric = rank_ic(sig)
     ric["6m_nonoverlap"] = rank_ic_nonoverlap(sig, 6)        # de-overlapped significance check
     # book at the engine's realistic low-turnover hold horizons (monthly churn = worst case)
@@ -331,9 +357,9 @@ def run_universe(name: str, P: pd.DataFrame, bench_daily: pd.Series, contaminate
     for h in (1, 3, 6):
         dual_R, dmeta = book(sig, nr.N_HOLD, gate=True, hold=h)
         rel_R, _ = book(sig, nr.N_HOLD, gate=False, hold=h)
-        bd = _stats(dual_R, bench_m_ret); bd["avg_cash"] = dmeta["avg_cash"]
+        bd = _stats(dual_R, bench_m_ret, ledger=led, family=fam); bd["avg_cash"] = dmeta["avg_cash"]
         book_by_hold[f"hold_{h}m"] = {"engine_top4_dual": bd,
-                                      "top4_rel_nogate": _stats(rel_R, bench_m_ret)}
+                                      "top4_rel_nogate": _stats(rel_R, bench_m_ret, ledger=led, family=fam)}
     return {
         "n_assets": int(P.shape[1]),
         "span": [str(P.index.min().date()), str(P.index.max().date())],
@@ -342,8 +368,8 @@ def run_universe(name: str, P: pd.DataFrame, bench_daily: pd.Series, contaminate
         "lead_lag": lead_lag(sig),
         "book_by_hold": book_by_hold,
         "baselines": {
-            "ew_buyhold": _stats(ew, bench_m_ret),
-            "shanghai_composite_buyhold": _stats(bench_m_ret.reindex(ew.index)),  # 000001.SS (not CSI300)
+            "ew_buyhold": _stats(ew, bench_m_ret, ledger=led, family=fam),
+            "shanghai_composite_buyhold": _stats(bench_m_ret.reindex(ew.index), ledger=led, family=fam),  # 000001.SS (not CSI300)
         },
     }
 
