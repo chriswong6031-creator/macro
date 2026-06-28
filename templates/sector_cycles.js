@@ -859,10 +859,28 @@
     '</div>';
   }
 
-  // the "open this item's own page" target. US: every sector ETF and basket ETF-proxy has a
-  // single-stock analyzer at stock.html#TICKER (baskets without a proxy fall to the baskets hub).
-  // China (Shenwan indices / A-share baskets have no analyzer) routes to the China Sector Central
-  // hub. Returns null when there's nothing to open (incl. when already embedded in that hub).
+  // each US sector ETF has a dedicated equal-weight sector page under basket/; map by the
+  // stable SECTOR_CYCLES `id` so the "open page" button lands on that page rather than the
+  // ETF's single-stock analyzer (stock.html#TICKER).
+  var US_SECTOR_PAGE = {
+    xlk: "basket/us_sector_tech.html",
+    xlc: "basket/us_sector_comm.html",
+    xly: "basket/us_sector_discretionary.html",
+    xlf: "basket/us_sector_financials.html",
+    xli: "basket/us_sector_industrials.html",
+    xlb: "basket/us_sector_materials.html",
+    xle: "basket/us_sector_energy.html",
+    xlv: "basket/us_sector_health.html",
+    xlp: "basket/us_sector_staples.html",
+    xlu: "basket/us_sector_utilities.html",
+    xlre: "basket/us_sector_realestate.html"
+  };
+
+  // the "open this item's own page" target. US: each sector ETF opens its dedicated sector page
+  // (US_SECTOR_PAGE); basket ETF-proxies open the single-stock analyzer at stock.html#TICKER
+  // (baskets without a proxy fall to the baskets hub). China (Shenwan indices / A-share baskets
+  // have no analyzer) routes to the China Sector Central hub. Returns null when there's nothing
+  // to open (incl. when already embedded in that hub).
   function sectorPageHref(s) {
     if (META.region === "china") {
       // when this same JS is embedded IN the China Sector Central hub, don't render a
@@ -871,12 +889,14 @@
       return /sector_central/.test(location.pathname) ? null : ("sector_central_china.html#" + s.id);
     }
     if (s.kind === "basket") return s.etf_proxy ? ("stock.html#" + s.etf_proxy) : "baskets.html";
+    if (US_SECTOR_PAGE[s.id]) return US_SECTOR_PAGE[s.id];
     return s.ticker ? ("stock.html#" + s.ticker) : null;
   }
   function sectorPageLabel(s) {
     if (META.region === "china") return L("Open in Sector Central", "在板块中枢查看");
     if (s.kind === "basket") return s.etf_proxy ? (L("Open ", "查看 ") + s.etf_proxy + L(" page", " 页面"))
                                                 : L("Open baskets hub", "查看篮子中心");
+    if (US_SECTOR_PAGE[s.id]) return L("Open ", "查看 ") + nm(s) + L(" page", " 页面");
     return L("Open ", "查看 ") + (s.ticker || "") + L(" page", " 页面");
   }
 
