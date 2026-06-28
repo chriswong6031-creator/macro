@@ -1088,6 +1088,37 @@
     font-size:11.5px;line-height:1.4;color:var(--ink-1)}
   body.page-macro .v-override .ic{color:var(--act);flex:none;font-size:12px;line-height:1.3}
 
+  /* Risk-Radar banner — the validated leading drawdown gauge, promoted to the very top
+     of the command-center so the headline can never read risk-on above a screaming radar */
+  body.page-macro .ms-radar{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin:0 0 14px;
+    padding:9px 13px;border-radius:10px;font-size:12.5px;line-height:1.35;
+    background:color-mix(in srgb,var(--rc) 8%,var(--panel2));
+    border:var(--rule) solid color-mix(in srgb,var(--rc) 28%,var(--hair));border-left:3px solid var(--rc)}
+  body.page-macro .ms-radar.loud{background:color-mix(in srgb,var(--rc) 14%,var(--panel2));
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--rc) 22%,transparent),0 8px 26px -12px var(--rc)}
+  body.page-macro .ms-radar .msr-ic{font-size:17px;line-height:1;flex:none}
+  body.page-macro .ms-radar .msr-main{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 240px}
+  body.page-macro .ms-radar .msr-tit{font-weight:600;color:var(--ink-2)}
+  body.page-macro .ms-radar .msr-tit b{font-family:var(--num)}
+  body.page-macro .ms-radar .msr-odds{font-size:11px;color:var(--ink-3)}
+  body.page-macro .ms-radar .msr-odds b{font-family:var(--num);color:var(--ink-2)}
+  body.page-macro .ms-radar .msr-amp{font-size:11px;color:var(--rc);font-weight:600;line-height:1.3}
+  body.page-macro .ms-radar .msr-do{font-size:11.5px;color:var(--ink-2);max-width:34ch}
+  @media(max-width:760px){body.page-macro .ms-radar .msr-do{max-width:none;flex:1 1 100%}}
+
+  /* Heads-up strip — compact live flags (next catalyst / Fed stance / fragility),
+     replacing the old full-width Event-Risk + Turning-Point + Fed-reaction panels.
+     Global vars only (renders on both the macro and stocks pages). */
+  .heads-up{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .heads-up .hu-label{font-family:ui-monospace,"SF Mono",monospace;font-size:10px;font-weight:700;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted);flex:none}
+  .heads-up .hu-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;
+    font-size:12px;line-height:1.3;color:var(--text);text-decoration:none;
+    background:color-mix(in srgb,var(--hc) 9%,var(--panel2));
+    border:1px solid color-mix(in srgb,var(--hc) 32%,var(--line));border-left:3px solid var(--hc)}
+  .heads-up a.hu-chip:hover{border-color:var(--hc)}
+  .heads-up .hu-chip b{font-family:ui-monospace,"SF Mono",monospace}
+
   /* evidence matrix — one expandable row per factor */
   body.page-macro .e-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 2px}
   body.page-macro .e-title{font-family:var(--num);font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
@@ -1203,6 +1234,22 @@
     {% set _nalerts = (alerts|length if alerts else 0) + (1 if (latest.dislocation and latest.dislocation.dislocation_active) else 0) %}
     {# ===== MARKET STATE command-center — the first read: what kind of market is this? ===== #}
     <div class="ms ms-{{ MS.color }}">
+      {# Risk Radar banner — promoted from lower on the page. When it is at caution or
+         worse it has already CAPPED/FORCED the verdict above (engine/market_state.py),
+         so the dial, label and this banner always agree. #}
+      {% if MS.radar and MS.radar.state %}
+      {% set rd = MS.radar %}
+      {% set rdcol = 'var(--down)' if rd.state=='risk-off' else ('var(--orange)' if rd.state=='elevated' else ('var(--warn)' if rd.state=='caution' else ('var(--ink-3)' if rd.state=='watch' else 'var(--up)'))) %}
+      <div class="ms-radar{{ ' loud' if rd.is_loud }}" style="--rc:{{ rdcol }}">
+        <span class="msr-ic">{{ '🛑' if rd.state=='risk-off' else ('🚨' if rd.state=='elevated' else ('⚠️' if rd.state=='caution' else ('👀' if rd.state=='watch' else '✅'))) }}</span>
+        <span class="msr-main">
+          <span class="msr-tit">{{ t('Risk Radar','风险雷达') }} · <b style="color:{{ rdcol }}">{{ t(rd.state|upper, rd.state_zh) }}{% if rd.top_score is not none %} {{ rd.top_score }}/100{% endif %}</b>{% if rd.is_loud %} — {{ t(rd.label_en, rd.label_zh) }}{% endif %}{{ help('A leading drawdown-risk gauge, built only from signals that passed a strict backtest. It watches five kinds of stress (credit, rates, bubble, growth, volatility) and stays quiet until the broad market is actually breaking — so a loud reading is rare and meaningful. It measures the ODDS of a pullback, not the direction. Every call is graded afterwards and the gauge is re-tuned from its own misses. Use it to size down, never to pick stocks. When it reaches caution or worse it caps the Market State verdict above.', '领先的回撤风险指标，仅由通过严格回测的信号构成。它监测五类压力（信用、利率、泡沫、增长、波动），在大盘真正破位前保持沉默——因此响亮的读数稀少而有意义。它衡量回撤的“概率”而非方向。每次判断事后都会被评判，并据其失误自我再校准。用它来降低仓位，绝非选股。当它达到“警戒”或更高时，会封顶上方的市场状态结论。') }}</span>
+          {% if rd.amp and rd.amp > 0 %}<span class="msr-amp">▲ {{ t('Weighted heavily','重度加权') }} — {{ t('amplified by','放大因子') }} {{ rd.amp }}: <span class="l-en">{{ rd.amp_flags_en|join(' · ') }}</span><span class="l-zh">{{ rd.amp_flags_zh|join(' · ') }}</span></span>{% endif %}
+          {% if rd.dd21 is not none %}<span class="msr-odds">{{ t('Pullback odds (≥5%)','回撤概率（≥5%）') }} · 5d {{ (rd.dd5*100)|round|int }}% · 10d {{ (rd.dd10*100)|round|int }}% · <b>21d {{ (rd.dd21*100)|round|int }}%</b></span>{% endif %}
+        </span>
+        {% if rd.is_loud %}<span class="msr-do"><b>{{ t('Do','应对') }}:</b> {{ t(rd.do_en, rd.do_zh) }}{% if rd.gross and rd.gross < 1 %} · {{ t('gross','仓位') }} ×{{ '%.2f'|format(rd.gross) }}{% endif %}</span>{% endif %}
+      </div>
+      {% endif %}
       <div class="ms-head">
         <span class="ms-eyebrow"><span class="ms-live"></span>{{ t('MARKET STATE','市场状态') }}</span>
         <span class="ms-date">· {{ MS.asof }}</span>
@@ -1531,118 +1578,28 @@
     <span class="abc-go">→</span>
   </a>
 
-  <!-- ===================== EVENT-RISK WINDOW — non-directional catalyst flag (display-only) ===================== -->
-  {% if event_risk and event_risk.show %}
-  {% set ER = event_risk %}
-  {% set erc = 'var(--down)' if ER.fragility.fragile else ('var(--orange)' if ER.vol_tier=='high' else 'var(--warn)') %}
-  <div class="panel span12" id="event-risk" style="border-left:3px solid {{ erc }}">
-    <h2>📅 {{ t(ER.headline_en, ER.headline_zh) }}
-      {{ help("A non-directional ATTENTION flag, not a signal and NOT a dampener. It pairs a known high-impact catalyst date with the dashboard's already-measured fragility. It never predicts direction — pre-FOMC drift died after 2016 and the average announcement premium is positive, so these days resolve up about as often as down. It never cuts exposure and is never scored. The honest use: expect two-sided volatility, size and set stops for the noise.", "这是非方向性的注意力提示，不是信号、也不是抑制器。它把已知的高影响催化剂日期与仪表盘已测得的脆弱性配对。它从不预测方向——2016年后FOMC前漂移已消失，且平均公告溢价为正，因此这些日子上涨与下跌的概率相当。它从不削减仓位、也从不计入评分。正确用法：预期两面性波动，按噪声调整仓位与止损。") }}
-    </h2>
-    <div class="grid">
-      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ erc }};border-radius:8px;padding:12px 14px">
-        <div class="muted sm" style="margin-bottom:6px">{{ t('Display / context only — this is NOT a sell signal and NOT a direction call.', '仅供显示／参考 — 这不是卖出信号，也不是方向判断。') }}</div>
-        <div>{{ t(ER.sub_en, ER.sub_zh) }}</div>
-        {% if ER.fragility.fragile %}
-        <div style="margin-top:9px;border-top:1px solid var(--line);padding-top:8px">
-          <b style="color:{{ erc }}">→ {{ t('Walking in fragile', '当前仓位脆弱') }}:</b>
-          <ul style="margin:5px 0 0;padding-left:18px">
-            {% for r in ER.fragility.reasons %}<li class="sm">{{ t(r.en, r.zh) }}</li>{% endfor %}
-          </ul>
-        </div>
-        {% endif %}
-        {% if ER.track and ER.track.n %}
-        <div class="sm muted" style="margin-top:9px;border-top:1px solid var(--line);padding-top:7px">
-          <b>{{ t('Our track record', '我们的战绩') }}:</b>
-          {{ t('across', '过去') }} {{ ER.track.n }} {{ t('flagged event-days the S&P realized ±', '次标记事件当日，标普实际波动 ±') }}{{ ER.track.avg_abs }}% ({{ t('up', '上涨') }} {{ (ER.track.up_rate*100)|round|int }}%) — {{ t('the base rate this banner is calibrated against (two-sided).', '本横幅据以校准的基准（两面性）。') }}
-        </div>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- ===================== TURNING-POINT FRAGILITY — conviction guardrail (display-only) ===================== -->
-  {% if latest.turning_point and latest.turning_point.present %}
-  {% set TP = latest.turning_point %}
-  {% set tpc = 'var(--down)' if TP.state=='fragile-structural' else ('var(--muted)' if TP.state=='cooling' else 'var(--orange)') %}
-  {% set _stx = {'RORO extreme':'RORO 极值','capitulation':'恐慌投降','regime transitioning':'周期转换中','rate path priced':'利率路径已定价'} %}
-  <div class="panel span12" id="turning-point" style="border-left:3px solid {{ tpc }}">
-    <h2>⚠️ {{ t(TP.headline_en, TP.headline_zh) }}
-      {{ help("A conviction guardrail, NOT a signal. It fires only when the tape is one-factor (six markets on one macro bet), a macro-shock driver dominates, and positioning is stretched — the configuration that whipsaws on a fast catalyst. It lowers stated conviction; it never tells you to fade. It is read across existing leaves and is never scored, because it cannot distinguish a forced, reversible move from an early, real regime change.", "这是确信度护栏，并非信号。仅当行情呈单因子（六个市场押注同一宏观主题）、某一宏观冲击驱动占主导、且仓位被拉伸时才触发——这正是快速催化剂下容易剧烈反复的格局。它只降低确信度，绝不提示做空。它跨既有读数综合得出，从不计入评分，因为它无法区分被迫的可逆移动与早期的真实周期变化。") }}
-    </h2>
-    <div class="grid">
-      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ tpc }};border-radius:8px;padding:12px 14px">
-        <div class="muted sm" style="margin-bottom:6px">{{ t('Display-only — these reads are coincident, not predictive. The dashboard is NOT telling you a direction here.', '仅供显示 — 此处读数为巧合同步，并非预测。仪表盘在此并不告诉你方向。') }}</div>
-        <div>{{ t(TP.message_en, TP.message_zh) }}</div>
-        <div style="margin-top:8px;font-weight:700;color:{{ tpc }}">→ {{ t(TP.size_note_en, TP.size_note_zh) }}</div>
-        {% if TP.defer_to == 'dislocation' %}
-        <div class="sm" style="margin-top:7px;color:var(--down)">↘ {{ t('See the', '参见') }} <a href="#dislocation" style="color:var(--down);text-decoration:underline">{{ t('Dislocation gate', '错位一道闸') }}</a> {{ t('— this is its falling-knife regime, not a fade.', '— 此为接飞刀情形，而非做空机会。') }}</div>
-        {% endif %}
-        <div class="sm muted" style="margin-top:9px;border-top:1px solid var(--line);padding-top:7px">
-          <b>{{ t('Why it fired', '触发原因') }}:</b>
-          {% if TP.drivers.one_factor %}{{ t('one-factor tape', '单因子行情') }}{% if TP.drivers.absorption_pctile is not none %} ({{ t('absorption', '吸收率') }} {{ (TP.drivers.absorption_pctile*100)|round|int }}{{ t('th pct', ' 百分位') }}){% endif %} · {% endif %}
-          {% if TP.drivers.primary_label %}{{ t('driver', '驱动') }}: {{ t(TP.drivers.primary_label, TP.drivers.primary_label_zh or TP.drivers.primary_label) }} · {% endif %}
-          {% if TP.drivers.stretched %}{{ t('stretched', '拉伸') }}: {% for s in TP.drivers.stretched %}{{ t(s, _stx.get(s, s)) }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- ===================== FED REACTION FUNCTION — explicit policy stance (display-only) ===================== -->
-  {% if latest.fed_stance and latest.fed_stance.stance and latest.fed_stance.stance != 'unknown' %}
-  {% set FS = latest.fed_stance %}
-  {% set fsc = 'var(--down)' if FS.color=='down' else ('var(--up)' if FS.color=='up' else 'var(--muted)') %}
-  <div class="panel span12" id="fed-stance" style="border-left:3px solid {{ fsc }}">
-    <h2>🏛️ {{ t('Fed reaction function', '美联储反应函数') }}:
-      <span style="color:{{ fsc }}">{{ t(FS.label_en, FS.label_zh) }}</span>
-      {{ help("An EXPLICIT read of monetary-policy stance (hawkish/neutral/dovish) off the market-implied path (fed_path) + the FOMC statement's guidance direction — so policy stance is stated, not left implicit in the curve. Display-only / never scored: a market price is reactive, not a forecast.", "对货币政策立场（鹰派/中性/鸽派）的显式读数，基于市场隐含路径（fed_path）+ FOMC 声明的指引方向——使政策立场被明确陈述，而非隐含于曲线中。仅供展示、从不计入评分：市场价格是被动反应而非预测。") }}
-    </h2>
-    <div class="grid">
-      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ fsc }};border-radius:8px;padding:12px 14px">
-        {% if FS.drivers_en %}<div><b>{{ t('Drivers', '驱动') }}:</b> <span class="l-en">{{ FS.drivers_en | join(' · ') }}</span><span class="l-zh">{{ FS.drivers_zh | join(' · ') }}</span></div>{% endif %}
-        <div class="sm muted" style="margin-top:7px">{{ t(FS.note_en, FS.note_zh) }}
-          → <a href="policy_watch.html" style="color:var(--link)">{{ t('Fed & Policy Watch: intent, theaters & capital rotation', '美联储与政策观察：意图、战区与资本轮动') }} →</a></div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
-
-  {# vol-shock panel retired — folded into the Market State command-center's Volatility factor #}
-
-  {# signal-stack panel retired — folded into the Market State command-center composite #}
-  {# signal-stack retired — folded into the Market State command-center #}
-  <!-- ===================== VOL-SHOCK RISK — leading-precursor fusion (display-only) ===================== -->
-  {% if vol_shock %}
-  {% set vs = vol_shock %}
-  {% set vsc = 'var(--up)' if vs.band == 'low' else ('var(--warn)' if vs.band == 'elevated' else 'var(--down)') %}
-  <div class="panel span12" id="vol-shock" style="border-left:3px solid {{ vsc }}">
-    <h2>⚡ {{ t('Vol-shock risk — leading-precursor fusion', '波动冲击风险 — 领先前兆融合') }}
-      {% if vs.score is not none %}<span style="color:{{ vsc }};font-weight:800">{{ vs.score_int }}<small style="font-size:13px;font-weight:600;color:var(--muted)">/100 · {{ t(vs.band|capitalize, vs.band_zh) }}</small></span>{% endif %}
-      {{ help("ONE forward 0-100 caution gauge that FUSES the fast / LEADING precursors which tend to flash BEFORE an equity vol shock — cross-asset concentration, dealer short-gamma, a VIX term inversion, a compressed variance-risk premium, complacent positioning, breadth divergence, the active turning-point caution. The two existing 0-100 scores (de-risk model + macro-risk) are deliberately SLOW recession/credit gauges that lag a days-ahead shock; this is the leading complement. Each factor's points SUM to the headline, so the bar shows exactly what is flashing. DISPLAY-ONLY / validation-accruing: never scored, feeds no allocation — each firing is logged and graded on forward data.", "一个前瞻性的 0-100 警示计，融合在股市波动冲击之前往往率先闪现的快速领先前兆——跨资产集中度、做市商空头 Gamma、VIX 期限倒挂、被压缩的波动风险溢价、自满的持仓、广度背离、已激活的转折点警示。现有两个 0-100 评分（降险模型 + 宏观风险）是刻意求稳的衰退／信用滞后计，会落后于数日内的冲击；本计为其领先互补。各因子贡献分相加即为总分，进度条直观显示当前什么在闪现。仅供展示／正在积累验证：不计分、不驱动仓位——每次触发均记录并以未来数据评分。") }}
-    </h2>
-    {% if vs.score is not none %}
-    <div class="rm-bar">{% for f in vs.factors %}{% if f.available and f.points %}<div style="width:{{ f.points }}%;background:{{ f.color }}" title="{{ f.label }}: {{ f.points }}"></div>{% endif %}{% endfor %}</div>
-    <div class="muted" style="font-size:11px">{{ t('Filled = vol-shock risk score out of 100; each segment = a leading factor\'s contribution.', '填充 = 满分100的波动冲击风险评分；每段 = 一个领先因子的贡献。') }}</div>
-    <table class="rm-tbl">
-      <tr><th class="l">{{ t('Leading factor', '领先因子') }}</th><th>{{ t('Reading', '读数') }}</th><th>{{ t('Weight', '权重') }}</th><th>{{ t('Points', '贡献') }}</th></tr>
-      {% for f in vs.factors %}
-      <tr><td class="l"><span class="rm-dot" style="background:{{ f.color }}"></span>{{ t(f.label, f.label_zh) }}
-        {% if f.note %}<div class="muted" style="font-size:10.5px;margin-left:15px">{{ t(f.note, f.note_zh) }}</div>{% endif %}</td>
-        <td>{{ (f.sub|round|int ~ '/100') if f.sub is not none else '—' }}</td>
-        <td>{{ '%.2f'|format(f.weight) }}</td>
-        <td><b>{{ ('%.1f'|format(f.points)) if f.points is not none else '—' }}</b></td></tr>
-      {% endfor %}
-      <tr><td class="l"><b>{{ t('Vol-shock risk score', '波动冲击风险评分') }}</b></td><td></td><td></td><td><b>{{ vs.score }}</b></td></tr>
-    </table>
-    {% if vs.why %}<p class="sm" style="margin:9px 0 0"><b>{{ t('Why', '原因') }}:</b> {{ t(vs.why, vs.why_zh) }}</p>{% endif %}
-    <p class="muted sm" style="margin:6px 0 0">{{ t('Graded on', '评分标准') }}: {{ t(vs.outcome_label_en, vs.outcome_label_zh) }}.
-      {% if vs.track_record and vs.track_record.n %} {{ t('Forward record', '前瞻记录') }}: {{ vs.track_record.n }} {{ t('firings', '次触发') }} · {{ (vs.track_record.hit_rate * 100) | round | int }}% {{ t('hit', '命中') }}.{% else %} {{ t('Forward record accruing — graded once N trading days elapse.', '前瞻记录积累中——满 N 个交易日后评分。') }}{% endif %}</p>
-    {% else %}
-    <p class="muted sm">{{ t('No leading precursors available right now.', '当前无可用领先前兆。') }}</p>
+  <!-- Heads-up strip — compact live flags (next catalyst / Fed stance / fragility).
+       Replaces the old full-width Event-Risk + Turning-Point + Fed-reaction panels.
+       The Vol-shock panel is retired — the Risk Radar override already carries stress. -->
+  {% set _hu_show = (event_risk and event_risk.show) or (latest.turning_point and latest.turning_point.present) or (latest.fed_stance and latest.fed_stance.stance and latest.fed_stance.stance != 'unknown') %}
+  {% if _hu_show %}
+  <div class="panel span12 heads-up">
+    <span class="hu-label">⚡ {{ t('Heads-up','提醒') }}</span>
+    {% if event_risk and event_risk.show %}
+    {% set ER = event_risk %}
+    {% set erc = 'var(--down)' if ER.fragility.fragile else ('var(--orange)' if ER.vol_tier=='high' else 'var(--warn)') %}
+    <span class="hu-chip" id="event-risk" style="--hc:{{ erc }}">📅 {{ t(ER.headline_en, ER.headline_zh) }}{{ help('A heads-up that a big scheduled event is near — not a buy/sell signal and not a direction call. These days swing both ways, so size positions and set stops for the noise.', '提醒重大日程事件临近 — 既非买卖信号也非方向判断。这类日子常两面波动，请据噪声调整仓位与止损。') }}</span>
     {% endif %}
-    <p class="muted sm" style="margin:8px 0 0">{{ t(vs.disclaimer, vs.disclaimer_zh) }}</p>
+    {% if latest.fed_stance and latest.fed_stance.stance and latest.fed_stance.stance != 'unknown' %}
+    {% set FS = latest.fed_stance %}
+    {% set fsc = 'var(--down)' if FS.color=='down' else ('var(--up)' if FS.color=='up' else 'var(--muted)') %}
+    <a class="hu-chip" id="fed-stance" href="policy_watch.html" style="--hc:{{ fsc }}">🏛️ {{ t('Fed','美联储') }}: <b style="color:{{ fsc }}">{{ t(FS.label_en, FS.label_zh) }}</b>{{ help('The Fed’s likely next move, read from rate-market pricing plus the latest FOMC guidance. Context only — a market price reacts, it doesn’t forecast. Tap to open Fed &amp; Policy Watch.', '美联储下一步的可能动向，依据利率市场定价与最新 FOMC 指引读出。仅供参考——市场价格是反应而非预测。点击打开美联储与政策观察。') }}</a>
+    {% endif %}
+    {% if latest.turning_point and latest.turning_point.present %}
+    {% set TP = latest.turning_point %}
+    {% set tpc = 'var(--down)' if TP.state=='fragile-structural' else ('var(--muted)' if TP.state=='cooling' else 'var(--orange)') %}
+    <span class="hu-chip" id="turning-point" style="--hc:{{ tpc }}">⚠️ {{ t(TP.headline_en, TP.headline_zh) }}{{ help('A conviction guardrail, not a signal. It flags when the whole market is leaning on one bet and positioning is stretched — the setup that whipsaws on a surprise. It lowers conviction; it never tells you to bet against the move.', '确信度护栏，并非信号。当整个市场押注单一主题且仓位被拉伸时触发——这是意外消息下易剧烈反复的格局。它降低确信度，绝不提示反向押注。') }}</span>
+    {% endif %}
   </div>
   {% endif %}
 
@@ -1650,8 +1607,8 @@
   {% if latest.rate_inflation_transmission and latest.rate_inflation_transmission.state %}
   {% set rit = latest.rate_inflation_transmission %}
   <div class="panel span12" id="rate-transmission">
-    <h2>{{ t('Rate & inflation transmission — what it’s pushing on now', '利率与通胀传导 — 当前在推动什么') }}
-      {{ help("How the current interest-rate, rate-expectations and inflation (CPI / core PCE) state propagates into each asset class — the headwind / tailwind each faces and which causal chains are live. Coefficients are MEASURED forward IC; display-only, never scored (repricing is reactive). The full cause→1st/2nd/3rd-order cascade, conditional scenarios and the inflation decomposition are on the Transmission page.", "当前利率、利率预期与通胀（CPI／核心PCE）状态如何传导至各类资产——各自面临的逆风/顺风及哪些因果链处于活跃。系数为实测前瞻IC；仅供展示、从不计分（重定价是被动的）。完整的“因→一/二/三阶”级联、情景推演与通胀分解见“传导”页面。") }}
+    <h2>{{ t('Rates & inflation — who it helps, who it hurts', '利率与通胀 — 利好谁、利空谁') }}
+      {{ help("How today's interest rates and inflation help or hurt each asset class. Green = tailwind, red = headwind. It's a read on pressure, not a buy/sell call. The full cause-and-effect breakdown is on the Transmission page.", "当前利率与通胀如何利好或利空各类资产。绿色＝顺风，红色＝逆风。这是对压力的判断，而非买卖信号。完整的因果分解见“传导”页面。") }}
       <a href="transmission.html" style="float:right;font-size:12px;font-weight:600">{{ t('Full page →', '完整页面 →') }}</a>
     </h2>
     <div style="display:flex;flex-wrap:wrap;gap:8px 18px;margin:4px 0 12px;font-size:13px">
@@ -1667,9 +1624,7 @@
         {% for h in rit.tailwinds[:4] %}<div style="margin-top:5px;display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span> <b class="wind tail">+{{ '%.2f'|format(h.net) }}</b></div>{% else %}<div class="muted">—</div>{% endfor %}
       </div>
     </div>
-    {% set ac = rit.chains|selectattr('active')|list %}
-    {% if ac %}<div class="muted sm" style="margin-top:10px">{{ t('Active chains','活跃传导链') }}: {% for c in ac %}<span class="l-en">{{ c.title.en }}</span><span class="l-zh">{{ c.title.zh }}</span>{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
-    <p class="muted sm" style="margin:8px 0 0">{{ t('Display-only — never scored. The scored-leg gate found no rate/inflation leg robust enough to time returns; these flag risk, not return.', '仅供展示，从不计分。可计分腿检验未发现足够稳健以择时回报的利率/通胀腿；它们标示风险而非回报。') }}</p>
+    <p class="muted sm" style="margin:10px 0 0">{{ t('A read on risk, not return — context only.', '仅作风险判断而非回报，仅供参考。') }}</p>
   </div>
   {% endif %}
 
@@ -1677,11 +1632,11 @@
   {% if latest.cross_asset_confirm and latest.cross_asset_confirm.verdict not in [none, 'unknown'] %}
   {% set cac = latest.cross_asset_confirm %}
   {% set _cvtone = 'up' if cac.verdict == 'confirm' else ('down' if cac.verdict == 'diverge' else 'flat') %}
-  <div class="panel span12" id="cross-asset-confirm">
-    <h2>{{ t('Bonds & FX cross-check — do the fast markets confirm equities?', '债券与外汇交叉验证 — 快端市场是否确认股票？') }}
-      {{ help("Bonds (credit, curve, rates-vol, sovereign) and FX (the dollar, EM carry) sit at the fast end of the macro complex. This compares their INDEPENDENT reads — the bond credit×curve cycle clock, credit / curve / rates-vol bands, the dollar-smile regime, EM-FX conviction — against the equity cycle & risk read. Honestly graded: only credit/EBP and the curve have a (noisy) leading horizon; rates-vol-vs-VIX, the dollar/EM risk-off read and FX carry are COINCIDENT confirmation, and the stock-bond correlation is a slow regime descriptor. DISPLAY-ONLY — never scored; a divergence is an attention flag, not a forecast.", "债券（信用、曲线、利率波动、主权）与外汇（美元、新兴市场套息）处于宏观体系的快端。本面板将它们的独立读数 — 债券信用×曲线时钟、信用／曲线／利率波动区间、美元微笑周期、新兴市场外汇信念 — 与股票周期与风险读数作对比。诚实分级：仅信用/EBP与曲线具（嘈杂的）领先性；利率波动对VIX、美元/新兴市场避险读数与外汇套息为同步确认，股债相关性为缓慢的周期描述。仅供展示 — 从不评分；背离是关注信号，而非预测。") }}
-      <span class="badge tone-{{ _cvtone }}" style="float:right">{{ t(cac.verdict, cac.verdict_zh) }}{% if cac.agree_pct is not none %} · {{ cac.agree_pct }}%{% endif %}{% if cac.confidence %} · {{ t('conf', '信心') }} {{ t(cac.confidence_en or cac.confidence, cac.confidence_zh or cac.confidence) }}{% endif %}</span>
-    </h2>
+  <details class="panel span12 fold" id="cross-asset-confirm">
+    <summary>{{ t('Bonds & FX cross-check — do they confirm stocks?', '债券与外汇交叉验证 — 是否确认股票？') }}
+      <span class="badge tone-{{ _cvtone }}">{{ t(cac.verdict, cac.verdict_zh) }}{% if cac.agree_pct is not none %} · {{ cac.agree_pct }}%{% endif %}</span>
+      {{ help("Bonds and the dollar move faster than stocks, so this checks whether they agree with the stock-market read. They AGREE = the move has support; they DIVERGE = a yellow flag worth watching. Context only, never a buy/sell signal.", "债券与美元比股票反应更快，因此本面板检查它们是否认同股市读数。一致＝走势有支撑；背离＝值得留意的黄旗。仅供参考，绝非买卖信号。") }}
+    </summary>
     <div style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid var({{ '--up' if _cvtone=='up' else ('--down' if _cvtone=='down' else '--muted') }});border-radius:8px;padding:10px 12px;font-weight:600">
       {{ t(cac.headline_en, cac.headline_zh) }}
     </div>
@@ -1702,17 +1657,14 @@
     </div>
     {% if cac.caution_flags %}
     <div style="margin-top:10px">
-      <div class="sm" style="font-weight:600;margin-bottom:4px">{{ t('Cross-asset caution flags', '跨资产关注信号') }}</div>
+      <div class="sm" style="font-weight:600;margin-bottom:4px">{{ t('Watch flags', '关注信号') }}</div>
       {% for f in cac.caution_flags %}
-      <div class="sm" style="padding:4px 8px;margin:3px 0;border-left:3px solid var({{ '--down' if f.severity=='high' else ('--warn' if f.severity=='medium' else '--muted') }});background:var(--panel2);border-radius:4px">
-        {{ t(f.en, f.zh) }}
-        <span class="badge sm" style="margin-left:4px">{{ f.owner|upper }} · {{ t('leading', '领先') if f.lead=='leading' else t('coincident', '同步') }}{% if f.equity_blind %} · {{ t('equities not yet showing it', '股票尚未显示') }}{% endif %}</span>
-      </div>
+      <div class="sm" style="padding:4px 8px;margin:3px 0;border-left:3px solid var({{ '--down' if f.severity=='high' else ('--warn' if f.severity=='medium' else '--muted') }});background:var(--panel2);border-radius:4px">{{ t(f.en, f.zh) }}</div>
       {% endfor %}
     </div>
     {% endif %}
     <p class="muted sm" style="margin:10px 0 0">{{ t(cac.note_en, cac.note_zh) }}</p>
-  </div>
+  </details>
   {% endif %}
 
   <!-- ===================== MAJOR US INDEXES — HEALTH & RISK ===================== -->
@@ -1814,55 +1766,23 @@
 
   {# Fired alerts moved into the combined "Now" board (alerts · news · relief radar) below. #}
 
-  <!-- ============ MARKET RISK RADAR v2 (engine/risk_radar.py) — primary top-of-page risk read ============ -->
+  <!-- Risk Radar detail — the headline read now lives in the Market State banner at the
+       top of the page; this collapsed fold keeps the per-scare breakdown, jargon-stripped. -->
   {% set RR = latest.risk_radar %}
-  {% if RR and RR.state %}
-  {% set rrcol = 'var(--act)' if RR.state=='risk-off' else ('var(--orange)' if RR.state=='elevated' else ('var(--warn)' if RR.state=='caution' else ('var(--muted)' if RR.state=='watch' else 'var(--up)'))) %}
-  {% set rrglow = 'rgba(224,85,85,.55)' if RR.state=='risk-off' else ('rgba(224,139,69,.5)' if RR.state=='elevated' else 'rgba(224,160,48,.4)') %}
-  {% set rricon = '🛑' if RR.state=='risk-off' else ('🚨' if RR.state=='elevated' else ('⚠️' if RR.state=='caution' else ('👀' if RR.state=='watch' else '✅'))) %}
-  <div class="panel span12{% if RR.alert %} rr-float rr-loud{% endif %}" id="risk-radar" style="--rr:{{ rrcol }};--rs-glow:{{ rrglow }}">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
-      <div class="rr-head">{{ rricon }} {{ t('Market Risk Radar', '市场风险雷达') }} — {{ t(RR.dominant_label_en or 'calm', RR.dominant_label_zh or '平静') }}
-        {{ help('An evidence-gated, regime-typed, genuinely-LEADING drawdown-risk radar (engine/risk_radar.py). Five scare-types (credit / rates / bubble / growth = validated leading; vol = display only — needs deep options-flow data) are each built ONLY from signals that pass a strict day-level-lift backtest (research/RISK_ENGINE_V2_FINDINGS.md). LOUD + EARLY but tiered: the quiet watch/caution tiers are early and high-recall; the LOUD banner is gated to fire only when the broad tape is breaking (SPY<200dma + weak breadth) -> ~2.3x base-rate precision, ~17% of days. The drawdown odds ESCALATE with intensity + conjunction. Every call is graded forward and an Opus loop retunes the calibration from its mistakes (within bounds, behind a do-no-harm backtest). De-risk response is SIZING, not selection; the validated regime quad is untouched.', '基于证据闸、按风险类型分型、真正“领先”的回撤风险雷达（engine/risk_radar.py）。五类风险（信用/利率/泡沫/增长=经验证领先；波动=仅展示，需期权流数据），每类仅由通过严格日级提升回测的信号构成。响亮但分层：静默的watch/caution层早且高召回；响亮横幅仅在大盘破位（SPY<200日均线+宽度走弱）时触发——约2.3倍基准精度、约17%的交易日。回撤概率随强度与共振上升。每次判断都会前向评判，Opus循环据其错误在边界内（经“无害”回测）再校准。应对是调整仓位而非选股；不改变经验证的区制四象限。') }}
-      </div>
-      <div class="rr-head">{{ RR.state|upper }}{% if RR.top_score is not none %} · {{ RR.top_score|round|int }}/100{% endif %}</div>
-    </div>
-    <p class="muted sm" style="margin:4px 0 9px">{{ t(RR.headline_en, RR.headline_zh) }}</p>
-    {% if RR.drawdown_prob and RR.drawdown_prob.h21 is not none %}
-    {% set dp = RR.drawdown_prob %}
-    <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 11px;margin-bottom:9px">
-      <span class="sm" style="font-weight:700">{{ t('Drawdown odds (≥5% pullback, escalating)', '回撤概率（≥5%，递增）') }}:</span>
-      <span class="rr-prob"> 5d <b>{{ (dp.h5*100)|round|int }}%</b> · 10d <b>{{ (dp.h10*100)|round|int }}%</b> · 21d <b style="color:{{ rrcol }}">{{ (dp.h21*100)|round|int }}%</b></span>
-      <span class="muted sm"> ({{ dp.lift_h21 }}× {{ t('base', '基准') }} {{ (dp.base_h21*100)|round|int }}%)</span>
-    </div>
-    {% endif %}
-    {% if RR.scares %}
-    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px">
+  {% if RR and RR.scares %}
+  <details class="panel span12 fold" id="risk-radar">
+    <summary>{{ t('Risk Radar — what’s driving it', '风险雷达 — 由什么驱动') }} <span class="muted sm">· {{ RR.state|upper }}{% if RR.top_score is not none %} {{ RR.top_score|round|int }}/100{% endif %}</span></summary>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:11px">
     {% for s in RR.scares %}
-      {% set sb = 'var(--act)' if s.band=='risk-off' else ('var(--orange)' if s.band=='elevated' else ('var(--warn)' if s.band=='caution' else ('var(--muted)' if s.band=='watch' else 'var(--line)'))) %}
+      {% set sb = 'var(--down)' if s.band=='risk-off' else ('var(--orange)' if s.band=='elevated' else ('var(--warn)' if s.band=='caution' else ('var(--ink-3)' if s.band=='watch' else 'var(--line)'))) %}
       <div class="rr-scare" style="border-left:3px solid {{ sb }}">
-        <div class="sm" style="font-weight:700">{{ t(s.label_en, s.label_zh) }} <span style="color:{{ sb }}">{{ s.score|round|int }}</span> <span class="muted" style="font-size:10px">[{{ s.tier }}]</span></div>
-        {% for l in s.firing_legs[:3] %}<span class="rr-chip">{{ l.leg }} {{ (l.pctile*100)|round|int }}%{% if l.confirmed %} ✓{% endif %}{% if l.lift_2020 %} · {{ l.lift_2020 }}×{% endif %}</span>{% endfor %}
+        <div class="sm" style="font-weight:700">{{ t(s.label_en, s.label_zh) }} <span style="color:{{ sb }}">{{ s.score|round|int }}</span></div>
+        <div class="muted" style="font-size:10.5px">{{ s.band|upper }}</div>
       </div>
     {% endfor %}
     </div>
-    {% endif %}
-    {% if RR.context_gate %}
-    <div class="sm" style="margin-bottom:5px"><b>{{ t('Loud-alert gate', '大警报闸') }}:</b>
-      {% if RR.context_gate.met %}<span style="color:{{ rrcol }}">{{ t('OPEN — broad tape breaking (SPY<200dma + weak breadth)', '开 — 大盘破位（SPY<200日均线+宽度弱）') }}</span>
-      {% else %}<span class="muted">{{ t('shut — broad tape intact; quiet tier only (narrow/fast events need options-flow data)', '关 — 大盘未破；仅静默层（窄幅/快速事件需期权流数据）') }}</span>{% endif %}
-    </div>
-    {% endif %}
-    <div class="sm" style="margin-bottom:6px"><b>{{ t('Do', '应对') }}:</b> {{ t(RR.reader_contract, RR.reader_contract) }}{% if RR.gross_factor and RR.gross_factor < 1 %} · {{ t('suggested gross', '建议总仓位') }} ×{{ '%.2f'|format(RR.gross_factor) }}{% endif %}</div>
-    {% if RR.forward_log and RR.forward_log.n_graded %}
-    {% set fl = RR.forward_log %}
-    <div class="muted" style="font-size:11px;border-top:1px solid var(--line);padding-top:6px">🧾 {{ t('Self-audit', '自检') }}: {{ fl.n_graded }} {{ t('graded calls', '已评判') }}{% if fl.alert_precision is not none %} · {{ t('alert precision', '警报精度') }} {{ (fl.alert_precision*100)|round|int }}%{% endif %}{% if fl.recall_dd5_h21 is not none %} · {{ t('recall', '召回') }} {{ (fl.recall_dd5_h21*100)|round|int }}%{% endif %}{% if fl.n_false_pos %} · {{ fl.n_false_pos }} {{ t('false alarms', '误报') }}{% endif %} — {{ t('Opus retunes from these', 'Opus据此再校准') }}</div>
-    {% endif %}
-    {% if RR.flow_status and not RR.flow_status.mature %}
-    <div class="muted" style="font-size:11px;margin-top:4px">⏳ {{ t('Vol-event detection accruing', '波动事件探测累积中') }}: {{ t('put/call', '认沽/认购') }} {{ RR.flow_status.putcall_rows }}/{{ RR.flow_status.min_history }} · GEX {{ RR.flow_status.gex_rows }}/{{ RR.flow_status.min_history }} {{ t('days — deep options-flow history is not freely available, so these legs accrue forward and self-validate via the Opus loop', '天 — 深度期权流历史无法免费获取，故这些因子前向累积并经Opus循环自我验证') }}</div>
-    {% endif %}
-    <div class="muted" style="font-size:10.5px;margin-top:5px">{{ t(RR.disclaimer, RR.disclaimer) }}</div>
-  </div>
+    <p class="muted sm" style="margin:10px 0 0">{{ t('Each bar is one kind of market stress, scored 0–100. The radar only turns loud when the broad market is actually breaking — it sizes risk, it never picks stocks.', '每个条目代表一类市场压力，评分 0–100。只有当大盘真正破位时雷达才会转为响亮 —— 它用于调整风险敞口，绝不选股。') }}</p>
+  </details>
   {% endif %}
 
   <!-- ============ EARLY RISK-STATE BANNER (engine/risk_state.py) — fallback when Risk Radar v2 absent ============ -->
@@ -2094,34 +2014,14 @@
   {% set SC = (latest.playbook or {}).scenario %}
   {% set NH = nowcast_hist or {} %}
   <div class="panel span12" id="conditions">
-    <h2>🛰️ {{ t('Macro nowcast · conditions · risk appetite', '宏观即时预测 · 金融条件 · 风险偏好') }}
-      {{ help("A complementary lens that runs ALONGSIDE the price-based quad and never alters it: the Fed-research feeds and option-implied risk that a markets-only model misses. Financial conditions (Chicago Fed NFCI — 105 inputs in one z-score), a 0–100 recession-risk score (Sahm rule + smoothed probability + Excess Bond Premium + a term-premium-ADJUSTED curve that strips the 2022–24 false inversion), real-time growth (Weekly Economic Index, GDPNow) and inflation (Atlanta sticky vs flexible CPI) nowcasts, and a cross-asset risk-appetite read (equity vol-risk-premium, VIX term structure, CBOE SKEW, the stock-bond correlation regime, a RORO composite). Free Fed/CBOE data — see research/QUANT_FACTOR_EXPANSION.md.", "一个与价格象限并行、绝不改变象限的补充视角：纯市场模型遗漏的美联储研究数据与期权隐含风险。金融条件（芝加哥联储 NFCI — 105 项输入合成一个 z 分数）、0–100 衰退风险评分（Sahm 法则 + 平滑概率 + 超额债券溢价 + 期限溢价调整后的收益率曲线，剔除 2022–24 的假性倒挂）、实时增长（周度经济指数、GDPNow）与通胀（亚特兰大黏性对弹性 CPI）即时预测，以及跨资产风险偏好（股票波动率风险溢价、VIX 期限结构、CBOE SKEW、股债相关性状态、RORO 综合）。免费美联储／CBOE 数据。") }}
+    <h2>🛰️ {{ t('The economy & risk, in real time', '经济与风险 · 实时') }}
+      {{ help("Live reads on the economy and market risk, from official Fed and options data — to complement the price-based regime above. Covers how stressed the financial system is, the odds of a recession, real-time growth and inflation, and how much appetite the market has for risk right now. Context only; it never changes the regime call.", "来自官方美联储与期权数据的经济与市场风险实时读数，用以补充上方基于价格的周期判断。涵盖金融体系的紧张程度、衰退概率、实时增长与通胀，以及市场当前的风险偏好。仅供参考，绝不改变周期判断。") }}
     </h2>
     <div class="grid">
 
-      <!-- Financial conditions -->
-      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-        <div style="font-weight:700;margin-bottom:6px">{{ t('Financial conditions', '金融条件') }} <span class="muted sm">NFCI</span>
-          {{ help("How easy or hard it is to borrow and trade across the whole US financial system — the Chicago Fed's NFCI distils 105 money-market, debt, equity and shadow-banking indicators into one number. 0 = average; NEGATIVE = looser/easier than normal (a tailwind for risk assets); POSITIVE = tighter (a headwind). The percentile shows where today ranks against the last 5 years.", "在整个美国金融体系中借贷与交易的难易程度 — 芝加哥联储 NFCI 将 105 项指标合成一个数。0＝平均；负＝比平常更宽松（风险资产顺风）；正＝更紧（逆风）。百分位表示今日在近五年中的排名。") }}</div>
-        {% if FC.nfci is not none %}
-        {% set fcolor = 'var(--up)' if FC.state=='loose' else ('var(--down)' if FC.state=='tight' else 'var(--muted)') %}
-        <div style="font-size:22px;font-weight:700;color:{{ fcolor }}">{{ '%+.2f'|format(FC.nfci) }}
-          <span class="badge" style="font-size:11px;vertical-align:middle">{{ t(FC.state, {'loose':'宽松','tight':'收紧','neutral':'中性'}.get(FC.state, FC.state)) }}{% if FC.trend %} · {{ t(FC.trend, {'tightening':'收紧中','loosening':'宽松中'}.get(FC.trend, FC.trend)) }}{% endif %}</span></div>
-        <div class="muted sm" style="margin-top:4px">{{ t('Easier than', '比') }} {{ ((1-FC.nfci_pctile)*100)|round|int if FC.nfci_pctile is not none else '—' }}% {{ t('of the past 5 years', '的近五年更宽松') }}</div>
-        {% if FC.subindices %}
-        <details class="jarg"><summary>{{ t("what's driving it", '驱动因素') }}</summary>
-          <div class="jbody">
-            {% set _sub = {'nfci_risk': ('Risk', '风险', 'Volatility & funding stress — how nervous markets are.', '波动与融资压力 — 市场有多紧张。'),
-                           'nfci_credit': ('Credit', '信用', 'How cheaply & freely firms and households can borrow.', '企业与家庭借贷的便宜与顺畅程度。'),
-                           'nfci_leverage': ('Leverage', '杠杆', 'How much debt & margin is built up in the system.', '系统中累积的债务与保证金规模。')} %}
-            {% for k,v in FC.subindices.items() %}{% set m = _sub.get(k) %}{% if m %}
-            <div class="jrow"><span class="jk">{{ t(m[0], m[1]) }}</span><span class="jv">{{ t(m[2], m[3]) }}</span><span class="jn" style="color:{{ 'var(--down)' if v>0.05 else ('var(--up)' if v<-0.05 else 'var(--muted)') }}">{{ '%+.2f'|format(v) }}</span></div>
-            {% endif %}{% endfor %}
-            <div class="muted" style="font-size:10px;margin-top:5px">{{ t('+ = tightening contribution · − = loosening', '正＝收紧贡献 · 负＝宽松贡献') }}</div>
-          </div>
-        </details>{% endif %}
-        {% else %}<div class="muted">—</div>{% endif %}
-      </div>
+      {# Financial-conditions (NFCI) card retired — it duplicated the OFR Financial Stress
+         Index below (both = financial tightness vs a 5-year percentile). OFR survives because
+         it breaks the stress into channels (credit / funding / volatility …). #}
 
       <!-- Systemic stress (OFR FSI decomposition) -->
       {% set SS = C.systemic_stress %}

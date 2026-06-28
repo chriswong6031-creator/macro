@@ -16,7 +16,10 @@ ALREADY turned (price across timeframes, vol term structure, credit, breadth),
 not a forecast. A handful of early-warning OVERRIDES (an 'act' alert, a fresh
 regime flip, a high/extreme drawdown-risk or acute systemic-stress band) can cap
 or force the verdict so the headline can never read "risk-on" while a stress
-gauge is screaming.
+gauge is screaming. The HEAVIEST of these is the Risk Radar (engine/risk_radar.py):
+an active radar imposes an amplified score CEILING that descends with its intensity
+and with every other risk gauge flashing at the same time — so the validated leading
+drawdown signal dominates the bullish legs instead of being averaged into silence.
 
 Pure functions, never raises: any shortfall degrades the affected leg (or the
 whole read) to None and the page still builds. No new data is fetched — the
@@ -343,6 +346,114 @@ def _cap(verdict: str, ceiling: str) -> str:
     return verdict if _VERDICT_ORDER.index(verdict) <= _VERDICT_ORDER.index(ceiling) else ceiling
 
 
+# Risk Radar bands → plain Chinese + a one-line "what to do" (English, 中文).
+_RADAR_ZH = {"calm": "平静", "watch": "观察", "caution": "警戒", "elevated": "升高", "risk-off": "避险"}
+_RADAR_DO = {
+    "calm": ("Normal exposure.", "正常仓位。"),
+    "watch": ("A risk is building — stay normal, just watch it.", "风险在积累 — 保持正常，留意即可。"),
+    "caution": ("Trim chasing; favour good entries over extended leaders.", "减少追高；择优入场而非追逐已延展的龙头。"),
+    "elevated": ("De-risk: cut size, don't add to froth, honour stops.", "降险：减仓、勿加注泡沫、严守止损。"),
+    "risk-off": ("Protect capital: raise cash, no new chases.", "保住本金：提高现金、勿追新高。"),
+}
+
+
+def _radar_override(latest: dict, overrides: list) -> dict:
+    """Summarise the Risk Radar (engine/risk_radar.py) for the hero AND, when it is at
+    caution or worse, compute an AMPLIFIED score ceiling + push an override note.
+
+    The radar is the HEAVIEST input on this read. An active radar dominates the bullish
+    trend/breadth legs rather than being averaged into silence — the "conjunction over
+    mean" principle the radar itself is built on (research/RISK_ENGINE_V2_FINDINGS.md).
+    Two things scale how hard it pulls the verdict down:
+      • intensity — its gated state, plus a SEVERE-BUT-GATED bump when the radar's own
+        un-gated read is worse than its label (the context gate keeps the label quiet
+        until the broad tape breaks, but the underlying drawdown risk is already high);
+      • a CONFLUENCE MULTIPLIER — every OTHER risk gauge that is flashing at the same
+        time (a second scare-type, complacency/fragility, a stress band) drops the
+        ceiling further, so a confluence drives the verdict deep into risk-off even
+        while VIX and trend still look calm.
+    The caller applies the returned `ceiling` to the 0-100 score."""
+    rr = latest.get("risk_radar") or {}
+    state = rr.get("state")
+    top = _num(rr.get("top_score"))
+    ungated = rr.get("state_ungated") or state
+    dp = rr.get("drawdown_prob") or {}
+    out = {
+        "state": state,
+        "top_score": round(top) if top is not None else None,
+        "label_en": rr.get("dominant_label_en") or "calm",
+        "label_zh": rr.get("dominant_label_zh") or "平静",
+        "state_zh": _RADAR_ZH.get(state, state or ""),
+        "do_en": _RADAR_DO.get(state, ("", ""))[0],
+        "do_zh": _RADAR_DO.get(state, ("", ""))[1],
+        "gross": _num(rr.get("gross_factor")),
+        "dd5": _num(dp.get("h5")), "dd10": _num(dp.get("h10")), "dd21": _num(dp.get("h21")),
+        "dd_lift": _num(dp.get("lift_h21")),
+        "is_loud": state in ("caution", "elevated", "risk-off"),
+        "amp": 0, "amp_flags_en": [], "amp_flags_zh": [],
+        "severe_gated": False, "ceiling": None,
+    }
+    if state not in ("caution", "elevated", "risk-off"):
+        return out
+
+    # ---- confluence multiplier: count the OTHER risk gauges flashing right now ----
+    C = latest.get("conditions") or {}
+    cmp_ = C.get("complacency") or {}
+    flags_en, flags_zh = [], []
+    if rr.get("conjunction"):
+        flags_en.append("several scare-types firing together")
+        flags_zh.append("多个风险类型同时触发")
+    nhot = sum(1 for s in (rr.get("scares") or [])
+               if s.get("band") in ("caution", "elevated", "risk-off"))
+    if nhot >= 2:
+        flags_en.append(f"{nhot} risk types elevated")
+        flags_zh.append(f"{nhot} 类风险升高")
+    if (cmp_.get("state") or "") in ("watch", "high"):
+        flags_en.append("complacency — calm VIX but fragile")
+        flags_zh.append("自满 — VIX 平静但脆弱")
+    if cmp_.get("breadth_div"):
+        flags_en.append("narrowing breadth / leadership")
+        flags_zh.append("广度／领导性收窄")
+    if (C.get("drawdown_risk") or {}).get("band") in ("elevated", "high", "extreme"):
+        flags_en.append("drawdown-risk band rising")
+        flags_zh.append("回撤风险区间上升")
+    if (C.get("systemic_stress") or {}).get("state") in ("elevated", "acute"):
+        flags_en.append("systemic stress building")
+        flags_zh.append("系统性压力累积")
+    if (latest.get("turning_point") or {}).get("present"):
+        flags_en.append("fragile one-factor tape")
+        flags_zh.append("脆弱的单因子行情")
+    amp = len(flags_en)
+
+    # severe-but-gated: un-gated read worse than the label, or the top scare screaming
+    severe_gated = state == "caution" and (
+        ungated in ("elevated", "risk-off") or (top is not None and top >= 85))
+
+    base = {"caution": 56, "elevated": 38, "risk-off": 26}[state]
+    if severe_gated:
+        base -= 10
+    ceiling = max(12, base - 6 * amp)   # each corroborating signal pulls 6 pts lower
+
+    out.update(amp=amp, amp_flags_en=flags_en, amp_flags_zh=flags_zh,
+               severe_gated=severe_gated, ceiling=ceiling)
+
+    sc = f" ({out['top_score']}/100)" if out["top_score"] is not None else ""
+    amp_en = (f" amplified by {amp} corroborating risk signal{'s' if amp != 1 else ''}"
+              if amp else "")
+    amp_zh = f"，并由 {amp} 个佐证风险信号放大" if amp else ""
+    sev_en = " (underlying read already risk-off)" if severe_gated else ""
+    sev_zh = "（底层读数已为避险）" if severe_gated else ""
+    if ceiling < 42:
+        overrides.append({"kind": "radar",
+            "note_en": f"Risk Radar {state}{sc}{sev_en}{amp_en} — forced to Risk-off.",
+            "note_zh": f"风险雷达{_RADAR_ZH.get(state, state)}{sc}{sev_zh}{amp_zh} — 强制为「避险」。"})
+    else:
+        overrides.append({"kind": "radar",
+            "note_en": f"Risk Radar {state}{sc}{amp_en} — capped at Mixed.",
+            "note_zh": f"风险雷达{_RADAR_ZH.get(state, state)}{sc}{amp_zh} — 已封顶为「混合」。"})
+    return out
+
+
 def market_state_snapshot(latest: dict, frame=None, alerts: list | None = None) -> dict | None:
     """Blend the live signal legs into a 0-100 risk-on score + Green/Yellow/Red
     verdict. DISPLAY-ONLY; returns None only if nothing at all resolves."""
@@ -396,11 +507,34 @@ def market_state_snapshot(latest: dict, frame=None, alerts: list | None = None) 
                               "note_en": "A falling-knife dislocation is live — forced to Risk-off.",
                               "note_zh": "接飞刀式错位正在发生 — 强制为「避险」。"})
 
+        # ---- Risk Radar override + confluence amplification (runs LAST so it wins) ----
+        # The radar is the heaviest guard on this read. _radar_override returns an
+        # amplified score ceiling (intensity × how many other risk gauges are flashing);
+        # an active radar therefore dominates the bullish legs instead of being averaged
+        # into silence, and a confluence pushes the verdict deep into risk-off even while
+        # VIX and trend still look calm.
+        radar = _radar_override(latest, overrides)
+
+        # Keep the 0-100 dial honest: a forced verdict pulls the displayed score into its
+        # own band, then the radar's amplified ceiling pulls it lower still (never higher).
+        score = raw_score
+        if verdict == "RISK_OFF":
+            score = min(score, 41)
+        elif verdict == "MIXED":
+            score = min(score, 59)
+        if radar.get("ceiling") is not None:
+            score = min(score, radar["ceiling"])
+        # the penalised score now drives the verdict; the radar can only make it more
+        # risk-off than the prior overrides, never less.
+        verdict = _cap(verdict, _verdict_from_score(score))
+
         flip_en, flip_zh = _flip_text(comps, verdict)
         return {
             "schema": "market_state.v1",
             "asof": latest.get("date"),
-            "score": raw_score,
+            "score": score,
+            "raw_score": raw_score,
+            "radar": radar,
             "verdict": verdict,
             "color": _COLOR[verdict],
             "label_en": _LABEL[verdict][0], "label_zh": _LABEL[verdict][1],
