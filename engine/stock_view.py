@@ -112,6 +112,49 @@ _VERDICT_GLOSS: dict[str, tuple[str, str]] = {
     "Neutral — no clear edge":
         ("No clear edge either way — neutral.",
          "多空均无明显优势——中性。"),
+    # ---- shared / CN cycle-anchored verbs (the A-share book leads with the cycle/timing) ----
+    "Extended — wait for a pullback":
+        ("Ran too far, too fast — wait for a pullback, don't chase.",
+         "涨得太快太远——等待回撤，勿追高。"),
+    "Downtrend — avoid":
+        ("In a downtrend — avoid until it bottoms.",
+         "处于下行趋势——筑底前回避。"),
+    "Topping — take profits, don't add":
+        ("Rolling over off a high — take profits, don't add.",
+         "高位见顶回落——止盈，勿加仓。"),
+    "Verify accounting before buying":
+        ("Accounting flag — verify the books before buying.",
+         "财务质量警示——买入前先核实账目。"),
+    "Reversal buy — washed out and turning up":
+        ("Washed out and turning up — the cycle and the A-share reversal edge agree.",
+         "超跌企稳上行——周期与 A 股反转优势一致。"),
+    "Buy zone · earnings imminent — wait or size down":
+        ("In a buy zone, but earnings are tomorrow — a coin-flip event; wait or size down.",
+         "处于买入区，但明日财报——二元事件；等待或减小仓位。"),
+    "Buy zone · stressed tape — smaller size, confirm":
+        ("In a buy zone, but the tape is stressed (QVIX) — smaller size, confirm first.",
+         "处于买入区，但盘面承压（QVIX）——减小仓位并先确认。"),
+    "Buy zone — cycle turning up":
+        ("The cycle is turning up — a buy zone here; selection is light, so size accordingly.",
+         "周期上行——此处为买入区；选股信号偏弱，按此控制仓位。"),
+    "Uptrend — hold, add on dips":
+        ("In an uptrend — hold and add on dips, don't chase the spike.",
+         "处于上行趋势——持有并在回调时加仓，勿追急涨。"),
+    "Basing near a low — reversal setting up":
+        ("Basing near a low with the reversal edge present — get ready for the turn.",
+         "底部区域且具备反转优势——准备迎接拐点。"),
+    "Basing near a low — get ready":
+        ("Basing near a low — get ready, wait for the turn to confirm.",
+         "底部区域——准备就绪，等待拐点确认。"),
+    "Countertrend bounce — not a base yet":
+        ("A bounce inside a downtrend — not a base yet; don't mistake it for the turn.",
+         "下行趋势中的反弹——尚未筑底；勿误判为拐点。"),
+    "Reversal candidate — selection edge":
+        ("Carries the A-share reversal selection edge — a candidate; confirm timing.",
+         "具备 A 股反转选股优势——候选项；请确认时机。"),
+    "Ran hot — limited reversal edge":
+        ("Already run up — limited mean-reversion edge left (not weakness vs the index).",
+         "涨幅已大——均值回归空间有限（并非相对大盘弱势）。"),
     # ---- HK screen verbs (never a "buy") ----
     "Mainland is accumulating — flow screen":
         ("Mainland money is buying it — a flow screen, not a pick.",

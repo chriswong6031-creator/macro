@@ -255,6 +255,43 @@ def test_parabolic_gets_specific_dont_chase_verdict():
     assert "chase" in ss.conviction_profile(rec, "US")["verdict"].lower()
 
 
+# --- CN cycle-anchored verdict (the cn_brokers fix) -------------------------
+# The A-share book is a reversal model, so a hot basket's leaders carry a LOW selection z.
+# The verdict must LEAD with the cycle/entry state (not the reversal z): an overbought leader
+# reads "Extended", never "downtrend"; a clean FRESH BUY reads "Buy zone", never "Lagging".
+def _cn_rec(state, *, rev_z=None, pct_vs_200dma=0.0, rsi=55.0, alpha_entry="intact"):
+    return {"rev_z": rev_z, "alpha_entry": alpha_entry,
+            "ladder": {"state": state, "entry": {"urgency": "now"}},
+            "tech": {"off_52w_high_pct": -5.0, "rsi14": rsi, "pct_vs_200dma": pct_vs_200dma}}
+
+
+def test_cn_overbought_top_is_extended_not_downtrend():
+    # the 中信建投 case: +22% over the 200dma, at a high (TOP WATCH), reversal z deeply negative.
+    rec = _cn_rec("TOP WATCH", rev_z=-2.6, pct_vs_200dma=22.0, rsi=73.0)
+    v = ss.conviction_profile(rec, "CN")["verdict"].lower()
+    assert "extended" in v and "downtrend" not in v
+
+
+def test_cn_fresh_buy_reads_buy_zone_not_lagging():
+    # the 中金公司 case: FRESH BUY off a dip but a mildly negative reversal z (bounce underway).
+    rec = _cn_rec("FRESH BUY", rev_z=-0.7, pct_vs_200dma=1.4, rsi=59.0)
+    v = ss.conviction_profile(rec, "CN")["verdict"].lower()
+    assert "buy zone" in v and "lagging" not in v and "weakness" not in v
+
+
+def test_cn_rally_on_reads_uptrend_not_lagging():
+    rec = _cn_rec("RALLY ON", rev_z=-0.9, pct_vs_200dma=2.0)
+    v = ss.conviction_profile(rec, "CN")["verdict"].lower()
+    assert "uptrend" in v and "lagging" not in v
+
+
+def test_cn_washed_out_with_reversal_edge_reads_basing():
+    # the 国信证券 case: deeply beaten down (BOTTOM WATCH) with a positive reversal z.
+    rec = _cn_rec("BOTTOM WATCH", rev_z=1.2, pct_vs_200dma=-16.0, rsi=48.0)
+    v = ss.conviction_profile(rec, "CN")["verdict"].lower()
+    assert "basing" in v and "reversal" in v
+
+
 def test_absent_entry_is_unknown_not_poor():
     # strong selection, NO entry legs at all -> 'entry unknown', never asserts 'poor entry'
     # (analyst-revision leg drives selection; SUE's IC ~0 demoted it to a floor in v2.2.)

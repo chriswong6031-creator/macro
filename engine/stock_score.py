@@ -969,10 +969,64 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
                       "相对强度突出 — 筛选项，非已验证买入", drivers, cautions)
         return _v("Exposure name — context only", "敞口标的 — 仅供参考", drivers, cautions)
 
+    # ---- CN: a CYCLE-ANCHORED read (owner call). The A-share book's validated edge is
+    # mean-reversion TIMING, which the cycle ladder already expresses (FRESH BUY fires off a
+    # washout, TOP WATCH near a high). So the verb LEADS with the cycle/entry state — coherent
+    # with the Entry gauge AND the sector-cycle basket read — and the reversal/selection z only
+    # GRADES conviction (a confluence bonus); it never flips a clean buy to "lagging". This ends
+    # the cn_brokers complaint: a hot basket's FRESH-BUY leaders read "Buy zone", not "Lagging —
+    # relative weakness", and an overbought leader at a high reads "Extended", not "downtrend".
+    if m == "CN":
+        if cycle_blocked:
+            # an UPSIDE extreme (overbought top / parabolic / far above the 200dma) is
+            # "extended", NOT a downtrend; only a genuine DOWNSIDE tape avoids.
+            extended = (state == "TOP WATCH" or grade == _PARABOLIC or _ovx
+                        or rec.get("alpha_entry") == "extended")
+            if extended:
+                return _v("Extended — wait for a pullback", "过度拉伸 — 等待回撤", drivers, cautions)
+            if state == "ROLLING OVER":
+                return _v("Topping — take profits, don't add", "见顶回落 — 止盈勿加", drivers, cautions)
+            return _v("Downtrend — avoid", "下行趋势 — 回避", drivers, cautions)
+        rev_strong = sel_t in ("high", "mid")           # reversal/selection confluence
+        if acct == "warn":
+            return _v("Verify accounting before buying", "买入前先核实财务质量", drivers, cautions)
+        if state in ("FRESH BUY", "TURN SIGNALED"):
+            if _ed is not None and 0 <= _ed <= 1:        # binary event tomorrow
+                return _v("Buy zone · earnings imminent — wait or size down",
+                          "买入区 · 财报临近 — 等待或减小仓位", drivers, cautions)
+            if _risk_veto:                               # QVIX-panic tape vetoes a clean chase
+                return _v("Buy zone · stressed tape — smaller size, confirm",
+                          "买入区 · 盘面承压 — 减小仓位并确认", drivers, cautions)
+            if rev_strong:                               # cycle turn AND the reversal edge agree
+                return _v("Reversal buy — washed out and turning up",
+                          "反转买点 — 超跌企稳上行", drivers, cautions)
+            return _v("Buy zone — cycle turning up", "买入区 — 周期上行", drivers, cautions)
+        if state == "RALLY ON":
+            return _v("Uptrend — hold, add on dips", "上行趋势 — 持有，回调加仓", drivers, cautions)
+        if state == "BOTTOM WATCH":
+            if rev_strong:
+                return _v("Basing near a low — reversal setting up",
+                          "底部区域 — 反转酝酿", drivers, cautions)
+            return _v("Basing near a low — get ready", "底部区域 — 准备就绪", drivers, cautions)
+        if state == "COUNTERTREND BOUNCE":
+            return _v("Countertrend bounce — not a base yet", "反弹 — 尚未筑底", drivers, cautions)
+        if rev_strong:                                   # no clear cycle state, but reversal likes it
+            return _v("Reversal candidate — selection edge", "反转候选 — 选股优势", drivers, cautions)
+        if sel_t == "low":                               # ran up — reversal edge spent (NOT "weak vs index")
+            return _v("Ran hot — limited reversal edge", "涨幅已大 — 反转空间有限", drivers, cautions)
+        return _v("Neutral — no clear edge", "中性 — 无明显优势", drivers, cautions)
+
     # ---- cycle hard-block: never 'Buy' regardless of the composite ----------
     if cycle_blocked:
-        # a parabolic blow-off / over-extended chase is blocked — the specific message
-        if (grade == _PARABOLIC or _ovx) and sel_t in ("high", "mid"):
+        # WHY blocked? An UPSIDE extreme (overbought top / parabolic / far above the 200dma)
+        # is "extended — wait for a pullback", NOT a downtrend. Only a genuine DOWNSIDE tape
+        # (DECLINE / ROLLING OVER / exit-avoid urgency) reads "avoid/downtrend". Without this
+        # split, a low-selection name at an overbought HIGH (TOP WATCH) was mislabeled "Avoid —
+        # downtrend" — the exact opposite of its state (masked on US where momentum-selection and
+        # the momentum cycle agree in sign; unmasked on a reversal-led book).
+        extended = (state == "TOP WATCH" or grade == _PARABOLIC or _ovx
+                    or rec.get("alpha_entry") == "extended")
+        if extended:
             return _v("Extended — don't chase; wait for a pullback",
                       "过度拉升 — 勿追高；等待回撤", drivers, cautions)
         if sel_t == "high":
