@@ -926,35 +926,65 @@
     --ink-2: color-mix(in srgb, var(--text) 64%, transparent);
     --ink-3: var(--muted);
     --rule: 1px;
-    --pad: 17px;
+    --pad: 20px;
     --ms: var(--card-shadow), inset 0 1px 0 0 color-mix(in srgb, var(--text) 7%, transparent);
+
+    /* ═══ BILLION-DOLLAR MAKEOVER — one shared design system ═══════════════
+       The page used to re-invent its type sizes (~29 distinct px values) and
+       spacing in every block. These tokens are the single source of truth so
+       every module shares one scale, one rhythm, one material language. */
+    /* deepened terminal canvas — richer "screen" black, scoped to this page */
+    --bg:#0a0c11; --panel:#14171e; --panel2:#1b1f28;
+    /* type scale — 10 deliberate steps replace the ad-hoc soup */
+    --fs-display:46px;   /* hero verdict word          */
+    --fs-num-xl:38px;    /* the big board scores        */
+    --fs-h1:28px;        /* page / hero title           */
+    --fs-num-lg:22px;    /* secondary big numerals      */
+    --fs-h2:17px;        /* panel section titles        */
+    --fs-md:15px;        /* lead body / strong figures  */
+    --fs-body:14px;      /* base copy                   */
+    --fs-h3:14px;        /* subsection titles           */
+    --fs-sm:12.5px;      /* secondary copy / table body */
+    --fs-label:11px;     /* MONO eyebrows · caps        */
+    --fs-micro:10px;     /* dense ticks · table heads   */
+    /* spacing grid (4px base) — kill the 7/9/11/13/17/19px grab-bag */
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
+    /* radii + the eyebrow tracking constant */
+    --r-sm:8px; --r-md:10px; --r-lg:14px; --trk:.18em;
+    /* the single regime/accent rail used on every section header */
+    --rail: var(--link);
   }
   html[data-theme="light"] body.page-macro {
+    /* restore the airy light canvas (the dark overrides above set it on <body>) */
+    --bg:#f6f7fa; --panel:#ffffff; --panel2:#eef1f6;
     --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
     --hair: color-mix(in srgb, var(--line) 90%, transparent);
     --ms: var(--card-shadow), inset 0 1px 0 0 rgba(255,255,255,.6);
   }
 
-  /* ---- type scale: confident hierarchy, kill the tiny-muted soup ---- */
-  body.page-macro { font-size: 14.5px; line-height: 1.55; }
-  body.page-macro h1 { font-size: 20px; font-weight: 800; letter-spacing: -.01em;
+  /* ---- type scale: one confident hierarchy, every size from the scale ---- */
+  body.page-macro { font-size: var(--fs-body); line-height: 1.55; }
+  body.page-macro h1 { font-size: var(--fs-h1); font-weight: 800; letter-spacing: -.02em;
     color: var(--ink-1); }
-  /* section headers: readable sentence-case (NOT tiny uppercase — these are long
-     descriptive titles), strong ink, with an accent channel tick + hairline rule */
-  body.page-macro .panel > h2 { font-size: 14px; font-weight: 700; letter-spacing: -.005em;
-    text-transform: none; color: var(--ink-1); margin: 0 0 13px; padding: 0 0 11px;
-    border-bottom: var(--rule) solid var(--hair); line-height: 1.35; }
-  body.page-macro .panel > h2::before { content: ""; display: inline-block;
-    width: 3px; height: 14px; border-radius: 1.5px; background: var(--link);
-    margin-right: 9px; vertical-align: -2px; }
-  html[data-lang="zh"] body.page-macro .panel > h2 { letter-spacing: 0; }
-  body.page-macro h3 { font-size: 12.5px; font-weight: 700; letter-spacing: 0;
+  /* THE section-header system — every panel title reads identically: a regime
+     rail, a strong sentence-case title, a hairline rule to the panel edge. This
+     single shared rhythm is what turns the islands into one product. */
+  body.page-macro h2 { font-size: var(--fs-h2); font-weight: 700; letter-spacing: -.01em;
+    text-transform: none; color: var(--ink-1); line-height: 1.3; }
+  body.page-macro .panel > h2 { margin: 0 0 var(--sp-4); padding: 0 0 var(--sp-3);
+    border-bottom: var(--rule) solid var(--hair-strong);
+    display: flex; align-items: center; gap: 11px; flex-wrap: wrap; }
+  body.page-macro .panel > h2::before { content: ""; flex: none; align-self: center;
+    width: 3px; height: 18px; border-radius: 2px;
+    background: linear-gradient(180deg, var(--rail), color-mix(in srgb, var(--rail) 35%, transparent)); }
+  html[data-lang="zh"] body.page-macro h2 { letter-spacing: 0; }
+  body.page-macro h3 { font-size: var(--fs-h3); font-weight: 700; letter-spacing: 0;
     color: var(--ink-1); text-transform: none; }
   /* lift inline body greys; keep a true-caption class at the dimmer --ink-3 */
   body.page-macro .muted { color: var(--ink-2); }
   body.page-macro .kv { color: var(--ink-2); }
   body.page-macro .sm { color: var(--ink-2); }
-  body.page-macro .cap, body.page-macro .muted.cap { font-size: 11px; font-weight: 700;
+  body.page-macro .cap, body.page-macro .muted.cap { font-size: var(--fs-label); font-weight: 700;
     letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
 
   /* ---- numerals: the terminal signature — figures tabular + mono ---- */
@@ -975,15 +1005,15 @@
     font-family: inherit; font-variant-numeric: normal; letter-spacing: normal; }
 
   /* ---- panel: crisp module — hairline frame, faint machined top edge ---- */
-  body.page-macro .grid { gap: 14px; }
-  @media (min-width: 1100px) { body.page-macro .grid { gap: 16px 18px; } }
+  body.page-macro .grid { gap: var(--sp-4); }
+  @media (min-width: 1100px) { body.page-macro .grid { gap: var(--sp-5) var(--sp-5); } }
   body.page-macro .panel { background: var(--panel);
-    border: var(--rule) solid var(--hair-strong); border-radius: 12px;
-    padding: var(--pad) calc(var(--pad) + 1px); box-shadow: var(--ms); }
+    border: var(--rule) solid var(--hair-strong); border-radius: var(--r-lg);
+    padding: var(--pad) calc(var(--pad) + 2px); box-shadow: var(--ms); }
 
   /* ---- tables: terminal treatment ---- */
-  body.page-macro table { font-size: 12.5px; }
-  body.page-macro th { font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  body.page-macro table { font-size: var(--fs-sm); }
+  body.page-macro th { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .08em;
     text-transform: uppercase; color: var(--ink-3);
     border-bottom: var(--rule) solid var(--hair-strong); }
   body.page-macro td { border-bottom: var(--rule) solid var(--hair); color: var(--ink-1); }
@@ -1892,8 +1922,8 @@
   {% set ffc = 'var(--up)' if ff.band == 'calm' else ('var(--warn)' if ff.band in ['watch','elevated'] else 'var(--down)') %}
   {% set ax = ff.face_a.score if ff.face_a.score is not none else 0 %}
   {% set bx = ff.face_b.score if ff.face_b.score is not none else 0 %}
-  <div class="panel span6" id="froth-fragility" style="border-left:3px solid {{ ffc }}">
-    <h2>🫧 {{ t('Froth & Fragility', '狂热与脆弱') }}
+  <div class="panel span6" id="froth-fragility" style="--rail:{{ ffc }}">
+    <h2>{{ t('Froth & Fragility', '狂热与脆弱') }}
       {% if ff.headline is not none %}<span style="float:right;color:{{ ffc }};font-weight:800;font-size:16px">{{ ff.headline|round|int }}<small style="font-size:12px;font-weight:600;color:var(--muted)">/100 · {{ t(ff.band|capitalize, ff.band_zh) }}</small></span>{% endif %}
       {{ help("A top-risk gauge that measures what a single VIX read cannot: retail EUPHORIA (semis/AI parabolicity) AND hidden DISTRIBUTION (a rotating decline under a pinned index, where the cap-weighted index and VIX stay calm because the leaders take turns falling / rotation holds the tape up). The honest read is the 2D danger-quadrant: only EUPHORIC AND FRAGILE together is a distribution-top risk. VIX is coincident index implied-vol — it is √ρ·σ̄, so falling single-stock correlation mechanically pins it low while internal risk builds; this gauge fuses the LEADING internals it misses. DISPLAY-ONLY / validation-accruing: it feeds NO score and NO allocation — the only sanctioned response is SIZING (de-risk), never selection. Each firing is logged and graded on forward QQQ/SMH drawdown + VIX jump.", "一个顶部风险计，衡量单看 VIX 无法捕捉的两面：零售欣喜（半导体/AI 抛物化）与隐性派发（被托住的指数下的轮动式下行：龙头轮流下跌或板块轮动撑住大盘，使市值加权指数与 VIX 保持平静）。诚实读法是二维危险象限：唯有“欣喜且脆弱”同时出现才是派发顶部风险。VIX 是同步的指数隐含波动率——约等于 √ρ·σ̄，因此个股相关性下降会机械地把它压低，而内部风险却在累积；本计融合它错过的领先内部指标。仅供展示／积累验证：不计分、不驱动仓位——唯一被许可的回应是减仓，绝非选股。每次触发都会记录并以未来 QQQ/SMH 回撤与 VIX 跳升评分。") }}
     </h2>
@@ -2145,7 +2175,7 @@
   {% set vcolor = 'var(--up)' if DL.verdict=='buyable_washout' else ('var(--down)' if DL.verdict=='stand_aside' else 'var(--muted)') %}
   {% if DL.dislocation_active %}{# only renders when a real dislocation is firing; CSS floats it to the very top #}
   <div class="panel span12 dislo-lit" id="dislocation" style="--lit:{{ vcolor }}">
-    <h2>🚦 {{ t('Dislocation Gate-1 · buyable washout vs falling knife', '错位一道闸 · 可买入错杀 对 接飞刀') }}
+    <h2>{{ t('Dislocation Gate-1 · buyable washout vs falling knife', '错位一道闸 · 可买入错杀 对 接飞刀') }}
       {{ help("A risk FILTER that sits in FRONT of the capitulation gauge: when a stress dislocation hits (VIX panic, a >10% drawdown, a variance-premium extreme or VIX backwardation), it asks ONE question — is the Fed put present? PUT-ABSENT = a recession is underway (real-time Sahm >= 0.50) OR inflation locks the Fed (sustained 10y breakeven >= 2.5%). The whole edge is in REFUSING the falling knife (2000/2008/2022), not in catching the bounce — measured on SPY 1997-2026, see research/DISLOCATION_VALIDATION.md.", "位于恐慌触底指标之前的风险过滤器：当压力错位出现（VIX 恐慌、>10% 回撤、方差溢价极端或 VIX 倒挂）时，它只问一个问题 — 美联储托底是否在位？托底缺失＝衰退进行中（实时 Sahm ≥ 0.50）或通胀锁住美联储（持续十年期盈亏平衡 ≥ 2.5%）。全部优势在于拒绝接飞刀（2000／2008／2022），而非抄到反弹 — 基于标普 1997-2026 实测。") }}
     </h2>
     <p class="muted sm" style="margin:-4px 0 10px">{{ t('A risk filter, not a buy signal. The edge is in refusing the knife, not catching the bounce — judged on drawdown, not return.', '这是风险过滤器而非买入信号。优势在于拒绝接飞刀，而非抄到反弹 — 以回撤而非回报衡量。') }}</p>
@@ -2294,7 +2324,7 @@
   html[data-lang="zh"] body.page-macro #now-board .nb-strip-h{letter-spacing:0}
   </style>
   <div class="panel span6" id="now-board">
-    <h2>📰 {{ t('Market news &amp; catalysts','市场新闻与日程') }}
+    <h2>{{ t('Market news &amp; catalysts','市场新闻与日程') }}
       {{ help("Reputable, macro-relevant headlines — filtered, theme-tagged and ranked by impact. Press a story to open a condensed read. Plus the US high-impact event window and any active relief-radar snap. All CONTEXT — never scored; the mechanical model never reads it.", "可靠、与宏观相关的头条 — 经筛选、标注主题并按影响排序。点按展开精简解读。另含美国高影响事件窗口与正在触发的反弹雷达。全部为背景 — 从不评分，机械模型从不读取。") }}
       <a href="news.html" style="float:right;font-size:12px;font-weight:600;color:var(--link)">{{ t('Full feed →','完整新闻 →') }}</a>
     </h2>
@@ -2353,7 +2383,7 @@
   <!-- ===== FEAR <-> EUPHORIA SYNTHESIS (display-only conditioning lens) ===== -->
   {% if mode != 'stocks' %}
   <div class="panel span6" id="fear-euphoria">
-    <h2>🌡️ {{ t('Fear ↔ Euphoria: regime synthesis', '恐惧 ↔ 欣喜：周期综合') }}
+    <h2>{{ t('Fear ↔ Euphoria: regime synthesis', '恐惧 ↔ 欣喜：周期综合') }}
       {{ help("A conditioning lens, NOT a signal. It synthesises components this dashboard already computes — the cross-asset RORO risk-appetite composite, the dislocation verdict and the capitulation gauge — into one Fear↔Euphoria regime read. It does NOT score direction or size positions, and never feeds the quad, the macro-risk score or any axis. 'Contrarian at extremes' is regime-dependent: fear is buyable only when the Fed put is present; in put-absent regimes extreme fear can be a falling knife.", "这是环境视角，不是信号。它综合本仪表盘已计算的成分 — 跨资产 RORO 风险偏好综合、错位读数与投降指标 — 形成单一的恐惧↔欣喜周期读数。它不评分方向、不决定仓位，也绝不进入象限、宏观风险评分或任何轴。'极端时反向操作'取决于周期：只有在美联储托底在位时，恐惧才可买入；托底缺失时，极端恐惧可能是下跌中的刀子。") }}
       <a href="gex.html" class="muted" style="font-size:12px;font-weight:400;float:right">{{ t('dealer gamma →','交易商 gamma →') }}</a>
     </h2>
@@ -2395,7 +2425,7 @@
   {% if mode != 'macro' %}
   {% if action_board %}
   <div class="panel span12">
-    <h2>⚡ {{ t('What to act on now', '当前可操作') }}
+    <h2>{{ t('What to act on now', '当前可操作') }}
       {{ help("Your at-a-glance starting point — now spanning BOTH 🧩 narrative baskets (Memory & Storage, Non-AI Software, …) and 🏛 GICS sectors, because 'Technology' blends generational winners (memory/semis) with names being obliterated (non-AI software). Baskets give the narrative resolution sectors can't. HONESTY: a basket on the BUY side is a leadership LENS (≈), descriptive — cross-sectional momentum rank-IC is ~0 on the clean multi-decade backtest, so it focuses attention, it is not a return forecast. A basket on the REDUCE side carries a VALIDATED mark (✓): it rides the absolute-trend / fading-deteriorating drawdown gate, the one backtested edge (it roughly halved drawdown over 27y). ★ = currently in the narrative-rotation model book. Sectors keep their price-cycle read. Click any name for the full breakdown.", "你的一眼总览起点 — 现同时覆盖🧩叙事篮子（内存与存储、非AI软件…）与🏛GICS板块，因为“科技”把世代赢家（内存/半导体）与被血洗的标的（非AI软件）混为一谈。篮子提供板块无法给出的叙事分辨。诚实说明：买入侧的篮子是领先度透镜（≈），描述性 — 横截面动量 rank-IC≈0（多年期干净回测），用于聚焦而非预测收益。减仓侧的篮子带已验证标记（✓）：依托绝对趋势／衰退-恶化回撤门槛，这是唯一经回测的优势（27年里大致将回撤减半）。★＝当前在叙事轮动模型组合中。板块保留其价格周期判读。点击任意名称查看完整拆解。") }}
     </h2>
     {# Unified board: 🧩 narrative baskets (the AI-buildout-vs-rest resolution) lead each
@@ -2967,7 +2997,7 @@
   {% if mode != 'macro' %}
   <!-- ======================= ACCUMULATION WATCH ======================= -->
   <div class="panel span12" id="accumulation">
-    <h2>{{ t('🐳 Accumulation watch — sector ETFs', '🐳 增持监测 — 板块 ETF') }}
+    <h2>{{ t('Accumulation watch — sector ETFs', '增持监测 — 板块 ETF') }}
       {{ help("Each sector SPDR's top-10 weights, with each holding's weight change split into the part explained by the stock's own price move and a residual ('active' = weight that grew MORE than price alone). A large positive residual = real buying flowed into the name beyond market drift. HONEST CAVEAT: these SPDRs are PASSIVE index funds, so the residual is index reconstitution / float-weight flow (forced index-fund buying), NOT a discretionary manager's conviction — that reading comes with the active funds in the planned top-200 page. The technical column shows the stock's own cycle state; ✅ marks accumulation that also has a forming buy setup. Thresholds are uncalibrated until more snapshot history accumulates.", "每只板块 SPDR 的前十大权重；每只持仓的权重变动被拆分为“由个股自身价格变动解释的部分”与“残差”（“主动”=权重增长超过价格涨幅的部分）。较大的正残差=除市场漂移外确有真实买盘流入该股。诚实提示：这些 SPDR 是被动指数基金，故残差代表指数再平衡／流通权重调整带来的资金流（被动强制买入），并非主动经理的信念——后者要等到计划中的前 200 ETF 页面里的主动基金。技术面列显示个股自身的周期状态；✅ 表示增持同时出现了正在形成的买入形态。在积累更多快照历史前，阈值尚未校准。") }}
     </h2>
     {% if accumulation %}
