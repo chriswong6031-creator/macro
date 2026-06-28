@@ -104,46 +104,84 @@
   window.setLang = setLang;
   window.setTheme = setTheme;
 
-  /* ---- global stock search (unified macro nav) ----------------------------
-     The same autocomplete the analyzer uses, promoted into the nav bar: fetch
-     the nightly library (stockdata/index.json), suggest, and on pick bounce to
-     stock.html#TICKER (the analyzer routes off the hash). Path-depth aware so
-     it works from /sectors/ too. No-ops on pages without a .nav-search. */
+  /* ---- one unified global stock search -------------------------------------
+     One central search box, every market in it. We merge each market's nightly
+     library into a single searchable universe and route each pick to the analyzer
+     that owns it — US→stock.html, China→china_lookup.html, HK→hk_lookup.html,
+     Canada→canada_stock.html, Intl→intl_stock.html (each analyzer routes off the
+     #TICKER hash). Per-entry routing means a page no longer scopes the box to its
+     own market: the legacy data-lib / data-target attributes are ignored (a page
+     that set data-lib is just relabelled, since it now searches the whole world).
+     Path-depth aware so it works from /sectors/ too. No-ops without a .nav-search. */
+  var STOCK_MARKETS = [
+    { lib: 'stockdata/index.json',       target: 'stock.html',        flag: '🇺🇸', mkt: 'US' },
+    { lib: 'chinastockdata/index.json',  target: 'china_lookup.html', flag: '🇨🇳', mkt: 'China' },
+    { lib: 'hkstockdata/index.json',     target: 'hk_lookup.html',    flag: '🇭🇰', mkt: 'HK' },
+    { lib: 'canadastockdata/index.json', target: 'canada_stock.html', flag: '🇨🇦', mkt: 'Canada' },
+    { lib: 'intlstockdata/index.json',   target: 'intl_stock.html',   flag: '🌐', mkt: 'Intl' }
+  ];
   function initNavSearch() {
     var box = document.querySelector('.nav-search');
     if (!box) return;
     var input = box.querySelector('input'), sugg = box.querySelector('.nav-sugg');
-    // lang-aware placeholder: English lives in the attribute, Chinese in
-    // data-ph-zh, swapped on langchange (never put dual-language <span> inside an
-    // attribute — the class="" quote breaks it)
+    if (!input || !sugg) return;
+    // lang-aware placeholder: English lives in the attribute, Chinese in data-ph-zh,
+    // swapped on langchange (never put a dual-language <span> inside an attribute —
+    // the class="" quote breaks it). A page that used to scope the box to one market
+    // (data-lib set) now searches the whole world, so relabel it.
     var phEn = input.placeholder, phZh = input.getAttribute('data-ph-zh') || phEn;
+    if (box.getAttribute('data-lib')) {
+      phEn = 'Search any stock — US, China, HK, Canada & more…';
+      phZh = '搜索任意股票 — 美股、A 股、港股、加股等…';
+    }
     function setPh() { input.placeholder = document.documentElement.getAttribute('data-lang') === 'zh' ? phZh : phEn; }
     setPh();
     document.addEventListener('langchange', setPh);
     var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
-    // a page can scope the search to its own library + analyzer via data attributes
-    // (default = the global nightly library + stock.html, so macro is unchanged)
-    var libUrl = box.getAttribute('data-lib') || 'stockdata/index.json';
-    var target = box.getAttribute('data-target') || 'stock.html';
+    // merge every market's nightly library into one universe; tag each row with the
+    // analyzer it routes to and a market flag (Intl rows carry their own per-country
+    // flag + market name, so prefer those when present)
     var lib = [], rows = [], sel = -1;
-    fetch(pfx + libUrl).then(function (r) { return r.json(); })
-      .then(function (d) { lib = d || []; }).catch(function () {});
-    function go(t) { location.href = pfx + target + '#' + encodeURIComponent(t); }
+    STOCK_MARKETS.forEach(function (m) {
+      fetch(pfx + m.lib).then(function (r) { return r.json(); }).then(function (d) {
+        (d || []).forEach(function (x) {
+          x._tgt = m.target;
+          x._fl = x.fl || m.flag;
+          x._mk = x.mk || m.mkt;
+        });
+        lib = lib.concat(d || []);
+      }).catch(function () {});
+    });
+    function go(x) { if (x) location.href = pfx + (x._tgt || 'stock.html') + '#' + encodeURIComponent(x.t); }
     function close() { sugg.classList.remove('show'); sugg.innerHTML = ''; rows = []; sel = -1; }
     function paint() {
       [].forEach.call(sugg.querySelectorAll('.row'), function (r, i) { r.classList.toggle('sel', i === sel); });
     }
+    // rank exact ticker > ticker-prefix > name-prefix > loose substring — matters now
+    // that one query sweeps thousands of names across five markets
+    function rank(x, v) {
+      var t = x.t.toUpperCase(), n = (x.n || '').toUpperCase();
+      if (t === v) return 0;
+      if (t.indexOf(v) === 0) return 1;
+      if (n.indexOf(v) === 0) return 2;
+      if (t.indexOf(v) > -1) return 3;
+      if (n.indexOf(v) > -1) return 4;
+      return 9;
+    }
     function search() {
       var v = input.value.trim().toUpperCase();
       if (!v) { close(); return; }
-      rows = lib.filter(function (x) {
-        return x.t.toUpperCase().indexOf(v) > -1 || (x.n || '').toUpperCase().indexOf(v) > -1;
-      }).slice(0, 8);
+      rows = lib.map(function (x) { return { x: x, r: rank(x, v) }; })
+        .filter(function (o) { return o.r < 9; })
+        .sort(function (a, b) { return a.r - b.r; })
+        .slice(0, 10).map(function (o) { return o.x; });
       sel = -1;
-      if (!rows.length) { sugg.innerHTML = '<div class="empty">No match in the nightly library.</div>'; sugg.classList.add('show'); return; }
+      if (!rows.length) { sugg.innerHTML = '<div class="empty">No match across the global library.</div>'; sugg.classList.add('show'); return; }
       sugg.innerHTML = rows.map(function (x, i) {
         var st = (x.st || '').replace(/ /g, '_');
-        return '<div class="row" data-i="' + i + '"><b>' + x.t + '</b><small>' + (x.n || '') + '</small>'
+        return '<div class="row" data-i="' + i + '">'
+             + (x._fl ? '<span class="mkt" title="' + (x._mk || '') + '">' + x._fl + '</span>' : '')
+             + '<b>' + x.t + '</b><small>' + (x.n || '') + '</small>'
              + (x.st ? '<span class="stt st-' + st + '">' + x.st + '</span>' : '') + '</div>';
       }).join('');
       sugg.classList.add('show');
@@ -154,11 +192,11 @@
       if (!sugg.classList.contains('show')) return;
       if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(sel + 1, rows.length - 1); paint(); }
       else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(sel - 1, 0); paint(); }
-      else if (e.key === 'Enter') { e.preventDefault(); var pick = rows[sel] || rows[0]; if (pick) go(pick.t); }
+      else if (e.key === 'Enter') { e.preventDefault(); go(rows[sel] || rows[0]); }
       else if (e.key === 'Escape') { close(); input.blur(); }
     });
     sugg.addEventListener('mousedown', function (e) {
-      var r = e.target.closest('.row'); if (!r) return; e.preventDefault(); go(rows[+r.dataset.i].t);
+      var r = e.target.closest('.row'); if (!r) return; e.preventDefault(); go(rows[+r.dataset.i]);
     });
     document.addEventListener('click', function (e) { if (!box.contains(e.target)) close(); });
   }

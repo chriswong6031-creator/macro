@@ -1,19 +1,21 @@
 {# Shared full navigation chrome for standalone pages.
 
+   The search box is ONE unified universe: theme.js merges every market's nightly
+   library (US + China + HK + Canada + Intl) and routes each pick to the analyzer
+   that owns it, so pages no longer scope it to a single market.
+
    Optional page variables:
    - nav_prefix: "../" for pages rendered one directory below site root.
-   - nav_search_lib: region-specific library, e.g. "chinastockdata/index.json".
-   - nav_search_target: matching analyzer, e.g. "china_lookup.html".
    - nav_search_placeholder_en/nav_search_placeholder_zh: optional placeholder copy.
 #}
 {% set NP = nav_prefix if (nav_prefix is defined and nav_prefix) else '' %}
 <nav class="site-nav">
   {% include "_navlinks.html.j2" %}
-  <div class="nav-search"{% if nav_search_lib is defined and nav_search_lib %} data-lib="{{ nav_search_lib }}"{% endif %}{% if nav_search_target is defined and nav_search_target %} data-target="{{ nav_search_target }}"{% endif %}>
+  <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
-      placeholder="{{ nav_search_placeholder_en | default('Search any stock, ETF, commodity or crypto…') }}"
-      data-ph-zh="{{ nav_search_placeholder_zh | default('搜索任意股票、ETF、商品或加密货币…') }}">
+      placeholder="{{ nav_search_placeholder_en | default('Search any stock — US, China, HK, Canada & more…') }}"
+      data-ph-zh="{{ nav_search_placeholder_zh | default('搜索任意股票 — 美股、A 股、港股、加股等…') }}">
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">

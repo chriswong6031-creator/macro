@@ -164,10 +164,8 @@
 </style>
 </head>
 <body>
-  {% set nav_search_lib = 'intlstockdata/index.json' %}
-  {% set nav_search_target = 'intl_stock.html' %}
-  {% set nav_search_placeholder_en = 'Search any JP / KR / TW / UK / EU stock…' %}
-  {% set nav_search_placeholder_zh = '搜索任意日 / 韩 / 台 / 英 / 欧股票…' %}
+  {% set nav_search_placeholder_en = 'Search any stock — US, China, HK, Canada & more…' %}
+  {% set nav_search_placeholder_zh = '搜索任意股票 — 美股、A 股、港股、加股等…' %}
   {% include "_site_nav.html.j2" %}
   <div class="panel">
     <div class="topline">
@@ -320,7 +318,32 @@
   }
   q.placeholder = L('ph');
 
-  fetch('intlstockdata/index.json').then(r => r.json()).then(d => { idx = d; fromHash(); });
+  // one unified universe — load THIS market first so a deep-linked #TICKER resolves
+  // immediately, then fold in every other market so the box can find ANY stock and
+  // route cross-market picks to the analyzer that owns them (US→stock.html, …).
+  var STOCK_MKTS = [
+    ['stockdata/', 'stock.html', '🇺🇸', 'US'],
+    ['chinastockdata/', 'china_lookup.html', '🇨🇳', 'China'],
+    ['hkstockdata/', 'hk_lookup.html', '🇭🇰', 'HK'],
+    ['canadastockdata/', 'canada_stock.html', '🇨🇦', 'Canada'],
+    ['intlstockdata/', 'intl_stock.html', '🌐', 'Intl']
+  ];
+  var STOCK_HOME = 'intl_stock.html';
+  function tagMkt(d, m) {
+    (d || []).forEach(function (x) { x._tgt = m[1]; x._fl = x.fl || m[2]; x._mk = x.mk || m[3]; });
+    return d || [];
+  }
+  (function () {
+    var home = STOCK_MKTS.filter(function (m) { return m[1] === STOCK_HOME; })[0];
+    fetch(home[0] + 'index.json').then(function (r) { return r.json(); }).then(function (d) {
+      idx = tagMkt(d, home); fromHash();
+      STOCK_MKTS.forEach(function (m) {
+        if (m[1] === STOCK_HOME) return;
+        fetch(m[0] + 'index.json').then(function (r) { return r.json(); })
+          .then(function (e) { idx = idx.concat(tagMkt(e, m)); }).catch(function () {});
+      });
+    });
+  })();
   fetch('intlstockdata/calibration.json').then(r => r.ok ? r.json() : null)
     .then(d => { cal = d; }).catch(() => {});
 
@@ -345,7 +368,9 @@
       return ap - bp || a.t.localeCompare(b.t);
     }).slice(0, 12);
     sugg.innerHTML = items.map(function (x, i) {
-      return '<div data-i="' + i + '"><b>' + x.t + '</b><small>' + x.n +
+      return '<div data-i="' + i + '">' +
+             (x._fl ? '<span style="flex:none;width:18px;text-align:center">' + x._fl + '</span>' : '') +
+             '<b>' + x.t + '</b><small>' + x.n +
              (x.s ? ' · ' + x.s : '') + '</small><span class="muted" style="font-size:11px">' +
              disp(x.st) + '</span></div>';
     }).join('');
@@ -368,6 +393,10 @@
     if (!items[i]) return;
     sugg.style.display = 'none';
     q.value = items[i].t;
+    // foreign market → bounce to the analyzer that owns it; same market → load in place
+    if (items[i]._tgt && items[i]._tgt !== 'intl_stock.html') {
+      location.href = items[i]._tgt + '#' + encodeURIComponent(items[i].t); return;
+    }
     location.hash = encodeURIComponent(items[i].t);
   }
 
