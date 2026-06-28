@@ -75,3 +75,55 @@ def flows_table() -> pd.DataFrame | None:
     if not rows:
         return None
     return pd.concat(rows, axis=1)
+
+
+# Trading-day windows the multi-period flow board sums over. Each window caps at
+# the available history, so until enough days accrue the wider windows simply hold
+# fewer days (and 2W/1M can coincide). Order = display order.
+FLOW_PERIODS: tuple[tuple[str, int], ...] = (
+    ("1D", 1), ("3D", 3), ("1W", 5), ("2W", 10), ("1M", 21),
+)
+
+
+def sector_flow_periods(
+        periods: tuple[tuple[str, int], ...] = FLOW_PERIODS) -> dict | None:
+    """Multi-window sector-ETF flow: for each sector SPDR, the SUM of daily
+    creation/redemption flow ($mn) over each trailing window (1D/3D/1W/2W/1M).
+
+    This is the multi-day view of where money is rotating across the sector
+    complex — far more readable than the day-by-day grid. Each window sums the
+    trailing N trading days that exist (so wider windows hold fewer days until
+    history matures). Returns ``{asof, depth, labels, rows, net}`` where ``rows``
+    is one ``{ticker, vals: {label: $mn|None}}`` per fund and ``net`` is the
+    across-complex sum per window. None until at least two daily snapshots exist.
+    """
+    ft = flows_table()
+    if ft is None:
+        return None
+    ft = ft.dropna(how="all")
+    if ft.empty:
+        return None
+    labels = [lbl for lbl, _ in periods]
+    rows: list[dict] = []
+    net = {lbl: 0.0 for lbl in labels}
+    depth = 0
+    for col in ft.columns:
+        ticker = col.replace("_flow_mn", "")
+        s = ft[col].dropna()
+        depth = max(depth, len(s))
+        vals: dict[str, float | None] = {}
+        for lbl, n in periods:
+            if len(s):
+                v = float(s.tail(n).sum())
+                vals[lbl] = v
+                net[lbl] += v
+            else:
+                vals[lbl] = None
+        rows.append({"ticker": ticker, "vals": vals})
+    return {
+        "asof": str(ft.index.max().date()),
+        "depth": int(depth),
+        "labels": labels,
+        "rows": rows,
+        "net": net,
+    }

@@ -277,6 +277,70 @@ def all_accumulation_signals() -> list[dict]:
     return sorted(out, key=lambda r: -abs(r["active_change"]))
 
 
+def top_sector_residuals(n: int = 12) -> list[dict]:
+    """The strongest residual ('active') weight movers across every sector SPDR,
+    ranked by |active_change| and enriched with each name's cycle state — for the
+    display-only Accumulation-watch panel.
+
+    Unlike ``all_accumulation_signals`` this does NOT gate on the alert threshold:
+    on passive sector SPDRs the residual (weight growth beyond price) is small by
+    construction (~0.01–0.05pp), so the thresholded list is almost always empty and
+    the panel reads as broken. This always surfaces the top movers so the panel
+    shows the genuine 'where is weight accumulating beyond price' read, however
+    small — honestly labelled as index-reconstitution flow, never scored.
+
+    Cheap-then-rich: rank on the already-computed decompositions (cheap) and only
+    run the per-name cycle/ladder lookup on the top ``n`` (the expensive part)."""
+    funds = config.load()["sponsors"]["sector_funds"]
+    pool: list[tuple[str, str, "pd.Series"]] = []
+    for fund in funds:
+        try:
+            dec = weight_decomposition(fund)
+        except Exception as e:  # noqa: BLE001 — one fund must not kill the rest
+            log.error("weight_decomposition %s failed: %s", fund, e)
+            continue
+        if dec is None or dec.empty:
+            continue
+        for tk, row in dec.iterrows():
+            ac = row.get("active_change")
+            if ac is None or pd.isna(ac) or float(ac) == 0.0:
+                continue
+            pool.append((fund, str(tk), row))
+    pool.sort(key=lambda x: -abs(float(x[2]["active_change"])))
+    pool = pool[:n]
+
+    liq, drag = _live_macro_context()
+    min_hist = _cfg().get("min_price_history", 60)
+    betas: dict[str, float] = {}
+    out: list[dict] = []
+    for fund, tk, row in pool:
+        if fund not in betas:
+            try:
+                from engine.conditions import sector_macro_beta
+                betas[fund] = sector_macro_beta(fund)
+            except Exception:  # noqa: BLE001 — macro overlay is additive
+                betas[fund] = 0.0
+        ladder = _ladder_for(tk, min_hist, liquidity=liq, macro_drag=drag,
+                             macro_beta=betas[fund])
+        direction = "accumulating" if row["active_change"] > 0 else "distributing"
+        confirmed = bool(
+            direction == "accumulating" and ladder
+            and (ladder["state"] in BULLISH_STATES
+                 or ladder["urgency"] in ("now", "imminent", "soon")))
+        out.append({
+            "fund": fund, "ticker": tk, "name": str(row.get("name", "")).title(),
+            "w0": float(row["w0"]), "w1": float(row["w1"]),
+            "raw_change": float(row["raw_change"]),
+            "active_change": float(row["active_change"]),
+            "active_pct": float(row["active_pct"]) if pd.notna(row["active_pct"]) else None,
+            "est_flow_mn": float(row["est_flow_mn"]) if pd.notna(row["est_flow_mn"]) else None,
+            "t0": row["t0"], "t1": row["t1"],
+            "direction": direction, "ladder": ladder, "confirmed": confirmed,
+            "vol": volume_surge(tk),
+        })
+    return out
+
+
 # --------------------------------------------------------------------------- #
 # Sector lookup — the GICS sector each stock belongs to, so the radar can show it
 # and the per-stock page can answer "which sector fund is buying me". Reuses the

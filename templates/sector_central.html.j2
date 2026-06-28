@@ -100,6 +100,17 @@
   .card-nm a { color: inherit; border-bottom: 1px dotted color-mix(in srgb, var(--link) 45%, transparent); transition: color .15s, border-color .15s; }
   .card-nm a:hover { color: var(--link); border-bottom-color: var(--link); }
   #heatmap-scorecard { margin: 4px 0 8px; }
+  /* sector-ETF flow board (server-rendered multi-window heatmap) */
+  .scf-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 13px; background: var(--panel); padding: 4px 6px 6px; }
+  table.scf { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  table.scf th, table.scf td { padding: 8px 10px; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); white-space: nowrap; }
+  table.scf thead th { font-size: 11px; font-weight: 700; color: var(--muted); text-align: right; text-transform: uppercase; letter-spacing: .03em; border-bottom: 1px solid var(--line); }
+  table.scf th.scf-s { text-align: left; }
+  table.scf td.scf-s { text-align: left; font-size: 13px; }
+  table.scf td.scf-c { text-align: right; font-size: 12.5px; font-weight: 600; border-radius: 5px; }
+  table.scf tbody tr:last-child td { border-bottom: none; }
+  table.scf tr.scf-net td { border-top: 2px solid var(--line); font-weight: 700; background: color-mix(in srgb, var(--line) 22%, transparent); }
+  table.scf tr.scf-net td.scf-s b { color: var(--text); }
 </style>
 </head>
 <body>
@@ -129,6 +140,7 @@
   <div class="scc-rail">
     <a href="#sc-cyclemap">🌀 <span class="l-en">Cycle map</span><span class="l-zh">周期图谱</span></a>
     <a href="#sc-board">🧠 <span class="l-en">Conviction board</span><span class="l-zh">信念研判</span></a>
+    <a href="#sc-flows">💸 <span class="l-en">Sector flow</span><span class="l-zh">板块资金流</span></a>
     <a href="#sc-heatmap">🔥 <span class="l-en">Market heat</span><span class="l-zh">市场热度</span></a>
     <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets &amp; Rotation</span><span class="l-zh">主题篮子与轮动</span> →</a>
   </div>
@@ -197,6 +209,10 @@
     </div>
   </div>
   <div id="board" class="board"></div>
+
+  {# ===== SECTOR-ETF FLOW — multi-window creation/redemption flow, server-rendered =====
+     Built in scripts/build_sector_central._flows_section_html from collectors.sponsors. #}
+  {% if flows_html %}{{ flows_html | safe }}{% endif %}
 
   {# ===== SECTOR HEATMAP — the compact scorecard, embedded (full treemap stays the subpage) ===== #}
   <div class="scc-section-h" id="sc-heatmap">
