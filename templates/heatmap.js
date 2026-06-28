@@ -94,31 +94,26 @@
   }
   var FG_DARK = [16, 21, 28], FG_LIGHT = [244, 247, 251];   // #10151c / #f4f7fb
   function fgFor(c) {
-    // Dark theme: white on every tile (deep palette).
-    if (!isLightTheme()) return '#f4f7fb';
-    // Light theme: pick the text colour with the higher WCAG contrast against the
-    // tile — biased slightly toward white so the deepest red/green keep the
-    // conventional white-on-saturated look (TradingView / Finviz light). The 10%
-    // bias is what flips the bright mid/strong GREEN bins to dark text: white on
-    // them only scores ~2.8:1 (unreadable) while dark scores ~6:1.
-    return contrast(c, FG_DARK) > contrast(c, FG_LIGHT) * 1.1 ? '#10151c' : '#f4f7fb';
+    // Institutional board: white labels on every tile in both themes (tiles run
+    // saturated/dark enough that white always reads — Finviz / TradingView look).
+    return '#ffffff';
   }
   function neutral() {
-    // flat ~0% tile: a dark slate in dark mode, a light gray in light mode so it
-    // sits on (not against) the light chrome.
-    return isLightTheme() ? [228, 231, 235] : [41, 46, 57];
+    // flat ~0% tile: a dark slate in both themes so the white label stays legible
+    // (light mode used to be a pale grey that white text vanished on).
+    return isLightTheme() ? [104, 111, 124] : [41, 46, 57];
   }
   function binPalette() {
     var up = hexToRgb(cssVar('--hm-up-v') || '#1ec173');
     var dn = hexToRgb(cssVar('--hm-dn-v') || '#e8485f');
     var nu = neutral(), P = {};
     if (isLightTheme()) {
-      // soft, light bins that read as one family with the light chrome; only the
-      // extremes saturate (and pick up white text via fgFor).
-      P[3] = up; P[2] = mix(up, nu, 0.55); P[1] = mix(up, nu, 0.26);
+      // deep, saturated bins on the white board so every tile carries white text
+      // (TradingView/Finviz light): even small moves stay dark enough to read.
+      P[3] = up; P[2] = mix(up, nu, 0.74); P[1] = mix(up, nu, 0.46);
       P[0] = nu;
-      P[-1] = mix(dn, nu, 0.26); P[-2] = mix(dn, nu, 0.55); P[-3] = dn;
-      P.na = [236, 238, 241];
+      P[-1] = mix(dn, nu, 0.46); P[-2] = mix(dn, nu, 0.74); P[-3] = dn;
+      P.na = [150, 156, 166];
     } else {
       // deep, rich bins for the dark board; white labels throughout.
       P[3] = up; P[2] = mix(up, nu, 0.82); P[1] = mix(up, nu, 0.46);
@@ -1090,7 +1085,7 @@
     if (document.getElementById('mm-heatmap-style')) return;
     var css = ''
       + ':root{--hm-up-v:#14ad6c;--hm-dn-v:#e4435a;--hm-glass:color-mix(in srgb,var(--panel) 70%,transparent);--hm-edge:color-mix(in srgb,#ffffff 8%,var(--line));--hm-frame:color-mix(in srgb,#000000 38%,var(--bg));}'
-      + 'html[data-theme="light"]{--hm-up-v:#1aa869;--hm-dn-v:#d83a48;--hm-glass:color-mix(in srgb,#ffffff 78%,transparent);--hm-edge:color-mix(in srgb,#0b1830 10%,var(--line));--hm-frame:color-mix(in srgb,#ffffff 72%,var(--panel2));}'
+      + 'html[data-theme="light"]{--hm-up-v:#1aa869;--hm-dn-v:#d83a48;--hm-glass:color-mix(in srgb,#ffffff 78%,transparent);--hm-edge:color-mix(in srgb,#0b1830 13%,var(--line));--hm-frame:#ffffff;}'
       + 'html[data-lang="zh"]{--hm-up-v:#e4435a;--hm-dn-v:#14ad6c;}'
       + 'html[data-theme="light"][data-lang="zh"]{--hm-up-v:#d83a48;--hm-dn-v:#1aa869;}'
       + '.hm-scope{font-family:Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;}'
@@ -1121,7 +1116,7 @@
       + '.hm-tm{position:relative;width:100%;}'
       + '@media (prefers-reduced-motion:no-preference){.hm-tile.hm-in{animation:hmtilein .42s cubic-bezier(.2,.7,.3,1) both;}@keyframes hmtilein{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:none;}}}'
       + '.hm-sec{position:absolute;overflow:hidden;border-radius:7px;background:var(--hm-frame);}'
-      + '.hm-sec-hd{position:absolute;left:0;top:0;width:100%;display:flex;align-items:center;gap:7px;padding:0 9px;font-weight:800;letter-spacing:.01em;color:var(--text);white-space:nowrap;z-index:5;font-size:12.5px;cursor:help;background:color-mix(in srgb,var(--panel2) 86%,transparent);}'
+      + '.hm-sec-hd{position:absolute;left:0;top:0;width:100%;display:flex;align-items:center;gap:7px;padding:0 9px;font-weight:800;letter-spacing:.01em;color:var(--text);white-space:nowrap;z-index:5;font-size:12.5px;cursor:help;background:transparent;}'
       + '.hm-sec-hd .nm{text-transform:uppercase;letter-spacing:.04em;font-size:11.5px;overflow:hidden;text-overflow:ellipsis;}'
       + '.hm-sec-hd .pc{font-weight:800;font-variant-numeric:tabular-nums;}'
       + '.hm-sec-hd .hm-sec-i{margin-left:auto;opacity:.4;font-size:11px;}'
