@@ -822,11 +822,11 @@
     xlre: "basket/us_sector_realestate.html"
   };
 
-  // the "open this item's own page" target. US: each sector ETF opens its dedicated sector page
-  // (US_SECTOR_PAGE); basket ETF-proxies open the single-stock analyzer at stock.html#TICKER
-  // (baskets without a proxy fall to the baskets hub). China (Shenwan indices / A-share baskets
-  // have no analyzer) routes to the China Sector Central hub. Returns null when there's nothing
-  // to open (incl. when already embedded in that hub).
+  // the "open this item's own page" target. US: each sector ETF opens its dedicated equal-weight
+  // sector page (US_SECTOR_PAGE), and each thematic basket opens its dedicated theme page at
+  // basket/<id>.html (the "b-" id prefix stripped) — NOT the proxy ETF's single-stock analyzer.
+  // China (Shenwan indices / A-share baskets have no analyzer) routes to the China Sector Central
+  // hub. Returns null when there's nothing to open (incl. when already embedded in that hub).
   function sectorPageHref(s) {
     if (META.region === "china") {
       // when this same JS is embedded IN the China Sector Central hub, don't render a
@@ -834,15 +834,14 @@
       // cycles page, deep-link into the hub and let its boot() focus this item by #id.
       return /sector_central/.test(location.pathname) ? null : ("sector_central_china.html#" + s.id);
     }
-    if (s.kind === "basket") return s.etf_proxy ? ("stock.html#" + s.etf_proxy) : "baskets.html";
+    if (s.kind === "basket") return "basket/" + s.id.replace(/^b-/, "") + ".html";
     if (US_SECTOR_PAGE[s.id]) return US_SECTOR_PAGE[s.id];
     return s.ticker ? ("stock.html#" + s.ticker) : null;
   }
   function sectorPageLabel(s) {
     if (META.region === "china") return L("Open in Sector Central", "在板块中枢查看");
-    if (s.kind === "basket") return s.etf_proxy ? (L("Open ", "查看 ") + s.etf_proxy + L(" page", " 页面"))
-                                                : L("Open baskets hub", "查看篮子中心");
-    if (US_SECTOR_PAGE[s.id]) return L("Open ", "查看 ") + nm(s) + L(" page", " 页面");
+    // both thematic baskets and US sector ETFs label by their own name → "Open <name> page".
+    if (s.kind === "basket" || US_SECTOR_PAGE[s.id]) return L("Open ", "查看 ") + nm(s) + L(" page", " 页面");
     return L("Open ", "查看 ") + (s.ticker || "") + L(" page", " 页面");
   }
 
