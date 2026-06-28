@@ -1159,6 +1159,24 @@ def basket_action_items(site) -> dict:
     return buckets
 
 
+# US sector ETFs each have a dedicated equal-weight sector page under basket/; map the SPDR
+# ticker → that page so dashboard sector affordances open it instead of the legacy
+# sectors/<TICKER>.html drill-down. Mirrors US_SECTOR_PAGE in site/sector_cycles.js.
+US_SECTOR_PAGE = {
+    "XLK": "basket/us_sector_tech.html",
+    "XLC": "basket/us_sector_comm.html",
+    "XLY": "basket/us_sector_discretionary.html",
+    "XLF": "basket/us_sector_financials.html",
+    "XLI": "basket/us_sector_industrials.html",
+    "XLB": "basket/us_sector_materials.html",
+    "XLE": "basket/us_sector_energy.html",
+    "XLV": "basket/us_sector_health.html",
+    "XLP": "basket/us_sector_staples.html",
+    "XLU": "basket/us_sector_utilities.html",
+    "XLRE": "basket/us_sector_realestate.html",
+}
+
+
 def action_board(sector_timing: dict, notable: list[dict],
                  basket_items: dict | None = None) -> dict:
     """Bucket sector + narrative-basket + standout-stock cycle signals into an at-a-glance
@@ -1170,7 +1188,7 @@ def action_board(sector_timing: dict, notable: list[dict],
     for fund, tm in sector_timing.items():
         e = tm.get("entry") or {}
         item = {"ticker": fund, "name": SECTOR_NAMES.get(fund, fund),
-                "kind": "sector", "href": "sectors/" + fund + ".html",
+                "kind": "sector", "href": US_SECTOR_PAGE.get(fund, "sectors/" + fund + ".html"),
                 "label": tm["label"], "tag": e.get("tag", ""),
                 "text": e.get("text", ""), "days": e.get("days_hi"),
                 "age_short": tm.get("age_short"), "age_short_zh": tm.get("age_short_zh"),
@@ -1301,6 +1319,7 @@ def sector_setup_view(latest: dict, timing: dict | None = None) -> dict | None:
         stages = {s["ticker"]: s for s in ((latest.get("playbook") or {}).get("stages") or [])}
         month = pd.Timestamp(latest["date"]).month if latest.get("date") else None
         for r in bd["sectors"]:
+            r["href"] = US_SECTOR_PAGE.get(r["ticker"], "sectors/" + r["ticker"] + ".html")
             st = stages.get(r["ticker"], {})
             r["verdict"] = T(r["label"], r["label_zh"])
             r["action_txt"] = T(r["action"], r["action_zh"])
