@@ -907,7 +907,7 @@
 
     var head = ''
       + '<div class="hm-sc-hd">'
-      +   '<div class="hm-sc-tit">🔥 ' + L('S&amp;P 500 Heatmap', 'S&amp;P 500 热力图') + '</div>'
+      +   '<div class="hm-sc-tit">' + L('S&amp;P 500 Heatmap', 'S&amp;P 500 热力图') + '</div>'
       +   '<div class="hm-sc-meta"><span class="hm-dot ' + (live ? 'live' : '') + '"></span>'
       +     L((live ? 'Live · 15-min delayed' : 'Daily close') + ' · ' + (data.asof || '—') + ' · ' + data.n_tiles + ' names',
               (live ? '实时 · 延迟15分钟' : '日线收盘') + ' · ' + (data.asof || '—') + ' · ' + data.n_tiles + ' 只') + '</div>'
@@ -1054,7 +1054,7 @@
       _ov.className = 'hm-ov hm-scope';
       _ov.innerHTML = '<div class="hm-ov-scrim"></div>'
         + '<div class="hm-ov-panel" role="dialog" aria-modal="true" aria-label="Market heatmap">'
-        +   '<div class="hm-ov-head"><span class="t">🔥 ' + L('S&amp;P 500 Heatmap', 'S&amp;P 500 热力图') + '</span>'
+        +   '<div class="hm-ov-head"><span class="t">' + L('S&amp;P 500 Heatmap', 'S&amp;P 500 热力图') + '</span>'
         +     '<button type="button" class="hm-ov-x" aria-label="Close">✕</button></div>'
         +   '<div class="hm-ov-body"><div class="hm-ov-full"></div></div>'
         + '</div>';

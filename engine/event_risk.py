@@ -152,8 +152,8 @@ def snapshot(latest: dict | None = None, events: list[dict] | None = None,
     time_et = nxt.get("time_et", "")
     up_pct = round(hist["up_rate"] * 100)
 
-    headline_en = f"⚠ Event-risk window: {label} {when_en}"
-    headline_zh = f"⚠ 事件风险窗口：{label} {when_zh}"
+    headline_en = f"Event-risk window: {label} {when_en}"
+    headline_zh = f"事件风险窗口：{label} {when_zh}"
     if nxt_days >= 1:
         headline_en += f" ({md}{(' · ' + time_et + ' ET') if time_et else ''})"
         headline_zh += f"（{md}{(' · ' + time_et + ' ET') if time_et else ''}）"
@@ -167,8 +167,8 @@ def snapshot(latest: dict | None = None, events: list[dict] | None = None,
               f"方向是两面性的掷硬币——这不是卖出信号；公告溢价平均为正。按噪声调整仓位、放宽止损，不要凭空增加信心。")
 
     if frag["fragile"]:
-        headline_en = f"⚠ Walking into {label} {when_en} positioned FRAGILE"
-        headline_zh = f"⚠ 在仓位脆弱状态下迎接 {label}（{when_zh}）"
+        headline_en = f"Walking into {label} {when_en} positioned FRAGILE"
+        headline_zh = f"在仓位脆弱状态下迎接 {label}（{when_zh}）"
 
     return {
         "show": True,
