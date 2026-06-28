@@ -61,6 +61,22 @@ jobs:
           path: data/hk_breadth/_closes_cache.parquet
           key: hk-breadth-closes-${{ github.run_id }}
           restore-keys: hk-breadth-closes-
+      - name: restore china per-name OHLC store (signal-engine deep store; nightly backfill grows it)
+        # Per-name daily OHLC (collectors/china_stock_prices.py → data/china_stocks/<T>.parquet).
+        # Regenerable from yfinance + incremental (store.upsert), so cached cross-run like the
+        # breadth caches rather than committed in full (only the ~12-name seed is committed); the
+        # collect job grows it nightly, the engine job restores it to lift CN names to US parity.
+        uses: actions/cache@v4
+        with:
+          path: data/china_stocks
+          key: china-stocks-ohlc-${{ github.run_id }}
+          restore-keys: china-stocks-ohlc-
+      - name: restore hk per-name OHLC store (signal-engine deep store; nightly backfill grows it)
+        uses: actions/cache@v4
+        with:
+          path: data/hk_stocks
+          key: hk-stocks-ohlc-${{ github.run_id }}
+          restore-keys: hk-stocks-ohlc-
       - name: restore intraday (4H) cache
         # Polygon hourly bars: regenerable + daily-changing, so cached cross-job (like the
         # breadth caches) instead of committed, to keep the repo from bloating. The collect
@@ -155,6 +171,18 @@ jobs:
           path: data/hk_breadth/_closes_cache.parquet
           key: hk-breadth-closes-engine-${{ github.run_id }}
           restore-keys: hk-breadth-closes-
+      - name: restore china per-name OHLC store (build_china_library overlays it for US parity)
+        uses: actions/cache@v4
+        with:
+          path: data/china_stocks
+          key: china-stocks-ohlc-engine-${{ github.run_id }}
+          restore-keys: china-stocks-ohlc-
+      - name: restore hk per-name OHLC store (build_hk_library overlays it for US parity)
+        uses: actions/cache@v4
+        with:
+          path: data/hk_stocks
+          key: hk-stocks-ohlc-engine-${{ github.run_id }}
+          restore-keys: hk-stocks-ohlc-
       - name: restore intraday (4H) cache (build_chart_data emits site/intraday from it)
         uses: actions/cache@v4
         with:
