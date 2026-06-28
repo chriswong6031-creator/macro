@@ -2644,7 +2644,8 @@ def main() -> int:
                   "masterbrief.js", "aibrief.js", "stockbrief.js", "aidesk_lean.js",
                   "stockview.js",
                   "lightweight-charts.js",
-                  "allocation_scorecard.js", "live.js", "wh_banner.js", "heatmap.js"):
+                  "allocation_scorecard.js", "live.js", "wh_banner.js", "heatmap.js",
+                  "subsector_rotation.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
@@ -2985,6 +2986,18 @@ def main() -> int:
         log.info("wrote %s (%.0f KB)", out_hm, out_hm.stat().st_size / 1024)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("sector heatmap failed: %s", e)
+
+    # Subsector Rotation — Finviz broad-universe theme→subsector rotation/velocity
+    # read (RRG map + emerging screen). Offline from the same committed Finviz
+    # snapshot as the themes treemap; a separate lens from our curated baskets.
+    try:
+        from scripts.build_subsector_rotation import build as build_subsector_rotation
+        build_subsector_rotation(site, generated_utc=generated)
+        out_sr = site / "subsector_rotation.html"
+        out_sr.write_text(env.get_template("subsector_rotation.html.j2").render())
+        log.info("wrote %s (%.0f KB)", out_sr, out_sr.stat().st_size / 1024)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("subsector rotation failed: %s", e)
 
     # --- history page: the longer-window charts + lifespan base rates ----------
     from engine.playbook import QUAD_SHORT, next_quads_line, transition_stats
