@@ -649,6 +649,31 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("hk conditions charts failed (%s); skipping", e)
 
+        # Market State command-center (display-only) — the HK 6-factor scorecard +
+        # side-by-side .ms-front board. Reuses engine.market_state with HK_PROFILE
+        # (engine/market_state_hk.py): the index tape over Hang Seng / HSCEI / HS TECH
+        # plus the conditions readers (RORO, VHSI+HIBOR vol proxy, breadth percentile,
+        # HKMA/peg liquidity, slowdown/drawdown guard). None-safe; never breaks the page.
+        try:
+            from engine import market_state as _ms
+            from engine.market_state_hk import HK_PROFILE
+            from engine.hk_inputs import build_features as _hk_feats
+            _f = _hk_feats()
+            # precompute the % >50d-MA 5y percentile + a price/breadth divergence flag for F4
+            _b = _f["pct_above_50"].dropna() if "pct_above_50" in getattr(_f, "columns", []) else None
+            if _b is not None and len(_b) >= 60:
+                _win = _b.tail(252 * 5)
+                _pctile = float((_win <= _win.iloc[-1]).mean())
+                _px = _f["^HSI"].dropna() if "^HSI" in _f.columns else None
+                _div = bool(_px is not None and len(_px) > 21 and len(_b) > 21
+                            and _b.iloc[-1] < _b.iloc[-22] and _px.iloc[-1] > _px.iloc[-22])
+                latest.setdefault("conditions", {})["breadth"] = {"above200_pctile": _pctile, "div": _div}
+            vm["market_state"] = _ms.market_state_snapshot(
+                latest, _f, latest.get("alerts") or [], profile=HK_PROFILE)
+        except Exception as e:  # noqa: BLE001 — additive panel, never fatal
+            log.error("hk market_state failed (%s); skipping", e)
+            vm["market_state"] = None
+
         # HK / US / China macro release calendar — display-only scheduling context
         # (pure date arithmetic; no news API). None-safe.
         try:

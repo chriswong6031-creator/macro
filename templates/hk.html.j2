@@ -411,6 +411,7 @@
   .ev-chip b { color: var(--text); } .ev-chip .ev-d { font-weight: 800; color: var(--warn); font-variant-numeric: tabular-nums; }
   .ev-chip .ev-rg { font-size: 9px; font-weight: 700; padding: 0 5px; border-radius: 6px; color: var(--muted); background: var(--panel2, color-mix(in srgb,var(--muted) 12%,var(--panel))); }
 {% include "_cmd_hero.css.j2" %}
+{% include "_market_state.css.j2" %}
 </style>
 </head>
 <body>
@@ -695,6 +696,20 @@
     'Q4': ('A growth scare with cooling inflation — lean defensive; SOE staples &amp; telecom over high-beta tech.', '增长恐慌伴随通胀降温 — 偏防御；国企必需消费与电信优于高贝塔科技。')
   } %}
   <div class="panel span12 cmd-hero" id="regime-radar">
+    {% if market_state %}
+    {% set ms = market_state %}
+    {% set board = {
+      'eyebrow_help_en': "What kind of HK market is this RIGHT NOW — a single risk-on/off read that BLENDS the broad-market tape across timeframes, cross-asset risk appetite (the 12-leg RORO composite, heavily global), the volatility regime (VHSI + HIBOR funding), market breadth, HKMA/peg liquidity, and the downturn-risk guards into one 0-100 score. GREEN risk-on (≥60) · YELLOW mixed/transition (42–59) · RED risk-off (<42). Confirmation over prediction — every leg reads what has ALREADY turned, not a forecast. DISPLAY-ONLY: a synthesis of signals shown elsewhere on this page; it never scores, sizes or feeds the regime engine.",
+      'eyebrow_help_zh': "当前是什么样的港股市场 — 一个把多周期大盘趋势、跨资产风险偏好（12 腿 RORO 综合，高度全球化）、波动率环境（VHSI＋HIBOR 资金）、市场广度、金管局／联汇流动性，以及下行风险护栏融合为一个 0-100 评分的风险偏好读数。绿色＝风险偏好（≥60）·黄色＝混合/转换（42–59）·红色＝避险（<42）。确认优于预测 — 每条腿读取的是已经转向的东西，而非预测。仅供展示：它是本页其他信号的综合，绝不评分、定仓或进入周期引擎。",
+      'tape_title_en': "Multi-timeframe tape · the broad HK market", 'tape_title_zh': "多周期趋势 · 港股大盘",
+      'tape_help_en': "How the broad HK market is trending across four timeframes — 1D, 3D, 7D and 30D — for the Hang Seng, HSCEI and HS TECH. ▲ = up (MACD positive and RSI ≥ 50), ▼ = down, ▶ = mixed. The right-hand verdict is the confluence across timeframes — confirmation comes when the longer horizons align.",
+      'tape_help_zh': "港股大盘在四个周期（1D、3D、7D、30D）上的趋势 — 恒生指数、国企指数、恒生科技。▲＝上行（MACD 为正且 RSI ≥ 50），▼＝下行，▶＝分化。右侧为多周期合流结论 — 待较长周期对齐方为确认。",
+      'divider_en': "Macro backdrop — the growth × inflation regime", 'divider_zh': "宏观背景 — 增长 × 通胀周期"
+    } %}
+    {% endif %}
+    {# ===== ONE side-by-side board: Market State (left) + the HK regime backdrop (right) ===== #}
+    <div class="ms-front{% if market_state %} ms ms-{{ market_state.color }}{% endif %}">
+    {% if market_state %}{% include "_market_state_board.html.j2" %}{% endif %}
     <div class="hero-bar">
       <!-- LEFT — 2×2 quadrant locator (growth ↑ top, inflation → right; lit cell = today) -->
       <div class="hero-loc">
@@ -771,6 +786,7 @@
         </div>
       </div>
     </div>
+    </div>{# /.ms-front — close the side-by-side board #}
     {% if latest.confirming %}<p class="note" style="margin:14px 0 0;padding-top:11px;border-top:1px solid var(--hair);text-transform:none">{{ t('Confirming', '确认') }}: {{ latest.confirming|join(', ') }}{% if latest.contradicting %} · {{ t('Contradicting', '矛盾') }}: {{ latest.contradicting|join(', ') }}{% endif %}</p>{% endif %}
   </div>
 
