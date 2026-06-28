@@ -1,0 +1,92 @@
+{# ===== Market State board — the inner pieces of the side-by-side .ms-front board =====
+   Shared across the China / HK / Canada home pages (the US macro page keeps its own
+   inline copy with the radar-amplification UI). The including template provides:
+     · ms     — the market_state snapshot dict (engine.market_state.market_state_snapshot)
+     · board  — market-specific labels: eyebrow_help_en/zh, tape_title_en/zh,
+                tape_help_en/zh, divider_en/zh  (all plain strings)
+     · t() / help()  — the parent template's bilingual macros (available via include-with-context)
+   The wrapper <div class="ms-front ms ms-{color}"> and the market's own growth×inflation
+   hero-bar (the right column) are rendered by the template AROUND this include. The radar
+   banner only appears when the market actually has a radar source (ms.radar.state). #}
+{% set _va = {'green':'▲','yellow':'▶','red':'▼'}.get(ms.color, '▶') %}
+
+{% if ms.radar and ms.radar.state %}
+{% set rd = ms.radar %}
+{% set rdcol = 'var(--down)' if rd.state=='risk-off' else ('var(--orange)' if rd.state=='elevated' else ('var(--warn)' if rd.state=='caution' else ('var(--ink-3)' if rd.state=='watch' else 'var(--up)'))) %}
+<div class="ms-radar{{ ' loud' if rd.is_loud }}" style="--rc:{{ rdcol }}">
+  <span class="msr-ic">{{ '🛑' if rd.state=='risk-off' else ('🚨' if rd.state=='elevated' else ('⚠️' if rd.state=='caution' else ('👀' if rd.state=='watch' else '✅'))) }}</span>
+  <span class="msr-main">
+    <span class="msr-tit">{{ t('Risk Radar','风险雷达') }} · <b style="color:{{ rdcol }}">{{ t(rd.state|upper, rd.state_zh) }}{% if rd.top_score is not none %} {{ rd.top_score }}/100{% endif %}</b>{% if rd.is_loud and rd.label_en %} — {{ t(rd.label_en, rd.label_zh) }}{% endif %}</span>
+    {% if rd.dd21 is not none %}<span class="msr-odds">{{ t('Pullback odds (≥5%)','回撤概率（≥5%）') }} · 5d {{ (rd.dd5*100)|round|int }}% · 10d {{ (rd.dd10*100)|round|int }}% · <b>21d {{ (rd.dd21*100)|round|int }}%</b></span>{% endif %}
+  </span>
+  {% if rd.is_loud and rd.do_en %}<span class="msr-do"><b>{{ t('Do','应对') }}:</b> {{ t(rd.do_en, rd.do_zh) }}</span>{% endif %}
+</div>
+{% endif %}
+
+<div class="ms-head">
+  <span class="ms-eyebrow"><span class="ms-live"></span>{{ t('MARKET STATE','市场状态') }}</span>
+  <span class="ms-date">· {{ ms.asof }}</span>
+  {{ help(board.eyebrow_help_en, board.eyebrow_help_zh) }}
+</div>
+
+<div class="ms-top">
+  {# LEFT — the verdict: what kind of market, in 2 seconds #}
+  <section class="ms-verdict">
+    <p class="v-label">{{ t('Verdict','结论') }}</p>
+    <p class="v-word">{{ t(ms.label_en, ms.label_zh) }}<span class="arr">{{ _va }}</span></p>
+    <div class="v-scorerow"><span class="v-score">{{ ms.score }}</span><span class="v-outof">/ 100</span></div>
+    <div class="v-meter"><span class="tick" style="left:{{ ms.score }}%"></span></div>
+    <div class="v-scale"><span>0</span><span>42</span><span>60</span><span>100</span></div>
+    <p class="v-thesis">{{ t(ms.headline_en, ms.headline_zh) }}</p>
+    {% for o in ms.overrides %}<p class="v-override"><span class="ic">⚠</span>{{ t(o.note_en, o.note_zh) }}</p>{% endfor %}
+    {% if ms.flip_en %}<p class="v-flip">{{ t(ms.flip_en, ms.flip_zh) }}</p>{% endif %}
+  </section>
+
+  {# RIGHT — the evidence: six factors, one tight row each (arrow · title · bar · score).
+     The short read + the metric tags live in a hover popup anchored to the TITLE. #}
+  <section class="ms-evidence">
+    <div class="e-head"><p class="e-title">{{ t('Evidence · factors','依据 · 因子') }}</p><span class="e-cols">{{ t('tone · score','信号 · 评分') }}</span></div>
+    {% for c in ms.components %}
+    <div class="ms-f tone-{{ c.tone }}">
+      <span class="f-dir">{{ c.arrow }}</span>
+      <span class="f-name help"><span class="f-txt">{{ t(c.label_en, c.label_zh) }}</span><span class="tip">
+        <span class="f-tipread">{{ t(c.read_en, c.read_zh) }}</span>
+        {% if c.metrics %}<span class="f-tipmetrics">{% for m in c.metrics %}<span class="ms-metric">{{ t(m.k_en, m.k_zh) }} <b>{{ m.v }}</b></span>{% endfor %}</span>{% endif %}
+      </span></span>
+      <span class="f-tone"><i style="width:{{ c.score }}%"></i></span>
+      <span class="f-score">{{ c.score }}</span>
+    </div>
+    {% endfor %}
+  </section>
+</div>
+
+{% if ms.mtf and ms.mtf.indices %}
+{# the multi-timeframe tape — the broad market across four horizons #}
+<section class="ms-tape">
+  <div class="tape-head">
+    <p class="tape-title">{{ t(board.tape_title_en, board.tape_title_zh) }}{{ help(board.tape_help_en, board.tape_help_zh) }}</p>
+    <span class="tape-sub">{{ t('arrow · RSI','箭头 · RSI') }}</span>
+  </div>
+  <table class="ms-tapetbl">
+    <thead><tr>
+      <th class="l">{{ t('Index','指数') }}</th>
+      <th>1D</th><th>3D</th><th>7D</th><th>30D</th>
+      <th class="r">{{ t('Confluence','合流') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for r in ms.mtf.indices %}
+      <tr>
+        <td class="l t-inst">{{ t(r.label_en, r.label_zh) }}</td>
+        {% for tf in ['D','3D','W','M'] %}{% set cell = r.cells[tf] %}
+        <td>{% if cell %}<span class="ms-cell2 {{ cell.tone }}"><span class="ar">{{ cell.arrow }}</span><span class="rsi">{{ cell.rsi|round|int if cell.rsi is not none else '·' }}</span></span>{% else %}<span class="ms-cell2 flat"><span class="ar">·</span></span>{% endif %}</td>
+        {% endfor %}
+        <td class="r"><span class="ms-conf {{ r.tone }}">{{ t(r.confluence_en, r.confluence_zh) }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if ms.caveat_en %}<p class="ms-caveat">{{ t(ms.caveat_en, ms.caveat_zh) }}</p>{% endif %}
+</section>
+{% endif %}
+
+<div class="ms-divider">{{ t(board.divider_en, board.divider_zh) }}</div>
