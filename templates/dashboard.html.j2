@@ -253,13 +253,14 @@
      in the page-macro and page-stocks scopes. The escalating odds ramp replaces
      the old cramped "5d.. 10d.. 21d.." text run. ============================ */
   .rrx { --rc: var(--warn);
-         display: grid; gap: 11px; margin: 12px 0 2px; padding: 13px 15px; border-radius: 12px;
-         background: color-mix(in srgb, var(--rc) 7%, var(--panel2));
-         border: 1px solid color-mix(in srgb, var(--rc) 26%, var(--line));
-         border-left: 3px solid var(--rc); font-size: 12.5px; line-height: 1.4; }
+         display: grid; gap: 12px; margin: 12px 0 2px; padding: 15px 18px; border-radius: 12px;
+         background: var(--panel);
+         border: 1px solid var(--line);
+         border-left: 4px solid var(--rc); font-size: 12.5px; line-height: 1.4;
+         box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4); }
   body.page-macro .ms-front > .rrx { margin: 0 0 14px; }
-  .rrx.rrx-loud { background: color-mix(in srgb, var(--rc) 12%, var(--panel2));
-         box-shadow: 0 0 0 1px color-mix(in srgb, var(--rc) 22%, transparent), 0 10px 30px -14px var(--rc);
+  .rrx.rrx-loud { background: color-mix(in srgb, var(--rc) 4%, var(--panel));
+         box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rc) 20%, transparent), 0 14px 34px -18px color-mix(in srgb, var(--rc) 70%, transparent);
          animation: rrxPulse 2.4s ease-in-out infinite; }
   @keyframes rrxPulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rc) 30%, transparent); }
                         50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--rc) 6%, transparent); } }
@@ -347,6 +348,17 @@
     .rrx .rrx-odds { flex-direction: column; gap: 14px; }
     .rrx .rrx-odds-l { flex: 0 0 auto; }
     .rrx .rrx-ramp { flex: 0 0 auto; width: 100%; max-width: none; justify-content: space-around; }
+  }
+  /* phone: collapse to a SIMPLE, STRONG alert — headline + the one number that
+     matters + the action. The ramp, the verbose amplification line and the
+     non-dominant threat meters are desktop-only detail, not a mobile wall. */
+  @media (max-width: 560px) {
+    .rrx { padding: 14px 15px; gap: 10px; }
+    .rrx .rrx-amp, .rrx .rrx-ramp, .rrx .rrx-ev { display: none; }
+    .rrx .rrx-odds { padding: 11px 13px; }
+    .rrx .rrx-big { font-size: 34px; }
+    .rrx .rrx-threats { gap: 5px; }
+    .rrx .rrx-th:not(.dom) { display: none; }
   }
 
   .help { display: inline-flex; align-items: center; justify-content: center;
