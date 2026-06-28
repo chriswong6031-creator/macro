@@ -1362,16 +1362,16 @@
   }
 
   /* verdict column */
-  body.page-macro .v-label{font-family:var(--num);font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  body.page-macro .v-label{font-family:var(--num);font-size:var(--fs-micro);font-weight:700;letter-spacing:var(--trk);text-transform:uppercase;
     color:var(--ink-3);margin:0 0 9px}
-  body.page-macro .v-word{font-size:40px;line-height:.94;font-weight:800;letter-spacing:-.025em;margin:0;color:var(--ms-c);
+  body.page-macro .v-word{font-size:var(--fs-display);line-height:.92;font-weight:800;letter-spacing:-.03em;margin:0;color:var(--ms-c);
     display:flex;align-items:center;gap:.2em}
   body.page-macro .v-word .arr{font-family:var(--num);font-size:.42em;font-weight:700;transform:translateY(-.04em)}
   html[data-lang="zh"] body.page-macro .v-word{letter-spacing:0}
-  @media(max-width:560px){body.page-macro .v-word{font-size:34px}}
-  body.page-macro .v-scorerow{display:flex;align-items:baseline;gap:7px;margin-top:11px}
-  body.page-macro .v-score{font-family:var(--num);font-size:30px;font-weight:700;line-height:1;letter-spacing:-.02em;color:var(--ink-1)}
-  body.page-macro .v-outof{font-family:var(--num);font-size:13px;color:var(--ink-3)}
+  @media(max-width:560px){body.page-macro .v-word{font-size:38px}}
+  body.page-macro .v-scorerow{display:flex;align-items:baseline;gap:7px;margin-top:12px}
+  body.page-macro .v-score{font-family:var(--num);font-size:var(--fs-num-xl);font-weight:800;line-height:1;letter-spacing:-.02em;color:var(--ink-1)}
+  body.page-macro .v-outof{font-family:var(--num);font-size:var(--fs-sm);color:var(--ink-3)}
   body.page-macro .v-meter{margin-top:12px;height:6px;border-radius:3px;position:relative;overflow:hidden;
     background:linear-gradient(90deg,
       color-mix(in srgb,var(--down) 30%,var(--panel2)) 0 42%,
