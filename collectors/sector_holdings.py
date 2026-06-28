@@ -1,8 +1,11 @@
-"""Top-10 holdings per sector SPDR + their stock prices + light fundamentals.
+"""Top-N holdings per sector SPDR + their stock prices + light fundamentals.
 
 - Holdings: SSGA's daily holdings XLSX per fund (public investor documents).
-  Top 10 by weight, upserted into one history parquet per sector.
-- Stock prices: yahoo batch for the union of all top-10 tickers (~80-100
+  Top N (=20) by weight, upserted into one history parquet per sector. The
+  XLSX already lists every holding, so widening N is free (no extra fetch);
+  N=20 roughly doubles name coverage for the single-stock library and the
+  heatmap's offline cap proxy vs the legacy top-10.
+- Stock prices: yahoo batch for the union of all top-N tickers (~160-200
   names), stored under data/stocks/ — full history on backfill (the cycle
   calibration needs it), incremental daily afterwards.
 - Fundamentals: best-effort yfinance info fields, weekly cadence, LOW
@@ -22,12 +25,18 @@ from lib import config, store
 
 log = logging.getLogger(__name__)
 
+# How many holdings to keep per sector ETF. The SSGA file carries every holding,
+# so this only sets how deep into the tail we store/track. 20 ≈ 75-85% of each
+# fund's weight and ~160-200 union names (vs ~110 at top-10). The legacy
+# helper names (top10_union/latest_top10) are kept for their callers.
+TOP_N = 20
+
 SSGA_XLSX = ("https://www.ssga.com/us/en/intermediary/etfs/library-content/"
              "products/fund-data/etfs/us/holdings-daily-us-en-{fund}.xlsx")
 
 
 class SectorHoldingsAdapter(Adapter):
-    """Daily top-10 holdings snapshots for the 11 sector SPDRs."""
+    """Daily top-N (=20) holdings snapshots for the 11 sector SPDRs."""
 
     name = "sector_holdings"
     group = "sector_holdings"
@@ -36,7 +45,7 @@ class SectorHoldingsAdapter(Adapter):
         self.cfg = config.load()["sponsors"]
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
-        # 10 rows share one date, so these tables bypass the store's
+        # N rows share one date, so these tables bypass the store's
         # one-row-per-date upsert and are merged here instead
         ok, errors = 0, []
         for fund in self.cfg["sector_funds"]:
@@ -87,7 +96,7 @@ class SectorHoldingsAdapter(Adapter):
         df["weight_pct"] = pd.to_numeric(df[wcol], errors="coerce")
         df = (df.dropna(subset=["weight_pct", "ticker"])
                 .query("ticker != '-'")
-                .nlargest(10, "weight_pct"))
+                .nlargest(TOP_N, "weight_pct"))
         out = pd.DataFrame({
             "ticker": df["ticker"].astype(str).str.strip(),
             "name": df["name"].astype(str).str.strip() if "name" in df.columns else "",
@@ -98,7 +107,8 @@ class SectorHoldingsAdapter(Adapter):
         return out
 
 def top10_union() -> list[str]:
-    """Union of current top-10 tickers across all sectors (for the price feed)."""
+    """Union of current top-N holdings tickers across all sectors (price feed).
+    (Name kept for back-compat; returns the top-``TOP_N`` union, not just 10.)"""
     d = config.data_dir() / "sector_holdings"
     if not d.exists():
         return []
@@ -122,7 +132,7 @@ def latest_top10(fund: str) -> pd.DataFrame | None:
 
 
 class StockPriceAdapter(Adapter):
-    """Daily closes for the union of top-10 holdings (cycle engine fuel)."""
+    """Daily closes for the union of top-N holdings (cycle engine fuel)."""
 
     name = "stock_prices"
     group = "stocks"
