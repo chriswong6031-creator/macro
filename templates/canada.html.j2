@@ -144,6 +144,7 @@
   .help:hover .tip { display:block; }
   .caveat { font-size:11.5px; color:var(--muted); font-style:italic; }
 {% include "_cmd_hero.css.j2" %}
+{% include "_market_state.css.j2" %}
 </style>
 </head>
 <body>
@@ -199,6 +200,20 @@
   'Q4': ('A growth scare with cooling inflation — lean defensive; bonds and staples over cyclicals.', '增长恐慌伴随通胀降温 — 偏防御；债券与必需消费优于周期股。')
 } %}
 <div class="panel cmd-hero" id="regime-radar">
+  {% if market_state %}
+  {% set ms = market_state %}
+  {% set board = {
+    'eyebrow_help_en': "What kind of TSX market is this RIGHT NOW — a single risk-on/off read that BLENDS the broad-market tape across timeframes, cross-asset risk appetite (the commodity / CAD / S&P / VIX / DXY overlay), the volatility regime (VIX, Canada's cross-asset fear gauge), market breadth, BoC liquidity & the GoC curve, and the downturn-risk guards into one 0-100 score. GREEN risk-on (≥60) · YELLOW mixed/transition (42–59) · RED risk-off (<42). Confirmation over prediction — every leg reads what has ALREADY turned, not a forecast. DISPLAY-ONLY: a synthesis of signals shown elsewhere on this page; it never scores, sizes or feeds the regime engine.",
+    'eyebrow_help_zh': "当前是什么样的 TSX 市场 — 一个把多周期大盘趋势、跨资产风险偏好（商品／加元／标普／VIX／美元指数综合）、波动率环境（VIX，加拿大的跨资产恐慌指标）、市场广度、加央行流动性与加债曲线，以及下行风险护栏融合为一个 0-100 评分的风险偏好读数。绿色＝风险偏好（≥60）·黄色＝混合/转换（42–59）·红色＝避险（<42）。确认优于预测 — 每条腿读取的是已经转向的东西，而非预测。仅供展示：它是本页其他信号的综合，绝不评分、定仓或进入周期引擎。",
+    'tape_title_en': "Multi-timeframe tape · the broad TSX market", 'tape_title_zh': "多周期趋势 · TSX 大盘",
+    'tape_help_en': "How the broad TSX market is trending across four timeframes — 1D, 3D, 7D and 30D — for the S&P/TSX Composite plus its two dominant pillars, Financials and Energy (the TSX is heavily concentrated in them). ▲ = up (MACD positive and RSI ≥ 50), ▼ = down, ▶ = mixed. The right-hand verdict is the confluence across timeframes.",
+    'tape_help_zh': "TSX 大盘在四个周期（1D、3D、7D、30D）上的趋势 — 标普/TSX 综合指数及其两大支柱金融与能源（TSX 高度集中于此）。▲＝上行（MACD 为正且 RSI ≥ 50），▼＝下行，▶＝分化。右侧为多周期合流结论。",
+    'divider_en': "Macro backdrop — the growth × inflation regime", 'divider_zh': "宏观背景 — 增长 × 通胀周期"
+  } %}
+  {% endif %}
+  {# ===== ONE side-by-side board: Market State (left) + the TSX regime backdrop (right) ===== #}
+  <div class="ms-front{% if market_state %} ms ms-{{ market_state.color }}{% endif %}">
+  {% if market_state %}{% include "_market_state_board.html.j2" %}{% endif %}
   <div class="hero-bar">
     <!-- LEFT — 2×2 quadrant locator (growth ↑ top, inflation → right; lit cell = today) -->
     <div class="hero-loc">
@@ -252,6 +267,7 @@
       </div>
     </div>
   </div>
+  </div>{# /.ms-front — close the side-by-side board #}
 </div>
 
 <!-- ===== Commodity / CAD / BoC overlay hero (the primary driver) ===== -->
@@ -512,6 +528,21 @@
 <script src="chart_i18n.js"></script>
 <script src="charts.js"></script>
 <script src="tablesort.js"></script>
+<script>
+  // keep tooltips on-screen: flip below near the top of the viewport, and anchor to the
+  // nearest side when the help target is close to the left/right edge (powers the Market
+  // State evidence hover popups + every ? tip on the page)
+  document.addEventListener('mouseover', function (e) {
+    var h = e.target.closest('.help'); if (!h) return;
+    var r = h.getBoundingClientRect();
+    h.classList.toggle('below', r.top < 340);
+    var tip = h.querySelector('.tip');
+    var half = ((tip && tip.offsetWidth) || 300) / 2 + 16;
+    h.classList.remove('edge-right', 'edge-left');
+    if (r.left + r.width / 2 + half > window.innerWidth) h.classList.add('edge-right');
+    else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
+  });
+</script>
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
