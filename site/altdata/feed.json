@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-28T17:43:58.468145+00:00",
+  "generated_utc": "2026-06-28T19:21:41.231285+00:00",
   "as_of": "2026-06-28",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -4460,35 +4460,80 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 465,
+      "rows": 473,
       "last_seen": "2026-06-28",
       "recent": [
         {
-          "url": "https://www.quiverquant.com/news/Nebius+Group+Stock+%28NBIS%29+Opinions+on+AI+Infrastructure+Expansion",
-          "time": "2026-06-28 14:03:33",
-          "headline": "Nebius Group Stock (NBIS) Opinions on AI Infrastructure Expansion",
+          "url": "https://www.quiverquant.com/news/Upwork+Stock+%28UPWK%29+Opinions+on+AI+Competition+in+Freelance+Market",
+          "time": "2026-06-28 17:32:53",
+          "headline": "Upwork Stock (UPWK) Opinions on AI Competition in Freelance Market",
           "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Nvidia Partnership Boost:</strong> Market observers on social media highlighted Nebius Group's new physical AI Living Lab initiative with Nvidia, positioning the firm to suppo\u2026",
-          "image": "https://www.quiverquant.com/images/nbis_rect_new.png",
-          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Market Watchers Note Activity:</strong> Social media chatter around Upwork has highlighted traders adding the stock to buy lists alongside other value names. Participants expe\u2026",
+          "image": "https://www.quiverquant.com/images/upwk_rect_new.png",
+          "_first_seen": "2026-06-28T18:17:49.011911+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Infleqtion+Stock+%28INFQ%29+Opinions+on+Quantum+Computing+Developments",
-          "time": "2026-06-28 14:03:33",
-          "headline": "Infleqtion Stock (INFQ) Opinions on Quantum Computing Developments",
+          "url": "https://www.quiverquant.com/news/Sellas+Life+Sciences+Stock+%28SLS%29+Opinions+on+Acquisition+Rumors+from+Executive+Filings",
+          "time": "2026-06-28 17:32:53",
+          "headline": "Sellas Life Sciences Stock (SLS) Opinions on Acquisition Rumors from Executive Filings",
           "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Analyst rating sparks interest:</strong> Recent coverage from Wedbush has highlighted Infleqtion's potential in quantum technologies, with a price target suggesting notable up\u2026",
-          "image": "https://www.quiverquant.com/images/infq_rect_new.png",
-          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">M&A Speculation:</strong> Recent regulatory filings updating executive severance and change-of-control provisions have sparked renewed talk of potential acquisitions. Market p\u2026",
+          "image": "https://www.quiverquant.com/images/sls_rect_new.png",
+          "_first_seen": "2026-06-28T18:17:49.011911+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Wolfspeed+Stock+%28WOLF%29+Opinions+on+AI+Data+Center+Opportunities",
-          "time": "2026-06-28 14:03:33",
-          "headline": "Wolfspeed Stock (WOLF) Opinions on AI Data Center Opportunities",
+          "url": "https://www.quiverquant.com/news/Ouster+Stock+%28OUST%29+Opinions+on+Rev8+Lidar+Partnerships+and+CNBC+Coverage",
+          "time": "2026-06-28 17:32:53",
+          "headline": "Ouster Stock (OUST) Opinions on Rev8 Lidar Partnerships and CNBC Coverage",
           "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Restructuring boost:</strong> Social media chatter highlights Wolfspeed's recent prepackaged debt restructuring that delivered over a billion dollars in liquidity. Analysts on\u2026",
-          "image": "https://www.quiverquant.com/images/wolf_rect_new.png",
-          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Partnership Momentum Builds:</strong> Social media chatter highlights Ouster's recent manufacturing expansion with Benchmark Electronics, positioning the company for high-volu\u2026",
+          "image": "https://www.quiverquant.com/images/oust_rect_new.png",
+          "_first_seen": "2026-06-28T18:17:49.011911+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Palantir+Technologies+Stock+%28PLTR%29+Opinions+on+surveillance+technology+deployment",
+          "time": "2026-06-28 17:32:53",
+          "headline": "Palantir Technologies Stock (PLTR) Opinions on surveillance technology deployment",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Surveillance Tech Ties Emerge:</strong> Social media users are linking Palantir's software roots in military counterinsurgency to new domestic applications like advanced licen\u2026",
+          "image": "https://www.quiverquant.com/images/pltr_rect_new.png",
+          "_first_seen": "2026-06-28T18:17:49.011911+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Applied+Optoelectronics+Stock+%28AAOI%29+Opinions+on+Recent+Price+Decline+and+Sector+Concerns",
+          "time": "2026-06-28 17:32:53",
+          "headline": "Applied Optoelectronics Stock (AAOI) Opinions on Recent Price Decline and Sector Concerns",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Price retreat sparks debate:</strong> Social media chatter has intensified around Applied Optoelectronics shares as the stock pulled back sharply from recent highs near $180 t\u2026",
+          "image": "https://www.quiverquant.com/images/aaoi_rect_new.png",
+          "_first_seen": "2026-06-28T18:17:49.011911+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Absci+Stock+%28ABSI%29+Opinions+on+Positive+Phase+1+Data+for+ABS-201",
+          "time": "2026-06-28 17:32:53",
+          "headline": "Absci Stock (ABSI) Opinions on Positive Phase 1 Data for ABS-201",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Positive Trial Results:</strong> Absci reported encouraging interim Phase 1 data for its ABS-201 candidate targeting hair loss, showing a clean safety profile with no serious \u2026",
+          "image": "https://www.quiverquant.com/images/absi_rect_new.png",
+          "_first_seen": "2026-06-28T18:17:49.011911+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Vistra+Stock+%28VST%29+Opinions+on+AI+Data+Center+Power+Demand",
+          "time": "2026-06-28 17:32:53",
+          "headline": "Vistra Stock (VST) Opinions on AI Data Center Power Demand",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">AI Power Surge:</strong> Social media chatter has intensified around Vistra's positioning in the surging demand for electricity from data centers, with analysts highlighting i\u2026",
+          "image": "https://www.quiverquant.com/images/vst_rect_new.png",
+          "_first_seen": "2026-06-28T18:17:49.011911+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Recursion+Pharmaceuticals+Stock+%28RXRX%29+Opinions+on+ARK+Invest%27s+Recent+Share+Purchase",
+          "time": "2026-06-28 17:32:53",
+          "headline": "Recursion Pharmaceuticals Stock (RXRX) Opinions on ARK Invest's Recent Share Purchase",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">ARK boosts holdings:</strong> Social media chatter highlights ARK Invest's recent addition of over 260,000 shares in Recursion Pharmaceuticals. Observers note the move undersc\u2026",
+          "image": "https://www.quiverquant.com/images/rxrx_rect_new.png",
+          "_first_seen": "2026-06-28T18:17:49.011911+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Prairie+Operating+Co.+Stock+%28PROP%29+Opinions+on+Energy+Sector+Dynamics+and+Dilution+Concerns",
@@ -4497,33 +4542,6 @@
           "category": "discussion_automated",
           "summary": "<p><strong style=\"color: rgb(218,48,46);\">Energy fundamentals spark debate:</strong> Social media users highlight Prairie Operating Co.'s substantial proven oil reserves valued at over $1 billion against a modest mark\u2026",
           "image": "https://www.quiverquant.com/images/prop_rect_new.png",
-          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Micron+Technology+Stock+%28MU%29+Opinions+on+Recent+Earnings+and+AI+Demand+Surge",
-          "time": "2026-06-28 14:03:33",
-          "headline": "Micron Technology Stock (MU) Opinions on Recent Earnings and AI Demand Surge",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings Beat:</strong> Social media discussions centered on Micron Technology's recent quarterly results that exceeded expectations, with observers noting robust demand for h\u2026",
-          "image": "https://www.quiverquant.com/images/mu_rect_new.png",
-          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/AST+SpaceMobile+Stock+%28ASTS%29+Opinions+on+Satellite+Deployment+Progress",
-          "time": "2026-06-28 14:03:33",
-          "headline": "AST SpaceMobile Stock (ASTS) Opinions on Satellite Deployment Progress",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Satellite Progress:</strong> Market participants are closely tracking the latest orbital data for AST SpaceMobile's satellites, noting reduced drag and steady unfolding that p\u2026",
-          "image": "https://www.quiverquant.com/images/asts_rect_new.png",
-          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/The+Trade+Desk+Stock+%28TTD%29+Opinions+on+Large+Insider+Purchase",
-          "time": "2026-06-28 14:03:33",
-          "headline": "The Trade Desk Stock (TTD) Opinions on Large Insider Purchase",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Insider Purchase Spotlight:</strong> Social media discussions have centered on a notably large open-market insider purchase at The Trade Desk, with observers highlighting its \u2026",
-          "image": "https://www.quiverquant.com/images/ttd_rect_new.png",
           "_first_seen": "2026-06-28T16:22:00.404797+00:00"
         },
         {
@@ -4536,39 +4554,66 @@
           "_first_seen": "2026-06-28T16:22:00.404797+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Thomas+R.+Suozzi+Lost+an+Estimated+%24759.3K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Representative Thomas R. Suozzi Lost an Estimated $759.3K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Representative Thomas R. Suozzi</strong> lost <strong>$759.3K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Thomas R. Suozzi Net Worth</h\u2026",
-          "image": "https://www.quiverquant.com/images/S001201_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+          "url": "https://www.quiverquant.com/news/The+Trade+Desk+Stock+%28TTD%29+Opinions+on+Large+Insider+Purchase",
+          "time": "2026-06-28 14:03:33",
+          "headline": "The Trade Desk Stock (TTD) Opinions on Large Insider Purchase",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Insider Purchase Spotlight:</strong> Social media discussions have centered on a notably large open-market insider purchase at The Trade Desk, with observers highlighting its \u2026",
+          "image": "https://www.quiverquant.com/images/ttd_rect_new.png",
+          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Mark+R.+Warner+Made+an+Estimated+%24263.4K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator Mark R. Warner Made an Estimated $263.4K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator Mark R. Warner</strong> made <strong>$263.4K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Mark R. Warner Net Worth</h2><p>Quiver Quanti\u2026",
-          "image": "https://www.quiverquant.com/images/W000805_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+          "url": "https://www.quiverquant.com/news/AST+SpaceMobile+Stock+%28ASTS%29+Opinions+on+Satellite+Deployment+Progress",
+          "time": "2026-06-28 14:03:33",
+          "headline": "AST SpaceMobile Stock (ASTS) Opinions on Satellite Deployment Progress",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Satellite Progress:</strong> Market participants are closely tracking the latest orbital data for AST SpaceMobile's satellites, noting reduced drag and steady unfolding that p\u2026",
+          "image": "https://www.quiverquant.com/images/asts_rect_new.png",
+          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Mikie+Sherrill+Lost+an+Estimated+%24121.1K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Representative Mikie Sherrill Lost an Estimated $121.1K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Representative Mikie Sherrill</strong> lost <strong>$121.1K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Mikie Sherrill Net Worth</h2><p\u2026",
-          "image": "https://www.quiverquant.com/images/S001207_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+          "url": "https://www.quiverquant.com/news/Micron+Technology+Stock+%28MU%29+Opinions+on+Recent+Earnings+and+AI+Demand+Surge",
+          "time": "2026-06-28 14:03:33",
+          "headline": "Micron Technology Stock (MU) Opinions on Recent Earnings and AI Demand Surge",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings Beat:</strong> Social media discussions centered on Micron Technology's recent quarterly results that exceeded expectations, with observers noting robust demand for h\u2026",
+          "image": "https://www.quiverquant.com/images/mu_rect_new.png",
+          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Lisa+Blunt+Rochester+Lost+an+Estimated+%24124.0K+in+the+Stock+Market+Last+Month",
+          "url": "https://www.quiverquant.com/news/Wolfspeed+Stock+%28WOLF%29+Opinions+on+AI+Data+Center+Opportunities",
+          "time": "2026-06-28 14:03:33",
+          "headline": "Wolfspeed Stock (WOLF) Opinions on AI Data Center Opportunities",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Restructuring boost:</strong> Social media chatter highlights Wolfspeed's recent prepackaged debt restructuring that delivered over a billion dollars in liquidity. Analysts on\u2026",
+          "image": "https://www.quiverquant.com/images/wolf_rect_new.png",
+          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Infleqtion+Stock+%28INFQ%29+Opinions+on+Quantum+Computing+Developments",
+          "time": "2026-06-28 14:03:33",
+          "headline": "Infleqtion Stock (INFQ) Opinions on Quantum Computing Developments",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Analyst rating sparks interest:</strong> Recent coverage from Wedbush has highlighted Infleqtion's potential in quantum technologies, with a price target suggesting notable up\u2026",
+          "image": "https://www.quiverquant.com/images/infq_rect_new.png",
+          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Nebius+Group+Stock+%28NBIS%29+Opinions+on+AI+Infrastructure+Expansion",
+          "time": "2026-06-28 14:03:33",
+          "headline": "Nebius Group Stock (NBIS) Opinions on AI Infrastructure Expansion",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Nvidia Partnership Boost:</strong> Market observers on social media highlighted Nebius Group's new physical AI Living Lab initiative with Nvidia, positioning the firm to suppo\u2026",
+          "image": "https://www.quiverquant.com/images/nbis_rect_new.png",
+          "_first_seen": "2026-06-28T16:22:00.404797+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ron+Wyden+Lost+an+Estimated+%24333.5K+in+the+Stock+Market+Last+Month",
           "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator Lisa Blunt Rochester Lost an Estimated $124.0K in the Stock Market Last Month",
+          "headline": "Net Worth Update: Senator Ron Wyden Lost an Estimated $333.5K in the Stock Market Last Month",
           "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator Lisa Blunt Rochester</strong> lost <strong>$124.0K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Lisa Blunt Rochester Net Worth</h2><p>Q\u2026",
-          "image": "https://www.quiverquant.com/images/B001303_congress.png",
+          "summary": "<p><strong>Senator Ron Wyden</strong> lost <strong>$333.5K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Ron Wyden Net Worth</h2><p>Quiver Quantitative est\u2026",
+          "image": "https://www.quiverquant.com/images/W000779_congress.png",
           "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
@@ -4581,12 +4626,12 @@
           "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Katie+Boyd+Britt+Lost+an+Estimated+%24366.4K+in+the+Stock+Market+Last+Month",
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Jacky+Rosen+Lost+an+Estimated+%24129.2K+in+the+Stock+Market+Last+Month",
           "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator Katie Boyd Britt Lost an Estimated $366.4K in the Stock Market Last Month",
+          "headline": "Net Worth Update: Senator Jacky Rosen Lost an Estimated $129.2K in the Stock Market Last Month",
           "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator Katie Boyd Britt</strong> lost <strong>$366.4K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Katie Boyd Britt Net Worth</h2><p>Quiver Qu\u2026",
-          "image": "https://www.quiverquant.com/images/B001319_congress.png",
+          "summary": "<p><strong>Senator Jacky Rosen</strong> lost <strong>$129.2K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Jacky Rosen Net Worth</h2><p>Quiver Quantitative\u2026",
+          "image": "https://www.quiverquant.com/images/R000608_congress.png",
           "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
@@ -4599,93 +4644,48 @@
           "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Jacky+Rosen+Lost+an+Estimated+%24129.2K+in+the+Stock+Market+Last+Month",
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Katie+Boyd+Britt+Lost+an+Estimated+%24366.4K+in+the+Stock+Market+Last+Month",
           "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator Jacky Rosen Lost an Estimated $129.2K in the Stock Market Last Month",
+          "headline": "Net Worth Update: Senator Katie Boyd Britt Lost an Estimated $366.4K in the Stock Market Last Month",
           "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator Jacky Rosen</strong> lost <strong>$129.2K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Jacky Rosen Net Worth</h2><p>Quiver Quantitative\u2026",
-          "image": "https://www.quiverquant.com/images/R000608_congress.png",
+          "summary": "<p><strong>Senator Katie Boyd Britt</strong> lost <strong>$366.4K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Katie Boyd Britt Net Worth</h2><p>Quiver Qu\u2026",
+          "image": "https://www.quiverquant.com/images/B001319_congress.png",
           "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ron+Wyden+Lost+an+Estimated+%24333.5K+in+the+Stock+Market+Last+Month",
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Thomas+R.+Suozzi+Lost+an+Estimated+%24759.3K+in+the+Stock+Market+Last+Month",
           "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator Ron Wyden Lost an Estimated $333.5K in the Stock Market Last Month",
+          "headline": "Net Worth Update: Representative Thomas R. Suozzi Lost an Estimated $759.3K in the Stock Market Last Month",
           "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator Ron Wyden</strong> lost <strong>$333.5K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Ron Wyden Net Worth</h2><p>Quiver Quantitative est\u2026",
-          "image": "https://www.quiverquant.com/images/W000779_congress.png",
+          "summary": "<p><strong>Representative Thomas R. Suozzi</strong> lost <strong>$759.3K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Thomas R. Suozzi Net Worth</h\u2026",
+          "image": "https://www.quiverquant.com/images/S001201_congress.png",
           "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+J.+French+Hill+Made+an+Estimated+%24312.7K+in+the+Stock+Market+Last+Month",
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Lisa+Blunt+Rochester+Lost+an+Estimated+%24124.0K+in+the+Stock+Market+Last+Month",
           "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Representative J. French Hill Made an Estimated $312.7K in the Stock Market Last Month",
+          "headline": "Net Worth Update: Senator Lisa Blunt Rochester Lost an Estimated $124.0K in the Stock Market Last Month",
           "category": "congress_trades_automated",
-          "summary": "<p><strong>Representative J. French Hill</strong> made <strong>$312.7K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative J. French Hill Net Worth</h2><p\u2026",
-          "image": "https://www.quiverquant.com/images/H001072_congress.png",
+          "summary": "<p><strong>Senator Lisa Blunt Rochester</strong> lost <strong>$124.0K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Lisa Blunt Rochester Net Worth</h2><p>Q\u2026",
+          "image": "https://www.quiverquant.com/images/B001303_congress.png",
           "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Sheldon+Whitehouse+Lost+an+Estimated+%241.1M+in+the+Stock+Market+Last+Month",
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Mikie+Sherrill+Lost+an+Estimated+%24121.1K+in+the+Stock+Market+Last+Month",
           "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator Sheldon Whitehouse Lost an Estimated $1.1M in the Stock Market Last Month",
+          "headline": "Net Worth Update: Representative Mikie Sherrill Lost an Estimated $121.1K in the Stock Market Last Month",
           "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator Sheldon Whitehouse</strong> lost <strong>$1.1M</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Sheldon Whitehouse Net Worth</h2><p>Quiver \u2026",
-          "image": "https://www.quiverquant.com/images/W000802_congress.png",
+          "summary": "<p><strong>Representative Mikie Sherrill</strong> lost <strong>$121.1K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Mikie Sherrill Net Worth</h2><p\u2026",
+          "image": "https://www.quiverquant.com/images/S001207_congress.png",
           "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Laurel+M.+Lee+Lost+an+Estimated+%24457.7K+in+the+Stock+Market+Last+Month",
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Mark+R.+Warner+Made+an+Estimated+%24263.4K+in+the+Stock+Market+Last+Month",
           "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Representative Laurel M. Lee Lost an Estimated $457.7K in the Stock Market Last Month",
+          "headline": "Net Worth Update: Senator Mark R. Warner Made an Estimated $263.4K in the Stock Market Last Month",
           "category": "congress_trades_automated",
-          "summary": "<p><strong>Representative Laurel M. Lee</strong> lost <strong>$457.7K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Laurel M. Lee Net Worth</h2><p>Q\u2026",
-          "image": "https://www.quiverquant.com/images/L000597_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Daniel+Meuser+Lost+an+Estimated+%24134.7K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Representative Daniel Meuser Lost an Estimated $134.7K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Representative Daniel Meuser</strong> lost <strong>$134.7K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Daniel Meuser Net Worth</h2><p>Q\u2026",
-          "image": "https://www.quiverquant.com/images/M001204_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Gilbert+Ray+Cisneros%2C+Jr.+Lost+an+Estimated+%24177.2K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Representative Gilbert Ray Cisneros, Jr. Lost an Estimated $177.2K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Representative Gilbert Ray Cisneros, Jr.</strong> lost <strong>$177.2K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Gilbert Ray Cisneros\u2026",
-          "image": "https://www.quiverquant.com/images/C001123_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Tim+Sheehy+Lost+an+Estimated+%248.4M+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator Tim Sheehy Lost an Estimated $8.4M in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator Tim Sheehy</strong> lost <strong>$8.4M</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Tim Sheehy Net Worth</h2><p>Quiver Quantitative est\u2026",
-          "image": "https://www.quiverquant.com/images/S001232_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ron+Johnson+Lost+an+Estimated+%24524.6K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator Ron Johnson Lost an Estimated $524.6K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator Ron Johnson</strong> lost <strong>$524.6K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Ron Johnson Net Worth</h2><p>Quiver Quantitative\u2026",
-          "image": "https://www.quiverquant.com/images/J000293_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Scott+Franklin+Lost+an+Estimated+%24571.5K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Representative Scott Franklin Lost an Estimated $571.5K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Representative Scott Franklin</strong> lost <strong>$571.5K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Scott Franklin Net Worth</h2><p\u2026",
-          "image": "https://www.quiverquant.com/images/F000472_congress.png",
+          "summary": "<p><strong>Senator Mark R. Warner</strong> made <strong>$263.4K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Mark R. Warner Net Worth</h2><p>Quiver Quanti\u2026",
+          "image": "https://www.quiverquant.com/images/W000805_congress.png",
           "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         }
       ]
@@ -5212,256 +5212,256 @@
       "emoji": "\ud83d\udcf1",
       "label_en": "App ratings",
       "label_zh": "\u5e94\u7528\u8bc4\u5206",
-      "rows": 28783,
+      "rows": 29233,
       "last_seen": "2026-06-28",
       "recent": [
         {
-          "Ticker": "TNDM",
-          "App": "Tandem t:slim Mobile App",
-          "Created": "2020-07-07",
-          "Publisher": "Tandem Diabetes Care, Inc.",
-          "Rating": "3.09207",
-          "Count": "2107",
+          "Ticker": "VRML",
+          "App": "Vermillion State Bank",
+          "Created": "2017-11-08",
+          "Publisher": "Vermillion State Bank",
+          "Rating": "4.86933",
+          "Count": "1102",
           "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+          "_first_seen": "2026-06-28T18:17:51.154222+00:00"
         },
         {
-          "Ticker": "FRG",
-          "App": "Round Table Pizza Rewards",
-          "Created": "2019-11-06",
-          "Publisher": "Global Franchise Group LLC",
-          "Rating": "4.601",
-          "Count": "11434",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "CZFC",
-          "App": "Citizens First Bank Mobile",
-          "Created": "2014-06-29",
-          "Publisher": "Citizens First Bank Florida",
-          "Rating": "4.81716",
-          "Count": "3369",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "CYBR",
-          "App": "Idira Mobile",
-          "Created": "2019-09-29",
-          "Publisher": "CYBERARK SOFTWARE INC.",
-          "Rating": "2.80769",
-          "Count": "26",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "CY",
-          "App": "Cypress\u00ae BLE-Beacon\u2122",
-          "Created": "2016-05-19",
-          "Publisher": "Cypress Semiconductor",
-          "Rating": "1.0",
-          "Count": "1",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "FRO",
-          "App": "Frontline Education",
-          "Created": "2017-02-07",
-          "Publisher": "Frontline Technologies Group LLC",
-          "Rating": "4.74486",
-          "Count": "78439",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "FRME",
-          "App": "First Merchants Retirement App",
-          "Created": "2020-05-13",
-          "Publisher": "First Merchants Corporation",
-          "Rating": "1.875",
-          "Count": "8",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "FRME",
-          "App": "First Merchants Mobile App",
-          "Created": "2015-07-19",
-          "Publisher": "First Merchants Corporation",
-          "Rating": "4.74864",
-          "Count": "28302",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "FRGI",
-          "App": "Pollo Tropical",
-          "Created": "2014-03-01",
-          "Publisher": "Fiesta Restaurant Group, Inc",
-          "Rating": "4.80905",
-          "Count": "42682",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "FRG",
-          "App": "Master Pizza",
-          "Created": "2015-09-19",
-          "Publisher": "Master Pizza Franchise Group, LLC",
-          "Rating": "4.07527",
-          "Count": "93",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "FORR",
-          "App": "Forrester Events App",
-          "Created": "2023-03-08",
-          "Publisher": "Forrester Research",
-          "Rating": "4.0",
-          "Count": "5",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "D",
-          "App": "Dominion Energy Credit Union",
-          "Created": "2012-10-09",
-          "Publisher": "Dominion Energy Credit Union",
-          "Rating": "4.09144",
-          "Count": "514",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "FOLD",
-          "App": "MyDay \u2013 Galafold\u00ae (migalastat)",
-          "Created": "2021-07-02",
-          "Publisher": "Amicus Therapeutics, Inc.",
-          "Rating": "5.0",
-          "Count": "1",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "FNKO",
-          "App": "Funko",
-          "Created": "2017-09-21",
-          "Publisher": "Funko LLC",
-          "Rating": "2.77022",
-          "Count": "544",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "FLXS",
-          "App": "FlexSync",
-          "Created": "2024-04-10",
-          "Publisher": "FLEXSTEEL INDUSTRIES, INC.",
-          "Rating": "3.35",
-          "Count": "20",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "FLXS",
-          "App": "MyRecline by Flexsteel",
-          "Created": "2017-08-04",
-          "Publisher": "FLEXSTEEL INDUSTRIES, INC.",
-          "Rating": "3.06977",
-          "Count": "43",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "FLS",
-          "App": "IPS Mobile Insight",
-          "Created": "2017-08-31",
-          "Publisher": "FLOWSERVE CORPORATION",
-          "Rating": "4.0",
+          "Ticker": "GH",
+          "App": "Guardant Health Portal",
+          "Created": "2016-09-16",
+          "Publisher": "Guardant Health, Inc",
+          "Rating": "2.25",
           "Count": "4",
           "Time": "2026-06-28",
           "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         },
         {
-          "Ticker": "FLS",
-          "App": "Flowserve Events",
-          "Created": "2020-01-16",
-          "Publisher": "FLOWSERVE CORPORATION",
-          "Rating": "5.0",
-          "Count": "1",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "FLNT",
-          "App": "Fluent Home",
-          "Created": "2016-03-26",
-          "Publisher": "Fluent Home LLC",
-          "Rating": "4.3936",
-          "Count": "813",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "FLNT",
-          "App": "Fluent Forever - Language App",
-          "Created": "2019-04-08",
-          "Publisher": "Fluent Forever Inc",
-          "Rating": "3.7219",
-          "Count": "1201",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "CZR",
-          "App": "Caesars Rewards Resort Offers",
-          "Created": "2013-12-19",
-          "Publisher": "Caesars Entertainment Corporation",
-          "Rating": "4.78507",
-          "Count": "182120",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "DAC",
-          "App": "Danaos Info@Gate On The Go!",
-          "Created": "2019-09-23",
-          "Publisher": "Danaos Management Consultants S.A.",
-          "Rating": "0.0",
-          "Count": "0",
-          "Time": "2026-06-28",
-          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
-        },
-        {
-          "Ticker": "CMBM",
-          "App": "cnArcher",
-          "Created": "2018-08-17",
-          "Publisher": "Cambium Networks LTD",
+          "Ticker": "GGG",
+          "App": "Graco BlueLink",
+          "Created": "2019-01-25",
+          "Publisher": "Graco Inc.",
           "Rating": "3.66667",
           "Count": "3",
           "Time": "2026-06-28",
           "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         },
         {
-          "Ticker": "DBD",
-          "App": "DN Visualizer - AR",
-          "Created": "2021-06-28",
-          "Publisher": "Diebold Nixdorf Incorporated",
-          "Rating": "5.0",
+          "Ticker": "GGG",
+          "App": "Graco Sales Book",
+          "Created": "2015-09-14",
+          "Publisher": "Graco Inc.",
+          "Rating": "4.7",
           "Count": "10",
           "Time": "2026-06-28",
           "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         },
         {
-          "Ticker": "DGII",
-          "App": "Digi XBee Mobile",
-          "Created": "2018-11-16",
-          "Publisher": "Digi International Inc",
-          "Rating": "3.0",
+          "Ticker": "GE",
+          "App": "Portland General Electric",
+          "Created": "2019-10-05",
+          "Publisher": "Portland General Electric Company",
+          "Rating": "4.15993",
+          "Count": "544",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "GE",
+          "App": "General Electric Credit Union",
+          "Created": "2017-07-03",
+          "Publisher": "General Electric Credit Union",
+          "Rating": "4.77973",
+          "Count": "7123",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "GDOT",
+          "App": "Walmart MoneyCard\u00ae",
+          "Created": "2025-05-17",
+          "Publisher": "Green Dot Corporation",
+          "Rating": "4.17889",
+          "Count": "6389",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "GDOT",
+          "App": "Amazon Flex Debit Card",
+          "Created": "2020-11-02",
+          "Publisher": "Green Dot Corporation",
+          "Rating": "4.72047",
+          "Count": "10582",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "GDOT",
+          "App": "Green Dot - Mobile Banking",
+          "Created": "2011-05-17",
+          "Publisher": "Green Dot Corporation",
+          "Rating": "3.43187",
+          "Count": "11904",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "GDDY",
+          "App": "GoDaddy: Websites & Marketing",
+          "Created": "2012-07-05",
+          "Publisher": "GoDaddy Mobile LLC",
+          "Rating": "4.82878",
+          "Count": "106420",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "GCP",
+          "App": "Adfil\u00aeStrux",
+          "Created": "2019-12-13",
+          "Publisher": "GCP Applied Technologies Inc.",
+          "Rating": "0.0",
+          "Count": "0",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "GCO",
+          "App": "Journeys Sales Meeting",
+          "Created": "2016-02-16",
+          "Publisher": "Genesco Inc.",
+          "Rating": "2.8",
           "Count": "5",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "GCI",
+          "App": "Cincinnati Sports",
+          "Created": "2010-09-23",
+          "Publisher": "Gannett",
+          "Rating": "4.53852",
+          "Count": "4063",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "GCI",
+          "App": "The Detroit News: Local News",
+          "Created": "2014-09-19",
+          "Publisher": "Gannett",
+          "Rating": "4.54614",
+          "Count": "7185",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "GCI",
+          "App": "Milwaukee Journal Sentinel",
+          "Created": "2012-05-22",
+          "Publisher": "Gannett",
+          "Rating": "4.34449",
+          "Count": "5736",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "GCI",
+          "App": "azcentral",
+          "Created": "2014-03-11",
+          "Publisher": "Gannett",
+          "Rating": "4.34722",
+          "Count": "6572",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "GCI",
+          "App": "Detroit Free Press: Freep",
+          "Created": "2014-09-18",
+          "Publisher": "Gannett",
+          "Rating": "4.57247",
+          "Count": "12617",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "GAIA",
+          "App": "Gaia On The Go",
+          "Created": "2011-12-21",
+          "Publisher": "Gaia Interactive Inc.",
+          "Rating": "1.66209",
+          "Count": "364",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "GAIA",
+          "App": "Gaia: Streaming Consciousness",
+          "Created": "2014-02-27",
+          "Publisher": "Gaia, Inc",
+          "Rating": "4.83068",
+          "Count": "138852",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "GABC",
+          "App": "German American Mobile Banking",
+          "Created": "2014-02-10",
+          "Publisher": "German American Bancorp, Inc.",
+          "Rating": "4.79106",
+          "Count": "9443",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "FWRD",
+          "App": "Forward Ten4",
+          "Created": "2020-08-24",
+          "Publisher": "Forward Air Corporation",
+          "Rating": "2.44444",
+          "Count": "18",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "FVRR",
+          "App": "Fiverr - Freelance Services",
+          "Created": "2011-12-11",
+          "Publisher": "Fiverr International Ltd.",
+          "Rating": "4.91718",
+          "Count": "567627",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "FUNC",
+          "App": "First United Mobile Banking",
+          "Created": "2012-04-10",
+          "Publisher": "First United Bank and Trust Company",
+          "Rating": "4.82367",
+          "Count": "431",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "FUNC",
+          "App": "First United Bank (TX)",
+          "Created": "2014-02-28",
+          "Publisher": "First United Bank, TX",
+          "Rating": "4.70698",
+          "Count": "802",
+          "Time": "2026-06-28",
+          "_first_seen": "2026-06-28T16:22:02.921118+00:00"
+        },
+        {
+          "Ticker": "FUNC",
+          "App": "My Bank First United Mobile",
+          "Created": "2011-09-15",
+          "Publisher": "First United Bank & Trust",
+          "Rating": "4.82754",
+          "Count": "2963",
           "Time": "2026-06-28",
           "_first_seen": "2026-06-28T16:22:02.921118+00:00"
         }
@@ -5471,182 +5471,182 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 48306,
+      "rows": 48906,
       "last_seen": "2026-06-28",
       "recent": [
         {
-          "ticker": "AES",
-          "owner_name": "Quadrature Capital Ltd",
+          "ticker": "CDW",
+          "owner_name": "CIBC Asset Management Inc",
           "owner_title": "Institution",
-          "shares": "213206",
+          "shares": "30741",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "PARNASSUS INVESTMENTS, LLC",
+          "ticker": "ASPI",
+          "owner_name": "AQR CAPITAL MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "7887228",
+          "shares": "29356",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "AVIVA PLC",
+          "ticker": "ASPI",
+          "owner_name": "Centiva Capital, LP",
           "owner_title": "Institution",
-          "shares": "8349689",
+          "shares": "36544",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "TD ASSET MANAGEMENT INC",
+          "ticker": "ASPI",
+          "owner_name": "Caitong International Asset Management Co., Ltd",
           "owner_title": "Institution",
-          "shares": "8275670",
+          "shares": "34983",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "BANK OF NOVA SCOTIA",
+          "ticker": "ASPI",
+          "owner_name": "Police & Firemen's Retirement System of New Jersey",
           "owner_title": "Institution",
-          "shares": "8248355",
+          "shares": "33888",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "PRUDENTIAL FINANCIAL INC",
+          "ticker": "ASPI",
+          "owner_name": "Quantinno Capital Management LP",
           "owner_title": "Institution",
-          "shares": "8226360",
+          "shares": "33067",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "FAYEZ SAROFIM & CO",
+          "ticker": "ASPI",
+          "owner_name": "ROYAL BANK OF CANADA",
           "owner_title": "Institution",
-          "shares": "8084635",
+          "shares": "32048",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "ProShare Advisors LLC",
+          "ticker": "ASPI",
+          "owner_name": "KLP KAPITALFORVALTNING AS",
           "owner_title": "Institution",
-          "shares": "8030900",
+          "shares": "31600",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "ALKEON CAPITAL MANAGEMENT LLC",
+          "ticker": "ASPI",
+          "owner_name": "MANUFACTURERS LIFE INSURANCE COMPANY, THE",
           "owner_title": "Institution",
-          "shares": "7964931",
+          "shares": "30503",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "NEW YORK STATE TEACHERS RETIREMENT SYSTEM",
+          "ticker": "ASPI",
+          "owner_name": "INTECH INVESTMENT MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "7863287",
+          "shares": "29516",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "WINDACRE PARTNERSHIP LLC",
+          "ticker": "ASPI",
+          "owner_name": "Arizona State Retirement System",
           "owner_title": "Institution",
-          "shares": "7185100",
+          "shares": "29210",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "CITADEL ADVISORS LLC",
+          "ticker": "ASPI",
+          "owner_name": "Advisory Services Network, LLC",
           "owner_title": "Institution",
-          "shares": "7692857",
+          "shares": "40248",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "CANADA LIFE ASSURANCE Co",
+          "ticker": "ASPI",
+          "owner_name": "NEW YORK STATE COMMON RETIREMENT FUND",
           "owner_title": "Institution",
-          "shares": "7657087",
+          "shares": "29200",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "ALTAROCK PARTNERS LP",
+          "ticker": "ASPI",
+          "owner_name": "Cresset Asset Management, LLC",
           "owner_title": "Institution",
-          "shares": "7567946",
+          "shares": "27284",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "APG Asset Management N.V.",
+          "ticker": "ASPI",
+          "owner_name": "Jump Financial, LLC",
           "owner_title": "Institution",
-          "shares": "7547056",
+          "shares": "26276",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "DnB Asset Management AS",
+          "ticker": "ASPI",
+          "owner_name": "Fortitude Advisory Group L.L.C.",
           "owner_title": "Institution",
-          "shares": "7450247",
+          "shares": "26035",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "SANDS CAPITAL MANAGEMENT, LLC",
+          "ticker": "ASPI",
+          "owner_name": "MERCER GLOBAL ADVISORS INC /ADV",
           "owner_title": "Institution",
-          "shares": "7440012",
+          "shares": "25550",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "Korea Investment CORP",
+          "ticker": "ASPI",
+          "owner_name": "Sanctuary Advisors, LLC",
           "owner_title": "Institution",
-          "shares": "7350766",
+          "shares": "24615",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "1832 Asset Management L.P.",
+          "ticker": "ASPI",
+          "owner_name": "Zurcher Kantonalbank (Zurich Cantonalbank)",
           "owner_title": "Institution",
-          "shares": "8349910",
+          "shares": "23600",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "STIFEL FINANCIAL CORP",
+          "ticker": "ASPI",
+          "owner_name": "Cambridge Investment Research Advisors, Inc.",
           "owner_title": "Institution",
-          "shares": "8394669",
+          "shares": "21531",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "Robeco Institutional Asset Management B.V.",
+          "ticker": "ASPI",
+          "owner_name": "JANUS HENDERSON GROUP PLC",
           "owner_title": "Institution",
-          "shares": "8429660",
+          "shares": "39000",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "STATE BOARD OF ADMINISTRATION OF FLORIDA RETIREMENT SYSTEM",
+          "ticker": "ASPI",
+          "owner_name": "Allegheny Financial Group",
           "owner_title": "Institution",
-          "shares": "8502697",
+          "shares": "40649",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "VOYA INVESTMENT MANAGEMENT LLC",
+          "ticker": "ASPI",
+          "owner_name": "NATIONAL BANK OF CANADA /FI/",
           "owner_title": "Institution",
-          "shares": "10011341",
+          "shares": "86120",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "BERKSHIRE HATHAWAY INC",
+          "ticker": "ASPI",
+          "owner_name": "SIMPLEX TRADING, LLC",
           "owner_title": "Institution",
-          "shares": "10000000",
+          "shares": "61648",
           "_collected": "2026-06-28"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "CIBC Private Wealth Group LLC",
+          "ticker": "ASPI",
+          "owner_name": "PRICE T ROWE ASSOCIATES INC /MD/",
           "owner_title": "Institution",
-          "shares": "9945180",
+          "shares": "80641",
           "_collected": "2026-06-28"
         }
       ]
@@ -5655,9 +5655,99 @@
       "emoji": "\ud83d\udcb0",
       "label_en": "Executive comp",
       "label_zh": "\u9ad8\u7ba1\u85aa\u916c",
-      "rows": 936,
+      "rows": 974,
       "last_seen": "2026-06-28",
       "recent": [
+        {
+          "ticker": "CDW",
+          "name": "Frederick J. Kulevich",
+          "role": "Chief Legal Officer",
+          "year": "2022",
+          "total_comp": "2860481.0",
+          "salary": "485288.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Bernerd Da Santos",
+          "role": "EVP & President, US & Renewables",
+          "year": "2023",
+          "total_comp": "3155786.0",
+          "salary": "644000.0",
+          "bonus": "204470.0",
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AEP",
+          "name": "Julia A. Sloat",
+          "role": "Former Chair of the Board, President and CEO",
+          "year": "2023",
+          "total_comp": "10633745.0",
+          "salary": "1200000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AEP",
+          "name": "Julia A. Sloat",
+          "role": "Former Chair of the Board, President and CEO",
+          "year": "2024",
+          "total_comp": "2922283.0",
+          "salary": "327692.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AEP",
+          "name": "Therace M. Risch",
+          "role": "CTO",
+          "year": "2024",
+          "total_comp": "2926088.0",
+          "salary": "684906.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AEP",
+          "name": "Charles E. Zebula",
+          "role": "CFO",
+          "year": "2024",
+          "total_comp": "3842733.0",
+          "salary": "724327.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AEP",
+          "name": "Greg B. Hall",
+          "role": "COO",
+          "year": "2024",
+          "total_comp": "3899524.0",
+          "salary": "575491.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AEP",
+          "name": "Ben Fowke",
+          "role": "Former Interim President and CEO",
+          "year": "2024",
+          "total_comp": "11330019.0",
+          "salary": "1058462.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AEP",
+          "name": "William J. Fehrman",
+          "role": "CEO",
+          "year": "2024",
+          "total_comp": "13257022.0",
+          "salary": "628846.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
         {
           "ticker": "AES",
           "name": "Stephen Coughlin",
@@ -5665,6 +5755,86 @@
           "year": "2022",
           "total_comp": "2445980.0",
           "salary": "580000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Juan Ignacio Rubiolo",
+          "role": "EVP & President, Energy Infrastructure",
+          "year": "2022",
+          "total_comp": "2744969.0",
+          "salary": "515000.0",
+          "bonus": "321875.0",
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Bernerd Da Santos",
+          "role": "EVP & President, Renewables",
+          "year": "2022",
+          "total_comp": "2845413.0",
+          "salary": "625000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Andr\u00e9s Gluski",
+          "role": "President & CEO",
+          "year": "2022",
+          "total_comp": "12525258.0",
+          "salary": "1241000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Stephen Coughlin",
+          "role": "EVP & CFO",
+          "year": "2023",
+          "total_comp": "3126922.0",
+          "salary": "597000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Juan Ignacio Rubiolo",
+          "role": "EVP & COO",
+          "year": "2023",
+          "total_comp": "3237227.0",
+          "salary": "530000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AEP",
+          "name": "David M. Feinberg",
+          "role": "General Counsel and Secretary",
+          "year": "2023",
+          "total_comp": "2831150.0",
+          "salary": "746000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Andr\u00e9s Gluski",
+          "role": "CEO",
+          "year": "2023",
+          "total_comp": "12716194.0",
+          "salary": "1241000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Bernerd Da Santos",
+          "role": "EVP & President, US & Renewables",
+          "year": "2024",
+          "total_comp": "3093584.0",
+          "salary": "663000.0",
           "bonus": null,
           "_collected": "2026-06-28"
         },
@@ -5680,61 +5850,11 @@
         },
         {
           "ticker": "AES",
-          "name": "Andr\u00e9s Gluski",
-          "role": "CEO",
-          "year": "2025",
-          "total_comp": "9153896.0",
-          "salary": "1241000.0",
-          "bonus": null,
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AES",
-          "name": "Juan Ignacio Rubiolo",
-          "role": "EVP & COO",
-          "year": "2025",
-          "total_comp": "3323332.0",
-          "salary": "550000.0",
-          "bonus": null,
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AES",
-          "name": "Stephen Coughlin",
-          "role": "EVP & CFO",
-          "year": "2025",
-          "total_comp": "3155414.0",
-          "salary": "645000.0",
-          "bonus": "89010.0",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AES",
-          "name": "Bernerd Da Santos",
-          "role": "EVP & President, US & Renewables",
-          "year": "2025",
-          "total_comp": "2980129.0",
-          "salary": "663000.0",
-          "bonus": null,
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AES",
-          "name": "Andr\u00e9s Gluski",
-          "role": "CEO",
+          "name": "Ricardo Fal\u00fa",
+          "role": "President",
           "year": "2024",
-          "total_comp": "13355284.0",
-          "salary": "1241000.0",
-          "bonus": null,
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AES",
-          "name": "Juan Ignacio Rubiolo",
-          "role": "EVP & COO",
-          "year": "2024",
-          "total_comp": "3288327.0",
-          "salary": "550000.0",
+          "total_comp": "3175790.0",
+          "salary": "555000.0",
           "bonus": null,
           "_collected": "2026-06-28"
         },
@@ -5750,11 +5870,21 @@
         },
         {
           "ticker": "AES",
-          "name": "Ricardo Fal\u00fa",
-          "role": "President",
+          "name": "Juan Ignacio Rubiolo",
+          "role": "EVP & COO",
           "year": "2024",
-          "total_comp": "3175790.0",
-          "salary": "555000.0",
+          "total_comp": "3288327.0",
+          "salary": "550000.0",
+          "bonus": null,
+          "_collected": "2026-06-28"
+        },
+        {
+          "ticker": "AES",
+          "name": "Andr\u00e9s Gluski",
+          "role": "CEO",
+          "year": "2024",
+          "total_comp": "13355284.0",
+          "salary": "1241000.0",
           "bonus": null,
           "_collected": "2026-06-28"
         },
@@ -5772,141 +5902,11 @@
           "ticker": "AES",
           "name": "Bernerd Da Santos",
           "role": "EVP & President, US & Renewables",
-          "year": "2024",
-          "total_comp": "3093584.0",
+          "year": "2025",
+          "total_comp": "2980129.0",
           "salary": "663000.0",
           "bonus": null,
           "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AES",
-          "name": "Juan Ignacio Rubiolo",
-          "role": "EVP & COO",
-          "year": "2023",
-          "total_comp": "3237227.0",
-          "salary": "530000.0",
-          "bonus": null,
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AES",
-          "name": "Bernerd Da Santos",
-          "role": "EVP & President, US & Renewables",
-          "year": "2023",
-          "total_comp": "3155786.0",
-          "salary": "644000.0",
-          "bonus": "204470.0",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AES",
-          "name": "Stephen Coughlin",
-          "role": "EVP & CFO",
-          "year": "2023",
-          "total_comp": "3126922.0",
-          "salary": "597000.0",
-          "bonus": null,
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AES",
-          "name": "Andr\u00e9s Gluski",
-          "role": "President & CEO",
-          "year": "2022",
-          "total_comp": "12525258.0",
-          "salary": "1241000.0",
-          "bonus": null,
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AES",
-          "name": "Bernerd Da Santos",
-          "role": "EVP & President, Renewables",
-          "year": "2022",
-          "total_comp": "2845413.0",
-          "salary": "625000.0",
-          "bonus": null,
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AES",
-          "name": "Juan Ignacio Rubiolo",
-          "role": "EVP & President, Energy Infrastructure",
-          "year": "2022",
-          "total_comp": "2744969.0",
-          "salary": "515000.0",
-          "bonus": "321875.0",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AES",
-          "name": "Andr\u00e9s Gluski",
-          "role": "CEO",
-          "year": "2023",
-          "total_comp": "12716194.0",
-          "salary": "1241000.0",
-          "bonus": null,
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "name": "Paul Mann",
-          "role": "Executive Chairman",
-          "year": "2023",
-          "total_comp": "2212657.0",
-          "salary": "480000.0",
-          "bonus": null,
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "ASPI",
-          "name": "Robert Ainscow",
-          "role": "COO",
-          "year": "2022",
-          "total_comp": "1963403.0",
-          "salary": "133333.0",
-          "bonus": null,
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "ASPI",
-          "name": "Paul Mann",
-          "role": "CEO",
-          "year": "2022",
-          "total_comp": "5899007.0",
-          "salary": "260000.0",
-          "bonus": null,
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "ASPI",
-          "name": "Hendrik Strydom",
-          "role": "CTO",
-          "year": "2023",
-          "total_comp": "122400.0",
-          "salary": "122400.0",
-          "bonus": null,
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "ASPI",
-          "name": "Robert Ainscow",
-          "role": "Interim CEO and COO",
-          "year": "2023",
-          "total_comp": "249996.0",
-          "salary": "159996.0",
-          "bonus": null,
-          "_collected": "2026-06-26"
-        },
-        {
-          "ticker": "ASPI",
-          "name": "Paul Mann",
-          "role": "Executive Chairman",
-          "year": "2024",
-          "total_comp": "4767309.0",
-          "salary": "510000.0",
-          "bonus": null,
-          "_collected": "2026-06-26"
         }
       ]
     }
@@ -35965,6 +35965,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "OILD",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "EHLD",
         "category": "Acquisitions",
         "confidence": "high",
@@ -36915,6 +36923,14 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
+      },
+      {
+        "ticker": "PKX",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "UCAR",
@@ -38363,6 +38379,30 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
+      },
+      {
+        "ticker": "MBAI",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "ENLT",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "OGI",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "CRBD",
@@ -41498,15 +41538,15 @@
         "hot": true
       },
       {
-        "ticker": "LITE",
+        "ticker": "HWM",
         "bull_ratio": 0.78,
-        "articles": 50,
+        "articles": 27,
         "hot": true
       },
       {
-        "ticker": "HWM",
-        "bull_ratio": 0.77,
-        "articles": 26,
+        "ticker": "LITE",
+        "bull_ratio": 0.78,
+        "articles": 50,
         "hot": true
       },
       {
@@ -41645,8 +41685,8 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17609,
-        "wow_pct": 0.96,
+        "stars": 17618,
+        "wow_pct": 1.01,
         "hot": true
       },
       {
@@ -41663,14 +41703,14 @@
       },
       {
         "ticker": "AMD",
-        "stars": 6656,
-        "wow_pct": 0.23,
+        "stars": 6657,
+        "wow_pct": 0.24,
         "hot": true
       },
       {
         "ticker": "MSFT",
-        "stars": 186990,
-        "wow_pct": 0.21,
+        "stars": 186993,
+        "wow_pct": 0.22,
         "hot": true
       },
       {
@@ -41681,13 +41721,13 @@
       },
       {
         "ticker": "GOOGL",
-        "stars": 196084,
+        "stars": 196085,
         "wow_pct": 0.15,
         "hot": true
       },
       {
         "ticker": "META",
-        "stars": 246272,
+        "stars": 246276,
         "wow_pct": 0.12,
         "hot": true
       },
@@ -41705,7 +41745,13 @@
       },
       {
         "ticker": "MDB",
-        "stars": 28406,
+        "stars": 28407,
+        "wow_pct": 0.1,
+        "hot": false
+      },
+      {
+        "ticker": "GTLB",
+        "stars": 24475,
         "wow_pct": 0.09,
         "hot": false
       },
@@ -41713,12 +41759,6 @@
         "ticker": "PLTR",
         "stars": 21870,
         "wow_pct": 0.09,
-        "hot": false
-      },
-      {
-        "ticker": "GTLB",
-        "stars": 24474,
-        "wow_pct": 0.08,
         "hot": false
       },
       {
@@ -43178,25 +43218,60 @@
     ],
     "news": [
       {
-        "headline": "Nebius Group Stock (NBIS) Opinions on AI Infrastructure Expansion",
+        "headline": "Upwork Stock (UPWK) Opinions on AI Competition in Freelance Market",
         "ticker": null,
         "category": "discussion_automated",
-        "time": "2026-06-28 14:03:33",
-        "url": "https://www.quiverquant.com/news/Nebius+Group+Stock+%28NBIS%29+Opinions+on+AI+Infrastructure+Expansion"
+        "time": "2026-06-28 17:32:53",
+        "url": "https://www.quiverquant.com/news/Upwork+Stock+%28UPWK%29+Opinions+on+AI+Competition+in+Freelance+Market"
       },
       {
-        "headline": "Infleqtion Stock (INFQ) Opinions on Quantum Computing Developments",
+        "headline": "Sellas Life Sciences Stock (SLS) Opinions on Acquisition Rumors from Executive Filings",
         "ticker": null,
         "category": "discussion_automated",
-        "time": "2026-06-28 14:03:33",
-        "url": "https://www.quiverquant.com/news/Infleqtion+Stock+%28INFQ%29+Opinions+on+Quantum+Computing+Developments"
+        "time": "2026-06-28 17:32:53",
+        "url": "https://www.quiverquant.com/news/Sellas+Life+Sciences+Stock+%28SLS%29+Opinions+on+Acquisition+Rumors+from+Executive+Filings"
       },
       {
-        "headline": "Wolfspeed Stock (WOLF) Opinions on AI Data Center Opportunities",
+        "headline": "Ouster Stock (OUST) Opinions on Rev8 Lidar Partnerships and CNBC Coverage",
         "ticker": null,
         "category": "discussion_automated",
-        "time": "2026-06-28 14:03:33",
-        "url": "https://www.quiverquant.com/news/Wolfspeed+Stock+%28WOLF%29+Opinions+on+AI+Data+Center+Opportunities"
+        "time": "2026-06-28 17:32:53",
+        "url": "https://www.quiverquant.com/news/Ouster+Stock+%28OUST%29+Opinions+on+Rev8+Lidar+Partnerships+and+CNBC+Coverage"
+      },
+      {
+        "headline": "Palantir Technologies Stock (PLTR) Opinions on surveillance technology deployment",
+        "ticker": null,
+        "category": "discussion_automated",
+        "time": "2026-06-28 17:32:53",
+        "url": "https://www.quiverquant.com/news/Palantir+Technologies+Stock+%28PLTR%29+Opinions+on+surveillance+technology+deployment"
+      },
+      {
+        "headline": "Applied Optoelectronics Stock (AAOI) Opinions on Recent Price Decline and Sector Concerns",
+        "ticker": null,
+        "category": "discussion_automated",
+        "time": "2026-06-28 17:32:53",
+        "url": "https://www.quiverquant.com/news/Applied+Optoelectronics+Stock+%28AAOI%29+Opinions+on+Recent+Price+Decline+and+Sector+Concerns"
+      },
+      {
+        "headline": "Absci Stock (ABSI) Opinions on Positive Phase 1 Data for ABS-201",
+        "ticker": null,
+        "category": "discussion_automated",
+        "time": "2026-06-28 17:32:53",
+        "url": "https://www.quiverquant.com/news/Absci+Stock+%28ABSI%29+Opinions+on+Positive+Phase+1+Data+for+ABS-201"
+      },
+      {
+        "headline": "Vistra Stock (VST) Opinions on AI Data Center Power Demand",
+        "ticker": null,
+        "category": "discussion_automated",
+        "time": "2026-06-28 17:32:53",
+        "url": "https://www.quiverquant.com/news/Vistra+Stock+%28VST%29+Opinions+on+AI+Data+Center+Power+Demand"
+      },
+      {
+        "headline": "Recursion Pharmaceuticals Stock (RXRX) Opinions on ARK Invest's Recent Share Purchase",
+        "ticker": null,
+        "category": "discussion_automated",
+        "time": "2026-06-28 17:32:53",
+        "url": "https://www.quiverquant.com/news/Recursion+Pharmaceuticals+Stock+%28RXRX%29+Opinions+on+ARK+Invest%27s+Recent+Share+Purchase"
       },
       {
         "headline": "Prairie Operating Co. Stock (PROP) Opinions on Energy Sector Dynamics and Dilution Concerns",
@@ -43206,18 +43281,11 @@
         "url": "https://www.quiverquant.com/news/Prairie+Operating+Co.+Stock+%28PROP%29+Opinions+on+Energy+Sector+Dynamics+and+Dilution+Concerns"
       },
       {
-        "headline": "Micron Technology Stock (MU) Opinions on Recent Earnings and AI Demand Surge",
+        "headline": "BigBear.ai Stock (BBAI) Opinions on Recent Price Movements and Dilution",
         "ticker": null,
         "category": "discussion_automated",
         "time": "2026-06-28 14:03:33",
-        "url": "https://www.quiverquant.com/news/Micron+Technology+Stock+%28MU%29+Opinions+on+Recent+Earnings+and+AI+Demand+Surge"
-      },
-      {
-        "headline": "AST SpaceMobile Stock (ASTS) Opinions on Satellite Deployment Progress",
-        "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-28 14:03:33",
-        "url": "https://www.quiverquant.com/news/AST+SpaceMobile+Stock+%28ASTS%29+Opinions+on+Satellite+Deployment+Progress"
+        "url": "https://www.quiverquant.com/news/BigBear.ai+Stock+%28BBAI%29+Opinions+on+Recent+Price+Movements+and+Dilution"
       },
       {
         "headline": "The Trade Desk Stock (TTD) Opinions on Large Insider Purchase",
@@ -43227,67 +43295,39 @@
         "url": "https://www.quiverquant.com/news/The+Trade+Desk+Stock+%28TTD%29+Opinions+on+Large+Insider+Purchase"
       },
       {
-        "headline": "BigBear.ai Stock (BBAI) Opinions on Recent Price Movements and Dilution",
+        "headline": "AST SpaceMobile Stock (ASTS) Opinions on Satellite Deployment Progress",
         "ticker": null,
         "category": "discussion_automated",
         "time": "2026-06-28 14:03:33",
-        "url": "https://www.quiverquant.com/news/BigBear.ai+Stock+%28BBAI%29+Opinions+on+Recent+Price+Movements+and+Dilution"
+        "url": "https://www.quiverquant.com/news/AST+SpaceMobile+Stock+%28ASTS%29+Opinions+on+Satellite+Deployment+Progress"
       },
       {
-        "headline": "Net Worth Update: Representative Thomas R. Suozzi Lost an Estimated $759.3K in the Stock Market Last Month",
+        "headline": "Micron Technology Stock (MU) Opinions on Recent Earnings and AI Demand Surge",
         "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Thomas+R.+Suozzi+Lost+an+Estimated+%24759.3K+in+the+Stock+Market+Last+Month"
+        "category": "discussion_automated",
+        "time": "2026-06-28 14:03:33",
+        "url": "https://www.quiverquant.com/news/Micron+Technology+Stock+%28MU%29+Opinions+on+Recent+Earnings+and+AI+Demand+Surge"
       },
       {
-        "headline": "Net Worth Update: Senator Mark R. Warner Made an Estimated $263.4K in the Stock Market Last Month",
+        "headline": "Wolfspeed Stock (WOLF) Opinions on AI Data Center Opportunities",
         "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Mark+R.+Warner+Made+an+Estimated+%24263.4K+in+the+Stock+Market+Last+Month"
+        "category": "discussion_automated",
+        "time": "2026-06-28 14:03:33",
+        "url": "https://www.quiverquant.com/news/Wolfspeed+Stock+%28WOLF%29+Opinions+on+AI+Data+Center+Opportunities"
       },
       {
-        "headline": "Net Worth Update: Representative Mikie Sherrill Lost an Estimated $121.1K in the Stock Market Last Month",
+        "headline": "Infleqtion Stock (INFQ) Opinions on Quantum Computing Developments",
         "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Mikie+Sherrill+Lost+an+Estimated+%24121.1K+in+the+Stock+Market+Last+Month"
+        "category": "discussion_automated",
+        "time": "2026-06-28 14:03:33",
+        "url": "https://www.quiverquant.com/news/Infleqtion+Stock+%28INFQ%29+Opinions+on+Quantum+Computing+Developments"
       },
       {
-        "headline": "Net Worth Update: Senator Lisa Blunt Rochester Lost an Estimated $124.0K in the Stock Market Last Month",
+        "headline": "Nebius Group Stock (NBIS) Opinions on AI Infrastructure Expansion",
         "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Lisa+Blunt+Rochester+Lost+an+Estimated+%24124.0K+in+the+Stock+Market+Last+Month"
-      },
-      {
-        "headline": "Net Worth Update: Senator John W. Hickenlooper Lost an Estimated $370.5K in the Stock Market Last Month",
-        "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+John+W.+Hickenlooper+Lost+an+Estimated+%24370.5K+in+the+Stock+Market+Last+Month"
-      },
-      {
-        "headline": "Net Worth Update: Senator Katie Boyd Britt Lost an Estimated $366.4K in the Stock Market Last Month",
-        "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Katie+Boyd+Britt+Lost+an+Estimated+%24366.4K+in+the+Stock+Market+Last+Month"
-      },
-      {
-        "headline": "Net Worth Update: Representative Mike Kelly Lost an Estimated $215.6K in the Stock Market Last Month",
-        "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Mike+Kelly+Lost+an+Estimated+%24215.6K+in+the+Stock+Market+Last+Month"
-      },
-      {
-        "headline": "Net Worth Update: Senator Jacky Rosen Lost an Estimated $129.2K in the Stock Market Last Month",
-        "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Jacky+Rosen+Lost+an+Estimated+%24129.2K+in+the+Stock+Market+Last+Month"
+        "category": "discussion_automated",
+        "time": "2026-06-28 14:03:33",
+        "url": "https://www.quiverquant.com/news/Nebius+Group+Stock+%28NBIS%29+Opinions+on+AI+Infrastructure+Expansion"
       },
       {
         "headline": "Net Worth Update: Senator Ron Wyden Lost an Estimated $333.5K in the Stock Market Last Month",
@@ -43297,25 +43337,25 @@
         "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ron+Wyden+Lost+an+Estimated+%24333.5K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Net Worth Update: Representative J. French Hill Made an Estimated $312.7K in the Stock Market Last Month",
+        "headline": "Net Worth Update: Senator John W. Hickenlooper Lost an Estimated $370.5K in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
         "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+J.+French+Hill+Made+an+Estimated+%24312.7K+in+the+Stock+Market+Last+Month"
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+John+W.+Hickenlooper+Lost+an+Estimated+%24370.5K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Net Worth Update: Senator Sheldon Whitehouse Lost an Estimated $1.1M in the Stock Market Last Month",
+        "headline": "Net Worth Update: Senator Jacky Rosen Lost an Estimated $129.2K in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
         "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Sheldon+Whitehouse+Lost+an+Estimated+%241.1M+in+the+Stock+Market+Last+Month"
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Jacky+Rosen+Lost+an+Estimated+%24129.2K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Net Worth Update: Representative Laurel M. Lee Lost an Estimated $457.7K in the Stock Market Last Month",
+        "headline": "Net Worth Update: Representative Mike Kelly Lost an Estimated $215.6K in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
         "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Laurel+M.+Lee+Lost+an+Estimated+%24457.7K+in+the+Stock+Market+Last+Month"
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Mike+Kelly+Lost+an+Estimated+%24215.6K+in+the+Stock+Market+Last+Month"
       }
     ],
     "wsb": [
@@ -43651,10 +43691,10 @@
       {
         "ticker": "UBER",
         "rating": 4.84,
-        "reviews": 29425408,
-        "apps": 5,
+        "reviews": 29437696,
+        "apps": 6,
         "top_app": "Uber - Request a ride",
-        "review_velocity": -12288.0,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -43667,30 +43707,48 @@
         "lean": "strong"
       },
       {
-        "ticker": "LYFT",
-        "rating": 4.91,
-        "reviews": 17618910,
-        "apps": 2,
-        "top_app": "Lyft",
-        "review_velocity": -1766.0,
+        "ticker": "MSFT",
+        "rating": 4.77,
+        "reviews": 19684388,
+        "apps": 8,
+        "top_app": "Microsoft Outlook",
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
-        "ticker": "MSFT",
-        "rating": 4.78,
-        "reviews": 15760998,
-        "apps": 4,
-        "top_app": "Microsoft Outlook",
-        "review_velocity": -3923390.0,
+        "ticker": "WMT",
+        "rating": 4.82,
+        "reviews": 18461149,
+        "apps": 5,
+        "top_app": "Walmart: Shopping & Savings",
+        "review_velocity": 0.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "LYFT",
+        "rating": 4.91,
+        "reviews": 17620676,
+        "apps": 3,
+        "top_app": "Lyft",
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
         "ticker": "SBUX",
         "rating": 4.89,
-        "reviews": 8087339,
-        "apps": 2,
+        "reviews": 8087971,
+        "apps": 4,
         "top_app": "Starbucks",
-        "review_velocity": -632.0,
+        "review_velocity": 0.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "Z",
+        "rating": 4.8,
+        "reviews": 7629095,
+        "apps": 4,
+        "top_app": "Zillow Real Estate & Rentals",
+        "review_velocity": 282.0,
         "lean": "strong"
       },
       {
@@ -43714,10 +43772,10 @@
       {
         "ticker": "DAL",
         "rating": 4.85,
-        "reviews": 7005915,
-        "apps": 1,
+        "reviews": 7005978,
+        "apps": 3,
         "top_app": "Fly Delta",
-        "review_velocity": -63.0,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -43732,10 +43790,10 @@
       {
         "ticker": "NFLX",
         "rating": 4.75,
-        "reviews": 6762324,
-        "apps": 1,
+        "reviews": 6762562,
+        "apps": 2,
         "top_app": "Netflix",
-        "review_velocity": -238.0,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
@@ -43763,24 +43821,6 @@
         "apps": 1,
         "top_app": "Snapchat",
         "review_velocity": 0.0,
-        "lean": "strong"
-      },
-      {
-        "ticker": "EBAY",
-        "rating": 4.82,
-        "reviews": 5015950,
-        "apps": 2,
-        "top_app": "eBay online shopping & selling",
-        "review_velocity": 0.0,
-        "lean": "strong"
-      },
-      {
-        "ticker": "BAC",
-        "rating": 4.81,
-        "reviews": 5033970,
-        "apps": 3,
-        "top_app": "Bank of America Mobile Banking",
-        "review_velocity": 128.0,
         "lean": "strong"
       }
     ],
@@ -45173,7 +45213,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.96% stars \u00b7 hf_model_momentum: +6.7% model downloads \u00b7 patent_cluster: 48 grants, 11 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +1.01% stars \u00b7 hf_model_momentum: +6.7% model downloads \u00b7 patent_cluster: 48 grants, 11 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "GOOGL",
@@ -45200,7 +45240,7 @@
           "gov_contract",
           "patent_cluster"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.78\u2605 \u00d7 15,760,998 reviews \u00b7 github_momentum: +0.21% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 97 grants, 20 IPC classes"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,684,388 reviews \u00b7 github_momentum: +0.22% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 97 grants, 20 IPC classes"
       },
       {
         "ticker": "HOOD",
@@ -45248,7 +45288,7 @@
           "special_situation",
           "trump"
         ],
-        "why": "congress_buy: 2 member(s) net +12 \u00b7 github_momentum: +0.23% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations \u00b7 trump: ADVANCED MICRO DEVICES INC"
+        "why": "congress_buy: 2 member(s) net +12 \u00b7 github_momentum: +0.24% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations \u00b7 trump: ADVANCED MICRO DEVICES INC"
       },
       {
         "ticker": "DELL",

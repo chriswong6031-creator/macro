@@ -379,6 +379,8 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
 .nav-sugg.show { display: block; }
 .nav-sugg .row { display: flex; align-items: center; gap: 9px; padding: 8px 12px; cursor: pointer; }
 .nav-sugg .row:hover, .nav-sugg .row.sel { background: color-mix(in srgb, var(--link) 12%, var(--panel2)); }
+/* leading market flag (US / China / HK / Canada / Intl) on the unified universe search */
+.nav-sugg .row .mkt { flex: none; width: 20px; text-align: center; font-size: 13px; line-height: 1; }
 .nav-sugg .row b { min-width: 58px; font-size: 13px; color: var(--text); font-weight: 600; }
 .nav-sugg .row small { flex: 1; color: var(--muted); font-size: 12px; white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }

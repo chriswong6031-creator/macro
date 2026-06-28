@@ -38,7 +38,7 @@
   /* ---- view state -------------------------------------------------------- */
   // family = which independent SECTION is active: the 11 sector ETFs (clean default)
   // or the 34 thematic baskets (their own space). Only one family is ever on screen.
-  var state = { mode: "price", scale: "log", focus: null, family: "sectors" };
+  var state = { mode: "osc", scale: "log", focus: null, family: "sectors" };
   function activeList() { return state.family === "baskets" ? BASKETS : SECTORS; }
   function isActive(s) { return (s.kind === "basket") === (state.family === "baskets"); }
 
@@ -308,6 +308,18 @@
     });
   }
 
+  // reflect the boot-time state onto the segmented controls (Cycle position is the
+  // default view, so Price is un-lit and the Log/Linear scale starts locked) — keeps
+  // the UI honest no matter which template's static `on` classes shipped.
+  function syncHeroControls() {
+    var modes = document.getElementById("sc-modes"), scale = document.getElementById("sc-scale");
+    if (modes) modes.querySelectorAll(".sc-mbtn").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-mode") === state.mode); });
+    if (scale) {
+      scale.querySelectorAll(".sc-sbtn").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-scale") === state.scale); });
+      scale.classList.toggle("disabled", state.mode !== "price");
+    }
+  }
+
   /* ---- phase filter chips ------------------------------------------------- */
   var PHASE_FILTER = [
     { key: "Peak", label: ["Topping", "见顶"] },
@@ -329,7 +341,7 @@
       }).join("") +
       '<button class="cyc-gall" id="sc-gall" title="' + L("Show all phases", "显示全部") + '"><span class="ga-dots">' +
         PHASE_FILTER.map(function (p) { return '<i style="background:' + phaseHue(p.key) + '"></i>'; }).join("") +
-      '</span>' + L("Select all", "全选") + '</button>';
+      '</span>' + L("All phases", "全部阶段") + '</button>';
     host.querySelectorAll(".cyc-gchip").forEach(function (b) {
       b.addEventListener("click", function () {
         var k = b.getAttribute("data-k");
@@ -414,10 +426,10 @@
       // phase facet's doing (don't tell the user to tap a basket — that would deselect it).
       var anySel = BASKETS.some(function (b) { return basketShown[b.id]; });
       hint.innerHTML = anySel
-        ? L("No baskets match this phase — pick another phase or hit <b>Select all</b>.",
-            "该阶段暂无篮子——换一个阶段或点<b>全选</b>。")
-        : L("No baskets on the clock — tap a basket or hit <b>Select all</b> to chart them.",
-            "图中暂无篮子——点击任一篮子或点<b>全选</b>即可绘制。");
+        ? L("No baskets match this phase — pick another phase or hit <b>All phases</b>.",
+            "该阶段暂无篮子——换一个阶段或点<b>全部阶段</b>。")
+        : L("No baskets on the clock — tap a basket or hit <b>Select all visible</b> to chart them.",
+            "图中暂无篮子——点击任一篮子或点<b>全选可见</b>即可绘制。");
     } else { hint.hidden = true; }
   }
   /* ---- section family (Sector ETFs vs Thematic Baskets) ------------------ */
@@ -457,11 +469,11 @@
     var wrap = document.getElementById("sc-chips");
     if (!wrap) return;
     wrap.innerHTML = "";
-    // a pinned "Select all" so the whole sector board can be brought back in one tap
+    // a pinned "Select all visible" so every sector the facet shows can be re-lit in one tap
     var all = el("button", "sc-chip-all");
     all.setAttribute("type", "button");
-    all.setAttribute("title", L("Show every sector", "显示全部板块"));
-    all.innerHTML = '<span class="sca-ic" aria-hidden="true">✦</span>' + L("Select all", "全选");
+    all.setAttribute("title", L("Chart every sector the filter is showing", "绘制当前筛选下的全部板块"));
+    all.innerHTML = '<span class="sca-ic" aria-hidden="true">✦</span>' + L("Select all visible", "全选可见");
     all.addEventListener("click", selectAllSectors);
     wrap.appendChild(all);
     SECTORS.forEach(function (s) {
@@ -473,17 +485,18 @@
       wrap.appendChild(b);
     });
   }
-  // "Select all" for the sector ETFs — clear any focus and re-show every phase, so all
-  // 11 sectors sit on the clock at once.
+  // "Select all visible" for the sector ETFs — sectors are always on the clock
+  // (subject to the active "Where they stand" facet), so this just clears any focus
+  // so every sector the facet is SHOWING reads at equal weight. It deliberately does
+  // NOT widen the phase facet — that's the "All phases" button's job.
   function selectAllSectors() {
-    PHASE_FILTER.forEach(function (p) { phaseState[p.key] = true; });
     setFocus(null);
     syncGroups();
   }
 
   /* ---- thematic baskets: a collapsible, category-grouped rail; all baskets are
      selected by default — tapping one toggles it off, the "Where they stand" facet
-     narrows the field, and "Select all" brings the whole set back ---- */
+     narrows the field, and "Select all visible" charts every basket the facet shows ---- */
   function basketChipHTML(b) {
     return '<button class="sc-bchip' + (basketShown[b.id] ? " on" : "") + '" data-id="' + b.id + '" style="--c:' + b.accent + '">' +
       '<span class="dot"></span><span class="nm">' + shortNm(b) + '</span>' +
@@ -505,8 +518,8 @@
           '<span class="sc-bask-hint">' + L("tap to pick", "点选板块") + '</span>' +
           '<span class="sc-bask-caret" aria-hidden="true">▾</span>' +
         '</button>' +
-        '<button class="sc-bask-all" id="sc-bask-all" type="button" title="' + L("Chart every basket", "绘制全部篮子") + '">' +
-          '<span class="sca-ic" aria-hidden="true">✦</span>' + L("Select all", "全选") + '</button>' +
+        '<button class="sc-bask-all" id="sc-bask-all" type="button" title="' + L("Chart every basket the filter is showing", "绘制当前筛选下的全部篮子") + '">' +
+          '<span class="sca-ic" aria-hidden="true">✦</span>' + L("Select all visible", "全选可见") + '</button>' +
       '</div>' +
       '<div class="sc-bask-panel" id="sc-bask-panel">' +
         cats.map(function (c) {
@@ -526,10 +539,13 @@
     });
     updateBasketSel();
   }
-  // "Select all" for the thematic baskets — chart every basket and re-show every phase.
+  // "Select all visible" for the thematic baskets — chart only the baskets the active
+  // "Where they stand" facet is currently showing, and LEAVE the phase facet intact.
+  // So when you've filtered to e.g. "Bottoming", this charts every bottoming basket at
+  // once for a same-status cross-comparison — without dragging the other phases back in.
   function selectAllBaskets() {
-    BASKETS.forEach(function (b) { basketShown[b.id] = true; });
-    PHASE_FILTER.forEach(function (p) { phaseState[p.key] = true; });
+    var allOff = PHASE_FILTER.every(function (p) { return !phaseState[p.key]; });
+    BASKETS.forEach(function (b) { if (allOff || phaseState[b.now.phase]) basketShown[b.id] = true; });
     updateBasketSel();
     setFocus(null);
     syncGroups();
@@ -900,10 +916,10 @@
       '<div class="cyc-grp cyc-grp-full">' +
         '<div class="cyc-lbl">' + (baskets ? L("Thematic basket rotation · ", "主题篮子轮动 · ") : L("Sector rotation · ", "板块轮动 · ")) + META.asOf + '</div>' +
         '<p class="rg-headline">' + (baskets
-          ? L("All " + BASKETS.length + " thematic baskets start <b>charted together</b> — each an equal-weight index of its members. Use <b>Where they stand</b> or tap a basket to narrow the field, or hit <b>Select all</b> to bring them all back. Flip to <b>Cycle position</b> to compare them on a 0–100 clock.",
-              "全部 " + BASKETS.length + " 个主题篮子<b>默认一同绘制</b>——每个均为其成分股的等权指数。用<b>所处阶段</b>或点击篮子可缩小范围，点<b>全选</b>即可重新全部显示。切换到<b>周期位置</b>可在 0–100 的时钟上对比。")
-          : L("Real price on a log axis, every line rebased to 100 at the left edge of the visible window — so <b>zoom to any period</b> and the lines instantly show relative performance from there. Flip to <b>Cycle position</b> to compare sectors on a 0–100 clock. Tap a sector to see its turning points and the story behind each move.",
-              "对数坐标下的真实价格，每条线在可见区间的左端再基准化为 100——<b>缩放到任意时段</b>，各线即刻显示自该点起的相对表现。切换到<b>周期位置</b>可在 0–100 的时钟上对比。点按某板块查看其拐点及每段走势背后的故事。")) + '</p>' +
+          ? L("All " + BASKETS.length + " thematic baskets start <b>charted together</b> on a 0–100 <b>cycle-position</b> clock — each an equal-weight index of its members. Use <b>Where they stand</b> or tap a basket to narrow the field, or hit <b>Select all visible</b> to chart every basket the filter is showing. Flip to <b>Price</b> for the real tape (rebased, log).",
+              "全部 " + BASKETS.length + " 个主题篮子<b>默认一同绘制</b>在 0–100 <b>周期位置</b>时钟上——每个均为其成分股的等权指数。用<b>所处阶段</b>或点击篮子可缩小范围，点<b>全选可见</b>即可绘制当前筛选下的全部篮子。切换到<b>价格</b>可查看真实走势（再基准化、对数）。")
+          : L("Every sector on a 0–100 <b>cycle-position</b> clock — high = stretched/late, low = washed-out. Flip to <b>Price</b> for the real tape (rebased on a log axis, so every line shares an axis). Tap a sector to see its turning points and the story behind each move.",
+              "每个板块同处 0–100 <b>周期位置</b>时钟——高=拉伸/晚期，低=超卖。切换到<b>价格</b>可查看真实走势（对数坐标下再基准化，使每条线共用同一坐标轴）。点按某板块查看其拐点及每段走势背后的故事。")) + '</p>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
         '<div class="cyc-lbl">' + L("Where the ", "各") + noun + L(" stand", "所处位置") + '</div>' +
@@ -970,7 +986,7 @@
     BASKETS.forEach(function (b) { basketShown[b.id] = true; chartHidden[b.id] = true; });
     mountChips(); mountBaskets();
     wireFamily(); applyFamilyDisplay();                            // sectors section active; baskets hidden
-    mountHero(); wireControls(); buildGroups(); buildDefaultPanel(); mountCards(); initSheet();
+    mountHero(); wireControls(); syncHeroControls(); buildGroups(); buildDefaultPanel(); mountCards(); initSheet();
     document.addEventListener("langchange", rerender);
     var h = (location.hash || "").replace("#", "");
     if (h && byId[h]) setTimeout(function () {

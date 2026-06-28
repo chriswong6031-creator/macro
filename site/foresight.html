@@ -162,6 +162,17 @@
            background:color-mix(in srgb,var(--info) 10%,transparent); }
   .fx-disco-foot { font-size:10.5px; color:var(--muted); margin-top:11px; line-height:1.5; font-style:italic; }
 
+  /* subsector radar table */
+  .fx-radar-tbl { width:100%; border-collapse:collapse; font-size:12px; margin-top:6px; }
+  .fx-radar-tbl th { text-align:left; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase;
+                     color:var(--muted); padding:5px 8px; border-bottom:1px solid var(--line); }
+  .fx-radar-tbl th.num, .fx-radar-tbl td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .fx-radar-tbl td { padding:6px 8px; border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent); }
+  .fx-rstage { font-size:9.5px; font-weight:800; padding:2px 7px; border-radius:6px; color:var(--c,var(--muted));
+               background:color-mix(in srgb,var(--c,var(--muted)) 14%,var(--panel)); }
+  .fx-rsub { font-weight:700; } .fx-rsec { font-size:10px; color:var(--muted); }
+  .fx-rscar { font-weight:800; color:var(--g-hot); cursor:help; }
+
 </style>
 
 </head>
@@ -209,6 +220,7 @@
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">Finviz's 268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">Finviz 268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
           </div>
         </div>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -329,8 +341,8 @@
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
-      placeholder="Search any stock, ETF, commodity or crypto…"
-      data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
@@ -354,7 +366,7 @@
     <div class="fx-eyebrow">🔮 <span class="l-en">Thematic Foresight Desk</span><span class="l-zh">主题前瞻台</span></div>
     <h1><span class="l-en">Catch the theme before the revisions explode</span><span class="l-zh">在盈利预期爆发前抓住主题</span></h1>
     <p class="fx-sub"><span class="l-en">Anticipate themes at the <b>precipice of induction</b> and convert them to calls <b>before</b> estimate revisions broaden. Physical-supply tightness (T1) <b>leads</b> the revision; customer capex (T2) and revision-breadth (T4) <b>confirm</b>; the buy is deferred to a dislocation. Worked case: the June-2024 13D HBM/DRAM call — <i>sold out, concentrated, underpriced</i>, right and ~9 months early.</span><span class="l-zh">在主题处于<b>诱发临界点</b>时提前布局，在盈利预期普遍上修<b>之前</b>转化为决策。物理供给紧张（T1）<b>领先</b>预期修正；客户资本开支（T2）与预期上修广度（T4）<b>确认</b>；买点交由错位回调触发。范例：2024年6月 13D 的 HBM/DRAM 判断——售罄、集中、被低估，正确且早约9个月。</span></p>
-    <div class="fx-asof"><span class="l-en">Revisions as of</span><span class="l-zh">预期数据截至</span> 2026-06-28 · <span class="l-en">generated</span><span class="l-zh">生成于</span> 2026-06-28 17:02 UTC</div>
+    <div class="fx-asof"><span class="l-en">Revisions as of</span><span class="l-zh">预期数据截至</span> 2026-06-28 · <span class="l-en">generated</span><span class="l-zh">生成于</span> 2026-06-28 18:49 UTC</div>
   </header>
 
   
@@ -1237,6 +1249,217 @@
   
 
   
+  
+  <div class="fx-panel fx-radar">
+    <h2>📡 <span class="l-en">Subsector radar — the whole S&P 500 at sub-industry granularity</span><span class="l-zh">子行业雷达——以子行业粒度覆盖整个标普500</span></h2>
+    <div class="sub"><span class="l-en">The cascade runs the same <b>bottleneck × revision</b> signature over all <b>113 Finviz sub-industries</b> (503 names), not just the 18 curated themes — so you can see, market-wide, <b>where supply scarcity and estimate revisions are aligning</b>. The bottleneck here is a <b>text-only proxy</b> (EDGAR scarcity language), not FRED-confirmed — a screen to investigate, not a confirmed thesis.</span><span class="l-zh">级联将同一<b>瓶颈 × 预期修正</b>信号运行于全部<b>113个 Finviz 子行业</b>（503只成分股），而不仅是18个精选主题——从而在全市场范围看到<b>供给短缺与盈利预期在何处共振</b>。此处瓶颈为<b>纯文本代理</b>（EDGAR 短缺用语），非 FRED 确认——是待查筛选，而非确认论点。</span>
+      <b>6</b> / 57 <span class="l-en">scanned sub-industries currently pair scarcity language with their revision read.</span><span class="l-zh">个已扫描子行业当前将短缺用语与其预期读数配对。</span></div>
+    <table class="fx-radar-tbl">
+      <thead><tr>
+        <th><span class="l-en">Stage</span><span class="l-zh">阶段</span></th><th><span class="l-en">Sub-industry</span><span class="l-zh">子行业</span></th>
+        <th class="num"><span class="l-en">Breadth</span><span class="l-zh">广度</span></th><th class="num"><span class="l-en">90d drift</span><span class="l-zh">90日漂移</span></th>
+        <th class="num"><span class="l-en">Scarcity</span><span class="l-zh">短缺</span></th>
+      </tr></thead>
+      <tbody>
+      
+      <tr>
+        <td><span class="fx-rstage stg-PRECIPICE">PRECIPICE</span></td>
+        <td><span class="fx-rsub">Medical Devices</span> <span class="fx-rsec">Healthcare</span></td>
+        <td class="num">+0.01</td>
+        <td class="num">-0%</td>
+        <td class="num"><span class="fx-rscar" title="ALGN, MDT">2🔥</span></td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-BROADENING">BROADENING</span></td>
+        <td><span class="fx-rsub">Specialty Industrial Machinery</span> <span class="fx-rsec">Industrials</span></td>
+        <td class="num">+0.41</td>
+        <td class="num">+1%</td>
+        <td class="num"><span class="fx-rscar" title="AME, FTV, PH, TT">4🔥</span></td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-BROADENING">BROADENING</span></td>
+        <td><span class="fx-rsub">Aerospace &amp; Defense</span> <span class="fx-rsec">Industrials</span></td>
+        <td class="num">+0.31</td>
+        <td class="num">+0%</td>
+        <td class="num"><span class="fx-rscar" title="BA, LHX, LMT, NOC">4🔥</span></td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Communication Equipment</span> <span class="fx-rsec">Technology</span></td>
+        <td class="num">+0.90</td>
+        <td class="num">+6%</td>
+        <td class="num"><span class="fx-rscar" title="ANET, CIEN, MSI">3🔥</span></td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Semiconductors</span> <span class="fx-rsec">Technology</span></td>
+        <td class="num">+0.88</td>
+        <td class="num">+14%</td>
+        <td class="num"><span class="fx-rscar" title="AVGO, MCHP, MPWR, NVDA, QCOM">5🔥</span></td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Electrical Equipment &amp; Parts</span> <span class="fx-rsec">Industrials</span></td>
+        <td class="num">+0.84</td>
+        <td class="num">+8%</td>
+        <td class="num"><span class="fx-rscar" title="GNRC, VRT">2🔥</span></td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Engineering &amp; Construction</span> <span class="fx-rsec">Industrials</span></td>
+        <td class="num">+1.00</td>
+        <td class="num">+5%</td>
+        <td class="num"><span class="fx-rscar" title="PWR">1🔥</span></td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Semiconductor Equipment &amp; Materials</span> <span class="fx-rsec">Technology</span></td>
+        <td class="num">+0.96</td>
+        <td class="num">+12%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Oil &amp; Gas Refining &amp; Marketing</span> <span class="fx-rsec">Energy</span></td>
+        <td class="num">+0.93</td>
+        <td class="num">+47%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Integrated Freight &amp; Logistics</span> <span class="fx-rsec">Industrials</span></td>
+        <td class="num">+0.82</td>
+        <td class="num">+4%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Computer Hardware</span> <span class="fx-rsec">Technology</span></td>
+        <td class="num">+0.81</td>
+        <td class="num">+20%</td>
+        <td class="num"><span class="fx-rscar" title="DELL">1🔥</span></td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Healthcare Plans</span> <span class="fx-rsec">Healthcare</span></td>
+        <td class="num">+0.78</td>
+        <td class="num">+3%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Medical Distribution</span> <span class="fx-rsec">Healthcare</span></td>
+        <td class="num">+0.78</td>
+        <td class="num">+1%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Building Products &amp; Equipment</span> <span class="fx-rsec">Industrials</span></td>
+        <td class="num">+0.76</td>
+        <td class="num">+1%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Electronic Components</span> <span class="fx-rsec">Technology</span></td>
+        <td class="num">+0.74</td>
+        <td class="num">+10%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Scientific &amp; Technical Instruments</span> <span class="fx-rsec">Technology</span></td>
+        <td class="num">+0.66</td>
+        <td class="num">+2%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Discount Stores</span> <span class="fx-rsec">Consumer Defensive</span></td>
+        <td class="num">+0.59</td>
+        <td class="num">+1%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Software - Application</span> <span class="fx-rsec">Technology</span></td>
+        <td class="num">+0.56</td>
+        <td class="num">+3%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-RE-RATING">RE-RATING</span></td>
+        <td><span class="fx-rsub">Financial Data &amp; Stock Exchanges</span> <span class="fx-rsec">Financial</span></td>
+        <td class="num">+0.51</td>
+        <td class="num">+2%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-WATCH">WATCH</span></td>
+        <td><span class="fx-rsub">Banks - Regional</span> <span class="fx-rsec">Financial</span></td>
+        <td class="num">+0.48</td>
+        <td class="num">+1%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-WATCH">WATCH</span></td>
+        <td><span class="fx-rsub">REIT - Specialty</span> <span class="fx-rsec">Real Estate</span></td>
+        <td class="num">+0.48</td>
+        <td class="num">+3%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-WATCH">WATCH</span></td>
+        <td><span class="fx-rsub">Specialty Chemicals</span> <span class="fx-rsec">Basic Materials</span></td>
+        <td class="num">+0.46</td>
+        <td class="num">+1%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-WATCH">WATCH</span></td>
+        <td><span class="fx-rsub">Asset Management</span> <span class="fx-rsec">Financial</span></td>
+        <td class="num">+0.43</td>
+        <td class="num">-1%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      <tr>
+        <td><span class="fx-rstage stg-WATCH">WATCH</span></td>
+        <td><span class="fx-rsub">Oil &amp; Gas Midstream</span> <span class="fx-rsec">Energy</span></td>
+        <td class="num">+0.42</td>
+        <td class="num">+2%</td>
+        <td class="num">—</td>
+      </tr>
+      
+      </tbody>
+    </table>
+  </div>
+  
+
+  
   <div class="fx-panel">
     <h2><span class="l-en">Forward-graded track record</span><span class="l-zh">前瞻评分记录</span></h2>
     <div class="sub"><span class="l-en">Every PRECIPICE / BROADENING flag is logged with a timestamp and graded forward against the basket's realized return — the desk's own hit-rate is measured, public, and immutable. The ledgers began accruing recently, so this is a flags-logged counter, not a hit-rate yet.</span><span class="l-zh">每个 PRECIPICE / BROADENING 标记都带时间戳记录，并对篮子的实际收益进行前瞻评分——本台自身命中率可测量、公开且不可篡改。账本近期才开始累计，目前为标记计数，尚非命中率。</span></div>
@@ -1245,8 +1468,9 @@
       <span class="chip2"><b>0</b> <span class="l-en">bottleneck regimes</span><span class="l-zh">瓶颈机制</span></span>
       <span class="chip2"><b>0</b> <span class="l-en">glut flags</span><span class="l-zh">过剩标记</span></span>
       <span class="chip2"><b>36</b> <span class="l-en">revision reads</span><span class="l-zh">预期读数</span></span>
-      <span class="chip2"><b>0</b> <span class="l-en">guidance tilts</span><span class="l-zh">指引倾向</span></span>
+      <span class="chip2"><b>1</b> <span class="l-en">guidance tilts</span><span class="l-zh">指引倾向</span></span>
       <span class="chip2"><b>5</b> <span class="l-en">discovery candidates</span><span class="l-zh">发现候选</span></span>
+      <span class="chip2"><b>3</b> <span class="l-en">subsector flags</span><span class="l-zh">子行业标记</span></span>
       
     </div>
     

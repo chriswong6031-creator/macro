@@ -109,8 +109,9 @@
 </style>
 </head>
 <body>
-<nav class="site-nav" style="max-width:1320px;margin:0 auto;padding:11px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-  <a class="nav-brand" href="index.html" style="font-weight:800;letter-spacing:-.02em;font-size:16px;color:var(--text)">MASTERMIND</a>
+
+
+<nav class="site-nav">
   
 
 
@@ -151,6 +152,7 @@
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">Finviz's 268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">Finviz 268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
           </div>
         </div>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -268,11 +270,24 @@
   
   <script src="live_config.js"></script>
   <script src="live.js"></script>
-  <div class="nav-ctrls" style="margin-left:auto;display:flex;gap:8px;align-items:center">
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock — US, China, HK, Canada & more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
     <a class="ai-brief-link" href="mastermind.html">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
     <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ <span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
-    <button class="lang-btn" type="button">中文</button>
-    <button class="theme-btn" type="button">☀️ Light</button>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
   </div>
 </nav>
 
@@ -297,14 +312,19 @@
   </div>
 
   
+  <div class="scc-universe">
+    <span class="scc-universe-lab"><span class="l-en">Viewing</span><span class="l-zh">查看</span></span>
+    <div class="sc-tabs" id="sc-tabs" role="tablist" aria-label="Sectors or thematic baskets">
+      <button class="sc-tab on" data-fam="sectors" role="tab">🧭 <span class="l-en">Sector ETFs</span><span class="l-zh">板块 ETF</span> <i id="sc-tab-n-sec"></i></button>
+      <button class="sc-tab" data-fam="baskets" role="tab">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span> <i id="sc-tab-n-bsk"></i></button>
+    </div>
+  </div>
+
+  
   <section class="scc-cycle cyc-page sc-page" id="sc-cyclemap">
     <div class="scc-section-h">
       <h2><span class="l-en">Cycle map — every sector &amp; theme on one clock</span><span class="l-zh">周期图谱 — 各板块与主题同框</span></h2>
       <span class="scc-section-sub"><span class="l-en">Real price (rebased / log) or a 0–100 cycle-position oscillator · auto-detected turns · tap a line to read its legs</span><span class="l-zh">真实价格（再基准化／对数）或 0–100 周期位置振荡器 · 自动识别拐点 · 点击曲线查看区段</span></span>
-    </div>
-    <div class="sc-tabs" id="sc-tabs" role="tablist">
-      <button class="sc-tab on" data-fam="sectors" role="tab">🧭 <span class="l-en">Sector ETFs</span><span class="l-zh">板块 ETF</span> <i id="sc-tab-n-sec"></i></button>
-      <button class="sc-tab" data-fam="baskets" role="tab">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span> <i id="sc-tab-n-bsk"></i></button>
     </div>
     <section class="cyc-stage">
       <div class="cyc-hero">
@@ -312,13 +332,13 @@
           <h2 id="sc-hero-title"><span class="l-en">Sector rotation overlay</span><span class="l-zh">板块轮动叠加</span></h2>
           <div class="cyc-hero-tools">
             <div class="sc-ctrl-group">
-              <div class="sc-scale" id="sc-scale" aria-label="Price scale">
+              <div class="sc-scale disabled" id="sc-scale" aria-label="Price scale">
                 <button class="sc-sbtn on" data-scale="log"><span class="l-en">Log</span><span class="l-zh">对数</span></button>
                 <button class="sc-sbtn" data-scale="linear"><span class="l-en">Linear</span><span class="l-zh">线性</span></button>
               </div>
               <div class="sc-modes" id="sc-modes" aria-label="Chart mode">
-                <button class="sc-mbtn on" data-mode="price"><span class="l-en">Price</span><span class="l-zh">价格</span></button>
-                <button class="sc-mbtn" data-mode="osc"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></button>
+                <button class="sc-mbtn" data-mode="price"><span class="l-en">Price</span><span class="l-zh">价格</span></button>
+                <button class="sc-mbtn on" data-mode="osc"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></button>
               </div>
             </div>
             <div class="cyc-legend">

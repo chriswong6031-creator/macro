@@ -422,9 +422,9 @@
     "tiers": {
       "leading": {
         "asof": "2026-06-30",
-        "index": 91.81677804005295,
+        "index": 91.81677804005298,
         "mom6": 0.21178101113352454,
-        "trend": 0.5738914937339371,
+        "trend": 0.5738914937339376,
         "diffusion": 75.0,
         "n_legs": 4,
         "direction": "rising",
@@ -4748,7 +4748,7 @@
   },
   "fed_path": {
     "asof": "2026-06-26",
-    "built": "2026-06-28T16:36:42.544435+00:00",
+    "built": "2026-06-28T18:31:23.867441+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -6909,7 +6909,7 @@
           {
             "ticker": "GEV",
             "breadth": 0.74,
-            "est_chg_90d": 7.6,
+            "est_chg_90d": 7.3,
             "n_analysts": 23
           }
         ]
@@ -6985,7 +6985,7 @@
           {
             "ticker": "ETN",
             "breadth": 0.54,
-            "est_chg_90d": 1.9,
+            "est_chg_90d": -0.1,
             "n_analysts": 13
           },
           {
@@ -7362,7 +7362,7 @@
         "name": "Solar",
         "breadth": -0.336,
         "level_state": "NEGATIVE",
-        "est_drift_90d": -7.01,
+        "est_drift_90d": -5.48,
         "net_up_total": -20.0,
         "breadth_accel": null,
         "broadening_state": "INSUFFICIENT_HISTORY",
@@ -7373,7 +7373,7 @@
           {
             "ticker": "ENPH",
             "breadth": -0.9,
-            "est_chg_90d": -11.0,
+            "est_chg_90d": -10.3,
             "n_analysts": 20
           },
           {
@@ -7391,7 +7391,7 @@
           {
             "ticker": "FSLR",
             "breadth": 0.18,
-            "est_chg_90d": -3.0,
+            "est_chg_90d": -0.7,
             "n_analysts": 22
           }
         ]
@@ -7568,7 +7568,7 @@
         "name": "Diagnostics & Life-Science Tools",
         "breadth": 0.709,
         "level_state": "POSITIVE",
-        "est_drift_90d": 1.62,
+        "est_drift_90d": 1.17,
         "net_up_total": 69.0,
         "breadth_accel": null,
         "broadening_state": "INSUFFICIENT_HISTORY",
@@ -7621,7 +7621,7 @@
           {
             "ticker": "DHR",
             "breadth": 1.0,
-            "est_chg_90d": 1.6,
+            "est_chg_90d": 1.2,
             "n_analysts": 3
           }
         ]
@@ -7630,7 +7630,7 @@
         "name": "Agriculture & Fertilizer",
         "breadth": 0.023,
         "level_state": "FLAT_LOW",
-        "est_drift_90d": -2.01,
+        "est_drift_90d": -1.24,
         "net_up_total": -6.0,
         "breadth_accel": null,
         "broadening_state": "INSUFFICIENT_HISTORY",
@@ -7647,7 +7647,7 @@
           {
             "ticker": "FMC",
             "breadth": -0.29,
-            "est_chg_90d": -8.0,
+            "est_chg_90d": -1.1,
             "n_analysts": 14
           },
           {
@@ -7759,7 +7759,7 @@
           {
             "ticker": "GEV",
             "breadth": 0.74,
-            "est_chg_90d": 7.6,
+            "est_chg_90d": 7.3,
             "n_analysts": 23
           },
           {
@@ -7809,8 +7809,8 @@
         },
         "cap_u_latest": null,
         "ppi_yoy_latest": null,
-        "language_accel": null,
-        "language_hits": 0,
+        "language_accel": 2.0,
+        "language_hits": 2,
         "weights": {
           "leg1_capacity": 0.28,
           "leg2_inventory": 0.22,
@@ -7833,8 +7833,8 @@
         },
         "cap_u_latest": null,
         "ppi_yoy_latest": null,
-        "language_accel": null,
-        "language_hits": 0,
+        "language_accel": 3.0,
+        "language_hits": 3,
         "weights": {
           "leg1_capacity": 0.28,
           "leg2_inventory": 0.22,
@@ -7857,8 +7857,8 @@
         },
         "cap_u_latest": null,
         "ppi_yoy_latest": null,
-        "language_accel": null,
-        "language_hits": 0,
+        "language_accel": 0.0,
+        "language_hits": 2,
         "weights": {
           "leg1_capacity": 0.28,
           "leg2_inventory": 0.22,
@@ -7881,8 +7881,8 @@
         },
         "cap_u_latest": null,
         "ppi_yoy_latest": null,
-        "language_accel": null,
-        "language_hits": 0,
+        "language_accel": 1.4,
+        "language_hits": 12,
         "weights": {
           "leg1_capacity": 0.28,
           "leg2_inventory": 0.22,
@@ -7905,8 +7905,8 @@
         },
         "cap_u_latest": null,
         "ppi_yoy_latest": null,
-        "language_accel": null,
-        "language_hits": 0,
+        "language_accel": 1.0,
+        "language_hits": 1,
         "weights": {
           "leg1_capacity": 0.28,
           "leg2_inventory": 0.22,
@@ -7929,8 +7929,8 @@
         },
         "cap_u_latest": null,
         "ppi_yoy_latest": null,
-        "language_accel": null,
-        "language_hits": 0,
+        "language_accel": 4.0,
+        "language_hits": 4,
         "weights": {
           "leg1_capacity": 0.28,
           "leg2_inventory": 0.22,
@@ -7953,8 +7953,8 @@
         },
         "cap_u_latest": null,
         "ppi_yoy_latest": null,
-        "language_accel": null,
-        "language_hits": 0,
+        "language_accel": 3.0,
+        "language_hits": 3,
         "weights": {
           "leg1_capacity": 0.28,
           "leg2_inventory": 0.22,
@@ -8245,7 +8245,184 @@
     },
     "note": "display-only; exit-risk mirror of the bottleneck. Buy the bottleneck, exit before the glut. GLUT_FORMING/GLUT = trim / exit clock, never a sized signal."
   },
-  "guidance_gap": null,
+  "guidance_gap": {
+    "asof": "2026-05-07",
+    "n_themes": 7,
+    "window_days": 90,
+    "themes": {
+      "nuclear_power": {
+        "name": "Nuclear & SMR Power",
+        "guidance_band": "NEUTRAL",
+        "n_raisers": 1,
+        "n_cutters": 0,
+        "net": 1,
+        "raisers": [
+          "GEV"
+        ],
+        "cutters": [],
+        "asof": "2026-04-22",
+        "recent": [
+          {
+            "ticker": "GEV",
+            "direction": "raise",
+            "phrase": "increasing our guidance",
+            "file_date": "2026-04-22"
+          },
+          {
+            "ticker": "GEV",
+            "direction": "raise",
+            "phrase": "increasing our guidance",
+            "file_date": "2026-04-22"
+          }
+        ]
+      },
+      "data_center_power": {
+        "name": "Data Center Power & Cooling",
+        "guidance_band": "NEUTRAL",
+        "n_raisers": 1,
+        "n_cutters": 0,
+        "net": 1,
+        "raisers": [
+          "ETN"
+        ],
+        "cutters": [],
+        "asof": "2026-05-05",
+        "recent": [
+          {
+            "ticker": "ETN",
+            "direction": "raise",
+            "phrase": "above the high end",
+            "file_date": "2026-05-05"
+          }
+        ]
+      },
+      "semicap_equipment": {
+        "name": "Semiconductor Equipment (WFE)",
+        "guidance_band": "RAISING",
+        "n_raisers": 2,
+        "n_cutters": 0,
+        "net": 2,
+        "raisers": [
+          "FORM",
+          "MKSI"
+        ],
+        "cutters": [],
+        "asof": "2026-05-06",
+        "recent": [
+          {
+            "ticker": "MKSI",
+            "direction": "raise",
+            "phrase": "above the high end",
+            "file_date": "2026-05-06"
+          },
+          {
+            "ticker": "FORM",
+            "direction": "raise",
+            "phrase": "above the high end",
+            "file_date": "2026-04-29"
+          }
+        ]
+      },
+      "robotics_automation": {
+        "name": "Robotics & Automation",
+        "guidance_band": "NEUTRAL",
+        "n_raisers": 1,
+        "n_cutters": 0,
+        "net": 1,
+        "raisers": [
+          "TER"
+        ],
+        "cutters": [],
+        "asof": "2026-04-29",
+        "recent": [
+          {
+            "ticker": "TER",
+            "direction": "raise",
+            "phrase": "above the high end",
+            "file_date": "2026-04-29"
+          }
+        ]
+      },
+      "fintech_payments": {
+        "name": "Fintech & Payments",
+        "guidance_band": "NEUTRAL",
+        "n_raisers": 1,
+        "n_cutters": 0,
+        "net": 1,
+        "raisers": [
+          "XYZ"
+        ],
+        "cutters": [],
+        "asof": "2026-05-07",
+        "recent": [
+          {
+            "ticker": "XYZ",
+            "direction": "raise",
+            "phrase": "raising our guidance",
+            "file_date": "2026-05-07"
+          },
+          {
+            "ticker": "XYZ",
+            "direction": "raise",
+            "phrase": "raising our full-year guidance",
+            "file_date": "2026-05-07"
+          }
+        ]
+      },
+      "diagnostics_lifesci": {
+        "name": "Diagnostics & Life-Science Tools",
+        "guidance_band": "NEUTRAL",
+        "n_raisers": 1,
+        "n_cutters": 0,
+        "net": 1,
+        "raisers": [
+          "VCYT"
+        ],
+        "cutters": [],
+        "asof": "2026-05-05",
+        "recent": [
+          {
+            "ticker": "VCYT",
+            "direction": "raise",
+            "phrase": "raising guidance",
+            "file_date": "2026-05-05"
+          }
+        ]
+      },
+      "grid_electrification": {
+        "name": "Grid & Electrification",
+        "guidance_band": "NEUTRAL",
+        "n_raisers": 1,
+        "n_cutters": 0,
+        "net": 1,
+        "raisers": [
+          "GEV"
+        ],
+        "cutters": [],
+        "asof": "2026-04-22",
+        "recent": [
+          {
+            "ticker": "GEV",
+            "direction": "raise",
+            "phrase": "increasing our guidance",
+            "file_date": "2026-04-22"
+          },
+          {
+            "ticker": "GEV",
+            "direction": "raise",
+            "phrase": "increasing our guidance",
+            "file_date": "2026-04-22"
+          }
+        ]
+      }
+    },
+    "weights": {
+      "guidance_band": "raise/cut tilt of member 8-K guidance language (last 90d)",
+      "net": "distinct raisers - distinct cutters",
+      "n_raisers/n_cutters": "distinct member filers pre-signaling up / down"
+    },
+    "note": "display-only; T3 guidance-gap LANGUAGE leg \u2014 8-K 'raising/lowering guidance' language leads the consensus revision (T4) by days-to-weeks. Coarse directional band, not a numeric beat/miss; >=2 filers to leave NEUTRAL. The numeric gap (vs whisper) is the paid upgrade."
+  },
   "foresight_cascade": {
     "asof": "2026-06-28",
     "n_themes": 18,
@@ -8319,19 +8496,19 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 17.73,
-        "guidance_band": null,
-        "guidance_net": null,
-        "guidance_raisers": null,
-        "guidance_cutters": null,
+        "guidance_band": "RAISING",
+        "guidance_net": 2,
+        "guidance_raisers": 2,
+        "guidance_cutters": 0,
         "glut_band": "AWAITING_DATA",
         "glut_score": null,
         "score": 50.0,
         "score_detail": {
           "score": 50.0,
-          "base": 53.7,
+          "base": 54.9,
           "axes": {
             "magnitude": 1.0,
-            "acceleration": 0.75,
+            "acceleration": 0.81,
             "bottleneck": 0.4,
             "pricing_power": 0.4,
             "underpricing": 0.17,
@@ -8423,10 +8600,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 9.67,
-        "guidance_band": null,
-        "guidance_net": null,
-        "guidance_raisers": null,
-        "guidance_cutters": null,
+        "guidance_band": "NEUTRAL",
+        "guidance_net": 1,
+        "guidance_raisers": 1,
+        "guidance_cutters": 0,
         "glut_band": "AWAITING_DATA",
         "glut_score": null,
         "score": 50.0,
@@ -8475,10 +8652,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 0.07,
-        "guidance_band": null,
-        "guidance_net": null,
-        "guidance_raisers": null,
-        "guidance_cutters": null,
+        "guidance_band": "NEUTRAL",
+        "guidance_net": 1,
+        "guidance_raisers": 1,
+        "guidance_cutters": 0,
         "glut_band": "AWAITING_DATA",
         "glut_score": null,
         "score": 45.0,
@@ -8528,10 +8705,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 1.97,
-        "guidance_band": null,
-        "guidance_net": null,
-        "guidance_raisers": null,
-        "guidance_cutters": null,
+        "guidance_band": "NEUTRAL",
+        "guidance_net": 1,
+        "guidance_raisers": 1,
+        "guidance_cutters": 0,
         "glut_band": null,
         "glut_score": null,
         "score": 45.0,
@@ -8634,10 +8811,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": -0.57,
-        "guidance_band": null,
-        "guidance_net": null,
-        "guidance_raisers": null,
-        "guidance_cutters": null,
+        "guidance_band": "NEUTRAL",
+        "guidance_net": 1,
+        "guidance_raisers": 1,
+        "guidance_cutters": 0,
         "glut_band": null,
         "glut_score": null,
         "score": 45.0,
@@ -8686,7 +8863,7 @@
         "revision_breadth": 0.023,
         "revision_level": "FLAT_LOW",
         "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": -2.01,
+        "est_drift_90d": -1.24,
         "guidance_band": null,
         "guidance_net": null,
         "guidance_raisers": null,
@@ -8792,7 +8969,7 @@
         "revision_breadth": -0.336,
         "revision_level": "NEGATIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": -7.01,
+        "est_drift_90d": -5.48,
         "guidance_band": null,
         "guidance_net": null,
         "guidance_raisers": null,
@@ -8802,9 +8979,9 @@
         "score": 45.0,
         "score_detail": {
           "score": 45.0,
-          "base": 48.6,
+          "base": 48.1,
           "axes": {
-            "magnitude": 0.23,
+            "magnitude": 0.2,
             "acceleration": 0.5,
             "bottleneck": 0.4,
             "pricing_power": 0.4,
@@ -9105,11 +9282,11 @@
         "revision_breadth": 0.709,
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 1.62,
-        "guidance_band": null,
-        "guidance_net": null,
-        "guidance_raisers": null,
-        "guidance_cutters": null,
+        "est_drift_90d": 1.17,
+        "guidance_band": "NEUTRAL",
+        "guidance_net": 1,
+        "guidance_raisers": 1,
+        "guidance_cutters": 0,
         "glut_band": null,
         "glut_score": null,
         "score": 38.9,
@@ -9158,10 +9335,10 @@
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
         "est_drift_90d": 4.57,
-        "guidance_band": null,
-        "guidance_net": null,
-        "guidance_raisers": null,
-        "guidance_cutters": null,
+        "guidance_band": "NEUTRAL",
+        "guidance_net": 1,
+        "guidance_raisers": 1,
+        "guidance_cutters": 0,
         "glut_band": null,
         "glut_score": null,
         "score": 36.9,
@@ -9216,7 +9393,660 @@
       "n_derisk": 0
     }
   },
-  "theme_emergence": null,
+  "theme_emergence": {
+    "asof": "2026-06-24",
+    "n_candidates": 5,
+    "candidates": [
+      {
+        "sic": "3674",
+        "sic_desc": "Semiconductors & Related Devices",
+        "n_filers": 13,
+        "n_new_filers": 10,
+        "n_known_filers": 3,
+        "velocity": 6,
+        "new_filers": [
+          "ALAB",
+          "CBRS",
+          "CRDO",
+          "CRUS",
+          "KOPN",
+          "MCHP",
+          "MRVL",
+          "MX",
+          "PRSO",
+          "SMTK"
+        ],
+        "phrases": [
+          "allocate supply",
+          "capacity constrained",
+          "constrained capacity",
+          "extended lead times",
+          "on allocation",
+          "supply constrained",
+          "tight supply",
+          "unable to meet demand"
+        ],
+        "sample_quotes": [
+          {
+            "ticker": "CBRS",
+            "phrase": "on allocation",
+            "file_date": "2026-06-24"
+          },
+          {
+            "ticker": "CRDO",
+            "phrase": "on allocation",
+            "file_date": "2026-06-15"
+          },
+          {
+            "ticker": "AVGO",
+            "phrase": "on allocation",
+            "file_date": "2026-06-09"
+          },
+          {
+            "ticker": "MRVL",
+            "phrase": "tight supply",
+            "file_date": "2026-05-28"
+          },
+          {
+            "ticker": "MRVL",
+            "phrase": "supply constrained",
+            "file_date": "2026-05-28"
+          }
+        ],
+        "asof": "2026-06-24"
+      },
+      {
+        "sic": "3760",
+        "sic_desc": "Guided Missiles & Space Vehicles & Parts",
+        "n_filers": 4,
+        "n_new_filers": 4,
+        "n_known_filers": 0,
+        "velocity": 3,
+        "new_filers": [
+          "FLY",
+          "MNTS",
+          "RKLB",
+          "YSS"
+        ],
+        "phrases": [
+          "capacity constrained",
+          "on allocation",
+          "record backlog",
+          "sold out",
+          "supply constrained"
+        ],
+        "sample_quotes": [
+          {
+            "ticker": "RKLB",
+            "phrase": "supply constrained",
+            "file_date": "2026-05-07"
+          },
+          {
+            "ticker": "RKLB",
+            "phrase": "supply constrained",
+            "file_date": "2026-05-07"
+          },
+          {
+            "ticker": "RKLB",
+            "phrase": "record backlog",
+            "file_date": "2026-05-07"
+          },
+          {
+            "ticker": "MNTS",
+            "phrase": "sold out",
+            "file_date": "2026-05-05"
+          },
+          {
+            "ticker": "MNTS",
+            "phrase": "sold out",
+            "file_date": "2026-05-05"
+          }
+        ],
+        "asof": "2026-05-07"
+      },
+      {
+        "sic": "2834",
+        "sic_desc": "Pharmaceutical Preparations",
+        "n_filers": 4,
+        "n_new_filers": 4,
+        "n_known_filers": 0,
+        "velocity": 0,
+        "new_filers": [
+          "APVO",
+          "HIND",
+          "HYPD",
+          "ONC"
+        ],
+        "phrases": [
+          "capacity constrained",
+          "on allocation",
+          "sold out",
+          "supply constrained"
+        ],
+        "sample_quotes": [
+          {
+            "ticker": "APVO",
+            "phrase": "supply constrained",
+            "file_date": "2026-05-27"
+          },
+          {
+            "ticker": "HYPD",
+            "phrase": "sold out",
+            "file_date": "2026-05-15"
+          },
+          {
+            "ticker": "HIND",
+            "phrase": "on allocation",
+            "file_date": "2026-05-12"
+          },
+          {
+            "ticker": "HYPD",
+            "phrase": "sold out",
+            "file_date": "2026-03-30"
+          },
+          {
+            "ticker": "HIND",
+            "phrase": "on allocation",
+            "file_date": "2026-03-18"
+          }
+        ],
+        "asof": "2026-05-27"
+      },
+      {
+        "sic": "7374",
+        "sic_desc": "Services-Computer Processing & Data Preparation",
+        "n_filers": 3,
+        "n_new_filers": 3,
+        "n_known_filers": 0,
+        "velocity": 2,
+        "new_filers": [
+          "BRUN",
+          "MOVE",
+          "SHAZ"
+        ],
+        "phrases": [
+          "capacity constrained",
+          "longer lead times",
+          "sold out",
+          "supply constrained"
+        ],
+        "sample_quotes": [
+          {
+            "ticker": "SHAZ",
+            "phrase": "longer lead times",
+            "file_date": "2026-05-15"
+          },
+          {
+            "ticker": "BRUN",
+            "phrase": "supply constrained",
+            "file_date": "2026-05-14"
+          },
+          {
+            "ticker": "SHAZ",
+            "phrase": "sold out",
+            "file_date": "2026-03-31"
+          },
+          {
+            "ticker": "MOVE",
+            "phrase": "capacity constrained",
+            "file_date": "2026-03-31"
+          },
+          {
+            "ticker": "SHAZ",
+            "phrase": "supply constrained",
+            "file_date": "2026-03-31"
+          }
+        ],
+        "asof": "2026-05-15"
+      },
+      {
+        "sic": "3841",
+        "sic_desc": "Surgical & Medical Instruments & Apparatus",
+        "n_filers": 3,
+        "n_new_filers": 3,
+        "n_known_filers": 0,
+        "velocity": 0,
+        "new_filers": [
+          "APYX",
+          "GCTK",
+          "IVF"
+        ],
+        "phrases": [
+          "capacity constrained",
+          "on allocation",
+          "supply constrained"
+        ],
+        "sample_quotes": [
+          {
+            "ticker": "IVF",
+            "phrase": "capacity constrained",
+            "file_date": "2026-06-22"
+          },
+          {
+            "ticker": "IVF",
+            "phrase": "capacity constrained",
+            "file_date": "2026-06-02"
+          },
+          {
+            "ticker": "GCTK",
+            "phrase": "on allocation",
+            "file_date": "2026-05-14"
+          },
+          {
+            "ticker": "APYX",
+            "phrase": "supply constrained",
+            "file_date": "2026-05-07"
+          },
+          {
+            "ticker": "GCTK",
+            "phrase": "on allocation",
+            "file_date": "2026-03-30"
+          }
+        ],
+        "asof": "2026-06-22"
+      }
+    ],
+    "note": "display-only; CANDIDATE emerging bottlenecks \u2014 industries where a majority of un-tracked companies are independently reporting physical scarcity. A candidate is on PROBATION: never a buy, never auto-added; it earns a tracked slot only when a physical correlate fires. The pre-13D discovery layer."
+  },
+  "subsector_scan": {
+    "asof": "2026-06-28",
+    "n_subsectors": 57,
+    "n_scarcity_aligned": 6,
+    "subsectors": [
+      {
+        "sector": "Healthcare",
+        "sub_industry": "Medical Devices",
+        "n_members": 12,
+        "n_covered": 10,
+        "breadth": 0.005,
+        "level_state": "FLAT_LOW",
+        "est_drift_90d": -0.08,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 2,
+        "scarcity_members": [
+          "ALGN",
+          "MDT"
+        ],
+        "stage": "PRECIPICE",
+        "rationale": "supply TIGHT while revisions not yet firing \u2014 the early state",
+        "text_only": true
+      },
+      {
+        "sector": "Industrials",
+        "sub_industry": "Specialty Industrial Machinery",
+        "n_members": 19,
+        "n_covered": 17,
+        "breadth": 0.413,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 0.74,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 4,
+        "scarcity_members": [
+          "AME",
+          "FTV",
+          "PH",
+          "TT"
+        ],
+        "stage": "BROADENING",
+        "rationale": "supply TIGHT and revisions rising \u2014 runway confirmed",
+        "text_only": true
+      },
+      {
+        "sector": "Industrials",
+        "sub_industry": "Aerospace & Defense",
+        "n_members": 12,
+        "n_covered": 11,
+        "breadth": 0.308,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 0.49,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 4,
+        "scarcity_members": [
+          "BA",
+          "LHX",
+          "LMT",
+          "NOC"
+        ],
+        "stage": "BROADENING",
+        "rationale": "supply TIGHT and revisions rising \u2014 runway confirmed",
+        "text_only": true
+      },
+      {
+        "sector": "Technology",
+        "sub_industry": "Communication Equipment",
+        "n_members": 7,
+        "n_covered": 7,
+        "breadth": 0.897,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 5.78,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 3,
+        "scarcity_members": [
+          "ANET",
+          "CIEN",
+          "MSI"
+        ],
+        "stage": "RE-RATING",
+        "rationale": "supply TIGHT but revisions already broad \u2014 runway maturing, do not chase",
+        "text_only": true
+      },
+      {
+        "sector": "Technology",
+        "sub_industry": "Semiconductors",
+        "n_members": 14,
+        "n_covered": 14,
+        "breadth": 0.878,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 13.93,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 5,
+        "scarcity_members": [
+          "AVGO",
+          "MCHP",
+          "MPWR",
+          "NVDA",
+          "QCOM"
+        ],
+        "stage": "RE-RATING",
+        "rationale": "supply TIGHT but revisions already broad \u2014 runway maturing, do not chase",
+        "text_only": true
+      },
+      {
+        "sector": "Industrials",
+        "sub_industry": "Electrical Equipment & Parts",
+        "n_members": 3,
+        "n_covered": 3,
+        "breadth": 0.842,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 8.15,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 2,
+        "scarcity_members": [
+          "GNRC",
+          "VRT"
+        ],
+        "stage": "RE-RATING",
+        "rationale": "supply TIGHT but revisions already broad \u2014 runway maturing, do not chase",
+        "text_only": true
+      },
+      {
+        "sector": "Industrials",
+        "sub_industry": "Engineering & Construction",
+        "n_members": 4,
+        "n_covered": 4,
+        "breadth": 1.0,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 5.15,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 1,
+        "scarcity_members": [
+          "PWR"
+        ],
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "text_only": true
+      },
+      {
+        "sector": "Technology",
+        "sub_industry": "Semiconductor Equipment & Materials",
+        "n_members": 5,
+        "n_covered": 4,
+        "breadth": 0.962,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 12.03,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 0,
+        "scarcity_members": [],
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "text_only": true
+      },
+      {
+        "sector": "Energy",
+        "sub_industry": "Oil & Gas Refining & Marketing",
+        "n_members": 3,
+        "n_covered": 3,
+        "breadth": 0.926,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 46.51,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 0,
+        "scarcity_members": [],
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "text_only": true
+      },
+      {
+        "sector": "Industrials",
+        "sub_industry": "Integrated Freight & Logistics",
+        "n_members": 6,
+        "n_covered": 4,
+        "breadth": 0.816,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 3.53,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 0,
+        "scarcity_members": [],
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "text_only": true
+      },
+      {
+        "sector": "Technology",
+        "sub_industry": "Computer Hardware",
+        "n_members": 7,
+        "n_covered": 6,
+        "breadth": 0.805,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 20.04,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 1,
+        "scarcity_members": [
+          "DELL"
+        ],
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "text_only": true
+      },
+      {
+        "sector": "Healthcare",
+        "sub_industry": "Healthcare Plans",
+        "n_members": 6,
+        "n_covered": 6,
+        "breadth": 0.782,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 2.56,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 0,
+        "scarcity_members": [],
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "text_only": true
+      },
+      {
+        "sector": "Healthcare",
+        "sub_industry": "Medical Distribution",
+        "n_members": 4,
+        "n_covered": 4,
+        "breadth": 0.775,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 0.81,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 0,
+        "scarcity_members": [],
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "text_only": true
+      },
+      {
+        "sector": "Industrials",
+        "sub_industry": "Building Products & Equipment",
+        "n_members": 4,
+        "n_covered": 4,
+        "breadth": 0.759,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 1.19,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 0,
+        "scarcity_members": [],
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "text_only": true
+      },
+      {
+        "sector": "Technology",
+        "sub_industry": "Electronic Components",
+        "n_members": 6,
+        "n_covered": 5,
+        "breadth": 0.745,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 10.14,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 0,
+        "scarcity_members": [],
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "text_only": true
+      },
+      {
+        "sector": "Technology",
+        "sub_industry": "Scientific & Technical Instruments",
+        "n_members": 4,
+        "n_covered": 4,
+        "breadth": 0.661,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 1.88,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 0,
+        "scarcity_members": [],
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "text_only": true
+      },
+      {
+        "sector": "Consumer Defensive",
+        "sub_industry": "Discount Stores",
+        "n_members": 5,
+        "n_covered": 5,
+        "breadth": 0.592,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 0.9,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 0,
+        "scarcity_members": [],
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "text_only": true
+      },
+      {
+        "sector": "Technology",
+        "sub_industry": "Software - Application",
+        "n_members": 11,
+        "n_covered": 10,
+        "breadth": 0.564,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 2.67,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 0,
+        "scarcity_members": [],
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "text_only": true
+      },
+      {
+        "sector": "Financial",
+        "sub_industry": "Financial Data & Stock Exchanges",
+        "n_members": 8,
+        "n_covered": 7,
+        "breadth": 0.509,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 1.62,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 0,
+        "scarcity_members": [],
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "text_only": true
+      },
+      {
+        "sector": "Financial",
+        "sub_industry": "Banks - Regional",
+        "n_members": 9,
+        "n_covered": 9,
+        "breadth": 0.484,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 0.78,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 0,
+        "scarcity_members": [],
+        "stage": "WATCH",
+        "rationale": "revisions present (bottleneck unknown)",
+        "text_only": true
+      },
+      {
+        "sector": "Real Estate",
+        "sub_industry": "REIT - Specialty",
+        "n_members": 8,
+        "n_covered": 5,
+        "breadth": 0.478,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 2.94,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 0,
+        "scarcity_members": [],
+        "stage": "WATCH",
+        "rationale": "revisions present (bottleneck unknown)",
+        "text_only": true
+      },
+      {
+        "sector": "Basic Materials",
+        "sub_industry": "Specialty Chemicals",
+        "n_members": 9,
+        "n_covered": 9,
+        "breadth": 0.464,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 0.81,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 0,
+        "scarcity_members": [],
+        "stage": "WATCH",
+        "rationale": "revisions present (bottleneck unknown)",
+        "text_only": true
+      },
+      {
+        "sector": "Financial",
+        "sub_industry": "Asset Management",
+        "n_members": 14,
+        "n_covered": 12,
+        "breadth": 0.431,
+        "level_state": "POSITIVE",
+        "est_drift_90d": -1.36,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 0,
+        "scarcity_members": [],
+        "stage": "WATCH",
+        "rationale": "revisions present (bottleneck unknown)",
+        "text_only": true
+      },
+      {
+        "sector": "Energy",
+        "sub_industry": "Oil & Gas Midstream",
+        "n_members": 4,
+        "n_covered": 4,
+        "breadth": 0.417,
+        "level_state": "POSITIVE",
+        "est_drift_90d": 2.05,
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "n_scarcity": 0,
+        "scarcity_members": [],
+        "stage": "WATCH",
+        "rationale": "revisions present (bottleneck unknown)",
+        "text_only": true
+      }
+    ],
+    "all_count": 57,
+    "note": "display-only; the cascade signature (text scarcity x revision breadth) over all 113 Finviz sub-industries. The bottleneck is a TEXT-ONLY proxy (EDGAR scarcity language), not FRED-confirmed \u2014 a screen to investigate, not a confirmed thesis. Complements the curated 18-theme cascade and the small-cap discovery layer."
+  },
   "cross_asset_confirm": {
     "verdict": "diverge",
     "verdict_zh": "\u80cc\u79bb",
@@ -12459,7 +13289,7 @@
   },
   "freshness": {
     "asof": "2026-06-26",
-    "built_at": "2026-06-28T16:36:45Z",
+    "built_at": "2026-06-28T18:31:26Z",
     "age_days": 2,
     "age_sessions": 0,
     "max_age_sessions": 1,

@@ -43,10 +43,10 @@
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.419,
-      "chg": 2.0,
+      "quote": 1.4194,
+      "chg": 2.1,
       "action": "LONG",
-      "score": 29.4
+      "score": 29.5
     },
     "USDMXN": {
       "label": "USD/MXN",
@@ -57,8 +57,8 @@
     },
     "USDBRL": {
       "label": "USD/BRL",
-      "quote": 5.169,
-      "chg": 2.1,
+      "quote": 5.1704,
+      "chg": 2.2,
       "action": "FLAT",
       "score": 7.0
     },

@@ -122,6 +122,7 @@
           <div class="nav-dd-menu" role="menu">
             <a href="../sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="../baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="../subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">Finviz's 268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">Finviz 268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
           </div>
         </div>
         <a href="../strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -253,7 +254,7 @@
 
 <footer>
   <span class="l-en">Read-only analytics — not investment advice. Theme scores and textures are a transparent focus/structure lens, NOT a validated forward-edge buy list: cross-sectional theme momentum has ~0 rank-IC and the baskets are hindsight-curated. Per-member conviction is the same per-stock Conviction Profile used on the stock dashboard, shown with its honest trust tier; it is an event-edge screen, never an order.</span><span class="l-zh">只读分析 — 非投资建议。主题评分与纹理是透明的聚焦/结构透镜，并非经验证的前瞻买入清单：横截面主题动量 rank-IC≈0，且篮子为事后筛选。成分股信念采用股票看板同一套信念档案，附带诚实的信任层级；它是事件型筛选，绝非下单指令。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-06-28 17:05 UTC</span>.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-06-28 18:50 UTC</span>.
 </footer>
 
 <script>
@@ -534,9 +535,9 @@ function render(){
   const nBoard=mem.filter(m=>m.on_board).length;
   h+=`<h2><span class="idx">04</span>${L('Holdings — own-it conviction + entry timing','成分股 — 持有信念 + 入场择时')} <span class="chip">${mem.length} ${L('names','只')}</span>${nBoard?` <span class="chip sb-chip" title="Members currently on the US standout buy board">★ ${nBoard} ${L('on standout board','在精选榜')}</span>`:''}</h2>
   <div class="panel"><div class="ts"><table id="hold">
-    <thead><tr><th>${L('Stock','个股')}</th><th class="num" data-s="conv">${L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th>${L('Entry now','入场时机')}</th><th class="num" data-s="r20">20d</th><th class="num" data-s="ytd">YTD</th><th>${L('Why in theme','入选理由')}</th></tr></thead>
+    <thead><tr><th>${L('Stock','个股')}</th><th class="num" data-s="conv">${DETAIL.region==='china'?L('Potential','潜力'):L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th>${L('Entry now','入场时机')}</th><th class="num" data-s="r20">20d</th><th class="num" data-s="ytd">YTD</th><th>${L('Why in theme','入选理由')}</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
-    <div class="disc">${L('Conviction is the per-stock 4-axis Conviction Profile (selection · entry · tailwind · quality) from the stock dashboard — a within-market percentile, event-edge tier, never an order. ⚠ = cycle state blocks a buy.','信念为股票看板的四轴信念档案（选择·入场·顺风·质量）— 市场内百分位、事件型层级，绝非下单。⚠ = 周期状态禁止买入。')}</div>
+    <div class="disc">${DETAIL.region==='china'?L('Potential is a per-stock BUY-READINESS score: washed out (room to run) AND turning up now (cycle trigger) AND survivable, nudged by theme tailwind — primed → setting up → watch → no setup. A timing screen that grades itself forward, never an order or an alpha claim. ⚠ = cycle blocks a buy.','潜力为个股买入就绪度评分：超跌（具备空间）且当前周期上行（触发）且可存续，并按主题顺风微调——蓄势待发→正在筑底→观察→暂无买点。前向自评的择时筛选，非下单指令、非超额收益承诺。⚠ = 周期禁止买入。'):L('Conviction is the per-stock 4-axis Conviction Profile (selection · entry · tailwind · quality) from the stock dashboard — a within-market percentile, event-edge tier, never an order. ⚠ = cycle state blocks a buy.','信念为股票看板的四轴信念档案（选择·入场·顺风·质量）— 市场内百分位、事件型层级，绝非下单。⚠ = 周期状态禁止买入。')}</div>
   </div>`;
 
   // ---- changelog + flags ----

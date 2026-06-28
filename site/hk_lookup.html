@@ -380,8 +380,6 @@
   
   
   
-  
-  
 
 <nav class="site-nav">
   
@@ -424,6 +422,7 @@
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">Finviz's 268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">Finviz 268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
           </div>
         </div>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -541,11 +540,11 @@
   
   <script src="live_config.js"></script>
   <script src="live.js"></script>
-  <div class="nav-search" data-lib="hkstockdata/index.json" data-target="hk_lookup.html">
+  <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
-      placeholder="Search any HK stock, sector, or index…"
-      data-ph-zh="搜索任意港股、板块或指数…">
+      placeholder="Search any stock — US, China, HK, Canada & more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
@@ -693,7 +692,32 @@
   }
   q.placeholder = L('ph');
 
-  fetch('hkstockdata/index.json').then(r => r.json()).then(d => { idx = d; fromHash(); });
+  // one unified universe — load THIS market first so a deep-linked #TICKER resolves
+  // immediately, then fold in every other market so the box can find ANY stock and
+  // route cross-market picks to the analyzer that owns them (US→stock.html, …).
+  var STOCK_MKTS = [
+    ['stockdata/', 'stock.html', '🇺🇸', 'US'],
+    ['chinastockdata/', 'china_lookup.html', '🇨🇳', 'China'],
+    ['hkstockdata/', 'hk_lookup.html', '🇭🇰', 'HK'],
+    ['canadastockdata/', 'canada_stock.html', '🇨🇦', 'Canada'],
+    ['intlstockdata/', 'intl_stock.html', '🌐', 'Intl']
+  ];
+  var STOCK_HOME = 'hk_lookup.html';
+  function tagMkt(d, m) {
+    (d || []).forEach(function (x) { x._tgt = m[1]; x._fl = x.fl || m[2]; x._mk = x.mk || m[3]; });
+    return d || [];
+  }
+  (function () {
+    var home = STOCK_MKTS.filter(function (m) { return m[1] === STOCK_HOME; })[0];
+    fetch(home[0] + 'index.json').then(function (r) { return r.json(); }).then(function (d) {
+      idx = tagMkt(d, home); fromHash();
+      STOCK_MKTS.forEach(function (m) {
+        if (m[1] === STOCK_HOME) return;
+        fetch(m[0] + 'index.json').then(function (r) { return r.json(); })
+          .then(function (e) { idx = idx.concat(tagMkt(e, m)); }).catch(function () {});
+      });
+    });
+  })();
   fetch('hkstockdata/calibration.json').then(r => r.ok ? r.json() : null)
     .then(d => { cal = d; }).catch(() => {});
 
@@ -718,7 +742,9 @@
       return ap - bp || a.t.localeCompare(b.t);
     }).slice(0, 12);
     sugg.innerHTML = items.map(function (x, i) {
-      return '<div data-i="' + i + '"><b>' + x.t + '</b><small>' + x.n +
+      return '<div data-i="' + i + '">' +
+             (x._fl ? '<span style="flex:none;width:18px;text-align:center">' + x._fl + '</span>' : '') +
+             '<b>' + x.t + '</b><small>' + x.n +
              (x.s ? ' · ' + x.s : '') + '</small><span class="muted" style="font-size:11px">' +
              disp(x.st) + '</span></div>';
     }).join('');
@@ -741,6 +767,10 @@
     if (!items[i]) return;
     sugg.style.display = 'none';
     q.value = items[i].t;
+    // foreign market → bounce to the analyzer that owns it; same market → load in place
+    if (items[i]._tgt && items[i]._tgt !== 'hk_lookup.html') {
+      location.href = items[i]._tgt + '#' + encodeURIComponent(items[i].t); return;
+    }
     location.hash = encodeURIComponent(items[i].t);
   }
 
@@ -1042,7 +1072,7 @@
     else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
   });
 </script>
-<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-28 17:03 UTC UTC · <span class="l-en">charts drawn from our own stored EOD prices with TradingView Lightweight Charts · curated HK universe, not exhaustive</span><span class="l-zh">图表由我方存储的日线数据经 TradingView Lightweight Charts 绘制 · 精选港股范围，非全市场</span></p>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-28 18:49 UTC UTC · <span class="l-en">charts drawn from our own stored EOD prices with TradingView Lightweight Charts · curated HK universe, not exhaustive</span><span class="l-zh">图表由我方存储的日线数据经 TradingView Lightweight Charts 绘制 · 精选港股范围，非全市场</span></p>
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>

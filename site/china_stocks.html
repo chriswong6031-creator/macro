@@ -723,6 +723,7 @@
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">Finviz's 268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">Finviz 268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
           </div>
         </div>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -840,10 +841,10 @@
   
   <script src="live_config.js"></script>
   <script src="live.js"></script>
-  <div class="nav-search" data-lib="chinastockdata/index.json" data-target="china_lookup.html">
+  <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search A-shares"
-      placeholder="Search any A-share stock…" data-ph-zh="搜索任意 A 股个股…">
+      placeholder="Search any stock — US, China, HK, Canada & more…" data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
@@ -884,16 +885,17 @@
   
   <div class="panel span12" id="standouts">
     <h2><span class="l-en">⚡ Standout individual stocks</span><span class="l-zh">⚡ 表现突出的个股</span>
-      <span class="note" style="text-transform:none">· <span class="l-en">cycle-aligned bottoming, confirmed by the 3-day MACD-RSI × StochRSI confluence gate</span><span class="l-zh">周期共振筑底，并经 3 日 MACD-RSI × StochRSI 共振门确认</span></span>
+      <span class="note" style="text-transform:none">· <span class="l-en">cycle-aligned bottoming · weekly + 3-day + daily turning up</span><span class="l-zh">周期共振筑底 · 周线＋3日＋日线同向上行</span></span>
       <span class="help">?<span class="tip"><span class="l-en">The actionable per-stock shortlist — the China parallel of the US 'Standout individual stocks' card strip. This is a MULTI-TIMEFRAME BOTTOMING-ALIGNMENT screen, not a deep-dip catch: a name is shown only when its <b>weekly</b> momentum is NOT still falling (basing, turning up, or already rising — never mid weekly bear leg), its <b>3-day</b> is at or nearing a bullish MACD cross, and its <b>daily</b> has just crossed up or is about to (1-2 bars) — or is already rising but not over-extended. A still-falling weekly name (a falling knife) is excluded by design even if its trailing relative strength is strong. Ranked by <b>alignment quality</b> (weekly-heaviest), with the A-share reversal / relative-strength leg only as a tiebreaker. A 🟡 <b>near-aligned</b> tag marks a backfill name (weekly OK + one lower timeframe turning, but not all three confirmed) shown only when too few names are fully aligned — treat it as a watch, not a confirmed entry. Context to size and confirm — not a buy list.</span><span class="l-zh">可操作的个股精选名单 —— 美国“表现突出的个股”卡片的中国版。这是一套<b>多周期共振筑底</b>筛选，而非深跌抄底：仅当个股的<b>周线</b>动量不再下行（筑底、转向上行、或已上行——绝不处于周线空头段），<b>3日线</b>处于或临近看多 MACD 交叉，且<b>日线</b>刚刚上穿或即将上穿（1-2 根 K 线）——或已上行但未过度延伸时，才会显示。仍在下行的周线个股（接飞刀）即便趋势强度很高也按规则剔除。按<b>共振质量</b>排序（周线权重最高），A 股反转/相对强度仅作并列时的次级排序。🟡 <b>临近共振</b>标记表示补位个股（周线合格＋某一较低周期转向，但三周期尚未全部确认），仅在充分共振的名称过少时显示——视为观察项而非确认入场。用于定仓与确认的背景 —— 而非买入清单。</span></span></span>
     </h2>
+    <p class="note" style="margin:0 0 2px;text-transform:none"><span class="l-en">Names whose weekly, 3-day and daily cycles are aligned to the upside — weekly not still falling, 3-day nearing a bullish cross, daily just crossed or about to. Ranked by alignment quality, weekly-heaviest. A per-card badge flags the MACD-RSI × StochRSI confluence tier (T1 master → T4 earliest) when one has fired — a confirmation read, not a separate filter. Each card carries the unified Conviction profile — four transparent axes (selection / entry / tailwind / quality) and one honest verdict; the cycle state caps the verdict, so a downtrend never reads “Buy”. A 🟡 near-aligned card is an unconfirmed backfill. A research shortlist to size and confirm, not a buy list.</span><span class="l-zh">周线、3日与日线周期同向上行的个股 —— 周线不再下行、3日临近看多交叉、日线刚上穿或即将上穿。按共振质量排序，周线权重最高。卡片徽标在 MACD-RSI × StochRSI 共振触发时标注其层级（T1 主确认 → T4 最早）—— 仅为确认读数，而非额外过滤。每张卡片附带统一确信度画像 —— 四条透明维度（选股／入场／顺风／质量）与一个诚实结论；周期状态会封顶结论，下行趋势永不显示“买入”。🟡 临近共振卡片为未确认的补位项。用于研究、定仓与确认的名单，而非买入清单。</span></p>
     
-    <p class="note" style="margin:0;text-transform:none"><b>7</b> <span class="l-en">of</span><span class="l-zh">／</span> <b>46</b> <span class="l-en">cycle-aligned names cleared the MACD-RSI × StochRSI confluence gate — a confirmed (T1) or imminent (T2–T4) 3-day cross. Alignment alone no longer puts a name on the board.</span><span class="l-zh">只多周期共振的个股中，通过 MACD-RSI × StochRSI 共振门 —— 已确认（T1）或临近（T2–T4）的 3 日交叉。仅靠共振已不足以让个股进入此榜。</span></p>
-    
-    <p class="note" style="margin:0 0 2px;text-transform:none"><span class="l-en">Names whose weekly, 3-day and daily cycles are aligned to the upside AND that clear the 3-day MACD-RSI × StochRSI confluence gate (a confirmed or imminent cross). Ordered strongest-tier first (T1 master → T4 earliest). Each card carries the unified Conviction profile — four transparent axes (selection / entry / tailwind / quality) and one honest verdict; the cycle state caps the verdict, so a downtrend never reads “Buy”. A research shortlist to size and confirm, not a buy list.</span><span class="l-zh">周线、3日与日线周期同向上行、且通过 3 日 MACD-RSI × StochRSI 共振门（已确认或临近交叉）的个股。按层级由强到弱排序（T1 主确认 → T4 最早）。每张卡片附带统一确信度画像 —— 四条透明维度（选股／入场／顺风／质量）与一个诚实结论；周期状态会封顶结论，下行趋势永不显示“买入”。用于研究、定仓与确认的名单，而非买入清单。</span></p>
-    
-    
-    
+    <div style="margin:6px 0 9px;padding:7px 11px;border-radius:9px;font-size:11.5px;line-height:1.5;border:1px solid var(--line);border-left:3px solid var(--warn);background:color-mix(in srgb,var(--warn) 7%,var(--panel))">
+      <span style="font-size:13px">🌀</span>
+      <b><span class="l-en">QVIX vol regime</span><span class="l-zh">QVIX 波动区制</span>: <span class="l-en">panic</span><span class="l-zh">恐慌</span></b>
+      (z +2.2, 23.2) — <span class="l-en">QVIX panic spike — vol expanding fast; halt new chases, even oversold names keep falling</span><span class="l-zh">QVIX 恐慌飙升 — 波动快速放大；暂停追高，超卖股也可能续跌</span>
+      <span class="help">?<span class="tip"><span class="l-en">The GEX-analog for A-shares (no single-stock options): the China VIX (QVIX, from 50/300-ETF options) vol-regime. CRITICAL — the US 'high VIX = fear' reading is INVERTED here: China has a positive return-volatility correlation, so a high QVIX level often accompanies a speculative rally. We gate on the QVIX z-score vs its own 60-day (the rate of change), not the level. A panic SPIKE is the crash-risk regime (taxes a chase + vetoes a high-conviction verb); a suppressed regime is a coiled, constructive vol environment. Market-wide context, not a per-stock signal.</span><span class="l-zh">A 股的 GEX 类比（无个股期权）：中国波动率指数（QVIX，源自 50/300ETF 期权）的波动区制。关键 —— 美式“高 VIX=恐慌”在此相反：中国收益-波动正相关，高 QVIX 水平常伴随投机性上涨。我们以 QVIX 相对自身 60 日的 z 分数（变化率）而非水平来判定。恐慌飙升是崩盘风险区制（对追高征税并否决高确信结论）；受抑区制则是蓄势、有利的波动环境。全市场背景，而非个股信号。</span></span></span>
+    </div>
     
     
     <div class="nb-legend">
@@ -903,108 +905,7 @@
       <span><b><span class="l-en">Two gauges</span><span class="l-zh">两个量表</span></b>: <span class="l-en">Conviction (is it worth owning) + a separate Entry gauge (when & at what price)</span><span class="l-zh">确信度（是否值得持有）＋ 独立的入场量表（何时、以何价）</span></span>
       <span class="lg-sep">·</span><span><b><span class="l-en">Edge basis</span><span class="l-zh">优势来源</span></b>: <span class="l-en">Reversal context — validated but high-variance, not a buy list</span><span class="l-zh">均值回归参考 — 已验证但高波动，非买入清单</span></span>
     </div>
-    
     <div class="nbgrid" data-showmore="12">
-    
-      
-      <a class="nbcard nb-down" href="china_lookup.html#600618.SS">
-        <div class="nb-top">
-          <span class="nb-tk">600618.SS</span>
-          <span class="nb-nm"><span class="l-en">Shanghai Chlor-Alkali Chemical Co., Ltd.</span><span class="l-zh">氯碱化工</span></span>
-          <span class="sig-gate sig-pending" title="master confluence buy just fired; forward reclaim-and-hold confirmation pending. Tier T1 · weight 1.0. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-06-24 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">◔ <span class="l-en">forming</span><span class="l-zh">形成中</span> <span class="sig-w">T1·1.0</span></span>
-          <span class="nb-px" data-sym="600618.SS" data-mkt="cn">10.16</span>
-        </div>
-        <div class="nb-sub"><span><span class="l-en">Basic Materials</span><span class="l-zh">原材料</span></span><span class="nb-offh">-42.6% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
-        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,15.8 3.8,14.5 7.6,15.9 11.4,13.0 15.2,14.4 19.0,16.9 22.9,15.0 26.7,17.9 30.5,21.4 34.3,13.4 38.1,12.9 41.9,14.6 45.7,13.4 49.5,13.6 53.3,14.2 57.1,15.3 61.0,13.7 64.8,14.8 68.6,14.8 72.4,10.1 76.2,11.3 80.0,11.7 83.8,10.8 87.6,13.2 91.4,11.8 95.2,14.2 99.0,13.2 102.9,14.3 106.7,17.2 110.5,18.0 114.3,18.9 118.1,20.2 121.9,18.3 125.7,18.8 129.5,15.4 133.3,22.0 137.1,25.6 141.0,24.9 144.8,29.4 148.6,28.1 152.4,32.3 156.2,31.7 160.0,35.0 163.8,35.5 167.6,36.9 171.4,34.3 175.2,36.1 179.0,35.9 182.9,38.6 186.7,38.1 190.5,42.0 194.3,41.3 198.1,39.2 201.9,34.0 205.7,34.8 209.5,32.0 213.3,31.7 217.1,34.3 221.0,37.3 224.8,31.4 228.6,33.3 232.4,33.4 236.2,34.8 240.0,39.1 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,15.8 3.8,14.5 7.6,15.9 11.4,13.0 15.2,14.4 19.0,16.9 22.9,15.0 26.7,17.9 30.5,21.4 34.3,13.4 38.1,12.9 41.9,14.6 45.7,13.4 49.5,13.6 53.3,14.2 57.1,15.3 61.0,13.7 64.8,14.8 68.6,14.8 72.4,10.1 76.2,11.3 80.0,11.7 83.8,10.8 87.6,13.2 91.4,11.8 95.2,14.2 99.0,13.2 102.9,14.3 106.7,17.2 110.5,18.0 114.3,18.9 118.1,20.2 121.9,18.3 125.7,18.8 129.5,15.4 133.3,22.0 137.1,25.6 141.0,24.9 144.8,29.4 148.6,28.1 152.4,32.3 156.2,31.7 160.0,35.0 163.8,35.5 167.6,36.9 171.4,34.3 175.2,36.1 179.0,35.9 182.9,38.6 186.7,38.1 190.5,42.0 194.3,41.3 198.1,39.2 201.9,34.0 205.7,34.8 209.5,32.0 213.3,31.7 217.1,34.3 221.0,37.3 224.8,31.4 228.6,33.3 232.4,33.4 236.2,34.8 240.0,39.1" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="39.1" r="2.6" fill="var(--down)"/></svg>
-        
-        
-        <div class="nb-conv">
-          <span class="nb-cscore band-constructive" title="Within-A-share RANK — cross-sectional percentile of the conviction composite (display, not a probability). The number is a RANK; the verdict beside it is the absolute act-now call, so a top-ranked name can still read 'wait'. · A股板内排名 — 确信度合成的横截面百分位（展示，非概率）。数字为排名；旁边的结论才是当下的绝对判断，故排名靠前也可能显示“观望”。"><span class="nb-crank"><span class="l-en">rank</span><span class="l-zh">排名</span></span>66</span>
-          <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
-        </div>
-        
-        
-        
-        <div class="nb-align" title="Weekly bear recovering · 3-Day oversold↑ · Daily rising · 周线周线柱状图回升（仍偏熊） · 3日oversold↑ · 日线上行">
-          <span class="nba-mark">🟢</span>
-          <span class="nba-line"><span class="l-en">3D StochRSI crossed up from oversold; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 StochRSI 从超卖上穿；周线柱状图回升（仍偏熊）</span></span>
-          <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
-        </div>
-        
-        
-        
-        
-        <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when &amp; at what price to buy · 入场择时（量表2）— 何时、以何价买入. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~23+ trading days. Wait for support to hold, or for the next low to set up.">
-          <div class="nbe-head">
-            <span class="nbe-dot a1"></span>
-            <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
-          </div>
-          
-          <div class="nbe-zone">
-            <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-            <span class="nbe-px">9.65–9.90</span>
-            <span class="nbe-pct">-3.8%</span>
-          </div>
-          
-          
-          <div class="nbe-cyc">
-            <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 13<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
-            <span class="nbe-bar"><span class="nbe-bf" style="width:31%"></span></span>
-            <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~23–29d</span>
-          </div>
-          
-        </div>
-        
-        
-        <div class="nb-axes">
-          
-          
-          <div class="nb-ax" title="SEL 53/100">
-            <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-            <div class="axt"><div class="axf" style="width:53%"></div></div>
-          </div>
-          
-          
-          <div class="nb-ax" title="ENT 43/100">
-            <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-            <div class="axt"><div class="axf" style="width:43%"></div></div>
-          </div>
-          
-          
-          <div class="nb-ax ax-na" title="TWD — no data">
-            <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-            <div class="axt"><div class="axf" style="width:0%"></div></div>
-          </div>
-          
-          
-          <div class="nb-ax ax-na" title="QUAL — no data">
-            <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-            <div class="axt"><div class="axf" style="width:0%"></div></div>
-          </div>
-          
-        </div>
-        
-        <div class="nb-bot">
-          <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-          
-          <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.67 of the conviction-base size (forecast vol 39.5% · inverse-vol ×0.56 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。×0.67 相对确信度基准仓位（预测波动 39.5% · 逆波动 ×0.56 · 区制 ×1.2）。已验证的 +0.1-0.15 夏普杠杆 — 持仓多少，独立于持有什么与何时买入。">⚖ 0.67×</span>
-        </div>
-        
-        <div class="nb-alpha">
-          <span class="nb-az az-dn" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α -0.67</span>
-          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#180/229</span>
-          
-        </div>
-        
-        
-        
-        
-        
-        
-        
-        
-        
-      </a>
     
       
       <a class="nbcard nb-down" href="china_lookup.html#002324.SZ">
@@ -1107,120 +1008,20 @@
       </a>
     
       
-      <a class="nbcard nb-up" href="china_lookup.html#002602.SZ">
+      <a class="nbcard nb-down" href="china_lookup.html#600618.SS">
         <div class="nb-top">
-          <span class="nb-tk">002602.SZ</span>
-          <span class="nb-nm"><span class="l-en">Zhejiang Century Huatong Group Co.,Ltd</span><span class="l-zh">世纪华通</span></span>
-          <span class="sig-gate sig-early" title="2D MACD-RSI crossed + 3D StochRSI crossed — an EARLY tier (fires before the 3D master). Tier T2 · weight 0.8. deep-oversold cross. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-06-26 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">◑ <span class="l-en">early</span><span class="l-zh">提前</span> <span class="sig-w">T2·0.8</span></span>
-          <span class="nb-px" data-sym="002602.SZ" data-mkt="cn">13.67</span>
+          <span class="nb-tk">600618.SS</span>
+          <span class="nb-nm"><span class="l-en">Shanghai Chlor-Alkali Chemical Co., Ltd.</span><span class="l-zh">氯碱化工</span></span>
+          <span class="sig-gate sig-pending" title="master confluence buy just fired; forward reclaim-and-hold confirmation pending. Tier T1 · weight 1.0. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-06-24 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">◔ <span class="l-en">forming</span><span class="l-zh">形成中</span> <span class="sig-w">T1·1.0</span></span>
+          <span class="nb-px" data-sym="600618.SS" data-mkt="cn">10.16</span>
         </div>
-        <div class="nb-sub"><span><span class="l-en">Communication Services</span><span class="l-zh">通信服务</span></span><span class="nb-offh">-37.5% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
-        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,21.4 3.8,19.1 7.6,20.8 11.4,18.3 15.2,22.4 19.0,21.6 22.9,13.1 26.7,14.6 30.5,14.1 34.3,12.0 38.1,10.1 41.9,15.7 45.7,15.1 49.5,19.6 53.3,19.4 57.1,16.0 61.0,12.2 64.8,13.0 68.6,15.3 72.4,15.7 76.2,15.5 80.0,17.6 83.8,18.8 87.6,16.5 91.4,12.8 95.2,10.4 99.0,21.2 102.9,21.3 106.7,20.3 110.5,21.6 114.3,26.3 118.1,26.5 121.9,27.7 125.7,32.3 129.5,28.9 133.3,28.8 137.1,30.1 141.0,30.0 144.8,32.3 148.6,32.2 152.4,33.9 156.2,28.2 160.0,29.4 163.8,29.6 167.6,30.7 171.4,26.3 175.2,27.9 179.0,27.6 182.9,28.6 186.7,28.2 190.5,30.6 194.3,32.1 198.1,30.8 201.9,29.3 205.7,32.1 209.5,35.0 213.3,39.9 217.1,41.0 221.0,42.0 224.8,38.4 228.6,41.8 232.4,40.3 236.2,36.5 240.0,37.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,21.4 3.8,19.1 7.6,20.8 11.4,18.3 15.2,22.4 19.0,21.6 22.9,13.1 26.7,14.6 30.5,14.1 34.3,12.0 38.1,10.1 41.9,15.7 45.7,15.1 49.5,19.6 53.3,19.4 57.1,16.0 61.0,12.2 64.8,13.0 68.6,15.3 72.4,15.7 76.2,15.5 80.0,17.6 83.8,18.8 87.6,16.5 91.4,12.8 95.2,10.4 99.0,21.2 102.9,21.3 106.7,20.3 110.5,21.6 114.3,26.3 118.1,26.5 121.9,27.7 125.7,32.3 129.5,28.9 133.3,28.8 137.1,30.1 141.0,30.0 144.8,32.3 148.6,32.2 152.4,33.9 156.2,28.2 160.0,29.4 163.8,29.6 167.6,30.7 171.4,26.3 175.2,27.9 179.0,27.6 182.9,28.6 186.7,28.2 190.5,30.6 194.3,32.1 198.1,30.8 201.9,29.3 205.7,32.1 209.5,35.0 213.3,39.9 217.1,41.0 221.0,42.0 224.8,38.4 228.6,41.8 232.4,40.3 236.2,36.5 240.0,37.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="37.0" r="2.6" fill="var(--up)"/></svg>
+        <div class="nb-sub"><span><span class="l-en">Basic Materials</span><span class="l-zh">原材料</span></span><span class="nb-offh">-42.6% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,15.8 3.8,14.5 7.6,15.9 11.4,13.0 15.2,14.4 19.0,16.9 22.9,15.0 26.7,17.9 30.5,21.4 34.3,13.4 38.1,12.9 41.9,14.6 45.7,13.4 49.5,13.6 53.3,14.2 57.1,15.3 61.0,13.7 64.8,14.8 68.6,14.8 72.4,10.1 76.2,11.3 80.0,11.7 83.8,10.8 87.6,13.2 91.4,11.8 95.2,14.2 99.0,13.2 102.9,14.3 106.7,17.2 110.5,18.0 114.3,18.9 118.1,20.2 121.9,18.3 125.7,18.8 129.5,15.4 133.3,22.0 137.1,25.6 141.0,24.9 144.8,29.4 148.6,28.1 152.4,32.3 156.2,31.7 160.0,35.0 163.8,35.5 167.6,36.9 171.4,34.3 175.2,36.1 179.0,35.9 182.9,38.6 186.7,38.1 190.5,42.0 194.3,41.3 198.1,39.2 201.9,34.0 205.7,34.8 209.5,32.0 213.3,31.7 217.1,34.3 221.0,37.3 224.8,31.4 228.6,33.3 232.4,33.4 236.2,34.8 240.0,39.1 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,15.8 3.8,14.5 7.6,15.9 11.4,13.0 15.2,14.4 19.0,16.9 22.9,15.0 26.7,17.9 30.5,21.4 34.3,13.4 38.1,12.9 41.9,14.6 45.7,13.4 49.5,13.6 53.3,14.2 57.1,15.3 61.0,13.7 64.8,14.8 68.6,14.8 72.4,10.1 76.2,11.3 80.0,11.7 83.8,10.8 87.6,13.2 91.4,11.8 95.2,14.2 99.0,13.2 102.9,14.3 106.7,17.2 110.5,18.0 114.3,18.9 118.1,20.2 121.9,18.3 125.7,18.8 129.5,15.4 133.3,22.0 137.1,25.6 141.0,24.9 144.8,29.4 148.6,28.1 152.4,32.3 156.2,31.7 160.0,35.0 163.8,35.5 167.6,36.9 171.4,34.3 175.2,36.1 179.0,35.9 182.9,38.6 186.7,38.1 190.5,42.0 194.3,41.3 198.1,39.2 201.9,34.0 205.7,34.8 209.5,32.0 213.3,31.7 217.1,34.3 221.0,37.3 224.8,31.4 228.6,33.3 232.4,33.4 236.2,34.8 240.0,39.1" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="39.1" r="2.6" fill="var(--down)"/></svg>
         
         
         <div class="nb-conv">
-          <span class="nb-cscore band-high" title="Within-A-share RANK — cross-sectional percentile of the conviction composite (display, not a probability). The number is a RANK; the verdict beside it is the absolute act-now call, so a top-ranked name can still read 'wait'. · A股板内排名 — 确信度合成的横截面百分位（展示，非概率）。数字为排名；旁边的结论才是当下的绝对判断，故排名靠前也可能显示“观望”。"><span class="nb-crank"><span class="l-en">rank</span><span class="l-zh">排名</span></span>94</span>
+          <span class="nb-cscore band-constructive" title="Within-A-share RANK — cross-sectional percentile of the conviction composite (display, not a probability). The number is a RANK; the verdict beside it is the absolute act-now call, so a top-ranked name can still read 'wait'. · A股板内排名 — 确信度合成的横截面百分位（展示，非概率）。数字为排名；旁边的结论才是当下的绝对判断，故排名靠前也可能显示“观望”。"><span class="nb-crank"><span class="l-en">rank</span><span class="l-zh">排名</span></span>66</span>
           <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
-        </div>
-        
-        
-        
-        <div class="nb-align" title="Weekly bear recovering · 3-Day oversold↑ · Daily crossed up · 周线周线柱状图回升（仍偏熊） · 3日oversold↑ · 日线已上穿">
-          <span class="nba-mark">🟢</span>
-          <span class="nba-line"><span class="l-en">3D StochRSI crossed up from oversold; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 StochRSI 从超卖上穿；周线柱状图回升（仍偏熊）</span></span>
-          <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
-        </div>
-        
-        
-        
-        
-        <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when &amp; at what price to buy · 入场择时（量表2）— 何时、以何价买入. Trend intact — hold; add on dips toward the 10-day average.">
-          <div class="nbe-head">
-            <span class="nbe-dot a1"></span>
-            <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
-          </div>
-          
-          <div class="nbe-zone">
-            <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-            <span class="nbe-px">13.46</span>
-            <span class="nbe-pct">-1.5%</span>
-          </div>
-          
-          
-          <div class="nbe-cyc">
-            <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 23<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
-            <span class="nbe-bar"><span class="nbe-bf" style="width:55%"></span></span>
-            <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~13–19d</span>
-          </div>
-          
-        </div>
-        
-        
-        <div class="nb-axes">
-          
-          
-          <div class="nb-ax" title="SEL 55/100">
-            <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-            <div class="axt"><div class="axf" style="width:55%"></div></div>
-          </div>
-          
-          
-          <div class="nb-ax" title="ENT 50/100">
-            <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-            <div class="axt"><div class="axf" style="width:50%"></div></div>
-          </div>
-          
-          
-          <div class="nb-ax ax-na" title="TWD — no data">
-            <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-            <div class="axt"><div class="axf" style="width:0%"></div></div>
-          </div>
-          
-          
-          <div class="nb-ax ax-na" title="QUAL — no data">
-            <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-            <div class="axt"><div class="axf" style="width:0%"></div></div>
-          </div>
-          
-        </div>
-        
-        <div class="nb-bot">
-          <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-          
-          <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.64 of the conviction-base size (forecast vol 41.5% · inverse-vol ×0.53 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。×0.64 相对确信度基准仓位（预测波动 41.5% · 逆波动 ×0.53 · 区制 ×1.2）。已验证的 +0.1-0.15 夏普杠杆 — 持仓多少，独立于持有什么与何时买入。">⚖ 0.64×</span>
-        </div>
-        
-        <div class="nb-alpha">
-          <span class="nb-az az-up" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α +1.15</span>
-          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#4/47</span>
-          
-        </div>
-        
-        
-        
-        
-        
-        
-        
-        
-        
-      </a>
-    
-      
-      <a class="nbcard nb-down" href="china_lookup.html#000685.SZ">
-        <div class="nb-top">
-          <span class="nb-tk">000685.SZ</span>
-          <span class="nb-nm"><span class="l-en">Zhongshan Public Utilities Group Co.,Ltd</span><span class="l-zh">中山公用</span></span>
-          <span class="sig-gate sig-early" title="2D MACD-RSI crossed + 3D StochRSI crossed — an EARLY tier (fires before the 3D master). Tier T2 · weight 0.8. deep-oversold cross. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-06-24 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">◑ <span class="l-en">early</span><span class="l-zh">提前</span> <span class="sig-w">T2·0.8</span></span>
-          <span class="nb-px" data-sym="000685.SZ" data-mkt="cn">11.08</span>
-        </div>
-        <div class="nb-sub"><span><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span><span class="nb-offh">-23.2% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
-        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,36.6 3.8,35.1 7.6,35.0 11.4,33.6 15.2,33.7 19.0,31.6 22.9,31.5 26.7,34.5 30.5,36.7 34.3,37.2 38.1,33.1 41.9,35.0 45.7,32.4 49.5,32.6 53.3,32.0 57.1,32.2 61.0,30.9 64.8,30.9 68.6,30.8 72.4,28.6 76.2,26.3 80.0,25.3 83.8,26.3 87.6,28.0 91.4,25.5 95.2,23.0 99.0,24.2 102.9,22.8 106.7,24.1 110.5,25.0 114.3,25.9 118.1,26.6 121.9,27.5 125.7,29.1 129.5,32.1 133.3,18.8 137.1,10.1 141.0,15.1 144.8,16.8 148.6,18.6 152.4,19.1 156.2,18.5 160.0,23.0 163.8,27.9 167.6,27.4 171.4,26.6 175.2,28.9 179.0,30.0 182.9,33.7 186.7,35.7 190.5,40.7 194.3,40.6 198.1,40.4 201.9,42.0 205.7,36.1 209.5,33.4 213.3,32.1 217.1,30.7 221.0,33.4 224.8,26.1 228.6,27.3 232.4,30.3 236.2,29.7 240.0,32.0 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,36.6 3.8,35.1 7.6,35.0 11.4,33.6 15.2,33.7 19.0,31.6 22.9,31.5 26.7,34.5 30.5,36.7 34.3,37.2 38.1,33.1 41.9,35.0 45.7,32.4 49.5,32.6 53.3,32.0 57.1,32.2 61.0,30.9 64.8,30.9 68.6,30.8 72.4,28.6 76.2,26.3 80.0,25.3 83.8,26.3 87.6,28.0 91.4,25.5 95.2,23.0 99.0,24.2 102.9,22.8 106.7,24.1 110.5,25.0 114.3,25.9 118.1,26.6 121.9,27.5 125.7,29.1 129.5,32.1 133.3,18.8 137.1,10.1 141.0,15.1 144.8,16.8 148.6,18.6 152.4,19.1 156.2,18.5 160.0,23.0 163.8,27.9 167.6,27.4 171.4,26.6 175.2,28.9 179.0,30.0 182.9,33.7 186.7,35.7 190.5,40.7 194.3,40.6 198.1,40.4 201.9,42.0 205.7,36.1 209.5,33.4 213.3,32.1 217.1,30.7 221.0,33.4 224.8,26.1 228.6,27.3 232.4,30.3 236.2,29.7 240.0,32.0" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="32.0" r="2.6" fill="var(--down)"/></svg>
-        
-        
-        <div class="nb-conv">
-          <span class="nb-cscore band-neutral" title="Within-A-share RANK — cross-sectional percentile of the conviction composite (display, not a probability). The number is a RANK; the verdict beside it is the absolute act-now call, so a top-ranked name can still read 'wait'. · A股板内排名 — 确信度合成的横截面百分位（展示，非概率）。数字为排名；旁边的结论才是当下的绝对判断，故排名靠前也可能显示“观望”。"><span class="nb-crank"><span class="l-en">rank</span><span class="l-zh">排名</span></span>43</span>
-          <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
         </div>
         
         
@@ -1234,7 +1035,7 @@
         
         
         
-        <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when &amp; at what price to buy · 入场择时（量表2）— 何时、以何价买入. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~26+ trading days. Wait for support to hold, or for the next low to set up.">
+        <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when &amp; at what price to buy · 入场择时（量表2）— 何时、以何价买入. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~23+ trading days. Wait for support to hold, or for the next low to set up.">
           <div class="nbe-head">
             <span class="nbe-dot a1"></span>
             <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
@@ -1242,15 +1043,15 @@
           
           <div class="nbe-zone">
             <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-            <span class="nbe-px">11.01</span>
-            <span class="nbe-pct">-0.6%</span>
+            <span class="nbe-px">9.65–9.90</span>
+            <span class="nbe-pct">-3.8%</span>
           </div>
           
           
           <div class="nbe-cyc">
-            <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 10<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
-            <span class="nbe-bar"><span class="nbe-bf" style="width:24%"></span></span>
-            <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~26–32d</span>
+            <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 13<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
+            <span class="nbe-bar"><span class="nbe-bf" style="width:31%"></span></span>
+            <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~23–29d</span>
           </div>
           
         </div>
@@ -1259,15 +1060,15 @@
         <div class="nb-axes">
           
           
-          <div class="nb-ax" title="SEL 41/100">
+          <div class="nb-ax" title="SEL 53/100">
             <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-            <div class="axt"><div class="axf" style="width:41%"></div></div>
+            <div class="axt"><div class="axf" style="width:53%"></div></div>
           </div>
           
           
-          <div class="nb-ax" title="ENT 48/100">
+          <div class="nb-ax" title="ENT 43/100">
             <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-            <div class="axt"><div class="axf" style="width:48%"></div></div>
+            <div class="axt"><div class="axf" style="width:43%"></div></div>
           </div>
           
           
@@ -1287,112 +1088,12 @@
         <div class="nb-bot">
           <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
           
-          <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.78 of the conviction-base size (forecast vol 34.0% · inverse-vol ×0.65 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。×0.78 相对确信度基准仓位（预测波动 34.0% · 逆波动 ×0.65 · 区制 ×1.2）。已验证的 +0.1-0.15 夏普杠杆 — 持仓多少，独立于持有什么与何时买入。">⚖ 0.78×</span>
+          <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.67 of the conviction-base size (forecast vol 39.5% · inverse-vol ×0.56 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。×0.67 相对确信度基准仓位（预测波动 39.5% · 逆波动 ×0.56 · 区制 ×1.2）。已验证的 +0.1-0.15 夏普杠杆 — 持仓多少，独立于持有什么与何时买入。">⚖ 0.67×</span>
         </div>
         
         <div class="nb-alpha">
-          <span class="nb-az az-up" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α +0.34</span>
-          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#21/56</span>
-          
-        </div>
-        
-        
-        
-        
-        
-        
-        
-        
-        
-      </a>
-    
-      
-      <a class="nbcard nb-up" href="china_lookup.html#688036.SS">
-        <div class="nb-top">
-          <span class="nb-tk">688036.SS</span>
-          <span class="nb-nm"><span class="l-en">Shenzhen Transsion Holdings Co., Ltd.</span><span class="l-zh">传音控股</span></span>
-          <span class="sig-gate sig-early" title="2D-MACD pre-cross advance-warning. ONE door — confirm sector/leadership + your stop before acting. · mixed · 2026-06-25 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">⋯ <span class="l-en">approaching</span><span class="l-zh">临近</span></span>
-          <span class="nb-px" data-sym="688036.SS" data-mkt="cn">56.81</span>
-        </div>
-        <div class="nb-sub"><span><span class="l-en">Technology</span><span class="l-zh">科技</span></span><span class="nb-offh">-44.2% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
-        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,37.9 3.8,33.1 7.6,33.2 11.4,30.2 15.2,36.1 19.0,34.6 22.9,35.4 26.7,38.8 30.5,41.8 34.3,42.0 38.1,37.4 41.9,40.5 45.7,39.3 49.5,41.0 53.3,40.6 57.1,40.5 61.0,37.2 64.8,39.7 68.6,39.0 72.4,39.8 76.2,33.5 80.0,35.5 83.8,35.7 87.6,28.2 91.4,26.2 95.2,26.7 99.0,28.3 102.9,27.5 106.7,28.7 110.5,29.0 114.3,24.8 118.1,27.1 121.9,24.8 125.7,24.4 129.5,21.8 133.3,17.9 137.1,10.1 141.0,14.0 144.8,16.9 148.6,13.9 152.4,13.9 156.2,14.9 160.0,17.9 163.8,19.8 167.6,21.0 171.4,16.9 175.2,16.4 179.0,15.0 182.9,22.0 186.7,20.1 190.5,28.6 194.3,29.5 198.1,36.1 201.9,36.6 205.7,35.5 209.5,35.4 213.3,33.5 217.1,30.5 221.0,35.9 224.8,30.7 228.6,30.5 232.4,35.2 236.2,31.3 240.0,28.5 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.9 3.8,33.1 7.6,33.2 11.4,30.2 15.2,36.1 19.0,34.6 22.9,35.4 26.7,38.8 30.5,41.8 34.3,42.0 38.1,37.4 41.9,40.5 45.7,39.3 49.5,41.0 53.3,40.6 57.1,40.5 61.0,37.2 64.8,39.7 68.6,39.0 72.4,39.8 76.2,33.5 80.0,35.5 83.8,35.7 87.6,28.2 91.4,26.2 95.2,26.7 99.0,28.3 102.9,27.5 106.7,28.7 110.5,29.0 114.3,24.8 118.1,27.1 121.9,24.8 125.7,24.4 129.5,21.8 133.3,17.9 137.1,10.1 141.0,14.0 144.8,16.9 148.6,13.9 152.4,13.9 156.2,14.9 160.0,17.9 163.8,19.8 167.6,21.0 171.4,16.9 175.2,16.4 179.0,15.0 182.9,22.0 186.7,20.1 190.5,28.6 194.3,29.5 198.1,36.1 201.9,36.6 205.7,35.5 209.5,35.4 213.3,33.5 217.1,30.5 221.0,35.9 224.8,30.7 228.6,30.5 232.4,35.2 236.2,31.3 240.0,28.5" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="28.5" r="2.6" fill="var(--up)"/></svg>
-        
-        
-        <div class="nb-conv">
-          <span class="nb-cscore band-high" title="Within-A-share RANK — cross-sectional percentile of the conviction composite (display, not a probability). The number is a RANK; the verdict beside it is the absolute act-now call, so a top-ranked name can still read 'wait'. · A股板内排名 — 确信度合成的横截面百分位（展示，非概率）。数字为排名；旁边的结论才是当下的绝对判断，故排名靠前也可能显示“观望”。"><span class="nb-crank"><span class="l-en">rank</span><span class="l-zh">排名</span></span>93</span>
-          <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
-        </div>
-        
-        
-        
-        <div class="nb-align" title="Weekly rising · 3-Day turn↑ · Daily ≈ cross · 周线周线上行 · 3日turn↑ · 日线临近上穿">
-          <span class="nba-mark">🟢</span>
-          <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly uptrend</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线上行</span></span>
-          <span class="nba-tag"><span class="l-en">Entry armed</span><span class="l-zh">入场就绪</span></span>
-        </div>
-        
-        
-        
-        
-        <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when &amp; at what price to buy · 入场择时（量表2）— 何时、以何价买入. Trend intact — hold; add on dips toward the 10-day average.">
-          <div class="nbe-head">
-            <span class="nbe-dot a1"></span>
-            <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
-          </div>
-          
-          <div class="nbe-zone">
-            <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-            <span class="nbe-px">54.93</span>
-            <span class="nbe-pct">-3.3%</span>
-          </div>
-          
-          
-          <div class="nbe-cyc">
-            <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 10<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
-            <span class="nbe-bar"><span class="nbe-bf" style="width:24%"></span></span>
-            <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~26–32d</span>
-          </div>
-          
-        </div>
-        
-        
-        <div class="nb-axes">
-          
-          
-          <div class="nb-ax" title="SEL 52/100">
-            <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-            <div class="axt"><div class="axf" style="width:52%"></div></div>
-          </div>
-          
-          
-          <div class="nb-ax" title="ENT 47/100">
-            <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-            <div class="axt"><div class="axf" style="width:47%"></div></div>
-          </div>
-          
-          
-          <div class="nb-ax" title="TWD 65/100">
-            <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-            <div class="axt"><div class="axf" style="width:65%"></div></div>
-          </div>
-          
-          
-          <div class="nb-ax ax-na" title="QUAL — no data">
-            <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-            <div class="axt"><div class="axf" style="width:0%"></div></div>
-          </div>
-          
-        </div>
-        
-        <div class="nb-bot">
-          <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-          
-          <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.74 of the conviction-base size (forecast vol 35.6% · inverse-vol ×0.62 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。×0.74 相对确信度基准仓位（预测波动 35.6% · 逆波动 ×0.62 · 区制 ×1.2）。已验证的 +0.1-0.15 夏普杠杆 — 持仓多少，独立于持有什么与何时买入。">⚖ 0.74×</span>
-        </div>
-        
-        <div class="nb-alpha">
-          <span class="nb-az az-dn" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α -0.94</span>
-          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#279/354</span>
+          <span class="nb-az az-dn" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α -0.67</span>
+          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#180/229</span>
           
         </div>
         
@@ -1512,6 +1213,306 @@
       </a>
     
       
+      <a class="nbcard nb-down" href="china_lookup.html#000685.SZ">
+        <div class="nb-top">
+          <span class="nb-tk">000685.SZ</span>
+          <span class="nb-nm"><span class="l-en">Zhongshan Public Utilities Group Co.,Ltd</span><span class="l-zh">中山公用</span></span>
+          <span class="sig-gate sig-early" title="2D MACD-RSI crossed + 3D StochRSI crossed — an EARLY tier (fires before the 3D master). Tier T2 · weight 0.8. deep-oversold cross. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-06-24 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">◑ <span class="l-en">early</span><span class="l-zh">提前</span> <span class="sig-w">T2·0.8</span></span>
+          <span class="nb-px" data-sym="000685.SZ" data-mkt="cn">11.08</span>
+        </div>
+        <div class="nb-sub"><span><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span><span class="nb-offh">-23.2% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,36.6 3.8,35.1 7.6,35.0 11.4,33.6 15.2,33.7 19.0,31.6 22.9,31.5 26.7,34.5 30.5,36.7 34.3,37.2 38.1,33.1 41.9,35.0 45.7,32.4 49.5,32.6 53.3,32.0 57.1,32.2 61.0,30.9 64.8,30.9 68.6,30.8 72.4,28.6 76.2,26.3 80.0,25.3 83.8,26.3 87.6,28.0 91.4,25.5 95.2,23.0 99.0,24.2 102.9,22.8 106.7,24.1 110.5,25.0 114.3,25.9 118.1,26.6 121.9,27.5 125.7,29.1 129.5,32.1 133.3,18.8 137.1,10.1 141.0,15.1 144.8,16.8 148.6,18.6 152.4,19.1 156.2,18.5 160.0,23.0 163.8,27.9 167.6,27.4 171.4,26.6 175.2,28.9 179.0,30.0 182.9,33.7 186.7,35.7 190.5,40.7 194.3,40.6 198.1,40.4 201.9,42.0 205.7,36.1 209.5,33.4 213.3,32.1 217.1,30.7 221.0,33.4 224.8,26.1 228.6,27.3 232.4,30.3 236.2,29.7 240.0,32.0 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,36.6 3.8,35.1 7.6,35.0 11.4,33.6 15.2,33.7 19.0,31.6 22.9,31.5 26.7,34.5 30.5,36.7 34.3,37.2 38.1,33.1 41.9,35.0 45.7,32.4 49.5,32.6 53.3,32.0 57.1,32.2 61.0,30.9 64.8,30.9 68.6,30.8 72.4,28.6 76.2,26.3 80.0,25.3 83.8,26.3 87.6,28.0 91.4,25.5 95.2,23.0 99.0,24.2 102.9,22.8 106.7,24.1 110.5,25.0 114.3,25.9 118.1,26.6 121.9,27.5 125.7,29.1 129.5,32.1 133.3,18.8 137.1,10.1 141.0,15.1 144.8,16.8 148.6,18.6 152.4,19.1 156.2,18.5 160.0,23.0 163.8,27.9 167.6,27.4 171.4,26.6 175.2,28.9 179.0,30.0 182.9,33.7 186.7,35.7 190.5,40.7 194.3,40.6 198.1,40.4 201.9,42.0 205.7,36.1 209.5,33.4 213.3,32.1 217.1,30.7 221.0,33.4 224.8,26.1 228.6,27.3 232.4,30.3 236.2,29.7 240.0,32.0" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="32.0" r="2.6" fill="var(--down)"/></svg>
+        
+        
+        <div class="nb-conv">
+          <span class="nb-cscore band-neutral" title="Within-A-share RANK — cross-sectional percentile of the conviction composite (display, not a probability). The number is a RANK; the verdict beside it is the absolute act-now call, so a top-ranked name can still read 'wait'. · A股板内排名 — 确信度合成的横截面百分位（展示，非概率）。数字为排名；旁边的结论才是当下的绝对判断，故排名靠前也可能显示“观望”。"><span class="nb-crank"><span class="l-en">rank</span><span class="l-zh">排名</span></span>43</span>
+          <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
+        </div>
+        
+        
+        
+        <div class="nb-align" title="Weekly bear recovering · 3-Day oversold↑ · Daily rising · 周线周线柱状图回升（仍偏熊） · 3日oversold↑ · 日线上行">
+          <span class="nba-mark">🟢</span>
+          <span class="nba-line"><span class="l-en">3D StochRSI crossed up from oversold; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 StochRSI 从超卖上穿；周线柱状图回升（仍偏熊）</span></span>
+          <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+        </div>
+        
+        
+        
+        
+        <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when &amp; at what price to buy · 入场择时（量表2）— 何时、以何价买入. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~26+ trading days. Wait for support to hold, or for the next low to set up.">
+          <div class="nbe-head">
+            <span class="nbe-dot a1"></span>
+            <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
+          </div>
+          
+          <div class="nbe-zone">
+            <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+            <span class="nbe-px">11.01</span>
+            <span class="nbe-pct">-0.6%</span>
+          </div>
+          
+          
+          <div class="nbe-cyc">
+            <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 10<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
+            <span class="nbe-bar"><span class="nbe-bf" style="width:24%"></span></span>
+            <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~26–32d</span>
+          </div>
+          
+        </div>
+        
+        
+        <div class="nb-axes">
+          
+          
+          <div class="nb-ax" title="SEL 41/100">
+            <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+            <div class="axt"><div class="axf" style="width:41%"></div></div>
+          </div>
+          
+          
+          <div class="nb-ax" title="ENT 48/100">
+            <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+            <div class="axt"><div class="axf" style="width:48%"></div></div>
+          </div>
+          
+          
+          <div class="nb-ax ax-na" title="TWD — no data">
+            <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+            <div class="axt"><div class="axf" style="width:0%"></div></div>
+          </div>
+          
+          
+          <div class="nb-ax ax-na" title="QUAL — no data">
+            <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+            <div class="axt"><div class="axf" style="width:0%"></div></div>
+          </div>
+          
+        </div>
+        
+        <div class="nb-bot">
+          <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
+          
+          <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.78 of the conviction-base size (forecast vol 34.0% · inverse-vol ×0.65 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。×0.78 相对确信度基准仓位（预测波动 34.0% · 逆波动 ×0.65 · 区制 ×1.2）。已验证的 +0.1-0.15 夏普杠杆 — 持仓多少，独立于持有什么与何时买入。">⚖ 0.78×</span>
+        </div>
+        
+        <div class="nb-alpha">
+          <span class="nb-az az-up" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α +0.34</span>
+          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#21/56</span>
+          
+        </div>
+        
+        
+        
+        
+        
+        
+        
+        
+        
+      </a>
+    
+      
+      <a class="nbcard nb-up" href="china_lookup.html#002602.SZ">
+        <div class="nb-top">
+          <span class="nb-tk">002602.SZ</span>
+          <span class="nb-nm"><span class="l-en">Zhejiang Century Huatong Group Co.,Ltd</span><span class="l-zh">世纪华通</span></span>
+          <span class="sig-gate sig-early" title="2D MACD-RSI crossed + 3D StochRSI crossed — an EARLY tier (fires before the 3D master). Tier T2 · weight 0.8. deep-oversold cross. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-06-26 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">◑ <span class="l-en">early</span><span class="l-zh">提前</span> <span class="sig-w">T2·0.8</span></span>
+          <span class="nb-px" data-sym="002602.SZ" data-mkt="cn">13.67</span>
+        </div>
+        <div class="nb-sub"><span><span class="l-en">Communication Services</span><span class="l-zh">通信服务</span></span><span class="nb-offh">-37.5% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,21.4 3.8,19.1 7.6,20.8 11.4,18.3 15.2,22.4 19.0,21.6 22.9,13.1 26.7,14.6 30.5,14.1 34.3,12.0 38.1,10.1 41.9,15.7 45.7,15.1 49.5,19.6 53.3,19.4 57.1,16.0 61.0,12.2 64.8,13.0 68.6,15.3 72.4,15.7 76.2,15.5 80.0,17.6 83.8,18.8 87.6,16.5 91.4,12.8 95.2,10.4 99.0,21.2 102.9,21.3 106.7,20.3 110.5,21.6 114.3,26.3 118.1,26.5 121.9,27.7 125.7,32.3 129.5,28.9 133.3,28.8 137.1,30.1 141.0,30.0 144.8,32.3 148.6,32.2 152.4,33.9 156.2,28.2 160.0,29.4 163.8,29.6 167.6,30.7 171.4,26.3 175.2,27.9 179.0,27.6 182.9,28.6 186.7,28.2 190.5,30.6 194.3,32.1 198.1,30.8 201.9,29.3 205.7,32.1 209.5,35.0 213.3,39.9 217.1,41.0 221.0,42.0 224.8,38.4 228.6,41.8 232.4,40.3 236.2,36.5 240.0,37.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,21.4 3.8,19.1 7.6,20.8 11.4,18.3 15.2,22.4 19.0,21.6 22.9,13.1 26.7,14.6 30.5,14.1 34.3,12.0 38.1,10.1 41.9,15.7 45.7,15.1 49.5,19.6 53.3,19.4 57.1,16.0 61.0,12.2 64.8,13.0 68.6,15.3 72.4,15.7 76.2,15.5 80.0,17.6 83.8,18.8 87.6,16.5 91.4,12.8 95.2,10.4 99.0,21.2 102.9,21.3 106.7,20.3 110.5,21.6 114.3,26.3 118.1,26.5 121.9,27.7 125.7,32.3 129.5,28.9 133.3,28.8 137.1,30.1 141.0,30.0 144.8,32.3 148.6,32.2 152.4,33.9 156.2,28.2 160.0,29.4 163.8,29.6 167.6,30.7 171.4,26.3 175.2,27.9 179.0,27.6 182.9,28.6 186.7,28.2 190.5,30.6 194.3,32.1 198.1,30.8 201.9,29.3 205.7,32.1 209.5,35.0 213.3,39.9 217.1,41.0 221.0,42.0 224.8,38.4 228.6,41.8 232.4,40.3 236.2,36.5 240.0,37.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="37.0" r="2.6" fill="var(--up)"/></svg>
+        
+        
+        <div class="nb-conv">
+          <span class="nb-cscore band-high" title="Within-A-share RANK — cross-sectional percentile of the conviction composite (display, not a probability). The number is a RANK; the verdict beside it is the absolute act-now call, so a top-ranked name can still read 'wait'. · A股板内排名 — 确信度合成的横截面百分位（展示，非概率）。数字为排名；旁边的结论才是当下的绝对判断，故排名靠前也可能显示“观望”。"><span class="nb-crank"><span class="l-en">rank</span><span class="l-zh">排名</span></span>94</span>
+          <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+        </div>
+        
+        
+        
+        <div class="nb-align" title="Weekly bear recovering · 3-Day oversold↑ · Daily crossed up · 周线周线柱状图回升（仍偏熊） · 3日oversold↑ · 日线已上穿">
+          <span class="nba-mark">🟢</span>
+          <span class="nba-line"><span class="l-en">3D StochRSI crossed up from oversold; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 StochRSI 从超卖上穿；周线柱状图回升（仍偏熊）</span></span>
+          <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+        </div>
+        
+        
+        
+        
+        <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when &amp; at what price to buy · 入场择时（量表2）— 何时、以何价买入. Trend intact — hold; add on dips toward the 10-day average.">
+          <div class="nbe-head">
+            <span class="nbe-dot a1"></span>
+            <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+          </div>
+          
+          <div class="nbe-zone">
+            <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+            <span class="nbe-px">13.46</span>
+            <span class="nbe-pct">-1.5%</span>
+          </div>
+          
+          
+          <div class="nbe-cyc">
+            <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 23<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
+            <span class="nbe-bar"><span class="nbe-bf" style="width:55%"></span></span>
+            <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~13–19d</span>
+          </div>
+          
+        </div>
+        
+        
+        <div class="nb-axes">
+          
+          
+          <div class="nb-ax" title="SEL 55/100">
+            <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+            <div class="axt"><div class="axf" style="width:55%"></div></div>
+          </div>
+          
+          
+          <div class="nb-ax" title="ENT 50/100">
+            <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+            <div class="axt"><div class="axf" style="width:50%"></div></div>
+          </div>
+          
+          
+          <div class="nb-ax ax-na" title="TWD — no data">
+            <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+            <div class="axt"><div class="axf" style="width:0%"></div></div>
+          </div>
+          
+          
+          <div class="nb-ax ax-na" title="QUAL — no data">
+            <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+            <div class="axt"><div class="axf" style="width:0%"></div></div>
+          </div>
+          
+        </div>
+        
+        <div class="nb-bot">
+          <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
+          
+          <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.64 of the conviction-base size (forecast vol 41.5% · inverse-vol ×0.53 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。×0.64 相对确信度基准仓位（预测波动 41.5% · 逆波动 ×0.53 · 区制 ×1.2）。已验证的 +0.1-0.15 夏普杠杆 — 持仓多少，独立于持有什么与何时买入。">⚖ 0.64×</span>
+        </div>
+        
+        <div class="nb-alpha">
+          <span class="nb-az az-up" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α +1.15</span>
+          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#4/47</span>
+          
+        </div>
+        
+        
+        
+        
+        
+        
+        
+        
+        
+      </a>
+    
+      
+      <a class="nbcard nb-up" href="china_lookup.html#688036.SS">
+        <div class="nb-top">
+          <span class="nb-tk">688036.SS</span>
+          <span class="nb-nm"><span class="l-en">Shenzhen Transsion Holdings Co., Ltd.</span><span class="l-zh">传音控股</span></span>
+          <span class="sig-gate sig-early" title="2D-MACD pre-cross advance-warning. ONE door — confirm sector/leadership + your stop before acting. · mixed · 2026-06-25 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">⋯ <span class="l-en">approaching</span><span class="l-zh">临近</span></span>
+          <span class="nb-px" data-sym="688036.SS" data-mkt="cn">56.81</span>
+        </div>
+        <div class="nb-sub"><span><span class="l-en">Technology</span><span class="l-zh">科技</span></span><span class="nb-offh">-44.2% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+        <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,37.9 3.8,33.1 7.6,33.2 11.4,30.2 15.2,36.1 19.0,34.6 22.9,35.4 26.7,38.8 30.5,41.8 34.3,42.0 38.1,37.4 41.9,40.5 45.7,39.3 49.5,41.0 53.3,40.6 57.1,40.5 61.0,37.2 64.8,39.7 68.6,39.0 72.4,39.8 76.2,33.5 80.0,35.5 83.8,35.7 87.6,28.2 91.4,26.2 95.2,26.7 99.0,28.3 102.9,27.5 106.7,28.7 110.5,29.0 114.3,24.8 118.1,27.1 121.9,24.8 125.7,24.4 129.5,21.8 133.3,17.9 137.1,10.1 141.0,14.0 144.8,16.9 148.6,13.9 152.4,13.9 156.2,14.9 160.0,17.9 163.8,19.8 167.6,21.0 171.4,16.9 175.2,16.4 179.0,15.0 182.9,22.0 186.7,20.1 190.5,28.6 194.3,29.5 198.1,36.1 201.9,36.6 205.7,35.5 209.5,35.4 213.3,33.5 217.1,30.5 221.0,35.9 224.8,30.7 228.6,30.5 232.4,35.2 236.2,31.3 240.0,28.5 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.9 3.8,33.1 7.6,33.2 11.4,30.2 15.2,36.1 19.0,34.6 22.9,35.4 26.7,38.8 30.5,41.8 34.3,42.0 38.1,37.4 41.9,40.5 45.7,39.3 49.5,41.0 53.3,40.6 57.1,40.5 61.0,37.2 64.8,39.7 68.6,39.0 72.4,39.8 76.2,33.5 80.0,35.5 83.8,35.7 87.6,28.2 91.4,26.2 95.2,26.7 99.0,28.3 102.9,27.5 106.7,28.7 110.5,29.0 114.3,24.8 118.1,27.1 121.9,24.8 125.7,24.4 129.5,21.8 133.3,17.9 137.1,10.1 141.0,14.0 144.8,16.9 148.6,13.9 152.4,13.9 156.2,14.9 160.0,17.9 163.8,19.8 167.6,21.0 171.4,16.9 175.2,16.4 179.0,15.0 182.9,22.0 186.7,20.1 190.5,28.6 194.3,29.5 198.1,36.1 201.9,36.6 205.7,35.5 209.5,35.4 213.3,33.5 217.1,30.5 221.0,35.9 224.8,30.7 228.6,30.5 232.4,35.2 236.2,31.3 240.0,28.5" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="28.5" r="2.6" fill="var(--up)"/></svg>
+        
+        
+        <div class="nb-conv">
+          <span class="nb-cscore band-high" title="Within-A-share RANK — cross-sectional percentile of the conviction composite (display, not a probability). The number is a RANK; the verdict beside it is the absolute act-now call, so a top-ranked name can still read 'wait'. · A股板内排名 — 确信度合成的横截面百分位（展示，非概率）。数字为排名；旁边的结论才是当下的绝对判断，故排名靠前也可能显示“观望”。"><span class="nb-crank"><span class="l-en">rank</span><span class="l-zh">排名</span></span>93</span>
+          <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+        </div>
+        
+        
+        
+        <div class="nb-align" title="Weekly rising · 3-Day turn↑ · Daily ≈ cross · 周线周线上行 · 3日turn↑ · 日线临近上穿">
+          <span class="nba-mark">🟢</span>
+          <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly uptrend</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线上行</span></span>
+          <span class="nba-tag"><span class="l-en">Entry armed</span><span class="l-zh">入场就绪</span></span>
+        </div>
+        
+        
+        
+        
+        <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when &amp; at what price to buy · 入场择时（量表2）— 何时、以何价买入. Trend intact — hold; add on dips toward the 10-day average.">
+          <div class="nbe-head">
+            <span class="nbe-dot a1"></span>
+            <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+          </div>
+          
+          <div class="nbe-zone">
+            <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+            <span class="nbe-px">54.93</span>
+            <span class="nbe-pct">-3.3%</span>
+          </div>
+          
+          
+          <div class="nbe-cyc">
+            <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 10<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
+            <span class="nbe-bar"><span class="nbe-bf" style="width:24%"></span></span>
+            <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~26–32d</span>
+          </div>
+          
+        </div>
+        
+        
+        <div class="nb-axes">
+          
+          
+          <div class="nb-ax" title="SEL 52/100">
+            <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+            <div class="axt"><div class="axf" style="width:52%"></div></div>
+          </div>
+          
+          
+          <div class="nb-ax" title="ENT 47/100">
+            <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+            <div class="axt"><div class="axf" style="width:47%"></div></div>
+          </div>
+          
+          
+          <div class="nb-ax" title="TWD 65/100">
+            <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+            <div class="axt"><div class="axf" style="width:65%"></div></div>
+          </div>
+          
+          
+          <div class="nb-ax ax-na" title="QUAL — no data">
+            <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+            <div class="axt"><div class="axf" style="width:0%"></div></div>
+          </div>
+          
+        </div>
+        
+        <div class="nb-bot">
+          <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
+          
+          <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.74 of the conviction-base size (forecast vol 35.6% · inverse-vol ×0.62 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。×0.74 相对确信度基准仓位（预测波动 35.6% · 逆波动 ×0.62 · 区制 ×1.2）。已验证的 +0.1-0.15 夏普杠杆 — 持仓多少，独立于持有什么与何时买入。">⚖ 0.74×</span>
+        </div>
+        
+        <div class="nb-alpha">
+          <span class="nb-az az-dn" title="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated). · 板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α -0.94</span>
+          <span class="nb-rk" title="Rank within its sector by residual relative strength · 按残差相对强度在其板块内排名">#279/354</span>
+          
+        </div>
+        
+        
+        
+        
+        
+        
+        
+        
+        
+      </a>
+    
+      
       <a class="nbcard nb-down" href="china_lookup.html#600835.SS">
         <div class="nb-top">
           <span class="nb-tk">600835.SS</span>
@@ -1615,7 +1616,7 @@
     
     <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ <span class="l-en">Weakest relative momentum (laggards) — distribution risk:</span><span class="l-zh">相对动量最弱（落后股）— 派发风险：</span></p>
     <p style="margin:0;display:flex;flex-wrap:wrap;gap:4px 0;align-items:center">
-      <a href="china_lookup.html#001391.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>001391.SZ</b> <span class="note"><span class="l-en">Air China Cargo Co., Ltd.</span><span class="l-zh">国货航</span></span> <span class="neg">-3.00</span></a><a href="china_lookup.html#300294.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>300294.SZ</b> <span class="note"><span class="l-en">China Resources Boya Bio-pharmaceutical Group Co.,Ltd</span><span class="l-zh">博雅生物</span></span> <span class="neg">-3.00</span></a><a href="china_lookup.html#300525.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>300525.SZ</b> <span class="note"><span class="l-en">Fujian Boss Software Corp.</span><span class="l-zh">博思软件</span></span> <span class="neg">-2.86</span></a><a href="china_lookup.html#300070.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>300070.SZ</b> <span class="note"><span class="l-en">Beijing Originwater Technology Co., Ltd.</span><span class="l-zh">碧水源</span></span> <span class="neg">-2.75</span></a><a href="china_lookup.html#600422.SS" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>600422.SS</b> <span class="note"><span class="l-en">KPC Pharmaceuticals,Inc.</span><span class="l-zh">昆药集团</span></span> <span class="neg">-2.64</span></a><a href="china_lookup.html#000625.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>000625.SZ</b> <span class="note"><span class="l-en">Chongqing Changan Automobile Company Limited</span><span class="l-zh">长安汽车</span></span> <span class="neg">-2.59</span></a>
+      <a href="china_lookup.html#001391.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>001391.SZ</b> <span class="note"><span class="l-en">Air China Cargo Co., Ltd.</span><span class="l-zh">国货航</span></span> <span class="neg">-3.00</span></a><a href="china_lookup.html#300294.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>300294.SZ</b> <span class="note"><span class="l-en">China Resources Boya Bio-pharmaceutical Group Co.,Ltd</span><span class="l-zh">博雅生物</span></span> <span class="neg">-3.00</span></a><a href="china_lookup.html#300525.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>300525.SZ</b> <span class="note"><span class="l-en">Fujian Boss Software Corp.</span><span class="l-zh">博思软件</span></span> <span class="neg">-2.86</span></a><a href="china_lookup.html#300070.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>300070.SZ</b> <span class="note"><span class="l-en">Beijing Originwater Technology Co., Ltd.</span><span class="l-zh">碧水源</span></span> <span class="neg">-2.75</span></a><a href="china_lookup.html#600422.SS" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>600422.SS</b> <span class="note"><span class="l-en">KPC Pharmaceuticals,Inc.</span><span class="l-zh">昆药集团</span></span> <span class="neg">-2.64</span></a><a href="china_lookup.html#000625.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>000625.SZ</b> <span class="note"><span class="l-en">Chongqing Changan Automobile Company Limited</span><span class="l-zh">长安汽车</span></span> <span class="neg">-2.59</span></a><a href="china_lookup.html#300284.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>300284.SZ</b> <span class="note"><span class="l-en">JSTI Group</span><span class="l-zh">苏交科</span></span> <span class="neg">-2.57</span></a><a href="china_lookup.html#002139.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>002139.SZ</b> <span class="note"><span class="l-en">Shenzhen Topband Co., Ltd.</span><span class="l-zh">拓邦股份</span></span> <span class="neg">-2.53</span></a><a href="china_lookup.html#002368.SZ" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>002368.SZ</b> <span class="note"><span class="l-en">Taiji Computer Corporation Limited</span><span class="l-zh">太极股份</span></span> <span class="neg">-2.50</span></a><a href="china_lookup.html#601186.SS" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>601186.SS</b> <span class="note"><span class="l-en">China Railway Construction Corporation Limited</span><span class="l-zh">中国铁建</span></span> <span class="neg">-2.47</span></a><a href="china_lookup.html#600085.SS" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>600085.SS</b> <span class="note"><span class="l-en">Beijing Tongrentang Co., Ltd</span><span class="l-zh">同仁堂</span></span> <span class="neg">-2.44</span></a><a href="china_lookup.html#601800.SS" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>601800.SS</b> <span class="note"><span class="l-en">China Communications Construction Company Limited</span><span class="l-zh">中国交建</span></span> <span class="neg">-2.35</span></a>
     </p>
     
     <p class="note" style="margin:8px 0 0;font-size:11px"><span class="l-en">Cycle entry + mean-reversion (the validated A-share effects), with residual relative strength as a light quality tiebreaker. Deep-history corrected: A-shares mean-revert — momentum is not an edge. A shortlist to size and confirm, not a buy list; cycle state is a drawdown/structure tool, not a timing oracle.</span><span class="l-zh">周期入场 + 均值回归（A股已验证的效应），残差相对强度仅作轻量质量加权。经深度历史校正：A股均值回归 —— 动量并非优势。用于定仓与确认的名单，而非买入清单；周期状态是回撤/结构工具，而非择时神谕。</span></p>
@@ -1636,7 +1637,7 @@
     <p class="note sb-cap" id="sb-cap"><!-- per-mode caption injected by JS --></p>
     <table class="sb-table"><thead id="sb-head"></thead><tbody id="sb-body"></tbody></table>
     <p class="note" style="margin:8px 0 0;font-size:11px"><span class="l-en">Validated A-share effects only: short-term within-sector REVERSAL (Sharpe 0.58) and the LOW-VOL defensive tilt (Sharpe 0.98 vs 0.88 market). Classic momentum / value / quality were tested over ~35 years and do NOT clear FDR on A-shares. A research surface to size and confirm — not a confident buy list; cycle state is a drawdown/structure tool, not a timing oracle.</span><span class="l-zh">仅采用已验证的A股效应：短期板块内反转（夏普0.58）与低波防御倾向（夏普0.98 对 市场0.88）。经典动量／价值／质量在约35年里测试均未通过FDR。用于定仓与确认的研究面板 —— 而非买入清单；周期状态是回撤/结构工具，而非择时神谕。</span></p>
-    <script type="application/json" id="sb-data">{"alpha": [{"alpha": 2.81, "cycle": "NEARING A HIGH", "cycle_dir": "caution", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Grace Fabric Technology Co.,Ltd. / \u5b8f\u548c\u79d1\u6280", "price": 297.0, "resid_ann": 260.7, "rev_1m": 54.3, "rev_pctile": 97.0, "rs": 99.0, "rs12m": 99.0, "rs3m": 99.0, "rs6m": 99.0, "sector": "Basic Materials", "sector_n": 229, "sector_rank": 1, "ticker": "603256.SS", "total_mom": 326.6}, {"alpha": 2.72, "cycle": "NEARING A HIGH", "cycle_dir": "caution", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "intact", "name": "Nantong Haixing Electronics Co., Ltd. / \u6d77\u661f\u80a1\u4efd", "price": 118.2, "resid_ann": 187.7, "rev_1m": 8.5, "rev_pctile": 78.0, "rs": 98.0, "rs12m": 97.0, "rs3m": 98.0, "rs6m": 98.0, "sector": "Industrials", "sector_n": 326, "sector_rank": 1, "ticker": "603115.SS", "total_mom": 232.2}, {"alpha": 2.7, "cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "entry": "intact", "name": "Zhende Medical Co., Ltd. / \u632f\u5fb7\u533b\u7597", "price": 87.13, "resid_ann": 147.9, "rev_1m": 1.8, "rev_pctile": 71.0, "rs": 93.0, "rs12m": 91.0, "rs3m": 53.0, "rs6m": 72.0, "sector": "Healthcare", "sector_n": 116, "sector_rank": 1, "ticker": "603301.SS", "total_mom": 163.9}, {"alpha": 2.52, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "entry": "extended", "name": "Shareate Tools Ltd. / \u65b0\u9510\u80a1\u4efd", "price": 99.89, "resid_ann": 153.8, "rev_1m": 37.7, "rev_pctile": 93.0, "rs": 97.0, "rs12m": 98.0, "rs3m": 92.0, "rs6m": 96.0, "sector": "Industrials", "sector_n": 326, "sector_rank": 2, "ticker": "688257.SS", "total_mom": 205.9}, {"alpha": 2.46, "cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "entry": "extended", "name": "Zhongji Innolight Co., Ltd. / \u4e2d\u9645\u65ed\u521b", "price": 1253.89, "resid_ann": 180.3, "rev_1m": 14.2, "rev_pctile": 81.0, "rs": 99.0, "rs12m": 98.0, "rs3m": 90.0, "rs6m": 88.0, "sector": "Technology", "sector_n": 354, "sector_rank": 1, "ticker": "300308.SZ", "total_mom": 270.0}, {"alpha": 2.43, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "entry": "intact", "name": "Jiangsu Lettall Electronic Co.,Ltd / \u5229\u901a\u7535\u5b50", "price": 187.09, "resid_ann": 171.3, "rev_1m": -7.3, "rev_pctile": 50.0, "rs": 98.0, "rs12m": 97.0, "rs3m": 98.0, "rs6m": 99.0, "sector": "Technology", "sector_n": 354, "sector_rank": 2, "ticker": "603629.SS", "total_mom": 235.7}, {"alpha": 2.4, "cycle": "NEARING A HIGH", "cycle_dir": "caution", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Han\u0027s Laser Technology Industry Group Co., Ltd. / \u5927\u65cf\u6fc0\u5149", "price": 151.27, "resid_ann": 132.6, "rev_1m": 16.0, "rev_pctile": 83.0, "rs": 96.0, "rs12m": 94.0, "rs3m": 94.0, "rs6m": 96.0, "sector": "Industrials", "sector_n": 326, "sector_rank": 3, "ticker": "002008.SZ", "total_mom": 185.1}, {"alpha": 2.35, "cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "entry": "pullback", "name": "Beijing Sifang Automation Co.,Ltd / \u56db\u65b9\u80a1\u4efd", "price": 65.16, "resid_ann": 134.7, "rev_1m": -22.0, "rev_pctile": 12.0, "rs": 95.0, "rs12m": 91.0, "rs3m": 82.0, "rs6m": 88.0, "sector": "Industrials", "sector_n": 326, "sector_rank": 4, "ticker": "601126.SS", "total_mom": 178.2}, {"alpha": 2.33, "cycle": "NEARING A HIGH", "cycle_dir": "caution", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Guangdong Dtech Technology Co., Ltd. / \u9f0e\u6cf0\u9ad8\u79d1", "price": 590.0, "resid_ann": 198.2, "rev_1m": 58.0, "rev_pctile": 98.0, "rs": 99.0, "rs12m": 99.0, "rs3m": 98.0, "rs6m": 98.0, "sector": "Technology", "sector_n": 354, "sector_rank": 3, "ticker": "301377.SZ", "total_mom": 286.1}, {"alpha": 2.32, "cycle": "NEARING A HIGH", "cycle_dir": "caution", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Yangtze Optical Fibre And Cable Joint Stock Limited Company / \u957f\u98de\u5149\u7ea4", "price": 543.0, "resid_ann": 196.5, "rev_1m": 43.0, "rev_pctile": 94.0, "rs": 99.0, "rs12m": 99.0, "rs3m": 93.0, "rs6m": 98.0, "sector": "Technology", "sector_n": 354, "sector_rank": 4, "ticker": "601869.SS", "total_mom": 262.1}, {"alpha": 2.28, "cycle": "NEARING A HIGH", "cycle_dir": "caution", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "OKE Precision Cutting Tools Co., Ltd. / \u6b27\u79d1\u4ebf", "price": 187.66, "resid_ann": 177.2, "rev_1m": 30.5, "rev_pctile": 90.0, "rs": 98.0, "rs12m": 98.0, "rs3m": 95.0, "rs6m": 98.0, "sector": "Industrials", "sector_n": 326, "sector_rank": 5, "ticker": "688308.SS", "total_mom": 237.1}, {"alpha": 2.25, "cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "entry": "intact", "name": "Guangdong Songfa Ceramics Co.,Ltd. / \u677e\u53d1\u80a1\u4efd", "price": 143.82, "resid_ann": 119.8, "rev_1m": 5.1, "rev_pctile": 75.0, "rs": 90.0, "rs12m": 88.0, "rs3m": 74.0, "rs6m": 84.0, "sector": "Consumer Cyclical", "sector_n": 116, "sector_rank": 1, "ticker": "603268.SS", "total_mom": 138.5}, {"alpha": 2.23, "cycle": "NEARING A HIGH", "cycle_dir": "caution", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Shenzhen Han\u0027s CNC Technology Co., Ltd. / \u5927\u65cf\u6570\u63a7", "price": 370.78, "resid_ann": 178.2, "rev_1m": 22.5, "rev_pctile": 87.0, "rs": 98.0, "rs12m": 98.0, "rs3m": 93.0, "rs6m": 94.0, "sector": "Industrials", "sector_n": 326, "sector_rank": 6, "ticker": "301200.SZ", "total_mom": 235.1}, {"alpha": 2.2, "cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "entry": "pullback", "name": "Swancor Advanced Materials Co., Ltd. / \u4e0a\u7eac\u65b0\u6750", "price": 148.91, "resid_ann": 311.8, "rev_1m": -26.7, "rev_pctile": 6.0, "rs": 99.0, "rs12m": 99.0, "rs3m": 76.0, "rs6m": 79.0, "sector": "Basic Materials", "sector_n": 229, "sector_rank": 2, "ticker": "688585.SS", "total_mom": 386.0}, {"alpha": 2.15, "cycle": "UPTREND", "cycle_dir": "up", "cycle_zh": "\u4e0a\u6da8\u8d8b\u52bf", "entry": "extended", "name": "Suzhou Dongshan Precision Manufacturing Co., Ltd. / \u4e1c\u5c71\u7cbe\u5bc6", "price": 260.32, "resid_ann": 150.9, "rev_1m": 18.8, "rev_pctile": 85.0, "rs": 98.0, "rs12m": 97.0, "rs3m": 94.0, "rs6m": 94.0, "sector": "Technology", "sector_n": 354, "sector_rank": 5, "ticker": "002384.SZ", "total_mom": 230.0}, {"alpha": 2.14, "cycle": "UPTREND", "cycle_dir": "up", "cycle_zh": "\u4e0a\u6da8\u8d8b\u52bf", "entry": "extended", "name": "Yuanjie Semiconductor Technology Co., Ltd. / \u6e90\u6770\u79d1\u6280", "price": 1776.91, "resid_ann": 194.6, "rev_1m": 49.9, "rev_pctile": 96.0, "rs": 99.0, "rs12m": 99.0, "rs3m": 94.0, "rs6m": 96.0, "sector": "Technology", "sector_n": 354, "sector_rank": 6, "ticker": "688498.SS", "total_mom": 283.6}], "lowvol": [{"beta": -0.05, "cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "mktcap_yi": 6521.0, "name": "China Yangtze Power Co., Ltd. / \u957f\u6c5f\u7535\u529b", "price": 26.65, "sector": "Utilities", "ticker": "600900.SS", "vol_pct_ann": 12.3, "vol_rank_pct": 0.0}, {"beta": 0.12, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 839.0, "name": "Yunnan Baiyao Group Co.,Ltd / \u4e91\u5357\u767d\u836f", "price": 47.0, "sector": "Healthcare", "ticker": "000538.SZ", "vol_pct_ann": 12.9, "vol_rank_pct": 0.0}, {"beta": 0.07, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 920.0, "name": "Daqin Railway Co., Ltd. / \u5927\u79e6\u94c1\u8def", "price": 4.63, "sector": "Industrials", "ticker": "601006.SS", "vol_pct_ann": 13.2, "vol_rank_pct": 0.0}, {"beta": 0.19, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 567.0, "name": "Shanghai Pharmaceuticals Holding Co., Ltd / \u4e0a\u6d77\u533b\u836f", "price": 15.29, "sector": "Healthcare", "ticker": "601607.SS", "vol_pct_ann": 13.5, "vol_rank_pct": 0.0}, {"beta": 0.05, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 18822.0, "name": "China Mobile Limited / \u4e2d\u56fd\u79fb\u52a8", "price": 86.82, "sector": "Communication Services", "ticker": "600941.SS", "vol_pct_ann": 13.9, "vol_rank_pct": 0.0}, {"beta": 0.16, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 1108.0, "name": "Shanghai International Port (Group) Co., Ltd. / \u4e0a\u6e2f\u96c6\u56e2", "price": 4.76, "sector": "Industrials", "ticker": "600018.SS", "vol_pct_ann": 14.3, "vol_rank_pct": 0.0}, {"beta": 0.05, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 2216.0, "name": "Beijing-Shanghai High-Speed Railway Co., Ltd. / \u4eac\u6caa\u9ad8\u94c1", "price": 4.53, "sector": "Industrials", "ticker": "601816.SS", "vol_pct_ann": 14.3, "vol_rank_pct": 0.0}, {"beta": 0.28, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 321.0, "name": "Guangzhou Baiyunshan Pharmaceutical Holdings Company Limited / \u767d\u4e91\u5c71", "price": 19.77, "sector": "Healthcare", "ticker": "600332.SS", "vol_pct_ann": 14.6, "vol_rank_pct": 1.0}, {"beta": 0.22, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 1081.0, "name": "China Three Gorges Renewables (Group) Co.,Ltd. / \u4e09\u5ce1\u80fd\u6e90", "price": 3.78, "sector": "Utilities", "ticker": "600905.SS", "vol_pct_ann": 14.7, "vol_rank_pct": 1.0}, {"beta": 0.21, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Chongqing Fuling Zhacai Group Co., Ltd. / \u6daa\u9675\u69a8\u83dc", "price": 10.84, "sector": "Consumer Defensive", "ticker": "002507.SZ", "vol_pct_ann": 14.7, "vol_rank_pct": 1.0}, {"beta": 0.25, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Bright Dairy \u0026 Food Co.,Ltd / \u5149\u660e\u4e73\u4e1a", "price": 6.16, "sector": "Consumer Defensive", "ticker": "600597.SS", "vol_pct_ann": 14.9, "vol_rank_pct": 1.0}, {"beta": 0.29, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 284.0, "name": "Shanghai RAAS Blood Products Co., Ltd. / \u4e0a\u6d77\u83b1\u58eb", "price": 4.31, "sector": "Healthcare", "ticker": "002252.SZ", "vol_pct_ann": 14.9, "vol_rank_pct": 1.0}, {"beta": 0.22, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 1818.0, "name": "China State Construction Engineering Corporation Limited / \u4e2d\u56fd\u5efa\u7b51", "price": 4.4, "sector": "Industrials", "ticker": "601668.SS", "vol_pct_ann": 15.0, "vol_rank_pct": 1.0}, {"beta": 0.26, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Jiangsu Hengshun Vinegar-Industry Co.,Ltd / \u6052\u987a\u918b\u4e1a", "price": 6.51, "sector": "Consumer Defensive", "ticker": "600305.SS", "vol_pct_ann": 15.0, "vol_rank_pct": 1.0}, {"beta": 0.09, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 790.0, "name": "Henan Shuanghui Investment \u0026 Development Co.,Ltd. / \u53cc\u6c47\u53d1\u5c55", "price": 22.8, "sector": "Consumer Defensive", "ticker": "000895.SZ", "vol_pct_ann": 15.5, "vol_rank_pct": 1.0}, {"beta": 0.15, "cycle": "UPTREND", "cycle_dir": "up", "cycle_zh": "\u4e0a\u6da8\u8d8b\u52bf", "mktcap_yi": 347.0, "name": "Youngor Fashion Co., Ltd. / \u96c5\u6208\u5c14", "price": 7.51, "sector": "Consumer Cyclical", "ticker": "600177.SS", "vol_pct_ann": 15.7, "vol_rank_pct": 1.0}], "reversal": [{"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 839.0, "name": "CNPC Capital Company Limited / \u4e2d\u6cb9\u8d44\u672c", "price": 6.64, "ret_3m": -38.5, "rev_z": 2.07, "sector": "Financial Services", "sector_n": 95, "sector_rank": 1, "ticker": "000617.SZ"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Anhui Huaheng Biotechnology Co., Ltd. / \u534e\u6052\u751f\u7269", "price": 15.4, "ret_3m": -47.2, "rev_z": 2.05, "sector": "Healthcare", "sector_n": 118, "sector_rank": 1, "ticker": "688639.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 336.0, "name": "Shenzhen Salubris Pharmaceuticals Co., Ltd. / \u4fe1\u7acb\u6cf0", "price": 30.15, "ret_3m": -45.3, "rev_z": 1.94, "sector": "Healthcare", "sector_n": 118, "sector_rank": 2, "ticker": "002294.SZ"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Xinjiang Xintai Natural Gas Co., Ltd. / \u65b0\u5929\u7136\u6c14", "price": 22.39, "ret_3m": -43.2, "rev_z": 1.72, "sector": "Utilities", "sector_n": 57, "sector_rank": 1, "ticker": "603393.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "NYOCOR Co., Ltd. / \u91d1\u5f00\u65b0\u80fd", "price": 6.37, "ret_3m": -42.5, "rev_z": 1.67, "sector": "Utilities", "sector_n": 57, "sector_rank": 2, "ticker": "600821.SS"}, {"cycle": "UPTREND", "cycle_dir": "up", "cycle_zh": "\u4e0a\u6da8\u8d8b\u52bf", "mktcap_yi": 372.0, "name": "Sunshine Guojian Pharmaceutical (Shanghai) Co., Ltd / \u4e09\u751f\u56fd\u5065", "price": 41.46, "ret_3m": -39.5, "rev_z": 1.6, "sector": "Healthcare", "sector_n": 118, "sector_rank": 3, "ticker": "688336.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Zhongman Petroleum and Natural Gas Group Corp.,Ltd. / \u4e2d\u66fc\u77f3\u6cb9", "price": 18.74, "ret_3m": -46.8, "rev_z": 1.58, "sector": "Energy", "sector_n": 35, "sector_rank": 1, "ticker": "603619.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Soho Holly Futures Co., Ltd. / \u5f18\u4e1a\u671f\u8d27", "price": 6.97, "ret_3m": -29.4, "rev_z": 1.54, "sector": "Financial Services", "sector_n": 95, "sector_rank": 2, "ticker": "001236.SZ"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Star Lake Bioscience Co., Inc.Zhaoqing Guangdong / \u661f\u6e56\u79d1\u6280", "price": 4.4, "ret_3m": -38.4, "rev_z": 1.53, "sector": "Healthcare", "sector_n": 118, "sector_rank": 4, "ticker": "600866.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Heilongjiang ZBD Pharmaceutical Co., Ltd. / \u73cd\u5b9d\u5c9b", "price": 4.28, "ret_3m": -38.0, "rev_z": 1.51, "sector": "Healthcare", "sector_n": 118, "sector_rank": 5, "ticker": "603567.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Zhejiang Dongri Limited Company / \u6d59\u6c5f\u4e1c\u65e5", "price": 27.42, "ret_3m": -48.1, "rev_z": 1.48, "sector": "Consumer Defensive", "sector_n": 57, "sector_rank": 1, "ticker": "600113.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Hangzhou Shunwang Technology Co,Ltd / \u987a\u7f51\u79d1\u6280", "price": 17.92, "ret_3m": -38.2, "rev_z": 1.43, "sector": "Communication Services", "sector_n": 47, "sector_rank": 1, "ticker": "300113.SZ"}, {"mktcap_yi": 30.0, "name": "Shenzhen SOFARSOLAR Co., Ltd. / \u9996\u822a\u65b0\u80fd", "ret_3m": -56.5, "rev_z": 1.42, "sector": "Technology", "sector_n": 363, "sector_rank": 1, "ticker": "301658.SZ"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Hengdian Entertainment Co.,LTD / \u6a2a\u5e97\u5f71\u89c6", "price": 14.21, "ret_3m": -36.8, "rev_z": 1.34, "sector": "Communication Services", "sector_n": 47, "sector_rank": 2, "ticker": "603103.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 332.0, "name": "Beijing Wantai Biological Pharmacy Enterprise Co., Ltd. / \u4e07\u6cf0\u751f\u7269", "price": 26.27, "ret_3m": -34.7, "rev_z": 1.32, "sector": "Healthcare", "sector_n": 118, "sector_rank": 6, "ticker": "603392.SS"}, {"cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "mktcap_yi": 30.0, "name": "Ruida Futures Co.,Ltd. / \u745e\u8fbe\u671f\u8d27", "price": 19.87, "ret_3m": -25.1, "rev_z": 1.29, "sector": "Financial Services", "sector_n": 95, "sector_rank": 3, "ticker": "002961.SZ"}]}</script>
+    <script type="application/json" id="sb-data">{"alpha": [{"alpha": 2.81, "cycle": "NEARING A HIGH", "cycle_dir": "caution", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Grace Fabric Technology Co.,Ltd. / \u5b8f\u548c\u79d1\u6280", "price": 297.0, "resid_ann": 260.7, "rev_1m": 54.3, "rev_pctile": 97.0, "rs": 99.0, "rs12m": 99.0, "rs3m": 99.0, "rs6m": 99.0, "sector": "Basic Materials", "sector_n": 229, "sector_rank": 1, "ticker": "603256.SS", "total_mom": 326.6}, {"alpha": 2.72, "cycle": "NEARING A HIGH", "cycle_dir": "caution", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "intact", "name": "Nantong Haixing Electronics Co., Ltd. / \u6d77\u661f\u80a1\u4efd", "price": 118.2, "resid_ann": 187.7, "rev_1m": 8.5, "rev_pctile": 78.0, "rs": 98.0, "rs12m": 97.0, "rs3m": 98.0, "rs6m": 98.0, "sector": "Industrials", "sector_n": 326, "sector_rank": 1, "ticker": "603115.SS", "total_mom": 232.2}, {"alpha": 2.7, "cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "entry": "intact", "name": "Zhende Medical Co., Ltd. / \u632f\u5fb7\u533b\u7597", "price": 87.13, "resid_ann": 147.9, "rev_1m": 1.8, "rev_pctile": 71.0, "rs": 93.0, "rs12m": 91.0, "rs3m": 53.0, "rs6m": 72.0, "sector": "Healthcare", "sector_n": 116, "sector_rank": 1, "ticker": "603301.SS", "total_mom": 163.9}, {"alpha": 2.52, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "entry": "extended", "name": "Shareate Tools Ltd. / \u65b0\u9510\u80a1\u4efd", "price": 99.89, "resid_ann": 153.8, "rev_1m": 37.7, "rev_pctile": 93.0, "rs": 97.0, "rs12m": 98.0, "rs3m": 92.0, "rs6m": 96.0, "sector": "Industrials", "sector_n": 326, "sector_rank": 2, "ticker": "688257.SS", "total_mom": 205.9}, {"alpha": 2.46, "cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "entry": "extended", "name": "Zhongji Innolight Co., Ltd. / \u4e2d\u9645\u65ed\u521b", "price": 1253.89, "resid_ann": 180.3, "rev_1m": 14.2, "rev_pctile": 81.0, "rs": 99.0, "rs12m": 98.0, "rs3m": 90.0, "rs6m": 88.0, "sector": "Technology", "sector_n": 354, "sector_rank": 1, "ticker": "300308.SZ", "total_mom": 270.0}, {"alpha": 2.43, "cycle": "BOTTOMING", "cycle_dir": "up", "cycle_zh": "\u7b51\u5e95\u4e2d", "entry": "intact", "name": "Jiangsu Lettall Electronic Co.,Ltd / \u5229\u901a\u7535\u5b50", "price": 187.09, "resid_ann": 171.4, "rev_1m": -7.3, "rev_pctile": 50.0, "rs": 98.0, "rs12m": 97.0, "rs3m": 98.0, "rs6m": 99.0, "sector": "Technology", "sector_n": 354, "sector_rank": 2, "ticker": "603629.SS", "total_mom": 235.7}, {"alpha": 2.4, "cycle": "NEARING A HIGH", "cycle_dir": "caution", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Han\u0027s Laser Technology Industry Group Co., Ltd. / \u5927\u65cf\u6fc0\u5149", "price": 151.27, "resid_ann": 132.6, "rev_1m": 16.0, "rev_pctile": 83.0, "rs": 96.0, "rs12m": 94.0, "rs3m": 94.0, "rs6m": 96.0, "sector": "Industrials", "sector_n": 326, "sector_rank": 3, "ticker": "002008.SZ", "total_mom": 185.1}, {"alpha": 2.35, "cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "entry": "pullback", "name": "Beijing Sifang Automation Co.,Ltd / \u56db\u65b9\u80a1\u4efd", "price": 65.16, "resid_ann": 134.7, "rev_1m": -22.0, "rev_pctile": 12.0, "rs": 95.0, "rs12m": 91.0, "rs3m": 82.0, "rs6m": 88.0, "sector": "Industrials", "sector_n": 326, "sector_rank": 4, "ticker": "601126.SS", "total_mom": 178.2}, {"alpha": 2.33, "cycle": "NEARING A HIGH", "cycle_dir": "caution", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Guangdong Dtech Technology Co., Ltd. / \u9f0e\u6cf0\u9ad8\u79d1", "price": 590.0, "resid_ann": 198.2, "rev_1m": 58.0, "rev_pctile": 98.0, "rs": 99.0, "rs12m": 99.0, "rs3m": 98.0, "rs6m": 98.0, "sector": "Technology", "sector_n": 354, "sector_rank": 3, "ticker": "301377.SZ", "total_mom": 286.1}, {"alpha": 2.32, "cycle": "NEARING A HIGH", "cycle_dir": "caution", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Yangtze Optical Fibre And Cable Joint Stock Limited Company / \u957f\u98de\u5149\u7ea4", "price": 543.0, "resid_ann": 196.5, "rev_1m": 43.0, "rev_pctile": 94.0, "rs": 99.0, "rs12m": 99.0, "rs3m": 93.0, "rs6m": 98.0, "sector": "Technology", "sector_n": 354, "sector_rank": 4, "ticker": "601869.SS", "total_mom": 262.1}, {"alpha": 2.28, "cycle": "NEARING A HIGH", "cycle_dir": "caution", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "OKE Precision Cutting Tools Co., Ltd. / \u6b27\u79d1\u4ebf", "price": 187.66, "resid_ann": 177.3, "rev_1m": 30.5, "rev_pctile": 90.0, "rs": 98.0, "rs12m": 98.0, "rs3m": 95.0, "rs6m": 98.0, "sector": "Industrials", "sector_n": 326, "sector_rank": 5, "ticker": "688308.SS", "total_mom": 237.1}, {"alpha": 2.25, "cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "entry": "intact", "name": "Guangdong Songfa Ceramics Co.,Ltd. / \u677e\u53d1\u80a1\u4efd", "price": 143.82, "resid_ann": 119.8, "rev_1m": 5.1, "rev_pctile": 75.0, "rs": 90.0, "rs12m": 88.0, "rs3m": 74.0, "rs6m": 84.0, "sector": "Consumer Cyclical", "sector_n": 116, "sector_rank": 1, "ticker": "603268.SS", "total_mom": 138.5}, {"alpha": 2.23, "cycle": "NEARING A HIGH", "cycle_dir": "caution", "cycle_zh": "\u63a5\u8fd1\u9ad8\u70b9", "entry": "extended", "name": "Shenzhen Han\u0027s CNC Technology Co., Ltd. / \u5927\u65cf\u6570\u63a7", "price": 370.78, "resid_ann": 178.2, "rev_1m": 22.5, "rev_pctile": 87.0, "rs": 98.0, "rs12m": 98.0, "rs3m": 93.0, "rs6m": 94.0, "sector": "Industrials", "sector_n": 326, "sector_rank": 6, "ticker": "301200.SZ", "total_mom": 235.1}, {"alpha": 2.2, "cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "entry": "pullback", "name": "Swancor Advanced Materials Co., Ltd. / \u4e0a\u7eac\u65b0\u6750", "price": 148.91, "resid_ann": 311.8, "rev_1m": -26.7, "rev_pctile": 6.0, "rs": 99.0, "rs12m": 99.0, "rs3m": 76.0, "rs6m": 79.0, "sector": "Basic Materials", "sector_n": 229, "sector_rank": 2, "ticker": "688585.SS", "total_mom": 386.0}, {"alpha": 2.15, "cycle": "UPTREND", "cycle_dir": "up", "cycle_zh": "\u4e0a\u6da8\u8d8b\u52bf", "entry": "extended", "name": "Suzhou Dongshan Precision Manufacturing Co., Ltd. / \u4e1c\u5c71\u7cbe\u5bc6", "price": 260.32, "resid_ann": 150.9, "rev_1m": 18.8, "rev_pctile": 85.0, "rs": 98.0, "rs12m": 97.0, "rs3m": 94.0, "rs6m": 94.0, "sector": "Technology", "sector_n": 354, "sector_rank": 5, "ticker": "002384.SZ", "total_mom": 230.0}, {"alpha": 2.14, "cycle": "UPTREND", "cycle_dir": "up", "cycle_zh": "\u4e0a\u6da8\u8d8b\u52bf", "entry": "extended", "name": "Yuanjie Semiconductor Technology Co., Ltd. / \u6e90\u6770\u79d1\u6280", "price": 1776.91, "resid_ann": 194.6, "rev_1m": 49.9, "rev_pctile": 96.0, "rs": 99.0, "rs12m": 99.0, "rs3m": 94.0, "rs6m": 96.0, "sector": "Technology", "sector_n": 354, "sector_rank": 6, "ticker": "688498.SS", "total_mom": 283.6}], "lowvol": [{"beta": -0.05, "cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "mktcap_yi": 6521.0, "name": "China Yangtze Power Co., Ltd. / \u957f\u6c5f\u7535\u529b", "price": 26.65, "sector": "Utilities", "ticker": "600900.SS", "vol_pct_ann": 12.3, "vol_rank_pct": 0.0}, {"beta": 0.12, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 839.0, "name": "Yunnan Baiyao Group Co.,Ltd / \u4e91\u5357\u767d\u836f", "price": 47.0, "sector": "Healthcare", "ticker": "000538.SZ", "vol_pct_ann": 12.9, "vol_rank_pct": 0.0}, {"beta": 0.07, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 920.0, "name": "Daqin Railway Co., Ltd. / \u5927\u79e6\u94c1\u8def", "price": 4.63, "sector": "Industrials", "ticker": "601006.SS", "vol_pct_ann": 13.2, "vol_rank_pct": 0.0}, {"beta": 0.19, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 567.0, "name": "Shanghai Pharmaceuticals Holding Co., Ltd / \u4e0a\u6d77\u533b\u836f", "price": 15.29, "sector": "Healthcare", "ticker": "601607.SS", "vol_pct_ann": 13.5, "vol_rank_pct": 0.0}, {"beta": 0.05, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 18822.0, "name": "China Mobile Limited / \u4e2d\u56fd\u79fb\u52a8", "price": 86.82, "sector": "Communication Services", "ticker": "600941.SS", "vol_pct_ann": 13.9, "vol_rank_pct": 0.0}, {"beta": 0.16, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 1108.0, "name": "Shanghai International Port (Group) Co., Ltd. / \u4e0a\u6e2f\u96c6\u56e2", "price": 4.76, "sector": "Industrials", "ticker": "600018.SS", "vol_pct_ann": 14.3, "vol_rank_pct": 0.0}, {"beta": 0.05, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 2216.0, "name": "Beijing-Shanghai High-Speed Railway Co., Ltd. / \u4eac\u6caa\u9ad8\u94c1", "price": 4.53, "sector": "Industrials", "ticker": "601816.SS", "vol_pct_ann": 14.3, "vol_rank_pct": 0.0}, {"beta": 0.28, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 321.0, "name": "Guangzhou Baiyunshan Pharmaceutical Holdings Company Limited / \u767d\u4e91\u5c71", "price": 19.77, "sector": "Healthcare", "ticker": "600332.SS", "vol_pct_ann": 14.6, "vol_rank_pct": 1.0}, {"beta": 0.22, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 1081.0, "name": "China Three Gorges Renewables (Group) Co.,Ltd. / \u4e09\u5ce1\u80fd\u6e90", "price": 3.78, "sector": "Utilities", "ticker": "600905.SS", "vol_pct_ann": 14.7, "vol_rank_pct": 1.0}, {"beta": 0.21, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Chongqing Fuling Zhacai Group Co., Ltd. / \u6daa\u9675\u69a8\u83dc", "price": 10.84, "sector": "Consumer Defensive", "ticker": "002507.SZ", "vol_pct_ann": 14.7, "vol_rank_pct": 1.0}, {"beta": 0.25, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Bright Dairy \u0026 Food Co.,Ltd / \u5149\u660e\u4e73\u4e1a", "price": 6.16, "sector": "Consumer Defensive", "ticker": "600597.SS", "vol_pct_ann": 14.9, "vol_rank_pct": 1.0}, {"beta": 0.29, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 284.0, "name": "Shanghai RAAS Blood Products Co., Ltd. / \u4e0a\u6d77\u83b1\u58eb", "price": 4.31, "sector": "Healthcare", "ticker": "002252.SZ", "vol_pct_ann": 14.9, "vol_rank_pct": 1.0}, {"beta": 0.22, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 1818.0, "name": "China State Construction Engineering Corporation Limited / \u4e2d\u56fd\u5efa\u7b51", "price": 4.4, "sector": "Industrials", "ticker": "601668.SS", "vol_pct_ann": 15.0, "vol_rank_pct": 1.0}, {"beta": 0.26, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Jiangsu Hengshun Vinegar-Industry Co.,Ltd / \u6052\u987a\u918b\u4e1a", "price": 6.51, "sector": "Consumer Defensive", "ticker": "600305.SS", "vol_pct_ann": 15.0, "vol_rank_pct": 1.0}, {"beta": 0.09, "cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 790.0, "name": "Henan Shuanghui Investment \u0026 Development Co.,Ltd. / \u53cc\u6c47\u53d1\u5c55", "price": 22.8, "sector": "Consumer Defensive", "ticker": "000895.SZ", "vol_pct_ann": 15.5, "vol_rank_pct": 1.0}, {"beta": 0.15, "cycle": "UPTREND", "cycle_dir": "up", "cycle_zh": "\u4e0a\u6da8\u8d8b\u52bf", "mktcap_yi": 347.0, "name": "Youngor Fashion Co., Ltd. / \u96c5\u6208\u5c14", "price": 7.51, "sector": "Consumer Cyclical", "ticker": "600177.SS", "vol_pct_ann": 15.7, "vol_rank_pct": 1.0}], "reversal": [{"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 839.0, "name": "CNPC Capital Company Limited / \u4e2d\u6cb9\u8d44\u672c", "price": 6.64, "ret_3m": -38.5, "rev_z": 2.07, "sector": "Financial Services", "sector_n": 95, "sector_rank": 1, "ticker": "000617.SZ"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Anhui Huaheng Biotechnology Co., Ltd. / \u534e\u6052\u751f\u7269", "price": 15.4, "ret_3m": -47.2, "rev_z": 2.05, "sector": "Healthcare", "sector_n": 118, "sector_rank": 1, "ticker": "688639.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 336.0, "name": "Shenzhen Salubris Pharmaceuticals Co., Ltd. / \u4fe1\u7acb\u6cf0", "price": 30.15, "ret_3m": -45.3, "rev_z": 1.94, "sector": "Healthcare", "sector_n": 118, "sector_rank": 2, "ticker": "002294.SZ"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Xinjiang Xintai Natural Gas Co., Ltd. / \u65b0\u5929\u7136\u6c14", "price": 22.39, "ret_3m": -43.2, "rev_z": 1.72, "sector": "Utilities", "sector_n": 57, "sector_rank": 1, "ticker": "603393.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "NYOCOR Co., Ltd. / \u91d1\u5f00\u65b0\u80fd", "price": 6.37, "ret_3m": -42.5, "rev_z": 1.67, "sector": "Utilities", "sector_n": 57, "sector_rank": 2, "ticker": "600821.SS"}, {"cycle": "UPTREND", "cycle_dir": "up", "cycle_zh": "\u4e0a\u6da8\u8d8b\u52bf", "mktcap_yi": 372.0, "name": "Sunshine Guojian Pharmaceutical (Shanghai) Co., Ltd / \u4e09\u751f\u56fd\u5065", "price": 41.46, "ret_3m": -39.5, "rev_z": 1.6, "sector": "Healthcare", "sector_n": 118, "sector_rank": 3, "ticker": "688336.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Zhongman Petroleum and Natural Gas Group Corp.,Ltd. / \u4e2d\u66fc\u77f3\u6cb9", "price": 18.74, "ret_3m": -46.8, "rev_z": 1.58, "sector": "Energy", "sector_n": 35, "sector_rank": 1, "ticker": "603619.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Soho Holly Futures Co., Ltd. / \u5f18\u4e1a\u671f\u8d27", "price": 6.97, "ret_3m": -29.4, "rev_z": 1.54, "sector": "Financial Services", "sector_n": 95, "sector_rank": 2, "ticker": "001236.SZ"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Star Lake Bioscience Co., Inc.Zhaoqing Guangdong / \u661f\u6e56\u79d1\u6280", "price": 4.4, "ret_3m": -38.4, "rev_z": 1.53, "sector": "Healthcare", "sector_n": 118, "sector_rank": 4, "ticker": "600866.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Heilongjiang ZBD Pharmaceutical Co., Ltd. / \u73cd\u5b9d\u5c9b", "price": 4.28, "ret_3m": -38.0, "rev_z": 1.51, "sector": "Healthcare", "sector_n": 118, "sector_rank": 5, "ticker": "603567.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Zhejiang Dongri Limited Company / \u6d59\u6c5f\u4e1c\u65e5", "price": 27.42, "ret_3m": -48.1, "rev_z": 1.47, "sector": "Consumer Defensive", "sector_n": 57, "sector_rank": 1, "ticker": "600113.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Hangzhou Shunwang Technology Co,Ltd / \u987a\u7f51\u79d1\u6280", "price": 17.92, "ret_3m": -38.2, "rev_z": 1.43, "sector": "Communication Services", "sector_n": 47, "sector_rank": 1, "ticker": "300113.SZ"}, {"mktcap_yi": 30.0, "name": "Shenzhen SOFARSOLAR Co., Ltd. / \u9996\u822a\u65b0\u80fd", "ret_3m": -56.5, "rev_z": 1.42, "sector": "Technology", "sector_n": 363, "sector_rank": 1, "ticker": "301658.SZ"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 30.0, "name": "Hengdian Entertainment Co.,LTD / \u6a2a\u5e97\u5f71\u89c6", "price": 14.21, "ret_3m": -36.8, "rev_z": 1.34, "sector": "Communication Services", "sector_n": 47, "sector_rank": 2, "ticker": "603103.SS"}, {"cycle": "DOWNTREND", "cycle_dir": "down", "cycle_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "mktcap_yi": 332.0, "name": "Beijing Wantai Biological Pharmacy Enterprise Co., Ltd. / \u4e07\u6cf0\u751f\u7269", "price": 26.27, "ret_3m": -34.7, "rev_z": 1.32, "sector": "Healthcare", "sector_n": 118, "sector_rank": 6, "ticker": "603392.SS"}, {"cycle": "NEARING A LOW", "cycle_dir": "down", "cycle_zh": "\u63a5\u8fd1\u4f4e\u70b9", "mktcap_yi": 30.0, "name": "Ruida Futures Co.,Ltd. / \u745e\u8fbe\u671f\u8d27", "price": 19.87, "ret_3m": -25.1, "rev_z": 1.29, "sector": "Financial Services", "sector_n": 95, "sector_rank": 3, "ticker": "002961.SZ"}]}</script>
     <script type="application/json" id="sb-seczh">{"Basic Materials": "\u539f\u6750\u6599", "Communication Services": "\u901a\u4fe1\u670d\u52a1", "Consumer Cyclical": "\u53ef\u9009\u6d88\u8d39", "Consumer Defensive": "\u5fc5\u9700\u6d88\u8d39", "Energy": "\u80fd\u6e90", "Financial Services": "\u91d1\u878d", "Healthcare": "\u533b\u7597\u4fdd\u5065", "Industrials": "\u5de5\u4e1a", "Real Estate": "\u623f\u5730\u4ea7", "Technology": "\u79d1\u6280", "Utilities": "\u516c\u7528\u4e8b\u4e1a"}</script>
     <script>
     (function () {
@@ -1937,7 +1938,7 @@
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-06-28 17:03 UTC ·
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-06-28 18:49 UTC ·
   <span class="l-en">Free public data (yfinance + Eastmoney), mechanical &amp; backtested · not investment advice</span><span class="l-zh">免费公开数据（yfinance + 东方财富），机械化并经回测 · 非投资建议</span><br>
   <span class="l-en">Sector ETFs ~5y history (display-grade RS); regime &amp; ladder calibrated on the deep 2006–2026 panel.</span><span class="l-zh">板块ETF约5年历史（展示级相对强弱）；周期与阶梯基于2006–2026深度样本校准。</span>
 </div>

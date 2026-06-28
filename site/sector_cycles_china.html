@@ -14,8 +14,10 @@
 <link rel="stylesheet" href="sector_cycles.css">
 </head>
 <body>
+
+
 <nav class="site-nav">
-    
+  
 
 
     <div class="nav-links">
@@ -55,6 +57,7 @@
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">Finviz's 268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">Finviz 268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
           </div>
         </div>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -175,7 +178,8 @@
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
-      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+      placeholder="Search any stock — US, China, HK, Canada & more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
@@ -239,13 +243,13 @@
         <h2 id="sc-hero-title"><span class="l-en">Sector rotation overlay</span><span class="l-zh">板块轮动叠加</span></h2>
         <div class="cyc-hero-tools">
           <div class="sc-ctrl-group">
-            <div class="sc-scale" id="sc-scale" aria-label="Price scale">
+            <div class="sc-scale disabled" id="sc-scale" aria-label="Price scale">
               <button class="sc-sbtn on" data-scale="log"><span class="l-en">Log</span><span class="l-zh">对数</span></button>
               <button class="sc-sbtn" data-scale="linear"><span class="l-en">Linear</span><span class="l-zh">线性</span></button>
             </div>
             <div class="sc-modes" id="sc-modes" aria-label="Chart mode">
-              <button class="sc-mbtn on" data-mode="price"><span class="l-en">Price</span><span class="l-zh">价格</span></button>
-              <button class="sc-mbtn" data-mode="osc"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></button>
+              <button class="sc-mbtn" data-mode="price"><span class="l-en">Price</span><span class="l-zh">价格</span></button>
+              <button class="sc-mbtn on" data-mode="osc"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></button>
             </div>
           </div>
           <div class="cyc-legend">
