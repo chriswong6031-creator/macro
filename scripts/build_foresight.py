@@ -112,6 +112,20 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("convergence failed (non-fatal): %s", e)
         convergence = None
+    # LLM analyst over the convergence (graceful no-op without a credential) + the deterministic
+    # thesis monitor that fires when the convergence a thesis was built on decays.
+    try:
+        from engine.foresight_analyst import compute_foresight_analyst
+        analyst = compute_foresight_analyst(convergence, cascade)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("foresight_analyst failed (non-fatal): %s", e)
+        analyst = None
+    try:
+        from engine.thesis_monitor import compute_thesis_monitor
+        monitor = compute_thesis_monitor(convergence)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("thesis_monitor failed (non-fatal): %s", e)
+        monitor = None
 
     themes = cascade.get("themes", [])
     stage_counts = {s: 0 for s in STAGE_ORDER}
@@ -143,6 +157,8 @@ def main() -> int:
             emergence=emergence,
             subsectors=subsectors,
             convergence=convergence,
+            analyst=analyst,
+            monitor=monitor,
             asof=cascade.get("asof"),
             generated_utc=built,
             nav_prefix="",
