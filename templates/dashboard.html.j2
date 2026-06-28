@@ -2190,14 +2190,21 @@
           {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" title="GICS sector">🏛</span><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.age_short %}<span class="actage">⏱ {{ t(x.age_short, x.age_short_zh) }}</span>{% endif %}{% if x.eq_badge %}<span class="eqmini eq-{{ x.eq_dir }}" title="{{ x.eq_tip }}">{{ x.eq_badge }}</span>{% endif %}<span class="acttag">{{ td(x.label) }}</span></a>{% endif %}
         {% else %}<p class="muted sm">{{ t('Nothing topping.', '无标的做顶。') }}</p>{% endfor %}
       </div>
-      <div class="actcol act-hold">
+      <div class="actcol act-hold lst-wrap">
         <div class="acth">⚪ {{ t('HOLD / avoid', '持有／回避') }}</div>
+        {# Hold + avoid stack up the most items (sectors + baskets); cap the column at 6 rows
+           and fold the rest behind a Show more toggle (shared .lst-collapse primitive). #}
+        <div class="lst-collapse lst-cap6 is-collapsed">
         {% for x in action_board.hold %}
           {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" title="GICS sector">🏛</span><b>{{ td(x.name) }}</b> <span class="muted">{{ t("hold — don't chase", '持有 — 勿追高') }}</span></a>{% endif %}
         {% endfor %}
         {% for x in action_board.avoid %}
           {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" title="GICS sector">🏛</span><b>{{ td(x.name) }}</b> <span class="muted">{{ t("wait", '等待') if x.tag == "WAIT" else t("avoid", '回避') }}</span></a>{% endif %}
         {% endfor %}
+        </div>
+        {% if (action_board.hold | length) + (action_board.avoid | length) > 6 %}
+        <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>
+        {% endif %}
       </div>
     </div>
     {% set _su = us_standouts if (us_standouts and us_standouts.buy) else None %}
