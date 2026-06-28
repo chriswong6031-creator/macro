@@ -246,32 +246,108 @@
   .chart { width: 100%; }
   .topline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
 
-  /* US Stocks header — Risk Radar alert (rendered only when the radar fires; see #stocks-header).
-     Self-contained on the GLOBAL theme vars, because the macro .ms-radar styling lives in the
-     page-macro scope which doesn't apply here. --rc = the band colour, set inline. */
-  .rr-alert { display: flex; align-items: center; gap: 11px; flex-wrap: wrap;
-              margin: 12px 0 2px; padding: 9px 13px; border-radius: 10px;
-              border: 1px solid color-mix(in srgb, var(--rc) 55%, var(--line));
-              background: color-mix(in srgb, var(--rc) 12%, var(--panel2));
-              animation: rrApulse 2.2s ease-in-out infinite; }
-  @media (prefers-reduced-motion: reduce) { .rr-alert { animation: none;
-              box-shadow: 0 0 0 1px color-mix(in srgb, var(--rc) 40%, transparent); } }
-  @keyframes rrApulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rc) 34%, transparent); }
-                        50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--rc) 7%, transparent); } }
-  .rr-alert .rra-ic { font-size: 17px; line-height: 1; flex: none; }
-  .rr-alert .rra-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 240px; }
-  .rr-alert .rra-tit { font-weight: 600; color: var(--text); }
-  .rr-alert .rra-tit b { font-weight: 800; }
-  .rr-alert .rra-odds { font-size: 11px; color: var(--muted); }
-  .rr-alert .rra-odds b { color: var(--text); }
-  .rr-alert .rra-do { font-size: 11.5px; color: var(--text); max-width: 36ch; }
-  @media (max-width: 760px) { .rr-alert .rra-do { max-width: none; flex: 1 1 100%; } }
-  .rr-alert .rra-scares { display: flex; flex-wrap: wrap; align-items: center; gap: 5px;
-              flex: 1 1 100%; margin-top: 3px; font-size: 11px; color: var(--muted); }
-  .rr-alert .rra-scare { border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px;
-              color: var(--text); background: var(--panel); }
-  .rr-alert .rra-more { margin-left: auto; color: var(--link); font-weight: 700; font-size: 11.5px;
-              white-space: nowrap; }
+  /* ============================================================================
+     RISK RADAR CARD (.rrx) — the one shared, redesigned alert used on BOTH the
+     Macro Market-State board and the US-Stocks header (macro risk_radar_card()).
+     GLOBAL theme vars only + an inline --rc state accent, so it renders the same
+     in the page-macro and page-stocks scopes. The escalating odds ramp replaces
+     the old cramped "5d.. 10d.. 21d.." text run. ============================ */
+  .rrx { --rc: var(--warn);
+         display: grid; gap: 11px; margin: 12px 0 2px; padding: 13px 15px; border-radius: 12px;
+         background: color-mix(in srgb, var(--rc) 7%, var(--panel2));
+         border: 1px solid color-mix(in srgb, var(--rc) 26%, var(--line));
+         border-left: 3px solid var(--rc); font-size: 12.5px; line-height: 1.4; }
+  body.page-macro .ms-front > .rrx { margin: 0 0 14px; }
+  .rrx.rrx-loud { background: color-mix(in srgb, var(--rc) 12%, var(--panel2));
+         box-shadow: 0 0 0 1px color-mix(in srgb, var(--rc) 22%, transparent), 0 10px 30px -14px var(--rc);
+         animation: rrxPulse 2.4s ease-in-out infinite; }
+  @keyframes rrxPulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rc) 30%, transparent); }
+                        50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--rc) 6%, transparent); } }
+  @media (prefers-reduced-motion: reduce) { .rrx.rrx-loud { animation: none;
+         box-shadow: 0 0 0 1px color-mix(in srgb, var(--rc) 30%, transparent); } }
+  /* header */
+  .rrx .rrx-hd { display: flex; align-items: flex-start; gap: 10px; }
+  .rrx .rrx-ic { font-size: 18px; line-height: 1.1; flex: none; }
+  .rrx .rrx-id { min-width: 0; flex: 1; }
+  .rrx .rrx-ttl { display: flex; align-items: center; flex-wrap: wrap; gap: 7px;
+         font-weight: 700; font-size: 13px; color: var(--text); }
+  .rrx .rrx-badge { font-weight: 800; letter-spacing: .03em; color: var(--rc); font-size: 11.5px;
+         font-variant-numeric: tabular-nums; padding: 1px 7px; border-radius: 5px;
+         background: color-mix(in srgb, var(--rc) 16%, transparent);
+         border: 1px solid color-mix(in srgb, var(--rc) 38%, transparent); }
+  .rrx .rrx-dom { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+  .rrx .rrx-amp { color: var(--rc); font-weight: 600; font-size: 11px; margin-top: 3px; }
+  .rrx .rrx-gross { flex: none; text-align: center; padding: 3px 11px; border-radius: 9px;
+         background: color-mix(in srgb, var(--rc) 12%, transparent);
+         border: 1px solid color-mix(in srgb, var(--rc) 32%, transparent); }
+  .rrx .rrx-gross .gv { display: block; font-weight: 800; font-size: 15px; color: var(--rc);
+         font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .rrx .rrx-gross .gn { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: .07em;
+         color: var(--muted); }
+  /* odds hero */
+  .rrx .rrx-odds { display: flex; gap: 16px; align-items: stretch; flex-wrap: wrap;
+         background: color-mix(in srgb, var(--rc) 5%, var(--panel));
+         border: 1px solid var(--line); border-radius: 9px; padding: 11px 14px; }
+  .rrx .rrx-odds-l { flex: 1 1 150px; display: flex; flex-direction: column; justify-content: center; }
+  .rrx .rrx-cap { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em;
+         color: var(--muted); }
+  .rrx .rrx-cap-sub { font-weight: 600; letter-spacing: .02em; opacity: .8; }
+  .rrx .rrx-big { font-weight: 800; font-size: 40px; line-height: .95; color: var(--rc); margin: 4px 0 2px;
+         font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .rrx .rrx-big .pct { font-size: 22px; margin-left: 1px; }
+  .rrx .rrx-big .rrx-hz { font-size: 11px; font-weight: 600; color: var(--muted); margin-left: 7px;
+         letter-spacing: 0; }
+  .rrx .rrx-vsn { font-size: 11.5px; color: var(--muted); }
+  .rrx .rrx-vsn b { color: var(--text); font-variant-numeric: tabular-nums; }
+  /* escalating ramp */
+  .rrx .rrx-ramp { flex: 1 1 240px; min-width: 0; max-width: 430px; display: flex; align-items: flex-end;
+         justify-content: space-between; gap: 12px; position: relative; padding-top: 18px; }
+  .rrx .rrx-col { flex: 1 1 0; min-width: 0; max-width: 76px; display: flex; flex-direction: column;
+         align-items: center; gap: 5px; }
+  .rrx .rrx-v { font-size: 12.5px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+  .rrx .rrx-col.is-hd .rrx-v { color: var(--rc); }
+  .rrx .rrx-tk { width: 100%; max-width: 54px; height: 64px; position: relative;
+         display: flex; align-items: flex-end; justify-content: center; border-bottom: 1px solid var(--line); }
+  .rrx .rrx-norm { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 2px 2px 0 0;
+         background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--muted) 32%, transparent) 0 4px, transparent 4px 8px);
+         border-top: 1px dashed color-mix(in srgb, var(--muted) 60%, transparent); }
+  .rrx .rrx-fill { width: 100%; border-radius: 3px 3px 0 0; position: relative; z-index: 1; min-height: 6px;
+         background: linear-gradient(180deg, var(--rc), color-mix(in srgb, var(--rc) 50%, transparent)); }
+  .rrx .rrx-hl { font-size: 10.5px; font-weight: 600; color: var(--muted); }
+  .rrx .rrx-col.is-hd .rrx-hl { color: var(--text); }
+  .rrx .rrx-leg { position: absolute; top: 0; right: 2px; display: flex; align-items: center; gap: 4px;
+         font-size: 9.5px; color: var(--muted); }
+  .rrx .rrx-leg-n { width: 13px; border-top: 1px dashed color-mix(in srgb, var(--muted) 60%, transparent); }
+  /* threat meters */
+  .rrx .rrx-threats { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rrx .rrx-th { --sb: var(--muted); display: inline-flex; align-items: center; gap: 6px;
+         padding: 3px 9px; border-radius: 7px; font-size: 11px;
+         background: var(--panel); border: 1px solid var(--line); }
+  .rrx .rrx-th.dom { background: color-mix(in srgb, var(--sb) 10%, var(--panel));
+         border-color: color-mix(in srgb, var(--sb) 50%, var(--line)); }
+  .rrx .rrx-th.dim { opacity: .58; }
+  .rrx .rrx-th-n { color: var(--text); font-weight: 600; }
+  .rrx .rrx-th.dom .rrx-th-n { color: var(--sb); }
+  .rrx .rrx-meter { display: inline-flex; gap: 1.5px; }
+  .rrx .rrx-meter i { width: 3px; height: 11px; border-radius: 1px;
+         background: color-mix(in srgb, var(--muted) 28%, transparent); }
+  .rrx .rrx-meter i.on { background: var(--sb); }
+  .rrx .rrx-th-s { color: var(--text); font-weight: 800; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .rrx .rrx-tag { font-size: 8.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+         border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+  .rrx .rrx-ev { font-size: 11px; color: var(--muted); }
+  .rrx .rrx-ev-k { font-weight: 700; color: var(--text); margin-right: 6px; }
+  .rrx .rrx-ev-p { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  /* action */
+  .rrx .rrx-do { font-size: 12px; color: var(--text); padding-top: 9px;
+         border-top: 1px solid color-mix(in srgb, var(--rc) 20%, var(--line)); }
+  .rrx .rrx-do-k { font-weight: 800; color: var(--rc); text-transform: uppercase; letter-spacing: .06em;
+         font-size: 10.5px; margin-right: 8px; }
+  @media (max-width: 760px) {
+    .rrx .rrx-odds { flex-direction: column; gap: 14px; }
+    .rrx .rrx-odds-l { flex: 0 0 auto; }
+    .rrx .rrx-ramp { flex: 0 0 auto; width: 100%; max-width: none; justify-content: space-around; }
+  }
 
   .help { display: inline-flex; align-items: center; justify-content: center;
           width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
@@ -1281,38 +1357,8 @@
     font-size:11.5px;line-height:1.4;color:var(--ink-1)}
   body.page-macro .v-override .ic{color:var(--act);flex:none;font-size:12px;line-height:1.3}
 
-  /* Risk-Radar banner — the validated leading drawdown gauge, promoted to the very top
-     of the command-center so the headline can never read risk-on above a screaming radar */
-  body.page-macro .ms-radar{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin:0 0 14px;
-    padding:9px 13px;border-radius:10px;font-size:12.5px;line-height:1.35;
-    background:color-mix(in srgb,var(--rc) 8%,var(--panel2));
-    border:var(--rule) solid color-mix(in srgb,var(--rc) 28%,var(--hair));border-left:3px solid var(--rc)}
-  body.page-macro .ms-radar.loud{background:color-mix(in srgb,var(--rc) 14%,var(--panel2));
-    box-shadow:0 0 0 1px color-mix(in srgb,var(--rc) 22%,transparent),0 8px 26px -12px var(--rc)}
-  body.page-macro .ms-radar .msr-ic{font-size:17px;line-height:1;flex:none}
-  body.page-macro .ms-radar .msr-main{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 240px}
-  body.page-macro .ms-radar .msr-tit{font-weight:600;color:var(--ink-2)}
-  body.page-macro .ms-radar .msr-tit b{font-family:var(--num)}
-  body.page-macro .ms-radar .msr-odds{font-size:11px;color:var(--ink-3)}
-  body.page-macro .ms-radar .msr-odds b{font-family:var(--num);color:var(--ink-2)}
-  body.page-macro .ms-radar .msr-amp{font-size:11px;color:var(--rc);font-weight:600;line-height:1.3}
-  body.page-macro .ms-radar .msr-do{font-size:11.5px;color:var(--ink-2);max-width:34ch}
-  @media(max-width:760px){body.page-macro .ms-radar .msr-do{max-width:none;flex:1 1 100%}}
-  body.page-macro .ms-radar .msr-scares{display:flex;flex-wrap:wrap;align-items:center;gap:5px;flex:1 1 100%;
-    margin-top:4px;padding-top:7px;border-top:var(--rule) solid var(--hair);font-size:10.5px;color:var(--ink-3)}
-  body.page-macro .ms-radar .msr-scare{border:var(--rule) solid var(--hair);border-radius:6px;padding:1px 7px;color:var(--ink-2);background:var(--panel);position:relative;cursor:help}
-  body.page-macro .ms-radar .msr-scare b{font-family:var(--num)}
-  /* hover explainer on each scare chip — what the alert means in its current state.
-     Reuses the global tooltip edge-detection JS (it keys on .msr-scare too). */
-  body.page-macro .ms-radar .msr-scare > .tip{display:none;position:absolute;bottom:150%;left:50%;
-    transform:translateX(-50%);width:290px;max-width:78vw;background:var(--panel);border:1px solid var(--line);
-    padding:9px 11px;border-radius:8px;z-index:60;font-size:12px;line-height:1.45;color:var(--text);
-    text-align:left;font-weight:400;letter-spacing:normal;box-shadow:var(--popover-shadow);
-    pointer-events:none;white-space:normal}
-  body.page-macro .ms-radar .msr-scare:hover > .tip{display:block}
-  body.page-macro .ms-radar .msr-scare.below > .tip{bottom:auto;top:150%}
-  body.page-macro .ms-radar .msr-scare.edge-right > .tip{left:auto;right:0;transform:none}
-  body.page-macro .ms-radar .msr-scare.edge-left > .tip{left:0;right:auto;transform:none}
+  /* Risk-Radar banner now renders through the shared .rrx card (macro risk_radar_card);
+     its old .ms-radar / .msr-* styling was retired with the cramped text-run markup. */
 
   /* Heads-up strip — compact live flags (next catalyst / Fed stance / fragility),
      replacing the old full-width Event-Risk + Turning-Point + Fed-reaction panels.
