@@ -889,6 +889,21 @@ sentiment:
   naaim_url: https://naaim.org/programs/naaim-exposure-index/
   retries: 2
 
+# Offshore (en.wikipedia.org) per-ticker pageviews -> a DISPLAY-ONLY abnormal-
+# attention chip (over-extension/fade caution, never directional). Keyless.
+wiki_pageviews:
+  base_url: https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article
+  project: en.wikipedia.org
+  access: all-access
+  agent: user
+  history_days: 120          # rolling window the chip's z is computed over
+  history_days_full: 740     # --full-history backfill (API serves from 2015-07)
+  min_days: 60               # need a baseline to z-score against
+  z_window: 90               # abnormal-attention baseline window
+  retries: 3
+  chip_threshold: 2.0        # z at/above which the caution chip renders
+  pace_sec: 0.05             # inter-call sleep (mirror equity_profile pacing)
+
 sponsors:
   # Daily shares-outstanding + NAV for sector SPDRs -> flow = delta(SO) x NAV
   sectorspdr_api: https://www.sectorspdrs.com/api/fundQuote/
