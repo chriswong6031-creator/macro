@@ -1,0 +1,48 @@
+# Caddyfile — static origin for mastermind-x.com, behind Cloudflare.
+#
+# Cloudflare terminates public TLS at its edge and connects back to this origin.
+# `tls internal` serves Caddy's self-signed cert on :443 so the CF<->origin hop is
+# still encrypted; set Cloudflare SSL/TLS mode to **Full** (NOT "Full (strict)",
+# which would reject a self-signed origin cert). To upgrade later, replace
+# `tls internal` with a Cloudflare *Origin Certificate* (`tls /path/cert.pem /path/key.pem`)
+# and switch CF to "Full (strict)".
+#
+# Pre-launch: the whole site is served but marked noindex so it can't be crawled
+# before launch. Product login (Supabase) arrives in Slice 2; for a private beta
+# right now, front this with Cloudflare Access (email OTP, zero code).
+
+{
+	# CF owns the public redirect; don't fight it.
+	auto_https disable_redirects
+	# Trust Cloudflare's forwarded client IP (so logs show the real visitor).
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+mastermind-x.com, www.mastermind-x.com {
+	root * /opt/macro/site
+	encode zstd gzip
+	file_server {
+		index index.html
+	}
+
+	header {
+		# Pre-launch: keep the product out of search indexes.
+		X-Robots-Tag "noindex, nofollow, noarchive"
+		# Basic hardening.
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# Self-signed origin cert; pair with Cloudflare SSL mode = "Full".
+	tls internal
+
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 20mb
+			roll_keep 5
+		}
+	}
+}
