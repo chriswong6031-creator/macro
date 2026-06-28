@@ -390,40 +390,39 @@ def _radar_override(latest: dict, overrides: list) -> dict:
         "dd5": _num(dp.get("h5")), "dd10": _num(dp.get("h10")), "dd21": _num(dp.get("h21")),
         "dd_lift": _num(dp.get("lift_h21")),
         "is_loud": state in ("caution", "elevated", "risk-off"),
-        "amp": 0, "amp_flags_en": [], "amp_flags_zh": [],
+        "amp": 0, "amp_keys": [], "amp_flags_en": [], "amp_flags_zh": [],
         "severe_gated": False, "ceiling": None,
     }
     if state not in ("caution", "elevated", "risk-off"):
         return out
 
-    # ---- confluence multiplier: count the OTHER risk gauges flashing right now ----
+    # ---- confluence multiplier: the OTHER risk gauges flashing right now. Each carries a
+    # STABLE key so the forward-grade log (engine/market_state_audit.py) can measure which
+    # corroborators actually precede drawdowns and prune the ones that don't. ----
     C = latest.get("conditions") or {}
     cmp_ = C.get("complacency") or {}
-    flags_en, flags_zh = [], []
-    if rr.get("conjunction"):
-        flags_en.append("several scare-types firing together")
-        flags_zh.append("多个风险类型同时触发")
     nhot = sum(1 for s in (rr.get("scares") or [])
                if s.get("band") in ("caution", "elevated", "risk-off"))
-    if nhot >= 2:
-        flags_en.append(f"{nhot} risk types elevated")
-        flags_zh.append(f"{nhot} 类风险升高")
-    if (cmp_.get("state") or "") in ("watch", "high"):
-        flags_en.append("complacency — calm VIX but fragile")
-        flags_zh.append("自满 — VIX 平静但脆弱")
-    if cmp_.get("breadth_div"):
-        flags_en.append("narrowing breadth / leadership")
-        flags_zh.append("广度／领导性收窄")
-    if (C.get("drawdown_risk") or {}).get("band") in ("elevated", "high", "extreme"):
-        flags_en.append("drawdown-risk band rising")
-        flags_zh.append("回撤风险区间上升")
-    if (C.get("systemic_stress") or {}).get("state") in ("elevated", "acute"):
-        flags_en.append("systemic stress building")
-        flags_zh.append("系统性压力累积")
-    if (latest.get("turning_point") or {}).get("present"):
-        flags_en.append("fragile one-factor tape")
-        flags_zh.append("脆弱的单因子行情")
-    amp = len(flags_en)
+    _checks = [
+        ("conjunction", bool(rr.get("conjunction")),
+         "several scare-types firing together", "多个风险类型同时触发"),
+        ("two_plus_scares", nhot >= 2,
+         f"{nhot} risk types elevated", f"{nhot} 类风险升高"),
+        ("complacency", (cmp_.get("state") or "") in ("watch", "high"),
+         "complacency — calm VIX but fragile", "自满 — VIX 平静但脆弱"),
+        ("breadth_div", bool(cmp_.get("breadth_div")),
+         "narrowing breadth / leadership", "广度／领导性收窄"),
+        ("drawdown_band", (C.get("drawdown_risk") or {}).get("band") in ("elevated", "high", "extreme"),
+         "drawdown-risk band rising", "回撤风险区间上升"),
+        ("systemic_stress", (C.get("systemic_stress") or {}).get("state") in ("elevated", "acute"),
+         "systemic stress building", "系统性压力累积"),
+        ("turning_point", bool((latest.get("turning_point") or {}).get("present")),
+         "fragile one-factor tape", "脆弱的单因子行情"),
+    ]
+    keys = [k for k, on, _e, _z in _checks if on]
+    flags_en = [e for _k, on, e, _z in _checks if on]
+    flags_zh = [z for _k, on, _e, z in _checks if on]
+    amp = len(keys)
 
     # severe-but-gated: un-gated read worse than the label, or the top scare screaming
     severe_gated = state == "caution" and (
@@ -434,7 +433,7 @@ def _radar_override(latest: dict, overrides: list) -> dict:
         base -= 10
     ceiling = max(12, base - 6 * amp)   # each corroborating signal pulls 6 pts lower
 
-    out.update(amp=amp, amp_flags_en=flags_en, amp_flags_zh=flags_zh,
+    out.update(amp=amp, amp_keys=keys, amp_flags_en=flags_en, amp_flags_zh=flags_zh,
                severe_gated=severe_gated, ceiling=ceiling)
 
     sc = f" ({out['top_score']}/100)" if out["top_score"] is not None else ""

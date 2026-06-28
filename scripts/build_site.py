@@ -1747,7 +1747,18 @@ def market_state_view(latest: dict, f: pd.DataFrame) -> dict | None:
     Green/Yellow/Red verdict. Zero new data, never scored. None on shortfall."""
     try:
         from engine import market_state as _ms
-        return _ms.market_state_snapshot(latest, f, latest.get("alerts") or [])
+        snap = _ms.market_state_snapshot(latest, f, latest.get("alerts") or [])
+        if snap:
+            # Self-auditing forward-outcome log (engine/market_state_audit.py): log today's
+            # verdict, grade matured entries vs realized SPY, and attach the scorecard
+            # (incl. per-corroborator precision) so the amplification is accountable and
+            # the weak corroborators can be measured + pruned over time. Never fatal.
+            try:
+                from engine import market_state_audit as _msa
+                snap["audit"] = _msa.snapshot_and_grade(snap)
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.warning("market_state audit failed: %s", e)
+        return snap
     except Exception as e:  # noqa: BLE001 — additive panel, never fatal
         log.warning("market_state view failed: %s", e)
         return None
