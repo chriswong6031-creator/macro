@@ -3812,6 +3812,21 @@ china:
       "518880.SS": Gold ETF                 # 黄金 — de-risk leg (2013->)
       "511010.SS": Treasury Bond ETF        # 国债 5Y — short-bond de-risk leg
 
+  # -- Plane A per-NAME OHLC: signal-engine store (group=china_stocks) ----------
+  # Per-name daily OHLC (close/high/low/volume) for the MACD-RSI x StochRSI
+  # confluence + buy-filter, which need real HIGH/LOW + years of history (the
+  # data/china index/ETF store above is close+volume only). Universe = the committed
+  # A-share search universe (data/china_search/closes.parquet, ~1.5k names); `seed`
+  # is the curated set committed up front, the rest backfills nightly (store.upsert
+  # is incremental). Store mirrors data/stocks/*.parquet. yfinance .SS/.SZ already
+  # match the data/china namespace -> no remap. research/signal_engine/MULTICOUNTRY_DATA.md
+  stock_prices:
+    retries: 3
+    backoff_base_s: 5
+    batch_size: 50
+    sleep_s: 2.5                     # between chunks — Yahoo 429 mitigation on the ~1.5k-name backfill
+    seed: ["600519.SS","000001.SZ","300750.SZ","601398.SS","600036.SS","000858.SZ","601318.SS","600276.SS","002594.SZ","600900.SS","601988.SS","000333.SZ"]
+
   # -- Plane B: macro via Eastmoney datacenter JSON (group=china_macro) --------
   # Report-name -> column parsing lives in collectors/china_macro.py (logic, not
   # a tunable); this list toggles which series the collector attempts. Each
@@ -3990,6 +4005,21 @@ hk:
     extras:                         # collected into the `hk` group but not treated as searchable indices
       "EEM": MSCI EM ETF            # global-risk factor (EM equity)
       "^HSIL": HSI Volatility (VHSI)  # HK's native VIX (HSI 30-day implied vol; ^VHSI not on Yahoo)
+
+  # -- Plane A per-NAME OHLC: signal-engine store (group=hk_stocks) ------------
+  # Per-name daily OHLC (close/high/low/volume) for the MACD-RSI x StochRSI
+  # confluence + buy-filter (the data/hk index store is close+volume only; the
+  # site/hkstockdata charts are close-only). Universe = the committed HK breadth /
+  # search universe (data/hk_breadth/_closes_cache.parquet, ~160 names); `seed` is
+  # the curated set committed up front, the rest backfills nightly (incremental).
+  # Store mirrors data/stocks/*.parquet. yfinance .HK already matches the data/hk
+  # namespace -> no remap. research/signal_engine/MULTICOUNTRY_DATA.md
+  stock_prices:
+    retries: 3
+    backoff_base_s: 5
+    batch_size: 50
+    sleep_s: 2.5                     # between chunks — Yahoo 429 mitigation on the backfill
+    seed: ["0700.HK","0005.HK","9988.HK","3690.HK","0941.HK","1299.HK","0388.HK","2318.HK","1810.HK","9618.HK","0883.HK","0939.HK"]
 
   # -- Sectors = deep synthetic baskets of curated constituents ---------------
   # Each sector is an equal-weight basket (engine.indicators.basket_index) over

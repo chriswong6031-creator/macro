@@ -1,0 +1,110 @@
+"""Shared per-name daily-OHLC pull for the China + HK signal stores
+(group = ``china_stocks`` / ``hk_stocks``).
+
+Mirrors ``collectors/china_prices.py``'s yfinance pull but keeps the **full OHLC**
+(close/high/low/volume) that the MACD-RSI x StochRSI confluence + buy-filter need —
+versus the close+volume the index/ETF stores (``data/china`` / ``data/hk``) keep.
+Store layout matches ``data/stocks/*.parquet`` (the US deep-history store): one
+parquet per ticker, ``DatetimeIndex`` named ``Date``, columns ``[close, high, low,
+volume]`` float64. yfinance ``.SS``/``.SZ``/``.HK`` suffixes already match the
+existing namespaces, so there is no remap. See
+``research/signal_engine/MULTICOUNTRY_DATA.md`` for the source decision.
+"""
+from __future__ import annotations
+
+import logging
+import time
+
+import pandas as pd
+import yfinance as yf
+
+from lib import config, store
+
+log = logging.getLogger(__name__)
+
+_OHLC = ["Close", "High", "Low", "Volume"]
+_REN = {"Close": "close", "High": "high", "Low": "low", "Volume": "volume"}
+_DEEP_MIN_ROWS = 250  # already-deep names take the cheap 1mo window
+
+
+def universe_columns(relpath: str, seed: list[str] | None = None) -> list[str]:
+    """Ticker universe = the column names of a committed wide-closes cache
+    (e.g. ``china_search/closes.parquet``), unioned with the config ``seed``.
+    Defensive: a missing cache (e.g. a fresh CI checkout) degrades to the seed
+    alone rather than raising — the runner just collects fewer names that night."""
+    out: list[str] = list(seed or [])
+    p = config.data_dir() / relpath
+    if p.exists():
+        try:
+            out += [str(c) for c in pd.read_parquet(p).columns]
+        except Exception as e:  # noqa: BLE001 — universe is best-effort context, never fatal
+            log.warning("stock_ohlc: could not read universe %s: %s", relpath, e)
+    return list(dict.fromkeys(out))
+
+
+def _download(batch: list[str], period: str, cfg: dict) -> pd.DataFrame:
+    last_exc: Exception | None = None
+    for attempt in range(cfg["retries"]):
+        try:
+            df = yf.download(batch, period=period, auto_adjust=True,
+                             progress=False, group_by="ticker", threads=True)
+            if df is None or df.empty:
+                raise RuntimeError("empty yfinance response")
+            return df
+        except Exception as e:  # noqa: BLE001
+            last_exc = e
+            wait = cfg["backoff_base_s"] * (2 ** attempt)
+            log.warning("stock_ohlc batch failed (%s); retry in %.0fs", e, wait)
+            time.sleep(wait)
+    raise last_exc  # type: ignore[misc]
+
+
+def _fetch_plan(tickers: list[str], group: str, full_history: bool) -> dict[str, list[str]]:
+    """Newly-added / shallow names pull ``period='max'`` (backfill from inception);
+    names already deep on disk take the cheap ``'1mo'`` window. ``store.upsert``
+    dedups by date, so re-pulling 'max' over a shallow series just completes it."""
+    if full_history:
+        return {"max": list(tickers)}
+    deep, shallow = [], []
+    for t in tickers:
+        df = store.read(group, t)
+        (deep if (df is not None and len(df) >= _DEEP_MIN_ROWS) else shallow).append(t)
+    return {"1mo": deep, "max": shallow}
+
+
+def fetch_ohlc(tickers: list[str], group: str, cfg: dict,
+               full_history: bool) -> dict[str, pd.DataFrame]:
+    """Pull OHLC for ``tickers`` into ``{ticker: frame[close,high,low,volume]}``.
+
+    Chunked (``batch_size``) with an inter-chunk ``sleep_s`` to stay under Yahoo's
+    429 throttle on the ~1.5k-name first backfill. A chunk that fails permanently is
+    SKIPPED (logged), not fatal — ``store.upsert`` is incremental so the next nightly
+    run refills the gap. Raises only when *nothing* came back (so the circuit breaker
+    can act on a truly dead endpoint)."""
+    frames: dict[str, pd.DataFrame] = {}
+    bs = int(cfg.get("batch_size", 50))
+    sleep_s = float(cfg.get("sleep_s", 2.0))
+    for period, tks in _fetch_plan(tickers, group, full_history).items():
+        for i in range(0, len(tks), bs):
+            batch = tks[i:i + bs]
+            if not batch:
+                continue
+            try:
+                df = _download(batch, period, cfg)
+            except Exception as e:  # noqa: BLE001 — one dead chunk must not kill the rest
+                log.warning("stock_ohlc[%s]: chunk of %d failed permanently (%s); skipping",
+                            group, len(batch), e)
+                continue
+            for t in batch:
+                try:
+                    sub = df[t] if isinstance(df.columns, pd.MultiIndex) else df
+                    sub = sub[_OHLC].rename(columns=_REN).dropna(subset=["close"])
+                    if not sub.empty:
+                        frames[t] = sub.astype("float64")
+                except KeyError:
+                    log.warning("stock_ohlc[%s]: no data for %s", group, t)
+            if i + bs < len(tks):
+                time.sleep(sleep_s)
+    if not frames:
+        raise RuntimeError(f"stock_ohlc[{group}]: 0/{len(tickers)} tickers returned data")
+    return frames
