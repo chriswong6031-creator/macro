@@ -4387,6 +4387,3178 @@
           "note": "Coherence-audit additions (researched, seeded deep history, quant-gated vs the current EW index). quant-gated adds (clear the cohort bar): FERG (0.65), WCC (0.62). Seeded at the basket seed date so backtest history is continuous. DROPPED below the bar: DXPE (0.453<bar 0.499)."
         }
       ]
+    },
+    "us_sector_tech": {
+      "name": "Technology (Equal-Weight)",
+      "name_zh": "信息技术（等权）",
+      "theme": "S&P 500 Technology sector, equal-weighted",
+      "category": "US Sectors (EW)",
+      "parent": "US Sectors",
+      "etf_proxy": "XLK",
+      "etf_proxy_note": "XLK is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "created": "2026-06-28",
+      "weighting": "equal",
+      "thesis": "Every S&P 500 Technology name, equal-weighted, versus the cap-weighted XLK. When this equal-weight line lags XLK the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "members": [
+        {
+          "ticker": "AAPL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "ACN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "ADBE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "ADI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "ADSK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "AKAM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "AMAT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "AMD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "ANET",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "APH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "APP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "AVGO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "CDNS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "CDW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "CIEN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "COHR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "CRM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "CRWD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "CSCO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "CTSH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "DDOG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "DELL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "FFIV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "FICO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "FLEX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "FSLR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "FTNT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "GDDY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "GEN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "GLW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "HPE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "HPQ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "IBM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "INTC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "INTU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "IT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "JBL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "KEYS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "KLAC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "LITE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "LRCX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "MCHP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "MPWR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "MRVL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "MSFT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "MSI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "MU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "NOW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "NTAP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "NVDA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "NXPI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "ON",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "ORCL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "PANW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "PLTR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "PTC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "Q",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "QCOM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "ROP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "SMCI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "SNDK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "SNPS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "STX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "SWKS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "TDY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "TEL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "TER",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "TRMB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "TXN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "TYL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "VRSN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "WDAY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "WDC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        },
+        {
+          "ticker": "ZBRA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Technology constituent"
+        }
+      ]
+    },
+    "us_sector_financials": {
+      "name": "Financials (Equal-Weight)",
+      "name_zh": "金融（等权）",
+      "theme": "S&P 500 Financials sector, equal-weighted",
+      "category": "US Sectors (EW)",
+      "parent": "US Sectors",
+      "etf_proxy": "XLF",
+      "etf_proxy_note": "XLF is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "created": "2026-06-28",
+      "weighting": "equal",
+      "thesis": "Every S&P 500 Financials name, equal-weighted, versus the cap-weighted XLF. When this equal-weight line lags XLF the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "members": [
+        {
+          "ticker": "ACGL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "AFL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "AIG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "AIZ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "AJG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "ALL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "AMP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "AON",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "APO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "ARES",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "AXP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "BAC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "BEN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "BLK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "BNY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "BRK-B",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "BRO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "BX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "C",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "CB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "CBOE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "CFG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "CINF",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "CME",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "COF",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "COIN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "CPAY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "EG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "ERIE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "FDS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "FI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "FIS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "FITB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "GL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "GPN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "GS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "HBAN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "HIG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "HOOD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "IBKR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "ICE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "IVZ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "JKHY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "JPM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "KEY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "KKR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "L",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "MA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "MCO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "MET",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "MMC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "MS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "MSCI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "MTB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "NDAQ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "NTRS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "PFG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "PGR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "PNC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "PRU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "PYPL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "RF",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "RJF",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "SCHW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "SPGI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "STT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "SYF",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "TFC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "TROW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "TRV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "USB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "V",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "WFC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "WRB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "WTW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        },
+        {
+          "ticker": "XYZ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Financials constituent"
+        }
+      ]
+    },
+    "us_sector_health": {
+      "name": "Health Care (Equal-Weight)",
+      "name_zh": "医疗保健（等权）",
+      "theme": "S&P 500 Health Care sector, equal-weighted",
+      "category": "US Sectors (EW)",
+      "parent": "US Sectors",
+      "etf_proxy": "XLV",
+      "etf_proxy_note": "XLV is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "created": "2026-06-28",
+      "weighting": "equal",
+      "thesis": "Every S&P 500 Health Care name, equal-weighted, versus the cap-weighted XLV. When this equal-weight line lags XLV the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "members": [
+        {
+          "ticker": "A",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "ABBV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "ABT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "ALGN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "AMGN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "BAX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "BDX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "BIIB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "BMY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "BSX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "CAH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "CI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "CNC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "COO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "COR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "CRL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "CVS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "DGX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "DHR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "DVA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "DXCM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "ELV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "EW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "GEHC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "GILD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "HCA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "HSIC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "HUM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "IDXX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "INCY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "IQV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "ISRG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "JNJ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "LH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "LLY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "MCK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "MDT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "MRK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "MRNA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "MTD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "PFE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "PODD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "REGN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "RMD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "RVTY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "SOLV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "STE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "SYK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "TECH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "TMO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "UHS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "UNH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "VEEV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "VRTX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "VTRS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "WAT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "WST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "ZBH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        },
+        {
+          "ticker": "ZTS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Health Care constituent"
+        }
+      ]
+    },
+    "us_sector_discretionary": {
+      "name": "Consumer Discretionary (Equal-Weight)",
+      "name_zh": "非必需消费（等权）",
+      "theme": "S&P 500 Consumer Discretionary sector, equal-weighted",
+      "category": "US Sectors (EW)",
+      "parent": "US Sectors",
+      "etf_proxy": "XLY",
+      "etf_proxy_note": "XLY is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "created": "2026-06-28",
+      "weighting": "equal",
+      "thesis": "Every S&P 500 Consumer Discretionary name, equal-weighted, versus the cap-weighted XLY. When this equal-weight line lags XLY the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "members": [
+        {
+          "ticker": "ABNB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "AMZN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "APTV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "AZO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "BBY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "BKNG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "CCL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "CMG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "CVNA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "DASH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "DECK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "DHI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "DPZ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "DRI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "EBAY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "EXPE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "F",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "GM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "GPC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "GRMN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "HAS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "HD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "HLT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "LEN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "LOW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "LULU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "LVS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "MAR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "MCD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "MGM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "NCLH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "NKE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "NVR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "ORLY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "PHM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "RCL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "RL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "ROST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "SBUX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "TJX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "TPR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "TSCO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "TSLA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "ULTA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "WSM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "WYNN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        },
+        {
+          "ticker": "YUM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Discretionary constituent"
+        }
+      ]
+    },
+    "us_sector_comm": {
+      "name": "Communication Services (Equal-Weight)",
+      "name_zh": "通信服务（等权）",
+      "theme": "S&P 500 Communication Services sector, equal-weighted",
+      "category": "US Sectors (EW)",
+      "parent": "US Sectors",
+      "etf_proxy": "XLC",
+      "etf_proxy_note": "XLC is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "created": "2026-06-28",
+      "weighting": "equal",
+      "thesis": "Every S&P 500 Communication Services name, equal-weighted, versus the cap-weighted XLC. When this equal-weight line lags XLC the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "members": [
+        {
+          "ticker": "CHTR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "CMCSA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "DIS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "EA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "ECHO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "FOX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "FOXA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "GOOG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "GOOGL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "LYV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "META",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "NFLX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "NWS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "NWSA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "OMC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "PSKY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "T",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "TKO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "TMUS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "TTD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "TTWO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "VZ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        },
+        {
+          "ticker": "WBD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Communication Services constituent"
+        }
+      ]
+    },
+    "us_sector_industrials": {
+      "name": "Industrials (Equal-Weight)",
+      "name_zh": "工业（等权）",
+      "theme": "S&P 500 Industrials sector, equal-weighted",
+      "category": "US Sectors (EW)",
+      "parent": "US Sectors",
+      "etf_proxy": "XLI",
+      "etf_proxy_note": "XLI is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "created": "2026-06-28",
+      "weighting": "equal",
+      "thesis": "Every S&P 500 Industrials name, equal-weighted, versus the cap-weighted XLI. When this equal-weight line lags XLI the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "members": [
+        {
+          "ticker": "ADP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "ALLE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "AME",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "AOS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "AXON",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "BA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "BLDR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "BR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "CARR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "CAT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "CHRW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "CMI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "CPRT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "CSX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "CTAS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "DAL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "DE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "DOV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "EFX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "EME",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "EMR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "ETN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "EXPD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "FAST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "FDX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "FDXF",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "FIX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "FTV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "GD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "GE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "GEV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "GNRC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "GWW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "HII",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "HON",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "HUBB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "HWM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "IEX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "IR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "ITW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "J",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "JBHT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "JCI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "LDOS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "LHX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "LII",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "LMT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "LUV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "MAS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "MMM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "NDSN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "NOC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "NSC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "ODFL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "OTIS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "PAYX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "PCAR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "PH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "PNR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "PWR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "ROK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "ROL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "RSG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "RTX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "SNA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "SWK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "TDG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "TT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "TXT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "UAL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "UBER",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "UNP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "UPS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "URI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "VLTO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "VRSK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "VRT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "WAB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "WM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        },
+        {
+          "ticker": "XYL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Industrials constituent"
+        }
+      ]
+    },
+    "us_sector_staples": {
+      "name": "Consumer Staples (Equal-Weight)",
+      "name_zh": "必需消费（等权）",
+      "theme": "S&P 500 Consumer Staples sector, equal-weighted",
+      "category": "US Sectors (EW)",
+      "parent": "US Sectors",
+      "etf_proxy": "XLP",
+      "etf_proxy_note": "XLP is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "created": "2026-06-28",
+      "weighting": "equal",
+      "thesis": "Every S&P 500 Consumer Staples name, equal-weighted, versus the cap-weighted XLP. When this equal-weight line lags XLP the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "members": [
+        {
+          "ticker": "ADM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "BF-B",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "BG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "CAG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "CASY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "CHD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "CL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "CLX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "COST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "DG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "DLTR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "EL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "GIS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "HRL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "HSY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "KDP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "KHC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "KMB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "KO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "KR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "KVUE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "MDLZ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "MKC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "MNST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "MO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "PEP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "PG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "PM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "SJM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "STZ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "SYY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "TAP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "TGT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "TSN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        },
+        {
+          "ticker": "WMT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Consumer Staples constituent"
+        }
+      ]
+    },
+    "us_sector_energy": {
+      "name": "Energy (Equal-Weight)",
+      "name_zh": "能源（等权）",
+      "theme": "S&P 500 Energy sector, equal-weighted",
+      "category": "US Sectors (EW)",
+      "parent": "US Sectors",
+      "etf_proxy": "XLE",
+      "etf_proxy_note": "XLE is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "created": "2026-06-28",
+      "weighting": "equal",
+      "thesis": "Every S&P 500 Energy name, equal-weighted, versus the cap-weighted XLE. When this equal-weight line lags XLE the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "members": [
+        {
+          "ticker": "APA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "BKR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "COP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "CVX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "DVN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "EOG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "EQT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "EXE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "FANG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "HAL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "KMI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "MPC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "OKE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "OXY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "PSX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "SLB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "TPL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "TRGP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "VLO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "WMB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        },
+        {
+          "ticker": "XOM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Energy constituent"
+        }
+      ]
+    },
+    "us_sector_utilities": {
+      "name": "Utilities (Equal-Weight)",
+      "name_zh": "公用事业（等权）",
+      "theme": "S&P 500 Utilities sector, equal-weighted",
+      "category": "US Sectors (EW)",
+      "parent": "US Sectors",
+      "etf_proxy": "XLU",
+      "etf_proxy_note": "XLU is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "created": "2026-06-28",
+      "weighting": "equal",
+      "thesis": "Every S&P 500 Utilities name, equal-weighted, versus the cap-weighted XLU. When this equal-weight line lags XLU the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "members": [
+        {
+          "ticker": "AEE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "AEP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "AES",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "ATO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "AWK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "CEG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "CMS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "CNP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "D",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "DTE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "DUK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "ED",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "EIX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "ES",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "ETR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "EVRG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "EXC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "FE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "LNT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "NEE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "NI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "NRG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "PCG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "PEG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "PNW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "PPL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "SO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "SRE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "VST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "WEC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        },
+        {
+          "ticker": "XEL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Utilities constituent"
+        }
+      ]
+    },
+    "us_sector_realestate": {
+      "name": "Real Estate (Equal-Weight)",
+      "name_zh": "房地产（等权）",
+      "theme": "S&P 500 Real Estate sector, equal-weighted",
+      "category": "US Sectors (EW)",
+      "parent": "US Sectors",
+      "etf_proxy": "XLRE",
+      "etf_proxy_note": "XLRE is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "created": "2026-06-28",
+      "weighting": "equal",
+      "thesis": "Every S&P 500 Real Estate name, equal-weighted, versus the cap-weighted XLRE. When this equal-weight line lags XLRE the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "members": [
+        {
+          "ticker": "AMT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "ARE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "AVB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "BXP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "CBRE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "CCI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "CPT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "CSGP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "DLR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "DOC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "EQIX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "EQR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "ESS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "EXR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "FRT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "HST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "INVH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "IRM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "KIM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "MAA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "O",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "PLD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "PSA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "REG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "SBAC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "SPG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "UDR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "VICI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "VTR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "WELL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        },
+        {
+          "ticker": "WY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Real Estate constituent"
+        }
+      ]
+    },
+    "us_sector_materials": {
+      "name": "Materials (Equal-Weight)",
+      "name_zh": "材料（等权）",
+      "theme": "S&P 500 Materials sector, equal-weighted",
+      "category": "US Sectors (EW)",
+      "parent": "US Sectors",
+      "etf_proxy": "XLB",
+      "etf_proxy_note": "XLB is cap-weighted; this basket is equal-weight — the gap is a breadth read.",
+      "created": "2026-06-28",
+      "weighting": "equal",
+      "thesis": "Every S&P 500 Materials name, equal-weighted, versus the cap-weighted XLB. When this equal-weight line lags XLB the sector's move is carried by its largest names (narrow); when it leads, participation is broad. A breadth/dispersion gauge for the sector, not a buy list.",
+      "members": [
+        {
+          "ticker": "ALB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "AMCR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "APD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "AVY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "BALL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "CF",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "CRH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "CTVA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "DD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "DOW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "ECL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "FCX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "IFF",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "IP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "LIN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "LYB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "MLM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "MOS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "NEM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "NUE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "PKG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "PPG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "SHW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "STLD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "SW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        },
+        {
+          "ticker": "VMC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "S&P 500 Materials constituent"
+        }
+      ]
     }
   },
   "construction": "Equal-weighted, monthly-rebalanced, buy-and-hold between rebalances; dated membership changes take effect same-day.",
