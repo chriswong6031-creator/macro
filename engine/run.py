@@ -299,6 +299,14 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("bottleneck layer failed: %s", e)
         latest["bottleneck"] = None
+    # power-cluster PHYSICAL read (electricity scarcity) — the physical correlate the FRED
+    # semis/metals bottleneck can't give data-center-power / grid / nuclear / solar.
+    try:
+        from engine.power_scarcity import compute_power_scarcity
+        latest["power_scarcity"] = compute_power_scarcity()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("power-scarcity layer failed: %s", e)
+        latest["power_scarcity"] = None
     try:
         from engine.demand_capex import compute_demand_capex
         latest["demand_capex"] = compute_demand_capex()
@@ -357,7 +365,7 @@ def run() -> dict:
         from engine.foresight_convergence import compute_convergence
         latest["foresight_convergence"] = compute_convergence(
             latest.get("foresight_cascade"), latest.get("theme_emergence"),
-            latest.get("subsector_scan"))
+            latest.get("subsector_scan"), latest.get("power_scarcity"))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("convergence layer failed: %s", e)
         latest["foresight_convergence"] = None

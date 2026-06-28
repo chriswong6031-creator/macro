@@ -62,10 +62,19 @@ def _discovery_filers(emergence: dict | None) -> dict[str, set]:
     return out
 
 
+def _power_tight_themes(power_scarcity: dict | None) -> set[str]:
+    """Power-cluster themes whose electricity-scarcity read is TIGHT/SOLD_OUT — a real physical
+    correlate the FRED semis/metals bottleneck can't give them."""
+    if not power_scarcity or power_scarcity.get("band") not in ("TIGHT", "SOLD_OUT"):
+        return set()
+    return set((power_scarcity.get("themes") or {}).keys())
+
+
 def compute_convergence(cascade: dict | None, emergence: dict | None = None,
-                        subsectors: dict | None = None) -> dict | None:
-    """Fuse the cascade rows + discovery + subsector radar into a ranked heating-up board.
-    DISPLAY-ONLY. Returns None when the cascade is absent."""
+                        subsectors: dict | None = None,
+                        power_scarcity: dict | None = None) -> dict | None:
+    """Fuse the cascade rows + discovery + subsector radar (+ power-cluster physical) into a
+    ranked heating-up board. DISPLAY-ONLY. Returns None when the cascade is absent."""
     if not cascade or not cascade.get("themes"):
         return None
     members = _theme_members()
@@ -74,11 +83,18 @@ def compute_convergence(cascade: dict | None, emergence: dict | None = None,
     # flatten the scarcity / discovery ticker pools for cheap overlap tests
     scarce_pool = set().union(*scarce_subs.values()) if scarce_subs else set()
     disc_pool = set().union(*disc.values()) if disc else set()
+    power_tight = _power_tight_themes(power_scarcity)
 
     items = []
     for r in cascade["themes"]:
+        theme = r.get("theme")
         sigs = [name for name, fn in SIGNALS if fn(r)]
-        mem = members.get(r.get("theme"), set())
+        # power-cluster themes get their PHYSICAL surface from electricity scarcity when the
+        # FRED semis/metals bottleneck doesn't apply to them
+        power_physical = theme in power_tight
+        if power_physical and "physical" not in sigs:
+            sigs.append("physical")
+        mem = members.get(theme, set())
         cross = []
         if mem & scarce_pool:
             cross.append("subsector_scarcity")
@@ -87,7 +103,7 @@ def compute_convergence(cascade: dict | None, emergence: dict | None = None,
         all_sigs = sigs + cross
         breadth = r.get("revision_breadth")
         earliness = max(0.0, 1.0 - max(0.0, breadth)) if breadth is not None else 0.6
-        physical = bool((r.get("score_detail") or {}).get("physical_confirmed"))
+        physical = bool((r.get("score_detail") or {}).get("physical_confirmed")) or power_physical
         # heat = converged-leading-signals x earliness, gated by a physical correlate. A late
         # (already-broad) theme decays toward 0 even with many signals — it is priced, not hot.
         heat = round((len(all_sigs) / MAX_SIGNALS) * earliness * (1.15 if physical else 0.75), 3)
