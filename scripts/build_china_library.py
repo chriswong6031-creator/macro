@@ -24,6 +24,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import i18n  # noqa: E402
 from engine import stock_score  # noqa: E402
+from engine import china_name_score  # noqa: E402  — per-name POTENTIAL (buy-readiness) score
+from engine import china_name_score_grader  # noqa: E402  — forward-grades the POTENTIAL score
 from engine import stock_technicals  # noqa: E402  — richer close-only technical snapshot
 from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
 from engine import china_signals  # noqa: E402  — A-share reversal tech + QVIX regime + margin risk
@@ -796,6 +798,16 @@ def main(alpha: dict | None = None) -> dict | None:
                 rec["entry_signal"] = es
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("china entry-signal for %s failed (%s)", ticker, e)
+        # ---- POTENTIAL score (engine/china_name_score) — the displayed CN buy-readiness ----
+        # Replaces the old reversal-percentile (which ranked the most beaten-down name highest):
+        # a trigger-gated washout confluence answering "set up to rise FROM HERE, actionable now?".
+        # Computed AFTER entry_signal so the trigger can read the entry gauge. Attached here;
+        # the displayed conviction.score/band are overridden from it after panel scoring below.
+        try:
+            rec["conviction"]["potential"] = china_name_score.potential_score(
+                rec, regime_stress=float(cn_risk_overlay.get("stress") or 0.0))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("china potential score for %s failed (%s)", ticker, e)
         profiles[ticker] = prof
         if rec.get("entry_signal"):
             entry_sig[ticker] = rec["entry_signal"]    # attached to standout rows below
@@ -821,6 +833,36 @@ def main(alpha: dict | None = None) -> dict | None:
     # rec['conviction'] is the SAME object, so the deferred per-stock JSONs below pick
     # it up — and the fundamentals re-read pass that follows preserves it).
     stock_score.attach_panel_scores(profiles, "CN")
+    # CN DISPLAYED score = the POTENTIAL (buy-readiness), not the comp-z reversal percentile.
+    # Keep the percentile as `rank_pctile` (still a meaningful within-board rank) and drop the
+    # now-inaccurate "within-board percentile RANK" honesty note. The verdict/entry gauges are
+    # already cycle-anchored, so all three now agree (washed-out + turning = high, not "most fallen").
+    for _safe, _rec in to_write:
+        _c = _rec.get("conviction") or {}
+        _pot = _c.get("potential")
+        if not _pot:
+            continue
+        _c["rank_pctile"] = _c.get("score")               # preserve the old percentile rank
+        _c["score"] = _pot["score"]
+        _c["band"], _c["band_en"], _c["band_zh"] = _pot["band"], _pot["band_en"], _pot["band_zh"]
+        _notes = _c.get("notes")
+        if _notes:
+            _c["notes"] = [n for n in _notes if n.get("kind") != "rank"] or None
+    # forward-grading ledger — log today's POTENTIAL calls (keep-first per date,ticker) so the
+    # score EARNS trust over time. The render lanes discard data/ writes, so only the nightly
+    # `daily` (which commits data/) persists one entry per name per day. Best-effort.
+    try:
+        _asof = (alpha or {}).get("as_of") or str(pd.Timestamp.utcnow().date())
+        _calls = []
+        for _safe, _rec in to_write:
+            _pot = (_rec.get("conviction") or {}).get("potential")
+            if _pot and _pot.get("call"):
+                _calls.append({**_pot["call"], "level": (_rec.get("tech") or {}).get("price")})
+        if _calls:
+            _n = china_name_score_grader.append_name_calls(_calls, asof=_asof)
+            log.info("china name-score grader: logged %d calls for %s (ledger=%d)", len(_calls), _asof, _n)
+    except Exception as e:  # noqa: BLE001 — grading is additive, never fatal
+        log.warning("china name-score grader append failed (%s)", e)
     for safe, rec in to_write:
         rec["view"] = stock_view.build_view(rec, "CN")   # canonical render model (rebuilt below once val/margin land)
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
