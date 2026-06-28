@@ -4236,19 +4236,14 @@
     "doc_id": "fomc_2026-06-17",
     "asof": "2026-06-17",
     "tone_score": 0.0,
-    "guidance_direction": "on_hold",
+    "guidance_direction": "unknown",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
-    "confidence": "medium",
+    "confidence": "low",
     "confidence_gated": false,
     "dropped_fields": [],
-    "evidence": [
-      {
-        "field": "guidance_direction",
-        "quote_span": "maintain the target range"
-      }
-    ],
-    "degraded_reason": null,
+    "evidence": [],
+    "degraded_reason": "stop_max_tokens",
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
   "dislocation": {
@@ -4753,7 +4748,7 @@
   },
   "fed_path": {
     "asof": "2026-06-26",
-    "built": "2026-06-27T23:29:51.783059+00:00",
+    "built": "2026-06-28T04:21:56.374590+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -4815,17 +4810,15 @@
     "label_zh": "\u9e70\u6d3e",
     "color": "down",
     "implied_cuts_12m": -1.0,
-    "guidance": "on_hold",
+    "guidance": "unknown",
     "market_vs_fed_bp": 9.0,
     "market_vs_fed_en": "market \u2248 the Fed",
     "market_vs_fed_zh": "\u5e02\u573a\u4e0e\u7f8e\u8054\u50a8\u57fa\u672c\u4e00\u81f4",
     "drivers_en": [
-      "market prices ~1.0 hike(s) over 12m",
-      "statement guidance on-hold"
+      "market prices ~1.0 hike(s) over 12m"
     ],
     "drivers_zh": [
-      "\u5e02\u573a\u8ba1\u5165\u672a\u676512\u4e2a\u6708\u7ea61.0\u6b21\u52a0\u606f",
-      "\u58f0\u660e\u6307\u5f15\u6309\u5175\u4e0d\u52a8"
+      "\u5e02\u573a\u8ba1\u5165\u672a\u676512\u4e2a\u6708\u7ea61.0\u6b21\u52a0\u606f"
     ],
     "is_context_only": true,
     "phase0": "display-only \u2014 never scored",
@@ -9410,8 +9403,8 @@
     "state_ungated": "risk-off",
     "flow_status": {
       "min_history": 252,
-      "putcall_rows": 17,
-      "gex_rows": 17,
+      "putcall_rows": 18,
+      "gex_rows": 18,
       "mature": false,
       "note": "options-flow vol legs (put/call, GEX) accrue forward \u2014 deep history is unavailable freely; they activate + self-validate via the Opus loop when mature"
     },
@@ -9777,6 +9770,105 @@
         "tech_rsi14": 53.0,
         "tech_macd_pos": true,
         "tech_off_52w_high_pct": -3.3,
+        "rate_inflation": {
+          "ticker": "XLB",
+          "covered": true,
+          "rate": {
+            "net": -0.176,
+            "verdict": "headwind",
+            "strength": "strong",
+            "max_ic": 0.215,
+            "sign": -1,
+            "measured": true,
+            "drivers": [
+              {
+                "driver": "policy_gap",
+                "label": {
+                  "en": "us2y \u2212 funds (cut/hike pricing)",
+                  "zh": "2\u5e74\u671f\u2212\u8054\u90a6\u57fa\u91d1\uff08\u964d/\u52a0\u606f\u5b9a\u4ef7\uff09"
+                },
+                "ic": -0.177,
+                "verdict": "CONFIRMED",
+                "verdict_zh": "\u5df2\u786e\u8ba4",
+                "activation_z": 1.78,
+                "contribution": -0.126
+              },
+              {
+                "driver": "real10y_chg63",
+                "label": {
+                  "en": "Real 10y \u2014 63d change (speed)",
+                  "zh": "\u5b9e\u964510\u5e74\u671f\u6536\u76ca\u7387\u201463\u65e5\u53d8\u52a8\uff08\u901f\u5ea6\uff09"
+                },
+                "ic": -0.215,
+                "verdict": "CONFIRMED",
+                "verdict_zh": "\u5df2\u786e\u8ba4",
+                "activation_z": 0.75,
+                "contribution": -0.065
+              }
+            ],
+            "show": true,
+            "tone": "neg",
+            "arrow": "\u25bc",
+            "chip": {
+              "en": "Rate headwind",
+              "zh": "\u5229\u7387\u9006\u98ce"
+            },
+            "tip": {
+              "en": "Rate channel: measured headwind right now (net -0.18; strong measured sensitivity, rate-sensitive). Dominant driver: us2y \u2212 funds (cut/hike pricing), forward IC -0.18 (CONFIRMED), currently +1.8\u03c3. Display-only \u2014 never scored.",
+              "zh": "\u5229\u7387\u901a\u9053\uff1a\u5f53\u524d\u5b9e\u6d4b\u4e3a\u9006\u98ce\uff08\u51c0\u503c -0.18\uff1b\u5229\u7387\u654f\u611f\uff0c\u53ef\u6d4b\u654f\u611f\u5ea6\u5f3a\uff09\u3002\u4e3b\u5bfc\u9a71\u52a8\uff1a2\u5e74\u671f\u2212\u8054\u90a6\u57fa\u91d1\uff08\u964d/\u52a0\u606f\u5b9a\u4ef7\uff09\uff0c\u524d\u77bbIC -0.18\uff08\u5df2\u786e\u8ba4\uff09\uff0c\u5f53\u524d +1.8\u03c3\u3002\u4ec5\u4f9b\u5c55\u793a\uff0c\u4ece\u4e0d\u8ba1\u5206\u3002"
+            }
+          },
+          "inflation": {
+            "net": -0.123,
+            "verdict": "headwind",
+            "strength": "strong",
+            "max_ic": 0.143,
+            "sign": -1,
+            "measured": true,
+            "drivers": [
+              {
+                "driver": "corepce_gap",
+                "label": {
+                  "en": "Core PCE YoY \u2212 2% target",
+                  "zh": "\u6838\u5fc3PCE\u540c\u6bd4\u22122%\u76ee\u6807"
+                },
+                "ic": -0.143,
+                "verdict": "CONFIRMED",
+                "verdict_zh": "\u5df2\u786e\u8ba4",
+                "activation_z": 2.17,
+                "contribution": -0.124
+              },
+              {
+                "driver": "infl_accel",
+                "label": {
+                  "en": "Inflation re-acceleration (3m\u221212m)",
+                  "zh": "\u901a\u80c0\u518d\u52a0\u901f\uff083\u6708\u221212\u6708\uff09"
+                },
+                "ic": -0.066,
+                "verdict": "DIRECTIONAL",
+                "verdict_zh": "\u65b9\u5411\u6027",
+                "activation_z": -0.04,
+                "contribution": 0.001
+              }
+            ],
+            "show": true,
+            "tone": "neg",
+            "arrow": "\u25bc",
+            "chip": {
+              "en": "Inflation headwind",
+              "zh": "\u901a\u80c0\u9006\u98ce"
+            },
+            "tip": {
+              "en": "Inflation channel: measured headwind right now (net -0.12; strong measured sensitivity, inflation-pressured). Dominant driver: Core PCE YoY \u2212 2% target, forward IC -0.14 (CONFIRMED), currently +2.2\u03c3. Display-only \u2014 never scored.",
+              "zh": "\u901a\u80c0\u901a\u9053\uff1a\u5f53\u524d\u5b9e\u6d4b\u4e3a\u9006\u98ce\uff08\u51c0\u503c -0.12\uff1b\u53d7\u901a\u80c0\u538b\u5236\uff0c\u53ef\u6d4b\u654f\u611f\u5ea6\u5f3a\uff09\u3002\u4e3b\u5bfc\u9a71\u52a8\uff1a\u6838\u5fc3PCE\u540c\u6bd4\u22122%\u76ee\u6807\uff0c\u524d\u77bbIC -0.14\uff08\u5df2\u786e\u8ba4\uff09\uff0c\u5f53\u524d +2.2\u03c3\u3002\u4ec5\u4f9b\u5c55\u793a\uff0c\u4ece\u4e0d\u8ba1\u5206\u3002"
+            }
+          },
+          "summary": {
+            "en": "This sector currently shows a measured rate headwind and a measured inflation headwind. These are measured forward-IC coefficients shown as context \u2014 display-only, never folded into the heat score (the scored-leg gate found no robust rate/inflation timing leg).",
+            "zh": "\u8be5\u677f\u5757\u5f53\u524d\u5448\u73b0\u5b9e\u6d4b\u5229\u7387\u9006\u98ce\u4e0e\u5b9e\u6d4b\u901a\u80c0\u9006\u98ce\u3002\u8fd9\u4e9b\u662f\u4f5c\u4e3a\u80cc\u666f\u5c55\u793a\u7684\u5b9e\u6d4b\u524d\u77bbIC\u7cfb\u6570 \u2014\u2014 \u4ec5\u4f9b\u5c55\u793a\uff0c\u7edd\u4e0d\u8ba1\u5165\u70ed\u5ea6\u5206\u6570\uff08\u53ef\u8ba1\u5206\u817f\u68c0\u9a8c\u672a\u53d1\u73b0\u7a33\u5065\u7684\u5229\u7387/\u901a\u80c0\u62e9\u65f6\u817f\uff09\u3002"
+          },
+          "any_shown": true
+        },
         "heat": 62,
         "heat_parts": {
           "score": 62,
@@ -9877,6 +9969,55 @@
         "tech_rsi14": 29.0,
         "tech_macd_pos": false,
         "tech_off_52w_high_pct": -11.3,
+        "rate_inflation": {
+          "ticker": "XLC",
+          "covered": false,
+          "rate": {
+            "net": 0.0,
+            "verdict": "neutral",
+            "strength": "weak",
+            "max_ic": null,
+            "sign": 0,
+            "measured": false,
+            "drivers": [],
+            "show": false,
+            "tone": "muted",
+            "arrow": "\u00b7",
+            "chip": {
+              "en": "Rate: not measured",
+              "zh": "\u5229\u7387\uff1a\u672a\u6d4b\u5f97"
+            },
+            "tip": {
+              "en": "No measured rate transmission cell for this sector \u2014 it is not in the calibrated matrix. Display-only.",
+              "zh": "\u8be5\u677f\u5757\u6ca1\u6709\u53ef\u6d4b\u5f97\u7684\u5229\u7387\u4f20\u5bfc\u7cfb\u6570\uff08\u4e0d\u5728\u5df2\u6821\u51c6\u77e9\u9635\u4e2d\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u3002"
+            }
+          },
+          "inflation": {
+            "net": 0.0,
+            "verdict": "neutral",
+            "strength": "weak",
+            "max_ic": null,
+            "sign": 0,
+            "measured": false,
+            "drivers": [],
+            "show": false,
+            "tone": "muted",
+            "arrow": "\u00b7",
+            "chip": {
+              "en": "Inflation: not measured",
+              "zh": "\u901a\u80c0\uff1a\u672a\u6d4b\u5f97"
+            },
+            "tip": {
+              "en": "No measured inflation transmission cell for this sector \u2014 it is not in the calibrated matrix. Display-only.",
+              "zh": "\u8be5\u677f\u5757\u6ca1\u6709\u53ef\u6d4b\u5f97\u7684\u901a\u80c0\u4f20\u5bfc\u7cfb\u6570\uff08\u4e0d\u5728\u5df2\u6821\u51c6\u77e9\u9635\u4e2d\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u3002"
+            }
+          },
+          "summary": {
+            "en": "This sector currently shows no robust rate link and no robust inflation link. These are measured forward-IC coefficients shown as context \u2014 display-only, never folded into the heat score (the scored-leg gate found no robust rate/inflation timing leg).",
+            "zh": "\u8be5\u677f\u5757\u5f53\u524d\u5448\u73b0\u65e0\u7a33\u5065\u5229\u7387\u5173\u8054\u4e0e\u65e0\u7a33\u5065\u901a\u80c0\u5173\u8054\u3002\u8fd9\u4e9b\u662f\u4f5c\u4e3a\u80cc\u666f\u5c55\u793a\u7684\u5b9e\u6d4b\u524d\u77bbIC\u7cfb\u6570 \u2014\u2014 \u4ec5\u4f9b\u5c55\u793a\uff0c\u7edd\u4e0d\u8ba1\u5165\u70ed\u5ea6\u5206\u6570\uff08\u53ef\u8ba1\u5206\u817f\u68c0\u9a8c\u672a\u53d1\u73b0\u7a33\u5065\u7684\u5229\u7387/\u901a\u80c0\u62e9\u65f6\u817f\uff09\u3002"
+          },
+          "any_shown": false
+        },
         "heat": 24,
         "heat_parts": {
           "score": 24,
@@ -9983,6 +10124,68 @@
         "tech_rsi14": 39.0,
         "tech_macd_pos": false,
         "tech_off_52w_high_pct": -13.9,
+        "rate_inflation": {
+          "ticker": "XLE",
+          "covered": true,
+          "rate": {
+            "net": -0.034,
+            "verdict": "neutral",
+            "strength": "strong",
+            "max_ic": 0.112,
+            "sign": -1,
+            "measured": true,
+            "drivers": [
+              {
+                "driver": "real10y_chg63",
+                "label": {
+                  "en": "Real 10y \u2014 63d change (speed)",
+                  "zh": "\u5b9e\u964510\u5e74\u671f\u6536\u76ca\u7387\u201463\u65e5\u53d8\u52a8\uff08\u901f\u5ea6\uff09"
+                },
+                "ic": -0.112,
+                "verdict": "CONFIRMED",
+                "verdict_zh": "\u5df2\u786e\u8ba4",
+                "activation_z": 0.75,
+                "contribution": -0.034
+              }
+            ],
+            "show": true,
+            "tone": "muted",
+            "arrow": "\u00b7",
+            "chip": {
+              "en": "Rate-sensitive",
+              "zh": "\u5229\u7387\u654f\u611f"
+            },
+            "tip": {
+              "en": "Rate channel: measured neutral right now (net -0.03; strong measured sensitivity, rate-sensitive). Dominant driver: Real 10y \u2014 63d change (speed), forward IC -0.11 (CONFIRMED), currently +0.8\u03c3. Display-only \u2014 never scored.",
+              "zh": "\u5229\u7387\u901a\u9053\uff1a\u5f53\u524d\u5b9e\u6d4b\u4e3a\u4e2d\u6027\uff08\u51c0\u503c -0.03\uff1b\u5229\u7387\u654f\u611f\uff0c\u53ef\u6d4b\u654f\u611f\u5ea6\u5f3a\uff09\u3002\u4e3b\u5bfc\u9a71\u52a8\uff1a\u5b9e\u964510\u5e74\u671f\u6536\u76ca\u7387\u201463\u65e5\u53d8\u52a8\uff08\u901f\u5ea6\uff09\uff0c\u524d\u77bbIC -0.11\uff08\u5df2\u786e\u8ba4\uff09\uff0c\u5f53\u524d +0.8\u03c3\u3002\u4ec5\u4f9b\u5c55\u793a\uff0c\u4ece\u4e0d\u8ba1\u5206\u3002"
+            }
+          },
+          "inflation": {
+            "net": 0.0,
+            "verdict": "neutral",
+            "strength": "weak",
+            "max_ic": null,
+            "sign": 0,
+            "measured": false,
+            "drivers": [],
+            "show": false,
+            "tone": "muted",
+            "arrow": "\u00b7",
+            "chip": {
+              "en": "Inflation: regime-dependent",
+              "zh": "\u901a\u80c0\uff1a\u4f9d\u8d56\u72b6\u6001"
+            },
+            "tip": {
+              "en": "This sector's inflation link is only regime-dependent (CONTEXT) over the split-half forward-IC test \u2014 no robust measured headwind/tailwind. Display-only, never scored.",
+              "zh": "\u5728\u5206\u534a\u524d\u77bbIC\u68c0\u9a8c\u4e2d\uff0c\u8be5\u677f\u5757\u7684\u901a\u80c0\u5173\u8054\u4ec5\u4f9d\u8d56\u5e02\u573a\u72b6\u6001\uff08CONTEXT\uff09\u2014\u2014 \u65e0\u7a33\u5065\u53ef\u6d4b\u7684\u9006\u98ce/\u987a\u98ce\u3002\u4ec5\u4f9b\u5c55\u793a\uff0c\u4ece\u4e0d\u8ba1\u5206\u3002"
+            }
+          },
+          "summary": {
+            "en": "This sector currently shows a measured but quiet rate link and no robust inflation link. These are measured forward-IC coefficients shown as context \u2014 display-only, never folded into the heat score (the scored-leg gate found no robust rate/inflation timing leg).",
+            "zh": "\u8be5\u677f\u5757\u5f53\u524d\u5448\u73b0\u53ef\u6d4b\u4f46\u5e73\u9759\u7684\u5229\u7387\u5173\u8054\u4e0e\u65e0\u7a33\u5065\u901a\u80c0\u5173\u8054\u3002\u8fd9\u4e9b\u662f\u4f5c\u4e3a\u80cc\u666f\u5c55\u793a\u7684\u5b9e\u6d4b\u524d\u77bbIC\u7cfb\u6570 \u2014\u2014 \u4ec5\u4f9b\u5c55\u793a\uff0c\u7edd\u4e0d\u8ba1\u5165\u70ed\u5ea6\u5206\u6570\uff08\u53ef\u8ba1\u5206\u817f\u68c0\u9a8c\u672a\u53d1\u73b0\u7a33\u5065\u7684\u5229\u7387/\u901a\u80c0\u62e9\u65f6\u817f\uff09\u3002"
+          },
+          "any_shown": true
+        },
         "heat": 32,
         "heat_parts": {
           "score": 32,
@@ -10087,6 +10290,105 @@
         "tech_rsi14": 60.0,
         "tech_macd_pos": true,
         "tech_off_52w_high_pct": -4.5,
+        "rate_inflation": {
+          "ticker": "XLF",
+          "covered": true,
+          "rate": {
+            "net": -0.044,
+            "verdict": "neutral",
+            "strength": "strong",
+            "max_ic": 0.161,
+            "sign": -1,
+            "measured": true,
+            "drivers": [
+              {
+                "driver": "curve_tp_adj",
+                "label": {
+                  "en": "TP-adjusted 2s10s curve",
+                  "zh": "\u671f\u9650\u6ea2\u4ef7\u8c03\u6574\u540e\u76842-10\u5e74\u66f2\u7ebf"
+                },
+                "ic": -0.145,
+                "verdict": "CONFIRMED",
+                "verdict_zh": "\u5df2\u786e\u8ba4",
+                "activation_z": -1.79,
+                "contribution": 0.104
+              },
+              {
+                "driver": "policy_gap",
+                "label": {
+                  "en": "us2y \u2212 funds (cut/hike pricing)",
+                  "zh": "2\u5e74\u671f\u2212\u8054\u90a6\u57fa\u91d1\uff08\u964d/\u52a0\u606f\u5b9a\u4ef7\uff09"
+                },
+                "ic": -0.14,
+                "verdict": "DIRECTIONAL",
+                "verdict_zh": "\u65b9\u5411\u6027",
+                "activation_z": 1.78,
+                "contribution": -0.1
+              }
+            ],
+            "show": true,
+            "tone": "muted",
+            "arrow": "\u00b7",
+            "chip": {
+              "en": "Rate-sensitive",
+              "zh": "\u5229\u7387\u654f\u611f"
+            },
+            "tip": {
+              "en": "Rate channel: measured neutral right now (net -0.04; strong measured sensitivity, rate-sensitive). Dominant driver: TP-adjusted 2s10s curve, forward IC -0.14 (CONFIRMED), currently -1.8\u03c3. Display-only \u2014 never scored.",
+              "zh": "\u5229\u7387\u901a\u9053\uff1a\u5f53\u524d\u5b9e\u6d4b\u4e3a\u4e2d\u6027\uff08\u51c0\u503c -0.04\uff1b\u5229\u7387\u654f\u611f\uff0c\u53ef\u6d4b\u654f\u611f\u5ea6\u5f3a\uff09\u3002\u4e3b\u5bfc\u9a71\u52a8\uff1a\u671f\u9650\u6ea2\u4ef7\u8c03\u6574\u540e\u76842-10\u5e74\u66f2\u7ebf\uff0c\u524d\u77bbIC -0.14\uff08\u5df2\u786e\u8ba4\uff09\uff0c\u5f53\u524d -1.8\u03c3\u3002\u4ec5\u4f9b\u5c55\u793a\uff0c\u4ece\u4e0d\u8ba1\u5206\u3002"
+            }
+          },
+          "inflation": {
+            "net": -0.155,
+            "verdict": "headwind",
+            "strength": "strong",
+            "max_ic": 0.116,
+            "sign": -1,
+            "measured": true,
+            "drivers": [
+              {
+                "driver": "corepce_gap",
+                "label": {
+                  "en": "Core PCE YoY \u2212 2% target",
+                  "zh": "\u6838\u5fc3PCE\u540c\u6bd4\u22122%\u76ee\u6807"
+                },
+                "ic": -0.116,
+                "verdict": "CONFIRMED",
+                "verdict_zh": "\u5df2\u786e\u8ba4",
+                "activation_z": 2.17,
+                "contribution": -0.101
+              },
+              {
+                "driver": "exp_wedge",
+                "label": {
+                  "en": "Expectations wedge (mkt \u2212 model)",
+                  "zh": "\u9884\u671f\u7f3a\u53e3\uff08\u5e02\u573a\u2212\u6a21\u578b\uff09"
+                },
+                "ic": 0.083,
+                "verdict": "DIRECTIONAL",
+                "verdict_zh": "\u65b9\u5411\u6027",
+                "activation_z": -1.67,
+                "contribution": -0.055
+              }
+            ],
+            "show": true,
+            "tone": "neg",
+            "arrow": "\u25bc",
+            "chip": {
+              "en": "Inflation headwind",
+              "zh": "\u901a\u80c0\u9006\u98ce"
+            },
+            "tip": {
+              "en": "Inflation channel: measured headwind right now (net -0.15; strong measured sensitivity, inflation-pressured). Dominant driver: Core PCE YoY \u2212 2% target, forward IC -0.12 (CONFIRMED), currently +2.2\u03c3. Display-only \u2014 never scored.",
+              "zh": "\u901a\u80c0\u901a\u9053\uff1a\u5f53\u524d\u5b9e\u6d4b\u4e3a\u9006\u98ce\uff08\u51c0\u503c -0.15\uff1b\u53d7\u901a\u80c0\u538b\u5236\uff0c\u53ef\u6d4b\u654f\u611f\u5ea6\u5f3a\uff09\u3002\u4e3b\u5bfc\u9a71\u52a8\uff1a\u6838\u5fc3PCE\u540c\u6bd4\u22122%\u76ee\u6807\uff0c\u524d\u77bbIC -0.12\uff08\u5df2\u786e\u8ba4\uff09\uff0c\u5f53\u524d +2.2\u03c3\u3002\u4ec5\u4f9b\u5c55\u793a\uff0c\u4ece\u4e0d\u8ba1\u5206\u3002"
+            }
+          },
+          "summary": {
+            "en": "This sector currently shows a measured but quiet rate link and a measured inflation headwind. These are measured forward-IC coefficients shown as context \u2014 display-only, never folded into the heat score (the scored-leg gate found no robust rate/inflation timing leg).",
+            "zh": "\u8be5\u677f\u5757\u5f53\u524d\u5448\u73b0\u53ef\u6d4b\u4f46\u5e73\u9759\u7684\u5229\u7387\u5173\u8054\u4e0e\u5b9e\u6d4b\u901a\u80c0\u9006\u98ce\u3002\u8fd9\u4e9b\u662f\u4f5c\u4e3a\u80cc\u666f\u5c55\u793a\u7684\u5b9e\u6d4b\u524d\u77bbIC\u7cfb\u6570 \u2014\u2014 \u4ec5\u4f9b\u5c55\u793a\uff0c\u7edd\u4e0d\u8ba1\u5165\u70ed\u5ea6\u5206\u6570\uff08\u53ef\u8ba1\u5206\u817f\u68c0\u9a8c\u672a\u53d1\u73b0\u7a33\u5065\u7684\u5229\u7387/\u901a\u80c0\u62e9\u65f6\u817f\uff09\u3002"
+          },
+          "any_shown": true
+        },
         "heat": 51,
         "heat_parts": {
           "score": 51,
@@ -10193,6 +10495,55 @@
         "tech_rsi14": 58.0,
         "tech_macd_pos": true,
         "tech_off_52w_high_pct": -1.6,
+        "rate_inflation": {
+          "ticker": "XLI",
+          "covered": false,
+          "rate": {
+            "net": 0.0,
+            "verdict": "neutral",
+            "strength": "weak",
+            "max_ic": null,
+            "sign": 0,
+            "measured": false,
+            "drivers": [],
+            "show": false,
+            "tone": "muted",
+            "arrow": "\u00b7",
+            "chip": {
+              "en": "Rate: not measured",
+              "zh": "\u5229\u7387\uff1a\u672a\u6d4b\u5f97"
+            },
+            "tip": {
+              "en": "No measured rate transmission cell for this sector \u2014 it is not in the calibrated matrix. Display-only.",
+              "zh": "\u8be5\u677f\u5757\u6ca1\u6709\u53ef\u6d4b\u5f97\u7684\u5229\u7387\u4f20\u5bfc\u7cfb\u6570\uff08\u4e0d\u5728\u5df2\u6821\u51c6\u77e9\u9635\u4e2d\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u3002"
+            }
+          },
+          "inflation": {
+            "net": 0.0,
+            "verdict": "neutral",
+            "strength": "weak",
+            "max_ic": null,
+            "sign": 0,
+            "measured": false,
+            "drivers": [],
+            "show": false,
+            "tone": "muted",
+            "arrow": "\u00b7",
+            "chip": {
+              "en": "Inflation: not measured",
+              "zh": "\u901a\u80c0\uff1a\u672a\u6d4b\u5f97"
+            },
+            "tip": {
+              "en": "No measured inflation transmission cell for this sector \u2014 it is not in the calibrated matrix. Display-only.",
+              "zh": "\u8be5\u677f\u5757\u6ca1\u6709\u53ef\u6d4b\u5f97\u7684\u901a\u80c0\u4f20\u5bfc\u7cfb\u6570\uff08\u4e0d\u5728\u5df2\u6821\u51c6\u77e9\u9635\u4e2d\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u3002"
+            }
+          },
+          "summary": {
+            "en": "This sector currently shows no robust rate link and no robust inflation link. These are measured forward-IC coefficients shown as context \u2014 display-only, never folded into the heat score (the scored-leg gate found no robust rate/inflation timing leg).",
+            "zh": "\u8be5\u677f\u5757\u5f53\u524d\u5448\u73b0\u65e0\u7a33\u5065\u5229\u7387\u5173\u8054\u4e0e\u65e0\u7a33\u5065\u901a\u80c0\u5173\u8054\u3002\u8fd9\u4e9b\u662f\u4f5c\u4e3a\u80cc\u666f\u5c55\u793a\u7684\u5b9e\u6d4b\u524d\u77bbIC\u7cfb\u6570 \u2014\u2014 \u4ec5\u4f9b\u5c55\u793a\uff0c\u7edd\u4e0d\u8ba1\u5165\u70ed\u5ea6\u5206\u6570\uff08\u53ef\u8ba1\u5206\u817f\u68c0\u9a8c\u672a\u53d1\u73b0\u7a33\u5065\u7684\u5229\u7387/\u901a\u80c0\u62e9\u65f6\u817f\uff09\u3002"
+          },
+          "any_shown": false
+        },
         "heat": 62,
         "heat_parts": {
           "score": 62,
@@ -10293,6 +10644,105 @@
         "tech_rsi14": 48.0,
         "tech_macd_pos": false,
         "tech_off_52w_high_pct": -8.5,
+        "rate_inflation": {
+          "ticker": "XLK",
+          "covered": true,
+          "rate": {
+            "net": -0.187,
+            "verdict": "headwind",
+            "strength": "strong",
+            "max_ic": 0.193,
+            "sign": -1,
+            "measured": true,
+            "drivers": [
+              {
+                "driver": "policy_gap",
+                "label": {
+                  "en": "us2y \u2212 funds (cut/hike pricing)",
+                  "zh": "2\u5e74\u671f\u2212\u8054\u90a6\u57fa\u91d1\uff08\u964d/\u52a0\u606f\u5b9a\u4ef7\uff09"
+                },
+                "ic": -0.165,
+                "verdict": "DIRECTIONAL",
+                "verdict_zh": "\u65b9\u5411\u6027",
+                "activation_z": 1.78,
+                "contribution": -0.117
+              },
+              {
+                "driver": "real10y_chg63",
+                "label": {
+                  "en": "Real 10y \u2014 63d change (speed)",
+                  "zh": "\u5b9e\u964510\u5e74\u671f\u6536\u76ca\u7387\u201463\u65e5\u53d8\u52a8\uff08\u901f\u5ea6\uff09"
+                },
+                "ic": -0.193,
+                "verdict": "CONFIRMED",
+                "verdict_zh": "\u5df2\u786e\u8ba4",
+                "activation_z": 0.75,
+                "contribution": -0.058
+              }
+            ],
+            "show": true,
+            "tone": "neg",
+            "arrow": "\u25bc",
+            "chip": {
+              "en": "Rate headwind",
+              "zh": "\u5229\u7387\u9006\u98ce"
+            },
+            "tip": {
+              "en": "Rate channel: measured headwind right now (net -0.19; strong measured sensitivity, rate-sensitive). Dominant driver: us2y \u2212 funds (cut/hike pricing), forward IC -0.17 (DIRECTIONAL), currently +1.8\u03c3. Display-only \u2014 never scored.",
+              "zh": "\u5229\u7387\u901a\u9053\uff1a\u5f53\u524d\u5b9e\u6d4b\u4e3a\u9006\u98ce\uff08\u51c0\u503c -0.19\uff1b\u5229\u7387\u654f\u611f\uff0c\u53ef\u6d4b\u654f\u611f\u5ea6\u5f3a\uff09\u3002\u4e3b\u5bfc\u9a71\u52a8\uff1a2\u5e74\u671f\u2212\u8054\u90a6\u57fa\u91d1\uff08\u964d/\u52a0\u606f\u5b9a\u4ef7\uff09\uff0c\u524d\u77bbIC -0.17\uff08\u65b9\u5411\u6027\uff09\uff0c\u5f53\u524d +1.8\u03c3\u3002\u4ec5\u4f9b\u5c55\u793a\uff0c\u4ece\u4e0d\u8ba1\u5206\u3002"
+            }
+          },
+          "inflation": {
+            "net": -0.118,
+            "verdict": "headwind",
+            "strength": "strong",
+            "max_ic": 0.138,
+            "sign": -1,
+            "measured": true,
+            "drivers": [
+              {
+                "driver": "corepce_gap",
+                "label": {
+                  "en": "Core PCE YoY \u2212 2% target",
+                  "zh": "\u6838\u5fc3PCE\u540c\u6bd4\u22122%\u76ee\u6807"
+                },
+                "ic": -0.138,
+                "verdict": "CONFIRMED",
+                "verdict_zh": "\u5df2\u786e\u8ba4",
+                "activation_z": 2.17,
+                "contribution": -0.12
+              },
+              {
+                "driver": "infl_accel",
+                "label": {
+                  "en": "Inflation re-acceleration (3m\u221212m)",
+                  "zh": "\u901a\u80c0\u518d\u52a0\u901f\uff083\u6708\u221212\u6708\uff09"
+                },
+                "ic": -0.073,
+                "verdict": "DIRECTIONAL",
+                "verdict_zh": "\u65b9\u5411\u6027",
+                "activation_z": -0.04,
+                "contribution": 0.001
+              }
+            ],
+            "show": true,
+            "tone": "neg",
+            "arrow": "\u25bc",
+            "chip": {
+              "en": "Inflation headwind",
+              "zh": "\u901a\u80c0\u9006\u98ce"
+            },
+            "tip": {
+              "en": "Inflation channel: measured headwind right now (net -0.12; strong measured sensitivity, inflation-pressured). Dominant driver: Core PCE YoY \u2212 2% target, forward IC -0.14 (CONFIRMED), currently +2.2\u03c3. Display-only \u2014 never scored.",
+              "zh": "\u901a\u80c0\u901a\u9053\uff1a\u5f53\u524d\u5b9e\u6d4b\u4e3a\u9006\u98ce\uff08\u51c0\u503c -0.12\uff1b\u53d7\u901a\u80c0\u538b\u5236\uff0c\u53ef\u6d4b\u654f\u611f\u5ea6\u5f3a\uff09\u3002\u4e3b\u5bfc\u9a71\u52a8\uff1a\u6838\u5fc3PCE\u540c\u6bd4\u22122%\u76ee\u6807\uff0c\u524d\u77bbIC -0.14\uff08\u5df2\u786e\u8ba4\uff09\uff0c\u5f53\u524d +2.2\u03c3\u3002\u4ec5\u4f9b\u5c55\u793a\uff0c\u4ece\u4e0d\u8ba1\u5206\u3002"
+            }
+          },
+          "summary": {
+            "en": "This sector currently shows a measured rate headwind and a measured inflation headwind. These are measured forward-IC coefficients shown as context \u2014 display-only, never folded into the heat score (the scored-leg gate found no robust rate/inflation timing leg).",
+            "zh": "\u8be5\u677f\u5757\u5f53\u524d\u5448\u73b0\u5b9e\u6d4b\u5229\u7387\u9006\u98ce\u4e0e\u5b9e\u6d4b\u901a\u80c0\u9006\u98ce\u3002\u8fd9\u4e9b\u662f\u4f5c\u4e3a\u80cc\u666f\u5c55\u793a\u7684\u5b9e\u6d4b\u524d\u77bbIC\u7cfb\u6570 \u2014\u2014 \u4ec5\u4f9b\u5c55\u793a\uff0c\u7edd\u4e0d\u8ba1\u5165\u70ed\u5ea6\u5206\u6570\uff08\u53ef\u8ba1\u5206\u817f\u68c0\u9a8c\u672a\u53d1\u73b0\u7a33\u5065\u7684\u5229\u7387/\u901a\u80c0\u62e9\u65f6\u817f\uff09\u3002"
+          },
+          "any_shown": true
+        },
         "heat": 44,
         "heat_parts": {
           "score": 44,
@@ -10397,6 +10847,105 @@
         "tech_rsi14": 55.0,
         "tech_macd_pos": true,
         "tech_off_52w_high_pct": -5.4,
+        "rate_inflation": {
+          "ticker": "XLP",
+          "covered": true,
+          "rate": {
+            "net": -0.094,
+            "verdict": "headwind",
+            "strength": "strong",
+            "max_ic": 0.127,
+            "sign": -1,
+            "measured": true,
+            "drivers": [
+              {
+                "driver": "policy_gap",
+                "label": {
+                  "en": "us2y \u2212 funds (cut/hike pricing)",
+                  "zh": "2\u5e74\u671f\u2212\u8054\u90a6\u57fa\u91d1\uff08\u964d/\u52a0\u606f\u5b9a\u4ef7\uff09"
+                },
+                "ic": -0.071,
+                "verdict": "DIRECTIONAL",
+                "verdict_zh": "\u65b9\u5411\u6027",
+                "activation_z": 1.78,
+                "contribution": -0.05
+              },
+              {
+                "driver": "real10y_chg63",
+                "label": {
+                  "en": "Real 10y \u2014 63d change (speed)",
+                  "zh": "\u5b9e\u964510\u5e74\u671f\u6536\u76ca\u7387\u201463\u65e5\u53d8\u52a8\uff08\u901f\u5ea6\uff09"
+                },
+                "ic": -0.127,
+                "verdict": "CONFIRMED",
+                "verdict_zh": "\u5df2\u786e\u8ba4",
+                "activation_z": 0.75,
+                "contribution": -0.038
+              }
+            ],
+            "show": true,
+            "tone": "neg",
+            "arrow": "\u25bc",
+            "chip": {
+              "en": "Rate headwind",
+              "zh": "\u5229\u7387\u9006\u98ce"
+            },
+            "tip": {
+              "en": "Rate channel: measured headwind right now (net -0.09; strong measured sensitivity, rate-sensitive). Dominant driver: us2y \u2212 funds (cut/hike pricing), forward IC -0.07 (DIRECTIONAL), currently +1.8\u03c3. Display-only \u2014 never scored.",
+              "zh": "\u5229\u7387\u901a\u9053\uff1a\u5f53\u524d\u5b9e\u6d4b\u4e3a\u9006\u98ce\uff08\u51c0\u503c -0.09\uff1b\u5229\u7387\u654f\u611f\uff0c\u53ef\u6d4b\u654f\u611f\u5ea6\u5f3a\uff09\u3002\u4e3b\u5bfc\u9a71\u52a8\uff1a2\u5e74\u671f\u2212\u8054\u90a6\u57fa\u91d1\uff08\u964d/\u52a0\u606f\u5b9a\u4ef7\uff09\uff0c\u524d\u77bbIC -0.07\uff08\u65b9\u5411\u6027\uff09\uff0c\u5f53\u524d +1.8\u03c3\u3002\u4ec5\u4f9b\u5c55\u793a\uff0c\u4ece\u4e0d\u8ba1\u5206\u3002"
+            }
+          },
+          "inflation": {
+            "net": -0.163,
+            "verdict": "headwind",
+            "strength": "strong",
+            "max_ic": 0.129,
+            "sign": -1,
+            "measured": true,
+            "drivers": [
+              {
+                "driver": "exp_wedge",
+                "label": {
+                  "en": "Expectations wedge (mkt \u2212 model)",
+                  "zh": "\u9884\u671f\u7f3a\u53e3\uff08\u5e02\u573a\u2212\u6a21\u578b\uff09"
+                },
+                "ic": 0.129,
+                "verdict": "DIRECTIONAL",
+                "verdict_zh": "\u65b9\u5411\u6027",
+                "activation_z": -1.67,
+                "contribution": -0.086
+              },
+              {
+                "driver": "corepce_gap",
+                "label": {
+                  "en": "Core PCE YoY \u2212 2% target",
+                  "zh": "\u6838\u5fc3PCE\u540c\u6bd4\u22122%\u76ee\u6807"
+                },
+                "ic": -0.089,
+                "verdict": "DIRECTIONAL",
+                "verdict_zh": "\u65b9\u5411\u6027",
+                "activation_z": 2.17,
+                "contribution": -0.077
+              }
+            ],
+            "show": true,
+            "tone": "neg",
+            "arrow": "\u25bc",
+            "chip": {
+              "en": "Inflation headwind",
+              "zh": "\u901a\u80c0\u9006\u98ce"
+            },
+            "tip": {
+              "en": "Inflation channel: measured headwind right now (net -0.16; strong measured sensitivity, inflation-pressured). Dominant driver: Expectations wedge (mkt \u2212 model), forward IC +0.13 (DIRECTIONAL), currently -1.7\u03c3. Display-only \u2014 never scored.",
+              "zh": "\u901a\u80c0\u901a\u9053\uff1a\u5f53\u524d\u5b9e\u6d4b\u4e3a\u9006\u98ce\uff08\u51c0\u503c -0.16\uff1b\u53d7\u901a\u80c0\u538b\u5236\uff0c\u53ef\u6d4b\u654f\u611f\u5ea6\u5f3a\uff09\u3002\u4e3b\u5bfc\u9a71\u52a8\uff1a\u9884\u671f\u7f3a\u53e3\uff08\u5e02\u573a\u2212\u6a21\u578b\uff09\uff0c\u524d\u77bbIC +0.13\uff08\u65b9\u5411\u6027\uff09\uff0c\u5f53\u524d -1.7\u03c3\u3002\u4ec5\u4f9b\u5c55\u793a\uff0c\u4ece\u4e0d\u8ba1\u5206\u3002"
+            }
+          },
+          "summary": {
+            "en": "This sector currently shows a measured rate headwind and a measured inflation headwind. These are measured forward-IC coefficients shown as context \u2014 display-only, never folded into the heat score (the scored-leg gate found no robust rate/inflation timing leg).",
+            "zh": "\u8be5\u677f\u5757\u5f53\u524d\u5448\u73b0\u5b9e\u6d4b\u5229\u7387\u9006\u98ce\u4e0e\u5b9e\u6d4b\u901a\u80c0\u9006\u98ce\u3002\u8fd9\u4e9b\u662f\u4f5c\u4e3a\u80cc\u666f\u5c55\u793a\u7684\u5b9e\u6d4b\u524d\u77bbIC\u7cfb\u6570 \u2014\u2014 \u4ec5\u4f9b\u5c55\u793a\uff0c\u7edd\u4e0d\u8ba1\u5165\u70ed\u5ea6\u5206\u6570\uff08\u53ef\u8ba1\u5206\u817f\u68c0\u9a8c\u672a\u53d1\u73b0\u7a33\u5065\u7684\u5229\u7387/\u901a\u80c0\u62e9\u65f6\u817f\uff09\u3002"
+          },
+          "any_shown": true
+        },
         "heat": 54,
         "heat_parts": {
           "score": 54,
@@ -10503,6 +11052,55 @@
         "tech_rsi14": 60.0,
         "tech_macd_pos": true,
         "tech_off_52w_high_pct": 0.0,
+        "rate_inflation": {
+          "ticker": "XLRE",
+          "covered": true,
+          "rate": {
+            "net": 0.0,
+            "verdict": "neutral",
+            "strength": "weak",
+            "max_ic": null,
+            "sign": 0,
+            "measured": false,
+            "drivers": [],
+            "show": false,
+            "tone": "muted",
+            "arrow": "\u00b7",
+            "chip": {
+              "en": "Rate: regime-dependent",
+              "zh": "\u5229\u7387\uff1a\u4f9d\u8d56\u72b6\u6001"
+            },
+            "tip": {
+              "en": "This sector's rate link is only regime-dependent (CONTEXT) over the split-half forward-IC test \u2014 no robust measured headwind/tailwind. Display-only, never scored.",
+              "zh": "\u5728\u5206\u534a\u524d\u77bbIC\u68c0\u9a8c\u4e2d\uff0c\u8be5\u677f\u5757\u7684\u5229\u7387\u5173\u8054\u4ec5\u4f9d\u8d56\u5e02\u573a\u72b6\u6001\uff08CONTEXT\uff09\u2014\u2014 \u65e0\u7a33\u5065\u53ef\u6d4b\u7684\u9006\u98ce/\u987a\u98ce\u3002\u4ec5\u4f9b\u5c55\u793a\uff0c\u4ece\u4e0d\u8ba1\u5206\u3002"
+            }
+          },
+          "inflation": {
+            "net": 0.0,
+            "verdict": "neutral",
+            "strength": "weak",
+            "max_ic": null,
+            "sign": 0,
+            "measured": false,
+            "drivers": [],
+            "show": false,
+            "tone": "muted",
+            "arrow": "\u00b7",
+            "chip": {
+              "en": "Inflation: regime-dependent",
+              "zh": "\u901a\u80c0\uff1a\u4f9d\u8d56\u72b6\u6001"
+            },
+            "tip": {
+              "en": "This sector's inflation link is only regime-dependent (CONTEXT) over the split-half forward-IC test \u2014 no robust measured headwind/tailwind. Display-only, never scored.",
+              "zh": "\u5728\u5206\u534a\u524d\u77bbIC\u68c0\u9a8c\u4e2d\uff0c\u8be5\u677f\u5757\u7684\u901a\u80c0\u5173\u8054\u4ec5\u4f9d\u8d56\u5e02\u573a\u72b6\u6001\uff08CONTEXT\uff09\u2014\u2014 \u65e0\u7a33\u5065\u53ef\u6d4b\u7684\u9006\u98ce/\u987a\u98ce\u3002\u4ec5\u4f9b\u5c55\u793a\uff0c\u4ece\u4e0d\u8ba1\u5206\u3002"
+            }
+          },
+          "summary": {
+            "en": "This sector currently shows no robust rate link and no robust inflation link. These are measured forward-IC coefficients shown as context \u2014 display-only, never folded into the heat score (the scored-leg gate found no robust rate/inflation timing leg).",
+            "zh": "\u8be5\u677f\u5757\u5f53\u524d\u5448\u73b0\u65e0\u7a33\u5065\u5229\u7387\u5173\u8054\u4e0e\u65e0\u7a33\u5065\u901a\u80c0\u5173\u8054\u3002\u8fd9\u4e9b\u662f\u4f5c\u4e3a\u80cc\u666f\u5c55\u793a\u7684\u5b9e\u6d4b\u524d\u77bbIC\u7cfb\u6570 \u2014\u2014 \u4ec5\u4f9b\u5c55\u793a\uff0c\u7edd\u4e0d\u8ba1\u5165\u70ed\u5ea6\u5206\u6570\uff08\u53ef\u8ba1\u5206\u817f\u68c0\u9a8c\u672a\u53d1\u73b0\u7a33\u5065\u7684\u5229\u7387/\u901a\u80c0\u62e9\u65f6\u817f\uff09\u3002"
+          },
+          "any_shown": false
+        },
         "heat": 62,
         "heat_parts": {
           "score": 62,
@@ -10603,6 +11201,80 @@
         "tech_rsi14": 65.0,
         "tech_macd_pos": true,
         "tech_off_52w_high_pct": -2.5,
+        "rate_inflation": {
+          "ticker": "XLU",
+          "covered": true,
+          "rate": {
+            "net": 0.0,
+            "verdict": "neutral",
+            "strength": "weak",
+            "max_ic": null,
+            "sign": 0,
+            "measured": false,
+            "drivers": [],
+            "show": false,
+            "tone": "muted",
+            "arrow": "\u00b7",
+            "chip": {
+              "en": "Rate: regime-dependent",
+              "zh": "\u5229\u7387\uff1a\u4f9d\u8d56\u72b6\u6001"
+            },
+            "tip": {
+              "en": "This sector's rate link is only regime-dependent (CONTEXT) over the split-half forward-IC test \u2014 no robust measured headwind/tailwind. Display-only, never scored.",
+              "zh": "\u5728\u5206\u534a\u524d\u77bbIC\u68c0\u9a8c\u4e2d\uff0c\u8be5\u677f\u5757\u7684\u5229\u7387\u5173\u8054\u4ec5\u4f9d\u8d56\u5e02\u573a\u72b6\u6001\uff08CONTEXT\uff09\u2014\u2014 \u65e0\u7a33\u5065\u53ef\u6d4b\u7684\u9006\u98ce/\u987a\u98ce\u3002\u4ec5\u4f9b\u5c55\u793a\uff0c\u4ece\u4e0d\u8ba1\u5206\u3002"
+            }
+          },
+          "inflation": {
+            "net": -0.022,
+            "verdict": "neutral",
+            "strength": "strong",
+            "max_ic": 0.1,
+            "sign": 1,
+            "measured": true,
+            "drivers": [
+              {
+                "driver": "be10y_chg63",
+                "label": {
+                  "en": "10y breakeven \u2014 63d change",
+                  "zh": "10\u5e74\u671f\u76c8\u4e8f\u5e73\u8861\u201463\u65e5\u53d8\u52a8"
+                },
+                "ic": 0.06,
+                "verdict": "DIRECTIONAL",
+                "verdict_zh": "\u65b9\u5411\u6027",
+                "activation_z": -0.87,
+                "contribution": -0.021
+              },
+              {
+                "driver": "infl_accel",
+                "label": {
+                  "en": "Inflation re-acceleration (3m\u221212m)",
+                  "zh": "\u901a\u80c0\u518d\u52a0\u901f\uff083\u6708\u221212\u6708\uff09"
+                },
+                "ic": 0.1,
+                "verdict": "CONFIRMED",
+                "verdict_zh": "\u5df2\u786e\u8ba4",
+                "activation_z": -0.04,
+                "contribution": -0.002
+              }
+            ],
+            "show": true,
+            "tone": "muted",
+            "arrow": "\u00b7",
+            "chip": {
+              "en": "Inflation-helped",
+              "zh": "\u53d7\u76ca\u4e8e\u901a\u80c0"
+            },
+            "tip": {
+              "en": "Inflation channel: measured neutral right now (net -0.02; strong measured sensitivity, inflation-helped). Dominant driver: 10y breakeven \u2014 63d change, forward IC +0.06 (DIRECTIONAL), currently -0.9\u03c3. Display-only \u2014 never scored.",
+              "zh": "\u901a\u80c0\u901a\u9053\uff1a\u5f53\u524d\u5b9e\u6d4b\u4e3a\u4e2d\u6027\uff08\u51c0\u503c -0.02\uff1b\u53d7\u76ca\u4e8e\u901a\u80c0\uff0c\u53ef\u6d4b\u654f\u611f\u5ea6\u5f3a\uff09\u3002\u4e3b\u5bfc\u9a71\u52a8\uff1a10\u5e74\u671f\u76c8\u4e8f\u5e73\u8861\u201463\u65e5\u53d8\u52a8\uff0c\u524d\u77bbIC +0.06\uff08\u65b9\u5411\u6027\uff09\uff0c\u5f53\u524d -0.9\u03c3\u3002\u4ec5\u4f9b\u5c55\u793a\uff0c\u4ece\u4e0d\u8ba1\u5206\u3002"
+            }
+          },
+          "summary": {
+            "en": "This sector currently shows no robust rate link and a measured but quiet inflation link. These are measured forward-IC coefficients shown as context \u2014 display-only, never folded into the heat score (the scored-leg gate found no robust rate/inflation timing leg).",
+            "zh": "\u8be5\u677f\u5757\u5f53\u524d\u5448\u73b0\u65e0\u7a33\u5065\u5229\u7387\u5173\u8054\u4e0e\u53ef\u6d4b\u4f46\u5e73\u9759\u7684\u901a\u80c0\u5173\u8054\u3002\u8fd9\u4e9b\u662f\u4f5c\u4e3a\u80cc\u666f\u5c55\u793a\u7684\u5b9e\u6d4b\u524d\u77bbIC\u7cfb\u6570 \u2014\u2014 \u4ec5\u4f9b\u5c55\u793a\uff0c\u7edd\u4e0d\u8ba1\u5165\u70ed\u5ea6\u5206\u6570\uff08\u53ef\u8ba1\u5206\u817f\u68c0\u9a8c\u672a\u53d1\u73b0\u7a33\u5065\u7684\u5229\u7387/\u901a\u80c0\u62e9\u65f6\u817f\uff09\u3002"
+          },
+          "any_shown": true
+        },
         "heat": 54,
         "heat_parts": {
           "score": 54,
@@ -10709,6 +11381,105 @@
         "tech_rsi14": 72.0,
         "tech_macd_pos": true,
         "tech_off_52w_high_pct": 0.0,
+        "rate_inflation": {
+          "ticker": "XLV",
+          "covered": true,
+          "rate": {
+            "net": -0.043,
+            "verdict": "neutral",
+            "strength": "moderate",
+            "max_ic": 0.043,
+            "sign": -1,
+            "measured": true,
+            "drivers": [
+              {
+                "driver": "curve_tp_adj",
+                "label": {
+                  "en": "TP-adjusted 2s10s curve",
+                  "zh": "\u671f\u9650\u6ea2\u4ef7\u8c03\u6574\u540e\u76842-10\u5e74\u66f2\u7ebf"
+                },
+                "ic": 0.043,
+                "verdict": "DIRECTIONAL",
+                "verdict_zh": "\u65b9\u5411\u6027",
+                "activation_z": -1.79,
+                "contribution": -0.031
+              },
+              {
+                "driver": "real10y_chg63",
+                "label": {
+                  "en": "Real 10y \u2014 63d change (speed)",
+                  "zh": "\u5b9e\u964510\u5e74\u671f\u6536\u76ca\u7387\u201463\u65e5\u53d8\u52a8\uff08\u901f\u5ea6\uff09"
+                },
+                "ic": -0.042,
+                "verdict": "DIRECTIONAL",
+                "verdict_zh": "\u65b9\u5411\u6027",
+                "activation_z": 0.75,
+                "contribution": -0.013
+              }
+            ],
+            "show": true,
+            "tone": "muted",
+            "arrow": "\u00b7",
+            "chip": {
+              "en": "Rate-sensitive",
+              "zh": "\u5229\u7387\u654f\u611f"
+            },
+            "tip": {
+              "en": "Rate channel: measured neutral right now (net -0.04; moderate measured sensitivity, rate-sensitive). Dominant driver: TP-adjusted 2s10s curve, forward IC +0.04 (DIRECTIONAL), currently -1.8\u03c3. Display-only \u2014 never scored.",
+              "zh": "\u5229\u7387\u901a\u9053\uff1a\u5f53\u524d\u5b9e\u6d4b\u4e3a\u4e2d\u6027\uff08\u51c0\u503c -0.04\uff1b\u5229\u7387\u654f\u611f\uff0c\u53ef\u6d4b\u654f\u611f\u5ea6\u4e2d\u7b49\uff09\u3002\u4e3b\u5bfc\u9a71\u52a8\uff1a\u671f\u9650\u6ea2\u4ef7\u8c03\u6574\u540e\u76842-10\u5e74\u66f2\u7ebf\uff0c\u524d\u77bbIC +0.04\uff08\u65b9\u5411\u6027\uff09\uff0c\u5f53\u524d -1.8\u03c3\u3002\u4ec5\u4f9b\u5c55\u793a\uff0c\u4ece\u4e0d\u8ba1\u5206\u3002"
+            }
+          },
+          "inflation": {
+            "net": -0.333,
+            "verdict": "headwind",
+            "strength": "strong",
+            "max_ic": 0.218,
+            "sign": -1,
+            "measured": true,
+            "drivers": [
+              {
+                "driver": "corepce_gap",
+                "label": {
+                  "en": "Core PCE YoY \u2212 2% target",
+                  "zh": "\u6838\u5fc3PCE\u540c\u6bd4\u22122%\u76ee\u6807"
+                },
+                "ic": -0.19,
+                "verdict": "CONFIRMED",
+                "verdict_zh": "\u5df2\u786e\u8ba4",
+                "activation_z": 2.17,
+                "contribution": -0.165
+              },
+              {
+                "driver": "exp_wedge",
+                "label": {
+                  "en": "Expectations wedge (mkt \u2212 model)",
+                  "zh": "\u9884\u671f\u7f3a\u53e3\uff08\u5e02\u573a\u2212\u6a21\u578b\uff09"
+                },
+                "ic": 0.218,
+                "verdict": "CONFIRMED",
+                "verdict_zh": "\u5df2\u786e\u8ba4",
+                "activation_z": -1.67,
+                "contribution": -0.145
+              }
+            ],
+            "show": true,
+            "tone": "neg",
+            "arrow": "\u25bc",
+            "chip": {
+              "en": "Inflation headwind",
+              "zh": "\u901a\u80c0\u9006\u98ce"
+            },
+            "tip": {
+              "en": "Inflation channel: measured headwind right now (net -0.33; strong measured sensitivity, inflation-pressured). Dominant driver: Core PCE YoY \u2212 2% target, forward IC -0.19 (CONFIRMED), currently +2.2\u03c3. Display-only \u2014 never scored.",
+              "zh": "\u901a\u80c0\u901a\u9053\uff1a\u5f53\u524d\u5b9e\u6d4b\u4e3a\u9006\u98ce\uff08\u51c0\u503c -0.33\uff1b\u53d7\u901a\u80c0\u538b\u5236\uff0c\u53ef\u6d4b\u654f\u611f\u5ea6\u5f3a\uff09\u3002\u4e3b\u5bfc\u9a71\u52a8\uff1a\u6838\u5fc3PCE\u540c\u6bd4\u22122%\u76ee\u6807\uff0c\u524d\u77bbIC -0.19\uff08\u5df2\u786e\u8ba4\uff09\uff0c\u5f53\u524d +2.2\u03c3\u3002\u4ec5\u4f9b\u5c55\u793a\uff0c\u4ece\u4e0d\u8ba1\u5206\u3002"
+            }
+          },
+          "summary": {
+            "en": "This sector currently shows a measured but quiet rate link and a measured inflation headwind. These are measured forward-IC coefficients shown as context \u2014 display-only, never folded into the heat score (the scored-leg gate found no robust rate/inflation timing leg).",
+            "zh": "\u8be5\u677f\u5757\u5f53\u524d\u5448\u73b0\u53ef\u6d4b\u4f46\u5e73\u9759\u7684\u5229\u7387\u5173\u8054\u4e0e\u5b9e\u6d4b\u901a\u80c0\u9006\u98ce\u3002\u8fd9\u4e9b\u662f\u4f5c\u4e3a\u80cc\u666f\u5c55\u793a\u7684\u5b9e\u6d4b\u524d\u77bbIC\u7cfb\u6570 \u2014\u2014 \u4ec5\u4f9b\u5c55\u793a\uff0c\u7edd\u4e0d\u8ba1\u5165\u70ed\u5ea6\u5206\u6570\uff08\u53ef\u8ba1\u5206\u817f\u68c0\u9a8c\u672a\u53d1\u73b0\u7a33\u5065\u7684\u5229\u7387/\u901a\u80c0\u62e9\u65f6\u817f\uff09\u3002"
+          },
+          "any_shown": true
+        },
         "heat": 60,
         "heat_parts": {
           "score": 60,
@@ -10809,6 +11580,55 @@
         "tech_rsi14": 45.0,
         "tech_macd_pos": false,
         "tech_off_52w_high_pct": -8.0,
+        "rate_inflation": {
+          "ticker": "XLY",
+          "covered": false,
+          "rate": {
+            "net": 0.0,
+            "verdict": "neutral",
+            "strength": "weak",
+            "max_ic": null,
+            "sign": 0,
+            "measured": false,
+            "drivers": [],
+            "show": false,
+            "tone": "muted",
+            "arrow": "\u00b7",
+            "chip": {
+              "en": "Rate: not measured",
+              "zh": "\u5229\u7387\uff1a\u672a\u6d4b\u5f97"
+            },
+            "tip": {
+              "en": "No measured rate transmission cell for this sector \u2014 it is not in the calibrated matrix. Display-only.",
+              "zh": "\u8be5\u677f\u5757\u6ca1\u6709\u53ef\u6d4b\u5f97\u7684\u5229\u7387\u4f20\u5bfc\u7cfb\u6570\uff08\u4e0d\u5728\u5df2\u6821\u51c6\u77e9\u9635\u4e2d\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u3002"
+            }
+          },
+          "inflation": {
+            "net": 0.0,
+            "verdict": "neutral",
+            "strength": "weak",
+            "max_ic": null,
+            "sign": 0,
+            "measured": false,
+            "drivers": [],
+            "show": false,
+            "tone": "muted",
+            "arrow": "\u00b7",
+            "chip": {
+              "en": "Inflation: not measured",
+              "zh": "\u901a\u80c0\uff1a\u672a\u6d4b\u5f97"
+            },
+            "tip": {
+              "en": "No measured inflation transmission cell for this sector \u2014 it is not in the calibrated matrix. Display-only.",
+              "zh": "\u8be5\u677f\u5757\u6ca1\u6709\u53ef\u6d4b\u5f97\u7684\u901a\u80c0\u4f20\u5bfc\u7cfb\u6570\uff08\u4e0d\u5728\u5df2\u6821\u51c6\u77e9\u9635\u4e2d\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u3002"
+            }
+          },
+          "summary": {
+            "en": "This sector currently shows no robust rate link and no robust inflation link. These are measured forward-IC coefficients shown as context \u2014 display-only, never folded into the heat score (the scored-leg gate found no robust rate/inflation timing leg).",
+            "zh": "\u8be5\u677f\u5757\u5f53\u524d\u5448\u73b0\u65e0\u7a33\u5065\u5229\u7387\u5173\u8054\u4e0e\u65e0\u7a33\u5065\u901a\u80c0\u5173\u8054\u3002\u8fd9\u4e9b\u662f\u4f5c\u4e3a\u80cc\u666f\u5c55\u793a\u7684\u5b9e\u6d4b\u524d\u77bbIC\u7cfb\u6570 \u2014\u2014 \u4ec5\u4f9b\u5c55\u793a\uff0c\u7edd\u4e0d\u8ba1\u5165\u70ed\u5ea6\u5206\u6570\uff08\u53ef\u8ba1\u5206\u817f\u68c0\u9a8c\u672a\u53d1\u73b0\u7a33\u5065\u7684\u5229\u7387/\u901a\u80c0\u62e9\u65f6\u817f\uff09\u3002"
+          },
+          "any_shown": false
+        },
         "heat": 29,
         "heat_parts": {
           "score": 29,
@@ -11045,8 +11865,8 @@
   },
   "freshness": {
     "asof": "2026-06-26",
-    "built_at": "2026-06-27T23:29:54Z",
-    "age_days": 1,
+    "built_at": "2026-06-28T04:21:58Z",
+    "age_days": 2,
     "age_sessions": 0,
     "max_age_sessions": 1,
     "stale": false,

@@ -1,5 +1,5 @@
 {
- "asof": "2026-06-27",
+ "asof": "2026-06-28",
  "audit": "prices",
  "config": {
   "price_max_gap_days": 4,
@@ -13,14 +13,14 @@
   "macro_outlier_z": 5,
   "email_alerts": false
  },
- "n": 459,
+ "n": 533,
  "n_failed": 1,
- "fail_pct": 0.218,
- "n_flags": 45,
+ "fail_pct": 0.188,
+ "n_flags": 54,
  "universes": [
   {
    "name": "stocks",
-   "n": 114,
+   "n": 121,
    "n_failed": 0,
    "fail_pct": 0.0,
    "n_flags": 1,
@@ -37,10 +37,10 @@
   },
   {
    "name": "baskets/ohlcv",
-   "n": 345,
+   "n": 412,
    "n_failed": 1,
-   "fail_pct": 0.29,
-   "n_flags": 44,
+   "fail_pct": 0.243,
+   "n_flags": 53,
    "skipped": false,
    "note": "",
    "failed": [
@@ -110,7 +110,7 @@
     {
      "name": "DELL",
      "kind": "move",
-     "detail": "+32.8% on 2026-05-29 (2 day(s) > 20%)"
+     "detail": "+32.8% on 2026-05-29"
     },
     {
      "name": "DVA",
@@ -121,6 +121,11 @@
      "name": "FLY",
      "kind": "move",
      "detail": "+22.6% on 2026-05-08 (2 day(s) > 20%)"
+    },
+    {
+     "name": "FLYW",
+     "kind": "move",
+     "detail": "+20.5% on 2026-05-06"
     },
     {
      "name": "FTNT",
@@ -143,9 +148,19 @@
      "detail": "+40.8% on 2026-03-09"
     },
     {
+     "name": "HON",
+     "kind": "move",
+     "detail": "+100.3% on 2026-06-18"
+    },
+    {
      "name": "HUT",
      "kind": "move",
      "detail": "+35.3% on 2026-05-06"
+    },
+    {
+     "name": "IBP",
+     "kind": "move",
+     "detail": "-27.6% on 2026-05-07"
     },
     {
      "name": "INFQ",
@@ -161,6 +176,11 @@
      "name": "IONQ",
      "kind": "move",
      "detail": "+20.9% on 2026-04-15 (2 day(s) > 20%)"
+    },
+    {
+     "name": "KVYO",
+     "kind": "move",
+     "detail": "-32.2% on 2026-05-06"
     },
     {
      "name": "LUNR",
@@ -203,6 +223,11 @@
      "detail": "+30.1% on 2026-05-29"
     },
     {
+     "name": "ON",
+     "kind": "move",
+     "detail": "-23.7% on 2026-06-26"
+    },
+    {
      "name": "PL",
      "kind": "move",
      "detail": "-26.0% on 2026-06-05 (2 day(s) > 20%)"
@@ -228,6 +253,11 @@
      "detail": "+34.2% on 2026-05-08"
     },
     {
+     "name": "SATL",
+     "kind": "move",
+     "detail": "+38.2% on 2026-03-23"
+    },
+    {
      "name": "SGML",
      "kind": "move",
      "detail": "+21.5% on 2026-04-02"
@@ -236,6 +266,11 @@
      "name": "SMCI",
      "kind": "move",
      "detail": "-33.3% on 2026-03-20 (3 day(s) > 20%)"
+    },
+    {
+     "name": "SNDK",
+     "kind": "move",
+     "detail": "+22.0% on 2026-06-25"
     },
     {
      "name": "SNOW",
@@ -268,9 +303,19 @@
      "detail": "+22.9% on 2026-04-23"
     },
     {
+     "name": "VECO",
+     "kind": "move",
+     "detail": "+25.2% on 2026-05-06"
+    },
+    {
      "name": "ZS",
      "kind": "move",
      "detail": "-31.5% on 2026-05-27"
+    },
+    {
+     "name": "ZTS",
+     "kind": "move",
+     "detail": "-21.5% on 2026-05-07"
     }
    ]
   }

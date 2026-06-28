@@ -758,3 +758,9 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   40% { transform: scale(1); } 72% { opacity: 1; } 100% { transform: scale(1.02); opacity: 0; } }
 @keyframes skyfx-ring { 0% { transform: scale(.55); opacity: .55; } 70% { opacity: .12; } 100% { transform: scale(2.1); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .sky-fx { display: none !important; } }
+
+/* Forward-cone "anticipation" conviction note — hidden site-wide (low signal value).
+   Single shared-CSS gate so it stays suppressed on every dashboard (US / China / HK /
+   Canada / Intl) regardless of which generator emitted it (engine.stock_score or
+   scripts.build_intl_library._cone_note). The sibling 'rank' note is unaffected. */
+.nb-note-anticipation { display: none !important; }

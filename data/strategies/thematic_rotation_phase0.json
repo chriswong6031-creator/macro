@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "us",
-  "generated_at": "2026-06-27T23:49:32.154005+00:00",
+  "generated_at": "2026-06-28T04:28:58.962730+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -114,7 +114,7 @@
       "years": 27.5
     },
     "baskets": {
-      "n_assets": 34,
+      "n_assets": 45,
       "span": [
         "2023-05-31",
         "2026-06-30"
@@ -122,98 +122,98 @@
       "contaminated": true,
       "algorithm": {
         "ew_buyhold": {
-          "cagr": 0.5252,
-          "sharpe": 1.93,
-          "max_dd": -0.1402,
-          "calmar": 3.75,
+          "cagr": 0.448,
+          "sharpe": 1.91,
+          "max_dd": -0.1214,
+          "calmar": 3.69,
           "n_months": 37,
-          "dsr": 0.948
+          "dsr": 0.941
         },
         "top3_mom12_rel": {
-          "cagr": 1.3038,
+          "cagr": 1.3022,
           "sharpe": 1.67,
-          "max_dd": -0.2645,
+          "max_dd": -0.2643,
           "calmar": 4.93,
           "n_months": 25,
           "dsr": 0.841
         },
         "top3_mom6_rel": {
-          "cagr": 1.3561,
+          "cagr": 1.3553,
           "sharpe": 1.81,
-          "max_dd": -0.1908,
+          "max_dd": -0.1907,
           "calmar": 7.11,
           "n_months": 27,
           "dsr": 0.898
         },
         "top3_mom12_dual": {
-          "cagr": 1.2275,
+          "cagr": 1.2259,
           "sharpe": 1.66,
-          "max_dd": -0.2645,
+          "max_dd": -0.2643,
           "calmar": 4.64,
           "n_months": 25,
           "dsr": 0.821
         },
         "top4_mom12_dual": {
-          "cagr": 1.0698,
+          "cagr": 1.0688,
           "sharpe": 1.57,
-          "max_dd": -0.2332,
-          "calmar": 4.59,
+          "max_dd": -0.2331,
+          "calmar": 4.58,
           "n_months": 25,
           "dsr": 0.788
         }
       },
       "rank_ic": {
         "1m": {
-          "mean_ic": 0.0896,
-          "ic_t_hac": 2.679,
+          "mean_ic": 0.087,
+          "ic_t_hac": 2.612,
           "hit": 0.6,
           "n_steps": 25
         },
         "3m": {
-          "mean_ic": 0.1886,
-          "ic_t_hac": 2.756,
+          "mean_ic": 0.1955,
+          "ic_t_hac": 3.332,
           "hit": 0.625,
           "n_steps": 8
         }
       },
       "tsmom_conditional": {
         "above_trend": {
-          "mean": 0.0342,
-          "std": 0.1262,
-          "sharpe": 0.94,
-          "p05": -0.1434,
-          "n": 774
+          "mean": 0.0293,
+          "std": 0.1142,
+          "sharpe": 0.89,
+          "p05": -0.1315,
+          "n": 1002
         },
         "below_trend": {
-          "mean": 0.0441,
-          "std": 0.1126,
-          "sharpe": 1.36,
-          "p05": -0.0957,
-          "n": 484
+          "mean": 0.039,
+          "std": 0.1022,
+          "sharpe": 1.32,
+          "p05": -0.0923,
+          "n": 641
         },
-        "mean_diff_t": -1.44,
-        "mean_diff_p": 0.1489
+        "mean_diff_t": -1.78,
+        "mean_diff_p": 0.0761
       },
       "extension_drawdown": {
         "fwd_days": 63,
         "cohorts": {
           "normal": {
-            "mean_fwd_maxdd": -0.0903,
-            "p05_fwd_maxdd": -0.2795,
-            "n": 13096
+            "mean_fwd_maxdd": -0.0812,
+            "p05_fwd_maxdd": -0.2585,
+            "n": 17255
           },
           "stretched": {
-            "mean_fwd_maxdd": -0.093,
-            "p05_fwd_maxdd": -0.3022,
-            "n": 2768
+            "mean_fwd_maxdd": -0.0888,
+            "p05_fwd_maxdd": -0.2886,
+            "n": 3340
           },
           "parabolic": {
-            "mean_fwd_maxdd": -0.099,
-            "p05_fwd_maxdd": -0.3206,
-            "n": 932
+            "mean_fwd_maxdd": -0.092,
+            "p05_fwd_maxdd": -0.3084,
+            "n": 1141
           }
         },
-        "spearman_ez_vs_fwd_maxdd": 0.023
+        "spearman_ez_vs_fwd_maxdd": -0.002
       },
       "warning": "HINDSIGHT-curated membership + only ~3y + ~15 names -> severely underpowered and survivorship-biased. Context only, never a validation."
     }

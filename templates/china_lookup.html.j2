@@ -244,6 +244,11 @@
       <h2>{{ t('Chart', '图表') }}</h2>
       <div id="tvbox"></div>
     </div>
+    <!-- ===== Momentum across timeframes — paired right under the chart ===== -->
+    <div class="panel">
+      <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
+      <div id="r_mtf"></div>
+    </div>
     <!-- ===== Evidence lanes + country slot (Layer 2, shared stockview.js) ===== -->
     <div id="sv-evidence"></div>
     <div id="sv-country"></div>
@@ -285,11 +290,7 @@
       <div id="r_pos"></div>
     </div>
     </details>
-    <details class="sv-group"><summary>{{ t('📈 Momentum &amp; history', '📈 动量与历史') }}</summary>
-    <div class="panel">
-      <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
-      <div id="r_mtf"></div>
-    </div>
+    <!-- Trust-the-state: standalone panel at the page bottom (per revamp) -->
     <div class="panel">
       <h2>{{ t('How much to trust the state — measured 2008→2026', '这个状态有多可信 — 实测 2008→2026') }}{{ help(
         'A-shares drift up over a month from every state (the market\'s long upward bias); the spread between
@@ -305,7 +306,6 @@
         对于风险状态，回撤视角比平均收益更重要。') }}</h2>
       <table id="r_cal"></table>
     </div>
-    </details>
     <p class="muted sv-method" style="font-size:11.5px;margin:14px 2px 0">{{ t(
       'How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation.',
       '如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅为研究性背景展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。') }}</p>

@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-28T00:16:12.457993+00:00",
+  "generated_utc": "2026-06-28T04:59:46.259832+00:00",
   "as_of": "2026-06-28",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -1554,9 +1554,19 @@
       "emoji": "\ud83d\udcbc",
       "label_en": "Corporate lobbying",
       "label_zh": "\u4f01\u4e1a\u6e38\u8bf4",
-      "rows": 19754,
-      "last_seen": "2026-06-26",
+      "rows": 19755,
+      "last_seen": "2026-06-27",
       "recent": [
+        {
+          "Date": "2026-06-27",
+          "Amount": "70000.0",
+          "Client": "INFLEQTION INC.",
+          "Issue": "Science/Technology",
+          "Specific_Issue": "Issues related to quantum computing.",
+          "Registrant": "CGCN GROUP, LLC",
+          "Ticker": "INFQ",
+          "_first_seen": "2026-06-28T04:13:06.583011+00:00"
+        },
         {
           "Date": "2026-06-26",
           "Amount": "0.0",
@@ -1780,16 +1790,6 @@
         {
           "Date": "2026-06-16",
           "Amount": "0.0",
-          "Client": "LIFE360",
-          "Issue": "Consumer Issues/Safety/Products \n Computer Industry",
-          "Specific_Issue": "Issues related to competition in mobile app ecosystems; S.__ American Innovation and Choice Online Act; S.2153 Open App Markets Act; H.R.3209 App Store Freedom Act \n Issues related to competition in mobile app ecosyst\u2026",
-          "Registrant": "EMERGENT STRATEGIES",
-          "Ticker": "LIF",
-          "_first_seen": "2026-06-20T00:51:38.545783+00:00"
-        },
-        {
-          "Date": "2026-06-16",
-          "Amount": "0.0",
           "Client": "PEBBLEBROOK HOTEL TRUST",
           "Issue": "Natural Resources",
           "Specific_Issue": "Issues related to National Park Service leases.",
@@ -1800,11 +1800,11 @@
         {
           "Date": "2026-06-16",
           "Amount": "0.0",
-          "Client": "MINIMED GROUP INC.",
-          "Issue": "Health Issues \n Medicare/Medicaid",
-          "Specific_Issue": "Issues related to medical device access and coverage. \n Issues related to medical device access and coverage.",
-          "Registrant": "MEHLMAN CONSULTING, INC.",
-          "Ticker": "MMED",
+          "Client": "LIFE360",
+          "Issue": "Consumer Issues/Safety/Products \n Computer Industry",
+          "Specific_Issue": "Issues related to competition in mobile app ecosystems; S.__ American Innovation and Choice Online Act; S.2153 Open App Markets Act; H.R.3209 App Store Freedom Act \n Issues related to competition in mobile app ecosyst\u2026",
+          "Registrant": "EMERGENT STRATEGIES",
+          "Ticker": "LIF",
           "_first_seen": "2026-06-20T00:51:38.545783+00:00"
         }
       ]
@@ -3433,183 +3433,183 @@
       "emoji": "\ud83e\udd8d",
       "label_en": "WallStreetBets",
       "label_zh": "WSB\u70ed\u5ea6",
-      "rows": 2456,
-      "last_seen": "2026-06-27",
+      "rows": 2763,
+      "last_seen": "2026-06-28",
       "recent": [
         {
           "Ticker": "VC",
           "Count": "1",
           "Sentiment": "0.1093",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "LIVE",
           "Count": "1",
           "Sentiment": "0.7359",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "ANET",
           "Count": "15",
           "Sentiment": "0.14191333333333336",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "OKLO",
           "Count": "21",
           "Sentiment": "-0.04873333333333334",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "EU",
           "Count": "9",
           "Sentiment": "0.06314444444444448",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "SE",
           "Count": "4",
           "Sentiment": "0.2897",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "EPS",
           "Count": "5",
           "Sentiment": "0.6384799999999999",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "SEDG",
           "Count": "6",
           "Sentiment": "-0.04284999999999999",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "GO",
           "Count": "6",
           "Sentiment": "-0.06998333333333333",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "FSLR",
           "Count": "2",
           "Sentiment": "0.2673",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "PR",
           "Count": "1",
           "Sentiment": "-0.34",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "BOIL",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "HR",
           "Count": "4",
           "Sentiment": "-0.030925000000000008",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "XLV",
           "Count": "1",
           "Sentiment": "-0.8074",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "TDOC",
           "Count": "2",
           "Sentiment": "0.0",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "HOOD",
           "Count": "19",
           "Sentiment": "-0.039557894736842104",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "DIS",
           "Count": "3",
           "Sentiment": "-0.11896666666666667",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "NKLA",
           "Count": "11",
           "Sentiment": "-0.02502727272727273",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "ETSY",
           "Count": "5",
           "Sentiment": "0.3463",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "BKSY",
           "Count": "6",
           "Sentiment": "0.16961666666666667",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "PPT",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "DJT",
           "Count": "6",
           "Sentiment": "-0.013500000000000007",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "AB",
           "Count": "1",
           "Sentiment": "-0.3182",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "WELL",
           "Count": "3",
           "Sentiment": "0.6257333333333333",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Ticker": "DATS",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-06-27T02:06:55.839322+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
+          "_collected": "2026-06-28"
         }
       ]
     },
@@ -4460,9 +4460,189 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 437,
-      "last_seen": "2026-06-27",
+      "rows": 457,
+      "last_seen": "2026-06-28",
       "recent": [
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Laurel+M.+Lee+Lost+an+Estimated+%24457.7K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Representative Laurel M. Lee Lost an Estimated $457.7K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Laurel M. Lee</strong> lost <strong>$457.7K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Laurel M. Lee Net Worth</h2><p>Q\u2026",
+          "image": "https://www.quiverquant.com/images/L000597_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ron+Wyden+Lost+an+Estimated+%24333.5K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator Ron Wyden Lost an Estimated $333.5K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Ron Wyden</strong> lost <strong>$333.5K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Ron Wyden Net Worth</h2><p>Quiver Quantitative est\u2026",
+          "image": "https://www.quiverquant.com/images/W000779_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+John+W.+Hickenlooper+Lost+an+Estimated+%24370.5K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator John W. Hickenlooper Lost an Estimated $370.5K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator John W. Hickenlooper</strong> lost <strong>$370.5K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator John W. Hickenlooper Net Worth</h2><p>Q\u2026",
+          "image": "https://www.quiverquant.com/images/H000273_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Jacky+Rosen+Lost+an+Estimated+%24129.2K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator Jacky Rosen Lost an Estimated $129.2K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Jacky Rosen</strong> lost <strong>$129.2K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Jacky Rosen Net Worth</h2><p>Quiver Quantitative\u2026",
+          "image": "https://www.quiverquant.com/images/R000608_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Mike+Kelly+Lost+an+Estimated+%24215.6K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Representative Mike Kelly Lost an Estimated $215.6K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Mike Kelly</strong> lost <strong>$215.6K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Mike Kelly Net Worth</h2><p>Quiver \u2026",
+          "image": "https://www.quiverquant.com/images/K000376_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Katie+Boyd+Britt+Lost+an+Estimated+%24366.4K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator Katie Boyd Britt Lost an Estimated $366.4K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Katie Boyd Britt</strong> lost <strong>$366.4K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Katie Boyd Britt Net Worth</h2><p>Quiver Qu\u2026",
+          "image": "https://www.quiverquant.com/images/B001319_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Thomas+R.+Suozzi+Lost+an+Estimated+%24759.3K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Representative Thomas R. Suozzi Lost an Estimated $759.3K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Thomas R. Suozzi</strong> lost <strong>$759.3K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Thomas R. Suozzi Net Worth</h\u2026",
+          "image": "https://www.quiverquant.com/images/S001201_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Lisa+Blunt+Rochester+Lost+an+Estimated+%24124.0K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator Lisa Blunt Rochester Lost an Estimated $124.0K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Lisa Blunt Rochester</strong> lost <strong>$124.0K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Lisa Blunt Rochester Net Worth</h2><p>Q\u2026",
+          "image": "https://www.quiverquant.com/images/B001303_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Mark+R.+Warner+Made+an+Estimated+%24263.4K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator Mark R. Warner Made an Estimated $263.4K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Mark R. Warner</strong> made <strong>$263.4K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Mark R. Warner Net Worth</h2><p>Quiver Quanti\u2026",
+          "image": "https://www.quiverquant.com/images/W000805_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+J.+French+Hill+Made+an+Estimated+%24312.7K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Representative J. French Hill Made an Estimated $312.7K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative J. French Hill</strong> made <strong>$312.7K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative J. French Hill Net Worth</h2><p\u2026",
+          "image": "https://www.quiverquant.com/images/H001072_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Mikie+Sherrill+Lost+an+Estimated+%24121.1K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Representative Mikie Sherrill Lost an Estimated $121.1K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Mikie Sherrill</strong> lost <strong>$121.1K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Mikie Sherrill Net Worth</h2><p\u2026",
+          "image": "https://www.quiverquant.com/images/S001207_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Sheldon+Whitehouse+Lost+an+Estimated+%241.1M+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator Sheldon Whitehouse Lost an Estimated $1.1M in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Sheldon Whitehouse</strong> lost <strong>$1.1M</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Sheldon Whitehouse Net Worth</h2><p>Quiver \u2026",
+          "image": "https://www.quiverquant.com/images/W000802_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ron+Johnson+Lost+an+Estimated+%24524.6K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator Ron Johnson Lost an Estimated $524.6K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Ron Johnson</strong> lost <strong>$524.6K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Ron Johnson Net Worth</h2><p>Quiver Quantitative\u2026",
+          "image": "https://www.quiverquant.com/images/J000293_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+David+Kustoff+Lost+an+Estimated+%24245.3K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Representative David Kustoff Lost an Estimated $245.3K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative David Kustoff</strong> lost <strong>$245.3K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative David Kustoff Net Worth</h2><p>Q\u2026",
+          "image": "https://www.quiverquant.com/images/K000392_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Darrell+Issa+Made+an+Estimated+%24686.9K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Representative Darrell Issa Made an Estimated $686.9K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Darrell Issa</strong> made <strong>$686.9K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Darrell Issa Net Worth</h2><p>Qui\u2026",
+          "image": "https://www.quiverquant.com/images/I000056_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Scott+Franklin+Lost+an+Estimated+%24571.5K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Representative Scott Franklin Lost an Estimated $571.5K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Scott Franklin</strong> lost <strong>$571.5K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Scott Franklin Net Worth</h2><p\u2026",
+          "image": "https://www.quiverquant.com/images/F000472_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Mitch+McConnell+Lost+an+Estimated+%24434.3K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator Mitch McConnell Lost an Estimated $434.3K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Mitch McConnell</strong> lost <strong>$434.3K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Mitch McConnell Net Worth</h2><p>Quiver Quan\u2026",
+          "image": "https://www.quiverquant.com/images/M000355_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Tim+Sheehy+Lost+an+Estimated+%248.4M+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Senator Tim Sheehy Lost an Estimated $8.4M in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Tim Sheehy</strong> lost <strong>$8.4M</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Tim Sheehy Net Worth</h2><p>Quiver Quantitative est\u2026",
+          "image": "https://www.quiverquant.com/images/S001232_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Gilbert+Ray+Cisneros%2C+Jr.+Lost+an+Estimated+%24177.2K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Representative Gilbert Ray Cisneros, Jr. Lost an Estimated $177.2K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Gilbert Ray Cisneros, Jr.</strong> lost <strong>$177.2K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Gilbert Ray Cisneros\u2026",
+          "image": "https://www.quiverquant.com/images/C001123_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Daniel+Meuser+Lost+an+Estimated+%24134.7K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-28 03:00:29",
+          "headline": "Net Worth Update: Representative Daniel Meuser Lost an Estimated $134.7K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Daniel Meuser</strong> lost <strong>$134.7K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Daniel Meuser Net Worth</h2><p>Q\u2026",
+          "image": "https://www.quiverquant.com/images/M001204_congress.png",
+          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
+        },
         {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Plaskett+Responds+to+Supreme+Court+Ruling+on+Haitian+TPS+Protections",
           "time": "2026-06-27 22:19:49",
@@ -4482,12 +4662,12 @@
           "_first_seen": "2026-06-27T23:19:14.677158+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Circle+Stock+%28CRCL%29+Opinions+on+USDC+Adoption+and+Recent+Volatility",
+          "url": "https://www.quiverquant.com/news/Western+Digital+Stock+%28WDC%29+Opinions+on+Recent+Semiconductor+Market+Volatility",
           "time": "2026-06-27 17:32:47",
-          "headline": "Circle Stock (CRCL) Opinions on USDC Adoption and Recent Volatility",
+          "headline": "Western Digital Stock (WDC) Opinions on Recent Semiconductor Market Volatility",
           "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Market Volatility Focus:</strong> Social media chatter centers on Circle's recent share price pullback to the $69 range, with analysts noting it aligns closely with key suppor\u2026",
-          "image": "https://www.quiverquant.com/images/crcl_rect_new.png",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Year-to-Date Surge:</strong> Social media conversations emphasize Western Digital's standout 240% gain in 2026, ranking it among leading technology names driven by robust memo\u2026",
+          "image": "https://www.quiverquant.com/images/wdc_rect_new.png",
           "_first_seen": "2026-06-27T23:19:14.677158+00:00"
         },
         {
@@ -4500,192 +4680,12 @@
           "_first_seen": "2026-06-27T23:19:14.677158+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Shopify+Stock+%28SHOP%29+Opinions+on+Trustpilot+Integration",
-          "time": "2026-06-27 17:32:47",
-          "headline": "Shopify Stock (SHOP) Opinions on Trustpilot Integration",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Trustpilot Partnership:</strong> Social media users highlighted Shopify's new integration with Trustpilot, set to launch June 29, as a strategic move to embed verified custome\u2026",
-          "image": "https://www.quiverquant.com/images/shop_rect_new.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/POET+Technologies+Stock+%28POET%29+Opinions+on+Recent+Price+Consolidation",
-          "time": "2026-06-27 17:32:47",
-          "headline": "POET Technologies Stock (POET) Opinions on Recent Price Consolidation",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Price Consolidation:</strong> Social media chatter centers on POET Technologies shares holding steady near $10 following a sharp retreat from earlier peaks. Observers note lig\u2026",
-          "image": "https://www.quiverquant.com/images/poet_rect_new.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Microsoft+Stock+%28MSFT%29+Opinions+on+AI+Capital+Expenditure+Worries",
-          "time": "2026-06-27 17:32:47",
-          "headline": "Microsoft Stock (MSFT) Opinions on AI Capital Expenditure Worries",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Stock Hits Lows:</strong> Microsoft shares have fallen sharply this year amid broader market scrutiny of technology valuations. Traders note the stock trading near multi-month\u2026",
-          "image": "https://www.quiverquant.com/images/msft_rect_new.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Western+Digital+Stock+%28WDC%29+Opinions+on+Recent+Semiconductor+Market+Volatility",
-          "time": "2026-06-27 17:32:47",
-          "headline": "Western Digital Stock (WDC) Opinions on Recent Semiconductor Market Volatility",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Year-to-Date Surge:</strong> Social media conversations emphasize Western Digital's standout 240% gain in 2026, ranking it among leading technology names driven by robust memo\u2026",
-          "image": "https://www.quiverquant.com/images/wdc_rect_new.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Eli+Lilly+Stock+%28LLY%29+Opinions+on+Analyst+Notes+Amid+Obesity+Drug+Shifts",
-          "time": "2026-06-27 17:32:47",
-          "headline": "Eli Lilly Stock (LLY) Opinions on Analyst Notes Amid Obesity Drug Shifts",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Analyst Upgrades:</strong> Recent analyst commentary has highlighted renewed confidence in Eli Lilly, with Cantor Fitzgerald reiterating an Overweight rating and a price targe\u2026",
-          "image": "https://www.quiverquant.com/images/lly_rect_new.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/Constellation+Energy+Stock+%28CEG%29+Opinions+on+AI+Data+Center+Power+Demand",
           "time": "2026-06-27 17:32:47",
           "headline": "Constellation Energy Stock (CEG) Opinions on AI Data Center Power Demand",
           "category": "discussion_automated",
           "summary": "<p><strong style=\"color: rgb(218,48,46);\">AI Power Demand:</strong> Social media chatter highlights Constellation Energy's role in supplying reliable nuclear power to meet surging needs from data centers. Investors po\u2026",
           "image": "https://www.quiverquant.com/images/ceg_rect_new.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Brian+Mast+Highlights+Defense+and+Water+Priorities+in+Weekly+Update",
-          "time": "2026-06-27 16:19:52",
-          "headline": "Press Release: Brian Mast Highlights Defense and Water Priorities in Weekly Update",
-          "category": "legislation_automated",
-          "summary": "<p>Congressman Brian Mast highlights defense bill amendments and clean-water efforts, including military leave and Everglades-related water quality issues.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><stro\u2026",
-          "image": "https://www.quiverquant.com/images/M001199_congress.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Daniel+S.+Goldman+introduces+H.R.+9349%3A+Voting+Systems+Protection+Act",
-          "time": "2026-06-27 15:42:28",
-          "headline": "New Bill: Representative Daniel S. Goldman introduces H.R. 9349: Voting Systems Protection Act",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from H.R. 9349: Voting Systems Protection Act. This bill was received on 2026-06-18, and currently has 8 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This bill would place ne\u2026",
-          "image": "https://www.quiverquant.com/images/G000599_congress.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Senator+Sheldon+Whitehouse+introduces+S.+4819%3A+Lifeline+for+First+Responders+Act",
-          "time": "2026-06-27 15:42:28",
-          "headline": "New Bill: Senator Sheldon Whitehouse introduces S. 4819: Lifeline for First Responders Act",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from S. 4819: Lifeline for First Responders Act. This bill was received on 2026-06-17, and currently has 9 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This bill would create\u2026",
-          "image": "https://www.quiverquant.com/images/W000802_congress.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Senator+Mazie+K.+Hirono+introduces+S.+4859%3A+Pell+Grant+Preservation+and+Expansion+Act+of+2026",
-          "time": "2026-06-27 15:42:28",
-          "headline": "New Bill: Senator Mazie K. Hirono introduces S. 4859: Pell Grant Preservation and Expansion Act of 2026",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from S. 4859: Pell Grant Preservation and Expansion Act of 2026. This bill was received on 2026-06-23, and currently has 28 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This \u2026",
-          "image": "https://www.quiverquant.com/images/H001042_congress.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Judy+Chu+introduces+H.R.+9400%3A+American+Rescuers+of+the+Holocaust+Congressional+Gold+Medal+Act+of+2026",
-          "time": "2026-06-27 15:42:28",
-          "headline": "New Bill: Representative Judy Chu introduces H.R. 9400: American Rescuers of the Holocaust Congressional Gold Medal Act of 2026",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from H.R. 9400: American Rescuers of the Holocaust Congressional Gold Medal Act of 2026. This bill was received on 2026-06-23, and currently has 18 cosponsors.</p><p>Here is a short summary of\u2026",
-          "image": "https://www.quiverquant.com/images/C001080_congress.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Sam+Liccardo+introduces+H.R.+9438%3A+Supporting+Knowledge+through+Industry-Led+Learning+Act",
-          "time": "2026-06-27 15:42:28",
-          "headline": "New Bill: Representative Sam Liccardo introduces H.R. 9438: Supporting Knowledge through Industry-Led Learning Act",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from H.R. 9438: Supporting Knowledge through Industry-Led Learning Act. This bill was received on 2026-06-24, and currently has 1 cosponsor.</p><p>Here is a short summary of the bill:</p><p>\n \u2026",
-          "image": "https://www.quiverquant.com/images/L000607_congress.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Don+Bacon+introduces+H.R.+9417%3A+Artemis+II+Congressional+Gold+Medal+Act",
-          "time": "2026-06-27 15:42:28",
-          "headline": "New Bill: Representative Don Bacon introduces H.R. 9417: Artemis II Congressional Gold Medal Act",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from H.R. 9417: Artemis II Congressional Gold Medal Act. This bill was received on 2026-06-24, and currently has 3 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This bill woul\u2026",
-          "image": "https://www.quiverquant.com/images/B001298_congress.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Mark+Pocan+introduces+H.R.+9414%3A+Pell+Grant+Preservation+and+Expansion+Act+of+2026",
-          "time": "2026-06-27 15:42:28",
-          "headline": "New Bill: Representative Mark Pocan introduces H.R. 9414: Pell Grant Preservation and Expansion Act of 2026",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from H.R. 9414: Pell Grant Preservation and Expansion Act of 2026. This bill was received on 2026-06-23, and currently has 40 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n Thi\u2026",
-          "image": "https://www.quiverquant.com/images/P000607_congress.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Steven+Horsford+introduces+H.R.+9352%3A+AI-Related+Job+Impacts+Clarity+Act",
-          "time": "2026-06-27 15:42:28",
-          "headline": "New Bill: Representative Steven Horsford introduces H.R. 9352: AI-Related Job Impacts Clarity Act",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from H.R. 9352: AI-Related Job Impacts Clarity Act. This bill was received on 2026-06-18, and currently has 2 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This bill would req\u2026",
-          "image": "https://www.quiverquant.com/images/H001066_congress.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Shontel+M.+Brown+introduces+H.R.+9423%3A+Organic+Imports+Verification+Act+of+2026",
-          "time": "2026-06-27 15:42:28",
-          "headline": "New Bill: Representative Shontel M. Brown introduces H.R. 9423: Organic Imports Verification Act of 2026",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from H.R. 9423: Organic Imports Verification Act of 2026. This bill was received on 2026-06-24, and currently has 1 cosponsor.</p><p>Here is a short summary of the bill:</p><p>\n This bill woul\u2026",
-          "image": "https://www.quiverquant.com/images/B001313_congress.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Senator+Edward+J.+Markey+introduces+S.+4864%3A+Providing+Understanding+of+Paraprofessionals+in+Learning+Act",
-          "time": "2026-06-27 15:42:28",
-          "headline": "New Bill: Senator Edward J. Markey introduces S. 4864: Providing Understanding of Paraprofessionals in Learning Act",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from S. 4864: Providing Understanding of Paraprofessionals in Learning Act. This bill was received on 2026-06-23, and currently has 2 cosponsors.</p><p>Here is a short summary of the bill:</p>\u2026",
-          "image": "https://www.quiverquant.com/images/M000133_congress.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Senator+Ben+Ray+Lujan+introduces+S.+4860%3A+Cultivating+Horticultural+Innovation+in+Local+Economies+Act+of+2026",
-          "time": "2026-06-27 15:42:28",
-          "headline": "New Bill: Senator Ben Ray Lujan introduces S. 4860: Cultivating Horticultural Innovation in Local Economies Act of 2026",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from S. 4860: Cultivating Horticultural Innovation in Local Economies Act of 2026. This bill was received on 2026-06-23, and currently has 9 cosponsors.</p><p>Here is a short summary of the bi\u2026",
-          "image": "https://www.quiverquant.com/images/L000570_congress.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Henry+C.+%22Hank%22+Johnson%2C+Jr.+introduces+H.R.+9408%3A+Open+Meetings+Act+of+2026",
-          "time": "2026-06-27 15:42:28",
-          "headline": "New Bill: Representative Henry C. \"Hank\" Johnson, Jr. introduces H.R. 9408: Open Meetings Act of 2026",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from H.R. 9408: Open Meetings Act of 2026. This bill was received on 2026-06-23, and currently has 6 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This bill would require the\n\u2026",
-          "image": "https://www.quiverquant.com/images/J000288_congress.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Senator+Ted+Cruz+introduces+S.+4863%3A+Save+Our+Shrimpers+Act",
-          "time": "2026-06-27 15:42:28",
-          "headline": "New Bill: Senator Ted Cruz introduces S. 4863: Save Our Shrimpers Act",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from S. 4863: Save Our Shrimpers Act. This bill was received on 2026-06-23, and currently has 3 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This bill would direct the U.S. T\u2026",
-          "image": "https://www.quiverquant.com/images/C001098_congress.png",
-          "_first_seen": "2026-06-27T23:19:14.677158+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Summer+L.+Lee+introduces+H.R.+9437%3A+Right+to+Vote+Act",
-          "time": "2026-06-27 15:42:28",
-          "headline": "New Bill: Representative Summer L. Lee introduces H.R. 9437: Right to Vote Act",
-          "category": "legislation_automated",
-          "summary": "<p>We have received text from H.R. 9437: Right to Vote Act. This bill was received on 2026-06-24, and currently has 23 cosponsors.</p><p>Here is a short summary of the bill:</p><p>\n This bill would create a new federa\u2026",
-          "image": "https://www.quiverquant.com/images/L000602_congress.png",
           "_first_seen": "2026-06-27T23:19:14.677158+00:00"
         }
       ]
@@ -4694,183 +4694,183 @@
       "emoji": "\ud83d\udcc1",
       "label_en": "Congress holdings",
       "label_zh": "\u56fd\u4f1a\u6301\u4ed3",
-      "rows": 1656,
-      "last_seen": "2026-06-27",
+      "rows": 1863,
+      "last_seen": "2026-06-28",
       "recent": [
         {
           "Politician": "Zoe Lofgren",
           "Holdings": "{\"MMM\": -8000, \"BABA\": 0, \"CB\": 0, \"CMA\": 0, \"ECL\": -8000, \"TXN\": -8000, \"ACN\": 16000, \"ADBE\": 0, \"ALLY\": 16000, \"AMZN\": 0, \"AEP\": 0, \"AWK\": 0, \"AON\": 32000, \"AMAT\": 8000, \"ARCC\": 0, \"ASML\": 8000, \"T\": 0, \"AGR\": 0, \"B\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Kathy Manning",
           "Holdings": "{\"APD\": 40500, \"GOOGL\": -16000, \"GOOG\": -8000, \"AMGN\": -16000, \"AAPL\": -16000, \"CAT\": 8000, \"CNC\": 16000, \"CB\": 16000, \"CFG\": -8000, \"CME\": 8000, \"EL\": 8000, \"EXPD\": 8000, \"GIS\": 8000, \"HD\": 8000, \"INTC\": -40500, \"INT\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Greg Steube",
           "Holdings": "{\"SNV\": 56500}",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Greg Murphy",
           "Holdings": "{\"NYMX\": -75000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Greg Gianforte",
           "Holdings": "{\"ATLKY\": 92000, \"FMX\": 292500, \"OSW\": 553000, \"PEGA\": 742000, \"TSM\": -422500, \"YNDX\": -67500, \"CSGP\": -408000, \"GDDY\": 250000, \"NSRGY\": -315000, \"PRLB\": 0, \"RBA\": -183000, \"FIVE\": -75000, \"IAC\": 175000, \"IFF\": -10000\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Grace Meng",
           "Holdings": "{\"LHX\": 75000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Gilbert Cisneros",
           "Holdings": "{\"ADBE\": 40500, \"LNT\": 40000, \"AMZN\": 49000, \"AAPL\": 232000, \"CRNC\": 8000, \"CNS\": 0, \"CYRX\": 8000, \"EBS\": 32000, \"DAVA\": 32000, \"ERIC\": 65000, \"FIVE\": -24000, \"GDDY\": 122500, \"HELE\": -8000, \"INTU\": 0, \"IQV\": -64500, \"\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Gerald E. Connolly",
           "Holdings": "{\"PG\": -8000, \"DIS\": -8000, \"D\": -49000, \"LDOS\": -64500, \"SAIC\": -24000, \"CI\": -16000, \"ERH\": 8000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Gary Palmer",
           "Holdings": "{\"ABBV\": 16000, \"AMZN\": 0, \"CTL\": 0, \"EL\": -8000, \"IDTI\": -16000, \"NTRS\": 0, \"REGN\": -8000, \"TJX\": 48000, \"GOOGL\": -8000, \"UHAL\": 16000, \"AMP\": 8000, \"AMGN\": 0, \"AAPL\": -8000, \"APTV\": 8000, \"ASND\": 8000, \"ASML\": 8000,\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Garret Graves",
           "Holdings": "{\"CRNC\": -8000, \"NUAN\": -8000, \"C\": -8000, \"DDD\": -8000, \"GOLD\": 8000, \"PSTH\": 8000, \"ABNB\": 16000, \"AMZN\": 8000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Frank Pallone Jr.",
           "Holdings": "{\"CVX\": -8000, \"C\": -8000, \"D\": -8000, \"PM\": -24000, \"EL\": -32500, \"GE\": -16000, \"TXN\": -32500, \"DIS\": -8000, \"MO\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Frank A. Lobiondo",
           "Holdings": "{\"BLK\": 8000, \"AAPL\": 16000, \"IBM\": -8000, \"QCOM\": -16000, \"GIS\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Feinstein, Dianne",
           "Holdings": "{\"ALLO\": -3000000, \"NVS\": 575000, \"GOOGL\": 400000, \"AMAT\": -175000, \"BA\": 25000, \"BAM\": 57500, \"CHTR\": 575000, \"CCI\": 275500, \"DHR\": -725000, \"DLR\": -350000, \"FDX\": -267500, \"FEYE\": -175000, \"INFO\": -575000, \"MSFT\": -\u2026",
           "Type": "Senator",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Enzi, Michael B.",
           "Holdings": "{\"KEY\": -8000}",
           "Type": "Senator",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Elizabeth Fletcher",
           "Holdings": "{\"MMM\": -8000, \"ABT\": -8000, \"ACN\": -16000, \"ANTM\": 8000, \"BDX\": -24000, \"CACI\": 0, \"CCL\": 0, \"CERN\": -16000, \"CTSH\": -16000, \"COST\": -8000, \"DRI\": 0, \"DLTR\": -16000, \"ECL\": -8000, \"FDX\": 0, \"FISV\": -32000, \"HD\": -800\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Elaine Luria",
           "Holdings": "{\"BABA\": -625000, \"QS\": 8000, \"TSLA\": 8000, \"UBER\": 625000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Ed Perlmutter",
           "Holdings": "{\"BABA\": 0, \"AMZN\": 8000, \"COST\": 0, \"MSFT\": 0, \"NEM\": -8000, \"KR\": 0, \"BRK.B\": 8000, \"COIN\": 8000, \"GOOG\": 0, \"VZ\": 8000, \"AAPL\": -8000, \"GILD\": 0, \"KMI\": 0, \"HD\": -8000, \"WBA\": 0, \"SWK\": -48500, \"USB\": -81000, \"FB\":\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Ed Case",
           "Holdings": "{\"MRIN\": 8000, \"MO\": -75000, \"GE\": -8000, \"KMI\": -8000, \"MSFT\": 75000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Earl Blumenauer",
           "Holdings": "{\"ERJ\": 24000, \"F\": 16000, \"ICE\": 16000, \"NWN\": 37000, \"POR\": 8000, \"USB\": 0, \"DANOY\": 0, \"KR\": -8000, \"ALL\": 8000, \"AAPL\": 0, \"FDX\": 16000, \"GILD\": 16000, \"HHC\": -16000, \"TEL\": 16000, \"BRK.B\": 8000, \"CAT\": 8000, \"CBS\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Dwight Evans",
           "Holdings": "{\"APO\": 16000, \"HII\": -16000, \"KMI\": -8000, \"CG\": 16000, \"BABA\": 16000, \"GOOGL\": 16500, \"AMZN\": -48500, \"AEP\": 0, \"T\": 0, \"BRK.B\": -16000, \"DEO\": 8000, \"HASI\": -8000, \"INTC\": 0, \"TMO\": -8000, \"AWK\": 0, \"XOM\": 8000, \"N\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Duckworth, Tammy",
           "Holdings": "{\"DVMT\": -8000, \"BBL\": 0, \"DWDP\": -16000, \"ABT\": -8000, \"JNJ\": -8000, \"CC\": -8000, \"GME\": -8000, \"CAT\": -16000, \"POT\": -8000, \"MCD\": -8000, \"NEE\": -32500, \"VZ\": -32500, \"ITW\": -8000, \"DIS\": -8000, \"GS\": -8000, \"SOUHY\"\u2026",
           "Type": "Senator",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Donna Shalala",
           "Holdings": "{\"TGNA\": -105500, \"AOS\": 8000, \"ABM\": -8000, \"AYI\": -16000, \"ADUS\": -8000, \"ADDYY\": 0, \"AMD\": 0, \"AGCO\": -8000, \"AAGIY\": -40500, \"ALK\": -16000, \"ALFVY\": -8000, \"ALLE\": 16000, \"AGN\": 0, \"AZSEY\": -32500, \"AIMC\": -8000, \u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Donald Sternoff Beyer Jr.",
           "Holdings": "{\"AAGIY\": -8000, \"CVS\": 8000, \"FVRR\": -8000, \"GH\": -8000, \"IXJ\": 8000, \"IYZ\": 8000, \"NDAQ\": 8000, \"NVS\": -8000, \"BBH\": 8000, \"VZ\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Donald Sternoff Beyer Jr",
           "Holdings": "{\"CONE\": -8000, \"DAIUF\": -8500, \"MSFT\": -24500, \"MSCI\": -32500, \"TDOC\": -16500, \"PEP\": 0, \"ASML\": 0, \"FLIR\": 24000, \"ACN\": 24000, \"GOOG\": -500, \"AMZN\": -24500, \"AAPL\": 40000, \"BRK.B\": 0, \"C\": -16500, \"CGNX\": 16000, \"C\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         },
         {
           "Politician": "Donald Sternoff  Beyer Jr",
           "Holdings": "{\"GOOG\": 8000, \"AAPL\": -16000, \"ASML\": 16000, \"BRK.B\": 24000, \"DAIUF\": -24000, \"ECL\": 0, \"FNV\": 8000, \"MSFT\": -16000, \"NEE\": -32500, \"REGN\": 24000, \"TDOC\": -32000, \"AAIGF\": 8000, \"EL\": 0, \"FVRR\": -8000, \"GS\": 56000, \"\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-27T02:07:00.577401+00:00",
-          "_collected": "2026-06-27"
+          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
+          "_collected": "2026-06-28"
         }
       ]
     },
@@ -5471,183 +5471,183 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 43367,
-      "last_seen": "2026-06-27",
+      "rows": 48100,
+      "last_seen": "2026-06-28",
       "recent": [
         {
-          "ticker": "DAL",
-          "owner_name": "NISA INVESTMENT ADVISORS, LLC",
+          "ticker": "COF",
+          "owner_name": "Cetera Investment Advisers",
           "owner_title": "Institution",
-          "shares": "150367",
-          "_collected": "2026-06-27"
+          "shares": "240851",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "CANADA LIFE ASSURANCE Co",
+          "owner_name": "National Pension Service",
           "owner_title": "Institution",
-          "shares": "7657087",
-          "_collected": "2026-06-27"
+          "shares": "19843319",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "PRUDENTIAL FINANCIAL INC",
+          "owner_name": "DEUTSCHE BANK AG\\",
           "owner_title": "Institution",
-          "shares": "8226360",
-          "_collected": "2026-06-27"
+          "shares": "32308027",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "FAYEZ SAROFIM & CO",
+          "owner_name": "JANUS HENDERSON GROUP PLC",
           "owner_title": "Institution",
-          "shares": "8084635",
-          "_collected": "2026-06-27"
+          "shares": "32297269",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "ProShare Advisors LLC",
+          "owner_name": "WELLS FARGO & COMPANY/MN",
           "owner_title": "Institution",
-          "shares": "8030900",
-          "_collected": "2026-06-27"
+          "shares": "32078451",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "ALKEON CAPITAL MANAGEMENT LLC",
+          "owner_name": "Sanders Capital, LLC",
           "owner_title": "Institution",
-          "shares": "7964931",
-          "_collected": "2026-06-27"
+          "shares": "29818675",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "PARNASSUS INVESTMENTS, LLC",
+          "owner_name": "BAILLIE GIFFORD & CO",
           "owner_title": "Institution",
-          "shares": "7887228",
-          "_collected": "2026-06-27"
+          "shares": "29387070",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "NEW YORK STATE TEACHERS RETIREMENT SYSTEM",
+          "owner_name": "Swiss National Bank",
           "owner_title": "Institution",
-          "shares": "7863287",
-          "_collected": "2026-06-27"
+          "shares": "28236000",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "CITADEL ADVISORS LLC",
+          "owner_name": "AMERICAN CENTURY COMPANIES INC",
           "owner_title": "Institution",
-          "shares": "7692857",
-          "_collected": "2026-06-27"
+          "shares": "26600380",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "ALTAROCK PARTNERS LP",
+          "owner_name": "MASSACHUSETTS FINANCIAL SERVICES CO /MA/",
           "owner_title": "Institution",
-          "shares": "7567946",
-          "_collected": "2026-06-27"
+          "shares": "25952500",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Newlands Management Operations LLC",
+          "owner_name": "BANK OF MONTREAL /CAN/",
           "owner_title": "Institution",
-          "shares": "6589070",
-          "_collected": "2026-06-27"
+          "shares": "24640996",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "APG Asset Management N.V.",
+          "owner_name": "Sumitomo Mitsui Trust Group, Inc.",
           "owner_title": "Institution",
-          "shares": "7547056",
-          "_collected": "2026-06-27"
+          "shares": "24620350",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "DnB Asset Management AS",
+          "owner_name": "VICTORY CAPITAL MANAGEMENT INC",
           "owner_title": "Institution",
-          "shares": "7450247",
-          "_collected": "2026-06-27"
+          "shares": "24448590",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "SANDS CAPITAL MANAGEMENT, LLC",
+          "owner_name": "HSBC HOLDINGS PLC",
           "owner_title": "Institution",
-          "shares": "7440012",
-          "_collected": "2026-06-27"
+          "shares": "23474107",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Korea Investment CORP",
+          "owner_name": "CALIFORNIA PUBLIC EMPLOYEES RETIREMENT SYSTEM",
           "owner_title": "Institution",
-          "shares": "7350766",
-          "_collected": "2026-06-27"
+          "shares": "21785734",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "LAZARD ASSET MANAGEMENT LLC",
+          "owner_name": "Mitsubishi UFJ Asset Management Co., Ltd.",
           "owner_title": "Institution",
-          "shares": "7239349",
-          "_collected": "2026-06-27"
+          "shares": "21415372",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "WINDACRE PARTNERSHIP LLC",
+          "owner_name": "RAYMOND JAMES FINANCIAL INC",
           "owner_title": "Institution",
-          "shares": "7185100",
-          "_collected": "2026-06-27"
+          "shares": "21213148",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "FRED ALGER MANAGEMENT, LLC",
+          "owner_name": "ARROWSTREET CAPITAL, LIMITED PARTNERSHIP",
           "owner_title": "Institution",
-          "shares": "7053441",
-          "_collected": "2026-06-27"
+          "shares": "32578171",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "BANK OF NOVA SCOTIA",
+          "owner_name": "Fisher Asset Management, LLC",
           "owner_title": "Institution",
-          "shares": "8248355",
-          "_collected": "2026-06-27"
+          "shares": "34185457",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "TD ASSET MANAGEMENT INC",
+          "owner_name": "UBS Group AG",
           "owner_title": "Institution",
-          "shares": "8275670",
-          "_collected": "2026-06-27"
+          "shares": "34407951",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "AVIVA PLC",
+          "owner_name": "Amundi",
           "owner_title": "Institution",
-          "shares": "8349689",
-          "_collected": "2026-06-27"
+          "shares": "53809551",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "1832 Asset Management L.P.",
+          "owner_name": "Nuveen Asset Management, LLC",
           "owner_title": "Institution",
-          "shares": "8349910",
-          "_collected": "2026-06-27"
+          "shares": "62741520",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "COATUE MANAGEMENT LLC",
+          "owner_name": "WELLINGTON MANAGEMENT GROUP LLP",
           "owner_title": "Institution",
-          "shares": "9932265",
-          "_collected": "2026-06-27"
+          "shares": "62403604",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "BESSEMER GROUP INC",
+          "owner_name": "Invesco Ltd.",
           "owner_title": "Institution",
-          "shares": "9828748",
-          "_collected": "2026-06-27"
+          "shares": "59604857",
+          "_collected": "2026-06-28"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Skye Global Management LP",
+          "owner_name": "Nuveen, LLC",
           "owner_title": "Institution",
-          "shares": "9752000",
-          "_collected": "2026-06-27"
+          "shares": "57301203",
+          "_collected": "2026-06-28"
         }
       ]
     },
@@ -6416,13 +6416,13 @@
       {
         "ticker": "NVDA",
         "downloads_30d": 29516894.0,
-        "wow_pct": 6.1,
+        "wow_pct": 4.7,
         "hot": true
       },
       {
         "ticker": "GOOGL",
         "downloads_30d": 209122239.0,
-        "wow_pct": 4.5,
+        "wow_pct": 4.0,
         "hot": true
       },
       {
@@ -6434,37 +6434,37 @@
       {
         "ticker": "BABA",
         "downloads_30d": 210169954.0,
-        "wow_pct": -0.2,
+        "wow_pct": -0.7,
         "hot": false
       },
       {
         "ticker": "AMZN",
         "downloads_30d": 24250340.0,
-        "wow_pct": -0.5,
+        "wow_pct": -1.8,
         "hot": false
       },
       {
         "ticker": "CRM",
         "downloads_30d": 6799234.0,
-        "wow_pct": -2.8,
+        "wow_pct": -3.5,
         "hot": false
       },
       {
         "ticker": "MSFT",
         "downloads_30d": 28694894.0,
-        "wow_pct": -3.9,
+        "wow_pct": -3.5,
         "hot": false
       },
       {
         "ticker": "IBM",
         "downloads_30d": 9697582.0,
-        "wow_pct": -5.5,
+        "wow_pct": -4.5,
         "hot": false
       },
       {
         "ticker": "AAPL",
         "downloads_30d": 6378294.0,
-        "wow_pct": -9.6,
+        "wow_pct": -8.6,
         "hot": false
       }
     ],
@@ -17687,7 +17687,7 @@
       {
         "ticker": "DRCT",
         "category": "Restructuring",
-        "confidence": "high",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
         "detail": "Restructuring"
@@ -25886,11 +25886,11 @@
       },
       {
         "ticker": "CPTKW",
-        "category": "M&A / Divestitures",
+        "category": "SPACs",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "M&A / Divestitures"
+        "detail": "SPACs"
       },
       {
         "ticker": "ECOM",
@@ -27814,11 +27814,11 @@
       },
       {
         "ticker": "KHC",
-        "category": "Strategic Reviews",
+        "category": "Capital Returns",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Strategic Reviews"
+        "detail": "Capital Returns"
       },
       {
         "ticker": "MPAA",
@@ -35445,6 +35445,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "RTB",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "NRIM",
         "category": "Acquisitions",
         "confidence": "high",
@@ -35875,6 +35883,14 @@
         "activist": false,
         "filer": null,
         "detail": "SPACs"
+      },
+      {
+        "ticker": "URBN",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "CYTOF",
@@ -36477,6 +36493,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "F-PD",
+        "category": "Restructuring",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Restructuring"
+      },
+      {
         "ticker": "TLPH",
         "category": "Delistings",
         "confidence": "high",
@@ -36915,6 +36939,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "XNDU",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "IH",
@@ -37949,6 +37981,14 @@
         "detail": "Activist Campaigns"
       },
       {
+        "ticker": "NBBK",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "ISPC",
         "category": "Delistings",
         "confidence": "high",
@@ -38141,12 +38181,92 @@
         "detail": "Other"
       },
       {
-        "ticker": "AMT",
+        "ticker": "YSG",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "AMAN",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
+        "ticker": "BXSL",
         "category": "Other",
         "confidence": "medium",
         "activist": false,
         "filer": null,
         "detail": "Other"
+      },
+      {
+        "ticker": "GTLS",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "NOEMR",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
+        "ticker": "CHUC",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "CODX",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "QBTS",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "EQR",
+        "category": "Acquisitions",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "LILKV",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "NNUP",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "PSBD",
@@ -38163,6 +38283,30 @@
         "activist": false,
         "filer": null,
         "detail": "SPACs"
+      },
+      {
+        "ticker": "STX",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "TRINZ",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "UNMA",
+        "category": "Capital Returns",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "NFBK",
@@ -38182,6 +38326,14 @@
       },
       {
         "ticker": "BPTH",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "AMT",
         "category": "Other",
         "confidence": "medium",
         "activist": false,
@@ -38755,14 +38907,6 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
-      },
-      {
-        "ticker": "STX",
-        "category": "Capital Returns",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Capital Returns"
       },
       {
         "ticker": "TFSL",
@@ -40129,7 +40273,7 @@
       {
         "ticker": "TEL",
         "vol_oi": 0.929,
-        "mult": 6.56,
+        "mult": 6.26,
         "put_call": 0.12,
         "lean": "call-skew",
         "hot": true
@@ -40137,7 +40281,7 @@
       {
         "ticker": "TENB",
         "vol_oi": 0.89,
-        "mult": 6.08,
+        "mult": 5.22,
         "put_call": 0.05,
         "lean": "call-skew",
         "hot": true
@@ -40145,39 +40289,31 @@
       {
         "ticker": "QLYS",
         "vol_oi": 0.215,
-        "mult": 3.79,
+        "mult": 3.53,
         "put_call": 0.05,
-        "lean": "call-skew",
-        "hot": true
-      },
-      {
-        "ticker": "MQ",
-        "vol_oi": 0.056,
-        "mult": 3.7,
-        "put_call": 0.12,
         "lean": "call-skew",
         "hot": true
       },
       {
         "ticker": "FTNT",
         "vol_oi": 0.434,
-        "mult": 3.57,
+        "mult": 3.51,
         "put_call": 0.57,
         "lean": "call-skew",
         "hot": true
       },
       {
-        "ticker": "CRML",
-        "vol_oi": 0.209,
-        "mult": 3.25,
-        "put_call": 0.3,
+        "ticker": "MQ",
+        "vol_oi": 0.056,
+        "mult": 3.42,
+        "put_call": 0.12,
         "lean": "call-skew",
         "hot": true
       },
       {
         "ticker": "LLY",
         "vol_oi": 0.353,
-        "mult": 2.9,
+        "mult": 2.88,
         "put_call": 0.36,
         "lean": "call-skew",
         "hot": false
@@ -40185,7 +40321,7 @@
       {
         "ticker": "ON",
         "vol_oi": 0.59,
-        "mult": 2.9,
+        "mult": 2.81,
         "put_call": 1.5,
         "lean": "put-skew",
         "hot": false
@@ -40193,8 +40329,16 @@
       {
         "ticker": "KDP",
         "vol_oi": 0.19,
-        "mult": 2.88,
+        "mult": 2.74,
         "put_call": 0.15,
+        "lean": "call-skew",
+        "hot": false
+      },
+      {
+        "ticker": "CRML",
+        "vol_oi": 0.209,
+        "mult": 2.46,
+        "put_call": 0.3,
         "lean": "call-skew",
         "hot": false
       },
@@ -40215,33 +40359,9 @@
         "hot": false
       },
       {
-        "ticker": "STM",
-        "vol_oi": 0.159,
-        "mult": 1.91,
-        "put_call": 0.28,
-        "lean": "call-skew",
-        "hot": false
-      },
-      {
-        "ticker": "CRWD",
-        "vol_oi": 0.237,
-        "mult": 1.9,
-        "put_call": 0.54,
-        "lean": "call-skew",
-        "hot": false
-      },
-      {
-        "ticker": "IREN",
-        "vol_oi": 0.406,
-        "mult": 1.88,
-        "put_call": 4.22,
-        "lean": "put-skew",
-        "hot": false
-      },
-      {
         "ticker": "DKNG",
         "vol_oi": 0.102,
-        "mult": 1.86,
+        "mult": 1.84,
         "put_call": 0.26,
         "lean": "call-skew",
         "hot": false
@@ -40249,40 +40369,64 @@
       {
         "ticker": "LYV",
         "vol_oi": 0.141,
-        "mult": 1.85,
+        "mult": 1.83,
         "put_call": 0.1,
+        "lean": "call-skew",
+        "hot": false
+      },
+      {
+        "ticker": "STM",
+        "vol_oi": 0.159,
+        "mult": 1.83,
+        "put_call": 0.28,
         "lean": "call-skew",
         "hot": false
       },
       {
         "ticker": "S",
         "vol_oi": 0.084,
-        "mult": 1.78,
+        "mult": 1.75,
         "put_call": 0.16,
         "lean": "call-skew",
         "hot": false
       },
       {
-        "ticker": "TXT",
-        "vol_oi": 0.325,
-        "mult": 1.76,
-        "put_call": 5.08,
+        "ticker": "IREN",
+        "vol_oi": 0.406,
+        "mult": 1.74,
+        "put_call": 4.22,
         "lean": "put-skew",
         "hot": false
       },
       {
         "ticker": "WULF",
         "vol_oi": 0.095,
-        "mult": 1.76,
+        "mult": 1.74,
         "put_call": 2.81,
         "lean": "put-skew",
         "hot": false
       },
       {
-        "ticker": "NOW",
-        "vol_oi": 0.212,
-        "mult": 1.75,
-        "put_call": 0.59,
+        "ticker": "TXT",
+        "vol_oi": 0.325,
+        "mult": 1.73,
+        "put_call": 5.08,
+        "lean": "put-skew",
+        "hot": false
+      },
+      {
+        "ticker": "CRWD",
+        "vol_oi": 0.237,
+        "mult": 1.69,
+        "put_call": 0.54,
+        "lean": "call-skew",
+        "hot": false
+      },
+      {
+        "ticker": "UNH",
+        "vol_oi": 0.119,
+        "mult": 1.63,
+        "put_call": 0.48,
         "lean": "call-skew",
         "hot": false
       }
@@ -40565,62 +40709,62 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17587,
-        "wow_pct": 0.88,
+        "stars": 17588,
+        "wow_pct": 0.84,
         "hot": true
       },
       {
         "ticker": "NET",
-        "stars": 14642,
-        "wow_pct": 0.45,
+        "stars": 14643,
+        "wow_pct": 0.4,
         "hot": true
       },
       {
         "ticker": "IBM",
         "stars": 7536,
-        "wow_pct": 0.4,
+        "wow_pct": 0.36,
         "hot": true
       },
       {
         "ticker": "AMD",
         "stars": 6655,
-        "wow_pct": 0.27,
+        "wow_pct": 0.21,
         "hot": true
       },
       {
         "ticker": "MSFT",
-        "stars": 186845,
+        "stars": 186865,
         "wow_pct": 0.15,
         "hot": true
       },
       {
         "ticker": "ESTC",
-        "stars": 77174,
-        "wow_pct": 0.13,
+        "stars": 77187,
+        "wow_pct": 0.14,
         "hot": true
       },
       {
         "ticker": "U",
-        "stars": 19519,
+        "stars": 19520,
         "wow_pct": 0.12,
+        "hot": true
+      },
+      {
+        "ticker": "DDOG",
+        "stars": 3655,
+        "wow_pct": 0.11,
         "hot": true
       },
       {
         "ticker": "MDB",
         "stars": 28407,
-        "wow_pct": 0.11,
-        "hot": false
-      },
-      {
-        "ticker": "DDOG",
-        "stars": 3655,
-        "wow_pct": 0.08,
+        "wow_pct": 0.1,
         "hot": false
       },
       {
         "ticker": "GOOGL",
-        "stars": 195945,
-        "wow_pct": 0.08,
+        "stars": 195965,
+        "wow_pct": 0.09,
         "hot": false
       },
       {
@@ -40631,20 +40775,26 @@
       },
       {
         "ticker": "META",
-        "stars": 246135,
+        "stars": 246161,
         "wow_pct": 0.07,
         "hot": false
       },
       {
         "ticker": "PLTR",
-        "stars": 21865,
+        "stars": 21866,
         "wow_pct": 0.07,
+        "hot": false
+      },
+      {
+        "ticker": "TWLO",
+        "stars": 2064,
+        "wow_pct": 0.05,
         "hot": false
       },
       {
         "ticker": "CRM",
         "stars": 11241,
-        "wow_pct": 0.02,
+        "wow_pct": 0.03,
         "hot": false
       },
       {
@@ -40656,12 +40806,6 @@
       {
         "ticker": "SNOW",
         "stars": 336,
-        "wow_pct": 0.0,
-        "hot": false
-      },
-      {
-        "ticker": "TWLO",
-        "stars": 2064,
         "wow_pct": 0.0,
         "hot": false
       }
@@ -42098,144 +42242,144 @@
     ],
     "news": [
       {
-        "headline": "Press Release: Plaskett Responds to Supreme Court Ruling on Haitian TPS Protections",
+        "headline": "Net Worth Update: Representative Laurel M. Lee Lost an Estimated $457.7K in the Stock Market Last Month",
         "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-27 22:19:49",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Plaskett+Responds+to+Supreme+Court+Ruling+on+Haitian+TPS+Protections"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Laurel+M.+Lee+Lost+an+Estimated+%24457.7K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Press Release: Troy Carter Responds to Soot Pollution Ruling",
+        "headline": "Net Worth Update: Senator Ron Wyden Lost an Estimated $333.5K in the Stock Market Last Month",
         "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-27 20:19:53",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Troy+Carter+Responds+to+Soot+Pollution+Ruling"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ron+Wyden+Lost+an+Estimated+%24333.5K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Circle Stock (CRCL) Opinions on USDC Adoption and Recent Volatility",
+        "headline": "Net Worth Update: Senator John W. Hickenlooper Lost an Estimated $370.5K in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-27 17:32:47",
-        "url": "https://www.quiverquant.com/news/Circle+Stock+%28CRCL%29+Opinions+on+USDC+Adoption+and+Recent+Volatility"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+John+W.+Hickenlooper+Lost+an+Estimated+%24370.5K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Redwire Stock (RDW) Opinions on Space Sector Dynamics",
+        "headline": "Net Worth Update: Senator Jacky Rosen Lost an Estimated $129.2K in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-27 17:32:47",
-        "url": "https://www.quiverquant.com/news/Redwire+Stock+%28RDW%29+Opinions+on+Space+Sector+Dynamics"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Jacky+Rosen+Lost+an+Estimated+%24129.2K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Shopify Stock (SHOP) Opinions on Trustpilot Integration",
+        "headline": "Net Worth Update: Representative Mike Kelly Lost an Estimated $215.6K in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-27 17:32:47",
-        "url": "https://www.quiverquant.com/news/Shopify+Stock+%28SHOP%29+Opinions+on+Trustpilot+Integration"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Mike+Kelly+Lost+an+Estimated+%24215.6K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "POET Technologies Stock (POET) Opinions on Recent Price Consolidation",
+        "headline": "Net Worth Update: Senator Katie Boyd Britt Lost an Estimated $366.4K in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-27 17:32:47",
-        "url": "https://www.quiverquant.com/news/POET+Technologies+Stock+%28POET%29+Opinions+on+Recent+Price+Consolidation"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Katie+Boyd+Britt+Lost+an+Estimated+%24366.4K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Microsoft Stock (MSFT) Opinions on AI Capital Expenditure Worries",
+        "headline": "Net Worth Update: Representative Thomas R. Suozzi Lost an Estimated $759.3K in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-27 17:32:47",
-        "url": "https://www.quiverquant.com/news/Microsoft+Stock+%28MSFT%29+Opinions+on+AI+Capital+Expenditure+Worries"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Thomas+R.+Suozzi+Lost+an+Estimated+%24759.3K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Western Digital Stock (WDC) Opinions on Recent Semiconductor Market Volatility",
+        "headline": "Net Worth Update: Senator Lisa Blunt Rochester Lost an Estimated $124.0K in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-27 17:32:47",
-        "url": "https://www.quiverquant.com/news/Western+Digital+Stock+%28WDC%29+Opinions+on+Recent+Semiconductor+Market+Volatility"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Lisa+Blunt+Rochester+Lost+an+Estimated+%24124.0K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Eli Lilly Stock (LLY) Opinions on Analyst Notes Amid Obesity Drug Shifts",
+        "headline": "Net Worth Update: Senator Mark R. Warner Made an Estimated $263.4K in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-27 17:32:47",
-        "url": "https://www.quiverquant.com/news/Eli+Lilly+Stock+%28LLY%29+Opinions+on+Analyst+Notes+Amid+Obesity+Drug+Shifts"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Mark+R.+Warner+Made+an+Estimated+%24263.4K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Constellation Energy Stock (CEG) Opinions on AI Data Center Power Demand",
+        "headline": "Net Worth Update: Representative J. French Hill Made an Estimated $312.7K in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-27 17:32:47",
-        "url": "https://www.quiverquant.com/news/Constellation+Energy+Stock+%28CEG%29+Opinions+on+AI+Data+Center+Power+Demand"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+J.+French+Hill+Made+an+Estimated+%24312.7K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Press Release: Brian Mast Highlights Defense and Water Priorities in Weekly Update",
+        "headline": "Net Worth Update: Representative Mikie Sherrill Lost an Estimated $121.1K in the Stock Market Last Month",
         "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-27 16:19:52",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Brian+Mast+Highlights+Defense+and+Water+Priorities+in+Weekly+Update"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Mikie+Sherrill+Lost+an+Estimated+%24121.1K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "New Bill: Representative Daniel S. Goldman introduces H.R. 9349: Voting Systems Protection Act",
+        "headline": "Net Worth Update: Senator Sheldon Whitehouse Lost an Estimated $1.1M in the Stock Market Last Month",
         "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-27 15:42:28",
-        "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Daniel+S.+Goldman+introduces+H.R.+9349%3A+Voting+Systems+Protection+Act"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Sheldon+Whitehouse+Lost+an+Estimated+%241.1M+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "New Bill: Senator Sheldon Whitehouse introduces S. 4819: Lifeline for First Responders Act",
+        "headline": "Net Worth Update: Senator Ron Johnson Lost an Estimated $524.6K in the Stock Market Last Month",
         "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-27 15:42:28",
-        "url": "https://www.quiverquant.com/news/New+Bill%3A+Senator+Sheldon+Whitehouse+introduces+S.+4819%3A+Lifeline+for+First+Responders+Act"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ron+Johnson+Lost+an+Estimated+%24524.6K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "New Bill: Senator Mazie K. Hirono introduces S. 4859: Pell Grant Preservation and Expansion Act of 2026",
+        "headline": "Net Worth Update: Representative David Kustoff Lost an Estimated $245.3K in the Stock Market Last Month",
         "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-27 15:42:28",
-        "url": "https://www.quiverquant.com/news/New+Bill%3A+Senator+Mazie+K.+Hirono+introduces+S.+4859%3A+Pell+Grant+Preservation+and+Expansion+Act+of+2026"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+David+Kustoff+Lost+an+Estimated+%24245.3K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "New Bill: Representative Judy Chu introduces H.R. 9400: American Rescuers of the Holocaust Congressional Gold Medal Act of 2026",
+        "headline": "Net Worth Update: Representative Darrell Issa Made an Estimated $686.9K in the Stock Market Last Month",
         "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-27 15:42:28",
-        "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Judy+Chu+introduces+H.R.+9400%3A+American+Rescuers+of+the+Holocaust+Congressional+Gold+Medal+Act+of+2026"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Darrell+Issa+Made+an+Estimated+%24686.9K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "New Bill: Representative Sam Liccardo introduces H.R. 9438: Supporting Knowledge through Industry-Led Learning Act",
+        "headline": "Net Worth Update: Representative Scott Franklin Lost an Estimated $571.5K in the Stock Market Last Month",
         "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-27 15:42:28",
-        "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Sam+Liccardo+introduces+H.R.+9438%3A+Supporting+Knowledge+through+Industry-Led+Learning+Act"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Scott+Franklin+Lost+an+Estimated+%24571.5K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "New Bill: Representative Don Bacon introduces H.R. 9417: Artemis II Congressional Gold Medal Act",
+        "headline": "Net Worth Update: Senator Mitch McConnell Lost an Estimated $434.3K in the Stock Market Last Month",
         "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-27 15:42:28",
-        "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Don+Bacon+introduces+H.R.+9417%3A+Artemis+II+Congressional+Gold+Medal+Act"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Mitch+McConnell+Lost+an+Estimated+%24434.3K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "New Bill: Representative Mark Pocan introduces H.R. 9414: Pell Grant Preservation and Expansion Act of 2026",
+        "headline": "Net Worth Update: Senator Tim Sheehy Lost an Estimated $8.4M in the Stock Market Last Month",
         "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-27 15:42:28",
-        "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Mark+Pocan+introduces+H.R.+9414%3A+Pell+Grant+Preservation+and+Expansion+Act+of+2026"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Tim+Sheehy+Lost+an+Estimated+%248.4M+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "New Bill: Representative Steven Horsford introduces H.R. 9352: AI-Related Job Impacts Clarity Act",
+        "headline": "Net Worth Update: Representative Gilbert Ray Cisneros, Jr. Lost an Estimated $177.2K in the Stock Market Last Month",
         "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-27 15:42:28",
-        "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Steven+Horsford+introduces+H.R.+9352%3A+AI-Related+Job+Impacts+Clarity+Act"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Gilbert+Ray+Cisneros%2C+Jr.+Lost+an+Estimated+%24177.2K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "New Bill: Representative Shontel M. Brown introduces H.R. 9423: Organic Imports Verification Act of 2026",
+        "headline": "Net Worth Update: Representative Daniel Meuser Lost an Estimated $134.7K in the Stock Market Last Month",
         "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-27 15:42:28",
-        "url": "https://www.quiverquant.com/news/New+Bill%3A+Representative+Shontel+M.+Brown+introduces+H.R.+9423%3A+Organic+Imports+Verification+Act+of+2026"
+        "category": "congress_trades_automated",
+        "time": "2026-06-28 03:00:29",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Daniel+Meuser+Lost+an+Estimated+%24134.7K+in+the+Stock+Market+Last+Month"
       }
     ],
     "wsb": [
@@ -42980,804 +43124,804 @@
     ],
     "congress_holdings": {
       "ICE": {
-        "position_usd": 381708000.0,
-        "holders": 96
+        "position_usd": 429421500.0,
+        "holders": 108
       },
       "MSFT": {
-        "position_usd": 171252000.0,
-        "holders": 552
+        "position_usd": 192658500.0,
+        "holders": 621
       },
       "AAPL": {
-        "position_usd": 142160000.0,
-        "holders": 632
+        "position_usd": 159930000.0,
+        "holders": 711
       },
       "AMZN": {
-        "position_usd": 79324000.0,
-        "holders": 448
+        "position_usd": 89239500.0,
+        "holders": 504
       },
       "SPY": {
-        "position_usd": 66684000.0,
-        "holders": 72
+        "position_usd": 75019500.0,
+        "holders": 81
       },
       "FB": {
-        "position_usd": 64900000.0,
-        "holders": 280
+        "position_usd": 73012500.0,
+        "holders": 315
       },
       "GOOGL": {
-        "position_usd": 42304000.0,
-        "holders": 304
+        "position_usd": 47592000.0,
+        "holders": 342
       },
       "V": {
-        "position_usd": 30784000.0,
-        "holders": 264
+        "position_usd": 34632000.0,
+        "holders": 297
       },
       "NFLX": {
-        "position_usd": 29972000.0,
-        "holders": 152
+        "position_usd": 33718500.0,
+        "holders": 171
       },
       "CHTR": {
-        "position_usd": 29852000.0,
-        "holders": 64
+        "position_usd": 33583500.0,
+        "holders": 72
       },
       "NVDA": {
-        "position_usd": 26856000.0,
-        "holders": 224
+        "position_usd": 30213000.0,
+        "holders": 252
       },
       "PYPL": {
-        "position_usd": 25996000.0,
-        "holders": 192
+        "position_usd": 29245500.0,
+        "holders": 216
       },
       "CRM": {
-        "position_usd": 25348000.0,
-        "holders": 136
+        "position_usd": 28516500.0,
+        "holders": 153
       },
       "DDOG": {
-        "position_usd": 24260000.0,
-        "holders": 16
+        "position_usd": 27292500.0,
+        "holders": 18
       },
       "XON": {
-        "position_usd": 24064000.0,
-        "holders": 24
+        "position_usd": 27072000.0,
+        "holders": 27
       },
       "BRP": {
-        "position_usd": 24064000.0,
-        "holders": 16
+        "position_usd": 27072000.0,
+        "holders": 18
       },
       "BXS": {
-        "position_usd": 24016000.0,
-        "holders": 24
+        "position_usd": 27018000.0,
+        "holders": 27
       },
       "ALLO": {
-        "position_usd": 24000000.0,
-        "holders": 8
+        "position_usd": 27000000.0,
+        "holders": 9
       },
       "XOM": {
-        "position_usd": 23228000.0,
-        "holders": 320
+        "position_usd": 26131500.0,
+        "holders": 360
       },
       "JPM": {
-        "position_usd": 21380000.0,
-        "holders": 352
+        "position_usd": 24052500.0,
+        "holders": 396
       },
       "JNJ": {
-        "position_usd": 21336000.0,
-        "holders": 352
+        "position_usd": 24003000.0,
+        "holders": 396
       },
       "TFX": {
-        "position_usd": 20784000.0,
-        "holders": 32
+        "position_usd": 23382000.0,
+        "holders": 36
       },
       "T": {
-        "position_usd": 20048000.0,
-        "holders": 352
+        "position_usd": 22554000.0,
+        "holders": 396
       },
       "DIS": {
-        "position_usd": 19384000.0,
-        "holders": 376
+        "position_usd": 21807000.0,
+        "holders": 423
       },
       "TRUP": {
-        "position_usd": 19000000.0,
-        "holders": 16
+        "position_usd": 21375000.0,
+        "holders": 18
       },
       "A": {
-        "position_usd": 18856000.0,
-        "holders": 40
+        "position_usd": 21213000.0,
+        "holders": 45
       },
       "ET": {
-        "position_usd": 18440000.0,
-        "holders": 80
+        "position_usd": 20745000.0,
+        "holders": 90
       },
       "AB": {
-        "position_usd": 18000000.0,
-        "holders": 8
+        "position_usd": 20250000.0,
+        "holders": 9
       },
       "MA": {
-        "position_usd": 17980000.0,
-        "holders": 200
+        "position_usd": 20227500.0,
+        "holders": 225
       },
       "LHCG": {
-        "position_usd": 16588000.0,
-        "holders": 40
+        "position_usd": 18661500.0,
+        "holders": 45
       },
       "VZ": {
-        "position_usd": 16268000.0,
-        "holders": 264
+        "position_usd": 18301500.0,
+        "holders": 297
       },
       "SHLX": {
-        "position_usd": 15204000.0,
-        "holders": 40
+        "position_usd": 17104500.0,
+        "holders": 45
       },
       "NEE": {
-        "position_usd": 14752000.0,
-        "holders": 176
+        "position_usd": 16596000.0,
+        "holders": 198
       },
       "FDX": {
-        "position_usd": 14556000.0,
-        "holders": 184
+        "position_usd": 16375500.0,
+        "holders": 207
       },
       "USAC": {
-        "position_usd": 14356000.0,
-        "holders": 16
+        "position_usd": 16150500.0,
+        "holders": 18
       },
       "LEN": {
-        "position_usd": 14264000.0,
-        "holders": 16
+        "position_usd": 16047000.0,
+        "holders": 18
       },
       "BABA": {
-        "position_usd": 14176000.0,
-        "holders": 208
+        "position_usd": 15948000.0,
+        "holders": 234
       },
       "CAPL": {
-        "position_usd": 14064000.0,
-        "holders": 24
+        "position_usd": 15822000.0,
+        "holders": 27
       },
       "WMT": {
-        "position_usd": 14048000.0,
-        "holders": 272
+        "position_usd": 15804000.0,
+        "holders": 306
       },
       "AM": {
-        "position_usd": 14024000.0,
-        "holders": 56
+        "position_usd": 15777000.0,
+        "holders": 63
       },
       "HD": {
-        "position_usd": 13972000.0,
-        "holders": 256
+        "position_usd": 15718500.0,
+        "holders": 288
       },
       "ENBL": {
-        "position_usd": 13568000.0,
-        "holders": 16
+        "position_usd": 15264000.0,
+        "holders": 18
       },
       "GE": {
-        "position_usd": 13120000.0,
-        "holders": 328
+        "position_usd": 14760000.0,
+        "holders": 369
       },
       "CVX": {
-        "position_usd": 12684000.0,
-        "holders": 264
+        "position_usd": 14269500.0,
+        "holders": 297
       },
       "TXN": {
-        "position_usd": 12596000.0,
-        "holders": 136
+        "position_usd": 14170500.0,
+        "holders": 153
       },
       "UNH": {
-        "position_usd": 12332000.0,
-        "holders": 240
+        "position_usd": 13873500.0,
+        "holders": 270
       },
       "UBS": {
-        "position_usd": 12128000.0,
-        "holders": 40
+        "position_usd": 13644000.0,
+        "holders": 45
       },
       "DFS": {
-        "position_usd": 12100000.0,
-        "holders": 88
+        "position_usd": 13612500.0,
+        "holders": 99
       },
       "RGC": {
-        "position_usd": 12064000.0,
-        "holders": 16
+        "position_usd": 13572000.0,
+        "holders": 18
       },
       "COST": {
-        "position_usd": 11936000.0,
-        "holders": 256
+        "position_usd": 13428000.0,
+        "holders": 288
       },
       "PG": {
-        "position_usd": 11516000.0,
-        "holders": 264
+        "position_usd": 12955500.0,
+        "holders": 297
       },
       "INFO": {
-        "position_usd": 11204000.0,
-        "holders": 56
+        "position_usd": 12604500.0,
+        "holders": 63
       },
       "LIN": {
-        "position_usd": 11148000.0,
-        "holders": 136
+        "position_usd": 12541500.0,
+        "holders": 153
       },
       "CRWD": {
-        "position_usd": 11132000.0,
-        "holders": 72
+        "position_usd": 12523500.0,
+        "holders": 81
       },
       "HON": {
-        "position_usd": 10996000.0,
-        "holders": 160
+        "position_usd": 12370500.0,
+        "holders": 180
       },
       "WFC": {
-        "position_usd": 10992000.0,
-        "holders": 208
+        "position_usd": 12366000.0,
+        "holders": 234
       },
       "BAYRY": {
-        "position_usd": 10924000.0,
-        "holders": 32
+        "position_usd": 12289500.0,
+        "holders": 36
       },
       "BAC": {
-        "position_usd": 10832000.0,
-        "holders": 232
+        "position_usd": 12186000.0,
+        "holders": 261
       },
       "ALK": {
-        "position_usd": 10452000.0,
-        "holders": 40
+        "position_usd": 11758500.0,
+        "holders": 45
       },
       "MCD": {
-        "position_usd": 10432000.0,
-        "holders": 192
+        "position_usd": 11736000.0,
+        "holders": 216
       },
       "SPG": {
-        "position_usd": 10412000.0,
-        "holders": 96
+        "position_usd": 11713500.0,
+        "holders": 108
       },
       "BRK.B": {
-        "position_usd": 10084000.0,
-        "holders": 216
+        "position_usd": 11344500.0,
+        "holders": 243
       },
       "SBUX": {
-        "position_usd": 9936000.0,
-        "holders": 272
+        "position_usd": 11178000.0,
+        "holders": 306
       },
       "PBFX": {
-        "position_usd": 9748000.0,
-        "holders": 16
+        "position_usd": 10966500.0,
+        "holders": 18
       },
       "LUV": {
-        "position_usd": 9696000.0,
-        "holders": 128
+        "position_usd": 10908000.0,
+        "holders": 144
       },
       "AMZA": {
-        "position_usd": 9600000.0,
-        "holders": 16
+        "position_usd": 10800000.0,
+        "holders": 18
       },
       "ACN": {
-        "position_usd": 9508000.0,
-        "holders": 184
+        "position_usd": 10696500.0,
+        "holders": 207
       },
       "FTAI": {
-        "position_usd": 9460000.0,
-        "holders": 8
+        "position_usd": 10642500.0,
+        "holders": 9
       },
       "INTC": {
-        "position_usd": 9308000.0,
-        "holders": 296
+        "position_usd": 10471500.0,
+        "holders": 333
       },
       "PODD": {
-        "position_usd": 9188000.0,
-        "holders": 32
+        "position_usd": 10336500.0,
+        "holders": 36
       },
       "EMR": {
-        "position_usd": 9156000.0,
-        "holders": 112
+        "position_usd": 10300500.0,
+        "holders": 126
       },
       "CSCO": {
-        "position_usd": 9152000.0,
-        "holders": 248
+        "position_usd": 10296000.0,
+        "holders": 279
       },
       "ZAYO": {
-        "position_usd": 9132000.0,
-        "holders": 24
+        "position_usd": 10273500.0,
+        "holders": 27
       },
       "CAT": {
-        "position_usd": 8852000.0,
-        "holders": 208
+        "position_usd": 9958500.0,
+        "holders": 234
       },
       "DHR": {
-        "position_usd": 8852000.0,
-        "holders": 160
+        "position_usd": 9958500.0,
+        "holders": 180
       },
       "WMB": {
-        "position_usd": 8840000.0,
-        "holders": 80
+        "position_usd": 9945000.0,
+        "holders": 90
       },
       "CEQP": {
-        "position_usd": 8688000.0,
-        "holders": 24
+        "position_usd": 9774000.0,
+        "holders": 27
       },
       "QCOM": {
-        "position_usd": 8632000.0,
-        "holders": 240
+        "position_usd": 9711000.0,
+        "holders": 270
       },
       "RCKY": {
-        "position_usd": 8600000.0,
-        "holders": 8
+        "position_usd": 9675000.0,
+        "holders": 9
       },
       "TSLA": {
-        "position_usd": 8504000.0,
-        "holders": 184
+        "position_usd": 9567000.0,
+        "holders": 207
       },
       "MMM": {
-        "position_usd": 8464000.0,
-        "holders": 168
+        "position_usd": 9522000.0,
+        "holders": 189
       },
       "RPM": {
-        "position_usd": 8436000.0,
-        "holders": 48
+        "position_usd": 9490500.0,
+        "holders": 54
       },
       "BKCC": {
-        "position_usd": 8400000.0,
-        "holders": 8
+        "position_usd": 9450000.0,
+        "holders": 9
       },
       "BMY": {
-        "position_usd": 8356000.0,
-        "holders": 144
+        "position_usd": 9400500.0,
+        "holders": 162
       },
       "ZBRA": {
-        "position_usd": 8260000.0,
-        "holders": 24
+        "position_usd": 9292500.0,
+        "holders": 27
       },
       "AJRD": {
-        "position_usd": 8064000.0,
-        "holders": 16
+        "position_usd": 9072000.0,
+        "holders": 18
       },
       "PEP": {
-        "position_usd": 8000000.0,
-        "holders": 256
+        "position_usd": 9000000.0,
+        "holders": 288
       },
       "ABBV": {
-        "position_usd": 7928000.0,
-        "holders": 184
+        "position_usd": 8919000.0,
+        "holders": 207
       },
       "PM": {
-        "position_usd": 7844000.0,
-        "holders": 112
+        "position_usd": 8824500.0,
+        "holders": 126
       },
       "TMO": {
-        "position_usd": 7788000.0,
-        "holders": 168
+        "position_usd": 8761500.0,
+        "holders": 189
       },
       "RTX": {
-        "position_usd": 7756000.0,
-        "holders": 80
+        "position_usd": 8725500.0,
+        "holders": 90
       },
       "IBM": {
-        "position_usd": 7744000.0,
-        "holders": 208
+        "position_usd": 8712000.0,
+        "holders": 234
       },
       "CB": {
-        "position_usd": 7728000.0,
-        "holders": 160
+        "position_usd": 8694000.0,
+        "holders": 180
       },
       "ADBE": {
-        "position_usd": 7660000.0,
-        "holders": 112
+        "position_usd": 8617500.0,
+        "holders": 126
       },
       "IHRT": {
-        "position_usd": 7460000.0,
-        "holders": 8
+        "position_usd": 8392500.0,
+        "holders": 9
       },
       "DGRO": {
-        "position_usd": 7432000.0,
-        "holders": 16
+        "position_usd": 8361000.0,
+        "holders": 18
       },
       "REZI": {
-        "position_usd": 7360000.0,
-        "holders": 56
+        "position_usd": 8280000.0,
+        "holders": 63
       },
       "VEEV": {
-        "position_usd": 7256000.0,
-        "holders": 32
+        "position_usd": 8163000.0,
+        "holders": 36
       },
       "UPS": {
-        "position_usd": 7116000.0,
-        "holders": 136
+        "position_usd": 8005500.0,
+        "holders": 153
       },
       "LLY": {
-        "position_usd": 7104000.0,
-        "holders": 96
+        "position_usd": 7992000.0,
+        "holders": 108
       },
       "CVS": {
-        "position_usd": 6996000.0,
-        "holders": 240
+        "position_usd": 7870500.0,
+        "holders": 270
       },
       "KO": {
-        "position_usd": 6912000.0,
-        "holders": 224
+        "position_usd": 7776000.0,
+        "holders": 252
       },
       "BIDU": {
-        "position_usd": 6800000.0,
-        "holders": 64
+        "position_usd": 7650000.0,
+        "holders": 72
       },
       "MCHP": {
-        "position_usd": 6772000.0,
-        "holders": 40
+        "position_usd": 7618500.0,
+        "holders": 45
       },
       "MIC": {
-        "position_usd": 6724000.0,
-        "holders": 24
+        "position_usd": 7564500.0,
+        "holders": 27
       },
       "NSRGY": {
-        "position_usd": 6716000.0,
-        "holders": 144
+        "position_usd": 7555500.0,
+        "holders": 162
       },
       "PXD": {
-        "position_usd": 6704000.0,
-        "holders": 48
+        "position_usd": 7542000.0,
+        "holders": 54
       },
       "ULTI": {
-        "position_usd": 6592000.0,
-        "holders": 16
+        "position_usd": 7416000.0,
+        "holders": 18
       },
       "LH": {
-        "position_usd": 6524000.0,
-        "holders": 40
+        "position_usd": 7339500.0,
+        "holders": 45
       },
       "UBER": {
-        "position_usd": 6372000.0,
-        "holders": 72
+        "position_usd": 7168500.0,
+        "holders": 81
       },
       "CTSH": {
-        "position_usd": 6332000.0,
-        "holders": 80
+        "position_usd": 7123500.0,
+        "holders": 90
       },
       "LOW": {
-        "position_usd": 6224000.0,
-        "holders": 160
+        "position_usd": 7002000.0,
+        "holders": 180
       },
       "NS": {
-        "position_usd": 6200000.0,
-        "holders": 16
+        "position_usd": 6975000.0,
+        "holders": 18
       },
       "PEGA": {
-        "position_usd": 6196000.0,
-        "holders": 16
+        "position_usd": 6970500.0,
+        "holders": 18
       },
       "HALO": {
-        "position_usd": 6192000.0,
-        "holders": 24
+        "position_usd": 6966000.0,
+        "holders": 27
       },
       "ROK": {
-        "position_usd": 6180000.0,
-        "holders": 48
+        "position_usd": 6952500.0,
+        "holders": 54
       },
       "TIP": {
-        "position_usd": 6176000.0,
-        "holders": 24
+        "position_usd": 6948000.0,
+        "holders": 27
       },
       "GOOG": {
-        "position_usd": 6140000.0,
-        "holders": 216
+        "position_usd": 6907500.0,
+        "holders": 243
       },
       "TSM": {
-        "position_usd": 6124000.0,
-        "holders": 128
-      },
-      "ABT": {
-        "position_usd": 6112000.0,
-        "holders": 176
-      },
-      "DD": {
-        "position_usd": 6080000.0,
-        "holders": 120
-      },
-      "STT": {
-        "position_usd": 6080000.0,
-        "holders": 120
-      },
-      "PFE": {
-        "position_usd": 6048000.0,
-        "holders": 264
-      },
-      "TWOU": {
-        "position_usd": 6000000.0,
-        "holders": 8
-      },
-      "RNR": {
-        "position_usd": 6000000.0,
-        "holders": 8
-      },
-      "AMLP": {
-        "position_usd": 6000000.0,
-        "holders": 8
-      },
-      "EFA": {
-        "position_usd": 6000000.0,
-        "holders": 8
-      },
-      "NVS": {
-        "position_usd": 5900000.0,
-        "holders": 120
-      },
-      "CL": {
-        "position_usd": 5872000.0,
-        "holders": 120
-      },
-      "AMGN": {
-        "position_usd": 5852000.0,
-        "holders": 168
-      },
-      "LMT": {
-        "position_usd": 5792000.0,
-        "holders": 152
-      },
-      "DEO": {
-        "position_usd": 5680000.0,
-        "holders": 136
-      },
-      "BA": {
-        "position_usd": 5624000.0,
-        "holders": 208
-      },
-      "NGL": {
-        "position_usd": 5604000.0,
-        "holders": 24
-      },
-      "XLE": {
-        "position_usd": 5584000.0,
-        "holders": 16
-      },
-      "MO": {
-        "position_usd": 5568000.0,
-        "holders": 168
-      },
-      "F": {
-        "position_usd": 5528000.0,
-        "holders": 192
-      },
-      "IWN": {
-        "position_usd": 5456000.0,
-        "holders": 40
-      },
-      "PAA": {
-        "position_usd": 5452000.0,
-        "holders": 40
-      },
-      "ORCL": {
-        "position_usd": 5360000.0,
-        "holders": 112
-      },
-      "TJX": {
-        "position_usd": 5268000.0,
-        "holders": 208
-      },
-      "RMD": {
-        "position_usd": 5256000.0,
-        "holders": 40
-      },
-      "AMAT": {
-        "position_usd": 5196000.0,
-        "holders": 112
-      },
-      "NKE": {
-        "position_usd": 5192000.0,
-        "holders": 112
-      },
-      "MDY": {
-        "position_usd": 5128000.0,
-        "holders": 16
-      },
-      "VMC": {
-        "position_usd": 5104000.0,
-        "holders": 64
-      },
-      "KHC": {
-        "position_usd": 5084000.0,
-        "holders": 152
-      },
-      "TTWO": {
-        "position_usd": 5064000.0,
-        "holders": 16
-      },
-      "EPD": {
-        "position_usd": 5016000.0,
-        "holders": 56
-      },
-      "AMN": {
-        "position_usd": 5016000.0,
-        "holders": 16
-      },
-      "VTV": {
-        "position_usd": 5000000.0,
-        "holders": 8
-      },
-      "GLP": {
-        "position_usd": 4972000.0,
-        "holders": 16
-      },
-      "MRK": {
-        "position_usd": 4952000.0,
-        "holders": 216
-      },
-      "CCI": {
-        "position_usd": 4944000.0,
-        "holders": 128
-      },
-      "PRU": {
-        "position_usd": 4908000.0,
-        "holders": 104
-      },
-      "MDLZ": {
-        "position_usd": 4880000.0,
-        "holders": 112
-      },
-      "DXCM": {
-        "position_usd": 4848000.0,
-        "holders": 64
-      },
-      "IWD": {
-        "position_usd": 4744000.0,
-        "holders": 16
-      },
-      "SQ": {
-        "position_usd": 4692000.0,
-        "holders": 96
-      },
-      "HHC": {
-        "position_usd": 4648000.0,
-        "holders": 32
-      },
-      "D": {
-        "position_usd": 4616000.0,
-        "holders": 136
-      },
-      "ARNA": {
-        "position_usd": 4572000.0,
-        "holders": 24
-      },
-      "DAL": {
-        "position_usd": 4568000.0,
-        "holders": 104
-      },
-      "TTD": {
-        "position_usd": 4528000.0,
-        "holders": 24
-      },
-      "DOCU": {
-        "position_usd": 4524000.0,
-        "holders": 32
-      },
-      "CUTR": {
-        "position_usd": 4464000.0,
-        "holders": 8
-      },
-      "KEYS": {
-        "position_usd": 4456000.0,
-        "holders": 40
-      },
-      "C": {
-        "position_usd": 4428000.0,
-        "holders": 160
-      },
-      "OSW": {
-        "position_usd": 4424000.0,
-        "holders": 16
-      },
-      "TCEHY": {
-        "position_usd": 4416000.0,
-        "holders": 48
-      },
-      "PNR": {
-        "position_usd": 4400000.0,
-        "holders": 24
-      },
-      "CTL": {
-        "position_usd": 4388000.0,
-        "holders": 64
-      },
-      "ADP": {
-        "position_usd": 4360000.0,
-        "holders": 72
-      },
-      "TFC": {
-        "position_usd": 4288000.0,
-        "holders": 120
-      },
-      "PGR": {
-        "position_usd": 4252000.0,
-        "holders": 104
-      },
-      "IFNNY": {
-        "position_usd": 4180000.0,
-        "holders": 24
-      },
-      "AVGO": {
-        "position_usd": 4124000.0,
-        "holders": 104
-      },
-      "MSM": {
-        "position_usd": 4120000.0,
-        "holders": 24
-      },
-      "SLB": {
-        "position_usd": 4108000.0,
-        "holders": 232
-      },
-      "BRK-B": {
-        "position_usd": 4108000.0,
-        "holders": 40
-      },
-      "IR": {
-        "position_usd": 4100000.0,
-        "holders": 56
-      },
-      "AZO": {
-        "position_usd": 4088000.0,
-        "holders": 64
-      },
-      "UNP": {
-        "position_usd": 4068000.0,
-        "holders": 136
-      },
-      "BBVA": {
-        "position_usd": 4068000.0,
-        "holders": 32
-      },
-      "CMCSA": {
-        "position_usd": 4052000.0,
-        "holders": 216
-      },
-      "SU": {
-        "position_usd": 4028000.0,
-        "holders": 72
-      },
-      "USB": {
-        "position_usd": 4000000.0,
-        "holders": 168
-      },
-      "MIDD": {
-        "position_usd": 3988000.0,
-        "holders": 24
-      },
-      "GS": {
-        "position_usd": 3916000.0,
+        "position_usd": 6889500.0,
         "holders": 144
       },
+      "ABT": {
+        "position_usd": 6876000.0,
+        "holders": 198
+      },
+      "DD": {
+        "position_usd": 6840000.0,
+        "holders": 135
+      },
+      "STT": {
+        "position_usd": 6840000.0,
+        "holders": 135
+      },
+      "PFE": {
+        "position_usd": 6804000.0,
+        "holders": 297
+      },
+      "TWOU": {
+        "position_usd": 6750000.0,
+        "holders": 9
+      },
+      "RNR": {
+        "position_usd": 6750000.0,
+        "holders": 9
+      },
+      "AMLP": {
+        "position_usd": 6750000.0,
+        "holders": 9
+      },
+      "EFA": {
+        "position_usd": 6750000.0,
+        "holders": 9
+      },
+      "NVS": {
+        "position_usd": 6637500.0,
+        "holders": 135
+      },
+      "CL": {
+        "position_usd": 6606000.0,
+        "holders": 135
+      },
+      "AMGN": {
+        "position_usd": 6583500.0,
+        "holders": 189
+      },
+      "LMT": {
+        "position_usd": 6516000.0,
+        "holders": 171
+      },
+      "DEO": {
+        "position_usd": 6390000.0,
+        "holders": 153
+      },
+      "BA": {
+        "position_usd": 6327000.0,
+        "holders": 234
+      },
+      "NGL": {
+        "position_usd": 6304500.0,
+        "holders": 27
+      },
+      "XLE": {
+        "position_usd": 6282000.0,
+        "holders": 18
+      },
+      "MO": {
+        "position_usd": 6264000.0,
+        "holders": 189
+      },
+      "F": {
+        "position_usd": 6219000.0,
+        "holders": 216
+      },
+      "IWN": {
+        "position_usd": 6138000.0,
+        "holders": 45
+      },
+      "PAA": {
+        "position_usd": 6133500.0,
+        "holders": 45
+      },
+      "ORCL": {
+        "position_usd": 6030000.0,
+        "holders": 126
+      },
+      "TJX": {
+        "position_usd": 5926500.0,
+        "holders": 234
+      },
+      "RMD": {
+        "position_usd": 5913000.0,
+        "holders": 45
+      },
+      "AMAT": {
+        "position_usd": 5845500.0,
+        "holders": 126
+      },
+      "NKE": {
+        "position_usd": 5841000.0,
+        "holders": 126
+      },
+      "MDY": {
+        "position_usd": 5769000.0,
+        "holders": 18
+      },
+      "VMC": {
+        "position_usd": 5742000.0,
+        "holders": 72
+      },
+      "KHC": {
+        "position_usd": 5719500.0,
+        "holders": 171
+      },
+      "TTWO": {
+        "position_usd": 5697000.0,
+        "holders": 18
+      },
+      "EPD": {
+        "position_usd": 5643000.0,
+        "holders": 63
+      },
+      "AMN": {
+        "position_usd": 5643000.0,
+        "holders": 18
+      },
+      "VTV": {
+        "position_usd": 5625000.0,
+        "holders": 9
+      },
+      "GLP": {
+        "position_usd": 5593500.0,
+        "holders": 18
+      },
+      "MRK": {
+        "position_usd": 5571000.0,
+        "holders": 243
+      },
+      "CCI": {
+        "position_usd": 5562000.0,
+        "holders": 144
+      },
+      "PRU": {
+        "position_usd": 5521500.0,
+        "holders": 117
+      },
+      "MDLZ": {
+        "position_usd": 5490000.0,
+        "holders": 126
+      },
+      "DXCM": {
+        "position_usd": 5454000.0,
+        "holders": 72
+      },
+      "IWD": {
+        "position_usd": 5337000.0,
+        "holders": 18
+      },
+      "SQ": {
+        "position_usd": 5278500.0,
+        "holders": 108
+      },
+      "HHC": {
+        "position_usd": 5229000.0,
+        "holders": 36
+      },
+      "D": {
+        "position_usd": 5193000.0,
+        "holders": 153
+      },
+      "ARNA": {
+        "position_usd": 5143500.0,
+        "holders": 27
+      },
+      "DAL": {
+        "position_usd": 5139000.0,
+        "holders": 117
+      },
+      "TTD": {
+        "position_usd": 5094000.0,
+        "holders": 27
+      },
+      "DOCU": {
+        "position_usd": 5089500.0,
+        "holders": 36
+      },
+      "CUTR": {
+        "position_usd": 5022000.0,
+        "holders": 9
+      },
+      "KEYS": {
+        "position_usd": 5013000.0,
+        "holders": 45
+      },
+      "C": {
+        "position_usd": 4981500.0,
+        "holders": 180
+      },
+      "OSW": {
+        "position_usd": 4977000.0,
+        "holders": 18
+      },
+      "TCEHY": {
+        "position_usd": 4968000.0,
+        "holders": 54
+      },
+      "PNR": {
+        "position_usd": 4950000.0,
+        "holders": 27
+      },
+      "CTL": {
+        "position_usd": 4936500.0,
+        "holders": 72
+      },
+      "ADP": {
+        "position_usd": 4905000.0,
+        "holders": 81
+      },
+      "TFC": {
+        "position_usd": 4824000.0,
+        "holders": 135
+      },
+      "PGR": {
+        "position_usd": 4783500.0,
+        "holders": 117
+      },
+      "IFNNY": {
+        "position_usd": 4702500.0,
+        "holders": 27
+      },
+      "AVGO": {
+        "position_usd": 4639500.0,
+        "holders": 117
+      },
+      "MSM": {
+        "position_usd": 4635000.0,
+        "holders": 27
+      },
+      "SLB": {
+        "position_usd": 4621500.0,
+        "holders": 261
+      },
+      "BRK-B": {
+        "position_usd": 4621500.0,
+        "holders": 45
+      },
+      "IR": {
+        "position_usd": 4612500.0,
+        "holders": 63
+      },
+      "AZO": {
+        "position_usd": 4599000.0,
+        "holders": 72
+      },
+      "UNP": {
+        "position_usd": 4576500.0,
+        "holders": 153
+      },
+      "BBVA": {
+        "position_usd": 4576500.0,
+        "holders": 36
+      },
+      "CMCSA": {
+        "position_usd": 4558500.0,
+        "holders": 243
+      },
+      "SU": {
+        "position_usd": 4531500.0,
+        "holders": 81
+      },
+      "USB": {
+        "position_usd": 4500000.0,
+        "holders": 189
+      },
+      "MIDD": {
+        "position_usd": 4486500.0,
+        "holders": 27
+      },
+      "GS": {
+        "position_usd": 4405500.0,
+        "holders": 162
+      },
       "DG": {
-        "position_usd": 3880000.0,
-        "holders": 88
+        "position_usd": 4365000.0,
+        "holders": 99
       },
       "MPLX": {
-        "position_usd": 3876000.0,
-        "holders": 48
+        "position_usd": 4360500.0,
+        "holders": 54
       },
       "MS": {
-        "position_usd": 3868000.0,
-        "holders": 120
+        "position_usd": 4351500.0,
+        "holders": 135
       },
       "TDOC": {
-        "position_usd": 3852000.0,
-        "holders": 40
+        "position_usd": 4333500.0,
+        "holders": 45
       },
       "GLW": {
-        "position_usd": 3832000.0,
-        "holders": 48
+        "position_usd": 4311000.0,
+        "holders": 54
       },
       "RAND": {
-        "position_usd": 3828000.0,
-        "holders": 8
+        "position_usd": 4306500.0,
+        "holders": 9
       },
       "CSGP": {
-        "position_usd": 3772000.0,
-        "holders": 40
+        "position_usd": 4243500.0,
+        "holders": 45
       },
       "CME": {
-        "position_usd": 3760000.0,
-        "holders": 96
+        "position_usd": 4230000.0,
+        "holders": 108
       },
       "BP": {
-        "position_usd": 3744000.0,
-        "holders": 80
+        "position_usd": 4212000.0,
+        "holders": 90
       },
       "UTX": {
-        "position_usd": 3712000.0,
-        "holders": 160
+        "position_usd": 4176000.0,
+        "holders": 180
       },
       "OKE": {
-        "position_usd": 3676000.0,
-        "holders": 72
+        "position_usd": 4135500.0,
+        "holders": 81
       }
     },
     "flights": [
@@ -44093,7 +44237,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.88% stars \u00b7 hf_model_momentum: +6.1% model downloads \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.84% stars \u00b7 hf_model_momentum: +4.7% model downloads \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "GOOGL",
@@ -44106,7 +44250,7 @@
           "material_8k",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,644,366 reviews \u00b7 hf_model_momentum: +4.5% model downloads \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,644,366 reviews \u00b7 hf_model_momentum: +4.0% model downloads \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "MSFT",
@@ -44167,7 +44311,7 @@
           "special_situation",
           "trump"
         ],
-        "why": "congress_buy: 2 member(s) net +12 \u00b7 github_momentum: +0.27% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations \u00b7 trump: ADVANCED MICRO DEVICES INC"
+        "why": "congress_buy: 2 member(s) net +12 \u00b7 github_momentum: +0.21% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations \u00b7 trump: ADVANCED MICRO DEVICES INC"
       },
       {
         "ticker": "DELL",
