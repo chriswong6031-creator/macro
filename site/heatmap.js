@@ -199,19 +199,6 @@
   function sectorLabels(data) {
     var m = {}; (data.sectors || []).forEach(function (s) { m[s.key] = { en: s.en, zh: s.zh }; }); return m;
   }
-  /* Finviz sector → short label (en, zh). Legacy GICS keys kept for safety. */
-  var SHORT = {
-    'Technology': ['Technology', '信息技术'], 'Communication Services': ['Comm Svcs', '通信服务'],
-    'Healthcare': ['Healthcare', '医疗保健'], 'Financial': ['Financial', '金融'],
-    'Consumer Cyclical': ['Cons Cyclical', '非必需消费'], 'Consumer Defensive': ['Cons Defensive', '必需消费'],
-    'Industrials': ['Industrials', '工业'], 'Energy': ['Energy', '能源'],
-    'Utilities': ['Utilities', '公用事业'], 'Real Estate': ['Real Estate', '房地产'],
-    'Basic Materials': ['Materials', '材料'],
-    'Information Technology': ['Tech', '信息技术'], 'Health Care': ['Health', '医疗'],
-    'Financials': ['Financials', '金融'], 'Consumer Discretionary': ['Cons Disc', '非必需消费'],
-    'Consumer Staples': ['Staples', '必需消费'], 'Materials': ['Materials', '材料']
-  };
-  function shortSec(name) { return SHORT[name] ? SHORT[name] : [name, name]; }
 
   /* ====================================================================== */
   /*  STOCK HOVER CARD — our conviction read, lazily fetched, degrades gracefully */
@@ -896,78 +883,159 @@
   /* ====================================================================== */
   /*  COMPACT SCORECARD (dashboard)                                          */
   /* ====================================================================== */
+  // Minimized, Perplexity-style market map: a real stock-level treemap (sector →
+  // stocks, sized by market cap, coloured by the 1D bin) — NOT a sector-summary
+  // strip. Reuses the full map's .hm-sec / .hm-tile styling and the global hover
+  // machinery. Desktop hovers a tile for our conviction card (and a sector header
+  // for its members) and carries an Expand → full overlay; touch/mobile gets the
+  // map with neither hover popups nor an Expand control (the standalone Sector
+  // Heatmap page remains the deep view). One level shallower than the overlay —
+  // no sub-industry headers — to stay legible at this height, mirroring Perplexity.
   function renderScorecard(root, data) {
     if (root.getAttribute('data-hm-init')) return;   // guard against double-init
     root.setAttribute('data-hm-init', '1');
     root.classList.add('hm-scope', 'hm-sc');
     var labs = sectorLabels(data);
-    var sectors = groupHierarchy(data);
     var live = data.source === 'polygon-live';
+    var TF = '1D';                                    // the dashboard map is a 1D snapshot
+    var REDUCE = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     var head = ''
       + '<div class="hm-sc-hd">'
-      +   '<div class="hm-sc-tit">' + L('Market heatmap', '市场热力图') + '</div>'
+      +   '<div class="hm-sc-tit">🔥 ' + L('S&amp;P 500 Heatmap', 'S&amp;P 500 热力图') + '</div>'
       +   '<div class="hm-sc-meta"><span class="hm-dot ' + (live ? 'live' : '') + '"></span>'
-      +     L((live ? 'Live' : 'Daily close') + ' · ' + (data.asof || '—') + ' · ' + data.n_tiles + ' names',
-              (live ? '实时' : '日线收盘') + ' · ' + (data.asof || '—') + ' · ' + data.n_tiles + ' 只') + '</div>'
-      +   '<button type="button" class="hm-sc-exp">⤢ ' + L('Expand', '展开') + '</button>'
+      +     L((live ? 'Live · 15-min delayed' : 'Daily close') + ' · ' + (data.asof || '—') + ' · ' + data.n_tiles + ' names',
+              (live ? '实时 · 延迟15分钟' : '日线收盘') + ' · ' + (data.asof || '—') + ' · ' + data.n_tiles + ' 只') + '</div>'
+      +   '<button type="button" class="hm-sc-exp" aria-label="Expand heatmap">⤢ ' + L('Expand', '展开') + '</button>'
       + '</div>';
-
-    var stripWrap = '<div class="hm-sc-strip"></div>';
-    var foot = '<div class="hm-sc-foot"><div class="hm-sc-breadth"><span class="lab">'
-      + L('Breadth', '涨跌广度') + '</span><span class="hm-sc-bar"></span><span class="cnt"></span></div>'
-      + '<div class="hm-sc-lead"></div></div>';
-    root.innerHTML = head + stripWrap + foot;
-
+    var foot = ''
+      + '<div class="hm-sc-foot">'
+      +   '<div class="hm-sc-legend"></div>'
+      +   '<div class="hm-sc-breadth"></div>'
+      + '</div>';
+    root.innerHTML = head + '<div class="hm-sc-map"><div class="hm-sc-tm"></div></div>' + foot;
     root.querySelector('.hm-sc-exp').addEventListener('click', openOverlay);
 
-    function paintStrip() {
-      var strip = root.querySelector('.hm-sc-strip');
-      var W = strip.clientWidth, H = 100;
-      if (W <= 0) { requestAnimationFrame(paintStrip); return; }
-      strip.style.height = H + 'px';
-      var pal = binPalette(), edges = edgesFor('1D');
-      var items = Object.keys(sectors).map(function (k) { return { value: sectors[k].value, ref: sectors[k] }; });
-      var rects = squarify(items, 0, 0, W, H);
-      var html = [];
-      rects.forEach(function (r) {
-        var s = r.ref, agg = sectorAgg(data, s.tiles, '1D');
-        var c = pal[binIndex(agg, edges)], fg = fgFor(c);
-        var sl = shortSec(s.name), w = r.w - 3, h = r.h - 3;
-        if (w < 2 || h < 2) return;
-        var top = s.tiles.slice().sort(function (a, b) { return (b.size || 0) - (a.size || 0); })
-          .slice(0, 3).map(function (t) { return t.t; }).join(' · ');
-        html.push('<div class="hm-sc-tile" style="left:' + (r.x + 1.5) + 'px;top:' + (r.y + 1.5)
-          + 'px;width:' + w + 'px;height:' + h + 'px;background-color:' + rgb(c) + ';color:' + fg + '">'
-          + '<div class="t1">' + L(sl[0], sl[1]) + '</div>'
-          + '<div class="t2">' + fmtPc(agg) + '</div>'
-          + (w > 96 && h > 44 ? '<div class="t3">' + esc(top) + '</div>' : '') + '</div>');
-      });
-      strip.innerHTML = html.join('');
-      Array.prototype.forEach.call(strip.querySelectorAll('.hm-sc-tile'),
-        function (el) { el.addEventListener('click', openOverlay); });
-    }
-    function paintFoot() {
-      var br = breadth(data.tiles, '1D'), tot = Math.max(1, br.adv + br.dec);
-      root.querySelector('.hm-sc-bar').innerHTML = '<i class="up" style="width:' + (100 * br.adv / tot)
-        + '%"></i><i class="dn" style="width:' + (100 * br.dec / tot) + '%"></i>';
-      root.querySelector('.hm-sc-breadth .cnt').innerHTML = '<b class="up">' + br.adv + '</b> / <b class="dn">' + br.dec + '</b>';
-      var sorted = data.tiles.filter(function (t) { return t.perf['1D'] != null; })
-        .sort(function (a, b) { return b.perf['1D'] - a.perf['1D']; });
-      var lead = sorted.slice(0, 2), lag = sorted.slice(-2).reverse();
-      function chip(t, up) {
-        return '<a class="hm-sc-chip ' + (up ? 'up' : 'dn') + '" href="stock.html#' + encodeURIComponent(t.t) + '">'
-          + esc(t.t) + ' ' + fmtPc(t.perf['1D']) + '</a>';
+    var mapBox = root.querySelector('.hm-sc-map');
+    var tm = root.querySelector('.hm-sc-tm');
+    var tileEls = [];          // {el, t}
+    var hier = {};             // sector name -> {name, value, tiles}  (rebuilt each paint)
+    var firstPaint = true;
+
+    function isMobile() { return window.matchMedia('(max-width: 560px)').matches; }
+    function canHover() { return window.matchMedia('(hover: hover) and (pointer: fine)').matches; }
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+    function tileLabel(t, tw, th) {
+      // only names with a readable footprint carry a label; the rest are pure
+      // colour (Finviz / TradingView / Perplexity behaviour).
+      if (tw < 24 || th < 15) return '';
+      var symF = clamp(Math.min(tw / 3.8, th * 0.5), 8, 18);
+      var s = '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(t.t) + '</span>';
+      if (tw >= 40 && th >= 29) {
+        var pcF = clamp(Math.min(tw / 5.6, th * 0.32), 7.5, 12);
+        s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + fmtPc(t.perf[TF]) + '</span>';
       }
-      root.querySelector('.hm-sc-lead').innerHTML =
-        '<span class="lab">' + L('Leaders', '领涨') + '</span>' + lead.map(function (t) { return chip(t, true); }).join('')
-        + '<span class="lab lag">' + L('Laggards', '领跌') + '</span>' + lag.map(function (t) { return chip(t, false); }).join('');
+      return s;
     }
-    function paint() { paintStrip(); paintFoot(); }
+    function paintMap() {
+      var W = tm.clientWidth;
+      if (W <= 0) { requestAnimationFrame(paintMap); return; }
+      var H = isMobile() ? Math.round(clamp(W * 1.15, 380, 560)) : Math.round(clamp(W * 0.36, 340, 520));
+      mapBox.style.height = H + 'px'; tm.style.height = H + 'px';
+      var animate = firstPaint && !REDUCE; firstPaint = false;
+      tileEls = []; hier = {};
+      var pal = binPalette(), edges = edgesFor(TF);
+      var sectors = groupHierarchy(data);
+      Object.keys(sectors).forEach(function (k) { hier[k] = sectors[k]; });
+      var secItems = Object.keys(sectors).map(function (k) { return { value: sectors[k].value, ref: sectors[k] }; });
+      var secRects = squarify(secItems, 0, 0, W, H);
+      var html = [];
+      secRects.forEach(function (sr) {
+        var s = sr.ref;
+        var x = sr.x + SEC_GAP / 2, y = sr.y + SEC_GAP / 2, w = sr.w - SEC_GAP, h = sr.h - SEC_GAP;
+        if (w <= 2 || h <= 2) return;
+        var lab = labs[s.name] || { en: s.name, zh: s.name };
+        var hd = (h > 30 && w > 60) ? Math.min(17, h * 0.34) : 0;
+        html.push('<div class="hm-sec" style="left:' + x + 'px;top:' + y + 'px;width:' + w + 'px;height:' + h + 'px">');
+        if (hd) {
+          var agg = sectorAgg(data, s.tiles, TF);
+          html.push('<div class="hm-sec-hd hm-sc-sechd" data-sec-name="' + esc(s.name) + '" style="height:' + hd + 'px;line-height:' + hd + 'px">'
+            + '<span class="nm">' + L(esc(lab.en), esc(lab.zh)) + '</span>'
+            + (w > 96 ? '<span class="pc ' + (agg == null ? '' : agg >= 0 ? 'up' : 'dn') + '">' + fmtPc(agg) + '</span>' : '')
+            + '</div>');
+        }
+        var innerY = hd, innerH = h - hd;
+        var tRects = squarify(s.tiles.map(function (t) { return { value: (t.size || 0.0001), ref: t }; }), 0, 0, w, innerH);
+        tRects.forEach(function (tr) {
+          var t = tr.ref;
+          var tw = tr.w - TILE_GAP, th = tr.h - TILE_GAP;
+          if (tw < 1.5 || th < 1.5) return;
+          var c = pal[binIndex(t.perf[TF], edges)];
+          var cls = 'hm-tile';
+          if (tw >= 88 && th >= 50) cls += ' big';
+          if (animate) cls += ' hm-in';
+          var dly = animate ? ';animation-delay:' + Math.min(tileEls.length * 0.7, 360).toFixed(0) + 'ms' : '';
+          html.push('<div class="' + cls + '" data-i="' + tileEls.length + '" style="left:' + tr.x + 'px;top:'
+            + (innerY + tr.y) + 'px;width:' + tw + 'px;height:' + th + 'px;background-color:' + rgb(c) + ';color:' + fgFor(c)
+            + ';--tg:rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',.62)' + dly + '">' + tileLabel(t, tw, th) + '</div>');
+          tileEls.push({ t: t });
+        });
+        html.push('</div>');   // .hm-sec
+      });
+      tm.innerHTML = html.join('');
+      Array.prototype.forEach.call(tm.querySelectorAll('.hm-tile'),
+        function (el) { tileEls[+el.getAttribute('data-i')].el = el; });
+    }
+    function paintLegend() {
+      var e = edgesFor(TF), pal = binPalette(), sw = '';
+      [-3, -2, -1, 0, 1, 2, 3].forEach(function (b) { sw += '<span class="hm-lg-sw" style="background:' + rgb(pal[b]) + '"></span>'; });
+      root.querySelector('.hm-sc-legend').innerHTML = '<span class="hm-lg-end">−' + edgeFmt(e[2]) + '%</span>'
+        + '<span class="hm-lg-sws">' + sw + '</span>'
+        + '<span class="hm-lg-end">+' + edgeFmt(e[2]) + '%</span>';
+    }
+    function paintBreadth() {
+      var br = breadth(data.tiles, TF), tot = Math.max(1, br.adv + br.dec);
+      root.querySelector('.hm-sc-breadth').innerHTML =
+        '<span class="hm-sc-blab">' + L('Breadth', '涨跌广度') + '</span>'
+        + '<span class="hm-sc-bar"><i class="up" style="width:' + (100 * br.adv / tot) + '%"></i>'
+        + '<i class="dn" style="width:' + (100 * br.dec / tot) + '%"></i></span>'
+        + '<span class="hm-sc-bn"><b class="up">' + br.adv + '▲</b> <b class="dn">' + br.dec + '▼</b></span>';
+    }
+
+    /* ----- hover (desktop only) / tap-through ----- */
+    function onMove(e) {
+      if (!canHover()) return;            // touch / no fine pointer → no popups
+      data._tf = TF;
+      var tEl = e.target.closest && e.target.closest('.hm-tile');
+      if (tEl) {
+        var rec = tileEls[+tEl.getAttribute('data-i')];
+        if (rec) { showCard(data, rec.t, e.clientX, e.clientY); return; }
+      }
+      var sEl = e.target.closest && e.target.closest('.hm-sc-sechd');
+      if (sEl) {
+        var name = sEl.getAttribute('data-sec-name');
+        if (name && hier[name]) { showMembers(data, name, null, hier[name].tiles, e.clientX, e.clientY); return; }
+      }
+      hideCard(); hideMembers();
+    }
+    function onLeave() { hideCard(); hideMembers(); }
+    function onClick(e) {
+      var el = e.target.closest && e.target.closest('.hm-tile');
+      if (!el) return;
+      var rec = tileEls[+el.getAttribute('data-i')];
+      if (rec) window.location.href = 'stock.html#' + encodeURIComponent(rec.t.t);
+    }
+    tm.addEventListener('mousemove', onMove);
+    tm.addEventListener('mouseleave', onLeave);
+    tm.addEventListener('click', onClick);
+
+    function paint() { paintMap(); paintLegend(); paintBreadth(); }
     paint();
-    var rt; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(paintStrip, 160); });
-    document.addEventListener('themechange', paint);
-    document.addEventListener('langchange', paint);
+    var rt;
+    window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { hideCard(); hideMembers(); paint(); }, 160); });
+    document.addEventListener('themechange', function () { hideCard(); hideMembers(); paint(); });
+    document.addEventListener('langchange', function () { hideCard(); hideMembers(); paint(); });
   }
 
   /* ====================================================================== */
@@ -1123,23 +1191,21 @@
       + '.hm-mem-n{font-size:10.5px;color:var(--muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
       + '.hm-mem-cap{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none;}'
       + '.hm-mem-more{font-size:10.5px;color:var(--muted);text-align:center;padding:5px 0 3px;font-weight:600;}'
-      // scorecard
+      // scorecard — compact, Perplexity-style stock-level treemap
       + '.hm-sc-hd{display:flex;align-items:center;gap:10px;margin-bottom:11px;}'
-      + '.hm-sc-tit{font-size:14px;font-weight:800;color:var(--text);}'
-      + '.hm-sc-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);}'
-      + '.hm-sc-exp{margin-left:auto;font:700 12px Inter,sans-serif;color:var(--text);background:var(--panel2);border:1px solid var(--line);padding:6px 12px;border-radius:9px;cursor:pointer;transition:background .15s,border-color .15s;}'
+      + '.hm-sc-tit{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:800;color:var(--text);}'
+      + '.hm-sc-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;}'
+      + '.hm-sc-exp{margin-left:auto;font:700 12px Inter,sans-serif;color:var(--text);background:var(--panel2);border:1px solid var(--line);padding:6px 12px;border-radius:9px;cursor:pointer;transition:background .15s,border-color .15s;white-space:nowrap;}'
       + '.hm-sc-exp:hover{border-color:color-mix(in srgb,var(--link) 55%,var(--line));background:color-mix(in srgb,var(--link) 10%,var(--panel2));}'
-      + '.hm-sc-strip{position:relative;width:100%;border-radius:11px;overflow:hidden;margin-bottom:11px;background:var(--hm-frame);border:1px solid var(--hm-edge);}'
-      + '.hm-sc-tile{position:absolute;border-radius:7px;padding:7px 9px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.25);transition:filter .15s,box-shadow .15s;text-shadow:0 1px 2px rgba(0,0,0,.3);}'
-      + '.hm-sc-tile:hover{filter:brightness(1.08);box-shadow:0 0 0 1.5px rgba(255,255,255,.8);}'
-      + '.hm-sc-tile .t1{font-size:11.5px;font-weight:800;line-height:1.1;text-transform:uppercase;letter-spacing:.03em;} .hm-sc-tile .t2{font-size:10px;font-weight:700;font-variant-numeric:tabular-nums;opacity:.92;} .hm-sc-tile .t3{font-size:9px;opacity:.82;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
-      + '.hm-sc-foot{display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:11px;}'
-      + '.hm-sc-breadth{display:flex;align-items:center;gap:8px;flex:1;min-width:160px;}'
-      + '.hm-sc-breadth .lab{color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700;font-size:10px;white-space:nowrap;}'
-      + '.hm-sc-bar{flex:1;height:7px;border-radius:4px;overflow:hidden;display:flex;background:var(--panel2);min-width:60px;} .hm-sc-bar i{display:block;height:100%;} .hm-sc-bar i.up{background:var(--up);} .hm-sc-bar i.dn{background:var(--down);}'
-      + '.hm-sc-breadth .cnt{font-variant-numeric:tabular-nums;color:var(--muted);} .hm-sc-breadth .cnt b.up{color:var(--up);} .hm-sc-breadth .cnt b.dn{color:var(--down);}'
-      + '.hm-sc-lead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;} .hm-sc-lead .lab{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;} .hm-sc-lead .lab.lag{margin-left:6px;}'
-      + '.hm-sc-chip{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);} .hm-sc-chip.up{color:var(--up);} .hm-sc-chip.dn{color:var(--down);}'
+      + '.hm-sc-map{position:relative;width:100%;border-radius:12px;overflow:hidden;background:var(--hm-frame);border:1px solid var(--hm-edge);box-shadow:0 4px 18px rgba(0,0,0,.2);}'
+      + '.hm-sc-tm{position:relative;width:100%;}'
+      + '.hm-sc-sechd{box-sizing:border-box;padding:0 7px;font-size:11px;} .hm-sc-sechd .nm{font-size:10.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;} .hm-sc-sechd .pc{margin-left:auto;padding-left:5px;flex:none;}'
+      + '.hm-sc-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:11px;font-size:11px;}'
+      + '.hm-sc-legend{display:flex;align-items:center;gap:7px;color:var(--muted);}'
+      + '.hm-sc-breadth{display:flex;align-items:center;gap:8px;color:var(--muted);}'
+      + '.hm-sc-blab{text-transform:uppercase;letter-spacing:.05em;font-weight:700;font-size:10px;white-space:nowrap;}'
+      + '.hm-sc-bar{width:96px;height:7px;border-radius:4px;overflow:hidden;display:flex;background:var(--panel2);} .hm-sc-bar i{display:block;height:100%;} .hm-sc-bar i.up{background:var(--up);} .hm-sc-bar i.dn{background:var(--down);}'
+      + '.hm-sc-bn{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;} .hm-sc-bn b.up{color:var(--up);} .hm-sc-bn b.dn{color:var(--down);}'
       // overlay
       + '.hm-ov{position:fixed;inset:0;z-index:1000;display:flex;align-items:stretch;justify-content:center;}'
       + '.hm-ov-scrim{position:absolute;inset:0;background:rgba(4,6,10,.66);backdrop-filter:blur(6px) saturate(1.1);-webkit-backdrop-filter:blur(6px) saturate(1.1);opacity:0;transition:opacity .3s;}'
@@ -1163,7 +1229,9 @@
       + '.hm-mobile .hm-legend,.hm-mobile .hm-read-src,.hm-mobile .hm-hint{display:none;} .hm-mobile .hm-sort{display:flex;}'
       // reduced motion
       + '@media (prefers-reduced-motion: reduce){.hm-tile,.hm-card,.hm-mem,.hm-ov-scrim,.hm-ov-panel{transition:none !important;} .hm-c-load span{animation:none;}}'
-      + '@media (max-width:560px){.hm-bar{gap:8px;} .hm-sc-foot{gap:10px;}}';
+      + '@media (max-width:560px){.hm-bar{gap:8px;} .hm-sc-foot{gap:10px;} .hm-sc-meta{font-size:10px;}}'
+      // hide the scorecard Expand on small screens OR any touch device (no hover) — the deep map stays reachable via the standalone Sector Heatmap page
+      + '@media (max-width:560px),(any-hover:none){.hm-sc-exp{display:none;}}';
     var st = document.createElement('style');
     st.id = 'mm-heatmap-style';
     st.textContent = css;
