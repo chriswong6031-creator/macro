@@ -2,7 +2,5 @@
  "asof": "2026-06-24",
  "files_checked": 218,
  "n_markers": 54430,
- "errors": [
-  "data/signal_archive/mtf_signals_latest.json: schema: at (root): Additional properties are not allowed ('source' was unexpected)"
- ]
+ "errors": []
 }

@@ -27,7 +27,7 @@
     "label": "deteriorating",
     "name": "AI Semiconductors",
     "name_zh": "AI\u534a\u5bfc\u4f53",
-    "rank": 35,
+    "rank": 34,
     "reco": "avoid",
     "score": 46
   },
@@ -75,7 +75,7 @@
     "label": "neutral",
     "name": "Data-Center Power & Cooling",
     "name_zh": "\u6570\u636e\u4e2d\u5fc3\u7535\u529b\u4e0e\u6563\u70ed",
-    "rank": 34,
+    "rank": 33,
     "reco": "hold",
     "score": 47
   },
@@ -227,7 +227,7 @@
     "label": "emerging",
     "name": "Retail",
     "name_zh": "\u96f6\u552e",
-    "rank": 24,
+    "rank": 25,
     "reco": "enter",
     "score": 57
   },
@@ -291,9 +291,9 @@
     "label": "deteriorating",
     "name": "Energy (Equal-Weight)",
     "name_zh": "\u80fd\u6e90\uff08\u7b49\u6743\uff09",
-    "rank": 33,
+    "rank": 35,
     "reco": "avoid",
-    "score": 48
+    "score": 46
   },
   "us_sector_financials": {
     "label": "emerging",
@@ -323,9 +323,9 @@
     "label": "neutral",
     "name": "Materials (Equal-Weight)",
     "name_zh": "\u6750\u6599\uff08\u7b49\u6743\uff09",
-    "rank": 25,
+    "rank": 24,
     "reco": "hold",
-    "score": 57
+    "score": 58
   },
   "us_sector_realestate": {
     "label": "dominant",
