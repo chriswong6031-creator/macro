@@ -500,7 +500,7 @@
         '<span class="gd-r-main"><span class="gd-r-idx">' + m.flag + ' ' + bilingual(m.index_name_en, m.index_name_zh) + '</span>' +
         '<span class="gd-r-px"><span class="nb-px" data-sym="' + (m.index_sym || "") + '" data-mkt="idx">' + (m.index_price || "—") + '</span> ' +
         '<em class="nb-chg ' + ((m.index_chg_pct || 0) >= 0 ? "up" : "down") + '" data-sym="' + (m.index_sym || "") + '">' + ((m.index_chg_pct || 0) >= 0 ? "+" : "") + (m.index_chg_pct == null ? "" : m.index_chg_pct + "%") + '</em></span></span>' +
-        '<span class="gd-r-state"><span class="gd-r-dot"></span><span class="gd-r-txt"></span><span class="gd-r-cd"></span></span>';
+        '<span class="gd-r-state"><span class="gd-r-stat"><span class="gd-r-dot"></span><span class="gd-r-txt"></span></span><span class="gd-r-cd"></span></span>';
       // tap (mobile) / click (desktop) toggles a PERSISTENT popup — press again to close
       li.addEventListener("click", function () { toggleSelect(m); });
       // desktop only: hovering a row pops a transient preview that drops on mouse-out.
