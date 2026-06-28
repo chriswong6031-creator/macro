@@ -204,7 +204,15 @@ jobs:
             cl_china() { brun china "build china a-share dashboard (build_china)" scripts.build_china; }
             cl_hk()    { brun hk    "build hong kong / hang seng (build_hk)"      scripts.build_hk; }
             cl_gex() {
-              brun gex_board    "GEX magnets board (build_gex_board)"        scripts.build_gex_board
+              # NOTE: build_gex_board is DELIBERATELY omitted from the auto (push-triggered)
+              # render. Unlike every other builder here it is NOT a pure function of committed
+              # data — it fetches ~700 live option chains from the free Cboe CDN (5 workers,
+              # 429-rate-limited w/ multi-second backoff → ~22 min, the band's longest lane).
+              # An engine/** code change cannot affect options chains, and GEX's consumers
+              # (build_site, radar, engine.run) all read the COMMITTED data/gex/latest.json, so
+              # skipping it here staled nothing — site/gex/* simply keeps the last nightly's
+              # values until the nightly `daily` (or a manual `scope=gex` dispatch) refreshes
+              # them. This also restores the lane's "NO network" invariant. See header comment.
               brun vol_regime   "index vol-regime (build_vol_regime)"        scripts.build_vol_regime
               brun options_flow "options flow desk (build_options_flow)"     scripts.build_options_flow
               brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
@@ -223,7 +231,7 @@ jobs:
             }
             cl_markets & cl_china & cl_hk & cl_gex & cl_baskets & cl_misc &
             wait
-            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery gex_board vol_regime options_flow options_skew baskets news methodology seasonality reports policy_intent policy_watch index_changes"
+            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery vol_regime options_flow options_skew baskets news methodology seasonality reports policy_intent policy_watch index_changes"
             echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
             for slug in $ORDER; do
               [ -f "$ART/$slug.log" ] || continue
