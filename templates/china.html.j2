@@ -1161,13 +1161,19 @@
 
   {% if mode != 'macro' %}
   <!-- ===================== STANDOUT STOCKS (cycle-aligned bottoming · weekly+3d+daily) ===================== -->
-  {% if setups and setups.buy %}
+  {% if setups and (setups.buy or setups.gated) %}
   <div class="panel span12" id="standouts">
     <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
-      <span class="note" style="text-transform:none">· {{ t('cycle-aligned bottoming · weekly + 3-day + daily turning up', '周期共振筑底 · 周线＋3日＋日线同向上行') }}</span>
+      <span class="note" style="text-transform:none">· {{ t('cycle-aligned bottoming, confirmed by the 3-day MACD-RSI × StochRSI confluence gate', '周期共振筑底，并经 3 日 MACD-RSI × StochRSI 共振门确认') }}</span>
       {{ help("The actionable per-stock shortlist — the China parallel of the US 'Standout individual stocks' card strip. This is a MULTI-TIMEFRAME BOTTOMING-ALIGNMENT screen, not a deep-dip catch: a name is shown only when its <b>weekly</b> momentum is NOT still falling (basing, turning up, or already rising — never mid weekly bear leg), its <b>3-day</b> is at or nearing a bullish MACD cross, and its <b>daily</b> has just crossed up or is about to (1-2 bars) — or is already rising but not over-extended. A still-falling weekly name (a falling knife) is excluded by design even if its trailing relative strength is strong. Ranked by <b>alignment quality</b> (weekly-heaviest), with the A-share reversal / relative-strength leg only as a tiebreaker. A 🟡 <b>near-aligned</b> tag marks a backfill name (weekly OK + one lower timeframe turning, but not all three confirmed) shown only when too few names are fully aligned — treat it as a watch, not a confirmed entry. Context to size and confirm — not a buy list.", "可操作的个股精选名单 —— 美国“表现突出的个股”卡片的中国版。这是一套<b>多周期共振筑底</b>筛选，而非深跌抄底：仅当个股的<b>周线</b>动量不再下行（筑底、转向上行、或已上行——绝不处于周线空头段），<b>3日线</b>处于或临近看多 MACD 交叉，且<b>日线</b>刚刚上穿或即将上穿（1-2 根 K 线）——或已上行但未过度延伸时，才会显示。仍在下行的周线个股（接飞刀）即便趋势强度很高也按规则剔除。按<b>共振质量</b>排序（周线权重最高），A 股反转/相对强度仅作并列时的次级排序。🟡 <b>临近共振</b>标记表示补位个股（周线合格＋某一较低周期转向，但三周期尚未全部确认），仅在充分共振的名称过少时显示——视为观察项而非确认入场。用于定仓与确认的背景 —— 而非买入清单。") }}
     </h2>
-    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Names whose weekly, 3-day and daily cycles are aligned to the upside — weekly not still falling, 3-day nearing a bullish cross, daily just crossed or about to. Ranked by alignment quality, weekly-heaviest. Each card carries the unified Conviction profile — four transparent axes (selection / entry / tailwind / quality) and one honest verdict; the cycle state caps the verdict, so a downtrend never reads “Buy”. A 🟡 near-aligned card is an unconfirmed backfill. A research shortlist to size and confirm, not a buy list.', '周线、3日与日线周期同向上行的个股 —— 周线不再下行、3日临近看多交叉、日线刚上穿或即将上穿。按共振质量排序，周线权重最高。每张卡片附带统一确信度画像 —— 四条透明维度（选股／入场／顺风／质量）与一个诚实结论；周期状态会封顶结论，下行趋势永不显示“买入”。🟡 临近共振卡片为未确认的补位项。用于研究、定仓与确认的名单，而非买入清单。') }}</p>
+    {% if setups.gated %}
+    <p class="note" style="margin:0;text-transform:none"><b>{{ setups.n_confluence }}</b> {{ t('of', '／') }} <b>{{ setups.n_aligned }}</b> {{ t('cycle-aligned names cleared the MACD-RSI × StochRSI confluence gate — a confirmed (T1) or imminent (T2–T4) 3-day cross. Alignment alone no longer puts a name on the board.', '只多周期共振的个股中，通过 MACD-RSI × StochRSI 共振门 —— 已确认（T1）或临近（T2–T4）的 3 日交叉。仅靠共振已不足以让个股进入此榜。') }}</p>
+    {% endif %}
+    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Names whose weekly, 3-day and daily cycles are aligned to the upside AND that clear the 3-day MACD-RSI × StochRSI confluence gate (a confirmed or imminent cross). Ordered strongest-tier first (T1 master → T4 earliest). Each card carries the unified Conviction profile — four transparent axes (selection / entry / tailwind / quality) and one honest verdict; the cycle state caps the verdict, so a downtrend never reads “Buy”. A research shortlist to size and confirm, not a buy list.', '周线、3日与日线周期同向上行、且通过 3 日 MACD-RSI × StochRSI 共振门（已确认或临近交叉）的个股。按层级由强到弱排序（T1 主确认 → T4 最早）。每张卡片附带统一确信度画像 —— 四条透明维度（选股／入场／顺风／质量）与一个诚实结论；周期状态会封顶结论，下行趋势永不显示“买入”。用于研究、定仓与确认的名单，而非买入清单。') }}</p>
+    {% if not setups.buy %}
+    <p class="note" style="margin:8px 0 0;text-transform:none;color:var(--muted)">{{ t('No A-share name cleared the MACD-RSI × StochRSI confluence gate today — none of the cycle-aligned candidates shows a confirmed or imminent 3-day cross. The board is empty by design rather than showing unconfirmed names.', '今日没有 A 股个股通过 MACD-RSI × StochRSI 共振门 —— 所有多周期共振候选均无已确认或临近的 3 日交叉。本榜按设计留空，而非展示未确认个股。') }}</p>
+    {% endif %}
     {% if setups.qvix_regime %}{% set q = setups.qvix_regime %}
     <div style="margin:6px 0 9px;padding:7px 11px;border-radius:9px;font-size:11.5px;line-height:1.5;border:1px solid var(--line);border-left:3px solid {{ 'var(--warn)' if q.verdict=='caution' else ('var(--link)' if q.verdict=='confirm' else 'var(--muted)') }};background:color-mix(in srgb,{{ 'var(--warn)' if q.verdict=='caution' else 'var(--link)' }} 7%,var(--panel))">
       <span style="font-size:13px">{% if q.regime=='panic' %}🌀{% elif q.regime=='suppressed' %}🧊{% else %}〰{% endif %}</span>
@@ -1177,6 +1183,7 @@
     </div>{% endif %}
     {# ONE shared legend — the score's meaning, the two-gauge model, and the edge basis
        (trust tier) explained once here instead of repeated on every card below. #}
+    {% if setups.buy %}
     {% set _tt = (setups.buy[0].conviction or {}).trust_tier %}
     <div class="nb-legend">
       <span class="lg-k">{{ t('Reading the cards', '如何看卡片') }}</span>
@@ -1185,6 +1192,7 @@
       <span><b>{{ t('Two gauges', '两个量表') }}</b>: {{ t('Conviction (is it worth owning) + a separate Entry gauge (when & at what price)', '确信度（是否值得持有）＋ 独立的入场量表（何时、以何价）') }}</span>
       {% if _tt %}<span class="lg-sep">·</span><span><b>{{ t('Edge basis', '优势来源') }}</b>: <span class="l-en">{{ _tt.en }}</span><span class="l-zh">{{ _tt.zh }}</span></span>{% endif %}
     </div>
+    {% endif %}
     <div class="nbgrid" data-showmore="12">
     {% for n in setups.buy %}
       {% set _d = n.dir or 'caution' %}
@@ -1192,6 +1200,7 @@
         <div class="nb-top">
           <span class="nb-tk">{{ n.ticker }}</span>
           <span class="nb-nm">{{ nm(n.name) }}</span>
+          {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
           {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="cn">{{ '%.2f'|format(n.price) }}</span>{% endif %}
         </div>
         <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.off_high is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>

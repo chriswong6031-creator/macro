@@ -460,6 +460,20 @@ def _basket_tailwind_map() -> dict[str, dict]:
     return out
 
 
+def _confluence_gate(rows: list[dict]) -> list[dict]:
+    """Promote the owner's T1->T4 confluence cascade from a DISPLAY badge to the Standout
+    board's INCLUSION gate. Keep only rows whose attached verdict (``row['signal']``, the
+    engine.signal_gate MACD-RSI x StochRSI cascade) is ELIGIBLE — i.e. a real (T1 master)
+    or imminent (T2 early / T3 approaching / T4 earliest) 3-day cross fired — ordered
+    strongest-tier first (the sort is stable, so the upstream alignment/setup order is kept
+    within a tier). The multi-timeframe ALIGNMENT screen still decides candidacy upstream;
+    this is the final confirmation filter, so a name that merely 'aligns' but has no 3-day
+    MACD-RSI x StochRSI cross no longer reaches the board (CHINA_HK_STOCK_SIGNALS / GRID_GATE)."""
+    elig = [r for r in (rows or []) if (r.get("signal") or {}).get("eligible")]
+    elig.sort(key=lambda r: signal_gate.tier_rank(r.get("signal")))
+    return elig
+
+
 def compute_china_standouts(setups: dict | None, reversal: dict | None,
                             lowvol: dict | None) -> dict | None:
     """Enrich the reversal-led `setups.buy` shortlist into US-parity 'Standout
@@ -516,6 +530,25 @@ def compute_china_standouts(setups: dict | None, reversal: dict | None,
             col = ("var(--up)" if r.get("dir") == "up"
                    else "var(--down)" if r.get("dir") == "down" else "var(--muted)")
             r["spark_svg"] = _spark_svg(s, color=col)
+    # FINAL GATE — the board now only shows names confirmed by the T1->T4 MACD-RSI x StochRSI
+    # confluence cascade (engine.signal_gate). main() already attached r['signal']; recompute
+    # close-only as a fallback so a raw-setups caller still gates correctly. n_aligned/
+    # n_confluence let the page state how many of the aligned names cleared the cross.
+    n_aligned = len(setups["buy"])
+    for r in setups["buy"]:
+        if r.get("signal") is None and closes is not None:
+            t = r.get("ticker")
+            if t in closes.columns:
+                s = closes[t].dropna()
+                if len(s):
+                    try:
+                        r["signal"] = signal_gate.compact(signal_gate.gate(t, s))
+                    except Exception:  # noqa: BLE001 — additive; a thin name just stays ungated
+                        pass
+    setups["buy"] = _confluence_gate(setups["buy"])
+    setups["gated"] = True
+    setups["n_aligned"] = n_aligned
+    setups["n_confluence"] = len(setups["buy"])
     return setups
 
 
@@ -905,6 +938,10 @@ def main(alpha: dict | None = None) -> dict | None:
         # ranked shortlist (the card grid shows 12, reveals the rest on demand).
         setups = rank_setups(cand, as_of=(alpha or {}).get("as_of"), n_buy=110,
                              align_map=align_map)
+        # Attach the confluence T1->T4 verdict so the persisted narrow board carries it —
+        # the page renders this via compute_china_standouts(), which BADGES and GATES on it.
+        for r in setups["buy"]:
+            r["signal"] = signal_gate.compact(sig_verdict.get(r.get("ticker")))
         (site / "factordata" / "china_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))
         # WIDE "Standout individual stocks" board (the China parallel of
@@ -935,6 +972,13 @@ def main(alpha: dict | None = None) -> dict | None:
             if risk_sig.get(t):
                 r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
+        # GATE the persisted (fallback) board the same way the page is gated, so a stale-day
+        # fallback can't reintroduce names with no 3-day cross: confluence-eligible only.
+        n_aligned = len(wide["buy"])
+        wide["buy"] = _confluence_gate(wide["buy"])
+        wide["gated"] = True
+        wide["n_aligned"] = n_aligned
+        wide["n_confluence"] = len(wide["buy"])
         eligible = sum(1 for _s, r in cand
                        if (align_map.get(r.get("ticker")) or {}).get("aligned"))
         wide["eligible"] = eligible
@@ -945,8 +989,8 @@ def main(alpha: dict | None = None) -> dict | None:
             wide["qvix_regime"] = qvix_reg
         (site / "factordata" / "china_standouts.json").write_text(
             json.dumps(wide, separators=(",", ":"), default=str))
-        log.info("wrote china_standouts.json (%d buy of %d aligned / %d universe)",
-                 len(wide["buy"]), eligible, len(cand))
+        log.info("wrote china_standouts.json (%d confluence-gated of %d aligned / %d universe)",
+                 wide["n_confluence"], n_aligned, len(cand))
     log.info("china library: %d analyzed, %d skipped (thin history), %d setups",
              built, failed, len(cand))
     return setups
