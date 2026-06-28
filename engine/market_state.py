@@ -29,6 +29,8 @@ from __future__ import annotations
 
 import json
 import logging
+from dataclasses import dataclass, field
+from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -53,6 +55,30 @@ _INDEXES = [
     ("IWM", "Russell 2000", "罗素2000"),
 ]
 _TF_LABEL = {"D": ("Daily", "日"), "3D": ("3-Day", "3日"), "W": ("Weekly", "周"), "M": ("Monthly", "月")}
+
+
+# --------------------------------------------------------- market profile ----
+# The blender, tape, verdict/cap/flip and override machinery below are all
+# market-neutral. Only the index tape, the five conditions readers, the radar
+# source, and which early-warning overrides apply differ per market. A
+# MarketProfile gathers exactly those so the SAME engine serves the US macro
+# page and the China / HK / Canada home pages (engine/market_state_cn.py etc.).
+# US_PROFILE (defined below, once the default readers exist) reproduces today's
+# behaviour byte-for-byte, so a profile-less call is unchanged.
+@dataclass(frozen=True)
+class MarketProfile:
+    key: str                                    # "us" | "cn" | "hk" | "ca"
+    indices: tuple                              # ((ticker, en, zh), ...) for the tape
+    tape_noun_en: str                           # e.g. "US indices" / "China indices"
+    tape_noun_zh: str
+    component_readers: tuple                     # (fn(latest)->comp|None, ...) the 5 non-trend legs
+    radar_override: Callable | None = None       # fn(latest, overrides)->dict ; None = no radar
+    # which early-warning overrides apply: any of
+    #   "alert_act" · "new_regime" · "stress_band" · "dislocation"
+    overrides: frozenset = field(
+        default_factory=lambda: frozenset({"alert_act", "new_regime", "stress_band", "dislocation"}))
+    caveat_en: str = ""                          # honest "display-only / lighter than US" board footnote
+    caveat_zh: str = ""
 
 
 def _clamp(x: float, lo: float = 0.0, hi: float = 1.0) -> float:
@@ -137,12 +163,12 @@ def _index_mtf(close: pd.Series) -> dict | None:
             "confluence_zh": conf_zh, "tone": tone}
 
 
-def _build_tape(frame) -> tuple[dict | None, float | None]:
+def _build_tape(frame, indices=None) -> tuple[dict | None, float | None]:
     """The multi-timeframe board + an aggregate trend score01."""
     if frame is None:
         return None, None
     rows, means = [], []
-    for tkr, en, zh in _INDEXES:
+    for tkr, en, zh in (indices or _INDEXES):
         if tkr not in getattr(frame, "columns", []):
             continue
         mtf = _index_mtf(frame[tkr])
@@ -504,19 +530,47 @@ def _radar_override(latest: dict, overrides: list) -> dict:
     return out
 
 
-def market_state_snapshot(latest: dict, frame=None, alerts: list | None = None) -> dict | None:
+def _calm_radar() -> dict:
+    """The neutral radar payload for a market with no Risk-Radar source — the board
+    simply omits the banner ({% if MS.radar.state %})."""
+    return {"state": None, "top_score": None, "label_en": "calm", "label_zh": "平静",
+            "state_zh": "", "do_en": "", "do_zh": "", "gross": None,
+            "dd5": None, "dd10": None, "dd21": None, "dd_lift": None, "is_loud": False,
+            "amp": 0, "amp_keys": [], "amp_flags_en": [], "amp_flags_zh": [],
+            "severe_gated": False, "ceiling": None}
+
+
+# The default (US) profile — every field reproduces today's hardcoded behaviour, so
+# market_state_snapshot(latest, frame, alerts) with no profile is byte-identical.
+US_PROFILE = MarketProfile(
+    key="us",
+    indices=tuple(_INDEXES),
+    tape_noun_en="US indices", tape_noun_zh="美股指数",
+    component_readers=(_comp_risk, _comp_vol, _comp_breadth, _comp_liquidity, _comp_stress),
+    radar_override=_radar_override,
+    overrides=frozenset({"alert_act", "new_regime", "stress_band", "dislocation"}),
+)
+
+
+def market_state_snapshot(latest: dict, frame=None, alerts: list | None = None,
+                          profile: "MarketProfile | None" = None) -> dict | None:
     """Blend the live signal legs into a 0-100 risk-on score + Green/Yellow/Red
-    verdict. DISPLAY-ONLY; returns None only if nothing at all resolves."""
+    verdict. DISPLAY-ONLY; returns None only if nothing at all resolves.
+
+    `profile` selects the market (indices, conditions readers, radar source, which
+    overrides apply); defaults to US_PROFILE so existing callers are unchanged."""
+    profile = profile or US_PROFILE
     try:
         if not isinstance(latest, dict):
             return None
-        tape, trend_s = _build_tape(frame)
+        tape, trend_s = _build_tape(frame, profile.indices)
         comps = []
         if trend_s is not None:
             comps.append(_component(
                 "trend", "Trend & technicals", "趋势与技术", trend_s,
-                _tape_read_en(tape), _tape_read_zh(tape), [], mean=(2 * trend_s - 1)))
-        for fn in (_comp_risk, _comp_vol, _comp_breadth, _comp_liquidity, _comp_stress):
+                _tape_read_en(tape, profile.tape_noun_en),
+                _tape_read_zh(tape, profile.tape_noun_zh), [], mean=(2 * trend_s - 1)))
+        for fn in profile.component_readers:
             c = fn(latest)
             if c:
                 comps.append(c)
@@ -529,15 +583,16 @@ def market_state_snapshot(latest: dict, frame=None, alerts: list | None = None) 
         raw_score = int(round(100 * num / den)) if den else 50
         verdict = _verdict_from_score(raw_score)
 
-        # ---- early-warning overrides (cap or force) ----
+        # ---- early-warning overrides (cap or force), each gated by the profile ----
         overrides = []
+        ov = profile.overrides
         sev = {(a.get("severity") if isinstance(a, dict) else None) for a in (alerts or [])}
-        if "act" in sev:
+        if "alert_act" in ov and "act" in sev:
             verdict = _cap(verdict, "MIXED")
             overrides.append({"kind": "alert",
                               "note_en": "An act-level alert is firing — capped at Mixed pending review.",
                               "note_zh": "有行动级警报触发 — 暂封顶为「混合」待复核。"})
-        if (latest.get("transition_state") or "") == "NEW_REGIME":
+        if "new_regime" in ov and (latest.get("transition_state") or "") == "NEW_REGIME":
             verdict = _cap(verdict, "MIXED")
             overrides.append({"kind": "regime",
                               "note_en": "The regime just flipped — capped at Mixed until it settles.",
@@ -545,13 +600,13 @@ def market_state_snapshot(latest: dict, frame=None, alerts: list | None = None) 
         C = latest.get("conditions") or {}
         dd_band = (C.get("drawdown_risk") or {}).get("band")
         ss_state = (C.get("systemic_stress") or {}).get("state")
-        if dd_band in ("high", "extreme") or ss_state == "acute":
+        if "stress_band" in ov and (dd_band in ("high", "extreme") or ss_state == "acute"):
             verdict = "RISK_OFF"
             overrides.append({"kind": "stress",
                               "note_en": "Elevated drawdown / systemic-stress band — forced to Risk-off.",
                               "note_zh": "回撤／系统性压力区间偏高 — 强制为「避险」。"})
         dl = latest.get("dislocation") or {}
-        if dl.get("dislocation_active") and dl.get("verdict") == "stand_aside":
+        if "dislocation" in ov and dl.get("dislocation_active") and dl.get("verdict") == "stand_aside":
             verdict = "RISK_OFF"
             overrides.append({"kind": "dislocation",
                               "note_en": "A falling-knife dislocation is live — forced to Risk-off.",
@@ -562,8 +617,8 @@ def market_state_snapshot(latest: dict, frame=None, alerts: list | None = None) 
         # amplified score ceiling (intensity × how many other risk gauges are flashing);
         # an active radar therefore dominates the bullish legs instead of being averaged
         # into silence, and a confluence pushes the verdict deep into risk-off even while
-        # VIX and trend still look calm.
-        radar = _radar_override(latest, overrides)
+        # VIX and trend still look calm. Markets without a radar source skip this entirely.
+        radar = profile.radar_override(latest, overrides) if profile.radar_override else _calm_radar()
 
         # Keep the 0-100 dial honest: a forced verdict pulls the displayed score into its
         # own band, then the radar's amplified ceiling pulls it lower still (never higher).
@@ -595,6 +650,8 @@ def market_state_snapshot(latest: dict, frame=None, alerts: list | None = None) 
             "overrides": overrides,
             "flip_en": flip_en, "flip_zh": flip_zh,
             "alerts_count": len([a for a in (alerts or []) if a]),
+            "market": profile.key,
+            "caveat_en": profile.caveat_en, "caveat_zh": profile.caveat_zh,
             "is_display_only": True,
         }
     except Exception as e:  # noqa: BLE001 — additive panel, never fatal
@@ -602,21 +659,21 @@ def market_state_snapshot(latest: dict, frame=None, alerts: list | None = None) 
         return None
 
 
-def _tape_read_en(tape) -> str:
+def _tape_read_en(tape, noun: str = "US indices") -> str:
     if not tape:
         return "Broad-market tape unavailable."
     ups = sum(1 for r in tape["indices"] if r["mean"] >= 0.34)
     n = len(tape["indices"])
     lead = ", ".join(r["confluence_en"].lower() for r in tape["indices"][:3])
-    return f"{ups}/{n} US indices in an uptrend across timeframes ({lead})."
+    return f"{ups}/{n} {noun} in an uptrend across timeframes ({lead})."
 
 
-def _tape_read_zh(tape) -> str:
+def _tape_read_zh(tape, noun: str = "美股指数") -> str:
     if not tape:
         return "大盘多周期数据暂缺。"
     ups = sum(1 for r in tape["indices"] if r["mean"] >= 0.34)
     n = len(tape["indices"])
-    return f"{ups}/{n} 个美股指数多周期呈上升趋势。"
+    return f"{ups}/{n} 个{noun}多周期呈上升趋势。"
 
 
 def _flip_text(comps: list, verdict: str) -> tuple[str, str]:

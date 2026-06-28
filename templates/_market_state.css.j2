@@ -1,0 +1,162 @@
+  /* ===================== MARKET STATE board (shared) =====================
+     The side-by-side .ms-front board ported from the US macro terminal (#646):
+     Market State (verdict + evidence) left, the growth×inflation hero-bar right,
+     the multi-timeframe tape full-width below. Lives INSIDE the .cmd-hero panel so
+     it inherits its theme vars (--num/--hair/--tile/--ink-*/--rule); include this
+     AFTER _cmd_hero.css.j2 so the verdict's .v-* rules win over the vitals' on the
+     left column only (every verdict rule is scoped under .ms-verdict so the hero-bar
+     vitals are never restyled). Colour spent only on signal. */
+  .cmd-hero .ms-front { --hair-strong: var(--line); --ms-c: var(--ink-3); }
+  .cmd-hero .ms-front.ms-green  { --ms-c: var(--up); }
+  .cmd-hero .ms-front.ms-yellow { --ms-c: var(--warn); }
+  .cmd-hero .ms-front.ms-red    { --ms-c: var(--down); }
+
+  /* base = mobile: one tight stack (radar → eyebrow → verdict/evidence → tape →
+     divider → backdrop). At >=1100px it promotes to the side-by-side grid. */
+  .cmd-hero .ms-front.ms { display: flex; flex-direction: column; gap: 14px; }
+  .cmd-hero .ms-front > .ms-radar, .cmd-hero .ms-front > .ms-head { margin: 0; }
+  .cmd-hero .ms-front > .ms-top, .cmd-hero .ms-front > .ms-tape { margin-top: 0; }
+  .cmd-hero .ms-front > .ms-divider { margin: 4px 0 0; }
+  @media (min-width: 1100px) {
+    .cmd-hero .ms-front.ms { display: grid; gap: 0 30px; align-items: start;
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+      grid-template-areas: "radar radar" "head head" "state hero" "tape tape"; }
+    .cmd-hero .ms-front > .ms-radar { grid-area: radar; margin-bottom: 12px; }
+    .cmd-hero .ms-front > .ms-head { grid-area: head; }
+    .cmd-hero .ms-front > .ms-top { grid-area: state; margin-top: 14px; }
+    .cmd-hero .ms-front > .ms-tape { grid-area: tape; }
+    .cmd-hero .ms-front > .ms-divider { display: none; }
+    /* the backdrop, recomposed for the narrow right column: [locator | regime]
+       on top, the four vitals as a 2×2 strip beneath — never the 3-up layout */
+    .cmd-hero .ms-front > .hero-bar { grid-area: hero; margin-top: 14px; padding-left: 30px;
+      border-left: var(--rule) solid var(--hair);
+      grid-template-columns: auto minmax(0, 1fr); gap: 12px 18px; }
+    .cmd-hero .ms-front > .hero-bar .hero-main { grid-column: 2; border: 0; padding: 0; }
+    .cmd-hero .ms-front > .hero-bar .hero-vitals { grid-column: 1 / -1; gap: 12px 18px; }
+  }
+
+  /* Risk-Radar banner (only renders for markets that have one) */
+  .cmd-hero .ms-radar { display: flex; align-items: center; gap: 11px; flex-wrap: wrap;
+    padding: 9px 13px; border-radius: 10px; font-size: 12.5px; line-height: 1.35;
+    background: color-mix(in srgb, var(--rc) 8%, var(--panel2));
+    border: var(--rule) solid color-mix(in srgb, var(--rc) 28%, var(--hair)); border-left: 3px solid var(--rc); }
+  .cmd-hero .ms-radar.loud { background: color-mix(in srgb, var(--rc) 14%, var(--panel2)); }
+  .cmd-hero .ms-radar .msr-ic { font-size: 17px; line-height: 1; flex: none; }
+  .cmd-hero .ms-radar .msr-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 240px; }
+  .cmd-hero .ms-radar .msr-tit { font-weight: 600; color: var(--ink-2); }
+  .cmd-hero .ms-radar .msr-tit b { font-family: var(--num); }
+  .cmd-hero .ms-radar .msr-odds { font-size: 11px; color: var(--ink-3); }
+  .cmd-hero .ms-radar .msr-odds b { font-family: var(--num); color: var(--ink-2); }
+  .cmd-hero .ms-radar .msr-do { font-size: 11.5px; color: var(--ink-2); max-width: 34ch; }
+
+  /* header strip */
+  .cmd-hero .ms-head { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; margin: 0 0 4px; }
+  .cmd-hero .ms-eyebrow { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap;
+    font-family: var(--num); font-size: 11px; font-weight: 700; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--ink-2); margin: 0; }
+  html[data-lang="zh"] .cmd-hero .ms-eyebrow { letter-spacing: 0; }
+  .cmd-hero .ms-live { width: 7px; height: 7px; border-radius: 50%; background: var(--ms-c); flex: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ms-c) 20%, transparent); }
+  .cmd-hero .ms-date { font-family: var(--num); font-size: 11px; letter-spacing: .04em; color: var(--ink-3); white-space: nowrap; }
+
+  /* top: verdict | evidence */
+  .cmd-hero .ms-top { display: grid; grid-template-columns: minmax(0, 236px) minmax(0, 1fr); margin-top: 16px; }
+  .cmd-hero .ms-verdict { padding-right: 22px; border-right: var(--rule) solid var(--hair); }
+  .cmd-hero .ms-evidence { padding-left: 22px; min-width: 0; }
+  @media (max-width: 760px) {
+    .cmd-hero .ms-top { grid-template-columns: 1fr; }
+    .cmd-hero .ms-verdict { padding: 0 0 16px; border-right: 0; border-bottom: var(--rule) solid var(--hair-strong); }
+    .cmd-hero .ms-evidence { padding: 16px 0 0; }
+  }
+
+  /* verdict column — every rule scoped under .ms-verdict so the hero vitals'
+     .v-label / .v-meter are never restyled */
+  .cmd-hero .ms-verdict .v-label { font-family: var(--num); font-size: 10px; font-weight: 700;
+    letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 9px; }
+  .cmd-hero .ms-verdict .v-word { font-size: 40px; line-height: .94; font-weight: 800; letter-spacing: -.025em;
+    margin: 0; color: var(--ms-c); display: flex; align-items: center; gap: .2em; }
+  .cmd-hero .ms-verdict .v-word .arr { font-family: var(--num); font-size: .42em; font-weight: 700; transform: translateY(-.04em); }
+  html[data-lang="zh"] .cmd-hero .ms-verdict .v-word { letter-spacing: 0; }
+  .cmd-hero .ms-verdict .v-scorerow { display: flex; align-items: baseline; gap: 7px; margin-top: 11px; }
+  .cmd-hero .ms-verdict .v-score { font-family: var(--num); font-size: 30px; font-weight: 700; line-height: 1; letter-spacing: -.02em; color: var(--ink-1); }
+  .cmd-hero .ms-verdict .v-outof { font-family: var(--num); font-size: 13px; color: var(--ink-3); }
+  .cmd-hero .ms-verdict .v-meter { margin-top: 12px; height: 6px; border-radius: 3px; position: relative; overflow: hidden;
+    background: linear-gradient(90deg,
+      color-mix(in srgb, var(--down) 30%, var(--panel2)) 0 42%,
+      color-mix(in srgb, var(--warn) 30%, var(--panel2)) 42% 60%,
+      color-mix(in srgb, var(--up) 30%, var(--panel2)) 60% 100%); }
+  .cmd-hero .ms-verdict .v-meter .tick { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ms-c); border-radius: 2px; box-shadow: 0 0 0 2px var(--panel); }
+  .cmd-hero .ms-verdict .v-scale { display: flex; justify-content: space-between; margin-top: 6px; font-family: var(--num); font-size: 9.5px; letter-spacing: .02em; color: var(--ink-3); }
+  .cmd-hero .ms-verdict .v-thesis { margin: 12px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--ink-1); }
+  .cmd-hero .ms-verdict .v-override { margin: 10px 0 0; display: flex; align-items: flex-start; gap: 7px; padding: 8px 11px; border-radius: 7px;
+    border: var(--rule) solid color-mix(in srgb, var(--act) 38%, var(--hair)); background: color-mix(in srgb, var(--act) 11%, transparent);
+    font-size: 11.5px; line-height: 1.4; color: var(--ink-1); }
+  .cmd-hero .ms-verdict .v-override .ic { color: var(--act); flex: none; font-size: 12px; line-height: 1.3; }
+  .cmd-hero .ms-verdict .v-flip { margin: 13px 0 0; padding: 8px 11px; border-left: 2px solid var(--warn);
+    background: color-mix(in srgb, var(--warn) 7%, transparent); font-size: 12px; line-height: 1.45; color: var(--ink-2); }
+
+  /* evidence matrix — one tight row per factor (arrow · title · bar · score) */
+  .cmd-hero .e-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 2px; }
+  .cmd-hero .e-title { font-family: var(--num); font-size: 10px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3); margin: 0; }
+  .cmd-hero .e-cols { font-family: var(--num); font-size: 9.5px; letter-spacing: .06em; color: var(--ink-3); }
+  .cmd-hero .ms-f { border-top: var(--rule) solid var(--hair); display: grid; align-items: center;
+    grid-template-columns: 14px minmax(0, 1fr) 70px 28px; column-gap: 11px; padding: 6px 3px; }
+  .cmd-hero .ms-f.tone-good { --ft: var(--up); }
+  .cmd-hero .ms-f.tone-warn { --ft: var(--warn); }
+  .cmd-hero .ms-f.tone-bad  { --ft: var(--down); }
+  .cmd-hero .ms-f.tone-flat { --ft: var(--ink-3); }
+  .cmd-hero .ms-f .f-dir { font-family: var(--num); font-size: 11px; line-height: 1; text-align: center; color: var(--ft); }
+  /* the title IS the hover target: reuse .help/.tip but strip the ?-circle to plain dotted text */
+  .cmd-hero .ms-f .f-name.help { position: relative; display: block; min-width: 0; width: auto; height: auto;
+    border: 0; border-radius: 0; margin: 0; overflow: visible; cursor: help; }
+  .cmd-hero .ms-f .f-name .f-txt { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: 12.5px; font-weight: 600; color: var(--ink-1);
+    text-decoration: underline dotted color-mix(in srgb, var(--ink-3) 55%, transparent); text-underline-offset: 3px; }
+  .cmd-hero .ms-f .f-name.help:hover .f-txt { text-decoration-color: var(--ink-2); }
+  html[data-lang="zh"] .cmd-hero .ms-f .f-name .f-txt { text-underline-offset: 2px; }
+  .cmd-hero .ms-f .f-name .tip { width: 248px; font-weight: 400; }
+  .cmd-hero .ms-f .f-tipread { display: block; color: var(--ink-1); line-height: 1.45; margin-bottom: 7px; }
+  .cmd-hero .ms-f .f-tipmetrics { display: flex; flex-wrap: wrap; gap: 6px 7px; }
+  .cmd-hero .ms-f .f-tone { height: 4px; border-radius: 2px; background: var(--panel2); overflow: hidden; }
+  .cmd-hero .ms-f .f-tone i { display: block; height: 100%; border-radius: 2px; background: var(--ft); }
+  .cmd-hero .ms-f .f-score { font-family: var(--num); font-size: 15px; font-weight: 700; text-align: right; line-height: 1; color: var(--ft); }
+  .cmd-hero .ms-metric { display: inline-flex; align-items: baseline; gap: 6px; padding: 3px 9px; background: var(--tile);
+    border: var(--rule) solid var(--hair); border-radius: 6px; font-size: 11px; color: var(--ink-3); }
+  .cmd-hero .ms-metric b { font-family: var(--num); font-weight: 700; color: var(--ink-1); }
+  @media (max-width: 760px) { .cmd-hero .ms-f { grid-template-columns: 14px minmax(0, 1fr) 72px 26px; column-gap: 9px; } }
+  @media (max-width: 560px) { .cmd-hero .ms-f .f-score { font-size: 14px; } }
+
+  /* multi-timeframe tape */
+  .cmd-hero .ms-tape { margin-top: 16px; padding-top: 13px; border-top: var(--rule) solid var(--hair-strong); }
+  .cmd-hero .tape-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+  .cmd-hero .tape-title { display: inline-flex; align-items: center; gap: 7px; font-family: var(--num); font-size: 10px; font-weight: 700;
+    letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3); margin: 0; }
+  html[data-lang="zh"] .cmd-hero .tape-title { letter-spacing: 0; }
+  .cmd-hero .tape-sub { font-family: var(--num); font-size: 9.5px; letter-spacing: .04em; color: var(--ink-3); }
+  .cmd-hero table.ms-tapetbl { width: 100%; border-collapse: collapse; }
+  .cmd-hero table.ms-tapetbl th { font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3);
+    text-align: center; padding: 6px 6px; border-bottom: var(--rule) solid var(--hair); }
+  .cmd-hero table.ms-tapetbl th.l, .cmd-hero table.ms-tapetbl td.l { text-align: left; }
+  .cmd-hero table.ms-tapetbl th.r, .cmd-hero table.ms-tapetbl td.r { text-align: right; }
+  .cmd-hero table.ms-tapetbl td { padding: 6px 6px; border-bottom: var(--rule) solid var(--hair); }
+  .cmd-hero table.ms-tapetbl tr:last-child td { border-bottom: 0; }
+  .cmd-hero .t-inst { font-size: 13px; font-weight: 600; color: var(--ink-1); }
+  .cmd-hero .ms-cell2 { display: inline-flex; align-items: baseline; gap: 6px; justify-content: center; font-family: var(--num); }
+  .cmd-hero .ms-cell2 .ar { font-size: 11px; line-height: 1; }
+  .cmd-hero .ms-cell2 .rsi { font-size: 12.5px; color: var(--ink-2); }
+  .cmd-hero .ms-cell2.good, .cmd-hero .ms-conf.good { color: var(--up); }
+  .cmd-hero .ms-cell2.bad,  .cmd-hero .ms-conf.bad  { color: var(--down); }
+  .cmd-hero .ms-cell2.flat, .cmd-hero .ms-conf.warn, .cmd-hero .ms-conf.flat { color: var(--warn); }
+  .cmd-hero .ms-conf { font-size: 12px; font-weight: 700; white-space: nowrap; }
+  @media (max-width: 560px) {
+    .cmd-hero table.ms-tapetbl th, .cmd-hero table.ms-tapetbl td { padding-left: 3px; padding-right: 3px; }
+    .cmd-hero .ms-cell2 .rsi { display: none; }
+  }
+  .cmd-hero .ms-caveat { margin: 9px 0 0; font-size: 10.5px; line-height: 1.45; color: var(--ink-3); }
+
+  /* divider into the macro-backdrop column (full-width label on mobile, hidden on the desktop grid) */
+  .cmd-hero .ms-divider { display: flex; align-items: center; gap: 12px; font-family: var(--num);
+    font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+  .cmd-hero .ms-divider::after { content: ""; flex: 1; height: 1px; background: var(--hair); }
+  html[data-lang="zh"] .cmd-hero .ms-divider { letter-spacing: 0; }
+  @media (prefers-reduced-motion: reduce) { .cmd-hero .qm { transition: none; } }

@@ -426,6 +426,7 @@
   .nav-dd-menu a { display: block; padding: 7px 10px; border-radius: 8px; font-size: 13px; color: var(--muted); text-decoration: none; white-space: nowrap; }
   .nav-dd-menu a:hover, .nav-dd-menu a.active { background: var(--panel2); color: var(--text); }
 {% include "_cmd_hero.css.j2" %}
+{% include "_market_state.css.j2" %}
 </style>
 </head>
 <body>
@@ -476,6 +477,20 @@
     'Q4': ('A growth scare with cooling inflation — lean defensive; staples, utilities and bonds over high-beta.', '增长恐慌伴随通胀降温 — 偏防御；必需消费、公用与债券优于高贝塔。')
   } %}
   <div class="panel span12 cmd-hero" id="regime-radar">
+    {% if market_state %}
+    {% set ms = market_state %}
+    {% set board = {
+      'eyebrow_help_en': "What kind of A-share market is this RIGHT NOW — a single risk-on/off read that BLENDS the broad-market tape across timeframes, cross-asset risk appetite (the 9-leg RORO composite), the volatility & froth regime (QVIX + margin), market breadth, PBoC liquidity & credit, and the downturn-risk guards into one 0-100 score. GREEN risk-on (≥60) · YELLOW mixed/transition (42–59) · RED risk-off (<42). Confirmation over prediction — every leg reads what has ALREADY turned, not a forecast. DISPLAY-ONLY: a synthesis of signals shown elsewhere on this page; it never scores, sizes or feeds the regime engine.",
+      'eyebrow_help_zh': "当前是什么样的A股市场 — 一个把多周期大盘趋势、跨资产风险偏好（9 腿 RORO 综合）、波动与拥挤（QVIX＋融资）、市场广度、央行流动性与信用，以及下行风险护栏融合为一个 0-100 评分的风险偏好读数。绿色＝风险偏好（≥60）·黄色＝混合/转换（42–59）·红色＝避险（<42）。确认优于预测 — 每条腿读取的是已经转向的东西，而非预测。仅供展示：它是本页其他信号的综合，绝不评分、定仓或进入周期引擎。",
+      'tape_title_en': "Multi-timeframe tape · the broad A-share market", 'tape_title_zh': "多周期趋势 · A股大盘",
+      'tape_help_en': "How the broad A-share market is trending across four timeframes — 1D, 3D, 7D and 30D — for the Shanghai Composite, CSI 300 and Shenzhen Component. ▲ = up (MACD positive and RSI ≥ 50), ▼ = down, ▶ = mixed. The right-hand verdict is the confluence across timeframes — confirmation comes when the longer horizons align.",
+      'tape_help_zh': "A股大盘在四个周期（1D、3D、7D、30D）上的趋势 — 上证综指、沪深300、深证成指。▲＝上行（MACD 为正且 RSI ≥ 50），▼＝下行，▶＝分化。右侧为多周期合流结论 — 待较长周期对齐方为确认。",
+      'divider_en': "Macro backdrop — the growth × inflation regime", 'divider_zh': "宏观背景 — 增长 × 通胀周期"
+    } %}
+    {% endif %}
+    {# ===== ONE side-by-side board: Market State (left) + the A-share regime backdrop (right) ===== #}
+    <div class="ms-front{% if market_state %} ms ms-{{ market_state.color }}{% endif %}">
+    {% if market_state %}{% include "_market_state_board.html.j2" %}{% endif %}
     <div class="hero-bar">
       <!-- LEFT — 2×2 quadrant locator (growth ↑ top, inflation → right; lit cell = today) -->
       <div class="hero-loc">
@@ -534,6 +549,7 @@
         </div>
       </div>
     </div>
+    </div>{# /.ms-front — close the side-by-side board #}
     {% if latest.confirming %}<p class="note" style="margin:14px 0 0;padding-top:11px;border-top:1px solid var(--hair);text-transform:none">{{ t('Confirming', '确认') }}: {{ latest.confirming|join(', ') }}{% if latest.contradicting %} · {{ t('Contradicting', '矛盾') }}: {{ latest.contradicting|join(', ') }}{% endif %}</p>{% endif %}
   </div>
 
