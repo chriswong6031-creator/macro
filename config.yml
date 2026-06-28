@@ -11,6 +11,28 @@ storage:
   reports_dir: reports
   run_status_file: data/run_status.json
 
+signal_sanity:
+  # Output-board correctness tripwire (engine/signal_sanity.py + scripts/signal_sanity.py):
+  # validates the per-ticker boards both books select from. Default = WARN (annotate +
+  # report + notify); opt-in block-mode (Actions var SIGNAL_SANITY_BLOCK=true) can gate
+  # the daily commit. Complements the collect-time INPUT audit (run_quality_audits).
+  stale_days: 5          # board as_of older than now by this many days → warn (absolute)
+  rel_stale_days: 2      # board lags the freshest sibling by this many days → warn (relative)
+  max_drift_pct: 0.5     # primary-score mean moved > this fraction vs prior vintage → warn
+  min_pop: 8             # min records in a subset before judging a column degenerate
+  require_all: true      # a missing required board is a hard failure
+  baseline_file: signal_sanity/baseline.jsonl   # rolling per-vintage stats (under data/)
+  # coverage floors — below these a board is almost certainly broken. NOTE: standouts is
+  # a BUY-board whose count is market-volatile (~25-60), so its floor is a genuine-break
+  # threshold (near-empty), not a "healthy day" count.
+  floors:
+    standouts: 10
+    briefing: 8
+    radar: 40
+    altdata: 8
+    news: 100
+    intel_hub: 8
+
 # -----------------------------------------------------------------------------
 # Collectors
 # -----------------------------------------------------------------------------
