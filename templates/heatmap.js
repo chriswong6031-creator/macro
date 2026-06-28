@@ -82,28 +82,32 @@
             Math.round(a[2] * t + b[2] * (1 - t))];
   }
   function rgb(c) { return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
-  function fgFor(c) {
-    // Dark theme: white text on every tile (matches Finviz / TradingView, and
-    // reads as one consistent label colour). Light theme: stay contrast-adaptive
-    // so text doesn't vanish on the pale tiles.
-    if (document.documentElement.getAttribute('data-theme') !== 'light') return '#f4f7fb';
-    var lum = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
-    return lum > 150 ? '#0b0e13' : '#f4f7fb';
+  function fgFor() {
+    // White labels on every tile, both themes (matches Finviz / TradingView).
+    // The deepened palette below + the tile text-shadow keep white legible even
+    // on the lightest bins, in light mode too.
+    return '#f4f7fb';
   }
   function neutral() {
-    // a desaturated slate between the gauge-mid track and the panel — distinct
-    // from the page background so a flat ~0% tile still reads as a tile.
-    return mix(hexToRgb(cssVar('--g-mid') || '#3a4150'), hexToRgb(cssVar('--panel') || '#181b21'), 0.5);
+    // a desaturated slate for the flat ~0% tile, deep enough that white text
+    // stays legible — a medium slate in light mode, a dark slate in dark mode.
+    return document.documentElement.getAttribute('data-theme') === 'light'
+      ? [99, 108, 124] : [41, 46, 57];
   }
   function binPalette() {
     var up = hexToRgb(cssVar('--hm-up-v') || '#1ec173');
     var dn = hexToRgb(cssVar('--hm-dn-v') || '#e8485f');
     var nu = neutral();
     var P = {};
-    P[3] = up; P[2] = mix(up, nu, 0.74); P[1] = mix(up, nu, 0.34);
+    // deeper mixes so even the level-1 tiles carry enough colour/depth for
+    // white labels (and the brightest bins read a touch richer).
+    P[3] = up; P[2] = mix(up, nu, 0.82); P[1] = mix(up, nu, 0.46);
     P[0] = nu;
-    P[-1] = mix(dn, nu, 0.34); P[-2] = mix(dn, nu, 0.74); P[-3] = dn;
-    P.na = mix(hexToRgb(cssVar('--panel2') || '#1e222a'), nu, 0.5);
+    P[-1] = mix(dn, nu, 0.46); P[-2] = mix(dn, nu, 0.82); P[-3] = dn;
+    // no-data tile: a muted slate kept deep enough for white text in both themes
+    // (the panel-based mix went too pale in light mode).
+    P.na = document.documentElement.getAttribute('data-theme') === 'light'
+      ? [124, 132, 145] : mix(hexToRgb(cssVar('--panel2') || '#1e222a'), nu, 0.5);
     return P;
   }
   function binIndex(pc, edges) {
@@ -831,10 +835,10 @@
   function injectStyle() {
     if (document.getElementById('mm-heatmap-style')) return;
     var css = ''
-      + ':root{--hm-up-v:#17b877;--hm-dn-v:#e84d62;--hm-glass:color-mix(in srgb,var(--panel) 70%,transparent);--hm-edge:color-mix(in srgb,#ffffff 8%,var(--line));--hm-frame:color-mix(in srgb,#000000 38%,var(--bg));}'
-      + 'html[data-theme="light"]{--hm-up-v:#119c63;--hm-dn-v:#dc3145;--hm-glass:color-mix(in srgb,#ffffff 78%,transparent);--hm-edge:color-mix(in srgb,#0b1830 10%,var(--line));--hm-frame:color-mix(in srgb,#c5ccd6 60%,var(--bg));}'
-      + 'html[data-lang="zh"]{--hm-up-v:#e84d62;--hm-dn-v:#17b877;}'
-      + 'html[data-theme="light"][data-lang="zh"]{--hm-up-v:#dc3145;--hm-dn-v:#119c63;}'
+      + ':root{--hm-up-v:#14ad6c;--hm-dn-v:#e4435a;--hm-glass:color-mix(in srgb,var(--panel) 70%,transparent);--hm-edge:color-mix(in srgb,#ffffff 8%,var(--line));--hm-frame:color-mix(in srgb,#000000 38%,var(--bg));}'
+      + 'html[data-theme="light"]{--hm-up-v:#0c8f5b;--hm-dn-v:#d62a3d;--hm-glass:color-mix(in srgb,#ffffff 78%,transparent);--hm-edge:color-mix(in srgb,#0b1830 10%,var(--line));--hm-frame:color-mix(in srgb,#c5ccd6 60%,var(--bg));}'
+      + 'html[data-lang="zh"]{--hm-up-v:#e4435a;--hm-dn-v:#14ad6c;}'
+      + 'html[data-theme="light"][data-lang="zh"]{--hm-up-v:#d62a3d;--hm-dn-v:#0c8f5b;}'
       + '.hm-scope{font-family:Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;}'
       + '.hm-scope .up{color:var(--up);} .hm-scope .dn{color:var(--down);}'
       // control bar
