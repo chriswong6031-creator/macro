@@ -393,6 +393,33 @@ def main() -> int:
         site = Path(config.load()["storage"]["site_dir"])
         site.mkdir(parents=True, exist_ok=True)
 
+        # Market State command-center (display-only) — the Canada 6-factor scorecard +
+        # side-by-side .ms-front board. engine/canada_conditions.py builds the conditions
+        # bundle (cross-asset overlay RORO + newly-built slowdown/drawdown gauges) in the
+        # same shape as China/HK so engine/market_state_ca.py reuses the reader pattern.
+        # None-safe; never breaks the page.
+        try:
+            from engine import canada_conditions as _cac
+            from engine import market_state as _ms
+            from engine.canada_inputs import build_features as _ca_feats
+            from engine.market_state_ca import CA_PROFILE
+            _f = _ca_feats()
+            latest["conditions"] = _cac.snapshot(_f, latest.get("overlay") or {})
+            # precompute the % >200d-MA 5y percentile + a price/breadth divergence flag for F4
+            _b = _f["pct_above_200"].dropna() if "pct_above_200" in getattr(_f, "columns", []) else None
+            if _b is not None and len(_b) >= 60:
+                _win = _b.tail(252 * 5)
+                _pctile = float((_win <= _win.iloc[-1]).mean())
+                _px = _f["market_index"].dropna() if "market_index" in _f.columns else None
+                _div = bool(_px is not None and len(_px) > 21 and len(_b) > 21
+                            and _b.iloc[-1] < _b.iloc[-22] and _px.iloc[-1] > _px.iloc[-22])
+                latest["conditions"]["breadth"] = {"above200_pctile": _pctile, "div": _div}
+            vm["market_state"] = _ms.market_state_snapshot(
+                latest, _f, latest.get("alerts") or [], profile=CA_PROFILE)
+        except Exception as e:  # noqa: BLE001 — additive panel, never fatal
+            log.error("canada market_state failed (%s); skipping", e)
+            vm["market_state"] = None
+
         # regime history -> Time Machine JSON + lifespan base rates
         hist = store.read("canada_regime", "regime_history")
         if hist is not None and "quad" in hist.columns:
