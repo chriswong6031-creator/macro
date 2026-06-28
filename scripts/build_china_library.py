@@ -837,7 +837,7 @@ def main(alpha: dict | None = None) -> dict | None:
     # Keep the percentile as `rank_pctile` (still a meaningful within-board rank) and drop the
     # now-inaccurate "within-board percentile RANK" honesty note. The verdict/entry gauges are
     # already cycle-anchored, so all three now agree (washed-out + turning = high, not "most fallen").
-    for _safe, _rec in to_write:
+    for _, _rec in to_write:
         _c = _rec.get("conviction") or {}
         _pot = _c.get("potential")
         if not _pot:
@@ -854,7 +854,7 @@ def main(alpha: dict | None = None) -> dict | None:
     try:
         _asof = (alpha or {}).get("as_of") or str(pd.Timestamp.utcnow().date())
         _calls = []
-        for _safe, _rec in to_write:
+        for _, _rec in to_write:
             _pot = (_rec.get("conviction") or {}).get("potential")
             if _pot and _pot.get("call"):
                 _calls.append({**_pot["call"], "level": (_rec.get("tech") or {}).get("price")})
