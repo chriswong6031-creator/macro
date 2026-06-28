@@ -187,11 +187,15 @@ def compute_rotation(
         })
     themes.sort(key=lambda t: t["emerging_score"], reverse=True)
 
-    # highlights — only sensible candidates per bucket.
+    # highlights — only sensible candidates per bucket. A breadth floor keeps the
+    # actionable emerging/fading calls off 1-2-member "subsectors" (those are a
+    # stock or two, not a rotation) — signal hygiene, not a fitted parameter.
+    MIN_BREADTH = 3
     emerging = [s["key"] for s in subsectors
-                if s["rs_mom"] > 0 and (s["accel"] is None or s["accel"] >= 0)][:12]
+                if s["n_members"] >= MIN_BREADTH and s["rs_mom"] > 0
+                and (s["accel"] is None or s["accel"] >= 0)][:12]
     fading = [s["key"] for s in sorted(subsectors, key=lambda s: s["rs_mom"])
-              if s["rs_ratio"] > 0 and s["rs_mom"] < 0][:12]
+              if s["n_members"] >= MIN_BREADTH and s["rs_ratio"] > 0 and s["rs_mom"] < 0][:12]
     leaders = [s["key"] for s in sorted(subsectors, key=lambda s: s["rs_ratio"], reverse=True)][:12]
     laggards = [s["key"] for s in sorted(subsectors, key=lambda s: s["rs_ratio"])][:12]
 

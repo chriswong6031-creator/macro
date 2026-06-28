@@ -5,14 +5,15 @@ from engine import subsector_rotation as sr
 
 
 def _tree():
+    # ≥3 members each so they clear the emerging/fading breadth floor (MIN_BREADTH=3).
     return [
         {"theme": "Alpha", "subsectors": [
-            {"key": "a1", "name": "A-One", "members": ["AA", "AB"]},
-            {"key": "a2", "name": "A-Two", "members": ["AC"]},
+            {"key": "a1", "name": "A-One", "members": ["AA", "AB", "AD"]},
+            {"key": "a2", "name": "A-Two", "members": ["AC", "AE", "AF"]},
         ]},
         {"theme": "Beta", "subsectors": [
-            {"key": "b1", "name": "B-One", "members": ["BA"]},
-            {"key": "b2", "name": "B-Two", "members": ["BB"]},
+            {"key": "b1", "name": "B-One", "members": ["BA", "BC", "BD"]},
+            {"key": "b2", "name": "B-Two", "members": ["BB", "BE", "BF"]},
         ]},
     ]
 
@@ -79,3 +80,21 @@ def test_missing_horizons_are_safe():
     assert out["n_subsectors"] == 2
     for s in out["subsectors"]:
         assert s["quadrant"] in ("leading", "weakening", "improving", "lagging")
+
+
+def test_breadth_floor_excludes_thin_subsectors():
+    # a 2-member subsector that is momentum-hot must NOT reach the emerging call
+    # (it's a stock or two, not a rotation) — while an identical 3-member one does.
+    tree = [{"theme": "T", "subsectors": [
+        {"key": "thin", "name": "Thin", "members": ["TA", "TB"]},
+        {"key": "broad", "name": "Broad", "members": ["BA", "BB", "BC"]},
+        {"key": "c1", "name": "C1", "members": ["CA", "CB", "CC"]},
+        {"key": "c2", "name": "C2", "members": ["DA", "DB", "DC"]},
+    ]}]
+    # improving = weak over long windows, strong recently (relative rank RISES short-term).
+    improving = {"1W": 15.0, "1M": 8.0, "3M": -5.0, "6M": -10.0, "1Y": -8.0}
+    fading = {"1W": -8.0, "1M": -5.0, "3M": 10.0, "6M": 15.0, "1Y": 12.0}
+    perf = {"thin": dict(improving), "broad": dict(improving),
+            "c1": dict(fading), "c2": dict(fading)}
+    em = sr.compute_rotation(tree, perf)["highlights"]["emerging"]
+    assert "broad" in em and "thin" not in em

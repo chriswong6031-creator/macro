@@ -1,0 +1,59 @@
+{
+  "schema": "subsector_rotation.track_record.v1",
+  "as_of": "2026-06-28",
+  "generated_at": "2026-06-28T22:35:26.928833+00:00",
+  "is_context_only": true,
+  "n_snapshots": 268,
+  "n_days": 1,
+  "horizons": {
+    "5": {
+      "n_matured": 0,
+      "score_ic": null,
+      "score_ic_t_hac": null,
+      "score_ic_detail": {
+        "n_days": 0
+      },
+      "by_stage": {}
+    },
+    "10": {
+      "n_matured": 0,
+      "score_ic": null,
+      "score_ic_t_hac": null,
+      "score_ic_detail": {
+        "n_days": 0
+      },
+      "by_stage": {}
+    },
+    "21": {
+      "n_matured": 0,
+      "score_ic": null,
+      "score_ic_t_hac": null,
+      "score_ic_detail": {
+        "n_days": 0
+      },
+      "by_stage": {}
+    },
+    "63": {
+      "n_matured": 0,
+      "score_ic": null,
+      "score_ic_t_hac": null,
+      "score_ic_detail": {
+        "n_days": 0
+      },
+      "by_stage": {}
+    }
+  },
+  "lead_time_d": null,
+  "peak_score_ic": null,
+  "proven": {
+    "5": false,
+    "10": false,
+    "21": false,
+    "63": false
+  },
+  "any_matured": false,
+  "verdict": "accruing",
+  "note": "Measuring \u2014 logging daily calls; no horizon has matured yet. The forward edge is unmeasured. Context-only.",
+  "recent_misses": [],
+  "disclaimer": "A falsifiable scorecard of the rotation read's own calls \u2014 emerging_score rank and emerging/fading labels graded against realized member-equal-weight SPY-relative forward returns. Until a horizon matures and clears a Newey-West significance bar it is 'measuring', never trusted. Members are frozen point-in-time; only priceable members are used. Nothing here sizes a position."
+}

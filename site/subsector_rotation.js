@@ -59,6 +59,42 @@
       +'</div>';
   }
 
+  /* ---------- track record / calibration (does the read actually work?) ---------- */
+  function drawTrackRecord(el){
+    var tr=_data.track_record;
+    if(!tr){el.style.display='none';return;}
+    function fpct(v){return v==null?'—':(v*100).toFixed(0)+'%';}
+    function fic(v){return v==null?'—':(v>0?'+':'')+(+v).toFixed(3);}
+    function ft(v){return v==null?'—':(+v).toFixed(1);}
+    var V={accruing:['Accruing','子样本累积中','--muted'],measuring:['Measuring','测量中','--warn'],validated:['Validated','已验证','--up']};
+    var vb=V[tr.verdict]||V.accruing;
+    var hs=tr.horizons||{};
+    var rows=Object.keys(hs).map(function(h){
+      var e=hs[h], bs=e.by_stage||{}, em=bs.emerging||{}, fa=bs.fading||{};
+      var prov=(tr.proven||{})[h];
+      return '<tr><td>'+h+'d</td><td class="num">'+(e.n_matured||0)+'</td>'
+        +'<td class="num">'+fpct(em.hit_rate)+'</td><td class="num">'+fpct(fa.hit_rate)+'</td>'
+        +'<td class="num">'+fic(e.score_ic)+'</td><td class="num">'+ft(e.score_ic_t_hac)
+        +(prov?' <span class="sr-ok">✓</span>':'')+'</td></tr>';
+    }).join('');
+    var misses=(tr.recent_misses||[]).slice(0,8).map(function(mi){
+      return '<span class="sr-miss" title="'+esc(mi.theme||'')+'"><b>'+esc(mi.name)+'</b> '
+        +'<i class="'+(mi.stage==='emerging'?'dn':'up')+'">'+(mi.fwd_rel>0?'+':'')+(mi.fwd_rel*100).toFixed(1)+'%</i></span>';
+    }).join('');
+    el.innerHTML=''
+      +'<div class="sr-tr-hd">📊 '+L('Track record','跟踪记录')
+        +'<span class="sr-tr-q" style="color:var('+vb[2]+');border-color:var('+vb[2]+')">'+L(vb[0],vb[1])+'</span>'
+        +'<span class="sr-tr-meta">'+(tr.n_days||0)+' '+L('days logged','天')+' · '+(tr.n_snapshots||0)+' '+L('calls logged','次记录')+'</span></div>'
+      +'<div class="sr-tr-note">'+esc(tr.note||'')+'</div>'
+      +'<div class="sr-tr-body"><table class="sr-tr-tbl"><thead><tr>'
+        +'<th>'+L('Horizon','周期')+'</th><th class="num">'+L('Matured','已到期')+'</th>'
+        +'<th class="num">'+L('Emerging hit','升温命中')+'</th><th class="num">'+L('Fading hit','退潮命中')+'</th>'
+        +'<th class="num">'+L('Score IC','评分IC')+'</th><th class="num">'+L('HAC t','HAC t')+'</th></tr></thead>'
+        +'<tbody>'+rows+'</tbody></table></div>'
+      +(misses?'<div class="sr-tr-misses"><span class="sr-tr-mlab">'+L('Recently wrong (logged)','近期误判（已记录）')+'</span>'+misses+'</div>':'')
+      +'<div class="sr-tr-disc">'+esc(tr.disclaimer||'')+'</div>';
+  }
+
   function items(){return _unit==='themes'?_data.themes:_data.subsectors;}
   function nameOf(it){return _unit==='themes'?it.theme:it.name;}
   function keyOf(it){return _unit==='themes'?it.theme:it.key;}
@@ -80,6 +116,7 @@
           +'<div class="sr-map-wrap"></div></div>'
         +'<div class="sr-rails"></div>'
       +'</div>'
+      +'<div class="sr-tr-wrap"></div>'
       +'<div class="sr-table-wrap"></div>';
 
     Array.prototype.forEach.call(root.querySelectorAll('.sr-toggle button'),function(b){
@@ -87,6 +124,7 @@
     });
     drawMap(root.querySelector('.sr-map-wrap'));
     drawRails(root.querySelector('.sr-rails'));
+    drawTrackRecord(root.querySelector('.sr-tr-wrap'));
     drawTable(root.querySelector('.sr-table-wrap'));
 
     document.removeEventListener('themechange',_rerender); document.removeEventListener('langchange',_rerender);
@@ -283,6 +321,12 @@
     +'.sr-tsp-row{display:flex;gap:8px;margin:8px 0 2px;flex-wrap:wrap;} .sr-tsp{display:flex;flex-direction:column;line-height:1.15;} .sr-tsp span{font-size:8.5px;color:var(--muted);} .sr-tsp b{font-size:11px;font-variant-numeric:tabular-nums;}'
     +'.sr-tip-mt{font-size:10.5px;color:var(--muted);margin-top:6px;border-top:1px solid var(--line);padding-top:6px;} .sr-tip-mt b{color:var(--text);font-variant-numeric:tabular-nums;}'
     +'.sr-tip-mem{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px;} .sr-chip{font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--panel2);border:1px solid var(--line);font-variant-numeric:tabular-nums;}'
+    +'.sr-tr-wrap{margin-top:14px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;}'
+    +'.sr-tr-hd{display:flex;align-items:center;gap:10px;font-weight:800;font-size:13px;color:var(--text);flex-wrap:wrap;} .sr-tr-q{font-size:10px;font-weight:800;padding:1px 8px;border-radius:6px;border:1px solid;text-transform:uppercase;letter-spacing:.04em;} .sr-tr-meta{margin-left:auto;font-size:11px;color:var(--muted);font-weight:600;}'
+    +'.sr-tr-note{font-size:11.5px;color:var(--muted);margin:6px 0 10px;line-height:1.5;}'
+    +'.sr-tr-tbl{width:100%;border-collapse:collapse;font-size:12px;} .sr-tr-tbl th{text-align:left;padding:6px 8px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--line);white-space:nowrap;} .sr-tr-tbl th.num,.sr-tr-tbl td.num{text-align:right;font-variant-numeric:tabular-nums;} .sr-tr-tbl td{padding:6px 8px;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);} .sr-ok{color:var(--up);font-weight:800;}'
+    +'.sr-tr-misses{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:11px;} .sr-tr-mlab{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);} .sr-miss{font-size:11px;padding:2px 7px;border:1px solid var(--line);border-radius:7px;background:var(--panel2);} .sr-miss b{color:var(--text);} .sr-miss i{font-style:normal;font-variant-numeric:tabular-nums;} .sr-miss i.up{color:var(--up);} .sr-miss i.dn{color:var(--down);}'
+    +'.sr-tr-disc{font-size:10px;color:var(--muted);margin-top:11px;line-height:1.5;opacity:.85;}'
     +'.sr-strip{margin:14px 0 0;padding:11px 13px;background:var(--panel);border:1px solid var(--line);border-radius:14px;}'
     +'.srx-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-weight:800;font-size:13px;color:var(--text);margin-bottom:9px;} .srx-hd i{font-style:normal;font-weight:600;font-size:10.5px;color:var(--muted);margin-left:8px;} .srx-more{font-size:11.5px;font-weight:700;color:var(--link);white-space:nowrap;}'
     +'.srx-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;} @media (max-width:680px){.srx-cols{grid-template-columns:1fr;}}'

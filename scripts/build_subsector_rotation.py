@@ -41,6 +41,23 @@ def build(site: Path | None = None, *, generated_utc: str | None = None) -> dict
         asof=snap.get("asof") or "",
     )
 
+    # Forward TRACK-RECORD (additive, degrade-safe): log today's calls with their
+    # FROZEN member baskets, then grade every matured past call. The read becomes
+    # falsifiable — context-only, never sizes; verdict stays 'accruing' for months.
+    try:
+        from engine import subsector_track_record as strk
+        member_map = {sub.get("key"): (sub.get("members") or [])
+                      for th in tree for sub in th.get("subsectors", [])}
+        asof_date = snap.get("asof") or datetime.now(timezone.utc).date().isoformat()
+        n_logged = strk.snapshot(payload, member_map, today=asof_date)
+        tr = strk.compute(today=asof_date)
+        payload["track_record"] = tr
+        _data("subsector_rotation", "track_record.json").write_text(json.dumps(tr, indent=2))
+        log.info("track record: +%d snapshots, %d days logged, verdict=%s",
+                 n_logged, tr.get("n_days"), tr.get("verdict"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("track record failed: %s", e)
+
     outdir = site / "marketdata"
     outdir.mkdir(parents=True, exist_ok=True)
     out = outdir / "subsector_rotation.json"
