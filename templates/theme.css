@@ -340,7 +340,7 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
    Vector / Commodities). On desktop the child menu flies out to the right of
    its row; ::after bridges the gap so the cursor can cross into it. */
 .nav-dd-menu .nav-sub { display: block; position: relative; }
-.nav-dd-menu .nav-sub > a.nav-sub-trig { display: flex; align-items: center; }
+.nav-dd-menu .nav-sub > a.nav-sub-trig { display: flex; align-items: center; gap: .3em; }
 .nav-dd-menu .nav-sub > a.nav-sub-trig .caret-r { margin-left: auto; padding-left: 12px; font-size: 10px;
   opacity: .55; flex: none; transition: transform .2s; }
 .nav-dd-menu .nav-sub:hover > a.nav-sub-trig .caret-r { opacity: .9; transform: translateX(2px); }
