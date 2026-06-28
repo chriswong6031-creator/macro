@@ -1,0 +1,179 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{# Render one ticker card. `lane` sets the accent. Cards are <a> — NEVER nest an <a>
+   inside (chips/spark/note are spans/divs) so the grid can't shatter. #}
+{# NOTE: never place the t() macro inside an HTML attribute — it emits
+   <span class="l-en">…</span>, whose inner " closes the attribute and dumps the
+   text into the DOM. All chip meanings live in the legend section instead. #}
+{% macro card(c, lane) -%}
+<a class="ic-card" data-lane="{{ lane }}" data-state="{{ c.state }}" href="stock.html?t={{ c.ticker }}">
+  <div class="ic-top">
+    <span class="ic-tk">{{ c.ticker }}</span>
+    <span class="ic-score" style="--sc:{{ c.impulse_score }}">{{ c.impulse_score }}</span>
+  </div>
+  <div class="ic-name">{{ c.name }}{% if c.sector %} · <span class="ic-sec">{{ c.sector }}</span>{% endif %}</div>
+  {% if c.spark_svg %}<div class="ic-spark">{{ c.spark_svg|safe }}</div>{% endif %}
+  <div class="ic-chips">
+    {% if c.accel_z is not none %}<span class="chip accel">⚡ {{ '%+.1f'|format(c.accel_z) }}</span>{% endif %}
+    {% if c.vol_vel is not none %}<span class="chip vol">📊 {{ '%+.0f%%'|format((c.vol_vel-1)*100) }}</span>{% endif %}
+    {% if c.runup_20 is not none %}<span class="chip run">{{ '%+.0f%%'|format(c.runup_20*100) }}/20d</span>{% endif %}
+    {% if c.dist_50 is not none %}<span class="chip ext">{{ '%+.0f%%'|format(c.dist_50*100) }} vs 50d</span>{% endif %}
+    {% if c.days_igniting and c.days_igniting > 0 %}<span class="chip fresh{% if c.days_igniting == 1 %} new{% endif %}">{% if c.days_igniting == 1 %}{{ t('NEW today','今日新') }}{% else %}{{ t('day','第') }} {{ c.days_igniting }}{% endif %}</span>{% endif %}
+  </div>
+  <div class="ic-note">{{ t(c.note, c.note_zh) }}</div>
+</a>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Impulse Tracker — early-ignition momentum screen</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1360px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:22px; margin:0 0 2px; }
+  .lead { color:var(--muted); font-size:13px; margin:0 0 14px; max-width:880px; }
+  .faint { color:var(--muted); }
+  /* regime + stat strip */
+  .strip { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:0 0 16px; }
+  .reg { font-size:12px; font-weight:800; letter-spacing:.02em; padding:5px 12px; border-radius:9px; border:1px solid var(--line); }
+  .reg.calm { color:var(--up); background:color-mix(in srgb,var(--up) 12%,transparent); border-color:color-mix(in srgb,var(--up) 38%,var(--line)); }
+  .reg.mixed { color:var(--warn); background:color-mix(in srgb,var(--warn) 12%,transparent); border-color:color-mix(in srgb,var(--warn) 38%,var(--line)); }
+  .reg.stress { color:var(--down); background:color-mix(in srgb,var(--down) 12%,transparent); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
+  .reg.unknown { color:var(--muted); }
+  .stat { font-size:12px; color:var(--muted); padding:5px 12px; border:1px solid var(--line); border-radius:9px; background:var(--panel); }
+  .stat b { color:var(--text); font-size:14px; font-variant-numeric:tabular-nums; }
+  /* section heads */
+  .sec { display:flex; align-items:baseline; gap:10px; margin:22px 0 4px; }
+  .sec h2 { font-size:16px; margin:0; }
+  .sec .cnt { color:var(--muted); font-size:12.5px; font-variant-numeric:tabular-nums; }
+  .sub { color:var(--muted); font-size:12.5px; margin:0 0 10px; max-width:820px; }
+  /* the grid + cards (overflow-contained: min-width:0 on card AND children) */
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:12px; margin:4px 0 6px; }
+  .ic-card { display:flex; flex-direction:column; gap:7px; min-width:0; overflow:hidden;
+    background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--muted);
+    border-radius:12px; padding:12px 13px; transition:border-color .15s, transform .08s; }
+  .ic-card > * { min-width:0; max-width:100%; }
+  .ic-card:hover { border-color:var(--accent,var(--link)); transform:translateY(-1px); }
+  .ic-card[data-state="EARLY_IGNITION"] { border-left-color:var(--up); }
+  .ic-card[data-state="IGNITING"] { border-left-color:color-mix(in srgb,var(--up) 60%,var(--line)); }
+  .ic-card[data-state="COILING"] { border-left-color:var(--link); }
+  .ic-card[data-state="EXTENDED_RUN"] { border-left-color:var(--warn); }
+  .ic-card[data-state="FADING"] { border-left-color:var(--down); }
+  .ic-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .ic-tk { font-weight:800; font-size:15px; letter-spacing:.01em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ic-score { flex:none; font-weight:800; font-size:13px; font-variant-numeric:tabular-nums; min-width:30px; text-align:center;
+    padding:2px 8px; border-radius:999px; color:#fff;
+    background:color-mix(in srgb, var(--up) calc(var(--sc,50)*1%), var(--down)); }
+  .ic-name { font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ic-sec { color:var(--muted); }
+  .ic-spark { height:40px; line-height:0; }
+  .ic-chips { display:flex; flex-wrap:wrap; gap:5px; }
+  .chip { font-size:10.5px; padding:1px 7px; border-radius:6px; background:var(--panel2,var(--bg)); border:1px solid var(--line); color:var(--muted); white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .chip.accel { color:var(--up); border-color:color-mix(in srgb,var(--up) 34%,var(--line)); }
+  .chip.vol { color:var(--link); }
+  .chip.fresh { color:var(--muted); }
+  .chip.fresh.new { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line)); font-weight:800; }
+  .ic-note { font-size:11.5px; color:var(--muted); line-height:1.45; overflow-wrap:anywhere; }
+  .empty { color:var(--muted); font-size:13px; padding:10px 2px; }
+  /* method / legend */
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:13px; padding:14px 16px; margin:20px 0 8px; }
+  .legend { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin-top:6px; }
+  .lg { font-size:12px; color:var(--muted); } .lg b { color:var(--text); }
+  .cav { color:var(--muted); font-size:11.5px; line-height:1.55; border-top:1px dotted var(--line); padding-top:9px; margin-top:10px; }
+  details.fold > summary { cursor:pointer; color:var(--muted); font-size:12.5px; padding:5px 0; }
+  .kv { font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  {% include "_navlinks.html.j2" %}
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<h1>🚀 {{ t('Impulse Tracker', '冲量追踪') }}</h1>
+<p class="lead">{{ t('A fast, reactive screen for momentum / velocity / acceleration of price and volume across the US tape — built to catch names where the impulse is JUST starting to fire, while an entry still exists. Stocks that already ran are demoted, not surfaced. Reactive timing context, regime-aware; not a validated alpha signal and never a P(up) — short-horizon direction is a coin-flip and momentum decays in stress.',
+  '一个对全美股价格与成交量的动量／速度／加速度进行快速、灵敏扫描的工具 — 专门捕捉冲量刚刚启动、入场窗口仍在的个股。已经大涨的股票会被降权而非展示。这是对时机的灵敏背景判断，并感知市场状态；并非经验证的阿尔法信号，也从不给出涨跌概率 — 短周期方向接近抛硬币，且动量在承压行情中衰减。') }}</p>
+
+{% if d.status != 'ok' %}
+  <p class="empty">{{ t('Impulse data is not available for this build.', '本次构建暂无冲量数据。') }}</p>
+{% else %}
+{% set reg = d.regime %}
+<div class="strip">
+  <span class="reg {{ reg.state }}">{{ t(reg.label, reg.label_zh) }}{% if reg.vix is not none %} · VIX {{ '%.1f'|format(reg.vix) }}{% endif %}</span>
+  <span class="stat">{{ t('Just igniting','刚刚点火') }} <b>{{ d.counts.buy }}</b></span>
+  <span class="stat">{{ t('Accelerating','加速中') }} <b>{{ d.counts.igniting }}</b></span>
+  <span class="stat">{{ t('Already ran','已大涨') }} <b>{{ d.counts.extended }}</b></span>
+  <span class="stat">{{ t('Coiling','蓄势') }} <b>{{ d.counts.coiling }}</b></span>
+  <span class="stat">{{ t('Universe','样本') }} <b>{{ d.universe }}</b></span>
+  <span class="stat faint">{{ t('As of','截至') }} {{ d.as_of }}</span>
+</div>
+
+<div class="sec"><h2>🟢 {{ t('Just igniting — entry still open', '刚刚点火 — 入场窗口仍开') }}</h2><span class="cnt">{{ d.buy|length }}{% if d.counts.buy > d.buy|length %} / {{ d.counts.buy }}{% endif %}</span></div>
+<p class="sub">{{ t('Acceleration turning up NOW with volume confirming, and the move has not yet run (small 20-day gain, not stretched above its averages). Ranked by impulse score; “NEW today” = the acceleration first fired this session.',
+  '加速度此刻转向上行、成交量确认，且涨势尚未展开（20日涨幅小、未明显高于均线）。按冲量分排序；“今日新”= 本交易日首次点火。') }}</p>
+{% if d.buy %}<div class="grid">{% for c in d.buy %}{{ card(c, 'buy') }}{% endfor %}</div>
+{% else %}<p class="empty">{{ t('Nothing freshly igniting in this regime — the screen stays patient rather than forcing a pick.', '当前行情下无新点火标的 — 宁可空仓等待，也不强行选股。') }}</p>{% endif %}
+
+{% if d.igniting %}
+<div class="sec"><h2>🟩 {{ t('Accelerating — momentum building', '加速中 — 动能积累') }}</h2><span class="cnt">{{ d.igniting|length }}</span></div>
+<p class="sub">{{ t('Still accelerating, but already up enough that the freshest entry has passed. Trail / wait for a pullback.', '仍在加速，但已上涨到错过最佳入场点。可跟踪或等回调。') }}</p>
+<div class="grid">{% for c in d.igniting %}{{ card(c, 'igniting') }}{% endfor %}</div>
+{% endif %}
+
+{% if d.coiling %}
+<div class="sec"><h2>🔵 {{ t('Coiling — pre-ignition watch', '蓄势 — 点火前观察') }}</h2><span class="cnt">{{ d.coiling|length }}{% if d.counts.coiling > d.coiling|length %} / {{ d.counts.coiling }}{% endif %}</span></div>
+<p class="sub">{{ t('Quiet price, but volume is starting to perk up — a base that may be about to fire. Watchlist, not a buy yet.', '价格安静，但成交量开始活跃 — 可能即将启动的基底。观察名单，尚非买入。') }}</p>
+<div class="grid">{% for c in d.coiling %}{{ card(c, 'coiling') }}{% endfor %}</div>
+{% endif %}
+
+{% if d.extended %}
+<div class="sec"><h2>🟠 {{ t('Already ran — no entry', '已大涨 — 无入场点') }}</h2><span class="cnt">{{ d.extended|length }}</span></div>
+<p class="sub">{{ t('Accelerating, but the move has ALREADY happened (big 20-day gain / stretched above the averages). Shown for awareness — wait for a pullback, do not chase.', '正在加速，但涨势已经发生（20日大涨／远高于均线）。仅作提示 — 等回调，勿追高。') }}</p>
+<div class="grid">{% for c in d.extended %}{{ card(c, 'extended') }}{% endfor %}</div>
+{% endif %}
+
+{% if d.fading %}
+<div class="sec"><h2>🔴 {{ t('Fading — rolling over', '转弱 — 动能消退') }}</h2><span class="cnt">{{ d.fading|length }}</span></div>
+<p class="sub">{{ t('Acceleration is turning down / the trend is weakening. The opposite of an entry — avoid.', '加速度转向下行／趋势走弱。与入场相反 — 回避。') }}</p>
+<div class="grid">{% for c in d.fading %}{{ card(c, 'fading') }}{% endfor %}</div>
+{% endif %}
+
+<div class="panel">
+  <div class="sec" style="margin:0 0 4px"><h2>📐 {{ t('How the impulse score is built', '冲量分如何计算') }}</h2></div>
+  <div class="legend">
+    <div class="lg"><b>⚡ {{ t('Acceleration','加速度') }}</b> — {{ t('fast (5d) return slope pulling above the slow (20d) slope, normalised by the name’s own volatility, plus a denoised MACD-histogram impulse.','5日收益斜率上穿20日斜率，按个股自身波动归一，并叠加去噪的MACD柱状冲量。') }}</div>
+    <div class="lg"><b>📊 {{ t('Volume confirmation','成交量确认') }}</b> — {{ t('relative volume vs the 20-day median and a short/slow volume ratio — is participation waking up?','相对成交量 vs 20日中位数，及短／长量比 — 参与度是否被唤醒？') }}</div>
+    <div class="lg"><b>🛑 {{ t('Extension penalty','拉伸惩罚') }}</b> — {{ t('subtract-only: the more a name has already run (20-day gain, distance above the 50/200-day averages), the lower it ranks — so the buy lane keeps an entry.','只减不加：已经涨得越多（20日涨幅、高出50／200日均线），排名越低 — 让买入区始终留有入场点。') }}</div>
+    <div class="lg"><b>🧭 {{ t('Absolute-trend gate','绝对趋势闸') }}</b> — {{ t('names in an active down-trend are excluded from the buy lane — no falling knives.','处于明确下行趋势的个股被排除在买入区外 — 不接飞刀。') }}</div>
+  </div>
+  <p class="cav">{{ t('Method & honesty: scores are a within-universe percentile of a fixed, legible composite (no learned weights). Computed on daily end-of-day bars across the S&P-1500 breadth universe; the public site rebuilds once daily after the US close, so this is the night-before tape, not an intraday feed. Direction is never claimed — engine/velocity.py and the signal lab record that short-horizon P(up) is a measured coin-flip and momentum’s edge is regime-switched (it decays in stress). Treat this as a reactive timing/context screen to narrow where to look, confirmed on your own chart before acting. Nothing here is investment advice or a scored input to any other model.',
+    '方法与诚实声明：分数是固定、可读的合成指标在全样本中的百分位（无学习权重）。基于标普1500广度样本的日终数据计算；公开站点每日美股收盘后重建一次，因此这是“前一晚”的行情，并非盘中实时数据。从不声称方向 — engine/velocity.py 与信号实验室已记录：短周期涨跌概率接近抛硬币，且动量优势随市场状态切换（承压时衰减）。请将其视为缩小关注范围的灵敏时机／背景工具，在自己的图表上确认后再行动。本页内容均非投资建议，也不作为任何其他模型的评分输入。') }}</p>
+  <details class="fold"><summary>{{ t('Show the exact thresholds used','显示所用的具体阈值') }}</summary>
+    <div class="kv" style="margin-top:6px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:4px 14px">
+      {% for k, v in d.cfg.items() %}<span>{{ k }} = {{ v }}</span>{% endfor %}
+    </div>
+  </details>
+</div>
+{% endif %}
+
+<script src="theme.js"></script>
+<footer class="site-footer" style="margin-top:18px;color:var(--muted);font-size:12px">
+  {{ t('Made with ❤️ in Canada · Developed by', '用 ❤️ 在加拿大制作 · 开发者') }} Chris Wong · <span class="faint">{{ t('Built', '构建于') }} {{ built }} UTC · {{ t('display-only research context, not investment advice', '仅研究背景展示，非投资建议') }}</span>
+</footer>
+</body>
+</html>
