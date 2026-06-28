@@ -215,21 +215,41 @@ def theme_textures(lvl: pd.Series, fp: dict | None, fp5: dict | None,
 def act_now_stocks(members: list, theme: dict) -> dict:
     """WHAT TO ACT ON NOW (stock level) — the member stocks with a genuine buy entry RIGHT
     NOW, GATED by theme health: if the theme is out of favour (deteriorating / fading /
-    avoid / trim / in a downtrend) it recommends NOTHING. Otherwise only members whose
-    per-stock Conviction Profile is a buy/add, with the cycle NOT blocking and a decent
-    entry-axis percentile (good price, not chasing). Honest: a focus list, never an order.
+    avoid / trim, or a NEUTRAL theme below its long-term trend) it recommends NOTHING.
+    A label the engine has AFFIRMATIVELY called constructive (EMERGING / DOMINANT) is NOT
+    vetoed by the slow 200d `in_bull` flag — such a theme is early / below-trend by
+    construction, and theme_scoring._reco has already demoted its verb to HOLD; vetoing it
+    again here just made the board self-contradict ("out of favour (emerging)"). Otherwise
+    only members whose per-stock Conviction Profile is a buy/add, with the cycle NOT blocking
+    and a decent entry-axis percentile (good price, not chasing). Honest: a focus list, never
+    an order.
 
     `members` carry a plucked `conviction` block (score, verdict, cycle_blocked, entry_pct)."""
     label = (theme or {}).get("label")
     reco = (theme or {}).get("reco")
     tx = (theme or {}).get("textures") or {}
     in_bull = (tx.get("bull_age") or {}).get("in_bull", True)
-    theme_bad = label in ("deteriorating", "fading") or reco in ("avoid", "trim") or in_bull is False
-    if theme_bad:
-        why = label or reco or "downtrend"
+    # "Out of favour" must mean the theme's OWN lifecycle read is risk-off — a fading /
+    # deteriorating label or a trim / avoid reco. The raw 200d-SMA `in_bull` flag is a SLOW
+    # filter: an EMERGING / DOMINANT theme freshly turning up off a base sits below its 200d
+    # (in_bull False) BY CONSTRUCTION, so it must not override the engine's own constructive
+    # call — that produced the self-contradicting "out of favour (emerging)" scoreboard while
+    # suppressing members that DID have an open entry. Drawdown-control for an early /
+    # below-trend theme is already applied upstream in theme_scoring._reco (it demotes the verb
+    # to HOLD). So a False `in_bull` only counts as a downtrend veto when the label is NOT
+    # constructive (i.e. neutral / missing).
+    risk_label = label in ("deteriorating", "fading")
+    risk_reco = reco in ("avoid", "trim")
+    constructive = label in ("emerging", "dominant")
+    downtrend = (in_bull is False) and not constructive
+    if risk_label or risk_reco or downtrend:
+        why = label if risk_label else reco if risk_reco else "downtrend"
+        why_en = "in a downtrend" if why == "downtrend" else str(why)
+        why_zh = {"deteriorating": "走弱", "fading": "退潮", "avoid": "建议回避",
+                  "trim": "建议减持", "downtrend": "处于下行趋势"}.get(why, str(why))
         return {"status": "theme_out_of_favour", "buys": [],
-                "note_en": "Theme is out of favour (" + str(why) + ") — no stock buys recommended here right now.",
-                "note_zh": "主题暂不被青睐（" + str(why) + "）— 当前不建议买入该主题个股。"}
+                "note_en": "Theme is out of favour (" + why_en + ") — no stock buys recommended here right now.",
+                "note_zh": "主题暂不被青睐（" + why_zh + "）— 当前不建议买入该主题个股。"}
     buys = []
     for m in members or []:
         c = m.get("conviction")
