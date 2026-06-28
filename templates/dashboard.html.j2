@@ -1138,7 +1138,6 @@
     margin-top:4px;padding-top:7px;border-top:var(--rule) solid var(--hair);font-size:10.5px;color:var(--ink-3)}
   body.page-macro .ms-radar .msr-scare{border:var(--rule) solid var(--hair);border-radius:6px;padding:1px 7px;color:var(--ink-2);background:var(--panel)}
   body.page-macro .ms-radar .msr-scare b{font-family:var(--num)}
-  body.page-macro .ms-radar .msr-more{margin-left:auto;color:var(--link);font-weight:700}
 
   /* Heads-up strip — compact live flags (next catalyst / Fed stance / fragility),
      replacing the old full-width Event-Risk + Turning-Point + Fed-reaction panels.
@@ -1295,7 +1294,7 @@
            detail folded up from the (now-removed) standalone card. Full per-leg detail +
            self-audit live on the Macro Signals data page. #}
         {% if rd.state in ['caution','elevated','risk-off'] and latest.risk_radar and latest.risk_radar.scares %}
-        <span class="msr-scares">{{ t('Stress:','压力来源：') }}{% for s in latest.risk_radar.scares %}{% if s.score is not none and s.score >= 25 %}{% set sb = 'var(--down)' if s.band=='risk-off' else ('var(--orange)' if s.band=='elevated' else ('var(--warn)' if s.band=='caution' else 'var(--ink-3)')) %}<span class="msr-scare" style="border-color:{{ sb }}">{{ t(s.label_en, s.label_zh) }} <b style="color:{{ sb }}">{{ s.score|round|int }}</b></span>{% endif %}{% endfor %}<a class="msr-more" href="macro_signals.html">{{ t('full radar →','完整雷达 →') }}</a></span>
+        <span class="msr-scares">{{ t('Stress:','压力来源：') }}{% for s in latest.risk_radar.scares %}{% if s.score is not none and s.score >= 25 %}{% set sb = 'var(--down)' if s.band=='risk-off' else ('var(--orange)' if s.band=='elevated' else ('var(--warn)' if s.band=='caution' else 'var(--ink-3)')) %}<span class="msr-scare" style="border-color:{{ sb }}">{{ t(s.label_en, s.label_zh) }} <b style="color:{{ sb }}">{{ s.score|round|int }}</b></span>{% endif %}{% endfor %}</span>
         {% endif %}
       </div>
       {% endif %}
