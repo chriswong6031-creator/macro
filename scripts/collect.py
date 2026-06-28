@@ -453,7 +453,8 @@ def main() -> int:
         sources[r.source] = {**asdict(r), "elapsed_sec": timings.get(r.source),
                              "checked_at": datetime.now(timezone.utc).isoformat()}
     status["sources"] = sources
-    status["circuit_breaker"] = update_breaker(results)
+    status["circuit_breaker"], status["circuit_breaker_probe"] = update_breaker(
+        results, status.get("circuit_breaker_probe"))
     store.write_status(status)
 
     ok = sum(1 for r in results if r.status in ("ok", "stale"))
