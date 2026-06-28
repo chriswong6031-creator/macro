@@ -394,6 +394,56 @@ def _clean_time(value: str, title: str = "") -> str:
     return s
 
 
+# Native CN news-page anchors (<a> on cnstock/stcn/yicai) fold the article's
+# section breadcrumb and a relative-time suffix into the link text, e.g.
+#   人民币资产"圈粉"全球 … 要闻 · 人民币资产 06-27
+#   拟收购光通信公司，SpaceX获批 聚焦 · SpaceX
+#   下周外盘看点 … OPEC+月度会议召开。 10分钟前
+# get_text(" ") then concatenates that metadata onto the headline. The guards
+# below strip ONLY the trailing relative-time / date suffix and a leading or
+# trailing "section ·" breadcrumb — never mid-title text — so the rendered
+# title (and its duplicated l-en/l-zh spans) stays clean.
+_DOTCHARS = "·•・‧∙"
+_TITLE_DOT = rf"[{_DOTCHARS}]"
+# Known section labels — used only for the LEADING breadcrumb (whose tail is the
+# real headline, so it must be gated to avoid eating a genuine "X · Y" title).
+_TITLE_SECTION = (r"要闻|快讯|滚动|资讯|公告|头条|财经|新闻|宏观|评论|行情|国内|国际|"
+                  r"深度|独家|原创|聚焦|基金|保险|券商|银行|公司|产业|产业资讯|科技|"
+                  r"汽车|医药|地产|能源|消费|港股|美股|A股|市场|观点|专栏")
+_TITLE_TIME_SUFFIX = re.compile(
+    r"\s+(?:"
+    r"刚刚|\d+\s*分钟前|\d+\s*小时前|\d+\s*天前|"
+    r"前天\s*\d{1,2}:\d{2}|昨天\s*\d{1,2}:\d{2}|今天\s*\d{1,2}:\d{2}|"
+    r"\d{4}-\d{1,2}-\d{1,2}(?:\s+\d{1,2}:\d{2})?|"
+    r"\d{1,2}-\d{1,2}(?:\s+\d{1,2}:\d{2})?"
+    r")$"
+)
+# Trailing breadcrumb: a short "<label> · <tail>" glued at the very end. Native
+# pages use dozens of category names, so match any short non-space label/tail
+# either side of the middot rather than enumerate them — the trailing ` · `
+# between two short segments is the reliable breadcrumb signal.
+_TITLE_BREADCRUMB_SUFFIX = re.compile(
+    rf"\s+[^\s{_DOTCHARS}]{{2,8}}\s*{_TITLE_DOT}\s*[^\s{_DOTCHARS}]{{1,12}}$"
+)
+_TITLE_SECTION_PREFIX = re.compile(
+    rf"^\s*(?:{_TITLE_SECTION})\s*{_TITLE_DOT}\s*"
+)
+
+
+def _clean_title(title: str) -> str:
+    """A clean headline with native-page breadcrumb + relative-time metadata
+    stripped. Conservative: removes only leading/trailing metadata, never
+    mid-title content. Safe on English/official titles (CN tokens won't match)."""
+    s = " ".join(str(title or "").split())
+    prev = None
+    while s and s != prev:                  # peel stacked suffixes (要闻 · X 06-27)
+        prev = s
+        s = _TITLE_TIME_SUFFIX.sub("", s)
+        s = _TITLE_BREADCRUMB_SUFFIX.sub("", s)
+        s = s.rstrip()
+    return _TITLE_SECTION_PREFIX.sub("", s).strip()
+
+
 def _importance(title: str, summary: str = "", theme: str = "macro", source_tier: str = "",
                 source_name: str = "", source: str = "") -> tuple[int, str, list[str]]:
     blob = f"{title} {summary}"
@@ -737,13 +787,14 @@ def _fetch_official_pages(cfg: dict, today: date | None = None) -> tuple[list[di
                     continue
                 soup = BeautifulSoup(r.text, "html.parser")
                 for a in soup.find_all("a", href=True):
-                    title = re.sub(r"^\s*\d+\.?", "", " ".join(a.get_text(" ", strip=True).split()))
+                    raw_title = re.sub(r"^\s*\d+\.?", "", " ".join(a.get_text(" ", strip=True).split()))
+                    title = _clean_title(raw_title)
                     if len(title) < 8:
                         continue
                     if title.lower() in {"latest releases", "release calendar", "international cooperation", "understanding statistics"}:
                         continue
                     href = urljoin(page["url"], a["href"])
-                    nearby = " ".join([title, a.parent.get_text(" ", strip=True) if a.parent else ""])
+                    nearby = " ".join([raw_title, a.parent.get_text(" ", strip=True) if a.parent else ""])
                     when = _parse_dateish(nearby)
                     has_iso_date = bool(when and re.match(r"20\d{2}-\d{2}-\d{2}", when))
                     if when and re.match(r"20\d{2}-\d{2}-\d{2}", when):
@@ -793,13 +844,14 @@ def _fetch_news_pages(cfg: dict, today: date | None = None) -> tuple[list[dict],
                 source_lang = page.get("source_lang", "en")
                 added = 0
                 for a in soup.find_all("a", href=True):
-                    title = " ".join(a.get_text(" ", strip=True).split())
+                    raw_title = " ".join(a.get_text(" ", strip=True).split())
+                    title = _clean_title(raw_title)
                     if len(title) < 12:
                         continue
                     href = urljoin(page["url"], a["href"])
                     if domain and domain not in href:
                         continue
-                    when = _parse_dateish(f"{title} {href}")
+                    when = _parse_dateish(f"{raw_title} {href}")
                     if when:
                         try:
                             if date.fromisoformat(when) < today - timedelta(days=window_days):
