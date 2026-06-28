@@ -646,10 +646,11 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     eligible = [e for e in ranked if (sig_verdict.get(e["ticker"]) or {}).get("eligible")]
     gate_applied = bool(eligible)
     if gate_applied:
-        # takes first (tier_rank 0), then anticipations; composite_z orders within tier
-        buys = sorted(eligible,
-                      key=lambda e: (signal_gate.tier_rank(sig_verdict.get(e["ticker"])),
-                                     -comp(e)))[:n_buy]
+        # owner's WEIGHTED cascade blend: tier weight scales a conviction percentile so strong
+        # earlier tiers surface alongside masters, not buried below them (TIERED_CASCADE.md).
+        buys = signal_gate.blend_sorted(
+            eligible, base_of=comp,
+            verdict_of=lambda e: sig_verdict.get(e["ticker"]))[:n_buy]
     else:   # degenerate: no name cleared the confluence gate -> graceful un-gated fallback
         log.warning("hk_standouts: 0 names cleared the confluence gate — falling back to conviction board")
         buys = [e for e in ranked if buyable(e)][:n_buy]

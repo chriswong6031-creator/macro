@@ -186,10 +186,12 @@ def rank_setups(cands: list[tuple[float, dict]], *, buy_min: float = BUY_MIN,
         eligible = [(s, r) for s, r in ranked_desc
                     if (gate.get(r.get("ticker")) or {}).get("eligible")]
         if eligible:
-            # primary key = tier (take above anticipation), secondary = the market rank key
-            gated = sorted(eligible,
-                           key=lambda x: (signal_gate.tier_rank(gate.get(x[1].get("ticker"))),
-                                          -_key(x)[0], -_key(x)[1]))
+            # owner's WEIGHTED cascade blend: the cascade tier weight scales the market rank
+            # key's percentile so strong-rank earlier tiers (T2/T3) surface alongside masters,
+            # not buried below them when confirmed takes outnumber the cap (TIERED_CASCADE.md).
+            gated = signal_gate.blend_sorted(
+                eligible, base_of=lambda x: _key(x)[0],
+                verdict_of=lambda x: gate.get(x[1].get("ticker")))
             buys = dedupe_dual_class([r for _s, r in gated])[:n_buy]
             return {"as_of": as_of, "buy": buys, "laggards": laggards,
                     "gate_applied": True,

@@ -56,6 +56,10 @@ _TIER_ORDER = {(TAKE, None): 0, (ANTICIPATION, "pending"): 1, (ANTICIPATION, "ea
 # owner's weighted cascade rank (held-out justified, TIERED_CASCADE.md): T1 master .. T4 earliest.
 # pending (3D master forming) sits at 1, between the held take (T1=0) and the 2D-early tiers.
 _CASCADE_RANK = {"T1": 0, "T2": 2, "T3": 3, "T4": 4}
+# board ranking = convex blend of cascade tier (TIER_FRAC) + conviction percentile (1-TIER_FRAC).
+# Conviction-led (<0.5) so strong EARLIER tiers surface on a take-heavy board; tier is a real
+# boost (a master beats an equal-conviction earlier tier). See signal_gate.blend_sorted.
+TIER_FRAC = 0.45
 
 _VERDICT_KEYS = ("eligible", "tier", "sub", "reason", "state", "above200",
                  "weekly_bull", "early_now", "asof", "last",
@@ -140,6 +144,32 @@ def tier_rank(v: dict | None) -> int:
     if tc:
         return _CASCADE_RANK.get(tc, 8)
     return _TIER_ORDER.get((v.get("tier"), v.get("sub")), 8)
+
+
+def blend_sorted(items: list, base_of, verdict_of, reverse: bool = True) -> list:
+    """Order `items` by the owner's WEIGHTED cascade blend (best first by default).
+
+    Strict tier-first buries the earlier tiers whenever confirmed masters outnumber the board
+    cap (US/CN). The owner asked for a WEIGHTED blend instead: a name's board score is its
+    base-score PERCENTILE within the pool, lifted by 0.5 and SCALED by the cascade weight
+    (T1 1.0 .. T4 0.4) -- so masters still dominate, but a strong-conviction T2/T3 outranks a
+    weak master and surfaces. Percentile-based ⇒ robust to the per-market base scale
+    (US/HK composite_z, CN/CA alpha/setup). `base_of(x)`->market rank score; `verdict_of(x)`->
+    the signal_gate verdict (for .weight). Ineligible / weightless names sink (score 0).
+    See research/signal_engine/TIERED_CASCADE.md."""
+    import bisect
+    vals = sorted((base_of(x) or 0.0) for x in items)
+    n = len(vals) or 1
+
+    def _score(x):
+        w = (verdict_of(x) or {}).get("weight") or 0.0
+        if not w:
+            return -1.0
+        wn = max(0.0, min(1.0, (w - 0.4) / 0.6))                 # T1->1.0 .. T4->0.0
+        pct = bisect.bisect_right(vals, base_of(x) or 0.0) / n   # conviction percentile in pool
+        return TIER_FRAC * wn + (1.0 - TIER_FRAC) * pct          # convex blend (conviction-led)
+
+    return sorted(items, key=_score, reverse=reverse)
 
 
 def compact(v: dict | None) -> dict:

@@ -1135,10 +1135,13 @@ def main() -> int:
         eligible_scored = [(t, p) for t, p in scored if _elig(t)]
         gate_applied = bool(eligible_scored)
         if gate_applied:
-            # takes first (tier_rank 0), then anticipations; composite_z orders within tier
-            buyable = sorted(eligible_scored,
-                             key=lambda kv: (signal_gate.tier_rank(sig_verdict.get(kv[0])),
-                                             -(kv[1]["composite_z"])))
+            # owner's WEIGHTED cascade blend: tier weight scales a conviction percentile so
+            # strong-conviction earlier tiers (T2/T3) surface alongside masters, not buried
+            # below them when confirmed takes outnumber the cap (TIERED_CASCADE.md).
+            buyable = signal_gate.blend_sorted(
+                eligible_scored,
+                base_of=lambda kv: kv[1].get("composite_z"),
+                verdict_of=lambda kv: sig_verdict.get(kv[0]))
             buy_set = {t for t, _ in buyable}
             watch = [(t, p) for t, p in scored
                      if t not in buy_set and (p.get("composite_z") or 0) > 0]
