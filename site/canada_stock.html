@@ -567,6 +567,11 @@
         <p class="muted" id="r_why" style="margin:6px 0"></p>
       </details>
     </div>
+    <!-- ===== Price chart — pinned to the top, right below the decision card ===== -->
+    <div class="panel">
+      <h2><span class="l-en">Chart</span><span class="l-zh">图表</span></h2>
+      <div id="tvbox"></div>
+    </div>
     <!-- ===== Evidence lanes + country slot (Layer 2, shared stockview.js) ===== -->
     <div id="sv-evidence"></div>
     <div id="sv-country"></div>
@@ -606,14 +611,10 @@
       <div id="r_cbeta" class="mtf"></div>
     </div>
     </details>
-    <details class="sv-group"><summary><span class="l-en">📈 Momentum, chart &amp; history</span><span class="l-zh">📈 动量、图表与历史</span></summary>
+    <details class="sv-group"><summary><span class="l-en">📈 Momentum &amp; history</span><span class="l-zh">📈 动量与历史</span></summary>
     <div class="panel">
       <h2><span class="l-en">Momentum across timeframes</span><span class="l-zh">跨周期动量</span></h2>
       <div id="r_mtf"></div>
-    </div>
-    <div class="panel">
-      <h2><span class="l-en">Chart</span><span class="l-zh">图表</span></h2>
-      <div id="tvbox"></div>
     </div>
     <div class="panel" id="r_cal_panel" style="display:none">
       <h2><span class="l-en">How much to trust the state — measured on TSX history</span><span class="l-zh">这个状态有多可信 — 基于TSX历史实测</span><span class="help">?<span class="tip"><span class="l-en">TSX names drift up over a month from every state; the spread between states is small. Use the state for <b>structure</b> (cycle position, confirmation checklist, invalidation level) and size positions instead of seeking certainty. <b>Typical dip</b> = median worst drop over the next month; <b>bad-case dip</b> = the worst 1-in-10 month (10th percentile).</span><span class="l-zh">从任何状态出发，TSX 个股在一个月内都倾向于上涨；各状态之间的差距很小。请把状态用于<b>结构判断</b>（周期位置、确认清单、失效价位）并据此控制仓位，而非追求确定性。<b>典型回撤</b> = 未来一个月最大跌幅中位数；<b>最坏回撤</b> = 十分之一的最差月份（第10百分位）。</span></span></span></h2>
