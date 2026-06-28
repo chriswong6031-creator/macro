@@ -312,10 +312,17 @@ def run() -> dict:
         log.error("glut-watch layer failed: %s", e)
         latest["glut_watch"] = None
     try:
+        from engine.guidance_gap import compute_guidance_gap
+        latest["guidance_gap"] = compute_guidance_gap()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("guidance-gap layer failed: %s", e)
+        latest["guidance_gap"] = None
+    try:
         from engine.foresight_cascade import compute_foresight_cascade
         latest["foresight_cascade"] = compute_foresight_cascade(
             latest.get("bottleneck"), latest.get("theme_revisions"),
-            latest.get("demand_capex"), latest.get("glut_watch"))
+            latest.get("demand_capex"), latest.get("glut_watch"),
+            latest.get("guidance_gap"))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("foresight-cascade layer failed: %s", e)
         latest["foresight_cascade"] = None

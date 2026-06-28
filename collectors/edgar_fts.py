@@ -38,7 +38,42 @@ PHRASES = [
 MAX_PAGES = 5              # 10 hits/page -> up to 50 most-recent hits per phrase
 LOOKBACK_DAYS = 400        # window swept (covers the engine's 240d accel window + margin)
 STALE_DAYS = 7             # skip refresh if the cache's newest fetch is younger than this
-_TICKER_RE = re.compile(r"\(([A-Z][A-Z.\-]{0,6}),\s*CIK", re.I)
+# EDGAR display_names come in two shapes, both handled below:
+#   legacy   "COMPANY  (TICK, CIK 0001234567)"          — ticker + CIK in ONE paren
+#   current  "COMPANY  (TICK)  (CIK 0001234567)"        — ticker and CIK in SEPARATE parens
+#            "COMPANY  (TICK, TICK-WT)  (CIK ...)"       — multiple share classes / warrants
+#            "Boeing Co (The)  (BA)  (CIK 0000012927)"  — a name-paren BEFORE the ticker paren
+# The old regex only matched the legacy single-paren form, so every current-format hit
+# parsed to None (silently dropping the entire EDGAR-language leg). The ticker paren is the
+# LAST ticker-shaped paren immediately preceding the CIK paren — so an issuer-name paren like
+# "(The)" (Boeing/Coca-Cola/Disney/Carlyle) is overwritten by the real "(BA)" paren rather
+# than mistaken for the ticker.
+_PAREN_RE = re.compile(r"\(([^)]*)\)")
+_TICKER_TOK = re.compile(r"^[A-Z][A-Z.\-]{0,6}$")
+# common issuer-name-paren tokens that are ticker-SHAPED but are not tickers
+_NOT_TICKER = {"THE", "INC", "CO", "CORP", "LP", "LLP", "LLC", "LTD", "PLC", "SA", "AG",
+               "NV", "SE", "AB", "NEW", "OLD", "CLASS", "OF", "GROUP", "HLDG", "HLDGS"}
+
+
+def _tickers_from_display(name: str) -> list[str]:
+    """Tickers from the paren immediately preceding the CIK paren (the ticker paren).
+
+    Returns [] when no ticker-shaped token precedes the CIK. Handles the legacy single-paren
+    '(TICK, CIK ..)', the current two-paren '(TICK) (CIK ..)', multi-class '(TICK, TICK-WT)',
+    and a leading issuer-name paren like '(The)' (which gets overwritten by the real paren)."""
+    last: list[str] = []
+    for grp in _PAREN_RE.findall(name or ""):
+        g = grp.strip()
+        if g.upper().startswith("CIK"):
+            return last                         # the ticker paren is the one just before CIK
+        toks = []
+        for tok in g.split(","):
+            tok = tok.strip().upper()
+            if tok and tok not in _NOT_TICKER and tok != "CIK" and _TICKER_TOK.match(tok):
+                toks.append(tok)
+        if toks:
+            last = toks                         # overwrite earlier name-parens like (The)
+    return last                                 # legacy form (CIK lives inside the ticker paren)
 
 
 def _cache_path():
@@ -60,10 +95,10 @@ def _parse_hit(h: dict) -> dict | None:
     names = src.get("display_names") or []
     if not names:
         return None
-    m = _TICKER_RE.search(names[0])
-    if not m:
+    cand = _tickers_from_display(names[0])
+    if not cand:
         return None
-    ticker = m.group(1).upper()
+    ticker = cand[0]
     ciks = src.get("ciks") or []
     return {
         "id": h.get("_id"),

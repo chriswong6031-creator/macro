@@ -15,6 +15,9 @@
 {% macro rv_tone(level) -%}
 {%- if level == 'POSITIVE' -%}hot{%- elif level == 'NEGATIVE' -%}cool{%- elif level == 'FLAT_LOW' -%}info{%- else -%}mute{%- endif -%}
 {%- endmacro %}
+{% macro gd_tone(band) -%}
+{%- if band in ('RAISING','BROAD-RAISE') -%}hot{%- elif band == 'CUTTING' -%}cool{%- else -%}mute{%- endif -%}
+{%- endmacro %}
 
 {% block base_css %}
   .fx-wrap { max-width:1060px; margin:0 auto; }
@@ -152,8 +155,8 @@
     <summary>{{ t('How to read the cascade', '如何解读级联') }}</summary>
     <div class="fx-flow">
       <b>{{ t('The cascade, by lead time', '按领先时间排列的级联') }}:</b>
-      <b>T1 {{ t('Bottleneck', '瓶颈') }}</b><span class="arr">→</span><b>T2 {{ t('Demand', '需求') }}</b><span class="arr">→</span><b>T4 {{ t('Revisions', '预期修正') }}</b><span class="arr">→</span><b>{{ t('Entry (dislocation)', '入场（错位）') }}</b>.
-      {{ t('Bottleneck LEADS; demand & revisions CONFIRM; entry is timed separately.', '瓶颈领先；需求与预期确认；入场单独择时。') }}
+      <b>T1 {{ t('Bottleneck', '瓶颈') }}</b><span class="arr">→</span><b>T2 {{ t('Demand', '需求') }}</b><span class="arr">→</span><b>T3 {{ t('Guidance', '指引') }}</b><span class="arr">→</span><b>T4 {{ t('Revisions', '预期修正') }}</b><span class="arr">→</span><b>{{ t('Entry (dislocation)', '入场（错位）') }}</b>.
+      {{ t('Bottleneck LEADS; demand & guidance pre-signal; revisions CONFIRM; entry is timed separately.', '瓶颈领先；需求与指引预示；预期确认；入场单独择时。') }}
     </div>
     <div class="fx-leg-grid">
       <div class="fx-leg-item"><b style="color:var(--info)">PRECIPICE</b> — <span class="mut">{{ t('supply tight, revisions not yet firing — early, highest edge remaining', '供给紧张、预期尚未启动——早期，剩余优势最大') }}</span></div>
@@ -189,6 +192,11 @@
           <div class="lv">{{ r.demand_band or '—' }}</div>
           <div class="ld">{% if r.capex_yoy is not none %}{{ t('customer capex', '客户资本开支') }} +{{ r.capex_yoy|round|int }}% YoY{% else %}{{ t('not capex-linked', '非资本开支驱动') }}{% endif %}</div>
         </div>
+        <div class="fx-leg {{ gd_tone(r.guidance_band) }}">
+          <div class="lk">T3 · {{ t('Guidance', '业绩指引') }}</div>
+          <div class="lv">{{ r.guidance_band or '—' }}</div>
+          <div class="ld">{% if r.guidance_band %}{% if r.guidance_raisers %}{{ r.guidance_raisers }} {{ t('raising', '上调') }}{% endif %}{% if r.guidance_raisers and r.guidance_cutters %} · {% endif %}{% if r.guidance_cutters %}{{ r.guidance_cutters }} {{ t('cutting', '下调') }}{% endif %}{% if not r.guidance_raisers and not r.guidance_cutters %}{{ t('balanced', '中性') }}{% endif %}{% else %}{{ t('no 8-K guidance', '无8-K指引') }}{% endif %}</div>
+        </div>
         <div class="fx-leg {{ rv_tone(r.revision_level) }}">
           <div class="lk">T4 · {{ t('Revisions', '预期修正') }}</div>
           <div class="lv">{% if r.revision_breadth is not none %}{{ '%+.2f'|format(r.revision_breadth) }}{% else %}—{% endif %}</div>
@@ -213,6 +221,7 @@
       <span class="chip2"><b>{{ track.bottleneck }}</b> {{ t('bottleneck regimes', '瓶颈机制') }}</span>
       <span class="chip2"><b>{{ track.glut }}</b> {{ t('glut flags', '过剩标记') }}</span>
       <span class="chip2"><b>{{ track.revisions }}</b> {{ t('revision reads', '预期读数') }}</span>
+      <span class="chip2"><b>{{ track.guidance }}</b> {{ t('guidance tilts', '指引倾向') }}</span>
       {% for e in track.recent %}<span class="chip2">{{ e.theme }} · <b>{{ e.stage }}</b> · {{ e.asof }}</span>{% endfor %}
     </div>
     {% if grade %}
@@ -231,8 +240,8 @@
   <div class="fx-panel">
     <h2>{{ t('Methodology & honesty', '方法与诚实声明') }}</h2>
     <p class="fx-meth">{{ t(
-      '<b>Display-only.</b> Nothing here is a scored signal or a sized position. <b>Bottleneck (T1)</b> reads free FRED capacity / inventory / orders / industry-PPI + SEC EDGAR "sold out / on allocation" language; it is the leading thesis and shows <i>AWAITING</i> until the FRED series collect. <b>Demand (T2)</b> projects the hyperscaler-capex pool onto AI-beneficiary themes (capex leads beneficiary revenue ~2–4 quarters). <b>Revisions (T4)</b> roll per-name analyst EPS-revision breadth up to the theme — the confirmation gauge, never the entry. The desk is a <b>watchlist-builder / thesis-confirmer, not an entry-timer</b>: 13D was right and ~9 months early, so the BUY is deferred to the dislocation overlay (buy the flush, not the pop). <b>Exit-risk (glut)</b> inverts the bottleneck — capacity rolling over, inventories restocking, pricing fading, and capacity expanding to chase the shortage — and takes precedence over a late read: a forming glut while estimates are still high is the trim/exit clock. No point-dates; turn-detection is measured coincident, so hazard reads are banded.',
-      '<b>仅供展示。</b>此处任何内容都不是评分信号或仓位。<b>瓶颈（T1）</b>读取免费的 FRED 产能/库存/订单/行业 PPI ＋ SEC EDGAR “售罄/配额”用语；它是领先论点，在 FRED 序列采集前显示<i>待采集</i>。<b>需求（T2）</b>将云厂商资本开支池投射到 AI 受益主题（资本开支领先受益方营收约2–4个季度）。<b>预期修正（T4）</b>将个股分析师 EPS 上修广度汇总到主题层——确认指标，绝非入场点。本台是<b>观察名单构建器／论点确认器，而非择时器</b>：13D 正确但早约9个月，故买点交由错位叠加（买回调，不买冲高）。<b>退出风险（过剩）</b>与瓶颈相反——产能见顶回落、库存回补、定价走弱、产能为追赶短缺而扩张——并优先于偏晚读数：预期仍高而过剩正在形成即为减仓／退出倒计时。不给精确日期；拐点检测为同步指标，故风险读数以区间呈现。') }}</p>
+      '<b>Display-only.</b> Nothing here is a scored signal or a sized position. <b>Bottleneck (T1)</b> reads free FRED capacity / inventory / orders / industry-PPI + SEC EDGAR "sold out / on allocation" language; it is the leading thesis and shows <i>AWAITING</i> until the FRED series collect. <b>Demand (T2)</b> projects the hyperscaler-capex pool onto AI-beneficiary themes (capex leads beneficiary revenue ~2–4 quarters). <b>Guidance (T3)</b> reads free SEC EDGAR 8-K "raising / lowering guidance" language — management pre-signaling that leads the consensus revision by days-to-weeks (≥2 filers to call a tilt; a coarse directional band, not a numeric beat/miss — the numeric gap vs whisper is the paid upgrade). <b>Revisions (T4)</b> roll per-name analyst EPS-revision breadth up to the theme — the confirmation gauge, never the entry. The desk is a <b>watchlist-builder / thesis-confirmer, not an entry-timer</b>: 13D was right and ~9 months early, so the BUY is deferred to the dislocation overlay (buy the flush, not the pop). <b>Exit-risk (glut)</b> inverts the bottleneck — capacity rolling over, inventories restocking, pricing fading, and capacity expanding to chase the shortage — and takes precedence over a late read: a forming glut while estimates are still high is the trim/exit clock. No point-dates; turn-detection is measured coincident, so hazard reads are banded.',
+      '<b>仅供展示。</b>此处任何内容都不是评分信号或仓位。<b>瓶颈（T1）</b>读取免费的 FRED 产能/库存/订单/行业 PPI ＋ SEC EDGAR “售罄/配额”用语；它是领先论点，在 FRED 序列采集前显示<i>待采集</i>。<b>需求（T2）</b>将云厂商资本开支池投射到 AI 受益主题（资本开支领先受益方营收约2–4个季度）。<b>指引（T3）</b>读取免费的 SEC EDGAR 8-K “上调／下调业绩指引”用语——管理层预先释放信号，领先市场一致预期修正数日至数周（需≥2家公司方可判定倾向；为粗略方向区间，而非精确超预期幅度——与whisper对比的数值缺口为付费升级）。<b>预期修正（T4）</b>将个股分析师 EPS 上修广度汇总到主题层——确认指标，绝非入场点。本台是<b>观察名单构建器／论点确认器，而非择时器</b>：13D 正确但早约9个月，故买点交由错位叠加（买回调，不买冲高）。<b>退出风险（过剩）</b>与瓶颈相反——产能见顶回落、库存回补、定价走弱、产能为追赶短缺而扩张——并优先于偏晚读数：预期仍高而过剩正在形成即为减仓／退出倒计时。不给精确日期；拐点检测为同步指标，故风险读数以区间呈现。') }}</p>
   </div>
 
 </div>

@@ -82,6 +82,25 @@ def test_demand_confirms_in_rationale():
     assert "capex" in r["rationale"].lower()
 
 
+def test_guidance_confirms_without_changing_stage():
+    # T3 guidance is a LEADING confirmer on the rationale + a score input, never a
+    # stage-changer: a BROAD-RAISE on a PRECIPICE theme stays PRECIPICE but lifts the
+    # acceleration axis and annotates the rationale.
+    bottleneck = {"themes": {"a": {"name": "A", "band": "TIGHT", "tightness": 0.9, "regime": True}}}
+    revisions = {"themes": {"a": {"name": "A", "breadth": 0.05, "level_state": "FLAT_LOW"}}}
+    guidance = {"themes": {"a": {"name": "A", "guidance_band": "BROAD-RAISE",
+                                 "n_raisers": 3, "n_cutters": 0, "net": 3}}}
+    out = fc.compute_foresight_cascade(bottleneck=bottleneck, revisions=revisions,
+                                       demand={"themes": {}}, glut={"themes": {}},
+                                       guidance=guidance, write_ledger=False)
+    r = out["themes"][0]
+    assert r["stage"] == "PRECIPICE"
+    assert r["guidance_band"] == "BROAD-RAISE"
+    assert r["guidance_raisers"] == 3
+    assert "pre-signaling" in r["rationale"]
+    assert r["score_detail"]["axes"]["acceleration"] >= 0.5   # T3 raise lifts acceleration
+
+
 def test_glut_overrides_to_exit_risk():
     # a forming glut while estimates are still broad -> GLUT-RISK (exit clock) takes precedence
     bottleneck = {"themes": {"a": {"name": "A", "band": "TIGHT", "tightness": 0.9}}}

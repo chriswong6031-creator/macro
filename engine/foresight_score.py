@@ -56,7 +56,14 @@ def _acceleration(r: dict) -> float:
     if r.get("bottleneck_regime"):
         parts.append(0.85)
     parts = [p for p in parts if p is not None]
-    return round(sum(parts) / len(parts), 3) if parts else 0.4
+    base = (sum(parts) / len(parts)) if parts else 0.4
+    # T3 guidance tilt is a LEADING acceleration precursor — management raising guidance
+    # front-runs the revision wave; a cut decelerates. Applied as a bounded bonus/drag on
+    # the context mean (NOT an averaged member, which could let a RAISE LOWER acceleration
+    # on an already-hot theme). NEUTRAL / absent never moves the axis.
+    guband = r.get("guidance_band")
+    base += {"BROAD-RAISE": 0.10, "RAISING": 0.06, "CUTTING": -0.15}.get(guband, 0.0)
+    return round(_clamp(base, 0.0, 1.0), 3)
 
 
 def _bottleneck(r: dict) -> float | None:

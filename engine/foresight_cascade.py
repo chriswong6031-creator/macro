@@ -121,9 +121,13 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
                               revisions: dict | None = None,
                               demand: dict | None = None,
                               glut: dict | None = None,
+                              guidance: dict | None = None,
                               write_ledger: bool = True) -> dict | None:
-    """Combine T1 (bottleneck) x T2 (demand) x T4 (revisions) x exit-risk (glut) into a
-    per-theme stage + entry overlay. Computes any input not supplied."""
+    """Combine T1 (bottleneck) x T2 (demand) x T3 (guidance) x T4 (revisions) x exit-risk
+    (glut) into a per-theme stage + entry overlay. Computes any input not supplied.
+
+    T3 guidance is a LEADING confirmer on the rationale + a score input, never a
+    stage-changer (the stage stays T1 x T4 x exit-risk)."""
     if bottleneck is None:
         try:
             from engine.bottleneck import compute_bottleneck
@@ -152,11 +156,19 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         except Exception as e:  # noqa: BLE001
             log.warning("cascade: glut_watch failed: %s", e)
             glut = None
+    if guidance is None:
+        try:
+            from engine.guidance_gap import compute_guidance_gap
+            guidance = compute_guidance_gap(write_ledger=False)
+        except Exception as e:  # noqa: BLE001
+            log.warning("cascade: guidance_gap failed: %s", e)
+            guidance = None
 
     bn_themes = (bottleneck or {}).get("themes") or {}
     rv_themes = (revisions or {}).get("themes") or {}
     dm_themes = (demand or {}).get("themes") or {}
     gl_themes = (glut or {}).get("themes") or {}
+    gd_themes = (guidance or {}).get("themes") or {}
     keys = set(bn_themes) | set(rv_themes) | set(dm_themes)
     if not keys:
         return None
@@ -165,6 +177,7 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
     rows = []
     for k in keys:
         bn, rv, dm, gl = bn_themes.get(k), rv_themes.get(k), dm_themes.get(k), gl_themes.get(k)
+        gd = gd_themes.get(k)
         gband = (gl or {}).get("band")
         stage, rationale = _stage(bn, rv, gband)
         # demand is a LEADING confirmation/conviction modifier on the rationale, not a
@@ -174,6 +187,15 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
             rationale += f" · customer capex {dband.lower()} (+{(dm.get('capex_yoy') or 0):.0f}% YoY) confirms demand"
         elif dm and dband in ("COOLING", "CONTRACTING") and stage != "GLUT-RISK":
             rationale += f" · CAUTION: customer capex {dband.lower()}"
+        # T3 guidance is the LEADING pre-revision confirmer: management raising guidance
+        # (8-K language) front-runs the consensus revision. Reinforces a thesis stage,
+        # cautions a late one; never changes the stage.
+        guband = (gd or {}).get("guidance_band")
+        if gd and guband in ("RAISING", "BROAD-RAISE") and stage in THESIS_STAGES:
+            rationale += (f" · T3 guidance {guband.lower()}: {gd.get('n_raisers', 0)} "
+                          "firm(s) pre-signaling above consensus (leads the revision)")
+        elif gd and guband == "CUTTING" and stage != "GLUT-RISK":
+            rationale += f" · CAUTION: {gd.get('n_cutters', 0)} firm(s) cutting guidance"
         entry_ready, entry_note = _entry(stage, disloc)
         rows.append({
             "theme": k,
@@ -192,6 +214,10 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
             "revision_level": (rv or {}).get("level_state"),
             "broadening_state": (rv or {}).get("broadening_state"),
             "est_drift_90d": (rv or {}).get("est_drift_90d"),
+            "guidance_band": guband,
+            "guidance_net": (gd or {}).get("net"),
+            "guidance_raisers": (gd or {}).get("n_raisers"),
+            "guidance_cutters": (gd or {}).get("n_cutters"),
             "glut_band": gband,
             "glut_score": (gl or {}).get("glut_score"),
         })
@@ -210,8 +236,9 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         "demand_pool": {"bn": (demand or {}).get("pool_bn"), "yoy": (demand or {}).get("pool_yoy"),
                         "trend": (demand or {}).get("pool_trend")} if demand else None,
         "note": ("display-only; STAGE = where the leading edge is. T1 bottleneck LEADS, T2 "
-                 "demand confirms, T4 revisions confirm, exit-risk caps the late ones; the "
-                 "0-100 score ranks edge+quality. ENTRY is deferred to the dislocation overlay."),
+                 "demand confirms, T3 guidance pre-signals the revision, T4 revisions confirm, "
+                 "exit-risk caps the late ones; the 0-100 score ranks edge+quality. ENTRY is "
+                 "deferred to the dislocation overlay."),
     }
     # Phase-5 investability rubric: annotate each row with a 0-100 score and re-rank by it
     # (additive — the cascade is unchanged if scoring fails).
