@@ -203,6 +203,32 @@ def test_enriched_time_is_clean_for_native_scraped_item() -> None:
     assert clean["time"] == "2026-06-28 17:04:04"      # real timestamp preserved
 
 
+def test_clean_title_strips_breadcrumb_and_relative_time() -> None:
+    # the two exact garbage titles reported on native CN sources (cnstock/yicai)
+    g1 = '人民币资产"圈粉"全球 财政部再发50亿欧元主权债券 要闻 · 人民币资产 06-27'
+    g2 = "下周外盘看点丨非农如何影响美联储加息… OPEC+月度会议召开。 10分钟前"
+    assert cn._clean_title(g1) == '人民币资产"圈粉"全球 财政部再发50亿欧元主权债券'
+    assert cn._clean_title(g2) == "下周外盘看点丨非农如何影响美联储加息… OPEC+月度会议召开。"
+    # every relative-time / date suffix variant the task calls out
+    assert cn._clean_title("央行开展逆回购操作 3小时前") == "央行开展逆回购操作"
+    assert cn._clean_title("统计局公布PPI数据 昨天 15:30") == "统计局公布PPI数据"
+    assert cn._clean_title("社融数据超预期 今天09:00") == "社融数据超预期"
+    assert cn._clean_title("证监会发布新规 06-27 14:05") == "证监会发布新规"
+    assert cn._clean_title("发改委部署稳增长 2026-06-27") == "发改委部署稳增长"
+    # trailing "section · tail" breadcrumb (stcn-style) — any short label/tail
+    assert cn._clean_title("拟收购光通信公司，SpaceX获批 聚焦 · SpaceX") == "拟收购光通信公司，SpaceX获批"
+    assert cn._clean_title("创纪录！百亿级私募突破140家 基金 · 私募基金") == "创纪录！百亿级私募突破140家"
+    assert cn._clean_title("太空算力真火，创企3个月融资已3轮 产业资讯 · 太空算力") == "太空算力真火，创企3个月融资已3轮"
+    # leading section breadcrumb label is stripped from the front
+    assert cn._clean_title("要闻 · A股放量上涨北向资金净流入") == "A股放量上涨北向资金净流入"
+    # conservative: never touch mid-title text, hyphenated scores, or clean titles
+    assert (cn._clean_title("上市公司密集启动增持回购 A股市场情绪回暖")
+            == "上市公司密集启动增持回购 A股市场情绪回暖")
+    assert cn._clean_title("中国队3-2险胜") == "中国队3-2险胜"   # glued digits kept
+    assert cn._clean_title("PBOC keeps loan prime rate steady") == "PBOC keeps loan prime rate steady"
+    assert cn._clean_title("") == ""
+
+
 def test_panel_importable() -> None:
     # the build_china entrypoint just calls cn.panel(); make sure it exists/imports
     assert callable(cn.panel) and callable(cn.policy_tone) and callable(cn.flash_headlines)
@@ -222,6 +248,7 @@ if __name__ == "__main__":
         test_clean_time_rejects_title_and_url,
         test_parse_dateish_never_echoes_raw_input,
         test_enriched_time_is_clean_for_native_scraped_item,
+        test_clean_title_strips_breadcrumb_and_relative_time,
         test_panel_importable,
     ]
     for fn in tests:
