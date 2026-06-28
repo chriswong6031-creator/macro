@@ -215,6 +215,11 @@
         <p class="muted" id="r_why" style="margin:6px 0"></p>
       </details>
     </div>
+    <!-- ===== Price chart — pinned to the top, right below the decision card ===== -->
+    <div class="panel">
+      <h2>{{ t('Chart', '图表') }}</h2>
+      <div id="tvbox"></div>
+    </div>
     <!-- ===== Evidence lanes + country slot (Layer 2, shared stockview.js) ===== -->
     <div id="sv-evidence"></div>
     <div id="sv-country"></div>
@@ -238,14 +243,10 @@
       <div id="r_ah"></div>
     </div>
     </details>
-    <details class="sv-group"><summary>{{ t('📈 Momentum, chart &amp; history', '📈 动量、图表与历史') }}</summary>
+    <details class="sv-group"><summary>{{ t('📈 Momentum &amp; history', '📈 动量与历史') }}</summary>
     <div class="panel">
       <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
       <div id="r_mtf"></div>
-    </div>
-    <div class="panel">
-      <h2>{{ t('Chart', '图表') }}</h2>
-      <div id="tvbox"></div>
     </div>
     <div class="panel">
       <h2>{{ t('How much to trust the state — measured on HK history', '这个状态有多可信 — 基于香港历史实测') }}{{ help(
