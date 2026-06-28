@@ -1,27 +1,46 @@
+{# =========================================================================
+   Capital Flow Velocity — "Flow Compass": ONE kinetics instrument read top to
+   bottom as a single zoom. Channel pulse (all big money) → sector lane → member
+   name + does the institution agree. Five tables merged into two zones that share
+   data, cross-validate (主力 flow × Dragon-Tiger seats), and breathe.
+   ========================================================================= #}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
-{# velocity z-chip: green = inflow (zh swaps to red per CJK convention via .chg classes) #}
-{% macro vz(v) -%}
-{% if v is none %}<span class="chg na">·</span>{% else %}<span class="chg {{ 'pos' if v>=0 else 'neg' }}">{{ '%+.2f'|format(v) }}σ</span>{% endif %}
+{# the SPINE: one velocity-bar glyph reused at 3 sizes. Centered track; fill grows from the
+   midline — right=inflow (green / zh red via currentColor), left=outflow. ±3σ fills a half. #}
+{% macro vbar(v, size='md', i=0) -%}
+<span class="vbar vbar-{{ size }}">
+  <span class="vbar-track">{% if v is not none %}{% set w = ((([ (v|abs)/3.0, 1.0]|min)) * 50)|round(1) %}<span class="vbar-fill {{ 'pos' if v>=0 else 'neg' }}" style="width:{{ w }}%;--i:{{ i }}"></span>{% endif %}</span>
+  <span class="vbar-sig">{{ '%+.2f'|format(v) if v is not none else '·' }}σ</span>
+</span>
 {%- endmacro %}
 {% macro rate(v) -%}
 {% if v is none %}<span class="chg na">·</span>{% else %}<span class="chg {{ 'pos' if v>=0 else 'neg' }}">{{ '%+.1f'|format(v) }}%</span>{% endif %}
 {%- endmacro %}
-{% macro spark(pts, cls='') -%}
-{% if pts %}<svg class="spark {{ cls }}" viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="{{ pts }}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>{% endif %}
+{% macro accel(v) -%}
+{% if v is none %}<span class="chg na">·</span>{% else %}<span class="chg {{ 'pos' if v>=0 else 'neg' }}">{{ '%+.3f'|format(v) }}</span>{% endif %}
+{%- endmacro %}
+{% macro spark(pts, frozen=False) -%}
+{% if pts %}<svg class="spark{{ ' spark-frozen' if frozen }}" viewBox="0 0 120 28" width="120" height="28" preserveAspectRatio="none"><polyline points="{{ pts }}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>{% if frozen %}<line x1="118" y1="2" x2="118" y2="26" stroke="var(--amber)" stroke-width="1.1" stroke-dasharray="2 2"/>{% endif %}</svg>{% endif %}
 {%- endmacro %}
 {% macro vstate(en, zh, vel) -%}
 {% set k = 'in' if (vel is not none and vel>=0.5) else ('out' if (vel is not none and vel<=-0.5) else 'mid') %}
 <span class="vstate {{ k }}">{{ t(en, zh) }}</span>
+{%- endmacro %}
+{# confluence: a pure render-time CLASS from two existing fields — NOT a stored/ranked score #}
+{% macro confcls(vel, seat) -%}
+{%- if seat and vel is not none -%}
+{%- if vel>=0.5 and seat.dir=='buy' -%}conf-buy{%- elif vel<=-0.5 and seat.dir=='sell' -%}conf-sell{%- elif (vel>=0.5 and seat.dir=='sell') or (vel<=-0.5 and seat.dir=='buy') -%}conf-diverge{%- endif -%}
+{%- endif -%}
 {%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Capital Flow Velocity — China & Hong Kong</title>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.setAttribute('data-market',sessionStorage.getItem('mkt')||'a');document.documentElement.classList.add('js');}catch(e){}</script>
+<title>Capital Flow Velocity — China &amp; Hong Kong</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -35,7 +54,7 @@ html[data-lang="zh"] .l-en{display:none}
 html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
 body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1280px;margin:0 auto;padding:0 20px 60px}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:20}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:22px;position:sticky;top:0;background:var(--bg);z-index:20}
 .nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
 a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
 a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
@@ -70,59 +89,113 @@ html[data-theme="dark"] .lang-toggle{background:#222732}
 html[data-theme="dark"] .theme-switch{background:#222732}
 html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
 html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
-.h1{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin:6px 0 4px}
-.intro{color:var(--muted);font-size:14.5px;max-width:920px;margin-bottom:6px}
-.note{border-left:3px solid var(--blue);padding:8px 0 8px 14px;margin:14px 0 4px;color:var(--text);font-size:13px;max-width:960px}
-.legend{display:flex;flex-wrap:wrap;gap:14px;margin:12px 0 2px;font-size:12px;color:var(--muted)}
-.legend b{color:var(--ink)}
-.sec-h{display:flex;align-items:baseline;gap:12px;margin:36px 0 4px;flex-wrap:wrap}
+.h1{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin:4px 0 4px}
+.intro{color:var(--muted);font-size:14.5px;max-width:940px;margin-bottom:8px}
+.note{border-left:3px solid var(--blue);padding:8px 0 8px 14px;margin:12px 0 4px;color:var(--text);font-size:13px;max-width:980px}
+/* legend — the visual key, shown once */
+.legend{display:flex;flex-wrap:wrap;gap:16px 22px;margin:14px 0 2px;font-size:12px;color:var(--muted);align-items:center}
+.legend .lg{display:inline-flex;align-items:center;gap:7px}.legend b{color:var(--ink);font-weight:700}
+.cdot{display:inline-block;width:8px;height:8px;border-radius:50%}
+.cdot.conf-buy{background:var(--green)}.cdot.conf-sell{background:var(--red)}
+.cdot.conf-diverge{background:transparent;border:1.5px solid var(--amber)}
+html[data-lang="zh"] .cdot.conf-buy{background:var(--red)}html[data-lang="zh"] .cdot.conf-sell{background:var(--green)}
+.sec-h{display:flex;align-items:baseline;gap:12px;margin:30px 0 4px;flex-wrap:wrap}
 .sec-h h2{font-size:21px;font-weight:800;color:var(--ink);margin:0;letter-spacing:-.02em}
 .sec-h .sub{color:var(--muted);font-size:13px}
 .chg{font-variant-numeric:tabular-nums;font-weight:700}
 .chg.pos{color:var(--green)} .chg.neg{color:var(--red)} .chg.na{color:var(--faint);font-weight:400}
 html[data-lang="zh"] .chg.pos{color:var(--red)} html[data-lang="zh"] .chg.neg{color:var(--green)}
-/* ---- aggregate channel cards ---- */
-.vgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:14px}
-@media(max-width:880px){.vgrid{grid-template-columns:1fr}}
-.vcard{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:20px;position:relative}
-.vcard.frozen{opacity:.86}
-.vcard-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:2px}
-.vcard-top h3{font-size:17px;font-weight:800;color:var(--ink);margin:0;letter-spacing:-.01em}
-.asof{margin-left:auto;font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums}
-.vstate{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid var(--grid);color:var(--text);white-space:nowrap}
+/* ── the velocity-bar glyph (the spine) ── */
+.vbar{display:inline-flex;flex-direction:column;align-items:center;gap:2px}
+.vbar-track{position:relative;height:6px;border-radius:999px;background:var(--grid)}
+.vbar-lg .vbar-track{width:92px}.vbar-md .vbar-track{width:64px}.vbar-sm .vbar-track{width:48px}
+.vbar-track::before{content:"";position:absolute;left:50%;top:-1px;height:8px;width:1px;background:var(--faint);opacity:.5}
+.vbar-fill{position:absolute;top:0;height:100%;border-radius:999px;transform-origin:left;animation:vfill .55s cubic-bezier(.3,1,.5,1) both;animation-delay:calc(var(--i,0)*26ms)}
+.vbar-fill.pos{left:50%;background:var(--green)}
+.vbar-fill.neg{right:50%;transform-origin:right;background:var(--red)}
+html[data-lang="zh"] .vbar-fill.pos{background:var(--red)}html[data-lang="zh"] .vbar-fill.neg{background:var(--green)}
+.vbar-sig{font-size:10px;font-variant-numeric:tabular-nums;color:var(--muted);line-height:1}
+@keyframes vfill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+/* ── state + chips ── */
+.vstate{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--grid);color:var(--text);white-space:nowrap}
 .vstate.in{border-color:#1FA971;color:#1FA971;background:color-mix(in srgb,#1FA971 10%,transparent)}
 .vstate.out{border-color:var(--red);color:var(--red);background:color-mix(in srgb,var(--red) 10%,transparent)}
 .vstate.mid{border-color:var(--amber);color:var(--amber);background:color-mix(in srgb,var(--amber) 9%,transparent)}
 html[data-lang="zh"] .vstate.in{border-color:var(--red);color:var(--red);background:color-mix(in srgb,var(--red) 10%,transparent)}
 html[data-lang="zh"] .vstate.out{border-color:#1FA971;color:#1FA971;background:color-mix(in srgb,#1FA971 10%,transparent)}
-.vrow{display:flex;gap:8px;margin:14px 0 6px;flex-wrap:wrap}
-.vchip{flex:1;min-width:84px;background:var(--bg);border-radius:11px;padding:9px 11px;text-align:center}
+/* ── Zone 1: channel pulse cards ── */
+.vgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:14px}
+@media(max-width:880px){.vgrid{grid-template-columns:1fr}}
+.vcard{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:18px 20px;position:relative}
+.vcard.frozen{opacity:.9;border-style:dashed;border-color:color-mix(in srgb,var(--amber) 45%,var(--grid))}
+.vcard-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:2px}
+.vcard-top h3{font-size:16px;font-weight:800;color:var(--ink);margin:0;letter-spacing:-.01em}
+.asof{margin-left:auto;font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.vrow{display:flex;gap:10px;margin:14px 0 8px}
+.vchip{flex:1;background:var(--bg);border-radius:12px;padding:10px 8px 9px;text-align:center}
 html[data-theme="dark"] .vchip{background:var(--grid)}
-.vchip .k{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700}
-.vchip .v{font-size:18px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
-.vmeta{display:flex;align-items:center;gap:12px;margin-top:10px;color:var(--muted);font-size:12px;flex-wrap:wrap}
-.vmeta .sp{color:var(--blue);flex:none}
-.frozen-banner{margin-top:12px;font-size:12px;color:var(--amber);border:1px dashed color-mix(in srgb,var(--amber) 50%,var(--grid));border-radius:10px;padding:9px 12px;line-height:1.5}
-/* ---- tables ---- */
-.two{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:14px}
-@media(max-width:900px){.two{grid-template-columns:1fr}}
-.panel{background:var(--card);border:1px solid var(--grid);border-radius:16px;overflow:hidden}
-.panel-h{padding:12px 16px;border-bottom:1px solid var(--grid);font-size:13px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px}
+.vchip .k{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;margin-bottom:6px}
+.vmeta{display:flex;align-items:center;gap:14px;margin-top:10px;color:var(--muted);font-size:12px;flex-wrap:wrap}
+.vmeta .sp{color:var(--blue);flex:none;margin-left:auto}.vcard.frozen .vmeta .sp,.vcard.frozen .spark{color:var(--faint)}
+.frozen-banner{margin-top:10px;font-size:12px;color:var(--amber);border:1px dashed color-mix(in srgb,var(--amber) 45%,var(--grid));border-radius:10px;padding:8px 11px;line-height:1.5}
+/* ── market toggle ── */
+.mkt-toggle{display:inline-flex;background:var(--card);border:1px solid var(--grid);border-radius:999px;padding:3px;gap:2px}
+.mkt-toggle button{appearance:none;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:700;padding:5px 14px;border-radius:999px;cursor:pointer;white-space:nowrap;transition:color .15s,background .15s}
+.mkt-toggle button[aria-pressed="true"]{background:var(--blue);color:#fff}
+html:not(.js) .mkt-toggle{display:none}
+/* JS-off: show both boards under their own headers; JS-on: market attr hides one */
+html.js[data-market="a"] .market-hk{display:none}
+html.js[data-market="hk"] .market-a{display:none}
+.market-tag{display:none}
+html:not(.js) .market-tag{display:inline-block;font-size:12px;color:var(--muted);margin:18px 0 0}
+/* ── Zone 2: the flow-map board ── */
+.panel{background:var(--card);border:1px solid var(--grid);border-radius:16px;overflow:hidden;margin-top:12px}
+.panel-h{padding:11px 16px;border-bottom:1px solid var(--grid);font-size:12.5px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.panel-h .dep{font-weight:500;color:var(--amber);font-size:12px}
 .tbl-wrap{overflow-x:auto}
-table.board{border-collapse:collapse;width:100%;font-size:13px}
-table.board th,table.board td{padding:8px 12px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--grid)}
-table.board th{font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--card)}
+table.board{border-collapse:collapse;width:100%;font-size:13px;min-width:920px}
+table.board th,table.board td{padding:9px 12px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--grid)}
+table.board th{font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700;cursor:pointer;user-select:none;background:var(--card)}
 table.board th:first-child,table.board td:first-child{text-align:left}
+table.board th.nos{cursor:default}
 table.board tbody tr:last-child td{border-bottom:none}
-table.board tbody tr:hover td{background:color-mix(in srgb,var(--blue) 6%,transparent)}
-.snm{font-weight:700;color:var(--ink)} .snm small{color:var(--faint);font-weight:400;font-size:11px;margin-left:5px}
-.tk{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--muted)}
-.full table.board{min-width:980px}
+.sector-row{cursor:pointer}
+.sector-row:hover td{background:color-mix(in srgb,var(--blue) 6%,transparent)}
+.chev{display:inline-flex;width:16px;justify-content:center;color:var(--muted);transition:transform .2s;font-size:10px}
+.sector-row.open .chev{transform:rotate(90deg);color:var(--blue)}
+.snm{font-weight:700;color:var(--ink)}
+.tk{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--faint);margin-left:6px}
 .cat{font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;background:var(--bg);border:1px solid var(--grid);color:var(--muted)}
 html[data-theme="dark"] .cat{background:var(--grid)}
+.attn{font-size:10.5px;font-weight:700;color:var(--blue);background:color-mix(in srgb,var(--blue) 12%,transparent);border-radius:6px;padding:2px 6px;margin-left:6px;white-space:nowrap}
 .spark{display:block;color:var(--blue)}
-.foot{margin-top:42px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7;max-width:1000px}
+/* member sub-rows */
+html.js .mrow{display:none}
+html.js .sector-row.open + .mrow,html.js .mrow.show{display:table-row}
+.mrow td{background:color-mix(in srgb,var(--bg) 55%,var(--card));border-bottom:1px solid color-mix(in srgb,var(--grid) 60%,transparent);padding-top:6px;padding-bottom:6px}
+.mrow.show td{animation:rowin .26s ease both}
+@keyframes rowin{from{opacity:0;transform:translateY(-2px)}to{opacity:1;transform:none}}
+.mrow .mname{padding-left:30px;position:relative}
+.mrow.meanrow td{color:var(--muted);font-style:italic;font-size:12px}
+.mrow.meanrow .mname{padding-left:30px}
+.mrow .lbar{box-shadow:none}
+.mrow.conf-buy td:first-child{box-shadow:inset 3px 0 0 color-mix(in srgb,var(--green) 60%,transparent)}
+.mrow.conf-sell td:first-child{box-shadow:inset 3px 0 0 color-mix(in srgb,var(--red) 60%,transparent)}
+.mrow.conf-diverge td:first-child{box-shadow:inset 3px 0 0 color-mix(in srgb,var(--amber) 60%,transparent)}
+html[data-lang="zh"] .mrow.conf-buy td:first-child{box-shadow:inset 3px 0 0 color-mix(in srgb,var(--red) 60%,transparent)}
+html[data-lang="zh"] .mrow.conf-sell td:first-child{box-shadow:inset 3px 0 0 color-mix(in srgb,var(--green) 60%,transparent)}
+.seat{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;border-radius:6px;padding:2px 7px;white-space:nowrap}
+.seat.buy{color:var(--green);background:color-mix(in srgb,var(--green) 11%,transparent)}
+.seat.sell{color:var(--red);background:color-mix(in srgb,var(--red) 11%,transparent)}
+html[data-lang="zh"] .seat.buy{color:var(--red);background:color-mix(in srgb,var(--red) 11%,transparent)}
+html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,var(--green) 11%,transparent)}
+.seat .ss{color:var(--faint);font-weight:500}
+/* HK own-% mini bar */
+.ownbar{display:inline-block;width:46px;height:6px;border-radius:999px;background:var(--grid);position:relative;vertical-align:middle}
+.ownbar i{position:absolute;left:0;top:0;height:100%;border-radius:999px;background:var(--blue)}
+.foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7;max-width:1000px}
 .foot b{color:var(--muted)}
+@media (prefers-reduced-motion: reduce){.vbar-fill,.mrow.show td{animation:none}}
 </style>
 </head>
 <body>
@@ -141,14 +214,19 @@ html[data-theme="dark"] .cat{background:var(--grid)}
   </div>
 
   <div class="h1">🌊 {{ t('Capital Flow Velocity','资金流速') }}</div>
-  <div class="intro">{{ t('How fast — and accelerating — big money is moving into China &amp; Hong Kong names and sectors. Built from the net-flow series the dashboard already collects: the Stock-Connect channels, the Tushare 主力 (super-large + large order) weekly grid, the Dragon-Tiger institutional seats, and mainland southbound holdings.','大资金流入中国与香港个股、板块的速度与加速度。数据源自仪表盘既有的净流向序列：沪深港通通道、Tushare 主力（超大单+大单）周度网格、龙虎榜机构席位、以及内地南向持仓。') }}</div>
+  <div class="intro">{{ t('One instrument, read top to bottom — from the Stock-Connect channel pulse (all big money) down through sector lanes to the individual names driving them, with the question at every name: <b>does the institution agree?</b>','一把尺子，自上而下贯通——从沪深港通通道脉搏（全部大资金），到板块流向，再到驱动它们的个股，并在每只个股追问：<b>机构是否认同？</b>') }}</div>
+  <div class="note">{{ t('Display-only positioning lens — flow is <b>never</b> scored into an allocation signal. <b>Velocity</b> = standardized net-flow rate (cumulative-flow drift ÷ its own vol); <b>acceleration</b> = its 2nd derivative. <b>Confluence</b> is a binary agree/diverge read where 主力 flow and Dragon-Tiger institutional seats land on the same name — context, not a manufactured score.','仅供定位参考——资金流向<b>从不</b>计入配置信号。<b>流速</b>＝标准化净流入率（累计流向漂移 ÷ 自身波动）；<b>加速度</b>＝其二阶导。<b>共振</b>＝当主力资金与龙虎榜机构席位落在同一只个股上的二元一致/背离判断——仅为背景，非人造分值。') }}</div>
+  <div class="legend">
+    <span class="lg"><span class="vbar vbar-sm"><span class="vbar-track"><span class="vbar-fill pos" style="width:36%"></span></span></span> <b>{{ t('inflow','流入') }}</b></span>
+    <span class="lg"><span class="vbar vbar-sm"><span class="vbar-track"><span class="vbar-fill neg" style="width:36%"></span></span></span> <b>{{ t('outflow','流出') }}</b> <span style="color:var(--faint)">{{ t('· ±3σ fills the half-track','· ±3σ 填满半轨') }}</span></span>
+    <span class="lg"><i class="cdot conf-buy"></i><i class="cdot conf-sell"></i> <b>{{ t('confluence','共振') }}</b> <span style="color:var(--faint)">{{ t('flow + institutions agree','资金与机构一致') }}</span></span>
+    <span class="lg"><i class="cdot conf-diverge"></i> <b>{{ t('divergence','背离') }}</b> <span style="color:var(--faint)">{{ t('they disagree','二者相左') }}</span></span>
+  </div>
 
-  <div class="note">{{ t('Display-only positioning lens — flow is <b>never</b> scored into an allocation signal (per-name fund-flow tested at rank-IC ≈ 0). <b>Velocity</b> = the standardized recent net-flow rate (t-stat of the cumulative-flow drift vs its own volatility); <b>acceleration</b> = its 2nd derivative. + reads as money flowing IN.','仅供定位参考——资金流向<b>从不</b>计入配置信号（个股资金流经检验 rank-IC ≈ 0）。<b>流速</b>＝标准化的近期净流入率（累计流向漂移相对自身波动的 t 值）；<b>加速度</b>＝其二阶导。正值代表资金流入。') }}</div>
-
-  {# ============================ AGGREGATE CHANNELS ============================ #}
+  {# ============================ ZONE 1 — CHANNEL PULSE ============================ #}
   {% if snap.aggregate %}
-  <div class="sec-h"><h2>🛰️ {{ t('Stock-Connect Channels','沪深港通通道') }}</h2>
-    <span class="sub">{{ t('whole-channel flow · daily 1w / 1m / 3m velocity','整体通道资金 · 日度 1周 / 1月 / 3月流速') }}</span></div>
+  <div class="sec-h"><h2>🛰️ {{ t('Channel Pulse','通道脉搏') }}</h2>
+    <span class="sub">{{ t('the whole-channel frame · daily 1w / 1m / 3m velocity','整体通道框架 · 日度 1周 / 1月 / 3月流速') }}</span></div>
   <div class="vgrid">
     {% for c in snap.aggregate %}
     <div class="vcard {{ 'frozen' if not c.live }}">
@@ -160,16 +238,16 @@ html[data-theme="dark"] .cat{background:var(--grid)}
       {% if c.live %}
       <div class="vrow">
         {% for lab in ['1w','1m','3m'] %}
-        <div class="vchip"><div class="k">{{ lab }}</div><div class="v">{{ vz(c.vel[lab]) }}</div></div>
+        <div class="vchip"><div class="k">{{ lab }}</div>{{ vbar(c.vel[lab], 'lg', loop.index) }}</div>
         {% endfor %}
       </div>
       <div class="vmeta">
-        <span>{{ t('~1m net','近1月净额') }} <b class="chg {{ 'pos' if (c.flow_1m_b or 0)>=0 else 'neg' }}">{{ '%+.1f'|format(c.flow_1m_b) }} {{ t('¥B','亿元×10') }}</b></span>
+        <span>{{ t('~1m net','近1月净额') }} <b class="chg {{ 'pos' if (c.flow_1m_b or 0)>=0 else 'neg' }}">{{ '%+.1f'|format(c.flow_1m_b) }} {{ t('¥B','十亿') }}</b></span>
         <span>{{ t('up-days (20)','上涨日(20)') }} <b>{{ c.pos_days_20 }}/20</b></span>
         <span class="sp">{{ spark(c.spark) }}</span>
       </div>
       {% else %}
-      <div class="vmeta" style="margin-top:8px"><span class="sp">{{ spark(c.spark) }}</span><span>{{ t('20d-cum net, through freeze','20日累计净额，至停更') }}</span></div>
+      <div class="vmeta"><span>{{ t('20d-cum net, through the freeze','20日累计净额，至停更') }}</span><span class="sp">{{ spark(c.spark, frozen=True) }}</span></div>
       <div class="frozen-banner">⚠ {{ t(c.note, c.note_zh) }}</div>
       {% endif %}
     </div>
@@ -177,174 +255,172 @@ html[data-theme="dark"] .cat{background:var(--grid)}
   </div>
   {% endif %}
 
-  {# ============================ A-SHARE SECTORS ============================ #}
+  {# ============================ ZONE 2 — FLOW MAP ============================ #}
+  {% if snap.ashare_sectors or snap.hk_names %}
+  {% set sbt = snap.seats_by_ticker or {} %}
+  <div class="sec-h"><h2>🧭 {{ t('Flow Map','资金流向图') }}</h2>
+    <span class="sub">{{ t('sector → member names → institutional confluence · weekly · as of','板块 → 成分个股 → 机构共振 · 周度 · 截至') }} {{ snap.as_of }}</span>
+    <span style="margin-left:auto" class="mkt-toggle" role="group" aria-label="Market">
+      <button data-mkt="a" aria-pressed="true">{{ t('A-Share','沪深') }}</button>
+      <button data-mkt="hk" aria-pressed="false">{{ t('HK Southbound','南向') }}</button>
+    </span>
+  </div>
+
+  {# ---- A-SHARE: sector lanes → member drill-down ---- #}
   {% if snap.ashare_sectors and snap.ashare_sectors.rows %}
   {% set s = snap.ashare_sectors %}
-  <div class="sec-h"><h2>🧭 {{ t('A-Share Sector Flow Velocity','A股板块资金流速') }}</h2>
-    <span class="sub">{{ t('22 curated sectors · equal-weight main-money net-rate · weekly · as of','22个精选板块 · 等权主力净占比 · 周度 · 截至') }} {{ s.as_of }}</span></div>
-  <div class="panel full">
-  <div class="tbl-wrap">
-    <table class="board" id="sectortbl">
-      <thead><tr>
-        <th data-c="0">{{ t('Sector','板块') }}</th>
-        <th data-c="1">{{ t('Category','类别') }}</th>
-        <th data-c="2">{{ t('Members','成分') }}</th>
-        <th data-c="3">{{ t('4wk net-rate','4周净占比') }}</th>
-        <th data-c="4">{{ t('Velocity','流速') }}</th>
-        <th data-c="5">{{ t('Accel','加速度') }}</th>
-        <th data-c="6">{{ t('State','状态') }}</th>
-        <th data-c="7">{{ t('Flow trend','流向趋势') }}</th>
-      </tr></thead>
-      <tbody>
-      {% for r in s.rows %}
-        <tr>
-          <td class="snm">{{ t(r.name, r.name_zh) }}</td>
-          <td><span class="cat">{{ td(r.category) if r.category else '·' }}</span></td>
-          <td>{{ r.n_members }}</td>
-          <td>{{ rate(r.rate_4wk) }}</td>
-          <td>{{ vz(r.vel) }}</td>
-          <td><span class="chg {{ 'pos' if (r.accel or 0)>=0 else 'neg' }}">{{ '%+.3f'|format(r.accel) if r.accel is not none else '·' }}</span></td>
-          <td style="text-align:left">{{ vstate(r.state, r.state_zh, r.vel) }}</td>
-          <td>{{ spark(r.spark) }}</td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
+  <div class="market-a">
+    <span class="market-tag">{{ t('A-Share 沪深','A股 沪深') }}</span>
+    <div class="panel">
+    <div class="tbl-wrap">
+      <table class="board" id="sectortbl">
+        <thead><tr>
+          <th data-c="0">{{ t('Sector','板块') }}</th>
+          <th class="nos">{{ t('Category','类别') }}</th>
+          <th data-c="2">{{ t('Members','成分') }}</th>
+          <th data-c="3">{{ t('4wk net','4周净占比') }}</th>
+          <th data-c="4">{{ t('Velocity','流速') }}</th>
+          <th data-c="5">{{ t('Accel','加速度') }}</th>
+          <th class="nos">{{ t('State','状态') }}</th>
+          <th class="nos">{{ t('Flow trend','流向趋势') }}</th>
+        </tr></thead>
+        <tbody>
+        {% for r in s.rows %}
+          {% set has_members = r.members and r.members|length %}
+          <tr class="sector-row{{ ' nodrill' if not has_members }}" data-sector="{{ r.id }}" aria-expanded="false">
+            <td class="snm"><span class="chev">{{ '▸' if has_members else '·' }}</span> {{ t(r.name, r.name_zh) }}</td>
+            <td><span class="cat">{{ td(r.category) if r.category else '·' }}</span></td>
+            <td>{{ r.n_members }}{% if r.inst_attention %}<span class="attn" title="members with institutional-seat activity">{{ r.inst_attention }} {{ t('inst','机构') }}</span>{% endif %}</td>
+            <td>{{ rate(r.rate_4wk) }}</td>
+            <td style="text-align:center">{{ vbar(r.vel, 'md', loop.index) }}</td>
+            <td>{{ accel(r.accel) }}</td>
+            <td style="text-align:left">{{ vstate(r.state, r.state_zh, r.vel) }}</td>
+            <td>{{ spark(r.spark) }}</td>
+          </tr>
+          {% if has_members %}
+          {# sector-mean anchor row so members read as deviations around it #}
+          <tr class="mrow meanrow" data-sector="{{ r.id }}">
+            <td class="mname">{{ t('sector mean','板块均值') }}</td>
+            <td></td><td></td><td>{{ rate(r.rate_4wk) }}</td>
+            <td style="text-align:center">{{ vbar(r.vel, 'sm') }}</td>
+            <td></td><td></td><td></td>
+          </tr>
+          {% for m in r.members %}
+          {% set seat = sbt.get(m.ticker) %}
+          {% set cc = confcls(m.vel, seat) %}
+          <tr class="mrow {{ cc }}" data-sector="{{ r.id }}">
+            <td class="mname snm">{% if cc %}<i class="cdot {{ cc }}"></i> {% endif %}{{ m.name or m.ticker }}<span class="tk">{{ m.ticker }}</span></td>
+            <td>{% if seat %}<span class="seat {{ seat.dir }}" title="Dragon-Tiger institutional-seat net (机构专用)">🏛 {{ '%+.1f'|format(seat.inst_net_yi) }}亿 <span class="ss">{{ seat.n_buy }}/{{ seat.n_sell }}</span></span>{% endif %}</td>
+            <td></td>
+            <td>{{ rate(m.rate_4wk) }}</td>
+            <td style="text-align:center">{{ vbar(m.vel, 'sm', loop.index) }}</td>
+            <td>{{ accel(m.accel) }}</td>
+            <td style="text-align:left">{{ vstate(m.state, m.state_zh, m.vel) }}</td>
+            <td></td>
+          </tr>
+          {% endfor %}
+          {% endif %}
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    </div>
+    <div class="legend" style="margin-top:10px">{{ t(s.note, s.note_zh) }}</div>
   </div>
-  </div>
-  <div class="legend">{{ t(s.note, s.note_zh) }}</div>
   {% endif %}
 
-  {# ============================ A-SHARE NAMES ============================ #}
-  {% if snap.ashare_names %}
-  {% set n = snap.ashare_names %}
-  <div class="sec-h"><h2>📈 {{ t('A-Share Names — Big-Money Velocity','A股个股 — 主力流速') }}</h2>
-    <span class="sub">{{ t('ranked across','排序范围') }} {{ n.n }} {{ t('names · weekly · as of','只 · 周度 · 截至') }} {{ n.as_of }}</span></div>
-  <div class="two">
-    <div class="panel">
-      <div class="panel-h">🟢 {{ t('Accelerating IN — strongest inflow velocity','加速流入 — 流速最强') }}</div>
-      <div class="tbl-wrap"><table class="board">
-        <thead><tr><th>{{ t('Name','名称') }}</th><th>{{ t('4wk net','4周净占比') }}</th><th>{{ t('Velocity','流速') }}</th><th>{{ t('Accel','加速度') }}</th></tr></thead>
-        <tbody>
-        {% for r in n.inflow %}
-          <tr><td class="snm">{{ r.name or r.ticker }} <span class="tk">{{ r.ticker }}</span></td>
-            <td>{{ rate(r.rate_4wk) }}</td><td>{{ vz(r.vel) }}</td>
-            <td><span class="chg {{ 'pos' if (r.accel or 0)>=0 else 'neg' }}">{{ '%+.3f'|format(r.accel) if r.accel is not none else '·' }}</span></td></tr>
-        {% endfor %}
-        </tbody></table></div>
-    </div>
-    <div class="panel">
-      <div class="panel-h">🔴 {{ t('Accelerating OUT — strongest outflow velocity','加速流出 — 流出最强') }}</div>
-      <div class="tbl-wrap"><table class="board">
-        <thead><tr><th>{{ t('Name','名称') }}</th><th>{{ t('4wk net','4周净占比') }}</th><th>{{ t('Velocity','流速') }}</th><th>{{ t('Accel','加速度') }}</th></tr></thead>
-        <tbody>
-        {% for r in n.outflow %}
-          <tr><td class="snm">{{ r.name or r.ticker }} <span class="tk">{{ r.ticker }}</span></td>
-            <td>{{ rate(r.rate_4wk) }}</td><td>{{ vz(r.vel) }}</td>
-            <td><span class="chg {{ 'pos' if (r.accel or 0)>=0 else 'neg' }}">{{ '%+.3f'|format(r.accel) if r.accel is not none else '·' }}</span></td></tr>
-        {% endfor %}
-        </tbody></table></div>
-    </div>
-  </div>
-  <div class="legend">{{ t(n.note, n.note_zh) }}</div>
-  {% endif %}
-
-  {# ============================ INSTITUTIONAL SEATS ============================ #}
-  {% if snap.ashare_seats %}
-  {% set q = snap.ashare_seats %}
-  <div class="sec-h"><h2>🏛️ {{ t('A-Share Institutional Seats','A股机构席位') }}</h2>
-    <span class="sub">{{ t('Dragon-Tiger 机构专用 net buys · recent window · as of','龙虎榜机构专用净买入 · 近期窗口 · 截至') }} {{ q.as_of }}</span></div>
-  <div class="two">
-    <div class="panel">
-      <div class="panel-h">🟢 {{ t('Institutions bought','机构买入') }}</div>
-      <div class="tbl-wrap"><table class="board">
-        <thead><tr><th>{{ t('Name','名称') }}</th><th>{{ t('Inst net','机构净额') }}</th><th>{{ t('Seats B/S','买/卖席') }}</th></tr></thead>
-        <tbody>
-        {% for r in q.buying %}
-          <tr><td class="snm">{{ r.name or r.ticker }} <span class="tk">{{ r.ticker }}</span></td>
-            <td><span class="chg pos">+{{ '%.2f'|format(r.inst_net_yi) }}亿</span></td>
-            <td>{{ r.n_buy }}/{{ r.n_sell }}</td></tr>
-        {% endfor %}
-        </tbody></table></div>
-    </div>
-    <div class="panel">
-      <div class="panel-h">🔴 {{ t('Institutions sold','机构卖出') }}</div>
-      <div class="tbl-wrap"><table class="board">
-        <thead><tr><th>{{ t('Name','名称') }}</th><th>{{ t('Inst net','机构净额') }}</th><th>{{ t('Seats B/S','买/卖席') }}</th></tr></thead>
-        <tbody>
-        {% for r in q.selling %}
-          <tr><td class="snm">{{ r.name or r.ticker }} <span class="tk">{{ r.ticker }}</span></td>
-            <td><span class="chg neg">{{ '%.2f'|format(r.inst_net_yi) }}亿</span></td>
-            <td>{{ r.n_buy }}/{{ r.n_sell }}</td></tr>
-        {% endfor %}
-        </tbody></table></div>
-    </div>
-  </div>
-  <div class="legend">{{ t(q.note, q.note_zh) }}</div>
-  {% endif %}
-
-  {# ============================ HK SOUTHBOUND ============================ #}
+  {# ---- HK: same board grammar, flat southbound per-name rows ---- #}
   {% if snap.hk_names %}
   {% set h = snap.hk_names %}
-  <div class="sec-h"><h2>🇭🇰 {{ t('Hong Kong — Southbound per-name','香港 — 南向个股') }}</h2>
-    <span class="sub">{{ t('mainland Connect crowd · as of','内地南向资金 · 截至') }} {{ h.as_of }}</span></div>
-  {% if not h.vel_ready %}
-  <div class="frozen-banner" style="color:var(--blue);border-color:color-mix(in srgb,var(--blue) 45%,var(--grid));max-width:960px">
-    ⏳ {{ t('Multi-horizon velocity unlocks as the daily holdings history deepens','多周期流速随每日持仓历史积累解锁') }}
-    — {{ t('depth','深度') }} {{ h.depth }}/8 {{ t('days. Showing the 5-day accumulation board for now.','日。当前显示5日累积看板。') }}
+  <div class="market-hk">
+    <span class="market-tag">{{ t('HK Southbound 南向','港股南向') }}</span>
+    <div class="panel">
+      <div class="panel-h">🇭🇰 {{ t('Mainland southbound per-name','内地南向个股') }}
+        {% if not h.vel_ready %}<span class="dep">· {{ t('velocity unlocks at depth 8','流速于深度8解锁') }} ({{ h.depth }}/8) — {{ t('5d accumulation for now','当前为5日累积') }}</span>{% endif %}</div>
+      <div class="tbl-wrap">
+        <table class="board" id="hktbl">
+          <thead><tr>
+            <th data-c="0">{{ t('Name','名称') }}</th>
+            <th class="nos">{{ t('Flow','流向') }}</th>
+            <th data-c="2">{{ t('5d hold Δ','5日持仓Δ') }}</th>
+            <th data-c="3">{{ t('Own %','持股%') }}</th>
+            <th data-c="4">{{ t('Hold','持仓') }}</th>
+          </tr></thead>
+          <tbody>
+          {% for r in (h.buying or []) %}
+          <tr><td class="snm">{{ r.name or r.ticker }}<span class="tk">{{ r.ticker }}</span></td>
+            <td style="text-align:left">{{ vstate('accumulating','加仓', r.chg5_pct) }}</td>
+            <td>{{ rate(r.chg5_pct) }}</td>
+            <td><span class="ownbar"><i style="width:{{ [ (r.own_pct or 0)/30*100, 100]|min |round }}%"></i></span> {{ '%.1f'|format(r.own_pct) if r.own_pct is not none else '·' }}</td>
+            <td>HK${{ r.hold_b }}B</td></tr>
+          {% endfor %}
+          {% for r in (h.selling or []) %}
+          <tr><td class="snm">{{ r.name or r.ticker }}<span class="tk">{{ r.ticker }}</span></td>
+            <td style="text-align:left">{{ vstate('distributing','减仓', r.chg5_pct) }}</td>
+            <td>{{ rate(r.chg5_pct) }}</td>
+            <td><span class="ownbar"><i style="width:{{ [ (r.own_pct or 0)/30*100, 100]|min |round }}%"></i></span> {{ '%.1f'|format(r.own_pct) if r.own_pct is not none else '·' }}</td>
+            <td>HK${{ r.hold_b }}B</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="legend" style="margin-top:10px">{{ t('Southbound holdings are mainland money via Connect — a flow confirmer, not a standalone signal. '+(h.note or ''),'南向持仓为内地经互联互通的资金——资金确认项，非独立信号。') }}</div>
   </div>
   {% endif %}
-  <div class="two">
-    <div class="panel">
-      <div class="panel-h">🟢 {{ t('Mainland accumulating','内地加仓') }}</div>
-      <div class="tbl-wrap"><table class="board">
-        <thead><tr><th>{{ t('Name','名称') }}</th><th>{{ t('5d hold Δ','5日持仓Δ') }}</th><th>{{ t('Own %','持股%') }}</th><th>{{ t('Hold','持仓') }}</th></tr></thead>
-        <tbody>
-        {% for r in h.buying %}
-          <tr><td class="snm">{{ r.name or r.ticker }} <span class="tk">{{ r.ticker }}</span></td>
-            <td>{{ rate(r.chg5_pct) }}</td><td>{{ '%.1f'|format(r.own_pct) if r.own_pct is not none else '·' }}</td>
-            <td>HK${{ r.hold_b }}B</td></tr>
-        {% endfor %}
-        </tbody></table></div>
-    </div>
-    <div class="panel">
-      <div class="panel-h">🔴 {{ t('Mainland distributing','内地减仓') }}</div>
-      <div class="tbl-wrap"><table class="board">
-        <thead><tr><th>{{ t('Name','名称') }}</th><th>{{ t('5d hold Δ','5日持仓Δ') }}</th><th>{{ t('Own %','持股%') }}</th><th>{{ t('Hold','持仓') }}</th></tr></thead>
-        <tbody>
-        {% for r in h.selling %}
-          <tr><td class="snm">{{ r.name or r.ticker }} <span class="tk">{{ r.ticker }}</span></td>
-            <td>{{ rate(r.chg5_pct) }}</td><td>{{ '%.1f'|format(r.own_pct) if r.own_pct is not none else '·' }}</td>
-            <td>HK${{ r.hold_b }}B</td></tr>
-        {% endfor %}
-        </tbody></table></div>
-    </div>
-  </div>
-  <div class="legend">{{ t('Southbound holdings are mainland money via Connect (a flow confirmer, not a standalone signal). '+(h.note or ''), '南向持仓为内地经互联互通的资金（资金确认项，非独立信号）。') }}</div>
   {% endif %}
 
   <div class="foot">
     <b>{{ t('Sources','数据来源') }}:</b>
-    {{ t('Stock-Connect channels — Eastmoney RPT_MUTUAL_DEAL_HISTORY (southbound live to date; northbound aggregate net discontinued 2024-08-16). A-share name/sector flow — Tushare moneyflow_dc 主力 weekly grid (data/tushare/flow_hist). Institutional seats — Eastmoney 龙虎榜 (data/china_lhb). HK southbound — Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS (data/hk_southbound).','沪深港通——东方财富 RPT_MUTUAL_DEAL_HISTORY（南向实时；北向整体净额于2024-08-16停更）。A股个股/板块资金——Tushare moneyflow_dc 主力周度网格。机构席位——东方财富龙虎榜。南向——东方财富 RPT_MUTUAL_STOCK_HOLDRANKS。') }}<br>
+    {{ t('Stock-Connect channels — Eastmoney RPT_MUTUAL_DEAL_HISTORY (southbound live; northbound aggregate net discontinued 2024-08-16). A-share name/sector flow — Tushare moneyflow_dc 主力 weekly grid. Institutional seats — Eastmoney 龙虎榜 机构专用. HK southbound — Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS.','沪深港通——东方财富 RPT_MUTUAL_DEAL_HISTORY（南向实时；北向整体净额于2024-08-16停更）。A股个股/板块资金——Tushare moneyflow_dc 主力周度网格。机构席位——东方财富龙虎榜机构专用。南向——东方财富 RPT_MUTUAL_STOCK_HOLDRANKS。') }}<br>
     <b>{{ t('Method','方法') }}:</b>
-    {{ t('Velocity = slope_z of cumulative net-flow (drift ÷ its own volatility); acceleration = the trailing slope of that velocity. All causal & point-in-time. This is descriptive positioning context, not investment advice.','流速＝累计净流向的 slope_z（漂移 ÷ 自身波动）；加速度＝该流速的滚动斜率。全部为因果、时点对齐。仅为描述性定位背景，非投资建议。') }}
+    {{ t('Velocity = slope_z of cumulative net-flow (drift ÷ its own volatility); acceleration = the trailing slope of that velocity. A sector’s velocity is the equal-weight mean of its members’, so members fan out as deviations around the sector bar. Confluence is a render-time agree/diverge class joining 主力 velocity sign to the institutional-seat direction on the same ticker — nothing numeric is manufactured. Causal, point-in-time, descriptive context — not investment advice.','流速＝累计净流向的 slope_z（漂移 ÷ 自身波动）；加速度＝该流速的滚动斜率。板块流速＝成分股等权均值，故成分股以围绕板块条的偏离呈现。共振为渲染期一致/背离类别，将主力流速方向与同一代码的机构席位方向相连——不制造任何分值。因果、时点对齐、描述性背景，非投资建议。') }}
     · {{ t('Built','构建于') }} {{ built }}
   </div>
 </div>
 <script>
 (function(){
-  // click-to-sort numeric columns on the sector table
-  var tbl=document.getElementById('sectortbl'); if(!tbl) return;
-  tbl.querySelectorAll('th').forEach(function(th,i){
-    th.addEventListener('click',function(){
-      var rows=Array.from(tbl.tBodies[0].rows), asc=th._asc=!th._asc;
-      rows.sort(function(a,b){
-        var x=parseFloat((a.cells[i].textContent||'').replace(/[^0-9.\-]/g,'')),
-            y=parseFloat((b.cells[i].textContent||'').replace(/[^0-9.\-]/g,''));
-        if(isNaN(x)&&isNaN(y))return 0; if(isNaN(x))return 1; if(isNaN(y))return -1;
-        return asc?x-y:y-x;
+  var H=document.documentElement;
+  // ---- accordion: sectors collapsed by default (html.js), click to drill ----
+  document.querySelectorAll('tr.sector-row').forEach(function(row){
+    if(row.classList.contains('nodrill')) return;
+    row.addEventListener('click',function(e){
+      if(e.target.closest('a')) return;
+      var open=row.classList.toggle('open');
+      row.setAttribute('aria-expanded',open?'true':'false');
+      var id=row.getAttribute('data-sector');
+      document.querySelectorAll('tr.mrow[data-sector="'+(window.CSS&&CSS.escape?CSS.escape(id):id)+'"]').forEach(function(m){
+        m.classList.toggle('show',open);
       });
-      rows.forEach(function(r){tbl.tBodies[0].appendChild(r);});
+    });
+  });
+  // ---- market toggle: one attribute swaps the whole board ----
+  var btns=document.querySelectorAll('.mkt-toggle button');
+  function setMkt(m){
+    H.setAttribute('data-market',m);
+    try{sessionStorage.setItem('mkt',m);}catch(e){}
+    btns.forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-mkt')===m?'true':'false');});
+  }
+  btns.forEach(function(b){b.addEventListener('click',function(){setMkt(b.getAttribute('data-mkt'));});});
+  setMkt(H.getAttribute('data-market')||'a');
+  // ---- column sort (keeps open sectors' members attached to their parent) ----
+  document.querySelectorAll('table.board').forEach(function(tbl){
+    tbl.querySelectorAll('th[data-c]').forEach(function(th){
+      th.addEventListener('click',function(){
+        var ci=+th.getAttribute('data-c'), body=tbl.tBodies[0], asc=th._asc=!th._asc;
+        var groups=[], cur=null;
+        Array.from(body.rows).forEach(function(rw){
+          if(rw.classList.contains('mrow')){ if(cur) cur.kids.push(rw); }
+          else { cur={head:rw,kids:[]}; groups.push(cur); }
+        });
+        groups.sort(function(a,b){
+          var x=parseFloat((a.head.cells[ci].textContent||'').replace(/[^0-9.\-]/g,'')),
+              y=parseFloat((b.head.cells[ci].textContent||'').replace(/[^0-9.\-]/g,''));
+          if(isNaN(x)&&isNaN(y))return 0; if(isNaN(x))return 1; if(isNaN(y))return -1;
+          return asc?x-y:y-x;
+        });
+        groups.forEach(function(g){ body.appendChild(g.head); g.kids.forEach(function(k){body.appendChild(k);}); });
+      });
     });
   });
 })();
