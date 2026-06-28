@@ -218,6 +218,63 @@ def _ordered_groups(universe: list[tuple]) -> list[str]:
     return core + sorted(themes)
 
 
+# Index/ETF GEX is the *validatable* slice — the dealer long-call/short-put SIGN is
+# robust for broad indices, fragile for single names (LIMITATIONS.md) — so the daily
+# archive snapshot keeps that slice plus the market-wide CBOE SKEW / put-call context.
+# scripts.archive_signals folds data/gex/latest.json into the unified signal_archive
+# corpus, so the day's options state is recorded PIT alongside the regime labels (the
+# un-backfillable input the eventual GEX→forward-vol validation will train on).
+ARCHIVE_KEYS = ("SPX", "NDX", "RUT", "SPY", "QQQ", "IWM", "DIA")
+_ARCHIVE_FIELDS = ("spot", "regime", "tier", "net_gex_bn", "gamma_flip",
+                   "dist_to_flip_pct", "iv30", "put_call_oi_ratio",
+                   "call_wall", "put_wall", "max_pain", "daily_move_pct")
+
+
+def _market_context(data_dir: Path) -> dict:
+    """Latest market-wide options context (CBOE SKEW + index/equity put-call) from the
+    collector parquets, co-located so the snapshot pairs the systematic tail read with
+    the index GEX state. Best-effort — a missing series just drops that field."""
+    ctx: dict = {}
+    try:
+        sk = pd.read_parquet(data_dir / "cboe" / "skew.parquet")["skew"].dropna()
+        if len(sk):
+            ctx["skew"] = round(float(sk.iloc[-1]), 2)
+            ctx["skew_asof"] = str(pd.Timestamp(sk.index[-1]).date())
+    except Exception:  # noqa: BLE001 — context is a nicety, never fatal
+        pass
+    try:
+        pc = pd.read_parquet(data_dir / "cboe" / "putcall.parquet").dropna(how="all")
+        if len(pc):
+            last = pc.iloc[-1]
+            for c in ("index_pc_ratio", "equity_pc_ratio"):
+                if c in pc.columns and pd.notna(last.get(c)):
+                    ctx[c] = round(float(last[c]), 3)
+            ctx["put_call_asof"] = str(pd.Timestamp(pc.index[-1]).date())
+    except Exception:  # noqa: BLE001
+        pass
+    return ctx
+
+
+def _write_archive_snapshot(manifest: list[dict], data_dir: Path) -> None:
+    """Write data/gex/latest.json — the index/ETF GEX summary + market context — for
+    scripts.archive_signals to fold into the signal_archive corpus. Best-effort: a
+    failure here never affects the page build (callers do not depend on it)."""
+    try:
+        by_key = {m["key"]: m for m in manifest}
+        indices = {k: {f: by_key[k].get(f) for f in _ARCHIVE_FIELDS}
+                   for k in ARCHIVE_KEYS if k in by_key}
+        if not indices:
+            return
+        snap = {"asof": str(date.today()), "source": "cboe_delayed",
+                "indices": indices, "market": _market_context(data_dir)}
+        out = data_dir / "gex"
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "latest.json").write_text(json.dumps(snap, default=float, indent=1))
+        log.info("gex: archive snapshot -> %s (%d indices)", out / "latest.json", len(indices))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("gex: archive snapshot skipped: %s", e)
+
+
 def main() -> int:
     from concurrent.futures import ThreadPoolExecutor
     from collectors.cboe import GexAdapter
@@ -271,6 +328,7 @@ def main() -> int:
     coverage["__all__"] = {"covered": len(manifest), "total": len(rows)}
 
     (out_dir / "index.json").write_text(json.dumps(manifest, default=float, separators=(",", ":")))
+    _write_archive_snapshot(manifest, config.data_dir())
 
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     from engine.i18n import td, tr
