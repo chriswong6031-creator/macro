@@ -50,3 +50,17 @@ mastermind-x.com, www.mastermind-x.com {
 	# under /var/lib/caddy, so a /var/log/caddy file sink fails with EACCES and
 	# crashes startup. journald is the idiomatic, sandbox-safe sink.
 }
+
+# ---- app.mastermind-x.com — the Mastermind Terminal (Next.js) ----------------
+# The charting SaaS frontend, served by terminal.service (next start) on :3000.
+# Needs a Cloudflare DNS A record: app -> 146.190.142.17 (proxied), SSL mode "Full".
+app.mastermind-x.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3000
+	header {
+		X-Robots-Tag "noindex, nofollow, noarchive"
+		-Server
+	}
+	# Self-signed origin cert; pair with Cloudflare SSL mode = "Full".
+	tls internal
+}
