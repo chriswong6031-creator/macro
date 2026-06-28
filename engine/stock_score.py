@@ -1238,6 +1238,10 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         # bounded tilt into the entry axis above — never the selection rank).
         "gex_confirm": rec.get("gex_confirm"),
         "vol_squeeze": rec.get("vol_squeeze"),
+        # Cremers-Weinbaum call−put IV-spread confirmer (directional options lean) — DISPLAY-ONLY
+        # context; unlike the gex tilt it does NOT yet touch the score (gated on
+        # validate_options_ivspread earning a verdict — the chain panel is still accruing).
+        "iv_spread_confirm": rec.get("iv_spread_confirm"),
         "notes": notes or None,       # honesty notes: percentile-rank caveat + favourable-cone read
         "n_axes": n_axes,
         "cycle_blocked": blocked,
@@ -1340,6 +1344,8 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
         "gex": record.get("gex"),
         "gex_confirm": record.get("gex_confirm"),
         "vol_squeeze": record.get("vol_squeeze"),
+        "iv_spread": record.get("iv_spread"),              # CW call−put IV spread (display)
+        "iv_spread_confirm": record.get("iv_spread_confirm"),
         # forward anticipation cone — its risk-SHAPE asymmetry feeds a bounded entry tilt + a
         # display note (the 'high upside / low downside' the score used to ignore); direction is
         # never bet (p_up ~ coin-flip).

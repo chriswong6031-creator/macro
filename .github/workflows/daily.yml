@@ -366,6 +366,7 @@ jobs:
             brun vol_regime   "index vol-regime (build_vol_regime)"        scripts.build_vol_regime
             brun options_flow "options flow desk (build_options_flow)"     scripts.build_options_flow
             brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
+            brun options_ivspread "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
           }
           cl_baskets() {
             brun baskets     "thematic baskets (build_baskets)"        scripts.build_baskets
@@ -387,7 +388,7 @@ jobs:
           wait
           # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
           #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          ORDER="china hk flow_velocity commodities spr forex bonds crossasset transmission discovery gex_board vol_regime options_flow options_skew baskets news methodology seasonality reports policy_intent policy_watch special index_changes"
+          ORDER="china hk flow_velocity commodities spr forex bonds crossasset transmission discovery gex_board vol_regime options_flow options_skew options_ivspread baskets news methodology seasonality reports policy_intent policy_watch special index_changes"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue

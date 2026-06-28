@@ -45,6 +45,7 @@ from engine import dannytrades_chip as dt_chip  # noqa: E402
 from engine import stock_technicals  # noqa: E402  — richer OHLCV-aware technical snapshot
 from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole
 from engine import gex_confirm  # noqa: E402  — dealer-gamma verifier/confirmer
+from engine import options_ivspread  # noqa: E402  — Cremers-Weinbaum call−put IV-spread confirmer
 from engine import demand_chain as dchain  # noqa: E402
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
@@ -869,6 +870,19 @@ def main() -> int:
     gex_board = _load_gex_board(site)
     gex_by_ticker = _optionable_gex() if not gex_board else {}
     opex_days = _next_monthly_opex_days()
+    # Cremers-Weinbaum call−put IV spread per optionable name (the one DIRECTIONAL options
+    # confirmer we can build for $0 — no trade tape / NBBO signing needed). Computed once over
+    # the freshest per-strike chain snapshot; graceful {} when the GEX chain store is absent.
+    # DISPLAY-ONLY context until scripts/validate_options_ivspread earns a verdict.
+    try:
+        _ivs_chain = options_ivspread._latest_chain()
+        ivspread_map = options_ivspread.ivspread_map(_ivs_chain) if _ivs_chain is not None else {}
+        ivspread_prior = options_ivspread.prior_spread_map() if ivspread_map else {}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.debug("ivspread map skipped: %s", e)
+        ivspread_map, ivspread_prior = {}, {}
+    if ivspread_map:
+        log.info("IV-spread confirmer: %d optionable names", len(ivspread_map))
     # contrarian crowding/fragility flags (DISPLAY-ONLY, gated OUT of the score by
     # scripts/fund_crowding_phase0.py — short interest has no PIT history to validate).
     # Computed once over the whole panel; graceful (absent feed => {} => no chip).
@@ -1216,6 +1230,22 @@ def main() -> int:
         # next monthly expiry — no feed). DISPLAY-ONLY, never in the score.
         if rec.get("gex") is not None and opex_days is not None:
             rec["gex"]["opex_days"] = opex_days
+        # ---- IV-spread confirmer (Cremers-Weinbaum) — DIRECTIONAL options lean ----------
+        # The directional companion to the gex confirmer: gex says HOW the next move behaves;
+        # the IV spread says which way the options market is LEANING (calls richer = informed
+        # bullish). Long confirmer (direction='up') matching how gex_confirm is wired here; it
+        # can amplify or caution but never manufacture a buy, and stays display-only until the
+        # forward-IC gate validates. None when the name has no/thin options.
+        _ivs = ivspread_map.get(ticker)
+        if _ivs:
+            rec["iv_spread"] = _ivs
+            _prior = ivspread_prior.get(ticker.upper())
+            _cur = _ivs.get("ivspread")
+            _chg = (round(float(_cur) - _prior, 5)
+                    if _prior is not None and _cur is not None else None)
+            _ic = options_ivspread.assess(_ivs, chg=_chg)
+            if _ic:
+                rec["iv_spread_confirm"] = _ic
         if fragility_map.get(ticker):
             rec["fragility"] = fragility_map[ticker]
         if bsk_mem.get(ticker):
