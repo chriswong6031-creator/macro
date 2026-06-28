@@ -1,6 +1,11 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
+{# "?" affordance: hover/focus reveals a plain-language note. Native title can't
+   switch on data-lang, so it carries both languages "EN · ZH" (.qm CSS in _vector_polish). #}
+{% macro qmark(en, zh='') -%}
+<span class="qm" tabindex="0" role="note" title="{{ en }}{% if zh %} · {{ zh }}{% endif %}">?</span>
+{%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -164,14 +169,13 @@ html[data-theme="dark"] .rchip{background:var(--grid)}
       {% if rec.key_risk_en %}<div class="deck-risk">⚠ {{ t(rec.key_risk_en, rec.key_risk_zh) }}</div>{% endif %}
     </div>
     <div class="card">
-      <h3>{{ t('How much — risk-budgeted Kelly','配置多少 — 风险预算 Kelly') }}</h3>
+      <h3>{{ t('How much — risk-budgeted Kelly','配置多少 — 风险预算 Kelly') }}{{ qmark('Half-Kelly on the calibrated 90-day regime edge, capped so the worst-case 90-day dip stays inside the drawdown budget. Direction is a coin-flip, so this sizes the regime, not the week.','基于已校准的 90 天格局优势的半 Kelly，并设上限使极端 90 天回撤不超过回撤预算。方向接近抛硬币，故仓位针对格局而非本周。') }}</h3>
       {% if sizing %}
       <div style="font-size:30px;font-weight:800;color:{{ 'var(--bull)' if sizing.size_pct>=40 else 'var(--bear)' }}">{{ sizing.size_pct }}%<span class="sub" style="font-size:13px;font-weight:600"> {{ t('of the BTC sleeve','BTC 仓位') }}</span></div>
       <div class="kx"><span>{{ t('Regime edge (90d)','格局优势（90天）') }}</span><b style="color:{{ 'var(--bull)' if sizing.edge_90>=0 else 'var(--bear)' }}">{{ '%+0.0f'|format(sizing.edge_90) }}%</b></div>
       <div class="kx"><span>{{ t('Volatility (90d σ)','波动率（90天 σ）') }}</span><b>{{ sizing.vol_90 }}%</b></div>
       <div class="kx"><span>{{ t('Worst-case 90d dip (p05)','极端 90 天回撤（p05）') }}</span><b style="color:var(--bear)">{{ sizing.tail_90 }}%</b></div>
       <div class="kx"><span>{{ t('Binding constraint','约束因素') }}</span><b>{{ t('drawdown cap','回撤上限') if sizing.binding=='tail' else t('regime edge','格局优势') }}</b></div>
-      <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('Half-Kelly on the calibrated 90-day regime edge, CAPPED so the worst-case 90d dip stays inside the drawdown budget. Direction is a coin-flip, so the edge is the regime, not the week.','基于已校准的 90 天格局优势的半 Kelly，并设上限使极端 90 天回撤不超过回撤预算。方向接近抛硬币，故优势来自格局而非本周。') }}</div>
       {% else %}<div class="sub faint">{{ t('Sizing unavailable (insufficient regime history).','无法定仓（格局历史不足）。') }}</div>{% endif %}
       {% if catalyst and catalyst.imminent %}<div class="deck-risk" style="color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,var(--card))">⚠ {{ t('Next macro binary:','下一宏观二元事件：') }} <b>{{ td(catalyst.next_event) }}</b> {{ t('in','还有') }} {{ catalyst.days }} {{ t('days','天') }} — {{ t('don\'t size up into it.','勿在此前加仓。') }}</div>{% endif %}
     </div>
@@ -182,7 +186,7 @@ html[data-theme="dark"] .rchip{background:var(--grid)}
   {% macro sgncol(v) %}{{ 'var(--bull)' if (v is not none and v > 0) else ('var(--bear)' if (v is not none and v < 0) else 'var(--muted)') }}{% endmacro %}
   <div class="card" style="margin-top:18px">
     <h3 style="margin-bottom:4px">{{ t('What BTC did next · on days like today','类似今日的历史日 · BTC 后续走势') }} <span class="faint" style="font-size:12px;font-weight:600">{{ cones.regime or t('all history','全历史') }}</span></h3>
-    <div class="sub faint" style="margin:0 0 10px;font-size:12px">{{ t('Realized spread of BTC returns over the next 7 / 30 / 90 days, measured on past days whose regime matched today — median = the typical outcome, p25→p75 = the middle 50%. History, not a forecast.','历史上与今日格局相同的交易日，BTC 在随后 7 / 30 / 90 天的实际收益分布 —— 中位数 = 典型结果，p25→p75 = 中间 50%。是历史，不是预测。') }}</div>
+    <div class="sub faint" style="margin:0 0 10px;font-size:12px">{{ t('The real spread of BTC returns over the next 7 / 30 / 90 days, taken from past days in the same regime as today — median = the typical outcome, p25→p75 = the middle 50%. History, not a forecast.','取历史上与今日格局相同的交易日，BTC 在随后 7 / 30 / 90 天的真实收益分布 —— 中位数 = 典型结果，p25→p75 = 中间 50%。是历史，不是预测。') }}</div>
     <table style="width:100%;border-collapse:collapse;font-size:13px">
       <tr style="color:var(--muted);font-size:11px;text-transform:uppercase"><td style="padding:5px 4px">{{ t('Horizon','周期') }}</td><td style="text-align:right">p25</td><td style="text-align:right">{{ t('median','中位') }}</td><td style="text-align:right">p75</td><td style="text-align:right">{{ t('odds ↑','上涨概率') }}</td><td style="text-align:right">{{ t('avg dip','常见回撤') }}</td></tr>
       {% for k in ['7d','30d','90d'] %}{% set h = cones.horizons.get(k) %}{% if h and h.p50 is not none %}
@@ -197,7 +201,7 @@ html[data-theme="dark"] .rchip{background:var(--grid)}
         <td style="text-align:right;color:var(--bear)">{{ h.dd_avg }}%</td>
       </tr>{% endif %}{% endfor %}
     </table>
-    <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Empirical, zero fitted weights. p25/p75 colored by their own sign; “odds ↑” is the up-rate vs the all-history base rate and tints only when it clears base by more than ±5 pts — otherwise direction is a coin-flip and only the size of the move (and the avg dip) matters.','实证，无拟合权重。p25/p75 按自身符号着色；“上涨概率”为相对全样本基准的上涨频率，仅当超出基准 ±5 个百分点以上才着色 —— 否则方向接近抛硬币，只看波动幅度（及常见回撤）。') }}</div>
+    <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Empirical, with zero fitted weights. p25/p75 are colored by their own sign; “odds ↑” is the up-rate vs. the all-history base rate, and only tints when it beats base by more than ±5 points — otherwise direction is a coin-flip and only the size of the move (and the avg dip) matters.','实证，无拟合权重。p25/p75 按自身符号着色；“上涨概率”为相对全历史基准的上涨频率，仅当超出基准 ±5 个百分点以上才着色 —— 否则方向接近抛硬币，只看波动幅度（及常见回撤）。') }}</div>
   </div>
   {% endif %}
   {% endif %}
@@ -219,8 +223,8 @@ html[data-theme="dark"] .rchip{background:var(--grid)}
         <span><i style="background:var(--amber)"></i>{{ t('Altcoins','山寨币') }}</span><span><i style="background:#9aa4b2"></i>{{ t('Cash / stables','现金 / 稳定币') }}</span>
       </div>
       {% if verdict and verdict.sub %}<div class="sub" style="margin-top:14px;color:var(--ink)">{{ t(verdict.sub, verdict.sub_zh) }}</div>{% endif %}
-      <div class="sub" style="margin-top:12px;font-size:12.5px">{{ t('Total crypto exposure here = the tactical allocation','此处的加密总仓位 = 战术仓位') }} <b>{{ alloc_pct }}%</b> {{ t('from the headline Optimal Strategy — the alt-cycle grid only SPLITS that budget across BTC / ETH / alts. When the risk gate is shut','（来自首页“最优策略”）— 山寨周期矩阵仅将该预算在 BTC / ETH / 山寨间分配。当风险闸门关闭时') }} ({{ alloc_pct }}%){{ t(', this page is','，本页也为') }} <b>{{ 100 - alloc_pct }}% {{ t('cash too','现金') }}</b>{{ t(', matching the main dashboard.','，与主看板一致。') }}</div>
-      <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Strategic grid cell for this regime × alt-season','该格局 × 山寨季的战略矩阵单元') }}: <b>BTC {{ grid_full.btc }} · ETH {{ grid_full.eth }} · {{ t('Alts','山寨') }} {{ grid_full.alts }} · {{ t('Cash','现金') }} {{ grid_full.cash }}</b> — {{ t('the split WHEN the gate opens. Cash dominates in a bear/counter-trend regime regardless of alt-season ("nimble only, not an investment buy"); a regime overlay, NOT a precise entry timer.', '即闸门开启时的分配比例。无论山寨季如何，熊市/逆势格局下以现金为主（“仅适合灵活短线、并非投资买入”）；这是格局叠加，而非精确入场计时。') }}</div>
+      <div class="sub" style="margin-top:12px;font-size:12.5px">{{ t('Total crypto exposure here = the tactical allocation','此处的加密总仓位 = 战术仓位') }} <b>{{ alloc_pct }}%</b> {{ t('from the headline Optimal Strategy — this grid just splits that budget across BTC / ETH / alts. When the risk gate is shut','（来自首页”最优策略”）— 本矩阵只是把该预算在 BTC / ETH / 山寨间分配。风险闸门关闭时') }} ({{ alloc_pct }}%){{ t(', this page is','，本页也为') }} <b>{{ 100 - alloc_pct }}% {{ t('cash too','现金') }}</b>{{ t(', matching the main dashboard.','，与主看板一致。') }}</div>
+      <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Strategic grid cell for this regime × alt-season','该格局 × 山寨季的战略矩阵单元') }}: <b>BTC {{ grid_full.btc }} · ETH {{ grid_full.eth }} · {{ t('Alts','山寨') }} {{ grid_full.alts }} · {{ t('Cash','现金') }} {{ grid_full.cash }}</b> — {{ t('the split once the gate opens. In a bear / counter-trend regime, cash dominates no matter the alt-season (“nimble trades only, not an investment buy”). A regime overlay, not a precise entry timer.', '即闸门开启后的分配比例。在熊市／逆势格局下，无论山寨季如何都以现金为主（”仅适合灵活短线，并非投资买入”）。这是格局叠加，而非精确入场计时。') }}</div>
     </div>
     <div class="card">
       <h3>{{ t('Where are we in the alt cycle?','处于山寨周期何处？') }}</h3>
@@ -236,14 +240,14 @@ html[data-theme="dark"] .rchip{background:var(--grid)}
         <div class="lab"><span>{{ t('ETH/BTC 8-week trend','ETH/BTC 8 周趋势') }}</span><span><b style="color:{{ 'var(--blue)' if alt.slope and alt.slope>=0 else 'var(--r3)' }}">{{ ('%+0.1f%%'|format(alt.slope)) if alt.slope is not none else '—' }}</b> · {{ t('above 50w MA','高于 50 周均线') if alt.above_ma else t('below 50w MA','低于 50 周均线') }}</span></div>
         <div class="lab"><span>{{ t('BTC dominance','BTC 占比') }}</span><span><b>{{ ('%.1f%%'|format(alt.dom)) if alt.dom is not none else '—' }}</b>{% if alt.ethdom is not none %} <span class="faint">· ETH {{ '%.1f%%'|format(alt.ethdom) }}</span>{% endif %}</span></div>
       </div>
-      <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('ETH/BTC is the deep, calibratable alt proxy (2017→): 0.07 = alt-season confirmed, sub-0.05 = deep BTC-season. ETH leads alts, so ETH gets weight before pure alts do. Dominance/score are current context (CoinGecko snapshot).', 'ETH/BTC 是历史最久、可校准的山寨代理（2017 起）：0.07 = 确认山寨季，低于 0.05 = 深度 BTC 季。ETH 领先山寨，故 ETH 先于纯山寨获得配置。占比/评分为当前背景（CoinGecko 快照）。') }}</div>
+      <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('ETH/BTC is the longest-history, testable alt proxy (2017→): 0.07 = alt-season confirmed, below 0.05 = deep BTC-season. ETH leads the alts, so it gets weight before pure alts do. Dominance and score are current context (CoinGecko snapshot).', 'ETH/BTC 是历史最久、可检验的山寨代理（2017 起）：0.07 = 确认山寨季，低于 0.05 = 深度 BTC 季。ETH 领先山寨，故先于纯山寨获得配置。占比与评分为当前背景（CoinGecko 快照）。') }}</div>
     </div>
   </div>
 
   <!-- ===== ETH/BTC chart ===== -->
   <div class="section-title">{{ t('ETH/BTC ratio · the alt-cycle clock','ETH/BTC 比率 · 山寨周期时钟') }}</div>
   <div class="card">{{ chart_ethbtc|safe }}
-    <div class="sub" style="margin-top:8px">{{ t('A multi-year base below 0.05 turning up off the 50-week MA is the early alt-season bell; a break above 0.07 confirms it. We are well below 0.05 and falling — no alt season in sight.', '在 0.05 下方多年筑底并自 50 周均线上翻，是山寨季的早期信号；突破 0.07 则确认。当前远低于 0.05 且仍在下行 — 暂无山寨季迹象。') }}</div>
+    <div class="sub" style="margin-top:8px">{{ t('A multi-year base below 0.05 turning up off the 50-week average is the early alt-season bell; a break above 0.07 confirms it. We’re well below 0.05 and still falling — no alt-season in sight.', '在 0.05 下方多年筑底并自 50 周均线上翻，是山寨季的早期信号；突破 0.07 则确认。当前远低于 0.05 且仍在下行 — 暂无山寨季迹象。') }}</div>
   </div>
 
   <!-- ===== the full grid ===== -->
@@ -258,7 +262,7 @@ html[data-theme="dark"] .rchip{background:var(--grid)}
         {% for sk in ['btc','mixed','alt'] %}<td class="{{ 'cur' if (rk==grid.regime_key and sk==grid.season_key) else '' }}">{{ g[rk][sk] }}</td>{% endfor %}
       </tr>{% endfor %}
     </table>
-    <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Cells are BTC·ETH·Alts·Cash %. Highlighted = current. Rules: alts only when alt-season AND not bear; ETH leads alts; cash dominates bear regardless of season. The % grid is judgment (labelled context), not a backtested optimum.', '单元格为 BTC·ETH·山寨·现金 %。高亮 = 当前。规则：仅在山寨季且非熊市时配置山寨；ETH 领先山寨；熊市无论季节均以现金为主。该 % 矩阵为判断（背景），而非回测最优。') }}</div>
+    <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Cells are BTC·ETH·Alts·Cash %. Highlighted = current. Rules: alts only in alt-season and not a bear; ETH leads alts; cash dominates a bear regardless of season. The grid is judgment (labelled context), not a backtested optimum.', '单元格为 BTC·ETH·山寨·现金 %。高亮 = 当前。规则：仅在山寨季且非熊市时配置山寨；ETH 领先山寨；熊市无论季节均以现金为主。该矩阵为判断（背景），而非回测最优。') }}</div>
   </div>
 
   <!-- ===== BTC strategy variants + backtests ===== -->
@@ -277,11 +281,11 @@ html[data-theme="dark"] .rchip{background:var(--grid)}
     </div>{% endfor %}
   </div>
   <div class="card" style="margin-top:18px">
-    <div class="sub">{{ t('All four BTC variants are a (momentum × risk-index) grid with a calibration-confirmed valuation overlay: MVRV-Z below 0 floors the allocation (accumulate the bottom), Mayer above 2.4 / Reserve-Risk above 0.02 caps it (trim the cycle top). Every variant beat buy-and-hold on Sharpe AND drawdown across 2015→ (HODL MaxDD −84%). Conservative trades return for the lowest drawdown; Optimal is the re-tuned best risk/reward. The macro overlay (net liquidity, global M2) was tested and kept OUT of the tactical sizing — it is a strategic context, not a timer.', '四个比特币变体均为（动量 × 风险指数）矩阵，并叠加经校准确认的估值层：MVRV-Z 低于 0 设置仓位下限（低位累积），Mayer 高于 2.4 / 储备风险高于 0.02 设置上限（顶部减仓）。2015 年以来每个变体在夏普与回撤上均优于买入持有（HODL 最大回撤 −84%）。保守型以收益换取最小回撤；最优型为重新调校后的最佳风险收益。宏观叠加（净流动性、全球 M2）经测试后被排除在战术仓位之外 — 它是战略背景，而非计时器。') }}</div>
+    <div class="sub">{{ t('All four BTC variants come from a (momentum × risk-index) grid plus a tested valuation overlay: MVRV-Z below 0 sets a floor (buy the bottom), Mayer above 2.4 / Reserve-Risk above 0.02 caps it (trim the top). Every variant beat buy-and-hold on both Sharpe and drawdown since 2015 (HODL’s max drawdown was −84%). Conservative gives up return for the smallest drawdown; Optimal is the best overall risk/reward. The macro overlay (net liquidity, global M2) was tested and deliberately left out of the sizing — it’s strategic context, not a timer.', '四个比特币变体均来自（动量 × 风险指数）矩阵，并叠加经检验的估值层：MVRV-Z 低于 0 设下限（买入底部），Mayer 高于 2.4 / 储备风险高于 0.02 设上限（顶部减仓）。2015 年以来每个变体在夏普与回撤上均优于买入持有（HODL 最大回撤 −84%）。保守型以收益换取最小回撤；最优型为整体最佳风险收益。宏观叠加（净流动性、全球 M2）经检验后被刻意排除在仓位之外 — 它是战略背景，而非计时器。') }}</div>
   </div>
 
   <div class="foot">
-    {{ t('Mechanical, backtested, free public data. Not investment advice. Allocation grids and the 0.05/0.07 ETH/BTC lines are conventions/judgment, not optimized; ~1.5–2 clean ETH/BTC cycles = low confidence. Built','机械化 · 经回测 · 免费公开数据。非投资建议。配置矩阵与 0.05/0.07 的 ETH/BTC 线为惯例/判断，非优化结果；约 1.5–2 个完整 ETH/BTC 周期 = 低置信度。生成于') }} {{ built }}.
+    {{ t('Mechanical, backtested, free public data. Not investment advice. The allocation grids and the 0.05 / 0.07 ETH/BTC lines are conventions/judgment, not optimized; with only ~1.5–2 clean ETH/BTC cycles, confidence is low. Built','机械化 · 经回测 · 免费公开数据。非投资建议。配置矩阵与 0.05 / 0.07 的 ETH/BTC 线为惯例/判断，非优化结果；仅约 1.5–2 个完整 ETH/BTC 周期，置信度低。生成于') }} {{ built }}.
   </div>
 </div>
 <script>
