@@ -463,19 +463,19 @@ def _risk_lines(R: dict) -> dict:
     w_en, w_zh = _RISK_WORD.get(band, ("ELEVATED", "偏高"))
     contrarian = band in ("50-75", "75-100")
     avg, tail, cavg, ctail = R["avg"], R["tail"], R["calm_avg"], R["calm_tail"]
-    main_en = (f"Worst-case is the 1-in-20 dip, typical is the average — {n:,} windows in this "
-               f"risk band, confirmed in both pre/post-2021 halves. "
+    main_en = (f"“Worst-case” is the 1-in-20 (5%) dip, “typical” is the average — from {n:,} similar "
+               f"windows, and it holds in both halves of history. "
                f"Worst-case {tail}% (calm {ctail}%) · typical {avg}% (calm {cavg}%), next {h} days.")
-    main_zh = (f"极端为二十中之一的回撤，常见为平均值 — 本风险区间 {n:,} 个窗口，2021 年前后两半均确认。"
+    main_zh = (f"“极端”为二十中取一（5%）的回撤，“常见”为平均值 — 取自 {n:,} 个相似窗口，且在历史两半段均成立。"
                f"极端 {tail}%（平静 {ctail}%）· 常见 {avg}%（平静 {cavg}%），未来 {h} 天。")
     if contrarian:
-        guard_en = ("Near-term drawdown risk only. At the 90-day scale high risk historically marks "
-                    "bottoms — NOT a sell signal; see the cycle verdict.")
+        guard_en = ("Near-term drawdown risk only. Over 90 days, high risk has historically marked "
+                    "bottoms — not a sell signal; see the cycle verdict.")
         guard_zh = ("仅为近端回撤风险。在 90 天尺度上，高风险历史上往往标记底部 — 这不是卖出信号；请参见周期判断。")
     else:
-        guard_en = (f"A near-term (next-{h}-day) drawdown read, not a cycle call. Risk grades "
-                    f"drawdown — it does not rank it perfectly across bands.")
-        guard_zh = f"近端（未来 {h} 天）回撤判断，并非周期判断。风险对回撤分级 — 并非在各区间严格排序。"
+        guard_en = (f"A near-term (next-{h}-day) drawdown read, not a cycle call. It grades "
+                    f"drawdown into bands — it doesn’t rank every band perfectly.")
+        guard_zh = f"近端（未来 {h} 天）回撤判断，并非周期判断。它将回撤分级 — 但并非在各档间严格排序。"
     return {"word_en": w_en, "word_zh": w_zh, "contrarian": contrarian,
             "head_en": f"{w_en} · next {h} days", "head_zh": f"{w_zh} · 未来 {h} 天",
             "main_en": main_en, "main_zh": main_zh, "guard_en": guard_en, "guard_zh": guard_zh}
