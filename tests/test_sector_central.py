@@ -122,6 +122,30 @@ def test_reasoning_trace_tiers_are_well_formed():
         assert r["en"] and r["zh"]
 
 
+def test_reasoning_zh_has_no_english_leak():
+    """The zh reasoning BODIES must translate every phaseLabel/quad/lead/signal/beta token so a
+    zh reader sees no English in the expanded trace (guards the build-side i18n fix). state_zh is
+    supplied upstream, so the regime row falls back to it rather than leaking the English state."""
+    import re
+    latin = re.compile(r"[A-Za-z]")
+    mkt = {"state_en": "Risk-on — adding", "state_zh": "风险偏好 — 加仓", "derisk_blended": 0.25,
+           "quad": "Q1", "quad_name": "Goldilocks", "liquidity": "expanding",
+           "gate_factor": 0.6, "risk_on": 0.5}
+    fwd = {"trend_pass": True, "ret_12m": 0.17}
+    plabs = [("Bottoming", "Trough"), ("Prime entry", "Recovery"), ("Trending", "Expansion"),
+             ("Topping", "Peak"), ("Rolling over", "Downturn")]
+    for (plab, phase), sig, lead, beta in [(p, s, ld, b) for p in plabs
+                                           for s in ("BUY", "SELL", None)
+                                           for ld in ("leading", "lagging", "mid-pack")
+                                           for b in (0.5, -0.5, 0.0)]:
+        state_d = {"pos": 27.0, "phase": phase, "phaseLabel": plab, "signal": sig, "osc_slope": 1.0}
+        rows = sc._trace(state_d, fwd, mkt, {"rs_rank": 3, "lead": lead},
+                         {"n_crowded": 2, "n_members": 6, "frac": 0.33}, early=True,
+                         stretched=True, beta=beta, heat={"breadth_pct": 55, "heat_1M": 2.3})
+        for r in rows:
+            assert not latin.search(r["zh"]), f"English leaked into zh body: {r['zh']!r}"
+
+
 # ---------------------------------------------------------------- trend gates map ----
 
 def test_trend_gates_keys_sectors_by_ticker_and_baskets_by_bid():

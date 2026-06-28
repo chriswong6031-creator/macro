@@ -60,6 +60,28 @@ def test_euphoric_cannot_be_top_tier():
     assert conv["label_en"] in ("Neutral", "Cautious", "Reduce")  # euphoric → not Accumulate
 
 
+def test_reasoning_zh_has_no_english_leak():
+    """The zh reasoning BODIES must translate every regime/quad/phase/momentum token so a
+    zh reader sees no English in the expanded trace (guards the build-side i18n fix)."""
+    import re
+    latin = re.compile(r"[A-Za-z]")
+    mkt = {"state_en": "Risk-off — de-risking", "state_zh": "风险偏离 — 降险中",
+           "derisk_blended": 0.96, "quad": "Q3", "quad_name": "Stagflation",
+           "liquidity": "neutral", "gate_factor": 0.2, "risk_on": -0.9}
+    fwd_d = {"cond_rate": 0.62, "base_rate": 0.5, "lift": 0.12, "ci_lo": 0.55,
+             "ci_hi": 0.7, "n": 40, "h": 6}
+    cases = [("Beaten down", "深度超跌", "Trough"), ("Recovering", "修复回升", "Recovery"),
+             ("Mid-cycle", "周期中段", "Expansion"), ("Stretched", "走高偏贵", "Peak"),
+             ("Overheated", "过热", "Downturn")]
+    for (label, label_zh, phase), lead in [(c, ld) for c in cases
+                                           for ld in ("leading", "lagging", "mid-pack")]:
+        state_d = {"signature": 50, "phase": phase, "label": label, "label_zh": label_zh}
+        rows = cc._trace(state_d, fwd_d, mkt, {"rs_rank": 3, "lead": lead},
+                         {"n_crowded": 2, "n_members": 6, "frac": 0.33}, early=True, euphoric=True)
+        for r in rows:
+            assert not latin.search(r["zh"]), f"English leaked into zh body: {r['zh']!r}"
+
+
 # ------------------------------------------------------------ data-dependent ----
 
 @pytest.mark.skipif(not HAVE_DATA, reason="china_sectors data plane absent")
