@@ -26,6 +26,19 @@ body { background: var(--bg); color: var(--text); }
   box-shadow: 0 1px 2px rgba(0,0,0,.22), 0 3px 12px color-mix(in srgb, var(--link) 16%, transparent); }
 .sc-tab.on i { color: var(--link); border-color: color-mix(in srgb, var(--link) 42%, var(--line)); }
 
+/* ---- page-level universe toggle (Sector ETFs / Shenwan vs Thematic Baskets) -------
+   On the Sector Central hubs this toggle drives BOTH the cycle map AND the conviction
+   board, so it's raised out of the chart card to a prominent, labelled primary control
+   that sits right above the cycle map. Scoped to .scc-page so the standalone cycles
+   pages (.cyc-page, no .scc-page) keep their original compact tabs. */
+.scc-page .scc-universe { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; margin: 20px 0 8px; }
+.scc-page .scc-universe-lab { font-size: 11px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; color: var(--muted); }
+.scc-page .scc-universe .sc-tabs { margin: 0; padding: 5px; border-radius: 15px; gap: 5px; }
+.scc-page .scc-universe .sc-tab { font-size: 15px; font-weight: 750; padding: 11px 24px; border-radius: 12px; }
+.scc-page .scc-universe .sc-tab i { font-size: 12px; }
+@media (max-width: 560px) { .scc-page .scc-universe .sc-tabs { width: 100%; }
+  .scc-page .scc-universe .sc-tab { flex: 1; justify-content: center; padding: 11px 12px; } }
+
 /* chart empty-state hint (baskets section with nothing selected yet) */
 .sc-chartwrap { position: relative; }
 .sc-chart-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -276,8 +289,11 @@ html[data-theme="light"] .sc-bchip.on { color: #fff; }
    Cycle Intelligence page (.cyc-page, no .sc-page) is untouched.
    ========================================================================== */
 
-/* phase "Select all": sit right beside the Where-they-stand chips, not shoved to a 2nd line */
-.sc-page .cyc-gall { margin-left: 4px; }
+/* phase "All phases" reset: pinned to the FAR RIGHT of the Where-they-stand row (its own
+   pill), so it no longer reads as a stray chip crammed against the facets — the old
+   margin-left:4px butted it right up against the last phase chip and looked like an
+   overlap/bug. It is the filter-reset, distinct from the rail's "Select all visible". */
+.sc-page .cyc-gall { margin-left: auto; }
 
 /* shared look for the sector-rail + basket-rail "Select all" buttons */
 .sc-chip-all, .sc-bask-all { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer;
