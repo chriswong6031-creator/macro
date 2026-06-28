@@ -208,6 +208,11 @@ jobs:
           # collect job's committed data/quiver/* (no API key needed here); returns 0 on error.
           run_py "alternative data desk (build_alt_data)" scripts.build_alt_data
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
+          # Impulse Tracker — AFTER build_site (a US-stocks sibling page): writes impulse.html +
+          # factordata/impulse.json from the breadth close/volume caches + the regime read
+          # (engine.run, above). Reactive early-ignition momentum screen; display/context only.
+          # Reads only committed/cached data; returns 0 on error so it can never break the site.
+          run_py "impulse tracker (build_impulse)" scripts.build_impulse
           # Congressional / politician disclosed-trades desk — AFTER build_alt_data (refreshes
           # data/quiver/congress.parquet) + build_site (refreshes per-name stockdata + regime +
           # allocation that the watchlist scores against). Reads only committed data; returns 0 on error.

@@ -502,6 +502,24 @@ engine_equity_factors:
   # quintile over this trailing window (a coarse "what's working now" gauge).
   leadership_window_d: 63
 
+impulse:
+  # Impulse Tracker (engine/impulse.py → scripts/build_impulse.py → impulse.html):
+  # a reactive EARLY-IGNITION screen. All keys are OPTIONAL — engine.impulse.
+  # ImpulseConfig defaults apply when omitted; only override to retune. The gates
+  # encode the product rule: a name stays in the BUY lane only while the move is
+  # young (small recent run-up, not stretched above its moving averages). Display/
+  # context only; never a scored input elsewhere (short-horizon direction is a
+  # coin-flip + momentum is regime-switched — see engine/velocity.py honesty gate).
+  accel_early_z: 0.5        # accel_z above this = acceleration is meaningfully up
+  vol_confirm: 1.05         # 3d/20d volume ratio above this = participation waking up
+  rvol_confirm: 1.30        # OR relative-volume above this confirms
+  runup_extended: 0.22      # 20d run-up at/above this = already ran (no entry)
+  runup_early_max: 0.15     # BUY lane keeps the recent run-up below this
+  ext50_extended: 0.20      # >20% above the 50d avg = stretched
+  ext200_extended: 0.40     # >40% above the 200d avg = a sustained runner, demote
+  trend_hard_down: -1.5     # slope_z below this = active down-trend → never a buy
+  min_dollar_vol: 3000000   # liquidity floor on 20d average dollar volume ($)
+
 engine_residual_alpha:
   # Sector-neutral residual-momentum leg (research/RESIDUAL_ALPHA_MOMENTUM.md).
   # Phase 0 verdict: a modest, regime-decayed edge — a ranking/context leg, NOT a
