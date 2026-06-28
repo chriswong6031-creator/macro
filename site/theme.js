@@ -678,7 +678,22 @@
       ts.id = 'tbl-scroll-css';
       ts.textContent = '.tbl-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}'
         + '.tbl-scroll::-webkit-scrollbar{height:6px}'
-        + '.tbl-scroll::-webkit-scrollbar-thumb{background:var(--line,var(--grid,#2a2f3a));border-radius:6px}';
+        + '.tbl-scroll::-webkit-scrollbar-thumb{background:var(--line,var(--grid,#2a2f3a));border-radius:6px}'
+        // ── mobile-fit safety net ────────────────────────────────────────────
+        // The dashboard's grid/column primitives collapse to one column on phones,
+        // but their items default to min-width:auto, so nowrap content (long basket
+        // names, allocation labels, AI reasoning) forced the single track far wider
+        // than the screen → page-wide horizontal scroll. Let those items shrink
+        // (min-width:0) and let the known nowrap leaves wrap. ≤700px only.
+        + '@media (max-width:700px){'
+        +   '.grid>*,.anwrap>*,.rotwrap>*,.rotwrap2>*,.twocol>*,.sm-2col>*,.sm-3col>*,.scm-2col>*,.scm-3col>*,.fl-cols>*,.sgrid>*,.sid-grid>*,.cmeta>*,.band>*,.board>*,.cards>*,.scards>*,.score>*,.s>*,.vgrid>*,.vcard>*,.vchip>*,.vchart-bar>*,.metric-row>*,.pdial>*{min-width:0}'
+        +   '.ancol,.anrow,.anrow>*,.pcol,.prow,.prow>*,.sm-col,.scm-col,.vcard,.vchip{min-width:0}'
+        +   '.anrow .rn,.cnt,.band .cnt,.b-fact{white-space:normal}'
+        +   '.vchart-chips{flex-wrap:wrap}'
+        + '}'
+        // grids whose tracks carry a fixed minmax() floor wider than a phone can't be
+        // fixed by min-width:0 on the items — collapse the track itself on small screens.
+        +   '@media (max-width:560px){.score,.score .s{grid-template-columns:repeat(2,1fr)}.board{grid-template-columns:1fr}}';
       document.head.appendChild(ts);
     }
     (root || document).querySelectorAll('table').forEach(function (t) {
