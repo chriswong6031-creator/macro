@@ -117,6 +117,15 @@ html[data-theme="dark"] .xa-bar{background:#222732}
 .xa-mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--faint);opacity:.5}
 .xa-fill{position:absolute;top:0;bottom:0;border-radius:5px}
 .xa-verd{text-align:right;font-size:12px;font-weight:700}
+/* phone: the 152px + 92px fixed columns + bar don't fit a card on a narrow screen
+   (the row overflowed the viewport). Stack to two rows — asset / verdict on top,
+   the bar full-width below — and let the label column shrink + wrap. */
+@media(max-width:560px){
+  .xa-row{grid-template-columns:1fr auto;column-gap:10px;row-gap:7px}
+  .xa-row>.xa-asset{grid-area:1/1;min-width:0}
+  .xa-row>.xa-verd{grid-area:1/2;min-width:0}
+  .xa-row>.xa-bar{grid-area:2/1/3/3}
+}
 </style>
 {% include "_vector_polish.html.j2" %}
 </head>
