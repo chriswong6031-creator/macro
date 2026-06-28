@@ -435,6 +435,11 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
   transform: translateY(-1px); box-shadow: 0 5px 14px -5px color-mix(in srgb, var(--link) 42%, transparent); }
 .nav-ctrls .ai-brief-link:active { transform: translateY(0); box-shadow: none; }
 .nav-ctrls .ai-brief-link.active { background: var(--link); border-color: var(--link); color: #fff; }
+/* Terminal entry — the live Mastermind Terminal (app.mastermind-x.com), pinned
+   beside the Mastermind button. Same pill, link-accented border/text so it reads
+   as the one outbound door to the live app. */
+.nav-ctrls .ai-brief-link.terminal-link { border-color: color-mix(in srgb, var(--link) 50%, var(--line)); color: var(--link); }
+.nav-ctrls .ai-brief-link.terminal-link:hover { background: var(--link); border-color: var(--link); color: #fff; }
 
 /* AI Daily Brief entry card — the single in-page doorway to the cross-asset LLM
    synthesis page (aibrief.html). Replaces the old inline AI Master Brief panel on the
