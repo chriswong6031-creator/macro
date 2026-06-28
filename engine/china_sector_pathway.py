@@ -87,7 +87,14 @@ def _conditional(setup: pd.Series, mpx: pd.Series, h: int) -> dict | None:
         return None
     base_rate = float((sub["f"] > 0).mean())
     base_med = float(sub["f"].median())
-    hi = sub[sub["s"] >= sub["s"].quantile(2 / 3)]
+    # CAUSAL high-setup cohort: judge each month against its OWN-history (expanding) 2/3
+    # boundary, never a full-sample quantile — so the historical cohort and the live tercile
+    # read (_current_pctile, also expanding) are computed identically (house rule live==backtest).
+    # A full-sample quantile would let future data decide which past months were "high setup",
+    # leaking look-ahead into the headline conditional rate.
+    bound = setup.expanding(min_periods=36).quantile(2 / 3)
+    in_hi = (setup >= bound).reindex(sub.index).fillna(False)
+    hi = sub[in_hi.to_numpy(dtype=bool)]
     if len(hi) < 8:
         return None
     k = int((hi["f"] > 0).sum()); n = len(hi)
