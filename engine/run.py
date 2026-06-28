@@ -326,6 +326,15 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("foresight-cascade layer failed: %s", e)
         latest["foresight_cascade"] = None
+    # Theme DISCOVERY: bottlenecks forming OUTSIDE the 18 tracked themes — a cluster of
+    # un-tracked filers in one SIC industry independently reporting physical scarcity (the
+    # pre-13D state). Display-only candidate generator on probation; never auto-added.
+    try:
+        from engine.theme_emergence import compute_theme_emergence
+        latest["theme_emergence"] = compute_theme_emergence()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("theme-emergence layer failed: %s", e)
+        latest["theme_emergence"] = None
     # Cross-asset confirmation: does the leading-family complex (BONDS + FX) CONFIRM
     # or DIVERGE from the equity/macro regime computed above? Reads the two dedicated
     # dashboards' contracts (data/bonds/bond_health.json, data/forex/latest.json) — whose
