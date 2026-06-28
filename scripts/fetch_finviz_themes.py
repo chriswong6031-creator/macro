@@ -28,6 +28,7 @@ import json
 import time
 import urllib.parse
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -118,6 +119,10 @@ def main() -> None:
 
     snap = {
         "source": "finviz-themes",
+        # Finviz themes perf is end-of-day; stamp the fetch date so the rotation
+        # build + its forward track-record date each call by the true data day
+        # (build_subsector_rotation reads snap["asof"]).
+        "asof": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "timeframes": list(ST_TO_TF.values()),
         "subsector_perf": sub_perf,
         "member_perf": mem_perf,

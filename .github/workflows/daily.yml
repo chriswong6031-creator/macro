@@ -113,6 +113,15 @@ jobs:
         run: |
           if [ -n "$FRED_API_KEY" ]; then echo "::notice::FRED_API_KEY present — using official API"; else echo "::warning::FRED_API_KEY ABSENT — check repo Settings > Secrets and variables > Actions > Repository secrets"; fi
           python -m scripts.collect
+      - name: refresh Finviz themes snapshot (subsector-rotation feed; non-fatal)
+        # The only network leg for the themes map + Subsector Rotation. Refreshes
+        # data/themes_heatmap/perf_snapshot.json (stamped with asof) so the rotation
+        # read is fresh-daily and its forward track-record accrues a real daily
+        # history. Keyless, can be rate-limited from CI IPs — strictly non-fatal:
+        # on failure the build keeps the last committed snapshot.
+        run: |
+          python scripts/fetch_finviz_themes.py \
+            || echo "::warning::Finviz themes fetch failed (non-fatal) — keeping committed snapshot"
       - name: commit data
         run: |
           git config user.name "dashboard-bot"
