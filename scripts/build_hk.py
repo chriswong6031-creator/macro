@@ -668,6 +668,11 @@ def main() -> int:
                 _div = bool(_px is not None and len(_px) > 21 and len(_b) > 21
                             and _b.iloc[-1] < _b.iloc[-22] and _px.iloc[-1] > _px.iloc[-22])
                 latest.setdefault("conditions", {})["breadth"] = {"above200_pctile": _pctile, "div": _div}
+            # external-driver Risk Radar (engine/risk_radar_intl.py: US rate shocks + dollar
+            # strength — HK's US-coupling is recent but real). Populated BEFORE market_state so
+            # HK_PROFILE.radar_override surfaces it. None-safe; display-only.
+            from engine import risk_radar_intl as _rri
+            latest["risk_radar"] = _rri.snapshot(_rri.HK_PROFILE)
             vm["market_state"] = _ms.market_state_snapshot(
                 latest, _f, latest.get("alerts") or [], profile=HK_PROFILE)
         except Exception as e:  # noqa: BLE001 — additive panel, never fatal

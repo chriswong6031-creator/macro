@@ -435,6 +435,47 @@ def _ceiling_for(state: str, severe_gated: bool, amp_keys, calib: dict) -> int |
     return int(max(calib.get("floor", 12), round(base - pull)))
 
 
+def _radar_to_rd(rr: dict) -> dict:
+    """Map a risk_radar.v2 (US) / risk_radar_intl.v1 (CN/HK/CA) payload into the `rd` dict
+    the shared .rrx Risk-Radar card consumes. Pure; the amplifying US override and the
+    display-only override both build on it. `amp`/`ceiling` default to off (the US override
+    fills them in when the radar is loud)."""
+    state = rr.get("state")
+    top = _num(rr.get("top_score"))
+    dp = rr.get("drawdown_prob") or {}
+    return {
+        "state": state,
+        "top_score": round(top) if top is not None else None,
+        "label_en": rr.get("dominant_label_en") or "calm",
+        "label_zh": rr.get("dominant_label_zh") or "平静",
+        "state_zh": _RADAR_ZH.get(state, state or ""),
+        "do_en": _RADAR_DO.get(state, ("", ""))[0],
+        "do_zh": _RADAR_DO.get(state, ("", ""))[1],
+        "gross": _num(rr.get("gross_factor")),
+        "dd5": _num(dp.get("h5")), "dd10": _num(dp.get("h10")), "dd21": _num(dp.get("h21")),
+        "dd_lift": _num(dp.get("lift_h21")),
+        # unconditional "normal" base rates per horizon — the reference the radar card draws the
+        # escalating odds against (so a small near-term bar can't be misread as "no risk").
+        "dd_base": {"h5": _num(dp.get("base_h5")), "h10": _num(dp.get("base_h10")),
+                    "h21": _num(dp.get("base_h21"))},
+        "is_loud": state in ("caution", "elevated", "risk-off"),
+        # carried so the board can pass ms.radar.scares to the card (the US page passes
+        # latest.risk_radar.scares separately, so this is harmless duplication there).
+        "scares": rr.get("scares") or [],
+        "amp": 0, "amp_keys": [], "amp_flags_en": [], "amp_flags_zh": [],
+        "severe_gated": False, "ceiling": None,
+    }
+
+
+def _radar_override_display(latest: dict, overrides: list) -> dict:
+    """Display-only radar mapping for markets that HAVE a calibrated radar but not yet the
+    amplification + forward-grade auto-tune loop the US one carries (China/HK/Canada, fed by
+    engine/risk_radar_intl.py). It renders the card from latest['risk_radar'] but NEVER forces
+    the verdict (ceiling stays None, no override note appended) — honest until each market's
+    radar accrues its own graded track record."""
+    return _radar_to_rd(latest.get("risk_radar") or {})
+
+
 def _radar_override(latest: dict, overrides: list) -> dict:
     """Summarise the Risk Radar (engine/risk_radar.py) for the hero AND, when it is at
     caution or worse, compute an AMPLIFIED score ceiling + push an override note.
@@ -455,27 +496,7 @@ def _radar_override(latest: dict, overrides: list) -> dict:
     state = rr.get("state")
     top = _num(rr.get("top_score"))
     ungated = rr.get("state_ungated") or state
-    dp = rr.get("drawdown_prob") or {}
-    out = {
-        "state": state,
-        "top_score": round(top) if top is not None else None,
-        "label_en": rr.get("dominant_label_en") or "calm",
-        "label_zh": rr.get("dominant_label_zh") or "平静",
-        "state_zh": _RADAR_ZH.get(state, state or ""),
-        "do_en": _RADAR_DO.get(state, ("", ""))[0],
-        "do_zh": _RADAR_DO.get(state, ("", ""))[1],
-        "gross": _num(rr.get("gross_factor")),
-        "dd5": _num(dp.get("h5")), "dd10": _num(dp.get("h10")), "dd21": _num(dp.get("h21")),
-        "dd_lift": _num(dp.get("lift_h21")),
-        # unconditional "normal" base rates per horizon — the reference the radar card draws the
-        # escalating odds against (so a 4% near-term bar can't be misread as "no risk"). Stable
-        # constants from engine/risk_radar._PROB_BASE; template falls back to them on older payloads.
-        "dd_base": {"h5": _num(dp.get("base_h5")), "h10": _num(dp.get("base_h10")),
-                    "h21": _num(dp.get("base_h21"))},
-        "is_loud": state in ("caution", "elevated", "risk-off"),
-        "amp": 0, "amp_keys": [], "amp_flags_en": [], "amp_flags_zh": [],
-        "severe_gated": False, "ceiling": None,
-    }
+    out = _radar_to_rd(rr)
     if state not in ("caution", "elevated", "risk-off"):
         return out
 

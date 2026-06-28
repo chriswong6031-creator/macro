@@ -1,0 +1,115 @@
+  /* ============================================================================
+     RISK RADAR CARD (.rrx) — the one shared, redesigned alert used on the US Macro
+     + US-Stocks pages AND the China / HK / Canada Market-State boards (the macros
+     live in _risk_radar_card.html.j2). GLOBAL theme vars only + an inline --rc state
+     accent, so it renders the same in the page-macro, page-stocks and china/hk/canada
+     scopes. The escalating odds ramp replaces the old cramped "5d.. 10d.. 21d.." run.
+     Included by dashboard.html.j2 (both modes) + _market_state.css.j2 (CN/HK/CA). ==== */
+  .rrx { --rc: var(--warn);
+         display: grid; gap: 12px; margin: 12px 0 2px; padding: 15px 18px; border-radius: 12px;
+         background: var(--panel);
+         border: 1px solid var(--line);
+         border-left: 4px solid var(--rc); font-size: 12.5px; line-height: 1.4;
+         box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4); }
+  body.page-macro .ms-front > .rrx { margin: 0 0 14px; }
+  .rrx.rrx-loud { background: color-mix(in srgb, var(--rc) 4%, var(--panel));
+         box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rc) 20%, transparent), 0 14px 34px -18px color-mix(in srgb, var(--rc) 70%, transparent);
+         animation: rrxPulse 2.4s ease-in-out infinite; }
+  @keyframes rrxPulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rc) 30%, transparent); }
+                        50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--rc) 6%, transparent); } }
+  @media (prefers-reduced-motion: reduce) { .rrx.rrx-loud { animation: none;
+         box-shadow: 0 0 0 1px color-mix(in srgb, var(--rc) 30%, transparent); } }
+  /* header */
+  .rrx .rrx-hd { display: flex; align-items: flex-start; gap: 10px; }
+  .rrx .rrx-ic { font-size: 18px; line-height: 1.1; flex: none; }
+  .rrx .rrx-id { min-width: 0; flex: 1; }
+  .rrx .rrx-ttl { display: flex; align-items: center; flex-wrap: wrap; gap: 7px;
+         font-weight: 700; font-size: 13px; color: var(--text); }
+  .rrx .rrx-badge { font-weight: 800; letter-spacing: .03em; color: var(--rc); font-size: 11.5px;
+         font-variant-numeric: tabular-nums; padding: 1px 7px; border-radius: 5px;
+         background: color-mix(in srgb, var(--rc) 16%, transparent);
+         border: 1px solid color-mix(in srgb, var(--rc) 38%, transparent); }
+  .rrx .rrx-dom { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+  .rrx .rrx-amp { color: var(--rc); font-weight: 600; font-size: 11px; margin-top: 3px; }
+  .rrx .rrx-gross { flex: none; text-align: center; padding: 3px 11px; border-radius: 9px;
+         background: color-mix(in srgb, var(--rc) 12%, transparent);
+         border: 1px solid color-mix(in srgb, var(--rc) 32%, transparent); }
+  .rrx .rrx-gross .gv { display: block; font-weight: 800; font-size: 15px; color: var(--rc);
+         font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .rrx .rrx-gross .gn { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: .07em;
+         color: var(--muted); }
+  /* odds hero */
+  .rrx .rrx-odds { display: flex; gap: 16px; align-items: stretch; flex-wrap: wrap;
+         background: color-mix(in srgb, var(--rc) 5%, var(--panel));
+         border: 1px solid var(--line); border-radius: 9px; padding: 11px 14px; }
+  .rrx .rrx-odds-l { flex: 1 1 150px; display: flex; flex-direction: column; justify-content: center; }
+  .rrx .rrx-cap { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em;
+         color: var(--muted); }
+  .rrx .rrx-cap-sub { font-weight: 600; letter-spacing: .02em; opacity: .8; }
+  .rrx .rrx-big { font-weight: 800; font-size: 40px; line-height: .95; color: var(--rc); margin: 4px 0 2px;
+         font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .rrx .rrx-big .pct { font-size: 22px; margin-left: 1px; }
+  .rrx .rrx-big .rrx-hz { font-size: 11px; font-weight: 600; color: var(--muted); margin-left: 7px;
+         letter-spacing: 0; }
+  .rrx .rrx-vsn { font-size: 11.5px; color: var(--muted); }
+  .rrx .rrx-vsn b { color: var(--text); font-variant-numeric: tabular-nums; }
+  /* escalating ramp */
+  .rrx .rrx-ramp { flex: 1 1 240px; min-width: 0; max-width: 430px; display: flex; align-items: flex-end;
+         justify-content: space-between; gap: 12px; position: relative; padding-top: 18px; }
+  .rrx .rrx-col { flex: 1 1 0; min-width: 0; max-width: 76px; display: flex; flex-direction: column;
+         align-items: center; gap: 5px; }
+  .rrx .rrx-v { font-size: 12.5px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+  .rrx .rrx-col.is-hd .rrx-v { color: var(--rc); }
+  .rrx .rrx-tk { width: 100%; max-width: 54px; height: 64px; position: relative;
+         display: flex; align-items: flex-end; justify-content: center; border-bottom: 1px solid var(--line); }
+  .rrx .rrx-norm { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 2px 2px 0 0;
+         background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--muted) 32%, transparent) 0 4px, transparent 4px 8px);
+         border-top: 1px dashed color-mix(in srgb, var(--muted) 60%, transparent); }
+  .rrx .rrx-fill { width: 100%; border-radius: 3px 3px 0 0; position: relative; z-index: 1; min-height: 6px;
+         background: linear-gradient(180deg, var(--rc), color-mix(in srgb, var(--rc) 50%, transparent)); }
+  .rrx .rrx-hl { font-size: 10.5px; font-weight: 600; color: var(--muted); }
+  .rrx .rrx-col.is-hd .rrx-hl { color: var(--text); }
+  .rrx .rrx-leg { position: absolute; top: 0; right: 2px; display: flex; align-items: center; gap: 4px;
+         font-size: 9.5px; color: var(--muted); }
+  .rrx .rrx-leg-n { width: 13px; border-top: 1px dashed color-mix(in srgb, var(--muted) 60%, transparent); }
+  /* threat meters */
+  .rrx .rrx-threats { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rrx .rrx-th { --sb: var(--muted); display: inline-flex; align-items: center; gap: 6px;
+         padding: 3px 9px; border-radius: 7px; font-size: 11px;
+         background: var(--panel); border: 1px solid var(--line); }
+  .rrx .rrx-th.dom { background: color-mix(in srgb, var(--sb) 10%, var(--panel));
+         border-color: color-mix(in srgb, var(--sb) 50%, var(--line)); }
+  .rrx .rrx-th.dim { opacity: .58; }
+  .rrx .rrx-th-n { color: var(--text); font-weight: 600; }
+  .rrx .rrx-th.dom .rrx-th-n { color: var(--sb); }
+  .rrx .rrx-meter { display: inline-flex; gap: 1.5px; }
+  .rrx .rrx-meter i { width: 3px; height: 11px; border-radius: 1px;
+         background: color-mix(in srgb, var(--muted) 28%, transparent); }
+  .rrx .rrx-meter i.on { background: var(--sb); }
+  .rrx .rrx-th-s { color: var(--text); font-weight: 800; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .rrx .rrx-tag { font-size: 8.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+         border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+  .rrx .rrx-ev { font-size: 11px; color: var(--muted); }
+  .rrx .rrx-ev-k { font-weight: 700; color: var(--text); margin-right: 6px; }
+  .rrx .rrx-ev-p { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  /* action */
+  .rrx .rrx-do { font-size: 12px; color: var(--text); padding-top: 9px;
+         border-top: 1px solid color-mix(in srgb, var(--rc) 20%, var(--line)); }
+  .rrx .rrx-do-k { font-weight: 800; color: var(--rc); text-transform: uppercase; letter-spacing: .06em;
+         font-size: 10.5px; margin-right: 8px; }
+  @media (max-width: 760px) {
+    .rrx .rrx-odds { flex-direction: column; gap: 14px; }
+    .rrx .rrx-odds-l { flex: 0 0 auto; }
+    .rrx .rrx-ramp { flex: 0 0 auto; width: 100%; max-width: none; justify-content: space-around; }
+  }
+  /* phone: collapse to a SIMPLE, STRONG alert — headline + the one number that
+     matters + the action. The ramp, the verbose amplification line and the
+     non-dominant threat meters are desktop-only detail, not a mobile wall. */
+  @media (max-width: 560px) {
+    .rrx { padding: 14px 15px; gap: 10px; }
+    .rrx .rrx-amp, .rrx .rrx-ramp, .rrx .rrx-ev { display: none; }
+    .rrx .rrx-odds { padding: 11px 13px; }
+    .rrx .rrx-big { font-size: 34px; }
+    .rrx .rrx-threats { gap: 5px; }
+    .rrx .rrx-th:not(.dom) { display: none; }
+  }

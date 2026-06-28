@@ -37,99 +37,9 @@
 {%- set s = st.get(band, st['calm']) -%}
 {{ t(b[0], b[1]) }}<br><br>{{ t(s[0], s[1]) }}
 {%- endmacro %}
-{# plain-English name for a raw risk_radar firing-leg code (engine/risk_radar.py
-   signal keys) so the evidence reads like English, not engine internals. #}
-{% macro rr_leg(leg) -%}
-{%- set m = {
-  'credit_oas_roc':   ('HY credit spreads widening','高收益利差走阔'),
-  'credit_hyg_tlt':   ('HY bonds lagging Treasuries','高收益债跑输国债'),
-  'rates_move':       ('Bond-market volatility (MOVE)','债市波动率（MOVE）'),
-  'rates_realrate':   ('Real yields jumping','实际利率跳升'),
-  'bubble_ext':       ('S&P stretched vs 200-day','标普超买（>200日线）'),
-  'bubble_leadership':('Narrow leadership (semis)','领涨过窄（半导体）'),
-  'growth_defensives':('Defensives outperforming','防御股跑赢'),
-  'growth_cyc_def':   ('Cyclicals fading vs defensives','周期股弱于防御'),
-  'vol_term':         ('VIX term-structure stress','VIX 期限结构紧张'),
-  'vol_putcall':      ('Put/call skew','认沽/认购偏斜'),
-  'vol_gex':          ('Dealer gamma (GEX)','做市商 Gamma'),
-} -%}{%- set p = m.get(leg, (leg, leg)) -%}{{ t(p[0], p[1]) }}
-{%- endmacro %}
-{# ============================================================================
-   RISK RADAR CARD — the one shared, redesigned alert used on BOTH the Macro
-   Market-State board (.ms-front) and the US-Stocks header. Replaces the old
-   cramped "Pullback odds · 5d.. 10d.. 21d.." text run with an escalating odds
-   ramp drawn against the normal base rate, under a state-coloured header,
-   compact threat meters + plain-English evidence, and the action line. Built
-   only from market_state.radar (rd) + risk_radar.scares, token-only with an
-   inline --rc state accent so it renders identically in both page scopes.
-   ============================================================================ #}
-{% macro risk_radar_card(rd, scares) -%}
-{%- set rc = 'var(--act)' if rd.state=='risk-off' else ('var(--orange)' if rd.state=='elevated' else ('var(--warn)' if rd.state=='caution' else ('var(--info)' if rd.state=='watch' else 'var(--ok)'))) -%}
-{%- set ic = '🛑' if rd.state=='risk-off' else ('🚨' if rd.state=='elevated' else ('⚠️' if rd.state=='caution' else ('👀' if rd.state=='watch' else '✅'))) -%}
-{%- set base = rd.dd_base if (rd.dd_base and rd.dd_base.h21 is not none) else {'h5':0.036,'h10':0.086,'h21':0.178} -%}
-{%- set hmax = (rd.dd21 / 0.82) if (rd.dd21 is not none and rd.dd21 > 0) else 0.25 -%}
-<div class="rrx rrx-{{ rd.state }}{{ ' rrx-loud' if rd.is_loud }}" style="--rc:{{ rc }}">
-  <div class="rrx-hd">
-    <span class="rrx-ic">{{ ic }}</span>
-    <div class="rrx-id">
-      <div class="rrx-ttl">{{ t('Risk Radar','风险雷达') }}
-        <span class="rrx-badge">{{ t(rd.state|upper, rd.state_zh) }}{% if rd.top_score is not none %} · {{ rd.top_score }}/100{% endif %}</span>
-        {{ help('A leading drawdown-risk gauge, built only from signals that passed a strict backtest. It watches five kinds of stress (credit, rates, bubble, growth, volatility) and stays quiet until the broad market is actually breaking. It measures the ODDS of a pullback, not the direction — use it to size down, never to pick stocks. Every call is graded afterwards and the gauge is re-tuned from its own misses.', '领先的回撤风险指标，仅由通过严格回测的信号构成。它监测五类压力（信用、利率、泡沫、增长、波动），在大盘真正破位前保持沉默。它衡量回撤的“概率”而非方向——用于降低仓位，绝非选股。每次判断事后都会被评判，并据其失误自我再校准。') }}
-      </div>
-      {% if rd.label_en %}<div class="rrx-dom">{{ t(rd.label_en, rd.label_zh) }}</div>{% endif %}
-      {% if rd.amp and rd.amp > 0 %}<div class="rrx-amp">▲ {{ t('Amplified','放大') }} — <span class="l-en">{{ rd.amp_flags_en|join(' · ') }}</span><span class="l-zh">{{ rd.amp_flags_zh|join(' · ') }}</span></div>{% endif %}
-    </div>
-    {% if rd.gross is not none and rd.gross < 1 %}<div class="rrx-gross"><span class="gv">×{{ '%.2f'|format(rd.gross) }}</span><span class="gn">{{ t('gross','建议仓位') }}</span></div>{% endif %}
-  </div>
-
-  {% if rd.dd21 is not none %}
-  <div class="rrx-odds">
-    <div class="rrx-odds-l">
-      <div class="rrx-cap">{{ t('Pullback odds','回撤概率') }} <span class="rrx-cap-sub">{{ t('≥5% drop · escalating','≥5% · 递增') }}</span></div>
-      <div class="rrx-big">{{ (rd.dd21*100)|round|int }}<span class="pct">%</span><span class="rrx-hz">{{ t('within 21 days','21 日内') }}</span></div>
-      <div class="rrx-vsn">{% if rd.dd_lift is not none %}<b>{{ rd.dd_lift }}×</b> {% endif %}{{ t('vs normal','对比常态') }} {{ (base.h21*100)|round|int }}%</div>
-    </div>
-    <div class="rrx-ramp">
-      {% for h in [ ('5d','5日',rd.dd5,base.h5), ('10d','10日',rd.dd10,base.h10), ('21d','21日',rd.dd21,base.h21) ] %}
-      {%- set odd = h[2] if h[2] is not none else 0 -%}
-      {%- set bs = h[3] if h[3] is not none else 0 -%}
-      <div class="rrx-col{{ ' is-hd' if loop.last }}">
-        <span class="rrx-v">{{ (odd*100)|round|int }}%</span>
-        <div class="rrx-tk">
-          <div class="rrx-norm" style="height:{{ [(bs/hmax*100)|round|int, 2]|max }}%"></div>
-          <div class="rrx-fill" style="height:{{ [(odd/hmax*100)|round|int, 6]|max }}%"></div>
-        </div>
-        <span class="rrx-hl">{{ t(h[0], h[1]) }}</span>
-      </div>
-      {% endfor %}
-      <span class="rrx-leg"><span class="rrx-leg-n"></span>{{ t('normal','常态') }}</span>
-    </div>
-  </div>
-  {% endif %}
-
-  {% if scares %}
-  <div class="rrx-threats">
-    {% for s in scares %}{% if s.score is not none %}
-    {%- set sb = 'var(--act)' if s.band=='risk-off' else ('var(--orange)' if s.band=='elevated' else ('var(--warn)' if s.band=='caution' else ('var(--info)' if s.band=='watch' else 'var(--muted)'))) -%}
-    {%- set dom = (s.label_en == rd.label_en) -%}
-    {%- set dim = (s.tier == 'B') -%}
-    <span class="rrx-th{{ ' dom' if dom }}{{ ' dim' if dim }}" style="--sb:{{ sb }}">
-      <span class="rrx-th-n">{{ t(s.label_en, s.label_zh) }}</span>
-      <span class="rrx-meter">{% for i in range(10) %}<i class="{{ 'on' if i < (s.score/10)|round(0,'floor')|int }}"></i>{% endfor %}</span>
-      <b class="rrx-th-s">{{ s.score|round|int }}</b>{% if dim %}<span class="rrx-tag">{{ t('display','仅展示') }}</span>{% endif %}
-    </span>
-    {% endif %}{% endfor %}
-  </div>
-  {% for s in scares %}{% if s.label_en == rd.label_en and s.firing_legs %}
-  <div class="rrx-ev"><span class="rrx-ev-k">{{ t('Leading','领先信号') }}</span>{% for l in s.firing_legs[:2] %}{% if not loop.first %} · {% endif %}{{ rr_leg(l.leg) }} <span class="rrx-ev-p">{{ (l.pctile*100)|round|int }}th{% if l.confirmed %} ✓{% endif %}</span>{% endfor %}</div>
-  {% endif %}{% endfor %}
-  {% endif %}
-
-  {% if rd.is_loud and rd.do_en %}
-  <div class="rrx-do"><span class="rrx-do-k">{{ t('Do','应对') }}</span>{{ t(rd.do_en, rd.do_zh) }}</div>
-  {% endif %}
-</div>
-{%- endmacro %}
+{% import "_risk_radar_card.html.j2" as rrc %}
+{# rr_leg + risk_radar_card moved to the shared partial _risk_radar_card.html.j2
+   (used by the US Macro/Stocks pages AND the China/HK/Canada Market-State boards). #}
 {# coloured, arrowed direction word for a nowcast metric (from nowcast_hist) #}
 {% macro trendword(nh) -%}
 {% if nh and nh.trend %}{% set _ar = {'rising':'▲','accelerating':'▲','falling':'▼','cooling':'▼','flat':'▶'} %}{% set _zh = {'rising':'上行','falling':'下行','accelerating':'加速','cooling':'降温','flat':'走平'} %}<span class="tw tw-{{ nh.dir }}">{{ _ar[nh.trend] }} <span class="l-en">{{ nh.trend }}</span><span class="l-zh">{{ _zh[nh.trend] }}</span></span>{% endif %}
@@ -246,120 +156,7 @@
   .chart { width: 100%; }
   .topline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
 
-  /* ============================================================================
-     RISK RADAR CARD (.rrx) — the one shared, redesigned alert used on BOTH the
-     Macro Market-State board and the US-Stocks header (macro risk_radar_card()).
-     GLOBAL theme vars only + an inline --rc state accent, so it renders the same
-     in the page-macro and page-stocks scopes. The escalating odds ramp replaces
-     the old cramped "5d.. 10d.. 21d.." text run. ============================ */
-  .rrx { --rc: var(--warn);
-         display: grid; gap: 12px; margin: 12px 0 2px; padding: 15px 18px; border-radius: 12px;
-         background: var(--panel);
-         border: 1px solid var(--line);
-         border-left: 4px solid var(--rc); font-size: 12.5px; line-height: 1.4;
-         box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4); }
-  body.page-macro .ms-front > .rrx { margin: 0 0 14px; }
-  .rrx.rrx-loud { background: color-mix(in srgb, var(--rc) 4%, var(--panel));
-         box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rc) 20%, transparent), 0 14px 34px -18px color-mix(in srgb, var(--rc) 70%, transparent);
-         animation: rrxPulse 2.4s ease-in-out infinite; }
-  @keyframes rrxPulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rc) 30%, transparent); }
-                        50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--rc) 6%, transparent); } }
-  @media (prefers-reduced-motion: reduce) { .rrx.rrx-loud { animation: none;
-         box-shadow: 0 0 0 1px color-mix(in srgb, var(--rc) 30%, transparent); } }
-  /* header */
-  .rrx .rrx-hd { display: flex; align-items: flex-start; gap: 10px; }
-  .rrx .rrx-ic { font-size: 18px; line-height: 1.1; flex: none; }
-  .rrx .rrx-id { min-width: 0; flex: 1; }
-  .rrx .rrx-ttl { display: flex; align-items: center; flex-wrap: wrap; gap: 7px;
-         font-weight: 700; font-size: 13px; color: var(--text); }
-  .rrx .rrx-badge { font-weight: 800; letter-spacing: .03em; color: var(--rc); font-size: 11.5px;
-         font-variant-numeric: tabular-nums; padding: 1px 7px; border-radius: 5px;
-         background: color-mix(in srgb, var(--rc) 16%, transparent);
-         border: 1px solid color-mix(in srgb, var(--rc) 38%, transparent); }
-  .rrx .rrx-dom { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
-  .rrx .rrx-amp { color: var(--rc); font-weight: 600; font-size: 11px; margin-top: 3px; }
-  .rrx .rrx-gross { flex: none; text-align: center; padding: 3px 11px; border-radius: 9px;
-         background: color-mix(in srgb, var(--rc) 12%, transparent);
-         border: 1px solid color-mix(in srgb, var(--rc) 32%, transparent); }
-  .rrx .rrx-gross .gv { display: block; font-weight: 800; font-size: 15px; color: var(--rc);
-         font-variant-numeric: tabular-nums; line-height: 1.1; }
-  .rrx .rrx-gross .gn { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: .07em;
-         color: var(--muted); }
-  /* odds hero */
-  .rrx .rrx-odds { display: flex; gap: 16px; align-items: stretch; flex-wrap: wrap;
-         background: color-mix(in srgb, var(--rc) 5%, var(--panel));
-         border: 1px solid var(--line); border-radius: 9px; padding: 11px 14px; }
-  .rrx .rrx-odds-l { flex: 1 1 150px; display: flex; flex-direction: column; justify-content: center; }
-  .rrx .rrx-cap { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em;
-         color: var(--muted); }
-  .rrx .rrx-cap-sub { font-weight: 600; letter-spacing: .02em; opacity: .8; }
-  .rrx .rrx-big { font-weight: 800; font-size: 40px; line-height: .95; color: var(--rc); margin: 4px 0 2px;
-         font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
-  .rrx .rrx-big .pct { font-size: 22px; margin-left: 1px; }
-  .rrx .rrx-big .rrx-hz { font-size: 11px; font-weight: 600; color: var(--muted); margin-left: 7px;
-         letter-spacing: 0; }
-  .rrx .rrx-vsn { font-size: 11.5px; color: var(--muted); }
-  .rrx .rrx-vsn b { color: var(--text); font-variant-numeric: tabular-nums; }
-  /* escalating ramp */
-  .rrx .rrx-ramp { flex: 1 1 240px; min-width: 0; max-width: 430px; display: flex; align-items: flex-end;
-         justify-content: space-between; gap: 12px; position: relative; padding-top: 18px; }
-  .rrx .rrx-col { flex: 1 1 0; min-width: 0; max-width: 76px; display: flex; flex-direction: column;
-         align-items: center; gap: 5px; }
-  .rrx .rrx-v { font-size: 12.5px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
-  .rrx .rrx-col.is-hd .rrx-v { color: var(--rc); }
-  .rrx .rrx-tk { width: 100%; max-width: 54px; height: 64px; position: relative;
-         display: flex; align-items: flex-end; justify-content: center; border-bottom: 1px solid var(--line); }
-  .rrx .rrx-norm { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 2px 2px 0 0;
-         background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--muted) 32%, transparent) 0 4px, transparent 4px 8px);
-         border-top: 1px dashed color-mix(in srgb, var(--muted) 60%, transparent); }
-  .rrx .rrx-fill { width: 100%; border-radius: 3px 3px 0 0; position: relative; z-index: 1; min-height: 6px;
-         background: linear-gradient(180deg, var(--rc), color-mix(in srgb, var(--rc) 50%, transparent)); }
-  .rrx .rrx-hl { font-size: 10.5px; font-weight: 600; color: var(--muted); }
-  .rrx .rrx-col.is-hd .rrx-hl { color: var(--text); }
-  .rrx .rrx-leg { position: absolute; top: 0; right: 2px; display: flex; align-items: center; gap: 4px;
-         font-size: 9.5px; color: var(--muted); }
-  .rrx .rrx-leg-n { width: 13px; border-top: 1px dashed color-mix(in srgb, var(--muted) 60%, transparent); }
-  /* threat meters */
-  .rrx .rrx-threats { display: flex; flex-wrap: wrap; gap: 6px; }
-  .rrx .rrx-th { --sb: var(--muted); display: inline-flex; align-items: center; gap: 6px;
-         padding: 3px 9px; border-radius: 7px; font-size: 11px;
-         background: var(--panel); border: 1px solid var(--line); }
-  .rrx .rrx-th.dom { background: color-mix(in srgb, var(--sb) 10%, var(--panel));
-         border-color: color-mix(in srgb, var(--sb) 50%, var(--line)); }
-  .rrx .rrx-th.dim { opacity: .58; }
-  .rrx .rrx-th-n { color: var(--text); font-weight: 600; }
-  .rrx .rrx-th.dom .rrx-th-n { color: var(--sb); }
-  .rrx .rrx-meter { display: inline-flex; gap: 1.5px; }
-  .rrx .rrx-meter i { width: 3px; height: 11px; border-radius: 1px;
-         background: color-mix(in srgb, var(--muted) 28%, transparent); }
-  .rrx .rrx-meter i.on { background: var(--sb); }
-  .rrx .rrx-th-s { color: var(--text); font-weight: 800; font-size: 11.5px; font-variant-numeric: tabular-nums; }
-  .rrx .rrx-tag { font-size: 8.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
-         border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
-  .rrx .rrx-ev { font-size: 11px; color: var(--muted); }
-  .rrx .rrx-ev-k { font-weight: 700; color: var(--text); margin-right: 6px; }
-  .rrx .rrx-ev-p { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
-  /* action */
-  .rrx .rrx-do { font-size: 12px; color: var(--text); padding-top: 9px;
-         border-top: 1px solid color-mix(in srgb, var(--rc) 20%, var(--line)); }
-  .rrx .rrx-do-k { font-weight: 800; color: var(--rc); text-transform: uppercase; letter-spacing: .06em;
-         font-size: 10.5px; margin-right: 8px; }
-  @media (max-width: 760px) {
-    .rrx .rrx-odds { flex-direction: column; gap: 14px; }
-    .rrx .rrx-odds-l { flex: 0 0 auto; }
-    .rrx .rrx-ramp { flex: 0 0 auto; width: 100%; max-width: none; justify-content: space-around; }
-  }
-  /* phone: collapse to a SIMPLE, STRONG alert — headline + the one number that
-     matters + the action. The ramp, the verbose amplification line and the
-     non-dominant threat meters are desktop-only detail, not a mobile wall. */
-  @media (max-width: 560px) {
-    .rrx { padding: 14px 15px; gap: 10px; }
-    .rrx .rrx-amp, .rrx .rrx-ramp, .rrx .rrx-ev { display: none; }
-    .rrx .rrx-odds { padding: 11px 13px; }
-    .rrx .rrx-big { font-size: 34px; }
-    .rrx .rrx-threats { gap: 5px; }
-    .rrx .rrx-th:not(.dom) { display: none; }
-  }
+{% include "_risk_radar_card.css.j2" %}
 
   .help { display: inline-flex; align-items: center; justify-content: center;
           width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
@@ -1302,7 +1099,7 @@
        reads as a genuine 'market is turning over' signal rather than permanent chrome. Uses
        market_state directly (the MS alias is set later, inside the macro-only region). #}
     {% if market_state and market_state.radar and market_state.radar.is_loud %}
-    {{ risk_radar_card(market_state.radar, latest.risk_radar.scares if latest.risk_radar else none) }}
+    {{ rrc.risk_radar_card(market_state.radar, latest.risk_radar.scares if latest.risk_radar else none) }}
     {% endif %}
     <p class="muted" style="margin:6px 0 0">{{ t('Where to look for stocks — standouts, sector rotation, factor tilts and real fund flows, filtered by the current macro regime.', '在哪里找股票 — 精选个股、板块轮动、因子倾斜与基金真实资金流，按当前宏观周期过滤。') }}
       <a href="macro.html" style="color:var(--link);font-weight:600">← {{ t('Macro regime dashboard', '宏观周期看板') }}</a></p>
@@ -1553,7 +1350,7 @@
          worse it has already CAPPED/FORCED the verdict above (engine/market_state.py),
          so the dial, label and this banner always agree. #}
       {% if MS.radar and MS.radar.state %}
-      {{ risk_radar_card(MS.radar, latest.risk_radar.scares if latest.risk_radar else none) }}
+      {{ rrc.risk_radar_card(MS.radar, latest.risk_radar.scares if latest.risk_radar else none) }}
       {% endif %}
       <div class="ms-head">
         <span class="ms-eyebrow"><span class="ms-live"></span>{{ t('MARKET STATE','市场状态') }}</span>

@@ -8,19 +8,15 @@
    The wrapper <div class="ms-front ms ms-{color}"> and the market's own growth×inflation
    hero-bar (the right column) are rendered by the template AROUND this include. The radar
    banner only appears when the market actually has a radar source (ms.radar.state). #}
+{% import "_risk_radar_card.html.j2" as rrc %}
 {% set _va = {'green':'▲','yellow':'▶','red':'▼'}.get(ms.color, '▶') %}
 
+{# Risk Radar — the SAME redesigned .rrx card the US Macro/Stocks pages use. For
+   China/HK/Canada it is fed by engine/risk_radar_intl.py (a calibrated, validated
+   external-driver + breadth radar); the banner renders only when the market has a
+   live radar source (ms.radar.state set). #}
 {% if ms.radar and ms.radar.state %}
-{% set rd = ms.radar %}
-{% set rdcol = 'var(--down)' if rd.state=='risk-off' else ('var(--orange)' if rd.state=='elevated' else ('var(--warn)' if rd.state=='caution' else ('var(--ink-3)' if rd.state=='watch' else 'var(--up)'))) %}
-<div class="ms-radar{{ ' loud' if rd.is_loud }}" style="--rc:{{ rdcol }}">
-  <span class="msr-ic">{{ '🛑' if rd.state=='risk-off' else ('🚨' if rd.state=='elevated' else ('⚠️' if rd.state=='caution' else ('👀' if rd.state=='watch' else '✅'))) }}</span>
-  <span class="msr-main">
-    <span class="msr-tit">{{ t('Risk Radar','风险雷达') }} · <b style="color:{{ rdcol }}">{{ t(rd.state|upper, rd.state_zh) }}{% if rd.top_score is not none %} {{ rd.top_score }}/100{% endif %}</b>{% if rd.is_loud and rd.label_en %} — {{ t(rd.label_en, rd.label_zh) }}{% endif %}</span>
-    {% if rd.dd21 is not none %}<span class="msr-odds">{{ t('Pullback odds (≥5%)','回撤概率（≥5%）') }} · 5d {{ (rd.dd5*100)|round|int }}% · 10d {{ (rd.dd10*100)|round|int }}% · <b>21d {{ (rd.dd21*100)|round|int }}%</b></span>{% endif %}
-  </span>
-  {% if rd.is_loud and rd.do_en %}<span class="msr-do"><b>{{ t('Do','应对') }}:</b> {{ t(rd.do_en, rd.do_zh) }}</span>{% endif %}
-</div>
+{{ rrc.risk_radar_card(ms.radar, ms.radar.scares) }}
 {% endif %}
 
 <div class="ms-head">
