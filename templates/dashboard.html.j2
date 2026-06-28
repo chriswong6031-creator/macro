@@ -1782,6 +1782,10 @@
     {% endfor %}
     </div>
     <p class="muted sm" style="margin:10px 0 0">{{ t('Each bar is one kind of market stress, scored 0–100. The radar only turns loud when the broad market is actually breaking — it sizes risk, it never picks stocks.', '每个条目代表一类市场压力，评分 0–100。只有当大盘真正破位时雷达才会转为响亮 —— 它用于调整风险敞口，绝不选股。') }}</p>
+    {% set MA = market_state.audit if market_state else none %}
+    {% if MA %}
+    <div class="muted" style="font-size:11px;border-top:1px solid var(--line);padding-top:7px;margin-top:9px">🧾 {{ t('Self-audit','自检') }}: {% if MA.n_graded and MA.n_graded > 0 %}{{ MA.n_graded }} {{ t('risk calls graded vs the next 5–21 days of S&P','次风险判断已对照其后 5–21 日标普评判') }}{% if MA.risk_precision is not none %} · {{ t('precision','精度') }} {{ (MA.risk_precision*100)|round|int }}%{% if MA.risk_lift %} ({{ MA.risk_lift }}× {{ t('base','基准') }}){% endif %}{% endif %}{% if MA.recall_dd5 is not none %} · {{ t('recall','召回') }} {{ (MA.recall_dd5*100)|round|int }}%{% endif %} — {{ t('the loop re-weights its own signals from its misses, no manual tuning','该循环据自身失误重新加权，无需人工调参') }}.{% else %}{{ t('accruing — every Market-State risk call is logged and graded against the next 5–21 days of S&P, so the gauge learns which signals actually lead and prunes the rest. No human tuning.','积累中 —— 每次市场状态风险判断都会被记录并对照其后 5–21 日标普评判，使指标学习哪些信号真正领先并剔除其余。无需人工调参。') }}{% endif %}</div>
+    {% endif %}
   </details>
   {% endif %}
 

@@ -1,0 +1,226 @@
+"""Market State — forward-outcome log + deterministic grading + corroborator attribution.
+
+The sibling of engine/risk_radar_audit.py, for the Market State verdict
+(engine/market_state.py). Every daily Market State snapshot is APPENDED to
+data/market_state/forward_log.jsonl (idempotent by as-of date). Once an entry's horizon
+matures, it is GRADED deterministically against the realized SPY path: did a >= threshold
+drawdown actually occur within H business days? A RISK_OFF verdict is then a true- or
+false-positive; a quiet verdict that preceded a drawdown is a miss.
+
+What makes this the EVERGREEN piece: the scorecard adds PER-CORROBORATOR attribution. For
+each amplification flag the Risk-Radar override fired (conjunction, complacency, breadth_div,
+drawdown_band, systemic_stress, turning_point, two_plus_scares) it measures how often a
+drawdown actually followed when that corroborator was present in a risk-off call — i.e.
+which corroborators genuinely LEAD drawdowns (keep / up-weight) and which are noise or lag
+(prune / down-weight). That is the evidence the confluence multiplier should be tuned by
+over time, instead of a human re-picking the weights. It accrues forward from first run,
+exactly like the radar's loop; until entries mature the scorecard simply reports that.
+
+Pure-ish + never raises into the build. No new data is fetched beyond the SPY close series
+already in the price store.
+"""
+from __future__ import annotations
+
+import json
+import logging
+from datetime import datetime, timezone
+from pathlib import Path
+
+import pandas as pd
+
+from lib import config, store
+
+log = logging.getLogger(__name__)
+
+HORIZONS = {"h5": 5, "h10": 10, "h21": 21}        # business-day forward windows
+PRIMARY_DD = 0.05                                  # a >=5% pullback = a "drawdown"
+RISK_VERDICTS = ("RISK_OFF",)                      # the loud risk call graded for precision
+# the full, stable corroborator vocabulary (must match engine.market_state._radar_override)
+CORROBORATORS = ("conjunction", "two_plus_scares", "complacency", "breadth_div",
+                 "drawdown_band", "systemic_stress", "turning_point")
+
+
+def _path(root=None) -> Path:
+    base = config.data_dir() if root is None else (Path(root) / "data")
+    p = base / "market_state" / "forward_log.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def _read(p: Path) -> list[dict]:
+    if not p.exists():
+        return []
+    rows = []
+    for line in p.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rows.append(json.loads(line))
+        except Exception:  # noqa: BLE001
+            continue
+    return rows
+
+
+def _write(p: Path, rows: list[dict]) -> None:
+    p.write_text("\n".join(json.dumps(r, separators=(",", ":"), default=str) for r in rows) + "\n")
+
+
+def _entry_from_snapshot(ms: dict) -> dict | None:
+    """Slim a market_state_snapshot() result to the loggable fields (no recompute)."""
+    if not ms or not ms.get("asof") or not ms.get("verdict"):
+        return None
+    rd = ms.get("radar") or {}
+    return {
+        "asof": str(ms["asof"]),
+        "verdict": ms.get("verdict"),
+        "score": ms.get("score"),
+        "raw_score": ms.get("raw_score"),
+        "radar_state": rd.get("state"),
+        "radar_top": rd.get("top_score"),
+        "amp": rd.get("amp"),
+        "amp_keys": list(rd.get("amp_keys") or []),
+        "severe_gated": bool(rd.get("severe_gated")),
+        "logged_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "graded": None,
+    }
+
+
+def log_snapshot(ms: dict, root=None) -> bool:
+    """Append today's Market State snapshot to the forward log (idempotent by as-of)."""
+    try:
+        entry = _entry_from_snapshot(ms)
+        if entry is None:
+            return False
+        p = _path(root)
+        rows = _read(p)
+        if any(r.get("asof") == entry["asof"] for r in rows):
+            return False
+        rows.append(entry)
+        _write(p, rows)
+        return True
+    except Exception as e:  # noqa: BLE001 — never fatal
+        log.warning("market_state_audit log failed: %s", e)
+        return False
+
+
+def _spy() -> pd.Series | None:
+    try:
+        df = store.read("yahoo", "SPY")
+    except Exception:  # noqa: BLE001
+        return None
+    if df is None or "close" not in df:
+        return None
+    s = df["close"].dropna()
+    s.index = pd.to_datetime(s.index)
+    return s.sort_index()
+
+
+def _grade_entry(entry: dict, spy: pd.Series) -> dict | None:
+    """Realized forward max-drawdown per horizon from the as-of date; classify the verdict.
+    Returns the 'graded' dict, or None if the longest horizon hasn't matured yet."""
+    asof = pd.Timestamp(entry["asof"])
+    loc = spy.index.searchsorted(asof, side="right")     # first bar strictly after as-of
+    maxH = max(HORIZONS.values())
+    if loc + maxH > len(spy):
+        return None                                       # not matured
+    base_px = float(spy.iloc[max(0, loc - 1)])
+    fwd_dd = {}
+    for hk, hd in HORIZONS.items():
+        w = spy.iloc[loc: loc + hd]
+        fwd_dd[hk] = round(float(w.min() / base_px - 1.0), 4) if len(w) else None
+    any_dd5 = any(fwd_dd[hk] is not None and fwd_dd[hk] <= -PRIMARY_DD for hk in HORIZONS)
+    is_risk = entry.get("verdict") in RISK_VERDICTS
+    if is_risk:
+        outcome = "true_positive" if any_dd5 else "false_positive"
+    else:
+        outcome = "miss" if any_dd5 else "quiet"          # quiet verdict that did / didn't precede a dd
+    return {"base_px": round(base_px, 2), "fwd_dd": fwd_dd,
+            "any_dd5_within_h21": bool(any_dd5), "outcome": outcome,
+            "graded_at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+
+
+def grade_log(root=None) -> int:
+    """Grade every matured, ungraded entry against the realized SPY path. Returns # newly graded."""
+    try:
+        p = _path(root)
+        rows = _read(p)
+        if not rows:
+            return 0
+        spy = _spy()
+        if spy is None:
+            return 0
+        n = 0
+        for r in rows:
+            if r.get("graded"):
+                continue
+            g = _grade_entry(r, spy)
+            if g is not None:
+                r["graded"] = g
+                n += 1
+        if n:
+            _write(p, rows)
+        return n
+    except Exception as e:  # noqa: BLE001
+        log.warning("market_state_audit grade failed: %s", e)
+        return 0
+
+
+def scorecard(root=None) -> dict:
+    """Rolling realized-accuracy scorecard from the graded log: risk-call precision, drawdown
+    recall, per-verdict hit-rate, and PER-CORROBORATOR precision + lift (which amplification
+    flags actually precede drawdowns). What the dashboard surfaces and a future bounded
+    auto-tuner would read to re-weight / prune corroborators. Never raises."""
+    try:
+        rows = [r for r in _read(_path(root)) if r.get("graded")]
+    except Exception:  # noqa: BLE001
+        rows = []
+    if not rows:
+        return {"n_graded": 0, "note": "accruing — no matured entries yet"}
+    base_rate = round(sum(int(r["graded"]["any_dd5_within_h21"]) for r in rows) / len(rows), 3)
+    risk = [r for r in rows if r.get("verdict") in RISK_VERDICTS]
+    tp = [r for r in risk if r["graded"]["outcome"] == "true_positive"]
+    fp = [r for r in risk if r["graded"]["outcome"] == "false_positive"]
+    pre = [r for r in rows if r["graded"].get("any_dd5_within_h21")]      # days that preceded a dd
+    pre_called = [r for r in pre if r.get("verdict") in RISK_VERDICTS]
+    by_verdict = {}
+    for r in rows:
+        d = by_verdict.setdefault(r.get("verdict"), {"n": 0, "dd": 0})
+        d["n"] += 1
+        d["dd"] += int(bool(r["graded"].get("any_dd5_within_h21")))
+    by_verdict = {k: {"n": v["n"], "hit_rate": round(v["dd"] / v["n"], 3) if v["n"] else None}
+                  for k, v in by_verdict.items()}
+    # per-corroborator: precision of risk calls in which that flag was present, + lift vs base
+    per_corr = {}
+    for k in CORROBORATORS:
+        with_k = [r for r in risk if k in (r.get("amp_keys") or [])]
+        if not with_k:
+            continue
+        tp_k = sum(1 for r in with_k if r["graded"]["outcome"] == "true_positive")
+        prec = round(tp_k / len(with_k), 3)
+        per_corr[k] = {"n": len(with_k), "precision": prec,
+                       "lift": round(prec / base_rate, 2) if base_rate else None}
+    mistakes = [{"asof": r["asof"], "verdict": r["verdict"], "amp_keys": r.get("amp_keys"),
+                 "kind": r["graded"]["outcome"], "fwd_dd_h21": r["graded"]["fwd_dd"].get("h21")}
+                for r in rows
+                if r["graded"]["outcome"] in ("false_positive", "miss")]
+    return {
+        "n_graded": len(rows),
+        "base_rate_dd5": base_rate,
+        "risk_precision": round(len(tp) / len(risk), 3) if risk else None,
+        "risk_lift": round((len(tp) / len(risk)) / base_rate, 2) if risk and base_rate else None,
+        "n_risk": len(risk), "n_true_pos": len(tp), "n_false_pos": len(fp),
+        "recall_dd5": round(len(pre_called) / len(pre), 3) if pre else None,
+        "by_verdict": by_verdict,
+        "per_corroborator": per_corr,
+        "recent_mistakes": sorted(mistakes, key=lambda m: m["asof"], reverse=True)[:25],
+        "asof_range": [rows[0]["asof"], rows[-1]["asof"]],
+    }
+
+
+def snapshot_and_grade(ms: dict, root=None) -> dict:
+    """Convenience for the build: log today's Market State snapshot, grade matured entries,
+    and return the scorecard (attached to the snapshot as ms['audit'] for the dashboard)."""
+    log_snapshot(ms, root=root)
+    grade_log(root=root)
+    return scorecard(root=root)
