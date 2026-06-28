@@ -134,11 +134,7 @@ def timeline_chart(f: pd.DataFrame, regime: pd.DataFrame, segments: pd.DataFrame
         'border-top:1px solid #e6e8ec;text-align:center;line-height:1.6;'
         'font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif">'
         '<span style="display:block;font-size:13.5px;font-weight:600;color:#1c2430;'
-        'letter-spacing:.2px"><span class="l-en">Made with ❤️ in Canada</span>'
-        '<span class="l-zh">用 ❤️ 在加拿大制作</span></span>'
-        '<span style="display:block;margin-top:1px;font-size:12px;color:#5d6b7e">'
-        '<span class="l-en">Developed by Chris Wong</span>'
-        '<span class="l-zh">开发者 Chris Wong</span></span></footer>'
+        'letter-spacing:.2px">© 2026 MastermindX Inc</span></footer>'
     )
     # instant EN<->中文 toggle, consistent with the rest of the site (standalone
     # page, so the no-flash init + visibility CSS + button style are inline; the
@@ -173,7 +169,7 @@ def timeline_chart(f: pd.DataFrame, regime: pd.DataFrame, segments: pd.DataFrame
         '<script src="theme.js"></script><script src="chart_i18n.js"></script>'
     )
     html = out_html.read_text()
-    if "Made with" not in html:
+    if "MastermindX Inc" not in html:
         html = html.replace("</head>", _head + "</head>", 1)
         html = html.replace("</body>", _body + _footer + "</body>", 1)
         out_html.write_text(html)

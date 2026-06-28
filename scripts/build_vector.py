@@ -1770,7 +1770,6 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
     """The AURORA globe flight-deck landing hub. intl/ipo/spr (+ any future state)
     are accepted-and-ignored: build_landing still passes them, so the signature must
     absorb them or every daily build crashes (TypeError)."""
-    built = vm["built"]
     blob = _globe_markets()
     us_n = (us_stocks or {}).get("n_setups") or 0
     cn_n = (china_stocks or {}).get("n_setups") or 0
@@ -1820,16 +1819,16 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         '<div class="lang-toggle" role="group" aria-label="Language"><span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span></div>'
         '</div>'
         '<header class="h"><span class="eyebrow"><span class="live"></span>'
-        + _bi("Live · updated " + built, "实时 · 更新于 " + built)
+        + _bi('Live · <span class="hub-clock" data-loc="en">—</span>',
+              '实时 · <span class="hub-clock" data-loc="zh-CN">—</span>')
         + '</span><h1 class="hub-logo">' + _BRAND_MARK_SVG
         + '<span class="logo-word">MASTERMIND</span></h1>'
         '<p>' + _bi("Regime dashboards across every major asset class — one mechanical, backtested engine.",
                     "覆盖各大类资产的市场周期仪表盘——一套机械化、经回测的引擎。") + '</p></header>'
         + globe_deck + markets + vectors + alerts_html
-        + '<div class="foot">' + _bi("Built " + built + " · mechanical, backtested, free public data · not investment advice",
-                                      "生成于 " + built + " · 机械化 · 经回测 · 免费公开数据 · 非投资建议") + '</div>'
-        '<footer class="site-footer"><span class="made">' + _bi("Made with ❤️ in Canada", "用 ❤️ 在加拿大制作") + '</span>'
-        '<span class="dev">' + _bi("Developed by Chris Wong", "开发者 Chris Wong") + '</span></footer>'
+        + '<div class="foot">' + _bi("Rigorously tested data · powered by AI · not investment advice",
+                                      "经严格测试的数据 · 由 AI 驱动 · 非投资建议") + '</div>'
+        '<footer class="site-footer"><span class="made">' + _bi("© 2026 MastermindX Inc", "© 2026 MastermindX Inc") + '</span></footer>'
         '</div>'
         '<script id="globe-data" type="application/json">' + blob_json + '</script>'
         '<script defer src="vendor/d3-array.min.js"></script>'
@@ -1842,6 +1841,12 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         # .nb-px/.nb-chg index rows; no-ops when no Worker/snapshot URL is configured.
         '<script src="live_config.js"></script>'
         '<script src="live.js"></script>'
+        # eyebrow clock — ticks the viewer's own browser local time, second by second
+        '<script>(function(){var els=document.querySelectorAll(".hub-clock");if(!els.length)return;'
+        'var opt={year:"numeric",month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false,timeZoneName:"short"};'
+        'function tick(){var d=new Date();for(var i=0;i<els.length;i++){var l=els[i].getAttribute("data-loc")||undefined;'
+        'try{els[i].textContent=d.toLocaleString(l,opt);}catch(e){els[i].textContent=d.toLocaleString(undefined,opt);}}}'
+        'tick();setInterval(tick,1000);})();</script>'
         '</body></html>'
     )
     return head + body
