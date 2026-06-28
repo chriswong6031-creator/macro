@@ -139,6 +139,12 @@ jobs:
         # worker URL (a repo VARIABLE) so live_config.js keeps browser live prices wired.
         env:
           LIVE_QUOTES_WORKER_URL: ${{ vars.LIVE_QUOTES_WORKER_URL }}
+          # render-only lane: commits site/ ONLY and discards every data/ write, so the
+          # per-build SEC/Wikipedia drip fetches (equity_profile / edgar_rpo / edgar_headcount
+          # in build_stock_library) are wasted network here — their parquet is thrown away and
+          # the page renders from the committed caches. Skip them (~3-4 min off the spine, and
+          # one less third-party hammer per push). The nightly `daily` leaves this unset.
+          RENDER_NO_DRIP: "1"
         run: |
           set +e
           SCOPE="${{ github.event.inputs.scope }}"; SCOPE="${SCOPE:-all}"

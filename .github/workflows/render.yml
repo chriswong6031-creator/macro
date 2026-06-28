@@ -170,9 +170,15 @@ jobs:
         # like the nightly — so one broken page can't 404 the whole deploy.
         env:
           # Only the live-quotes worker URL (a repo VARIABLE, baked into live_config.js so
-          # browser live prices stay wired) — NO API/LLM secrets, so the render makes no
-          # network calls and is a pure function of the committed data on disk.
+          # browser live prices stay wired) — NO API/LLM secrets, so the render is a pure
+          # function of the committed data on disk.
           LIVE_QUOTES_WORKER_URL: ${{ vars.LIVE_QUOTES_WORKER_URL }}
+          # This lane commits site/ ONLY and discards every data/ write, so build_stock_library's
+          # per-build SEC/Wikipedia drip fetches (equity_profile / edgar_rpo / edgar_headcount)
+          # are wasted network here — their parquet is thrown away and the page renders from the
+          # committed caches. Skipping them keeps the "no network calls" claim above honest and
+          # trims ~3-4 min. The nightly `daily` (which commits data/) leaves this unset.
+          RENDER_NO_DRIP: "1"
         run: |
           set +e
           SCOPE="${{ steps.pick.outputs.scope }}"; SCOPE="${SCOPE:-all}"
