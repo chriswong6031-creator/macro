@@ -13,6 +13,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="cycle.css">
+<link rel="stylesheet" href="sector_cycles.css">
 <style>
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font: 14px/1.55 Inter, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; }
@@ -85,6 +87,13 @@
   .gr-cell { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--panel2, transparent); }
   .muted { color: var(--muted); } .sm { font-size: 12px; }
   footer { color: var(--muted); font-size: 11.5px; margin-top: 30px; border-top: 1px solid var(--line); padding-top: 12px; max-width: 95ch; }
+  /* embedded cycle-map section */
+  .scc-cycle { margin: 18px 0 6px; }
+  .scc-section-h { margin: 0 0 8px; }
+  .scc-section-h h2 { font-size: 17px; font-weight: 760; margin: 0; }
+  .scc-section-h .scc-section-sub { font-size: 12.5px; color: var(--muted); }
+  /* the embedded overlay reuses cycle.css/.sc-* but lives outside a .cyc-wrap — give the stage a panel frame */
+  .scc-cycle .cyc-stage { background: var(--panel); border: 1px solid var(--line); border-radius: 13px; padding: 12px 14px; }
 </style>
 </head>
 <body>
@@ -124,6 +133,59 @@
     <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span> →</a>
     <a href="china_sector_desk.html">🧭 <span class="l-en">Sector Desk</span><span class="l-zh">行业桌面</span> →</a>
   </div>
+
+  {# ===== CYCLE MAP — the sector_cycles overlay, embedded so the hub carries the charting =====
+     Reuses sector_cycles.js + mm_charts.js over window.SECTOR_CYCLES (the China cycles data). The
+     scorecards (sc-cards) are intentionally omitted — the conviction board below replaces them. #}
+  <section class="scc-cycle cyc-page sc-page sc-china">
+    <div class="scc-section-h">
+      <h2><span class="l-en">Cycle map — every sector & theme on one clock</span><span class="l-zh">周期图谱 — 各板块与主题同框</span></h2>
+      <span class="scc-section-sub"><span class="l-en">Real price (rebased / log) or a 0–100 cycle-position oscillator · auto-detected turns · tap a line to read its legs</span><span class="l-zh">真实价格（再基准化／对数）或 0–100 周期位置振荡器 · 自动识别拐点 · 点击曲线查看区段</span></span>
+    </div>
+    <div class="sc-tabs" id="sc-tabs" role="tablist">
+      <button class="sc-tab on" data-fam="sectors" role="tab">🧭 <span class="l-en">Shenwan Sectors</span><span class="l-zh">申万行业</span> <i id="sc-tab-n-sec"></i></button>
+      <button class="sc-tab" data-fam="baskets" role="tab">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span> <i id="sc-tab-n-bsk"></i></button>
+    </div>
+    <section class="cyc-stage">
+      <div class="cyc-hero">
+        <div class="cyc-hero-hd">
+          <h2 id="sc-hero-title"><span class="l-en">Sector rotation overlay</span><span class="l-zh">板块轮动叠加</span></h2>
+          <div class="cyc-hero-tools">
+            <div class="sc-ctrl-group">
+              <div class="sc-scale" id="sc-scale" aria-label="Price scale">
+                <button class="sc-sbtn on" data-scale="log"><span class="l-en">Log</span><span class="l-zh">对数</span></button>
+                <button class="sc-sbtn" data-scale="linear"><span class="l-en">Linear</span><span class="l-zh">线性</span></button>
+              </div>
+              <div class="sc-modes" id="sc-modes" aria-label="Chart mode">
+                <button class="sc-mbtn on" data-mode="price"><span class="l-en">Price</span><span class="l-zh">价格</span></button>
+                <button class="sc-mbtn" data-mode="osc"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></button>
+              </div>
+            </div>
+            <div class="cyc-legend">
+              <span><i class="ls"></i> <span class="l-en">Price</span><span class="l-zh">价格</span></span>
+              <span><i class="lm lm-pk"></i> <span class="l-en">Peak</span><span class="l-zh">波峰</span></span>
+              <span><i class="lm lm-tr"></i> <span class="l-en">Trough</span><span class="l-zh">波谷</span></span>
+            </div>
+            <div class="cyc-zoom" id="sc-zoom" aria-label="Zoom"></div>
+          </div>
+        </div>
+        <div class="cyc-groups" id="sc-groups" aria-label="Phase filter"></div>
+        <div class="cyc-chips" id="sc-chips" aria-label="Sector toggles"></div>
+        <div class="sc-baskets" id="sc-baskets" aria-label="Thematic baskets"></div>
+        <div class="sc-chartwrap">
+          <div id="sc-chart" data-h="560" role="img" aria-label="China sector cycle overlay chart"></div>
+          <div class="sc-chart-hint" id="sc-chart-hint" hidden></div>
+        </div>
+      </div>
+      <aside class="cyc-detail" id="sc-detail">
+        <div class="cyc-handle" id="sc-handle" aria-hidden="true"></div>
+        <div class="cyc-panels">
+          <div class="cyc-panel show" id="sc-panel-default"></div>
+          <div class="cyc-panel" id="sc-panel-focus"></div>
+        </div>
+      </aside>
+    </section>
+  </section>
 
   <div class="scc-tabs">
     <button class="scc-tab on" data-fam="sectors"><span class="l-en">Shenwan Sectors</span><span class="l-zh">申万行业</span> <i id="n-sec"></i></button>
@@ -253,6 +315,12 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
 </script>
+{# the embedded cycle-map overlay — same engine + data as sector_cycles_china.html. It reads
+   window.SECTOR_CYCLES (distinct from the board's window.SECTOR_CENTRAL) and renders into the
+   cyc-stage above; missing sc-cards is handled gracefully (the board replaces the scorecards). #}
+<script src="sector_cycles_china_data.js"></script>
+<script src="mm_charts.js"></script>
+<script src="sector_cycles.js"></script>
 <script src="theme.js"></script>
 </body>
 </html>

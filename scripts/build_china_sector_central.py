@@ -63,6 +63,19 @@ def main() -> int:
     html = env.get_template("sector_central_china.html.j2").render()
     (site / "sector_central_china.html").write_text(html, encoding="utf-8")
 
+    # the page embeds the cycle-map overlay → ensure its shared assets are present. The China
+    # cycles DATA (sector_cycles_china_data.js) is written by build_china_sector_cycles, which
+    # runs before this in daily.yml's cl_china; we copy the page assets and warn if data is absent.
+    import shutil
+    for asset in ("sector_cycles.css", "sector_cycles.js"):
+        src = root / "templates" / asset
+        if src.exists():
+            shutil.copy2(src, site / asset)
+    for need in ("sector_cycles_china_data.js", "mm_charts.js", "cycle.css"):
+        if not (site / need).exists():
+            log.warning("china_sector_central: %s missing — embedded cycle chart needs "
+                        "build_china_sector_cycles (+ build_cycle) to run first", need)
+
     log.info("built site/sector_central_china.html (%d sectors, %d baskets, %d calls logged, grader=%s)",
              len(data["sectors"]), len(data.get("baskets", [])), n_logged,
              (data.get("grader") or {}).get("available"))
