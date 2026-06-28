@@ -24,15 +24,9 @@ mastermind-x.com, www.mastermind-x.com {
 	root * /opt/macro/site
 	encode zstd gzip
 
-	# Interim private-beta gate (single shared credential) — REPLACED by Supabase
-	# product login in Slice 2. bcrypt(cost 14) of a 24-char random password;
-	# the plaintext is delivered out-of-band and rotatable via `caddy hash-password`.
-	basic_auth {
-		beta $2a$14$xP/vuIXBK.YRZc4HQw/4uOEp4DoarTKLJR/iRUBBY0OaTpnIMT4gq
-	}
-
 	# Slice 2 backend — FastAPI (macro-api.service) on localhost. Everything under
-	# /api/* is proxied here; the rest is served as static files below.
+	# /api/* is proxied here; the rest is served as static files below. Per-user
+	# auth lives in the API (Supabase) + (later) a login wall; no shared password.
 	reverse_proxy /api/* 127.0.0.1:8000
 
 	file_server {

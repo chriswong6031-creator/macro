@@ -9,6 +9,8 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Header, HTTPException
@@ -16,6 +18,16 @@ from fastapi.responses import JSONResponse
 
 REPO = Path(os.environ.get("MACRO_REPO", "/opt/macro"))
 SITE = REPO / "site"
+
+# Public Supabase project coordinates (the anon key is publishable — it already
+# ships in the browser via site/auth.js — so committing it here is fine). Override
+# via env if the project changes.
+SUPABASE_URL = os.environ.get(
+    "SUPABASE_URL", "https://fsldfzlxyavsuwqbceod.supabase.co"
+).rstrip("/")
+SUPABASE_ANON_KEY = os.environ.get(
+    "SUPABASE_ANON_KEY", "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv"
+)
 
 app = FastAPI(title="macro API", version="0.1.0")
 
@@ -44,32 +56,32 @@ def overlay():
     return JSONResponse(json.loads(f.read_text()))
 
 
-# ---- auth: inactive until SUPABASE_JWT_SECRET is configured ----------------
+# ---- auth: secretless — verify the access token against Supabase ------------
 def require_user(authorization: str | None = Header(default=None)) -> dict:
-    """Verify a Supabase access token (HS256, aud=authenticated).
+    """Verify a Supabase access token without any server-side secret.
 
-    Returns 503 until the JWT secret is provided, so the gate is obviously
-    inactive rather than silently open. Supabase signs user JWTs with the
-    project's JWT secret (Dashboard -> Settings -> API -> JWT Secret).
+    Calls Supabase's ``GET /auth/v1/user`` with the bearer token + the public
+    anon key. Valid token -> 200 + the user record; bad/expired -> 401. No JWT
+    secret to store or leak; the trade-off is one short upstream call per
+    request (fine at MVP scale; cache later if needed).
     """
-    secret = os.environ.get("SUPABASE_JWT_SECRET")
-    if not secret:
-        raise HTTPException(503, "auth not configured (set SUPABASE_JWT_SECRET)")
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(401, "missing bearer token")
-    import jwt  # PyJWT
-
     token = authorization.split(" ", 1)[1]
+    req = urllib.request.Request(
+        f"{SUPABASE_URL}/auth/v1/user",
+        headers={"Authorization": f"Bearer {token}", "apikey": SUPABASE_ANON_KEY},
+    )
     try:
-        claims = jwt.decode(
-            token, secret, algorithms=["HS256"], audience="authenticated"
-        )
-    except Exception as e:  # noqa: BLE001 - surface the reason, never the secret
-        raise HTTPException(401, f"invalid token: {e}") from None
-    return claims
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        raise HTTPException(401, f"invalid token ({e.code})") from None
+    except Exception as e:  # noqa: BLE001 - network/upstream failure, not the user's fault
+        raise HTTPException(502, f"auth check failed: {e}") from None
 
 
 @app.get("/api/me")
 def me(user: dict = Depends(require_user)) -> dict:
-    """Whoami — first authenticated route; proves the Supabase gate works."""
-    return {"sub": user.get("sub"), "email": user.get("email"), "role": user.get("role")}
+    """Whoami — first authenticated route; proves the Supabase login works."""
+    return {"id": user.get("id"), "email": user.get("email"), "role": user.get("role")}
