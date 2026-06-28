@@ -9,4 +9,6 @@ git -C "$APP_DIR" reset --hard FETCH_HEAD
 # config can never take the site down on the unattended nightly cron.
 install -m 0644 "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile
 caddy validate --config /etc/caddy/Caddyfile && { systemctl reload caddy 2>/dev/null || systemctl restart caddy; }
+# Pick up any app/ code changes in the FastAPI service (if deployed).
+systemctl is-enabled macro-api >/dev/null 2>&1 && systemctl restart macro-api || true
 echo "macro-update $(date -u +%FT%TZ) -> $(git -C "$APP_DIR" rev-parse --short HEAD)"

@@ -1,0 +1,20 @@
+[Unit]
+Description=macro API (FastAPI serving tier)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/macro
+# Optional env: SUPABASE_JWT_SECRET (activates auth), SUPABASE_PROJECT_REF, etc.
+# The leading '-' makes the file optional so the service starts without it.
+EnvironmentFile=-/etc/macro-api.env
+ExecStart=/opt/macro-api/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=2
+# Light hardening (still runs as root for MVP simplicity; tighten to a dedicated
+# user later). The app only reads /opt/macro and writes nothing.
+NoNewPrivileges=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
