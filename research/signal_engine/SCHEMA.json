@@ -126,6 +126,10 @@
         "asof": {"$ref": "#/$defs/date"},
         "tf": {"type": "string", "minLength": 1},
         "universe": {"type": "string", "minLength": 1},
+        "source": {
+          "enum": ["daily_adjusted", "intraday_delayed"],
+          "description": "Provenance of the per-ticker daily close feeding the 3D bars: daily_adjusted = nightly adjusted daily store (default); intraday_delayed = derived from the 15-min-DELAYED intraday store (--intraday research hook, engine/bar_derive.py). Optional display-only labeling, not alpha."
+        },
         "note": {"type": "string", "description": "Honest-labeling note (display-only risk signal, not alpha)."},
         "signals": {"type": "array", "items": {"$ref": "#/$defs/signalEntry"}}
       }
