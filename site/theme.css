@@ -669,7 +669,13 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
      the FULL width below (instead of being squeezed beside the toggles), then
      the search — so links stay readable and the toggles never float mid-list. */
   .site-nav { grid-template-columns: 1fr; column-gap: 8px; row-gap: 8px; }
-  .site-nav .nav-ctrls { grid-column: 1; grid-row: 1; margin-top: 0; }
+  /* stretch the cluster to the full column and let it WRAP — keeping the default
+     justify-self:end sized it to its content (max-content), so the AI-brief pills +
+     theme + EN/中文 toggles overflowed the viewport ~21px at 375px. flex-wrap lets
+     the toggles drop to a second row instead of spilling; justify-content keeps
+     them flush right as the comment below intends. */
+  .site-nav .nav-ctrls { grid-column: 1; grid-row: 1; margin-top: 0;
+    justify-self: stretch; flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
   .site-nav .nav-links { grid-column: 1; grid-row: 2; }
   .nav-search { grid-column: 1; grid-row: 3; }
   .site-nav a.nav-link { padding: 6px 8px; font-size: 12.5px; }
