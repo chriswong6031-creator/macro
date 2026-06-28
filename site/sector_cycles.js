@@ -42,6 +42,28 @@
   function activeList() { return state.family === "baskets" ? BASKETS : SECTORS; }
   function isActive(s) { return (s.kind === "basket") === (state.family === "baskets"); }
 
+  /* ---- mobile (China) view model ---------------------------------------- */
+  // The desktop layout (full overlay + always-on detail underbar) is forced onto a
+  // phone. On <=880px China we instead show a legible FEW lines by default (the top
+  // relative-strength leaders), let a focus / Series-pick / Show-all override it, and
+  // drive the detail as a true hidden-at-rest bottom sheet. Everything here is gated on
+  // isCnMobile() so desktop (US + China) and the shared US mobile page are untouched.
+  var IS_CN = META.region === "china";
+  function isMobile() { return window.innerWidth <= 880; }
+  function isCnMobile() { return IS_CN && isMobile(); }
+  var mobileSel = null;        // explicit per-id chart selection (Series picker); null = leaders default
+  var mobileShowAll = false;   // user opted into the full overlay
+  function mobileLeaders() {   // top-5 of the ACTIVE family by relative strength
+    var m = {};
+    activeList().filter(function (s) { return s.now && s.now.rs_rank; })
+      .sort(function (a, b) { return a.now.rs_rank - b.now.rs_rank; })
+      .slice(0, 5).forEach(function (s) { m[s.id] = true; });
+    return m;
+  }
+  function mobileShownCount() {   // how many of the active family are actually on the chart
+    return activeList().filter(function (s) { return !chartHidden[s.id]; }).length;
+  }
+
   /* ---- small helpers ----------------------------------------------------- */
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
@@ -381,6 +403,18 @@
       var sel = s.kind === "basket" ? !!basketShown[s.id] : true;
       chartHidden[s.id] = !(isActive(s) && sel && keepShown(s));
     });
+    // mobile (China): cap the overlay to a legible few — the top RS leaders by default,
+    // or the user's explicit Series pick — so a 375px phone never gets 31-line spaghetti.
+    // The phase facet still narrows first; a focused line and "Show all" both override.
+    if (isCnMobile() && !mobileShowAll) {
+      var _lead = mobileSel ? null : mobileLeaders();
+      activeList().forEach(function (s) {
+        if (chartHidden[s.id]) return;                 // already hidden by family / phase facet
+        var show = mobileSel ? !!mobileSel[s.id] : !!_lead[s.id];
+        if (s.id === state.focus) show = true;          // the focused line always stays drawn
+        chartHidden[s.id] = !show;
+      });
+    }
     // When a "Where they stand" facet is active, off-phase sectors/baskets are
     // REMOVED from the selector (not just dimmed) — so the chip rail and card grid
     // show only the active facet's members, no horizontal hunting through greyed chips.
@@ -448,6 +482,7 @@
   function switchFamily(fam) {
     if (fam === state.family) return;
     state.family = fam; state.focus = null;
+    mobileSel = null; mobileShowAll = false;   // each family opens on its own leaders default
     if (heroChart) heroChart.focus(null);
     applyFamilyDisplay();
     mountCards();          // re-render the scorecards for the new family
@@ -490,6 +525,10 @@
   // so every sector the facet is SHOWING reads at equal weight. It deliberately does
   // NOT widen the phase facet — that's the "All phases" button's job.
   function selectAllSectors() {
+    // mobile (China): toggle the chart between the full visible overlay and the top-5
+    // leaders. On desktop this stays a pure "re-light every visible sector" (it does NOT
+    // widen the phase facet — that's the "All phases" button's job).
+    if (isCnMobile()) { mobileShowAll = !mobileShowAll; mobileSel = null; }
     setFocus(null);
     syncGroups();
   }
@@ -673,7 +712,10 @@
       cd.classList.toggle("dim", !!id && cd.getAttribute("data-id") !== id);
     });
     renderPanel(id);
-    if (id && window.innerWidth <= 880) expandSheet(true);
+    if (window.innerWidth <= 880) {
+      if (isCnMobile()) { if (id) openSheet("half"); else closeSheet(); }   // hidden-at-rest detent sheet
+      else if (id) expandSheet(true);                                       // US legacy peek sheet
+    }
     try { history.replaceState(null, "", id ? "#" + id : location.pathname + location.search); } catch (e) {}
   }
 
@@ -953,18 +995,119 @@
   }
 
   /* ---- mobile bottom sheet ----------------------------------------------- */
+  // US / desktop keep the original peek-and-expand underbar (untouched). China mobile
+  // gets a true hidden-at-rest, multi-detent sheet (hidden → half → full) with 1:1
+  // finger-follow drag, rubber-band, velocity flick, a scrim on the modal detent and a
+  // visible ✕ — so the detail never permanently covers the scorecards.
   function expandSheet(on) { var s = document.getElementById("sc-detail"); if (s) s.classList.toggle("expanded", on !== false); }
+
+  var sheetDetent = "hidden";
+  function _scrim() {
+    var s = document.getElementById("sc-scrim");
+    if (!s) {
+      s = el("div", "sc-scrim"); s.id = "sc-scrim";
+      s.addEventListener("click", function () { setFocus(null); });
+      document.body.appendChild(s);
+    }
+    return s;
+  }
+  function setDetent(d) {
+    var sheet = document.getElementById("sc-detail"); if (!sheet) return;
+    sheetDetent = d;
+    sheet.classList.toggle("sc-sheet-half", d === "half");
+    sheet.classList.toggle("sc-sheet-full", d === "full");
+    var modal = d === "full", scrim = _scrim();
+    scrim.style.opacity = modal ? "1" : "0";
+    scrim.style.pointerEvents = modal ? "auto" : "none";
+    document.body.style.overflow = modal ? "hidden" : "";   // lock the page only behind the modal detent
+  }
+  function openSheet(d) { setDetent(d || "half"); }
+  function closeSheet() { setDetent("hidden"); }
+  function detentPx() { var ih = window.innerHeight; return { full: 0, half: ih * 0.46, hidden: ih * 0.92 }; }
+
   function initSheet() {
     var sheet = document.getElementById("sc-detail"), handle = document.getElementById("sc-handle");
     if (!sheet || !handle) return;
-    handle.addEventListener("click", function () { sheet.classList.toggle("expanded"); });
-    var startY = 0, dragging = false;
-    handle.addEventListener("touchstart", function (e) { startY = e.touches[0].clientY; dragging = true; }, { passive: true });
-    handle.addEventListener("touchmove", function (e) {
-      if (!dragging) return; var dy = e.touches[0].clientY - startY;
-      if (dy < -30) sheet.classList.add("expanded"); else if (dy > 40) sheet.classList.remove("expanded");
+    if (!IS_CN) {   // US / standalone Cycle page: original simple expand toggle, verbatim
+      handle.addEventListener("click", function () { sheet.classList.toggle("expanded"); });
+      var sY = 0, drag0 = false;
+      handle.addEventListener("touchstart", function (e) { sY = e.touches[0].clientY; drag0 = true; }, { passive: true });
+      handle.addEventListener("touchmove", function (e) {
+        if (!drag0) return; var dy = e.touches[0].clientY - sY;
+        if (dy < -30) sheet.classList.add("expanded"); else if (dy > 40) sheet.classList.remove("expanded");
+      }, { passive: true });
+      handle.addEventListener("touchend", function () { drag0 = false; });
+      return;
+    }
+    // China: inject a visible ✕ close — the grabber alone is easy to miss (NN/g).
+    if (!handle.querySelector(".sc-sheet-x")) {
+      var x = el("button", "sc-sheet-x"); x.type = "button";
+      x.setAttribute("aria-label", "Close"); x.innerHTML = "✕";
+      x.addEventListener("click", function (e) { e.stopPropagation(); setFocus(null); });
+      handle.appendChild(x);
+    }
+    // tap the grabber → toggle half / full
+    handle.addEventListener("click", function (e) {
+      if (e.target.closest(".sc-sheet-x")) return;
+      setDetent(sheetDetent === "full" ? "half" : "full");
+    });
+    // 1:1 finger-follow drag with rubber-band past the bounds + velocity flick
+    var startY = 0, baseTY = 0, lastY = 0, lastT = 0, prevY = 0, prevT = 0, dragging = false;
+    function rubber(v, min, max) {
+      var d = window.innerHeight;
+      if (v < min) { var o = min - v; return min - (1 - 1 / ((o * 0.55 / d) + 1)) * d; }
+      if (v > max) { var o2 = v - max; return max + (1 - 1 / ((o2 * 0.55 / d) + 1)) * d; }
+      return v;
+    }
+    handle.addEventListener("touchstart", function (e) {
+      dragging = true; startY = e.touches[0].clientY; baseTY = detentPx()[sheetDetent];
+      prevY = lastY = startY; prevT = lastT = e.timeStamp;
+      sheet.classList.add("sc-dragging");
     }, { passive: true });
-    handle.addEventListener("touchend", function () { dragging = false; });
+    handle.addEventListener("touchmove", function (e) {
+      if (!dragging) return;
+      var y = e.touches[0].clientY, det = detentPx();
+      sheet.style.transform = "translateY(" + rubber(baseTY + (y - startY), det.full, det.hidden) + "px)";
+      prevY = lastY; prevT = lastT; lastY = y; lastT = e.timeStamp;
+    }, { passive: true });
+    handle.addEventListener("touchend", function () {
+      if (!dragging) return; dragging = false;
+      var det = detentPx(), pos = baseTY + (lastY - startY);
+      var dt = lastT - prevT, vel = dt > 0 ? (lastY - prevY) / dt : 0;   // px/ms, +down
+      var order = ["full", "half", "hidden"], target;
+      if (Math.abs(vel) > 0.5) {                       // flick → one detent in the flick direction
+        var ci = order.indexOf(sheetDetent); target = order[clamp(ci + (vel > 0 ? 1 : -1), 0, 2)];
+      } else {                                         // settle → nearest detent by position
+        var bd = Infinity; order.forEach(function (k) { var dd = Math.abs(det[k] - pos); if (dd < bd) { bd = dd; target = k; } });
+      }
+      sheet.classList.remove("sc-dragging");
+      sheet.style.transform = "";                      // hand back to the CSS class transform (animates the settle)
+      if (target === "hidden") setFocus(null); else setDetent(target);
+    });
+    // Esc closes the sheet
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && sheetDetent !== "hidden") setFocus(null);
+    });
+  }
+
+  /* ---- mobile chrome: collapse the EXPERIMENTAL provenance into an accordion ---- */
+  function initMobileChrome() {
+    if (!isCnMobile()) return;   // desktop (US + China) keeps the full inline banner
+    var prov = document.querySelector(".sc-provenance");
+    if (!prov || prov.classList.contains("sc-prov-collapsible")) return;
+    var chip = prov.querySelector(".sc-prov-chip"), txt = prov.querySelector(".sc-prov-text");
+    if (!chip || !txt) return;
+    var head = el("div", "sc-prov-head"), caret = el("span", "sc-prov-caret", "▾");
+    caret.setAttribute("aria-hidden", "true");
+    prov.insertBefore(head, chip);
+    head.appendChild(chip); head.appendChild(caret);
+    prov.classList.add("sc-prov-collapsible");
+    prov.setAttribute("role", "button");
+    prov.setAttribute("aria-expanded", "false");
+    head.addEventListener("click", function () {
+      var open = prov.classList.toggle("sc-prov-open");
+      prov.setAttribute("aria-expanded", open ? "true" : "false");
+    });
   }
 
   /* ---- lang/theme re-render --------------------------------------------- */
@@ -987,6 +1130,7 @@
     mountChips(); mountBaskets();
     wireFamily(); applyFamilyDisplay();                            // sectors section active; baskets hidden
     mountHero(); wireControls(); syncHeroControls(); buildGroups(); buildDefaultPanel(); mountCards(); initSheet();
+    initMobileChrome();
     document.addEventListener("langchange", rerender);
     var h = (location.hash || "").replace("#", "");
     if (h && byId[h]) setTimeout(function () {

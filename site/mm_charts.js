@@ -501,7 +501,13 @@
   MMChart.prototype._initZoom = function () {
     if (this.spec.zoom === false) return;
     var self = this, sv = this.svg;
-    sv.style.touchAction = "none";
+    // On phones, declare vertical-scroll intent: a vertical swipe over the chart now
+    // scrolls the PAGE (was touch-action:none, which trapped the page scroll on a
+    // 380px-tall chart). Horizontal-dominant drags still pan the chart; two-finger
+    // pinch/pan is unaffected. Above 880px (desktop, US + China) the original
+    // full-capture behaviour is kept verbatim.
+    var mobilePanY = (typeof window !== "undefined" && window.innerWidth <= 880);
+    sv.style.touchAction = mobilePanY ? "pan-y" : "none";
     var down = false, brush = false, startPx = 0, startView = null, brushRect = null;
 
     var onWheel = function (e) {
@@ -549,12 +555,24 @@
     // touch: 1-finger pan, 2-finger pinch
     var t = null;
     var onTStart = function (e) {
-      if (e.touches.length === 1) t = { mode: "pan", px: e.touches[0].clientX, view: (self._view || self._fullX).slice() };
+      if (e.touches.length === 1) t = { mode: "pan", px: e.touches[0].clientX, py: e.touches[0].clientY, axis: null, view: (self._view || self._fullX).slice() };
       else if (e.touches.length === 2) { var a = e.touches[0], b = e.touches[1]; t = { mode: "pinch", dist: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), midPx: (a.clientX + b.clientX) / 2, view: (self._view || self._fullX).slice() }; }
     };
     var onTMove = function (e) {
       if (!t) return; var r = sv.getBoundingClientRect(), p = self._plot;
       if (t.mode === "pan" && e.touches.length === 1) {
+        // phone: a vertical-dominant swipe should scroll the PAGE, not pan the chart.
+        // Lock the axis once the finger has moved far enough to disambiguate, then bail
+        // (return) on vertical so the gesture bubbles to native scroll (listener is
+        // passive + we never preventDefault, so it bubbles cleanly).
+        if (window.innerWidth <= 880) {
+          if (t.axis === null) {
+            var adx = Math.abs(e.touches[0].clientX - t.px), ady = Math.abs(e.touches[0].clientY - t.py);
+            if (adx < 6 && ady < 6) return;
+            t.axis = ady > adx ? "v" : "h";
+          }
+          if (t.axis === "v") return;
+        }
         var span = t.view[1] - t.view[0], dxUnits = (e.touches[0].clientX - t.px) / (p.x1 - p.x0) * span;
         self.setView([t.view[0] - dxUnits, t.view[1] - dxUnits], false);
       } else if (t.mode === "pinch" && e.touches.length === 2) {

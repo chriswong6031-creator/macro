@@ -309,6 +309,81 @@ html[data-theme="light"] .cyc-chip.on { color: #fff; }
   .cc-px { display: none; }
 }
 
+/* ---- China mobile: a true hidden-at-rest, multi-detent bottom sheet --------
+   Replaces the permanent 126px peek (which floated over the scorecards) with a sheet
+   that is GONE at rest and rises to a half (nonmodal, chart still visible) or full
+   (modal, scrim) detent only when a sector is focused. translateY-only → compositor
+   cheap. All .sc-china-scoped so the US mobile page keeps its peek sheet. */
+@media (max-width: 880px) {
+  .sc-china .cyc-detail { top: auto; bottom: 0; height: 92vh; max-height: 92vh; z-index: 60;
+    transform: translateY(100%); transition: transform .42s var(--ease); box-shadow: 0 -14px 44px rgba(0,0,0,.4); }
+  .sc-china .cyc-detail.sc-sheet-half { transform: translateY(46vh); }
+  .sc-china .cyc-detail.sc-sheet-full { transform: translateY(0); }
+  .sc-china .cyc-detail.sc-dragging { transition: none; will-change: transform; }
+  .sc-china .cyc-panels { overscroll-behavior: contain; }
+  /* bigger grab zone + a visible close affordance */
+  .sc-china .cyc-handle { min-height: 22px; padding: 13px 0 9px; position: relative; touch-action: none; }
+  .sc-china .sc-sheet-x { position: absolute; top: 7px; right: 12px; width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center; border: 0; cursor: pointer;
+    background: var(--panel2); color: var(--muted); border-radius: 50%; font-size: 17px; line-height: 1;
+    box-shadow: 0 1px 3px rgba(0,0,0,.25); z-index: 2; -webkit-tap-highlight-color: transparent; }
+  .sc-china .sc-sheet-x:active { transform: scale(.92); }
+  /* scrim behind the FULL (modal) detent only — half/hidden stay browseable */
+  .sc-scrim { position: fixed; inset: 0; background: rgba(0,0,0,.46); opacity: 0; pointer-events: none;
+    transition: opacity .32s var(--ease); z-index: 55; }
+}
+
+/* ---- China mobile: declutter the preamble + control stack, 44px touch targets ----
+   Everything .sc-china-scoped (incl. the nav-brand hide) so desktop and the shared US
+   sector / standalone Cycle pages are untouched. NOTE: a position:sticky toolbar is
+   intentionally NOT used — .cyc-hero is overflow:hidden, inside which sticky cannot
+   stick; we compact the stack instead. */
+@media (max-width: 880px) {
+  /* slimmer hero: smaller gradient title + a clamped 4-line subtitle (the full
+     methodology lives in the collapsible EXPERIMENTAL note just below). */
+  .sc-china .cyc-title { font-size: clamp(23px, 7vw, 31px); margin: 6px 0 6px; }
+  .sc-china .cyc-sub { font-size: 13.5px; display: -webkit-box; -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical; overflow: hidden; }
+  .sc-china .cyc-hd { padding: 16px 2px 12px; }
+
+  /* EXPERIMENTAL provenance → a tappable accordion (collapsed by default; JS adds the
+     .sc-prov-head wrapper + caret and toggles .sc-prov-open). */
+  .sc-china .sc-provenance.sc-prov-collapsible { flex-direction: column; gap: 0; padding: 0; align-items: stretch; }
+  .sc-china .sc-prov-head { display: flex; align-items: center; gap: 9px; padding: 12px 13px; cursor: pointer;
+    min-height: 44px; box-sizing: border-box; }
+  .sc-china .sc-prov-caret { margin-left: auto; color: var(--muted); font-size: 12px;
+    transition: transform .24s var(--ease); }
+  .sc-china .sc-prov-collapsible.sc-prov-open .sc-prov-caret { transform: rotate(180deg); }
+  .sc-china .sc-prov-collapsible .sc-prov-text { max-height: 0; overflow: hidden; margin: 0; padding: 0 13px;
+    transition: max-height .34s var(--ease), padding .24s var(--ease); }
+  .sc-china .sc-prov-collapsible.sc-prov-open .sc-prov-text { max-height: 1400px; padding: 0 13px 13px; }
+
+  /* compact control stack: cards are the legend, so drop it; phase filter to ONE
+     horizontally-scrollable row (was 3 wrapped rows ≈110px). */
+  .sc-china .cyc-legend { display: none; }
+  .sc-china .cyc-hero-tools { gap: 8px 10px; }
+  .sc-china .cyc-groups { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; padding: 2px 2px 9px; }
+  .sc-china .cyc-groups::-webkit-scrollbar { display: none; }
+  .sc-china .cyc-glabel { display: none; }
+  .sc-china .cyc-gchip, .sc-china .cyc-gall { flex: 0 0 auto; }
+  .sc-china .cyc-gall { margin-left: 6px; }
+
+  /* ≥44px-ish touch targets (Apple HIG 44pt / Material 48dp) — grow the hit box, keep
+     the pill look. */
+  .sc-china .sc-mbtn, .sc-china .sc-sbtn { min-height: 40px; display: inline-flex; align-items: center; }
+  .sc-china .cyc-zbtn { min-height: 38px; display: inline-flex; align-items: center; }
+  .sc-china .cyc-gchip { min-height: 40px; }
+  .sc-china .cyc-chip { min-height: 42px; }
+  .sc-china .sc-tab { min-height: 44px; }
+  .sc-china .sc-chip-all, .sc-china .sc-bask-all, .sc-china .sc-bask-toggle { min-height: 42px; }
+}
+@media (max-width: 560px) {
+  /* keep the nav on a single row — theme.js already collapses the links to a hamburger
+     under 700px, so the brand wordmark is the only thing forcing a 2nd row. */
+  .sc-china .nav-brand { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cyc-page *, .mmc-series, .cyc-card, .cyc-panel { transition: none !important; animation: none !important; }
 }
