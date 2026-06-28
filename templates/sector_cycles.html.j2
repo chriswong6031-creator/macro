@@ -46,29 +46,34 @@
       <div class="cyc-hero-hd">
         <h2 id="sc-hero-title"><span class="l-en">Sector rotation overlay</span><span class="l-zh">板块轮动叠加</span></h2>
         <div class="cyc-hero-tools">
-          <div class="sc-ctrl-group">
-            <div class="sc-scale disabled" id="sc-scale" aria-label="Price scale">
-              <button class="sc-sbtn on" data-scale="log"><span class="l-en">Log</span><span class="l-zh">对数</span></button>
-              <button class="sc-sbtn" data-scale="linear"><span class="l-en">Linear</span><span class="l-zh">线性</span></button>
-            </div>
-            <div class="sc-modes" id="sc-modes" aria-label="Chart mode">
-              <button class="sc-mbtn" data-mode="price"><span class="l-en">Price</span><span class="l-zh">价格</span></button>
-              <button class="sc-mbtn on" data-mode="osc"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></button>
+          <div class="sc-modes" id="sc-modes" aria-label="Chart mode">
+            <button class="sc-mbtn" data-mode="price" aria-pressed="false"><span class="l-en">Price</span><span class="l-zh">价格</span></button>
+            <button class="sc-mbtn on" data-mode="osc" aria-pressed="true"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></button>
+          </div>
+          <div class="sc-mode-cap"><span class="l-en">Low = washed-out · High = stretched</span><span class="l-zh">低 = 超卖 · 高 = 拉伸</span></div>
+          <div class="sc-advanced" id="sc-advanced">
+            <button type="button" class="sc-adv-toggle" id="sc-adv-toggle" aria-expanded="false" aria-controls="sc-advbody"><span class="l-en">Chart options</span><span class="l-zh">图表选项</span></button>
+            <div class="sc-adv-body" id="sc-advbody">
+              <div class="sc-scale disabled" id="sc-scale" hidden aria-label="Price scale">
+                <button class="sc-sbtn on" data-scale="log" aria-pressed="true"><span class="l-en">Log</span><span class="l-zh">对数</span></button>
+                <button class="sc-sbtn" data-scale="linear" aria-pressed="false"><span class="l-en">Linear</span><span class="l-zh">线性</span></button>
+              </div>
+              <div class="cyc-legend" id="sc-legend" aria-label="Legend">
+                <span><i class="lc" style="background:color-mix(in srgb,var(--down) 42%,transparent)"></i> <span class="l-en">washed-out</span><span class="l-zh">超卖</span></span>
+                <span><i class="lc" style="background:color-mix(in srgb,var(--muted) 32%,transparent)"></i> <span class="l-en">mid-cycle</span><span class="l-zh">中段</span></span>
+                <span><i class="lc" style="background:color-mix(in srgb,var(--warn) 46%,transparent)"></i> <span class="l-en">stretched</span><span class="l-zh">拉伸</span></span>
+              </div>
+              <div class="cyc-zoom" id="sc-zoom" aria-label="Zoom"></div>
             </div>
           </div>
-          <div class="cyc-legend">
-            <span><i class="ls"></i> <span class="l-en">Price</span><span class="l-zh">价格</span></span>
-            <span><i class="lm lm-pk"></i> <span class="l-en">Peak</span><span class="l-zh">波峰</span></span>
-            <span><i class="lm lm-tr"></i> <span class="l-en">Trough</span><span class="l-zh">波谷</span></span>
-          </div>
-          <div class="cyc-zoom" id="sc-zoom" aria-label="Zoom"></div>
         </div>
       </div>
       <div class="cyc-groups" id="sc-groups" aria-label="Phase filter"></div>
       <div class="cyc-chips" id="sc-chips" aria-label="Sector toggles"></div>
       <div class="sc-baskets" id="sc-baskets" aria-label="Thematic baskets"></div>
+      <span id="sc-sr-status" class="sc-sr-status" role="status" aria-live="polite"></span>
       <div class="sc-chartwrap">
-        <div id="sc-chart" data-h="600" role="img" aria-label="Sector cycle overlay chart"></div>
+        <div id="sc-chart" data-h="600" role="img" aria-label="Sector cycle clock — each line a sector's 0 to 100 cycle position over time. Tap a line for its story."></div>
         <div class="sc-chart-hint" id="sc-chart-hint" hidden></div>
       </div>
     </div>
