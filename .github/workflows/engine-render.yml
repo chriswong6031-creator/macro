@@ -335,11 +335,15 @@ jobs:
           git add -f site/chinaohlc site/canadaohlc site/intlohlc 2>/dev/null || true
           if git diff --cached --quiet; then echo "no rendered-site changes to commit"; exit 0; fi
           git commit -m "engine-render: regime recompute + re-render $(date -u +%F) (scope=${{ github.event.inputs.scope || 'all' }})"
+          # --autostash: we commit site/ ONLY, leaving the render's throwaway data/ writes
+          # unstaged; a plain `pull --rebase` refuses on a dirty tree and silently failed
+          # EVERY push. Autostash parks them, rebases, restores. This push is the only path
+          # to the live site (VPS serves committed main; no Pages-artifact fallback).
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
+            if git pull --rebase --autostash -X theirs origin main && git push; then
               echo "pushed engine-rendered site on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
-            echo "engine-render push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            echo "engine-render push attempt $i failed (rebase/race); re-syncing"; sleep $((i * 7))
           done
           echo "::warning::could not push engine-rendered site after 5 attempts — the next render or the nightly will re-land it"
