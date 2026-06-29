@@ -384,66 +384,66 @@
   };
   var SETTINGS_CSS = [
     /* two-row nav: the menu takes the whole first row on its own line; the global
-       search + the Mastermind / Terminal / ⚙ cluster sit together on the second
+       search + the Mastermind / Terminal / GEAR cluster sit together on the second
        row. Injected here — not only in theme.css — so the self-contained vector /
        forex / bonds / commodities family (which never loads theme.css) gets the
        exact same two-row bar live, no rebuild, same pattern as the mobile-nav CSS
-       above. >700px only; the ≤700px collapse (flex + has-nav-toggle) overrides. */
+       above. >700px only; the <=700px collapse (flex + has-nav-toggle) overrides. */
     '.site-nav .nav-links{grid-column:1 / -1;grid-row:1}',
     '.site-nav .nav-search{grid-column:1;grid-row:2;max-width:480px}',
     '.site-nav .nav-ctrls{grid-column:2;grid-row:2;justify-self:end;align-self:center;margin-top:0}',
-    '.nav-settings-btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;flex:none;cursor:pointer;border-radius:50%;border:1px solid var(--line,var(--grid));background:var(--panel2,var(--card));color:var(--text,var(--ink));transition:border-color .2s,color .2s,transform .16s ease,box-shadow .18s ease;-webkit-tap-highlight-color:transparent}',
+    /* the GEAR trigger + its anchored dropdown. The panel is position:absolute inside
+       a relative .nav-settings wrapper (mirrors .nav-dd-menu), so it opens right under
+       the gear — no trip to screen-centre — and follows it on scroll. No scrim;
+       click-outside / Esc / a second click on the gear closes it. */
+    '.nav-settings{position:relative;display:inline-flex;flex:none}',
+    '.nav-settings-btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;flex:none;cursor:pointer;border-radius:50%;border:1px solid var(--line,var(--grid));background:var(--panel2,var(--card));color:var(--text,var(--ink));transition:border-color .2s,color .2s,background .2s,transform .16s ease,box-shadow .18s ease;-webkit-tap-highlight-color:transparent}',
     '.nav-settings-btn:hover{border-color:var(--link,var(--blue));color:var(--link,var(--blue));transform:translateY(-1px);box-shadow:0 5px 14px -6px color-mix(in srgb,var(--link,var(--blue)) 45%,transparent)}',
     '.nav-settings-btn:active{transform:translateY(0);box-shadow:none}',
+    '.nav-settings-btn[aria-expanded="true"]{border-color:var(--link,var(--blue));color:var(--link,var(--blue));background:color-mix(in srgb,var(--link,var(--blue)) 13%,var(--panel2,var(--card)))}',
     '.nav-settings-btn svg{width:18px;height:18px;display:block;transition:transform .5s cubic-bezier(.34,1.3,.5,1)}',
-    '.nav-settings-btn:hover svg{transform:rotate(70deg)}',
-    '.settings-overlay{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;background:color-mix(in srgb,#04060c 74%,transparent);-webkit-backdrop-filter:blur(9px) saturate(1.05);backdrop-filter:blur(9px) saturate(1.05);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,visibility 0s linear .22s}',
-    '.settings-overlay.open{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .22s ease,visibility 0s}',
-    'html.settings-lock{overflow:hidden}',
-    '.settings-card{width:min(430px,94vw);box-sizing:border-box;background:var(--panel,var(--card));border:1px solid color-mix(in srgb,var(--text,#e7ecf6) 13%,var(--line,var(--grid)));border-radius:20px;box-shadow:0 28px 80px -16px rgba(0,0,0,.82),0 0 0 1px rgba(0,0,0,.25),inset 0 1px 0 color-mix(in srgb,var(--text,#fff) 7%,transparent);padding:22px 22px 20px;transform:translateY(10px) scale(.985);opacity:.5;transition:transform .26s cubic-bezier(.32,1.25,.5,1),opacity .2s ease;font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif}',
-    '.settings-overlay.open .settings-card{transform:none;opacity:1}',
-    '.settings-head{display:flex;align-items:center;gap:11px;margin:0 0 4px}',
-    '.settings-head .sh-ic{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:12px;background:color-mix(in srgb,var(--link,var(--blue)) 15%,transparent);color:var(--link,var(--blue));flex:none}',
-    '.settings-head .sh-ic svg{width:19px;height:19px}',
-    '.settings-head h2{margin:0;padding:0;border:0;font-size:17px;font-weight:800;letter-spacing:.01em;text-transform:none;line-height:1.2;color:var(--text,var(--ink))}',
-    '.settings-head .sh-sub{display:block;font-size:11.5px;font-weight:500;color:var(--muted,var(--ink-3));margin-top:1px}',
-    '.settings-close{margin-left:auto;width:32px;height:32px;border-radius:9px;border:1px solid transparent;background:transparent;color:var(--muted,var(--ink-3));cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none;transition:background .18s,color .18s,border-color .18s}',
-    '.settings-close:hover{background:var(--panel2,var(--card));color:var(--text,var(--ink));border-color:var(--line,var(--grid))}',
-    '.settings-close svg{width:16px;height:16px}',
-    '.settings-sec{margin-top:16px}',
-    '.settings-sec-t{display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--muted,var(--ink-3));margin:0 0 9px}',
-    '.settings-row{display:flex;align-items:center;gap:13px;padding:11px 13px;border-radius:13px;background:var(--panel2,var(--card));border:1px solid var(--line,var(--grid))}',
-    '.settings-row+.settings-row{margin-top:8px}',
+    '.nav-settings-btn:hover svg,.nav-settings-btn[aria-expanded="true"] svg{transform:rotate(70deg)}',
+    '.settings-pop{position:absolute;top:calc(100% + 9px);right:0;z-index:100000;width:min(340px,calc(100vw - 20px));box-sizing:border-box;background:var(--panel,var(--card));border:1px solid color-mix(in srgb,var(--text,#e7ecf6) 14%,var(--line,var(--grid)));border-radius:15px;box-shadow:0 18px 50px -12px rgba(0,0,0,.62),0 4px 14px rgba(0,0,0,.3),inset 0 1px 0 color-mix(in srgb,var(--text,#fff) 6%,transparent);padding:13px;transform-origin:top right;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-8px) scale(.97);transition:opacity .16s ease,transform .2s cubic-bezier(.32,1.3,.5,1),visibility 0s linear .2s;font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif}',
+    '.settings-pop.open{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition:opacity .16s ease,transform .2s cubic-bezier(.32,1.3,.5,1),visibility 0s}',
+    '.settings-head{display:flex;align-items:center;gap:8px;margin:0;padding:0 2px 2px}',
+    '.settings-head h2{margin:0;padding:0;border:0;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;line-height:1.2;color:var(--muted,var(--ink-3))}',
+    '.settings-close{margin-left:auto;width:24px;height:24px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--muted,var(--ink-3));cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none;transition:background .18s,color .18s}',
+    '.settings-close:hover{background:var(--panel2,var(--card));color:var(--text,var(--ink))}',
+    '.settings-close svg{width:15px;height:15px}',
+    '.settings-sec{margin-top:9px}',
+    '.settings-sec-t{display:flex;align-items:center;gap:8px;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted,var(--ink-3));margin:0 0 7px;padding:0 2px}',
+    '.settings-row{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:11px;background:var(--panel2,var(--card));border:1px solid var(--line,var(--grid))}',
+    '.settings-row+.settings-row{margin-top:7px}',
     '.settings-row .sr-ic{flex:none;color:var(--muted,var(--ink-3));display:inline-flex}',
-    '.settings-row .sr-ic svg{width:19px;height:19px;display:block}',
+    '.settings-row .sr-ic svg{width:18px;height:18px;display:block}',
     '.settings-row .sr-main{flex:1;min-width:0}',
-    '.settings-row .sr-lbl{display:block;font-size:13.5px;font-weight:700;color:var(--text,var(--ink))}',
-    '.settings-row .sr-desc{display:block;font-size:11.5px;color:var(--muted,var(--ink-3));margin-top:1px}',
+    '.settings-row .sr-lbl{display:block;font-size:13px;font-weight:700;color:var(--text,var(--ink))}',
+    '.settings-row .sr-desc{display:block;font-size:11px;color:var(--muted,var(--ink-3));margin-top:1px}',
     '.settings-row .sr-ctrl{flex:none;display:inline-flex;align-items:center}',
-    /* the relocated toggles — full styling, scoped to the modal so it renders the
-       SAME on macro pages (theme.css present) and vector pages (theme.css absent) */
-    '.settings-overlay .theme-switch{width:56px;height:27px;border-radius:999px;background:var(--bg,var(--card));border:1px solid var(--line,var(--grid));position:relative;cursor:pointer;padding:0;flex:none}',
-    '.settings-overlay .theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}',
-    '.settings-overlay .theme-switch .ic.sun{right:8px}.settings-overlay .theme-switch .ic.moon{left:8px}',
-    '.settings-overlay .theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#e8c15a;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}',
-    '.settings-overlay .theme-switch .knob::before{content:"🌙"}',
-    'html[data-theme="light"] .settings-overlay .theme-switch .knob{transform:translateX(29px);background:#285fff}',
-    'html[data-theme="light"] .settings-overlay .theme-switch .knob::before{content:"☀️"}',
-    '.settings-overlay .lang-toggle{display:inline-flex;position:relative;background:var(--bg,var(--card));border:1px solid var(--line,var(--grid));border-radius:999px;padding:3px;flex:none;cursor:pointer}',
-    '.settings-overlay .lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--link,var(--blue));transition:transform .34s cubic-bezier(.34,1.4,.5,1)}',
-    'html[data-lang="zh"] .settings-overlay .lang-toggle .pill{transform:translateX(100%)}',
-    '.settings-overlay .lang-toggle .opt{position:relative;z-index:1;min-width:30px;text-align:center;padding:3px 11px;font-size:11.5px;font-weight:600;color:var(--muted,var(--ink-3));transition:color .25s;user-select:none}',
-    'html:not([data-lang="zh"]) .settings-overlay .lang-toggle .en-opt{color:#fff}',
-    'html[data-lang="zh"] .settings-overlay .lang-toggle .zh-opt{color:#fff}',
-    '.settings-soon{font-size:9.5px;font-weight:800;letter-spacing:.05em;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,var(--link,var(--blue)) 16%,transparent);color:var(--link,var(--blue));text-transform:uppercase}',
-    '.settings-acct{padding:13px}',
-    '.settings-acct .sa-d{font-size:12.5px;color:var(--muted,var(--ink-3));line-height:1.5;margin:0 0 11px}',
-    '.settings-acct .sa-btns{display:flex;gap:9px}',
-    '.settings-acct .sa-btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 12px;border-radius:11px;font-size:13px;font-weight:700;cursor:not-allowed;border:1px solid var(--line,var(--grid));font-family:inherit}',
+    /* relocated toggles — full styling, scoped to the popover so it renders the SAME
+       on macro pages (theme.css present) and vector pages (theme.css absent) */
+    '.settings-pop .theme-switch{width:56px;height:27px;border-radius:999px;background:var(--bg,var(--card));border:1px solid var(--line,var(--grid));position:relative;cursor:pointer;padding:0;flex:none}',
+    '.settings-pop .theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}',
+    '.settings-pop .theme-switch .ic.sun{right:8px}.settings-pop .theme-switch .ic.moon{left:8px}',
+    '.settings-pop .theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#e8c15a;display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}',
+    '.settings-pop .theme-switch .knob::before{content:"🌙"}',
+    'html[data-theme="light"] .settings-pop .theme-switch .knob{transform:translateX(29px);background:#285fff}',
+    'html[data-theme="light"] .settings-pop .theme-switch .knob::before{content:"☀️"}',
+    '.settings-pop .lang-toggle{display:inline-flex;position:relative;background:var(--bg,var(--card));border:1px solid var(--line,var(--grid));border-radius:999px;padding:3px;flex:none;cursor:pointer}',
+    '.settings-pop .lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--link,var(--blue));transition:transform .34s cubic-bezier(.34,1.4,.5,1)}',
+    'html[data-lang="zh"] .settings-pop .lang-toggle .pill{transform:translateX(100%)}',
+    '.settings-pop .lang-toggle .opt{position:relative;z-index:1;min-width:30px;text-align:center;padding:3px 11px;font-size:11.5px;font-weight:600;color:var(--muted,var(--ink-3));transition:color .25s;user-select:none}',
+    'html:not([data-lang="zh"]) .settings-pop .lang-toggle .en-opt{color:#fff}',
+    'html[data-lang="zh"] .settings-pop .lang-toggle .zh-opt{color:#fff}',
+    '.settings-soon{font-size:9px;font-weight:800;letter-spacing:.05em;padding:2px 7px;border-radius:999px;background:color-mix(in srgb,var(--link,var(--blue)) 16%,transparent);color:var(--link,var(--blue));text-transform:uppercase}',
+    '.settings-acct{padding:11px;display:block}',
+    '.settings-acct .sa-d{font-size:11.5px;color:var(--muted,var(--ink-3));line-height:1.5;margin:0 0 9px}',
+    '.settings-acct .sa-btns{display:flex;gap:8px}',
+    '.settings-acct .sa-btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;font-size:12.5px;font-weight:700;cursor:not-allowed;border:1px solid var(--line,var(--grid));font-family:inherit}',
+    '.settings-acct .sa-btn .sr-ic{color:inherit}',
     '.settings-acct .sa-btn.ghost{background:transparent;color:var(--text,var(--ink))}',
     '.settings-acct .sa-btn.solid{background:var(--link,var(--blue));border-color:var(--link,var(--blue));color:#fff;opacity:.92}',
-    '@media (max-width:560px){.settings-overlay{align-items:flex-end;padding:0}.settings-card{width:100%;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));transform:translateY(100%);opacity:1}.settings-overlay.open .settings-card{transform:none}}',
-    '@media (prefers-reduced-motion:reduce){.settings-overlay,.settings-card{transition:opacity .15s ease}.settings-card{transform:none}.nav-settings-btn:hover svg,.nav-settings-btn:hover{transform:none}}'
+    '@media (prefers-reduced-motion:reduce){.settings-pop{transition:opacity .14s ease,visibility 0s linear .14s}.settings-pop.open{transition:opacity .14s ease}.nav-settings-btn:hover svg,.nav-settings-btn[aria-expanded="true"] svg{transform:none}}'
   ].join('');
 
   function setLabels(root) {
@@ -455,7 +455,7 @@
   }
 
   function initSettings() {
-    if (document.getElementById('settings-modal')) return true;   // once
+    if (document.getElementById('settings-pop')) return true;   // once
     var ts = document.querySelector('.theme-switch'), lt = document.querySelector('.lang-toggle');
     if (!ts && !lt) return false;   // legacy .theme-btn pages keep their own text controls
     // Where the gear lands: the nav control cluster on dashboard pages; otherwise
@@ -470,83 +470,80 @@
       document.head.appendChild(st);
     }
 
+    // .nav-settings wraps the gear + its dropdown so the panel anchors right under
+    // the gear (position:absolute), opening with no trip to screen-centre.
+    var wrap = document.createElement('div');
+    wrap.className = 'nav-settings';
+
     var gear = document.createElement('button');
     gear.type = 'button'; gear.className = 'nav-settings-btn'; gear.id = 'settings-open';
-    gear.setAttribute('aria-label', 'Settings'); gear.setAttribute('aria-haspopup', 'dialog');
+    gear.setAttribute('aria-label', 'Settings');
+    gear.setAttribute('aria-haspopup', 'true');
+    gear.setAttribute('aria-expanded', 'false');
+    gear.setAttribute('aria-controls', 'settings-pop');
     gear.innerHTML = SET_ICON.gear;
 
-    var overlay = document.createElement('div');
-    overlay.className = 'settings-overlay'; overlay.id = 'settings-modal';
-    overlay.innerHTML =
-      '<div class="settings-card" role="dialog" aria-modal="true" aria-labelledby="settings-title">' +
-        '<div class="settings-head">' +
-          '<span class="sh-ic">' + SET_ICON.gear + '</span>' +
-          '<div><h2 id="settings-title" data-set="title"></h2><span class="sh-sub" data-set="sub"></span></div>' +
-          '<button type="button" class="settings-close" aria-label="Close settings">' + SET_ICON.x + '</button>' +
+    var pop = document.createElement('div');
+    pop.className = 'settings-pop'; pop.id = 'settings-pop';
+    pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Settings');
+    pop.setAttribute('tabindex', '-1');
+    pop.innerHTML =
+      '<div class="settings-head">' +
+        '<h2 data-set="title"></h2>' +
+        '<button type="button" class="settings-close" aria-label="Close settings">' + SET_ICON.x + '</button>' +
+      '</div>' +
+      '<div class="settings-sec">' +
+        '<div class="settings-sec-t" data-set="prefs"></div>' +
+        '<div class="settings-row">' +
+          '<span class="sr-ic">' + SET_ICON.theme + '</span>' +
+          '<span class="sr-main"><span class="sr-lbl" data-set="theme"></span><span class="sr-desc" data-set="themeD"></span></span>' +
+          '<span class="sr-ctrl" id="set-theme-slot"></span>' +
         '</div>' +
-        '<div class="settings-sec">' +
-          '<div class="settings-sec-t" data-set="prefs"></div>' +
-          '<div class="settings-row">' +
-            '<span class="sr-ic">' + SET_ICON.theme + '</span>' +
-            '<span class="sr-main"><span class="sr-lbl" data-set="theme"></span><span class="sr-desc" data-set="themeD"></span></span>' +
-            '<span class="sr-ctrl" id="set-theme-slot"></span>' +
-          '</div>' +
-          '<div class="settings-row">' +
-            '<span class="sr-ic">' + SET_ICON.lang + '</span>' +
-            '<span class="sr-main"><span class="sr-lbl" data-set="lang"></span><span class="sr-desc" data-set="langD"></span></span>' +
-            '<span class="sr-ctrl" id="set-lang-slot"></span>' +
-          '</div>' +
+        '<div class="settings-row">' +
+          '<span class="sr-ic">' + SET_ICON.lang + '</span>' +
+          '<span class="sr-main"><span class="sr-lbl" data-set="lang"></span><span class="sr-desc" data-set="langD"></span></span>' +
+          '<span class="sr-ctrl" id="set-lang-slot"></span>' +
         '</div>' +
-        '<div class="settings-sec">' +
-          '<div class="settings-sec-t"><span data-set="account"></span><span class="settings-soon" data-set="soon"></span></div>' +
-          '<div class="settings-row settings-acct" style="display:block">' +
-            '<p class="sa-d" data-set="acctD"></p>' +
-            '<div class="sa-btns">' +
-              '<button type="button" class="sa-btn ghost" disabled><span class="sr-ic" style="display:inline-flex">' + SET_ICON.user + '</span><span data-set="signin"></span></button>' +
-              '<button type="button" class="sa-btn solid" disabled data-set="signup"></button>' +
-            '</div>' +
+      '</div>' +
+      '<div class="settings-sec">' +
+        '<div class="settings-sec-t"><span data-set="account"></span><span class="settings-soon" data-set="soon"></span></div>' +
+        '<div class="settings-row settings-acct" style="display:block">' +
+          '<p class="sa-d" data-set="acctD"></p>' +
+          '<div class="sa-btns">' +
+            '<button type="button" class="sa-btn ghost" disabled><span class="sr-ic" style="display:inline-flex">' + SET_ICON.user + '</span><span data-set="signin"></span></button>' +
+            '<button type="button" class="sa-btn solid" disabled data-set="signup"></button>' +
           '</div>' +
         '</div>' +
       '</div>';
-    document.body.appendChild(overlay);
 
-    // relocate the live toggles into the modal (their listeners ride along)
-    if (ts) overlay.querySelector('#set-theme-slot').appendChild(ts);
-    if (lt) overlay.querySelector('#set-lang-slot').appendChild(lt);
-    ctrls.appendChild(gear);   // gear takes their place, pinned at the bar's end
+    wrap.appendChild(gear);
+    wrap.appendChild(pop);
+    ctrls.appendChild(wrap);   // gear + dropdown, pinned at the cluster's end
 
-    setLabels(overlay);
-    document.addEventListener('langchange', function () { setLabels(overlay); });
+    // relocate the live toggles into the popover (their listeners ride along)
+    if (ts) pop.querySelector('#set-theme-slot').appendChild(ts);
+    if (lt) pop.querySelector('#set-lang-slot').appendChild(lt);
 
-    var card = overlay.querySelector('.settings-card');
-    var lastFocus = null;
-    function isOpen() { return overlay.classList.contains('open'); }
+    setLabels(pop);
+    document.addEventListener('langchange', function () { setLabels(pop); });
+
+    function isOpen() { return pop.classList.contains('open'); }
     function open() {
       if (isOpen()) return;
-      lastFocus = document.activeElement;
-      document.documentElement.classList.add('settings-lock');
-      overlay.classList.add('open');   // visibility/opacity/pointer-events all driven by .open
-      overlay.querySelector('.settings-close').focus();
+      pop.classList.add('open');
+      gear.setAttribute('aria-expanded', 'true');
+      pop.focus();
     }
     function close() {
       if (!isOpen()) return;
-      overlay.classList.remove('open'); document.documentElement.classList.remove('settings-lock');
-      if (lastFocus && lastFocus.focus) lastFocus.focus(); else gear.focus();
+      pop.classList.remove('open');
+      gear.setAttribute('aria-expanded', 'false');
     }
-    gear.addEventListener('click', open);
-    overlay.querySelector('.settings-close').addEventListener('click', close);
-    overlay.addEventListener('mousedown', function (e) { if (e.target === overlay) close(); });
-    document.addEventListener('keydown', function (e) {
-      if (!isOpen()) return;
-      if (e.key === 'Escape') { close(); return; }
-      if (e.key === 'Tab') {   // simple focus trap
-        var f = card.querySelectorAll('button:not([disabled]),.theme-switch,.lang-toggle .opt,[tabindex]');
-        if (!f.length) return;
-        var first = f[0], last = f[f.length - 1];
-        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-      }
-    });
+    gear.addEventListener('click', function () { isOpen() ? close() : open(); });
+    pop.querySelector('.settings-close').addEventListener('click', function () { close(); gear.focus(); });
+    // no scrim: a click anywhere outside the gear + its dropdown closes it
+    document.addEventListener('mousedown', function (e) { if (isOpen() && !wrap.contains(e.target)) close(); });
+    document.addEventListener('keydown', function (e) { if (isOpen() && e.key === 'Escape') { close(); gear.focus(); } });
     window.openSettings = open;
     return true;
   }
