@@ -405,6 +405,18 @@
     '.nav-settings-btn:hover svg,.nav-settings-btn[aria-expanded="true"] svg{transform:rotate(70deg)}',
     '.settings-pop{position:absolute;top:calc(100% + 9px);right:0;z-index:100000;width:min(340px,calc(100vw - 20px));box-sizing:border-box;background:var(--panel,var(--card));border:1px solid color-mix(in srgb,var(--text,#e7ecf6) 14%,var(--line,var(--grid)));border-radius:15px;box-shadow:0 18px 50px -12px rgba(0,0,0,.62),0 4px 14px rgba(0,0,0,.3),inset 0 1px 0 color-mix(in srgb,var(--text,#fff) 6%,transparent);padding:13px;transform-origin:top right;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-8px) scale(.97);transition:opacity .16s ease,transform .2s cubic-bezier(.32,1.3,.5,1),visibility 0s linear .2s;font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif}',
     '.settings-pop.open{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition:opacity .16s ease,transform .2s cubic-bezier(.32,1.3,.5,1),visibility 0s}',
+    /* HOVER DROPDOWN (desktop): the gear now opens on hover like the top-nav .nav-dd
+       menus — hovering it (or keyboard-focusing into the wrapper) reveals the panel
+       with the SAME spring as the click path, and a transparent ::after bridges the
+       9px gap so the cursor can travel gear->panel without it closing. hover/fine
+       pointers only; touch keeps the JS click toggle (where the close x still shows). */
+    '@media (hover:hover) and (pointer:fine){',
+    '.nav-settings::after{content:"";position:absolute;top:100%;right:0;width:100%;height:11px}',
+    '.nav-settings:hover .settings-pop,.nav-settings:focus-within .settings-pop{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition:opacity .16s ease,transform .2s cubic-bezier(.32,1.3,.5,1),visibility 0s}',
+    '.nav-settings:hover .nav-settings-btn,.nav-settings:focus-within .nav-settings-btn{border-color:var(--link,var(--blue));color:var(--link,var(--blue));background:color-mix(in srgb,var(--link,var(--blue)) 13%,var(--panel2,var(--card)))}',
+    '.nav-settings:hover .nav-settings-btn svg,.nav-settings:focus-within .nav-settings-btn svg{transform:rotate(70deg)}',
+    '.nav-settings .settings-close{display:none}',
+    '}',
     '.settings-head{display:flex;align-items:center;gap:8px;margin:0;padding:0 2px 2px}',
     '.settings-head h2{margin:0;padding:0;border:0;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;line-height:1.2;color:var(--muted,var(--ink-3))}',
     '.settings-close{margin-left:auto;width:24px;height:24px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--muted,var(--ink-3));cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none;transition:background .18s,color .18s}',
@@ -443,7 +455,7 @@
     '.settings-acct .sa-btn .sr-ic{color:inherit}',
     '.settings-acct .sa-btn.ghost{background:transparent;color:var(--text,var(--ink))}',
     '.settings-acct .sa-btn.solid{background:var(--link,var(--blue));border-color:var(--link,var(--blue));color:#fff;opacity:.92}',
-    '@media (prefers-reduced-motion:reduce){.settings-pop{transition:opacity .14s ease,visibility 0s linear .14s}.settings-pop.open{transition:opacity .14s ease}.nav-settings-btn:hover svg,.nav-settings-btn[aria-expanded="true"] svg{transform:none}}'
+    '@media (prefers-reduced-motion:reduce){.settings-pop{transition:opacity .14s ease,visibility 0s linear .14s}.settings-pop.open,.nav-settings:hover .settings-pop,.nav-settings:focus-within .settings-pop{transition:opacity .14s ease}.nav-settings-btn:hover svg,.nav-settings-btn[aria-expanded="true"] svg,.nav-settings:hover .nav-settings-btn svg,.nav-settings:focus-within .nav-settings-btn svg{transform:none}}'
   ].join('');
 
   function setLabels(root) {
@@ -544,6 +556,12 @@
     // no scrim: a click anywhere outside the gear + its dropdown closes it
     document.addEventListener('mousedown', function (e) { if (isOpen() && !wrap.contains(e.target)) close(); });
     document.addEventListener('keydown', function (e) { if (isOpen() && e.key === 'Escape') { close(); gear.focus(); } });
+    // Desktop also opens the panel on hover (pure CSS above). If a stray click set
+    // .open, make sure leaving the gear + panel always closes it so it never stays
+    // pinned under the cursor; touch (no hover) keeps the click / outside / Esc path.
+    if (window.matchMedia && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
+      wrap.addEventListener('mouseleave', close);
+    }
     window.openSettings = open;
     return true;
   }
