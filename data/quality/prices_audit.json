@@ -1,5 +1,5 @@
 {
- "asof": "2026-06-28",
+ "asof": "2026-06-29",
  "audit": "prices",
  "config": {
   "price_max_gap_days": 4,
