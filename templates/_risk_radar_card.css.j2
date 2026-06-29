@@ -12,6 +12,10 @@
          border-left: 4px solid var(--rc); font-size: 12.5px; line-height: 1.4;
          box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4); }
   body.page-macro .ms-front > .rrx { margin: 0 0 14px; }
+  /* grouping wrappers: inert everywhere by default (the card keeps its single-column
+     stack on the China/HK/Canada/stocks placements); the macro front-page overrides
+     these to display:flex to build the 2-column banner. */
+  .rrx > .rrx-main, .rrx > .rrx-side { display: contents; min-width: 0; }
   .rrx.rrx-loud { background: color-mix(in srgb, var(--rc) 4%, var(--panel));
          box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rc) 20%, transparent), 0 14px 34px -18px color-mix(in srgb, var(--rc) 70%, transparent);
          animation: rrxPulse 2.4s ease-in-out infinite; }

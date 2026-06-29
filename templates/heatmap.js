@@ -596,7 +596,10 @@
       var showSym = tw >= 26 && th >= 17;
       var showPc = tw >= 44 && th >= 31;
       if (!showSym) return '';
-      var symF = Math.max(8.5, Math.min(tw / 3.7, th * 0.52, 22));
+      // cap the font to the tile width so long tickers shrink to fit instead of overflowing
+      var nch = (t.t || '').length || 1;
+      var fitF = (tw - 5) / (nch * 0.80);
+      var symF = Math.max(6, Math.min(tw / 3.7, th * 0.52, fitF, 22));
       var pcF = Math.max(8, Math.min(tw / 5.4, th * 0.34, 13));
       var s = '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(t.t) + '</span>';
       if (showPc) s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + fmtPc(pc) + '</span>';
@@ -935,7 +938,11 @@
       // only names with a readable footprint carry a label; the rest are pure
       // colour (Finviz / TradingView / Perplexity behaviour).
       if (tw < 24 || th < 15) return '';
-      var symF = clamp(Math.min(tw / 3.8, th * 0.5), 8, 18);
+      // cap the font to the tile width so long tickers (CMCSA, GOOGL…) shrink to fit
+      // instead of overflowing — the old 8px floor forced 5-char symbols past narrow edges.
+      var nch = (t.t || '').length || 1;
+      var fitF = (tw - 5) / (nch * 0.80);
+      var symF = clamp(Math.min(tw / 3.8, th * 0.5, fitF), 6, 18);
       var s = '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(t.t) + '</span>';
       if (tw >= 40 && th >= 29) {
         var pcF = clamp(Math.min(tw / 5.6, th * 0.32), 7.5, 12);
@@ -1202,7 +1209,8 @@
       + '.hm-sc-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;}'
       + '.hm-sc-exp{margin-left:auto;font:700 12px Inter,sans-serif;color:var(--text);background:var(--panel2);border:1px solid var(--line);padding:6px 12px;border-radius:9px;cursor:pointer;transition:background .15s,border-color .15s;white-space:nowrap;}'
       + '.hm-sc-exp:hover{border-color:color-mix(in srgb,var(--link) 55%,var(--line));background:color-mix(in srgb,var(--link) 10%,var(--panel2));}'
-      + '.hm-sc-map{position:relative;width:100%;border-radius:12px;overflow:hidden;background:var(--hm-frame);border:1px solid var(--hm-edge);}'
+      + '.hm-scope.hm-sc.panel{border:0;}'
+      + '.hm-sc-map{position:relative;width:100%;border-radius:12px;overflow:hidden;background:var(--hm-frame);}'
       + '.hm-sc-tm{position:relative;width:100%;}'
       + '.hm-sc-sechd{box-sizing:border-box;padding:0 7px;font-size:11px;} .hm-sc-sechd .nm{font-size:10.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;} .hm-sc-sechd .pc{margin-left:auto;padding-left:5px;flex:none;}'
       + '.hm-sc-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:11px;font-size:11px;}'
