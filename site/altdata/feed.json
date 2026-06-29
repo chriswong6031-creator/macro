@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-06-28T21:46:43.759971+00:00",
-  "as_of": "2026-06-28",
+  "generated_utc": "2026-06-29T00:49:56.487399+00:00",
+  "as_of": "2026-06-29",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -3199,9 +3199,36 @@
       "emoji": "\ud83d\udcfa",
       "label_en": "CNBC stock picks",
       "label_zh": "CNBC\u9009\u80a1",
-      "rows": 250,
-      "last_seen": "2026-06-26",
+      "rows": 253,
+      "last_seen": "2026-06-28",
       "recent": [
+        {
+          "Ticker": "GS",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Bullish",
+          "Traders": "Steve Weiss",
+          "Upload_Time": "2026-06-28T23:05:37.000",
+          "_first_seen": "2026-06-28T23:11:32.478541+00:00"
+        },
+        {
+          "Ticker": "SPCX",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Sell",
+          "Traders": "Bryn Talkington",
+          "Upload_Time": "2026-06-28T23:05:14.000",
+          "_first_seen": "2026-06-28T23:11:32.478541+00:00"
+        },
+        {
+          "Ticker": "NVDA",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Buy",
+          "Traders": "Kevin Simpson",
+          "Upload_Time": "2026-06-28T23:04:46.000",
+          "_first_seen": "2026-06-28T23:11:32.478541+00:00"
+        },
         {
           "Ticker": "XLE",
           "Date": "2026-06-25T00:00:00.000",
@@ -3399,33 +3426,6 @@
           "Traders": "Josh Brown",
           "Upload_Time": "2026-06-26T19:29:34.000",
           "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "MU",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Hold",
-          "Traders": "Joe Terranova",
-          "Upload_Time": "2026-06-26T19:29:16.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "CVX",
-          "Date": "2026-06-24T00:00:00.000",
-          "Notes": null,
-          "Direction": "Final Trade",
-          "Traders": "Guy Adami",
-          "Upload_Time": "2026-06-25T16:45:19.000",
-          "_first_seen": "2026-06-26T03:31:22.928478+00:00"
-        },
-        {
-          "Ticker": "USO",
-          "Date": "2026-06-24T00:00:00.000",
-          "Notes": null,
-          "Direction": "Final Trade",
-          "Traders": "Dan Nathan",
-          "Upload_Time": "2026-06-25T16:44:43.000",
-          "_first_seen": "2026-06-26T03:31:22.928478+00:00"
         }
       ]
     },
@@ -4460,9 +4460,18 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 473,
+      "rows": 474,
       "last_seen": "2026-06-28",
       "recent": [
+        {
+          "url": "https://www.quiverquant.com/news/BridgeBio+Pharma+Announces+NEJM+Publication+and+ICCBH+Presentation+of+Positive+Phase+3+PROPEL+3+Data+for+Oral+Infigratinib+in+Achondroplasia",
+          "time": "2026-06-28 20:10:27",
+          "headline": "BridgeBio Pharma Announces NEJM Publication and ICCBH Presentation of Positive Phase 3 PROPEL 3 Data for Oral Infigratinib in Achondroplasia",
+          "category": "press_release_summary",
+          "summary": "<p>BridgeBio announces Phase 3 PROPEL 3 data for infigratinib, showing significant improvements in children with achondroplasia.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>BridgeBio Pharma announced today\u2026",
+          "image": "https://www.quiverquant.com/images/bbio_rect_new.png",
+          "_first_seen": "2026-06-28T23:11:34.790560+00:00"
+        },
         {
           "url": "https://www.quiverquant.com/news/Upwork+Stock+%28UPWK%29+Opinions+on+AI+Competition+in+Freelance+Market",
           "time": "2026-06-28 17:32:53",
@@ -4536,12 +4545,12 @@
           "_first_seen": "2026-06-28T18:17:49.011911+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Prairie+Operating+Co.+Stock+%28PROP%29+Opinions+on+Energy+Sector+Dynamics+and+Dilution+Concerns",
+          "url": "https://www.quiverquant.com/news/Micron+Technology+Stock+%28MU%29+Opinions+on+Recent+Earnings+and+AI+Demand+Surge",
           "time": "2026-06-28 14:03:33",
-          "headline": "Prairie Operating Co. Stock (PROP) Opinions on Energy Sector Dynamics and Dilution Concerns",
+          "headline": "Micron Technology Stock (MU) Opinions on Recent Earnings and AI Demand Surge",
           "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Energy fundamentals spark debate:</strong> Social media users highlight Prairie Operating Co.'s substantial proven oil reserves valued at over $1 billion against a modest mark\u2026",
-          "image": "https://www.quiverquant.com/images/prop_rect_new.png",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings Beat:</strong> Social media discussions centered on Micron Technology's recent quarterly results that exceeded expectations, with observers noting robust demand for h\u2026",
+          "image": "https://www.quiverquant.com/images/mu_rect_new.png",
           "_first_seen": "2026-06-28T16:22:00.404797+00:00"
         },
         {
@@ -4572,12 +4581,12 @@
           "_first_seen": "2026-06-28T16:22:00.404797+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Micron+Technology+Stock+%28MU%29+Opinions+on+Recent+Earnings+and+AI+Demand+Surge",
+          "url": "https://www.quiverquant.com/news/Prairie+Operating+Co.+Stock+%28PROP%29+Opinions+on+Energy+Sector+Dynamics+and+Dilution+Concerns",
           "time": "2026-06-28 14:03:33",
-          "headline": "Micron Technology Stock (MU) Opinions on Recent Earnings and AI Demand Surge",
+          "headline": "Prairie Operating Co. Stock (PROP) Opinions on Energy Sector Dynamics and Dilution Concerns",
           "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings Beat:</strong> Social media discussions centered on Micron Technology's recent quarterly results that exceeded expectations, with observers noting robust demand for h\u2026",
-          "image": "https://www.quiverquant.com/images/mu_rect_new.png",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Energy fundamentals spark debate:</strong> Social media users highlight Prairie Operating Co.'s substantial proven oil reserves valued at over $1 billion against a modest mark\u2026",
+          "image": "https://www.quiverquant.com/images/prop_rect_new.png",
           "_first_seen": "2026-06-28T16:22:00.404797+00:00"
         },
         {
@@ -4677,15 +4686,6 @@
           "category": "congress_trades_automated",
           "summary": "<p><strong>Representative Mikie Sherrill</strong> lost <strong>$121.1K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Mikie Sherrill Net Worth</h2><p\u2026",
           "image": "https://www.quiverquant.com/images/S001207_congress.png",
-          "_first_seen": "2026-06-28T04:13:20.718560+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Mark+R.+Warner+Made+an+Estimated+%24263.4K+in+the+Stock+Market+Last+Month",
-          "time": "2026-06-28 03:00:29",
-          "headline": "Net Worth Update: Senator Mark R. Warner Made an Estimated $263.4K in the Stock Market Last Month",
-          "category": "congress_trades_automated",
-          "summary": "<p><strong>Senator Mark R. Warner</strong> made <strong>$263.4K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Mark R. Warner Net Worth</h2><p>Quiver Quanti\u2026",
-          "image": "https://www.quiverquant.com/images/W000805_congress.png",
           "_first_seen": "2026-06-28T04:13:20.718560+00:00"
         }
       ]
@@ -5978,21 +5978,21 @@
           "parties": "D"
         },
         {
-          "ticker": "ENTG",
-          "net": 9,
-          "buys": 9,
-          "sells": 0,
-          "members": 1,
-          "est_usd": 72004.0,
-          "parties": "D"
-        },
-        {
           "ticker": "BWXT",
           "net": 8,
           "buys": 8,
           "sells": 0,
           "members": 1,
           "est_usd": 162004.0,
+          "parties": "D"
+        },
+        {
+          "ticker": "ENTG",
+          "net": 8,
+          "buys": 8,
+          "sells": 0,
+          "members": 1,
+          "est_usd": 64004.0,
           "parties": "D"
         },
         {
@@ -6062,11 +6062,11 @@
         },
         {
           "ticker": "TSCO",
-          "net": -13,
-          "buys": 1,
+          "net": -14,
+          "buys": 0,
           "sells": 14,
           "members": 2,
-          "est_usd": 8000.0,
+          "est_usd": 0.0,
           "parties": "D"
         },
         {
@@ -6198,20 +6198,20 @@
         "top_agency": "Department of Homeland Security"
       },
       {
-        "ticker": "MDLN",
-        "total_usd": 167613583.0,
-        "contracts": 37,
-        "agencies": 2,
-        "accel_x": 34.98,
-        "top_agency": "Department of Veterans Affairs"
-      },
-      {
         "ticker": "GD",
-        "total_usd": 100855922.0,
-        "contracts": 11,
-        "agencies": 6,
+        "total_usd": 100711524.0,
+        "contracts": 9,
+        "agencies": 4,
         "accel_x": 1.08,
         "top_agency": "Department of Homeland Security"
+      },
+      {
+        "ticker": "MDLN",
+        "total_usd": 85009107.0,
+        "contracts": 31,
+        "agencies": 2,
+        "accel_x": 0.97,
+        "top_agency": "Department of Veterans Affairs"
       },
       {
         "ticker": "PLTR",
@@ -6239,10 +6239,10 @@
       },
       {
         "ticker": "KBR",
-        "total_usd": 41021250.0,
-        "contracts": 17,
+        "total_usd": 30375605.0,
+        "contracts": 11,
         "agencies": 4,
-        "accel_x": 2.07,
+        "accel_x": 1.0,
         "top_agency": "Department of Commerce"
       },
       {
@@ -6254,28 +6254,20 @@
         "top_agency": "Department of State"
       },
       {
-        "ticker": "CDW",
-        "total_usd": 18472232.0,
-        "contracts": 36,
-        "agencies": 5,
-        "accel_x": 4.05,
-        "top_agency": "Department of Transportation"
-      },
-      {
-        "ticker": "BAH",
-        "total_usd": 14715128.0,
-        "contracts": 10,
-        "agencies": 5,
-        "accel_x": 0.6,
-        "top_agency": "Department of Defense"
-      },
-      {
         "ticker": "AXON",
-        "total_usd": 12222950.0,
-        "contracts": 13,
-        "agencies": 4,
-        "accel_x": 8.67,
+        "total_usd": 12095996.0,
+        "contracts": 10,
+        "agencies": 3,
+        "accel_x": 7.87,
         "top_agency": "Department of Homeland Security"
+      },
+      {
+        "ticker": "CDW",
+        "total_usd": 11618569.0,
+        "contracts": 27,
+        "agencies": 5,
+        "accel_x": 1.02,
+        "top_agency": "Department of Transportation"
       },
       {
         "ticker": "SAIC",
@@ -6286,28 +6278,36 @@
         "top_agency": "Department of Transportation"
       },
       {
-        "ticker": "MRNA",
-        "total_usd": 8699145.0,
-        "contracts": 3,
-        "agencies": 1,
-        "accel_x": null,
-        "top_agency": "Department of Health and Human Services"
-      },
-      {
         "ticker": "F",
         "total_usd": 7824265.0,
         "contracts": 158,
         "agencies": 1,
-        "accel_x": 1.01,
+        "accel_x": 1.06,
         "top_agency": "General Services Administration"
       },
       {
-        "ticker": "EVRG",
-        "total_usd": 7241464.0,
-        "contracts": 1,
+        "ticker": "TTEK",
+        "total_usd": 6719692.0,
+        "contracts": 13,
+        "agencies": 5,
+        "accel_x": 14.71,
+        "top_agency": "Environmental Protection Agency"
+      },
+      {
+        "ticker": "PPC",
+        "total_usd": 6180480.0,
+        "contracts": 2,
         "agencies": 1,
         "accel_x": null,
-        "top_agency": "Department of Energy"
+        "top_agency": "Department of Agriculture"
+      },
+      {
+        "ticker": "OMCL",
+        "total_usd": 5942392.0,
+        "contracts": 11,
+        "agencies": 2,
+        "accel_x": 3.5,
+        "top_agency": "Department of Veterans Affairs"
       }
     ],
     "gov_grants": [
@@ -41821,8 +41821,8 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17622,
-        "wow_pct": 1.03,
+        "stars": 17630,
+        "wow_pct": 1.08,
         "hot": true
       },
       {
@@ -41833,8 +41833,8 @@
       },
       {
         "ticker": "IBM",
-        "stars": 7536,
-        "wow_pct": 0.36,
+        "stars": 7537,
+        "wow_pct": 0.37,
         "hot": true
       },
       {
@@ -41845,14 +41845,8 @@
       },
       {
         "ticker": "MSFT",
-        "stars": 186992,
+        "stars": 186998,
         "wow_pct": 0.22,
-        "hot": true
-      },
-      {
-        "ticker": "ESTC",
-        "stars": 77188,
-        "wow_pct": 0.15,
         "hot": true
       },
       {
@@ -41862,8 +41856,14 @@
         "hot": true
       },
       {
+        "ticker": "ESTC",
+        "stars": 77187,
+        "wow_pct": 0.14,
+        "hot": true
+      },
+      {
         "ticker": "META",
-        "stars": 246277,
+        "stars": 246278,
         "wow_pct": 0.12,
         "hot": true
       },
@@ -43354,6 +43354,13 @@
     ],
     "news": [
       {
+        "headline": "BridgeBio Pharma Announces NEJM Publication and ICCBH Presentation of Positive Phase 3 PROPEL 3 Data for Oral Infigratinib in Achondroplasia",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-28 20:10:27",
+        "url": "https://www.quiverquant.com/news/BridgeBio+Pharma+Announces+NEJM+Publication+and+ICCBH+Presentation+of+Positive+Phase+3+PROPEL+3+Data+for+Oral+Infigratinib+in+Achondroplasia"
+      },
+      {
         "headline": "Upwork Stock (UPWK) Opinions on AI Competition in Freelance Market",
         "ticker": null,
         "category": "discussion_automated",
@@ -43410,11 +43417,11 @@
         "url": "https://www.quiverquant.com/news/Recursion+Pharmaceuticals+Stock+%28RXRX%29+Opinions+on+ARK+Invest%27s+Recent+Share+Purchase"
       },
       {
-        "headline": "Prairie Operating Co. Stock (PROP) Opinions on Energy Sector Dynamics and Dilution Concerns",
+        "headline": "Micron Technology Stock (MU) Opinions on Recent Earnings and AI Demand Surge",
         "ticker": null,
         "category": "discussion_automated",
         "time": "2026-06-28 14:03:33",
-        "url": "https://www.quiverquant.com/news/Prairie+Operating+Co.+Stock+%28PROP%29+Opinions+on+Energy+Sector+Dynamics+and+Dilution+Concerns"
+        "url": "https://www.quiverquant.com/news/Micron+Technology+Stock+%28MU%29+Opinions+on+Recent+Earnings+and+AI+Demand+Surge"
       },
       {
         "headline": "BigBear.ai Stock (BBAI) Opinions on Recent Price Movements and Dilution",
@@ -43438,11 +43445,11 @@
         "url": "https://www.quiverquant.com/news/AST+SpaceMobile+Stock+%28ASTS%29+Opinions+on+Satellite+Deployment+Progress"
       },
       {
-        "headline": "Micron Technology Stock (MU) Opinions on Recent Earnings and AI Demand Surge",
+        "headline": "Prairie Operating Co. Stock (PROP) Opinions on Energy Sector Dynamics and Dilution Concerns",
         "ticker": null,
         "category": "discussion_automated",
         "time": "2026-06-28 14:03:33",
-        "url": "https://www.quiverquant.com/news/Micron+Technology+Stock+%28MU%29+Opinions+on+Recent+Earnings+and+AI+Demand+Surge"
+        "url": "https://www.quiverquant.com/news/Prairie+Operating+Co.+Stock+%28PROP%29+Opinions+on+Energy+Sector+Dynamics+and+Dilution+Concerns"
       },
       {
         "headline": "Wolfspeed Stock (WOLF) Opinions on AI Data Center Opportunities",
@@ -43485,13 +43492,6 @@
         "category": "congress_trades_automated",
         "time": "2026-06-28 03:00:29",
         "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Jacky+Rosen+Lost+an+Estimated+%24129.2K+in+the+Stock+Market+Last+Month"
-      },
-      {
-        "headline": "Net Worth Update: Representative Mike Kelly Lost an Estimated $215.6K in the Stock Market Last Month",
-        "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-28 03:00:29",
-        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Mike+Kelly+Lost+an+Estimated+%24215.6K+in+the+Stock+Market+Last+Month"
       }
     ],
     "wsb": [
@@ -43597,6 +43597,33 @@
       }
     ],
     "cnbc": [
+      {
+        "Ticker": "GS",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Bullish",
+        "Traders": "Steve Weiss",
+        "Upload_Time": "2026-06-28T23:05:37.000",
+        "_first_seen": "2026-06-28T23:11:32.478541+00:00"
+      },
+      {
+        "Ticker": "SPCX",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Sell",
+        "Traders": "Bryn Talkington",
+        "Upload_Time": "2026-06-28T23:05:14.000",
+        "_first_seen": "2026-06-28T23:11:32.478541+00:00"
+      },
+      {
+        "Ticker": "NVDA",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Buy",
+        "Traders": "Kevin Simpson",
+        "Upload_Time": "2026-06-28T23:04:46.000",
+        "_first_seen": "2026-06-28T23:11:32.478541+00:00"
+      },
       {
         "Ticker": "XLE",
         "Date": "2026-06-25T00:00:00.000",
@@ -43794,33 +43821,6 @@
         "Traders": "Josh Brown",
         "Upload_Time": "2026-06-26T19:29:34.000",
         "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "MU",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Hold",
-        "Traders": "Joe Terranova",
-        "Upload_Time": "2026-06-26T19:29:16.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "CVX",
-        "Date": "2026-06-24T00:00:00.000",
-        "Notes": null,
-        "Direction": "Final Trade",
-        "Traders": "Guy Adami",
-        "Upload_Time": "2026-06-25T16:45:19.000",
-        "_first_seen": "2026-06-26T03:31:22.928478+00:00"
-      },
-      {
-        "Ticker": "USO",
-        "Date": "2026-06-24T00:00:00.000",
-        "Notes": null,
-        "Direction": "Final Trade",
-        "Traders": "Dan Nathan",
-        "Upload_Time": "2026-06-25T16:44:43.000",
-        "_first_seen": "2026-06-26T03:31:22.928478+00:00"
       }
     ],
     "app_ratings": [
@@ -45338,10 +45338,11 @@
     "convergence": [
       {
         "ticker": "NVDA",
-        "score": 7,
-        "weighted_score": 2.55,
+        "score": 8,
+        "weighted_score": 2.8,
         "channel_list": [
           "13f_add",
+          "cnbc_pick",
           "darkpool_accum",
           "github_momentum",
           "hf_model_momentum",
@@ -45349,7 +45350,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +1.03% stars \u00b7 hf_model_momentum: +6.7% model downloads \u00b7 patent_cluster: 48 grants, 11 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 cnbc_pick: Kevin Simpson \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +1.08% stars \u00b7 hf_model_momentum: +6.7% model downloads \u00b7 patent_cluster: 48 grants, 11 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "GOOGL",
@@ -45473,16 +45474,6 @@
         "why": "clinical_phase3_start: 9 new Phase-3 \u00b7 fda_label_expansion: WELLCOVORIN \u00b7 special_situation: M&A / Divestitures"
       },
       {
-        "ticker": "KBR",
-        "score": 2,
-        "weighted_score": 1.45,
-        "channel_list": [
-          "activist_13d",
-          "gov_contract_accel"
-        ],
-        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract_accel: $41,021,250, 2.1x accel"
-      },
-      {
         "ticker": "N/A",
         "score": 2,
         "weighted_score": 1.4,
@@ -45556,16 +45547,6 @@
         "why": "patent_cluster: 44 grants, 22 IPC classes \u00b7 special_situation: M&A / Divestitures \u00b7 trump: TEXAS INSTRS INC"
       },
       {
-        "ticker": "CDW",
-        "score": 2,
-        "weighted_score": 1.3,
-        "channel_list": [
-          "gov_contract_accel",
-          "special_situation"
-        ],
-        "why": "gov_contract_accel: $18,472,232, 4.0x accel \u00b7 special_situation: Capital Returns"
-      },
-      {
         "ticker": "BWXT",
         "score": 3,
         "weighted_score": 1.2,
@@ -45616,6 +45597,26 @@
           "fda_label_expansion"
         ],
         "why": "clinical_phase3_start: 3 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: PERJETA"
+      },
+      {
+        "ticker": "BMY",
+        "score": 2,
+        "weighted_score": 1.05,
+        "channel_list": [
+          "clinical_phase3_start",
+          "fda_label_expansion"
+        ],
+        "why": "clinical_phase3_start: 1 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: ONUREG"
+      },
+      {
+        "ticker": "SNPS",
+        "score": 2,
+        "weighted_score": 1.05,
+        "channel_list": [
+          "activist_13d",
+          "trump"
+        ],
+        "why": "activist_13d: 13D activist campaign \u00b7 trump: SYNOPSYS INC COM"
       }
     ]
   }

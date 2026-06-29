@@ -6,7 +6,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Food &amp; Beverage — <span class="l-en">Theme detail</span><span class="l-zh">主题详情</span></title>
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="../theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -254,7 +254,7 @@
 
 <footer>
   <span class="l-en">Read-only analytics — not investment advice. Theme scores and textures are a transparent focus/structure lens, NOT a validated forward-edge buy list: cross-sectional theme momentum has ~0 rank-IC and the baskets are hindsight-curated. Per-member conviction is the same per-stock Conviction Profile used on the stock dashboard, shown with its honest trust tier; it is an event-edge screen, never an order.</span><span class="l-zh">只读分析 — 非投资建议。主题评分与纹理是透明的聚焦/结构透镜，并非经验证的前瞻买入清单：横截面主题动量 rank-IC≈0，且篮子为事后筛选。成分股信念采用股票看板同一套信念档案，附带诚实的信任层级；它是事件型筛选，绝非下单指令。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-06-28 21:39 UTC</span>.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-06-29 00:52 UTC</span>.
 </footer>
 
 <script>
@@ -535,9 +535,9 @@ function render(){
   const nBoard=mem.filter(m=>m.on_board).length;
   h+=`<h2><span class="idx">04</span>${L('Holdings — own-it conviction + entry timing','成分股 — 持有信念 + 入场择时')} <span class="chip">${mem.length} ${L('names','只')}</span>${nBoard?` <span class="chip sb-chip" title="Members currently on the US standout buy board">★ ${nBoard} ${L('on standout board','在精选榜')}</span>`:''}</h2>
   <div class="panel"><div class="ts"><table id="hold">
-    <thead><tr><th>${L('Stock','个股')}</th><th class="num" data-s="conv">${DETAIL.region==='china'?L('Potential','潜力'):L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th>${L('Entry now','入场时机')}</th><th class="num" data-s="r20">20d</th><th class="num" data-s="ytd">YTD</th><th>${L('Why in theme','入选理由')}</th></tr></thead>
+    <thead><tr><th>${L('Stock','个股')}</th><th class="num" data-s="conv">${L('Potential','潜力')}</th><th>${L('Verdict','结论')}</th><th>${L('Entry now','入场时机')}</th><th class="num" data-s="r20">20d</th><th class="num" data-s="ytd">YTD</th><th>${L('Why in theme','入选理由')}</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
-    <div class="disc">${DETAIL.region==='china'?L('Potential is a per-stock BUY-READINESS score: washed out (room to run) AND turning up now (cycle trigger) AND survivable, nudged by theme tailwind — primed → setting up → watch → no setup. A timing screen that grades itself forward, never an order or an alpha claim. ⚠ = cycle blocks a buy.','潜力为个股买入就绪度评分：超跌（具备空间）且当前周期上行（触发）且可存续，并按主题顺风微调——蓄势待发→正在筑底→观察→暂无买点。前向自评的择时筛选，非下单指令、非超额收益承诺。⚠ = 周期禁止买入。'):L('Conviction is the per-stock 4-axis Conviction Profile (selection · entry · tailwind · quality) from the stock dashboard — a within-market percentile, event-edge tier, never an order. ⚠ = cycle state blocks a buy.','信念为股票看板的四轴信念档案（选择·入场·顺风·质量）— 市场内百分位、事件型层级，绝非下单。⚠ = 周期状态禁止买入。')}</div>
+    <div class="disc">${L('Potential is a per-stock BUY-READINESS score: washed out (room to run) AND turning up now (cycle trigger) AND survivable, nudged by theme tailwind and — where the market has one — its validated selection edge (US: insider / earnings / revisions). Primed → setting up → watch → no setup. A timing screen that grades itself forward, never an order or an alpha claim. ⚠ = cycle blocks a buy.','潜力为个股买入就绪度评分：超跌（具备空间）且当前周期上行（触发）且可存续，并按主题顺风与（若该市场存在）已验证选股优势（美股：内幕/业绩/评级修正）微调——蓄势待发→正在筑底→观察→暂无买点。前向自评的择时筛选，非下单指令、非超额收益承诺。⚠ = 周期禁止买入。')}</div>
   </div>`;
 
   // ---- changelog + flags ----
@@ -570,6 +570,5 @@ function boot(){
 if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
 </script>
 <script src="../theme.js"></script>
-<script defer data-whb data-root="../" src="../wh_banner.js"></script>
 </body>
 </html>
