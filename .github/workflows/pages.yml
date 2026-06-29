@@ -1,10 +1,12 @@
 name: pages
-# Deploys the dashboard whenever site/ changes on main (e.g. a local rebuild
-# pushed directly), so the site never waits for the next scheduled run.
+# DISABLED auto-trigger: mastermind-x.com is served by the VPS (Caddy behind
+# Cloudflare, pulling main every ~3 min), NOT GitHub Pages (Pages is dormant —
+# no custom domain). This workflow used to fire on EVERY site/** commit only to
+# deploy to the `github-pages` environment, whose one-deploy-at-a-time
+# serialization CANCELLED concurrent renders during merge-sprees (the 1-2h freeze).
+# Kept manual-only in case Pages is ever revived. See render.yml (renders + commits
+# site/ to main, which the VPS serves).
 on:
-  push:
-    branches: [main]
-    paths: ["site/**"]
   workflow_dispatch:
 
 permissions:

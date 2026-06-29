@@ -47,9 +47,7 @@ on:
       - "scripts/build_*.py"
 
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: write   # commit the rendered site/ to main; the VPS (Caddy) serves from main
 
 concurrency:
   # Its OWN lane, isolated from `pipeline-daily` so a render can never starve (or be
@@ -66,9 +64,6 @@ jobs:
   render:
     runs-on: ubuntu-latest
     timeout-minutes: 75
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -389,12 +384,4 @@ jobs:
             git rebase --abort 2>/dev/null || true
             echo "render push attempt $i lost a race; re-syncing"; sleep $((i * 7))
           done
-          echo "::warning::could not push rendered site after 5 attempts (non-fatal — it still deploys via artifact)"
-      - name: upload pages artifact
-        if: always()   # deploy the freshly rendered tree even if the commit-push lost a race
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site/
-      - id: deployment
-        if: always()
-        uses: actions/deploy-pages@v4
+          echo "::warning::could not push rendered site after 5 attempts — the next render or the nightly will re-land it"
