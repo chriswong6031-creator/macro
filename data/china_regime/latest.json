@@ -346,8 +346,8 @@
         "label": "Liquidity impulse",
         "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
         "family": "liquidity",
-        "projection": 0.11,
-        "strength": 0.11,
+        "projection": 0.09,
+        "strength": 0.09,
         "direction": "domestic liquidity easing \u2014 M1/M2 up, overnight cheap, small-caps & margin bid"
       }
     ],
@@ -355,17 +355,17 @@
   },
   "conditions": {
     "roro": {
-      "roro": -0.099,
-      "roro_raw": -0.1,
+      "roro": -0.109,
+      "roro_raw": -0.11,
       "roro_state": "neutral",
       "china_roro_copper_gold": 1.672,
       "china_roro_breadth": -1.078,
       "china_roro_southbound": -0.685,
       "china_roro_m1_m2": 0.021,
-      "china_roro_turnover": 2.285,
+      "china_roro_turnover": 2.206,
       "china_roro_qvix": -1.399,
       "china_roro_usdcnh": -1.114,
-      "china_roro_margin": -0.499,
+      "china_roro_margin": -0.5,
       "china_roro_ah_premium": null,
       "legs": [
         {
@@ -400,7 +400,7 @@
           "key": "turnover",
           "name_en": "Turnover band",
           "name_zh": "\u6210\u4ea4\u6d3b\u8dc3\u5ea6",
-          "value": 2.285,
+          "value": 2.206,
           "lean": "risk-on"
         },
         {
@@ -421,7 +421,7 @@
           "key": "margin",
           "name_en": "Margin froth",
           "name_zh": "\u878d\u8d44\u62e5\u6324\u5ea6",
-          "value": -0.499,
+          "value": -0.5,
           "lean": "risk-off"
         }
       ]
@@ -499,7 +499,7 @@
       "note_zh": "\u5df2\u752820\u5e74A\u80a1\u524d\u77bb\u6570\u636e\u6821\u51c6\uff1a\u65e0\u524d\u77bb\u56de\u64a4\u4f18\u52bf\uff08A\u80a1\u5747\u503c\u56de\u5f52 \u2014\u2014 \u9ad8\u8bfb\u6570\u504f\u5e73/\u9006\u5411\uff09\uff1b\u533a\u95f4\u4e3a\u5386\u53f2\u5206\u4f4d\u951a\u5b9a\u3002\u63cf\u8ff0\u6027\u80cc\u666f\uff0c\u4ece\u4e0d\u8ba1\u5165\u8bc4\u5206\u3002"
     },
     "drawdown_risk": {
-      "score": 64.1,
+      "score": 66.5,
       "band": "elevated",
       "uncalibrated": false,
       "calibrated": true,
@@ -2088,7 +2088,7 @@
           0.115,
           0.123,
           -0.094,
-          -0.099
+          -0.109
         ]
       },
       "recession": {
@@ -5248,7 +5248,7 @@
           62.7,
           60.0,
           61.3,
-          64.1
+          66.5
         ]
       },
       "fear_euphoria": {
@@ -6828,7 +6828,7 @@
           71.2,
           72.4,
           48.5,
-          47.9
+          47.5
         ]
       }
     },
@@ -6836,10 +6836,10 @@
     "note": "display-only conditioning lens \u2014 RORO + uncalibrated recession/drawdown gauges; never feeds china_axes / china_regime / china_playbook"
   },
   "fear_euphoria": {
-    "fe_score": 48,
+    "fe_score": 47,
     "band": "Neutral",
     "band_zh": "\u4e2d\u6027",
-    "roro": -0.099,
+    "roro": -0.109,
     "roro_state": "neutral",
     "legs": [
       {
@@ -6878,8 +6878,8 @@
         "key": "turnover",
         "name_en": "Turnover band",
         "name_zh": "\u6210\u4ea4\u6d3b\u8dc3\u5ea6",
-        "value": 2.285,
-        "pct": 96,
+        "value": 2.206,
+        "pct": 95,
         "lean": "risk-on"
       },
       {
@@ -6902,8 +6902,8 @@
         "key": "margin",
         "name_en": "Margin froth",
         "name_zh": "\u878d\u8d44\u62e5\u6324\u5ea6",
-        "value": -0.499,
-        "pct": 3,
+        "value": -0.5,
+        "pct": 1,
         "lean": "risk-off"
       }
     ],

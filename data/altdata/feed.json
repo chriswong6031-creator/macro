@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-29T00:30:07.374163+00:00",
+  "generated_utc": "2026-06-29T03:06:33.455782+00:00",
   "as_of": "2026-06-29",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -3199,9 +3199,225 @@
       "emoji": "\ud83d\udcfa",
       "label_en": "CNBC stock picks",
       "label_zh": "CNBC\u9009\u80a1",
-      "rows": 253,
+      "rows": 277,
       "last_seen": "2026-06-28",
       "recent": [
+        {
+          "Ticker": "XLV",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Final Trade",
+          "Traders": "Michael Khouw",
+          "Upload_Time": "2026-06-28T23:18:45.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "GM",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Final Trade",
+          "Traders": "Tim Seymour",
+          "Upload_Time": "2026-06-28T23:17:53.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "SPCX",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Final Trade",
+          "Traders": "Steve Weiss",
+          "Upload_Time": "2026-06-28T23:17:28.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "MRK",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Final Trade",
+          "Traders": "Courtney Dominguez",
+          "Upload_Time": "2026-06-28T23:16:55.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "XHB",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Bullish",
+          "Traders": "Courtney Dominguez",
+          "Upload_Time": "2026-06-28T23:16:24.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "DAL",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Bullish",
+          "Traders": "Tim Seymour",
+          "Upload_Time": "2026-06-28T23:15:56.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "NKE",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Bullish",
+          "Traders": "Michael Khouw",
+          "Upload_Time": "2026-06-28T23:15:38.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "NKE",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Long",
+          "Traders": "Tim Seymour",
+          "Upload_Time": "2026-06-28T23:15:23.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "SPCX",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Bearish",
+          "Traders": "Tim Seymour",
+          "Upload_Time": "2026-06-28T23:15:04.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "SPCX",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Bullish",
+          "Traders": "Steve Grasso",
+          "Upload_Time": "2026-06-28T23:14:45.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "ENB",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Final Trade",
+          "Traders": "Jenny Harrington",
+          "Upload_Time": "2026-06-28T23:13:50.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "UBER",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Final Trade",
+          "Traders": "Bryn Talkington",
+          "Upload_Time": "2026-06-28T23:13:22.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "META",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Final Trade",
+          "Traders": "Steve Weiss",
+          "Upload_Time": "2026-06-28T23:13:04.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "NVDA",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Final Trade",
+          "Traders": "Kevin Simpson",
+          "Upload_Time": "2026-06-28T23:12:30.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "DKS",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Bullish",
+          "Traders": "Steve Weiss",
+          "Upload_Time": "2026-06-28T23:12:06.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "FISV",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Hold",
+          "Traders": "Jenny Harrington",
+          "Upload_Time": "2026-06-28T23:11:36.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "NFLX",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Hold",
+          "Traders": "Steve Weiss",
+          "Upload_Time": "2026-06-28T23:11:01.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "PLTR",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Long",
+          "Traders": "Bryn Talkington",
+          "Upload_Time": "2026-06-28T23:10:34.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "SWK",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Bullish",
+          "Traders": "Jenny Harrington",
+          "Upload_Time": "2026-06-28T23:09:57.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "UNH",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Hold",
+          "Traders": "Steve Weiss",
+          "Upload_Time": "2026-06-28T23:09:01.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "MRP",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Bullish",
+          "Traders": "Jenny Harrington",
+          "Upload_Time": "2026-06-28T23:08:13.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "CAT",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Trim",
+          "Traders": "Steve Weiss",
+          "Upload_Time": "2026-06-28T23:07:34.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "APO",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Sell",
+          "Traders": "Bryn Talkington",
+          "Upload_Time": "2026-06-28T23:06:58.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
+        {
+          "Ticker": "GLD",
+          "Date": "2026-06-26T00:00:00.000",
+          "Notes": null,
+          "Direction": "Sell",
+          "Traders": "Steve Weiss",
+          "Upload_Time": "2026-06-28T23:06:21.000",
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+        },
         {
           "Ticker": "GS",
           "Date": "2026-06-26T00:00:00.000",
@@ -3209,223 +3425,7 @@
           "Direction": "Bullish",
           "Traders": "Steve Weiss",
           "Upload_Time": "2026-06-28T23:05:37.000",
-          "_first_seen": "2026-06-28T23:11:32.478541+00:00"
-        },
-        {
-          "Ticker": "SPCX",
-          "Date": "2026-06-26T00:00:00.000",
-          "Notes": null,
-          "Direction": "Sell",
-          "Traders": "Bryn Talkington",
-          "Upload_Time": "2026-06-28T23:05:14.000",
-          "_first_seen": "2026-06-28T23:11:32.478541+00:00"
-        },
-        {
-          "Ticker": "NVDA",
-          "Date": "2026-06-26T00:00:00.000",
-          "Notes": null,
-          "Direction": "Buy",
-          "Traders": "Kevin Simpson",
-          "Upload_Time": "2026-06-28T23:04:46.000",
-          "_first_seen": "2026-06-28T23:11:32.478541+00:00"
-        },
-        {
-          "Ticker": "XLE",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Final Trade",
-          "Traders": "Dan Nathan",
-          "Upload_Time": "2026-06-26T19:38:15.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "RRC",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Final Trade",
-          "Traders": "Katie Stockton",
-          "Upload_Time": "2026-06-26T19:37:41.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "NVO",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Final Trade",
-          "Traders": "Tim Seymour",
-          "Upload_Time": "2026-06-26T19:37:15.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "FCX",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Final Trade",
-          "Traders": "Guy Adami",
-          "Upload_Time": "2026-06-26T19:36:52.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "MCD",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Bearish",
-          "Traders": "Tim Seymour",
-          "Upload_Time": "2026-06-26T19:36:12.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "AMZN",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Bearish",
-          "Traders": "Katie Stockton",
-          "Upload_Time": "2026-06-26T19:35:45.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "UAL",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Buy on a Pullback",
-          "Traders": "Katie Stockton",
-          "Upload_Time": "2026-06-26T19:35:22.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "DAL",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Bullish",
-          "Traders": "Tim Seymour",
-          "Upload_Time": "2026-06-26T19:34:58.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "DAL",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Bullish",
-          "Traders": "Guy Adami",
-          "Upload_Time": "2026-06-26T19:34:35.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "QCOM",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Final Trade",
-          "Traders": "Jim Lebenthal",
-          "Upload_Time": "2026-06-26T19:34:09.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "ROK",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Final Trade",
-          "Traders": "Stephanie Link",
-          "Upload_Time": "2026-06-26T19:33:44.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "SPG",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Final Trade",
-          "Traders": "Josh Brown",
-          "Upload_Time": "2026-06-26T19:33:23.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "MRK",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Final Trade",
-          "Traders": "Joe Terranova",
-          "Upload_Time": "2026-06-26T19:33:02.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "AAPL",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Bullish",
-          "Traders": "Josh Brown",
-          "Upload_Time": "2026-06-26T19:32:44.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "TFC",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Buy",
-          "Traders": "Stephanie Link",
-          "Upload_Time": "2026-06-26T19:32:24.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "CFG",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Bullish",
-          "Traders": "Josh Brown",
-          "Upload_Time": "2026-06-26T19:31:53.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "NFLX",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Hold",
-          "Traders": "Josh Brown",
-          "Upload_Time": "2026-06-26T19:31:24.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "CVS",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Bullish",
-          "Traders": "Josh Brown",
-          "Upload_Time": "2026-06-26T19:31:01.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "JPM",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Bullish",
-          "Traders": "Josh Brown",
-          "Upload_Time": "2026-06-26T19:30:41.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "ONTO",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Bullish",
-          "Traders": "Joe Terranova",
-          "Upload_Time": "2026-06-26T19:30:21.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "MU",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Buy",
-          "Traders": "Jim Lebenthal",
-          "Upload_Time": "2026-06-26T19:29:51.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-        },
-        {
-          "Ticker": "MU",
-          "Date": "2026-06-25T00:00:00.000",
-          "Notes": null,
-          "Direction": "Bearish",
-          "Traders": "Josh Brown",
-          "Upload_Time": "2026-06-26T19:29:34.000",
-          "_first_seen": "2026-06-27T02:06:57.836336+00:00"
+          "_first_seen": "2026-06-29T01:43:15.488916+00:00"
         }
       ]
     },
@@ -3433,183 +3433,183 @@
       "emoji": "\ud83e\udd8d",
       "label_en": "WallStreetBets",
       "label_zh": "WSB\u70ed\u5ea6",
-      "rows": 2763,
-      "last_seen": "2026-06-28",
+      "rows": 3070,
+      "last_seen": "2026-06-29",
       "recent": [
         {
           "Ticker": "VC",
           "Count": "1",
           "Sentiment": "0.1093",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "LIVE",
           "Count": "1",
           "Sentiment": "0.7359",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "ANET",
           "Count": "15",
           "Sentiment": "0.14191333333333336",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "OKLO",
           "Count": "21",
           "Sentiment": "-0.04873333333333334",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "EU",
           "Count": "9",
           "Sentiment": "0.06314444444444448",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "SE",
           "Count": "4",
           "Sentiment": "0.2897",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "EPS",
           "Count": "5",
           "Sentiment": "0.6384799999999999",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "SEDG",
           "Count": "6",
           "Sentiment": "-0.04284999999999999",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "GO",
           "Count": "6",
           "Sentiment": "-0.06998333333333333",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "FSLR",
           "Count": "2",
           "Sentiment": "0.2673",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "PR",
           "Count": "1",
           "Sentiment": "-0.34",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "BOIL",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "HR",
           "Count": "4",
           "Sentiment": "-0.030925000000000008",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "XLV",
           "Count": "1",
           "Sentiment": "-0.8074",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "TDOC",
           "Count": "2",
           "Sentiment": "0.0",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "HOOD",
           "Count": "19",
           "Sentiment": "-0.039557894736842104",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "DIS",
           "Count": "3",
           "Sentiment": "-0.11896666666666667",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "NKLA",
           "Count": "11",
           "Sentiment": "-0.02502727272727273",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "ETSY",
           "Count": "5",
           "Sentiment": "0.3463",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "BKSY",
           "Count": "6",
           "Sentiment": "0.16961666666666667",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "PPT",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "DJT",
           "Count": "6",
           "Sentiment": "-0.013500000000000007",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "AB",
           "Count": "1",
           "Sentiment": "-0.3182",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "WELL",
           "Count": "3",
           "Sentiment": "0.6257333333333333",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Ticker": "DATS",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-06-28T04:13:17.181422+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:14.439181+00:00",
+          "_collected": "2026-06-29"
         }
       ]
     },
@@ -4101,358 +4101,358 @@
       "emoji": "\ud83d\udcb8",
       "label_en": "Corporate donors",
       "label_zh": "\u4f01\u4e1a\u6350\u8d60",
-      "rows": 757,
-      "last_seen": "2026-06-21",
+      "rows": 1062,
+      "last_seen": "2026-06-28",
       "recent": [
         {
-          "BioGuideID": "T000486",
-          "CandidateName": "TORRES, RITCHIE JOHN",
-          "CompanyCMTENM": "VERIZON COMMUNICATIONS, INC. POLITICAL ACTION COMMITTEE (VERIZON PAC)",
-          "TransactionDate": "2026-04-29",
-          "TransactionAmount": "2000",
-          "Ticker": "VZ",
-          "CommitteeName": "TORRES FOR CONGRESS",
+          "BioGuideID": "R000605",
+          "CandidateName": "ROUNDS, MIKE",
+          "CompanyCMTENM": "ACCENTURE INC. POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-01",
+          "TransactionAmount": "4000",
+          "Ticker": "ACN",
+          "CommitteeName": "ROUNDS FOR SENATE",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00186288",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T04:44:56.718339+00:00"
+          "CompanyCMTEID": "C00300707",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
+        },
+        {
+          "BioGuideID": "L000585",
+          "CandidateName": "LAHOOD, DARIN MCKAY",
+          "CompanyCMTENM": "ELI LILLY AND COMPANY POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-21",
+          "TransactionAmount": "5000",
+          "Ticker": "LLY",
+          "CommitteeName": "LAHOOD FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00082792",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
+        },
+        {
+          "BioGuideID": "S001156",
+          "CandidateName": "SANCHEZ, LINDA",
+          "CompanyCMTENM": "NEXTERA ENERGY, INC. POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-21",
+          "TransactionAmount": "1500",
+          "Ticker": "NEE",
+          "CommitteeName": "STAND WITH SANCHEZ",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00064774",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
         },
         {
           "BioGuideID": null,
           "CandidateName": null,
-          "CompanyCMTENM": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION VOLUNTARY POLITICAL ACTION COMMITTEE",
-          "TransactionDate": "2026-05-08",
-          "TransactionAmount": "15000",
-          "Ticker": "SAIC",
-          "CommitteeName": "DEMOCRATIC SENATORIAL CAMPAIGN COMMITTEE",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00300418",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
-        },
-        {
-          "BioGuideID": "D000631",
-          "CandidateName": "DEAN, MADELEINE",
-          "CompanyCMTENM": "GRAIL, INC. PAC",
-          "TransactionDate": "2026-05-05",
-          "TransactionAmount": "1000",
-          "Ticker": "GRAL",
-          "CommitteeName": "MAD 4 PA PAC",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00754648",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
-        },
-        {
-          "BioGuideID": "C001126",
-          "CandidateName": "CAREY, MIKE",
-          "CompanyCMTENM": "THE COCA-COLA COMPANY NONPARTISAN COMMITTEE FOR GOOD GOVERNMENT",
-          "TransactionDate": "2026-05-05",
-          "TransactionAmount": "1000",
-          "Ticker": "COKE",
-          "CommitteeName": "CAREY FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00012468",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
-        },
-        {
-          "BioGuideID": "G000597",
-          "CandidateName": "GARBARINO, ANDREW",
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-05-05",
-          "TransactionAmount": "1500",
-          "Ticker": "EIX",
-          "CommitteeName": "GARBARINO FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
-        },
-        {
-          "BioGuideID": "M001226",
-          "CandidateName": "MENENDEZ, ROBERT",
-          "CompanyCMTENM": "NATERA, INC. PAC (NATERA PAC)",
-          "TransactionDate": "2026-05-05",
+          "CompanyCMTENM": "ELI LILLY AND COMPANY POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-21",
           "TransactionAmount": "2500",
-          "Ticker": "NTRA",
-          "CommitteeName": "MENENDEZ FOR CONGRESS",
+          "Ticker": "LLY",
+          "CommitteeName": "BUILDING UP DEMOCRACY'S DREAM",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00897355",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
-        },
-        {
-          "BioGuideID": "F000480",
-          "CandidateName": "FONG, VINCE",
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-05-04",
-          "TransactionAmount": "1000",
-          "Ticker": "EIX",
-          "CommitteeName": "VINCE FONG FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
-        },
-        {
-          "BioGuideID": "T000472",
-          "CandidateName": "TAKANO, MARK",
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-05-04",
-          "TransactionAmount": "1000",
-          "Ticker": "EIX",
-          "CommitteeName": "MARK TAKANO FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
-        },
-        {
-          "BioGuideID": "W000187",
-          "CandidateName": "WATERS, MAXINE MS",
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-05-04",
-          "TransactionAmount": "1500",
-          "Ticker": "EIX",
-          "CommitteeName": "CITIZENS FOR WATERS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
-        },
-        {
-          "BioGuideID": null,
-          "CandidateName": null,
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-05-04",
-          "TransactionAmount": "1000",
-          "Ticker": "EIX",
-          "CommitteeName": "MAINTAINING INTEGRITY IN OUR NATION PAC",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
-        },
-        {
-          "BioGuideID": "C001059",
-          "CandidateName": "COSTA, JIM",
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-05-04",
-          "TransactionAmount": "1000",
-          "Ticker": "EIX",
-          "CommitteeName": "JIM COSTA FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
-        },
-        {
-          "BioGuideID": "F000482",
-          "CandidateName": "FEDORCHAK, JULIE",
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-05-04",
-          "TransactionAmount": "1000",
-          "Ticker": "EIX",
-          "CommitteeName": "FEDORCHAK FOR ND",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
-        },
-        {
-          "BioGuideID": "G000605",
-          "CandidateName": "GRAY, ADAM C.",
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-05-04",
-          "TransactionAmount": "1000",
-          "Ticker": "EIX",
-          "CommitteeName": "ADAM GRAY FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
-        },
-        {
-          "BioGuideID": "D000623",
-          "CandidateName": "DESAULNIER, MARK",
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-05-04",
-          "TransactionAmount": "500",
-          "Ticker": "EIX",
-          "CommitteeName": "MARK DESAULNIER FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
-        },
-        {
-          "BioGuideID": "G000559",
-          "CandidateName": "GARAMENDI, JOHN",
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-05-04",
-          "TransactionAmount": "1000",
-          "Ticker": "EIX",
-          "CommitteeName": "GARAMENDI FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
+          "CompanyCMTEID": "C00082792",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
         },
         {
           "BioGuideID": "L000570",
           "CandidateName": "LUJAN, BEN RAY",
-          "CompanyCMTENM": "COMCAST CORPORATION & NBCUNIVERSAL POLITICAL ACTION COMMITTEE - FEDERAL",
-          "TransactionDate": "2026-04-30",
+          "CompanyCMTENM": "NEXTERA ENERGY, INC. POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-21",
           "TransactionAmount": "2500",
-          "Ticker": "CMCSV",
+          "Ticker": "NEE",
           "CommitteeName": "PEOPLE FOR BEN",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00248716",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
+          "CompanyCMTEID": "C00064774",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
         },
         {
-          "BioGuideID": "C001047",
-          "CandidateName": "CAPITO, SHELLEY MOORE",
-          "CompanyCMTENM": "COMCAST CORPORATION & NBCUNIVERSAL POLITICAL ACTION COMMITTEE - FEDERAL",
-          "TransactionDate": "2026-04-30",
-          "TransactionAmount": "5000",
-          "Ticker": "CMCSV",
-          "CommitteeName": "CAPITO FOR WEST VIRGINIA",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00248716",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
-        },
-        {
-          "BioGuideID": "F000474",
-          "CandidateName": "FLOOD, MIKE",
-          "CompanyCMTENM": "AMERICAN HOMES 4 RENT TRS, LLC POLITICAL ACTION COMMITTEE (AMH PAC)",
-          "TransactionDate": "2026-05-06",
-          "TransactionAmount": "1500",
-          "Ticker": "AMH",
-          "CommitteeName": "MIKE FLOOD FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00830083",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
-        },
-        {
-          "BioGuideID": "E000294",
-          "CandidateName": "EMMER, THOMAS EARL JR.",
-          "CompanyCMTENM": "AMERICAN HOMES 4 RENT TRS, LLC POLITICAL ACTION COMMITTEE (AMH PAC)",
-          "TransactionDate": "2026-05-06",
-          "TransactionAmount": "1500",
-          "Ticker": "AMH",
-          "CommitteeName": "EMMER FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00830083",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
-        },
-        {
-          "BioGuideID": "H001072",
-          "CandidateName": "HILL, JAMES FRENCH",
-          "CompanyCMTENM": "AMERICAN HOMES 4 RENT TRS, LLC POLITICAL ACTION COMMITTEE (AMH PAC)",
-          "TransactionDate": "2026-05-06",
+          "BioGuideID": "B001315",
+          "CandidateName": "BUDZINSKI, NIKKI",
+          "CompanyCMTENM": "NEXTERA ENERGY, INC. POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-21",
           "TransactionAmount": "1000",
-          "Ticker": "AMH",
-          "CommitteeName": "FRENCH HILL FOR ARKANSAS",
+          "Ticker": "NEE",
+          "CommitteeName": "NIKKI FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00830083",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
+          "CompanyCMTEID": "C00064774",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
+        },
+        {
+          "BioGuideID": null,
+          "CandidateName": "HERN, KEVIN",
+          "CompanyCMTENM": "NEXTERA ENERGY, INC. POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-21",
+          "TransactionAmount": "2500",
+          "Ticker": "NEE",
+          "CommitteeName": "HERN FOR SENATE",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00064774",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
+        },
+        {
+          "BioGuideID": "B001257",
+          "CandidateName": "BILIRAKIS, GUS M",
+          "CompanyCMTENM": "ELI LILLY AND COMPANY POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-21",
+          "TransactionAmount": "1000",
+          "Ticker": "LLY",
+          "CommitteeName": "BILIRAKIS FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00082792",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
         },
         {
           "BioGuideID": null,
           "CandidateName": null,
-          "CompanyCMTENM": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION VOLUNTARY POLITICAL ACTION COMMITTEE",
-          "TransactionDate": "2026-05-08",
-          "TransactionAmount": "1000",
-          "Ticker": "SAIC",
-          "CommitteeName": "TEAM JORDAN",
+          "CompanyCMTENM": "ELI LILLY AND COMPANY POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-21",
+          "TransactionAmount": "5000",
+          "Ticker": "LLY",
+          "CommitteeName": "COMMON VALUES PAC",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00300418",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
+          "CompanyCMTEID": "C00082792",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
         },
         {
-          "BioGuideID": "F000482",
-          "CandidateName": "FEDORCHAK, JULIE",
-          "CompanyCMTENM": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION VOLUNTARY POLITICAL ACTION COMMITTEE",
-          "TransactionDate": "2026-05-08",
+          "BioGuideID": "M001194",
+          "CandidateName": "MOOLENAAR, JOHN MR.",
+          "CompanyCMTENM": "ELI LILLY AND COMPANY POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-21",
           "TransactionAmount": "2500",
-          "Ticker": "SAIC",
-          "CommitteeName": "FEDORCHAK FOR ND",
+          "Ticker": "LLY",
+          "CommitteeName": "MOOLENAAR FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00300418",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
+          "CompanyCMTEID": "C00082792",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
         },
         {
-          "BioGuideID": "M001235",
-          "CandidateName": "MOORE, RILEY",
-          "CompanyCMTENM": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION VOLUNTARY POLITICAL ACTION COMMITTEE",
-          "TransactionDate": "2026-05-08",
-          "TransactionAmount": "1500",
-          "Ticker": "SAIC",
-          "CommitteeName": "MOORE FOR WEST VIRGINIA, INC.",
+          "BioGuideID": "C001110",
+          "CandidateName": "CORREA, LOU",
+          "CompanyCMTENM": "BLACKROCK FUNDS SERVICES GROUP LLC POLITICAL ACTION COMMITTEE (BLACKROCK PAC)",
+          "TransactionDate": "2026-05-22",
+          "TransactionAmount": "2500",
+          "Ticker": "BLK",
+          "CommitteeName": "LOU CORREA FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00300418",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
+          "CompanyCMTEID": "C00479246",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
         },
         {
           "BioGuideID": "C001056",
           "CandidateName": "CORNYN, JOHN SEN",
-          "CompanyCMTENM": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION VOLUNTARY POLITICAL ACTION COMMITTEE",
-          "TransactionDate": "2026-05-08",
+          "CompanyCMTENM": "AMERIPRISE FINANCIAL INC. POLITICAL ACTION COMMITTEE (AMERIPRISEPAC)",
+          "TransactionDate": "2026-05-20",
           "TransactionAmount": "1000",
-          "Ticker": "SAIC",
-          "CommitteeName": "TEXANS FOR SENATOR JOHN CORNYN INC.",
+          "Ticker": "AMP",
+          "CommitteeName": "TEXANS FOR SENATOR JOHN CORNYN",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00300418",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
+          "CompanyCMTEID": "C00414474",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
         },
         {
-          "BioGuideID": "J000295",
-          "CandidateName": "JOYCE, DAVID P.",
-          "CompanyCMTENM": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION VOLUNTARY POLITICAL ACTION COMMITTEE",
-          "TransactionDate": "2026-05-08",
+          "BioGuideID": "P000034",
+          "CandidateName": "PALLONE, FRANK JR",
+          "CompanyCMTENM": "FIRSTENERGY CORP POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-20",
           "TransactionAmount": "5000",
-          "Ticker": "SAIC",
-          "CommitteeName": "FRIENDS OF DAVE JOYCE",
+          "Ticker": "FE",
+          "CommitteeName": "PALLONE FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00300418",
-          "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T00:09:26.916064+00:00"
+          "CompanyCMTEID": "C00140855",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
+        },
+        {
+          "BioGuideID": "W000821",
+          "CandidateName": "WESTERMAN, BRUCE",
+          "CompanyCMTENM": "FIRSTENERGY CORP POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-20",
+          "TransactionAmount": "5000",
+          "Ticker": "FE",
+          "CommitteeName": "WESTERMAN FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00140855",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
+        },
+        {
+          "BioGuideID": "M001205",
+          "CandidateName": "MILLER, CAROL DEVINE",
+          "CompanyCMTENM": "FIRSTENERGY CORP POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-20",
+          "TransactionAmount": "5000",
+          "Ticker": "FE",
+          "CommitteeName": "CAROL FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00140855",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
+        },
+        {
+          "BioGuideID": "S001226",
+          "CandidateName": "SALINAS, ANDREA",
+          "CompanyCMTENM": "NEXTERA ENERGY, INC. POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-19",
+          "TransactionAmount": "-1000",
+          "Ticker": "NEE",
+          "CommitteeName": "ANDREA SALINAS FOR OREGON",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00064774",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
+        },
+        {
+          "BioGuideID": "L000590",
+          "CandidateName": "LEE, SUSIE",
+          "CompanyCMTENM": "NEXTERA ENERGY, INC. POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-19",
+          "TransactionAmount": "-2000",
+          "Ticker": "NEE",
+          "CommitteeName": "SUSIE LEE FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00064774",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
+        },
+        {
+          "BioGuideID": "N000191",
+          "CandidateName": "NEGUSE, JOSEPH",
+          "CompanyCMTENM": "FIRSTENERGY CORP POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-05-19",
+          "TransactionAmount": "2500",
+          "Ticker": "FE",
+          "CommitteeName": "JOE NEGUSE FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00140855",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
+        },
+        {
+          "BioGuideID": "C001035",
+          "CandidateName": "COLLINS, SUSAN M.",
+          "CompanyCMTENM": "AMERICAN EXPRESS COMPANY POLITICAL ACTION COMMITTEE (AXPPAC)",
+          "TransactionDate": "2026-05-21",
+          "TransactionAmount": "2500",
+          "Ticker": "AXP",
+          "CommitteeName": "COLLINS FOR SENATOR",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00040535",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
+        },
+        {
+          "BioGuideID": null,
+          "CandidateName": null,
+          "CompanyCMTENM": "GENERAL MOTORS COMPANY POLITICAL ACTION COMMITTEE (GM PAC)",
+          "TransactionDate": "2026-05-21",
+          "TransactionAmount": "5000",
+          "Ticker": "GM",
+          "CommitteeName": "MICHIGAN DEMOCRATIC STATE CENTRAL COMMITTEE",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00076810",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
+        },
+        {
+          "BioGuideID": "F000468",
+          "CandidateName": "FLETCHER, ELIZABETH",
+          "CompanyCMTENM": "GENERAL MOTORS COMPANY POLITICAL ACTION COMMITTEE (GM PAC)",
+          "TransactionDate": "2026-05-21",
+          "TransactionAmount": "1000",
+          "Ticker": "GM",
+          "CommitteeName": "ELIZABETH PANNILL FLETCHER FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00076810",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
+        },
+        {
+          "BioGuideID": null,
+          "CandidateName": null,
+          "CompanyCMTENM": "GENERAL MOTORS COMPANY POLITICAL ACTION COMMITTEE (GM PAC)",
+          "TransactionDate": "2026-05-21",
+          "TransactionAmount": "2500",
+          "Ticker": "GM",
+          "CommitteeName": "SHORE PAC",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00076810",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
+        },
+        {
+          "BioGuideID": "S000344",
+          "CandidateName": "SHERMAN, BRAD",
+          "CompanyCMTENM": "BLACKROCK FUNDS SERVICES GROUP LLC POLITICAL ACTION COMMITTEE (BLACKROCK PAC)",
+          "TransactionDate": "2026-05-22",
+          "TransactionAmount": "5000",
+          "Ticker": "BLK",
+          "CommitteeName": "SHERMAN FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00479246",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
+        },
+        {
+          "BioGuideID": "L000582",
+          "CandidateName": "LIEU, TED",
+          "CompanyCMTENM": "BLACKROCK FUNDS SERVICES GROUP LLC POLITICAL ACTION COMMITTEE (BLACKROCK PAC)",
+          "TransactionDate": "2026-05-22",
+          "TransactionAmount": "5000",
+          "Ticker": "BLK",
+          "CommitteeName": "TED LIEU FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00479246",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
+        },
+        {
+          "BioGuideID": "G000583",
+          "CandidateName": "GOTTHEIMER, JOSH",
+          "CompanyCMTENM": "BLACKROCK FUNDS SERVICES GROUP LLC POLITICAL ACTION COMMITTEE (BLACKROCK PAC)",
+          "TransactionDate": "2026-05-22",
+          "TransactionAmount": "2500",
+          "Ticker": "BLK",
+          "CommitteeName": "JOSH FOR JERSEY",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00479246",
+          "Uploaded": "2026-06-28 23:33:40.398575",
+          "_first_seen": "2026-06-29T01:43:16.190247+00:00"
         }
       ]
     },
@@ -4470,7 +4470,7 @@
           "category": "press_release_summary",
           "summary": "<p>BridgeBio announces Phase 3 PROPEL 3 data for infigratinib, showing significant improvements in children with achondroplasia.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>BridgeBio Pharma announced today\u2026",
           "image": "https://www.quiverquant.com/images/bbio_rect_new.png",
-          "_first_seen": "2026-06-28T23:11:34.790560+00:00"
+          "_first_seen": "2026-06-29T01:43:16.507182+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Upwork+Stock+%28UPWK%29+Opinions+on+AI+Competition+in+Freelance+Market",
@@ -4694,183 +4694,183 @@
       "emoji": "\ud83d\udcc1",
       "label_en": "Congress holdings",
       "label_zh": "\u56fd\u4f1a\u6301\u4ed3",
-      "rows": 1863,
-      "last_seen": "2026-06-28",
+      "rows": 2070,
+      "last_seen": "2026-06-29",
       "recent": [
         {
           "Politician": "Zoe Lofgren",
           "Holdings": "{\"MMM\": -8000, \"BABA\": 0, \"CB\": 0, \"CMA\": 0, \"ECL\": -8000, \"TXN\": -8000, \"ACN\": 16000, \"ADBE\": 0, \"ALLY\": 16000, \"AMZN\": 0, \"AEP\": 0, \"AWK\": 0, \"AON\": 32000, \"AMAT\": 8000, \"ARCC\": 0, \"ASML\": 8000, \"T\": 0, \"AGR\": 0, \"B\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Kathy Manning",
           "Holdings": "{\"APD\": 40500, \"GOOGL\": -16000, \"GOOG\": -8000, \"AMGN\": -16000, \"AAPL\": -16000, \"CAT\": 8000, \"CNC\": 16000, \"CB\": 16000, \"CFG\": -8000, \"CME\": 8000, \"EL\": 8000, \"EXPD\": 8000, \"GIS\": 8000, \"HD\": 8000, \"INTC\": -40500, \"INT\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Greg Steube",
           "Holdings": "{\"SNV\": 56500}",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Greg Murphy",
           "Holdings": "{\"NYMX\": -75000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Greg Gianforte",
           "Holdings": "{\"ATLKY\": 92000, \"FMX\": 292500, \"OSW\": 553000, \"PEGA\": 742000, \"TSM\": -422500, \"YNDX\": -67500, \"CSGP\": -408000, \"GDDY\": 250000, \"NSRGY\": -315000, \"PRLB\": 0, \"RBA\": -183000, \"FIVE\": -75000, \"IAC\": 175000, \"IFF\": -10000\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Grace Meng",
           "Holdings": "{\"LHX\": 75000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Gilbert Cisneros",
           "Holdings": "{\"ADBE\": 40500, \"LNT\": 40000, \"AMZN\": 49000, \"AAPL\": 232000, \"CRNC\": 8000, \"CNS\": 0, \"CYRX\": 8000, \"EBS\": 32000, \"DAVA\": 32000, \"ERIC\": 65000, \"FIVE\": -24000, \"GDDY\": 122500, \"HELE\": -8000, \"INTU\": 0, \"IQV\": -64500, \"\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Gerald E. Connolly",
           "Holdings": "{\"PG\": -8000, \"DIS\": -8000, \"D\": -49000, \"LDOS\": -64500, \"SAIC\": -24000, \"CI\": -16000, \"ERH\": 8000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Gary Palmer",
           "Holdings": "{\"ABBV\": 16000, \"AMZN\": 0, \"CTL\": 0, \"EL\": -8000, \"IDTI\": -16000, \"NTRS\": 0, \"REGN\": -8000, \"TJX\": 48000, \"GOOGL\": -8000, \"UHAL\": 16000, \"AMP\": 8000, \"AMGN\": 0, \"AAPL\": -8000, \"APTV\": 8000, \"ASND\": 8000, \"ASML\": 8000,\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Garret Graves",
           "Holdings": "{\"CRNC\": -8000, \"NUAN\": -8000, \"C\": -8000, \"DDD\": -8000, \"GOLD\": 8000, \"PSTH\": 8000, \"ABNB\": 16000, \"AMZN\": 8000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Frank Pallone Jr.",
           "Holdings": "{\"CVX\": -8000, \"C\": -8000, \"D\": -8000, \"PM\": -24000, \"EL\": -32500, \"GE\": -16000, \"TXN\": -32500, \"DIS\": -8000, \"MO\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Frank A. Lobiondo",
           "Holdings": "{\"BLK\": 8000, \"AAPL\": 16000, \"IBM\": -8000, \"QCOM\": -16000, \"GIS\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Feinstein, Dianne",
           "Holdings": "{\"ALLO\": -3000000, \"NVS\": 575000, \"GOOGL\": 400000, \"AMAT\": -175000, \"BA\": 25000, \"BAM\": 57500, \"CHTR\": 575000, \"CCI\": 275500, \"DHR\": -725000, \"DLR\": -350000, \"FDX\": -267500, \"FEYE\": -175000, \"INFO\": -575000, \"MSFT\": -\u2026",
           "Type": "Senator",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Enzi, Michael B.",
           "Holdings": "{\"KEY\": -8000}",
           "Type": "Senator",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Elizabeth Fletcher",
           "Holdings": "{\"MMM\": -8000, \"ABT\": -8000, \"ACN\": -16000, \"ANTM\": 8000, \"BDX\": -24000, \"CACI\": 0, \"CCL\": 0, \"CERN\": -16000, \"CTSH\": -16000, \"COST\": -8000, \"DRI\": 0, \"DLTR\": -16000, \"ECL\": -8000, \"FDX\": 0, \"FISV\": -32000, \"HD\": -800\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Elaine Luria",
           "Holdings": "{\"BABA\": -625000, \"QS\": 8000, \"TSLA\": 8000, \"UBER\": 625000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Ed Perlmutter",
           "Holdings": "{\"BABA\": 0, \"AMZN\": 8000, \"COST\": 0, \"MSFT\": 0, \"NEM\": -8000, \"KR\": 0, \"BRK.B\": 8000, \"COIN\": 8000, \"GOOG\": 0, \"VZ\": 8000, \"AAPL\": -8000, \"GILD\": 0, \"KMI\": 0, \"HD\": -8000, \"WBA\": 0, \"SWK\": -48500, \"USB\": -81000, \"FB\":\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Ed Case",
           "Holdings": "{\"MRIN\": 8000, \"MO\": -75000, \"GE\": -8000, \"KMI\": -8000, \"MSFT\": 75000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Earl Blumenauer",
           "Holdings": "{\"ERJ\": 24000, \"F\": 16000, \"ICE\": 16000, \"NWN\": 37000, \"POR\": 8000, \"USB\": 0, \"DANOY\": 0, \"KR\": -8000, \"ALL\": 8000, \"AAPL\": 0, \"FDX\": 16000, \"GILD\": 16000, \"HHC\": -16000, \"TEL\": 16000, \"BRK.B\": 8000, \"CAT\": 8000, \"CBS\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Dwight Evans",
           "Holdings": "{\"APO\": 16000, \"HII\": -16000, \"KMI\": -8000, \"CG\": 16000, \"BABA\": 16000, \"GOOGL\": 16500, \"AMZN\": -48500, \"AEP\": 0, \"T\": 0, \"BRK.B\": -16000, \"DEO\": 8000, \"HASI\": -8000, \"INTC\": 0, \"TMO\": -8000, \"AWK\": 0, \"XOM\": 8000, \"N\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Duckworth, Tammy",
           "Holdings": "{\"DVMT\": -8000, \"BBL\": 0, \"DWDP\": -16000, \"ABT\": -8000, \"JNJ\": -8000, \"CC\": -8000, \"GME\": -8000, \"CAT\": -16000, \"POT\": -8000, \"MCD\": -8000, \"NEE\": -32500, \"VZ\": -32500, \"ITW\": -8000, \"DIS\": -8000, \"GS\": -8000, \"SOUHY\"\u2026",
           "Type": "Senator",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Donna Shalala",
           "Holdings": "{\"TGNA\": -105500, \"AOS\": 8000, \"ABM\": -8000, \"AYI\": -16000, \"ADUS\": -8000, \"ADDYY\": 0, \"AMD\": 0, \"AGCO\": -8000, \"AAGIY\": -40500, \"ALK\": -16000, \"ALFVY\": -8000, \"ALLE\": 16000, \"AGN\": 0, \"AZSEY\": -32500, \"AIMC\": -8000, \u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Donald Sternoff Beyer Jr.",
           "Holdings": "{\"AAGIY\": -8000, \"CVS\": 8000, \"FVRR\": -8000, \"GH\": -8000, \"IXJ\": 8000, \"IYZ\": 8000, \"NDAQ\": 8000, \"NVS\": -8000, \"BBH\": 8000, \"VZ\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Donald Sternoff Beyer Jr",
           "Holdings": "{\"CONE\": -8000, \"DAIUF\": -8500, \"MSFT\": -24500, \"MSCI\": -32500, \"TDOC\": -16500, \"PEP\": 0, \"ASML\": 0, \"FLIR\": 24000, \"ACN\": 24000, \"GOOG\": -500, \"AMZN\": -24500, \"AAPL\": 40000, \"BRK.B\": 0, \"C\": -16500, \"CGNX\": 16000, \"C\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         },
         {
           "Politician": "Donald Sternoff  Beyer Jr",
           "Holdings": "{\"GOOG\": 8000, \"AAPL\": -16000, \"ASML\": 16000, \"BRK.B\": 24000, \"DAIUF\": -24000, \"ECL\": 0, \"FNV\": 8000, \"MSFT\": -16000, \"NEE\": -32500, \"REGN\": 24000, \"TDOC\": -32000, \"AAIGF\": 8000, \"EL\": 0, \"FVRR\": -8000, \"GS\": 56000, \"\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-06-28T04:13:20.905990+00:00",
-          "_collected": "2026-06-28"
+          "_first_seen": "2026-06-29T01:43:16.738212+00:00",
+          "_collected": "2026-06-29"
         }
       ]
     },
@@ -5471,183 +5471,183 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 48906,
-      "last_seen": "2026-06-28",
+      "rows": 53835,
+      "last_seen": "2026-06-29",
       "recent": [
         {
-          "ticker": "CDW",
-          "owner_name": "CIBC Asset Management Inc",
+          "ticker": "CMCSA",
+          "owner_name": "YACKTMAN ASSET MANAGEMENT LP",
           "owner_title": "Institution",
-          "shares": "30741",
-          "_collected": "2026-06-28"
+          "shares": "1167500",
+          "_collected": "2026-06-29"
         },
         {
-          "ticker": "ASPI",
-          "owner_name": "AQR CAPITAL MANAGEMENT LLC",
+          "ticker": "AMGN",
+          "owner_name": "NATIXIS ADVISORS, LLC",
           "owner_title": "Institution",
-          "shares": "29356",
-          "_collected": "2026-06-28"
+          "shares": "392002",
+          "_collected": "2026-06-29"
         },
         {
-          "ticker": "ASPI",
-          "owner_name": "Centiva Capital, LP",
-          "owner_title": "Institution",
-          "shares": "36544",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "Caitong International Asset Management Co., Ltd",
-          "owner_title": "Institution",
-          "shares": "34983",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "Police & Firemen's Retirement System of New Jersey",
-          "owner_title": "Institution",
-          "shares": "33888",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "Quantinno Capital Management LP",
-          "owner_title": "Institution",
-          "shares": "33067",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "ROYAL BANK OF CANADA",
-          "owner_title": "Institution",
-          "shares": "32048",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "KLP KAPITALFORVALTNING AS",
-          "owner_title": "Institution",
-          "shares": "31600",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "MANUFACTURERS LIFE INSURANCE COMPANY, THE",
-          "owner_title": "Institution",
-          "shares": "30503",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "INTECH INVESTMENT MANAGEMENT LLC",
-          "owner_title": "Institution",
-          "shares": "29516",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "Arizona State Retirement System",
-          "owner_title": "Institution",
-          "shares": "29210",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "Advisory Services Network, LLC",
-          "owner_title": "Institution",
-          "shares": "40248",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "NEW YORK STATE COMMON RETIREMENT FUND",
-          "owner_title": "Institution",
-          "shares": "29200",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "Cresset Asset Management, LLC",
-          "owner_title": "Institution",
-          "shares": "27284",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "Jump Financial, LLC",
-          "owner_title": "Institution",
-          "shares": "26276",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "Fortitude Advisory Group L.L.C.",
-          "owner_title": "Institution",
-          "shares": "26035",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "MERCER GLOBAL ADVISORS INC /ADV",
-          "owner_title": "Institution",
-          "shares": "25550",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "Sanctuary Advisors, LLC",
-          "owner_title": "Institution",
-          "shares": "24615",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "Zurcher Kantonalbank (Zurich Cantonalbank)",
-          "owner_title": "Institution",
-          "shares": "23600",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "Cambridge Investment Research Advisors, Inc.",
-          "owner_title": "Institution",
-          "shares": "21531",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "JANUS HENDERSON GROUP PLC",
-          "owner_title": "Institution",
-          "shares": "39000",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
-          "owner_name": "Allegheny Financial Group",
-          "owner_title": "Institution",
-          "shares": "40649",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "ASPI",
+          "ticker": "AMGN",
           "owner_name": "NATIONAL BANK OF CANADA /FI/",
           "owner_title": "Institution",
-          "shares": "86120",
-          "_collected": "2026-06-28"
+          "shares": "420993",
+          "_collected": "2026-06-29"
         },
         {
-          "ticker": "ASPI",
-          "owner_name": "SIMPLEX TRADING, LLC",
+          "ticker": "AMGN",
+          "owner_name": "Janney Montgomery Scott LLC",
           "owner_title": "Institution",
-          "shares": "61648",
-          "_collected": "2026-06-28"
+          "shares": "416010",
+          "_collected": "2026-06-29"
         },
         {
-          "ticker": "ASPI",
-          "owner_name": "PRICE T ROWE ASSOCIATES INC /MD/",
+          "ticker": "AMGN",
+          "owner_name": "TRUIST FINANCIAL CORP",
           "owner_title": "Institution",
-          "shares": "80641",
-          "_collected": "2026-06-28"
+          "shares": "407214",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "CIBC Asset Management Inc",
+          "owner_title": "Institution",
+          "shares": "404263",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Capital International, Inc./CA/",
+          "owner_title": "Institution",
+          "shares": "398069",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "APG Asset Management N.V.",
+          "owner_title": "Institution",
+          "shares": "395935",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Candriam S.C.A.",
+          "owner_title": "Institution",
+          "shares": "395351",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "WEALTH ENHANCEMENT ADVISORY SERVICES, LLC",
+          "owner_title": "Institution",
+          "shares": "388718",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Assenagon Asset Management S.A.",
+          "owner_title": "Institution",
+          "shares": "344745",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "NEOS Investment Management LLC",
+          "owner_title": "Institution",
+          "shares": "369940",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "TD ASSET MANAGEMENT INC",
+          "owner_title": "Institution",
+          "shares": "367247",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Focus Partners Wealth",
+          "owner_title": "Institution",
+          "shares": "366355",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Quantinno Capital Management LP",
+          "owner_title": "Institution",
+          "shares": "364725",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "DZ BANK AG Deutsche Zentral Genossenschafts Bank, Frankfurt am Main",
+          "owner_title": "Institution",
+          "shares": "361181",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "SEI INVESTMENTS CO",
+          "owner_title": "Institution",
+          "shares": "356625",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Forum Financial Management, LP",
+          "owner_title": "Institution",
+          "shares": "347970",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "MIRAE ASSET GLOBAL ETFS HOLDINGS Ltd.",
+          "owner_title": "Institution",
+          "shares": "427642",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Brandywine Global Investment Management, LLC",
+          "owner_title": "Institution",
+          "shares": "427722",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Cerity Partners LLC",
+          "owner_title": "Institution",
+          "shares": "433555",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "NEW YORK STATE TEACHERS RETIREMENT SYSTEM",
+          "owner_title": "Institution",
+          "shares": "441342",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "PRUDENTIAL FINANCIAL INC",
+          "owner_title": "Institution",
+          "shares": "550331",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Aberdeen Group plc",
+          "owner_title": "Institution",
+          "shares": "534443",
+          "_collected": "2026-06-29"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "KING LUTHER CAPITAL MANAGEMENT CORP",
+          "owner_title": "Institution",
+          "shares": "515668",
+          "_collected": "2026-06-29"
         }
       ]
     },
@@ -6416,37 +6416,31 @@
       {
         "ticker": "NVDA",
         "downloads_30d": 30073822.0,
-        "wow_pct": 6.7,
-        "hot": true
-      },
-      {
-        "ticker": "GOOGL",
-        "downloads_30d": 207781753.0,
-        "wow_pct": 3.3,
+        "wow_pct": 4.3,
         "hot": true
       },
       {
         "ticker": "META",
         "downloads_30d": 91024307.0,
-        "wow_pct": 3.2,
-        "hot": false
+        "wow_pct": 2.3,
+        "hot": true
       },
       {
-        "ticker": "AMZN",
-        "downloads_30d": 24309408.0,
-        "wow_pct": -1.6,
+        "ticker": "GOOGL",
+        "downloads_30d": 207781753.0,
+        "wow_pct": 0.6,
         "hot": false
       },
       {
         "ticker": "BABA",
         "downloads_30d": 207611302.0,
-        "wow_pct": -1.9,
+        "wow_pct": -2.6,
         "hot": false
       },
       {
-        "ticker": "CRM",
-        "downloads_30d": 6752800.0,
-        "wow_pct": -4.2,
+        "ticker": "AMZN",
+        "downloads_30d": 24309408.0,
+        "wow_pct": -2.9,
         "hot": false
       },
       {
@@ -6458,13 +6452,19 @@
       {
         "ticker": "IBM",
         "downloads_30d": 9629527.0,
-        "wow_pct": -5.2,
+        "wow_pct": -4.6,
+        "hot": false
+      },
+      {
+        "ticker": "CRM",
+        "downloads_30d": 6752800.0,
+        "wow_pct": -5.8,
         "hot": false
       },
       {
         "ticker": "AAPL",
         "downloads_30d": 6206291.0,
-        "wow_pct": -11.0,
+        "wow_pct": -10.4,
         "hot": false
       }
     ],
@@ -20285,6 +20285,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "SNDA",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "7239",
         "category": "Acquisitions",
         "confidence": "high",
@@ -23843,6 +23851,14 @@
         "activist": false,
         "filer": null,
         "detail": "Strategic Reviews"
+      },
+      {
+        "ticker": "AUPH",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "BCAX",
@@ -38077,6 +38093,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "PLUN-RI",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
         "ticker": "SNDK",
         "category": "Other",
         "confidence": "high",
@@ -38195,6 +38219,14 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "PHR",
+        "category": "Restructuring",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Restructuring"
       },
       {
         "ticker": "BWLP",
@@ -38317,6 +38349,14 @@
         "detail": "Other"
       },
       {
+        "ticker": "CNI",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "PMMBF",
         "category": "Capital Returns",
         "confidence": "high",
@@ -38421,6 +38461,62 @@
         "detail": "Restructuring"
       },
       {
+        "ticker": "PRTS",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "CRCL",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "CRON",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "HKHC",
+        "category": "Activist Campaigns",
+        "confidence": "high",
+        "activist": true,
+        "filer": null,
+        "detail": "Activist Campaigns"
+      },
+      {
+        "ticker": "KWY",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
+        "ticker": "ODYY",
+        "category": "Deal Terminations",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Deal Terminations"
+      },
+      {
+        "ticker": "OSPN",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "PMI",
         "category": "Delistings",
         "confidence": "high",
@@ -38429,20 +38525,36 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "SAGU-WT",
-        "category": "Other",
+        "ticker": "SITM",
+        "category": "Acquisitions",
         "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "SCLXW",
+        "category": "Other",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
         "detail": "Other"
       },
       {
-        "ticker": "SNYR",
-        "category": "Delistings",
+        "ticker": "TNL",
+        "category": "Capital Returns",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "VRDN",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "PSA-PS",
@@ -38885,6 +38997,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "SAGU-WT",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "GLW",
         "category": "Delistings",
         "confidence": "high",
@@ -39195,6 +39315,14 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
+      },
+      {
+        "ticker": "SNYR",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
       },
       {
         "ticker": "RPID",
@@ -41433,7 +41561,7 @@
       {
         "ticker": "TEL",
         "vol_oi": 0.929,
-        "mult": 6.26,
+        "mult": 5.82,
         "put_call": 0.12,
         "lean": "call-skew",
         "hot": true
@@ -41441,7 +41569,7 @@
       {
         "ticker": "TENB",
         "vol_oi": 0.89,
-        "mult": 5.22,
+        "mult": 5.07,
         "put_call": 0.05,
         "lean": "call-skew",
         "hot": true
@@ -41449,31 +41577,31 @@
       {
         "ticker": "QLYS",
         "vol_oi": 0.215,
-        "mult": 3.53,
+        "mult": 3.49,
         "put_call": 0.05,
-        "lean": "call-skew",
-        "hot": true
-      },
-      {
-        "ticker": "FTNT",
-        "vol_oi": 0.434,
-        "mult": 3.51,
-        "put_call": 0.57,
         "lean": "call-skew",
         "hot": true
       },
       {
         "ticker": "MQ",
         "vol_oi": 0.056,
-        "mult": 3.42,
+        "mult": 3.18,
         "put_call": 0.12,
         "lean": "call-skew",
         "hot": true
       },
       {
+        "ticker": "FTNT",
+        "vol_oi": 0.434,
+        "mult": 2.87,
+        "put_call": 0.57,
+        "lean": "call-skew",
+        "hot": false
+      },
+      {
         "ticker": "LLY",
         "vol_oi": 0.353,
-        "mult": 2.88,
+        "mult": 2.87,
         "put_call": 0.36,
         "lean": "call-skew",
         "hot": false
@@ -41481,7 +41609,7 @@
       {
         "ticker": "ON",
         "vol_oi": 0.59,
-        "mult": 2.81,
+        "mult": 2.79,
         "put_call": 1.5,
         "lean": "put-skew",
         "hot": false
@@ -41489,7 +41617,7 @@
       {
         "ticker": "KDP",
         "vol_oi": 0.19,
-        "mult": 2.74,
+        "mult": 2.7,
         "put_call": 0.15,
         "lean": "call-skew",
         "hot": false
@@ -41497,7 +41625,7 @@
       {
         "ticker": "CRML",
         "vol_oi": 0.209,
-        "mult": 2.46,
+        "mult": 1.96,
         "put_call": 0.3,
         "lean": "call-skew",
         "hot": false
@@ -41505,89 +41633,89 @@
       {
         "ticker": "CNC",
         "vol_oi": 0.152,
-        "mult": 2.11,
+        "mult": 1.85,
         "put_call": 0.7,
         "lean": "balanced",
         "hot": false
       },
       {
-        "ticker": "CVS",
-        "vol_oi": 0.193,
-        "mult": 1.99,
-        "put_call": 0.17,
-        "lean": "call-skew",
-        "hot": false
-      },
-      {
         "ticker": "DKNG",
         "vol_oi": 0.102,
-        "mult": 1.84,
+        "mult": 1.79,
         "put_call": 0.26,
-        "lean": "call-skew",
-        "hot": false
-      },
-      {
-        "ticker": "LYV",
-        "vol_oi": 0.141,
-        "mult": 1.83,
-        "put_call": 0.1,
         "lean": "call-skew",
         "hot": false
       },
       {
         "ticker": "STM",
         "vol_oi": 0.159,
-        "mult": 1.83,
-        "put_call": 0.28,
-        "lean": "call-skew",
-        "hot": false
-      },
-      {
-        "ticker": "S",
-        "vol_oi": 0.084,
         "mult": 1.75,
-        "put_call": 0.16,
+        "put_call": 0.28,
         "lean": "call-skew",
         "hot": false
       },
       {
         "ticker": "IREN",
         "vol_oi": 0.406,
-        "mult": 1.74,
+        "mult": 1.62,
         "put_call": 4.22,
         "lean": "put-skew",
         "hot": false
       },
       {
-        "ticker": "WULF",
-        "vol_oi": 0.095,
-        "mult": 1.74,
-        "put_call": 2.81,
+        "ticker": "BURL",
+        "vol_oi": 0.297,
+        "mult": 1.6,
+        "put_call": 4.66,
         "lean": "put-skew",
         "hot": false
       },
       {
-        "ticker": "TXT",
-        "vol_oi": 0.325,
-        "mult": 1.73,
-        "put_call": 5.08,
-        "lean": "put-skew",
-        "hot": false
-      },
-      {
-        "ticker": "CRWD",
-        "vol_oi": 0.237,
-        "mult": 1.69,
-        "put_call": 0.54,
+        "ticker": "LYV",
+        "vol_oi": 0.141,
+        "mult": 1.6,
+        "put_call": 0.1,
         "lean": "call-skew",
         "hot": false
       },
       {
         "ticker": "UNH",
         "vol_oi": 0.119,
-        "mult": 1.63,
+        "mult": 1.6,
         "put_call": 0.48,
         "lean": "call-skew",
+        "hot": false
+      },
+      {
+        "ticker": "CRWD",
+        "vol_oi": 0.237,
+        "mult": 1.56,
+        "put_call": 0.54,
+        "lean": "call-skew",
+        "hot": false
+      },
+      {
+        "ticker": "DRS",
+        "vol_oi": 0.195,
+        "mult": 1.52,
+        "put_call": 2.25,
+        "lean": "put-skew",
+        "hot": false
+      },
+      {
+        "ticker": "KO",
+        "vol_oi": 0.106,
+        "mult": 1.52,
+        "put_call": 0.66,
+        "lean": "call-skew",
+        "hot": false
+      },
+      {
+        "ticker": "HUBS",
+        "vol_oi": 0.239,
+        "mult": 1.51,
+        "put_call": 9.45,
+        "lean": "put-skew",
         "hot": false
       }
     ],
@@ -41869,20 +41997,20 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17630,
-        "wow_pct": 1.08,
-        "hot": true
-      },
-      {
-        "ticker": "NET",
-        "stars": 14647,
-        "wow_pct": 0.43,
+        "stars": 17633,
+        "wow_pct": 1.05,
         "hot": true
       },
       {
         "ticker": "IBM",
-        "stars": 7537,
-        "wow_pct": 0.37,
+        "stars": 7538,
+        "wow_pct": 0.33,
+        "hot": true
+      },
+      {
+        "ticker": "NET",
+        "stars": 14648,
+        "wow_pct": 0.32,
         "hot": true
       },
       {
@@ -41893,25 +42021,19 @@
       },
       {
         "ticker": "MSFT",
-        "stars": 186998,
-        "wow_pct": 0.22,
+        "stars": 187000,
+        "wow_pct": 0.2,
         "hot": true
       },
       {
         "ticker": "GOOGL",
-        "stars": 196087,
-        "wow_pct": 0.15,
-        "hot": true
-      },
-      {
-        "ticker": "ESTC",
-        "stars": 77187,
-        "wow_pct": 0.14,
+        "stars": 196088,
+        "wow_pct": 0.13,
         "hot": true
       },
       {
         "ticker": "META",
-        "stars": 246278,
+        "stars": 246281,
         "wow_pct": 0.12,
         "hot": true
       },
@@ -41922,15 +42044,9 @@
         "hot": true
       },
       {
-        "ticker": "MDB",
-        "stars": 28407,
+        "ticker": "ESTC",
+        "stars": 77187,
         "wow_pct": 0.1,
-        "hot": false
-      },
-      {
-        "ticker": "GTLB",
-        "stars": 24475,
-        "wow_pct": 0.09,
         "hot": false
       },
       {
@@ -41946,9 +42062,15 @@
         "hot": false
       },
       {
-        "ticker": "TWLO",
-        "stars": 2064,
-        "wow_pct": 0.05,
+        "ticker": "MDB",
+        "stars": 28407,
+        "wow_pct": 0.08,
+        "hot": false
+      },
+      {
+        "ticker": "GTLB",
+        "stars": 24475,
+        "wow_pct": 0.07,
         "hot": false
       },
       {
@@ -41966,6 +42088,12 @@
       {
         "ticker": "SNOW",
         "stars": 336,
+        "wow_pct": 0.0,
+        "hot": false
+      },
+      {
+        "ticker": "TWLO",
+        "stars": 2064,
         "wow_pct": 0.0,
         "hot": false
       }
@@ -43310,6 +43438,12 @@
     ],
     "corporate_donors": [
       {
+        "ticker": "CMA",
+        "total_usd": 562705.0,
+        "donations": 1,
+        "politicians": 0
+      },
+      {
         "ticker": "PCH",
         "total_usd": 89434.0,
         "donations": 1,
@@ -43352,10 +43486,34 @@
         "politicians": 38
       },
       {
+        "ticker": "AXP",
+        "total_usd": 65000.0,
+        "donations": 32,
+        "politicians": 27
+      },
+      {
+        "ticker": "DE",
+        "total_usd": 60500.0,
+        "donations": 21,
+        "politicians": 21
+      },
+      {
+        "ticker": "LLY",
+        "total_usd": 55000.0,
+        "donations": 24,
+        "politicians": 19
+      },
+      {
         "ticker": "MRK",
         "total_usd": 54500.0,
         "donations": 21,
         "politicians": 17
+      },
+      {
+        "ticker": "LUMN",
+        "total_usd": 53000.0,
+        "donations": 31,
+        "politicians": 29
       },
       {
         "ticker": "MO",
@@ -43368,36 +43526,6 @@
         "total_usd": 51000.0,
         "donations": 30,
         "politicians": 25
-      },
-      {
-        "ticker": "JPM",
-        "total_usd": 49500.0,
-        "donations": 20,
-        "politicians": 13
-      },
-      {
-        "ticker": "VZ",
-        "total_usd": 42500.0,
-        "donations": 24,
-        "politicians": 20
-      },
-      {
-        "ticker": "SAIC",
-        "total_usd": 42000.0,
-        "donations": 13,
-        "politicians": 8
-      },
-      {
-        "ticker": "LNG",
-        "total_usd": 37000.0,
-        "donations": 13,
-        "politicians": 13
-      },
-      {
-        "ticker": "VLO",
-        "total_usd": 35000.0,
-        "donations": 7,
-        "politicians": 6
       }
     ],
     "news": [
@@ -43646,229 +43774,229 @@
     ],
     "cnbc": [
       {
+        "Ticker": "XLV",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Final Trade",
+        "Traders": "Michael Khouw",
+        "Upload_Time": "2026-06-28T23:18:45.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "GM",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Final Trade",
+        "Traders": "Tim Seymour",
+        "Upload_Time": "2026-06-28T23:17:53.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "SPCX",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Final Trade",
+        "Traders": "Steve Weiss",
+        "Upload_Time": "2026-06-28T23:17:28.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "MRK",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Final Trade",
+        "Traders": "Courtney Dominguez",
+        "Upload_Time": "2026-06-28T23:16:55.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "XHB",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Bullish",
+        "Traders": "Courtney Dominguez",
+        "Upload_Time": "2026-06-28T23:16:24.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "DAL",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Bullish",
+        "Traders": "Tim Seymour",
+        "Upload_Time": "2026-06-28T23:15:56.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "NKE",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Bullish",
+        "Traders": "Michael Khouw",
+        "Upload_Time": "2026-06-28T23:15:38.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "NKE",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Long",
+        "Traders": "Tim Seymour",
+        "Upload_Time": "2026-06-28T23:15:23.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "SPCX",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Bearish",
+        "Traders": "Tim Seymour",
+        "Upload_Time": "2026-06-28T23:15:04.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "SPCX",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Bullish",
+        "Traders": "Steve Grasso",
+        "Upload_Time": "2026-06-28T23:14:45.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "ENB",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Final Trade",
+        "Traders": "Jenny Harrington",
+        "Upload_Time": "2026-06-28T23:13:50.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "UBER",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Final Trade",
+        "Traders": "Bryn Talkington",
+        "Upload_Time": "2026-06-28T23:13:22.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "META",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Final Trade",
+        "Traders": "Steve Weiss",
+        "Upload_Time": "2026-06-28T23:13:04.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "NVDA",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Final Trade",
+        "Traders": "Kevin Simpson",
+        "Upload_Time": "2026-06-28T23:12:30.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "DKS",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Bullish",
+        "Traders": "Steve Weiss",
+        "Upload_Time": "2026-06-28T23:12:06.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "FISV",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Hold",
+        "Traders": "Jenny Harrington",
+        "Upload_Time": "2026-06-28T23:11:36.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "NFLX",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Hold",
+        "Traders": "Steve Weiss",
+        "Upload_Time": "2026-06-28T23:11:01.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "PLTR",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Long",
+        "Traders": "Bryn Talkington",
+        "Upload_Time": "2026-06-28T23:10:34.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "SWK",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Bullish",
+        "Traders": "Jenny Harrington",
+        "Upload_Time": "2026-06-28T23:09:57.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "UNH",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Hold",
+        "Traders": "Steve Weiss",
+        "Upload_Time": "2026-06-28T23:09:01.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "MRP",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Bullish",
+        "Traders": "Jenny Harrington",
+        "Upload_Time": "2026-06-28T23:08:13.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "CAT",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Trim",
+        "Traders": "Steve Weiss",
+        "Upload_Time": "2026-06-28T23:07:34.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "APO",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Sell",
+        "Traders": "Bryn Talkington",
+        "Upload_Time": "2026-06-28T23:06:58.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
+        "Ticker": "GLD",
+        "Date": "2026-06-26T00:00:00.000",
+        "Notes": null,
+        "Direction": "Sell",
+        "Traders": "Steve Weiss",
+        "Upload_Time": "2026-06-28T23:06:21.000",
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
+      },
+      {
         "Ticker": "GS",
         "Date": "2026-06-26T00:00:00.000",
         "Notes": null,
         "Direction": "Bullish",
         "Traders": "Steve Weiss",
         "Upload_Time": "2026-06-28T23:05:37.000",
-        "_first_seen": "2026-06-28T23:11:32.478541+00:00"
-      },
-      {
-        "Ticker": "SPCX",
-        "Date": "2026-06-26T00:00:00.000",
-        "Notes": null,
-        "Direction": "Sell",
-        "Traders": "Bryn Talkington",
-        "Upload_Time": "2026-06-28T23:05:14.000",
-        "_first_seen": "2026-06-28T23:11:32.478541+00:00"
-      },
-      {
-        "Ticker": "NVDA",
-        "Date": "2026-06-26T00:00:00.000",
-        "Notes": null,
-        "Direction": "Buy",
-        "Traders": "Kevin Simpson",
-        "Upload_Time": "2026-06-28T23:04:46.000",
-        "_first_seen": "2026-06-28T23:11:32.478541+00:00"
-      },
-      {
-        "Ticker": "XLE",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Final Trade",
-        "Traders": "Dan Nathan",
-        "Upload_Time": "2026-06-26T19:38:15.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "RRC",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Final Trade",
-        "Traders": "Katie Stockton",
-        "Upload_Time": "2026-06-26T19:37:41.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "NVO",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Final Trade",
-        "Traders": "Tim Seymour",
-        "Upload_Time": "2026-06-26T19:37:15.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "FCX",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Final Trade",
-        "Traders": "Guy Adami",
-        "Upload_Time": "2026-06-26T19:36:52.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "MCD",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Bearish",
-        "Traders": "Tim Seymour",
-        "Upload_Time": "2026-06-26T19:36:12.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "AMZN",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Bearish",
-        "Traders": "Katie Stockton",
-        "Upload_Time": "2026-06-26T19:35:45.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "UAL",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Buy on a Pullback",
-        "Traders": "Katie Stockton",
-        "Upload_Time": "2026-06-26T19:35:22.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "DAL",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Bullish",
-        "Traders": "Tim Seymour",
-        "Upload_Time": "2026-06-26T19:34:58.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "DAL",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Bullish",
-        "Traders": "Guy Adami",
-        "Upload_Time": "2026-06-26T19:34:35.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "QCOM",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Final Trade",
-        "Traders": "Jim Lebenthal",
-        "Upload_Time": "2026-06-26T19:34:09.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "ROK",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Final Trade",
-        "Traders": "Stephanie Link",
-        "Upload_Time": "2026-06-26T19:33:44.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "SPG",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Final Trade",
-        "Traders": "Josh Brown",
-        "Upload_Time": "2026-06-26T19:33:23.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "MRK",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Final Trade",
-        "Traders": "Joe Terranova",
-        "Upload_Time": "2026-06-26T19:33:02.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "AAPL",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Bullish",
-        "Traders": "Josh Brown",
-        "Upload_Time": "2026-06-26T19:32:44.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "TFC",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Buy",
-        "Traders": "Stephanie Link",
-        "Upload_Time": "2026-06-26T19:32:24.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "CFG",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Bullish",
-        "Traders": "Josh Brown",
-        "Upload_Time": "2026-06-26T19:31:53.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "NFLX",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Hold",
-        "Traders": "Josh Brown",
-        "Upload_Time": "2026-06-26T19:31:24.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "CVS",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Bullish",
-        "Traders": "Josh Brown",
-        "Upload_Time": "2026-06-26T19:31:01.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "JPM",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Bullish",
-        "Traders": "Josh Brown",
-        "Upload_Time": "2026-06-26T19:30:41.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "ONTO",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Bullish",
-        "Traders": "Joe Terranova",
-        "Upload_Time": "2026-06-26T19:30:21.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "MU",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Buy",
-        "Traders": "Jim Lebenthal",
-        "Upload_Time": "2026-06-26T19:29:51.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
-      },
-      {
-        "Ticker": "MU",
-        "Date": "2026-06-25T00:00:00.000",
-        "Notes": null,
-        "Direction": "Bearish",
-        "Traders": "Josh Brown",
-        "Upload_Time": "2026-06-26T19:29:34.000",
-        "_first_seen": "2026-06-27T02:06:57.836336+00:00"
+        "_first_seen": "2026-06-29T01:43:15.488916+00:00"
       }
     ],
     "app_ratings": [
@@ -44284,804 +44412,804 @@
     ],
     "congress_holdings": {
       "ICE": {
-        "position_usd": 429421500.0,
-        "holders": 108
+        "position_usd": 477135000.0,
+        "holders": 120
       },
       "MSFT": {
-        "position_usd": 192658500.0,
-        "holders": 621
+        "position_usd": 214065000.0,
+        "holders": 690
       },
       "AAPL": {
-        "position_usd": 159930000.0,
-        "holders": 711
+        "position_usd": 177700000.0,
+        "holders": 790
       },
       "AMZN": {
-        "position_usd": 89239500.0,
-        "holders": 504
+        "position_usd": 99155000.0,
+        "holders": 560
       },
       "SPY": {
-        "position_usd": 75019500.0,
-        "holders": 81
+        "position_usd": 83355000.0,
+        "holders": 90
       },
       "FB": {
-        "position_usd": 73012500.0,
-        "holders": 315
+        "position_usd": 81125000.0,
+        "holders": 350
       },
       "GOOGL": {
-        "position_usd": 47592000.0,
-        "holders": 342
+        "position_usd": 52880000.0,
+        "holders": 380
       },
       "V": {
-        "position_usd": 34632000.0,
-        "holders": 297
+        "position_usd": 38480000.0,
+        "holders": 330
       },
       "NFLX": {
-        "position_usd": 33718500.0,
-        "holders": 171
+        "position_usd": 37465000.0,
+        "holders": 190
       },
       "CHTR": {
-        "position_usd": 33583500.0,
-        "holders": 72
+        "position_usd": 37315000.0,
+        "holders": 80
       },
       "NVDA": {
-        "position_usd": 30213000.0,
-        "holders": 252
+        "position_usd": 33570000.0,
+        "holders": 280
       },
       "PYPL": {
-        "position_usd": 29245500.0,
-        "holders": 216
+        "position_usd": 32495000.0,
+        "holders": 240
       },
       "CRM": {
-        "position_usd": 28516500.0,
-        "holders": 153
+        "position_usd": 31685000.0,
+        "holders": 170
       },
       "DDOG": {
-        "position_usd": 27292500.0,
-        "holders": 18
+        "position_usd": 30325000.0,
+        "holders": 20
       },
       "XON": {
-        "position_usd": 27072000.0,
-        "holders": 27
+        "position_usd": 30080000.0,
+        "holders": 30
       },
       "BRP": {
-        "position_usd": 27072000.0,
-        "holders": 18
+        "position_usd": 30080000.0,
+        "holders": 20
       },
       "BXS": {
-        "position_usd": 27018000.0,
-        "holders": 27
+        "position_usd": 30020000.0,
+        "holders": 30
       },
       "ALLO": {
-        "position_usd": 27000000.0,
-        "holders": 9
+        "position_usd": 30000000.0,
+        "holders": 10
       },
       "XOM": {
-        "position_usd": 26131500.0,
-        "holders": 360
+        "position_usd": 29035000.0,
+        "holders": 400
       },
       "JPM": {
-        "position_usd": 24052500.0,
-        "holders": 396
+        "position_usd": 26725000.0,
+        "holders": 440
       },
       "JNJ": {
-        "position_usd": 24003000.0,
-        "holders": 396
+        "position_usd": 26670000.0,
+        "holders": 440
       },
       "TFX": {
-        "position_usd": 23382000.0,
-        "holders": 36
+        "position_usd": 25980000.0,
+        "holders": 40
       },
       "T": {
-        "position_usd": 22554000.0,
-        "holders": 396
+        "position_usd": 25060000.0,
+        "holders": 440
       },
       "DIS": {
-        "position_usd": 21807000.0,
-        "holders": 423
+        "position_usd": 24230000.0,
+        "holders": 470
       },
       "TRUP": {
-        "position_usd": 21375000.0,
-        "holders": 18
+        "position_usd": 23750000.0,
+        "holders": 20
       },
       "A": {
-        "position_usd": 21213000.0,
-        "holders": 45
+        "position_usd": 23570000.0,
+        "holders": 50
       },
       "ET": {
-        "position_usd": 20745000.0,
-        "holders": 90
+        "position_usd": 23050000.0,
+        "holders": 100
       },
       "AB": {
-        "position_usd": 20250000.0,
-        "holders": 9
+        "position_usd": 22500000.0,
+        "holders": 10
       },
       "MA": {
-        "position_usd": 20227500.0,
-        "holders": 225
+        "position_usd": 22475000.0,
+        "holders": 250
       },
       "LHCG": {
-        "position_usd": 18661500.0,
-        "holders": 45
+        "position_usd": 20735000.0,
+        "holders": 50
       },
       "VZ": {
-        "position_usd": 18301500.0,
-        "holders": 297
+        "position_usd": 20335000.0,
+        "holders": 330
       },
       "SHLX": {
-        "position_usd": 17104500.0,
-        "holders": 45
+        "position_usd": 19005000.0,
+        "holders": 50
       },
       "NEE": {
-        "position_usd": 16596000.0,
-        "holders": 198
+        "position_usd": 18440000.0,
+        "holders": 220
       },
       "FDX": {
-        "position_usd": 16375500.0,
-        "holders": 207
+        "position_usd": 18195000.0,
+        "holders": 230
       },
       "USAC": {
-        "position_usd": 16150500.0,
-        "holders": 18
+        "position_usd": 17945000.0,
+        "holders": 20
       },
       "LEN": {
-        "position_usd": 16047000.0,
-        "holders": 18
+        "position_usd": 17830000.0,
+        "holders": 20
       },
       "BABA": {
-        "position_usd": 15948000.0,
-        "holders": 234
+        "position_usd": 17720000.0,
+        "holders": 260
       },
       "CAPL": {
-        "position_usd": 15822000.0,
-        "holders": 27
+        "position_usd": 17580000.0,
+        "holders": 30
       },
       "WMT": {
-        "position_usd": 15804000.0,
-        "holders": 306
+        "position_usd": 17560000.0,
+        "holders": 340
       },
       "AM": {
-        "position_usd": 15777000.0,
-        "holders": 63
+        "position_usd": 17530000.0,
+        "holders": 70
       },
       "HD": {
-        "position_usd": 15718500.0,
-        "holders": 288
+        "position_usd": 17465000.0,
+        "holders": 320
       },
       "ENBL": {
-        "position_usd": 15264000.0,
-        "holders": 18
+        "position_usd": 16960000.0,
+        "holders": 20
       },
       "GE": {
-        "position_usd": 14760000.0,
-        "holders": 369
+        "position_usd": 16400000.0,
+        "holders": 410
       },
       "CVX": {
-        "position_usd": 14269500.0,
-        "holders": 297
+        "position_usd": 15855000.0,
+        "holders": 330
       },
       "TXN": {
-        "position_usd": 14170500.0,
-        "holders": 153
+        "position_usd": 15745000.0,
+        "holders": 170
       },
       "UNH": {
-        "position_usd": 13873500.0,
-        "holders": 270
+        "position_usd": 15415000.0,
+        "holders": 300
       },
       "UBS": {
-        "position_usd": 13644000.0,
-        "holders": 45
+        "position_usd": 15160000.0,
+        "holders": 50
       },
       "DFS": {
-        "position_usd": 13612500.0,
-        "holders": 99
+        "position_usd": 15125000.0,
+        "holders": 110
       },
       "RGC": {
-        "position_usd": 13572000.0,
-        "holders": 18
+        "position_usd": 15080000.0,
+        "holders": 20
       },
       "COST": {
-        "position_usd": 13428000.0,
-        "holders": 288
+        "position_usd": 14920000.0,
+        "holders": 320
       },
       "PG": {
-        "position_usd": 12955500.0,
-        "holders": 297
+        "position_usd": 14395000.0,
+        "holders": 330
       },
       "INFO": {
-        "position_usd": 12604500.0,
-        "holders": 63
+        "position_usd": 14005000.0,
+        "holders": 70
       },
       "LIN": {
-        "position_usd": 12541500.0,
-        "holders": 153
+        "position_usd": 13935000.0,
+        "holders": 170
       },
       "CRWD": {
-        "position_usd": 12523500.0,
-        "holders": 81
+        "position_usd": 13915000.0,
+        "holders": 90
       },
       "HON": {
-        "position_usd": 12370500.0,
-        "holders": 180
+        "position_usd": 13745000.0,
+        "holders": 200
       },
       "WFC": {
-        "position_usd": 12366000.0,
-        "holders": 234
+        "position_usd": 13740000.0,
+        "holders": 260
       },
       "BAYRY": {
-        "position_usd": 12289500.0,
-        "holders": 36
+        "position_usd": 13655000.0,
+        "holders": 40
       },
       "BAC": {
-        "position_usd": 12186000.0,
-        "holders": 261
+        "position_usd": 13540000.0,
+        "holders": 290
       },
       "ALK": {
-        "position_usd": 11758500.0,
-        "holders": 45
+        "position_usd": 13065000.0,
+        "holders": 50
       },
       "MCD": {
-        "position_usd": 11736000.0,
-        "holders": 216
+        "position_usd": 13040000.0,
+        "holders": 240
       },
       "SPG": {
-        "position_usd": 11713500.0,
-        "holders": 108
+        "position_usd": 13015000.0,
+        "holders": 120
       },
       "BRK.B": {
-        "position_usd": 11344500.0,
-        "holders": 243
+        "position_usd": 12605000.0,
+        "holders": 270
       },
       "SBUX": {
-        "position_usd": 11178000.0,
-        "holders": 306
+        "position_usd": 12420000.0,
+        "holders": 340
       },
       "PBFX": {
-        "position_usd": 10966500.0,
-        "holders": 18
+        "position_usd": 12185000.0,
+        "holders": 20
       },
       "LUV": {
-        "position_usd": 10908000.0,
-        "holders": 144
+        "position_usd": 12120000.0,
+        "holders": 160
       },
       "AMZA": {
-        "position_usd": 10800000.0,
-        "holders": 18
+        "position_usd": 12000000.0,
+        "holders": 20
       },
       "ACN": {
-        "position_usd": 10696500.0,
-        "holders": 207
+        "position_usd": 11885000.0,
+        "holders": 230
       },
       "FTAI": {
-        "position_usd": 10642500.0,
-        "holders": 9
+        "position_usd": 11825000.0,
+        "holders": 10
       },
       "INTC": {
-        "position_usd": 10471500.0,
-        "holders": 333
+        "position_usd": 11635000.0,
+        "holders": 370
       },
       "PODD": {
-        "position_usd": 10336500.0,
-        "holders": 36
+        "position_usd": 11485000.0,
+        "holders": 40
       },
       "EMR": {
-        "position_usd": 10300500.0,
-        "holders": 126
+        "position_usd": 11445000.0,
+        "holders": 140
       },
       "CSCO": {
-        "position_usd": 10296000.0,
-        "holders": 279
+        "position_usd": 11440000.0,
+        "holders": 310
       },
       "ZAYO": {
-        "position_usd": 10273500.0,
-        "holders": 27
+        "position_usd": 11415000.0,
+        "holders": 30
       },
       "CAT": {
-        "position_usd": 9958500.0,
-        "holders": 234
+        "position_usd": 11065000.0,
+        "holders": 260
       },
       "DHR": {
-        "position_usd": 9958500.0,
-        "holders": 180
+        "position_usd": 11065000.0,
+        "holders": 200
       },
       "WMB": {
-        "position_usd": 9945000.0,
-        "holders": 90
+        "position_usd": 11050000.0,
+        "holders": 100
       },
       "CEQP": {
-        "position_usd": 9774000.0,
-        "holders": 27
+        "position_usd": 10860000.0,
+        "holders": 30
       },
       "QCOM": {
-        "position_usd": 9711000.0,
-        "holders": 270
+        "position_usd": 10790000.0,
+        "holders": 300
       },
       "RCKY": {
-        "position_usd": 9675000.0,
-        "holders": 9
+        "position_usd": 10750000.0,
+        "holders": 10
       },
       "TSLA": {
-        "position_usd": 9567000.0,
-        "holders": 207
+        "position_usd": 10630000.0,
+        "holders": 230
       },
       "MMM": {
-        "position_usd": 9522000.0,
-        "holders": 189
+        "position_usd": 10580000.0,
+        "holders": 210
       },
       "RPM": {
-        "position_usd": 9490500.0,
-        "holders": 54
+        "position_usd": 10545000.0,
+        "holders": 60
       },
       "BKCC": {
-        "position_usd": 9450000.0,
-        "holders": 9
+        "position_usd": 10500000.0,
+        "holders": 10
       },
       "BMY": {
-        "position_usd": 9400500.0,
-        "holders": 162
+        "position_usd": 10445000.0,
+        "holders": 180
       },
       "ZBRA": {
-        "position_usd": 9292500.0,
-        "holders": 27
+        "position_usd": 10325000.0,
+        "holders": 30
       },
       "AJRD": {
-        "position_usd": 9072000.0,
-        "holders": 18
+        "position_usd": 10080000.0,
+        "holders": 20
       },
       "PEP": {
-        "position_usd": 9000000.0,
-        "holders": 288
+        "position_usd": 10000000.0,
+        "holders": 320
       },
       "ABBV": {
-        "position_usd": 8919000.0,
-        "holders": 207
+        "position_usd": 9910000.0,
+        "holders": 230
       },
       "PM": {
-        "position_usd": 8824500.0,
-        "holders": 126
+        "position_usd": 9805000.0,
+        "holders": 140
       },
       "TMO": {
-        "position_usd": 8761500.0,
-        "holders": 189
+        "position_usd": 9735000.0,
+        "holders": 210
       },
       "RTX": {
-        "position_usd": 8725500.0,
-        "holders": 90
+        "position_usd": 9695000.0,
+        "holders": 100
       },
       "IBM": {
-        "position_usd": 8712000.0,
-        "holders": 234
+        "position_usd": 9680000.0,
+        "holders": 260
       },
       "CB": {
-        "position_usd": 8694000.0,
-        "holders": 180
+        "position_usd": 9660000.0,
+        "holders": 200
       },
       "ADBE": {
-        "position_usd": 8617500.0,
-        "holders": 126
+        "position_usd": 9575000.0,
+        "holders": 140
       },
       "IHRT": {
-        "position_usd": 8392500.0,
-        "holders": 9
+        "position_usd": 9325000.0,
+        "holders": 10
       },
       "DGRO": {
-        "position_usd": 8361000.0,
-        "holders": 18
+        "position_usd": 9290000.0,
+        "holders": 20
       },
       "REZI": {
-        "position_usd": 8280000.0,
-        "holders": 63
+        "position_usd": 9200000.0,
+        "holders": 70
       },
       "VEEV": {
-        "position_usd": 8163000.0,
-        "holders": 36
+        "position_usd": 9070000.0,
+        "holders": 40
       },
       "UPS": {
-        "position_usd": 8005500.0,
-        "holders": 153
+        "position_usd": 8895000.0,
+        "holders": 170
       },
       "LLY": {
-        "position_usd": 7992000.0,
-        "holders": 108
+        "position_usd": 8880000.0,
+        "holders": 120
       },
       "CVS": {
-        "position_usd": 7870500.0,
-        "holders": 270
+        "position_usd": 8745000.0,
+        "holders": 300
       },
       "KO": {
-        "position_usd": 7776000.0,
-        "holders": 252
+        "position_usd": 8640000.0,
+        "holders": 280
       },
       "BIDU": {
-        "position_usd": 7650000.0,
-        "holders": 72
+        "position_usd": 8500000.0,
+        "holders": 80
       },
       "MCHP": {
-        "position_usd": 7618500.0,
-        "holders": 45
+        "position_usd": 8465000.0,
+        "holders": 50
       },
       "MIC": {
-        "position_usd": 7564500.0,
-        "holders": 27
+        "position_usd": 8405000.0,
+        "holders": 30
       },
       "NSRGY": {
-        "position_usd": 7555500.0,
-        "holders": 162
+        "position_usd": 8395000.0,
+        "holders": 180
       },
       "PXD": {
-        "position_usd": 7542000.0,
-        "holders": 54
+        "position_usd": 8380000.0,
+        "holders": 60
       },
       "ULTI": {
-        "position_usd": 7416000.0,
-        "holders": 18
+        "position_usd": 8240000.0,
+        "holders": 20
       },
       "LH": {
-        "position_usd": 7339500.0,
-        "holders": 45
+        "position_usd": 8155000.0,
+        "holders": 50
       },
       "UBER": {
-        "position_usd": 7168500.0,
-        "holders": 81
+        "position_usd": 7965000.0,
+        "holders": 90
       },
       "CTSH": {
-        "position_usd": 7123500.0,
-        "holders": 90
+        "position_usd": 7915000.0,
+        "holders": 100
       },
       "LOW": {
-        "position_usd": 7002000.0,
-        "holders": 180
+        "position_usd": 7780000.0,
+        "holders": 200
       },
       "NS": {
-        "position_usd": 6975000.0,
-        "holders": 18
+        "position_usd": 7750000.0,
+        "holders": 20
       },
       "PEGA": {
-        "position_usd": 6970500.0,
-        "holders": 18
+        "position_usd": 7745000.0,
+        "holders": 20
       },
       "HALO": {
-        "position_usd": 6966000.0,
-        "holders": 27
+        "position_usd": 7740000.0,
+        "holders": 30
       },
       "ROK": {
-        "position_usd": 6952500.0,
-        "holders": 54
+        "position_usd": 7725000.0,
+        "holders": 60
       },
       "TIP": {
-        "position_usd": 6948000.0,
-        "holders": 27
+        "position_usd": 7720000.0,
+        "holders": 30
       },
       "GOOG": {
-        "position_usd": 6907500.0,
-        "holders": 243
+        "position_usd": 7675000.0,
+        "holders": 270
       },
       "TSM": {
-        "position_usd": 6889500.0,
-        "holders": 144
+        "position_usd": 7655000.0,
+        "holders": 160
       },
       "ABT": {
-        "position_usd": 6876000.0,
-        "holders": 198
+        "position_usd": 7640000.0,
+        "holders": 220
       },
       "DD": {
-        "position_usd": 6840000.0,
-        "holders": 135
+        "position_usd": 7600000.0,
+        "holders": 150
       },
       "STT": {
-        "position_usd": 6840000.0,
-        "holders": 135
+        "position_usd": 7600000.0,
+        "holders": 150
       },
       "PFE": {
-        "position_usd": 6804000.0,
-        "holders": 297
+        "position_usd": 7560000.0,
+        "holders": 330
       },
       "TWOU": {
-        "position_usd": 6750000.0,
-        "holders": 9
+        "position_usd": 7500000.0,
+        "holders": 10
       },
       "RNR": {
-        "position_usd": 6750000.0,
-        "holders": 9
+        "position_usd": 7500000.0,
+        "holders": 10
       },
       "AMLP": {
-        "position_usd": 6750000.0,
-        "holders": 9
+        "position_usd": 7500000.0,
+        "holders": 10
       },
       "EFA": {
-        "position_usd": 6750000.0,
-        "holders": 9
+        "position_usd": 7500000.0,
+        "holders": 10
       },
       "NVS": {
-        "position_usd": 6637500.0,
-        "holders": 135
+        "position_usd": 7375000.0,
+        "holders": 150
       },
       "CL": {
-        "position_usd": 6606000.0,
-        "holders": 135
+        "position_usd": 7340000.0,
+        "holders": 150
       },
       "AMGN": {
-        "position_usd": 6583500.0,
-        "holders": 189
+        "position_usd": 7315000.0,
+        "holders": 210
       },
       "LMT": {
-        "position_usd": 6516000.0,
-        "holders": 171
+        "position_usd": 7240000.0,
+        "holders": 190
       },
       "DEO": {
-        "position_usd": 6390000.0,
-        "holders": 153
+        "position_usd": 7100000.0,
+        "holders": 170
       },
       "BA": {
-        "position_usd": 6327000.0,
-        "holders": 234
+        "position_usd": 7030000.0,
+        "holders": 260
       },
       "NGL": {
-        "position_usd": 6304500.0,
-        "holders": 27
+        "position_usd": 7005000.0,
+        "holders": 30
       },
       "XLE": {
-        "position_usd": 6282000.0,
-        "holders": 18
+        "position_usd": 6980000.0,
+        "holders": 20
       },
       "MO": {
-        "position_usd": 6264000.0,
-        "holders": 189
+        "position_usd": 6960000.0,
+        "holders": 210
       },
       "F": {
-        "position_usd": 6219000.0,
-        "holders": 216
+        "position_usd": 6910000.0,
+        "holders": 240
       },
       "IWN": {
-        "position_usd": 6138000.0,
-        "holders": 45
+        "position_usd": 6820000.0,
+        "holders": 50
       },
       "PAA": {
-        "position_usd": 6133500.0,
-        "holders": 45
+        "position_usd": 6815000.0,
+        "holders": 50
       },
       "ORCL": {
-        "position_usd": 6030000.0,
-        "holders": 126
+        "position_usd": 6700000.0,
+        "holders": 140
       },
       "TJX": {
-        "position_usd": 5926500.0,
-        "holders": 234
+        "position_usd": 6585000.0,
+        "holders": 260
       },
       "RMD": {
-        "position_usd": 5913000.0,
-        "holders": 45
+        "position_usd": 6570000.0,
+        "holders": 50
       },
       "AMAT": {
-        "position_usd": 5845500.0,
-        "holders": 126
+        "position_usd": 6495000.0,
+        "holders": 140
       },
       "NKE": {
-        "position_usd": 5841000.0,
-        "holders": 126
+        "position_usd": 6490000.0,
+        "holders": 140
       },
       "MDY": {
-        "position_usd": 5769000.0,
-        "holders": 18
+        "position_usd": 6410000.0,
+        "holders": 20
       },
       "VMC": {
-        "position_usd": 5742000.0,
-        "holders": 72
+        "position_usd": 6380000.0,
+        "holders": 80
       },
       "KHC": {
-        "position_usd": 5719500.0,
-        "holders": 171
+        "position_usd": 6355000.0,
+        "holders": 190
       },
       "TTWO": {
-        "position_usd": 5697000.0,
-        "holders": 18
+        "position_usd": 6330000.0,
+        "holders": 20
       },
       "EPD": {
-        "position_usd": 5643000.0,
-        "holders": 63
+        "position_usd": 6270000.0,
+        "holders": 70
       },
       "AMN": {
-        "position_usd": 5643000.0,
-        "holders": 18
+        "position_usd": 6270000.0,
+        "holders": 20
       },
       "VTV": {
-        "position_usd": 5625000.0,
-        "holders": 9
+        "position_usd": 6250000.0,
+        "holders": 10
       },
       "GLP": {
-        "position_usd": 5593500.0,
-        "holders": 18
+        "position_usd": 6215000.0,
+        "holders": 20
       },
       "MRK": {
-        "position_usd": 5571000.0,
-        "holders": 243
+        "position_usd": 6190000.0,
+        "holders": 270
       },
       "CCI": {
-        "position_usd": 5562000.0,
-        "holders": 144
+        "position_usd": 6180000.0,
+        "holders": 160
       },
       "PRU": {
-        "position_usd": 5521500.0,
-        "holders": 117
+        "position_usd": 6135000.0,
+        "holders": 130
       },
       "MDLZ": {
-        "position_usd": 5490000.0,
-        "holders": 126
+        "position_usd": 6100000.0,
+        "holders": 140
       },
       "DXCM": {
-        "position_usd": 5454000.0,
-        "holders": 72
+        "position_usd": 6060000.0,
+        "holders": 80
       },
       "IWD": {
-        "position_usd": 5337000.0,
-        "holders": 18
+        "position_usd": 5930000.0,
+        "holders": 20
       },
       "SQ": {
-        "position_usd": 5278500.0,
-        "holders": 108
+        "position_usd": 5865000.0,
+        "holders": 120
       },
       "HHC": {
-        "position_usd": 5229000.0,
-        "holders": 36
+        "position_usd": 5810000.0,
+        "holders": 40
       },
       "D": {
-        "position_usd": 5193000.0,
-        "holders": 153
+        "position_usd": 5770000.0,
+        "holders": 170
       },
       "ARNA": {
-        "position_usd": 5143500.0,
-        "holders": 27
+        "position_usd": 5715000.0,
+        "holders": 30
       },
       "DAL": {
-        "position_usd": 5139000.0,
-        "holders": 117
+        "position_usd": 5710000.0,
+        "holders": 130
       },
       "TTD": {
-        "position_usd": 5094000.0,
-        "holders": 27
+        "position_usd": 5660000.0,
+        "holders": 30
       },
       "DOCU": {
-        "position_usd": 5089500.0,
-        "holders": 36
+        "position_usd": 5655000.0,
+        "holders": 40
       },
       "CUTR": {
-        "position_usd": 5022000.0,
-        "holders": 9
+        "position_usd": 5580000.0,
+        "holders": 10
       },
       "KEYS": {
-        "position_usd": 5013000.0,
-        "holders": 45
+        "position_usd": 5570000.0,
+        "holders": 50
       },
       "C": {
-        "position_usd": 4981500.0,
-        "holders": 180
+        "position_usd": 5535000.0,
+        "holders": 200
       },
       "OSW": {
-        "position_usd": 4977000.0,
-        "holders": 18
+        "position_usd": 5530000.0,
+        "holders": 20
       },
       "TCEHY": {
-        "position_usd": 4968000.0,
-        "holders": 54
+        "position_usd": 5520000.0,
+        "holders": 60
       },
       "PNR": {
-        "position_usd": 4950000.0,
-        "holders": 27
+        "position_usd": 5500000.0,
+        "holders": 30
       },
       "CTL": {
-        "position_usd": 4936500.0,
-        "holders": 72
+        "position_usd": 5485000.0,
+        "holders": 80
       },
       "ADP": {
-        "position_usd": 4905000.0,
-        "holders": 81
-      },
-      "TFC": {
-        "position_usd": 4824000.0,
-        "holders": 135
-      },
-      "PGR": {
-        "position_usd": 4783500.0,
-        "holders": 117
-      },
-      "IFNNY": {
-        "position_usd": 4702500.0,
-        "holders": 27
-      },
-      "AVGO": {
-        "position_usd": 4639500.0,
-        "holders": 117
-      },
-      "MSM": {
-        "position_usd": 4635000.0,
-        "holders": 27
-      },
-      "SLB": {
-        "position_usd": 4621500.0,
-        "holders": 261
-      },
-      "BRK-B": {
-        "position_usd": 4621500.0,
-        "holders": 45
-      },
-      "IR": {
-        "position_usd": 4612500.0,
-        "holders": 63
-      },
-      "AZO": {
-        "position_usd": 4599000.0,
-        "holders": 72
-      },
-      "UNP": {
-        "position_usd": 4576500.0,
-        "holders": 153
-      },
-      "BBVA": {
-        "position_usd": 4576500.0,
-        "holders": 36
-      },
-      "CMCSA": {
-        "position_usd": 4558500.0,
-        "holders": 243
-      },
-      "SU": {
-        "position_usd": 4531500.0,
-        "holders": 81
-      },
-      "USB": {
-        "position_usd": 4500000.0,
-        "holders": 189
-      },
-      "MIDD": {
-        "position_usd": 4486500.0,
-        "holders": 27
-      },
-      "GS": {
-        "position_usd": 4405500.0,
-        "holders": 162
-      },
-      "DG": {
-        "position_usd": 4365000.0,
-        "holders": 99
-      },
-      "MPLX": {
-        "position_usd": 4360500.0,
-        "holders": 54
-      },
-      "MS": {
-        "position_usd": 4351500.0,
-        "holders": 135
-      },
-      "TDOC": {
-        "position_usd": 4333500.0,
-        "holders": 45
-      },
-      "GLW": {
-        "position_usd": 4311000.0,
-        "holders": 54
-      },
-      "RAND": {
-        "position_usd": 4306500.0,
-        "holders": 9
-      },
-      "CSGP": {
-        "position_usd": 4243500.0,
-        "holders": 45
-      },
-      "CME": {
-        "position_usd": 4230000.0,
-        "holders": 108
-      },
-      "BP": {
-        "position_usd": 4212000.0,
+        "position_usd": 5450000.0,
         "holders": 90
       },
-      "UTX": {
-        "position_usd": 4176000.0,
+      "TFC": {
+        "position_usd": 5360000.0,
+        "holders": 150
+      },
+      "PGR": {
+        "position_usd": 5315000.0,
+        "holders": 130
+      },
+      "IFNNY": {
+        "position_usd": 5225000.0,
+        "holders": 30
+      },
+      "AVGO": {
+        "position_usd": 5155000.0,
+        "holders": 130
+      },
+      "MSM": {
+        "position_usd": 5150000.0,
+        "holders": 30
+      },
+      "SLB": {
+        "position_usd": 5135000.0,
+        "holders": 290
+      },
+      "BRK-B": {
+        "position_usd": 5135000.0,
+        "holders": 50
+      },
+      "IR": {
+        "position_usd": 5125000.0,
+        "holders": 70
+      },
+      "AZO": {
+        "position_usd": 5110000.0,
+        "holders": 80
+      },
+      "UNP": {
+        "position_usd": 5085000.0,
+        "holders": 170
+      },
+      "BBVA": {
+        "position_usd": 5085000.0,
+        "holders": 40
+      },
+      "CMCSA": {
+        "position_usd": 5065000.0,
+        "holders": 270
+      },
+      "SU": {
+        "position_usd": 5035000.0,
+        "holders": 90
+      },
+      "USB": {
+        "position_usd": 5000000.0,
+        "holders": 210
+      },
+      "MIDD": {
+        "position_usd": 4985000.0,
+        "holders": 30
+      },
+      "GS": {
+        "position_usd": 4895000.0,
         "holders": 180
       },
+      "DG": {
+        "position_usd": 4850000.0,
+        "holders": 110
+      },
+      "MPLX": {
+        "position_usd": 4845000.0,
+        "holders": 60
+      },
+      "MS": {
+        "position_usd": 4835000.0,
+        "holders": 150
+      },
+      "TDOC": {
+        "position_usd": 4815000.0,
+        "holders": 50
+      },
+      "GLW": {
+        "position_usd": 4790000.0,
+        "holders": 60
+      },
+      "RAND": {
+        "position_usd": 4785000.0,
+        "holders": 10
+      },
+      "CSGP": {
+        "position_usd": 4715000.0,
+        "holders": 50
+      },
+      "CME": {
+        "position_usd": 4700000.0,
+        "holders": 120
+      },
+      "BP": {
+        "position_usd": 4680000.0,
+        "holders": 100
+      },
+      "UTX": {
+        "position_usd": 4640000.0,
+        "holders": 200
+      },
       "OKE": {
-        "position_usd": 4135500.0,
-        "holders": 81
+        "position_usd": 4595000.0,
+        "holders": 90
       }
     },
     "flights": [
@@ -45398,21 +45526,20 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 cnbc_pick: Kevin Simpson \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +1.08% stars \u00b7 hf_model_momentum: +6.7% model downloads \u00b7 patent_cluster: 48 grants, 11 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 cnbc_pick: Kevin Simpson \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +1.05% stars \u00b7 hf_model_momentum: +4.3% model downloads \u00b7 patent_cluster: 48 grants, 11 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "GOOGL",
-        "score": 6,
-        "weighted_score": 2.4,
+        "score": 5,
+        "weighted_score": 2.05,
         "channel_list": [
           "13f_add",
           "app_demand",
           "github_momentum",
-          "hf_model_momentum",
           "material_8k",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,644,366 reviews \u00b7 github_momentum: +0.15% stars \u00b7 hf_model_momentum: +3.3% model downloads \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,644,366 reviews \u00b7 github_momentum: +0.13% stars \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "MSFT",
@@ -45425,7 +45552,7 @@
           "gov_contract",
           "patent_cluster"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,684,388 reviews \u00b7 github_momentum: +0.22% stars \u00b7 gov_contract: $22,858,532 awarded \u00b7 patent_cluster: 97 grants, 20 IPC classes"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,684,388 reviews \u00b7 github_momentum: +0.2% stars \u00b7 gov_contract: $22,858,532 awarded \u00b7 patent_cluster: 97 grants, 20 IPC classes"
       },
       {
         "ticker": "HOOD",
@@ -45497,7 +45624,7 @@
           "fda_label_expansion",
           "special_situation"
         ],
-        "why": "clinical_phase3_start: 6 new Phase-3, 2 halt(s) \u00b7 cnbc_pick: Joe Terranova \u00b7 fda_label_expansion: KEYTRUDA \u00b7 special_situation: Tender Offers"
+        "why": "clinical_phase3_start: 6 new Phase-3, 2 halt(s) \u00b7 cnbc_pick: Courtney Dominguez \u00b7 fda_label_expansion: KEYTRUDA \u00b7 special_situation: Tender Offers"
       },
       {
         "ticker": "AZN",
@@ -45606,6 +45733,28 @@
         "why": "activist_13d: 13D activist campaign \u00b7 congress_buy: 1 member(s) net +8 \u00b7 news_sentiment: 0.84 bullish news (44 art)"
       },
       {
+        "ticker": "SPCX",
+        "score": 3,
+        "weighted_score": 1.2,
+        "channel_list": [
+          "cnbc_pick",
+          "material_8k",
+          "special_situation"
+        ],
+        "why": "cnbc_pick: Steve Weiss \u00b7 material_8k: 6 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other"
+      },
+      {
+        "ticker": "UBER",
+        "score": 3,
+        "weighted_score": 1.15,
+        "channel_list": [
+          "app_demand",
+          "cnbc_pick",
+          "trump"
+        ],
+        "why": "app_demand: 4.84\u2605 \u00d7 29,437,696 reviews \u00b7 cnbc_pick: Bryn Talkington \u00b7 trump: UBER TECHNOLOGIES INC"
+      },
+      {
         "ticker": "ETN",
         "score": 3,
         "weighted_score": 1.1,
@@ -45645,26 +45794,6 @@
           "fda_label_expansion"
         ],
         "why": "clinical_phase3_start: 3 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: PERJETA"
-      },
-      {
-        "ticker": "BMY",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion"
-        ],
-        "why": "clinical_phase3_start: 1 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: ONUREG"
-      },
-      {
-        "ticker": "SNPS",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "activist_13d",
-          "trump"
-        ],
-        "why": "activist_13d: 13D activist campaign \u00b7 trump: SYNOPSYS INC COM"
       }
     ]
   }

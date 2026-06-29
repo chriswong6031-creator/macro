@@ -1883,3 +1883,4 @@
 {"date":"2026-06-29","kind":"ticker","subject":"PCOR","ticker":"PCOR","edge_score":2,"state":"POSITIVE_DIVERGENCE"}
 {"date":"2026-06-29","kind":"ticker","subject":"KVYO","ticker":"KVYO","edge_score":2,"state":"CONFIRMED_UP"}
 {"date":"2026-06-29","kind":"ticker","subject":"GTLB","ticker":"GTLB","edge_score":2,"state":"CONFIRMED_UP"}
+{"date":"2026-06-29","kind":"ticker","subject":"UBER","ticker":"UBER","edge_score":28,"state":"POSITIVE_DIVERGENCE"}
