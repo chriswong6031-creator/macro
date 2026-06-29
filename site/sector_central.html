@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>US Sector Central Intelligence — Mastermind</title>
 <meta name="description" content="One regime-gated confluence read per US sector & theme: where we are (cycle state) leads; the macro regime and the VALIDATED absolute-trend drawdown gate gate it; momentum, heat & crowding confirm and size — with a transparent reasoning trace and a self-grader. Embeds the Sector Cycles overlay and the Sector Heatmap.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,8 +33,35 @@
   .rg-on { color: var(--up); } .rg-off { color: var(--down); } .rg-mix { color: var(--warn); }
   .rg-bar { height: 7px; border-radius: 5px; margin-top: 7px; overflow: hidden; background: var(--line); }
   .rg-bar i { display: block; height: 100%; }
+  /* plain "new here?" orientation strip */
+  .scc-howto { margin: 12px 0 2px; padding: 11px 14px; font-size: 13px; line-height: 1.55; color: var(--muted);
+    background: color-mix(in srgb, var(--link) 6%, var(--panel)); border: 1px solid color-mix(in srgb, var(--link) 22%, var(--line));
+    border-left: 3px solid var(--link); border-radius: 11px; max-width: 96ch; }
+  .scc-howto b { color: var(--text); }
+  /* plain-language headline row spanning the full regime grid */
+  .regime .rg-headline-row { grid-column: 1 / -1; display: flex; align-items: center; gap: 9px;
+    font-size: 14.5px; font-weight: 650; line-height: 1.4; padding: 11px 14px; border: 1px solid var(--line);
+    border-radius: 12px; background: var(--panel); }
+  .rg-headline-row .rg-hl-ic { font-size: 16px; flex: none; }
+  .rg-headline-row.rg-hl-on { border-color: color-mix(in srgb, var(--up) 42%, var(--line)); }
+  .rg-headline-row.rg-hl-on .rg-hl-ic { color: var(--up); }
+  .rg-headline-row.rg-hl-off { border-color: color-mix(in srgb, var(--down) 42%, var(--line)); }
+  .rg-headline-row.rg-hl-off .rg-hl-ic { color: var(--down); }
+  .rg-headline-row.rg-hl-mix .rg-hl-ic { color: var(--warn); }
+  /* collapse the redundant inner chart title on the hub (the universe toggle + section heading say it) */
+  .scc-page #sc-hero-title { display: none; }
+  /* board universe toggle: redundant with the page-level one on a phone → desktop only.
+     (.scc-tabs.scc-tabs-board to outrank the later .scc-tabs{display:flex} base rule.) */
+  @media (max-width: 880px) { .scc-tabs.scc-tabs-board { display: none; } }
+  /* collapsible reasoning trace on conviction cards */
+  .trace-d > summary { font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--muted);
+    cursor: pointer; list-style: none; padding: 4px 0; display: inline-flex; align-items: center; gap: 6px; }
+  .trace-d > summary::-webkit-details-marker { display: none; }
+  .trace-d > summary::after { content: "▾"; font-size: 10px; transition: transform .2s; }
+  .trace-d[open] > summary::after { transform: rotate(180deg); }
   /* sub-dashboard rail */
-  .scc-rail { display: flex; gap: 9px; flex-wrap: wrap; margin: 6px 0 16px; }
+  .scc-rail { display: flex; gap: 9px; flex-wrap: wrap; margin: 6px 0 16px; position: sticky; top: 0; z-index: 30;
+    background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); padding: 7px 0; }
   .scc-rail a { font-size: 12.5px; border: 1px solid var(--line); border-radius: 9px; padding: 7px 12px;
     background: var(--panel2, var(--panel)); transition: border-color .15s; }
   .scc-rail a:hover { border-color: var(--muted); }
@@ -302,6 +329,8 @@
     <div class="scc-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> <b id="scc-asof">…</b></div>
   </header>
 
+  <p class="scc-howto"><span class="l-en"><b>New here?</b> This page maps where each US sector &amp; theme sits in its cycle on a 0–100 clock. <b>Low</b> = beaten-down / washed-out, <b>high</b> = stretched / late. Tap any line or card to read one sector’s story.</span><span class="l-zh"><b>第一次来？</b>本页用 0–100 时钟展示每个美股行业与主题在其周期中的位置。<b>低</b>=超跌／超卖，<b>高</b>=拉伸／晚期。点按任意曲线或卡片即可查看某行业的走势故事。</span></p>
+
   <div id="regime" class="regime"></div>
   <div class="scc-rail">
     <a href="#sc-cyclemap">🌀 <span class="l-en">Cycle map</span><span class="l-zh">周期图谱</span></a>
@@ -331,29 +360,34 @@
         <div class="cyc-hero-hd">
           <h2 id="sc-hero-title"><span class="l-en">Sector rotation overlay</span><span class="l-zh">板块轮动叠加</span></h2>
           <div class="cyc-hero-tools">
-            <div class="sc-ctrl-group">
-              <div class="sc-scale disabled" id="sc-scale" aria-label="Price scale">
-                <button class="sc-sbtn on" data-scale="log"><span class="l-en">Log</span><span class="l-zh">对数</span></button>
-                <button class="sc-sbtn" data-scale="linear"><span class="l-en">Linear</span><span class="l-zh">线性</span></button>
-              </div>
-              <div class="sc-modes" id="sc-modes" aria-label="Chart mode">
-                <button class="sc-mbtn" data-mode="price"><span class="l-en">Price</span><span class="l-zh">价格</span></button>
-                <button class="sc-mbtn on" data-mode="osc"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></button>
+            <div class="sc-modes" id="sc-modes" aria-label="Chart mode">
+              <button class="sc-mbtn" data-mode="price" aria-pressed="false"><span class="l-en">Price</span><span class="l-zh">价格</span></button>
+              <button class="sc-mbtn on" data-mode="osc" aria-pressed="true"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></button>
+            </div>
+            <div class="sc-mode-cap"><span class="l-en">Low = washed-out · High = stretched</span><span class="l-zh">低 = 超卖 · 高 = 拉伸</span></div>
+            <div class="sc-advanced" id="sc-advanced">
+              <button type="button" class="sc-adv-toggle" id="sc-adv-toggle" aria-expanded="false" aria-controls="sc-advbody"><span class="l-en">Chart options</span><span class="l-zh">图表选项</span></button>
+              <div class="sc-adv-body" id="sc-advbody">
+                <div class="sc-scale disabled" id="sc-scale" hidden aria-label="Price scale">
+                  <button class="sc-sbtn on" data-scale="log" aria-pressed="true"><span class="l-en">Log</span><span class="l-zh">对数</span></button>
+                  <button class="sc-sbtn" data-scale="linear" aria-pressed="false"><span class="l-en">Linear</span><span class="l-zh">线性</span></button>
+                </div>
+                <div class="cyc-legend" id="sc-legend" aria-label="Legend">
+                  <span><i class="lc" style="background:color-mix(in srgb,var(--down) 42%,transparent)"></i> <span class="l-en">washed-out</span><span class="l-zh">超卖</span></span>
+                  <span><i class="lc" style="background:color-mix(in srgb,var(--muted) 32%,transparent)"></i> <span class="l-en">mid-cycle</span><span class="l-zh">中段</span></span>
+                  <span><i class="lc" style="background:color-mix(in srgb,var(--warn) 46%,transparent)"></i> <span class="l-en">stretched</span><span class="l-zh">拉伸</span></span>
+                </div>
+                <div class="cyc-zoom" id="sc-zoom" aria-label="Zoom"></div>
               </div>
             </div>
-            <div class="cyc-legend">
-              <span><i class="ls"></i> <span class="l-en">Price</span><span class="l-zh">价格</span></span>
-              <span><i class="lm lm-pk"></i> <span class="l-en">Peak</span><span class="l-zh">波峰</span></span>
-              <span><i class="lm lm-tr"></i> <span class="l-en">Trough</span><span class="l-zh">波谷</span></span>
-            </div>
-            <div class="cyc-zoom" id="sc-zoom" aria-label="Zoom"></div>
           </div>
         </div>
         <div class="cyc-groups" id="sc-groups" aria-label="Phase filter"></div>
         <div class="cyc-chips" id="sc-chips" aria-label="Sector toggles"></div>
         <div class="sc-baskets" id="sc-baskets" aria-label="Thematic baskets"></div>
+        <span id="sc-sr-status" class="sc-sr-status" role="status" aria-live="polite"></span>
         <div class="sc-chartwrap">
-          <div id="sc-chart" data-h="560" role="img" aria-label="US sector cycle overlay chart"></div>
+          <div id="sc-chart" data-h="560" role="img" aria-label="US sector cycle clock — each line a sector's 0 to 100 cycle position over time. Tap a line for its story."></div>
           <div class="sc-chart-hint" id="sc-chart-hint" hidden></div>
         </div>
       </div>
@@ -370,11 +404,11 @@
   <div class="scc-boardhead" id="sc-board">
     <div class="scc-section-h">
       <h2><span class="l-en">Conviction board — one gated read per name</span><span class="l-zh">信念研判 — 每个标的一个门控研判</span></h2>
-      <span class="scc-section-sub"><span class="l-en">Pick a universe to read — this switch is linked to the cycle map above.</span><span class="l-zh">选择查看的范围——此切换与上方周期图谱联动。</span></span>
+      <span class="scc-section-sub"><span class="l-en">One gated read per name — the cycle state leads, the macro regime gates it, momentum &amp; heat confirm.</span><span class="l-zh">每个标的一个门控研判——周期状态主导，宏观体制门控，动量与热度确认。</span></span>
     </div>
     <div class="scc-tabs scc-tabs-board" role="tablist" aria-label="Conviction board universe">
-      <button class="scc-tab on" data-fam="sectors"><span class="l-en">🧭 Sector ETFs</span><span class="l-zh">🧭 板块 ETF</span> <i id="n-sec"></i></button>
-      <button class="scc-tab" data-fam="baskets"><span class="l-en">🧺 Thematic Baskets</span><span class="l-zh">🧺 主题篮子</span> <i id="n-bsk"></i></button>
+      <button class="scc-tab on" role="tab" aria-selected="true" data-fam="sectors"><span class="l-en">🧭 Sector ETFs</span><span class="l-zh">🧭 板块 ETF</span> <i id="n-sec"></i></button>
+      <button class="scc-tab" role="tab" aria-selected="false" data-fam="baskets"><span class="l-en">🧺 Thematic Baskets</span><span class="l-zh">🧺 主题篮子</span> <i id="n-bsk"></i></button>
     </div>
   </div>
   <div id="board" class="board"></div>
@@ -418,8 +452,14 @@
     var risk=M.risk_on, tone=(risk==null)?'mix':(risk>0.2?'on':risk<-0.2?'off':'mix');
     var toneCls={on:'rg-on',off:'rg-off',mix:'rg-mix'}[tone];
     var dr=M.derisk_blended, postPct=(risk!=null)?Math.round((risk+1)/2*100):50;
+    // plain-language headline so a non-expert gets the "is this good or bad?" read instantly
+    var headTxt = tone==='on' ? L('Markets are risk-on right now — a broadly supportive backdrop.','当前市场偏好风险——整体环境较为有利。')
+      : tone==='off' ? L('Markets are leaning defensive right now — a cautious backdrop.','当前市场偏防御——环境趋于谨慎。')
+      : L('Markets are mixed right now — no strong risk signal either way.','当前市场信号中性——风险方向不明确。');
+    var headIc = tone==='off' ? '⚠' : tone==='on' ? '✓' : '•';
+    var head='<div class="rg-headline-row rg-hl-'+tone+'"><span class="rg-hl-ic">'+headIc+'</span><span>'+headTxt+'</span></div>';
     var cells=[];
-    cells.push('<div class="rg-cell lead"><div class="rg-k">'+L('Regime gate','体制门控')+' · '+L('validated','已验证')+'</div>'+
+    cells.push('<div class="rg-cell lead"><div class="rg-k">'+L('Market backdrop','市场环境')+' · '+L('validated','已验证')+'</div>'+
       '<div class="rg-v '+toneCls+'">'+esc(M.state_en||'—')+'</div>'+
       '<div class="rg-bar"><i style="width:'+postPct+'%;background:'+(tone==='off'?'var(--down)':tone==='on'?'var(--up)':'var(--muted)')+'"></i></div>'+
       '<div class="rg-d">'+L('macro risk','宏观风险')+' '+(dr!=null?dr:'—')+' · '+L('gate ×','门控 ×')+(M.gate_factor!=null?M.gate_factor:'—')+'</div></div>');
@@ -434,7 +474,7 @@
     cells.push('<div class="rg-cell"><div class="rg-k">'+L('Trend breadth','趋势宽度')+' · '+L('validated gate','已验证门控')+'</div>'+
       '<div class="rg-v">'+(na!=null&&ns?na+'/'+ns:'—')+'</div>'+
       '<div class="rg-d">'+L('sectors above own 200-day trend','行业位于自身200日趋势之上')+'</div></div>');
-    document.getElementById('regime').innerHTML=cells.join('');
+    document.getElementById('regime').innerHTML=head+cells.join('');
   }
 
   /* ---- conviction card ---- */
@@ -474,7 +514,7 @@
         '<div class="conv"><span class="conv-badge tier-'+dir+'">'+L(esc(c.label_en),esc(c.label_zh||c.label_en))+'</span>'+
         '<div class="conv-score">'+c.score+'</div><div class="conv-sub">'+L('conviction','信念')+'</div></div></div>'+
       '<div class="chips">'+chips.join('')+'</div>'+ fwdHtml +
-      '<div class="trace">'+trace+'</div>'+
+      '<details class="trace-d"><summary>'+L('Why — the full reasoning','为何 — 完整推理')+'</summary><div class="trace">'+trace+'</div></details>'+
       '<div class="conflu">'+L('confluence','共振度')+': <b class="'+esc((c.confluence||{}).label||'')+'">'+esc((c.confluence||{}).label||'—')+'</b> · '+
         '<a href="'+cycHref+'" data-focus="'+esc(s.id)+'" style="color:var(--link)">'+L('open cycle →','打开周期 →')+'</a></div>'+
     '</article>';
@@ -487,7 +527,7 @@
   /* keep the conviction-board universe toggle linked to the cycle-map family toggle above */
   function setBoardFam(f){
     fam=f;
-    document.querySelectorAll('.scc-tab').forEach(function(x){ x.classList.toggle('on', x.getAttribute('data-fam')===f); });
+    document.querySelectorAll('.scc-tab').forEach(function(x){ var on=x.getAttribute('data-fam')===f; x.classList.toggle('on', on); x.setAttribute('aria-selected', on?'true':'false'); });
     renderBoard();
   }
   function linkTabs(){
@@ -544,6 +584,5 @@
 
 <script src="heatmap.js"></script>
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><span class="l-en">Canada — S&P/TSX Regime</span><span class="l-zh">加拿大 — 标普/TSX 周期</span> — 2026-06-26</title>
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <style>
@@ -252,14 +252,14 @@
   /* base = mobile: one tight stack (radar → eyebrow → verdict/evidence → tape →
      divider → backdrop). At >=1100px it promotes to the side-by-side grid. */
   .cmd-hero .ms-front.ms { display: flex; flex-direction: column; gap: 14px; }
-  .cmd-hero .ms-front > .ms-radar, .cmd-hero .ms-front > .ms-head { margin: 0; }
+  .cmd-hero .ms-front > .rrx, .cmd-hero .ms-front > .ms-head { margin: 0; }
   .cmd-hero .ms-front > .ms-top, .cmd-hero .ms-front > .ms-tape { margin-top: 0; }
   .cmd-hero .ms-front > .ms-divider { margin: 4px 0 0; }
   @media (min-width: 1100px) {
     .cmd-hero .ms-front.ms { display: grid; gap: 0 30px; align-items: start;
       grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
       grid-template-areas: "radar radar" "head head" "state hero" "tape tape"; }
-    .cmd-hero .ms-front > .ms-radar { grid-area: radar; margin-bottom: 12px; }
+    .cmd-hero .ms-front > .rrx { grid-area: radar; margin-bottom: 12px; }
     .cmd-hero .ms-front > .ms-head { grid-area: head; }
     .cmd-hero .ms-front > .ms-top { grid-area: state; margin-top: 14px; }
     .cmd-hero .ms-front > .ms-tape { grid-area: tape; }
@@ -273,19 +273,127 @@
     .cmd-hero .ms-front > .hero-bar .hero-vitals { grid-column: 1 / -1; gap: 12px 18px; }
   }
 
-  /* Risk-Radar banner (only renders for markets that have one) */
-  .cmd-hero .ms-radar { display: flex; align-items: center; gap: 11px; flex-wrap: wrap;
-    padding: 9px 13px; border-radius: 10px; font-size: 12.5px; line-height: 1.35;
-    background: color-mix(in srgb, var(--rc) 8%, var(--panel2));
-    border: var(--rule) solid color-mix(in srgb, var(--rc) 28%, var(--hair)); border-left: 3px solid var(--rc); }
-  .cmd-hero .ms-radar.loud { background: color-mix(in srgb, var(--rc) 14%, var(--panel2)); }
-  .cmd-hero .ms-radar .msr-ic { font-size: 17px; line-height: 1; flex: none; }
-  .cmd-hero .ms-radar .msr-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 240px; }
-  .cmd-hero .ms-radar .msr-tit { font-weight: 600; color: var(--ink-2); }
-  .cmd-hero .ms-radar .msr-tit b { font-family: var(--num); }
-  .cmd-hero .ms-radar .msr-odds { font-size: 11px; color: var(--ink-3); }
-  .cmd-hero .ms-radar .msr-odds b { font-family: var(--num); color: var(--ink-2); }
-  .cmd-hero .ms-radar .msr-do { font-size: 11.5px; color: var(--ink-2); max-width: 34ch; }
+  /* Risk Radar — the shared .rrx card (engine/risk_radar_intl.py feeds it on these
+     boards). Same markup + CSS as the US Macro/Stocks pages; global theme tokens only. */
+  /* ============================================================================
+     RISK RADAR CARD (.rrx) — the one shared, redesigned alert used on the US Macro
+     + US-Stocks pages AND the China / HK / Canada Market-State boards (the macros
+     live in _risk_radar_card.html.j2). GLOBAL theme vars only + an inline --rc state
+     accent, so it renders the same in the page-macro, page-stocks and china/hk/canada
+     scopes. The escalating odds ramp replaces the old cramped "5d.. 10d.. 21d.." run.
+     Included by dashboard.html.j2 (both modes) + _market_state.css.j2 (CN/HK/CA). ==== */
+  .rrx { --rc: var(--warn);
+         display: grid; gap: 12px; margin: 12px 0 2px; padding: 15px 18px; border-radius: 12px;
+         background: var(--panel);
+         border: 1px solid var(--line);
+         border-left: 4px solid var(--rc); font-size: 12.5px; line-height: 1.4;
+         box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4); }
+  body.page-macro .ms-front > .rrx { margin: 0 0 14px; }
+  .rrx.rrx-loud { background: color-mix(in srgb, var(--rc) 4%, var(--panel));
+         box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rc) 20%, transparent), 0 14px 34px -18px color-mix(in srgb, var(--rc) 70%, transparent);
+         animation: rrxPulse 2.4s ease-in-out infinite; }
+  @keyframes rrxPulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rc) 30%, transparent); }
+                        50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--rc) 6%, transparent); } }
+  @media (prefers-reduced-motion: reduce) { .rrx.rrx-loud { animation: none;
+         box-shadow: 0 0 0 1px color-mix(in srgb, var(--rc) 30%, transparent); } }
+  /* header */
+  .rrx .rrx-hd { display: flex; align-items: flex-start; gap: 10px; }
+  .rrx .rrx-ic { font-size: 18px; line-height: 1.1; flex: none; }
+  .rrx .rrx-id { min-width: 0; flex: 1; }
+  .rrx .rrx-ttl { display: flex; align-items: center; flex-wrap: wrap; gap: 7px;
+         font-weight: 700; font-size: 13px; color: var(--text); }
+  .rrx .rrx-badge { font-weight: 800; letter-spacing: .03em; color: var(--rc); font-size: 11.5px;
+         font-variant-numeric: tabular-nums; padding: 1px 7px; border-radius: 5px;
+         background: color-mix(in srgb, var(--rc) 16%, transparent);
+         border: 1px solid color-mix(in srgb, var(--rc) 38%, transparent); }
+  .rrx .rrx-dom { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+  .rrx .rrx-amp { color: var(--rc); font-weight: 600; font-size: 11px; margin-top: 3px; }
+  .rrx .rrx-gross { flex: none; text-align: center; padding: 3px 11px; border-radius: 9px;
+         background: color-mix(in srgb, var(--rc) 12%, transparent);
+         border: 1px solid color-mix(in srgb, var(--rc) 32%, transparent); }
+  .rrx .rrx-gross .gv { display: block; font-weight: 800; font-size: 15px; color: var(--rc);
+         font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .rrx .rrx-gross .gn { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: .07em;
+         color: var(--muted); }
+  /* odds hero */
+  .rrx .rrx-odds { display: flex; gap: 16px; align-items: stretch; flex-wrap: wrap;
+         background: color-mix(in srgb, var(--rc) 5%, var(--panel));
+         border: 1px solid var(--line); border-radius: 9px; padding: 11px 14px; }
+  .rrx .rrx-odds-l { flex: 1 1 150px; display: flex; flex-direction: column; justify-content: center; }
+  .rrx .rrx-cap { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em;
+         color: var(--muted); }
+  .rrx .rrx-cap-sub { font-weight: 600; letter-spacing: .02em; opacity: .8; }
+  .rrx .rrx-big { font-weight: 800; font-size: 40px; line-height: .95; color: var(--rc); margin: 4px 0 2px;
+         font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .rrx .rrx-big .pct { font-size: 22px; margin-left: 1px; }
+  .rrx .rrx-big .rrx-hz { font-size: 11px; font-weight: 600; color: var(--muted); margin-left: 7px;
+         letter-spacing: 0; }
+  .rrx .rrx-vsn { font-size: 11.5px; color: var(--muted); }
+  .rrx .rrx-vsn b { color: var(--text); font-variant-numeric: tabular-nums; }
+  /* escalating ramp */
+  .rrx .rrx-ramp { flex: 1 1 240px; min-width: 0; max-width: 430px; display: flex; align-items: flex-end;
+         justify-content: space-between; gap: 12px; position: relative; padding-top: 18px; }
+  .rrx .rrx-col { flex: 1 1 0; min-width: 0; max-width: 76px; display: flex; flex-direction: column;
+         align-items: center; gap: 5px; }
+  .rrx .rrx-v { font-size: 12.5px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+  .rrx .rrx-col.is-hd .rrx-v { color: var(--rc); }
+  .rrx .rrx-tk { width: 100%; max-width: 54px; height: 64px; position: relative;
+         display: flex; align-items: flex-end; justify-content: center; border-bottom: 1px solid var(--line); }
+  .rrx .rrx-norm { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 2px 2px 0 0;
+         background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--muted) 32%, transparent) 0 4px, transparent 4px 8px);
+         border-top: 1px dashed color-mix(in srgb, var(--muted) 60%, transparent); }
+  .rrx .rrx-fill { width: 100%; border-radius: 3px 3px 0 0; position: relative; z-index: 1; min-height: 6px;
+         background: linear-gradient(180deg, var(--rc), color-mix(in srgb, var(--rc) 50%, transparent)); }
+  .rrx .rrx-hl { font-size: 10.5px; font-weight: 600; color: var(--muted); }
+  .rrx .rrx-col.is-hd .rrx-hl { color: var(--text); }
+  .rrx .rrx-leg { position: absolute; top: 0; right: 2px; display: flex; align-items: center; gap: 4px;
+         font-size: 9.5px; color: var(--muted); }
+  .rrx .rrx-leg-n { width: 13px; border-top: 1px dashed color-mix(in srgb, var(--muted) 60%, transparent); }
+  /* threat meters */
+  .rrx .rrx-threats { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rrx .rrx-th { --sb: var(--muted); display: inline-flex; align-items: center; gap: 6px;
+         padding: 3px 9px; border-radius: 7px; font-size: 11px;
+         background: var(--panel); border: 1px solid var(--line); }
+  .rrx .rrx-th.dom { background: color-mix(in srgb, var(--sb) 10%, var(--panel));
+         border-color: color-mix(in srgb, var(--sb) 50%, var(--line)); }
+  .rrx .rrx-th.dim { opacity: .58; }
+  .rrx .rrx-th-n { color: var(--text); font-weight: 600; }
+  .rrx .rrx-th.dom .rrx-th-n { color: var(--sb); }
+  .rrx .rrx-meter { display: inline-flex; gap: 1.5px; }
+  .rrx .rrx-meter i { width: 3px; height: 11px; border-radius: 1px;
+         background: color-mix(in srgb, var(--muted) 28%, transparent); }
+  .rrx .rrx-meter i.on { background: var(--sb); }
+  .rrx .rrx-th-s { color: var(--text); font-weight: 800; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .rrx .rrx-tag { font-size: 8.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+         border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+  .rrx .rrx-ev { font-size: 11px; color: var(--muted); }
+  .rrx .rrx-ev-k { font-weight: 700; color: var(--text); margin-right: 6px; }
+  .rrx .rrx-ev-p { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  /* action */
+  .rrx .rrx-do { font-size: 12px; color: var(--text); padding-top: 9px;
+         border-top: 1px solid color-mix(in srgb, var(--rc) 20%, var(--line)); }
+  .rrx .rrx-do-k { font-weight: 800; color: var(--rc); text-transform: uppercase; letter-spacing: .06em;
+         font-size: 10.5px; margin-right: 8px; }
+  /* self-audit line (international radars only) */
+  .rrx .rrx-audit { font-size: 10.5px; color: var(--muted); }
+  .rrx .rrx-audit-k { font-weight: 700; color: var(--text); margin-right: 6px; }
+  .rrx .rrx-audit b { color: var(--text); font-variant-numeric: tabular-nums; }
+  @media (max-width: 760px) {
+    .rrx .rrx-odds { flex-direction: column; gap: 14px; }
+    .rrx .rrx-odds-l { flex: 0 0 auto; }
+    .rrx .rrx-ramp { flex: 0 0 auto; width: 100%; max-width: none; justify-content: space-around; }
+  }
+  /* phone: collapse to a SIMPLE, STRONG alert — headline + the one number that
+     matters + the action. The ramp, the verbose amplification line and the
+     non-dominant threat meters are desktop-only detail, not a mobile wall. */
+  @media (max-width: 560px) {
+    .rrx { padding: 14px 15px; gap: 10px; }
+    .rrx .rrx-amp, .rrx .rrx-ramp, .rrx .rrx-ev { display: none; }
+    .rrx .rrx-odds { padding: 11px 13px; }
+    .rrx .rrx-big { font-size: 34px; }
+    .rrx .rrx-threats { gap: 5px; }
+    .rrx .rrx-th:not(.dom) { display: none; }
+  }
 
   /* header strip */
   .cmd-hero .ms-head { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; margin: 0 0 4px; }
@@ -587,7 +695,7 @@
     <h1>🇨🇦 <span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-26 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-28 21:36 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-26 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-29 01:39 UTC</span>
   </div>
   
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">Standout TSX names ranked by sector-neutral residual momentum, with the cycle entry as timing context. Search any TSX stock from the box above; click a card for the full breakdown.</span><span class="l-zh">按板块中性残差动量排名的 TSX 个股精选，并以周期入场作为时机背景。可在上方搜索框查询任意 TSX 个股；点击卡片查看完整拆解。</span>
@@ -622,7 +730,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,33.8 3.8,32.4 7.6,27.3 11.4,19.6 15.2,21.3 19.0,21.5 22.9,20.9 26.7,22.4 30.5,21.3 34.3,20.0 38.1,20.2 41.9,14.2 45.7,16.1 49.5,15.5 53.3,10.1 57.1,14.2 61.0,20.4 64.8,16.9 68.6,23.5 72.4,24.0 76.2,24.9 80.0,29.2 83.8,32.7 87.6,32.1 91.4,31.4 95.2,33.4 99.0,33.5 102.9,26.3 106.7,24.0 110.5,20.8 114.3,17.5 118.1,13.6 121.9,15.3 125.7,19.3 129.5,24.2 133.3,30.6 137.1,29.5 141.0,31.2 144.8,32.2 148.6,30.2 152.4,32.4 156.2,35.8 160.0,34.0 163.8,30.3 167.6,34.8 171.4,27.3 175.2,33.4 179.0,32.9 182.9,39.1 186.7,37.1 190.5,39.6 194.3,42.0 198.1,37.3 201.9,34.3 205.7,29.6 209.5,25.5 213.3,28.0 217.1,29.1 221.0,30.3 224.8,29.9 228.6,35.8 232.4,39.1 236.2,37.8 240.0,31.9 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,33.8 3.8,32.4 7.6,27.3 11.4,19.6 15.2,21.3 19.0,21.5 22.9,20.9 26.7,22.4 30.5,21.3 34.3,20.0 38.1,20.2 41.9,14.2 45.7,16.1 49.5,15.5 53.3,10.1 57.1,14.2 61.0,20.4 64.8,16.9 68.6,23.5 72.4,24.0 76.2,24.9 80.0,29.2 83.8,32.7 87.6,32.1 91.4,31.4 95.2,33.4 99.0,33.5 102.9,26.3 106.7,24.0 110.5,20.8 114.3,17.5 118.1,13.6 121.9,15.3 125.7,19.3 129.5,24.2 133.3,30.6 137.1,29.5 141.0,31.2 144.8,32.2 148.6,30.2 152.4,32.4 156.2,35.8 160.0,34.0 163.8,30.3 167.6,34.8 171.4,27.3 175.2,33.4 179.0,32.9 182.9,39.1 186.7,37.1 190.5,39.6 194.3,42.0 198.1,37.3 201.9,34.3 205.7,29.6 209.5,25.5 213.3,28.0 217.1,29.1 221.0,30.3 224.8,29.9 228.6,35.8 232.4,39.1 236.2,37.8 240.0,31.9" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="31.9" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">53</span>
+        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">32</span>
         <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
       </div>
       
@@ -713,7 +821,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,28.0 3.8,27.7 7.6,19.6 11.4,15.2 15.2,13.5 19.0,14.4 22.9,11.9 26.7,10.1 30.5,12.9 34.3,12.6 38.1,14.0 41.9,15.5 45.7,16.2 49.5,15.8 53.3,13.3 57.1,16.5 61.0,22.1 64.8,22.3 68.6,23.8 72.4,25.2 76.2,26.2 80.0,30.6 83.8,32.8 87.6,32.6 91.4,35.0 95.2,36.1 99.0,35.2 102.9,29.8 106.7,33.3 110.5,30.9 114.3,27.7 118.1,27.5 121.9,25.7 125.7,27.0 129.5,34.0 133.3,35.5 137.1,34.1 141.0,33.5 144.8,33.1 148.6,28.6 152.4,31.3 156.2,34.5 160.0,33.5 163.8,30.1 167.6,31.5 171.4,27.1 175.2,30.3 179.0,26.4 182.9,36.2 186.7,38.4 190.5,40.0 194.3,41.9 198.1,42.0 201.9,40.7 205.7,33.3 209.5,28.5 213.3,29.2 217.1,33.6 221.0,36.1 224.8,32.6 228.6,36.3 232.4,38.3 236.2,38.6 240.0,35.7 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,28.0 3.8,27.7 7.6,19.6 11.4,15.2 15.2,13.5 19.0,14.4 22.9,11.9 26.7,10.1 30.5,12.9 34.3,12.6 38.1,14.0 41.9,15.5 45.7,16.2 49.5,15.8 53.3,13.3 57.1,16.5 61.0,22.1 64.8,22.3 68.6,23.8 72.4,25.2 76.2,26.2 80.0,30.6 83.8,32.8 87.6,32.6 91.4,35.0 95.2,36.1 99.0,35.2 102.9,29.8 106.7,33.3 110.5,30.9 114.3,27.7 118.1,27.5 121.9,25.7 125.7,27.0 129.5,34.0 133.3,35.5 137.1,34.1 141.0,33.5 144.8,33.1 148.6,28.6 152.4,31.3 156.2,34.5 160.0,33.5 163.8,30.1 167.6,31.5 171.4,27.1 175.2,30.3 179.0,26.4 182.9,36.2 186.7,38.4 190.5,40.0 194.3,41.9 198.1,42.0 201.9,40.7 205.7,33.3 209.5,28.5 213.3,29.2 217.1,33.6 221.0,36.1 224.8,32.6 228.6,36.3 232.4,38.3 236.2,38.6 240.0,35.7" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="35.7" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-low" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">12</span>
+        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">25</span>
         <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
       </div>
       
@@ -804,7 +912,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,32.6 3.8,33.5 7.6,27.1 11.4,24.7 15.2,23.0 19.0,25.2 22.9,25.7 26.7,19.8 30.5,20.5 34.3,19.7 38.1,19.6 41.9,20.3 45.7,17.3 49.5,16.3 53.3,16.1 57.1,13.4 61.0,20.7 64.8,10.1 68.6,12.8 72.4,14.7 76.2,14.0 80.0,20.9 83.8,23.1 87.6,14.7 91.4,17.4 95.2,19.3 99.0,23.2 102.9,13.3 106.7,18.5 110.5,20.3 114.3,16.7 118.1,20.2 121.9,21.6 125.7,24.8 129.5,29.7 133.3,34.3 137.1,33.8 141.0,32.0 144.8,32.4 148.6,29.9 152.4,28.6 156.2,29.2 160.0,26.0 163.8,24.3 167.6,23.5 171.4,14.8 175.2,20.6 179.0,21.5 182.9,32.8 186.7,30.6 190.5,34.1 194.3,42.0 198.1,37.6 201.9,35.2 205.7,28.3 209.5,27.3 213.3,28.7 217.1,27.8 221.0,27.3 224.8,26.8 228.6,24.4 232.4,26.8 236.2,30.6 240.0,29.7 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,32.6 3.8,33.5 7.6,27.1 11.4,24.7 15.2,23.0 19.0,25.2 22.9,25.7 26.7,19.8 30.5,20.5 34.3,19.7 38.1,19.6 41.9,20.3 45.7,17.3 49.5,16.3 53.3,16.1 57.1,13.4 61.0,20.7 64.8,10.1 68.6,12.8 72.4,14.7 76.2,14.0 80.0,20.9 83.8,23.1 87.6,14.7 91.4,17.4 95.2,19.3 99.0,23.2 102.9,13.3 106.7,18.5 110.5,20.3 114.3,16.7 118.1,20.2 121.9,21.6 125.7,24.8 129.5,29.7 133.3,34.3 137.1,33.8 141.0,32.0 144.8,32.4 148.6,29.9 152.4,28.6 156.2,29.2 160.0,26.0 163.8,24.3 167.6,23.5 171.4,14.8 175.2,20.6 179.0,21.5 182.9,32.8 186.7,30.6 190.5,34.1 194.3,42.0 198.1,37.6 201.9,35.2 205.7,28.3 209.5,27.3 213.3,28.7 217.1,27.8 221.0,27.3 224.8,26.8 228.6,24.4 232.4,26.8 236.2,30.6 240.0,29.7" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="29.7" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">58</span>
+        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">27</span>
         <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
       </div>
       
@@ -895,7 +1003,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,31.7 3.8,30.5 7.6,24.0 11.4,17.7 15.2,18.5 19.0,18.0 22.9,16.0 26.7,14.9 30.5,14.2 34.3,12.0 38.1,10.1 41.9,11.0 45.7,16.0 49.5,16.8 53.3,13.5 57.1,16.1 61.0,22.7 64.8,21.1 68.6,23.4 72.4,23.6 76.2,25.6 80.0,28.1 83.8,31.0 87.6,31.3 91.4,31.7 95.2,34.2 99.0,35.1 102.9,28.4 106.7,29.3 110.5,27.5 114.3,26.7 118.1,26.4 121.9,26.1 125.7,27.4 129.5,33.1 133.3,37.3 137.1,33.7 141.0,31.6 144.8,31.5 148.6,26.6 152.4,27.2 156.2,31.2 160.0,32.7 163.8,29.8 167.6,32.9 171.4,30.5 175.2,27.3 179.0,25.1 182.9,33.8 186.7,33.4 190.5,35.4 194.3,42.0 198.1,34.5 201.9,33.4 205.7,26.7 209.5,23.4 213.3,28.1 217.1,32.3 221.0,31.7 224.8,27.0 228.6,28.4 232.4,33.3 236.2,32.7 240.0,30.1 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,31.7 3.8,30.5 7.6,24.0 11.4,17.7 15.2,18.5 19.0,18.0 22.9,16.0 26.7,14.9 30.5,14.2 34.3,12.0 38.1,10.1 41.9,11.0 45.7,16.0 49.5,16.8 53.3,13.5 57.1,16.1 61.0,22.7 64.8,21.1 68.6,23.4 72.4,23.6 76.2,25.6 80.0,28.1 83.8,31.0 87.6,31.3 91.4,31.7 95.2,34.2 99.0,35.1 102.9,28.4 106.7,29.3 110.5,27.5 114.3,26.7 118.1,26.4 121.9,26.1 125.7,27.4 129.5,33.1 133.3,37.3 137.1,33.7 141.0,31.6 144.8,31.5 148.6,26.6 152.4,27.2 156.2,31.2 160.0,32.7 163.8,29.8 167.6,32.9 171.4,30.5 175.2,27.3 179.0,25.1 182.9,33.8 186.7,33.4 190.5,35.4 194.3,42.0 198.1,34.5 201.9,33.4 205.7,26.7 209.5,23.4 213.3,28.1 217.1,32.3 221.0,31.7 224.8,27.0 228.6,28.4 232.4,33.3 236.2,32.7 240.0,30.1" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="30.1" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">68</span>
+        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">30</span>
         <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
       </div>
       
@@ -986,7 +1094,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,29.7 3.8,29.6 7.6,22.7 11.4,18.8 15.2,19.3 19.0,19.4 22.9,17.4 26.7,15.6 30.5,14.5 34.3,12.5 38.1,12.3 41.9,10.8 45.7,13.8 49.5,15.4 53.3,10.1 57.1,10.9 61.0,21.2 64.8,17.5 68.6,19.0 72.4,17.2 76.2,18.3 80.0,23.1 83.8,26.6 87.6,27.8 91.4,28.5 95.2,32.0 99.0,31.2 102.9,23.4 106.7,25.0 110.5,21.1 114.3,18.7 118.1,17.6 121.9,17.6 125.7,20.0 129.5,28.4 133.3,33.5 137.1,31.3 141.0,30.7 144.8,31.6 148.6,26.8 152.4,25.6 156.2,29.2 160.0,27.9 163.8,24.2 167.6,27.2 171.4,25.4 175.2,29.2 179.0,28.2 182.9,38.3 186.7,36.2 190.5,37.5 194.3,42.0 198.1,36.0 201.9,32.5 205.7,27.1 209.5,22.4 213.3,23.0 217.1,28.3 221.0,30.2 224.8,28.0 228.6,31.2 232.4,34.8 236.2,32.9 240.0,30.5 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,29.7 3.8,29.6 7.6,22.7 11.4,18.8 15.2,19.3 19.0,19.4 22.9,17.4 26.7,15.6 30.5,14.5 34.3,12.5 38.1,12.3 41.9,10.8 45.7,13.8 49.5,15.4 53.3,10.1 57.1,10.9 61.0,21.2 64.8,17.5 68.6,19.0 72.4,17.2 76.2,18.3 80.0,23.1 83.8,26.6 87.6,27.8 91.4,28.5 95.2,32.0 99.0,31.2 102.9,23.4 106.7,25.0 110.5,21.1 114.3,18.7 118.1,17.6 121.9,17.6 125.7,20.0 129.5,28.4 133.3,33.5 137.1,31.3 141.0,30.7 144.8,31.6 148.6,26.8 152.4,25.6 156.2,29.2 160.0,27.9 163.8,24.2 167.6,27.2 171.4,25.4 175.2,29.2 179.0,28.2 182.9,38.3 186.7,36.2 190.5,37.5 194.3,42.0 198.1,36.0 201.9,32.5 205.7,27.1 209.5,22.4 213.3,23.0 217.1,28.3 221.0,30.2 224.8,28.0 228.6,31.2 232.4,34.8 236.2,32.9 240.0,30.5" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="30.5" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">76</span>
+        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">29</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       
@@ -1074,7 +1182,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,36.7 3.8,37.1 7.6,27.7 11.4,21.4 15.2,21.0 19.0,20.1 22.9,18.2 26.7,11.2 30.5,16.2 34.3,16.9 38.1,20.5 41.9,18.3 45.7,23.4 49.5,23.6 53.3,22.0 57.1,21.7 61.0,27.7 64.8,25.6 68.6,27.7 72.4,25.8 76.2,25.4 80.0,29.7 83.8,32.7 87.6,31.5 91.4,30.3 95.2,32.7 99.0,32.9 102.9,19.9 106.7,19.4 110.5,14.9 114.3,13.3 118.1,10.1 121.9,13.1 125.7,14.4 129.5,22.6 133.3,28.0 137.1,24.7 141.0,25.8 144.8,27.3 148.6,23.8 152.4,23.7 156.2,27.2 160.0,26.1 163.8,22.9 167.6,26.8 171.4,26.8 175.2,29.2 179.0,27.5 182.9,35.5 186.7,35.8 190.5,38.5 194.3,42.0 198.1,36.7 201.9,33.7 205.7,28.6 209.5,19.7 213.3,19.1 217.1,21.5 221.0,21.9 224.8,22.0 228.6,26.1 232.4,29.0 236.2,28.8 240.0,26.2 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,36.7 3.8,37.1 7.6,27.7 11.4,21.4 15.2,21.0 19.0,20.1 22.9,18.2 26.7,11.2 30.5,16.2 34.3,16.9 38.1,20.5 41.9,18.3 45.7,23.4 49.5,23.6 53.3,22.0 57.1,21.7 61.0,27.7 64.8,25.6 68.6,27.7 72.4,25.8 76.2,25.4 80.0,29.7 83.8,32.7 87.6,31.5 91.4,30.3 95.2,32.7 99.0,32.9 102.9,19.9 106.7,19.4 110.5,14.9 114.3,13.3 118.1,10.1 121.9,13.1 125.7,14.4 129.5,22.6 133.3,28.0 137.1,24.7 141.0,25.8 144.8,27.3 148.6,23.8 152.4,23.7 156.2,27.2 160.0,26.1 163.8,22.9 167.6,26.8 171.4,26.8 175.2,29.2 179.0,27.5 182.9,35.5 186.7,35.8 190.5,38.5 194.3,42.0 198.1,36.7 201.9,33.7 205.7,28.6 209.5,19.7 213.3,19.1 217.1,21.5 221.0,21.9 224.8,22.0 228.6,26.1 232.4,29.0 236.2,28.8 240.0,26.2" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="26.2" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">85</span>
+        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">26</span>
         <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
       </div>
       
@@ -1162,7 +1270,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,26.2 3.8,29.3 7.6,22.7 11.4,20.0 15.2,19.8 19.0,20.8 22.9,24.1 26.7,23.7 30.5,23.7 34.3,22.7 38.1,18.4 41.9,17.7 45.7,14.8 49.5,13.8 53.3,15.5 57.1,13.4 61.0,17.3 64.8,10.1 68.6,14.4 72.4,17.5 76.2,15.9 80.0,18.8 83.8,22.5 87.6,17.5 91.4,19.4 95.2,19.2 99.0,23.3 102.9,15.9 106.7,19.8 110.5,19.0 114.3,16.5 118.1,19.8 121.9,22.7 125.7,25.7 129.5,30.7 133.3,34.2 137.1,34.2 141.0,33.0 144.8,31.9 148.6,30.1 152.4,28.6 156.2,27.6 160.0,26.8 163.8,25.1 167.6,26.6 171.4,20.4 175.2,26.4 179.0,26.6 182.9,36.4 186.7,35.2 190.5,38.9 194.3,42.0 198.1,36.9 201.9,35.4 205.7,28.4 209.5,27.6 213.3,27.4 217.1,26.8 221.0,26.4 224.8,28.2 228.6,28.2 232.4,30.9 236.2,33.6 240.0,33.2 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,26.2 3.8,29.3 7.6,22.7 11.4,20.0 15.2,19.8 19.0,20.8 22.9,24.1 26.7,23.7 30.5,23.7 34.3,22.7 38.1,18.4 41.9,17.7 45.7,14.8 49.5,13.8 53.3,15.5 57.1,13.4 61.0,17.3 64.8,10.1 68.6,14.4 72.4,17.5 76.2,15.9 80.0,18.8 83.8,22.5 87.6,17.5 91.4,19.4 95.2,19.2 99.0,23.3 102.9,15.9 106.7,19.8 110.5,19.0 114.3,16.5 118.1,19.8 121.9,22.7 125.7,25.7 129.5,30.7 133.3,34.2 137.1,34.2 141.0,33.0 144.8,31.9 148.6,30.1 152.4,28.6 156.2,27.6 160.0,26.8 163.8,25.1 167.6,26.6 171.4,20.4 175.2,26.4 179.0,26.6 182.9,36.4 186.7,35.2 190.5,38.9 194.3,42.0 198.1,36.9 201.9,35.4 205.7,28.4 209.5,27.6 213.3,27.4 217.1,26.8 221.0,26.4 224.8,28.2 228.6,28.2 232.4,30.9 236.2,33.6 240.0,33.2" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="33.2" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">56</span>
+        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">32</span>
         <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
       </div>
       
@@ -1253,7 +1361,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,30.7 3.8,33.8 7.6,27.4 11.4,33.2 15.2,34.5 19.0,34.0 22.9,32.7 26.7,16.7 30.5,16.2 34.3,18.9 38.1,15.4 41.9,11.4 45.7,13.3 49.5,12.1 53.3,10.1 57.1,10.4 61.0,10.7 64.8,10.5 68.6,11.9 72.4,18.1 76.2,23.9 80.0,25.4 83.8,22.2 87.6,25.1 91.4,20.8 95.2,25.1 99.0,22.9 102.9,27.9 106.7,29.4 110.5,34.3 114.3,38.0 118.1,36.7 121.9,41.6 125.7,40.0 129.5,41.5 133.3,39.9 137.1,37.3 141.0,39.1 144.8,39.4 148.6,40.0 152.4,38.4 156.2,41.9 160.0,40.4 163.8,40.5 167.6,41.6 171.4,42.0 175.2,41.7 179.0,37.9 182.9,33.6 186.7,31.9 190.5,31.6 194.3,32.6 198.1,32.4 201.9,31.9 205.7,31.3 209.5,32.0 213.3,32.5 217.1,32.2 221.0,33.0 224.8,35.4 228.6,35.7 232.4,29.2 236.2,32.6 240.0,32.3 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,30.7 3.8,33.8 7.6,27.4 11.4,33.2 15.2,34.5 19.0,34.0 22.9,32.7 26.7,16.7 30.5,16.2 34.3,18.9 38.1,15.4 41.9,11.4 45.7,13.3 49.5,12.1 53.3,10.1 57.1,10.4 61.0,10.7 64.8,10.5 68.6,11.9 72.4,18.1 76.2,23.9 80.0,25.4 83.8,22.2 87.6,25.1 91.4,20.8 95.2,25.1 99.0,22.9 102.9,27.9 106.7,29.4 110.5,34.3 114.3,38.0 118.1,36.7 121.9,41.6 125.7,40.0 129.5,41.5 133.3,39.9 137.1,37.3 141.0,39.1 144.8,39.4 148.6,40.0 152.4,38.4 156.2,41.9 160.0,40.4 163.8,40.5 167.6,41.6 171.4,42.0 175.2,41.7 179.0,37.9 182.9,33.6 186.7,31.9 190.5,31.6 194.3,32.6 198.1,32.4 201.9,31.9 205.7,31.3 209.5,32.0 213.3,32.5 217.1,32.2 221.0,33.0 224.8,35.4 228.6,35.7 232.4,29.2 236.2,32.6 240.0,32.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="32.3" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-low" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">33</span>
+        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">29</span>
         <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
       </div>
       
@@ -1341,7 +1449,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,28.6 3.8,28.6 7.6,20.8 11.4,20.2 15.2,20.7 19.0,19.8 22.9,17.6 26.7,17.8 30.5,18.8 34.3,16.6 38.1,12.6 41.9,10.1 45.7,12.6 49.5,12.2 53.3,11.1 57.1,11.4 61.0,19.8 64.8,18.0 68.6,19.5 72.4,17.9 76.2,16.9 80.0,20.8 83.8,23.4 87.6,23.1 91.4,22.8 95.2,23.2 99.0,23.9 102.9,16.4 106.7,15.8 110.5,14.4 114.3,13.3 118.1,14.2 121.9,15.3 125.7,17.4 129.5,22.5 133.3,27.6 137.1,28.8 141.0,30.2 144.8,30.6 148.6,27.6 152.4,27.6 156.2,31.7 160.0,31.7 163.8,28.3 167.6,32.2 171.4,31.7 175.2,35.4 179.0,35.6 182.9,39.5 186.7,38.7 190.5,40.6 194.3,42.0 198.1,38.4 201.9,36.1 205.7,29.6 209.5,28.1 213.3,28.1 217.1,30.3 221.0,30.9 224.8,29.4 228.6,34.8 232.4,36.6 236.2,35.3 240.0,32.4 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,28.6 3.8,28.6 7.6,20.8 11.4,20.2 15.2,20.7 19.0,19.8 22.9,17.6 26.7,17.8 30.5,18.8 34.3,16.6 38.1,12.6 41.9,10.1 45.7,12.6 49.5,12.2 53.3,11.1 57.1,11.4 61.0,19.8 64.8,18.0 68.6,19.5 72.4,17.9 76.2,16.9 80.0,20.8 83.8,23.4 87.6,23.1 91.4,22.8 95.2,23.2 99.0,23.9 102.9,16.4 106.7,15.8 110.5,14.4 114.3,13.3 118.1,14.2 121.9,15.3 125.7,17.4 129.5,22.5 133.3,27.6 137.1,28.8 141.0,30.2 144.8,30.6 148.6,27.6 152.4,27.6 156.2,31.7 160.0,31.7 163.8,28.3 167.6,32.2 171.4,31.7 175.2,35.4 179.0,35.6 182.9,39.5 186.7,38.7 190.5,40.6 194.3,42.0 198.1,38.4 201.9,36.1 205.7,29.6 209.5,28.1 213.3,28.1 217.1,30.3 221.0,30.9 224.8,29.4 228.6,34.8 232.4,36.6 236.2,35.3 240.0,32.4" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="32.4" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">60</span>
+        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">33</span>
         <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
       </div>
       
@@ -1432,7 +1540,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.3 3.8,30.6 7.6,30.3 11.4,26.9 15.2,21.1 19.0,18.9 22.9,22.1 26.7,19.5 30.5,22.2 34.3,23.5 38.1,20.7 41.9,17.4 45.7,17.2 49.5,22.1 53.3,19.8 57.1,18.6 61.0,18.9 64.8,18.0 68.6,10.1 72.4,11.7 76.2,19.2 80.0,20.5 83.8,18.8 87.6,14.1 91.4,16.1 95.2,15.8 99.0,10.1 102.9,25.0 106.7,18.0 110.5,15.9 114.3,20.1 118.1,19.8 121.9,26.0 125.7,25.5 129.5,26.9 133.3,27.7 137.1,25.0 141.0,25.3 144.8,27.4 148.6,26.7 152.4,29.5 156.2,31.4 160.0,33.9 163.8,32.1 167.6,37.8 171.4,42.0 175.2,37.0 179.0,40.0 182.9,36.4 186.7,40.0 190.5,36.1 194.3,34.4 198.1,32.0 201.9,28.0 205.7,25.6 209.5,23.1 213.3,27.8 217.1,30.3 221.0,26.5 224.8,35.3 228.6,33.2 232.4,28.6 236.2,27.7 240.0,24.3 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.3 3.8,30.6 7.6,30.3 11.4,26.9 15.2,21.1 19.0,18.9 22.9,22.1 26.7,19.5 30.5,22.2 34.3,23.5 38.1,20.7 41.9,17.4 45.7,17.2 49.5,22.1 53.3,19.8 57.1,18.6 61.0,18.9 64.8,18.0 68.6,10.1 72.4,11.7 76.2,19.2 80.0,20.5 83.8,18.8 87.6,14.1 91.4,16.1 95.2,15.8 99.0,10.1 102.9,25.0 106.7,18.0 110.5,15.9 114.3,20.1 118.1,19.8 121.9,26.0 125.7,25.5 129.5,26.9 133.3,27.7 137.1,25.0 141.0,25.3 144.8,27.4 148.6,26.7 152.4,29.5 156.2,31.4 160.0,33.9 163.8,32.1 167.6,37.8 171.4,42.0 175.2,37.0 179.0,40.0 182.9,36.4 186.7,40.0 190.5,36.1 194.3,34.4 198.1,32.0 201.9,28.0 205.7,25.6 209.5,23.1 213.3,27.8 217.1,30.3 221.0,26.5 224.8,35.3 228.6,33.2 232.4,28.6 236.2,27.7 240.0,24.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="24.3" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">45</span>
+        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">28</span>
         <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
       </div>
       
@@ -1523,7 +1631,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,20.8 3.8,25.7 7.6,26.8 11.4,25.8 15.2,28.1 19.0,28.9 22.9,31.0 26.7,27.8 30.5,30.4 34.3,31.3 38.1,29.0 41.9,28.0 45.7,33.4 49.5,30.4 53.3,25.9 57.1,23.2 61.0,24.4 64.8,23.2 68.6,22.6 72.4,23.2 76.2,23.9 80.0,23.7 83.8,22.4 87.6,22.8 91.4,25.3 95.2,26.9 99.0,28.0 102.9,29.5 106.7,29.8 110.5,29.3 114.3,29.3 118.1,28.8 121.9,31.5 125.7,26.9 129.5,26.5 133.3,30.1 137.1,26.0 141.0,21.1 144.8,20.1 148.6,17.7 152.4,10.6 156.2,15.2 160.0,15.0 163.8,13.0 167.6,10.3 171.4,12.4 175.2,14.8 179.0,10.1 182.9,42.0 186.7,41.8 190.5,37.6 194.3,38.3 198.1,35.2 201.9,35.7 205.7,32.0 209.5,37.7 213.3,37.4 217.1,34.2 221.0,33.2 224.8,33.6 228.6,36.4 232.4,35.2 236.2,37.3 240.0,36.1 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,20.8 3.8,25.7 7.6,26.8 11.4,25.8 15.2,28.1 19.0,28.9 22.9,31.0 26.7,27.8 30.5,30.4 34.3,31.3 38.1,29.0 41.9,28.0 45.7,33.4 49.5,30.4 53.3,25.9 57.1,23.2 61.0,24.4 64.8,23.2 68.6,22.6 72.4,23.2 76.2,23.9 80.0,23.7 83.8,22.4 87.6,22.8 91.4,25.3 95.2,26.9 99.0,28.0 102.9,29.5 106.7,29.8 110.5,29.3 114.3,29.3 118.1,28.8 121.9,31.5 125.7,26.9 129.5,26.5 133.3,30.1 137.1,26.0 141.0,21.1 144.8,20.1 148.6,17.7 152.4,10.6 156.2,15.2 160.0,15.0 163.8,13.0 167.6,10.3 171.4,12.4 175.2,14.8 179.0,10.1 182.9,42.0 186.7,41.8 190.5,37.6 194.3,38.3 198.1,35.2 201.9,35.7 205.7,32.0 209.5,37.7 213.3,37.4 217.1,34.2 221.0,33.2 224.8,33.6 228.6,36.4 232.4,35.2 236.2,37.3 240.0,36.1" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="36.1" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-low" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">16</span>
+        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">39</span>
         <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
       </div>
       
@@ -1614,7 +1722,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,26.4 3.8,25.6 7.6,19.8 11.4,16.8 15.2,15.7 19.0,17.0 22.9,16.8 26.7,14.6 30.5,14.6 34.3,10.1 38.1,11.8 41.9,11.7 45.7,15.5 49.5,15.0 53.3,10.8 57.1,12.6 61.0,21.7 64.8,20.0 68.6,23.0 72.4,23.6 76.2,25.5 80.0,28.9 83.8,32.9 87.6,31.9 91.4,32.7 95.2,34.8 99.0,35.2 102.9,29.2 106.7,31.0 110.5,28.1 114.3,26.7 118.1,27.3 121.9,27.6 125.7,29.4 129.5,35.6 133.3,36.5 137.1,34.9 141.0,35.3 144.8,36.8 148.6,34.2 152.4,34.3 156.2,37.8 160.0,36.0 163.8,31.3 167.6,34.2 171.4,33.2 175.2,35.6 179.0,33.3 182.9,39.2 186.7,38.9 190.5,40.6 194.3,42.0 198.1,39.5 201.9,38.8 205.7,34.4 209.5,31.6 213.3,35.0 217.1,35.6 221.0,37.3 224.8,35.4 228.6,39.1 232.4,40.6 236.2,39.1 240.0,38.5 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,26.4 3.8,25.6 7.6,19.8 11.4,16.8 15.2,15.7 19.0,17.0 22.9,16.8 26.7,14.6 30.5,14.6 34.3,10.1 38.1,11.8 41.9,11.7 45.7,15.5 49.5,15.0 53.3,10.8 57.1,12.6 61.0,21.7 64.8,20.0 68.6,23.0 72.4,23.6 76.2,25.5 80.0,28.9 83.8,32.9 87.6,31.9 91.4,32.7 95.2,34.8 99.0,35.2 102.9,29.2 106.7,31.0 110.5,28.1 114.3,26.7 118.1,27.3 121.9,27.6 125.7,29.4 129.5,35.6 133.3,36.5 137.1,34.9 141.0,35.3 144.8,36.8 148.6,34.2 152.4,34.3 156.2,37.8 160.0,36.0 163.8,31.3 167.6,34.2 171.4,33.2 175.2,35.6 179.0,33.3 182.9,39.2 186.7,38.9 190.5,40.6 194.3,42.0 198.1,39.5 201.9,38.8 205.7,34.4 209.5,31.6 213.3,35.0 217.1,35.6 221.0,37.3 224.8,35.4 228.6,39.1 232.4,40.6 236.2,39.1 240.0,38.5" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="38.5" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-low" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">14</span>
+        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">37</span>
         <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
       </div>
       
@@ -1702,7 +1810,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,28.9 3.8,32.6 7.6,26.2 11.4,27.6 15.2,28.2 19.0,27.8 22.9,29.2 26.7,26.4 30.5,26.6 34.3,26.3 38.1,23.2 41.9,22.7 45.7,18.2 49.5,18.4 53.3,20.0 57.1,16.7 61.0,20.0 64.8,12.9 68.6,15.3 72.4,20.6 76.2,17.5 80.0,19.6 83.8,23.0 87.6,16.7 91.4,16.4 95.2,16.6 99.0,18.3 102.9,10.1 106.7,10.6 110.5,16.9 114.3,15.1 118.1,18.2 121.9,20.8 125.7,23.0 129.5,26.5 133.3,34.2 137.1,32.3 141.0,28.4 144.8,27.6 148.6,26.1 152.4,26.3 156.2,26.7 160.0,26.4 163.8,27.1 167.6,29.1 171.4,22.5 175.2,27.2 179.0,29.7 182.9,37.8 186.7,36.7 190.5,39.7 194.3,42.0 198.1,37.1 201.9,37.2 205.7,35.2 209.5,36.0 213.3,35.8 217.1,31.4 221.0,31.3 224.8,32.7 228.6,34.8 232.4,36.3 236.2,38.4 240.0,38.6 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,28.9 3.8,32.6 7.6,26.2 11.4,27.6 15.2,28.2 19.0,27.8 22.9,29.2 26.7,26.4 30.5,26.6 34.3,26.3 38.1,23.2 41.9,22.7 45.7,18.2 49.5,18.4 53.3,20.0 57.1,16.7 61.0,20.0 64.8,12.9 68.6,15.3 72.4,20.6 76.2,17.5 80.0,19.6 83.8,23.0 87.6,16.7 91.4,16.4 95.2,16.6 99.0,18.3 102.9,10.1 106.7,10.6 110.5,16.9 114.3,15.1 118.1,18.2 121.9,20.8 125.7,23.0 129.5,26.5 133.3,34.2 137.1,32.3 141.0,28.4 144.8,27.6 148.6,26.1 152.4,26.3 156.2,26.7 160.0,26.4 163.8,27.1 167.6,29.1 171.4,22.5 175.2,27.2 179.0,29.7 182.9,37.8 186.7,36.7 190.5,39.7 194.3,42.0 198.1,37.1 201.9,37.2 205.7,35.2 209.5,36.0 213.3,35.8 217.1,31.4 221.0,31.3 224.8,32.7 228.6,34.8 232.4,36.3 236.2,38.4 240.0,38.6" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="38.6" r="2.6" fill="var(--down)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">73</span>
+        <span class="nb-cscore band-constructive" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">47</span>
         <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
       </div>
       
@@ -1790,7 +1898,7 @@
       <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.7 3.8,42.0 7.6,40.4 11.4,34.5 15.2,30.6 19.0,32.7 22.9,32.7 26.7,30.2 30.5,31.3 34.3,27.0 38.1,26.8 41.9,22.9 45.7,22.4 49.5,21.4 53.3,18.7 57.1,21.3 61.0,21.0 64.8,22.7 68.6,20.1 72.4,20.8 76.2,20.4 80.0,19.6 83.8,22.4 87.6,21.3 91.4,20.7 95.2,20.6 99.0,22.5 102.9,19.9 106.7,16.0 110.5,14.3 114.3,13.3 118.1,16.9 121.9,20.6 125.7,17.5 129.5,20.9 133.3,22.7 137.1,20.0 141.0,19.0 144.8,15.8 148.6,15.3 152.4,15.8 156.2,15.3 160.0,15.1 163.8,15.7 167.6,18.1 171.4,17.4 175.2,18.8 179.0,17.2 182.9,15.4 186.7,15.1 190.5,13.3 194.3,18.4 198.1,13.2 201.9,12.5 205.7,15.0 209.5,13.7 213.3,17.1 217.1,17.2 221.0,16.1 224.8,17.5 228.6,18.7 232.4,13.6 236.2,14.6 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,41.7 3.8,42.0 7.6,40.4 11.4,34.5 15.2,30.6 19.0,32.7 22.9,32.7 26.7,30.2 30.5,31.3 34.3,27.0 38.1,26.8 41.9,22.9 45.7,22.4 49.5,21.4 53.3,18.7 57.1,21.3 61.0,21.0 64.8,22.7 68.6,20.1 72.4,20.8 76.2,20.4 80.0,19.6 83.8,22.4 87.6,21.3 91.4,20.7 95.2,20.6 99.0,22.5 102.9,19.9 106.7,16.0 110.5,14.3 114.3,13.3 118.1,16.9 121.9,20.6 125.7,17.5 129.5,20.9 133.3,22.7 137.1,20.0 141.0,19.0 144.8,15.8 148.6,15.3 152.4,15.8 156.2,15.3 160.0,15.1 163.8,15.7 167.6,18.1 171.4,17.4 175.2,18.8 179.0,17.2 182.9,15.4 186.7,15.1 190.5,13.3 194.3,18.4 198.1,13.2 201.9,12.5 205.7,15.0 209.5,13.7 213.3,17.1 217.1,17.2 221.0,16.1 224.8,17.5 228.6,18.7 232.4,13.6 236.2,14.6 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
       
       <div class="nb-conv">
-        <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">93</span>
+        <span class="nb-cscore band-neutral" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">44</span>
         <span class="nb-verdict"><span class="l-en">High-confluence leader (context)</span><span class="l-zh">高共振 领先（参考）</span></span>
       </div>
       
@@ -1910,7 +2018,7 @@
 
 
 
-<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-28 21:36 UTC · <span class="l-en">Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.</span><span class="l-zh">无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。</span></p>
+<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-29 01:39 UTC · <span class="l-en">Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.</span><span class="l-zh">无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。</span></p>
 
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
@@ -1935,6 +2043,5 @@
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>
