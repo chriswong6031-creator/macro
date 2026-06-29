@@ -370,6 +370,30 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
     ts = asof or subs.dropna(how="all").index[-1]
     sigrow = sigs.reindex([subs.dropna(how="all").index[-1]]).iloc[-1]
 
+    # ELECTION-CYCLE MODULATOR (engine/election_cycle.py) — a calendar MODULATOR, never an
+    # originating leg (the midterm edge is suggestive-not-significant; see that file's docstring
+    # for the backtest). In the ONE non-collinear slice — a midterm Apr-Oct window while the tape
+    # is still risk-ON — it LOWERS the early (watch/caution) bands a few points so the QUIET tiers
+    # fire earlier (the measured ~1.25x cut). It NEVER touches the elevated/risk-off bands, so the
+    # calendar can NEVER manufacture a loud banner (that still requires the broad tape to break).
+    # Plus a small gross (sizing) trim across the window. Additive, never fatal.
+    gate = gate if gate is not None else context_gate_live()
+    cyc = None
+    mod = {"band_delta": 0.0, "gross_mult": 1.0, "active": False, "risk_on_slice": False}
+    try:
+        from engine import election_cycle as _ec
+        risk_on = (gate.get("spy_below_200dma") is False)
+        cyc = _ec.context(asof=ts)
+        mod = _ec.modulation(asof=ts, spy_risk_on=risk_on)
+        if mod["band_delta"] > 0:
+            d = mod["band_delta"]
+            bands = {**bands, "watch": max(0.0, bands["watch"] - d),
+                     "caution": max(0.0, bands["caution"] - d)}
+        if cyc is not None:
+            cyc["modulation"] = mod
+    except Exception as e:  # noqa: BLE001 — modulator, never fatal
+        log.warning("risk_radar election-cycle overlay failed: %s", e)
+
     scares = []
     for scare, spec in calib["scares"].items():
         if scare not in row or pd.isna(row[scare]):
@@ -425,12 +449,19 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
 
     # CONTEXT GATE: the LOUD banner (elevated+) requires the broad tape to be breaking; otherwise cap
     # at 'caution' (the early/quiet tier still shows). Biggest verified FP-reduction lever.
-    gate = gate if gate is not None else context_gate_live()
+    # (gate was computed above for the election-cycle overlay; reuse it.)
     if not gate.get("met") and _STATE_ORDER.index(state) > _STATE_ORDER.index("caution"):
         state = "caution"
 
     alert = _STATE_ORDER.index(state) >= _STATE_ORDER.index(calib.get("alert_from", _ALERT_FROM))
     gross = _gross_for(state)
+    # Election-cycle sizing prior (de-risk = SIZING): trims gross modestly in the midterm window,
+    # but NEVER de-grosses a calm book — calm = full gross is the radar's contract. The calendar
+    # earns a trim only once the radar is already at watch+ (the band nudge surfaces that earlier).
+    gross_applied = mod.get("gross_mult", 1.0) < 1.0 and state != "calm"
+    if gross_applied:
+        gross = round(max(_GROSS["floor"], gross * float(mod["gross_mult"])), 3)
+    mod["gross_applied"] = bool(gross_applied)
     prob = _drawdown_prob(state, len(hotA), calib)
     head_en, head_zh = _headline(state, dominant, hotA)
 
@@ -453,6 +484,7 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
         "state_ungated": state_ungated,
         "flow_status": flow_status(),
         "gross_factor": gross,
+        "cycle_context": cyc,   # election-cycle MODULATOR (display + sizing; never originates an alert)
         "favor_entries": _STATE_ORDER.index(state) >= _STATE_ORDER.index("caution"),
         "cap_leadership": _STATE_ORDER.index(state) >= _STATE_ORDER.index("elevated"),
         "reader_contract": _READER[state],

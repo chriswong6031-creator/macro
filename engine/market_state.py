@@ -465,6 +465,9 @@ def _radar_to_rd(rr: dict) -> dict:
         # the radar's own forward-grade scorecard (engine/risk_radar_intl_audit) — drives the
         # card's "self-audit" line. None on the US radar (which logs via market_state_audit).
         "forward_log": rr.get("forward_log"),
+        # election-cycle MODULATOR (engine/election_cycle.py) — display chip + sizing prior; only
+        # set on the US radar (the intl radars carry no midterm prior — the backtest refuted it).
+        "cycle": rr.get("cycle_context"),
         "amp": 0, "amp_keys": [], "amp_flags_en": [], "amp_flags_zh": [],
         "severe_gated": False, "ceiling": None,
     }
