@@ -1142,7 +1142,7 @@
      class is only present when market_state exists, so the grid never triggers on the
      (already mode-gated) empty case. */
   body.page-macro .ms-front.ms{display:flex;flex-direction:column;gap:14px;margin-top:14px}
-  body.page-macro .ms-front>.ms-radar{margin:0}
+  body.page-macro .ms-front>.rrx{margin:0}
   body.page-macro .ms-front>.ms-head{margin:0}
   body.page-macro .ms-front>.ms-top{margin-top:0}
   body.page-macro .ms-front>.ms-tape{margin-top:0}
@@ -1151,7 +1151,14 @@
     body.page-macro .ms-front.ms{display:grid;gap:0 30px;align-items:start;
       grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);
       grid-template-areas:"radar radar" "head head" "state hero" "tape hero"}
-    body.page-macro .ms-front>.ms-radar{grid-area:radar;margin-bottom:12px}
+    /* Risk Radar = a wide BANNER spanning the top: header + escalating odds on the left,
+       and the threat meters / leading evidence / action — which used to stack at the bottom
+       of a tall half-width block — moved into the right column that was empty whitespace. */
+    body.page-macro .ms-front>.rrx{grid-area:radar;margin-bottom:12px;
+      grid-template-columns:minmax(0,1.32fr) minmax(0,1fr);column-gap:22px;row-gap:0;align-items:stretch}
+    body.page-macro .ms-front>.rrx>.rrx-main{display:flex;flex-direction:column;gap:12px;min-width:0}
+    body.page-macro .ms-front>.rrx>.rrx-side{display:flex;flex-direction:column;justify-content:center;gap:9px;min-width:0;
+      padding-left:22px;border-left:1px solid color-mix(in srgb,var(--rc) 22%,var(--line))}
     body.page-macro .ms-front>.ms-head{grid-area:head}
     body.page-macro .ms-front>.ms-top{grid-area:state;margin-top:14px}
     body.page-macro .ms-front>.ms-tape{grid-area:tape}

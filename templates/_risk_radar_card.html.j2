@@ -53,6 +53,9 @@
 {%- set base = rd.dd_base if (rd.dd_base and rd.dd_base.h21 is not none) else {'h5':0.036,'h10':0.086,'h21':0.178} -%}
 {%- set hmax = (rd.dd21 / 0.82) if (rd.dd21 is not none and rd.dd21 > 0) else 0.25 -%}
 <div class="rrx rrx-{{ rd.state }}{{ ' rrx-loud' if rd.is_loud }}" style="--rc:{{ rc }}">
+  {# .rrx-main / .rrx-side are display:contents by default (no layout change on the China/HK/
+     Canada/stocks cards); only the macro front-page promotes them to a 2-column banner. #}
+  <div class="rrx-main">
   <div class="rrx-hd">
     <span class="rrx-ic">{{ ic }}</span>
     <div class="rrx-id">
@@ -90,7 +93,9 @@
     </div>
   </div>
   {% endif %}
+  </div>{# /.rrx-main #}
 
+  <div class="rrx-side">
   {% if scares %}
   <div class="rrx-threats">
     {% for s in scares %}{% if s.score is not none %}
@@ -119,5 +124,6 @@
   {% if rd.forward_log %}{% set fl = rd.forward_log %}
   <div class="rrx-audit"><span class="rrx-audit-k">🧾 {{ t('Self-audit','自审') }}</span>{% if fl.n_graded and fl.n_graded > 0 %}{{ fl.n_graded }} {{ t('graded','已评分') }}{% if fl.force_lift is not none %} · <b>{{ fl.force_lift }}×</b> {{ t('vs base rate','对比基准') }}{% endif %} · {% if fl.can_force %}{{ t('moving the verdict','参与定调') }} ✓{% else %}{{ t('display-only','仅展示') }}{% endif %}{% else %}{{ t('accruing — grades begin once calls mature (~21 trading days)','积累中 — 约21个交易日后开始评分') }}{% endif %}</div>
   {% endif %}
+  </div>{# /.rrx-side #}
 </div>
 {%- endmacro %}
