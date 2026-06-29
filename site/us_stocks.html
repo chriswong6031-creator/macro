@@ -8,13 +8,15 @@
 
 
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>US Stock Dashboard — 2026-06-26</title>
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <style>
@@ -98,32 +100,125 @@
   .chart { width: 100%; }
   .topline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
 
-  /* US Stocks header — Risk Radar alert (rendered only when the radar fires; see #stocks-header).
-     Self-contained on the GLOBAL theme vars, because the macro .ms-radar styling lives in the
-     page-macro scope which doesn't apply here. --rc = the band colour, set inline. */
-  .rr-alert { display: flex; align-items: center; gap: 11px; flex-wrap: wrap;
-              margin: 12px 0 2px; padding: 9px 13px; border-radius: 10px;
-              border: 1px solid color-mix(in srgb, var(--rc) 55%, var(--line));
-              background: color-mix(in srgb, var(--rc) 12%, var(--panel2));
-              animation: rrApulse 2.2s ease-in-out infinite; }
-  @media (prefers-reduced-motion: reduce) { .rr-alert { animation: none;
-              box-shadow: 0 0 0 1px color-mix(in srgb, var(--rc) 40%, transparent); } }
-  @keyframes rrApulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rc) 34%, transparent); }
-                        50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--rc) 7%, transparent); } }
-  .rr-alert .rra-ic { font-size: 17px; line-height: 1; flex: none; }
-  .rr-alert .rra-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 240px; }
-  .rr-alert .rra-tit { font-weight: 600; color: var(--text); }
-  .rr-alert .rra-tit b { font-weight: 800; }
-  .rr-alert .rra-odds { font-size: 11px; color: var(--muted); }
-  .rr-alert .rra-odds b { color: var(--text); }
-  .rr-alert .rra-do { font-size: 11.5px; color: var(--text); max-width: 36ch; }
-  @media (max-width: 760px) { .rr-alert .rra-do { max-width: none; flex: 1 1 100%; } }
-  .rr-alert .rra-scares { display: flex; flex-wrap: wrap; align-items: center; gap: 5px;
-              flex: 1 1 100%; margin-top: 3px; font-size: 11px; color: var(--muted); }
-  .rr-alert .rra-scare { border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px;
-              color: var(--text); background: var(--panel); }
-  .rr-alert .rra-more { margin-left: auto; color: var(--link); font-weight: 700; font-size: 11.5px;
-              white-space: nowrap; }
+  /* ============================================================================
+     RISK RADAR CARD (.rrx) — the one shared, redesigned alert used on the US Macro
+     + US-Stocks pages AND the China / HK / Canada Market-State boards (the macros
+     live in _risk_radar_card.html.j2). GLOBAL theme vars only + an inline --rc state
+     accent, so it renders the same in the page-macro, page-stocks and china/hk/canada
+     scopes. The escalating odds ramp replaces the old cramped "5d.. 10d.. 21d.." run.
+     Included by dashboard.html.j2 (both modes) + _market_state.css.j2 (CN/HK/CA). ==== */
+  .rrx { --rc: var(--warn);
+         display: grid; gap: 12px; margin: 12px 0 2px; padding: 15px 18px; border-radius: 12px;
+         background: var(--panel);
+         border: 1px solid var(--line);
+         border-left: 4px solid var(--rc); font-size: 12.5px; line-height: 1.4;
+         box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4); }
+  body.page-macro .ms-front > .rrx { margin: 0 0 14px; }
+  .rrx.rrx-loud { background: color-mix(in srgb, var(--rc) 4%, var(--panel));
+         box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rc) 20%, transparent), 0 14px 34px -18px color-mix(in srgb, var(--rc) 70%, transparent);
+         animation: rrxPulse 2.4s ease-in-out infinite; }
+  @keyframes rrxPulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--rc) 30%, transparent); }
+                        50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--rc) 6%, transparent); } }
+  @media (prefers-reduced-motion: reduce) { .rrx.rrx-loud { animation: none;
+         box-shadow: 0 0 0 1px color-mix(in srgb, var(--rc) 30%, transparent); } }
+  /* header */
+  .rrx .rrx-hd { display: flex; align-items: flex-start; gap: 10px; }
+  .rrx .rrx-ic { font-size: 18px; line-height: 1.1; flex: none; }
+  .rrx .rrx-id { min-width: 0; flex: 1; }
+  .rrx .rrx-ttl { display: flex; align-items: center; flex-wrap: wrap; gap: 7px;
+         font-weight: 700; font-size: 13px; color: var(--text); }
+  .rrx .rrx-badge { font-weight: 800; letter-spacing: .03em; color: var(--rc); font-size: 11.5px;
+         font-variant-numeric: tabular-nums; padding: 1px 7px; border-radius: 5px;
+         background: color-mix(in srgb, var(--rc) 16%, transparent);
+         border: 1px solid color-mix(in srgb, var(--rc) 38%, transparent); }
+  .rrx .rrx-dom { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+  .rrx .rrx-amp { color: var(--rc); font-weight: 600; font-size: 11px; margin-top: 3px; }
+  .rrx .rrx-gross { flex: none; text-align: center; padding: 3px 11px; border-radius: 9px;
+         background: color-mix(in srgb, var(--rc) 12%, transparent);
+         border: 1px solid color-mix(in srgb, var(--rc) 32%, transparent); }
+  .rrx .rrx-gross .gv { display: block; font-weight: 800; font-size: 15px; color: var(--rc);
+         font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .rrx .rrx-gross .gn { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: .07em;
+         color: var(--muted); }
+  /* odds hero */
+  .rrx .rrx-odds { display: flex; gap: 16px; align-items: stretch; flex-wrap: wrap;
+         background: color-mix(in srgb, var(--rc) 5%, var(--panel));
+         border: 1px solid var(--line); border-radius: 9px; padding: 11px 14px; }
+  .rrx .rrx-odds-l { flex: 1 1 150px; display: flex; flex-direction: column; justify-content: center; }
+  .rrx .rrx-cap { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em;
+         color: var(--muted); }
+  .rrx .rrx-cap-sub { font-weight: 600; letter-spacing: .02em; opacity: .8; }
+  .rrx .rrx-big { font-weight: 800; font-size: 40px; line-height: .95; color: var(--rc); margin: 4px 0 2px;
+         font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .rrx .rrx-big .pct { font-size: 22px; margin-left: 1px; }
+  .rrx .rrx-big .rrx-hz { font-size: 11px; font-weight: 600; color: var(--muted); margin-left: 7px;
+         letter-spacing: 0; }
+  .rrx .rrx-vsn { font-size: 11.5px; color: var(--muted); }
+  .rrx .rrx-vsn b { color: var(--text); font-variant-numeric: tabular-nums; }
+  /* escalating ramp */
+  .rrx .rrx-ramp { flex: 1 1 240px; min-width: 0; max-width: 430px; display: flex; align-items: flex-end;
+         justify-content: space-between; gap: 12px; position: relative; padding-top: 18px; }
+  .rrx .rrx-col { flex: 1 1 0; min-width: 0; max-width: 76px; display: flex; flex-direction: column;
+         align-items: center; gap: 5px; }
+  .rrx .rrx-v { font-size: 12.5px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+  .rrx .rrx-col.is-hd .rrx-v { color: var(--rc); }
+  .rrx .rrx-tk { width: 100%; max-width: 54px; height: 64px; position: relative;
+         display: flex; align-items: flex-end; justify-content: center; border-bottom: 1px solid var(--line); }
+  .rrx .rrx-norm { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 2px 2px 0 0;
+         background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--muted) 32%, transparent) 0 4px, transparent 4px 8px);
+         border-top: 1px dashed color-mix(in srgb, var(--muted) 60%, transparent); }
+  .rrx .rrx-fill { width: 100%; border-radius: 3px 3px 0 0; position: relative; z-index: 1; min-height: 6px;
+         background: linear-gradient(180deg, var(--rc), color-mix(in srgb, var(--rc) 50%, transparent)); }
+  .rrx .rrx-hl { font-size: 10.5px; font-weight: 600; color: var(--muted); }
+  .rrx .rrx-col.is-hd .rrx-hl { color: var(--text); }
+  .rrx .rrx-leg { position: absolute; top: 0; right: 2px; display: flex; align-items: center; gap: 4px;
+         font-size: 9.5px; color: var(--muted); }
+  .rrx .rrx-leg-n { width: 13px; border-top: 1px dashed color-mix(in srgb, var(--muted) 60%, transparent); }
+  /* threat meters */
+  .rrx .rrx-threats { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rrx .rrx-th { --sb: var(--muted); display: inline-flex; align-items: center; gap: 6px;
+         padding: 3px 9px; border-radius: 7px; font-size: 11px;
+         background: var(--panel); border: 1px solid var(--line); }
+  .rrx .rrx-th.dom { background: color-mix(in srgb, var(--sb) 10%, var(--panel));
+         border-color: color-mix(in srgb, var(--sb) 50%, var(--line)); }
+  .rrx .rrx-th.dim { opacity: .58; }
+  .rrx .rrx-th-n { color: var(--text); font-weight: 600; }
+  .rrx .rrx-th.dom .rrx-th-n { color: var(--sb); }
+  .rrx .rrx-meter { display: inline-flex; gap: 1.5px; }
+  .rrx .rrx-meter i { width: 3px; height: 11px; border-radius: 1px;
+         background: color-mix(in srgb, var(--muted) 28%, transparent); }
+  .rrx .rrx-meter i.on { background: var(--sb); }
+  .rrx .rrx-th-s { color: var(--text); font-weight: 800; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .rrx .rrx-tag { font-size: 8.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+         border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+  .rrx .rrx-ev { font-size: 11px; color: var(--muted); }
+  .rrx .rrx-ev-k { font-weight: 700; color: var(--text); margin-right: 6px; }
+  .rrx .rrx-ev-p { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  /* action */
+  .rrx .rrx-do { font-size: 12px; color: var(--text); padding-top: 9px;
+         border-top: 1px solid color-mix(in srgb, var(--rc) 20%, var(--line)); }
+  .rrx .rrx-do-k { font-weight: 800; color: var(--rc); text-transform: uppercase; letter-spacing: .06em;
+         font-size: 10.5px; margin-right: 8px; }
+  /* self-audit line (international radars only) */
+  .rrx .rrx-audit { font-size: 10.5px; color: var(--muted); }
+  .rrx .rrx-audit-k { font-weight: 700; color: var(--text); margin-right: 6px; }
+  .rrx .rrx-audit b { color: var(--text); font-variant-numeric: tabular-nums; }
+  @media (max-width: 760px) {
+    .rrx .rrx-odds { flex-direction: column; gap: 14px; }
+    .rrx .rrx-odds-l { flex: 0 0 auto; }
+    .rrx .rrx-ramp { flex: 0 0 auto; width: 100%; max-width: none; justify-content: space-around; }
+  }
+  /* phone: collapse to a SIMPLE, STRONG alert — headline + the one number that
+     matters + the action. The ramp, the verbose amplification line and the
+     non-dominant threat meters are desktop-only detail, not a mobile wall. */
+  @media (max-width: 560px) {
+    .rrx { padding: 14px 15px; gap: 10px; }
+    .rrx .rrx-amp, .rrx .rrx-ramp, .rrx .rrx-ev { display: none; }
+    .rrx .rrx-odds { padding: 11px 13px; }
+    .rrx .rrx-big { font-size: 34px; }
+    .rrx .rrx-threats { gap: 5px; }
+    .rrx .rrx-th:not(.dom) { display: none; }
+  }
 
   .help { display: inline-flex; align-items: center; justify-content: center;
           width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
@@ -136,8 +231,9 @@
                z-index: 60; font-size: 12px; line-height: 1.45; color: var(--text);
                text-align: left; font-weight: 400; text-transform: none;
                letter-spacing: normal; box-shadow: var(--popover-shadow);
-               pointer-events: none; white-space: normal; }
-  .help:hover .tip { display: block; }
+               pointer-events: none; white-space: normal;
+               max-height: min(56vh, 360px); overflow-y: auto; overscroll-behavior: contain; }
+  .help:hover .tip, .help.tip-open .tip { display: block; }
   th .help .tip, .help.below .tip { bottom: auto; top: 140%; }
   /* keep tooltips on-screen near the right/left viewport edges */
   .help.edge-right .tip { left: auto; right: 0; transform: none; }
@@ -174,9 +270,12 @@
   .dial .active-CONSTRUCTIVE { background: var(--up); color: #fff; }
   .dial .active-AGGRESSIVE { background: var(--ok); color: #fff; }
   @media (max-width: 520px) { .dial > span { font-size: 8.5px; padding: 5px 1px; } }
-  .reason { margin: 4px 0; padding-left: 24px; position: relative; }
+  .reason { margin: 7px 0; padding-left: 24px; position: relative; line-height: 1.4; }
   .reason b.sig { position: absolute; left: 0; width: 17px; text-align: center;
                   border-radius: 4px; font-size: 12px; }
+  /* lead the bullet with the read; demote the parenthetical stats so it scans */
+  .reason .reason-main { font-weight: 600; color: var(--ink-1, var(--text)); }
+  .reason .reason-det { color: var(--ink-3, var(--muted)); font-size: .92em; }
 
   .card { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
           padding: 10px 12px; margin: 6px 0; }
@@ -702,35 +801,67 @@
     --ink-2: color-mix(in srgb, var(--text) 64%, transparent);
     --ink-3: var(--muted);
     --rule: 1px;
-    --pad: 17px;
-    --ms: var(--card-shadow), inset 0 1px 0 0 color-mix(in srgb, var(--text) 7%, transparent);
+    --pad: 20px;
+    --ms: inset 0 1px 0 0 color-mix(in srgb, var(--text) 9%, transparent),
+          0 1px 1px rgba(0,0,0,.28), 0 14px 30px -18px rgba(0,0,0,.55);
+
+    /* ═══ BILLION-DOLLAR MAKEOVER — one shared design system ═══════════════
+       The page used to re-invent its type sizes (~29 distinct px values) and
+       spacing in every block. These tokens are the single source of truth so
+       every module shares one scale, one rhythm, one material language. */
+    /* deepened terminal canvas — richer "screen" black, scoped to this page */
+    --bg:#0a0c11; --panel:#14171e; --panel2:#1b1f28;
+    /* type scale — 10 deliberate steps replace the ad-hoc soup */
+    --fs-display:46px;   /* hero verdict word          */
+    --fs-num-xl:38px;    /* the big board scores        */
+    --fs-h1:28px;        /* page / hero title           */
+    --fs-num-lg:22px;    /* secondary big numerals      */
+    --fs-h2:17px;        /* panel section titles        */
+    --fs-md:15px;        /* lead body / strong figures  */
+    --fs-body:14px;      /* base copy                   */
+    --fs-h3:14px;        /* subsection titles           */
+    --fs-sm:12.5px;      /* secondary copy / table body */
+    --fs-label:11px;     /* MONO eyebrows · caps        */
+    --fs-micro:10px;     /* dense ticks · table heads   */
+    /* spacing grid (4px base) — kill the 7/9/11/13/17/19px grab-bag */
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
+    /* radii + the eyebrow tracking constant */
+    --r-sm:8px; --r-md:10px; --r-lg:14px; --trk:.18em;
+    /* the single regime/accent rail used on every section header */
+    --rail: var(--link);
   }
   html[data-theme="light"] body.page-macro {
+    /* restore the airy light canvas (the dark overrides above set it on <body>) */
+    --bg:#f6f7fa; --panel:#ffffff; --panel2:#eef1f6;
     --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
     --hair: color-mix(in srgb, var(--line) 90%, transparent);
-    --ms: var(--card-shadow), inset 0 1px 0 0 rgba(255,255,255,.6);
+    --ms: inset 0 1px 0 0 rgba(255,255,255,.7),
+          0 1px 2px rgba(20,30,50,.05), 0 14px 30px -20px rgba(20,30,50,.16);
   }
 
-  /* ---- type scale: confident hierarchy, kill the tiny-muted soup ---- */
-  body.page-macro { font-size: 14.5px; line-height: 1.55; }
-  body.page-macro h1 { font-size: 20px; font-weight: 800; letter-spacing: -.01em;
+  /* ---- type scale: one confident hierarchy, every size from the scale ---- */
+  body.page-macro { font-size: var(--fs-body); line-height: 1.55; }
+  body.page-macro h1 { font-size: var(--fs-h1); font-weight: 800; letter-spacing: -.02em;
     color: var(--ink-1); }
-  /* section headers: readable sentence-case (NOT tiny uppercase — these are long
-     descriptive titles), strong ink, with an accent channel tick + hairline rule */
-  body.page-macro .panel > h2 { font-size: 14px; font-weight: 700; letter-spacing: -.005em;
-    text-transform: none; color: var(--ink-1); margin: 0 0 13px; padding: 0 0 11px;
-    border-bottom: var(--rule) solid var(--hair); line-height: 1.35; }
-  body.page-macro .panel > h2::before { content: ""; display: inline-block;
-    width: 3px; height: 14px; border-radius: 1.5px; background: var(--link);
-    margin-right: 9px; vertical-align: -2px; }
-  html[data-lang="zh"] body.page-macro .panel > h2 { letter-spacing: 0; }
-  body.page-macro h3 { font-size: 12.5px; font-weight: 700; letter-spacing: 0;
+  /* THE section-header system — every panel title reads identically: a regime
+     rail, a strong sentence-case title, a hairline rule to the panel edge. This
+     single shared rhythm is what turns the islands into one product. */
+  body.page-macro h2 { font-size: var(--fs-h2); font-weight: 700; letter-spacing: -.01em;
+    text-transform: none; color: var(--ink-1); line-height: 1.3; }
+  body.page-macro .panel > h2 { margin: 0 0 var(--sp-4); padding: 0 0 var(--sp-3);
+    border-bottom: var(--rule) solid var(--hair-strong);
+    display: flex; align-items: center; gap: 11px; flex-wrap: wrap; }
+  body.page-macro .panel > h2::before { content: ""; flex: none; align-self: center;
+    width: 3px; height: 18px; border-radius: 2px;
+    background: linear-gradient(180deg, var(--rail), color-mix(in srgb, var(--rail) 35%, transparent)); }
+  html[data-lang="zh"] body.page-macro h2 { letter-spacing: 0; }
+  body.page-macro h3 { font-size: var(--fs-h3); font-weight: 700; letter-spacing: 0;
     color: var(--ink-1); text-transform: none; }
   /* lift inline body greys; keep a true-caption class at the dimmer --ink-3 */
   body.page-macro .muted { color: var(--ink-2); }
   body.page-macro .kv { color: var(--ink-2); }
   body.page-macro .sm { color: var(--ink-2); }
-  body.page-macro .cap, body.page-macro .muted.cap { font-size: 11px; font-weight: 700;
+  body.page-macro .cap, body.page-macro .muted.cap { font-size: var(--fs-label); font-weight: 700;
     letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
 
   /* ---- numerals: the terminal signature — figures tabular + mono ---- */
@@ -751,15 +882,15 @@
     font-family: inherit; font-variant-numeric: normal; letter-spacing: normal; }
 
   /* ---- panel: crisp module — hairline frame, faint machined top edge ---- */
-  body.page-macro .grid { gap: 14px; }
-  @media (min-width: 1100px) { body.page-macro .grid { gap: 16px 18px; } }
+  body.page-macro .grid { gap: var(--sp-4); }
+  @media (min-width: 1100px) { body.page-macro .grid { gap: var(--sp-5) var(--sp-5); } }
   body.page-macro .panel { background: var(--panel);
-    border: var(--rule) solid var(--hair-strong); border-radius: 12px;
-    padding: var(--pad) calc(var(--pad) + 1px); box-shadow: var(--ms); }
+    border: var(--rule) solid var(--hair-strong); border-radius: var(--r-lg);
+    padding: var(--pad) calc(var(--pad) + 2px); box-shadow: var(--ms); }
 
   /* ---- tables: terminal treatment ---- */
-  body.page-macro table { font-size: 12.5px; }
-  body.page-macro th { font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  body.page-macro table { font-size: var(--fs-sm); }
+  body.page-macro th { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .08em;
     text-transform: uppercase; color: var(--ink-3);
     border-bottom: var(--rule) solid var(--hair-strong); }
   body.page-macro td { border-bottom: var(--rule) solid var(--hair); color: var(--ink-1); }
@@ -1184,18 +1315,99 @@
     </div>
     
     
-    
-    
-    <div class="rr-alert" style="--rc:var(--warn)">
-      <span class="rra-ic">⚠️</span>
-      <span class="rra-main">
-        <span class="rra-tit"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span> · <b style="color:var(--warn)"><span class="l-en">CAUTION</span><span class="l-zh">警戒</span> 91/100</b> — <span class="l-en">Growth scare / defensive rotation</span><span class="l-zh">增长恐慌/防御轮动</span><span class="help">?<span class="tip"><span class="l-en">A leading drawdown-risk gauge, built only from signals that passed a strict backtest. It watches five kinds of stress (credit, rates, bubble, growth, volatility) and stays quiet until the broad market is actually breaking — so it appears here only when it fires (caution or worse). It measures the ODDS of a pullback, not the direction. Use it to size down, never to pick stocks. Full per-leg detail on the Macro Signals page.</span><span class="l-zh">领先的回撤风险指标，仅由通过严格回测的信号构成。它监测五类压力（信用、利率、泡沫、增长、波动），在大盘真正破位前保持沉默 — 因此仅在触发（警戒或更高）时于此显示。它衡量回撤的“概率”而非方向。用它来降低仓位，绝非选股。完整分项见宏观信号页。</span></span></span></span>
-        <span class="rra-odds"><span class="l-en">Pullback odds (≥5%)</span><span class="l-zh">回撤概率（≥5%）</span> · 5d 4% · 10d 10% · <b>21d 19%</b></span>
-        <span class="rra-scares"><span class="l-en">Stress:</span><span class="l-zh">压力来源：</span><span class="rra-scare" style="border-color:var(--down)"><span class="l-en">Growth scare / defensive rotation</span><span class="l-zh">增长恐慌/防御轮动</span> <b style="color:var(--down)">91</b></span><span class="rra-scare" style="border-color:var(--warn)"><span class="l-en">Credit stress</span><span class="l-zh">信用压力</span> <b style="color:var(--warn)">68</b></span><span class="rra-scare" style="border-color:var(--muted)"><span class="l-en">Volatility event</span><span class="l-zh">波动率事件</span> <b style="color:var(--muted)">58</b></span><span class="rra-scare" style="border-color:var(--muted)"><span class="l-en">Bubble / blow-off unwind</span><span class="l-zh">泡沫/见顶回吐</span> <b style="color:var(--muted)">38</b></span></span>
-      </span>
-      <span class="rra-do"><b><span class="l-en">Do</span><span class="l-zh">应对</span>:</b> <span class="l-en">Trim chasing; favour good entries over extended leaders.</span><span class="l-zh">减少追高；择优入场而非追逐已延展的龙头。</span> · <span class="l-en">gross</span><span class="l-zh">仓位</span> ×0.90</span>
-      <a class="rra-more" href="macro_signals.html"><span class="l-en">full radar →</span><span class="l-zh">完整雷达 →</span></a>
+    <div class="rrx rrx-caution rrx-loud" style="--rc:var(--warn)">
+  <div class="rrx-hd">
+    <span class="rrx-ic">⚠️</span>
+    <div class="rrx-id">
+      <div class="rrx-ttl"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span>
+        <span class="rrx-badge"><span class="l-en">CAUTION</span><span class="l-zh">警戒</span> · 91/100</span>
+        <span class="help">?<span class="tip"><span class="l-en">A leading drawdown-risk gauge, built only from signals that passed a strict backtest. It watches the kinds of stress that actually lead this market's drawdowns and stays quiet until the broad market is actually breaking. It measures the ODDS of a pullback, not the direction — use it to size down, never to pick stocks. Every call is graded afterwards and the gauge is re-tuned from its own misses.</span><span class="l-zh">领先的回撤风险指标，仅由通过严格回测的信号构成。它监测真正领先本市场回撤的压力类型，在大盘真正破位前保持沉默。它衡量回撤的“概率”而非方向——用于降低仓位，绝非选股。每次判断事后都会被评判，并据其失误自我再校准。</span></span></span>
+      </div>
+      <div class="rrx-dom"><span class="l-en">Growth scare / defensive rotation</span><span class="l-zh">增长恐慌/防御轮动</span></div>
+      <div class="rrx-amp">▲ <span class="l-en">Amplified</span><span class="l-zh">放大</span> — <span class="l-en">several scare-types firing together · 2 risk types elevated · complacency — calm VIX but fragile</span><span class="l-zh">多个风险类型同时触发 · 2 类风险升高 · 自满 — VIX 平静但脆弱</span></div>
     </div>
+    <div class="rrx-gross"><span class="gv">×0.90</span><span class="gn"><span class="l-en">gross</span><span class="l-zh">建议仓位</span></span></div>
+  </div>
+
+  
+  <div class="rrx-odds">
+    <div class="rrx-odds-l">
+      <div class="rrx-cap"><span class="l-en">Pullback odds</span><span class="l-zh">回撤概率</span> <span class="rrx-cap-sub"><span class="l-en">≥5% drop · escalating</span><span class="l-zh">≥5% · 递增</span></span></div>
+      <div class="rrx-big">19<span class="pct">%</span><span class="rrx-hz"><span class="l-en">within 21 days</span><span class="l-zh">21 日内</span></span></div>
+      <div class="rrx-vsn"><b>1.07×</b> <span class="l-en">vs normal</span><span class="l-zh">对比常态</span> 18%</div>
+    </div>
+    <div class="rrx-ramp">
+      <div class="rrx-col">
+        <span class="rrx-v">4%</span>
+        <div class="rrx-tk">
+          <div class="rrx-norm" style="height:16%"></div>
+          <div class="rrx-fill" style="height:18%"></div>
+        </div>
+        <span class="rrx-hl"><span class="l-en">5d</span><span class="l-zh">5日</span></span>
+      </div>
+      <div class="rrx-col">
+        <span class="rrx-v">10%</span>
+        <div class="rrx-tk">
+          <div class="rrx-norm" style="height:37%"></div>
+          <div class="rrx-fill" style="height:43%"></div>
+        </div>
+        <span class="rrx-hl"><span class="l-en">10d</span><span class="l-zh">10日</span></span>
+      </div>
+      <div class="rrx-col is-hd">
+        <span class="rrx-v">19%</span>
+        <div class="rrx-tk">
+          <div class="rrx-norm" style="height:77%"></div>
+          <div class="rrx-fill" style="height:82%"></div>
+        </div>
+        <span class="rrx-hl"><span class="l-en">21d</span><span class="l-zh">21日</span></span>
+      </div>
+      
+      <span class="rrx-leg"><span class="rrx-leg-n"></span><span class="l-en">normal</span><span class="l-zh">常态</span></span>
+    </div>
+  </div>
+  
+
+  
+  <div class="rrx-threats">
+    <span class="rrx-th dom" style="--sb:var(--act)">
+      <span class="rrx-th-n"><span class="l-en">Growth scare / defensive rotation</span><span class="l-zh">增长恐慌/防御轮动</span></span>
+      <span class="rrx-meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span>
+      <b class="rrx-th-s">91</b>
+    </span>
+    <span class="rrx-th" style="--sb:var(--warn)">
+      <span class="rrx-th-n"><span class="l-en">Credit stress</span><span class="l-zh">信用压力</span></span>
+      <span class="rrx-meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span>
+      <b class="rrx-th-s">68</b>
+    </span>
+    <span class="rrx-th dim" style="--sb:var(--info)">
+      <span class="rrx-th-n"><span class="l-en">Volatility event</span><span class="l-zh">波动率事件</span></span>
+      <span class="rrx-meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span>
+      <b class="rrx-th-s">58</b><span class="rrx-tag"><span class="l-en">display</span><span class="l-zh">仅展示</span></span>
+    </span>
+    <span class="rrx-th" style="--sb:var(--muted)">
+      <span class="rrx-th-n"><span class="l-en">Bubble / blow-off unwind</span><span class="l-zh">泡沫/见顶回吐</span></span>
+      <span class="rrx-meter"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span>
+      <b class="rrx-th-s">38</b>
+    </span>
+    <span class="rrx-th" style="--sb:var(--muted)">
+      <span class="rrx-th-n"><span class="l-en">Rates / inflation shock</span><span class="l-zh">利率/通胀冲击</span></span>
+      <span class="rrx-meter"><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></span>
+      <b class="rrx-th-s">14</b>
+    </span>
+    
+  </div>
+  
+  <div class="rrx-ev"><span class="rrx-ev-k"><span class="l-en">Leading</span><span class="l-zh">领先信号</span></span><span class="l-en">Defensives outperforming</span><span class="l-zh">防御股跑赢</span> <span class="rrx-ev-p">93th ✓</span> · <span class="l-en">Cyclicals fading vs defensives</span><span class="l-zh">周期股弱于防御</span> <span class="rrx-ev-p">89th</span></div>
+  
+  
+
+  
+  <div class="rrx-do"><span class="rrx-do-k"><span class="l-en">Do</span><span class="l-zh">应对</span></span><span class="l-en">Trim chasing; favour good entries over extended leaders.</span><span class="l-zh">减少追高；择优入场而非追逐已延展的龙头。</span></div>
+  
+
+  
+  
+</div>
     
     <p class="muted" style="margin:6px 0 0"><span class="l-en">Where to look for stocks — standouts, sector rotation, factor tilts and real fund flows, filtered by the current macro regime.</span><span class="l-zh">在哪里找股票 — 精选个股、板块轮动、因子倾斜与基金真实资金流，按当前宏观周期过滤。</span>
       <a href="macro.html" style="color:var(--link);font-weight:600">← <span class="l-en">Macro regime dashboard</span><span class="l-zh">宏观周期看板</span></a></p>
@@ -1211,7 +1423,7 @@
   
   
   <div class="panel span12">
-    <h2>⚡ <span class="l-en">What to act on now</span><span class="l-zh">当前可操作</span>
+    <h2><span class="l-en">What to act on now</span><span class="l-zh">当前可操作</span>
       <span class="help">?<span class="tip"><span class="l-en">Your at-a-glance starting point — now spanning BOTH 🧩 narrative baskets (Memory & Storage, Non-AI Software, …) and 🏛 GICS sectors, because 'Technology' blends generational winners (memory/semis) with names being obliterated (non-AI software). Baskets give the narrative resolution sectors can't. HONESTY: a basket on the BUY side is a leadership LENS (≈), descriptive — cross-sectional momentum rank-IC is ~0 on the clean multi-decade backtest, so it focuses attention, it is not a return forecast. A basket on the REDUCE side carries a VALIDATED mark (✓): it rides the absolute-trend / fading-deteriorating drawdown gate, the one backtested edge (it roughly halved drawdown over 27y). ★ = currently in the narrative-rotation model book. Sectors keep their price-cycle read. Click any name for the full breakdown.</span><span class="l-zh">你的一眼总览起点 — 现同时覆盖🧩叙事篮子（内存与存储、非AI软件…）与🏛GICS板块，因为“科技”把世代赢家（内存/半导体）与被血洗的标的（非AI软件）混为一谈。篮子提供板块无法给出的叙事分辨。诚实说明：买入侧的篮子是领先度透镜（≈），描述性 — 横截面动量 rank-IC≈0（多年期干净回测），用于聚焦而非预测收益。减仓侧的篮子带已验证标记（✓）：依托绝对趋势／衰退-恶化回撤门槛，这是唯一经回测的优势（27年里大致将回撤减半）。★＝当前在叙事轮动模型组合中。板块保留其价格周期判读。点击任意名称查看完整拆解。</span></span></span>
     </h2>
     
@@ -1278,15 +1490,15 @@
         
           <a class="actitem ai-theme" href="basket/housing.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Housing Chain</span><span class="l-zh">住房产业链</span></b><span class="ai-lens" title="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast · 领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
-          <a class="actitem" href="basket/us_sector_industrials.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Industrials</span><span class="l-zh">工业</span></b> <span class="muted"><span class="l-en">hold — don't chase</span><span class="l-zh">持有 — 勿追高</span></span></a>
+          <a class="actitem" href="sectors/XLI.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Industrials</span><span class="l-zh">工业</span></b> <span class="muted"><span class="l-en">hold — don't chase</span><span class="l-zh">持有 — 勿追高</span></span></a>
         
-          <a class="actitem" href="basket/us_sector_staples.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></b> <span class="muted"><span class="l-en">hold — don't chase</span><span class="l-zh">持有 — 勿追高</span></span></a>
+          <a class="actitem" href="sectors/XLP.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></b> <span class="muted"><span class="l-en">hold — don't chase</span><span class="l-zh">持有 — 勿追高</span></span></a>
         
-          <a class="actitem" href="basket/us_sector_realestate.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></b> <span class="muted"><span class="l-en">hold — don't chase</span><span class="l-zh">持有 — 勿追高</span></span></a>
+          <a class="actitem" href="sectors/XLRE.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></b> <span class="muted"><span class="l-en">hold — don't chase</span><span class="l-zh">持有 — 勿追高</span></span></a>
         
-          <a class="actitem" href="basket/us_sector_utilities.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></b> <span class="muted"><span class="l-en">hold — don't chase</span><span class="l-zh">持有 — 勿追高</span></span></a>
+          <a class="actitem" href="sectors/XLU.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></b> <span class="muted"><span class="l-en">hold — don't chase</span><span class="l-zh">持有 — 勿追高</span></span></a>
         
-          <a class="actitem" href="basket/us_sector_health.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></b> <span class="muted"><span class="l-en">hold — don't chase</span><span class="l-zh">持有 — 勿追高</span></span></a>
+          <a class="actitem" href="sectors/XLV.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></b> <span class="muted"><span class="l-en">hold — don't chase</span><span class="l-zh">持有 — 勿追高</span></span></a>
         
         
           <a class="actitem ai-theme" href="basket/uranium_miners.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Uranium & Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
@@ -1305,17 +1517,17 @@
         
           <a class="actitem ai-theme" href="basket/crypto.html"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Crypto & Digital Assets</span><span class="l-zh">加密与数字资产</span></b><span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
-          <a class="actitem" href="basket/us_sector_materials.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Materials</span><span class="l-zh">原材料</span></b> <span class="muted"><span class="l-en">wait</span><span class="l-zh">等待</span></span></a>
+          <a class="actitem" href="sectors/XLB.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Materials</span><span class="l-zh">原材料</span></b> <span class="muted"><span class="l-en">wait</span><span class="l-zh">等待</span></span></a>
         
-          <a class="actitem" href="basket/us_sector_comm.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Communications</span><span class="l-zh">通讯</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
+          <a class="actitem" href="sectors/XLC.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Communications</span><span class="l-zh">通讯</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
         
-          <a class="actitem" href="basket/us_sector_energy.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Energy</span><span class="l-zh">能源</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
+          <a class="actitem" href="sectors/XLE.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Energy</span><span class="l-zh">能源</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
         
-          <a class="actitem" href="basket/us_sector_financials.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Financials</span><span class="l-zh">金融</span></b> <span class="muted"><span class="l-en">wait</span><span class="l-zh">等待</span></span></a>
+          <a class="actitem" href="sectors/XLF.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Financials</span><span class="l-zh">金融</span></b> <span class="muted"><span class="l-en">wait</span><span class="l-zh">等待</span></span></a>
         
-          <a class="actitem" href="basket/us_sector_tech.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Technology</span><span class="l-zh">科技</span></b> <span class="muted"><span class="l-en">wait</span><span class="l-zh">等待</span></span></a>
+          <a class="actitem" href="sectors/XLK.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Technology</span><span class="l-zh">科技</span></b> <span class="muted"><span class="l-en">wait</span><span class="l-zh">等待</span></span></a>
         
-          <a class="actitem" href="basket/us_sector_discretionary.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></b> <span class="muted"><span class="l-en">wait</span><span class="l-zh">等待</span></span></a>
+          <a class="actitem" href="sectors/XLY.html"><span class="ai-bdg" title="GICS sector">🏛</span><b><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></b> <span class="muted"><span class="l-en">wait</span><span class="l-zh">等待</span></span></a>
         
         </div>
         
@@ -5536,7 +5748,7 @@
       </tr>
       
       <tr>
-        <td class="l"><a href="basket/us_sector_realestate.html"><b>XLRE</b></a> <span class="muted"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span>
+        <td class="l"><a href="sectors/XLRE.html"><b>XLRE</b></a> <span class="muted"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span>
         </td>
         <td class="l" data-sort="2">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5559,7 +5771,7 @@
       </tr>
       
       <tr>
-        <td class="l"><a href="basket/us_sector_staples.html"><b>XLP</b></a> <span class="muted"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></span>
+        <td class="l"><a href="sectors/XLP.html"><b>XLP</b></a> <span class="muted"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></span>
         </td>
         <td class="l" data-sort="2">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5582,7 +5794,7 @@
       </tr>
       
       <tr>
-        <td class="l"><a href="basket/us_sector_energy.html"><b>XLE</b></a> <span class="muted"><span class="l-en">Energy</span><span class="l-zh">能源</span></span>
+        <td class="l"><a href="sectors/XLE.html"><b>XLE</b></a> <span class="muted"><span class="l-en">Energy</span><span class="l-zh">能源</span></span>
         </td>
         <td class="l" data-sort="2">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5605,7 +5817,7 @@
       </tr>
       
       <tr>
-        <td class="l"><a href="basket/us_sector_tech.html"><b>XLK</b></a> <span class="muted"><span class="l-en">Technology</span><span class="l-zh">科技</span></span>
+        <td class="l"><a href="sectors/XLK.html"><b>XLK</b></a> <span class="muted"><span class="l-en">Technology</span><span class="l-zh">科技</span></span>
         </td>
         <td class="l" data-sort="5">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5628,7 +5840,7 @@
       </tr>
       
       <tr>
-        <td class="l"><a href="basket/us_sector_materials.html"><b>XLB</b></a> <span class="muted"><span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
+        <td class="l"><a href="sectors/XLB.html"><b>XLB</b></a> <span class="muted"><span class="l-en">Materials</span><span class="l-zh">原材料</span></span>
         </td>
         <td class="l" data-sort="5">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5651,7 +5863,7 @@
       </tr>
       
       <tr>
-        <td class="l"><a href="basket/us_sector_industrials.html"><b>XLI</b></a> <span class="muted"><span class="l-en">Industrials</span><span class="l-zh">工业</span></span>
+        <td class="l"><a href="sectors/XLI.html"><b>XLI</b></a> <span class="muted"><span class="l-en">Industrials</span><span class="l-zh">工业</span></span>
         </td>
         <td class="l" data-sort="7">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5670,11 +5882,11 @@
             <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="40.0" width="14.2" height="3.2" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="36.2" width="14.2" height="3.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="32.3" width="14.2" height="7.7" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="19.9" width="14.2" height="20.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="35.0" width="14.2" height="5.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="134.7" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="140.2" y="40.0" width="14.2" height="2.3" rx="1.5" style="fill:var(--down);opacity:1"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">6</text><rect x="165.6" y="27.5" width="14.2" height="12.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">7</text><rect x="190.9" y="38.1" width="14.2" height="1.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="8.0" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="31.4" width="14.2" height="8.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="30.5" width="14.2" height="9.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="neg">-0.4%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="pos">+0.5%</td><td>57%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+1.0%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.7%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.7%</td><td>61%</td><td class="muted">28</td></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.3%</td><td>46%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.7%</td><td>74%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.2%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-1.1%</td><td>52%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.1%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+3.5%</td><td>78%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.3%</td><td>70%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
-        <td class="pos" style="font-size:11.5px"><span class="l-en">+0.1% vs SPY · 50% up · n=2187</span><span class="l-zh">对SPY +0.1% · 50% 上涨 · n=2187</span></td>
+        <td class="pos" style="font-size:11.5px"><span class="l-en">+0.1% vs SPY · 50% up · n=2186</span><span class="l-zh">对SPY +0.1% · 50% 上涨 · n=2186</span></td>
       </tr>
       
       <tr>
-        <td class="l"><a href="basket/us_sector_health.html"><b>XLV</b></a> <span class="muted"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></span>
+        <td class="l"><a href="sectors/XLV.html"><b>XLV</b></a> <span class="muted"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></span>
         </td>
         <td class="l" data-sort="7">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5693,11 +5905,11 @@
             <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="29.8" width="14.2" height="10.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="2.0" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="30.2" width="14.2" height="9.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="26.1" width="14.2" height="13.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="34.5" width="14.2" height="5.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="134.7" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="140.2" y="30.2" width="14.2" height="9.8" rx="1.5" style="fill:var(--up);opacity:1"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">6</text><rect x="165.6" y="27.9" width="14.2" height="12.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">7</text><rect x="190.9" y="38.3" width="14.2" height="1.7" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="13.3" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="32.0" width="14.2" height="8.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="23.5" width="14.2" height="16.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="pos">+0.9%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-0.2%</td><td>57%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+0.9%</td><td>61%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+1.3%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.5%</td><td>68%</td><td class="muted">28</td></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="pos">+0.9%</td><td>57%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.1%</td><td>63%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.2%</td><td>56%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-1.2%</td><td>41%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+0.7%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+2.4%</td><td>78%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.5%</td><td>67%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
-        <td class="pos" style="font-size:11.5px"><span class="l-en">+0.1% vs SPY · 50% up · n=2187</span><span class="l-zh">对SPY +0.1% · 50% 上涨 · n=2187</span></td>
+        <td class="pos" style="font-size:11.5px"><span class="l-en">+0.1% vs SPY · 50% up · n=2186</span><span class="l-zh">对SPY +0.1% · 50% 上涨 · n=2186</span></td>
       </tr>
       
       <tr>
-        <td class="l"><a href="basket/us_sector_utilities.html"><b>XLU</b></a> <span class="muted"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span>
+        <td class="l"><a href="sectors/XLU.html"><b>XLU</b></a> <span class="muted"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span>
         </td>
         <td class="l" data-sort="7">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5716,11 +5928,11 @@
             <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="40.0" width="14.2" height="2.4" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="11.2" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="14.2" width="14.2" height="25.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="31.8" width="14.2" height="8.2" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="134.7" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="140.2" y="38.8" width="14.2" height="1.2" rx="1.5" style="fill:var(--up);opacity:1"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">6</text><rect x="165.6" y="27.7" width="14.2" height="12.3" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">7</text><rect x="190.9" y="36.0" width="14.2" height="4.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="39.0" width="14.2" height="1.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="26.1" width="14.2" height="13.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="30.9" width="14.2" height="9.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="29.0" width="14.2" height="11.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="neg">-0.2%</td><td>46%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-1.0%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+2.3%</td><td>75%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.3%</td><td>82%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.7%</td><td>61%</td><td class="muted">28</td></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="pos">+0.1%</td><td>54%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.1%</td><td>67%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.3%</td><td>63%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="pos">+0.1%</td><td>63%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+1.2%</td><td>74%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+0.8%</td><td>59%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.0%</td><td>63%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
-        <td class="pos" style="font-size:11.5px"><span class="l-en">+0.1% vs SPY · 50% up · n=2187</span><span class="l-zh">对SPY +0.1% · 50% 上涨 · n=2187</span></td>
+        <td class="pos" style="font-size:11.5px"><span class="l-en">+0.1% vs SPY · 50% up · n=2186</span><span class="l-zh">对SPY +0.1% · 50% 上涨 · n=2186</span></td>
       </tr>
       
       <tr>
-        <td class="l"><a href="basket/us_sector_financials.html"><b>XLF</b></a> <span class="muted"><span class="l-en">Financials</span><span class="l-zh">金融</span></span>
+        <td class="l"><a href="sectors/XLF.html"><b>XLF</b></a> <span class="muted"><span class="l-en">Financials</span><span class="l-zh">金融</span></span>
         </td>
         <td class="l" data-sort="8">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5739,11 +5951,11 @@
             <span class="tip tip-seas"><b style="font-size:12px;display:block;margin-bottom:1px"><span class="l-en">Seasonality — average return by month</span><span class="l-zh">季节性 — 各月平均回报</span></b><svg viewBox="0 0 320 86" width="100%" style="display:block;margin:4px 0 6px;overflow:visible"><line x1="8" y1="40" x2="312" y2="40" style="stroke:var(--line);stroke-width:1"/><rect x="13.6" y="40.0" width="14.2" height="1.8" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="20.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">1</text><rect x="38.9" y="40.0" width="14.2" height="9.5" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="46.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">2</text><rect x="64.2" y="31.9" width="14.2" height="8.1" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="71.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">3</text><rect x="89.6" y="14.0" width="14.2" height="26.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="96.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">4</text><rect x="114.9" y="37.1" width="14.2" height="2.9" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="122.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">5</text><rect x="134.7" y="6" width="25.3" height="66.0" rx="2" style="fill:var(--text);opacity:.07"/><rect x="140.2" y="40.0" width="14.2" height="8.1" rx="1.5" style="fill:var(--down);opacity:1"/><text x="147.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--text);font-weight:700">6</text><rect x="165.6" y="21.6" width="14.2" height="18.4" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="172.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">7</text><rect x="190.9" y="37.5" width="14.2" height="2.5" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="198.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">8</text><rect x="216.2" y="40.0" width="14.2" height="11.4" rx="1.5" style="fill:var(--down);opacity:0.55"/><text x="223.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">9</text><rect x="241.6" y="20.2" width="14.2" height="19.8" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="248.7" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">10</text><rect x="266.9" y="20.0" width="14.2" height="20.0" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="274.0" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">11</text><rect x="292.2" y="28.4" width="14.2" height="11.6" rx="1.5" style="fill:var(--up);opacity:0.55"/><text x="299.3" y="80" text-anchor="middle" style="font-size:9px;fill:var(--muted);font-weight:400">12</text></svg><div style="display:flex;gap:10px"><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jan</span><span class="l-zh">1月</span></td><td class="neg">-0.2%</td><td>54%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Feb</span><span class="l-zh">2月</span></td><td class="neg">-1.0%</td><td>50%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Mar</span><span class="l-zh">3月</span></td><td class="pos">+0.8%</td><td>43%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">Apr</span><span class="l-zh">4月</span></td><td class="pos">+2.6%</td><td>64%</td><td class="muted">28</td></tr><tr><td style="text-align:left"><span class="l-en">May</span><span class="l-zh">5月</span></td><td class="pos">+0.3%</td><td>57%</td><td class="muted">28</td></tr><tr style="background:var(--panel2);font-weight:700"><td style="text-align:left"><span class="l-en">Jun</span><span class="l-zh">6月</span></td><td class="neg">-0.8%</td><td>39%</td><td class="muted">28</td></tr></table><table style="margin:0;flex:1 1 0;min-width:0"><colgroup><col style="width:28%"><col style="width:28%"><col style="width:23%"><col style="width:21%"></colgroup><tr><th style="text-align:left"><span class="l-en">Month</span><span class="l-zh">月份</span></th><th><span class="l-en">Avg</span><span class="l-zh">均值</span></th><th><span class="l-en">Up</span><span class="l-zh">收涨</span></th><th><span class="l-en">Yrs</span><span class="l-zh">年数</span></th></tr><tr><td style="text-align:left"><span class="l-en">Jul</span><span class="l-zh">7月</span></td><td class="pos">+1.9%</td><td>67%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Aug</span><span class="l-zh">8月</span></td><td class="pos">+0.2%</td><td>52%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Sep</span><span class="l-zh">9月</span></td><td class="neg">-1.2%</td><td>44%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Oct</span><span class="l-zh">10月</span></td><td class="pos">+2.0%</td><td>67%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Nov</span><span class="l-zh">11月</span></td><td class="pos">+2.0%</td><td>67%</td><td class="muted">27</td></tr><tr><td style="text-align:left"><span class="l-en">Dec</span><span class="l-zh">12月</span></td><td class="pos">+1.2%</td><td>70%</td><td class="muted">27</td></tr></table></div><div class="muted" style="font-size:10.5px;margin-top:6px;line-height:1.4"><span class="l-en">Each month’s average return across this instrument’s full history, and how often it closed up. Weak evidence — background colour only, never a signal on its own (and left out of the heat score).</span><span class="l-zh">该标的全部历史中每个月的平均回报及收涨频率。属于弱证据 — 仅作背景参考，绝不单独作为信号（且已排除在热度分数之外）。</span></div></span>
           </span>
         </td>
-        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.1% vs SPY · 49% up · n=2335</span><span class="l-zh">对SPY -0.1% · 49% 上涨 · n=2335</span></td>
+        <td class="neg" style="font-size:11.5px"><span class="l-en">-0.1% vs SPY · 48% up · n=2336</span><span class="l-zh">对SPY -0.1% · 48% 上涨 · n=2336</span></td>
       </tr>
       
       <tr>
-        <td class="l"><a href="basket/us_sector_discretionary.html"><b>XLY</b></a> <span class="muted"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></span>
+        <td class="l"><a href="sectors/XLY.html"><b>XLY</b></a> <span class="muted"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></span>
         </td>
         <td class="l" data-sort="10">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5766,7 +5978,7 @@
       </tr>
       
       <tr>
-        <td class="l"><a href="basket/us_sector_comm.html"><b>XLC</b></a> <span class="muted"><span class="l-en">Communications</span><span class="l-zh">通讯</span></span>
+        <td class="l"><a href="sectors/XLC.html"><b>XLC</b></a> <span class="muted"><span class="l-en">Communications</span><span class="l-zh">通讯</span></span>
         </td>
         <td class="l" data-sort="10">
           <span style="display:inline-flex;align-items:center;gap:6px">
@@ -5798,7 +6010,7 @@
   
   <!-- ======================= ACCUMULATION WATCH ======================= -->
   <div class="panel span12" id="accumulation">
-    <h2><span class="l-en">🐳 Accumulation watch — sector ETFs</span><span class="l-zh">🐳 增持监测 — 板块 ETF</span>
+    <h2><span class="l-en">Accumulation watch — sector ETFs</span><span class="l-zh">增持监测 — 板块 ETF</span>
       <span class="help">?<span class="tip"><span class="l-en">Each sector SPDR's top-10 weights, with each holding's weight change split into the part explained by the stock's own price move and a residual ('active' = weight that grew MORE than price alone). A large positive residual = real buying flowed into the name beyond market drift. HONEST CAVEAT: these SPDRs are PASSIVE index funds, so the residual is index reconstitution / float-weight flow (forced index-fund buying), NOT a discretionary manager's conviction — that reading comes with the active funds in the planned top-200 page. The technical column shows the stock's own cycle state; ✅ marks accumulation that also has a forming buy setup. Thresholds are uncalibrated until more snapshot history accumulates.</span><span class="l-zh">每只板块 SPDR 的前十大权重；每只持仓的权重变动被拆分为“由个股自身价格变动解释的部分”与“残差”（“主动”=权重增长超过价格涨幅的部分）。较大的正残差=除市场漂移外确有真实买盘流入该股。诚实提示：这些 SPDR 是被动指数基金，故残差代表指数再平衡／流通权重调整带来的资金流（被动强制买入），并非主动经理的信念——后者要等到计划中的前 200 ETF 页面里的主动基金。技术面列显示个股自身的周期状态；✅ 表示增持同时出现了正在形成的买入形态。在积累更多快照历史前，阈值尚未校准。</span></span></span>
     </h2>
     
@@ -6134,9 +6346,26 @@ window.__CHART_SWAP__ = {
 <script src="live_config.js"></script>
 <script src="live.js"></script>
 <script src="heatmap.js"></script>
+<script>
+/* Keep .help tooltips on-screen: flip below the icon when it's near the top of
+   the viewport, and clamp horizontally near the left/right edges. Hover-only,
+   no layout cost until you point at a "?". */
+(function(){
+  function place(h){
+    var r = h.getBoundingClientRect(), vw = window.innerWidth;
+    h.classList.toggle('below', r.top < 240);
+    h.classList.remove('edge-left','edge-right');
+    if (r.left > vw - 170) h.classList.add('edge-right');
+    else if (r.left < 170) h.classList.add('edge-left');
+  }
+  document.addEventListener('pointerover', function(e){
+    var h = e.target.closest && e.target.closest('.help');
+    if (h) place(h);
+  }, true);
+})();
+</script>
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

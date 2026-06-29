@@ -176,9 +176,10 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
 .pill-ok, .pill-stale, .pill-failed, .pill-dead, .pill-blocked,
 .tag-lead, .tag-avoid, .tag-watch, .chip-pos, .chip-neg,
 .sig-p, .sig-m, .sig-i, .urgpill, .lad-tint {
-  background: color-mix(in srgb, var(--c, var(--muted)) 15%, var(--panel));
-  color: color-mix(in srgb, var(--c, var(--muted)) 80%, var(--text));
-  border-color: color-mix(in srgb, var(--c, var(--muted)) 30%, transparent);
+  background: color-mix(in srgb, var(--c, var(--muted)) 12%, var(--panel));
+  color: color-mix(in srgb, var(--c, var(--muted)) 86%, var(--text));
+  border-color: color-mix(in srgb, var(--c, var(--muted)) 34%, transparent);
+  font-variant-numeric: tabular-nums; letter-spacing: .01em;
 }
 /* base-color assignments */
 .st-FRESH_BUY, .st-RALLY_ON, .pill-ok, .tag-lead, .chip-pos, .sig-p,
