@@ -1,32 +1,32 @@
 {
-  "2fecf493557e": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Materials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Materials",
-    "score": 59.0
+  "7761f9077a34": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Consumer Staples",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Consumer Staples",
+    "score": 75.9
   },
   "a5b55771f8ec": {
     "name_en": "Emerging Industrials cluster",
     "name_zh": "\u65b0\u5174 Industrials \u96c6\u7fa4",
-    "score": 65.8
+    "score": 66.1
   },
   "af004650aca6": {
     "name_en": "Emerging Consumer Staples cluster",
     "name_zh": "\u65b0\u5174 Consumer Staples \u96c6\u7fa4",
-    "score": 52.2
+    "score": 53.0
   },
-  "c6a7ebc09b4c": {
+  "c48fb91475a9": {
     "name_en": "Cross-sector cluster \u00b7 Information Technology + Industrials",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Information Technology + Industrials",
-    "score": 66.2
+    "score": 66.3
   },
-  "d54b48fe9e5d": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Financials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Financials",
-    "score": 69.1
+  "d08afbae6b8e": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Consumer Discretionary",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Consumer Discretionary",
+    "score": 65.7
   },
   "e00ab1b8a9fc": {
     "name_en": "Cross-sector cluster \u00b7 Information Technology + Communication",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Information Technology + Communication",
-    "score": 64.7
+    "score": 63.5
   }
 }

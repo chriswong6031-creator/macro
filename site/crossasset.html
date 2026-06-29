@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><span class="l-en">Cross-Asset Vector — trend · ratios · correlation regime</span><span class="l-zh">跨资产向量 — 趋势 · 比价 · 相关性体制</span></title>
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   body{background:var(--bg);color:var(--text);font:14px/1.5 Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;margin:0;padding:18px}
@@ -86,8 +86,10 @@ html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-men
    `.site-nav` so the `.topbar` pages that also include this partial keep their
    own inline nav untouched. The fly-out + hover polish above still apply. The
    `≤700px` mobile hamburger is injected later by theme.js and wins on order. */
-.site-nav{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:9px}
-.site-nav .nav-links{grid-column:1;grid-row:1;display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}
+.site-nav{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:9px;max-width:1500px;margin-left:auto;margin-right:auto}
+/* menu on its own first row (one line); search + controls share row two — holds the bar to two rows */
+.site-nav .nav-links{grid-column:1 / -1;grid-row:1;display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}
+.site-nav .nav-search{grid-column:1;grid-row:2;max-width:480px}
 /* MASTERMIND brand lockup — covers the .site-nav (migrated) and legacy .topbar nav (mirrors theme.css; --blue stands in for the macro --link). */
 .site-nav .nav-brand,.topbar .nav-brand{display:inline-flex;align-items:center;gap:8px;flex:none;padding:3px 10px 3px 4px;margin:0 6px 0 0;border-radius:11px;text-decoration:none;transition:background .18s,transform .16s ease}
 .site-nav .nav-brand:hover,.topbar .nav-brand:hover{background:color-mix(in srgb,var(--blue) 11%,transparent);transform:translateY(-1px)}
@@ -103,7 +105,7 @@ html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-men
 .site-nav .nav-dd:hover>.nav-dd-menu,.site-nav .nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
 .site-nav .nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
 .site-nav .nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
-.site-nav .nav-ctrls{grid-column:2;grid-row:1;justify-self:end;align-self:center;display:flex;align-items:center;gap:10px}
+.site-nav .nav-ctrls{grid-column:2;grid-row:2;justify-self:end;align-self:center;display:flex;align-items:center;gap:10px}
 .site-nav .nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;cursor:pointer}
 .site-nav .nav-ctrls .ai-brief-link.active{background:var(--blue);border-color:var(--blue);color:#fff}
 .site-nav .theme-switch{width:56px;height:27px;border-radius:999px;background:var(--card);border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
@@ -854,12 +856,11 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
   
 
   <div class="card">
-    <p class="muted sm" style="margin:0"><span class="l-en">Cross-asset trend = time-series momentum (sign of trailing return), the canonical managed-futures factor — shown as a REGIME read, not a buy list. AQR&#39;s gross Sharpe is contested; the validated, after-cost number is in reports/cross-asset-phase0.md. Carry &amp; ratios are current-state context.</span><span class="l-zh">Cross-asset trend = time-series momentum (sign of trailing return), the canonical managed-futures factor — shown as a REGIME read, not a buy list. AQR&#39;s gross Sharpe is contested; the validated, after-cost number is in reports/cross-asset-phase0.md. Carry &amp; ratios are current-state context.</span> <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-28 20:57 UTC.
+    <p class="muted sm" style="margin:0"><span class="l-en">Cross-asset trend = time-series momentum (sign of trailing return), the canonical managed-futures factor — shown as a REGIME read, not a buy list. AQR&#39;s gross Sharpe is contested; the validated, after-cost number is in reports/cross-asset-phase0.md. Carry &amp; ratios are current-state context.</span><span class="l-zh">Cross-asset trend = time-series momentum (sign of trailing return), the canonical managed-futures factor — shown as a REGIME read, not a buy list. AQR&#39;s gross Sharpe is contested; the validated, after-cost number is in reports/cross-asset-phase0.md. Carry &amp; ratios are current-state context.</span> <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-28 23:54 UTC.
       <span class="l-en">Source: engine/cross_asset_trend.py + the cross-asset correlation leaf, over keyless price stores. Validation: scripts/cross_asset_phase0.py.</span><span class="l-zh">来源：engine/cross_asset_trend.py 及跨资产相关性叶子模块，覆盖无密钥价格库。验证：scripts/cross_asset_phase0.py。</span></p>
   </div>
 
 </div>
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

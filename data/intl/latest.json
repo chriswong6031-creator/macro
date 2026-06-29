@@ -311,8 +311,8 @@
         "unemployment": 4.9,
         "unemployment_chg6m": -0.2,
         "m2_yoy": -3.66,
-        "fx": 1.3198,
-        "fx_strength_3m": -0.79,
+        "fx": 1.3188,
+        "fx_strength_3m": -0.86,
         "realvol": 10.4,
         "drawdown": -3.7
       },
@@ -365,8 +365,8 @@
         "unemployment": 6.7,
         "unemployment_chg6m": 0.1,
         "m2_yoy": 5.1,
-        "fx": 1.139,
-        "fx_strength_3m": -1.73,
+        "fx": 1.1362,
+        "fx_strength_3m": -1.97,
         "realvol": 10.2,
         "drawdown": -0.7
       },
@@ -577,16 +577,16 @@
           "value": -2.27
         },
         {
+          "cc": "EZ",
+          "flag": "\ud83c\uddea\ud83c\uddfa",
+          "name": "Eurozone",
+          "value": -1.97
+        },
+        {
           "cc": "JP",
           "flag": "\ud83c\uddef\ud83c\uddf5",
           "name": "Japan",
           "value": -1.96
-        },
-        {
-          "cc": "EZ",
-          "flag": "\ud83c\uddea\ud83c\uddfa",
-          "name": "Eurozone",
-          "value": -1.73
         },
         {
           "cc": "IN",
@@ -598,7 +598,7 @@
           "cc": "GB",
           "flag": "\ud83c\uddec\ud83c\udde7",
           "name": "United Kingdom",
-          "value": -0.79
+          "value": -0.86
         },
         {
           "cc": "AU",

@@ -1,5 +1,5 @@
 {
- "asof": "2026-06-28",
+ "asof": "2026-06-29",
  "source": "cboe_delayed",
  "indices": {
   "SPX": {
@@ -48,15 +48,15 @@
    "spot": 728.99,
    "regime": "short",
    "tier": "full",
-   "net_gex_bn": -10.82,
-   "gamma_flip": 744.77,
-   "dist_to_flip_pct": -2.16,
-   "iv30": 16.12,
+   "net_gex_bn": -10.8,
+   "gamma_flip": 744.79,
+   "dist_to_flip_pct": -2.17,
+   "iv30": 16.07,
    "put_call_oi_ratio": 1.82,
    "call_wall": 800.0,
    "put_wall": 720.0,
    "max_pain": 740.0,
-   "daily_move_pct": 1.02
+   "daily_move_pct": 1.01
   },
   "QQQ": {
    "spot": 706.52,
@@ -104,8 +104,8 @@
  "market": {
   "skew": 139.4,
   "skew_asof": "2026-06-26",
-  "index_pc_ratio": 1.217,
-  "equity_pc_ratio": 1.337,
+  "index_pc_ratio": 1.492,
+  "equity_pc_ratio": 1.364,
   "put_call_asof": "2026-06-28"
  }
 }

@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-06-29",
-  "generated_utc": "2026-06-29T00:50:07.439407+00:00",
-  "n_tickers": 4618,
+  "generated_utc": "2026-06-29T00:30:20.153090+00:00",
+  "n_tickers": 4624,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
     "TDG": {
@@ -38965,6 +38965,16 @@
       "trump_linked": false,
       "affiliated": false
     },
+    "IIIV": {
+      "ticker": "IIIV",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
     "MOVE": {
       "ticker": "MOVE",
       "channels": [
@@ -39387,6 +39397,16 @@
     },
     "BNT": {
       "ticker": "BNT",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "CHKP": {
+      "ticker": "CHKP",
       "channels": [
         "special_situation"
       ],
@@ -39837,6 +39857,16 @@
     },
     "CULP": {
       "ticker": "CULP",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "TRNR": {
+      "ticker": "TRNR",
       "channels": [
         "special_situation"
       ],
@@ -40667,6 +40697,16 @@
     },
     "VCX": {
       "ticker": "VCX",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "GPAEF": {
+      "ticker": "GPAEF",
       "channels": [
         "special_situation"
       ],
@@ -42845,8 +42885,38 @@
       "trump_linked": false,
       "affiliated": false
     },
+    "ORXCF": {
+      "ticker": "ORXCF",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
     "TNRSF": {
       "ticker": "TNRSF",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "TOP": {
+      "ticker": "TOP",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "ALV": {
+      "ticker": "ALV",
       "channels": [
         "special_situation"
       ],
@@ -45457,16 +45527,6 @@
     },
     "SPCE": {
       "ticker": "SPCE",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.4,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "ORXCF": {
-      "ticker": "ORXCF",
       "channels": [
         "special_situation"
       ],

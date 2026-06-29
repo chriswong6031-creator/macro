@@ -7,7 +7,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><span class="l-en">Hong Kong Narrative Rotation — where to allocate across themes</span><span class="l-zh">香港主题轮动 — 主题间配置去向</span></title>
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -433,7 +433,7 @@
   
   
   <tr class="">
-    <td><b><a class="tlink" href="baskets_hk.html#b-hk_banks"><span class="l-en">Banks (H + HK)</span><span class="l-zh">银行</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
+    <td><b><a class="tlink" href="baskets_hk.html#b-hk_banks"><span class="l-en">Banks (H + HK)</span><span class="l-zh">银行</span><span class="jump" title="Open theme detail">↗</span></a></b>
       <span class="stage lead"><span class="l-en">LEADER</span><span class="l-zh">领跑</span></span>
       
       <div class="legrow">Financials · 13 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
@@ -447,7 +447,7 @@
   
   
   <tr class="">
-    <td><b><a class="tlink" href="baskets_hk.html#b-hk_dividend"><span class="l-en">High-Dividend Blue Chips</span><span class="l-zh">高股息蓝筹</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
+    <td><b><a class="tlink" href="baskets_hk.html#b-hk_dividend"><span class="l-en">High-Dividend Blue Chips</span><span class="l-zh">高股息蓝筹</span><span class="jump" title="Open theme detail">↗</span></a></b>
       
       
       <div class="legrow">Telecom, Utilities &amp; Income · 8 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
@@ -461,7 +461,7 @@
   
   
   <tr class="inelig">
-    <td><b><a class="tlink" href="baskets_hk.html#b-hk_insurers"><span class="l-en">Insurers</span><span class="l-zh">保险</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
+    <td><b><a class="tlink" href="baskets_hk.html#b-hk_insurers"><span class="l-en">Insurers</span><span class="l-zh">保险</span><span class="jump" title="Open theme detail">↗</span></a></b>
       
       
       <div class="legrow">Financials · 8 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
@@ -475,7 +475,7 @@
   
   
   <tr class="">
-    <td><b><a class="tlink" href="baskets_hk.html#b-hk_industrials"><span class="l-en">Industrials &amp; Infrastructure</span><span class="l-zh">工业与基建</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
+    <td><b><a class="tlink" href="baskets_hk.html#b-hk_industrials"><span class="l-en">Industrials &amp; Infrastructure</span><span class="l-zh">工业与基建</span><span class="jump" title="Open theme detail">↗</span></a></b>
       
       
       <div class="legrow">Industrials &amp; Transport · 9 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
@@ -489,7 +489,7 @@
   
   
   <tr class="inelig">
-    <td><b><a class="tlink" href="baskets_hk.html#b-hk_materials"><span class="l-en">Materials &amp; Metals</span><span class="l-zh">有色金属</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
+    <td><b><a class="tlink" href="baskets_hk.html#b-hk_materials"><span class="l-en">Materials &amp; Metals</span><span class="l-zh">有色金属</span><span class="jump" title="Open theme detail">↗</span></a></b>
       
       
       <div class="legrow">Energy &amp; Resources · 11 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
@@ -503,7 +503,7 @@
   
   
   <tr class="inelig">
-    <td><b><a class="tlink" href="baskets_hk.html#b-hk_china_tech"><span class="l-en">China Tech &amp; Internet</span><span class="l-zh">中资科技与互联网</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
+    <td><b><a class="tlink" href="baskets_hk.html#b-hk_china_tech"><span class="l-en">China Tech &amp; Internet</span><span class="l-zh">中资科技与互联网</span><span class="jump" title="Open theme detail">↗</span></a></b>
       
       
       <div class="legrow">Tech &amp; Internet · 19 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
@@ -517,7 +517,7 @@
   
   
   <tr class="inelig">
-    <td><b><a class="tlink" href="baskets_hk.html#b-hk_conglo"><span class="l-en">Conglomerates &amp; Exchange</span><span class="l-zh">综合企业与交易所</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
+    <td><b><a class="tlink" href="baskets_hk.html#b-hk_conglo"><span class="l-en">Conglomerates &amp; Exchange</span><span class="l-zh">综合企业与交易所</span><span class="jump" title="Open theme detail">↗</span></a></b>
       
       
       <div class="legrow">Financials · 5 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
@@ -531,7 +531,7 @@
   
   
   <tr class="inelig">
-    <td><b><a class="tlink" href="baskets_hk.html#b-hk_biotech"><span class="l-en">Biotech, Pharma &amp; CXO</span><span class="l-zh">生物医药与CXO</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
+    <td><b><a class="tlink" href="baskets_hk.html#b-hk_biotech"><span class="l-en">Biotech, Pharma &amp; CXO</span><span class="l-zh">生物医药与CXO</span><span class="jump" title="Open theme detail">↗</span></a></b>
       
       
       <div class="legrow">Consumer &amp; Healthcare · 15 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
@@ -545,7 +545,7 @@
   
   
   <tr class="inelig">
-    <td><b><a class="tlink" href="baskets_hk.html#b-hk_property"><span class="l-en">Property &amp; REITs</span><span class="l-zh">地产与REITs</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
+    <td><b><a class="tlink" href="baskets_hk.html#b-hk_property"><span class="l-en">Property &amp; REITs</span><span class="l-zh">地产与REITs</span><span class="jump" title="Open theme detail">↗</span></a></b>
       
       
       <div class="legrow">Property · 15 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
@@ -559,7 +559,7 @@
   
   
   <tr class="inelig">
-    <td><b><a class="tlink" href="baskets_hk.html#b-hk_energy"><span class="l-en">Energy (H-shares)</span><span class="l-zh">能源</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
+    <td><b><a class="tlink" href="baskets_hk.html#b-hk_energy"><span class="l-en">Energy (H-shares)</span><span class="l-zh">能源</span><span class="jump" title="Open theme detail">↗</span></a></b>
       
       
       <div class="legrow">Energy &amp; Resources · 10 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
@@ -573,7 +573,7 @@
   
   
   <tr class="inelig">
-    <td><b><a class="tlink" href="baskets_hk.html#b-hk_telco_util"><span class="l-en">Telecom &amp; Utilities</span><span class="l-zh">电信与公用事业</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
+    <td><b><a class="tlink" href="baskets_hk.html#b-hk_telco_util"><span class="l-en">Telecom &amp; Utilities</span><span class="l-zh">电信与公用事业</span><span class="jump" title="Open theme detail">↗</span></a></b>
       
       
       <div class="legrow">Telecom, Utilities &amp; Income · 12 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
@@ -587,7 +587,7 @@
   
   
   <tr class="inelig">
-    <td><b><a class="tlink" href="baskets_hk.html#b-hk_consumer"><span class="l-en">China Consumer Brands</span><span class="l-zh">中资消费品牌</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
+    <td><b><a class="tlink" href="baskets_hk.html#b-hk_consumer"><span class="l-en">China Consumer Brands</span><span class="l-zh">中资消费品牌</span><span class="jump" title="Open theme detail">↗</span></a></b>
       
       
       <div class="legrow">Consumer &amp; Healthcare · 17 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
@@ -601,7 +601,7 @@
   
   
   <tr class="inelig">
-    <td><b><a class="tlink" href="baskets_hk.html#b-hk_gaming"><span class="l-en">Macau Gaming</span><span class="l-zh">澳门博彩</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
+    <td><b><a class="tlink" href="baskets_hk.html#b-hk_gaming"><span class="l-en">Macau Gaming</span><span class="l-zh">澳门博彩</span><span class="jump" title="Open theme detail">↗</span></a></b>
       
       
       <div class="legrow">Gaming &amp; Tourism · 5 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
@@ -615,7 +615,7 @@
   
   
   <tr class="inelig">
-    <td><b><a class="tlink" href="baskets_hk.html#b-hk_ev"><span class="l-en">China EV &amp; Autos</span><span class="l-zh">中资电动车</span><span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
+    <td><b><a class="tlink" href="baskets_hk.html#b-hk_ev"><span class="l-en">China EV &amp; Autos</span><span class="l-zh">中资电动车</span><span class="jump" title="Open theme detail">↗</span></a></b>
       
       
       <div class="legrow">Autos &amp; EV · 8 <span class="l-en">names</span><span class="l-zh">只</span></div></td>
@@ -749,7 +749,7 @@
 
 <footer>
   <span class="l-en">Read-only analytics for informational purposes only — NOT investment advice and NOT a buy/sell list. The thematic baskets are equal-weight, point-in-time dated-membership trackers over a free ~3-5y price cache, benchmarked to Hang Seng and curated with knowledge of the period — so they are HINDSIGHT-descriptive, not an out-of-sample backtest. The allocation ALGORITHM is validated on multi-decade sector-ETF history (see panel 04), where its only repeatable edge is drawdown/shake-out control via the absolute-trend gate; cross-sectional momentum has ~0 forward rank-IC and basket-level crowding has no forward drawdown edge (it only sizes down). Durability, crowding and rotation are coincident, display-only context — none of them feeds any score. See LIMITATIONS.md and scripts/thematic_rotation_phase0.py.</span><span class="l-zh">仅供参考的只读分析 — 非投资建议，也非买卖清单。主题篮子为等权、按时点日期管理成分、基于免费约3-5年价格缓存，以 Hang Seng 为基准，且在已知该期表现下整理 — 故为事后描述性序列，并非样本外回测。该配置&#34;算法&#34;在跨越数十年的行业 ETF 历史上验证（见面板04），其唯一可重复的优势是通过绝对趋势门控制回撤/被甩出；横截面动量前瞻rank-IC约为0，篮子层面拥挤无前瞻回撤优势（仅用于降仓）。持续性、拥挤与轮动均为同步的、仅展示的背景 — 都不进入任何评分。参见 LIMITATIONS.md 与 scripts/thematic_rotation_phase0.py。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-28 20:57 UTC.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-28 23:55 UTC.
 </footer>
 <script>
 // ---- PR2 strategic playbook: buy/sell entries · risk over time · rotation alerts ----
@@ -818,6 +818,5 @@ function renderRotAlerts(){
 </script>
 <script src="ai_desk_thematic.js"></script>
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

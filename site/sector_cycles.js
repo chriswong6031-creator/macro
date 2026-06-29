@@ -66,7 +66,11 @@
 
   /* ---- small helpers ----------------------------------------------------- */
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  // respect the OS "reduce motion" setting for the chart's draw/transition animations
+  var REDUCE = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+  // keyboard activation for role="button" elements that aren't native <button>s
+  function keyActivate(node) { node.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); node.click(); } }); }
   function log10(v) { return Math.log(v) / Math.LN10; }
   function fmtMon(t) {
     if (!t) return "—"; var p = String(t).split("-"), m = (+p[1] || 6), yy = String(p[0]).slice(2);
@@ -157,7 +161,7 @@
       var yv = osc ? (t.osc != null ? t.osc : 50) : yval(t.rebased * f);
       return { x: t.x, y: yv, kind: t.k === "peak" ? "peak" : "trough", label: fmtMon(t.t), sub: t.mag_pct ? ("±" + t.mag_pct + "%") : "" };
     });
-    if (hist.length) markers.push({ x: hist[hist.length - 1].x, y: hist[hist.length - 1].y, kind: "now", label: "Now", sub: phaseLabel(s) });
+    if (hist.length) markers.push({ x: hist[hist.length - 1].x, y: hist[hist.length - 1].y, kind: "now", label: L("Now", "当前"), sub: phaseLabel(s) });
     return { id: s.id, color: s.accent, label: s.name, width: 2, hist: hist, proj: [], markers: markers, c: s, hidden: !!chartHidden[s.id] };
   }
 
@@ -193,7 +197,7 @@
       yTicks: yTicks(), bands: bands(),
       padding: HERO_PAD,
       guides: [{ x: META.today, label: L("TODAY", "当前"), kind: "today" }],
-      animate: true, crosshair: true, zoom: true,
+      animate: !REDUCE, crosshair: true, zoom: true,
       series: ALL.map(seriesFor),
       vbands: focusBands(),
       tip: heroTip,
@@ -315,8 +319,7 @@
       b.addEventListener("click", function () {
         var m = b.getAttribute("data-mode"); if (m === state.mode) return;
         state.mode = m;
-        modes.querySelectorAll(".sc-mbtn").forEach(function (x) { x.classList.toggle("on", x === b); });
-        scale.classList.toggle("disabled", m !== "price");
+        syncHeroControls();
         rebuildHero(true); remountSparks();
       });
     });
@@ -324,21 +327,65 @@
       b.addEventListener("click", function () {
         var sc = b.getAttribute("data-scale"); if (sc === state.scale) return;
         state.scale = sc;
-        scale.querySelectorAll(".sc-sbtn").forEach(function (x) { x.classList.toggle("on", x === b); });
+        syncHeroControls();
         rebuildHero(true); remountSparks();
       });
     });
   }
 
-  // reflect the boot-time state onto the segmented controls (Cycle position is the
-  // default view, so Price is un-lit and the Log/Linear scale starts locked) — keeps
-  // the UI honest no matter which template's static `on` classes shipped.
+  // reflect view state onto the segmented controls. Cycle position is the default view,
+  // so Price is un-lit and the Log/Linear scale is meaningless → we hide it entirely
+  // (no dead greyed row that reads as the user's first broken tap, esp. on mobile).
+  // aria-pressed keeps the segmented buttons announced to assistive tech.
   function syncHeroControls() {
     var modes = document.getElementById("sc-modes"), scale = document.getElementById("sc-scale");
-    if (modes) modes.querySelectorAll(".sc-mbtn").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-mode") === state.mode); });
+    if (modes) modes.querySelectorAll(".sc-mbtn").forEach(function (b) {
+      var on = b.getAttribute("data-mode") === state.mode;
+      b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
     if (scale) {
-      scale.querySelectorAll(".sc-sbtn").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-scale") === state.scale); });
-      scale.classList.toggle("disabled", state.mode !== "price");
+      scale.querySelectorAll(".sc-sbtn").forEach(function (b) {
+        var on = b.getAttribute("data-scale") === state.scale;
+        b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      var locked = state.mode !== "price";
+      scale.classList.toggle("disabled", locked);
+      scale.hidden = locked;                       // reclaim the dead row in cycle-position mode
+    }
+    // the "low = washed-out · high = stretched" caption only describes the 0–100 oscillator
+    var cap = document.querySelector(".sc-mode-cap"); if (cap) cap.hidden = state.mode !== "osc";
+    syncLegend();
+  }
+
+  // mobile "Chart options" disclosure (scale + legend + zoom). Desktop shows them inline
+  // (the toggle is display:none), so this is a no-op there.
+  function wireAdvanced() {
+    var t = document.getElementById("sc-adv-toggle"), w = document.getElementById("sc-advanced");
+    if (!t || !w) return;
+    t.addEventListener("click", function () {
+      var open = w.classList.toggle("open");
+      t.setAttribute("aria-expanded", open ? "true" : "false");
+      if (heroChart) heroChart.resize();           // chart reflows as the panel grows/shrinks
+    });
+  }
+
+  // mode-aware legend — in Cycle position there is NO price line, so don't claim one;
+  // show the 0–100 band key (washed-out / mid / stretched) + a "tap a line" affordance.
+  // In Price mode show the line + peak/trough glyphs. Re-localizes on language change.
+  function syncLegend() {
+    var leg = document.getElementById("sc-legend");
+    if (!leg) return;
+    if (state.mode === "osc") {
+      leg.innerHTML =
+        '<span><i class="lc" style="background:color-mix(in srgb,var(--down) 42%,transparent)"></i>' + L("washed-out", "超卖") + '</span>' +
+        '<span><i class="lc" style="background:color-mix(in srgb,var(--muted) 32%,transparent)"></i>' + L("mid-cycle", "中段") + '</span>' +
+        '<span><i class="lc" style="background:color-mix(in srgb,var(--warn) 46%,transparent)"></i>' + L("stretched", "拉伸") + '</span>' +
+        '<span class="cyc-leg-hint">' + L("tap a line to focus", "点击曲线聚焦") + '</span>';
+    } else {
+      leg.innerHTML =
+        '<span><i class="ls"></i> ' + L("Price", "价格") + '</span>' +
+        '<span><i class="lm lm-pk"></i> ' + L("Peak", "波峰") + '</span>' +
+        '<span><i class="lm lm-tr"></i> ' + L("Trough", "波谷") + '</span>';
     }
   }
 
@@ -474,7 +521,7 @@
     // baskets rail = a compact, collapsed quick-picker above the chart; the 34
     // scorecards below are the primary browse/selector, so the chart stays in view.
     if (bask) { bask.style.display = state.family === "baskets" ? "" : "none"; bask.classList.remove("open"); }
-    document.querySelectorAll("#sc-tabs .sc-tab").forEach(function (t) { t.classList.toggle("on", t.getAttribute("data-fam") === state.family); });
+    document.querySelectorAll("#sc-tabs .sc-tab").forEach(function (t) { var on = t.getAttribute("data-fam") === state.family; t.classList.toggle("on", on); t.setAttribute("aria-selected", on ? "true" : "false"); });
     var ttl = document.getElementById("sc-hero-title");
     if (ttl) ttl.innerHTML = state.family === "baskets"
       ? '<span class="l-en">Thematic basket rotation</span><span class="l-zh">主题篮子轮动</span>'
@@ -490,6 +537,7 @@
     buildGroups();         // re-count phase chips + re-filter (calls applyVisibility)
     buildDefaultPanel();
     renderPanel(null);
+    guideEntry();          // open the new family on one highlighted line, not a tangle
   }
   function wireFamily() {
     document.querySelectorAll("#sc-tabs .sc-tab").forEach(function (t) {
@@ -505,13 +553,17 @@
     var wrap = document.getElementById("sc-chips");
     if (!wrap) return;
     wrap.innerHTML = "";
-    // a pinned "Select all visible" so every sector the facet shows can be re-lit in one tap
-    var all = el("button", "sc-chip-all");
-    all.setAttribute("type", "button");
-    all.setAttribute("title", L("Chart every sector the filter is showing", "绘制当前筛选下的全部板块"));
-    all.innerHTML = '<span class="sca-ic" aria-hidden="true">✦</span>' + L("Select all visible", "全选可见");
-    all.addEventListener("click", selectAllSectors);
-    wrap.appendChild(all);
+    // a pinned "Select all visible" so every sector the facet shows can be re-lit in one tap.
+    // (China mobile uses the upstream Series(n) picker for selection instead, so skip it there
+    // to avoid two overlapping selection controls in one rail.)
+    if (!isCnMobile()) {
+      var all = el("button", "sc-chip-all");
+      all.setAttribute("type", "button");
+      all.setAttribute("title", L("Chart every sector the filter is showing", "绘制当前筛选下的全部板块"));
+      all.innerHTML = '<span class="sca-ic" aria-hidden="true">✦</span>' + L("Select all visible", "全选可见");
+      all.addEventListener("click", selectAllSectors);
+      wrap.appendChild(all);
+    }
     SECTORS.forEach(function (s) {
       var b = el("button", "cyc-chip");
       b.setAttribute("data-id", s.id);
@@ -633,7 +685,7 @@
     return {
       xDomain: [hist.length ? hist[0].x : META.xDomain[0], META.xDomain[1] - 0.25],
       yDomain: yd, padding: { t: 8, r: 6, b: 8, l: 6 },
-      crosshair: false, animate: true, zoom: false,
+      crosshair: false, animate: !REDUCE, zoom: false,
       series: [{ id: s.id, color: s.accent, width: 2, hist: hist, markers: [{ x: hist.length ? hist[hist.length - 1].x : META.today, y: lastY, kind: "now" }] }]
     };
   }
@@ -696,6 +748,7 @@
   /* ---- focus orchestration ----------------------------------------------- */
   function toggleFocus(id) { setFocus(state.focus === id ? null : id); }
   function setFocus(id) {
+    clearFirstHint();                              // any focus change = the user has engaged
     // focusing a basket implies selecting it onto the chart
     if (id && byId[id] && byId[id].kind === "basket" && !basketShown[id]) {
       basketShown[id] = true; updateBasketSel(); applyVisibility();
@@ -731,6 +784,7 @@
     if (back) back.addEventListener("click", function () { setFocus(null); });
     foc.querySelectorAll(".sc-leg").forEach(function (row) {
       row.addEventListener("click", function () { openLeg(byId[id], +row.getAttribute("data-i"), row); });
+      keyActivate(row);
     });
     def.classList.remove("show"); foc.classList.add("show");
   }
@@ -915,7 +969,7 @@
       var verb = g.dir === "up" ? L("Rally", "上涨") : L("Selloff", "下跌");
       var dt = fmtMon(g.start.t) + " → " + fmtMon(g.end.t);
       var title = g.narr && nz(g.narr, "title") ? nz(g.narr, "title") : (verb + " " + (g.mag != null ? sign + g.mag + "%" : ""));
-      return '<div class="sc-leg" data-i="' + g.i + '" style="--c:' + s.accent + ';--lc:' + lc + '">' +
+      return '<div class="sc-leg" role="button" tabindex="0" data-i="' + g.i + '" style="--c:' + s.accent + ';--lc:' + lc + '">' +
         '<span class="sc-leg-k ' + g.dir + '">' + verb + '</span>' +
         '<span class="sc-leg-t">' + title + ' <span class="sc-leg-dt">· ' + dt + '</span></span>' +
         '<span class="sc-leg-m">' + (g.mag != null ? sign + g.mag + "%" : "") + '</span>' +
@@ -971,7 +1025,7 @@
     var leadRows = lead.slice(0, leadCap).map(function (s) {
       var rs = s.now.rs_63d;
       return '<div class="sc-lead-row"><span class="sc-lead-rk">' + s.now.rs_rank + '</span>' +
-        '<span class="sc-lead-nm" data-id="' + s.id + '" style="--c:' + s.accent + '"><span class="dot"></span>' + nm(s) + '</span>' +
+        '<span class="sc-lead-nm" role="button" tabindex="0" data-id="' + s.id + '" style="--c:' + s.accent + '"><span class="dot"></span>' + nm(s) + '</span>' +
         '<span class="sc-lead-rs ' + (rs >= 0 ? "pos" : "neg") + '">' + (rs >= 0 ? "+" : "") + rs + '%</span></div>';
     }).join("") + (lead.length > leadCap ? '<div class="sc-lead-more">+ ' + (lead.length - leadCap) + ' ' + L("more", "更多") + '</div>' : "");
 
@@ -979,8 +1033,8 @@
       '<div class="cyc-grp cyc-grp-full">' +
         '<div class="cyc-lbl">' + (baskets ? L("Thematic basket rotation · ", "主题篮子轮动 · ") : L("Sector rotation · ", "板块轮动 · ")) + META.asOf + '</div>' +
         '<p class="rg-headline">' + (baskets
-          ? L("All " + BASKETS.length + " thematic baskets start <b>charted together</b> on a 0–100 <b>cycle-position</b> clock — each an equal-weight index of its members. Use <b>Where they stand</b> or tap a basket to narrow the field, or hit <b>Select all visible</b> to chart every basket the filter is showing. Flip to <b>Price</b> for the real tape (rebased, log).",
-              "全部 " + BASKETS.length + " 个主题篮子<b>默认一同绘制</b>在 0–100 <b>周期位置</b>时钟上——每个均为其成分股的等权指数。用<b>所处阶段</b>或点击篮子可缩小范围，点<b>全选可见</b>即可绘制当前筛选下的全部篮子。切换到<b>价格</b>可查看真实走势（再基准化、对数）。")
+          ? L("The <b>strongest baskets</b> are charted to start — each an equal-weight index of its members on a 0–100 <b>cycle-position</b> clock. Tap a basket to add it, use <b>Where they stand</b> to narrow, or hit <b>Select all visible</b> for the whole field of " + BASKETS.length + ". Flip to <b>Price</b> for the real tape (rebased, log).",
+              "已先绘制<b>最强的几个篮子</b>——每个均为其成分股的等权指数，置于 0–100 <b>周期位置</b>时钟上。点击篮子可加入，用<b>所处阶段</b>缩小范围，或点<b>全选可见</b>查看全部 " + BASKETS.length + " 个。切换到<b>价格</b>可查看真实走势（再基准化、对数）。")
           : L("Every sector on a 0–100 <b>cycle-position</b> clock — high = stretched/late, low = washed-out. Flip to <b>Price</b> for the real tape (rebased on a log axis, so every line shares an axis). Tap a sector to see its turning points and the story behind each move.",
               "每个板块同处 0–100 <b>周期位置</b>时钟——高=拉伸/晚期，低=超卖。切换到<b>价格</b>可查看真实走势（对数坐标下再基准化，使每条线共用同一坐标轴）。点按某板块查看其拐点及每段走势背后的故事。")) + '</p>' +
       '</div>' +
@@ -1011,6 +1065,7 @@
 
     def.querySelectorAll(".mini-chip, .sc-lead-nm").forEach(function (b) {
       b.addEventListener("click", function () { setFocus(b.getAttribute("data-id")); });
+      if (b.classList.contains("sc-lead-nm")) keyActivate(b);   // mini-chip is a native <button>
     });
     def.classList.add("show");
   }
@@ -1276,25 +1331,65 @@
 
   /* ---- lang/theme re-render --------------------------------------------- */
   function rerender() {
+    clearFirstHint();                              // drop the stale-language onboarding pill on a lang flip
     var savedFocus = state.focus, savedPhase = {};
     PHASE_FILTER.forEach(function (p) { savedPhase[p.key] = phaseState[p.key]; });
     var ovEl = document.getElementById("sc-series-ov"); if (ovEl) ovEl.remove();   // rebuild picker chrome in the new language
     mountChips(); mountBaskets(); applyFamilyDisplay(); mountCards(); buildDefaultPanel(); buildZoom(); buildGroups();
     PHASE_FILTER.forEach(function (p) { phaseState[p.key] = savedPhase[p.key]; });
-    syncGroups();
+    syncGroups(); syncHeroControls();              // re-localize the mode-aware legend on language flip
     if (heroChart) rebuildHero(false);
     if (savedFocus) setFocus(savedFocus); else renderPanel(null);
   }
 
+  /* ---- guided first-load: highlight ONE line + a tap hint (novice entry) --- */
+  // Pick the most interesting on-chart series: a sector at "prime entry" (Recovery),
+  // else one that's "bottoming" (Trough), else the relative-strength leader.
+  function bestPick() {
+    var pool = activeList().filter(function (s) { return !chartHidden[s.id]; });
+    if (!pool.length) pool = activeList().slice();
+    var cand = pool.filter(function (s) { return s.now.phase === "Recovery"; });
+    if (!cand.length) cand = pool.filter(function (s) { return s.now.phase === "Trough"; });
+    if (!cand.length) cand = pool;
+    cand = cand.slice().sort(function (a, b) { return (a.now.rs_rank || 999) - (b.now.rs_rank || 999); });
+    return cand.length ? cand[0].id : null;
+  }
+  // highlight (dim the rest) WITHOUT opening the focus panel/sheet — keeps the full
+  // comparison overlay but gives a novice a single clear entry point. Uses the chart's
+  // own focus (persists across re-render) rather than setFocus (which opens the sheet).
+  function guideEntry() {
+    if (state.focus) return;
+    var bp = bestPick();
+    if (bp && heroChart) heroChart.focus(bp);
+  }
+  // one-shot onboarding pill over the chart — cleared on the first real interaction.
+  var firstHintDone = false, firstHintTimer = null;
+  function showFirstHint() {
+    if (firstHintDone) return;
+    var wrap = document.querySelector(".sc-chartwrap"); if (!wrap) return;
+    firstHintDone = true;
+    var n = el("div", "sc-chart-hint sc-hint-tap"); n.id = "sc-firsthint";
+    n.innerHTML = L("High = stretched · low = washed-out — tap any line, chip or card for its story",
+                    "高 = 拉伸 · 低 = 超卖 — 点按任意曲线、标签或卡片查看其走势");
+    wrap.appendChild(n);
+    firstHintTimer = setTimeout(clearFirstHint, 11000);
+  }
+  function clearFirstHint() {
+    if (firstHintTimer) { clearTimeout(firstHintTimer); firstHintTimer = null; }
+    var n = document.getElementById("sc-firsthint"); if (n && n.parentNode) n.parentNode.removeChild(n);
+  }
+
   /* ---- boot -------------------------------------------------------------- */
   function boot() {
-    // baskets START all selected (the whole field is charted the moment you open the
-    // Thematic Baskets tab); they're hidden on the chart for now only because the
-    // Sector ETFs tab is the active family at load.
-    BASKETS.forEach(function (b) { basketShown[b.id] = true; chartHidden[b.id] = true; });
+    // Thematic baskets: chart only the STRONGEST few to start — 45 overlaid lines are an
+    // unreadable tangle. The whole field is one tap away via "Select all visible". (They're
+    // off the chart for now anyway because Sector ETFs is the active family at load.)
+    var bRanked = BASKETS.slice().sort(function (a, b) { return (a.now.rs_rank || 999) - (b.now.rs_rank || 999); });
+    BASKETS.forEach(function (b) { basketShown[b.id] = false; chartHidden[b.id] = true; });
+    bRanked.slice(0, 6).forEach(function (b) { basketShown[b.id] = true; });
     mountChips(); mountBaskets();
     wireFamily(); applyFamilyDisplay();                            // sectors section active; baskets hidden
-    mountHero(); wireControls(); syncHeroControls(); buildGroups(); buildDefaultPanel(); mountCards(); initSheet();
+    mountHero(); wireControls(); wireAdvanced(); syncHeroControls(); buildGroups(); buildDefaultPanel(); mountCards(); initSheet();
     initMobileChrome(); mountChartFsBtn();
     document.addEventListener("langchange", rerender);
     document.addEventListener("keydown", function (e) {
@@ -1305,6 +1400,7 @@
       if (byId[h].kind === "basket") switchFamily("baskets");
       setFocus(h);
     }, 350);
+    else { guideEntry(); showFirstHint(); }   // novice entry: highlight one line + a tap hint
   }
   // public hook: let a host page (e.g. Sector Central) focus the embedded overlay on a
   // sector/basket by id, switching family + scrolling the chart into view. Returns false

@@ -1,6 +1,6 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-06-28",
+  "as_of": "2026-06-29",
   "desks": [
     {
       "name": "AI Desk",

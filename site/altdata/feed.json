@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-29T00:49:56.487399+00:00",
+  "generated_utc": "2026-06-29T00:30:07.374163+00:00",
   "as_of": "2026-06-29",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -35189,6 +35189,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "IIIV",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "MOVE",
         "category": "Delistings",
         "confidence": "high",
@@ -35531,6 +35539,14 @@
         "activist": false,
         "filer": null,
         "detail": "Going-Private"
+      },
+      {
+        "ticker": "CHKP",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "XP",
@@ -35891,6 +35907,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "TRNR",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "KDP",
@@ -36595,6 +36619,14 @@
         "activist": false,
         "filer": null,
         "detail": "Issuer Tenders"
+      },
+      {
+        "ticker": "GPAEF",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "TDBCP",
@@ -38357,12 +38389,36 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "ORXCF",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "TNRSF",
         "category": "Capital Returns",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
+      },
+      {
+        "ticker": "TOP",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "ALV",
+        "category": "Restructuring",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Restructuring"
       },
       {
         "ticker": "PMI",
@@ -40507,14 +40563,6 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
-      },
-      {
-        "ticker": "ORXCF",
-        "category": "Capital Returns",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Capital Returns"
       },
       {
         "ticker": "ATNI",

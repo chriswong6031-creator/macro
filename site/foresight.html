@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Thematic Foresight Desk — Macro Dashboard</title>
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   /* ---------- shared Research-Reports chrome ---------- */
@@ -38,6 +38,43 @@
   .fx-sub { color:var(--muted); font-size:13.5px; max-width:760px; line-height:1.55; }
   .fx-sub b { color:var(--text); font-weight:700; }
   .fx-asof { color:var(--muted); font-size:11.5px; margin-top:8px; }
+
+  /* convergence "neural web" board */
+  .fx-web { border:1px solid var(--line); border-left:5px solid var(--down); border-radius:14px;
+            background:var(--panel); padding:15px 17px; margin:16px 0 6px; }
+  .fx-web-h { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .fx-web-t { font-size:16px; font-weight:800; }
+  .fx-web-sub { font-size:11px; color:var(--muted); }
+  .fx-web-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+  .fx-hot { border:1px solid var(--line); border-left:4px solid var(--c,var(--down)); border-radius:11px;
+            background:var(--panel2); padding:11px 13px; }
+  .fx-hot-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .fx-hot-nm { font-size:14px; font-weight:800; }
+  .fx-hot-heat { font-size:19px; font-weight:800; color:var(--down); font-variant-numeric:tabular-nums; }
+  .fx-hot-sig { display:flex; flex-wrap:wrap; gap:4px; margin:7px 0; }
+  .fx-sig { font-size:9.5px; font-weight:700; padding:2px 6px; border-radius:5px; color:var(--down);
+            background:color-mix(in srgb,var(--down) 12%,transparent); text-transform:capitalize; }
+  .fx-hot-meta { font-size:10.5px; color:var(--muted); }
+  .fx-web-none { font-size:12.5px; color:var(--muted); line-height:1.55; }
+  .fx-web-partial { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+  .fx-pc { font-size:11px; padding:4px 10px; border-radius:8px; background:var(--panel2); border:1px solid var(--line);
+           color:var(--muted); cursor:help; } .fx-pc b { color:var(--text); }
+  .fx-web-foot { font-size:10px; color:var(--muted); margin-top:11px; line-height:1.5; font-style:italic; }
+  /* AI analyst block */
+  .fx-ai { margin-top:13px; padding-top:12px; border-top:1px dashed var(--line); }
+  .fx-ai-h { font-size:13px; font-weight:800; margin-bottom:6px; }
+  .fx-ai-mon { font-size:10.5px; font-weight:800; color:var(--down); margin-left:6px; }
+  .fx-ai-regime { font-size:12.5px; color:var(--text); line-height:1.55; margin-bottom:9px; }
+  .fx-ai-th { border-left:3px solid var(--info); padding:2px 0 2px 11px; margin:8px 0; }
+  .fx-ai-mech { font-size:12.5px; line-height:1.5; }
+  .fx-ai-conf { font-size:9px; font-weight:800; text-transform:uppercase; padding:1px 6px; border-radius:5px;
+                background:color-mix(in srgb,var(--cc,var(--muted)) 16%,transparent); color:var(--cc,var(--muted)); }
+  .c-high { --cc:var(--up); } .c-medium { --cc:var(--info); } .c-low { --cc:var(--muted); }
+  .fx-ai-no { font-size:11.5px; color:var(--info); margin-top:3px; line-height:1.45; }
+  .fx-ai-kill { font-size:10.5px; color:var(--muted); margin-top:4px; }
+  .fx-kc { display:inline-block; font-size:10px; padding:1px 6px; margin:1px 4px 1px 0; border-radius:5px;
+           background:var(--panel2); border:1px solid var(--line); }
+  .fx-ai-foot { font-size:9.5px; color:var(--muted); margin-top:9px; font-style:italic; line-height:1.5; }
 
   /* macro banners (demand pool + entry/dislocation) */
   .fx-banners { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0 8px; }
@@ -143,6 +180,13 @@
   .sz-STARTER { --pc:var(--info); }
   .sz-HOLD, .sz-WATCH { --pc:var(--muted); }
   .sz-TRIM, .sz-EXIT { --pc:var(--down); }
+
+  /* per-card alt-data confirmer chip */
+  .fx-conf { display:inline-flex; align-items:center; gap:5px; margin:9px 8px 0 0; font-size:11px; font-weight:700;
+             padding:5px 11px; border-radius:8px; cursor:help; color:var(--muted);
+             border:1px solid var(--line); background:var(--panel2); }
+  .fx-conf.lit { color:var(--info); border-color:color-mix(in srgb,var(--info) 38%,transparent);
+                 background:color-mix(in srgb,var(--info) 10%,var(--panel)); }
 
   /* discovery panel */
   .fx-disco { border-left:5px solid var(--info); }
@@ -366,8 +410,40 @@
     <div class="fx-eyebrow">🔮 <span class="l-en">Thematic Foresight Desk</span><span class="l-zh">主题前瞻台</span></div>
     <h1><span class="l-en">Catch the theme before the revisions explode</span><span class="l-zh">在盈利预期爆发前抓住主题</span></h1>
     <p class="fx-sub"><span class="l-en">Anticipate themes at the <b>precipice of induction</b> and convert them to calls <b>before</b> estimate revisions broaden. Physical-supply tightness (T1) <b>leads</b> the revision; customer capex (T2) and revision-breadth (T4) <b>confirm</b>; the buy is deferred to a dislocation. Worked case: the June-2024 13D HBM/DRAM call — <i>sold out, concentrated, underpriced</i>, right and ~9 months early.</span><span class="l-zh">在主题处于<b>诱发临界点</b>时提前布局，在盈利预期普遍上修<b>之前</b>转化为决策。物理供给紧张（T1）<b>领先</b>预期修正；客户资本开支（T2）与预期上修广度（T4）<b>确认</b>；买点交由错位回调触发。范例：2024年6月 13D 的 HBM/DRAM 判断——售罄、集中、被低估，正确且早约9个月。</span></p>
-    <div class="fx-asof"><span class="l-en">Revisions as of</span><span class="l-zh">预期数据截至</span> 2026-06-28 · <span class="l-en">generated</span><span class="l-zh">生成于</span> 2026-06-28 20:55 UTC</div>
+    <div class="fx-asof"><span class="l-en">Revisions as of</span><span class="l-zh">预期数据截至</span> 2026-06-28 · <span class="l-en">generated</span><span class="l-zh">生成于</span> 2026-06-28 23:53 UTC</div>
   </header>
+
+  
+  
+  <div class="fx-web">
+    <div class="fx-web-h">
+      <span class="fx-web-t">🔥 <span class="l-en">What's heating up early</span><span class="l-zh">正在早期升温的</span></span>
+      <span class="fx-web-sub"><span class="l-en">independent leading surfaces converging</span><span class="l-zh">独立领先面在何处共振</span> · <span class="l-en">max</span><span class="l-zh">最多</span> 6</span>
+    </div>
+    
+    <div class="fx-web-none"><span class="l-en">Nothing is converging hot right now — no theme pairs multiple independent leading surfaces with an un-priced (early) revision read and a physical correlate. That is an honest read, not a gap: when the leading signals genuinely stack up early, they surface here first. Top partial convergences below.</span><span class="l-zh">目前没有强共振——没有任何主题同时具备多个独立领先面、尚未被定价（早期）的预期读数与物理佐证。这是诚实读数而非缺漏：当领先信号真正在早期叠加时，会首先在此出现。下方为当前部分共振。</span></div>
+    <div class="fx-web-partial">
+      
+      <span class="fx-pc" title="altdata, subsector_scarcity"><b>Defense &amp; Aerospace</b> · 2 <span class="l-en">surface</span><span class="l-zh">面</span>s · <span class="l-en">heat</span><span class="l-zh">热度</span> 16</span>
+      
+      <span class="fx-pc" title="subsector_scarcity"><b>Medical Devices</b> · 1 <span class="l-en">surface</span><span class="l-zh">面</span> · <span class="l-en">heat</span><span class="l-zh">热度</span> 12</span>
+      
+      <span class="fx-pc" title="demand"><b>Nuclear &amp; SMR Power</b> · 1 <span class="l-en">surface</span><span class="l-zh">面</span> · <span class="l-en">heat</span><span class="l-zh">热度</span> 11</span>
+      
+      <span class="fx-pc" title="altdata"><b>Fintech &amp; Payments</b> · 1 <span class="l-en">surface</span><span class="l-zh">面</span> · <span class="l-en">heat</span><span class="l-zh">热度</span> 11</span>
+      
+      <span class="fx-pc" title="demand, subsector_scarcity"><b>Data Center Power &amp; Cooling</b> · 2 <span class="l-en">surface</span><span class="l-zh">面</span>s · <span class="l-en">heat</span><span class="l-zh">热度</span> 9</span>
+      
+      <span class="fx-pc" title="demand"><b>Grid &amp; Electrification</b> · 1 <span class="l-en">surface</span><span class="l-zh">面</span> · <span class="l-en">heat</span><span class="l-zh">热度</span> 8</span>
+      
+    </div>
+    
+    <div class="fx-web-foot"><span class="l-en">HEAT = independent leading surfaces (physical bottleneck · demand · guidance · insider/award · subsector scarcity · discovery echo) converging on one theme, weighted by earliness (inverse to how priced the revisions already are) and gated by a physical correlate. Multi-surface agreement raises precision; earliness keeps it ahead of the crowd. Not a return forecast — forward-graded like every leg.</span><span class="l-zh">热度＝独立领先面（物理瓶颈·需求·指引·内部人/中标·子行业短缺·发现回声）在单一主题上的共振，按早期度（与预期被定价程度相反）加权，并以物理佐证为门槛。多面一致提升精度；早期度使其领先人群。非收益预测——与每条腿一样前瞻评分。</span></div>
+
+    
+    
+  </div>
+  
 
   
   <div class="fx-banners">
@@ -377,6 +453,7 @@
       <div class="v">$379B · +69% YoY</div>
       <div class="d"><span class="l-en">MSFT · GOOGL · AMZN · META · ORCL — the forward-demand engine that leads AI-beneficiary revenue ~2–4 quarters</span><span class="l-zh">MSFT · GOOGL · AMZN · META · ORCL — 领先 AI 受益方营收约2–4个季度的前瞻需求引擎</span> · <b>accelerating</b></div>
     </div>
+    
     
     
     <div class="fx-bn entry-off">
@@ -460,6 +537,7 @@
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
       <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
+      <span class="fx-conf" title="">🛰 1 patent cluster</span>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -502,6 +580,7 @@
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
       <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
+      
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -544,6 +623,7 @@
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
       <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
+      <span class="fx-conf" title="">🛰 2 patent cluster · 2 13f add</span>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -586,6 +666,7 @@
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
       <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
+      
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -628,6 +709,7 @@
 
       <p class="why">revisions present (bottleneck unknown)</p>
       <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
+      
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
@@ -670,6 +752,7 @@
 
       <p class="why">revisions present (bottleneck unknown)</p>
       <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
+      <span class="fx-conf" title="">🛰 1 activist 13d</span>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
@@ -712,6 +795,7 @@
 
       <p class="why">revisions present (bottleneck unknown)</p>
       <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
+      
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
@@ -721,7 +805,7 @@
       <div class="row1">
         
         <span class="fx-score sc-watch"
-              title="magnitude 0.2 · acceleration 0.5 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.87 · purity 0.5 · timing 0.4">
+              title="magnitude 0.2 · acceleration 0.54 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.87 · purity 0.5 · timing 0.4">
           <span class="s">45</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
         </span>
         <span class="nm">Fintech &amp; Payments</span>
@@ -754,6 +838,7 @@
 
       <p class="why">revisions present (bottleneck unknown)</p>
       <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
+      <span class="fx-conf lit" title="HOOD">🛰 1 insider cluster</span>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
@@ -796,6 +881,7 @@
 
       <p class="why">revisions flat (bottleneck unknown)</p>
       <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
+      
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
@@ -838,6 +924,7 @@
 
       <p class="why">revisions flat (bottleneck unknown)</p>
       <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
+      <span class="fx-conf" title="">🛰 1 activist 13d</span>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
@@ -880,6 +967,7 @@
 
       <p class="why">revisions present (bottleneck unknown)</p>
       <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
+      
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
@@ -922,6 +1010,7 @@
 
       <p class="why">revisions present (bottleneck unknown)</p>
       <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
+      
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -931,7 +1020,7 @@
       <div class="row1">
         
         <span class="fx-score sc-watch"
-              title="magnitude 0.2 · acceleration 0.5 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.66 · purity 0.5 · timing 0.4">
+              title="magnitude 0.2 · acceleration 0.53 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.66 · purity 0.5 · timing 0.4">
           <span class="s">44</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
         </span>
         <span class="nm">Defense &amp; Aerospace</span>
@@ -964,6 +1053,7 @@
 
       <p class="why">revisions present (bottleneck unknown)</p>
       <span class="fx-size sz-WATCH" title="nothing actionable yet">⚖ WATCH</span>
+      <span class="fx-conf lit" title="AXON">🛰 1 gov-award accel · 1 patent cluster</span>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -1006,6 +1096,7 @@
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
       <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
+      <span class="fx-conf" title="">🛰 1 activist 13d</span>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -1048,6 +1139,7 @@
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
       <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
+      <span class="fx-conf" title="">🛰 1 activist 13d</span>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -1090,6 +1182,7 @@
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
       <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
+      
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -1132,6 +1225,7 @@
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
       <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
+      
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -1174,6 +1268,7 @@
 
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
       <span class="fx-size sz-HOLD" title="late — revisions already broad; hold, no add, trim on strength">⚖ HOLD</span>
+      
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
       <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
@@ -1462,7 +1557,7 @@
   
   <div class="fx-panel">
     <h2><span class="l-en">Forward-graded track record</span><span class="l-zh">前瞻评分记录</span></h2>
-    <div class="sub"><span class="l-en">Every PRECIPICE / BROADENING flag is logged with a timestamp and graded forward against the basket's realized return — the desk's own hit-rate is measured, public, and immutable. The ledgers began accruing recently, so this is a flags-logged counter, not a hit-rate yet.</span><span class="l-zh">每个 PRECIPICE / BROADENING 标记都带时间戳记录，并对篮子的实际收益进行前瞻评分——本台自身命中率可测量、公开且不可篡改。账本近期才开始累计，目前为标记计数，尚非命中率。</span></div>
+    <div class="sub"><span class="l-en">Every PRECIPICE / BROADENING flag is logged at fire time and graded forward vs SPY — <b>survivorship-free</b> (delisted members counted at their loss), on <b>point-in-time</b> basket membership, with a <b>Wilson 95% CI</b> and a <b>Benjamini-Hochberg FDR</b> gate so a small lucky sample can't read as edge. The ledgers began accruing recently, so until flags mature this is a flags-logged counter, never a fabricated hit-rate.</span><span class="l-zh">每个 PRECIPICE / BROADENING 标记在触发时记录并对标普前瞻评分——<b>免幸存者偏差</b>（退市成分按其亏损计入）、采用<b>时点</b>篮子成分，并附<b>Wilson 95%置信区间</b>与<b>Benjamini-Hochberg FDR</b>门槛，使小样本的侥幸不会被读作优势。账本近期才开始累计，标记成熟前仅为计数，绝非编造命中率。</span></div>
     <div class="fx-rec">
       <span class="chip2"><b>0</b> <span class="l-en">cascade flags</span><span class="l-zh">级联标记</span></span>
       <span class="chip2"><b>0</b> <span class="l-en">bottleneck regimes</span><span class="l-zh">瓶颈机制</span></span>
@@ -1495,6 +1590,5 @@
 </footer>
 
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>
