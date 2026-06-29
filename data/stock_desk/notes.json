@@ -1,33 +1,29 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-06-26",
-  "generated_at": "2026-06-29T01:10:15.476498+00:00",
+  "generated_at": "2026-06-29T03:15:06.159224+00:00",
   "degraded": null,
   "notes": [
     {
       "id": "2026-06-26-IRT-1",
       "ticker": "IRT",
       "name": "IRT Living",
-      "lean": "constructive",
+      "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The uptrend is intact with strong revisions (z=2.63) and the 'High-confluence leader' verdict signaling no extension; risk controls keep the lean constructive as long as the 10-day average holds.",
+      "thesis": "Context leader driven by positive revisions and a steady uptrend; but the neutral band, HOLD signal, and macro liquidity contraction keep the view balanced, expecting market-like returns.",
       "evidence": [
-        "Verdict: High-confluence leader (context)",
-        "Selection axis: revisions z=2.63",
-        "Entry axis: not blocked, off high only -3.6%",
-        "Cycle: daily mid, translation right, not blocked"
+        "verdict: High-confluence leader (context)",
+        "selection revisions leg z=2.65 positive",
+        "ladder: RALLY ON / HOLD, urgency hold",
+        "macro: US net liquidity contracting \u2013 caution on odds"
       ],
-      "dissent": "Contracting macro liquidity and the negative momentum leg (alpha z=-1.31) could reverse the uptrend quickly, turning this into a false start.",
+      "dissent": "Revisions lack standalone validated edge, and a break of the short-term trend would undermine the context.",
       "falsifier": {
-        "text": "Close below the rising 10-day average and the last swing low.",
+        "text": "Price closes below its rising 10-day average.",
         "check": {
-          "kind": "rel_return",
-          "subject_ticker": "IRT",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
         }
       },
       "check_by": "2026-07-24",
@@ -39,23 +35,23 @@
       "name": "Yelp, Inc.",
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 10,
-      "thesis": "The fresh buy signal is undercut by a 'Neutral \u2014 no clear edge' verdict and a negative selection axis (SUE -0.54, momentum -1.25); without validated edge the lean is neutral relative to the S&P 500.",
+      "horizon_d": 25,
+      "thesis": "The deterministic verdict is Neutral \u2014 no clear edge, with negative SUE and weak momentum overriding a high quality factor score; the fresh buy signal lacks conviction support, so relative performance is uncertain.",
       "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "Selection: SUE z=-0.54, alpha z=-1.25",
-        "Tailwind: z=-0.32 (headwind)",
-        "Technical: price below 50 and 200 DMA, -31.9% off high"
+        "verdict: Neutral \u2014 no clear edge",
+        "selection SUE z=-0.54 negative",
+        "quality factors z=2.66 high but not a direct alpha source",
+        "ladder: FRESH BUY but conviction board overrides"
       ],
-      "dissent": "High quality factors (z=2.66) and a potential floor from the fresh swing low could spark a sharp counter-trend rally, but the risk/reward is unclear.",
+      "dissent": "High quality and buybacks could spark a mean-reversion rally if consumer sentiment improves and price reclaims the 50-dma.",
       "falsifier": {
-        "text": "A weekly close above the 50-day moving average and a turn positive in the SUE detector.",
+        "text": "SUE turns positive and price closes above the 50-day moving average.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-07-10",
+      "check_by": "2026-07-31",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
@@ -64,27 +60,27 @@
       "name": "Stewart Information Services Corporation",
       "lean": "constructive",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "The 'Constructive \u2014 building a base' verdict aligns with a steady uptrend and gently positive revisions (z=0.72), though the accounting watch flag keeps conviction low.",
+      "horizon_d": 30,
+      "thesis": "Constructive verdict reflects a building base with modest revisions and marginally positive SUE; limited by accounting watch and low entry urgency, so any edge is faint.",
       "evidence": [
-        "Verdict: Constructive \u2014 building a base",
-        "Selection: revisions z=0.72, SUE z=0.06",
-        "Entry: not blocked, RSI 58, off high -9.6%",
-        "Cycle: daily uptrend, translation middle"
+        "verdict: Constructive \u2014 building a base",
+        "selection SUE z=0.06 slightly positive",
+        "selection revisions z=0.72",
+        "caution: accounting watch"
       ],
-      "dissent": "The accounting watch flag and negative quality z-score (-0.31) warn of potential earnings quality issues that could undermine the base.",
+      "dissent": "Low quality metrics and an accounting watch flag could manifest in earnings disappointment, erasing the base.",
       "falsifier": {
-        "text": "A close below the 200-day moving average or a break of the latest swing low.",
+        "text": "Price closes below the 200-day moving average.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "STC",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 15
+          "horizon_d": 30
         }
       },
-      "check_by": "2026-07-17",
+      "check_by": "2026-08-07",
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
@@ -92,86 +88,85 @@
       "ticker": "ULS",
       "name": "UL Solutions",
       "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 10,
-      "thesis": "A strong selection axis (SUE 1.22, revisions 1.12) supports the bottoming signal and 'Constructive \u2014 building a base' verdict, but the mixed weekly trend demands a short-horizon lean.",
+      "conviction": "medium",
+      "horizon_d": 30,
+      "thesis": "Strong, point-in-time event edge from positive SUE and upward revisions aligned with a bottoming cycle and imminent buy signal, supporting relative outperformance despite elevated macro risk.",
       "evidence": [
-        "Verdict: Constructive \u2014 building a base",
-        "Selection: SUE z=1.22, revisions z=1.12",
-        "Entry: z=0.85, turn signaled, off high -5.4%",
-        "Quality: z=0.89, accounting clean"
+        "verdict: Constructive \u2014 building a base",
+        "selection SUE z=1.22 positive (validated leg)",
+        "selection revisions z=1.12 positive",
+        "entry z=0.85, ladder: TURN SIGNALED, urgency imminent",
+        "quality z=0.89 clean"
       ],
-      "dissent": "The larger weekly timeframe hasn't confirmed the turn, and a macro headwind could abort the bottoming process before it gains traction.",
+      "dissent": "Macro sensitivity and elevated macro risk could trigger a broader sell-off that overpowers the stock-specific event edge.",
       "falsifier": {
-        "text": "Failure to hold above the 50-day moving average and a MACD histogram rollover.",
+        "text": "Price closes below the recent swing low of 89.70.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "ULS",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 10
+          "horizon_d": 30
         }
       },
-      "check_by": "2026-07-10",
+      "check_by": "2026-08-07",
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
       "id": "2026-06-26-DINO-5",
       "ticker": "DINO",
       "name": "HF Sinclair",
-      "lean": "constructive",
+      "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The 'High-confluence leader' verdict is powered by exceptional revisions (z=2.15) and SUE (0.92), but the validated caution on the deteriorating Energy basket trims conviction to low.",
+      "horizon_d": 25,
+      "thesis": "Selection signals are strong, but the validated caution on a deteriorating Energy narrative basket and the neutral band act as risk gates; relative performance versus the S&P 500 is questionable until sector headwinds clear.",
       "evidence": [
-        "Verdict: High-confluence leader (context)",
-        "Selection: revisions z=2.15, SUE z=0.92",
-        "Caution: Narrative basket (US Energy Complex) deteriorating",
-        "Entry: pullback, not blocked"
+        "verdict: High-confluence leader (context)",
+        "selection revisions z=2.17 positive",
+        "caution: Narrative basket (US Energy Complex) deteriorating \u2013 trim/size down",
+        "tailwind z=-0.20 negative",
+        "ladder: RALLY ON / HOLD"
       ],
-      "dissent": "A sector-wide selloff in Energy could easily swamp company-specific strength, making the uptrend fragile despite the high selection score.",
+      "dissent": "A strong rebound in oil prices could revive the Energy complex and amplify DINO's earnings leverage, negating the narrative caution.",
       "falsifier": {
-        "text": "A close below the 50-day moving average or another down leg in the US Energy basket.",
+        "text": "Energy Select Sector SPDR (XLE) closes below its 200-day moving average.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "DINO",
           "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 25
         }
       },
-      "check_by": "2026-07-24",
+      "check_by": "2026-07-31",
       "engine_verdict": "High-confluence leader (context)"
     },
     {
       "id": "2026-06-26-VFC-6",
       "ticker": "VFC",
       "name": "VF Corporation",
-      "lean": "constructive",
+      "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "The 'Constructive \u2014 building a base' verdict is supported by positive revisions (z=0.89) and a pullback entry, but the large -19% drawdown and mixed weekly picture keep conviction low.",
+      "horizon_d": 25,
+      "thesis": "Constructive base-building verdict is undercut by an absent SUE leg, negative tailwind, and mixed larger trend; revision strength alone gives no clear edge, so the risk-reward is ambiguous.",
       "evidence": [
-        "Verdict: Constructive \u2014 building a base",
-        "Selection: revisions z=0.89, alpha z=0.56",
-        "Entry: pullback/extended, RSI 52, off high -19%",
-        "Cycle: daily uptrend, weekly mixed"
+        "verdict: Constructive \u2014 building a base",
+        "selection revisions z=0.90 but no SUE present",
+        "tailwind z=-0.32 negative",
+        "ladder: RALLY ON / HOLD, weekly trend mixed",
+        "quality z null"
       ],
-      "dissent": "The absence of quality data and the deep off-high discount suggest fragile demand; a macro deterioration could easily drive a retest of the lows.",
+      "dissent": "An improvement in discretionary spending could lift VFC from deeply oversold levels, turning the base into a durable recovery.",
       "falsifier": {
-        "text": "A breakdown below the swing low or a close under the 200-day moving average.",
+        "text": "Price closes above the 50-day moving average and the weekly trend turns bullish.",
         "check": {
-          "kind": "rel_return",
-          "subject_ticker": "VFC",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 15
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-07-17",
+      "check_by": "2026-07-31",
       "engine_verdict": "Constructive \u2014 building a base"
     }
   ],
