@@ -1,15 +1,15 @@
 {
   "date": "2026-06-26",
-  "generated_utc": "2026-06-29 01:57",
+  "generated_utc": "2026-06-29 04:05",
   "business_cycle": {
     "available": true,
     "asof": "2026-06-30",
     "tiers": {
       "leading": {
         "asof": "2026-06-30",
-        "index": 91.81677804005298,
+        "index": 91.81677804005295,
         "mom6": 0.21178101113352454,
-        "trend": 0.5738914937339376,
+        "trend": 0.5738914937339371,
         "diffusion": 75.0,
         "n_legs": 4,
         "direction": "rising",

@@ -203,6 +203,13 @@
          border-top: 1px solid color-mix(in srgb, var(--rc) 20%, var(--line)); }
   .rrx .rrx-do-k { font-weight: 800; color: var(--rc); text-transform: uppercase; letter-spacing: .06em;
          font-size: 10.5px; margin-right: 8px; }
+  /* election-cycle context chip (US radar only; engine/election_cycle.py) */
+  .rrx .rrx-cyc { font-size: 11px; color: var(--muted); padding-top: 9px;
+         border-top: 1px solid color-mix(in srgb, var(--rc) 16%, var(--line)); }
+  .rrx .rrx-cyc-k { font-weight: 700; color: var(--text); margin-right: 4px; }
+  .rrx .rrx-cyc-tag { color: var(--rc); font-weight: 700; font-size: 10px; margin-left: 6px; }
+  .rrx .rrx-cyc-sub { color: var(--muted); font-size: 10px; margin-top: 2px; }
+  .rrx .rrx-cyc-sec { color: var(--text); font-size: 10.5px; margin-top: 3px; font-variant-numeric: tabular-nums; }
   /* self-audit line (international radars only) */
   .rrx .rrx-audit { font-size: 10.5px; color: var(--muted); }
   .rrx .rrx-audit-k { font-weight: 700; color: var(--text); margin-right: 6px; }
@@ -1332,7 +1339,7 @@
       <div class="rrx-dom"><span class="l-en">Growth scare / defensive rotation</span><span class="l-zh">增长恐慌/防御轮动</span></div>
       <div class="rrx-amp">▲ <span class="l-en">Amplified</span><span class="l-zh">放大</span> — <span class="l-en">several scare-types firing together · 2 risk types elevated · complacency — calm VIX but fragile</span><span class="l-zh">多个风险类型同时触发 · 2 类风险升高 · 自满 — VIX 平静但脆弱</span></div>
     </div>
-    <div class="rrx-gross"><span class="gv">×0.90</span><span class="gn"><span class="l-en">gross</span><span class="l-zh">建议仓位</span></span></div>
+    <div class="rrx-gross"><span class="gv">×0.87</span><span class="gn"><span class="l-en">gross</span><span class="l-zh">建议仓位</span></span></div>
   </div>
 
   
@@ -1411,6 +1418,16 @@
 
   
   <div class="rrx-do"><span class="rrx-do-k"><span class="l-en">Do</span><span class="l-zh">应对</span></span><span class="l-en">Trim chasing; favour good entries over extended leaders.</span><span class="l-zh">减少追高；择优入场而非追逐已延展的龙头。</span></div>
+  
+
+  
+  
+  <div class="rrx-cyc">
+    <span class="rrx-cyc-k">🗳 <span class="l-en">Midterm year</span><span class="l-zh">中期选举年</span> · <span class="l-en">Apr–Oct window</span><span class="l-zh">4–10月窗口</span></span><span class="help">?<span class="tip"><span class="l-en">Midterm Apr–Oct drawdowns averaged −15% vs −10% otherwise (n=8, suggestive not significant, p≈0.09; the worst years on record are non-midterm). Edge is narrow: while the tape is still healthy (S&P above its 200-day), this window has flagged ≥5% pullbacks at ~1.25× the base rate — early warning, sized not triggered. Calendar context only — it modulates sizing/sensitivity, never originates an alert. The Dollar-Milkshake direction (firmer dollar in midterm H2) is actually reversed in history; trust the radar's measured dollar/rate/CNH legs, not the year.</span><span class="l-zh">中期选举年 4–10 月最大回撤平均约 −15%（其余年份约 −10%；n=8，仅具提示性、未达显著，p≈0.09；史上最深回撤多发生在非中期年）。 优势有限：当大盘仍健康（标普高于 200 日线）时，该窗口的 ≥5% 回撤概率约为常态的 1.25 倍——用于提前预警与降低仓位，而非触发买卖。 仅为日历背景——只调节仓位/灵敏度，绝不独立触发警报。历史上「美元里程碑」方向（中期下半年美元更强）实际相反；请相信雷达已验证的美元/利率/离岸人民币因子，而非年份本身。</span></span></span>
+    <span class="rrx-cyc-tag">▲ <span class="l-en">early-warning sensitivity raised</span><span class="l-zh">已提高预警灵敏度</span></span>
+    <div class="rrx-cyc-sub"><span class="l-en">historically bottoms ~Aug–Oct 2026</span><span class="l-zh">历史上约在 2026 年 8–10 月见底</span></div>
+    
+  </div>
   
 
   
@@ -2118,7 +2135,7 @@
             
             <span class="nb-vchip vf-neutral" title="Options check (dealer gamma) — negative-gamma tape — dealer hedging amplifies the move (fuel for a breakout) · call wall 72.5 · flip 71.19 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 负 Gamma 行情 — 做市商对冲放大波动（利于突破） · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">· <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">neutral</span><span class="l-zh">中性</span></span>
             
-            <span class="nb-vchip vf-caution" title="Options IV lean — Cremers-Weinbaum call−put implied-vol spread — puts richer than calls by -9.9 vol pts vs peers — protection strongly bid · Cremers-Weinbaum call−put IV spread (matched strikes, ~30d, OI-weighted). Calls richer than puts = informed bullish lean; puts richer = protection bid. A CROSS-SECTIONAL context read — dividends/borrow can bias the level, the feed is delayed EOD, and it is DISPLAY-ONLY until the forward-IC gate validates. It can amplify or caution a long the price thesis already likes, never create a buy. | 期权隐含波动率偏向 — Cremers-Weinbaum 看涨−看跌隐含波动率价差 — 看跌比看涨贵 -9.9 个波动点（相对同业） — 保护性看跌被大力买入 · Cremers-Weinbaum 看涨−看跌隐含波动率价差（同行权价配对，约30天，按未平仓量加权）。看涨比看跌更贵 = 知情资金偏多；看跌更贵 = 买入保护。这是横截面参考读数 — 股息/借券成本会扰动水平，数据为延迟收盘，且在前瞻IC验证通过前仅作展示。它只能放大或警示价格逻辑本已看好的多头，绝不制造买入信号。">↓ <span class="l-en">IV lean</span><span class="l-zh">IV偏向</span> <span class="l-en">down</span><span class="l-zh">偏空</span></span>
+            <span class="nb-vchip vf-caution" title="Options IV lean — Cremers-Weinbaum call−put implied-vol spread — puts richer than calls by -10.0 vol pts vs peers — protection strongly bid · Cremers-Weinbaum call−put IV spread (matched strikes, ~30d, OI-weighted). Calls richer than puts = informed bullish lean; puts richer = protection bid. A CROSS-SECTIONAL context read — dividends/borrow can bias the level, the feed is delayed EOD, and it is DISPLAY-ONLY until the forward-IC gate validates. It can amplify or caution a long the price thesis already likes, never create a buy. | 期权隐含波动率偏向 — Cremers-Weinbaum 看涨−看跌隐含波动率价差 — 看跌比看涨贵 -10.0 个波动点（相对同业） — 保护性看跌被大力买入 · Cremers-Weinbaum 看涨−看跌隐含波动率价差（同行权价配对，约30天，按未平仓量加权）。看涨比看跌更贵 = 知情资金偏多；看跌更贵 = 买入保护。这是横截面参考读数 — 股息/借券成本会扰动水平，数据为延迟收盘，且在前瞻IC验证通过前仅作展示。它只能放大或警示价格逻辑本已看好的多头，绝不制造买入信号。">↓ <span class="l-en">IV lean</span><span class="l-zh">IV偏向</span> <span class="l-en">down</span><span class="l-zh">偏空</span></span>
             
           </div>
           
@@ -6493,6 +6510,5 @@ window.__CHART_SWAP__ = {
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>
