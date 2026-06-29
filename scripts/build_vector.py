@@ -2126,6 +2126,12 @@ def main() -> int:
                        - pd.Timedelta(days=int(_mg_cfg.get("buy_lead_days", 0)))).strftime("%Y-%m-%d")
     midterm = {"active": _mt_active, "year": _last_dt.year if _mt_active else None, "release": _mt_release}
 
+    # Cycle-thesis MONITOR (engine/btc_cycle_thesis.py): turns the halving/midterm-cycle
+    # conviction into a watched thesis — projected bottom window + falsifier flags (dampening /
+    # timing / desync / structure). Reuses the committed cycle config + the PIT 1064/364 status.
+    from engine import btc_cycle_thesis
+    cycle_thesis = btc_cycle_thesis.monitor(close, cfg=config.load()["vector"], sig=sig)
+
     # raw OHLC for scenarios
     raw = store.read("coinbase", "btc_daily")
     hi = raw["high"].reindex(close.index).fillna(close)
@@ -2523,6 +2529,7 @@ def main() -> int:
             "status": last.get("cphase_status"),
             "anchor": last.get("cphase_anchor_date"),
         },
+        "cycle_thesis": cycle_thesis,   # halving/midterm thesis monitor + falsifier flags
         "positioning": {
             "cot_net_pct": _r(last.get("cot_net_pct"), 1),
             "cot_z": _r(last.get("cot_z"), 2),
