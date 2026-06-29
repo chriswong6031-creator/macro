@@ -4,6 +4,43 @@
 (function () {
   var docEl = document.documentElement;
 
+  /* ---- Mastermind Terminal jump -------------------------------------------
+     Single-stock analysis now opens in the Terminal web app. US stock links
+     (stock.html#TICKER) and US search picks route to
+     app.mastermind-x.com/terminal?sym=TICKER for a seamless hand-off; the
+     origin is pre-warmed (DNS + TLS) so the first navigation is instant.
+     China/HK/Canada/Intl keep their in-page analyzers for now (their ticker
+     formats differ from the Terminal universe). Flip window.MM_TERMINAL = false
+     anywhere to restore the in-page US analyzer. */
+  var MM_TERMINAL_BASE = 'https://app.mastermind-x.com/terminal';
+  function mmTerminalOn() { return window.MM_TERMINAL !== false; }
+  function terminalUrl(t) { return MM_TERMINAL_BASE + '?sym=' + encodeURIComponent(t); }
+  (function prewarmTerminal() {
+    if (!mmTerminalOn() || !document.head) return;
+    ['preconnect', 'dns-prefetch'].forEach(function (rel) {
+      var l = document.createElement('link');
+      l.rel = rel; l.href = 'https://app.mastermind-x.com';
+      if (rel === 'preconnect') l.crossOrigin = '';
+      document.head.appendChild(l);
+    });
+  })();
+  // Re-route US single-stock links anywhere on the site → Terminal (capture phase
+  // so it runs before the browser follows the <a>). Leaves new-tab / modified
+  // clicks and non-US analyzers alone.
+  document.addEventListener('click', function (e) {
+    if (!mmTerminalOn() || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a || a.target === '_blank') return;
+    var href = a.getAttribute('href') || '', h = href.indexOf('#');
+    if (h < 0) return;
+    var page = href.slice(0, h).replace(/[?].*$/, '').replace(/.*\//, '');
+    if (page !== 'stock.html') return;            // US analyzer only
+    var t = href.slice(h + 1);
+    if (!t) return;
+    e.preventDefault();
+    location.href = terminalUrl(decodeURIComponent(t));
+  }, true);
+
   /* ---- Google Analytics 4 (gtag.js) ---------------------------------------
      Injected once on EVERY page via this one shared script (every page loads
      theme.js), so there's no per-template tag to maintain. Loads gtag.js async
@@ -152,7 +189,12 @@
         lib = lib.concat(d || []);
       }).catch(function () {});
     });
-    function go(x) { if (x) location.href = pfx + (x._tgt || 'stock.html') + '#' + encodeURIComponent(x.t); }
+    function go(x) {
+      if (!x) return;
+      // US picks open the Terminal; other markets keep their in-page analyzer
+      if (mmTerminalOn() && (x._tgt === 'stock.html' || x._mk === 'US')) { location.href = terminalUrl(x.t); return; }
+      location.href = pfx + (x._tgt || 'stock.html') + '#' + encodeURIComponent(x.t);
+    }
     function close() { sugg.classList.remove('show'); sugg.innerHTML = ''; rows = []; sel = -1; }
     function paint() {
       [].forEach.call(sugg.querySelectorAll('.row'), function (r, i) { r.classList.toggle('sel', i === sel); });
