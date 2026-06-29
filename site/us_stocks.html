@@ -114,6 +114,10 @@
          border-left: 4px solid var(--rc); font-size: 12.5px; line-height: 1.4;
          box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 16px 32px -24px rgba(0,0,0,.4); }
   body.page-macro .ms-front > .rrx { margin: 0 0 14px; }
+  /* grouping wrappers: inert everywhere by default (the card keeps its single-column
+     stack on the China/HK/Canada/stocks placements); the macro front-page overrides
+     these to display:flex to build the 2-column banner. */
+  .rrx > .rrx-main, .rrx > .rrx-side { display: contents; min-width: 0; }
   .rrx.rrx-loud { background: color-mix(in srgb, var(--rc) 4%, var(--panel));
          box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rc) 20%, transparent), 0 14px 34px -18px color-mix(in srgb, var(--rc) 70%, transparent);
          animation: rrxPulse 2.4s ease-in-out infinite; }
@@ -1316,6 +1320,8 @@
     
     
     <div class="rrx rrx-caution rrx-loud" style="--rc:var(--warn)">
+  
+  <div class="rrx-main">
   <div class="rrx-hd">
     <span class="rrx-ic">⚠️</span>
     <div class="rrx-id">
@@ -1366,7 +1372,9 @@
     </div>
   </div>
   
+  </div>
 
+  <div class="rrx-side">
   
   <div class="rrx-threats">
     <span class="rrx-th dom" style="--sb:var(--act)">
@@ -1409,6 +1417,7 @@
   
   <div class="rrx-audit"><span class="rrx-audit-k">🧾 <span class="l-en">Self-audit</span><span class="l-zh">自审</span></span><span class="l-en">accruing — grades begin once calls mature (~21 trading days)</span><span class="l-zh">积累中 — 约21个交易日后开始评分</span></div>
   
+  </div>
 </div>
     
     <p class="muted" style="margin:6px 0 0"><span class="l-en">Where to look for stocks — standouts, sector rotation, factor tilts and real fund flows, filtered by the current macro regime.</span><span class="l-zh">在哪里找股票 — 精选个股、板块轮动、因子倾斜与基金真实资金流，按当前宏观周期过滤。</span>
@@ -1542,7 +1551,7 @@
     <div class="notable">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
         <span style="font-weight:700;font-size:13px"><span class="l-en">Standout individual stocks</span><span class="l-zh">表现突出的个股</span></span>
-        <span class="muted" style="font-size:11.5px">34 <span class="l-en">shown ·</span><span class="l-zh">已显示 ·</span> 34 <span class="l-en">fully aligned across weekly · 3-day · daily (bottoming, not a falling knife) · TWO gauges per card: an OWN-IT conviction score (leadership · quality · valuation) and a separate ENTRY gauge — buy now, or wait for the pullback to $X. A high score is NOT a buy-now; the green dot means the entry is open today.</span><span class="l-zh">在周线·3日·日线上完全共振（筑底，而非接飞刀）· 每张卡片两个量表：持有信念分（领先·质量·估值）+ 独立的入场量表 — 立即买入，或等待回撤至某价位。高分并不等于立即买入；绿点代表今日入场窗口已开。</span>
+        <span class="muted" style="font-size:11.5px">35 <span class="l-en">shown ·</span><span class="l-zh">已显示 ·</span> 35 <span class="l-en">fully aligned across weekly · 3-day · daily (bottoming, not a falling knife) · TWO gauges per card: an OWN-IT conviction score (leadership · quality · valuation) and a separate ENTRY gauge — buy now, or wait for the pullback to $X. A high score is NOT a buy-now; the green dot means the entry is open today.</span><span class="l-zh">在周线·3日·日线上完全共振（筑底，而非接飞刀）· 每张卡片两个量表：持有信念分（领先·质量·估值）+ 独立的入场量表 — 立即买入，或等待回撤至某价位。高分并不等于立即买入；绿点代表今日入场窗口已开。</span>
           <span class="help">?<span class="tip"><span class="l-en">Each name carries TWO independent gauges so a great company is never confused with a great entry. (1) OWN-IT CONVICTION (the 0-100 score): leadership (validated sector-neutral residual momentum α across the S&P 1500) + quality + a forward-aware valuation read — a cheap-on-forward leader like NVDA is NOT penalized for a rich trailing multiple. It surfaces leaders that aren't in any sector ETF's top-10. It is a within-market percentile DISPLAY skin (not a probability) and reads 'high-confluence (context)' until a deep Phase-0 proves forward edge; the α leg is just one light, regime-scaled input, not the rank key. (2) ENTRY TIMING (the coloured strip): the price-cycle read across daily/3-day/weekly — buy now (green dot), wait for the pullback to the shown buy-zone price, or extended/topping (don't chase). Two VERIFIERS — an Options (dealer-gamma) check and a single-stock volatility-squeeze read — sharpen the ENTRY only (display + a small bounded tilt); they can lower conviction but never manufacture a buy, and never touch the selection rank. The price-cycle state is a HARD modifier: a name late in its cycle, in a downtrend or topping, can NEVER read 'buy now' — it reads 'strong name, wrong tape', which is why this card and the stock's own page never disagree. The board is sorted by conviction; the entry gauge tells you which are actionable today. Click any card for the full breakdown.</span><span class="l-zh">每个标的带有两个相互独立的量表，使“好公司”绝不等同于“好入场点”。(1) 持有信念（0-100 分）：领先度（在标普1500内已验证的行业中性残差动量 α）+ 质量 + 前瞻估值读数——像 NVDA 这种前瞻便宜的领涨股不会因偏高的历史倍数而被扣分。它能发掘不在任何行业ETF前十大持仓中的领涨股。它是市场内百分位的展示皮肤（非概率），在深度 Phase-0 证明前瞻优势前显示为“高共振（参考）”；α 维度只是一个轻量、随行情缩放的输入，并非排序关键。(2) 入场择时（彩色条）：跨日线/3日/周线的价格周期读数——立即买入（绿点）、等待回撤至所示买入区价位，或过度拉伸/做顶（勿追高）。两个验证器——期权（做市商 Gamma）检查与个股波动压缩读数——只优化“入场”（展示＋小幅有界倾斜）；它们可降低确信度，但绝不制造买入信号，也不触及选股排序。价格周期状态是硬性修正项：处于周期晚期、下行或做顶的个股永远不会显示“立即买入”，而显示“强势但趋势不利”，因此本卡片与个股自身页面绝不冲突。榜单按信念排序；入场量表告诉你今天哪些可操作。点击任意卡片查看完整拆解。</span></span></span></span>
         
       </div>
@@ -1593,7 +1602,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.0 3.8,42.0 7.6,41.3 11.4,40.1 15.2,40.4 19.0,37.0 22.9,37.4 26.7,36.2 30.5,35.3 34.3,34.7 38.1,32.5 41.9,30.7 45.7,28.0 49.5,28.5 53.3,28.6 57.1,21.4 61.0,20.5 64.8,25.1 68.6,31.0 72.4,25.8 76.2,26.7 80.0,26.1 83.8,18.8 87.6,19.3 91.4,19.0 95.2,19.9 99.0,16.8 102.9,16.2 106.7,17.4 110.5,18.1 114.3,17.2 118.1,16.9 121.9,16.8 125.7,19.3 129.5,19.9 133.3,23.6 137.1,19.7 141.0,16.2 144.8,13.2 148.6,11.9 152.4,10.8 156.2,14.1 160.0,18.9 163.8,19.7 167.6,22.8 171.4,28.2 175.2,28.5 179.0,22.8 182.9,18.2 186.7,17.0 190.5,16.3 194.3,12.6 198.1,11.7 201.9,15.4 205.7,13.4 209.5,17.5 213.3,19.1 217.1,26.4 221.0,28.8 224.8,26.0 228.6,22.2 232.4,18.7 236.2,15.0 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,41.0 3.8,42.0 7.6,41.3 11.4,40.1 15.2,40.4 19.0,37.0 22.9,37.4 26.7,36.2 30.5,35.3 34.3,34.7 38.1,32.5 41.9,30.7 45.7,28.0 49.5,28.5 53.3,28.6 57.1,21.4 61.0,20.5 64.8,25.1 68.6,31.0 72.4,25.8 76.2,26.7 80.0,26.1 83.8,18.8 87.6,19.3 91.4,19.0 95.2,19.9 99.0,16.8 102.9,16.2 106.7,17.4 110.5,18.1 114.3,17.2 118.1,16.9 121.9,16.8 125.7,19.3 129.5,19.9 133.3,23.6 137.1,19.7 141.0,16.2 144.8,13.2 148.6,11.9 152.4,10.8 156.2,14.1 160.0,18.9 163.8,19.7 167.6,22.8 171.4,28.2 175.2,28.5 179.0,22.8 182.9,18.2 186.7,17.0 190.5,16.3 194.3,12.6 198.1,11.7 201.9,15.4 205.7,13.4 209.5,17.5 213.3,19.1 217.1,26.4 221.0,28.8 224.8,26.0 228.6,22.2 232.4,18.7 236.2,15.0 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">99</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">29</span>
             <span class="nb-verdict"><span class="l-en">High-confluence leader (context)</span><span class="l-zh">高共振 领先（参考）</span></span>
             
           </div>
@@ -1707,7 +1716,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,27.6 3.8,29.1 7.6,27.4 11.4,27.6 15.2,25.9 19.0,26.0 22.9,24.7 26.7,24.3 30.5,25.1 34.3,24.4 38.1,24.8 41.9,23.6 45.7,22.0 49.5,19.1 53.3,17.1 57.1,15.1 61.0,14.2 64.8,10.8 68.6,10.7 72.4,13.6 76.2,12.0 80.0,10.5 83.8,15.9 87.6,14.8 91.4,16.4 95.2,11.3 99.0,12.2 102.9,10.1 106.7,13.6 110.5,12.9 114.3,18.5 118.1,25.5 121.9,34.1 125.7,35.0 129.5,42.0 133.3,39.8 137.1,39.2 141.0,36.1 144.8,36.5 148.6,39.0 152.4,36.9 156.2,34.7 160.0,32.7 163.8,33.3 167.6,35.3 171.4,32.7 175.2,34.2 179.0,38.3 182.9,32.0 186.7,33.5 190.5,34.6 194.3,31.6 198.1,29.5 201.9,34.4 205.7,34.1 209.5,36.2 213.3,33.3 217.1,36.3 221.0,34.9 224.8,36.5 228.6,35.8 232.4,33.1 236.2,34.8 240.0,30.5 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,27.6 3.8,29.1 7.6,27.4 11.4,27.6 15.2,25.9 19.0,26.0 22.9,24.7 26.7,24.3 30.5,25.1 34.3,24.4 38.1,24.8 41.9,23.6 45.7,22.0 49.5,19.1 53.3,17.1 57.1,15.1 61.0,14.2 64.8,10.8 68.6,10.7 72.4,13.6 76.2,12.0 80.0,10.5 83.8,15.9 87.6,14.8 91.4,16.4 95.2,11.3 99.0,12.2 102.9,10.1 106.7,13.6 110.5,12.9 114.3,18.5 118.1,25.5 121.9,34.1 125.7,35.0 129.5,42.0 133.3,39.8 137.1,39.2 141.0,36.1 144.8,36.5 148.6,39.0 152.4,36.9 156.2,34.7 160.0,32.7 163.8,33.3 167.6,35.3 171.4,32.7 175.2,34.2 179.0,38.3 182.9,32.0 186.7,33.5 190.5,34.6 194.3,31.6 198.1,29.5 201.9,34.4 205.7,34.1 209.5,36.2 213.3,33.3 217.1,36.3 221.0,34.9 224.8,36.5 228.6,35.8 232.4,33.1 236.2,34.8 240.0,30.5" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="30.5" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">98</span>
+            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">78</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -1813,7 +1822,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.2 3.8,42.0 7.6,36.9 11.4,35.7 15.2,37.2 19.0,38.3 22.9,36.3 26.7,34.2 30.5,28.5 34.3,26.6 38.1,28.2 41.9,27.5 45.7,27.5 49.5,26.5 53.3,27.4 57.1,20.9 61.0,22.6 64.8,21.6 68.6,18.9 72.4,12.4 76.2,10.5 80.0,10.1 83.8,11.5 87.6,14.7 91.4,14.7 95.2,16.9 99.0,19.2 102.9,18.2 106.7,17.2 110.5,15.1 114.3,15.4 118.1,19.4 121.9,22.6 125.7,23.4 129.5,21.0 133.3,22.7 137.1,19.2 141.0,23.6 144.8,20.8 148.6,20.9 152.4,21.8 156.2,21.0 160.0,20.9 163.8,25.7 167.6,28.5 171.4,31.2 175.2,30.8 179.0,34.4 182.9,32.4 186.7,26.4 190.5,28.3 194.3,25.7 198.1,25.2 201.9,29.0 205.7,27.9 209.5,25.7 213.3,24.5 217.1,25.9 221.0,23.5 224.8,24.2 228.6,20.1 232.4,19.5 236.2,28.3 240.0,18.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,41.2 3.8,42.0 7.6,36.9 11.4,35.7 15.2,37.2 19.0,38.3 22.9,36.3 26.7,34.2 30.5,28.5 34.3,26.6 38.1,28.2 41.9,27.5 45.7,27.5 49.5,26.5 53.3,27.4 57.1,20.9 61.0,22.6 64.8,21.6 68.6,18.9 72.4,12.4 76.2,10.5 80.0,10.1 83.8,11.5 87.6,14.7 91.4,14.7 95.2,16.9 99.0,19.2 102.9,18.2 106.7,17.2 110.5,15.1 114.3,15.4 118.1,19.4 121.9,22.6 125.7,23.4 129.5,21.0 133.3,22.7 137.1,19.2 141.0,23.6 144.8,20.8 148.6,20.9 152.4,21.8 156.2,21.0 160.0,20.9 163.8,25.7 167.6,28.5 171.4,31.2 175.2,30.8 179.0,34.4 182.9,32.4 186.7,26.4 190.5,28.3 194.3,25.7 198.1,25.2 201.9,29.0 205.7,27.9 209.5,25.7 213.3,24.5 217.1,25.9 221.0,23.5 224.8,24.2 228.6,20.1 232.4,19.5 236.2,28.3 240.0,18.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="18.0" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">81</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">33</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
             
           </div>
@@ -1927,7 +1936,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.7 3.8,39.4 7.6,41.8 11.4,36.9 15.2,38.5 19.0,38.5 22.9,39.2 26.7,42.0 30.5,37.6 34.3,38.6 38.1,38.9 41.9,38.7 45.7,31.6 49.5,30.3 53.3,31.5 57.1,28.5 61.0,26.7 64.8,28.1 68.6,31.1 72.4,31.6 76.2,30.7 80.0,32.9 83.8,33.3 87.6,33.7 91.4,30.2 95.2,28.7 99.0,30.8 102.9,10.3 106.7,10.1 110.5,17.7 114.3,16.3 118.1,20.1 121.9,20.8 125.7,18.6 129.5,16.1 133.3,18.3 137.1,18.3 141.0,16.9 144.8,14.2 148.6,13.6 152.4,12.9 156.2,15.8 160.0,16.1 163.8,17.5 167.6,17.4 171.4,16.8 175.2,19.8 179.0,19.5 182.9,17.8 186.7,21.2 190.5,20.9 194.3,18.7 198.1,20.4 201.9,18.9 205.7,21.0 209.5,20.9 213.3,23.3 217.1,25.0 221.0,28.9 224.8,31.1 228.6,31.2 232.4,27.1 236.2,22.6 240.0,18.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.7 3.8,39.4 7.6,41.8 11.4,36.9 15.2,38.5 19.0,38.5 22.9,39.2 26.7,42.0 30.5,37.6 34.3,38.6 38.1,38.9 41.9,38.7 45.7,31.6 49.5,30.3 53.3,31.5 57.1,28.5 61.0,26.7 64.8,28.1 68.6,31.1 72.4,31.6 76.2,30.7 80.0,32.9 83.8,33.3 87.6,33.7 91.4,30.2 95.2,28.7 99.0,30.8 102.9,10.3 106.7,10.1 110.5,17.7 114.3,16.3 118.1,20.1 121.9,20.8 125.7,18.6 129.5,16.1 133.3,18.3 137.1,18.3 141.0,16.9 144.8,14.2 148.6,13.6 152.4,12.9 156.2,15.8 160.0,16.1 163.8,17.5 167.6,17.4 171.4,16.8 175.2,19.8 179.0,19.5 182.9,17.8 186.7,21.2 190.5,20.9 194.3,18.7 198.1,20.4 201.9,18.9 205.7,21.0 209.5,20.9 213.3,23.3 217.1,25.0 221.0,28.9 224.8,31.1 228.6,31.2 232.4,27.1 236.2,22.6 240.0,18.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="18.1" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">99</span>
+            <span class="nb-cscore band-constructive" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">46</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
             
           </div>
@@ -2035,7 +2044,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,30.0 3.8,29.1 7.6,30.3 11.4,31.5 15.2,34.1 19.0,34.4 22.9,33.6 26.7,34.2 30.5,38.9 34.3,42.0 38.1,40.1 41.9,38.2 45.7,40.7 49.5,38.7 53.3,35.5 57.1,40.7 61.0,39.4 64.8,36.5 68.6,36.6 72.4,36.5 76.2,35.2 80.0,32.5 83.8,30.9 87.6,25.2 91.4,23.0 95.2,19.5 99.0,14.9 102.9,10.1 106.7,16.1 110.5,17.1 114.3,13.7 118.1,12.2 121.9,14.8 125.7,18.3 129.5,19.5 133.3,17.2 137.1,16.6 141.0,13.9 144.8,15.2 148.6,20.0 152.4,17.3 156.2,19.8 160.0,20.6 163.8,20.3 167.6,17.4 171.4,15.7 175.2,11.4 179.0,11.2 182.9,12.1 186.7,14.7 190.5,12.9 194.3,17.8 198.1,15.8 201.9,17.3 205.7,14.9 209.5,22.1 213.3,23.3 217.1,24.4 221.0,27.0 224.8,24.6 228.6,24.9 232.4,24.7 236.2,21.1 240.0,20.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,30.0 3.8,29.1 7.6,30.3 11.4,31.5 15.2,34.1 19.0,34.4 22.9,33.6 26.7,34.2 30.5,38.9 34.3,42.0 38.1,40.1 41.9,38.2 45.7,40.7 49.5,38.7 53.3,35.5 57.1,40.7 61.0,39.4 64.8,36.5 68.6,36.6 72.4,36.5 76.2,35.2 80.0,32.5 83.8,30.9 87.6,25.2 91.4,23.0 95.2,19.5 99.0,14.9 102.9,10.1 106.7,16.1 110.5,17.1 114.3,13.7 118.1,12.2 121.9,14.8 125.7,18.3 129.5,19.5 133.3,17.2 137.1,16.6 141.0,13.9 144.8,15.2 148.6,20.0 152.4,17.3 156.2,19.8 160.0,20.6 163.8,20.3 167.6,17.4 171.4,15.7 175.2,11.4 179.0,11.2 182.9,12.1 186.7,14.7 190.5,12.9 194.3,17.8 198.1,15.8 201.9,17.3 205.7,14.9 209.5,22.1 213.3,23.3 217.1,24.4 221.0,27.0 224.8,24.6 228.6,24.9 232.4,24.7 236.2,21.1 240.0,20.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="20.2" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">98</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">34</span>
             <span class="nb-verdict"><span class="l-en">High-confluence leader (context)</span><span class="l-zh">高共振 领先（参考）</span></span>
             
           </div>
@@ -2099,7 +2108,7 @@
             
           </div>
           
-          <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.9</span><span class="nbb nbb-literature">revisions +2.1</span></div>
+          <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.9</span><span class="nbb nbb-literature">revisions +2.2</span></div>
           
           
           
@@ -2107,7 +2116,7 @@
           
           <div class="nb-vf">
             
-            <span class="nb-vchip vf-neutral" title="Options check (dealer gamma) — negative-gamma tape — dealer hedging amplifies the move (fuel for a breakout) · call wall 72.5 · flip 71.45 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 负 Gamma 行情 — 做市商对冲放大波动（利于突破） · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">· <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">neutral</span><span class="l-zh">中性</span></span>
+            <span class="nb-vchip vf-neutral" title="Options check (dealer gamma) — negative-gamma tape — dealer hedging amplifies the move (fuel for a breakout) · call wall 72.5 · flip 71.19 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 负 Gamma 行情 — 做市商对冲放大波动（利于突破） · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">· <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">neutral</span><span class="l-zh">中性</span></span>
             
             <span class="nb-vchip vf-caution" title="Options IV lean — Cremers-Weinbaum call−put implied-vol spread — puts richer than calls by -9.9 vol pts vs peers — protection strongly bid · Cremers-Weinbaum call−put IV spread (matched strikes, ~30d, OI-weighted). Calls richer than puts = informed bullish lean; puts richer = protection bid. A CROSS-SECTIONAL context read — dividends/borrow can bias the level, the feed is delayed EOD, and it is DISPLAY-ONLY until the forward-IC gate validates. It can amplify or caution a long the price thesis already likes, never create a buy. | 期权隐含波动率偏向 — Cremers-Weinbaum 看涨−看跌隐含波动率价差 — 看跌比看涨贵 -9.9 个波动点（相对同业） — 保护性看跌被大力买入 · Cremers-Weinbaum 看涨−看跌隐含波动率价差（同行权价配对，约30天，按未平仓量加权）。看涨比看跌更贵 = 知情资金偏多；看跌更贵 = 买入保护。这是横截面参考读数 — 股息/借券成本会扰动水平，数据为延迟收盘，且在前瞻IC验证通过前仅作展示。它只能放大或警示价格逻辑本已看好的多头，绝不制造买入信号。">↓ <span class="l-en">IV lean</span><span class="l-zh">IV偏向</span> <span class="l-en">down</span><span class="l-zh">偏空</span></span>
             
@@ -2150,7 +2159,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.8 3.8,40.5 7.6,42.0 11.4,37.0 15.2,37.4 19.0,37.7 22.9,36.6 26.7,37.3 30.5,31.8 34.3,28.9 38.1,29.7 41.9,28.5 45.7,26.3 49.5,21.4 53.3,18.5 57.1,13.3 61.0,10.4 64.8,10.4 68.6,10.1 72.4,19.1 76.2,20.5 80.0,23.0 83.8,26.9 87.6,29.6 91.4,25.6 95.2,25.1 99.0,28.8 102.9,29.2 106.7,22.7 110.5,24.8 114.3,25.3 118.1,31.4 121.9,33.5 125.7,36.2 129.5,35.3 133.3,38.9 137.1,37.6 141.0,38.5 144.8,41.6 148.6,41.8 152.4,38.7 156.2,38.7 160.0,34.6 163.8,31.5 167.6,35.9 171.4,38.7 175.2,38.7 179.0,40.5 182.9,39.9 186.7,39.4 190.5,39.2 194.3,36.9 198.1,39.9 201.9,33.5 205.7,32.6 209.5,30.7 213.3,32.3 217.1,38.2 221.0,34.5 224.8,36.3 228.6,37.0 232.4,35.1 236.2,36.7 240.0,34.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.8 3.8,40.5 7.6,42.0 11.4,37.0 15.2,37.4 19.0,37.7 22.9,36.6 26.7,37.3 30.5,31.8 34.3,28.9 38.1,29.7 41.9,28.5 45.7,26.3 49.5,21.4 53.3,18.5 57.1,13.3 61.0,10.4 64.8,10.4 68.6,10.1 72.4,19.1 76.2,20.5 80.0,23.0 83.8,26.9 87.6,29.6 91.4,25.6 95.2,25.1 99.0,28.8 102.9,29.2 106.7,22.7 110.5,24.8 114.3,25.3 118.1,31.4 121.9,33.5 125.7,36.2 129.5,35.3 133.3,38.9 137.1,37.6 141.0,38.5 144.8,41.6 148.6,41.8 152.4,38.7 156.2,38.7 160.0,34.6 163.8,31.5 167.6,35.9 171.4,38.7 175.2,38.7 179.0,40.5 182.9,39.9 186.7,39.4 190.5,39.2 194.3,36.9 198.1,39.9 201.9,33.5 205.7,32.6 209.5,30.7 213.3,32.3 217.1,38.2 221.0,34.5 224.8,36.3 228.6,37.0 232.4,35.1 236.2,36.7 240.0,34.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="34.2" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">96</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">38</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
             
           </div>
@@ -2249,7 +2258,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,28.9 3.8,37.5 7.6,35.3 11.4,29.1 15.2,28.9 19.0,27.5 22.9,22.0 26.7,22.5 30.5,17.8 34.3,21.8 38.1,27.7 41.9,25.5 45.7,26.3 49.5,23.4 53.3,21.9 57.1,18.2 61.0,16.4 64.8,20.0 68.6,24.4 72.4,20.5 76.2,21.3 80.0,20.4 83.8,20.0 87.6,23.2 91.4,17.6 95.2,22.0 99.0,18.0 102.9,14.4 106.7,12.6 110.5,15.4 114.3,18.9 118.1,20.7 121.9,19.6 125.7,23.1 129.5,18.1 133.3,19.6 137.1,12.0 141.0,17.9 144.8,11.9 148.6,10.3 152.4,12.0 156.2,15.1 160.0,23.5 163.8,27.0 167.6,33.1 171.4,36.3 175.2,36.8 179.0,42.0 182.9,37.5 186.7,26.4 190.5,32.3 194.3,29.0 198.1,25.8 201.9,24.5 205.7,17.7 209.5,17.8 213.3,19.3 217.1,15.5 221.0,17.6 224.8,19.8 228.6,15.7 232.4,21.9 236.2,20.8 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,28.9 3.8,37.5 7.6,35.3 11.4,29.1 15.2,28.9 19.0,27.5 22.9,22.0 26.7,22.5 30.5,17.8 34.3,21.8 38.1,27.7 41.9,25.5 45.7,26.3 49.5,23.4 53.3,21.9 57.1,18.2 61.0,16.4 64.8,20.0 68.6,24.4 72.4,20.5 76.2,21.3 80.0,20.4 83.8,20.0 87.6,23.2 91.4,17.6 95.2,22.0 99.0,18.0 102.9,14.4 106.7,12.6 110.5,15.4 114.3,18.9 118.1,20.7 121.9,19.6 125.7,23.1 129.5,18.1 133.3,19.6 137.1,12.0 141.0,17.9 144.8,11.9 148.6,10.3 152.4,12.0 156.2,15.1 160.0,23.5 163.8,27.0 167.6,33.1 171.4,36.3 175.2,36.8 179.0,42.0 182.9,37.5 186.7,26.4 190.5,32.3 194.3,29.0 198.1,25.8 201.9,24.5 205.7,17.7 209.5,17.8 213.3,19.3 217.1,15.5 221.0,17.6 224.8,19.8 228.6,15.7 232.4,21.9 236.2,20.8 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-constructive" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">67</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">27</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -2357,7 +2366,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,31.7 3.8,34.9 7.6,31.5 11.4,31.1 15.2,29.5 19.0,29.0 22.9,29.7 26.7,31.3 30.5,34.9 34.3,35.2 38.1,41.1 41.9,35.5 45.7,37.2 49.5,32.4 53.3,34.1 57.1,34.8 61.0,30.5 64.8,30.7 68.6,30.9 72.4,36.4 76.2,33.8 80.0,35.0 83.8,34.7 87.6,32.2 91.4,34.3 95.2,29.9 99.0,28.9 102.9,29.0 106.7,33.1 110.5,29.4 114.3,30.1 118.1,35.4 121.9,36.0 125.7,36.3 129.5,35.3 133.3,30.5 137.1,27.6 141.0,26.7 144.8,26.1 148.6,27.7 152.4,26.5 156.2,27.0 160.0,28.9 163.8,26.4 167.6,19.9 171.4,10.1 175.2,14.3 179.0,20.2 182.9,23.4 186.7,31.5 190.5,33.9 194.3,36.3 198.1,36.1 201.9,37.4 205.7,36.4 209.5,38.2 213.3,37.7 217.1,41.7 221.0,39.8 224.8,41.5 228.6,41.5 232.4,38.1 236.2,42.0 240.0,36.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,31.7 3.8,34.9 7.6,31.5 11.4,31.1 15.2,29.5 19.0,29.0 22.9,29.7 26.7,31.3 30.5,34.9 34.3,35.2 38.1,41.1 41.9,35.5 45.7,37.2 49.5,32.4 53.3,34.1 57.1,34.8 61.0,30.5 64.8,30.7 68.6,30.9 72.4,36.4 76.2,33.8 80.0,35.0 83.8,34.7 87.6,32.2 91.4,34.3 95.2,29.9 99.0,28.9 102.9,29.0 106.7,33.1 110.5,29.4 114.3,30.1 118.1,35.4 121.9,36.0 125.7,36.3 129.5,35.3 133.3,30.5 137.1,27.6 141.0,26.7 144.8,26.1 148.6,27.7 152.4,26.5 156.2,27.0 160.0,28.9 163.8,26.4 167.6,19.9 171.4,10.1 175.2,14.3 179.0,20.2 182.9,23.4 186.7,31.5 190.5,33.9 194.3,36.3 198.1,36.1 201.9,37.4 205.7,36.4 209.5,38.2 213.3,37.7 217.1,41.7 221.0,39.8 224.8,41.5 228.6,41.5 232.4,38.1 236.2,42.0 240.0,36.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="36.0" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">94</span>
+            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">80</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -2429,7 +2438,7 @@
           
           <div class="nb-vf">
             
-            <span class="nb-vchip vf-neutral" title="Options check (dealer gamma) — long-gamma — dealer hedging dampens the move · call wall 50.0 · flip 44.4 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 多头 Gamma — 做市商对冲抑制波动 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">· <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">neutral</span><span class="l-zh">中性</span></span>
+            <span class="nb-vchip vf-neutral" title="Options check (dealer gamma) — long-gamma — dealer hedging dampens the move · call wall 50.0 · flip 44.41 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 多头 Gamma — 做市商对冲抑制波动 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">· <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">neutral</span><span class="l-zh">中性</span></span>
             
             <span class="nb-vchip vf-confirm" title="Options IV lean — Cremers-Weinbaum call−put implied-vol spread — calls richer than puts by +3.2 vol pts vs peers — strong informed bullish lean · Cremers-Weinbaum call−put IV spread (matched strikes, ~30d, OI-weighted). Calls richer than puts = informed bullish lean; puts richer = protection bid. A CROSS-SECTIONAL context read — dividends/borrow can bias the level, the feed is delayed EOD, and it is DISPLAY-ONLY until the forward-IC gate validates. It can amplify or caution a long the price thesis already likes, never create a buy. | 期权隐含波动率偏向 — Cremers-Weinbaum 看涨−看跌隐含波动率价差 — 看涨比看跌贵 +3.2 个波动点（相对同业） — 知情资金强烈偏多 · Cremers-Weinbaum 看涨−看跌隐含波动率价差（同行权价配对，约30天，按未平仓量加权）。看涨比看跌更贵 = 知情资金偏多；看跌更贵 = 买入保护。这是横截面参考读数 — 股息/借券成本会扰动水平，数据为延迟收盘，且在前瞻IC验证通过前仅作展示。它只能放大或警示价格逻辑本已看好的多头，绝不制造买入信号。">↑ <span class="l-en">IV lean</span><span class="l-zh">IV偏向</span> <span class="l-en">up</span><span class="l-zh">偏多</span></span>
             
@@ -2474,7 +2483,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.7 3.8,42.0 7.6,41.7 11.4,39.0 15.2,38.6 19.0,37.3 22.9,36.7 26.7,36.2 30.5,33.9 34.3,32.3 38.1,32.8 41.9,32.1 45.7,31.6 49.5,34.7 53.3,32.3 57.1,32.3 61.0,31.5 64.8,32.2 68.6,33.7 72.4,16.5 76.2,18.5 80.0,18.3 83.8,19.2 87.6,21.6 91.4,17.9 95.2,20.4 99.0,22.6 102.9,22.2 106.7,18.9 110.5,21.5 114.3,21.7 118.1,22.7 121.9,20.9 125.7,21.7 129.5,18.0 133.3,17.0 137.1,13.4 141.0,16.2 144.8,20.8 148.6,21.0 152.4,20.7 156.2,16.6 160.0,10.1 163.8,19.8 167.6,22.2 171.4,21.5 175.2,20.6 179.0,22.6 182.9,21.2 186.7,14.5 190.5,17.4 194.3,15.3 198.1,18.7 201.9,17.7 205.7,14.2 209.5,18.5 213.3,18.4 217.1,25.8 221.0,26.7 224.8,24.3 228.6,25.4 232.4,24.3 236.2,18.2 240.0,17.7 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,41.7 3.8,42.0 7.6,41.7 11.4,39.0 15.2,38.6 19.0,37.3 22.9,36.7 26.7,36.2 30.5,33.9 34.3,32.3 38.1,32.8 41.9,32.1 45.7,31.6 49.5,34.7 53.3,32.3 57.1,32.3 61.0,31.5 64.8,32.2 68.6,33.7 72.4,16.5 76.2,18.5 80.0,18.3 83.8,19.2 87.6,21.6 91.4,17.9 95.2,20.4 99.0,22.6 102.9,22.2 106.7,18.9 110.5,21.5 114.3,21.7 118.1,22.7 121.9,20.9 125.7,21.7 129.5,18.0 133.3,17.0 137.1,13.4 141.0,16.2 144.8,20.8 148.6,21.0 152.4,20.7 156.2,16.6 160.0,10.1 163.8,19.8 167.6,22.2 171.4,21.5 175.2,20.6 179.0,22.6 182.9,21.2 186.7,14.5 190.5,17.4 194.3,15.3 198.1,18.7 201.9,17.7 205.7,14.2 209.5,18.5 213.3,18.4 217.1,25.8 221.0,26.7 224.8,24.3 228.6,25.4 232.4,24.3 236.2,18.2 240.0,17.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="17.7" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">93</span>
+            <span class="nb-cscore band-constructive" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">49</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
             
           </div>
@@ -2546,7 +2555,7 @@
           
           <div class="nb-vf">
             
-            <span class="nb-vchip vf-caution" title="Options check (dealer gamma) — deep long-gamma (+6.2% over the flip) — dealers pin & fade breakouts · call wall 290.0 · flip 253.18 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +6.2%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">⚠ <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">caution</span><span class="l-zh">警示</span></span>
+            <span class="nb-vchip vf-caution" title="Options check (dealer gamma) — deep long-gamma (+6.0% over the flip) — dealers pin & fade breakouts · call wall 290.0 · flip 253.7 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +6.0%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">⚠ <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">caution</span><span class="l-zh">警示</span></span>
             
             
           </div>
@@ -2588,7 +2597,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,10.4 3.8,13.9 7.6,14.2 11.4,14.0 15.2,11.2 19.0,12.3 22.9,10.1 26.7,15.3 30.5,16.6 34.3,22.0 38.1,23.7 41.9,27.0 45.7,25.5 49.5,25.1 53.3,23.2 57.1,18.7 61.0,18.2 64.8,22.1 68.6,19.8 72.4,33.5 76.2,39.7 80.0,37.0 83.8,31.9 87.6,29.2 91.4,31.3 95.2,32.9 99.0,31.9 102.9,27.0 106.7,30.4 110.5,28.7 114.3,20.2 118.1,22.4 121.9,25.1 125.7,26.1 129.5,25.5 133.3,30.9 137.1,27.4 141.0,31.6 144.8,32.0 148.6,32.1 152.4,31.1 156.2,31.6 160.0,33.4 163.8,35.8 167.6,39.6 171.4,36.2 175.2,34.1 179.0,35.0 182.9,29.4 186.7,28.7 190.5,29.7 194.3,28.4 198.1,23.7 201.9,23.2 205.7,29.9 209.5,39.1 213.3,39.9 217.1,42.0 221.0,40.6 224.8,36.5 228.6,36.9 232.4,36.0 236.2,35.6 240.0,33.7 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,10.4 3.8,13.9 7.6,14.2 11.4,14.0 15.2,11.2 19.0,12.3 22.9,10.1 26.7,15.3 30.5,16.6 34.3,22.0 38.1,23.7 41.9,27.0 45.7,25.5 49.5,25.1 53.3,23.2 57.1,18.7 61.0,18.2 64.8,22.1 68.6,19.8 72.4,33.5 76.2,39.7 80.0,37.0 83.8,31.9 87.6,29.2 91.4,31.3 95.2,32.9 99.0,31.9 102.9,27.0 106.7,30.4 110.5,28.7 114.3,20.2 118.1,22.4 121.9,25.1 125.7,26.1 129.5,25.5 133.3,30.9 137.1,27.4 141.0,31.6 144.8,32.0 148.6,32.1 152.4,31.1 156.2,31.6 160.0,33.4 163.8,35.8 167.6,39.6 171.4,36.2 175.2,34.1 179.0,35.0 182.9,29.4 186.7,28.7 190.5,29.7 194.3,28.4 198.1,23.7 201.9,23.2 205.7,29.9 209.5,39.1 213.3,39.9 217.1,42.0 221.0,40.6 224.8,36.5 228.6,36.9 232.4,36.0 236.2,35.6 240.0,33.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="33.7" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">92</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">32</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
             
           </div>
@@ -2695,7 +2704,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,32.0 3.8,31.2 7.6,28.4 11.4,24.8 15.2,19.1 19.0,23.0 22.9,20.9 26.7,21.6 30.5,18.3 34.3,14.2 38.1,17.6 41.9,20.6 45.7,24.5 49.5,27.4 53.3,28.2 57.1,25.7 61.0,28.3 64.8,29.1 68.6,27.5 72.4,24.2 76.2,22.2 80.0,23.3 83.8,18.9 87.6,18.3 91.4,16.4 95.2,17.1 99.0,13.5 102.9,10.1 106.7,13.1 110.5,33.3 114.3,35.3 118.1,37.7 121.9,36.5 125.7,41.0 129.5,42.0 133.3,37.8 137.1,36.6 141.0,35.9 144.8,34.1 148.6,34.1 152.4,34.6 156.2,34.0 160.0,33.7 163.8,35.1 167.6,36.0 171.4,36.7 175.2,34.9 179.0,33.5 182.9,37.8 186.7,31.9 190.5,32.6 194.3,28.7 198.1,25.0 201.9,28.0 205.7,27.0 209.5,28.5 213.3,28.0 217.1,29.6 221.0,30.9 224.8,32.5 228.6,30.0 232.4,33.3 236.2,32.3 240.0,26.9 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,32.0 3.8,31.2 7.6,28.4 11.4,24.8 15.2,19.1 19.0,23.0 22.9,20.9 26.7,21.6 30.5,18.3 34.3,14.2 38.1,17.6 41.9,20.6 45.7,24.5 49.5,27.4 53.3,28.2 57.1,25.7 61.0,28.3 64.8,29.1 68.6,27.5 72.4,24.2 76.2,22.2 80.0,23.3 83.8,18.9 87.6,18.3 91.4,16.4 95.2,17.1 99.0,13.5 102.9,10.1 106.7,13.1 110.5,33.3 114.3,35.3 118.1,37.7 121.9,36.5 125.7,41.0 129.5,42.0 133.3,37.8 137.1,36.6 141.0,35.9 144.8,34.1 148.6,34.1 152.4,34.6 156.2,34.0 160.0,33.7 163.8,35.1 167.6,36.0 171.4,36.7 175.2,34.9 179.0,33.5 182.9,37.8 186.7,31.9 190.5,32.6 194.3,28.7 198.1,25.0 201.9,28.0 205.7,27.0 209.5,28.5 213.3,28.0 217.1,29.6 221.0,30.9 224.8,32.5 228.6,30.0 232.4,33.3 236.2,32.3 240.0,26.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="26.9" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">90</span>
+            <span class="nb-cscore band-constructive" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">56</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
             
           </div>
@@ -2786,6 +2795,121 @@
       
         
         
+        <a class="nbcard nb-up" href="stock.html#AIG">
+          <div class="nb-top">
+            <span class="nb-tk">AIG</span>
+            <span class="nb-nm">American International Group</span>
+            <span class="sig-gate sig-early" title="2D MACD-RSI crossed + 3D StochRSI crossed — an EARLY tier (fires before the 3D master). Tier T2 · weight 0.8. deep-oversold cross. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-06-26 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">◑ <span class="l-en">early</span><span class="l-zh">提前</span> <span class="sig-w">T2·0.8</span></span>
+            <span class="nb-px" data-sym="AIG" data-mkt="us">$75.57</span>
+          </div>
+          
+          
+          
+            
+            
+            
+            
+          <div class="nb-sub">
+            <span class="nb-spot nb-spot-link spot-up" data-href="basket/insurance.html" role="link" tabindex="0" title="Theme/sector spotlight tilt (×1.09) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Insurance &amp; Brokers (ACCUMULATE). Sector: Financials — improving. Open the theme →"><span>🔥</span><span class="sp-tag l-en">Insurance &amp; Brokers</span><span class="sp-tag l-zh">保险与经纪</span><span>▲</span></span>
+            
+            
+            <span class="nb-gics"><span class="l-en">Financials</span><span class="l-zh">金融</span></span><span class="nb-offh">-12.2% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span>
+          </div>
+          
+          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,31.5 3.8,37.8 7.6,32.6 11.4,26.9 15.2,25.4 19.0,26.0 22.9,21.3 26.7,22.5 30.5,16.5 34.3,15.1 38.1,19.1 41.9,14.6 45.7,18.4 49.5,18.1 53.3,12.7 57.1,10.5 61.0,11.1 64.8,14.1 68.6,23.1 72.4,21.7 76.2,27.4 80.0,32.2 83.8,32.0 87.6,33.8 91.4,29.0 95.2,10.1 99.0,15.8 102.9,11.5 106.7,15.2 110.5,21.2 114.3,21.6 118.1,23.0 121.9,21.4 125.7,24.3 129.5,24.7 133.3,22.8 137.1,14.5 141.0,18.4 144.8,16.1 148.6,13.3 152.4,20.7 156.2,20.0 160.0,29.1 163.8,33.2 167.6,34.0 171.4,37.7 175.2,36.1 179.0,42.0 182.9,37.8 186.7,28.1 190.5,34.7 194.3,35.5 198.1,30.7 201.9,28.9 205.7,26.9 209.5,28.6 213.3,27.0 217.1,29.1 221.0,32.7 224.8,21.5 228.6,20.8 232.4,22.6 236.2,28.8 240.0,25.3 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,31.5 3.8,37.8 7.6,32.6 11.4,26.9 15.2,25.4 19.0,26.0 22.9,21.3 26.7,22.5 30.5,16.5 34.3,15.1 38.1,19.1 41.9,14.6 45.7,18.4 49.5,18.1 53.3,12.7 57.1,10.5 61.0,11.1 64.8,14.1 68.6,23.1 72.4,21.7 76.2,27.4 80.0,32.2 83.8,32.0 87.6,33.8 91.4,29.0 95.2,10.1 99.0,15.8 102.9,11.5 106.7,15.2 110.5,21.2 114.3,21.6 118.1,23.0 121.9,21.4 125.7,24.3 129.5,24.7 133.3,22.8 137.1,14.5 141.0,18.4 144.8,16.1 148.6,13.3 152.4,20.7 156.2,20.0 160.0,29.1 163.8,33.2 167.6,34.0 171.4,37.7 175.2,36.1 179.0,42.0 182.9,37.8 186.7,28.1 190.5,34.7 194.3,35.5 198.1,30.7 201.9,28.9 205.7,26.9 209.5,28.6 213.3,27.0 217.1,29.1 221.0,32.7 224.8,21.5 228.6,20.8 232.4,22.6 236.2,28.8 240.0,25.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="25.3" r="2.6" fill="var(--up)"/></svg>
+          
+          <div class="nb-conv">
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">35</span>
+            <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+            
+          </div>
+          
+          
+          
+          <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily rising · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线上行">
+            <span class="nba-mark">🟢</span>
+            <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
+            <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+          </div>
+          
+          
+          
+          <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+            <div class="nbe-head">
+              <span class="nbe-dot a1"></span>
+              <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+            </div>
+            
+            <div class="nbe-zone">
+              <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+              <span class="nbe-px">$74.50–$75.36</span>
+              <span class="nbe-pct">-0.8%</span>
+            </div>
+            
+            
+            <div class="nbe-cyc">
+              <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 16<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
+              <span class="nbe-bar"><span class="nbe-bf" style="width:38%"></span></span>
+              <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~20–26d</span>
+            </div>
+            
+          </div>
+          
+          <div class="nb-axes">
+            
+            
+            <div class="nb-ax" title="SEL 53/100">
+              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+              <div class="axt"><div class="axf" style="width:53%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="ENT 53/100">
+              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+              <div class="axt"><div class="axf" style="width:53%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="TWD 53/100">
+              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+              <div class="axt"><div class="axf" style="width:53%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="QUAL 39/100">
+              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+              <div class="axt"><div class="axf" style="width:39%"></div></div>
+            </div>
+            
+          </div>
+          
+          <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.2</span><span class="nbb nbb-literature">revisions +0.6</span></div>
+          
+          
+          
+          
+          
+          <div class="nb-vf">
+            
+            <span class="nb-vchip vf-neutral" title="Options check (dealer gamma) — long-gamma — dealer hedging dampens the move · call wall 78.0 · flip 73.43 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 多头 Gamma — 做市商对冲抑制波动 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">· <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">neutral</span><span class="l-zh">中性</span></span>
+            
+            
+          </div>
+          
+          <div class="nb-bot">
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page. · 行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -0.28</span>
+            <span class="nb-rk">#162/255</span>
+            <span class="nb-size " title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.96 of the conviction-base size (forecast vol 22.8% · inverse-vol ×0.96 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.96×</span>
+            
+          </div>
+          
+          
+          
+          
+        </a>
+      
+        
+        
         <a class="nbcard nb-up" href="stock.html#SXT">
           <div class="nb-top">
             <span class="nb-tk">SXT</span>
@@ -2809,7 +2933,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.5 3.8,41.8 7.6,41.4 11.4,42.0 15.2,37.7 19.0,37.1 22.9,37.2 26.7,37.2 30.5,35.7 34.3,36.8 38.1,36.4 41.9,35.5 45.7,36.2 49.5,37.3 53.3,34.6 57.1,30.5 61.0,30.8 64.8,32.4 68.6,34.3 72.4,31.3 76.2,11.3 80.0,10.1 83.8,11.4 87.6,13.5 91.4,19.3 95.2,19.9 99.0,18.6 102.9,17.5 106.7,14.7 110.5,15.8 114.3,15.5 118.1,15.8 121.9,17.0 125.7,17.2 129.5,15.9 133.3,18.7 137.1,18.7 141.0,18.6 144.8,18.6 148.6,19.4 152.4,18.3 156.2,16.2 160.0,15.5 163.8,16.5 167.6,18.8 171.4,20.5 175.2,19.2 179.0,19.6 182.9,19.7 186.7,20.2 190.5,19.6 194.3,14.1 198.1,13.8 201.9,10.1 205.7,10.2 209.5,12.0 213.3,20.6 217.1,21.1 221.0,19.1 224.8,14.4 228.6,14.7 232.4,12.9 236.2,12.1 240.0,13.5 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,41.5 3.8,41.8 7.6,41.4 11.4,42.0 15.2,37.7 19.0,37.1 22.9,37.2 26.7,37.2 30.5,35.7 34.3,36.8 38.1,36.4 41.9,35.5 45.7,36.2 49.5,37.3 53.3,34.6 57.1,30.5 61.0,30.8 64.8,32.4 68.6,34.3 72.4,31.3 76.2,11.3 80.0,10.1 83.8,11.4 87.6,13.5 91.4,19.3 95.2,19.9 99.0,18.6 102.9,17.5 106.7,14.7 110.5,15.8 114.3,15.5 118.1,15.8 121.9,17.0 125.7,17.2 129.5,15.9 133.3,18.7 137.1,18.7 141.0,18.6 144.8,18.6 148.6,19.4 152.4,18.3 156.2,16.2 160.0,15.5 163.8,16.5 167.6,18.8 171.4,20.5 175.2,19.2 179.0,19.6 182.9,19.7 186.7,20.2 190.5,19.6 194.3,14.1 198.1,13.8 201.9,10.1 205.7,10.2 209.5,12.0 213.3,20.6 217.1,21.1 221.0,19.1 224.8,14.4 228.6,14.7 232.4,12.9 236.2,12.1 240.0,13.5" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="13.5" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">87</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">33</span>
             <span class="nb-verdict"><span class="l-en">Leader · weak fundamentals — higher-risk</span><span class="l-zh">领先 · 基本面偏弱 — 风险偏高</span></span>
             
           </div>
@@ -2923,7 +3047,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,29.4 3.8,37.2 7.6,37.8 11.4,32.5 15.2,29.4 19.0,33.1 22.9,32.5 26.7,33.7 30.5,27.3 34.3,26.3 38.1,24.2 41.9,22.0 45.7,20.8 49.5,19.7 53.3,20.3 57.1,14.7 61.0,15.0 64.8,27.6 68.6,27.5 72.4,32.2 76.2,25.8 80.0,23.6 83.8,29.3 87.6,33.8 91.4,29.1 95.2,28.2 99.0,29.6 102.9,25.7 106.7,22.0 110.5,10.1 114.3,13.7 118.1,22.4 121.9,16.4 125.7,17.8 129.5,15.7 133.3,24.8 137.1,20.1 141.0,17.5 144.8,14.0 148.6,23.3 152.4,25.3 156.2,24.9 160.0,30.7 163.8,31.1 167.6,32.9 171.4,37.8 175.2,36.6 179.0,38.5 182.9,32.0 186.7,27.4 190.5,27.9 194.3,26.5 198.1,36.4 201.9,40.7 205.7,37.3 209.5,41.4 213.3,38.4 217.1,42.0 221.0,36.4 224.8,39.8 228.6,40.5 232.4,39.4 236.2,36.2 240.0,32.7 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,29.4 3.8,37.2 7.6,37.8 11.4,32.5 15.2,29.4 19.0,33.1 22.9,32.5 26.7,33.7 30.5,27.3 34.3,26.3 38.1,24.2 41.9,22.0 45.7,20.8 49.5,19.7 53.3,20.3 57.1,14.7 61.0,15.0 64.8,27.6 68.6,27.5 72.4,32.2 76.2,25.8 80.0,23.6 83.8,29.3 87.6,33.8 91.4,29.1 95.2,28.2 99.0,29.6 102.9,25.7 106.7,22.0 110.5,10.1 114.3,13.7 118.1,22.4 121.9,16.4 125.7,17.8 129.5,15.7 133.3,24.8 137.1,20.1 141.0,17.5 144.8,14.0 148.6,23.3 152.4,25.3 156.2,24.9 160.0,30.7 163.8,31.1 167.6,32.9 171.4,37.8 175.2,36.6 179.0,38.5 182.9,32.0 186.7,27.4 190.5,27.9 194.3,26.5 198.1,36.4 201.9,40.7 205.7,37.3 209.5,41.4 213.3,38.4 217.1,42.0 221.0,36.4 224.8,39.8 228.6,40.5 232.4,39.4 236.2,36.2 240.0,32.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="32.7" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">87</span>
+            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">75</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -3030,7 +3154,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,35.7 3.8,40.0 7.6,42.0 11.4,37.2 15.2,34.9 19.0,35.9 22.9,34.8 26.7,34.6 30.5,27.6 34.3,23.9 38.1,23.0 41.9,23.7 45.7,23.1 49.5,26.0 53.3,29.9 57.1,25.2 61.0,23.4 64.8,24.8 68.6,25.5 72.4,22.3 76.2,25.3 80.0,24.9 83.8,24.1 87.6,26.6 91.4,22.8 95.2,23.7 99.0,24.4 102.9,20.7 106.7,16.7 110.5,19.7 114.3,21.1 118.1,19.1 121.9,19.3 125.7,17.8 129.5,19.6 133.3,30.5 137.1,35.1 141.0,31.5 144.8,30.0 148.6,31.1 152.4,32.9 156.2,26.6 160.0,28.4 163.8,28.3 167.6,29.8 171.4,31.3 175.2,28.2 179.0,26.7 182.9,25.2 186.7,25.2 190.5,24.9 194.3,24.6 198.1,28.6 201.9,20.7 205.7,21.7 209.5,18.3 213.3,17.2 217.1,16.0 221.0,12.6 224.8,10.9 228.6,14.0 232.4,12.6 236.2,10.1 240.0,14.8 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,35.7 3.8,40.0 7.6,42.0 11.4,37.2 15.2,34.9 19.0,35.9 22.9,34.8 26.7,34.6 30.5,27.6 34.3,23.9 38.1,23.0 41.9,23.7 45.7,23.1 49.5,26.0 53.3,29.9 57.1,25.2 61.0,23.4 64.8,24.8 68.6,25.5 72.4,22.3 76.2,25.3 80.0,24.9 83.8,24.1 87.6,26.6 91.4,22.8 95.2,23.7 99.0,24.4 102.9,20.7 106.7,16.7 110.5,19.7 114.3,21.1 118.1,19.1 121.9,19.3 125.7,17.8 129.5,19.6 133.3,30.5 137.1,35.1 141.0,31.5 144.8,30.0 148.6,31.1 152.4,32.9 156.2,26.6 160.0,28.4 163.8,28.3 167.6,29.8 171.4,31.3 175.2,28.2 179.0,26.7 182.9,25.2 186.7,25.2 190.5,24.9 194.3,24.6 198.1,28.6 201.9,20.7 205.7,21.7 209.5,18.3 213.3,17.2 217.1,16.0 221.0,12.6 224.8,10.9 228.6,14.0 232.4,12.6 236.2,10.1 240.0,14.8" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="14.8" r="2.6" fill="var(--down)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">87</span>
+            <span class="nb-cscore band-low" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">21</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
             
           </div>
@@ -3114,121 +3238,6 @@
       
         
         
-        <a class="nbcard nb-up" href="stock.html#STZ">
-          <div class="nb-top">
-            <span class="nb-tk">STZ</span>
-            <span class="nb-nm">Constellation Brands</span>
-            <span class="sig-gate sig-pending" title="master confluence buy just fired; forward reclaim-and-hold confirmation pending. Tier T1 · weight 1.0. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-06-26 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">◔ <span class="l-en">forming</span><span class="l-zh">形成中</span> <span class="sig-w">T1·1.0</span></span>
-            <span class="nb-px" data-sym="STZ" data-mkt="us">$146.30</span>
-          </div>
-          
-          
-          
-            
-            
-            
-            
-          <div class="nb-sub">
-            <span class="nb-spot nb-spot-link spot-up" data-href="basket/us_sector_staples.html" role="link" tabindex="0" title="Theme/sector spotlight tilt (×1.08) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Consumer Staples (Equal-Weight) (ACCUMULATE). Sector: Consumer Staples — improving. Open the theme →"><span>🔥</span><span class="sp-tag l-en">Consumer Staples (Equal-Weight)</span><span class="sp-tag l-zh">必需消费（等权）</span><span>▲</span></span>
-            
-            
-            <span class="nb-gics"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></span><span class="nb-offh">-14.7% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span>
-          </div>
-          
-          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,26.9 3.8,25.9 7.6,26.3 11.4,27.4 15.2,26.2 19.0,26.1 22.9,21.7 26.7,23.3 30.5,27.1 34.3,13.4 38.1,10.1 41.9,11.7 45.7,11.8 49.5,12.4 53.3,12.1 57.1,14.2 61.0,16.8 64.8,19.9 68.6,20.0 72.4,17.4 76.2,20.9 80.0,21.9 83.8,21.6 87.6,25.9 91.4,19.2 95.2,23.2 99.0,28.3 102.9,26.5 106.7,23.8 110.5,26.0 114.3,28.2 118.1,34.5 121.9,34.3 125.7,36.5 129.5,36.4 133.3,34.5 137.1,28.9 141.0,30.1 144.8,25.0 148.6,25.4 152.4,26.8 156.2,28.8 160.0,33.0 163.8,34.8 167.6,38.3 171.4,41.1 175.2,40.5 179.0,42.0 182.9,39.4 186.7,36.1 190.5,36.1 194.3,37.0 198.1,34.6 201.9,33.7 205.7,27.9 209.5,28.3 213.3,32.6 217.1,38.2 221.0,35.8 224.8,35.4 228.6,33.4 232.4,33.8 236.2,32.3 240.0,30.3 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,26.9 3.8,25.9 7.6,26.3 11.4,27.4 15.2,26.2 19.0,26.1 22.9,21.7 26.7,23.3 30.5,27.1 34.3,13.4 38.1,10.1 41.9,11.7 45.7,11.8 49.5,12.4 53.3,12.1 57.1,14.2 61.0,16.8 64.8,19.9 68.6,20.0 72.4,17.4 76.2,20.9 80.0,21.9 83.8,21.6 87.6,25.9 91.4,19.2 95.2,23.2 99.0,28.3 102.9,26.5 106.7,23.8 110.5,26.0 114.3,28.2 118.1,34.5 121.9,34.3 125.7,36.5 129.5,36.4 133.3,34.5 137.1,28.9 141.0,30.1 144.8,25.0 148.6,25.4 152.4,26.8 156.2,28.8 160.0,33.0 163.8,34.8 167.6,38.3 171.4,41.1 175.2,40.5 179.0,42.0 182.9,39.4 186.7,36.1 190.5,36.1 194.3,37.0 198.1,34.6 201.9,33.7 205.7,27.9 209.5,28.3 213.3,32.6 217.1,38.2 221.0,35.8 224.8,35.4 228.6,33.4 232.4,33.8 236.2,32.3 240.0,30.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="30.3" r="2.6" fill="var(--up)"/></svg>
-          
-          <div class="nb-conv">
-            <span class="nb-cscore band-low" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">35</span>
-            <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
-            
-          </div>
-          
-          
-          
-          <div class="nb-align" title="Weekly bear recovering · 3-Day ≈cross · Daily rising · 周线周线柱状图回升（仍偏熊） · 3日≈cross · 日线上行">
-            <span class="nba-mark">🟢</span>
-            <span class="nba-line"><span class="l-en">3D MACD about to cross up; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 临近上穿；周线柱状图回升（仍偏熊）</span></span>
-            <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
-          </div>
-          
-          
-          
-          <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
-            <div class="nbe-head">
-              <span class="nbe-dot a1"></span>
-              <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
-            </div>
-            
-            <div class="nbe-zone">
-              <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
-              <span class="nbe-px">$141.60–$144.00</span>
-              <span class="nbe-pct">-2.4%</span>
-            </div>
-            
-            
-            <div class="nbe-cyc">
-              <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 16<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
-              <span class="nbe-bar"><span class="nbe-bf" style="width:38%"></span></span>
-              <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~20–26d</span>
-            </div>
-            
-          </div>
-          
-          <div class="nb-axes">
-            
-            
-            <div class="nb-ax" title="SEL 41/100">
-              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-              <div class="axt"><div class="axf" style="width:41%"></div></div>
-            </div>
-            
-            
-            <div class="nb-ax" title="ENT 56/100">
-              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-              <div class="axt"><div class="axf" style="width:56%"></div></div>
-            </div>
-            
-            
-            <div class="nb-ax" title="TWD 53/100">
-              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-              <div class="axt"><div class="axf" style="width:53%"></div></div>
-            </div>
-            
-            
-            <div class="nb-ax" title="QUAL 41/100">
-              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-              <div class="axt"><div class="axf" style="width:41%"></div></div>
-            </div>
-            
-          </div>
-          
-          <div class="nb-basis"><span class="nbb nbb-literature">revisions -1.3</span><span class="nbb nbb-context">momentum +0.5</span></div>
-          
-          
-          
-          
-          
-          <div class="nb-vf">
-            
-            <span class="nb-vchip vf-neutral" title="Options check (dealer gamma) — long-gamma — dealer hedging dampens the move · call wall 150.0 · flip 144.36 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 多头 Gamma — 做市商对冲抑制波动 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">· <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">neutral</span><span class="l-zh">中性</span></span>
-            
-            
-          </div>
-          
-          <div class="nb-bot">
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page. · 行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α +0.50</span>
-            <span class="nb-rk">#23/75</span>
-            <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.21 of the conviction-base size (forecast vol 18.2% · inverse-vol ×1.21 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.21×</span>
-            
-          </div>
-          <div class="nb-cau"><span class="l-en">⚠ earnings in 2d — binary event, size down</span><span class="l-zh">⚠ 2天后财报 — 二元事件，减仓</span></div>
-          
-          
-          
-        </a>
-      
-        
-        
         <a class="nbcard nb-up" href="stock.html#CVSA">
           <div class="nb-top">
             <span class="nb-tk">CVSA</span>
@@ -3252,7 +3261,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,31.3 3.8,33.5 7.6,34.2 11.4,32.7 15.2,31.0 19.0,29.4 22.9,30.3 26.7,33.1 30.5,29.3 34.3,33.9 38.1,36.6 41.9,35.3 45.7,34.7 49.5,36.1 53.3,31.8 57.1,29.4 61.0,28.4 64.8,29.6 68.6,29.7 72.4,38.7 76.2,42.0 80.0,36.2 83.8,35.2 87.6,33.5 91.4,32.7 95.2,34.4 99.0,35.0 102.9,29.2 106.7,32.6 110.5,30.5 114.3,10.1 118.1,14.4 121.9,16.5 125.7,16.1 129.5,18.9 133.3,23.3 137.1,17.3 141.0,19.5 144.8,19.5 148.6,21.9 152.4,20.6 156.2,21.6 160.0,23.8 163.8,25.5 167.6,29.6 171.4,24.3 175.2,24.1 179.0,23.1 182.9,21.4 186.7,18.7 190.5,19.1 194.3,19.4 198.1,14.3 201.9,12.3 205.7,16.6 209.5,29.7 213.3,29.5 217.1,30.1 221.0,28.0 224.8,27.8 228.6,26.0 232.4,23.4 236.2,21.8 240.0,17.7 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,31.3 3.8,33.5 7.6,34.2 11.4,32.7 15.2,31.0 19.0,29.4 22.9,30.3 26.7,33.1 30.5,29.3 34.3,33.9 38.1,36.6 41.9,35.3 45.7,34.7 49.5,36.1 53.3,31.8 57.1,29.4 61.0,28.4 64.8,29.6 68.6,29.7 72.4,38.7 76.2,42.0 80.0,36.2 83.8,35.2 87.6,33.5 91.4,32.7 95.2,34.4 99.0,35.0 102.9,29.2 106.7,32.6 110.5,30.5 114.3,10.1 118.1,14.4 121.9,16.5 125.7,16.1 129.5,18.9 133.3,23.3 137.1,17.3 141.0,19.5 144.8,19.5 148.6,21.9 152.4,20.6 156.2,21.6 160.0,23.8 163.8,25.5 167.6,29.6 171.4,24.3 175.2,24.1 179.0,23.1 182.9,21.4 186.7,18.7 190.5,19.1 194.3,19.4 198.1,14.3 201.9,12.3 205.7,16.6 209.5,29.7 213.3,29.5 217.1,30.1 221.0,28.0 224.8,27.8 228.6,26.0 232.4,23.4 236.2,21.8 240.0,17.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="17.7" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">85</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">35</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
             
           </div>
@@ -3336,6 +3345,121 @@
       
         
         
+        <a class="nbcard nb-up" href="stock.html#STZ">
+          <div class="nb-top">
+            <span class="nb-tk">STZ</span>
+            <span class="nb-nm">Constellation Brands</span>
+            <span class="sig-gate sig-pending" title="master confluence buy just fired; forward reclaim-and-hold confirmation pending. Tier T1 · weight 1.0. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-06-26 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">◔ <span class="l-en">forming</span><span class="l-zh">形成中</span> <span class="sig-w">T1·1.0</span></span>
+            <span class="nb-px" data-sym="STZ" data-mkt="us">$146.30</span>
+          </div>
+          
+          
+          
+            
+            
+            
+            
+          <div class="nb-sub">
+            <span class="nb-spot nb-spot-link spot-up" data-href="basket/us_sector_staples.html" role="link" tabindex="0" title="Theme/sector spotlight tilt (×1.08) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Consumer Staples (Equal-Weight) (ACCUMULATE). Sector: Consumer Staples — improving. Open the theme →"><span>🔥</span><span class="sp-tag l-en">Consumer Staples (Equal-Weight)</span><span class="sp-tag l-zh">必需消费（等权）</span><span>▲</span></span>
+            
+            
+            <span class="nb-gics"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></span><span class="nb-offh">-14.7% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span>
+          </div>
+          
+          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,26.9 3.8,25.9 7.6,26.3 11.4,27.4 15.2,26.2 19.0,26.1 22.9,21.7 26.7,23.3 30.5,27.1 34.3,13.4 38.1,10.1 41.9,11.7 45.7,11.8 49.5,12.4 53.3,12.1 57.1,14.2 61.0,16.8 64.8,19.9 68.6,20.0 72.4,17.4 76.2,20.9 80.0,21.9 83.8,21.6 87.6,25.9 91.4,19.2 95.2,23.2 99.0,28.3 102.9,26.5 106.7,23.8 110.5,26.0 114.3,28.2 118.1,34.5 121.9,34.3 125.7,36.5 129.5,36.4 133.3,34.5 137.1,28.9 141.0,30.1 144.8,25.0 148.6,25.4 152.4,26.8 156.2,28.8 160.0,33.0 163.8,34.8 167.6,38.3 171.4,41.1 175.2,40.5 179.0,42.0 182.9,39.4 186.7,36.1 190.5,36.1 194.3,37.0 198.1,34.6 201.9,33.7 205.7,27.9 209.5,28.3 213.3,32.6 217.1,38.2 221.0,35.8 224.8,35.4 228.6,33.4 232.4,33.8 236.2,32.3 240.0,30.3 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,26.9 3.8,25.9 7.6,26.3 11.4,27.4 15.2,26.2 19.0,26.1 22.9,21.7 26.7,23.3 30.5,27.1 34.3,13.4 38.1,10.1 41.9,11.7 45.7,11.8 49.5,12.4 53.3,12.1 57.1,14.2 61.0,16.8 64.8,19.9 68.6,20.0 72.4,17.4 76.2,20.9 80.0,21.9 83.8,21.6 87.6,25.9 91.4,19.2 95.2,23.2 99.0,28.3 102.9,26.5 106.7,23.8 110.5,26.0 114.3,28.2 118.1,34.5 121.9,34.3 125.7,36.5 129.5,36.4 133.3,34.5 137.1,28.9 141.0,30.1 144.8,25.0 148.6,25.4 152.4,26.8 156.2,28.8 160.0,33.0 163.8,34.8 167.6,38.3 171.4,41.1 175.2,40.5 179.0,42.0 182.9,39.4 186.7,36.1 190.5,36.1 194.3,37.0 198.1,34.6 201.9,33.7 205.7,27.9 209.5,28.3 213.3,32.6 217.1,38.2 221.0,35.8 224.8,35.4 228.6,33.4 232.4,33.8 236.2,32.3 240.0,30.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="30.3" r="2.6" fill="var(--up)"/></svg>
+          
+          <div class="nb-conv">
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">28</span>
+            <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
+            
+          </div>
+          
+          
+          
+          <div class="nb-align" title="Weekly bear recovering · 3-Day ≈cross · Daily rising · 周线周线柱状图回升（仍偏熊） · 3日≈cross · 日线上行">
+            <span class="nba-mark">🟢</span>
+            <span class="nba-line"><span class="l-en">3D MACD about to cross up; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 临近上穿；周线柱状图回升（仍偏熊）</span></span>
+            <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+          </div>
+          
+          
+          
+          <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+            <div class="nbe-head">
+              <span class="nbe-dot a1"></span>
+              <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+            </div>
+            
+            <div class="nbe-zone">
+              <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+              <span class="nbe-px">$141.60–$144.00</span>
+              <span class="nbe-pct">-2.4%</span>
+            </div>
+            
+            
+            <div class="nbe-cyc">
+              <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 16<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
+              <span class="nbe-bar"><span class="nbe-bf" style="width:38%"></span></span>
+              <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~20–26d</span>
+            </div>
+            
+          </div>
+          
+          <div class="nb-axes">
+            
+            
+            <div class="nb-ax" title="SEL 41/100">
+              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+              <div class="axt"><div class="axf" style="width:41%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="ENT 56/100">
+              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+              <div class="axt"><div class="axf" style="width:56%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="TWD 53/100">
+              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+              <div class="axt"><div class="axf" style="width:53%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="QUAL 41/100">
+              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+              <div class="axt"><div class="axf" style="width:41%"></div></div>
+            </div>
+            
+          </div>
+          
+          <div class="nb-basis"><span class="nbb nbb-literature">revisions -1.3</span><span class="nbb nbb-context">momentum +0.5</span></div>
+          
+          
+          
+          
+          
+          <div class="nb-vf">
+            
+            <span class="nb-vchip vf-neutral" title="Options check (dealer gamma) — long-gamma — dealer hedging dampens the move · call wall 150.0 · flip 144.49 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 多头 Gamma — 做市商对冲抑制波动 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">· <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">neutral</span><span class="l-zh">中性</span></span>
+            
+            
+          </div>
+          
+          <div class="nb-bot">
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page. · 行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α +0.50</span>
+            <span class="nb-rk">#23/75</span>
+            <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.21 of the conviction-base size (forecast vol 18.2% · inverse-vol ×1.21 · regime ×1.0). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.21×</span>
+            
+          </div>
+          <div class="nb-cau"><span class="l-en">⚠ earnings in 1d — binary event, size down</span><span class="l-zh">⚠ 1天后财报 — 二元事件，减仓</span></div>
+          
+          
+          
+        </a>
+      
+        
+        
         <a class="nbcard nb-up" href="stock.html#FR">
           <div class="nb-top">
             <span class="nb-tk">FR</span>
@@ -3359,7 +3483,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,37.9 3.8,42.0 7.6,41.7 11.4,37.2 15.2,33.9 19.0,33.8 22.9,34.7 26.7,32.2 30.5,27.4 34.3,26.3 38.1,25.5 41.9,26.5 45.7,23.7 49.5,22.8 53.3,18.4 57.1,12.8 61.0,10.1 64.8,15.0 68.6,14.4 72.4,16.5 76.2,22.6 80.0,19.7 83.8,18.0 87.6,22.6 91.4,20.0 95.2,19.4 99.0,23.9 102.9,21.1 106.7,17.9 110.5,18.3 114.3,16.9 118.1,18.4 121.9,18.4 125.7,20.6 129.5,22.8 133.3,24.8 137.1,22.0 141.0,21.5 144.8,18.9 148.6,18.2 152.4,14.7 156.2,11.6 160.0,15.6 163.8,17.7 167.6,20.5 171.4,29.6 175.2,28.1 179.0,26.6 182.9,21.3 186.7,21.7 190.5,24.6 194.3,16.2 198.1,18.3 201.9,16.7 205.7,13.5 209.5,14.3 213.3,16.7 217.1,25.4 221.0,20.8 224.8,15.4 228.6,13.3 232.4,14.2 236.2,15.3 240.0,13.5 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.9 3.8,42.0 7.6,41.7 11.4,37.2 15.2,33.9 19.0,33.8 22.9,34.7 26.7,32.2 30.5,27.4 34.3,26.3 38.1,25.5 41.9,26.5 45.7,23.7 49.5,22.8 53.3,18.4 57.1,12.8 61.0,10.1 64.8,15.0 68.6,14.4 72.4,16.5 76.2,22.6 80.0,19.7 83.8,18.0 87.6,22.6 91.4,20.0 95.2,19.4 99.0,23.9 102.9,21.1 106.7,17.9 110.5,18.3 114.3,16.9 118.1,18.4 121.9,18.4 125.7,20.6 129.5,22.8 133.3,24.8 137.1,22.0 141.0,21.5 144.8,18.9 148.6,18.2 152.4,14.7 156.2,11.6 160.0,15.6 163.8,17.7 167.6,20.5 171.4,29.6 175.2,28.1 179.0,26.6 182.9,21.3 186.7,21.7 190.5,24.6 194.3,16.2 198.1,18.3 201.9,16.7 205.7,13.5 209.5,14.3 213.3,16.7 217.1,25.4 221.0,20.8 224.8,15.4 228.6,13.3 232.4,14.2 236.2,15.3 240.0,13.5" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="13.5" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">81</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">27</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
             
           </div>
@@ -3474,7 +3598,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.7 3.8,42.0 7.6,40.4 11.4,38.6 15.2,37.4 19.0,35.1 22.9,35.8 26.7,35.3 30.5,33.5 34.3,34.5 38.1,32.4 41.9,33.6 45.7,31.8 49.5,32.0 53.3,34.5 57.1,27.7 61.0,25.4 64.8,30.3 68.6,30.7 72.4,27.8 76.2,29.0 80.0,28.8 83.8,20.1 87.6,19.2 91.4,19.3 95.2,20.0 99.0,19.8 102.9,16.7 106.7,16.9 110.5,17.9 114.3,18.9 118.1,16.9 121.9,17.8 125.7,18.0 129.5,20.5 133.3,24.0 137.1,19.2 141.0,18.2 144.8,16.6 148.6,18.2 152.4,16.8 156.2,17.0 160.0,15.5 163.8,16.6 167.6,19.1 171.4,18.0 175.2,16.8 179.0,17.0 182.9,11.6 186.7,10.7 190.5,13.3 194.3,11.7 198.1,12.5 201.9,15.4 205.7,13.3 209.5,16.9 213.3,16.2 217.1,21.7 221.0,23.3 224.8,21.4 228.6,18.4 232.4,16.8 236.2,13.8 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.7 3.8,42.0 7.6,40.4 11.4,38.6 15.2,37.4 19.0,35.1 22.9,35.8 26.7,35.3 30.5,33.5 34.3,34.5 38.1,32.4 41.9,33.6 45.7,31.8 49.5,32.0 53.3,34.5 57.1,27.7 61.0,25.4 64.8,30.3 68.6,30.7 72.4,27.8 76.2,29.0 80.0,28.8 83.8,20.1 87.6,19.2 91.4,19.3 95.2,20.0 99.0,19.8 102.9,16.7 106.7,16.9 110.5,17.9 114.3,18.9 118.1,16.9 121.9,17.8 125.7,18.0 129.5,20.5 133.3,24.0 137.1,19.2 141.0,18.2 144.8,16.6 148.6,18.2 152.4,16.8 156.2,17.0 160.0,15.5 163.8,16.6 167.6,19.1 171.4,18.0 175.2,16.8 179.0,17.0 182.9,11.6 186.7,10.7 190.5,13.3 194.3,11.7 198.1,12.5 201.9,15.4 205.7,13.3 209.5,16.9 213.3,16.2 217.1,21.7 221.0,23.3 224.8,21.4 228.6,18.4 232.4,16.8 236.2,13.8 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-constructive" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">79</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">39</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -3546,7 +3670,7 @@
           
           <div class="nb-vf">
             
-            <span class="nb-vchip vf-neutral" title="Options check (dealer gamma) — long-gamma — dealer hedging dampens the move · call wall 70.0 · flip 66.78 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 多头 Gamma — 做市商对冲抑制波动 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">· <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">neutral</span><span class="l-zh">中性</span></span>
+            <span class="nb-vchip vf-neutral" title="Options check (dealer gamma) — long-gamma — dealer hedging dampens the move · call wall 70.0 · flip 66.73 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 多头 Gamma — 做市商对冲抑制波动 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">· <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">neutral</span><span class="l-zh">中性</span></span>
             
             
           </div>
@@ -3588,7 +3712,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,11.2 3.8,16.6 7.6,13.9 11.4,12.5 15.2,11.9 19.0,10.6 22.9,10.1 26.7,10.8 30.5,11.1 34.3,13.9 38.1,17.4 41.9,23.0 45.7,22.4 49.5,19.5 53.3,15.4 57.1,11.9 61.0,11.9 64.8,10.8 68.6,10.7 72.4,42.0 76.2,38.3 80.0,31.7 83.8,26.7 87.6,23.5 91.4,25.0 95.2,25.5 99.0,28.9 102.9,23.5 106.7,24.5 110.5,23.1 114.3,20.1 118.1,27.2 121.9,24.7 125.7,24.1 129.5,23.3 133.3,23.9 137.1,17.9 141.0,20.5 144.8,20.7 148.6,23.9 152.4,23.1 156.2,24.9 160.0,26.4 163.8,26.7 167.6,27.9 171.4,20.6 175.2,21.3 179.0,21.6 182.9,17.5 186.7,14.6 190.5,16.6 194.3,17.6 198.1,14.8 201.9,19.4 205.7,26.1 209.5,35.4 213.3,32.0 217.1,32.3 221.0,31.8 224.8,28.7 228.6,26.8 232.4,27.5 236.2,28.3 240.0,22.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,11.2 3.8,16.6 7.6,13.9 11.4,12.5 15.2,11.9 19.0,10.6 22.9,10.1 26.7,10.8 30.5,11.1 34.3,13.9 38.1,17.4 41.9,23.0 45.7,22.4 49.5,19.5 53.3,15.4 57.1,11.9 61.0,11.9 64.8,10.8 68.6,10.7 72.4,42.0 76.2,38.3 80.0,31.7 83.8,26.7 87.6,23.5 91.4,25.0 95.2,25.5 99.0,28.9 102.9,23.5 106.7,24.5 110.5,23.1 114.3,20.1 118.1,27.2 121.9,24.7 125.7,24.1 129.5,23.3 133.3,23.9 137.1,17.9 141.0,20.5 144.8,20.7 148.6,23.9 152.4,23.1 156.2,24.9 160.0,26.4 163.8,26.7 167.6,27.9 171.4,20.6 175.2,21.3 179.0,21.6 182.9,17.5 186.7,14.6 190.5,16.6 194.3,17.6 198.1,14.8 201.9,19.4 205.7,26.1 209.5,35.4 213.3,32.0 217.1,32.3 221.0,31.8 224.8,28.7 228.6,26.8 232.4,27.5 236.2,28.3 240.0,22.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="22.1" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-constructive" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">79</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">31</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
             
           </div>
@@ -3695,7 +3819,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,37.0 3.8,42.0 7.6,40.7 11.4,36.2 15.2,36.5 19.0,37.4 22.9,36.0 26.7,35.1 30.5,34.2 34.3,32.1 38.1,32.2 41.9,32.2 45.7,27.3 49.5,20.5 53.3,19.3 57.1,15.1 61.0,11.0 64.8,13.1 68.6,13.6 72.4,17.1 76.2,14.5 80.0,13.9 83.8,16.4 87.6,14.0 91.4,14.1 95.2,12.1 99.0,11.1 102.9,29.7 106.7,25.4 110.5,21.1 114.3,16.5 118.1,28.6 121.9,33.7 125.7,32.8 129.5,36.3 133.3,37.0 137.1,32.9 141.0,35.1 144.8,31.9 148.6,30.7 152.4,26.5 156.2,24.4 160.0,15.8 163.8,12.2 167.6,12.5 171.4,10.1 175.2,22.4 179.0,25.4 182.9,19.0 186.7,28.1 190.5,26.2 194.3,25.5 198.1,25.2 201.9,24.5 205.7,23.5 209.5,23.5 213.3,21.5 217.1,24.7 221.0,23.1 224.8,29.0 228.6,27.5 232.4,23.8 236.2,25.0 240.0,13.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.0 3.8,42.0 7.6,40.7 11.4,36.2 15.2,36.5 19.0,37.4 22.9,36.0 26.7,35.1 30.5,34.2 34.3,32.1 38.1,32.2 41.9,32.2 45.7,27.3 49.5,20.5 53.3,19.3 57.1,15.1 61.0,11.0 64.8,13.1 68.6,13.6 72.4,17.1 76.2,14.5 80.0,13.9 83.8,16.4 87.6,14.0 91.4,14.1 95.2,12.1 99.0,11.1 102.9,29.7 106.7,25.4 110.5,21.1 114.3,16.5 118.1,28.6 121.9,33.7 125.7,32.8 129.5,36.3 133.3,37.0 137.1,32.9 141.0,35.1 144.8,31.9 148.6,30.7 152.4,26.5 156.2,24.4 160.0,15.8 163.8,12.2 167.6,12.5 171.4,10.1 175.2,22.4 179.0,25.4 182.9,19.0 186.7,28.1 190.5,26.2 194.3,25.5 198.1,25.2 201.9,24.5 205.7,23.5 209.5,23.5 213.3,21.5 217.1,24.7 221.0,23.1 224.8,29.0 228.6,27.5 232.4,23.8 236.2,25.0 240.0,13.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="13.1" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-constructive" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">73</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">38</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -3802,7 +3926,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,21.9 3.8,19.2 7.6,17.4 11.4,17.8 15.2,16.6 19.0,14.1 22.9,13.6 26.7,15.4 30.5,12.3 34.3,10.1 38.1,12.2 41.9,12.4 45.7,16.3 49.5,18.9 53.3,20.2 57.1,17.4 61.0,21.5 64.8,20.8 68.6,21.1 72.4,18.2 76.2,21.1 80.0,21.8 83.8,16.7 87.6,19.5 91.4,19.7 95.2,18.6 99.0,21.2 102.9,19.6 106.7,21.1 110.5,17.8 114.3,18.6 118.1,25.0 121.9,25.8 125.7,25.8 129.5,26.6 133.3,26.0 137.1,21.9 141.0,25.1 144.8,26.8 148.6,26.3 152.4,28.0 156.2,37.9 160.0,36.4 163.8,36.2 167.6,36.7 171.4,37.7 175.2,37.8 179.0,36.9 182.9,35.4 186.7,34.2 190.5,35.7 194.3,33.4 198.1,30.2 201.9,32.9 205.7,32.4 209.5,36.2 213.3,34.9 217.1,38.7 221.0,41.9 224.8,42.0 228.6,38.6 232.4,35.5 236.2,39.6 240.0,35.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,21.9 3.8,19.2 7.6,17.4 11.4,17.8 15.2,16.6 19.0,14.1 22.9,13.6 26.7,15.4 30.5,12.3 34.3,10.1 38.1,12.2 41.9,12.4 45.7,16.3 49.5,18.9 53.3,20.2 57.1,17.4 61.0,21.5 64.8,20.8 68.6,21.1 72.4,18.2 76.2,21.1 80.0,21.8 83.8,16.7 87.6,19.5 91.4,19.7 95.2,18.6 99.0,21.2 102.9,19.6 106.7,21.1 110.5,17.8 114.3,18.6 118.1,25.0 121.9,25.8 125.7,25.8 129.5,26.6 133.3,26.0 137.1,21.9 141.0,25.1 144.8,26.8 148.6,26.3 152.4,28.0 156.2,37.9 160.0,36.4 163.8,36.2 167.6,36.7 171.4,37.7 175.2,37.8 179.0,36.9 182.9,35.4 186.7,34.2 190.5,35.7 194.3,33.4 198.1,30.2 201.9,32.9 205.7,32.4 209.5,36.2 213.3,34.9 217.1,38.7 221.0,41.9 224.8,42.0 228.6,38.6 232.4,35.5 236.2,39.6 240.0,35.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="35.2" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-constructive" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">72</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">35</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -3910,7 +4034,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,14.2 3.8,14.9 7.6,14.9 11.4,13.9 15.2,12.5 19.0,10.1 22.9,15.6 26.7,15.6 30.5,12.7 34.3,12.3 38.1,13.8 41.9,14.0 45.7,14.4 49.5,14.3 53.3,13.5 57.1,13.7 61.0,15.1 64.8,18.5 68.6,21.1 72.4,19.7 76.2,21.3 80.0,21.3 83.8,20.0 87.6,22.4 91.4,23.9 95.2,24.2 99.0,25.4 102.9,26.8 106.7,38.3 110.5,36.1 114.3,39.8 118.1,42.0 121.9,40.1 125.7,39.6 129.5,37.6 133.3,34.9 137.1,31.8 141.0,34.6 144.8,36.1 148.6,33.7 152.4,33.8 156.2,36.1 160.0,35.7 163.8,35.6 167.6,38.5 171.4,39.9 175.2,39.5 179.0,39.0 182.9,35.5 186.7,31.7 190.5,33.5 194.3,30.0 198.1,28.7 201.9,29.4 205.7,30.0 209.5,30.9 213.3,29.7 217.1,30.9 221.0,36.7 224.8,37.9 228.6,34.1 232.4,33.5 236.2,34.1 240.0,34.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,14.2 3.8,14.9 7.6,14.9 11.4,13.9 15.2,12.5 19.0,10.1 22.9,15.6 26.7,15.6 30.5,12.7 34.3,12.3 38.1,13.8 41.9,14.0 45.7,14.4 49.5,14.3 53.3,13.5 57.1,13.7 61.0,15.1 64.8,18.5 68.6,21.1 72.4,19.7 76.2,21.3 80.0,21.3 83.8,20.0 87.6,22.4 91.4,23.9 95.2,24.2 99.0,25.4 102.9,26.8 106.7,38.3 110.5,36.1 114.3,39.8 118.1,42.0 121.9,40.1 125.7,39.6 129.5,37.6 133.3,34.9 137.1,31.8 141.0,34.6 144.8,36.1 148.6,33.7 152.4,33.8 156.2,36.1 160.0,35.7 163.8,35.6 167.6,38.5 171.4,39.9 175.2,39.5 179.0,39.0 182.9,35.5 186.7,31.7 190.5,33.5 194.3,30.0 198.1,28.7 201.9,29.4 205.7,30.0 209.5,30.9 213.3,29.7 217.1,30.9 221.0,36.7 224.8,37.9 228.6,34.1 232.4,33.5 236.2,34.1 240.0,34.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="34.1" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-constructive" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">71</span>
+            <span class="nb-cscore band-constructive" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">60</span>
             <span class="nb-verdict"><span class="l-en">Leader · accounting warning — verify before buying</span><span class="l-zh">领先 · 财务质量警示 — 买入前先核实</span></span>
             
           </div>
@@ -3949,9 +4073,9 @@
           <div class="nb-axes">
             
             
-            <div class="nb-ax" title="SEL 55/100">
+            <div class="nb-ax" title="SEL 56/100">
               <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-              <div class="axt"><div class="axf" style="width:55%"></div></div>
+              <div class="axt"><div class="axf" style="width:56%"></div></div>
             </div>
             
             
@@ -3982,7 +4106,7 @@
           
           <div class="nb-vf">
             
-            <span class="nb-vchip vf-neutral" title="Options check (dealer gamma) — deep long-gamma (+4.2% over the flip) — dealers pin & fade breakouts · call wall 800.0 · flip 731.51 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +4.2%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">· <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">neutral</span><span class="l-zh">中性</span></span>
+            <span class="nb-vchip vf-neutral" title="Options check (dealer gamma) — deep long-gamma (+4.0% over the flip) — dealers pin & fade breakouts · call wall 800.0 · flip 732.85 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +4.0%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">· <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">neutral</span><span class="l-zh">中性</span></span>
             
             
           </div>
@@ -4024,7 +4148,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,19.4 3.8,22.5 7.6,22.4 11.4,20.2 15.2,20.7 19.0,19.7 22.9,21.0 26.7,21.8 30.5,26.1 34.3,32.0 38.1,34.9 41.9,32.0 45.7,31.6 49.5,26.3 53.3,25.1 57.1,24.5 61.0,23.3 64.8,24.2 68.6,23.3 72.4,28.7 76.2,24.9 80.0,26.2 83.8,25.3 87.6,25.0 91.4,25.4 95.2,24.1 99.0,23.0 102.9,24.7 106.7,28.8 110.5,24.9 114.3,25.4 118.1,27.3 121.9,28.7 125.7,31.4 129.5,32.3 133.3,29.3 137.1,26.0 141.0,24.7 144.8,24.8 148.6,26.7 152.4,24.6 156.2,25.9 160.0,27.8 163.8,23.7 167.6,18.8 171.4,10.1 175.2,14.1 179.0,17.7 182.9,19.5 186.7,26.5 190.5,30.6 194.3,31.9 198.1,35.5 201.9,34.6 205.7,32.8 209.5,33.9 213.3,35.1 217.1,38.1 221.0,39.6 224.8,42.0 228.6,38.8 232.4,38.5 236.2,38.6 240.0,33.3 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,19.4 3.8,22.5 7.6,22.4 11.4,20.2 15.2,20.7 19.0,19.7 22.9,21.0 26.7,21.8 30.5,26.1 34.3,32.0 38.1,34.9 41.9,32.0 45.7,31.6 49.5,26.3 53.3,25.1 57.1,24.5 61.0,23.3 64.8,24.2 68.6,23.3 72.4,28.7 76.2,24.9 80.0,26.2 83.8,25.3 87.6,25.0 91.4,25.4 95.2,24.1 99.0,23.0 102.9,24.7 106.7,28.8 110.5,24.9 114.3,25.4 118.1,27.3 121.9,28.7 125.7,31.4 129.5,32.3 133.3,29.3 137.1,26.0 141.0,24.7 144.8,24.8 148.6,26.7 152.4,24.6 156.2,25.9 160.0,27.8 163.8,23.7 167.6,18.8 171.4,10.1 175.2,14.1 179.0,17.7 182.9,19.5 186.7,26.5 190.5,30.6 194.3,31.9 198.1,35.5 201.9,34.6 205.7,32.8 209.5,33.9 213.3,35.1 217.1,38.1 221.0,39.6 224.8,42.0 228.6,38.8 232.4,38.5 236.2,38.6 240.0,33.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="33.3" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-constructive" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">70</span>
+            <span class="nb-cscore band-high" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">94</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -4138,7 +4262,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,37.3 3.8,40.3 7.6,38.7 11.4,38.0 15.2,40.1 19.0,41.8 22.9,42.0 26.7,40.5 30.5,37.8 34.3,37.2 38.1,34.6 41.9,32.2 45.7,28.9 49.5,28.8 53.3,29.0 57.1,23.7 61.0,25.1 64.8,29.6 68.6,34.2 72.4,32.4 76.2,31.2 80.0,30.3 83.8,16.2 87.6,19.6 91.4,16.1 95.2,15.9 99.0,14.5 102.9,12.7 106.7,10.6 110.5,10.6 114.3,10.1 118.1,12.2 121.9,13.0 125.7,14.5 129.5,17.1 133.3,20.5 137.1,19.6 141.0,19.6 144.8,16.8 148.6,15.6 152.4,14.4 156.2,15.6 160.0,14.8 163.8,15.0 167.6,18.1 171.4,19.7 175.2,20.9 179.0,20.7 182.9,19.4 186.7,18.4 190.5,19.5 194.3,18.1 198.1,20.9 201.9,22.4 205.7,20.0 209.5,24.3 213.3,23.8 217.1,28.9 221.0,26.9 224.8,26.5 228.6,25.1 232.4,22.6 236.2,25.0 240.0,17.5 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.3 3.8,40.3 7.6,38.7 11.4,38.0 15.2,40.1 19.0,41.8 22.9,42.0 26.7,40.5 30.5,37.8 34.3,37.2 38.1,34.6 41.9,32.2 45.7,28.9 49.5,28.8 53.3,29.0 57.1,23.7 61.0,25.1 64.8,29.6 68.6,34.2 72.4,32.4 76.2,31.2 80.0,30.3 83.8,16.2 87.6,19.6 91.4,16.1 95.2,15.9 99.0,14.5 102.9,12.7 106.7,10.6 110.5,10.6 114.3,10.1 118.1,12.2 121.9,13.0 125.7,14.5 129.5,17.1 133.3,20.5 137.1,19.6 141.0,19.6 144.8,16.8 148.6,15.6 152.4,14.4 156.2,15.6 160.0,14.8 163.8,15.0 167.6,18.1 171.4,19.7 175.2,20.9 179.0,20.7 182.9,19.4 186.7,18.4 190.5,19.5 194.3,18.1 198.1,20.9 201.9,22.4 205.7,20.0 209.5,24.3 213.3,23.8 217.1,28.9 221.0,26.9 224.8,26.5 228.6,25.1 232.4,22.6 236.2,25.0 240.0,17.5" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="17.5" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-constructive" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">68</span>
+            <span class="nb-cscore band-constructive" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">49</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -4246,7 +4370,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,34.4 3.8,33.5 7.6,32.4 11.4,32.0 15.2,38.6 19.0,38.0 22.9,36.1 26.7,38.5 30.5,35.6 34.3,35.4 38.1,36.0 41.9,34.1 45.7,36.9 49.5,38.7 53.3,39.5 57.1,38.2 61.0,38.4 64.8,42.0 68.6,33.2 72.4,28.8 76.2,32.9 80.0,35.7 83.8,31.6 87.6,34.2 91.4,32.2 95.2,31.1 99.0,28.8 102.9,28.6 106.7,27.7 110.5,27.2 114.3,27.3 118.1,18.1 121.9,14.2 125.7,13.3 129.5,10.1 133.3,11.9 137.1,10.4 141.0,10.3 144.8,12.8 148.6,12.9 152.4,12.5 156.2,19.9 160.0,19.4 163.8,22.3 167.6,23.3 171.4,27.1 175.2,26.3 179.0,24.4 182.9,25.2 186.7,22.5 190.5,24.3 194.3,22.3 198.1,18.7 201.9,20.5 205.7,17.6 209.5,19.6 213.3,17.8 217.1,21.6 221.0,22.4 224.8,26.7 228.6,22.2 232.4,22.1 236.2,20.8 240.0,19.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,34.4 3.8,33.5 7.6,32.4 11.4,32.0 15.2,38.6 19.0,38.0 22.9,36.1 26.7,38.5 30.5,35.6 34.3,35.4 38.1,36.0 41.9,34.1 45.7,36.9 49.5,38.7 53.3,39.5 57.1,38.2 61.0,38.4 64.8,42.0 68.6,33.2 72.4,28.8 76.2,32.9 80.0,35.7 83.8,31.6 87.6,34.2 91.4,32.2 95.2,31.1 99.0,28.8 102.9,28.6 106.7,27.7 110.5,27.2 114.3,27.3 118.1,18.1 121.9,14.2 125.7,13.3 129.5,10.1 133.3,11.9 137.1,10.4 141.0,10.3 144.8,12.8 148.6,12.9 152.4,12.5 156.2,19.9 160.0,19.4 163.8,22.3 167.6,23.3 171.4,27.1 175.2,26.3 179.0,24.4 182.9,25.2 186.7,22.5 190.5,24.3 194.3,22.3 198.1,18.7 201.9,20.5 205.7,17.6 209.5,19.6 213.3,17.8 217.1,21.6 221.0,22.4 224.8,26.7 228.6,22.2 232.4,22.1 236.2,20.8 240.0,19.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="19.2" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">58</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">27</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -4318,7 +4442,7 @@
           
           <div class="nb-vf">
             
-            <span class="nb-vchip vf-caution" title="Options check (dealer gamma) — deep long-gamma (+3.5% over the flip) — dealers pin & fade breakouts · call wall 185.0 · flip 174.35 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +3.5%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">⚠ <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">caution</span><span class="l-zh">警示</span></span>
+            <span class="nb-vchip vf-caution" title="Options check (dealer gamma) — deep long-gamma (+3.5% over the flip) — dealers pin & fade breakouts · call wall 185.0 · flip 174.36 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +3.5%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">⚠ <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">caution</span><span class="l-zh">警示</span></span>
             
             <span class="nb-vchip vf-confirm" title="Options IV lean — Cremers-Weinbaum call−put implied-vol spread — calls richer than puts by +7.3 vol pts vs peers — strong informed bullish lean · Cremers-Weinbaum call−put IV spread (matched strikes, ~30d, OI-weighted). Calls richer than puts = informed bullish lean; puts richer = protection bid. A CROSS-SECTIONAL context read — dividends/borrow can bias the level, the feed is delayed EOD, and it is DISPLAY-ONLY until the forward-IC gate validates. It can amplify or caution a long the price thesis already likes, never create a buy. | 期权隐含波动率偏向 — Cremers-Weinbaum 看涨−看跌隐含波动率价差 — 看涨比看跌贵 +7.3 个波动点（相对同业） — 知情资金强烈偏多 · Cremers-Weinbaum 看涨−看跌隐含波动率价差（同行权价配对，约30天，按未平仓量加权）。看涨比看跌更贵 = 知情资金偏多；看跌更贵 = 买入保护。这是横截面参考读数 — 股息/借券成本会扰动水平，数据为延迟收盘，且在前瞻IC验证通过前仅作展示。它只能放大或警示价格逻辑本已看好的多头，绝不制造买入信号。">↑ <span class="l-en">IV lean</span><span class="l-zh">IV偏向</span> <span class="l-en">up</span><span class="l-zh">偏多</span></span>
             
@@ -4361,7 +4485,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,42.0 3.8,35.5 7.6,37.0 11.4,31.7 15.2,33.1 19.0,33.7 22.9,36.9 26.7,36.3 30.5,32.4 34.3,31.0 38.1,33.1 41.9,27.7 45.7,25.4 49.5,24.1 53.3,19.8 57.1,18.2 61.0,17.8 64.8,25.9 68.6,10.1 72.4,12.5 76.2,12.6 80.0,14.3 83.8,13.8 87.6,16.3 91.4,26.9 95.2,29.3 99.0,31.4 102.9,30.5 106.7,27.6 110.5,18.1 114.3,16.6 118.1,20.3 121.9,21.1 125.7,20.0 129.5,19.7 133.3,20.3 137.1,19.5 141.0,16.9 144.8,14.2 148.6,17.9 152.4,16.5 156.2,17.5 160.0,19.6 163.8,20.0 167.6,21.2 171.4,22.4 175.2,25.0 179.0,21.3 182.9,17.2 186.7,19.8 190.5,17.7 194.3,13.1 198.1,17.2 201.9,20.4 205.7,19.1 209.5,19.5 213.3,22.0 217.1,25.3 221.0,23.0 224.8,29.0 228.6,26.1 232.4,23.6 236.2,22.1 240.0,19.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,42.0 3.8,35.5 7.6,37.0 11.4,31.7 15.2,33.1 19.0,33.7 22.9,36.9 26.7,36.3 30.5,32.4 34.3,31.0 38.1,33.1 41.9,27.7 45.7,25.4 49.5,24.1 53.3,19.8 57.1,18.2 61.0,17.8 64.8,25.9 68.6,10.1 72.4,12.5 76.2,12.6 80.0,14.3 83.8,13.8 87.6,16.3 91.4,26.9 95.2,29.3 99.0,31.4 102.9,30.5 106.7,27.6 110.5,18.1 114.3,16.6 118.1,20.3 121.9,21.1 125.7,20.0 129.5,19.7 133.3,20.3 137.1,19.5 141.0,16.9 144.8,14.2 148.6,17.9 152.4,16.5 156.2,17.5 160.0,19.6 163.8,20.0 167.6,21.2 171.4,22.4 175.2,25.0 179.0,21.3 182.9,17.2 186.7,19.8 190.5,17.7 194.3,13.1 198.1,17.2 201.9,20.4 205.7,19.1 209.5,19.5 213.3,22.0 217.1,25.3 221.0,23.0 224.8,29.0 228.6,26.1 232.4,23.6 236.2,22.1 240.0,19.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="19.8" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">53</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">28</span>
             <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
             
           </div>
@@ -4425,7 +4549,7 @@
             
           </div>
           
-          <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.7</span><span class="nbb nbb-literature">revisions +0.1</span></div>
+          <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.7</span><span class="nbb nbb-literature">revisions +0.2</span></div>
           
           
           
@@ -4469,7 +4593,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.4 3.8,42.0 7.6,41.2 11.4,37.6 15.2,36.0 19.0,34.8 22.9,34.4 26.7,33.1 30.5,32.3 34.3,32.3 38.1,31.0 41.9,31.2 45.7,29.7 49.5,29.4 53.3,31.1 57.1,26.7 61.0,24.2 64.8,28.5 68.6,29.4 72.4,27.3 76.2,28.3 80.0,26.3 83.8,16.9 87.6,16.0 91.4,17.4 95.2,16.9 99.0,18.0 102.9,15.1 106.7,13.9 110.5,14.5 114.3,16.3 118.1,13.0 121.9,13.3 125.7,13.8 129.5,16.8 133.3,19.6 137.1,15.1 141.0,15.2 144.8,13.6 148.6,16.3 152.4,14.7 156.2,15.2 160.0,14.1 163.8,15.5 167.6,17.9 171.4,17.5 175.2,17.0 179.0,17.2 182.9,11.0 186.7,10.5 190.5,12.7 194.3,13.4 198.1,13.7 201.9,16.0 205.7,13.3 209.5,15.9 213.3,15.6 217.1,20.9 221.0,23.2 224.8,20.6 228.6,18.2 232.4,16.8 236.2,14.2 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.4 3.8,42.0 7.6,41.2 11.4,37.6 15.2,36.0 19.0,34.8 22.9,34.4 26.7,33.1 30.5,32.3 34.3,32.3 38.1,31.0 41.9,31.2 45.7,29.7 49.5,29.4 53.3,31.1 57.1,26.7 61.0,24.2 64.8,28.5 68.6,29.4 72.4,27.3 76.2,28.3 80.0,26.3 83.8,16.9 87.6,16.0 91.4,17.4 95.2,16.9 99.0,18.0 102.9,15.1 106.7,13.9 110.5,14.5 114.3,16.3 118.1,13.0 121.9,13.3 125.7,13.8 129.5,16.8 133.3,19.6 137.1,15.1 141.0,15.2 144.8,13.6 148.6,16.3 152.4,14.7 156.2,15.2 160.0,14.1 163.8,15.5 167.6,17.9 171.4,17.5 175.2,17.0 179.0,17.2 182.9,11.0 186.7,10.5 190.5,12.7 194.3,13.4 198.1,13.7 201.9,16.0 205.7,13.3 209.5,15.9 213.3,15.6 217.1,20.9 221.0,23.2 224.8,20.6 228.6,18.2 232.4,16.8 236.2,14.2 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">48</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">37</span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
             
           </div>
@@ -4541,7 +4665,7 @@
           
           <div class="nb-vf">
             
-            <span class="nb-vchip vf-caution" title="Options check (dealer gamma) — deep long-gamma (+4.4% over the flip) — dealers pin & fade breakouts · call wall 195.0 · flip 181.69 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +4.4%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">⚠ <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">caution</span><span class="l-zh">警示</span></span>
+            <span class="nb-vchip vf-caution" title="Options check (dealer gamma) — deep long-gamma (+4.4% over the flip) — dealers pin & fade breakouts · call wall 195.0 · flip 181.84 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +4.4%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">⚠ <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">caution</span><span class="l-zh">警示</span></span>
             
             
           </div>
@@ -4583,7 +4707,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,33.0 3.8,36.7 7.6,39.0 11.4,32.5 15.2,31.4 19.0,30.1 22.9,30.6 26.7,31.3 30.5,29.9 34.3,28.9 38.1,29.2 41.9,26.5 45.7,23.8 49.5,23.1 53.3,18.4 57.1,15.9 61.0,15.0 64.8,16.4 68.6,10.1 72.4,16.0 76.2,16.4 80.0,16.9 83.8,25.4 87.6,21.2 91.4,18.0 95.2,24.6 99.0,25.9 102.9,23.5 106.7,24.7 110.5,26.9 114.3,32.9 118.1,33.9 121.9,33.7 125.7,32.6 129.5,32.2 133.3,32.3 137.1,29.9 141.0,29.3 144.8,31.1 148.6,33.4 152.4,31.8 156.2,30.4 160.0,28.0 163.8,26.4 167.6,25.7 171.4,19.0 175.2,16.8 179.0,14.0 182.9,10.1 186.7,13.4 190.5,18.7 194.3,18.0 198.1,13.6 201.9,14.2 205.7,17.1 209.5,40.0 213.3,40.3 217.1,38.8 221.0,41.2 224.8,42.0 228.6,40.9 232.4,38.0 236.2,35.9 240.0,34.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,33.0 3.8,36.7 7.6,39.0 11.4,32.5 15.2,31.4 19.0,30.1 22.9,30.6 26.7,31.3 30.5,29.9 34.3,28.9 38.1,29.2 41.9,26.5 45.7,23.8 49.5,23.1 53.3,18.4 57.1,15.9 61.0,15.0 64.8,16.4 68.6,10.1 72.4,16.0 76.2,16.4 80.0,16.9 83.8,25.4 87.6,21.2 91.4,18.0 95.2,24.6 99.0,25.9 102.9,23.5 106.7,24.7 110.5,26.9 114.3,32.9 118.1,33.9 121.9,33.7 125.7,32.6 129.5,32.2 133.3,32.3 137.1,29.9 141.0,29.3 144.8,31.1 148.6,33.4 152.4,31.8 156.2,30.4 160.0,28.0 163.8,26.4 167.6,25.7 171.4,19.0 175.2,16.8 179.0,14.0 182.9,10.1 186.7,13.4 190.5,18.7 194.3,18.0 198.1,13.6 201.9,14.2 205.7,17.1 209.5,40.0 213.3,40.3 217.1,38.8 221.0,41.2 224.8,42.0 228.6,40.9 232.4,38.0 236.2,35.9 240.0,34.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="34.2" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">47</span>
+            <span class="nb-cscore band-constructive" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">59</span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
             
           </div>
@@ -4697,7 +4821,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,16.1 3.8,22.7 7.6,20.7 11.4,15.8 15.2,14.3 19.0,10.1 22.9,11.7 26.7,10.7 30.5,15.2 34.3,14.0 38.1,18.0 41.9,15.7 45.7,14.3 49.5,15.9 53.3,18.1 57.1,16.6 61.0,17.1 64.8,20.0 68.6,20.1 72.4,21.0 76.2,21.4 80.0,18.8 83.8,18.5 87.6,20.0 91.4,19.2 95.2,16.8 99.0,14.7 102.9,15.7 106.7,10.9 110.5,19.5 114.3,22.8 118.1,24.9 121.9,26.0 125.7,27.1 129.5,27.7 133.3,32.1 137.1,34.2 141.0,35.6 144.8,33.8 148.6,34.4 152.4,35.0 156.2,35.5 160.0,35.5 163.8,33.1 167.6,30.9 171.4,31.9 175.2,37.2 179.0,37.2 182.9,35.6 186.7,39.1 190.5,39.9 194.3,38.5 198.1,41.6 201.9,42.0 205.7,40.8 209.5,39.0 213.3,39.0 217.1,34.4 221.0,32.2 224.8,31.7 228.6,33.2 232.4,35.4 236.2,38.0 240.0,34.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,16.1 3.8,22.7 7.6,20.7 11.4,15.8 15.2,14.3 19.0,10.1 22.9,11.7 26.7,10.7 30.5,15.2 34.3,14.0 38.1,18.0 41.9,15.7 45.7,14.3 49.5,15.9 53.3,18.1 57.1,16.6 61.0,17.1 64.8,20.0 68.6,20.1 72.4,21.0 76.2,21.4 80.0,18.8 83.8,18.5 87.6,20.0 91.4,19.2 95.2,16.8 99.0,14.7 102.9,15.7 106.7,10.9 110.5,19.5 114.3,22.8 118.1,24.9 121.9,26.0 125.7,27.1 129.5,27.7 133.3,32.1 137.1,34.2 141.0,35.6 144.8,33.8 148.6,34.4 152.4,35.0 156.2,35.5 160.0,35.5 163.8,33.1 167.6,30.9 171.4,31.9 175.2,37.2 179.0,37.2 182.9,35.6 186.7,39.1 190.5,39.9 194.3,38.5 198.1,41.6 201.9,42.0 205.7,40.8 209.5,39.0 213.3,39.0 217.1,34.4 221.0,32.2 224.8,31.7 228.6,33.2 232.4,35.4 236.2,38.0 240.0,34.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="34.8" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">43</span>
+            <span class="nb-cscore band-constructive" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">69</span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
             
           </div>
@@ -4796,7 +4920,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,37.8 3.8,38.9 7.6,38.8 11.4,36.0 15.2,36.8 19.0,38.9 22.9,35.2 26.7,35.2 30.5,31.0 34.3,30.1 38.1,31.7 41.9,33.1 45.7,30.9 49.5,27.6 53.3,28.8 57.1,22.3 61.0,19.4 64.8,18.3 68.6,18.5 72.4,14.7 76.2,11.5 80.0,13.4 83.8,10.1 87.6,11.6 91.4,11.6 95.2,14.4 99.0,16.6 102.9,16.2 106.7,15.8 110.5,20.0 114.3,18.7 118.1,28.1 121.9,31.0 125.7,31.5 129.5,30.2 133.3,29.6 137.1,25.3 141.0,27.9 144.8,26.9 148.6,25.9 152.4,29.0 156.2,29.7 160.0,31.2 163.8,33.3 167.6,34.1 171.4,37.9 175.2,37.8 179.0,42.0 182.9,39.5 186.7,33.9 190.5,35.4 194.3,32.7 198.1,33.1 201.9,33.1 205.7,31.8 209.5,31.2 213.3,30.7 217.1,34.1 221.0,34.2 224.8,33.7 228.6,29.5 232.4,36.2 236.2,37.1 240.0,34.7 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,37.8 3.8,38.9 7.6,38.8 11.4,36.0 15.2,36.8 19.0,38.9 22.9,35.2 26.7,35.2 30.5,31.0 34.3,30.1 38.1,31.7 41.9,33.1 45.7,30.9 49.5,27.6 53.3,28.8 57.1,22.3 61.0,19.4 64.8,18.3 68.6,18.5 72.4,14.7 76.2,11.5 80.0,13.4 83.8,10.1 87.6,11.6 91.4,11.6 95.2,14.4 99.0,16.6 102.9,16.2 106.7,15.8 110.5,20.0 114.3,18.7 118.1,28.1 121.9,31.0 125.7,31.5 129.5,30.2 133.3,29.6 137.1,25.3 141.0,27.9 144.8,26.9 148.6,25.9 152.4,29.0 156.2,29.7 160.0,31.2 163.8,33.3 167.6,34.1 171.4,37.9 175.2,37.8 179.0,42.0 182.9,39.5 186.7,33.9 190.5,35.4 194.3,32.7 198.1,33.1 201.9,33.1 205.7,31.8 209.5,31.2 213.3,30.7 217.1,34.1 221.0,34.2 224.8,33.7 228.6,29.5 232.4,36.2 236.2,37.1 240.0,34.7" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="34.7" r="2.6" fill="var(--down)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-low" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">38</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">25</span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
             
           </div>
@@ -4903,7 +5027,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,30.9 3.8,31.7 7.6,29.4 11.4,30.0 15.2,25.3 19.0,21.3 22.9,23.6 26.7,24.1 30.5,22.4 34.3,20.8 38.1,20.9 41.9,19.5 45.7,17.9 49.5,19.1 53.3,19.7 57.1,13.5 61.0,10.1 64.8,15.6 68.6,27.7 72.4,24.1 76.2,25.1 80.0,28.0 83.8,29.0 87.6,31.1 91.4,25.1 95.2,27.7 99.0,28.8 102.9,29.5 106.7,25.0 110.5,25.1 114.3,25.4 118.1,24.6 121.9,24.3 125.7,26.4 129.5,32.5 133.3,37.2 137.1,31.6 141.0,27.4 144.8,26.7 148.6,26.4 152.4,23.7 156.2,29.7 160.0,33.3 163.8,33.9 167.6,36.5 171.4,42.0 175.2,38.3 179.0,38.1 182.9,36.2 186.7,32.9 190.5,38.0 194.3,27.8 198.1,22.5 201.9,24.6 205.7,19.7 209.5,23.1 213.3,22.6 217.1,30.7 221.0,34.2 224.8,35.2 228.6,32.0 232.4,28.1 236.2,30.1 240.0,19.9 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,30.9 3.8,31.7 7.6,29.4 11.4,30.0 15.2,25.3 19.0,21.3 22.9,23.6 26.7,24.1 30.5,22.4 34.3,20.8 38.1,20.9 41.9,19.5 45.7,17.9 49.5,19.1 53.3,19.7 57.1,13.5 61.0,10.1 64.8,15.6 68.6,27.7 72.4,24.1 76.2,25.1 80.0,28.0 83.8,29.0 87.6,31.1 91.4,25.1 95.2,27.7 99.0,28.8 102.9,29.5 106.7,25.0 110.5,25.1 114.3,25.4 118.1,24.6 121.9,24.3 125.7,26.4 129.5,32.5 133.3,37.2 137.1,31.6 141.0,27.4 144.8,26.7 148.6,26.4 152.4,23.7 156.2,29.7 160.0,33.3 163.8,33.9 167.6,36.5 171.4,42.0 175.2,38.3 179.0,38.1 182.9,36.2 186.7,32.9 190.5,38.0 194.3,27.8 198.1,22.5 201.9,24.6 205.7,19.7 209.5,23.1 213.3,22.6 217.1,30.7 221.0,34.2 224.8,35.2 228.6,32.0 232.4,28.1 236.2,30.1 240.0,19.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="19.9" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-low" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">33</span>
+            <span class="nb-cscore band-low" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">23</span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
             
           </div>
@@ -5017,7 +5141,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,35.7 3.8,35.1 7.6,32.8 11.4,35.4 15.2,38.3 19.0,36.3 22.9,35.5 26.7,38.4 30.5,32.5 34.3,29.0 38.1,30.0 41.9,30.5 45.7,36.7 49.5,42.0 53.3,36.0 57.1,31.0 61.0,37.1 64.8,35.6 68.6,31.5 72.4,21.1 76.2,21.9 80.0,22.3 83.8,19.6 87.6,31.0 91.4,22.6 95.2,17.5 99.0,20.5 102.9,18.8 106.7,20.1 110.5,21.2 114.3,21.7 118.1,22.4 121.9,21.6 125.7,20.9 129.5,20.0 133.3,23.2 137.1,15.9 141.0,16.4 144.8,13.4 148.6,14.6 152.4,15.5 156.2,15.1 160.0,10.1 163.8,40.9 167.6,35.5 171.4,18.4 175.2,16.5 179.0,26.3 182.9,27.9 186.7,21.2 190.5,28.8 194.3,26.9 198.1,16.9 201.9,25.0 205.7,19.9 209.5,24.5 213.3,22.2 217.1,28.4 221.0,33.3 224.8,38.2 228.6,29.4 232.4,28.2 236.2,25.7 240.0,21.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,35.7 3.8,35.1 7.6,32.8 11.4,35.4 15.2,38.3 19.0,36.3 22.9,35.5 26.7,38.4 30.5,32.5 34.3,29.0 38.1,30.0 41.9,30.5 45.7,36.7 49.5,42.0 53.3,36.0 57.1,31.0 61.0,37.1 64.8,35.6 68.6,31.5 72.4,21.1 76.2,21.9 80.0,22.3 83.8,19.6 87.6,31.0 91.4,22.6 95.2,17.5 99.0,20.5 102.9,18.8 106.7,20.1 110.5,21.2 114.3,21.7 118.1,22.4 121.9,21.6 125.7,20.9 129.5,20.0 133.3,23.2 137.1,15.9 141.0,16.4 144.8,13.4 148.6,14.6 152.4,15.5 156.2,15.1 160.0,10.1 163.8,40.9 167.6,35.5 171.4,18.4 175.2,16.5 179.0,26.3 182.9,27.9 186.7,21.2 190.5,28.8 194.3,26.9 198.1,16.9 201.9,25.0 205.7,19.9 209.5,24.5 213.3,22.2 217.1,28.4 221.0,33.3 224.8,38.2 228.6,29.4 232.4,28.2 236.2,25.7 240.0,21.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="21.0" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-low" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">24</span>
+            <span class="nb-cscore band-low" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">20</span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
             
           </div>
@@ -5124,7 +5248,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,38.3 3.8,42.0 7.6,40.6 11.4,38.6 15.2,37.1 19.0,36.1 22.9,33.6 26.7,33.7 30.5,31.0 34.3,31.7 38.1,34.5 41.9,29.2 45.7,27.9 49.5,24.6 53.3,23.8 57.1,21.1 61.0,19.0 64.8,19.7 68.6,17.6 72.4,20.6 76.2,16.8 80.0,16.2 83.8,15.9 87.6,16.0 91.4,14.5 95.2,10.1 99.0,11.8 102.9,13.7 106.7,12.4 110.5,20.0 114.3,16.1 118.1,20.2 121.9,21.7 125.7,19.2 129.5,20.4 133.3,21.5 137.1,19.9 141.0,21.7 144.8,19.5 148.6,20.6 152.4,20.1 156.2,19.6 160.0,19.1 163.8,18.2 167.6,19.0 171.4,16.8 175.2,21.8 179.0,25.3 182.9,23.8 186.7,25.0 190.5,25.8 194.3,23.9 198.1,25.2 201.9,24.4 205.7,23.3 209.5,19.6 213.3,17.6 217.1,21.8 221.0,21.4 224.8,22.1 228.6,21.8 232.4,21.7 236.2,23.1 240.0,15.3 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,38.3 3.8,42.0 7.6,40.6 11.4,38.6 15.2,37.1 19.0,36.1 22.9,33.6 26.7,33.7 30.5,31.0 34.3,31.7 38.1,34.5 41.9,29.2 45.7,27.9 49.5,24.6 53.3,23.8 57.1,21.1 61.0,19.0 64.8,19.7 68.6,17.6 72.4,20.6 76.2,16.8 80.0,16.2 83.8,15.9 87.6,16.0 91.4,14.5 95.2,10.1 99.0,11.8 102.9,13.7 106.7,12.4 110.5,20.0 114.3,16.1 118.1,20.2 121.9,21.7 125.7,19.2 129.5,20.4 133.3,21.5 137.1,19.9 141.0,21.7 144.8,19.5 148.6,20.6 152.4,20.1 156.2,19.6 160.0,19.1 163.8,18.2 167.6,19.0 171.4,16.8 175.2,21.8 179.0,25.3 182.9,23.8 186.7,25.0 190.5,25.8 194.3,23.9 198.1,25.2 201.9,24.4 205.7,23.3 209.5,19.6 213.3,17.6 217.1,21.8 221.0,21.4 224.8,22.1 228.6,21.8 232.4,21.7 236.2,23.1 240.0,15.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="15.3" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-low" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">15</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">30</span>
             <span class="nb-verdict"><span class="l-en">Leader · accounting warning — verify before buying</span><span class="l-zh">领先 · 财务质量警示 — 买入前先核实</span></span>
             
           </div>
@@ -5232,7 +5356,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.0 3.8,42.0 7.6,40.0 11.4,37.3 15.2,36.9 19.0,35.9 22.9,37.8 26.7,36.8 30.5,34.5 34.3,37.0 38.1,37.6 41.9,35.0 45.7,32.7 49.5,27.3 53.3,27.4 57.1,28.5 61.0,25.6 64.8,25.1 68.6,24.8 72.4,29.8 76.2,29.3 80.0,27.5 83.8,27.9 87.6,26.5 91.4,27.5 95.2,26.1 99.0,20.6 102.9,21.9 106.7,22.5 110.5,21.6 114.3,23.5 118.1,22.8 121.9,20.1 125.7,19.5 129.5,10.2 133.3,10.2 137.1,10.4 141.0,12.8 144.8,13.7 148.6,12.8 152.4,19.2 156.2,23.3 160.0,24.7 163.8,25.0 167.6,21.2 171.4,19.5 175.2,22.3 179.0,26.3 182.9,25.7 186.7,27.1 190.5,28.2 194.3,28.5 198.1,29.5 201.9,28.5 205.7,28.7 209.5,26.0 213.3,17.7 217.1,18.9 221.0,12.1 224.8,11.9 228.6,10.1 232.4,14.2 236.2,12.4 240.0,12.6 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.0 3.8,42.0 7.6,40.0 11.4,37.3 15.2,36.9 19.0,35.9 22.9,37.8 26.7,36.8 30.5,34.5 34.3,37.0 38.1,37.6 41.9,35.0 45.7,32.7 49.5,27.3 53.3,27.4 57.1,28.5 61.0,25.6 64.8,25.1 68.6,24.8 72.4,29.8 76.2,29.3 80.0,27.5 83.8,27.9 87.6,26.5 91.4,27.5 95.2,26.1 99.0,20.6 102.9,21.9 106.7,22.5 110.5,21.6 114.3,23.5 118.1,22.8 121.9,20.1 125.7,19.5 129.5,10.2 133.3,10.2 137.1,10.4 141.0,12.8 144.8,13.7 148.6,12.8 152.4,19.2 156.2,23.3 160.0,24.7 163.8,25.0 167.6,21.2 171.4,19.5 175.2,22.3 179.0,26.3 182.9,25.7 186.7,27.1 190.5,28.2 194.3,28.5 198.1,29.5 201.9,28.5 205.7,28.7 209.5,26.0 213.3,17.7 217.1,18.9 221.0,12.1 224.8,11.9 228.6,10.1 232.4,14.2 236.2,12.4 240.0,12.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="12.6" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-low" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">5</span>
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">26</span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
             
           </div>
@@ -5304,7 +5428,7 @@
           
           <div class="nb-vf">
             
-            <span class="nb-vchip vf-caution" title="Options check (dealer gamma) — deep long-gamma (+16.8% over the flip) — dealers pin & fade breakouts · call wall 240.0 · flip 198.55 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +16.8%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">⚠ <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">caution</span><span class="l-zh">警示</span></span>
+            <span class="nb-vchip vf-caution" title="Options check (dealer gamma) — deep long-gamma (+16.5% over the flip) — dealers pin & fade breakouts · call wall 240.0 · flip 199.18 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +16.5%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">⚠ <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">caution</span><span class="l-zh">警示</span></span>
             
             
           </div>

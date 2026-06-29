@@ -8,7 +8,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Rate & Inflation Transmission — 2026-06-26</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -202,8 +202,10 @@ html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-men
    `.site-nav` so the `.topbar` pages that also include this partial keep their
    own inline nav untouched. The fly-out + hover polish above still apply. The
    `≤700px` mobile hamburger is injected later by theme.js and wins on order. */
-.site-nav{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:9px}
-.site-nav .nav-links{grid-column:1;grid-row:1;display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}
+.site-nav{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:12px;row-gap:9px;max-width:1500px;margin-left:auto;margin-right:auto}
+/* menu on its own first row (one line); search + controls share row two — holds the bar to two rows */
+.site-nav .nav-links{grid-column:1 / -1;grid-row:1;display:flex;flex-wrap:wrap;align-items:center;gap:3px;min-width:0}
+.site-nav .nav-search{grid-column:1;grid-row:2;max-width:480px}
 /* MASTERMIND brand lockup — covers the .site-nav (migrated) and legacy .topbar nav (mirrors theme.css; --blue stands in for the macro --link). */
 .site-nav .nav-brand,.topbar .nav-brand{display:inline-flex;align-items:center;gap:8px;flex:none;padding:3px 10px 3px 4px;margin:0 6px 0 0;border-radius:11px;text-decoration:none;transition:background .18s,transform .16s ease}
 .site-nav .nav-brand:hover,.topbar .nav-brand:hover{background:color-mix(in srgb,var(--blue) 11%,transparent);transform:translateY(-1px)}
@@ -219,7 +221,7 @@ html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-men
 .site-nav .nav-dd:hover>.nav-dd-menu,.site-nav .nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
 .site-nav .nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
 .site-nav .nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
-.site-nav .nav-ctrls{grid-column:2;grid-row:1;justify-self:end;align-self:center;display:flex;align-items:center;gap:10px}
+.site-nav .nav-ctrls{grid-column:2;grid-row:2;justify-self:end;align-self:center;display:flex;align-items:center;gap:10px}
 .site-nav .nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;cursor:pointer}
 .site-nav .nav-ctrls .ai-brief-link.active{background:var(--blue);border-color:var(--blue);color:#fff}
 .site-nav .theme-switch{width:56px;height:27px;border-radius:999px;background:var(--card);border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
@@ -1037,7 +1039,7 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     <div class="note" style="margin-top:12px">
       <p>• <span class="l-en">Display-only — never scored. The repricing of rates/inflation is REACTIVE; the curve moves after the data and the Fed, it does not lead them.</span><span class="l-zh">仅供展示，从不计入评分。利率/通胀的重新定价是被动的；曲线在数据与美联储之后变动，而非领先。</span></p><p>• <span class="l-en">Rate-of-change beats level: the SPEED of a real-yield move breaks equities more than its level. Coefficients are the measured forward IC, not a promise.</span><span class="l-zh">变动速度比水平更重要：实际收益率移动的速度比其水平更能冲击股票。系数为已测得的前瞻IC，并非承诺。</span></p><p>• <span class="l-en">Scenario moves apply a historical beta to a hypothetical shock — they are regime-dependent illustrations, not predictions, and assume the shock persists one quarter.</span><span class="l-zh">情景中的涨跌幅是将历史beta应用于假设冲击——属于依赖状态的示意而非预测，且假设冲击持续一个季度。</span></p><p>• <span class="l-en">The real / nominal / breakeven 63d-change drivers are mechanically collinear (real = nominal − breakeven); do not treat them as independent confirmations.</span><span class="l-zh">实际／名义／盈亏平衡的63日变动驱动在机制上共线（实际＝名义−盈亏平衡）；不应视为相互独立的印证。</span></p>
       <p><b><span class="l-en">Data.</span><span class="l-zh">数据。</span></b> <span class="l-en">Free / keyless FRED: full Treasury curve, real yields (TIPS), 5y/10y/5y5y breakevens, term premium; headline &amp; core CPI, headline &amp; core PCE (the Fed’s 2% target gauge), PPI, ECI wage growth, shelter &amp; core-services CPI; Cleveland model + UMich survey inflation expectations. All point-in-time vintaged for honest backtests.</span><span class="l-zh">免费/无密钥的FRED：完整国债曲线、实际利率(TIPS)、5/10年与5年5年盈亏平衡、期限溢价；整体与核心CPI、整体与核心PCE（美联储2%目标）、PPI、ECI工资增长、住房与核心服务CPI；克利夫兰模型与密歇根调查通胀预期。均按时点存档以便诚实回测。</span></p>
-      <p class="meta-foot"><span class="l-en">Calibration</span><span class="l-zh">校准</span>: scripts/calibrate_rate_inflation.py · <span class="l-en">report</span><span class="l-zh">报告</span> reports/rate-inflation-transmission-calibration.md · <span class="l-en">History</span><span class="l-zh">历史</span> 1971-01-04 → 2026-06-26 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-06-28 20:57 UTC</p>
+      <p class="meta-foot"><span class="l-en">Calibration</span><span class="l-zh">校准</span>: scripts/calibrate_rate_inflation.py · <span class="l-en">report</span><span class="l-zh">报告</span> reports/rate-inflation-transmission-calibration.md · <span class="l-en">History</span><span class="l-zh">历史</span> 1971-01-04 → 2026-06-26 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-06-29 02:07 UTC</p>
     </div>
   </div>
 </div>
@@ -1047,6 +1049,5 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
   <span>© 2026 MastermindX Inc</span>
   <span class="faint"><span class="l-en">Macro transmission context, not investment advice.</span><span class="l-zh">宏观传导背景，非投资建议。</span></span>
 </footer>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>
