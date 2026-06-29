@@ -118,6 +118,20 @@
   <div class="rrx-do"><span class="rrx-do-k">{{ t('Do','应对') }}</span>{{ t(rd.do_en, rd.do_zh) }}</div>
   {% endif %}
 
+  {# Election-cycle context (US radar only; engine/election_cycle.py) — a calendar MODULATOR,
+     never an alert originator. Surfaces the midterm window + the HONEST measured odds (the
+     full stat/slice/caveat live in the tooltip so the chip can't overclaim). #}
+  {% if rd.cycle and rd.cycle.show %}{% set cy = rd.cycle %}
+  <div class="rrx-cyc">
+    <span class="rrx-cyc-k">🗳 {{ t(cy.label_en, cy.label_zh) }}{% if cy.in_drawdown_window %} · {{ t('Apr–Oct window','4–10月窗口') }}{% endif %}</span>{{ help(cy.stat_en ~ ' ' ~ cy.slice_en ~ ' ' ~ cy.caveat_en, cy.stat_zh ~ ' ' ~ cy.slice_zh ~ ' ' ~ cy.caveat_zh) }}
+    {% if cy.modulation and cy.modulation.risk_on_slice %}<span class="rrx-cyc-tag">▲ {{ t('early-warning sensitivity raised','已提高预警灵敏度') }}</span>{% elif cy.modulation and cy.modulation.gross_applied %}<span class="rrx-cyc-tag">{{ t('sizing trimmed','已小幅降仓') }}</span>{% endif %}
+    {% if cy.trough_window_en %}<div class="rrx-cyc-sub">{{ t(cy.trough_window_en, cy.trough_window_zh) }}</div>{% endif %}
+    {% if cy.sector_bias %}{% set sb = cy.sector_bias %}
+    <div class="rrx-cyc-sec">{{ t('Favor','偏好') }} {% for f in sb.favor %}{% if not loop.first %} · {% endif %}{{ f.ticker }}{% endfor %} · {{ t('trim','减持') }} {% for a in sb.avoid %}{% if not loop.first %} · {% endif %}{{ a.ticker }}{% endfor %}</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
   {# self-audit line — only on the international radars (rd.forward_log set by
      engine/risk_radar_intl_audit). Every call is logged + graded vs the realized index path;
      the radar earns the right to move the verdict only once its own record clears the bar. #}
