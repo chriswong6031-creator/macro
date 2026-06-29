@@ -443,15 +443,17 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
   background: var(--panel2); border: 1px solid var(--line); color: var(--text);
   font-size: 12.5px; font-weight: 600; line-height: 1; cursor: pointer;
   transition: background .2s, border-color .2s, color .2s, transform .16s ease, box-shadow .18s ease; }
-.nav-ctrls .ai-brief-link:hover { border-color: var(--link); color: var(--link);
+/* Shared hover for BOTH pills (Mastermind + Terminal): fill with the link accent +
+   white text, lift and glow. Mastermind used to only outline its border on hover;
+   it now uses the Terminal pill's nicer fill animation so the two feel identical. */
+.nav-ctrls .ai-brief-link:hover { background: var(--link); border-color: var(--link); color: #fff;
   transform: translateY(-1px); box-shadow: 0 5px 14px -5px color-mix(in srgb, var(--link) 42%, transparent); }
 .nav-ctrls .ai-brief-link:active { transform: translateY(0); box-shadow: none; }
 .nav-ctrls .ai-brief-link.active { background: var(--link); border-color: var(--link); color: #fff; }
 /* Terminal entry — the live Mastermind Terminal (app.mastermind-x.com), pinned
-   beside the Mastermind button. Same pill, link-accented border/text so it reads
-   as the one outbound door to the live app. */
+   beside the Mastermind button. Link-accented border/text AT REST marks it as the
+   one outbound door to the live app; the fill-on-hover is the shared rule above. */
 .nav-ctrls .ai-brief-link.terminal-link { border-color: color-mix(in srgb, var(--link) 50%, var(--line)); color: var(--link); }
-.nav-ctrls .ai-brief-link.terminal-link:hover { background: var(--link); border-color: var(--link); color: #fff; }
 
 /* AI Daily Brief entry card — the single in-page doorway to the cross-asset LLM
    synthesis page (aibrief.html). Replaces the old inline AI Master Brief panel on the
