@@ -373,15 +373,17 @@ jobs:
           git add -f site/chinaohlc site/canadaohlc site/intlohlc 2>/dev/null || true
           if git diff --cached --quiet; then echo "no rendered-site changes to commit"; exit 0; fi
           git commit -m "render: site re-render $(date -u +%F) (scope=${{ github.event.inputs.scope || 'all' }})"
-          # best-effort push (the deploy below uses the uploaded artifact, so it never
-          # hinges on this landing): rebase-retry, preferring our fresh render on conflict.
-          # In a rebase, `-X theirs` keeps the commits being REPLAYED (our render) — same
-          # convention daily.yml uses to prefer its freshly-collected data.
+          # This push is now the ONLY way the render reaches the live site (the VPS serves
+          # committed main; there is no Pages-artifact fallback), so it MUST land.
+          # --autostash parks the render's throwaway data/ writes (we commit site/ ONLY) so
+          # `pull --rebase` doesn't refuse on a dirty tree — that refusal silently failed
+          # EVERY render push before. `-X theirs` keeps the commits being REPLAYED (our
+          # fresh render) on conflict.
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
+            if git pull --rebase --autostash -X theirs origin main && git push; then
               echo "pushed rendered site on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
-            echo "render push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+            echo "render push attempt $i failed (rebase/race); re-syncing"; sleep $((i * 7))
           done
           echo "::warning::could not push rendered site after 5 attempts — the next render or the nightly will re-land it"
