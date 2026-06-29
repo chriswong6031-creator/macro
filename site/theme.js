@@ -14,7 +14,9 @@
      anywhere to restore the in-page US analyzer. */
   var MM_TERMINAL_BASE = 'https://app.mastermind-x.com/terminal';
   function mmTerminalOn() { return window.MM_TERMINAL !== false; }
-  function terminalUrl(t) { return MM_TERMINAL_BASE + '?sym=' + encodeURIComponent(t); }
+  // from=macro lets the Terminal show its prominent "back to Dashboard" button reliably even when the
+  // referrer is stripped (the Terminal also falls back to document.referrer when this param is absent).
+  function terminalUrl(t) { return MM_TERMINAL_BASE + '?sym=' + encodeURIComponent(t) + '&from=macro'; }
   (function prewarmTerminal() {
     if (!mmTerminalOn() || !document.head) return;
     ['preconnect', 'dns-prefetch'].forEach(function (rel) {
