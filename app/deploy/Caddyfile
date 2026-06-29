@@ -64,3 +64,21 @@ app.mastermind-x.com {
 	# Self-signed origin cert; pair with Cloudflare SSL mode = "Full".
 	tls internal
 }
+
+# ---- bot.mastermind-x.com — Brain BOT serve-only mirror (uvicorn :8001) -------
+# The Mastermind Brain dashboard (paper-trading FastAPI), served by
+# mastermind.service on 127.0.0.1:8001. The app handles its own auth
+# (MASTERMIND_PASSWORD in /opt/mastermind/.env; currently disabled). MUST live
+# here — without a site block, Caddy's `tls internal` has no cert for this SNI and
+# the Cloudflare<->origin handshake fails with HTTP 525. DNS A record:
+# bot -> 146.190.142.17 (proxied), SSL mode "Full".
+bot.mastermind-x.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8001
+	header {
+		X-Robots-Tag "noindex, nofollow, noarchive"
+		-Server
+	}
+	# Self-signed origin cert; pair with Cloudflare SSL mode = "Full".
+	tls internal
+}
