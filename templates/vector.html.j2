@@ -1341,6 +1341,35 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <div class="sub" style="margin-top:8px">{{ t('Proprietary cycle timer.', '专有周期计时器。') }}</div>
     </div>
     <div class="card">
+      {# Cycle Thesis Monitor (engine/btc_cycle_thesis.py) — the halving/midterm bottom thesis,
+         watched with pre-committed falsifiers (dampening / timing / desync / structure). #}
+      {% set ct = cycle_thesis %}
+      {% if ct and ct.ok %}
+      {% set tsc = {'intact':'var(--blue)','watch':'var(--amber)','breaking':'var(--r3)'} %}
+      {% set tsz = {'intact':'成立','watch':'观察','breaking':'破位'} %}
+      {% set flc = {'ok':'var(--blue)','watch':'var(--amber)','alert':'var(--r3)'} %}
+      {% set fli = {'ok':'✓','watch':'▲','alert':'✕'} %}
+      <h3>{{ t('Cycle Thesis Monitor','周期论点监测') }}
+        <b style="color:{{ tsc.get(ct.thesis_status,'var(--muted)') }}"> · {{ t(ct.thesis_status|upper, tsz.get(ct.thesis_status,'—')) }}</b>
+        {% if ct.accumulate %}<b style="color:var(--blue)"> · {{ t('ACCUMULATION ZONE','吸筹区') }}</b>{% endif %}</h3>
+      {% if ct.drawdown_from_peak is not none %}
+      <div class="mini"><div class="lab"><span>{{ t('Drawdown from cycle peak','较周期顶部回撤') }} <span class="faint">({{ ct.peak_date }})</span></span><span><b style="color:var(--r3)">{{ (ct.drawdown_from_peak*100)|round|int }}%</b>{% if ct.prior_bear_mean is not none %} <span class="faint">{{ t('vs','对比') }} {{ (ct.prior_bear_mean*100)|round|int }}% {{ t('prior-bear avg','历史熊市均值') }}</span>{% endif %}</span></div></div>
+      {% endif %}
+      {% if ct.window_start %}
+      <div class="mini"><div class="lab"><span>{{ t('Projected bottom window','预测底部窗口') }}</span><span><b>{{ ct.window_start }} → {{ ct.window_end }}</b></span></div></div>
+      {% endif %}
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">
+        {% for f in ct.flags %}
+        <div style="display:flex;gap:6px;align-items:flex-start;font-size:11px;line-height:1.35"><span style="color:{{ flc.get(f.level,'var(--muted)') }};font-weight:700;flex:0 0 auto">{{ fli.get(f.level,'·') }}</span><span>{{ t(f.en, f.zh) }}</span></div>
+        {% endfor %}
+      </div>
+      <div class="sub" style="margin-top:8px">{{ t(ct.caveat_en, ct.caveat_zh) }}</div>
+      {% else %}
+      <h3>{{ t('Cycle Thesis Monitor','周期论点监测') }}</h3>
+      <div class="sub">{{ t('Monitor unavailable for this build.','本次构建暂无监测数据。') }}</div>
+      {% endif %}
+    </div>
+    <div class="card">
       <h3>{{ t('CME positioning & correlation', 'CME 持仓与相关性') }}
         {% if positioning.crowded %}<b style="color:var(--r3)"> · {{ t('CROWDED LONG','多头拥挤') }}</b>{% endif %}</h3>
       <div class="mini"><div class="lab"><span>{{ t('CME spec net (z-score)','CME 投机净持仓（z）') }}</span><span><b style="color:{{ 'var(--r3)' if positioning.crowded else 'var(--ink)' }}">{{ positioning.cot_z if positioning.cot_z is not none else '—' }}</b>{% if positioning.cot_net_pct is not none %} <span class="faint">({{ positioning.cot_net_pct }}% of OI)</span>{% endif %}</span></div></div>
