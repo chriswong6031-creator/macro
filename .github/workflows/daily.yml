@@ -725,7 +725,7 @@ jobs:
         # strips the tag. Resilient: rc 10 = "changed" (the desk's success signal, not an
         # error); each script leaves prior output in place on any real failure.
         run: |
-          python -m scripts.build_whitehouse --page-only; rc=$?; [ $rc -eq 0 ] || [ $rc -eq 10 ] || echo "whitehouse desk skipped (additive)"
+          rc=0; python -m scripts.build_whitehouse --page-only || rc=$?; [ "$rc" -eq 0 ] || [ "$rc" -eq 10 ] || echo "whitehouse desk skipped (additive, rc=$rc)"
           python -m scripts.inject_wh_banner || echo "banner inject skipped (additive)"
       - name: commit engine outputs
         if: always()   # commit the freshly-built pages even if a LATER optional builder times out or is cancelled. pages.yml deploys the COMMITTED main tree, so a skipped commit = stale live site. The builders are individually resilient (each leaves the prior page in place on its own error), so partial output is never broken — committing what built beats shipping nothing.
