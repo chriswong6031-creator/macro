@@ -30,7 +30,7 @@ from engine import stock_technicals  # noqa: E402  — richer close-only technic
 from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
 from engine import stock_view  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
-from engine.setups import ALIGN_MIN_KEEP  # noqa: E402
+from engine.setups import ALIGN_MIN_KEEP, entry_open_first  # noqa: E402
 from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's gate)
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -793,6 +793,10 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     for e in buys:
         e["align_tier"] = _atier(e)
         e["signal"] = signal_gate.compact(sig_verdict.get(e["ticker"]))   # confluence T1->T4 badge
+    # ENTRY-OPEN-FIRST: lead with names whose entry gauge reads "Buy zone — entry open
+    # now", then by the displayed conviction score (stable; the alignment/confluence
+    # rank settles ties). Each row carries conviction + entry_signal already.
+    buys = entry_open_first(buys)
     buy_keys = {id(e) for e in buys}
     # strong-but-unaligned names (good edge, weekly still falling / unconfirmed) -> a WATCH
     # strip, not the buy list — the honest "wait for the weekly to turn" demotion.

@@ -35,7 +35,7 @@ from engine import risk_sizing  # noqa: E402 — vol-managed inverse-vol sizing 
 from engine import dispersion  # noqa: E402 — cross-sectional dispersion regime (selection-gross dial)
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
-from engine.setups import CA_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
+from engine.setups import CA_ALPHA_WEIGHT, entry_open_first, rank_setups, setup_score  # noqa: E402
 from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's alpha/alignment gate)
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -293,6 +293,11 @@ def compute_canada_standouts(setups: dict | None) -> dict | None:
                 r["off_high"] = tech.get("off_52w_high_pct")
                 if r.get("conviction") is None and rec.get("conviction"):
                     r["conviction"] = rec["conviction"]
+                # the entry-timing gauge (WHEN to buy) so the card renders it AND the
+                # board can lead with open entries — main() attaches it only to the
+                # separate standouts artifact, not this page-facing setups list.
+                if rec.get("entry_signal"):
+                    r.setdefault("entry_signal", rec["entry_signal"])
             except Exception:  # noqa: BLE001
                 pass
         if not closes.empty and t in closes.columns:
@@ -300,6 +305,10 @@ def compute_canada_standouts(setups: dict | None) -> dict | None:
             col = ("var(--up)" if r.get("dir") == "up"
                    else "var(--down)" if r.get("dir") == "down" else "var(--muted)")
             r["spark_svg"] = _spark_svg(s, color=col)
+    # ENTRY-OPEN-FIRST: lead with names whose entry gauge reads "Buy zone — entry open
+    # now", then by the displayed conviction score (stable; the alpha/alignment rank
+    # settles ties). conviction + entry_signal are attached to each row above.
+    setups["buy"] = entry_open_first(setups["buy"])
     return setups
 
 
@@ -671,6 +680,7 @@ def main(alpha: dict | None = None) -> dict | None:
                 r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
             if risk_sig.get(t):
                 r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
+        wide["buy"] = entry_open_first(wide["buy"])   # entry-open-first, then score (stable)
         wide["eligible"] = eligible          # how many passed the alignment gate
         wide["universe"] = len(cand)
         if disp_regime:                      # selection-regime gross dial (board + bot)

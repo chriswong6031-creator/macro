@@ -135,6 +135,25 @@ def dedupe_dual_class(rows: list[dict]) -> list[dict]:
     return out
 
 
+def entry_open_first(rows: list[dict]) -> list[dict]:
+    """STABLE re-rank of a standout 'buy' board so names whose ENTRY gauge reads
+    'Buy zone — entry open now' (entry_signal.status == 'buy_now') lead the strip,
+    then by the displayed conviction score (high → low).
+
+    Stable: rows that tie on (entry-open?, score) keep the caller's prior order, so the
+    validated bottoming-alignment / confluence rank still settles ties — it just no
+    longer outranks an open entry window or a higher score. Reads the SAME fields the
+    cards render (entry_signal.status + conviction.score), so the board order always
+    matches the visible entry badge and score. Best-effort: a row missing either field
+    sorts as not-open / lowest-score within its group."""
+    def _key(r):
+        es = r.get("entry_signal") or {}
+        sc = (r.get("conviction") or {}).get("score")
+        return (0 if es.get("status") == "buy_now" else 1,
+                -(sc if sc is not None else -1.0))
+    return sorted(rows, key=_key)
+
+
 # minimum aligned names a standout strip shows before it backfills with NEAR-aligned
 # (clearly tagged) candidates — so the strip is never bare in thin tape but never pads
 # with falling knives (near-aligned still requires a not-falling weekly). Sourced from
