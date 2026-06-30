@@ -209,8 +209,14 @@
   .dial .active-AGGRESSIVE { background: var(--ok); color: #fff; }
   @media (max-width: 520px) { .dial > span { font-size: 8.5px; padding: 5px 1px; } }
   .reason { margin: 7px 0; padding-left: 24px; position: relative; line-height: 1.4; }
-  .reason b.sig { position: absolute; left: 0; width: 17px; text-align: center;
-                  border-radius: 4px; font-size: 12px; }
+  /* +/−/i markers — own class (rsig) so they don't collide with the signal-atom .sig
+     card (grid + ::before rail), which was hijacking them into a quarter-filled look. */
+  .reason b.rsig { position: absolute; left: 0; top: 1px; width: 16px; height: 16px;
+                  display: inline-flex; align-items: center; justify-content: center;
+                  border-radius: 5px; font-size: 11px; font-weight: 800; line-height: 1; }
+  .reason b.rsig-p { color: var(--up); background: color-mix(in srgb, var(--up) 16%, transparent); }
+  .reason b.rsig-m { color: var(--down); background: color-mix(in srgb, var(--down) 16%, transparent); }
+  .reason b.rsig-i { color: var(--ink-2, var(--muted)); background: color-mix(in srgb, var(--ink-2, var(--muted)) 14%, transparent); }
   /* lead the bullet with the read; demote the parenthetical stats so it scans */
   .reason .reason-main { font-weight: 600; color: var(--ink-1, var(--text)); }
   .reason .reason-det { color: var(--ink-3, var(--muted)); font-size: .92em; }
@@ -1624,7 +1630,7 @@
         </div>
         {% if pb.dial %}
         <div class="dial">{% for p in ["DEFENSIVE","CAREFUL","NEUTRAL","CONSTRUCTIVE","AGGRESSIVE"] %}<span class="{{ 'active-' + p if pb.dial.posture == p }}">{{ td(p) }}</span>{% endfor %}</div>
-        {% for sign, r_en, r_zh in pb.dial.reasons %}{% set _e = r_en.split(' (', 1) %}{% set _zsep = '（' if '（' in r_zh else ' (' %}{% set _z = r_zh.split(_zsep, 1) %}<div class="reason"><b class="sig sig-{{ {'+':'p','-':'m','i':'i'}[sign] }}">{{ {'+':'+','-':'−','i':'i'}[sign] }}</b><span class="l-en"><b class="reason-main">{{ _e[0] }}</b>{% if _e|length > 1 %}<span class="reason-det"> ({{ _e[1] }}</span>{% endif %}</span><span class="l-zh"><b class="reason-main">{{ _z[0] }}</b>{% if _z|length > 1 %}<span class="reason-det">{{ _zsep }}{{ _z[1] }}</span>{% endif %}</span></div>{% endfor %}
+        {% for sign, r_en, r_zh in pb.dial.reasons %}{% set _e = r_en.split(' (', 1) %}{% set _zsep = '（' if '（' in r_zh else ' (' %}{% set _z = r_zh.split(_zsep, 1) %}<div class="reason"><b class="rsig rsig-{{ {'+':'p','-':'m','i':'i'}[sign] }}">{{ {'+':'+','-':'−','i':'i'}[sign] }}</b><span class="l-en"><b class="reason-main">{{ _e[0] }}</b>{% if _e|length > 1 %}<span class="reason-det"> ({{ _e[1] }}</span>{% endif %}</span><span class="l-zh"><b class="reason-main">{{ _z[0] }}</b>{% if _z|length > 1 %}<span class="reason-det">{{ _zsep }}{{ _z[1] }}</span>{% endif %}</span></div>{% endfor %}
         {% endif %}
         <div style="margin-top:11px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:13px">
           {% if pb.next_list %}<span class="help" style="font-weight:600;color:var(--link);width:auto;height:auto;border:none;margin:0">{{ t("What's likely next",'接下来可能发生什么') }} ▾<span class="tip" style="width:300px;font-weight:400">
