@@ -379,12 +379,15 @@
   .rrx .rrx-do-k { font-weight: 800; color: var(--rc); text-transform: uppercase; letter-spacing: .06em;
          font-size: 10.5px; margin-right: 8px; }
   /* election-cycle context chip (US radar only; engine/election_cycle.py) */
-  .rrx .rrx-cyc { font-size: 11px; color: var(--muted); padding-top: 9px;
-         border-top: 1px solid color-mix(in srgb, var(--rc) 16%, var(--line)); }
-  .rrx .rrx-cyc-k { font-weight: 700; color: var(--text); margin-right: 4px; }
-  .rrx .rrx-cyc-tag { color: var(--rc); font-weight: 700; font-size: 10px; margin-left: 6px; }
-  .rrx .rrx-cyc-sub { color: var(--muted); font-size: 10px; margin-top: 2px; }
-  .rrx .rrx-cyc-sec { color: var(--text); font-size: 10.5px; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  /* compressed to <=2 dense lines so the cycle context never balloons the card */
+  .rrx .rrx-cyc { font-size: 10.5px; color: var(--muted); padding-top: 7px; margin-top: 2px; line-height: 1.4;
+         border-top: 1px solid color-mix(in srgb, var(--rc) 16%, var(--line));
+         display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; row-gap: 1px; }
+  .rrx .rrx-cyc-k { font-weight: 700; color: var(--text); }
+  .rrx .rrx-cyc-tag { color: var(--rc); font-weight: 700; font-size: 9.5px; }
+  .rrx .rrx-cyc-sub { color: var(--muted); font-size: 10px; margin: 0; }
+  .rrx .rrx-cyc-sec { color: var(--text); font-size: 10px; margin: 0; flex-basis: 100%;
+         font-variant-numeric: tabular-nums; }
   /* self-audit line (international radars only) */
   .rrx .rrx-audit { font-size: 10.5px; color: var(--muted); }
   .rrx .rrx-audit-k { font-weight: 700; color: var(--text); margin-right: 6px; }
@@ -399,11 +402,24 @@
      non-dominant threat meters are desktop-only detail, not a mobile wall. */
   @media (max-width: 560px) {
     .rrx { padding: 14px 15px; gap: 10px; }
-    .rrx .rrx-amp, .rrx .rrx-ramp, .rrx .rrx-ev { display: none; }
+    .rrx .rrx-amp, .rrx .rrx-ramp, .rrx .rrx-ev, .rrx .rrx-cyc, .rrx .rrx-audit { display: none; }
     .rrx .rrx-odds { padding: 11px 13px; }
     .rrx .rrx-big { font-size: 34px; }
     .rrx .rrx-threats { gap: 5px; }
     .rrx .rrx-th:not(.dom) { display: none; }
+  }
+  /* desktop: the consolidated 2-column board (header/odds/ramp | threats/evidence/
+     action/cycle) on EVERY market's .ms-front board, not just the US macro one —
+     roughly halves the card height vs the single-column stack. The US dashboard
+     keeps its own (higher-specificity, identical) copy; this is what reaches the
+     China / HK / Canada boards that only load this shared partial. */
+  @media (min-width: 1100px) {
+    .ms-front > .rrx { grid-template-columns: minmax(0,1.32fr) minmax(0,1fr);
+      column-gap: 22px; row-gap: 0; align-items: stretch; }
+    .ms-front > .rrx > .rrx-main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .ms-front > .rrx > .rrx-side { display: flex; flex-direction: column; justify-content: center;
+      gap: 9px; min-width: 0; padding-left: 22px;
+      border-left: 1px solid color-mix(in srgb, var(--rc) 22%, var(--line)); }
   }
 
   /* header strip */
@@ -563,6 +579,7 @@
             <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
             <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">Finviz's 268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">Finviz 268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
           </div>
         </div>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -706,7 +723,7 @@
     <h1>🇨🇦 <span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-29 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-30 03:55 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-29 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-30 05:56 UTC</span>
   </div>
   
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">Standout TSX names ranked by sector-neutral residual momentum, with the cycle entry as timing context. Search any TSX stock from the box above; click a card for the full breakdown.</span><span class="l-zh">按板块中性残差动量排名的 TSX 个股精选，并以周期入场作为时机背景。可在上方搜索框查询任意 TSX 个股；点击卡片查看完整拆解。</span>
@@ -2375,7 +2392,7 @@
 
 
 
-<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-30 03:55 UTC · <span class="l-en">Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.</span><span class="l-zh">无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。</span></p>
+<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-30 05:56 UTC · <span class="l-en">Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.</span><span class="l-zh">无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。</span></p>
 
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
