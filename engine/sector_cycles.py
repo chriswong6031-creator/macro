@@ -77,7 +77,8 @@ PHASES = {
     "Downturn":  {"label": "Downturn",  "short": "Rolling over", "hue": "#e0556b"},
 }
 
-WINDOW_YEARS = 6
+WINDOW_YEARS = 15          # full history window: surfaces ~15y of cycles (where the tape exists)
+DEFAULT_WINDOW_YEARS = 7   # default VISIBLE span; the chart opens here, a "Max/15Y" toggle expands to WINDOW_YEARS
 _TODAY_PAD = 0.30          # forward x-headroom (yrs) for the projection leg
 _ZZ_PCT = 14.0            # ZigZag reversal threshold — a sector "major" swing (intermediate cycle)
 _MAJOR_PCT = 20.0         # legs this big get a "major" flag (prioritised for narration)
@@ -233,6 +234,24 @@ def _weekly_points(s: pd.Series, value_fn=None) -> list[dict]:
     return out
 
 
+def _taper_points(s: pd.Series, recent_start: pd.Timestamp, value_fn=None) -> list[dict]:
+    """Tapered-cadence {x, v} points for the long 15y window: WEEKLY within the default
+    visible span (last DEFAULT_WINDOW_YEARS) where the user actually looks, MONTHLY for the
+    deep-history tail behind it. Keeps the default view crisp while ~halving the payload of
+    the zoomed-out Max view. Turns/legs are detected on the full daily tape, so this purely
+    cosmetic thinning never moves a pivot date."""
+    s = s.dropna()
+    old = s[s.index < recent_start].resample("ME").last().dropna()
+    recent = s[s.index >= recent_start].resample("W-FRI").last().dropna()
+    out = []
+    for ts, v in pd.concat([old, recent]).items():
+        if pd.isna(v):
+            continue
+        out.append({"x": round(_yf(ts), 3), "v": round(float(value_fn(v) if value_fn else v), 2)})
+    out.sort(key=lambda p: p["x"])
+    return out
+
+
 def _leadership(close_full: pd.DataFrame, ticker: str, bench: str = "SPY") -> dict:
     """RS vs SPY: 63d & 126d relative momentum + above-200d-trend of the ratio."""
     if ticker not in close_full or bench not in close_full:
@@ -271,9 +290,10 @@ def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp
     base = float(win.iloc[0])
     if base <= 0:
         return None
-    price_pts = _weekly_points(win, lambda v: v / base * 100.0)
+    recent_start = last_ts - pd.DateOffset(years=DEFAULT_WINDOW_YEARS)
+    price_pts = _taper_points(win, recent_start, lambda v: v / base * 100.0)
     osc_full = _detrended_osc(full)
-    osc_pts = _weekly_points(osc_full[osc_full.index >= win_start])
+    osc_pts = _taper_points(osc_full[osc_full.index >= win_start], recent_start)
 
     swings_all = _detect_swings(full, pct)
     swings = [s for s in swings_all if s["x"] >= _yf(win_start) - 0.05]
@@ -478,12 +498,15 @@ def compute(asof: str | None = None) -> dict | None:
 
     x_lo = round(_yf(win_start), 3)
     x_hi = round(_yf(last_ts) + _TODAY_PAD, 3)
+    x_lo_default = round(_yf(last_ts - pd.DateOffset(years=DEFAULT_WINDOW_YEARS)), 3)
     return {
         "meta": {
             "asOf": str(last_ts.date()),
             "today": round(_yf(last_ts), 3),
             "xDomain": [x_lo, x_hi],
+            "xDomainDefault": [x_lo_default, x_hi],
             "window_years": WINDOW_YEARS,
+            "default_window_years": DEFAULT_WINDOW_YEARS,
             "rebaseDate": str(win_start.date()),
             "benchmark": config.load()["engine"]["rs_ranking"]["benchmark"],
             "n_sectors": len(sectors),

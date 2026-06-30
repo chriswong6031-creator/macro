@@ -57,6 +57,24 @@ def _load_narratives(root: Path) -> dict:
     return narr
 
 
+def _load_dna(root: Path) -> dict:
+    """SECTOR_DNA cycle-cause profiles, same id keying as narratives (Shenwan code / "b-"+key)."""
+    f = root / "data" / "china_sector_cycles" / "cycle_dna.json"
+    if not f.exists():
+        return {}
+    try:
+        doc = json.loads(f.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_sector_cycles: cycle_dna.json unreadable (%s) — rendering without DNA", e)
+        return {}
+    if not isinstance(doc, dict):
+        return {}
+    dna = dict(doc.get("sectors", {}))
+    for k, v in (doc.get("baskets", {}) or {}).items():
+        dna["b-" + k] = v
+    return dna
+
+
 def _basket_cycle_map(data: dict) -> dict:
     """A compact per-basket cycle record (membership-key -> {price, turns, now, proj, signature})
     for the per-theme detail pages — small enough to inline on every basket_china page."""
@@ -99,10 +117,12 @@ def main() -> int:
         return 0
 
     narr = _load_narratives(root)
+    dna = _load_dna(root)
 
     # data JS (loaded directly by the page — no fetch, works on file:// + preview)
     payload = ("window.SECTOR_CYCLES=" + json.dumps(data, separators=(",", ":"), ensure_ascii=False) + ";\n"
-               + "window.SECTOR_NARR=" + json.dumps(narr, separators=(",", ":"), ensure_ascii=False) + ";\n")
+               + "window.SECTOR_NARR=" + json.dumps(narr, separators=(",", ":"), ensure_ascii=False) + ";\n"
+               + "window.SECTOR_DNA=" + json.dumps(dna, separators=(",", ":"), ensure_ascii=False) + ";\n")
     (site / "sector_cycles_china_data.js").write_text(payload, encoding="utf-8")
 
     # raw model + the per-theme cycle map (read by build_baskets_china for the mini-charts)

@@ -402,6 +402,29 @@ html[data-theme="light"] .sc-openpage { color: #fff; }
   animation: sc-hint-in .3s var(--ease); z-index: 4; }
 @keyframes sc-hint-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
 
+/* ---- Cycle DNA panel — the front-loaded "history rhymes" / predictive read ---- */
+.sc-dna { border-left: 3px solid color-mix(in srgb, var(--link) 55%, var(--line)); }
+.sc-dna .cyc-lbl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sc-dna-conf { font-size: 10px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase;
+  padding: 1px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: var(--panel2); }
+.sc-dna-conf.high { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, var(--line)); }
+.sc-dna-conf.low { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); }
+.sc-dna-sum { font-size: 12.5px; line-height: 1.55; color: var(--text); margin: 6px 0 0; opacity: .96; }
+.sc-dna-drv { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.sc-dna-drv span { font-size: 10.5px; color: var(--text); background: color-mix(in srgb, var(--link) 9%, var(--panel2));
+  border: 1px solid color-mix(in srgb, var(--link) 24%, var(--line)); border-radius: 999px; padding: 2px 9px; }
+.sc-dna-sig { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 11px; }
+.sc-dna-col .sc-dna-h { font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; margin-bottom: 4px; }
+.sc-dna-col.b .sc-dna-h { color: var(--up); } .sc-dna-col.t .sc-dna-h { color: var(--down); }
+.sc-dna-col ul { margin: 0; padding-left: 15px; }
+.sc-dna-col li { font-size: 11.5px; line-height: 1.5; color: var(--text); opacity: .9; margin-bottom: 2px; }
+.sc-dna-rhythm { margin-top: 10px; font-size: 11px; color: var(--muted); }
+.sc-dna-analog { margin-top: 9px; font-size: 12px; line-height: 1.5; color: var(--text);
+  padding: 8px 11px; background: color-mix(in srgb, var(--link) 7%, var(--panel2));
+  border: 1px solid color-mix(in srgb, var(--link) 20%, var(--line)); border-radius: 9px; }
+.sc-dna-ana-k { font-weight: 700; color: var(--link); margin-right: 4px; }
+@media (max-width: 620px) { .sc-dna-sig { grid-template-columns: 1fr; } }
+
 /* visible focus ring for keyboard users across both page chromes */
 .sc-page :focus-visible, .scc-page :focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 7px; }
 
