@@ -63,13 +63,25 @@
     var a = Math.abs(v), d = a >= 100 ? 0 : (a >= 10 ? 1 : 2);
     return (v > 0 ? '+' : (v < 0 ? '−' : '')) + a.toFixed(d) + '%';
   }
-  function fmtCap(v) {            // v in USD
+  var CUR_SYM = { USD: '$', HKD: 'HK$', CAD: 'C$', CNY: '¥' };
+  function fmtCap(v, cur) {            // v in absolute units of `cur` (default USD)
     if (v == null || !isFinite(v) || v <= 0) return '';
-    var bn = v / 1e9;
-    if (bn >= 1000) return '$' + (bn / 1000).toFixed(2) + 'T';
-    if (bn >= 100) return '$' + Math.round(bn) + 'B';
-    return '$' + bn.toFixed(1) + 'B';
+    cur = cur || 'USD';
+    if (cur === 'CNY') {              // Chinese 亿 / 万亿 convention
+      var yi = v / 1e8;
+      if (yi >= 10000) return '¥' + (yi / 10000).toFixed(2) + '万亿';
+      if (yi >= 100) return '¥' + Math.round(yi) + '亿';
+      return '¥' + yi.toFixed(1) + '亿';
+    }
+    var sym = CUR_SYM[cur] || '$', bn = v / 1e9;
+    if (bn >= 1000) return sym + (bn / 1000).toFixed(2) + 'T';
+    if (bn >= 100) return sym + Math.round(bn) + 'B';
+    if (bn >= 1) return sym + bn.toFixed(1) + 'B';
+    return sym + Math.max(1, Math.round(v / 1e6)) + 'M';   // sub-billion (small-cap / turnover)
   }
+  // tile display ticker: strip the exchange suffix so CN/HK/CA tiles read
+  // "601398" / "0700" / "RY" not "601398.SS" (no-op for US tickers).
+  function dispT(t) { return String(t).replace(/\.(SS|SZ|SH|HK|TO|V|TSX|NE|CN)$/i, ''); }
   function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
   function hexToRgb(h) {
     h = (h || '').trim(); if (h[0] === '#') h = h.slice(1);
@@ -210,14 +222,17 @@
   /*  STOCK HOVER CARD — our conviction read, lazily fetched, degrades gracefully */
   /* ====================================================================== */
   var _tickerCache = {};
-  function fetchTicker(t) {
-    if (window.SD && window.SD.loadTicker) return window.SD.loadTicker(t);
-    if (Object.prototype.hasOwnProperty.call(_tickerCache, t)) return Promise.resolve(_tickerCache[t]);
+  function fetchTicker(t, dir) {
+    dir = dir || 'stockdata';
+    // window.SD only knows the US stockdata/ dir; route other markets directly.
+    if (dir === 'stockdata' && window.SD && window.SD.loadTicker) return window.SD.loadTicker(t);
+    var key = dir + '/' + t;
+    if (Object.prototype.hasOwnProperty.call(_tickerCache, key)) return Promise.resolve(_tickerCache[key]);
     var safe = String(t).replace(/[=^]/g, '_');
-    return fetch('stockdata/' + safe + '.json')
+    return fetch(dir + '/' + safe + '.json')
       .then(function (r) { if (!r.ok) throw new Error('absent'); return r.json(); })
-      .then(function (j) { _tickerCache[t] = j; return j; })
-      .catch(function () { _tickerCache[t] = null; return null; });
+      .then(function (j) { _tickerCache[key] = j; return j; })
+      .catch(function () { _tickerCache[key] = null; return null; });
   }
 
   function positionFloat(el, cx, cy) {
@@ -252,7 +267,8 @@
     var cur = t.perf[data._tf];
     var cls = cur == null ? '' : (cur >= 0 ? 'up' : 'dn');
     var sub = t.industry && t.industry !== t.sector ? ' · ' + esc(t.industry) : '';
-    var cap = fmtCap(t.size);
+    var cap = fmtCap(t.size, data.currency);
+    var nm = (isZh() && t.name_zh) ? t.name_zh : t.name;
     var strip = '';
     (data.timeframes || []).forEach(function (tf) {
       var v = t.perf[tf.key];
@@ -262,8 +278,8 @@
     });
     return ''
       + '<div class="hm-c-hd">'
-      +   '<div class="hm-c-id"><div class="hm-c-sym">' + esc(t.t) + '</div>'
-      +     '<div class="hm-c-nm">' + esc(t.name) + ' · ' + L(lab.en, lab.zh) + sub + '</div></div>'
+      +   '<div class="hm-c-id"><div class="hm-c-sym">' + esc(dispT(t.t)) + '</div>'
+      +     '<div class="hm-c-nm">' + esc(nm) + ' · ' + L(lab.en, lab.zh) + sub + '</div></div>'
       +   '<div class="hm-c-px"><div class="hm-c-pxv" data-px>' + (cap || '—') + '</div>'
       +     '<div class="hm-c-chg ' + cls + '">' + fmtPc(cur) + '</div></div>'
       + '</div>'
@@ -284,7 +300,8 @@
     }
     var tech = rec.tech || {}, conv = rec.conviction || {}, prof = rec.profile || {}, val = rec.valuation || {};
     if (pxEl && tech.price != null) {
-      pxEl.textContent = '$' + (tech.price >= 100 ? Math.round(tech.price).toLocaleString()
+      var pxSym = CUR_SYM[data.currency] || '$';
+      pxEl.textContent = pxSym + (tech.price >= 100 ? Math.round(tech.price).toLocaleString()
         : (+tech.price).toFixed(2));
     }
     var h = '';
@@ -311,6 +328,11 @@
     if (chips) h += '<div class="hm-c-chips">' + chips + '</div>';
 
     var meta = '';
+    // Label the size value (e.g. "Mkt cap ¥2.54万亿", or "Avg turnover HK$14.8B"
+    // for the HK map) so the number is never mistaken for something it isn't.
+    var szLab = data.size_basis === 'equal' ? '' : lz(data.size_label_en, data.size_label_zh);
+    var szVal = fmtCap(t.size, data.currency);
+    if (szLab && szVal) meta += '<span class="hm-c-tag">' + esc(szLab) + ' <b>' + szVal + '</b></span>';
     var arch = prof.archetype || {};
     if (arch.label) meta += '<span class="hm-c-tag">' + esc(lz(arch.label, arch.label_zh)) + '</span>';
     var cheap = (val.trailing_pe && val.trailing_pe.cheap != null) ? val.trailing_pe.cheap
@@ -345,7 +367,7 @@
       clearTimeout(_cardTimer);
       var want = t.t;
       _cardTimer = setTimeout(function () {
-        fetchTicker(t.t).then(function (rec) {
+        fetchTicker(t.t, data.stockdata_dir).then(function (rec) {
           if (_cardFor !== want) return;
           enrichCard(el, data, t, rec);
           // re-anchor off the latest pointer position (the card grew), not the
@@ -375,16 +397,19 @@
     return _mem;
   }
   // shared shell: header (title + agg), breadth sub-line, scrollable row list.
-  function memShellHtml(ttl, agg, count, br, unitEn, unitZh, rowsHtml) {
+  function memShellHtml(ttl, agg, count, br, unitEn, unitZh, rowsHtml, sizeLab) {
     var tot = Math.max(1, br.adv + br.dec);
     var aggCls = agg == null ? '' : (agg >= 0 ? 'up' : 'dn');
+    // sizeLab (optional) names what the right-hand value column means (e.g. the
+    // HK map's column is average turnover, not market cap) so it can never be misread.
+    var ct = count + ' ' + L(unitEn, unitZh) + (sizeLab ? ' · ' + esc(sizeLab) : '');
     return ''
       + '<div class="hm-mem-hd">'
       +   '<div class="hm-mem-ttl">' + ttl + '</div>'
       +   '<div class="hm-mem-agg ' + aggCls + '">' + fmtPc(agg) + '</div>'
       + '</div>'
       + '<div class="hm-mem-sub">'
-      +   '<span class="hm-mem-ct">' + count + ' ' + L(unitEn, unitZh) + '</span>'
+      +   '<span class="hm-mem-ct">' + ct + '</span>'
       +   '<span class="hm-mem-br"><i class="up" style="width:' + (100 * br.adv / tot) + '%"></i>'
       +     '<i class="dn" style="width:' + (100 * br.dec / tot) + '%"></i></span>'
       +   '<span class="hm-mem-bn"><b class="up">' + br.adv + '▲</b> <b class="dn">' + br.dec + '▼</b></span>'
@@ -413,14 +438,16 @@
     var cap = 18, more = Math.max(0, rows.length - cap), body = '';
     rows.slice(0, cap).forEach(function (t) {
       var pc = t.perf[tf], c = pal[binIndex(pc, edges)];
+      var rnm = (isZh() && t.name_zh) ? t.name_zh : t.name;
       body += '<div class="hm-mem-row">'
         + '<span class="hm-mem-pc" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
-        + '<span class="hm-mem-t">' + esc(t.t) + '</span>'
-        + '<span class="hm-mem-n">' + esc(t.name) + '</span>'
-        + '<span class="hm-mem-cap">' + fmtCap(t.size) + '</span></div>';
+        + '<span class="hm-mem-t">' + esc(dispT(t.t)) + '</span>'
+        + '<span class="hm-mem-n">' + esc(rnm) + '</span>'
+        + '<span class="hm-mem-cap">' + fmtCap(t.size, data.currency) + '</span></div>';
     });
     if (more) body += '<div class="hm-mem-more">+' + more + ' ' + L('more', '更多') + '</div>';
-    memShow(key, memShellHtml(ttl, agg, tiles.length, br, 'names', '只', body), cx, cy);
+    var szLab = data.size_basis === 'equal' ? '' : lz(data.size_label_en, data.size_label_zh);
+    memShow(key, memShellHtml(ttl, agg, tiles.length, br, 'names', '只', body, szLab), cx, cy);
   }
   // Themes: a subsector tile → its member tickers (ticker · move). The tile's
   // own Finviz move is the header agg (it's what colours the tile), not a
@@ -482,11 +509,18 @@
     // Themes map: two levels (theme → subsector-leaf tile), tiles are subsectors
     // that carry a member list; hover shows members. Default (S&P) is unchanged.
     var IS_THEMES = data.map_type === 'themes';
+    // Flat Sector → stock treemap (CN / HK / CA): no curated sub-industry level,
+    // so one band per sector with stock tiles directly — TradingView's HSI/TSX look.
+    var IS_STOCKS = data.map_type === 'stocks';
+    var STOCK_URL = data.stock_url || 'stock.html#';
     root.classList.add('hm-scope', 'hm-view');
     if (IS_THEMES) root.classList.add('hm-themes');
     var hint = IS_THEMES
       ? L('Hover a subsector for its member tickers · hover a theme header for its subsectors · pick a timeframe above',
           '将鼠标悬停在子板块上查看成员个股 · 悬停主题标题查看其子板块 · 在上方选择周期')
+      : IS_STOCKS
+      ? L('Hover a sector header for its members · hover a tile for our read · click through to the analyzer',
+          '将鼠标悬停在板块标题上查看成员 · 悬停方块查看研判 · 点击进入分析器')
       : L('Hover a sector or subsector header for its members · hover a tile for our read · click through to the analyzer',
           '将鼠标悬停在板块或子行业标题上查看成员 · 悬停方块查看研判 · 点击进入分析器');
     root.innerHTML = ''
@@ -597,11 +631,12 @@
       var showPc = tw >= 44 && th >= 31;
       if (!showSym) return '';
       // cap the font to the tile width so long tickers shrink to fit instead of overflowing
-      var nch = (t.t || '').length || 1;
+      var sym = dispT(t.t);
+      var nch = sym.length || 1;
       var fitF = (tw - 5) / (nch * 0.80);
       var symF = Math.max(6, Math.min(tw / 3.7, th * 0.52, fitF, 22));
       var pcF = Math.max(8, Math.min(tw / 5.4, th * 0.34, 13));
-      var s = '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(t.t) + '</span>';
+      var s = '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(sym) + '</span>';
       if (showPc) s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + fmtPc(pc) + '</span>';
       return s;
     }
@@ -750,6 +785,68 @@
       secPc.forEach(function (sp) { sp.el = sp.show ? tm.querySelector('.pc[data-secpc="' + sp.key + '"]') : null; });
       recolor();
     }
+
+    /* ----- flat stocks treemap (sector → stock-leaf tile; CN / HK / CA) ----- */
+    function layoutStocksFlat() {
+      mode = 'tree'; root.classList.remove('hm-mobile');
+      var animate = firstLayout && !REDUCE; firstLayout = false;
+      tileEls = []; secPc = [];
+      var H = Math.max(560, Math.min(window.innerHeight - 140, 1280));
+      wrap.style.height = H + 'px'; tm.style.height = H + 'px';
+      var W = tm.clientWidth || wrap.clientWidth;
+      if (W <= 0) { requestAnimationFrame(layoutStocksFlat); return; }
+
+      hier = {};
+      data.tiles.forEach(function (t) {
+        var s = hier[t.sector] || (hier[t.sector] = { name: t.sector, value: 0, tiles: [] });
+        s.tiles.push(t); s.value += (t.size || 0);
+      });
+      var secItems = Object.keys(hier).map(function (k) { return { value: hier[k].value, ref: hier[k] }; });
+      var secRects = squarify(secItems, 0, 0, W, H);
+      var html = [], si = 0;
+
+      secRects.forEach(function (sr) {
+        var s = sr.ref;
+        var x = sr.x + SEC_GAP / 2, y = sr.y + SEC_GAP / 2, w = sr.w - SEC_GAP, h = sr.h - SEC_GAP;
+        if (w <= 2 || h <= 2) return;
+        var lab = labs[s.name] || { en: s.name, zh: s.name };
+        var hd = (h > 40 && w > 78) ? Math.min(SEC_HD, h * 0.42) : 0;
+        html.push('<div class="hm-sec" style="left:' + x + 'px;top:' + y + 'px;width:' + w + 'px;height:' + h + 'px">');
+        if (hd) {
+          html.push('<div class="hm-sec-hd" data-sec-name="' + esc(s.name) + '" style="height:' + hd + 'px;line-height:' + hd + 'px">'
+            + '<span class="nm">' + L(esc(lab.en), esc(lab.zh)) + '</span>'
+            + (w > 132 ? '<span class="pc" data-secpc="' + si + '"></span>' : '')
+            + '<span class="hm-sec-i">ⓘ</span></div>');
+          secPc.push({ key: si, tiles: s.tiles, show: w > 132, sector: s.name });
+        }
+        var innerY = hd, innerH = h - hd;
+        var tRects = squarify(s.tiles.map(function (t) { return { value: (t.size || 0.0001), ref: t }; }),
+          0, 0, w, innerH);
+        tRects.forEach(function (tr) {
+          var t = tr.ref;
+          var tw = tr.w - TILE_GAP, th = tr.h - TILE_GAP;
+          if (tw < 2 || th < 2) return;
+          var cls = 'hm-tile';
+          if (tw >= 96 && th >= 56) cls += ' big';
+          if (tw >= 150 && th >= 104) cls += ' huge';
+          if (animate) cls += ' hm-in';
+          var dly = animate ? ';animation-delay:' + Math.min(tileEls.length * 0.8, 480).toFixed(0) + 'ms' : '';
+          html.push('<div class="' + cls + '" data-i="' + tileEls.length + '" style="left:' + tr.x + 'px;top:'
+            + (innerY + tr.y) + 'px;width:' + tw + 'px;height:' + th + 'px' + dly + '">'
+            + tileLabel(t, tw, th) + '</div>');
+          tileEls.push({ t: t });
+        });
+        html.push('</div>');    // .hm-sec
+        si++;
+      });
+      tm.innerHTML = html.join('');
+      Array.prototype.forEach.call(tm.querySelectorAll('.hm-tile'), function (el) {
+        var rec = tileEls[+el.getAttribute('data-i')];
+        rec.el = el; rec.pcEl = el.querySelector('.pc');
+      });
+      secPc.forEach(function (sp) { sp.el = sp.show ? tm.querySelector('.pc[data-secpc="' + sp.key + '"]') : null; });
+      recolor();
+    }
     function recolor() {
       var edges = edgesFor(TF), pal = binPalette();
       tileEls.forEach(function (rec) {
@@ -803,10 +900,11 @@
               + '<span class="hm-mid"><b>' + esc(t.name) + '</b><span>' + det + '</span></span></div>');
             return;
           }
-          var sub = t.industry && t.industry !== t.sector ? esc(t.industry) : esc(t.name);
-          html.push('<a class="hm-mrow" href="stock.html#' + encodeURIComponent(t.t) + '">'
+          var rnm = (isZh() && t.name_zh) ? t.name_zh : t.name;
+          var sub = t.industry && t.industry !== t.sector ? esc(t.industry) : esc(rnm);
+          html.push('<a class="hm-mrow" href="' + STOCK_URL + encodeURIComponent(t.t) + '">'
             + '<span class="hm-mpc" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
-            + '<span class="hm-mid"><b>' + esc(t.t) + '</b><span>' + sub + '</span></span>'
+            + '<span class="hm-mid"><b>' + esc(dispT(t.t)) + '</b><span>' + sub + '</span></span>'
             + '<span class="hm-mgo">›</span></a>');
         });
         html.push('</div>');
@@ -855,14 +953,14 @@
       var el = e.target.closest && e.target.closest('.hm-tile');
       if (!el) return;
       var rec = tileEls[+el.getAttribute('data-i')];
-      if (rec) window.location.href = 'stock.html#' + encodeURIComponent(rec.t.t);
+      if (rec) window.location.href = STOCK_URL + encodeURIComponent(rec.t.t);
     }
     function onLeave() { hideCard(); hideMembers(); }
     tm.addEventListener('mousemove', onMove);
     tm.addEventListener('mouseleave', onLeave);
     tm.addEventListener('click', onClick);
 
-    function layout() { if (isMobile()) layoutList(); else if (IS_THEMES) layoutThemes(); else layoutTree(); }
+    function layout() { if (isMobile()) layoutList(); else if (IS_THEMES) layoutThemes(); else if (IS_STOCKS) layoutStocksFlat(); else layoutTree(); }
 
     var rt;
     function onResize() { clearTimeout(rt); rt = setTimeout(function () { hideCard(); hideMembers(); layout(); }, 150); }
@@ -1269,9 +1367,15 @@
     try { maps = JSON.parse(full.getAttribute('data-hm-maps') || 'null'); } catch (e) { maps = null; }
     if (!maps || !maps.length) return false;
     full.classList.add('hm-multi');
-    var bar = document.createElement('div'); bar.className = 'hm-maptype'; bar.setAttribute('role', 'tablist');
+    // single-map pages (CN / HK / CA) skip the switcher bar entirely; the US page
+    // (S&P 500 ⇄ Themes) keeps it.
+    var bar = null;
+    if (maps.length > 1) {
+      bar = document.createElement('div'); bar.className = 'hm-maptype'; bar.setAttribute('role', 'tablist');
+      full.appendChild(bar);
+    }
     var host = document.createElement('div'); host.className = 'hm-host';
-    full.appendChild(bar); full.appendChild(host);
+    full.appendChild(host);
     var curView = null, curKey = null, btns = {};
     function select(m) {
       if (curKey === m.key) return;
@@ -1293,13 +1397,15 @@
         if (window.console) console.error('heatmap load failed', e);
       });
     }
-    maps.forEach(function (m) {
-      var b = document.createElement('button'); b.type = 'button';
-      b.className = 'hm-mt'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', 'false');
-      b.innerHTML = (m.icon ? m.icon + ' ' : '') + L(m.label_en || m.key, m.label_zh || m.label_en || m.key);
-      b.addEventListener('click', function () { select(m); });
-      btns[m.key] = b; bar.appendChild(b);
-    });
+    if (bar) {
+      maps.forEach(function (m) {
+        var b = document.createElement('button'); b.type = 'button';
+        b.className = 'hm-mt'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', 'false');
+        b.innerHTML = (m.icon ? m.icon + ' ' : '') + L(m.label_en || m.key, m.label_zh || m.label_en || m.key);
+        b.addEventListener('click', function () { select(m); });
+        btns[m.key] = b; bar.appendChild(b);
+      });
+    }
     select(maps[0]);
     return true;
   }
