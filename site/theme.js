@@ -270,11 +270,17 @@
       ".has-nav-toggle .nav-links .nav-sub::after{display:none}",
     "}",
     "@media (max-width:560px){",
-      /* phone: collapse the Mastermind / Terminal cross-app pills to their icons so
-         the whole control row (hamburger + app pills + theme + language) fits on a
-         single line — matching the width where the brand wordmark already hides. */
-      ".has-nav-toggle .nav-ctrls .ai-brief-link{padding:6px 10px}",
-      ".has-nav-toggle .nav-ctrls .ai-brief-link .l-en,.has-nav-toggle .nav-ctrls .ai-brief-link .l-zh{display:none}",
+      /* phone: KEEP the Mastermind / Terminal labels — the lone icons were cryptic,
+         and the row has room to spare once the theme + language toggles collapse
+         into the settings gear. Just tighten the pills a hair so the whole control
+         row (hamburger + both labelled pills + gear) still rides on one tidy line. */
+      ".has-nav-toggle .nav-ctrls .ai-brief-link{padding:8px 12px;font-size:12px;gap:5px}",
+    "}",
+    /* very narrow phones (≤360px): shave the pills + cluster gap a touch more so the
+       labelled pills never wrap off the control row. */
+    "@media (max-width:360px){",
+      ".has-nav-toggle .nav-ctrls{gap:6px}",
+      ".has-nav-toggle .nav-ctrls .ai-brief-link{padding:7px 10px;font-size:11.5px;gap:4px}",
     "}"
   ].join('');
 
