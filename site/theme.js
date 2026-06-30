@@ -4,6 +4,13 @@
 (function () {
   var docEl = document.documentElement;
 
+  /* Supabase account config — BAKED IN at build time (scripts/build_site.py
+     replaces the token below with the project URL + public publishable key, or
+     `null` for a local-only build). A page that sets window.SUPABASE_CFG inline
+     (e.g. watchlist.html) wins, so the value is identical either way. The
+     publishable key is PUBLIC by design; per-user isolation is enforced by RLS. */
+  window.SUPABASE_CFG = window.SUPABASE_CFG || {"url": "https://fsldfzlxyavsuwqbceod.supabase.co", "anonKey": "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv"};
+
   /* ---- Google Analytics 4 (gtag.js) ---------------------------------------
      Injected once on EVERY page via this one shared script (every page loads
      theme.js), so there's no per-template tag to maintain. Loads gtag.js async
@@ -434,6 +441,489 @@
     lang: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/></svg>',
     user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0z"/></svg>'
   };
+
+  /* =======================================================================
+     ACCOUNT SYSTEM — Supabase auth, shared by EVERY page (the gear's account
+     section is the entry point). Strictly additive + fail-soft: with no baked
+     config the account UI hides and not a single third-party byte is fetched.
+     The Supabase SDK is self-hosted (templates/supabase.js -> site/supabase.js;
+     a JS CDN is blocked behind the GFW) and loaded LAZILY — only when the user
+     opens the modal or a prior session must be restored. Sign-in methods:
+       • Google  (signInWithOAuth — needs the provider enabled in the dashboard)
+       • Email + password (no email verification — disable "Confirm email")
+       • WeChat  (no native Supabase provider yet — shown as "coming soon")
+     The session is persisted in PERMANENT cookies (see COOKIE_STORAGE) so the
+     user stays signed in across visits and across every page on the origin. */
+  var GOOGLE_SVG = '<svg class="ob-g" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.02-3.7H.96v2.34A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.98 10.72a5.4 5.4 0 0 1 0-3.44V4.94H.96a9 9 0 0 0 0 8.12l3.02-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.47.89 11.43 0 9 0A9 9 0 0 0 .96 4.94l3.02 2.34C4.68 5.16 6.66 3.58 9 3.58z"/></svg>';
+  var WECHAT_SVG = '<svg class="ob-wx" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.7 3.3C4.9 3.3 1.8 6 1.8 9.3c0 1.9 1 3.5 2.6 4.7l-.7 2.1 2.4-1.3c.86.24 1.6.36 2.6.36.23 0 .46-.01.68-.03a5.2 5.2 0 0 1-.2-1.43c0-3 2.9-5.4 6.4-5.4l.6.02C15.7 5.5 12.6 3.3 8.7 3.3zM6.4 7.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm4.6 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/><path d="M22.2 14.1c0-2.7-2.6-4.9-5.8-4.9s-5.8 2.2-5.8 4.9 2.6 4.9 5.8 4.9c.74 0 1.45-.13 2.1-.34l2 1.1-.55-1.85c1.3-.9 2.25-2.2 2.25-3.81zm-7.7-1.1a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6zm3.9 0a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6z"/></svg>';
+  var EYE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+
+  /* ---- permanent cookie session storage ---------------------------------
+     The user asked to keep the login in cookies so it sticks across visits.
+     Cookies cap at ~4KB and a Supabase session JSON can exceed that, so the
+     value is split into chunks: a count cookie `<key>` + `<key>.0..n-1`. Each
+     chunk is percent-encoded on its own (so a multibyte escape never straddles
+     a chunk boundary). ~390-day Max-Age, Path=/ (shared by every page on the
+     origin), SameSite=Lax, Secure on https. Implements the get/set/remove
+     Storage contract supabase-js expects. */
+  var AUTH_COOKIE_DAYS = 390, AUTH_CHUNK = 1800, AUTH_MAXCHUNKS = 32;
+  function _cookieMap() {
+    var out = {}, parts = (document.cookie || '').split(';');
+    for (var i = 0; i < parts.length; i++) {
+      var p = parts[i].trim(); if (!p) continue;
+      var eq = p.indexOf('='); if (eq < 0) continue;
+      out[p.slice(0, eq)] = p.slice(eq + 1);
+    }
+    return out;
+  }
+  function _setCookie(name, val, days) {
+    var secure = location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = name + '=' + val + '; Path=/; Max-Age=' + (days * 86400) +
+                      '; SameSite=Lax' + secure;
+  }
+  function _delCookie(name) { document.cookie = name + '=; Path=/; Max-Age=0; SameSite=Lax'; }
+  function _clearCookieKey(name, map) {
+    map = map || _cookieMap();
+    if (map[name] != null) _delCookie(name);
+    for (var i = 0; i < AUTH_MAXCHUNKS; i++) {
+      if (map[name + '.' + i] != null) _delCookie(name + '.' + i);
+    }
+  }
+  var COOKIE_STORAGE = {
+    getItem: function (key) {
+      var map = _cookieMap(), n = map[key];
+      if (n == null) return null;
+      var count = parseInt(n, 10);
+      if (!(count > 0)) return null;
+      var out = '';
+      for (var i = 0; i < count; i++) {
+        var c = map[key + '.' + i];
+        if (c == null) return null;                 // torn write -> no session
+        out += decodeURIComponent(c);
+      }
+      return out;
+    },
+    setItem: function (key, value) {
+      _clearCookieKey(key);
+      var s = String(value == null ? '' : value), chunks = [];
+      for (var i = 0; i < s.length; i += AUTH_CHUNK) chunks.push(s.slice(i, i + AUTH_CHUNK));
+      if (!chunks.length) chunks = [''];
+      _setCookie(key, String(chunks.length), AUTH_COOKIE_DAYS);
+      for (var j = 0; j < chunks.length; j++) {
+        _setCookie(key + '.' + j, encodeURIComponent(chunks[j]), AUTH_COOKIE_DAYS);
+      }
+    },
+    removeItem: function (key) { _clearCookieKey(key); }
+  };
+
+  /* ---- lazy Supabase client (self-hosted SDK) --------------------------- */
+  var _sbCfg = window.SUPABASE_CFG;
+  var _authEnabled = !!(_sbCfg && _sbCfg.url && _sbCfg.anonKey);
+  var _sb = null, _sbLoading = null, _curUser = null, _authReady = false, _authBooted = false;
+  var _SDK_URL = 'supabase.js';
+
+  function _loadSDK() {
+    if (window.supabase && window.supabase.createClient) return Promise.resolve();
+    if (_sbLoading) return _sbLoading;
+    _sbLoading = new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = _SDK_URL; s.async = true;
+      s.onload = resolve; s.onerror = function () { reject(new Error('sdk')); };
+      (document.head || document.documentElement).appendChild(s);
+    });
+    return _sbLoading;
+  }
+  function getSupabaseClient() {
+    if (!_authEnabled) return Promise.reject(new Error('auth-disabled'));
+    if (_sb) return Promise.resolve(_sb);
+    return _loadSDK().then(function () {
+      if (_sb) return _sb;
+      _sb = window.supabase.createClient(_sbCfg.url, _sbCfg.anonKey, {
+        auth: {
+          persistSession: true, autoRefreshToken: true, detectSessionInUrl: true,
+          // PKCE (not implicit): the return carries a one-time ?code= (NOT tokens)
+          // that's useless without the code_verifier we stashed in storage before
+          // redirecting — so tokens never touch the URL/history, and a pasted
+          // #access_token link can't seed a session (no login-CSRF / fixation).
+          flowType: 'pkce',
+          storage: COOKIE_STORAGE          // permanent cookie session, shared site-wide
+        }
+      });
+      _sb.auth.onAuthStateChange(function (evt, session) { _onAuth(evt, session); });
+      return _sb;
+    });
+  }
+  window.getSupabaseClient = getSupabaseClient;
+
+  function _hasSessionCookie() {
+    var map = _cookieMap();
+    for (var k in map) { if (map.hasOwnProperty(k) && /^sb-.*-auth-token$/.test(k)) return true; }
+    return false;
+  }
+  function _isAuthReturn() {
+    var h = location.hash || '', q = location.search || '';
+    // PKCE returns ?code=...; keep the legacy hash checks for robustness.
+    return /[?&]code=/.test(q) || /[?&]error=/.test(q) ||
+           h.indexOf('access_token=') >= 0 || /[#&]error=/.test(h);
+  }
+  function _emitAuth(detail) {
+    try { window.dispatchEvent(new CustomEvent('mdx-auth', { detail: detail })); }
+    catch (e) {
+      var ev = document.createEvent('CustomEvent');
+      ev.initCustomEvent('mdx-auth', false, false, detail);
+      window.dispatchEvent(ev);
+    }
+  }
+  // supabase-js fires INITIAL_SESSION right after createClient; only SIGNED_OUT
+  // clears the user. Broadcast every change so the gear's account section AND
+  // the watchlist's cloud-sync (auth.js) react off one shared session.
+  function _onAuth(evt, session) {
+    _curUser = (session && session.user) ? session.user : (evt === 'SIGNED_OUT' ? null : _curUser);
+    if (evt === 'SIGNED_OUT') _curUser = null;
+    _authReady = true;
+    _emitAuth({ user: _curUser, event: evt });
+    _renderAcct();
+  }
+
+  window.MDXAuth = {
+    enabled: function () { return _authEnabled; },
+    user: function () { return _curUser; },
+    hasSession: function () { return _hasSessionCookie(); },
+    client: getSupabaseClient,
+    open: function (mode) { openAuthModal(mode || 'signin'); },
+    signOut: function () {
+      if (!_authEnabled) return Promise.resolve();
+      // sb.auth.signOut() fires SIGNED_OUT via onAuthStateChange -> _onAuth, which
+      // owns the UI reset. Only fall back to a manual emit if that path errors,
+      // so a normal sign-out updates each subscriber exactly once.
+      return getSupabaseClient().then(function (sb) { return sb.auth.signOut(); })
+        .catch(function () { _curUser = null; _emitAuth({ user: null, event: 'SIGNED_OUT' }); _renderAcct(); });
+    },
+    onChange: function (cb) {
+      window.addEventListener('mdx-auth', function (e) {
+        cb(e.detail && e.detail.user, e.detail && e.detail.event);
+      });
+      if (_authReady) { try { cb(_curUser, 'INITIAL_SESSION'); } catch (e) {} }
+    }
+  };
+
+  // Restore a prior session (or consume an OAuth/magic-link return) on load so
+  // every page shows the signed-in state. No-op + zero network for anon users.
+  // Always settle the auth state exactly once so every consumer (the gear's
+  // account bar + the watchlist sync pill) resolves — even for an anonymous
+  // visitor (no network) or when the self-hosted SDK fails to load (GFW).
+  function _authResolveAnon(evt) {
+    if (_authReady) return;            // a real session already resolved it
+    _authReady = true;
+    _emitAuth({ user: null, event: evt });
+    _renderAcct();
+  }
+  function _authBoot() {
+    if (_authBooted || !_authEnabled) return;
+    _authBooted = true;
+    if (_isAuthReturn() || _hasSessionCookie()) {
+      // restore the session / exchange the ?code= return; on SDK-load failure
+      // (e.g. supabase.js blocked) settle to signed-out so nothing hangs.
+      getSupabaseClient().then(function (sb) { return sb.auth.getSession(); })
+        .catch(function () { _authResolveAnon('SDK_FAILED'); });
+    } else {
+      _authResolveAnon('INITIAL_SESSION');   // anonymous — settle, no network
+    }
+  }
+
+  /* ---- the frosted-glass auth modal (matches index.html .glass) --------- */
+  var AUTH_L = {
+    siTitle:   ['Welcome back', '欢迎回来'],
+    siSub:     ['Sign in to sync across your devices', '登录以在各设备间同步'],
+    suTitle:   ['Create your account', '创建账户'],
+    suSub:     ['Free — sync watchlists, alerts & settings', '免费 — 同步自选、提醒与设置'],
+    google:    ['Continue with Google', '使用 Google 继续'],
+    wechat:    ['Continue with WeChat', '使用微信继续'],
+    soon:      ['Soon', '即将'],
+    wechatSoon:['WeChat sign-in is coming soon.', '微信登录即将推出。'],
+    or:        ['or', '或'],
+    email:     ['Email address', '邮箱地址'],
+    emailPh:   ['you@email.com', 'you@email.com'],
+    pw:        ['Password', '密码'],
+    pwPh:      ['At least 6 characters', '至少 6 个字符'],
+    si:        ['Sign in', '登录'],
+    su:        ['Create account', '注册'],
+    working:   ['Working…', '处理中…'],
+    redirect:  ['Redirecting to Google…', '正在跳转到 Google…'],
+    toSignup:  ['New here? Create an account', '新用户？创建账户'],
+    toSignin:  ['Already have an account? Sign in', '已有账户？登录'],
+    okSignup:  ['Account created — you’re signed in!', '账户已创建——已登录！'],
+    errEmail:  ['Enter a valid email address.', '请输入有效的邮箱地址。'],
+    errPw:     ['Password must be at least 6 characters.', '密码至少 6 个字符。'],
+    errCreds:  ['Wrong email or password.', '邮箱或密码错误。'],
+    errDupe:   ['That email is already registered — try signing in.', '该邮箱已注册——请直接登录。'],
+    errConfirm:['Check your inbox to confirm your email, then sign in.', '请查收邮箱完成验证后再登录。'],
+    errSdk:    ['Could not load sign-in. Check your connection.', '无法加载登录组件，请检查网络。'],
+    errGen:    ['Something went wrong — please try again.', '出错了，请重试。'],
+    legal:     ['Research, not investment advice.', '本产品为研究工具，非投资建议。'],
+    close:     ['Close', '关闭'],
+    showpw:    ['Show password', '显示密码'],
+    signedin:  ['Synced across your devices', '已在各设备间同步'],
+    signout:   ['Sign out', '退出']
+  };
+  function _authL(k) { var p = AUTH_L[k]; return p ? p[curLang() === 'zh' ? 1 : 0] : ''; }
+  function _setTxt(id, t) { var e = document.getElementById(id); if (e) e.textContent = t; }
+
+  var AUTH_CSS = [
+    '.auth-overlay{position:fixed;inset:0;z-index:100001;display:flex;align-items:center;justify-content:center;padding:20px;background:color-mix(in srgb,#04060c 72%,transparent);-webkit-backdrop-filter:blur(10px) saturate(1.05);backdrop-filter:blur(10px) saturate(1.05);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .24s ease,visibility 0s linear .24s}',
+    '.auth-overlay.open{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .24s ease,visibility 0s}',
+    'html.auth-lock{overflow:hidden}',
+    '.auth-card{position:relative;width:min(420px,94vw);box-sizing:border-box;border-radius:20px;overflow:hidden;isolation:isolate;background:color-mix(in srgb,var(--panel,var(--card,#0e1320)) 86%,transparent);border:1px solid color-mix(in srgb,var(--text,#e7ecf6) 13%,var(--line,var(--grid,#283042)));-webkit-backdrop-filter:blur(16px) saturate(1.1);backdrop-filter:blur(16px) saturate(1.1);box-shadow:0 32px 90px -20px rgba(0,0,0,.82),inset 0 1px 0 color-mix(in srgb,#fff 8%,transparent);padding:26px 24px 20px;transform:translateY(12px) scale(.98);opacity:.4;transition:transform .3s cubic-bezier(.32,1.28,.5,1),opacity .22s ease;font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text,var(--ink,#e7ecf6))}',
+    'html[data-theme="light"] .auth-card{background:color-mix(in srgb,var(--panel,#fff) 92%,transparent);box-shadow:0 30px 80px -22px rgba(20,30,50,.4),inset 0 1px 0 rgba(255,255,255,.7)}',
+    '.auth-overlay.open .auth-card{transform:none;opacity:1}',
+    '@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.auth-card{background:var(--panel,var(--card,#0e1320))}}',
+    '.auth-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--link,var(--blue,#4f8cff)),color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 18%,transparent))}',
+    '.auth-x{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:9px;border:1px solid transparent;background:transparent;color:var(--muted,var(--ink-3,#8b93a7));cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .18s,color .18s}',
+    '.auth-x:hover{background:color-mix(in srgb,var(--text,#fff) 8%,transparent);color:var(--text,var(--ink))}',
+    '.auth-x svg{width:16px;height:16px}',
+    '.auth-brand{display:flex;align-items:center;gap:11px;margin:0 0 17px}',
+    '.auth-brand .ab-ic{width:38px;height:38px;border-radius:11px;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 16%,transparent);color:var(--link,var(--blue,#4f8cff));flex:none}',
+    '.auth-brand .ab-ic svg{width:20px;height:20px}',
+    '.auth-brand h2{margin:0;font-size:18px;font-weight:800;letter-spacing:.01em;line-height:1.15;color:var(--text,var(--ink))}',
+    '.auth-brand .ab-sub{display:block;font-size:11.5px;font-weight:500;color:var(--muted,var(--ink-3));margin-top:2px}',
+    '.auth-oauth{display:flex;flex-direction:column;gap:9px;margin:0 0 4px}',
+    '.auth-ob{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px 14px;border-radius:12px;font-size:13.5px;font-weight:700;cursor:pointer;border:1px solid var(--line,var(--grid,#283042));background:var(--panel2,var(--card,#141a28));color:var(--text,var(--ink));font-family:inherit;transition:border-color .18s,transform .12s ease,background .18s}',
+    '.auth-ob:hover{border-color:color-mix(in srgb,var(--text,#fff) 26%,transparent);transform:translateY(-1px)}',
+    '.auth-ob:active{transform:translateY(0)}',
+    '.auth-ob:disabled{opacity:.6;cursor:default;transform:none}',
+    '.auth-ob svg{width:18px;height:18px;flex:none}',
+    '.auth-ob.wechat .ob-wx{color:#07C160}',
+    '.auth-ob .ob-soon{font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:999px;background:color-mix(in srgb,#07C160 18%,transparent);color:#07C160}',
+    '.auth-div{display:flex;align-items:center;gap:12px;margin:14px 0 12px;color:var(--muted,var(--ink-3));font-size:11px;text-transform:uppercase;letter-spacing:.08em}',
+    '.auth-div::before,.auth-div::after{content:"";flex:1;height:1px;background:var(--line,var(--grid,#283042))}',
+    '.auth-f{display:flex;flex-direction:column;gap:11px}',
+    '.auth-field{display:flex;flex-direction:column;gap:5px}',
+    '.auth-field label{font-size:11px;font-weight:700;color:var(--muted,var(--ink-3));letter-spacing:.02em}',
+    '.auth-in{width:100%;box-sizing:border-box;padding:11px 13px;border-radius:11px;border:1px solid var(--line,var(--grid,#283042));background:var(--bg,var(--card,#0b0f1a));color:var(--text,var(--ink));font-size:14px;font-family:inherit;outline:none;transition:border-color .18s,box-shadow .18s}',
+    '.auth-in:focus{border-color:var(--link,var(--blue,#4f8cff));box-shadow:0 0 0 3px color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 22%,transparent)}',
+    '.auth-pw-wrap{position:relative}',
+    '.auth-pw-wrap .auth-in{padding-right:42px}',
+    '.auth-reveal{position:absolute;top:50%;right:8px;transform:translateY(-50%);width:28px;height:28px;border:0;background:transparent;color:var(--muted,var(--ink-3));cursor:pointer;display:inline-flex;align-items:center;justify-content:center;border-radius:7px}',
+    '.auth-reveal:hover{color:var(--text,var(--ink));background:color-mix(in srgb,var(--text,#fff) 8%,transparent)}',
+    '.auth-reveal svg{width:16px;height:16px}',
+    '.auth-submit{margin-top:4px;width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--link,var(--blue,#4f8cff));background:var(--link,var(--blue,#4f8cff));color:#fff;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;transition:filter .18s,transform .12s ease,opacity .18s}',
+    '.auth-submit:hover{filter:brightness(1.06);transform:translateY(-1px)}',
+    '.auth-submit:active{transform:translateY(0)}',
+    '.auth-submit:disabled{opacity:.6;cursor:default;transform:none;filter:none}',
+    '.auth-msg{font-size:12px;line-height:1.45;margin:11px 0 0;padding:9px 11px;border-radius:10px;display:none}',
+    '.auth-msg.show{display:block}',
+    '.auth-msg.err{background:color-mix(in srgb,var(--down,#ff5c6c) 14%,transparent);color:var(--down,#ff5c6c);border:1px solid color-mix(in srgb,var(--down,#ff5c6c) 30%,transparent)}',
+    '.auth-msg.ok{background:color-mix(in srgb,var(--up,#23c08a) 14%,transparent);color:var(--up,#23c08a);border:1px solid color-mix(in srgb,var(--up,#23c08a) 30%,transparent)}',
+    '.auth-foot{margin:15px 0 0;text-align:center}',
+    '.auth-switch{background:none;border:0;color:var(--link,var(--blue,#4f8cff));font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;padding:4px}',
+    '.auth-switch:hover{text-decoration:underline}',
+    '.auth-legal{margin:12px 0 0;font-size:10px;line-height:1.5;color:var(--muted,var(--ink-3));text-align:center}',
+    '@media (max-width:520px){.auth-overlay{align-items:flex-end;padding:0}.auth-card{width:100%;border-radius:20px 20px 0 0;padding:24px 18px calc(18px + env(safe-area-inset-bottom));transform:translateY(100%);opacity:1}.auth-overlay.open .auth-card{transform:none}}',
+    '@media (prefers-reduced-motion:reduce){.auth-overlay,.auth-card{transition:opacity .15s ease}.auth-card{transform:none}}'
+  ].join('');
+
+  var _authBuilt = false, _authMode = 'signin', _authLastFocus = null;
+  // remember the CURRENT message + busy state by KEY so a mid-flow 'langchange'
+  // re-localizes the visible status/error and the 'Working…' button.
+  var _authMsgKey = null, _authMsgKind = null, _authBusyState = false;
+  function _authInjectCSS() {
+    if (document.getElementById('auth-css')) return;
+    var st = document.createElement('style'); st.id = 'auth-css'; st.textContent = AUTH_CSS;
+    document.head.appendChild(st);
+  }
+  function _buildAuthModal() {
+    if (_authBuilt) return;
+    _authInjectCSS();
+    var ov = document.createElement('div');
+    ov.className = 'auth-overlay'; ov.id = 'auth-overlay';
+    ov.innerHTML =
+      '<div class="auth-card" role="dialog" aria-modal="true" aria-labelledby="auth-title">' +
+        '<button type="button" class="auth-x" id="auth-x" aria-label="Close">' + SET_ICON.x + '</button>' +
+        '<div class="auth-brand"><span class="ab-ic">' + SET_ICON.user + '</span>' +
+          '<div><h2 id="auth-title"></h2><span class="ab-sub" id="auth-sub"></span></div></div>' +
+        '<div class="auth-oauth">' +
+          '<button type="button" class="auth-ob" id="auth-google">' + GOOGLE_SVG + '<span id="auth-google-t"></span></button>' +
+          '<button type="button" class="auth-ob wechat" id="auth-wechat">' + WECHAT_SVG + '<span id="auth-wechat-t"></span><span class="ob-soon" id="auth-wechat-soon"></span></button>' +
+        '</div>' +
+        '<div class="auth-div"><span id="auth-or"></span></div>' +
+        '<form class="auth-f" id="auth-form" novalidate>' +
+          '<div class="auth-field"><label for="auth-email" id="auth-email-l"></label>' +
+            '<input class="auth-in" type="email" id="auth-email" autocomplete="email" autocapitalize="off" spellcheck="false"></div>' +
+          '<div class="auth-field"><label for="auth-pw" id="auth-pw-l"></label>' +
+            '<div class="auth-pw-wrap"><input class="auth-in" type="password" id="auth-pw" autocomplete="current-password">' +
+              '<button type="button" class="auth-reveal" id="auth-reveal">' + EYE_SVG + '</button></div></div>' +
+          '<button type="submit" class="auth-submit" id="auth-submit"></button>' +
+        '</form>' +
+        '<div class="auth-msg" id="auth-msg" role="alert"></div>' +
+        '<div class="auth-foot"><button type="button" class="auth-switch" id="auth-switch"></button></div>' +
+        '<p class="auth-legal" id="auth-legal"></p>' +
+      '</div>';
+    document.body.appendChild(ov);
+    _authBuilt = true;
+    _wireAuthModal(ov);
+    _authRelabel();
+    document.addEventListener('langchange', _authRelabel);
+  }
+  function _authRelabel() {
+    if (!_authBuilt) return;
+    var si = _authMode === 'signin';
+    _setTxt('auth-title', _authL(si ? 'siTitle' : 'suTitle'));
+    _setTxt('auth-sub', _authL(si ? 'siSub' : 'suSub'));
+    _setTxt('auth-google-t', _authL('google'));
+    _setTxt('auth-wechat-t', _authL('wechat'));
+    _setTxt('auth-wechat-soon', _authL('soon'));
+    _setTxt('auth-or', _authL('or'));
+    _setTxt('auth-email-l', _authL('email'));
+    _setTxt('auth-pw-l', _authL('pw'));
+    _setTxt('auth-submit', _authBusyState ? _authL('working') : _authL(si ? 'si' : 'su'));
+    _setTxt('auth-switch', _authL(si ? 'toSignup' : 'toSignin'));
+    _setTxt('auth-legal', _authL('legal'));
+    var em = document.getElementById('auth-email'); if (em) em.placeholder = _authL('emailPh');
+    var pw = document.getElementById('auth-pw');
+    if (pw) { pw.placeholder = _authL('pwPh'); pw.setAttribute('autocomplete', si ? 'current-password' : 'new-password'); }
+    var x = document.getElementById('auth-x'); if (x) x.setAttribute('aria-label', _authL('close'));
+    var rv = document.getElementById('auth-reveal'); if (rv) rv.setAttribute('aria-label', _authL('showpw'));
+    // re-localize a currently-visible status/error message
+    if (_authMsgKey) {
+      var mm = document.getElementById('auth-msg');
+      if (mm && mm.className.indexOf('show') >= 0) mm.textContent = _authL(_authMsgKey);
+    }
+  }
+  function _authMsg(text, kind) {
+    var m = document.getElementById('auth-msg'); if (!m) return;
+    if (!text) { m.className = 'auth-msg'; m.textContent = ''; _authMsgKey = null; _authMsgKind = null; return; }
+    m.textContent = text; m.className = 'auth-msg show ' + (kind || 'err');
+  }
+  // show a message BY KEY so it can be re-localized on langchange
+  function _authShow(key, kind) {
+    _authMsgKey = key || null; _authMsgKind = kind || null;
+    _authMsg(key ? _authL(key) : '', kind);
+  }
+  function _authBusy(b) {
+    _authBusyState = b;
+    var s = document.getElementById('auth-submit'), g = document.getElementById('auth-google');
+    if (s) { s.disabled = b; s.textContent = b ? _authL('working') : _authL(_authMode === 'signin' ? 'si' : 'su'); }
+    if (g) g.disabled = b;
+  }
+  function _wireAuthModal(ov) {
+    var card = ov.querySelector('.auth-card');
+    ov.addEventListener('mousedown', function (e) { if (e.target === ov) closeAuthModal(); });
+    document.getElementById('auth-x').addEventListener('click', closeAuthModal);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && ov.classList.contains('open')) closeAuthModal();
+    });
+    document.getElementById('auth-switch').addEventListener('click', function () {
+      _authMode = _authMode === 'signin' ? 'signup' : 'signin';
+      _authMsg('', null); _authRelabel(); _authBusy(false);
+      var em = document.getElementById('auth-email'); if (em) em.focus();
+    });
+    document.getElementById('auth-reveal').addEventListener('click', function () {
+      var pw = document.getElementById('auth-pw'); if (!pw) return;
+      pw.type = pw.type === 'password' ? 'text' : 'password';
+    });
+    document.getElementById('auth-google').addEventListener('click', _authGoogle);
+    document.getElementById('auth-wechat').addEventListener('click', function () { _authShow('wechatSoon', 'ok'); });
+    document.getElementById('auth-form').addEventListener('submit', function (e) { e.preventDefault(); _authEmailSubmit(); });
+    // light focus trap (true modal)
+    card.addEventListener('keydown', function (e) {
+      if (e.key !== 'Tab') return;
+      var f = card.querySelectorAll('button:not([disabled]),input:not([disabled])');
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
+  }
+  function openAuthModal(mode) {
+    if (!_authEnabled) return;
+    _buildAuthModal();
+    _authMode = (mode === 'signup') ? 'signup' : 'signin';
+    _authRelabel(); _authMsg('', null); _authBusy(false);
+    var ov = document.getElementById('auth-overlay');
+    _authLastFocus = document.activeElement;
+    document.documentElement.classList.add('auth-lock');
+    ov.classList.add('open');
+    getSupabaseClient().catch(function () {});   // warm the SDK so the first action is instant
+    setTimeout(function () { var em = document.getElementById('auth-email'); if (em) em.focus(); }, 90);
+  }
+  function closeAuthModal() {
+    var ov = document.getElementById('auth-overlay'); if (!ov) return;
+    ov.classList.remove('open');
+    document.documentElement.classList.remove('auth-lock');
+    // don't leave credentials sitting in the fields on a shared browser
+    var em = document.getElementById('auth-email'); if (em) em.value = '';
+    var pw = document.getElementById('auth-pw'); if (pw) { pw.value = ''; pw.type = 'password'; }
+    _authMsg('', null);
+    if (_authLastFocus && _authLastFocus.focus) _authLastFocus.focus();
+  }
+  window.openAuthModal = openAuthModal;
+
+  function _authGoogle() {
+    _authBusy(true); _authShow('redirect', 'ok');
+    getSupabaseClient().then(function (sb) {
+      return sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.href.split('#')[0] } });
+    }).then(function (res) {
+      if (res && res.error) { _authBusy(false); _authShow(_authErrKey(res.error), 'err'); }
+      // else: the browser is navigating to Google's consent screen
+    }).catch(function () { _authBusy(false); _authShow('errSdk', 'err'); });
+  }
+  function _authEmailSubmit() {
+    var emEl = document.getElementById('auth-email'), pwEl = document.getElementById('auth-pw');
+    var email = (emEl && emEl.value || '').trim(), pw = (pwEl && pwEl.value) || '';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { _authShow('errEmail', 'err'); return; }
+    if (pw.length < 6) { _authShow('errPw', 'err'); return; }
+    _authBusy(true); _authMsg('', null);
+    var su = _authMode === 'signup';
+    getSupabaseClient().then(function (sb) {
+      if (su) {
+        return sb.auth.signUp({ email: email, password: pw }).then(function (res) {
+          if (res.error) throw res.error;
+          // With "Confirm email" OFF, signUp returns a session immediately.
+          if (res.data && res.data.session) return res;
+          // gotrue's anti-enumeration shape for an ALREADY-registered email (no
+          // error, no session, a user with an EMPTY identities array) — surface
+          // "already registered" instead of silently trying their password.
+          var u = res.data && res.data.user;
+          if (u && Array.isArray(u.identities) && u.identities.length === 0) {
+            throw new Error('user already registered');
+          }
+          // genuinely new user but confirmation is still ON -> a password sign-in
+          // surfaces the right "confirm your email" message.
+          return sb.auth.signInWithPassword({ email: email, password: pw });
+        });
+      }
+      return sb.auth.signInWithPassword({ email: email, password: pw });
+    }).then(function (res) {
+      if (res && res.error) throw res.error;
+      _authBusy(false);
+      if (su) { _authShow('okSignup', 'ok'); setTimeout(closeAuthModal, 750); }
+      else { closeAuthModal(); }
+    }).catch(function (err) { _authBusy(false); _authShow(_authErrKey(err), 'err'); });
+  }
+  function _authErrKey(err) {
+    var m = ((err && (err.message || err.error_description)) || '').toLowerCase();
+    if (m.indexOf('already registered') >= 0 || m.indexOf('already exists') >= 0 || m.indexOf('user already') >= 0) return 'errDupe';
+    if (m.indexOf('not confirmed') >= 0 || m.indexOf('confirm') >= 0) return 'errConfirm';
+    if (m.indexOf('invalid login') >= 0 || m.indexOf('invalid credentials') >= 0) return 'errCreds';
+    if (m.indexOf('failed to fetch') >= 0 || m.indexOf('networkerror') >= 0 || m.indexOf('load failed') >= 0) return 'errSdk';
+    return 'errGen';
+  }
+
+  // settings-popover account section: swap signed-out <-> signed-in views
+  function _renderAcct() {
+    var out = document.getElementById('set-acct-out'), inn = document.getElementById('set-acct-in');
+    if (!out || !inn) return;
+    if (_curUser) {
+      var email = _curUser.email || (_curUser.user_metadata && _curUser.user_metadata.email) || '';
+      out.style.display = 'none'; inn.style.display = 'flex';
+      _setTxt('set-email', email || '—');
+      var av = document.getElementById('set-avatar');
+      if (av) av.textContent = (email ? email.charAt(0) : 'U').toUpperCase();
+    } else {
+      out.style.display = 'block'; inn.style.display = 'none';
+    }
+  }
+
   var SET_L = {
     title:   ['Settings', '设置'],
     sub:     ['Personalize your workspace', '个性化你的工作区'],
@@ -447,7 +937,10 @@
     acctD:   ['Sign in to sync your watchlists, alerts and settings across devices.',
               '登录即可在各设备间同步自选、提醒与设置。'],
     signin:  ['Sign in', '登录'],
-    signup:  ['Create account', '注册']
+    signup:  ['Create account', '注册'],
+    signedin:['Synced across your devices', '已在各设备间同步'],
+    signout: ['Sign out', '退出'],
+    close:   ['Close settings', '关闭设置']
   };
   var SETTINGS_CSS = [
     /* two-row nav: the menu takes the whole first row on its own line; the global
@@ -522,6 +1015,18 @@
     '.settings-acct .sa-btn .sr-ic{color:inherit}',
     '.settings-acct .sa-btn.ghost{background:transparent;color:var(--text,var(--ink))}',
     '.settings-acct .sa-btn.solid{background:var(--link,var(--blue));border-color:var(--link,var(--blue));color:#fff;opacity:.92}',
+    /* account section is LIVE now (was a disabled placeholder): buttons click, and
+       a signed-in row replaces them. */
+    '.settings-acct .sa-btn{cursor:pointer}',
+    '.settings-acct .sa-btn.ghost:hover{border-color:var(--link,var(--blue));color:var(--link,var(--blue))}',
+    '.settings-acct .sa-btn.solid:hover{filter:brightness(1.07);opacity:1}',
+    '.settings-acct-in{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:11px;background:var(--panel2,var(--card));border:1px solid var(--line,var(--grid))}',
+    '.settings-acct-in .sa-avatar{flex:none;width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--link,var(--blue,#4f8cff)),color-mix(in srgb,var(--link,var(--blue,#4f8cff)) 55%,#9b5cff))}',
+    '.settings-acct-in .sr-main{flex:1;min-width:0}',
+    '.settings-acct-in .sr-lbl{display:block;font-size:13px;font-weight:700;color:var(--text,var(--ink));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.settings-acct-in .sr-desc{display:block;font-size:11px;color:var(--muted,var(--ink-3));margin-top:1px}',
+    '.settings-acct-in .sa-signout{flex:none;padding:7px 11px;border-radius:9px;border:1px solid var(--line,var(--grid));background:transparent;color:var(--text,var(--ink));font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:border-color .18s,color .18s}',
+    '.settings-acct-in .sa-signout:hover{border-color:var(--down,#ff5c6c);color:var(--down,#ff5c6c)}',
     '@media (prefers-reduced-motion:reduce){.settings-pop{transition:opacity .14s ease,visibility 0s linear .14s}.settings-pop.open,.nav-settings:hover .settings-pop,.nav-settings:focus-within .settings-pop{transition:opacity .14s ease}.nav-settings-btn:hover svg,.nav-settings-btn[aria-expanded="true"] svg,.nav-settings:hover .nav-settings-btn svg,.nav-settings:focus-within .nav-settings-btn svg{transform:none}}'
   ].join('');
 
@@ -584,14 +1089,19 @@
           '<span class="sr-ctrl" id="set-lang-slot"></span>' +
         '</div>' +
       '</div>' +
-      '<div class="settings-sec">' +
-        '<div class="settings-sec-t"><span data-set="account"></span><span class="settings-soon" data-set="soon"></span></div>' +
-        '<div class="settings-row settings-acct" style="display:block">' +
+      '<div class="settings-sec" id="set-acct-sec">' +
+        '<div class="settings-sec-t"><span data-set="account"></span></div>' +
+        '<div class="settings-row settings-acct" id="set-acct-out" style="display:block">' +
           '<p class="sa-d" data-set="acctD"></p>' +
           '<div class="sa-btns">' +
-            '<button type="button" class="sa-btn ghost" disabled><span class="sr-ic" style="display:inline-flex">' + SET_ICON.user + '</span><span data-set="signin"></span></button>' +
-            '<button type="button" class="sa-btn solid" disabled data-set="signup"></button>' +
+            '<button type="button" class="sa-btn ghost" id="set-signin"><span class="sr-ic" style="display:inline-flex">' + SET_ICON.user + '</span><span data-set="signin"></span></button>' +
+            '<button type="button" class="sa-btn solid" id="set-signup" data-set="signup"></button>' +
           '</div>' +
+        '</div>' +
+        '<div class="settings-acct-in" id="set-acct-in" style="display:none">' +
+          '<span class="sa-avatar" id="set-avatar"></span>' +
+          '<span class="sr-main"><span class="sr-lbl" id="set-email"></span><span class="sr-desc" data-set="signedin"></span></span>' +
+          '<button type="button" class="sa-signout" id="set-signout" data-set="signout"></button>' +
         '</div>' +
       '</div>';
 
@@ -603,8 +1113,16 @@
     if (ts) pop.querySelector('#set-theme-slot').appendChild(ts);
     if (lt) pop.querySelector('#set-lang-slot').appendChild(lt);
 
-    setLabels(pop);
-    document.addEventListener('langchange', function () { setLabels(pop); });
+    // keep the gear/popover/close ARIA labels localized too (the visible text is
+    // handled by setLabels; these attributes otherwise stay English).
+    function relabelSetAria() {
+      var lg = curLang() === 'zh' ? 1 : 0;
+      gear.setAttribute('aria-label', SET_L.title[lg]);
+      pop.setAttribute('aria-label', SET_L.title[lg]);
+      var cb = pop.querySelector('.settings-close'); if (cb) cb.setAttribute('aria-label', SET_L.close[lg]);
+    }
+    setLabels(pop); relabelSetAria();
+    document.addEventListener('langchange', function () { setLabels(pop); relabelSetAria(); });
 
     function isOpen() { return pop.classList.contains('open'); }
     function open() {
@@ -629,6 +1147,20 @@
     if (window.matchMedia && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
       wrap.addEventListener('mouseleave', close);
     }
+
+    // account section — live when Supabase is configured, else hidden entirely.
+    var bSignin = pop.querySelector('#set-signin'), bSignup = pop.querySelector('#set-signup'),
+        bSignout = pop.querySelector('#set-signout');
+    if (_authEnabled) {
+      if (bSignin) bSignin.addEventListener('click', function () { close(); openAuthModal('signin'); });
+      if (bSignup) bSignup.addEventListener('click', function () { close(); openAuthModal('signup'); });
+      if (bSignout) bSignout.addEventListener('click', function () { window.MDXAuth.signOut(); });
+      window.addEventListener('mdx-auth', _renderAcct);
+      _renderAcct();
+    } else {
+      var sec = pop.querySelector('#set-acct-sec'); if (sec) sec.style.display = 'none';
+    }
+
     window.openSettings = open;
     return true;
   }
@@ -820,6 +1352,7 @@
       t.addEventListener('click', function () { window.toggleLang(); });
     });
     initSettings();   // fallback if the early call above could not run
+    _authBoot();      // restore a prior cookie session / consume an OAuth return
     initNavSearch();
     initActiveNav();
     initMobileNav();

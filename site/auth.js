@@ -1,50 +1,40 @@
-/* auth.js — OPTIONAL cloud sync for the Watchlist, via Supabase (magic-link).
+/* auth.js — OPTIONAL cloud sync for the Watchlist, via Supabase.
 
-   Strictly additive and fail-soft:
-   • If window.SUPABASE_CFG is absent/blank, the auth UI is hidden and the page
-     stays a pure local-only watchlist — no SDK, no network call.
-   • The Supabase JS SDK is loaded LAZILY — only on a sign-in click, when a magic
-     link returns with tokens in the URL, or when a prior session is detected. An
-     anonymous visitor makes ZERO third-party requests.
-   • Sign-in is passwordless MAGIC LINK (free-tier-friendly: the default email
-     can't be customized to a code, so we email a link the user clicks). On the
-     free tier the project owner must add this site's origin to
-     Supabase → Authentication → URL Configuration → Redirect URLs.
-   • Security: the anon/publishable key is PUBLIC by design — per-user isolation
-     is enforced by Row-Level-Security against the user's JWT (see
-     templates/watchlist_supabase.sql). The service_role key NEVER ships here.
+   Sign-in itself is owned by the GLOBAL account system in theme.js (the gear's
+   account section + the frosted-glass modal): Google / email+password, one
+   shared client with a permanent cookie session. This file is now just the
+   watchlist's CLOUD-SYNC consumer of that session:
+     • It reacts to the shared session via window.MDXAuth.onChange (no own SDK,
+       no own client, no second storage — sessions can't diverge).
+     • The "Sign in to sync" button opens the global modal (window.MDXAuth.open).
+     • When signed in it pulls the user's cloud doc, WL.merge()s it into local,
+       and pushes the merged blob back — same blob shape, so signing in is a
+       non-destructive merge and signing out leaves a valid local list.
 
-   Plugs into the store seam exposed by watchlist.js (window.WL): pull the cloud
-   doc, WL.merge() it into local, push the merged blob back — same blob shape, so
-   signing in is a non-destructive merge and signing out leaves a valid local list. */
+   Strictly additive + fail-soft: with no baked config (window.SUPABASE_CFG blank)
+   or with theme.js absent, the auth UI hides and the page stays local-only —
+   zero third-party calls for an anonymous visitor. Security: the anon key is
+   PUBLIC by design; per-user isolation is enforced by RLS against the user's JWT
+   (templates/watchlist_supabase.sql). The service_role key NEVER ships here. */
 (function () {
   'use strict';
 
   var CFG = window.SUPABASE_CFG;
   var ENABLED = CFG && CFG.url && CFG.anonKey;
-  // Self-hosted (was a public JS CDN, blocked in mainland China). Vendored at
-  // templates/supabase.js -> site/supabase.js; same dir as auth.js. Pinned 2.x.
-  var SDK_URL = 'supabase.js';
   var TABLE = 'watchlists';
 
   function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
   var T = {
-    en: { signin: 'Sign in to sync', email: 'you@email.com', sendlink: 'Email me a sign-in link',
-          signout: 'Sign out', synced: 'Synced', syncing: 'Syncing…', local: 'Local only',
-          offline: 'Offline — local only', finishing: 'Finishing sign-in…',
-          sent: '📧 Check your email and click the link to finish signing in.',
-          bad: 'Sign-in failed — try again', sdkfail: 'Could not load the sign-in library (offline?)',
-          linkbad: 'That sign-in link expired or was already used — try again.', hello: 'Signed in as' },
-    zh: { signin: '登录以同步', email: 'you@email.com', sendlink: '把登录链接发到我的邮箱',
-          signout: '退出登录', synced: '已同步', syncing: '同步中…', local: '仅本地',
-          offline: '离线——仅本地', finishing: '正在完成登录…',
-          sent: '📧 请查收邮箱并点击链接以完成登录。',
-          bad: '登录失败——请重试', sdkfail: '无法加载登录组件（离线？）',
-          linkbad: '该登录链接已过期或已被使用——请重试。', hello: '已登录：' }
+    en: { signin: 'Sign in to sync', signout: 'Sign out', synced: 'Synced', syncing: 'Syncing…',
+          local: 'Local only', offline: 'Offline — local only', finishing: 'Finishing sign-in…',
+          hello: 'Signed in as' },
+    zh: { signin: '登录以同步', signout: '退出登录', synced: '已同步', syncing: '同步中…',
+          local: '仅本地', offline: '离线——仅本地', finishing: '正在完成登录…',
+          hello: '已登录：' }
   };
   function L(k) { return (T[lang()] || T.en)[k]; }
 
-  var sb = null, sdkLoading = null, user = null, pushTimer = null;
+  var sb = null, user = null, pushTimer = null;
 
   function el(id) { return document.getElementById(id); }
   function setPill(state) {
@@ -55,50 +45,20 @@
     p.className = 'wl-pill wl-pill-' + (state === 'finishing' ? 'syncing' : state);
   }
 
-  function loadSDK() {
-    if (window.supabase && window.supabase.createClient) return Promise.resolve();
-    if (sdkLoading) return sdkLoading;
-    sdkLoading = new Promise(function (resolve, reject) {
-      var s = document.createElement('script');
-      s.src = SDK_URL; s.async = true;
-      s.onload = resolve; s.onerror = function () { reject(new Error('sdk')); };
-      document.head.appendChild(s);
-    });
-    return sdkLoading;
+  // The shared client lives in theme.js (cookie session, self-hosted SDK). We
+  // never create our own — that would split the session across two stores.
+  function getClient() {
+    if (window.getSupabaseClient) return window.getSupabaseClient();
+    return Promise.reject(new Error('no-shared-client'));
   }
-  function client() {
-    if (sb) return sb;
-    sb = window.supabase.createClient(CFG.url, CFG.anonKey, {
-      // implicit flow returns tokens in the URL hash — robust for magic links
-      // opened in a different browser/device than the request (no PKCE verifier
-      // needed). detectSessionInUrl auto-consumes + strips the hash on return.
-      auth: { persistSession: true, autoRefreshToken: true,
-              detectSessionInUrl: true, flowType: 'implicit' }
-    });
-    sb.auth.onAuthStateChange(function (evt, session) { onAuth(evt, session); });
-    return sb;
-  }
-
-  // a returning signed-in user has an sb-*-auth-token in localStorage
-  function hasPersistedSession() {
-    try {
-      for (var i = 0; i < localStorage.length; i++) {
-        var k = localStorage.key(i);
-        if (k && /^sb-.*-auth-token$/.test(k)) return true;
-      }
-    } catch (e) {}
-    return false;
-  }
-  // did we just land back from a magic link? (tokens or an auth error in the hash)
-  function isAuthReturn() {
-    var h = location.hash || '';
-    return h.indexOf('access_token=') >= 0 || h.indexOf('error=') >= 0 ||
-           h.indexOf('error_description=') >= 0;
+  function ensureClientThenPull() {
+    getClient().then(function (c) { sb = c; return pull(); })
+      .catch(function () { setPill('offline'); });
   }
 
   // ---- sync ---------------------------------------------------------------
   function pull() {
-    if (!user) return Promise.resolve();
+    if (!user || !sb) return Promise.resolve();
     setPill('syncing');
     return sb.from(TABLE).select('doc').eq('user_id', user.id).maybeSingle()
       .then(function (res) {
@@ -128,105 +88,66 @@
     }
   };
 
-  // ---- auth state ---------------------------------------------------------
-  // supabase-js fires INITIAL_SESSION (null) right after createClient — that must
-  // NOT reset the UI (it would clobber the email form mid-sign-in). Only an
-  // explicit SIGNED_OUT returns to the signed-out view.
-  function onAuth(evt, session) {
-    user = session && session.user ? session.user : null;
-    if (user) { showAccount(user.email || ''); pull(); return; }
-    if (evt === 'SIGNED_OUT') { showSignedOut(); return; }
-    setPill('local');   // INITIAL_SESSION/etc with no user: clear transient pill, leave UI
-  }
+  // ---- ui -----------------------------------------------------------------
   function showAccount(email) {
-    el('wl_signin').style.display = 'none';
-    el('wl_authbox').style.display = 'none';
-    el('wl_account').style.display = 'flex';
-    el('wl_who').textContent = L('hello') + ' ' + email;
+    if (el('wl_signin')) el('wl_signin').style.display = 'none';
+    if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
+    if (el('wl_account')) el('wl_account').style.display = 'flex';
+    if (el('wl_who')) el('wl_who').textContent = L('hello') + ' ' + email;
   }
   function showSignedOut() {
-    el('wl_account').style.display = 'none';
-    el('wl_authbox').style.display = 'none';
-    el('wl_signin').style.display = 'inline-block';
+    if (el('wl_account')) el('wl_account').style.display = 'none';
+    if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
+    if (el('wl_signin')) el('wl_signin').style.display = 'inline-block';
     setPill('local');
   }
 
-  // ---- wiring -------------------------------------------------------------
+  // ---- shared-session reactions ------------------------------------------
+  function onAuthUser(u) {
+    user = u || null;
+    if (user) { showAccount(user.email || ''); ensureClientThenPull(); }
+    else { sb = null; showSignedOut(); }
+  }
+
   function wire() {
-    el('wl_signin').addEventListener('click', function () {
-      setPill('syncing');
-      loadSDK().then(function () {
-        client();
-        el('wl_signin').style.display = 'none';
-        el('wl_authbox').style.display = 'flex';
-        el('wl_email').style.display = '';
-        el('wl_send').style.display = '';
-        el('wl_sent').style.display = 'none';
-        el('wl_email').focus();
-        setPill('local');
-      }).catch(function () { setPill('offline'); toast(L('sdkfail'), true); });
+    var si = el('wl_signin');
+    if (si) si.addEventListener('click', function () {
+      if (window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open('signin');
     });
-
-    el('wl_send').addEventListener('click', function () {
-      var email = el('wl_email').value.trim();
-      if (!email) return;
-      el('wl_send').disabled = true;
-      sb.auth.signInWithOtp({
-        email: email,
-        options: { shouldCreateUser: true, emailRedirectTo: location.origin + location.pathname }
-      }).then(function (res) {
-        el('wl_send').disabled = false;
-        if (res.error) { toast(L('bad'), true); return; }
-        // magic-link sent: collapse the form to a "check your email" message
-        el('wl_email').style.display = 'none';
-        el('wl_send').style.display = 'none';
-        var m = el('wl_sent'); m.textContent = L('sent'); m.style.display = '';
-      });
+    var so = el('wl_signout');
+    if (so) so.addEventListener('click', function () {
+      if (window.MDXAuth && window.MDXAuth.signOut) window.MDXAuth.signOut();
+      else showSignedOut();   // (UI also updates via the mdx-auth event)
     });
-
-    el('wl_signout').addEventListener('click', function () {
-      if (sb) sb.auth.signOut();
-      showSignedOut();
-    });
-
-    document.addEventListener('visibilitychange', function () {
-      if (!document.hidden && user) pull();
-    });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden && user) pull(); });
     document.addEventListener('langchange', relabel);
   }
 
   function relabel() {
-    el('wl_signin').textContent = L('signin');
-    el('wl_send').textContent = L('sendlink');
-    el('wl_signout').textContent = L('signout');
-    el('wl_email').placeholder = L('email');
-    var m = el('wl_sent'); if (m && m.style.display !== 'none') m.textContent = L('sent');
+    if (el('wl_signin')) el('wl_signin').textContent = L('signin');
+    if (el('wl_signout')) el('wl_signout').textContent = L('signout');
     if (user) showAccount(user.email || ''); else setPill('local');
-  }
-
-  function toast(msg, bad) {
-    var t = el('wl_toast'); if (!t) return;
-    t.textContent = msg; t.className = 'wl-toast' + (bad ? ' bad' : '') + ' show';
-    setTimeout(function () { t.className = 'wl-toast'; }, 3000);
   }
 
   function init() {
     var box = el('wl_auth');
-    if (!ENABLED) { if (box) box.style.display = 'none'; return; }
-    box.style.display = 'flex';
-    relabel(); wire(); setPill('local');
-    // a magic link just returned, or a prior session exists -> load the SDK so
-    // detectSessionInUrl consumes the hash / the session restores
-    if (isAuthReturn()) {
-      setPill('finishing');
-      loadSDK().then(function () {
-        client();
-        if (location.hash.indexOf('error') >= 0) toast(L('linkbad'), true);
-      }).catch(function () { setPill('offline'); });
-    } else if (hasPersistedSession()) {
-      loadSDK().then(function () { client().auth.getSession(); })
-        .catch(function () { setPill('offline'); });
+    // Local-only unless BOTH the config is baked AND the shared client exists.
+    if (!ENABLED || !window.MDXAuth || !window.MDXAuth.onChange) {
+      if (box) box.style.display = 'none';
+      return;
     }
+    if (!box) return;            // nothing to wire if the panel isn't on the page
+    box.style.display = 'flex';
+    relabel(); wire(); showSignedOut();
+    // the legacy magic-link box is retired — sign-in goes through the global modal
+    if (el('wl_authbox')) el('wl_authbox').style.display = 'none';
+    if (window.MDXAuth.hasSession && window.MDXAuth.hasSession()) setPill('finishing');
+    window.MDXAuth.onChange(function (u, evt) {
+      // SDK blocked/failed to load (e.g. behind the GFW): settle to offline, not a
+      // forever "Finishing sign-in…" pill.
+      if (!u && evt === 'SDK_FAILED') { setPill('offline'); return; }
+      onAuthUser(u);
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
