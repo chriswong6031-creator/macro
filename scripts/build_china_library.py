@@ -946,10 +946,28 @@ def main(alpha: dict | None = None) -> dict | None:
     # carries (engine.cycles.mtf_alignment), available on every analyzed name's ladder.
     setups = None
     align_map = {t: (p or {}).get("alignment") for t, p in profiles.items()}
+    # US-PARITY ENTRY GATE (faithful port of build_stock_library._entry_ok): the
+    # bottoming-alignment screen is necessary but NOT sufficient. Before the alignment
+    # gate, DROP any name the cycle engine has blocked (downtrend / falling knife) OR
+    # whose entry axis is non-constructive (entry z <= 0). Without this the A-share board
+    # surfaced PRIME-tagged names sitting in a BOTTOM WATCH / bearish-regime ladder with a
+    # negative entry signal — names that merely "aligned" via a 3-day StochRSI pop or a
+    # MACD curl (not a clean cross). The US standout board has always applied this second
+    # leg; the China board skipped it, which is why its picks read mediocre vs the US side.
+    # `cand` stays the full scored universe (the reported `universe` count); `cand_ok` feeds
+    # ranking + the `eligible` tally. The fields are already on every conviction profile.
+    def _entry_ok(p: dict | None) -> bool:
+        p = p or {}
+        if p.get("cycle_blocked"):
+            return False
+        ez = ((p.get("axes") or {}).get("entry") or {}).get("z")
+        return ez is None or ez > 0
+    cand_ok = [(s, r) for (s, r) in cand if _entry_ok(profiles.get(r.get("ticker")))]
+    log.info("china entry-gate: %d of %d scored names pass _entry_ok", len(cand_ok), len(cand))
     if cand:
         # n_buy generous so the standout strip's "show more" can reveal the full
         # ranked shortlist (the card grid shows 12, reveals the rest on demand).
-        setups = rank_setups(cand, as_of=(alpha or {}).get("as_of"), n_buy=110,
+        setups = rank_setups(cand_ok, as_of=(alpha or {}).get("as_of"), n_buy=110,
                              align_map=align_map)
         # Attach the confluence T1->T4 verdict so the persisted narrow board carries it — the
         # page (via compute_china_standouts) renders it as the per-card tier BADGE (US-parity,
@@ -963,7 +981,7 @@ def main(alpha: dict | None = None) -> dict | None:
         # Conviction profile + price/off-high/sparkline so a transient build failure leaves
         # a stale-but-present artifact. eligible = names passing the alignment gate;
         # universe = the scored candidate count.
-        wide = rank_setups(cand, as_of=(alpha or {}).get("as_of"), n_buy=110, n_lag=12,
+        wide = rank_setups(cand_ok, as_of=(alpha or {}).get("as_of"), n_buy=110, n_lag=12,
                            align_map=align_map)
         # COMBINE re-rank: keep rank_setups' aligned-above-near inclusion, but order WITHIN each
         # alignment tier by the owner's weighted cascade blend (setup-score percentile lifted by
@@ -987,7 +1005,7 @@ def main(alpha: dict | None = None) -> dict | None:
                 r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
         wide["buy"] = entry_open_first(wide["buy"])   # entry-open-first, then score (stable)
-        eligible = sum(1 for _s, r in cand
+        eligible = sum(1 for _s, r in cand_ok
                        if (align_map.get(r.get("ticker")) or {}).get("aligned"))
         wide["eligible"] = eligible
         wide["universe"] = len(cand)
