@@ -269,6 +269,7 @@
             <a class="nav-mega-item" href="../cycle.html"><span class="nm-ic">🔄</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
             <a class="nav-mega-item" href="../markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></span></a>
             <a class="nav-mega-item" href="../sector_cycles.html"><span class="nm-ic">🧭</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
+            <a class="nav-mega-item" href="../country_cycles.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
             <a class="nav-mega-item" href="../crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
             <a class="nav-mega-item" href="../transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
           </div>
@@ -324,7 +325,11 @@ function render() {
   const cls = g['class'];
   const badge = e.tier ? tierB(e.tier) + (e.buyable ? ' <span class="pill buy">' + (cls === 'forming' ? 'FORMING' : 'ENTRY-NOW') + '</span>' : '') : '';
   const reg = `<span class="pill ${r.side || 'neutral'}">${esc(r.label || r.state || '—')}</span>`;
-  const kindLabel = DETAIL.kind === 'concept' ? L('同花顺 concept basket', '同花顺概念篮子') : DETAIL.kind === 'basket' ? L('thematic basket', '主题篮子') : L('S&amp;P 500 sub-industry', '标普500子行业');
+  const kindLabel = DETAIL.kind_label_en ? L(DETAIL.kind_label_en, DETAIL.kind_label_zh || DETAIL.kind_label_en)
+    : DETAIL.kind === 'concept' ? L('同花顺 concept basket', '同花顺概念篮子')
+    : DETAIL.kind === 'basket' ? L('thematic basket', '主题篮子')
+    : DETAIL.kind === 'sector' ? L('amalgamated complex', '汇聚综合体')
+    : L('S&amp;P 500 sub-industry', '标普500子行业');
   let h = `<div class="dh"><div><h1>${esc(g.label)}${g.label_zh ? ` <span style="color:var(--muted);font-weight:600;font-size:.66em">${esc(g.label_zh)}</span>` : ''}</h1><div class="sct">${esc(g.sector_zh || g.sector)} · ${kindLabel}</div></div>`
     + `<div class="badges">${badge} ${reg}</div></div>`;
   if (r.action) h += `<div class="action">${esc(r.action)}${e.reason ? ' · <span style="color:var(--muted)">' + esc(e.reason) + '</span>' : ''}</div>`;

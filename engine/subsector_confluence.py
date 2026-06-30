@@ -454,3 +454,117 @@ def compute_china_ths_confluence() -> dict:
     out["benchmark_label"], out["benchmark_label_zh"] = blab, blab_zh
     out["source"] = mem.get("source")
     return out
+
+
+# --------------------------------------------- US index desks (Nasdaq-100 / Russell-2000) ----
+# Same machinery as the S&P sub-industry desk, but over a CURATED index-membership file rather
+# than the Finviz heatmap clone. Each desk partitions its index into Finviz sub-industry
+# "subsectors" (the `subsectors` array, with the double-gated member funnel) PLUS a set of curated
+# "amalgamations" (the `sectors` rollup — higher-level complexes whose internal rotation keeps the
+# index grinding without leadership bleeding to ex-tech). Emits the compute_subsector_confluence
+# shape so the board page renders these tabs through the exact S&P code path. Benchmark = the
+# index's own ETF (QQQ / IWM) so rs_60d measures WITHIN-index relative strength (the rotation lens).
+
+def _members_to_tickers(members: list) -> list[str]:
+    """A membership 'members' list (dicts or bare strings) → a clean ticker list."""
+    out: list[str] = []
+    for m in members or []:
+        t = (m.get("ticker") if isinstance(m, dict) else m)
+        if t and not (isinstance(m, dict) and m.get("removed")):
+            out.append(t)
+    return out
+
+
+def _member_names(members: list) -> dict:
+    return {m["ticker"]: m.get("name_zh") for m in (members or [])
+            if isinstance(m, dict) and m.get("ticker")}
+
+
+def _compute_partition(subsectors: dict, amalgamations: dict, *, benchmark: str,
+                       universe: str, region: str, notes: str) -> dict:
+    """Score a curated {key: {name, name_zh?, sector, sector_zh?, members[]}} partition as the
+    subsector board + an amalgamation rollup. `subsectors` carry the member funnel; `amalgamations`
+    are the equal-weight complex indices (no funnel — the subsector groups already carry members)."""
+    bench = _bench_close(benchmark)
+    member_cache: dict = {}
+
+    subs: list[dict] = []
+    for key, spec in subsectors.items():
+        tickers = _members_to_tickers(spec.get("members"))
+        if len(set(tickers)) < MIN_MEMBERS:
+            continue
+        g = _safe_score(key, _slug(key), spec.get("name") or key, spec.get("sector") or "",
+                        tickers, bench, member_cache, kind="subsector",
+                        label_zh=spec.get("name_zh"), sector_zh=spec.get("sector_zh"),
+                        member_names=_member_names(spec.get("members")))
+        if g is not None:
+            subs.append(g)
+
+    sectors: list[dict] = []
+    for key, spec in (amalgamations or {}).items():
+        tickers = _members_to_tickers(spec.get("members"))
+        if len(set(tickers)) < MIN_MEMBERS:
+            continue
+        g = _safe_score(key, "amalg-" + _slug(key), spec.get("name") or key,
+                        spec.get("name") or key, tickers, bench, member_cache, kind="sector",
+                        with_members=False, label_zh=spec.get("name_zh"))
+        if g is not None:
+            sectors.append(g)
+
+    subs.sort(key=lambda g: (_CLASS_ORDER.get(g["class"], 9), -g["entry"]["weight"],
+                             -(g["regime"]["rs_60d"] or 0)))
+    sectors.sort(key=lambda g: (_CLASS_ORDER.get(g["class"], 9), -g["entry"]["weight"],
+                                -(g["regime"]["rs_60d"] or 0)))
+    n_total = len(subsectors)
+    return {
+        "ok": True, "universe": universe, "weighting": "equal", "benchmark": benchmark,
+        "region": region,
+        "as_of": max((g["as_of"] for g in subs), default=None),
+        "coverage": {"n_subsectors": n_total, "n_gateable": len(subs),
+                     "n_thin": n_total - len(subs), "n_sectors": len(sectors)},
+        "entry_now": [g["key"] for g in subs if g["class"] == "entry_now"],
+        "forming": [g["key"] for g in subs if g["class"] == "forming"],
+        "headwind": [g["key"] for g in subs if g["class"] == "headwind"],
+        "subsectors": subs,
+        "sectors": sectors,
+        "double_gated": funnel(subs),
+        "notes": notes,
+    }
+
+
+def _compute_index_desk(ns: str, benchmark_default: str, universe: str,
+                        index_label: str) -> dict:
+    """Shared loader for the Nasdaq/Russell desks: read data/baskets_<ns>/membership.json
+    ({subsectors, amalgamations, benchmark, benchmark_label}) and score the partition."""
+    p = config.data_dir() / f"baskets_{ns}" / "membership.json"
+    if not p.exists():
+        log.warning("%s_confluence: membership.json missing (%s)", ns, p)
+        return {"ok": False, "reason": f"{ns} membership missing", "subsectors": [], "sectors": [],
+                "double_gated": {"double_buy": [], "headwind_warn": []}}
+    mem = json.loads(p.read_text())
+    bench = mem.get("benchmark") or benchmark_default
+    blab = mem.get("benchmark_label") or index_label
+    out = _compute_partition(
+        mem.get("subsectors") or {}, mem.get("amalgamations") or {},
+        benchmark=bench, universe=universe, region=ns,
+        notes=(f"Equal-weight synthetic member-average index per Finviz sub-industry within the "
+               f"{index_label}, plus curated amalgamation complexes (the rollup). Owner's T1-T4 "
+               f"MACDRSI×StochRSI cascade = the ENTRY gate; the sector state machine = rotation "
+               f"CONTEXT; benchmarked to {blab} so rs_60d reads WITHIN-index leadership. Today's "
+               "membership (descriptive, not out-of-sample); EOD daily; calendar 3D buckets. "
+               "Tracks how leadership rotates among the index's subsectors. Regime base rates are "
+               "S&P-SPDR-calibrated (out-of-domain here) and not shown. DISPLAY-ONLY entry-quality "
+               "/ rotation-timing — one door, confirm before acting; not alpha."))
+    out["benchmark_label"] = blab
+    out["source"] = mem.get("source")
+    return out
+
+
+def compute_nasdaq_confluence() -> dict:
+    """Nasdaq-100 subsector confluence desk (benchmark QQQ)."""
+    return _compute_index_desk("nasdaq", "QQQ", "nasdaq_subsectors", "Nasdaq-100 (QQQ)")
+
+
+def compute_russell_confluence() -> dict:
+    """Russell-2000 subsector confluence desk (benchmark IWM)."""
+    return _compute_index_desk("russell", "IWM", "russell_subsectors", "Russell-2000 (IWM)")

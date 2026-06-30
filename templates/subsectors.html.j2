@@ -82,11 +82,13 @@
     <div class="asof" id="sc-asof"></div>
   </div>
   <div class="sc-sub">{{ t(
-    "Each S&amp;P-500 sub-industry as an equal-weight synthetic basket index, read through the owner's T1-T4 MACD-RSI × StochRSI confluence cascade (the ENTRY gate) and the validated sector state machine (the rotation CONTEXT). <b>ENTRY-NOW</b> = a subsector that just fired, or is about to. The <b>double-gate</b> funnels stocks whose own cascade fires AND whose subsector has a tailwind — and flags great stocks whose subsector is distributing. A risk / rotation-timing map — one door, confirm before acting; not alpha.",
-    "将标普500每个子行业视作等权合成篮子指数，用业主的 T1-T4 MACD-RSI × StochRSI 汇聚级联（入场闸门）与已验证的板块状态机（轮动背景）解读。<b>现可入场</b>=刚触发或即将触发的子行业。<b>双重闸门</b>筛出自身级联触发且所在子行业顺风的个股，并标记所在子行业正在派发的优质股。风险/轮动择时图——仅一道门，行动前请确认；非阿尔法。") }}</div>
+    "Each sub-industry as an equal-weight synthetic basket index, read through the owner's T1-T4 MACD-RSI × StochRSI confluence cascade (the ENTRY gate) and the validated sector state machine (the rotation CONTEXT). <b>ENTRY-NOW</b> = a subsector that just fired, or is about to. The <b>double-gate</b> funnels stocks whose own cascade fires AND whose subsector has a tailwind — and flags great stocks whose subsector is distributing. The <b>Nasdaq-100</b> &amp; <b>Russell-2000</b> tabs run the same engine WITHIN each index (RS vs QQQ / IWM), with curated <b>amalgamation</b> complexes as the rollup — to watch how leadership rotates among an index's subsectors (and whether money is bleeding out to ex-tech). A risk / rotation-timing map — one door, confirm before acting; not alpha.",
+    "将每个子行业视作等权合成篮子指数，用业主的 T1-T4 MACD-RSI × StochRSI 汇聚级联（入场闸门）与已验证的板块状态机（轮动背景）解读。<b>现可入场</b>=刚触发或即将触发的子行业。<b>双重闸门</b>筛出自身级联触发且所在子行业顺风的个股，并标记所在子行业正在派发的优质股。<b>纳斯达克100</b> 与 <b>罗素2000</b> 标签页在各自指数内运行同一引擎（相对强弱基准为 QQQ / IWM），以精选的<b>汇聚综合体</b>作为汇总——观察指数内子行业间的领导轮动（以及资金是否正流出科技）。风险/轮动择时图——仅一道门，行动前请确认；非阿尔法。") }}</div>
 
   <div class="sc-tabs">
     <div class="sc-tab on" data-tab="subsectors">{{ t('S&amp;P 500 Subsectors', '标普500子行业') }} <span class="n" id="tabn-sub"></span></div>
+    <div class="sc-tab" data-tab="nasdaq">{{ t('Nasdaq-100', '纳斯达克100') }} <span class="n" id="tabn-ndx"></span></div>
+    <div class="sc-tab" data-tab="russell">{{ t('Russell-2000', '罗素2000') }} <span class="n" id="tabn-rut"></span></div>
     <div class="sc-tab" data-tab="baskets">{{ t('Thematic Baskets', '主题篮子') }} <span class="n" id="tabn-bas"></span></div>
   </div>
 
