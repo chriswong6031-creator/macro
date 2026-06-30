@@ -33,7 +33,7 @@ from engine import stock_view  # noqa: E402
 from engine import dispersion  # noqa: E402  — cross-sectional selection-regime gross dial
 from engine import entry_signal  # noqa: E402  — WHEN/at-what-price entry-timing gauge (market-agnostic)
 from engine import risk_sizing  # noqa: E402  — vol-managed inverse-vol sizing (validated Sharpe lever)
-from engine.cycles import analyze  # noqa: E402
+from engine.cycles import _tf_state, analyze  # noqa: E402 — _tf_state: 2W StochRSI washout flag
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
 from engine.setups import CN_ALPHA_WEIGHT, dedupe_dual_class, entry_open_first, setup_score  # noqa: E402
 from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's alignment gate)
@@ -745,6 +745,16 @@ def main(alpha: dict | None = None) -> dict | None:
             rec["alpha"] = alpha_pt[ticker]
             sc = _setup_score(rec)
             if sc:
+                # 2W StochRSI WASHOUT-RECLAIM (owner request): a bullish reclaim of the 20 line
+                # from oversold on the 2-week bar (2W-FRI, the btc_mtf/commodity_mtf convention).
+                # Such names have likely washed out on the higher 2W/1M timeframe, so the board
+                # gives them a big rank lift (signal_gate.blend_sorted bonus_of) WHILE the cascade
+                # tier still orders within. Best-effort; thin history -> no flag.
+                try:
+                    _tf2w = _tf_state(close.resample("2W-FRI").last().dropna())
+                    sc[1]["washout_2w"] = bool(_tf2w.get("stoch_cross_up"))
+                except Exception:  # noqa: BLE001 — additive, never fatal
+                    pass
                 cand.append(sc)
         # ---- unified Conviction Profile (engine/stock_score, CN market) ----------
         # The single block both the china.html standout card AND china_lookup render,
@@ -959,11 +969,13 @@ def main(alpha: dict | None = None) -> dict | None:
     def _atier(t: str) -> str | None:
         a = align_map.get(t) or {}
         return "aligned" if a.get("aligned") else ("near" if a.get("near") else None)
+    WASHOUT_BONUS = 0.5   # 2W StochRSI washout-reclaim lift (~one tier; cascade tier still orders within)
     eligible_rows = signal_gate.blend_sorted(
         dedupe_dual_class([r for _s, r in cand
                            if (sig_verdict.get(r.get("ticker")) or {}).get("eligible")]),
         base_of=lambda r: r.get("setup") or 0.0,
-        verdict_of=lambda r: sig_verdict.get(r.get("ticker")))
+        verdict_of=lambda r: sig_verdict.get(r.get("ticker")),
+        bonus_of=lambda r: WASHOUT_BONUS if r.get("washout_2w") else 0.0)
     log.info("china confluence-gate: %d of %d scored names eligible (T1-T4)",
              len(eligible_rows), len(cand))
     if cand:
