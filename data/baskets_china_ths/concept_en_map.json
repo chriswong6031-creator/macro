@@ -1,0 +1,1472 @@
+{
+"中国AI 50": {
+"en": "China AI 50",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"同花顺出海50": {
+"en": "THS Global 50",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"超级品牌": {
+"en": "Super Brands",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"中芯国际概念": {
+"en": "SMIC Supply Chain",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"沪股通": {
+"en": "Shanghai Connect",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"同花顺漂亮100": {
+"en": "THS Beautiful 100",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"英伟达概念": {
+"en": "Nvidia Supply Chain",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"2025年报预增": {
+"en": "2025 Earnings Growth",
+"category_en": "Thematic / Other",
+"category_zh": "主题/其他"
+},
+"元宇宙": {
+"en": "Metaverse",
+"category_en": "Frontier Tech",
+"category_zh": "前沿科技"
+},
+"苹果概念": {
+"en": "Apple Supply Chain",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"MCU芯片": {
+"en": "MCU Chipsets",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"算力租赁": {
+"en": "Compute Leasing",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"金属铜": {
+"en": "Copper",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"金属锌": {
+"en": "Zinc",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"传感器": {
+"en": "Sensors",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"参股保险": {
+"en": "Insurance Holdings",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"富士康概念": {
+"en": "Foxconn Supply Chain",
+"category_en": "Advanced Manufacturing",
+"category_zh": "高端制造"
+},
+"注册制次新股": {
+"en": "Registration Reform IPOs",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"特斯拉概念": {
+"en": "Tesla Supply Chain",
+"category_en": "Autos & Mobility",
+"category_zh": "汽车与出行"
+},
+"阿里巴巴概念": {
+"en": "Alibaba Supply Chain",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"AI PC": {
+"en": "AI PCs",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"光纤概念": {
+"en": "Optical Fiber",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"金属铅": {
+"en": "Lead",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"央企国企改革": {
+"en": "SOE Reform",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"抖音概念(字节概念)": {
+"en": "ByteDance Ecosystem",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"抽水蓄能": {
+"en": "Pumped Hydro Storage",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"智能座舱": {
+"en": "Smart Cockpit",
+"category_en": "Autos & Mobility",
+"category_zh": "汽车与出行"
+},
+"金属镍": {
+"en": "Nickel",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"6G概念": {
+"en": "6G",
+"category_en": "Frontier Tech",
+"category_zh": "前沿科技"
+},
+"AI手机": {
+"en": "AI Phones",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"AI眼镜": {
+"en": "AI Glasses",
+"category_en": "Frontier Tech",
+"category_zh": "前沿科技"
+},
+"东数西算(算力)": {
+"en": "Data Center Compute",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"国产操作系统": {
+"en": "Domestic OS",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"智能医疗": {
+"en": "Smart Healthcare",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"物联网": {
+"en": "IoT",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"5G": {
+"en": "5G",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"AI智能体": {
+"en": "AI Agents",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"BC电池": {
+"en": "Back Contact Cells",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"OLED": {
+"en": "OLED Display",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"中字头股票": {
+"en": "SOE Stocks",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"国家大基金持股": {
+"en": "National Fund Holdings",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"期货概念": {
+"en": "Futures Concept",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"汽车热管理": {
+"en": "Auto Thermal Management",
+"category_en": "Autos & Mobility",
+"category_zh": "汽车与出行"
+},
+"腾讯概念": {
+"en": "Tencent Ecosystem",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"工业互联网": {
+"en": "Industrial IoT",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"毫米波雷达": {
+"en": "Millimeter Wave Radar",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"俄乌冲突概念": {
+"en": "Russia-Ukraine Conflict",
+"category_en": "Defense & Aerospace",
+"category_zh": "国防军工"
+},
+"小金属概念": {
+"en": "Minor Metals",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"智能音箱": {
+"en": "Smart Speakers",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"碳纤维": {
+"en": "Carbon Fiber",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"移动支付": {
+"en": "Mobile Payment",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"AI语料": {
+"en": "AI Training Data",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"DeepSeek概念": {
+"en": "DeepSeek AI",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"PEEK材料": {
+"en": "PEEK Materials",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"军民融合": {
+"en": "Civil-Military Integration",
+"category_en": "Defense & Aerospace",
+"category_zh": "国防军工"
+},
+"华为手机": {
+"en": "Huawei Phones",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"小米汽车": {
+"en": "Xiaomi Auto",
+"category_en": "Autos & Mobility",
+"category_zh": "汽车与出行"
+},
+"智慧城市": {
+"en": "Smart City",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"氟化工概念": {
+"en": "Fluorine Chemicals",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"汽车芯片": {
+"en": "Auto Chips",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"网络安全": {
+"en": "Cybersecurity",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"虚拟数字人": {
+"en": "Virtual Digital Avatars",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"NFT概念": {
+"en": "NFT & Blockchain",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"参股券商": {
+"en": "Brokerage Stakes",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"数字孪生": {
+"en": "Digital Twins",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"数据安全": {
+"en": "Data Security",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"眼科医疗": {
+"en": "Ophthalmic Medicine",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"福建自贸区": {
+"en": "Fujian FTZ",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"芯片概念": {
+"en": "Semiconductors",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"钠离子电池": {
+"en": "Sodium-Ion Batteries",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"鸿蒙概念": {
+"en": "HarmonyOS Ecosystem",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"AI应用": {
+"en": "AI Applications",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"F5G概念": {
+"en": "F5G Networks",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"一带一路": {
+"en": "Belt & Road Initiative",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"生物疫苗": {
+"en": "Biotech Vaccines",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"网络游戏": {
+"en": "Online Gaming",
+"category_en": "Media & Culture",
+"category_zh": "传媒文化"
+},
+"超导概念": {
+"en": "Superconductors",
+"category_en": "Frontier Tech",
+"category_zh": "前沿科技"
+},
+"长三角一体化": {
+"en": "Yangtze River Delta Integration",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"高端装备": {
+"en": "High-End Equipment",
+"category_en": "Advanced Manufacturing",
+"category_zh": "高端制造"
+},
+"2026一季报预增": {
+"en": "Q1 2026 Earnings Growth",
+"category_en": "Thematic / Other",
+"category_zh": "主题/其他"
+},
+"AI视频": {
+"en": "AI Video",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"乡村振兴": {
+"en": "Rural Revitalization",
+"category_en": "Agriculture",
+"category_zh": "农业"
+},
+"云游戏": {
+"en": "Cloud Gaming",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"光刻胶": {
+"en": "Photoresist",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"减速器": {
+"en": "Reducers & Gearboxes",
+"category_en": "Robotics & Automation",
+"category_zh": "机器人与自动化"
+},
+"国产航母": {
+"en": "Domestic Aircraft Carriers",
+"category_en": "Defense & Aerospace",
+"category_zh": "国防军工"
+},
+"国企改革": {
+"en": "SOE Reform",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"无人机": {
+"en": "Drones",
+"category_en": "Defense & Aerospace",
+"category_zh": "国防军工"
+},
+"海工装备": {
+"en": "Offshore Equipment",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"独角兽概念": {
+"en": "Unicorn Companies",
+"category_en": "Thematic / Other",
+"category_zh": "主题/其他"
+},
+"科创次新股": {
+"en": "STAR Market New Listings",
+"category_en": "Thematic / Other",
+"category_zh": "主题/其他"
+},
+"钒电池": {
+"en": "Vanadium Batteries",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"钙钛矿电池": {
+"en": "Perovskite Batteries",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"WiFi 6": {
+"en": "WiFi 6",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"人脸识别": {
+"en": "Facial Recognition",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"手机游戏": {
+"en": "Mobile Gaming",
+"category_en": "Media & Culture",
+"category_zh": "传媒文化"
+},
+"新型工业化": {
+"en": "New Industrialization",
+"category_en": "Advanced Manufacturing",
+"category_zh": "高端制造"
+},
+"星闪概念": {
+"en": "Star Flash Protocol",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"智慧政务": {
+"en": "Smart Government",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"柔性屏(折叠屏)": {
+"en": "Flexible & Foldable Displays",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"煤化工概念": {
+"en": "Coal Chemicals",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"两轮车": {
+"en": "Two-Wheelers",
+"category_en": "Autos & Mobility",
+"category_zh": "汽车与出行"
+},
+"同花顺新质50": {
+"en": "Tonghuashun New Quality 50",
+"category_en": "Thematic / Other",
+"category_zh": "主题/其他"
+},
+"数据确权": {
+"en": "Data Rights",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"股权转让(并购重组)": {
+"en": "M&A & Restructuring",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"西部大开发": {
+"en": "Western Development",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"证金持股": {
+"en": "Central Huijin Holdings",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"语音技术": {
+"en": "Voice Technology",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"飞行汽车(eVTOL)": {
+"en": "Flying Vehicles (eVTOL)",
+"category_en": "Autos & Mobility",
+"category_zh": "汽车与出行"
+},
+"3D打印": {
+"en": "3D Printing",
+"category_en": "Frontier Tech",
+"category_zh": "前沿科技"
+},
+"IP经济(谷子经济)": {
+"en": "IP Economy",
+"category_en": "Media & Culture",
+"category_zh": "传媒文化"
+},
+"TOPCON电池": {
+"en": "TOPCON Solar Cells",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"上海国企改革": {
+"en": "Shanghai SOE Reform",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"云办公": {
+"en": "Cloud Office",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"云计算": {
+"en": "Cloud Computing",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"养老概念": {
+"en": "Eldercare & Pensions",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"创投": {
+"en": "Venture Capital",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"区块链": {
+"en": "Blockchain",
+"category_en": "Frontier Tech",
+"category_zh": "前沿科技"
+},
+"华为海思概念股": {
+"en": "Huawei HiSilicon Supply Chain",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"华为鲲鹏": {
+"en": "Huawei Kunpeng Processors",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"在线教育": {
+"en": "Online Education",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"天然气": {
+"en": "Natural Gas",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"智能家居": {
+"en": "Smart Home",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"柔性直流输电": {
+"en": "Flexible HVDC Transmission",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"深股通": {
+"en": "Shenzhen-Hong Kong Connect",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"自由贸易港": {
+"en": "Free Trade Zones",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"财税数字化": {
+"en": "Digital Finance & Taxation",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"军工信息化": {
+"en": "Defense Digitalization",
+"category_en": "Defense & Aerospace",
+"category_zh": "国防军工"
+},
+"华为欧拉": {
+"en": "Huawei Euler OS",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"宁德时代概念": {
+"en": "CATL Battery Supply Chain",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"数字乡村": {
+"en": "Digital Rural Development",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"文化传媒概念": {
+"en": "Media & Culture",
+"category_en": "Media & Culture",
+"category_zh": "传媒文化"
+},
+"无线耳机": {
+"en": "Wireless Audio",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"水利": {
+"en": "Water Infrastructure",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"特钢概念": {
+"en": "Specialty Steel",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"猪肉": {
+"en": "Pork Industry",
+"category_en": "Agriculture",
+"category_zh": "农业"
+},
+"短剧游戏": {
+"en": "Short-Form Drama Games",
+"category_en": "Media & Culture",
+"category_zh": "传媒文化"
+},
+"石墨电极": {
+"en": "Graphite Electrodes",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"碳交易": {
+"en": "Carbon Trading",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"网红经济": {
+"en": "Influencer Economy",
+"category_en": "Media & Culture",
+"category_zh": "传媒文化"
+},
+"融资融券": {
+"en": "Margin Trading",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"超级电容": {
+"en": "Supercapacitors",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"MiniLED": {
+"en": "Mini-LED Displays",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"免税店": {
+"en": "Duty-Free Retail",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"可降解塑料": {
+"en": "Biodegradable Plastics",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"多模态AI": {
+"en": "Multimodal AI",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"小米概念": {
+"en": "Xiaomi Supply Chain",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"数字经济": {
+"en": "Digital Economy",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"数据要素": {
+"en": "Data as Factor of Production",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"智能穿戴": {
+"en": "Wearable Intelligence",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"有机硅概念": {
+"en": "Organosilicone Materials",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"核污染防治": {
+"en": "Nuclear Waste Management",
+"category_en": "Defense & Aerospace",
+"category_zh": "国防军工"
+},
+"猴痘概念": {
+"en": "Monkeypox Concept",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"环氧丙烷": {
+"en": "Propylene Oxide",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"航运概念": {
+"en": "Shipping Industry",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"金属钴": {
+"en": "Cobalt Metal",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"雄安新区": {
+"en": "Xiong'an New Area",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"雅下水电概念": {
+"en": "Yalong River Hydropower",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"页岩气": {
+"en": "Shale Gas",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"高压快充": {
+"en": "High-Voltage Fast Charging",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"光热发电": {
+"en": "Solar Thermal Power",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"共同富裕示范区": {
+"en": "Common Prosperity Demonstration Zone",
+"category_en": "Thematic / Other",
+"category_zh": "主题/其他"
+},
+"冷链物流": {
+"en": "Cold Chain Logistics",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"化肥": {
+"en": "Chemical Fertilizers",
+"category_en": "Agriculture",
+"category_zh": "农业"
+},
+"华为数字能源": {
+"en": "Huawei Digital Energy",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"同花顺果指数": {
+"en": "Tonghuashun Fruit Index",
+"category_en": "Thematic / Other",
+"category_zh": "主题/其他"
+},
+"土地流转": {
+"en": "Land Transfer Rights",
+"category_en": "Agriculture",
+"category_zh": "农业"
+},
+"基因测序": {
+"en": "Gene Sequencing",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"无线充电": {
+"en": "Wireless Charging",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"时空大数据": {
+"en": "Spatiotemporal Big Data",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"横琴新区": {
+"en": "Hengqin New Area",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"比亚迪概念": {
+"en": "BYD Concept",
+"category_en": "Autos & Mobility",
+"category_zh": "汽车与出行"
+},
+"深圳国企改革": {
+"en": "Shenzhen SOE Reform",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"空间计算": {
+"en": "Spatial Computing",
+"category_en": "Frontier Tech",
+"category_zh": "前沿科技"
+},
+"肝炎概念": {
+"en": "Hepatitis Concept",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"重组蛋白": {
+"en": "Recombinant Proteins",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"阿尔茨海默概念": {
+"en": "Alzheimer's Concept",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"ERP概念": {
+"en": "ERP Systems",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"PET铜箔": {
+"en": "PET Copper Foil",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"上海自贸区": {
+"en": "Shanghai Free Trade Zone",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"信托概念": {
+"en": "Trust Sector",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"冰雪产业": {
+"en": "Ice & Snow Industry",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"化债概念(AMC概念)": {
+"en": "Debt-to-Equity Swap",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"参股银行": {
+"en": "Bank Share Holdings",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"太赫兹": {
+"en": "Terahertz Technology",
+"category_en": "Frontier Tech",
+"category_zh": "前沿科技"
+},
+"安防": {
+"en": "Security & Surveillance",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"宠物经济": {
+"en": "Pet Economy",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"换电概念": {
+"en": "Battery Swap",
+"category_en": "Autos & Mobility",
+"category_zh": "汽车与出行"
+},
+"新疆振兴": {
+"en": "Xinjiang Development",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"智能物流": {
+"en": "Intelligent Logistics",
+"category_en": "Robotics & Automation",
+"category_zh": "机器人与自动化"
+},
+"智能电网": {
+"en": "Smart Grid",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"电子竞技": {
+"en": "E-Sports",
+"category_en": "Media & Culture",
+"category_zh": "传媒文化"
+},
+"电子身份证": {
+"en": "Digital Identity",
+"category_en": "Frontier Tech",
+"category_zh": "前沿科技"
+},
+"辅助生殖": {
+"en": "Assisted Reproduction",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"EDR概念": {
+"en": "Endpoint Detection & Response",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"互联网保险": {
+"en": "InsurTech",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"养鸡": {
+"en": "Poultry Farming",
+"category_en": "Agriculture",
+"category_zh": "农业"
+},
+"华为盘古": {
+"en": "Huawei Pangu",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"同花顺中特估100": {
+"en": "THS China Special Valuation 100",
+"category_en": "Thematic / Other",
+"category_zh": "主题/其他"
+},
+"幽门螺杆菌概念": {
+"en": "H. Pylori Treatment",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"智谱AI": {
+"en": "Zhipu AI",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"毛发医疗": {
+"en": "Hair Loss Treatment",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"民营医院": {
+"en": "Private Hospitals",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"海南自贸区": {
+"en": "Hainan Free Trade Zone",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"磷化工": {
+"en": "Phosphate Chemicals",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"粤港澳大湾区": {
+"en": "Guangdong-Hong Kong-Macau GBA",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"统一大市场": {
+"en": "Unified Market",
+"category_en": "Thematic / Other",
+"category_zh": "主题/其他"
+},
+"ETC": {
+"en": "Electronic Toll Collection",
+"category_en": "Autos & Mobility",
+"category_zh": "汽车与出行"
+},
+"三胎概念": {
+"en": "Three-Child Policy",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"乳业": {
+"en": "Dairy Industry",
+"category_en": "Agriculture",
+"category_zh": "农业"
+},
+"农业种植": {
+"en": "Crop Farming",
+"category_en": "Agriculture",
+"category_zh": "农业"
+},
+"动力电池回收": {
+"en": "Battery Recycling",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"医药电商": {
+"en": "Pharma E-Commerce",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"华为昇腾": {
+"en": "Huawei Ascend",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"啤酒概念": {
+"en": "Beer & Beverages",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"国资云": {
+"en": "State-Owned Cloud",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"培育钻石": {
+"en": "Lab-Grown Diamonds",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"建筑节能": {
+"en": "Building Energy Efficiency",
+"category_en": "Advanced Manufacturing",
+"category_zh": "高端制造"
+},
+"数字水印": {
+"en": "Digital Watermarking",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"新股与次新股": {
+"en": "IPO & IPO Secondaries",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"民爆概念": {
+"en": "Civil Explosives",
+"category_en": "Advanced Manufacturing",
+"category_zh": "高端制造"
+},
+"牙科医疗": {
+"en": "Dental Healthcare",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"硅能源": {
+"en": "Silicon Energy",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"碳中和": {
+"en": "Carbon Neutrality",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"禽流感": {
+"en": "Avian Flu",
+"category_en": "Agriculture",
+"category_zh": "农业"
+},
+"网约车": {
+"en": "Ride-Sharing",
+"category_en": "Autos & Mobility",
+"category_zh": "汽车与出行"
+},
+"航空发动机": {
+"en": "Aero Engines",
+"category_en": "Defense & Aerospace",
+"category_zh": "国防军工"
+},
+"草甘膦": {
+"en": "Glyphosate Herbicides",
+"category_en": "Agriculture",
+"category_zh": "农业"
+},
+"黑龙江自贸区": {
+"en": "Heilongjiang Free Trade Zone",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"京津冀一体化": {
+"en": "Beijing-Tianjin-Hebei Integration",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"代糖概念": {
+"en": "Sugar Substitutes",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"农机": {
+"en": "Agricultural Machinery",
+"category_en": "Agriculture",
+"category_zh": "农业"
+},
+"可燃冰": {
+"en": "Methane Hydrate",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"地下管网": {
+"en": "Underground Utility Networks",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"广东自贸区": {
+"en": "Guangdong Free Trade Zone",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"快手概念": {
+"en": "Kuaishou",
+"category_en": "Media & Culture",
+"category_zh": "传媒文化"
+},
+"房屋检测": {
+"en": "Building Inspection Services",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"新型烟草(电子烟)": {
+"en": "Novel Tobacco & E-Cigarettes",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"汽车拆解概念": {
+"en": "Vehicle Recycling",
+"category_en": "Autos & Mobility",
+"category_zh": "汽车与出行"
+},
+"燃料电池": {
+"en": "Fuel Cells",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"物业管理": {
+"en": "Property Management",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"玉米": {
+"en": "Corn",
+"category_en": "Agriculture",
+"category_zh": "农业"
+},
+"百度概念": {
+"en": "Baidu",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"盐湖提锂": {
+"en": "Lithium Extraction",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"绿色电力": {
+"en": "Green Power",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"蚂蚁集团概念": {
+"en": "Ant Group",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"超超临界发电": {
+"en": "Ultra-Supercritical Power",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"青蒿素": {
+"en": "Artemisinin",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"中韩自贸区": {
+"en": "China-Korea Free Trade Zone",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"华为汽车": {
+"en": "Huawei Automotive",
+"category_en": "Autos & Mobility",
+"category_zh": "汽车与出行"
+},
+"成飞概念": {
+"en": "Chengdu Aircraft",
+"category_en": "Defense & Aerospace",
+"category_zh": "国防军工"
+},
+"拼多多概念": {
+"en": "Pinduoduo",
+"category_en": "Software & Internet",
+"category_zh": "软件与互联网"
+},
+"智慧灯杆": {
+"en": "Smart Lighting Poles",
+"category_en": "Advanced Manufacturing",
+"category_zh": "高端制造"
+},
+"机器视觉": {
+"en": "Machine Vision",
+"category_en": "Robotics & Automation",
+"category_zh": "机器人与自动化"
+},
+"水泥概念": {
+"en": "Cement",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"污水处理": {
+"en": "Wastewater Treatment",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"消毒剂": {
+"en": "Disinfectants",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"电子纸": {
+"en": "E-Paper",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"空气能热泵": {
+"en": "Air-Source Heat Pumps",
+"category_en": "Energy Transition",
+"category_zh": "新能源"
+},
+"转基因": {
+"en": "Genetically Modified Crops",
+"category_en": "Agriculture",
+"category_zh": "农业"
+},
+"丙烯酸": {
+"en": "Acrylic Acid",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"中船系": {
+"en": "China State Shipbuilding",
+"category_en": "Defense & Aerospace",
+"category_zh": "国防军工"
+},
+"动物疫苗": {
+"en": "Animal Vaccines",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"垃圾分类": {
+"en": "Waste Sorting",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"天津自贸区": {
+"en": "Tianjin Free Trade Zone",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"家庭医生": {
+"en": "Family Doctor Services",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"染料": {
+"en": "Dye & Pigments",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"特色小镇": {
+"en": "Characteristic Towns",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"电力物联网": {
+"en": "Power IoT",
+"category_en": "Technology & AI",
+"category_zh": "科技与AI"
+},
+"细胞免疫治疗": {
+"en": "Cell Immunotherapy",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"维生素": {
+"en": "Vitamins & Supplements",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"职业教育": {
+"en": "Vocational Education",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"金属回收": {
+"en": "Metal Recycling",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"钛白粉概念": {
+"en": "Titanium Dioxide",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"铜缆高速连接": {
+"en": "Copper Cable Connectivity",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"露营经济": {
+"en": "Camping Economy",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"高股息精选": {
+"en": "High Dividend Select",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"POE胶膜": {
+"en": "POE Film",
+"category_en": "Semiconductors",
+"category_zh": "半导体"
+},
+"中俄贸易概念": {
+"en": "China-Russia Trade",
+"category_en": "Thematic / Other",
+"category_zh": "主题/其他"
+},
+"举牌": {
+"en": "Takeover Plays",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"人造肉": {
+"en": "Cultured Meat",
+"category_en": "Agriculture",
+"category_zh": "农业"
+},
+"仿制药一致性评价": {
+"en": "Generic Drug Consistency",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"共享单车": {
+"en": "Bike Sharing",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"农村电商": {
+"en": "Rural E-commerce",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"净水概念": {
+"en": "Water Purification",
+"category_en": "Materials & Resources",
+"category_zh": "资源与材料"
+},
+"托育服务": {
+"en": "Childcare Services",
+"category_en": "Consumer",
+"category_zh": "消费"
+},
+"摘帽": {
+"en": "Delisting Recovery",
+"category_en": "Financials",
+"category_zh": "金融"
+},
+"海峡两岸": {
+"en": "Cross-Strait Trade",
+"category_en": "Thematic / Other",
+"category_zh": "主题/其他"
+},
+"生态农业": {
+"en": "Ecological Agriculture",
+"category_en": "Agriculture",
+"category_zh": "农业"
+},
+"租售同权": {
+"en": "Rental Parity Rights",
+"category_en": "Real Estate & Infrastructure",
+"category_zh": "地产与基建"
+},
+"粮食概念": {
+"en": "Grain & Cereals",
+"category_en": "Agriculture",
+"category_zh": "农业"
+},
+"芬太尼": {
+"en": "Fentanyl",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"血氧仪": {
+"en": "Pulse Oximetry",
+"category_en": "Healthcare & Biotech",
+"category_zh": "医药与生物科技"
+},
+"长安汽车概念": {
+"en": "Changan Auto Supply",
+"category_en": "Autos & Mobility",
+"category_zh": "汽车与出行"
+}
+}

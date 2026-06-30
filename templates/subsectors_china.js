@@ -43,9 +43,11 @@
     return h + '</div>';
   }
 
+  var DB_CAP = 60;
   function funnelSection(p) {
     var dg = p.double_gated || {};
-    var db = dg.double_buy || [], hw = dg.headwind_warn || [];
+    var dbAll = dg.double_buy || [], hw = dg.headwind_warn || [];
+    var db = dbAll.slice(0, DB_CAP);
     var maxs = Math.max.apply(null, [0.01].concat(db.map(function (r) { return r.combined_score || 0; })));
     var rows = db.map(function (r) {
       var w = Math.round(60 * (r.combined_score || 0) / maxs);
@@ -62,10 +64,11 @@
         + '<td><a href="' + detailHrefKey(r.subsector_key) + '">' + nameCell(r.subsector, r.subsector_zh) + '</a></td>'
         + '<td><span class="pill avoid">' + esc(r.subsector_state) + '</span></td></tr>';
     }).join('');
-    var h = '<div class="sec"><h2>🎯 ' + L('Double-confluence buys', '双重汇聚买入') + ' <span style="color:var(--muted);font-weight:500">' + db.length + '</span></h2>'
+    var h = '<div class="sec"><h2>🎯 ' + L('Double-confluence buys', '双重汇聚买入') + ' <span style="color:var(--muted);font-weight:500">' + dbAll.length + '</span></h2>'
       + '<div class="desc">' + L('A-shares whose OWN T1-T4 cascade is buyable AND whose concept has a tailwind. Ranked by combined conviction = stock weight × concept buyability factor (T1×T1 = 1.0).',
         '自身 T1-T4 级联可买且所在概念顺风的A股。按综合把握度排序 = 个股权重 × 概念可买系数（T1×T1 = 1.0）。') + '</div>';
     h += db.length ? '<table class="tbl"><thead><tr><th>' + L('Stock', '个股') + '</th><th>' + L('Stock tier', '个股层级') + '</th><th>' + L('Concept', '概念') + '</th><th>' + L('Concept', '概念') + '</th><th>' + L('Conviction', '综合把握') + '</th><th>' + L('vs concept 20d', '相对概念20日') + '</th></tr></thead><tbody>' + rows + '</tbody></table>' : '<div class="empty">' + L('No double-confluence buys right now.', '当前无双重汇聚买入。') + '</div>';
+    if (dbAll.length > DB_CAP) h += '<div style="color:var(--muted);font-size:11px;padding:6px 2px">' + L('+ ' + (dbAll.length - DB_CAP) + ' more, showing top ' + DB_CAP + ' by conviction', '另有 ' + (dbAll.length - DB_CAP) + ' 个，按把握度显示前 ' + DB_CAP) + '</div>';
     if (warn) h += '<h2 style="margin-top:20px">⚠️ ' + L('Headwind warnings', '逆风警示') + ' <span style="color:var(--muted);font-weight:500">' + hw.length + '</span></h2>'
       + '<div class="desc">' + L('A strong-looking A-share (its own cascade fires) but its concept is TOPPING / SELLING — the "don\'t chase the leadership being distributed" flag. Not a buy.',
         '个股看似强势（自身级联触发），但所在概念正见顶/派发——“别去追正在派发的领涨股”信号。非买入。') + '</div>'
@@ -73,19 +76,40 @@
     return h + '</div>';
   }
 
+  var CLS_ORDER = { entry_now: 0, forming: 1, tailwind: 2, neutral: 3, late: 4, headwind: 5 };
+  function conceptRow(g) {
+    var e = g.entry || {}, r = g.regime || {};
+    return '<tr><td><a href="' + (g.chart_key ? detailHref(g) : '#') + '">' + nameCell(g.label, g.label_zh) + '</a></td>'
+      + '<td>' + tierBadge(e.tier) + '</td>'
+      + '<td>' + regimePill(r) + '</td>'
+      + '<td style="color:var(--muted);font-size:11px">' + (freshTxt(e) || '') + '</td>'
+      + '<td>' + signed(r.rs_60d) + '</td>'
+      + '<td class="num">' + (g.n_priced || g.n_members) + '</td></tr>';
+  }
   function allSection(p) {
-    var rows = (p.baskets || []).map(function (g) {
-      var e = g.entry || {}, r = g.regime || {};
-      return '<tr><td><a href="' + (g.chart_key ? detailHref(g) : '#') + '">' + nameCell(g.label, g.label_zh) + '</a></td>'
-        + '<td style="color:var(--muted)">' + nameCell(g.sector, g.sector_zh) + '</td>'
-        + '<td>' + tierBadge(e.tier) + '</td>'
-        + '<td>' + regimePill(r) + '</td>'
-        + '<td style="color:var(--muted);font-size:11px">' + (freshTxt(e) || '') + '</td>'
-        + '<td>' + signed(r.rs_60d) + '</td>'
-        + '<td class="num">' + (g.n_priced || g.n_members) + '</td></tr>';
-    }).join('');
-    return '<div class="sec"><h2>📋 ' + L('All gateable concepts', '全部可评概念') + ' <span style="color:var(--muted);font-weight:500">' + (p.baskets || []).length + '</span></h2>'
-      + '<table class="tbl"><thead><tr><th>' + L('Concept', '概念') + '</th><th>' + L('Category', '类别') + '</th><th>' + L('Entry', '入场') + '</th><th>' + L('Regime', '状态') + '</th><th>' + L('Freshness', '新鲜度') + '</th><th>RS60</th><th>' + L('N', '数') + '</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    var bs = (p.baskets || []);
+    var groups = {};
+    bs.forEach(function (g) { var c = g.sector || 'Other'; (groups[c] = groups[c] || []).push(g); });
+    var cats = Object.keys(groups);
+    // categories with the most entry-now concepts float to the top
+    cats.sort(function (a, b) {
+      var ea = groups[a].filter(function (g) { return g['class'] === 'entry_now'; }).length;
+      var eb = groups[b].filter(function (g) { return g['class'] === 'entry_now'; }).length;
+      return eb - ea || groups[b].length - groups[a].length || a.localeCompare(b);
+    });
+    var body = '';
+    cats.forEach(function (c) {
+      var gs = groups[c].slice().sort(function (x, y) {
+        return (CLS_ORDER[x['class']] || 9) - (CLS_ORDER[y['class']] || 9) || (((y.entry || {}).weight) || 0) - (((x.entry || {}).weight) || 0);
+      });
+      var en = gs.filter(function (g) { return g['class'] === 'entry_now'; }).length;
+      var zh = (gs[0] || {}).sector_zh || c;
+      body += '<tr><td colspan="6" style="font-weight:700;background:var(--panel);padding-top:13px;border-bottom:1px solid var(--line)">' + nameCell(c, zh)
+        + ' <span style="color:var(--muted);font-weight:400;font-size:11px">· ' + gs.length + (en ? ' · ' + en + ' ' + L('entry-now', '现可入场') : '') + '</span></td></tr>';
+      body += gs.map(conceptRow).join('');
+    });
+    return '<div class="sec"><h2>📋 ' + L('All gateable concepts · by category', '全部可评概念 · 按类别') + ' <span style="color:var(--muted);font-weight:500">' + bs.length + '</span></h2>'
+      + '<table class="tbl"><thead><tr><th>' + L('Concept', '概念') + '</th><th>' + L('Entry', '入场') + '</th><th>' + L('Regime', '状态') + '</th><th>' + L('Freshness', '新鲜度') + '</th><th>RS60</th><th>' + L('N', '数') + '</th></tr></thead><tbody>' + body + '</tbody></table></div>';
   }
 
   function render() {

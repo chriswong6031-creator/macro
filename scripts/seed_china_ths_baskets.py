@@ -258,6 +258,8 @@ def _pit_members(theme: str, snaps: list[tuple[str, dict]], universe: set[str],
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--refresh", action="store_true", help="re-fetch a today snapshot before building")
+    ap.add_argument("--curated-only", action="store_true",
+                    help="build ONLY the 50 hand-curated baskets (skip auto-adding the rest of the THS taxonomy)")
     args = ap.parse_args()
 
     members_p = config.data_dir() / "china_search" / "members.parquet"
@@ -267,6 +269,11 @@ def main() -> int:
         return 1
     meta = pd.read_parquet(members_p) if members_p.exists() else pd.DataFrame()
     universe = set(pd.read_parquet(closes_p, columns=None).columns)
+    # widen to the deep per-name OHLC store the confluence ENGINE actually prices from
+    # (engine.basket_index._load_member_ohlcv → data/china_stocks), so more THS concepts qualify.
+    cs_dir = config.data_dir() / "china_stocks"
+    if cs_dir.exists():
+        universe |= {p.stem for p in cs_dir.glob("*.parquet")}
 
     def zh_name(t: str, fallback: str) -> str:
         if not meta.empty and t in meta.index and pd.notna(meta.loc[t, "name_zh"]):
@@ -300,6 +307,47 @@ def main() -> int:
                                    f"{len(members)} members in cache"
                                    f"{f', {len(missing)} outside' if missing else ''}."}],
         }
+
+    # ── auto-add EVERY OTHER THS concept (beyond the curated set) with >=3 priced members ──
+    # The curated entries carry hand-written English labels / categories / theses; every other THS
+    # concept board adopts its 同花顺 name verbatim (name_zh) with an optional English label +
+    # category from the translation map (data/baskets_china_ths/concept_en_map.json, produced by the
+    # haiku translate pass) and a generic thesis. This widens the desk from the curated handful to
+    # the FULL priced THS taxonomy. Skipped (and curated) silently if --curated-only.
+    if not args.curated_only:
+        from collectors.china_ths_concepts import concept_code_map
+        codes = concept_code_map()
+        en_map_p = config.data_dir() / "baskets_china_ths" / "concept_en_map.json"
+        en_map = json.loads(en_map_p.read_text()) if en_map_p.exists() else {}
+        curated_names = {row[1] for row in CURATED}
+        n_auto = 0
+        for ths_name in snaps[-1][1].keys():
+            if ths_name in curated_names:
+                continue
+            code = codes.get(ths_name)
+            if not code:
+                continue
+            members, missing = _pit_members(ths_name, snaps, universe, zh_name)
+            if len(members) < 3:
+                continue
+            bid = "thsc" + str(code)
+            if bid in out_baskets:
+                continue
+            tr = en_map.get(ths_name) or {}
+            out_baskets[bid] = {
+                "name": tr.get("en") or ths_name, "name_zh": ths_name,
+                "category": tr.get("category_en") or "THS Concept",
+                "category_zh": tr.get("category_zh") or "同花顺概念",
+                "etf_proxy": None, "etf_proxy_note": "",
+                "created": SEED, "weighting": "equal",
+                "thesis": f"同花顺 concept board '{ths_name}' — {len(members)} priced A-share members.",
+                "thesis_zh": f"同花顺概念板块「{ths_name}」——{len(members)} 只有价A股成分。",
+                "members": members, "ths_concept": ths_name,
+                "changelog": [{"date": snaps[-1][0], "action": "auto-import",
+                               "note": f"Auto-imported 同花顺 concept '{ths_name}' ({len(members)} priced members)."}],
+            }
+            n_auto += 1
+        log.info("auto-added %d non-curated THS concepts (>=3 priced members)", n_auto)
 
     if not out_baskets:
         log.error("no THS baskets built — check the snapshot / universe overlap")
