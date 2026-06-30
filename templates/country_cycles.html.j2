@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" class="cyc-page sc-page sc-intl">
+{# Country Cycle Intelligence — the international sibling of sector_cycles.html.
+   REUSES the same design system (cycle.css), SVG engine (mm_charts.js) and orchestration
+   (sector_cycles.js) — but every line is a COUNTRY or REGION's USD-listed ETF (the iShares
+   MSCI single-country family + the regional/bloc aggregates), and the turns / phase /
+   projection are derived from the real USD tape by engine/country_cycles.py. Data + narratives
+   are emitted by scripts/build_country_cycles.py as country_cycles_data.js; this template owns
+   only the page shell + shared nav. Distinct from markets.html (the hand-curated 9-market
+   "Global Market Cycles" page): this one is fully data-derived, USD-denominated and broader. #}
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Country Cycle Intelligence — Mastermind</title>
+<meta name="description" content="Every country and region on one cycle clock — each line a USD-listed country ETF (iShares MSCI single-country family + regional blocs), rebased &amp; log so all share an axis. Auto-detected peaks &amp; troughs, the phase each market sits in (topping · expanding · rolling over · bottoming), a next-turn projection, and relative strength vs the US (SPY).">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="cycle.css">
+<link rel="stylesheet" href="sector_cycles.css">
+</head>
+<body>
+{% include "_site_nav.html.j2" %}
+
+<div class="cyc-wrap">
+  <header class="cyc-hd">
+    <div class="ht">
+      <div class="cyc-kicker"><span class="hb"></span> <span class="l-en">Country Cycle Intelligence</span><span class="l-zh">国家周期智慧</span> <span class="sc-flag">🌍</span></div>
+      <h1 class="cyc-title"><span class="l-en">Where every market stands</span><span class="l-zh">每个市场所处的位置</span></h1>
+      <p class="cyc-sub"><span class="l-en">Two dozen single-country ETFs and the regional blocs on one cycle clock — each line the market's
+        <b>real USD price</b> (iShares MSCI &amp; friends, most back to 1996), rebased &amp; log so every line shares an axis, with a
+        one-tap <b>cycle-position</b> view. Peaks &amp; troughs are auto-detected from the tape, each market is graded by where it
+        sits in its cycle, its next turn is projected from its own median half-cycle, and relative strength is measured
+        vs the US (SPY) — the honest "am I beating just owning America?" read. Click a leg for the story behind the move.</span><span class="l-zh">二十多只单一国家 ETF 与区域板块同处一张周期时钟——每条线代表该市场的<b>真实美元价格</b>（iShares MSCI 等，多数可追溯至 1996 年），
+        再基准化并取对数，使每条线共用同一坐标轴，并可一键切换为<b>周期位置</b>视图。波峰与波谷由价格走势自动识别，每个市场按其周期所处阶段评级，
+        下一拐点由其自身中位半周期推演，相对强弱以美国（标普 SPY）为基准衡量——即“是否跑赢单纯持有美国”这一诚实读数。点击任一区段即可了解推动该走势的原因。</span></p>
+    </div>
+    <div class="cyc-ctrls">
+      <span class="cyc-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> <span id="sc-asof">…</span></span>
+    </div>
+  </header>
+
+  <div class="sc-tabs" id="sc-tabs" role="tablist">
+    <button class="sc-tab on" data-fam="sectors" role="tab">🗺️ <span class="l-en">Countries</span><span class="l-zh">国家</span> <i id="sc-tab-n-sec"></i></button>
+    <button class="sc-tab" data-fam="baskets" role="tab">🌐 <span class="l-en">Regions &amp; Blocs</span><span class="l-zh">区域与板块</span> <i id="sc-tab-n-bsk"></i></button>
+  </div>
+
+  <section class="cyc-stage">
+    <div class="cyc-hero">
+      <div class="cyc-hero-hd">
+        <h2 id="sc-hero-title"><span class="l-en">Country rotation overlay</span><span class="l-zh">国家轮动叠加</span></h2>
+        <div class="cyc-hero-tools">
+          <div class="sc-modes" id="sc-modes" aria-label="Chart mode">
+            <button class="sc-mbtn" data-mode="price" aria-pressed="false"><span class="l-en">Price</span><span class="l-zh">价格</span></button>
+            <button class="sc-mbtn on" data-mode="osc" aria-pressed="true"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></button>
+          </div>
+          <div class="sc-mode-cap"><span class="l-en">Low = washed-out · High = stretched</span><span class="l-zh">低 = 超卖 · 高 = 拉伸</span></div>
+          <div class="sc-advanced" id="sc-advanced">
+            <button type="button" class="sc-adv-toggle" id="sc-adv-toggle" aria-expanded="false" aria-controls="sc-advbody"><span class="l-en">Chart options</span><span class="l-zh">图表选项</span></button>
+            <div class="sc-adv-body" id="sc-advbody">
+              <div class="sc-scale disabled" id="sc-scale" hidden aria-label="Price scale">
+                <button class="sc-sbtn on" data-scale="log" aria-pressed="true"><span class="l-en">Log</span><span class="l-zh">对数</span></button>
+                <button class="sc-sbtn" data-scale="linear" aria-pressed="false"><span class="l-en">Linear</span><span class="l-zh">线性</span></button>
+              </div>
+              <div class="cyc-legend" id="sc-legend" aria-label="Legend">
+                <span><i class="lc" style="background:color-mix(in srgb,var(--down) 42%,transparent)"></i> <span class="l-en">washed-out</span><span class="l-zh">超卖</span></span>
+                <span><i class="lc" style="background:color-mix(in srgb,var(--muted) 32%,transparent)"></i> <span class="l-en">mid-cycle</span><span class="l-zh">中段</span></span>
+                <span><i class="lc" style="background:color-mix(in srgb,var(--warn) 46%,transparent)"></i> <span class="l-en">stretched</span><span class="l-zh">拉伸</span></span>
+              </div>
+              <div class="cyc-zoom" id="sc-zoom" aria-label="Zoom"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cyc-groups" id="sc-groups" aria-label="Region filter"></div>
+      <div class="cyc-chips" id="sc-chips" aria-label="Country toggles"></div>
+      <div class="sc-baskets" id="sc-baskets" aria-label="Regional aggregates"></div>
+      <span id="sc-sr-status" class="sc-sr-status" role="status" aria-live="polite"></span>
+      <div class="sc-chartwrap">
+        <div id="sc-chart" data-h="600" role="img" aria-label="Country cycle clock — each line a market's 0 to 100 cycle position over time. Tap a line for its story."></div>
+        <div class="sc-chart-hint" id="sc-chart-hint" hidden></div>
+      </div>
+    </div>
+
+    <aside class="cyc-detail" id="sc-detail">
+      <div class="cyc-handle" id="sc-handle" aria-hidden="true"></div>
+      <div class="cyc-panels">
+        <div class="cyc-panel show" id="sc-panel-default"></div>
+        <div class="cyc-panel" id="sc-panel-focus"></div>
+      </div>
+    </aside>
+  </section>
+
+  <div class="cyc-cards-hd">
+    <h2><span class="l-en">Market scorecards</span><span class="l-zh">市场记分卡</span></h2>
+    <span class="sub"><span class="l-en">Tap any card — or its line on the chart — to focus it</span><span class="l-zh">点按任意卡片（或图中其曲线）以聚焦</span></span>
+  </div>
+  <div class="cyc-cards" id="sc-cards"></div>
+</div>
+
+<script src="country_cycles_data.js"></script>
+<script src="mm_charts.js"></script>
+<script src="sector_cycles.js"></script>
+<script>try{document.getElementById('sc-asof').textContent=(window.SECTOR_CYCLES&&window.SECTOR_CYCLES.meta||{}).asOf||'';}catch(e){}</script>
+<script src="theme.js"></script>
+</body>
+</html>
