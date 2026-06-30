@@ -14,8 +14,8 @@
   "email_alerts": false
  },
  "n": 904,
- "n_failed": 1,
- "fail_pct": 0.111,
+ "n_failed": 2,
+ "fail_pct": 0.221,
  "n_flags": 68,
  "universes": [
   {
@@ -58,8 +58,8 @@
   {
    "name": "baskets/ohlcv",
    "n": 681,
-   "n_failed": 1,
-   "fail_pct": 0.147,
+   "n_failed": 2,
+   "fail_pct": 0.294,
    "n_flags": 63,
    "skipped": false,
    "note": "",
@@ -68,6 +68,12 @@
      "name": "HUBB",
      "reasons": [
       "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2021-05-05)"
+     ]
+    },
+    {
+     "name": "RHHBY",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
      ]
     }
    ],
