@@ -1511,12 +1511,12 @@
   },
   {
    "ticker": "JCI",
-   "asof": "2026-06-24",
+   "asof": "2026-06-29",
    "state": "short-bias",
    "above200": true,
    "weekly_bull": false,
    "trail_breach": true,
-   "trail_stop": 141.103,
+   "trail_stop": 140.9623,
    "early_now": false,
    "last": {
     "date": "2026-06-19",

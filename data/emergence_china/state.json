@@ -1,32 +1,32 @@
 {
-  "51bfb40d4e5f": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Consumer Cyclical",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Consumer Cyclical",
-    "score": 78.8
-  },
-  "80d30351c39b": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Basic Materials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Basic Materials",
-    "score": 59.0
+  "8fc0dcf3b9d7": {
+    "name_en": "Emerging Basic Materials cluster",
+    "name_zh": "\u65b0\u5174 Basic Materials \u96c6\u7fa4",
+    "score": 57.0
   },
   "99f97c4a76b0": {
     "name_en": "Cross-sector cluster \u00b7 Basic Materials + Healthcare",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Basic Materials + Healthcare",
-    "score": 67.2
+    "score": 67.5
   },
   "9b580f3a6816": {
     "name_en": "Cross-sector cluster \u00b7 Energy + Utilities",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Energy + Utilities",
-    "score": 61.6
+    "score": 61.4
   },
-  "bada3b843130": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Technology",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Technology",
-    "score": 56.5
+  "b912341a681b": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Consumer Cyclical",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Consumer Cyclical",
+    "score": 75.8
   },
-  "f79cc0f6502a": {
-    "name_en": "Cross-sector cluster \u00b7 Healthcare + Industrials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Healthcare + Industrials",
-    "score": 61.3
+  "db3770b8b474": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Healthcare",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Healthcare",
+    "score": 59.4
+  },
+  "e056240260fd": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Consumer Cyclical",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Consumer Cyclical",
+    "score": 63.0
   }
 }

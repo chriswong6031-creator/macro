@@ -1086,3 +1086,5 @@
 {"date": "2026-06-29", "ticker": "WING", "score": 47.0, "percentile": 47.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-06-29", "ticker": "FWRD", "score": 41.0, "percentile": 41.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-06-29", "ticker": "CXW", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-29", "ticker": "WS", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-29", "ticker": "LEN", "score": 6.0, "percentile": 6.0, "regime": "mixed", "horizons": [21, 63, 126]}

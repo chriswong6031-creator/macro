@@ -8,9 +8,9 @@
   "defensive_w": 65,
   "sharpe": 0.9,
   "maxdd": -17.2,
-  "cagr": 7.35,
+  "cagr": 7.36,
   "band": "elevated",
   "years": 12.9,
-  "bench_csi_sharpe": 0.47,
+  "bench_csi_sharpe": 0.48,
   "bench_csi_maxdd": -45.5
 }

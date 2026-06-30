@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-30T10:12:32.514304+00:00",
+  "generated_utc": "2026-06-30T11:55:21.535141+00:00",
   "as_of": "2026-06-30",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -2022,9 +2022,123 @@
       "emoji": "\ud83d\udc54",
       "label_en": "Insider trading",
       "label_zh": "\u5185\u90e8\u4eba\u4ea4\u6613",
-      "rows": 24981,
+      "rows": 24987,
       "last_seen": "2026-06-30",
       "recent": [
+        {
+          "Ticker": "NTES",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Boltz Paul William JR",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "10000.0",
+          "PricePerShare": "128.3",
+          "SharesOwnedFollowing": "12223.0",
+          "fileDate": "2026-06-30T10:43:20.000",
+          "officerTitle": "General Counsel",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-30T10:45:03.190",
+          "_first_seen": "2026-06-30T10:47:43.811799+00:00"
+        },
+        {
+          "Ticker": "TSM",
+          "Date": "2026-06-30T00:00:00.000",
+          "Name": "Tien Bor-Zen",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "1000.0",
+          "PricePerShare": "75.7",
+          "SharesOwnedFollowing": "1000.0",
+          "fileDate": "2026-06-30T10:24:40.000",
+          "officerTitle": "VP",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T10:30:04.285",
+          "_first_seen": "2026-06-30T10:47:43.811799+00:00"
+        },
+        {
+          "Ticker": "TSM",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Tien Bor-Zen",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "1000.0",
+          "PricePerShare": "76.64",
+          "SharesOwnedFollowing": "12051.0",
+          "fileDate": "2026-06-30T10:24:40.000",
+          "officerTitle": "VP",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-30T10:30:04.285",
+          "_first_seen": "2026-06-30T10:47:43.811799+00:00"
+        },
+        {
+          "Ticker": "NOAH",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "YIN ZHE",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "765.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "17205335.0",
+          "fileDate": "2026-06-30T10:23:46.000",
+          "officerTitle": "CHIEF EXECUTIVE OFFICER",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T10:30:04.285",
+          "_first_seen": "2026-06-30T10:47:43.811799+00:00"
+        },
+        {
+          "Ticker": "AGEN",
+          "Date": "2026-06-26T00:00:00.000",
+          "Name": "ARMEN GARO H",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "5364.0",
+          "PricePerShare": "3.03",
+          "SharesOwnedFollowing": "366256.0",
+          "fileDate": "2026-06-30T10:06:11.000",
+          "officerTitle": "See Remarks",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-30T10:15:03.465",
+          "_first_seen": "2026-06-30T10:47:43.811799+00:00"
+        },
+        {
+          "Ticker": "NAMI",
+          "Date": "2026-06-26T00:00:00.000",
+          "Name": "Jiang Jun Jason",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "2.0",
+          "PricePerShare": "3.802",
+          "SharesOwnedFollowing": "107521.0",
+          "fileDate": "2026-06-30T10:05:39.000",
+          "officerTitle": "CFO and COO",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T10:15:03.465",
+          "_first_seen": "2026-06-30T10:47:43.811799+00:00"
+        },
         {
           "Ticker": "LEGN",
           "Date": "2026-06-25T00:00:00.000",
@@ -2143,25 +2257,6 @@
           "Ticker": "CAPR",
           "Date": "2026-06-25T00:00:00.000",
           "Name": "Bergmann Anthony",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "24100.0",
-          "PricePerShare": "30.38",
-          "SharesOwnedFollowing": "11223.0",
-          "fileDate": "2026-06-30T01:30:06.000",
-          "officerTitle": "CHIEF FINANCIAL OFFICER",
-          "isDirector": "False",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-06-30T01:45:04.087",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "CAPR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Bergmann Anthony",
           "AcquiredDisposedCode": "A",
           "TransactionCode": "M",
           "Shares": "24100.0",
@@ -2178,155 +2273,22 @@
           "_first_seen": "2026-06-30T02:29:20.011149+00:00"
         },
         {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
+          "Ticker": "CAPR",
+          "Date": "2026-06-25T00:00:00.000",
+          "Name": "Bergmann Anthony",
           "AcquiredDisposedCode": "D",
           "TransactionCode": "S",
-          "Shares": "9.0",
-          "PricePerShare": "84.59",
-          "SharesOwnedFollowing": "0.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
+          "Shares": "24100.0",
+          "PricePerShare": "30.38",
+          "SharesOwnedFollowing": "11223.0",
+          "fileDate": "2026-06-30T01:30:06.000",
+          "officerTitle": "CHIEF FINANCIAL OFFICER",
           "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
           "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "C",
-          "Shares": "17427.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "17427.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "349.0",
-          "PricePerShare": "84.59",
-          "SharesOwnedFollowing": "0.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "6654.0",
-          "PricePerShare": "84.0207",
-          "SharesOwnedFollowing": "9.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "279671.0",
-          "PricePerShare": "84.0207",
-          "SharesOwnedFollowing": "349.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "44363.0",
-          "PricePerShare": "84.0207",
-          "SharesOwnedFollowing": "55.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "55.0",
-          "PricePerShare": "84.59",
-          "SharesOwnedFollowing": "0.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "229334.0",
-          "PricePerShare": "84.0207",
-          "SharesOwnedFollowing": "286.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-30T01:45:04.087",
           "_first_seen": "2026-06-30T02:29:20.011149+00:00"
         },
         {
@@ -2371,11 +2333,106 @@
           "Ticker": "HNGE",
           "Date": "2026-06-29T00:00:00.000",
           "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "C",
-          "Shares": "600613.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "600613.0",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "279671.0",
+          "PricePerShare": "84.0207",
+          "SharesOwnedFollowing": "349.0",
+          "fileDate": "2026-06-30T01:27:21.000",
+          "officerTitle": null,
+          "isDirector": "False",
+          "isOfficer": "False",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T01:30:08.571",
+          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
+        },
+        {
+          "Ticker": "HNGE",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Insight Holdings Group, LLC",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "229334.0",
+          "PricePerShare": "84.0207",
+          "SharesOwnedFollowing": "286.0",
+          "fileDate": "2026-06-30T01:27:21.000",
+          "officerTitle": null,
+          "isDirector": "False",
+          "isOfficer": "False",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T01:30:08.571",
+          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
+        },
+        {
+          "Ticker": "HNGE",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Insight Holdings Group, LLC",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "55.0",
+          "PricePerShare": "84.59",
+          "SharesOwnedFollowing": "0.0",
+          "fileDate": "2026-06-30T01:27:21.000",
+          "officerTitle": null,
+          "isDirector": "False",
+          "isOfficer": "False",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T01:30:08.571",
+          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
+        },
+        {
+          "Ticker": "HNGE",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Insight Holdings Group, LLC",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "44363.0",
+          "PricePerShare": "84.0207",
+          "SharesOwnedFollowing": "55.0",
+          "fileDate": "2026-06-30T01:27:21.000",
+          "officerTitle": null,
+          "isDirector": "False",
+          "isOfficer": "False",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T01:30:08.571",
+          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
+        },
+        {
+          "Ticker": "HNGE",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Insight Holdings Group, LLC",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "9.0",
+          "PricePerShare": "84.59",
+          "SharesOwnedFollowing": "0.0",
+          "fileDate": "2026-06-30T01:27:21.000",
+          "officerTitle": null,
+          "isDirector": "False",
+          "isOfficer": "False",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T01:30:08.571",
+          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
+        },
+        {
+          "Ticker": "HNGE",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Insight Holdings Group, LLC",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "6654.0",
+          "PricePerShare": "84.0207",
+          "SharesOwnedFollowing": "9.0",
           "fileDate": "2026-06-30T01:27:21.000",
           "officerTitle": null,
           "isDirector": "False",
@@ -2411,66 +2468,9 @@
           "Name": "Insight Holdings Group, LLC",
           "AcquiredDisposedCode": "D",
           "TransactionCode": "S",
-          "Shares": "177768.0",
-          "PricePerShare": "81.305",
-          "SharesOwnedFollowing": "422845.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "3877.0",
-          "PricePerShare": "83.1765",
-          "SharesOwnedFollowing": "6663.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "5158.0",
-          "PricePerShare": "81.305",
-          "SharesOwnedFollowing": "12269.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "72672.0",
-          "PricePerShare": "82.0479",
-          "SharesOwnedFollowing": "442985.0",
+          "Shares": "349.0",
+          "PricePerShare": "84.59",
+          "SharesOwnedFollowing": "0.0",
           "fileDate": "2026-06-30T01:27:21.000",
           "officerTitle": null,
           "isDirector": "False",
@@ -2487,9 +2487,9 @@
           "Name": "Insight Holdings Group, LLC",
           "AcquiredDisposedCode": "A",
           "TransactionCode": "C",
-          "Shares": "116183.0",
+          "Shares": "17427.0",
           "PricePerShare": null,
-          "SharesOwnedFollowing": "116183.0",
+          "SharesOwnedFollowing": "17427.0",
           "fileDate": "2026-06-30T01:27:21.000",
           "officerTitle": null,
           "isDirector": "False",
@@ -2865,33 +2865,72 @@
       "emoji": "\ud83c\udfe6",
       "label_en": "13F position changes",
       "label_zh": "13F\u6301\u4ed3\u53d8\u5316",
-      "rows": 16410,
-      "last_seen": "2026-06-26",
+      "rows": 16414,
+      "last_seen": "2026-06-29",
       "recent": [
         {
-          "Date": "2026-06-26T17:12:53.000",
-          "ReportPeriod": "2021-03-31T00:00:00.000",
-          "Ticker": "KMB",
+          "Date": "2026-06-29T19:59:17.000",
+          "ReportPeriod": "2020-12-31T00:00:00.000",
+          "Ticker": "HON",
           "Fund": "First Nebraska Trust Co",
-          "Change": "205654.95",
-          "Change_Share": "1479.0",
+          "Change": "5681756.1674999995",
+          "Change_Share": "14171.0",
           "Change_Pct": null,
-          "Held": "1479.0",
-          "Held_Normalized": "1479.0",
-          "Close": "139.05",
-          "_first_seen": "2026-06-30T00:13:49.784062+00:00"
+          "Held": "28341.0",
+          "Held_Normalized": "14171.0",
+          "Close": "400.9425",
+          "_first_seen": "2026-06-30T10:47:59.008198+00:00"
+        },
+        {
+          "Date": "2026-06-29T19:59:17.000",
+          "ReportPeriod": "2020-12-31T00:00:00.000",
+          "Ticker": "DD",
+          "Fund": "First Nebraska Trust Co",
+          "Change": "119339.8178",
+          "Change_Share": "1337.0",
+          "Change_Pct": null,
+          "Held": "4012.0",
+          "Held_Normalized": "1337.0",
+          "Close": "89.2594",
+          "_first_seen": "2026-06-30T10:47:59.008198+00:00"
+        },
+        {
+          "Date": "2026-06-29T19:59:17.000",
+          "ReportPeriod": "2020-12-31T00:00:00.000",
+          "Ticker": "VUG",
+          "Fund": "First Nebraska Trust Co",
+          "Change": "274620.3432",
+          "Change_Share": "6504.0",
+          "Change_Pct": null,
+          "Held": "1084.0",
+          "Held_Normalized": "6504.0",
+          "Close": "42.2233",
+          "_first_seen": "2026-06-30T10:47:59.008198+00:00"
+        },
+        {
+          "Date": "2026-06-29T19:59:17.000",
+          "ReportPeriod": "2020-12-31T00:00:00.000",
+          "Ticker": "IWF",
+          "Fund": "First Nebraska Trust Co",
+          "Change": "239693.15999999997",
+          "Change_Share": "3976.0",
+          "Change_Pct": null,
+          "Held": "994.0",
+          "Held_Normalized": "3976.0",
+          "Close": "60.285",
+          "_first_seen": "2026-06-30T10:47:59.008198+00:00"
         },
         {
           "Date": "2026-06-26T17:12:53.000",
           "ReportPeriod": "2021-03-31T00:00:00.000",
-          "Ticker": "CWCO",
+          "Ticker": "TGT",
           "Fund": "First Nebraska Trust Co",
-          "Change": "-28917.5",
-          "Change_Share": "-2150.0",
-          "Change_Pct": "-0.1516433911694174",
-          "Held": "12028.0",
-          "Held_Normalized": "12028.0",
-          "Close": "13.45",
+          "Change": "16637.88",
+          "Change_Share": "84.0",
+          "Change_Pct": "0.017815482502651112",
+          "Held": "4799.0",
+          "Held_Normalized": "4799.0",
+          "Close": "198.07",
           "_first_seen": "2026-06-30T00:13:49.784062+00:00"
         },
         {
@@ -3001,14 +3040,14 @@
         {
           "Date": "2026-06-26T17:12:53.000",
           "ReportPeriod": "2021-03-31T00:00:00.000",
-          "Ticker": "TGT",
+          "Ticker": "SYY",
           "Fund": "First Nebraska Trust Co",
-          "Change": "16637.88",
-          "Change_Share": "84.0",
-          "Change_Pct": "0.017815482502651112",
-          "Held": "4799.0",
-          "Held_Normalized": "4799.0",
-          "Close": "198.07",
+          "Change": "-37401.5",
+          "Change_Share": "-475.0",
+          "Change_Pct": "-0.0002023986153378097",
+          "Held": "2346379.0",
+          "Held_Normalized": "2346379.0",
+          "Close": "78.74",
           "_first_seen": "2026-06-30T00:13:49.784062+00:00"
         },
         {
@@ -3027,14 +3066,14 @@
         {
           "Date": "2026-06-26T17:12:53.000",
           "ReportPeriod": "2021-03-31T00:00:00.000",
-          "Ticker": "SYY",
+          "Ticker": "CWCO",
           "Fund": "First Nebraska Trust Co",
-          "Change": "-37401.5",
-          "Change_Share": "-475.0",
-          "Change_Pct": "-0.0002023986153378097",
-          "Held": "2346379.0",
-          "Held_Normalized": "2346379.0",
-          "Close": "78.74",
+          "Change": "-28917.5",
+          "Change_Share": "-2150.0",
+          "Change_Pct": "-0.1516433911694174",
+          "Held": "12028.0",
+          "Held_Normalized": "12028.0",
+          "Close": "13.45",
           "_first_seen": "2026-06-30T00:13:49.784062+00:00"
         },
         {
@@ -3131,32 +3170,6 @@
         {
           "Date": "2026-06-26T17:12:53.000",
           "ReportPeriod": "2021-03-31T00:00:00.000",
-          "Ticker": "IYT",
-          "Fund": "First Nebraska Trust Co",
-          "Change": "-131906.56",
-          "Change_Share": "-512.0",
-          "Change_Pct": "-0.015039360827164845",
-          "Held": "8383.0",
-          "Held_Normalized": "33532.0",
-          "Close": "257.63",
-          "_first_seen": "2026-06-30T00:13:49.784062+00:00"
-        },
-        {
-          "Date": "2026-06-26T17:12:53.000",
-          "ReportPeriod": "2021-03-31T00:00:00.000",
-          "Ticker": "XOM",
-          "Fund": "First Nebraska Trust Co",
-          "Change": "-6978.75",
-          "Change_Share": "-125.0",
-          "Change_Pct": "-0.0025111495037968582",
-          "Held": "49653.0",
-          "Held_Normalized": "49653.0",
-          "Close": "55.83",
-          "_first_seen": "2026-06-30T00:13:49.784062+00:00"
-        },
-        {
-          "Date": "2026-06-26T17:12:53.000",
-          "ReportPeriod": "2021-03-31T00:00:00.000",
           "Ticker": "BMY",
           "Fund": "First Nebraska Trust Co",
           "Change": "11931.57",
@@ -3170,27 +3183,14 @@
         {
           "Date": "2026-06-26T17:12:53.000",
           "ReportPeriod": "2021-03-31T00:00:00.000",
-          "Ticker": "CLX",
+          "Ticker": "IYT",
           "Fund": "First Nebraska Trust Co",
-          "Change": "-16394.8",
-          "Change_Share": "-85.0",
-          "Change_Pct": "-0.004118217054263566",
-          "Held": "20555.0",
-          "Held_Normalized": "20555.0",
-          "Close": "192.88",
-          "_first_seen": "2026-06-30T00:13:49.784062+00:00"
-        },
-        {
-          "Date": "2026-06-26T17:12:53.000",
-          "ReportPeriod": "2021-03-31T00:00:00.000",
-          "Ticker": "CMCSA",
-          "Fund": "First Nebraska Trust Co",
-          "Change": "2326.73",
-          "Change_Share": "43.0",
-          "Change_Pct": "0.0020673076923076925",
-          "Held": "20843.0",
-          "Held_Normalized": "20843.0",
-          "Close": "54.11",
+          "Change": "-131906.56",
+          "Change_Share": "-512.0",
+          "Change_Pct": "-0.015039360827164845",
+          "Held": "8383.0",
+          "Held_Normalized": "33532.0",
+          "Close": "257.63",
           "_first_seen": "2026-06-30T00:13:49.784062+00:00"
         }
       ]
@@ -4460,9 +4460,108 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 524,
+      "rows": 535,
       "last_seen": "2026-06-30",
       "recent": [
+        {
+          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+General+Counsel+of+%24NTES+Sells+10%2C000+Shares",
+          "time": "2026-06-30 10:45:24",
+          "headline": "Insider Sale: General Counsel of $NTES Sells 10,000 Shares",
+          "category": "insiders_automated",
+          "summary": "<p>Paul William JR Boltz, the General Counsel of <a href=\"https://www.quiverquant.com/stock/NTES/\">$NTES</a>, sold 10,000 shares of the company on 06-29-2026 for an estimated <strong>$1,283,000</strong>. We received d\u2026",
+          "image": "https://www.quiverquant.com/images/ntes_rect_new.png",
+          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/GSI+Technology+to+Present+at+Canaccord+Genuity+46th+Annual+Growth+Conference",
+          "time": "2026-06-30 10:10:20",
+          "headline": "GSI Technology to Present at Canaccord Genuity 46th Annual Growth Conference",
+          "category": "press_release_summary",
+          "summary": "<p>GSI Technology will present at Canaccord Genuity's conference, highlighting its innovative APU technology and market progress.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>GSI Technology, Inc. announced \u2026",
+          "image": "https://www.quiverquant.com/images/gsit_rect_new.png",
+          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Globavend+Holdings+Launches+First+Fully+AI-Produced+Original+Micro+Drama%2C+%E2%80%9CBuried+Innocent%E2%80%9D",
+          "time": "2026-06-30 08:40:39",
+          "headline": "Globavend Holdings Launches First Fully AI-Produced Original Micro Drama, \u201cBuried Innocent\u201d",
+          "category": "press_release_summary",
+          "summary": "<p>Globavend Holdings launches \"Buried Innocent,\" its first AI-generated micro drama, alongside \"Kopi-Kopi,\" expanding into digital entertainment.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Globavend Hold\u2026",
+          "image": "https://www.quiverquant.com/images/gvh_rect_new.png",
+          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/HUTCHMED+to+Announce+Interim+Results+for+Six+Months+Ended+June+30%2C+2026+on+July+30%2C+2026",
+          "time": "2026-06-30 08:40:39",
+          "headline": "HUTCHMED to Announce Interim Results for Six Months Ended June 30, 2026 on July 30, 2026",
+          "category": "press_release_summary",
+          "summary": "<p>HUTCHMED will announce interim results on July 30, 2026, with webcasts for analysts and investors.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>HUTCHMED (China) Limited will announce its interim results \u2026",
+          "image": "https://www.quiverquant.com/images/hcm_rect_new.png",
+          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/WTW+Launches+GPU-Enabled+RiskAgility+Financial+Modeller+to+Boost+Insurance+Modelling+Performance",
+          "time": "2026-06-30 08:10:32",
+          "headline": "WTW Launches GPU-Enabled RiskAgility Financial Modeller to Boost Insurance Modelling Performance",
+          "category": "press_release_summary",
+          "summary": "<p>WTW launched an updated RiskAgility Financial Modeller, enhancing performance with GPU execution for life and health insurers.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>WTW has unveiled the latest ver\u2026",
+          "image": "https://www.quiverquant.com/images/wtw_rect_new.png",
+          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/707+Cayman+Holdings+Limited+Appoints+Robin+Hoksnes+Karlsen+as+Executive+Director",
+          "time": "2026-06-30 08:10:32",
+          "headline": "707 Cayman Holdings Limited Appoints Robin Hoksnes Karlsen as Executive Director",
+          "category": "press_release_summary",
+          "summary": "<p>707 Cayman Holdings Limited appoints Robin Hoksnes Karlsen as executive director, enhancing expertise in real estate and digital assets.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>707 Cayman Holdings L\u2026",
+          "image": "https://www.quiverquant.com/images/jem_rect_new.png",
+          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Freshworks+Announces+Vanquis+Selects+Freshservice+to+Support+Digital+Transformation",
+          "time": "2026-06-30 07:10:22",
+          "headline": "Freshworks Announces Vanquis Selects Freshservice to Support Digital Transformation",
+          "category": "press_release_summary",
+          "summary": "<p>Vanquis Bank chooses Freshservice for digital transformation, enhancing service operations with AI-powered capabilities and greater scalability.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Freshworks ha\u2026",
+          "image": "https://www.quiverquant.com/images/frsh_rect_new.png",
+          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Himax+Technologies+Launches+HE+Series+iToF+Depth+Decoder+ICs+for+Robotics+and+AI+Vision+Applications",
+          "time": "2026-06-30 06:10:21",
+          "headline": "Himax Technologies Launches HE Series iToF Depth Decoder ICs for Robotics and AI Vision Applications",
+          "category": "press_release_summary",
+          "summary": "<p>Himax Technologies launches HE Series iToF Depth Decoder ICs for enhanced 3D sensing in robotics and AI applications.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Himax Technologies, Inc. has announced t\u2026",
+          "image": "https://www.quiverquant.com/images/himx_rect_new.png",
+          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/GXO+and+Co-op+Extend+Transport+Partnership+with+New+Five-Year+Agreement",
+          "time": "2026-06-30 05:10:20",
+          "headline": "GXO and Co-op Extend Transport Partnership with New Five-Year Agreement",
+          "category": "press_release_summary",
+          "summary": "<p>GXO Logistics and Co-op extend their transport partnership, enhancing supply chain efficiency for over 1,000 stores for five more years.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>GXO Logistics, Inc. h\u2026",
+          "image": "https://www.quiverquant.com/images/gxo_rect_new.png",
+          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Cal-Maine+Foods+Reaches+Agreement+to+Resolve+DOJ+and+State+Attorneys+General+Claims",
+          "time": "2026-06-30 02:50:19",
+          "headline": "Cal-Maine Foods Reaches Agreement to Resolve DOJ and State Attorneys General Claims",
+          "category": "press_release_summary",
+          "summary": "<p>Cal-Maine Foods resolves DOJ and state claims regarding egg pricing with no fines, donating 30 million eggs to food banks.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Cal-Maine Foods, Inc. announced an \u2026",
+          "image": "https://www.quiverquant.com/images/calm_rect_new.png",
+          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Nuvectis+Pharma+Prices+%24100+Million+Underwritten+Public+Offering+of+Common+Stock",
+          "time": "2026-06-30 02:40:18",
+          "headline": "Nuvectis Pharma Prices $100 Million Underwritten Public Offering of Common Stock",
+          "category": "press_release_summary",
+          "summary": "<p>Nuvectis Pharma announces a public offering of 5 million shares at $20 each, aiming to raise $100 million.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Nuvectis Pharma, Inc. has announced the pricing of \u2026",
+          "image": "https://www.quiverquant.com/images/nvct_rect_new.png",
+          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+        },
         {
           "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Chief+Executive+Officer+of+%24LEGN+Sells+5%2C566+Shares",
           "time": "2026-06-30 02:01:22",
@@ -4509,12 +4608,12 @@
           "_first_seen": "2026-06-30T02:29:31.207580+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+House+Passes+Mary+Miller%E2%80%99s+SCREEN+Act+in+Child+Online+Safety+Package",
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Brian+Mast+discusses+water+policy+ahead+of+WRDA+2026+debate",
           "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: House Passes Mary Miller\u2019s SCREEN Act in Child Online Safety Package",
+          "headline": "Press Release: Brian Mast discusses water policy ahead of WRDA 2026 debate",
           "category": "legislation_automated",
-          "summary": "<p>House passes Miller-backed bill package tightening online child safety and age verification for obscene material.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Hou\u2026",
-          "image": "https://www.quiverquant.com/images/M001211_congress.png",
+          "summary": "<p>Congressman Mast discusses WRDA 2026 and efforts to reduce harmful water discharges affecting the Treasure Coast.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Rep\u2026",
+          "image": "https://www.quiverquant.com/images/M001199_congress.png",
           "_first_seen": "2026-06-30T02:29:31.207580+00:00"
         },
         {
@@ -4545,6 +4644,15 @@
           "_first_seen": "2026-06-30T02:29:31.207580+00:00"
         },
         {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+House+Passes+Mary+Miller%E2%80%99s+SCREEN+Act+in+Child+Online+Safety+Package",
+          "time": "2026-06-30 00:22:05",
+          "headline": "Press Release: House Passes Mary Miller\u2019s SCREEN Act in Child Online Safety Package",
+          "category": "legislation_automated",
+          "summary": "<p>House passes Miller-backed bill package tightening online child safety and age verification for obscene material.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Hou\u2026",
+          "image": "https://www.quiverquant.com/images/M001211_congress.png",
+          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
+        },
+        {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Kathy+Castor+Announces+House+Passage+of+Bipartisan+KIDS+Act+to+Strengthen+Online+Protections+for+Children",
           "time": "2026-06-30 00:22:05",
           "headline": "Press Release: Kathy Castor Announces House Passage of Bipartisan KIDS Act to Strengthen Online Protections for Children",
@@ -4554,21 +4662,12 @@
           "_first_seen": "2026-06-30T02:29:31.207580+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Lori+Trahan+Supports+Bipartisan+KIDS+Act+to+Address+Online+Safety+for+Children",
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+House+Passes+Laurel+Lee%E2%80%99s+Online+Safety+Bills+in+KIDS+Act",
           "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: Lori Trahan Supports Bipartisan KIDS Act to Address Online Safety for Children",
+          "headline": "Press Release: House Passes Laurel Lee\u2019s Online Safety Bills in KIDS Act",
           "category": "legislation_automated",
-          "summary": "<p>Trahan supports bipartisan KIDS Act legislation adding online privacy, safety, and parental controls for children and teens.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165\u2026",
-          "image": "https://www.quiverquant.com/images/T000482_congress.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Brian+Mast+discusses+water+policy+ahead+of+WRDA+2026+debate",
-          "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: Brian Mast discusses water policy ahead of WRDA 2026 debate",
-          "category": "legislation_automated",
-          "summary": "<p>Congressman Mast discusses WRDA 2026 and efforts to reduce harmful water discharges affecting the Treasure Coast.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Rep\u2026",
-          "image": "https://www.quiverquant.com/images/M001199_congress.png",
+          "summary": "<p>House passes bipartisan online safety and privacy legislation aimed at protecting children and teenagers online.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Hous\u2026",
+          "image": "https://www.quiverquant.com/images/L000597_congress.png",
           "_first_seen": "2026-06-30T02:29:31.207580+00:00"
         },
         {
@@ -4588,105 +4687,6 @@
           "summary": "<p>Krishnamoorthi praised a Supreme Court ruling allowing states to count mail ballots cast on time but received after Election Day.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(18\u2026",
           "image": "https://www.quiverquant.com/images/K000391_congress.png",
           "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Doris+Matsui%E2%80%99s+SECURE+Grid+Act+Passes+House%2C+Strengthening+Electric+Grid+Planning",
-          "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: Doris Matsui\u2019s SECURE Grid Act Passes House, Strengthening Electric Grid Planning",
-          "category": "legislation_automated",
-          "summary": "<p>House approves Matsui-backed bill to improve electric grid planning, reliability, and affordability amid extreme weather.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,24\u2026",
-          "image": "https://www.quiverquant.com/images/M001163_congress.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Brett+Guthrie%2C+House+Energy+and+Commerce+Leaders+Mark+Passage+of+KIDS+Act",
-          "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: Brett Guthrie, House Energy and Commerce Leaders Mark Passage of KIDS Act",
-          "category": "legislation_automated",
-          "summary": "<p>House leaders celebrate passage of the bipartisan KIDS Act, aimed at strengthening online protections for children and teens.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,16\u2026",
-          "image": "https://www.quiverquant.com/images/G000558_congress.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+House+Passes+Laurel+Lee%E2%80%99s+Online+Safety+Bills+in+KIDS+Act",
-          "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: House Passes Laurel Lee\u2019s Online Safety Bills in KIDS Act",
-          "category": "legislation_automated",
-          "summary": "<p>House passes bipartisan online safety and privacy legislation aimed at protecting children and teenagers online.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Hous\u2026",
-          "image": "https://www.quiverquant.com/images/L000597_congress.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Pfluger+Welcomes+Duffy+to+San+Angelo+Regional+Airport%2C+Announces+%2418+Million+Tower+Investment",
-          "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: Pfluger Welcomes Duffy to San Angelo Regional Airport, Announces $18 Million Tower Investment",
-          "category": "legislation_automated",
-          "summary": "<p>Rep. Pfluger and Secretary Duffy toured San Angelo airport, announcing $18 million for air traffic control modernization.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,24\u2026",
-          "image": "https://www.quiverquant.com/images/P000048_congress.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Shri+Thanedar+Supports+Supreme+Court+Voting+Rights+Ruling",
-          "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: Shri Thanedar Supports Supreme Court Voting Rights Ruling",
-          "category": "legislation_automated",
-          "summary": "<p>Thanedar praised a Supreme Court ruling preserving state laws counting timely postmarked mail ballots after Election Day.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,24\u2026",
-          "image": "https://www.quiverquant.com/images/T000488_congress.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Becca+Balint+Says+Congress+Should+Do+More+to+Protect+Kids+Online",
-          "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: Becca Balint Says Congress Should Do More to Protect Kids Online",
-          "category": "legislation_automated",
-          "summary": "<p>Rep. Balint criticized a kids online safety bill, calling for stronger enforceable action against Big Tech's mental health harms.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(18\u2026",
-          "image": "https://www.quiverquant.com/images/B001318_congress.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Congress+Vote%3A+The+House+has+passed+H.R.+7128+-++TRIA+Program+Reauthorization+Act+of+2026",
-          "time": "2026-06-29 23:57:30",
-          "headline": "Congress Vote: The House has passed H.R. 7128 -  TRIA Program Reauthorization Act of 2026",
-          "category": "legislation_automated",
-          "summary": "<p>The House has passed H.R. 7128 -  TRIA Program Reauthorization Act of 2026. This bill was introduced by <a href=\"https://www.quiverquant.com/congresstrading/politician/Mike%20Flood-F000474\">Representative Mike Floo\u2026",
-          "image": "https://www.quiverquant.com/images/F000474_congress.png",
-          "_first_seen": "2026-06-30T00:13:55.459841+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Congress+Vote%3A+The+House+has+passed+H.R.+7757+-++Kids+Internet+and+Digital+Safety+Act",
-          "time": "2026-06-29 23:57:30",
-          "headline": "Congress Vote: The House has passed H.R. 7757 -  Kids Internet and Digital Safety Act",
-          "category": "legislation_automated",
-          "summary": "<p>The House has passed H.R. 7757 -  Kids Internet and Digital Safety Act. This bill was introduced by <a href=\"https://www.quiverquant.com/congresstrading/politician/Brett%20Guthrie-G000558\">Representative Brett Guth\u2026",
-          "image": "https://www.quiverquant.com/images/G000558_congress.png",
-          "_first_seen": "2026-06-30T00:13:55.459841+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Purchase%3A+Chief+Executive+Officer+of+%24VFF+Buys+26%2C400+Shares",
-          "time": "2026-06-29 23:45:55",
-          "headline": "Insider Purchase: Chief Executive Officer of $VFF Buys 26,400 Shares",
-          "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1040739/Michael-A-Degiglio\">MICHAEL A DEGIGLIO</a>, the Chief Executive Officer of <a href=\"https://www.quiverquant.com/stock/VFF/\">$VFF</a>, bought 26,400 shares of th\u2026",
-          "image": "https://www.quiverquant.com/images/vff_rect_new.png",
-          "_first_seen": "2026-06-30T00:13:55.459841+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Chief+Legal+%26+Corp+Affairs+Ofc+of+%24AVGO+Sells+25%2C000+Shares",
-          "time": "2026-06-29 23:32:00",
-          "headline": "Insider Sale: Chief Legal & Corp Affairs Ofc of $AVGO Sells 25,000 Shares",
-          "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1627720/Mark-David-Brazeal\">Mark David Brazeal</a>, the Chief Legal & Corp Affairs Ofc of <a href=\"https://www.quiverquant.com/stock/AVGO/\">$AVGO</a>, sold 25,000 share\u2026",
-          "image": "https://www.quiverquant.com/images/avgo_rect_new.png",
-          "_first_seen": "2026-06-30T00:13:55.459841+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24BOX+Sells+1%2C325+Shares",
-          "time": "2026-06-29 23:15:59",
-          "headline": "Insider Sale: Director at $BOX Sells 1,325 Shares",
-          "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1405693/Bethany-Mayer\">Bethany Mayer</a>, a director at <a href=\"https://www.quiverquant.com/stock/BOX/\">$BOX</a>, sold 1,325 shares of the company on 06-26-2026 for an\u2026",
-          "image": "https://www.quiverquant.com/images/box_rect_new.png",
-          "_first_seen": "2026-06-30T00:13:55.459841+00:00"
         }
       ]
     },
@@ -4878,9 +4878,165 @@
       "emoji": "\ud83d\udcd1",
       "label_en": "Bill summaries",
       "label_zh": "\u6cd5\u6848\u6458\u8981",
-      "rows": 232,
-      "last_seen": "2026-06-27",
+      "rows": 244,
+      "last_seen": "2026-06-30",
       "recent": [
+        {
+          "currentChamber": "House",
+          "title": "New Pathways Act",
+          "congress": "119",
+          "number": "8645",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><b>New Pathways Act</b></p> <p>This bill revises existing requirements for the Bureau of Prisons (BOP) to help prisoners obtain identification documents prior to their release.</p> <p>With respect to U.S. citizens,\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/8645?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-04-30",
+          "_first_seen": "2026-06-30T10:48:04.719666+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Rural Community Hospital Demonstration Program Reauthorization",
+          "congress": "119",
+          "number": "8967",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Rural Community Hospital Demonstration Program Reauthorization</strong></p><p>This bill extends the Rural Community Hospital Demonstration Program for an additional five years. The&nbsp;program tests the fe\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/8967?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-05-21",
+          "_first_seen": "2026-06-30T10:48:04.719666+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Water Access Act",
+          "congress": "119",
+          "number": "9313",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Water Access Act</strong></p><p>This bill provides $500 million in FY2027 appropriations to the Department of Health and Human Services for the Low-Income Household Water Assistance Program. The program pro\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/9313?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-06-15",
+          "_first_seen": "2026-06-30T10:48:04.719666+00:00"
+        },
+        {
+          "currentChamber": "Senate",
+          "title": "Tribal Warrant Fairness Act",
+          "congress": "119",
+          "number": "3041",
+          "originChamber": "Senate",
+          "billType": "S",
+          "summary": "<p><strong>Tribal Warrant Fairness Act</strong></p><p>This bill authorizes the U.S. Marshals Service (USMS) to assist with certain tribal law enforcement activities and allows tribal law enforcement agencies to partic\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/3041?format=json",
+          "lastAction": "Passed Senate",
+          "lastActionDate": "2026-06-10",
+          "_first_seen": "2026-06-30T10:48:04.719666+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Public Lands Integrity Act",
+          "congress": "119",
+          "number": "9167",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Public Lands Integrity Act</strong></p><p>This bill generally prohibits provisions that result in the sale, disposal, or transfer of federal lands from being included in reconciliation legislation by requir\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/9167?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-06-04",
+          "_first_seen": "2026-06-30T10:48:04.719666+00:00"
+        },
+        {
+          "currentChamber": "Senate",
+          "title": "Improving Access to Medicare Coverage Act of 2026",
+          "congress": "119",
+          "number": "4641",
+          "originChamber": "Senate",
+          "billType": "S",
+          "summary": "<p><strong>Improving Access to Medicare Coverage Act of </strong><strong>2026</strong></p><p>This bill deems an individual receiving outpatient observation services in a hospital as an inpatient for purposes of satisf\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/4641?format=json",
+          "lastAction": "Introduced in Senate",
+          "lastActionDate": "2026-05-21",
+          "_first_seen": "2026-06-30T10:48:04.719666+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "National Defense Authorization Act for Fiscal Year 2027",
+          "congress": "119",
+          "number": "8800",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>National Defense Authorization Act for Fiscal Year 2027</strong></p><p>This bill sets forth policies and authorities for FY2027 for Department of Defense (DOD) programs, activities, and military constructio\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/8800?format=json",
+          "lastAction": "Reported to House",
+          "lastActionDate": "2026-06-15",
+          "_first_seen": "2026-06-30T10:48:04.719666+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "SURS Extension Act",
+          "congress": "119",
+          "number": "9002",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Small Practice, Underserved, and Rural Support Program Extension Act of 2023 or the SURS Extension Act</strong></p><p>This bill reauthorizes funds through FY2031 for the Centers for Medicare &amp; Medicaid \u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/9002?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-05-21",
+          "_first_seen": "2026-06-30T10:48:04.719666+00:00"
+        },
+        {
+          "currentChamber": "Senate",
+          "title": "Geothermal Cost-Recovery Authority Act of 2026",
+          "congress": "119",
+          "number": "4605",
+          "originChamber": "Senate",
+          "billType": "S",
+          "summary": "<p><strong>Geothermal Cost-Recovery Authority Act of 2026</strong></p><p>This bill expands the Geothermal Steam Act of 1970 to give the Department of the Interior the authority to collect certain fees from&nbsp;applic\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/4605?format=json",
+          "lastAction": "Introduced in Senate",
+          "lastActionDate": "2026-05-20",
+          "_first_seen": "2026-06-30T10:48:04.719666+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "IMPACT to Save Moms Act",
+          "congress": "119",
+          "number": "8907",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Innovative Maternal Payment and Coverage To Save Moms Act or the IMPACT to Save Moms Act</strong></p><p>This bill requires the Centers for Medicare &amp; Medicaid Services to establish the Perinatal Care Al\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/8907?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-05-19",
+          "_first_seen": "2026-06-30T10:48:04.719666+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "SAFE through Medicare Act",
+          "congress": "119",
+          "number": "8749",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Survival Aid For Emergencies through Medicare Act or the SAFE through Medicare Act</strong></p><p>This bill provides for Medicare coverage of medically necessary services for beneficiaries who are determine\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/8749?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-05-12",
+          "_first_seen": "2026-06-30T10:48:04.719666+00:00"
+        },
+        {
+          "currentChamber": "Senate",
+          "title": "Public Lands Integrity Act",
+          "congress": "119",
+          "number": "4455",
+          "originChamber": "Senate",
+          "billType": "S",
+          "summary": "<p><strong>Public Lands Integrity Act</strong></p><p>This bill generally prohibits&nbsp;provisions that result in the sale, disposal, or transfer of federal lands from being included in reconciliation legislation by r\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/4455?format=json",
+          "lastAction": "Introduced in Senate",
+          "lastActionDate": "2026-04-30",
+          "_first_seen": "2026-06-30T10:48:04.719666+00:00"
+        },
         {
           "currentChamber": "House",
           "title": "Energy Threat Analysis Center Act of 2026",
@@ -4973,16 +5129,16 @@
           "_first_seen": "2026-06-27T10:21:49.631129+00:00"
         },
         {
-          "currentChamber": "House",
-          "title": "SECURE Grid Act",
+          "currentChamber": "Senate",
+          "title": "A resolution designating June 23, 2026, as \"Social Media Harms Victim Remembrance Day\".",
           "congress": "119",
-          "number": "7257",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>Securing Community Upgrades for a Resilient Grid Act or the SECURE Grid Act</strong></p><p>This bill extends through FY2031 and modifies requirements for state energy security plans. Under current law, stat\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/7257?format=json",
-          "lastAction": "Reported to House",
-          "lastActionDate": "2026-05-11",
+          "number": "761",
+          "originChamber": "Senate",
+          "billType": "SRES",
+          "summary": "<p>This resolution designates June 23, 2026, as Social Media Harms Victim Remembrance Day&nbsp;and encourages government, industry, and community stakeholders to take action to prevent social media-related harm.</p>",
+          "url": "https://api.congress.gov/v3/bill/119/sres/761?format=json",
+          "lastAction": "Introduced in Senate",
+          "lastActionDate": "2026-06-09",
           "_first_seen": "2026-06-26T07:11:41.705091+00:00"
         },
         {
@@ -5012,32 +5168,6 @@
           "_first_seen": "2026-06-26T07:11:41.705091+00:00"
         },
         {
-          "currentChamber": "Senate",
-          "title": "A resolution designating June 23, 2026, as \"Social Media Harms Victim Remembrance Day\".",
-          "congress": "119",
-          "number": "761",
-          "originChamber": "Senate",
-          "billType": "SRES",
-          "summary": "<p>This resolution designates June 23, 2026, as Social Media Harms Victim Remembrance Day&nbsp;and encourages government, industry, and community stakeholders to take action to prevent social media-related harm.</p>",
-          "url": "https://api.congress.gov/v3/bill/119/sres/761?format=json",
-          "lastAction": "Introduced in Senate",
-          "lastActionDate": "2026-06-09",
-          "_first_seen": "2026-06-26T07:11:41.705091+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "Energy Emergency Leadership Act",
-          "congress": "119",
-          "number": "7258",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>Energy Emergency Leadership Act</strong></p><p>This bill expands the list of functions that the Secretary of Energy must assign to assistant secretaries under the Department of Energy Organization Act to in\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/7258?format=json",
-          "lastAction": "Reported to House",
-          "lastActionDate": "2026-05-11",
-          "_first_seen": "2026-06-26T07:11:41.705091+00:00"
-        },
-        {
           "currentChamber": "House",
           "title": "Rural and Municipal Utility Cybersecurity Act",
           "congress": "119",
@@ -5052,159 +5182,29 @@
         },
         {
           "currentChamber": "House",
-          "title": "Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran.",
+          "title": "SECURE Grid Act",
           "congress": "119",
-          "number": "100",
-          "originChamber": "House",
-          "billType": "HCONRES",
-          "summary": "<p>This concurrent resolution directs the President to remove U.S. Armed Forces from hostilities&nbsp;against Iran or any part of its government or military unless a declaration of war or authorization to use military\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hconres/100?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-05-13",
-          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
-        },
-        {
-          "currentChamber": "Senate",
-          "title": "A resolution designating May 16, 2026, as \"Kids to Parks Day\".",
-          "congress": "119",
-          "number": "734",
-          "originChamber": "Senate",
-          "billType": "SRES",
-          "summary": "<p>This resolution designates May 16, 2026, as Kids to Parks Day.</p><p>The resolution recognizes the importance of outdoor recreation and the preservation of open spaces in promoting the health and education of the y\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/sres/734?format=json",
-          "lastAction": "Passed Senate",
-          "lastActionDate": "2026-05-14",
-          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
-        },
-        {
-          "currentChamber": "Senate",
-          "title": "A resolution expressing support for the designation of May 2026 as \"Motorcycle Safety Awareness Month\".",
-          "congress": "119",
-          "number": "740",
-          "originChamber": "Senate",
-          "billType": "SRES",
-          "summary": "<p>This resolution expresses support for the designation of May 2026 as Motorcycle Safety Awareness Month. It also recognizes the contribution of motorcycles to transportation.</p>",
-          "url": "https://api.congress.gov/v3/bill/119/sres/740?format=json",
-          "lastAction": "Passed Senate",
-          "lastActionDate": "2026-05-19",
-          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
-        },
-        {
-          "currentChamber": "Unknown",
-          "title": "Medal of Sacrifice Act",
-          "congress": "119",
-          "number": "3497",
+          "number": "7257",
           "originChamber": "House",
           "billType": "HR",
-          "summary": "<p><strong>Medal of Sacrifice Act of 2025</strong></p><p>This act directs the President to issue a medal of sacrifice for eligible law enforcement officers and first responders who are killed in the line of duty.</p><\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/3497?format=json",
-          "lastAction": "Public Law",
-          "lastActionDate": "2026-05-28",
-          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "Recover COVID Unemployment Fraud in Banks Act",
-          "congress": "119",
-          "number": "8873",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>Recover COVID Unemployment Fraud in Banks Act</strong></p><p>This bill extends to 10 years the statute of limitations for federal criminal charges or civil enforcement actions for fraud&nbsp;related to seve\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/8873?format=json",
+          "summary": "<p><strong>Securing Community Upgrades for a Resilient Grid Act or the SECURE Grid Act</strong></p><p>This bill extends through FY2031 and modifies requirements for state energy security plans. Under current law, stat\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/7257?format=json",
           "lastAction": "Reported to House",
-          "lastActionDate": "2026-05-29",
-          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
+          "lastActionDate": "2026-05-11",
+          "_first_seen": "2026-06-26T07:11:41.705091+00:00"
         },
         {
           "currentChamber": "House",
-          "title": "Boxing Therapy for Parkinson\u2019s Access Act",
+          "title": "Energy Emergency Leadership Act",
           "congress": "119",
-          "number": "9150",
+          "number": "7258",
           "originChamber": "House",
           "billType": "HR",
-          "summary": "<p><strong>Boxing Therapy for Parkinson's Access Act</strong></p><p>This bill requires the Department of Veterans Affairs (VA) to furnish boxing-based exercise classes to veterans who (1) are enrolled in the VA health\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/9150?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-06-04",
-          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
-        },
-        {
-          "currentChamber": "Senate",
-          "title": "A bill to designate the facility of the United States Postal Service located at 201 East Grant Avenue in Georgetown, Ohio, as the \"Ulysses S. Grant Post Office Building\".",
-          "congress": "119",
-          "number": "4745",
-          "originChamber": "Senate",
-          "billType": "S",
-          "summary": "This bill designates the facility of the United States Postal Service located at 201 East Grant Avenue in Georgetown, Ohio, as the \"Ulysses S. Grant Post Office Building\".",
-          "url": "https://api.congress.gov/v3/bill/119/s/4745?format=json",
-          "lastAction": "Introduced in Senate",
-          "lastActionDate": "2026-06-10",
-          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "Faster Labor Contracts Act",
-          "congress": "119",
-          "number": "5408",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>Faster Labor Contracts Act</strong></p><p>This bill establishes mandatory deadlines for parties negotiating an initial collective bargaining agreement (CBA)&nbsp;and provides for mediation and arbitration t\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/5408?format=json",
-          "lastAction": "Passed House",
-          "lastActionDate": "2026-06-09",
-          "_first_seen": "2026-06-24T08:11:24.235655+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "Take Care of America\u2019s Veterans Act",
-          "congress": "119",
-          "number": "9237",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>Take Care of America's Veterans Act</strong></p><p>This bill addresses veterans\u2019 benefits, health care, counseling, Department of Veterans Affairs (VA) personnel, VA infrastructure, and the Veterans Communi\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/9237?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-06-10",
-          "_first_seen": "2026-06-24T08:11:24.235655+00:00"
-        },
-        {
-          "currentChamber": "Unknown",
-          "title": "Fiscal Year 2025 Veterans Affairs Major Medical Facility Authorization Act",
-          "congress": "119",
-          "number": "2393",
-          "originChamber": "Senate",
-          "billType": "S",
-          "summary": "<p><strong>Fiscal Year 2025 Veterans Affairs Major Medical Facility Authorization Act</strong></p><p>This act authorizes the Department of Veterans Affairs to carry out a major medical facility project in St. Louis, M\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/2393?format=json",
-          "lastAction": "Public Law",
-          "lastActionDate": "2026-06-09",
-          "_first_seen": "2026-06-24T08:11:24.235655+00:00"
-        },
-        {
-          "currentChamber": "Senate",
-          "title": "Community College Agriculture Advancement Act of 2026",
-          "congress": "119",
-          "number": "4730",
-          "originChamber": "Senate",
-          "billType": "S",
-          "summary": "<p><strong>Community College Agriculture Advancement Act of 2026</strong></p><p>This bill allows the Department of Agriculture (USDA) to make competitive grants to assist eligible entities (i.e.,&nbsp;a junior or comm\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/4730?format=json",
-          "lastAction": "Introduced in Senate",
-          "lastActionDate": "2026-06-10",
-          "_first_seen": "2026-06-24T08:11:24.235655+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "United States Commission on International Religious Freedom Reauthorization Act of 2026",
-          "congress": "119",
-          "number": "1744",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>United States Commission on International Religious Freedom Reauthorization Act of 2026</strong></p><p>This bill reauthorizes the U.S. Commission on International Religious Freedom through 2028. The commiss\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/1744?format=json",
-          "lastAction": "Passed House",
-          "lastActionDate": "2026-06-08",
-          "_first_seen": "2026-06-24T08:11:24.235655+00:00"
+          "summary": "<p><strong>Energy Emergency Leadership Act</strong></p><p>This bill expands the list of functions that the Secretary of Energy must assign to assistant secretaries under the Department of Energy Organization Act to in\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/7258?format=json",
+          "lastAction": "Reported to House",
+          "lastActionDate": "2026-05-11",
+          "_first_seen": "2026-06-26T07:11:41.705091+00:00"
         }
       ]
     },
@@ -5471,42 +5471,21 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 58785,
+      "rows": 58792,
       "last_seen": "2026-06-30",
       "recent": [
         {
-          "ticker": "ALGT",
-          "owner_name": "OSAIC HOLDINGS, INC.",
+          "ticker": "CMCSA",
+          "owner_name": "DANSKE BANK A/S",
           "owner_title": "Institution",
-          "shares": "372",
+          "shares": "2384450",
           "_collected": "2026-06-30"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "DZ BANK AG Deutsche Zentral Genossenschafts Bank, Frankfurt am Main",
+          "owner_name": "Cetera Investment Advisers",
           "owner_title": "Institution",
-          "shares": "361181",
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "AMGN",
-          "owner_name": "Candriam S.C.A.",
-          "owner_title": "Institution",
-          "shares": "395351",
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "AMGN",
-          "owner_name": "NATIXIS ADVISORS, LLC",
-          "owner_title": "Institution",
-          "shares": "392002",
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "AMGN",
-          "owner_name": "WEALTH ENHANCEMENT ADVISORY SERVICES, LLC",
-          "owner_title": "Institution",
-          "shares": "388718",
+          "shares": "345260",
           "_collected": "2026-06-30"
         },
         {
@@ -5539,16 +5518,16 @@
         },
         {
           "ticker": "AMGN",
-          "owner_name": "SEI INVESTMENTS CO",
+          "owner_name": "DZ BANK AG Deutsche Zentral Genossenschafts Bank, Frankfurt am Main",
           "owner_title": "Institution",
-          "shares": "356625",
+          "shares": "361181",
           "_collected": "2026-06-30"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "PFA Pension, Forsikringsaktieselskab",
+          "owner_name": "SEI INVESTMENTS CO",
           "owner_title": "Institution",
-          "shares": "336213",
+          "shares": "356625",
           "_collected": "2026-06-30"
         },
         {
@@ -5560,16 +5539,16 @@
         },
         {
           "ticker": "AMGN",
-          "owner_name": "Cetera Investment Advisers",
+          "owner_name": "Assenagon Asset Management S.A.",
           "owner_title": "Institution",
-          "shares": "345260",
+          "shares": "344745",
           "_collected": "2026-06-30"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "Assenagon Asset Management S.A.",
+          "owner_name": "BARTLETT & CO. WEALTH MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "344745",
+          "shares": "329953",
           "_collected": "2026-06-30"
         },
         {
@@ -5602,6 +5581,48 @@
         },
         {
           "ticker": "AMGN",
+          "owner_name": "Man Group plc",
+          "owner_title": "Institution",
+          "shares": "336503",
+          "_collected": "2026-06-30"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "PFA Pension, Forsikringsaktieselskab",
+          "owner_title": "Institution",
+          "shares": "336213",
+          "_collected": "2026-06-30"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "LSV ASSET MANAGEMENT",
+          "owner_title": "Institution",
+          "shares": "335430",
+          "_collected": "2026-06-30"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "WEALTH ENHANCEMENT ADVISORY SERVICES, LLC",
+          "owner_title": "Institution",
+          "shares": "388718",
+          "_collected": "2026-06-30"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "NATIXIS ADVISORS, LLC",
+          "owner_title": "Institution",
+          "shares": "392002",
+          "_collected": "2026-06-30"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Candriam S.C.A.",
+          "owner_title": "Institution",
+          "shares": "395351",
+          "_collected": "2026-06-30"
+        },
+        {
+          "ticker": "AMGN",
           "owner_name": "APG Asset Management N.V.",
           "owner_title": "Institution",
           "shares": "395935",
@@ -5609,44 +5630,23 @@
         },
         {
           "ticker": "AMGN",
-          "owner_name": "Capital International, Inc./CA/",
+          "owner_name": "Universal- Beteiligungs- und Servicegesellschaft mbH",
           "owner_title": "Institution",
-          "shares": "398069",
+          "shares": "465546",
           "_collected": "2026-06-30"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "CIBC Asset Management Inc",
+          "owner_name": "AVIVA PLC",
           "owner_title": "Institution",
-          "shares": "404263",
+          "shares": "464183",
           "_collected": "2026-06-30"
         },
         {
           "ticker": "AMGN",
-          "owner_name": "TRUIST FINANCIAL CORP",
+          "owner_name": "FIFTH THIRD BANCORP",
           "owner_title": "Institution",
-          "shares": "407214",
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "AMGN",
-          "owner_name": "Mizuho Markets Cayman LP",
-          "owner_title": "Institution",
-          "shares": "488970",
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "AMGN",
-          "owner_name": "STATE BOARD OF ADMINISTRATION OF FLORIDA RETIREMENT SYSTEM",
-          "owner_title": "Institution",
-          "shares": "473538",
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "AMGN",
-          "owner_name": "THRIVENT FINANCIAL FOR LUTHERANS",
-          "owner_title": "Institution",
-          "shares": "469965",
+          "shares": "461207",
           "_collected": "2026-06-30"
         }
       ]
@@ -6415,63 +6415,63 @@
     "hf": [
       {
         "ticker": "NVDA",
-        "downloads_30d": 30370985.0,
-        "wow_pct": 4.3,
+        "downloads_30d": 30608251.0,
+        "wow_pct": 5.1,
         "hot": true
       },
       {
         "ticker": "META",
-        "downloads_30d": 91338097.0,
-        "wow_pct": 1.6,
+        "downloads_30d": 91266683.0,
+        "wow_pct": 1.5,
         "hot": true
       },
       {
         "ticker": "GOOGL",
-        "downloads_30d": 208593079.0,
-        "wow_pct": 0.5,
-        "hot": false
-      },
-      {
-        "ticker": "BABA",
-        "downloads_30d": 206678244.0,
-        "wow_pct": -3.2,
+        "downloads_30d": 208806211.0,
+        "wow_pct": 0.6,
         "hot": false
       },
       {
         "ticker": "AMZN",
-        "downloads_30d": 24454777.0,
-        "wow_pct": -3.7,
+        "downloads_30d": 24331542.0,
+        "wow_pct": -4.2,
         "hot": false
       },
       {
-        "ticker": "MSFT",
-        "downloads_30d": 28318784.0,
-        "wow_pct": -4.3,
+        "ticker": "BABA",
+        "downloads_30d": 204504947.0,
+        "wow_pct": -4.2,
         "hot": false
       },
       {
         "ticker": "IBM",
-        "downloads_30d": 9587701.0,
-        "wow_pct": -4.5,
+        "downloads_30d": 9538567.0,
+        "wow_pct": -5.0,
+        "hot": false
+      },
+      {
+        "ticker": "MSFT",
+        "downloads_30d": 28058288.0,
+        "wow_pct": -5.2,
         "hot": false
       },
       {
         "ticker": "CRM",
-        "downloads_30d": 6718193.0,
-        "wow_pct": -6.2,
+        "downloads_30d": 6675332.0,
+        "wow_pct": -6.8,
         "hot": false
       },
       {
         "ticker": "AAPL",
-        "downloads_30d": 6136266.0,
-        "wow_pct": -10.6,
+        "downloads_30d": 6058776.0,
+        "wow_pct": -11.7,
         "hot": false
       }
     ],
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 19,
+        "count": 20,
         "items": "8.01"
       },
       {
@@ -10365,6 +10365,14 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "FSK",
+        "category": "Tender Offers",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Tender Offers"
+      },
+      {
         "ticker": "8860",
         "category": "Capital Returns",
         "confidence": "high",
@@ -13926,6 +13934,14 @@
       },
       {
         "ticker": "MSGS",
+        "category": "Spin-Offs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Spin-Offs"
+      },
+      {
+        "ticker": "MIDD",
         "category": "Spin-Offs",
         "confidence": "high",
         "activist": false,
@@ -18294,11 +18310,11 @@
       },
       {
         "ticker": "CTGO",
-        "category": "Acquisitions",
+        "category": "Other",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Other"
       },
       {
         "ticker": "DTSQ",
@@ -18446,11 +18462,11 @@
       },
       {
         "ticker": "SD",
-        "category": "Capital Returns",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Capital Returns"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "FLUT",
@@ -21406,11 +21422,11 @@
       },
       {
         "ticker": "ALGT",
-        "category": "Acquisitions",
+        "category": "Capital Returns",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Capital Returns"
       },
       {
         "ticker": "AEFES",
@@ -22878,11 +22894,11 @@
       },
       {
         "ticker": "TBPH",
-        "category": "Strategic Reviews",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Strategic Reviews"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "VTYX",
@@ -32669,12 +32685,28 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "HONIV",
+        "category": "Spin-Offs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Spin-Offs"
+      },
+      {
         "ticker": "HCTI",
         "category": "Other",
         "confidence": "medium",
         "activist": false,
         "filer": null,
         "detail": "Other"
+      },
+      {
+        "ticker": "HONAV",
+        "category": "Spin-Offs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Spin-Offs"
       },
       {
         "ticker": "IIPR-PA",
@@ -32699,6 +32731,14 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "NWSLL",
+        "category": "Capital Returns",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "NEE-PS",
@@ -33358,11 +33398,11 @@
       },
       {
         "ticker": "MAC",
-        "category": "Capital Returns",
-        "confidence": "medium",
+        "category": "Other",
+        "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Capital Returns"
+        "detail": "Other"
       },
       {
         "ticker": "NEO",
@@ -34294,11 +34334,11 @@
       },
       {
         "ticker": "EDGM",
-        "category": "Acquisitions",
+        "category": "Divestitures",
         "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Divestitures"
       },
       {
         "ticker": "FGNXP",
@@ -34899,6 +34939,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "STRD",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "PGIM",
@@ -35861,6 +35909,14 @@
         "detail": "Spin-Offs"
       },
       {
+        "ticker": "MLM",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "VEEAW",
         "category": "Restructuring",
         "confidence": "medium",
@@ -36078,6 +36134,14 @@
       },
       {
         "ticker": "SND",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "TBTC",
         "category": "Capital Returns",
         "confidence": "high",
         "activist": false,
@@ -36830,11 +36894,11 @@
       },
       {
         "ticker": "RKLB",
-        "category": "Other",
-        "confidence": "medium",
+        "category": "Acquisitions",
+        "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Other"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "WINVW",
@@ -37573,6 +37637,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "QETAU",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "WORX",
         "category": "Delistings",
         "confidence": "high",
@@ -37813,6 +37885,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "JATT",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
         "ticker": "TGLS",
         "category": "Acquisitions",
         "confidence": "high",
@@ -37923,14 +38003,6 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
-      },
-      {
-        "ticker": "MRT",
-        "category": "Capital Returns",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Capital Returns"
       },
       {
         "ticker": "WSUPW",
@@ -38133,6 +38205,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "MFP",
+        "category": "Spin-Offs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Spin-Offs"
+      },
+      {
         "ticker": "GAING",
         "category": "Delistings",
         "confidence": "high",
@@ -38251,6 +38331,14 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "QLEP-UN",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "MBGL",
@@ -38379,6 +38467,14 @@
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
+      },
+      {
+        "ticker": "PBT",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "RMTI",
@@ -38515,14 +38611,6 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
-      },
-      {
-        "ticker": "SCLXW",
-        "category": "Other",
-        "confidence": "medium",
-        "activist": false,
-        "filer": null,
-        "detail": "Other"
       },
       {
         "ticker": "TNL",
@@ -39501,6 +39589,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "TOMZ",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "XXI",
         "category": "Delistings",
         "confidence": "high",
@@ -40045,6 +40141,14 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "CCZ",
+        "category": "Spin-Offs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Spin-Offs"
+      },
+      {
         "ticker": "MIRA",
         "category": "Other",
         "confidence": "high",
@@ -40424,6 +40528,14 @@
         "ticker": "BSBK",
         "category": "Acquisitions",
         "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "CTNT",
+        "category": "Acquisitions",
+        "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
@@ -40966,11 +41078,11 @@
       },
       {
         "ticker": "KFY",
-        "category": "Capital Returns",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Capital Returns"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "NXTS",
@@ -41333,6 +41445,14 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "AESPU",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
         "ticker": "GXAI",
         "category": "Divestitures",
         "confidence": "high",
@@ -41555,166 +41675,222 @@
         "activist": false,
         "filer": null,
         "detail": "Rights Offerings"
+      },
+      {
+        "ticker": "CMRF",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "DLR-PJ",
+        "category": "Acquisitions",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "GLP-PB",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "ROLR",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "USDW",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "MTX",
+        "category": "Restructuring",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Restructuring"
+      },
+      {
+        "ticker": "TE-WT",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       }
     ],
     "unusual_options": [
       {
         "ticker": "CGNX",
-        "vol_oi": 2.007,
-        "mult": 38.38,
+        "vol_oi": 1.501,
+        "mult": 28.71,
         "put_call": 0.01,
         "lean": "call-skew",
         "hot": true
       },
       {
         "ticker": "NB",
-        "vol_oi": 0.983,
-        "mult": 31.36,
+        "vol_oi": 0.511,
+        "mult": 16.28,
         "put_call": 0.01,
         "lean": "call-skew",
         "hot": true
       },
       {
         "ticker": "DINO",
-        "vol_oi": 0.349,
-        "mult": 9.23,
+        "vol_oi": 0.392,
+        "mult": 10.38,
         "put_call": 0.03,
         "lean": "call-skew",
         "hot": true
       },
       {
         "ticker": "FBIN",
-        "vol_oi": 0.793,
-        "mult": 6.08,
+        "vol_oi": 0.67,
+        "mult": 5.14,
         "put_call": 0.1,
         "lean": "call-skew",
         "hot": true
       },
       {
         "ticker": "VIK",
-        "vol_oi": 0.424,
-        "mult": 6.01,
-        "put_call": 16.86,
+        "vol_oi": 0.342,
+        "mult": 4.84,
+        "put_call": 16.65,
         "lean": "put-skew",
         "hot": true
       },
       {
         "ticker": "PEP",
-        "vol_oi": 0.348,
-        "mult": 5.33,
+        "vol_oi": 0.296,
+        "mult": 4.53,
         "put_call": 0.09,
         "lean": "call-skew",
         "hot": true
       },
       {
         "ticker": "KVYO",
-        "vol_oi": 0.307,
-        "mult": 4.82,
+        "vol_oi": 0.243,
+        "mult": 3.82,
         "put_call": 11.32,
         "lean": "put-skew",
         "hot": true
       },
       {
-        "ticker": "EU",
-        "vol_oi": 0.394,
-        "mult": 4.37,
-        "put_call": 0.24,
-        "lean": "call-skew",
-        "hot": true
-      },
-      {
         "ticker": "PCG",
-        "vol_oi": 0.047,
-        "mult": 3.7,
+        "vol_oi": 0.048,
+        "mult": 3.71,
         "put_call": 0.19,
         "lean": "call-skew",
         "hot": true
       },
       {
+        "ticker": "EU",
+        "vol_oi": 0.292,
+        "mult": 3.24,
+        "put_call": 0.24,
+        "lean": "call-skew",
+        "hot": true
+      },
+      {
         "ticker": "KDP",
-        "vol_oi": 0.232,
-        "mult": 3.26,
+        "vol_oi": 0.216,
+        "mult": 3.03,
         "put_call": 0.09,
         "lean": "call-skew",
         "hot": true
       },
       {
-        "ticker": "GIS",
-        "vol_oi": 0.255,
-        "mult": 3.22,
-        "put_call": 1.28,
-        "lean": "balanced",
-        "hot": true
-      },
-      {
-        "ticker": "SGML",
-        "vol_oi": 0.304,
-        "mult": 3.14,
-        "put_call": 0.07,
-        "lean": "call-skew",
-        "hot": true
-      },
-      {
         "ticker": "NVT",
-        "vol_oi": 0.223,
-        "mult": 3.02,
+        "vol_oi": 0.204,
+        "mult": 2.76,
         "put_call": 0.91,
         "lean": "balanced",
-        "hot": true
+        "hot": false
       },
       {
         "ticker": "PANW",
         "vol_oi": 0.286,
-        "mult": 2.75,
-        "put_call": 0.43,
+        "mult": 2.74,
+        "put_call": 0.56,
         "lean": "call-skew",
         "hot": false
       },
       {
-        "ticker": "AVAV",
-        "vol_oi": 0.809,
-        "mult": 2.45,
-        "put_call": 0.92,
+        "ticker": "GIS",
+        "vol_oi": 0.207,
+        "mult": 2.62,
+        "put_call": 1.28,
         "lean": "balanced",
         "hot": false
       },
       {
         "ticker": "MQ",
         "vol_oi": 0.044,
-        "mult": 2.36,
+        "mult": 2.39,
         "put_call": 0.17,
         "lean": "call-skew",
         "hot": false
       },
       {
-        "ticker": "TER",
-        "vol_oi": 0.395,
-        "mult": 2.29,
-        "put_call": 0.51,
-        "lean": "call-skew",
-        "hot": false
-      },
-      {
         "ticker": "ACLS",
-        "vol_oi": 0.403,
-        "mult": 2.28,
+        "vol_oi": 0.418,
+        "mult": 2.36,
         "put_call": 0.22,
         "lean": "call-skew",
         "hot": false
       },
       {
+        "ticker": "SHW",
+        "vol_oi": 0.224,
+        "mult": 2.21,
+        "put_call": 2.35,
+        "lean": "put-skew",
+        "hot": false
+      },
+      {
         "ticker": "FOUR",
-        "vol_oi": 0.081,
-        "mult": 2.06,
+        "vol_oi": 0.084,
+        "mult": 2.12,
         "put_call": 2.63,
         "lean": "put-skew",
         "hot": false
       },
       {
-        "ticker": "CBRS",
-        "vol_oi": 0.776,
-        "mult": 2.04,
-        "put_call": 0.23,
+        "ticker": "CRWD",
+        "vol_oi": 0.313,
+        "mult": 1.91,
+        "put_call": 0.55,
+        "lean": "call-skew",
+        "hot": false
+      },
+      {
+        "ticker": "UPST",
+        "vol_oi": 0.178,
+        "mult": 1.91,
+        "put_call": 0.22,
+        "lean": "call-skew",
+        "hot": false
+      },
+      {
+        "ticker": "S",
+        "vol_oi": 0.124,
+        "mult": 1.9,
+        "put_call": 0.14,
         "lean": "call-skew",
         "hot": false
       }
@@ -41772,12 +41948,6 @@
         "hot": true
       },
       {
-        "ticker": "LRCX",
-        "bull_ratio": 0.84,
-        "articles": 50,
-        "hot": true
-      },
-      {
         "ticker": "SO",
         "bull_ratio": 0.84,
         "articles": 50,
@@ -41791,6 +41961,12 @@
       },
       {
         "ticker": "GEV",
+        "bull_ratio": 0.82,
+        "articles": 50,
+        "hot": true
+      },
+      {
+        "ticker": "LRCX",
         "bull_ratio": 0.82,
         "articles": 50,
         "hot": true
@@ -41821,6 +41997,12 @@
       },
       {
         "ticker": "GLW",
+        "bull_ratio": 0.8,
+        "articles": 50,
+        "hot": true
+      },
+      {
+        "ticker": "MU",
         "bull_ratio": 0.8,
         "articles": 50,
         "hot": true
@@ -41865,12 +42047,6 @@
         "ticker": "NDSN",
         "bull_ratio": 0.77,
         "articles": 13,
-        "hot": true
-      },
-      {
-        "ticker": "URI",
-        "bull_ratio": 0.77,
-        "articles": 31,
         "hot": true
       }
     ],
@@ -41996,61 +42172,55 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17658,
-        "wow_pct": 1.14,
+        "stars": 17668,
+        "wow_pct": 1.2,
         "hot": true
       },
       {
         "ticker": "NET",
-        "stars": 14657,
-        "wow_pct": 0.33,
+        "stars": 14660,
+        "wow_pct": 0.35,
         "hot": true
       },
       {
         "ticker": "IBM",
-        "stars": 7540,
-        "wow_pct": 0.25,
+        "stars": 7543,
+        "wow_pct": 0.29,
         "hot": true
       },
       {
         "ticker": "AMD",
-        "stars": 6658,
-        "wow_pct": 0.2,
-        "hot": true
-      },
-      {
-        "ticker": "MSFT",
-        "stars": 187036,
-        "wow_pct": 0.2,
+        "stars": 6661,
+        "wow_pct": 0.24,
         "hot": true
       },
       {
         "ticker": "DDOG",
-        "stars": 3658,
-        "wow_pct": 0.16,
+        "stars": 3659,
+        "wow_pct": 0.19,
         "hot": true
       },
       {
-        "ticker": "GOOGL",
-        "stars": 196106,
-        "wow_pct": 0.13,
+        "ticker": "MSFT",
+        "stars": 186935,
+        "wow_pct": 0.14,
         "hot": true
       },
       {
         "ticker": "U",
-        "stars": 19524,
-        "wow_pct": 0.13,
+        "stars": 19526,
+        "wow_pct": 0.14,
         "hot": true
       },
       {
-        "ticker": "META",
-        "stars": 246310,
-        "wow_pct": 0.12,
+        "ticker": "PLTR",
+        "stars": 21874,
+        "wow_pct": 0.11,
         "hot": false
       },
       {
-        "ticker": "PLTR",
-        "stars": 21873,
+        "ticker": "MDB",
+        "stars": 28415,
         "wow_pct": 0.1,
         "hot": false
       },
@@ -42061,20 +42231,26 @@
         "hot": false
       },
       {
-        "ticker": "MDB",
-        "stars": 28413,
-        "wow_pct": 0.09,
+        "ticker": "GTLB",
+        "stars": 24479,
+        "wow_pct": 0.08,
         "hot": false
       },
       {
-        "ticker": "GTLB",
-        "stars": 24477,
+        "ticker": "META",
+        "stars": 246203,
+        "wow_pct": 0.08,
+        "hot": false
+      },
+      {
+        "ticker": "GOOGL",
+        "stars": 195982,
         "wow_pct": 0.07,
         "hot": false
       },
       {
         "ticker": "CRM",
-        "stars": 11242,
+        "stars": 11243,
         "wow_pct": 0.04,
         "hot": false
       },
@@ -43529,6 +43705,83 @@
     ],
     "news": [
       {
+        "headline": "Insider Sale: General Counsel of $NTES Sells 10,000 Shares",
+        "ticker": null,
+        "category": "insiders_automated",
+        "time": "2026-06-30 10:45:24",
+        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+General+Counsel+of+%24NTES+Sells+10%2C000+Shares"
+      },
+      {
+        "headline": "GSI Technology to Present at Canaccord Genuity 46th Annual Growth Conference",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-30 10:10:20",
+        "url": "https://www.quiverquant.com/news/GSI+Technology+to+Present+at+Canaccord+Genuity+46th+Annual+Growth+Conference"
+      },
+      {
+        "headline": "Globavend Holdings Launches First Fully AI-Produced Original Micro Drama, \u201cBuried Innocent\u201d",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-30 08:40:39",
+        "url": "https://www.quiverquant.com/news/Globavend+Holdings+Launches+First+Fully+AI-Produced+Original+Micro+Drama%2C+%E2%80%9CBuried+Innocent%E2%80%9D"
+      },
+      {
+        "headline": "HUTCHMED to Announce Interim Results for Six Months Ended June 30, 2026 on July 30, 2026",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-30 08:40:39",
+        "url": "https://www.quiverquant.com/news/HUTCHMED+to+Announce+Interim+Results+for+Six+Months+Ended+June+30%2C+2026+on+July+30%2C+2026"
+      },
+      {
+        "headline": "WTW Launches GPU-Enabled RiskAgility Financial Modeller to Boost Insurance Modelling Performance",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-30 08:10:32",
+        "url": "https://www.quiverquant.com/news/WTW+Launches+GPU-Enabled+RiskAgility+Financial+Modeller+to+Boost+Insurance+Modelling+Performance"
+      },
+      {
+        "headline": "707 Cayman Holdings Limited Appoints Robin Hoksnes Karlsen as Executive Director",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-30 08:10:32",
+        "url": "https://www.quiverquant.com/news/707+Cayman+Holdings+Limited+Appoints+Robin+Hoksnes+Karlsen+as+Executive+Director"
+      },
+      {
+        "headline": "Freshworks Announces Vanquis Selects Freshservice to Support Digital Transformation",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-30 07:10:22",
+        "url": "https://www.quiverquant.com/news/Freshworks+Announces+Vanquis+Selects+Freshservice+to+Support+Digital+Transformation"
+      },
+      {
+        "headline": "Himax Technologies Launches HE Series iToF Depth Decoder ICs for Robotics and AI Vision Applications",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-30 06:10:21",
+        "url": "https://www.quiverquant.com/news/Himax+Technologies+Launches+HE+Series+iToF+Depth+Decoder+ICs+for+Robotics+and+AI+Vision+Applications"
+      },
+      {
+        "headline": "GXO and Co-op Extend Transport Partnership with New Five-Year Agreement",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-30 05:10:20",
+        "url": "https://www.quiverquant.com/news/GXO+and+Co-op+Extend+Transport+Partnership+with+New+Five-Year+Agreement"
+      },
+      {
+        "headline": "Cal-Maine Foods Reaches Agreement to Resolve DOJ and State Attorneys General Claims",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-30 02:50:19",
+        "url": "https://www.quiverquant.com/news/Cal-Maine+Foods+Reaches+Agreement+to+Resolve+DOJ+and+State+Attorneys+General+Claims"
+      },
+      {
+        "headline": "Nuvectis Pharma Prices $100 Million Underwritten Public Offering of Common Stock",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-30 02:40:18",
+        "url": "https://www.quiverquant.com/news/Nuvectis+Pharma+Prices+%24100+Million+Underwritten+Public+Offering+of+Common+Stock"
+      },
+      {
         "headline": "Insider Sale: Chief Executive Officer of $LEGN Sells 5,566 Shares",
         "ticker": null,
         "category": "insiders_automated",
@@ -43564,11 +43817,11 @@
         "url": "https://www.quiverquant.com/news/Insider+Sale%3A+VP+of+%24GOOGL+Sells+449+Shares"
       },
       {
-        "headline": "Press Release: House Passes Mary Miller\u2019s SCREEN Act in Child Online Safety Package",
+        "headline": "Press Release: Brian Mast discusses water policy ahead of WRDA 2026 debate",
         "ticker": null,
         "category": "legislation_automated",
         "time": "2026-06-30 00:22:05",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+House+Passes+Mary+Miller%E2%80%99s+SCREEN+Act+in+Child+Online+Safety+Package"
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Brian+Mast+discusses+water+policy+ahead+of+WRDA+2026+debate"
       },
       {
         "headline": "Press Release: Mike Flood\u2019s TRIA Reauthorization Bill Passes House",
@@ -43590,83 +43843,6 @@
         "category": "legislation_automated",
         "time": "2026-06-30 00:22:05",
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Kim+Schrier+Supports+House+Passage+of+KIDS+Act"
-      },
-      {
-        "headline": "Press Release: Kathy Castor Announces House Passage of Bipartisan KIDS Act to Strengthen Online Protections for Children",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 00:22:05",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Kathy+Castor+Announces+House+Passage+of+Bipartisan+KIDS+Act+to+Strengthen+Online+Protections+for+Children"
-      },
-      {
-        "headline": "Press Release: Lori Trahan Supports Bipartisan KIDS Act to Address Online Safety for Children",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 00:22:05",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Lori+Trahan+Supports+Bipartisan+KIDS+Act+to+Address+Online+Safety+for+Children"
-      },
-      {
-        "headline": "Press Release: Brian Mast discusses water policy ahead of WRDA 2026 debate",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 00:22:05",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Brian+Mast+discusses+water+policy+ahead+of+WRDA+2026+debate"
-      },
-      {
-        "headline": "Press Release: House Passes Walberg and Lee Bill to Update Children\u2019s Online Privacy Protections",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 00:22:05",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+House+Passes+Walberg+and+Lee+Bill+to+Update+Children%E2%80%99s+Online+Privacy+Protections"
-      },
-      {
-        "headline": "Press Release: Krishnamoorthi Responds to Supreme Court Ruling on Timely Cast Mail Ballots",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 00:22:05",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Krishnamoorthi+Responds+to+Supreme+Court+Ruling+on+Timely+Cast+Mail+Ballots"
-      },
-      {
-        "headline": "Press Release: Doris Matsui\u2019s SECURE Grid Act Passes House, Strengthening Electric Grid Planning",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 00:22:05",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Doris+Matsui%E2%80%99s+SECURE+Grid+Act+Passes+House%2C+Strengthening+Electric+Grid+Planning"
-      },
-      {
-        "headline": "Press Release: Brett Guthrie, House Energy and Commerce Leaders Mark Passage of KIDS Act",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 00:22:05",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Brett+Guthrie%2C+House+Energy+and+Commerce+Leaders+Mark+Passage+of+KIDS+Act"
-      },
-      {
-        "headline": "Press Release: House Passes Laurel Lee\u2019s Online Safety Bills in KIDS Act",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 00:22:05",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+House+Passes+Laurel+Lee%E2%80%99s+Online+Safety+Bills+in+KIDS+Act"
-      },
-      {
-        "headline": "Press Release: Pfluger Welcomes Duffy to San Angelo Regional Airport, Announces $18 Million Tower Investment",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 00:22:05",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Pfluger+Welcomes+Duffy+to+San+Angelo+Regional+Airport%2C+Announces+%2418+Million+Tower+Investment"
-      },
-      {
-        "headline": "Press Release: Shri Thanedar Supports Supreme Court Voting Rights Ruling",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 00:22:05",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Shri+Thanedar+Supports+Supreme+Court+Voting+Rights+Ruling"
-      },
-      {
-        "headline": "Press Release: Becca Balint Says Congress Should Do More to Protect Kids Online",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 00:22:05",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Becca+Balint+Says+Congress+Should+Do+More+to+Protect+Kids+Online"
       }
     ],
     "wsb": [
@@ -43751,14 +43927,14 @@
         "sentiment": 0.107
       },
       {
-        "ticker": "MSFT",
-        "mentions": 25,
-        "sentiment": 0.015
-      },
-      {
         "ticker": "QQQ",
         "mentions": 25,
         "sentiment": 0.074
+      },
+      {
+        "ticker": "MSFT",
+        "mentions": 25,
+        "sentiment": 0.015
       },
       {
         "ticker": "OKLO",
@@ -44249,6 +44425,16 @@
         "summary": "This resolution provides for the consideration of the bill (H.R. 1181) to prohibit payment card networks and covered entities from requiring the use of or assigning merchant category codes that distinguish a firearms retailer from general-merchandise retailer or sporting-goods retailer, and for othe"
       },
       {
+        "title": "National Defense Authorization Act for Fiscal Year 2027",
+        "sector": "Defense",
+        "chamber": "House",
+        "bill": "HR8800",
+        "last_action": "Reported to House",
+        "last_action_date": "2026-06-15",
+        "url": "https://api.congress.gov/v3/bill/119/hr/8800?format=json",
+        "summary": "National Defense Authorization Act for Fiscal Year 2027   This bill sets forth policies and authorities for FY2027 for Department of Defense (DOD) programs, activities, and military construction as well as the national security programs of the Department of Energy (DOE).  Among other elements, the b"
+      },
+      {
         "title": "Department of Homeland Security Appropriations Act, 2027",
         "sector": "Homeland / Immigration",
         "chamber": "House",
@@ -44279,16 +44465,6 @@
         "summary": "Departments of Labor, Health and Human Services, and Education, and Related Agencies Appropriations Act, 2027   This bill provides FY2027 appropriations to the Departments of Labor, Health and Human Services, and Education; and related agencies.  The bill provides appropriations to the Department of"
       },
       {
-        "title": "Take Care of America\u2019s Veterans Act",
-        "sector": "Defense",
-        "chamber": "House",
-        "bill": "HR9237",
-        "last_action": "Introduced in House",
-        "last_action_date": "2026-06-10",
-        "url": "https://api.congress.gov/v3/bill/119/hr/9237?format=json",
-        "summary": "Take Care of America's Veterans Act   This bill addresses veterans\u2019 benefits, health care, counseling, Department of Veterans Affairs (VA) personnel, VA infrastructure, and the Veterans Community Care Program (VCCP).  The bill modifies various compensation programs for veterans, including by (1) all"
-      },
-      {
         "title": "Community College Agriculture Advancement Act of 2026",
         "sector": "Infrastructure",
         "chamber": "Senate",
@@ -44297,6 +44473,16 @@
         "last_action_date": "2026-06-10",
         "url": "https://api.congress.gov/v3/bill/119/s/4730?format=json",
         "summary": "Community College Agriculture Advancement Act of 2026   This bill allows the Department of Agriculture (USDA) to make competitive grants to assist eligible entities (i.e.,&nbsp;a junior or community college, or a consortium or alliance of two-year public colleges, supporting agriculture advancement)"
+      },
+      {
+        "title": "Take Care of America\u2019s Veterans Act",
+        "sector": "Defense",
+        "chamber": "House",
+        "bill": "HR9237",
+        "last_action": "Introduced in House",
+        "last_action_date": "2026-06-10",
+        "url": "https://api.congress.gov/v3/bill/119/hr/9237?format=json",
+        "summary": "Take Care of America's Veterans Act   This bill addresses veterans\u2019 benefits, health care, counseling, Department of Veterans Affairs (VA) personnel, VA infrastructure, and the Veterans Community Care Program (VCCP).  The bill modifies various compensation programs for veterans, including by (1) all"
       },
       {
         "title": "Secure America Act",
@@ -44349,14 +44535,14 @@
         "summary": "Boxing Therapy for Parkinson's Access Act   This bill requires the Department of Veterans Affairs (VA) to furnish boxing-based exercise classes to veterans who (1) are enrolled in the VA health care system, (2) have been diagnosed with Parkinson's disease (or a similar movement disorder), and (3) el"
       },
       {
-        "title": "Directing the President pursuant to section 5(c) of the War Powers Resolution to remove United States Armed Forces from hostilities in Leban",
-        "sector": "Defense",
+        "title": "Main Street Competes Act",
+        "sector": "Trade",
         "chamber": "House",
-        "bill": "HCONRES108",
-        "last_action": "Introduced in House",
+        "bill": "HR8882",
+        "last_action": "Reported to House",
         "last_action_date": "2026-06-03",
-        "url": "https://api.congress.gov/v3/bill/119/hconres/108?format=json",
-        "summary": "This concurrent resolution directs the President to remove U.S. Armed Forces from hostilities in Lebanon within seven days of the resolution's adoption.  The resolution specifies that it shall not be construed to prevent or limit security cooperation with the Lebanese Armed Forces or the protection "
+        "url": "https://api.congress.gov/v3/bill/119/hr/8882?format=json",
+        "summary": "Main Street Competes Act   This bill requires the Department of Justice (DOJ) and the Federal Trade Commission (FTC) to separately report biennially to the Small Business Administration (SBA) on how such agency's enforcement of federal antitrust law has promoted competition and deterred anticompetit"
       },
       {
         "title": "Small Business Technological Act of 2025",
@@ -44379,14 +44565,14 @@
         "summary": "SBA Artificial Intelligence Utilization Act of 2026   This bill requires the Small Business Administration (SBA) to annually report on the SBA's&nbsp;use of artificial intelligence and machine learning.  The report must include information about&nbsp;(1) the benefits and risks posed by the SBA's use"
       },
       {
-        "title": "Main Street Competes Act",
-        "sector": "Trade",
+        "title": "Directing the President pursuant to section 5(c) of the War Powers Resolution to remove United States Armed Forces from hostilities in Leban",
+        "sector": "Defense",
         "chamber": "House",
-        "bill": "HR8882",
-        "last_action": "Reported to House",
+        "bill": "HCONRES108",
+        "last_action": "Introduced in House",
         "last_action_date": "2026-06-03",
-        "url": "https://api.congress.gov/v3/bill/119/hr/8882?format=json",
-        "summary": "Main Street Competes Act   This bill requires the Department of Justice (DOJ) and the Federal Trade Commission (FTC) to separately report biennially to the Small Business Administration (SBA) on how such agency's enforcement of federal antitrust law has promoted competition and deterred anticompetit"
+        "url": "https://api.congress.gov/v3/bill/119/hconres/108?format=json",
+        "summary": "This concurrent resolution directs the President to remove U.S. Armed Forces from hostilities in Lebanon within seven days of the resolution's adoption.  The resolution specifies that it shall not be construed to prevent or limit security cooperation with the Lebanese Armed Forces or the protection "
       },
       {
         "title": "Fraud Prevention and Accountability Act",
@@ -44397,16 +44583,6 @@
         "last_action_date": "2026-06-03",
         "url": "https://api.congress.gov/v3/bill/119/hr/8312?format=json",
         "summary": "Fraud Prevention and Accountability Act   This bill (1) assigns financial integrity, improper payment prevention, and spending transparency functions to the Bureau of the Fiscal Service (BFS) within the Department of the Treasury; (2) establishes an Office of the Inspector General for Fraud, Account"
-      },
-      {
-        "title": "COOL Online Act",
-        "sector": "Trade",
-        "chamber": "House",
-        "bill": "HR9057",
-        "last_action": "Introduced in House",
-        "last_action_date": "2026-05-29",
-        "url": "https://api.congress.gov/v3/bill/119/hr/9057?format=json",
-        "summary": "Country of Origin Labeling Requirement Act or the COOL Online Act     This bill requires sellers of imported products online to conspicuously disclose the country of origin of the products and the country where the seller's principal place of business is located.   This requirement does not apply to"
       }
     ],
     "congress_holdings": {
@@ -45524,20 +45700,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 cnbc_pick: Kevin Simpson \u00b7 github_momentum: +1.14% stars \u00b7 hf_model_momentum: +4.3% model downloads \u00b7 patent_cluster: 48 grants, 11 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
-      },
-      {
-        "ticker": "GOOGL",
-        "score": 5,
-        "weighted_score": 2.05,
-        "channel_list": [
-          "13f_add",
-          "app_demand",
-          "github_momentum",
-          "material_8k",
-          "special_situation"
-        ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,666,081 reviews \u00b7 github_momentum: +0.13% stars \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 cnbc_pick: Kevin Simpson \u00b7 github_momentum: +1.2% stars \u00b7 hf_model_momentum: +5.1% model downloads \u00b7 patent_cluster: 48 grants, 11 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "MSFT",
@@ -45550,7 +45713,7 @@
           "gov_contract",
           "patent_cluster"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,691,480 reviews \u00b7 github_momentum: +0.2% stars \u00b7 gov_contract: $22,858,532 awarded \u00b7 patent_cluster: 97 grants, 20 IPC classes"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,691,480 reviews \u00b7 github_momentum: +0.14% stars \u00b7 gov_contract: $22,858,532 awarded \u00b7 patent_cluster: 97 grants, 20 IPC classes"
       },
       {
         "ticker": "BIIB",
@@ -45587,6 +45750,18 @@
           "news_sentiment"
         ],
         "why": "activist_13d: 13D activist campaign \u00b7 gov_contract: $200,334,672 awarded \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 8.01) \u00b7 news_sentiment: 0.8 bullish news (50 art)"
+      },
+      {
+        "ticker": "GOOGL",
+        "score": 4,
+        "weighted_score": 1.75,
+        "channel_list": [
+          "13f_add",
+          "app_demand",
+          "material_8k",
+          "special_situation"
+        ],
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,666,081 reviews \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "MRK",
@@ -45715,7 +45890,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "congress_buy: 2 member(s) net +12 \u00b7 github_momentum: +0.2% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations"
+        "why": "congress_buy: 2 member(s) net +12 \u00b7 github_momentum: +0.24% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "INTC",

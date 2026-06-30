@@ -38,11 +38,11 @@
   ],
   "flip_condition": {
     "axis": "growth",
-    "component": "breadth_direction",
-    "z": 0.68,
+    "component": "copper_gold",
+    "z": 0.66,
     "threshold": 0.45,
-    "margin": 0.23,
-    "note": "growth axis flips risk: breadth_direction slope z=0.68 is the closest supporter to its +/-0.45 cutoff"
+    "margin": 0.21,
+    "note": "growth axis flips risk: copper_gold slope z=0.66 is the closest supporter to its +/-0.45 cutoff"
   },
   "sector_rs": [
     {
@@ -209,11 +209,11 @@
     },
     {
       "ticker": "GC=F",
-      "rs": 5.369095816464237,
-      "mom_20d_pct": -11.17,
-      "mom_60d_pct": -26.45,
+      "rs": 5.428205194100034,
+      "mom_20d_pct": -10.19,
+      "mom_60d_pct": -25.64,
       "above_200d_trend": false,
-      "pctile_252d": 9.9,
+      "pctile_252d": 15.1,
       "rank": 19
     }
   ],
@@ -258,7 +258,7 @@
     },
     "copper_gold": {
       "level": 0.0015,
-      "chg_20d_pct": 6.09
+      "chg_20d_pct": 3.99
     }
   },
   "alerts": [],
@@ -330,7 +330,7 @@
       "initial_claims_4wk": 224250.0,
       "continued_claims": 1821000.0,
       "claims_yoy_pct": -4.371002132196167,
-      "claims_z": 0.2255276720453677,
+      "claims_z": 0.22552767204521038,
       "claims_trend": "falling",
       "indeed_postings": 101.14,
       "indeed_chg_3m_pct": -1.0758998435054679,
@@ -348,22 +348,22 @@
       "read": "transitory (flexible-led)"
     },
     "risk_appetite": {
-      "vrp": 0.0330341479142362,
+      "vrp": 0.03303414791423975,
       "vrp_pctile": 0.11706349206349206,
       "vrp_state": "normal",
-      "realized_vol": 17.616965470616037,
+      "realized_vol": 17.616965470616034,
       "vix_term": 0.9037377879151449,
       "vix_term_state": "contango (calm)",
       "vix_term_lead_lag": "coincident",
       "skew": 144.46,
       "skew_pctile": 0.4126984126984127,
-      "stock_bond_corr": 0.5915606099031803,
+      "stock_bond_corr": 0.5915606099031808,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.13790439464965712,
+      "roro": 0.12220481121392988,
       "roro_state": "neutral",
-      "vol_target_scalar": 0.6811615780263194,
+      "vol_target_scalar": 0.6811615780263195,
       "news_sentiment": 0.042056720703840256,
-      "news_sentiment_z": 1.0967454259699327,
+      "news_sentiment_z": 1.096745425969937,
       "news_sentiment_state": "optimistic"
     },
     "drawdown_risk": {
@@ -421,9 +421,9 @@
     "tiers": {
       "leading": {
         "asof": "2026-06-30",
-        "index": 91.80222659457868,
-        "mom6": 0.19722956565925642,
-        "trend": 0.5697339378841462,
+        "index": 91.80222659457867,
+        "mom6": 0.1972295656592422,
+        "trend": 0.5697339378841421,
         "diffusion": 75.0,
         "n_legs": 4,
         "direction": "rising",
@@ -2683,9 +2683,9 @@
       },
       "lagging": {
         "asof": "2026-05-31",
-        "index": 92.95571211654324,
+        "index": 92.95571211654327,
         "mom6": 0.6245930960332231,
-        "trend": -0.024831973320245403,
+        "trend": -0.02483197332024509,
         "diffusion": 50.0,
         "n_legs": 4,
         "direction": "rising",
@@ -3813,7 +3813,7 @@
         ]
       }
     },
-    "cl_ratio_mom6": -0.8328947080982942,
+    "cl_ratio_mom6": -0.8328947080983014,
     "recession_signal": {
       "available": true,
       "state": "off",
@@ -4235,14 +4235,27 @@
     "doc_id": "fomc_2026-06-17",
     "asof": "2026-06-17",
     "tone_score": 0.0,
-    "guidance_direction": "unknown",
+    "guidance_direction": "on_hold",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
-    "confidence": "low",
+    "confidence": "medium",
     "confidence_gated": false,
     "dropped_fields": [],
-    "evidence": [],
-    "degraded_reason": "stop_max_tokens",
+    "evidence": [
+      {
+        "field": "tone_score",
+        "quote_span": "The Committee decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
+      },
+      {
+        "field": "guidance_direction",
+        "quote_span": "The Committee decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
+      },
+      {
+        "field": "risk_delta",
+        "quote_span": "The Committee reaffirmed its policy of maintaining ample reserves in the banking system"
+      }
+    ],
+    "degraded_reason": null,
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
   "dislocation": {
@@ -4290,7 +4303,7 @@
     }
   },
   "cross_asset": {
-    "asof": "2026-06-26",
+    "asof": "2026-06-29",
     "verdict": "concentrated",
     "summary": "CONCENTRATED \u00b7 0.97 5y-pctile",
     "headline": "CONCENTRATED \u2014 3 of 6 markets are one bet (US, Commodities, Dollar). Cross-asset correlation is in the top 3% of its 5y range: stacking these views is doubling one liquidity/risk exposure, not diversifying.",
@@ -4303,16 +4316,16 @@
       "Commodities",
       "Dollar"
     ],
-    "absorption_ratio": 0.446,
+    "absorption_ratio": 0.445,
     "absorption_pctile_5y": 0.97,
     "absorption_floor": 0.167,
-    "mean_abs_corr": 0.34,
+    "mean_abs_corr": 0.338,
     "pc1_loadings": {
       "US": 0.53,
-      "Crypto": 0.31,
+      "Crypto": 0.33,
       "China": 0.3,
       "HK": 0.27,
-      "Commodities": 0.51,
+      "Commodities": 0.49,
       "Dollar": 0.45
     },
     "dominant_cluster": [
@@ -4324,7 +4337,7 @@
       {
         "a": "China",
         "b": "HK",
-        "corr": 0.65
+        "corr": 0.66
       },
       {
         "a": "US",
@@ -4334,61 +4347,66 @@
       {
         "a": "US",
         "b": "Commodities",
-        "corr": 0.6
+        "corr": 0.56
       },
       {
         "a": "Commodities",
         "b": "Dollar",
-        "corr": 0.56
+        "corr": 0.54
+      },
+      {
+        "a": "US",
+        "b": "Crypto",
+        "corr": 0.51
       }
     ],
     "corr_matrix": {
       "US": {
         "US": 1.0,
-        "Crypto": 0.47,
+        "Crypto": 0.51,
         "China": 0.29,
-        "HK": 0.25,
-        "Commodities": 0.6,
+        "HK": 0.27,
+        "Commodities": 0.56,
         "Dollar": 0.61
       },
       "Crypto": {
-        "US": 0.47,
+        "US": 0.51,
         "Crypto": 1.0,
-        "China": -0.1,
-        "HK": -0.13,
-        "Commodities": 0.29,
-        "Dollar": 0.41
+        "China": -0.09,
+        "HK": -0.11,
+        "Commodities": 0.3,
+        "Dollar": 0.43
       },
       "China": {
         "US": 0.29,
-        "Crypto": -0.1,
+        "Crypto": -0.09,
         "China": 1.0,
-        "HK": 0.65,
-        "Commodities": 0.36,
+        "HK": 0.66,
+        "Commodities": 0.35,
         "Dollar": 0.06
       },
       "HK": {
-        "US": 0.25,
-        "Crypto": -0.13,
-        "China": 0.65,
+        "US": 0.27,
+        "Crypto": -0.11,
+        "China": 0.66,
         "HK": 1.0,
-        "Commodities": 0.3,
-        "Dollar": 0.0
+        "Commodities": 0.28,
+        "Dollar": 0.01
       },
       "Commodities": {
-        "US": 0.6,
-        "Crypto": 0.29,
-        "China": 0.36,
-        "HK": 0.3,
+        "US": 0.56,
+        "Crypto": 0.3,
+        "China": 0.35,
+        "HK": 0.28,
         "Commodities": 1.0,
-        "Dollar": 0.56
+        "Dollar": 0.54
       },
       "Dollar": {
         "US": 0.61,
-        "Crypto": 0.41,
+        "Crypto": 0.43,
         "China": 0.06,
-        "HK": 0.0,
-        "Commodities": 0.56,
+        "HK": 0.01,
+        "Commodities": 0.54,
         "Dollar": 1.0
       }
     },
@@ -4396,11 +4414,11 @@
   },
   "market_gamma": {
     "regime": "short",
-    "spot_vs_flip_pct": -4.6,
-    "net_gex_bn": 34.0,
-    "flip": 7800,
-    "gamma_flip": 7800,
-    "flip_strike": 7800,
+    "spot_vs_flip_pct": -2.7,
+    "net_gex_bn": 48.0,
+    "flip": 7650,
+    "gamma_flip": 7650,
+    "flip_strike": 7650,
     "spot": 7440,
     "asof": "2026-06-30"
   },
@@ -4418,7 +4436,7 @@
     "confidence": "low",
     "confidence_zh": "\u4f4e",
     "strength": 1.43,
-    "dominance_ratio": 1.06,
+    "dominance_ratio": 1.17,
     "agreement": 0.79,
     "runner_up": "china_stimulus",
     "runner_up_label": "China stimulus",
@@ -4448,7 +4466,7 @@
     ],
     "invalidation": "Fades if semis RS reverses and the rest of the equity-leadership fingerprint stops confirming.",
     "invalidation_zh": "\u82e5\u534a\u5bfc\u4f53\u76f8\u5bf9\u5f3a\u5ea6\u53cd\u8f6c\u3001\u4e14\u80a1\u7968\u9886\u6da8\u6307\u7eb9\u5176\u4f59\u817f\u505c\u6b62\u786e\u8ba4\uff0c\u6b64\u5224\u8bfb\u5c06\u6d88\u9000\u3002",
-    "absorption_pctile": null,
+    "absorption_pctile": 0.96,
     "scores": [
       {
         "driver": "ai_semis",
@@ -4464,8 +4482,8 @@
         "label": "China stimulus",
         "label_zh": "\u4e2d\u56fd\u523a\u6fc0",
         "family": "china",
-        "projection": -1.35,
-        "strength": 1.35,
+        "projection": -1.22,
+        "strength": 1.22,
         "direction": "China risk-off \u2014 A-shares/HK & copper lead down"
       },
       {
@@ -4473,8 +4491,8 @@
         "label": "Fed repricing",
         "label_zh": "\u7f8e\u8054\u50a8\u91cd\u5b9a\u4ef7",
         "family": "rates",
-        "projection": -1.1,
-        "strength": 1.1,
+        "projection": -1.14,
+        "strength": 1.14,
         "direction": "dovish repricing \u2014 cuts priced in, front-end down"
       },
       {
@@ -4500,8 +4518,8 @@
         "label": "USD shock",
         "label_zh": "\u7f8e\u5143\u51b2\u51fb",
         "family": "fx",
-        "projection": 0.86,
-        "strength": 0.86,
+        "projection": 0.69,
+        "strength": 0.69,
         "direction": "dollar surging \u2014 squeeze, commodities & EM pressured"
       },
       {
@@ -4518,8 +4536,8 @@
         "label": "Oil shock",
         "label_zh": "\u6cb9\u4ef7\u51b2\u51fb",
         "family": "inflation",
-        "projection": -0.39,
-        "strength": 0.39,
+        "projection": -0.35,
+        "strength": 0.35,
         "direction": "oil collapsing \u2014 energy lags, breakevens down"
       },
       {
@@ -4527,16 +4545,16 @@
         "label": "Real-rate shock",
         "label_zh": "\u5b9e\u9645\u5229\u7387\u51b2\u51fb",
         "family": "rates",
-        "projection": -0.14,
-        "strength": 0.14,
+        "projection": -0.21,
+        "strength": 0.21,
         "direction": "real yields falling \u2014 easing, gold & duration bid"
       }
     ],
     "note": "Deterministic cross-asset attribution \u2014 a regime READ, not a signal; never gates a score."
   },
   "portfolio": {
-    "asof": "2026-06-26",
-    "headline": "Equal-weighting all 6 market views puts 36% of portfolio RISK in one market (vs 17% if truly balanced); ERC rebalances to ~equal risk (heaviest weight: Dollar 0.435). Diversification ratio 1.68.",
+    "asof": "2026-06-29",
+    "headline": "Equal-weighting all 6 market views puts 36% of portfolio RISK in one market (vs 17% if truly balanced); ERC rebalances to ~equal risk (heaviest weight: Dollar 0.436). Diversification ratio 1.67.",
     "risk_budget": {
       "window_d": 126,
       "markets": [
@@ -4558,48 +4576,48 @@
           "Dollar": 0.167
         },
         "risk_contrib": {
-          "US": 0.125,
-          "Crypto": 0.362,
-          "China": 0.098,
-          "HK": 0.103,
-          "Commodities": 0.282,
+          "US": 0.126,
+          "Crypto": 0.361,
+          "China": 0.099,
+          "HK": 0.104,
+          "Commodities": 0.279,
           "Dollar": 0.031
         },
-        "port_vol_ann": 0.136,
+        "port_vol_ann": 0.137,
         "diversification_ratio": 1.62,
-        "max_risk_contrib": 0.362
+        "max_risk_contrib": 0.361
       },
       "inverse_vol": {
         "scheme": "inverse_vol",
         "weights": {
-          "US": 0.173,
+          "US": 0.172,
           "Crypto": 0.054,
           "China": 0.142,
           "HK": 0.126,
           "Commodities": 0.078,
-          "Dollar": 0.426
+          "Dollar": 0.427
         },
         "risk_contrib": {
           "US": 0.201,
           "Crypto": 0.117,
-          "China": 0.159,
-          "HK": 0.155,
-          "Commodities": 0.204,
+          "China": 0.16,
+          "HK": 0.156,
+          "Commodities": 0.201,
           "Dollar": 0.165
         },
-        "port_vol_ann": 0.089,
-        "diversification_ratio": 1.64,
-        "max_risk_contrib": 0.204
+        "port_vol_ann": 0.09,
+        "diversification_ratio": 1.63,
+        "max_risk_contrib": 0.201
       },
       "erc": {
         "scheme": "erc",
         "weights": {
-          "US": 0.145,
-          "Crypto": 0.069,
+          "US": 0.144,
+          "Crypto": 0.07,
           "China": 0.149,
-          "HK": 0.135,
-          "Commodities": 0.066,
-          "Dollar": 0.435
+          "HK": 0.134,
+          "Commodities": 0.067,
+          "Dollar": 0.436
         },
         "risk_contrib": {
           "US": 0.167,
@@ -4610,7 +4628,7 @@
           "Dollar": 0.167
         },
         "port_vol_ann": 0.089,
-        "diversification_ratio": 1.68,
+        "diversification_ratio": 1.67,
         "max_risk_contrib": 0.167
       }
     },
@@ -4756,14 +4774,14 @@
   },
   "fed_path": {
     "asof": "2026-06-29",
-    "built": "2026-06-30T02:43:57.161199+00:00",
+    "built": "2026-06-30T11:09:39.943917+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
     "target_mid": 3.62,
     "implied": {
       "now": 3.63,
-      "m1": 3.63,
+      "m1": null,
       "m3": 3.73,
       "m6": 3.9,
       "m12": 3.99
@@ -4777,7 +4795,7 @@
       "m1": null,
       "m3": 3.79,
       "m6": 3.95,
-      "m12": 4.02
+      "m12": 4.03
     },
     "dots": [
       {
@@ -4818,16 +4836,18 @@
     "label_zh": "\u9e70\u6d3e",
     "color": "down",
     "implied_cuts_12m": -1.0,
-    "guidance": "unknown",
+    "guidance": "on_hold",
     "market_vs_fed_bp": 10.0,
     "market_vs_fed_en": "market \u2248 the Fed",
     "market_vs_fed_zh": "\u5e02\u573a\u4e0e\u7f8e\u8054\u50a8\u57fa\u672c\u4e00\u81f4",
     "drivers_en": [
       "market prices ~1.0 hike(s) over 12m",
+      "statement guidance on-hold",
       "market \u2248 the Fed (+10bp)"
     ],
     "drivers_zh": [
       "\u5e02\u573a\u8ba1\u5165\u672a\u676512\u4e2a\u6708\u7ea61.0\u6b21\u52a0\u606f",
+      "\u58f0\u660e\u6307\u5f15\u6309\u5175\u4e0d\u52a8",
       "\u5e02\u573a\u4e0e\u7f8e\u8054\u50a8\u57fa\u672c\u4e00\u81f4\uff08+10bp\uff09"
     ],
     "is_context_only": true,
@@ -4904,7 +4924,7 @@
         "zh": "\u80fd\u6e90\u4f20\u5bfc\u2014\u2014\u6cb9\u4ef7\u4e0b\u8dcc\u62d6\u7d2f\u4e0e\u6574\u4f53CPI\u6302\u94a9\u7684\u76c8\u4e8f\u5e73\u8861\u3002\u540c\u6b65\u6307\u6807\uff0c\u901a\u5e38\u826f\u6027/\u5229\u4e8e\u589e\u957f\uff1b\u672c\u8eab\u5e76\u975e\u907f\u9669\u4fe1\u53f7\u3002"
       },
       "costate": {
-        "oil_chg_20d_pct": -23.7,
+        "oil_chg_20d_pct": -23.2,
         "real10y_chg_20d_bp": 11.0,
         "nom10y_chg_20d_bp": -9.0,
         "hy_oas_z": -0.51,
@@ -7057,7 +7077,7 @@
           {
             "ticker": "SNDK",
             "breadth": 1.0,
-            "est_chg_90d": 112.8,
+            "est_chg_90d": 111.8,
             "n_analysts": 6
           }
         ]
@@ -7089,7 +7109,7 @@
           {
             "ticker": "SMCI",
             "breadth": 0.87,
-            "est_chg_90d": 7.1,
+            "est_chg_90d": 5.4,
             "n_analysts": 15
           },
           {
@@ -7143,16 +7163,16 @@
             "n_analysts": 26
           },
           {
-            "ticker": "LRCX",
-            "breadth": 1.0,
-            "est_chg_90d": 15.6,
-            "n_analysts": 6
-          },
-          {
             "ticker": "AMAT",
             "breadth": 1.0,
             "est_chg_90d": 17.7,
             "n_analysts": 30
+          },
+          {
+            "ticker": "LRCX",
+            "breadth": 1.0,
+            "est_chg_90d": 15.6,
+            "n_analysts": 6
           },
           {
             "ticker": "MKSI",
@@ -7293,16 +7313,16 @@
             "n_analysts": 15
           },
           {
-            "ticker": "LDOS",
-            "breadth": 0.0,
-            "est_chg_90d": 2.2,
-            "n_analysts": 6
-          },
-          {
             "ticker": "NOC",
             "breadth": 0.0,
             "est_chg_90d": -0.2,
             "n_analysts": 4
+          },
+          {
+            "ticker": "LDOS",
+            "breadth": 0.0,
+            "est_chg_90d": 2.2,
+            "n_analysts": 6
           },
           {
             "ticker": "LMT",
@@ -7311,16 +7331,16 @@
             "n_analysts": 5
           },
           {
-            "ticker": "AXON",
-            "breadth": 0.33,
-            "est_chg_90d": 0.0,
-            "n_analysts": 18
-          },
-          {
             "ticker": "RTX",
             "breadth": 0.33,
             "est_chg_90d": 0.9,
             "n_analysts": 3
+          },
+          {
+            "ticker": "AXON",
+            "breadth": 0.33,
+            "est_chg_90d": 0.0,
+            "n_analysts": 18
           },
           {
             "ticker": "LHX",
@@ -7334,7 +7354,7 @@
         "name": "Copper, Steel & Electrification",
         "breadth": 0.375,
         "level_state": "POSITIVE",
-        "est_drift_90d": 7.89,
+        "est_drift_90d": 9.7,
         "net_up_total": 11.0,
         "breadth_accel": null,
         "broadening_state": "INSUFFICIENT_HISTORY",
@@ -7351,7 +7371,7 @@
           {
             "ticker": "STLD",
             "breadth": 0.33,
-            "est_chg_90d": 12.7,
+            "est_chg_90d": 16.3,
             "n_analysts": 3
           },
           {
@@ -7395,7 +7415,7 @@
           {
             "ticker": "SEDG",
             "breadth": -0.12,
-            "est_chg_90d": -16.9,
+            "est_chg_90d": -13.6,
             "n_analysts": 16
           },
           {
@@ -7437,16 +7457,16 @@
             "n_analysts": 13
           },
           {
-            "ticker": "CGNX",
-            "breadth": 1.0,
-            "est_chg_90d": 15.2,
-            "n_analysts": 18
-          },
-          {
             "ticker": "ROK",
             "breadth": 1.0,
             "est_chg_90d": 6.3,
             "n_analysts": 25
+          },
+          {
+            "ticker": "CGNX",
+            "breadth": 1.0,
+            "est_chg_90d": 15.2,
+            "n_analysts": 18
           }
         ]
       },
@@ -7487,16 +7507,16 @@
             "n_analysts": 34
           },
           {
-            "ticker": "FOUR",
-            "breadth": 0.0,
-            "est_chg_90d": -1.1,
-            "n_analysts": 20
-          },
-          {
             "ticker": "MA",
             "breadth": 0.0,
             "est_chg_90d": 0.5,
             "n_analysts": 4
+          },
+          {
+            "ticker": "FOUR",
+            "breadth": 0.0,
+            "est_chg_90d": -1.1,
+            "n_analysts": 20
           },
           {
             "ticker": "GPN",
@@ -7545,7 +7565,7 @@
           {
             "ticker": "TMDX",
             "breadth": 0.0,
-            "est_chg_90d": -11.1,
+            "est_chg_90d": -13.1,
             "n_analysts": 6
           },
           {
@@ -7561,16 +7581,16 @@
             "n_analysts": 22
           },
           {
-            "ticker": "DXCM",
-            "breadth": 0.33,
-            "est_chg_90d": 3.0,
-            "n_analysts": 12
-          },
-          {
             "ticker": "SYK",
             "breadth": 0.33,
             "est_chg_90d": -0.1,
             "n_analysts": 3
+          },
+          {
+            "ticker": "DXCM",
+            "breadth": 0.33,
+            "est_chg_90d": 3.0,
+            "n_analysts": 12
           }
         ]
       },
@@ -7623,16 +7643,16 @@
             "n_analysts": 10
           },
           {
-            "ticker": "DGX",
-            "breadth": 1.0,
-            "est_chg_90d": 1.7,
-            "n_analysts": 17
-          },
-          {
             "ticker": "DHR",
             "breadth": 1.0,
             "est_chg_90d": 1.2,
             "n_analysts": 3
+          },
+          {
+            "ticker": "DGX",
+            "breadth": 1.0,
+            "est_chg_90d": 1.7,
+            "n_analysts": 17
           }
         ]
       },
@@ -7773,12 +7793,6 @@
             "n_analysts": 23
           },
           {
-            "ticker": "PWR",
-            "breadth": 1.0,
-            "est_chg_90d": 6.8,
-            "n_analysts": 3
-          },
-          {
             "ticker": "NEE",
             "breadth": 1.0,
             "est_chg_90d": 0.6,
@@ -7789,6 +7803,12 @@
             "breadth": 1.0,
             "est_chg_90d": -0.1,
             "n_analysts": 4
+          },
+          {
+            "ticker": "PWR",
+            "breadth": 1.0,
+            "est_chg_90d": 6.8,
+            "n_analysts": 3
           }
         ]
       }
@@ -8899,6 +8919,62 @@
         }
       },
       {
+        "theme": "copper_steel_electrify",
+        "name": "Copper, Steel & Electrification",
+        "stage": "WATCH",
+        "rationale": "revisions present (bottleneck unknown)",
+        "entry_ready": false,
+        "entry_note": "not a thesis stage \u2014 no entry",
+        "bottleneck_band": "AWAITING_DATA",
+        "tightness": null,
+        "bottleneck_regime": false,
+        "demand_band": null,
+        "demand_strength": null,
+        "capex_yoy": null,
+        "revision_breadth": 0.375,
+        "revision_level": "POSITIVE",
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "est_drift_90d": 9.7,
+        "guidance_band": null,
+        "guidance_net": null,
+        "guidance_raisers": null,
+        "guidance_cutters": null,
+        "altdata_summary": null,
+        "n_altdata_leading": 0,
+        "altdata_members": null,
+        "glut_band": "AWAITING_DATA",
+        "glut_score": null,
+        "score": 45.0,
+        "score_detail": {
+          "score": 45.0,
+          "base": 45.6,
+          "axes": {
+            "magnitude": 0.32,
+            "acceleration": 0.5,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.66,
+            "purity": 0.5,
+            "timing": 0.4
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50",
+            "WATCH (late) -> capped at 45"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        },
+        "size_band": "WATCH",
+        "size_note": "nothing actionable yet",
+        "derisk": false,
+        "size_mult": 0.1,
+        "size_detail": {
+          "band": "WATCH",
+          "derisk": false,
+          "note": "nothing actionable yet"
+        }
+      },
+      {
         "theme": "glp1_obesity",
         "name": "GLP-1 / Obesity",
         "stage": "WATCH",
@@ -9166,61 +9242,6 @@
           "caps": [
             "text-only (no physical bottleneck) -> capped at 50",
             "WATCH (late) -> capped at 45"
-          ],
-          "verdict": "watch",
-          "physical_confirmed": false
-        },
-        "size_band": "WATCH",
-        "size_note": "nothing actionable yet",
-        "derisk": false,
-        "size_mult": 0.1,
-        "size_detail": {
-          "band": "WATCH",
-          "derisk": false,
-          "note": "nothing actionable yet"
-        }
-      },
-      {
-        "theme": "copper_steel_electrify",
-        "name": "Copper, Steel & Electrification",
-        "stage": "WATCH",
-        "rationale": "revisions present (bottleneck unknown)",
-        "entry_ready": false,
-        "entry_note": "not a thesis stage \u2014 no entry",
-        "bottleneck_band": "AWAITING_DATA",
-        "tightness": null,
-        "bottleneck_regime": false,
-        "demand_band": null,
-        "demand_strength": null,
-        "capex_yoy": null,
-        "revision_breadth": 0.375,
-        "revision_level": "POSITIVE",
-        "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 7.89,
-        "guidance_band": null,
-        "guidance_net": null,
-        "guidance_raisers": null,
-        "guidance_cutters": null,
-        "altdata_summary": null,
-        "n_altdata_leading": 0,
-        "altdata_members": null,
-        "glut_band": "AWAITING_DATA",
-        "glut_score": null,
-        "score": 44.7,
-        "score_detail": {
-          "score": 44.7,
-          "base": 44.7,
-          "axes": {
-            "magnitude": 0.26,
-            "acceleration": 0.5,
-            "bottleneck": 0.4,
-            "pricing_power": 0.4,
-            "underpricing": 0.66,
-            "purity": 0.5,
-            "timing": 0.4
-          },
-          "caps": [
-            "text-only (no physical bottleneck) -> capped at 50"
           ],
           "verdict": "watch",
           "physical_confirmed": false
@@ -10035,7 +10056,7 @@
         "n_covered": 6,
         "breadth": 0.805,
         "level_state": "POSITIVE",
-        "est_drift_90d": 20.04,
+        "est_drift_90d": 19.18,
         "broadening_state": "INSUFFICIENT_HISTORY",
         "n_scarcity": 1,
         "scarcity_members": [
@@ -10112,7 +10133,7 @@
         "n_covered": 4,
         "breadth": 0.661,
         "level_state": "POSITIVE",
-        "est_drift_90d": 1.88,
+        "est_drift_90d": 1.89,
         "broadening_state": "INSUFFICIENT_HISTORY",
         "n_scarcity": 0,
         "scarcity_members": [],
@@ -10142,7 +10163,7 @@
         "n_covered": 10,
         "breadth": 0.564,
         "level_state": "POSITIVE",
-        "est_drift_90d": 2.67,
+        "est_drift_90d": 2.39,
         "broadening_state": "INSUFFICIENT_HISTORY",
         "n_scarcity": 0,
         "scarcity_members": [],
@@ -10413,6 +10434,19 @@
         "size_band": "HOLD"
       },
       {
+        "theme": "copper_steel_electrify",
+        "name": "Copper, Steel & Electrification",
+        "stage": "WATCH",
+        "signals": [],
+        "n_signals": 0,
+        "cross_surface": [],
+        "earliness": 0.62,
+        "physical_confirmed": false,
+        "heat": 0.0,
+        "score": 45.0,
+        "size_band": "WATCH"
+      },
+      {
         "theme": "glp1_obesity",
         "name": "GLP-1 / Obesity",
         "stage": "WATCH",
@@ -10449,19 +10483,6 @@
         "physical_confirmed": false,
         "heat": 0.0,
         "score": 45.0,
-        "size_band": "WATCH"
-      },
-      {
-        "theme": "copper_steel_electrify",
-        "name": "Copper, Steel & Electrification",
-        "stage": "WATCH",
-        "signals": [],
-        "n_signals": 0,
-        "cross_surface": [],
-        "earliness": 0.62,
-        "physical_confirmed": false,
-        "heat": 0.0,
-        "score": 44.7,
         "size_band": "WATCH"
       },
       {
@@ -10639,10 +10660,10 @@
     "vrp_pctile": 0.07,
     "vrp_chg_21d": -7.08,
     "vrp_state": "collapsing (de-risk)",
-    "skew": null,
-    "skew_cost_pctile": 0.0,
-    "insurance_cost": "cheap (convexity on sale)",
-    "downside_vrp": null,
+    "skew": 144.5,
+    "skew_cost_pctile": 0.41,
+    "insurance_cost": "normal",
+    "downside_vrp": 3.818,
     "vvix": 88.7,
     "vvix_vix": 5.026,
     "vvix_pctile": 0.091,
@@ -10679,13 +10700,13 @@
         "eligible": false
       },
       "skew_cost": {
-        "z": null,
+        "z": -0.359,
         "scored": false,
         "sign": null,
         "eligible": false
       },
       "downside_vrp": {
-        "z": null,
+        "z": 2.5,
         "scored": false,
         "sign": null,
         "eligible": false
@@ -10988,6 +11009,57 @@
       "note": "options-flow vol legs (put/call, GEX) accrue forward \u2014 deep history is unavailable freely; they activate + self-validate via the Opus loop when mature"
     },
     "gross_factor": 0.873,
+    "trajectory": {
+      "intensity": 86.7,
+      "peak": 90.8,
+      "peak_days_ago": 1,
+      "off_peak": 4.1,
+      "velocity": 30.6,
+      "phase": "rising",
+      "reached_risk": true,
+      "state_now": "caution",
+      "odds_now": 0.19,
+      "odds_peak": 0.19,
+      "odds_delta": 0.06,
+      "spark": [
+        78.8,
+        76.5,
+        83.6,
+        86.0,
+        88.9,
+        89.7,
+        78.6,
+        82.9,
+        53.9,
+        52.9,
+        55.6,
+        63.1,
+        62.0,
+        62.5,
+        71.5,
+        62.7,
+        50.1,
+        59.7,
+        56.2,
+        68.9,
+        79.9,
+        84.6,
+        90.8,
+        86.7
+      ],
+      "spark_pts": "3.0,8.9 6.9,10.0 10.8,6.5 14.7,5.4 18.7,3.9 22.6,3.5 26.5,9.0 30.4,6.9 34.3,21.1 38.2,21.6 42.1,20.3 46.0,16.6 50.0,17.2 53.9,16.9 57.8,12.5 61.7,16.8 65.6,23.0 69.5,18.3 73.4,20.0 77.3,13.8 81.3,8.4 85.2,6.0 89.1,3.0 93.0,5.0",
+      "spark_peak": {
+        "x": 89.1,
+        "y": 3.0
+      },
+      "spark_last": {
+        "x": 93.0,
+        "y": 5.0
+      },
+      "spark_w": 96,
+      "spark_h": 26,
+      "window": 30
+    },
     "cycle_context": {
       "schema": "election_cycle.v1",
       "asof": "2026-06-29",
@@ -11031,7 +11103,7 @@
     }
   },
   "vol_shock": {
-    "score": 55.8,
+    "score": 56.1,
     "score_int": 56,
     "band": "elevated",
     "band_zh": "\u5347\u9ad8",
@@ -11055,14 +11127,14 @@
         "key": "dealer_gamma",
         "label": "Dealer gamma (short-gamma fragility)",
         "label_zh": "\u505a\u5e02\u5546 Gamma\uff08\u7a7a\u5934\u8106\u5f31\uff09",
-        "value": "short \u00b7 -4.60% to flip",
+        "value": "short \u00b7 -2.70% to flip",
         "weight": 1.0,
         "available": true,
-        "sub": 75.0,
+        "sub": 77.5,
         "note": "dealers short gamma \u2014 they amplify moves",
         "note_zh": "\u505a\u5e02\u5546\u6301\u7a7a\u5934 Gamma\u2014\u2014\u4f1a\u653e\u5927\u6ce2\u52a8",
         "color": "#d04545",
-        "points": 12.6
+        "points": 13.0
       },
       {
         "key": "vix_term",
@@ -11094,12 +11166,12 @@
         "key": "put_call",
         "label": "Put/call positioning",
         "label_zh": "\u770b\u8dcc/\u770b\u6da8\u6301\u4ed3",
-        "value": 0.58,
+        "value": 0.6,
         "weight": 0.175,
         "available": true,
-        "sub": 42.1,
-        "note": "balanced put/call \u00b7 young series (n=19), down-weighted",
-        "note_zh": "balanced put/call \u00b7 young series (n=19), down-weighted",
+        "sub": 40.0,
+        "note": "balanced put/call \u00b7 young series (n=20), down-weighted",
+        "note_zh": "balanced put/call \u00b7 young series (n=20), down-weighted",
         "color": "#5a9bd4",
         "points": 1.2
       },
@@ -11657,8 +11729,8 @@
     ],
     "triggers": [
       [
-        "The most fragile support is how many S&P 500 stocks are in uptrends \u2014 if it rolls over, the growth signal flips.",
-        "\u6700\u8106\u5f31\u7684\u652f\u6491\u662f\u5904\u4e8e\u4e0a\u6da8\u8d8b\u52bf\u7684 S&P 500 \u4e2a\u80a1\u6570\u91cf \u2014 \u82e5\u5176\u53cd\u8f6c\uff0cgrowth \u4fe1\u53f7\u5c06\u7ffb\u8f6c\u3002"
+        "The most fragile support is the copper-vs-gold price trend (a classic growth-expectations gauge) \u2014 if it rolls over, the growth signal flips.",
+        "\u6700\u8106\u5f31\u7684\u652f\u6491\u662f\u94dc\u91d1\u4ef7\u683c\u6bd4\u8d70\u52bf\uff08\u7ecf\u5178\u7684\u589e\u957f\u9884\u671f\u6307\u6807\uff09 \u2014 \u82e5\u5176\u53cd\u8f6c\uff0cgrowth \u4fe1\u53f7\u5c06\u7ffb\u8f6c\u3002"
       ],
       [
         "For a shift to Reflation, watch for inflation expectations and energy turning up while growth holds.",
@@ -13662,62 +13734,62 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 3978.5,
+        "price": 4038.2,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -10.4,
-        "pct_vs_200dma": -10.8,
-        "rsi14": 33.0,
+        "pct_vs_50dma": -8.8,
+        "pct_vs_200dma": -9.5,
+        "rsi14": 36.0,
         "macd_pos": false,
-        "off_52w_high_pct": -25.2,
+        "off_52w_high_pct": -24.1,
         "season_this": "Jun: -0.9% avg, up 42% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.9%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -14.6
+        "mom_60d_pct": -15.0
       },
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 70.32,
+        "price": 70.96,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -22.6,
-        "pct_vs_200dma": -5.2,
-        "rsi14": 30.0,
+        "pct_vs_50dma": -21.5,
+        "pct_vs_200dma": -4.3,
+        "rsi14": 31.0,
         "macd_pos": false,
-        "off_52w_high_pct": -37.7,
-        "season_this": "Jun: +2.1% avg, up 65% of years (n=26)",
-        "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +2.1%\uff0c65% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -37.7
+        "off_52w_high_pct": -37.2,
+        "season_this": "Jun: +2.2% avg, up 65% of years (n=26)",
+        "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +2.2%\uff0c65% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
+        "mom_60d_pct": -24.8
       },
       {
         "ticker": "HG=F",
         "name": "Copper",
-        "price": 6.15,
+        "price": 6.24,
         "above50": false,
         "above200": true,
-        "pct_vs_50dma": -1.7,
-        "pct_vs_200dma": 9.0,
-        "rsi14": 45.0,
+        "pct_vs_50dma": -0.4,
+        "pct_vs_200dma": 10.4,
+        "rsi14": 49.0,
         "macd_pos": false,
-        "off_52w_high_pct": -7.5,
-        "season_this": "Jun: -0.6% avg, up 54% of years (n=26)",
-        "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.6%\uff0c54% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": 11.0
+        "off_52w_high_pct": -6.2,
+        "season_this": "Jun: -0.5% avg, up 54% of years (n=26)",
+        "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.5%\uff0c54% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
+        "mom_60d_pct": 8.3
       },
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 101.27,
+        "price": 101.35,
         "above50": true,
         "above200": true,
         "pct_vs_50dma": 1.9,
         "pct_vs_200dma": 2.5,
-        "rsi14": 69.0,
+        "rsi14": 68.0,
         "macd_pos": true,
         "off_52w_high_pct": -0.3,
         "season_this": "Jun: -0.1% avg, up 45% of years (n=56)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.1%\uff0c45% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=56\uff09",
-        "mom_60d_pct": 1.6
+        "mom_60d_pct": 2.2
       }
     ],
     "evidence": {
@@ -13793,7 +13865,7 @@
   },
   "freshness": {
     "asof": "2026-06-29",
-    "built_at": "2026-06-30T02:44:00Z",
+    "built_at": "2026-06-30T11:09:41Z",
     "age_days": 1,
     "age_sessions": 1,
     "max_age_sessions": 1,
@@ -15313,12 +15385,12 @@
       },
       {
         "ticker": "JCI",
-        "asof": "2026-06-24",
+        "asof": "2026-06-29",
         "state": "short-bias",
         "above200": true,
         "weekly_bull": false,
         "trail_breach": true,
-        "trail_stop": 141.103,
+        "trail_stop": 140.9623,
         "early_now": false,
         "last": {
           "date": "2026-06-19",

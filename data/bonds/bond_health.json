@@ -51,13 +51,13 @@
       "repo_stress": false
     },
     "cross_asset": {
-      "stock_bond_corr": 0.5915606099031803,
+      "stock_bond_corr": 0.5915606099031808,
       "regime": "breakdown",
       "hedge_working": false
     },
     "sovereign": {
-      "euro_frag": 0.3839661579000002,
-      "bund_10y": 2.9223600013,
+      "euro_frag": 0.38678222110000027,
+      "bund_10y": 2.922896152,
       "frag_state": "calm",
       "frag_direction": "widening",
       "jgb_2s10s": 1.264,
@@ -94,19 +94,19 @@
       "note_en": "Discount-rate channel (real-10y, term premium) compresses long-duration multiples; credit (HY OAS) is the canary that leads equity drawdowns; the SPEED of yield moves (MOVE) matters more than the level.",
       "hy_oas": 2.83,
       "credit_canary": true,
-      "stock_bond_corr": 0.5915606099031803
+      "stock_bond_corr": 0.5915606099031808
     }
   },
   "fed_path": {
     "asof": "2026-06-29",
-    "built": "2026-06-30T03:15:40.591749+00:00",
+    "built": "2026-06-30T11:22:38.032180+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
     "target_mid": 3.62,
     "implied": {
       "now": 3.63,
-      "m1": 3.63,
+      "m1": null,
       "m3": 3.73,
       "m6": 3.9,
       "m12": 3.99
@@ -120,7 +120,7 @@
       "m1": null,
       "m3": 3.79,
       "m6": 3.95,
-      "m12": 4.02
+      "m12": 4.03
     },
     "dots": [
       {
@@ -161,7 +161,7 @@
       "avg_10y": 3.76,
       "avg_10y_chg_63d_bp": 5.0,
       "direction": "stable",
-      "avg_slope": 0.85,
+      "avg_slope": 0.84,
       "n": 7,
       "regime": "global yields stable"
     },
@@ -201,11 +201,11 @@
         "stale": false,
         "gdp_w": 0.22,
         "y10": 2.92,
-        "y2": 2.45,
-        "slope": 0.47,
+        "y2": 2.48,
+        "slope": 0.45,
         "slope_basis": "2s10s",
         "slope_state": "normal",
-        "chg_63d_bp": -13.0,
+        "chg_63d_bp": -12.0,
         "direction": "falling",
         "z1y": 0.23,
         "z5y": 0.84,
@@ -383,7 +383,7 @@
           "key": "macro",
           "label_en": "Macro impulse (reflation)",
           "label_zh": "宏观动能（再通胀）",
-          "value": -0.75,
+          "value": -0.71,
           "weight": 0.5,
           "state": "bearish",
           "note_en": "Rising copper/gold + breakevens = reflation = a duration headwind.",

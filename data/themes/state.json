@@ -205,7 +205,7 @@
     "name_zh": "\u91cf\u5b50\u8ba1\u7b97",
     "rank": 30,
     "reco": "avoid",
-    "score": 49
+    "score": 50
   },
   "regional_banks": {
     "label": "dominant",
@@ -219,9 +219,9 @@
     "label": "dominant",
     "name": "Reshoring & Industrial Capex",
     "name_zh": "\u56de\u6d41\u4e0e\u5de5\u4e1a\u8d44\u672c\u5f00\u652f",
-    "rank": 5,
+    "rank": 3,
     "reco": "hold",
-    "score": 70
+    "score": 71
   },
   "retail": {
     "label": "emerging",
@@ -243,7 +243,7 @@
     "label": "dominant",
     "name": "Semiconductor Equipment (WFE)",
     "name_zh": "\u534a\u5bfc\u4f53\u8bbe\u5907\uff08\u6676\u5706\u5382\u8bbe\u5907\uff09",
-    "rank": 3,
+    "rank": 4,
     "reco": "hold",
     "score": 71
   },
@@ -307,7 +307,7 @@
     "label": "emerging",
     "name": "Health Care (Equal-Weight)",
     "name_zh": "\u533b\u7597\u4fdd\u5065\uff08\u7b49\u6743\uff09",
-    "rank": 4,
+    "rank": 5,
     "reco": "hold",
     "score": 71
   },
