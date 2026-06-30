@@ -1,5 +1,5 @@
 {
- "asof": "2026-06-29",
+ "asof": "2026-06-30",
  "audit": "prices",
  "config": {
   "price_max_gap_days": 4,
@@ -13,14 +13,14 @@
   "macro_outlier_z": 5,
   "email_alerts": false
  },
- "n": 902,
- "n_failed": 1,
- "fail_pct": 0.111,
- "n_flags": 67,
+ "n": 904,
+ "n_failed": 18,
+ "fail_pct": 1.991,
+ "n_flags": 70,
  "universes": [
   {
    "name": "stocks",
-   "n": 221,
+   "n": 223,
    "n_failed": 0,
    "fail_pct": 0.0,
    "n_flags": 6,
@@ -41,7 +41,7 @@
     {
      "name": "HON",
      "kind": "move",
-     "detail": "+100.3% on 2026-06-18"
+     "detail": "+100.3% on 2026-06-18 (2 day(s) > 20%)"
     },
     {
      "name": "INTC",
@@ -63,16 +63,118 @@
   {
    "name": "baskets/ohlcv",
    "n": 681,
-   "n_failed": 1,
-   "fail_pct": 0.147,
-   "n_flags": 61,
+   "n_failed": 18,
+   "fail_pct": 2.643,
+   "n_flags": 64,
    "skipped": false,
    "note": "",
    "failed": [
     {
+     "name": "A",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
+     ]
+    },
+    {
+     "name": "CHD",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
+     ]
+    },
+    {
+     "name": "CMG",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
+     ]
+    },
+    {
+     "name": "DRI",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
+     ]
+    },
+    {
+     "name": "FDX",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-29)"
+     ]
+    },
+    {
+     "name": "HCA",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
+     ]
+    },
+    {
+     "name": "HII",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
+     ]
+    },
+    {
      "name": "HUBB",
      "reasons": [
       "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2021-05-05)"
+     ]
+    },
+    {
+     "name": "IBP",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
+     ]
+    },
+    {
+     "name": "MA",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-29)"
+     ]
+    },
+    {
+     "name": "MDA",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-29)"
+     ]
+    },
+    {
+     "name": "MHK",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
+     ]
+    },
+    {
+     "name": "PPG",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
+     ]
+    },
+    {
+     "name": "RVTY",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
+     ]
+    },
+    {
+     "name": "SW",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
+     ]
+    },
+    {
+     "name": "TMO",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
+     ]
+    },
+    {
+     "name": "V",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-29)"
+     ]
+    },
+    {
+     "name": "WAT",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
      ]
     }
    ],
@@ -106,6 +208,11 @@
      "name": "ASPI",
      "kind": "move",
      "detail": "+24.9% on 2026-05-26"
+    },
+    {
+     "name": "ASTS",
+     "kind": "move",
+     "detail": "+21.4% on 2026-06-29"
     },
     {
      "name": "BKSY",
@@ -205,7 +312,7 @@
     {
      "name": "HON",
      "kind": "move",
-     "detail": "+100.3% on 2026-06-18"
+     "detail": "+100.3% on 2026-06-18 (2 day(s) > 20%)"
     },
     {
      "name": "HUT",
@@ -236,6 +343,11 @@
      "name": "IONQ",
      "kind": "move",
      "detail": "+20.9% on 2026-04-15 (2 day(s) > 20%)"
+    },
+    {
+     "name": "IRDM",
+     "kind": "move",
+     "detail": "+25.4% on 2026-06-29"
     },
     {
      "name": "KVYO",
@@ -315,7 +427,7 @@
     {
      "name": "SATL",
      "kind": "move",
-     "detail": "+38.2% on 2026-03-23"
+     "detail": "+38.2% on 2026-03-23 (2 day(s) > 20%)"
     },
     {
      "name": "SGML",
@@ -371,6 +483,11 @@
      "name": "VECO",
      "kind": "move",
      "detail": "+25.2% on 2026-05-06"
+    },
+    {
+     "name": "VSAT",
+     "kind": "move",
+     "detail": "+23.8% on 2026-06-29"
     },
     {
      "name": "ZS",

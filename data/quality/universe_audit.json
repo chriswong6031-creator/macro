@@ -1,5 +1,5 @@
 {
- "asof": "2026-06-29",
+ "asof": "2026-06-30",
  "audit": "universe",
  "config": {
   "price_max_gap_days": 4,
@@ -13,14 +13,14 @@
   "macro_outlier_z": 5,
   "email_alerts": false
  },
- "n": 457,
+ "n": 507,
  "n_failed": 0,
  "fail_pct": 0.0,
  "n_flags": 37,
  "universes": [
   {
    "name": "us_sectors",
-   "n": 0,
+   "n": 11,
    "n_failed": 0,
    "fail_pct": 0.0,
    "n_flags": 0,
@@ -31,7 +31,7 @@
   },
   {
    "name": "us_etfs",
-   "n": 0,
+   "n": 39,
    "n_failed": 0,
    "fail_pct": 0.0,
    "n_flags": 0,
