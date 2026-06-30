@@ -1,30 +1,76 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-06-29",
-  "generated_at": "2026-06-30T01:45:07.589362+00:00",
+  "generated_at": "2026-06-30T04:14:44.196168+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-06-29-COKE-1",
-      "ticker": "COKE",
-      "name": "Coca-Cola Consolidated",
+      "id": "2026-06-29-RUN-1",
+      "ticker": "RUN",
+      "name": "Sunrun",
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The stock shows a bottoming attempt but the neutral verdict and mixed quality signals (accounting watch, negative composite factors) suggest no edge for outperformance versus the market over the near term.",
+      "evidence": [
+        "Verdict: Neutral \u2014 no clear edge",
+        "Quality axis flags accounting watch and negative factor score",
+        "Mixed tape regime with liquidity headwinds"
+      ],
+      "dissent": "A fresh SUE event and insider context could trigger a sharp bounce if sentiment shifts.",
+      "falsifier": {
+        "text": "If RUN closes above its 50-day moving average on above-average volume within the next 20 trading days, the neutral lean would be challenged.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-07-27",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-06-29-ARLO-2",
+      "ticker": "ARLO",
+      "name": "Arlo Technologies",
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Despite a clean quality profile and a recent SUE beat, the neutral verdict and negative price momentum (alpha) keep the stock in a no-clear-edge state; expects in-line performance relative to the S&P 500.",
+      "evidence": [
+        "Verdict: Neutral \u2014 no clear edge",
+        "Selection axis alpha z-score negative (-0.61), indicating weak trend momentum",
+        "Price below both 50- and 200-day moving averages"
+      ],
+      "dissent": "Strong quality and a positive earnings surprise could attract institutional flows and produce outperformance.",
+      "falsifier": {
+        "text": "If ARLO outperforms the S&P 500 by more than 3% over the next 20 trading days, the neutral lean would be falsified.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-07-27",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-06-29-FCN-3",
+      "ticker": "FCN",
+      "name": "FTI Consulting",
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Residual momentum and a bottoming cycle setup with clean accounting support a constructive lean relative to the S&P 500, though half-size entry reflects macro uncertainty.",
+      "thesis": "FTI Consulting is building a base with positive analyst revisions, a favorable entry setup, and a spotlight tailwind; expects modest relative outperformance as the bottoming pattern matures.",
       "evidence": [
-        "Verdict: 'Constructive \u2013 building a base'",
-        "16-day cycle low at 170.27 with price reclaiming 10-day average",
-        "Entry axis positive: off-high -11.2%, RSI 60, vol-squeeze present",
-        "Residual-alpha z-score +1.19 (selection leg)",
-        "Accounting flagged as clean"
+        "Verdict: Constructive \u2014 building a base",
+        "Entry axis positives: off-high -20.2%, RSI constructive, volatility squeeze",
+        "Revisions z-score +0.78 (literature tier) supports fundamental momentum"
       ],
-      "dissent": "Negative ROE (-77%) and the quality z-score (-1.43) under a contracting macro regime could undermine base-building and lead to a failed setup.",
+      "dissent": "SUE is neutral and price remains below both major moving averages; a breakdown below the recent swing low would signal base failure.",
       "falsifier": {
-        "text": "A daily close below $170.27 (the recent swing low) that fails to reclaim the 10-day moving average within three days.",
+        "text": "If FCN closes below the June 25 swing low of $140.40 within 20 trading days, the constructive lean is invalidated.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "COKE",
+          "subject_ticker": "FCN",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
@@ -35,129 +81,89 @@
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
-      "id": "2026-06-29-RNG-2",
-      "ticker": "RNG",
-      "name": "RingCentral, Inc.",
-      "lean": "neutral",
+      "id": "2026-06-29-FDS-4",
+      "ticker": "FDS",
+      "name": "FactSet",
+      "lean": "avoid",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Despite a technical bottoming setup and strong factor quality, the selection axis lacks a clear edge (SUE low, revisions flat) and the engine's verdict is neutral.",
+      "thesis": "FactSet exhibits relative weakness with deeply negative revisions and alpha, compounded by an imminent earnings announcement that introduces binary event risk; likely to underperform the market in the near term.",
       "evidence": [
-        "Verdict: 'Neutral \u2013 no clear edge'",
-        "Selection axis SUE z=0.14, revisions z=0.0",
-        "Entry axis positive but insufficient alone",
-        "Factor quality composite +1.17, but low-vol/beta negative"
+        "Verdict: Lagging \u2014 relative weakness",
+        "Selection axis: revision z -1.22, alpha z -0.95",
+        "Caution: earnings in 1 day \u2014 binary event, size down"
       ],
-      "dissent": "Strong quality factors and a possible swing low could still produce outperformance if the market rewards risk-on within tech.",
+      "dissent": "The stock is deeply off its highs (-47%) and a positive earnings surprise could trigger a sharp recovery from the bottoming price pattern.",
       "falsifier": {
-        "text": "A daily close above the 50-day moving average (approx $41.00) sustained for three sessions and accompanied by a rising SUE would indicate an emerging edge.",
+        "text": "If FDS reports earnings that beat expectations and the stock closes above its 50-day moving average on above-average volume within 5 trading days of the release, the avoid lean would be wrong.",
         "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
+          "kind": "rel_return",
+          "subject_ticker": "FDS",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 20
         }
       },
       "check_by": "2026-07-27",
-      "engine_verdict": "Neutral \u2014 no clear edge"
+      "engine_verdict": "Lagging \u2014 relative weakness"
     },
     {
-      "id": "2026-06-29-ARLO-3",
-      "ticker": "ARLO",
-      "name": "Arlo Technologies",
-      "lean": "neutral",
+      "id": "2026-06-29-SRPT-5",
+      "ticker": "SRPT",
+      "name": "Sarepta Therapeutics",
+      "lean": "cautious",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "SUE is elevated (z=1.35) but residual momentum is negative and the engine's verdict is neutral; macro headwinds for a macro-sensitive micro-cap keep the lean balanced.",
+      "thesis": "Sarepta attempts a bottom but the 'Lagging' verdict, left-translated prior cycle, negative revisions, and accounting warning suggest the attempted recovery will likely fail to outperform the broader market.",
       "evidence": [
-        "Verdict: 'Neutral \u2013 no clear edge'",
-        "Selection: SUE z=1.35 (validated) offset by alpha z=-0.61",
-        "Price below both 50- and 200-day moving averages",
-        "Macro-risk flag: aggregate macro risk elevated"
+        "Verdict: Lagging \u2014 relative weakness",
+        "Cycle note: prior cycle topped early (left-translated), a bearish structural tell",
+        "Quality axis: accounting warn, negative factor composite",
+        "Revisions z -1.31"
       ],
-      "dissent": "A deep discount (-32.9% from 52w high) plus a fresh SUE signal could ignite a sharp post-earnings drift if the bottoming pattern holds.",
+      "dissent": "A strong positive SUE and insider buying could catalyze a sharp, sentiment-driven rally that overcomes the weak technical structure.",
       "falsifier": {
-        "text": "A daily close above the 50-day moving average ($13.47) and a subsequent move above $14.00 within five days.",
+        "text": "If SRPT closes above its 50-day moving average and holds for 5 consecutive days, the cautious lean would need to be reassessed.",
         "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
+          "kind": "rel_return",
+          "subject_ticker": "SRPT",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 20
         }
       },
       "check_by": "2026-07-27",
-      "engine_verdict": "Neutral \u2014 no clear edge"
+      "engine_verdict": "Lagging \u2014 relative weakness"
     },
     {
-      "id": "2026-06-29-MSI-4",
-      "ticker": "MSI",
-      "name": "Motorola Solutions",
-      "lean": "neutral",
+      "id": "2026-06-29-LRN-6",
+      "ticker": "LRN",
+      "name": "Stride, Inc.",
+      "lean": "avoid",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Selection axis is weak (negative SUE and alpha), an accounting watch flag is present, and the tech basket is deteriorating, justifying the engine's neutral verdict.",
+      "thesis": "Stride shows a failed daily cycle and negative earnings momentum (revisions, SUE) under a 'Lagging' verdict, making near-term relative underperformance likely.",
       "evidence": [
-        "Verdict: 'Neutral \u2013 no clear edge'",
-        "Selection: SUE z=-0.60, alpha z=-1.01",
-        "Accounting watch flag",
-        "Narrative basket (Technology) deteriorating \u2013 risk gate"
+        "Verdict: Lagging \u2014 relative weakness",
+        "Cycle flag: failed cycle \u2014 price broke below the prior cycle low",
+        "Selection axis: SUE z -0.56, revisions z -1.22, alpha z -0.41"
       ],
-      "dissent": "Positive earnings revisions (z=0.61) and a short-term bottoming pattern could still produce a bounce if the broader tech sector stabilizes.",
+      "dissent": "Quality factors remain positive and strong net income growth could entice value buyers if the stock stabilizes.",
       "falsifier": {
-        "text": "A daily close above the 50-day moving average ($413.40) accompanied by a move of the residual-alpha z-score into positive territory.",
+        "text": "If LRN closes above its 50-day moving average within 15 trading days, the avoid lean is challenged.",
         "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
+          "kind": "rel_return",
+          "subject_ticker": "LRN",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 20
         }
       },
       "check_by": "2026-07-27",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-06-29-WAB-5",
-      "ticker": "WAB",
-      "name": "Wabtec",
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 10,
-      "thesis": "The engine sees constructive base-building but the ladder is BOTTOM WATCH with WAIT status and the entry axis is weak; no clear tactical edge until the pattern firms.",
-      "evidence": [
-        "Verdict: 'Constructive \u2013 building a base' but ladder WAIT",
-        "Entry axis z=0.027 with price still below 10-day average",
-        "Selection driven by revisions (z=0.75) and residual alpha (z=1.69)",
-        "Quality axis missing (no factor z-score)"
-      ],
-      "dissent": "Strong residual momentum and revisions could power a quick breakout, making a neutral stance too cautious.",
-      "falsifier": {
-        "text": "A daily close above $271 (above the 10-day moving average) for two consecutive sessions, signaling completion of the bottom.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-07-13",
-      "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-06-29-DINO-6",
-      "ticker": "DINO",
-      "name": "HF Sinclair",
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "The engine's verdict is 'High-confluence leader' but action is HOLD and the band is neutral; a bearish bigger picture and deteriorating energy basket argue for restraint.",
-      "evidence": [
-        "Verdict: 'High-confluence leader (context)' but HOLD ladder",
-        "Bearish bigger-picture regime, macro contraction",
-        "Narrative basket (US Energy) deteriorating \u2013 risk gate",
-        "Entry axis z=0.14, not blocked but not compelling"
-      ],
-      "dissent": "Powerful earnings momentum (SUE z=0.91, revisions z=2.19) could overcome sector headwinds and drive further relative outperformance.",
-      "falsifier": {
-        "text": "A daily close above $74.00 with the daily MACD turning positive would signal trend resumption, contradicting the neutral lean.",
-        "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
-        }
-      },
-      "check_by": "2026-07-20",
-      "engine_verdict": "High-confluence leader (context)"
+      "engine_verdict": "Lagging \u2014 relative weakness"
     }
   ],
   "disclaimer": "Accountable AI judgment on the deterministic top picks. The cross-sectional rank has no validated forward edge; these leans are fallible, falsifiable conditionals graded against reality \u2014 never position sizes. See the track record."
