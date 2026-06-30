@@ -423,12 +423,15 @@ live:
   # Empty string = no Worker; live.js then falls back to the static snapshot below.
   # Override without a commit via the GitHub repo VARIABLE LIVE_QUOTES_WORKER_URL.
   quotes_worker_url: ""
-  # Keyless, no-deploy live path: the GitHub Action .github/workflows/live-quotes.yml
-  # runs scripts/build_live_quotes every ~10 min during market hours and force-pushes
-  # quotes.json to a single-commit `live-data` branch; the browser live.js fetches it
-  # from raw.githubusercontent (CORS '*', ~5-min CDN cache) when no Worker is set.
-  # Override via the repo VARIABLE LIVE_QUOTES_SNAPSHOT_URL. Empty = no snapshot.
-  snapshot_url: "https://raw.githubusercontent.com/chriswong6031-creator/macro/live-data/quotes.json"
+  # SAME-ORIGIN live path (China-safe): live.js fetches quotes.json relative to the
+  # page, so it comes from the serving origin — NOT raw.githubusercontent.com, which
+  # is blocked in mainland China. The VPS must write this file (have the macro-live
+  # cron also run `python -m scripts.build_live_quotes --out site/live/quotes.json`);
+  # until it does, live.js gracefully falls back to same-origin live/overlay.json.
+  # Override via repo VARIABLE LIVE_QUOTES_SNAPSHOT_URL. Empty = overlay.json only.
+  # (Historic: a GitHub Action force-pushed quotes.json to a `live-data` branch and
+  # this pointed at raw.githubusercontent — replaced for China reachability.)
+  snapshot_url: "live/quotes.json"
   # Extra symbols to always include in the snapshot universe (beyond the CORE
   # index/futures set + every data-sym the built site emits).
   snapshot_extra: []
