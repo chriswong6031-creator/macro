@@ -14,8 +14,8 @@
   "email_alerts": false
  },
  "n": 904,
- "n_failed": 18,
- "fail_pct": 1.991,
+ "n_failed": 1,
+ "fail_pct": 0.111,
  "n_flags": 68,
  "universes": [
   {
@@ -58,118 +58,16 @@
   {
    "name": "baskets/ohlcv",
    "n": 681,
-   "n_failed": 18,
-   "fail_pct": 2.643,
+   "n_failed": 1,
+   "fail_pct": 0.147,
    "n_flags": 63,
    "skipped": false,
    "note": "",
    "failed": [
     {
-     "name": "A",
-     "reasons": [
-      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
-     ]
-    },
-    {
-     "name": "CHD",
-     "reasons": [
-      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
-     ]
-    },
-    {
-     "name": "CMG",
-     "reasons": [
-      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
-     ]
-    },
-    {
-     "name": "DRI",
-     "reasons": [
-      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
-     ]
-    },
-    {
-     "name": "FDX",
-     "reasons": [
-      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-29)"
-     ]
-    },
-    {
-     "name": "HCA",
-     "reasons": [
-      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
-     ]
-    },
-    {
-     "name": "HII",
-     "reasons": [
-      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
-     ]
-    },
-    {
      "name": "HUBB",
      "reasons": [
       "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2021-05-05)"
-     ]
-    },
-    {
-     "name": "IBP",
-     "reasons": [
-      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
-     ]
-    },
-    {
-     "name": "MA",
-     "reasons": [
-      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-29)"
-     ]
-    },
-    {
-     "name": "MDA",
-     "reasons": [
-      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-29)"
-     ]
-    },
-    {
-     "name": "MHK",
-     "reasons": [
-      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
-     ]
-    },
-    {
-     "name": "PPG",
-     "reasons": [
-      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
-     ]
-    },
-    {
-     "name": "RVTY",
-     "reasons": [
-      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
-     ]
-    },
-    {
-     "name": "SW",
-     "reasons": [
-      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
-     ]
-    },
-    {
-     "name": "TMO",
-     "reasons": [
-      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
-     ]
-    },
-    {
-     "name": "V",
-     "reasons": [
-      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-29)"
-     ]
-    },
-    {
-     "name": "WAT",
-     "reasons": [
-      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-29)"
      ]
     }
    ],

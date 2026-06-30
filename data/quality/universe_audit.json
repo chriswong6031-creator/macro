@@ -16,7 +16,7 @@
  "n": 507,
  "n_failed": 0,
  "fail_pct": 0.0,
- "n_flags": 36,
+ "n_flags": 37,
  "universes": [
   {
    "name": "us_sectors",
@@ -187,7 +187,7 @@
    "n": 82,
    "n_failed": 0,
    "fail_pct": 0.0,
-   "n_flags": 6,
+   "n_flags": 7,
    "skipped": false,
    "note": "",
    "failed": [],
@@ -199,6 +199,11 @@
     },
     {
      "name": "000799.SZ",
+     "kind": "missing",
+     "detail": "not in data/china_search/closes.parquet (coverage-limited store)"
+    },
+    {
+     "name": "002459.SZ",
      "kind": "missing",
      "detail": "not in data/china_search/closes.parquet (coverage-limited store)"
     },
