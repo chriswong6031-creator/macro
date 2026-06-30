@@ -536,7 +536,8 @@
       el.querySelector(".body").addEventListener("click", function (ev) { ev.stopPropagation(); toggleSelect(m); });
       islFront.appendChild(el); islEls[m.cc] = el; rowEls[m.cc] = el; islFrontState[m.cc] = true;
     });
-    buildCluster();
+    // (Asia cluster chip retired — overlapping pebbles now fan out as leader-line
+    //  "balloons" in positionIslands() so every market stays individually readable)
     updateClocks();
     setInterval(updateClocks, 1000);
     var utc = stage.parentNode.querySelector(".gd-utc");
@@ -551,44 +552,65 @@
   function positionIslands() {
     if (!islFront) return;
     var cx = W / 2, cy = H / 2, mob = W < 560;
-    var off = mob ? 14 : 24, hw = mob ? 60 : 80;   // body half-width budget for edge-clamping
+    var off = mob ? 16 : 26;                          // how far the balloon floats off its dot
+    var hw = mob ? 52 : 76, hh = 14, gapY = mob ? 8 : 10;  // body half-size + min vertical gap
+    var padX = mob ? 8 : 12, topPad = 40;            // viewport clamp insets
+    var lab = [];
     DATA.forEach(function (m) {
       var el = islEls[m.cc], ll = posMap[m.cc]; if (!el || !ll) return;
       var xy = projection(ll); if (!xy) return;
       var f = frontness(ll);
-      var dx = xy[0] - cx, dy = xy[1] - cy, len = Math.hypot(dx, dy) || 1;
-      var ox = dx / len * off, oy = dy / len * off;
-      var bx = xy[0] + ox; if (bx < hw) ox += (hw - bx); else if (bx > W - hw) ox -= (bx - (W - hw));
-      var by = xy[1] + oy; if (by < 44) oy += (44 - by);
+      var dx = xy[0] - cx, dy = xy[1] - cy, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
       el.style.setProperty("--x", xy[0].toFixed(1));
       el.style.setProperty("--y", xy[1].toFixed(1));
-      el.style.setProperty("--ox", ox.toFixed(1));
-      el.style.setProperty("--oy", oy.toFixed(1));
       el.style.setProperty("--f", f.toFixed(3));
-      // leader hairline from the true centroid dot out to the (clamped) pebble body
-      if (f > 0.5) { ctx.save(); ctx.beginPath(); ctx.moveTo(xy[0], xy[1]); ctx.lineTo(xy[0] + ox, xy[1] + oy); ctx.strokeStyle = rgba(qcolor(m.quad), 0.42 * f); ctx.lineWidth = 1; ctx.shadowColor = rgba(qcolor(m.quad), 0.5 * f); ctx.shadowBlur = 3; ctx.stroke(); ctx.restore(); }
       // hysteresis reparent across the limb so the opaque globe clips back-side pebbles
       var isF = islFrontState[m.cc];
       if (isF && f < 0.42) { islFrontState[m.cc] = false; islBack.appendChild(el); }
       else if (!isF && f > 0.58) { islFrontState[m.cc] = true; islFront.appendChild(el); }
       el.querySelector(".body").style.pointerEvents = f > 0.5 ? "auto" : "none";
+      if (f > 0.5) {
+        // front pebble: start the balloon a bit out along its radial, then declutter below
+        lab.push({ el: el, m: m, ax: xy[0], ay: xy[1], bx: xy[0] + ux * off, by: xy[1] + uy * off });
+      } else {
+        // fading/back: just sit a touch off the dot, no leader, no declutter
+        el.style.setProperty("--ox", (ux * off).toFixed(1));
+        el.style.setProperty("--oy", (uy * off).toFixed(1));
+      }
     });
-    clusterUpdate();
+    // fan overlapping balloons apart (mostly vertical → a readable column on strings)
+    declutter(lab, hw * 2 * 0.72, hh * 2 + gapY);
+    // commit positions (clamped to the viewport) + draw the leader "strings"
+    for (var i = 0; i < lab.length; i++) {
+      var p = lab[i];
+      if (p.bx < hw + padX) p.bx = hw + padX; else if (p.bx > W - hw - padX) p.bx = W - hw - padX;
+      if (p.by < topPad) p.by = topPad; else if (p.by > H - hh - padX) p.by = H - hh - padX;
+      p.el.style.setProperty("--ox", (p.bx - p.ax).toFixed(1));
+      p.el.style.setProperty("--oy", (p.by - p.ay).toFixed(1));
+      var q = qcolor(p.m.quad);
+      ctx.save(); ctx.beginPath(); ctx.moveTo(p.ax, p.ay); ctx.lineTo(p.bx, p.by);
+      ctx.strokeStyle = rgba(q, 0.5); ctx.lineWidth = 1; ctx.shadowColor = rgba(q, 0.55); ctx.shadowBlur = 3; ctx.stroke(); ctx.restore();
+    }
   }
-  function clusterUpdate() {
-    if (!clusterEl) return;
-    var fr = ASIA.map(function (cc) { var ll = posMap[cc]; return { cc: cc, f: ll ? frontness(ll) : 0, xy: ll ? projection(ll) : null }; }).filter(function (o) { return o.f > 0.45 && o.xy; });
-    var compress = false;
-    if (fr.length >= 3) { var xs = fr.map(function (o) { return o.xy[0]; }), ys = fr.map(function (o) { return o.xy[1]; }); compress = ((Math.max.apply(0, xs) - Math.min.apply(0, xs)) + (Math.max.apply(0, ys) - Math.min.apply(0, ys))) < 160; }
-    var doCluster = fr.length >= 3 && compress && !exploded;
-    ASIA.forEach(function (cc) { var el = islEls[cc]; if (el) el.style.visibility = (doCluster && frontness(posMap[cc]) > 0.45) ? "hidden" : ""; });
-    if (doCluster) {
-      var mx = fr.reduce(function (s, o) { return s + o.xy[0]; }, 0) / fr.length, my = fr.reduce(function (s, o) { return s + o.xy[1]; }, 0) / fr.length;
-      clusterEl.classList.add("show");
-      clusterEl.style.setProperty("--cx", mx.toFixed(1)); clusterEl.style.setProperty("--cy", my.toFixed(1));
-      clusterEl.querySelector(".cl-n").textContent = "+" + fr.length;
-      clusterEl.querySelector(".cl-dots").innerHTML = fr.map(function (o) { return '<i style="color:var(--' + byCC[o.cc].quad + ');background:var(--' + byCC[o.cc].quad + ')"></i>'; }).join("");
-    } else clusterEl.classList.remove("show");
+  // greedy relaxation: separate overlapping label bodies, pushing mostly vertically so
+  // a tight knot (East Asia) fans into a readable column of balloons-on-strings while
+  // each dot stays pinned to its true country. minDX/minDY = required centre spacing.
+  function declutter(lab, minDX, minDY) {
+    if (lab.length < 2) return;
+    for (var it = 0; it < 24; it++) {
+      var any = false;
+      for (var i = 0; i < lab.length; i++) {
+        for (var j = i + 1; j < lab.length; j++) {
+          var a = lab[i], b = lab[j], ddx = b.bx - a.bx, ddy = b.by - a.by;
+          if (minDX - Math.abs(ddx) > 0 && minDY - Math.abs(ddy) > 0) {   // bodies overlap
+            any = true;
+            var push = (minDY - Math.abs(ddy)) / 2 + 0.5;
+            if (ddy >= 0) { a.by -= push; b.by += push; } else { a.by += push; b.by -= push; }
+          }
+        }
+      }
+      if (!any) break;
+    }
   }
   function updateClocks() {
     var soonest = null;

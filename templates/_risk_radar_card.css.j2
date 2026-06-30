@@ -102,12 +102,15 @@
   .rrx .rrx-do-k { font-weight: 800; color: var(--rc); text-transform: uppercase; letter-spacing: .06em;
          font-size: 10.5px; margin-right: 8px; }
   /* election-cycle context chip (US radar only; engine/election_cycle.py) */
-  .rrx .rrx-cyc { font-size: 11px; color: var(--muted); padding-top: 9px;
-         border-top: 1px solid color-mix(in srgb, var(--rc) 16%, var(--line)); }
-  .rrx .rrx-cyc-k { font-weight: 700; color: var(--text); margin-right: 4px; }
-  .rrx .rrx-cyc-tag { color: var(--rc); font-weight: 700; font-size: 10px; margin-left: 6px; }
-  .rrx .rrx-cyc-sub { color: var(--muted); font-size: 10px; margin-top: 2px; }
-  .rrx .rrx-cyc-sec { color: var(--text); font-size: 10.5px; margin-top: 3px; font-variant-numeric: tabular-nums; }
+  /* compressed to <=2 dense lines so the cycle context never balloons the card */
+  .rrx .rrx-cyc { font-size: 10.5px; color: var(--muted); padding-top: 7px; margin-top: 2px; line-height: 1.4;
+         border-top: 1px solid color-mix(in srgb, var(--rc) 16%, var(--line));
+         display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; row-gap: 1px; }
+  .rrx .rrx-cyc-k { font-weight: 700; color: var(--text); }
+  .rrx .rrx-cyc-tag { color: var(--rc); font-weight: 700; font-size: 9.5px; }
+  .rrx .rrx-cyc-sub { color: var(--muted); font-size: 10px; margin: 0; }
+  .rrx .rrx-cyc-sec { color: var(--text); font-size: 10px; margin: 0; flex-basis: 100%;
+         font-variant-numeric: tabular-nums; }
   /* self-audit line (international radars only) */
   .rrx .rrx-audit { font-size: 10.5px; color: var(--muted); }
   .rrx .rrx-audit-k { font-weight: 700; color: var(--text); margin-right: 6px; }
@@ -122,9 +125,22 @@
      non-dominant threat meters are desktop-only detail, not a mobile wall. */
   @media (max-width: 560px) {
     .rrx { padding: 14px 15px; gap: 10px; }
-    .rrx .rrx-amp, .rrx .rrx-ramp, .rrx .rrx-ev { display: none; }
+    .rrx .rrx-amp, .rrx .rrx-ramp, .rrx .rrx-ev, .rrx .rrx-cyc, .rrx .rrx-audit { display: none; }
     .rrx .rrx-odds { padding: 11px 13px; }
     .rrx .rrx-big { font-size: 34px; }
     .rrx .rrx-threats { gap: 5px; }
     .rrx .rrx-th:not(.dom) { display: none; }
+  }
+  /* desktop: the consolidated 2-column board (header/odds/ramp | threats/evidence/
+     action/cycle) on EVERY market's .ms-front board, not just the US macro one —
+     roughly halves the card height vs the single-column stack. The US dashboard
+     keeps its own (higher-specificity, identical) copy; this is what reaches the
+     China / HK / Canada boards that only load this shared partial. */
+  @media (min-width: 1100px) {
+    .ms-front > .rrx { grid-template-columns: minmax(0,1.32fr) minmax(0,1fr);
+      column-gap: 22px; row-gap: 0; align-items: stretch; }
+    .ms-front > .rrx > .rrx-main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .ms-front > .rrx > .rrx-side { display: flex; flex-direction: column; justify-content: center;
+      gap: 9px; min-width: 0; padding-left: 22px;
+      border-left: 1px solid color-mix(in srgb, var(--rc) 22%, var(--line)); }
   }
