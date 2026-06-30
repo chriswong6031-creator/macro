@@ -18,7 +18,7 @@
 <title>US Stock Dashboard — 2026-06-29</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
-<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<script src="plotly-2.32.0.min.js"></script>
 <style>
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
@@ -666,7 +666,7 @@
               border-left: 3px solid var(--muted); }
   .nbe-buy_now, .nbe-partial { border-left-color: var(--up);
               background: color-mix(in srgb, var(--up) 8%, var(--panel)); }
-  .nbe-buy_soon, .nbe-watch { border-left-color: var(--g-cold); }
+  .nbe-buy_soon, .nbe-watch, .nbe-await_confluence { border-left-color: var(--g-cold); }
   .nbe-wait_pullback, .nbe-hold { border-left-color: var(--warn); }
   .nbe-extended, .nbe-topping { border-left-color: var(--warn);
               background: color-mix(in srgb, var(--warn) 9%, var(--panel)); }

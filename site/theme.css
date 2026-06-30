@@ -5,10 +5,17 @@
    light mode. Nothing hard-codes a dark background. */
 
 /* Inter — the typeface used by the Bitcoin Vector dashboard and the landing
-   hub. Loaded here (theme.css is linked by every page) and applied to <body>
-   below so the whole site shares one font; each page keeps its own
-   font-size/line-height. */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+   hub. SELF-HOSTED (was a Google Fonts web import): the Google Fonts CDN is
+   blocked in mainland China, so the WOFF2 files are vendored under site/fonts/
+   (source: templates/fonts/, copied by build_site) and served same-origin.
+   theme.css is linked by every page, so these @font-face rules give the whole
+   site Inter with no third-party request. */
+@font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url("fonts/Inter-400.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url("fonts/Inter-500.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:600;font-display:swap;src:url("fonts/Inter-600.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:700;font-display:swap;src:url("fonts/Inter-700.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:800;font-display:swap;src:url("fonts/Inter-800.woff2") format("woff2");}
+@font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
 :root {
   --bg: #0f1115; --panel: #181b21; --panel2: #1e222a; --text: #d7dce3;
   --muted: #8b93a1; --line: #2a2f3a;
@@ -298,7 +305,7 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
   transform: translateY(-1px); }
 .site-nav .nav-brand .brand-glyph { width: 29px; height: 29px; display: block; flex: none;
   filter: drop-shadow(0 2px 6px rgba(40,56,128,.34)); }
-/* weight 900 (Inter Black — loaded via the @import at the top) + tight tracking so the
+/* weight 900 (Inter Black — loaded via the @font-face rules at the top) + tight tracking so the
    wordmark reads as heavy as the logo glyph; line-height:1 so the all-caps ink centres
    on the glyph (the inherited 1.5 line-height left the caps sitting visibly high). */
 .site-nav .nav-brand .brand-word { font-family: Inter, -apple-system, "Segoe UI", Roboto, sans-serif;

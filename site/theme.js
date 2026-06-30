@@ -9,9 +9,19 @@
      theme.js), so there's no per-template tag to maintain. Loads gtag.js async
      and queues the first page_view via dataLayer. Skips localhost / file:// so
      local dev, previews and the admin tool never pollute the property. Set
-     GA4_ID to '' to disable site-wide. */
+     GA4_ID to '' to disable site-wide.
+
+     GFW NOTE: www.googletagmanager.com is blocked in mainland China. The tag is
+     async (never render-blocking), but a blocked request still hangs the socket
+     until TCP timeout and spams the console with ERR_CONNECTION errors. To keep
+     China page loads clean we (a) gate analytics behind an explicit opt-in flag
+     so it stays dormant by default, (b) swallow the load error via onerror, and
+     (c) defer injection to the idle window so it never competes with paint. */
   var GA4_ID = 'G-BZTZ9W1BBB';
   (function loadGA4() {
+    // Off unless explicitly enabled (set window.ENABLE_GA4 = true on the
+    // US-served origin only — never on the China mirror). Dormant by default.
+    if (window.ENABLE_GA4 !== true) return;
     if (!GA4_ID || window.__ga4_loaded) return;
     var h = location.hostname;
     if (!h || h === 'localhost' || h === '127.0.0.1' || h === '[::1]') return;
@@ -21,10 +31,17 @@
     window.gtag = gtag;
     gtag('js', new Date());
     gtag('config', GA4_ID);
-    var s = document.createElement('script');
-    s.async = true;
-    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA4_ID;
-    document.head.appendChild(s);
+    var inject = function () {
+      var s = document.createElement('script');
+      s.async = true;
+      s.referrerPolicy = 'no-referrer-when-downgrade';
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA4_ID;
+      s.onerror = function () { /* blocked (e.g. GFW) — fail silently */ };
+      (document.head || document.documentElement).appendChild(s);
+    };
+    // Wait for idle so a slow/blocked tag never delays interaction.
+    if (window.requestIdleCallback) requestIdleCallback(inject, { timeout: 4000 });
+    else setTimeout(inject, 1200);
   })();
 
   /* ---- Mastermind Terminal jump -------------------------------------------
