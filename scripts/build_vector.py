@@ -1376,13 +1376,13 @@ a:focus-visible,.links a:focus-visible,.ha-item summary:focus-visible{outline:2p
  filter:blur(3px);opacity:calc(.5*var(--f,1));animation:gdislbreath var(--bd,5s) ease-in-out infinite;animation-delay:var(--bdl,0s)}
 @keyframes gdislbreath{0%,100%{opacity:calc(.26*var(--f,1))}50%{opacity:calc(.6*var(--f,1))}}
 .gd-isl .dot{position:absolute;left:50%;top:50%;width:7px;height:7px;border-radius:50%;
- transform:translate(-50%,-50%);background:var(--qc);box-shadow:0 0 9px var(--qc),0 0 0 2px color-mix(in srgb,var(--bg) 70%,transparent);opacity:calc(.2+.8*var(--f,1))}
+ transform:translate(-50%,-50%);background:var(--qc);box-shadow:0 0 9px var(--qc),0 0 0 2px color-mix(in srgb,var(--bg) 70%,transparent);opacity:calc(.2 + .8*var(--f,1))}
 .gd-isl .ring{position:absolute;left:50%;top:50%;width:26px;height:26px;pointer-events:none;
- transform:translate(-50%,-50%) rotate(-90deg);opacity:calc(.15+.85*var(--f,1))}
+ transform:translate(-50%,-50%) rotate(-90deg);opacity:calc(.15 + .85*var(--f,1))}
 .gd-isl .ring .trk{fill:none;stroke:color-mix(in srgb,var(--line) 65%,transparent);stroke-width:2}
 .gd-isl .ring .arc{fill:none;stroke:var(--qc);stroke-width:2;stroke-linecap:round;filter:drop-shadow(0 0 3px var(--qc));transition:stroke-dashoffset .9s linear}
 .gd-isl .body{position:absolute;left:50%;top:50%;white-space:nowrap;margin:0;font-family:inherit;
- transform:translate(calc(-50% + var(--ox,0)*1px),calc(-50% + var(--oy,0)*1px)) scale(calc(.84+.16*var(--f,1)));
+ transform:translate(calc(-50% + var(--ox,0)*1px),calc(-50% + var(--oy,0)*1px)) scale(calc(.84 + .16*var(--f,1)));
  display:flex;align-items:center;gap:8px;padding:7px 13px 7px 11px;border-radius:999px;cursor:pointer;
  background:color-mix(in srgb,var(--panel) 84%,transparent);
  border:1px solid color-mix(in srgb,var(--qc) 26%,color-mix(in srgb,var(--line) 78%,transparent));
@@ -1394,10 +1394,22 @@ a:focus-visible,.links a:focus-visible,.ha-item summary:focus-visible{outline:2p
  background:linear-gradient(140deg,rgba(255,255,255,.62),rgba(255,255,255,.06) 40%,rgba(0,0,0,.16));
  -webkit-mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);-webkit-mask-composite:xor;mask-composite:exclude;padding:1px;opacity:.95}
 .gd-isl .body::after{content:'';position:absolute;left:16%;right:16%;bottom:-.5px;height:2.5px;border-radius:2px;
- background:var(--qc);box-shadow:0 0 10px var(--qc),0 0 3px var(--qc);opacity:calc(.35+.65*var(--f,1))}
+ background:var(--qc);box-shadow:0 0 10px var(--qc),0 0 3px var(--qc);opacity:calc(.35 + .65*var(--f,1))}
 .gd-isl .body:hover,.gd-isl .body:focus-visible{outline:none;border-color:color-mix(in srgb,var(--qc) 62%,var(--line));
  box-shadow:inset 0 1px 0 rgba(255,255,255,.66),inset 0 -9px 15px rgba(0,0,0,.32),0 14px 30px -10px rgba(0,0,0,.72),0 7px 22px -6px color-mix(in srgb,var(--qc) 62%,transparent)}
 .gd-isl.sel .body{border-color:color-mix(in srgb,var(--qc) 70%,var(--line))}
+/* LIGHT THEME: the dark inner shadows read as a muddy smudge on a white pebble — drop
+   them, go more transparent + frosted so the globe shows through as real glass */
+html[data-theme="light"] .gd-isl .body{
+ background:color-mix(in srgb,var(--panel) 52%,transparent);
+ border-color:color-mix(in srgb,var(--qc) 32%,color-mix(in srgb,var(--line) 66%,transparent));
+ -webkit-backdrop-filter:blur(15px) saturate(1.5);backdrop-filter:blur(15px) saturate(1.5);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 2px rgba(255,255,255,.45),0 8px 20px -10px rgba(28,40,64,.24),0 3px 13px -6px color-mix(in srgb,var(--qc) 40%,transparent)}
+html[data-theme="light"] .gd-isl .body::before{background:linear-gradient(140deg,rgba(255,255,255,.92),rgba(255,255,255,.22) 46%,rgba(120,140,170,.12))}
+html[data-theme="light"] .gd-isl .body:hover,html[data-theme="light"] .gd-isl .body:focus-visible{
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 11px 24px -10px rgba(28,40,64,.28),0 5px 16px -6px color-mix(in srgb,var(--qc) 55%,transparent)}
+html[data-theme="light"] .gd-cluster{background:color-mix(in srgb,var(--panel) 55%,transparent);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 8px 20px -10px rgba(28,40,64,.24)}
 .gd-isl .isl-flag{font-size:16px;line-height:1;filter:saturate(1.1)}
 .gd-isl .isl-sem{width:10px;height:10px;border-radius:50%;flex:none;position:relative}
 .gd-isl .isl-sem.open{background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 26%,transparent),0 0 7px var(--ok);animation:gdsempulse 2.1s ease-in-out infinite}
