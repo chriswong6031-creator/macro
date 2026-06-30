@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   collect:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macstudio]
     timeout-minutes: 100
     steps:
       - uses: actions/checkout@v4
@@ -144,7 +144,7 @@ jobs:
   engine:
     needs: collect
     if: always()            # a scraper failure must still produce a dashboard from cached data
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macstudio]
     timeout-minutes: 120    # was 70 — observed the job hitting exactly 70m on a congested runner and getting CANCELLED at the special-situations step (~step 30 of 50), AFTER it had successfully rebuilt every page (china/gex/vol-regime/etc.) but BEFORE the "commit engine outputs" step (50). Because pages.yml deploys the COMMITTED main tree, a skipped commit means the fresh build never lands and the live site serves a stale dashboard (missing nav links, new heroes, new JSON) until a run happens to finish under the cap. 120m gives real headroom to always reach the commit. residual-alpha measured ~1s (never the bottleneck the old comment guessed). DONE: the ~22 regional/desk builders between build_site and the hub now run as parallel independent clusters (the "regional + desk builders (parallelised)" step) instead of serially — band wall-clock dropped from ~75m to ~its longest single cluster (special-situations' ~28m EDGAR sweep, now the long pole). Next lever if more is needed: speed up that EDGAR sweep.
     steps:
       - uses: actions/checkout@v4
@@ -791,7 +791,7 @@ jobs:
   factor_series:
     needs: collect
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macstudio]
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -853,7 +853,7 @@ jobs:
   stock_briefs:
     needs: engine
     if: always()
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macstudio]
     timeout-minutes: 45
     env:
       DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
