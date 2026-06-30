@@ -651,7 +651,7 @@ function renderCards(){
   }).join('');
   el.querySelectorAll('.card').forEach(c=>c.onclick=()=>openBasket(c.dataset.id));
 }
-function memRows(b){ return (b.members||[]).map(m=>`<tr><td><b>${esc(m.symbol)}</b> <span class="muted sm">${esc(m.name)}</span></td>
+function memRows(b){ return (b.members||[]).map(m=>`<tr><td><a href="canada_stock.html#${encodeURIComponent(m.symbol)}"><b>${esc(m.symbol)}</b></a> <span class="muted sm">${esc(m.name)}</span></td>
   <td class="why">${esc(m.rationale)}</td><td class="num muted sm">${esc(m.added)}</td>
   <td class="num ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td><td class="num ${cls(m.ret_ytd)}">${fmtPct(m.ret_ytd)}</td></tr>`).join(''); }
 function detailSection(b){
