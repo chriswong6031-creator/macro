@@ -111,6 +111,8 @@
   .nb-sub { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:10px; color:var(--muted); min-width:0; }
   .nb-sub > span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
   .nb-sub .nb-offh { margin-left:auto; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .nb-washout { flex:none; font-size:8px; font-weight:800; letter-spacing:.02em; padding:1px 5px; border-radius:6px; white-space:nowrap;
+                background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 38%,transparent); }
   .nbcard .nch { background:transparent; margin:4px 0 2px; width:100%; height:42px; border-radius:5px; }
   .nb-bot { display:flex; align-items:center; flex-wrap:wrap; gap:5px 6px; margin-top:1px; }
   .nb-state { font-size:10px; font-weight:800; letter-spacing:.02em; padding:1px 7px; border-radius:8px; }
@@ -1195,7 +1197,7 @@
           {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
           {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="cn">{{ '%.2f'|format(n.price) }}</span>{% endif %}
         </div>
-        <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.off_high is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
+        <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.washout_2w %}<span class="nb-washout" title="2-week StochRSI reclaimed the 20 line from oversold — a higher-timeframe washout reversal (likely washed out on the 2W &amp; 1M, so a more durable bottom). · 2周 StochRSI 从超卖区上穿20线 — 高周期洗盘反转（2周/月线大概率已洗净，底部更稳）。"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}{% if n.off_high is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
         {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
         {% set c = n.conviction %}
         {% if c %}
