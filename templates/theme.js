@@ -745,8 +745,12 @@
     document.querySelectorAll('.theme-switch').forEach(function (b) {
       b.addEventListener('click', window.toggleTheme);
     });
-    document.querySelectorAll('.lang-toggle .opt').forEach(function (o) {
-      o.addEventListener('click', function () { setLang(o.getAttribute('data-l')); });
+    // Whole-control toggle: a click ANYWHERE on the language pill (either label, the
+    // sliding pill, the padding) flips to the other language — no need to land on the
+    // exact inactive side. Mirrors the theme switch, whose handler is on the whole
+    // <button>. Bound on the container so descendant clicks bubble up to one handler.
+    document.querySelectorAll('.lang-toggle').forEach(function (t) {
+      t.addEventListener('click', function () { window.toggleLang(); });
     });
     initSettings();   // fallback if the early call above could not run
     initNavSearch();
