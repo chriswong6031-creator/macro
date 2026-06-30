@@ -303,6 +303,10 @@ fred:
     credit: [HYG, LQD]
     bond_etfs: [TLT, IEF, TIP, EMB]   # Bonds dashboard price/flow proxies: long UST, 7-10y UST, TIPS, EM USD sov
     intl_etfs: [FXI]                  # China large-cap (US-hours) — factor-exposure China proxy + holding
+    country_etfs: [EWG, EWU, EWQ, EWL, EWP, EWI, EWN, EWD,   # World Market Cycles (intl_cycles.html) — USD single-country iShares MSCI ETFs, most back to 1996
+                   EWJ, EWA, EWH, EWS, EWC,
+                   INDA, EWT, EWY, EIDO, EWZ, EWW, ECH, EZA, TUR, EPOL,
+                   EFA, EEM, VGK, VPL, AAXJ, ILF, VXUS]       # + regional/bloc aggregates: Dev ex-US, EM, Europe, Pacific, Asia-xJP, LatAm, All-World ex-US
     vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX"]   # ^VVIX = vol-of-vol (option-implied risk layer)
     fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F", "SI=F", "BZ=F"]
     fx: ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X", "USDMXN=X", "USDBRL=X", "CNH=X", "CNH=F"]   # Forex Vector spot pairs; CNH=F = offshore CNH futures (2013->, real history vs CNH=X spot's 1 row)
@@ -4807,6 +4811,10 @@ yahoo:
     credit: [HYG, LQD]
     bond_etfs: [TLT, IEF, TIP, EMB]   # Bonds dashboard price/flow proxies: long UST, 7-10y UST, TIPS, EM USD sov
     intl_etfs: [FXI]                  # China large-cap (US-hours) — factor-exposure China proxy + holding
+    country_etfs: [EWG, EWU, EWQ, EWL, EWP, EWI, EWN, EWD,   # World Market Cycles (intl_cycles.html) — USD single-country iShares MSCI ETFs, most back to 1996
+                   EWJ, EWA, EWH, EWS, EWC,
+                   INDA, EWT, EWY, EIDO, EWZ, EWW, ECH, EZA, TUR, EPOL,
+                   EFA, EEM, VGK, VPL, AAXJ, ILF, VXUS]       # + regional/bloc aggregates: Dev ex-US, EM, Europe, Pacific, Asia-xJP, LatAm, All-World ex-US
     vol: ["^VIX", "^VIX9D", "^VIX3M", "^MOVE", "^VVIX"]   # ^VVIX = vol-of-vol (option-implied risk layer)
     fx_commod: ["DX-Y.NYB", "CL=F", "HG=F", "GC=F", "SI=F", "BZ=F"]
     fx: ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X", "USDMXN=X", "USDBRL=X", "CNH=X", "CNH=F"]   # Forex Vector spot pairs; CNH=F = offshore CNH futures (2013->, real history vs CNH=X spot's 1 row)

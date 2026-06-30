@@ -49,6 +49,13 @@
   // drive the detail as a true hidden-at-rest bottom sheet. Everything here is gated on
   // isCnMobile() so desktop (US + China) and the shared US mobile page are untouched.
   var IS_CN = META.region === "china";
+  var IS_INTL = META.region === "intl";
+  // unit noun for one series in the default (non-basket) family: US/China = "sector",
+  // intl = "market". For US/China these resolve to the original literals, so every
+  // rendered string on those pages stays byte-identical to before.
+  function unitE() { return IS_INTL ? "market" : "sector"; }    // lower-case English
+  function unitEC() { return IS_INTL ? "Market" : "Sector"; }   // capitalised English
+  function unitZ() { return IS_INTL ? "市场" : "板块"; }         // Chinese
   function isMobile() { return window.innerWidth <= 880; }
   function isCnMobile() { return IS_CN && isMobile(); }
   var mobileSel = null;        // explicit per-id chart selection (Series picker); null = leaders default
@@ -534,7 +541,7 @@
     var ttl = document.getElementById("sc-hero-title");
     if (ttl) ttl.innerHTML = state.family === "baskets"
       ? '<span class="l-en">Thematic basket rotation</span><span class="l-zh">主题篮子轮动</span>'
-      : '<span class="l-en">Sector rotation overlay</span><span class="l-zh">板块轮动叠加</span>';
+      : '<span class="l-en">' + unitEC() + ' rotation overlay</span><span class="l-zh">' + unitZ() + '轮动叠加</span>';
   }
   function switchFamily(fam) {
     if (fam === state.family) return;
@@ -568,7 +575,7 @@
     if (!isCnMobile()) {
       var all = el("button", "sc-chip-all");
       all.setAttribute("type", "button");
-      all.setAttribute("title", L("Chart every sector the filter is showing", "绘制当前筛选下的全部板块"));
+      all.setAttribute("title", L("Chart every " + unitE() + " the filter is showing", "绘制当前筛选下的全部" + unitZ()));
       all.innerHTML = '<span class="sca-ic" aria-hidden="true">✦</span>' + L("Select all visible", "全选可见");
       all.addEventListener("click", selectAllSectors);
       wrap.appendChild(all);
@@ -821,8 +828,8 @@
   function forecastCardHTML(s) {
     var p = s.proj; if (!p || !p.central) return "";
     if (!META.forecastPoint) {
-      return '<div class="cyc-regnote">' + L("Projected next " + p.nextTurn + " ≈ " + fmtMon(p.central) + " (" + fmtMon(p.low) + "–" + fmtMon(p.high) + "), from this sector’s own median half-cycle. A timing estimate, not a guarantee.",
-        "预计下次" + (p.nextTurn === "peak" ? "顶部" : "底部") + "约在 " + fmtMon(p.central) + "（" + fmtMon(p.low) + "–" + fmtMon(p.high) + "），基于该板块自身的中位半周期。仅为时间估计。") + '</div>';
+      return '<div class="cyc-regnote">' + L("Projected next " + p.nextTurn + " ≈ " + fmtMon(p.central) + " (" + fmtMon(p.low) + "–" + fmtMon(p.high) + "), from this " + unitE() + "’s own median half-cycle. A timing estimate, not a guarantee.",
+        "预计下次" + (p.nextTurn === "peak" ? "顶部" : "底部") + "约在 " + fmtMon(p.central) + "（" + fmtMon(p.low) + "–" + fmtMon(p.high) + "），基于该" + unitZ() + "自身的中位半周期。仅为时间估计。") + '</div>';
     }
     var up = p.nextTurn === "peak", ar = up ? "▲" : "▼";
     var band = (p.low && p.high) ? (fmtMon(p.low) + " – " + fmtMon(p.high)) : "";
@@ -891,6 +898,7 @@
   // China (Shenwan indices / A-share baskets have no analyzer) routes to the China Sector Central
   // hub. Returns null when there's nothing to open (incl. when already embedded in that hub).
   function sectorPageHref(s) {
+    if (META.region === "intl") return null;   // country/region ETFs have no dedicated drill page — the cycle card IS the page
     if (META.region === "china") {
       // when this same JS is embedded IN the China Sector Central hub, don't render a
       // button that merely reloads the page you're already on; from the standalone
@@ -960,7 +968,7 @@
     return '' +
       '<div class="cyc-grp cyc-grp-full">' +
         '<div class="sc-fhead-top">' +
-          '<button class="cyc-back">' + (s.kind === "basket" ? L("← All baskets", "← 全部篮子") : L("← All sectors", "← 全部板块")) + '</button>' +
+          '<button class="cyc-back">' + (s.kind === "basket" ? L("← All baskets", "← 全部篮子") : L("← All " + unitE() + "s", "← 全部" + unitZ())) + '</button>' +
           openBtn +
         '</div>' +
         '<div class="cyc-fhead" style="--c:' + s.accent + '">' +
@@ -1042,7 +1050,7 @@
     var def = document.getElementById("sc-panel-default");
     if (!def) return;
     var baskets = state.family === "baskets";
-    var noun = baskets ? L("baskets", "篮子") : L("sectors", "板块");
+    var noun = baskets ? L("baskets", "篮子") : L(unitE() + "s", unitZ());
     var buckets = { Peak: [], Expansion: [], Downturn: [], Recovery: [], Trough: [] };
     activeList().forEach(function (s) { (buckets[s.now.phase] || (buckets[s.now.phase] = [])).push(s); });
     function row(title, list, note, emptyMsg) {
@@ -1069,12 +1077,12 @@
 
     def.innerHTML = '' +
       '<div class="cyc-grp cyc-grp-full">' +
-        '<div class="cyc-lbl">' + (baskets ? L("Thematic basket rotation · ", "主题篮子轮动 · ") : L("Sector rotation · ", "板块轮动 · ")) + META.asOf + '</div>' +
+        '<div class="cyc-lbl">' + (baskets ? L("Thematic basket rotation · ", "主题篮子轮动 · ") : L(unitEC() + " rotation · ", unitZ() + "轮动 · ")) + META.asOf + '</div>' +
         '<p class="rg-headline">' + (baskets
           ? L("The <b>strongest baskets</b> are charted to start — each an equal-weight index of its members on a 0–100 <b>cycle-position</b> clock. Tap a basket to add it, use <b>Where they stand</b> to narrow, or hit <b>Select all visible</b> for the whole field of " + BASKETS.length + ". Flip to <b>Price</b> for the real tape (rebased, log).",
               "已先绘制<b>最强的几个篮子</b>——每个均为其成分股的等权指数，置于 0–100 <b>周期位置</b>时钟上。点击篮子可加入，用<b>所处阶段</b>缩小范围，或点<b>全选可见</b>查看全部 " + BASKETS.length + " 个。切换到<b>价格</b>可查看真实走势（再基准化、对数）。")
-          : L("Every sector on a 0–100 <b>cycle-position</b> clock — high = stretched/late, low = washed-out. Flip to <b>Price</b> for the real tape (rebased on a log axis, so every line shares an axis). Tap a sector to see its turning points and the story behind each move.",
-              "每个板块同处 0–100 <b>周期位置</b>时钟——高=拉伸/晚期，低=超卖。切换到<b>价格</b>可查看真实走势（对数坐标下再基准化，使每条线共用同一坐标轴）。点按某板块查看其拐点及每段走势背后的故事。")) + '</p>' +
+          : L("Every " + unitE() + " on a 0–100 <b>cycle-position</b> clock — high = stretched/late, low = washed-out. Flip to <b>Price</b> for the real tape (rebased on a log axis, so every line shares an axis). Tap a " + unitE() + " to see its turning points and the story behind each move.",
+              "每个" + unitZ() + "同处 0–100 <b>周期位置</b>时钟——高=拉伸/晚期，低=超卖。切换到<b>价格</b>可查看真实走势（对数坐标下再基准化，使每条线共用同一坐标轴）。点按某" + unitZ() + "查看其拐点及每段走势背后的故事。")) + '</p>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
         '<div class="cyc-lbl">' + L("Where the ", "各") + noun + L(" stand", "所处位置") + '</div>' +
@@ -1083,8 +1091,8 @@
           row(L("Trending", "上行中"), buckets.Expansion, L("healthy up-trend", "健康上行")) +
           row(L("Rolling over", "回落中"), buckets.Downturn, L("declining", "下行中")) +
           row(L("Prime entry", "入场良机"), buckets.Recovery, L("bottomed · turning up", "已筑底 · 转强"),
-              L("No " + (baskets ? "baskets" : "sectors") + " are at prime entry right now.",
-                "目前没有处于入场良机的" + (baskets ? "篮子" : "板块") + "。")) +
+              L("No " + (baskets ? "baskets" : (unitE() + "s")) + " are at prime entry right now.",
+                "目前没有处于入场良机的" + (baskets ? "篮子" : unitZ()) + "。")) +
           row(L("Bottoming", "筑底中"), buckets.Trough, L("washed-out", "超卖")) +
         '</div>' +
       '</div>' +
@@ -1096,8 +1104,8 @@
         '<div class="cyc-lbl">' + L("How to read", "如何解读") + '</div>' +
         '<ul class="cyc-how">' +
           '<li>' + L("<b>Price</b> shows the real tape (rebased, log); <b>Cycle position</b> shows a 0–100 oscillator — high = stretched/late, low = washed-out.", "<b>价格</b>显示真实走势（再基准化、对数）；<b>周期位置</b>显示 0–100 振荡器——高=拉伸/晚期，低=超卖。") + '</li>' +
-          '<li>' + L("▲ peaks and ▼ troughs are auto-detected major turns; the <b>● dot</b> is where the sector is now.", "▲ 波峰与 ▼ 波谷为自动识别的重大拐点；<b>● 圆点</b>是该板块当前位置。") + '</li>' +
-          '<li>' + L("<b>Tap a sector</b> (chip, card, or line), then tap a <b>leg</b> to read what drove that move.", "<b>点按某板块</b>（标签、卡片或曲线），再点按某<b>区段</b>了解推动该走势的原因。") + '</li>' +
+          '<li>' + L("▲ peaks and ▼ troughs are auto-detected major turns; the <b>● dot</b> is where the " + unitE() + " is now.", "▲ 波峰与 ▼ 波谷为自动识别的重大拐点；<b>● 圆点</b>是该" + unitZ() + "当前位置。") + '</li>' +
+          '<li>' + L("<b>Tap a " + unitE() + "</b> (chip, card, or line), then tap a <b>leg</b> to read what drove that move.", "<b>点按某" + unitZ() + "</b>（标签、卡片或曲线），再点按某<b>区段</b>了解推动该走势的原因。") + '</li>' +
         '</ul>' +
       '</div>';
 
@@ -1239,7 +1247,7 @@
     if (!wrap || wrap.querySelector(".sc-series-btn")) return;
     var btn = el("button", "sc-series-btn"); btn.type = "button";
     btn.setAttribute("aria-haspopup", "dialog");
-    btn.innerHTML = '<span aria-hidden="true">☰</span><span class="l-en">Series</span><span class="l-zh">板块</span>' +
+    btn.innerHTML = '<span aria-hidden="true">☰</span><span class="l-en">Series</span><span class="l-zh">' + unitZ() + '</span>' +
       '<span class="sc-series-n" id="sc-series-n"></span><span class="sc-series-car" aria-hidden="true">▾</span>';
     btn.addEventListener("click", openSeriesPicker);
     var allBtn = wrap.querySelector(".sc-chip-all");
@@ -1256,11 +1264,11 @@
     ov = el("div", "sc-series-ov"); ov.id = "sc-series-ov";
     ov.innerHTML =
       '<div class="sc-series-back"></div>' +
-      '<div class="sc-series-panel" role="dialog" aria-modal="true" aria-label="' + L("Choose sectors", "选择板块") + '">' +
-        '<div class="sc-series-hd"><span class="sc-series-ttl">' + L("Choose sectors", "选择板块") + '</span>' +
+      '<div class="sc-series-panel" role="dialog" aria-modal="true" aria-label="' + L("Choose " + unitE() + "s", "选择" + unitZ()) + '">' +
+        '<div class="sc-series-hd"><span class="sc-series-ttl">' + L("Choose " + unitE() + "s", "选择" + unitZ()) + '</span>' +
           '<button class="sc-series-done" type="button">' + L("Done", "完成") + '</button></div>' +
         '<div class="sc-series-tools">' +
-          '<input class="sc-series-search" type="search" placeholder="' + L("Search…", "搜索…") + '" aria-label="' + L("Search sectors", "搜索板块") + '">' +
+          '<input class="sc-series-search" type="search" placeholder="' + L("Search…", "搜索…") + '" aria-label="' + L("Search " + unitE() + "s", "搜索" + unitZ()) + '">' +
           '<button class="sc-series-act" data-act="all" type="button">' + L("All", "全选") + '</button>' +
           '<button class="sc-series-act" data-act="none" type="button">' + L("Clear", "清空") + '</button>' +
         '</div>' +
