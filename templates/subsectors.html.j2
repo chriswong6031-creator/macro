@@ -52,6 +52,9 @@
   .scbar { display:inline-block; height:7px; border-radius:4px; background:var(--up); vertical-align:middle; }
   .legend { color:var(--muted); font-size:11px; margin:6px 2px 0; }
   .sc-foot { color:var(--muted); font-size:11px; margin:24px 2px 0; line-height:1.65; max-width:108ch; border-top:1px solid var(--line); padding-top:12px; }
+  .sc-collapsed .sc-xtra { display:none; }
+  .sc-more { margin:8px 2px 0; font:600 12px/1.4 inherit; color:var(--link); background:none; border:1px solid var(--line); border-radius:8px; padding:5px 12px; cursor:pointer; transition:border-color .12s,background .12s; }
+  .sc-more:hover { border-color:var(--link); background:color-mix(in srgb,var(--link) 8%,transparent); }
   .secstrip { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:7px; }
   .secstrip .s { background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:8px 10px; }
   .secstrip .s .snm { font-weight:700; font-size:12px; }

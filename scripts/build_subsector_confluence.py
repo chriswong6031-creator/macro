@@ -270,10 +270,10 @@ def build_china(site: Path, generated_utc: str | None = None) -> int:
 
 INDEX_DESKS = {
     "nasdaq": {"compute": sc.compute_nasdaq_confluence, "label": "Nasdaq-100",
-               "label_zh": "纳斯达克100子行业", "kind_en": "Nasdaq-100 sub-industry",
+               "label_zh": "纳斯达克100", "kind_en": "Nasdaq-100 sub-industry",
                "kind_zh": "纳斯达克100子行业"},
     "russell": {"compute": sc.compute_russell_confluence, "label": "Russell-2000",
-                "label_zh": "罗素2000子行业", "kind_en": "Russell-2000 sub-industry",
+                "label_zh": "罗素2000", "kind_en": "Russell-2000 sub-industry",
                 "kind_zh": "罗素2000子行业"},
 }
 
@@ -322,9 +322,12 @@ def render_index_pages(ns: str, site: Path, env=None, generated_utc: str | None 
     n = 0
     for g in out.get("subsectors", []) + out.get("sectors", []):
         key = _detail_key(g)
+        is_amalg = g.get("kind") == "sector"
+        klab_en = (f"{meta['label']} complex" if is_amalg else meta["kind_en"])
+        klab_zh = ((meta['label_zh'] + "综合体") if is_amalg else meta["kind_zh"])
         detail = {
             "group": g, "kind": g.get("kind", "subsector"),
-            "kind_label_en": meta["kind_en"], "kind_label_zh": meta["kind_zh"],
+            "kind_label_en": klab_en, "kind_label_zh": klab_zh,
             "as_of": g.get("as_of"), "ohlc_dir": d["ohlc"], "sig_dir": d["sig"],
             "back": "../subsectors.html", "stock_base": "../stock.html#",
             "generated_utc": generated_utc,
