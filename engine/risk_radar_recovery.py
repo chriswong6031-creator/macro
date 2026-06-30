@@ -1,0 +1,255 @@
+"""Risk Radar DE-ESCALATION — the "risk has peaked / the risk-off may be ending" read.
+
+DISPLAY-ONLY · LEAF · NEVER RAISES. The mirror image of the rising-risk radar. It surfaces
+ONLY after the radar has been genuinely hot, when two things line up:
+
+  (a) RISK DERATING — the radar's own intensity has peaked and the pullback odds are rolling
+      over (engine/risk_radar.trajectory; leak-free, from the same causal sub-score history); and
+  (b) a LIQUIDITY TURN — the macro money tide is turning supportive: Fed net liquidity expanding
+      (TGA drawdown / reserves rising), the Fed pricing or signalling cuts (incl. an emergency
+      cut), the PBoC easing (RRR / LPR), or the global central-bank balance-sheet tide
+      (Fed + ECB + BoJ) expanding.
+
+When risk DERATES while liquidity is INJECTED, history says the risk-off is often nearing its
+end — so we ILLUSTRATE that turn (a "↘ receding / TURN" panel on the .rrx card) rather than
+leave the user staring at a still-red alert.
+
+HONESTY (this never moves money on its own):
+  • The rising radar earns the right to CAP Market State because its legs cleared a strict
+    forward-lift bar. This recovery read has NOT been forward-tested to that bar yet, so it is
+    a CONTEXT ILLUSTRATION only. It is wired in as a display-only sibling field on the radar
+    view-model and DOES NOT relax the radar's one-directional score ceiling
+    (engine/market_state._radar_override) — the guardrail stays intact.
+  • The de-risk → re-risk response is SIZING: scale exposure back in deliberately, in tranches,
+    keep stops, let price confirm. Never a single buy call.
+  • BoJ has no isolated easing detector freely available, so it enters ONLY via the aggregate
+    global central-bank tide (global_liquidity, which sums Fed+ECB+BoJ); the chip says so.
+  • Every input is display-only context already on the page; every field degrades to absent,
+    never crashes the build.
+
+A future engine/risk_radar_recovery_audit could forward-grade whether "receding + liquidity
+turn" actually precedes rebounds; the trajectory phase is already logged
+(engine/risk_radar_audit) so that record begins accruing now.
+"""
+from __future__ import annotations
+
+import logging
+from datetime import date, datetime
+
+log = logging.getLogger(__name__)
+
+
+def _num(v):
+    try:
+        if v is None:
+            return None
+        f = float(v)
+        return f if f == f else None   # drop NaN
+    except (TypeError, ValueError):
+        return None
+
+
+def _recent(date_str: str | None, days: int = 60) -> bool:
+    """True if an ISO date string is within `days` of today (for the 'fresh' catalyst flag)."""
+    if not date_str:
+        return False
+    try:
+        d = datetime.strptime(str(date_str)[:10], "%Y-%m-%d").date()
+        return (date.today() - d).days <= days
+    except (TypeError, ValueError):
+        return False
+
+
+# --- liquidity-injection catalysts -------------------------------------------------------------
+def _liquidity_catalysts(latest: dict) -> list[dict]:
+    """The supportive-liquidity legs that are firing right now, as display chips. All read the
+    display-only context already on the page; each degrades to absent. `fresh` = a genuinely
+    recent turn (drives the chip glow). NEVER raises."""
+    latest = latest or {}
+    cats: list[dict] = []
+
+    # 1) Fed net liquidity (WALCL − RRP − TGA). 'expanding' = the 20d ROC is positive, i.e. the
+    #    balance sheet is adding reserves and/or the Treasury is drawing its account down (TGA
+    #    drop). engine/regime.py classifies this into latest['liquidity_overlay'].
+    lo = latest.get("liquidity_overlay")
+    if lo == "expanding":
+        cats.append({
+            "key": "fed_netliq", "icon": "💵", "region": "US", "fresh": True,
+            "label_en": "Fed liquidity expanding", "label_zh": "美联储流动性扩张",
+            "detail_en": "Net liquidity (WALCL − RRP − TGA) rising — TGA drawdown / reserves added.",
+            "detail_zh": "净流动性（WALCL − RRP − TGA）上升 — TGA 回落／准备金注入。",
+        })
+
+    # 2) Fed policy easing / emergency cut — market pricing + reaction-function read (display-only;
+    #    engine/fed_path.py + engine/fed_stance.py). A large cut count = the emergency-cut case.
+    fs = latest.get("fed_stance") or {}
+    fp = latest.get("fed_path") or {}
+    cuts = _num(fs.get("implied_cuts_12m"))
+    if cuts is None:
+        cuts = _num(fp.get("implied_cuts_12m"))
+    dovish = (fs.get("stance") == "dovish")
+    easing_guide = ((fs.get("guidance") or "") == "easing")
+    if dovish or easing_guide or (cuts is not None and cuts >= 1.5):
+        big = cuts is not None and cuts >= 3
+        if cuts is not None and cuts >= 1:
+            det_en = f"Market prices ~{cuts:.0f} cut{'s' if cuts >= 2 else ''} over 12m — dovish reaction function."
+            det_zh = f"市场为未来12个月定价约{cuts:.0f}次降息 — 鸽派反应函数。"
+        else:
+            det_en = "Dovish Fed guidance — policy turning supportive."
+            det_zh = "美联储鸽派指引 — 政策转向宽松。"
+        cats.append({
+            "key": "fed_policy", "icon": "🏛", "region": "US",
+            "fresh": bool(easing_guide or big),
+            "label_en": "Fed easing — aggressive" if big else "Fed easing / cuts priced",
+            "label_zh": "美联储宽松（大幅）" if big else "美联储宽松／降息定价",
+            "detail_en": det_en, "detail_zh": det_zh,
+        })
+
+    # 3) PBoC easing (RRR / LPR / money-market) — engine/china_pboc_stance.py. Relevant to the
+    #    global liquidity tide, not just China. Lazy import: it is a China leaf the US latest may
+    #    not carry.
+    try:
+        from engine import china_pboc_stance
+        pb = china_pboc_stance.snapshot()
+    except Exception as e:  # noqa: BLE001
+        log.debug("recovery: pboc stance unavailable (%s)", e)
+        pb = None
+    if pb and pb.get("stance") == "easing":
+        moves = pb.get("last_moves") or []
+        fresh = any(m.get("easing") and _recent(m.get("date")) for m in moves)
+        rat = pb.get("rationale") or {}
+        cats.append({
+            "key": "pboc", "icon": "🇨🇳", "region": "CN", "fresh": bool(fresh),
+            "label_en": "PBoC easing", "label_zh": "中国央行宽松",
+            "detail_en": rat.get("en") or "RRR / LPR cuts — PBoC adding liquidity.",
+            "detail_zh": rat.get("zh") or "降准／降息 — 央行注入流动性。",
+        })
+
+    # 4) Global central-bank balance-sheet tide (Fed + ECB + BoJ, USD-summed) — engine/
+    #    global_liquidity.py. This is the ONLY freely-available read of BoJ liquidity, so the BoJ
+    #    leg lives here (the chip says so). Lazy import (not wired into the US latest).
+    try:
+        from engine import global_liquidity
+        gl = global_liquidity.snapshot()
+    except Exception as e:  # noqa: BLE001
+        log.debug("recovery: global liquidity unavailable (%s)", e)
+        gl = None
+    if gl and gl.get("state") == "expanding":
+        accel = gl.get("accel")
+        imp = (gl.get("impulse_pct") or {}).get("13w")
+        imp_txt = f"+{imp}%" if isinstance(imp, (int, float)) and imp > 0 else (f"{imp}%" if imp is not None else "")
+        cats.append({
+            "key": "global_cb", "icon": "🌊", "region": "GLOBAL",
+            "fresh": (accel == "accelerating"),
+            "label_en": "Global CB liquidity expanding", "label_zh": "全球央行流动性扩张",
+            "detail_en": f"Fed + ECB + BoJ balance-sheet tide {imp_txt} (13w), {accel}.".replace("  ", " "),
+            "detail_zh": f"美欧日央行资产负债表 13周 {imp_txt}（{accel}）。",
+        })
+
+    return cats
+
+
+# --- the assembled recovery read ---------------------------------------------------------------
+def assess(latest: dict) -> dict | None:
+    """The display-only recovery view-model attached to market_state.radar.recovery. Returns
+    {'present': False} when there is nothing to show, the full dict when the risk-off looks to be
+    peaking / receding, or None when there is no trajectory at all. NEVER raises."""
+    try:
+        rr = (latest or {}).get("risk_radar") or {}
+        traj = rr.get("trajectory")
+        if not traj:
+            return None
+        phase = traj.get("phase")
+        reached = bool(traj.get("reached_risk"))
+        cats = _liquidity_catalysts(latest)
+        n_cat = len(cats)
+        n_fresh = sum(1 for c in cats if c.get("fresh"))
+
+        # Show ONLY once there was genuine risk to recede FROM, and it is no longer rising — OR a
+        # broad liquidity turn is underway while the radar sits at/just past its peak.
+        present = (reached and phase in ("peaking", "receding")) or \
+                  (reached and phase != "rising" and n_fresh >= 2)
+        if not present:
+            return {"present": False}
+
+        receding = (phase == "receding")
+        peaking = (phase == "peaking")
+        turn_confirmed = bool(receding and n_fresh >= 1)   # risk derating + liquidity injection
+
+        off = traj.get("off_peak") or 0.0
+        vel = traj.get("velocity") or 0.0
+        # Modest, illustrative 0-100 strength: distance off the peak + how fast it is falling +
+        # how broad the liquidity turn is. Capped; never implies precision it doesn't have.
+        strength = int(max(0, min(100, round(
+            off * 3.0 + max(0.0, -vel) * 3.5 + n_cat * 11 + n_fresh * 6 + (14 if receding else 0)))))
+
+        odds_now = _num(traj.get("odds_now"))
+        odds_peak = _num(traj.get("odds_peak"))
+        odds_delta = _num(traj.get("odds_delta"))
+        days = int(traj.get("peak_days_ago") or 0)
+
+        # ---- bilingual copy ----
+        if turn_confirmed:
+            head_en, head_zh = "Risk receding — liquidity turning supportive", "风险回落 — 流动性转向支持"
+        elif receding:
+            head_en, head_zh = "Risk receding — pullback odds rolling over", "风险回落 — 回撤概率见顶回落"
+        else:
+            head_en, head_zh = "Risk may be peaking", "风险或已见顶"
+
+        # one-line sub headline with the concrete odds turn
+        if odds_now is not None and odds_peak is not None and odds_peak > odds_now:
+            sub_en = (f"Pullback odds {round(odds_peak*100)}% → {round(odds_now*100)}% "
+                      f"(peaked {days} day{'s' if days != 1 else ''} ago).")
+            sub_zh = f"回撤概率 {round(odds_peak*100)}% → {round(odds_now*100)}%（{days} 日前见顶）。"
+        elif peaking:
+            sub_en = f"Pullback odds have stopped climbing (peaked {days} day{'s' if days != 1 else ''} ago)."
+            sub_zh = f"回撤概率已停止攀升（{days} 日前见顶）。"
+        else:
+            sub_en = "The radar's intensity is rolling over."
+            sub_zh = "雷达强度正见顶回落。"
+
+        if turn_confirmed:
+            do_en = ("The risk-off may be nearing its end. Begin scaling exposure back in tranches — "
+                     "keep stops, let price confirm the low. Don't chase the first bounce.")
+            do_zh = ("避险或已接近尾声。可分批逐步回补敞口 — 保留止损，待价格确认低点，切勿追逐首次反弹。")
+        elif receding:
+            do_en = ("Odds are rolling over but no liquidity catalyst yet. Stop forced de-grossing; "
+                     "ready a buy plan and wait for a liquidity turn to confirm.")
+            do_zh = ("概率回落，但尚无流动性催化。停止被动减仓；备好买入计划，待流动性转向确认。")
+        else:
+            do_en = ("Risk has stopped climbing. Don't de-gross into the hole — ready a buy list and "
+                     "wait for the roll-over (and a liquidity turn) before adding.")
+            do_zh = ("风险已停止攀升。勿在低位被动减仓 — 备好买入清单，待见顶回落（及流动性转向）再加仓。")
+
+        caveat_en = ("Illustrative context, not a buy trigger. It reads the radar's own intensity "
+                     "trajectory (leak-free) plus the display-only central-bank liquidity series; "
+                     "unlike the alert legs it is not forward-tested yet, and risk can re-accelerate. "
+                     "The de-risk → re-risk response is sizing, scaled in deliberately. BoJ enters "
+                     "only via the aggregate global central-bank tide (no isolated BoJ feed).")
+        caveat_zh = ("仅为示意性背景，并非买入信号。它读取雷达自身的强度轨迹（无未来函数）以及仅供展示的"
+                     "央行流动性序列；不同于警报腿，此读数尚未经前瞻检验，风险可能再度加速。降险→回补的"
+                     "应对是仓位管理、分批进行。日本央行仅通过全球央行总潮汐体现（无独立日本数据源）。")
+
+        return {
+            "present": True,
+            "phase": phase, "receding": receding, "peaking": peaking,
+            "turn_confirmed": turn_confirmed, "strength": strength,
+            # the odds turn + velocity (mirrored from the trajectory so the template reads one dict)
+            "odds_now": odds_now, "odds_peak": odds_peak, "odds_delta": odds_delta,
+            "peak_days_ago": days, "velocity": vel, "off_peak": off,
+            "intensity": _num(traj.get("intensity")), "peak": _num(traj.get("peak")),
+            # sparkline (pre-scaled in engine/risk_radar.trajectory)
+            "spark": traj.get("spark"), "spark_pts": traj.get("spark_pts"),
+            "spark_peak": traj.get("spark_peak"), "spark_last": traj.get("spark_last"),
+            "spark_w": traj.get("spark_w"), "spark_h": traj.get("spark_h"),
+            # catalysts
+            "catalysts": cats, "n_catalysts": n_cat, "n_fresh": n_fresh,
+            # copy
+            "headline_en": head_en, "headline_zh": head_zh,
+            "sub_en": sub_en, "sub_zh": sub_zh,
+            "do_en": do_en, "do_zh": do_zh,
+            "caveat_en": caveat_en, "caveat_zh": caveat_zh,
+        }
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("risk_radar_recovery assess failed: %s", e)
+        return None
