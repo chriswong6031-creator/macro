@@ -16,14 +16,14 @@
  "n": 904,
  "n_failed": 18,
  "fail_pct": 1.991,
- "n_flags": 70,
+ "n_flags": 68,
  "universes": [
   {
    "name": "stocks",
    "n": 223,
    "n_failed": 0,
    "fail_pct": 0.0,
-   "n_flags": 6,
+   "n_flags": 5,
    "skipped": false,
    "note": "",
    "failed": [],
@@ -37,11 +37,6 @@
      "name": "CHTR",
      "kind": "move",
      "detail": "-25.5% on 2026-04-24"
-    },
-    {
-     "name": "HON",
-     "kind": "move",
-     "detail": "+100.3% on 2026-06-18 (2 day(s) > 20%)"
     },
     {
      "name": "INTC",
@@ -65,7 +60,7 @@
    "n": 681,
    "n_failed": 18,
    "fail_pct": 2.643,
-   "n_flags": 64,
+   "n_flags": 63,
    "skipped": false,
    "note": "",
    "failed": [
@@ -308,11 +303,6 @@
      "name": "HIMS",
      "kind": "move",
      "detail": "+40.8% on 2026-03-09"
-    },
-    {
-     "name": "HON",
-     "kind": "move",
-     "detail": "+100.3% on 2026-06-18 (2 day(s) > 20%)"
     },
     {
      "name": "HUT",
