@@ -7,8 +7,6 @@
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>US Sector Central Intelligence — Mastermind</title>
 <meta name="description" content="One regime-gated confluence read per US sector & theme: where we are (cycle state) leads; the macro regime and the VALIDATED absolute-trend drawdown gate gate it; momentum, heat & crowding confirm and size — with a transparent reasoning trace and a self-grader. Embeds the Sector Cycles overlay and the Sector Heatmap.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="cycle.css">
 <link rel="stylesheet" href="sector_cycles.css">
@@ -449,9 +447,15 @@
 
   /* ---- regime banner ---- */
   function regimeBanner(){
-    var risk=M.risk_on, tone=(risk==null)?'mix':(risk>0.2?'on':risk<-0.2?'off':'mix');
+    var risk=M.risk_on;
+    // headline tone follows the radar-aware Market State verdict (identical to macro.html); the
+    // macro-risk scalar is kept only as the gate sub-line below. Fall back to risk_on if no verdict.
+    var tone = M.ms_color ? ({green:'on',yellow:'mix',red:'off'}[M.ms_color]||'mix')
+                          : (risk==null?'mix':(risk>0.2?'on':risk<-0.2?'off':'mix'));
     var toneCls={on:'rg-on',off:'rg-off',mix:'rg-mix'}[tone];
-    var dr=M.derisk_blended, postPct=(risk!=null)?Math.round((risk+1)/2*100):50;
+    var dr=M.derisk_blended;
+    var postPct=(M.ms_score!=null)?Math.round(M.ms_score):(risk!=null?Math.round((risk+1)/2*100):50);
+    var rsv=M.radar_state;
     // plain-language headline so a non-expert gets the "is this good or bad?" read instantly
     var headTxt = tone==='on' ? L('Markets are risk-on right now — a broadly supportive backdrop.','当前市场偏好风险——整体环境较为有利。')
       : tone==='off' ? L('Markets are leaning defensive right now — a cautious backdrop.','当前市场偏防御——环境趋于谨慎。')
@@ -459,10 +463,10 @@
     var headIc = tone==='off' ? '⚠' : tone==='on' ? '✓' : '•';
     var head='<div class="rg-headline-row rg-hl-'+tone+'"><span class="rg-hl-ic">'+headIc+'</span><span>'+headTxt+'</span></div>';
     var cells=[];
-    cells.push('<div class="rg-cell lead"><div class="rg-k">'+L('Market backdrop','市场环境')+' · '+L('validated','已验证')+'</div>'+
-      '<div class="rg-v '+toneCls+'">'+esc(M.state_en||'—')+'</div>'+
-      '<div class="rg-bar"><i style="width:'+postPct+'%;background:'+(tone==='off'?'var(--down)':tone==='on'?'var(--up)':'var(--muted)')+'"></i></div>'+
-      '<div class="rg-d">'+L('macro risk','宏观风险')+' '+(dr!=null?dr:'—')+' · '+L('gate ×','门控 ×')+(M.gate_factor!=null?M.gate_factor:'—')+'</div></div>');
+    cells.push('<div class="rg-cell lead" id="scc-marketstate"><div class="rg-k">'+L('Market state','市场状态')+' · '+L('radar-aware','含风险雷达')+'</div>'+
+      '<div class="rg-v '+toneCls+'" id="scc-ms-verdict">'+esc(M.state_en||'—')+'</div>'+
+      '<div class="rg-bar"><i id="scc-ms-bar" style="width:'+postPct+'%;background:'+(tone==='off'?'var(--down)':tone==='on'?'var(--up)':'var(--muted)')+'"></i></div>'+
+      '<div class="rg-d">'+L('macro risk','宏观风险')+' '+(dr!=null?dr:'—')+' · '+L('gate ×','门控 ×')+(M.gate_factor!=null?M.gate_factor:'—')+(rsv?' · '+L('radar','雷达')+' '+esc(rsv):'')+'</div></div>');
     cells.push('<div class="rg-cell"><div class="rg-k">'+L('Quad','象限')+'</div>'+
       '<div class="rg-v">'+esc(M.quad_name||M.quad||'—')+'</div>'+
       '<div class="rg-d">'+L('growth','增长')+' '+(M.growth_score!=null?M.growth_score:'—')+' · '+L('infl','通胀')+' '+(M.inflation_score!=null?M.inflation_score:'—')+'</div></div>');
@@ -584,5 +588,7 @@
 
 <script src="heatmap.js"></script>
 <script src="theme.js"></script>
+<script src="live_config.js"></script>
+<script src="risk_state_live.js"></script>
 </body>
 </html>
