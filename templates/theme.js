@@ -490,15 +490,18 @@
   var X_SVG = '<svg class="ob-x" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zM17.083 19.77h1.833L7.084 4.126H5.117z"/></svg>';
   var EYE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
 
-  /* ---- permanent cookie session storage ---------------------------------
-     The user asked to keep the login in cookies so it sticks across visits.
-     Cookies cap at ~4KB and a Supabase session JSON can exceed that, so the
-     value is split into chunks: a count cookie `<key>` + `<key>.0..n-1`. Each
-     chunk is percent-encoded on its own (so a multibyte escape never straddles
-     a chunk boundary). ~390-day Max-Age, Path=/ (shared by every page on the
-     origin), SameSite=Lax, Secure on https. Implements the get/set/remove
-     Storage contract supabase-js expects. */
-  var AUTH_COOKIE_DAYS = 390, AUTH_CHUNK = 1800, AUTH_MAXCHUNKS = 32;
+  /* ---- session cookie storage — @supabase/ssr 0.12-COMPATIBLE ------------
+     The login is SHARED across every *.mastermind-x.com app (this dashboard, the
+     Terminal at app.mastermind-x.com, the bot at bot.mastermind-x.com), so the
+     on-disk cookie must be byte-identical to what @supabase/ssr writes/reads and
+     scoped to the parent domain. Format: value = "base64-" + base64url(JSON);
+     when that exceeds 3180 chars it splits into `<key>.0`, `<key>.1`, … (no
+     separate count cookie). Domain=.mastermind-x.com on a mastermind-x.com host
+     (host-only elsewhere — *.github.io / localhost). ~390-day Max-Age, Path=/,
+     SameSite=Lax, Secure on https. Verified byte-for-byte vs @supabase/ssr 0.12
+     (read + write, both directions). One-time re-login for anyone holding the
+     prior count-cookie format — _clearCookieKey wipes it on the next write. */
+  var AUTH_COOKIE_DAYS = 390, AUTH_CHUNK = 3180, AUTH_MAXCHUNKS = 32, AUTH_B64 = 'base64-';
   function _cookieMap() {
     var out = {}, parts = (document.cookie || '').split(';');
     for (var i = 0; i < parts.length; i++) {
@@ -508,12 +511,20 @@
     }
     return out;
   }
+  // share the session across every mastermind-x.com subdomain (host-only otherwise)
+  function _cookieDomain() {
+    return /(^|\.)mastermind-x\.com$/i.test(location.hostname || '') ? '; Domain=.mastermind-x.com' : '';
+  }
   function _setCookie(name, val, days) {
     var secure = location.protocol === 'https:' ? '; Secure' : '';
     document.cookie = name + '=' + val + '; Path=/; Max-Age=' + (days * 86400) +
-                      '; SameSite=Lax' + secure;
+                      '; SameSite=Lax' + secure + _cookieDomain();
   }
-  function _delCookie(name) { document.cookie = name + '=; Path=/; Max-Age=0; SameSite=Lax'; }
+  function _delCookie(name) {
+    // clear the domain-scoped cookie AND any legacy host-only one of the same name
+    document.cookie = name + '=; Path=/; Max-Age=0; SameSite=Lax' + _cookieDomain();
+    if (_cookieDomain()) document.cookie = name + '=; Path=/; Max-Age=0; SameSite=Lax';
+  }
   function _clearCookieKey(name, map) {
     map = map || _cookieMap();
     if (map[name] != null) _delCookie(name);
@@ -521,28 +532,34 @@
       if (map[name + '.' + i] != null) _delCookie(name + '.' + i);
     }
   }
+  // base64url of UTF-8 — matches @supabase/ssr stringToBase64URL / stringFromBase64URL
+  function _b64uEnc(str) {
+    return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function _b64uDec(s) {
+    var b = s.replace(/-/g, '+').replace(/_/g, '/');
+    while (b.length % 4) b += '=';
+    return decodeURIComponent(escape(atob(b)));
+  }
   var COOKIE_STORAGE = {
     getItem: function (key) {
-      var map = _cookieMap(), n = map[key];
-      if (n == null) return null;
-      var count = parseInt(n, 10);
-      if (!(count > 0)) return null;
-      var out = '';
-      for (var i = 0; i < count; i++) {
-        var c = map[key + '.' + i];
-        if (c == null) return null;                 // torn write -> no session
-        out += decodeURIComponent(c);
+      var map = _cookieMap(), combined = null;
+      if (map[key] != null) combined = map[key];               // single (unchunked) cookie
+      else {                                                    // else join chunks .0,.1,…
+        var vals = [], i = 0, c;
+        for (; (c = map[key + '.' + i]) != null; i++) vals.push(c);
+        if (vals.length) combined = vals.join('');
       }
-      return out;
+      if (combined == null) return null;
+      if (combined.indexOf(AUTH_B64) !== 0) return combined;    // raw (non-base64) value
+      try { return _b64uDec(combined.slice(AUTH_B64.length)); } catch (e) { return null; }
     },
     setItem: function (key, value) {
       _clearCookieKey(key);
-      var s = String(value == null ? '' : value), chunks = [];
-      for (var i = 0; i < s.length; i += AUTH_CHUNK) chunks.push(s.slice(i, i + AUTH_CHUNK));
-      if (!chunks.length) chunks = [''];
-      _setCookie(key, String(chunks.length), AUTH_COOKIE_DAYS);
-      for (var j = 0; j < chunks.length; j++) {
-        _setCookie(key + '.' + j, encodeURIComponent(chunks[j]), AUTH_COOKIE_DAYS);
+      var enc = AUTH_B64 + _b64uEnc(String(value == null ? '' : value));
+      if (enc.length <= AUTH_CHUNK) { _setCookie(key, enc, AUTH_COOKIE_DAYS); return; }
+      for (var i = 0, n = 0; i < enc.length; i += AUTH_CHUNK, n++) {
+        _setCookie(key + '.' + n, enc.slice(i, i + AUTH_CHUNK), AUTH_COOKIE_DAYS);
       }
     },
     removeItem: function (key) { _clearCookieKey(key); }
@@ -578,7 +595,8 @@
           // redirecting — so tokens never touch the URL/history, and a pasted
           // #access_token link can't seed a session (no login-CSRF / fixation).
           flowType: 'pkce',
-          storage: COOKIE_STORAGE          // permanent cookie session, shared site-wide
+          storage: COOKIE_STORAGE,         // permanent cookie session, shared cross-subdomain
+          storageKey: _storageKey()        // sb-<ref>-auth-token — must match @supabase/ssr
         }
       });
       _sb.auth.onAuthStateChange(function (evt, session) { _onAuth(evt, session); });
@@ -589,8 +607,14 @@
 
   function _hasSessionCookie() {
     var map = _cookieMap();
-    for (var k in map) { if (map.hasOwnProperty(k) && /^sb-.*-auth-token$/.test(k)) return true; }
+    // single cookie `sb-…-auth-token` OR a chunk `sb-…-auth-token.0` (chunked
+    // sessions have no unchunked cookie). Excludes `…-auth-token-code-verifier`.
+    for (var k in map) { if (map.hasOwnProperty(k) && /^sb-.*-auth-token(\.\d+)?$/.test(k)) return true; }
     return false;
+  }
+  function _storageKey() {
+    try { return 'sb-' + new URL(_sbCfg.url).hostname.split('.')[0] + '-auth-token'; }
+    catch (e) { return 'sb-auth-token'; }
   }
   function _isAuthReturn() {
     var h = location.hash || '', q = location.search || '';
