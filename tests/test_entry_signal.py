@@ -73,6 +73,60 @@ def test_half_size_is_partial_not_full_buy() -> None:
     assert es["status"] == "partial"
 
 
+# ---- confluence gate (MACD-2D x StochRSI-3D) --------------------------------
+
+def test_confluence_gate_downgrades_open_entry_when_not_buyable() -> None:
+    """A daily-cycle 'buy now' with NO fresh MACD-2D x StochRSI-3D confluence cross must read
+    'awaiting confluence' — an honest wait state, not an open entry window."""
+    close = _uptrend()
+    spot = float(close.iloc[-1])
+    rec = _rec("FRESH BUY", "now", "BUY NOW", dc_phase="new", dc_day=4,
+               dcl=spot * 0.95, eq=40, bc=70)
+    es = entry_signal.assess(close, None, rec, buyable=False)
+    assert es["status"] == "await_confluence"
+    assert es["confluence_gated"] is True
+    assert es["act_level"] == 1                       # forming, not act-now (was 3)
+    assert "awaiting" in es["headline"].lower()
+    assert es["buy_zone"] is not None                 # still shows the watch zone $
+    assert es["timing"]["opens_in_days_lo"] != 0      # window not declared open
+
+
+def test_confluence_gate_also_downgrades_partial() -> None:
+    close = _uptrend()
+    rec = _rec("TURN SIGNALED", "now", "HALF SIZE", dc_phase="in_band", dc_day=40,
+               dcl=float(close.iloc[-1]) * 0.93)
+    es = entry_signal.assess(close, None, rec, buyable=False)
+    assert es["status"] == "await_confluence" and es["confluence_gated"] is True
+
+
+def test_confluence_buyable_keeps_open_entry() -> None:
+    # the confluence HAS fired -> the open entry stands (buy_now), act-now ring, not gated
+    close = _uptrend()
+    rec = _rec("FRESH BUY", "now", "BUY NOW", dc_phase="new", dc_day=4,
+               dcl=float(close.iloc[-1]) * 0.95, eq=40, bc=70)
+    es = entry_signal.assess(close, None, rec, buyable=True)
+    assert es["status"] == "buy_now" and es["confluence_gated"] is False
+    assert es["act_level"] == 3
+
+
+def test_confluence_gate_leaves_non_open_states_untouched() -> None:
+    # the gate only touches an OPEN entry (buy_now/partial); an extended name is unaffected
+    close = _uptrend()
+    spot = float(close.iloc[-1])
+    rec = _rec("TOP WATCH", "caution", "DON'T CHASE", dcl=spot * 0.85, eq=-25)
+    es = entry_signal.assess(close, None, rec, buyable=False)
+    assert es["status"] == "extended" and es["confluence_gated"] is False
+
+
+def test_buyable_none_is_ungated_backward_compatible() -> None:
+    # default buyable=None leaves the gauge exactly as before (markets without the gate wired)
+    close = _uptrend()
+    rec = _rec("FRESH BUY", "now", "BUY NOW", dc_phase="new", dc_day=4,
+               dcl=float(close.iloc[-1]) * 0.95, eq=40, bc=70)
+    assert entry_signal.assess(close, None, rec)["status"] == "buy_now"
+    assert entry_signal.assess(close, None, rec, buyable=None)["status"] == "buy_now"
+
+
 def test_horizon_read_penalizes_stretched_position() -> None:
     """The d63 (position) read should be worse for a very stretched name than a
     mildly extended one — captures 'great trend but a poor entry right now'."""

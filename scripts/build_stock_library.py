@@ -1350,7 +1350,11 @@ def main() -> int:
         # A structured plan (status, buy zone $, don't-chase line, stop, horizon read)
         # so an extended leader reads "wait — accumulate ~$X", never "99 · Buy Now".
         try:
-            es = entry_signal.assess(close, high, rec)
+            # gate the entry gauge on the SAME MACD-2D x StochRSI-3D confluence as the boards:
+            # a daily-cycle "buy now / partial" with no fresh confluence cross reads
+            # "awaiting confluence", never an open entry window.
+            es = entry_signal.assess(close, high, rec,
+                                     buyable=signal_gate.is_buyable(sig_verdict.get(ticker)))
             if es:
                 rec["entry_signal"] = es
         except Exception as e:  # noqa: BLE001 — additive, never fatal

@@ -593,7 +593,7 @@
               border-left: 3px solid var(--muted); }
   .nbe-buy_now, .nbe-partial { border-left-color: var(--up);
               background: color-mix(in srgb, var(--up) 8%, var(--panel)); }
-  .nbe-buy_soon, .nbe-watch { border-left-color: var(--g-cold); }
+  .nbe-buy_soon, .nbe-watch, .nbe-await_confluence { border-left-color: var(--g-cold); }
   .nbe-wait_pullback, .nbe-hold { border-left-color: var(--warn); }
   .nbe-extended, .nbe-topping { border-left-color: var(--warn);
               background: color-mix(in srgb, var(--warn) 9%, var(--panel)); }
@@ -2411,7 +2411,7 @@
             </div>
             {% if es.buy_zone and es.buy_zone.high is not none %}
             <div class="nbe-zone">
-              <span class="nbe-lbl">{{ t('Buy zone', '买入区') }}</span>
+              <span class="nbe-lbl">{% if es.status == 'await_confluence' %}{{ t('Watch zone', '观察区') }}{% else %}{{ t('Buy zone', '买入区') }}{% endif %}</span>
               <span class="nbe-px">${{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–${{ '%.2f'|format(es.buy_zone.high) }}{% endif %}</span>
               {% if es.buy_zone.pct_from_spot is not none %}<span class="nbe-pct">{{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%</span>{% endif %}
             </div>
