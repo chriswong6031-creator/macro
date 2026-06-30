@@ -1120,7 +1120,7 @@
   {% if mode != 'stocks' %}
   <!-- ======================= HEADER ======================= -->
   <div class="panel span12" id="regime-radar">
-  <input type="checkbox" id="ms-alerts-toggle" class="ms-drawer-cb" hidden aria-hidden="true">
+  <input type="checkbox" id="ms-alerts-toggle" class="ms-alerts-cb" hidden aria-hidden="true">
   <style id="ms-css">
   /* ===== MARKET STATE — command-center (DISPLAY-ONLY synthesis) =====
      Bloomberg-grade: monochrome by default, colour spent only on signal.
@@ -1138,7 +1138,7 @@
   body.page-macro .ms-live{width:7px;height:7px;border-radius:50%;background:var(--ms-c);flex:none;
     box-shadow:0 0 0 3px color-mix(in srgb,var(--ms-c) 20%,transparent)}
   body.page-macro .ms-date{font-family:var(--num);font-size:11px;letter-spacing:.04em;color:var(--ink-3);white-space:nowrap}
-  body.page-macro .ms-alerts{margin-left:auto;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+  body.page-macro .ms-alerts{white-space:nowrap;display:inline-flex;align-items:center;gap:8px;cursor:pointer;
     border:var(--rule) solid var(--hair-strong);background:transparent;color:var(--ink-2);border-radius:999px;
     padding:5px 12px;font-size:11.5px;font-weight:600;letter-spacing:.02em;transition:border-color .14s,color .14s}
   body.page-macro .ms-alerts:hover{border-color:var(--ink-3);color:var(--ink-1)}
@@ -1312,24 +1312,39 @@
   html[data-lang="zh"] body.page-macro .ms-divider,html[data-lang="zh"] body.page-macro .tape-title,
   html[data-lang="zh"] body.page-macro .ms-eyebrow{letter-spacing:0}
 
-  /* ===== fired-alerts drawer (pure-CSS toggle via #ms-alerts-toggle) ===== */
-  body.page-macro .ms-drawer{display:none}
-  body.page-macro #ms-alerts-toggle:checked~.ms-drawer{display:block}
-  body.page-macro .ms-drawer-scrim{position:fixed;inset:0;z-index:80;background:color-mix(in srgb,#05070b 58%,transparent);
-    -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);cursor:pointer;animation:msFade .2s ease}
-  body.page-macro .ms-drawer-panel{position:fixed;top:0;right:0;bottom:0;z-index:81;width:min(470px,94vw);background:var(--panel);
-    border-left:var(--rule) solid var(--hair-strong);box-shadow:-22px 0 64px -22px rgba(0,0,0,.6);display:flex;flex-direction:column;
-    animation:msSlide .26s cubic-bezier(.2,.7,.3,1)}
-  @keyframes msSlide{from{transform:translateX(100%)}to{transform:translateX(0)}}
-  @keyframes msFade{from{opacity:0}to{opacity:1}}
-  @media(prefers-reduced-motion:reduce){body.page-macro .ms-drawer-panel,body.page-macro .ms-drawer-scrim{animation:none}}
-  body.page-macro .ms-drawer-head{display:flex;align-items:flex-start;gap:10px;padding:18px 20px;border-bottom:var(--rule) solid var(--hair)}
-  body.page-macro .ms-drawer-title{font-size:15px;font-weight:800;color:var(--ink-1)}
-  body.page-macro .ms-drawer-sub{font-size:11.5px;color:var(--ink-3);line-height:1.45;margin-top:3px;max-width:38ch}
-  body.page-macro .ms-drawer-close{margin-left:auto;cursor:pointer;width:30px;height:30px;border-radius:8px;flex:none;
-    border:var(--rule) solid var(--hair);background:var(--tile);color:var(--ink-2);display:grid;place-items:center;font-size:17px;line-height:1}
-  body.page-macro .ms-drawer-close:hover{color:var(--ink-1);border-color:var(--link)}
-  body.page-macro .ms-drawer-body{padding:14px 16px 28px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+  /* ===== fired-alerts popup (hover-activated; tap-toggle fallback via #ms-alerts-toggle) =====
+     Replaces the old right slide-out drawer: the "Fired alerts" pill now reveals a
+     frosted-glass popover anchored beneath it ON HOVER — no click needed. The glass
+     matches the nav dropdowns / gear popover (shared --glass-* tokens in theme.css).
+     On touch (no hover) the pill still tap-toggles the popup via the #ms-alerts-toggle
+     checkbox; Esc, a jump-link, or a click outside closes it (script at end of panel). */
+  body.page-macro .ms-alerts-wrap{position:relative;margin-left:auto;display:inline-flex}
+  body.page-macro .ms-alerts-pop{position:absolute;top:calc(100% + 9px);right:0;z-index:120;
+    width:min(442px,calc(100vw - 24px));max-height:min(560px,72vh);overflow-y:auto;box-sizing:border-box;
+    background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+    border:1px solid var(--glass-brd);border-radius:16px;box-shadow:var(--glass-shadow);padding:14px 15px 15px;
+    transform-origin:top right;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-8px) scale(.98);
+    transition:opacity .16s ease,transform .22s cubic-bezier(.32,1.3,.5,1),visibility 0s linear .22s}
+  body.page-macro .ms-alerts-pop::-webkit-scrollbar{width:7px}
+  body.page-macro .ms-alerts-pop::-webkit-scrollbar-thumb{background:var(--hair-strong);border-radius:7px}
+  body.page-macro #ms-alerts-toggle:checked ~ .ms-front .ms-alerts-pop{opacity:1;visibility:visible;pointer-events:auto;
+    transform:none;transition:opacity .16s ease,transform .22s cubic-bezier(.32,1.3,.5,1),visibility 0s}
+  body.page-macro #ms-alerts-toggle:checked ~ .ms-front .ms-alerts{border-color:var(--ink-3);color:var(--ink-1)}
+  @media (hover:hover) and (pointer:fine){
+    body.page-macro .ms-alerts-wrap::after{content:"";position:absolute;top:100%;right:0;width:100%;height:13px}
+    body.page-macro .ms-alerts-wrap:hover .ms-alerts-pop,
+    body.page-macro .ms-alerts-wrap:focus-within .ms-alerts-pop{opacity:1;visibility:visible;pointer-events:auto;
+      transform:none;transition:opacity .16s ease,transform .22s cubic-bezier(.32,1.3,.5,1),visibility 0s}
+    body.page-macro .ms-alerts-wrap:hover .ms-alerts,body.page-macro .ms-alerts-wrap:focus-within .ms-alerts{border-color:var(--ink-3);color:var(--ink-1)}
+  }
+  @media (prefers-reduced-motion:reduce){
+    body.page-macro .ms-alerts-pop{transition:opacity .14s ease,visibility 0s linear .14s;transform:none}
+    body.page-macro .ms-alerts-wrap:hover .ms-alerts-pop,
+    body.page-macro #ms-alerts-toggle:checked ~ .ms-front .ms-alerts-pop{transform:none;transition:opacity .14s ease}}
+  body.page-macro .ms-pop-head{display:flex;align-items:flex-start;gap:10px;margin:0 0 11px;padding-bottom:11px;border-bottom:var(--rule) solid var(--hair)}
+  body.page-macro .ms-pop-title{font-size:13.5px;font-weight:800;color:var(--ink-1);line-height:1.25}
+  body.page-macro .ms-pop-sub{font-size:11px;color:var(--ink-3);line-height:1.45;margin-top:3px}
+  body.page-macro .ms-pop-body{display:flex;flex-direction:column;gap:9px}
   body.page-macro .ms-sig{display:block;border:var(--rule) solid var(--hair);border-left:3px solid var(--sgc,var(--ink-3));
     border-radius:10px;background:var(--tile);padding:12px 14px;color:var(--ink-1);transition:transform .12s,box-shadow .12s}
   body.page-macro a.ms-sig:hover{transform:translateX(-2px);box-shadow:0 4px 16px -8px rgba(0,0,0,.4)}
@@ -1344,8 +1359,8 @@
   body.page-macro .ms-sig-what{font-size:11.5px;color:var(--ink-3);line-height:1.5;margin:8px 0 0;padding-top:8px;border-top:var(--rule) solid var(--hair)}
   body.page-macro .ms-sig-edge{font-size:11.5px;color:var(--ink-2);margin:6px 0 0;line-height:1.45}
   body.page-macro .ms-sig-edge b{color:var(--ink-3);font-weight:600}
-  body.page-macro .ms-drawer-empty{text-align:center;color:var(--ink-3);padding:46px 22px;font-size:13px;line-height:1.55}
-  body.page-macro .ms-drawer-empty .big{font-size:38px;display:block;margin-bottom:10px;color:var(--up);opacity:.7}
+  body.page-macro .ms-pop-empty{text-align:center;color:var(--ink-3);padding:30px 18px;font-size:12.5px;line-height:1.55}
+  body.page-macro .ms-pop-empty .big{font-size:32px;display:block;margin-bottom:8px;color:var(--up);opacity:.7}
   </style>
     {% set _ol = {
       'Q1': ('Falling inflation with steady growth — the friendliest backdrop for tech &amp; quality. Trust the radar, not just the label.', '通胀回落、增长平稳 — 对科技与质量最友好的环境。盯住雷达，而非仅看标签。'),
@@ -1374,10 +1389,41 @@
         <span class="ms-eyebrow"><span class="ms-live" id="ms-live-pill"></span>{{ t('MARKET STATE','市场状态') }}</span>
         <span class="ms-date" id="ms-date">· {{ MS.asof }}</span>
         {{ help("How risk-on or risk-off the market is right now — one 0–100 read blending the tape, cross-asset risk, volatility, breadth, liquidity and downturn guards. ≥60 risk-on · 42–59 mixed · <42 risk-off. It confirms what has already turned; it doesn't forecast.", "市场当前的风险偏好程度 — 0–100 单一读数，融合趋势、跨资产风险、波动率、广度、流动性与下行护栏。≥60 偏好 · 42–59 混合 · <42 避险。它确认已经转向的信号，而非预测。") }}
-        <label class="ms-alerts" for="ms-alerts-toggle">
-          {% if _nalerts %}<span class="dot"></span>{% endif %}{{ t('Fired alerts','已触发警报') }}
-          <span class="ct{{ ' is-zero' if not _nalerts }}">{{ _nalerts }}</span>
-        </label>
+        {# Fired-alerts pill + hover popup. Hover reveals the popover (no click);
+           on touch the label tap-toggles #ms-alerts-toggle. Content moved here
+           from the retired right slide-out drawer. #}
+        <div class="ms-alerts-wrap">
+          <label class="ms-alerts" for="ms-alerts-toggle" tabindex="0" aria-haspopup="dialog" aria-controls="ms-alerts-pop">
+            {% if _nalerts %}<span class="dot"></span>{% endif %}{{ t('Fired alerts','已触发警报') }}
+            <span class="ct{{ ' is-zero' if not _nalerts }}">{{ _nalerts }}</span>
+          </label>
+          <div class="ms-alerts-pop" id="ms-alerts-pop" role="dialog" aria-label="Fired alerts · 已触发警报">
+            <div class="ms-pop-head">
+              <div>
+                <div class="ms-pop-title">⚠ {{ t('Fired alerts','已触发警报') }}</div>
+                <div class="ms-pop-sub">{{ t('Alerts are rare by design — they fire only on a change: a level escalating, a crossing, a sign flip. Read every one.','警报刻意稀少 — 仅在发生变化时触发：级别升级、出现交叉、符号翻转。每条都要读。') }}</div>
+              </div>
+            </div>
+            <div class="ms-pop-body">
+              {% if latest.dislocation and latest.dislocation.dislocation_active %}
+              <a class="ms-sig sev-act" data-ms-jump href="#dislocation">
+                <div class="ms-sig-head"><span class="ms-sig-ico">🚦</span><span class="ms-sig-title">{{ t('Dislocation Gate-1 is ACTIVE','错位一道闸已激活') }}</span><span class="ms-sig-jump">{{ t('View ↓','查看 ↓') }}</span></div>
+                <div class="ms-sig-detail">{% if latest.dislocation.verdict == 'buyable_washout' %}{{ t('A stress washout with the Fed put intact — a buyable washout. Confirm into stabilization, do not anticipate.','压力抛售且美联储托底在位 — 可买入错杀。在企稳中确认，勿提前抢跑。') }}{% elif latest.dislocation.verdict == 'stand_aside' %}{{ t('A stress washout with the Fed put ABSENT — stand aside (the 2000/2008/2022 falling-knife regime).','压力抛售且美联储托底缺失 — 观望（2000／2008／2022 接飞刀情形）。') }}{% else %}{{ t('An acute stress dislocation is firing — see the gate below.','急性压力错位正在触发 — 见下方一道闸。') }}{% endif %}</div>
+              </a>
+              {% endif %}
+              {% if alerts %}{% for a in alerts %}
+              <a class="ms-sig sev-{{ a.severity }}"{% if a.anchor %} data-ms-jump href="#{{ a.anchor }}"{% endif %}>
+                <div class="ms-sig-head"><span class="ms-sig-ico">{{ a.icon }}</span><span class="ms-sig-title"><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></span>{% if a.anchor %}<span class="ms-sig-jump">{{ t('View ↓','查看 ↓') }}</span>{% endif %}</div>
+                <div class="ms-sig-detail"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
+                {% if a.what_en %}<div class="ms-sig-what"><span class="l-en">{{ a.what_en }}</span><span class="l-zh">{{ a.what_zh }}</span></div>{% endif %}
+                {% if a.edge_en %}<div class="ms-sig-edge"><b>{{ t('Conviction:','可信度：') }}</b> <span class="l-en">{{ a.edge_en }}</span><span class="l-zh">{{ a.edge_zh or a.edge_en }}</span></div>{% endif %}
+              </a>
+              {% endfor %}{% elif not (latest.dislocation and latest.dislocation.dislocation_active) %}
+              <div class="ms-pop-empty"><span class="big">✓</span>{{ t('No alerts fired today. Alerts are rare by design — they fire only on a change.','今日无警报触发。警报刻意稀少 — 仅在发生变化时触发。') }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="ms-top">
@@ -1663,43 +1709,17 @@
       </div>
     </details>
 
-    {# ===== fired-alerts drawer — opened by the command-center button ===== #}
-    <div class="ms-drawer">
-      <label class="ms-drawer-scrim" for="ms-alerts-toggle" aria-label="Close · 关闭"></label>
-      <aside class="ms-drawer-panel" role="dialog" aria-modal="true" aria-label="Fired alerts · 已触发警报">
-        <div class="ms-drawer-head">
-          <div>
-            <div class="ms-drawer-title">⚠ {{ t('Fired alerts','已触发警报') }}</div>
-            <div class="ms-drawer-sub">{{ t('Alerts are rare by design — they fire only on a change: a level escalating, a crossing, a sign flip. Read every one.','警报刻意稀少 — 仅在发生变化时触发：级别升级、出现交叉、符号翻转。每条都要读。') }}</div>
-          </div>
-          <label class="ms-drawer-close" for="ms-alerts-toggle" aria-label="Close · 关闭" title="Close · 关闭">×</label>
-        </div>
-        <div class="ms-drawer-body">
-          {% if latest.dislocation and latest.dislocation.dislocation_active %}
-          <a class="ms-sig sev-act" data-ms-jump href="#dislocation">
-            <div class="ms-sig-head"><span class="ms-sig-ico">🚦</span><span class="ms-sig-title">{{ t('Dislocation Gate-1 is ACTIVE','错位一道闸已激活') }}</span><span class="ms-sig-jump">{{ t('View ↓','查看 ↓') }}</span></div>
-            <div class="ms-sig-detail">{% if latest.dislocation.verdict == 'buyable_washout' %}{{ t('A stress washout with the Fed put intact — a buyable washout. Confirm into stabilization, do not anticipate.','压力抛售且美联储托底在位 — 可买入错杀。在企稳中确认，勿提前抢跑。') }}{% elif latest.dislocation.verdict == 'stand_aside' %}{{ t('A stress washout with the Fed put ABSENT — stand aside (the 2000/2008/2022 falling-knife regime).','压力抛售且美联储托底缺失 — 观望（2000／2008／2022 接飞刀情形）。') }}{% else %}{{ t('An acute stress dislocation is firing — see the gate below.','急性压力错位正在触发 — 见下方一道闸。') }}{% endif %}</div>
-          </a>
-          {% endif %}
-          {% if alerts %}{% for a in alerts %}
-          <a class="ms-sig sev-{{ a.severity }}"{% if a.anchor %} data-ms-jump href="#{{ a.anchor }}"{% endif %}>
-            <div class="ms-sig-head"><span class="ms-sig-ico">{{ a.icon }}</span><span class="ms-sig-title"><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></span>{% if a.anchor %}<span class="ms-sig-jump">{{ t('View ↓','查看 ↓') }}</span>{% endif %}</div>
-            <div class="ms-sig-detail"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
-            {% if a.what_en %}<div class="ms-sig-what"><span class="l-en">{{ a.what_en }}</span><span class="l-zh">{{ a.what_zh }}</span></div>{% endif %}
-            {% if a.edge_en %}<div class="ms-sig-edge"><b>{{ t('Conviction:','可信度：') }}</b> <span class="l-en">{{ a.edge_en }}</span><span class="l-zh">{{ a.edge_zh or a.edge_en }}</span></div>{% endif %}
-          </a>
-          {% endfor %}{% elif not (latest.dislocation and latest.dislocation.dislocation_active) %}
-          <div class="ms-drawer-empty"><span class="big">✓</span>{{ t('No alerts fired today. Alerts are rare by design — they fire only on a change.','今日无警报触发。警报刻意稀少 — 仅在发生变化时触发。') }}</div>
-          {% endif %}
-        </div>
-      </aside>
-    </div>
+    {# fired-alerts popup now lives inline in the header (.ms-alerts-wrap above);
+       the old right slide-out drawer was retired. This script only handles the
+       touch tap-toggle path: close on a jump-link, on Esc, or on a click outside. #}
     <script>
     (function(){
       var cb=document.getElementById('ms-alerts-toggle');
       if(!cb) return;
       document.addEventListener('click',function(e){
-        if(e.target.closest('[data-ms-jump]')) cb.checked=false;
+        if(e.target.closest('[data-ms-jump]')){ cb.checked=false; return; }
+        var wrap=e.target.closest('.ms-alerts-wrap');
+        if(cb.checked && !wrap) cb.checked=false;   // tap outside closes the pinned popup
       });
       document.addEventListener('keydown',function(e){
         if(e.key==='Escape'&&cb.checked) cb.checked=false;

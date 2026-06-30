@@ -27,6 +27,20 @@
   --chart-bg: transparent;
   --card-shadow: 0 1px 0 rgba(255,255,255,.02);
   --popover-shadow: 0 6px 18px rgba(0,0,0,.5);
+  /* ── frosted-glass popover system ───────────────────────────────────────────
+     ONE token set shared by every floating menu surface — the top-nav dropdowns,
+     the Research mega-menu, the global-search suggestions, the gear settings
+     popover, the bell alert popover and the fired-alerts popup — so they all read
+     as a single design family. backdrop-filter blurs the aurora + page behind the
+     panel; the translucent fill lets that colour bleed through. Opacity + shadow
+     are re-tuned per theme in the light block below. The self-contained vector
+     family (no theme.css) mirrors these values inline in _vector_polish.html.j2
+     and theme.js, so keep the three in sync if you retune the glass. */
+  --glass-bg: color-mix(in srgb, var(--panel) 75%, transparent);
+  --glass-brd: color-mix(in srgb, var(--text) 14%, transparent);
+  --glass-blur: saturate(180%) blur(22px);
+  --glass-shadow: 0 24px 64px -22px rgba(3,7,18,.74), 0 10px 26px -12px rgba(3,7,18,.55),
+    inset 0 1px 0 color-mix(in srgb,#fff 10%,transparent);
 }
 html[data-theme="light"] {
   /* Light palette tuned to match the Bitcoin Vector dashboard: airy #F7F8FA
@@ -45,6 +59,13 @@ html[data-theme="light"] {
   /* soft, light popover shadow — the dark theme's heavy 50%-black drop shadow
      reads as a murky grey halo on the white light-mode tooltips */
   --popover-shadow: 0 4px 10px rgba(20,30,50,.06), 0 12px 28px rgba(20,30,50,.14);
+  /* light glass: brighter fill (white reads thin when too transparent) + an airy
+     soft shadow with a crisp white top-edge sheen instead of the dark theme's
+     heavy drop. */
+  --glass-bg: color-mix(in srgb, var(--panel) 64%, transparent);
+  --glass-brd: color-mix(in srgb, #1c2430 9%, transparent);
+  --glass-shadow: 0 20px 54px -24px rgba(20,32,64,.34), 0 10px 24px -14px rgba(20,32,64,.20),
+    inset 0 1px 0 rgba(255,255,255,.85);
 }
 /* ---- Chinese mode: Asia colour convention -----------------------------------
    In Asia red = up/bullish, green = down/bearish — the inverse of the West. So
@@ -324,8 +345,10 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
 .site-nav .nav-dd:hover > a.nav-link .caret { transform: rotate(180deg); }
 .site-nav .nav-dd::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 9px; }
 .site-nav .nav-dd-menu { position: absolute; top: calc(100% + 7px); left: 0; z-index: 90;
-  min-width: 218px; background: var(--panel); border: 1px solid var(--line); border-radius: 13px;
-  box-shadow: var(--popover-shadow); padding: 6px; opacity: 0; visibility: hidden;
+  min-width: 218px; background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-brd); border-radius: 14px;
+  box-shadow: var(--glass-shadow); padding: 6px; opacity: 0; visibility: hidden;
   transform: translateY(-6px); transition: opacity .18s, transform .18s, visibility .18s; }
 .site-nav .nav-dd:hover > .nav-dd-menu, .site-nav .nav-dd:focus-within > .nav-dd-menu {
   opacity: 1; visibility: visible; transform: translateY(0); }
@@ -343,8 +366,9 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
   transition: transform .2s; }
 .nav-dd:hover > a.nav-link .caret, .nav-dd:focus-within > a.nav-link .caret { transform: rotate(180deg); }
 .nav-dd::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 9px; } /* hover gap bridge */
-.nav-dd-menu { position: absolute; top: calc(100% + 7px); left: 0; min-width: 232px; background: var(--panel);
-  border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--popover-shadow); padding: 6px;
+.nav-dd-menu { position: absolute; top: calc(100% + 7px); left: 0; min-width: 232px; background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-brd); border-radius: 14px; box-shadow: var(--glass-shadow); padding: 6px;
   opacity: 0; visibility: hidden; transform: translateY(-6px);
   transition: opacity .18s ease, transform .18s ease, visibility .18s; z-index: 70; }
 .nav-dd:hover > .nav-dd-menu, .nav-dd:focus-within > .nav-dd-menu { opacity: 1; visibility: visible;
@@ -391,8 +415,10 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
 .nav-search input::placeholder { color: var(--muted); }
 .nav-search input:focus { border-color: var(--link); animation: none; box-shadow: none; }
 .nav-sugg { position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 80;
-  background: var(--panel); border: 1px solid var(--line); border-radius: 11px; overflow: hidden;
-  overflow-y: auto; max-height: 60vh; box-shadow: var(--popover-shadow); display: none; }
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-brd); border-radius: 13px; overflow: hidden;
+  overflow-y: auto; max-height: 60vh; box-shadow: var(--glass-shadow); display: none; }
 .nav-sugg.show { display: block; }
 .nav-sugg .row { display: flex; align-items: center; gap: 9px; padding: 8px 12px; cursor: pointer; }
 .nav-sugg .row:hover, .nav-sugg .row.sel { background: color-mix(in srgb, var(--link) 12%, var(--panel2)); }
@@ -606,8 +632,10 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
    header); top/right here are just the no-JS fallback. */
 .af { position: fixed; top: 64px; right: 14px; z-index: 100;
   width: min(470px, calc(100vw - 24px));
-  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
-  box-shadow: var(--popover-shadow);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-brd); border-radius: 16px;
+  box-shadow: var(--glass-shadow);
   transform-origin: top right; transform: translateY(-7px) scale(.95); opacity: 0;
   visibility: hidden; pointer-events: none;
   transition: opacity .19s ease, transform .24s cubic-bezier(.18,.9,.32,1.12),
