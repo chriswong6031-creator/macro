@@ -29,7 +29,7 @@ def test_static_and_local_api_routes():
     try:
         # SPA shell
         code, body = _get(port, "/")
-        assert code == 200 and b"Macro Admin" in body
+        assert code == 200 and b"Mastermind Admin" in body
 
         # static asset
         code, _ = _get(port, "/app.js")
@@ -65,15 +65,15 @@ def _post(port, path, body, headers=None, host=None):
 
 
 def test_post_requires_json_content_type():
-    """CSRF guard: a cross-site 'simple request' (text/plain) is rejected with 403."""
+    """CSRF guard: a cross-site 'simple request' (text/plain) is rejected (415)."""
     httpd, port = _server()
     try:
         try:
             _post(port, "/api/flags/toggle", {"path": "x", "value": True},
                   headers={"Content-Type": "text/plain"})
-            raise AssertionError("expected 403")
+            raise AssertionError("expected 415")
         except urllib.error.HTTPError as e:
-            assert e.code == 403 and "application/json" in json.loads(e.read())["error"]
+            assert e.code == 415 and "application/json" in json.loads(e.read())["error"]
     finally:
         httpd.shutdown(); httpd.server_close()
 

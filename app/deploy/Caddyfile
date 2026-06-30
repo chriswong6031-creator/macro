@@ -82,3 +82,34 @@ bot.mastermind-x.com {
 	# Self-signed origin cert; pair with Cloudflare SSL mode = "Full".
 	tls internal
 }
+
+# ---- admin.mastermind-x.com — the Admin console (python -m admin :8787) -------
+# Authenticated control + observability console (admin.service on 127.0.0.1:8787).
+# UNLIKE the other hosts this is GREY-CLOUD / DNS-only (A record admin ->
+# 146.190.142.17, NOT proxied through Cloudflare), so Caddy provisions a REAL
+# Let's Encrypt cert over HTTP-01 (port 80 is kept open to all in ufw by
+# firewall-cloudflare.sh's grey-cloud escape hatch) — no `tls internal`, no
+# Cloudflare in front. The app enforces password + signed-session auth
+# (ADMIN_PASSWORD in /etc/macro-admin.env); Caddy adds anti-framing + HSTS headers.
+#
+# The global `auto_https disable_redirects` (correct for the CF-fronted hosts)
+# would otherwise serve this host over PLAINTEXT http:// with no upgrade — and the
+# login posts the shared password. So we add an explicit http:// block that
+# force-redirects to https:// (Caddy still answers the ACME HTTP-01 challenge on
+# :80 ahead of this redirect, so cert issuance/renewal is unaffected).
+http://admin.mastermind-x.com {
+	redir https://admin.mastermind-x.com{uri} permanent
+}
+
+admin.mastermind-x.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8787
+	header {
+		X-Robots-Tag "noindex, nofollow, noarchive"
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+}

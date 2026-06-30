@@ -1,66 +1,92 @@
-# Macro Admin
+# Mastermind Admin
 
-A **local, single-user, localhost-only** control panel for the static Macro
-Regime & Sector-Flow dashboard. The public site stays a server-less GitHub Pages
-build — this tool runs on your machine, edits the repo's `config.yml`, reads the
-committed pipeline state, and drives the GitHub Actions API. It is **never deployed**.
+A control + observability console for the whole Mastermind/Macro stack. It runs in
+**two modes**:
 
-## Run
+- **Local (default):** binds `127.0.0.1`, no auth required — the original
+  single-user dev tool for editing `config.yml` and driving GitHub Actions.
+- **Deployed:** runs on the VPS behind Caddy at **https://admin.mastermind-x.com**,
+  **password-authenticated**, and tracks the entire live site — web analytics,
+  registered users, server/service health, uptime, pipeline, cost, and content.
+
+## Run locally
 
 ```bash
-.venv/bin/python -m admin            # → http://127.0.0.1:8787
+.venv/bin/python -m admin            # → http://127.0.0.1:8787  (open, localhost-only)
 .venv/bin/python -m admin --open     # also open a browser
-.venv/bin/python -m admin --port 9000
+ADMIN_PASSWORD=secret .venv/bin/python -m admin   # local + login wall
 ```
 
-The core needs **no extra dependencies** (stdlib `http.server` + `requests` + `pyyaml`,
-all already in the project). Live Google Analytics reading is optional:
+Core needs no extra deps beyond the project's `requests` + `pyyaml`. Live Google
+Analytics reading is optional (`pip install -r admin/requirements.txt`).
 
-```bash
-.venv/bin/pip install -r admin/requirements.txt
-```
-
-## What it does
+## What it tracks
 
 | Tab | Capability |
 |-----|------------|
-| **Overview** | Health, AI-brief schedule, cost & feature snapshot; one-click rebuild/redeploy. |
-| **Features** | Toggle curated `config.yml` flags (AI brief, AI desk, notifications, news, data sources, dashboards). Edits are **surgical line edits** — every comment is preserved. ON-but-missing-secret flags are flagged as inert. |
-| **AI Brief** | Enable/disable Master Brain & AI Desk and set the **regenerate-every-N-days** interval (1–7). Shows each lens's last-generated time, model, and degrade status. |
-| **Traffic** | GA4 (`G-BZTZ9W1BBB`) — live real-time active users, 7-day sessions/users/pageviews, top pages & countries. Degrades to setup instructions until a service account is configured. |
-| **Build & Deploy** | Recent GitHub Actions runs (status/conclusion) + trigger `daily.yml` / `pages.yml` / `weekly.yml`. |
+| **Overview** | One-glance health: pipeline, services up, server load/mem/disk, AI cost, features, analytics. One-click rebuild/redeploy. |
+| **Analytics** | **Umami** (privacy-first, cookieless) — the tracking script is live on every page for free. In-panel visitors / pageviews / top pages / countries / referrers + realtime light up when `UMAMI_API_KEY` is set (paid Umami Cloud or self-hosted); otherwise it links out to the dashboard. |
+| **Users** | **Supabase** auth roster (Google + email): total / new / active, signups-over-30d sparkline, provider split, recent users. Read via the Management API SQL endpoint with a `sbp_…` PAT — no service-role key needed. |
+| **System** | VPS host metrics (CPU load, memory, swap, disk, uptime from `/proc`), **systemd service health** (caddy, macro-api, admin, terminal, mastermind), and an **endpoint uptime board** (all subdomains + `/api/health`). |
 | **Health** | `data/run_status.json` pipeline health, per-source status & circuit breakers, per-market dashboard freshness. |
-| **AI Cost** | Estimated DeepSeek spend per build / month and a cost-vs-interval table. Estimate only — the pipeline logs no token usage. |
+| **Features** | Toggle curated `config.yml` flags. Local mode edits the working tree; **deployed mode commits straight to `main` via the GitHub Contents API** (the VPS clone is read-only/ephemeral). |
+| **AI Brief** | Enable/disable Master Brain & AI Desk and set the regenerate-every-N-days interval. |
+| **Build & Deploy** | Recent GitHub Actions runs + trigger `daily.yml` / `pages.yml` / `weekly.yml`. |
+| **AI Cost** | DeepSeek spend estimate per build / month and cost-vs-interval table. |
 | **Content** | Page inventory + sizes, offline broken-internal-link check, live-site uptime probe. |
 
-## How changes go live
+## Security model (deployed)
 
-The site is rebuilt from **`origin/main`**. Toggling a flag edits the working-tree
-`config.yml` immediately, but it only takes effect once it's committed to `main` and a
-build runs:
+- Binds `127.0.0.1` only (the code **refuses** a non-loopback bind); Caddy
+  reverse-proxies the public host to it and terminates TLS (real Let's Encrypt —
+  `admin.` is grey-cloud / direct-to-origin, not behind Cloudflare).
+- Password → **HMAC-signed, stateless session cookie** (HttpOnly, Secure,
+  SameSite=Strict). Every `/api/*` route except login/session/health requires it.
+- Writes additionally require a **double-submit CSRF token** + same-origin Origin +
+  JSON Content-Type.
+- **Per-client** login lockout (keyed on the real IP via `X-Forwarded-For`), so an
+  attacker can't lock the operator out; atomic reserve closes the concurrency window.
+- **Fail-closed:** deployed mode refuses to start without `ADMIN_PASSWORD`.
 
-1. Toggle / set an interval → a banner shows "config.yml changed (not yet live)".
-2. **Commit & push to main** (enabled only when you're on a `main` tracking branch), or
-   commit locally and push from your main checkout.
-3. **Rebuild & deploy now** (Build tab) dispatches `daily.yml` to regenerate the site
-   with the new config. (`pages.yml` only redeploys the already-committed `site/`.)
-
-## Secrets / credentials (local `.env`)
-
-Read from `<repo>/.env` (gitignored), same convention as `lib/config.py`:
+## Environment (`.env` locally, `/etc/macro-admin.env` on the VPS)
 
 ```
-GH_TOKEN=ghp_...                 # fine-grained PAT, Actions: Read+Write — for rebuild/deploy
-GA4_PROPERTY_ID=123456789        # numeric GA4 property id (NOT the G-XXXX measurement id)
-GA4_SA_JSON=/abs/path/sa.json    # GA4 Data API service-account key (Viewer on the property)
+# --- deployed-mode auth (REQUIRED when ADMIN_DEPLOYED=1) ---
+ADMIN_DEPLOYED=1                 # forced by `--deployed`; enables auth + proxy trust
+ADMIN_PASSWORD=...               # the login password (no password → refuses to start)
+ADMIN_SESSION_SECRET=...         # persist so signed sessions survive a restart
+ADMIN_ALLOWED_HOSTS=admin.mastermind-x.com   # DNS-rebinding allowlist (default)
+ADMIN_SESSION_TTL_HOURS=168      # optional (default 7 days)
+
+# --- integrations (all optional; panels degrade with setup steps) ---
+SUPABASE_ACCESS_TOKEN=sbp_...    # Supabase PAT → Users panel (Management API SQL)
+SUPABASE_PROJECT_REF=...         # optional (defaults to the MarketIntelligence project)
+UMAMI_API_KEY=...                # optional → in-panel analytics (paid/self-hosted)
+GH_TOKEN=ghp_...                 # Contents:write + Actions:write → flag toggles + rebuild
+GA4_PROPERTY_ID / GA4_SA_JSON    # optional legacy GA4 reader
 ```
 
-Run status loads without a token (public repo); only **dispatching** a workflow needs `GH_TOKEN`.
+## Deploy to admin.mastermind-x.com
 
-## Safety
+DNS A record `admin → 146.190.142.17` (grey-cloud/DNS-only) is required. Then:
 
-- Binds to `127.0.0.1` only.
-- Config edits never round-trip YAML (comments preserved); writes are atomic.
-- Pushing to the live branch and dispatching workflows require an explicit confirm.
-- China: GA4 is blocked by the Great Firewall, so mainland traffic is undercounted —
-  the Traffic panel is provider-pluggable so Baidu Tongji can be added later.
+```bash
+# 1. land the code on main (the VPS pulls it via the macro-update cron), then on the VPS:
+ssh root@146.190.142.17
+
+# 2. create the secrets file (root-only) — NEVER in the repo:
+cat > /etc/macro-admin.env <<'EOF'
+ADMIN_DEPLOYED=1
+ADMIN_PASSWORD=<your password>
+ADMIN_SESSION_SECRET=<long random>
+SUPABASE_ACCESS_TOKEN=sbp_<...>
+EOF
+chmod 600 /etc/macro-admin.env
+
+# 3. provision (idempotent): venv deps, systemd unit, Caddy block, start:
+bash /opt/macro/admin/deploy/setup-admin.sh
+```
+
+`update.sh` (the existing 3-min pull cron) auto-restarts `admin.service` whenever
+`admin/` code changes on `main`, so the deployed panel tracks the repo without a
+manual redeploy. Secrets live in the untouched `/etc/macro-admin.env`.

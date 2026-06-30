@@ -28,4 +28,11 @@ if echo "$CHANGED" | grep -qE '^app/(main\.py|requirements\.txt|__init__\.py)$';
 	systemctl is-enabled macro-api >/dev/null 2>&1 && systemctl restart macro-api || true
 fi
 
+# admin console: restart ONLY when its own code changed, so the deployed panel at
+# admin.mastermind-x.com tracks main automatically (config/secrets live in the
+# untouched /etc/macro-admin.env, so a restart never loses them).
+if echo "$CHANGED" | grep -qE '^admin/'; then
+	systemctl is-enabled admin >/dev/null 2>&1 && systemctl restart admin || true
+fi
+
 echo "macro-update $(date -u +%FT%TZ) ${OLD:0:8}..$(git -C "$APP_DIR" rev-parse --short HEAD)"

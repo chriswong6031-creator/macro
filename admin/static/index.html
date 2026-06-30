@@ -4,23 +4,38 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
-  <title>Macro Admin</title>
+  <title>Mastermind Admin</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header>
-    <div class="hrow">
-      <div class="brand"><span class="dot">●</span> Macro Admin</div>
-      <div class="hmeta" id="hmeta"><span class="muted">loading…</span></div>
+  <!-- login gate (shown only when auth is enabled and there's no session) -->
+  <div class="login-wrap" id="login">
+    <div class="login-card">
+      <h1><span style="color:var(--accent)">●</span> Mastermind Admin</h1>
+      <div class="sub">Sign in to the control console.</div>
+      <form id="loginForm" autocomplete="off">
+        <input type="password" id="pw" placeholder="Password" autocomplete="current-password" autofocus>
+        <div class="err" id="loginErr"></div>
+        <button class="btn primary" type="submit">Sign in</button>
+      </form>
     </div>
-  </header>
+  </div>
 
-  <nav class="tabs" id="tabs"></nav>
+  <div id="app" style="display:none">
+    <header>
+      <div class="hrow">
+        <div class="brand"><span class="dot">●</span> Mastermind Admin</div>
+        <div class="hmeta" id="hmeta"><span class="muted">loading…</span></div>
+      </div>
+    </header>
 
-  <main>
-    <div class="banner" id="banner"></div>
-    <div id="view"><div class="spin">Loading…</div></div>
-  </main>
+    <nav class="tabs" id="tabs"></nav>
+
+    <main>
+      <div class="banner" id="banner"></div>
+      <div id="view"><div class="spin">Loading…</div></div>
+    </main>
+  </div>
 
   <div class="toast" id="toast"></div>
   <script src="app.js"></script>

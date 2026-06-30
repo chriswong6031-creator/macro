@@ -1,0 +1,30 @@
+[Unit]
+Description=Mastermind Admin console (deployed, authenticated)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/macro
+# Secrets live here (root-only 0600). The leading '-' makes it optional so the
+# unit still loads if the file is briefly absent — deployed mode is forced by the
+# --deployed flag below, and the app refuses to start without ADMIN_PASSWORD
+# (settings.startup_check), so a missing file fails CLOSED, never open.
+EnvironmentFile=-/etc/macro-admin.env
+# Bind loopback only; Caddy reverse-proxies admin.mastermind-x.com → here.
+ExecStart=/opt/macro/.venv/bin/python -m admin --deployed --host 127.0.0.1 --port 8787
+Restart=always
+RestartSec=2
+# Read-only git porcelain (status/rev-parse) runs in /opt/macro on every summary;
+# stop git taking optional index/refs locks so a read-mostly tree never trips it.
+Environment=GIT_OPTIONAL_LOCKS=0
+
+# Hardening — the console writes nothing to disk (config edits go out via the
+# GitHub API). ProtectSystem=full (not strict) leaves /opt writable for git's
+# opportunistic index refresh, matching macro-api.service; everything else locked.
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

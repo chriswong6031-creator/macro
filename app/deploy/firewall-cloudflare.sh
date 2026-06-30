@@ -25,6 +25,15 @@ ufw allow 22/tcp >/dev/null
 for cidr in $V4 $V6; do
   ufw allow from "$cidr" to any port 80,443 proto tcp >/dev/null
 done
+# GREY-CLOUD ESCAPE HATCH — keep 80/443 reachable from the public internet too.
+# Some hosts are DNS-only / direct-to-origin (admin.mastermind-x.com, and the
+# 2026-06-29 direct-Let's-Encrypt origin-TLS fix): they need port 80 for ACME
+# HTTP-01 validation and direct serving, which the CF-only allowlist above blocks.
+# Without this line the monthly self-refresh cron would re-lock the ports and take
+# admin + the direct-TLS certs offline. (Matches the live ufw 'open to all
+# (CF grey-cloud fallback)' rule.) The CF allowlist above is now informational;
+# direct-origin scraping is mitigated at the app layer (auth) + noindex, not ufw.
+ufw allow 80,443/tcp >/dev/null
 ufw --force enable >/dev/null
 
 log "monthly self-refresh cron (CF ranges change rarely)"
