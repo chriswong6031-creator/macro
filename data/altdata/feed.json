@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-30T11:55:21.535141+00:00",
+  "generated_utc": "2026-06-30T13:55:22.450235+00:00",
   "as_of": "2026-06-30",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -2022,123 +2022,9 @@
       "emoji": "\ud83d\udc54",
       "label_en": "Insider trading",
       "label_zh": "\u5185\u90e8\u4eba\u4ea4\u6613",
-      "rows": 24987,
+      "rows": 25013,
       "last_seen": "2026-06-30",
       "recent": [
-        {
-          "Ticker": "NTES",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Boltz Paul William JR",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "10000.0",
-          "PricePerShare": "128.3",
-          "SharesOwnedFollowing": "12223.0",
-          "fileDate": "2026-06-30T10:43:20.000",
-          "officerTitle": "General Counsel",
-          "isDirector": "False",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-06-30T10:45:03.190",
-          "_first_seen": "2026-06-30T10:47:43.811799+00:00"
-        },
-        {
-          "Ticker": "TSM",
-          "Date": "2026-06-30T00:00:00.000",
-          "Name": "Tien Bor-Zen",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "P",
-          "Shares": "1000.0",
-          "PricePerShare": "75.7",
-          "SharesOwnedFollowing": "1000.0",
-          "fileDate": "2026-06-30T10:24:40.000",
-          "officerTitle": "VP",
-          "isDirector": "False",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T10:30:04.285",
-          "_first_seen": "2026-06-30T10:47:43.811799+00:00"
-        },
-        {
-          "Ticker": "TSM",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Tien Bor-Zen",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "P",
-          "Shares": "1000.0",
-          "PricePerShare": "76.64",
-          "SharesOwnedFollowing": "12051.0",
-          "fileDate": "2026-06-30T10:24:40.000",
-          "officerTitle": "VP",
-          "isDirector": "False",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-06-30T10:30:04.285",
-          "_first_seen": "2026-06-30T10:47:43.811799+00:00"
-        },
-        {
-          "Ticker": "NOAH",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "YIN ZHE",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "M",
-          "Shares": "765.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "17205335.0",
-          "fileDate": "2026-06-30T10:23:46.000",
-          "officerTitle": "CHIEF EXECUTIVE OFFICER",
-          "isDirector": "True",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T10:30:04.285",
-          "_first_seen": "2026-06-30T10:47:43.811799+00:00"
-        },
-        {
-          "Ticker": "AGEN",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "ARMEN GARO H",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "A",
-          "Shares": "5364.0",
-          "PricePerShare": "3.03",
-          "SharesOwnedFollowing": "366256.0",
-          "fileDate": "2026-06-30T10:06:11.000",
-          "officerTitle": "See Remarks",
-          "isDirector": "True",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-06-30T10:15:03.465",
-          "_first_seen": "2026-06-30T10:47:43.811799+00:00"
-        },
-        {
-          "Ticker": "NAMI",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "Jiang Jun Jason",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "2.0",
-          "PricePerShare": "3.802",
-          "SharesOwnedFollowing": "107521.0",
-          "fileDate": "2026-06-30T10:05:39.000",
-          "officerTitle": "CFO and COO",
-          "isDirector": "True",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T10:15:03.465",
-          "_first_seen": "2026-06-30T10:47:43.811799+00:00"
-        },
         {
           "Ticker": "LEGN",
           "Date": "2026-06-25T00:00:00.000",
@@ -2148,15 +2034,53 @@
           "Shares": "5566.0",
           "PricePerShare": "14.78",
           "SharesOwnedFollowing": "241872.0",
-          "fileDate": "2026-06-30T01:53:13.000",
+          "fileDate": "2026-06-30T12:14:42.000",
           "officerTitle": "Chief Executive Officer",
           "isDirector": "True",
           "isOfficer": "True",
           "isTenPercentOwner": "False",
           "isOther": "False",
           "directOrIndirectOwnership": "D",
-          "uploaded": "2026-06-30T02:00:06.888",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
+          "uploaded": "2026-06-30T12:45:09.023",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "ZEPP",
+          "Date": "2026-06-26T00:00:00.000",
+          "Name": "FAN Meihui",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "520000.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "952000.0",
+          "fileDate": "2026-06-30T12:14:42.000",
+          "officerTitle": "Chief Technology Officer",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T12:15:05.099",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "RYAAY",
+          "Date": "2026-06-26T00:00:00.000",
+          "Name": "Hurley John JH",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "15000.0",
+          "PricePerShare": "31.24",
+          "SharesOwnedFollowing": "76025.0",
+          "fileDate": "2026-06-30T12:06:18.000",
+          "officerTitle": "Ryanair DAC CTO",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-30T12:15:05.099",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
         },
         {
           "Ticker": "USDE",
@@ -2167,15 +2091,15 @@
           "Shares": "323750.0",
           "PricePerShare": "0.0",
           "SharesOwnedFollowing": "323750.0",
-          "fileDate": "2026-06-30T01:47:15.000",
+          "fileDate": "2026-06-30T12:06:18.000",
           "officerTitle": "Chief Financial Officer",
           "isDirector": null,
           "isOfficer": "True",
           "isTenPercentOwner": null,
           "isOther": null,
           "directOrIndirectOwnership": "D",
-          "uploaded": "2026-06-30T02:00:06.888",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
+          "uploaded": "2026-06-30T12:45:09.023",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
         },
         {
           "Ticker": "USDE",
@@ -2186,319 +2110,395 @@
           "Shares": "60799.0",
           "PricePerShare": "0.0",
           "SharesOwnedFollowing": "384549.0",
-          "fileDate": "2026-06-30T01:47:15.000",
+          "fileDate": "2026-06-30T12:06:18.000",
           "officerTitle": "Chief Financial Officer",
           "isDirector": null,
           "isOfficer": "True",
           "isTenPercentOwner": null,
           "isOther": null,
           "directOrIndirectOwnership": "D",
-          "uploaded": "2026-06-30T02:00:06.888",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
+          "uploaded": "2026-06-30T12:45:09.023",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
         },
         {
-          "Ticker": "USDE",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Aly Ahmed J.",
+          "Ticker": "COE",
+          "Date": "2026-06-30T00:00:00.000",
+          "Name": "Huang Jack Jiajia",
           "AcquiredDisposedCode": "A",
-          "TransactionCode": "A",
-          "Shares": "52500.0",
+          "TransactionCode": "M",
+          "Shares": "275000.0",
           "PricePerShare": "0.0",
-          "SharesOwnedFollowing": "52500.0",
-          "fileDate": "2026-06-30T01:47:14.000",
-          "officerTitle": "Chief Technology Officer",
-          "isDirector": null,
+          "SharesOwnedFollowing": "42251300.0",
+          "fileDate": "2026-06-30T12:03:03.000",
+          "officerTitle": "Chief Executive Officer",
+          "isDirector": "True",
           "isOfficer": "True",
-          "isTenPercentOwner": null,
-          "isOther": null,
+          "isTenPercentOwner": "True",
+          "isOther": "False",
           "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T02:00:06.888",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
+          "uploaded": "2026-06-30T12:15:05.099",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
         },
         {
-          "Ticker": "CAPR",
+          "Ticker": "COE",
+          "Date": "2026-06-24T00:00:00.000",
+          "Name": "Huang Jack Jiajia",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "58500.0",
+          "PricePerShare": "14.81",
+          "SharesOwnedFollowing": "27877500.0",
+          "fileDate": "2026-06-30T12:03:03.000",
+          "officerTitle": "Chief Executive Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T12:15:05.099",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "COE",
+          "Date": "2026-06-24T00:00:00.000",
+          "Name": "Huang Jack Jiajia",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "60000.0",
+          "PricePerShare": "15.36",
+          "SharesOwnedFollowing": "28057500.0",
+          "fileDate": "2026-06-30T12:03:03.000",
+          "officerTitle": "Chief Executive Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T12:15:05.099",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "COE",
+          "Date": "2026-06-26T00:00:00.000",
+          "Name": "Huang Jack Jiajia",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "151800.0",
+          "PricePerShare": "15.61",
+          "SharesOwnedFollowing": "28359960.0",
+          "fileDate": "2026-06-30T12:03:03.000",
+          "officerTitle": "Chief Executive Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T12:15:05.099",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "COE",
           "Date": "2026-06-25T00:00:00.000",
-          "Name": "Krasney Karen",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "24100.0",
-          "PricePerShare": "30.38",
-          "SharesOwnedFollowing": "30547.0",
-          "fileDate": "2026-06-30T01:30:08.000",
-          "officerTitle": "EVP, GENERAL COUNSEL",
-          "isDirector": "False",
+          "Name": "Huang Jack Jiajia",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "150600.0",
+          "PricePerShare": "15.76",
+          "SharesOwnedFollowing": "28208100.0",
+          "fileDate": "2026-06-30T12:03:03.000",
+          "officerTitle": "Chief Executive Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T12:15:05.099",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "COE",
+          "Date": "2026-06-23T00:00:00.000",
+          "Name": "Huang Jack Jiajia",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "30000.0",
+          "PricePerShare": "16.0",
+          "SharesOwnedFollowing": "27545280.0",
+          "fileDate": "2026-06-30T12:03:03.000",
+          "officerTitle": "Chief Executive Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T12:15:05.099",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "COE",
+          "Date": "2026-06-24T00:00:00.000",
+          "Name": "Huang Jack Jiajia",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "3720.0",
+          "PricePerShare": "15.04",
+          "SharesOwnedFollowing": "27549000.0",
+          "fileDate": "2026-06-30T12:03:03.000",
+          "officerTitle": "Chief Executive Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T12:15:05.099",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "COE",
+          "Date": "2026-06-23T00:00:00.000",
+          "Name": "Huang Jack Jiajia",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "60000.0",
+          "PricePerShare": "16.0",
+          "SharesOwnedFollowing": "27515280.0",
+          "fileDate": "2026-06-30T12:03:03.000",
+          "officerTitle": "Chief Executive Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T12:15:05.099",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "COE",
+          "Date": "2026-06-23T00:00:00.000",
+          "Name": "Huang Jack Jiajia",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "13620.0",
+          "PricePerShare": "15.5",
+          "SharesOwnedFollowing": "27322500.0",
+          "fileDate": "2026-06-30T12:03:03.000",
+          "officerTitle": "Chief Executive Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T12:15:05.099",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "COE",
+          "Date": "2026-06-24T00:00:00.000",
+          "Name": "Huang Jack Jiajia",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "210000.0",
+          "PricePerShare": "15.46",
+          "SharesOwnedFollowing": "27759000.0",
+          "fileDate": "2026-06-30T12:03:03.000",
+          "officerTitle": "Chief Executive Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T12:15:05.099",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "COE",
+          "Date": "2026-06-23T00:00:00.000",
+          "Name": "Huang Jack Jiajia",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "72780.0",
+          "PricePerShare": "16.01",
+          "SharesOwnedFollowing": "27395280.0",
+          "fileDate": "2026-06-30T12:03:03.000",
+          "officerTitle": "Chief Executive Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T12:15:05.099",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "COE",
+          "Date": "2026-06-23T00:00:00.000",
+          "Name": "Huang Jack Jiajia",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "12000.0",
+          "PricePerShare": "15.63",
+          "SharesOwnedFollowing": "27308880.0",
+          "fileDate": "2026-06-30T12:03:03.000",
+          "officerTitle": "Chief Executive Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T12:15:05.099",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "COE",
+          "Date": "2026-06-26T00:00:00.000",
+          "Name": "Huang Jack Jiajia",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "60.0",
+          "PricePerShare": "14.85",
+          "SharesOwnedFollowing": "28208160.0",
+          "fileDate": "2026-06-30T12:03:03.000",
+          "officerTitle": "Chief Executive Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T12:15:05.099",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "SBSW",
+          "Date": "2026-06-26T00:00:00.000",
+          "Name": "Keyter Charl",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "200000.0",
+          "PricePerShare": "2.24",
+          "SharesOwnedFollowing": "2200000.0",
+          "fileDate": "2026-06-30T11:52:19.000",
+          "officerTitle": "Chief Financial Officer",
+          "isDirector": "True",
           "isOfficer": "True",
           "isTenPercentOwner": "False",
           "isOther": "False",
           "directOrIndirectOwnership": "D",
-          "uploaded": "2026-06-30T01:45:04.087",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
+          "uploaded": "2026-06-30T12:00:11.720",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
         },
         {
-          "Ticker": "CAPR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Krasney Karen",
+          "Ticker": "OPRA",
+          "Date": "2026-06-26T00:00:00.000",
+          "Name": "Zhou Yahui",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "J",
+          "Shares": "665995.0",
+          "PricePerShare": "16.01",
+          "SharesOwnedFollowing": "53681464.0",
+          "fileDate": "2026-06-30T11:30:02.000",
+          "officerTitle": "Executive Chairman",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-30T11:45:04.358",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "NOAH",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Wang Jingbo (Norah)",
           "AcquiredDisposedCode": "A",
           "TransactionCode": "M",
-          "Shares": "24100.0",
-          "PricePerShare": "3.18",
-          "SharesOwnedFollowing": "54647.0",
-          "fileDate": "2026-06-30T01:30:08.000",
-          "officerTitle": "EVP, GENERAL COUNSEL",
-          "isDirector": "False",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-06-30T01:45:04.087",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "CAPR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Bergmann Anthony",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "M",
-          "Shares": "24100.0",
-          "PricePerShare": "3.18",
-          "SharesOwnedFollowing": "35323.0",
-          "fileDate": "2026-06-30T01:30:06.000",
-          "officerTitle": "CHIEF FINANCIAL OFFICER",
-          "isDirector": "False",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-06-30T01:45:04.087",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "CAPR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Bergmann Anthony",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "24100.0",
-          "PricePerShare": "30.38",
-          "SharesOwnedFollowing": "11223.0",
-          "fileDate": "2026-06-30T01:30:06.000",
-          "officerTitle": "CHIEF FINANCIAL OFFICER",
-          "isDirector": "False",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-06-30T01:45:04.087",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "34387.0",
-          "PricePerShare": "81.305",
-          "SharesOwnedFollowing": "81796.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "25850.0",
-          "PricePerShare": "83.1765",
-          "SharesOwnedFollowing": "44418.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "279671.0",
-          "PricePerShare": "84.0207",
-          "SharesOwnedFollowing": "349.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "229334.0",
-          "PricePerShare": "84.0207",
-          "SharesOwnedFollowing": "286.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "55.0",
-          "PricePerShare": "84.59",
-          "SharesOwnedFollowing": "0.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "44363.0",
-          "PricePerShare": "84.0207",
-          "SharesOwnedFollowing": "55.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "9.0",
-          "PricePerShare": "84.59",
-          "SharesOwnedFollowing": "0.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "6654.0",
-          "PricePerShare": "84.0207",
-          "SharesOwnedFollowing": "9.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "286.0",
-          "PricePerShare": "84.59",
-          "SharesOwnedFollowing": "0.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "349.0",
-          "PricePerShare": "84.59",
-          "SharesOwnedFollowing": "0.0",
-          "fileDate": "2026-06-30T01:27:21.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
-        },
-        {
-          "Ticker": "HNGE",
-          "Date": "2026-06-29T00:00:00.000",
-          "Name": "Insight Holdings Group, LLC",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "C",
-          "Shares": "17427.0",
+          "Shares": "765.0",
           "PricePerShare": null,
-          "SharesOwnedFollowing": "17427.0",
-          "fileDate": "2026-06-30T01:27:21.000",
+          "SharesOwnedFollowing": "68736755.0",
+          "fileDate": "2026-06-30T10:53:27.000",
           "officerTitle": null,
-          "isDirector": "False",
+          "isDirector": "True",
           "isOfficer": "False",
           "isTenPercentOwner": "True",
           "isOther": "False",
           "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-30T01:30:08.571",
-          "_first_seen": "2026-06-30T02:29:20.011149+00:00"
+          "uploaded": "2026-06-30T11:00:06.025",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "NOAH",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Pan Qing",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "1095.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "928520.0",
+          "fileDate": "2026-06-30T10:46:31.000",
+          "officerTitle": "CHIEF FINANCIAL OFFICER",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-30T11:00:06.025",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "HTHT",
+          "Date": "2026-06-28T00:00:00.000",
+          "Name": "Cao Lei",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "30010.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "100050.0",
+          "fileDate": "2026-06-30T10:45:33.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-30T11:00:06.025",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "HTHT",
+          "Date": "2026-06-30T00:00:00.000",
+          "Name": "Cao Lei",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "F",
+          "Shares": "6260.0",
+          "PricePerShare": "43.27",
+          "SharesOwnedFollowing": "113220.0",
+          "fileDate": "2026-06-30T10:45:33.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-30T11:00:06.025",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
+        },
+        {
+          "Ticker": "HTHT",
+          "Date": "2026-06-28T00:00:00.000",
+          "Name": "Cao Lei",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "30750.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "130800.0",
+          "fileDate": "2026-06-30T10:45:33.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-30T11:00:06.025",
+          "_first_seen": "2026-06-30T12:52:38.918360+00:00"
         }
       ]
     },
@@ -4460,233 +4460,233 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 535,
+      "rows": 564,
       "last_seen": "2026-06-30",
       "recent": [
         {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+General+Counsel+of+%24NTES+Sells+10%2C000+Shares",
-          "time": "2026-06-30 10:45:24",
-          "headline": "Insider Sale: General Counsel of $NTES Sells 10,000 Shares",
+          "url": "https://www.quiverquant.com/news/Prestige+Consumer+Healthcare+Announces+Proposed+Private+Offering+of+%24400+Million+Senior+Notes+Due+2034+to+Redeem+2028+Notes",
+          "time": "2026-06-30 12:30:54",
+          "headline": "Prestige Consumer Healthcare Announces Proposed Private Offering of $400 Million Senior Notes Due 2034 to Redeem 2028 Notes",
+          "category": "press_release_summary",
+          "summary": "<p>Prestige Consumer Healthcare plans to offer $400 million in senior notes to refinance existing debt.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Prestige Consumer Healthcare Inc. announced that its subs\u2026",
+          "image": "https://www.quiverquant.com/images/pbh_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Quantum+X+Labs+Appoints+Dr.+Ira+Wolfson+to+Leadership+Team+as+It+Advances+Quantum+Technology+Development",
+          "time": "2026-06-30 12:30:54",
+          "headline": "Quantum X Labs Appoints Dr. Ira Wolfson to Leadership Team as It Advances Quantum Technology Development",
+          "category": "press_release_summary",
+          "summary": "<p>Quantum X Labs appoints Dr. Ira Wolfson to enhance its quantum technology development and scientific leadership.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Quantum X Labs has announced the appointment \u2026",
+          "image": "https://www.quiverquant.com/images/qxl_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/HCW+Biologics+Regains+Nasdaq+Bid+Price+Compliance+and+Announces+1-for-6+Reverse+Stock+Split",
+          "time": "2026-06-30 12:30:54",
+          "headline": "HCW Biologics Regains Nasdaq Bid Price Compliance and Announces 1-for-6 Reverse Stock Split",
+          "category": "press_release_summary",
+          "summary": "<p>HCW Biologics confirms Nasdaq compliance and announces a one-for-six reverse stock split to maintain bid price requirements.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>HCW Biologics Inc., a clinical-st\u2026",
+          "image": "https://www.quiverquant.com/images/hcwb_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24EW+Given+%24110+Price+Target",
+          "time": "2026-06-30 12:20:20",
+          "headline": "New Analyst Forecast: $EW Given $110 Price Target",
+          "category": "forecasts_automated",
+          "summary": "<p>We just received data on a new analyst forecast for $EW. Marie Thibault from BTIG set a price target of 110.0 for EW.</p><p>To track analyst ratings and price targets for $EW, check out Quiver Quantitative's <a hre\u2026",
+          "image": "https://www.quiverquant.com/images/ew_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24TSHA+Given+%2415+Price+Target",
+          "time": "2026-06-30 12:20:20",
+          "headline": "New Analyst Forecast: $TSHA Given $15 Price Target",
+          "category": "forecasts_automated",
+          "summary": "<p>We just received data on a new analyst forecast for $TSHA. Jack Allen  from Baird set a price target of 15.0 for TSHA.</p><p>To track analyst ratings and price targets for $TSHA, check out Quiver Quantitative's <a \u2026",
+          "image": "https://www.quiverquant.com/images/tsha_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24BCRX+Given+%2429+Price+Target",
+          "time": "2026-06-30 12:20:20",
+          "headline": "New Analyst Forecast: $BCRX Given $29 Price Target",
+          "category": "forecasts_automated",
+          "summary": "<p>We just received data on a new analyst forecast for $BCRX. Steven Seedhouse from Cantor Fitzgerald set a price target of 29.0 for BCRX.</p><p>To track analyst ratings and price targets for $BCRX, check out Quiver Q\u2026",
+          "image": "https://www.quiverquant.com/images/bcrx_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24ATI+Given+%24211+Price+Target",
+          "time": "2026-06-30 12:20:20",
+          "headline": "New Analyst Forecast: $ATI Given $211 Price Target",
+          "category": "forecasts_automated",
+          "summary": "<p>We just received data on a new analyst forecast for $ATI. Michael Leshock from Keybanc set a price target of 211.0 for ATI.</p><p>To track analyst ratings and price targets for $ATI, check out Quiver Quantitative's\u2026",
+          "image": "https://www.quiverquant.com/images/ati_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24ABVX+Given+%24175+Price+Target",
+          "time": "2026-06-30 12:20:20",
+          "headline": "New Analyst Forecast: $ABVX Given $175 Price Target",
+          "category": "forecasts_automated",
+          "summary": "<p>We just received data on a new analyst forecast for $ABVX. Julian Harrison from BTIG set a price target of 175.0 for ABVX.</p><p>To track analyst ratings and price targets for $ABVX, check out Quiver Quantitative's\u2026",
+          "image": "https://www.quiverquant.com/images/abvx_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24CNXC+Given+%2430+Price+Target",
+          "time": "2026-06-30 12:20:20",
+          "headline": "New Analyst Forecast: $CNXC Given $30 Price Target",
+          "category": "forecasts_automated",
+          "summary": "<p>We just received data on a new analyst forecast for $CNXC. David Koning from Baird set a price target of 30.0 for CNXC.</p><p>To track analyst ratings and price targets for $CNXC, check out Quiver Quantitative's <a\u2026",
+          "image": "https://www.quiverquant.com/images/cnxc_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24MNPR+Given+%24117+Price+Target",
+          "time": "2026-06-30 12:20:20",
+          "headline": "New Analyst Forecast: $MNPR Given $117 Price Target",
+          "category": "forecasts_automated",
+          "summary": "<p>We just received data on a new analyst forecast for $MNPR. Jeet Mukherjee  from BTIG set a price target of 117.0 for MNPR.</p><p>To track analyst ratings and price targets for $MNPR, check out Quiver Quantitative's\u2026",
+          "image": "https://www.quiverquant.com/images/mnpr_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24LRMR+Given+%245+Price+Target",
+          "time": "2026-06-30 12:20:20",
+          "headline": "New Analyst Forecast: $LRMR Given $5 Price Target",
+          "category": "forecasts_automated",
+          "summary": "<p>We just received data on a new analyst forecast for $LRMR. Joel Beatty from Baird set a price target of 5.0 for LRMR.</p><p>To track analyst ratings and price targets for $LRMR, check out Quiver Quantitative's <a h\u2026",
+          "image": "https://www.quiverquant.com/images/lrmr_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Hepsiburada+Completes+Planned+CEO+Transition%2C+Appoints+Ender+%C3%96zg%C3%BCn+as+CEO+and+Hakan+Karado%C4%9Fan+to+Lead+Delivery+Business",
+          "time": "2026-06-30 12:20:18",
+          "headline": "Hepsiburada Completes Planned CEO Transition, Appoints Ender \u00d6zg\u00fcn as CEO and Hakan Karado\u011fan to Lead Delivery Business",
+          "category": "press_release_summary",
+          "summary": "<p>Hepsiburada announces CEO transition, appointing Ender \u00d6zg\u00fcn as CEO and Hakan Karado\u011fan to lead Delivery, effective July 1, 2026.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>D-MARKET Electronic Services\u2026",
+          "image": "https://www.quiverquant.com/images/heps_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Ryanair+DAC+CTO+of+%24RYAAY+Sells+15%2C000+Shares",
+          "time": "2026-06-30 12:15:56",
+          "headline": "Insider Sale: Ryanair DAC CTO of $RYAAY Sells 15,000 Shares",
           "category": "insiders_automated",
-          "summary": "<p>Paul William JR Boltz, the General Counsel of <a href=\"https://www.quiverquant.com/stock/NTES/\">$NTES</a>, sold 10,000 shares of the company on 06-29-2026 for an estimated <strong>$1,283,000</strong>. We received d\u2026",
-          "image": "https://www.quiverquant.com/images/ntes_rect_new.png",
-          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+          "summary": "<p>John JH Hurley, the Ryanair DAC CTO of <a href=\"https://www.quiverquant.com/stock/RYAAY/\">$RYAAY</a>, sold 15,000 shares of the company on 06-26-2026 for an estimated <strong>$468,600</strong>. We received data on \u2026",
+          "image": "https://www.quiverquant.com/images/ryaay_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/GSI+Technology+to+Present+at+Canaccord+Genuity+46th+Annual+Growth+Conference",
-          "time": "2026-06-30 10:10:20",
-          "headline": "GSI Technology to Present at Canaccord Genuity 46th Annual Growth Conference",
+          "url": "https://www.quiverquant.com/news/ZenaTech+Reports+Approximately+CAD+%2433+Million+Annualized+Revenue+Run+Rate+for+2026%0A",
+          "time": "2026-06-30 11:50:19",
+          "headline": "ZenaTech Reports Approximately CAD $33 Million Annualized Revenue Run Rate for 2026",
           "category": "press_release_summary",
-          "summary": "<p>GSI Technology will present at Canaccord Genuity's conference, highlighting its innovative APU technology and market progress.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>GSI Technology, Inc. announced \u2026",
-          "image": "https://www.quiverquant.com/images/gsit_rect_new.png",
-          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+          "summary": "<p>ZenaTech reports a Q1 2026 annualized revenue run rate of CAD $33 million, driven by its DaaS model and acquisitions.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>ZenaTech, Inc., a technology company foc\u2026",
+          "image": "https://www.quiverquant.com/images/zena_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Globavend+Holdings+Launches+First+Fully+AI-Produced+Original+Micro+Drama%2C+%E2%80%9CBuried+Innocent%E2%80%9D",
-          "time": "2026-06-30 08:40:39",
-          "headline": "Globavend Holdings Launches First Fully AI-Produced Original Micro Drama, \u201cBuried Innocent\u201d",
+          "url": "https://www.quiverquant.com/news/Plus+Therapeutics+to+Rebrand+as+Cerenome%2C+Affirm+2026+Guidance+and+Report+CNSide+Commercial+Progress",
+          "time": "2026-06-30 11:41:37",
+          "headline": "Plus Therapeutics to Rebrand as Cerenome, Affirm 2026 Guidance and Report CNSide Commercial Progress",
           "category": "press_release_summary",
-          "summary": "<p>Globavend Holdings launches \"Buried Innocent,\" its first AI-generated micro drama, alongside \"Kopi-Kopi,\" expanding into digital entertainment.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Globavend Hold\u2026",
-          "image": "https://www.quiverquant.com/images/gvh_rect_new.png",
-          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+          "summary": "<p>Plus Therapeutics will rebrand as Cerenome, trading under Nasdaq ticker CNSY from August 3, 2026, and affirms 2026 milestones.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Plus Therapeutics, Inc. is set \u2026",
+          "image": "https://www.quiverquant.com/images/pstv_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/HUTCHMED+to+Announce+Interim+Results+for+Six+Months+Ended+June+30%2C+2026+on+July+30%2C+2026",
-          "time": "2026-06-30 08:40:39",
-          "headline": "HUTCHMED to Announce Interim Results for Six Months Ended June 30, 2026 on July 30, 2026",
+          "url": "https://www.quiverquant.com/news/Pacira+BioSciences+to+Divest+iovera%C2%B0+to+Zimmer+Biomet+for+Up+to+%24140+Million",
+          "time": "2026-06-30 11:41:37",
+          "headline": "Pacira BioSciences to Divest iovera\u00b0 to Zimmer Biomet for Up to $140 Million",
           "category": "press_release_summary",
-          "summary": "<p>HUTCHMED will announce interim results on July 30, 2026, with webcasts for analysts and investors.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>HUTCHMED (China) Limited will announce its interim results \u2026",
-          "image": "https://www.quiverquant.com/images/hcm_rect_new.png",
-          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+          "summary": "<p>Pacira BioSciences announces a $140 million deal with Zimmer Biomet for the iovera\u00b0 system and spasticity program collaboration.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Pacira BioSciences, Inc. has \u2026",
+          "image": "https://www.quiverquant.com/images/pcrx_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/WTW+Launches+GPU-Enabled+RiskAgility+Financial+Modeller+to+Boost+Insurance+Modelling+Performance",
-          "time": "2026-06-30 08:10:32",
-          "headline": "WTW Launches GPU-Enabled RiskAgility Financial Modeller to Boost Insurance Modelling Performance",
+          "url": "https://www.quiverquant.com/news/FocalTherics+Launches+First+Commercial+Endometriosis+Focal+One+Program+in+Europe+and+Treats+Initial+Patients",
+          "time": "2026-06-30 11:41:37",
+          "headline": "FocalTherics Launches First Commercial Endometriosis Focal One Program in Europe and Treats Initial Patients",
           "category": "press_release_summary",
-          "summary": "<p>WTW launched an updated RiskAgility Financial Modeller, enhancing performance with GPU execution for life and health insurers.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>WTW has unveiled the latest ver\u2026",
-          "image": "https://www.quiverquant.com/images/wtw_rect_new.png",
-          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+          "summary": "<p>FocalTherics launched its first European endometriosis program, treating patients with its Focal One Robotic HIFU technology in France.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>FocalTherics has succe\u2026",
+          "image": "https://www.quiverquant.com/images/focl_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/707+Cayman+Holdings+Limited+Appoints+Robin+Hoksnes+Karlsen+as+Executive+Director",
-          "time": "2026-06-30 08:10:32",
-          "headline": "707 Cayman Holdings Limited Appoints Robin Hoksnes Karlsen as Executive Director",
+          "url": "https://www.quiverquant.com/news/OptimizeRx+Launches+CopayCue+to+Deliver+Brand+Savings+Offers+at+the+Point+of+Prescribing",
+          "time": "2026-06-30 11:41:37",
+          "headline": "OptimizeRx Launches CopayCue to Deliver Brand Savings Offers at the Point of Prescribing",
           "category": "press_release_summary",
-          "summary": "<p>707 Cayman Holdings Limited appoints Robin Hoksnes Karlsen as executive director, enhancing expertise in real estate and digital assets.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>707 Cayman Holdings L\u2026",
-          "image": "https://www.quiverquant.com/images/jem_rect_new.png",
-          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+          "summary": "<p>OptimizeRx launches CopayCue\u2122, enhancing prescription affordability transparency for physicians during e-prescribing, improving patient access to therapies.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>O\u2026",
+          "image": "https://www.quiverquant.com/images/oprx_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Freshworks+Announces+Vanquis+Selects+Freshservice+to+Support+Digital+Transformation",
-          "time": "2026-06-30 07:10:22",
-          "headline": "Freshworks Announces Vanquis Selects Freshservice to Support Digital Transformation",
+          "url": "https://www.quiverquant.com/news/Pyxis+Oncology+Secures+%2450+Million+Private+Placement+to+Extend+Cash+Runway+and+Fund+MICVO+Clinical+Development",
+          "time": "2026-06-30 11:41:37",
+          "headline": "Pyxis Oncology Secures $50 Million Private Placement to Extend Cash Runway and Fund MICVO Clinical Development",
           "category": "press_release_summary",
-          "summary": "<p>Vanquis Bank chooses Freshservice for digital transformation, enhancing service operations with AI-powered capabilities and greater scalability.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Freshworks ha\u2026",
-          "image": "https://www.quiverquant.com/images/frsh_rect_new.png",
-          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+          "summary": "<p>Pyxis Oncology secures $50 million financing to advance MICVO for head and neck cancer, with key data updates expected in 2026.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Pyxis Oncology, Inc. announced\u2026",
+          "image": "https://www.quiverquant.com/images/pyxs_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Himax+Technologies+Launches+HE+Series+iToF+Depth+Decoder+ICs+for+Robotics+and+AI+Vision+Applications",
-          "time": "2026-06-30 06:10:21",
-          "headline": "Himax Technologies Launches HE Series iToF Depth Decoder ICs for Robotics and AI Vision Applications",
+          "url": "https://www.quiverquant.com/news/Blockfusion+Announces+AI+Customer+LOI+for+Up+to+300+MW%2C+%24175+Million+Notes+Financing+and+Campus+Expansion+Plans",
+          "time": "2026-06-30 11:41:37",
+          "headline": "Blockfusion Announces AI Customer LOI for Up to 300 MW, $175 Million Notes Financing and Campus Expansion Plans",
           "category": "press_release_summary",
-          "summary": "<p>Himax Technologies launches HE Series iToF Depth Decoder ICs for enhanced 3D sensing in robotics and AI applications.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Himax Technologies, Inc. has announced t\u2026",
-          "image": "https://www.quiverquant.com/images/himx_rect_new.png",
-          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+          "summary": "<p>Blockfusion signs a non-binding letter of intent for 300 MW IT capacity, pursuing expansion and financing for AI infrastructure.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Blockfusion USA, Inc. has sig\u2026",
+          "image": "https://www.quiverquant.com/images/bldc_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/GXO+and+Co-op+Extend+Transport+Partnership+with+New+Five-Year+Agreement",
-          "time": "2026-06-30 05:10:20",
-          "headline": "GXO and Co-op Extend Transport Partnership with New Five-Year Agreement",
+          "url": "https://www.quiverquant.com/news/InflaRx+to+Engage+EMA+on+Vilobelimab+and+Izicopan+Development+Path+in+AAV",
+          "time": "2026-06-30 11:41:37",
+          "headline": "InflaRx to Engage EMA on Vilobelimab and Izicopan Development Path in AAV",
           "category": "press_release_summary",
-          "summary": "<p>GXO Logistics and Co-op extend their transport partnership, enhancing supply chain efficiency for over 1,000 stores for five more years.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>GXO Logistics, Inc. h\u2026",
-          "image": "https://www.quiverquant.com/images/gxo_rect_new.png",
-          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+          "summary": "<p>InflaRx plans to engage with EMA on vilobelimab and izicopan for ANCA-associated vasculitis approval strategy.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>InflaRx N.V. has announced its plan to engage w\u2026",
+          "image": "https://www.quiverquant.com/images/ifrx_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Cal-Maine+Foods+Reaches+Agreement+to+Resolve+DOJ+and+State+Attorneys+General+Claims",
-          "time": "2026-06-30 02:50:19",
-          "headline": "Cal-Maine Foods Reaches Agreement to Resolve DOJ and State Attorneys General Claims",
+          "url": "https://www.quiverquant.com/news/Edible+Garden+Enters+Non-Binding+LOI+for+Strategic+Commercialization+Alliance+to+Expand+Distribution+and+Revenue+Opportunities",
+          "time": "2026-06-30 11:30:22",
+          "headline": "Edible Garden Enters Non-Binding LOI for Strategic Commercialization Alliance to Expand Distribution and Revenue Opportunities",
           "category": "press_release_summary",
-          "summary": "<p>Cal-Maine Foods resolves DOJ and state claims regarding egg pricing with no fines, donating 30 million eggs to food banks.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Cal-Maine Foods, Inc. announced an \u2026",
-          "image": "https://www.quiverquant.com/images/calm_rect_new.png",
-          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+          "summary": "<p>Edible Garden plans a strategic alliance to enhance commercialization and expand its distribution network in sustainable agriculture.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Edible Garden AG Incorpo\u2026",
+          "image": "https://www.quiverquant.com/images/edbl_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Nuvectis+Pharma+Prices+%24100+Million+Underwritten+Public+Offering+of+Common+Stock",
-          "time": "2026-06-30 02:40:18",
-          "headline": "Nuvectis Pharma Prices $100 Million Underwritten Public Offering of Common Stock",
+          "url": "https://www.quiverquant.com/news/Bilibili+Inc.+Provides+Update+on+US%24300+Million+Share+Repurchase+Program",
+          "time": "2026-06-30 11:20:18",
+          "headline": "Bilibili Inc. Provides Update on US$300 Million Share Repurchase Program",
           "category": "press_release_summary",
-          "summary": "<p>Nuvectis Pharma announces a public offering of 5 million shares at $20 each, aiming to raise $100 million.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Nuvectis Pharma, Inc. has announced the pricing of \u2026",
-          "image": "https://www.quiverquant.com/images/nvct_rect_new.png",
-          "_first_seen": "2026-06-30T10:48:03.608071+00:00"
+          "summary": "<p>Bilibili updates on its $300 million share repurchase program, reporting significant purchases as of June 30, 2026.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Bilibili Inc. announced an update on its t\u2026",
+          "image": "https://www.quiverquant.com/images/bili_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Chief+Executive+Officer+of+%24LEGN+Sells+5%2C566+Shares",
-          "time": "2026-06-30 02:01:22",
-          "headline": "Insider Sale: Chief Executive Officer of $LEGN Sells 5,566 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>Ying Huang, the Chief Executive Officer of <a href=\"https://www.quiverquant.com/stock/LEGN/\">$LEGN</a>, sold 5,566 shares of the company on 06-25-2026 for an estimated <strong>$82,265</strong>. We received data on \u2026",
-          "image": "https://www.quiverquant.com/images/legn_rect_new.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+EVP+of+%24CAPR+Sells+24%2C100+Shares",
-          "time": "2026-06-30 01:45:34",
-          "headline": "Insider Sale: EVP of $CAPR Sells 24,100 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>Karen Krasney, the EVP of <a href=\"https://www.quiverquant.com/stock/CAPR/\">$CAPR</a>, sold 24,100 shares of the company on 06-25-2026 for an estimated <strong>$732,158</strong>. We received data on the trade from \u2026",
-          "image": "https://www.quiverquant.com/images/capr_rect_new.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Raytech+Holding+Limited+Closes+%246.2+Million+Registered+Direct+Offering+to+Support+Expansion+and+Acquisition+Integration",
-          "time": "2026-06-30 00:50:17",
-          "headline": "Raytech Holding Limited Closes $6.2 Million Registered Direct Offering to Support Expansion and Acquisition Integration",
+          "url": "https://www.quiverquant.com/news/AC+Immune+Reports+Interim+12-Month+ABATE+Data+for+ACI-24+in+Prodromal+Alzheimer%E2%80%99s+Disease",
+          "time": "2026-06-30 11:11:24",
+          "headline": "AC Immune Reports Interim 12-Month ABATE Data for ACI-24 in Prodromal Alzheimer\u2019s Disease",
           "category": "press_release_summary",
-          "summary": "<p>Raytech Holding Limited closed a direct offering of 3,149,832 shares, raising approximately $6.2 million for strategic expansion.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Raytech Holding Limited, a H\u2026",
-          "image": "https://www.quiverquant.com/images/ray_rect_new.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
+          "summary": "<p>AC Immune reports positive interim results from the ABATE trial, demonstrating safety and antibody response in prodromal Alzheimer's patients.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>AC Immune annou\u2026",
+          "image": "https://www.quiverquant.com/images/aciu_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24TEM+Sells+2%2C673+Shares",
-          "time": "2026-06-30 00:45:42",
-          "headline": "Insider Sale: Director at $TEM Sells 2,673 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>Jennifer A Doudna, a director at <a href=\"https://www.quiverquant.com/stock/TEM/\">$TEM</a>, sold 2,673 shares of the company on 06-25-2026 for an estimated <strong>$147,015</strong>. We received data on the trade f\u2026",
-          "image": "https://www.quiverquant.com/images/tem_rect_new.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+VP+of+%24GOOGL+Sells+449+Shares",
-          "time": "2026-06-30 00:31:44",
-          "headline": "Insider Sale: VP of $GOOGL Sells 449 Shares",
-          "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/2138895/Marsida-Saraci\">Marsida Saraci</a>, the VP of <a href=\"https://www.quiverquant.com/stock/GOOGL/\">$GOOGL</a>, sold 449 shares of the company on 06-26-2026 for an\u2026",
-          "image": "https://www.quiverquant.com/images/googl_rect_new.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Brian+Mast+discusses+water+policy+ahead+of+WRDA+2026+debate",
-          "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: Brian Mast discusses water policy ahead of WRDA 2026 debate",
-          "category": "legislation_automated",
-          "summary": "<p>Congressman Mast discusses WRDA 2026 and efforts to reduce harmful water discharges affecting the Treasure Coast.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Rep\u2026",
-          "image": "https://www.quiverquant.com/images/M001199_congress.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Flood%E2%80%99s+TRIA+Reauthorization+Bill+Passes+House",
-          "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: Mike Flood\u2019s TRIA Reauthorization Bill Passes House",
-          "category": "legislation_automated",
-          "summary": "<p>House passes Flood\u2019s bipartisan bill reauthorizing terrorism risk insurance through 2034 with program updates.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">House \u2026",
-          "image": "https://www.quiverquant.com/images/F000474_congress.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Pallone+Marks+House+Passage+of+Bipartisan+KIDS+Act+to+Protect+Children+Online",
-          "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: Pallone Marks House Passage of Bipartisan KIDS Act to Protect Children Online",
-          "category": "legislation_automated",
-          "summary": "<p>Pallone announced House passage of a bipartisan bill strengthening online privacy and safety protections for minors.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">\u2026",
-          "image": "https://www.quiverquant.com/images/P000034_congress.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Kim+Schrier+Supports+House+Passage+of+KIDS+Act",
-          "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: Rep. Kim Schrier Supports House Passage of KIDS Act",
-          "category": "legislation_automated",
-          "summary": "<p>Rep. Kim Schrier backed bipartisan legislation advancing child online safety and data privacy protections.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">House adva\u2026",
-          "image": "https://www.quiverquant.com/images/S001216_congress.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+House+Passes+Mary+Miller%E2%80%99s+SCREEN+Act+in+Child+Online+Safety+Package",
-          "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: House Passes Mary Miller\u2019s SCREEN Act in Child Online Safety Package",
-          "category": "legislation_automated",
-          "summary": "<p>House passes Miller-backed bill package tightening online child safety and age verification for obscene material.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Hou\u2026",
-          "image": "https://www.quiverquant.com/images/M001211_congress.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Kathy+Castor+Announces+House+Passage+of+Bipartisan+KIDS+Act+to+Strengthen+Online+Protections+for+Children",
-          "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: Kathy Castor Announces House Passage of Bipartisan KIDS Act to Strengthen Online Protections for Children",
-          "category": "legislation_automated",
-          "summary": "<p>Castor praises bipartisan House passage of the KIDS Act, aimed at expanding online privacy and safety protections for minors.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,16\u2026",
-          "image": "https://www.quiverquant.com/images/C001066_congress.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+House+Passes+Laurel+Lee%E2%80%99s+Online+Safety+Bills+in+KIDS+Act",
-          "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: House Passes Laurel Lee\u2019s Online Safety Bills in KIDS Act",
-          "category": "legislation_automated",
-          "summary": "<p>House passes bipartisan online safety and privacy legislation aimed at protecting children and teenagers online.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Hous\u2026",
-          "image": "https://www.quiverquant.com/images/L000597_congress.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+House+Passes+Walberg+and+Lee+Bill+to+Update+Children%E2%80%99s+Online+Privacy+Protections",
-          "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: House Passes Walberg and Lee Bill to Update Children\u2019s Online Privacy Protections",
-          "category": "legislation_automated",
-          "summary": "<p>House passes bipartisan legislation to strengthen online privacy protections for children and teens, banning targeted ads.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,2\u2026",
-          "image": "https://www.quiverquant.com/images/W000798_congress.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Krishnamoorthi+Responds+to+Supreme+Court+Ruling+on+Timely+Cast+Mail+Ballots",
-          "time": "2026-06-30 00:22:05",
-          "headline": "Press Release: Krishnamoorthi Responds to Supreme Court Ruling on Timely Cast Mail Ballots",
-          "category": "legislation_automated",
-          "summary": "<p>Krishnamoorthi praised a Supreme Court ruling allowing states to count mail ballots cast on time but received after Election Day.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(18\u2026",
-          "image": "https://www.quiverquant.com/images/K000391_congress.png",
-          "_first_seen": "2026-06-30T02:29:31.207580+00:00"
+          "url": "https://www.quiverquant.com/news/Aqua+Metals+to+Present+at+NAATBatt+2026+Recycling+%26+Lifecycle+Management+Workshop",
+          "time": "2026-06-30 11:11:24",
+          "headline": "Aqua Metals to Present at NAATBatt 2026 Recycling & Lifecycle Management Workshop",
+          "category": "press_release_summary",
+          "summary": "<p>Aqua Metals will participate in the NAATBatt workshop, discussing innovative lithium battery recycling and circular supply chains.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Aqua Metals, Inc. has annou\u2026",
+          "image": "https://www.quiverquant.com/images/aqms_rect_new.png",
+          "_first_seen": "2026-06-30T12:52:58.969727+00:00"
         }
       ]
     },
@@ -6525,6 +6525,11 @@
         "items": "7.01, 8.01"
       },
       {
+        "ticker": "QBTS",
+        "count": 4,
+        "items": "7.01"
+      },
+      {
         "ticker": "XEL",
         "count": 4,
         "items": "8.01"
@@ -6588,11 +6593,6 @@
         "ticker": "DTE",
         "count": 3,
         "items": "7.01, 8.01"
-      },
-      {
-        "ticker": "FDX",
-        "count": 3,
-        "items": "1.01, 2.01, 5.02, 8.01"
       }
     ],
     "special_situations": [
@@ -15117,14 +15117,6 @@
         "detail": "Tender Offers"
       },
       {
-        "ticker": "VIVK",
-        "category": "Restructuring",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Restructuring"
-      },
-      {
         "ticker": "ZCAR",
         "category": "Restructuring",
         "confidence": "high",
@@ -18845,14 +18837,6 @@
         "detail": "Strategic Reviews"
       },
       {
-        "ticker": "PBI",
-        "category": "Strategic Reviews",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Strategic Reviews"
-      },
-      {
         "ticker": "SJM",
         "category": "Strategic Reviews",
         "confidence": "high",
@@ -19054,14 +19038,6 @@
       },
       {
         "ticker": "DT",
-        "category": "Activist Campaigns",
-        "confidence": "high",
-        "activist": true,
-        "filer": null,
-        "detail": "Activist Campaigns"
-      },
-      {
-        "ticker": "FLS",
         "category": "Activist Campaigns",
         "confidence": "high",
         "activist": true,
@@ -34965,6 +34941,14 @@
         "detail": "Issuer Tenders"
       },
       {
+        "ticker": "AUDC",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "CIGI",
         "category": "Acquisitions",
         "confidence": "high",
@@ -35445,6 +35429,14 @@
         "detail": "Spin-Offs"
       },
       {
+        "ticker": "GFS",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "GRABW",
         "category": "Acquisitions",
         "confidence": "high",
@@ -35531,6 +35523,14 @@
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
+      },
+      {
+        "ticker": "MICC",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "XP",
@@ -35811,6 +35811,14 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "PLGO",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "CSAI",
@@ -36613,6 +36621,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "SLMBP",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "SYBT",
         "category": "Acquisitions",
         "confidence": "high",
@@ -36987,6 +37003,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "SSM",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
       },
       {
         "ticker": "DCX",
@@ -38357,6 +38381,54 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "AUGO",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "HIMX",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "IBN",
+        "category": "Acquisitions",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "KEP",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "LU",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "MDA",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "GPATW",
         "category": "SPACs",
         "confidence": "high",
@@ -38379,14 +38451,6 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
-      },
-      {
-        "ticker": "MDA",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "MAXNQ",
@@ -41125,14 +41189,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "AUGO",
-        "category": "Capital Returns",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Capital Returns"
-      },
-      {
         "ticker": "AZI",
         "category": "Capital Returns",
         "confidence": "medium",
@@ -41403,14 +41459,6 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
-      },
-      {
-        "ticker": "IBN",
-        "category": "Acquisitions",
-        "confidence": "medium",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "NEXA",
@@ -41731,13 +41779,21 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
+      },
+      {
+        "ticker": "TSNDF",
+        "category": "Capital Returns",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       }
     ],
     "unusual_options": [
       {
         "ticker": "CGNX",
-        "vol_oi": 1.501,
-        "mult": 28.71,
+        "vol_oi": 1.528,
+        "mult": 29.22,
         "put_call": 0.01,
         "lean": "call-skew",
         "hot": true
@@ -41776,8 +41832,8 @@
       },
       {
         "ticker": "PEP",
-        "vol_oi": 0.296,
-        "mult": 4.53,
+        "vol_oi": 0.3,
+        "mult": 4.6,
         "put_call": 0.09,
         "lean": "call-skew",
         "hot": true
@@ -41816,26 +41872,26 @@
       },
       {
         "ticker": "NVT",
-        "vol_oi": 0.204,
-        "mult": 2.76,
-        "put_call": 0.91,
+        "vol_oi": 0.205,
+        "mult": 2.77,
+        "put_call": 0.9,
+        "lean": "balanced",
+        "hot": false
+      },
+      {
+        "ticker": "GIS",
+        "vol_oi": 0.216,
+        "mult": 2.73,
+        "put_call": 1.28,
         "lean": "balanced",
         "hot": false
       },
       {
         "ticker": "PANW",
-        "vol_oi": 0.286,
-        "mult": 2.74,
+        "vol_oi": 0.268,
+        "mult": 2.57,
         "put_call": 0.56,
         "lean": "call-skew",
-        "hot": false
-      },
-      {
-        "ticker": "GIS",
-        "vol_oi": 0.207,
-        "mult": 2.62,
-        "put_call": 1.28,
-        "lean": "balanced",
         "hot": false
       },
       {
@@ -41871,26 +41927,26 @@
         "hot": false
       },
       {
-        "ticker": "CRWD",
-        "vol_oi": 0.313,
-        "mult": 1.91,
-        "put_call": 0.55,
+        "ticker": "S",
+        "vol_oi": 0.124,
+        "mult": 1.9,
+        "put_call": 0.14,
+        "lean": "call-skew",
+        "hot": false
+      },
+      {
+        "ticker": "TER",
+        "vol_oi": 0.329,
+        "mult": 1.9,
+        "put_call": 0.52,
         "lean": "call-skew",
         "hot": false
       },
       {
         "ticker": "UPST",
-        "vol_oi": 0.178,
-        "mult": 1.91,
-        "put_call": 0.22,
-        "lean": "call-skew",
-        "hot": false
-      },
-      {
-        "ticker": "S",
-        "vol_oi": 0.124,
+        "vol_oi": 0.177,
         "mult": 1.9,
-        "put_call": 0.14,
+        "put_call": 0.22,
         "lean": "call-skew",
         "hot": false
       }
@@ -41972,6 +42028,12 @@
         "hot": true
       },
       {
+        "ticker": "MU",
+        "bull_ratio": 0.82,
+        "articles": 50,
+        "hot": true
+      },
+      {
         "ticker": "FIX",
         "bull_ratio": 0.81,
         "articles": 43,
@@ -41984,12 +42046,6 @@
         "hot": true
       },
       {
-        "ticker": "DELL",
-        "bull_ratio": 0.8,
-        "articles": 50,
-        "hot": true
-      },
-      {
         "ticker": "ETN",
         "bull_ratio": 0.8,
         "articles": 50,
@@ -41997,12 +42053,6 @@
       },
       {
         "ticker": "GLW",
-        "bull_ratio": 0.8,
-        "articles": 50,
-        "hot": true
-      },
-      {
-        "ticker": "MU",
         "bull_ratio": 0.8,
         "articles": 50,
         "hot": true
@@ -42027,6 +42077,12 @@
       },
       {
         "ticker": "DDOG",
+        "bull_ratio": 0.78,
+        "articles": 50,
+        "hot": true
+      },
+      {
+        "ticker": "DELL",
         "bull_ratio": 0.78,
         "articles": 50,
         "hot": true
@@ -42060,7 +42116,7 @@
       },
       {
         "ticker": "NVO",
-        "phase3_starts": 10,
+        "phase3_starts": 11,
         "halts": 0,
         "hot": true,
         "sample": "AMAZE 13: A Research Study Investigating How Well the Medicine Zenagamtide Helps People in Asia With Excess Body Weight Lose Weight"
@@ -42108,6 +42164,13 @@
         "sample": "A Study to Learn About the Safety of Diroximel Fumarate (DRF) and Dimethyl Fumarate (DMF) and Their Effects on Relapses in Pediatric Participants With Relapsing"
       },
       {
+        "ticker": "REGN",
+        "phase3_starts": 4,
+        "halts": 1,
+        "hot": true,
+        "sample": "A Study to Evaluate the Efficacy and Safety of Fel d 1 Monoclonal Antibodies in Adult and Pediatric Participants With Allergic Conjunctivitis Due to Cat Allergy"
+      },
+      {
         "ticker": "ABBV",
         "phase3_starts": 4,
         "halts": 2,
@@ -42122,16 +42185,9 @@
         "sample": "A Study to Evaluate Efficacy, Safety, and Immunogenicity With ABP 938 8 mg Versus EYLEA\u00ae HD (Aflibercept) in Participants With Neovascular Age-related Macular D"
       },
       {
-        "ticker": "REGN",
-        "phase3_starts": 3,
-        "halts": 1,
-        "hot": true,
-        "sample": "Stroke and Systemic Embolism Prevention in Adult Participants With Atrial Fibrillation"
-      },
-      {
         "ticker": "RHHBY",
         "phase3_starts": 3,
-        "halts": 1,
+        "halts": 2,
         "hot": true,
         "sample": "A Study to Evaluate the Effects of Enicepatide in Participants With Obesity or Overweight, With or Without Type 2 Diabetes"
       },
@@ -42172,14 +42228,14 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17668,
+        "stars": 17669,
         "wow_pct": 1.2,
         "hot": true
       },
       {
         "ticker": "NET",
-        "stars": 14660,
-        "wow_pct": 0.35,
+        "stars": 14659,
+        "wow_pct": 0.34,
         "hot": true
       },
       {
@@ -42202,19 +42258,19 @@
       },
       {
         "ticker": "MSFT",
-        "stars": 186935,
+        "stars": 186929,
         "wow_pct": 0.14,
         "hot": true
       },
       {
         "ticker": "U",
-        "stars": 19526,
-        "wow_pct": 0.14,
+        "stars": 19524,
+        "wow_pct": 0.13,
         "hot": true
       },
       {
         "ticker": "PLTR",
-        "stars": 21874,
+        "stars": 21875,
         "wow_pct": 0.11,
         "hot": false
       },
@@ -42226,7 +42282,7 @@
       },
       {
         "ticker": "ESTC",
-        "stars": 77194,
+        "stars": 77195,
         "wow_pct": 0.09,
         "hot": false
       },
@@ -42237,14 +42293,14 @@
         "hot": false
       },
       {
-        "ticker": "META",
-        "stars": 246203,
-        "wow_pct": 0.08,
+        "ticker": "GOOGL",
+        "stars": 195979,
+        "wow_pct": 0.07,
         "hot": false
       },
       {
-        "ticker": "GOOGL",
-        "stars": 195982,
+        "ticker": "META",
+        "stars": 246195,
         "wow_pct": 0.07,
         "hot": false
       },
@@ -42578,6 +42634,14 @@
           "sellers": 0
         },
         {
+          "ticker": "COE",
+          "buy_usd": 25990987.0,
+          "sell_usd": 0.0,
+          "net_usd": 25990987.0,
+          "buyers": 31,
+          "sellers": 0
+        },
+        {
           "ticker": "KNOP",
           "buy_usd": 25000000.0,
           "sell_usd": 0.0,
@@ -42600,14 +42664,6 @@
           "net_usd": 24661920.0,
           "buyers": 11,
           "sellers": 0
-        },
-        {
-          "ticker": "CGON",
-          "buy_usd": 24814454.0,
-          "sell_usd": 793076.0,
-          "net_usd": 24021378.0,
-          "buyers": 1,
-          "sellers": 4
         }
       ],
       "sells": [
@@ -43705,144 +43761,144 @@
     ],
     "news": [
       {
-        "headline": "Insider Sale: General Counsel of $NTES Sells 10,000 Shares",
+        "headline": "Prestige Consumer Healthcare Announces Proposed Private Offering of $400 Million Senior Notes Due 2034 to Redeem 2028 Notes",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-30 12:30:54",
+        "url": "https://www.quiverquant.com/news/Prestige+Consumer+Healthcare+Announces+Proposed+Private+Offering+of+%24400+Million+Senior+Notes+Due+2034+to+Redeem+2028+Notes"
+      },
+      {
+        "headline": "Quantum X Labs Appoints Dr. Ira Wolfson to Leadership Team as It Advances Quantum Technology Development",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-30 12:30:54",
+        "url": "https://www.quiverquant.com/news/Quantum+X+Labs+Appoints+Dr.+Ira+Wolfson+to+Leadership+Team+as+It+Advances+Quantum+Technology+Development"
+      },
+      {
+        "headline": "HCW Biologics Regains Nasdaq Bid Price Compliance and Announces 1-for-6 Reverse Stock Split",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-30 12:30:54",
+        "url": "https://www.quiverquant.com/news/HCW+Biologics+Regains+Nasdaq+Bid+Price+Compliance+and+Announces+1-for-6+Reverse+Stock+Split"
+      },
+      {
+        "headline": "New Analyst Forecast: $EW Given $110 Price Target",
+        "ticker": null,
+        "category": "forecasts_automated",
+        "time": "2026-06-30 12:20:20",
+        "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24EW+Given+%24110+Price+Target"
+      },
+      {
+        "headline": "New Analyst Forecast: $TSHA Given $15 Price Target",
+        "ticker": null,
+        "category": "forecasts_automated",
+        "time": "2026-06-30 12:20:20",
+        "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24TSHA+Given+%2415+Price+Target"
+      },
+      {
+        "headline": "New Analyst Forecast: $BCRX Given $29 Price Target",
+        "ticker": null,
+        "category": "forecasts_automated",
+        "time": "2026-06-30 12:20:20",
+        "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24BCRX+Given+%2429+Price+Target"
+      },
+      {
+        "headline": "New Analyst Forecast: $ATI Given $211 Price Target",
+        "ticker": null,
+        "category": "forecasts_automated",
+        "time": "2026-06-30 12:20:20",
+        "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24ATI+Given+%24211+Price+Target"
+      },
+      {
+        "headline": "New Analyst Forecast: $ABVX Given $175 Price Target",
+        "ticker": null,
+        "category": "forecasts_automated",
+        "time": "2026-06-30 12:20:20",
+        "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24ABVX+Given+%24175+Price+Target"
+      },
+      {
+        "headline": "New Analyst Forecast: $CNXC Given $30 Price Target",
+        "ticker": null,
+        "category": "forecasts_automated",
+        "time": "2026-06-30 12:20:20",
+        "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24CNXC+Given+%2430+Price+Target"
+      },
+      {
+        "headline": "New Analyst Forecast: $MNPR Given $117 Price Target",
+        "ticker": null,
+        "category": "forecasts_automated",
+        "time": "2026-06-30 12:20:20",
+        "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24MNPR+Given+%24117+Price+Target"
+      },
+      {
+        "headline": "New Analyst Forecast: $LRMR Given $5 Price Target",
+        "ticker": null,
+        "category": "forecasts_automated",
+        "time": "2026-06-30 12:20:20",
+        "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24LRMR+Given+%245+Price+Target"
+      },
+      {
+        "headline": "Hepsiburada Completes Planned CEO Transition, Appoints Ender \u00d6zg\u00fcn as CEO and Hakan Karado\u011fan to Lead Delivery Business",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-30 12:20:18",
+        "url": "https://www.quiverquant.com/news/Hepsiburada+Completes+Planned+CEO+Transition%2C+Appoints+Ender+%C3%96zg%C3%BCn+as+CEO+and+Hakan+Karado%C4%9Fan+to+Lead+Delivery+Business"
+      },
+      {
+        "headline": "Insider Sale: Ryanair DAC CTO of $RYAAY Sells 15,000 Shares",
         "ticker": null,
         "category": "insiders_automated",
-        "time": "2026-06-30 10:45:24",
-        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+General+Counsel+of+%24NTES+Sells+10%2C000+Shares"
+        "time": "2026-06-30 12:15:56",
+        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Ryanair+DAC+CTO+of+%24RYAAY+Sells+15%2C000+Shares"
       },
       {
-        "headline": "GSI Technology to Present at Canaccord Genuity 46th Annual Growth Conference",
+        "headline": "ZenaTech Reports Approximately CAD $33 Million Annualized Revenue Run Rate for 2026",
         "ticker": null,
         "category": "press_release_summary",
-        "time": "2026-06-30 10:10:20",
-        "url": "https://www.quiverquant.com/news/GSI+Technology+to+Present+at+Canaccord+Genuity+46th+Annual+Growth+Conference"
+        "time": "2026-06-30 11:50:19",
+        "url": "https://www.quiverquant.com/news/ZenaTech+Reports+Approximately+CAD+%2433+Million+Annualized+Revenue+Run+Rate+for+2026%0A"
       },
       {
-        "headline": "Globavend Holdings Launches First Fully AI-Produced Original Micro Drama, \u201cBuried Innocent\u201d",
+        "headline": "Plus Therapeutics to Rebrand as Cerenome, Affirm 2026 Guidance and Report CNSide Commercial Progress",
         "ticker": null,
         "category": "press_release_summary",
-        "time": "2026-06-30 08:40:39",
-        "url": "https://www.quiverquant.com/news/Globavend+Holdings+Launches+First+Fully+AI-Produced+Original+Micro+Drama%2C+%E2%80%9CBuried+Innocent%E2%80%9D"
+        "time": "2026-06-30 11:41:37",
+        "url": "https://www.quiverquant.com/news/Plus+Therapeutics+to+Rebrand+as+Cerenome%2C+Affirm+2026+Guidance+and+Report+CNSide+Commercial+Progress"
       },
       {
-        "headline": "HUTCHMED to Announce Interim Results for Six Months Ended June 30, 2026 on July 30, 2026",
+        "headline": "Pacira BioSciences to Divest iovera\u00b0 to Zimmer Biomet for Up to $140 Million",
         "ticker": null,
         "category": "press_release_summary",
-        "time": "2026-06-30 08:40:39",
-        "url": "https://www.quiverquant.com/news/HUTCHMED+to+Announce+Interim+Results+for+Six+Months+Ended+June+30%2C+2026+on+July+30%2C+2026"
+        "time": "2026-06-30 11:41:37",
+        "url": "https://www.quiverquant.com/news/Pacira+BioSciences+to+Divest+iovera%C2%B0+to+Zimmer+Biomet+for+Up+to+%24140+Million"
       },
       {
-        "headline": "WTW Launches GPU-Enabled RiskAgility Financial Modeller to Boost Insurance Modelling Performance",
+        "headline": "FocalTherics Launches First Commercial Endometriosis Focal One Program in Europe and Treats Initial Patients",
         "ticker": null,
         "category": "press_release_summary",
-        "time": "2026-06-30 08:10:32",
-        "url": "https://www.quiverquant.com/news/WTW+Launches+GPU-Enabled+RiskAgility+Financial+Modeller+to+Boost+Insurance+Modelling+Performance"
+        "time": "2026-06-30 11:41:37",
+        "url": "https://www.quiverquant.com/news/FocalTherics+Launches+First+Commercial+Endometriosis+Focal+One+Program+in+Europe+and+Treats+Initial+Patients"
       },
       {
-        "headline": "707 Cayman Holdings Limited Appoints Robin Hoksnes Karlsen as Executive Director",
+        "headline": "OptimizeRx Launches CopayCue to Deliver Brand Savings Offers at the Point of Prescribing",
         "ticker": null,
         "category": "press_release_summary",
-        "time": "2026-06-30 08:10:32",
-        "url": "https://www.quiverquant.com/news/707+Cayman+Holdings+Limited+Appoints+Robin+Hoksnes+Karlsen+as+Executive+Director"
+        "time": "2026-06-30 11:41:37",
+        "url": "https://www.quiverquant.com/news/OptimizeRx+Launches+CopayCue+to+Deliver+Brand+Savings+Offers+at+the+Point+of+Prescribing"
       },
       {
-        "headline": "Freshworks Announces Vanquis Selects Freshservice to Support Digital Transformation",
+        "headline": "Pyxis Oncology Secures $50 Million Private Placement to Extend Cash Runway and Fund MICVO Clinical Development",
         "ticker": null,
         "category": "press_release_summary",
-        "time": "2026-06-30 07:10:22",
-        "url": "https://www.quiverquant.com/news/Freshworks+Announces+Vanquis+Selects+Freshservice+to+Support+Digital+Transformation"
+        "time": "2026-06-30 11:41:37",
+        "url": "https://www.quiverquant.com/news/Pyxis+Oncology+Secures+%2450+Million+Private+Placement+to+Extend+Cash+Runway+and+Fund+MICVO+Clinical+Development"
       },
       {
-        "headline": "Himax Technologies Launches HE Series iToF Depth Decoder ICs for Robotics and AI Vision Applications",
+        "headline": "Blockfusion Announces AI Customer LOI for Up to 300 MW, $175 Million Notes Financing and Campus Expansion Plans",
         "ticker": null,
         "category": "press_release_summary",
-        "time": "2026-06-30 06:10:21",
-        "url": "https://www.quiverquant.com/news/Himax+Technologies+Launches+HE+Series+iToF+Depth+Decoder+ICs+for+Robotics+and+AI+Vision+Applications"
-      },
-      {
-        "headline": "GXO and Co-op Extend Transport Partnership with New Five-Year Agreement",
-        "ticker": null,
-        "category": "press_release_summary",
-        "time": "2026-06-30 05:10:20",
-        "url": "https://www.quiverquant.com/news/GXO+and+Co-op+Extend+Transport+Partnership+with+New+Five-Year+Agreement"
-      },
-      {
-        "headline": "Cal-Maine Foods Reaches Agreement to Resolve DOJ and State Attorneys General Claims",
-        "ticker": null,
-        "category": "press_release_summary",
-        "time": "2026-06-30 02:50:19",
-        "url": "https://www.quiverquant.com/news/Cal-Maine+Foods+Reaches+Agreement+to+Resolve+DOJ+and+State+Attorneys+General+Claims"
-      },
-      {
-        "headline": "Nuvectis Pharma Prices $100 Million Underwritten Public Offering of Common Stock",
-        "ticker": null,
-        "category": "press_release_summary",
-        "time": "2026-06-30 02:40:18",
-        "url": "https://www.quiverquant.com/news/Nuvectis+Pharma+Prices+%24100+Million+Underwritten+Public+Offering+of+Common+Stock"
-      },
-      {
-        "headline": "Insider Sale: Chief Executive Officer of $LEGN Sells 5,566 Shares",
-        "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-30 02:01:22",
-        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Chief+Executive+Officer+of+%24LEGN+Sells+5%2C566+Shares"
-      },
-      {
-        "headline": "Insider Sale: EVP of $CAPR Sells 24,100 Shares",
-        "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-30 01:45:34",
-        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+EVP+of+%24CAPR+Sells+24%2C100+Shares"
-      },
-      {
-        "headline": "Raytech Holding Limited Closes $6.2 Million Registered Direct Offering to Support Expansion and Acquisition Integration",
-        "ticker": null,
-        "category": "press_release_summary",
-        "time": "2026-06-30 00:50:17",
-        "url": "https://www.quiverquant.com/news/Raytech+Holding+Limited+Closes+%246.2+Million+Registered+Direct+Offering+to+Support+Expansion+and+Acquisition+Integration"
-      },
-      {
-        "headline": "Insider Sale: Director at $TEM Sells 2,673 Shares",
-        "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-30 00:45:42",
-        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24TEM+Sells+2%2C673+Shares"
-      },
-      {
-        "headline": "Insider Sale: VP of $GOOGL Sells 449 Shares",
-        "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-30 00:31:44",
-        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+VP+of+%24GOOGL+Sells+449+Shares"
-      },
-      {
-        "headline": "Press Release: Brian Mast discusses water policy ahead of WRDA 2026 debate",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 00:22:05",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Brian+Mast+discusses+water+policy+ahead+of+WRDA+2026+debate"
-      },
-      {
-        "headline": "Press Release: Mike Flood\u2019s TRIA Reauthorization Bill Passes House",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 00:22:05",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Flood%E2%80%99s+TRIA+Reauthorization+Bill+Passes+House"
-      },
-      {
-        "headline": "Press Release: Pallone Marks House Passage of Bipartisan KIDS Act to Protect Children Online",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 00:22:05",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Pallone+Marks+House+Passage+of+Bipartisan+KIDS+Act+to+Protect+Children+Online"
-      },
-      {
-        "headline": "Press Release: Rep. Kim Schrier Supports House Passage of KIDS Act",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 00:22:05",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Kim+Schrier+Supports+House+Passage+of+KIDS+Act"
+        "time": "2026-06-30 11:41:37",
+        "url": "https://www.quiverquant.com/news/Blockfusion+Announces+AI+Customer+LOI+for+Up+to+300+MW%2C+%24175+Million+Notes+Financing+and+Campus+Expansion+Plans"
       }
     ],
     "wsb": [
@@ -45749,7 +45805,7 @@
           "material_8k",
           "news_sentiment"
         ],
-        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract: $200,334,672 awarded \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 8.01) \u00b7 news_sentiment: 0.8 bullish news (50 art)"
+        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract: $200,334,672 awarded \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 8.01) \u00b7 news_sentiment: 0.78 bullish news (50 art)"
       },
       {
         "ticker": "GOOGL",

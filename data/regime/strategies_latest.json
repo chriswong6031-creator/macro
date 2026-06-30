@@ -1,6 +1,6 @@
 {
   "n": 27,
-  "built": "2026-06-30 11:43 UTC",
+  "built": "2026-06-30 13:44 UTC",
   "cards": [
     {
       "key": "spvector",
@@ -185,7 +185,7 @@
     {
       "key": "oil_trend",
       "name": "Crude-Oil Trend",
-      "cagr": 2.64,
+      "cagr": 2.65,
       "sharpe": 0.23,
       "maxdd": -44.4,
       "income": 1.25,

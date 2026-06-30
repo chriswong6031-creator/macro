@@ -4244,15 +4244,11 @@
     "evidence": [
       {
         "field": "tone_score",
-        "quote_span": "The Committee decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
+        "quote_span": "maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
       },
       {
         "field": "guidance_direction",
-        "quote_span": "The Committee decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
-      },
-      {
-        "field": "risk_delta",
-        "quote_span": "The Committee reaffirmed its policy of maintaining ample reserves in the banking system"
+        "quote_span": "decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
       }
     ],
     "degraded_reason": null,
@@ -4415,7 +4411,7 @@
   "market_gamma": {
     "regime": "short",
     "spot_vs_flip_pct": -2.7,
-    "net_gex_bn": 48.0,
+    "net_gex_bn": 47.0,
     "flip": 7650,
     "gamma_flip": 7650,
     "flip_strike": 7650,
@@ -4774,7 +4770,7 @@
   },
   "fed_path": {
     "asof": "2026-06-29",
-    "built": "2026-06-30T11:09:39.943917+00:00",
+    "built": "2026-06-30T13:12:47.049236+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -4783,19 +4779,19 @@
       "now": 3.63,
       "m1": null,
       "m3": 3.73,
-      "m6": 3.9,
-      "m12": 3.99
+      "m6": 3.92,
+      "m12": 4.01
     },
     "implied_source_en": "ZQ fed-funds futures",
     "implied_source_zh": "ZQ \u8054\u90a6\u57fa\u91d1\u671f\u8d27",
-    "implied_bp_12m": 36,
-    "implied_cuts_12m": -1,
+    "implied_bp_12m": 38,
+    "implied_cuts_12m": -2,
     "implied_cuts_6m": -1,
     "sofr_path": {
       "m1": null,
-      "m3": 3.79,
-      "m6": 3.95,
-      "m12": 4.03
+      "m3": 3.8,
+      "m6": 3.96,
+      "m12": 4.04
     },
     "dots": [
       {
@@ -4815,18 +4811,18 @@
       "horizon_label": "end-2026",
       "horizon_months": 6,
       "fed_dot": 3.8,
-      "market": 3.9,
-      "gap_bp": 10,
+      "market": 3.92,
+      "gap_bp": 12,
       "lean_en": "market \u2248 the Fed",
       "lean_zh": "\u5e02\u573a\u4e0e\u7f8e\u8054\u50a8\u57fa\u672c\u4e00\u81f4"
     },
     "ntfs": 0.54,
     "curve_tp_adj": 0.28,
     "rate_exp_proxy": 0.44,
-    "headline_en": "Market prices ~1 hike over the next 12m (funds 3.63% \u2192 3.99%)",
-    "headline_zh": "\u5e02\u573a\u4e3a\u672a\u676512\u4e2a\u6708\u5b9a\u4ef7\u7ea6\u52a0\u606f1\u6b21\uff08\u57fa\u91d1\u5229\u7387 3.63% \u2192 3.99%\uff09",
-    "read_en": "At end-2026 the market implies 3.90% vs the Fed's 3.80% median dot (+10bp \u2014 market \u2248 the Fed). The near-term forward spread is positive \u2014 no cuts priced near-term (+0.54pp).",
-    "read_zh": "\u5728end-2026\uff0c\u5e02\u573a\u9690\u542b 3.90% \u5bf9\u6bd4\u7f8e\u8054\u50a8 3.80% \u7684\u4e2d\u4f4d\u70b9\uff08+10\u57fa\u70b9 \u2014 \u5e02\u573a\u4e0e\u7f8e\u8054\u50a8\u57fa\u672c\u4e00\u81f4\uff09\u3002\u8fd1\u7aef\u8fdc\u671f\u5229\u5dee\u4e3a\u6b63\u2014\u2014\u8fd1\u7aef\u672a\u4e3a\u964d\u606f\u5b9a\u4ef7\uff08+0.54\u4e2a\u767e\u5206\u70b9\uff09\u3002",
+    "headline_en": "Market prices ~2 hikes over the next 12m (funds 3.63% \u2192 4.01%)",
+    "headline_zh": "\u5e02\u573a\u4e3a\u672a\u676512\u4e2a\u6708\u5b9a\u4ef7\u7ea6\u52a0\u606f2\u6b21\uff08\u57fa\u91d1\u5229\u7387 3.63% \u2192 4.01%\uff09",
+    "read_en": "At end-2026 the market implies 3.92% vs the Fed's 3.80% median dot (+12bp \u2014 market \u2248 the Fed). The near-term forward spread is positive \u2014 no cuts priced near-term (+0.54pp).",
+    "read_zh": "\u5728end-2026\uff0c\u5e02\u573a\u9690\u542b 3.92% \u5bf9\u6bd4\u7f8e\u8054\u50a8 3.80% \u7684\u4e2d\u4f4d\u70b9\uff08+12\u57fa\u70b9 \u2014 \u5e02\u573a\u4e0e\u7f8e\u8054\u50a8\u57fa\u672c\u4e00\u81f4\uff09\u3002\u8fd1\u7aef\u8fdc\u671f\u5229\u5dee\u4e3a\u6b63\u2014\u2014\u8fd1\u7aef\u672a\u4e3a\u964d\u606f\u5b9a\u4ef7\uff08+0.54\u4e2a\u767e\u5206\u70b9\uff09\u3002",
     "note_en": "Display / LLM-context only. The implied path is a market PRICE (the futures-implied funds rate), not a forecast edge, and repricing is REACTIVE \u2014 it moves after data and the Fed, it does not lead. Never scored, never an MRS leg. ZQ/SR3 = keyless CME futures; dots = FRED FEDTARMD (FOMC SEP median). Cite the CME/FRED.",
     "note_zh": "\u4ec5\u4f9b\u5c55\u793a / LLM \u4e0a\u4e0b\u6587\u3002\u9690\u542b\u8def\u5f84\u662f\u5e02\u573a\u4ef7\u683c\uff08\u671f\u8d27\u9690\u542b\u7684\u57fa\u91d1\u5229\u7387\uff09\uff0c\u5e76\u975e\u9884\u6d4b\u4f18\u52bf\uff0c\u4e14\u91cd\u65b0\u5b9a\u4ef7\u662f\u88ab\u52a8\u7684\u2014\u2014\u5b83\u5728\u6570\u636e\u548c\u7f8e\u8054\u50a8\u4e4b\u540e\u53d8\u52a8\uff0c\u5e76\u4e0d\u9886\u5148\u3002\u4ece\u4e0d\u8bc4\u5206\uff0c\u4ece\u4e0d\u4f5c\u4e3a MRS \u9879\u3002ZQ/SR3=\u65e0\u9700\u5bc6\u94a5\u7684 CME \u671f\u8d27\uff1b\u70b9\u9635\u56fe=FRED FEDTARMD\uff08FOMC SEP \u4e2d\u4f4d\u6570\uff09\u3002\u8bf7\u6ce8\u660e CME/FRED\u3002"
   },
@@ -4835,20 +4831,20 @@
     "label_en": "Hawkish",
     "label_zh": "\u9e70\u6d3e",
     "color": "down",
-    "implied_cuts_12m": -1.0,
+    "implied_cuts_12m": -2.0,
     "guidance": "on_hold",
-    "market_vs_fed_bp": 10.0,
+    "market_vs_fed_bp": 12.0,
     "market_vs_fed_en": "market \u2248 the Fed",
     "market_vs_fed_zh": "\u5e02\u573a\u4e0e\u7f8e\u8054\u50a8\u57fa\u672c\u4e00\u81f4",
     "drivers_en": [
-      "market prices ~1.0 hike(s) over 12m",
+      "market prices ~2.0 hike(s) over 12m",
       "statement guidance on-hold",
-      "market \u2248 the Fed (+10bp)"
+      "market \u2248 the Fed (+12bp)"
     ],
     "drivers_zh": [
-      "\u5e02\u573a\u8ba1\u5165\u672a\u676512\u4e2a\u6708\u7ea61.0\u6b21\u52a0\u606f",
+      "\u5e02\u573a\u8ba1\u5165\u672a\u676512\u4e2a\u6708\u7ea62.0\u6b21\u52a0\u606f",
       "\u58f0\u660e\u6307\u5f15\u6309\u5175\u4e0d\u52a8",
-      "\u5e02\u573a\u4e0e\u7f8e\u8054\u50a8\u57fa\u672c\u4e00\u81f4\uff08+10bp\uff09"
+      "\u5e02\u573a\u4e0e\u7f8e\u8054\u50a8\u57fa\u672c\u4e00\u81f4\uff08+12bp\uff09"
     ],
     "is_context_only": true,
     "phase0": "display-only \u2014 never scored",
@@ -6909,7 +6905,7 @@
           {
             "ticker": "VST",
             "breadth": -0.5,
-            "est_chg_90d": 4.0,
+            "est_chg_90d": 5.6,
             "n_analysts": 4
           },
           {
@@ -7027,7 +7023,7 @@
           {
             "ticker": "VRT",
             "breadth": 1.0,
-            "est_chg_90d": 10.8,
+            "est_chg_90d": 10.4,
             "n_analysts": 25
           },
           {
@@ -7048,7 +7044,7 @@
         "name": "Memory, HBM & Storage",
         "breadth": 0.955,
         "level_state": "POSITIVE",
-        "est_drift_90d": 42.52,
+        "est_drift_90d": 42.55,
         "net_up_total": 24.0,
         "breadth_accel": null,
         "broadening_state": "INSUFFICIENT_HISTORY",
@@ -7277,7 +7273,7 @@
           {
             "ticker": "ZBH",
             "breadth": 0.39,
-            "est_chg_90d": -0.1,
+            "est_chg_90d": 0.0,
             "n_analysts": 13
           },
           {
@@ -7527,7 +7523,7 @@
           {
             "ticker": "XYZ",
             "breadth": 0.82,
-            "est_chg_90d": 5.3,
+            "est_chg_90d": 5.5,
             "n_analysts": 33
           }
         ]
@@ -8602,7 +8598,7 @@
         "revision_breadth": 0.955,
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 42.52,
+        "est_drift_90d": 42.55,
         "guidance_band": null,
         "guidance_net": null,
         "guidance_raisers": null,
@@ -9878,7 +9874,7 @@
         "n_covered": 10,
         "breadth": 0.005,
         "level_state": "FLAT_LOW",
-        "est_drift_90d": -0.09,
+        "est_drift_90d": -0.07,
         "broadening_state": "INSUFFICIENT_HISTORY",
         "n_scarcity": 2,
         "scarcity_members": [
@@ -10026,7 +10022,7 @@
         "n_covered": 3,
         "breadth": 0.926,
         "level_state": "POSITIVE",
-        "est_drift_90d": 46.51,
+        "est_drift_90d": 38.7,
         "broadening_state": "INSUFFICIENT_HISTORY",
         "n_scarcity": 0,
         "scarcity_members": [],
@@ -10056,7 +10052,7 @@
         "n_covered": 6,
         "breadth": 0.805,
         "level_state": "POSITIVE",
-        "est_drift_90d": 19.18,
+        "est_drift_90d": 19.21,
         "broadening_state": "INSUFFICIENT_HISTORY",
         "n_scarcity": 1,
         "scarcity_members": [
@@ -13734,32 +13730,32 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4038.2,
+        "price": 4041.5,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -8.8,
-        "pct_vs_200dma": -9.5,
+        "pct_vs_50dma": -8.7,
+        "pct_vs_200dma": -9.4,
         "rsi14": 36.0,
         "macd_pos": false,
-        "off_52w_high_pct": -24.1,
+        "off_52w_high_pct": -24.0,
         "season_this": "Jun: -0.9% avg, up 42% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.9%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -15.0
+        "mom_60d_pct": -14.9
       },
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 70.96,
+        "price": 71.07,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -21.5,
-        "pct_vs_200dma": -4.3,
+        "pct_vs_50dma": -21.4,
+        "pct_vs_200dma": -4.2,
         "rsi14": 31.0,
         "macd_pos": false,
-        "off_52w_high_pct": -37.2,
+        "off_52w_high_pct": -37.1,
         "season_this": "Jun: +2.2% avg, up 65% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +2.2%\uff0c65% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -24.8
+        "mom_60d_pct": -24.7
       },
       {
         "ticker": "HG=F",
@@ -13768,7 +13764,7 @@
         "above50": false,
         "above200": true,
         "pct_vs_50dma": -0.4,
-        "pct_vs_200dma": 10.4,
+        "pct_vs_200dma": 10.3,
         "rsi14": 49.0,
         "macd_pos": false,
         "off_52w_high_pct": -6.2,
@@ -13779,17 +13775,17 @@
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 101.35,
+        "price": 101.38,
         "above50": true,
         "above200": true,
         "pct_vs_50dma": 1.9,
-        "pct_vs_200dma": 2.5,
+        "pct_vs_200dma": 2.6,
         "rsi14": 68.0,
         "macd_pos": true,
-        "off_52w_high_pct": -0.3,
+        "off_52w_high_pct": -0.2,
         "season_this": "Jun: -0.1% avg, up 45% of years (n=56)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.1%\uff0c45% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=56\uff09",
-        "mom_60d_pct": 2.2
+        "mom_60d_pct": 2.3
       }
     ],
     "evidence": {
@@ -13865,7 +13861,7 @@
   },
   "freshness": {
     "asof": "2026-06-29",
-    "built_at": "2026-06-30T11:09:41Z",
+    "built_at": "2026-06-30T13:12:48Z",
     "age_days": 1,
     "age_sessions": 1,
     "max_age_sessions": 1,

@@ -41,8 +41,8 @@
         "unemployment": 2.5,
         "unemployment_chg6m": -0.2,
         "m2_yoy": 4.22,
-        "fx": 162.344,
-        "fx_strength_3m": -2.29,
+        "fx": 162.402,
+        "fx_strength_3m": -2.32,
         "realvol": 39.4,
         "drawdown": -3.2
       },
@@ -257,8 +257,8 @@
         "unemployment": 4.49,
         "unemployment_chg6m": 0.41,
         "m2_yoy": null,
-        "fx": 0.6887,
-        "fx_strength_3m": -2.68,
+        "fx": 0.6888,
+        "fx_strength_3m": -2.67,
         "realvol": 11.8,
         "drawdown": -4.6
       },
@@ -296,7 +296,7 @@
       "inflation_score": -0.5,
       "confidence": 0.55,
       "liquidity": "unknown",
-      "recession_score": 12.0,
+      "recession_score": 13.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": 4.94,
@@ -311,10 +311,10 @@
         "unemployment": 4.9,
         "unemployment_chg6m": -0.2,
         "m2_yoy": -3.66,
-        "fx": 1.3234,
-        "fx_strength_3m": -1.25,
-        "realvol": 10.7,
-        "drawdown": -2.9
+        "fx": 1.3219,
+        "fx_strength_3m": -1.36,
+        "realvol": 10.4,
+        "drawdown": -3.2
       },
       "macro_asof": {
         "cpi_yoy": "2025-03",
@@ -323,13 +323,13 @@
         "yield_10y": "2026-05"
       },
       "equity": {
-        "price": 10597.84,
-        "off_52w_high": -2.9,
+        "price": 10563.05,
+        "off_52w_high": -3.2,
         "above_50d": true,
         "above_200d": true,
-        "realvol": 10.7,
-        "rsi": 61.0,
-        "ext_z": -0.88,
+        "realvol": 10.4,
+        "rsi": 60.0,
+        "ext_z": -1.01,
         "ext_grade": "intrend",
         "drawdown_risk": 6.0,
         "drawdown_band": "low",
@@ -365,9 +365,9 @@
         "unemployment": 6.7,
         "unemployment_chg6m": 0.1,
         "m2_yoy": 5.1,
-        "fx": 1.1403,
-        "fx_strength_3m": -2.43,
-        "realvol": 10.3,
+        "fx": 1.1399,
+        "fx_strength_3m": -2.46,
+        "realvol": 10.0,
         "drawdown": 0.0
       },
       "macro_asof": {
@@ -377,13 +377,13 @@
         "yield_10y": "2026-01"
       },
       "equity": {
-        "price": 643.12,
+        "price": 641.07,
         "off_52w_high": 0.0,
         "above_50d": true,
         "above_200d": true,
-        "realvol": 10.3,
-        "rsi": 64.0,
-        "ext_z": 0.95,
+        "realvol": 10.0,
+        "rsi": 63.0,
+        "ext_z": 0.82,
         "ext_grade": "steady",
         "drawdown_risk": 0.0,
         "drawdown_band": "low",
@@ -426,7 +426,7 @@
           "cc": "GB",
           "flag": "\ud83c\uddec\ud83c\udde7",
           "name": "United Kingdom",
-          "value": 12.0
+          "value": 13.0
         },
         {
           "cc": "JP",
@@ -580,19 +580,19 @@
           "cc": "AU",
           "flag": "\ud83c\udde6\ud83c\uddfa",
           "name": "Australia",
-          "value": -2.68
+          "value": -2.67
         },
         {
           "cc": "EZ",
           "flag": "\ud83c\uddea\ud83c\uddfa",
           "name": "Eurozone",
-          "value": -2.43
+          "value": -2.46
         },
         {
           "cc": "JP",
           "flag": "\ud83c\uddef\ud83c\uddf5",
           "name": "Japan",
-          "value": -2.29
+          "value": -2.32
         },
         {
           "cc": "IN",
@@ -604,7 +604,7 @@
           "cc": "GB",
           "flag": "\ud83c\uddec\ud83c\udde7",
           "name": "United Kingdom",
-          "value": -1.25
+          "value": -1.36
         },
         {
           "cc": "TW",
