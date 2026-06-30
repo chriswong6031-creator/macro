@@ -17,11 +17,21 @@ import io
 import logging
 
 import pandas as pd
+from requests.utils import default_user_agent
 
 from collectors.base import Adapter
 from lib import config
 
 log = logging.getLogger(__name__)
+
+# fred.stlouisfed.org grew a bot-protection WAF (~June 2026) that resets the
+# connection for the project's descriptive User-Agent AND for browser UAs, but
+# lets the honest requests-library UA through. Send that on the keyless
+# fredgraph.csv path. (The official API host, api.stlouisfed.org, is NOT gated —
+# so setting FRED_API_KEY is the fully robust path and bypasses this entirely.)
+# Imported by collectors/intl_macro.py and collectors/canada_macro.py, which also
+# scrape fredgraph.csv keylessly.
+FREDGRAPH_UA = default_user_agent()
 
 # Revision-prone series whose LATEST-revised value differs from what was knowable
 # in real time — economic releases (revised for months/years), model nowcasts, and
@@ -114,6 +124,7 @@ class FredAdapter(Adapter):
             retries=self.cfg["retries"],
             backoff_base=self.cfg["backoff_base_s"],
             timeout=90,
+            headers={"User-Agent": FREDGRAPH_UA},
         )
         df = pd.read_csv(io.StringIO(r.text))
         if df.shape[1] != 2 or "observation_date" not in df.columns[0].lower().replace(" ", "_"):

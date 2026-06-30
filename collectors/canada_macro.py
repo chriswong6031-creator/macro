@@ -22,6 +22,7 @@ import pandas as pd
 import requests
 
 from collectors.base import Adapter, is_connection_error
+from collectors.fred import FREDGRAPH_UA
 from lib import config
 
 # Skip a source's remaining series after this many CONSECUTIVE connection failures
@@ -93,7 +94,8 @@ class CanadaMacroAdapter(Adapter):
 
     def _fetch_fred(self, fid: str) -> pd.DataFrame:
         r = self.http_get(self.cfg["fred_base_url"], params={"id": fid},
-                          retries=self.cfg["retries"], timeout=15)
+                          retries=self.cfg["retries"], timeout=15,
+                          headers={"User-Agent": FREDGRAPH_UA})
         raw = pd.read_csv(io.StringIO(r.text))
         date_col = raw.columns[0]          # observation_date (or DATE on older series)
         val_col = raw.columns[1]
