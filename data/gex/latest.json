@@ -6,11 +6,11 @@
    "spot": 7440.43,
    "regime": "long",
    "tier": "full",
-   "net_gex_bn": 14.16,
-   "gamma_flip": 7406.49,
-   "dist_to_flip_pct": 0.46,
-   "iv30": 14.71,
-   "put_call_oi_ratio": 1.07,
+   "net_gex_bn": 17.11,
+   "gamma_flip": 7400.14,
+   "dist_to_flip_pct": 0.54,
+   "iv30": 14.69,
+   "put_call_oi_ratio": 1.06,
    "call_wall": 7500.0,
    "put_wall": 7200.0,
    "max_pain": 7235.0,
@@ -34,10 +34,10 @@
    "spot": 3010.42,
    "regime": "short",
    "tier": "full",
-   "net_gex_bn": -0.24,
-   "gamma_flip": 3024.4,
-   "dist_to_flip_pct": -0.46,
-   "iv30": 21.38,
+   "net_gex_bn": -0.25,
+   "gamma_flip": 3024.86,
+   "dist_to_flip_pct": -0.48,
+   "iv30": 21.46,
    "put_call_oi_ratio": 1.73,
    "call_wall": 3050.0,
    "put_wall": 2850.0,
@@ -102,10 +102,10 @@
   }
  },
  "market": {
-  "skew": 139.4,
-  "skew_asof": "2026-06-26",
+  "skew": 144.46,
+  "skew_asof": "2026-06-29",
   "index_pc_ratio": 1.152,
   "equity_pc_ratio": 1.239,
-  "put_call_asof": "2026-06-29"
+  "put_call_asof": "2026-06-30"
  }
 }

@@ -13,7 +13,7 @@
     "name_zh": "\u5927\u578b\u94f6\u884c",
     "rank": 1,
     "reco": "accumulate",
-    "score": 71
+    "score": 72
   },
   "ca_base_metals": {
     "label": "deteriorating",
@@ -69,7 +69,7 @@
     "name_zh": "\u7ba1\u9053\u4e0e\u4e2d\u6e38",
     "rank": 6,
     "reco": "hold",
-    "score": 58
+    "score": 59
   },
   "ca_rails_ind": {
     "label": "neutral",

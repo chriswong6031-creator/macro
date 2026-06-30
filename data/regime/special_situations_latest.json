@@ -1,21 +1,21 @@
 {
-  "total": 1074,
+  "total": 1040,
   "n_categories": 17,
-  "cross_border": 546,
+  "cross_border": 540,
   "top_categories": [
     {
       "category": "Acquisitions",
-      "n": 230
+      "n": 220
     },
     {
       "category": "Capital Returns",
-      "n": 165
+      "n": 157
     },
     {
       "category": "Other",
-      "n": 139
+      "n": 133
     }
   ],
   "floor_musd": 100.0,
-  "built": "2026-06-30 00:59 UTC"
+  "built": "2026-06-30 03:23 UTC"
 }

@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "canada",
-  "generated_at": "2026-06-30T00:52:48.865872+00:00",
+  "generated_at": "2026-06-30T03:16:25.748887+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -31,7 +31,7 @@
           "worst_decile_ret": -0.0568
         },
         "top3_mom6_rel": {
-          "cagr": 0.1221,
+          "cagr": 0.1222,
           "sharpe": 0.73,
           "max_dd": -0.5005,
           "calmar": 0.24,

@@ -11,5 +11,6 @@
   "PCG": "ahead_of_consensus",
   "QCOM": "ahead_of_consensus",
   "SO": "ahead_of_consensus",
+  "TLN": "ahead_of_consensus",
   "VST": "ahead_of_consensus"
 }

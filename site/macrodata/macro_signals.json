@@ -1,6 +1,6 @@
 {
   "date": "2026-06-29",
-  "generated_utc": "2026-06-30 03:04",
+  "generated_utc": "2026-06-30 02:44",
   "business_cycle": {
     "available": true,
     "asof": "2026-06-30",
@@ -3907,11 +3907,11 @@
       "vix_term": 0.9037377879151449,
       "vix_term_state": "contango (calm)",
       "vix_term_lead_lag": "coincident",
-      "skew": 139.4,
-      "skew_pctile": 0.17956349206349206,
+      "skew": 144.46,
+      "skew_pctile": 0.4126984126984127,
       "stock_bond_corr": 0.5915606099031803,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.26708914838949915,
+      "roro": 0.13790439464965712,
       "roro_state": "neutral",
       "vol_target_scalar": 0.6811615780263194,
       "news_sentiment": 0.042056720703840256,
@@ -4012,7 +4012,7 @@
   "fear_euphoria": {
     "fe_score": 57,
     "band": "Neutral",
-    "roro": 0.26708914838949915,
+    "roro": 0.13790439464965712,
     "roro_state": "neutral",
     "legs": [
       {
@@ -4152,62 +4152,62 @@
     {
       "ticker": "GC=F",
       "name": "Gold",
-      "price": 4031.4,
+      "price": 3978.5,
       "above50": false,
       "above200": false,
-      "pct_vs_50dma": -9.2,
-      "pct_vs_200dma": -9.6,
-      "rsi14": 35.0,
+      "pct_vs_50dma": -10.4,
+      "pct_vs_200dma": -10.8,
+      "rsi14": 33.0,
       "macd_pos": false,
-      "off_52w_high_pct": -24.2,
+      "off_52w_high_pct": -25.2,
       "season_this": "Jun: -0.9% avg, up 42% of years (n=26)",
       "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.9%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": -13.4
+      "mom_60d_pct": -14.6
     },
     {
       "ticker": "CL=F",
       "name": "Crude Oil",
-      "price": 70.27,
+      "price": 70.32,
       "above50": false,
       "above200": false,
       "pct_vs_50dma": -22.6,
       "pct_vs_200dma": -5.2,
       "rsi14": 30.0,
       "macd_pos": false,
-      "off_52w_high_pct": -37.8,
+      "off_52w_high_pct": -37.7,
       "season_this": "Jun: +2.1% avg, up 65% of years (n=26)",
       "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +2.1%\uff0c65% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": -37.8
+      "mom_60d_pct": -37.7
     },
     {
       "ticker": "HG=F",
       "name": "Copper",
-      "price": 6.18,
+      "price": 6.15,
       "above50": false,
       "above200": true,
-      "pct_vs_50dma": -1.3,
-      "pct_vs_200dma": 9.4,
-      "rsi14": 46.0,
+      "pct_vs_50dma": -1.7,
+      "pct_vs_200dma": 9.0,
+      "rsi14": 45.0,
       "macd_pos": false,
-      "off_52w_high_pct": -7.1,
+      "off_52w_high_pct": -7.5,
       "season_this": "Jun: -0.6% avg, up 54% of years (n=26)",
       "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.6%\uff0c54% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-      "mom_60d_pct": 11.5
+      "mom_60d_pct": 11.0
     },
     {
       "ticker": "DX-Y.NYB",
       "name": "US Dollar",
-      "price": 101.11,
+      "price": 101.27,
       "above50": true,
       "above200": true,
-      "pct_vs_50dma": 1.7,
-      "pct_vs_200dma": 2.3,
-      "rsi14": 65.0,
+      "pct_vs_50dma": 1.9,
+      "pct_vs_200dma": 2.5,
+      "rsi14": 69.0,
       "macd_pos": true,
-      "off_52w_high_pct": -0.5,
+      "off_52w_high_pct": -0.3,
       "season_this": "Jun: -0.1% avg, up 45% of years (n=56)",
       "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.1%\uff0c45% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=56\uff09",
-      "mom_60d_pct": 1.5
+      "mom_60d_pct": 1.6
     }
   ],
   "vix": {

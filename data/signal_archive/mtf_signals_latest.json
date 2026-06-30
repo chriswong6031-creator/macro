@@ -1062,10 +1062,10 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 66.811,
+   "trail_stop": 66.37,
    "early_now": false,
    "last": {
-    "date": "2026-06-16",
+    "date": "2026-06-11",
     "type": "sell"
    }
   },
@@ -1396,11 +1396,11 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 319.3724,
+   "trail_stop": 232.8996,
    "early_now": false,
    "last": {
-    "date": "2026-06-11",
-    "type": "rebuy",
+    "date": "2026-05-21",
+    "type": "buy",
     "quality": "take",
     "reason": "held confirmation"
    }
