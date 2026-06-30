@@ -20,8 +20,8 @@
 {% endif %}
 
 <div class="ms-head">
-  <span class="ms-eyebrow"><span class="ms-live"></span>{{ t('MARKET STATE','市场状态') }}</span>
-  <span class="ms-date">· {{ ms.asof }}</span>
+  <span class="ms-eyebrow"><span class="ms-live" id="ms-live-pill"></span>{{ t('MARKET STATE','市场状态') }}</span>
+  <span class="ms-date" id="ms-date">· {{ ms.asof }}</span>
   {{ help(board.eyebrow_help_en, board.eyebrow_help_zh) }}
 </div>
 
@@ -29,9 +29,9 @@
   {# LEFT — the verdict: what kind of market, in 2 seconds #}
   <section class="ms-verdict">
     <p class="v-label">{{ t('Verdict','结论') }}</p>
-    <p class="v-word">{{ t(ms.label_en, ms.label_zh) }}<span class="arr">{{ _va }}</span></p>
-    <div class="v-scorerow"><span class="v-score">{{ ms.score }}</span><span class="v-outof">/ 100</span></div>
-    <div class="v-meter"><span class="tick" style="left:{{ ms.score }}%"></span></div>
+    <p class="v-word" id="ms-word">{{ t(ms.label_en, ms.label_zh) }}<span class="arr">{{ _va }}</span></p>
+    <div class="v-scorerow"><span class="v-score" id="ms-score">{{ ms.score }}</span><span class="v-outof">/ 100</span></div>
+    <div class="v-meter"><span class="tick" id="ms-tick" style="left:{{ ms.score }}%"></span></div>
     <div class="v-scale"><span>0</span><span>42</span><span>60</span><span>100</span></div>
     <p class="v-thesis">{{ t(ms.headline_en, ms.headline_zh) }}</p>
     {% for o in ms.overrides %}<p class="v-override"><span class="ic">⚠</span>{{ t(o.note_en, o.note_zh) }}</p>{% endfor %}

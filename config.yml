@@ -435,6 +435,13 @@ live:
   # Extra symbols to always include in the snapshot universe (beyond the CORE
   # index/futures set + every data-sym the built site emits).
   snapshot_extra: []
+  # Intraday LIVE risk-state (scripts/build_risk_state.py -> site/live/risk_state.json).
+  # Recomputes ONLY the price-driven legs (tape, vol, the radar's equity/vol/credit-proxy
+  # legs + the SPY<200dma context gate) on live prices; the slow legs (HY OAS, NFCI, breadth,
+  # macro) carry forward stamped with their own as-of. The continuous score moves every tick;
+  # the discrete band WORD is debounced this many consecutive ticks before it flips (anti-whipsaw).
+  risk_state:
+    debounce_ticks: 2
 
 fedboard:
   # Excess Bond Premium (Gilchrist-Zakrajšek): the component of corporate credit

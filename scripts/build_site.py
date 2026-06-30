@@ -2666,7 +2666,8 @@ def main() -> int:
                   "masterbrief.js", "aibrief.js", "stockbrief.js", "aidesk_lean.js",
                   "stockview.js",
                   "lightweight-charts.js",
-                  "allocation_scorecard.js", "live.js", "wh_banner.js", "heatmap.js",
+                  "allocation_scorecard.js", "live.js", "risk_state_live.js",
+                  "wh_banner.js", "heatmap.js",
                   "subsector_rotation.js",
                   # vendored (self-hosted) third-party libs — were CDN <script> tags
                   # (cdn.jsdelivr / cdn.plot.ly) that are blocked/unreliable in mainland
