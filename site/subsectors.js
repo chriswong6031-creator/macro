@@ -38,6 +38,32 @@
   function stockHref(tk) { return 'stock.html#' + encodeURIComponent(tk); }
   function groupsOf(ds) { return (DATA[ds] || {})[DS[ds].groupsKey] || []; }
 
+  // a table that shows the first `limit` rows and tucks the rest behind a "Show all" toggle.
+  // `rowsArr` is an array of <tr> strings; the rest are tagged .sc-xtra (hidden while .sc-collapsed).
+  var _ctId = 0;
+  function collapsibleTable(theadHTML, rowsArr, limit) {
+    if (rowsArr.length <= limit) return '<table class="tbl"><thead>' + theadHTML + '</thead><tbody>' + rowsArr.join('') + '</tbody></table>';
+    var id = 'sc-ct-' + (++_ctId);
+    var body = rowsArr.map(function (r, i) { return i < limit ? r : r.replace(/^<tr/, '<tr class="sc-xtra"'); }).join('');
+    var n = rowsArr.length;
+    return '<div class="sc-collapse sc-collapsed" id="' + id + '" data-n="' + n + '" data-shown="' + limit + '">'
+      + '<table class="tbl"><thead>' + theadHTML + '</thead><tbody>' + body + '</tbody></table>'
+      + '<button class="sc-more" data-tgt="' + id + '" type="button">'
+      + '<span class="l-en">Show all ' + n + ' ▾</span><span class="l-zh">展开全部 ' + n + ' ▾</span></button></div>';
+  }
+  // one delegated handler toggles a collapse wrapper between first-N and all rows.
+  function onMoreClick(e) {
+    var btn = e.target.closest ? e.target.closest('.sc-more') : null;
+    if (!btn) return;
+    var box = document.getElementById(btn.getAttribute('data-tgt'));
+    if (!box) return;
+    var open = box.classList.toggle('sc-collapsed') === false;
+    var n = box.getAttribute('data-n'), shown = box.getAttribute('data-shown');
+    btn.innerHTML = open
+      ? '<span class="l-en">Show fewer ▴</span><span class="l-zh">收起 ▴</span>'
+      : '<span class="l-en">Show all ' + n + ' ▾</span><span class="l-zh">展开全部 ' + n + ' ▾</span>';
+  }
+
   /* ----- sections ----- */
   function cardHTML(g, ds) {
     var e = g.entry || {}, r = g.regime || {};
@@ -75,20 +101,20 @@
         + '<td class="num">' + (r.combined_score == null ? '–' : r.combined_score.toFixed(2)) + ' <span class="scbar" style="width:' + w + 'px"></span></td>'
         + '<td>' + signed(r.vs_subsector_20d) + '</td></tr>';
     }).join('');
-    var warn = dg.headwind_warn.map(function (r) {
+    var warnRows = dg.headwind_warn.map(function (r) {
       return '<tr><td class="tk"><a href="' + stockHref(r.ticker) + '">' + esc(r.ticker) + '</a></td>'
         + '<td>' + tierBadge(r.stock_tier) + '</td>'
         + '<td><a href="' + detailHref(ds, r.subsector_key) + '">' + esc(r.subsector) + '</a></td>'
         + '<td><span class="pill avoid">' + esc(r.subsector_state) + '</span></td></tr>';
-    }).join('');
+    });
     var h = '<div class="sec"><h2>🎯 ' + L('Double-confluence buys', '双重汇聚买入') + ' <span class="n" style="color:var(--muted);font-weight:500">' + dg.double_buy.length + '</span></h2>'
       + '<div class="desc">' + L('Stocks whose OWN T1-T4 cascade is buyable AND whose subsector has a tailwind. Ranked by combined conviction = stock weight × subsector buyability factor (T1×T1 = 1.0).',
         '自身 T1-T4 级联可买且所在子行业顺风的个股。按综合把握度排序 = 个股权重 × 子行业可买系数（T1×T1 = 1.0）。') + '</div>';
     h += dg.double_buy.length ? '<table class="tbl"><thead><tr><th>' + L('Stock', '个股') + '</th><th>' + L('Stock tier', '个股层级') + '</th><th>' + L('Subsector', '子行业') + '</th><th>' + L('Subsector', '子行业') + '</th><th>' + L('Conviction', '综合把握') + '</th><th>' + L('vs sub 20d', '相对子行业20日') + '</th></tr></thead><tbody>' + rows + '</tbody></table>' : '<div class="empty">' + L('No double-confluence buys right now.', '当前无双重汇聚买入。') + '</div>';
-    if (warn) h += '<h2 style="margin-top:20px">⚠️ ' + L('Headwind warnings', '逆风警示') + ' <span class="n" style="color:var(--muted);font-weight:500">' + dg.headwind_warn.length + '</span></h2>'
+    if (warnRows.length) h += '<h2 style="margin-top:20px">⚠️ ' + L('Headwind warnings', '逆风警示') + ' <span class="n" style="color:var(--muted);font-weight:500">' + dg.headwind_warn.length + '</span></h2>'
       + '<div class="desc">' + L('A great-looking stock (its own cascade fires) but its subsector is TOPPING / SELLING — the validated "don\'t chase the leadership institutions are distributing into" flag. Not a buy.',
         '个股看似强势（自身级联触发），但所在子行业正见顶/派发——已验证的“别去追机构正在派发的领涨股”信号。非买入。') + '</div>'
-      + '<table class="tbl"><thead><tr><th>' + L('Stock', '个股') + '</th><th>' + L('Stock tier', '个股层级') + '</th><th>' + L('Subsector', '子行业') + '</th><th>' + L('Subsector regime', '子行业状态') + '</th></tr></thead><tbody>' + warn + '</tbody></table>';
+      + collapsibleTable('<tr><th>' + L('Stock', '个股') + '</th><th>' + L('Stock tier', '个股层级') + '</th><th>' + L('Subsector', '子行业') + '</th><th>' + L('Subsector regime', '子行业状态') + '</th></tr>', warnRows, 4);
     return h + '</div>';
   }
 
@@ -104,9 +130,9 @@
         + '<td style="color:var(--muted);font-size:11px">' + (freshTxt(e) || '') + '</td>'
         + '<td>' + signed(r.rs_60d) + '</td>'
         + '<td class="num">' + (g.n_priced || g.n_members) + '</td></tr>';
-    }).join('');
+    });
     return '<div class="sec"><h2>📋 ' + L('All gateable ' + noun[0], '全部可评' + noun[1]) + ' <span class="n" style="color:var(--muted);font-weight:500">' + groups.length + '</span></h2>'
-      + '<table class="tbl"><thead><tr><th>' + L('Subsector', '子行业') + '</th><th>' + L('Sector', '板块') + '</th><th>' + L('Entry', '入场') + '</th><th>' + L('Regime', '状态') + '</th><th>' + L('Freshness', '新鲜度') + '</th><th>RS60</th><th>' + L('N', '数') + '</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+      + collapsibleTable('<tr><th>' + L('Subsector', '子行业') + '</th><th>' + L('Sector', '板块') + '</th><th>' + L('Entry', '入场') + '</th><th>' + L('Regime', '状态') + '</th><th>' + L('Freshness', '新鲜度') + '</th><th>RS60</th><th>' + L('N', '数') + '</th></tr>', rows, 10) + '</div>';
   }
 
   function sectorStrip(payload, ds) {
@@ -145,6 +171,8 @@
     Array.prototype.forEach.call(document.querySelectorAll('.sc-tab'), function (el) {
       el.addEventListener('click', function () { setTab(el.getAttribute('data-tab')); });
     });
+    var appEl = document.getElementById('sc-app');
+    if (appEl) appEl.addEventListener('click', onMoreClick);   // delegated "Show all / fewer" toggle
     var keys = Object.keys(DS);
     Promise.all(keys.map(function (k) {
       return fetch(DS[k].url, { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
