@@ -112,3 +112,36 @@ select, input[type=number] { background: var(--surface2); color: var(--text);
 .kv:last-child { border-bottom: none; }
 .bar { height: 6px; background: var(--grid); border-radius: 3px; overflow: hidden; margin-top: 6px; }
 .bar > i { display: block; height: 100%; background: var(--accent2); }
+.bar > i.warn { background: var(--warn); }
+.bar > i.bad { background: var(--bad); }
+
+input[type=password], input[type=text] { background: var(--surface2); color: var(--text);
+  border: 1px solid var(--border); border-radius: 7px; padding: 9px 11px;
+  font-family: var(--sans); font-size: 14px; width: 100%; }
+input:focus { outline: none; border-color: var(--accent); }
+
+/* ---- login gate --------------------------------------------------------- */
+.login-wrap { position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+  background: radial-gradient(1200px 600px at 50% -10%, #11203a 0, var(--bg) 60%); z-index: 100; padding: 20px; }
+.login-wrap.show { display: flex; }
+.login-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 28px 26px; width: 100%; max-width: 360px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.login-card h1 { font-size: 18px; margin: 0 0 4px; }
+.login-card .sub { margin-bottom: 18px; }
+.login-card form { display: flex; flex-direction: column; gap: 12px; }
+.login-card .err { color: #ffb3ae; font-size: 12px; min-height: 16px; }
+.login-card button { width: 100%; padding: 10px; font-size: 14px; }
+
+/* ---- metric meters / services ------------------------------------------- */
+.meter { margin-bottom: 12px; }
+.meter .top { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px; }
+.meter .top b { font-weight: 700; font-size: 14px; }
+.svc { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--border);
+  border-radius: 9px; background: var(--surface); margin-bottom: 8px; }
+.svc .nm { font-weight: 600; }
+.svc .meta { color: var(--muted); font-size: 12px; }
+.svc .spacer { margin-left: auto; }
+.spark { display: flex; align-items: flex-end; gap: 2px; height: 40px; margin-top: 8px; }
+.spark > i { flex: 1; background: var(--accent2); border-radius: 2px 2px 0 0; min-height: 2px; opacity: .85; }
+.logout { cursor: pointer; color: var(--muted); }
+.logout:hover { color: var(--text); }

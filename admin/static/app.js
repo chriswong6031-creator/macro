@@ -1,29 +1,59 @@
 "use strict";
-/* Macro Admin — single-page UI. Vanilla JS, no external deps (works offline). */
+/* Mastermind Admin — single-page console. Vanilla JS, no external deps. */
 
 const $ = (sel, el = document) => el.querySelector(sel);
 const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstChild; };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmtAge = (hrs) => hrs == null ? "—" : hrs < 1 ? `${Math.round(hrs * 60)}m` : hrs < 48 ? `${hrs.toFixed(0)}h` : `${(hrs / 24).toFixed(0)}d`;
 const fmtUSD = (n) => n == null ? "—" : "$" + Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
+const fmtBytes = (b) => { if (b == null) return "—"; const u = ["B", "KB", "MB", "GB", "TB"]; let i = 0, n = Number(b); while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; } return n.toFixed(n < 10 && i > 0 ? 1 : 0) + " " + u[i]; };
+const fmtNum = (n) => n == null ? "—" : Number(n).toLocaleString();
+const getCookie = (name) => { const m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)")); return m ? decodeURIComponent(m[1]) : null; };
+
+let SESSION = { auth_enabled: false, authenticated: true, deployed: false, integrations: {} };
 
 async function api(path, opts) {
   const r = await fetch(path, opts);
-  const j = await r.json().catch(() => ({ error: "bad json" }));
-  return j;
+  if (r.status === 401) { showLogin(); throw new Error("auth required"); }
+  return r.json().catch(() => ({ error: "bad json" }));
 }
-const post = (path, body) => api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+function post(path, body) {
+  const headers = { "Content-Type": "application/json" };
+  const csrf = getCookie("admin_csrf");
+  if (csrf) headers["X-CSRF-Token"] = csrf;
+  return api(path, { method: "POST", headers, body: JSON.stringify(body || {}) });
+}
 
 let TOAST_T;
 function toast(msg, err) {
   const t = $("#toast"); t.textContent = msg; t.className = "toast show" + (err ? " err" : "");
-  clearTimeout(TOAST_T); TOAST_T = setTimeout(() => t.className = "toast", 2600);
+  clearTimeout(TOAST_T); TOAST_T = setTimeout(() => t.className = "toast", 3000);
+}
+
+/* ---- login -------------------------------------------------------------- */
+function showLogin() { $("#login").classList.add("show"); $("#app").style.display = "none"; }
+function hideLogin() { $("#login").classList.remove("show"); $("#app").style.display = ""; }
+
+$("#loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("#loginErr").textContent = "";
+  const r = await fetch("/api/login", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password: $("#pw").value }),
+  }).then(x => x.json()).catch(() => ({ ok: false, error: "network error" }));
+  if (r.ok) { $("#pw").value = ""; hideLogin(); boot(); }
+  else $("#loginErr").textContent = r.error || "login failed";
+});
+
+async function logout() {
+  await post("/api/logout", {});
+  showLogin();
 }
 
 const TABS = [
-  ["overview", "Overview"], ["features", "Features"], ["brief", "AI Brief"],
-  ["traffic", "Traffic"], ["deploy", "Build & Deploy"], ["health", "Health"],
-  ["cost", "AI Cost"], ["content", "Content"],
+  ["overview", "Overview"], ["analytics", "Analytics"], ["users", "Users"],
+  ["system", "System"], ["health", "Health"], ["features", "Features"],
+  ["brief", "AI Brief"], ["deploy", "Build & Deploy"], ["cost", "AI Cost"], ["content", "Content"],
 ];
 let CURRENT = "overview";
 let SUMMARY = null;
@@ -38,7 +68,6 @@ function renderTabs() {
     nav.appendChild(b);
   });
 }
-
 function go(id) {
   CURRENT = id;
   if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
@@ -50,119 +79,228 @@ function go(id) {
 function renderHeader() {
   const m = SUMMARY.meta || {};
   const hh = SUMMARY.health || {};
-  const led = hh.healthy ? "ok" : (hh.broad_outage || (hh.sources && hh.sources.dead) ? "bad" : "warn");
-  const el = $("#hmeta");
-  el.innerHTML = "";
-  el.appendChild(h(`<span class="pill"><span class="led ${led}"></span>${hh.healthy ? "Healthy" : "Attention"}</span>`));
+  const sv = SUMMARY.services || {};
+  const allOk = hh.healthy && (!sv.available || sv.healthy);
+  const led = allOk ? "ok" : ((hh.broad_outage || (hh.sources && hh.sources.dead) || (sv.available && !sv.healthy)) ? "bad" : "warn");
+  const el = $("#hmeta"); el.innerHTML = "";
+  el.appendChild(h(`<span class="pill"><span class="led ${led}"></span>${allOk ? "Healthy" : "Attention"}</span>`));
+  if (m.deployed) el.appendChild(h(`<span class="pill" title="running on the VPS behind Caddy">deployed</span>`));
   el.appendChild(h(`<span>repo <code>${esc(m.repo || "?")}</code></span>`));
-  el.appendChild(h(`<span>token ${m.has_token ? "✓" : "✗"}</span>`));
-  el.appendChild(h(`<span>GA ${m.ga_configured ? "✓ live" : "tag-only"}</span>`));
+  el.appendChild(h(`<span>GH ${m.has_token ? "✓ token" : "read-only"}</span>`));
   if (m.site_url) el.appendChild(h(`<a href="${esc(m.site_url)}" target="_blank" rel="noopener">live site ↗</a>`));
+  if (SESSION.auth_enabled) { const lo = h(`<span class="logout">log out</span>`); lo.onclick = logout; el.appendChild(lo); }
 }
 
 function renderBanner() {
-  const g = SUMMARY.git || {};
+  const g = SUMMARY.git || {}, m = SUMMARY.meta || {};
   const b = $("#banner");
-  if (!g.config_dirty) { b.className = "banner"; b.innerHTML = ""; return; }
+  // In deployed mode, flag edits commit straight to main via GitHub — no local banner.
+  if (m.deployed || !g.config_dirty) { b.className = "banner"; b.innerHTML = ""; return; }
   b.className = "banner show";
   b.innerHTML = `<span>⚠︎ <b>config.yml changed</b> in the working tree — not live until committed to <code>main</code> and rebuilt.</span>`;
   const sp = h(`<span class="spacer"></span>`); b.appendChild(sp);
-  const commit = h(`<button class="btn">Commit locally</button>`);
-  commit.onclick = () => doCommit(false);
-  b.appendChild(commit);
-  if (g.can_push_live) {
-    const cp = h(`<button class="btn primary">Commit &amp; push to main</button>`);
-    cp.onclick = () => doCommit(true);
-    b.appendChild(cp);
-  } else {
-    b.appendChild(h(`<span class="sub">on <code>${esc(g.branch || "?")}</code> — push from a main checkout to go live</span>`));
-  }
+  const commit = h(`<button class="btn">Commit locally</button>`); commit.onclick = () => doCommit(false); b.appendChild(commit);
+  if (g.can_push_live) { const cp = h(`<button class="btn primary">Commit &amp; push to main</button>`); cp.onclick = () => doCommit(true); b.appendChild(cp); }
+  else b.appendChild(h(`<span class="sub">on <code>${esc(g.branch || "?")}</code> — push from a main checkout to go live</span>`));
 }
-
 async function doCommit(push) {
-  if (push && !confirm("Commit config.yml and PUSH to the live branch? This will reach the deploy pipeline on the next build.")) return;
+  if (push && !confirm("Commit config.yml and PUSH to the live branch?")) return;
   const r = await post("/api/git/commit", { push, confirm: true });
-  if (r.ok) { toast(r.pushed ? "Committed & pushed" : "Committed locally" + (r.warning ? " (" + r.warning + ")" : "")); await refresh(); }
+  if (r.ok) { toast(r.pushed ? "Committed & pushed" : "Committed locally"); await refresh(); renderBanner(); }
   else toast(r.error || "commit failed", true);
 }
 
-/* ---- refresh ------------------------------------------------------------ */
 async function refresh() {
   SUMMARY = await api("/api/summary");
   if (SUMMARY.error) { toast(SUMMARY.error, true); return; }
   renderHeader(); renderBanner();
 }
 
-/* ---- OVERVIEW ----------------------------------------------------------- */
+/* ---- helpers ------------------------------------------------------------ */
 function card(title, bodyHtml) { return `<div class="card"><h3>${title}</h3>${bodyHtml}</div>`; }
+function meter(label, pct, valText, cls) {
+  const c = cls || (pct >= 90 ? "bad" : pct >= 75 ? "warn" : "");
+  return `<div class="meter"><div class="top"><span>${esc(label)}</span><b>${valText}</b></div>
+    <div class="bar"><i class="${c}" style="width:${Math.max(0, Math.min(100, pct || 0))}%"></i></div></div>`;
+}
 
 const RENDER = {};
+
+/* ---- OVERVIEW ----------------------------------------------------------- */
 RENDER.overview = async () => {
-  const v = $("#view");
-  const s = SUMMARY, hh = s.health || {}, br = s.brief || {}, c = s.cost || {};
+  const v = $("#view"), s = SUMMARY;
+  const hh = s.health || {}, c = s.cost || {}, sys = s.system || {}, sv = s.services || {}, m = s.meta || {};
   const flagsOn = Object.values((s.flags && s.flags.groups) || {}).flat().filter(f => f.value === true).length;
-  const flagsTot = Object.values((s.flags && s.flags.groups) || {}).flat().length;
-  const mb = br.master_brain || {};
+  const mem = sys.memory || {}, disk = sys.disk || {};
   v.innerHTML = `
     <div class="grid">
-      ${card("Pipeline", `<div class="big">${hh.healthy ? "Healthy" : "Attention"}</div>
-        <div class="sub">last run ${fmtAge(hh.age_hours)} ago · ${(hh.sources || {}).ok || 0}/${(hh.sources || {}).total || 0} sources ok${(hh.sources || {}).dead ? ` · <span style="color:var(--bad)">${hh.sources.dead} dead</span>` : ""}</div>`)}
-      ${card("AI Brief", `<div class="big">${mb.enabled ? "On" : "Off"}</div>
-        <div class="sub">every ${mb.interval_days || 1} day(s) · ${(mb.lenses || []).length} lenses${mb.translate_zh ? " · 中文" : ""}</div>`)}
-      ${card("Est. AI cost", `<div class="big">${fmtUSD(c.monthly_usd)}<span class="sub"> /mo</span></div>
-        <div class="sub">${fmtUSD(c.effective_daily_usd)}/day effective</div>`)}
-      ${card("Features on", `<div class="big">${flagsOn}<span class="sub"> / ${flagsTot}</span></div>
-        <div class="sub">managed feature flags</div>`)}
+      ${card("Pipeline", `<div class="big" style="color:${hh.healthy ? "var(--ok)" : "var(--warn)"}">${hh.healthy ? "Healthy" : "Attention"}</div>
+        <div class="sub">last run ${fmtAge(hh.age_hours)} ago · ${(hh.sources || {}).ok || 0}/${(hh.sources || {}).total || 0} sources</div>`)}
+      ${card("Services", sv.available ? `<div class="big" style="color:${sv.healthy ? "var(--ok)" : "var(--bad)"}">${sv.ok_count}/${sv.total}</div><div class="sub">systemd units up</div>` : `<div class="big">—</div><div class="sub">off-VPS</div>`)}
+      ${card("Server", sys.available ? `<div class="big">${mem.used_pct != null ? mem.used_pct + "%" : "—"}<span class="sub"> mem</span></div><div class="sub">disk ${disk.used_pct != null ? disk.used_pct + "%" : "—"} · load ${sys.cpu && sys.cpu.load1 != null ? sys.cpu.load1.toFixed(2) : "—"}</div>` : `<div class="big">—</div><div class="sub">off-VPS</div>`)}
+      ${card("Est. AI cost", `<div class="big">${fmtUSD(c.monthly_usd)}<span class="sub"> /mo</span></div><div class="sub">${fmtUSD(c.effective_daily_usd)}/day</div>`)}
+      ${card("Features on", `<div class="big">${flagsOn}</div><div class="sub">managed flags</div>`)}
+      ${card("Analytics", `<div class="big" style="color:var(--ok);font-size:18px">Umami live</div><div class="sub">${m.integrations && m.integrations.umami ? "API connected" : "tag on every page"}</div>`)}
     </div>
     <div class="section">Quick actions</div>
     <div id="qa"></div>`;
   const qa = $("#qa");
   const rebuild = h(`<button class="btn primary">▶ Rebuild &amp; deploy now</button>`);
-  rebuild.onclick = () => dispatch("daily.yml");
-  rebuild.disabled = !(s.meta && s.meta.has_token);
-  qa.appendChild(rebuild);
+  rebuild.onclick = () => dispatch("daily.yml"); rebuild.disabled = !m.has_token; qa.appendChild(rebuild);
   const redeploy = h(`<button class="btn" style="margin-left:8px">⟳ Redeploy site only</button>`);
-  redeploy.onclick = () => dispatch("pages.yml");
-  redeploy.disabled = !(s.meta && s.meta.has_token);
-  qa.appendChild(redeploy);
-  if (!(s.meta && s.meta.has_token)) qa.appendChild(h(`<div class="sub" style="margin-top:8px">Set <code>GH_TOKEN</code> (Actions: write) in <code>.env</code> to enable rebuild/deploy from here.</div>`));
+  redeploy.onclick = () => dispatch("pages.yml"); redeploy.disabled = !m.has_token; qa.appendChild(redeploy);
+  const probe = h(`<button class="btn" style="margin-left:8px">◎ Probe all endpoints</button>`);
+  probe.onclick = () => go("system"); qa.appendChild(probe);
+  if (!m.has_token) qa.appendChild(h(`<div class="sub" style="margin-top:8px">Set <code>GH_TOKEN</code> (Actions: write) in the service env to enable rebuild/deploy.</div>`));
+};
+
+/* ---- ANALYTICS (Umami) -------------------------------------------------- */
+RENDER.analytics = async () => {
+  const v = $("#view");
+  const st = await api("/api/analytics");
+  const dash = st.dashboard_url || "https://cloud.umami.is";
+  if (!st.configured) {
+    v.innerHTML = `
+      <div class="grid">
+        ${card("Tracking tag", `<div class="big" style="color:var(--ok);font-size:20px">● Live</div><div class="sub">on every page · website <code>${esc((st.website_id || "").slice(0, 8))}…</code></div>`)}
+        ${card("In-panel API", `<div class="big" style="color:var(--warn);font-size:18px">Not connected</div><div class="sub">${esc(st.reason || "")}</div>`)}
+        ${card("Dashboard", `<div style="margin-top:6px"><a class="btn primary" href="${esc(dash)}" target="_blank" rel="noopener">Open Umami ↗</a></div>`)}
+      </div>
+      <div class="section">Light up in-panel charts</div>
+      <div class="card"><ol class="steps">${(st.setup_steps || []).map(x => `<li>${esc(x)}</li>`).join("")}</ol></div>`;
+    return;
+  }
+  v.innerHTML = `
+    <div class="grid">
+      ${card("Active now", `<div class="big" id="aNow">…</div><div class="sub">last 5 min</div>`)}
+      ${card("Visitors (7d)", `<div class="big" id="aVis">…</div><div class="sub" id="aVisits"></div>`)}
+      ${card("Pageviews (7d)", `<div class="big" id="aPv">…</div><div class="sub"><a href="${esc(dash)}" target="_blank" rel="noopener">dashboard ↗</a></div>`)}
+    </div>
+    <div class="grid" style="margin-top:14px">
+      <div class="card"><h3>Top pages (7d)</h3><div id="aPages" class="sub">loading…</div></div>
+      <div class="card"><h3>Top countries (7d)</h3><div id="aCty" class="sub">loading…</div></div>
+      <div class="card"><h3>Top referrers (7d)</h3><div id="aRef" class="sub">loading…</div></div>
+    </div>`;
+  const poll = async () => {
+    if (CURRENT !== "analytics" || !$("#aNow")) { if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; } return; }
+    const a = await api("/api/analytics/active"); const el = $("#aNow"); if (el) el.textContent = a.ok ? a.active : "—";
+  };
+  RT_TIMER = setInterval(poll, 15000); poll();
+  const rep = await api("/api/analytics/report?days=7");
+  if (rep.ok) {
+    $("#aVis").textContent = fmtNum(rep.summary.visitors); $("#aVisits").textContent = fmtNum(rep.summary.visits) + " visits";
+    $("#aPv").textContent = fmtNum(rep.summary.pageviews);
+    $("#aPages").innerHTML = (rep.top_pages || []).map(p => `<div class="kv"><span class="mono">${esc(p.path)}</span><b>${fmtNum(p.views)}</b></div>`).join("") || "<span class='muted'>none</span>";
+    $("#aCty").innerHTML = (rep.top_countries || []).map(c => `<div class="kv"><span>${esc(c.country)}</span><b>${fmtNum(c.visitors)}</b></div>`).join("") || "<span class='muted'>none</span>";
+    $("#aRef").innerHTML = (rep.top_referrers || []).map(r => `<div class="kv"><span class="mono">${esc(r.referrer)}</span><b>${fmtNum(r.visitors)}</b></div>`).join("") || "<span class='muted'>none</span>";
+  } else { $("#aPages").textContent = rep.error || "no data"; }
+};
+
+/* ---- USERS (Supabase) --------------------------------------------------- */
+RENDER.users = async () => {
+  const v = $("#view");
+  const d = await api("/api/users");
+  if (!d.ok) {
+    v.innerHTML = `<div class="card"><h3>Users — not connected</h3><div class="sub">${esc(d.reason || d.error || "")}</div>
+      <ol class="steps" style="margin-top:10px">${(d.setup_steps || []).map(x => `<li>${esc(x)}</li>`).join("")}</ol></div>`;
+    return;
+  }
+  const s = d.summary || {};
+  const series = d.signups_daily || [];
+  const maxN = Math.max(1, ...series.map(x => x.n));
+  v.innerHTML = `
+    <div class="grid">
+      ${card("Total users", `<div class="big">${fmtNum(s.total)}</div><div class="sub">${fmtNum(s.confirmed)} confirmed</div>`)}
+      ${card("New", `<div class="big">${fmtNum(s.new_7d)}<span class="sub"> /7d</span></div><div class="sub">${fmtNum(s.new_24h)} today · ${fmtNum(s.new_30d)}/30d</div>`)}
+      ${card("Active sign-ins", `<div class="big">${fmtNum(s.active_7d)}<span class="sub"> /7d</span></div><div class="sub">${fmtNum(s.active_24h)} in 24h</div>`)}
+      ${card("Providers", `${(d.providers || []).map(p => `<div class="kv"><span>${esc(p.provider)}</span><b>${fmtNum(p.n)}</b></div>`).join("") || "<span class='muted'>—</span>"}`)}
+    </div>
+    <div class="section">Signups (30d)</div>
+    <div class="card"><div class="spark">${series.map(x => `<i style="height:${Math.round(x.n / maxN * 100)}%" title="${esc(x.day)}: ${x.n}"></i>`).join("") || "<span class='muted'>no signups in 30d</span>"}</div></div>
+    <div class="section">Recent users <span class="cnt" id="uCnt"></span></div>
+    <div id="uTbl"><div class="spin">loading…</div></div>`;
+  const rec = await api("/api/users/recent?limit=50");
+  if (rec.ok) {
+    $("#uCnt").textContent = rec.users.length;
+    $("#uTbl").innerHTML = `<table><thead><tr><th>Email</th><th>Provider</th><th>Joined</th><th>Last sign-in</th><th>Confirmed</th></tr></thead><tbody>
+      ${rec.users.map(u => `<tr><td class="mono">${esc(u.email)}</td><td>${esc(u.provider)}</td><td class="mono sub">${esc(u.created_at || "—")}</td>
+        <td class="mono sub">${esc(u.last_sign_in_at || "—")}</td><td>${u.confirmed ? "<span class='statpill s-ok'>yes</span>" : "<span class='statpill s-mut'>no</span>"}</td></tr>`).join("")}
+    </tbody></table>`;
+  } else { $("#uTbl").innerHTML = `<div class="card sub">${esc(rec.error || "could not load")}</div>`; }
+};
+
+/* ---- SYSTEM + SERVICES + UPTIME ----------------------------------------- */
+RENDER.system = async () => {
+  const v = $("#view");
+  const sys = SUMMARY.system || {}, sv = SUMMARY.services || {};
+  const mem = sys.memory || {}, swap = sys.swap, disk = sys.disk || {}, cpu = sys.cpu || {};
+  const up = sys.uptime_s != null ? `${Math.floor(sys.uptime_s / 86400)}d ${Math.floor(sys.uptime_s % 86400 / 3600)}h` : "—";
+  v.innerHTML = `
+    <div class="grid">
+      <div class="card"><h3>Host resources</h3>
+        ${sys.available ? `
+        ${meter("CPU load (1m)", cpu.load1_pct, (cpu.load1 != null ? cpu.load1.toFixed(2) : "—") + ` / ${cpu.count} cores`)}
+        ${meter("Memory", mem.used_pct, fmtBytes(mem.used) + " / " + fmtBytes(mem.total))}
+        ${swap ? meter("Swap", swap.used_pct, fmtBytes(swap.used) + " / " + fmtBytes(swap.total)) : ""}
+        ${meter("Disk /", disk.used_pct, fmtBytes(disk.used) + " / " + fmtBytes(disk.total))}
+        <div class="sub">uptime ${up} · load 5m/15m ${cpu.load5 != null ? cpu.load5.toFixed(2) : "—"} / ${cpu.load15 != null ? cpu.load15.toFixed(2) : "—"}</div>
+        ` : `<div class="sub">Host metrics are read from /proc — only available when the console runs on the VPS.</div>`}
+      </div>
+      <div class="card"><h3>Endpoint uptime</h3><div id="upBoard"><button class="btn" id="upBtn">Probe all endpoints</button></div></div>
+    </div>
+    <div class="section">Services <span class="cnt">${sv.available ? sv.ok_count + "/" + sv.total + " up" : "off-VPS"}</span></div>
+    <div id="svcs"></div>`;
+  const svcs = $("#svcs");
+  if (!sv.available) svcs.innerHTML = `<div class="card sub">${esc(sv.reason || "systemctl unavailable")}</div>`;
+  else (sv.services || []).forEach(s => {
+    const led = s.ok ? "ok" : (s.active === "activating" ? "warn" : "bad");
+    const mem = s.memory != null ? " · " + fmtBytes(s.memory) : "";
+    svcs.appendChild(h(`<div class="svc"><span class="led ${led}" style="width:10px;height:10px;border-radius:50%;flex:none"></span>
+      <div><div class="nm">${esc(s.label)}</div><div class="meta mono">${esc(s.unit)} — ${esc(s.active || "?")}/${esc(s.sub || "")}${mem}${s.restarts ? " · " + s.restarts + " restarts" : ""}</div></div>
+      <span class="spacer"></span><span class="statpill ${s.ok ? "s-ok" : "s-bad"}">${esc(s.active || "?")}</span></div>`));
+  });
+  $("#upBtn").onclick = async () => {
+    $("#upBoard").innerHTML = "<span class='muted'>probing…</span>";
+    const u = await api("/api/uptime/all");
+    $("#upBoard").innerHTML = (u.targets || []).map(t => `<div class="kv"><span>${esc(t.label)}</span>
+      <b style="color:${t.ok ? "var(--ok)" : "var(--bad)"}">${t.ok ? (t.status || "up") + " · " + t.ms + "ms" : (t.status || "down")}</b></div>`).join("");
+  };
 };
 
 /* ---- FEATURES ----------------------------------------------------------- */
 RENDER.features = async () => {
   const v = $("#view");
   const data = await api("/api/flags");
-  let html = `<div class="sub" style="margin-bottom:12px">Toggle features in <code>config.yml</code>. Changes edit the working tree immediately and go live on the next build (commit + rebuild from the banner / Build tab).</div>`;
-  data.order.forEach(cat => {
-    html += `<div class="section">${esc(cat)} <span class="cnt">${data.groups[cat].length}</span></div><div id="g-${cat.replace(/\W/g, "")}"></div>`;
-  });
+  const meta = SUMMARY.meta || {};
+  const writable = !meta.deployed || (meta.integrations && meta.integrations.github_write);
+  const note = meta.deployed
+    ? (writable
+        ? `Toggles commit straight to <code>main</code> on GitHub; the VPS pulls the change within minutes.`
+        : `Read-only: set <code>GH_TOKEN</code> (Contents: write) in the service env to toggle flags from here.`)
+    : `Toggle features in <code>config.yml</code>. Changes edit the working tree and go live on the next build.`;
+  let html = `<div class="sub" style="margin-bottom:12px">${note}</div>`;
+  data.order.forEach(cat => { html += `<div class="section">${esc(cat)} <span class="cnt">${data.groups[cat].length}</span></div><div id="g-${cat.replace(/\W/g, "")}"></div>`; });
   v.innerHTML = html;
-  data.order.forEach(cat => {
-    const box = $("#g-" + cat.replace(/\W/g, ""));
-    data.groups[cat].forEach(f => box.appendChild(flagRow(f)));
-  });
+  data.order.forEach(cat => { const box = $("#g-" + cat.replace(/\W/g, "")); data.groups[cat].forEach(f => box.appendChild(flagRow(f, writable))); });
 };
-
-function flagRow(f) {
+function flagRow(f, writable) {
   const row = h(`<div class="row"></div>`);
-  const sw = h(`<label class="switch"><input type="checkbox" ${f.value ? "checked" : ""}><span class="slider"></span></label>`);
+  const sw = h(`<label class="switch"><input type="checkbox" ${f.value ? "checked" : ""} ${writable ? "" : "disabled"}><span class="slider"></span></label>`);
   const cb = sw.querySelector("input");
   cb.onchange = async () => {
     const r = await post("/api/flags/toggle", { path: f.path, value: cb.checked });
-    if (r.ok) { toast(`${f.label} → ${r.new}`); await refresh(); renderBanner(); refreshRowTags(row, f, cb.checked); }
+    if (r.ok) { toast(`${f.label} → ${r.new}${r.commit ? " (committed)" : ""}`); await refresh(); renderBanner(); refreshRowTags(row, f, cb.checked); }
     else { cb.checked = !cb.checked; toast(r.error || "toggle failed", true); }
   };
   row.appendChild(sw);
-  const txt = h(`<div><div class="lab">${esc(f.label)} ${f.master ? '<span class="tag master">kill-switch</span>' : ""} <span class="rowtags"></span></div><div class="note">${esc(f.note)} <code class="muted">${esc(f.path)}</code></div></div>`);
-  row.appendChild(txt);
+  row.appendChild(h(`<div><div class="lab">${esc(f.label)} ${f.master ? '<span class="tag master">kill-switch</span>' : ""} <span class="rowtags"></span></div><div class="note">${esc(f.note)} <code class="muted">${esc(f.path)}</code></div></div>`));
   refreshRowTags(row, f, f.value === true);
   return row;
 }
 function refreshRowTags(row, f, on) {
-  const box = row.querySelector(".rowtags"); if (!box) return;
-  box.innerHTML = "";
+  const box = row.querySelector(".rowtags"); if (!box) return; box.innerHTML = "";
   if (on && f.missing_secrets && f.missing_secrets.length)
-    box.appendChild(h(`<span class="tag inert" title="ON but required secret missing — no effect">⚠ needs ${esc(f.missing_secrets.join(", "))}</span>`));
+    box.appendChild(h(`<span class="tag inert" title="ON but required secret missing">⚠ needs ${esc(f.missing_secrets.join(", "))}</span>`));
 }
 
 /* ---- AI BRIEF ----------------------------------------------------------- */
@@ -172,7 +310,7 @@ RENDER.brief = async () => {
   const mb = d.master_brain, ad = d.ai_desk;
   const intervalSel = (target, cur) => `<select data-int="${target}" data-prev="${cur}">${[1, 2, 3, 4, 5, 6, 7].map(n => `<option value="${n}" ${n === cur ? "selected" : ""}>every ${n} day${n > 1 ? "s" : ""}</option>`).join("")}</select>`;
   v.innerHTML = `
-    ${!d.deepseek_key ? `<div class="banner show" style="position:static">⚠︎ <code>DEEPSEEK_API_KEY</code> is not set — briefs are a no-op even when enabled.</div>` : ""}
+    ${!d.deepseek_key ? `<div class="banner show" style="position:static">⚠︎ <code>DEEPSEEK_API_KEY</code> not set — briefs are a no-op even when enabled.</div>` : ""}
     <div class="section">AI Daily Brief (Master Brain)</div>
     <div class="row"><label class="switch"><input type="checkbox" id="mbEn" ${mb.enabled ? "checked" : ""}><span class="slider"></span></label>
       <div><div class="lab">Generate the morning briefs</div><div class="note">${(mb.lenses || []).join(", ")} · model <code>${esc(mb.model || "?")}</code></div></div>
@@ -189,70 +327,24 @@ RENDER.brief = async () => {
     <div class="row"><label class="switch"><input type="checkbox" id="adEn" ${ad.enabled ? "checked" : ""}><span class="slider"></span></label>
       <div><div class="lab">Generate the desk note</div><div class="note">${ad.panel_enabled ? "4-analyst panel" : "single analyst"} · last ${ad.age_days == null ? "—" : ad.age_days + "d ago"} · ${ad.theses} theses</div></div>
       <span class="spacer"></span>${intervalSel("ai_desk", ad.interval_days)}</div>`;
-
-  $("#mbEn").onchange = (e) => toggleFlag("master_brain.enabled", e.target.checked, "AI Brief");
-  $("#mbZh").onchange = (e) => toggleFlag("master_brain.translate_zh", e.target.checked, "中文 translation");
-  $("#adEn").onchange = (e) => toggleFlag("ai_desk.enabled", e.target.checked, "AI Desk");
+  const meta = SUMMARY.meta || {};
+  const writable = !meta.deployed || (meta.integrations && meta.integrations.github_write);
+  v.querySelectorAll('input[type=checkbox], select[data-int]').forEach(el => { if (!writable) el.disabled = true; });
+  $("#mbEn").onchange = (e) => toggleFlag(e.target, "master_brain.enabled", e.target.checked, "AI Brief");
+  $("#mbZh").onchange = (e) => toggleFlag(e.target, "master_brain.translate_zh", e.target.checked, "中文 translation");
+  $("#adEn").onchange = (e) => toggleFlag(e.target, "ai_desk.enabled", e.target.checked, "AI Desk");
   v.querySelectorAll("[data-int]").forEach(sel => sel.onchange = async () => {
     const prev = sel.dataset.prev;
     const r = await post("/api/brief/interval", { target: sel.dataset.int, days: Number(sel.value) });
     if (r.ok) { sel.dataset.prev = String(r.new); toast(`${sel.dataset.int} → every ${r.new} day(s)`); await refresh(); renderBanner(); }
-    else { sel.value = prev; toast(r.error || "failed", true); }   // revert UI on save failure
+    else { sel.value = prev; toast(r.error || "failed", true); }
   });
 };
-async function toggleFlag(path, value, label) {
+async function toggleFlag(el, path, value, label) {
   const r = await post("/api/flags/toggle", { path, value });
-  if (r.ok) { toast(`${label} → ${r.new}`); await refresh(); renderBanner(); }
-  else toast(r.error || "failed", true);
+  if (r.ok) { toast(`${label} → ${r.new}${r.commit ? " (committed)" : ""}`); await refresh(); renderBanner(); }
+  else { if (el) el.checked = !el.checked; toast(r.error || "failed", true); }   // revert UI on failure
 }
-
-/* ---- TRAFFIC ------------------------------------------------------------ */
-RENDER.traffic = async () => {
-  const v = $("#view");
-  const st = await api("/api/traffic");
-  if (!st.configured) {
-    v.innerHTML = `
-      <div class="grid">
-        ${card("Data tag", `<div class="big">Live</div><div class="sub">measurement id <code>${esc(st.measurement_id)}</code> on every page</div>`)}
-        ${card("Reading traffic", `<div class="big" style="color:var(--warn)">Not connected</div><div class="sub">${esc(st.reason || "needs a service account")}</div>`)}
-      </div>
-      <div class="section">Connect live traffic + real-time users</div>
-      <div class="card"><ol class="steps">${(st.setup_steps || []).map(s => `<li>${esc(s)}</li>`).join("")}</ol></div>
-      <div class="card" style="margin-top:12px"><h3>China</h3><div class="sub">${esc(st.china_note)}</div></div>`;
-    return;
-  }
-  v.innerHTML = `
-    <div class="grid">
-      ${card("Active users now", `<div class="big" id="rtUsers">…</div><div class="sub">last 30 min · auto-refresh</div>`)}
-      ${card("Sessions (7d)", `<div class="big" id="rep7s">…</div><div class="sub" id="rep7u"></div>`)}
-      ${card("Pageviews (7d)", `<div class="big" id="rep7v">…</div><div class="sub">property <code>${esc(st.property_id)}</code></div>`)}
-    </div>
-    <div class="grid" style="margin-top:14px">
-      <div class="card"><h3>Top pages (7d)</h3><div id="topPages" class="sub">loading…</div></div>
-      <div class="card"><h3>Top countries (7d)</h3><div id="topCountries" class="sub">loading…</div></div>
-      <div class="card"><h3>Active now by country</h3><div id="rtCountries" class="sub">loading…</div></div>
-    </div>`;
-  const pollRT = async () => {
-    // self-cancel if the user left the Traffic tab (so a stale interval can't throw)
-    if (CURRENT !== "traffic" || !$("#rtUsers")) { if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; } return; }
-    const rt = await api("/api/traffic/realtime");
-    const el = $("#rtUsers"); if (!el || CURRENT !== "traffic") return;   // re-check after await
-    el.textContent = rt.ok ? rt.active_users : "—";
-    const cc = $("#rtCountries");
-    if (rt.ok && cc) cc.innerHTML = (rt.by_country || []).map(c => `<div class="kv"><span>${esc(c.country)}</span><b>${c.active}</b></div>`).join("") || "<span class='muted'>none</span>";
-  };
-  if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
-  RT_TIMER = setInterval(pollRT, 15000);   // assign the handle BEFORE the first await
-  pollRT();
-  const rep = await api("/api/traffic/report?days=7");
-  if (rep.ok) {
-    $("#rep7s").textContent = rep.summary.sessions.toLocaleString();
-    $("#rep7u").textContent = rep.summary.users.toLocaleString() + " users · " + rep.summary.new_users.toLocaleString() + " new";
-    $("#rep7v").textContent = rep.summary.pageviews.toLocaleString();
-    $("#topPages").innerHTML = rep.top_pages.map(p => `<div class="kv"><span class="mono">${esc(p.path)}</span><b>${p.views}</b></div>`).join("");
-    $("#topCountries").innerHTML = rep.top_countries.map(c => `<div class="kv"><span>${esc(c.country)}</span><b>${c.users}</b></div>`).join("");
-  }
-};
 
 /* ---- BUILD & DEPLOY ----------------------------------------------------- */
 async function dispatch(workflow) {
@@ -264,26 +356,18 @@ async function dispatch(workflow) {
 }
 const STATUS_PILL = (r) => {
   if (r.status !== "completed") return `<span class="statpill s-warn">${esc(r.status)}</span>`;
-  const c = r.conclusion;
-  const cls = c === "success" ? "s-ok" : (c === "failure" || c === "timed_out") ? "s-bad" : "s-mut";
+  const c = r.conclusion, cls = c === "success" ? "s-ok" : (c === "failure" || c === "timed_out") ? "s-bad" : "s-mut";
   return `<span class="statpill ${cls}">${esc(c || "?")}</span>`;
 };
 RENDER.deploy = async () => {
-  const v = $("#view");
-  const hasTok = SUMMARY.meta && SUMMARY.meta.has_token;
-  v.innerHTML = `
-    <div id="depActions"></div>
-    <div class="section">Recent workflow runs</div>
-    <div id="runs"><div class="spin">loading…</div></div>`;
+  const v = $("#view"); const hasTok = SUMMARY.meta && SUMMARY.meta.has_token;
+  v.innerHTML = `<div id="depActions"></div><div class="section">Recent workflow runs</div><div id="runs"><div class="spin">loading…</div></div>`;
   const a = $("#depActions");
   [["daily.yml", "▶ Rebuild & deploy", "primary"], ["pages.yml", "⟳ Redeploy site only", ""], ["weekly.yml", "↻ Weekly deep build", ""]].forEach(([wf, label, cls]) => {
-    const b = h(`<button class="btn ${cls}" style="margin-right:8px">${label}</button>`);
-    b.disabled = !hasTok; b.onclick = () => dispatch(wf);
-    a.appendChild(b);
+    const b = h(`<button class="btn ${cls}" style="margin-right:8px">${label}</button>`); b.disabled = !hasTok; b.onclick = () => dispatch(wf); a.appendChild(b);
   });
-  if (!hasTok) a.appendChild(h(`<div class="sub" style="margin-top:8px">Set <code>GH_TOKEN</code> (Actions: write) in <code>.env</code> to trigger runs. (Run status below works without a token on a public repo.)</div>`));
-  const data = await api("/api/deploy");
-  const runs = $("#runs");
+  if (!hasTok) a.appendChild(h(`<div class="sub" style="margin-top:8px">Set <code>GH_TOKEN</code> (Actions: write) to trigger runs. (Run status below works without a token.)</div>`));
+  const data = await api("/api/deploy"); const runs = $("#runs");
   if (!data.ok) { runs.innerHTML = `<div class="card sub">Could not load runs: ${esc(data.error || "?")}</div>`; return; }
   runs.innerHTML = `<table><thead><tr><th>Workflow</th><th>Event</th><th>Status</th><th>Branch</th><th>Started</th><th></th></tr></thead><tbody>
     ${data.runs.map(r => `<tr><td><b>${esc(r.workflow || r.name)}</b></td><td class="sub">${esc(r.event)}</td><td>${STATUS_PILL(r)}</td>
@@ -294,8 +378,7 @@ RENDER.deploy = async () => {
 
 /* ---- HEALTH ------------------------------------------------------------- */
 RENDER.health = async () => {
-  const v = $("#view");
-  const d = await api("/api/health");
+  const v = $("#view"); const d = await api("/api/health");
   if (d.error) { v.innerHTML = card("Error", `<div class="sub" style="color:var(--bad)">${esc(d.error)}</div>`); return; }
   const src = d.sources || {};
   const sp = (s) => `<span class="statpill ${s === "ok" ? "s-ok" : s === "stale" ? "s-warn" : s === "dead" ? "s-bad" : "s-mut"}">${esc(s)}</span>`;
@@ -316,69 +399,59 @@ RENDER.health = async () => {
 
 /* ---- AI COST ------------------------------------------------------------ */
 RENDER.cost = async () => {
-  const v = $("#view");
-  const d = await api("/api/cost");
+  const v = $("#view"); const d = await api("/api/cost");
   if (d.error) { v.innerHTML = card("Error", `<div class="sub" style="color:var(--bad)">${esc(d.error)}</div>`); return; }
   const r = d.realized || {};
   v.innerHTML = `
     <div class="grid">
       ${card("Est. monthly", `<div class="big">${fmtUSD(d.monthly_usd)}</div><div class="sub">~${d.assumptions.build_days_per_month} build-days/mo</div>`)}
       ${card("Per build", `<div class="big">${fmtUSD(d.per_build_usd)}</div><div class="sub">${fmtUSD(d.effective_daily_usd)}/day effective</div>`)}
-      ${card("Realized", `<div class="big">${r.stockbrief_files || 0}</div><div class="sub">stock briefs · ${r.ai_desk_theses_logged || 0} theses logged</div>`)}
+      ${card("Realized", `<div class="big">${r.stockbrief_files || 0}</div><div class="sub">stock briefs · ${r.ai_desk_theses_logged || 0} theses</div>`)}
     </div>
-    ${!d.deepseek_key ? `<div class="card sub" style="margin-top:12px;color:var(--warn)">DEEPSEEK_API_KEY not set — actual spend is $0 (briefs are a no-op).</div>` : ""}
+    ${!d.deepseek_key ? `<div class="card sub" style="margin-top:12px;color:var(--warn)">DEEPSEEK_API_KEY not set — actual spend is $0.</div>` : ""}
     <div class="section">Components</div>
     <table><thead><tr><th>Component</th><th>On</th><th>Model</th><th class="r">Calls/build</th><th class="r">$/build</th><th>Cadence</th></tr></thead><tbody>
       ${(d.components || []).map(c => `<tr><td><b>${esc(c.name)}</b><div class="sub">${esc(c.note)}</div></td>
         <td>${c.enabled ? "<span class='statpill s-ok'>yes</span>" : "<span class='statpill s-mut'>no</span>"}</td>
-        <td class="mono">${esc(c.model)}</td><td class="r">${c.calls_per_build}</td><td class="r">${fmtUSD(c.cost_per_build)}</td>
-        <td class="sub">every ${c.interval_days}d</td></tr>`).join("")}
-    </tbody></table>
-    <div class="section">Monthly cost vs brief interval</div>
-    <div class="card"><div class="sub" style="margin-bottom:8px">If you set the Master Brain + AI Desk interval to N days (per-stock briefs stay daily):</div>
-    <table><thead><tr><th>Interval</th><th class="r">Est. monthly</th></tr></thead><tbody>
-      ${(d.savings_by_interval || []).map(s => `<tr><td>every ${s.interval} day${s.interval > 1 ? "s" : ""}</td><td class="r">${fmtUSD(s.monthly_usd)}</td></tr>`).join("")}
-    </tbody></table></div>
-    <div class="card sub" style="margin-top:12px">⚠︎ ${esc(d.assumptions.disclaimer)}</div>`;
+        <td class="mono">${esc(c.model)}</td><td class="r">${c.calls_per_build}</td><td class="r">${fmtUSD(c.cost_per_build)}</td><td class="sub">every ${c.interval_days}d</td></tr>`).join("")}
+    </tbody></table>`;
 };
 
 /* ---- CONTENT ------------------------------------------------------------ */
 RENDER.content = async () => {
-  const v = $("#view");
-  const d = await api("/api/content");
+  const v = $("#view"); const d = await api("/api/content");
   v.innerHTML = `
     <div class="grid">
       ${card("Pages", `<div class="big">${d.total_pages}</div><div class="sub">deployed *.html</div>`)}
       ${card("Total size", `<div class="big">${d.total_mb} MB</div><div class="sub">${d.total_kb} KB</div>`)}
-      ${card("Checks", `<div id="upBox"><button class="btn" id="upBtn">Probe live site</button></div>`)}
+      ${card("Live probe", `<div id="upBox"><button class="btn" id="upBtn2">Probe live site</button></div>`)}
       ${card("Links", `<div id="lkBox"><button class="btn" id="lkBtn">Check internal links</button></div>`)}
     </div>
     <div class="section">All pages <span class="cnt">${d.total_pages}</span></div>
     <table><thead><tr><th>Page</th><th class="r">Size (KB)</th><th class="r">Updated</th></tr></thead><tbody>
       ${d.pages.map(p => `<tr><td class="mono">${esc(p.name)}</td><td class="r">${p.kb}</td><td class="r sub">${fmtAge(p.age_hours)} ago</td></tr>`).join("")}
     </tbody></table>`;
-  $("#upBtn").onclick = async () => {
-    $("#upBox").innerHTML = "<span class='muted'>probing…</span>";
-    const u = await api("/api/uptime");
+  $("#upBtn2").onclick = async () => {
+    $("#upBox").innerHTML = "<span class='muted'>probing…</span>"; const u = await api("/api/uptime");
     $("#upBox").innerHTML = u.ok ? `<div class="big" style="font-size:18px;color:var(--ok)">200 OK</div><div class="sub">${u.ms} ms · ${(u.bytes / 1024).toFixed(0)} KB</div>`
       : `<div class="big" style="font-size:18px;color:var(--bad)">${u.status || "down"}</div><div class="sub">${esc(u.error || "")}</div>`;
   };
   $("#lkBtn").onclick = async () => {
-    $("#lkBox").innerHTML = "<span class='muted'>scanning…</span>";
-    const l = await api("/api/content/links");
-    $("#lkBox").innerHTML = `<div class="big" style="font-size:18px;color:${l.count ? "var(--warn)" : "var(--ok)"}">${l.count} broken</div><div class="sub">${l.checked_pages} pages · .html nav links in local site/</div>`;
-    if (l.count) {
-      const sec = h(`<div></div>`);
-      sec.innerHTML = `<div class="section">Broken internal links <span class="cnt">${l.count}</span></div>
-        <table><thead><tr><th>Page</th><th>Link</th></tr></thead><tbody>${l.broken.map(b => `<tr><td class="mono">${esc(b.page)}</td><td class="mono" style="color:var(--bad)">${esc(b.link)}</td></tr>`).join("")}</tbody></table>`;
-      $("#view").appendChild(sec);
-    }
+    $("#lkBox").innerHTML = "<span class='muted'>scanning…</span>"; const l = await api("/api/content/links");
+    $("#lkBox").innerHTML = `<div class="big" style="font-size:18px;color:${l.count ? "var(--warn)" : "var(--ok)"}">${l.count} broken</div><div class="sub">${l.checked_pages} pages scanned</div>`;
+    if (l.count) { const sec = h(`<div></div>`); sec.innerHTML = `<div class="section">Broken internal links <span class="cnt">${l.count}</span></div>
+      <table><thead><tr><th>Page</th><th>Link</th></tr></thead><tbody>${l.broken.map(b => `<tr><td class="mono">${esc(b.page)}</td><td class="mono" style="color:var(--bad)">${esc(b.link)}</td></tr>`).join("")}</tbody></table>`; $("#view").appendChild(sec); }
   };
 };
 
 /* ---- boot --------------------------------------------------------------- */
-(async function boot() {
+async function boot() {
   renderTabs();
   await refresh();
   go("overview");
+}
+(async function init() {
+  SESSION = await fetch("/api/session").then(r => r.json()).catch(() => ({ auth_enabled: false, authenticated: true }));
+  if (SESSION.auth_enabled && !SESSION.authenticated) { showLogin(); return; }
+  hideLogin(); boot();
 })();

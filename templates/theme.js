@@ -51,6 +51,37 @@
     else setTimeout(inject, 1200);
   })();
 
+  /* ---- Umami web analytics (cloud.umami.is) -------------------------------
+     Privacy-first, cookieless pageview analytics for the whole site — loaded
+     once here so every page is tracked with no per-template tag. Unlike GA4
+     this is ON by default: Umami sets no cookies and collects no PII, so no
+     consent banner is needed. Skips localhost / 127.0.0.1 / file:// (so local
+     dev, previews and the admin console never pollute the stats) and skips the
+     admin.* host itself. Loads async at idle and fails silently if the host is
+     unreachable (e.g. a strict network / GFW), so it can never block paint or
+     spam the console. The website id is PUBLIC — it ships in the page tag
+     either way. View the data at https://cloud.umami.is (reading it back via
+     API needs a paid plan; the admin Analytics tab degrades to a link-out). */
+  var UMAMI_WEBSITE_ID = 'd7734c31-99fa-4949-bcde-bec41fbfb2cf';
+  (function loadUmami() {
+    if (!UMAMI_WEBSITE_ID || window.__umami_loaded) return;
+    var h = location.hostname;
+    if (!h || h === 'localhost' || h === '127.0.0.1' || h === '[::1]') return;
+    if (h.split('.')[0] === 'admin') return;          // don't track the console
+    window.__umami_loaded = true;
+    var inject = function () {
+      var s = document.createElement('script');
+      s.async = true;
+      s.defer = true;
+      s.src = 'https://cloud.umami.is/script.js';
+      s.setAttribute('data-website-id', UMAMI_WEBSITE_ID);
+      s.onerror = function () { /* unreachable (e.g. GFW) — fail silently */ };
+      (document.head || document.documentElement).appendChild(s);
+    };
+    if (window.requestIdleCallback) requestIdleCallback(inject, { timeout: 4000 });
+    else setTimeout(inject, 1200);
+  })();
+
   /* ---- Mastermind Terminal jump -------------------------------------------
      Single-stock analysis now opens in the Terminal web app. US stock links
      (stock.html#TICKER) and US search picks route to
