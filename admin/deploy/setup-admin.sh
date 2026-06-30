@@ -16,8 +16,8 @@ test -x "$VENV/bin/python" || { log "FATAL: $VENV/bin/python missing"; exit 1; }
 
 log "[1/5] python deps (pyyaml, requests)"
 "$VENV/bin/python" - <<'PY' || "$VENV/bin/pip" install --quiet --disable-pip-version-check pyyaml requests
-import importlib, sys
-sys.exit(0 if all(importlib.util.find_spec(m) for m in ("yaml", "requests")) else 1)
+import importlib.util as u, sys
+sys.exit(0 if all(u.find_spec(m) for m in ("yaml", "requests")) else 1)
 PY
 
 log "[2/5] secrets file"
