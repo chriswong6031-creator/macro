@@ -40,6 +40,12 @@ DETAIL_DIR = "subsector"
 BOARD_JSON = "marketdata/subsector_confluence.json"
 BASKET_JSON = "marketdata/basket_confluence.json"
 
+# China 同花顺 (THS) concept desk — namespaced so it never clobbers the US outputs.
+CN_OHLC_DIR = "subsectorohlc_china"
+CN_SIG_DIR = "subsector_signals_china"
+CN_DETAIL_DIR = "subsector_china"
+CN_BOARD_JSON = "marketdata/subsector_confluence_china.json"
+
 
 # ----------------------------------------------------------------- helpers ----
 
@@ -77,23 +83,24 @@ def _write_json(path: Path, obj) -> None:
 
 
 def _detail_key(g: dict) -> str:
-    """Detail-page/file key. Baskets are namespaced ('b-') so they never collide with a
-    sub-industry slug."""
+    """Detail-page/file key within a desk's own dirs. US curated baskets are namespaced ('b-') so
+    they never collide with a sub-industry slug in the SHARED US dirs. China concepts live in their
+    OWN dirs (subsector_china/, …) and carry a 'ths-' slug already, so no extra prefix is needed."""
     return ("b-" + g["key"]) if g.get("kind") == "basket" else g["key"]
 
 
-def _emit_group_files(site: Path, g: dict) -> None:
-    """Write a group's chart OHLC + §7 signal file; mutate g to drop the heavy series and
-    record the keys the detail page chart will mount."""
+def _emit_group_files(site: Path, g: dict, ohlc_dir: str = OHLC_DIR, sig_dir: str = SIG_DIR) -> None:
+    """Write a group's chart OHLC + §7 signal file into the given desk dirs; mutate g to drop the
+    heavy series and record the keys the detail page chart will mount."""
     key = _detail_key(g)
     cand = g.pop("_candle", None)
     markers = g.pop("_markers", None) or {}
     if cand is not None:
-        _write_json(site / OHLC_DIR / f"{key}.json", {"t": key, "o": 1, "src": "subsector",
-                                                       "bars": _bars_from_candle(cand)})
+        _write_json(site / ohlc_dir / f"{key}.json", {"t": key, "o": 1, "src": "subsector",
+                                                      "bars": _bars_from_candle(cand)})
         g["chart_key"] = key
     if markers.get("markers"):
-        _write_json(site / SIG_DIR / f"{key}.json", markers)
+        _write_json(site / sig_dir / f"{key}.json", markers)
         g["has_signals"] = True
 
 
@@ -194,5 +201,67 @@ def build(site: Path, generated_utc: str | None = None) -> int:
     return render_pages(site, _env(), generated_utc)
 
 
+# ----------------------------------------------------- China 同花顺 (THS) desk ----
+
+def main_china() -> dict:
+    """Nightly (cl_china band): compute the China 同花顺 concept confluence desk + write its
+    namespaced JSON / chart / signal files + render its pages. Mirrors main() for the US desk."""
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    cn = sc.compute_china_ths_confluence()
+    for g in cn.get("baskets", []):
+        _emit_group_files(site, g, ohlc_dir=CN_OHLC_DIR, sig_dir=CN_SIG_DIR)
+    cn["generated_utc"] = generated
+    _write_json(site / CN_BOARD_JSON, cn)
+    n = render_china_pages(site, _env(), generated)
+    log.info("subsector_confluence[CHINA]: %d THS concepts (%d entry-now), %d pages — as_of %s",
+             len(cn.get("baskets", [])), len(cn.get("entry_now", [])), n, cn.get("as_of"))
+    return {"baskets": len(cn.get("baskets", [])), "entry_now": cn.get("entry_now", []),
+            "pages": n, "as_of": cn.get("as_of")}
+
+
+def render_china_pages(site: Path, env=None, generated_utc: str | None = None) -> int:
+    """Render the China board (subsectors_china.html) + one detail page per THS concept FROM the
+    committed China JSON. Render-lane safe (no recompute). Reuses the bilingual detail template."""
+    env = env or _env()
+    generated_utc = generated_utc or datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    try:
+        cn = json.loads((site / CN_BOARD_JSON).read_text())
+    except Exception as e:  # noqa: BLE001
+        log.error("china confluence board JSON missing (%s) — run main_china() first", e)
+        return 0
+    (site / "subsectors_china.html").write_text(
+        env.get_template("subsectors_china.html.j2").render(generated_utc=generated_utc))
+
+    out_dir = site / CN_DETAIL_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+    tmpl = env.get_template("subsector_detail.html.j2")
+    n = 0
+    for g in cn.get("baskets", []):
+        key = _detail_key(g)
+        detail = {
+            "group": g, "kind": "concept", "as_of": g.get("as_of"),
+            "ohlc_dir": CN_OHLC_DIR, "sig_dir": CN_SIG_DIR,
+            "back": "../subsectors_china.html",
+            "stock_base": "../china_lookup.html#",
+            "generated_utc": generated_utc,
+        }
+        html = tmpl.render(detail_json=json.dumps(_clean(detail), separators=(",", ":"), allow_nan=False),
+                           group_name=g.get("label_zh") or g.get("label", key),
+                           chart_key=g.get("chart_key"), has_signals=bool(g.get("has_signals")),
+                           back_href="../subsectors_china.html", generated_utc=generated_utc)
+        (out_dir / f"{key}.html").write_text(html)
+        n += 1
+    log.info("subsector_confluence[CHINA]: rendered subsectors_china.html + %d detail pages", n)
+    return n
+
+
+def build_china(site: Path, generated_utc: str | None = None) -> int:
+    """build_site entrypoint (render lane) for the China desk."""
+    return render_china_pages(site, _env(), generated_utc)
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+    main_china() if "--china" in sys.argv else main()

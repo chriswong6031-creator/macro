@@ -39,6 +39,7 @@ DISPLAY-ONLY entry-QUALITY / RISK — one door; confirm before acting. None/empt
 """
 from __future__ import annotations
 
+import json
 import logging
 import re
 
@@ -81,9 +82,23 @@ def _seed_members(tickers: list[str]) -> list[dict]:
     return out
 
 
-def _spy_close() -> pd.Series | None:
-    df = basket_index._load_member_ohlcv("SPY")
+def _bench_close(ticker: str = "SPY") -> pd.Series | None:
+    """Benchmark close for the regime engine's rs_60d. Resolves via the member loader (US: SPY in
+    data/yahoo) and falls back to the China index store (data/china/<ticker>, e.g. 510300.SS = CSI
+    300). A China desk MUST pass its own benchmark — SPY-vs-A-share rs_60d would be nonsensical."""
+    df = basket_index._load_member_ohlcv(ticker)
+    if df is None:
+        p = config.data_dir() / "china" / f"{ticker}.parquet"
+        if p.exists():
+            try:
+                df = pd.read_parquet(p)
+            except Exception:  # noqa: BLE001
+                df = None
     return df["close"].dropna() if df is not None and "close" in df else None
+
+
+def _spy_close() -> pd.Series | None:
+    return _bench_close("SPY")
 
 
 def _ret20(close: pd.Series | None) -> float | None:
@@ -163,7 +178,9 @@ _CLASS_ORDER = {"entry_now": 0, "forming": 1, "tailwind": 2, "neutral": 3, "late
 
 def score_group(key: str, label: str, sector: str, tickers: list[str],
                 spy: pd.Series | None, member_cache: dict, *,
-                kind: str = "subsector", with_members: bool = True) -> dict | None:
+                kind: str = "subsector", with_members: bool = True,
+                label_zh: str | None = None, sector_zh: str | None = None,
+                member_names: dict | None = None) -> dict | None:
     """Build one group's synthetic index and run BOTH gates on it. Returns the structured
     verdict (entry tier + regime + per-member funnel + the index series for the chart), or
     None if the group is too thin / too short to gate. PURE w.r.t. files (reads the OHLCV store).
@@ -202,6 +219,7 @@ def score_group(key: str, label: str, sector: str, tickers: list[str],
             mtier = (mv or {}).get("tier_cascade")
             members_detail.append({
                 "ticker": t,
+                "name_zh": (member_names or {}).get(t),
                 "price": round(float(mc.iloc[-1]), 2),
                 "ret_20d": round(mret20, 1) if mret20 is not None else None,
                 "vs_basket": (round(mret20 - bret20, 1)
@@ -217,7 +235,8 @@ def score_group(key: str, label: str, sector: str, tickers: list[str],
                                            -(m["vs_basket"] if m["vs_basket"] is not None else -999)))
 
     return {
-        "key": key, "kind": kind, "label": label, "sector": sector,
+        "key": key, "kind": kind, "label": label, "label_zh": label_zh,
+        "sector": sector, "sector_zh": sector_zh,
         "n_members": len(set(tickers)), "n_priced": n_priced,
         "coverage_pct": meta.get("coverage_pct"), "n_live": meta.get("n_live"),
         "start": meta.get("start"), "as_of": str(close.index.max().date()),
@@ -279,10 +298,11 @@ def funnel(groups: list[dict]) -> dict:
             if not m["stock_buyable"]:
                 continue
             row = {
-                "ticker": m["ticker"], "price": m["price"],
+                "ticker": m["ticker"], "name_zh": m.get("name_zh"), "price": m["price"],
                 "stock_tier": m["stock_tier"], "stock_weight": m["stock_weight"],
                 "stock_ticks": m["stock_ticks"], "stock_bars_to_cross": m["stock_bars_to_cross"],
-                "subsector_key": g["key"], "subsector": g["label"], "sector": g["sector"],
+                "subsector_key": g["key"], "subsector": g["label"], "subsector_zh": g.get("label_zh"),
+                "sector": g["sector"],
                 "subsector_tier": g["entry"]["tier"], "subsector_state": sub_state,
                 "subsector_side": g["regime"]["side"], "subsector_factor": round(sub_factor, 3),
                 "combined_score": round((m["stock_weight"] or 0.0) * sub_factor, 4),
@@ -358,11 +378,19 @@ def compute_subsector_confluence() -> dict:
     }
 
 
-def compute_basket_confluence(memberships: dict) -> dict:
-    """The same desk over the owner-curated thematic baskets (data/baskets/membership.json) —
-    fully-priced equal-weight baskets, so the price confluence is clean. `memberships` is the
-    membership.json 'baskets' dict {basket_id: {name, category, members:[{ticker,...}], ...}}."""
-    spy = _spy_close()
+_US_BASKET_NOTE = ("Equal-weight curated thematic baskets; same T1-T4 entry gate + regime "
+                   "context as the subsector desk. Curated membership (descriptive); EOD daily. "
+                   "One door, confirm before acting; not alpha.")
+
+
+def compute_basket_confluence(memberships: dict, *, benchmark: str = "SPY",
+                              universe: str = "curated_baskets", kind: str = "basket",
+                              notes: str | None = None) -> dict:
+    """The same desk over a dict of equal-weight baskets {basket_id: {name, name_zh?, category,
+    category_zh?, members:[{ticker, removed?, name_zh?}], ...}}. Region-agnostic: pass `benchmark`
+    (SPY for US, 510300.SS=CSI 300 for China) for the regime rs_60d, and bilingual `name_zh`/
+    `category_zh`/member `name_zh` flow straight through to the output for the CN pages."""
+    spy = _bench_close(benchmark)
     member_cache: dict = {}
     items = memberships.items() if isinstance(memberships, dict) else [(b.get("id"), b) for b in memberships]
 
@@ -372,8 +400,11 @@ def compute_basket_confluence(memberships: dict) -> dict:
         tickers = [m.get("ticker") for m in members if m.get("ticker") and not m.get("removed")]
         if len(set(tickers)) < MIN_MEMBERS:
             continue
+        member_names = {m.get("ticker"): m.get("name_zh") for m in members if m.get("ticker")}
         g = _safe_score(bid, _slug(bid), spec.get("name") or bid, spec.get("category") or "theme",
-                        tickers, spy, member_cache, kind="basket")
+                        tickers, spy, member_cache, kind=kind,
+                        label_zh=spec.get("name_zh"), sector_zh=spec.get("category_zh"),
+                        member_names=member_names)
         if g is not None:
             g["basket_id"] = bid
             baskets.append(g)
@@ -382,7 +413,7 @@ def compute_basket_confluence(memberships: dict) -> dict:
                                 -(g["regime"]["rs_60d"] or 0)))
     ff = funnel(baskets)
     return {
-        "ok": True, "universe": "curated_baskets", "weighting": "equal",
+        "ok": True, "universe": universe, "weighting": "equal", "benchmark": benchmark,
         "as_of": max((g["as_of"] for g in baskets), default=None),
         "coverage": {"n_baskets": len(baskets)},
         "entry_now": [g["key"] for g in baskets if g["class"] == "entry_now"],
@@ -390,7 +421,36 @@ def compute_basket_confluence(memberships: dict) -> dict:
         "headwind": [g["key"] for g in baskets if g["class"] == "headwind"],
         "baskets": baskets,
         "double_gated": ff,
-        "notes": ("Equal-weight curated thematic baskets; same T1-T4 entry gate + regime "
-                  "context as the subsector desk. Curated membership (descriptive); EOD daily. "
-                  "One door, confirm before acting; not alpha."),
+        "notes": notes or _US_BASKET_NOTE,
     }
+
+
+def compute_china_ths_confluence() -> dict:
+    """The China 同花顺 (Tonghuashun) CONCEPT confluence desk. Same equal-weight index → T1-T4
+    MACDRSI×StochRSI entry gate → regime state machine → double-gated funnel as the US desk, over
+    the curated THS concept baskets (data/baskets_china_ths/membership.json), benchmarked to CSI
+    300 (沪深300, 510300.SS). THS concepts are a FLAT, overlapping classification (a stock sits in
+    many concepts) — NOT a sector→industry hierarchy — so this is the concept-basket analog of the
+    US thematic-baskets desk, not a granular sub-industry partition. Regime base rates are
+    US-SPDR-calibrated (NOT China-validated) and are not shown; the BUY/SETUP/TOPPING/SELL state
+    logic is market-agnostic technical analysis. Degrades to ok=False if the membership is absent."""
+    p = config.data_dir() / "baskets_china_ths" / "membership.json"
+    if not p.exists():
+        log.warning("china_ths_confluence: membership.json missing")
+        return {"ok": False, "reason": "THS membership missing", "baskets": [], "double_gated": {"double_buy": [], "headwind_warn": []}}
+    mem = json.loads(p.read_text())
+    baskets = mem.get("baskets") or {}
+    bench = mem.get("benchmark") or "510300.SS"
+    blab, blab_zh = mem.get("benchmark_label") or "CSI 300", mem.get("benchmark_label_zh") or "沪深300"
+    out = compute_basket_confluence(
+        baskets, benchmark=bench, universe="ths_concepts", kind="concept",
+        notes=(f"Equal-weight 同花顺 (Tonghuashun) CONCEPT baskets, benchmarked to {blab} ({blab_zh}, "
+               f"{bench}). Same T1-T4 MACDRSI×StochRSI entry gate + regime context as the US desk. "
+               "Curated, today's-membership (descriptive, hindsight-curated — NOT out-of-sample); EOD "
+               "daily; calendar 3D buckets. Regime base rates are US-sector-calibrated and not shown "
+               "for China. Display-only entry-quality / rotation-timing — one door, confirm before "
+               "acting; not alpha."))
+    out["region"] = "china"
+    out["benchmark_label"], out["benchmark_label_zh"] = blab, blab_zh
+    out["source"] = mem.get("source")
+    return out

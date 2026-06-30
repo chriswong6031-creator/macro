@@ -368,7 +368,7 @@ jobs:
             brun transmission "rate & inflation transmission (build_transmission)" scripts.build_transmission
             brun discovery    "discovery leaderboard (build_discovery)"            scripts.build_discovery
           }
-          cl_china() { brun china "build china a-share dashboard (build_china)" scripts.build_china; brun china_sector_desk "build china sector desk (build_china_sector_desk)" scripts.build_china_sector_desk; brun china_sector_cyc "china sector cycles (build_china_sector_cycles)" scripts.build_china_sector_cycles; brun china_sector_central "china sector central intelligence (build_china_sector_central)" scripts.build_china_sector_central; brun flow_velocity "capital flow velocity — CN/HK (build_flow_velocity)" scripts.build_flow_velocity; }
+          cl_china() { brun china "build china a-share dashboard (build_china)" scripts.build_china; brun china_sector_desk "build china sector desk (build_china_sector_desk)" scripts.build_china_sector_desk; brun china_sector_cyc "china sector cycles (build_china_sector_cycles)" scripts.build_china_sector_cycles; brun china_sector_central "china sector central intelligence (build_china_sector_central)" scripts.build_china_sector_central; brun flow_velocity "capital flow velocity — CN/HK (build_flow_velocity)" scripts.build_flow_velocity; brun subsector_conf_cn "china 同花顺 subsector confluence + double-gated funnel (build_subsector_confluence --china)" scripts.build_subsector_confluence --china; }
           cl_hk()    { brun hk    "build hong kong / hang seng (build_hk)"      scripts.build_hk; }
           cl_gex() {
             brun gex_board    "GEX magnets board (build_gex_board)"        scripts.build_gex_board
@@ -398,7 +398,7 @@ jobs:
           wait
           # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
           #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          ORDER="china hk flow_velocity commodities spr forex bonds crossasset transmission discovery gex_board vol_regime options_flow options_skew options_ivspread baskets subsector_conf news methodology seasonality reports policy_intent policy_watch special index_changes"
+          ORDER="china hk flow_velocity subsector_conf_cn commodities spr forex bonds crossasset transmission discovery gex_board vol_regime options_flow options_skew options_ivspread baskets subsector_conf news methodology seasonality reports policy_intent policy_watch special index_changes"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue

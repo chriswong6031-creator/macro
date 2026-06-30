@@ -2668,7 +2668,7 @@ def main() -> int:
                   "lightweight-charts.js",
                   "allocation_scorecard.js", "live.js", "risk_state_live.js",
                   "wh_banner.js", "heatmap.js",
-                  "subsector_rotation.js", "subsectors.js",
+                  "subsector_rotation.js", "subsectors.js", "subsectors_china.js",
                   # vendored (self-hosted) third-party libs — were CDN <script> tags
                   # (cdn.jsdelivr / cdn.plot.ly) that are blocked/unreliable in mainland
                   # China; served same-origin so pages load behind the GFW.
@@ -3044,6 +3044,17 @@ def main() -> int:
         log.info("wrote subsectors.html + %d subsector confluence detail pages", n_sc)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("subsector confluence render failed: %s", e)
+
+    # Subsector Confluence · China — the 同花顺 (Tonghuashun) CONCEPT desk: each THS concept board
+    # as an equal-weight A-share index → T1-T4 cascade + regime + double-gated funnel, benchmarked
+    # to CSI 300. Heavy compute is nightly (scripts.build_subsector_confluence --china, cl_china);
+    # here we only RENDER subsectors_china.html + detail pages from the committed JSON.
+    try:
+        from scripts.build_subsector_confluence import build_china as build_subsector_confluence_china
+        n_cn = build_subsector_confluence_china(site, generated_utc=generated)
+        log.info("wrote subsectors_china.html + %d China THS confluence detail pages", n_cn)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("china subsector confluence render failed: %s", e)
 
     # --- history page: the longer-window charts + lifespan base rates ----------
     from engine.playbook import QUAD_SHORT, next_quads_line, transition_stats

@@ -48,14 +48,14 @@
   <div class="nav-ctrls">
     <a class="ai-brief-link" href="../mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
     <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
-    <a class="ai-brief-link" href="../subsectors.html">💫 {{ t('All subsectors', '全部子行业') }}</a>
+    <a class="ai-brief-link" href="{{ back_href | default('../subsectors.html') }}">💫 {{ t('All subsectors', '全部子行业') }}</a>
     <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
     <div class="lang-toggle" role="group" aria-label="Language"><span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span></div>
   </div>
 </nav>
 
 <div class="wrap">
-  <a class="back" href="../subsectors.html">← {{ t('Subsector Confluence', '子行业汇聚') }}</a>
+  <a class="back" href="{{ back_href | default('../subsectors.html') }}">← {{ t('Subsector Confluence', '子行业汇聚') }}</a>
   <div id="app"></div>
 </div>
 
@@ -81,7 +81,8 @@ function render() {
   const cls = g['class'];
   const badge = e.tier ? tierB(e.tier) + (e.buyable ? ' <span class="pill buy">' + (cls === 'forming' ? 'FORMING' : 'ENTRY-NOW') + '</span>' : '') : '';
   const reg = `<span class="pill ${r.side || 'neutral'}">${esc(r.label || r.state || '—')}</span>`;
-  let h = `<div class="dh"><div><h1>${esc(g.label)}</h1><div class="sct">${esc(g.sector)} · ${DETAIL.kind === 'basket' ? L('thematic basket', '主题篮子') : L('S&amp;P 500 sub-industry', '标普500子行业')}</div></div>`
+  const kindLabel = DETAIL.kind === 'concept' ? L('同花顺 concept basket', '同花顺概念篮子') : DETAIL.kind === 'basket' ? L('thematic basket', '主题篮子') : L('S&amp;P 500 sub-industry', '标普500子行业');
+  let h = `<div class="dh"><div><h1>${esc(g.label)}${g.label_zh ? ` <span style="color:var(--muted);font-weight:600;font-size:.66em">${esc(g.label_zh)}</span>` : ''}</h1><div class="sct">${esc(g.sector_zh || g.sector)} · ${kindLabel}</div></div>`
     + `<div class="badges">${badge} ${reg}</div></div>`;
   if (r.action) h += `<div class="action">${esc(r.action)}${e.reason ? ' · <span style="color:var(--muted)">' + esc(e.reason) + '</span>' : ''}</div>`;
   h += `<div class="stats">`
@@ -100,7 +101,7 @@ function render() {
   if (ms.length) {
     h += `<h2>📊 ${L('Members — which names are firing', '成分——哪些个股在触发')}</h2>`;
     h += `<table class="tbl"><thead><tr><th>${L('Ticker', '代码')}</th><th>${L('Price', '价格')}</th><th>${L('Own tier', '自身层级')}</th><th>${L('20d', '20日')}</th><th>${L('vs subsector', '相对子行业')}</th><th>${L('Regime', '状态')}</th></tr></thead><tbody>`;
-    h += ms.map(m => `<tr class="${m.stock_buyable ? 'buyable' : ''}"><td class="tk"><a href="${DETAIL.stock_base || '../stock.html#'}${encodeURIComponent(m.ticker)}">${esc(m.ticker)}</a></td>`
+    h += ms.map(m => `<tr class="${m.stock_buyable ? 'buyable' : ''}"><td class="tk"><a href="${DETAIL.stock_base || '../stock.html#'}${encodeURIComponent(m.ticker)}">${esc(m.ticker)}</a>${m.name_zh ? ` <span style="color:var(--muted);font-weight:400;font-size:.85em">${esc(m.name_zh)}</span>` : ''}</td>`
       + `<td class="num">${m.price == null ? '–' : m.price.toFixed(2)}</td>`
       + `<td>${tierB(m.stock_tier)}</td>`
       + `<td>${sgn(m.ret_20d)}</td>`

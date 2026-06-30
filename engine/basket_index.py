@@ -52,12 +52,16 @@ _CACHE: dict[str, pd.DataFrame | None] = {}
 
 def _load_member_ohlcv(ticker: str) -> pd.DataFrame | None:
     """Per-member OHLCV, preferring the deep baskets store, then data/stocks (already OHLCV),
-    then the yahoo store (close+volume → high/low/open synthesised as the close). Cached."""
+    then the China A-share store (data/china_stocks, .SS/.SZ tickers — close/high/low/volume, no
+    open), then the yahoo store (close+volume → high/low/open synthesised as the close). Cached.
+    The china_stocks fallback never collides with the US stores (A-share tickers carry a .SS/.SZ
+    suffix), so it makes the basket machinery China-capable without touching the US path."""
     if ticker in _CACHE:
         return _CACHE[ticker]
     out: pd.DataFrame | None = None
     bp = config.data_dir() / "baskets" / "ohlcv" / f"{ticker}.parquet"
     sp = config.data_dir() / "stocks" / f"{ticker}.parquet"
+    cp = config.data_dir() / "china_stocks" / f"{ticker}.parquet"
     yp = config.data_dir() / "yahoo" / f"{ticker}.parquet"
     try:
         if bp.exists():
@@ -65,6 +69,12 @@ def _load_member_ohlcv(ticker: str) -> pd.DataFrame | None:
             out = df
         elif sp.exists():
             df = pd.read_parquet(sp)            # close/high/low/volume (no open)
+            df = df.copy()
+            if "open" not in df.columns:
+                df["open"] = df["close"]
+            out = df
+        elif cp.exists():
+            df = pd.read_parquet(cp)            # A-share close/high/low/volume (no open)
             df = df.copy()
             if "open" not in df.columns:
                 df["open"] = df["close"]

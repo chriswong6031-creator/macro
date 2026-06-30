@@ -121,3 +121,44 @@ def test_score_group_real_subsector_semiconductors():
     # every member carries its own gate verdict shape
     for m in g["members"]:
         assert "stock_tier" in m and "stock_buyable" in m
+
+
+# ----------------------------------------------------- China 同花顺 (THS) desk ----
+
+def _has_china():
+    from lib import config
+    return (config.data_dir() / "china_stocks").exists() and \
+        (config.data_dir() / "baskets_china_ths" / "membership.json").exists()
+
+
+@pytest.mark.skipif(not _has_china(), reason="China stores not present")
+def test_china_benchmark_and_member_loader_resolve():
+    from engine import basket_index
+    # CSI 300 benchmark loads (from data/china, not the member stores)
+    b = sc._bench_close("510300.SS")
+    assert b is not None and len(b) > 260
+    # an A-share .SZ/.SS ticker now resolves through the member loader (the china_stocks fallback)
+    df = basket_index._load_member_ohlcv("000725.SZ")
+    assert df is not None and "close" in df and "open" in df  # open synthesised from close
+
+
+@pytest.mark.skipif(not _has_china(), reason="China stores not present")
+def test_china_ths_score_group_is_bilingual_and_uses_csi300():
+    import json
+    from lib import config
+    mem = json.loads((config.data_dir() / "baskets_china_ths" / "membership.json").read_text())
+    bench = sc._bench_close(mem.get("benchmark") or "510300.SS")
+    bid, spec = next(iter(mem["baskets"].items()))
+    tickers = [m["ticker"] for m in spec["members"] if not m.get("removed")]
+    g = sc.score_group(sc._slug(bid), spec["name"], spec.get("category"), tickers, bench, {},
+                       kind="concept", label_zh=spec.get("name_zh"), sector_zh=spec.get("category_zh"),
+                       member_names={m["ticker"]: m.get("name_zh") for m in spec["members"]})
+    assert g is not None
+    assert g["kind"] == "concept"
+    assert g["label_zh"] == spec.get("name_zh")        # bilingual label flows through
+    assert g["regime"]["state"] in {
+        "BUY", "BUY_PARTIAL", "SETUP_BUY", "NEUTRAL", "EXTENDED",
+        "TOPPING", "SELL", "BELOW_TREND", "OVERSOLD_BOUNCE"}
+    assert g["regime"]["rs_60d"] is not None           # measured vs CSI 300, not SPY
+    # at least one member carries a Chinese name (the funnel/detail bilingual join key)
+    assert any(m.get("name_zh") for m in g["members"])
