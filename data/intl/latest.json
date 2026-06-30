@@ -41,8 +41,8 @@
         "unemployment": 2.5,
         "unemployment_chg6m": -0.2,
         "m2_yoy": 4.22,
-        "fx": 161.753,
-        "fx_strength_3m": -1.3,
+        "fx": 161.787,
+        "fx_strength_3m": -1.32,
         "realvol": 39.6,
         "drawdown": -5.1
       },
@@ -95,8 +95,8 @@
         "unemployment": 2.8,
         "unemployment_chg6m": -0.2,
         "m2_yoy": 5.73,
-        "fx": 1539.6801,
-        "fx_strength_3m": -2.11,
+        "fx": 1535.24,
+        "fx_strength_3m": -1.82,
         "realvol": 75.7,
         "drawdown": -9.5
       },
@@ -149,8 +149,8 @@
         "unemployment": null,
         "unemployment_chg6m": null,
         "m2_yoy": null,
-        "fx": 31.889,
-        "fx_strength_3m": 0.08,
+        "fx": 31.847,
+        "fx_strength_3m": 0.21,
         "realvol": 34.0,
         "drawdown": -5.7
       },
@@ -257,8 +257,8 @@
         "unemployment": 4.49,
         "unemployment_chg6m": 0.41,
         "m2_yoy": null,
-        "fx": 0.6891,
-        "fx_strength_3m": -0.38,
+        "fx": 0.6896,
+        "fx_strength_3m": -0.3,
         "realvol": 12.7,
         "drawdown": -4.5
       },
@@ -571,22 +571,22 @@
       "risk_high": false,
       "rows": [
         {
-          "cc": "KR",
-          "flag": "\ud83c\uddf0\ud83c\uddf7",
-          "name": "South Korea",
-          "value": -2.11
-        },
-        {
           "cc": "EZ",
           "flag": "\ud83c\uddea\ud83c\uddfa",
           "name": "Eurozone",
           "value": -1.97
         },
         {
+          "cc": "KR",
+          "flag": "\ud83c\uddf0\ud83c\uddf7",
+          "name": "South Korea",
+          "value": -1.82
+        },
+        {
           "cc": "JP",
           "flag": "\ud83c\uddef\ud83c\uddf5",
           "name": "Japan",
-          "value": -1.3
+          "value": -1.32
         },
         {
           "cc": "IN",
@@ -604,13 +604,13 @@
           "cc": "AU",
           "flag": "\ud83c\udde6\ud83c\uddfa",
           "name": "Australia",
-          "value": -0.38
+          "value": -0.3
         },
         {
           "cc": "TW",
           "flag": "\ud83c\uddf9\ud83c\uddfc",
           "name": "Taiwan",
-          "value": 0.08
+          "value": 0.21
         }
       ]
     },

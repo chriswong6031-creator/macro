@@ -1,5 +1,5 @@
 {
-  "date": "Jun 28, 2026",
+  "date": "Jun 30, 2026",
   "regime": "US growth premium",
   "favored": [
     "USD"
@@ -8,63 +8,63 @@
   "pairs": {
     "EURUSD": {
       "label": "EUR/USD",
-      "quote": 1.139,
-      "chg": -2.3,
+      "quote": 1.1425,
+      "chg": -1.8,
       "action": "FLAT",
-      "score": -10.7
+      "score": -9.2
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.3198,
-      "chg": -1.9,
+      "quote": 1.3258,
+      "chg": -1.3,
       "action": "FLAT",
-      "score": 14.3
+      "score": 10.6
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 161.721,
+      "quote": 161.91,
       "chg": 1.1,
       "action": "SHORT",
       "score": -40.0
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.808,
-      "chg": 2.1,
+      "quote": 0.8075,
+      "chg": 1.4,
       "action": "LONG",
-      "score": 29.1
+      "score": 25.4
     },
     "AUDUSD": {
       "label": "AUD/USD",
-      "quote": 0.6901,
-      "chg": -3.2,
+      "quote": 0.6889,
+      "chg": -2.2,
       "action": "SHORT",
-      "score": -35.2
+      "score": -32.8
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.4177,
-      "chg": 1.9,
+      "quote": 1.4207,
+      "chg": 1.8,
       "action": "LONG",
-      "score": 29.0
+      "score": 25.7
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.499,
-      "chg": 1.2,
-      "action": "FLAT",
-      "score": -18.0
+      "quote": 17.4644,
+      "chg": 1.1,
+      "action": "SHORT",
+      "score": -21.4
     },
     "USDBRL": {
       "label": "USD/BRL",
-      "quote": 5.1704,
-      "chg": 2.2,
+      "quote": 5.1707,
+      "chg": -0.1,
       "action": "FLAT",
       "score": 7.0
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.768,
+      "quote": 6.7635,
       "chg": 0.1,
       "action": "FLAT",
       "score": 15.0
@@ -73,8 +73,8 @@
   "dollar_desk": {
     "lean": "mixed backdrop",
     "real_rate_regime": "Restrictive real yields",
-    "real_rate_z": 0.61,
-    "fed_path_bps": 33.0,
+    "real_rate_z": 0.58,
+    "fed_path_bps": 37.0,
     "fed_path_lean": "steady",
     "usd_pos_pctile": 72.0,
     "usd_pos_state": "neutral",
@@ -89,13 +89,13 @@
   "transmission": {
     "usd_dir": "flat",
     "corr": {
-      "CL=F": 0.62,
-      "HG=F": -0.62,
-      "GC=F": -0.58,
+      "GC=F": -0.69,
+      "HG=F": -0.64,
       "SPY": -0.56,
+      "CL=F": 0.56,
       "EEM": -0.5,
-      "UST10": -0.37,
-      "BTC": -0.24
+      "UST10": -0.3,
+      "BTC": -0.18
     },
     "headwind_for": [
       "US equities",
@@ -111,16 +111,16 @@
     "unstable": []
   },
   "regime_radar": {
-    "as_of": "2026-06-26",
+    "as_of": "2026-06-30",
     "dominant": null,
     "active": [],
     "intensity": {
-      "carry_unwind": 13.2,
-      "dollar_wrecking_ball": 36.8,
-      "em_crisis_capital_flight": 8.0,
-      "haven_flight_risk_off": 9.8,
-      "reflation_risk_on": 0,
-      "intervention_risk": 21.6
+      "carry_unwind": 9.0,
+      "dollar_wrecking_ball": 27.6,
+      "em_crisis_capital_flight": 43.5,
+      "haven_flight_risk_off": 3.7,
+      "reflation_risk_on": 50.0,
+      "intervention_risk": 13.3
     }
   }
 }

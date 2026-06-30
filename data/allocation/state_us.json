@@ -1,5 +1,5 @@
 {
-  "cash": 0.369,
+  "cash": 0.344,
   "crash": false,
   "eligible": [
     "ai_infra",
@@ -22,7 +22,6 @@
     "quantum_computing",
     "regional_banks",
     "reshoring",
-    "retail",
     "robotics_automation",
     "semicap_equipment",
     "space_economy",
@@ -42,7 +41,7 @@
     "memory_storage",
     "ai_neoclouds",
     "managed_care",
-    "non_ai_tech"
+    "space_economy"
   ],
   "leader": "memory_storage",
   "names": {

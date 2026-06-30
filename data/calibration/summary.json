@@ -1,18 +1,18 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-06-29",
+  "as_of": "2026-06-30",
   "desks": [
     {
       "name": "AI Desk",
       "slug": "ai_desk",
-      "scored": 1,
-      "open": 17,
-      "hit_rate": 0.0,
-      "dir_accuracy": 0.0,
+      "scored": 2,
+      "open": 16,
+      "hit_rate": 0.5,
+      "dir_accuracy": 0.5,
       "conviction_monotone": null,
       "regimes": [],
       "health": "cold",
-      "health_note": "only 1 scored \u2014 check-by windows still maturing; treat as provisional"
+      "health_note": "only 2 scored \u2014 check-by windows still maturing; treat as provisional"
     },
     {
       "name": "Policy Intent",
@@ -30,7 +30,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 112,
+      "open": 116,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -42,7 +42,7 @@
       "name": "Divergence Radar",
       "slug": "radar",
       "scored": 0,
-      "open": 66,
+      "open": 77,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -54,7 +54,7 @@
       "name": "Stock Desk",
       "slug": "stock_desk",
       "scored": 0,
-      "open": 63,
+      "open": 61,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,

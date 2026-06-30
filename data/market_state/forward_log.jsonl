@@ -1,1 +1,2 @@
 {"asof":"2026-06-26","verdict":"RISK_OFF","score":28,"raw_score":61,"radar_state":"caution","radar_top":91,"amp":3,"amp_keys":["conjunction","two_plus_scares","complacency"],"severe_gated":true,"logged_at":"2026-06-28T10:12:17+00:00","graded":null}
+{"asof":"2026-06-29","verdict":"RISK_OFF","score":34,"raw_score":62,"radar_state":"caution","radar_top":87,"amp":2,"amp_keys":["two_plus_scares","complacency"],"severe_gated":true,"logged_at":"2026-06-30T00:32:20+00:00","graded":null}
