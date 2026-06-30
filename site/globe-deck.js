@@ -392,29 +392,31 @@
         var smp = routeSample(pts, u); if (!onFront(smp.p)) continue;
         var s = projection(smp.p); if (!s) continue;
         var sa = projection(smp.ahead), ang = sa ? Math.atan2(sa[1] - s[1], sa[0] - s[0]) : 0;
-        drawShip(s[0], s[1], ang, sz, sea, frontness(smp.p), t, ph);
+        drawShip(s[0], s[1], ang, sz, sea, frontness(smp.p), t, ph, dark);
       }
     }
   }
-  function drawShip(x, y, ang, sz, glow, fr, t, ph) {
+  function drawShip(x, y, ang, sz, glow, fr, t, ph, dark) {
     var wob = motionOK ? Math.sin(t / 700 + ph) * 0.05 : 0;
     ctx.save(); ctx.translate(x, y); ctx.rotate(ang + wob);
     ctx.globalAlpha = Math.max(0.28, fr);
     // soft shadow on the water (grounds the hull) — always dark, so it reads on a light ocean too
-    ctx.save(); ctx.globalAlpha *= 0.40; ctx.fillStyle = rgba(SHADE, 1);
+    ctx.save(); ctx.globalAlpha *= dark ? 0.40 : 0.26; ctx.fillStyle = rgba(SHADE, 1);
     ctx.beginPath(); ctx.ellipse(-sz * 0.1, sz * 0.16, sz * 1.15, sz * 0.5, 0, 0, 6.283); ctx.fill(); ctx.restore();
     // wake — luminous foam fanning back from the stern (sea-coloured so it shows in both themes)
     var wl = sz * (3.0 + (motionOK ? 0.7 * (0.5 + 0.5 * Math.sin(t / 360 + ph)) : 0.3));
     var g = ctx.createLinearGradient(-sz, 0, -sz - wl, 0);
-    g.addColorStop(0, rgba(glow, 0.55)); g.addColorStop(1, rgba(glow, 0));
+    g.addColorStop(0, rgba(glow, dark ? 0.55 : 0.5)); g.addColorStop(1, rgba(glow, 0));
     ctx.fillStyle = g; ctx.beginPath();
     ctx.moveTo(-sz * 0.9, sz * 0.30); ctx.lineTo(-sz - wl, sz * 0.60);
     ctx.lineTo(-sz - wl, -sz * 0.60); ctx.lineTo(-sz * 0.9, -sz * 0.30); ctx.closePath(); ctx.fill();
-    // hull
-    ctx.shadowColor = rgba(glow, 0.85); ctx.shadowBlur = 7;
-    shipPath(sz); ctx.fillStyle = rgba(PAL["--text"], 0.94); ctx.fill(); ctx.shadowBlur = 0;
+    // hull — near-white in BOTH themes (in light mode --text is dark → a heavy blob), with a
+    // thin slate outline so the pale hull still reads crisply on a light ocean; glow only in dark
+    ctx.shadowColor = rgba(glow, 0.85); ctx.shadowBlur = dark ? 7 : 0;
+    shipPath(sz); ctx.fillStyle = dark ? rgba(PAL["--text"], 0.94) : "rgba(252,253,255,0.97)"; ctx.fill(); ctx.shadowBlur = 0;
+    if (!dark) { shipPath(sz); ctx.strokeStyle = rgba(PAL["--muted"], 0.62); ctx.lineWidth = Math.max(0.5, sz * 0.1); ctx.stroke(); }
     // deckhouse + bow running light
-    ctx.fillStyle = rgba(glow, 0.85); ctx.fillRect(-sz * 0.55, -sz * 0.22, sz * 0.5, sz * 0.44);
+    ctx.fillStyle = rgba(glow, dark ? 0.85 : 0.92); ctx.fillRect(-sz * 0.55, -sz * 0.22, sz * 0.5, sz * 0.44);
     ctx.fillStyle = rgba(PAL["--orange"], 0.95); ctx.beginPath(); ctx.arc(sz * 0.85, 0, sz * 0.16, 0, 6.283); ctx.fill();
     ctx.restore();
   }
@@ -461,7 +463,7 @@
           ctx.beginPath(); ctx.moveTo(s[0], s[1]); ctx.lineTo(e2[0], e2[1]); ctx.stroke();
           ctx.setLineDash([]); ctx.restore();
         }
-        drawPlane(e2[0], e2[1], ang, sz, air, fr, t, ph, pts, u, MAXALT, cx, cy);
+        drawPlane(e2[0], e2[1], ang, sz, air, fr, t, ph, pts, u, MAXALT, cx, cy, dark);
       }
     }
   }
@@ -471,10 +473,10 @@
     planePath(sz * 0.9 * (1 - Math.min(0.4, alt * 2.2))); ctx.fill();
     ctx.restore();
   }
-  function drawPlane(x, y, ang, sz, glow, fr, t, ph, pts, u, MAXALT, cx, cy) {
+  function drawPlane(x, y, ang, sz, glow, fr, t, ph, pts, u, MAXALT, cx, cy, dark) {
     // contrail — a few elevated points trailing behind, fading out. Wrapped in its own
     // save/restore (self-contained, no state leak) and skipped on mobile to save per-frame trig.
-    var segs = W < 560 ? 0 : 5;
+    var segs = W < 560 ? 0 : 5, trail = dark ? PAL["--text"] : PAL["--muted"];   // softer trail in light mode
     if (segs) {
       ctx.save();
       var prev = null;
@@ -485,17 +487,19 @@
         var e = elev(ss, cx, cy, MAXALT * Math.sin(Math.PI * uu));
         if (prev) {
           ctx.beginPath(); ctx.moveTo(prev[0], prev[1]); ctx.lineTo(e[0], e[1]);
-          ctx.strokeStyle = rgba(PAL["--text"], 0.20 * fr * (1 - c / segs)); ctx.lineWidth = 1.6 * (1 - c / (segs + 2)); ctx.stroke();
+          ctx.strokeStyle = rgba(trail, 0.18 * fr * (1 - c / segs)); ctx.lineWidth = 1.6 * (1 - c / (segs + 2)); ctx.stroke();
         }
         prev = e;
       }
       ctx.restore();
     }
-    // body
+    // body — near-white in BOTH themes (light-mode --text is dark → a heavy blob); in light mode a
+    // thin slate outline keeps the pale fuselage crisp on the bright sky, and the warm glow is dropped
     ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
     ctx.globalAlpha = Math.max(0.35, fr);
-    ctx.shadowColor = rgba(glow, 0.95); ctx.shadowBlur = 9;
-    planePath(sz); ctx.fillStyle = rgba(PAL["--text"], 0.97); ctx.fill(); ctx.shadowBlur = 0;
+    ctx.shadowColor = rgba(glow, 0.95); ctx.shadowBlur = dark ? 9 : 0;
+    planePath(sz); ctx.fillStyle = dark ? rgba(PAL["--text"], 0.97) : "rgba(252,253,255,0.98)"; ctx.fill(); ctx.shadowBlur = 0;
+    if (!dark) { planePath(sz); ctx.strokeStyle = rgba(PAL["--muted"], 0.62); ctx.lineWidth = Math.max(0.5, sz * 0.08); ctx.stroke(); }
     ctx.fillStyle = rgba(glow, 0.95); ctx.beginPath(); ctx.arc(sz * 0.55, 0, sz * 0.14, 0, 6.283); ctx.fill();
     ctx.restore();
   }
