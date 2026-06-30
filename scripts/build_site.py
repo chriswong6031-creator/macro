@@ -2668,7 +2668,7 @@ def main() -> int:
                   "lightweight-charts.js",
                   "allocation_scorecard.js", "live.js", "risk_state_live.js",
                   "wh_banner.js", "heatmap.js",
-                  "subsector_rotation.js",
+                  "subsector_rotation.js", "subsectors.js",
                   # vendored (self-hosted) third-party libs — were CDN <script> tags
                   # (cdn.jsdelivr / cdn.plot.ly) that are blocked/unreliable in mainland
                   # China; served same-origin so pages load behind the GFW.
@@ -3031,6 +3031,19 @@ def main() -> int:
         log.info("wrote %s (%.0f KB)", out_sr, out_sr.stat().st_size / 1024)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("subsector rotation failed: %s", e)
+
+    # Subsector Confluence — the ENTRY-NOW desk: each S&P-500 sub-industry (+ the curated
+    # thematic baskets) as an equal-weight synthetic index, read through the T1-T4 confluence
+    # cascade + the validated regime state machine, with a double-gated stock funnel and one
+    # detail page (index chart + member table) per group. The HEAVY compute runs nightly
+    # (scripts.build_subsector_confluence.main, in the engine band); here we only RENDER the
+    # board + detail pages from the committed JSON (render-lane safe, no recompute).
+    try:
+        from scripts.build_subsector_confluence import build as build_subsector_confluence
+        n_sc = build_subsector_confluence(site, generated_utc=generated)
+        log.info("wrote subsectors.html + %d subsector confluence detail pages", n_sc)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("subsector confluence render failed: %s", e)
 
     # --- history page: the longer-window charts + lifespan base rates ----------
     from engine.playbook import QUAD_SHORT, next_quads_line, transition_stats

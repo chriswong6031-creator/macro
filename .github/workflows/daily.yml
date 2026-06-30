@@ -379,6 +379,7 @@ jobs:
           }
           cl_baskets() {
             brun baskets     "thematic baskets (build_baskets)"        scripts.build_baskets
+            brun subsector_conf "subsector confluence desk + double-gated funnel (build_subsector_confluence)" scripts.build_subsector_confluence
             brun news        "news suite (build_news)"                 scripts.build_news
             brun methodology "methodology page (build_methodology)"    scripts.build_methodology
           }
@@ -397,7 +398,7 @@ jobs:
           wait
           # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
           #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          ORDER="china hk flow_velocity commodities spr forex bonds crossasset transmission discovery gex_board vol_regime options_flow options_skew options_ivspread baskets news methodology seasonality reports policy_intent policy_watch special index_changes"
+          ORDER="china hk flow_velocity commodities spr forex bonds crossasset transmission discovery gex_board vol_regime options_flow options_skew options_ivspread baskets subsector_conf news methodology seasonality reports policy_intent policy_watch special index_changes"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue
