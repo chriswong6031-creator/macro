@@ -542,7 +542,7 @@
     var col = PAL["--text"], cx = W / 2, cy = H / 2, mob = W < 560;
     var list = mob ? orbitPaths.slice(0, 2) : orbitPaths;
     var altK = mob ? 0.7 : 1;                          // lower orbits on mobile so the ring stays inside the 1.13 clip (preserves page-scroll)
-    var sz = Math.max(3.0, Math.min(6.5, scale * 0.017)), dotR = Math.max(0.8, scale * 0.0036);
+    var sz = Math.max(4.5, Math.min(10, scale * 0.026)), dotR = Math.max(0.8, scale * 0.0036);
     for (var r = 0; r < list.length; r++) {
       var O = list[r], def = O.def, pts = O.pts, n = pts.length, ph = r * 1.9, alt = def.alt * altK;
       var breath = motionOK ? (0.62 + 0.38 * Math.sin(t / 3000 + ph)) : 0.85;
@@ -576,15 +576,22 @@
     var tw = motionOK ? (0.72 + 0.28 * Math.sin(t / 420 + ph)) : 1;
     ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
     ctx.globalAlpha = Math.min(1, a);
-    // solar-panel wings (perpendicular to travel), faint blue
-    ctx.fillStyle = rgba(PAL["--info"], 0.8);
-    ctx.fillRect(-sz * 0.22, -sz * 1.30, sz * 0.44, sz * 0.66);
-    ctx.fillRect(-sz * 0.22, sz * 0.64, sz * 0.44, sz * 0.66);
+    // solar-panel wings (perpendicular to travel) — wide blue arrays so the silhouette reads as a satellite
+    var pw = sz * 0.52, pl = sz * 0.82;
+    ctx.fillStyle = rgba(PAL["--info"], 0.85);
+    ctx.fillRect(-pw / 2, -sz * 1.52, pw, pl);   // top wing
+    ctx.fillRect(-pw / 2, sz * 0.70, pw, pl);    // bottom wing
+    // cell-division spine on each panel (suggests a solar array)
+    ctx.strokeStyle = rgba(col, 0.4); ctx.lineWidth = Math.max(0.4, sz * 0.06);
+    ctx.beginPath();
+    ctx.moveTo(0, -sz * 1.52); ctx.lineTo(0, -sz * 1.52 + pl);
+    ctx.moveTo(0, sz * 0.70); ctx.lineTo(0, sz * 0.70 + pl);
+    ctx.stroke();
     // strut + body (bright, glowing)
-    ctx.strokeStyle = rgba(col, 0.6); ctx.lineWidth = Math.max(0.5, sz * 0.09);
-    ctx.beginPath(); ctx.moveTo(0, -sz * 0.64); ctx.lineTo(0, sz * 0.64); ctx.stroke();
-    ctx.shadowColor = rgba(col, 0.95 * tw); ctx.shadowBlur = 6;
-    ctx.fillStyle = rgba(col, 0.97); ctx.beginPath(); ctx.arc(0, 0, sz * 0.46, 0, 6.283); ctx.fill();
+    ctx.strokeStyle = rgba(col, 0.65); ctx.lineWidth = Math.max(0.6, sz * 0.11);
+    ctx.beginPath(); ctx.moveTo(0, -sz * 0.7); ctx.lineTo(0, sz * 0.7); ctx.stroke();
+    ctx.shadowColor = rgba(col, 0.95 * tw); ctx.shadowBlur = 7;
+    ctx.fillStyle = rgba(col, 0.97); ctx.beginPath(); ctx.arc(0, 0, sz * 0.44, 0, 6.283); ctx.fill();
     ctx.restore();
   }
 

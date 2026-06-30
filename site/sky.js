@@ -17,6 +17,9 @@
   var moonEl = document.getElementById('sky-moon');
   // --- orbital satellite (dark mode only) ----------------------------------
   var satEl = document.getElementById('sky-sat');
+  // Big background satellite DISABLED — superseded by the globe's own mini-satellites.
+  // Code kept intact; flip to true to bring it back.
+  var SAT_ENABLED = false;
   var globeCanvas = document.querySelector('.gd-canvas');   // the rendered "earth"
   var satPhase = Math.PI;        // begin at the left of the globe, on the visible front arc
   var SAT_SPEED = 0.27;          // rad/s along the bright front sweep (left → right)
@@ -122,6 +125,7 @@
   // faked with scale + opacity — the ring stays clear of the disc, so no z-fighting.
   function placeSat(dt) {
     if (!satEl) return;
+    if (!SAT_ENABLED) { satEl.style.opacity = '0'; return; }   // disabled — keep it hidden
     if (theme() !== 'dark' || !globeCanvas) { satEl.style.opacity = '0'; return; }
     var r = globeCanvas.getBoundingClientRect();
     if (r.width < 4 || r.bottom <= 0 || r.top >= H) { satEl.style.opacity = '0'; return; }
