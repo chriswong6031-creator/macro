@@ -6,7 +6,7 @@ detector, the assembled recovery read, and the load-bearing invariant that it is
 import numpy as np
 import pandas as pd
 
-from engine import risk_radar, risk_radar_recovery
+from engine import risk_radar, risk_radar_intl, risk_radar_recovery
 
 
 def _subs(vals):
@@ -106,6 +106,48 @@ def test_assess_never_raises_on_garbage():
     # malformed inputs must degrade, never crash the build
     for bad in (None, {"risk_radar": None}, {"risk_radar": {"trajectory": {"phase": "receding"}}}):
         risk_radar_recovery.assess(bad)   # no exception
+
+
+# ---- shared classifier (used by both US + intl radars) ----------------------------------------
+def _win(vals):
+    return pd.Series(vals, index=pd.bdate_range("2026-01-01", periods=len(vals)))
+
+
+def test_shared_classifier_phases():
+    receding = risk_radar._trajectory_from_series(_win([90, 88, 85, 80, 75, 70]), None, None, 68.0)
+    assert receding["phase"] == "receding" and receding["velocity"] < 0
+    rising = risk_radar._trajectory_from_series(_win([50, 58, 66, 74, 82, 90]), None, None, 68.0)
+    assert rising["phase"] == "rising"
+    peaking = risk_radar._trajectory_from_series(_win([90, 91, 90, 91, 90, 90]), None, None, 68.0)
+    assert peaking["phase"] == "peaking"   # plateaued at the top (velocity ~0, still near peak)
+    calm = risk_radar._trajectory_from_series(_win([10, 12, 14, 16, 18, 20]), None, None, 68.0)
+    assert calm["phase"] == "calm"      # never reached the caution band -> nothing to recede from
+
+
+# ---- international radar trajectory ------------------------------------------------------------
+def test_intl_trajectory_receding():
+    idx = pd.bdate_range("2025-01-01", periods=250)
+    comp = pd.Series(np.concatenate([np.linspace(0.20, 0.95, 200),
+                                     np.linspace(0.95, 0.70, 50)]), index=idx)   # 0-1 percentile
+    B = pd.Series(np.linspace(100, 80, 250), index=idx)                          # declining index
+    t = risk_radar_intl._trajectory(comp, B, risk_radar_intl._calib(risk_radar_intl.CN_PROFILE))
+    assert t is not None
+    assert t["phase"] == "receding"
+    assert t["reached_risk"] is True
+    assert t["odds_now"] is not None      # intl odds series built from the per-market prob surface
+
+
+def test_intl_assess_uses_market_and_never_crashes():
+    # an intl latest carries market='cn' on the radar snapshot and lacks Fed keys; assess must read
+    # the Fed legs globally (via the US latest) and never crash on the intl shape.
+    idx = pd.bdate_range("2025-01-01", periods=250)
+    comp = pd.Series(np.concatenate([np.linspace(0.20, 0.95, 200),
+                                     np.linspace(0.95, 0.70, 50)]), index=idx)
+    B = pd.Series(np.linspace(100, 80, 250), index=idx)
+    traj = risk_radar_intl._trajectory(comp, B, risk_radar_intl._calib(risk_radar_intl.CN_PROFILE))
+    rec = risk_radar_recovery.assess({"risk_radar": {"market": "cn", "trajectory": traj}})
+    assert rec and rec["present"] is True            # CN risk receding
+    assert isinstance(rec["catalysts"], list)        # market-aware catalyst read, no crash
 
 
 # ---- DISPLAY-ONLY invariant -------------------------------------------------------------------

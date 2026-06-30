@@ -60,18 +60,37 @@ def _recent(date_str: str | None, days: int = 60) -> bool:
         return False
 
 
+def _us_latest() -> dict:
+    """The US regime latest.json — canonical source of the Fed net-liquidity overlay + reaction
+    function. The intl (CN/HK/CA) latests don't carry these, but the Fed is a GLOBAL liquidity
+    driver (US rate shocks are the #1 external lead in every intl radar profile), so the intl
+    recovery reads them from here. Never raises."""
+    try:
+        import json
+        from lib import config
+        p = config.data_dir() / "regime" / "latest.json"
+        return json.loads(p.read_text()) if p.exists() else {}
+    except Exception as e:  # noqa: BLE001
+        log.debug("recovery: US latest unavailable (%s)", e)
+        return {}
+
+
 # --- liquidity-injection catalysts -------------------------------------------------------------
-def _liquidity_catalysts(latest: dict) -> list[dict]:
+def _liquidity_catalysts(latest: dict, market: str = "us") -> list[dict]:
     """The supportive-liquidity legs that are firing right now, as display chips. All read the
     display-only context already on the page; each degrades to absent. `fresh` = a genuinely
-    recent turn (drives the chip glow). NEVER raises."""
+    recent turn (drives the chip glow). For the intl radars (market != 'us') the Fed legs are read
+    from the US regime latest (a global driver). NEVER raises."""
     latest = latest or {}
+    # Fed net-liq + reaction function: the US latest has them; the intl latests don't, so fall back
+    # to the US regime latest (the Fed is a global liquidity driver for CN/HK/CA too).
+    fed_src = latest if (market == "us" or latest.get("fed_stance")) else _us_latest()
     cats: list[dict] = []
 
     # 1) Fed net liquidity (WALCL − RRP − TGA). 'expanding' = the 20d ROC is positive, i.e. the
     #    balance sheet is adding reserves and/or the Treasury is drawing its account down (TGA
     #    drop). engine/regime.py classifies this into latest['liquidity_overlay'].
-    lo = latest.get("liquidity_overlay")
+    lo = fed_src.get("liquidity_overlay")
     if lo == "expanding":
         cats.append({
             "key": "fed_netliq", "icon": "💵", "region": "US", "fresh": True,
@@ -82,8 +101,8 @@ def _liquidity_catalysts(latest: dict) -> list[dict]:
 
     # 2) Fed policy easing / emergency cut — market pricing + reaction-function read (display-only;
     #    engine/fed_path.py + engine/fed_stance.py). A large cut count = the emergency-cut case.
-    fs = latest.get("fed_stance") or {}
-    fp = latest.get("fed_path") or {}
+    fs = fed_src.get("fed_stance") or {}
+    fp = fed_src.get("fed_path") or {}
     cuts = _num(fs.get("implied_cuts_12m"))
     if cuts is None:
         cuts = _num(fp.get("implied_cuts_12m"))
@@ -159,9 +178,10 @@ def assess(latest: dict) -> dict | None:
         traj = rr.get("trajectory")
         if not traj:
             return None
+        market = rr.get("market") or "us"   # 'us' | 'cn' | 'hk' | 'ca' (intl reads Fed legs globally)
         phase = traj.get("phase")
         reached = bool(traj.get("reached_risk"))
-        cats = _liquidity_catalysts(latest)
+        cats = _liquidity_catalysts(latest, market)
         n_cat = len(cats)
         n_fresh = sum(1 for c in cats if c.get("fresh"))
 

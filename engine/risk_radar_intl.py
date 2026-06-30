@@ -190,6 +190,33 @@ def _probs(cal: dict, state: str) -> dict:
     return out
 
 
+def _trajectory(comp, B, cal, window: int = 30) -> dict | None:
+    """Recent PATH of this market's composite radar — has it peaked + started rolling over, and how
+    fast are the pullback odds dropping? Powers the de-escalation panel (engine/risk_radar_recovery).
+    Reuses the SHARED classifier (engine/risk_radar._trajectory_from_series) so the phase logic is
+    identical to the US radar. Leak-free (comp is a causal trailing percentile). Never raises."""
+    try:
+        from engine.risk_radar import _trajectory_from_series
+        intensity = (comp.dropna() * 100.0)
+        if len(intensity) < 10:
+            return None
+        bands = cal["bands"]
+        ma = B.rolling(200, min_periods=120).mean()
+        below = (B < ma).reindex(intensity.index).fillna(False)   # context gate: index < 200dma
+        win = intensity.tail(window)
+        states, odds = [], []
+        for d, v in win.items():
+            st = _band(v, bands)
+            if not bool(below.get(d, False)) and _STATE_ORDER.index(st) > _STATE_ORDER.index("caution"):
+                st = "caution"                                     # gate caps the loud tiers
+            states.append(st)
+            odds.append(_probs(cal, st)["h21"])
+        return _trajectory_from_series(win, states, pd.Series(odds, index=win.index), bands["caution"])
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("risk_radar_intl trajectory failed: %s", e)
+        return None
+
+
 def compute(profile: "RadarProfile", root=None) -> dict:
     """Live calibrated radar snapshot for `profile`. Reads the store; never raises a useful
     payload away. Returns the (risk_radar_intl.v1) dict the market-state radar mapping consumes."""
@@ -275,6 +302,8 @@ def compute(profile: "RadarProfile", root=None) -> dict:
         "dominant_label_zh": dom_zh,
         "scares": scares,
         "drawdown_prob": _probs(cal, state),
+        # de-escalation PATH (peaked? rolling over? how fast?) — reuses the composite series above.
+        "trajectory": _trajectory(comp, B, cal),
         "gross_factor": _GROSS.get(state, 1.0),
         "conjunction": bool(nhot >= 2),
         "context_gate": {"met": below, "below_200dma": below},
