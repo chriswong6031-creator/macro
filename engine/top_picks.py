@@ -24,9 +24,13 @@ was the strongest confirming leg. The win is MODEST and still fails the multiple
 NOT an alpha machine. We rank by it because it is a *measured* improvement over the leg
 the board ranked by before, not because it clears an absolute bar nothing here clears.
 
-Entry timing (``entry_label``) is the second axis: a leader on a recent pullback is a
-constructive BUY ZONE; one that just spiked is EXTENDED (wait). This is DISPLAY/risk
-placement, never a rank ingredient — folding it in measurably HURTS US forward returns.
+Entry timing (``entry_label``) is the second axis: it describes WHERE in its own trend a
+leader sits — easing back (Pullback), riding it (In trend) or just spiked (Extended, wait).
+This is DISPLAY/risk-placement CONTEXT, never a rank ingredient (folding it in measurably
+HURTS US forward returns) and — critically — NOT a buy call: a name eases back in its trend
+yet can still be downtrending on the 3D MACD/StochRSI. The actionable BUY label comes from the
+validated MACD-2D x StochRSI-3D confluence gate (``engine/signal_gate.is_buyable``), which the
+discovery board layers on top as a separate, hard-gated signal.
 """
 from __future__ import annotations
 
@@ -46,15 +50,18 @@ TILT_LEGS = ("value", "quality", "profitability", "low_vol", "insider")
 MIN_TILT_LEGS = 2          # need >=2 confirming legs or conviction is treated as neutral (0)
 WINSOR_CAP = 3.0
 
-# entry-axis labels (second axis — NOT in the rank). Mirrors engine/residual_alpha._entry
-# but reads as an action: a leader on a pullback is the constructive entry.
+# entry-axis labels (second axis — NOT in the rank). Mirrors engine/residual_alpha._entry.
+# This is TREND-POSITION CONTEXT, not a buy call: "Pullback" = a leader easing back toward its
+# trend (a constructive place to WATCH), NOT a confirmed entry. The confirmed BUY label is the
+# confluence gate (engine/signal_gate) the discovery board layers on top — so a name can read
+# "Pullback" here yet be downtrending on the 3D MACD/StochRSI and therefore NOT buyable.
 ENTRY_LABELS = {
-    # tag:       (en,          zh,       css,          buy_zone?)
-    "pullback": ("Buy zone", "可建仓", "tp-buyzone", True),   # leader on a recent dip
-    "intact":   ("Steady",   "稳健",   "tp-steady",  False),  # leader, no dip/spike
-    "extended": ("Extended", "过热",   "tp-extended", False), # leader just spiked → wait
-    "laggard":  ("Laggard",  "落后",   "tp-laggard", False),
-    "neutral":  ("Neutral",  "中性",   "tp-neutral", False),
+    # tag:       (en,          zh,       css)
+    "pullback": ("Pullback", "回调",   "tp-pullback"),  # leader easing back to trend (watch, not buy)
+    "intact":   ("In trend", "趋势内", "tp-steady"),    # leader, no dip/spike
+    "extended": ("Extended", "过热",   "tp-extended"),  # leader just spiked → wait
+    "laggard":  ("Laggard",  "落后",   "tp-laggard"),
+    "neutral":  ("Neutral",  "中性",   "tp-neutral"),
 }
 
 
@@ -90,8 +97,9 @@ def band(score: float | None) -> str:
     return "deeplag"
 
 
-def entry_meta(entry: str | None) -> tuple[str, str, str, bool]:
-    """(en, zh, css, is_buy_zone) for an entry tag — defaults to neutral."""
+def entry_meta(entry: str | None) -> tuple[str, str, str]:
+    """(en, zh, css) trend-position CONTEXT for an entry tag — defaults to neutral. NOTE this
+    is no longer a buy flag: the buy call is the confluence gate (engine/signal_gate)."""
     return ENTRY_LABELS.get(entry or "neutral", ENTRY_LABELS["neutral"])
 
 

@@ -208,9 +208,18 @@ def rank_setups(cands: list[tuple[float, dict]], *, buy_min: float = BUY_MIN,
                 lag_max: float = LAG_MAX, n_buy: int = N_BUY, n_lag: int = N_LAG,
                 as_of=None, rank_by: str = "setup",
                 align_map: dict | None = None,
-                align_min_keep: int = ALIGN_MIN_KEEP) -> dict:
+                align_min_keep: int = ALIGN_MIN_KEEP,
+                buy_gate=None) -> dict:
     """Split scored candidates into the constructive ``buy`` shortlist and the
     ``laggards`` watch. ``cands`` is a list of ``(score, row)`` from :func:`setup_score`.
+
+    ``buy_gate`` (``ticker -> bool``), when given, is a HARD admission filter on the BUY
+    shortlist ONLY (laggards are untouched): a name reaches the buy list only when
+    ``buy_gate(ticker)`` is truthy. It REPLACES the ``alpha >= buy_min`` momentum floor (the
+    gate is now the buyability criterion; the score is just the rank). This is how the US
+    "Top setups" board surfaces only names that have a FRESH MACD-2D x StochRSI-3D confluence
+    buy (engine.signal_gate.is_buyable) instead of every high-alpha leader regardless of tape.
+    It composes with ``align_map`` (both must pass).
 
     ``rank_by`` chooses the SORT key, per the market's validated evidence:
       * ``"alpha"`` (US) — order by the sector-neutral residual-momentum z. The
@@ -237,19 +246,24 @@ def rank_setups(cands: list[tuple[float, dict]], *, buy_min: float = BUY_MIN,
 
     ranked_desc = sorted(cands, key=_key, reverse=True)   # best (buys) first
     ranked_asc = sorted(cands, key=_key)                  # worst (laggards) first
+    _gate_ok = (lambda r: bool(buy_gate(r.get("ticker")))) if buy_gate is not None \
+        else (lambda r: True)
     if align_map is not None:
         def _asort(r):
             a = align_map.get(r.get("ticker")) or {}
             sec = (r.get("alpha") if rank_by == "alpha" else r.get("setup")) or 0.0
             return (a.get("score") or 0.0, sec)
         buys = dedupe_dual_class(
-            alignment_gate([r for _s, r in ranked_desc],
+            alignment_gate([r for _s, r in ranked_desc if _gate_ok(r)],
                            lambda r: align_map.get(r.get("ticker")),
                            min_keep=align_min_keep, sort_key=_asort))[:n_buy]
     else:
+        # buy_gate REPLACES the alpha floor (it is now the buyability gate); without a gate the
+        # board keeps the classic alpha >= buy_min momentum admission.
         buys = dedupe_dual_class(
             [r for s, r in ranked_desc
-             if r.get("alpha") is not None and r["alpha"] >= buy_min])[:n_buy]
+             if r.get("alpha") is not None
+             and (_gate_ok(r) if buy_gate is not None else r["alpha"] >= buy_min)])[:n_buy]
     laggards = dedupe_dual_class(
         [r for s, r in ranked_asc
          if r.get("alpha") is not None and r["alpha"] <= lag_max])[:n_lag]

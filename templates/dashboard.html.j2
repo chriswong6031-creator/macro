@@ -691,6 +691,11 @@
   .ts-nm { font-size: 10px; color: var(--muted); }
   .ts-tbl td.az-up { color: var(--up); font-weight: 700; }
   .ts-tbl td.az-dn { color: var(--down); font-weight: 700; }
+  /* confluence buy-signal chip (the hard gate the board now requires) */
+  .ts-buy { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 6px; white-space: nowrap; border: 1px solid var(--line); }
+  .ts-buy.ok { color: var(--up); border-color: var(--up); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
+  .ts-buy.soon { color: var(--up); border-color: color-mix(in srgb, var(--up) 55%, var(--line)); }
+  .ts-empty { margin-top: 9px; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
   /* major-index health (macro page hero) */
   .idx-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
   @media (max-width: 900px) { .idx-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -2497,19 +2502,21 @@
       {% endfor %}
       {% endif %}
       </div>
-      {% if top_setups and top_setups.buy %}
+      {% if top_setups %}
       <div class="topsetups">
         <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
           <span style="font-weight:700;font-size:12.5px">⚡ {{ t('Top setups', '顶级布局') }}</span>
-          <span class="muted" style="font-size:11px">{{ t('sector-neutral momentum (α) leaders · cycle entry & insiders shown as context · across the S&P 1500', '行业中性动量（α）领涨股 · 周期入场与内部人作为情境 · 覆盖标普 1500') }}
-            {{ help("Alpha leaders (sector-neutral residual momentum — market + sector beta stripped) ranked across the WHOLE S&P 1500, so it can surface a high-conviction small/mid-cap name that isn't in any sector ETF's top-10. RANKED BY α: we Phase-0 tested blending the cycle entry + reversal overlay into the rank (reports/setup-score-phase0.md, survivorship-clean S&P 500, 12y, PIT) and the blend did NOT improve forward-return ranking — it diluted α — so the board rides the validated α leg. The cycle state + pullback/extended + the 'setup' column are shown as risk-placement CONTEXT (when to enter), not a return signal, and the 👤 chip flags an insider buy-cluster confirmer. Click any row for the full breakdown.", "行业中性残差动量（剥离大盘与行业 beta）的领涨股，在整个标普 1500 范围内排序，因此能发掘并不在任何行业 ETF 前十大持仓中的高置信中小盘个股。按 α 排序：我们做了 Phase-0 检验，把周期入场+反转叠加混入排序（reports/setup-score-phase0.md，无幸存者偏差的标普500，12年，PIT），该混合并未改善前瞻收益排序 — 反而稀释了 α — 因此榜单以已验证的 α 为准。周期状态、回调/过热以及“布局分”列作为风险摆位的情境展示（何时入场），而非收益信号；👤 标记表示内部人集群买入的确认指标。点击任意行查看完整拆解。") }}</span>
+          <span class="muted" style="font-size:11px">{{ t('α-ranked names that have triggered the MACD-2D × StochRSI-3D confluence buy · across the S&P 1500', '已触发 MACD-2D × StochRSI-3D 共振买入、并按 α 排序的标的 · 覆盖标普 1500') }}
+            {{ help("Actionable setups only. A name appears here only once it has TRIGGERED the validated MACD-2D × StochRSI-3D confluence buy (engine/signal_gate): the 2D MACD and 3D StochRSI have crossed within the last ~6 days and momentum is still constructive (Buy zone), OR the 3D StochRSI has crossed and the 2D MACD is about to cross in the next 1-2 bars (About to cross). This is a HARD gate — a high-α leader that is downtrending / topped on the 3D MACD/StochRSI is NOT shown, no matter how strong its momentum (the bug this fixes). Among the names that pass the gate, the board RANKS by α (sector-neutral residual momentum, market + sector beta stripped) so the strongest leaders surface first; the cycle state, trend chip and 'setup' score are risk-placement CONTEXT, and 👤 flags an insider buy-cluster. Click any row for the full breakdown.", "仅显示可操作布局。标的只有在触发了经验证的 MACD-2D × StochRSI-3D 共振买入（engine/signal_gate）后才会出现：2日 MACD 与 3日 StochRSI 已在约近6日内交叉且动量仍具建设性（买入区），或 3日 StochRSI 已上穿、2日 MACD 即将在未来1-2根K线内交叉（即将交叉）。这是硬性门控——无论动量多强，在 3日 MACD/StochRSI 上处于下行/做顶的高 α 领涨股都不会显示（本次修复的问题）。在通过门控的标的中，榜单按 α（行业中性残差动量，剥离大盘与行业 beta）排序，使最强领涨股优先；周期状态、趋势标签与“布局分”为风险摆位情境，👤 表示内部人集群买入。点击任意行查看完整拆解。") }}</span>
           <a class="ts-more" href="discovery.html">{{ t('Top Picks', '精选股') }} →</a>
         </div>
+        {% if top_setups.buy %}
         <table class="ts-tbl">
           <thead><tr>
             <th>{{ t('Stock', '个股') }}</th><th>{{ t('Sector', '板块') }}</th>
             <th class="r">α</th><th class="r">{{ t('rank', '排名') }}</th>
-            <th>{{ t('cycle', '周期') }}</th><th>{{ t('entry', '入场') }}</th>
+            <th title="The validated MACD-2D × StochRSI-3D confluence buy gate (engine/signal_gate): Buy zone = both crossed within ~6 days, still constructive; About to cross = 3D StochRSI crossed, 2D MACD imminent. The board requires this. · 经验证的共振买入门控：买入区=两者约近6日内交叉且建设性；即将交叉=3日StochRSI已上穿、2日MACD即将交叉。榜单以此为准。">{{ t('buy', '买入') }}</th>
+            <th>{{ t('cycle', '周期') }}</th><th>{{ t('trend', '趋势') }}</th>
             <th class="r" title="Cross-sectional factor composite (value / quality / low-vol …) — a LIGHT quality tiebreaker (crowded, post-publication decayed), not a driver · 横截面因子综合（价值/质量/低波…）— 轻量质量打破平局，非主导">{{ t('factor', '因子') }}</th>
             <th class="r" title="Entry-context blend (0.7·alpha-z + cycle/reversal timing). The board is ranked by α, not this — Phase-0 found the blend does not improve forward-return ranking (reports/setup-score-phase0.md). · 入场情境混合分（0.7·alpha-z + 周期/反转择时）。榜单按 α 排序而非此分 — Phase-0 显示该混合不改善前瞻收益排序。">{{ t('setup', '布局分') }}</th>
           </tr></thead>
@@ -2520,6 +2527,7 @@
               <td class="muted">{{ td(r.sector) }}</td>
               <td class="r {{ 'az-up' if r.alpha and r.alpha > 0 else 'az-dn' }}">{{ '%+.2f'|format(r.alpha) }}</td>
               <td class="r muted">{% if r.sector_rank %}#{{ r.sector_rank }}/{{ r.sector_n }}{% endif %}</td>
+              <td>{% set sg = r.signal if (r.signal is defined) else none %}{% if sg and sg.tier_cascade in ('T1','T2') %}<span class="ts-buy ok" title="Confirmed: 2D MACD-RSI × 3D StochRSI crossed within ~6 days, still constructive · 已确认：2日MACD-RSI×3日StochRSI约近6日内交叉、仍具建设性">{{ t('Buy zone', '买入区') }}</span>{% elif sg and sg.tier_cascade == 'T3' %}<span class="ts-buy soon" title="Anticipation: 3D StochRSI crossed, 2D MACD-RSI about to cross (next 1-2 bars) · 预期：3日StochRSI已上穿、2日MACD-RSI即将交叉（未来1-2根K线）">{{ t('About to cross', '即将交叉') }}</span>{% else %}<span class="muted">—</span>{% endif %}</td>
               <td>{% if r.label %}{{ td(r.label) }}{% else %}<span class="muted">—</span>{% endif %}</td>
               <td>{% if r.alpha_entry == 'pullback' %}<span class="ent-good">{{ t('pullback', '回调') }}</span>{% elif r.alpha_entry == 'extended' %}<span class="ent-warn">{{ t('extended', '过热') }}</span>{% else %}<span class="muted">{{ r.alpha_entry or '—' }}</span>{% endif %}</td>
               <td class="r {{ 'az-up' if r.factor_z and r.factor_z > 0 else ('az-dn' if r.factor_z and r.factor_z < 0 else 'muted') }}">{% if r.factor_z is not none %}{{ '%+.1f'|format(r.factor_z) }}{% else %}—{% endif %}</td>
@@ -2528,6 +2536,9 @@
           {% endfor %}
           </tbody>
         </table>
+        {% else %}
+        <p class="ts-empty">⚪ {{ t("No names have a fresh MACD-2D × StochRSI-3D confluence buy right now — so there are no actionable setups to recommend today. A strong α leader that is downtrending or topped on the 3D MACD/StochRSI is not a buy; this board only lists names that have actually triggered the entry. See Top Picks for the full conviction board.", "当前没有标的触发新的 MACD-2D × StochRSI-3D 共振买入 — 因此今日没有可推荐的可操作布局。在 3日 MACD/StochRSI 上下行或做顶的强势 α 领涨股不构成买入；本榜单只列出确实已触发入场的标的。完整信念榜见精选股。") }}</p>
+        {% endif %}
       </div>
       {% endif %}
     </div>

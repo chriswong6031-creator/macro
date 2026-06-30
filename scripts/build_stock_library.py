@@ -1484,21 +1484,41 @@ def main() -> int:
     cal = config.data_dir() / "regime" / "ladder_calibration.json"
     if cal.exists():
         (outdir / "calibration.json").write_text(cal.read_text())
+    # Publish the per-name confluence-cascade verdict (the owner's MACD-2D x StochRSI-3D
+    # T1->T4 gate, already computed above for every universe name) so the discovery "Top
+    # Picks" board (scripts/build_discovery, which runs AFTER build_site in the daily
+    # pipeline) can gate its "Buy-zone" picks on the SAME signal the Top-setups strip uses —
+    # one source of truth, no recompute, T1 (the validated §7 master) included. Additive.
+    (site / "factordata").mkdir(parents=True, exist_ok=True)
+    if sig_verdict:
+        try:
+            sig_out = {t: signal_gate.buy_signal(v) for t, v in sig_verdict.items()}
+            (site / "factordata" / "signal_gate.json").write_text(
+                json.dumps({"as_of": alpha_asof, "verdicts": sig_out},
+                           separators=(",", ":"), default=str, allow_nan=False))
+            log.info("wrote signal_gate.json (%d verdicts, %d buyable)", len(sig_out),
+                     sum(1 for v in sig_verdict.values() if signal_gate.is_buyable(v)))
+        except Exception as e:  # noqa: BLE001 — additive; discovery falls back to recompute
+            log.warning("signal_gate.json write skipped (%s)", e)
     # cross-sectional "Top setups" — selection (sector-neutral residual alpha) ×
     # timing (cycle entry + reversal overlay), surfaced on the macro dashboard's
     # "Standout individual stocks" board (read by build_site one build later, since
-    # build_library runs at the END of build_site). Buys = strong-alpha leaders on a
-    # constructive entry; laggards = weak alpha. Mirrors build_china_library.
+    # build_library runs at the END of build_site). Mirrors build_china_library.
     if cand:
-        # rank by the validated alpha leg, NOT the blended setup score: Phase-0
-        # (reports/setup-score-phase0.md) found the cycle-timing/reversal blend does
-        # not improve forward-return ranking on the US panel — it dilutes alpha — so
-        # the board rides the positive-IC leg and shows the timing as entry context.
-        setups = rank_setups(cand, as_of=alpha_asof, rank_by="alpha")
-        (site / "factordata").mkdir(parents=True, exist_ok=True)
+        # The buy list is HARD-GATED on the owner's MACD-2D x StochRSI-3D confluence
+        # (signal_gate.is_buyable: T1/T2 just-crossed or T3 about-to-cross) — so the board
+        # only ever recommends a name that has actually triggered (or is imminently
+        # triggering) the entry, never a high-alpha leader that is downtrending on the 3D
+        # MACD/StochRSI. The gate REPLACES the alpha>=0.5 floor; the alpha leg now only
+        # RANKS the survivors (Phase-0 found the cycle/reversal blend dilutes forward-return
+        # ranking, so we keep the validated alpha leg as the sort and show timing as context).
+        setups = rank_setups(cand, as_of=alpha_asof, rank_by="alpha",
+                             buy_gate=lambda t: signal_gate.is_buyable(sig_verdict.get(t)))
+        for r in setups.get("buy", []):
+            r["signal"] = signal_gate.buy_signal(sig_verdict.get(r.get("ticker")))
         (site / "factordata" / "setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))
-        log.info("wrote setups.json (%d buy, %d laggards, %d candidates)",
+        log.info("wrote setups.json (%d buy [confluence-gated], %d laggards, %d candidates)",
                  len(setups["buy"]), len(setups["laggards"]), len(cand))
         # WIDE "Standout individual stocks" board (the bench the user sees, ~80-120).
         # v2: when the deep-PIT gate is GO (the validated EVENT edge beats the momentum

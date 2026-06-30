@@ -124,6 +124,30 @@ def test_rank_setups_as_of_passthrough():
     assert out == {"as_of": "2026-06-14", "buy": [], "laggards": []}
 
 
+def test_rank_setups_buy_gate_hard_filters_and_replaces_alpha_floor():
+    # The Top-setups board gates the buy list on the confluence (signal_gate) verdict, NOT the
+    # alpha>=0.5 floor. A strong-alpha leader that fails the gate is DROPPED; a modest-alpha name
+    # (below the old floor) that PASSES the gate is admitted — the gate replaces the floor.
+    cands = [
+        setup_score(_rec(2.5, entry="extended", ticker="HOT", name="Hot Leader"), alpha_weight=US_ALPHA_WEIGHT),   # high α, no cross
+        setup_score(_rec(0.2, entry="pullback", urgency="now", eq_dir="up", ticker="OK", name="Ok Co"), alpha_weight=US_ALPHA_WEIGHT),  # low α, fresh cross
+        setup_score(_rec(-1.5, urgency="exit", eq_dir="down", ticker="LAG", name="Lag Co"), alpha_weight=US_ALPHA_WEIGHT),  # laggard
+    ]
+    buyable = {"OK"}
+    out = rank_setups(cands, rank_by="alpha", buy_gate=lambda t: t in buyable)
+    assert [r["ticker"] for r in out["buy"]] == ["OK"]      # gate admits OK, drops the un-gated HOT
+    assert [r["ticker"] for r in out["laggards"]] == ["LAG"]  # laggards untouched by buy_gate
+
+
+def test_rank_setups_buy_gate_empty_when_nothing_passes():
+    # honest empty board when no name has a fresh confluence buy — never a misleading fallback list
+    cands = [setup_score(_rec(2.0 + i * 0.1, entry="pullback", urgency="now", eq_dir="up",
+                              ticker=f"T{i}", name=f"Co {i}"), alpha_weight=US_ALPHA_WEIGHT)
+             for i in range(5)]
+    out = rank_setups(cands, rank_by="alpha", buy_gate=lambda t: False)
+    assert out["buy"] == []
+
+
 # ---- dual-class dedup -------------------------------------------------------
 
 def test_norm_company_collapses_share_classes():

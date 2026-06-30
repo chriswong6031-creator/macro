@@ -40,15 +40,17 @@ def test_band_thresholds():
 
 # ---- entry axis -------------------------------------------------------------
 
-def test_entry_meta_buy_zone_and_extended():
-    en, zh, css, buyzone = entry_meta("pullback")
-    assert en == "Buy zone" and css == "tp-buyzone" and buyzone is True
-    en, zh, css, buyzone = entry_meta("extended")
-    assert en == "Extended" and css == "tp-extended" and buyzone is False
-    # only a leader-on-a-pullback is a buy zone
-    assert entry_meta("intact")[3] is False
-    assert entry_meta("laggard")[3] is False
-    assert entry_meta(None)[3] is False        # missing -> neutral, not a buy zone
+def test_entry_meta_is_trend_context_not_a_buy_call():
+    # entry_meta is now (en, zh, css) trend-position CONTEXT — NOT a buy flag. The buy call is
+    # the confluence gate (engine/signal_gate); a "pullback" no longer reads "Buy zone".
+    en, zh, css = entry_meta("pullback")
+    assert en == "Pullback" and css == "tp-pullback"   # constructive context, not "Buy zone"
+    en, zh, css = entry_meta("extended")
+    assert en == "Extended" and css == "tp-extended"
+    assert entry_meta("intact")[0] == "In trend"
+    assert entry_meta(None)[0] == "Neutral"            # missing -> neutral
+    # the 3-tuple no longer carries a buy_zone boolean (nothing keys "buy" off the trend read)
+    assert all(len(entry_meta(t)) == 3 for t in ("pullback", "extended", "intact", "laggard", None))
 
 
 # ---- compute_scores: structure ---------------------------------------------

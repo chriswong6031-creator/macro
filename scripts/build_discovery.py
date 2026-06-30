@@ -34,9 +34,10 @@ from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import confluence_tiers, signal_gate  # noqa: E402 — MACD-2D x StochRSI-3D buy gate
 from engine.extension import (GRADES, VAL_LABELS, cohort_stretch,  # noqa: E402
                               extension_signals, valuation_vs_history)
-from engine.top_picks import (ALPHA_W, ENTRY_LABELS, TILT_LEGS, TILT_W,  # noqa: E402
+from engine.top_picks import (ALPHA_W, TILT_LEGS, TILT_W,  # noqa: E402
                               band, compute_scores, entry_meta)
 from lib import config  # noqa: E402
 
@@ -48,8 +49,48 @@ SECTOR_TOP = 18     # rows shown per sector drill
 BUYZONE_N = 12      # length of the "buy-zone" sweet-spot strip
 BUYZONE_MIN = 0.3   # a buy-zone pick must still be a genuine top pick (top_score >= this)
 
-# entry tag -> (en, zh, css class), for the template's echip macro
-ENTRY_META = {tag: (m[0], m[1], m[2]) for tag, m in ENTRY_LABELS.items()}
+# confluence-tier -> (en, zh, css) for the actionable BUY signal chip. T1/T2 are a CONFIRMED,
+# just-crossed buy; T3 is the "about to cross" anticipation. Keyed by the cascade tier.
+SIGNAL_LABELS = {
+    "T1": ("Buy zone", "买入区", "sg-confirmed"),     # validated 3D master take, just-crossed
+    "T2": ("Buy zone", "买入区", "sg-confirmed"),     # 2D MACD x 3D StochRSI just crossed
+    "T3": ("About to cross", "即将交叉", "sg-imminent"),  # 3D StochRSI crossed, 2D MACD imminent
+}
+
+
+def _signal_verdicts(site: Path, closes) -> dict:
+    """ticker -> the compact MACD-2D x StochRSI-3D confluence verdict that gates the Top-setups
+    strip on us_stocks.html. PRIMARY source: site/factordata/signal_gate.json, written by
+    build_stock_library in the SAME daily run (so the discovery board and the Top-setups strip
+    agree exactly, and T1 — the validated §7 master take — is included). FALLBACK (standalone /
+    first run): recompute the close-only cascade here (T2/T3/T4 only; T1 needs the §7 analysis),
+    so the gate still applies. Never fatal: returns {} and the page degrades to no buy-zone."""
+    p = site / "factordata" / "signal_gate.json"
+    if p.exists():
+        try:
+            data = json.loads(p.read_text())
+            v = data.get("verdicts") if isinstance(data, dict) else None
+            if v:
+                log.info("loaded signal_gate.json (%d verdicts)", len(v))
+                return v
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("signal_gate.json unreadable (%s); recomputing cascade", e)
+    if closes is None:
+        return {}
+    log.info("signal_gate.json absent — recomputing close-only cascade (no T1)")
+    out: dict[str, dict] = {}
+    for tk in closes.columns:
+        try:
+            s = closes[tk].dropna()
+            if s.empty:
+                continue
+            casc = confluence_tiers.cascade(s, take_active=False)
+            out[tk] = {"eligible": bool(casc.get("eligible")),
+                       "tier_cascade": casc.get("tier"), "tier_sub": casc.get("sub"),
+                       "ticks": casc.get("ticks"), "bars_to_cross": casc.get("bars_to_cross")}
+        except Exception:  # noqa: BLE001 — one bad series must not 404 the page
+            continue
+    return out
 
 
 def _names_sectors() -> dict:
@@ -127,6 +168,11 @@ def main() -> int:
     log.info("extension read on %d names (%d parabolic), valuation on %d",
              len(ext), sum(1 for v in ext.values() if v.get("parabolic")), len(val))
 
+    # the MACD-2D x StochRSI-3D confluence verdict per name — the HARD gate on what is allowed
+    # to read "Buy zone" (engine/signal_gate). Same source the Top-setups strip on us_stocks.html
+    # gates on, so the two surfaces never disagree.
+    verdicts = _signal_verdicts(site, closes)
+
     # ---- score the whole universe with the validated Top-Pick composite ---------
     inp = []
     for tk, a in pt.items():
@@ -151,18 +197,27 @@ def main() -> int:
         at = attn.get(tk, {})
         ex = ext.get(tk, {})
         vl = val.get(tk, {})
-        en, zh, css, buyzone = entry_meta(a.get("entry"))
+        en, zh, css = entry_meta(a.get("entry"))   # trend-position CONTEXT (not a buy call)
         g = ex.get("grade", "na")
         g_en, g_zh, g_css, g_caution = GRADES.get(g, GRADES["na"])
         vlab = vl.get("val_label")
         v_en, v_zh, v_css = VAL_LABELS.get(vlab, (None, None, None))
+        # the actionable BUY signal: only a fresh MACD-2D x StochRSI-3D confluence (T1/T2/T3)
+        # counts — a "Pullback" trend read is NOT a buy on its own.
+        cv = verdicts.get(tk) or {}
+        tier = cv.get("tier_cascade")
+        buyable = signal_gate.is_buyable(cv)
+        sg_en, sg_zh, sg_css = SIGNAL_LABELS.get(tier, (None, None, None))
         return {
             "ticker": tk, "name": name, "sector": sector, "price": _price(px, tk),
             "top_score": s["top_score"], "band": band(s["top_score"]),
             "alpha": s["alpha"], "alpha_band": band(s["alpha"]),
             "conviction_z": s["conviction_z"], "n_legs": s["n_legs"], "legs": s["legs"],
             "entry": a.get("entry"), "entry_en": en, "entry_zh": zh, "entry_css": css,
-            "buyzone": buyzone,
+            # confluence BUY signal (the hard gate) — display fields for the template chip
+            "buyable": buyable, "sig_tier": tier, "sig_ticks": cv.get("ticks"),
+            "sig_btc": cv.get("bars_to_cross"),
+            "sig_en": sg_en, "sig_zh": sg_zh, "sig_css": sg_css,
             "total_mom": a.get("total_mom"), "rev_1m": a.get("rev_1m"),
             "rev_pctile": a.get("rev_pctile"), "sector_rank": a.get("sector_rank"),
             "sector_n": a.get("sector_n"),
@@ -193,9 +248,18 @@ def main() -> int:
     cohort_n = max(8, len(rows) // 5)
     banner = cohort_stretch(rows[:cohort_n])
 
-    # the "buy-zone" sweet spot: genuine top picks (high conviction) that are ALSO a
-    # leader on a pullback — the user's "good entry into a high-alpha name".
-    buyzone = [r for r in rows if r["buyzone"] and r["top_score"] >= BUYZONE_MIN][:BUYZONE_N]
+    # the "buy-zone" sweet spot: genuine top picks (conviction >= BUYZONE_MIN) that have ALSO
+    # triggered the MACD-2D x StochRSI-3D confluence buy (T1/T2 just-crossed, or T3 about-to-
+    # cross). HARD-gated — a high-conviction name that is downtrending on the 3D MACD/StochRSI
+    # no longer reads "Buy zone" (the bug this fixes). Confirmed crosses (T1/T2) rank above the
+    # T3 anticipation, then by conviction.
+    _tier_rank = {"T1": 0, "T2": 0, "T3": 1}
+    buyzone = sorted(
+        [r for r in rows if r["buyable"] and r["top_score"] >= BUYZONE_MIN],
+        key=lambda r: (_tier_rank.get(r["sig_tier"], 9), -r["top_score"]))[:BUYZONE_N]
+    n_buyable = sum(1 for r in rows if r["buyable"])
+    log.info("buy-zone: %d confluence-buyable names (%d in strip ≥%.1f conviction)",
+             n_buyable, len(buyzone), BUYZONE_MIN)
 
     # ---- sectors overview (by mean Top-Pick conviction) + top-quintile share ------
     q_cut = rows[max(0, len(rows) // 5 - 1)]["top_score"] if rows else 0.0
@@ -231,11 +295,11 @@ def main() -> int:
     env.globals.update(td=td, tr=tr)
     html = env.get_template("discovery.html.j2").render(
         strongest=strongest, weakest=weakest, buyzone=buyzone, sectors=sectors,
-        by_sector=by_sector, sector_order=sector_order, entry_meta=ENTRY_META,
+        by_sector=by_sector, sector_order=sector_order,
         tilt_legs=list(TILT_LEGS), alpha_w=ALPHA_W, tilt_w=TILT_W, banner=banner,
         attn_threshold=float((config.load().get("wiki_pageviews") or {}).get("chip_threshold", 2.0)),
         as_of=alpha.get("as_of"), windows=alpha.get("windows") or {},
-        n=len(rows), built=built)
+        n=len(rows), n_buyable=n_buyable, built=built)
     (site / "discovery.html").write_text(html)
     log.info("wrote %s/discovery.html (%d names, %d sectors, %d buy-zone, %d KB)",
              site, len(rows), len(by_sector), len(buyzone), len(html) // 1024)
