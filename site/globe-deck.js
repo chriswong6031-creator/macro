@@ -98,9 +98,9 @@
     canvas.width = W * dpr; canvas.height = H * dpr;
     canvas.style.width = W + "px"; canvas.style.height = H + "px";
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    R = Math.min(W, H) * 0.34;   // small fit factor → the globe + 1.13x halo float clear of
-                                 // the canvas rect at EVERY zoom level (capped below), so it's
-                                 // never cut off by the canvas edge — desktop and mobile alike
+    R = Math.min(W, H) * 0.40;   // fit factor → the globe + 1.13x halo float clear of the
+                                 // canvas rect at the DEFAULT zoom (0.40*1.13 = 0.45 < 0.5),
+                                 // so it's never cut off by the canvas edge — bigger hero globe
     fitScale = R; scale = scale === 240 ? R : Math.min(R * 1.35, Math.max(R * 0.8, scale));
     apply();
     if (ready) render(performance.now());   // repaint + reposition islands on resize even when paused
