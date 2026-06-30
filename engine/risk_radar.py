@@ -488,16 +488,21 @@ def _gross_for(state: str) -> float:
     return round(max(_GROSS["floor"], g), 3)
 
 
+_STATE_ZH = {"calm": "平静", "watch": "观察", "caution": "警戒",
+             "elevated": "升高", "risk-off": "避险"}
+
+
 def _headline(state, dominant, hot):
     if state == "calm" or not dominant:
         return ("Risk radar: calm — no scare-type elevated.", "风险雷达：平静 — 无升级的风险类型。")
     name = dominant["label_en"]
     name_zh = dominant["label_zh"]
+    state_zh = _STATE_ZH.get(state, state)
     legs = ", ".join(f"{l['leg']}({l['pctile']:.0%})" for l in dominant["firing_legs"][:3])
     conj = " + " + " × ".join(h["label_en"] for h in hot[:2]) if len(hot) >= 2 else ""
     en = (f"{state.upper()}: {name} ({dominant['score']:.0f}/100){conj}. Leading: {legs}."
           f" Modest odds (~1.5-2x) — de-risk, favor entries.")
-    zh = f"{state.upper()}：{name}（{dominant['score']:.0f}/100）。降低风险敞口、择优入场。"
+    zh = f"{state_zh}：{name_zh}（{dominant['score']:.0f}/100）。降低风险敞口、择优入场。"
     return en, zh
 
 

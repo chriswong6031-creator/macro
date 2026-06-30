@@ -473,8 +473,8 @@ const THEME_ALERTS = {{ theme_alerts_json|safe }};
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 
 const TBL_COLS = ['1d','5d','20d','60d','MTD','YTD'];
-const TBL_MODES = [['raw','Raw'],['rel','vs S&P'],['sigma','σ']];
-const RANGES = [['3M',63],['6M',126],['YTD','ytd'],['1Y',252],['All',0]];
+const TBL_MODES = [['raw',L('Raw','原始')],['rel',L('vs S&P','对标普')],['sigma','σ']];
+const RANGES = [['3M',63],['6M',126],['YTD','ytd'],['1Y',252],[L('All','全部'),0]];
 const HZ_TABS = ['1d','5d','20d','60d','YTD'];
 const PALETTE = ['#5aa7ff','#4ade80','#facc15','#fb923c','#f472b6','#2dd4bf','#a78bfa','#fb7185','#a3e635','#38bdf8','#e879f9','#34d399','#fbbf24','#60a5fa'];
 const colorOf = {}; (BASKETS.baskets||[]).forEach((b,i)=>colorOf[b.id]=PALETTE[i%PALETTE.length]);
@@ -532,7 +532,7 @@ function renderBTable(){
     const x=a.vals[sc], y=b.vals[sc]; if(x==null) return 1; if(y==null) return -1; return (x-y)*dir; });
   const fmt = btblMode==='sigma' ? fmtZ : fmtPct;
   const th = c => `<th class="num ${c===sc?'sel':''}" data-c="${c}">${c}${c===sc?(dir<0?' ▾':' ▴'):''}</th>`;
-  let html = `<thead><tr><th data-c="name">Basket${sc==='name'?(dir<0?' ▾':' ▴'):''}</th><th class="num">60d</th>${TBL_COLS.map(th).join('')}</tr></thead><tbody>`;
+  let html = `<thead><tr><th data-c="name">${L('Basket','篮子')}${sc==='name'?(dir<0?' ▾':' ▴'):''}</th><th class="num">60d</th>${TBL_COLS.map(th).join('')}</tr></thead><tbody>`;
   html += rows.map(r=>`<tr><td class="bname" data-id="${r.id}"><span class="dot" style="background:${r.color}"></span>${esc(r.name)}</td>
     <td class="num">${sparkSvg(r.spark,{color:r.color})}</td>
     ${TBL_COLS.map(c=>`<td class="num ${cls(r.vals[c])}">${r.vals[c]==null?'<span class="muted">—</span>':fmt(r.vals[c])}</td>`).join('')}</tr>`).join('');
@@ -562,7 +562,7 @@ function chartOpts(){ return { autoSize:true,
   rightPriceScale:{ borderColor:cssv('--line')||'#222' }, timeScale:{ borderColor:cssv('--line')||'#222' },
   crosshair:{ mode:0, vertLine:{labelBackgroundColor:cssv('--panel2')||'#333'}, horzLine:{labelBackgroundColor:cssv('--panel2')||'#333'} } }; }
 function renderChart(){
-  const el=document.getElementById('chart'); if(typeof LightweightCharts==='undefined'){ el.innerHTML='<p class="muted">The charting library failed to load — the rest of the page is unaffected.</p>'; return; }
+  const el=document.getElementById('chart'); if(typeof LightweightCharts==='undefined'){ el.innerHTML='<p class="muted">'+L('The charting library failed to load — the rest of the page is unaffected.','图表库加载失败 — 页面其余部分不受影响。')+'</p>'; return; }
   if(!chart){ chart=LightweightCharts.createChart(el,chartOpts()); }
   (chart.__series||[]).forEach(s=>chart.removeSeries(s)); chart.__series=[];
   const start=rangeStart(CHART.dates);
@@ -592,17 +592,17 @@ function initChartDefaults(){
 
 // ---- 03 cards + details ---------------------------------------------------
 let bhz = localStorage.getItem('fw-hz')||'20d';
-function kpi(k,p){ const v=p?p.rel:null; return `<div class="kpi"><div class="v ${cls(v)}">${fmtPct(v)}</div><div class="k">${k} vs S&P</div></div>`; }
+function kpi(k,p){ const v=p?p.rel:null; return `<div class="kpi"><div class="v ${cls(v)}">${fmtPct(v)}</div><div class="k">${k} ${L('vs S&P','对标普')}</div></div>`; }
 function renderCards(){
   const el=document.getElementById('cards');
   el.innerHTML=(BASKETS.categories||[]).map(cat=>{
     const cards=(BASKETS.baskets||[]).filter(b=>b.category===cat)
       .sort((a,c)=>((c.perf?.[bhz]?.rel)??-9)-((a.perf?.[bhz]?.rel)??-9))
       .map(b=>{ const spk=sparkTail(ratio(CHART.baskets[b.id]));
-        const ref=b.reference?` · tracks ${esc(b.reference.label)} (r ${b.reference.corr.toFixed(2)})`:'';
+        const ref=b.reference?` · ${L('tracks','跟踪')} ${esc(b.reference.label)} (r ${b.reference.corr.toFixed(2)})`:'';
         return `<div class="card" style="--c:${colorOf[b.id]}" data-id="${b.id}">
           <div class="nm"><span class="dot" style="background:${colorOf[b.id]}"></span>${esc(b.name)}</div>
-          <div class="meta">${b.n_members} members · equal-weighted · since ${esc(b.created)}${ref}</div>
+          <div class="meta">${b.n_members} ${L('members','只成分')} · ${L('equal-weighted','等权')} · ${L('since','自')} ${esc(b.created)}${ref}</div>
           <div class="th">${esc(b.thesis)}</div>
           <div class="perf">${kpi(hzLabel(bhz),b.perf?.[bhz])}${kpi('YTD',b.perf?.ytd)}<span class="spark">${sparkSvg(spk,{w:96,h:30,color:colorOf[b.id]})}</span></div>
         </div>`; }).join('');
@@ -640,7 +640,7 @@ function renderStory(){
   const dot=id=>`<span class="dot" style="background:${colorOf[id]||'#888'}"></span>`;
   const lead=(BASKETS.baskets||[]).find(b=>b.name===s.leader), lag=(BASKETS.baskets||[]).find(b=>b.name===s.laggard);
   document.getElementById('story').innerHTML =
-    `${lead?dot(lead.id):''}<b>${esc(s.leader)}</b> leads the themes over 20 days (<span class="${cls(s.leader_rel)}">${fmtPct(s.leader_rel)}</span> vs S&amp;P) · ${lag?dot(lag.id):''}<b>${esc(s.laggard)}</b> lags (<span class="${cls(s.laggard_rel)}">${fmtPct(s.laggard_rel)}</span>) · <b>${s.n_baskets}</b> baskets across <b>${s.n_cats}</b> categories.`;
+    `${lead?dot(lead.id):''}<b>${esc(s.leader)}</b> ${L('leads the themes over 20 days','领涨主题（20日）')} (<span class="${cls(s.leader_rel)}">${fmtPct(s.leader_rel)}</span> ${L('vs S&amp;P','对标普')}) · ${lag?dot(lag.id):''}<b>${esc(s.laggard)}</b> ${L('lags','落后')} (<span class="${cls(s.laggard_rel)}">${fmtPct(s.laggard_rel)}</span>) · <b>${s.n_baskets}</b> ${L('baskets across','个篮子，覆盖')} <b>${s.n_cats}</b> ${L('categories.','个类别。')}`;
 }
 
 // ---- Theme Rotation Desk --------------------------------------------------
@@ -967,9 +967,10 @@ function boot(){
   renderActNow(); renderRegimeSizing(); renderMacroCtx(); renderThemeDesk(); renderConcentration(); renderRotation(); renderScorecards(); renderBell();
   renderStory();
   renderTabs(document.getElementById('btbl-mode'), TBL_MODES, btblMode, v=>{ btblMode=v; localStorage.setItem('fw-btbl-mode',v); renderBTable(); });
-  renderTabs(document.getElementById('chart-modes'), [['rel','vs S&P 500'],['abs','Absolute']], chartMode, v=>{ chartMode=v; renderChart(); });
+  renderTabs(document.getElementById('chart-modes'), [['rel',L('vs S&P 500','对标普500')],['abs',L('Absolute','绝对')]], chartMode, v=>{ chartMode=v; renderChart(); });
   const rel=document.getElementById('chart-ranges');
   rel.innerHTML=RANGES.map(([lab,v])=>`<button data-v="${v}" class="${v===chartRange?'on':''}">${lab}</button>`).join('')+`<input class="rangeN" type="number" min="5" max="600" placeholder="N days">`;
+  (function(){const rn=rel.querySelector('.rangeN'),sp=()=>rn.placeholder=document.documentElement.getAttribute('data-lang')==='zh'?'N 天':'N days';sp();document.addEventListener('langchange',sp);})();
   rel.querySelectorAll('button').forEach(b=>b.onclick=()=>{ chartRange=(b.dataset.v==='ytd')?'ytd':parseInt(b.dataset.v,10); rel.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); renderChart(); });
   rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
   renderTabs(document.getElementById('hz-tabs'), HZ_TABS.map(h=>[h,hzLabel(h)]), bhz, v=>{ bhz=v; localStorage.setItem('fw-hz',v); renderCards(); renderDetails(); });

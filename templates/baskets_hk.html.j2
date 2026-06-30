@@ -169,7 +169,7 @@ const THEME_ALERTS = {{ theme_alerts_json|default('[]')|safe }};
 window.BASKET_BASE = 'basket_hk/';
 
 const TBL_COLS = ['1d','5d','20d','60d','MTD','YTD'];
-const RANGES = [['3M',63],['6M',126],['YTD','ytd'],['1Y',252],['All',0]];
+const RANGES = [['3M',63],['6M',126],['YTD','ytd'],['1Y',252],['<span class="l-en">All</span><span class="l-zh">全部</span>',0]];
 const HZ_TABS = ['1d','5d','20d','60d','YTD'];
 const PALETTE = ['#5aa7ff','#4ade80','#facc15','#fb923c','#f472b6','#2dd4bf','#a78bfa','#fb7185','#a3e635','#38bdf8','#e879f9','#34d399','#fbbf24','#60a5fa','#c084fc','#22d3ee','#f87171','#bef264','#818cf8','#fcd34d','#5eead4','#fda4af'];
 const colorOf = {}; (BASKETS.baskets||[]).forEach((b,i)=>colorOf[b.id]=PALETTE[i%PALETTE.length]);
@@ -267,7 +267,7 @@ function chartOpts(){ return { autoSize:true,
   rightPriceScale:{ borderColor:cssv('--line')||'#222' }, timeScale:{ borderColor:cssv('--line')||'#222' },
   crosshair:{ mode:0, vertLine:{labelBackgroundColor:cssv('--panel2')||'#333'}, horzLine:{labelBackgroundColor:cssv('--panel2')||'#333'} } }; }
 function renderChart(){
-  const el=document.getElementById('chart'); if(typeof LightweightCharts==='undefined'){ el.innerHTML='<p class="muted">The charting library failed to load — the rest of the page is unaffected.</p>'; return; }
+  const el=document.getElementById('chart'); if(typeof LightweightCharts==='undefined'){ el.innerHTML='<p class="muted">'+(LANG()==='zh'?'图表库加载失败 — 页面其余部分不受影响。':'The charting library failed to load — the rest of the page is unaffected.')+'</p>'; return; }
   if(!chart){ chart=LightweightCharts.createChart(el,chartOpts()); }
   (chart.__series||[]).forEach(s=>chart.removeSeries(s)); chart.__series=[];
   const start=rangeStart(CHART.dates);
@@ -366,6 +366,7 @@ function boot(){
   renderModeTabs();
   const rel=document.getElementById('chart-ranges');
   rel.innerHTML=RANGES.map(([lab,v])=>`<button data-v="${v}" class="${v===chartRange?'on':''}">${lab}</button>`).join('')+`<input class="rangeN" type="number" min="5" max="600" placeholder="N days">`;
+  (function(){const rn=rel.querySelector('.rangeN'),sp=()=>rn.placeholder=LANG()==='zh'?'N 天':'N days';sp();document.addEventListener('langchange',sp);})();
   rel.querySelectorAll('button').forEach(b=>b.onclick=()=>{ chartRange=(b.dataset.v==='ytd')?'ytd':parseInt(b.dataset.v,10); rel.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); renderChart(); });
   rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
   renderTabs(document.getElementById('hz-tabs'), HZ_TABS.map(h=>[h,hzLabel(h)]), bhz, v=>{ bhz=v; localStorage.setItem('cnfw-hz',v); renderCards(); renderDetails(); });

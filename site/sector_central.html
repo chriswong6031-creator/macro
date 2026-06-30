@@ -408,6 +408,12 @@
   function lang(){ return document.documentElement.getAttribute("data-lang") === "zh" ? "zh" : "en"; }
   function L(en, zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
   function esc(s){ return (s==null?'':String(s)).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+  var LEX={"Goldilocks":"理想增长","Reflation":"再通胀","Stagflation":"滞胀",
+    "Growth-scare/Deflation":"增长恐慌／通缩","Growth scare":"增长恐慌","Growth-scare":"增长恐慌","Deflation":"通缩",
+    "expanding":"扩张","contracting":"收缩","neutral":"中性","unknown":"未知",
+    "Risk-on":"风险偏好","Risk-off":"风险规避","Neutral":"中性"};
+  function tr(s){ return s==null?s:(LEX[s]||LEX[String(s).trim()]||s); }
+  function TL(s){ return s==null?'—':L(esc(s),esc(tr(s))); }
   function pc(x){ return (x>0?'+':'')+x.toFixed(1)+'%'; }
   var asof=document.getElementById('scc-asof'); if(asof) asof.textContent=D.as_of||'';
   document.getElementById('n-sec').textContent=(D.sectors||[]).length;
@@ -420,16 +426,16 @@
     var dr=M.derisk_blended, postPct=(risk!=null)?Math.round((risk+1)/2*100):50;
     var cells=[];
     cells.push('<div class="rg-cell lead"><div class="rg-k">'+L('Regime gate','体制门控')+' · '+L('validated','已验证')+'</div>'+
-      '<div class="rg-v '+toneCls+'">'+esc(M.state_en||'—')+'</div>'+
+      '<div class="rg-v '+toneCls+'">'+L(esc(M.state_en||'—'),esc(M.state_zh||tr(M.state_en)||'—'))+'</div>'+
       '<div class="rg-bar"><i style="width:'+postPct+'%;background:'+(tone==='off'?'var(--down)':tone==='on'?'var(--up)':'var(--muted)')+'"></i></div>'+
       '<div class="rg-d">'+L('macro risk','宏观风险')+' '+(dr!=null?dr:'—')+' · '+L('gate ×','门控 ×')+(M.gate_factor!=null?M.gate_factor:'—')+'</div></div>');
     cells.push('<div class="rg-cell"><div class="rg-k">'+L('Quad','象限')+'</div>'+
-      '<div class="rg-v">'+esc(M.quad_name||M.quad||'—')+'</div>'+
+      '<div class="rg-v">'+TL(M.quad_name||M.quad||'—')+'</div>'+
       '<div class="rg-d">'+L('growth','增长')+' '+(M.growth_score!=null?M.growth_score:'—')+' · '+L('infl','通胀')+' '+(M.inflation_score!=null?M.inflation_score:'—')+'</div></div>');
     var tac=M.tactical_label, tsc=M.risk_state_score;
     cells.push('<div class="rg-cell"><div class="rg-k">'+L('Net liquidity','净流动性')+' · '+L('tactical','战术')+'</div>'+
-      '<div class="rg-v" style="font-size:16px">'+esc(M.liquidity||'—')+'</div>'+
-      '<div class="rg-d">'+L('tactical','战术')+' '+(tac?esc(tac):'—')+(tsc!=null?' '+Math.round(tsc)+'/100':'')+(M.caution?' · '+L('breadth caution','宽度警示'):'')+'</div></div>');
+      '<div class="rg-v" style="font-size:16px">'+TL(M.liquidity||'—')+'</div>'+
+      '<div class="rg-d">'+L('tactical','战术')+' '+(tac?L(esc(tac),esc(M.tactical_label_zh||tr(tac))):'—')+(tsc!=null?' '+Math.round(tsc)+'/100':'')+(M.caution?' · '+L('breadth caution','宽度警示'):'')+'</div></div>');
     var na=M.n_above_trend, ns=M.n_sectors;
     cells.push('<div class="rg-cell"><div class="rg-k">'+L('Trend breadth','趋势宽度')+' · '+L('validated gate','已验证门控')+'</div>'+
       '<div class="rg-v">'+(na!=null&&ns?na+'/'+ns:'—')+'</div>'+
