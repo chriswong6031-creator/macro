@@ -2674,6 +2674,13 @@ def main() -> int:
     # function-local for the WHOLE of main(); referencing it before that import
     # raises UnboundLocalError and aborts the build. `json` is module-global.
     _auth_repl = json.dumps(_auth_cfg)
+    # GitHub Pages custom domain: serve the dashboard at www.mastermind-x.com.
+    # Written on every build (and committed as site/CNAME for the fast pages.yml
+    # path) so a render never drops it — without it Pages reverts to the
+    # *.github.io URL and the Google/X OAuth redirect (Supabase Site URL =
+    # https://www.mastermind-x.com) lands on a dead host. apex mastermind-x.com
+    # stays on the VPS; only www is the Pages custom domain.
+    (site / "CNAME").write_text("www.mastermind-x.com\n")
     # copy shared static assets (theme + visual widgets) into the site
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
                   "stockdata.js", "watchlist.js", "factor_exposure.js", "auth.js",
