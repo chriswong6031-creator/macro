@@ -35,6 +35,9 @@ _STATUS_BY_URGENCY = {
 _HEADLINE = {
     "buy_now":       ("Buy zone — entry open now", "买入区 — 入场窗口已开启"),
     "partial":       ("Partial entry — half size now", "部分入场 — 当前可建半仓"),
+    # the daily-cycle ladder turned up but the validated MACD-2D x StochRSI-3D confluence has
+    # NOT fired yet — an honest wait state so the card never claims the window is open early.
+    "await_confluence": ("Cycle turn — awaiting confluence cross", "周期拐点 — 等待共振交叉确认"),
     "buy_soon":      ("Buy soon — on confirmation", "即将买入 — 待确认"),
     "watch":         ("Watch — a low is approaching", "观察 — 低点临近"),
     "wait_pullback": ("Wait for the pullback", "等待回撤"),
@@ -122,9 +125,18 @@ def _horizon_read(rec: dict, eq_score: float | None, spot: float,
     return {"d3": round(d3, 2), "d21": round(d21, 2), "d63": round(d63, 2)}
 
 
-def assess(close: pd.Series, high: pd.Series | None, rec: dict) -> dict | None:
+def assess(close: pd.Series, high: pd.Series | None, rec: dict, *,
+           buyable: bool | None = None) -> dict | None:
     """Build the structured entry-timing block for one name, or None when the
-    cycle ladder isn't computable. Pure / point-in-time; safe to call per build."""
+    cycle ladder isn't computable. Pure / point-in-time; safe to call per build.
+
+    ``buyable`` is the MACD-2D x StochRSI-3D CONFLUENCE verdict (engine/signal_gate.is_buyable)
+    for this name. The daily-cycle ladder this gauge reads can flash an OPEN entry
+    (buy_now / partial) while the validated confluence cross has NOT fired — so when the caller
+    passes ``buyable=False`` an open entry is HARD-GATED down to an honest "await_confluence"
+    wait state (the card never claims the window is open before the validated cross). Pass
+    ``buyable=None`` (the default) to leave the gauge ungated — backward compatible for callers
+    that don't compute the confluence (e.g. markets without the gate wired)."""
     lad = rec.get("ladder") or {}
     cyc = rec.get("cycle") or {}
     if not lad or not lad.get("state"):
@@ -147,6 +159,14 @@ def assess(close: pd.Series, high: pd.Series | None, rec: dict) -> dict | None:
         status = "topping" if cyc.get("dc_phase") == "stretched" else "extended"
     if state == "DECLINE":
         status = "blocked"
+    # CONFLUENCE GATE — the daily-cycle ladder above can read an OPEN entry while the validated
+    # MACD-2D x StochRSI-3D confluence (engine/signal_gate) has NOT fired. When the caller marks
+    # the name not-confluence-buyable, downgrade an open entry (buy_now / partial) to an honest
+    # "awaiting confluence cross" wait state; the buy-zone prices still render (it stays a watch
+    # zone), but the headline / act-ring no longer claim the window is open before the cross.
+    confluence_gated = bool(buyable is False and status in ("buy_now", "partial"))
+    if confluence_gated:
+        status = "await_confluence"
 
     ma10, ma20, ma50, ma200 = (_ma(c, 10), _ma(c, 20), _ma(c, 50), _ma(c, 200))
     atrp = _atr_pct(c, high)
@@ -158,7 +178,7 @@ def assess(close: pd.Series, high: pd.Series | None, rec: dict) -> dict | None:
 
     # ── buy zone (real prices) + don't-chase line + invalidation stop ──────────
     zone_lo = zone_hi = chase_above = None
-    if status in ("buy_now", "partial", "buy_soon"):
+    if status in ("buy_now", "partial", "buy_soon", "await_confluence"):
         # near a fresh low: accumulate from spot down toward the cycle low; the chase
         # line sits ~half an ATR above spot (paying up past it is chasing the bar).
         zone_hi = _round_px(spot)
@@ -211,10 +231,14 @@ def assess(close: pd.Series, high: pd.Series | None, rec: dict) -> dict | None:
         pct_through = int(round(100 * min(dc_day / max(band[1], 1), 1.3)))
 
     en, zh = _HEADLINE.get(status, _HEADLINE["watch"])
+    # a confluence-gated name is "forming, don't act yet" — never the act-now ring, regardless
+    # of the (still-fresh) daily-cycle urgency that drove it.
+    act = 1 if confluence_gated else _ACT_LEVEL.get(urg, 1)
     out = {
         "status": status,
         "urgency": urg,
-        "act_level": _ACT_LEVEL.get(urg, 1),
+        "act_level": act,
+        "confluence_gated": confluence_gated,
         "headline": en, "headline_zh": zh,
         "action": entry.get("text"), "action_zh": entry.get("text_zh"),
         "entry_z": eq_score,                       # signed drawdown-calibrated quality
