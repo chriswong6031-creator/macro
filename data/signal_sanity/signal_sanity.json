@@ -1,7 +1,11 @@
 {
-  "ok": true,
-  "fail_reasons": [],
-  "warnings": [],
+  "ok": false,
+  "fail_reasons": [
+    "news: coverage 14 < floor 100 (news flow)"
+  ],
+  "warnings": [
+    "news.n_recent: mean drifted 70% (1.6→2.71) vs 2026-06-29"
+  ],
   "surfaces": {
     "standouts": {
       "key": "standouts",
@@ -18,14 +22,14 @@
         "as_of": "2026-06-29",
         "n_records": 29,
         "coverage": 29,
-        "fingerprint": "b608eee2e5f84458",
+        "fingerprint": "9bc4ae9450ef097c",
         "scores": {
           "conviction.composite_z": {
             "n_sub": 29,
             "pop": 29,
             "uniq": 29,
-            "mean": 0.036482758620689656,
-            "std": 0.4703730449620522
+            "mean": 0.034448275862068965,
+            "std": 0.4682393718960197
           },
           "alpha": {
             "n_sub": 29,
@@ -52,14 +56,14 @@
         "as_of": "2026-06-30",
         "n_records": 25,
         "coverage": 25,
-        "fingerprint": "43f4999444601c95",
+        "fingerprint": "24b832e551aa5179",
         "scores": {
           "priority": {
             "n_sub": 25,
             "pop": 25,
-            "uniq": 20,
-            "mean": 0.5821999999999999,
-            "std": 0.14337224278081165
+            "uniq": 17,
+            "mean": 0.5564,
+            "std": 0.13153706701914863
           },
           "strength": {
             "n_sub": 25,
@@ -135,33 +139,37 @@
     "news": {
       "key": "news",
       "label": "news flow",
-      "ok": true,
-      "fails": [],
-      "warns": [],
+      "ok": false,
+      "fails": [
+        "news: coverage 14 < floor 100 (news flow)"
+      ],
+      "warns": [
+        "news.n_recent: mean drifted 70% (1.6→2.71) vs 2026-06-29"
+      ],
       "as_of": "2026-06-30",
-      "n": 444,
-      "coverage": 184,
+      "n": 14,
+      "coverage": 14,
       "row": {
         "run_date": "2026-06-30",
         "surface": "news",
         "as_of": "2026-06-30",
-        "n_records": 444,
-        "coverage": 184,
-        "fingerprint": "405b262394d3cb65",
+        "n_records": 14,
+        "coverage": 14,
+        "fingerprint": "44ad3b61939443b8",
         "scores": {
           "n_recent": {
-            "n_sub": 184,
-            "pop": 184,
-            "uniq": 6,
-            "mean": 1.5923913043478262,
-            "std": 1.1572769477689553
+            "n_sub": 14,
+            "pop": 14,
+            "uniq": 5,
+            "mean": 2.7142857142857144,
+            "std": 2.1189138534559038
           },
           "sentiment_score": {
-            "n_sub": 184,
-            "pop": 184,
-            "uniq": 5,
-            "mean": 0.26989130434782604,
-            "std": 0.8470947723853846
+            "n_sub": 14,
+            "pop": 14,
+            "uniq": 1,
+            "mean": 0.0,
+            "std": 0.0
           }
         }
       }
@@ -181,28 +189,28 @@
         "as_of": "2026-06-30",
         "n_records": 30,
         "coverage": 30,
-        "fingerprint": "683d7be2b58837ae",
+        "fingerprint": "388c81382e16c053",
         "scores": {
           "composite_conviction": {
             "n_sub": 30,
             "pop": 30,
-            "uniq": 29,
-            "mean": 48.30333333333333,
-            "std": 20.704274652566045
+            "uniq": 27,
+            "mean": 45.92666666666666,
+            "std": 20.45541384464161
           },
           "opportunity_score": {
             "n_sub": 30,
             "pop": 30,
-            "uniq": 28,
-            "mean": 50.2,
-            "std": 16.41192655763891
+            "uniq": 29,
+            "mean": 52.06666666666667,
+            "std": 17.36531664618363
           },
           "edge_remaining": {
             "n_sub": 30,
             "pop": 30,
-            "uniq": 29,
-            "mean": 0.7812,
-            "std": 0.13080708441568956
+            "uniq": 26,
+            "mean": 0.7944333333333333,
+            "std": 0.12529875852892114
           }
         }
       }
@@ -217,5 +225,5 @@
     "intel_hub"
   ],
   "missing": [],
-  "evaluated_at": "2026-06-30T04:08:15.218538+00:00"
+  "evaluated_at": "2026-06-30T09:39:20.680234+00:00"
 }
