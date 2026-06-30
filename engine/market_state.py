@@ -493,6 +493,17 @@ def _radar_override_intl(latest: dict, overrides: list) -> dict:
     rr = latest.get("risk_radar") or {}
     out = _radar_to_rd(rr)
     state = rr.get("state")
+
+    # DE-ESCALATION read (display-only) for the CN/HK/CA radar — has this market's risk peaked +
+    # rolled over while the global liquidity tide (Fed/PBoC/global CB) turns supportive? Never
+    # touches the ceiling below. See engine/risk_radar_recovery.py.
+    try:
+        from engine import risk_radar_recovery
+        out["recovery"] = risk_radar_recovery.assess(latest)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("risk_radar_intl recovery assess failed: %s", e)
+        out["recovery"] = None
+
     if rr.get("can_force") and state in ("caution", "elevated", "risk-off"):
         ceil = _RADAR_INTL_CEIL.get(state)
         out["ceiling"] = ceil

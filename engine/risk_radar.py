@@ -574,6 +574,54 @@ def _spark_points(vals, w: float = 96.0, h: float = 26.0, pad: float = 3.0):
             {"x": pts[peak_i][0], "y": pts[peak_i][1]}, {"x": pts[-1][0], "y": pts[-1][1]})
 
 
+def _trajectory_from_series(win, states, odds, caution_band: float) -> dict:
+    """Shared trajectory classifier used by BOTH the US (engine/risk_radar) and the international
+    (engine/risk_radar_intl) radars, so the peaking/receding logic can never drift between them.
+    Inputs: the recent intensity WINDOW (Series), the aligned daily gated STATE (list/Series or
+    None), the aligned pullback-odds Series (or None), and this market's caution band. Pure."""
+    cur = float(win.iloc[-1])
+    peak = float(win.max())
+    peak_days_ago = int(len(win) - 1 - int(win.to_numpy().argmax()))
+    off_peak = round(peak - cur, 1)
+    lb = min(_TRAJ_VEL_LB, len(win) - 1)
+    velocity = round(cur - float(win.iloc[-1 - lb]), 1) if lb > 0 else 0.0   # pts over ~1 week
+    st_list = list(states) if states is not None else None
+    # did the radar reach a genuinely risky level recently (something to recede FROM)? Use the raw
+    # intensity peak (so a context-GATED episode, loud banner never fired but risk real, still counts).
+    reached_risk = bool(peak >= caution_band)
+    if st_list is not None:
+        reached_risk = reached_risk or any(
+            _STATE_ORDER.index(s) >= _STATE_ORDER.index("caution") for s in st_list)
+    rising = velocity >= 1.5
+    falling = velocity <= -1.5
+    if not reached_risk:
+        phase = "calm"
+    elif falling and off_peak >= 3.0:
+        phase = "receding"
+    elif rising:
+        phase = "rising"
+    elif off_peak < 4.0:
+        phase = "peaking"
+    else:
+        phase = "flat"
+    odds_now = round(float(odds.iloc[-1]), 3) if odds is not None else None
+    odds_peak = round(float(odds.max()), 3) if odds is not None else None
+    olb = (min(_TRAJ_ODDS_LB, len(odds) - 1) if odds is not None else 0)
+    odds_delta = (round(float(odds.iloc[-1] - odds.iloc[-1 - olb]), 3)
+                  if (odds is not None and olb > 0) else None)
+    spark_vals = [round(float(v), 1) for v in win.tail(_TRAJ_SPARK).tolist()]
+    pts, peak_xy, last_xy = _spark_points(spark_vals)
+    return {
+        "intensity": round(cur, 1), "peak": round(peak, 1), "peak_days_ago": peak_days_ago,
+        "off_peak": off_peak, "velocity": velocity,   # pts over ~1wk (negative = receding)
+        "phase": phase, "reached_risk": reached_risk,
+        "state_now": (str(st_list[-1]) if st_list else None),
+        "odds_now": odds_now, "odds_peak": odds_peak, "odds_delta": odds_delta,
+        "spark": spark_vals, "spark_pts": pts, "spark_peak": peak_xy, "spark_last": last_xy,
+        "spark_w": 96, "spark_h": 26, "window": int(len(win)),
+    }
+
+
 def trajectory(subs: pd.DataFrame | None = None, calib: dict | None = None,
                window: int = _TRAJ_WINDOW) -> dict | None:
     """Recent PATH of the radar — has its intensity peaked and turned down, and how fast are the
@@ -611,52 +659,7 @@ def trajectory(subs: pd.DataFrame | None = None, calib: dict | None = None,
                 index=win.index)
         except Exception:  # noqa: BLE001 — odds series is best-effort
             states = odds = None
-
-        cur = float(win.iloc[-1])
-        peak = float(win.max())
-        peak_days_ago = int(len(win) - 1 - int(win.to_numpy().argmax()))
-        off_peak = round(peak - cur, 1)
-        lb = min(_TRAJ_VEL_LB, len(win) - 1)
-        velocity = round(cur - float(win.iloc[-1 - lb]), 1) if lb > 0 else 0.0   # pts over ~1 week
-
-        # did the radar reach a genuinely risky level recently (something to recede FROM)? Use the
-        # raw intensity peak (so a context-GATED episode, where the loud banner never fired but the
-        # underlying drawdown risk was real, still counts).
-        reached_risk = bool(peak >= bands["caution"])
-        if states is not None:
-            reached_risk = reached_risk or any(
-                _STATE_ORDER.index(s) >= _STATE_ORDER.index("caution") for s in states)
-
-        rising = velocity >= 1.5
-        falling = velocity <= -1.5
-        if not reached_risk:
-            phase = "calm"
-        elif falling and off_peak >= 3.0:
-            phase = "receding"
-        elif rising:
-            phase = "rising"
-        elif off_peak < 4.0:
-            phase = "peaking"
-        else:
-            phase = "flat"
-
-        odds_now = round(float(odds.iloc[-1]), 3) if odds is not None else None
-        odds_peak = round(float(odds.max()), 3) if odds is not None else None
-        olb = (min(_TRAJ_ODDS_LB, len(odds) - 1) if odds is not None else 0)
-        odds_delta = (round(float(odds.iloc[-1] - odds.iloc[-1 - olb]), 3)
-                      if (odds is not None and olb > 0) else None)
-
-        spark_vals = [round(float(v), 1) for v in win.tail(_TRAJ_SPARK).tolist()]
-        pts, peak_xy, last_xy = _spark_points(spark_vals)
-        return {
-            "intensity": round(cur, 1), "peak": round(peak, 1), "peak_days_ago": peak_days_ago,
-            "off_peak": off_peak, "velocity": velocity,   # pts over ~1wk (negative = receding)
-            "phase": phase, "reached_risk": reached_risk,
-            "state_now": (str(states.iloc[-1]) if states is not None else None),
-            "odds_now": odds_now, "odds_peak": odds_peak, "odds_delta": odds_delta,
-            "spark": spark_vals, "spark_pts": pts, "spark_peak": peak_xy, "spark_last": last_xy,
-            "spark_w": 96, "spark_h": 26, "window": int(len(win)),
-        }
+        return _trajectory_from_series(win, states, odds, bands["caution"])
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("risk_radar trajectory failed: %s", e)
         return None
