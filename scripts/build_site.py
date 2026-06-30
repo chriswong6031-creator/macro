@@ -2664,10 +2664,20 @@ def main() -> int:
                   "stockview.js",
                   "lightweight-charts.js",
                   "allocation_scorecard.js", "live.js", "wh_banner.js", "heatmap.js",
-                  "subsector_rotation.js"):
+                  "subsector_rotation.js",
+                  # vendored (self-hosted) third-party libs — were CDN <script> tags
+                  # (cdn.jsdelivr / cdn.plot.ly) that are blocked/unreliable in mainland
+                  # China; served same-origin so pages load behind the GFW.
+                  "supabase.js", "plotly-2.32.0.min.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
+    # self-hosted webfonts (binary WOFF2) — copied as a tree so the @font-face in
+    # theme.css resolves same-origin (Google Fonts is blocked in mainland China).
+    import shutil
+    fonts_src = config.ROOT / "templates" / "fonts"
+    if fonts_src.exists():
+        shutil.copytree(fonts_src, site / "fonts", dirs_exist_ok=True)
     # live-price progressive enhancement config (Worker URL + cadence from config.yml);
     # live.js no-ops when the URL is empty, so this is safe on the static deploy.
     try:

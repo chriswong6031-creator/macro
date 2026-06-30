@@ -22,7 +22,9 @@
 
   var CFG = window.SUPABASE_CFG;
   var ENABLED = CFG && CFG.url && CFG.anonKey;
-  var SDK_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
+  // Self-hosted (was a public JS CDN, blocked in mainland China). Vendored at
+  // templates/supabase.js -> site/supabase.js; same dir as auth.js. Pinned 2.x.
+  var SDK_URL = 'supabase.js';
   var TABLE = 'watchlists';
 
   function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }

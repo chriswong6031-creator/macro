@@ -201,8 +201,11 @@ def resolve_snapshot_url() -> str:
     cfg = config.load().get("live") or {}
     url = (os.environ.get("LIVE_QUOTES_SNAPSHOT_URL", "").strip()
            or str(cfg.get("snapshot_url", "") or "").strip())
-    if url and not url.startswith("https://"):
-        log.warning("live snapshot URL ignored (must be https://): %r", url)
+    # Allow a SAME-ORIGIN relative path (e.g. "live/quotes.json" — China-safe, no
+    # raw.githubusercontent) OR an absolute https URL. Reject only an absolute URL
+    # with a non-https scheme (malformed / mixed-content), which would break live.js.
+    if url and "://" in url and not url.startswith("https://"):
+        log.warning("live snapshot URL ignored (must be https:// or same-origin relative): %r", url)
         return ""
     return url
 
