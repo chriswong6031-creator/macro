@@ -456,6 +456,7 @@
      user stays signed in across visits and across every page on the origin. */
   var GOOGLE_SVG = '<svg class="ob-g" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.02-3.7H.96v2.34A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.98 10.72a5.4 5.4 0 0 1 0-3.44V4.94H.96a9 9 0 0 0 0 8.12l3.02-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.47.89 11.43 0 9 0A9 9 0 0 0 .96 4.94l3.02 2.34C4.68 5.16 6.66 3.58 9 3.58z"/></svg>';
   var WECHAT_SVG = '<svg class="ob-wx" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.7 3.3C4.9 3.3 1.8 6 1.8 9.3c0 1.9 1 3.5 2.6 4.7l-.7 2.1 2.4-1.3c.86.24 1.6.36 2.6.36.23 0 .46-.01.68-.03a5.2 5.2 0 0 1-.2-1.43c0-3 2.9-5.4 6.4-5.4l.6.02C15.7 5.5 12.6 3.3 8.7 3.3zM6.4 7.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm4.6 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/><path d="M22.2 14.1c0-2.7-2.6-4.9-5.8-4.9s-5.8 2.2-5.8 4.9 2.6 4.9 5.8 4.9c.74 0 1.45-.13 2.1-.34l2 1.1-.55-1.85c1.3-.9 2.25-2.2 2.25-3.81zm-7.7-1.1a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6zm3.9 0a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6z"/></svg>';
+  var X_SVG = '<svg class="ob-x" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zM17.083 19.77h1.833L7.084 4.126H5.117z"/></svg>';
   var EYE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
 
   /* ---- permanent cookie session storage ---------------------------------
@@ -638,6 +639,7 @@
     suTitle:   ['Create your account', '创建账户'],
     suSub:     ['Free — sync watchlists, alerts & settings', '免费 — 同步自选、提醒与设置'],
     google:    ['Continue with Google', '使用 Google 继续'],
+    x:         ['Continue with X', '使用 X 继续'],
     wechat:    ['Continue with WeChat', '使用微信继续'],
     soon:      ['Soon', '即将'],
     wechatSoon:['WeChat sign-in is coming soon.', '微信登录即将推出。'],
@@ -650,6 +652,7 @@
     su:        ['Create account', '注册'],
     working:   ['Working…', '处理中…'],
     redirect:  ['Redirecting to Google…', '正在跳转到 Google…'],
+    redirectX: ['Redirecting to X…', '正在跳转到 X…'],
     toSignup:  ['New here? Create an account', '新用户？创建账户'],
     toSignin:  ['Already have an account? Sign in', '已有账户？登录'],
     okSignup:  ['Account created — you’re signed in!', '账户已创建——已登录！'],
@@ -743,6 +746,7 @@
           '<div><h2 id="auth-title"></h2><span class="ab-sub" id="auth-sub"></span></div></div>' +
         '<div class="auth-oauth">' +
           '<button type="button" class="auth-ob" id="auth-google">' + GOOGLE_SVG + '<span id="auth-google-t"></span></button>' +
+          '<button type="button" class="auth-ob xcom" id="auth-xbtn">' + X_SVG + '<span id="auth-xbtn-t"></span></button>' +
           '<button type="button" class="auth-ob wechat" id="auth-wechat">' + WECHAT_SVG + '<span id="auth-wechat-t"></span><span class="ob-soon" id="auth-wechat-soon"></span></button>' +
         '</div>' +
         '<div class="auth-div"><span id="auth-or"></span></div>' +
@@ -770,6 +774,7 @@
     _setTxt('auth-title', _authL(si ? 'siTitle' : 'suTitle'));
     _setTxt('auth-sub', _authL(si ? 'siSub' : 'suSub'));
     _setTxt('auth-google-t', _authL('google'));
+    _setTxt('auth-xbtn-t', _authL('x'));
     _setTxt('auth-wechat-t', _authL('wechat'));
     _setTxt('auth-wechat-soon', _authL('soon'));
     _setTxt('auth-or', _authL('or'));
@@ -801,9 +806,11 @@
   }
   function _authBusy(b) {
     _authBusyState = b;
-    var s = document.getElementById('auth-submit'), g = document.getElementById('auth-google');
+    var s = document.getElementById('auth-submit'), g = document.getElementById('auth-google'),
+        x = document.getElementById('auth-xbtn');
     if (s) { s.disabled = b; s.textContent = b ? _authL('working') : _authL(_authMode === 'signin' ? 'si' : 'su'); }
     if (g) g.disabled = b;
+    if (x) x.disabled = b;
   }
   function _wireAuthModal(ov) {
     var card = ov.querySelector('.auth-card');
@@ -822,6 +829,7 @@
       pw.type = pw.type === 'password' ? 'text' : 'password';
     });
     document.getElementById('auth-google').addEventListener('click', _authGoogle);
+    document.getElementById('auth-xbtn').addEventListener('click', _authX);
     document.getElementById('auth-wechat').addEventListener('click', function () { _authShow('wechatSoon', 'ok'); });
     document.getElementById('auth-form').addEventListener('submit', function (e) { e.preventDefault(); _authEmailSubmit(); });
     // light focus trap (true modal)
@@ -858,15 +866,19 @@
   }
   window.openAuthModal = openAuthModal;
 
-  function _authGoogle() {
-    _authBusy(true); _authShow('redirect', 'ok');
+  // shared OAuth kickoff for the provider buttons (Google, X/Twitter). On success
+  // the browser navigates to the provider's consent screen; we only land back in
+  // .then() if the SDK returns an error before redirecting.
+  function _authOAuth(provider, redirectKey) {
+    _authBusy(true); _authShow(redirectKey, 'ok');
     getSupabaseClient().then(function (sb) {
-      return sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.href.split('#')[0] } });
+      return sb.auth.signInWithOAuth({ provider: provider, options: { redirectTo: location.href.split('#')[0] } });
     }).then(function (res) {
       if (res && res.error) { _authBusy(false); _authShow(_authErrKey(res.error), 'err'); }
-      // else: the browser is navigating to Google's consent screen
     }).catch(function () { _authBusy(false); _authShow('errSdk', 'err'); });
   }
+  function _authGoogle() { _authOAuth('google', 'redirect'); }
+  function _authX() { _authOAuth('twitter', 'redirectX'); }   // Supabase provider id for X is 'twitter'
   function _authEmailSubmit() {
     var emEl = document.getElementById('auth-email'), pwEl = document.getElementById('auth-pw');
     var email = (emEl && emEl.value || '').trim(), pw = (pwEl && pwEl.value) || '';
