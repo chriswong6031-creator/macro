@@ -1,7 +1,7 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-06-29",
-  "generated_at": "2026-06-30T12:03:33.767176+00:00",
+  "generated_at": "2026-06-30T14:05:02.637463+00:00",
   "degraded": null,
   "notes": [
     {
@@ -10,24 +10,24 @@
       "name": "Sunrun",
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "The daily cycle is attempting a bottom, but the weekly trend remains unconfirmed and macro headwinds persist; negative free cash flow and accounting watch flag undermine fundamental quality, leaving no clear edge versus the S&P 500.",
+      "horizon_d": 20,
+      "thesis": "The bottoming turn signal is early and unconfirmed against a mixed weekly backdrop, while negative quality factors (low\u2011vol lottery risk, high short interest, accounting watch) suggest no dependable edge relative to the S&P 500.",
       "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "Selection z=0.15 (SUE -0.14, revision -0.09)",
-        "Quality z=-1.08, accounting watch",
-        "Entry z=0.50 but mixed weekly timeframe",
-        "Macro: US net liquidity contracting, elevated macro risk"
+        "Verdict: Neutral \u2013 no clear edge",
+        "Quality axis z -1.08; accounting watch flag",
+        "SUE z -0.14 weak near-term surprise context",
+        "Macro: US net liquidity contracting, elevated macro risk",
+        "10-day MA reclaim but below 50- and 200-day MAs"
       ],
-      "dissent": "If the turn matures into a weekly uptrend and the insider-buying signal is rewarded, a sharp mean-reversion rally from deeply oversold levels could outperform.",
+      "dissent": "If the daily cycle extends into a weekly upturn and insider-buying / SUE capital flows materialise, the name could unexpectedly outperform.",
       "falsifier": {
-        "text": "Price closes above the 50-day moving average (~$13.59) and weekly MACD turns positive \u2014 that would challenge the neutral view.",
+        "text": "Price breaks below the recent swing low (~$12.0) and RSI closes under 40 on the daily chart, indicating the bottoming structure has failed.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-08-10",
+      "check_by": "2026-07-27",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
@@ -36,24 +36,24 @@
       "name": "Arlo Technologies",
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "A daily bottoming setup coexists with a strong earnings-surprise signal (SUE z=1.35) and high quality, but the mixed weekly trend and macro headwinds offset the event edge, making sustained outperformance unlikely at this juncture.",
+      "horizon_d": 15,
+      "thesis": "Despite a favourable quality profile (clean accounting, strong profitability) and a positive SUE signal, the regime is mixed and the daily turn lacks weekly confirmation, keeping the edge ambiguous versus the index.",
       "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "SUE z=1.35 (fresh 32 days), quality z=2.385",
-        "Selection z=0.13, tailwind z=-0.04",
-        "Entry z=0.48 but weekly trend not turned",
-        "Macro: US net liquidity contracting"
+        "Verdict: Neutral \u2013 no clear edge",
+        "Quality axis z 2.385; accounting clean",
+        "SUE z 1.35 \u2013 positive surprise context",
+        "Entry z 0.48; off-high -32.9%, RSI 51",
+        "Mixed tape; no clear weekly trend"
       ],
-      "dissent": "If macro conditions ease, the combination of high quality and fresh earnings momentum could drive a rapid re-rating and significant relative strength.",
+      "dissent": "If the SUE-driven PEAD effect materialises and the quality premium attracts buyers, the stock could break above the 50\u2011day MA and outperform.",
       "falsifier": {
-        "text": "Stock closes above the 200-day moving average (~$14.36) on above-average volume within 30 days \u2014 that would indicate the neutral stance was too conservative.",
+        "text": "Price closes below the 10\u2011day moving average and daily MACD turns negative, signalling the bottoming attempt has failed.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-08-10",
+      "check_by": "2026-07-20",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
@@ -63,17 +63,17 @@
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 30,
-      "thesis": "The stock is building a base with a fresh swing low and nascent daily momentum; positive analyst revisions (z=0.78) and a favorable entry setup support a constructive lean, though the absent weekly uptrend caps upside conviction.",
+      "thesis": "The deterministic profile flags a base\u2011building setup supported by positive revisions, a constructive entry z\u2011score, and an off\u2011high pullback; if the daily cycle matures into a weekly turn, the name has scope to outperform the S&P 500.",
       "evidence": [
-        "Verdict: Constructive \u2014 building a base",
-        "Revision z=0.78, selection z=0.27",
-        "Entry z=0.48 (off-high, vol-squeeze, RSI reset)",
-        "Tailwind present (spotlight)",
-        "cycle_blocked: false, half-size entry"
+        "Verdict: Constructive \u2013 building a base",
+        "Revisions z 0.78 \u2013 positive literature\u2011backed leg",
+        "Entry z 0.48; off\u2011high -20.2%, RSI 46, vol\u2011squeeze present",
+        "Tailwind axis present via spotlight",
+        "Accounting clean; moderate quality"
       ],
-      "dissent": "If macro liquidity tightens further, the stock could easily break the recent swing low and resume the downtrend, underperforming in a risk-off tape.",
+      "dissent": "If macro headwinds intensify and the weekly trend remains flat, the base could fail, leaving the stock vulnerable to a break below the -20% support zone.",
       "falsifier": {
-        "text": "Price falls below the swing low at $140.4 and daily MACD prints a bearish crossover \u2014 that would invalidate the constructive lean.",
+        "text": "Price drops below the cycle low of $140.40 and fails to reclaim that level within three trading days.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "FCN",
@@ -92,28 +92,28 @@
       "name": "FactSet",
       "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "The stock is lagging with deeply negative revisions and momentum; an imminent earnings report (1 day) introduces binary-event risk, making it likely to continue underperforming the S&P 500 barring a major positive surprise.",
+      "horizon_d": 5,
+      "thesis": "An earnings report in the next day creates a binary event, while lagging selection metrics (negative revisions, weak momentum) and a -47% drawdown give no pre\u2011event edge; caution is warranted relative to the market.",
       "evidence": [
-        "Verdict: Lagging \u2014 relative weakness",
-        "Revision z=-1.22, alpha z=-0.95",
-        "Off 52-week high -47.2%",
-        "Caution: earnings in 1d \u2014 binary event, size down",
-        "Entry only marginally supportive (z=0.05)"
+        "Verdict: Lagging \u2013 relative weakness",
+        "Caution: earnings in 1d \u2013 binary event",
+        "Revisions z -1.22; momentum z -0.95 \u2013 both weak",
+        "Off\u2011high -47.2%, below 200\u2011day MA",
+        "Mixed tape, no quality axis signal"
       ],
-      "dissent": "A strong earnings beat and guidance raise could completely reverse the lagging trend, triggering a sharp rally driven by short covering.",
+      "dissent": "A strong earnings beat and upward guidance revision could trigger a sharp mean\u2011reversion rally that overwhelms the lagging signals.",
       "falsifier": {
-        "text": "Post-earnings, the stock closes above $250 and sustains that level for five consecutive trading days \u2014 that would falsify the cautious lean.",
+        "text": "The stock closes above its 50\u2011day moving average five trading days after the earnings release, indicating post\u2011event strength contrary to the cautious view.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "FDS",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
-          "horizon_d": 30
+          "horizon_d": 5
         }
       },
-      "check_by": "2026-08-10",
+      "check_by": "2026-07-06",
       "engine_verdict": "Lagging \u2014 relative weakness"
     },
     {
@@ -122,28 +122,28 @@
       "name": "Sarepta Therapeutics",
       "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "Despite a daily bottoming attempt, the prior cycle topped early (left-translated) and negative revisions plus fundamental losses with an accounting warn signal continuation of relative weakness; upside is likely limited.",
+      "horizon_d": 15,
+      "thesis": "Despite a fresh daily cycle, the prior left\u2011translated cycle and negative fundamentals (poor earnings, accounting warn, extreme lottery/low\u2011vol factor z\u2011scores) weigh on the profile, keeping relative performance likely sub\u2011par.",
       "evidence": [
-        "Verdict: Lagging \u2014 relative weakness",
-        "Left-translated prior cycle (bearish structure)",
-        "Revision z=-1.32, quality z=-0.50, accounting warn",
-        "Negative net income, CFO, ROE",
-        "Off 52-week high -30.4%, macro headwinds"
+        "Verdict: Lagging \u2013 relative weakness",
+        "Cycle translation: left \u2013 a bearish structural tell",
+        "Accounting warn flag; quality z -0.5",
+        "Low\u2011vol z -3.0, low\u2011beta z -1.96, short\u2011interest z -3.0",
+        "Net income deeply negative, negative operating cash flow"
       ],
-      "dissent": "A positive clinical or regulatory catalyst typical for biotech could detach the stock from its weak fundamentals and cause a violent upside breakout.",
+      "dissent": "If the SUE signal (z 1.35) triggers a strong post\u2011earnings drift and the daily cycle extends into a powerful right\u2011translated move, the name could surprise to the upside.",
       "falsifier": {
-        "text": "Price closes above the 50-day moving average (~$18.20) and weekly RSI crosses above 50 \u2014 that would challenge the cautious view.",
+        "text": "Price closes above the 50\u2011day moving average (currently ~$18.2) on above\u2011average volume, invalidating the downtrend structure.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "SRPT",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
-          "horizon_d": 30
+          "horizon_d": 15
         }
       },
-      "check_by": "2026-08-10",
+      "check_by": "2026-07-20",
       "engine_verdict": "Lagging \u2014 relative weakness"
     },
     {
@@ -152,28 +152,28 @@
       "name": "Stride, Inc.",
       "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "A failed daily cycle (price broke below the cycle low) and negative earnings/revision momentum confirm a lagging profile; the deep drawdown and trend damage make outperformance improbable in the near term.",
+      "horizon_d": 15,
+      "thesis": "The failed daily cycle flag, negative SUE/revision readings, and elevated macro headwinds outweigh the decent quality score; the name is likely to lag the S&P 500 until a new, confirmed cycle low forms.",
       "evidence": [
-        "Verdict: Lagging \u2014 relative weakness",
-        "Failed cycle flag: price broke below the low that began this cycle",
-        "Revision z=-1.22, SUE z=-0.56, alpha z=-0.41",
-        "Off 52-week high -49.1%",
-        "Entry only marginally supportive (z=0.05)"
+        "Verdict: Lagging \u2013 relative weakness",
+        "Failed cycle flag: price broke below prior cycle low",
+        "SUE z -0.56; revisions z -1.22 \u2013 both negative",
+        "Off\u2011high -49.1%, below both 50- and 200\u2011day MAs",
+        "Mixed tape; US net liquidity contracting"
       ],
-      "dissent": "A sector-wide policy catalyst or a large contract win could spark a sharp reversal from oversold conditions, outperforming in a risk-on rotation.",
+      "dissent": "The clean accounting and positive quality factors could attract value buyers, and if the stock reclaims the 10\u2011day average decisively, a V\u2011shaped recovery might materialise.",
       "falsifier": {
-        "text": "Stock reclaims and holds the 50-day moving average (~$92.15) for two consecutive weeks \u2014 that would invalidate the cautious lean.",
+        "text": "Price closes above the 10\u2011day simple moving average and daily MACD turns positive, signalling the failed cycle has been repaired and the bottoming is gaining traction.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "LRN",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
-          "horizon_d": 30
+          "horizon_d": 15
         }
       },
-      "check_by": "2026-08-10",
+      "check_by": "2026-07-20",
       "engine_verdict": "Lagging \u2014 relative weakness"
     }
   ],
