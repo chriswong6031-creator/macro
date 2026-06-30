@@ -54,6 +54,25 @@ def _load_narratives(root: Path) -> dict:
     return narr
 
 
+def _load_dna(root: Path) -> dict:
+    """SECTOR_DNA (the front-loaded "history rhymes" / cycle-cause profiles), same id keying as
+    narratives: sectors by ticker.lower(), baskets by "b-"+key. Optional — page renders without."""
+    f = root / "data" / "sector_cycles" / "cycle_dna.json"
+    if not f.exists():
+        return {}
+    try:
+        doc = json.loads(f.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001
+        log.warning("sector_cycles: cycle_dna.json unreadable (%s) — rendering without DNA", e)
+        return {}
+    if not isinstance(doc, dict):
+        return {}
+    dna = dict(doc.get("sectors", {}))
+    for k, v in (doc.get("baskets", {}) or {}).items():
+        dna["b-" + k] = v
+    return dna
+
+
 def main() -> int:
     root = config.ROOT
     try:
@@ -73,10 +92,12 @@ def main() -> int:
         return 0
 
     narr = _load_narratives(root)
+    dna = _load_dna(root)
 
     # data JS (loaded directly by the page — no fetch, works on file:// + preview)
     payload = ("window.SECTOR_CYCLES=" + json.dumps(data, separators=(",", ":")) + ";\n"
-               + "window.SECTOR_NARR=" + json.dumps(narr, separators=(",", ":"), ensure_ascii=False) + ";\n")
+               + "window.SECTOR_NARR=" + json.dumps(narr, separators=(",", ":"), ensure_ascii=False) + ";\n"
+               + "window.SECTOR_DNA=" + json.dumps(dna, separators=(",", ":"), ensure_ascii=False) + ";\n")
     (site / "sector_cycles_data.js").write_text(payload, encoding="utf-8")
 
     # also publish the raw model for external consumers / debugging
@@ -88,6 +109,11 @@ def main() -> int:
         loader=FileSystemLoader(str(root / "templates")),
         autoescape=False,  # macro pages emit raw HTML; _navlinks uses |safe
     )
+    try:                                       # _navlinks references t()/td()/tr() i18n globals
+        from engine import i18n
+        env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+    except Exception:  # noqa: BLE001 — degrade to English-only rather than crash the build
+        env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
     html = env.get_template("sector_cycles.html.j2").render()
     (site / "sector_cycles.html").write_text(html, encoding="utf-8")
 
