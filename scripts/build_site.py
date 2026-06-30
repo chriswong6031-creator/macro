@@ -3045,6 +3045,23 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("sector heatmap failed: %s", e)
 
+    # --- China / Hong Kong / Canada sector treemaps (flat Sector → stock) ------
+    # The international siblings of the S&P map: each builds
+    # marketdata/<market>_heatmap.json (offline-safe from that market's close
+    # cache) and a standalone page rendered from the shared market_heatmap.html.j2.
+    # Additive — never fatal to the daily run.
+    try:
+        from scripts.build_market_heatmap import build_all as build_market_heatmaps
+        from engine.market_heatmap import PAGE_META as _HM_MK
+        build_market_heatmaps(site, generated_utc=generated)
+        _hm_tmpl = env.get_template("market_heatmap.html.j2")
+        for _m, _mk in _HM_MK.items():
+            out_mh = site / f"{_m}_heatmap.html"
+            out_mh.write_text(_hm_tmpl.render(mk=_mk))
+            log.info("wrote %s (%.0f KB)", out_mh, out_mh.stat().st_size / 1024)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("market heatmaps (cn/hk/ca) failed: %s", e)
+
     # Subsector Rotation — Finviz broad-universe theme→subsector rotation/velocity
     # read (RRG map + emerging screen). Offline from the same committed Finviz
     # snapshot as the themes treemap; a separate lens from our curated baskets.
