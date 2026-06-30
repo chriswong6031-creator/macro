@@ -103,6 +103,7 @@
                                  // never cut off by the canvas edge — desktop and mobile alike
     fitScale = R; scale = scale === 240 ? R : Math.min(R * 1.35, Math.max(R * 0.8, scale));
     apply();
+    if (ready) render(performance.now());   // repaint + reposition islands on resize even when paused
   }
   function apply() { projection.rotate([rot[0], rot[1], 0]).scale(scale).translate([W / 2, H / 2]); clipHit(); }
   // Limit the canvas's TOUCH/click region to the visible globe disc (+ glow), centered.
@@ -245,8 +246,9 @@
     // HK sonar marker
     if (hk) drawMarker(t, hk, cx, cy);
 
-    // labels for covered markets
-    drawLabels();
+    // floating data-islands (DOM overlay): positioned, occluded + leader-drawn here,
+    // replacing the old static canvas flag labels AND the market-clock sidebar
+    positionIslands();
   }
 
   function visible(lonlat) {
@@ -256,6 +258,12 @@
   function onFront(lonlat) {
     var center = [-rot[0], -rot[1]];
     return d3.geoDistance(lonlat, center) < Math.PI / 2;
+  }
+  // feathered generalization of onFront(): 1 = dead-front, fading to 0 across the limb,
+  // so islands dissolve through the edge instead of popping. Drives the --f occlusion var.
+  var FEATHER = 0.30;
+  function frontness(lonlat) {
+    return Math.max(0, Math.min(1, (Math.PI / 2 - d3.geoDistance(lonlat, [-rot[0], -rot[1]])) / FEATHER));
   }
 
   function drawMarker(t, mk, cx, cy) {
@@ -299,6 +307,7 @@
   var raf = null;
   function frame(t) {
     if (sweep && t - sweep.t0 > sweep.dur + 500) sweep = null;
+    var tgt = (hovering && !dragging) ? 0.5 : 1; spd += (tgt - spd) * 0.05;   // fade slowdown / fade speedup on hover
     if (flying) {
       var u = Math.min(1, (t - flying.t0) / flying.dur);
       var e = 1 - Math.pow(1 - u, 3);
@@ -311,8 +320,8 @@
       // handled by pointermove
     } else if (Math.abs(velX) > 0.02 || Math.abs(velY) > 0.02) {
       rot[0] += velX; rot[1] = clampLat(rot[1] + velY); velX *= 0.94; velY *= 0.94; apply();
-    } else if (motionOK && (t - lastInteract) > 4000) {
-      rot[0] += 0.12; apply();   // idle auto-rotate
+    } else if (motionOK && !selected && (t - lastInteract) > 1500) {
+      rot[0] += 0.12 * spd; apply();   // idle auto-rotate, eased to half-speed while hovered
     }
     render(t);
     raf = requestAnimationFrame(frame);
@@ -321,14 +330,21 @@
 
   // ---- interaction ---------------------------------------------------------
   var px = 0, py = 0, moved = 0, lastMoveT = 0;
+  // hovering the globe EASES the idle auto-spin down to half speed (a smooth fade, not a
+  // dead stop); it fades back to full when the pointer leaves. spd = smoothed multiplier.
+  var hovering = false, spd = 1;
+  stage.addEventListener("pointerenter", function (e) { if (e.pointerType !== "touch") hovering = true; });
+  stage.addEventListener("pointerleave", function (e) { if (e.pointerType !== "touch") hovering = false; });
   canvas.addEventListener("pointerdown", function (e) {
     dragging = true; flying = null; velX = velY = 0; moved = 0;
     px = e.clientX; py = e.clientY; lastInteract = performance.now();
     canvas.setPointerCapture(e.pointerId);
   });
   canvas.addEventListener("pointermove", function (e) {
-    lastInteract = performance.now();
+    // only a DRAG resets the idle timer + rotates; a bare hover never pops a tooltip
+    // and never dead-stops the spin (the islands own all hover/press affordances)
     if (dragging) {
+      lastInteract = performance.now();
       var k = 0.32 * (240 / scale);
       var dx = (e.clientX - px), dy = (e.clientY - py);
       rot[0] += dx * k; rot[1] = clampLat(rot[1] - dy * k);
@@ -336,8 +352,6 @@
       velX = dx * k * (16 / d) * 0.6; velY = -dy * k * (16 / d) * 0.6; lastMoveT = nt;
       moved += Math.abs(dx) + Math.abs(dy); px = e.clientX; py = e.clientY; apply();
       hideTip();
-    } else {
-      hoverAt(e.clientX, e.clientY);
     }
   });
   canvas.addEventListener("pointerup", function (e) {
@@ -474,7 +488,11 @@
       else { add = (24 * 60 - now) + o; var seq = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; var di = seq.indexOf(day); var d2 = (di + 1) % 7; while (d2 === 0 || d2 === 6) { add += 24 * 60; d2 = (d2 + 1) % 7; } }
       next = add; label_en = "opens in"; label_zh = "距开盘";
     }
-    return { open: open, lunch: lunch, next: next, label_en: label_en, label_zh: label_zh, frac: lp.min / 1440 };
+    // arc = fraction of the current span still remaining (full ring → empties toward the bell)
+    var arc = 0;
+    if (open) { var span = c - o; arc = span > 0 ? Math.max(0, Math.min(1, next / span)) : 0; }
+    else if (lunch) { var sp = hm(m.lunch[1]) - hm(m.lunch[0]); arc = sp > 0 ? Math.max(0, Math.min(1, next / sp)) : 0; }
+    return { open: open, lunch: lunch, next: next, label_en: label_en, label_zh: label_zh, frac: lp.min / 1440, arc: arc };
   }
   function dur(mins) { var h = Math.floor(mins / 60), m = Math.round(mins % 60); return (h ? h + "h " : "") + m + "m"; }
   function sunmoon(frac) {
@@ -484,50 +502,111 @@
     if (day) return '<svg viewBox="0 0 32 20" class="gd-sm"><circle cx="' + (16 + ax - 14) + '" cy="' + (4 + ay) + '" r="4" fill="var(--warn)"/></svg>';
     return '<svg viewBox="0 0 32 20" class="gd-sm"><path d="M' + (18) + ' 5a5 5 0 1 0 0 10 6 6 0 0 1 0-10z" fill="var(--muted)"/></svg>';
   }
-  var rowEls = {};
-  // markets shown on the globe but intentionally hidden from the market-clock list
-  var CLOCK_HIDE = { TW: 1, GB: 1 };
-  function buildSidebar() {
-    var ul = stage.parentNode.querySelector(".gd-clock ul"); if (!ul) return;
-    DATA.slice().filter(function (m) { return !CLOCK_HIDE[m.cc]; }).forEach(function (m) {
-      var li = document.createElement("li"); li.className = "gd-row"; li.tabIndex = 0; li.setAttribute("data-cc", m.cc);
-      li.innerHTML =
-        '<span class="gd-r-sm"></span>' +
-        '<span class="gd-r-main"><span class="gd-r-idx">' + m.flag + ' ' + bilingual(m.index_name_en, m.index_name_zh) + '</span>' +
-        '<span class="gd-r-px"><span class="nb-px" data-sym="' + (m.index_sym || "") + '" data-mkt="idx">' + (m.index_price || "—") + '</span> ' +
-        '<em class="nb-chg ' + ((m.index_chg_pct || 0) >= 0 ? "up" : "down") + '" data-sym="' + (m.index_sym || "") + '">' + ((m.index_chg_pct || 0) >= 0 ? "+" : "") + (m.index_chg_pct == null ? "" : m.index_chg_pct + "%") + '</em></span></span>' +
-        '<span class="gd-r-state"><span class="gd-r-stat"><span class="gd-r-dot"></span><span class="gd-r-txt"></span></span><span class="gd-r-cd"></span></span>';
-      // press (tap / click) toggles the popup — press again to close. NEVER on hover.
-      li.addEventListener("click", function () { toggleSelect(m); });
-      // desktop hover only highlights the matching market on the globe — no popup.
-      // touch reports pointerType "touch" — skip hover there so the tap-toggle owns it.
-      li.addEventListener("pointerenter", function (e) {
-        if (e.pointerType === "touch") return;
-        hovered = m.cc;
-      });
-      li.addEventListener("pointerleave", function (e) {
-        if (e.pointerType === "touch") return;
-        if (!dragging) hovered = null;
-      });
-      ul.appendChild(li); rowEls[m.cc] = li;
+  // ---- floating data-islands (replaces the whole market-clock sidebar) ------
+  // One geo-anchored glass pebble per market. Rest = flag + open/closed semaphore +
+  // signed %chg (+ live price on desktop). A depleting ring around the centroid dot
+  // shows time-to-bell. Press → the existing regime popup. Front pebbles are crisp
+  // jewels; back pebbles dim/blur and are reparented BELOW the canvas so the opaque
+  // globe clips them. NO hover-expand (it shifted layout). Every datum that the
+  // sidebar showed survives: %chg + price live on the pebble (live.js still patches
+  // .nb-px/.nb-chg), session state in the semaphore + ring + the next-bell strip,
+  // and the sr-only legend buttons remain the keyboard / no-JS spine.
+  var islEls = {}, islFrontState = {}, islFront = null, islBack = null, rowEls = {};
+  var ASIA = ["CN", "JP", "KR", "TW", "HK"], clusterEl = null, exploded = false;
+  var RINGC = 2 * Math.PI * 9;
+  function buildIslands() {
+    islFront = stage.querySelector(".gd-isl-front");
+    islBack = stage.querySelector(".gd-isl-back");
+    if (!islFront || !islBack) return;
+    DATA.forEach(function (m) {
+      var up = (m.index_chg_pct || 0) >= 0;
+      var el = document.createElement("div"); el.className = "gd-isl " + m.quad; el.setAttribute("data-cc", m.cc);
+      var conf = m.confidence == null ? 0.4 : m.confidence;
+      el.style.setProperty("--bd", (3.4 + 2.6 * (1 - conf)).toFixed(2) + "s");
+      el.style.setProperty("--bdl", (-(hashPhase(m.cc) / 6.283 * 4)).toFixed(2) + "s");
+      el.innerHTML =
+        '<span class="glow"></span><span class="dot"></span>' +
+        '<svg class="ring" viewBox="0 0 24 24" aria-hidden="true"><circle class="trk" cx="12" cy="12" r="9"></circle><circle class="arc" cx="12" cy="12" r="9"></circle></svg>' +
+        '<button class="body" type="button" aria-label="' + (m.name_en || m.cc) + '">' +
+        '<span class="isl-flag">' + m.flag + '</span>' +
+        '<span class="isl-sem closed"></span>' +
+        '<em class="isl-chg nb-chg ' + (up ? "up" : "down") + '" data-sym="' + (m.index_sym || "") + '">' + (up ? "+" : "") + (m.index_chg_pct == null ? "" : m.index_chg_pct + "%") + '</em>' +
+        '<span class="isl-px nb-px" data-sym="' + (m.index_sym || "") + '" data-mkt="idx">' + (m.index_price || "—") + '</span>' +
+        '</button>';
+      el.querySelector(".body").addEventListener("click", function (ev) { ev.stopPropagation(); toggleSelect(m); });
+      islFront.appendChild(el); islEls[m.cc] = el; rowEls[m.cc] = el; islFrontState[m.cc] = true;
     });
+    buildCluster();
     updateClocks();
     setInterval(updateClocks, 1000);
     var utc = stage.parentNode.querySelector(".gd-utc");
-    if (utc) setInterval(function () { utc.textContent = new Date().toISOString().slice(11, 16); }, 1000);
+    if (utc) { var tick = function () { utc.textContent = new Date().toISOString().slice(11, 16); }; tick(); setInterval(tick, 1000); }
+  }
+  function buildCluster() {
+    clusterEl = document.createElement("div"); clusterEl.className = "gd-cluster";
+    clusterEl.innerHTML = '<span class="cl-globe" aria-hidden="true">🌏</span>' + bilingual("Asia", "亚洲") + '<span class="cl-n"></span><span class="cl-dots" aria-hidden="true"></span>';
+    clusterEl.addEventListener("click", function (e) { e.stopPropagation(); exploded = !exploded; });
+    islFront.appendChild(clusterEl);
+  }
+  function positionIslands() {
+    if (!islFront) return;
+    var cx = W / 2, cy = H / 2, mob = W < 560;
+    var off = mob ? 14 : 24, hw = mob ? 60 : 80;   // body half-width budget for edge-clamping
+    DATA.forEach(function (m) {
+      var el = islEls[m.cc], ll = posMap[m.cc]; if (!el || !ll) return;
+      var xy = projection(ll); if (!xy) return;
+      var f = frontness(ll);
+      var dx = xy[0] - cx, dy = xy[1] - cy, len = Math.hypot(dx, dy) || 1;
+      var ox = dx / len * off, oy = dy / len * off;
+      var bx = xy[0] + ox; if (bx < hw) ox += (hw - bx); else if (bx > W - hw) ox -= (bx - (W - hw));
+      var by = xy[1] + oy; if (by < 44) oy += (44 - by);
+      el.style.setProperty("--x", xy[0].toFixed(1));
+      el.style.setProperty("--y", xy[1].toFixed(1));
+      el.style.setProperty("--ox", ox.toFixed(1));
+      el.style.setProperty("--oy", oy.toFixed(1));
+      el.style.setProperty("--f", f.toFixed(3));
+      // leader hairline from the true centroid dot out to the (clamped) pebble body
+      if (f > 0.5) { ctx.save(); ctx.beginPath(); ctx.moveTo(xy[0], xy[1]); ctx.lineTo(xy[0] + ox, xy[1] + oy); ctx.strokeStyle = rgba(qcolor(m.quad), 0.42 * f); ctx.lineWidth = 1; ctx.shadowColor = rgba(qcolor(m.quad), 0.5 * f); ctx.shadowBlur = 3; ctx.stroke(); ctx.restore(); }
+      // hysteresis reparent across the limb so the opaque globe clips back-side pebbles
+      var isF = islFrontState[m.cc];
+      if (isF && f < 0.42) { islFrontState[m.cc] = false; islBack.appendChild(el); }
+      else if (!isF && f > 0.58) { islFrontState[m.cc] = true; islFront.appendChild(el); }
+      el.querySelector(".body").style.pointerEvents = f > 0.5 ? "auto" : "none";
+    });
+    clusterUpdate();
+  }
+  function clusterUpdate() {
+    if (!clusterEl) return;
+    var fr = ASIA.map(function (cc) { var ll = posMap[cc]; return { cc: cc, f: ll ? frontness(ll) : 0, xy: ll ? projection(ll) : null }; }).filter(function (o) { return o.f > 0.45 && o.xy; });
+    var compress = false;
+    if (fr.length >= 3) { var xs = fr.map(function (o) { return o.xy[0]; }), ys = fr.map(function (o) { return o.xy[1]; }); compress = ((Math.max.apply(0, xs) - Math.min.apply(0, xs)) + (Math.max.apply(0, ys) - Math.min.apply(0, ys))) < 160; }
+    var doCluster = fr.length >= 3 && compress && !exploded;
+    ASIA.forEach(function (cc) { var el = islEls[cc]; if (el) el.style.visibility = (doCluster && frontness(posMap[cc]) > 0.45) ? "hidden" : ""; });
+    if (doCluster) {
+      var mx = fr.reduce(function (s, o) { return s + o.xy[0]; }, 0) / fr.length, my = fr.reduce(function (s, o) { return s + o.xy[1]; }, 0) / fr.length;
+      clusterEl.classList.add("show");
+      clusterEl.style.setProperty("--cx", mx.toFixed(1)); clusterEl.style.setProperty("--cy", my.toFixed(1));
+      clusterEl.querySelector(".cl-n").textContent = "+" + fr.length;
+      clusterEl.querySelector(".cl-dots").innerHTML = fr.map(function (o) { return '<i style="color:var(--' + byCC[o.cc].quad + ');background:var(--' + byCC[o.cc].quad + ')"></i>'; }).join("");
+    } else clusterEl.classList.remove("show");
   }
   function updateClocks() {
+    var soonest = null;
     DATA.forEach(function (m) {
-      var li = rowEls[m.cc]; if (!li) return;
+      var el = islEls[m.cc]; if (!el) return;
       var st = clockState(m);
-      li.querySelector(".gd-r-sm").innerHTML = sunmoon(st.frac);
-      var dot = li.querySelector(".gd-r-dot"); dot.className = "gd-r-dot " + (st.open ? "on" : st.lunch ? "lunch" : "off");
-      li.querySelector(".gd-r-txt").innerHTML = st.open ? bilingual("Open", "交易中") : st.lunch ? bilingual("Lunch", "午休") : bilingual("Closed", "休市");
-      li.querySelector(".gd-r-cd").innerHTML = '<span class="l-en">' + st.label_en + ' ' + dur(st.next) + '</span><span class="l-zh">' + st.label_zh + ' ' + dur(st.next) + '</span>';
-      li.classList.toggle("sel", selected === m.cc);
+      var pre = (st.open && st.next <= 15) || (!st.open && !st.lunch && st.next <= 15);
+      el.querySelector(".isl-sem").className = "isl-sem " + (st.open ? (pre ? "pre" : "open") : st.lunch ? "lunch" : pre ? "pre" : "closed");
+      var arcEl = el.querySelector(".arc");
+      if (arcEl) { var shown = st.open || st.lunch; arcEl.style.strokeDasharray = RINGC.toFixed(2); arcEl.style.strokeDashoffset = (RINGC * (1 - (shown ? st.arc : 0))).toFixed(2); arcEl.style.stroke = pre ? "var(--warn)" : "var(--qc)"; arcEl.style.opacity = shown ? "1" : "0"; }
+      el.classList.toggle("sel", selected === m.cc);
+      if (!soonest || st.next < soonest.next) soonest = { m: m, next: st.next, label_en: st.label_en, label_zh: st.label_zh };
     });
+    var nb = stage.parentNode.querySelector(".gd-nextbell");
+    if (nb && soonest) nb.innerHTML = bilingual("Next bell · " + soonest.m.index_name_en + " " + soonest.label_en + " " + dur(soonest.next),
+                                                "下一响铃 · " + soonest.m.index_name_zh + " " + soonest.label_zh + " " + dur(soonest.next));
   }
-  function syncRows() { Object.keys(rowEls).forEach(function (cc) { rowEls[cc].classList.toggle("sel", selected === cc); }); }
+  function syncRows() { Object.keys(islEls).forEach(function (cc) { islEls[cc].classList.toggle("sel", selected === cc); }); }
 
   // ---- recolor on lang/theme change ----------------------------------------
   function recolor() {
@@ -559,11 +638,21 @@
 
   // ---- boot ----------------------------------------------------------------
   function boot(topo) {
-    buildGeometry(topo); readPalette(); buildStars(); buildSidebar(); size();
-    // The clock is built lazily (after a topo fetch + idle callback), so live.js's
+    buildGeometry(topo); readPalette(); buildStars(); buildIslands(); size();
+    // The islands are built lazily (after a topo fetch + idle callback), so live.js's
     // first poll already ran against an empty DOM — nudge it to patch the fresh
     // .nb-px/.nb-chg index nodes now instead of waiting a full poll interval.
     if (window.LiveQuotes && window.LiveQuotes.refresh) window.LiveQuotes.refresh();
+    // motion toggle in the slim strip (WCAG 2.2.2 stop control)
+    var mbtn = stage.parentNode.querySelector(".gd-motion");
+    if (mbtn) {
+      var setM = function () {
+        mbtn.innerHTML = motionOK ? bilingual("⏸ Pause motion", "⏸ 暂停动效") : bilingual("▶ Resume motion", "▶ 恢复动效");
+        mbtn.setAttribute("aria-pressed", motionOK ? "false" : "true");
+      };
+      setM();
+      mbtn.addEventListener("click", function () { motionOK = !motionOK; setM(); if (motionOK && !raf) raf = requestAnimationFrame(frame); });
+    }
     if (poster) poster.style.opacity = "0";
     canvas.style.opacity = "1";
     render(performance.now());
