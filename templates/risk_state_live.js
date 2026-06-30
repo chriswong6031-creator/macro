@@ -43,13 +43,16 @@
       front.classList.remove("ms-green", "ms-yellow", "ms-red");
       front.classList.add("ms-" + (COLOR[disp.verdict] || "yellow"));
     }
+    // honest freshness: a 15-min-delayed feed (delayed_min>0 -> realtime:false) is NOT "live".
     var dt = document.getElementById("ms-date");
     if (dt && d.live_active) {
-      dt.textContent = "· " + (isZh() ? "实时 " : "live ") + (d.built || "").slice(11, 16) + " UTC";
-      dt.classList.add("ms-date-live");
+      var hhmm = (d.built || "").slice(11, 16);
+      var word = d.realtime ? (isZh() ? "实时 " : "live ") : (isZh() ? "延迟 " : "delayed ");
+      dt.textContent = "· " + word + hhmm + " UTC";
+      dt.classList.toggle("ms-date-live", !!d.realtime);
     }
     var pill = document.getElementById("ms-live-pill");
-    if (pill) pill.classList.toggle("on", !!d.live_active);
+    if (pill) pill.classList.toggle("on", !!(d.live_active && d.realtime));
   }
 
   /* sector_central.html — the regime banner headline */

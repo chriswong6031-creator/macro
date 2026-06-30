@@ -55,16 +55,22 @@ SPLICE = {
 }
 # which market_state component legs become LIVE when we splice (the rest carry nightly)
 _LIVE_LEGS = {"trend", "vol"}
+# Volatility indices legitimately move far more than equities in a single session (VIX +40-80%
+# on a real shock), so the equity limit-move guard would WRONGLY reject them — blinding the vol
+# leg exactly when stress hits. Use a much looser cap (still catches a 10x glitch print).
+_VOL_NAMES = {"_VIX", "_VIX3M", "_VIX9D", "_MOVE"}
+_VOL_MAX_CHG = 200.0
 
 
 def _usable(quote, base_close, max_chg, stale_after, now, session_open) -> float | None:
-    """A fresh, real, non-outlier live trade -> its price; else None (carry nightly)."""
+    """A fresh, real, non-outlier live trade -> its price; else None (carry nightly).
+    max_chg=None disables the limit-move guard."""
     st = live_overlay.staleness(quote, stale_after, now, session_open=session_open)
     if st["stale"] or not quote or quote.get("price") is None:
         return None
     price = float(quote["price"])
     ref = quote.get("prev_close") or base_close
-    if ref and abs(price / float(ref) - 1) > max_chg / 100.0:
+    if max_chg is not None and ref and abs(price / float(ref) - 1) > max_chg / 100.0:
         return None  # limit-move / glitch guard
     return price
 
@@ -80,7 +86,8 @@ def _spliced_frames(quotes, max_chg, stale_after, now, session_open):
         if close is None or close.empty:
             continue
         nightly_close[name] = float(close.iloc[-1])
-        price = _usable(quotes.get(sym), nightly_close[name], max_chg, stale_after, now, session_open)
+        cap = _VOL_MAX_CHG if name in _VOL_NAMES else max_chg
+        price = _usable(quotes.get(sym), nightly_close[name], cap, stale_after, now, session_open)
         if price is None:
             continue
         s = live_overlay.splice(close, price, now)
@@ -273,7 +280,9 @@ def build(offline: bool = False) -> dict:
     display = {
         "verdict": disp_verdict,
         "label_en": disp_label[0], "label_zh": disp_label[1], "color": disp_label[2],
-        "score": (live_blk.get("score") if live_active else nightly_blk.get("score")),
+        "score": (live_blk.get("score") if live_active
+                  else (nightly_blk.get("score") if nightly_blk.get("score") is not None
+                        else live_blk.get("score"))),
         "band_changed": deb.get("band_changed", False),
         "pending": deb.get("pending"),
     }
