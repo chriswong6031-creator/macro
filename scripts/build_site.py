@@ -2659,6 +2659,21 @@ def main() -> int:
                                                confirming, contradicting)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("advanced page failed: %s", e)
+    # Supabase account config (public URL + publishable anon key) — BAKED into
+    # theme.js so the account system (sign-in modal + cookie session) works on
+    # EVERY page, not just watchlist.html. Same value the watchlist injects inline;
+    # a page-level window.SUPABASE_CFG still wins. The publishable key is PUBLIC by
+    # design — per-user isolation is enforced by RLS (templates/watchlist_supabase.sql).
+    _auth_wl = config.load().get("watchlist", {})
+    _auth_sup = (_auth_wl.get("supabase") or {})
+    _auth_cfg = ({"url": _auth_sup["url"], "anonKey": _auth_sup["anon_key"]}
+                 if _auth_sup.get("url") and _auth_sup.get("anon_key") else None)
+    _AUTH_TOKEN = "/*__SUPABASE_CFG__*/null"
+    # NB: use the module-level `json` here, NOT `_json` — `_json` is imported
+    # further down in main() (in the stock_search block), which makes the name
+    # function-local for the WHOLE of main(); referencing it before that import
+    # raises UnboundLocalError and aborts the build. `json` is module-global.
+    _auth_repl = json.dumps(_auth_cfg)
     # copy shared static assets (theme + visual widgets) into the site
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
                   "stockdata.js", "watchlist.js", "factor_exposure.js", "auth.js",
@@ -2675,7 +2690,10 @@ def main() -> int:
                   "supabase.js", "plotly-2.32.0.min.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
-            (site / asset).write_text(src.read_text())
+            text = src.read_text()
+            if asset == "theme.js":
+                text = text.replace(_AUTH_TOKEN, _auth_repl)
+            (site / asset).write_text(text)
     # self-hosted webfonts (binary WOFF2) — copied as a tree so the @font-face in
     # theme.css resolves same-origin (Google Fonts is blocked in mainland China).
     import shutil
