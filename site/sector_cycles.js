@@ -106,7 +106,12 @@
   // performance from that point — not a tangled 6-year fan. curView tracks the
   // visible x-range; the anchor factor scales each series' stored (window-start)
   // rebase to the current left edge.
-  var curView = META.xDomain.slice();
+  // Full pannable extent is the 15y window; the chart OPENS on the ~7y default view and a
+  // "Max" zoom-preset expands to the full history (data is 15y, but 15y of weekly turns is
+  // dense, so the recent-but-deep 7y is the friendlier home view — Max for the long memory).
+  var DEFAULT_VIEW = (META.xDomainDefault || META.xDomain);
+  var WIN_Y = META.window_years || Math.round(META.xDomain[1] - META.xDomain[0]);
+  var curView = DEFAULT_VIEW.slice();
   function priceAnchorFactor(s) {
     var pts = s.price, a = pts.length ? pts[0].v : 100;
     for (var i = 0; i < pts.length; i++) { if (pts[i].x <= curView[0]) a = pts[i].v; else break; }
@@ -230,6 +235,7 @@
     if (!node) return;
     heroChart = window.MMChart.create(node, heroSpec());
     heroChart.setHidden(chartHidden);
+    if (META.xDomainDefault) heroChart.setView(DEFAULT_VIEW.slice(), false);   // open on the ~7y home view
     buildZoom();
     // chart-click → if a sector is focused, open the leg under the cursor
     node.addEventListener("click", onChartClick);
@@ -297,19 +303,22 @@
     var z = document.getElementById("sc-zoom");
     if (!z) return;
     var lo = META.xDomain[0], hi = META.xDomain[1];
+    var maxYrs = Math.round(hi - lo);                 // ~15 (label adapts if the window changes)
     var presets = [
-      { label: L("6y", "6年"), d: META.xDomain },
+      { label: L("Max " + maxYrs + "y", "全部" + maxYrs + "年"), d: META.xDomain },   // full 15y history
+      { label: L("7y", "7年"), d: DEFAULT_VIEW },     // the default home view
       { label: L("3y", "3年"), d: [hi - 3.3, hi] },
       { label: L("1y", "1年"), d: [hi - 1.3, hi] },
       { label: L("6m", "6月"), d: [hi - 0.85, hi] }
     ];
     z.innerHTML = '<span class="cyc-zhint">' + L("scroll · drag", "滚动 · 拖拽") + '</span>' +
       presets.map(function (p, i) { return '<button class="cyc-zbtn" data-i="' + i + '">' + p.label + '</button>'; }).join("") +
-      '<button class="cyc-zbtn cyc-zreset" id="sc-zreset">' + L("Reset ⤢", "重置 ⤢") + '</button>';
+      '<button class="cyc-zbtn cyc-zreset" id="sc-zreset">' + L("Home ⤢", "首页 ⤢") + '</button>';
     presets.forEach(function (p, i) {
       z.querySelector('[data-i="' + i + '"]').addEventListener("click", function () { if (heroChart) heroChart.setView(p.d.slice(), true); });
     });
-    z.querySelector("#sc-zreset").addEventListener("click", function () { if (heroChart) heroChart.resetZoom(); });
+    // "Home" returns to the ~7y default view (not the full extent) — the intended landing window
+    z.querySelector("#sc-zreset").addEventListener("click", function () { if (heroChart) heroChart.setView(DEFAULT_VIEW.slice(), true); });
   }
 
   /* ---- mode + scale segmented controls ----------------------------------- */
@@ -899,6 +908,34 @@
     return L("Open ", "查看 ") + (s.ticker || "") + L(" page", " 页面");
   }
 
+  // ---- Cycle DNA: the front-loaded "history rhymes" layer (window.SECTOR_DNA, keyed by id).
+  // What STRUCTURALLY drives this series to cycle, what marks its tops vs troughs, and which
+  // past leg today most rhymes with — researched against the 15y dated turns. Hidden if absent.
+  function dnaHTML(s) {
+    var DNA = window.SECTOR_DNA || {};
+    var d = DNA[s.id]; if (!d) return "";
+    var sum = curLang() === "zh" ? (d.summary_zh || d.summary) : d.summary;
+    var drv = (curLang() === "zh" && d.drivers_zh) ? d.drivers_zh : (d.drivers || []);
+    var tops = (curLang() === "zh" && d.top_signals_zh) ? d.top_signals_zh : (d.top_signals || []);
+    var bots = (curLang() === "zh" && d.bottom_signals_zh) ? d.bottom_signals_zh : (d.bottom_signals || []);
+    var analog = curLang() === "zh" ? (d.analog_zh || d.analog) : d.analog;
+    var cyc = d.median_cycle_months ? Math.round(d.median_cycle_months) : null;
+    var conf = d.confidence ? '<span class="sc-dna-conf ' + d.confidence + '">' + L("confidence ", "可信度 ") +
+      L(d.confidence, d.confidence === "high" ? "高" : d.confidence === "medium" ? "中" : "低") + '</span>' : "";
+    function ul(items) { return '<ul>' + items.map(function (x) { return '<li>' + x + '</li>'; }).join("") + '</ul>'; }
+    return '<div class="cyc-grp cyc-grp-3 sc-dna">' +
+      '<div class="cyc-lbl">' + L("Cycle DNA — why it rhymes", "周期基因 — 历史为何押韵") + conf + '</div>' +
+      (sum ? '<p class="sc-dna-sum">' + sum + '</p>' : "") +
+      (drv.length ? '<div class="sc-dna-drv">' + drv.map(function (x) { return '<span>' + x + '</span>'; }).join("") + '</div>' : "") +
+      ((bots.length || tops.length) ? '<div class="sc-dna-sig">' +
+        (bots.length ? '<div class="sc-dna-col b"><div class="sc-dna-h">' + L("Troughs form when", "底部形成于") + '</div>' + ul(bots) + '</div>' : "") +
+        (tops.length ? '<div class="sc-dna-col t"><div class="sc-dna-h">' + L("Peaks form when", "顶部形成于") + '</div>' + ul(tops) + '</div>' : "") +
+      '</div>' : "") +
+      (cyc ? '<div class="sc-dna-rhythm">' + L("Median full cycle ≈ ", "中位完整周期约 ") + cyc + L(" months", " 个月") + '</div>' : "") +
+      (analog ? '<div class="sc-dna-analog"><span class="sc-dna-ana-k">' + L("Closest analog", "最相似的历史") + '</span> ' + analog + '</div>' : "") +
+    '</div>';
+  }
+
   function focusHTML(s) {
     var nw = s.now, ph = PHASES[nw.phase] || {}, tilt = tiltOf(s);
     function fact(k, v) { return '<div class="f"><div class="fk">' + k + '</div><div class="fv">' + v + '</div></div>'; }
@@ -946,13 +983,14 @@
           fact(L("Next " + ((s.proj || {}).nextTurn || "turn"), "下次" + ((s.proj || {}).nextTurn === "peak" ? "顶部" : "底部")), s.proj ? fmtMon(s.proj.central) : "—") +
           fact(L("Typical ½-cycle", "典型半周期"), lenVal) +
           fact(L("RS vs ", "相对") + benchLabel() + L(" (63d)", "(63日)"), rsVal) +
-          fact(L("6y change", "6年涨跌"), (nw.ret_win_pct >= 0 ? "+" : "") + nw.ret_win_pct + "%") +
+          fact(L(WIN_Y + "y change", WIN_Y + "年涨跌"), (nw.ret_win_pct >= 0 ? "+" : "") + nw.ret_win_pct + "%") +
         '</div>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
         readHTML +
         forecastCardHTML(s) +
       '</div>' +
+      dnaHTML(s) +
       pathwayHTML(s) +
       '<div class="cyc-grp cyc-grp-3">' +
         '<div class="cyc-lbl">' + L("Cycle legs — tap for the story", "周期区段 — 点击查看故事") + '</div>' +

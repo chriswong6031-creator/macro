@@ -4,18 +4,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Sector Cycle Intelligence — Mastermind</title>
 <meta name="description" content="Every US sector ETF on one cycle clock — real price (rebased / log) with a cycle-position toggle, auto-detected peaks & troughs, the phase each sector sits in (topping · expanding · rolling over · bottoming), and the story behind each move.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="cycle.css">
 <link rel="stylesheet" href="sector_cycles.css">
 </head>
 <body>
+
+
 <nav class="site-nav">
-    
+  
 
 
     <div class="nav-links">
@@ -55,6 +55,8 @@
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">Finviz's 268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">Finviz 268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
           </div>
         </div>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -73,6 +75,7 @@
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsectors_china.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
           </div>
         </div>
         <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
@@ -175,7 +178,8 @@
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
-      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+      placeholder="Search any stock — US, China, HK, Canada & more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
@@ -216,29 +220,34 @@
       <div class="cyc-hero-hd">
         <h2 id="sc-hero-title"><span class="l-en">Sector rotation overlay</span><span class="l-zh">板块轮动叠加</span></h2>
         <div class="cyc-hero-tools">
-          <div class="sc-ctrl-group">
-            <div class="sc-scale" id="sc-scale" aria-label="Price scale">
-              <button class="sc-sbtn on" data-scale="log"><span class="l-en">Log</span><span class="l-zh">对数</span></button>
-              <button class="sc-sbtn" data-scale="linear"><span class="l-en">Linear</span><span class="l-zh">线性</span></button>
-            </div>
-            <div class="sc-modes" id="sc-modes" aria-label="Chart mode">
-              <button class="sc-mbtn on" data-mode="price"><span class="l-en">Price</span><span class="l-zh">价格</span></button>
-              <button class="sc-mbtn" data-mode="osc"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></button>
+          <div class="sc-modes" id="sc-modes" aria-label="Chart mode">
+            <button class="sc-mbtn" data-mode="price" aria-pressed="false"><span class="l-en">Price</span><span class="l-zh">价格</span></button>
+            <button class="sc-mbtn on" data-mode="osc" aria-pressed="true"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></button>
+          </div>
+          <div class="sc-mode-cap"><span class="l-en">Low = washed-out · High = stretched</span><span class="l-zh">低 = 超卖 · 高 = 拉伸</span></div>
+          <div class="sc-advanced" id="sc-advanced">
+            <button type="button" class="sc-adv-toggle" id="sc-adv-toggle" aria-expanded="false" aria-controls="sc-advbody"><span class="l-en">Chart options</span><span class="l-zh">图表选项</span></button>
+            <div class="sc-adv-body" id="sc-advbody">
+              <div class="sc-scale disabled" id="sc-scale" hidden aria-label="Price scale">
+                <button class="sc-sbtn on" data-scale="log" aria-pressed="true"><span class="l-en">Log</span><span class="l-zh">对数</span></button>
+                <button class="sc-sbtn" data-scale="linear" aria-pressed="false"><span class="l-en">Linear</span><span class="l-zh">线性</span></button>
+              </div>
+              <div class="cyc-legend" id="sc-legend" aria-label="Legend">
+                <span><i class="lc" style="background:color-mix(in srgb,var(--down) 42%,transparent)"></i> <span class="l-en">washed-out</span><span class="l-zh">超卖</span></span>
+                <span><i class="lc" style="background:color-mix(in srgb,var(--muted) 32%,transparent)"></i> <span class="l-en">mid-cycle</span><span class="l-zh">中段</span></span>
+                <span><i class="lc" style="background:color-mix(in srgb,var(--warn) 46%,transparent)"></i> <span class="l-en">stretched</span><span class="l-zh">拉伸</span></span>
+              </div>
+              <div class="cyc-zoom" id="sc-zoom" aria-label="Zoom"></div>
             </div>
           </div>
-          <div class="cyc-legend">
-            <span><i class="ls"></i> <span class="l-en">Price</span><span class="l-zh">价格</span></span>
-            <span><i class="lm lm-pk"></i> <span class="l-en">Peak</span><span class="l-zh">波峰</span></span>
-            <span><i class="lm lm-tr"></i> <span class="l-en">Trough</span><span class="l-zh">波谷</span></span>
-          </div>
-          <div class="cyc-zoom" id="sc-zoom" aria-label="Zoom"></div>
         </div>
       </div>
       <div class="cyc-groups" id="sc-groups" aria-label="Phase filter"></div>
       <div class="cyc-chips" id="sc-chips" aria-label="Sector toggles"></div>
       <div class="sc-baskets" id="sc-baskets" aria-label="Thematic baskets"></div>
+      <span id="sc-sr-status" class="sc-sr-status" role="status" aria-live="polite"></span>
       <div class="sc-chartwrap">
-        <div id="sc-chart" data-h="600" role="img" aria-label="Sector cycle overlay chart"></div>
+        <div id="sc-chart" data-h="600" role="img" aria-label="Sector cycle clock — each line a sector's 0 to 100 cycle position over time. Tap a line for its story."></div>
         <div class="sc-chart-hint" id="sc-chart-hint" hidden></div>
       </div>
     </div>
@@ -264,6 +273,5 @@
 <script src="sector_cycles.js"></script>
 <script>try{document.getElementById('sc-asof').textContent=(window.SECTOR_CYCLES&&window.SECTOR_CYCLES.meta||{}).asOf||'';}catch(e){}</script>
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>
