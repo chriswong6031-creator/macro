@@ -62,17 +62,19 @@ concurrency:
 
 jobs:
   render:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macstudio]
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
       - run: git pull origin main
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
       - run: pip install -r requirements.txt
       # Restore the gitignored breadth close caches (the stock-search libraries +
       # build_site's per-name analyze read constituent closes) and the intraday cache
