@@ -97,6 +97,10 @@
     dpr = Math.min(2, window.devicePixelRatio || 1);
     canvas.width = W * dpr; canvas.height = H * dpr;
     canvas.style.width = W + "px"; canvas.style.height = H + "px";
+    // soft top/bottom fade so the globe dissolves into the page near the subtitle (above) and the
+    // next-bell strip (below) — when zoomed in it fades out gracefully instead of a hard clip line
+    var fade = "linear-gradient(to bottom, transparent 0%, #000 8%, #000 92%, transparent 100%)";
+    canvas.style.webkitMaskImage = fade; canvas.style.maskImage = fade;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     R = Math.min(W, H) * 0.43;   // fit factor → the globe + 1.13x halo float clear of the
                                  // canvas rect at the DEFAULT zoom (0.43*1.13 = 0.486 < 0.5),
