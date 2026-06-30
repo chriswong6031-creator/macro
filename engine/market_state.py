@@ -747,3 +747,41 @@ def _flip_text(comps: list, verdict: str) -> tuple[str, str]:
     return (f"→ Green if {weakest['label_en'].lower()} firms up (now {weakest['score']}/100); "
             f"→ Red if it deteriorates further.",
             f"→ 若{weakest['label_zh']}转强（现 {weakest['score']}/100）则转「绿」；进一步恶化则转「红」。")
+
+
+# --------------------------------------------------------------- store ----
+# The verdict is the SINGLE SOURCE OF TRUTH for "how risk-on is the market" across the
+# whole site. The macro page computes it (with the full feature frame); persisting it here
+# lets OTHER pages (engine/sector_central.py) and the intraday live engine
+# (scripts/build_risk_state.py) consume the SAME radar-aware verdict instead of each
+# re-deriving a (divergent) read — which is exactly how sector_central used to disagree
+# with macro.html. Build order already runs build_site before build_sector_central, so the
+# file is fresh when the latter reads it. Never raises.
+def _store_path(root=None):
+    from pathlib import Path
+    from lib import config
+    base = config.data_dir() if root is None else (Path(root) / "data")
+    return base / "market_state" / "latest.json"
+
+
+def persist(snap: dict | None, root=None) -> None:
+    """Write the canonical market-state snapshot to data/market_state/latest.json."""
+    if not snap:
+        return
+    try:
+        p = _store_path(root)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(snap, ensure_ascii=False, default=str))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("market_state persist failed: %s", e)
+
+
+def load_persisted(root=None) -> dict | None:
+    """Read the persisted canonical snapshot; None if absent/unreadable."""
+    try:
+        p = _store_path(root)
+        if p.exists():
+            return json.loads(p.read_text())
+    except Exception as e:  # noqa: BLE001
+        log.warning("market_state load_persisted failed: %s", e)
+    return None

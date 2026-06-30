@@ -1694,6 +1694,9 @@ def market_state_view(latest: dict, f: pd.DataFrame) -> dict | None:
                 snap["audit"]["tune"] = _mst.tune()
             except Exception as e:  # noqa: BLE001 — additive, never fatal
                 log.warning("market_state audit/tune failed: %s", e)
+            # Persist the canonical verdict so sector_central + the intraday live engine
+            # consume the SAME radar-aware read (single source of truth). Never fatal.
+            _ms.persist(snap)
         return snap
     except Exception as e:  # noqa: BLE001 — additive panel, never fatal
         log.warning("market_state view failed: %s", e)

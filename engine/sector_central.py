@@ -125,14 +125,36 @@ def _regime_anchor() -> dict:
         gate = min(gate, 0.85)
     gate = round(float(np.clip(gate, 0.2, 1.0)), 2)
 
-    # the GATE posture (what actually drives the gate) is the validated MRS scalar — so the banner
-    # headline + color reflect THAT, not the tactical risk_state gauge (kept as secondary context).
+    # the GATE posture (what actually drives the gate) is the validated MRS scalar — kept verbatim
+    # as gate_state_* and surfaced as the banner sub-line. The gating arithmetic above is unchanged.
     r = risk_on or 0
-    state_en = "Risk-on" if r > 0.2 else "Risk-off" if r < -0.2 else "Neutral"
-    state_zh = "偏多" if r > 0.2 else "偏空" if r < -0.2 else "中性"
+    gate_state_en = "Risk-on" if r > 0.2 else "Risk-off" if r < -0.2 else "Neutral"
+    gate_state_zh = "偏多" if r > 0.2 else "偏空" if r < -0.2 else "中性"
+
+    # HEADLINE = the SAME radar-aware Market State verdict the macro page shows, so the two pages
+    # can never disagree. The macro_risk leg above IGNORES the Risk Radar (that is exactly why this
+    # page used to read "Risk-on" while macro.html read "Risk-off"); the Market State verdict does
+    # not. Prefer the persisted nightly snapshot (byte-identical to macro.html); else recompute from
+    # the same latest.json (radar-aware, sans the trend leg); else fall back to the gate label.
+    state_en, state_zh = gate_state_en, gate_state_zh
+    ms_verdict = ms_score = ms_color = radar_state = None
+    try:
+        from engine import market_state as _ms
+        snap = _ms.load_persisted() or _ms.market_state_snapshot(d)
+        if snap:
+            state_en = snap.get("label_en") or state_en
+            state_zh = snap.get("label_zh") or state_zh
+            ms_verdict, ms_score, ms_color = snap.get("verdict"), snap.get("score"), snap.get("color")
+            radar_state = (snap.get("radar") or {}).get("state")
+    except Exception as e:  # noqa: BLE001
+        log.warning("central: market_state unify failed: %s", e)
+
     return {
         "risk_on": risk_on, "gate_factor": gate,
         "state_en": state_en, "state_zh": state_zh,
+        "gate_state_en": gate_state_en, "gate_state_zh": gate_state_zh,
+        "ms_verdict": ms_verdict, "ms_score": ms_score, "ms_color": ms_color,
+        "radar_state": radar_state,
         "tactical_label": rstate.get("label_en"), "tactical_label_zh": rstate.get("label_zh"),
         "risk_state_score": rstate.get("score"), "risk_state_state": rstate.get("state"),
         "headline_en": rstate.get("headline_en"), "headline_zh": rstate.get("headline_zh"),
@@ -394,9 +416,9 @@ def _trace(state_d, fwd, mkt, mom_d, crowd, early, stretched, beta, heat) -> lis
     quad_name = mkt.get("quad_name")
     quad_zh = _QUAD_ZH.get(quad_name, quad_name) if quad_name else (mkt.get("quad") or "—")
     t.append({"layer": "Regime gate", "tier": "validated", "stance": rstance,
-              "en": f"{mkt.get('state_en')} (MRS {mkt.get('derisk_blended')}, {quad_name or mkt.get('quad') or '—'}, "
+              "en": f"{mkt.get('gate_state_en') or mkt.get('state_en')} (MRS {mkt.get('derisk_blended')}, {quad_name or mkt.get('quad') or '—'}, "
                     f"liquidity {mkt.get('liquidity') or '—'}) → gate ×{mkt.get('gate_factor')}{betatxt}",
-              "zh": f"{mkt.get('state_zh') or mkt.get('state_en')}（宏观风险 {mkt.get('derisk_blended')}，{quad_zh}）→ 门控 ×{mkt.get('gate_factor')}{betatxt_zh}"})
+              "zh": f"{mkt.get('gate_state_zh') or mkt.get('gate_state_en') or mkt.get('state_en')}（宏观风险 {mkt.get('derisk_blended')}，{quad_zh}）→ 门控 ×{mkt.get('gate_factor')}{betatxt_zh}"})
     lead = mom_d.get("lead")
     t.append({"layer": "Momentum", "tier": "confirmer", "stance": lead,
               "en": f"RS #{mom_d.get('rs_rank') or '—'} — {lead} (focus lens, not alpha)"
