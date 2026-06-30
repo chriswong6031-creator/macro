@@ -942,7 +942,10 @@
       // instead of overflowing — the old 8px floor forced 5-char symbols past narrow edges.
       var nch = (t.t || '').length || 1;
       var fitF = (tw - 5) / (nch * 0.80);
-      var symF = clamp(Math.min(tw / 3.8, th * 0.5, fitF), 6, 18);
+      // tighter divisor + lower floor so the small/narrow tiles render their ticker
+      // smaller (fitF already caps to width); larger tiles compute above the floor
+      // and keep their size.
+      var symF = clamp(Math.min(tw / 4.2, th * 0.5, fitF), 5, 18);
       var s = '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(t.t) + '</span>';
       if (tw >= 40 && th >= 29) {
         var pcF = clamp(Math.min(tw / 5.6, th * 0.32), 7.5, 12);
