@@ -64,7 +64,7 @@
   function cssv(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
   function readPalette() {
     ["--q1", "--q2", "--q3", "--q4", "--panel", "--panel2", "--line", "--info",
-     "--text", "--bg", "--up", "--down", "--muted"].forEach(function (n) {
+     "--text", "--bg", "--up", "--down", "--muted", "--warn", "--orange"].forEach(function (n) {
       PAL[n] = norm(cssv(n) || "#888");
     });
   }
@@ -228,6 +228,9 @@
       }
     }
 
+    // shipping lanes + ships riding the ocean surface
+    drawSeaRoutes(t, dark);
+
     // confluence arcs (same-regime agreements)
     for (var ai = 0; ai < arcs.length; ai++) {
       var arc = arcs[ai], aq = qcolor(arc.q), interp = d3.geoInterpolate(arc.a, arc.b), pts = [];
@@ -245,6 +248,9 @@
 
     // HK sonar marker
     if (hk) drawMarker(t, hk, cx, cy);
+
+    // air corridors + planes flying above the hemisphere (drawn last → top layer)
+    drawAirRoutes(t, dark);
 
     // floating data-islands (DOM overlay): positioned, occluded + leader-drawn here,
     // replacing the old static canvas flag labels AND the market-clock sidebar
@@ -288,6 +294,203 @@
     ctx.fillStyle = PAL["--text"];
     ctx.strokeStyle = rgba(PAL["--bg"], 0.9); ctx.lineWidth = 3; ctx.lineJoin = "round";
     ctx.strokeText(label, xy[0] + 8, xy[1] - 7); ctx.fillText(label, xy[0] + 8, xy[1] - 7);
+  }
+
+  // ---- world trade & flight network: ships at sea, planes in the sky --------
+  // Hand-placed lon/lat waypoints tracing the great commercial shipping lanes and
+  // great-circle air corridors between major hubs. Each route is densified ONCE
+  // into a near-even great-circle polyline so its glyph rides it at a steady clip.
+  // Ships hug the ocean surface; planes fly an elevated arc and drop a moving
+  // shadow on the water — in an orthographic view, lifting a point radially out
+  // from the globe's screen centre by (1+altitude) is EXACTLY correct, so the
+  // aircraft genuinely floats above the hemisphere. Sea lines breathe cool azure
+  // (--info), air corridors warm gold (--warn); both pulse + drift like contrails.
+  var SEA_LANES = [
+    { name: "trans-pacific",    ships: 2, dur: 72000,  wp: [[121.5, 31.2], [140, 34], [170, 40], [-175, 41], [-140, 38], [-122.4, 37.6]] },
+    { name: "transpac-south",   ships: 1, dur: 78000,  wp: [[121.8, 31.0], [145, 30], [178, 27], [-150, 25], [-125, 31], [-118.3, 33.7]] },
+    { name: "trans-atlantic",   ships: 2, dur: 52000,  wp: [[-73.9, 40.5], [-55, 42], [-30, 47], [-9, 49.5], [1.5, 50.4], [4.1, 52.0]] },
+    { name: "asia-europe-suez", ships: 2, dur: 150000, wp: [[103.8, 1.2], [95, 5.5], [80, 5.5], [63, 11], [52, 12.6], [43.3, 12.6], [38, 20], [33.9, 27.7], [32.3, 31.3], [25, 34], [14.5, 37], [4, 38], [-5.6, 35.9], [-9.5, 40], [-6, 47], [1.4, 50.2]] },
+    { name: "gulf-asia-oil",    ships: 1, dur: 124000, wp: [[56.4, 26.6], [59, 24], [66, 20], [74, 9], [82, 6], [95, 4], [103.8, 1.3], [110, 4], [114, 12], [117, 19], [120.5, 29], [122, 31]] },
+    { name: "europe-southam",   ships: 1, dur: 82000,  wp: [[-9, 38], [-16, 30], [-22, 16], [-30, 2], [-35, -12], [-42, -22], [-43.2, -23.0]] },
+    { name: "asia-australia",   ships: 1, dur: 86000,  wp: [[114.2, 22.3], [112, 8], [110, -2], [116, -9], [125, -12], [138, -18], [148, -25], [151.2, -33.9]] }
+  ];
+  var AIR_ROUTES = [
+    { name: "jfk-lhr", planes: 1, dur: 26000, a: [-73.78, 40.64],  b: [-0.45, 51.47] },
+    { name: "lax-hnd", planes: 1, dur: 40000, a: [-118.4, 33.94],  b: [139.78, 35.55] },
+    { name: "lhr-sin", planes: 1, dur: 44000, a: [-0.45, 51.47],   b: [103.99, 1.36] },
+    { name: "dxb-jfk", planes: 1, dur: 38000, a: [55.36, 25.25],   b: [-73.78, 40.64] },
+    { name: "hkg-sfo", planes: 1, dur: 42000, a: [113.91, 22.31],  b: [-122.38, 37.62] },
+    { name: "syd-lax", planes: 1, dur: 46000, a: [151.18, -33.95], b: [-118.4, 33.94] },
+    { name: "fra-pvg", planes: 1, dur: 40000, a: [8.57, 50.03],    b: [121.8, 31.14] },
+    { name: "gru-jnb", planes: 1, dur: 34000, a: [-46.47, -23.43], b: [28.24, -26.13] }
+  ];
+  var seaPaths = [], airPaths = [];
+  var SHADE = "#0a0e16";   // fixed near-black for vessel/aircraft shadows (theme-independent)
+  function densify(wp) {
+    var pts = [], STEP = 0.05;                       // ~3° between great-circle samples
+    for (var i = 0; i < wp.length - 1; i++) {
+      var A = wp[i], B = wp[i + 1], n = Math.max(1, Math.round(d3.geoDistance(A, B) / STEP)), ip = d3.geoInterpolate(A, B);
+      for (var j = 0; j < n; j++) pts.push(ip(j / n));
+    }
+    pts.push(wp[wp.length - 1]);
+    return pts;
+  }
+  function buildRoutes() {
+    seaPaths = SEA_LANES.map(function (L) { return { def: L, pts: densify(L.wp) }; });
+    airPaths = AIR_ROUTES.map(function (R) { return { def: R, pts: densify([R.a, R.b]) }; });
+  }
+  function routeSample(pts, u) {                      // position + a look-ahead point for heading
+    var n = pts.length; if (n < 2) return { p: pts[0], ahead: pts[0] };
+    var f = u * (n - 1), i = Math.max(0, Math.min(n - 2, Math.floor(f))), fr = f - i, ip = d3.geoInterpolate(pts[i], pts[i + 1]);
+    return { p: ip(Math.max(0, Math.min(1, fr))), ahead: ip(Math.min(1, fr + 0.2)) };
+  }
+  function elev(s, cx, cy, alt) { return [cx + (s[0] - cx) * (1 + alt), cy + (s[1] - cy) * (1 + alt)]; }
+
+  function shipPath(sz) {                             // top-down hull, bow toward +x
+    ctx.beginPath();
+    ctx.moveTo(1.25 * sz, 0); ctx.lineTo(0.55 * sz, 0.40 * sz); ctx.lineTo(-0.95 * sz, 0.40 * sz);
+    ctx.lineTo(-1.05 * sz, 0); ctx.lineTo(-0.95 * sz, -0.40 * sz); ctx.lineTo(0.55 * sz, -0.40 * sz);
+    ctx.closePath();
+  }
+  function planePath(sz) {                            // top-down airliner, nose toward +x
+    ctx.beginPath();
+    ctx.moveTo(1.05 * sz, 0);
+    ctx.lineTo(0.18 * sz, 0.15 * sz); ctx.lineTo(-0.12 * sz, 0.15 * sz); ctx.lineTo(-0.18 * sz, 0.60 * sz);
+    ctx.lineTo(-0.36 * sz, 0.60 * sz); ctx.lineTo(-0.34 * sz, 0.12 * sz); ctx.lineTo(-0.80 * sz, 0.10 * sz);
+    ctx.lineTo(-0.95 * sz, 0.34 * sz); ctx.lineTo(-1.04 * sz, 0.32 * sz); ctx.lineTo(-1.0 * sz, 0);
+    ctx.lineTo(-1.04 * sz, -0.32 * sz); ctx.lineTo(-0.95 * sz, -0.34 * sz); ctx.lineTo(-0.80 * sz, -0.10 * sz);
+    ctx.lineTo(-0.34 * sz, -0.12 * sz); ctx.lineTo(-0.36 * sz, -0.60 * sz); ctx.lineTo(-0.18 * sz, -0.60 * sz);
+    ctx.lineTo(-0.12 * sz, -0.15 * sz); ctx.lineTo(0.18 * sz, -0.15 * sz);
+    ctx.closePath();
+  }
+
+  function drawSeaRoutes(t, dark) {
+    if (!seaPaths.length) return;
+    var sea = PAL["--info"], mob = W < 560, sz = Math.max(4.2, Math.min(8.5, scale * 0.023));
+    for (var r = 0; r < seaPaths.length; r++) {
+      var R = seaPaths[r], def = R.def, pts = R.pts, ph = r * 1.7;
+      var breath = motionOK ? (0.5 + 0.5 * Math.sin(t / 2600 + ph)) : 0.7;
+      // breathing dotted lane (d3 geoPath auto-clips to the visible hemisphere)
+      ctx.save();
+      ctx.beginPath(); path({ type: "LineString", coordinates: pts });
+      ctx.strokeStyle = rgba(sea, (dark ? 0.64 : 0.62) * (0.6 + 0.4 * breath));
+      ctx.lineWidth = 1.25; ctx.setLineDash([1.6, 5]);
+      ctx.lineDashOffset = motionOK ? -(t / 100 + ph * 20) : 0;
+      ctx.shadowColor = rgba(sea, 0.6 * breath); ctx.shadowBlur = 3 + 3.5 * breath;
+      ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+      // ships riding the lane
+      var nShip = mob ? 1 : (def.ships || 1);
+      for (var k = 0; k < nShip; k++) {
+        var u = motionOK ? ((t / def.dur + k / nShip + r * 0.13) % 1) : ((k / nShip + r * 0.13 + 0.4) % 1);
+        var smp = routeSample(pts, u); if (!onFront(smp.p)) continue;
+        var s = projection(smp.p); if (!s) continue;
+        var sa = projection(smp.ahead), ang = sa ? Math.atan2(sa[1] - s[1], sa[0] - s[0]) : 0;
+        drawShip(s[0], s[1], ang, sz, sea, frontness(smp.p), t, ph);
+      }
+    }
+  }
+  function drawShip(x, y, ang, sz, glow, fr, t, ph) {
+    var wob = motionOK ? Math.sin(t / 700 + ph) * 0.05 : 0;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang + wob);
+    ctx.globalAlpha = Math.max(0.28, fr);
+    // soft shadow on the water (grounds the hull) — always dark, so it reads on a light ocean too
+    ctx.save(); ctx.globalAlpha *= 0.40; ctx.fillStyle = rgba(SHADE, 1);
+    ctx.beginPath(); ctx.ellipse(-sz * 0.1, sz * 0.16, sz * 1.15, sz * 0.5, 0, 0, 6.283); ctx.fill(); ctx.restore();
+    // wake — luminous foam fanning back from the stern (sea-coloured so it shows in both themes)
+    var wl = sz * (3.0 + (motionOK ? 0.7 * (0.5 + 0.5 * Math.sin(t / 360 + ph)) : 0.3));
+    var g = ctx.createLinearGradient(-sz, 0, -sz - wl, 0);
+    g.addColorStop(0, rgba(glow, 0.55)); g.addColorStop(1, rgba(glow, 0));
+    ctx.fillStyle = g; ctx.beginPath();
+    ctx.moveTo(-sz * 0.9, sz * 0.30); ctx.lineTo(-sz - wl, sz * 0.60);
+    ctx.lineTo(-sz - wl, -sz * 0.60); ctx.lineTo(-sz * 0.9, -sz * 0.30); ctx.closePath(); ctx.fill();
+    // hull
+    ctx.shadowColor = rgba(glow, 0.85); ctx.shadowBlur = 7;
+    shipPath(sz); ctx.fillStyle = rgba(PAL["--text"], 0.94); ctx.fill(); ctx.shadowBlur = 0;
+    // deckhouse + bow running light
+    ctx.fillStyle = rgba(glow, 0.85); ctx.fillRect(-sz * 0.55, -sz * 0.22, sz * 0.5, sz * 0.44);
+    ctx.fillStyle = rgba(PAL["--orange"], 0.95); ctx.beginPath(); ctx.arc(sz * 0.85, 0, sz * 0.16, 0, 6.283); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawAirRoutes(t, dark) {
+    if (!airPaths.length) return;
+    var air = PAL["--warn"], cx = W / 2, cy = H / 2, mob = W < 560;
+    var MAXALT = mob ? 0.095 : 0.13, sz = Math.max(5.5, Math.min(11.5, scale * 0.032));
+    for (var r = 0; r < airPaths.length; r++) {
+      var R = airPaths[r], def = R.def, pts = R.pts, ph = r * 1.3, n = pts.length;
+      var breath = motionOK ? (0.5 + 0.5 * Math.sin(t / 2500 + ph)) : 0.7;
+      // elevated breathing dotted corridor: project each sample, lift radially, skip the far side
+      ctx.save();
+      ctx.strokeStyle = rgba(air, (dark ? 0.6 : 0.58) * (0.6 + 0.4 * breath));
+      ctx.lineWidth = 1.25; ctx.setLineDash([1.6, 5]);
+      ctx.lineDashOffset = motionOK ? -(t / 85 + ph * 20) : 0;
+      ctx.shadowColor = rgba(air, 0.6 * breath); ctx.shadowBlur = 3.5 + 3.5 * breath;
+      ctx.beginPath();
+      var started = false, iStep = mob ? 2 : 1;   // coarser sampling on mobile halves the per-frame trig
+      for (var i = 0; i < n; i += iStep) {
+        var ll = pts[i];
+        // onFront() is the real culler: orthographic projection() still returns coords for
+        // back-hemisphere points (folded onto the disc), so it can't break the line by itself
+        if (!onFront(ll)) { started = false; continue; }
+        var sp = projection(ll); if (!sp) { started = false; continue; }
+        var e = elev(sp, cx, cy, MAXALT * Math.sin(Math.PI * (i / (n - 1))));
+        if (!started) { ctx.moveTo(e[0], e[1]); started = true; } else ctx.lineTo(e[0], e[1]);
+      }
+      ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+      // aircraft flying the corridor (elevated body + shadow on the water below)
+      var nP = mob ? 1 : (def.planes || 1);
+      for (var k = 0; k < nP; k++) {
+        var u = motionOK ? ((t / def.dur + k / nP + r * 0.21) % 1) : ((k / nP + r * 0.21 + 0.35) % 1);
+        var smp = routeSample(pts, u); if (!onFront(smp.p)) continue;
+        var s = projection(smp.p); if (!s) continue;
+        var alt = MAXALT * Math.sin(Math.PI * u), e2 = elev(s, cx, cy, alt);
+        var sa = projection(smp.ahead), ea = sa ? elev(sa, cx, cy, alt) : null;
+        var ang = ea ? Math.atan2(ea[1] - e2[1], ea[0] - e2[0]) : 0, fr = frontness(smp.p);
+        drawPlaneShadow(s[0], s[1], ang, sz, fr, alt);
+        // altitude stem: a faint line from the water shadow up to the aircraft — reads as height
+        if (alt > 0.012) {
+          ctx.save();
+          ctx.strokeStyle = rgba(air, 0.28 * fr); ctx.lineWidth = 1; ctx.setLineDash([1, 2.5]);
+          ctx.beginPath(); ctx.moveTo(s[0], s[1]); ctx.lineTo(e2[0], e2[1]); ctx.stroke();
+          ctx.setLineDash([]); ctx.restore();
+        }
+        drawPlane(e2[0], e2[1], ang, sz, air, fr, t, ph, pts, u, MAXALT, cx, cy);
+      }
+    }
+  }
+  function drawPlaneShadow(x, y, ang, sz, fr, alt) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+    ctx.globalAlpha = 0.30 * fr; ctx.fillStyle = rgba(SHADE, 1);
+    planePath(sz * 0.9 * (1 - Math.min(0.4, alt * 2.2))); ctx.fill();
+    ctx.restore();
+  }
+  function drawPlane(x, y, ang, sz, glow, fr, t, ph, pts, u, MAXALT, cx, cy) {
+    // contrail — a few elevated points trailing behind, fading out. Wrapped in its own
+    // save/restore (self-contained, no state leak) and skipped on mobile to save per-frame trig.
+    var segs = W < 560 ? 0 : 5;
+    if (segs) {
+      ctx.save();
+      var prev = null;
+      for (var c = 1; c <= segs; c++) {
+        var uu = u - c * 0.016; if (uu < 0) break;
+        var sp = routeSample(pts, uu).p; if (!onFront(sp)) { prev = null; continue; }
+        var ss = projection(sp); if (!ss) { prev = null; continue; }
+        var e = elev(ss, cx, cy, MAXALT * Math.sin(Math.PI * uu));
+        if (prev) {
+          ctx.beginPath(); ctx.moveTo(prev[0], prev[1]); ctx.lineTo(e[0], e[1]);
+          ctx.strokeStyle = rgba(PAL["--text"], 0.20 * fr * (1 - c / segs)); ctx.lineWidth = 1.6 * (1 - c / (segs + 2)); ctx.stroke();
+        }
+        prev = e;
+      }
+      ctx.restore();
+    }
+    // body
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+    ctx.globalAlpha = Math.max(0.35, fr);
+    ctx.shadowColor = rgba(glow, 0.95); ctx.shadowBlur = 9;
+    planePath(sz); ctx.fillStyle = rgba(PAL["--text"], 0.97); ctx.fill(); ctx.shadowBlur = 0;
+    ctx.fillStyle = rgba(glow, 0.95); ctx.beginPath(); ctx.arc(sz * 0.55, 0, sz * 0.14, 0, 6.283); ctx.fill();
+    ctx.restore();
   }
 
   function drawLabels() {
@@ -660,7 +863,7 @@
 
   // ---- boot ----------------------------------------------------------------
   function boot(topo) {
-    buildGeometry(topo); readPalette(); buildStars(); buildIslands(); size();
+    buildGeometry(topo); buildRoutes(); readPalette(); buildStars(); buildIslands(); size();
     // The islands are built lazily (after a topo fetch + idle callback), so live.js's
     // first poll already ran against an empty DOM — nudge it to patch the fresh
     // .nb-px/.nb-chg index nodes now instead of waiting a full poll interval.
