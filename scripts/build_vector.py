@@ -1346,8 +1346,9 @@ a:focus-visible,.links a:focus-visible,.ha-item summary:focus-visible{outline:2p
  .card,.ico,.ha-item summary{transition:none} .card:hover{transform:none}}
 
 /* ===== flight deck ===== */
-.globe-deck{display:grid;grid-template-columns:minmax(0,2.05fr) minmax(0,1fr);gap:16px;align-items:stretch;max-width:100%}
-@media(max-width:880px){.globe-deck{grid-template-columns:minmax(0,1fr)}}
+/* single full-bleed column — the globe is the whole instrument; the market-clock
+   sidebar is gone, its data migrated onto the floating islands + the slim strip */
+.globe-deck{display:flex;flex-direction:column;gap:10px;align-items:stretch;max-width:100%}
 @media(max-width:520px){
  .gd-clock{padding:12px 11px 10px}
  .gd-row{gap:8px;padding:6px 7px}
@@ -1356,10 +1357,80 @@ a:focus-visible,.links a:focus-visible,.ha-item summary:focus-visible{outline:2p
 }
 /* the globe is UNBOUNDED — no card; it floats on the page's aurora. The canvas is
    transparent outside the sphere, so body::before's aurora shows through. */
-.gd-stage{min-height:640px;display:flex;overflow:visible;background:none;border:none;box-shadow:none;min-width:0}
+.gd-stage{position:relative;min-height:640px;display:flex;overflow:visible;background:none;border:none;box-shadow:none;min-width:0}
 @media(max-width:880px){.gd-stage{min-height:0;height:min(94vw,500px)}}
-.gd-canvas{width:100%;max-width:100%;height:100%;display:block;touch-action:none;cursor:grab;outline:none}
+.gd-canvas{position:relative;z-index:10;width:100%;max-width:100%;height:100%;display:block;touch-action:none;cursor:grab;outline:none}
 .gd-canvas:focus-visible{outline:2px solid var(--link);outline-offset:-2px}
+
+/* ===== floating data-islands (a back layer UNDER the canvas + a front layer OVER it;
+   the opaque globe disc clips back-side pebbles → true behind/in-front occlusion) ===== */
+.gd-islands{position:absolute;inset:0;pointer-events:none}
+.gd-islands.gd-isl-back{z-index:5}
+.gd-islands.gd-isl-front{z-index:20}
+.gd-isl{position:absolute;left:0;top:0;will-change:transform;--qc:var(--info);
+ transform:translate(calc(var(--x,0)*1px - 50%),calc(var(--y,0)*1px - 50%))}
+.gd-isl.q1{--qc:var(--q1)} .gd-isl.q2{--qc:var(--q2)} .gd-isl.q3{--qc:var(--q3)} .gd-isl.q4{--qc:var(--q4)}
+.gd-isl .glow{position:absolute;left:50%;top:50%;width:52px;height:24px;border-radius:999px;pointer-events:none;z-index:-1;
+ transform:translate(calc(-50% + var(--ox,0)*1px),calc(-50% + var(--oy,0)*1px));
+ background:radial-gradient(52% 62% at 50% 55%,color-mix(in srgb,var(--qc) 40%,transparent),transparent 70%);
+ filter:blur(3px);opacity:calc(.5*var(--f,1));animation:gdislbreath var(--bd,5s) ease-in-out infinite;animation-delay:var(--bdl,0s)}
+@keyframes gdislbreath{0%,100%{opacity:calc(.26*var(--f,1))}50%{opacity:calc(.6*var(--f,1))}}
+.gd-isl .dot{position:absolute;left:50%;top:50%;width:7px;height:7px;border-radius:50%;
+ transform:translate(-50%,-50%);background:var(--qc);box-shadow:0 0 9px var(--qc),0 0 0 2px color-mix(in srgb,var(--bg) 70%,transparent);opacity:calc(.2+.8*var(--f,1))}
+.gd-isl .ring{position:absolute;left:50%;top:50%;width:26px;height:26px;pointer-events:none;
+ transform:translate(-50%,-50%) rotate(-90deg);opacity:calc(.15+.85*var(--f,1))}
+.gd-isl .ring .trk{fill:none;stroke:color-mix(in srgb,var(--line) 65%,transparent);stroke-width:2}
+.gd-isl .ring .arc{fill:none;stroke:var(--qc);stroke-width:2;stroke-linecap:round;filter:drop-shadow(0 0 3px var(--qc));transition:stroke-dashoffset .9s linear}
+.gd-isl .body{position:absolute;left:50%;top:50%;white-space:nowrap;margin:0;font-family:inherit;
+ transform:translate(calc(-50% + var(--ox,0)*1px),calc(-50% + var(--oy,0)*1px)) scale(calc(.84+.16*var(--f,1)));
+ display:flex;align-items:center;gap:8px;padding:7px 13px 7px 11px;border-radius:999px;cursor:pointer;
+ background:color-mix(in srgb,var(--panel) 84%,transparent);
+ border:1px solid color-mix(in srgb,var(--qc) 26%,color-mix(in srgb,var(--line) 78%,transparent));
+ -webkit-backdrop-filter:blur(13px) saturate(1.7);backdrop-filter:blur(13px) saturate(1.7);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 -9px 15px rgba(0,0,0,.32),0 11px 26px -10px rgba(0,0,0,.7),0 5px 18px -7px color-mix(in srgb,var(--qc) 45%,transparent);
+ transition:opacity .35s ease,filter .35s ease,border-color .2s ease,box-shadow .2s ease,transform .12s linear;
+ opacity:calc(.12 + .88*var(--f,1));filter:blur(calc((1 - var(--f,1))*6px)) saturate(calc(.4 + .6*var(--f,1)))}
+.gd-isl .body::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+ background:linear-gradient(140deg,rgba(255,255,255,.62),rgba(255,255,255,.06) 40%,rgba(0,0,0,.16));
+ -webkit-mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);-webkit-mask-composite:xor;mask-composite:exclude;padding:1px;opacity:.95}
+.gd-isl .body::after{content:'';position:absolute;left:16%;right:16%;bottom:-.5px;height:2.5px;border-radius:2px;
+ background:var(--qc);box-shadow:0 0 10px var(--qc),0 0 3px var(--qc);opacity:calc(.35+.65*var(--f,1))}
+.gd-isl .body:hover,.gd-isl .body:focus-visible{outline:none;border-color:color-mix(in srgb,var(--qc) 62%,var(--line));
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.66),inset 0 -9px 15px rgba(0,0,0,.32),0 14px 30px -10px rgba(0,0,0,.72),0 7px 22px -6px color-mix(in srgb,var(--qc) 62%,transparent)}
+.gd-isl.sel .body{border-color:color-mix(in srgb,var(--qc) 70%,var(--line))}
+.gd-isl .isl-flag{font-size:16px;line-height:1;filter:saturate(1.1)}
+.gd-isl .isl-sem{width:10px;height:10px;border-radius:50%;flex:none;position:relative}
+.gd-isl .isl-sem.open{background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 26%,transparent),0 0 7px var(--ok);animation:gdsempulse 2.1s ease-in-out infinite}
+@keyframes gdsempulse{0%,100%{box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 26%,transparent),0 0 7px var(--ok)}50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--ok) 14%,transparent),0 0 11px var(--ok)}}
+.gd-isl .isl-sem.closed{background:color-mix(in srgb,var(--muted) 26%,transparent);border:1.5px solid color-mix(in srgb,var(--muted) 80%,transparent)}
+.gd-isl .isl-sem.lunch{background:conic-gradient(var(--warn) 0 50%,transparent 50% 100%);border:1.5px solid var(--warn)}
+.gd-isl .isl-sem.pre{background:var(--warn);box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 28%,transparent),0 0 8px var(--warn)}
+.gd-isl .isl-chg{font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em;font-style:normal}
+.gd-isl .isl-chg.up{color:var(--up)} .gd-isl .isl-chg.down{color:var(--down)} .gd-isl .isl-chg.stale{color:var(--muted)}
+.gd-isl .isl-px{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;margin-left:1px}
+/* ===== Asia cluster chip (collapses the JP/KR/TW/HK/CN knot when compressed) ===== */
+.gd-cluster{position:absolute;left:0;top:0;display:none;align-items:center;gap:7px;padding:7px 13px 7px 11px;border-radius:999px;cursor:pointer;z-index:30;
+ transform:translate(calc(var(--cx,0)*1px - 50%),calc(var(--cy,0)*1px - 50%));
+ background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid color-mix(in srgb,var(--line) 80%,transparent);
+ -webkit-backdrop-filter:blur(13px) saturate(1.6);backdrop-filter:blur(13px) saturate(1.6);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.55),inset 0 -8px 14px rgba(0,0,0,.30),0 11px 26px -10px rgba(0,0,0,.7);
+ font-size:12.5px;font-weight:800;color:var(--text);letter-spacing:-.01em}
+.gd-cluster.show{display:flex}
+.gd-cluster .cl-globe{font-size:15px;line-height:1}
+.gd-cluster .cl-n{color:var(--muted);font-weight:700}
+.gd-cluster .cl-dots{display:flex;gap:3px;margin-left:3px}
+.gd-cluster .cl-dots i{width:6px;height:6px;border-radius:50%;display:block;box-shadow:0 0 5px currentColor}
+.gd-cluster .l-zh{display:none} html[data-lang="zh"] .gd-cluster .l-en{display:none} html[data-lang="zh"] .gd-cluster .l-zh{display:inline}
+/* ===== slim residual strip — world-clock anchor + next-bell + motion toggle ===== */
+.gd-strip{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 16px;margin:2px auto 0;font-size:12px;color:var(--muted)}
+.gd-strip .gd-utc{color:var(--text);font-variant-numeric:tabular-nums;font-weight:700}
+.gd-strip .gd-nextbell{color:color-mix(in srgb,var(--text) 80%,var(--muted));font-weight:600}
+.gd-strip .gd-motion{font:inherit;color:var(--muted);background:color-mix(in srgb,var(--panel) 60%,transparent);border:1px solid var(--line);border-radius:999px;padding:3px 11px;cursor:pointer}
+.gd-strip .gd-motion:hover{border-color:color-mix(in srgb,var(--info) 45%,var(--line))}
+.gd-strip .gd-asof{flex-basis:100%;text-align:center;font-size:10.5px;color:var(--muted)}
+.gd-strip .l-zh{display:none} html[data-lang="zh"] .gd-strip .l-en{display:none} html[data-lang="zh"] .gd-strip .l-zh{display:inline}
+@media(max-width:560px){.gd-isl .body{gap:6px;padding:5px 10px 5px 8px} .gd-isl .isl-chg{font-size:12px} .gd-isl .isl-px{display:none} .gd-isl .isl-flag{font-size:14px}}
+@media (prefers-reduced-motion: reduce){.gd-isl .glow,.gd-isl .isl-sem.open{animation:none}}
 .gd-poster{position:absolute;inset:0;width:100%;height:100%;transition:opacity .6s ease;pointer-events:none}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;margin:-1px;padding:0;border:0}
 .gd-legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;margin:0;padding:0;border:0;list-style:none}
@@ -1490,19 +1561,21 @@ html[data-lang="zh"] .gd-r-cd .l-zh,html[data-lang="zh"] .gd-r-txt .l-zh{display
 
 _GLOBE_DECK_DOM = r"""<section class="globe-deck command" aria-label="Global macro regime globe">
     <div class="gd-stage">
+      <div class="gd-islands gd-isl-back" aria-hidden="true"></div>
       <canvas class="gd-canvas" data-topo="world-110m.json" role="application" tabindex="0"
         aria-roledescription="interactive macro-regime globe"
         aria-label="Macro regime globe. Arrow keys rotate, plus and minus zoom, Escape deselects." aria-describedby="gd-live"></canvas>
+      <div class="gd-islands gd-isl-front" aria-hidden="true"></div>
       <span id="gd-live" class="sr-only" aria-live="polite"></span>
       <div class="gd-tip glass" role="tooltip" hidden></div>
       <ul class="gd-legend" aria-label="Markets / 市场列表">__LEGEND__</ul>
     </div>
-    <aside class="gd-clock glass" aria-label="Market clock">
-      <header><span class="l-en">Market clock</span><span class="l-zh">交易时钟</span> · <time class="gd-utc"></time> UTC</header>
-      <ul></ul>
-      <p class="gd-asof"><span class="l-en">Prices ≈15-min delayed · clocks live</span><span class="l-zh">价格约延迟15分钟 · 时钟实时</span></p>
-      <p class="gd-foot"><span class="l-en">Regular sessions; holidays not modeled</span><span class="l-zh">常规交易时段，未计入假期</span></p>
-    </aside>
+    <div class="gd-strip">
+      <span class="gd-clk"><time class="gd-utc"></time> <span class="l-en">UTC</span><span class="l-zh">协调时</span></span>
+      <span class="gd-nextbell"></span>
+      <button class="gd-motion" type="button" aria-pressed="false"></button>
+      <span class="gd-asof"><span class="l-en">Prices ≈15-min delayed · sessions live · holidays not modeled</span><span class="l-zh">价格约延迟15分钟 · 交易时段实时 · 未计入假期</span></span>
+    </div>
   </section>"""
 
 _GQUAD_ZH = {"Goldilocks": "理想增长", "Reflation": "再通胀", "Stagflation": "滞胀",
