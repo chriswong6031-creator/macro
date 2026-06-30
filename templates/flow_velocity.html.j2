@@ -39,7 +39,7 @@
 {% macro memberrow(m, sbt, sid, i, show=False) -%}
 {% set seat = sbt.get(m.ticker) %}{% set cc = confcls(m.vel, seat) %}
 <tr class="mrow {{ cc }}{{ ' show' if show }}" data-sector="{{ sid }}">
-  <td class="mname snm">{% if cc %}<i class="cdot {{ cc }}"></i> {% endif %}{{ m.name or m.ticker }}<span class="tk">{{ m.ticker }}</span></td>
+  <td class="mname snm">{% if cc %}<i class="cdot {{ cc }}"></i> {% endif %}<a href="{{ ('hk_lookup.html#' if m.ticker.endswith('.HK') else 'china_lookup.html#') ~ m.ticker }}">{{ m.name or m.ticker }}<span class="tk">{{ m.ticker }}</span></a></td>
   <td>{% if seat %}<span class="seat {{ seat.dir }}" title="Dragon-Tiger institutional-seat net (机构专用)">🏛 {{ '%+.1f'|format(seat.inst_net_yi) }}亿 <span class="ss">{{ seat.n_buy }}/{{ seat.n_sell }}</span></span>{% endif %}</td>
   <td></td>
   <td>{{ rate(m.rate_4wk) }}</td>
@@ -342,14 +342,14 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
           </tr></thead>
           <tbody>
           {% for r in (h.buying or []) %}
-          <tr><td class="snm">{{ r.name or r.ticker }}<span class="tk">{{ r.ticker }}</span></td>
+          <tr><td class="snm"><a href="hk_lookup.html#{{ r.ticker }}">{{ r.name or r.ticker }}<span class="tk">{{ r.ticker }}</span></a></td>
             <td style="text-align:left">{{ vstate('accumulating','加仓', r.chg5_pct) }}</td>
             <td>{{ rate(r.chg5_pct) }}</td>
             <td><span class="ownbar"><i style="width:{{ [ (r.own_pct or 0)/30*100, 100]|min |round }}%"></i></span> {{ '%.1f'|format(r.own_pct) if r.own_pct is not none else '·' }}</td>
             <td>HK${{ r.hold_b }}B</td></tr>
           {% endfor %}
           {% for r in (h.selling or []) %}
-          <tr><td class="snm">{{ r.name or r.ticker }}<span class="tk">{{ r.ticker }}</span></td>
+          <tr><td class="snm"><a href="hk_lookup.html#{{ r.ticker }}">{{ r.name or r.ticker }}<span class="tk">{{ r.ticker }}</span></a></td>
             <td style="text-align:left">{{ vstate('distributing','减仓', r.chg5_pct) }}</td>
             <td>{{ rate(r.chg5_pct) }}</td>
             <td><span class="ownbar"><i style="width:{{ [ (r.own_pct or 0)/30*100, 100]|min |round }}%"></i></span> {{ '%.1f'|format(r.own_pct) if r.own_pct is not none else '·' }}</td>
