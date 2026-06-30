@@ -33,7 +33,8 @@ from engine.cycles import analyze, market_vix_context  # noqa: E402
 from engine.extension import extension_signals  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import (  # noqa: E402
-    ALIGN_MIN_KEEP, US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer)
+    ALIGN_MIN_KEEP, US_ALPHA_WEIGHT, entry_open_first, rank_setups, setup_score,
+    sue_confirmer)
 from engine import stock_score  # noqa: E402
 from engine import name_score  # noqa: E402  — per-name POTENTIAL (buy-readiness) score, edge-blended
 from engine import name_score_grader  # noqa: E402  — forward-grades the POTENTIAL score
@@ -1584,6 +1585,11 @@ def main() -> int:
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
             if demand_chip.get(t):                 # L2 demand-divergence flag for the board chip
                 r["demand"] = demand_chip[t]
+        # ENTRY-OPEN-FIRST board order: names whose entry gauge reads "Buy zone — entry
+        # open now" lead the strip, then by the displayed conviction score. Stable, so
+        # the bottoming-alignment + confluence rank above only settles ties. Applied
+        # after enrichment so entry_signal + conviction are attached to every row.
+        wide["buy"] = entry_open_first(wide["buy"])
         wide["eligible"] = eligible
         wide["universe"] = len(cand)
         if disp_regime:                            # selection-regime gross dial (board + bot)

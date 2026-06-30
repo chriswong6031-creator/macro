@@ -35,7 +35,7 @@ from engine import entry_signal  # noqa: E402  — WHEN/at-what-price entry-timi
 from engine import risk_sizing  # noqa: E402  — vol-managed inverse-vol sizing (validated Sharpe lever)
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
-from engine.setups import CN_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
+from engine.setups import CN_ALPHA_WEIGHT, entry_open_first, rank_setups, setup_score  # noqa: E402
 from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's alignment gate)
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -518,6 +518,10 @@ def compute_china_standouts(setups: dict | None, reversal: dict | None,
             col = ("var(--up)" if r.get("dir") == "up"
                    else "var(--down)" if r.get("dir") == "down" else "var(--muted)")
             r["spark_svg"] = _spark_svg(s, color=col)
+    # ENTRY-OPEN-FIRST: lead with names whose entry gauge reads "Buy zone — entry open
+    # now", then by the displayed conviction score (stable; the reversal/alignment rank
+    # settles ties). conviction + entry_signal were just attached to each row above.
+    setups["buy"] = entry_open_first(setups["buy"])
     return setups
 
 
@@ -982,6 +986,7 @@ def main(alpha: dict | None = None) -> dict | None:
             if risk_sig.get(t):
                 r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
+        wide["buy"] = entry_open_first(wide["buy"])   # entry-open-first, then score (stable)
         eligible = sum(1 for _s, r in cand
                        if (align_map.get(r.get("ticker")) or {}).get("aligned"))
         wide["eligible"] = eligible
