@@ -1,0 +1,14 @@
+# Cloudflare Workers Builds runs `npx wrangler deploy` from the REPOSITORY ROOT.
+# With no config here, wrangler auto-detects the repo as a static site
+# (Framework: Static, `npx cecil build` -> `_site`) and the build FAILS because
+# `_site` is never produced. That misdetection is the persistent
+# "Workers Builds: macro" red X (the worker/ lockfile fix never applied, because
+# the build never runs inside worker/).
+#
+# This root config pins the build to the real, tiny live-quotes Worker so CI
+# deploys the "macro" service deterministically. The Worker is dormant (its URL
+# is not wired into the site — see worker/DEPLOY.md), so this just keeps the
+# build green. Local/manual deploys still use worker/wrangler.toml.
+name = "macro"
+main = "worker/quotes.worker.js"
+compatibility_date = "2024-11-01"
