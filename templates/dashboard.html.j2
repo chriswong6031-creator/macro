@@ -1103,7 +1103,7 @@
        radar is loud (caution/elevated/risk-off → is_loud), i.e. when it actually fires, so it
        reads as a genuine 'market is turning over' signal rather than permanent chrome. Uses
        market_state directly (the MS alias is set later, inside the macro-only region). #}
-    {% if market_state and market_state.radar and market_state.radar.is_loud %}
+    {% if market_state and market_state.radar and (market_state.radar.is_loud or (market_state.radar.recovery and market_state.radar.recovery.present)) %}
     {{ rrc.risk_radar_card(market_state.radar, latest.risk_radar.scares if latest.risk_radar else none) }}
     {% endif %}
     <p class="muted" style="margin:6px 0 0">{{ t('Where to look for stocks — standouts, sector rotation, factor tilts and real fund flows, filtered by the current macro regime.', '在哪里找股票 — 精选个股、板块轮动、因子倾斜与基金真实资金流，按当前宏观周期过滤。') }}

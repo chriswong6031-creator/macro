@@ -470,6 +470,10 @@ def _radar_to_rd(rr: dict) -> dict:
         "cycle": rr.get("cycle_context"),
         "amp": 0, "amp_keys": [], "amp_flags_en": [], "amp_flags_zh": [],
         "severe_gated": False, "ceiling": None,
+        # display-only DE-ESCALATION read ("risk-off may be ending"); the US override fills it in
+        # below from the radar trajectory + the liquidity tide. Stays None on the intl radars and
+        # the no-source calm radar, so the card's {% if rd.recovery %} guard simply skips it.
+        "recovery": None,
     }
 
 
@@ -525,6 +529,18 @@ def _radar_override(latest: dict, overrides: list) -> dict:
     top = _num(rr.get("top_score"))
     ungated = rr.get("state_ungated") or state
     out = _radar_to_rd(rr)
+
+    # DE-ESCALATION read (display-only): has risk peaked + are the pullback odds rolling over while
+    # the liquidity tide turns supportive? Computed at EVERY state (also calm/watch) so the "risk-off
+    # may be ending" panel persists through the cool-down. It NEVER touches the ceiling/amp/verdict
+    # below — the radar's one-directional guardrail is untouched. See engine/risk_radar_recovery.py.
+    try:
+        from engine import risk_radar_recovery
+        out["recovery"] = risk_radar_recovery.assess(latest)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("risk_radar recovery assess failed: %s", e)
+        out["recovery"] = None
+
     if state not in ("caution", "elevated", "risk-off"):
         return out
 
@@ -593,7 +609,7 @@ def _calm_radar() -> dict:
             "dd5": None, "dd10": None, "dd21": None, "dd_lift": None,
             "dd_base": {"h5": None, "h10": None, "h21": None}, "is_loud": False,
             "amp": 0, "amp_keys": [], "amp_flags_en": [], "amp_flags_zh": [],
-            "severe_gated": False, "ceiling": None}
+            "severe_gated": False, "ceiling": None, "recovery": None}
 
 
 # The default (US) profile — every field reproduces today's hardcoded behaviour, so

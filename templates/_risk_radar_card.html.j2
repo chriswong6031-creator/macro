@@ -96,6 +96,41 @@
   </div>{# /.rrx-main #}
 
   <div class="rrx-side">
+  {# DE-ESCALATION panel (engine/risk_radar_recovery.py) — "risk has peaked / the risk-off may be
+     ending". DISPLAY-ONLY: it never relaxes the radar's one-directional score ceiling. Shows the
+     pullback-odds turn (peak → now) as a sparkline + the supportive-liquidity catalysts firing now
+     (Fed net-liq/TGA, Fed cuts, PBoC easing, the global Fed+ECB+BoJ tide). Persists through the
+     cool-down so the "it may be over soon" read stays visible after the loud alert fades. #}
+  {% if rd.recovery and rd.recovery.present %}{% set rv = rd.recovery %}
+  {%- set rvc = 'var(--ok)' if rv.receding else 'var(--info)' -%}
+  <div class="rrx-rec{{ ' is-turn' if rv.turn_confirmed }}" style="--rvc:{{ rvc }}">
+    <div class="rrx-rec-hd">
+      <span class="rrx-rec-ar">{{ '↘' if rv.receding else '◔' }}</span>
+      <span class="rrx-rec-ttl">{{ t(rv.headline_en, rv.headline_zh) }}</span>
+      {% if rv.turn_confirmed %}<span class="rrx-rec-tag">{{ t('TURN','转向') }}</span>{% endif %}
+      {{ help(rv.caveat_en, rv.caveat_zh) }}
+    </div>
+    <div class="rrx-rec-mid">
+      {% if rv.spark_pts %}
+      <svg class="rrx-rec-spark" viewBox="0 0 {{ rv.spark_w }} {{ rv.spark_h }}" preserveAspectRatio="none" aria-hidden="true">
+        <polyline points="{{ rv.spark_pts }}" fill="none" stroke="var(--rvc)" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+        {% if rv.spark_peak %}<circle class="pk" cx="{{ rv.spark_peak.x }}" cy="{{ rv.spark_peak.y }}" r="1.6"/>{% endif %}
+        {% if rv.spark_last %}<circle class="lx" cx="{{ rv.spark_last.x }}" cy="{{ rv.spark_last.y }}" r="2.1"/>{% endif %}
+      </svg>
+      {% endif %}
+      <span class="rrx-rec-sub">{{ t(rv.sub_en, rv.sub_zh) }}</span>
+    </div>
+    {% if rv.catalysts %}
+    <div class="rrx-rec-cats">
+      <span class="rrx-rec-k">{{ t('Liquidity','流动性') }}</span>
+      {% for c in rv.catalysts %}<span class="rrx-rec-chip{{ ' fresh' if c.fresh }}">{{ c.icon }} {{ t(c.label_en, c.label_zh) }}{{ help(c.detail_en, c.detail_zh) }}</span>{% endfor %}
+    </div>
+    {% else %}
+    <div class="rrx-rec-cats none">{{ t('No liquidity catalyst yet — risk easing on its own; watch for a policy / liquidity turn to confirm.','尚无流动性催化 — 风险自行回落；留意政策／流动性转向以确认。') }}</div>
+    {% endif %}
+    {% if rv.do_en %}<div class="rrx-rec-do"><span class="rrx-rec-do-k">{{ t('Do','应对') }}</span>{{ t(rv.do_en, rv.do_zh) }}</div>{% endif %}
+  </div>
+  {% endif %}
   {% if scares %}
   <div class="rrx-threats">
     {% for s in scares %}{% if s.score is not none %}
