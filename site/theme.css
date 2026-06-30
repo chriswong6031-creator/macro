@@ -437,23 +437,34 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
   display: flex; align-items: center; gap: 10px; }
 
 /* static AI Daily Brief entry — pinned in the nav-ctrls cluster beside the theme +
-   language toggles, so it never scrolls with the main menu */
-.nav-ctrls .ai-brief-link { display: inline-flex; align-items: center; gap: 5px;
-  white-space: nowrap; flex: none; padding: 5px 12px; border-radius: 999px;
-  background: var(--panel2); border: 1px solid var(--line); color: var(--text);
-  font-size: 12.5px; font-weight: 600; line-height: 1; cursor: pointer;
+   language toggles, so it never scrolls with the main menu. Styled as a refined
+   pill: a soft top-lit gradient, a hairline border and a faint resting shadow give
+   it depth so it reads as a real button rather than a flat chip. */
+.nav-ctrls .ai-brief-link { display: inline-flex; align-items: center; gap: 6px;
+  white-space: nowrap; flex: none; padding: 6px 13px; border-radius: 999px;
+  background: linear-gradient(180deg, var(--panel), var(--panel2));
+  border: 1px solid var(--line); color: var(--text);
+  font-size: 12.5px; font-weight: 600; letter-spacing: .1px; line-height: 1; cursor: pointer;
+  box-shadow: 0 1px 2px rgba(16,24,40,.05), inset 0 1px 0 rgba(255,255,255,.05);
   transition: background .2s, border-color .2s, color .2s, transform .16s ease, box-shadow .18s ease; }
 /* Shared hover for BOTH pills (Mastermind + Terminal): fill with the link accent +
    white text, lift and glow. Mastermind used to only outline its border on hover;
    it now uses the Terminal pill's nicer fill animation so the two feel identical. */
 .nav-ctrls .ai-brief-link:hover { background: var(--link); border-color: var(--link); color: #fff;
-  transform: translateY(-1px); box-shadow: 0 5px 14px -5px color-mix(in srgb, var(--link) 42%, transparent); }
+  transform: translateY(-1px); box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--link) 50%, transparent); }
 .nav-ctrls .ai-brief-link:active { transform: translateY(0); box-shadow: none; }
 .nav-ctrls .ai-brief-link.active { background: var(--link); border-color: var(--link); color: #fff; }
 /* Terminal entry — the live Mastermind Terminal (app.mastermind-x.com), pinned
-   beside the Mastermind button. Link-accented border/text AT REST marks it as the
-   one outbound door to the live app; the fill-on-hover is the shared rule above. */
-.nav-ctrls .ai-brief-link.terminal-link { border-color: color-mix(in srgb, var(--link) 50%, var(--line)); color: var(--link); }
+   beside the Mastermind button. Link-accented border/text + a faint link-tinted
+   fill AT REST mark it as the one outbound door to the live app; the brighter
+   fill-on-hover is the shared rule above. */
+.nav-ctrls .ai-brief-link.terminal-link {
+  border-color: color-mix(in srgb, var(--link) 55%, var(--line)); color: var(--link);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--link) 12%, var(--panel)), color-mix(in srgb, var(--link) 7%, var(--panel2))); }
+/* Terminal's at-rest border/background tie the shared :hover rule on specificity, so
+   spell its hover out in full (higher specificity) to guarantee the solid link fill +
+   white text win over the resting tint. */
+.nav-ctrls .ai-brief-link.terminal-link:hover { background: var(--link); border-color: var(--link); color: #fff; }
 
 /* AI Daily Brief entry card — the single in-page doorway to the cross-asset LLM
    synthesis page (aibrief.html). Replaces the old inline AI Master Brief panel on the
