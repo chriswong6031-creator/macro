@@ -112,7 +112,10 @@
   // (the #1 mobile complaint). Radius tracks zoom; corners were always transparent, so
   // there's no visual change. Re-applied via apply() on every scale change.
   function clipHit() {
-    var r = scale * 1.13 + 4;                 // sphere + atmosphere halo + a small touch margin
+    // sphere + atmosphere halo + satellite orbits + touch margin. Mobile keeps the ORIGINAL
+    // 1.13 disc (orbits are lowered there to fit inside it, see drawSatellites) so the canvas
+    // edge bands still fall OUTSIDE it and a swipe scrolls the page instead of spinning the globe.
+    var r = (W < 560 ? scale * 1.13 : scale * 1.26) + 4;
     if (Math.abs(r - lastClipR) < 0.5) return;
     lastClipR = r;
     var cp = "circle(" + r.toFixed(1) + "px at 50% 50%)";
@@ -252,6 +255,9 @@
     // air corridors + planes flying above the hemisphere (drawn last → top layer)
     drawAirRoutes(t, dark);
 
+    // orbital tier: mini satellites on faint white dotted orbits, way up high
+    drawSatellites(t, dark);
+
     // floating data-islands (DOM overlay): positioned, occluded + leader-drawn here,
     // replacing the old static canvas flag labels AND the market-clock sidebar
     positionIslands();
@@ -338,6 +344,7 @@
   function buildRoutes() {
     seaPaths = SEA_LANES.map(function (L) { return { def: L, pts: densify(L.wp) }; });
     airPaths = AIR_ROUTES.map(function (R) { return { def: R, pts: densify([R.a, R.b]) }; });
+    buildOrbits();
   }
   function routeSample(pts, u) {                      // position + a look-ahead point for heading
     var n = pts.length; if (n < 2) return { p: pts[0], ahead: pts[0] };
@@ -490,6 +497,90 @@
     ctx.shadowColor = rgba(glow, 0.95); ctx.shadowBlur = 9;
     planePath(sz); ctx.fillStyle = rgba(PAL["--text"], 0.97); ctx.fill(); ctx.shadowBlur = 0;
     ctx.fillStyle = rgba(glow, 0.95); ctx.beginPath(); ctx.arc(sz * 0.55, 0, sz * 0.14, 0, 6.283); ctx.fill();
+    ctx.restore();
+  }
+
+  // ---- orbital tier: mini satellites circling on faint white dotted orbits ---
+  // Way above the air corridors (constant high altitude, a FULL great-circle ring
+  // round the whole globe). Each ring is a closed orbit defined by inclination +
+  // ascending-node longitude; points are projected then lifted radially by the same
+  // (1+alt) orthographic identity used for planes — only far higher. Real occlusion:
+  // a ring point hides only when it's on the FAR side AND projects inside the globe
+  // silhouette, so the ring sweeps in front of the planet, round the limb, and
+  // vanishes behind it. The orbit is drawn as faint white DOTS (per-dot alpha → free
+  // occlusion + a soft edge-fade so high rings dissolve at the canvas rim, never hard-clip).
+  var DEG = Math.PI / 180;
+  var SATS = [
+    { inc: 64, node: 20,   alt: 0.20,  dur: 16000, n: 1 },
+    { inc: 50, node: 135,  alt: 0.185, dur: 19500, n: 1 },
+    { inc: 36, node: -85,  alt: 0.225, dur: 14000, n: 1 },
+    { inc: 70, node: 250,  alt: 0.195, dur: 21000, n: 1 }
+  ];
+  var orbitPaths = [];
+  function orbitLL(incDeg, nodeDeg, phi) {            // a point on the orbital great circle
+    var inc = incDeg * DEG;
+    var la = Math.asin(Math.sin(inc) * Math.sin(phi)) / DEG;
+    var lo = nodeDeg + Math.atan2(Math.cos(inc) * Math.sin(phi), Math.cos(phi)) / DEG;
+    return [lo, la];
+  }
+  function buildOrbits() {
+    orbitPaths = SATS.map(function (S) {
+      var N = 92, pts = [];
+      for (var i = 0; i < N; i++) pts.push(orbitLL(S.inc, S.node, i / N * 2 * Math.PI));
+      return { def: S, pts: pts };
+    });
+  }
+  function edgeFade(x, y) {                           // 0 at the canvas rim → 1 well inside it
+    return Math.max(0, Math.min(1, Math.min(x, W - x, y, H - y) / 38));
+  }
+  function drawSatellites(t, dark) {
+    if (!orbitPaths.length) return;
+    var col = PAL["--text"], cx = W / 2, cy = H / 2, mob = W < 560;
+    var list = mob ? orbitPaths.slice(0, 2) : orbitPaths;
+    var altK = mob ? 0.7 : 1;                          // lower orbits on mobile so the ring stays inside the 1.13 clip (preserves page-scroll)
+    var sz = Math.max(3.0, Math.min(6.5, scale * 0.017)), dotR = Math.max(0.8, scale * 0.0036);
+    for (var r = 0; r < list.length; r++) {
+      var O = list[r], def = O.def, pts = O.pts, n = pts.length, ph = r * 1.9, alt = def.alt * altK;
+      var breath = motionOK ? (0.62 + 0.38 * Math.sin(t / 3000 + ph)) : 0.85;
+      // faint dotted orbit ring (per-dot occlusion: near side always; far side only outside the disc)
+      var iStep = mob ? 2 : 1;
+      for (var i = 0; i < n; i += iStep) {
+        var ll = pts[i], sp = projection(ll); if (!sp) continue;
+        var ex = cx + (sp[0] - cx) * (1 + alt), ey = cy + (sp[1] - cy) * (1 + alt);
+        var nf = onFront(ll);
+        if (!nf && Math.hypot(ex - cx, ey - cy) <= scale + 1) continue;   // far side, hidden behind the disc
+        var fade = edgeFade(ex, ey); if (fade <= 0) continue;
+        var a = (dark ? 0.46 : 0.40) * breath * fade * (nf ? 1 : 0.66);
+        ctx.beginPath(); ctx.arc(ex, ey, dotR, 0, 6.283); ctx.fillStyle = rgba(col, a); ctx.fill();
+      }
+      // satellites riding the ring
+      var nS = mob ? 1 : (def.n || 1);
+      for (var k = 0; k < nS; k++) {
+        var u = motionOK ? ((t / def.dur + k / nS + r * 0.27) % 1) : ((k / nS + r * 0.27 + 0.2) % 1);
+        var phi = u * 2 * Math.PI, p0 = orbitLL(def.inc, def.node, phi), s0 = projection(p0); if (!s0) continue;
+        var sx = cx + (s0[0] - cx) * (1 + alt), sy = cy + (s0[1] - cy) * (1 + alt);
+        var nf0 = onFront(p0);
+        if (!nf0 && Math.hypot(sx - cx, sy - cy) <= scale + 1) continue;  // far side, behind the disc
+        var sf = edgeFade(sx, sy); if (sf <= 0) continue;
+        var p1 = orbitLL(def.inc, def.node, phi + 0.06), s1 = projection(p1);
+        var ang = s1 ? Math.atan2((cy + (s1[1] - cy) * (1 + alt)) - sy, (cx + (s1[0] - cx) * (1 + alt)) - sx) : 0;
+        drawSat(sx, sy, ang, sz, col, (nf0 ? 1 : 0.78) * sf, t, ph);
+      }
+    }
+  }
+  function drawSat(x, y, ang, sz, col, a, t, ph) {
+    var tw = motionOK ? (0.72 + 0.28 * Math.sin(t / 420 + ph)) : 1;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+    ctx.globalAlpha = Math.min(1, a);
+    // solar-panel wings (perpendicular to travel), faint blue
+    ctx.fillStyle = rgba(PAL["--info"], 0.8);
+    ctx.fillRect(-sz * 0.22, -sz * 1.30, sz * 0.44, sz * 0.66);
+    ctx.fillRect(-sz * 0.22, sz * 0.64, sz * 0.44, sz * 0.66);
+    // strut + body (bright, glowing)
+    ctx.strokeStyle = rgba(col, 0.6); ctx.lineWidth = Math.max(0.5, sz * 0.09);
+    ctx.beginPath(); ctx.moveTo(0, -sz * 0.64); ctx.lineTo(0, sz * 0.64); ctx.stroke();
+    ctx.shadowColor = rgba(col, 0.95 * tw); ctx.shadowBlur = 6;
+    ctx.fillStyle = rgba(col, 0.97); ctx.beginPath(); ctx.arc(0, 0, sz * 0.46, 0, 6.283); ctx.fill();
     ctx.restore();
   }
 
