@@ -19,8 +19,18 @@
   if (!DATA || !DATA.sectors) return;
   var META = DATA.meta, PHASES = DATA.phases, SECTORS = DATA.sectors;
   var BASKETS = DATA.baskets || [];
-  var ALL = SECTORS.concat(BASKETS);            // one chart space, shared by sectors + baskets
+  var NASDAQ = DATA.nasdaq || [];
+  var RUSSELL = DATA.russell || [];
+  var ALL = SECTORS.concat(BASKETS, NASDAQ, RUSSELL);  // one chart space, shared by all families
   var basketShown = {};                          // basket id -> selected/on the chart? (boot selects all)
+
+  /* ---- family registry: each non-sector family is "basket-like" ----------- */
+  var FAM = {
+    sectors: { list: function () { return SECTORS; }, kind: "sector" },
+    baskets:  { list: function () { return BASKETS; },  kind: "basket"  },
+    nasdaq:   { list: function () { return NASDAQ; },   kind: "nasdaq"  },
+    russell:  { list: function () { return RUSSELL; },  kind: "russell" }
+  };
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
   /* ---- i18n (EN default, 中文 when <html data-lang="zh">) ----------------- */
@@ -39,8 +49,11 @@
   // family = which independent SECTION is active: the 11 sector ETFs (clean default)
   // or the 34 thematic baskets (their own space). Only one family is ever on screen.
   var state = { mode: "osc", scale: "log", focus: null, family: "sectors" };
-  function activeList() { return state.family === "baskets" ? BASKETS : SECTORS; }
-  function isActive(s) { return (s.kind === "basket") === (state.family === "baskets"); }
+  function activeList() { return FAM[state.family] ? FAM[state.family].list() : SECTORS; }
+  function isActive(s) { return s.kind === (FAM[state.family] || FAM.sectors).kind; }
+  // helpers to distinguish "basket-like" families (all non-sectors) from the sectors family
+  function isBasketLike() { return state.family !== "sectors"; }
+  function isBasketRec(s) { return s.kind !== "sector"; }
 
   /* ---- mobile (China) view model ---------------------------------------- */
   // The desktop layout (full overlay + always-on detail underbar) is forced onto a
@@ -459,11 +472,11 @@
     // underneath), so an off-phase selected basket is never permanently stranded.
     function pinned(s) { return s.id === state.focus; }
     function keepShown(s) { return phaseOK(s) || pinned(s); }
-    // only the ACTIVE family is ever on the chart; sectors obey the phase facet, baskets
-    // ride on the chart only when selected — and an explicit pick overrides the facet.
+    // only the ACTIVE family is ever on the chart; sectors obey the phase facet, basket-like
+    // families ride on the chart only when selected — and an explicit pick overrides the facet.
     chartHidden = {};
     ALL.forEach(function (s) {
-      var sel = s.kind === "basket" ? !!basketShown[s.id] : true;
+      var sel = isBasketRec(s) ? !!basketShown[s.id] : true;
       chartHidden[s.id] = !(isActive(s) && sel && keepShown(s));
     });
     // mobile (China): cap the overlay to a legible few — the top RS leaders by default,
@@ -518,36 +531,55 @@
     var hint = document.getElementById("sc-chart-hint");
     if (!hint) return;
     var anyShown = ALL.some(function (s) { return isActive(s) && !chartHidden[s.id]; });
-    if (state.family === "baskets" && !anyShown) {
+    if (isBasketLike() && !anyShown) {
       hint.hidden = false;
-      // baskets are selected by default; if some are still selected the empty chart is the
-      // phase facet's doing (don't tell the user to tap a basket — that would deselect it).
-      var anySel = BASKETS.some(function (b) { return basketShown[b.id]; });
+      // basket-like families are selected by default; if some are still selected the empty
+      // chart is the phase facet's doing (don't tell the user to tap one — that deselects it).
+      var anySel = activeList().some(function (b) { return basketShown[b.id]; });
       hint.innerHTML = anySel
-        ? L("No baskets match this phase — pick another phase or hit <b>All phases</b>.",
-            "该阶段暂无篮子——换一个阶段或点<b>全部阶段</b>。")
-        : L("No baskets on the clock — tap a basket or hit <b>Select all visible</b> to chart them.",
-            "图中暂无篮子——点击任一篮子或点<b>全选可见</b>即可绘制。");
+        ? L("No items match this phase — pick another phase or hit <b>All phases</b>.",
+            "该阶段暂无条目——换一个阶段或点<b>全部阶段</b>。")
+        : L("Nothing on the clock — tap an item or hit <b>Select all visible</b> to chart them.",
+            "图中暂无条目——点击任一条目或点<b>全选可见</b>即可绘制。");
     } else { hint.hidden = true; }
   }
-  /* ---- section family (Sector ETFs vs Thematic Baskets) ------------------ */
+  /* ---- section family (Sector ETFs vs basket-like families) -------------- */
   function applyFamilyDisplay() {
     var chips = document.getElementById("sc-chips"), bask = document.getElementById("sc-baskets");
     if (chips) chips.style.display = state.family === "sectors" ? "" : "none";
-    // baskets rail = a compact, collapsed quick-picker above the chart; the 34
-    // scorecards below are the primary browse/selector, so the chart stays in view.
-    if (bask) { bask.style.display = state.family === "baskets" ? "" : "none"; bask.classList.remove("open"); }
+    // basket-like families: re-mount the drawer for the active family's items, then show it.
+    if (bask) {
+      if (isBasketLike()) { mountBaskets(); bask.style.display = ""; bask.classList.remove("open"); }
+      else { bask.style.display = "none"; bask.classList.remove("open"); }
+    }
     document.querySelectorAll("#sc-tabs .sc-tab").forEach(function (t) { var on = t.getAttribute("data-fam") === state.family; t.classList.toggle("on", on); t.setAttribute("aria-selected", on ? "true" : "false"); });
     var ttl = document.getElementById("sc-hero-title");
-    if (ttl) ttl.innerHTML = state.family === "baskets"
-      ? '<span class="l-en">Thematic basket rotation</span><span class="l-zh">主题篮子轮动</span>'
-      : '<span class="l-en">' + unitEC() + ' rotation overlay</span><span class="l-zh">' + unitZ() + '轮动叠加</span>';
+    if (ttl) {
+      if (state.family === "baskets") {
+        ttl.innerHTML = '<span class="l-en">Thematic basket rotation</span><span class="l-zh">主题篮子轮动</span>';
+      } else if (isBasketLike()) {
+        var fmeta = (DATA.meta.families || []).filter(function (f) { return f.key === state.family; })[0];
+        var lbl = fmeta ? fmeta.label : state.family;
+        var lbl_zh = fmeta ? (fmeta.label_zh || lbl) : lbl;
+        ttl.innerHTML = '<span class="l-en">' + lbl + ' rotation</span><span class="l-zh">' + lbl_zh + '轮动</span>';
+      } else {
+        ttl.innerHTML = '<span class="l-en">' + unitEC() + ' rotation overlay</span><span class="l-zh">' + unitZ() + '轮动叠加</span>';
+      }
+    }
   }
   function switchFamily(fam) {
     if (fam === state.family) return;
     state.family = fam; state.focus = null;
     mobileSel = null; mobileShowAll = false;   // each family opens on its own leaders default
     if (heroChart) heroChart.focus(null);
+    // for basket-like families, initialise basketShown for the new active list — default-select
+    // the top RS leaders so the chart opens on something sensible, not empty.
+    if (isBasketLike()) {
+      var ranked = activeList().slice().sort(function (a, b) { return (a.now.rs_rank || 999) - (b.now.rs_rank || 999); });
+      // clear stale ids from all basket-like arrays (they share the same map)
+      BASKETS.concat(NASDAQ, RUSSELL).forEach(function (b) { basketShown[b.id] = false; });
+      ranked.slice(0, 6).forEach(function (b) { basketShown[b.id] = true; });
+    }
     applyFamilyDisplay();
     mountCards();          // re-render the scorecards for the new family
     buildGroups();         // re-count phase chips + re-filter (calls applyVisibility)
@@ -560,8 +592,14 @@
       t.addEventListener("click", function () { switchFamily(t.getAttribute("data-fam")); });
     });
     var ns = document.getElementById("sc-tab-n-sec"), nb = document.getElementById("sc-tab-n-bsk");
+    var nn = document.getElementById("sc-tab-n-ndx"), nr = document.getElementById("sc-tab-n-rut");
     if (ns) ns.textContent = SECTORS.length;
     if (nb) nb.textContent = BASKETS.length;
+    // hide Nasdaq/Russell tabs when the arrays are absent (e.g. China page)
+    var tNdx = document.querySelector("#sc-tabs .sc-tab[data-fam='nasdaq']");
+    var tRut = document.querySelector("#sc-tabs .sc-tab[data-fam='russell']");
+    if (tNdx) { if (nn) nn.textContent = NASDAQ.length; tNdx.style.display = NASDAQ.length ? "" : "none"; }
+    if (tRut) { if (nr) nr.textContent = RUSSELL.length; tRut.style.display = RUSSELL.length ? "" : "none"; }
   }
 
   /* ---- sector toggle chips ----------------------------------------------- */
@@ -614,20 +652,27 @@
   function mountBaskets() {
     var host = document.getElementById("sc-baskets");
     if (!host) return;
-    if (!BASKETS.length) { host.style.display = "none"; return; }
+    var list = activeList();
+    if (!list.length) { host.style.display = "none"; return; }
+    // pick a label/icon for the active basket-like family
+    var fmeta = (DATA.meta.families || []).filter(function (f) { return f.key === state.family; })[0];
+    var famLabel = state.family === "baskets"
+      ? L("Thematic baskets", "主题篮子")
+      : (fmeta ? L(fmeta.label, fmeta.label_zh || fmeta.label) : state.family);
+    var famIcon = state.family === "baskets" ? "🧺" : state.family === "nasdaq" ? "💻" : "🔭";
     var byCat = {};
-    BASKETS.forEach(function (b) { (byCat[b.group] = byCat[b.group] || []).push(b); });
+    list.forEach(function (b) { (byCat[b.group] = byCat[b.group] || []).push(b); });
     var cats = Object.keys(byCat).sort();
     host.innerHTML =
       '<div class="sc-bask-head" id="sc-bask-head">' +
         '<button class="sc-bask-toggle" id="sc-bask-toggle" type="button" aria-expanded="false">' +
-          '<span class="sc-bask-ic" aria-hidden="true">🧺</span><span class="sc-bask-title">' + L("Thematic baskets", "主题篮子") + '</span>' +
-          '<span class="sc-bask-n">' + BASKETS.length + '</span>' +
+          '<span class="sc-bask-ic" aria-hidden="true">' + famIcon + '</span><span class="sc-bask-title">' + famLabel + '</span>' +
+          '<span class="sc-bask-n">' + list.length + '</span>' +
           '<span class="sc-bask-sel" id="sc-bask-sel"></span>' +
           '<span class="sc-bask-hint">' + L("tap to pick", "点选板块") + '</span>' +
           '<span class="sc-bask-caret" aria-hidden="true">▾</span>' +
         '</button>' +
-        '<button class="sc-bask-all" id="sc-bask-all" type="button" title="' + L("Chart every basket the filter is showing", "绘制当前筛选下的全部篮子") + '">' +
+        '<button class="sc-bask-all" id="sc-bask-all" type="button" title="' + L("Chart every item the filter is showing", "绘制当前筛选下的全部条目") + '">' +
           '<span class="sca-ic" aria-hidden="true">✦</span>' + L("Select all visible", "全选可见") + '</button>' +
       '</div>' +
       '<div class="sc-bask-panel" id="sc-bask-panel">' +
@@ -654,16 +699,17 @@
   // once for a same-status cross-comparison — without dragging the other phases back in.
   function selectAllBaskets() {
     var allOff = PHASE_FILTER.every(function (p) { return !phaseState[p.key]; });
-    BASKETS.forEach(function (b) { if (allOff || phaseState[b.now.phase]) basketShown[b.id] = true; });
+    activeList().forEach(function (b) { if (allOff || phaseState[b.now.phase]) basketShown[b.id] = true; });
     updateBasketSel();
     setFocus(null);
     syncGroups();
   }
   function updateBasketSel() {
-    // honest counter: "N on chart" = selected baskets actually drawn (a "Where they
-    // stand" facet can narrow the selected set; the focused basket always counts).
+    // honest counter: "N on chart" = selected items actually drawn (a "Where they
+    // stand" facet can narrow the selected set; the focused item always counts).
     var allOff = PHASE_FILTER.every(function (p) { return !phaseState[p.key]; });
-    var sel = BASKETS.filter(function (b) { return basketShown[b.id]; });
+    var list = activeList();
+    var sel = isBasketLike() ? list.filter(function (b) { return basketShown[b.id]; }) : [];
     var drawn = sel.filter(function (b) { return allOff || phaseState[b.now.phase] || b.id === state.focus; }).length;
     var el2 = document.getElementById("sc-bask-sel");
     if (el2) el2.textContent = !sel.length ? ""
@@ -672,10 +718,10 @@
     document.querySelectorAll(".sc-bchip").forEach(function (ch) {
       ch.classList.toggle("on", !!basketShown[ch.getAttribute("data-id")]);
     });
-    // keep the basket scorecards' "on chart" state in sync with the chips
+    // keep the scorecards' "on chart" state in sync with the chips for basket-like records
     document.querySelectorAll("#sc-cards .cyc-card").forEach(function (cd) {
       var id = cd.getAttribute("data-id"), it = byId[id];
-      if (it && it.kind === "basket") cd.classList.toggle("sel", !!basketShown[id]);
+      if (it && isBasketRec(it)) cd.classList.toggle("sel", !!basketShown[id]);
     });
   }
   function toggleBasket(id) {
@@ -730,13 +776,13 @@
       card.setAttribute("data-id", s.id);
       card.style.setProperty("--c", s.accent);           // ETF identity dot
       card.style.setProperty("--ph", phaseHue(nw.phase)); // card chrome reads by CYCLE PHASE
-      if (s.kind === "basket" && basketShown[s.id]) card.classList.add("sel");
+      if (isBasketRec(s) && basketShown[s.id]) card.classList.add("sel");
       var rs = nw.rs_63d;
       var rsTxt = rs == null ? "" : ('<span class="cc-tilt ' + (rs >= 0 ? "t-up" : "t-down") + '">RS #' + (nw.rs_rank || "—") + '</span>');
       var nextTxt = s.proj ? (L("Next ", "下次") + (s.proj.nextTurn === "peak" ? "▲ " : "▼ ") + fmtMon(s.proj.central)) : L("—", "—");
       var sigHTML = nw.signal === "BUY" ? '<span class="cc-sig buy">' + L("BUY", "买入") + '</span>'
         : nw.signal === "SELL" ? '<span class="cc-sig sell">' + L("SELL", "卖出") + '</span>' : "";
-      var pxLine = s.kind === "basket"
+      var pxLine = isBasketRec(s)
         ? ((s.etf_proxy ? s.etf_proxy + " · " : "") + grpName(s))
         : (s.ticker + " · " + grpName(s));
       card.innerHTML =
@@ -754,7 +800,7 @@
             '<span class="cc-tilt ' + tilt.cls + '">' + tilt.ar + ' ' + L(tilt.lab[0], tilt.lab[1]) + '</span>' +
             rsTxt + '</div>' +
         '</div>';
-      card.addEventListener("click", function () { s.kind === "basket" ? toggleBasket(s.id) : toggleFocus(s.id); });
+      card.addEventListener("click", function () { isBasketRec(s) ? toggleBasket(s.id) : toggleFocus(s.id); });
       grid.appendChild(card);
       var sp = card.querySelector(".cc-spark");
       sparks[s.id] = window.MMChart.create(sp, sparkSpec(s));
@@ -765,8 +811,8 @@
   function toggleFocus(id) { setFocus(state.focus === id ? null : id); }
   function setFocus(id) {
     clearFirstHint();                              // any focus change = the user has engaged
-    // focusing a basket implies selecting it onto the chart
-    if (id && byId[id] && byId[id].kind === "basket" && !basketShown[id]) {
+    // focusing a basket-like record implies selecting it onto the chart
+    if (id && byId[id] && isBasketRec(byId[id]) && !basketShown[id]) {
       basketShown[id] = true; updateBasketSel(); applyVisibility();
     }
     state.focus = id;
@@ -906,13 +952,14 @@
       return /sector_central/.test(location.pathname) ? null : ("sector_central_china.html#" + s.id);
     }
     if (s.kind === "basket") return "basket/" + s.id.replace(/^b-/, "") + ".html";
+    if (s.kind === "nasdaq" || s.kind === "russell") return null;   // no dedicated page for index sub-series
     if (US_SECTOR_PAGE[s.id]) return US_SECTOR_PAGE[s.id];
     return s.ticker ? ("stock.html#" + s.ticker) : null;
   }
   function sectorPageLabel(s) {
     if (META.region === "china") return L("Open in Sector Central", "在板块中枢查看");
     // both thematic baskets and US sector ETFs label by their own name → "Open <name> page".
-    if (s.kind === "basket" || US_SECTOR_PAGE[s.id]) return L("Open ", "查看 ") + nm(s) + L(" page", " 页面");
+    if (isBasketRec(s) || US_SECTOR_PAGE[s.id]) return L("Open ", "查看 ") + nm(s) + L(" page", " 页面");
     return L("Open ", "查看 ") + (s.ticker || "") + L(" page", " 页面");
   }
 
@@ -950,7 +997,7 @@
     var posLab = Math.round(nw.pos) + "/100 · " + zoneWord(nw.pos);
     var lenVal = s.proj && s.proj.period_yrs ? (s.proj.period_yrs.median + L(" yr", " 年")) : "—";
     var rsVal = nw.rs_63d == null ? "—" : ((nw.rs_63d >= 0 ? "+" : "") + nw.rs_63d + "% · #" + (nw.rs_rank || "—"));
-    var isB = s.kind === "basket", noun = isB ? "Basket" : "Sector", nounZh = isB ? "篮子" : "板块";
+    var isB = isBasketRec(s), noun = isB ? "Basket" : "Sector", nounZh = isB ? "篮子" : "板块";
     var read = nz(NARR[s.id], "now") || nw.read;
     var readHTML = read ? ('<div class="cyc-read"><div class="cyc-lbl">' + L("The read", "解读") + '</div><p>' + read + '</p></div>')
       : ('<div class="cyc-read"><div class="cyc-lbl">' + L("The read", "解读") + '</div><p class="sc-leg-pending">' +
@@ -968,7 +1015,7 @@
     return '' +
       '<div class="cyc-grp cyc-grp-full">' +
         '<div class="sc-fhead-top">' +
-          '<button class="cyc-back">' + (s.kind === "basket" ? L("← All baskets", "← 全部篮子") : L("← All " + unitE() + "s", "← 全部" + unitZ())) + '</button>' +
+          '<button class="cyc-back">' + (isBasketRec(s) ? L("← All baskets", "← 全部篮子") : L("← All " + unitE() + "s", "← 全部" + unitZ())) + '</button>' +
           openBtn +
         '</div>' +
         '<div class="cyc-fhead" style="--c:' + s.accent + '">' +
@@ -1049,7 +1096,7 @@
   function buildDefaultPanel() {
     var def = document.getElementById("sc-panel-default");
     if (!def) return;
-    var baskets = state.family === "baskets";
+    var baskets = isBasketLike();
     var noun = baskets ? L("baskets", "篮子") : L(unitE() + "s", unitZ());
     var buckets = { Peak: [], Expansion: [], Downturn: [], Recovery: [], Trough: [] };
     activeList().forEach(function (s) { (buckets[s.now.phase] || (buckets[s.now.phase] = [])).push(s); });
@@ -1079,8 +1126,8 @@
       '<div class="cyc-grp cyc-grp-full">' +
         '<div class="cyc-lbl">' + (baskets ? L("Thematic basket rotation · ", "主题篮子轮动 · ") : L(unitEC() + " rotation · ", unitZ() + "轮动 · ")) + META.asOf + '</div>' +
         '<p class="rg-headline">' + (baskets
-          ? L("The <b>strongest baskets</b> are charted to start — each an equal-weight index of its members on a 0–100 <b>cycle-position</b> clock. Tap a basket to add it, use <b>Where they stand</b> to narrow, or hit <b>Select all visible</b> for the whole field of " + BASKETS.length + ". Flip to <b>Price</b> for the real tape (rebased, log).",
-              "已先绘制<b>最强的几个篮子</b>——每个均为其成分股的等权指数，置于 0–100 <b>周期位置</b>时钟上。点击篮子可加入，用<b>所处阶段</b>缩小范围，或点<b>全选可见</b>查看全部 " + BASKETS.length + " 个。切换到<b>价格</b>可查看真实走势（再基准化、对数）。")
+          ? L("The <b>strongest items</b> are charted to start — each an equal-weight index of its members on a 0–100 <b>cycle-position</b> clock. Tap an item to add it, use <b>Where they stand</b> to narrow, or hit <b>Select all visible</b> for the whole field of " + activeList().length + ". Flip to <b>Price</b> for the real tape (rebased, log).",
+              "已先绘制<b>最强的几个条目</b>——每个均为其成分股的等权指数，置于 0–100 <b>周期位置</b>时钟上。点击条目可加入，用<b>所处阶段</b>缩小范围，或点<b>全选可见</b>查看全部 " + activeList().length + " 个。切换到<b>价格</b>可查看真实走势（再基准化、对数）。")
           : L("Every " + unitE() + " on a 0–100 <b>cycle-position</b> clock — high = stretched/late, low = washed-out. Flip to <b>Price</b> for the real tape (rebased on a log axis, so every line shares an axis). Tap a " + unitE() + " to see its turning points and the story behind each move.",
               "每个" + unitZ() + "同处 0–100 <b>周期位置</b>时钟——高=拉伸/晚期，低=超卖。切换到<b>价格</b>可查看真实走势（对数坐标下再基准化，使每条线共用同一坐标轴）。点按某" + unitZ() + "查看其拐点及每段走势背后的故事。")) + '</p>' +
       '</div>' +
@@ -1427,12 +1474,14 @@
 
   /* ---- boot -------------------------------------------------------------- */
   function boot() {
-    // Thematic baskets: chart only the STRONGEST few to start — 45 overlaid lines are an
+    // Basket-like families: chart only the STRONGEST few to start — overlaid lines are an
     // unreadable tangle. The whole field is one tap away via "Select all visible". (They're
     // off the chart for now anyway because Sector ETFs is the active family at load.)
     var bRanked = BASKETS.slice().sort(function (a, b) { return (a.now.rs_rank || 999) - (b.now.rs_rank || 999); });
     BASKETS.forEach(function (b) { basketShown[b.id] = false; chartHidden[b.id] = true; });
     bRanked.slice(0, 6).forEach(function (b) { basketShown[b.id] = true; });
+    // NASDAQ / RUSSELL: initialise hidden; when their tab is activated switchFamily seeds them
+    NASDAQ.concat(RUSSELL).forEach(function (b) { basketShown[b.id] = false; chartHidden[b.id] = true; });
     mountChips(); mountBaskets();
     wireFamily(); applyFamilyDisplay();                            // sectors section active; baskets hidden
     mountHero(); wireControls(); wireAdvanced(); syncHeroControls(); buildGroups(); buildDefaultPanel(); mountCards(); initSheet();
@@ -1443,7 +1492,8 @@
     });
     var h = (location.hash || "").replace("#", "");
     if (h && byId[h]) setTimeout(function () {
-      if (byId[h].kind === "basket") switchFamily("baskets");
+      var hs = byId[h];
+      if (isBasketRec(hs)) switchFamily(FAM[hs.kind] ? hs.kind : "baskets");
       setFocus(h);
     }, 350);
     else { guideEntry(); showFirstHint(); }   // novice entry: highlight one line + a tap hint
@@ -1453,7 +1503,8 @@
   // if the id is unknown so the caller can fall back to a normal link.
   window.SectorCyclesFocus = function (id) {
     if (!id || !byId[id]) return false;
-    switchFamily(byId[id].kind === "basket" ? "baskets" : "sectors");
+    var s = byId[id];
+    switchFamily(isBasketRec(s) ? (FAM[s.kind] ? s.kind : "baskets") : "sectors");
     setFocus(id);
     var ch = document.getElementById("sc-chart");
     if (ch && ch.scrollIntoView) ch.scrollIntoView({ behavior: "smooth", block: "center" });

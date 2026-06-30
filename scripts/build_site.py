@@ -3098,6 +3098,19 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("china subsector confluence render failed: %s", e)
 
+    # Subsector Confluence · Nasdaq-100 + Russell-2000 — same engine WITHIN each US index
+    # (benchmarked to QQQ / IWM so RS reads within-index leadership), with curated amalgamation
+    # complexes as the rollup. These surface as extra tabs on the SHARED subsectors.html (the JS
+    # fetches their JSON); here we only render their per-group detail pages from the committed
+    # JSON. Heavy compute is nightly (scripts.build_subsector_confluence --nasdaq / --russell).
+    try:
+        from scripts.build_subsector_confluence import build_nasdaq, build_russell
+        n_ndx = build_nasdaq(site, generated_utc=generated)
+        n_rut = build_russell(site, generated_utc=generated)
+        log.info("wrote %d Nasdaq-100 + %d Russell-2000 subsector confluence detail pages", n_ndx, n_rut)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("nasdaq/russell subsector confluence render failed: %s", e)
+
     # --- history page: the longer-window charts + lifespan base rates ----------
     from engine.playbook import QUAD_SHORT, next_quads_line, transition_stats
     trans = transition_stats(hist["quad"])

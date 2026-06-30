@@ -442,6 +442,73 @@ def _basket_accent(i: int, n: int) -> str:
     return f"hsl({hue} 64% 62%)"
 
 
+# Index-amalgamation families (Nasdaq-100 / Russell-2000): the curated complexes from the subsector
+# desks (data/baskets_<ns>/membership.json["amalgamations"]) on the SAME cycle clock, so the user
+# can watch how leadership rotates among an index's complexes and project each one's next turn.
+_AMALGAM_FAMILIES = {
+    "nasdaq": {"label": "Nasdaq-100", "label_zh": "纳斯达克100", "benchmark": "QQQ"},
+    "russell": {"label": "Russell-2000", "label_zh": "罗素2000", "benchmark": "IWM"},
+}
+
+
+def _bench_close(bench: str, closes: pd.DataFrame) -> pd.Series | None:
+    """RS benchmark for an index family: the index ETF close (QQQ / IWM), from the close panel
+    if present, else the deep member store."""
+    if bench in closes:
+        s = closes[bench].dropna()
+        if not s.empty:
+            return s
+    try:
+        df = basket_index._load_member_ohlcv(bench)
+        return df["close"].dropna() if df is not None and "close" in df else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _load_amalgams(ns: str) -> dict:
+    f = config.data_dir() / f"baskets_{ns}" / "membership.json"
+    if not f.exists():
+        return {}
+    try:
+        return (json.loads(f.read_text(encoding="utf-8")) or {}).get("amalgamations", {})
+    except Exception as e:  # noqa: BLE001
+        log.warning("sector_cycles: %s amalgamations unreadable: %s", ns, e)
+        return {}
+
+
+def build_amalgam_family(ns: str, win_start: pd.Timestamp, last_ts: pd.Timestamp,
+                         closes: pd.DataFrame) -> list[dict]:
+    """Cycle records for one index's amalgamation complexes (kind=ns, id=`<ns>-<key>`), RS'd to
+    the index ETF so leadership reads WITHIN the index."""
+    fam = _AMALGAM_FAMILIES[ns]
+    amalgams = _load_amalgams(ns)
+    bench = _bench_close(fam["benchmark"], closes)
+    keys = list(amalgams)
+    out: list[dict] = []
+    for i, key in enumerate(keys):
+        spec = amalgams[key]
+        bmeta = {"members": spec.get("members") or [], "name": spec.get("name") or key,
+                 "name_zh": spec.get("name_zh"), "category": fam["label"],
+                 "etf_proxy": "", "theme": None}
+        try:
+            rec = build_basket(key, bmeta, win_start, last_ts, bench, _basket_accent(i, len(keys)))
+        except Exception as e:  # noqa: BLE001
+            log.exception("sector_cycles: %s amalgam %s failed: %s", ns, key, e)
+            rec = None
+        if not rec:
+            continue
+        rec["id"] = f"{ns}-{key}"               # distinct from thematic 'b-<id>' namespace
+        rec["kind"] = ns                         # the JS family key
+        rec["group"] = fam["label"]
+        rec["group_zh"] = fam["label_zh"]
+        out.append(rec)
+    ranked = sorted([b for b in out if b["now"].get("rs_63d") is not None],
+                    key=lambda b: b["now"]["rs_63d"], reverse=True)
+    for n, b in enumerate(ranked, 1):
+        b["now"]["rs_rank"] = n
+    return out
+
+
 def compute(asof: str | None = None) -> dict | None:
     """Top-level: build every sector's cycle record + page meta. Returns None if the
     close panel can't be loaded (build script then no-ops)."""
@@ -496,6 +563,17 @@ def compute(asof: str | None = None) -> dict | None:
         b["now"]["rs_rank"] = n
     baskets.sort(key=lambda b: (b.get("group") or "", b["name"]))   # grouped for the chip rail
 
+    # --- index amalgamation families (Nasdaq-100 / Russell-2000 complexes) ---
+    amalgam_families = {}
+    for ns in _AMALGAM_FAMILIES:
+        try:
+            fam_recs = build_amalgam_family(ns, win_start, last_ts, closes)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.exception("sector_cycles: amalgam family %s failed: %s", ns, e)
+            fam_recs = []
+        if fam_recs:
+            amalgam_families[ns] = fam_recs
+
     x_lo = round(_yf(win_start), 3)
     x_hi = round(_yf(last_ts) + _TODAY_PAD, 3)
     x_lo_default = round(_yf(last_ts - pd.DateOffset(years=DEFAULT_WINDOW_YEARS)), 3)
@@ -511,8 +589,14 @@ def compute(asof: str | None = None) -> dict | None:
             "benchmark": config.load()["engine"]["rs_ranking"]["benchmark"],
             "n_sectors": len(sectors),
             "n_baskets": len(baskets),
+            "families": [{"key": ns, "label": _AMALGAM_FAMILIES[ns]["label"],
+                          "label_zh": _AMALGAM_FAMILIES[ns]["label_zh"],
+                          "benchmark": _AMALGAM_FAMILIES[ns]["benchmark"],
+                          "n": len(amalgam_families[ns])}
+                         for ns in _AMALGAM_FAMILIES if ns in amalgam_families],
         },
         "phases": PHASES,
         "sectors": sectors,
         "baskets": baskets,
+        **amalgam_families,
     }

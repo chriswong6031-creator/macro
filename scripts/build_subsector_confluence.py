@@ -262,6 +262,111 @@ def build_china(site: Path, generated_utc: str | None = None) -> int:
     return render_china_pages(site, _env(), generated_utc)
 
 
+# ------------------------------------- US index desks (Nasdaq-100 / Russell-2000) ----
+# Generic namespaced desk: same data/render split as the US + China desks, parameterised by a
+# namespace so Nasdaq and Russell share one code path. The board UI is the SHARED subsectors.html
+# (extra tabs fetch these JSONs client-side); here we only compute the JSON, emit the per-group
+# chart/signal files into namespaced dirs, and render the per-group DETAIL pages.
+
+INDEX_DESKS = {
+    "nasdaq": {"compute": sc.compute_nasdaq_confluence, "label": "Nasdaq-100",
+               "label_zh": "纳斯达克100子行业", "kind_en": "Nasdaq-100 sub-industry",
+               "kind_zh": "纳斯达克100子行业"},
+    "russell": {"compute": sc.compute_russell_confluence, "label": "Russell-2000",
+                "label_zh": "罗素2000子行业", "kind_en": "Russell-2000 sub-industry",
+                "kind_zh": "罗素2000子行业"},
+}
+
+
+def _index_dirs(ns: str) -> dict:
+    return {"ohlc": f"subsectorohlc_{ns}", "sig": f"subsector_signals_{ns}",
+            "detail": f"subsector_{ns}", "board": f"marketdata/subsector_confluence_{ns}.json"}
+
+
+def main_index(ns: str) -> dict:
+    """Nightly (cl_baskets band): compute the index desk + write its namespaced JSON / chart /
+    signal files + render its detail pages. Mirrors main_china() for the Nasdaq/Russell desks."""
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    d = _index_dirs(ns)
+    out = INDEX_DESKS[ns]["compute"]()
+    for g in out.get("subsectors", []) + out.get("sectors", []):
+        _emit_group_files(site, g, ohlc_dir=d["ohlc"], sig_dir=d["sig"])
+    out["generated_utc"] = generated
+    _write_json(site / d["board"], out)
+    n = render_index_pages(ns, site, _env(), generated)
+    log.info("subsector_confluence[%s]: %d subsectors (%d entry-now), %d amalgamations, %d pages — as_of %s",
+             ns.upper(), len(out.get("subsectors", [])), len(out.get("entry_now", [])),
+             len(out.get("sectors", [])), n, out.get("as_of"))
+    return {"subsectors": len(out.get("subsectors", [])), "entry_now": out.get("entry_now", []),
+            "amalgamations": len(out.get("sectors", [])), "pages": n, "as_of": out.get("as_of")}
+
+
+def render_index_pages(ns: str, site: Path, env=None, generated_utc: str | None = None) -> int:
+    """Render one detail page per group (subsector + amalgamation) FROM the committed namespaced
+    JSON. Render-lane safe (no recompute). Reuses the bilingual detail template. The board page
+    itself is the shared subsectors.html (rendered by render_pages)."""
+    env = env or _env()
+    generated_utc = generated_utc or datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    d = _index_dirs(ns)
+    meta = INDEX_DESKS[ns]
+    try:
+        out = json.loads((site / d["board"]).read_text())
+    except Exception as e:  # noqa: BLE001
+        log.error("%s confluence board JSON missing (%s) — run main_index('%s') first", ns, e, ns)
+        return 0
+    out_dir = site / d["detail"]
+    out_dir.mkdir(parents=True, exist_ok=True)
+    tmpl = env.get_template("subsector_detail.html.j2")
+    n = 0
+    for g in out.get("subsectors", []) + out.get("sectors", []):
+        key = _detail_key(g)
+        detail = {
+            "group": g, "kind": g.get("kind", "subsector"),
+            "kind_label_en": meta["kind_en"], "kind_label_zh": meta["kind_zh"],
+            "as_of": g.get("as_of"), "ohlc_dir": d["ohlc"], "sig_dir": d["sig"],
+            "back": "../subsectors.html", "stock_base": "../stock.html#",
+            "generated_utc": generated_utc,
+        }
+        html = tmpl.render(detail_json=json.dumps(_clean(detail), separators=(",", ":"), allow_nan=False),
+                           group_name=g.get("label", key), chart_key=g.get("chart_key"),
+                           has_signals=bool(g.get("has_signals")), back_href="../subsectors.html",
+                           generated_utc=generated_utc)
+        (out_dir / f"{key}.html").write_text(html)
+        n += 1
+    log.info("subsector_confluence[%s]: rendered %d detail pages", ns.upper(), n)
+    return n
+
+
+def build_index(ns: str, site: Path, generated_utc: str | None = None) -> int:
+    """build_site entrypoint (render lane) for an index desk."""
+    return render_index_pages(ns, site, _env(), generated_utc)
+
+
+def build_nasdaq(site: Path, generated_utc: str | None = None) -> int:
+    return build_index("nasdaq", site, generated_utc)
+
+
+def build_russell(site: Path, generated_utc: str | None = None) -> int:
+    return build_index("russell", site, generated_utc)
+
+
+def main_nasdaq() -> dict:
+    return main_index("nasdaq")
+
+
+def main_russell() -> dict:
+    return main_index("russell")
+
+
 if __name__ == "__main__":
     import sys
-    main_china() if "--china" in sys.argv else main()
+    if "--china" in sys.argv:
+        main_china()
+    elif "--nasdaq" in sys.argv:
+        main_index("nasdaq")
+    elif "--russell" in sys.argv:
+        main_index("russell")
+    else:
+        main()

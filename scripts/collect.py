@@ -413,17 +413,43 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("basket extras step failed: %s", e)
 
+    # Nasdaq-100 / Russell-2000 subsector universes: refresh the Finviz industry classification
+    # (the sub-industry → subsector partition), then re-author the curated memberships. The desk +
+    # cycle families render off data/baskets_<ns>/membership.json. Additive, never fatal.
+    for idx in ("ndx", "rut"):
+        try:
+            from scripts.fetch_finviz_screener import fetch as _fv_fetch, INDEX_FILTER, OUT_DIR
+            import json as _json
+            flt = INDEX_FILTER[idx]
+            log.info("=== refreshing Finviz %s classification ===", flt)
+            payload = _fv_fetch(flt)
+            out = config.data_dir() / OUT_DIR / f"{flt}.json"
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(_json.dumps(payload, indent=0, separators=(",", ":")))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("finviz %s classification step failed: %s", idx, e)
+
     # Baskets-only DEEP OHLCV store (data/baskets/ohlcv/<T>.parquet): full open/high/low/
     # close/VOLUME per member, the candle the consolidated-index engines (basket_index ->
     # basket_mtf + basket_tape) render whale accumulation / Chaikin money-flow / vol-hole on.
-    # The close-only extras store above can't feed volume. Separate per-ticker store, merged
-    # onto prior, additive, never fatal. See scripts/fetch_basket_ohlcv.py.
+    # The close-only extras store above can't feed volume. Also pulls the Nasdaq/Russell subsector
+    # universes (idx_rut covers the small-caps the breadth cache only holds shallowly). Separate
+    # per-ticker store, merged onto prior, additive, never fatal. See scripts/fetch_basket_ohlcv.py.
     try:
         from scripts.fetch_basket_ohlcv import main as fetch_basket_ohlcv
-        log.info("=== refreshing thematic-basket OHLCV (volume) ===")
-        fetch_basket_ohlcv([])
+        log.info("=== refreshing thematic-basket + index-subsector OHLCV (volume) ===")
+        fetch_basket_ohlcv(["--finviz", "idx_ndx,idx_rut"])
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("basket OHLCV step failed: %s", e)
+
+    # Re-author the Nasdaq/Russell subsector + amalgamation memberships from the fresh Finviz
+    # classification + the refreshed OHLCV (the correlation-validated bulk-outs need prices).
+    try:
+        from scripts.build_subsector_membership import main as build_subsector_membership
+        log.info("=== rebuilding Nasdaq/Russell subsector memberships ===")
+        build_subsector_membership([])
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("subsector membership step failed: %s", e)
 
     # Polygon options-OI accrual: snapshot the GEX universe's chains and store the RAW
     # per-strike open interest the Cboe path throws away (the one thing that can't be

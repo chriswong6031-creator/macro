@@ -1,10 +1,23 @@
 /* Subsector Confluence desk — renders the ENTRY-NOW board + double-gated funnel from the
-   precomputed engine JSON (marketdata/subsector_confluence.json + basket_confluence.json).
+   precomputed engine JSON. Four datasets share one render path:
+     subsectors — S&P-500 Finviz sub-industries  (marketdata/subsector_confluence.json)
+     baskets    — curated thematic baskets        (marketdata/basket_confluence.json)
+     nasdaq     — Nasdaq-100 sub-industries        (marketdata/subsector_confluence_nasdaq.json)
+     russell    — Russell-2000 sub-industries      (marketdata/subsector_confluence_russell.json)
    Vanilla JS, no deps. Bilingual via .l-en/.l-zh spans (theme.js toggles by html[data-lang]). */
 (function () {
   'use strict';
   var L = function (en, zh) { return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh == null ? en : zh) + '</span>'; };
-  var DATA = { subsectors: null, baskets: null };
+
+  // dataset registry — url, detail-page dir + key prefix, the group array key, and whether the
+  // dataset carries an amalgamation/sector rollup strip + what to call it.
+  var DS = {
+    subsectors: { url: 'marketdata/subsector_confluence.json', dir: 'subsector/', prefix: '', groupsKey: 'subsectors', noun: ['subsectors', '子行业'], rollup: ['Sector rollup', '板块汇总'], rollupDesc: ['Each Finviz sector as one equal-weight basket — the backdrop the subsectors live inside.', '每个 Finviz 板块作为一个等权篮子——子行业所处的大背景。'] },
+    baskets: { url: 'marketdata/basket_confluence.json', dir: 'subsector/', prefix: 'b-', groupsKey: 'baskets', noun: ['baskets', '篮子'], rollup: null },
+    nasdaq: { url: 'marketdata/subsector_confluence_nasdaq.json', dir: 'subsector_nasdaq/', prefix: '', groupsKey: 'subsectors', noun: ['subsectors', '子行业'], rollup: ['Amalgamated complexes', '汇聚综合体'], rollupDesc: ['Higher-level complexes (semis, software, internet, the ex-tech bucket) — watch whether leadership rotates among them or bleeds out of tech. RS is vs QQQ (within-index).', '高层级综合体（半导体、软件、互联网、非科技桶）——观察领导地位是在它们之间轮动还是流出科技。相对强弱基准为 QQQ（指数内）。'] },
+    russell: { url: 'marketdata/subsector_confluence_russell.json', dir: 'subsector_russell/', prefix: '', groupsKey: 'subsectors', noun: ['subsectors', '子行业'], rollup: ['Sector amalgamations', '板块汇聚'], rollupDesc: ['The 11 Finviz sectors as equal-weight baskets — the natural small-cap rotation buckets. RS is vs IWM (within-index).', '11 个 Finviz 板块作为等权篮子——小盘股自然的轮动桶。相对强弱基准为 IWM（指数内）。'] }
+  };
+  var DATA = {};
   var TAB = 'subsectors';
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -18,10 +31,12 @@
     if (e.ticks != null) return e.ticks === 0 ? L('crossed this bar', '本根交叉') : L(e.ticks + ' tick' + (e.ticks > 1 ? 's' : '') + ' ago', e.ticks + ' 格前'); // 1 tick = 3 days on 3D
     return '';
   }
-  // `key` is the RAW group slug (g.key / row.subsector_key); detailHref applies the basket 'b-'
-  // namespace ONCE. Never pass g.chart_key here — it is already the namespaced detail key.
-  function detailHref(ds, key) { return 'subsector/' + (ds === 'baskets' ? 'b-' + key : key) + '.html'; }
+  // `key` is the RAW group slug (g.key / row.subsector_key); detailHref applies the dataset's
+  // detail dir + key prefix (the curated baskets carry the 'b-' namespace). Never pass
+  // g.chart_key here — it is already the namespaced detail key.
+  function detailHref(ds, key) { var d = DS[ds]; return d.dir + d.prefix + key + '.html'; }
   function stockHref(tk) { return 'stock.html#' + encodeURIComponent(tk); }
+  function groupsOf(ds) { return (DATA[ds] || {})[DS[ds].groupsKey] || []; }
 
   /* ----- sections ----- */
   function cardHTML(g, ds) {
@@ -35,14 +50,14 @@
   }
 
   function entryNowSection(payload, ds) {
-    var keyset = {}; (payload.entry_now || []).forEach(function (k) { keyset[k] = 1; });
-    var groups = (payload[ds === 'baskets' ? 'baskets' : 'subsectors'] || []);
+    var noun = DS[ds].noun;
+    var groups = groupsOf(ds);
     var entry = groups.filter(function (g) { return g['class'] === 'entry_now'; });
     var forming = groups.filter(function (g) { return g['class'] === 'forming'; });
-    var h = '<div class="sec"><h2>🟢 ' + L('Entry-now ' + (ds === 'baskets' ? 'baskets' : 'subsectors'), '现可入场' + (ds === 'baskets' ? '篮子' : '子行业')) + ' <span class="n" style="color:var(--muted);font-weight:500">' + entry.length + '</span></h2>'
+    var h = '<div class="sec"><h2>🟢 ' + L('Entry-now ' + noun[0], '现可入场' + noun[1]) + ' <span class="n" style="color:var(--muted);font-weight:500">' + entry.length + '</span></h2>'
       + '<div class="desc">' + L('Fresh T1/T2 confluence cross (just fired) or T3 (3D StochRSI crossed &amp; 2D MACD about to cross). The headline — these are buy-ready now; the detail page shows the index chart &amp; which members are firing.',
         'T1/T2 汇聚刚触发，或 T3（3D StochRSI 已穿且 2D MACD 即将上穿）。头条——当前可买；详情页含指数图与触发成分。') + '</div>';
-    h += entry.length ? '<div class="cards">' + entry.map(function (g) { return cardHTML(g, ds); }).join('') + '</div>' : '<div class="empty">' + L('No subsector is firing a fresh entry tier right now.', '当前没有子行业触发新的入场层级。') + '</div>';
+    h += entry.length ? '<div class="cards">' + entry.map(function (g) { return cardHTML(g, ds); }).join('') + '</div>' : '<div class="empty">' + L('No ' + noun[0] + ' is firing a fresh entry tier right now.', '当前没有' + noun[1] + '触发新的入场层级。') + '</div>';
     if (forming.length) h += '<h2 style="margin-top:18px">🔵 ' + L('Forming (T4 — earliest)', '构筑中（T4 — 最早）') + ' <span class="n" style="color:var(--muted);font-weight:500">' + forming.length + '</span></h2><div class="cards">' + forming.map(function (g) { return cardHTML(g, ds); }).join('') + '</div>';
     return h + '</div>';
   }
@@ -78,7 +93,8 @@
   }
 
   function allGroupsSection(payload, ds) {
-    var groups = (payload[ds === 'baskets' ? 'baskets' : 'subsectors'] || []).slice();
+    var noun = DS[ds].noun;
+    var groups = groupsOf(ds).slice();
     var rows = groups.map(function (g) {
       var e = g.entry || {}, r = g.regime || {};
       return '<tr><td><a href="' + (g.chart_key ? detailHref(ds, g.key) : '#') + '">' + esc(g.label) + '</a></td>'
@@ -89,28 +105,33 @@
         + '<td>' + signed(r.rs_60d) + '</td>'
         + '<td class="num">' + (g.n_priced || g.n_members) + '</td></tr>';
     }).join('');
-    return '<div class="sec"><h2>📋 ' + L('All gateable ' + (ds === 'baskets' ? 'baskets' : 'subsectors'), '全部可评' + (ds === 'baskets' ? '篮子' : '子行业')) + ' <span class="n" style="color:var(--muted);font-weight:500">' + groups.length + '</span></h2>'
+    return '<div class="sec"><h2>📋 ' + L('All gateable ' + noun[0], '全部可评' + noun[1]) + ' <span class="n" style="color:var(--muted);font-weight:500">' + groups.length + '</span></h2>'
       + '<table class="tbl"><thead><tr><th>' + L('Subsector', '子行业') + '</th><th>' + L('Sector', '板块') + '</th><th>' + L('Entry', '入场') + '</th><th>' + L('Regime', '状态') + '</th><th>' + L('Freshness', '新鲜度') + '</th><th>RS60</th><th>' + L('N', '数') + '</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
-  function sectorStrip(payload) {
+  function sectorStrip(payload, ds) {
+    var meta = DS[ds].rollup;
+    if (!meta) return '';
     var secs = payload.sectors || [];
     if (!secs.length) return '';
     var cells = secs.map(function (g) {
       var r = g.regime || {};
-      return '<div class="s"><div class="snm">' + esc(g.label) + '</div><div style="margin-top:5px">' + regimePill(r) + (g.entry && g.entry.tier ? ' ' + tierBadge(g.entry.tier) : '') + '</div></div>';
+      var href = g.chart_key ? detailHref(ds, g.key) : null;
+      var inner = '<div class="snm">' + esc(g.label) + '</div><div style="margin-top:5px">' + regimePill(r) + (g.entry && g.entry.tier ? ' ' + tierBadge(g.entry.tier) : '') + '</div>'
+        + (r.rs_60d != null ? '<div style="color:var(--muted);font-size:10.5px;margin-top:4px">RS60 ' + signed(r.rs_60d) + '</div>' : '');
+      return href ? '<a class="s" href="' + href + '">' + inner + '</a>' : '<div class="s">' + inner + '</div>';
     }).join('');
-    return '<div class="sec"><h2>🗺️ ' + L('Sector rollup', '板块汇总') + '</h2><div class="desc">' + L('Each Finviz sector as one equal-weight basket — the backdrop the subsectors live inside.', '每个 Finviz 板块作为一个等权篮子——子行业所处的大背景。') + '</div><div class="secstrip">' + cells + '</div></div>';
+    return '<div class="sec"><h2>🗺️ ' + L(meta[0], meta[1]) + '</h2><div class="desc">' + L(DS[ds].rollupDesc[0], DS[ds].rollupDesc[1]) + '</div><div class="secstrip">' + cells + '</div></div>';
   }
 
   function render() {
     var app = document.getElementById('sc-app');
     var ds = TAB;
-    var payload = DATA[ds === 'baskets' ? 'baskets' : 'subsectors'];
+    var payload = DATA[ds];
     if (!payload || !payload.ok) { app.innerHTML = '<div class="empty">' + L('No data yet — run the nightly build.', '暂无数据——请运行夜间构建。') + '</div>'; return; }
     var cov = payload.coverage || {};
     document.getElementById('sc-asof').innerHTML = L('as of ' + (payload.as_of || '—'), '截至 ' + (payload.as_of || '—')) + (cov.n_gateable != null ? ' · ' + cov.n_gateable + '/' + cov.n_subsectors + ' ' + L('gateable', '可评') : '');
-    var h = entryNowSection(payload, ds) + funnelSection(payload, ds) + (ds === 'subsectors' ? sectorStrip(payload) : '') + allGroupsSection(payload, ds);
+    var h = entryNowSection(payload, ds) + funnelSection(payload, ds) + sectorStrip(payload, ds) + allGroupsSection(payload, ds);
     app.innerHTML = h;
   }
 
@@ -124,15 +145,15 @@
     Array.prototype.forEach.call(document.querySelectorAll('.sc-tab'), function (el) {
       el.addEventListener('click', function () { setTab(el.getAttribute('data-tab')); });
     });
-    Promise.all([
-      fetch('marketdata/subsector_confluence.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
-      fetch('marketdata/basket_confluence.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })
-    ]).then(function (res) {
-      DATA.subsectors = res[0]; DATA.baskets = res[1];
-      var s = res[0] && res[0].subsectors ? res[0].subsectors.length : 0;
-      var b = res[1] && res[1].baskets ? res[1].baskets.length : 0;
-      var ns = document.getElementById('tabn-sub'); if (ns) ns.textContent = s;
-      var nb = document.getElementById('tabn-bas'); if (nb) nb.textContent = b;
+    var keys = Object.keys(DS);
+    Promise.all(keys.map(function (k) {
+      return fetch(DS[k].url, { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    })).then(function (res) {
+      keys.forEach(function (k, i) { DATA[k] = res[i]; });
+      var cnt = function (k) { var p = DATA[k]; return p ? (p[DS[k].groupsKey] || []).length : 0; };
+      var set = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
+      set('tabn-sub', cnt('subsectors')); set('tabn-bas', cnt('baskets'));
+      set('tabn-ndx', cnt('nasdaq')); set('tabn-rut', cnt('russell'));
       render();
     });
   }

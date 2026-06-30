@@ -21,7 +21,13 @@ pull is MERGED onto its prior parquet (prior backfills any row the pull missed),
 flaky day can never drop a member or break the daily build. Wired into scripts/collect.py
 after fetch_basket_extras.
 
-Usage: python -m scripts.fetch_basket_ohlcv [--limit N]
+Usage:
+    python -m scripts.fetch_basket_ohlcv [--limit N]               # the basket membership
+    python -m scripts.fetch_basket_ohlcv --tickers NVDA,ANET,...   # an explicit list
+    python -m scripts.fetch_basket_ohlcv --finviz idx_ndx,idx_rut  # every name in a
+                                                                   # data/finviz_screener/<flt>.json
+The explicit/finviz modes back the NDX/Russell subsector desks (the deep store
+engine/basket_index prefers also serves their EW subsector indices).
 """
 from __future__ import annotations
 
@@ -70,6 +76,22 @@ def _membership_tickers() -> list[str]:
     return sorted(out)
 
 
+def _finviz_tickers(filters: list[str]) -> list[str]:
+    """Every ticker in the given data/finviz_screener/<flt>.json classification files."""
+    out: set[str] = set()
+    base = config.data_dir() / "finviz_screener"
+    for flt in filters:
+        p = base / f"{flt}.json"
+        if not p.exists():
+            log.warning("finviz classification missing: %s", p)
+            continue
+        for r in (json.loads(p.read_text()).get("rows") or []):
+            t = r.get("ticker")
+            if t:
+                out.add(t)
+    return sorted(out)
+
+
 def _download_ohlcv(tickers: list[str]) -> dict[str, pd.DataFrame]:
     """Per-ticker OHLCV frames, deep from START. Reuses the breadth yfinance pattern
     (crumb/cookie auth that works headless), batched with retry+backoff. group_by=ticker
@@ -110,19 +132,24 @@ def _download_ohlcv(tickers: list[str]) -> dict[str, pd.DataFrame]:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=0, help="cap tickers (debug)")
+    ap.add_argument("--tickers", default="", help="explicit comma-separated ticker list")
+    ap.add_argument("--finviz", default="", help="comma-separated finviz_screener filters "
+                                                 "(e.g. idx_ndx,idx_rut) to pull every member of")
     args = ap.parse_args(argv)
 
     odir = config.data_dir() / "baskets" / "ohlcv"
     odir.mkdir(parents=True, exist_ok=True)
 
-    members = _membership_tickers()
+    explicit = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+    fv = _finviz_tickers([f.strip() for f in args.finviz.split(",") if f.strip()]) if args.finviz else []
+    members = sorted(set(explicit) | set(fv)) if (explicit or fv) else _membership_tickers()
     if args.limit:
         members = members[:args.limit]
     if not members:
-        log.info("no basket members to fetch (need data/baskets/membership.json)")
+        log.info("no members to fetch (need data/baskets/membership.json or --tickers/--finviz)")
         return 0
 
-    log.info("fetching deep OHLCV for %d basket members", len(members))
+    log.info("fetching deep OHLCV for %d members", len(members))
     fetch_syms = [ALIASES.get(t, t) for t in members]
     rev = {ALIASES.get(t, t): t for t in members}        # yahoo symbol -> membership ticker
     try:

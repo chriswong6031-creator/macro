@@ -1,0 +1,905 @@
+{
+ "version": 1,
+ "region": "nasdaq",
+ "index": "Nasdaq-100",
+ "benchmark": "QQQ",
+ "benchmark_label": "Nasdaq-100 (QQQ)",
+ "as_of": "2026-06-30",
+ "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
+ "subsectors": {
+  "semiconductors": {
+   "name": "Semiconductors",
+   "sector": "Semis & Silicon",
+   "members": [
+    {
+     "ticker": "NVDA",
+     "name": "NVIDIA Corp"
+    },
+    {
+     "ticker": "AVGO",
+     "name": "Broadcom Inc"
+    },
+    {
+     "ticker": "MU",
+     "name": "Micron Technology Inc"
+    },
+    {
+     "ticker": "AMD",
+     "name": "Advanced Micro Devices Inc"
+    },
+    {
+     "ticker": "INTC",
+     "name": "Intel Corp"
+    },
+    {
+     "ticker": "ARM",
+     "name": "Arm Holdings Plc ADR"
+    },
+    {
+     "ticker": "TXN",
+     "name": "Texas Instruments Inc"
+    },
+    {
+     "ticker": "MRVL",
+     "name": "Marvell Technology Inc"
+    },
+    {
+     "ticker": "QCOM",
+     "name": "Qualcomm Inc"
+    },
+    {
+     "ticker": "ADI",
+     "name": "Analog Devices Inc"
+    },
+    {
+     "ticker": "ALAB",
+     "name": "Astera Labs Inc"
+    },
+    {
+     "ticker": "NXPI",
+     "name": "NXP Semiconductors NV"
+    },
+    {
+     "ticker": "MPWR",
+     "name": "Monolithic Power System Inc"
+    },
+    {
+     "ticker": "MCHP",
+     "name": "Microchip Technology Inc"
+    }
+   ]
+  },
+  "software-application": {
+   "name": "Software - Application",
+   "sector": "Software & Cloud",
+   "members": [
+    {
+     "ticker": "SHOP",
+     "name": "Shopify Inc"
+    },
+    {
+     "ticker": "CDNS",
+     "name": "Cadence Design Systems Inc"
+    },
+    {
+     "ticker": "ADP",
+     "name": "Automatic Data Processing Inc"
+    },
+    {
+     "ticker": "DDOG",
+     "name": "Datadog Inc"
+    },
+    {
+     "ticker": "ADBE",
+     "name": "Adobe Inc"
+    },
+    {
+     "ticker": "INTU",
+     "name": "Intuit Inc"
+    },
+    {
+     "ticker": "ADSK",
+     "name": "Autodesk Inc"
+    },
+    {
+     "ticker": "PAYX",
+     "name": "Paychex Inc"
+    },
+    {
+     "ticker": "ROP",
+     "name": "Roper Technologies Inc"
+    },
+    {
+     "ticker": "MSTR",
+     "name": "Strategy Inc"
+    },
+    {
+     "ticker": "WDAY",
+     "name": "Workday Inc"
+    }
+   ]
+  },
+  "software-infrastructure": {
+   "name": "Software - Infrastructure",
+   "sector": "Software & Cloud",
+   "members": [
+    {
+     "ticker": "MSFT",
+     "name": "Microsoft Corp"
+    },
+    {
+     "ticker": "PLTR",
+     "name": "Palantir Technologies Inc"
+    },
+    {
+     "ticker": "PANW",
+     "name": "Palo Alto Networks Inc"
+    },
+    {
+     "ticker": "CRWD",
+     "name": "Crowdstrike Holdings Inc"
+    },
+    {
+     "ticker": "FTNT",
+     "name": "Fortinet Inc"
+    },
+    {
+     "ticker": "SNPS",
+     "name": "Synopsys Inc"
+    },
+    {
+     "ticker": "NBIS",
+     "name": "Nebius Group NV"
+    },
+    {
+     "ticker": "CRWV",
+     "name": "CoreWeave Inc"
+    },
+    {
+     "ticker": "ZS",
+     "name": "Zscaler Inc"
+    }
+   ]
+  },
+  "semiconductor-equipment-materials": {
+   "name": "Semiconductor Equipment & Materials",
+   "sector": "Semis & Silicon",
+   "members": [
+    {
+     "ticker": "ASML",
+     "name": "ASML Holding NV"
+    },
+    {
+     "ticker": "AMAT",
+     "name": "Applied Materials Inc"
+    },
+    {
+     "ticker": "LRCX",
+     "name": "Lam Research Corp"
+    },
+    {
+     "ticker": "KLAC",
+     "name": "KLA Corp"
+    },
+    {
+     "ticker": "TER",
+     "name": "Teradyne Inc"
+    }
+   ]
+  },
+  "internet-retail": {
+   "name": "Internet Retail",
+   "sector": "Internet & Platforms",
+   "members": [
+    {
+     "ticker": "AMZN",
+     "name": "Amazon.com Inc"
+    },
+    {
+     "ticker": "PDD",
+     "name": "PDD Holdings Inc ADR"
+    },
+    {
+     "ticker": "MELI",
+     "name": "MercadoLibre Inc"
+    },
+    {
+     "ticker": "DASH",
+     "name": "DoorDash Inc"
+    }
+   ]
+  },
+  "internet-content-information": {
+   "name": "Internet Content & Information",
+   "sector": "Internet & Platforms",
+   "members": [
+    {
+     "ticker": "GOOG",
+     "name": "Alphabet Inc"
+    },
+    {
+     "ticker": "GOOGL",
+     "name": "Alphabet Inc"
+    },
+    {
+     "ticker": "META",
+     "name": "Meta Platforms Inc"
+    }
+   ]
+  },
+  "biotechnology": {
+   "name": "Biotechnology",
+   "sector": "Healthcare & Biotech",
+   "members": [
+    {
+     "ticker": "VRTX",
+     "name": "Vertex Pharmaceuticals Inc"
+    },
+    {
+     "ticker": "REGN",
+     "name": "Regeneron Pharmaceuticals Inc"
+    },
+    {
+     "ticker": "ALNY",
+     "name": "Alnylam Pharmaceuticals Inc"
+    },
+    {
+     "ticker": "INSM",
+     "name": "Insmed Inc"
+    }
+   ]
+  },
+  "specialty-business-services": {
+   "name": "Specialty Business Services",
+   "sector": "Software & Cloud",
+   "members": [
+    {
+     "ticker": "CTAS",
+     "name": "Cintas Corp"
+    },
+    {
+     "ticker": "TRI",
+     "name": "Thomson-Reuters Corp"
+    },
+    {
+     "ticker": "CPRT",
+     "name": "Copart Inc"
+    }
+   ]
+  },
+  "telecom-services": {
+   "name": "Telecom Services",
+   "sector": "Internet & Platforms",
+   "members": [
+    {
+     "ticker": "TMUS",
+     "name": "T-Mobile US Inc"
+    },
+    {
+     "ticker": "CMCSA",
+     "name": "Comcast Corp"
+    },
+    {
+     "ticker": "CHTR",
+     "name": "Charter Communications Inc"
+    }
+   ]
+  },
+  "computer-hardware": {
+   "name": "Computer Hardware & Storage",
+   "sector": "Semis & Silicon",
+   "members": [
+    {
+     "ticker": "SNDK",
+     "name": "Sandisk Corp"
+    },
+    {
+     "ticker": "WDC",
+     "name": "Western Digital Corp"
+    },
+    {
+     "ticker": "STX",
+     "name": "Seagate Technology Holdings Plc"
+    }
+   ]
+  },
+  "communication-equipment": {
+   "name": "Communication Equipment",
+   "sector": "Semis & Silicon",
+   "members": [
+    {
+     "ticker": "CSCO",
+     "name": "Cisco Systems Inc"
+    },
+    {
+     "ticker": "LITE",
+     "name": "Lumentum Holdings Inc"
+    },
+    {
+     "ticker": "ANET",
+     "name": "ANET"
+    },
+    {
+     "ticker": "CIEN",
+     "name": "CIEN"
+    },
+    {
+     "ticker": "AAOI",
+     "name": "AAOI"
+    }
+   ]
+  },
+  "space-defense-tech": {
+   "name": "Space & Defense Tech",
+   "sector": "Software & Cloud",
+   "members": [
+    {
+     "ticker": "RKLB",
+     "name": "Rocket Lab Corp"
+    },
+    {
+     "ticker": "AXON",
+     "name": "Axon Enterprise Inc"
+    },
+    {
+     "ticker": "KTOS",
+     "name": "KTOS"
+    },
+    {
+     "ticker": "LUNR",
+     "name": "LUNR"
+    },
+    {
+     "ticker": "RDW",
+     "name": "RDW"
+    },
+    {
+     "ticker": "ASTS",
+     "name": "ASTS"
+    }
+   ]
+  }
+ },
+ "amalgamations": {
+  "semis-silicon": {
+   "name": "Semis & Silicon",
+   "name_zh": "半导体与硅",
+   "members": [
+    {
+     "ticker": "NVDA",
+     "name": "NVIDIA Corp"
+    },
+    {
+     "ticker": "AVGO",
+     "name": "Broadcom Inc"
+    },
+    {
+     "ticker": "MU",
+     "name": "Micron Technology Inc"
+    },
+    {
+     "ticker": "AMD",
+     "name": "Advanced Micro Devices Inc"
+    },
+    {
+     "ticker": "INTC",
+     "name": "Intel Corp"
+    },
+    {
+     "ticker": "ARM",
+     "name": "Arm Holdings Plc ADR"
+    },
+    {
+     "ticker": "TXN",
+     "name": "Texas Instruments Inc"
+    },
+    {
+     "ticker": "MRVL",
+     "name": "Marvell Technology Inc"
+    },
+    {
+     "ticker": "QCOM",
+     "name": "Qualcomm Inc"
+    },
+    {
+     "ticker": "ADI",
+     "name": "Analog Devices Inc"
+    },
+    {
+     "ticker": "ALAB",
+     "name": "Astera Labs Inc"
+    },
+    {
+     "ticker": "NXPI",
+     "name": "NXP Semiconductors NV"
+    },
+    {
+     "ticker": "MPWR",
+     "name": "Monolithic Power System Inc"
+    },
+    {
+     "ticker": "MCHP",
+     "name": "Microchip Technology Inc"
+    },
+    {
+     "ticker": "ASML",
+     "name": "ASML Holding NV"
+    },
+    {
+     "ticker": "AMAT",
+     "name": "Applied Materials Inc"
+    },
+    {
+     "ticker": "LRCX",
+     "name": "Lam Research Corp"
+    },
+    {
+     "ticker": "KLAC",
+     "name": "KLA Corp"
+    },
+    {
+     "ticker": "TER",
+     "name": "Teradyne Inc"
+    },
+    {
+     "ticker": "CSCO",
+     "name": "Cisco Systems Inc"
+    },
+    {
+     "ticker": "LITE",
+     "name": "Lumentum Holdings Inc"
+    },
+    {
+     "ticker": "ANET",
+     "name": "ANET"
+    },
+    {
+     "ticker": "CIEN",
+     "name": "CIEN"
+    },
+    {
+     "ticker": "AAOI",
+     "name": "AAOI"
+    },
+    {
+     "ticker": "SNDK",
+     "name": "Sandisk Corp"
+    },
+    {
+     "ticker": "WDC",
+     "name": "Western Digital Corp"
+    },
+    {
+     "ticker": "STX",
+     "name": "Seagate Technology Holdings Plc"
+    }
+   ]
+  },
+  "software-cloud": {
+   "name": "Software & Cloud",
+   "name_zh": "软件与云",
+   "members": [
+    {
+     "ticker": "MSFT",
+     "name": "Microsoft Corp"
+    },
+    {
+     "ticker": "PLTR",
+     "name": "Palantir Technologies Inc"
+    },
+    {
+     "ticker": "PANW",
+     "name": "Palo Alto Networks Inc"
+    },
+    {
+     "ticker": "CRWD",
+     "name": "Crowdstrike Holdings Inc"
+    },
+    {
+     "ticker": "FTNT",
+     "name": "Fortinet Inc"
+    },
+    {
+     "ticker": "SNPS",
+     "name": "Synopsys Inc"
+    },
+    {
+     "ticker": "NBIS",
+     "name": "Nebius Group NV"
+    },
+    {
+     "ticker": "CRWV",
+     "name": "CoreWeave Inc"
+    },
+    {
+     "ticker": "ZS",
+     "name": "Zscaler Inc"
+    },
+    {
+     "ticker": "SHOP",
+     "name": "Shopify Inc"
+    },
+    {
+     "ticker": "CDNS",
+     "name": "Cadence Design Systems Inc"
+    },
+    {
+     "ticker": "ADP",
+     "name": "Automatic Data Processing Inc"
+    },
+    {
+     "ticker": "DDOG",
+     "name": "Datadog Inc"
+    },
+    {
+     "ticker": "ADBE",
+     "name": "Adobe Inc"
+    },
+    {
+     "ticker": "INTU",
+     "name": "Intuit Inc"
+    },
+    {
+     "ticker": "ADSK",
+     "name": "Autodesk Inc"
+    },
+    {
+     "ticker": "PAYX",
+     "name": "Paychex Inc"
+    },
+    {
+     "ticker": "ROP",
+     "name": "Roper Technologies Inc"
+    },
+    {
+     "ticker": "MSTR",
+     "name": "Strategy Inc"
+    },
+    {
+     "ticker": "WDAY",
+     "name": "Workday Inc"
+    },
+    {
+     "ticker": "CTAS",
+     "name": "Cintas Corp"
+    },
+    {
+     "ticker": "TRI",
+     "name": "Thomson-Reuters Corp"
+    },
+    {
+     "ticker": "CPRT",
+     "name": "Copart Inc"
+    },
+    {
+     "ticker": "RKLB",
+     "name": "Rocket Lab Corp"
+    },
+    {
+     "ticker": "AXON",
+     "name": "Axon Enterprise Inc"
+    },
+    {
+     "ticker": "KTOS",
+     "name": "KTOS"
+    },
+    {
+     "ticker": "LUNR",
+     "name": "LUNR"
+    },
+    {
+     "ticker": "RDW",
+     "name": "RDW"
+    },
+    {
+     "ticker": "ASTS",
+     "name": "ASTS"
+    },
+    {
+     "ticker": "CTSH",
+     "name": "Cognizant Technology Solutions"
+    },
+    {
+     "ticker": "VRSK",
+     "name": "Verisk Analytics Inc"
+    }
+   ]
+  },
+  "internet-platforms": {
+   "name": "Internet & Platforms",
+   "name_zh": "互联网与平台",
+   "members": [
+    {
+     "ticker": "GOOG",
+     "name": "Alphabet Inc"
+    },
+    {
+     "ticker": "GOOGL",
+     "name": "Alphabet Inc"
+    },
+    {
+     "ticker": "META",
+     "name": "Meta Platforms Inc"
+    },
+    {
+     "ticker": "AMZN",
+     "name": "Amazon.com Inc"
+    },
+    {
+     "ticker": "PDD",
+     "name": "PDD Holdings Inc ADR"
+    },
+    {
+     "ticker": "MELI",
+     "name": "MercadoLibre Inc"
+    },
+    {
+     "ticker": "DASH",
+     "name": "DoorDash Inc"
+    },
+    {
+     "ticker": "TMUS",
+     "name": "T-Mobile US Inc"
+    },
+    {
+     "ticker": "CMCSA",
+     "name": "Comcast Corp"
+    },
+    {
+     "ticker": "CHTR",
+     "name": "Charter Communications Inc"
+    },
+    {
+     "ticker": "APP",
+     "name": "Applovin Corp"
+    },
+    {
+     "ticker": "NFLX",
+     "name": "Netflix Inc"
+    },
+    {
+     "ticker": "WBD",
+     "name": "Warner Bros. Discovery Inc"
+    },
+    {
+     "ticker": "EA",
+     "name": "Electronic Arts Inc"
+    },
+    {
+     "ticker": "TTWO",
+     "name": "Take-Two Interactive Software Inc"
+    }
+   ]
+  },
+  "ai-power-neoclouds": {
+   "name": "AI Power & Neoclouds",
+   "name_zh": "AI 电力与新云",
+   "members": [
+    {
+     "ticker": "CEG",
+     "name": "Constellation Energy Corp"
+    },
+    {
+     "ticker": "NBIS",
+     "name": "Nebius Group NV"
+    },
+    {
+     "ticker": "CRWV",
+     "name": "CoreWeave Inc"
+    },
+    {
+     "ticker": "VRT",
+     "name": "VRT"
+    }
+   ]
+  },
+  "megacap-anchors": {
+   "name": "Mega-cap Anchors",
+   "name_zh": "超大盘锚",
+   "members": [
+    {
+     "ticker": "AAPL",
+     "name": "Apple Inc"
+    },
+    {
+     "ticker": "MSFT",
+     "name": "Microsoft Corp"
+    },
+    {
+     "ticker": "NVDA",
+     "name": "NVIDIA Corp"
+    },
+    {
+     "ticker": "AMZN",
+     "name": "Amazon.com Inc"
+    },
+    {
+     "ticker": "GOOGL",
+     "name": "Alphabet Inc"
+    },
+    {
+     "ticker": "META",
+     "name": "Meta Platforms Inc"
+    },
+    {
+     "ticker": "TSLA",
+     "name": "Tesla Inc"
+    },
+    {
+     "ticker": "AVGO",
+     "name": "Broadcom Inc"
+    }
+   ]
+  },
+  "consumer-mobility": {
+   "name": "Consumer & Mobility",
+   "name_zh": "消费与出行",
+   "members": [
+    {
+     "ticker": "TSLA",
+     "name": "Tesla Inc"
+    },
+    {
+     "ticker": "RIVN",
+     "name": "RIVN"
+    },
+    {
+     "ticker": "LCID",
+     "name": "LCID"
+    },
+    {
+     "ticker": "BKNG",
+     "name": "Booking Holdings Inc"
+    },
+    {
+     "ticker": "ABNB",
+     "name": "Airbnb Inc"
+    },
+    {
+     "ticker": "SBUX",
+     "name": "Starbucks Corp"
+    },
+    {
+     "ticker": "MAR",
+     "name": "Marriott International Inc"
+    },
+    {
+     "ticker": "ORLY",
+     "name": "O'Reilly Automotive Inc"
+    },
+    {
+     "ticker": "ROST",
+     "name": "Ross Stores Inc"
+    },
+    {
+     "ticker": "PDD",
+     "name": "PDD Holdings Inc ADR"
+    }
+   ]
+  },
+  "healthcare-biotech": {
+   "name": "Healthcare & Biotech",
+   "name_zh": "医疗与生物科技",
+   "members": [
+    {
+     "ticker": "VRTX",
+     "name": "Vertex Pharmaceuticals Inc"
+    },
+    {
+     "ticker": "REGN",
+     "name": "Regeneron Pharmaceuticals Inc"
+    },
+    {
+     "ticker": "ALNY",
+     "name": "Alnylam Pharmaceuticals Inc"
+    },
+    {
+     "ticker": "INSM",
+     "name": "Insmed Inc"
+    },
+    {
+     "ticker": "AMGN",
+     "name": "AMGEN Inc"
+    },
+    {
+     "ticker": "GILD",
+     "name": "Gilead Sciences Inc"
+    },
+    {
+     "ticker": "ISRG",
+     "name": "Intuitive Surgical Inc"
+    },
+    {
+     "ticker": "DXCM",
+     "name": "Dexcom Inc"
+    },
+    {
+     "ticker": "GEHC",
+     "name": "GE HealthCare Technologies Inc"
+    },
+    {
+     "ticker": "IDXX",
+     "name": "Idexx Laboratories Inc"
+    }
+   ]
+  },
+  "defensives-extech": {
+   "name": "Defensives & Ex-Tech",
+   "name_zh": "防御与非科技",
+   "members": [
+    {
+     "ticker": "PEP",
+     "name": "PepsiCo Inc"
+    },
+    {
+     "ticker": "MNST",
+     "name": "Monster Beverage Corp"
+    },
+    {
+     "ticker": "KDP",
+     "name": "Keurig Dr Pepper Inc"
+    },
+    {
+     "ticker": "CCEP",
+     "name": "Coca-Cola Europacific Partners Plc"
+    },
+    {
+     "ticker": "COST",
+     "name": "Costco Wholesale Corp"
+    },
+    {
+     "ticker": "MDLZ",
+     "name": "Mondelez International Inc"
+    },
+    {
+     "ticker": "KHC",
+     "name": "Kraft Heinz Co"
+    },
+    {
+     "ticker": "AEP",
+     "name": "American Electric Power Company Inc"
+    },
+    {
+     "ticker": "XEL",
+     "name": "Xcel Energy Inc"
+    },
+    {
+     "ticker": "EXC",
+     "name": "Exelon Corp"
+    },
+    {
+     "ticker": "FANG",
+     "name": "Diamondback Energy Inc"
+    },
+    {
+     "ticker": "LIN",
+     "name": "Linde Plc"
+    },
+    {
+     "ticker": "CSX",
+     "name": "CSX Corp"
+    },
+    {
+     "ticker": "PCAR",
+     "name": "Paccar Inc"
+    },
+    {
+     "ticker": "FAST",
+     "name": "Fastenal Co"
+    },
+    {
+     "ticker": "ODFL",
+     "name": "Old Dominion Freight Line Inc"
+    },
+    {
+     "ticker": "HON",
+     "name": "Honeywell International Inc"
+    },
+    {
+     "ticker": "PYPL",
+     "name": "PayPal Holdings Inc"
+    }
+   ]
+  }
+ }
+}
