@@ -42,17 +42,47 @@ REV_BARS = 3
 
 
 # ------------------------------------------------------------ indicators ----
+def _rma(s: pd.Series, n: int) -> pd.Series:
+    """Wilder's RMA (== Pine ta.rma): SMA seed over the first ``n`` valid values, then
+    the recursive  rma = (x + (n-1)·rma_prev) / n.
+
+    pandas ``ewm(alpha=1/n, adjust=True)`` (what this file used to do) does NOT match
+    Pine — it forms a weighted average anchored on the first value, which shifts the
+    early series and can flip near-threshold crosses. The SMA seed is the faithful one."""
+    a = s.to_numpy(dtype="float64")
+    out = np.full(a.shape, np.nan)
+    fin = np.flatnonzero(np.isfinite(a))
+    if fin.size < n:
+        return pd.Series(out, index=s.index)
+    start = fin[0]
+    seed = start + n - 1
+    out[seed] = np.mean(a[start:seed + 1])
+    alpha = 1.0 / n
+    for t in range(seed + 1, a.size):
+        out[t] = alpha * a[t] + (1.0 - alpha) * out[t - 1]
+    return pd.Series(out, index=s.index)
+
+
 def rsi(close: pd.Series, n: int = 14) -> pd.Series:
-    """Wilder's RSI (== Pine ta.rsi == engine.technicals.rsi)."""
+    """Wilder's RSI (== Pine ta.rsi): RMA of gains over RMA of losses (SMA-seeded).
+
+    Pine: rsi = down==0 ? 100 : up==0 ? 0 : 100-100/(1+up/down). The down==0 branch (an
+    unbroken up-run after the seed) must read 100, not NaN. It never fires on the 2021+
+    live feed, but the oracle also runs full-history symbols where thin early sessions can
+    produce a >=n-bar zero-down run; without the mask those bars wrongly went NaN."""
     d = close.diff()
-    up = d.clip(lower=0).ewm(alpha=1 / n, min_periods=n).mean()
-    dn = (-d.clip(upper=0)).ewm(alpha=1 / n, min_periods=n).mean()
+    up = _rma(d.clip(lower=0), n)
+    dn = _rma(-d.clip(upper=0), n)
     rs = up / dn.replace(0, np.nan)
-    return 100 - 100 / (1 + rs)
+    out = 100 - 100 / (1 + rs)              # up==0 (rs=0) already yields 0, matching Pine
+    return out.mask(dn == 0, 100.0)         # down==0 -> 100 (and wins over up==0, per Pine)
 
 
 def ema(s: pd.Series, span: int) -> pd.Series:
-    return s.ewm(span=span, min_periods=span).mean()
+    """Pine ta.ema: recursive  ema = α·x + (1-α)·ema_prev  (α = 2/(span+1)), seeded with
+    the first valid value.  == ewm(adjust=False); pandas' default adjust=True forms a
+    weighted average that differs in the warm-up and can flip near-threshold crosses."""
+    return s.ewm(span=span, adjust=False).mean()
 
 
 def rsi_macd(close: pd.Series):
@@ -90,12 +120,114 @@ def bars_since(cond: pd.Series) -> pd.Series:
 
 
 # ------------------------------------------------------------ signals --------
-def compute_signals(daily_close: pd.Series) -> pd.DataFrame:
+def _3d_groups(daily_close: pd.Series, bar_anchor: int = 0):
+    """Session-grouped 3D bars (the TradingView rule). Returns
+    ``(open_dates, close_dates, close_px)`` so callers can reference a bar by its OPEN date
+    (TV's bar timestamp) and still know its CLOSE session (needed to align the weekly gate).
+    See ``_resample_3d`` for the anchoring rationale."""
+    c = daily_close.dropna()
+    n = len(c)
+    if n == 0:
+        empty = c.index[:0]
+        return empty, empty, np.array([], dtype="float64")
+    gi = np.arange(n) + int(bar_anchor)
+    opens = np.empty(n, dtype=bool)
+    opens[0] = True
+    opens[1:] = (gi[:-1] % 3 == 0)          # a new bar opens the session after a close
+    open_pos = np.flatnonzero(opens)
+    close_pos = np.append(open_pos[1:] - 1, n - 1)   # each bar closes the session before the next opens
+    vals = c.to_numpy()
+    return c.index[open_pos], c.index[close_pos], vals[close_pos]
+
+
+def _resample_3d(daily_close: pd.Series, bar_anchor: int = 0) -> pd.Series:
+    """Build the 3D timeframe the way TradingView does: group TRADING SESSIONS (not
+    calendar business days) three at a time, anchored so a bar CLOSES whenever the global
+    session index is divisible by 3, and label each bar by its OPEN (first session) date —
+    matching TV's 3D bar timestamps (verified 5/5 against TradingView NVDA-3D crosshairs).
+
+    ``bar_anchor`` is the global session index — counted from the symbol's FIRST listed
+    session (IPO) — of ``daily_close``'s first row. Pass 0 when ``daily_close`` IS the full
+    history (the oracle contract / default); pass the offset when feeding a truncated window
+    so the phase still matches a full-history TV chart.
+
+    pandas ``resample("3B")`` (what this file used to do) is WRONG: it buckets by the Mon–Fri
+    calendar and mis-splits real sessions around every holiday, scrambling which sessions
+    share a 3D bar — and therefore every cross. On NVDA that moved ~80% of signal dates."""
+    od, _cd, px = _3d_groups(daily_close, bar_anchor)
+    return pd.Series(px, index=od, name=getattr(daily_close, "name", None))
+
+
+def _resample_2w(daily_close: pd.Series, week_parity: int = 0) -> pd.Series:
+    """2-week bars = calendar weeks paired two at a time (TV treats 2W as a calendar unit).
+
+    Unlike 3D, the only freedom is the PAIRING PHASE: which weeks share a 2W bar. pandas
+    ``resample("2W-FRI")`` anchors that phase to the series' first row, so a TRUNCATED feed
+    pairs the opposite weeks from a full-history TV chart. ``week_parity`` (0/1) restores the
+    full-history pairing — pass ``ipo_week_parity(feed, sym)`` for a truncated feed. The
+    default 0 reproduces ``resample("2W-FRI")`` bar-for-bar on full history (verified).
+
+    Confirmed against TradingView NVDA-2W (2026-06-29): the last CLOSED 2W bar spans the
+    weeks ending 2026-06-05 and 2026-06-19 — full history already matches; the 6-yr feed
+    needed parity=1. (2W only feeds the fixed=True backtest's ``bear_block``, never live CB/CS.)"""
+    wk = daily_close.resample("W-FRI").last().dropna()
+    n = len(wk)
+    if n == 0:
+        return wk
+    gi = np.arange(n) + int(week_parity)
+    opens = np.empty(n, dtype=bool)
+    opens[0] = True
+    opens[1:] = (gi[:-1] % 2 == 0)          # a 2W bar closes on even global-week index; next opens after
+    close_pos = np.append(np.flatnonzero(opens)[1:] - 1, n - 1)
+    return pd.Series(wk.to_numpy()[close_pos], index=wk.index[close_pos], name=wk.name)
+
+
+def ipo_bar_anchor(feed_close: pd.Series, symbol: str) -> int:
+    """The ``bar_anchor`` for a TRUNCATED feed: the global session index (counted from the
+    symbol's IPO) of ``feed_close``'s first row, so ``compute_signals`` phases the 3D bars
+    to a full-history TradingView chart instead of to the feed's own (arbitrary) start.
+
+    The IPO session calendar is taken from the deep OHLC store (``DATA/<symbol>.parquet``),
+    which shares the NYSE calendar with the live Polygon feed (verified bar-for-bar). Returns
+    0 when the deep store is unavailable (e.g. the rsync VPS, or a non-US symbol not in the
+    store) — the 3D bars are then anchored at the feed's first row: still session-grouped
+    (fixing the resample('3B') bug) but possibly phase-shifted vs TV until full history is fed."""
+    try:
+        full = pd.read_parquet(DATA / f"{symbol}.parquet", columns=["close"]).index
+        return int(full.searchsorted(feed_close.dropna().index[0]))
+    except Exception:
+        return 0
+
+
+def ipo_week_parity(feed_close: pd.Series, symbol: str) -> int:
+    """The ``week_parity`` for a TRUNCATED feed: the parity (0/1) of the global weekly-bar
+    index — counted from the symbol's IPO — of the feed's first W-FRI week, so the 2W pairing
+    matches a full-history TradingView chart (see ``_resample_2w``). Reads the deep store;
+    returns 0 if unavailable (then 2W is anchored at the feed start, possibly off by one week
+    — inert for live signals, it only shifts the fixed=True backtest's bear_block)."""
+    try:
+        full = pd.read_parquet(DATA / f"{symbol}.parquet", columns=["close"])["close"]
+        fullwk = full.dropna().resample("W-FRI").last().dropna()
+        feedwk = feed_close.dropna().resample("W-FRI").last().dropna()
+        return int(fullwk.index.searchsorted(feedwk.index[0])) % 2
+    except Exception:
+        return 0
+
+
+def compute_signals(daily_close: pd.Series, bar_anchor: int = 0, week_parity: int = 0) -> pd.DataFrame:
     """All trade-driving signals on the 3D timeframe, with a leak-free weekly
-    (confirm-TF) trend gate. Returns a frame indexed by 3D bar dates."""
-    s3 = daily_close.resample("3B").last().dropna()
-    if len(s3) < 90:
+    (confirm-TF) trend gate. Returns a frame indexed by 3D bar OPEN dates.
+
+    ``bar_anchor`` phases the session-grouped 3D bars to the symbol's full-history (IPO)
+    anchor — see ``_resample_3d``. ``week_parity`` phases the 2-week confirm gate the same way
+    (see ``_resample_2w``). Feed the symbol's FULL daily history (both 0) for TradingView
+    parity, or pass ``ipo_bar_anchor`` / ``ipo_week_parity`` for a truncated feed. The weekly
+    and monthly confirm timeframes stay plain calendar resamples (W / ME have no phase
+    ambiguity; only daily-multiples and 2-week pairs do)."""
+    open_dates, close_dates, close_px = _3d_groups(daily_close, bar_anchor)
+    if len(open_dates) < 90:
         return pd.DataFrame()
+    s3 = pd.Series(close_px, index=open_dates, name=getattr(daily_close, "name", None))
 
     macd, sig = rsi_macd(s3)
     k, d = stoch_rsi_kd(s3)
@@ -106,12 +238,23 @@ def compute_signals(daily_close: pd.Series) -> pd.DataFrame:
     macd_bull = crossover(macd, sig)
     macd_bear = crossunder(macd, sig)
 
-    # ---- weekly confirm-TF gate (one step up from 3D), leak-free ----
+    # ---- weekly confirm-TF gate (one step up from a 3D chart = "1W"), leak-free ----
+    # Pine: macd_c = request.security(sym,"1W", macd[1], lookahead_off) = the PRIOR fully
+    # closed weekly bar as of each 3D bar's CLOSE. Map each 3D bar to that weekly bar by a
+    # session-aligned search — NOT shift(1)+ffill, which double-lags to W-2 on mid-week bars.
     wk = daily_close.resample("W-FRI").last().dropna()
     wmacd, wsig = rsi_macd(wk)
-    w_bull = (wmacd >= wsig).shift(1)          # use the PRIOR closed week (no repaint)
-    w_bull_on3 = w_bull.reindex(s3.index, method="ffill").fillna(False).astype(bool)
-    w_bear_on3 = (~w_bull_on3)
+    wk_bull = (wmacd >= wsig).to_numpy()
+    wk_bear = (wmacd <= wsig).to_numpy()       # inclusive on a tie, like Pine (>= and <=)
+    if len(wk_bull):
+        wpos = wk.index.searchsorted(close_dates, side="left") - 1   # last weekly closed before the bar
+        wok = wpos >= 0
+        wci = np.clip(wpos, 0, len(wk_bull) - 1)
+        w_bull_on3 = pd.Series(wok & wk_bull[wci], index=open_dates)
+        w_bear_on3 = pd.Series(wok & wk_bear[wci], index=open_dates)
+    else:
+        w_bull_on3 = pd.Series(False, index=open_dates)
+        w_bear_on3 = pd.Series(False, index=open_dates)
 
     # ---- Pine confirmed-signal gates (live defaults) ----
     b1_from_os = d.rolling(CONF_W).min() < OS
@@ -139,8 +282,8 @@ def compute_signals(daily_close: pd.Series) -> pd.DataFrame:
     mo = daily_close.resample("ME").last().dropna()
     mmacd, msig = rsi_macd(mo)
     mo_bull = (mmacd >= msig).shift(1).reindex(s3.index, method="ffill").fillna(False).astype(bool)
-    # 2-week RSI-MACD -- the IC-bottom RE-ENABLE the user proposed.
-    w2 = daily_close.resample("2W-FRI").last().dropna()
+    # 2-week RSI-MACD -- the IC-bottom RE-ENABLE the user proposed (TV-phased; see _resample_2w).
+    w2 = _resample_2w(daily_close, week_parity)
     w2macd, w2sig = rsi_macd(w2)
     w2_bull = (w2macd >= w2sig).shift(1).reindex(s3.index, method="ffill").fillna(False).astype(bool)
 
