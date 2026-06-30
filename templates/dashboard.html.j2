@@ -1365,8 +1365,8 @@
       {{ rrc.risk_radar_card(MS.radar, latest.risk_radar.scares if latest.risk_radar else none) }}
       {% endif %}
       <div class="ms-head">
-        <span class="ms-eyebrow"><span class="ms-live"></span>{{ t('MARKET STATE','市场状态') }}</span>
-        <span class="ms-date">· {{ MS.asof }}</span>
+        <span class="ms-eyebrow"><span class="ms-live" id="ms-live-pill"></span>{{ t('MARKET STATE','市场状态') }}</span>
+        <span class="ms-date" id="ms-date">· {{ MS.asof }}</span>
         {{ help("How risk-on or risk-off the market is right now — one 0–100 read blending the tape, cross-asset risk, volatility, breadth, liquidity and downturn guards. ≥60 risk-on · 42–59 mixed · <42 risk-off. It confirms what has already turned; it doesn't forecast.", "市场当前的风险偏好程度 — 0–100 单一读数，融合趋势、跨资产风险、波动率、广度、流动性与下行护栏。≥60 偏好 · 42–59 混合 · <42 避险。它确认已经转向的信号，而非预测。") }}
         <label class="ms-alerts" for="ms-alerts-toggle">
           {% if _nalerts %}<span class="dot"></span>{% endif %}{{ t('Fired alerts','已触发警报') }}
@@ -1378,9 +1378,9 @@
         {# LEFT — the verdict: what kind of market, in 2 seconds #}
         <section class="ms-verdict">
           <p class="v-label">{{ t('Verdict','结论') }}</p>
-          <p class="v-word">{{ t(MS.label_en, MS.label_zh) }}<span class="arr">{{ _va }}</span></p>
-          <div class="v-scorerow"><span class="v-score">{{ MS.score }}</span><span class="v-outof">/ 100</span></div>
-          <div class="v-meter"><span class="tick" style="left:{{ MS.score }}%"></span></div>
+          <p class="v-word" id="ms-word">{{ t(MS.label_en, MS.label_zh) }}<span class="arr">{{ _va }}</span></p>
+          <div class="v-scorerow"><span class="v-score" id="ms-score">{{ MS.score }}</span><span class="v-outof">/ 100</span></div>
+          <div class="v-meter"><span class="tick" id="ms-tick" style="left:{{ MS.score }}%"></span></div>
           <div class="v-scale"><span>0</span><span>42</span><span>60</span><span>100</span></div>
           <p class="v-thesis">{{ t(MS.headline_en, MS.headline_zh) }}</p>
           {% for o in MS.overrides %}<p class="v-override"><span class="ic">⚠</span>{{ t(o.note_en, o.note_zh) }}</p>{% endfor %}
@@ -3001,6 +3001,7 @@ window.__CHART_SWAP__ = {
 <script src="charts.js"></script>
 <script src="live_config.js"></script>
 <script src="live.js"></script>
+<script src="risk_state_live.js"></script>
 <script src="heatmap.js"></script>
 <script>
 /* Keep .help tooltips on-screen: flip below the icon when it's near the top of
