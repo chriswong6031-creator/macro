@@ -8,8 +8,19 @@
 {% set w = ((a if a else 0) / 3.0 * 50) %}
 <span class="abar">{% if (a or 0) >= 0 %}<i style="left:50%;width:{{ [w,50]|min|round(1) }}%;background:var(--up)"></i>{% else %}<i style="right:50%;width:{{ [-w,50]|min|round(1) }}%;background:var(--down)"></i>{% endif %}<i class="mid"></i></span>
 {%- endmacro %}
+{# trend-position CONTEXT (Pullback / In trend / Extended) — NOT a buy call #}
 {% macro entry(r) -%}
 <span class="echip {{ r.entry_css }}">{{ t(r.entry_en, r.entry_zh) }}</span>
+{%- endmacro %}
+{# the ACTIONABLE buy signal: a fresh MACD-2D x StochRSI-3D confluence cross. T1/T2 = a
+   confirmed, just-crossed buy; T3 = the 3D StochRSI has crossed and the 2D MACD is about to.
+   A name with no fresh cross (downtrending / topped / a HOLD) renders a muted dash. #}
+{% macro signal(r) -%}
+{%- if r.sig_tier and r.sig_en -%}
+<span class="sgchip {{ r.sig_css }}" title="{{ 'Confirmed MACD-2D x StochRSI-3D confluence buy — crossed within the last ~6 days and still constructive (not overbought / rolled over).' if r.sig_tier in ('T1','T2') else 'Anticipation: the 3D StochRSI has already crossed up and the 2D MACD is about to cross in the next 1-2 bars. Earlier (lower-confidence) than a confirmed cross.' }} The board only labels a name buyable when this fires — never off trend/momentum alone. · {{ '已确认的 MACD-2D × StochRSI-3D 共振买入：约近6日内交叉且仍具建设性（未超买/未回落）。' if r.sig_tier in ('T1','T2') else '预期信号：3日 StochRSI 已上穿，2日 MACD 即将在未来1-2根K线内交叉。' }}">{{ t(r.sig_en, r.sig_zh) }}{% if r.sig_tier == 'T3' and r.sig_btc is not none %} <span class="xs">~{{ r.sig_btc }}d</span>{% endif %}</span>
+{%- else -%}
+<span class="sgchip sg-none" title="No fresh MACD-2D x StochRSI-3D confluence cross — not a buy today (a strong name can still be a HOLD or downtrending on the 3D). · 无新的共振交叉 — 今日非买入。">—</span>
+{%- endif -%}
 {%- endmacro %}
 {# extension / exhaustion grade (own-history) — risk placement, never in the score.
    Null-safe: a row with no extension data renders a neutral dash. #}
@@ -45,6 +56,7 @@
   <td class="rk">{{ i }}</td>
   <td><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="muted sm">{{ r.name[:18] }}</span><br><span class="muted xs">{{ td(r.sector) }}</span></td>
   <td><div class="scorecell">{{ sbar(r.top_score) }}<span class="znum band-{{ r.band }}">{{ '%+.2f'|format(r.top_score) }}</span></div></td>
+  <td>{{ signal(r) }}</td>
   <td>{{ stretch(r) }}</td>
   <td>{{ entry(r) }}</td>
   <td class="convcell">{{ conv(r) }}</td>
@@ -56,6 +68,7 @@
 <tr data-grade="{{ r.grade }}">
   <td><a href="stock.html#{{ r.ticker }}"><b>{{ r.ticker }}</b></a> <span class="muted sm">{{ r.name[:18] }}</span></td>
   <td><div class="scorecell">{{ sbar(r.top_score) }}<span class="znum band-{{ r.band }}">{{ '%+.2f'|format(r.top_score) }}</span></div></td>
+  <td>{{ signal(r) }}</td>
   <td>{{ stretch(r) }}</td>
   <td>{{ entry(r) }}</td>
   <td class="convcell">{{ conv(r) }}</td>
@@ -101,11 +114,17 @@
   .znum { font-variant-numeric:tabular-nums; width:42px; text-align:right; }
   .band-strong .znum, .band-leader .znum { color:var(--up); font-weight:600; }
   .band-lag .znum, .band-deeplag .znum { color:var(--down); font-weight:600; }
-  /* entry badges (axis 2) */
+  /* entry badges (axis 2 — trend-position CONTEXT, not a buy call) */
   .echip { font-size:10.5px; padding:1px 8px; border-radius:7px; border:1px solid var(--line); white-space:nowrap; font-weight:600; }
-  .tp-buyzone { color:var(--up); border-color:var(--up); background:color-mix(in srgb, var(--up) 12%, transparent); }
+  .tp-pullback { color:var(--text); border-color:color-mix(in srgb, var(--up) 30%, var(--line)); font-weight:500; }
   .tp-extended { color:var(--down); border-color:var(--down); }
   .tp-steady, .tp-laggard, .tp-neutral { color:var(--muted); font-weight:400; }
+  /* actionable BUY signal — the MACD-2D x StochRSI-3D confluence gate (the hard buy filter) */
+  .sgchip { font-size:10.5px; padding:1px 8px; border-radius:7px; border:1px solid var(--line); white-space:nowrap; font-weight:600; }
+  .sgchip .xs { font-weight:400; opacity:.85; }
+  .sg-confirmed { color:var(--up); border-color:var(--up); background:color-mix(in srgb, var(--up) 15%, transparent); }
+  .sg-imminent { color:var(--up); border-color:color-mix(in srgb, var(--up) 55%, var(--line)); background:color-mix(in srgb, var(--up) 6%, transparent); }
+  .sg-none { color:var(--muted); opacity:.45; font-weight:400; }
   /* conviction driver chips */
   .convcell { max-width:260px; }
   .cchips { display:flex; flex-wrap:wrap; gap:4px; }
@@ -185,8 +204,8 @@
     <span class="muted sm">{{ t('holistic conviction across the S&P 1500 — ranked by what to own, flagged for when to buy', '覆盖标普 1500 的综合信念 — 按“持有什么”排名，并标注“何时买入”') }}</span>
   </div>
   <p class="muted sm note">{{ t(
-    "Two axes, kept honest and separate. CONVICTION (the rank) = a validated alpha-led blend: sector-neutral residual momentum (the only individually positive-IC leg) plus a light multi-factor confirmation — value, quality, profitability, low-vol and insider buying. ENTRY (a separate column) = a leader on a recent pullback is a constructive 'buy zone'; one that just spiked is 'extended' (wait). We DON'T fold entry into the rank: unlike China's A-shares (which mean-revert), US leaders keep running, so a reversal tilt in the rank measurably hurts (reports/top-picks-phase0.md). The blend beat residual-momentum alone on point-in-time IC at every horizon, but it's a modest, decayed, crowded edge — a research lens with an entry read, not a guaranteed buy list.",
-    "两个维度，保持诚实且分离。信念（排名）= 经验证的以阿尔法为主的混合：板块中性残差动量（唯一单独正 IC 的因子）加上轻度多因子确认——价值、质量、盈利、低波动与内部人买入。入场（单独一列）= 处于近期回调的领先股为建设性“可建仓”；刚刚飙升的为“过热”（等待）。我们不把入场折入排名：与会均值回归的中国 A 股不同，美股领先股会延续，因此在排名中加入反转倾斜会明显损害收益（reports/top-picks-phase0.md）。该混合在每个时间跨度的点对点 IC 上都优于单独的残差动量，但属温和、已衰减、拥挤的边际信号——是带入场读数的研究视角，而非保证买入清单。") }}</p>
+    "Two axes, kept honest and separate. CONVICTION (the rank) = a validated alpha-led blend: sector-neutral residual momentum (the only individually positive-IC leg) plus a light multi-factor confirmation — value, quality, profitability, low-vol and insider buying. BUY (a separate column) = the actionable entry, HARD-GATED on the validated MACD-2D × StochRSI-3D confluence: a name reads 'Buy zone' only once both have crossed within ~6 days (confirmed) or the 3D StochRSI has crossed and the 2D MACD is about to (about-to-cross). A high-conviction leader that is downtrending on the 3D MACD/StochRSI is NOT a buy — it shows a muted dash. The separate 'trend' chip (pullback / in-trend / extended) is risk-placement CONTEXT only, never a buy call and never in the rank (folding timing into the US rank measurably hurts — reports/top-picks-phase0.md). The conviction blend beat residual-momentum alone on point-in-time IC at every horizon, but it's a modest, decayed, crowded edge — a research lens with a gated entry read, not a guaranteed buy list.",
+    "两个维度，保持诚实且分离。信念（排名）= 经验证的以阿尔法为主的混合：板块中性残差动量（唯一单独正 IC 的因子）加上轻度多因子确认——价值、质量、盈利、低波动与内部人买入。买入（单独一列）= 可操作的入场，并以经验证的 MACD-2D × StochRSI-3D 共振硬性门控：只有当两者在约6日内交叉（已确认），或 3日 StochRSI 已上穿、2日 MACD 即将交叉（即将交叉）时，标的才显示“买入区”。在 3日 MACD/StochRSI 上处于下行的高信念领先股不构成买入——显示为灰色破折号。单独的“趋势”标签（回调/趋势内/过热）仅为风险定位情境，绝非买入信号、也不计入排名（将择时折入美股排名会明显损害收益——reports/top-picks-phase0.md）。信念混合在每个时间跨度的点对点 IC 上都优于单独残差动量，但属温和、已衰减、拥挤的边际信号——是带门控入场读数的研究视角，而非保证买入清单。") }}</p>
   <p class="muted sm" style="margin:6px 0 0">{{ t('As of', '截至') }} {{ as_of }} · {{ n }} {{ t('names', '只') }} ·
     {{ t('score', '评分') }} {{ alpha_w }}·α + {{ tilt_w }}·{{ t('conviction', '信念') }} ·
     {{ t('betas', '贝塔') }} {{ windows.beta_win }}d · {{ t('formation', '形成窗口') }} {{ windows.form }}-{{ windows.skip }}d</p>
@@ -204,10 +223,10 @@
 </div>
 {% endif %}
 
-{% if buyzone %}
 <div class="panel">
   <h2>{{ t('⭐ Buy-zone picks', '⭐ 可建仓精选') }}
-    {{ help('The sweet spot: high-conviction Top Picks that are ALSO a sector leader on a recent pullback (not extended) — a constructive entry into a high-quality leader rather than chasing one that just ran. Entry is a risk-placement read, not a return prediction.', '最佳交集：既是高信念精选、又是处于近期回调（而非过热）的板块领先股——以建设性方式进入优质领先股，而不是追高。入场为风险定位读数，而非收益预测。') }}</h2>
+    {{ help('The sweet spot, HARD-GATED on the MACD-2D × StochRSI-3D confluence buy filter: high-conviction Top Picks that have ALSO actually triggered the entry — the 2D MACD and 3D StochRSI have crossed within the last ~6 days (confirmed), or the 3D StochRSI has crossed and the 2D MACD is about to (about-to-cross). A name only appears here if it is genuinely buyable today — a strong name that is downtrending on the 3D MACD/StochRSI is NOT shown, no matter how high its conviction.', '最佳交集，并以 MACD-2D × StochRSI-3D 共振买入过滤器硬性筛选：既是高信念精选、又确实已触发入场——2日 MACD 与 3日 StochRSI 已在约近6日内交叉（已确认），或 3日 StochRSI 已上穿、2日 MACD 即将交叉（即将交叉）。只有今天确实可买入的标的才会出现在此——无论信念多高，若其在 3日 MACD/StochRSI 上处于下行，则不予显示。') }}</h2>
+  {% if buyzone %}
   <div class="bz-strip">
     {% for r in buyzone %}
     <div class="bz-card">
@@ -216,12 +235,15 @@
         <span class="bz-score">{{ '%+.2f'|format(r.top_score) }}</span>
       </div>
       <div class="muted xs" style="margin:1px 0 6px">{{ r.name[:24] }} · {{ td(r.sector) }} · α {{ '%+.2f'|format(r.alpha) }}{% if r.sector_rank %} #{{ r.sector_rank }}/{{ r.sector_n }}{% endif %}</div>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">{{ stretch(r) }}{{ entry(r) }}{{ conv(r) }}</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">{{ signal(r) }}{{ stretch(r) }}{{ entry(r) }}{{ conv(r) }}</div>
     </div>
     {% endfor %}
   </div>
+  {% if n_buyable and n_buyable > buyzone|length %}<p class="muted sm note">{{ t('+ %d more name(s) with a fresh confluence buy below conviction %.1f — see the “buy” column in the table.'|format(n_buyable - buyzone|length, 0.3), '另有 %d 个已触发共振买入但信念低于 %.1f 的标的 — 见下表“买入”列。'|format(n_buyable - buyzone|length, 0.3)) }}</p>{% endif %}
+  {% else %}
+  <p class="muted sm note" style="margin:0">{{ t('No names have a fresh MACD-2D × StochRSI-3D confluence buy right now. That is the honest read — few setups are actually triggered on a given day; the board does not manufacture a buy out of trend or momentum alone. Check the “buy” column in the table below as crosses fire.', '当前没有标的触发新的 MACD-2D × StochRSI-3D 共振买入。这是诚实的判读——某一日真正触发的布局本就很少；本榜单不会仅凭趋势或动量制造买入信号。随着交叉出现，请关注下表的“买入”列。') }}</p>
+  {% endif %}
 </div>
-{% endif %}
 
 <div class="tabs">
   <button class="tabbtn on" data-tab="global">{{ t('Top Picks', '精选') }}</button>
@@ -241,8 +263,9 @@
     {% set thead %}
       <tr><th>#</th><th>{{ t('stock', '个股') }}</th>
         <th>{{ t('Top-Pick score', '精选评分') }}{{ help('The conviction rank = 0.6·alpha + 0.4·confirmation. alpha is the sector-neutral residual-momentum z; confirmation is the sector-neutral z-mean of value / quality / profitability / low-vol / insider. Validated point-in-time to beat alpha alone on IC at every horizon (reports/top-picks-phase0.md). A modest, decayed edge — context, not a guaranteed buy.', '信念排名 = 0.6·阿尔法 + 0.4·确认。阿尔法为板块中性残差动量 z；确认为价值/质量/盈利/低波/内部人的板块中性 z 均值。经点对点验证在每个跨度上优于单独阿尔法（reports/top-picks-phase0.md）。温和、已衰减的边际信号——背景而非保证买入。') }}</th>
+        <th>{{ t('buy', '买入') }}{{ help('The ACTIONABLE entry signal — the validated MACD-2D × StochRSI-3D confluence gate (engine/signal_gate). "Buy zone" = the 2D MACD and 3D StochRSI have crossed within the last ~6 days and momentum is still constructive; "About to cross" = the 3D StochRSI has crossed and the 2D MACD is projected to cross in the next 1-2 bars. A muted dash means no fresh cross — the name is a HOLD or downtrending today, regardless of conviction. This is the only column that says "buy".', '可操作的入场信号——经验证的 MACD-2D × StochRSI-3D 共振门控（engine/signal_gate）。“买入区”=2日 MACD 与 3日 StochRSI 已在约近6日内交叉且动量仍具建设性；“即将交叉”=3日 StochRSI 已上穿、2日 MACD 预计在未来1-2根K线内交叉。灰色破折号表示无新交叉——无论信念高低，该股今日为持有或下行。这是唯一表示“买入”的列。') }}</th>
         <th>{{ t('stretch', '拉伸') }}{{ help('Extension vs the name\'s OWN history (ext_z = distance above its 200-day average, z-scored over a year): In-trend → Steady → Stretched → ⚠Parabolic. The PARABOLIC tail (>2σ) is the validated bubble-pullback flag — that cohort showed a −94% drawdown / negative skew point-in-time (reports/top-picks-freshness-phase0.md). DISPLAY-ONLY risk placement — never in the rank, never a short. We tested folding it into the score / a freshness rotation: it does NOT reduce drawdown, so it stays a per-name caution.', '相对自身历史的拉伸（ext_z = 高于其200日均线的距离，按年标准化）：趋势内→平稳→拉伸→⚠抛物。抛物尾部（>2σ）为经验证的泡沫回撤标记（该群体点对点显示 −94% 回撤）。仅作每股风险定位——不计入排名，不做空。') }}</th>
-        <th>{{ t('entry', '入场') }}{{ help('Separate timing axis (NOT in the rank): a leader on a recent 1-month pullback is a constructive buy zone; one that just spiked is extended (wait). Complements stretch — a name can be a 1m buy-zone yet still stretched vs its own year.', '独立的择时维度（不在排名内）：近一个月回调的领先股为可建仓；刚飙升的为过热（等待）。与“拉伸”互补。') }}</th>
+        <th>{{ t('trend', '趋势') }}{{ help('Trend-position CONTEXT (NOT a buy call, NOT in the rank): Pullback = a leader easing back toward its trend; In trend = riding it; Extended = just spiked (wait). This is where in its OWN move a leader sits — the actual buy trigger is the separate "buy" column (the confluence gate). A name can read "Pullback" here yet have no fresh cross.', '趋势位置情境（非买入信号、不计入排名）：回调=领先股回踩趋势；趋势内=延续；过热=刚飙升（等待）。这是领先股处于自身走势的哪个位置——真正的买入触发在单独的“买入”列（共振门控）。某股此处可显示“回调”却无新交叉。') }}</th>
         <th>{{ t('conviction drivers', '信念驱动') }}{{ help('Which confirming legs move the score (sector-neutral z ≥ 0.6 or ≤ -0.6): Profit = gross profitability (the strongest confirmer), plus value / quality / low-vol. 👤N = N insiders bought. "Rich/Cheap vs own" = current earnings yield vs the name\'s own ~3y history (display-only).', '推动评分的确认因子（板块中性 z ≥ 0.6 或 ≤ -0.6）：Profit = 毛利率（最强确认），以及价值/质量/低波。👤N = N 名内部人买入。“相对自身偏高/偏低” = 当前市盈收益率相对该股近3年历史（仅展示）。') }}</th>
         <th class="r">{{ t('α', '阿尔法') }}</th><th class="r">{{ t('price', '价格') }}</th></tr>
     {% endset %}
@@ -287,19 +310,19 @@
         <div>
           <h3 class="pos">{{ t('Top picks', '精选') }} — {{ td(sec) }}</h3>
           <table>
-            <tr><th>{{ t('stock', '个股') }}</th><th>{{ t('score', '评分') }}</th><th>{{ t('stretch', '拉伸') }}</th><th>{{ t('entry', '入场') }}</th><th>{{ t('drivers', '驱动') }}</th><th class="r">{{ t('α', '阿尔法') }}</th></tr>
+            <tr><th>{{ t('stock', '个股') }}</th><th>{{ t('score', '评分') }}</th><th>{{ t('buy', '买入') }}</th><th>{{ t('stretch', '拉伸') }}</th><th>{{ t('trend', '趋势') }}</th><th>{{ t('drivers', '驱动') }}</th><th class="r">{{ t('α', '阿尔法') }}</th></tr>
             {% for r in by_sector[sec].leaders %}{{ srow(r) }}{% endfor %}
           </table>
         </div>
         <div>
           <h3 class="neg">{{ t('Avoid', '回避') }} — {{ td(sec) }}</h3>
           <table>
-            <tr><th>{{ t('stock', '个股') }}</th><th>{{ t('score', '评分') }}</th><th>{{ t('stretch', '拉伸') }}</th><th>{{ t('entry', '入场') }}</th><th>{{ t('drivers', '驱动') }}</th><th class="r">{{ t('α', '阿尔法') }}</th></tr>
+            <tr><th>{{ t('stock', '个股') }}</th><th>{{ t('score', '评分') }}</th><th>{{ t('buy', '买入') }}</th><th>{{ t('stretch', '拉伸') }}</th><th>{{ t('trend', '趋势') }}</th><th>{{ t('drivers', '驱动') }}</th><th class="r">{{ t('α', '阿尔法') }}</th></tr>
             {% for r in by_sector[sec].laggards %}{{ srow(r) }}{% endfor %}
           </table>
         </div>
       </div>
-      <p class="muted sm note">{{ t('Re-ranked WITHIN sector by the Top-Pick score. α is the sector-neutral residual-momentum component; the score adds the multi-factor confirmation. Entry flags the constructive (pullback) vs extended names — a separate axis.', '按精选评分在板块内重新排序。α 为板块中性残差动量成分；评分加入多因子确认。入场标注建设性（回调）与过热个股——独立维度。') }}</p>
+      <p class="muted sm note">{{ t('Re-ranked WITHIN sector by the Top-Pick score. α is the sector-neutral residual-momentum component; the score adds the multi-factor confirmation. The "buy" column is the MACD-2D × StochRSI-3D confluence gate (the actionable entry); "trend" is where in its own move a leader sits — a separate context axis.', '按精选评分在板块内重新排序。α 为板块中性残差动量成分；评分加入多因子确认。“买入”列为 MACD-2D × StochRSI-3D 共振门控（可操作的入场）；“趋势”表示领先股处于自身走势的位置——独立的情境维度。') }}</p>
     </div>
     {% endfor %}
   </div>

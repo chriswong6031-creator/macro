@@ -63,6 +63,34 @@ _CASCADE_RANK = {"T1": 0, "T2": 2, "T3": 3, "T4": 4}
 # boost (a master beats an equal-conviction earlier tier). See signal_gate.blend_sorted.
 TIER_FRAC = 0.45
 
+# The tiers that constitute a FRESH, ACTIONABLE confluence BUY for the "what to buy now"
+# boards (the Top-setups strip on us_stocks.html + the discovery "Buy-zone" picks). This is
+# the owner's explicit spec — a name is only a recommendation if EITHER:
+#   * it has triggered the MACD-2D x StochRSI-3D confluence — the 2D RSI-MACD has JUST crossed
+#     (its arrow is <= FRESH_TICKS 2D-ticks old, the "just-crossed" trigger) while the 3D
+#     StochRSI has crossed RECENTLY (within the confluence window CONF_W) and is still
+#     constructive / not-topped (T2); or the validated 3D master take is itself just-crossed
+#     and not-topped (T1, the stronger superset). NOTE the asymmetry is intentional and matches
+#     the validated engine (confluence_tiers TIERED_CASCADE.md): the StochRSI sets up the zone
+#     (it need not be same-bar), the 2D MACD cross is the freshness-gated trigger; the
+#     not-topped veto kills a stale/overbought setup regardless of when the StochRSI crossed; OR
+#   * the 3D StochRSI has ALREADY crossed and the 2D RSI-MACD is about to cross in the next
+#     1-2 ticks (T3, the anticipation tier).
+# T4 is DELIBERATELY EXCLUDED: it fires off the *2D* StochRSI (not the 3D), so it does not meet
+# the "StochRSI 3D crossover" requirement and is the earliest / weakest anti-falling-knife tier.
+BUYABLE_TIERS = ("T1", "T2", "T3")
+
+
+def is_buyable(v: dict | None) -> bool:
+    """True iff a gate verdict (full or :func:`compact`) is a fresh, actionable confluence buy
+    per BUYABLE_TIERS — a just-crossed confirmed cross (T1/T2) or the StochRSI-3D-crossed /
+    MACD-2D-about-to-cross anticipation (T3). The topped / stale / early-only paths in
+    :func:`gate` clear ``tier_cascade`` to None, so a HOLD or a downtrend never reads buyable."""
+    if not v or not v.get("eligible"):
+        return False
+    return v.get("tier_cascade") in BUYABLE_TIERS
+
+
 _VERDICT_KEYS = ("eligible", "tier", "sub", "reason", "state", "above200",
                  "weekly_bull", "early_now", "asof", "last",
                  "tier_cascade", "weight", "tier_sub", "bars_to_cross", "fresh_bars", "ticks")
@@ -217,6 +245,20 @@ def compact(v: dict | None) -> dict:
     if not v:
         return {"eligible": False, "tier": None, "sub": None, "reason": "no signal"}
     return {k: v.get(k) for k in _VERDICT_KEYS}
+
+
+# the SLIM, fully JSON-safe verdict for the "what to buy" boards (Top-setups strip on
+# us_stocks.html + the discovery Buy-zone picks). Unlike compact() it drops the §7 marker
+# payload ("last"/"state"/...) — those can carry NaN, and the boards only need the tier +
+# freshness — so it is safe to persist with allow_nan=False. is_buyable() reads from this.
+_BUY_KEYS = ("eligible", "tier_cascade", "tier_sub", "ticks", "bars_to_cross")
+
+
+def buy_signal(v: dict | None) -> dict:
+    """Slim, JSON-safe buy verdict: confluence tier + freshness only, no markers."""
+    if not v:
+        return {"eligible": False, "tier_cascade": None}
+    return {k: v.get(k) for k in _BUY_KEYS}
 
 
 def write_signal_file(out_dir, ticker: str, result: dict | None) -> bool:
