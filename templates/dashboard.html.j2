@@ -209,8 +209,14 @@
   .dial .active-AGGRESSIVE { background: var(--ok); color: #fff; }
   @media (max-width: 520px) { .dial > span { font-size: 8.5px; padding: 5px 1px; } }
   .reason { margin: 7px 0; padding-left: 24px; position: relative; line-height: 1.4; }
-  .reason b.sig { position: absolute; left: 0; width: 17px; text-align: center;
-                  border-radius: 4px; font-size: 12px; }
+  /* +/−/i markers — own class (rsig) so they don't collide with the signal-atom .sig
+     card (grid + ::before rail), which was hijacking them into a quarter-filled look. */
+  .reason b.rsig { position: absolute; left: 0; top: 1px; width: 16px; height: 16px;
+                  display: inline-flex; align-items: center; justify-content: center;
+                  border-radius: 5px; font-size: 11px; font-weight: 800; line-height: 1; }
+  .reason b.rsig-p { color: var(--up); background: color-mix(in srgb, var(--up) 16%, transparent); }
+  .reason b.rsig-m { color: var(--down); background: color-mix(in srgb, var(--down) 16%, transparent); }
+  .reason b.rsig-i { color: var(--ink-2, var(--muted)); background: color-mix(in srgb, var(--ink-2, var(--muted)) 14%, transparent); }
   /* lead the bullet with the read; demote the parenthetical stats so it scans */
   .reason .reason-main { font-weight: 600; color: var(--ink-1, var(--text)); }
   .reason .reason-det { color: var(--ink-3, var(--muted)); font-size: .92em; }
@@ -1103,7 +1109,7 @@
        radar is loud (caution/elevated/risk-off → is_loud), i.e. when it actually fires, so it
        reads as a genuine 'market is turning over' signal rather than permanent chrome. Uses
        market_state directly (the MS alias is set later, inside the macro-only region). #}
-    {% if market_state and market_state.radar and market_state.radar.is_loud %}
+    {% if market_state and market_state.radar and (market_state.radar.is_loud or (market_state.radar.recovery and market_state.radar.recovery.present)) %}
     {{ rrc.risk_radar_card(market_state.radar, latest.risk_radar.scares if latest.risk_radar else none) }}
     {% endif %}
     <p class="muted" style="margin:6px 0 0">{{ t('Where to look for stocks — standouts, sector rotation, factor tilts and real fund flows, filtered by the current macro regime.', '在哪里找股票 — 精选个股、板块轮动、因子倾斜与基金真实资金流，按当前宏观周期过滤。') }}
@@ -1624,7 +1630,7 @@
         </div>
         {% if pb.dial %}
         <div class="dial">{% for p in ["DEFENSIVE","CAREFUL","NEUTRAL","CONSTRUCTIVE","AGGRESSIVE"] %}<span class="{{ 'active-' + p if pb.dial.posture == p }}">{{ td(p) }}</span>{% endfor %}</div>
-        {% for sign, r_en, r_zh in pb.dial.reasons %}{% set _e = r_en.split(' (', 1) %}{% set _zsep = '（' if '（' in r_zh else ' (' %}{% set _z = r_zh.split(_zsep, 1) %}<div class="reason"><b class="sig sig-{{ {'+':'p','-':'m','i':'i'}[sign] }}">{{ {'+':'+','-':'−','i':'i'}[sign] }}</b><span class="l-en"><b class="reason-main">{{ _e[0] }}</b>{% if _e|length > 1 %}<span class="reason-det"> ({{ _e[1] }}</span>{% endif %}</span><span class="l-zh"><b class="reason-main">{{ _z[0] }}</b>{% if _z|length > 1 %}<span class="reason-det">{{ _zsep }}{{ _z[1] }}</span>{% endif %}</span></div>{% endfor %}
+        {% for sign, r_en, r_zh in pb.dial.reasons %}{% set _e = r_en.split(' (', 1) %}{% set _zsep = '（' if '（' in r_zh else ' (' %}{% set _z = r_zh.split(_zsep, 1) %}<div class="reason"><b class="rsig rsig-{{ {'+':'p','-':'m','i':'i'}[sign] }}">{{ {'+':'+','-':'−','i':'i'}[sign] }}</b><span class="l-en"><b class="reason-main">{{ _e[0] }}</b>{% if _e|length > 1 %}<span class="reason-det"> ({{ _e[1] }}</span>{% endif %}</span><span class="l-zh"><b class="reason-main">{{ _z[0] }}</b>{% if _z|length > 1 %}<span class="reason-det">{{ _zsep }}{{ _z[1] }}</span>{% endif %}</span></div>{% endfor %}
         {% endif %}
         <div style="margin-top:11px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:13px">
           {% if pb.next_list %}<span class="help" style="font-weight:600;color:var(--link);width:auto;height:auto;border:none;margin:0">{{ t("What's likely next",'接下来可能发生什么') }} ▾<span class="tip" style="width:300px;font-weight:400">
@@ -1747,94 +1753,149 @@
   </a>
 
 
-  <!-- ===================== FROTH & FRAGILITY — retail euphoria + hidden distribution (display-only; signal-only, full breakdown is backend) ===================== -->
-  {% if mode != 'stocks' and froth_fragility %}
-  {% set ff = froth_fragility %}
-  {% set ffc = 'var(--up)' if ff.band == 'calm' else ('var(--warn)' if ff.band in ['watch','elevated'] else 'var(--down)') %}
-  {% set ax = ff.face_a.score if ff.face_a.score is not none else 0 %}
-  {% set bx = ff.face_b.score if ff.face_b.score is not none else 0 %}
-  <div class="panel span6" id="froth-fragility" style="--rail:{{ ffc }}">
-    <h2>{{ t('Froth & Fragility', '狂热与脆弱') }}
-      {% if ff.headline is not none %}<span style="float:right;color:{{ ffc }};font-weight:800;font-size:16px">{{ ff.headline|round|int }}<small style="font-size:12px;font-weight:600;color:var(--muted)">/100 · {{ t(ff.band|capitalize, ff.band_zh) }}</small></span>{% endif %}
-      {{ help("A top-risk gauge that measures what a single VIX read cannot: retail EUPHORIA (semis/AI parabolicity) AND hidden DISTRIBUTION (a rotating decline under a pinned index, where the cap-weighted index and VIX stay calm because the leaders take turns falling / rotation holds the tape up). The honest read is the 2D danger-quadrant: only EUPHORIC AND FRAGILE together is a distribution-top risk. VIX is coincident index implied-vol — it is √ρ·σ̄, so falling single-stock correlation mechanically pins it low while internal risk builds; this gauge fuses the LEADING internals it misses. DISPLAY-ONLY / validation-accruing: it feeds NO score and NO allocation — the only sanctioned response is SIZING (de-risk), never selection. Each firing is logged and graded on forward QQQ/SMH drawdown + VIX jump.", "一个顶部风险计，衡量单看 VIX 无法捕捉的两面：零售欣喜（半导体/AI 抛物化）与隐性派发（被托住的指数下的轮动式下行：龙头轮流下跌或板块轮动撑住大盘，使市值加权指数与 VIX 保持平静）。诚实读法是二维危险象限：唯有“欣喜且脆弱”同时出现才是派发顶部风险。VIX 是同步的指数隐含波动率——约等于 √ρ·σ̄，因此个股相关性下降会机械地把它压低，而内部风险却在累积；本计融合它错过的领先内部指标。仅供展示／积累验证：不计分、不驱动仓位——唯一被许可的回应是减仓，绝非选股。每次触发都会记录并以未来 QQQ/SMH 回撤与 VIX 跳升评分。") }}
+  <!-- ===================== SENTIMENT REGIME — Froth & Fragility + Fear↔Euphoria (display-only conditioning lenses; merged scorecard) ===================== -->
+  {% if mode != 'stocks' and (froth_fragility or fear_euphoria) %}
+  <div class="panel span12" id="sentiment-regime">
+    <h2>{{ t('Sentiment regime — froth, fear &amp; euphoria', '情绪周期 — 狂热、恐惧与欣喜') }}
+      {{ help("Two display-only regime lenses in one card. Froth & Fragility — a top-risk gauge that fuses retail EUPHORIA (semis/AI parabolicity) with hidden DISTRIBUTION (a rotating decline under a pinned index) — the leading internals a single VIX read misses; only EUPHORIC AND FRAGILE together is a distribution-top risk, and the only sanctioned response is SIZING (de-risk), never selection. Fear ↔ Euphoria — a conditioning read that synthesises the cross-asset RORO risk-appetite composite, the dislocation verdict and the capitulation gauge into one 0-100 regime score. NEITHER scores direction or sizes positions; neither feeds the quad, the macro-risk score or any axis.", "两个仅供展示的周期视角合于一卡。狂热与脆弱 — 顶部风险计，融合零售欣喜（半导体/AI 抛物化）与隐性派发（被托住指数下的轮动式下行）——单看 VIX 会错过的领先内部指标；唯有“欣喜且脆弱”同时出现才是派发顶部风险，唯一被许可的回应是减仓，绝非选股。恐惧↔欣喜 — 综合跨资产 RORO 风险偏好综合、错位读数与投降指标，形成单一的 0-100 周期评分。两者都不评分方向、不决定仓位；都不进入象限、宏观风险评分或任何轴。") }}
+      <a href="macro_signals.html" class="muted" style="font-size:12px;font-weight:400;margin-left:auto">{{ t('full breakdown →','完整拆解 →') }}</a>
     </h2>
+    <p class="muted sm" style="margin:-4px 0 14px">{{ t('Conditioning lenses, not signals — they synthesise components this dashboard already computes and never score direction or size positions.', '环境视角，而非信号 — 仅综合本仪表盘已计算的成分，绝不评分方向或决定仓位。') }}</p>
+    <div style="display:flex;flex-wrap:wrap;gap:18px 22px">
 
-    {% if ff.face_a.score is not none or ff.face_b.score is not none %}
-    <div style="margin-top:2px;font-weight:700;color:{{ ffc }}">{{ t(ff.quadrant_en, ff.quadrant_zh) }}
-      {% if ff.provisional %}<span class="badge sm" style="margin-left:6px" title="forward record still accruing">{{ t('provisional', '暂定') }}</span>{% endif %}
-      {% if ff.unwind_risk %}<span class="badge sm" style="margin-left:6px;color:var(--down)" title="correlation snapping back">⚠ {{ t('unwind risk','解构风险') }}</span>{% endif %}
+      <!-- Froth & Fragility -->
+      {% if froth_fragility %}
+      {% set ff = froth_fragility %}
+      {% set ffc = 'var(--up)' if ff.band == 'calm' else ('var(--warn)' if ff.band in ['watch','elevated'] else 'var(--down)') %}
+      {% set ax = ff.face_a.score if ff.face_a.score is not none else 0 %}
+      {% set bx = ff.face_b.score if ff.face_b.score is not none else 0 %}
+      <section style="flex:1 1 320px;min-width:0;border-left:3px solid {{ ffc }};padding-left:14px">
+        <h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:0">{{ t('Froth & Fragility', '狂热与脆弱') }}
+          {% if ff.headline is not none %}<span style="margin-left:auto;color:{{ ffc }};font-weight:800;font-size:16px">{{ ff.headline|round|int }}<small style="font-size:12px;font-weight:600;color:var(--muted)">/100 · {{ t(ff.band|capitalize, ff.band_zh) }}</small></span>{% endif %}
+          {{ help("A top-risk gauge that measures what a single VIX read cannot: retail EUPHORIA (semis/AI parabolicity) AND hidden DISTRIBUTION (a rotating decline under a pinned index, where the cap-weighted index and VIX stay calm because the leaders take turns falling / rotation holds the tape up). The honest read is the 2D danger-quadrant: only EUPHORIC AND FRAGILE together is a distribution-top risk. VIX is coincident index implied-vol — it is √ρ·σ̄, so falling single-stock correlation mechanically pins it low while internal risk builds; this gauge fuses the LEADING internals it misses. DISPLAY-ONLY / validation-accruing: it feeds NO score and NO allocation — the only sanctioned response is SIZING (de-risk), never selection. Each firing is logged and graded on forward QQQ/SMH drawdown + VIX jump.", "一个顶部风险计，衡量单看 VIX 无法捕捉的两面：零售欣喜（半导体/AI 抛物化）与隐性派发（被托住的指数下的轮动式下行：龙头轮流下跌或板块轮动撑住大盘，使市值加权指数与 VIX 保持平静）。诚实读法是二维危险象限：唯有“欣喜且脆弱”同时出现才是派发顶部风险。VIX 是同步的指数隐含波动率——约等于 √ρ·σ̄，因此个股相关性下降会机械地把它压低，而内部风险却在累积；本计融合它错过的领先内部指标。仅供展示／积累验证：不计分、不驱动仓位——唯一被许可的回应是减仓，绝非选股。每次触发都会记录并以未来 QQQ/SMH 回撤与 VIX 跳升评分。") }}
+        </h3>
+        {% if ff.face_a.score is not none or ff.face_b.score is not none %}
+        <div style="margin-top:2px;font-weight:700;color:{{ ffc }}">{{ t(ff.quadrant_en, ff.quadrant_zh) }}
+          {% if ff.provisional %}<span class="badge sm" style="margin-left:6px" title="forward record still accruing">{{ t('provisional', '暂定') }}</span>{% endif %}
+          {% if ff.unwind_risk %}<span class="badge sm" style="margin-left:6px;color:var(--down)" title="correlation snapping back">⚠ {{ t('unwind risk','解构风险') }}</span>{% endif %}
+        </div>
+        <div class="muted sm" style="margin-top:6px">{{ t('Euphoria','欣喜') }} <b style="color:var(--text)">{{ ax|round|int }}</b>/100 · {{ t('Fragility / distribution','脆弱／派发') }} <b style="color:var(--text)">{{ bx|round|int }}</b>/100</div>
+        {% else %}
+        <p class="muted sm">{{ t('Not enough data to compute the gauge right now.','当前数据不足以计算该指标。') }}</p>
+        {% endif %}
+        <p class="muted sm" style="margin:8px 0 0">{% if ff.track_record and ff.track_record.n %}{{ t('Forward record','前瞻记录') }}: {{ ff.track_record.n }} {{ t('firings','次触发') }} · {{ (ff.track_record.hit_rate * 100)|round|int }}% {{ t('hit','命中') }}. {% else %}{{ t('Forward record accruing.','前瞻记录积累中。') }} {% endif %}{{ t('Display-only — the response is sizing, not selection.','仅供展示——应对是调整仓位，而非选股。') }}</p>
+      </section>
+      {% endif %}
+
+      <!-- Fear ↔ Euphoria -->
+      {% if fear_euphoria %}
+      {% set FE = fear_euphoria %}
+      {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
+      <section style="flex:1 1 320px;min-width:0">
+        <h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:0">{{ t('Fear ↔ Euphoria: regime synthesis', '恐惧 ↔ 欣喜：周期综合') }}
+          {{ help("A conditioning lens, NOT a signal. It synthesises components this dashboard already computes — the cross-asset RORO risk-appetite composite, the dislocation verdict and the capitulation gauge — into one Fear↔Euphoria regime read. It does NOT score direction or size positions, and never feeds the quad, the macro-risk score or any axis. 'Contrarian at extremes' is regime-dependent: fear is buyable only when the Fed put is present; in put-absent regimes extreme fear can be a falling knife.", "这是环境视角，不是信号。它综合本仪表盘已计算的成分 — 跨资产 RORO 风险偏好综合、错位读数与投降指标 — 形成单一的恐惧↔欣喜周期读数。它不评分方向、不决定仓位，也绝不进入象限、宏观风险评分或任何轴。'极端时反向操作'取决于周期：只有在美联储托底在位时，恐惧才可买入；托底缺失时，极端恐惧可能是下跌中的刀子。") }}
+        </h3>
+        <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+          <div style="font-weight:700">{{ t('Fear ↔ Euphoria', '恐惧 ↔ 欣喜') }}
+            <span style="font-size:22px">{{ FE.fe_score }}</span><span class="muted" style="font-size:13px">/100</span>
+            <span class="badge" style="font-size:11px;vertical-align:middle;background:var(--panel)">{{ t(FE.band, _bandzh.get(FE.band, FE.band)) }}</span>
+            {% if FE.roro is not none %}<span class="muted sm" style="float:right">RORO {{ '%+.2f'|format(FE.roro) }}{% if FE.roro_state %} <span class="pill" style="background:var(--panel)">{{ td(FE.roro_state) }}</span>{% endif %}</span>{% endif %}
+          </div>
+          <div class="pgauge" style="width:100%"><i style="left: {{ FE.fe_score }}%"></i></div>
+          <div class="pends"><span>← {{ t('Fear', '恐惧') }}</span><span>{{ t('Euphoria', '欣喜') }} →</span></div>
+          <div class="pends" style="margin-top:3px">
+            <span{% if FE.band=='Panic' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Panic', '恐慌') }}</span>
+            <span{% if FE.band=='Fear' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Fear', '恐惧') }}</span>
+            <span{% if FE.band=='Neutral' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Neutral', '中性') }}</span>
+            <span{% if FE.band=='Greed' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Greed', '贪婪') }}</span>
+            <span{% if FE.band=='Euphoria' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Euphoria', '欣喜') }}</span>
+          </div>
+          <div class="muted sm" style="margin-top:8px">{{ t("Today's score is the rolling-5-year percentile of the RORO composite (valid after ~2.5y). 'Contrarian at extremes' is regime-dependent — see the dislocation read below.", '今日评分为 RORO 综合的滚动五年百分位（约 2.5 年后有效）。"极端时反向操作"取决于周期 — 见下方错位读数。') }}</div>
+        </div>
+      </section>
+      {% endif %}
+
     </div>
-    <div class="muted sm" style="margin-top:6px">{{ t('Euphoria','欣喜') }} <b style="color:var(--text)">{{ ax|round|int }}</b>/100 · {{ t('Fragility / distribution','脆弱／派发') }} <b style="color:var(--text)">{{ bx|round|int }}</b>/100</div>
-    {% else %}
-    <p class="muted sm">{{ t('Not enough data to compute the gauge right now.','当前数据不足以计算该指标。') }}</p>
-    {% endif %}
-
-    <p class="muted sm" style="margin:8px 0 0">{% if ff.track_record and ff.track_record.n %}{{ t('Forward record','前瞻记录') }}: {{ ff.track_record.n }} {{ t('firings','次触发') }} · {{ (ff.track_record.hit_rate * 100)|round|int }}% {{ t('hit','命中') }}. {% else %}{{ t('Forward record accruing.','前瞻记录积累中。') }} {% endif %}{{ t('Display-only — the response is sizing, not selection.','仅供展示——应对是调整仓位，而非选股。') }}</p>
   </div>
   {% endif %}
 
-  <!-- ===================== RATE & INFLATION TRANSMISSION (compact; full page = transmission.html) ===================== -->
-  {% if latest.rate_inflation_transmission and latest.rate_inflation_transmission.state %}
-  {% set rit = latest.rate_inflation_transmission %}
-  <div class="panel span6" id="rate-transmission">
-    <h2>{{ t('Rates & inflation — who it helps, who it hurts', '利率与通胀 — 利好谁、利空谁') }}
-      {{ help("How today's interest rates and inflation help or hurt each asset class. Green = tailwind, red = headwind. It's a read on pressure, not a buy/sell call. The full cause-and-effect breakdown is on the Transmission page.", "当前利率与通胀如何利好或利空各类资产。绿色＝顺风，红色＝逆风。这是对压力的判断，而非买卖信号。完整的因果分解见“传导”页面。") }}
-      <a href="transmission.html" style="float:right;font-size:12px;font-weight:600">{{ t('Full page →', '完整页面 →') }}</a>
+  <!-- ===================== CROSS-ASSET MACRO — Rates & inflation transmission + Bonds & FX cross-check (merged scorecard; context-only) ===================== -->
+  {% set _rit = latest.rate_inflation_transmission if (latest.rate_inflation_transmission and latest.rate_inflation_transmission.state) else None %}
+  {% set _cac = latest.cross_asset_confirm if (latest.cross_asset_confirm and latest.cross_asset_confirm.verdict not in [none, 'unknown']) else None %}
+  {% if _rit or _cac %}
+  <div class="panel span12" id="cross-asset-macro">
+    <h2>{{ t('Rates, bonds &amp; FX — cross-asset check', '利率、债券与外汇 — 跨资产校验') }}
+      {{ help("Two context-only cross-asset reads in one card. Rates & inflation — how today's rates and inflation help or hurt each asset class (green = tailwind, red = headwind): a read on pressure, not a buy/sell call. Bonds & FX cross-check — bonds and the dollar move faster than stocks, so this checks whether they confirm the equity read (AGREE = the move has support; DIVERGE = a yellow flag). Neither is a buy/sell signal; the full cause-and-effect breakdown is on the Transmission page.", "两个仅供参考的跨资产读数合于一卡。利率与通胀 — 当前利率与通胀如何利好或利空各类资产（绿色＝顺风，红色＝逆风）：判断压力，而非买卖信号。债券与外汇交叉验证 — 债券与美元比股票反应更快，因此检查它们是否确认股市读数（一致＝走势有支撑；背离＝黄旗）。两者都不是买卖信号；完整的因果分解见“传导”页面。") }}
+      <a href="transmission.html" style="margin-left:auto;font-size:12px;font-weight:600">{{ t('Transmission page →', '传导页面 →') }}</a>
     </h2>
-    <div style="display:flex;flex-wrap:wrap;gap:8px 18px;margin:4px 0 12px;font-size:13px">
-      <span>{{ t('Rates','利率') }}: <b><span class="l-en">{{ rit.state.rates.label.en }}</span><span class="l-zh">{{ rit.state.rates.label.zh }}</span></b></span>
-      <span>{{ t('Inflation','通胀') }}: <b><span class="l-en">{{ rit.state.inflation.label.en }}</span><span class="l-zh">{{ rit.state.inflation.label.zh }}</span></b></span>
-      <span>{{ t('Expectations','预期') }}: <b><span class="l-en">{{ rit.state.expectations.label.en }}</span><span class="l-zh">{{ rit.state.expectations.label.zh }}</span></b></span>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:13px">
-      <div><span class="tone-down" style="font-weight:700">{{ t('Headwind','逆风') }}</span>
-        {% for h in rit.headwinds[:3] %}<div style="margin-top:5px;display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span> <b class="wind head">{{ '%.2f'|format(h.net) }}</b></div>{% else %}<div class="muted">—</div>{% endfor %}
-      </div>
-      <div><span class="tone-up" style="font-weight:700">{{ t('Tailwind','顺风') }}</span>
-        {% for h in rit.tailwinds[:3] %}<div style="margin-top:5px;display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span> <b class="wind tail">+{{ '%.2f'|format(h.net) }}</b></div>{% else %}<div class="muted">—</div>{% endfor %}
-      </div>
-    </div>
-    <p class="muted sm" style="margin:10px 0 0">{{ t('A read on risk, not return — context only.', '仅作风险判断而非回报，仅供参考。') }}</p>
-  </div>
-  {% endif %}
+    <p class="muted sm" style="margin:-4px 0 14px">{{ t('Context only, never a buy/sell signal — macro pressure on each asset class, and whether the fast markets confirm the equity move.', '仅供参考，绝非买卖信号 — 各类资产承受的宏观压力，以及快速市场是否确认股票走势。') }}</p>
+    <div style="display:flex;flex-wrap:wrap;gap:18px 22px">
 
-  <!-- ===================== BONDS & FX CROSS-CHECK — do the fast markets confirm equities? ===================== -->
-  {% if latest.cross_asset_confirm and latest.cross_asset_confirm.verdict not in [none, 'unknown'] %}
-  {% set cac = latest.cross_asset_confirm %}
-  {% set _cvtone = 'up' if cac.verdict == 'confirm' else ('down' if cac.verdict == 'diverge' else 'flat') %}
-  <details class="panel span6 fold" id="cross-asset-confirm">
-    <summary>{{ t('Bonds & FX cross-check — do they confirm stocks?', '债券与外汇交叉验证 — 是否确认股票？') }}
-      <span class="badge tone-{{ _cvtone }}">{{ t(cac.verdict, cac.verdict_zh) }}{% if cac.agree_pct is not none %} · {{ cac.agree_pct }}%{% endif %}</span>
-      {{ help("Bonds and the dollar move faster than stocks, so this checks whether they agree with the stock-market read. They AGREE = the move has support; they DIVERGE = a yellow flag worth watching. Context only, never a buy/sell signal.", "债券与美元比股票反应更快，因此本面板检查它们是否认同股市读数。一致＝走势有支撑；背离＝值得留意的黄旗。仅供参考，绝非买卖信号。") }}
-    </summary>
-    <div style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid var({{ '--up' if _cvtone=='up' else ('--down' if _cvtone=='down' else '--muted') }});border-radius:8px;padding:10px 12px;font-weight:600">
-      {{ t(cac.headline_en, cac.headline_zh) }}
+      <!-- Rates & inflation — who it helps, who it hurts -->
+      {% if _rit %}
+      {% set rit = _rit %}
+      <section style="flex:1 1 320px;min-width:0">
+        <h3 style="margin-top:0">{{ t('Rates & inflation — who it helps, who it hurts', '利率与通胀 — 利好谁、利空谁') }}
+          {{ help("How today's interest rates and inflation help or hurt each asset class. Green = tailwind, red = headwind. It's a read on pressure, not a buy/sell call. The full cause-and-effect breakdown is on the Transmission page.", "当前利率与通胀如何利好或利空各类资产。绿色＝顺风，红色＝逆风。这是对压力的判断，而非买卖信号。完整的因果分解见“传导”页面。") }}
+        </h3>
+        <div style="display:flex;flex-wrap:wrap;gap:8px 18px;margin:4px 0 12px;font-size:13px">
+          <span>{{ t('Rates','利率') }}: <b><span class="l-en">{{ rit.state.rates.label.en }}</span><span class="l-zh">{{ rit.state.rates.label.zh }}</span></b></span>
+          <span>{{ t('Inflation','通胀') }}: <b><span class="l-en">{{ rit.state.inflation.label.en }}</span><span class="l-zh">{{ rit.state.inflation.label.zh }}</span></b></span>
+          <span>{{ t('Expectations','预期') }}: <b><span class="l-en">{{ rit.state.expectations.label.en }}</span><span class="l-zh">{{ rit.state.expectations.label.zh }}</span></b></span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:13px">
+          <div><span class="tone-down" style="font-weight:700">{{ t('Headwind','逆风') }}</span>
+            {% for h in rit.headwinds[:3] %}<div style="margin-top:5px;display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span> <b class="wind head">{{ '%.2f'|format(h.net) }}</b></div>{% else %}<div class="muted">—</div>{% endfor %}
+          </div>
+          <div><span class="tone-up" style="font-weight:700">{{ t('Tailwind','顺风') }}</span>
+            {% for h in rit.tailwinds[:3] %}<div style="margin-top:5px;display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span> <b class="wind tail">+{{ '%.2f'|format(h.net) }}</b></div>{% else %}<div class="muted">—</div>{% endfor %}
+          </div>
+        </div>
+        <p class="muted sm" style="margin:10px 0 0">{{ t('A read on risk, not return — context only.', '仅作风险判断而非回报，仅供参考。') }}</p>
+      </section>
+      {% endif %}
+
+      <!-- Bonds & FX cross-check — do they confirm stocks? -->
+      {% if _cac %}
+      {% set cac = _cac %}
+      {% set _cvtone = 'up' if cac.verdict == 'confirm' else ('down' if cac.verdict == 'diverge' else 'flat') %}
+      <section style="flex:1 1 320px;min-width:0">
+        <h3 style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:0">{{ t('Bonds & FX cross-check — do they confirm stocks?', '债券与外汇交叉验证 — 是否确认股票？') }}
+          <span class="badge tone-{{ _cvtone }}">{{ t(cac.verdict, cac.verdict_zh) }}{% if cac.agree_pct is not none %} · {{ cac.agree_pct }}%{% endif %}</span>
+          {{ help("Bonds and the dollar move faster than stocks, so this checks whether they agree with the stock-market read. They AGREE = the move has support; they DIVERGE = a yellow flag worth watching. Context only, never a buy/sell signal.", "债券与美元比股票反应更快，因此本面板检查它们是否认同股市读数。一致＝走势有支撑；背离＝值得留意的黄旗。仅供参考，绝非买卖信号。") }}
+        </h3>
+        <div style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid var({{ '--up' if _cvtone=='up' else ('--down' if _cvtone=='down' else '--muted') }});border-radius:8px;padding:10px 12px;font-weight:600">
+          {{ t(cac.headline_en, cac.headline_zh) }}
+        </div>
+        {% if cac.cycle %}
+        <div class="muted sm" style="margin-top:8px">
+          {{ t('Cycle clock', '周期时钟') }}: {{ t('equities', '股票') }} <b>{{ td(cac.cycle.equity) if cac.cycle.equity else '—' }}</b>
+          · {{ t('bonds', '债券') }} <b>{{ t(cac.cycle.bonds_en or cac.cycle.bonds or '—', cac.cycle.bonds_zh or cac.cycle.bonds or '—') }}</b>
+          {% if cac.cycle.fx_regime %} · {{ t('dollar-smile', '美元微笑') }} <b>{{ t(cac.cycle.fx_regime, cac.cycle.fx_regime_zh or cac.cycle.fx_regime) }}</b>{% endif %}
+        </div>
+        {% endif %}
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px">
+          {% for leg in cac.legs %}
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span class="sstack-dot tone-{{ leg.tone }}" style="margin-top:5px;flex:0 0 auto"></span>
+            <div><b>{{ t(leg.label_en, leg.label_zh) }}</b> — <span class="muted">{{ t(leg.detail_en, leg.detail_zh) }}</span></div>
+          </div>
+          {% endfor %}
+        </div>
+        {% if cac.caution_flags %}
+        <div style="margin-top:10px">
+          <div class="sm" style="font-weight:600;margin-bottom:4px">{{ t('Watch flags', '关注信号') }}</div>
+          {% for f in cac.caution_flags %}
+          <div class="sm" style="padding:4px 8px;margin:3px 0;border-left:3px solid var({{ '--down' if f.severity=='high' else ('--warn' if f.severity=='medium' else '--muted') }});background:var(--panel2);border-radius:4px">{{ t(f.en, f.zh) }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <p class="muted sm" style="margin:10px 0 0">{{ t(cac.note_en, cac.note_zh) }}</p>
+      </section>
+      {% endif %}
+
     </div>
-    {% if cac.cycle %}
-    <div class="muted sm" style="margin-top:8px">
-      {{ t('Cycle clock', '周期时钟') }}: {{ t('equities', '股票') }} <b>{{ td(cac.cycle.equity) if cac.cycle.equity else '—' }}</b>
-      · {{ t('bonds', '债券') }} <b>{{ t(cac.cycle.bonds_en or cac.cycle.bonds or '—', cac.cycle.bonds_zh or cac.cycle.bonds or '—') }}</b>
-      {% if cac.cycle.fx_regime %} · {{ t('dollar-smile', '美元微笑') }} <b>{{ t(cac.cycle.fx_regime, cac.cycle.fx_regime_zh or cac.cycle.fx_regime) }}</b>{% endif %}
-    </div>
-    {% endif %}
-    <div style="display:flex;flex-direction:column;gap:6px;margin-top:10px">
-      {% for leg in cac.legs %}
-      <div style="display:flex;gap:8px;align-items:flex-start">
-        <span class="sstack-dot tone-{{ leg.tone }}" style="margin-top:5px;flex:0 0 auto"></span>
-        <div><b>{{ t(leg.label_en, leg.label_zh) }}</b> — <span class="muted">{{ t(leg.detail_en, leg.detail_zh) }}</span></div>
-      </div>
-      {% endfor %}
-    </div>
-    {% if cac.caution_flags %}
-    <div style="margin-top:10px">
-      <div class="sm" style="font-weight:600;margin-bottom:4px">{{ t('Watch flags', '关注信号') }}</div>
-      {% for f in cac.caution_flags %}
-      <div class="sm" style="padding:4px 8px;margin:3px 0;border-left:3px solid var({{ '--down' if f.severity=='high' else ('--warn' if f.severity=='medium' else '--muted') }});background:var(--panel2);border-radius:4px">{{ t(f.en, f.zh) }}</div>
-      {% endfor %}
-    </div>
-    {% endif %}
-    <p class="muted sm" style="margin:10px 0 0">{{ t(cac.note_en, cac.note_zh) }}</p>
-  </details>
+  </div>
   {% endif %}
 
   <!-- ===================== MAJOR US INDEXES — HEALTH & RISK ===================== -->
@@ -2211,46 +2272,7 @@
   </div>
   {% endif %}{# /mode != stocks — news & catalysts board #}
 
-  <!-- ===== FEAR <-> EUPHORIA SYNTHESIS (display-only conditioning lens) ===== -->
-  {% if mode != 'stocks' %}
-  <div class="panel span6" id="fear-euphoria">
-    <h2>{{ t('Fear ↔ Euphoria: regime synthesis', '恐惧 ↔ 欣喜：周期综合') }}
-      {{ help("A conditioning lens, NOT a signal. It synthesises components this dashboard already computes — the cross-asset RORO risk-appetite composite, the dislocation verdict and the capitulation gauge — into one Fear↔Euphoria regime read. It does NOT score direction or size positions, and never feeds the quad, the macro-risk score or any axis. 'Contrarian at extremes' is regime-dependent: fear is buyable only when the Fed put is present; in put-absent regimes extreme fear can be a falling knife.", "这是环境视角，不是信号。它综合本仪表盘已计算的成分 — 跨资产 RORO 风险偏好综合、错位读数与投降指标 — 形成单一的恐惧↔欣喜周期读数。它不评分方向、不决定仓位，也绝不进入象限、宏观风险评分或任何轴。'极端时反向操作'取决于周期：只有在美联储托底在位时，恐惧才可买入；托底缺失时，极端恐惧可能是下跌中的刀子。") }}
-      <a href="gex.html" class="muted" style="font-size:12px;font-weight:400;float:right">{{ t('dealer gamma →','交易商 gamma →') }}</a>
-    </h2>
-    <p class="muted sm" style="margin:-4px 0 10px">{{ t('A regime read, not a signal — it synthesises existing components and never scores direction or sizes positions.', '这是周期读数而非信号 — 仅综合已有成分，绝不评分方向或决定仓位。') }}</p>
-    {% if fear_euphoria %}
-    {% set FE = fear_euphoria %}
-    {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
-    <div class="grid">
-
-      <!-- 0-100 Fear<->Euphoria gauge -->
-      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-        <div style="font-weight:700">{{ t('Fear ↔ Euphoria', '恐惧 ↔ 欣喜') }}
-          <span style="font-size:22px">{{ FE.fe_score }}</span><span class="muted" style="font-size:13px">/100</span>
-          <span class="badge" style="font-size:11px;vertical-align:middle;background:var(--panel)">{{ t(FE.band, _bandzh.get(FE.band, FE.band)) }}</span>
-          {% if FE.roro is not none %}<span class="muted sm" style="float:right">RORO {{ '%+.2f'|format(FE.roro) }}{% if FE.roro_state %} <span class="pill" style="background:var(--panel)">{{ td(FE.roro_state) }}</span>{% endif %}</span>{% endif %}
-        </div>
-        <div class="pgauge" style="width:100%"><i style="left: {{ FE.fe_score }}%"></i></div>
-        <div class="pends"><span>← {{ t('Fear', '恐惧') }}</span><span>{{ t('Euphoria', '欣喜') }} →</span></div>
-        <div class="pends" style="margin-top:3px">
-          <span{% if FE.band=='Panic' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Panic', '恐慌') }}</span>
-          <span{% if FE.band=='Fear' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Fear', '恐惧') }}</span>
-          <span{% if FE.band=='Neutral' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Neutral', '中性') }}</span>
-          <span{% if FE.band=='Greed' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Greed', '贪婪') }}</span>
-          <span{% if FE.band=='Euphoria' %} style="color:var(--text);font-weight:700"{% endif %}>{{ t('Euphoria', '欣喜') }}</span>
-        </div>
-        <div class="muted sm" style="margin-top:8px">{{ t("Today's score is the rolling-5-year percentile of the RORO composite (valid after ~2.5y). 'Contrarian at extremes' is regime-dependent — see the dislocation read below.", '今日评分为 RORO 综合的滚动五年百分位（约 2.5 年后有效）。"极端时反向操作"取决于周期 — 见下方错位读数。') }}</div>
-      </div>
-
-      <a class="span12" href="macro_signals.html" style="display:block;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;color:var(--link);font-weight:600">{{ t('Full breakdown — the 7 RORO legs, positioning vs price, dislocation &amp; capitulation \u2192','\u5b8c\u6574\u62c6\u89e3 — 7 \u9879 RORO \u5206\u91cf\u3001\u6301\u4ed3\u5bf9\u4ef7\u683c\u3001\u9519\u4f4d\u4e0e\u6295\u964d \u2192') }}</a>
-
-    </div>
-    {% else %}
-    <p class="muted">{{ t('Building…', '构建中…') }}</p>
-    {% endif %}
-  </div>
-  {% endif %}{# /fear-euphoria — macro only #}
+  <!-- Fear ↔ Euphoria synthesis merged into the #sentiment-regime scorecard near the top of the board -->
 
   <!-- ======================= ACTION BOARD ======================= -->
   {% if mode != 'macro' %}

@@ -288,12 +288,15 @@ def compute(asof: str | None = None) -> dict | None:
 
     x_lo = round(sc._yf(win_start), 3)
     x_hi = round(sc._yf(last_ts) + CN_TODAY_PAD, 3)
+    x_lo_default = round(sc._yf(last_ts - pd.DateOffset(years=sc.DEFAULT_WINDOW_YEARS)), 3)
     return {
         "meta": {
             "asOf": str(last_ts.date()),
             "today": round(sc._yf(last_ts), 3),
             "xDomain": [x_lo, x_hi],
+            "xDomainDefault": [x_lo_default, x_hi],
             "window_years": sc.WINDOW_YEARS,
+            "default_window_years": sc.DEFAULT_WINDOW_YEARS,
             "rebaseDate": str(win_start.date()),
             "benchmark": "SHCOMP", "benchmark_zh": "上证综指",
             "region": "china",

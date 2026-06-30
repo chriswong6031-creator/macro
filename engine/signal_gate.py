@@ -214,7 +214,7 @@ def tier_rank(v: dict | None) -> int:
     return _TIER_ORDER.get((v.get("tier"), v.get("sub")), 8)
 
 
-def blend_sorted(items: list, base_of, verdict_of, reverse: bool = True) -> list:
+def blend_sorted(items: list, base_of, verdict_of, reverse: bool = True, bonus_of=None) -> list:
     """Order `items` by the owner's WEIGHTED cascade blend (best first by default).
 
     Strict tier-first buries the earlier tiers whenever confirmed masters outnumber the board
@@ -224,18 +224,24 @@ def blend_sorted(items: list, base_of, verdict_of, reverse: bool = True) -> list
     weak master and surfaces. Percentile-based ⇒ robust to the per-market base scale
     (US/HK composite_z, CN/CA alpha/setup). `base_of(x)`->market rank score; `verdict_of(x)`->
     the signal_gate verdict (for .weight). Ineligible / weightless names sink (score 0).
+
+    `bonus_of(x)` (optional) -> an ADDITIVE per-row lift on the 0..1 blend scale (e.g. the China
+    2W-StochRSI washout-reclaim bonus). It is added on top of the tier×conviction blend, so a
+    bonus of ~one TIER_FRAC lifts a row by roughly a full tier WHILE the cascade tier still
+    orders rows that share the same bonus. Default None = no lift (existing callers unchanged).
     See research/signal_engine/TIERED_CASCADE.md."""
     import bisect
     vals = sorted((base_of(x) or 0.0) for x in items)
     n = len(vals) or 1
 
     def _score(x):
+        b = (bonus_of(x) if bonus_of else 0.0) or 0.0           # optional additive lift (washout)
         w = (verdict_of(x) or {}).get("weight") or 0.0
         if not w:
-            return -1.0
+            return -1.0 + b
         wn = max(0.0, min(1.0, (w - 0.4) / 0.6))                 # T1->1.0 .. T4->0.0
         pct = bisect.bisect_right(vals, base_of(x) or 0.0) / n   # conviction percentile in pool
-        return TIER_FRAC * wn + (1.0 - TIER_FRAC) * pct          # convex blend (conviction-led)
+        return TIER_FRAC * wn + (1.0 - TIER_FRAC) * pct + b      # convex blend + optional lift
 
     return sorted(items, key=_score, reverse=reverse)
 

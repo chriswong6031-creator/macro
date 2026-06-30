@@ -942,7 +942,10 @@
       // instead of overflowing — the old 8px floor forced 5-char symbols past narrow edges.
       var nch = (t.t || '').length || 1;
       var fitF = (tw - 5) / (nch * 0.80);
-      var symF = clamp(Math.min(tw / 3.8, th * 0.5, fitF), 6, 18);
+      // tighter divisor + lower floor so the small/narrow tiles render their ticker
+      // smaller (fitF already caps to width); larger tiles compute above the floor
+      // and keep their size.
+      var symF = clamp(Math.min(tw / 4.2, th * 0.5, fitF), 5, 18);
       var s = '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(t.t) + '</span>';
       if (tw >= 40 && th >= 29) {
         var pcF = clamp(Math.min(tw / 5.6, th * 0.32), 7.5, 12);
@@ -1091,7 +1094,7 @@
   function injectStyle() {
     if (document.getElementById('mm-heatmap-style')) return;
     var css = ''
-      + ':root{--hm-up-v:#14ad6c;--hm-dn-v:#e4435a;--hm-glass:color-mix(in srgb,var(--panel) 70%,transparent);--hm-edge:color-mix(in srgb,#ffffff 8%,var(--line));--hm-frame:color-mix(in srgb,#000000 38%,var(--bg));}'
+      + ':root{--hm-up-v:#14ad6c;--hm-dn-v:#e4435a;--hm-glass:color-mix(in srgb,var(--panel) 70%,transparent);--hm-edge:color-mix(in srgb,#ffffff 8%,var(--line));--hm-frame:var(--panel2);}'
       + 'html[data-theme="light"]{--hm-up-v:#1aa869;--hm-dn-v:#d83a48;--hm-glass:color-mix(in srgb,#ffffff 78%,transparent);--hm-edge:color-mix(in srgb,#0b1830 13%,var(--line));--hm-frame:#ffffff;}'
       + 'html[data-lang="zh"]{--hm-up-v:#e4435a;--hm-dn-v:#14ad6c;}'
       + 'html[data-theme="light"][data-lang="zh"]{--hm-up-v:#d83a48;--hm-dn-v:#1aa869;}'

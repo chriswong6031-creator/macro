@@ -484,6 +484,9 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
         "state_ungated": state_ungated,
         "flow_status": flow_status(),
         "gross_factor": gross,
+        # de-escalation PATH (peaked? falling? how fast?) — leak-free, reuses the subscore history
+        # already computed above; consumed by engine/risk_radar_recovery.py for the recovery panel.
+        "trajectory": trajectory(subs, calib),
         "cycle_context": cyc,   # election-cycle MODULATOR (display + sizing; never originates an alert)
         "favor_entries": _STATE_ORDER.index(state) >= _STATE_ORDER.index("caution"),
         "cap_leadership": _STATE_ORDER.index(state) >= _STATE_ORDER.index("elevated"),
@@ -540,6 +543,126 @@ _READER = {
     "elevated": "De-gross. Favor entries, cap leadership, honor stops. Don't add to froth.",
     "risk-off": "Protect capital: de-gross hard, raise cash, no new leadership chases.",
 }
+
+
+# --- de-escalation trajectory (powers the recovery panel; engine/risk_radar_recovery.py) -----
+# The mirror of the rising-risk read: has the radar's intensity PEAKED and started falling, and
+# how fast are the pullback odds rolling over? Everything here is a function of the SAME causal
+# sub-score history (leak-free) — no new data, no new persistence.
+_TRAJ_WINDOW = 30          # trading days of recent path we summarise
+_TRAJ_SPARK = 24           # points drawn in the mini sparkline
+_TRAJ_VEL_LB = 5           # ~1 trading week lookback for the velocity read
+_TRAJ_ODDS_LB = 10         # lookback for the pullback-odds change
+
+
+def _spark_points(vals, w: float = 96.0, h: float = 26.0, pad: float = 3.0):
+    """SVG polyline 'x,y …' for a series scaled into a w×h box (y inverted), plus the (x,y) of the
+    peak and the last point. Pure; returns ('', None, None) when degenerate."""
+    n = len(vals)
+    if n < 2:
+        return "", None, None
+    lo, hi = min(vals), max(vals)
+    rng = (hi - lo) or 1.0
+    innerw, innerh = w - 2 * pad, h - 2 * pad
+    pts = []
+    for i, v in enumerate(vals):
+        x = pad + innerw * i / (n - 1)
+        y = pad + innerh * (1.0 - (v - lo) / rng)
+        pts.append((round(x, 1), round(y, 1)))
+    peak_i = max(range(n), key=lambda i: vals[i])
+    return (" ".join(f"{x},{y}" for x, y in pts),
+            {"x": pts[peak_i][0], "y": pts[peak_i][1]}, {"x": pts[-1][0], "y": pts[-1][1]})
+
+
+def _trajectory_from_series(win, states, odds, caution_band: float) -> dict:
+    """Shared trajectory classifier used by BOTH the US (engine/risk_radar) and the international
+    (engine/risk_radar_intl) radars, so the peaking/receding logic can never drift between them.
+    Inputs: the recent intensity WINDOW (Series), the aligned daily gated STATE (list/Series or
+    None), the aligned pullback-odds Series (or None), and this market's caution band. Pure."""
+    cur = float(win.iloc[-1])
+    peak = float(win.max())
+    peak_days_ago = int(len(win) - 1 - int(win.to_numpy().argmax()))
+    off_peak = round(peak - cur, 1)
+    lb = min(_TRAJ_VEL_LB, len(win) - 1)
+    velocity = round(cur - float(win.iloc[-1 - lb]), 1) if lb > 0 else 0.0   # pts over ~1 week
+    st_list = list(states) if states is not None else None
+    # did the radar reach a genuinely risky level recently (something to recede FROM)? Use the raw
+    # intensity peak (so a context-GATED episode, loud banner never fired but risk real, still counts).
+    reached_risk = bool(peak >= caution_band)
+    if st_list is not None:
+        reached_risk = reached_risk or any(
+            _STATE_ORDER.index(s) >= _STATE_ORDER.index("caution") for s in st_list)
+    rising = velocity >= 1.5
+    falling = velocity <= -1.5
+    if not reached_risk:
+        phase = "calm"
+    elif falling and off_peak >= 3.0:
+        phase = "receding"
+    elif rising:
+        phase = "rising"
+    elif off_peak < 4.0:
+        phase = "peaking"
+    else:
+        phase = "flat"
+    odds_now = round(float(odds.iloc[-1]), 3) if odds is not None else None
+    odds_peak = round(float(odds.max()), 3) if odds is not None else None
+    olb = (min(_TRAJ_ODDS_LB, len(odds) - 1) if odds is not None else 0)
+    odds_delta = (round(float(odds.iloc[-1] - odds.iloc[-1 - olb]), 3)
+                  if (odds is not None and olb > 0) else None)
+    spark_vals = [round(float(v), 1) for v in win.tail(_TRAJ_SPARK).tolist()]
+    pts, peak_xy, last_xy = _spark_points(spark_vals)
+    return {
+        "intensity": round(cur, 1), "peak": round(peak, 1), "peak_days_ago": peak_days_ago,
+        "off_peak": off_peak, "velocity": velocity,   # pts over ~1wk (negative = receding)
+        "phase": phase, "reached_risk": reached_risk,
+        "state_now": (str(st_list[-1]) if st_list else None),
+        "odds_now": odds_now, "odds_peak": odds_peak, "odds_delta": odds_delta,
+        "spark": spark_vals, "spark_pts": pts, "spark_peak": peak_xy, "spark_last": last_xy,
+        "spark_w": 96, "spark_h": 26, "window": int(len(win)),
+    }
+
+
+def trajectory(subs: pd.DataFrame | None = None, calib: dict | None = None,
+               window: int = _TRAJ_WINDOW) -> dict | None:
+    """Recent PATH of the radar — has its intensity peaked and turned down, and how fast are the
+    pullback odds dropping? Powers the de-escalation / "risk-off may be ending" panel
+    (engine/risk_radar_recovery.py). LEAK-FREE: every input is a causal trailing-window percentile
+    (subscore_series). Returns None when there is too little history. NEVER raises into the build."""
+    try:
+        calib = calib or _calib()
+        bands = calib["bands"]
+        if subs is None:
+            subs = subscore_series(leading_signals(), calib)
+        if subs is None or subs.empty:
+            return None
+        tierA = [s for s, v in calib["scares"].items()
+                 if v.get("tier") == "A" and s in subs.columns]
+        if not tierA:
+            return None
+        # continuous intensity = the worst Tier-A sub-score each day (0-100). Smooth, so its recent
+        # peak + slope is a far cleaner "is risk receding?" read than the 5-step gated state.
+        intensity = subs[tierA].max(axis=1).dropna()
+        if len(intensity) < 10:
+            return None
+        win = intensity.tail(window)
+        # faithful daily gated+escalated STATE over the recent window (reuse the backtest replica;
+        # lazy import avoids a module cycle) + the conjunction count, so the pullback-odds SERIES
+        # matches what the card would have shown. Only the window is mapped to odds (not all history).
+        states = odds = None
+        try:
+            from engine.risk_radar_backtest import state_series
+            states = state_series(subs, calib).reindex(intensity.index).tail(window)
+            nhot = sum((subs[s] >= bands["caution"]).astype(int) for s in tierA
+                       ).reindex(intensity.index).fillna(0).astype(int).tail(window)
+            odds = pd.Series(
+                [_drawdown_prob(st, int(n), calib)["h21"] for st, n in zip(states, nhot)],
+                index=win.index)
+        except Exception:  # noqa: BLE001 — odds series is best-effort
+            states = odds = None
+        return _trajectory_from_series(win, states, odds, bands["caution"])
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("risk_radar trajectory failed: %s", e)
+        return None
 
 
 def snapshot(root=None) -> dict:

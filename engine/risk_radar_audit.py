@@ -70,6 +70,12 @@ def _entry_from_snapshot(snap: dict) -> dict | None:
         "scares": {s["scare"]: {"score": s.get("score"), "band": s.get("band")}
                    for s in (snap.get("scares") or [])},
         "drawdown_prob": snap.get("drawdown_prob"),
+        # de-escalation trajectory (engine/risk_radar.trajectory) — slim record so a future
+        # recovery audit can grade whether "peaking/receding" actually preceded a rebound.
+        "traj_phase": (snap.get("trajectory") or {}).get("phase"),
+        "traj_intensity": (snap.get("trajectory") or {}).get("intensity"),
+        "traj_off_peak": (snap.get("trajectory") or {}).get("off_peak"),
+        "traj_odds_now": (snap.get("trajectory") or {}).get("odds_now"),
         "logged_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "graded": None,
     }

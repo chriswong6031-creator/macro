@@ -98,8 +98,8 @@
     canvas.width = W * dpr; canvas.height = H * dpr;
     canvas.style.width = W + "px"; canvas.style.height = H + "px";
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    R = Math.min(W, H) * 0.40;   // fit factor → the globe + 1.13x halo float clear of the
-                                 // canvas rect at the DEFAULT zoom (0.40*1.13 = 0.45 < 0.5),
+    R = Math.min(W, H) * 0.43;   // fit factor → the globe + 1.13x halo float clear of the
+                                 // canvas rect at the DEFAULT zoom (0.43*1.13 = 0.486 < 0.5),
                                  // so it's never cut off by the canvas edge — bigger hero globe
     fitScale = R; scale = scale === 240 ? R : Math.min(R * 1.35, Math.max(R * 0.8, scale));
     apply();
@@ -554,7 +554,7 @@
     var cx = W / 2, cy = H / 2, mob = W < 560;
     var off = mob ? 16 : 26;                          // how far the balloon floats off its dot
     var hw = mob ? 52 : 76, hh = 14, gapY = mob ? 8 : 10;  // body half-size + min vertical gap
-    var padX = mob ? 8 : 12, topPad = 40;            // viewport clamp insets
+    var padX = mob ? 14 : 12, topPad = 40;           // viewport clamp insets (extra margin on mobile)
     var lab = [];
     DATA.forEach(function (m) {
       var el = islEls[m.cc], ll = posMap[m.cc]; if (!el || !ll) return;

@@ -33,9 +33,9 @@ from engine import stock_view  # noqa: E402
 from engine import dispersion  # noqa: E402  — cross-sectional selection-regime gross dial
 from engine import entry_signal  # noqa: E402  — WHEN/at-what-price entry-timing gauge (market-agnostic)
 from engine import risk_sizing  # noqa: E402  — vol-managed inverse-vol sizing (validated Sharpe lever)
-from engine.cycles import analyze  # noqa: E402
+from engine.cycles import _tf_state, analyze  # noqa: E402 — _tf_state: 2W StochRSI washout flag
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
-from engine.setups import CN_ALPHA_WEIGHT, dedupe_dual_class, entry_open_first, setup_score  # noqa: E402
+from engine.setups import CN_ALPHA_WEIGHT, dedupe_dual_class, setup_score  # noqa: E402
 from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's alignment gate)
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -518,10 +518,10 @@ def compute_china_standouts(setups: dict | None, reversal: dict | None,
             col = ("var(--up)" if r.get("dir") == "up"
                    else "var(--down)" if r.get("dir") == "down" else "var(--muted)")
             r["spark_svg"] = _spark_svg(s, color=col)
-    # ENTRY-OPEN-FIRST: lead with names whose entry gauge reads "Buy zone — entry open
-    # now", then by the displayed conviction score (stable; the reversal/alignment rank
-    # settles ties). conviction + entry_signal were just attached to each row above.
-    setups["buy"] = entry_open_first(setups["buy"])
+    # ORDER: keep the cascade-blend rank main() set via signal_gate.blend_sorted (cascade tier
+    # × conviction, with the 2W-StochRSI washout bonus floated up). We deliberately do NOT
+    # entry-open-first re-sort here — that flattened the tier/washout rank (it orders only on the
+    # entry gauge + conviction score). Entry-open stays visible as the per-card chip.
     return setups
 
 
@@ -745,6 +745,16 @@ def main(alpha: dict | None = None) -> dict | None:
             rec["alpha"] = alpha_pt[ticker]
             sc = _setup_score(rec)
             if sc:
+                # 2W StochRSI WASHOUT-RECLAIM (owner request): a bullish reclaim of the 20 line
+                # from oversold on the 2-week bar (2W-FRI, the btc_mtf/commodity_mtf convention).
+                # Such names have likely washed out on the higher 2W/1M timeframe, so the board
+                # gives them a big rank lift (signal_gate.blend_sorted bonus_of) WHILE the cascade
+                # tier still orders within. Best-effort; thin history -> no flag.
+                try:
+                    _tf2w = _tf_state(close.resample("2W-FRI").last().dropna())
+                    sc[1]["washout_2w"] = bool(_tf2w.get("stoch_cross_up"))
+                except Exception:  # noqa: BLE001 — additive, never fatal
+                    pass
                 cand.append(sc)
         # ---- unified Conviction Profile (engine/stock_score, CN market) ----------
         # The single block both the china.html standout card AND china_lookup render,
@@ -959,11 +969,13 @@ def main(alpha: dict | None = None) -> dict | None:
     def _atier(t: str) -> str | None:
         a = align_map.get(t) or {}
         return "aligned" if a.get("aligned") else ("near" if a.get("near") else None)
+    WASHOUT_BONUS = 0.5   # 2W StochRSI washout-reclaim lift (~one tier; cascade tier still orders within)
     eligible_rows = signal_gate.blend_sorted(
         dedupe_dual_class([r for _s, r in cand
                            if (sig_verdict.get(r.get("ticker")) or {}).get("eligible")]),
         base_of=lambda r: r.get("setup") or 0.0,
-        verdict_of=lambda r: sig_verdict.get(r.get("ticker")))
+        verdict_of=lambda r: sig_verdict.get(r.get("ticker")),
+        bonus_of=lambda r: WASHOUT_BONUS if r.get("washout_2w") else 0.0)
     log.info("china confluence-gate: %d of %d scored names eligible (T1-T4)",
              len(eligible_rows), len(cand))
     if cand:
@@ -993,7 +1005,6 @@ def main(alpha: dict | None = None) -> dict | None:
             if risk_sig.get(t):
                 r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
-        wide["buy"] = entry_open_first(wide["buy"])   # entry-open-first, then score (stable)
         wide["eligible"] = len(eligible_rows)
         wide["universe"] = len(cand)
         if disp_regime:                      # selection-regime gross dial (board context)

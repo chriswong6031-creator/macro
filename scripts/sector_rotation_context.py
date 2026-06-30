@@ -135,6 +135,22 @@ def compute_contexts() -> dict:
         out[s["id"]] = {"ticker": tk, "name": s["name"], "phase": s["now"]["phaseLabel"],
                         "pos": s["now"]["pos"], "rs_rank": s["now"].get("rs_rank"),
                         "now_ctx": leg_ctx(cl, start6, str(last.date()), tk), "legs": legs}
+
+    # baskets — the SPDR-relative macro/rotation BACKDROP per leg (the basket itself isn't a
+    # SPDR, so this_rank is None and the basket's own return comes from the engine leg mag).
+    for b in d.get("baskets", []):
+        turns = b["turns"]
+        legs = {}
+        for i in range(len(turns) - 1):
+            a, c = turns[i], turns[i + 1]
+            ctx = leg_ctx(cl, a["date"], c["date"], b["id"])
+            ctx["this_ret"] = (c["mag_pct"] if c["k"] == "peak" else -c["mag_pct"]) if c.get("mag_pct") is not None else None
+            legs[a["date"]] = {"end": c["date"], "dir": "rally" if c["k"] == "peak" else "selloff",
+                               "mag_pct": c["mag_pct"], "ctx": ctx}
+        out[b["id"]] = {"ticker": b.get("etf_proxy") or "", "name": b["name"], "kind": "basket",
+                        "group": b.get("group"), "phase": b["now"]["phaseLabel"],
+                        "pos": b["now"]["pos"], "rs_rank": b["now"].get("rs_rank"),
+                        "now_ctx": leg_ctx(cl, start6, str(last.date()), b["id"]), "legs": legs}
     return out
 
 
