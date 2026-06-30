@@ -1204,7 +1204,7 @@
           <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
         </div>
         {% set al = c.alignment %}
-        {% if al and al.line %}
+        {% if al and al.line and n.align_tier in ['aligned','near'] %}
         {# multi-timeframe ENTRY gate (engine.cycles.mtf_alignment): a low-risk SWING entry
            must be a FRESH turn from a low — weekly bear-recovering/basing + 3-day cross from
            oversold (<25) + daily just-crossed. 🟢 Prime/Armed = confirmed; 🟡 Approaching =

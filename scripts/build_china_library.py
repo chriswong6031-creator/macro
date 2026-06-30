@@ -35,7 +35,7 @@ from engine import entry_signal  # noqa: E402  — WHEN/at-what-price entry-timi
 from engine import risk_sizing  # noqa: E402  — vol-managed inverse-vol sizing (validated Sharpe lever)
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
-from engine.setups import CN_ALPHA_WEIGHT, entry_open_first, rank_setups, setup_score  # noqa: E402
+from engine.setups import CN_ALPHA_WEIGHT, dedupe_dual_class, entry_open_first, setup_score  # noqa: E402
 from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's alignment gate)
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -946,55 +946,44 @@ def main(alpha: dict | None = None) -> dict | None:
     # carries (engine.cycles.mtf_alignment), available on every analyzed name's ladder.
     setups = None
     align_map = {t: (p or {}).get("alignment") for t, p in profiles.items()}
-    # US-PARITY ENTRY GATE (faithful port of build_stock_library._entry_ok): the
-    # bottoming-alignment screen is necessary but NOT sufficient. Before the alignment
-    # gate, DROP any name the cycle engine has blocked (downtrend / falling knife) OR
-    # whose entry axis is non-constructive (entry z <= 0). Without this the A-share board
-    # surfaced PRIME-tagged names sitting in a BOTTOM WATCH / bearish-regime ladder with a
-    # negative entry signal — names that merely "aligned" via a 3-day StochRSI pop or a
-    # MACD curl (not a clean cross). The US standout board has always applied this second
-    # leg; the China board skipped it, which is why its picks read mediocre vs the US side.
-    # `cand` stays the full scored universe (the reported `universe` count); `cand_ok` feeds
-    # ranking + the `eligible` tally. The fields are already on every conviction profile.
-    def _entry_ok(p: dict | None) -> bool:
-        p = p or {}
-        if p.get("cycle_blocked"):
-            return False
-        ez = ((p.get("axes") or {}).get("entry") or {}).get("z")
-        return ez is None or ez > 0
-    cand_ok = [(s, r) for (s, r) in cand if _entry_ok(profiles.get(r.get("ticker")))]
-    log.info("china entry-gate: %d of %d scored names pass _entry_ok", len(cand_ok), len(cand))
+    # CONFLUENCE GATE (owner directive, 2026-06-29): the board's INCLUSION gate is now the
+    # owner's T1->T4 MACD-RSI x StochRSI confluence cascade (engine/signal_gate, computed per
+    # name above as sig_verdict), REPLACING the bottoming-alignment screen. A name is buyable
+    # iff its cascade verdict is `eligible` — a held-fresh / forming T1 master, or a projected
+    # T2/T3/T4 — all already freshness- and not-topped-guarded inside signal_gate.gate. Being
+    # ABOVE or below the 200-day is irrelevant; the cascade alone decides (the prior screen's
+    # below-200 "bottoming" bias was wrong for this system). Ranked by the weighted cascade
+    # blend (signal_gate.blend_sorted): strongest tier first, lifted by the setup-score
+    # percentile so conviction breaks ties within a tier. The bottoming-alignment line is kept
+    # ONLY as per-card CONTEXT (align_tier, rendered when the name also happens to be aligned).
+    def _atier(t: str) -> str | None:
+        a = align_map.get(t) or {}
+        return "aligned" if a.get("aligned") else ("near" if a.get("near") else None)
+    eligible_rows = signal_gate.blend_sorted(
+        dedupe_dual_class([r for _s, r in cand
+                           if (sig_verdict.get(r.get("ticker")) or {}).get("eligible")]),
+        base_of=lambda r: r.get("setup") or 0.0,
+        verdict_of=lambda r: sig_verdict.get(r.get("ticker")))
+    log.info("china confluence-gate: %d of %d scored names eligible (T1-T4)",
+             len(eligible_rows), len(cand))
     if cand:
-        # n_buy generous so the standout strip's "show more" can reveal the full
-        # ranked shortlist (the card grid shows 12, reveals the rest on demand).
-        setups = rank_setups(cand_ok, as_of=(alpha or {}).get("as_of"), n_buy=110,
-                             align_map=align_map)
-        # Attach the confluence T1->T4 verdict so the persisted narrow board carries it — the
-        # page (via compute_china_standouts) renders it as the per-card tier BADGE (US-parity,
-        # display-only; the multi-timeframe alignment screen stays the board's inclusion gate).
-        for r in setups["buy"]:
+        as_of = (alpha or {}).get("as_of")
+        # laggards watch-strip: weakest residual-alpha names, independent of the buy gate.
+        laggards = dedupe_dual_class(sorted(
+            (r for _s, r in cand if r.get("alpha") is not None),
+            key=lambda r: r["alpha"]))[:12]
+        for r in eligible_rows:
+            r["align_tier"] = _atier(r.get("ticker"))        # context chip only (shown if aligned/near)
             r["signal"] = signal_gate.compact(sig_verdict.get(r.get("ticker")))
+        setups = {"as_of": as_of, "rank_by": "confluence",
+                  "buy": eligible_rows[:110], "laggards": laggards}
         (site / "factordata" / "china_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))
-        # WIDE "Standout individual stocks" board (the China parallel of
-        # us_standouts.json). Same bottoming-alignment gate; each row carries the unified
-        # Conviction profile + price/off-high/sparkline so a transient build failure leaves
-        # a stale-but-present artifact. eligible = names passing the alignment gate;
-        # universe = the scored candidate count.
-        wide = rank_setups(cand_ok, as_of=(alpha or {}).get("as_of"), n_buy=110, n_lag=12,
-                           align_map=align_map)
-        # COMBINE re-rank: keep rank_setups' aligned-above-near inclusion, but order WITHIN each
-        # alignment tier by the owner's weighted cascade blend (setup-score percentile lifted by
-        # the T1->T4 weight). Weightless names keep their setup rank. Eligibility is UNCHANGED.
-        import bisect as _bisect
-        _scores = sorted((r.get("setup") or 0.0) for r in wide["buy"])
-        _bn = len(_scores) or 1
-
-        def _combine_key(r):
-            w = (sig_verdict.get(r.get("ticker")) or {}).get("weight") or 0.0
-            pct = _bisect.bisect_right(_scores, r.get("setup") or 0.0) / _bn
-            return (0 if r.get("align_tier") == "aligned" else 1, -(pct + 0.5 * w))
-        wide["buy"] = sorted(wide["buy"], key=_combine_key)
+        # WIDE "Standout individual stocks" board — same confluence gate; each row carries the
+        # unified Conviction profile + entry/risk gauges so the card renders fully. eligible =
+        # the confluence-eligible count; universe = the scored candidate count.
+        wide = {"as_of": as_of, "rank_by": "confluence",
+                "buy": list(eligible_rows[:110]), "laggards": laggards}
         for r in wide["buy"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
@@ -1005,9 +994,7 @@ def main(alpha: dict | None = None) -> dict | None:
                 r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
         wide["buy"] = entry_open_first(wide["buy"])   # entry-open-first, then score (stable)
-        eligible = sum(1 for _s, r in cand_ok
-                       if (align_map.get(r.get("ticker")) or {}).get("aligned"))
-        wide["eligible"] = eligible
+        wide["eligible"] = len(eligible_rows)
         wide["universe"] = len(cand)
         if disp_regime:                      # selection-regime gross dial (board context)
             wide["dispersion_regime"] = disp_regime
@@ -1015,8 +1002,8 @@ def main(alpha: dict | None = None) -> dict | None:
             wide["qvix_regime"] = qvix_reg
         (site / "factordata" / "china_standouts.json").write_text(
             json.dumps(wide, separators=(",", ":"), default=str))
-        log.info("wrote china_standouts.json (%d buy of %d aligned / %d universe)",
-                 len(wide["buy"]), eligible, len(cand))
+        log.info("wrote china_standouts.json (%d buy of %d eligible / %d universe)",
+                 len(wide["buy"]), len(eligible_rows), len(cand))
     log.info("china library: %d analyzed, %d skipped (thin history), %d setups",
              built, failed, len(cand))
     return setups
