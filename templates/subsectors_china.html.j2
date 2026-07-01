@@ -46,6 +46,15 @@
   .num { font-variant-numeric:tabular-nums; }
   .pos{ color:var(--up); } .neg{ color:var(--down); }
   .scbar { display:inline-block; height:7px; border-radius:4px; background:var(--up); vertical-align:middle; }
+  .relb { font-size:9.5px; font-weight:800; padding:0 5px; border-radius:6px; letter-spacing:.02em; vertical-align:middle; white-space:nowrap; }
+  .rel-low { color:var(--orange); border:1px solid color-mix(in srgb,var(--orange) 45%,transparent); }
+  .rel-med { color:var(--muted); }
+  .npc { color:var(--muted); font-size:10.5px; font-variant-numeric:tabular-nums; }
+  details.thin { margin:14px 2px 0; border:1px dashed var(--line); border-radius:10px; padding:0 12px 12px; background:color-mix(in srgb,var(--orange) 4%,transparent); }
+  details.thin > summary { cursor:pointer; font-weight:700; font-size:13.5px; padding:11px 2px; list-style:none; display:flex; align-items:center; gap:8px; }
+  details.thin > summary::-webkit-details-marker { display:none; }
+  details.thin > summary::before { content:'▸'; color:var(--muted); }
+  details.thin[open] > summary::before { content:'▾'; }
   .sc-foot { color:var(--muted); font-size:11px; margin:24px 2px 0; line-height:1.65; max-width:108ch; border-top:1px solid var(--line); padding-top:12px; }
   .empty { color:var(--muted); padding:14px; }
 </style>
@@ -80,8 +89,8 @@
   <div id="sc-app"><div class="empty">{{ t('Loading…', '加载中…') }}</div></div>
 
   <div class="sc-foot">{{ t(
-    "Equal-weight synthetic member-average index per 同花顺 concept; <b>today's</b> curated THS membership (a descriptive consolidated tape, hindsight-curated — not an out-of-sample backtest). EOD daily. 3-day bars are calendar-business-day buckets. The cascade is leak-free (it projects from past bars only); A-share suspensions are carried forward and limit-up/down days reflect traded reality. Thin concepts (&lt;3 priced members or &lt;~1y history) are omitted. The regime base rates were measured on US sector ETFs and are NOT shown for China — but the BUY/SETUP/TOPPING/SELL state logic is market-agnostic technical analysis. DISPLAY-ONLY entry-quality / risk — confirm before acting; not alpha.",
-    "每个同花顺概念为等权合成成分均值指数；采用<b>当前</b>精选同花顺成分（描述性合并行情，后视精选——非样本外回测）。日终数据。三日K线按日历交易日分桶。级联无未来函数（仅用过去K线外推）；A股停牌按前收延续，涨跌停日反映真实成交。过薄概念（少于3只有价成分或不足约1年历史）已省略。状态机基准率基于美国行业ETF测得，故不在中国展示——但 买入/预备/见顶/卖出 状态逻辑为市场无关的技术分析。仅供展示的入场质量/风险——行动前请确认；非阿尔法。") }}</div>
+    "Equal-weight synthetic member-average index per 同花顺 concept; <b>today's</b> curated THS membership (a descriptive consolidated tape, hindsight-curated — not an out-of-sample backtest). EOD daily. 3-day bars are calendar-business-day buckets. The cascade is leak-free (it projects from past bars only); A-share suspensions are carried forward and limit-up/down days reflect traded reality. Concepts with fewer than 3 priced members or under ~1y history are dropped entirely; those with <b>fewer than 6 priced members are shown but flagged ⚠ thin and collapsed out of the headline lists</b> — an equal-weight index on so few names is driven by 1–2 stocks, so its tier &amp; regime read is high-variance (a heuristic breadth flag, not a validated reliability number). The regime base rates were measured on US sector ETFs and are NOT shown for China — but the BUY/SETUP/TOPPING/SELL state logic is market-agnostic technical analysis. DISPLAY-ONLY entry-quality / risk — confirm before acting; not alpha.",
+    "每个同花顺概念为等权合成成分均值指数；采用<b>当前</b>精选同花顺成分（描述性合并行情，后视精选——非样本外回测）。日终数据。三日K线按日历交易日分桶。级联无未来函数（仅用过去K线外推）；A股停牌按前收延续，涨跌停日反映真实成交。有价成分少于3只或历史不足约1年的概念直接剔除；<b>少于6只有价成分的概念仍展示但标记 ⚠ 偏薄并从头条列表折叠</b>——如此少成分的等权指数由1-2只个股主导，层级与状态读数高波动（启发式宽度标记，非验证过的可信度数值）。状态机基准率基于美国行业ETF测得，故不在中国展示——但 买入/预备/见顶/卖出 状态逻辑为市场无关的技术分析。仅供展示的入场质量/风险——行动前请确认；非阿尔法。") }}</div>
 </div>
 
 <footer class="site-footer">

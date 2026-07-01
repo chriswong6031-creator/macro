@@ -28,7 +28,10 @@ from engine import china_name_score  # noqa: E402  — per-name POTENTIAL (buy-r
 from engine import china_name_score_grader  # noqa: E402  — forward-grades the POTENTIAL score
 from engine import stock_technicals  # noqa: E402  — richer close-only technical snapshot
 from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
-from engine import china_signals  # noqa: E402  — A-share reversal tech + QVIX regime + margin risk
+from engine import china_signals  # noqa: E402  — A-share reversal tech + QVIX regime + margin risk + extension
+from engine import china_liquidity  # noqa: E402  — dollar-ADV liquidity floor + turnover-shape discriminator
+from engine.china_reversal import is_st  # noqa: E402  — ST/*ST/退 delisting-risk exclusion
+from engine import china_standout_track  # noqa: E402  — board-ORDER forward ledger (keystone)
 from engine import stock_view  # noqa: E402
 from engine import dispersion  # noqa: E402  — cross-sectional selection-regime gross dial
 from engine import entry_signal  # noqa: E402  — WHEN/at-what-price entry-timing gauge (market-agnostic)
@@ -617,8 +620,9 @@ def main(alpha: dict | None = None) -> dict | None:
         (fdir / "china_alpha.json").write_text(
             json.dumps(alpha, separators=(",", ":"), default=str))
 
-    # market caps (亿) for the fundamentals valuation pass — best-effort
+    # market caps (亿) for the fundamentals valuation pass + Chinese names (for the ST screen) — best-effort
     mktcap_by: dict[str, float] = {}
+    name_zh_by: dict[str, str] = {}
     try:
         mp = config.data_dir() / "china_search" / "members.parquet"
         if mp.exists():
@@ -629,8 +633,11 @@ def main(alpha: dict | None = None) -> dict | None:
             if "mktcap_yi" in mdf.columns:
                 mktcap_by = {str(r[tcol]): float(r["mktcap_yi"])
                              for _, r in mdf.iterrows() if pd.notna(r.get("mktcap_yi"))}
+            if "name_zh" in mdf.columns:
+                name_zh_by = {str(r[tcol]): str(r["name_zh"])
+                              for _, r in mdf.iterrows() if pd.notna(r.get("name_zh"))}
     except Exception as e:  # noqa: BLE001
-        log.debug("china mktcap load failed: %s", e)
+        log.debug("china mktcap/name load failed: %s", e)
 
     # live China net-liquidity regime — the single macro conviction modifier on the
     # ladder (CN has no macro_risk/VIX leg, unlike the US build)
@@ -731,6 +738,45 @@ def main(alpha: dict | None = None) -> dict | None:
                      disp_regime.get("avg_corr"), regime_gross)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("china dispersion regime failed (%s)", e)
+    # dollar-ADV liquidity + turnover-shape from the deep OHLCV store — the REAL tradability leg
+    # (members.parquet mktcap is 46% a 30亿 placeholder; ADV is measured from close×volume). One
+    # read per name (~3s over the ~1,500-name store). Missing/thin names simply have no ADV entry.
+    liq_by: dict[str, dict] = {}
+    try:
+        liq_by = china_liquidity.liquidity_map([t for (t, *_r) in uni])
+        _n_illq = sum(1 for v in liq_by.values()
+                      if (v.get("adv_yi") or 0) < china_liquidity.ADV_FLOOR_YI)
+        log.info("china liquidity: ADV for %d names; %d below the %.2f亿/day tradability floor",
+                 len(liq_by), _n_illq, china_liquidity.ADV_FLOOR_YI)
+    except Exception as e:  # noqa: BLE001 — additive screen, never fatal
+        log.warning("china liquidity map unavailable (%s)", e)
+
+    # QUALITY / TRADABILITY screen (P6) — keep garbage off the standout pool. Fail-CLOSED on ST;
+    # the ADV floor only excludes names we can PROVE are illiquid (missing ADV passes through, logged).
+    # market-cap is inert on the top-cap search universe (all real caps >30亿, 46% placeholder) so it
+    # is kept as honest defense-in-depth and reported, not relied on. Counts surface the REAL bite.
+    screen_drop = {"st": 0, "mcap": 0, "adv": 0, "stale": 0}
+    MCAP_FLOOR_YI = 30.0            # matches china_reversal; 30.0 exactly is the placeholder => "unknown"
+    STALE_DAYS = 15                 # a name whose last bar is >15 calendar days stale is likely
+    #                                suspended/delisted (e.g. a frozen HK/A name) — never a live buy.
+    # panel reference date = the freshest last-bar across the universe (suspended names lag it).
+    _panel_asof = max((c.last_valid_index() for (_t, c, *_r) in uni
+                       if c is not None and c.last_valid_index() is not None), default=None)
+
+    def _tradability_ok(_t: str) -> bool:
+        if is_st(name_zh_by.get(_t), None):
+            screen_drop["st"] += 1
+            return False
+        _cap = mktcap_by.get(_t)
+        if _cap is not None and _cap != MCAP_FLOOR_YI and _cap < MCAP_FLOOR_YI:  # real sub-floor cap only
+            screen_drop["mcap"] += 1
+            return False
+        _adv = (liq_by.get(_t) or {}).get("adv_yi")
+        if _adv is not None and _adv < china_liquidity.ADV_FLOOR_YI:  # proven illiquid
+            screen_drop["adv"] += 1
+            return False
+        return True
+
     recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
     sig_verdict: dict[str, dict] = {}       # owner's confluence T1->T4 cascade verdict per name
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
@@ -755,7 +801,23 @@ def main(alpha: dict | None = None) -> dict | None:
                     sc[1]["washout_2w"] = bool(_tf2w.get("stoch_cross_up"))
                 except Exception:  # noqa: BLE001 — additive, never fatal
                     pass
-                cand.append(sc)
+                # anti-chase EXTENSION read (close-only) — DEMOTES names that already ran (limit-up
+                # pop / stretched above MA / near 52w high). Attached to the row; blend_sorted's
+                # bonus_of subtracts a penalty proportional to score. Turnover-shape from the deep
+                # store distinguishes accumulation (expansion off a base) from a distribution spike.
+                try:
+                    sc[1]["extension"] = china_signals.extension_read(
+                        close, rec.get("tech"), ticker,
+                        turn_ratio=(liq_by.get(ticker) or {}).get("turn_ratio"))
+                except Exception:  # noqa: BLE001 — additive, never fatal
+                    pass
+                # QUALITY / TRADABILITY screen — keep ST / illiquid / stale garbage off the board
+                _last = close.last_valid_index()
+                if (_panel_asof is not None and _last is not None
+                        and (_panel_asof - _last).days > STALE_DAYS):
+                    screen_drop["stale"] += 1          # suspended / delisted — not a live pick
+                elif _tradability_ok(ticker):
+                    cand.append(sc)
         # ---- unified Conviction Profile (engine/stock_score, CN market) ----------
         # The single block both the china.html standout card AND china_lookup render,
         # so the two can never structurally disagree. The CN SELECTION leg is the
@@ -932,6 +994,36 @@ def main(alpha: dict | None = None) -> dict | None:
             idx["f"] = 1
     log.info("china context attached: fund %d · consensus %d · earnings %d · val_pct %d · margin %d",
              len(fmap), len(cons), len(earn), len(vpct), len(marg))
+
+    # per-name QUALITY composite (P9) — DISPLAY BADGE ONLY, deliberately NEVER in the board sort.
+    # Sector-neutral z of value (earnings yield), quality (ROE) and profitability (net margin) via the
+    # validated composite_score machinery (equal-weight, sector-neutral). Coverage is only ~half the
+    # universe and value/quality are MUTED A-share edges, so a coverage-biased SORT would distort the
+    # board — this is a chip (strong/avg/weak/—) to help weed obvious junk, nothing more.
+    quality_badge: dict[str, dict] = {}
+    if fmap:
+        try:
+            from engine import composite_score
+            _legs = {t: {"value": (100.0 / v["pe"]) if (v.get("pe") and v["pe"] > 0) else None,
+                         "quality": v.get("roe"), "profitability": v.get("net_margin")}
+                     for t, f in fmap.items() for v in [f.get("valuation") or {}]}
+            _lf = pd.DataFrame.from_dict(_legs, orient="index")
+            _comp = composite_score.build(_lf, {t: sector_by.get(t) or "—" for t in _legs},
+                                          use_legs=("value", "quality", "profitability"))
+            for _t, _row in _comp.iterrows():
+                _z = _row.get("composite")
+                if _z is None or _z != _z:
+                    continue
+                _v = fmap[_t].get("valuation") or {}
+                quality_badge[_t] = {
+                    "z": round(float(_z), 2),
+                    "band": "strong" if _z >= 0.75 else "weak" if _z <= -0.75 else "avg",
+                    "n_legs": int(_row.get("n_legs") or 0), "roe": _v.get("roe"), "pe": _v.get("pe"),
+                    "piotroski": (fmap[_t].get("piotroski") or {}).get("score")}
+            log.info("china quality composite: %d names badged (of %d with fundamentals, ~%d%% of universe)",
+                     len(quality_badge), len(fmap), int(100 * len(fmap) / max(1, len(price_by))))
+        except Exception as e:  # noqa: BLE001 — additive badge, never fatal
+            log.warning("china quality composite failed (%s)", e)
     index = _write_verified_index(outdir, index)
     # Bespoke chart OHLC (close-only area series) read by china_lookup.html's chart.js —
     # pure serialisation of china_search closes; never break the library over the garnish.
@@ -970,14 +1062,45 @@ def main(alpha: dict | None = None) -> dict | None:
         a = align_map.get(t) or {}
         return "aligned" if a.get("aligned") else ("near" if a.get("near") else None)
     WASHOUT_BONUS = 0.5   # 2W StochRSI washout-reclaim lift (~one tier; cascade tier still orders within)
+    EXT_PENALTY = 0.5     # anti-chase: a fully-extended name is demoted ~one tier (symmetric w/ washout)
+    # CN tier flatten (P4, revised): in A-shares a confirmed breakout is often already run and
+    # medium-term momentum is dead, so we let a FRESH T2/T3 compete with a fresh T1 — a MILD
+    # near-parity flatten (wn floored at 0.6, tier_frac 0.30 vs the US 0.45), NOT an inversion.
+    # "Already ran" is handled ORTHOGONALLY by EXT_PENALTY below, not by demoting every T1.
+    CN_TIER_FRAC, CN_WN_FLOOR = 0.30, 0.60
+
+    def _cn_bonus(r):
+        b = WASHOUT_BONUS if r.get("washout_2w") else 0.0
+        ext = float((r.get("extension") or {}).get("score") or 0.0)
+        return b - EXT_PENALTY * ext                    # net additive lift/penalty on the 0..1 blend
+
     eligible_rows = signal_gate.blend_sorted(
         dedupe_dual_class([r for _s, r in cand
                            if (sig_verdict.get(r.get("ticker")) or {}).get("eligible")]),
         base_of=lambda r: r.get("setup") or 0.0,
         verdict_of=lambda r: sig_verdict.get(r.get("ticker")),
-        bonus_of=lambda r: WASHOUT_BONUS if r.get("washout_2w") else 0.0)
-    log.info("china confluence-gate: %d of %d scored names eligible (T1-T4)",
-             len(eligible_rows), len(cand))
+        bonus_of=_cn_bonus, tier_frac=CN_TIER_FRAC, wn_floor=CN_WN_FLOOR)
+    _n_ext = sum(1 for r in eligible_rows if (r.get("extension") or {}).get("extended"))
+    log.info("china confluence-gate: %d of %d scored names eligible (T1-T4); "
+             "%d extended (demoted); quality-screen dropped ST=%d mcap=%d adv=%d stale=%d",
+             len(eligible_rows), len(cand), _n_ext,
+             screen_drop["st"], screen_drop["mcap"], screen_drop["adv"], screen_drop["stale"])
+
+    # DIVERSIFY the head of the strip: cap per-sector representation so the top isn't ONE crowded
+    # theme shown five ways (the flat, overlapping THS taxonomy makes single-theme crowding common).
+    # A pure reorder — overflow rows keep their relative order and are appended after; nothing drops.
+    def _diversify(rows: list, cap: int = 6) -> list:
+        from collections import defaultdict
+        seen: dict[str, int] = defaultdict(int)
+        head, overflow = [], []
+        for r in rows:
+            s = r.get("sector") or "—"
+            if seen[s] < cap:
+                head.append(r); seen[s] += 1
+            else:
+                overflow.append(r)
+        return head + overflow
+    eligible_rows = _diversify(eligible_rows)
     if cand:
         as_of = (alpha or {}).get("as_of")
         # laggards watch-strip: weakest residual-alpha names, independent of the buy gate.
@@ -1004,13 +1127,38 @@ def main(alpha: dict | None = None) -> dict | None:
                 r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
             if risk_sig.get(t):
                 r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
+            if quality_badge.get(t):
+                r["quality"] = quality_badge[t]      # fundamental-quality chip (DISPLAY only, not sort)
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
         wide["eligible"] = len(eligible_rows)
         wide["universe"] = len(cand)
+        wide["quality_screen"] = {           # honest report of what the screen actually did
+            "adv_floor_yi": china_liquidity.ADV_FLOOR_YI, "mcap_floor_yi": MCAP_FLOOR_YI,
+            "dropped": dict(screen_drop), "n_extended_demoted": _n_ext,
+            "note": ("ST/*ST/退 excluded; suspended/delisted (stale >15d) excluded; names below the "
+                     "dollar-ADV tradability floor excluded (only when provably illiquid); already-"
+                     "extended names DEMOTED, not hidden (see the 'extended' badge). Market-cap is "
+                     "defense-in-depth only — the source field is ~46% placeholder, so ADV + staleness "
+                     "do the real weeding."),
+        }
         if disp_regime:                      # selection-regime gross dial (board context)
             wide["dispersion_regime"] = disp_regime
         if qvix_reg:                         # the market vol-regime banner (GEX-analog for A-shares)
             wide["qvix_regime"] = qvix_reg
+        # board-ORDER forward ledger (keystone): log today's ranked top-N so the BOARD earns trust
+        # (the per-name grader does not observe blend_sorted order). Only the nightly `daily` (which
+        # commits data/) persists it; render lanes discard the data/ write. grade() is "accruing"
+        # until forward returns mature. This is the honest prerequisite for a hard extension veto.
+        try:
+            _bn = china_standout_track.append_board(wide["buy"], asof=as_of)
+            _bt = china_standout_track.grade()
+            if _bt.get("available"):
+                wide["board_track"] = _bt
+                setups["board_track"] = _bt
+            log.info("china standout board-track: logged top-%d (ledger=%d, graded=%s)",
+                     min(60, len(wide["buy"])), _bn, _bt.get("n_graded"))
+        except Exception as e:  # noqa: BLE001 — telemetry, never fatal
+            log.warning("china standout board-track failed (%s)", e)
         (site / "factordata" / "china_standouts.json").write_text(
             json.dumps(wide, separators=(",", ":"), default=str))
         log.info("wrote china_standouts.json (%d buy of %d eligible / %d universe)",

@@ -40,6 +40,39 @@ log = logging.getLogger("seed_china_ths_baskets")
 
 SEED = "2021-06-15"  # china_search cache start; first-run members seeded here (hindsight-curated)
 
+# Auto-add taxonomy curation (P3 — automated rule; curated baskets bypass ALL of this).
+AUTO_MIN_MEMBERS = 8   # a non-curated THS board needs >=8 priced members to auto-import (was 3);
+#                        thinner concepts add correlated noise more than diversified signal, and the
+#                        board's reliability tiering already flags/collapses anything <6.
+JACCARD_DEDUPE = 0.85  # two concepts sharing >=85% of members are near-redundant slices of one
+#                        theme; keep the broader/curated one, drop the auto duplicate.
+
+# Substring patterns marking NON-investable event / news / mechanical THS boards (not themes):
+# earnings-forecast & corporate-action events, "owns-a-stake-in-X" participation baskets, index /
+# connect / margin mechanics, sub-new-stock buckets, and one-off political/news labels. Verified
+# against the live taxonomy to catch only junk (预增/举牌/参股X/次新股/沪深股通/芬太尼/…), no real theme.
+_DROP_SUBSTRINGS = (
+    # daily-tape / price-action event boards (future-proof; usually not exposed as boards)
+    "涨停", "连板", "触板", "昨日", "首板", "炸板",
+    # earnings-forecast & corporate-action events
+    "预增", "预减", "扭亏", "摘帽", "摘星", "举牌", "高送转", "送转", "填权",
+    "定增", "股权转让", "债转股", "员工持股", "股权激励", "回购", "增持", "减持", "解禁", "破发",
+    # ownership / participation derivative boards ("参股银行/券商/保险" …)
+    "参股",
+    # index-membership / connect / financing mechanics
+    "MSCI", "富时", "标普道琼斯", "深股通", "沪股通", "陆股通", "融资融券", "转债", "可转债", "国债",
+    # mechanical "new stock" buckets & one-off news / political / hype labels
+    "次新", "海峡两岸", "芬太尼", "租售同权", "独角兽",
+)
+
+
+def _is_event_board(name: str) -> bool:
+    return any(k in (name or "") for k in _DROP_SUBSTRINGS)
+
+
+def _jaccard(a: set, b: set) -> float:
+    return (len(a & b) / len(a | b)) if (a and b) else 0.0
+
 # Bilingual category labels (mirror the curated page's "EN · 中文" grouping style).
 CATS = {
     "ai":      ("Technology & AI", "科技与AI"),
@@ -321,14 +354,21 @@ def main() -> int:
         en_map = json.loads(en_map_p.read_text()) if en_map_p.exists() else {}
         curated_names = {row[1] for row in CURATED}
         n_auto = 0
+        n_event, n_thin = 0, 0
+        dropped_event = []
         for ths_name in snaps[-1][1].keys():
             if ths_name in curated_names:
+                continue
+            if _is_event_board(ths_name):          # skip event / news / mechanical boards
+                n_event += 1
+                dropped_event.append(ths_name)
                 continue
             code = codes.get(ths_name)
             if not code:
                 continue
             members, missing = _pit_members(ths_name, snaps, universe, zh_name)
-            if len(members) < 3:
+            if len(members) < AUTO_MIN_MEMBERS:    # too thin to auto-import (curated set is exempt)
+                n_thin += 1
                 continue
             bid = "thsc" + str(code)
             if bid in out_baskets:
@@ -347,7 +387,32 @@ def main() -> int:
                                "note": f"Auto-imported 同花顺 concept '{ths_name}' ({len(members)} priced members)."}],
             }
             n_auto += 1
-        log.info("auto-added %d non-curated THS concepts (>=3 priced members)", n_auto)
+        log.info("auto-added %d non-curated THS concepts (>=%d priced members); "
+                 "dropped %d event/news/mechanical boards, %d too thin (<%d)",
+                 n_auto, AUTO_MIN_MEMBERS, n_event, n_thin, AUTO_MIN_MEMBERS)
+        if dropped_event:
+            log.info("  event/news boards dropped: %s", ", ".join(sorted(dropped_event)))
+
+    # ── dedupe near-identical concepts (Jaccard >= threshold) — keep the broader / curated one ──
+    # The flat THS taxonomy has heavy overlap (a stock sits in ~4 concepts), so many auto boards are
+    # near-redundant slices of one theme; they inflate correlated entry-now / double-buy signals.
+    # Curated baskets are protected (never dropped); only an AUTO board is dropped as a duplicate.
+    _order = ([b for b in out_baskets if not b.startswith("thsc")] +
+              sorted([b for b in out_baskets if b.startswith("thsc")],
+                     key=lambda b: -len(out_baskets[b]["members"])))
+    kept_sets: list[tuple[str, set]] = []
+    dropped_dup = []
+    for bid in _order:
+        ms = {m["ticker"] for m in out_baskets[bid]["members"] if not m.get("removed")}
+        dup_of = next((kb for kb, ks in kept_sets if _jaccard(ms, ks) >= JACCARD_DEDUPE), None)
+        if dup_of and bid.startswith("thsc"):
+            dropped_dup.append(f"{out_baskets[bid]['name_zh']}≈{out_baskets[dup_of]['name_zh']}")
+            del out_baskets[bid]
+        else:
+            kept_sets.append((bid, ms))
+    if dropped_dup:
+        log.info("deduped %d near-identical auto concepts (Jaccard>=%.2f): %s",
+                 len(dropped_dup), JACCARD_DEDUPE, ", ".join(dropped_dup))
 
     if not out_baskets:
         log.error("no THS baskets built — check the snapshot / universe overlap")

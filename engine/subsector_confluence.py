@@ -59,6 +59,38 @@ _SEED_ADDED = "1990-01-01"            # synthetic membership start (unused under
 ENTRY_TIERS = signal_gate.BUYABLE_TIERS          # ("T1","T2","T3")
 FORMING_TIER = "T4"
 
+# ---- breadth reliability of a synthetic index --------------------------------------------------
+# An equal-weight index on very few PRICED members is dominated by 1-2 names (on 3 names one stock
+# is 33% of the tape), so its cascade tier + regime read is high-variance. We KEEP such groups
+# (MIN_MEMBERS still gates the raw compute, and the member double-buy join is preserved) but tag
+# them LOW confidence so a board can collapse them out of its headline lists rather than showing a
+# 3-stock "index" with the same visual weight as a 25-name one. Heuristic DISPLAY thresholds, not
+# statistically-derived cutoffs — an honest breadth flag, not a validated reliability number.
+RELIABLE_MIN = 12                     # HIGH: broad, diversified index
+RELIABLE_MED = 6                      # MED: usable but thin (<6 priced = LOW, collapsed by the board)
+
+
+def reliability(n_priced: int | None) -> str:
+    """HIGH/MED/LOW breadth-confidence tier from the count of PRICED members."""
+    n = n_priced or 0
+    if n >= RELIABLE_MIN:
+        return "high"
+    if n >= RELIABLE_MED:
+        return "med"
+    return "low"
+
+
+def _breadth_coverage(groups: list[dict], base: dict | None = None) -> dict:
+    """Coverage dict enriched with the HIGH/MED/LOW breadth-confidence split (+ thin share) so a
+    board header can honestly report how much of it rests on thin, high-variance indices."""
+    out = dict(base or {})
+    n = len(groups)
+    out["n_high"] = sum(1 for g in groups if g.get("reliability") == "high")
+    out["n_med"] = sum(1 for g in groups if g.get("reliability") == "med")
+    out["n_low_conf"] = sum(1 for g in groups if g.get("reliability") == "low")
+    out["thin_share"] = round(out["n_low_conf"] / n, 3) if n else None
+    return out
+
 # regime sides that constitute a subsector TAILWIND vs a HEADWIND (sector_signals states).
 # Tailwind = the buy family; headwind = the validated negative-edge avoid family (TOPPING/SELL).
 # EXTENDED is "late, don't chase" (~market-neutral at 63d) — neither a tailwind nor a hard headwind.
@@ -238,6 +270,7 @@ def score_group(key: str, label: str, sector: str, tickers: list[str],
         "key": key, "kind": kind, "label": label, "label_zh": label_zh,
         "sector": sector, "sector_zh": sector_zh,
         "n_members": len(set(tickers)), "n_priced": n_priced,
+        "reliability": reliability(n_priced),
         "coverage_pct": meta.get("coverage_pct"), "n_live": meta.get("n_live"),
         "start": meta.get("start"), "as_of": str(close.index.max().date()),
         "price_level": round(px, 4),
@@ -305,6 +338,8 @@ def funnel(groups: list[dict]) -> dict:
                 "sector": g["sector"],
                 "subsector_tier": g["entry"]["tier"], "subsector_state": sub_state,
                 "subsector_side": g["regime"]["side"], "subsector_factor": round(sub_factor, 3),
+                "subsector_reliability": g.get("reliability"),
+                "subsector_n_priced": g.get("n_priced"),
                 "combined_score": round((m["stock_weight"] or 0.0) * sub_factor, 4),
                 "vs_subsector_20d": m["vs_basket"],
             }
@@ -312,8 +347,11 @@ def funnel(groups: list[dict]) -> dict:
                 double_buy.append(row)
             elif headwind:
                 headwind_warn.append(row)
-    double_buy.sort(key=lambda r: -r["combined_score"])
-    headwind_warn.sort(key=lambda r: -(r["stock_weight"] or 0.0))
+    # breadth is an ADDITIVE tiebreaker only (not a multiplicative penalty): at equal conviction a
+    # pick backed by a broader concept ranks above one backed by a 3-name index. The board still
+    # collapses the LOW-confidence rows into their own section — this just orders within a section.
+    double_buy.sort(key=lambda r: (-r["combined_score"], -(r.get("subsector_n_priced") or 0)))
+    headwind_warn.sort(key=lambda r: (-(r["stock_weight"] or 0.0), -(r.get("subsector_n_priced") or 0)))
     return {"double_buy": double_buy, "headwind_warn": headwind_warn}
 
 
@@ -360,10 +398,10 @@ def compute_subsector_confluence() -> dict:
     return {
         "ok": True, "universe": "sp500_subsectors", "weighting": "equal",
         "as_of": max((g["as_of"] for g in subs), default=None),
-        "coverage": {
+        "coverage": _breadth_coverage(subs, {
             "n_subsectors": n_total, "n_gateable": len(subs),
             "n_thin": n_total - len(subs), "n_sectors": len(sectors),
-        },
+        }),
         "entry_now": [g["key"] for g in subs if g["class"] == "entry_now"],
         "forming": [g["key"] for g in subs if g["class"] == "forming"],
         "headwind": [g["key"] for g in subs if g["class"] == "headwind"],
@@ -415,7 +453,7 @@ def compute_basket_confluence(memberships: dict, *, benchmark: str = "SPY",
     return {
         "ok": True, "universe": universe, "weighting": "equal", "benchmark": benchmark,
         "as_of": max((g["as_of"] for g in baskets), default=None),
-        "coverage": {"n_baskets": len(baskets)},
+        "coverage": _breadth_coverage(baskets, {"n_baskets": len(baskets)}),
         "entry_now": [g["key"] for g in baskets if g["class"] == "entry_now"],
         "forming": [g["key"] for g in baskets if g["class"] == "forming"],
         "headwind": [g["key"] for g in baskets if g["class"] == "headwind"],
@@ -522,8 +560,8 @@ def _compute_partition(subsectors: dict, amalgamations: dict, *, benchmark: str,
         "ok": True, "universe": universe, "weighting": "equal", "benchmark": benchmark,
         "region": region,
         "as_of": max((g["as_of"] for g in subs), default=None),
-        "coverage": {"n_subsectors": n_total, "n_gateable": len(subs),
-                     "n_thin": n_total - len(subs), "n_sectors": len(sectors)},
+        "coverage": _breadth_coverage(subs, {"n_subsectors": n_total, "n_gateable": len(subs),
+                     "n_thin": n_total - len(subs), "n_sectors": len(sectors)}),
         "entry_now": [g["key"] for g in subs if g["class"] == "entry_now"],
         "forming": [g["key"] for g in subs if g["class"] == "forming"],
         "headwind": [g["key"] for g in subs if g["class"] == "headwind"],
