@@ -296,8 +296,8 @@
         "label": "Inflation / commodities",
         "label_zh": "\u901a\u80c0/\u5927\u5b97",
         "family": "inflation",
-        "projection": -0.69,
-        "strength": 0.69,
+        "projection": -0.72,
+        "strength": 0.72,
         "direction": "upstream disinflation \u2014 PPI, coal, nonferrous & oil lead down"
       },
       {
@@ -305,8 +305,8 @@
         "label": "Yuan (CNH) shock",
         "label_zh": "\u4eba\u6c11\u5e01(CNH)\u51b2\u51fb",
         "family": "fx",
-        "projection": -0.48,
-        "strength": 0.48,
+        "projection": -0.44,
+        "strength": 0.44,
         "direction": "yuan firming \u2014 CNH down, capital-inflow relief, equities supported"
       },
       {
@@ -341,19 +341,19 @@
         "label": "Stimulus tape",
         "label_zh": "\u523a\u6fc0\u884c\u60c5",
         "family": "growth",
-        "projection": 0.02,
-        "strength": 0.02,
-        "direction": "stimulus-on \u2014 CSI300, brokers, property & copper/rebar lead up"
+        "projection": -0.03,
+        "strength": 0.03,
+        "direction": "stimulus-off \u2014 CSI300, brokers, property & copper/rebar lead down"
       }
     ],
     "note": "Deterministic China cross-asset attribution \u2014 a regime READ, not a signal; never gates a score or the quad."
   },
   "conditions": {
     "roro": {
-      "roro": 0.108,
-      "roro_raw": 0.109,
+      "roro": 0.093,
+      "roro_raw": 0.094,
       "roro_state": "neutral",
-      "china_roro_copper_gold": 2.007,
+      "china_roro_copper_gold": 1.9,
       "china_roro_breadth": -0.884,
       "china_roro_southbound": 0.23,
       "china_roro_m1_m2": null,
@@ -367,7 +367,7 @@
           "key": "copper_gold",
           "name_en": "Copper / Gold",
           "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-          "value": 2.007,
+          "value": 1.9,
           "lean": "risk-on"
         },
         {
@@ -2076,7 +2076,7 @@
           -0.094,
           -0.118,
           -0.223,
-          0.108
+          0.093
         ]
       },
       "recession": {
@@ -6816,7 +6816,7 @@
           48.5,
           46.0,
           35.7,
-          70.5
+          68.4
         ]
       }
     },
@@ -6824,17 +6824,17 @@
     "note": "display-only conditioning lens \u2014 RORO + uncalibrated recession/drawdown gauges; never feeds china_axes / china_regime / china_playbook"
   },
   "fear_euphoria": {
-    "fe_score": 70,
+    "fe_score": 68,
     "band": "Greed",
     "band_zh": "\u8d2a\u5a6a",
-    "roro": 0.108,
+    "roro": 0.093,
     "roro_state": "neutral",
     "legs": [
       {
         "key": "copper_gold",
         "name_en": "Copper / Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 2.007,
+        "value": 1.9,
         "pct": 99,
         "lean": "risk-on"
       },

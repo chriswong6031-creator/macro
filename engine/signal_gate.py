@@ -214,7 +214,8 @@ def tier_rank(v: dict | None) -> int:
     return _TIER_ORDER.get((v.get("tier"), v.get("sub")), 8)
 
 
-def blend_sorted(items: list, base_of, verdict_of, reverse: bool = True, bonus_of=None) -> list:
+def blend_sorted(items: list, base_of, verdict_of, reverse: bool = True, bonus_of=None,
+                 *, tier_frac: float | None = None, wn_floor: float = 0.0) -> list:
     """Order `items` by the owner's WEIGHTED cascade blend (best first by default).
 
     Strict tier-first buries the earlier tiers whenever confirmed masters outnumber the board
@@ -226,22 +227,33 @@ def blend_sorted(items: list, base_of, verdict_of, reverse: bool = True, bonus_o
     the signal_gate verdict (for .weight). Ineligible / weightless names sink (score 0).
 
     `bonus_of(x)` (optional) -> an ADDITIVE per-row lift on the 0..1 blend scale (e.g. the China
-    2W-StochRSI washout-reclaim bonus). It is added on top of the tier×conviction blend, so a
-    bonus of ~one TIER_FRAC lifts a row by roughly a full tier WHILE the cascade tier still
-    orders rows that share the same bonus. Default None = no lift (existing callers unchanged).
+    2W-StochRSI washout-reclaim bonus, or a NEGATIVE anti-chase extension penalty). It is added on
+    top of the tier×conviction blend, so a bonus of ~one TIER_FRAC lifts a row by roughly a full
+    tier WHILE the cascade tier still orders rows that share the same bonus. Default None = no lift.
+
+    `tier_frac` overrides the module TIER_FRAC (how much the tier vs conviction drives the blend);
+    `wn_floor` COMPRESSES the tier weight toward parity — the normalised tier weight wn (T1→1 ..
+    T4→0) is remapped to [wn_floor, 1], so wn_floor=0.6 means T4 still gets 60% of T1's tier credit.
+    Both default to the US behaviour (unchanged callers). CHINA passes a lower tier_frac + a wn_floor
+    so a FRESH T2/T3 competes with a fresh — but often already-extended — T1 (medium-term A-share
+    momentum is dead; a confirmed breakout is frequently already run). Anti-chase is handled
+    ORTHOGONALLY by the extension penalty in bonus_of, NOT by inverting the tier.
     See research/signal_engine/TIERED_CASCADE.md."""
     import bisect
+    tf = TIER_FRAC if tier_frac is None else tier_frac
+    wf = max(0.0, min(1.0, wn_floor))
     vals = sorted((base_of(x) or 0.0) for x in items)
     n = len(vals) or 1
 
     def _score(x):
-        b = (bonus_of(x) if bonus_of else 0.0) or 0.0           # optional additive lift (washout)
+        b = (bonus_of(x) if bonus_of else 0.0) or 0.0           # optional additive lift/penalty
         w = (verdict_of(x) or {}).get("weight") or 0.0
         if not w:
             return -1.0 + b
         wn = max(0.0, min(1.0, (w - 0.4) / 0.6))                 # T1->1.0 .. T4->0.0
+        wn = wf + (1.0 - wf) * wn                                # compress toward parity (CN flatten)
         pct = bisect.bisect_right(vals, base_of(x) or 0.0) / n   # conviction percentile in pool
-        return TIER_FRAC * wn + (1.0 - TIER_FRAC) * pct + b      # convex blend + optional lift
+        return tf * wn + (1.0 - tf) * pct + b                    # convex blend + optional lift
 
     return sorted(items, key=_score, reverse=reverse)
 

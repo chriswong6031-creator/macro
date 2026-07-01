@@ -98,6 +98,76 @@ def ashare_tech(close: pd.Series, ticker: str = "") -> dict:
 
 
 # ---------------------------------------------------------------------------
+# anti-chase EXTENSION read (close-only) — "has this already run?"
+# ---------------------------------------------------------------------------
+def _clip01(x) -> float:
+    v = _f(x)
+    return 0.0 if v is None else max(0.0, min(1.0, v))
+
+
+def extension_read(close: pd.Series, tech: dict | None = None, ticker: str = "",
+                   turn_ratio: float | None = None) -> dict:
+    """Close-only "has this already run?" read → a MONOTONE, gentle anti-chase penalty in 0..1 plus
+    display context. In A-shares a confirmed breakout is often ALREADY extended (limit-up pops fully
+    reverse and the buyer becomes exit liquidity), so the standout board DEMOTES — never hard-vetoes
+    here — names that spiked INTO the cross. Score legs, each individually monotone (no interaction
+    terms, an overfit guard): distance above the 20d MA in σ (primary), the 5-day surge, and nearness
+    to the 52w high. A fresh near-limit-up day and a turnover SPIKE at a stretched price are surfaced
+    as BADGE context only (practitioner-lore — kept OUT of the score). A true 连板 / locked-at-limit
+    veto needs intraday / limit-status data we do not have on the close-only store and is omitted.
+
+    Returns {score, extended, limit_up, turn_ratio, turn_spike, reason}. Degrade-never-raise.
+    """
+    tech = tech or {}
+    c = pd.to_numeric(close, errors="coerce").dropna().astype(float)
+    if len(c) < 21:
+        return {"score": 0.0, "extended": False, "limit_up": False,
+                "turn_ratio": turn_ratio, "turn_spike": False, "reason": None}
+    ma20 = c.tail(20).mean()
+    sd20 = c.tail(20).std(ddof=0)
+    z = float((c.iloc[-1] - ma20) / sd20) if sd20 else 0.0            # σ above the 20d MA (noisy on trends)
+    ret5 = float(c.iloc[-1] / c.iloc[-6] - 1.0) * 100.0              # 5-session % surge
+    ret20 = float(c.iloc[-1] / c.iloc[-21] - 1.0) * 100.0            # 1-month cumulative run
+    off_high = _f(tech.get("off_52w_high_pct"))                       # <=0; near 0 = at the highs
+    # near-limit-up day (a fresh pop): a simple close-to-close move within 0.5pp of the board limit
+    _, lim = board_type(ticker)
+    last_ret = float(c.iloc[-1] / c.iloc[-2] - 1.0) * 100.0 if c.iloc[-2] > 0 else 0.0
+    limit_up = last_ret > 0 and last_ret >= (lim - 0.5)
+
+    # each leg is individually MONOTONE in "how much has it already run"; no interaction terms.
+    # cumulative returns (5d + 1-month) lead — dist_ma20_z under-reads a sustained parabola (its
+    # own σ inflates as the trend runs), so it is only a minor confirmer.
+    leg_ret5 = _clip01((ret5 - 10.0) / 20.0)                          # +10%→0 .. +30%/5d→1
+    leg_ret20 = _clip01((ret20 - 25.0) / 40.0)                        # +25%→0 .. +65%/1mo→1
+    leg_high = _clip01((off_high + 10.0) / 10.0) if off_high is not None else 0.0  # -10%→0 .. 0%→1
+    leg_ma = _clip01((z - 1.5) / 2.5)                                 # 1.5σ→0 .. 4.0σ→1
+    score = round(0.30 * leg_ret5 + 0.30 * leg_ret20 + 0.25 * leg_high + 0.15 * leg_ma, 3)
+
+    turn_spike = bool(turn_ratio and turn_ratio >= 2.0 and z >= 1.5)  # blow-off / distribution flavour
+    # "extended" = already RAN (chase risk). A fresh limit-up counts ONLY if the name has already
+    # run cumulatively (>=8% in a month) — a limit-up OFF A BASE is an IGNITION (the early runner we
+    # WANT to anticipate, per the A-share "rises out of nowhere" dynamic), not an over-extended chase.
+    extended = bool(score >= 0.60 or (limit_up and ret20 >= 8.0))
+
+    reasons = []
+    if leg_ret20 > 0 or (limit_up and ret20 >= 8.0):
+        reasons.append(f"+{ret20:.0f}% 1mo")
+    elif leg_ret5 > 0:
+        reasons.append(f"+{ret5:.0f}% 5d")
+    if leg_high > 0 and off_high is not None:
+        reasons.append(f"{off_high:+.0f}% off 52w high")
+    if leg_ma > 0:
+        reasons.append(f"{z:+.1f}σ vs 20d MA")
+    if limit_up:
+        reasons.append("fresh limit-up")
+    if turn_spike:
+        reasons.append("turnover spike at highs")
+    return {"score": score, "extended": extended, "limit_up": bool(limit_up),
+            "turn_ratio": turn_ratio, "turn_spike": turn_spike,
+            "reason": " · ".join(reasons) or None}
+
+
+# ---------------------------------------------------------------------------
 # QVIX vol-regime confirmer — the GEX-analog (INVERTED vs US)
 # ---------------------------------------------------------------------------
 QVIX_DEFAULTS = {"panic_z": 2.0, "elevated_z": 1.0, "calm_z": -1.0, "win": 60}
