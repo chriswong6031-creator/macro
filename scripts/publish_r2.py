@@ -34,7 +34,7 @@ log = logging.getLogger("publish_r2")
 # HTML / JS stays on Pages — only these bulk per-ticker trees move to R2.
 DEFAULT_DIRS = [
     "ohlc", "chinaohlc", "hkohlc", "intlohlc", "canadaohlc",
-    "subsectorohlc", "subsectorohlc_china", "subsectorohlc_russell",
+    "subsectorohlc", "subsectorohlc_china", "subsectorohlc_russell", "subsectorohlc_nasdaq",
     "stockdata", "chinastockdata", "hkstockdata", "canadastockdata", "intlstockdata",
     "intraday",
 ]

@@ -115,3 +115,4 @@ data/options_flow/_*.parquet
 site/subsectorohlc/
 site/subsectorohlc_china/
 site/subsectorohlc_russell/
+site/subsectorohlc_nasdaq/

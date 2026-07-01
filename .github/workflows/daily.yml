@@ -790,11 +790,11 @@ jobs:
         # US-evening shard owns the US/intl/canada/subsector stores; CN/HK go via asia-close.yml.
         # Content-hash skip -> only deltas upload. Still committed to git for now (Pages fallback);
         # the git de-bloat + Pages slim-down is the follow-up increment once the client reads R2.
-        run: python -m scripts.publish_r2 --dirs ohlc,intlohlc,canadaohlc,subsectorohlc,subsectorohlc_russell,stockdata,intlstockdata,canadastockdata,intraday || echo "::warning::R2 publish failed (non-fatal)"
+        run: python -m scripts.publish_r2 --dirs ohlc,intlohlc,canadaohlc,subsectorohlc,subsectorohlc_russell,subsectorohlc_nasdaq,stockdata,intlstockdata,canadastockdata,intraday || echo "::warning::R2 publish failed (non-fatal)"
       - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)
         if: always()
         run: |
-          rm -rf site/ohlc site/chinaohlc site/hkohlc site/intlohlc site/canadaohlc site/subsectorohlc site/subsectorohlc_china site/subsectorohlc_russell site/stockdata site/chinastockdata site/hkstockdata site/canadastockdata site/intlstockdata site/intraday 2>/dev/null || true
+          rm -rf site/ohlc site/chinaohlc site/hkohlc site/intlohlc site/canadaohlc site/subsectorohlc site/subsectorohlc_china site/subsectorohlc_russell site/subsectorohlc_nasdaq site/stockdata site/chinastockdata site/hkstockdata site/canadastockdata site/intlstockdata site/intraday 2>/dev/null || true
       - name: upload pages artifact
         if: always()   # deploy must not hinge on the commit-push above succeeding
         uses: actions/upload-pages-artifact@v3
