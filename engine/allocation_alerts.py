@@ -81,16 +81,24 @@ def compute_events(data: dict, prior: dict | None, region: str) -> list[dict]:
     ev = []
 
     # --- book composition: themes entering / leaving the suggested allocation ---
+    # Fix #42: severity downgraded 'high' → 'low' for entered_book / left_book.
+    # Rationale: narrative-rotation rank-IC ≈ 0 on the unbiased universe (Spearman
+    # −0.0295/−0.041 in baskets_calibration); this module's own docstring says
+    # "Display-only: the playbook is discipline, not a prediction." Tagging a
+    # null-edge momentum reordering as 'high' pollutes the Alert Center triage
+    # alongside validated risk-off signals.
+    # TODO(W4): replace hardcoded per-event severity with an IC-aware severity model
+    # once the registry (Masterplan §W4) accrues per-channel measured IC.
     ph, ch = set(prior.get("held", [])), set(cur["held"])
     for bid in ch - ph:
-        ev.append(_ev(region, bid, "entered_book", ts, "high",
+        ev.append(_ev(region, bid, "entered_book", ts, "low",
                       f"➕ {name(bid)} entered the suggested book",
                       f"{name(bid)} is now one of the held themes in the {region.upper()} rotation book.",
                       {"to": "held"}, "in",
                       f"➕ {name(bid)} 进入建议组合",
                       f"{name(bid)} 现已纳入 {region.upper()} 轮动组合的持有主题。"))
     for bid in ph - ch:
-        ev.append(_ev(region, bid, "left_book", ts, "high",
+        ev.append(_ev(region, bid, "left_book", ts, "low",
                       f"➖ {name(bid)} dropped out of the book",
                       f"{name(bid)} is no longer held in the {region.upper()} rotation book.",
                       {"to": "out"}, "out",
