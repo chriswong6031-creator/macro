@@ -2683,6 +2683,7 @@ def main() -> int:
     (site / "CNAME").write_text("www.mastermind-x.com\n")
     # copy shared static assets (theme + visual widgets) into the site
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
+                  "account.js",
                   "stockdata.js", "watchlist.js", "factor_exposure.js", "auth.js",
                   "tablesort.js", "charts.js",
                   "masterbrief.js", "aibrief.js", "stockbrief.js", "aidesk_lean.js",

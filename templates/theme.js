@@ -121,6 +121,22 @@
     location.href = terminalUrl(decodeURIComponent(t));
   }, true);
 
+  /* ---- account / profile panel loader -------------------------------------
+     Load the shared account component (account.js) on EVERY page and point it at
+     the app API. It self-mounts a HIDDEN management panel (no avatar) and exposes
+     window.MMAccount.open(), which the settings-gear signed-in row calls. Identity
+     rides the shared .mastermind-x.com cookie (credentials:include) — so it never
+     loads a Supabase SDK here (jsdelivr is GFW-blocked). Path-depth aware; idempotent. */
+  (function loadAccount() {
+    if (window.__mmAccountLoading) return;
+    window.__mmAccountLoading = true;
+    window.MM_API = window.MM_API || 'https://app.mastermind-x.com';
+    var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
+    var s = document.createElement('script');
+    s.src = pfx + 'account.js'; s.async = true;
+    document.head.appendChild(s);
+  })();
+
   /* ---- Plotly charts: re-theme to the active theme -------------------------
      Charts are built transparent with neutral-grey axes (build_site.py); here we
      relayout their font + gridlines crisply for light vs dark — on load and on
@@ -1005,7 +1021,7 @@
               '登录即可在各设备间同步自选、提醒与设置。'],
     signin:  ['Sign in', '登录'],
     signup:  ['Create account', '注册'],
-    signedin:['Synced across your devices', '已在各设备间同步'],
+    signedin:['Manage account & sync ›', '管理账户与同步 ›'],
     signout: ['Sign out', '退出'],
     close:   ['Close settings', '关闭设置']
   };
@@ -1225,6 +1241,16 @@
       if (bSignin) bSignin.addEventListener('click', function () { close(); openAuthModal('signin'); });
       if (bSignup) bSignup.addEventListener('click', function () { close(); openAuthModal('signup'); });
       if (bSignout) bSignout.addEventListener('click', function () { window.MDXAuth.signOut(); });
+      // clicking the signed-in row (avatar / email) opens the full account-management
+      // panel (account.js), which reads the app broker over the shared cookie — no SDK.
+      var mMain = pop.querySelector('#set-acct-in .sr-main');
+      if (mMain) {
+        mMain.style.cursor = 'pointer';
+        mMain.setAttribute('role', 'button'); mMain.setAttribute('tabindex', '0');
+        var _openMgr = function () { close(); if (window.MMAccount && window.MMAccount.open) window.MMAccount.open(); };
+        mMain.addEventListener('click', _openMgr);
+        mMain.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); _openMgr(); } });
+      }
       window.addEventListener('mdx-auth', _renderAcct);
       _renderAcct();
     } else {
