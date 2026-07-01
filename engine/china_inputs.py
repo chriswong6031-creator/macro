@@ -89,9 +89,16 @@ def build_features() -> pd.DataFrame:
         f["smallcap_largecap"] = np.nan
 
     # --- macro (monthly; step-fill across the month like US payrolls/INDPRO) ----
+    # ffill_limit must bridge the PUBLICATION LAG, not just one month: the print is stamped on
+    # its reference month (e.g. May -> 2026-05-01) but the daily frame runs to today, ~2 months
+    # ahead, because the current month's macro isn't out yet. At limit=40 the carry ran out ~2-3
+    # bdays short of the last row, so cpi_yoy/ppi_yoy/indpro_yoy were NaN exactly where the regime
+    # reads them -> cpi_direction/ppi_direction/indpro_trend dropped out and the axes collapsed
+    # onto the market-proxy legs (a FALSE Goldilocks). 90 bdays (~4.3mo) covers the normal lag +
+    # a delayed release, NaN-ing out only on a real multi-month outage.
     m = _macro_frame()
     for col in ["pmi_mfg", "pmi_nonmfg", "cpi_yoy", "ppi_yoy", "m2_yoy", "m1_yoy", "indpro_yoy"]:
-        put(col, m[col] if (not m.empty and col in m.columns) else None, ffill_limit=40)
+        put(col, m[col] if (not m.empty and col in m.columns) else None, ffill_limit=90)
     for col in ["rate_3m", "rate_1y"]:
         put(col, m[col] if (not m.empty and col in m.columns) else None, ffill_limit=10)
     # quarterly GDP + event-dated LPR step-fill across their long cadence
