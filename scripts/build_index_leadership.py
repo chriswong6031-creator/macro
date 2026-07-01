@@ -140,6 +140,7 @@ def compute(site: Path) -> dict | None:
     tab_partic: dict[str, float | None] = {}
     tab_out: dict[str, dict] = {}
     as_of = None
+    spy = _etf_close("SPY")  # coil rs-hold benchmark for the baskets tab
 
     for tab, cfg in TABS.items():
         board = _read_json(site / cfg["json"])
@@ -150,6 +151,7 @@ def compute(site: Path) -> dict | None:
 
         gi: dict[str, dict] = {}
         closes: list[pd.Series] = []
+        closes_by_key: dict[str, pd.Series] = {}
         for g in groups:
             key = g.get("key")
             if not key or not g.get("chart_key"):
@@ -158,6 +160,7 @@ def compute(site: Path) -> dict | None:
             if close is None:
                 continue
             closes.append(close)
+            closes_by_key[key] = close
             reg, entry = g.get("regime") or {}, g.get("entry") or {}
             gi[key] = {
                 "hz": il.horizon_returns(close),
@@ -175,9 +178,24 @@ def compute(site: Path) -> dict | None:
         tab_reps[tab] = il.horizon_returns(rep_close)
         tab_breadth[tab] = il.breadth_thrust(closes)
         tab_partic[tab] = within["participation"]["frac_improving"]
+
+        # Phase 2 — confirm each COILING (RRG 'improving') candidate against the higher
+        # timeframe: run the multi-factor coil assessment and DROP the ones that are only a
+        # bounce inside a confirmed weekly / 2-week / monthly downtrend (stage='knife').
+        coil_bench = rep_close if cfg["rep"] else spy
+        coiled, n_knife = [], 0
+        for e in within["coiling"][:20]:
+            ca = il.coil_assess(closes_by_key.get(e["key"]), bench=coil_bench)
+            if ca and ca["stage"] == "knife":
+                n_knife += 1
+                continue
+            coiled.append({**e, "coil": ca} if ca else e)
+        coiled.sort(key=lambda e: (e.get("coil") or {}).get("coil_score", -1.0), reverse=True)
+
         tab_out[tab] = {
             "label": list(cfg["label"]),
-            "rising": within["rising"][:12], "coiling": within["coiling"][:12],
+            "rising": within["rising"][:12],
+            "coiling": coiled[:12], "coil_filtered": n_knife,
             "participation": within["participation"],
         }
 
@@ -230,9 +248,13 @@ def compute(site: Path) -> dict | None:
         },
         "notes": ("Leadership Acceleration Score (LAS) ranks the four universes by whose leadership is "
                   "ACCELERATING most — z(return-accel)·0.40 + z(breadth-thrust)·0.30 + z(participation)·0.30, "
-                  "cross-sectional over the tabs. RUNNING = already leading & accelerating (RRG 'leading'); "
-                  "COILING = laggards turning up (RRG 'improving') with a below-trend guard. A 4-point z-score "
-                  "is noisy — the raw legs are shown. DISPLAY-ONLY rotation-timing context; not alpha."),
+                  "cross-sectional over the tabs. RUNNING = already leading & accelerating (RRG 'leading'). "
+                  "COILING = laggards turning up (RRG 'improving') that PASS a multi-factor coil confirmation "
+                  "(graded RSI divergence, multi-timeframe turn, volatility contraction, RS-hold, deterioration "
+                  "easing, above-rising-trend) AND survive a weekly / 2-week / monthly downtrend veto — a bounce "
+                  "inside a confirmed higher-timeframe bear is dropped (stage='knife'), not shown as 'about to "
+                  "run'. A 4-point z-score is noisy — raw legs shown. DISPLAY-ONLY rotation-timing / watchlist "
+                  "ordering (bottom-timing is a drawdown lever, not return-alpha); confirm before acting."),
     }
 
 

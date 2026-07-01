@@ -42,6 +42,8 @@
   var LEAD = null;
   function quadInfo(q) { return ({ leading: ['Leading', '领先', 'var(--up)'], improving: ['Improving', '改善', 'var(--info)'], weakening: ['Weakening', '走弱', 'var(--orange)'], lagging: ['Lagging', '落后', 'var(--down)'] })[q] || ['—', '—', 'var(--muted)']; }
   function quadPill(q) { var i = quadInfo(q); return '<span class="qp" style="color:' + i[2] + ';border-color:' + i[2] + '">' + L(i[0], i[1]) + '</span>'; }
+  function stageBadge(st) { var m = ({ primed: ['Primed', '就绪', 'var(--up)'], coiling: ['Coiling', '蓄势', 'var(--info)'], watch: ['Watch', '观察', 'var(--muted)'], knife: ['Knife', '刀口', 'var(--down)'] })[st] || ['—', '—', 'var(--muted)']; return '<span class="qp" style="color:' + m[2] + ';border-color:' + m[2] + '">' + L(m[0], m[1]) + '</span>'; }
+  function tfChip(lbl, dir) { var c = dir === 'up' ? 'var(--up)' : dir === 'down' ? 'var(--down)' : 'var(--muted)'; var a = dir === 'up' ? '▲' : dir === 'down' ? '▼' : dir === 'flat' ? '–' : '·'; return '<span class="tfc" style="color:' + c + '">' + lbl + ' ' + a + '</span>'; }
   // theme.js wrapTables() runs on DOMContentLoaded, BEFORE this file async-injects its tables,
   // so our tables never get the .tbl-scroll wrapper and bleed past the viewport on mobile.
   // Re-apply the house wrap (theme.css styles .tbl-scroll) to any table we render.
@@ -89,9 +91,18 @@
   }
 
   function leadCard(e) {
-    var qi = quadInfo(e.quadrant);
-    return '<div class="lcard" style="border-left-color:' + qi[2] + '"><div class="lc-top"><span class="lc-nm">' + esc(e.label) + '</span>' + (e.entry_tier ? tierBadge(e.entry_tier) : '') + '</div>'
-      + '<div class="lc-sub">' + esc(e.sector || '') + '</div>'
+    var qi = quadInfo(e.quadrant), co = e.coil;
+    var head = '<div class="lc-top"><span class="lc-nm">' + esc(e.label) + '</span>' + (e.entry_tier ? tierBadge(e.entry_tier) : '') + '</div>'
+      + '<div class="lc-sub">' + esc(e.sector || '') + '</div>';
+    if (co) {  // COILING card — show coil stage + the higher-timeframe (W/2W/M) trend the veto reads
+      var tf = co.tf || {};
+      var chips = ['W', '2W', 'M'].map(function (k) { return tfChip(k, tf[k]); }).join(' ');
+      return '<div class="lcard" style="border-left-color:' + qi[2] + '">' + head
+        + '<div class="lc-row">' + stageBadge(co.stage) + ' <span class="pill ' + (e.regime_side || 'neutral') + '">' + esc(e.regime_state || '—') + '</span></div>'
+        + '<div class="lc-tf">' + L('higher TF', '更高周期') + ': ' + chips + (co.htf_turning ? ' <span style="color:var(--up)">' + L('confirming', '确认中') + '</span>' : '') + '</div>'
+        + '<div class="lc-meta">' + L('coil', '蓄势') + ' ' + num(co.coil_score, 0) + '/100' + (e.rs_60d != null ? ' · RS60 ' + signed(e.rs_60d, 1) : '') + '</div></div>';
+    }
+    return '<div class="lcard" style="border-left-color:' + qi[2] + '">' + head
       + '<div class="lc-row">' + quadPill(e.quadrant) + ' <span class="pill ' + (e.regime_side || 'neutral') + '">' + esc(e.regime_state || '—') + '</span></div>'
       + '<div class="lc-meta">' + L('accel', '加速') + ' ' + signed(e.emerging_score, 2) + (e.rs_60d != null ? ' · RS60 ' + signed(e.rs_60d, 1) : '') + '</div></div>';
   }
@@ -99,20 +110,23 @@
   function tabLeadership(ds) {
     if (!LEAD || !LEAD.ok || !LEAD.tabs[ds]) return '';
     var t = LEAD.tabs[ds], run = t.rising || [], coil = t.coiling || [];
-    var col = function (icon, ten, tzh, den, dzh, list, een, ezh) {
+    var col = function (icon, ten, tzh, den, dzh, list, een, ezh, note) {
       return '<div class="lead-col"><h2>' + icon + ' ' + L(ten, tzh) + ' <span class="n" style="color:var(--muted);font-weight:500">' + list.length + '</span></h2>'
         + '<div class="desc">' + L(den, dzh) + '</div>'
-        + (list.length ? '<div class="lcards">' + list.map(leadCard).join('') + '</div>' : '<div class="empty">' + L(een, ezh) + '</div>') + '</div>';
+        + (list.length ? '<div class="lcards">' + list.map(leadCard).join('') + '</div>' : '<div class="empty">' + L(een, ezh) + '</div>')
+        + (note || '') + '</div>';
     };
+    var filtered = t.coil_filtered || 0;
+    var coilNote = filtered ? '<div class="lc-filtered">⛔ ' + L(filtered + ' more dropped by the weekly / 2-week / monthly downtrend veto (a bounce inside a higher-timeframe bear — not a durable coil).', filtered + ' 个被周/双周/月线下跌否决过滤（更高周期熊市中的反弹——非可持续蓄势）。') + '</div>' : '';
     return '<div class="sec"><div class="lead-cols">'
       + col('🏃', 'Running — rising leaders', '领跑——上升领导',
         "This tab's subsectors already LEADING their peers and still accelerating (RRG leading quadrant, not topping). Ranked by acceleration, not level — the runners.",
         '本标签中已领先同侪且仍在加速的子行业（RRG 领先象限，未见顶）。按加速度而非水平排序——领跑者。',
         run, 'None accelerating cleanly in the leading quadrant.', '领先象限中暂无干净加速者。')
       + col('🌱', 'Coiling — about to run', '蓄势——即将启动',
-        'Laggards turning UP (RRG improving quadrant), guarded against a bounce inside a confirmed downtrend / distribution. A v1 rotation-derived coil list — confirm the higher timeframe before acting.',
-        '落后但开始转强的子行业（RRG 改善象限），已排除确认下跌/派发中的反弹。v1 轮动衍生蓄势清单——行动前请确认更高周期。',
-        coil, 'No laggards turning up yet.', '暂无落后转强者。')
+        'Laggards turning UP (RRG improving) that PASS a coil confirmation — graded RSI divergence, multi-timeframe turn, volatility contraction, RS-hold — and SURVIVE a weekly / 2-week / monthly downtrend veto. The W/2W/M chips show that higher-timeframe trend. "Primed" = turning up above a rising trend with the higher TF confirming.',
+        '落后但开始转强（RRG 改善象限）且通过蓄势确认的子行业——分级 RSI 背离、多周期转向、波动收缩、相对强弱守稳——并通过周/双周/月线下跌否决。W/2W/M 标签显示更高周期趋势。“就绪”=在上升趋势之上转强且更高周期确认。',
+        coil, 'No laggards passed higher-timeframe coil confirmation.', '暂无落后子行业通过更高周期蓄势确认。', coilNote)
       + '</div></div>';
   }
 
