@@ -1,0 +1,28 @@
+/* Heavy-store data base — route the per-ticker OHLC + search-library fetches to a
+   CDN / object store (Cloudflare R2) when window.DATA_BASE is set. When it is EMPTY
+   (the default) this is a strict NO-OP: the relative-path fetches resolve from
+   GitHub Pages exactly as before, so shipping this changes nothing until we
+   deliberately flip DATA_BASE at deploy. One shim replaces per-page fetch edits and
+   can never miss a call site. Injected in <head> (non-deferred) by
+   scripts/inject_data_base.py so it patches window.fetch BEFORE any page data fetch.
+
+   THE FLIP (later): set DATA_BASE below to the R2 public URL (or a custom domain),
+   enable the bucket's public access + CORS, redeploy. Everything then loads from R2. */
+(function () {
+  window.DATA_BASE = window.DATA_BASE || "";              // "" = serve from Pages (default)
+  var B = window.DATA_BASE;
+  if (!B) return;                                         // no-op when unset -> zero behavior change
+  B = B.replace(/\/+$/, "");                              // strip trailing slash
+  // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var orig = window.fetch;
+  window.fetch = function (u, o) {
+    try {
+      if (typeof u === "string") {
+        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
+        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+      }
+    } catch (e) { /* never let the shim break a fetch */ }
+    return orig.call(this, u, o);
+  };
+})();

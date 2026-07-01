@@ -113,6 +113,8 @@ jobs:
             [ "$rc" -ne 0 ] && echo "::error title=$mod failed (rc=$rc)::$(tail -n 2 /tmp/lib.log | tr '\n' ' ' | tail -c 500)"
           done
           exit 0
+      - name: inject data-base shim into CN/HK pages (site-wide, no-op while DATA_BASE empty)
+        run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
       - name: commit engine outputs
         if: always()
         run: |

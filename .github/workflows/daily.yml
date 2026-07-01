@@ -733,6 +733,10 @@ jobs:
         run: |
           rc=0; python -m scripts.build_whitehouse --page-only || rc=$?; [ "$rc" -eq 0 ] || [ "$rc" -eq 10 ] || echo "whitehouse desk skipped (additive, rc=$rc)"
           python -m scripts.inject_wh_banner || echo "banner inject skipped (additive)"
+          # data-base fetch shim (site-wide, <head>): reroutes heavy per-ticker fetches to R2
+          # when window.DATA_BASE is set; no-op while empty. Last page-mutating pass so no
+          # later builder strips the tag. See scripts/inject_data_base.py.
+          python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
       - name: commit engine outputs
         if: always()   # commit the freshly-built pages even if a LATER optional builder times out or is cancelled. pages.yml deploys the COMMITTED main tree, so a skipped commit = stale live site. The builders are individually resilient (each leaves the prior page in place on its own error), so partial output is never broken — committing what built beats shipping nothing.
         run: |
