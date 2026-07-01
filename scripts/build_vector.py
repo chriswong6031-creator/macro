@@ -2394,9 +2394,17 @@ def main() -> int:
         from engine import btc_recommend
         cones = btc_recommend.forward_cones(sig)
         recommendation = btc_recommend.recommend(sig, master, cones, envd.get("risk"), sizing)
+        # Fix #34: stamp the midterm-blackout state directly on the rec object so BOTH
+        # templates (vector.html.j2 and vector_allocation.html.j2) can guard from a SINGLE
+        # flag and cannot drift. When suppressed, ok stays True so the object is valid, but
+        # templates check `rec.suppressed_by_blackout` before rendering the action card.
+        if isinstance(recommendation, dict) and recommendation.get("ok"):
+            recommendation["suppressed_by_blackout"] = bool(midterm.get("active"))
+        else:
+            recommendation["suppressed_by_blackout"] = False
     except Exception as e:  # noqa: BLE001 — decision layer is optional
         log.warning("recommendation engine failed (%s)", e)
-        cones, recommendation = {"ok": False}, {"ok": False}
+        cones, recommendation = {"ok": False}, {"ok": False, "suppressed_by_blackout": False}
 
     # New mastermind-upgrade factor panels (research/VECTOR_FACTOR_ROADMAP_2026).
     newf = {

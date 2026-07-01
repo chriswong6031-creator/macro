@@ -451,7 +451,11 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
     </div>
   </div>
   {# ---------------- THE RECOMMENDATION (the actionable decision) ---------------- #}
-  {% if rec and rec.ok %}
+  {# Fix #34: suppress the recommendation card during a midterm blackout — mirrors the
+     guard in vector_allocation.html.j2 (line: and not (midterm and midterm.active)).
+     Both templates now read rec.suppressed_by_blackout (stamped in build_vector.py)
+     so the guard cannot drift between the two pages. #}
+  {% if rec and rec.ok and not rec.suppressed_by_blackout %}
   {% set rt = rec.tone %}
   {% set L = rec.levels %}
   <div class="reco">
