@@ -38,6 +38,84 @@
   function stockHref(tk) { return 'stock.html#' + encodeURIComponent(tk); }
   function groupsOf(ds) { return (DATA[ds] || {})[DS[ds].groupsKey] || []; }
 
+  /* ----- index leadership (rising star + drivers + per-tab running/coiling) ----- */
+  var LEAD = null;
+  function quadInfo(q) { return ({ leading: ['Leading', '领先', 'var(--up)'], improving: ['Improving', '改善', 'var(--info)'], weakening: ['Weakening', '走弱', 'var(--orange)'], lagging: ['Lagging', '落后', 'var(--down)'] })[q] || ['—', '—', 'var(--muted)']; }
+  function quadPill(q) { var i = quadInfo(q); return '<span class="qp" style="color:' + i[2] + ';border-color:' + i[2] + '">' + L(i[0], i[1]) + '</span>'; }
+  // theme.js wrapTables() runs on DOMContentLoaded, BEFORE this file async-injects its tables,
+  // so our tables never get the .tbl-scroll wrapper and bleed past the viewport on mobile.
+  // Re-apply the house wrap (theme.css styles .tbl-scroll) to any table we render.
+  function wrapTbls(root) {
+    if (!root) return;
+    root.querySelectorAll('table').forEach(function (t) {
+      if (t.closest('.tbl-scroll') || !t.parentNode) return;
+      var w = document.createElement('div'); w.className = 'tbl-scroll';
+      t.parentNode.insertBefore(w, t); w.appendChild(t);
+    });
+  }
+
+  function leadershipStrip() {
+    var el = document.getElementById('sc-leadership'); if (!el) return;
+    var d = LEAD; if (!d || !d.ok) { el.innerHTML = ''; return; }
+    var star = d.rising_star, ln = d.leader_now, T = d.tabs || {};
+    var order = ['subsectors', 'nasdaq', 'russell', 'baskets'].filter(function (t) { return T[t]; });
+    var whyTxt = (star && star.why && star.why.length) ? star.why.map(function (w) { return w.leg; }).join(' · ') : L('mixed legs', '综合');
+    var lnQuad = ln ? (T[ln.tab] || {}).quadrant : null;
+    var lnNote = (lnQuad === 'weakening' || lnQuad === 'lagging') ? L(' · but weakening', ' · 但走弱') : '';
+    var hero = '<div class="lead-hero">';
+    if (star) hero += '<div class="lead-star"><div class="lbl">⭐ ' + L('Rising star', '上升之星') + '</div><div class="big">' + L(star.label[0], star.label[1]) + ' <span class="las">LAS ' + (star.las >= 0 ? '+' : '') + num(star.las, 2) + '</span></div><div class="why">' + L('leadership accelerating fastest — ', '领导加速最快——') + esc(whyTxt) + '</div></div>';
+    if (ln) hero += '<div class="lead-leader"><div class="lbl">' + L('Leader now', '当前领导') + '</div><div class="big">' + L(ln.label[0], ln.label[1]) + '</div><div class="why">' + L('highest RS level', '相对强弱水平最高') + lnNote + '</div></div>';
+    hero += '</div>';
+    var rows = order.map(function (t) {
+      var v = T[t], isStar = star && star.tab === t;
+      return '<tr' + (isStar ? ' class="star"' : '') + '><td class="u">' + (isStar ? '⭐ ' : '') + L(v.label[0], v.label[1]) + '</td>'
+        + '<td class="b">' + (v.las >= 0 ? '+' : '') + num(v.las, 2) + '</td>'
+        + '<td>' + num(v.rs_ratio, 2) + '</td>'
+        + '<td>' + signed(v.rs_mom, 2) + '</td>'
+        + '<td style="text-align:right">' + quadPill(v.quadrant) + '</td>'
+        + '<td>' + signed(v.breadth_thrust != null ? v.breadth_thrust * 100 : null, 1) + '</td>'
+        + '<td>' + (v.participation != null ? num(v.participation * 100, 0) + '%' : '–') + '</td></tr>';
+    }).join('');
+    var tbl = '<table class="lead-tbl"><thead><tr><th>' + L('Universe', '指数域') + '</th><th>LAS</th><th>' + L('RS level', 'RS水平') + '</th><th>' + L('RS mom', 'RS动量') + '</th><th>' + L('Quadrant', '象限') + '</th><th>' + L('Breadth thrust', '广度推力') + '</th><th>' + L('Particip.', '参与度') + '</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    var chips = ((d.drivers && d.drivers.ratios) || []).map(function (r) {
+      var up = r.rising;
+      return '<div class="chip ' + (up ? 'up' : 'dn') + '"><div class="ct">' + L(r.label_en, r.label_zh) + '</div>'
+        + '<div class="cv">' + (up ? '▲ ' : '▼ ') + L(r.read_en, r.read_zh) + '</div>'
+        + '<div class="cm">20d ' + signed(r.mom20, 1) + ' · 60d ' + signed(r.mom60, 1) + (r.pctile != null ? ' · ' + L('pctile', '分位') + ' ' + num(r.pctile, 0) : '') + '</div></div>';
+    }).join('');
+    var drivers = chips ? '<div class="lead-drivers"><div class="dh">' + L('Why — leadership drivers (observable ratios, not a regime label)', '为什么——领导驱动（可观测比率，非状态标签）') + '</div><div class="chips">' + chips + '</div></div>' : '';
+    el.innerHTML = '<div class="lead-head"><h2>🧭 ' + L('Index leadership rotation', '指数领导轮动') + '</h2><span class="asof">' + L('as of ' + (d.as_of || '—'), '截至 ' + (d.as_of || '—')) + '</span></div>' + hero + tbl + drivers;
+    wrapTbls(el);
+  }
+
+  function leadCard(e) {
+    var qi = quadInfo(e.quadrant);
+    return '<div class="lcard" style="border-left-color:' + qi[2] + '"><div class="lc-top"><span class="lc-nm">' + esc(e.label) + '</span>' + (e.entry_tier ? tierBadge(e.entry_tier) : '') + '</div>'
+      + '<div class="lc-sub">' + esc(e.sector || '') + '</div>'
+      + '<div class="lc-row">' + quadPill(e.quadrant) + ' <span class="pill ' + (e.regime_side || 'neutral') + '">' + esc(e.regime_state || '—') + '</span></div>'
+      + '<div class="lc-meta">' + L('accel', '加速') + ' ' + signed(e.emerging_score, 2) + (e.rs_60d != null ? ' · RS60 ' + signed(e.rs_60d, 1) : '') + '</div></div>';
+  }
+
+  function tabLeadership(ds) {
+    if (!LEAD || !LEAD.ok || !LEAD.tabs[ds]) return '';
+    var t = LEAD.tabs[ds], run = t.rising || [], coil = t.coiling || [];
+    var col = function (icon, ten, tzh, den, dzh, list, een, ezh) {
+      return '<div class="lead-col"><h2>' + icon + ' ' + L(ten, tzh) + ' <span class="n" style="color:var(--muted);font-weight:500">' + list.length + '</span></h2>'
+        + '<div class="desc">' + L(den, dzh) + '</div>'
+        + (list.length ? '<div class="lcards">' + list.map(leadCard).join('') + '</div>' : '<div class="empty">' + L(een, ezh) + '</div>') + '</div>';
+    };
+    return '<div class="sec"><div class="lead-cols">'
+      + col('🏃', 'Running — rising leaders', '领跑——上升领导',
+        "This tab's subsectors already LEADING their peers and still accelerating (RRG leading quadrant, not topping). Ranked by acceleration, not level — the runners.",
+        '本标签中已领先同侪且仍在加速的子行业（RRG 领先象限，未见顶）。按加速度而非水平排序——领跑者。',
+        run, 'None accelerating cleanly in the leading quadrant.', '领先象限中暂无干净加速者。')
+      + col('🌱', 'Coiling — about to run', '蓄势——即将启动',
+        'Laggards turning UP (RRG improving quadrant), guarded against a bounce inside a confirmed downtrend / distribution. A v1 rotation-derived coil list — confirm the higher timeframe before acting.',
+        '落后但开始转强的子行业（RRG 改善象限），已排除确认下跌/派发中的反弹。v1 轮动衍生蓄势清单——行动前请确认更高周期。',
+        coil, 'No laggards turning up yet.', '暂无落后转强者。')
+      + '</div></div>';
+  }
+
   /* ----- sections ----- */
   function cardHTML(g, ds) {
     var e = g.entry || {}, r = g.regime || {};
@@ -131,8 +209,9 @@
     if (!payload || !payload.ok) { app.innerHTML = '<div class="empty">' + L('No data yet — run the nightly build.', '暂无数据——请运行夜间构建。') + '</div>'; return; }
     var cov = payload.coverage || {};
     document.getElementById('sc-asof').innerHTML = L('as of ' + (payload.as_of || '—'), '截至 ' + (payload.as_of || '—')) + (cov.n_gateable != null ? ' · ' + cov.n_gateable + '/' + cov.n_subsectors + ' ' + L('gateable', '可评') : '');
-    var h = entryNowSection(payload, ds) + funnelSection(payload, ds) + sectorStrip(payload, ds) + allGroupsSection(payload, ds);
+    var h = tabLeadership(ds) + entryNowSection(payload, ds) + funnelSection(payload, ds) + sectorStrip(payload, ds) + allGroupsSection(payload, ds);
     app.innerHTML = h;
+    wrapTbls(app);
   }
 
   function setTab(tab) {
@@ -154,6 +233,14 @@
       var set = function (id, v) { var el = document.getElementById(id); if (el) el.textContent = v; };
       set('tabn-sub', cnt('subsectors')); set('tabn-bas', cnt('baskets'));
       set('tabn-ndx', cnt('nasdaq')); set('tabn-rut', cnt('russell'));
+      return fetch('marketdata/index_leadership.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    }).then(function (lead) {
+      LEAD = lead;
+      leadershipStrip();
+      if (LEAD && LEAD.ok && LEAD.rising_star) {
+        var el = document.querySelector('.sc-tab[data-tab="' + LEAD.rising_star.tab + '"]');
+        if (el && !el.querySelector('.star-badge')) { var b = document.createElement('span'); b.className = 'star-badge'; b.textContent = ' ⭐'; b.title = 'Rising star — leadership accelerating fastest'; el.appendChild(b); }
+      }
       render();
     });
   }

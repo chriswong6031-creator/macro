@@ -3111,6 +3111,17 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("nasdaq/russell subsector confluence render failed: %s", e)
 
+    # Index Leadership — a decoupled post-pass over the four committed confluence boards
+    # (S&P-500 / Nasdaq-100 / Russell-2000 / thematic baskets) + their OHLC sidecars + the
+    # index/style ETFs: lifts the RRG/velocity math to the INDEX level (which universe is the
+    # RISING STAR — accelerating leadership), the observable leadership-driver ratios, and the
+    # per-tab RUNNING / COILING lists. subsectors.js fetches marketdata/index_leadership.json.
+    try:
+        from scripts.build_index_leadership import build as build_index_leadership
+        build_index_leadership(site, generated_utc=generated)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("index leadership build failed: %s", e)
+
     # --- history page: the longer-window charts + lifespan base rates ----------
     from engine.playbook import QUAD_SHORT, next_quads_line, transition_stats
     trans = transition_stats(hist["quad"])
