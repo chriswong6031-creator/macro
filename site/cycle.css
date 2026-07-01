@@ -13,8 +13,12 @@
    cycle.css (cycle, markets, sector_central[_china], sector_cycles[_china]) set
    no body padding, so without this the menu jams against the very top of the
    viewport — the recurring "menu has no padding" bug. Owning the gap here fixes
-   every cycle.css page at once; the floor is enforced by scripts/check_nav_gap.py. */
-body { margin: 0; padding-top: 24px; }
+   every cycle.css page at once; the floor is enforced by scripts/check_nav_gap.py.
+   These pages carry no inline <body> style of their own, so this rule is also
+   their base canvas: pull background/text from the theme tokens (dark default,
+   light override) or <body> falls back to transparent + black text — unreadable
+   in dark mode. */
+body { margin: 0; padding-top: 24px; background: var(--bg); color: var(--text); }
 
 /* nav layout (desktop horizontal; theme.js collapses it under 700px) */
 .site-nav .nav-links { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
