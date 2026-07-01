@@ -1869,10 +1869,36 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
     alerts_html = _g_alerts(alerts)
     blob_json = json.dumps(blob, ensure_ascii=False)
 
+    # SEO + social + favicon (the landing page — highest-value target). Plain,
+    # static HTML: social scrapers (Slack/X/iMessage) don't run JS. Mirrors the
+    # shared templates/_seo_head.html.j2 used by the Jinja hub pages.
+    _seo_title = "Mastermind — Global Macro Regime & Market Cycle Intelligence"
+    _seo_desc = ("Mastermind is a live macro dashboard tracking market regimes, sector "
+                 "rotation and boom-bust cycles across the US, China, Hong Kong, Canada and "
+                 "global markets — risk radar, signals and cycle clocks in one place.")
+    _seo = (
+        '<meta name="description" content="%s">\n'
+        '<link rel="canonical" href="https://mastermind-x.com/">\n'
+        '<meta property="og:type" content="website">\n'
+        '<meta property="og:site_name" content="Mastermind">\n'
+        '<meta property="og:title" content="%s">\n'
+        '<meta property="og:description" content="%s">\n'
+        '<meta property="og:url" content="https://mastermind-x.com/">\n'
+        '<meta property="og:image" content="https://mastermind-x.com/apple-touch-icon.png">\n'
+        '<meta name="twitter:card" content="summary">\n'
+        '<meta name="twitter:title" content="%s">\n'
+        '<meta name="twitter:description" content="%s">\n'
+        '<meta name="twitter:image" content="https://mastermind-x.com/apple-touch-icon.png">\n'
+        '<link rel="icon" href="favicon.svg" type="image/svg+xml">\n'
+        '<link rel="icon" href="favicon.ico" sizes="any">\n'
+        '<link rel="apple-touch-icon" href="apple-touch-icon.png">\n'
+    ) % (_seo_desc, _seo_title, _seo_desc, _seo_title, _seo_desc)
+
     head = (HUB_MARKER + "\n"
             '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-            '<title>MASTERMIND</title>\n'
+            '<title>' + _seo_title + '</title>\n'
+            + _seo +
             "<script>try{var h=new Date().getHours(),tod=(h>=7&&h<19)?'light':'dark',t=localStorage.getItem('theme'),a=localStorage.getItem('themeAuto');if(!t||a){t=tod;localStorage.setItem('theme',t);localStorage.setItem('themeAuto','1');}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>\n"
             '<link rel="stylesheet" href="theme.css">\n'
             '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">\n'

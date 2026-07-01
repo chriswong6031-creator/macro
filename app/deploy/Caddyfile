@@ -46,8 +46,14 @@ mastermind-x.com, www.mastermind-x.com {
 	}
 
 	header {
-		# Pre-launch: keep the product out of search indexes.
-		X-Robots-Tag "noindex, nofollow, noarchive"
+		# PUBLIC (was pre-launch noindex): the site is now open to search engines.
+		# The old `X-Robots-Tag "noindex, nofollow, noarchive"` header was removed
+		# here so crawlers can index it (paired with robots.txt + sitemap.xml in
+		# site/). Re-add that header to pull the whole site back out of search.
+		# NOTE: the LIVE header is emitted by the VPS /etc/caddy/Caddyfile, which
+		# has diverged from this repo copy — remove the noindex THERE too and
+		# `systemctl reload caddy`, or the site stays de-indexed. See
+		# [[mastermind-x-origin-tls-direct]].
 		# Basic hardening.
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
