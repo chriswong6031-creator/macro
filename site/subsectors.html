@@ -17,7 +17,7 @@
   .sc-head h1 { font-size:23px; margin:0; font-weight:800; letter-spacing:-.015em; }
   .sc-head .asof { color:var(--muted); font-size:12px; margin-left:auto; }
   .sc-sub { color:var(--muted); font-size:12.5px; margin:2px 2px 14px; max-width:96ch; line-height:1.55; }
-  .sc-tabs { display:flex; gap:6px; margin:6px 2px 16px; border-bottom:1px solid var(--line); }
+  .sc-tabs { display:flex; flex-wrap:wrap; gap:6px; margin:6px 2px 16px; border-bottom:1px solid var(--line); }
   .sc-tab { padding:8px 14px; cursor:pointer; font-weight:600; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px; }
   .sc-tab.on { color:var(--text); border-bottom-color:var(--link); }
   .sc-tab .n { color:var(--muted); font-weight:500; font-size:12px; }
@@ -57,6 +57,44 @@
   .secstrip .s { background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:8px 10px; }
   .secstrip .s .snm { font-weight:700; font-size:12px; }
   .empty { color:var(--muted); padding:14px; }
+  /* --- index leadership strip (rising star + drivers) --- */
+  .lead-wrap { border:1px solid var(--line); border-radius:13px; background:var(--panel); padding:13px 15px; margin:8px 2px 16px; }
+  .lead-wrap:empty { display:none; }
+  .lead-head { display:flex; align-items:baseline; gap:10px; margin-bottom:10px; }
+  .lead-head h2 { font-size:15px; font-weight:800; margin:0; letter-spacing:-.01em; }
+  .lead-head .asof { color:var(--muted); font-size:11px; margin-left:auto; }
+  .lead-hero { display:flex; flex-wrap:wrap; gap:12px 30px; margin-bottom:12px; }
+  .lead-hero .lbl { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
+  .lead-hero .big { font-size:17px; font-weight:800; margin-top:2px; }
+  .lead-hero .big .las { font-size:12px; font-weight:700; color:var(--up); margin-left:6px; }
+  .lead-hero .why { color:var(--muted); font-size:11.5px; margin-top:1px; max-width:52ch; }
+  .lead-star .big { color:var(--up); }
+  table.lead-tbl { width:100%; border-collapse:collapse; font-size:12px; margin-bottom:12px; }
+  table.lead-tbl th { text-align:right; color:var(--muted); font-weight:600; font-size:10px; text-transform:uppercase; letter-spacing:.03em; padding:4px 8px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  table.lead-tbl th:first-child, table.lead-tbl td:first-child { text-align:left; }
+  table.lead-tbl td { padding:5px 8px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  table.lead-tbl tr.star td { background:color-mix(in srgb,var(--up) 9%,transparent); }
+  table.lead-tbl td.u { font-weight:700; } table.lead-tbl td.b { font-weight:800; }
+  .qp { font-size:10px; font-weight:700; padding:1px 7px; border-radius:9px; border:1px solid; }
+  .lead-drivers .dh { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+  .lead-drivers .chips { display:grid; grid-template-columns:repeat(auto-fit,minmax(196px,1fr)); gap:8px; }
+  .lead-drivers .chip { border:1px solid var(--line); border-left-width:3px; border-radius:9px; padding:7px 10px; background:var(--bg); }
+  .lead-drivers .chip.up { border-left-color:var(--up); } .lead-drivers .chip.dn { border-left-color:var(--down); }
+  .lead-drivers .chip .ct { font-weight:700; font-size:11.5px; }
+  .lead-drivers .chip .cv { font-size:11px; margin-top:2px; line-height:1.35; }
+  .lead-drivers .chip .cm { color:var(--muted); font-size:10.5px; margin-top:3px; font-variant-numeric:tabular-nums; }
+  .star-badge { font-size:12px; }
+  /* per-tab running / coiling columns */
+  .lead-cols { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:820px){ .lead-cols{ grid-template-columns:1fr; } }
+  .lead-col h2 { font-size:14px; }
+  .lcards { display:grid; grid-template-columns:repeat(auto-fill,minmax(202px,1fr)); gap:8px; }
+  .lcard { border:1px solid var(--line); border-left-width:3px; border-radius:10px; padding:9px 11px; background:var(--panel); }
+  .lcard .lc-top { display:flex; justify-content:space-between; align-items:center; gap:6px; }
+  .lcard .lc-nm { font-weight:700; font-size:12.5px; line-height:1.2; }
+  .lcard .lc-sub { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.03em; margin-top:2px; }
+  .lcard .lc-row { display:flex; gap:5px; align-items:center; margin-top:7px; flex-wrap:wrap; }
+  .lcard .lc-meta { color:var(--muted); font-size:10.5px; margin-top:6px; font-variant-numeric:tabular-nums; }
 </style>
 </head>
 <body>
@@ -329,6 +367,8 @@
     <div class="asof" id="sc-asof"></div>
   </div>
   <div class="sc-sub"><span class="l-en">Each sub-industry as an equal-weight synthetic basket index, read through the owner's T1-T4 MACD-RSI × StochRSI confluence cascade (the ENTRY gate) and the validated sector state machine (the rotation CONTEXT). <b>ENTRY-NOW</b> = a subsector that just fired, or is about to. The <b>double-gate</b> funnels stocks whose own cascade fires AND whose subsector has a tailwind — and flags great stocks whose subsector is distributing. The <b>Nasdaq-100</b> &amp; <b>Russell-2000</b> tabs run the same engine WITHIN each index (RS vs QQQ / IWM), with curated <b>amalgamation</b> complexes as the rollup — to watch how leadership rotates among an index's subsectors (and whether money is bleeding out to ex-tech). A risk / rotation-timing map — one door, confirm before acting; not alpha.</span><span class="l-zh">将每个子行业视作等权合成篮子指数，用业主的 T1-T4 MACD-RSI × StochRSI 汇聚级联（入场闸门）与已验证的板块状态机（轮动背景）解读。<b>现可入场</b>=刚触发或即将触发的子行业。<b>双重闸门</b>筛出自身级联触发且所在子行业顺风的个股，并标记所在子行业正在派发的优质股。<b>纳斯达克100</b> 与 <b>罗素2000</b> 标签页在各自指数内运行同一引擎（相对强弱基准为 QQQ / IWM），以精选的<b>汇聚综合体</b>作为汇总——观察指数内子行业间的领导轮动（以及资金是否正流出科技）。风险/轮动择时图——仅一道门，行动前请确认；非阿尔法。</span></div>
+
+  <div id="sc-leadership" class="lead-wrap"></div>
 
   <div class="sc-tabs">
     <div class="sc-tab on" data-tab="subsectors"><span class="l-en">S&amp;P 500 Subsectors</span><span class="l-zh">标普500子行业</span> <span class="n" id="tabn-sub"></span></div>
