@@ -118,21 +118,22 @@ def _quarter_signs(accel: dict[int, int]) -> dict[str, int]:
     return out
 
 
-def _axis(sids: list[str], as_of, vintages) -> dict | None:
-    """Aggregate the base-effect forward signal across the series that define one axis."""
+def _axis(levels: dict[str, tuple[pd.Series | None, bool]]) -> dict | None:
+    """Aggregate the base-effect forward signal across the level series that define one axis.
+    `levels` maps a series name to (monthly SA level series or None, revised flag). The US path
+    builds these from FRED; other markets (China) reconstruct levels from YoY (level_from_yoy)."""
     per, any_revised, missing = [], False, []
-    for sid in sids:
-        lvl, rev = _level(sid, as_of, vintages)
+    for name, (lvl, rev) in levels.items():
         if lvl is None:
-            missing.append(sid)
+            missing.append(name)
             continue
         flat = _project(lvl, 0.0)
         if flat is None:
-            missing.append(sid)
+            missing.append(name)
             continue
         mom = np.log(lvl.astype(float)).diff().dropna()
         sd = float(mom.iloc[-MOM_WIN:].std()) if len(mom) >= MOM_WIN else 0.0
-        per.append({"sid": sid, "revised": rev, "flat": flat,
+        per.append({"sid": name, "revised": rev, "flat": flat,
                     "up": _project(lvl, +0.5 * sd), "dn": _project(lvl, -0.5 * sd),
                     "qsigns": _quarter_signs(flat["accel"])})
         any_revised = any_revised or rev
@@ -177,16 +178,33 @@ def _note(axis: str, a: dict) -> str:
     return f"{comp} a year ago -> base-forced {verb} in {axis} into Q1{traj}"
 
 
-def compute(as_of=None, vintages=None) -> dict | None:
-    """The full base-effect block for data/regime/latest.json (display-only in v0).
+def level_from_yoy(yoy_pct: pd.Series, seed: float = 100.0) -> pd.Series:
+    """Reconstruct a smooth monthly LEVEL index from a YoY-percent series — for markets that
+    publish YoY only, no cumulative index (China CPI/PPI/IndPro). Spreads each year's YoY evenly
+    across 12 months in log space: log L_t = log L_{t-1} + log(1+yoy_t/100)/12, so the level's
+    trailing-12-month YoY tracks the input while the *monthly* path stays smooth. The naive exact
+    chain (L_t = L_{t-12}*(1+yoy_t)) reproduces YoY exactly but its fabricated within-year path is
+    jumpy — for a volatile series (China industrial production) that noise poisons the base-effect
+    projection (a spurious ±20pp swing). Base-effect only needs the shape of the base path, so a
+    smooth reconstruction is the right trade."""
+    y = pd.Series(yoy_pct).dropna().astype(float).sort_index() / 100.0
+    y.index = pd.to_datetime(y.index)
+    y = y.resample("MS").last().ffill().dropna()   # contiguous monthly grid, bridge rare gaps
+    if len(y) < 24:
+        return pd.Series(dtype=float)
+    logl = (np.log1p(y) / 12.0).cumsum() + np.log(seed)
+    return np.exp(logl)
 
-    Returns None if neither axis can be built. `as_of`/`vintages` enable point-in-time reads;
-    omit them for a latest-revision run (flagged revised=True)."""
-    growth = _axis(GROWTH_SIDS, as_of, vintages)
-    infl = _axis(INFLATION_SIDS, as_of, vintages)
+
+def compute_from_levels(growth_levels: dict | None, inflation_levels: dict | None,
+                        as_of_str: str | None = None) -> dict | None:
+    """Generic base-effect block from pre-built level dicts (name -> (level_series, revised)).
+    The US `compute` reads FRED; China reconstructs levels from YoY and calls this directly."""
+    growth = _axis(growth_levels) if growth_levels else None
+    infl = _axis(inflation_levels) if inflation_levels else None
     if growth is None and infl is None:
         return None
-    out: dict = {"horizon_m": HORIZON_M, "as_of": str(as_of) if as_of is not None else None}
+    out: dict = {"horizon_m": HORIZON_M, "as_of": as_of_str}
     if growth is not None:
         out["growth"] = growth
         out["growth_note"] = _note("growth", growth)
@@ -195,6 +213,15 @@ def compute(as_of=None, vintages=None) -> dict | None:
         out["inflation_note"] = _note("inflation", infl)
     out["revised"] = bool((growth or {}).get("revised", True) or (infl or {}).get("revised", True))
     return out
+
+
+def compute(as_of=None, vintages=None) -> dict | None:
+    """The full base-effect block for the US regime (display-only). Reads FRED levels; `as_of` +
+    `vintages` enable point-in-time reads, omit them for latest-revision (flagged revised=True)."""
+    growth_levels = {sid: _level(sid, as_of, vintages) for sid in GROWTH_SIDS}
+    inflation_levels = {sid: _level(sid, as_of, vintages) for sid in INFLATION_SIDS}
+    return compute_from_levels(growth_levels, inflation_levels,
+                               str(as_of) if as_of is not None else None)
 
 
 def grading_row(result: dict, asof: str) -> dict:
