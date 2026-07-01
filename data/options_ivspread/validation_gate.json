@@ -1,21 +1,23 @@
 {
   "schema": "options_ivspread.gate.v1",
-  "generated_at": "2026-06-28 10:36 UTC",
+  "generated_at": "2026-07-01 14:12 UTC",
   "scored": false,
-  "status": "insufficient_history (have 14/120 dates, 366/15 names)",
+  "status": "insufficient_history (have 17/120 dates, 368/15 names)",
   "weight": 0.0,
-  "n_dates": 14,
-  "n_names": 366,
+  "n_dates": 17,
+  "n_names": 368,
   "min_dates": 120,
   "min_names": 15,
   "ic_by_horizon": {
     "5": {
-      "n_dates": 3,
-      "mean_ic": NaN,
+      "n_dates": 6,
+      "mean_ic": 0.0923,
       "hac_t": NaN
     },
     "10": {
-      "n_dates": 0
+      "n_dates": 1,
+      "mean_ic": NaN,
+      "hac_t": NaN
     },
     "21": {
       "n_dates": 0
