@@ -111,3 +111,52 @@ def test_pit_diff_dates_entries_and_exits():
     assert by["000001.SZ"]["added"] == seed.SEED and by["000001.SZ"]["removed"] == "2026-06-15"  # dropped
     assert by["600519.SS"]["added"] == "2026-06-15" and by["600519.SS"]["removed"] is None       # entered later
     assert missing == []
+
+
+def test_pit_truncated_latest_snapshot_fabricates_no_exits():
+    """A shrunken latest snapshot (truncated scrape) must NOT mark the missing tail as removed —
+    every ever-seen member is carried forward as active (removed=None)."""
+    full = [{"ticker": f"6000{i:02d}.SS", "name": str(i)} for i in range(10)]   # 10-name board
+    trunc = full[:3]                                                            # scrape truncated to 3
+    snaps = [("2026-06-27", {"T": full}), ("2026-06-30", {"T": trunc})]
+    universe = {m["ticker"] for m in full}
+    members, _ = seed._pit_members("T", snaps, universe, _zh)
+    assert len(members) == 10                                    # all 10 retained
+    assert all(m["removed"] is None for m in members)            # none fabricated as exits
+
+
+def test_pit_genuine_exit_survives_when_board_holds_size():
+    """A single drop with the board otherwise intact (size above the shrink floor) is a real exit."""
+    prev = [{"ticker": f"6000{i:02d}.SS", "name": str(i)} for i in range(10)]
+    latest = prev[1:] + [{"ticker": "600099.SS", "name": "new"}]   # drop one, add one → size holds
+    snaps = [("2026-06-27", {"T": prev}), ("2026-06-30", {"T": latest})]
+    universe = {m["ticker"] for m in prev} | {"600099.SS"}
+    members, _ = seed._pit_members("T", snaps, universe, _zh)
+    by = {m["ticker"]: m for m in members}
+    assert by["600000.SS"]["removed"] == "2026-06-30"           # the genuine drop is dated
+    assert by["600099.SS"]["added"] == "2026-06-30" and by["600099.SS"]["removed"] is None
+
+
+# ── collector: complete-or-fail member paging ─────────────────────────────────
+def test_concept_members_raises_on_truncation(monkeypatch):
+    """A mid-pagination HTTP failure that survives the fresh-cookie retry raises ThsTruncated
+    instead of returning the partial rows collected so far."""
+    import collectors.china_ths_concepts as ths
+
+    class _Resp:
+        def __init__(self, status, text=""):
+            self.status_code, self.text = status, text
+
+    page1 = ("<table><tr><th>代码</th><th>名称</th></tr>"
+             + "".join(f"<tr><td>60000{i}</td><td>n{i}</td></tr>" for i in range(10)) + "</table>")
+
+    class _Sess:
+        def get(self, url, timeout=0):
+            return _Resp(200, page1) if "/page/1/" in url else _Resp(401)   # page 2 blocked, always
+
+    monkeypatch.setattr(ths, "_PAGE_PAUSE", 0)
+    monkeypatch.setattr(ths, "time", type("T", (), {"sleep": staticmethod(lambda *_: None)}))
+    monkeypatch.setattr(ths, "_session", lambda *a, **k: _Sess())   # fresh-cookie retry stays offline
+    import pytest
+    with pytest.raises(ths.ThsTruncated):
+        ths.concept_members("999999", _Sess())

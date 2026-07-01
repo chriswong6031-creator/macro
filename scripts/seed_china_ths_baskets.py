@@ -39,6 +39,12 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("seed_china_ths_baskets")
 
 SEED = "2021-06-15"  # china_search cache start; first-run members seeded here (hindsight-curated)
+# A latest snapshot whose board for a theme is smaller than this fraction of that theme's historical
+# max is treated as a (possibly truncated) scrape: we trust NO removals from it and carry every
+# ever-seen member forward as active. Guards against the collector handing us a partial member list
+# and the diff then reading the missing tail as a mass exit. THS boards don't lose ~30% of their
+# names between daily snapshots — a drop that large is almost always scrape truncation.
+SHRINK_FRAC = 0.7
 
 # Auto-add taxonomy curation (P3 — automated rule; curated baskets bypass ALL of this).
 AUTO_MIN_MEMBERS = 8   # a non-curated THS board needs >=8 priced members to auto-import (was 3);
@@ -259,6 +265,12 @@ def _pit_members(theme: str, snaps: list[tuple[str, dict]], universe: set[str],
     latest_tickers = {m["ticker"] for m in latest_theme}
     latest_name = {m["ticker"]: m["name"] for m in latest_theme}
 
+    # Is the latest snapshot a trustworthy read of this board, or a shrunken (likely truncated) one?
+    # Compare its size to the theme's historical max; below SHRINK_FRAC we honour NO removals from it.
+    theme_counts = [len(snap.get(theme, [])) for _, snap in snaps if snap.get(theme)]
+    max_count = max(theme_counts) if theme_counts else 0
+    latest_trustworthy = bool(latest_theme) and len(latest_theme) >= SHRINK_FRAC * max_count
+
     # first date each ticker appears, last date it appears, and a display name
     first_seen: dict[str, str] = {}
     last_seen: dict[str, str] = {}
@@ -276,9 +288,11 @@ def _pit_members(theme: str, snaps: list[tuple[str, dict]], universe: set[str],
             missing.append(t)
             continue
         added = SEED if first_seen[t] == first_date else first_seen[t]
-        if t in latest_tickers:
+        if t in latest_tickers or not latest_trustworthy:
+            # present in the latest board, OR the latest board looks truncated (don't fabricate an
+            # exit from a partial scrape) → keep the member active.
             removed = None
-        else:  # gone from the latest board → removed at the first snapshot after it last appeared
+        else:  # genuinely gone from a trustworthy latest board → removed at first snapshot after last seen
             after = [d for d in dates if d > last_seen[t]]
             removed = after[0] if after else None
         ths_nm = latest_name.get(t, any_name.get(t, t))
