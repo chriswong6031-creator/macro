@@ -137,6 +137,34 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("business-cycle layer failed: %s", e)
         latest["business_cycle"] = None
+    # Base-effect forward-regime projection (the Hedgeye kernel): forward YoY paths + the
+    # base-forced acceleration/deceleration sign per quarter for growth (INDPRO/PAYEMS) and
+    # inflation (core CPI/PCE — the Fed's target). The forward econic 2nd-derivative the
+    # market-proxy Quad lacks. DISPLAY-ONLY leaf (engine/base_effect.py): carries ZERO axis
+    # weight, and each build appends to data/regime/base_effect_fwd.jsonl for later
+    # forward-grading against the disclosed inversion stat (plan §A.6). See
+    # research/HEDGEYE_UPGRADE_MASTER_PLAN.md.
+    try:
+        from engine import base_effect as _base_effect
+        _bex = _base_effect.compute()
+        latest["base_effect"] = _bex
+        if _bex is not None:
+            _bfp = p / "base_effect_fwd.jsonl"
+            _today = str(asof.date())
+            _last = None
+            if _bfp.exists():
+                _bl = _bfp.read_text().splitlines()
+                if _bl:
+                    try:
+                        _last = json.loads(_bl[-1]).get("asof")
+                    except Exception:  # noqa: BLE001
+                        _last = None
+            if _last != _today:  # one grading row per session, idempotent across same-day rebuilds
+                with open(_bfp, "a") as _bfh:
+                    _bfh.write(json.dumps(_base_effect.grading_row(_bex, _today), default=str) + "\n")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("base-effect layer failed: %s", e)
+        latest["base_effect"] = None
     # Catalyst tone (LLM Tier-A): a DIGEST of the most recent public catalyst (FOMC
     # statement) as honest CONTEXT only. Default-off LEAF (engine/catalyst_tone.py);
     # None when disabled or nothing recent. NEVER enters the deterministic scoring path.
