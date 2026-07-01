@@ -879,3 +879,51 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
 @media (min-width:681px) {
   .lst-wrap:has(.lst-collapse.lst-cap6 > :nth-child(7)) > .lst-more { display:block; }
 }
+
+/* ==== regime panels (base-effect strip + HMM regime-probability) — shared by dashboard.html.j2 (US) + china.html.j2. Status colours --ok/--warn/--muted do NOT flip in zh; quad colours --q1..--q4 do (intentional). ==== */
+/* MEASURED / MODELED / NO-EDGE honesty badges (status colours --ok/--warn/--muted do NOT
+   flip in zh mode, unlike --up/--down) + the base-effect forward strip (v0). */
+.mbadge { display:inline-flex; align-items:center; gap:4px; font-size:9px; font-weight:800;
+          letter-spacing:.07em; padding:2px 7px; border-radius:5px; text-transform:uppercase; border:1px solid; }
+.mbadge.measured { color:var(--ok);    border-color:color-mix(in srgb,var(--ok) 55%,transparent);   background:color-mix(in srgb,var(--ok) 12%,transparent); }
+.mbadge.modeled  { color:var(--warn);  border-color:color-mix(in srgb,var(--warn) 55%,transparent); background:color-mix(in srgb,var(--warn) 12%,transparent); }
+.mbadge.noedge   { color:var(--muted); border-color:var(--line); background:var(--panel2); }
+.bfwd .bfwd-head { display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin:0 0 4px; }
+.bfwd .bfwd-head h3 { font-size:12px; margin:0; color:var(--text); text-transform:uppercase; letter-spacing:.05em; }
+.bfwd-sub { color:var(--muted); font-size:12px; margin:0 0 12px; max-width:78ch; }
+.bfwd-main { display:flex; gap:18px; flex-wrap:wrap; align-items:stretch; }
+.bfwd-now { flex:0 0 auto; min-width:158px; display:flex; flex-direction:column; gap:3px; justify-content:center;
+            padding:10px 15px; border-radius:11px; color:#fff; }
+.bfwd-now.q-Q2 { color:#1a1a1a; }
+.bfwd-now .k { font-size:9px; letter-spacing:.09em; text-transform:uppercase; opacity:.9; }
+.bfwd-now .v { font-size:17px; font-weight:800; line-height:1.12; }
+.bfwd-now .s { font-size:10px; opacity:.88; }
+.bfwd-axes { flex:1 1 300px; display:grid; grid-template-columns:auto auto 1fr; gap:7px 14px; align-content:center; }
+.bfwd-ax-l { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; align-self:center; }
+.bfwd-ax-v { font-variant-numeric:tabular-nums; font-weight:700; font-size:13px; align-self:center; white-space:nowrap; }
+.bfwd-ax-v .bfa { font-weight:700; margin-left:3px; }
+.bfwd-ax-n { font-size:11px; color:var(--muted); align-self:center; }
+.bfwd-path { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:14px; }
+.bfwd-path .pl { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-right:2px; }
+.bfwd-path .arw { color:var(--muted); }
+.bfq { border-radius:6px; padding:4px 9px; color:#fff; font-weight:700; font-size:10.5px; white-space:nowrap; }
+.bfq.q-Q2 { color:#1a1a1a; } .bfq small { font-weight:500; opacity:.85; }
+.bfwd-note { font-size:11px; color:var(--muted); margin-top:12px; line-height:1.5;
+             border-top:1px solid var(--line); padding-top:8px; }
+@media (max-width:640px){ .bfwd-main{ gap:12px; } .bfwd-now{ width:100%; }
+  .bfwd-axes{ grid-template-columns:auto 1fr; column-gap:12px; row-gap:2px; }
+  .bfwd-ax-n{ grid-column:1/-1; margin:0 0 8px; } }
+/* HMM regime-probability panel (v1) — soft P(Quad) + transition odds + hazard */
+.rhmm-main { display:flex; gap:24px; flex-wrap:wrap; align-items:flex-start; }
+.rhmm-bars { display:grid; grid-template-columns:auto 1fr auto; gap:5px 9px; align-items:center;
+             flex:1 1 340px; max-width:480px; }
+.rhmm-q { font-size:11px; font-weight:600; white-space:nowrap; }
+.rhmm-track { height:12px; border-radius:6px; background:var(--panel2); overflow:hidden; min-width:70px; }
+.rhmm-fill { height:100%; border-radius:6px; }
+.rhmm-pct { font-size:11px; font-variant-numeric:tabular-nums; color:var(--muted); text-align:right; min-width:34px; }
+.rhmm-side { flex:1 1 300px; font-size:12px; line-height:1.65; }
+.rhmm-side .k { color:var(--muted); text-transform:uppercase; font-size:10px; letter-spacing:.05em; }
+.rhmm-chip { display:inline-block; padding:1px 7px; border-radius:5px; color:#fff; font-size:10.5px;
+             font-weight:700; margin:0 3px 3px 0; }
+.rhmm-chip.q-Q2 { color:#1a1a1a; }
+@media (max-width:640px){ .rhmm-bars{ min-width:0; } }
