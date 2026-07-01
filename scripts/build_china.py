@@ -571,6 +571,18 @@ def main() -> int:
         log.error("china engine failed (%s); skipping china page", e)
         return 0
 
+    # Continuous regime probabilities via the informed HMM (v1, L2) — the SAME engine as the US
+    # (engine/regime_hmm.py): soft P(Quad) + monthly transition matrix + hazard, replacing the
+    # |score|*agreement coin-flip "confidence". DISPLAY-ONLY; a ~1s informed fit on the committed
+    # China regime history (follows the ffill-corrected axis scores once the regime reruns).
+    try:
+        from engine.regime_hmm import fit_regime_hmm
+        _crh = store.read("china_regime", "regime_history")
+        latest["regime_hmm"] = fit_regime_hmm(_crh, history_days=252) if _crh is not None else None
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("china regime-hmm leaf failed (%s); skipping", e)
+        latest["regime_hmm"] = None
+
     # China Income Vector allocation deep-dive (site/china_allocation.html) +
     # data/china_regime/china_alloc_latest.json — built here (no workflow edit needed) so
     # it runs on every CI build of build_china, BEFORE the index-health button reads its
