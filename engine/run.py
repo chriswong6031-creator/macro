@@ -165,6 +165,19 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("base-effect layer failed: %s", e)
         latest["base_effect"] = None
+    # Continuous regime probabilities via the informed 4-state Gaussian HMM (v1, L2): soft
+    # P(Quad) + a monthly transition matrix + hazard + expected dwell, replacing the
+    # |score|*agreement heuristic "confidence" with real probabilities. DISPLAY-ONLY leaf
+    # (engine/regime_hmm.py): a ~1s informed fit (no EM), so it sits in the engine lane, never
+    # the render (render.yml reads latest.json). The legacy raw_quad + hysteresis path in
+    # engine/regime.py stays canonical; nothing here drives a weight, size, or gross dial until
+    # scripts/validate_regime_fwd.py clears it. See research/HEDGEYE_UPGRADE_MASTER_PLAN.md §A.3.
+    try:
+        from engine.regime_hmm import fit_regime_hmm
+        latest["regime_hmm"] = fit_regime_hmm(full, history_days=252)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("regime-hmm layer failed: %s", e)
+        latest["regime_hmm"] = None
     # Catalyst tone (LLM Tier-A): a DIGEST of the most recent public catalyst (FOMC
     # statement) as honest CONTEXT only. Default-off LEAF (engine/catalyst_tone.py);
     # None when disabled or nothing recent. NEVER enters the deterministic scoring path.
