@@ -505,9 +505,11 @@ def _compute_partition(subsectors: dict, amalgamations: dict, *, benchmark: str,
         tickers = _members_to_tickers(spec.get("members"))
         if len(set(tickers)) < MIN_MEMBERS:
             continue
+        # with_members=True so a complex's detail page lists its constituent names (gated), like
+        # a subsector page — the amalgam is its own equal-weight index of those members.
         g = _safe_score(key, "amalg-" + _slug(key), spec.get("name") or key,
                         spec.get("name") or key, tickers, bench, member_cache, kind="sector",
-                        with_members=False, label_zh=spec.get("name_zh"))
+                        with_members=True, label_zh=spec.get("name_zh"))
         if g is not None:
             sectors.append(g)
 
