@@ -1,0 +1,58 @@
+name: intraday-fastpath
+# The LIVE FAST-PATH (the fast/slow split): recompute the cheap price-sensitive leaves
+# + mark the nightly GTAA allocations to a live(-ish) price -> site/live/overlay.json.
+# The slow regime/conviction/brain layer stays in the nightly US build; THIS refreshes
+# only the price-driven layer intraday. Reads the nightly baselines (site/stockdata/*,
+# masterminds_latest.json) committed by the US-evening build.
+#
+# FEED: 15-min-delayed Polygon/Yahoo today (build_live_overlay stamps delayed_min +
+# marks stale legs honestly). When a real-time/websocket plan (Alpaca / Polygon
+# advanced) lands, flip config `live.delayed_min: 0` — NO code change here.
+#
+# CADENCE: dispatch-only for now. Before enabling a tight cron, move the overlay
+# OFF main -> a side branch (like live-quotes.yml pushes quotes.json to `live-data`),
+# so a 10-30-min cadence does not fire a Pages deploy every run. At a true 10-min /
+# real-time cadence this graduates from an Actions job to a native systemd timer /
+# daemon on the box (Actions cron is best-effort ~15-45 min — too loose for 10 min).
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: "*/30 13-21 * * 1-5"   # every 30 min during US RTH — enable after the serving path is finalised
+
+permissions:
+  contents: write
+
+concurrency:
+  group: intraday-fastpath
+  cancel-in-progress: true
+
+jobs:
+  fastpath:
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: build live overlay (fast leaves + live-marked GTAA allocations)
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+        run: python -m scripts.build_live_overlay
+      - name: commit live overlay
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add site/live/overlay.json site/live_config.js
+          if git diff --cached --quiet; then echo "no overlay change"; exit 0; fi
+          git commit -m "live: intraday overlay $(date -u +%FT%H:%MZ)"
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then echo "pushed overlay (attempt $i)"; exit 0; fi
+            git rebase --abort 2>/dev/null || true; echo "overlay push attempt $i lost a race"; sleep $((i * 5))
+          done
+          echo "::warning::could not push live overlay after 5 attempts (non-fatal)"
