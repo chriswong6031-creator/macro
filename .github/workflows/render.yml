@@ -361,6 +361,8 @@ jobs:
         # JS syntax error (e.g. an empty template var rendering the page blank), so a bad
         # render keeps the last-good site live instead of shipping a broken page.
         run: python3 scripts/check_inline_js.py site
+      - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
+        run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
       - name: commit rendered site (site/ ONLY — never data/, so ledgers stay pristine)
         if: always()
         run: |

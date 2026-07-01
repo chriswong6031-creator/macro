@@ -323,6 +323,8 @@ jobs:
       - name: guard — inline JS must parse
         # Same gate as render.yml/pages.yml: a JS syntax error keeps the last-good site live.
         run: python3 scripts/check_inline_js.py site
+      - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
+        run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
       - name: commit rendered site (site/ ONLY — never data/, so every ledger stays pristine)
         if: always()
         run: |

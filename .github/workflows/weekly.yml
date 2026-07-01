@@ -145,6 +145,8 @@ jobs:
             fi
           done
           exit 0
+      - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
+        run: python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
       - name: commit weekly outputs
         run: |
           git config user.name "dashboard-bot"
