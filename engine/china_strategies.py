@@ -56,6 +56,48 @@ def _china_col(group: str, key: str, col: str) -> pd.Series:
     return df[c].astype(float).dropna()
 
 
+# Residual execution lag (trading days) applied AFTER availability-date stamping —
+# a print released on availability_date can be acted on the next session. This
+# replaces the old fixed 22-trading-day guess that (stamped at month-start) landed
+# ~10 days BEFORE the real ~day 9-15 release, a systematic look-ahead on China's
+# most market-moving macro print (audit #27).
+_CREDIT_EXEC_LAG = 1
+
+
+def _tsf_availability_stamp(series: pd.Series) -> pd.Series:
+    """Re-index a reference-month-stamped TSF-derived series onto its PUBLICATION-
+    availability dates, so a value only becomes actable on/after the print was
+    actually released. Reads the collector's additive `availability_date` column
+    (falling back to the conservative day-16-of-following-month model if the
+    column is absent, e.g. a parquet written before this change). The returned
+    series is indexed by availability date; downstream `_onto(..., lag)` then
+    ffills it causally onto the price calendar and applies a small residual
+    execution lag — NOT the old 22-trading-day peek."""
+    if series is None or series.empty:
+        return series
+    df = store.read("china_credit", "tsf")
+    ref_index = pd.to_datetime(series.index)
+    if df is not None and "availability_date" in getattr(df, "columns", []):
+        avail_map = pd.Series(pd.to_datetime(df["availability_date"]).to_numpy(),
+                              index=pd.to_datetime(df.index))
+        avail = ref_index.map(lambda d: avail_map.get(d, pd.NaT))
+        avail = pd.to_datetime(pd.Series(avail, index=series.index))
+        # Any reference date without a mapped availability (shouldn't happen) →
+        # conservative model so we never fall back to a look-ahead.
+        miss = avail.isna()
+        if miss.any():
+            from collectors.china_credit import tsf_availability_date
+            avail[miss] = [tsf_availability_date(d) for d in ref_index[miss.to_numpy()]]
+    else:
+        from collectors.china_credit import tsf_availability_date
+        avail = pd.Series([tsf_availability_date(d) for d in ref_index], index=series.index)
+    out = pd.Series(series.to_numpy(), index=pd.DatetimeIndex(avail.to_numpy()))
+    out = out[~out.index.isna()].sort_index()
+    # If two reference months mapped to the same availability date (shouldn't for a
+    # monthly series), keep the last.
+    return out[~out.index.duplicated(keep="last")]
+
+
 # --------------------------------------------------------------------------- #
 # legs (each [0,1], 1 = de-risk; raw on native index — score fns wrap with _onto)
 # --------------------------------------------------------------------------- #
@@ -69,7 +111,10 @@ def _credit_derisk() -> pd.Series:
         return pd.Series(dtype=float)
     yoy = tsf.rolling(12).sum().pct_change(12) * 100.0
     impulse = yoy.diff(6)
-    return pct_rank_window(-impulse, 36)
+    derisk = pct_rank_window(-impulse, 36)
+    # Re-stamp from reference-month-start to PUBLICATION-availability date so the
+    # leg can never act on the impulse before the market saw the print (audit #27).
+    return _tsf_availability_stamp(derisk)
 
 
 def _margin_derisk() -> pd.Series:
@@ -94,7 +139,8 @@ def _vol_derisk(close: pd.Series) -> pd.Series:
 def _sc_credit_vol(ctx, bench) -> dict:
     i = bench.index
     return _compose({
-        "credit": {"series": _onto(_credit_derisk(), i, 22), "weight": 1.0, "lag": 22,
+        "credit": {"series": _onto(_credit_derisk(), i, _CREDIT_EXEC_LAG),
+                   "weight": 1.0, "lag": _CREDIT_EXEC_LAG,
                    "label": "Credit impulse contracting"},
         "vol": {"series": _onto(_vol_derisk(bench), i, 1), "weight": 0.5, "lag": 1,
                 "label": "Realized volatility"},
@@ -112,7 +158,8 @@ def _sc_volmanaged(ctx, bench) -> dict:
 def _sc_credit_margin(ctx, bench) -> dict:
     i = bench.index
     return _compose({
-        "credit": {"series": _onto(_credit_derisk(), i, 22), "weight": 1.0, "lag": 22,
+        "credit": {"series": _onto(_credit_derisk(), i, _CREDIT_EXEC_LAG),
+                   "weight": 1.0, "lag": _CREDIT_EXEC_LAG,
                    "label": "Credit impulse contracting"},
         "margin": {"series": _onto(_margin_derisk(), i, 1), "weight": 0.5, "lag": 1,
                    "label": "Margin-leverage euphoria"},
