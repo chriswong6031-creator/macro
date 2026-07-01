@@ -350,7 +350,7 @@
   },
   "conditions": {
     "roro": {
-      "roro": 0.109,
+      "roro": 0.108,
       "roro_raw": 0.109,
       "roro_state": "neutral",
       "china_roro_copper_gold": 2.007,
@@ -2076,7 +2076,7 @@
           -0.094,
           -0.118,
           -0.223,
-          0.109
+          0.108
         ]
       },
       "recession": {
@@ -6827,7 +6827,7 @@
     "fe_score": 70,
     "band": "Greed",
     "band_zh": "\u8d2a\u5a6a",
-    "roro": 0.109,
+    "roro": 0.108,
     "roro_state": "neutral",
     "legs": [
       {

@@ -1,15 +1,15 @@
 {
-  "date": "2026-06-29",
-  "score": 21,
+  "date": "2026-06-30",
+  "score": 6,
   "band": "low",
   "band_label": "LOW \u2014 fully invested",
   "equity_w": 100,
   "cash_w": 0,
   "stance": "100% equity",
-  "cagr": 12.54,
+  "cagr": 12.56,
   "sharpe": 0.88,
   "maxdd": -36.5,
   "equity_weight": 100,
-  "risk_score": 21,
-  "asof": "2026-06-29"
+  "risk_score": 6,
+  "asof": "2026-06-30"
 }

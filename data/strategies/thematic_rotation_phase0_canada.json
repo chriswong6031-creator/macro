@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "canada",
-  "generated_at": "2026-06-30T13:25:40.827942+00:00",
+  "generated_at": "2026-07-01T01:25:04.924165+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -13,7 +13,7 @@
       "contaminated": false,
       "algorithm": {
         "ew_buyhold": {
-          "cagr": 0.121,
+          "cagr": 0.1211,
           "sharpe": 0.9,
           "max_dd": -0.3754,
           "calmar": 0.32,
@@ -31,7 +31,7 @@
           "worst_decile_ret": -0.0568
         },
         "top3_mom6_rel": {
-          "cagr": 0.1222,
+          "cagr": 0.1224,
           "sharpe": 0.73,
           "max_dd": -0.5005,
           "calmar": 0.24,
@@ -49,7 +49,7 @@
           "worst_decile_ret": -0.0489
         },
         "top4_mom12_dual": {
-          "cagr": 0.1082,
+          "cagr": 0.1083,
           "sharpe": 0.9,
           "max_dd": -0.2032,
           "calmar": 0.53,
@@ -61,7 +61,7 @@
       "rank_ic": {
         "1m": {
           "mean_ic": 0.0533,
-          "ic_t_hac": 1.908,
+          "ic_t_hac": 1.905,
           "hit": 0.551,
           "n_steps": 272
         },
@@ -81,22 +81,22 @@
           "n": 1464
         },
         "below_trend": {
-          "mean": 0.0117,
+          "mean": 0.0118,
           "std": 0.0788,
           "sharpe": 0.52,
           "p05": -0.1048,
           "n": 742
         },
-        "mean_diff_t": -0.79,
-        "mean_diff_p": 0.427
+        "mean_diff_t": -0.8,
+        "mean_diff_p": 0.4249
       },
       "extension_drawdown": {
         "fwd_days": 63,
         "cohorts": {
           "normal": {
-            "mean_fwd_maxdd": -0.0669,
+            "mean_fwd_maxdd": -0.0668,
             "p05_fwd_maxdd": -0.2227,
-            "n": 32810
+            "n": 32818
           },
           "stretched": {
             "mean_fwd_maxdd": -0.0565,
@@ -106,7 +106,7 @@
           "parabolic": {
             "mean_fwd_maxdd": -0.066,
             "p05_fwd_maxdd": -0.2067,
-            "n": 2309
+            "n": 2310
           }
         },
         "spearman_ez_vs_fwd_maxdd": 0.059

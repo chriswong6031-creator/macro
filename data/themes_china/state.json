@@ -72,12 +72,12 @@
     "score": 76
   },
   "cn_defense": {
-    "label": "deteriorating",
+    "label": "emerging",
     "name": "Defense & Aerospace",
     "name_zh": "\u519b\u5de5\u822a\u5929",
     "rank": 8,
-    "reco": "avoid",
-    "score": 49
+    "reco": "hold",
+    "score": 53
   },
   "cn_food_bev": {
     "label": "deteriorating",
