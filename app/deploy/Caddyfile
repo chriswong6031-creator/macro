@@ -156,3 +156,30 @@ maltese.greydeercapital.com {
 	}
 	tls internal
 }
+
+# ---- greydeercapital.com — Grey Deer Capital brand site (static) + intake API ----
+# The static site lives in /opt/greydeercapital (its OWN repo,
+# chriswong6031-creator/greydeercapital, deployed via that repo's deploy/deploy.sh).
+# /api/* is the self-hosted inquiry intake service (greydeercapital-intake.service)
+# on loopback :8110. Behind Cloudflare (SSL "Full"), so `tls internal`. Like maltese,
+# this block MUST live in THIS repo file — macro-update reinstalls /etc/caddy/Caddyfile
+# from here on every main commit, so a box-only edit gets wiped within ~3 minutes.
+greydeercapital.com, www.greydeercapital.com {
+	root * /opt/greydeercapital
+	encode zstd gzip
+	reverse_proxy /api/* 127.0.0.1:8110
+	file_server {
+		index index.html
+	}
+	handle_errors {
+		rewrite * /404.html
+		file_server
+	}
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+	tls internal
+}
