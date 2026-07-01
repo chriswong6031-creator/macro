@@ -89,6 +89,22 @@ def _detail_key(g: dict) -> str:
     return ("b-" + g["key"]) if g.get("kind") == "basket" else g["key"]
 
 
+def _prune_orphan_details(out_dir: Path, live_keys: set[str]) -> int:
+    """Delete detail `*.html` in ``out_dir`` whose key is no longer on the board.
+
+    Correct-by-construction: ``live_keys`` is the exact set of keys written in the
+    SAME render pass, so only true orphans — a concept/subsector dropped from the
+    board (e.g. the THS 344->248 curation left 99 dead pages) — are removed, never
+    a live page. Callers MUST guard on ``n > 0`` so an empty/failed render (missing
+    board JSON) can never nuke a live directory."""
+    removed = 0
+    for f in out_dir.glob("*.html"):
+        if f.stem not in live_keys:
+            f.unlink()
+            removed += 1
+    return removed
+
+
 def _emit_group_files(site: Path, g: dict, ohlc_dir: str = OHLC_DIR, sig_dir: str = SIG_DIR) -> None:
     """Write a group's chart OHLC + §7 signal file into the given desk dirs; mutate g to drop the
     heavy series and record the keys the detail page chart will mount."""
@@ -149,7 +165,13 @@ def main() -> dict:
 
 def _env():
     from jinja2 import Environment, FileSystemLoader
-    return Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=False)
+    env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=False)
+    try:                                       # _navlinks references t()/td()/tr() i18n globals
+        from engine import i18n
+        env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+    except Exception:  # noqa: BLE001 — degrade to English-only rather than crash the build
+        env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
+    return env
 
 
 def render_pages(site: Path, env=None, generated_utc: str | None = None) -> int:
@@ -176,6 +198,7 @@ def render_pages(site: Path, env=None, generated_utc: str | None = None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     tmpl = env.get_template("subsector_detail.html.j2")
     n = 0
+    live: set[str] = set()
     groups = [("subsector", g) for g in subs.get("subsectors", [])] + \
              [("basket", g) for g in baskets.get("baskets", [])]
     for kind, g in groups:
@@ -191,7 +214,12 @@ def render_pages(site: Path, env=None, generated_utc: str | None = None) -> int:
                            group_name=g.get("label", key), chart_key=g.get("chart_key"),
                            has_signals=bool(g.get("has_signals")), generated_utc=generated_utc)
         (out_dir / f"{key}.html").write_text(html)
+        live.add(key)
         n += 1
+    if n:  # never prune on an empty/failed render
+        pruned = _prune_orphan_details(out_dir, live)
+        if pruned:
+            log.info("subsector_confluence: pruned %d orphaned detail page(s)", pruned)
     log.info("subsector_confluence: rendered subsectors.html + %d detail pages", n)
     return n
 
@@ -238,6 +266,7 @@ def render_china_pages(site: Path, env=None, generated_utc: str | None = None) -
     out_dir.mkdir(parents=True, exist_ok=True)
     tmpl = env.get_template("subsector_detail.html.j2")
     n = 0
+    live: set[str] = set()
     for g in cn.get("baskets", []):
         key = _detail_key(g)
         detail = {
@@ -252,7 +281,12 @@ def render_china_pages(site: Path, env=None, generated_utc: str | None = None) -
                            chart_key=g.get("chart_key"), has_signals=bool(g.get("has_signals")),
                            back_href="../subsectors_china.html", generated_utc=generated_utc)
         (out_dir / f"{key}.html").write_text(html)
+        live.add(key)
         n += 1
+    if n:  # never prune on an empty/failed render
+        pruned = _prune_orphan_details(out_dir, live)
+        if pruned:
+            log.info("subsector_confluence[CHINA]: pruned %d orphaned detail page(s)", pruned)
     log.info("subsector_confluence[CHINA]: rendered subsectors_china.html + %d detail pages", n)
     return n
 
@@ -320,6 +354,7 @@ def render_index_pages(ns: str, site: Path, env=None, generated_utc: str | None 
     out_dir.mkdir(parents=True, exist_ok=True)
     tmpl = env.get_template("subsector_detail.html.j2")
     n = 0
+    live: set[str] = set()
     for g in out.get("subsectors", []) + out.get("sectors", []):
         key = _detail_key(g)
         is_amalg = g.get("kind") == "sector"
@@ -337,7 +372,12 @@ def render_index_pages(ns: str, site: Path, env=None, generated_utc: str | None 
                            has_signals=bool(g.get("has_signals")), back_href="../subsectors.html",
                            generated_utc=generated_utc)
         (out_dir / f"{key}.html").write_text(html)
+        live.add(key)
         n += 1
+    if n:  # never prune on an empty/failed render
+        pruned = _prune_orphan_details(out_dir, live)
+        if pruned:
+            log.info("subsector_confluence[%s]: pruned %d orphaned detail page(s)", ns.upper(), pruned)
     log.info("subsector_confluence[%s]: rendered %d detail pages", ns.upper(), n)
     return n
 

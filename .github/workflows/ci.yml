@@ -10,6 +10,7 @@ on:
       - "site/**"
       - "scripts/check_inline_js.py"
       - "scripts/check_nav_gap.py"
+      - "scripts/check_nav_mega.py"
       - ".github/workflows/ci.yml"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
       # must re-prove the contract still holds (see the signal-contract job below).
@@ -41,6 +42,17 @@ jobs:
       - uses: actions/checkout@v4
       - name: nav menu must keep a top gap
         run: python3 scripts/check_nav_gap.py site
+
+  nav-mega:
+    # The Research nav is a shared partial (_navlinks.html.j2) whose Research entry is
+    # the grouped 'nav-mega' panel. A page built OUTSIDE the routine render loop (an
+    # out-of-loop page builder, or a hand-static page) can render the shared nav but
+    # freeze WITHOUT the mega-menu. This catches that drift BEFORE merge.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shared-nav pages must carry the Research mega-menu
+        run: python3 scripts/check_nav_mega.py site
 
   signal-contract:
     # HARD pre-merge gate for the signal→chart §7 contract (research/signal_engine/SCHEMA.json,
