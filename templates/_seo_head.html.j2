@@ -1,0 +1,29 @@
+{# Shared SEO + favicon <head> block. Before {% include %}, set (all optional):
+     seo_title  — plain-text page title for social cards (NO t()/markup)
+     seo_desc   — ~150-char meta description (plain text)
+     seo_path   — page filename for the canonical URL, e.g. "macro.html"
+   Falls back to sensible site-wide defaults if a var is unset. Emits the meta
+   description, canonical, Open Graph + Twitter cards, and favicon links. Social
+   scrapers (Slack/X/iMessage/Facebook) do NOT run JS, so this MUST be static
+   HTML — never inject it from theme.js. Favicon paths are root-relative (all
+   pages that include this live at the site root). #}
+{%- set _base = 'https://mastermind-x.com/' -%}
+{%- set _title = seo_title | default('Mastermind — Macro Regime & Market Cycle Intelligence') -%}
+{%- set _desc = seo_desc | default('Live macro-regime, market-cycle and sector-rotation intelligence across US, China, Hong Kong, Canada and global markets — risk radar, signals and cycle clocks in one dashboard.') -%}
+{%- set _url = _base ~ (seo_path | default('')) -%}
+{%- set _img = _base ~ 'apple-touch-icon.png' -%}
+<meta name="description" content="{{ _desc }}">
+<link rel="canonical" href="{{ _url }}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="{{ _title }}">
+<meta property="og:description" content="{{ _desc }}">
+<meta property="og:url" content="{{ _url }}">
+<meta property="og:image" content="{{ _img }}">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{{ _title }}">
+<meta name="twitter:description" content="{{ _desc }}">
+<meta name="twitter:image" content="{{ _img }}">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">

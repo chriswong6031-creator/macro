@@ -72,6 +72,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% if mode == 'stocks' %}US Stock Dashboard{% else %}Macro Regime Dashboard{% endif %} — {{ latest.date }}</title>
+{% if mode == 'stocks' %}{% set seo_title = 'US Stock Dashboard — Signals, Sectors and Regime | Mastermind' %}{% set seo_desc = 'US single-stock and sector signals in one board — momentum, breadth, confluence and regime context, updated daily.' %}{% set seo_path = 'us_stocks.html' %}{% else %}{% set seo_title = 'US Macro Regime Dashboard — Risk Radar and Market State | Mastermind' %}{% set seo_desc = 'Track the US market regime in real time — risk radar, market state, sector rotation, cross-asset confirmation and factor signals, updated daily.' %}{% set seo_path = 'macro.html' %}{% endif %}
+{% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <script src="plotly-2.32.0.min.js"></script>
