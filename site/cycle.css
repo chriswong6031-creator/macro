@@ -5,6 +5,13 @@
    accent passed as --c; tints derive via color-mix so they adapt to the theme.
    ========================================================================== */
 
+/* CACHE-BUSTER: this file is linked as `cycle.css?v=N` by its pages (the six
+   templates/*.html.j2 that build the cycle-family pages + the hand-curated
+   site/markets.html). mastermind-x.com is fronted by the TencentEdgeOne CDN,
+   which caches CSS aggressively by full URL, so BUMP the ?v= on every one of
+   those links whenever you edit this file — otherwise the edge keeps serving
+   the stale copy to users. Currently v=2 (v=1 = the unversioned original). */
+
 .cyc-page { --c: var(--link); --rad: 16px; --ease: cubic-bezier(.22,.61,.36,1); }
 .cyc-wrap { max-width: 1320px; margin: 0 auto; padding: 0 22px 72px; }
 
