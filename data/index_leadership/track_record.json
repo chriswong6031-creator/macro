@@ -1,0 +1,55 @@
+{
+  "schema": "index_leadership.track_record.v1",
+  "as_of": "2026-06-30",
+  "generated_at": "2026-07-01T03:30:03.335958+00:00",
+  "is_context_only": true,
+  "n_snapshots": 33,
+  "n_days": 1,
+  "horizons": {
+    "5": {
+      "n_matured": 0,
+      "by_stage": {},
+      "running_ic": null,
+      "running_ic_t_hac": null,
+      "coiling_ic": null,
+      "coiling_ic_t_hac": null
+    },
+    "10": {
+      "n_matured": 0,
+      "by_stage": {},
+      "running_ic": null,
+      "running_ic_t_hac": null,
+      "coiling_ic": null,
+      "coiling_ic_t_hac": null
+    },
+    "21": {
+      "n_matured": 0,
+      "by_stage": {},
+      "running_ic": null,
+      "running_ic_t_hac": null,
+      "coiling_ic": null,
+      "coiling_ic_t_hac": null
+    },
+    "63": {
+      "n_matured": 0,
+      "by_stage": {},
+      "running_ic": null,
+      "running_ic_t_hac": null,
+      "coiling_ic": null,
+      "coiling_ic_t_hac": null
+    }
+  },
+  "lead_time_d": null,
+  "peak_ic": null,
+  "proven": {
+    "5": false,
+    "10": false,
+    "21": false,
+    "63": false
+  },
+  "any_matured": false,
+  "verdict": "accruing",
+  "note": "Measuring \u2014 logging RUNNING / COILING calls daily; no horizon has matured yet. The forward edge is unmeasured. Context-only.",
+  "recent_misses": [],
+  "disclaimer": "A falsifiable scorecard of the leadership read's OWN calls \u2014 RUNNING (momentum continuation) and COILING (confirmed bottom) \u2014 graded against realized member-equal-weight SPY-relative forward returns. Until a horizon matures and clears a Newey-West significance bar it is 'measuring', never trusted. Members frozen point-in-time; only priceable members used. Nothing here sizes a position."
+}

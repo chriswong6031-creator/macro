@@ -44,6 +44,23 @@
   function quadPill(q) { var i = quadInfo(q); return '<span class="qp" style="color:' + i[2] + ';border-color:' + i[2] + '">' + L(i[0], i[1]) + '</span>'; }
   function stageBadge(st) { var m = ({ primed: ['Primed', '就绪', 'var(--up)'], coiling: ['Coiling', '蓄势', 'var(--info)'], watch: ['Watch', '观察', 'var(--muted)'], knife: ['Knife', '刀口', 'var(--down)'] })[st] || ['—', '—', 'var(--muted)']; return '<span class="qp" style="color:' + m[2] + ';border-color:' + m[2] + '">' + L(m[0], m[1]) + '</span>'; }
   function tfChip(lbl, dir) { var c = dir === 'up' ? 'var(--up)' : dir === 'down' ? 'var(--down)' : 'var(--muted)'; var a = dir === 'up' ? '▲' : dir === 'down' ? '▼' : dir === 'flat' ? '–' : '·'; return '<span class="tfc" style="color:' + c + '">' + lbl + ' ' + a + '</span>'; }
+  function trackBox(tr) {
+    if (!tr) return '';
+    var vcol = tr.verdict === 'validated' ? 'var(--up)' : tr.verdict === 'measuring' ? 'var(--info)' : 'var(--muted)';
+    var vlab = tr.verdict === 'validated' ? L('Validated', '已验证') : tr.verdict === 'measuring' ? L('Measuring', '测量中') : L('Accruing', '积累中');
+    var days = tr.n_days || 0;
+    var h = '<div class="lead-track"><span class="tr-badge" style="color:' + vcol + ';border-color:' + vcol + '">📊 ' + L('Forward track record', '前瞻战绩') + ': ' + vlab + '</span> '
+      + '<span class="tr-txt">' + L((tr.n_snapshots || 0) + ' calls logged over ' + days + (days === 1 ? ' day' : ' days'), (tr.n_snapshots || 0) + ' 条记录，历时 ' + days + ' 天') + '</span>';
+    var h21 = (tr.horizons || {})['21'];
+    if (tr.any_matured && h21 && h21.n_matured) {
+      var bs = h21.by_stage || {}, parts = [];
+      ['running', 'coiling', 'coiling_primed'].forEach(function (st) { if (bs[st] && bs[st].hit_rate != null) parts.push((st === 'coiling_primed' ? 'coil✓' : st) + ' ' + Math.round(bs[st].hit_rate * 100) + '% (' + bs[st].n + ')'); });
+      if (parts.length) h += ' · <span class="tr-txt">' + L('21d hit-rate: ', '21日命中率：') + parts.join(', ') + '</span>';
+    } else {
+      h += ' · <span class="tr-txt" style="color:var(--muted)">' + L('grades mature at 5 / 10 / 21 / 63d — measured, not asserted', '5 / 10 / 21 / 63 日后成熟评级——实测而非断言') + '</span>';
+    }
+    return h + '</div>';
+  }
   // theme.js wrapTables() runs on DOMContentLoaded, BEFORE this file async-injects its tables,
   // so our tables never get the .tbl-scroll wrapper and bleed past the viewport on mobile.
   // Re-apply the house wrap (theme.css styles .tbl-scroll) to any table we render.
@@ -92,7 +109,7 @@
       var held = mac.severity === 'risk_off' ? L(' — coil calls held back (let washouts confirm)', ' — 蓄势信号已收敛（待清洗确认）') : '';
       macLine = '<div class="lead-macro">' + L('Macro backdrop', '宏观背景') + ': ' + dot + ' ' + L(mac.label_en || mac.verdict || '—', mac.label_zh || mac.verdict || '—') + (mac.score != null ? ' <span style="color:var(--muted)">(' + mac.score + '/100)</span>' : '') + held + '</div>';
     }
-    el.innerHTML = '<div class="lead-head"><h2>🧭 ' + L('Index leadership rotation', '指数领导轮动') + '</h2><span class="asof">' + L('as of ' + (d.as_of || '—'), '截至 ' + (d.as_of || '—')) + '</span></div>' + hero + macLine + tbl + drivers;
+    el.innerHTML = '<div class="lead-head"><h2>🧭 ' + L('Index leadership rotation', '指数领导轮动') + '</h2><span class="asof">' + L('as of ' + (d.as_of || '—'), '截至 ' + (d.as_of || '—')) + '</span></div>' + hero + macLine + tbl + drivers + trackBox(d.track_record);
     wrapTbls(el);
   }
 

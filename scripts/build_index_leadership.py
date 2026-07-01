@@ -164,6 +164,7 @@ def compute(site: Path) -> dict | None:
     spy = _etf_close("SPY")  # coil rs-hold benchmark for the baskets tab
     macro = _market_state()
     macro_sev = _macro_severity(macro)  # 'risk_on' | 'mixed' | 'risk_off' | None
+    member_map: dict[str, list] = {}  # 'tab:key' -> frozen member tickers (forward track-record)
 
     for tab, cfg in TABS.items():
         board = _read_json(site / cfg["json"])
@@ -184,6 +185,8 @@ def compute(site: Path) -> dict | None:
                 continue
             closes.append(close)
             closes_by_key[key] = close
+            member_map[f"{tab}:{key}"] = [m.get("ticker") for m in (g.get("members") or [])
+                                          if isinstance(m, dict) and m.get("ticker")]
             reg, entry = g.get("regime") or {}, g.get("entry") or {}
             gi[key] = {
                 "hz": il.horizon_returns(close),
@@ -290,6 +293,7 @@ def compute(site: Path) -> dict | None:
                   "back — no 'primed' call, a score haircut, a macro-caution flag. A 4-point z-score is noisy — "
                   "raw legs shown. DISPLAY-ONLY rotation-timing / watchlist ordering (bottom-timing is a "
                   "drawdown lever, not return-alpha); confirm before acting."),
+        "_member_map": member_map,
     }
 
 
@@ -305,6 +309,25 @@ def build(site: Path | None = None, generated_utc: str | None = None) -> int:
     if not payload:
         log.warning("index_leadership: no confluence boards found — skipped")
         return 0
+
+    # Forward TRACK-RECORD (additive, degrade-safe): log today's RUNNING / COILING calls with
+    # their FROZEN member baskets, then grade every matured past call — the read becomes
+    # falsifiable. Context-only; verdict stays 'accruing' until a horizon matures + clears the
+    # Newey-West bar. member_map is server-side only (popped so it never bloats the client JSON).
+    member_map = payload.pop("_member_map", {}) or {}
+    try:
+        from engine import index_leadership_track as track
+        asof = payload.get("as_of") or None
+        n_log = track.snapshot(payload, member_map, today=asof)
+        payload["track_record"] = track.compute(today=asof)
+        tp = config.data_dir() / "index_leadership" / "track_record.json"
+        tp.parent.mkdir(parents=True, exist_ok=True)
+        tp.write_text(json.dumps(payload["track_record"], indent=2))
+        log.info("index_leadership track: +%d snapshots, %d days, verdict=%s", n_log,
+                 payload["track_record"].get("n_days"), payload["track_record"].get("verdict"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("index_leadership track record failed: %s", e)
+
     out = site / OUT_JSON
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(_clean(payload), separators=(",", ":"), allow_nan=False))
