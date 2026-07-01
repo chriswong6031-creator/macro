@@ -1,7 +1,7 @@
 name: daily
 on:
   schedule:
-    - cron: "40 22 * * *"   # 22:40 UTC every day, after the US close (16:00 ET = 20:00/21:00 UTC across DST); off-hour minute avoids scheduler congestion
+    - cron: "0 2 * * *"   # 02:00 UTC (~6pm PST / 7pm PDT) — after the US close AND the ~6pm-ET FINRA short-vol file; all US econ for the day is out. China/HK split to asia-close.yml (08:30 UTC).
   workflow_dispatch:
 
 permissions:
@@ -114,7 +114,9 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}                 # GitHub star velocity (collectors/github_repos.py); the auto-injected workflow token reads public-repo metadata at 1000/hr — no new secret needed
         run: |
           if [ -n "$FRED_API_KEY" ]; then echo "::notice::FRED_API_KEY present — using official API"; else echo "::warning::FRED_API_KEY ABSENT — check repo Settings > Secrets and variables > Actions > Repository secrets"; fi
-          python -m scripts.collect
+          # --exclude-group asia: China/HK collectors run in their own asia-close shard
+          # (after the Asia cash close), not here — keeps this US-evening run lean.
+          python -m scripts.collect --exclude-group asia
       - name: refresh Finviz themes snapshot (subsector-rotation feed; non-fatal)
         # The only network leg for the themes map + Subsector Rotation. Refreshes
         # data/themes_heatmap/perf_snapshot.json (stamped with asof) so the rotation
@@ -372,8 +374,9 @@ jobs:
             brun transmission "rate & inflation transmission (build_transmission)" scripts.build_transmission
             brun discovery    "discovery leaderboard (build_discovery)"            scripts.build_discovery
           }
-          cl_china() { brun china "build china a-share dashboard (build_china)" scripts.build_china; brun china_sector_desk "build china sector desk (build_china_sector_desk)" scripts.build_china_sector_desk; brun china_sector_cyc "china sector cycles (build_china_sector_cycles)" scripts.build_china_sector_cycles; brun china_sector_central "china sector central intelligence (build_china_sector_central)" scripts.build_china_sector_central; brun flow_velocity "capital flow velocity — CN/HK (build_flow_velocity)" scripts.build_flow_velocity; brun subsector_conf_cn "china 同花顺 subsector confluence + double-gated funnel (build_subsector_confluence --china)" scripts.build_subsector_confluence --china; }
-          cl_hk()    { brun hk    "build hong kong / hang seng (build_hk)"      scripts.build_hk; }
+          # cl_china / cl_hk MOVED to .github/workflows/asia-close.yml — rebuilt after the
+          # Asia cash close (~08:30 UTC) so CN/HK render SETTLED marks, not the stale ones a
+          # US-evening run would lock in. They are self-recomputing (no US-regime dependency).
           cl_gex() {
             brun gex_board    "GEX magnets board (build_gex_board)"        scripts.build_gex_board
             brun vol_regime   "index vol-regime (build_vol_regime)"        scripts.build_vol_regime
@@ -401,11 +404,11 @@ jobs:
             brun index_changes "S&P index changes (build_index_changes)"     scripts.build_index_changes
           }
           # launch every cluster concurrently, then barrier before the hub (build_vector, below)
-          cl_markets & cl_china & cl_hk & cl_gex & cl_baskets & cl_special & cl_misc &
+          cl_markets & cl_gex & cl_baskets & cl_special & cl_misc &
           wait
           # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
           #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          ORDER="china hk flow_velocity subsector_conf_cn commodities spr forex bonds crossasset transmission discovery gex_board vol_regime options_flow options_skew options_ivspread baskets subsector_conf subsector_conf_ndx subsector_conf_rut news methodology seasonality reports policy_intent policy_watch special index_changes"
+          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime options_flow options_skew options_ivspread baskets subsector_conf subsector_conf_ndx subsector_conf_rut news methodology seasonality reports policy_intent policy_watch special index_changes"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue
@@ -674,7 +677,7 @@ jobs:
               scripts.build_intl_library) echo site/intlstockdata;;
             esac
           }
-          for mod in scripts.build_china_library scripts.build_hk_library scripts.build_canada_library scripts.build_intl_library; do
+          for mod in scripts.build_canada_library scripts.build_intl_library; do
             idx="$(libdir "$mod")/index.json"
             # Skip a market whose dashboard step already built its library FRESH this run
             # (index.json newer than the job-start marker). This rebuild is a FAILURE-PATH
