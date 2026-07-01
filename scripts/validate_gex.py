@@ -17,6 +17,7 @@ Run: .venv/bin/python -m scripts.validate_gex
 from __future__ import annotations
 
 import glob
+import json
 import sys
 from pathlib import Path
 
@@ -87,11 +88,14 @@ def main() -> int:
              "Falsifiable claim: short-gamma days precede HIGHER forward realized vol than long-gamma days.",
              "Forward-accumulating (no free options history). This verdict GATES any ladder weight; "
              "until it PASSES, GEX is display-only and never touches the score.", ""]
+    verdicts: list[str] = []
     if not files:
         lines.append("- no GEX history yet (collector has not run)")
     for f in files:
         try:
-            lines += ["- " + ln for ln in evaluate(Path(f).stem, pd.read_parquet(f))]
+            evl = evaluate(Path(f).stem, pd.read_parquet(f))
+            verdicts += evl
+            lines += ["- " + ln for ln in evl]
         except Exception as e:  # noqa: BLE001
             lines.append(f"- {Path(f).stem}: read error ({e})")
     report = "\n".join(lines)
@@ -99,6 +103,29 @@ def main() -> int:
     out = config.ROOT / "reports" / "gex-validation.md"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(report + "\n")
+
+    # structured gate artifact — the firewall engine/stock_score.py consults before letting GEX
+    # touch the per-stock score (mirrors data/vol_regime/gate.json). scored=true only when at
+    # least one horizon's short−long forward-RV CI excludes 0; otherwise display-only.
+    scored = any("PASS —" in ln for ln in verdicts)
+    building = (not verdicts) or any("building history" in ln for ln in verdicts)
+    status = "passed" if scored else ("building_history" if building else "no_edge")
+    gate = {
+        "schema": "gex.gate.v1",
+        "generated_at": pd.Timestamp.now("UTC").strftime("%Y-%m-%d %H:%M UTC"),
+        "scored": bool(scored),
+        "status": status,
+        "weight": 0.10 if scored else 0.0,
+        "horizons": list(HORIZONS),
+        "min_per_bucket": MIN_PER_BUCKET,
+        "evidence": verdicts,
+        "note": ("gamma regime beat a forward-RV null — GEX may enter the per-stock score"
+                 if scored else
+                 "display-only until a horizon's short−long forward-RV bootstrap CI excludes 0"),
+    }
+    gp = config.data_dir() / "gex" / "gate.json"
+    gp.parent.mkdir(parents=True, exist_ok=True)
+    gp.write_text(json.dumps(gate, indent=2) + "\n")
     return 0
 
 

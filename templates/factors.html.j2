@@ -74,6 +74,18 @@
   .zpos { color:var(--up); font-weight:600; } .zneg { color:var(--down); font-weight:600; }
   .chip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:8px;
           background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  /* validation chip — status colours (--ok/--act/--muted) do NOT flip in zh mode, unlike --up/--down */
+  .val-chip { display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:.03em;
+              padding:1px 6px; margin-left:7px; border-radius:6px; vertical-align:middle; white-space:nowrap; }
+  .val-chip.validated   { color:var(--ok);    border:1px solid color-mix(in srgb,var(--ok) 55%,transparent);
+                          background:color-mix(in srgb,var(--ok) 12%,transparent); }
+  .val-chip.negative-ic { color:var(--act);   border:1px solid color-mix(in srgb,var(--act) 55%,transparent);
+                          background:color-mix(in srgb,var(--act) 14%,transparent); }
+  .val-chip.fdr-fail    { color:var(--muted); border:1px solid var(--line); background:var(--panel2); }
+  .ic-alert { margin:0 0 10px; padding:8px 11px; border-radius:7px; font-size:12px; line-height:1.5;
+              border:1px solid color-mix(in srgb,var(--act) 45%,transparent);
+              background:color-mix(in srgb,var(--act) 9%,var(--panel)); }
+  .ic-alert b { color:var(--act); font-weight:700; }
   sub { font-size:.72em; }
   .bbar { display:inline-block; width:150px; max-width:42vw; height:11px; border-radius:6px;
           background:var(--panel2); position:relative; overflow:hidden; vertical-align:middle; }
@@ -197,6 +209,14 @@
               '区间 ' ~ ic.span ~ ' · ' ~ ic.rebalances ~ ' 次季度再平衡 · 约 ' ~ ic.median_universe ~ ' 只。约 3 年价格历史使样本仅 n≈' ~ ic.rebalances ~ '，t 统计与 FDR 检验力较低。仅作诚实背景，而非买入信号 — 且基本面约每年才更新一次，基本面因子的独立样本更少。') }}
       {% endif %}
     </p>
+    {% set _comp = ic.factors.get('composite') if ic.factors else none %}
+    {% if _comp and _comp.get('mean_ic') is not none and _comp.mean_ic < 0 %}
+    <div class="ic-alert">
+      <b>⚠ {{ t('The equal-weight composite has NEGATIVE predictive IC.', '等权综合因子的预测 IC 为负。') }}</b>
+      {{ t('Its blended mean IC is ' ~ ('%+.4f'|format(_comp.mean_ic)) ~ ' over ' ~ ic.rebalances ~ ' quarters — the naive all-factor blend INVERTS the cross-section on this panel, so it is worse than useless as a stock screen. Do NOT trade the composite. Judge each factor on its own row below: only a factor tagged VALIDATED (survives BH-FDR AND positive mean IC) has earned it, and even that is a marginal survivor on a survivorship-biased panel.',
+           '其混合平均 IC 为 ' ~ ('%+.4f'|format(_comp.mean_ic)) ~ '（' ~ ic.rebalances ~ ' 个季度）— 朴素的全因子等权混合在此面板上反转了横截面，作为选股信号还不如不用。切勿交易该综合因子。请按下方每个因子各自的行判断：仅标记为 VALIDATED（通过 BH-FDR 且平均 IC 为正）的因子才成立，且即便如此也只是幸存者偏差面板上的勉强通过者。') }}
+    </div>
+    {% endif %}
     <table>
       <tr>
         <th>{{ t('factor','因子') }}</th>
@@ -208,8 +228,9 @@
         <th class="r">n</th>
       </tr>
       {% for r in ic.rows %}
+      {% set _vs = 'validated' if (r.survives_fdr and r.mean_ic is not none and r.mean_ic > 0) else ('negative-ic' if (r.mean_ic is not none and r.mean_ic < 0) else 'fdr-fail') %}
       <tr>
-        <td>{{ t(r.label_en, fac.factor_labels.get(r.factor, r.label_en)) }}</td>
+        <td>{{ t(r.label_en, fac.factor_labels.get(r.factor, r.label_en)) }}<span class="val-chip {{ _vs }}">{% if _vs == 'validated' %}{{ t('VALIDATED','已验证') }}{% elif _vs == 'negative-ic' %}{{ t('NEG-IC','反向') }}{% else %}{{ t('FDR-FAIL','未过检') }}{% endif %}</span></td>
         <td class="r {{ 'pos' if r.mean_ic and r.mean_ic > 0 else ('neg' if r.mean_ic and r.mean_ic < 0 else 'muted') }}">{{ '%+.4f'|format(r.mean_ic) if r.mean_ic is not none else '—' }}</td>
         <td class="r {{ 'pos' if r.ic_ir_ann and r.ic_ir_ann > 0 else ('neg' if r.ic_ir_ann and r.ic_ir_ann < 0 else 'muted') }}">{{ '%+.2f'|format(r.ic_ir_ann) if r.ic_ir_ann is not none else '—' }}</td>
         <td class="r muted">{{ '%+.2f'|format(r.t_hac) if r.t_hac is not none else '—' }}</td>

@@ -1,0 +1,160 @@
+{
+  "generated_utc": "2026-07-01T02:44:46.898946+00:00",
+  "store_rows": 5652,
+  "store_series": 15,
+  "rows": [
+    {
+      "series": "CPIAUCSL",
+      "role": "headline CPI level (base-effect inflation)",
+      "present": false,
+      "earliest_vintage": null,
+      "latest_vintage": null,
+      "n_vintages": 0,
+      "n_periods": 0,
+      "verdict": "ABSENT"
+    },
+    {
+      "series": "CPILFESL",
+      "role": "core CPI level (base-effect inflation)",
+      "present": false,
+      "earliest_vintage": null,
+      "latest_vintage": null,
+      "n_vintages": 0,
+      "n_periods": 0,
+      "verdict": "ABSENT"
+    },
+    {
+      "series": "PCEPILFE",
+      "role": "core PCE level (base-effect inflation \u2014 the Fed's target)",
+      "present": false,
+      "earliest_vintage": null,
+      "latest_vintage": null,
+      "n_vintages": 0,
+      "n_periods": 0,
+      "verdict": "ABSENT"
+    },
+    {
+      "series": "PPIFIS",
+      "role": "PPI final demand (base-effect inflation, optional)",
+      "present": false,
+      "earliest_vintage": null,
+      "latest_vintage": null,
+      "n_vintages": 0,
+      "n_periods": 0,
+      "verdict": "ABSENT"
+    },
+    {
+      "series": "STICKCPIM157SFRBATL",
+      "role": "Atlanta sticky CPI (persistent-inflation direction)",
+      "present": true,
+      "earliest_vintage": "2014-03-18",
+      "latest_vintage": "2026-06-10",
+      "n_vintages": 146,
+      "n_periods": 148,
+      "verdict": "THIN"
+    },
+    {
+      "series": "FLEXCPIM157SFRBATL",
+      "role": "Atlanta flexible CPI",
+      "present": true,
+      "earliest_vintage": "2014-03-18",
+      "latest_vintage": "2026-06-10",
+      "n_vintages": 145,
+      "n_periods": 148,
+      "verdict": "THIN"
+    },
+    {
+      "series": "INDPRO",
+      "role": "industrial production level (base-effect growth)",
+      "present": true,
+      "earliest_vintage": "1997-01-17",
+      "latest_vintage": "2026-05-15",
+      "n_vintages": 352,
+      "n_periods": 353,
+      "verdict": "OK"
+    },
+    {
+      "series": "PAYEMS",
+      "role": "nonfarm payrolls level (base-effect growth)",
+      "present": true,
+      "earliest_vintage": "1997-01-10",
+      "latest_vintage": "2026-06-05",
+      "n_vintages": 353,
+      "n_periods": 354,
+      "verdict": "OK"
+    },
+    {
+      "series": "WEI",
+      "role": "Weekly Economic Index (growth nowcast)",
+      "present": true,
+      "earliest_vintage": "2020-04-21",
+      "latest_vintage": "2026-06-11",
+      "n_vintages": 321,
+      "n_periods": 321,
+      "verdict": "SHALLOW"
+    },
+    {
+      "series": "GDPNOW",
+      "role": "Atlanta Fed GDPNow (growth nowcast)",
+      "present": true,
+      "earliest_vintage": "2016-08-04",
+      "latest_vintage": "2026-04-30",
+      "n_vintages": 40,
+      "n_periods": 40,
+      "verdict": "SHALLOW"
+    },
+    {
+      "series": "ICSA",
+      "role": "initial jobless claims (labor nowcast)",
+      "present": false,
+      "earliest_vintage": null,
+      "latest_vintage": null,
+      "n_vintages": 0,
+      "n_periods": 0,
+      "verdict": "ABSENT"
+    },
+    {
+      "series": "SAHMREALTIME",
+      "role": "real-time Sahm rule (recession nowcast)",
+      "present": true,
+      "earliest_vintage": "2019-10-04",
+      "latest_vintage": "2026-06-05",
+      "n_vintages": 80,
+      "n_periods": 80,
+      "verdict": "SHALLOW"
+    },
+    {
+      "series": "RECPROUSM156N",
+      "role": "NY Fed recession probability",
+      "present": true,
+      "earliest_vintage": "2012-10-01",
+      "latest_vintage": "2026-06-01",
+      "n_vintages": 161,
+      "n_periods": 166,
+      "verdict": "THIN"
+    }
+  ],
+  "summary": {
+    "ok": [
+      "INDPRO",
+      "PAYEMS"
+    ],
+    "thin_or_shallow": [
+      "STICKCPIM157SFRBATL",
+      "FLEXCPIM157SFRBATL",
+      "WEI",
+      "GDPNOW",
+      "SAHMREALTIME",
+      "RECPROUSM156N"
+    ],
+    "absent": [
+      "CPIAUCSL",
+      "CPILFESL",
+      "PCEPILFE",
+      "PPIFIS",
+      "ICSA"
+    ]
+  },
+  "alfred_probe": {},
+  "note": "Base-effect on ABSENT series (notably core PCE/CPI) has no point-in-time path in the local store today; route those latest-revision with revised=True (the base period is a settled historical print, so a deterministic base signal is still defensible) and label them in the UI. See plan \u00a72 S3."
+}
