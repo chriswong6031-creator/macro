@@ -25,8 +25,8 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import (ai_cost, auth, brief, config_store, content, flags, ga4,
-               github_api, github_config, gitops, health, services, settings,
+from . import (ai_cost, auth, brief, config_store, content, experiments, flags,
+               ga4, github_api, github_config, gitops, health, services, settings,
                system, umami, uptime_board, users)
 from .paths import STATIC
 
@@ -244,11 +244,14 @@ class Handler(BaseHTTPRequestHandler):
                     "git": gitops.status(),
                     "system": system.snapshot(),
                     "services": services.status(),
+                    "experiments": experiments.alert_summary(),
                 })
             if path == "/api/flags":
                 return self._json(flags.snapshot())
             if path == "/api/brief":
                 return self._json(brief.panel())
+            if path == "/api/experiments":
+                return self._json(experiments.panel())
             if path == "/api/health":
                 return self._json(health.summary())
             if path == "/api/cost":

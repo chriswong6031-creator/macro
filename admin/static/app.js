@@ -51,7 +51,7 @@ async function logout() {
 }
 
 const TABS = [
-  ["overview", "Overview"], ["analytics", "Analytics"], ["users", "Users"],
+  ["overview", "Overview"], ["experiments", "Experiments"], ["analytics", "Analytics"], ["users", "Users"],
   ["system", "System"], ["health", "Health"], ["features", "Features"],
   ["brief", "AI Brief"], ["deploy", "Build & Deploy"], ["cost", "AI Cost"], ["content", "Content"],
 ];
@@ -84,6 +84,12 @@ function renderHeader() {
   const led = allOk ? "ok" : ((hh.broad_outage || (hh.sources && hh.sources.dead) || (sv.available && !sv.healthy)) ? "bad" : "warn");
   const el = $("#hmeta"); el.innerHTML = "";
   el.appendChild(h(`<span class="pill"><span class="led ${led}"></span>${allOk ? "Healthy" : "Attention"}</span>`));
+  const ex = SUMMARY.experiments || {};
+  if (ex.available && ex.ready_count > 0) {
+    const p = h(`<span class="pill ready" title="experiment results are ready — open the Experiments tab">🔔 ${ex.ready_count} result${ex.ready_count > 1 ? "s" : ""} ready</span>`);
+    p.style.cursor = "pointer"; p.onclick = () => go("experiments");
+    el.appendChild(p);
+  }
   if (m.deployed) el.appendChild(h(`<span class="pill" title="running on the VPS behind Caddy">deployed</span>`));
   el.appendChild(h(`<span>repo <code>${esc(m.repo || "?")}</code></span>`));
   el.appendChild(h(`<span>GH ${m.has_token ? "✓ token" : "read-only"}</span>`));
@@ -141,6 +147,7 @@ RENDER.overview = async () => {
       ${card("Est. AI cost", `<div class="big">${fmtUSD(c.monthly_usd)}<span class="sub"> /mo</span></div><div class="sub">${fmtUSD(c.effective_daily_usd)}/day</div>`)}
       ${card("Features on", `<div class="big">${flagsOn}</div><div class="sub">managed flags</div>`)}
       ${card("Analytics", `<div class="big" style="color:var(--ok);font-size:18px">Umami live</div><div class="sub">${m.integrations && m.integrations.umami ? "API connected" : "tag on every page"}</div>`)}
+      ${card("Experiments", `<div class="big" style="color:${(s.experiments && s.experiments.ready_count) ? "var(--ok)" : "var(--text)"}">${(s.experiments && s.experiments.ready_count) || 0}<span class="sub"> ready</span></div><div class="sub">${s.experiments && s.experiments.soonest ? "next in " + s.experiments.soonest.days_until + "d" : (s.experiments && s.experiments.n ? s.experiments.n + " tracked" : "—")}</div>`)}
     </div>
     <div class="section">Quick actions</div>
     <div id="qa"></div>`;
@@ -152,6 +159,57 @@ RENDER.overview = async () => {
   const probe = h(`<button class="btn" style="margin-left:8px">◎ Probe all endpoints</button>`);
   probe.onclick = () => go("system"); qa.appendChild(probe);
   if (!m.has_token) qa.appendChild(h(`<div class="sub" style="margin-top:8px">Set <code>GH_TOKEN</code> (Actions: write) in the service env to enable rebuild/deploy.</div>`));
+};
+
+/* ---- EXPERIMENTS & DATA COLLECTION -------------------------------------- */
+const EXP_STATUS_PILL = (s) => {
+  const cls = s === "validated" ? "s-ok" : (s === "measuring" || s === "proven") ? "s-warn" : s === "blocked" ? "s-bad" : "s-mut";
+  return `<span class="statpill ${cls}">${esc(s || "?")}</span>`;
+};
+const EXP_DUE = (e) => {
+  if (e.ready) return `<b style="color:var(--ok)">ready ✓</b>`;
+  if (e.days_until == null) return `<span class="sub">${esc(e.come_back_on || "—")}</span>`;
+  if (e.days_until <= 0) return `<b style="color:var(--ok)">due now</b>`;
+  const soon = e.days_until <= 7;
+  return `<span style="color:${soon ? "var(--warn)" : "var(--text)"}">${e.days_until}d</span> <span class="sub mono">${esc((e.come_back_on || "").slice(0, 10))}</span>`;
+};
+RENDER.experiments = async () => {
+  const v = $("#view");
+  const d = await api("/api/experiments");
+  if (!d.ok) {
+    v.innerHTML = card("Experiments & data collection", `<div class="sub">${esc(d.reason || "not available")}</div>`);
+    return;
+  }
+  const exps = d.experiments || [];
+  const ready = exps.filter(e => e.ready);
+  let html = `<div class="sub" style="margin-bottom:10px">Running experiments & long-horizon data collection — each with the exact date to come back for the next step. The macro build re-computes this nightly (<code>engine.experiments_registry</code>).</div>
+    <div class="grid">
+      ${card("Tracked", `<div class="big">${d.n}</div><div class="sub">experiments & accruals</div>`)}
+      ${card("Results ready", `<div class="big" style="color:${d.ready_count ? "var(--ok)" : "var(--text)"}">${d.ready_count}</div><div class="sub">come back for the next step</div>`)}
+      ${card("Registry as of", `<div class="big" style="font-size:18px" class="mono">${esc(d.as_of || "—")}</div><div class="sub">today ${esc(d.today || "")}</div>`)}
+    </div>`;
+  if (ready.length) {
+    html += `<div class="section">🔔 Ready for review <span class="cnt">${ready.length}</span></div>
+      <div class="grid">${ready.map(e => `<div class="card ready"><h3>${esc(e.name)}</h3>
+        <div class="sub">${esc(e.what || "")}</div>
+        <div class="kv" style="margin-top:8px"><span>Status</span>${EXP_STATUS_PILL(e.status)}</div>
+        ${e.phase_hint ? `<div class="kv"><span>Next</span><b>${esc(e.phase_hint)}</b></div>` : ""}
+        <div class="note" style="margin-top:6px">${esc(e.next_step || "")}</div>
+        ${e.state ? `<div class="note mono muted">${esc(e.state)}</div>` : ""}
+        ${e.surfaced ? `<div class="note mono muted">↳ ${esc(e.surfaced)}</div>` : ""}</div>`).join("")}</div>`;
+  }
+  html += `<div class="section">All experiments <span class="cnt">${exps.length}</span></div>
+    <table><thead><tr><th>Experiment</th><th>Kind</th><th>Status</th><th>Cadence</th><th class="r">Come back</th><th>Next step</th></tr></thead><tbody>
+    ${exps.map(e => `<tr${e.ready ? ' class="hl"' : ""}>
+      <td><b>${esc(e.name)}</b><div class="sub">${esc(e.what || "")}</div><div class="note mono muted">${esc(e.source || "")}</div></td>
+      <td class="sub">${esc(e.kind || "")}</td>
+      <td>${EXP_STATUS_PILL(e.status)}</td>
+      <td class="sub">${esc(e.cadence || "")}</td>
+      <td class="r">${EXP_DUE(e)}</td>
+      <td class="sub" style="max-width:340px">${esc(e.next_step || "")}${e.state ? `<div class="note mono muted">${esc(e.state)}</div>` : ""}</td></tr>`).join("")}
+    </tbody></table>
+    ${d.note ? `<div class="sub" style="margin-top:10px">${esc(d.note)}</div>` : ""}`;
+  v.innerHTML = html;
 };
 
 /* ---- ANALYTICS (Umami) -------------------------------------------------- */
