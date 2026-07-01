@@ -71,7 +71,11 @@ fred:
   vintage_series: [PAYEMS, INDPRO, M2SL, WEI, GDPNOW, RECPROUSM156N, THREEFYTP10,
     SAHMREALTIME, STICKCPIM157SFRBATL, CORESTICKM157SFRBATL, FLEXCPIM157SFRBATL,
     MEDCPIM158SFRBCLE, STLFSI4, UMCSENT, MICH,
-    AWHMAN, ICSA, PERMIT, NEWORDER, W875RX1, CMRMTSPL, UEMPMEAN, ISRATIO, BUSLOANS, CUSR0000SAS]
+    AWHMAN, ICSA, PERMIT, NEWORDER, W875RX1, CMRMTSPL, UEMPMEAN, ISRATIO, BUSLOANS, CUSR0000SAS,
+    # base-effect inflation levels (engine/base_effect.py) — absent from the store per
+    # scripts/audit_alfred_depth.py; a keyed collect run backfills them so the base-effect
+    # inflation legs upgrade from latest-revision (revised=True) to point-in-time.
+    CPIAUCSL, CPILFESL, PCEPILFE, PCEPI, PPIFIS]
   series:
     rates:
       DGS2: us2y
