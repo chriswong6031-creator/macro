@@ -14,7 +14,7 @@
   if (!B) return;                                         // no-op when unset -> zero behavior change
   B = B.replace(/\/+$/, "");                              // strip trailing slash
   // the per-ticker stores that live in R2 (mirror scripts/publish_r2.py DEFAULT_DIRS)
-  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
+  var RE = /^(ohlc|chinaohlc|hkohlc|intlohlc|canadaohlc|subsectorohlc(?:_china|_russell|_nasdaq)?|stockdata|chinastockdata|hkstockdata|canadastockdata|intlstockdata|intraday)\//;
   var orig = window.fetch;
   window.fetch = function (u, o) {
     try {
