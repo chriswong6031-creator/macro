@@ -102,7 +102,14 @@
         + '<div class="cv">' + (up ? '▲ ' : '▼ ') + L(r.read_en, r.read_zh) + '</div>'
         + '<div class="cm">20d ' + signed(r.mom20, 1) + ' · 60d ' + signed(r.mom60, 1) + (r.pctile != null ? ' · ' + L('pctile', '分位') + ' ' + num(r.pctile, 0) : '') + '</div></div>';
     }).join('');
-    var drivers = chips ? '<div class="lead-drivers"><div class="dh">' + L('Why — leadership drivers (observable ratios, not a regime label)', '为什么——领导驱动（可观测比率，非状态标签）') + '</div><div class="chips">' + chips + '</div></div>' : '';
+    var rg = d.regime, regLine = '';
+    if (rg) {
+      var liqZh = ({ expanding: '扩张', contracting: '收缩', neutral: '中性', unknown: '未知' })[rg.liquidity] || rg.liquidity;
+      var liqTxt = rg.liquidity ? ' · ' + L('liquidity ' + rg.liquidity, '流动性' + liqZh) : '';
+      regLine = '<div class="lead-regime">🌐 ' + L('Regime backdrop', '宏观象限') + ': <b>' + esc(rg.quad) + ' ' + L(rg.name_en, rg.name_zh) + '</b> (' + L(rg.axes_en, rg.axes_zh) + ')' + liqTxt
+        + ' → ' + L('expected tilt: ', '预期倾向：') + L(rg.tilt_en, rg.tilt_zh) + '. <span class="rg-cav">' + L('Odds-tilt, not a rule — compare to what is actually leading.', '仅为概率倾向，非规则——请对照上方实际领涨。') + '</span></div>';
+    }
+    var drivers = (chips || regLine) ? '<div class="lead-drivers"><div class="dh">' + L('Why — leadership drivers (macro cause + observable ratios)', '为什么——领导驱动（宏观成因 + 可观测比率）') + '</div>' + regLine + (chips ? '<div class="chips">' + chips + '</div>' : '') + '</div>' : '';
     var mac = d.macro, macLine = '';
     if (mac) {
       var dot = mac.color === 'red' ? '🔴' : mac.color === 'yellow' ? '🟡' : mac.color === 'green' ? '🟢' : '⚪';
