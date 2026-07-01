@@ -100,6 +100,38 @@
   .quad-Q2 { color: #1a1a1a; }
   .quad-Q1 { background: var(--q1); } .quad-Q2 { background: var(--q2); }
   .quad-Q3 { background: var(--q3); } .quad-Q4 { background: var(--q4); }
+  /* MEASURED / MODELED / NO-EDGE honesty badges (status colours --ok/--warn/--muted do NOT
+     flip in zh mode, unlike --up/--down) + the base-effect forward strip (v0). */
+  .mbadge { display:inline-flex; align-items:center; gap:4px; font-size:9px; font-weight:800;
+            letter-spacing:.07em; padding:2px 7px; border-radius:5px; text-transform:uppercase; border:1px solid; }
+  .mbadge.measured { color:var(--ok);    border-color:color-mix(in srgb,var(--ok) 55%,transparent);   background:color-mix(in srgb,var(--ok) 12%,transparent); }
+  .mbadge.modeled  { color:var(--warn);  border-color:color-mix(in srgb,var(--warn) 55%,transparent); background:color-mix(in srgb,var(--warn) 12%,transparent); }
+  .mbadge.noedge   { color:var(--muted); border-color:var(--line); background:var(--panel2); }
+  .bfwd .bfwd-head { display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin:0 0 4px; }
+  .bfwd .bfwd-head h3 { font-size:12px; margin:0; color:var(--text); text-transform:uppercase; letter-spacing:.05em; }
+  .bfwd-sub { color:var(--muted); font-size:12px; margin:0 0 12px; max-width:78ch; }
+  .bfwd-main { display:flex; gap:18px; flex-wrap:wrap; align-items:stretch; }
+  .bfwd-now { flex:0 0 auto; min-width:158px; display:flex; flex-direction:column; gap:3px; justify-content:center;
+              padding:10px 15px; border-radius:11px; color:#fff; }
+  .bfwd-now.q-Q2 { color:#1a1a1a; }
+  .bfwd-now .k { font-size:9px; letter-spacing:.09em; text-transform:uppercase; opacity:.9; }
+  .bfwd-now .v { font-size:17px; font-weight:800; line-height:1.12; }
+  .bfwd-now .s { font-size:10px; opacity:.88; }
+  .bfwd-axes { flex:1 1 300px; display:grid; grid-template-columns:auto auto 1fr; gap:7px 14px; align-content:center; }
+  .bfwd-ax-l { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; align-self:center; }
+  .bfwd-ax-v { font-variant-numeric:tabular-nums; font-weight:700; font-size:13px; align-self:center; white-space:nowrap; }
+  .bfwd-ax-v .bfa { font-weight:700; margin-left:3px; }
+  .bfwd-ax-n { font-size:11px; color:var(--muted); align-self:center; }
+  .bfwd-path { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:14px; }
+  .bfwd-path .pl { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-right:2px; }
+  .bfwd-path .arw { color:var(--muted); }
+  .bfq { border-radius:6px; padding:4px 9px; color:#fff; font-weight:700; font-size:10.5px; white-space:nowrap; }
+  .bfq.q-Q2 { color:#1a1a1a; } .bfq small { font-weight:500; opacity:.85; }
+  .bfwd-note { font-size:11px; color:var(--muted); margin-top:12px; line-height:1.5;
+               border-top:1px solid var(--line); padding-top:8px; }
+  @media (max-width:640px){ .bfwd-main{ gap:12px; } .bfwd-now{ width:100%; }
+    .bfwd-axes{ grid-template-columns:auto 1fr; column-gap:12px; row-gap:2px; }
+    .bfwd-ax-n{ grid-column:1/-1; margin:0 0 8px; } }
   .kv { color: var(--muted); } .kv b { color: var(--text); font-weight: 600; }
 
   table { border-collapse: collapse; width: 100%; font-size: 13px; }
@@ -1728,6 +1760,54 @@
     </script>
   </div>
 
+
+  {# --- Base-effect forward-regime strip (v0): the forward ECONOMIC quad the KNOWN base is
+        forcing over the next 3 quarters. DISPLAY-ONLY / MODELED — engine/base_effect.py.
+        Hidden until a render writes latest.base_effect (guarded, degrade-never-raise). --- #}
+  {% if latest.base_effect and latest.base_effect.growth and latest.base_effect.inflation %}
+  {% set _be = latest.base_effect %}
+  {% set _bg = _be.growth %}
+  {% set _bi = _be.inflation %}
+  {% set _QN = {'Q1':['GOLDILOCKS','理想增长'],'Q2':['REFLATION','再通胀'],'Q3':['STAGFLATION','滞胀'],'Q4':['GROWTH SCARE','增长恐慌']} %}
+  {% macro _iq(g, i) %}{% if g >= 0 and i < 0 %}Q1{% elif g >= 0 and i >= 0 %}Q2{% elif g < 0 and i >= 0 %}Q3{% else %}Q4{% endif %}{% endmacro %}
+  {% macro _accel(s) %}{% if s > 0 %}▲ {{ t('accelerating','加速') }}{% elif s < 0 %}▼ {{ t('decelerating','减速') }}{% else %}– {{ t('flat','走平') }}{% endif %}{% endmacro %}
+  {% macro _axnote(a) %}{% set c = a.q1 %}{{ t('easy comps' if c > 0 else ('tough comps' if c < 0 else 'neutral comps'), '低基数' if c > 0 else ('高基数' if c < 0 else '中性基数')) }}{% if a.current_yoy is not none and a.yoy_path and a.yoy_path[-1] is not none %} · {{ t('YoY','同比') }} {{ '%.1f'|format(a.current_yoy) }}%→{{ '%.1f'|format(a.yoy_path[-1]) }}% {{ t('3q','3季') }}{% endif %}{% endmacro %}
+  {% set _q1q = _iq(_bg.q1, _bi.q1)|trim %}
+  <div class="panel span12 bfwd">
+    <div class="bfwd-head">
+      <h3>{{ t('Where the regime is headed','周期将去往何处') }} · {{ t('base-effect forward path','基数效应前瞻路径') }}</h3>
+      <span class="mbadge modeled">{{ t('MODELED','模型推算') }}</span>
+      {{ help("The Hedgeye kernel, built honestly. A year-over-year rate has a denominator — the 'base' — already known 12 months ahead. Holding month-to-month momentum at its normal pace, the KNOWN base bends the forward path of the rate: a HIGH base a year ago (tough comps) forces the rate DOWN (deceleration); a LOW base (easy comps) forces it UP (acceleration). This reads the ECONOMY's forward direction for growth (industrial production + payrolls) and inflation (core CPI + core PCE) — distinct from, and more forward-looking than, the current-tape quad above. MODELED: a projection under a normal-momentum assumption, not measured data. The base arithmetic is settled, but the accelerate/decelerate call is unvalidated and display-only while it accrues a forward-grading record versus the disclosed base-effect inversion statistic.",
+               "以诚实方式构建的 Hedgeye 内核。同比增速有一个分母 —— “基数” —— 在 12 个月前就已知。将环比动能保持在正常速度时，已知的基数会弯折增速的前瞻路径：一年前的高基数（高对比基准）迫使增速下行（减速）；低基数（低对比基准）迫使其上行（加速）。这里读取的是经济的前瞻方向 —— 增长（工业产出＋非农就业）与通胀（核心 CPI＋核心 PCE）—— 有别于上方的当前盘面象限，且更具前瞻性。模型推算：基于正常动能假设的投影，而非实测数据。基数算术已确定，但加速／减速的判断尚未验证、仅作展示，同时针对已披露的基数效应反转统计积累前瞻评分记录。") }}
+    </div>
+    <p class="bfwd-sub">{{ t('The growth × inflation quad the KNOWN base is forcing over the next three quarters — a forward ECONOMIC read, not today’s tape. The current-tape quad is above; this is where the settled base path is pushing growth and inflation next.','已知基数在未来三个季度所迫使的增长×通胀象限 —— 前瞻的经济读数，而非今日盘面。上方为当前盘面象限；此处为已确定的基数路径接下来对增长与通胀的推动方向。') }}</p>
+    <div class="bfwd-main">
+      <div class="bfwd-now q-{{ _q1q }}" style="background:var(--q{{ _q1q[1] }})">
+        <span class="k">{{ t('NEXT QUARTER','下一季度') }}</span>
+        <span class="v">{{ t(_QN[_q1q][0], _QN[_q1q][1]) }}</span>
+        <span class="s">{{ t('base-forced','基数迫使') }}</span>
+      </div>
+      <div class="bfwd-axes">
+        <span class="bfwd-ax-l">{{ t('Growth','增长') }}</span>
+        <span class="bfwd-ax-v">{{ '%.1f'|format(_bg.current_yoy) }}%<span class="bfa">{{ _accel(_bg.q1) }}</span></span>
+        <span class="bfwd-ax-n">{{ _axnote(_bg) }}</span>
+        <span class="bfwd-ax-l">{{ t('Inflation','通胀') }}</span>
+        <span class="bfwd-ax-v">{{ '%.1f'|format(_bi.current_yoy) }}%<span class="bfa">{{ _accel(_bi.q1) }}</span></span>
+        <span class="bfwd-ax-n">{{ _axnote(_bi) }}</span>
+      </div>
+    </div>
+    <div class="bfwd-path">
+      <span class="pl">{{ t('3-quarter path','三季度路径') }}</span>
+      {% for _h in ['q1','q2','q3'] %}
+        {% set _qq = _iq(_bg[_h], _bi[_h])|trim %}
+        {% if not loop.first %}<span class="arw">→</span>{% endif %}
+        <span class="bfq q-{{ _qq }}" style="background:var(--q{{ _qq[1] }})">+{{ loop.index }}Q <small>{{ t(_QN[_qq][0], _QN[_qq][1]) }}</small></span>
+      {% endfor %}
+    </div>
+    <p class="bfwd-note">{{ t('MODELED — a projection under a normal-momentum assumption. The base (denominator) path is settled arithmetic (MEASURED); the accelerate/decelerate call is unvalidated and display-only, accruing a forward-grading log against the disclosed base-effect inversion statistic. Growth is point-in-time back to 1997; inflation uses latest-revision data until the core-CPI/PCE vintages backfill.',
+         '模型推算 —— 基于正常动能假设的投影。基数（分母）路径为已确定的算术（实测）；加速／减速判断尚未验证、仅作展示，正针对已披露的基数效应反转统计积累前瞻评分记录。增长为 1997 年以来的时点数据；通胀在核心 CPI／PCE 修订版历史回填前使用最新修订数据。') }}</p>
+  </div>
+  {% endif %}
 
   <!-- Heads-up strip — compact live flags (next catalyst / Fed stance / fragility).
        Replaces the old full-width Event-Risk + Turning-Point + Fed-reaction panels.
