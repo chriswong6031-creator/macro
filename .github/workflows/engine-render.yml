@@ -332,9 +332,7 @@ jobs:
           # working tree (regime recompute, ledger appends, cache writes); committing NONE of it
           # keeps the nightly the single advancer of every forward-accountability ledger.
           git add site/
-          git add -f site/stockbrief site/stockdata site/ohlc site/intraday 2>/dev/null || true
-          git add -f site/chinastockdata site/canadastockdata site/intlstockdata 2>/dev/null || true
-          git add -f site/chinaohlc site/canadaohlc site/intlohlc 2>/dev/null || true
+          git add -f site/stockbrief 2>/dev/null || true
           if git diff --cached --quiet; then echo "no rendered-site changes to commit"; exit 0; fi
           git commit -m "engine-render: regime recompute + re-render $(date -u +%F) (scope=${{ github.event.inputs.scope || 'all' }})"
           # --autostash: we commit site/ ONLY, leaving the render's throwaway data/ writes

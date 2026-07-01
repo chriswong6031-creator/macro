@@ -751,30 +751,23 @@ jobs:
           # China stock-search library: gitignored like the other markets' libraries —
           # force-add it so the committed-tree deploy ships every indexed A-share detail
           # JSON, not just the old tracked subset.
-          git add -f site/chinastockdata 2>/dev/null || true
           # Canada stock-search library: gitignored like the other markets' libraries,
           # but (unlike them) force-added here so the committed-tree deploy ships it —
           # otherwise canada_stock.html's search 404s on canadastockdata/index.json.
-          git add -f site/canadastockdata 2>/dev/null || true
           # International stock-search library: same gitignore situation — force-add so
           # the committed-tree deploy ships it (else intl_stock.html search 404s).
-          git add -f site/intlstockdata 2>/dev/null || true
           # US stock-search library (built by build_site -> build_stock_library): only a
           # ~534-name legacy subset was ever tracked while the index lists ~1595, so the
           # untracked long tail 404'd on click. Force-add the whole dir so every name ships.
-          git add -f site/stockdata 2>/dev/null || true
           # Bespoke single-stock chart OHLC (built by build_site -> build_chart_data):
           # gitignored like the search libraries, so force-add it or the committed-tree
           # deploy ships no price data and every stock chart renders empty.
-          git add -f site/ohlc 2>/dev/null || true
           # Non-US bespoke chart OHLC (built by build_{china,canada,intl}_library): same
           # gitignore + force-add situation as their stockdata libraries. HK now also ships
           # reconstructed candles (build_hk_library -> build_chart_data.build_hk -> site/hkohlc),
           # imputed from its close-only per-stock JSON so the chart draws candlesticks.
-          git add -f site/chinaohlc site/canadaohlc site/intlohlc site/hkohlc 2>/dev/null || true
           # US 4H intraday chart data (built by build_site -> build_chart_data.emit_intraday
           # from the cached data/intraday) — gitignored, force-add so the deploy ships it.
-          git add -f site/intraday 2>/dev/null || true
           if git diff --cached --quiet; then echo "no engine output changes"; exit 0; fi
           git commit -m "engine: regime update $(date -u +%F)"
           # best-effort push (see commit-data). The deploy below uses the uploaded
@@ -798,6 +791,10 @@ jobs:
         # Content-hash skip -> only deltas upload. Still committed to git for now (Pages fallback);
         # the git de-bloat + Pages slim-down is the follow-up increment once the client reads R2.
         run: python -m scripts.publish_r2 --dirs ohlc,intlohlc,canadaohlc,subsectorohlc,subsectorohlc_russell,stockdata,intlstockdata,canadastockdata,intraday || echo "::warning::R2 publish failed (non-fatal)"
+      - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)
+        if: always()
+        run: |
+          rm -rf site/ohlc site/chinaohlc site/hkohlc site/intlohlc site/canadaohlc site/subsectorohlc site/subsectorohlc_china site/subsectorohlc_russell site/stockdata site/chinastockdata site/hkstockdata site/canadastockdata site/intlstockdata site/intraday 2>/dev/null || true
       - name: upload pages artifact
         if: always()   # deploy must not hinge on the commit-push above succeeding
         uses: actions/upload-pages-artifact@v3
@@ -931,7 +928,6 @@ jobs:
           # aidesk_lean.js panel 404s. The ledger (data/stock_desk, NOT gitignored) must also be
           # committed or the track record can never accumulate past-due leans. (Same gitignore/
           # force-add trap as the per-market stock libraries.)
-          git add -f site/stockdata/ai_desk_notes.json site/stockdata/ai_desk_track.json 2>/dev/null || true
           git add data/stock_desk 2>/dev/null || true
           if git diff --cached --quiet; then echo "no stock-brief changes"; exit 0; fi
           git commit -m "stock-briefs: AI research briefs + accountable leans $(date -u +%F)"
@@ -944,6 +940,16 @@ jobs:
             echo "stock-briefs push attempt $i lost a race; re-syncing"; sleep $((i * 7))
           done
           echo "::warning::could not push stock briefs after 5 attempts (non-fatal — the stock page falls back to the last committed briefs)"
+      - name: sync stock_briefs stockdata writes to R2 (post-flip freshness)
+        if: always()
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        # stock_briefs writes stockdata/ai_desk_notes.json + ai_desk_track.json AFTER the engine
+        # job's R2 upload, so sync them here or the shim fetches a stale copy from R2.
+        run: python -m scripts.publish_r2 --dirs stockdata || echo "::warning::R2 stockdata sync failed (non-fatal)"
 
   publish:
     # GitHub Pages can't serve a /site folder from a branch — deploy the

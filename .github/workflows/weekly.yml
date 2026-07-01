@@ -152,10 +152,6 @@ jobs:
           git add data/ reports/ site/
           # Stock-search libraries are gitignored — force-add so the committed-tree
           # deploy ships their index/detail JSON. See daily.yml.
-          git add -f site/chinastockdata 2>/dev/null || true
-          git add -f site/canadastockdata 2>/dev/null || true
-          git add -f site/intlstockdata 2>/dev/null || true
-          git add -f site/stockdata 2>/dev/null || true
           if git diff --cached --quiet; then echo "no weekly changes to commit"; exit 0; fi
           git commit -m "weekly: deep-dive $(date -u +%F)"
           # best-effort push: losing a race with a concurrent push must NOT fail the
@@ -169,6 +165,10 @@ jobs:
             echo "weekly push attempt $i lost a race; re-syncing"; sleep $((i * 7))
           done
           echo "::warning::could not push weekly outputs after 5 attempts (non-fatal — site still deploys via artifact)"
+      - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)
+        if: always()
+        run: |
+          rm -rf site/ohlc site/chinaohlc site/hkohlc site/intlohlc site/canadaohlc site/subsectorohlc site/subsectorohlc_china site/subsectorohlc_russell site/stockdata site/chinastockdata site/hkstockdata site/canadastockdata site/intlstockdata site/intraday 2>/dev/null || true
       - name: upload pages artifact
         if: always()   # deploy must not hinge on the commit-push above succeeding
         uses: actions/upload-pages-artifact@v3

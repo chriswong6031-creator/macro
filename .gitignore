@@ -111,3 +111,7 @@ site/live/
 # options-flow transient caches (re-downloadable; keep out of git)
 data/massive_flat/
 data/options_flow/_*.parquet
+# heavy per-ticker stores — served from Cloudflare R2 (scripts/publish_r2.py), not committed/deployed
+site/subsectorohlc/
+site/subsectorohlc_china/
+site/subsectorohlc_russell/
