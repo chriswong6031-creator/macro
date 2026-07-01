@@ -134,3 +134,25 @@ admin.mastermind-x.com {
 		-Server
 	}
 }
+
+# ---- maltese.greydeercapital.com — 线条小狗 Line-Puppy sticker gallery (static) ----
+# A SEPARATE Cloudflare zone (greydeercapital.com) proxied to THIS origin; the static
+# files live at /opt/maltese (OUTSIDE this /opt/macro checkout — synced by hand via
+# scripts/deploy.sh in ~/Documents/线条小狗_stickers). Like the mastermind-x hosts it
+# uses `tls internal` paired with Cloudflare SSL mode "Full" (non-strict origin pull).
+# This block MUST live in THIS repo file: macro-update reinstalls /etc/caddy/Caddyfile
+# from here on every main commit, so a block hand-added on the box alone gets wiped.
+# Without a block for this SNI the Cloudflare<->origin handshake fails with HTTP 525.
+maltese.greydeercapital.com {
+	root * /opt/maltese
+	encode zstd gzip
+	file_server {
+		index index.html
+	}
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	tls internal
+}
