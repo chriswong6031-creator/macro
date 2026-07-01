@@ -783,6 +783,17 @@ jobs:
             echo "engine push attempt $i lost a race; re-syncing"; sleep $((i * 7))
           done
           echo "::warning::could not push engine outputs after 5 attempts (non-fatal — site still deploys via artifact)"
+      - name: publish heavy per-ticker stores to R2 (additive; no-op without creds)
+        if: always()
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        # US-evening shard owns the US/intl/canada/subsector stores; CN/HK go via asia-close.yml.
+        # Content-hash skip -> only deltas upload. Still committed to git for now (Pages fallback);
+        # the git de-bloat + Pages slim-down is the follow-up increment once the client reads R2.
+        run: python -m scripts.publish_r2 --dirs ohlc,intlohlc,canadaohlc,subsectorohlc,subsectorohlc_russell,stockdata,intlstockdata,canadastockdata,intraday || echo "::warning::R2 publish failed (non-fatal)"
       - name: upload pages artifact
         if: always()   # deploy must not hinge on the commit-push above succeeding
         uses: actions/upload-pages-artifact@v3

@@ -128,3 +128,11 @@ jobs:
             git rebase --abort 2>/dev/null || true; echo "asia engine push attempt $i lost a race"; sleep $((i * 7))
           done
           echo "::warning::could not push asia engine outputs after 5 attempts (non-fatal)"
+      - name: publish CN/HK stores to R2 (additive; no-op without creds)
+        if: always()
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.publish_r2 --dirs chinaohlc,hkohlc,subsectorohlc_china,chinastockdata,hkstockdata || echo "::warning::R2 publish failed (non-fatal)"
