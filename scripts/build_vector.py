@@ -1356,8 +1356,11 @@ a:focus-visible,.links a:focus-visible,.ha-item summary:focus-visible{outline:2p
  .gd-r-cd{font-size:9.5px} .gd-r-txt{font-size:10.5px}
 }
 /* the globe is UNBOUNDED — no card; it floats on the page's aurora. The canvas is
-   transparent outside the sphere, so body::before's aurora shows through. */
-.gd-stage{position:relative;min-height:640px;display:flex;overflow:visible;background:none;border:none;box-shadow:none;min-width:0}
+   transparent outside the sphere, so body::before's aurora shows through.
+   min-height is viewport-aware: full 640px hero on tall monitors, but it shrinks on
+   shorter laptops so the Markets grid below clears the fold on load (a flat 640px +
+   the ~320px header pushed the grid ~170px under the fold at ~790px viewports). */
+.gd-stage{position:relative;min-height:clamp(380px,100svh - 370px,640px);display:flex;overflow:visible;background:none;border:none;box-shadow:none;min-width:0}
 @media(max-width:880px){.gd-stage{min-height:0;height:min(94vw,500px)}}
 .gd-canvas{position:relative;z-index:10;width:100%;max-width:100%;height:100%;display:block;touch-action:none;cursor:grab;outline:none}
 .gd-canvas:focus-visible{outline:2px solid var(--link);outline-offset:-2px}

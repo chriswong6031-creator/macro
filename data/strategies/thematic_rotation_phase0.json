@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "us",
-  "generated_at": "2026-07-01T01:25:01.644093+00:00",
+  "generated_at": "2026-07-01T03:40:53.242188+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -122,7 +122,7 @@
       "contaminated": true,
       "algorithm": {
         "ew_buyhold": {
-          "cagr": 0.4504,
+          "cagr": 0.4502,
           "sharpe": 1.96,
           "max_dd": -0.1158,
           "calmar": 3.89,
@@ -164,48 +164,48 @@
       },
       "rank_ic": {
         "1m": {
-          "mean_ic": 0.0921,
-          "ic_t_hac": 2.845,
+          "mean_ic": 0.0936,
+          "ic_t_hac": 2.881,
           "hit": 0.56,
           "n_steps": 25
         },
         "3m": {
-          "mean_ic": 0.1943,
-          "ic_t_hac": 3.118,
-          "hit": 0.75,
+          "mean_ic": 0.1944,
+          "ic_t_hac": 3.133,
+          "hit": 0.625,
           "n_steps": 8
         }
       },
       "tsmom_conditional": {
         "above_trend": {
           "mean": 0.0296,
-          "std": 0.1123,
+          "std": 0.1124,
           "sharpe": 0.91,
           "p05": -0.126,
           "n": 1031
         },
         "below_trend": {
-          "mean": 0.0388,
+          "mean": 0.0387,
           "std": 0.1018,
           "sharpe": 1.32,
           "p05": -0.0902,
           "n": 634
         },
-        "mean_diff_t": -1.72,
-        "mean_diff_p": 0.0854
+        "mean_diff_t": -1.71,
+        "mean_diff_p": 0.0877
       },
       "extension_drawdown": {
         "fwd_days": 63,
         "cohorts": {
           "normal": {
             "mean_fwd_maxdd": -0.0793,
-            "p05_fwd_maxdd": -0.2565,
-            "n": 17507
+            "p05_fwd_maxdd": -0.2567,
+            "n": 17509
           },
           "stretched": {
-            "mean_fwd_maxdd": -0.084,
+            "mean_fwd_maxdd": -0.0841,
             "p05_fwd_maxdd": -0.2864,
-            "n": 3494
+            "n": 3492
           },
           "parabolic": {
             "mean_fwd_maxdd": -0.0892,

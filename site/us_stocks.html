@@ -44,6 +44,38 @@
   .quad-Q2 { color: #1a1a1a; }
   .quad-Q1 { background: var(--q1); } .quad-Q2 { background: var(--q2); }
   .quad-Q3 { background: var(--q3); } .quad-Q4 { background: var(--q4); }
+  /* MEASURED / MODELED / NO-EDGE honesty badges (status colours --ok/--warn/--muted do NOT
+     flip in zh mode, unlike --up/--down) + the base-effect forward strip (v0). */
+  .mbadge { display:inline-flex; align-items:center; gap:4px; font-size:9px; font-weight:800;
+            letter-spacing:.07em; padding:2px 7px; border-radius:5px; text-transform:uppercase; border:1px solid; }
+  .mbadge.measured { color:var(--ok);    border-color:color-mix(in srgb,var(--ok) 55%,transparent);   background:color-mix(in srgb,var(--ok) 12%,transparent); }
+  .mbadge.modeled  { color:var(--warn);  border-color:color-mix(in srgb,var(--warn) 55%,transparent); background:color-mix(in srgb,var(--warn) 12%,transparent); }
+  .mbadge.noedge   { color:var(--muted); border-color:var(--line); background:var(--panel2); }
+  .bfwd .bfwd-head { display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin:0 0 4px; }
+  .bfwd .bfwd-head h3 { font-size:12px; margin:0; color:var(--text); text-transform:uppercase; letter-spacing:.05em; }
+  .bfwd-sub { color:var(--muted); font-size:12px; margin:0 0 12px; max-width:78ch; }
+  .bfwd-main { display:flex; gap:18px; flex-wrap:wrap; align-items:stretch; }
+  .bfwd-now { flex:0 0 auto; min-width:158px; display:flex; flex-direction:column; gap:3px; justify-content:center;
+              padding:10px 15px; border-radius:11px; color:#fff; }
+  .bfwd-now.q-Q2 { color:#1a1a1a; }
+  .bfwd-now .k { font-size:9px; letter-spacing:.09em; text-transform:uppercase; opacity:.9; }
+  .bfwd-now .v { font-size:17px; font-weight:800; line-height:1.12; }
+  .bfwd-now .s { font-size:10px; opacity:.88; }
+  .bfwd-axes { flex:1 1 300px; display:grid; grid-template-columns:auto auto 1fr; gap:7px 14px; align-content:center; }
+  .bfwd-ax-l { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; align-self:center; }
+  .bfwd-ax-v { font-variant-numeric:tabular-nums; font-weight:700; font-size:13px; align-self:center; white-space:nowrap; }
+  .bfwd-ax-v .bfa { font-weight:700; margin-left:3px; }
+  .bfwd-ax-n { font-size:11px; color:var(--muted); align-self:center; }
+  .bfwd-path { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:14px; }
+  .bfwd-path .pl { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-right:2px; }
+  .bfwd-path .arw { color:var(--muted); }
+  .bfq { border-radius:6px; padding:4px 9px; color:#fff; font-weight:700; font-size:10.5px; white-space:nowrap; }
+  .bfq.q-Q2 { color:#1a1a1a; } .bfq small { font-weight:500; opacity:.85; }
+  .bfwd-note { font-size:11px; color:var(--muted); margin-top:12px; line-height:1.5;
+               border-top:1px solid var(--line); padding-top:8px; }
+  @media (max-width:640px){ .bfwd-main{ gap:12px; } .bfwd-now{ width:100%; }
+    .bfwd-axes{ grid-template-columns:auto 1fr; column-gap:12px; row-gap:2px; }
+    .bfwd-ax-n{ grid-column:1/-1; margin:0 0 8px; } }
   .kv { color: var(--muted); } .kv b { color: var(--text); font-weight: 600; }
 
   table { border-collapse: collapse; width: 100%; font-size: 13px; }
@@ -1702,7 +1734,7 @@
     <div class="notable">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
         <span style="font-weight:700;font-size:13px"><span class="l-en">Standout individual stocks</span><span class="l-zh">表现突出的个股</span></span>
-        <span class="muted" style="font-size:11.5px">24 <span class="l-en">shown ·</span><span class="l-zh">已显示 ·</span> 24 <span class="l-en">fully aligned across weekly · 3-day · daily (bottoming, not a falling knife) · TWO gauges per card: an OWN-IT conviction score (leadership · quality · valuation) and a separate ENTRY gauge — buy now, or wait for the pullback to $X. A high score is NOT a buy-now; the green dot means the entry is open today.</span><span class="l-zh">在周线·3日·日线上完全共振（筑底，而非接飞刀）· 每张卡片两个量表：持有信念分（领先·质量·估值）+ 独立的入场量表 — 立即买入，或等待回撤至某价位。高分并不等于立即买入；绿点代表今日入场窗口已开。</span>
+        <span class="muted" style="font-size:11.5px">31 <span class="l-en">shown ·</span><span class="l-zh">已显示 ·</span> 31 <span class="l-en">fully aligned across weekly · 3-day · daily (bottoming, not a falling knife) · TWO gauges per card: an OWN-IT conviction score (leadership · quality · valuation) and a separate ENTRY gauge — buy now, or wait for the pullback to $X. A high score is NOT a buy-now; the green dot means the entry is open today.</span><span class="l-zh">在周线·3日·日线上完全共振（筑底，而非接飞刀）· 每张卡片两个量表：持有信念分（领先·质量·估值）+ 独立的入场量表 — 立即买入，或等待回撤至某价位。高分并不等于立即买入；绿点代表今日入场窗口已开。</span>
           <span class="help">?<span class="tip"><span class="l-en">Each name carries TWO independent gauges so a great company is never confused with a great entry. (1) OWN-IT CONVICTION (the 0-100 score): leadership (validated sector-neutral residual momentum α across the S&P 1500) + quality + a forward-aware valuation read — a cheap-on-forward leader like NVDA is NOT penalized for a rich trailing multiple. It surfaces leaders that aren't in any sector ETF's top-10. It is a within-market percentile DISPLAY skin (not a probability) and reads 'high-confluence (context)' until a deep Phase-0 proves forward edge; the α leg is just one light, regime-scaled input, not the rank key. (2) ENTRY TIMING (the coloured strip): the price-cycle read across daily/3-day/weekly — buy now (green dot), wait for the pullback to the shown buy-zone price, or extended/topping (don't chase). Two VERIFIERS — an Options (dealer-gamma) check and a single-stock volatility-squeeze read — sharpen the ENTRY only (display + a small bounded tilt); they can lower conviction but never manufacture a buy, and never touch the selection rank. The price-cycle state is a HARD modifier: a name late in its cycle, in a downtrend or topping, can NEVER read 'buy now' — it reads 'strong name, wrong tape', which is why this card and the stock's own page never disagree. The board is sorted by conviction; the entry gauge tells you which are actionable today. Click any card for the full breakdown.</span><span class="l-zh">每个标的带有两个相互独立的量表，使“好公司”绝不等同于“好入场点”。(1) 持有信念（0-100 分）：领先度（在标普1500内已验证的行业中性残差动量 α）+ 质量 + 前瞻估值读数——像 NVDA 这种前瞻便宜的领涨股不会因偏高的历史倍数而被扣分。它能发掘不在任何行业ETF前十大持仓中的领涨股。它是市场内百分位的展示皮肤（非概率），在深度 Phase-0 证明前瞻优势前显示为“高共振（参考）”；α 维度只是一个轻量、随行情缩放的输入，并非排序关键。(2) 入场择时（彩色条）：跨日线/3日/周线的价格周期读数——立即买入（绿点）、等待回撤至所示买入区价位，或过度拉伸/做顶（勿追高）。两个验证器——期权（做市商 Gamma）检查与个股波动压缩读数——只优化“入场”（展示＋小幅有界倾斜）；它们可降低确信度，但绝不制造买入信号，也不触及选股排序。价格周期状态是硬性修正项：处于周期晚期、下行或做顶的个股永远不会显示“立即买入”，而显示“强势但趋势不利”，因此本卡片与个股自身页面绝不冲突。榜单按信念排序；入场量表告诉你今天哪些可操作。点击任意卡片查看完整拆解。</span></span></span></span>
         
       </div>
@@ -1735,6 +1767,122 @@
       
       
       
+      
+        
+        
+        <a class="nbcard nb-up" href="stock.html#ETN">
+          <div class="nb-top">
+            <span class="nb-tk">ETN</span>
+            <span class="nb-nm">Eaton Corp Plc</span>
+            <span class="sig-gate sig-early" title="2D MACD-RSI crossed + 3D StochRSI crossed — an EARLY tier (fires before the 3D master). Tier T2 · weight 0.8. shallow pullback cross. ONE door — confirm sector/leadership + your stop before acting. · long-bias · 2026-06-26 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">◑ <span class="l-en">early</span><span class="l-zh">提前</span> <span class="sig-w">T2·0.8</span></span>
+            <span class="nb-px" data-sym="ETN" data-mkt="us">$426.12</span>
+          </div>
+          
+          
+          
+            
+            
+            
+            
+          <div class="nb-sub">
+            <span class="nb-spot nb-spot-link spot-up" data-href="basket/us_sector_industrials.html" role="link" tabindex="0" title="Theme/sector spotlight tilt (×1.14) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Industrials (Equal-Weight) (ACCUMULATE). Sector: Industrials — leading. Open the theme →"><span>🔥</span><span class="sp-tag l-en">Industrials (Equal-Weight)</span><span class="sp-tag l-zh">工业（等权）</span><span>▲</span></span>
+            
+            
+            <span class="nb-gics"><span class="l-en">Industrials</span><span class="l-zh">工业</span></span><span class="nb-offh">-2.2% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span>
+          </div>
+          
+          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,42.0 3.8,37.2 7.6,34.5 11.4,36.0 15.2,35.0 19.0,33.4 22.9,27.6 26.7,22.6 30.5,21.7 34.3,21.6 38.1,22.1 41.9,24.4 45.7,25.2 49.5,20.6 53.3,20.1 57.1,19.4 61.0,18.0 64.8,14.3 68.6,14.5 72.4,17.0 76.2,18.2 80.0,19.0 83.8,11.4 87.6,14.0 91.4,15.0 95.2,19.0 99.0,15.4 102.9,23.0 106.7,21.8 110.5,15.8 114.3,21.8 118.1,20.0 121.9,19.6 125.7,22.5 129.5,28.5 133.3,32.0 137.1,29.3 141.0,28.7 144.8,25.3 148.6,21.3 152.4,20.2 156.2,21.7 160.0,22.1 163.8,22.3 167.6,16.3 171.4,15.1 175.2,16.0 179.0,23.7 182.9,21.3 186.7,21.7 190.5,30.7 194.3,24.5 198.1,25.3 201.9,19.9 205.7,19.7 209.5,19.0 213.3,14.9 217.1,10.1 221.0,20.5 224.8,20.8 228.6,15.5 232.4,21.4 236.2,19.5 240.0,13.4 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,42.0 3.8,37.2 7.6,34.5 11.4,36.0 15.2,35.0 19.0,33.4 22.9,27.6 26.7,22.6 30.5,21.7 34.3,21.6 38.1,22.1 41.9,24.4 45.7,25.2 49.5,20.6 53.3,20.1 57.1,19.4 61.0,18.0 64.8,14.3 68.6,14.5 72.4,17.0 76.2,18.2 80.0,19.0 83.8,11.4 87.6,14.0 91.4,15.0 95.2,19.0 99.0,15.4 102.9,23.0 106.7,21.8 110.5,15.8 114.3,21.8 118.1,20.0 121.9,19.6 125.7,22.5 129.5,28.5 133.3,32.0 137.1,29.3 141.0,28.7 144.8,25.3 148.6,21.3 152.4,20.2 156.2,21.7 160.0,22.1 163.8,22.3 167.6,16.3 171.4,15.1 175.2,16.0 179.0,23.7 182.9,21.3 186.7,21.7 190.5,30.7 194.3,24.5 198.1,25.3 201.9,19.9 205.7,19.7 209.5,19.0 213.3,14.9 217.1,10.1 221.0,20.5 224.8,20.8 228.6,15.5 232.4,21.4 236.2,19.5 240.0,13.4" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="13.4" r="2.6" fill="var(--up)"/></svg>
+          
+          <div class="nb-conv">
+            <span class="nb-cscore band-constructive" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">47</span>
+            <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+            
+          </div>
+          
+          
+          
+          <div class="nb-align" title="Weekly rising · 3-Day turn↑ · Daily rising · 周线周线上行 · 3日turn↑ · 日线上行">
+            <span class="nba-mark">🟢</span>
+            <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly uptrend</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线上行</span></span>
+            <span class="nba-tag"><span class="l-en">Entry armed</span><span class="l-zh">入场就绪</span></span>
+          </div>
+          
+          
+          
+          <div class="nb-entry nbe-buy_now" title="ENTRY timing (gauge 2) — when & at what price to buy. Confirmed cycle low — the entry window is open now, with a clear exit if it closes back below 375.46.">
+            <div class="nbe-head">
+              <span class="nbe-dot a3"></span>
+              <span class="nbe-status"><span class="l-en">Buy zone — entry open now</span><span class="l-zh">买入区 — 入场窗口已开启</span></span>
+            </div>
+            
+            <div class="nbe-zone">
+              <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+              <span class="nbe-px">$406.20–$426.10</span>
+              <span class="nbe-pct">-2.3%</span>
+            </div>
+            
+            
+            <div class="nbe-cyc">
+              <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 28<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
+              <span class="nbe-bar"><span class="nbe-bf" style="width:67%"></span></span>
+              
+            </div>
+            
+          </div>
+          
+          <div class="nb-axes">
+            
+            
+            <div class="nb-ax" title="SEL 49/100">
+              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+              <div class="axt"><div class="axf" style="width:49%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="ENT 53/100">
+              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+              <div class="axt"><div class="axf" style="width:53%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="TWD 55/100">
+              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+              <div class="axt"><div class="axf" style="width:55%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="QUAL 42/100">
+              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+              <div class="axt"><div class="axf" style="width:42%"></div></div>
+            </div>
+            
+          </div>
+          
+          <div class="nb-basis"><span class="nbb nbb-validated">SUE -1.1</span><span class="nbb nbb-literature">revisions +0.3</span></div>
+          
+          
+          
+          
+          
+          <div class="nb-vf">
+            
+            <span class="nb-vchip vf-caution" title="Options check (dealer gamma) — deep long-gamma (+5.3% over the flip) — dealers pin & fade breakouts · call wall 440.0 · flip 403.6 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +5.3%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">⚠ <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">caution</span><span class="l-zh">警示</span></span>
+            
+            
+            <span class="nb-vchip vf-exp" title="Volatility black hole · BBWP 58.0 — Volatility is already elevated — realized vol sits in the top fifth of the past year, so the move is underway, not loading. This is the opposite of a coiled squeeze: the quiet entry is already gone. A late / heads-up read, never a standalone signal. | 波动黑洞 — 波动率已处于高位 — 实现波动率位于过去一年前五分之一，行情已在进行，而非蓄势。这与压缩蓄势相反：安静的入场点已过。属偏晚的提示读数，绝非独立信号。">💥 <span class="l-en">Already moving</span><span class="l-zh">已在异动</span></span>
+          </div>
+          
+          <div class="nb-bot">
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page. · 行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -0.12</span>
+            <span class="nb-rk">#141/252</span>
+            <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.61 of the conviction-base size (forecast vol 43.0% · inverse-vol ×0.51 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.61×</span>
+            
+          </div>
+          
+          
+          
+          
+        </a>
       
         
         
@@ -2470,6 +2618,112 @@
       
         
         
+        <a class="nbcard nb-up" href="stock.html#BJ">
+          <div class="nb-top">
+            <span class="nb-tk">BJ</span>
+            <span class="nb-nm">BJ's Wholesale Club</span>
+            <span class="sig-gate sig-early" title="2D-MACD pre-cross advance-warning. ONE door — confirm sector/leadership + your stop before acting. · mixed · 2026-06-29 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">⋯ <span class="l-en">approaching</span><span class="l-zh">临近</span></span>
+            <span class="nb-px" data-sym="BJ" data-mkt="us">$87.22</span>
+          </div>
+          
+          
+          
+          <div class="nb-sub"><span><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></span><span class="nb-offh">-21.1% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+          
+          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,10.1 3.8,11.2 7.6,19.2 11.4,12.0 15.2,17.2 19.0,18.1 22.9,18.1 26.7,21.2 30.5,23.2 34.3,22.3 38.1,25.3 41.9,27.5 45.7,24.2 49.5,24.6 53.3,21.6 57.1,16.3 61.0,17.5 64.8,14.3 68.6,19.9 72.4,22.9 76.2,24.3 80.0,25.9 83.8,20.8 87.6,21.6 91.4,19.2 95.2,19.8 99.0,23.8 102.9,19.8 106.7,22.7 110.5,26.6 114.3,24.7 118.1,18.4 121.9,16.4 125.7,15.5 129.5,14.1 133.3,12.8 137.1,17.7 141.0,19.6 144.8,36.1 148.6,39.7 152.4,41.2 156.2,37.4 160.0,38.9 163.8,33.1 167.6,32.0 171.4,30.7 175.2,32.3 179.0,30.6 182.9,25.6 186.7,29.9 190.5,23.7 194.3,27.0 198.1,26.8 201.9,28.5 205.7,30.5 209.5,35.7 213.3,39.0 217.1,42.0 221.0,37.1 224.8,34.2 228.6,36.7 232.4,31.3 236.2,30.4 240.0,34.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,10.1 3.8,11.2 7.6,19.2 11.4,12.0 15.2,17.2 19.0,18.1 22.9,18.1 26.7,21.2 30.5,23.2 34.3,22.3 38.1,25.3 41.9,27.5 45.7,24.2 49.5,24.6 53.3,21.6 57.1,16.3 61.0,17.5 64.8,14.3 68.6,19.9 72.4,22.9 76.2,24.3 80.0,25.9 83.8,20.8 87.6,21.6 91.4,19.2 95.2,19.8 99.0,23.8 102.9,19.8 106.7,22.7 110.5,26.6 114.3,24.7 118.1,18.4 121.9,16.4 125.7,15.5 129.5,14.1 133.3,12.8 137.1,17.7 141.0,19.6 144.8,36.1 148.6,39.7 152.4,41.2 156.2,37.4 160.0,38.9 163.8,33.1 167.6,32.0 171.4,30.7 175.2,32.3 179.0,30.6 182.9,25.6 186.7,29.9 190.5,23.7 194.3,27.0 198.1,26.8 201.9,28.5 205.7,30.5 209.5,35.7 213.3,39.0 217.1,42.0 221.0,37.1 224.8,34.2 228.6,36.7 232.4,31.3 236.2,30.4 240.0,34.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="34.8" r="2.6" fill="var(--up)"/></svg>
+          
+          <div class="nb-conv">
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">35</span>
+            <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+            
+          </div>
+          
+          
+          
+          <div class="nb-align" title="Weekly bear recovering · 3-Day ≈cross · Daily crossed up · 周线周线柱状图回升（仍偏熊） · 3日≈cross · 日线已上穿">
+            <span class="nba-mark">🟢</span>
+            <span class="nba-line"><span class="l-en">3D MACD about to cross up; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 临近上穿；周线柱状图回升（仍偏熊）</span></span>
+            <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+          </div>
+          
+          
+          
+          <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+            <div class="nbe-head">
+              <span class="nbe-dot a1"></span>
+              <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+            </div>
+            
+            <div class="nbe-zone">
+              <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+              <span class="nbe-px">$87.05</span>
+              <span class="nbe-pct">-0.2%</span>
+            </div>
+            
+            
+            <div class="nbe-cyc">
+              <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 23<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
+              <span class="nbe-bar"><span class="nbe-bf" style="width:55%"></span></span>
+              <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~13–19d</span>
+            </div>
+            
+          </div>
+          
+          <div class="nb-axes">
+            
+            
+            <div class="nb-ax" title="SEL 42/100">
+              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+              <div class="axt"><div class="axf" style="width:42%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="ENT 53/100">
+              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+              <div class="axt"><div class="axf" style="width:53%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="TWD 50/100">
+              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+              <div class="axt"><div class="axf" style="width:50%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax ax-na" title="QUAL — no data">
+              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+              <div class="axt"><div class="axf" style="width:0%"></div></div>
+            </div>
+            
+          </div>
+          
+          <div class="nb-basis"><span class="nbb nbb-literature">revisions -0.5</span><span class="nbb nbb-context">momentum -0.6</span></div>
+          
+          
+          
+          
+          
+          <div class="nb-vf">
+            
+            <span class="nb-vchip vf-caution" title="Options check (dealer gamma) — long-gamma — dealer hedging dampens the move · call wall 90.0 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 多头 Gamma — 做市商对冲抑制波动 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">⚠ <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">caution</span><span class="l-zh">警示</span></span>
+            
+            
+          </div>
+          
+          <div class="nb-bot">
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page. · 行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -0.58</span>
+            <span class="nb-rk">#57/74</span>
+            <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.9 of the conviction-base size (forecast vol 29.2% · inverse-vol ×0.75 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.90×</span>
+            
+          </div>
+          <div class="nb-cau"><span class="l-en">⚠ Narrative basket (Retail) is below its long-term trend — validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).</span><span class="l-zh">⚠ 所属叙事篮子（零售）已跌破长期趋势 — 已验证的回撤门槛：减小仓位。</span></div>
+          
+          
+          
+        </a>
+      
+        
+        
         <a class="nbcard nb-up" href="stock.html#GTY">
           <div class="nb-top">
             <span class="nb-tk">GTY</span>
@@ -2562,6 +2816,112 @@
             
           </div>
           
+          
+          
+          
+        </a>
+      
+        
+        
+        <a class="nbcard nb-up" href="stock.html#IFF">
+          <div class="nb-top">
+            <span class="nb-tk">IFF</span>
+            <span class="nb-nm">Intl Flavors + Fragrances</span>
+            
+            <span class="nb-px" data-sym="IFF" data-mkt="us">$79.22</span>
+          </div>
+          
+          
+          
+          <div class="nb-sub"><span><span class="l-en">Materials</span><span class="l-zh">原材料</span></span><span class="nb-offh">-4.0% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+          
+          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,37.3 3.8,33.7 7.6,33.6 11.4,34.0 15.2,35.3 19.0,39.5 22.9,30.9 26.7,32.4 30.5,33.7 34.3,35.6 38.1,33.6 41.9,36.0 45.7,34.8 49.5,26.1 53.3,29.4 57.1,34.0 61.0,36.8 64.8,37.3 68.6,36.9 72.4,37.2 76.2,37.7 80.0,42.0 83.8,39.0 87.6,37.6 91.4,39.3 95.2,37.7 99.0,10.1 102.9,20.7 106.7,14.4 110.5,19.6 114.3,20.2 118.1,22.5 121.9,25.6 125.7,32.4 129.5,31.1 133.3,35.0 137.1,29.4 141.0,27.5 144.8,27.5 148.6,26.1 152.4,23.6 156.2,21.2 160.0,25.7 163.8,29.8 167.6,32.1 171.4,31.4 175.2,32.1 179.0,32.6 182.9,33.6 186.7,26.3 190.5,29.9 194.3,22.4 198.1,20.7 201.9,20.5 205.7,21.6 209.5,25.7 213.3,23.3 217.1,25.0 221.0,27.9 224.8,25.3 228.6,27.0 232.4,24.1 236.2,23.8 240.0,17.6 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.3 3.8,33.7 7.6,33.6 11.4,34.0 15.2,35.3 19.0,39.5 22.9,30.9 26.7,32.4 30.5,33.7 34.3,35.6 38.1,33.6 41.9,36.0 45.7,34.8 49.5,26.1 53.3,29.4 57.1,34.0 61.0,36.8 64.8,37.3 68.6,36.9 72.4,37.2 76.2,37.7 80.0,42.0 83.8,39.0 87.6,37.6 91.4,39.3 95.2,37.7 99.0,10.1 102.9,20.7 106.7,14.4 110.5,19.6 114.3,20.2 118.1,22.5 121.9,25.6 125.7,32.4 129.5,31.1 133.3,35.0 137.1,29.4 141.0,27.5 144.8,27.5 148.6,26.1 152.4,23.6 156.2,21.2 160.0,25.7 163.8,29.8 167.6,32.1 171.4,31.4 175.2,32.1 179.0,32.6 182.9,33.6 186.7,26.3 190.5,29.9 194.3,22.4 198.1,20.7 201.9,20.5 205.7,21.6 209.5,25.7 213.3,23.3 217.1,25.0 221.0,27.9 224.8,25.3 228.6,27.0 232.4,24.1 236.2,23.8 240.0,17.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="17.6" r="2.6" fill="var(--up)"/></svg>
+          
+          <div class="nb-conv">
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">33</span>
+            <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
+            
+          </div>
+          
+          
+          
+          <div class="nb-align" title="Weekly rising · 3-Day turn↑ · Daily crossed up · 周线周线上行 · 3日turn↑ · 日线已上穿">
+            <span class="nba-mark">🟢</span>
+            <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly uptrend</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线上行</span></span>
+            <span class="nba-tag"><span class="l-en">Entry armed</span><span class="l-zh">入场就绪</span></span>
+          </div>
+          
+          
+          
+          <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+            <div class="nbe-head">
+              <span class="nbe-dot a1"></span>
+              <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+            </div>
+            
+            <div class="nbe-zone">
+              <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+              <span class="nbe-px">$75.46–$76.35</span>
+              <span class="nbe-pct">-4.2%</span>
+            </div>
+            
+            
+            <div class="nbe-cyc">
+              <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 15<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
+              <span class="nbe-bar"><span class="nbe-bf" style="width:36%"></span></span>
+              <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~21–27d</span>
+            </div>
+            
+          </div>
+          
+          <div class="nb-axes">
+            
+            
+            <div class="nb-ax" title="SEL 54/100">
+              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+              <div class="axt"><div class="axf" style="width:54%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="ENT 56/100">
+              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+              <div class="axt"><div class="axf" style="width:56%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="TWD 51/100">
+              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+              <div class="axt"><div class="axf" style="width:51%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="QUAL 50/100">
+              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+              <div class="axt"><div class="axf" style="width:50%"></div></div>
+            </div>
+            
+          </div>
+          
+          <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.7</span><span class="nbb nbb-validated">insider +0.2</span></div>
+          
+          
+          
+          
+          
+          <div class="nb-vf">
+            
+            <span class="nb-vchip vf-caution" title="Options check (dealer gamma) — deep long-gamma (+15.9% over the flip) — dealers pin & fade breakouts · call wall 80.0 · flip 66.63 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +15.9%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">⚠ <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">caution</span><span class="l-zh">警示</span></span>
+            
+            
+          </div>
+          
+          <div class="nb-bot">
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page. · 行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α +0.41</span>
+            <span class="nb-rk">#26/76</span>
+            <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.81 of the conviction-base size (forecast vol 32.5% · inverse-vol ×0.68 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.81×</span>
+            
+          </div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           
           
           
@@ -2667,6 +3027,113 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page. · 行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α +0.71</span>
             <span class="nb-rk">#66/252</span>
             <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.6 of the conviction-base size (forecast vol 43.7% · inverse-vol ×0.5 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.60×</span>
+            
+          </div>
+          
+          
+          
+          
+        </a>
+      
+        
+        
+        <a class="nbcard nb-up" href="stock.html#APD">
+          <div class="nb-top">
+            <span class="nb-tk">APD</span>
+            <span class="nb-nm">Air Products + Chemicals Inc</span>
+            <span class="sig-gate sig-early" title="2D-MACD pre-cross advance-warning. ONE door — confirm sector/leadership + your stop before acting. · mixed · 2026-06-29 | 加权共识层级 T1主确认→T4最早；级联中的一道门，操作前请确认板块/龙头与止损。">⋯ <span class="l-en">approaching</span><span class="l-zh">临近</span></span>
+            <span class="nb-px" data-sym="APD" data-mkt="us">$293.18</span>
+          </div>
+          
+          
+          
+          <div class="nb-sub"><span><span class="l-en">Materials</span><span class="l-zh">原材料</span></span><span class="nb-offh">-4.3% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+          
+          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,25.2 3.8,26.1 7.6,25.4 11.4,21.7 15.2,21.1 19.0,22.7 22.9,18.9 26.7,17.8 30.5,16.9 34.3,17.0 38.1,18.8 41.9,20.1 45.7,18.3 49.5,23.3 53.3,19.3 57.1,20.5 61.0,18.7 64.8,12.4 68.6,14.1 72.4,13.6 76.2,12.7 80.0,13.5 83.8,15.7 87.6,14.8 91.4,17.3 95.2,12.2 99.0,15.6 102.9,20.3 106.7,20.0 110.5,11.6 114.3,12.5 118.1,10.1 121.9,15.9 125.7,20.0 129.5,21.9 133.3,23.3 137.1,25.7 141.0,24.7 144.8,25.4 148.6,25.3 152.4,28.8 156.2,30.7 160.0,35.3 163.8,35.1 167.6,34.7 171.4,32.0 175.2,31.5 179.0,31.9 182.9,37.0 186.7,31.3 190.5,37.3 194.3,35.8 198.1,32.6 201.9,31.4 205.7,33.6 209.5,32.5 213.3,33.9 217.1,31.2 221.0,31.8 224.8,35.2 228.6,34.1 232.4,36.1 236.2,42.0 240.0,22.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,25.2 3.8,26.1 7.6,25.4 11.4,21.7 15.2,21.1 19.0,22.7 22.9,18.9 26.7,17.8 30.5,16.9 34.3,17.0 38.1,18.8 41.9,20.1 45.7,18.3 49.5,23.3 53.3,19.3 57.1,20.5 61.0,18.7 64.8,12.4 68.6,14.1 72.4,13.6 76.2,12.7 80.0,13.5 83.8,15.7 87.6,14.8 91.4,17.3 95.2,12.2 99.0,15.6 102.9,20.3 106.7,20.0 110.5,11.6 114.3,12.5 118.1,10.1 121.9,15.9 125.7,20.0 129.5,21.9 133.3,23.3 137.1,25.7 141.0,24.7 144.8,25.4 148.6,25.3 152.4,28.8 156.2,30.7 160.0,35.3 163.8,35.1 167.6,34.7 171.4,32.0 175.2,31.5 179.0,31.9 182.9,37.0 186.7,31.3 190.5,37.3 194.3,35.8 198.1,32.6 201.9,31.4 205.7,33.6 209.5,32.5 213.3,33.9 217.1,31.2 221.0,31.8 224.8,35.2 228.6,34.1 232.4,36.1 236.2,42.0 240.0,22.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="22.0" r="2.6" fill="var(--up)"/></svg>
+          
+          <div class="nb-conv">
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">32</span>
+            <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+            
+          </div>
+          
+          
+          
+          <div class="nb-align" title="Weekly bear recovering · 3-Day oversold↑ · Daily crossed up · 周线周线柱状图回升（仍偏熊） · 3日oversold↑ · 日线已上穿">
+            <span class="nba-mark">🟢</span>
+            <span class="nba-line"><span class="l-en">3D StochRSI crossed up from oversold; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 StochRSI 从超卖上穿；周线柱状图回升（仍偏熊）</span></span>
+            <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+          </div>
+          
+          
+          
+          <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+            <div class="nbe-head">
+              <span class="nbe-dot a1"></span>
+              <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+            </div>
+            
+            <div class="nbe-zone">
+              <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+              <span class="nbe-px">$280.70–$280.90</span>
+              <span class="nbe-pct">-4.2%</span>
+            </div>
+            
+            
+            <div class="nbe-cyc">
+              <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 13<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
+              <span class="nbe-bar"><span class="nbe-bf" style="width:31%"></span></span>
+              <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~23–29d</span>
+            </div>
+            
+          </div>
+          
+          <div class="nb-axes">
+            
+            
+            <div class="nb-ax" title="SEL 52/100">
+              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+              <div class="axt"><div class="axf" style="width:52%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="ENT 52/100">
+              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+              <div class="axt"><div class="axf" style="width:52%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="TWD 51/100">
+              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+              <div class="axt"><div class="axf" style="width:51%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax ax-na" title="QUAL — no data">
+              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+              <div class="axt"><div class="axf" style="width:0%"></div></div>
+            </div>
+            
+          </div>
+          
+          <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.5</span><span class="nbb nbb-context">momentum -0.5</span></div>
+          
+          
+          
+          
+          
+          <div class="nb-vf">
+            
+            <span class="nb-vchip vf-caution" title="Options check (dealer gamma) — deep long-gamma (+6.0% over the flip) — dealers pin & fade breakouts · call wall 310.0 · flip 275.67 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +6.0%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">⚠ <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">caution</span><span class="l-zh">警示</span></span>
+            
+            
+            <span class="nb-vchip vf-exp" title="Volatility black hole · BBWP 24.0 — Volatility is already elevated — realized vol sits in the top fifth of the past year, so the move is underway, not loading. This is the opposite of a coiled squeeze: the quiet entry is already gone. A late / heads-up read, never a standalone signal. | 波动黑洞 — 波动率已处于高位 — 实现波动率位于过去一年前五分之一，行情已在进行，而非蓄势。这与压缩蓄势相反：安静的入场点已过。属偏晚的提示读数，绝非独立信号。">💥 <span class="l-en">Already moving</span><span class="l-zh">已在异动</span></span>
+          </div>
+          
+          <div class="nb-bot">
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page. · 行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -0.53</span>
+            <span class="nb-rk">#48/76</span>
+            <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.53 of the conviction-base size (forecast vol 49.5% · inverse-vol ×0.44 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.53×</span>
             
           </div>
           
@@ -2890,6 +3357,112 @@
       
         
         
+        <a class="nbcard nb-up" href="stock.html#PPL">
+          <div class="nb-top">
+            <span class="nb-tk">PPL</span>
+            <span class="nb-nm">PPL Corporation</span>
+            
+            <span class="nb-px" data-sym="PPL" data-mkt="us">$36.35</span>
+          </div>
+          
+          
+          
+          <div class="nb-sub"><span><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></span><span class="nb-offh">-8.7% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+          
+          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,20.3 3.8,19.3 7.6,18.3 11.4,16.8 15.2,16.3 19.0,15.5 22.9,13.9 26.7,10.1 30.5,11.0 34.3,11.9 38.1,11.2 41.9,12.7 45.7,12.8 49.5,14.6 53.3,16.3 57.1,19.3 61.0,21.7 64.8,17.4 68.6,16.2 72.4,16.2 76.2,14.8 80.0,16.7 83.8,23.7 87.6,22.8 91.4,21.6 95.2,24.2 99.0,26.9 102.9,27.5 106.7,32.4 110.5,30.6 114.3,31.6 118.1,35.0 121.9,34.8 125.7,40.0 129.5,39.7 133.3,37.8 137.1,36.8 141.0,32.6 144.8,31.8 148.6,32.9 152.4,34.5 156.2,37.4 160.0,37.0 163.8,42.0 167.6,40.2 171.4,39.2 175.2,38.4 179.0,35.1 182.9,37.3 186.7,35.0 190.5,34.3 194.3,35.0 198.1,32.8 201.9,31.0 205.7,29.8 209.5,35.8 213.3,35.5 217.1,34.3 221.0,30.3 224.8,26.7 228.6,26.2 232.4,26.1 236.2,27.7 240.0,29.9 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,20.3 3.8,19.3 7.6,18.3 11.4,16.8 15.2,16.3 19.0,15.5 22.9,13.9 26.7,10.1 30.5,11.0 34.3,11.9 38.1,11.2 41.9,12.7 45.7,12.8 49.5,14.6 53.3,16.3 57.1,19.3 61.0,21.7 64.8,17.4 68.6,16.2 72.4,16.2 76.2,14.8 80.0,16.7 83.8,23.7 87.6,22.8 91.4,21.6 95.2,24.2 99.0,26.9 102.9,27.5 106.7,32.4 110.5,30.6 114.3,31.6 118.1,35.0 121.9,34.8 125.7,40.0 129.5,39.7 133.3,37.8 137.1,36.8 141.0,32.6 144.8,31.8 148.6,32.9 152.4,34.5 156.2,37.4 160.0,37.0 163.8,42.0 167.6,40.2 171.4,39.2 175.2,38.4 179.0,35.1 182.9,37.3 186.7,35.0 190.5,34.3 194.3,35.0 198.1,32.8 201.9,31.0 205.7,29.8 209.5,35.8 213.3,35.5 217.1,34.3 221.0,30.3 224.8,26.7 228.6,26.2 232.4,26.1 236.2,27.7 240.0,29.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="29.9" r="2.6" fill="var(--up)"/></svg>
+          
+          <div class="nb-conv">
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">29</span>
+            <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+            
+          </div>
+          
+          
+          
+          <div class="nb-align" title="Weekly bear recovering · 3-Day turn↑ · Daily rising · 周线周线柱状图回升（仍偏熊） · 3日turn↑ · 日线上行">
+            <span class="nba-mark">🟢</span>
+            <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly histogram recovering (still bearish)</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线柱状图回升（仍偏熊）</span></span>
+            <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+          </div>
+          
+          
+          
+          <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+            <div class="nbe-head">
+              <span class="nbe-dot a1"></span>
+              <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+            </div>
+            
+            <div class="nbe-zone">
+              <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+              <span class="nbe-px">$35.81–$36.30</span>
+              <span class="nbe-pct">-0.8%</span>
+            </div>
+            
+            
+            <div class="nbe-cyc">
+              <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 20<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
+              <span class="nbe-bar"><span class="nbe-bf" style="width:48%"></span></span>
+              <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~16–22d</span>
+            </div>
+            
+          </div>
+          
+          <div class="nb-axes">
+            
+            
+            <div class="nb-ax" title="SEL 46/100">
+              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+              <div class="axt"><div class="axf" style="width:46%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="ENT 56/100">
+              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+              <div class="axt"><div class="axf" style="width:56%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="TWD 51/100">
+              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+              <div class="axt"><div class="axf" style="width:51%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="QUAL 37/100">
+              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+              <div class="axt"><div class="axf" style="width:37%"></div></div>
+            </div>
+            
+          </div>
+          
+          <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.1</span><span class="nbb nbb-context">momentum -0.9</span></div>
+          
+          
+          
+          
+          
+          <div class="nb-vf">
+            
+            <span class="nb-vchip vf-caution" title="Options check (dealer gamma) — deep long-gamma (+9.3% over the flip) — dealers pin & fade breakouts · call wall 38.0 · flip 32.96 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +9.3%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">⚠ <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">caution</span><span class="l-zh">警示</span></span>
+            
+            
+          </div>
+          
+          <div class="nb-bot">
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page. · 行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -0.95</span>
+            <span class="nb-rk">#58/60</span>
+            <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.91 of the conviction-base size (forecast vol 13.8% · inverse-vol ×1.59 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.91×</span>
+            
+          </div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
+          
+          
+          
+        </a>
+      
+        
+        
         <a class="nbcard nb-up" href="stock.html#XEL">
           <div class="nb-top">
             <span class="nb-tk">XEL</span>
@@ -2950,9 +3523,9 @@
             </div>
             
             
-            <div class="nb-ax" title="ENT 63/100">
+            <div class="nb-ax" title="ENT 56/100">
               <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-              <div class="axt"><div class="axf" style="width:63%"></div></div>
+              <div class="axt"><div class="axf" style="width:56%"></div></div>
             </div>
             
             
@@ -2986,6 +3559,112 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page. · 行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α +0.03</span>
             <span class="nb-rk">#29/60</span>
             <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.36 of the conviction-base size (forecast vol 19.4% · inverse-vol ×1.13 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.36×</span>
+            
+          </div>
+          
+          
+          
+          
+        </a>
+      
+        
+        
+        <a class="nbcard nb-down" href="stock.html#AIG">
+          <div class="nb-top">
+            <span class="nb-tk">AIG</span>
+            <span class="nb-nm">American International Group</span>
+            
+            <span class="nb-px" data-sym="AIG" data-mkt="us">$74.53</span>
+          </div>
+          
+          
+          
+          <div class="nb-sub"><span><span class="l-en">Financials</span><span class="l-zh">金融</span></span><span class="nb-offh">-13.4% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+          
+          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,32.6 3.8,26.9 7.6,25.4 11.4,26.0 15.2,21.3 19.0,22.5 22.9,16.5 26.7,15.1 30.5,19.1 34.3,14.6 38.1,18.4 41.9,18.1 45.7,12.7 49.5,10.5 53.3,11.1 57.1,14.1 61.0,23.1 64.8,21.7 68.6,27.4 72.4,32.2 76.2,32.0 80.0,33.8 83.8,29.0 87.6,10.1 91.4,15.8 95.2,11.5 99.0,15.2 102.9,21.2 106.7,21.6 110.5,23.0 114.3,21.4 118.1,24.3 121.9,24.7 125.7,22.8 129.5,14.5 133.3,18.4 137.1,16.1 141.0,13.3 144.8,20.7 148.6,20.0 152.4,29.1 156.2,33.2 160.0,34.0 163.8,37.7 167.6,36.1 171.4,42.0 175.2,37.8 179.0,28.1 182.9,34.7 186.7,35.5 190.5,30.7 194.3,28.9 198.1,26.9 201.9,28.6 205.7,27.0 209.5,29.1 213.3,32.7 217.1,21.5 221.0,20.8 224.8,22.6 228.6,28.8 232.4,25.3 236.2,27.5 240.0,30.3 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,32.6 3.8,26.9 7.6,25.4 11.4,26.0 15.2,21.3 19.0,22.5 22.9,16.5 26.7,15.1 30.5,19.1 34.3,14.6 38.1,18.4 41.9,18.1 45.7,12.7 49.5,10.5 53.3,11.1 57.1,14.1 61.0,23.1 64.8,21.7 68.6,27.4 72.4,32.2 76.2,32.0 80.0,33.8 83.8,29.0 87.6,10.1 91.4,15.8 95.2,11.5 99.0,15.2 102.9,21.2 106.7,21.6 110.5,23.0 114.3,21.4 118.1,24.3 121.9,24.7 125.7,22.8 129.5,14.5 133.3,18.4 137.1,16.1 141.0,13.3 144.8,20.7 148.6,20.0 152.4,29.1 156.2,33.2 160.0,34.0 163.8,37.7 167.6,36.1 171.4,42.0 175.2,37.8 179.0,28.1 182.9,34.7 186.7,35.5 190.5,30.7 194.3,28.9 198.1,26.9 201.9,28.6 205.7,27.0 209.5,29.1 213.3,32.7 217.1,21.5 221.0,20.8 224.8,22.6 228.6,28.8 232.4,25.3 236.2,27.5 240.0,30.3" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="30.3" r="2.6" fill="var(--down)"/></svg>
+          
+          <div class="nb-conv">
+            <span class="nb-cscore band-neutral" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">28</span>
+            <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+            
+          </div>
+          
+          
+          
+          <div class="nb-align" title="Weekly basing · 3-Day turn↑ · Daily rising · 周线周线筑底 · 3日turn↑ · 日线上行">
+            <span class="nba-mark">🟢</span>
+            <span class="nba-line"><span class="l-en">3D MACD turned up from below zero; weekly basing</span><span class="l-zh">3日 MACD 在零轴下方上拐；周线筑底</span></span>
+            <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+          </div>
+          
+          
+          
+          <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~18+ trading days. Wait for support to hold, or for the next low to set up.">
+            <div class="nbe-head">
+              <span class="nbe-dot a1"></span>
+              <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
+            </div>
+            
+            <div class="nbe-zone">
+              <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+              <span class="nbe-px">$73.16–$73.84</span>
+              <span class="nbe-pct">-1.4%</span>
+            </div>
+            
+            
+            <div class="nbe-cyc">
+              <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 18<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
+              <span class="nbe-bar"><span class="nbe-bf" style="width:43%"></span></span>
+              <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~18–24d</span>
+            </div>
+            
+          </div>
+          
+          <div class="nb-axes">
+            
+            
+            <div class="nb-ax" title="SEL 53/100">
+              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+              <div class="axt"><div class="axf" style="width:53%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="ENT 51/100">
+              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+              <div class="axt"><div class="axf" style="width:51%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="TWD 51/100">
+              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+              <div class="axt"><div class="axf" style="width:51%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="QUAL 39/100">
+              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+              <div class="axt"><div class="axf" style="width:39%"></div></div>
+            </div>
+            
+          </div>
+          
+          <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.2</span><span class="nbb nbb-literature">revisions +0.6</span></div>
+          
+          
+          
+          
+          
+          <div class="nb-vf">
+            
+            <span class="nb-vchip vf-caution" title="Options check (dealer gamma) — deep long-gamma (+3.7% over the flip) — dealers pin & fade breakouts · call wall 78.0 · flip 71.74 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +3.7%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">⚠ <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">caution</span><span class="l-zh">警示</span></span>
+            
+            
+          </div>
+          
+          <div class="nb-bot">
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page. · 行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α -0.34</span>
+            <span class="nb-rk">#162/254</span>
+            <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.84 of the conviction-base size (forecast vol 14.4% · inverse-vol ×1.53 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.84×</span>
             
           </div>
           
@@ -4154,6 +4833,121 @@
       
         
         
+        <a class="nbcard nb-down" href="stock.html#WMB">
+          <div class="nb-top">
+            <span class="nb-tk">WMB</span>
+            <span class="nb-nm">Williams Cos Inc</span>
+            
+            <span class="nb-px" data-sym="WMB" data-mkt="us">$74.34</span>
+          </div>
+          
+          
+          
+            
+            
+            
+            
+          <div class="nb-sub">
+            <span class="nb-spot nb-spot-link spot-dn" data-href="basket/us_sector_energy.html" role="link" tabindex="0" title="Theme/sector spotlight tilt (×0.88) — a small narrative nudge to rank; never overrides extension or risk vetoes. Theme: Energy (Equal-Weight) (AVOID). Sector: Energy — lagging. Open the theme →"><span>🧊</span><span class="sp-tag l-en">Energy (Equal-Weight)</span><span class="sp-tag l-zh">能源（等权）</span><span>▼</span></span>
+            
+            
+            <span class="nb-gics"><span class="l-en">Energy</span><span class="l-zh">能源</span></span><span class="nb-offh">-5.7% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span>
+          </div>
+          
+          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,33.7 3.8,32.7 7.6,35.9 11.4,35.3 15.2,33.3 19.0,28.4 22.9,31.9 26.7,32.5 30.5,32.8 34.3,36.9 38.1,37.2 41.9,39.5 45.7,39.2 49.5,38.2 53.3,39.0 57.1,40.7 61.0,38.4 64.8,36.5 68.6,34.7 72.4,36.6 76.2,31.8 80.0,30.8 83.8,20.6 87.6,23.2 91.4,23.7 95.2,21.3 99.0,29.3 102.9,32.1 106.7,35.5 110.5,27.9 114.3,26.0 118.1,22.7 121.9,15.9 125.7,15.8 129.5,15.9 133.3,10.1 137.1,15.3 141.0,16.5 144.8,13.3 148.6,20.5 152.4,27.2 156.2,31.5 160.0,37.4 163.8,42.0 167.6,37.7 171.4,36.5 175.2,33.8 179.0,35.5 182.9,36.7 186.7,36.7 190.5,34.4 194.3,36.6 198.1,33.2 201.9,35.3 205.7,35.3 209.5,36.1 213.3,29.7 217.1,23.4 221.0,20.5 224.8,20.2 228.6,14.5 232.4,13.2 236.2,23.0 240.0,25.5 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,33.7 3.8,32.7 7.6,35.9 11.4,35.3 15.2,33.3 19.0,28.4 22.9,31.9 26.7,32.5 30.5,32.8 34.3,36.9 38.1,37.2 41.9,39.5 45.7,39.2 49.5,38.2 53.3,39.0 57.1,40.7 61.0,38.4 64.8,36.5 68.6,34.7 72.4,36.6 76.2,31.8 80.0,30.8 83.8,20.6 87.6,23.2 91.4,23.7 95.2,21.3 99.0,29.3 102.9,32.1 106.7,35.5 110.5,27.9 114.3,26.0 118.1,22.7 121.9,15.9 125.7,15.8 129.5,15.9 133.3,10.1 137.1,15.3 141.0,16.5 144.8,13.3 148.6,20.5 152.4,27.2 156.2,31.5 160.0,37.4 163.8,42.0 167.6,37.7 171.4,36.5 175.2,33.8 179.0,35.5 182.9,36.7 186.7,36.7 190.5,34.4 194.3,36.6 198.1,33.2 201.9,35.3 205.7,35.3 209.5,36.1 213.3,29.7 217.1,23.4 221.0,20.5 224.8,20.2 228.6,14.5 232.4,13.2 236.2,23.0 240.0,25.5" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="25.5" r="2.6" fill="var(--down)"/></svg>
+          
+          <div class="nb-conv">
+            <span class="nb-cscore band-low" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">18</span>
+            <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
+            
+          </div>
+          
+          
+          
+          <div class="nb-align" title="Weekly turning · 3-Day oversold↑ · Daily rising · 周线周线转向 · 3日oversold↑ · 日线上行">
+            <span class="nba-mark">🟢</span>
+            <span class="nba-line"><span class="l-en">3D StochRSI crossed up from oversold; weekly turning up</span><span class="l-zh">3日 StochRSI 从超卖上穿；周线转向</span></span>
+            <span class="nba-tag"><span class="l-en">Prime entry</span><span class="l-zh">黄金入场</span></span>
+          </div>
+          
+          
+          
+          <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~16+ trading days. Wait for support to hold, or for the next low to set up.">
+            <div class="nbe-head">
+              <span class="nbe-dot a1"></span>
+              <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
+            </div>
+            
+            <div class="nbe-zone">
+              <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+              <span class="nbe-px">$73.05</span>
+              <span class="nbe-pct">-1.7%</span>
+            </div>
+            
+            
+            <div class="nbe-cyc">
+              <span><span class="l-en">cycle day</span><span class="l-zh">周期第</span> 20<span class="l-en"></span><span class="l-zh">天</span>/36–42</span>
+              <span class="nbe-bar"><span class="nbe-bf" style="width:48%"></span></span>
+              <span>· <span class="l-en">window</span><span class="l-zh">窗口</span> ~16–22d</span>
+            </div>
+            
+          </div>
+          
+          <div class="nb-axes">
+            
+            
+            <div class="nb-ax" title="SEL 49/100">
+              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+              <div class="axt"><div class="axf" style="width:49%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="ENT 54/100">
+              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+              <div class="axt"><div class="axf" style="width:54%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="TWD 46/100">
+              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+              <div class="axt"><div class="axf" style="width:46%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="QUAL 53/100">
+              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+              <div class="axt"><div class="axf" style="width:53%"></div></div>
+            </div>
+            
+          </div>
+          
+          <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.4</span><span class="nbb nbb-literature">revisions -0.3</span></div>
+          
+          
+          
+          
+          
+          <div class="nb-vf">
+            
+            <span class="nb-vchip vf-caution" title="Options check (dealer gamma) — deep long-gamma (+3.2% over the flip) — dealers pin & fade breakouts · call wall 80.0 · flip 71.93 · Dealer-gamma confirmer — context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy. | 期权确认（做市商 Gamma） — 深度多头 Gamma（高于翻转位 +3.2%）— 做市商钉价、压制突破 · 做市商 Gamma 确认器 — 用于判断下一步波动的“方式”，并非选股。做市商方向为假设（对个股较脆弱），数据为延迟收盘。它只能降低信心，绝不制造买入信号。">⚠ <span class="l-en">Options</span><span class="l-zh">期权</span> <span class="l-en">caution</span><span class="l-zh">警示</span></span>
+            
+            
+          </div>
+          
+          <div class="nb-bot">
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page. · 行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α +0.11</span>
+            <span class="nb-rk">#30/69</span>
+            <span class="nb-size " title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.05 of the conviction-base size (forecast vol 25.2% · inverse-vol ×0.87 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.05×</span>
+            
+          </div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span><span class="l-en">⚠ Narrative basket (Energy (Equal-Weight)) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">⚠ 所属叙事篮子（能源（等权））正在恶化 — 已验证风险门槛：减仓。</span></div>
+          
+          
+          
+        </a>
+      
+        
+        
         <a class="nbcard nb-down" href="stock.html#MDU">
           <div class="nb-top">
             <span class="nb-tk">MDU</span>
@@ -4455,7 +5249,7 @@
       <span class="l-en">Participation looks</span><span class="l-zh">参与度看起来</span> <b><span class="l-en">broad</span><span class="l-zh">广泛</span></b> —
       <b>67%</b> <span class="l-en">of the 1,500 above their 50-day</span><span class="l-zh">的 1500 只高于 50 日均线</span>,
       <b>67%</b> <span class="l-en">above their 200-day</span><span class="l-zh">高于 200 日均线</span>;
-      <span class="l-en">net new highs</span><span class="l-zh">净新高</span> <b>+94</b>.
+      <span class="l-en">net new highs</span><span class="l-zh">净新高</span> <b>+102</b>.
     </p>
     <table>
       <tr>
@@ -4471,7 +5265,7 @@
       <tr>
         <td class="l"><b><span class="l-en">Large cap</span><span class="l-zh">大盘</span></b> <span class="muted" style="font-size:11px">S&P 500</span></td>
         <td class="l">
-          <span class="pos">210</span><span class="muted">/</span><span class="neg">290</span>
+          <span class="pos">212</span><span class="muted">/</span><span class="neg">289</span>
           <span class="bbar" style="width:54px" title="42% advancing"><i style="width:42.0%; background:var(--up)"></i><i style="width:58.0%; background:var(--down)"></i></span>
         </td>
         <td class="pos">62%</td>
@@ -4482,23 +5276,23 @@
       <tr>
         <td class="l"><b><span class="l-en">Mid cap</span><span class="l-zh">中盘</span></b> <span class="muted" style="font-size:11px">S&P 400</span></td>
         <td class="l">
-          <span class="pos">195</span><span class="muted">/</span><span class="neg">203</span>
+          <span class="pos">197</span><span class="muted">/</span><span class="neg">201</span>
           <span class="bbar" style="width:54px" title="49% advancing"><i style="width:49.0%; background:var(--up)"></i><i style="width:51.0%; background:var(--down)"></i></span>
         </td>
         <td class="pos">65%</td>
         <td class="pos">67%</td>
-        <td class="pos">+16</td>
+        <td class="pos">+18</td>
       </tr>
       
       <tr>
         <td class="l"><b><span class="l-en">Small cap</span><span class="l-zh">小盘</span></b> <span class="muted" style="font-size:11px">S&P 600</span></td>
         <td class="l">
-          <span class="pos">312</span><span class="muted">/</span><span class="neg">281</span>
-          <span class="bbar" style="width:54px" title="53% advancing"><i style="width:53.0%; background:var(--up)"></i><i style="width:47.0%; background:var(--down)"></i></span>
+          <span class="pos">321</span><span class="muted">/</span><span class="neg">271</span>
+          <span class="bbar" style="width:54px" title="54% advancing"><i style="width:54.0%; background:var(--up)"></i><i style="width:46.0%; background:var(--down)"></i></span>
         </td>
         <td class="pos">71%</td>
         <td class="pos">70%</td>
-        <td class="pos">+66</td>
+        <td class="pos">+72</td>
       </tr>
       
     </table>
@@ -4528,13 +5322,13 @@
         <div class="muted" style="font-size:11px; letter-spacing:.02em"><span class="l-en">McClellan Oscillator</span><span class="l-zh">麦克莱伦振荡指标</span>
           <span class="help">?<span class="tip"><span class="l-en">Ratio-adjusted McClellan Oscillator: the 19-day minus 39-day EMA of net advances (normalised so a changing universe size doesn't distort it). Above zero & rising = breadth momentum building; below zero & falling = internals rolling over. The Summation Index is its running total — its slope and sign carry the meaning, not the absolute (cumulative) level.</span><span class="l-zh">比率调整后的麦克莱伦振荡指标：净上涨家数的19日与39日指数均线之差（已归一化，避免样本规模变化造成失真）。高于零且上行 = 广度动量在累积；低于零且下行 = 内部结构在回落。累积指标是其累计和 — 关键在斜率与正负号，而非绝对（累计）水平。</span></span></span></div>
         <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 2px">
-          <b class="pos" style="font-size:22px">+11.0</b>
+          <b class="pos" style="font-size:22px">+11.4</b>
           <span class="pill pos" style="background:var(--panel)"><span class="l-en">positive</span><span class="l-zh">正向</span></span>
         </div>
-        <svg class="nch" viewBox="0 0 240 46" preserveAspectRatio="none" width="100%" height="46"><line x1="0" y1="24.6" x2="240" y2="24.6" stroke="var(--muted)" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.55"/><polyline points="0,46 0.0,37.4 1.3,31.0 2.7,24.3 4.0,24.6 5.4,30.1 6.7,24.7 8.0,17.5 9.4,16.7 10.7,20.7 12.1,19.9 13.4,20.3 14.7,17.8 16.1,25.7 17.4,31.4 18.8,31.7 20.1,30.2 21.5,32.4 22.8,33.0 24.1,29.3 25.5,32.8 26.8,25.4 28.2,22.3 29.5,18.7 30.8,17.6 32.2,24.3 33.5,27.3 34.9,33.9 36.2,32.8 37.5,33.9 38.9,37.2 40.2,26.6 41.6,25.7 42.9,17.6 44.2,13.4 45.6,9.2 46.9,16.8 48.3,19.6 49.6,16.7 50.9,17.8 52.3,18.4 53.6,23.7 55.0,25.7 56.3,19.6 57.7,15.2 59.0,18.5 60.3,17.9 61.7,24.5 63.0,24.8 64.4,24.4 65.7,23.3 67.0,17.4 68.4,20.4 69.7,15.3 71.1,16.4 72.4,20.2 73.7,24.2 75.1,35.4 76.4,30.9 77.8,26.6 79.1,21.1 80.4,28.3 81.8,23.8 83.1,22.8 84.5,23.6 85.8,23.7 87.2,21.5 88.5,19.7 89.8,21.9 91.2,29.8 92.5,22.4 93.9,21.9 95.2,25.9 96.5,23.4 97.9,24.8 99.2,28.1 100.6,26.5 101.9,27.1 103.2,25.4 104.6,24.8 105.9,20.4 107.3,24.8 108.6,18.5 109.9,19.3 111.3,18.5 112.6,18.5 114.0,24.2 115.3,19.7 116.6,21.4 118.0,19.8 119.3,23.3 120.7,20.4 122.0,25.2 123.4,21.0 124.7,21.9 126.0,18.8 127.4,19.2 128.7,21.2 130.1,28.0 131.4,26.9 132.7,32.8 134.1,37.1 135.4,35.9 136.8,39.4 138.1,41.5 139.4,46.0 140.8,42.7 142.1,34.4 143.5,30.2 144.8,37.5 146.1,37.4 147.5,42.0 148.8,33.6 150.2,30.8 151.5,26.7 152.8,29.3 154.2,34.9 155.5,32.2 156.9,23.3 158.2,21.0 159.6,19.2 160.9,16.6 162.2,19.7 163.6,12.7 164.9,12.6 166.3,19.6 167.6,15.7 168.9,15.4 170.3,18.2 171.6,17.1 173.0,12.0 174.3,13.0 175.6,19.1 177.0,21.8 178.3,21.7 179.7,25.9 181.0,27.3 182.3,28.2 183.7,31.9 185.0,25.4 186.4,29.0 187.7,33.2 189.1,29.1 190.4,25.7 191.7,29.2 193.1,30.7 194.4,31.7 195.8,30.5 197.1,33.3 198.4,29.9 199.8,34.2 201.1,28.4 202.5,30.9 203.8,25.5 205.1,23.7 206.5,19.2 207.8,20.1 209.2,21.5 210.5,22.5 211.8,25.3 213.2,27.2 214.5,26.5 215.9,28.6 217.2,23.0 218.5,23.9 219.9,27.1 221.2,21.5 222.6,25.4 223.9,22.2 225.3,16.1 226.6,17.1 227.9,17.4 229.3,26.6 230.6,26.0 232.0,25.2 233.3,23.8 234.6,21.0 236.0,19.3 237.3,17.0 238.7,19.3 240.0,22.2 240,46" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.4 1.3,31.0 2.7,24.3 4.0,24.6 5.4,30.1 6.7,24.7 8.0,17.5 9.4,16.7 10.7,20.7 12.1,19.9 13.4,20.3 14.7,17.8 16.1,25.7 17.4,31.4 18.8,31.7 20.1,30.2 21.5,32.4 22.8,33.0 24.1,29.3 25.5,32.8 26.8,25.4 28.2,22.3 29.5,18.7 30.8,17.6 32.2,24.3 33.5,27.3 34.9,33.9 36.2,32.8 37.5,33.9 38.9,37.2 40.2,26.6 41.6,25.7 42.9,17.6 44.2,13.4 45.6,9.2 46.9,16.8 48.3,19.6 49.6,16.7 50.9,17.8 52.3,18.4 53.6,23.7 55.0,25.7 56.3,19.6 57.7,15.2 59.0,18.5 60.3,17.9 61.7,24.5 63.0,24.8 64.4,24.4 65.7,23.3 67.0,17.4 68.4,20.4 69.7,15.3 71.1,16.4 72.4,20.2 73.7,24.2 75.1,35.4 76.4,30.9 77.8,26.6 79.1,21.1 80.4,28.3 81.8,23.8 83.1,22.8 84.5,23.6 85.8,23.7 87.2,21.5 88.5,19.7 89.8,21.9 91.2,29.8 92.5,22.4 93.9,21.9 95.2,25.9 96.5,23.4 97.9,24.8 99.2,28.1 100.6,26.5 101.9,27.1 103.2,25.4 104.6,24.8 105.9,20.4 107.3,24.8 108.6,18.5 109.9,19.3 111.3,18.5 112.6,18.5 114.0,24.2 115.3,19.7 116.6,21.4 118.0,19.8 119.3,23.3 120.7,20.4 122.0,25.2 123.4,21.0 124.7,21.9 126.0,18.8 127.4,19.2 128.7,21.2 130.1,28.0 131.4,26.9 132.7,32.8 134.1,37.1 135.4,35.9 136.8,39.4 138.1,41.5 139.4,46.0 140.8,42.7 142.1,34.4 143.5,30.2 144.8,37.5 146.1,37.4 147.5,42.0 148.8,33.6 150.2,30.8 151.5,26.7 152.8,29.3 154.2,34.9 155.5,32.2 156.9,23.3 158.2,21.0 159.6,19.2 160.9,16.6 162.2,19.7 163.6,12.7 164.9,12.6 166.3,19.6 167.6,15.7 168.9,15.4 170.3,18.2 171.6,17.1 173.0,12.0 174.3,13.0 175.6,19.1 177.0,21.8 178.3,21.7 179.7,25.9 181.0,27.3 182.3,28.2 183.7,31.9 185.0,25.4 186.4,29.0 187.7,33.2 189.1,29.1 190.4,25.7 191.7,29.2 193.1,30.7 194.4,31.7 195.8,30.5 197.1,33.3 198.4,29.9 199.8,34.2 201.1,28.4 202.5,30.9 203.8,25.5 205.1,23.7 206.5,19.2 207.8,20.1 209.2,21.5 210.5,22.5 211.8,25.3 213.2,27.2 214.5,26.5 215.9,28.6 217.2,23.0 218.5,23.9 219.9,27.1 221.2,21.5 222.6,25.4 223.9,22.2 225.3,16.1 226.6,17.1 227.9,17.4 229.3,26.6 230.6,26.0 232.0,25.2 233.3,23.8 234.6,21.0 236.0,19.3 237.3,17.0 238.7,19.3 240.0,22.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="22.2" r="2.6" fill="var(--up)"/></svg>
+        <svg class="nch" viewBox="0 0 240 46" preserveAspectRatio="none" width="100%" height="46"><line x1="0" y1="24.6" x2="240" y2="24.6" stroke="var(--muted)" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.55"/><polyline points="0,46 0.0,37.4 1.3,31.0 2.7,24.3 4.0,24.6 5.4,30.1 6.7,24.7 8.0,17.5 9.4,16.7 10.7,20.7 12.1,19.9 13.4,20.3 14.7,17.8 16.1,25.7 17.4,31.4 18.8,31.7 20.1,30.2 21.5,32.4 22.8,33.0 24.1,29.3 25.5,32.8 26.8,25.4 28.2,22.3 29.5,18.7 30.8,17.6 32.2,24.3 33.5,27.3 34.9,33.9 36.2,32.8 37.5,33.9 38.9,37.2 40.2,26.6 41.6,25.7 42.9,17.6 44.2,13.4 45.6,9.2 46.9,16.8 48.3,19.6 49.6,16.7 50.9,17.8 52.3,18.4 53.6,23.7 55.0,25.7 56.3,19.6 57.7,15.2 59.0,18.5 60.3,17.9 61.7,24.5 63.0,24.8 64.4,24.4 65.7,23.3 67.0,17.4 68.4,20.4 69.7,15.3 71.1,16.4 72.4,20.2 73.7,24.2 75.1,35.4 76.4,30.9 77.8,26.6 79.1,21.1 80.4,28.3 81.8,23.8 83.1,22.8 84.5,23.6 85.8,23.7 87.2,21.5 88.5,19.7 89.8,21.9 91.2,29.8 92.5,22.4 93.9,21.9 95.2,25.9 96.5,23.4 97.9,24.8 99.2,28.1 100.6,26.5 101.9,27.1 103.2,25.4 104.6,24.8 105.9,20.4 107.3,24.8 108.6,18.5 109.9,19.3 111.3,18.5 112.6,18.5 114.0,24.2 115.3,19.7 116.6,21.4 118.0,19.8 119.3,23.3 120.7,20.4 122.0,25.2 123.4,21.0 124.7,21.9 126.0,18.8 127.4,19.2 128.7,21.2 130.1,28.0 131.4,26.9 132.7,32.8 134.1,37.1 135.4,35.9 136.8,39.4 138.1,41.5 139.4,46.0 140.8,42.7 142.1,34.4 143.5,30.2 144.8,37.5 146.1,37.4 147.5,42.0 148.8,33.6 150.2,30.8 151.5,26.7 152.8,29.3 154.2,34.9 155.5,32.2 156.9,23.3 158.2,21.0 159.6,19.2 160.9,16.6 162.2,19.7 163.6,12.7 164.9,12.6 166.3,19.6 167.6,15.7 168.9,15.4 170.3,18.2 171.6,17.1 173.0,12.0 174.3,13.0 175.6,19.1 177.0,21.8 178.3,21.7 179.7,25.9 181.0,27.3 182.3,28.2 183.7,31.9 185.0,25.4 186.4,29.0 187.7,33.2 189.1,29.1 190.4,25.7 191.7,29.2 193.1,30.7 194.4,31.7 195.8,30.5 197.1,33.3 198.4,29.9 199.8,34.2 201.1,28.4 202.5,30.9 203.8,25.5 205.1,23.7 206.5,19.2 207.8,20.1 209.2,21.5 210.5,22.5 211.8,25.3 213.2,27.3 214.5,26.7 215.9,28.7 217.2,23.1 218.5,23.9 219.9,27.2 221.2,21.5 222.6,25.4 223.9,22.2 225.3,16.2 226.6,17.1 227.9,17.4 229.3,26.6 230.6,26.0 232.0,25.2 233.3,23.8 234.6,21.0 236.0,19.3 237.3,17.0 238.7,19.3 240.0,22.1 240,46" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.4 1.3,31.0 2.7,24.3 4.0,24.6 5.4,30.1 6.7,24.7 8.0,17.5 9.4,16.7 10.7,20.7 12.1,19.9 13.4,20.3 14.7,17.8 16.1,25.7 17.4,31.4 18.8,31.7 20.1,30.2 21.5,32.4 22.8,33.0 24.1,29.3 25.5,32.8 26.8,25.4 28.2,22.3 29.5,18.7 30.8,17.6 32.2,24.3 33.5,27.3 34.9,33.9 36.2,32.8 37.5,33.9 38.9,37.2 40.2,26.6 41.6,25.7 42.9,17.6 44.2,13.4 45.6,9.2 46.9,16.8 48.3,19.6 49.6,16.7 50.9,17.8 52.3,18.4 53.6,23.7 55.0,25.7 56.3,19.6 57.7,15.2 59.0,18.5 60.3,17.9 61.7,24.5 63.0,24.8 64.4,24.4 65.7,23.3 67.0,17.4 68.4,20.4 69.7,15.3 71.1,16.4 72.4,20.2 73.7,24.2 75.1,35.4 76.4,30.9 77.8,26.6 79.1,21.1 80.4,28.3 81.8,23.8 83.1,22.8 84.5,23.6 85.8,23.7 87.2,21.5 88.5,19.7 89.8,21.9 91.2,29.8 92.5,22.4 93.9,21.9 95.2,25.9 96.5,23.4 97.9,24.8 99.2,28.1 100.6,26.5 101.9,27.1 103.2,25.4 104.6,24.8 105.9,20.4 107.3,24.8 108.6,18.5 109.9,19.3 111.3,18.5 112.6,18.5 114.0,24.2 115.3,19.7 116.6,21.4 118.0,19.8 119.3,23.3 120.7,20.4 122.0,25.2 123.4,21.0 124.7,21.9 126.0,18.8 127.4,19.2 128.7,21.2 130.1,28.0 131.4,26.9 132.7,32.8 134.1,37.1 135.4,35.9 136.8,39.4 138.1,41.5 139.4,46.0 140.8,42.7 142.1,34.4 143.5,30.2 144.8,37.5 146.1,37.4 147.5,42.0 148.8,33.6 150.2,30.8 151.5,26.7 152.8,29.3 154.2,34.9 155.5,32.2 156.9,23.3 158.2,21.0 159.6,19.2 160.9,16.6 162.2,19.7 163.6,12.7 164.9,12.6 166.3,19.6 167.6,15.7 168.9,15.4 170.3,18.2 171.6,17.1 173.0,12.0 174.3,13.0 175.6,19.1 177.0,21.8 178.3,21.7 179.7,25.9 181.0,27.3 182.3,28.2 183.7,31.9 185.0,25.4 186.4,29.0 187.7,33.2 189.1,29.1 190.4,25.7 191.7,29.2 193.1,30.7 194.4,31.7 195.8,30.5 197.1,33.3 198.4,29.9 199.8,34.2 201.1,28.4 202.5,30.9 203.8,25.5 205.1,23.7 206.5,19.2 207.8,20.1 209.2,21.5 210.5,22.5 211.8,25.3 213.2,27.3 214.5,26.7 215.9,28.7 217.2,23.1 218.5,23.9 219.9,27.2 221.2,21.5 222.6,25.4 223.9,22.2 225.3,16.2 226.6,17.1 227.9,17.4 229.3,26.6 230.6,26.0 232.0,25.2 233.3,23.8 234.6,21.0 236.0,19.3 237.3,17.0 238.7,19.3 240.0,22.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="22.1" r="2.6" fill="var(--up)"/></svg>
         <div class="muted" style="font-size:11px; margin-top:3px"><span class="l-en">Summation Index</span><span class="l-zh">累积指标</span>
           <b class="pos"><span class="l-en">rising</span><span class="l-zh">上行</span></b>
-          <span class="muted">(20d +194)</span>
+          <span class="muted">(20d +192)</span>
         </div>
       </div>
       
@@ -4551,7 +5345,7 @@
         <span style="position:relative; display:block; height:10px; background:var(--panel); border-radius:5px; margin:10px 0 6px" title="0.40 washed → 0.615 thrust">
           <i style="position:absolute; left:25.0%; top:-3px; width:2px; height:16px; background:var(--muted); opacity:.7"></i>
           <i style="position:absolute; left:78.8%; top:-3px; width:2px; height:16px; background:var(--up)"></i>
-          <i style="position:absolute; left:calc(55.8% - 5px); top:0; width:10px; height:10px; border-radius:50%; background:var(--link); box-shadow:0 0 0 2px var(--panel2)"></i>
+          <i style="position:absolute; left:calc(56.0% - 5px); top:0; width:10px; height:10px; border-radius:50%; background:var(--link); box-shadow:0 0 0 2px var(--panel2)"></i>
         </span>
         <div class="muted" style="font-size:11px; margin-top:3px">
           <span class="l-en">last strict thrust</span><span class="l-zh">上次严格脉冲</span> <b>2023-11-03</b>
@@ -4569,10 +5363,10 @@
           <b class="muted" style="font-size:22px">70</b>
           <span class="pill muted" style="background:var(--panel)"><span class="l-en">mixed</span><span class="l-zh">参差</span></span>
         </div>
-        <svg class="nch" viewBox="0 0 240 46" preserveAspectRatio="none" width="100%" height="46"><line x1="0" y1="34.1" x2="240" y2="34.1" stroke="var(--muted)" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.55"/><polyline points="0,46 0.0,31.8 1.3,34.1 2.7,36.7 4.0,37.0 5.4,37.9 6.7,41.6 8.0,44.6 9.4,41.8 10.7,42.8 12.1,41.7 13.4,38.2 14.7,39.3 16.1,40.3 17.4,43.7 18.8,46.0 20.1,42.5 21.5,38.2 22.8,38.8 24.1,34.4 25.5,29.8 26.8,28.0 28.2,23.7 29.5,20.0 30.8,14.9 32.2,12.2 33.5,10.7 34.9,9.6 36.2,11.0 37.5,12.7 38.9,14.7 40.2,15.0 41.6,16.1 42.9,18.9 44.2,20.6 45.6,20.8 46.9,22.0 48.3,21.7 49.6,20.8 50.9,18.9 52.3,17.8 53.6,17.2 55.0,18.4 56.3,16.2 57.7,15.1 59.0,14.1 60.3,14.0 61.7,14.0 63.0,14.9 64.4,19.9 65.7,22.1 67.0,26.5 68.4,25.9 69.7,28.4 71.1,33.7 72.4,39.3 73.7,43.0 75.1,44.0 76.4,42.2 77.8,38.7 79.1,36.0 80.4,32.3 81.8,34.6 83.1,32.6 84.5,28.5 85.8,23.5 87.2,18.7 88.5,21.5 89.8,23.5 91.2,24.0 92.5,24.0 93.9,27.5 95.2,29.3 96.5,34.2 97.9,38.3 99.2,37.1 100.6,41.6 101.9,41.0 103.2,39.0 104.6,40.1 105.9,45.0 107.3,43.0 108.6,42.6 109.9,36.4 111.3,30.2 112.6,32.7 114.0,29.7 115.3,27.4 116.6,28.3 118.0,24.6 119.3,21.6 120.7,20.2 122.0,16.8 123.4,19.8 124.7,21.4 126.0,19.4 127.4,18.6 128.7,17.6 130.1,18.7 131.4,21.8 132.7,20.2 134.1,18.9 135.4,16.6 136.8,13.6 138.1,15.5 139.4,19.5 140.8,20.4 142.1,20.0 143.5,19.7 144.8,17.9 146.1,18.9 147.5,21.4 148.8,25.1 150.2,40.2 151.5,39.1 152.8,38.0 154.2,38.8 155.5,38.9 156.9,36.4 158.2,36.2 159.6,34.3 160.9,31.0 162.2,31.8 163.6,29.9 164.9,28.1 166.3,28.5 167.6,25.2 168.9,22.0 170.3,21.7 171.6,18.7 173.0,16.8 174.3,15.1 175.6,12.0 177.0,11.5 178.3,11.0 179.7,9.2 181.0,10.6 182.3,14.3 183.7,17.5 185.0,18.3 186.4,20.3 187.7,23.4 189.1,24.2 190.4,25.4 191.7,26.7 193.1,28.5 194.4,29.6 195.8,29.3 197.1,28.8 198.4,30.2 199.8,32.6 201.1,30.9 202.5,32.7 203.8,31.5 205.1,30.2 206.5,27.1 207.8,24.2 209.2,22.0 210.5,20.6 211.8,20.2 213.2,17.6 214.5,18.4 215.9,17.5 217.2,18.6 218.5,19.2 219.9,22.0 221.2,22.1 222.6,23.3 223.9,22.9 225.3,21.6 226.6,20.7 227.9,19.1 229.3,20.2 230.6,21.9 232.0,23.1 233.3,22.2 234.6,22.8 236.0,21.6 237.3,20.3 238.7,20.6 240.0,21.9 240,46" fill="var(--link)" opacity="0.12" stroke="none"/><polyline points="0.0,31.8 1.3,34.1 2.7,36.7 4.0,37.0 5.4,37.9 6.7,41.6 8.0,44.6 9.4,41.8 10.7,42.8 12.1,41.7 13.4,38.2 14.7,39.3 16.1,40.3 17.4,43.7 18.8,46.0 20.1,42.5 21.5,38.2 22.8,38.8 24.1,34.4 25.5,29.8 26.8,28.0 28.2,23.7 29.5,20.0 30.8,14.9 32.2,12.2 33.5,10.7 34.9,9.6 36.2,11.0 37.5,12.7 38.9,14.7 40.2,15.0 41.6,16.1 42.9,18.9 44.2,20.6 45.6,20.8 46.9,22.0 48.3,21.7 49.6,20.8 50.9,18.9 52.3,17.8 53.6,17.2 55.0,18.4 56.3,16.2 57.7,15.1 59.0,14.1 60.3,14.0 61.7,14.0 63.0,14.9 64.4,19.9 65.7,22.1 67.0,26.5 68.4,25.9 69.7,28.4 71.1,33.7 72.4,39.3 73.7,43.0 75.1,44.0 76.4,42.2 77.8,38.7 79.1,36.0 80.4,32.3 81.8,34.6 83.1,32.6 84.5,28.5 85.8,23.5 87.2,18.7 88.5,21.5 89.8,23.5 91.2,24.0 92.5,24.0 93.9,27.5 95.2,29.3 96.5,34.2 97.9,38.3 99.2,37.1 100.6,41.6 101.9,41.0 103.2,39.0 104.6,40.1 105.9,45.0 107.3,43.0 108.6,42.6 109.9,36.4 111.3,30.2 112.6,32.7 114.0,29.7 115.3,27.4 116.6,28.3 118.0,24.6 119.3,21.6 120.7,20.2 122.0,16.8 123.4,19.8 124.7,21.4 126.0,19.4 127.4,18.6 128.7,17.6 130.1,18.7 131.4,21.8 132.7,20.2 134.1,18.9 135.4,16.6 136.8,13.6 138.1,15.5 139.4,19.5 140.8,20.4 142.1,20.0 143.5,19.7 144.8,17.9 146.1,18.9 147.5,21.4 148.8,25.1 150.2,40.2 151.5,39.1 152.8,38.0 154.2,38.8 155.5,38.9 156.9,36.4 158.2,36.2 159.6,34.3 160.9,31.0 162.2,31.8 163.6,29.9 164.9,28.1 166.3,28.5 167.6,25.2 168.9,22.0 170.3,21.7 171.6,18.7 173.0,16.8 174.3,15.1 175.6,12.0 177.0,11.5 178.3,11.0 179.7,9.2 181.0,10.6 182.3,14.3 183.7,17.5 185.0,18.3 186.4,20.3 187.7,23.4 189.1,24.2 190.4,25.4 191.7,26.7 193.1,28.5 194.4,29.6 195.8,29.3 197.1,28.8 198.4,30.2 199.8,32.6 201.1,30.9 202.5,32.7 203.8,31.5 205.1,30.2 206.5,27.1 207.8,24.2 209.2,22.0 210.5,20.6 211.8,20.2 213.2,17.6 214.5,18.4 215.9,17.5 217.2,18.6 218.5,19.2 219.9,22.0 221.2,22.1 222.6,23.3 223.9,22.9 225.3,21.6 226.6,20.7 227.9,19.1 229.3,20.2 230.6,21.9 232.0,23.1 233.3,22.2 234.6,22.8 236.0,21.6 237.3,20.3 238.7,20.6 240.0,21.9" fill="none" stroke="var(--link)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="21.9" r="2.6" fill="var(--link)"/></svg>
+        <svg class="nch" viewBox="0 0 240 46" preserveAspectRatio="none" width="100%" height="46"><line x1="0" y1="34.1" x2="240" y2="34.1" stroke="var(--muted)" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.55"/><polyline points="0,46 0.0,31.8 1.3,34.1 2.7,36.7 4.0,37.0 5.4,37.9 6.7,41.6 8.0,44.6 9.4,41.8 10.7,42.8 12.1,41.7 13.4,38.2 14.7,39.3 16.1,40.3 17.4,43.7 18.8,46.0 20.1,42.5 21.5,38.2 22.8,38.8 24.1,34.4 25.5,29.8 26.8,28.0 28.2,23.7 29.5,20.0 30.8,14.9 32.2,12.2 33.5,10.7 34.9,9.6 36.2,11.0 37.5,12.7 38.9,14.7 40.2,15.0 41.6,16.1 42.9,18.9 44.2,20.6 45.6,20.8 46.9,22.0 48.3,21.7 49.6,20.8 50.9,18.9 52.3,17.8 53.6,17.2 55.0,18.4 56.3,16.2 57.7,15.1 59.0,14.1 60.3,14.0 61.7,14.0 63.0,14.9 64.4,19.9 65.7,22.1 67.0,26.5 68.4,25.9 69.7,28.4 71.1,33.7 72.4,39.3 73.7,43.0 75.1,44.0 76.4,42.2 77.8,38.7 79.1,36.0 80.4,32.3 81.8,34.6 83.1,32.6 84.5,28.5 85.8,23.5 87.2,18.7 88.5,21.5 89.8,23.5 91.2,24.0 92.5,24.0 93.9,27.5 95.2,29.3 96.5,34.2 97.9,38.3 99.2,37.1 100.6,41.6 101.9,41.0 103.2,39.0 104.6,40.1 105.9,45.0 107.3,43.0 108.6,42.6 109.9,36.4 111.3,30.2 112.6,32.7 114.0,29.7 115.3,27.4 116.6,28.3 118.0,24.6 119.3,21.6 120.7,20.2 122.0,16.8 123.4,19.8 124.7,21.4 126.0,19.4 127.4,18.6 128.7,17.6 130.1,18.7 131.4,21.8 132.7,20.2 134.1,18.9 135.4,16.6 136.8,13.6 138.1,15.5 139.4,19.5 140.8,20.4 142.1,20.0 143.5,19.7 144.8,17.9 146.1,18.9 147.5,21.4 148.8,25.1 150.2,40.2 151.5,39.1 152.8,38.0 154.2,38.8 155.5,38.9 156.9,36.4 158.2,36.2 159.6,34.3 160.9,31.0 162.2,31.8 163.6,29.9 164.9,28.1 166.3,28.5 167.6,25.2 168.9,22.0 170.3,21.7 171.6,18.7 173.0,16.8 174.3,15.1 175.6,12.0 177.0,11.5 178.3,11.0 179.7,9.2 181.0,10.6 182.3,14.3 183.7,17.5 185.0,18.3 186.4,20.3 187.7,23.4 189.1,24.2 190.4,25.4 191.7,26.7 193.1,28.5 194.4,29.6 195.8,29.3 197.1,28.8 198.4,30.2 199.8,32.6 201.1,30.9 202.5,32.7 203.8,31.5 205.1,30.2 206.5,27.1 207.8,24.2 209.2,22.0 210.5,20.6 211.8,20.2 213.2,17.6 214.5,18.5 215.9,17.6 217.2,18.8 218.5,19.5 219.9,22.2 221.2,22.2 222.6,23.5 223.9,23.2 225.3,21.9 226.6,21.0 227.9,19.3 229.3,20.3 230.6,22.0 232.0,23.1 233.3,22.2 234.6,22.9 236.0,21.7 237.3,20.3 238.7,20.8 240.0,22.0 240,46" fill="var(--link)" opacity="0.12" stroke="none"/><polyline points="0.0,31.8 1.3,34.1 2.7,36.7 4.0,37.0 5.4,37.9 6.7,41.6 8.0,44.6 9.4,41.8 10.7,42.8 12.1,41.7 13.4,38.2 14.7,39.3 16.1,40.3 17.4,43.7 18.8,46.0 20.1,42.5 21.5,38.2 22.8,38.8 24.1,34.4 25.5,29.8 26.8,28.0 28.2,23.7 29.5,20.0 30.8,14.9 32.2,12.2 33.5,10.7 34.9,9.6 36.2,11.0 37.5,12.7 38.9,14.7 40.2,15.0 41.6,16.1 42.9,18.9 44.2,20.6 45.6,20.8 46.9,22.0 48.3,21.7 49.6,20.8 50.9,18.9 52.3,17.8 53.6,17.2 55.0,18.4 56.3,16.2 57.7,15.1 59.0,14.1 60.3,14.0 61.7,14.0 63.0,14.9 64.4,19.9 65.7,22.1 67.0,26.5 68.4,25.9 69.7,28.4 71.1,33.7 72.4,39.3 73.7,43.0 75.1,44.0 76.4,42.2 77.8,38.7 79.1,36.0 80.4,32.3 81.8,34.6 83.1,32.6 84.5,28.5 85.8,23.5 87.2,18.7 88.5,21.5 89.8,23.5 91.2,24.0 92.5,24.0 93.9,27.5 95.2,29.3 96.5,34.2 97.9,38.3 99.2,37.1 100.6,41.6 101.9,41.0 103.2,39.0 104.6,40.1 105.9,45.0 107.3,43.0 108.6,42.6 109.9,36.4 111.3,30.2 112.6,32.7 114.0,29.7 115.3,27.4 116.6,28.3 118.0,24.6 119.3,21.6 120.7,20.2 122.0,16.8 123.4,19.8 124.7,21.4 126.0,19.4 127.4,18.6 128.7,17.6 130.1,18.7 131.4,21.8 132.7,20.2 134.1,18.9 135.4,16.6 136.8,13.6 138.1,15.5 139.4,19.5 140.8,20.4 142.1,20.0 143.5,19.7 144.8,17.9 146.1,18.9 147.5,21.4 148.8,25.1 150.2,40.2 151.5,39.1 152.8,38.0 154.2,38.8 155.5,38.9 156.9,36.4 158.2,36.2 159.6,34.3 160.9,31.0 162.2,31.8 163.6,29.9 164.9,28.1 166.3,28.5 167.6,25.2 168.9,22.0 170.3,21.7 171.6,18.7 173.0,16.8 174.3,15.1 175.6,12.0 177.0,11.5 178.3,11.0 179.7,9.2 181.0,10.6 182.3,14.3 183.7,17.5 185.0,18.3 186.4,20.3 187.7,23.4 189.1,24.2 190.4,25.4 191.7,26.7 193.1,28.5 194.4,29.6 195.8,29.3 197.1,28.8 198.4,30.2 199.8,32.6 201.1,30.9 202.5,32.7 203.8,31.5 205.1,30.2 206.5,27.1 207.8,24.2 209.2,22.0 210.5,20.6 211.8,20.2 213.2,17.6 214.5,18.5 215.9,17.6 217.2,18.8 218.5,19.5 219.9,22.2 221.2,22.2 222.6,23.5 223.9,23.2 225.3,21.9 226.6,21.0 227.9,19.3 229.3,20.3 230.6,22.0 232.0,23.1 233.3,22.2 234.6,22.9 236.0,21.7 237.3,20.3 238.7,20.8 240.0,22.0" fill="none" stroke="var(--link)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="22.0" r="2.6" fill="var(--link)"/></svg>
         <div class="muted" style="font-size:11px; margin-top:3px"><span class="l-en">net new highs</span><span class="l-zh">净新高</span>
           <b class="pos">+12</b>
-          <span class="l-en">today</span><span class="l-zh">今日</span> · <b>+18.9</b> <span class="l-en">avg 10d</span><span class="l-zh">10日均</span>
+          <span class="l-en">today</span><span class="l-zh">今日</span> · <b>+18.6</b> <span class="l-en">avg 10d</span><span class="l-zh">10日均</span>
         </div>
       </div>
       
@@ -4585,7 +5379,7 @@
         <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 2px; min-height:30px">
           <b class="muted" style="font-size:16px"><span class="l-en">in range</span><span class="l-zh">区间内</span></b>
         </div>
-        <svg class="nch" viewBox="0 0 240 46" preserveAspectRatio="none" width="100%" height="46"><polyline points="0,46 0.0,46.0 2.0,42.2 4.0,40.8 6.1,40.8 8.1,40.3 10.1,37.9 12.1,35.5 14.1,36.2 16.1,41.9 18.2,35.9 20.2,34.7 22.2,37.2 24.2,34.7 26.2,35.3 28.2,37.5 30.3,36.1 32.3,36.3 34.3,34.7 36.3,33.8 38.3,29.7 40.3,32.3 42.4,26.6 44.4,26.0 46.4,24.1 48.4,22.8 50.4,26.2 52.4,21.9 54.5,22.1 56.5,19.7 58.5,21.3 60.5,18.1 62.5,20.9 64.5,16.8 66.6,16.4 68.6,12.8 70.6,11.7 72.6,12.0 74.6,16.5 76.6,15.2 78.7,19.7 80.7,23.6 82.7,23.5 84.7,27.2 86.7,30.2 88.7,35.5 90.8,35.0 92.8,29.9 94.8,27.4 96.8,33.9 98.8,35.2 100.8,40.5 102.9,35.5 104.9,34.2 106.9,31.5 108.9,34.0 110.9,39.2 112.9,38.3 115.0,31.9 117.0,29.9 119.0,28.0 121.0,25.2 123.0,26.9 125.0,20.4 127.1,18.8 129.1,23.1 131.1,19.1 133.1,17.7 135.1,18.6 137.1,16.8 139.2,11.3 141.2,10.4 143.2,13.6 145.2,14.9 147.2,14.1 149.2,16.8 151.3,17.7 153.3,18.5 155.3,21.6 157.3,16.8 159.3,19.6 161.3,23.2 163.4,20.6 165.4,18.0 167.4,20.8 169.4,22.3 171.4,23.7 173.4,23.4 175.5,26.3 177.5,24.4 179.5,28.5 181.5,24.7 183.5,27.2 185.5,23.5 187.6,22.1 189.6,18.1 191.6,18.2 193.6,18.7 195.6,19.1 197.6,21.2 199.7,22.7 201.7,22.4 203.7,24.3 205.7,20.1 207.7,20.5 209.7,23.1 211.8,18.6 213.8,21.5 215.8,18.8 217.8,13.3 219.8,13.0 221.8,12.1 223.9,18.9 225.9,18.4 227.9,17.8 229.9,16.6 231.9,14.0 233.9,11.9 236.0,9.2 238.0,9.9 240.0,11.4 240,46" fill="var(--link)" opacity="0.12" stroke="none"/><polyline points="0.0,46.0 2.0,42.2 4.0,40.8 6.1,40.8 8.1,40.3 10.1,37.9 12.1,35.5 14.1,36.2 16.1,41.9 18.2,35.9 20.2,34.7 22.2,37.2 24.2,34.7 26.2,35.3 28.2,37.5 30.3,36.1 32.3,36.3 34.3,34.7 36.3,33.8 38.3,29.7 40.3,32.3 42.4,26.6 44.4,26.0 46.4,24.1 48.4,22.8 50.4,26.2 52.4,21.9 54.5,22.1 56.5,19.7 58.5,21.3 60.5,18.1 62.5,20.9 64.5,16.8 66.6,16.4 68.6,12.8 70.6,11.7 72.6,12.0 74.6,16.5 76.6,15.2 78.7,19.7 80.7,23.6 82.7,23.5 84.7,27.2 86.7,30.2 88.7,35.5 90.8,35.0 92.8,29.9 94.8,27.4 96.8,33.9 98.8,35.2 100.8,40.5 102.9,35.5 104.9,34.2 106.9,31.5 108.9,34.0 110.9,39.2 112.9,38.3 115.0,31.9 117.0,29.9 119.0,28.0 121.0,25.2 123.0,26.9 125.0,20.4 127.1,18.8 129.1,23.1 131.1,19.1 133.1,17.7 135.1,18.6 137.1,16.8 139.2,11.3 141.2,10.4 143.2,13.6 145.2,14.9 147.2,14.1 149.2,16.8 151.3,17.7 153.3,18.5 155.3,21.6 157.3,16.8 159.3,19.6 161.3,23.2 163.4,20.6 165.4,18.0 167.4,20.8 169.4,22.3 171.4,23.7 173.4,23.4 175.5,26.3 177.5,24.4 179.5,28.5 181.5,24.7 183.5,27.2 185.5,23.5 187.6,22.1 189.6,18.1 191.6,18.2 193.6,18.7 195.6,19.1 197.6,21.2 199.7,22.7 201.7,22.4 203.7,24.3 205.7,20.1 207.7,20.5 209.7,23.1 211.8,18.6 213.8,21.5 215.8,18.8 217.8,13.3 219.8,13.0 221.8,12.1 223.9,18.9 225.9,18.4 227.9,17.8 229.9,16.6 231.9,14.0 233.9,11.9 236.0,9.2 238.0,9.9 240.0,11.4" fill="none" stroke="var(--link)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="11.4" r="2.6" fill="var(--link)"/></svg>
+        <svg class="nch" viewBox="0 0 240 46" preserveAspectRatio="none" width="100%" height="46"><polyline points="0,46 0.0,46.0 2.0,42.2 4.0,40.8 6.1,40.8 8.1,40.3 10.1,37.9 12.1,35.4 14.1,36.2 16.1,41.9 18.2,35.9 20.2,34.6 22.2,37.2 24.2,34.7 26.2,35.2 28.2,37.5 30.3,36.1 32.3,36.3 34.3,34.7 36.3,33.8 38.3,29.6 40.3,32.3 42.4,26.5 44.4,26.0 46.4,24.1 48.4,22.7 50.4,26.2 52.4,21.8 54.5,22.0 56.5,19.6 58.5,21.3 60.5,18.0 62.5,20.8 64.5,16.7 66.6,16.3 68.6,12.7 70.6,11.6 72.6,11.9 74.6,16.4 76.6,15.2 78.7,19.6 80.7,23.6 82.7,23.4 84.7,27.1 86.7,30.1 88.7,35.5 90.8,35.0 92.8,29.9 94.8,27.3 96.8,33.8 98.8,35.2 100.8,40.5 102.9,35.5 104.9,34.2 106.9,31.4 108.9,33.9 110.9,39.2 112.9,38.3 115.0,31.8 117.0,29.8 119.0,27.9 121.0,25.1 123.0,26.8 125.0,20.3 127.1,18.8 129.1,23.1 131.1,19.0 133.1,17.6 135.1,18.6 137.1,16.7 139.2,11.2 141.2,10.2 143.2,13.5 145.2,14.8 147.2,14.0 149.2,16.7 151.3,17.6 153.3,18.4 155.3,21.5 157.3,16.7 159.3,19.5 161.3,23.1 163.4,20.5 165.4,17.9 167.4,20.7 169.4,22.3 171.4,23.6 173.4,23.4 175.5,26.2 177.5,24.3 179.5,28.5 181.5,24.7 183.5,27.2 185.5,23.4 187.6,22.0 189.6,18.0 191.6,18.1 193.6,18.6 195.6,19.0 197.6,21.1 199.7,22.8 201.7,22.5 203.7,24.4 205.7,20.1 207.7,20.6 209.7,23.2 211.8,18.7 213.8,21.5 215.8,18.8 217.8,13.3 219.8,13.0 221.8,12.2 223.9,19.0 225.9,18.5 227.9,17.8 229.9,16.6 231.9,14.0 233.9,11.9 236.0,9.2 238.0,9.9 240.0,11.4 240,46" fill="var(--link)" opacity="0.12" stroke="none"/><polyline points="0.0,46.0 2.0,42.2 4.0,40.8 6.1,40.8 8.1,40.3 10.1,37.9 12.1,35.4 14.1,36.2 16.1,41.9 18.2,35.9 20.2,34.6 22.2,37.2 24.2,34.7 26.2,35.2 28.2,37.5 30.3,36.1 32.3,36.3 34.3,34.7 36.3,33.8 38.3,29.6 40.3,32.3 42.4,26.5 44.4,26.0 46.4,24.1 48.4,22.7 50.4,26.2 52.4,21.8 54.5,22.0 56.5,19.6 58.5,21.3 60.5,18.0 62.5,20.8 64.5,16.7 66.6,16.3 68.6,12.7 70.6,11.6 72.6,11.9 74.6,16.4 76.6,15.2 78.7,19.6 80.7,23.6 82.7,23.4 84.7,27.1 86.7,30.1 88.7,35.5 90.8,35.0 92.8,29.9 94.8,27.3 96.8,33.8 98.8,35.2 100.8,40.5 102.9,35.5 104.9,34.2 106.9,31.4 108.9,33.9 110.9,39.2 112.9,38.3 115.0,31.8 117.0,29.8 119.0,27.9 121.0,25.1 123.0,26.8 125.0,20.3 127.1,18.8 129.1,23.1 131.1,19.0 133.1,17.6 135.1,18.6 137.1,16.7 139.2,11.2 141.2,10.2 143.2,13.5 145.2,14.8 147.2,14.0 149.2,16.7 151.3,17.6 153.3,18.4 155.3,21.5 157.3,16.7 159.3,19.5 161.3,23.1 163.4,20.5 165.4,17.9 167.4,20.7 169.4,22.3 171.4,23.6 173.4,23.4 175.5,26.2 177.5,24.3 179.5,28.5 181.5,24.7 183.5,27.2 185.5,23.4 187.6,22.0 189.6,18.0 191.6,18.1 193.6,18.6 195.6,19.0 197.6,21.1 199.7,22.8 201.7,22.5 203.7,24.4 205.7,20.1 207.7,20.6 209.7,23.2 211.8,18.7 213.8,21.5 215.8,18.8 217.8,13.3 219.8,13.0 221.8,12.2 223.9,19.0 225.9,18.5 227.9,17.8 229.9,16.6 231.9,14.0 233.9,11.9 236.0,9.2 238.0,9.9 240.0,11.4" fill="none" stroke="var(--link)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="11.4" r="2.6" fill="var(--link)"/></svg>
         <div class="muted" style="font-size:11px; margin-top:3px"><span class="l-en">neither price nor the advance/decline line is at a 3-month extreme — no divergence to read</span><span class="l-zh">价格与腾落线均未触及三个月极值 — 暂无背离可读</span>.
           <span class="muted">(60d corr 0.03)</span>
         </div>
@@ -4601,7 +5395,7 @@
           <b class="pos" style="font-size:22px">62%</b>
           <span class="pill" style="background:var(--panel)">49<span class="l-en">th pct</span><span class="l-zh">分位</span> · <span class="l-en">since</span><span class="l-zh">自</span> 1991</span>
         </div>
-        <svg class="nch" viewBox="0 0 240 46" preserveAspectRatio="none" width="100%" height="46"><line x1="0" y1="25.4" x2="240" y2="25.4" stroke="var(--muted)" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.55"/><polyline points="0,46 0.0,33.1 1.3,29.4 2.7,25.1 4.0,25.1 5.4,31.2 6.7,28.2 8.0,23.0 9.4,21.9 10.7,24.4 12.1,23.3 13.4,22.9 14.7,20.1 16.1,26.2 17.4,30.3 18.8,30.7 20.1,31.0 21.5,32.3 22.8,32.3 24.1,31.5 25.5,32.7 26.8,29.0 28.2,27.4 29.5,24.8 30.8,23.4 32.2,28.4 33.5,29.4 34.9,33.6 36.2,33.1 37.5,34.4 38.9,37.4 40.2,31.0 41.6,30.1 42.9,23.2 44.2,20.1 45.6,17.8 46.9,22.8 48.3,23.6 49.6,21.9 50.9,20.8 52.3,21.3 53.6,25.0 55.0,26.4 56.3,21.7 57.7,17.9 59.0,18.8 60.3,17.3 61.7,20.1 63.0,18.6 64.4,19.7 65.7,19.9 67.0,16.9 68.4,16.9 69.7,16.5 71.1,16.1 72.4,14.9 73.7,16.5 75.1,20.3 76.4,18.3 77.8,16.2 79.1,13.0 80.4,16.3 81.8,11.0 83.1,10.2 84.5,10.8 85.8,12.8 87.2,9.9 88.5,9.2 89.8,9.9 91.2,15.6 92.5,11.5 93.9,11.9 95.2,13.3 96.5,11.5 97.9,13.7 99.2,16.9 100.6,15.5 101.9,13.7 103.2,13.9 104.6,16.3 105.9,12.9 107.3,14.8 108.6,12.3 109.9,12.9 111.3,12.6 112.6,13.6 114.0,17.1 115.3,16.2 116.6,15.1 118.0,13.9 119.3,15.8 120.7,14.5 122.0,17.3 123.4,16.9 124.7,16.6 126.0,14.4 127.4,16.5 128.7,17.2 130.1,20.6 131.4,19.5 132.7,23.9 134.1,28.8 135.4,29.1 136.8,31.2 138.1,32.8 139.4,37.5 140.8,37.4 142.1,36.3 143.5,35.5 144.8,39.3 146.1,40.3 147.5,45.6 148.8,42.9 150.2,42.3 151.5,40.7 152.8,44.1 154.2,46.0 155.5,45.9 156.9,42.9 158.2,40.8 159.6,38.7 160.9,36.4 162.2,38.7 163.6,26.0 164.9,25.3 166.3,29.1 167.6,25.1 168.9,22.7 170.3,23.8 171.6,23.2 173.0,17.8 174.3,16.9 175.6,19.9 177.0,21.9 178.3,21.6 179.7,23.4 181.0,24.2 182.3,23.6 183.7,25.5 185.0,21.3 186.4,22.0 187.7,24.2 189.1,23.1 190.4,21.3 191.7,22.9 193.1,23.9 194.4,25.3 195.8,24.7 197.1,28.1 198.4,27.5 199.8,29.2 201.1,24.9 202.5,27.3 203.8,23.8 205.1,22.7 206.5,20.5 207.8,21.2 209.2,22.0 210.5,21.0 211.8,22.4 213.2,24.2 214.5,23.8 215.9,25.4 217.2,21.7 218.5,22.3 219.9,23.5 221.2,20.1 222.6,24.5 223.9,21.0 225.3,18.0 226.6,16.3 227.9,14.8 229.3,22.8 230.6,21.7 232.0,21.9 233.3,18.7 234.6,15.8 236.0,15.8 237.3,15.7 238.7,15.2 240.0,16.9 240,46" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,33.1 1.3,29.4 2.7,25.1 4.0,25.1 5.4,31.2 6.7,28.2 8.0,23.0 9.4,21.9 10.7,24.4 12.1,23.3 13.4,22.9 14.7,20.1 16.1,26.2 17.4,30.3 18.8,30.7 20.1,31.0 21.5,32.3 22.8,32.3 24.1,31.5 25.5,32.7 26.8,29.0 28.2,27.4 29.5,24.8 30.8,23.4 32.2,28.4 33.5,29.4 34.9,33.6 36.2,33.1 37.5,34.4 38.9,37.4 40.2,31.0 41.6,30.1 42.9,23.2 44.2,20.1 45.6,17.8 46.9,22.8 48.3,23.6 49.6,21.9 50.9,20.8 52.3,21.3 53.6,25.0 55.0,26.4 56.3,21.7 57.7,17.9 59.0,18.8 60.3,17.3 61.7,20.1 63.0,18.6 64.4,19.7 65.7,19.9 67.0,16.9 68.4,16.9 69.7,16.5 71.1,16.1 72.4,14.9 73.7,16.5 75.1,20.3 76.4,18.3 77.8,16.2 79.1,13.0 80.4,16.3 81.8,11.0 83.1,10.2 84.5,10.8 85.8,12.8 87.2,9.9 88.5,9.2 89.8,9.9 91.2,15.6 92.5,11.5 93.9,11.9 95.2,13.3 96.5,11.5 97.9,13.7 99.2,16.9 100.6,15.5 101.9,13.7 103.2,13.9 104.6,16.3 105.9,12.9 107.3,14.8 108.6,12.3 109.9,12.9 111.3,12.6 112.6,13.6 114.0,17.1 115.3,16.2 116.6,15.1 118.0,13.9 119.3,15.8 120.7,14.5 122.0,17.3 123.4,16.9 124.7,16.6 126.0,14.4 127.4,16.5 128.7,17.2 130.1,20.6 131.4,19.5 132.7,23.9 134.1,28.8 135.4,29.1 136.8,31.2 138.1,32.8 139.4,37.5 140.8,37.4 142.1,36.3 143.5,35.5 144.8,39.3 146.1,40.3 147.5,45.6 148.8,42.9 150.2,42.3 151.5,40.7 152.8,44.1 154.2,46.0 155.5,45.9 156.9,42.9 158.2,40.8 159.6,38.7 160.9,36.4 162.2,38.7 163.6,26.0 164.9,25.3 166.3,29.1 167.6,25.1 168.9,22.7 170.3,23.8 171.6,23.2 173.0,17.8 174.3,16.9 175.6,19.9 177.0,21.9 178.3,21.6 179.7,23.4 181.0,24.2 182.3,23.6 183.7,25.5 185.0,21.3 186.4,22.0 187.7,24.2 189.1,23.1 190.4,21.3 191.7,22.9 193.1,23.9 194.4,25.3 195.8,24.7 197.1,28.1 198.4,27.5 199.8,29.2 201.1,24.9 202.5,27.3 203.8,23.8 205.1,22.7 206.5,20.5 207.8,21.2 209.2,22.0 210.5,21.0 211.8,22.4 213.2,24.2 214.5,23.8 215.9,25.4 217.2,21.7 218.5,22.3 219.9,23.5 221.2,20.1 222.6,24.5 223.9,21.0 225.3,18.0 226.6,16.3 227.9,14.8 229.3,22.8 230.6,21.7 232.0,21.9 233.3,18.7 234.6,15.8 236.0,15.8 237.3,15.7 238.7,15.2 240.0,16.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="16.9" r="2.6" fill="var(--up)"/></svg>
+        <svg class="nch" viewBox="0 0 240 46" preserveAspectRatio="none" width="100%" height="46"><line x1="0" y1="25.4" x2="240" y2="25.4" stroke="var(--muted)" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.55"/><polyline points="0,46 0.0,33.1 1.3,29.4 2.7,25.1 4.0,25.1 5.4,31.2 6.7,28.2 8.0,23.0 9.4,21.9 10.7,24.4 12.1,23.3 13.4,22.9 14.7,20.1 16.1,26.2 17.4,30.3 18.8,30.7 20.1,31.0 21.5,32.3 22.8,32.3 24.1,31.5 25.5,32.7 26.8,29.0 28.2,27.4 29.5,24.8 30.8,23.4 32.2,28.4 33.5,29.4 34.9,33.6 36.2,33.1 37.5,34.4 38.9,37.4 40.2,31.0 41.6,30.1 42.9,23.2 44.2,20.1 45.6,17.8 46.9,22.8 48.3,23.6 49.6,21.9 50.9,20.8 52.3,21.3 53.6,25.0 55.0,26.4 56.3,21.7 57.7,17.9 59.0,18.8 60.3,17.3 61.7,20.1 63.0,18.6 64.4,19.7 65.7,19.9 67.0,16.9 68.4,16.9 69.7,16.5 71.1,16.1 72.4,14.9 73.7,16.5 75.1,20.3 76.4,18.3 77.8,16.2 79.1,13.0 80.4,16.3 81.8,11.0 83.1,10.2 84.5,10.8 85.8,12.8 87.2,9.9 88.5,9.2 89.8,9.9 91.2,15.6 92.5,11.5 93.9,11.9 95.2,13.3 96.5,11.5 97.9,13.7 99.2,16.9 100.6,15.5 101.9,13.7 103.2,13.9 104.6,16.3 105.9,12.9 107.3,14.8 108.6,12.3 109.9,12.9 111.3,12.6 112.6,13.6 114.0,17.1 115.3,16.2 116.6,15.1 118.0,13.9 119.3,15.8 120.7,14.5 122.0,17.3 123.4,16.9 124.7,16.6 126.0,14.4 127.4,16.5 128.7,17.2 130.1,20.6 131.4,19.5 132.7,23.9 134.1,28.8 135.4,29.1 136.8,31.2 138.1,32.8 139.4,37.5 140.8,37.4 142.1,36.3 143.5,35.5 144.8,39.3 146.1,40.3 147.5,45.6 148.8,42.9 150.2,42.3 151.5,40.7 152.8,44.1 154.2,46.0 155.5,45.9 156.9,42.9 158.2,40.8 159.6,38.7 160.9,36.4 162.2,38.7 163.6,26.0 164.9,25.3 166.3,29.1 167.6,25.1 168.9,22.7 170.3,23.8 171.6,23.2 173.0,17.8 174.3,16.9 175.6,19.9 177.0,21.9 178.3,21.6 179.7,23.4 181.0,24.2 182.3,23.6 183.7,25.5 185.0,21.3 186.4,22.0 187.7,24.2 189.1,23.1 190.4,21.3 191.7,22.9 193.1,23.9 194.4,25.3 195.8,24.7 197.1,28.1 198.4,27.5 199.8,29.2 201.1,24.9 202.5,27.3 203.8,23.8 205.1,22.7 206.5,20.5 207.8,21.2 209.2,22.0 210.5,21.0 211.8,22.4 213.2,24.2 214.5,23.9 215.9,25.4 217.2,21.7 218.5,22.3 219.9,23.6 221.2,20.1 222.6,24.6 223.9,21.0 225.3,18.0 226.6,16.3 227.9,14.8 229.3,22.8 230.6,21.7 232.0,21.9 233.3,19.0 234.6,16.0 236.0,16.0 237.3,15.8 238.7,15.2 240.0,16.9 240,46" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,33.1 1.3,29.4 2.7,25.1 4.0,25.1 5.4,31.2 6.7,28.2 8.0,23.0 9.4,21.9 10.7,24.4 12.1,23.3 13.4,22.9 14.7,20.1 16.1,26.2 17.4,30.3 18.8,30.7 20.1,31.0 21.5,32.3 22.8,32.3 24.1,31.5 25.5,32.7 26.8,29.0 28.2,27.4 29.5,24.8 30.8,23.4 32.2,28.4 33.5,29.4 34.9,33.6 36.2,33.1 37.5,34.4 38.9,37.4 40.2,31.0 41.6,30.1 42.9,23.2 44.2,20.1 45.6,17.8 46.9,22.8 48.3,23.6 49.6,21.9 50.9,20.8 52.3,21.3 53.6,25.0 55.0,26.4 56.3,21.7 57.7,17.9 59.0,18.8 60.3,17.3 61.7,20.1 63.0,18.6 64.4,19.7 65.7,19.9 67.0,16.9 68.4,16.9 69.7,16.5 71.1,16.1 72.4,14.9 73.7,16.5 75.1,20.3 76.4,18.3 77.8,16.2 79.1,13.0 80.4,16.3 81.8,11.0 83.1,10.2 84.5,10.8 85.8,12.8 87.2,9.9 88.5,9.2 89.8,9.9 91.2,15.6 92.5,11.5 93.9,11.9 95.2,13.3 96.5,11.5 97.9,13.7 99.2,16.9 100.6,15.5 101.9,13.7 103.2,13.9 104.6,16.3 105.9,12.9 107.3,14.8 108.6,12.3 109.9,12.9 111.3,12.6 112.6,13.6 114.0,17.1 115.3,16.2 116.6,15.1 118.0,13.9 119.3,15.8 120.7,14.5 122.0,17.3 123.4,16.9 124.7,16.6 126.0,14.4 127.4,16.5 128.7,17.2 130.1,20.6 131.4,19.5 132.7,23.9 134.1,28.8 135.4,29.1 136.8,31.2 138.1,32.8 139.4,37.5 140.8,37.4 142.1,36.3 143.5,35.5 144.8,39.3 146.1,40.3 147.5,45.6 148.8,42.9 150.2,42.3 151.5,40.7 152.8,44.1 154.2,46.0 155.5,45.9 156.9,42.9 158.2,40.8 159.6,38.7 160.9,36.4 162.2,38.7 163.6,26.0 164.9,25.3 166.3,29.1 167.6,25.1 168.9,22.7 170.3,23.8 171.6,23.2 173.0,17.8 174.3,16.9 175.6,19.9 177.0,21.9 178.3,21.6 179.7,23.4 181.0,24.2 182.3,23.6 183.7,25.5 185.0,21.3 186.4,22.0 187.7,24.2 189.1,23.1 190.4,21.3 191.7,22.9 193.1,23.9 194.4,25.3 195.8,24.7 197.1,28.1 198.4,27.5 199.8,29.2 201.1,24.9 202.5,27.3 203.8,23.8 205.1,22.7 206.5,20.5 207.8,21.2 209.2,22.0 210.5,21.0 211.8,22.4 213.2,24.2 214.5,23.9 215.9,25.4 217.2,21.7 218.5,22.3 219.9,23.6 221.2,20.1 222.6,24.6 223.9,21.0 225.3,18.0 226.6,16.3 227.9,14.8 229.3,22.8 230.6,21.7 232.0,21.9 233.3,19.0 234.6,16.0 236.0,16.0 237.3,15.8 238.7,15.2 240.0,16.9" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="16.9" r="2.6" fill="var(--up)"/></svg>
         <div class="muted" style="font-size:11px; margin-top:3px">
           &gt;200d <b>62%</b> · <span class="l-en">20d</span><span class="l-zh">20日</span> <b class="pos">+10.7</b>
            · <span class="l-en">A/D</span><span class="l-zh">腾落</span> <b class="pos"><span class="l-en">up</span><span class="l-zh">上行</span></b>
@@ -4615,12 +5409,12 @@
         <div class="muted" style="font-size:11px; letter-spacing:.02em"><span class="l-en">Large / mid / small gap</span><span class="l-zh">大／中／小盘差</span>
           <span class="help">?<span class="tip"><span class="l-en">The % > 50-day line for each S&P size tier (500 / 400 / 600), and the small-minus-large gap. Small caps participating MORE than large = a healthy, broad-based tape; small lagging = a narrow, mega-cap-led advance that's more fragile.</span><span class="l-zh">标普各规模层级（500／400／600）高于50日均线的占比，以及「小盘减大盘」之差。小盘参与度高于大盘 = 健康、广泛的盘面；小盘落后 = 狭窄、由超大盘主导、更脆弱的上涨。</span></span></span></div>
         <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 2px">
-          <b class="pos" style="font-size:22px">+8.5</b>
+          <b class="pos" style="font-size:22px">+8.3</b>
           <span class="pill pos" style="background:var(--panel)"><span class="l-en">broadening</span><span class="l-zh">扩散</span></span>
         </div>
         <div style="display:flex; gap:10px; margin:8px 0 4px; font-size:12px">
           <span><span class="l-en">L</span><span class="l-zh">大</span> <b>62%</b></span>
-          <span class="muted"><span class="l-en">M</span><span class="l-zh">中</span> <b>65%</b></span>
+          <span class="muted"><span class="l-en">M</span><span class="l-zh">中</span> <b>66%</b></span>
           <span><span class="l-en">S</span><span class="l-zh">小</span> <b>71%</b></span>
         </div>
         <div class="muted" style="font-size:11px; margin-top:3px"><span class="l-en">small caps participating MORE than large — a healthy, broad-based tape</span><span class="l-zh">小盘参与度高于大盘 — 健康、广泛的盘面</span>.</div>
@@ -5126,8 +5920,8 @@
         <tr><td class="l"><b>CLOU</b></td>
             <td class="l"><a href="stock.html#DDOG"><b>DDOG</b></a> <span class="muted">Datadog Inc - Class A</span></td>
             <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td>
-            <td class="r muted">6.87%</td>
-            <td class="r pos"><b>+6.87pp</b></td>
+            <td class="r muted">7.12%</td>
+            <td class="r pos"><b>+7.12pp</b></td>
             <td class="l"><span class="muted">—</span></td></tr>
         
         <tr><td class="l"><b>OZEM</b></td>
@@ -5165,13 +5959,6 @@
             <td class="r pos"><b>+4.79pp</b></td>
             <td class="l"><span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td></tr>
         
-        <tr><td class="l"><b>BUG</b></td>
-            <td class="l"><a href="stock.html#CVLT"><b>CVLT</b></a> <span class="muted">Commvault Systems Inc</span></td>
-            <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td>
-            <td class="r muted">4.77%</td>
-            <td class="r pos"><b>+4.77pp</b></td>
-            <td class="l"><span class="muted">—</span></td></tr>
-        
         <tr><td class="l"><b>BETZ</b></td>
             <td class="l"><a href="stock.html#LNW AU"><b>LNW AU</b></a> <span class="muted">Light & Wonder Inc</span></td>
             <td class="l muted"><span class="l-en">Sports Betting</span><span class="l-zh">Sports Betting</span></td>
@@ -5179,11 +5966,18 @@
             <td class="r pos"><b>+4.70pp</b></td>
             <td class="l"><span class="muted">—</span></td></tr>
         
+        <tr><td class="l"><b>BUG</b></td>
+            <td class="l"><a href="stock.html#CVLT"><b>CVLT</b></a> <span class="muted">Commvault Systems Inc</span></td>
+            <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td>
+            <td class="r muted">4.55%</td>
+            <td class="r pos"><b>+4.55pp</b></td>
+            <td class="l"><span class="muted">—</span></td></tr>
+        
         <tr><td class="l"><b>CLOU</b></td>
             <td class="l"><a href="stock.html#NET"><b>NET</b></a> <span class="muted">Cloudflare Inc - Class A</span></td>
             <td class="l muted"><span class="l-en">Cloud</span><span class="l-zh">Cloud</span></td>
-            <td class="r muted">4.36%</td>
-            <td class="r pos"><b>+4.36pp</b></td>
+            <td class="r muted">4.34%</td>
+            <td class="r pos"><b>+4.34pp</b></td>
             <td class="l"><span class="muted">—</span></td></tr>
         
         <tr><td class="l"><b>ARKK</b></td>
@@ -5313,5 +6107,6 @@ window.__CHART_SWAP__ = {
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
+<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>
