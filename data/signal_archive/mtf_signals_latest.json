@@ -254,10 +254,10 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 185.8028,
+   "trail_stop": 184.6992,
    "early_now": false,
    "last": {
-    "date": "2026-06-12",
+    "date": "2026-06-09",
     "type": "sell"
    }
   },
@@ -808,7 +808,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 600.046,
+   "trail_stop": 599.0523,
    "early_now": false,
    "last": {
     "date": "2026-06-10",
@@ -856,7 +856,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 100.4027,
+   "trail_stop": 99.9073,
    "early_now": false,
    "last": {
     "date": "2026-06-24",
@@ -1086,15 +1086,17 @@
   {
    "ticker": "ESS",
    "asof": "2026-06-29",
-   "state": "mixed",
+   "state": "long-bias",
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 283.6614,
+   "trail_stop": 282.0619,
    "early_now": false,
    "last": {
-    "date": "2026-06-16",
-    "type": "sell"
+    "date": "2026-06-29",
+    "type": "rebuy",
+    "quality": "pending",
+    "reason": "pending confirmation"
    }
   },
   {
@@ -1824,7 +1826,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 60.4208,
+   "trail_stop": 60.0931,
    "early_now": false,
    "last": {
     "date": "2026-06-17",
@@ -2074,7 +2076,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 238.5137,
+   "trail_stop": 238.1255,
    "early_now": false,
    "last": {
     "date": "2026-06-16",
@@ -2116,7 +2118,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 61.4964,
+   "trail_stop": 61.3271,
    "early_now": true,
    "last": {
     "date": "2026-06-26",
@@ -2220,7 +2222,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 16.7404,
+   "trail_stop": 16.7091,
    "early_now": false,
    "last": {
     "date": "2026-06-10",
@@ -2662,7 +2664,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": true,
-   "trail_stop": 245.5776,
+   "trail_stop": 245.2093,
    "early_now": false,
    "last": {
     "date": "2026-06-17",
@@ -2704,7 +2706,7 @@
    "above200": false,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 313.9782,
+   "trail_stop": 313.4398,
    "early_now": false,
    "last": {
     "date": "2026-05-18",
@@ -2972,7 +2974,7 @@
    "above200": true,
    "weekly_bull": true,
    "trail_breach": false,
-   "trail_stop": 58.3782,
+   "trail_stop": 58.0589,
    "early_now": false,
    "last": {
     "date": "2026-05-12",
@@ -3088,7 +3090,7 @@
    "above200": true,
    "weekly_bull": false,
    "trail_breach": false,
-   "trail_stop": 85.9934,
+   "trail_stop": 85.6753,
    "early_now": false,
    "last": {
     "date": "2026-05-26",

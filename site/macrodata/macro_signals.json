@@ -1,6 +1,6 @@
 {
   "date": "2026-06-30",
-  "generated_utc": "2026-07-01 03:20",
+  "generated_utc": "2026-07-01 03:25",
   "business_cycle": {
     "available": true,
     "asof": "2026-06-30",
@@ -3907,11 +3907,11 @@
       "vix_term": 0.8657895138389186,
       "vix_term_state": "contango (calm)",
       "vix_term_lead_lag": "coincident",
-      "skew": 144.46,
-      "skew_pctile": 0.4117063492063492,
+      "skew": 149.6,
+      "skew_pctile": 0.6150793650793651,
       "stock_bond_corr": 0.5920642961425798,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.3308987686975122,
+      "roro": 0.17016428070463938,
       "roro_state": "neutral",
       "vol_target_scalar": 0.6729967262106253,
       "news_sentiment": 0.042056720703840256,
@@ -4010,9 +4010,9 @@
     }
   },
   "fear_euphoria": {
-    "fe_score": 75,
-    "band": "Greed",
-    "roro": 0.3308987686975122,
+    "fe_score": 60,
+    "band": "Neutral",
+    "roro": 0.17016428070463938,
     "roro_state": "neutral",
     "legs": [
       {
@@ -4035,9 +4035,9 @@
         "key": "skew",
         "name_en": "SKEW (tail pricing)",
         "name_zh": "SKEW \u5c3e\u90e8\u5b9a\u4ef7",
-        "value": 0.293,
-        "pct": 57,
-        "lean": "risk-on"
+        "value": -0.612,
+        "pct": 30,
+        "lean": "risk-off"
       },
       {
         "key": "vix_term",
@@ -4059,7 +4059,7 @@
         "key": "copper_gold",
         "name_en": "Copper/Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 2.007,
+        "value": 1.9,
         "pct": 99,
         "lean": "risk-on"
       },
@@ -4067,16 +4067,16 @@
         "key": "dxy",
         "name_en": "Dollar (20d %\u0394)",
         "name_zh": "\u7f8e\u5143\uff0820\u65e5 %\u53d8\u52a8\uff09",
-        "value": -1.319,
-        "pct": 11,
+        "value": -1.432,
+        "pct": 9,
         "lean": "risk-off"
       }
     ],
     "confirmation": {
-      "n_on": 6,
-      "n_off": 1,
+      "n_on": 5,
+      "n_off": 2,
       "total": 7,
-      "agree": 6,
+      "agree": 5,
       "direction": "risk-on",
       "confirmed_by": [
         {
@@ -4088,11 +4088,6 @@
           "key": "hy_oas",
           "en": "HY credit spread",
           "zh": "\u9ad8\u6536\u76ca\u4fe1\u7528\u5229\u5dee"
-        },
-        {
-          "key": "skew",
-          "en": "SKEW (tail pricing)",
-          "zh": "SKEW \u5c3e\u90e8\u5b9a\u4ef7"
         },
         {
           "key": "vix_term",
@@ -4112,13 +4107,18 @@
       ],
       "dissent": [
         {
+          "key": "skew",
+          "en": "SKEW (tail pricing)",
+          "zh": "SKEW \u5c3e\u90e8\u5b9a\u4ef7"
+        },
+        {
           "key": "dxy",
           "en": "Dollar (20d %\u0394)",
           "zh": "\u7f8e\u5143\uff0820\u65e5 %\u53d8\u52a8\uff09"
         }
       ],
-      "verdict_en": "clean risk-on",
-      "verdict_zh": "\u4e00\u81f4\u504f\u597d\u98ce\u9669"
+      "verdict_en": "risk-on, not clean",
+      "verdict_zh": "\u504f\u597d\u98ce\u9669\uff08\u4e0d\u4e00\u81f4\uff09"
     },
     "positioning": {
       "chip": "diverges",
@@ -4151,62 +4151,62 @@
     {
       "ticker": "GC=F",
       "name": "Gold",
-      "price": 4023.7,
+      "price": 3996.0,
       "above50": false,
       "above200": false,
-      "pct_vs_50dma": -9.1,
-      "pct_vs_200dma": -9.8,
-      "rsi14": 35.0,
+      "pct_vs_50dma": -9.7,
+      "pct_vs_200dma": -10.4,
+      "rsi14": 33.0,
       "macd_pos": false,
-      "off_52w_high_pct": -24.3,
+      "off_52w_high_pct": -24.9,
       "season_this": "Jul: +1.0% avg, up 56% of years (n=25)",
       "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.0%\uff0c56% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=25\uff09",
-      "mom_60d_pct": -15.3
+      "mom_60d_pct": -15.9
     },
     {
       "ticker": "CL=F",
       "name": "Crude Oil",
-      "price": 70.04,
+      "price": 69.79,
       "above50": false,
       "above200": false,
-      "pct_vs_50dma": -22.5,
-      "pct_vs_200dma": -5.6,
+      "pct_vs_50dma": -22.8,
+      "pct_vs_200dma": -5.9,
       "rsi14": 30.0,
       "macd_pos": false,
-      "off_52w_high_pct": -38.0,
+      "off_52w_high_pct": -38.2,
       "season_this": "Jul: +0.7% avg, up 68% of years (n=25)",
       "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +0.7%\uff0c68% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=25\uff09",
-      "mom_60d_pct": -25.8
+      "mom_60d_pct": -26.1
     },
     {
       "ticker": "HG=F",
       "name": "Copper",
-      "price": 6.25,
+      "price": 6.15,
       "above50": false,
       "above200": true,
-      "pct_vs_50dma": -0.2,
-      "pct_vs_200dma": 10.6,
-      "rsi14": 49.0,
+      "pct_vs_50dma": -1.8,
+      "pct_vs_200dma": 8.8,
+      "rsi14": 45.0,
       "macd_pos": false,
-      "off_52w_high_pct": -6.0,
+      "off_52w_high_pct": -7.5,
       "season_this": "Jul: +1.5% avg, up 60% of years (n=25)",
       "season_this_zh": "7\u6708\uff1a\u5e73\u5747 +1.5%\uff0c60% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=25\uff09",
-      "mom_60d_pct": 8.5
+      "mom_60d_pct": 6.8
     },
     {
       "ticker": "DX-Y.NYB",
       "name": "US Dollar",
-      "price": 101.17,
+      "price": 101.32,
       "above50": true,
       "above200": true,
-      "pct_vs_50dma": 1.7,
-      "pct_vs_200dma": 2.3,
-      "rsi14": 66.0,
+      "pct_vs_50dma": 1.9,
+      "pct_vs_200dma": 2.5,
+      "rsi14": 67.0,
       "macd_pos": true,
-      "off_52w_high_pct": -0.4,
+      "off_52w_high_pct": -0.3,
       "season_this": "Jul: -0.2% avg, up 49% of years (n=55)",
       "season_this_zh": "7\u6708\uff1a\u5e73\u5747 -0.2%\uff0c49% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=55\uff09",
-      "mom_60d_pct": 2.1
+      "mom_60d_pct": 2.2
     }
   ],
   "vix": {
@@ -4285,7 +4285,7 @@
       "verdict": "<span class=\"l-en\">market-makers&#39; hedging absorbs moves \u2014 calmer tape likely (and we&#39;re near the tipping point \u2014 it can flip any day)</span><span class=\"l-zh\">\u505a\u5e02\u5546\u5bf9\u51b2\u5438\u6536\u6ce2\u52a8 \u2014 \u76d8\u9762\u53ef\u80fd\u66f4\u5e73\u9759\uff08\u4e14\u6211\u4eec\u5df2\u63a5\u8fd1\u4e34\u754c\u70b9 \u2014 \u968f\u65f6\u53ef\u80fd\u53cd\u8f6c\uff09</span>",
       "left": "",
       "right": "",
-      "tip": "<span class=\"l-en\">Estimated dealer gamma (GEX) from the S&amp;P options chain, standard assumption (dealers long calls/short puts). Positive = their hedging dampens market moves; negative = it amplifies them. Today: +172bn per 1% move (as of 2026-06-30). An estimate, not ground truth.</span><span class=\"l-zh\">\u7531\u6807\u666e\u671f\u6743\u94fe\u4f30\u7b97\u7684\u505a\u5e02\u5546 gamma\uff08GEX\uff09\uff0c\u91c7\u7528\u6807\u51c6\u5047\u8bbe\uff08\u505a\u5e02\u5546\u6301\u6709\u591a\u5934\u770b\u6da8/\u7a7a\u5934\u770b\u8dcc\uff09\u3002\u6b63\u503c = \u5176\u5bf9\u51b2\u6291\u5236\u5e02\u573a\u6ce2\u52a8\uff1b\u8d1f\u503c = \u653e\u5927\u6ce2\u52a8\u3002\u4eca\u65e5\uff1a\u6bcf1%\u6ce2\u52a8 +172\u5341\u4ebf \uff08\u622a\u81f3 2026-06-30\uff09\u3002\u8fd9\u662f\u4f30\u7b97\uff0c\u5e76\u975e\u771f\u5b9e\u503c\u3002</span>"
+      "tip": "<span class=\"l-en\">Estimated dealer gamma (GEX) from the S&amp;P options chain, standard assumption (dealers long calls/short puts). Positive = their hedging dampens market moves; negative = it amplifies them. Today: +165bn per 1% move (as of 2026-06-30). An estimate, not ground truth.</span><span class=\"l-zh\">\u7531\u6807\u666e\u671f\u6743\u94fe\u4f30\u7b97\u7684\u505a\u5e02\u5546 gamma\uff08GEX\uff09\uff0c\u91c7\u7528\u6807\u51c6\u5047\u8bbe\uff08\u505a\u5e02\u5546\u6301\u6709\u591a\u5934\u770b\u6da8/\u7a7a\u5934\u770b\u8dcc\uff09\u3002\u6b63\u503c = \u5176\u5bf9\u51b2\u6291\u5236\u5e02\u573a\u6ce2\u52a8\uff1b\u8d1f\u503c = \u653e\u5927\u6ce2\u52a8\u3002\u4eca\u65e5\uff1a\u6bcf1%\u6ce2\u52a8 +165\u5341\u4ebf \uff08\u622a\u81f3 2026-06-30\uff09\u3002\u8fd9\u662f\u4f30\u7b97\uff0c\u5e76\u975e\u771f\u5b9e\u503c\u3002</span>"
     },
     {
       "name": "<span class=\"l-en\">Fear gauge</span><span class=\"l-zh\">\u6050\u614c\u6307\u6807</span>",

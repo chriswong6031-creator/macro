@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-01T03:20:25.892095+00:00",
+  "generated_utc": "2026-07-01T04:15:06.945880+00:00",
   "as_of": "2026-07-01",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -1554,48 +1554,18 @@
       "emoji": "\ud83d\udcbc",
       "label_en": "Corporate lobbying",
       "label_zh": "\u4f01\u4e1a\u6e38\u8bf4",
-      "rows": 19776,
+      "rows": 19777,
       "last_seen": "2026-06-30",
       "recent": [
         {
           "Date": "2026-06-30",
-          "Amount": "140000.0",
-          "Client": "ALIBABA GROUP HOLDING LIMITED",
-          "Issue": "Trade (domestic/foreign)",
-          "Specific_Issue": "Provide strategic counsel and advocate on issues related to ecommerce and trade.",
-          "Registrant": "BGR GOVERNMENT AFFAIRS",
-          "Ticker": "BABA",
-          "_first_seen": "2026-07-01T00:23:35.167929+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "Amount": "0.0",
-          "Client": "THE BANK OF NEW YORK MELLON CORPORATION",
-          "Issue": "Financial Institutions/Investments/Securities",
-          "Specific_Issue": "Provide strategic counsel and advocate on issues related to financial services.",
-          "Registrant": "BGR GOVERNMENT AFFAIRS",
-          "Ticker": "BK",
-          "_first_seen": "2026-07-01T00:23:35.167929+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "Amount": "0.0",
-          "Client": "BOYD GAMING CORPORATION",
-          "Issue": null,
-          "Specific_Issue": null,
-          "Registrant": "POWERS PYLES SUTTER & VERVILLE, P.C.",
-          "Ticker": "BYD",
-          "_first_seen": "2026-07-01T00:23:35.167929+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "Amount": "220000.0",
-          "Client": "RIVIAN AUTOMOTIVE LLC",
-          "Issue": "Automotive Industry \n Manufacturing \n Trade (domestic/foreign)",
-          "Specific_Issue": "Issues affecting automotive and automotive supply chain in the US, including consumer tax incentives, commercial tax incentives, and emissions standards. Issues affecting autonomous vehicles, including SELF DRIVE Act \u2026",
-          "Registrant": "RIVIAN AUTOMOTIVE, LLC",
-          "Ticker": "RIVN",
-          "_first_seen": "2026-07-01T00:23:35.167929+00:00"
+          "Amount": "320000.0",
+          "Client": "BROWN-FORMAN CORPORATION",
+          "Issue": "Beverage Industry \n Taxation/Internal Revenue Code \n Trade (domestic/foreign) \n Tariff (miscellaneous tariff bills)",
+          "Specific_Issue": "Application and interpretation by Customs and Border Protection (CBP) and Treasury Department of 19 USC 1313(j)(2) (providing for substitution unused merchandise drawback), and of the Trade Facilitation and Trade Enfo\u2026",
+          "Registrant": "BECKER LAW FIRM PLLC",
+          "Ticker": "BF.A",
+          "_first_seen": "2026-07-01T03:01:27.436487+00:00"
         },
         {
           "Date": "2026-06-30",
@@ -1610,41 +1580,11 @@
         {
           "Date": "2026-06-30",
           "Amount": "0.0",
-          "Client": "TAKEDA PHARMACEUTICALS AMERICA INC",
-          "Issue": "Health Issues",
-          "Specific_Issue": "Issues relating to HR 4299, Protecting Patients' Access to Cancer and Complex Therapies Act, and general healthcare",
-          "Registrant": "FARRAGUT PARTNERS LLP",
-          "Ticker": "TAK",
-          "_first_seen": "2026-07-01T00:23:35.167929+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "Amount": "165000.0",
-          "Client": "FMC CORPORATION",
-          "Issue": "Trade (domestic/foreign) \n Agriculture \n Environment/Superfund",
-          "Specific_Issue": "Issues related to the flow of goods and services restrictions and foreign country trade barriers. \n Issues related to pesticide policy and regulations, PRIA and EPA OPP Funding, product registration reviews, ESA and F\u2026",
-          "Registrant": "FMC CORPORATION",
-          "Ticker": "FMC",
-          "_first_seen": "2026-07-01T00:23:35.167929+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "Amount": "10000.0",
-          "Client": "SOLARWINDS INC.",
-          "Issue": "Computer Industry \n Defense \n Homeland Security",
-          "Specific_Issue": "Cybersecurity, information technology (IT), IT network management software \n IT modernization strategies and funding \n IT modernization strategies and funding",
-          "Registrant": "SOLARWINDS, INC.",
-          "Ticker": "SWI",
-          "_first_seen": "2026-07-01T00:23:35.167929+00:00"
-        },
-        {
-          "Date": "2026-06-30",
-          "Amount": "0.0",
-          "Client": "VERIZON COMMUNICATIONS INC AND VARIOUS SUBSIDIARIES",
+          "Client": "BLOOMIN' BRANDS INC",
           "Issue": null,
           "Specific_Issue": null,
-          "Registrant": "MAYER BROWN LLP",
-          "Ticker": "VZ",
+          "Registrant": "BLOOMIN' BRANDS, INC.",
+          "Ticker": "BLMN",
           "_first_seen": "2026-07-01T00:23:35.167929+00:00"
         },
         {
@@ -1660,51 +1600,91 @@
         {
           "Date": "2026-06-30",
           "Amount": "0.0",
-          "Client": "BLOOMIN' BRANDS INC",
+          "Client": "VERIZON COMMUNICATIONS INC AND VARIOUS SUBSIDIARIES",
           "Issue": null,
           "Specific_Issue": null,
-          "Registrant": "BLOOMIN' BRANDS, INC.",
-          "Ticker": "BLMN",
+          "Registrant": "MAYER BROWN LLP",
+          "Ticker": "VZ",
           "_first_seen": "2026-07-01T00:23:35.167929+00:00"
         },
         {
-          "Date": "2026-06-29",
-          "Amount": "0.0",
-          "Client": "BROWN-FORMAN CORPORATION",
-          "Issue": "Beverage Industry \n Tariff (miscellaneous tariff bills) \n Taxation/Internal Revenue Code \n Trade (domestic/foreign)",
-          "Specific_Issue": "This amended registration is intended only to add a fourth lobbying issue category (TRD), and for all categories, to provide the following more detailed report of the specific lobbying issues required to be disclosed \u2026",
-          "Registrant": "BECKER LAW FIRM PLLC",
-          "Ticker": "BF.A",
+          "Date": "2026-06-30",
+          "Amount": "10000.0",
+          "Client": "SOLARWINDS INC.",
+          "Issue": "Computer Industry \n Defense \n Homeland Security",
+          "Specific_Issue": "Cybersecurity, information technology (IT), IT network management software \n IT modernization strategies and funding \n IT modernization strategies and funding",
+          "Registrant": "SOLARWINDS, INC.",
+          "Ticker": "SWI",
           "_first_seen": "2026-07-01T00:23:35.167929+00:00"
         },
         {
-          "Date": "2026-06-29",
-          "Amount": "45000.0",
-          "Client": "OLD DOMINION FREIGHT LINE INC.",
-          "Issue": "Transportation",
-          "Specific_Issue": "Transportation",
-          "Registrant": "BC CONSULTING, LLC",
-          "Ticker": "ODFL",
-          "_first_seen": "2026-06-30T00:13:28.830768+00:00"
+          "Date": "2026-06-30",
+          "Amount": "165000.0",
+          "Client": "FMC CORPORATION",
+          "Issue": "Trade (domestic/foreign) \n Agriculture \n Environment/Superfund",
+          "Specific_Issue": "Issues related to the flow of goods and services restrictions and foreign country trade barriers. \n Issues related to pesticide policy and regulations, PRIA and EPA OPP Funding, product registration reviews, ESA and F\u2026",
+          "Registrant": "FMC CORPORATION",
+          "Ticker": "FMC",
+          "_first_seen": "2026-07-01T00:23:35.167929+00:00"
         },
         {
-          "Date": "2026-06-29",
+          "Date": "2026-06-30",
           "Amount": "0.0",
+          "Client": "TAKEDA PHARMACEUTICALS AMERICA INC",
+          "Issue": "Health Issues",
+          "Specific_Issue": "Issues relating to HR 4299, Protecting Patients' Access to Cancer and Complex Therapies Act, and general healthcare",
+          "Registrant": "FARRAGUT PARTNERS LLP",
+          "Ticker": "TAK",
+          "_first_seen": "2026-07-01T00:23:35.167929+00:00"
+        },
+        {
+          "Date": "2026-06-30",
+          "Amount": "220000.0",
+          "Client": "RIVIAN AUTOMOTIVE LLC",
+          "Issue": "Automotive Industry \n Manufacturing \n Trade (domestic/foreign)",
+          "Specific_Issue": "Issues affecting automotive and automotive supply chain in the US, including consumer tax incentives, commercial tax incentives, and emissions standards. Issues affecting autonomous vehicles, including SELF DRIVE Act \u2026",
+          "Registrant": "RIVIAN AUTOMOTIVE, LLC",
+          "Ticker": "RIVN",
+          "_first_seen": "2026-07-01T00:23:35.167929+00:00"
+        },
+        {
+          "Date": "2026-06-30",
+          "Amount": "0.0",
+          "Client": "BOYD GAMING CORPORATION",
+          "Issue": null,
+          "Specific_Issue": null,
+          "Registrant": "POWERS PYLES SUTTER & VERVILLE, P.C.",
+          "Ticker": "BYD",
+          "_first_seen": "2026-07-01T00:23:35.167929+00:00"
+        },
+        {
+          "Date": "2026-06-30",
+          "Amount": "0.0",
+          "Client": "THE BANK OF NEW YORK MELLON CORPORATION",
+          "Issue": "Financial Institutions/Investments/Securities",
+          "Specific_Issue": "Provide strategic counsel and advocate on issues related to financial services.",
+          "Registrant": "BGR GOVERNMENT AFFAIRS",
+          "Ticker": "BK",
+          "_first_seen": "2026-07-01T00:23:35.167929+00:00"
+        },
+        {
+          "Date": "2026-06-30",
+          "Amount": "140000.0",
           "Client": "ALIBABA GROUP HOLDING LIMITED",
-          "Issue": "Small Business",
-          "Specific_Issue": "Issues related to e-commerce plateforms and the benefits to US businessess and US GDP",
-          "Registrant": "STORY PARTNERS, LLC",
+          "Issue": "Trade (domestic/foreign)",
+          "Specific_Issue": "Provide strategic counsel and advocate on issues related to ecommerce and trade.",
+          "Registrant": "BGR GOVERNMENT AFFAIRS",
           "Ticker": "BABA",
-          "_first_seen": "2026-06-30T00:13:28.830768+00:00"
+          "_first_seen": "2026-07-01T00:23:35.167929+00:00"
         },
         {
           "Date": "2026-06-29",
-          "Amount": "0.0",
-          "Client": "TRANSUNION",
-          "Issue": null,
-          "Specific_Issue": null,
-          "Registrant": "THE WILLIAMS GROUP",
-          "Ticker": "TRU",
+          "Amount": "60000.0",
+          "Client": "ALIBABA GROUP HOLDING LIMITED",
+          "Issue": "Trade (domestic/foreign)",
+          "Specific_Issue": "Provide strategic counsel and advocate on issues related to e-commerce and trade.",
+          "Registrant": "MO STRATEGIES, INC.",
+          "Ticker": "BABA",
           "_first_seen": "2026-06-30T00:13:28.830768+00:00"
         },
         {
@@ -1719,6 +1699,36 @@
         },
         {
           "Date": "2026-06-29",
+          "Amount": "0.0",
+          "Client": "TRANSUNION",
+          "Issue": null,
+          "Specific_Issue": null,
+          "Registrant": "THE WILLIAMS GROUP",
+          "Ticker": "TRU",
+          "_first_seen": "2026-06-30T00:13:28.830768+00:00"
+        },
+        {
+          "Date": "2026-06-29",
+          "Amount": "0.0",
+          "Client": "ALIBABA GROUP HOLDING LIMITED",
+          "Issue": "Small Business",
+          "Specific_Issue": "Issues related to e-commerce plateforms and the benefits to US businessess and US GDP",
+          "Registrant": "STORY PARTNERS, LLC",
+          "Ticker": "BABA",
+          "_first_seen": "2026-06-30T00:13:28.830768+00:00"
+        },
+        {
+          "Date": "2026-06-29",
+          "Amount": "45000.0",
+          "Client": "OLD DOMINION FREIGHT LINE INC.",
+          "Issue": "Transportation",
+          "Specific_Issue": "Transportation",
+          "Registrant": "BC CONSULTING, LLC",
+          "Ticker": "ODFL",
+          "_first_seen": "2026-06-30T00:13:28.830768+00:00"
+        },
+        {
+          "Date": "2026-06-29",
           "Amount": "50000.0",
           "Client": "MASIMO CORPORATION",
           "Issue": "Health Issues",
@@ -1729,23 +1739,13 @@
         },
         {
           "Date": "2026-06-29",
-          "Amount": "60000.0",
-          "Client": "ALIBABA GROUP HOLDING LIMITED",
-          "Issue": "Trade (domestic/foreign)",
-          "Specific_Issue": "Provide strategic counsel and advocate on issues related to e-commerce and trade.",
-          "Registrant": "MO STRATEGIES, INC.",
-          "Ticker": "BABA",
-          "_first_seen": "2026-06-30T00:13:28.830768+00:00"
-        },
-        {
-          "Date": "2026-06-29",
           "Amount": "0.0",
-          "Client": "EDWARDS LIFESCIENCES LLC",
-          "Issue": "Trade (domestic/foreign)",
-          "Specific_Issue": "Trade policy and tariffs.",
-          "Registrant": "AKIN GUMP STRAUSS HAUER & FELD",
-          "Ticker": "EW",
-          "_first_seen": "2026-07-01T00:23:35.167929+00:00"
+          "Client": "BLOOMIN' BRANDS INC",
+          "Issue": null,
+          "Specific_Issue": null,
+          "Registrant": "BLOOMIN' BRANDS, INC.",
+          "Ticker": "BLMN",
+          "_first_seen": "2026-06-30T00:13:28.830768+00:00"
         },
         {
           "Date": "2026-06-29",
@@ -1760,12 +1760,22 @@
         {
           "Date": "2026-06-29",
           "Amount": "0.0",
-          "Client": "BLOOMIN' BRANDS INC",
-          "Issue": null,
-          "Specific_Issue": null,
-          "Registrant": "BLOOMIN' BRANDS, INC.",
-          "Ticker": "BLMN",
-          "_first_seen": "2026-06-30T00:13:28.830768+00:00"
+          "Client": "BROWN-FORMAN CORPORATION",
+          "Issue": "Beverage Industry \n Tariff (miscellaneous tariff bills) \n Taxation/Internal Revenue Code \n Trade (domestic/foreign)",
+          "Specific_Issue": "This amended registration is intended only to add a fourth lobbying issue category (TRD), and for all categories, to provide the following more detailed report of the specific lobbying issues required to be disclosed \u2026",
+          "Registrant": "BECKER LAW FIRM PLLC",
+          "Ticker": "BF.A",
+          "_first_seen": "2026-07-01T00:23:35.167929+00:00"
+        },
+        {
+          "Date": "2026-06-29",
+          "Amount": "0.0",
+          "Client": "EDWARDS LIFESCIENCES LLC",
+          "Issue": "Trade (domestic/foreign)",
+          "Specific_Issue": "Trade policy and tariffs.",
+          "Registrant": "AKIN GUMP STRAUSS HAUER & FELD",
+          "Ticker": "EW",
+          "_first_seen": "2026-07-01T00:23:35.167929+00:00"
         },
         {
           "Date": "2026-06-27",
@@ -1795,16 +1805,6 @@
           "Specific_Issue": "Working with T-Mobile on Spectrum issues and Implementation of OBBA spectrum auction authority",
           "Registrant": "ALPINE ADVISORS",
           "Ticker": "TMUS",
-          "_first_seen": "2026-06-27T02:06:44.428200+00:00"
-        },
-        {
-          "Date": "2026-06-26",
-          "Amount": "80000.0",
-          "Client": "ALIBABA GROUP HOLDING LIMITED",
-          "Issue": "Trade (domestic/foreign) \n Small Business",
-          "Specific_Issue": "Education about expanding US exports Foreign accounting standards \n Small & medium sized enterprise export promotion",
-          "Registrant": "BROWNSTEIN HYATT FARBER SCHRECK, LLP",
-          "Ticker": "BABA",
           "_first_seen": "2026-06-27T02:06:44.428200+00:00"
         }
       ]
@@ -2022,483 +2022,483 @@
       "emoji": "\ud83d\udc54",
       "label_en": "Insider trading",
       "label_zh": "\u5185\u90e8\u4eba\u4ea4\u6613",
-      "rows": 25721,
+      "rows": 25765,
       "last_seen": "2026-07-01",
       "recent": [
         {
-          "Ticker": "ACHR",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "Spellacy Michael",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "M",
-          "Shares": "19102.0",
-          "PricePerShare": "0.0",
-          "SharesOwnedFollowing": "73746.0",
-          "fileDate": "2026-07-01T00:11:18.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
-        },
-        {
-          "Ticker": "ACHR",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "Pinelli Maria",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "M",
-          "Shares": "19102.0",
-          "PricePerShare": "0.0",
-          "SharesOwnedFollowing": "201787.0",
-          "fileDate": "2026-07-01T00:10:13.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
-        },
-        {
-          "Ticker": "CUEN",
+          "Ticker": "UMC",
           "Date": "2026-06-30T00:00:00.000",
-          "Name": "OAS ENERGY LLC",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "P",
-          "Shares": "1000.0",
-          "PricePerShare": "0.3476",
-          "SharesOwnedFollowing": "94921.0",
-          "fileDate": "2026-07-01T00:10:11.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "True",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
-        },
-        {
-          "Ticker": "CUEN",
-          "Date": "2026-06-30T00:00:00.000",
-          "Name": "OAS ENERGY LLC",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "P",
-          "Shares": "600.0",
-          "PricePerShare": "0.3508",
-          "SharesOwnedFollowing": "98921.0",
-          "fileDate": "2026-07-01T00:10:11.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "True",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
-        },
-        {
-          "Ticker": "CUEN",
-          "Date": "2026-06-30T00:00:00.000",
-          "Name": "OAS ENERGY LLC",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "P",
-          "Shares": "1700.0",
-          "PricePerShare": "0.3262",
-          "SharesOwnedFollowing": "100621.0",
-          "fileDate": "2026-07-01T00:10:11.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "True",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
-        },
-        {
-          "Ticker": "CUEN",
-          "Date": "2026-06-30T00:00:00.000",
-          "Name": "OAS ENERGY LLC",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "P",
-          "Shares": "900.0",
-          "PricePerShare": "0.34",
-          "SharesOwnedFollowing": "95821.0",
-          "fileDate": "2026-07-01T00:10:11.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "True",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
-        },
-        {
-          "Ticker": "CUEN",
-          "Date": "2026-06-30T00:00:00.000",
-          "Name": "OAS ENERGY LLC",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "P",
-          "Shares": "2500.0",
-          "PricePerShare": "0.3595",
-          "SharesOwnedFollowing": "98321.0",
-          "fileDate": "2026-07-01T00:10:11.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "True",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
-        },
-        {
-          "Ticker": "ACHR",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "MUNOZ OSCAR",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "M",
-          "Shares": "19102.0",
-          "PricePerShare": "0.0",
-          "SharesOwnedFollowing": "461223.0",
-          "fileDate": "2026-07-01T00:08:57.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
-        },
-        {
-          "Ticker": "CXDO",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Vincent Ron",
+          "Name": "HU CHE-JEN",
           "AcquiredDisposedCode": "D",
-          "TransactionCode": "F",
-          "Shares": "118.0",
-          "PricePerShare": "6.92",
-          "SharesOwnedFollowing": "128908.0",
-          "fileDate": "2026-07-01T00:07:54.000",
-          "officerTitle": "Chief Financial Officer",
+          "TransactionCode": "S",
+          "Shares": "10000.0",
+          "PricePerShare": "171.3",
+          "SharesOwnedFollowing": "3214080.0",
+          "fileDate": "2026-07-01T01:48:56.000",
+          "officerTitle": "Vice President",
           "isDirector": "False",
           "isOfficer": "True",
           "isTenPercentOwner": "False",
           "isOther": "False",
           "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
+          "uploaded": "2026-07-01T02:00:04.676",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
         },
         {
-          "Ticker": "CXDO",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Vincent Ron",
+          "Ticker": "UCTT",
+          "Date": "2026-06-26T00:00:00.000",
+          "Name": "HARDING BRIAN E",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "9363.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "37418.0",
+          "fileDate": "2026-07-01T01:35:49.000",
+          "officerTitle": "Chief Accounting Officer",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-07-01T01:45:03.311",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
+        },
+        {
+          "Ticker": "MUX",
+          "Date": "2026-06-28T00:00:00.000",
+          "Name": "Chan Jeffrey",
           "AcquiredDisposedCode": "A",
           "TransactionCode": "M",
-          "Shares": "278.0",
-          "PricePerShare": "0.0",
-          "SharesOwnedFollowing": "128866.0",
-          "fileDate": "2026-07-01T00:07:54.000",
-          "officerTitle": "Chief Financial Officer",
+          "Shares": "588.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "4527.0",
+          "fileDate": "2026-07-01T01:16:56.000",
+          "officerTitle": "VP - Finance",
           "isDirector": "False",
           "isOfficer": "True",
           "isTenPercentOwner": "False",
           "isOther": "False",
           "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
+          "uploaded": "2026-07-01T01:30:05.165",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
         },
         {
-          "Ticker": "CXDO",
-          "Date": "2026-06-27T00:00:00.000",
-          "Name": "Vincent Ron",
+          "Ticker": "MUX",
+          "Date": "2026-06-28T00:00:00.000",
+          "Name": "Chan Jeffrey",
           "AcquiredDisposedCode": "A",
           "TransactionCode": "M",
-          "Shares": "1110.0",
-          "PricePerShare": "0.0",
-          "SharesOwnedFollowing": "130018.0",
-          "fileDate": "2026-07-01T00:07:54.000",
+          "Shares": "248.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "4775.0",
+          "fileDate": "2026-07-01T01:16:56.000",
+          "officerTitle": "VP - Finance",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-07-01T01:30:05.165",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
+        },
+        {
+          "Ticker": "MUX",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Ball Ian J",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "160.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "320.0",
+          "fileDate": "2026-07-01T01:15:25.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-07-01T01:30:05.165",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
+        },
+        {
+          "Ticker": "MUX",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Shaver William M",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "5700.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "169606.0",
+          "fileDate": "2026-07-01T01:11:53.000",
+          "officerTitle": "Chief Operating Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-07-01T01:15:07.113",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
+        },
+        {
+          "Ticker": "MUX",
+          "Date": "2026-06-28T00:00:00.000",
+          "Name": "Shaver William M",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "866.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "152166.0",
+          "fileDate": "2026-07-01T01:11:53.000",
+          "officerTitle": "Chief Operating Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-07-01T01:15:07.113",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
+        },
+        {
+          "Ticker": "MUX",
+          "Date": "2026-06-28T00:00:00.000",
+          "Name": "Shaver William M",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "2100.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "151300.0",
+          "fileDate": "2026-07-01T01:11:53.000",
+          "officerTitle": "Chief Operating Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-07-01T01:15:07.113",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
+        },
+        {
+          "Ticker": "MUX",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Shaver William M",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "11740.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "163906.0",
+          "fileDate": "2026-07-01T01:11:53.000",
+          "officerTitle": "Chief Operating Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-07-01T01:15:07.113",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
+        },
+        {
+          "Ticker": "MUX",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Shaver William M",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "1480.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "171086.0",
+          "fileDate": "2026-07-01T01:11:53.000",
+          "officerTitle": "Chief Operating Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-07-01T01:15:07.113",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
+        },
+        {
+          "Ticker": "MUX",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Ing Perry",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "686.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "47666.0",
+          "fileDate": "2026-07-01T01:08:14.000",
           "officerTitle": "Chief Financial Officer",
           "isDirector": "False",
           "isOfficer": "True",
           "isTenPercentOwner": "False",
           "isOther": "False",
           "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
+          "uploaded": "2026-07-01T01:15:07.113",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
         },
         {
-          "Ticker": "CXDO",
-          "Date": "2026-06-27T00:00:00.000",
-          "Name": "Vincent Ron",
+          "Ticker": "MUX",
+          "Date": "2026-06-28T00:00:00.000",
+          "Name": "Ing Perry",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "116.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "46980.0",
+          "fileDate": "2026-07-01T01:08:14.000",
+          "officerTitle": "Chief Financial Officer",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-07-01T01:15:07.113",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
+        },
+        {
+          "Ticker": "MUX",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Ing Perry",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "337.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "48003.0",
+          "fileDate": "2026-07-01T01:08:14.000",
+          "officerTitle": "Chief Financial Officer",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-07-01T01:15:07.113",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
+        },
+        {
+          "Ticker": "MUX",
+          "Date": "2026-06-28T00:00:00.000",
+          "Name": "Ing Perry",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "270.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "46864.0",
+          "fileDate": "2026-07-01T01:08:14.000",
+          "officerTitle": "Chief Financial Officer",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-07-01T01:15:07.113",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
+        },
+        {
+          "Ticker": "MUX",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Ing Perry",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "91.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "48094.0",
+          "fileDate": "2026-07-01T01:08:14.000",
+          "officerTitle": "Chief Financial Officer",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-07-01T01:15:07.113",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
+        },
+        {
+          "Ticker": "HNRG",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Hudson Daniel Timothy",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "5000.0",
+          "PricePerShare": "16.98",
+          "SharesOwnedFollowing": "15000.0",
+          "fileDate": "2026-07-01T01:05:06.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-07-01T01:15:07.113",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
+        },
+        {
+          "Ticker": "NMM",
+          "Date": "2026-06-26T00:00:00.000",
+          "Name": "Frangou Angeliki",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "1195.0",
+          "PricePerShare": "69.2232",
+          "SharesOwnedFollowing": "4756211.0",
+          "fileDate": "2026-07-01T01:00:04.000",
+          "officerTitle": "See Remarks",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-07-01T01:15:07.113",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
+        },
+        {
+          "Ticker": "NMM",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Frangou Angeliki",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "1208.0",
+          "PricePerShare": "68.8774",
+          "SharesOwnedFollowing": "4757419.0",
+          "fileDate": "2026-07-01T01:00:04.000",
+          "officerTitle": "See Remarks",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-07-01T01:15:07.113",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
+        },
+        {
+          "Ticker": "NMM",
+          "Date": "2026-06-30T00:00:00.000",
+          "Name": "Frangou Angeliki",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "1199.0",
+          "PricePerShare": "69.5013",
+          "SharesOwnedFollowing": "4758618.0",
+          "fileDate": "2026-07-01T01:00:04.000",
+          "officerTitle": "See Remarks",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-07-01T01:15:07.113",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
+        },
+        {
+          "Ticker": "GECC",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "Great Elm Strategic Partnership I, LLC",
           "AcquiredDisposedCode": "D",
-          "TransactionCode": "F",
-          "Shares": "471.0",
-          "PricePerShare": "7.23",
-          "SharesOwnedFollowing": "129547.0",
-          "fileDate": "2026-07-01T00:07:54.000",
-          "officerTitle": "Chief Financial Officer",
+          "TransactionCode": "J",
+          "Shares": "180000.0",
+          "PricePerShare": "5.45",
+          "SharesOwnedFollowing": "1378260.0",
+          "fileDate": "2026-07-01T00:49:27.000",
+          "officerTitle": null,
           "isDirector": "False",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
+          "isOfficer": "False",
+          "isTenPercentOwner": "True",
           "isOther": "False",
           "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
+          "uploaded": "2026-07-01T01:00:04.610",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
         },
         {
-          "Ticker": "NTRA",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "Rubin Eric H",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "A",
-          "Shares": "75.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "2204.0",
-          "fileDate": "2026-07-01T00:05:18.000",
+          "Ticker": "ROIV",
+          "Date": "2026-06-30T00:00:00.000",
+          "Name": "MANCHESTER KEITH S",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "200000.0",
+          "PricePerShare": "35.45",
+          "SharesOwnedFollowing": "1748403.0",
+          "fileDate": "2026-07-01T00:38:34.000",
           "officerTitle": null,
           "isDirector": "True",
           "isOfficer": "False",
           "isTenPercentOwner": "False",
           "isOther": "False",
           "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
+          "uploaded": "2026-07-01T00:45:08.642",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
         },
         {
-          "Ticker": "NTRA",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "ROSENMAN HERM",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "A",
-          "Shares": "1571.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "5821.0",
-          "fileDate": "2026-07-01T00:05:16.000",
+          "Ticker": "ROIV",
+          "Date": "2026-06-30T00:00:00.000",
+          "Name": "MANCHESTER KEITH S",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "12380.0",
+          "PricePerShare": "35.28",
+          "SharesOwnedFollowing": "13689166.0",
+          "fileDate": "2026-07-01T00:38:34.000",
           "officerTitle": null,
           "isDirector": "True",
           "isOfficer": "False",
           "isTenPercentOwner": "False",
           "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-07-01T00:45:08.642",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
         },
         {
-          "Ticker": "NTRA",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "ROSENMAN HERM",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "A",
-          "Shares": "106.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "5927.0",
-          "fileDate": "2026-07-01T00:05:16.000",
+          "Ticker": "ROIV",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "MANCHESTER KEITH S",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "600000.0",
+          "PricePerShare": "34.59",
+          "SharesOwnedFollowing": "13701546.0",
+          "fileDate": "2026-07-01T00:38:34.000",
           "officerTitle": null,
           "isDirector": "True",
           "isOfficer": "False",
           "isTenPercentOwner": "False",
           "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-07-01T00:45:08.642",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
         },
         {
-          "Ticker": "NTRA",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "Marcus Gail Boxer",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "A",
-          "Shares": "98.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "7852.0",
-          "fileDate": "2026-07-01T00:05:14.000",
+          "Ticker": "ROIV",
+          "Date": "2026-06-29T00:00:00.000",
+          "Name": "MANCHESTER KEITH S",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "200000.0",
+          "PricePerShare": "34.44",
+          "SharesOwnedFollowing": "14301546.0",
+          "fileDate": "2026-07-01T00:38:34.000",
           "officerTitle": null,
           "isDirector": "True",
           "isOfficer": "False",
           "isTenPercentOwner": "False",
           "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-07-01T00:45:08.642",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
         },
         {
-          "Ticker": "NTRA",
+          "Ticker": "ROIV",
           "Date": "2026-06-26T00:00:00.000",
-          "Name": "Marcus Gail Boxer",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "A",
-          "Shares": "1571.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "7754.0",
-          "fileDate": "2026-07-01T00:05:14.000",
+          "Name": "MANCHESTER KEITH S",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "300783.0",
+          "PricePerShare": "33.92",
+          "SharesOwnedFollowing": "14826546.0",
+          "fileDate": "2026-07-01T00:38:34.000",
           "officerTitle": null,
           "isDirector": "True",
           "isOfficer": "False",
           "isTenPercentOwner": "False",
           "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
-        },
-        {
-          "Ticker": "NTRA",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "Lynch Thomas J. Jr.",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "A",
-          "Shares": "1905.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "1905.0",
-          "fileDate": "2026-07-01T00:05:13.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
-        },
-        {
-          "Ticker": "NTRA",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "Chapman Rowan E",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "A",
-          "Shares": "1571.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "4695.0",
-          "fileDate": "2026-07-01T00:05:10.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
-        },
-        {
-          "Ticker": "NTRA",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "Chapman Rowan E",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "A",
-          "Shares": "103.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "4798.0",
-          "fileDate": "2026-07-01T00:05:10.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
-        },
-        {
-          "Ticker": "NTRA",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "BOTHA ROELOF",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "A",
-          "Shares": "1571.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "4465.0",
-          "fileDate": "2026-07-01T00:05:09.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
-        },
-        {
-          "Ticker": "NTRA",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "BOTHA ROELOF",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "A",
-          "Shares": "120.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "4585.0",
-          "fileDate": "2026-07-01T00:05:09.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
-        },
-        {
-          "Ticker": "NTRA",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "Bertagnolli Monica",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "A",
-          "Shares": "75.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "7020.0",
-          "fileDate": "2026-07-01T00:05:07.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
-        },
-        {
-          "Ticker": "NTRA",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "Bertagnolli Monica",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "A",
-          "Shares": "1571.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "6945.0",
-          "fileDate": "2026-07-01T00:05:07.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
-        },
-        {
-          "Ticker": "NTRA",
-          "Date": "2026-06-26T00:00:00.000",
-          "Name": "Baynes Roy D.",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "A",
-          "Shares": "1571.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "20083.0",
-          "fileDate": "2026-07-01T00:05:05.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-07-01T00:15:09.388",
-          "_first_seen": "2026-07-01T00:23:45.129111+00:00"
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-07-01T00:45:08.642",
+          "_first_seen": "2026-07-01T03:01:29.759349+00:00"
         }
       ]
     },
@@ -4460,16 +4460,79 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 594,
+      "rows": 601,
       "last_seen": "2026-07-01",
       "recent": [
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Lawler+Responds+to+House+Hearing+on+Sanctuary+Policies",
-          "time": "2026-07-01 00:21:06",
-          "headline": "Press Release: Mike Lawler Responds to House Hearing on Sanctuary Policies",
+          "url": "https://www.quiverquant.com/news/InnSuites+Hospitality+Trust+Receives+NYSE+American+Noncompliance+Notice+and+Outlines+Plan+to+Restore+Equity+and+Listing+Compliance",
+          "time": "2026-07-01 02:30:23",
+          "headline": "InnSuites Hospitality Trust Receives NYSE American Noncompliance Notice and Outlines Plan to Restore Equity and Listing Compliance",
+          "category": "press_release_summary",
+          "summary": "<p>InnSuites Hospitality Trust receives notice of noncompliance from NYSE American and plans to submit a compliance plan by July 24, 2026.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>InnSuites Hospitality \u2026",
+          "image": "https://www.quiverquant.com/images/iht_rect_new.png",
+          "_first_seen": "2026-07-01T03:01:49.457806+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Meeks%2C+Nunn+Secure+Committee+Passage+of+Bipartisan+Financial+Advisers+Bill",
+          "time": "2026-07-01 02:19:57",
+          "headline": "Press Release: Meeks, Nunn Secure Committee Passage of Bipartisan Financial Advisers Bill",
           "category": "legislation_automated",
-          "summary": "<p>Lawler condemned Democrats and sanctuary policies at a hearing on victims\u2019 perspectives, citing Sheridan Gorman\u2019s killing.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,2\u2026",
-          "image": "https://www.quiverquant.com/images/L000599_congress.png",
+          "summary": "<p>Bipartisan House committee approval of a bill easing regulations for independent financial advisors and expanding access to advice.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(\u2026",
+          "image": "https://www.quiverquant.com/images/M001137_congress.png",
+          "_first_seen": "2026-07-01T03:01:49.457806+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Tony+Wied+Responds+to+Wisconsin+Disaster+Declaration+Approval",
+          "time": "2026-07-01 02:19:57",
+          "headline": "Press Release: Tony Wied Responds to Wisconsin Disaster Declaration Approval",
+          "category": "legislation_automated",
+          "summary": "<p>Congressman Wied praised federal disaster aid approval for Wisconsin flood recovery, highlighting damage, relief funding, and bipartisan advocacy.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong sty\u2026",
+          "image": "https://www.quiverquant.com/images/W000829_congress.png",
+          "_first_seen": "2026-07-01T03:01:49.457806+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Li+Auto+Reports+June+2026+Vehicle+Deliveries+and+Announces+Launch+of+New+Li+L8",
+          "time": "2026-07-01 02:10:19",
+          "headline": "Li Auto Reports June 2026 Vehicle Deliveries and Announces Launch of New Li L8",
+          "category": "press_release_summary",
+          "summary": "<p>Li Auto delivered 30,895 vehicles in June 2026, reaching cumulative deliveries of 1,733,687 and launched the new Li L8 SUV.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Li Auto Inc. announced it delivere\u2026",
+          "image": "https://www.quiverquant.com/images/li_rect_new.png",
+          "_first_seen": "2026-07-01T03:01:49.457806+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Vice+President+of+%24UMC+Sells+10%2C000+Shares",
+          "time": "2026-07-01 02:01:21",
+          "headline": "Insider Sale: Vice President of $UMC Sells 10,000 Shares",
+          "category": "insiders_automated",
+          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/2133608/Che-Jen-Hu\">CHE-JEN HU</a>, the Vice President of <a href=\"https://www.quiverquant.com/stock/UMC/\">$UMC</a>, sold 10,000 shares of the company on 06-30-2026 for\u2026",
+          "image": "https://www.quiverquant.com/images/umc_rect_new.png",
+          "_first_seen": "2026-07-01T03:01:49.457806+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24ROIV+Sells+600%2C000+Shares",
+          "time": "2026-07-01 00:57:28",
+          "headline": "Insider Sale: Director at $ROIV Sells 600,000 Shares",
+          "category": "insiders_automated",
+          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1244828/Keith-S-Manchester\">KEITH S MANCHESTER</a>, a director at <a href=\"https://www.quiverquant.com/stock/ROIV/\">$ROIV</a>, sold 600,000 shares of the company on 06-\u2026",
+          "image": "https://www.quiverquant.com/images/roiv_rect_new.png",
+          "_first_seen": "2026-07-01T03:01:49.457806+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+SVP%7CCAO+of+%24AIAI+Sells+14%2C781+Shares",
+          "time": "2026-07-01 00:40:23",
+          "headline": "Insider Sale: SVP|CAO of $AIAI Sells 14,781 Shares",
+          "category": "insiders_automated",
+          "summary": "<p>Barbara Barton Weiszhaar, the SVP/CAO of <a href=\"https://www.quiverquant.com/stock/AIAI/\">$AIAI</a>, sold 14,781 shares of the company on 06-30-2026 for an estimated <strong>$210,038</strong>. We received data on \u2026",
+          "image": "https://www.quiverquant.com/images/aiai_rect_new.png",
+          "_first_seen": "2026-07-01T03:01:49.457806+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Jared+Huffman+Votes+on+Lebanon+War+Powers+Resolution",
+          "time": "2026-07-01 00:21:06",
+          "headline": "Press Release: Rep. Jared Huffman Votes on Lebanon War Powers Resolution",
+          "category": "legislation_automated",
+          "summary": "<p>Rep. Huffman says he voted to limit U.S. military involvement in Lebanon and restore Congress\u2019s war powers.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Huffman s\u2026",
+          "image": "https://www.quiverquant.com/images/H001068_congress.png",
           "_first_seen": "2026-07-01T00:32:18.980736+00:00"
         },
         {
@@ -4482,12 +4545,12 @@
           "_first_seen": "2026-07-01T00:32:18.980736+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Jared+Huffman+Votes+on+Lebanon+War+Powers+Resolution",
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Lawler+Responds+to+House+Hearing+on+Sanctuary+Policies",
           "time": "2026-07-01 00:21:06",
-          "headline": "Press Release: Rep. Jared Huffman Votes on Lebanon War Powers Resolution",
+          "headline": "Press Release: Mike Lawler Responds to House Hearing on Sanctuary Policies",
           "category": "legislation_automated",
-          "summary": "<p>Rep. Huffman says he voted to limit U.S. military involvement in Lebanon and restore Congress\u2019s war powers.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Huffman s\u2026",
-          "image": "https://www.quiverquant.com/images/H001068_congress.png",
+          "summary": "<p>Lawler condemned Democrats and sanctuary policies at a hearing on victims\u2019 perspectives, citing Sheridan Gorman\u2019s killing.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,2\u2026",
+          "image": "https://www.quiverquant.com/images/L000599_congress.png",
           "_first_seen": "2026-07-01T00:32:18.980736+00:00"
         },
         {
@@ -4500,12 +4563,12 @@
           "_first_seen": "2026-07-01T00:32:18.980736+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Insider+at+%24ROIV+Sells+325%2C000+Shares",
+          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+President+and+CEO+of+%24CLYM+Sells+30%2C902+Shares",
           "time": "2026-07-01 00:01:39",
-          "headline": "Insider Sale: Insider at $ROIV Sells 325,000 Shares",
+          "headline": "Insider Sale: President and CEO of $CLYM Sells 30,902 Shares",
           "category": "insiders_automated",
-          "summary": "<p>Financial LP QVT, an insider at <a href=\"https://www.quiverquant.com/stock/ROIV/\">$ROIV</a>, sold 325,000 shares of the company on 06-26-2026 for an estimated <strong>$11,072,750</strong>. We received data on the t\u2026",
-          "image": "https://www.quiverquant.com/images/roiv_rect_new.png",
+          "summary": "<p>Aoife Brennan, the President and CEO of <a href=\"https://www.quiverquant.com/stock/CLYM/\">$CLYM</a>, sold 30,902 shares of the company on 06-29-2026 for an estimated <strong>$406,979</strong>. We received data on t\u2026",
+          "image": "https://www.quiverquant.com/images/clym_rect_new.png",
           "_first_seen": "2026-07-01T00:32:18.980736+00:00"
         },
         {
@@ -4518,12 +4581,12 @@
           "_first_seen": "2026-07-01T00:32:18.980736+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+President+and+CEO+of+%24CLYM+Sells+30%2C902+Shares",
+          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Insider+at+%24ROIV+Sells+325%2C000+Shares",
           "time": "2026-07-01 00:01:39",
-          "headline": "Insider Sale: President and CEO of $CLYM Sells 30,902 Shares",
+          "headline": "Insider Sale: Insider at $ROIV Sells 325,000 Shares",
           "category": "insiders_automated",
-          "summary": "<p>Aoife Brennan, the President and CEO of <a href=\"https://www.quiverquant.com/stock/CLYM/\">$CLYM</a>, sold 30,902 shares of the company on 06-29-2026 for an estimated <strong>$406,979</strong>. We received data on t\u2026",
-          "image": "https://www.quiverquant.com/images/clym_rect_new.png",
+          "summary": "<p>Financial LP QVT, an insider at <a href=\"https://www.quiverquant.com/stock/ROIV/\">$ROIV</a>, sold 325,000 shares of the company on 06-26-2026 for an estimated <strong>$11,072,750</strong>. We received data on the t\u2026",
+          "image": "https://www.quiverquant.com/images/roiv_rect_new.png",
           "_first_seen": "2026-07-01T00:32:18.980736+00:00"
         },
         {
@@ -4572,12 +4635,12 @@
           "_first_seen": "2026-07-01T00:32:18.980736+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Young+Kim%E2%80%99s+REG+Act+Passes+House+Financial+Services+Committee",
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Vindman%2C+Hamadeh+Introduce+Bill+to+Increase+VA+Clinic+Staffing+Transparency",
           "time": "2026-06-30 22:21:59",
-          "headline": "Press Release: Young Kim\u2019s REG Act Passes House Financial Services Committee",
+          "headline": "Press Release: Vindman, Hamadeh Introduce Bill to Increase VA Clinic Staffing Transparency",
           "category": "legislation_automated",
-          "summary": "<p>Young Kim\u2019s bill advancing in committee would require the SEC to assess cumulative regulatory impacts before finalizing rules.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,1\u2026",
-          "image": "https://www.quiverquant.com/images/K000397_congress.png",
+          "summary": "<p>Vindman and Hamadeh propose legislation requiring monthly VA staffing data to improve transparency and veteran care.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">\u2026",
+          "image": "https://www.quiverquant.com/images/V000138_congress.png",
           "_first_seen": "2026-07-01T00:32:18.980736+00:00"
         },
         {
@@ -4623,69 +4686,6 @@
           "category": "legislation_automated",
           "summary": "<p>Feenstra announced over $27 million in FEMA disaster recovery funding for Northwest Iowa home buyouts and mitigation projects.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,1\u2026",
           "image": "https://www.quiverquant.com/images/F000446_congress.png",
-          "_first_seen": "2026-07-01T00:32:18.980736+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Dan+Newhouse+Comments+on+Supreme+Court+Birthright+Citizenship+Ruling",
-          "time": "2026-06-30 22:21:59",
-          "headline": "Press Release: Rep. Dan Newhouse Comments on Supreme Court Birthright Citizenship Ruling",
-          "category": "legislation_automated",
-          "summary": "<p>Rep. Dan Newhouse comments on a Supreme Court ruling, criticizing birthright citizenship abuses and urging immigration reform.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,1\u2026",
-          "image": "https://www.quiverquant.com/images/N000189_congress.png",
-          "_first_seen": "2026-07-01T00:32:18.980736+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Andrea+Salinas+Introduces+Bill+Targeting+Presidential+Stock+Trading+Profits",
-          "time": "2026-06-30 22:21:59",
-          "headline": "Press Release: Andrea Salinas Introduces Bill Targeting Presidential Stock Trading Profits",
-          "category": "legislation_automated",
-          "summary": "<p>Rep. Salinas introduced legislation to require presidents to avoid or surrender profits from stock trades while in office.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,2\u2026",
-          "image": "https://www.quiverquant.com/images/S001226_congress.png",
-          "_first_seen": "2026-07-01T00:32:18.980736+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Joe+Courtney+Calls+on+Congress+to+Block+New+Medicaid+Restrictions",
-          "time": "2026-06-30 22:21:59",
-          "headline": "Press Release: Joe Courtney Calls on Congress to Block New Medicaid Restrictions",
-          "category": "legislation_automated",
-          "summary": "<p>Congressman Joe Courtney criticizes Medicaid-related health care cuts in Trump\u2019s H.R. 1, calling the policy inhumane.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\"\u2026",
-          "image": "https://www.quiverquant.com/images/C001069_congress.png",
-          "_first_seen": "2026-07-01T00:32:18.980736+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Joyce+Beatty+Urges+IMF+Action+on+Global+Economic+Stability+After+Iran+War",
-          "time": "2026-06-30 22:21:59",
-          "headline": "Press Release: Joyce Beatty Urges IMF Action on Global Economic Stability After Iran War",
-          "category": "legislation_automated",
-          "summary": "<p>Beatty and lawmakers urge IMF action to stabilize global markets after Iran war-related disruptions.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Beatty and colle\u2026",
-          "image": "https://www.quiverquant.com/images/B001281_congress.png",
-          "_first_seen": "2026-07-01T00:32:18.980736+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Raja+Krishnamoorthi+Responds+to+Supreme+Court+Ruling+on+Birthright+Citizenship",
-          "time": "2026-06-30 22:21:59",
-          "headline": "Press Release: Raja Krishnamoorthi Responds to Supreme Court Ruling on Birthright Citizenship",
-          "category": "legislation_automated",
-          "summary": "<p>Krishnamoorthi applauds a Supreme Court ruling affirming birthright citizenship and limiting executive authority over constitutional rights.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"co\u2026",
-          "image": "https://www.quiverquant.com/images/K000391_congress.png",
-          "_first_seen": "2026-07-01T00:32:18.980736+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Steve+Cohen+Responds+to+Supreme+Court+Birthright+Citizenship+Ruling",
-          "time": "2026-06-30 22:21:59",
-          "headline": "Press Release: Steve Cohen Responds to Supreme Court Birthright Citizenship Ruling",
-          "category": "legislation_automated",
-          "summary": "<p>Cohen supports the Supreme Court\u2019s birthright citizenship ruling and criticizes the justices and Trump.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Congressman C\u2026",
-          "image": "https://www.quiverquant.com/images/C001068_congress.png",
-          "_first_seen": "2026-07-01T00:32:18.980736+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Vindman%2C+Hamadeh+Introduce+Bill+to+Increase+VA+Clinic+Staffing+Transparency",
-          "time": "2026-06-30 22:21:59",
-          "headline": "Press Release: Vindman, Hamadeh Introduce Bill to Increase VA Clinic Staffing Transparency",
-          "category": "legislation_automated",
-          "summary": "<p>Vindman and Hamadeh propose legislation requiring monthly VA staffing data to improve transparency and veteran care.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">\u2026",
-          "image": "https://www.quiverquant.com/images/V000138_congress.png",
           "_first_seen": "2026-07-01T00:32:18.980736+00:00"
         }
       ]
@@ -5471,182 +5471,182 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 63342,
+      "rows": 63942,
       "last_seen": "2026-07-01",
       "recent": [
         {
-          "ticker": "CNTM",
-          "owner_name": "Cuocolo Kathleen C",
-          "owner_title": null,
-          "shares": "25000",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "MAVERICK CAPITAL LTD",
+          "ticker": "AXON",
+          "owner_name": "SPIREPOINT PRIVATE CLIENT, LLC",
           "owner_title": "Institution",
-          "shares": "676572",
+          "shares": "23179",
           "_collected": "2026-07-01"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "Ensign Peak Advisors, Inc",
+          "ticker": "AMZN",
+          "owner_name": "GOLDMAN SACHS GROUP INC",
           "owner_title": "Institution",
-          "shares": "700245",
+          "shares": "67695611",
           "_collected": "2026-07-01"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "JONES FINANCIAL COMPANIES LLLP",
-          "owner_title": "Institution",
-          "shares": "695451",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Blue Sparrow, LLC /DE",
-          "owner_title": "Institution",
-          "shares": "694300",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "NewEdge Advisors, LLC",
-          "owner_title": "Institution",
-          "shares": "692442",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "NISSAY ASSET MANAGEMENT CORP /JAPAN",
-          "owner_title": "Institution",
-          "shares": "692246",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Treasurer of the State of North Carolina",
-          "owner_title": "Institution",
-          "shares": "689475",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "AQR CAPITAL MANAGEMENT LLC",
-          "owner_title": "Institution",
-          "shares": "673706",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "HEALTHCARE OF ONTARIO PENSION PLAN TRUST FUND",
-          "owner_title": "Institution",
-          "shares": "712839",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
+          "ticker": "AMGN",
           "owner_name": "Creative Planning",
           "owner_title": "Institution",
-          "shares": "671405",
+          "shares": "223452",
           "_collected": "2026-07-01"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "Mitsubishi UFJ Trust & Banking Corp",
+          "ticker": "AMGN",
+          "owner_name": "FIRST FINANCIAL BANKSHARES INC",
           "owner_title": "Institution",
-          "shares": "667405",
+          "shares": "222322",
           "_collected": "2026-07-01"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "Cerity Partners LLC",
-          "owner_title": "Institution",
-          "shares": "662704",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "EMINENCE CAPITAL, LP",
-          "owner_title": "Institution",
-          "shares": "661424",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
+          "ticker": "AMGN",
           "owner_name": "PUBLIC EMPLOYEES RETIREMENT SYSTEM OF OHIO",
           "owner_title": "Institution",
-          "shares": "659922",
+          "shares": "221647",
           "_collected": "2026-07-01"
         },
         {
-          "ticker": "AMD",
+          "ticker": "AMGN",
+          "owner_name": "Swiss Life Asset Management Ltd",
+          "owner_title": "Institution",
+          "shares": "221459",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "AQR CAPITAL MANAGEMENT LLC",
+          "owner_title": "Institution",
+          "shares": "218527",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "VOYA INVESTMENT MANAGEMENT LLC",
+          "owner_title": "Institution",
+          "shares": "215258",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Ensign Peak Advisors, Inc",
+          "owner_title": "Institution",
+          "shares": "214379",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Mn Services Vermogensbeheer B.V.",
+          "owner_title": "Institution",
+          "shares": "208019",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "J. Safra Sarasin Holding AG",
+          "owner_title": "Institution",
+          "shares": "207680",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
           "owner_name": "KLP KAPITALFORVALTNING AS",
           "owner_title": "Institution",
-          "shares": "653847",
+          "shares": "205876",
           "_collected": "2026-07-01"
         },
         {
-          "ticker": "AMD",
+          "ticker": "AMGN",
+          "owner_name": "Woodline Partners LP",
+          "owner_title": "Institution",
+          "shares": "205802",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Harvest Portfolios Group Inc.",
+          "owner_title": "Institution",
+          "shares": "204260",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "BAHL & GAYNOR INC",
+          "owner_title": "Institution",
+          "shares": "195866",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "COMMERZBANK AKTIENGESELLSCHAFT /FI",
+          "owner_title": "Institution",
+          "shares": "194785",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "VAN ECK ASSOCIATES CORP",
+          "owner_title": "Institution",
+          "shares": "193115",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Wilkinson Global Asset Management LLC",
+          "owner_title": "Institution",
+          "shares": "186865",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "State of Tennessee, Department of Treasury",
+          "owner_title": "Institution",
+          "shares": "184956",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "COMMERCE BANK",
+          "owner_title": "Institution",
+          "shares": "223709",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Allianz Asset Management GmbH",
+          "owner_title": "Institution",
+          "shares": "225904",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "GUGGENHEIM CAPITAL LLC",
+          "owner_title": "Institution",
+          "shares": "225913",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
+          "owner_name": "Eurizon Capital SGR S.p.A.",
+          "owner_title": "Institution",
+          "shares": "269542",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AMGN",
           "owner_name": "NOMURA ASSET MANAGEMENT CO LTD",
           "owner_title": "Institution",
-          "shares": "707046",
+          "shares": "299167",
           "_collected": "2026-07-01"
         },
         {
-          "ticker": "AMD",
-          "owner_name": "CAPSTONE INVESTMENT ADVISORS, LLC",
+          "ticker": "AMGN",
+          "owner_name": "Zurcher Kantonalbank (Zurich Cantonalbank)",
           "owner_title": "Institution",
-          "shares": "715929",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "NORTHWESTERN MUTUAL WEALTH MANAGEMENT CO",
-          "owner_title": "Institution",
-          "shares": "639466",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "THRIVENT FINANCIAL FOR LUTHERANS",
-          "owner_title": "Institution",
-          "shares": "752136",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "CAISSE DE DEPOT ET PLACEMENT DU QUEBEC",
-          "owner_title": "Institution",
-          "shares": "786808",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "ENVESTNET ASSET MANAGEMENT INC",
-          "owner_title": "Institution",
-          "shares": "780995",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "CIBC Asset Management Inc",
-          "owner_title": "Institution",
-          "shares": "775629",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "WORLDQUANT MILLENNIUM ADVISORS LLC",
-          "owner_title": "Institution",
-          "shares": "763958",
-          "_collected": "2026-07-01"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "CIBC WORLD MARKET INC.",
-          "owner_title": "Institution",
-          "shares": "762533",
+          "shares": "282696",
           "_collected": "2026-07-01"
         }
       ]
@@ -5655,258 +5655,258 @@
       "emoji": "\ud83d\udcb0",
       "label_en": "Executive comp",
       "label_zh": "\u9ad8\u7ba1\u85aa\u916c",
-      "rows": 992,
-      "last_seen": "2026-06-30",
+      "rows": 1021,
+      "last_seen": "2026-07-01",
       "recent": [
         {
-          "ticker": "ADTX",
-          "name": "Shahrokh Shabahang, D.D.S., MS, Ph.D.",
-          "role": "Chief Innovation Officer",
+          "ticker": "AXON",
+          "name": "Patrick Smith",
+          "role": "CEO",
           "year": "2022",
-          "total_comp": "325000.0",
-          "salary": "325000.0",
+          "total_comp": "33203.0",
+          "salary": "31201.0",
           "bonus": null,
-          "_collected": "2026-06-30"
+          "_collected": "2026-07-01"
         },
         {
-          "ticker": "ADTX",
-          "name": "Matthew Shatzkes",
-          "role": "Former Chief Legal Officer & General Counsel",
-          "year": "2023",
-          "total_comp": "1123639.0",
-          "salary": "198670.0",
-          "bonus": "890893.0",
-          "_collected": "2026-06-30"
+          "ticker": "AVAV",
+          "name": "Kevin McDonnell",
+          "role": "CFO",
+          "year": "2022",
+          "total_comp": "1610093.0",
+          "salary": "450008.0",
+          "bonus": null,
+          "_collected": "2026-07-01"
         },
         {
-          "ticker": "ADTX",
-          "name": "Amro Albanna",
-          "role": "CEO and Director",
+          "ticker": "AVAV",
+          "name": "Wahid Nawabi",
+          "role": "CEO",
           "year": "2025",
-          "total_comp": "500000.0",
-          "salary": "500000.0",
+          "total_comp": "7405129.0",
+          "salary": "879071.0",
           "bonus": null,
-          "_collected": "2026-06-30"
+          "_collected": "2026-07-01"
         },
         {
-          "ticker": "ADTX",
-          "name": "Thomas J. Farley",
+          "ticker": "AVAV",
+          "name": "Kevin McDonnell",
           "role": "CFO",
           "year": "2025",
-          "total_comp": "395000.0",
-          "salary": "395000.0",
-          "bonus": null,
-          "_collected": "2026-06-30"
+          "total_comp": "2533968.0",
+          "salary": "495019.0",
+          "bonus": "34651.0",
+          "_collected": "2026-07-01"
         },
         {
-          "ticker": "ADTX",
-          "name": "Corinne Pankovcin",
-          "role": "Chief Mergers & Acquisitions Officer",
+          "ticker": "AVAV",
+          "name": "Melissa Brown",
+          "role": "Executive Vice President, General Chief Legal & Compliance Officer & Secretary",
           "year": "2025",
-          "total_comp": "385008.0",
-          "salary": "385008.0",
-          "bonus": null,
-          "_collected": "2026-06-30"
+          "total_comp": "1620951.0",
+          "salary": "476347.0",
+          "bonus": "57663.0",
+          "_collected": "2026-07-01"
         },
         {
-          "ticker": "ADTX",
-          "name": "Amro Albanna",
-          "role": "CEO and Director",
-          "year": "2024",
-          "total_comp": "500000.0",
-          "salary": "500000.0",
-          "bonus": null,
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "ADTX",
-          "name": "Thomas J. Farley",
-          "role": "CFO",
-          "year": "2024",
-          "total_comp": "395000.0",
-          "salary": "395000.0",
-          "bonus": null,
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "ADTX",
-          "name": "Corinne Pankovcin",
-          "role": "Chief Mergers & Acquisitions Officer",
-          "year": "2024",
-          "total_comp": "385008.0",
-          "salary": "385008.0",
-          "bonus": null,
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "ADTX",
-          "name": "Shahrokh Shabahang, D.D.S., MS, Ph.D.",
-          "role": "Chief Innovation Officer",
-          "year": "2024",
-          "total_comp": "325000.0",
-          "salary": "325000.0",
-          "bonus": null,
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "ADTX",
-          "name": "Shahrokh Shabahang, D.D.S., MS, Ph.D.",
-          "role": "Chief Innovation Officer",
+          "ticker": "AVAV",
+          "name": "Brett Hush",
+          "role": "Executive Vice President Loitering Munitions",
           "year": "2025",
-          "total_comp": "325000.0",
-          "salary": "325000.0",
+          "total_comp": "1443999.0",
+          "salary": "387512.0",
+          "bonus": "56877.0",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AVAV",
+          "name": "Trace Stevenson",
+          "role": "President, Autonomous Systems",
+          "year": "2025",
+          "total_comp": "1425019.0",
+          "salary": "404715.0",
           "bonus": null,
-          "_collected": "2026-06-30"
+          "_collected": "2026-07-01"
         },
         {
-          "ticker": "ADTX",
-          "name": "Amro Albanna",
-          "role": "CEO and Director",
-          "year": "2023",
-          "total_comp": "519233.0",
-          "salary": "432119.0",
-          "bonus": null,
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "ADTX",
-          "name": "Thomas J. Farley",
-          "role": "CFO",
-          "year": "2023",
-          "total_comp": "381451.0",
-          "salary": "337894.0",
-          "bonus": null,
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "ADTX",
-          "name": "Shahrokh Shabahang, D.D.S., MS, Ph.D.",
-          "role": "Chief Innovation Officer",
-          "year": "2023",
-          "total_comp": "358837.0",
-          "salary": "293502.0",
-          "bonus": null,
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "ADTX",
-          "name": "Matthew Shatzkes",
-          "role": "Chief Legal Officer & General Counsel",
-          "year": "2022",
-          "total_comp": "833719.0",
-          "salary": "368958.0",
-          "bonus": null,
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "ADTX",
-          "name": "Amro Albanna",
-          "role": "President",
-          "year": "2022",
-          "total_comp": "500000.0",
-          "salary": "500000.0",
-          "bonus": null,
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "ADTX",
-          "name": "Corinne Pankovcin",
-          "role": "Chief Commercialization Officer",
-          "year": "2022",
-          "total_comp": "385000.0",
-          "salary": "385000.0",
-          "bonus": null,
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "ADTX",
-          "name": "Thomas J. Farley",
-          "role": "Chief Financial Officer",
-          "year": "2022",
-          "total_comp": "360833.0",
-          "salary": "360833.0",
-          "bonus": null,
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "ADTX",
-          "name": "Corinne Pankovcin",
-          "role": "Chief Mergers & Acquisitions Officer",
-          "year": "2023",
-          "total_comp": "390331.0",
-          "salary": "346774.0",
-          "bonus": null,
-          "_collected": "2026-06-30"
-        },
-        {
-          "ticker": "AEP",
-          "name": "Greg B. Hall",
-          "role": "COO",
-          "year": "2024",
-          "total_comp": "3899524.0",
-          "salary": "575491.0",
-          "bonus": null,
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AES",
-          "name": "Bernerd Da Santos",
-          "role": "EVP & President, Renewables",
-          "year": "2022",
-          "total_comp": "2845413.0",
-          "salary": "625000.0",
-          "bonus": null,
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AES",
-          "name": "Juan Ignacio Rubiolo",
-          "role": "EVP & President, Energy Infrastructure",
-          "year": "2022",
-          "total_comp": "2744969.0",
-          "salary": "515000.0",
-          "bonus": "321875.0",
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AES",
-          "name": "Stephen Coughlin",
-          "role": "EVP & CFO",
-          "year": "2022",
-          "total_comp": "2445980.0",
-          "salary": "580000.0",
-          "bonus": null,
-          "_collected": "2026-06-28"
-        },
-        {
-          "ticker": "AEP",
-          "name": "William J. Fehrman",
+          "ticker": "AVAV",
+          "name": "Wahid Nawabi",
           "role": "CEO",
           "year": "2024",
-          "total_comp": "13257022.0",
-          "salary": "628846.0",
-          "bonus": null,
-          "_collected": "2026-06-28"
+          "total_comp": "7602053.0",
+          "salary": "837992.0",
+          "bonus": "288754.0",
+          "_collected": "2026-07-01"
         },
         {
-          "ticker": "AEP",
-          "name": "Ben Fowke",
-          "role": "Former Interim President and CEO",
+          "ticker": "AVAV",
+          "name": "Kevin McDonnell",
+          "role": "CFO",
           "year": "2024",
-          "total_comp": "11330019.0",
-          "salary": "1058462.0",
-          "bonus": null,
-          "_collected": "2026-06-28"
+          "total_comp": "2838084.0",
+          "salary": "493288.0",
+          "bonus": "34651.0",
+          "_collected": "2026-07-01"
         },
         {
-          "ticker": "AEP",
-          "name": "Julia A. Sloat",
-          "role": "Former Chair of the Board, President and CEO",
+          "ticker": "AVAV",
+          "name": "Melissa Brown",
+          "role": "Executive Vice President, General Chief Legal & Compliance Officer & Secretary",
           "year": "2024",
-          "total_comp": "2922283.0",
-          "salary": "327692.0",
+          "total_comp": "1704761.0",
+          "salary": "460414.0",
+          "bonus": "27722.0",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AVAV",
+          "name": "Trace Stevenson",
+          "role": "President, Autonomous Systems",
+          "year": "2024",
+          "total_comp": "1051904.0",
+          "salary": "338248.0",
+          "bonus": "42429.0",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AVAV",
+          "name": "Brett Hush",
+          "role": "Executive Vice President Loitering Munitions",
+          "year": "2024",
+          "total_comp": "1004696.0",
+          "salary": "322500.0",
+          "bonus": "16250.0",
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AVAV",
+          "name": "Kevin McDonnell",
+          "role": "CFO",
+          "year": "2023",
+          "total_comp": "2227253.0",
+          "salary": "450008.0",
           "bonus": null,
-          "_collected": "2026-06-28"
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AVAV",
+          "name": "Melissa Brown",
+          "role": "Executive Vice President, General Chief Legal & Compliance Officer & Secretary",
+          "year": "2023",
+          "total_comp": "1390729.0",
+          "salary": "416207.0",
+          "bonus": null,
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AVAV",
+          "name": "Wahid Nawabi",
+          "role": "CEO",
+          "year": "2022",
+          "total_comp": "3524268.0",
+          "salary": "821892.0",
+          "bonus": null,
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AVAV",
+          "name": "Wahid Nawabi",
+          "role": "CEO",
+          "year": "2023",
+          "total_comp": "4904510.0",
+          "salary": "750006.0",
+          "bonus": null,
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AVAV",
+          "name": "Melissa Brown",
+          "role": "Senior Vice President, General Counsel, Chief Compliance Officer & Secretary",
+          "year": "2022",
+          "total_comp": "950882.0",
+          "salary": "400870.0",
+          "bonus": null,
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AXON",
+          "name": "Jeffrey Kunins",
+          "role": "CPO and CTO",
+          "year": "2023",
+          "total_comp": "11360042.0",
+          "salary": "325000.0",
+          "bonus": null,
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AXON",
+          "name": "Jeffrey Kunins",
+          "role": "CPO and CTO",
+          "year": "2022",
+          "total_comp": "2429868.0",
+          "salary": "300000.0",
+          "bonus": null,
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AXON",
+          "name": "Joshua Isner",
+          "role": "President",
+          "year": "2022",
+          "total_comp": "4687373.0",
+          "salary": "350000.0",
+          "bonus": null,
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AXON",
+          "name": "Patrick Smith",
+          "role": "CEO",
+          "year": "2024",
+          "total_comp": "164525721.0",
+          "salary": "31201.0",
+          "bonus": null,
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AXON",
+          "name": "Patrick Smith",
+          "role": "CEO",
+          "year": "2023",
+          "total_comp": "40058.0",
+          "salary": "31201.0",
+          "bonus": null,
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AXON",
+          "name": "Brittany Bagley",
+          "role": "COO and CFO",
+          "year": "2023",
+          "total_comp": "10299974.0",
+          "salary": "450000.0",
+          "bonus": null,
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AXON",
+          "name": "Brittany Bagley",
+          "role": "COO and CFO",
+          "year": "2022",
+          "total_comp": "14178015.0",
+          "salary": "121023.0",
+          "bonus": null,
+          "_collected": "2026-07-01"
+        },
+        {
+          "ticker": "AXON",
+          "name": "Joshua Isner",
+          "role": "President",
+          "year": "2023",
+          "total_comp": "31490797.0",
+          "salary": "425000.0",
+          "bonus": null,
+          "_collected": "2026-07-01"
         }
       ]
     }
@@ -8005,14 +8005,6 @@
         "detail": "Going-Private"
       },
       {
-        "ticker": "CPRX",
-        "category": "Going-Private",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Going-Private"
-      },
-      {
         "ticker": "CRDL",
         "category": "Going-Private",
         "confidence": "high",
@@ -8325,14 +8317,6 @@
         "detail": "Other"
       },
       {
-        "ticker": "EOSE",
-        "category": "Rights Offerings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Rights Offerings"
-      },
-      {
         "ticker": "GNSS",
         "category": "Other",
         "confidence": "high",
@@ -8622,11 +8606,11 @@
       },
       {
         "ticker": "BORR",
-        "category": "Restructuring",
+        "category": "Issuer Tenders",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Restructuring"
+        "detail": "Issuer Tenders"
       },
       {
         "ticker": "600072",
@@ -8950,14 +8934,6 @@
       },
       {
         "ticker": "BKHA",
-        "category": "SPACs",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "SPACs"
-      },
-      {
-        "ticker": "CEPO",
         "category": "SPACs",
         "confidence": "high",
         "activist": false,
@@ -10149,14 +10125,6 @@
         "detail": "Activist Campaigns"
       },
       {
-        "ticker": "PCRX",
-        "category": "Activist Campaigns",
-        "confidence": "high",
-        "activist": true,
-        "filer": null,
-        "detail": "Activist Campaigns"
-      },
-      {
         "ticker": "RPAY",
         "category": "Activist Campaigns",
         "confidence": "high",
@@ -10854,14 +10822,6 @@
       },
       {
         "ticker": "1940",
-        "category": "Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Divestitures"
-      },
-      {
-        "ticker": "CHRN",
         "category": "Divestitures",
         "confidence": "high",
         "activist": false,
@@ -13211,14 +13171,6 @@
         "activist": false,
         "filer": null,
         "detail": "Restructuring"
-      },
-      {
-        "ticker": "CNDT",
-        "category": "Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Divestitures"
       },
       {
         "ticker": "CRN",
@@ -17639,7 +17591,7 @@
       {
         "ticker": "BAK",
         "category": "Restructuring",
-        "confidence": "high",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
         "detail": "Restructuring"
@@ -19558,11 +19510,11 @@
       },
       {
         "ticker": "JHG",
-        "category": "Going-Private",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Going-Private"
+        "detail": "Delistings"
       },
       {
         "ticker": "205A",
@@ -22560,14 +22512,6 @@
         "ticker": "SAP",
         "category": "Acquisitions",
         "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
-        "ticker": "LAES",
-        "category": "Acquisitions",
-        "confidence": "medium",
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
@@ -30413,14 +30357,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "FOX",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "601198",
         "category": "Acquisitions",
         "confidence": "high",
@@ -32677,14 +32613,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "NWSLL",
-        "category": "Capital Returns",
-        "confidence": "medium",
-        "activist": false,
-        "filer": null,
-        "detail": "Capital Returns"
-      },
-      {
         "ticker": "NEE-PS",
         "category": "Acquisitions",
         "confidence": "high",
@@ -32814,11 +32742,11 @@
       },
       {
         "ticker": "SBS",
-        "category": "Other",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Other"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "EC",
@@ -33518,11 +33446,11 @@
       },
       {
         "ticker": "MTEN",
-        "category": "Capital Returns",
-        "confidence": "high",
+        "category": "Other",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Capital Returns"
+        "detail": "Other"
       },
       {
         "ticker": "NIVFW",
@@ -34269,14 +34197,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "CYCUW",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "EVTC",
         "category": "Other",
         "confidence": "high",
@@ -35005,14 +34925,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "BSBR",
-        "category": "Other",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Other"
-      },
-      {
         "ticker": "ELPW",
         "category": "Other",
         "confidence": "medium",
@@ -35539,6 +35451,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "AGRZ",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "RTB",
@@ -36070,11 +35990,11 @@
       },
       {
         "ticker": "CIB",
-        "category": "Capital Returns",
+        "category": "Divestitures",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Capital Returns"
+        "detail": "Divestitures"
       },
       {
         "ticker": "TSMWF",
@@ -36323,14 +36243,6 @@
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
-      },
-      {
-        "ticker": "SSRGF",
-        "category": "Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Divestitures"
       },
       {
         "ticker": "RBOTW",
@@ -36965,14 +36877,6 @@
         "detail": "SPACs"
       },
       {
-        "ticker": "BACCU",
-        "category": "SPACs",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "SPACs"
-      },
-      {
         "ticker": "CBAT",
         "category": "Delistings",
         "confidence": "high",
@@ -37085,20 +36989,20 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "WRDIF",
-        "category": "Capital Returns",
-        "confidence": "medium",
-        "activist": false,
-        "filer": null,
-        "detail": "Capital Returns"
-      },
-      {
         "ticker": "RMBI",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "YOOV",
+        "category": "Divestitures",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
       },
       {
         "ticker": "CDLX",
@@ -37421,6 +37325,14 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "PLUT",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "ACNT",
         "category": "Capital Returns",
         "confidence": "high",
@@ -37701,6 +37613,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "CTRM",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "TORO",
         "category": "Capital Returns",
         "confidence": "high",
@@ -37755,14 +37675,6 @@
         "activist": false,
         "filer": null,
         "detail": "SPACs"
-      },
-      {
-        "ticker": "GITS",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
       },
       {
         "ticker": "KUST",
@@ -38101,14 +38013,6 @@
         "detail": "Restructuring"
       },
       {
-        "ticker": "WSKEF",
-        "category": "Other",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Other"
-      },
-      {
         "ticker": "AREC",
         "category": "Delistings",
         "confidence": "high",
@@ -38339,6 +38243,14 @@
         "activist": false,
         "filer": null,
         "detail": "Divestitures"
+      },
+      {
+        "ticker": "EVOTF",
+        "category": "Activist Campaigns",
+        "confidence": "high",
+        "activist": true,
+        "filer": null,
+        "detail": "Activist Campaigns"
       },
       {
         "ticker": "TMCR",
@@ -38654,11 +38566,11 @@
       },
       {
         "ticker": "ORXCF",
-        "category": "Capital Returns",
+        "category": "Spin-Offs",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Capital Returns"
+        "detail": "Spin-Offs"
       },
       {
         "ticker": "TNRSF",
@@ -39349,14 +39261,6 @@
         "detail": "SPACs"
       },
       {
-        "ticker": "VWAVW",
-        "category": "Other",
-        "confidence": "medium",
-        "activist": false,
-        "filer": null,
-        "detail": "Other"
-      },
-      {
         "ticker": "KSCP",
         "category": "Acquisitions",
         "confidence": "high",
@@ -39558,11 +39462,11 @@
       },
       {
         "ticker": "ARCXF",
-        "category": "Divestitures",
+        "category": "Capital Returns",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Divestitures"
+        "detail": "Capital Returns"
       },
       {
         "ticker": "GCLWW",
@@ -39643,14 +39547,6 @@
         "activist": false,
         "filer": null,
         "detail": "Rights Offerings"
-      },
-      {
-        "ticker": "PLMKU",
-        "category": "SPACs",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "SPACs"
       },
       {
         "ticker": "BIOE",
@@ -40350,11 +40246,11 @@
       },
       {
         "ticker": "MIMI",
-        "category": "Other",
-        "confidence": "high",
+        "category": "Acquisitions",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Other"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "SQNS",
@@ -40835,14 +40731,6 @@
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
-      },
-      {
-        "ticker": "GEBRF",
-        "category": "Other",
-        "confidence": "medium",
-        "activist": false,
-        "filer": null,
-        "detail": "Other"
       },
       {
         "ticker": "NIPG",
@@ -41445,14 +41333,6 @@
         "detail": "Other"
       },
       {
-        "ticker": "GHXIU",
-        "category": "SPACs",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "SPACs"
-      },
-      {
         "ticker": "INVE",
         "category": "Divestitures",
         "confidence": "high",
@@ -41843,6 +41723,54 @@
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
+      },
+      {
+        "ticker": "ALRTF",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "ANGHW",
+        "category": "Going-Private",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Going-Private"
+      },
+      {
+        "ticker": "BDRX",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "GGAL",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "HNDAF",
+        "category": "Acquisitions",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "DMB",
+        "category": "Activist Campaigns",
+        "confidence": "high",
+        "activist": true,
+        "filer": "Saba Capital Master Fund, Ltd.",
+        "detail": "Activist Campaigns"
       }
     ],
     "unusual_options": [
@@ -42284,14 +42212,14 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17675,
+        "stars": 17674,
         "wow_pct": 0.71,
         "hot": true
       },
       {
         "ticker": "NET",
-        "stars": 14662,
-        "wow_pct": 0.29,
+        "stars": 14663,
+        "wow_pct": 0.3,
         "hot": true
       },
       {
@@ -42316,18 +42244,12 @@
         "ticker": "PLTR",
         "stars": 21878,
         "wow_pct": 0.11,
-        "hot": true
+        "hot": false
       },
       {
         "ticker": "MDB",
         "stars": 28420,
         "wow_pct": 0.1,
-        "hot": true
-      },
-      {
-        "ticker": "ESTC",
-        "stars": 77215,
-        "wow_pct": 0.09,
         "hot": false
       },
       {
@@ -42337,27 +42259,15 @@
         "hot": false
       },
       {
-        "ticker": "MSFT",
-        "stars": 186963,
-        "wow_pct": 0.06,
-        "hot": false
-      },
-      {
-        "ticker": "GTLB",
-        "stars": 24479,
-        "wow_pct": 0.04,
-        "hot": false
-      },
-      {
         "ticker": "CRM",
         "stars": 11242,
         "wow_pct": 0.03,
         "hot": false
       },
       {
-        "ticker": "META",
-        "stars": 246221,
-        "wow_pct": 0.01,
+        "ticker": "ESTC",
+        "stars": 77143,
+        "wow_pct": 0.0,
         "hot": false
       },
       {
@@ -42379,9 +42289,27 @@
         "hot": false
       },
       {
-        "ticker": "GOOGL",
-        "stars": 196008,
+        "ticker": "MSFT",
+        "stars": 186821,
         "wow_pct": -0.01,
+        "hot": false
+      },
+      {
+        "ticker": "META",
+        "stars": 246121,
+        "wow_pct": -0.03,
+        "hot": false
+      },
+      {
+        "ticker": "GOOGL",
+        "stars": 195870,
+        "wow_pct": -0.08,
+        "hot": false
+      },
+      {
+        "ticker": "GTLB",
+        "stars": 24411,
+        "wow_pct": -0.23,
         "hot": false
       }
     ],
@@ -43817,18 +43745,53 @@
     ],
     "news": [
       {
-        "headline": "Press Release: Mike Lawler Responds to House Hearing on Sanctuary Policies",
+        "headline": "InnSuites Hospitality Trust Receives NYSE American Noncompliance Notice and Outlines Plan to Restore Equity and Listing Compliance",
         "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-07-01 00:21:06",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Lawler+Responds+to+House+Hearing+on+Sanctuary+Policies"
+        "category": "press_release_summary",
+        "time": "2026-07-01 02:30:23",
+        "url": "https://www.quiverquant.com/news/InnSuites+Hospitality+Trust+Receives+NYSE+American+Noncompliance+Notice+and+Outlines+Plan+to+Restore+Equity+and+Listing+Compliance"
       },
       {
-        "headline": "Press Release: Warner, Kaine and Scott Back $310.2 Million Loan for Hampton Roads Traffic Project",
+        "headline": "Press Release: Meeks, Nunn Secure Committee Passage of Bipartisan Financial Advisers Bill",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-07-01 00:21:06",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Warner%2C+Kaine+and+Scott+Back+%24310.2+Million+Loan+for+Hampton+Roads+Traffic+Project"
+        "time": "2026-07-01 02:19:57",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Meeks%2C+Nunn+Secure+Committee+Passage+of+Bipartisan+Financial+Advisers+Bill"
+      },
+      {
+        "headline": "Press Release: Tony Wied Responds to Wisconsin Disaster Declaration Approval",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-07-01 02:19:57",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Tony+Wied+Responds+to+Wisconsin+Disaster+Declaration+Approval"
+      },
+      {
+        "headline": "Li Auto Reports June 2026 Vehicle Deliveries and Announces Launch of New Li L8",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-07-01 02:10:19",
+        "url": "https://www.quiverquant.com/news/Li+Auto+Reports+June+2026+Vehicle+Deliveries+and+Announces+Launch+of+New+Li+L8"
+      },
+      {
+        "headline": "Insider Sale: Vice President of $UMC Sells 10,000 Shares",
+        "ticker": null,
+        "category": "insiders_automated",
+        "time": "2026-07-01 02:01:21",
+        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Vice+President+of+%24UMC+Sells+10%2C000+Shares"
+      },
+      {
+        "headline": "Insider Sale: Director at $ROIV Sells 600,000 Shares",
+        "ticker": null,
+        "category": "insiders_automated",
+        "time": "2026-07-01 00:57:28",
+        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24ROIV+Sells+600%2C000+Shares"
+      },
+      {
+        "headline": "Insider Sale: SVP|CAO of $AIAI Sells 14,781 Shares",
+        "ticker": null,
+        "category": "insiders_automated",
+        "time": "2026-07-01 00:40:23",
+        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+SVP%7CCAO+of+%24AIAI+Sells+14%2C781+Shares"
       },
       {
         "headline": "Press Release: Rep. Jared Huffman Votes on Lebanon War Powers Resolution",
@@ -43838,6 +43801,20 @@
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Jared+Huffman+Votes+on+Lebanon+War+Powers+Resolution"
       },
       {
+        "headline": "Press Release: Warner, Kaine and Scott Back $310.2 Million Loan for Hampton Roads Traffic Project",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-07-01 00:21:06",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Warner%2C+Kaine+and+Scott+Back+%24310.2+Million+Loan+for+Hampton+Roads+Traffic+Project"
+      },
+      {
+        "headline": "Press Release: Mike Lawler Responds to House Hearing on Sanctuary Policies",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-07-01 00:21:06",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Lawler+Responds+to+House+Hearing+on+Sanctuary+Policies"
+      },
+      {
         "headline": "Cadrenal Therapeutics Announces $3 Million Private Placement with Potential Additional $5.8 Million from Warrants",
         "ticker": null,
         "category": "press_release_summary",
@@ -43845,11 +43822,11 @@
         "url": "https://www.quiverquant.com/news/Cadrenal+Therapeutics+Announces+%243+Million+Private+Placement+with+Potential+Additional+%245.8+Million+from+Warrants"
       },
       {
-        "headline": "Insider Sale: Insider at $ROIV Sells 325,000 Shares",
+        "headline": "Insider Sale: President and CEO of $CLYM Sells 30,902 Shares",
         "ticker": null,
         "category": "insiders_automated",
         "time": "2026-07-01 00:01:39",
-        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Insider+at+%24ROIV+Sells+325%2C000+Shares"
+        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+President+and+CEO+of+%24CLYM+Sells+30%2C902+Shares"
       },
       {
         "headline": "Insider Sale: 10% owner at $PRM Sells 2,296,400 Shares",
@@ -43859,11 +43836,11 @@
         "url": "https://www.quiverquant.com/news/Insider+Sale%3A+10%25+owner+at+%24PRM+Sells+2%2C296%2C400+Shares"
       },
       {
-        "headline": "Insider Sale: President and CEO of $CLYM Sells 30,902 Shares",
+        "headline": "Insider Sale: Insider at $ROIV Sells 325,000 Shares",
         "ticker": null,
         "category": "insiders_automated",
         "time": "2026-07-01 00:01:39",
-        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+President+and+CEO+of+%24CLYM+Sells+30%2C902+Shares"
+        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Insider+at+%24ROIV+Sells+325%2C000+Shares"
       },
       {
         "headline": "Athene Names Larik Hall as Senior Vice President and Head of Japan",
@@ -43901,60 +43878,11 @@
         "url": "https://www.quiverquant.com/news/Aura+Biosciences%2C+Inc.+%28%24AURA%29+Former+President%2C+CEO+and+Director+2025+Pay+Revealed"
       },
       {
-        "headline": "Press Release: Young Kim\u2019s REG Act Passes House Financial Services Committee",
+        "headline": "Press Release: Vindman, Hamadeh Introduce Bill to Increase VA Clinic Staffing Transparency",
         "ticker": null,
         "category": "legislation_automated",
         "time": "2026-06-30 22:21:59",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Young+Kim%E2%80%99s+REG+Act+Passes+House+Financial+Services+Committee"
-      },
-      {
-        "headline": "Press Release: Mike Kelly comments on Supreme Court ruling on girls' and women\u2019s sports",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 22:21:59",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Kelly+comments+on+Supreme+Court+ruling+on+girls%27+and+women%E2%80%99s+sports"
-      },
-      {
-        "headline": "Press Release: McGovern, Smith and Khanna Lead House Letter Urging U.S. Response to China Ethnic Unity Law",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 22:21:59",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+McGovern%2C+Smith+and+Khanna+Lead+House+Letter+Urging+U.S.+Response+to+China+Ethnic+Unity+Law"
-      },
-      {
-        "headline": "Press Release: Juan Ciscomani Says VA Paid More Than $1 Billion to Arizona Veteran Healthcare Providers in FY2025",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 22:21:59",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Juan+Ciscomani+Says+VA+Paid+More+Than+%241+Billion+to+Arizona+Veteran+Healthcare+Providers+in+FY2025"
-      },
-      {
-        "headline": "Press Release: Joaquin Castro, Houlahan and Cisneros Call for Pentagon Flu Vaccine Requirement After Lackland Outbreak",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 22:21:59",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Joaquin+Castro%2C+Houlahan+and+Cisneros+Call+for+Pentagon+Flu+Vaccine+Requirement+After+Lackland+Outbreak"
-      },
-      {
-        "headline": "Press Release: Randy Feenstra Announces More Than $27 Million in FEMA Disaster Recovery Funding for Northwest Iowa",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 22:21:59",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Randy+Feenstra+Announces+More+Than+%2427+Million+in+FEMA+Disaster+Recovery+Funding+for+Northwest+Iowa"
-      },
-      {
-        "headline": "Press Release: Rep. Dan Newhouse Comments on Supreme Court Birthright Citizenship Ruling",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 22:21:59",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Dan+Newhouse+Comments+on+Supreme+Court+Birthright+Citizenship+Ruling"
-      },
-      {
-        "headline": "Press Release: Andrea Salinas Introduces Bill Targeting Presidential Stock Trading Profits",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-30 22:21:59",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Andrea+Salinas+Introduces+Bill+Targeting+Presidential+Stock+Trading+Profits"
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Vindman%2C+Hamadeh+Introduce+Bill+to+Increase+VA+Clinic+Staffing+Transparency"
       }
     ],
     "wsb": [
@@ -45594,6 +45522,13 @@
         "year": 2025
       },
       {
+        "ticker": "AXON",
+        "top_exec": "Patrick Smith",
+        "role": "CEO",
+        "total_comp": 164525721.0,
+        "year": 2024
+      },
+      {
         "ticker": "TSLA",
         "top_exec": "Vaibhav Taneja",
         "role": "CFO",
@@ -45697,13 +45632,6 @@
         "role": "CEO",
         "total_comp": 37245853.0,
         "year": 2022
-      },
-      {
-        "ticker": "DAL",
-        "top_exec": "Edward H. Bastian",
-        "role": "CEO",
-        "total_comp": 34214328.0,
-        "year": 2023
       }
     ],
     "retail": [
