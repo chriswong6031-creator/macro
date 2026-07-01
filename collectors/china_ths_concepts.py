@@ -44,6 +44,18 @@ except Exception:  # noqa: BLE001 — extremely unlikely; degrade to no-retry ad
 
 log = logging.getLogger(__name__)
 
+
+class ThsTruncated(RuntimeError):
+    """A concept's member table could not be fully paged (throttle / SSL drop / partial page).
+
+    Raised instead of returning a PARTIAL member list: a truncated fetch is indistinguishable from
+    a genuinely-shorter board, and recording it as authoritative makes the seed step manufacture
+    spurious `removed` events on the next diff (which silently breaks the THS baskets page). The
+    caller (`snapshot`) treats this like a throttle — the theme is left unresolved and retried on a
+    later resume run — so only COMPLETE member lists ever land in a snapshot.
+    """
+
+
 _UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
        "(KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36")
 _DATA = config.data_dir() / "baskets_china_ths"
@@ -129,27 +141,48 @@ def concept_code_map(force: bool = False) -> dict[str, str]:
 def concept_members(code: str, session: requests.Session | None = None) -> list[dict]:
     """All members of one THS concept board -> [{"ticker": "600519.SS", "name": "贵州茅台"}, …].
 
-    Pages the detail table until an empty/short page; returns [] on hard failure (logged).
+    Pages the detail table until a natural end (a short/empty last page, or no table past the last
+    page). COMPLETE-OR-FAIL: any mid-pagination failure — a non-200, a retry-exhausted fetch, a
+    missing/interstitial table on a page that should have one, or hitting the `_MAX_PAGES` ceiling
+    without a natural end — raises `ThsTruncated` rather than returning the partial rows collected
+    so far. Returning a truncated list would let the seed step read it as a genuine board shrink and
+    fabricate `removed` events (see ThsTruncated). An empty board (page 1 has no rows) returns [].
     """
     s = session or _session()
     out: list[dict] = []
     seen: set[str] = set()
     for pg in range(1, _MAX_PAGES + 1):
         url = f"https://q.10jqka.com.cn/gn/detail/order/desc/page/{pg}/ajax/1/code/{code}/"
-        try:
-            r = s.get(url, timeout=25)
-        except Exception as e:  # noqa: BLE001 — Retry exhausted (SSL drop etc.)
-            log.warning("THS concept %s page %d fetch failed: %s", code, pg, e)
-            break
-        if r.status_code != 200:
-            break
+        # THS invalidates the anti-scrape `v` cookie partway through a deep board (a 401 mid-
+        # pagination), which the adapter's Retry doesn't cover. Mint a FRESH cookie+session and
+        # retry the page once before giving up — this pushes past the mid-board 401 to the real
+        # end instead of truncating wherever the first 401 lands.
+        r = None
+        for attempt in range(2):
+            try:
+                r = s.get(url, timeout=25)
+            except Exception as e:  # noqa: BLE001 — Retry exhausted (SSL drop etc.)
+                if attempt == 0:
+                    s = _session(); time.sleep(1.5); continue
+                raise ThsTruncated(f"{code} page {pg} fetch failed: {e}") from e
+            if r.status_code == 200:
+                break
+            if attempt == 0:                          # anti-scrape block → fresh cookie, retry once
+                s = _session(); time.sleep(1.5); continue
+            raise ThsTruncated(f"{code} page {pg} → HTTP {r.status_code}")
         try:
             tbl = pd.read_html(StringIO(r.text))[0]
         except ValueError:
-            break  # no table on the page → past the last page
+            if pg == 1:  # page 1 with no table = throttle/interstitial, NOT an empty board
+                raise ThsTruncated(f"{code} page 1 returned no table (throttle/interstitial)")
+            break  # no table past the last page → natural end
         cols = {str(c) for c in tbl.columns}
-        if tbl.empty or "代码" not in cols or "名称" not in cols:
-            break
+        if "代码" not in cols or "名称" not in cols:
+            if pg == 1:
+                raise ThsTruncated(f"{code} page 1 had unexpected columns {sorted(cols)[:6]}")
+            break  # a trailing non-member table → natural end
+        if tbl.empty:
+            break  # empty page → natural end
         for _, row in tbl.iterrows():
             t = to_suffixed(str(row["代码"]).split(".")[0])
             if t in seen:
@@ -157,8 +190,10 @@ def concept_members(code: str, session: requests.Session | None = None) -> list[
             seen.add(t)
             out.append({"ticker": t, "name": str(row["名称"]).strip()})
         if len(tbl) < 10:
-            break  # last (short) page
+            break  # last (short) page → natural end
         time.sleep(_PAGE_PAUSE)
+    else:  # loop ran all _MAX_PAGES without a natural end → suspiciously large / still paging
+        raise ThsTruncated(f"{code} exceeded _MAX_PAGES={_MAX_PAGES} with no end page")
     return out
 
 
@@ -199,7 +234,20 @@ def snapshot(theme_names: list[str], as_of: str | None = None,
         if not code:
             log.warning("THS concept name not found (renamed/retired?): %s", name)
             continue
-        members = concept_members(code, _session())   # fresh cookie+session per theme
+        try:
+            members = concept_members(code, _session())   # fresh cookie+session per theme
+        except ThsTruncated as e:
+            # partial/throttled fetch — do NOT record it (would fabricate `removed` events on the
+            # next seed diff). Leave the theme unresolved so a later resume run retries it.
+            consec_empty += 1
+            log.warning("THS concept '%s' (%s) incomplete: %s (%d/%d consecutive)",
+                        name, code, e, consec_empty, _MAX_CONSEC_EMPTY)
+            if consec_empty >= _MAX_CONSEC_EMPTY:
+                log.error("THS appears to be throttling this IP — stopping; re-run to resume "
+                          "(%d/%d themes resolved so far)", len(result), len(theme_names))
+                break
+            time.sleep(_THEME_PAUSE * 2)              # back off harder after a truncated fetch
+            continue
         if not members:
             consec_empty += 1
             log.warning("THS concept '%s' (%s) returned no members (%d/%d consecutive)",
