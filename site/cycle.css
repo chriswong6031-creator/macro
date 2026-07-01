@@ -5,6 +5,13 @@
    accent passed as --c; tints derive via color-mix so they adapt to the theme.
    ========================================================================== */
 
+/* CACHE-BUSTER: this file is linked as `cycle.css?v=N` by its pages (the six
+   templates/*.html.j2 that build the cycle-family pages + the hand-curated
+   site/markets.html). mastermind-x.com is fronted by the TencentEdgeOne CDN,
+   which caches CSS aggressively by full URL, so BUMP the ?v= on every one of
+   those links whenever you edit this file — otherwise the edge keeps serving
+   the stale copy to users. Currently v=2 (v=1 = the unversioned original). */
+
 .cyc-page { --c: var(--link); --rad: 16px; --ease: cubic-bezier(.22,.61,.36,1); }
 .cyc-wrap { max-width: 1320px; margin: 0 auto; padding: 0 22px 72px; }
 
@@ -13,8 +20,12 @@
    cycle.css (cycle, markets, sector_central[_china], sector_cycles[_china]) set
    no body padding, so without this the menu jams against the very top of the
    viewport — the recurring "menu has no padding" bug. Owning the gap here fixes
-   every cycle.css page at once; the floor is enforced by scripts/check_nav_gap.py. */
-body { margin: 0; padding-top: 24px; }
+   every cycle.css page at once; the floor is enforced by scripts/check_nav_gap.py.
+   These pages carry no inline <body> style of their own, so this rule is also
+   their base canvas: pull background/text from the theme tokens (dark default,
+   light override) or <body> falls back to transparent + black text — unreadable
+   in dark mode. */
+body { margin: 0; padding-top: 24px; background: var(--bg); color: var(--text); }
 
 /* nav layout (desktop horizontal; theme.js collapses it under 700px) */
 .site-nav .nav-links { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }

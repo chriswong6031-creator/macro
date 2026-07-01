@@ -1,17 +1,20 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 0.122,
+  "roro": 0.331,
   "cap_recent": true,
   "fear_built": 0.5,
-  "roro_velocity": 0.028,
-  "vel_pctile": 0.548,
-  "legs_up": 0,
+  "roro_velocity": 0.215,
+  "vel_pctile": 0.825,
+  "legs_up": 2,
   "legs_total": 7,
-  "flipped_legs": [],
-  "days_since_last_snap": 11,
+  "flipped_legs": [
+    "vix",
+    "vix_term"
+  ],
+  "days_since_last_snap": 12,
   "fear_rebuilding": false,
-  "vix_term": 0.904,
+  "vix_term": 0.866,
   "status": "dormant",
   "gates": {
     "velocity": false,
@@ -20,6 +23,17 @@
     "washout": true
   },
   "min_legs": 4,
-  "flipped_legs_named": [],
+  "flipped_legs_named": [
+    {
+      "key": "vix",
+      "en": "VIX",
+      "zh": "\u6ce2\u52a8\u7387 VIX"
+    },
+    {
+      "key": "vix_term",
+      "en": "VIX term structure",
+      "zh": "VIX \u671f\u9650\u7ed3\u6784"
+    }
+  ],
   "magnitude_band": null
 }

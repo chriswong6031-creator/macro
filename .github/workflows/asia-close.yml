@@ -1,0 +1,130 @@
+name: asia-close
+# China A-share + Hong Kong dashboards, rebuilt AFTER the Asia cash close (mainland
+# ~07:00 UTC, HK ~08:00 UTC) so they render SETTLED closes instead of the stale marks
+# a US-evening run would lock in. Split out of daily.yml (time-sharding): this runs
+# `collect --group asia` (only china*/hk* adapters) then the CN/HK builders. It reads
+# the committed `yahoo` cross-asset series (SPY/VIX/DXY/copper/gold/USDCNY/EEM) that
+# the US-evening build already collected for HK's global-risk hero — no need to
+# re-collect it. The CN/HK regimes are self-recomputed, so there is NO ordering
+# dependency on the US regime write.
+on:
+  schedule:
+    - cron: "30 8 * * *"   # 08:30 UTC — after the HK cash close (08:00 UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  # its own lane; the rebase-retry push loop makes concurrent commits with the
+  # US-evening / slow shards race-safe.
+  group: pipeline-asia
+  cancel-in-progress: false
+
+jobs:
+  asia:
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 90
+    steps:
+      # Default ref (the branch that triggered this) — NOT a hard `ref: main`. On the
+      # feat/time-shards branch this pulls the collect.py that HAS --group; on main
+      # after merge it is main. `git push` (no args) then pushes the CURRENT branch to
+      # its origin counterpart, so a branch test commits to the branch, never to main.
+      - uses: actions/checkout@v4
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: restore china breadth close cache
+        uses: actions/cache@v4
+        with:
+          path: data/china_breadth/_closes_cache.parquet
+          key: china-breadth-closes-${{ github.run_id }}
+          restore-keys: china-breadth-closes-
+      - name: restore hk breadth close cache
+        uses: actions/cache@v4
+        with:
+          path: data/hk_breadth/_closes_cache.parquet
+          key: hk-breadth-closes-${{ github.run_id }}
+          restore-keys: hk-breadth-closes-
+      - name: restore china per-name OHLC store
+        uses: actions/cache@v4
+        with:
+          path: data/china_stocks
+          key: china-stocks-ohlc-${{ github.run_id }}
+          restore-keys: china-stocks-ohlc-
+      - name: restore hk per-name OHLC store
+        uses: actions/cache@v4
+        with:
+          path: data/hk_stocks
+          key: hk-stocks-ohlc-${{ github.run_id }}
+          restore-keys: hk-stocks-ohlc-
+      - name: collect China/HK data (graceful degradation — never fails on one source)
+        run: python -m scripts.collect --group asia
+      - name: commit collected asia data
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then echo "no asia data changes"; else
+            git commit -m "data: asia collection $(date -u +%F)"
+            for i in 1 2 3 4 5; do
+              if git pull --rebase -X theirs origin main && git push; then echo "pushed asia data (attempt $i)"; break; fi
+              git rebase --abort 2>/dev/null || true; echo "asia data push attempt $i lost a race"; sleep $((i * 7))
+            done
+          fi
+      - name: build China + Hong Kong dashboards (resilient — mirrors daily.yml cl_china/cl_hk)
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set +e
+          run_py() {
+            local label="$1" mod="$2"; shift 2
+            echo "::group::$label"
+            python -m "$mod" "$@" > /tmp/step.log 2>&1; local rc=$?
+            cat /tmp/step.log
+            echo "::endgroup::"
+            if [ "$rc" -ne 0 ]; then
+              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 /tmp/step.log | tr '\n' ' ' | tail -c 500)"
+              { echo "### ❌ $label failed (rc=$rc)"; echo '```'; tail -n 40 /tmp/step.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          }
+          # Order per daily.yml cl_china: china -> sector_desk -> sector_cycles ->
+          # sector_central (reads the cycles' data JS + the china regime gate) ->
+          # flow_velocity; then cl_hk (independent, self-recomputes its regime).
+          run_py "build china a-share dashboard (build_china)"        scripts.build_china
+          run_py "china sector desk (build_china_sector_desk)"        scripts.build_china_sector_desk
+          run_py "china sector cycles (build_china_sector_cycles)"    scripts.build_china_sector_cycles
+          run_py "china sector central (build_china_sector_central)"  scripts.build_china_sector_central
+          run_py "capital flow velocity — CN/HK (build_flow_velocity)" scripts.build_flow_velocity
+          run_py "china subsector confluence (build_subsector_confluence --china)" scripts.build_subsector_confluence --china
+          run_py "build hong kong / hang seng (build_hk)"             scripts.build_hk
+          exit 0
+      - name: rebuild China/HK stock-search libraries (resilient — guarantees the analyzers ship)
+        run: |
+          set +e
+          for mod in scripts.build_china_library scripts.build_hk_library; do
+            echo "::group::$mod"; python -m "$mod" > /tmp/lib.log 2>&1; rc=$?; cat /tmp/lib.log; echo "::endgroup::"
+            [ "$rc" -ne 0 ] && echo "::error title=$mod failed (rc=$rc)::$(tail -n 2 /tmp/lib.log | tr '\n' ' ' | tail -c 500)"
+          done
+          exit 0
+      - name: commit engine outputs
+        if: always()
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/ site/
+          # force-add the gitignored per-market search libraries + reconstructed candles
+          git add -f site/chinastockdata site/chinaohlc site/hkstockdata site/hkohlc 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no engine output changes"; exit 0; fi
+          git commit -m "engine: asia dashboards $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then echo "pushed asia engine outputs (attempt $i)"; exit 0; fi
+            git rebase --abort 2>/dev/null || true; echo "asia engine push attempt $i lost a race"; sleep $((i * 7))
+          done
+          echo "::warning::could not push asia engine outputs after 5 attempts (non-fatal)"

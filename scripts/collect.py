@@ -230,6 +230,36 @@ def all_adapters() -> dict:
     return registry
 
 
+# ------------------------------------------------------------------ shards ----
+# Named collector GROUPS for time-sharded runs (see .github/workflows/asia-close.yml,
+# the US-evening nightly, etc.). A regional/cadence shard passes --group <name> (keep
+# only these); the nightly US run passes --exclude-group asia (everything but China/HK).
+# `asia` is a bulletproof china*/hk* PREFIX match, so a new china_/hk_ adapter is
+# auto-classified. `crypto`/`slow` are explicit sets consumed by shards added later —
+# inert until a workflow references them; verify before enabling those shards.
+_CRYPTO = {"coinmetrics", "bgeo", "coinbase", "okx", "deribit", "feargreed",
+           "coingecko", "defillama", "mempool", "wikipedia_btc", "farside"}
+_SLOW = set(_QUIVER_KEYS) | {
+    "edgar_8k", "edgar_13f", "edgar_trumpflow", "beneficial_ownership", "cot",
+    "openfda", "huggingface", "grants_gov", "clinicaltrials", "finnhub_altdata",
+    "polygon_news", "github_repos", "sam_gov", "usaspending", "prediction_markets",
+}
+
+
+def group_members(name: str, registry: dict) -> set:
+    """Resolve a time-shard GROUP name to the adapter keys present in `registry`."""
+    keys = set(registry)
+    if name == "asia":
+        return {k for k in keys if k.startswith("china") or k.startswith("hk")}
+    if name == "crypto":
+        return keys & _CRYPTO
+    if name == "slow":
+        return keys & _SLOW
+    if name == "us":                 # everything that is NOT China/HK (nightly US run)
+        return {k for k in keys if not (k.startswith("china") or k.startswith("hk"))}
+    raise SystemExit(f"unknown group {name!r} (known: asia, crypto, slow, us)")
+
+
 def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -> dict:
     """End-of-collection DATA-QUALITY GATE (read-only over the stores; writes only data/quality/*).
 
@@ -312,6 +342,10 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--full-history", action="store_true")
     ap.add_argument("--only", default="")
+    ap.add_argument("--group", default="",
+                    help="run ONLY collectors in this named shard group (asia|crypto|slow|us)")
+    ap.add_argument("--exclude-group", default="",
+                    help="run everything EXCEPT collectors in this named shard group")
     ap.add_argument("--skip-quality", action="store_true",
                     help="skip the end-of-collection data-quality audit gate")
     args = ap.parse_args()
@@ -320,6 +354,14 @@ def main() -> int:
     if args.only:
         keep = {s.strip() for s in args.only.split(",")}
         registry = {k: v for k, v in registry.items() if k in keep}
+    if args.group:
+        keep = group_members(args.group, registry)
+        registry = {k: v for k, v in registry.items() if k in keep}
+    if args.exclude_group:
+        drop = group_members(args.exclude_group, registry)
+        registry = {k: v for k, v in registry.items() if k not in drop}
+    log.info("collect scope: %d adapters%s", len(registry),
+             f" (group={args.group or '-'} exclude={args.exclude_group or '-'} only={args.only or '-'})")
 
     results = []
     timings: dict[str, float] = {}
@@ -492,8 +534,11 @@ def main() -> int:
     # failure raises RuntimeError here — the intended, conspicuous abort.
     if args.skip_quality:
         log.info("[quality] data-quality gate skipped (--skip-quality).")
-    elif args.only:
-        log.info("[quality] data-quality gate skipped on partial --only run (%s).", args.only)
+    elif args.only or args.group or args.exclude_group:
+        log.info("[quality] data-quality gate skipped on partial run "
+                 "(only=%s group=%s exclude=%s) — the all-universe audit would false-flag "
+                 "sources this shard did not refresh.", args.only or "-",
+                 args.group or "-", args.exclude_group or "-")
     else:
         run_quality_audits()
 

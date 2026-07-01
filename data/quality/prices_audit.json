@@ -13,20 +13,33 @@
   "macro_outlier_z": 5,
   "email_alerts": false
  },
- "n": 904,
- "n_failed": 2,
- "fail_pct": 0.221,
- "n_flags": 68,
+ "n": 2741,
+ "n_failed": 69,
+ "fail_pct": 2.517,
+ "n_flags": 442,
  "universes": [
   {
    "name": "stocks",
    "n": 223,
-   "n_failed": 0,
-   "fail_pct": 0.0,
+   "n_failed": 2,
+   "fail_pct": 0.897,
    "n_flags": 5,
    "skipped": false,
    "note": "",
-   "failed": [],
+   "failed": [
+    {
+     "name": "CMI",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "IFF",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    }
+   ],
    "flags": [
     {
      "name": "CASY",
@@ -57,13 +70,217 @@
   },
   {
    "name": "baskets/ohlcv",
-   "n": 681,
-   "n_failed": 2,
-   "fail_pct": 0.294,
-   "n_flags": 63,
+   "n": 2518,
+   "n_failed": 67,
+   "fail_pct": 2.661,
+   "n_flags": 437,
    "skipped": false,
    "note": "",
    "failed": [
+    {
+     "name": "AROC",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "BCC",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "BDN",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "BHB",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "BKU",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "BOC",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "BOX",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "CAL",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "CMDB",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "CNMD",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "CNO",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "COOK",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "CPRI",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "CPS",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "CRI",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "CRK",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "CTRI",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "CURV",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "CWK",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "DBRG",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "DDD",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "DIN",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "EEX",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "ENOV",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "ENS",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "ENVA",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "EPRT",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "EVC",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "FOR",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "GCO",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "GPI",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "HIPO",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "HP",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "HSHP",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
     {
      "name": "HUBB",
      "reasons": [
@@ -71,7 +288,193 @@
      ]
     },
     {
+     "name": "IE",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "KFRC",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "KMT",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "KRG",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "MC",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "NC",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "NOG",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "NRDY",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "NTST",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "OEC",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "OLP",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "ONIT",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "PBH",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "PMI",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "PRLB",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "RAMP",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
      "name": "RHHBY",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "RYAM",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "SEG",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "SITC",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2021-05-05)"
+     ]
+    },
+    {
+     "name": "SKIL",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "SLND",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "SWX",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "TCI",
+     "reasons": [
+      "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "TRNO",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "TWO",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "UTL",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "VEL",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "VOYG",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "WLY",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2021-05-05)"
+     ]
+    },
+    {
+     "name": "XPRO",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2026-06-30)"
+     ]
+    },
+    {
+     "name": "ZIP",
      "reasons": [
       "OHLC invalid: high<max(open,low,close) on 1 row(s) (worst 2026-06-30)"
      ]
@@ -79,9 +482,109 @@
    ],
    "flags": [
     {
+     "name": "AAOI",
+     "kind": "move",
+     "detail": "+24.1% on 2026-05-11 (3 day(s) > 20%)"
+    },
+    {
+     "name": "AARD",
+     "kind": "move",
+     "detail": "-56.2% on 2026-03-02 (2 day(s) > 20%)"
+    },
+    {
+     "name": "ABAT",
+     "kind": "move",
+     "detail": "+22.2% on 2026-06-08"
+    },
+    {
+     "name": "ABSI",
+     "kind": "move",
+     "detail": "+36.0% on 2026-06-24 (4 day(s) > 20%)"
+    },
+    {
+     "name": "ACCO",
+     "kind": "move",
+     "detail": "+23.1% on 2026-05-01"
+    },
+    {
      "name": "ACLS",
      "kind": "move",
      "detail": "+22.4% on 2026-05-06"
+    },
+    {
+     "name": "ACNT",
+     "kind": "move",
+     "detail": "-20.6% on 2026-03-04"
+    },
+    {
+     "name": "ACTG",
+     "kind": "move",
+     "detail": "+20.5% on 2026-03-11"
+    },
+    {
+     "name": "ACTU",
+     "kind": "move",
+     "detail": "+22.7% on 2026-04-22"
+    },
+    {
+     "name": "ACVA",
+     "kind": "move",
+     "detail": "+24.5% on 2026-05-07"
+    },
+    {
+     "name": "ADCT",
+     "kind": "move",
+     "detail": "-57.1% on 2026-06-04 (2 day(s) > 20%)"
+    },
+    {
+     "name": "ADV",
+     "kind": "move",
+     "detail": "-23.1% on 2026-03-31"
+    },
+    {
+     "name": "AEHR",
+     "kind": "move",
+     "detail": "+25.7% on 2026-04-08 (3 day(s) > 20%)"
+    },
+    {
+     "name": "AEVA",
+     "kind": "move",
+     "detail": "+22.9% on 2026-05-12 (2 day(s) > 20%)"
+    },
+    {
+     "name": "AEYE",
+     "kind": "move",
+     "detail": "-22.4% on 2026-03-06"
+    },
+    {
+     "name": "AGIO",
+     "kind": "move",
+     "detail": "-23.0% on 2026-04-20"
+    },
+    {
+     "name": "AGL",
+     "kind": "move",
+     "detail": "+117.8% on 2026-05-07 (4 day(s) > 20%)"
+    },
+    {
+     "name": "AGX",
+     "kind": "move",
+     "detail": "+37.9% on 2026-03-27"
+    },
+    {
+     "name": "AIRJ",
+     "kind": "move",
+     "detail": "+20.4% on 2026-06-30"
+    },
+    {
+     "name": "AIRO",
+     "kind": "move",
+     "detail": "+21.9% on 2026-05-28"
+    },
+    {
+     "name": "AIRS",
+     "kind": "move",
+     "detail": "+51.6% on 2026-03-16 (2 day(s) > 20%)"
     },
     {
      "name": "AKAM",
@@ -89,9 +592,24 @@
      "detail": "+26.6% on 2026-05-08"
     },
     {
+     "name": "AKBA",
+     "kind": "move",
+     "detail": "-20.3% on 2026-05-07"
+    },
+    {
+     "name": "ALDX",
+     "kind": "move",
+     "detail": "-70.7% on 2026-03-17 (3 day(s) > 20%)"
+    },
+    {
      "name": "ALHC",
      "kind": "move",
      "detail": "+25.1% on 2026-06-09"
+    },
+    {
+     "name": "ALLO",
+     "kind": "move",
+     "detail": "-25.5% on 2026-04-14"
     },
     {
      "name": "ALM",
@@ -99,9 +617,104 @@
      "detail": "-21.1% on 2026-06-05"
     },
     {
+     "name": "ALMU",
+     "kind": "move",
+     "detail": "+42.7% on 2026-04-13 (5 day(s) > 20%)"
+    },
+    {
+     "name": "AMBA",
+     "kind": "move",
+     "detail": "+28.0% on 2026-06-30 (2 day(s) > 20%)"
+    },
+    {
+     "name": "AMBQ",
+     "kind": "move",
+     "detail": "+45.3% on 2026-05-12"
+    },
+    {
+     "name": "AMC",
+     "kind": "move",
+     "detail": "-24.6% on 2026-06-23 (2 day(s) > 20%)"
+    },
+    {
+     "name": "AMN",
+     "kind": "move",
+     "detail": "+29.0% on 2026-05-08"
+    },
+    {
+     "name": "AMPH",
+     "kind": "move",
+     "detail": "-20.9% on 2026-05-08"
+    },
+    {
+     "name": "AMPL",
+     "kind": "move",
+     "detail": "-21.4% on 2026-05-07"
+    },
+    {
+     "name": "AMPX",
+     "kind": "move",
+     "detail": "-27.4% on 2026-05-07 (2 day(s) > 20%)"
+    },
+    {
+     "name": "ANGI",
+     "kind": "move",
+     "detail": "-35.2% on 2026-05-06"
+    },
+    {
+     "name": "AORT",
+     "kind": "move",
+     "detail": "-28.3% on 2026-05-08"
+    },
+    {
+     "name": "AOSL",
+     "kind": "move",
+     "detail": "-24.1% on 2026-05-07 (2 day(s) > 20%)"
+    },
+    {
+     "name": "APEI",
+     "kind": "move",
+     "detail": "+21.2% on 2026-03-13"
+    },
+    {
+     "name": "APGE",
+     "kind": "move",
+     "detail": "+46.7% on 2026-06-22"
+    },
+    {
      "name": "APLD",
      "kind": "move",
      "detail": "+21.5% on 2026-05-21"
+    },
+    {
+     "name": "APPS",
+     "kind": "move",
+     "detail": "+38.9% on 2026-05-27 (2 day(s) > 20%)"
+    },
+    {
+     "name": "ARAI",
+     "kind": "move",
+     "detail": "+85.6% on 2026-04-14 (4 day(s) > 20%)"
+    },
+    {
+     "name": "ARAY",
+     "kind": "move",
+     "detail": "-39.6% on 2026-05-07 (2 day(s) > 20%)"
+    },
+    {
+     "name": "AREN",
+     "kind": "move",
+     "detail": "-29.3% on 2026-05-12 (2 day(s) > 20%)"
+    },
+    {
+     "name": "ARL",
+     "kind": "move",
+     "detail": "+34.1% on 2026-06-26"
+    },
+    {
+     "name": "ARQ",
+     "kind": "move",
+     "detail": "-48.8% on 2026-03-10"
     },
     {
      "name": "ASPI",
@@ -109,9 +722,109 @@
      "detail": "+24.9% on 2026-05-26"
     },
     {
+     "name": "ASPN",
+     "kind": "move",
+     "detail": "+24.3% on 2026-05-07"
+    },
+    {
+     "name": "ASTH",
+     "kind": "move",
+     "detail": "+29.5% on 2026-03-02"
+    },
+    {
      "name": "ASTS",
      "kind": "move",
      "detail": "+21.4% on 2026-06-29"
+    },
+    {
+     "name": "ATEC",
+     "kind": "move",
+     "detail": "-31.7% on 2026-05-06"
+    },
+    {
+     "name": "ATEX",
+     "kind": "move",
+     "detail": "+25.7% on 2026-06-11"
+    },
+    {
+     "name": "ATLN",
+     "kind": "move",
+     "detail": "+202.3% on 2026-06-23 (9 day(s) > 20%)"
+    },
+    {
+     "name": "ATOM",
+     "kind": "move",
+     "detail": "+38.9% on 2026-04-24 (3 day(s) > 20%)"
+    },
+    {
+     "name": "ATYR",
+     "kind": "move",
+     "detail": "-44.2% on 2026-05-12 (4 day(s) > 20%)"
+    },
+    {
+     "name": "AVD",
+     "kind": "move",
+     "detail": "+22.8% on 2026-03-30"
+    },
+    {
+     "name": "AVNS",
+     "kind": "move",
+     "detail": "+69.5% on 2026-04-14"
+    },
+    {
+     "name": "AVNW",
+     "kind": "move",
+     "detail": "-33.3% on 2026-05-05"
+    },
+    {
+     "name": "AVXL",
+     "kind": "move",
+     "detail": "-34.6% on 2026-03-25"
+    },
+    {
+     "name": "AZTA",
+     "kind": "move",
+     "detail": "-25.3% on 2026-05-06"
+    },
+    {
+     "name": "BAND",
+     "kind": "move",
+     "detail": "+52.1% on 2026-04-30 (2 day(s) > 20%)"
+    },
+    {
+     "name": "BARK",
+     "kind": "move",
+     "detail": "-20.3% on 2026-03-20"
+    },
+    {
+     "name": "BBCP",
+     "kind": "move",
+     "detail": "+30.7% on 2026-06-05"
+    },
+    {
+     "name": "BE",
+     "kind": "move",
+     "detail": "+27.2% on 2026-04-29 (2 day(s) > 20%)"
+    },
+    {
+     "name": "BEEP",
+     "kind": "move",
+     "detail": "+22.7% on 2026-05-11"
+    },
+    {
+     "name": "BETR",
+     "kind": "move",
+     "detail": "-28.5% on 2026-05-07 (2 day(s) > 20%)"
+    },
+    {
+     "name": "BFLY",
+     "kind": "move",
+     "detail": "+55.9% on 2026-06-18"
+    },
+    {
+     "name": "BKKT",
+     "kind": "move",
+     "detail": "+21.0% on 2026-05-21"
     },
     {
      "name": "BKSY",
@@ -119,9 +832,89 @@
      "detail": "+22.4% on 2026-05-08 (2 day(s) > 20%)"
     },
     {
+     "name": "BLMN",
+     "kind": "move",
+     "detail": "+41.0% on 2026-05-06"
+    },
+    {
+     "name": "BLZE",
+     "kind": "move",
+     "detail": "+63.6% on 2026-05-05 (2 day(s) > 20%)"
+    },
+    {
+     "name": "BMBL",
+     "kind": "move",
+     "detail": "+34.2% on 2026-03-12 (2 day(s) > 20%)"
+    },
+    {
+     "name": "BMI",
+     "kind": "move",
+     "detail": "-24.1% on 2026-04-17"
+    },
+    {
+     "name": "BNED",
+     "kind": "move",
+     "detail": "+20.1% on 2026-06-25"
+    },
+    {
+     "name": "BOOM",
+     "kind": "move",
+     "detail": "+36.1% on 2026-05-01"
+    },
+    {
+     "name": "BRCB",
+     "kind": "move",
+     "detail": "-30.3% on 2026-05-13"
+    },
+    {
+     "name": "BRCC",
+     "kind": "move",
+     "detail": "+25.0% on 2026-03-03 (2 day(s) > 20%)"
+    },
+    {
      "name": "BTDR",
      "kind": "move",
      "detail": "+21.0% on 2026-05-06"
+    },
+    {
+     "name": "BUR",
+     "kind": "move",
+     "detail": "-47.1% on 2026-03-27"
+    },
+    {
+     "name": "BXC",
+     "kind": "move",
+     "detail": "+27.1% on 2026-05-06"
+    },
+    {
+     "name": "BYND",
+     "kind": "move",
+     "detail": "+40.9% on 2026-04-20 (2 day(s) > 20%)"
+    },
+    {
+     "name": "BYRN",
+     "kind": "move",
+     "detail": "-31.0% on 2026-04-09"
+    },
+    {
+     "name": "BZAI",
+     "kind": "move",
+     "detail": "+45.7% on 2026-04-17 (3 day(s) > 20%)"
+    },
+    {
+     "name": "BZH",
+     "kind": "move",
+     "detail": "+34.0% on 2026-05-11"
+    },
+    {
+     "name": "CABO",
+     "kind": "move",
+     "detail": "+30.1% on 2026-06-26"
+    },
+    {
+     "name": "CADL",
+     "kind": "move",
+     "detail": "+23.4% on 2026-04-17"
     },
     {
      "name": "CASY",
@@ -129,9 +922,54 @@
      "detail": "+20.3% on 2026-06-10"
     },
     {
+     "name": "CBRL",
+     "kind": "move",
+     "detail": "+22.6% on 2026-06-10"
+    },
+    {
+     "name": "CCOI",
+     "kind": "move",
+     "detail": "-29.3% on 2026-05-04"
+    },
+    {
+     "name": "CCRN",
+     "kind": "move",
+     "detail": "+29.5% on 2026-05-07"
+    },
+    {
+     "name": "CCSI",
+     "kind": "move",
+     "detail": "+20.2% on 2026-05-08"
+    },
+    {
+     "name": "CD",
+     "kind": "move",
+     "detail": "+26.5% on 2026-05-18 (5 day(s) > 20%)"
+    },
+    {
+     "name": "CDNA",
+     "kind": "move",
+     "detail": "+27.6% on 2026-04-16"
+    },
+    {
      "name": "CDW",
      "kind": "move",
      "detail": "-20.3% on 2026-05-06"
+    },
+    {
+     "name": "CDXS",
+     "kind": "move",
+     "detail": "+34.6% on 2026-03-12"
+    },
+    {
+     "name": "CELC",
+     "kind": "move",
+     "detail": "-25.7% on 2026-06-02"
+    },
+    {
+     "name": "CERS",
+     "kind": "move",
+     "detail": "+34.0% on 2026-05-01"
     },
     {
      "name": "CHTR",
@@ -144,14 +982,109 @@
      "detail": "+23.5% on 2026-05-05"
     },
     {
+     "name": "CLFD",
+     "kind": "move",
+     "detail": "+23.8% on 2026-05-07"
+    },
+    {
+     "name": "CLMB",
+     "kind": "move",
+     "detail": "-21.6% on 2026-04-30"
+    },
+    {
+     "name": "CLPT",
+     "kind": "move",
+     "detail": "+26.0% on 2026-06-17 (2 day(s) > 20%)"
+    },
+    {
+     "name": "CMPX",
+     "kind": "move",
+     "detail": "-64.4% on 2026-04-27"
+    },
+    {
+     "name": "CMRC",
+     "kind": "move",
+     "detail": "+23.6% on 2026-05-07"
+    },
+    {
+     "name": "COCO",
+     "kind": "move",
+     "detail": "+29.7% on 2026-04-29"
+    },
+    {
+     "name": "COMP",
+     "kind": "move",
+     "detail": "+27.3% on 2026-05-06"
+    },
+    {
+     "name": "COOK",
+     "kind": "move",
+     "detail": "+21.3% on 2026-05-18 (2 day(s) > 20%)"
+    },
+    {
      "name": "CRCL",
      "kind": "move",
      "detail": "-20.1% on 2026-03-24"
     },
     {
+     "name": "CRDF",
+     "kind": "move",
+     "detail": "-22.1% on 2026-06-01"
+    },
+    {
      "name": "CRML",
      "kind": "move",
      "detail": "+35.5% on 2026-04-17 (2 day(s) > 20%)"
+    },
+    {
+     "name": "CRMT",
+     "kind": "move",
+     "detail": "-55.0% on 2026-06-10 (7 day(s) > 20%)"
+    },
+    {
+     "name": "CRSR",
+     "kind": "move",
+     "detail": "+21.7% on 2026-05-28 (2 day(s) > 20%)"
+    },
+    {
+     "name": "CRTO",
+     "kind": "move",
+     "detail": "-21.2% on 2026-05-06"
+    },
+    {
+     "name": "CSTL",
+     "kind": "move",
+     "detail": "-22.3% on 2026-05-07"
+    },
+    {
+     "name": "CTEV",
+     "kind": "move",
+     "detail": "-40.9% on 2026-05-15 (2 day(s) > 20%)"
+    },
+    {
+     "name": "CURV",
+     "kind": "move",
+     "detail": "+28.0% on 2026-03-20"
+    },
+    {
+     "name": "CVRX",
+     "kind": "move",
+     "detail": "-23.8% on 2026-05-12"
+    },
+    {
+     "name": "DBI",
+     "kind": "move",
+     "detail": "-20.9% on 2026-06-09"
+    },
+    {
+     "name": "DCGO",
+     "kind": "move",
+     "detail": "+20.1% on 2026-03-17"
+    },
+    {
+     "name": "DDD",
+     "kind": "move",
+     "detail": "+28.1% on 2026-03-09 (2 day(s) > 20%)"
     },
     {
      "name": "DDOG",
@@ -164,9 +1097,169 @@
      "detail": "+32.8% on 2026-05-29"
     },
     {
+     "name": "DERM",
+     "kind": "move",
+     "detail": "-30.0% on 2026-03-26 (2 day(s) > 20%)"
+    },
+    {
+     "name": "DFTX",
+     "kind": "move",
+     "detail": "+49.8% on 2026-06-22"
+    },
+    {
+     "name": "DMRC",
+     "kind": "move",
+     "detail": "+26.3% on 2026-05-20"
+    },
+    {
+     "name": "DNTH",
+     "kind": "move",
+     "detail": "+21.5% on 2026-03-09"
+    },
+    {
+     "name": "DOCN",
+     "kind": "move",
+     "detail": "+40.4% on 2026-05-05"
+    },
+    {
+     "name": "DOMO",
+     "kind": "move",
+     "detail": "-37.1% on 2026-06-16 (4 day(s) > 20%)"
+    },
+    {
+     "name": "DOUG",
+     "kind": "move",
+     "detail": "-26.7% on 2026-03-13"
+    },
+    {
+     "name": "DSGN",
+     "kind": "move",
+     "detail": "-25.5% on 2026-05-18 (2 day(s) > 20%)"
+    },
+    {
+     "name": "DSGR",
+     "kind": "move",
+     "detail": "+35.0% on 2026-03-16 (2 day(s) > 20%)"
+    },
+    {
      "name": "DVA",
      "kind": "move",
      "detail": "+23.5% on 2026-05-06"
+    },
+    {
+     "name": "DY",
+     "kind": "move",
+     "detail": "+25.8% on 2026-05-27"
+    },
+    {
+     "name": "EFOR",
+     "kind": "move",
+     "detail": "-51.7% on 2026-04-23"
+    },
+    {
+     "name": "EGHT",
+     "kind": "move",
+     "detail": "+27.1% on 2026-05-01"
+    },
+    {
+     "name": "EHTH",
+     "kind": "move",
+     "detail": "+25.8% on 2026-03-03"
+    },
+    {
+     "name": "ELA",
+     "kind": "move",
+     "detail": "+31.2% on 2026-03-19 (2 day(s) > 20%)"
+    },
+    {
+     "name": "ELMD",
+     "kind": "move",
+     "detail": "+25.1% on 2026-05-13"
+    },
+    {
+     "name": "ELME",
+     "kind": "move",
+     "detail": "-33.2% on 2026-06-25"
+    },
+    {
+     "name": "EMBC",
+     "kind": "move",
+     "detail": "-57.8% on 2026-05-05"
+    },
+    {
+     "name": "EOLS",
+     "kind": "move",
+     "detail": "+35.4% on 2026-03-04"
+    },
+    {
+     "name": "EOSE",
+     "kind": "move",
+     "detail": "+29.6% on 2026-04-09 (2 day(s) > 20%)"
+    },
+    {
+     "name": "ERAS",
+     "kind": "move",
+     "detail": "-48.3% on 2026-04-28"
+    },
+    {
+     "name": "ESPR",
+     "kind": "move",
+     "detail": "+55.5% on 2026-05-01"
+    },
+    {
+     "name": "EVC",
+     "kind": "move",
+     "detail": "+93.2% on 2026-05-06 (2 day(s) > 20%)"
+    },
+    {
+     "name": "EVER",
+     "kind": "move",
+     "detail": "+63.0% on 2026-05-05"
+    },
+    {
+     "name": "EVEX",
+     "kind": "move",
+     "detail": "+20.4% on 2026-05-06"
+    },
+    {
+     "name": "EVMN",
+     "kind": "move",
+     "detail": "-40.2% on 2026-06-29"
+    },
+    {
+     "name": "EWTX",
+     "kind": "move",
+     "detail": "+20.9% on 2026-05-05"
+    },
+    {
+     "name": "EXFY",
+     "kind": "move",
+     "detail": "+30.0% on 2026-06-18"
+    },
+    {
+     "name": "EXTR",
+     "kind": "move",
+     "detail": "+28.2% on 2026-04-29"
+    },
+    {
+     "name": "FA",
+     "kind": "move",
+     "detail": "+23.1% on 2026-05-07"
+    },
+    {
+     "name": "FATE",
+     "kind": "move",
+     "detail": "+31.1% on 2026-05-05 (2 day(s) > 20%)"
+    },
+    {
+     "name": "FBYD",
+     "kind": "move",
+     "detail": "+36.6% on 2026-05-21 (2 day(s) > 20%)"
+    },
+    {
+     "name": "FC",
+     "kind": "move",
+     "detail": "+44.4% on 2026-04-02"
     },
     {
      "name": "FDXF",
@@ -174,9 +1267,39 @@
      "detail": "+22.5% on 2026-05-28"
     },
     {
+     "name": "FENC",
+     "kind": "move",
+     "detail": "+36.5% on 2026-05-14"
+    },
+    {
+     "name": "FFAI",
+     "kind": "move",
+     "detail": "+85.4% on 2026-04-21 (4 day(s) > 20%)"
+    },
+    {
+     "name": "FIGS",
+     "kind": "move",
+     "detail": "-24.3% on 2026-05-08"
+    },
+    {
+     "name": "FIVN",
+     "kind": "move",
+     "detail": "+29.3% on 2026-05-01"
+    },
+    {
+     "name": "FLD",
+     "kind": "move",
+     "detail": "+35.7% on 2026-04-17 (3 day(s) > 20%)"
+    },
+    {
      "name": "FLEX",
      "kind": "move",
      "detail": "+39.7% on 2026-05-06"
+    },
+    {
+     "name": "FLNC",
+     "kind": "move",
+     "detail": "+43.8% on 2026-06-01 (3 day(s) > 20%)"
     },
     {
      "name": "FLY",
@@ -189,9 +1312,34 @@
      "detail": "+20.5% on 2026-05-06"
     },
     {
+     "name": "FLYX",
+     "kind": "move",
+     "detail": "+33.8% on 2026-04-15 (2 day(s) > 20%)"
+    },
+    {
+     "name": "FRD",
+     "kind": "move",
+     "detail": "+31.6% on 2026-06-12"
+    },
+    {
+     "name": "FSLY",
+     "kind": "move",
+     "detail": "-38.2% on 2026-05-07 (2 day(s) > 20%)"
+    },
+    {
      "name": "FTNT",
      "kind": "move",
      "detail": "+20.0% on 2026-05-07"
+    },
+    {
+     "name": "FUBO",
+     "kind": "move",
+     "detail": "+23.5% on 2026-04-06 (2 day(s) > 20%)"
+    },
+    {
+     "name": "FULC",
+     "kind": "move",
+     "detail": "-51.1% on 2026-06-02"
     },
     {
      "name": "FUTU",
@@ -199,9 +1347,89 @@
      "detail": "-27.5% on 2026-05-22"
     },
     {
+     "name": "FWRD",
+     "kind": "move",
+     "detail": "-43.0% on 2026-05-08 (2 day(s) > 20%)"
+    },
+    {
+     "name": "GAMB",
+     "kind": "move",
+     "detail": "-42.0% on 2026-05-15"
+    },
+    {
+     "name": "GBTG",
+     "kind": "move",
+     "detail": "+57.5% on 2026-05-04"
+    },
+    {
+     "name": "GENI",
+     "kind": "move",
+     "detail": "+22.2% on 2026-05-18"
+    },
+    {
+     "name": "GEO",
+     "kind": "move",
+     "detail": "+20.9% on 2026-05-06"
+    },
+    {
+     "name": "GETY",
+     "kind": "move",
+     "detail": "+90.1% on 2026-06-22 (2 day(s) > 20%)"
+    },
+    {
+     "name": "GKOS",
+     "kind": "move",
+     "detail": "+22.8% on 2026-04-30"
+    },
+    {
      "name": "GLXY",
      "kind": "move",
      "detail": "+21.4% on 2026-06-08"
+    },
+    {
+     "name": "GO",
+     "kind": "move",
+     "detail": "-27.9% on 2026-03-05"
+    },
+    {
+     "name": "GOSS",
+     "kind": "move",
+     "detail": "-43.2% on 2026-05-18 (2 day(s) > 20%)"
+    },
+    {
+     "name": "GPGI",
+     "kind": "move",
+     "detail": "-25.9% on 2026-05-07"
+    },
+    {
+     "name": "GRPN",
+     "kind": "move",
+     "detail": "+24.9% on 2026-06-25 (2 day(s) > 20%)"
+    },
+    {
+     "name": "GTN",
+     "kind": "move",
+     "detail": "-20.1% on 2026-05-07"
+    },
+    {
+     "name": "GTX",
+     "kind": "move",
+     "detail": "+25.0% on 2026-04-30"
+    },
+    {
+     "name": "HCAT",
+     "kind": "move",
+     "detail": "+45.9% on 2026-06-04 (2 day(s) > 20%)"
+    },
+    {
+     "name": "HCKT",
+     "kind": "move",
+     "detail": "-26.5% on 2026-05-06"
+    },
+    {
+     "name": "HELE",
+     "kind": "move",
+     "detail": "+20.5% on 2026-04-23"
     },
     {
      "name": "HIMS",
@@ -209,9 +1437,49 @@
      "detail": "+40.8% on 2026-03-09"
     },
     {
+     "name": "HROW",
+     "kind": "move",
+     "detail": "-28.0% on 2026-03-03 (2 day(s) > 20%)"
+    },
+    {
+     "name": "HRTG",
+     "kind": "move",
+     "detail": "-20.0% on 2026-05-08"
+    },
+    {
+     "name": "HRTX",
+     "kind": "move",
+     "detail": "-45.8% on 2026-06-02 (2 day(s) > 20%)"
+    },
+    {
+     "name": "HTZ",
+     "kind": "move",
+     "detail": "-40.7% on 2026-06-24"
+    },
+    {
+     "name": "HUMA",
+     "kind": "move",
+     "detail": "+24.2% on 2026-05-13"
+    },
+    {
+     "name": "HURA",
+     "kind": "move",
+     "detail": "+26.4% on 2026-04-13 (2 day(s) > 20%)"
+    },
+    {
      "name": "HUT",
      "kind": "move",
      "detail": "+35.3% on 2026-05-06"
+    },
+    {
+     "name": "HYLN",
+     "kind": "move",
+     "detail": "+42.6% on 2026-05-22 (3 day(s) > 20%)"
+    },
+    {
+     "name": "IART",
+     "kind": "move",
+     "detail": "+24.1% on 2026-05-05"
     },
     {
      "name": "IBP",
@@ -219,9 +1487,49 @@
      "detail": "-27.6% on 2026-05-07"
     },
     {
+     "name": "IBRX",
+     "kind": "move",
+     "detail": "-21.1% on 2026-03-24"
+    },
+    {
+     "name": "IHRT",
+     "kind": "move",
+     "detail": "+35.2% on 2026-04-24"
+    },
+    {
+     "name": "IIIN",
+     "kind": "move",
+     "detail": "-22.1% on 2026-04-16"
+    },
+    {
+     "name": "IMVT",
+     "kind": "move",
+     "detail": "+35.3% on 2026-05-20"
+    },
+    {
+     "name": "INBX",
+     "kind": "move",
+     "detail": "+36.9% on 2026-04-22"
+    },
+    {
      "name": "INFQ",
      "kind": "move",
      "detail": "+31.5% on 2026-05-21"
+    },
+    {
+     "name": "INOD",
+     "kind": "move",
+     "detail": "+86.0% on 2026-05-08 (2 day(s) > 20%)"
+    },
+    {
+     "name": "INSG",
+     "kind": "move",
+     "detail": "+23.3% on 2026-04-30"
+    },
+    {
+     "name": "INSM",
+     "kind": "move",
+     "detail": "-23.4% on 2026-05-07"
     },
     {
      "name": "INTC",
@@ -234,6 +1542,11 @@
      "detail": "-20.0% on 2026-05-21"
     },
     {
+     "name": "INV",
+     "kind": "move",
+     "detail": "+34.6% on 2026-04-20"
+    },
+    {
      "name": "IONQ",
      "kind": "move",
      "detail": "+20.9% on 2026-04-15 (2 day(s) > 20%)"
@@ -244,9 +1557,149 @@
      "detail": "+25.4% on 2026-06-29"
     },
     {
+     "name": "ISPR",
+     "kind": "move",
+     "detail": "+33.1% on 2026-05-19 (3 day(s) > 20%)"
+    },
+    {
+     "name": "JACK",
+     "kind": "move",
+     "detail": "+20.2% on 2026-06-29"
+    },
+    {
+     "name": "JILL",
+     "kind": "move",
+     "detail": "-23.4% on 2026-03-31"
+    },
+    {
+     "name": "JOBY",
+     "kind": "move",
+     "detail": "+21.2% on 2026-05-06"
+    },
+    {
+     "name": "JRVR",
+     "kind": "move",
+     "detail": "-23.6% on 2026-05-05"
+    },
+    {
+     "name": "KFRC",
+     "kind": "move",
+     "detail": "+43.3% on 2026-04-28"
+    },
+    {
+     "name": "KLC",
+     "kind": "move",
+     "detail": "-42.6% on 2026-03-13"
+    },
+    {
+     "name": "KOD",
+     "kind": "move",
+     "detail": "+74.8% on 2026-03-26"
+    },
+    {
+     "name": "KODK",
+     "kind": "move",
+     "detail": "+20.3% on 2026-04-02"
+    },
+    {
+     "name": "KRT",
+     "kind": "move",
+     "detail": "+20.7% on 2026-03-13"
+    },
+    {
+     "name": "KSS",
+     "kind": "move",
+     "detail": "+20.6% on 2026-05-28"
+    },
+    {
+     "name": "KTB",
+     "kind": "move",
+     "detail": "+20.6% on 2026-03-03"
+    },
+    {
+     "name": "KULR",
+     "kind": "move",
+     "detail": "+27.0% on 2026-05-13"
+    },
+    {
      "name": "KVYO",
      "kind": "move",
      "detail": "-32.2% on 2026-05-06"
+    },
+    {
+     "name": "LAB",
+     "kind": "move",
+     "detail": "-30.4% on 2026-06-08"
+    },
+    {
+     "name": "LAKE",
+     "kind": "move",
+     "detail": "+25.6% on 2026-04-17"
+    },
+    {
+     "name": "LASR",
+     "kind": "move",
+     "detail": "+20.5% on 2026-03-02"
+    },
+    {
+     "name": "LENZ",
+     "kind": "move",
+     "detail": "-20.8% on 2026-05-12"
+    },
+    {
+     "name": "LFCR",
+     "kind": "move",
+     "detail": "-33.2% on 2026-03-16"
+    },
+    {
+     "name": "LFMD",
+     "kind": "move",
+     "detail": "+25.3% on 2026-03-10 (2 day(s) > 20%)"
+    },
+    {
+     "name": "LFST",
+     "kind": "move",
+     "detail": "+20.2% on 2026-05-07"
+    },
+    {
+     "name": "LFVN",
+     "kind": "move",
+     "detail": "-27.0% on 2026-06-15 (3 day(s) > 20%)"
+    },
+    {
+     "name": "LMB",
+     "kind": "move",
+     "detail": "-32.5% on 2026-05-06"
+    },
+    {
+     "name": "LMRI",
+     "kind": "move",
+     "detail": "-29.8% on 2026-03-26 (2 day(s) > 20%)"
+    },
+    {
+     "name": "LNSR",
+     "kind": "move",
+     "detail": "-32.8% on 2026-03-17"
+    },
+    {
+     "name": "LOVE",
+     "kind": "move",
+     "detail": "+21.9% on 2026-03-26"
+    },
+    {
+     "name": "LPRO",
+     "kind": "move",
+     "detail": "+48.1% on 2026-06-16"
+    },
+    {
+     "name": "LQDA",
+     "kind": "move",
+     "detail": "+25.6% on 2026-05-11"
+    },
+    {
+     "name": "LUNG",
+     "kind": "move",
+     "detail": "+25.5% on 2026-03-06"
     },
     {
      "name": "LUNR",
@@ -254,9 +1707,79 @@
      "detail": "+20.2% on 2026-05-08"
     },
     {
+     "name": "LVWR",
+     "kind": "move",
+     "detail": "+36.6% on 2026-06-26"
+    },
+    {
+     "name": "LZM",
+     "kind": "move",
+     "detail": "+33.2% on 2026-04-17"
+    },
+    {
+     "name": "MAZE",
+     "kind": "move",
+     "detail": "-35.2% on 2026-03-25"
+    },
+    {
+     "name": "MBX",
+     "kind": "move",
+     "detail": "+20.2% on 2026-06-11"
+    },
+    {
      "name": "MDB",
      "kind": "move",
      "detail": "-22.2% on 2026-03-03 (2 day(s) > 20%)"
+    },
+    {
+     "name": "MED",
+     "kind": "move",
+     "detail": "+22.5% on 2026-05-05"
+    },
+    {
+     "name": "MEI",
+     "kind": "move",
+     "detail": "+48.2% on 2026-05-13 (4 day(s) > 20%)"
+    },
+    {
+     "name": "MKTW",
+     "kind": "move",
+     "detail": "+24.4% on 2026-05-08"
+    },
+    {
+     "name": "MLKN",
+     "kind": "move",
+     "detail": "-22.4% on 2026-03-26"
+    },
+    {
+     "name": "MNKD",
+     "kind": "move",
+     "detail": "+24.5% on 2026-05-06"
+    },
+    {
+     "name": "MPAA",
+     "kind": "move",
+     "detail": "+34.6% on 2026-06-08"
+    },
+    {
+     "name": "MPLT",
+     "kind": "move",
+     "detail": "+21.3% on 2026-04-09"
+    },
+    {
+     "name": "MPTI",
+     "kind": "move",
+     "detail": "+20.6% on 2026-03-25"
+    },
+    {
+     "name": "MRDN",
+     "kind": "move",
+     "detail": "+23.8% on 2026-03-05 (3 day(s) > 20%)"
+    },
+    {
+     "name": "MRVI",
+     "kind": "move",
+     "detail": "+23.1% on 2026-05-08"
     },
     {
      "name": "MRVL",
@@ -264,9 +1787,59 @@
      "detail": "+32.5% on 2026-06-02"
     },
     {
+     "name": "MVIS",
+     "kind": "move",
+     "detail": "-31.7% on 2026-06-02 (3 day(s) > 20%)"
+    },
+    {
+     "name": "MVST",
+     "kind": "move",
+     "detail": "-34.2% on 2026-03-17 (2 day(s) > 20%)"
+    },
+    {
+     "name": "MXCT",
+     "kind": "move",
+     "detail": "+24.1% on 2026-05-13"
+    },
+    {
+     "name": "MXL",
+     "kind": "move",
+     "detail": "+76.1% on 2026-04-24 (4 day(s) > 20%)"
+    },
+    {
+     "name": "NAVN",
+     "kind": "move",
+     "detail": "+43.3% on 2026-03-26"
+    },
+    {
+     "name": "NEON",
+     "kind": "move",
+     "detail": "-26.2% on 2026-06-08"
+    },
+    {
      "name": "NET",
      "kind": "move",
      "detail": "-23.6% on 2026-05-08"
+    },
+    {
+     "name": "NFE",
+     "kind": "move",
+     "detail": "-20.3% on 2026-03-18"
+    },
+    {
+     "name": "NKTX",
+     "kind": "move",
+     "detail": "+23.9% on 2026-04-17"
+    },
+    {
+     "name": "NMAX",
+     "kind": "move",
+     "detail": "-27.4% on 2026-04-23 (2 day(s) > 20%)"
+    },
+    {
+     "name": "NN",
+     "kind": "move",
+     "detail": "+26.6% on 2026-04-16 (2 day(s) > 20%)"
     },
     {
      "name": "NNE",
@@ -274,9 +1847,49 @@
      "detail": "+27.7% on 2026-05-06"
     },
     {
+     "name": "NNOX",
+     "kind": "move",
+     "detail": "-44.0% on 2026-06-25 (3 day(s) > 20%)"
+    },
+    {
+     "name": "NPWR",
+     "kind": "move",
+     "detail": "+21.6% on 2026-05-12"
+    },
+    {
      "name": "NTAP",
      "kind": "move",
      "detail": "+22.4% on 2026-05-29"
+    },
+    {
+     "name": "NTLA",
+     "kind": "move",
+     "detail": "+23.2% on 2026-06-15"
+    },
+    {
+     "name": "NUVB",
+     "kind": "move",
+     "detail": "-25.3% on 2026-03-03"
+    },
+    {
+     "name": "NUVL",
+     "kind": "move",
+     "detail": "+39.3% on 2026-06-09"
+    },
+    {
+     "name": "NVCR",
+     "kind": "move",
+     "detail": "+27.5% on 2026-04-30 (2 day(s) > 20%)"
+    },
+    {
+     "name": "NVCT",
+     "kind": "move",
+     "detail": "+39.5% on 2026-06-24 (2 day(s) > 20%)"
+    },
+    {
+     "name": "NVTS",
+     "kind": "move",
+     "detail": "+24.9% on 2026-03-11 (4 day(s) > 20%)"
     },
     {
      "name": "NXPI",
@@ -284,9 +1897,39 @@
      "detail": "+25.5% on 2026-04-29"
     },
     {
+     "name": "NXXT",
+     "kind": "move",
+     "detail": "+100.0% on 2026-05-19 (4 day(s) > 20%)"
+    },
+    {
+     "name": "OCUL",
+     "kind": "move",
+     "detail": "+22.8% on 2026-03-02"
+    },
+    {
      "name": "OKTA",
      "kind": "move",
      "detail": "+30.1% on 2026-05-29"
+    },
+    {
+     "name": "OLMA",
+     "kind": "move",
+     "detail": "-25.8% on 2026-03-09"
+    },
+    {
+     "name": "OLPX",
+     "kind": "move",
+     "detail": "+51.1% on 2026-03-26"
+    },
+    {
+     "name": "OM",
+     "kind": "move",
+     "detail": "+25.6% on 2026-06-18 (2 day(s) > 20%)"
+    },
+    {
+     "name": "OMCL",
+     "kind": "move",
+     "detail": "+20.9% on 2026-04-28"
     },
     {
      "name": "ON",
@@ -294,9 +1937,179 @@
      "detail": "-23.7% on 2026-06-26"
     },
     {
+     "name": "ONT",
+     "kind": "move",
+     "detail": "-20.7% on 2026-05-07"
+    },
+    {
+     "name": "OPAL",
+     "kind": "move",
+     "detail": "+27.6% on 2026-03-16"
+    },
+    {
+     "name": "OPCH",
+     "kind": "move",
+     "detail": "-24.3% on 2026-04-30"
+    },
+    {
+     "name": "OPRX",
+     "kind": "move",
+     "detail": "-22.4% on 2026-05-13"
+    },
+    {
+     "name": "OPTU",
+     "kind": "move",
+     "detail": "+76.3% on 2026-06-01"
+    },
+    {
+     "name": "ORIC",
+     "kind": "move",
+     "detail": "-41.0% on 2026-04-01"
+    },
+    {
+     "name": "ORKA",
+     "kind": "move",
+     "detail": "+25.0% on 2026-03-13"
+    },
+    {
+     "name": "OSG",
+     "kind": "move",
+     "detail": "+43.4% on 2026-05-07"
+    },
+    {
+     "name": "OUST",
+     "kind": "move",
+     "detail": "+28.7% on 2026-06-29 (2 day(s) > 20%)"
+    },
+    {
+     "name": "PACK",
+     "kind": "move",
+     "detail": "+29.2% on 2026-04-30"
+    },
+    {
+     "name": "PACS",
+     "kind": "move",
+     "detail": "+28.6% on 2026-05-12"
+    },
+    {
+     "name": "PAHC",
+     "kind": "move",
+     "detail": "-26.2% on 2026-05-07"
+    },
+    {
+     "name": "PAYO",
+     "kind": "move",
+     "detail": "+24.3% on 2026-06-09"
+    },
+    {
+     "name": "PAYS",
+     "kind": "move",
+     "detail": "+36.6% on 2026-03-25"
+    },
+    {
+     "name": "PCT",
+     "kind": "move",
+     "detail": "+21.5% on 2026-05-14"
+    },
+    {
+     "name": "PD",
+     "kind": "move",
+     "detail": "+33.7% on 2026-05-29"
+    },
+    {
+     "name": "PDYN",
+     "kind": "move",
+     "detail": "+34.1% on 2026-03-05"
+    },
+    {
+     "name": "PGEN",
+     "kind": "move",
+     "detail": "+25.5% on 2026-03-26"
+    },
+    {
+     "name": "PGNY",
+     "kind": "move",
+     "detail": "+23.8% on 2026-05-08"
+    },
+    {
+     "name": "PHR",
+     "kind": "move",
+     "detail": "-26.6% on 2026-03-31"
+    },
+    {
+     "name": "PI",
+     "kind": "move",
+     "detail": "+20.7% on 2026-04-30"
+    },
+    {
      "name": "PL",
      "kind": "move",
      "detail": "-26.0% on 2026-06-05 (2 day(s) > 20%)"
+    },
+    {
+     "name": "PLAB",
+     "kind": "move",
+     "detail": "-36.4% on 2026-05-28"
+    },
+    {
+     "name": "PLSE",
+     "kind": "move",
+     "detail": "+22.1% on 2026-05-12"
+    },
+    {
+     "name": "PLUG",
+     "kind": "move",
+     "detail": "+23.2% on 2026-03-03"
+    },
+    {
+     "name": "PLX",
+     "kind": "move",
+     "detail": "-20.8% on 2026-03-18"
+    },
+    {
+     "name": "PMI",
+     "kind": "move",
+     "detail": "+60.7% on 2026-06-02 (5 day(s) > 20%)"
+    },
+    {
+     "name": "PMTS",
+     "kind": "move",
+     "detail": "+41.3% on 2026-03-05"
+    },
+    {
+     "name": "PNRG",
+     "kind": "move",
+     "detail": "-23.9% on 2026-05-28"
+    },
+    {
+     "name": "PRAX",
+     "kind": "move",
+     "detail": "-23.0% on 2026-06-02"
+    },
+    {
+     "name": "PRG",
+     "kind": "move",
+     "detail": "+24.1% on 2026-04-29"
+    },
+    {
+     "name": "PRIM",
+     "kind": "move",
+     "detail": "-50.1% on 2026-05-06 (2 day(s) > 20%)"
+    },
+    {
+     "name": "PROP",
+     "kind": "move",
+     "detail": "-34.3% on 2026-04-09 (2 day(s) > 20%)"
+    },
+    {
+     "name": "PSFE",
+     "kind": "move",
+     "detail": "+20.1% on 2026-03-03"
+    },
+    {
+     "name": "PSIX",
+     "kind": "move",
+     "detail": "-39.2% on 2026-05-12 (2 day(s) > 20%)"
     },
     {
      "name": "QBTS",
@@ -304,9 +2117,54 @@
      "detail": "+33.4% on 2026-05-21 (2 day(s) > 20%)"
     },
     {
+     "name": "QDEL",
+     "kind": "move",
+     "detail": "+32.2% on 2026-06-29 (2 day(s) > 20%)"
+    },
+    {
+     "name": "QSI",
+     "kind": "move",
+     "detail": "+24.9% on 2026-04-15"
+    },
+    {
+     "name": "RAMP",
+     "kind": "move",
+     "detail": "+27.3% on 2026-05-18"
+    },
+    {
+     "name": "RCAT",
+     "kind": "move",
+     "detail": "+32.6% on 2026-05-28"
+    },
+    {
+     "name": "RCMT",
+     "kind": "move",
+     "detail": "+32.0% on 2026-04-06 (2 day(s) > 20%)"
+    },
+    {
      "name": "RDW",
      "kind": "move",
      "detail": "+26.0% on 2026-05-26 (3 day(s) > 20%)"
+    },
+    {
+     "name": "REAX",
+     "kind": "move",
+     "detail": "-24.6% on 2026-04-27"
+    },
+    {
+     "name": "RELL",
+     "kind": "move",
+     "detail": "+22.7% on 2026-04-09"
+    },
+    {
+     "name": "REPL",
+     "kind": "move",
+     "detail": "+85.7% on 2026-05-29 (8 day(s) > 20%)"
+    },
+    {
+     "name": "RGNX",
+     "kind": "move",
+     "detail": "-37.8% on 2026-05-14 (2 day(s) > 20%)"
     },
     {
      "name": "RGTI",
@@ -314,9 +2172,54 @@
      "detail": "+30.6% on 2026-05-21"
     },
     {
+     "name": "RHLD",
+     "kind": "move",
+     "detail": "-25.1% on 2026-03-12 (2 day(s) > 20%)"
+    },
+    {
      "name": "RKLB",
      "kind": "move",
      "detail": "+34.2% on 2026-05-08"
+    },
+    {
+     "name": "RMAX",
+     "kind": "move",
+     "detail": "+24.4% on 2026-04-27 (2 day(s) > 20%)"
+    },
+    {
+     "name": "RMBS",
+     "kind": "move",
+     "detail": "-21.3% on 2026-04-28"
+    },
+    {
+     "name": "RNAC",
+     "kind": "move",
+     "detail": "+31.7% on 2026-03-09"
+    },
+    {
+     "name": "RPAY",
+     "kind": "move",
+     "detail": "+29.2% on 2026-04-17"
+    },
+    {
+     "name": "RXT",
+     "kind": "move",
+     "detail": "+56.0% on 2026-05-08 (9 day(s) > 20%)"
+    },
+    {
+     "name": "RZLV",
+     "kind": "move",
+     "detail": "+22.3% on 2026-04-01 (2 day(s) > 20%)"
+    },
+    {
+     "name": "SABR",
+     "kind": "move",
+     "detail": "+36.4% on 2026-03-02"
+    },
+    {
+     "name": "SAFX",
+     "kind": "move",
+     "detail": "+74.1% on 2026-03-11 (13 day(s) > 20%)"
     },
     {
      "name": "SATL",
@@ -324,9 +2227,59 @@
      "detail": "+38.2% on 2026-03-23 (2 day(s) > 20%)"
     },
     {
+     "name": "SGHT",
+     "kind": "move",
+     "detail": "-26.8% on 2026-03-05 (2 day(s) > 20%)"
+    },
+    {
      "name": "SGML",
      "kind": "move",
      "detail": "+21.5% on 2026-04-02"
+    },
+    {
+     "name": "SHAK",
+     "kind": "move",
+     "detail": "-28.3% on 2026-05-07"
+    },
+    {
+     "name": "SITM",
+     "kind": "move",
+     "detail": "+27.9% on 2026-05-07"
+    },
+    {
+     "name": "SKIN",
+     "kind": "move",
+     "detail": "-36.3% on 2026-05-08 (2 day(s) > 20%)"
+    },
+    {
+     "name": "SKYX",
+     "kind": "move",
+     "detail": "-23.4% on 2026-03-27 (2 day(s) > 20%)"
+    },
+    {
+     "name": "SLDB",
+     "kind": "move",
+     "detail": "+20.3% on 2026-03-06"
+    },
+    {
+     "name": "SLND",
+     "kind": "move",
+     "detail": "+47.5% on 2026-03-30 (7 day(s) > 20%)"
+    },
+    {
+     "name": "SLQT",
+     "kind": "move",
+     "detail": "+52.3% on 2026-05-05"
+    },
+    {
+     "name": "SLS",
+     "kind": "move",
+     "detail": "+25.1% on 2026-05-13 (2 day(s) > 20%)"
+    },
+    {
+     "name": "SLSN",
+     "kind": "move",
+     "detail": "+29.6% on 2026-04-02 (2 day(s) > 20%)"
     },
     {
      "name": "SMCI",
@@ -344,9 +2297,84 @@
      "detail": "+36.5% on 2026-05-28"
     },
     {
+     "name": "SNWV",
+     "kind": "move",
+     "detail": "-42.0% on 2026-06-16"
+    },
+    {
+     "name": "SOC",
+     "kind": "move",
+     "detail": "-55.8% on 2026-06-30 (2 day(s) > 20%)"
+    },
+    {
      "name": "SOUN",
      "kind": "move",
      "detail": "+20.1% on 2026-05-01"
+    },
+    {
+     "name": "SPIR",
+     "kind": "move",
+     "detail": "+31.7% on 2026-04-08 (3 day(s) > 20%)"
+    },
+    {
+     "name": "SPRY",
+     "kind": "move",
+     "detail": "-23.9% on 2026-06-25"
+    },
+    {
+     "name": "STAA",
+     "kind": "move",
+     "detail": "+20.7% on 2026-04-09"
+    },
+    {
+     "name": "STIM",
+     "kind": "move",
+     "detail": "+26.2% on 2026-05-28"
+    },
+    {
+     "name": "STRL",
+     "kind": "move",
+     "detail": "+52.2% on 2026-05-05"
+    },
+    {
+     "name": "SVC",
+     "kind": "move",
+     "detail": "-24.0% on 2026-03-31"
+    },
+    {
+     "name": "SVCO",
+     "kind": "move",
+     "detail": "+52.4% on 2026-03-13 (2 day(s) > 20%)"
+    },
+    {
+     "name": "SXT",
+     "kind": "move",
+     "detail": "+24.1% on 2026-04-24"
+    },
+    {
+     "name": "SYRE",
+     "kind": "move",
+     "detail": "+23.4% on 2026-04-13"
+    },
+    {
+     "name": "TBPH",
+     "kind": "move",
+     "detail": "-26.3% on 2026-03-03"
+    },
+    {
+     "name": "TDUP",
+     "kind": "move",
+     "detail": "-23.4% on 2026-03-03"
+    },
+    {
+     "name": "TE",
+     "kind": "move",
+     "detail": "+29.3% on 2026-05-26 (4 day(s) > 20%)"
+    },
+    {
+     "name": "TEAD",
+     "kind": "move",
+     "detail": "-24.3% on 2026-05-07 (4 day(s) > 20%)"
     },
     {
      "name": "TEAM",
@@ -359,9 +2387,109 @@
      "detail": "+20.1% on 2026-06-25"
     },
     {
+     "name": "TECX",
+     "kind": "move",
+     "detail": "+28.8% on 2026-03-06"
+    },
+    {
+     "name": "TH",
+     "kind": "move",
+     "detail": "+36.4% on 2026-04-01"
+    },
+    {
+     "name": "TKNO",
+     "kind": "move",
+     "detail": "+21.7% on 2026-03-10"
+    },
+    {
+     "name": "TLSI",
+     "kind": "move",
+     "detail": "-41.4% on 2026-05-13"
+    },
+    {
+     "name": "TMDX",
+     "kind": "move",
+     "detail": "-23.2% on 2026-05-06"
+    },
+    {
+     "name": "TMHC",
+     "kind": "move",
+     "detail": "+22.3% on 2026-06-01"
+    },
+    {
+     "name": "TNGX",
+     "kind": "move",
+     "detail": "+53.0% on 2026-06-08 (2 day(s) > 20%)"
+    },
+    {
+     "name": "TOI",
+     "kind": "move",
+     "detail": "+20.1% on 2026-03-16"
+    },
+    {
+     "name": "TPB",
+     "kind": "move",
+     "detail": "-20.8% on 2026-03-02"
+    },
+    {
+     "name": "TRDA",
+     "kind": "move",
+     "detail": "-57.3% on 2026-05-07"
+    },
+    {
+     "name": "TREE",
+     "kind": "move",
+     "detail": "+23.9% on 2026-03-03 (2 day(s) > 20%)"
+    },
+    {
+     "name": "TSHA",
+     "kind": "move",
+     "detail": "+27.4% on 2026-04-15"
+    },
+    {
+     "name": "TSSI",
+     "kind": "move",
+     "detail": "-24.1% on 2026-05-08 (2 day(s) > 20%)"
+    },
+    {
+     "name": "TUSK",
+     "kind": "move",
+     "detail": "+21.8% on 2026-05-11"
+    },
+    {
+     "name": "TVGN",
+     "kind": "move",
+     "detail": "+39.1% on 2026-05-14 (3 day(s) > 20%)"
+    },
+    {
+     "name": "TVRD",
+     "kind": "move",
+     "detail": "-36.4% on 2026-06-26 (2 day(s) > 20%)"
+    },
+    {
+     "name": "TVTX",
+     "kind": "move",
+     "detail": "+37.2% on 2026-04-14"
+    },
+    {
+     "name": "TZOO",
+     "kind": "move",
+     "detail": "+26.6% on 2026-04-23"
+    },
+    {
      "name": "UAMY",
      "kind": "move",
      "detail": "+20.3% on 2026-04-30"
+    },
+    {
+     "name": "UIS",
+     "kind": "move",
+     "detail": "+20.9% on 2026-05-27"
+    },
+    {
+     "name": "ULH",
+     "kind": "move",
+     "detail": "-28.0% on 2026-05-04 (2 day(s) > 20%)"
     },
     {
      "name": "URG",
@@ -374,14 +2502,149 @@
      "detail": "+22.9% on 2026-04-23"
     },
     {
+     "name": "USGO",
+     "kind": "move",
+     "detail": "+20.7% on 2026-03-02"
+    },
+    {
+     "name": "VCYT",
+     "kind": "move",
+     "detail": "+24.9% on 2026-05-06"
+    },
+    {
      "name": "VECO",
      "kind": "move",
      "detail": "+25.2% on 2026-05-06"
     },
     {
+     "name": "VICR",
+     "kind": "move",
+     "detail": "+24.2% on 2026-05-26 (2 day(s) > 20%)"
+    },
+    {
+     "name": "VISN",
+     "kind": "move",
+     "detail": "+22.2% on 2026-04-30"
+    },
+    {
+     "name": "VITL",
+     "kind": "move",
+     "detail": "-20.7% on 2026-05-07"
+    },
+    {
+     "name": "VPG",
+     "kind": "move",
+     "detail": "+28.5% on 2026-05-12"
+    },
+    {
+     "name": "VRDN",
+     "kind": "move",
+     "detail": "+33.4% on 2026-05-05 (3 day(s) > 20%)"
+    },
+    {
+     "name": "VRM",
+     "kind": "move",
+     "detail": "+35.8% on 2026-06-17 (3 day(s) > 20%)"
+    },
+    {
+     "name": "VRRM",
+     "kind": "move",
+     "detail": "-70.6% on 2026-05-27"
+    },
+    {
      "name": "VSAT",
      "kind": "move",
      "detail": "+23.8% on 2026-06-29"
+    },
+    {
+     "name": "VSTS",
+     "kind": "move",
+     "detail": "+29.0% on 2026-05-12"
+    },
+    {
+     "name": "VSXY",
+     "kind": "move",
+     "detail": "+47.4% on 2026-06-02"
+    },
+    {
+     "name": "VUZI",
+     "kind": "move",
+     "detail": "+21.7% on 2026-05-18 (2 day(s) > 20%)"
+    },
+    {
+     "name": "VYGR",
+     "kind": "move",
+     "detail": "+21.7% on 2026-03-10"
+    },
+    {
+     "name": "WALD",
+     "kind": "move",
+     "detail": "+48.8% on 2026-06-01 (2 day(s) > 20%)"
+    },
+    {
+     "name": "WEST",
+     "kind": "move",
+     "detail": "+39.8% on 2026-05-08"
+    },
+    {
+     "name": "WGS",
+     "kind": "move",
+     "detail": "-49.2% on 2026-05-05"
+    },
+    {
+     "name": "WOOF",
+     "kind": "move",
+     "detail": "+34.6% on 2026-03-12"
+    },
+    {
+     "name": "WRBY",
+     "kind": "move",
+     "detail": "+23.5% on 2026-05-07"
+    },
+    {
+     "name": "WTI",
+     "kind": "move",
+     "detail": "+21.4% on 2026-03-12 (2 day(s) > 20%)"
+    },
+    {
+     "name": "WVE",
+     "kind": "move",
+     "detail": "-49.6% on 2026-03-26"
+    },
+    {
+     "name": "WYFI",
+     "kind": "move",
+     "detail": "+27.0% on 2026-05-11 (3 day(s) > 20%)"
+    },
+    {
+     "name": "XENE",
+     "kind": "move",
+     "detail": "+49.6% on 2026-03-09"
+    },
+    {
+     "name": "XMTR",
+     "kind": "move",
+     "detail": "+39.2% on 2026-05-07"
+    },
+    {
+     "name": "XRX",
+     "kind": "move",
+     "detail": "+43.3% on 2026-04-30 (2 day(s) > 20%)"
+    },
+    {
+     "name": "YSS",
+     "kind": "move",
+     "detail": "+28.8% on 2026-04-09 (2 day(s) > 20%)"
+    },
+    {
+     "name": "ZD",
+     "kind": "move",
+     "detail": "+48.1% on 2026-03-03"
+    },
+    {
+     "name": "ZIP",
+     "kind": "move",
+     "detail": "+21.0% on 2026-06-01"
     },
     {
      "name": "ZS",
@@ -392,6 +2655,16 @@
      "name": "ZTS",
      "kind": "move",
      "detail": "-21.5% on 2026-05-07"
+    },
+    {
+     "name": "ZUMZ",
+     "kind": "move",
+     "detail": "-25.9% on 2026-06-05"
+    },
+    {
+     "name": "ZVRA",
+     "kind": "move",
+     "detail": "+21.3% on 2026-03-10"
     }
    ]
   }

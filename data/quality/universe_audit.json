@@ -16,7 +16,7 @@
  "n": 507,
  "n_failed": 0,
  "fail_pct": 0.0,
- "n_flags": 37,
+ "n_flags": 22,
  "universes": [
   {
    "name": "us_sectors",
@@ -45,7 +45,7 @@
    "n": 134,
    "n_failed": 0,
    "fail_pct": 0.0,
-   "n_flags": 26,
+   "n_flags": 11,
    "skipped": false,
    "note": "",
    "failed": [],
@@ -66,27 +66,12 @@
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
     {
-     "name": "CENX",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "CMC",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
      "name": "CRS",
      "kind": "nobars",
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
     {
      "name": "ENPH",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "ENS",
      "kind": "nobars",
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
@@ -111,72 +96,12 @@
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
     {
-     "name": "ITRI",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "KALU",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "MTRN",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "NEO",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "ORA",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "PAYO",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "RELY",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "RUN",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
      "name": "SEDG",
      "kind": "nobars",
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     },
     {
      "name": "SMG",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "TMDX",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "TNDM",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "TXNM",
-     "kind": "nobars",
-     "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
-    },
-    {
-     "name": "VCYT",
      "kind": "nobars",
      "detail": "present in data/universe/membership.parquet, bar-count indeterminate"
     }
