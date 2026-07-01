@@ -4,7 +4,7 @@
  "index": "Russell-2000",
  "benchmark": "IWM",
  "benchmark_label": "Russell-2000 (IWM)",
- "as_of": "2026-06-30",
+ "as_of": "2026-07-01",
  "source": "finviz idx_rut (1889 names); sub-industry subsectors + sector amalgamations",
  "subsectors": {
   "advertising-agencies": {
@@ -2400,6 +2400,10 @@
     {
      "ticker": "PJT",
      "name": "PJT Partners Inc"
+    },
+    {
+     "ticker": "MIAX",
+     "name": "Miami International Holdings Inc"
     },
     {
      "ticker": "PWP",
@@ -9846,6 +9850,10 @@
     {
      "ticker": "CBU",
      "name": "Community Financial System Inc"
+    },
+    {
+     "ticker": "MIAX",
+     "name": "Miami International Holdings Inc"
     },
     {
      "ticker": "NIC",
