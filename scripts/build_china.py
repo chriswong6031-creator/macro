@@ -583,6 +583,17 @@ def main() -> int:
         log.error("china regime-hmm leaf failed (%s); skipping", e)
         latest["regime_hmm"] = None
 
+    # Base-effect forward projection for China (engine/china_base_effect.py) — the Hedgeye kernel
+    # on a monthly level reconstructed from China's YoY-only CPI/PPI/IndPro. China PPI is heavily
+    # base-driven (the +0.5% -> +3.9% reflation IS a base effect), so this is high-signal here.
+    # DISPLAY-ONLY leaf, anchored to the actual latest YoY. Same contract as the US base_effect.
+    try:
+        from engine import china_base_effect as _cbe
+        latest["base_effect"] = _cbe.compute()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("china base-effect leaf failed (%s); skipping", e)
+        latest["base_effect"] = None
+
     # China Income Vector allocation deep-dive (site/china_allocation.html) +
     # data/china_regime/china_alloc_latest.json — built here (no workflow edit needed) so
     # it runs on every CI build of build_china, BEFORE the index-health button reads its

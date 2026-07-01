@@ -47,6 +47,26 @@ def test_project_short_series_returns_none():
     assert be._project(pd.Series(np.arange(1, 11.0), index=idx)) is None
 
 
+def test_level_from_yoy_is_smooth():
+    """Reconstruct a level from an OSCILLATING YoY: it must be smooth (no fabricated within-year
+    jumps like the naive exact chain) and monotone up for a positive average YoY."""
+    idx = pd.date_range("2015-01-01", periods=120, freq="MS")
+    yoy = pd.Series(2.0 + 1.5 * np.sin(np.arange(120) / 12 * 2 * np.pi), index=idx)  # 0.5..3.5%
+    lvl = be.level_from_yoy(yoy)
+    assert not lvl.empty and lvl.is_monotonic_increasing
+    mom = np.log(lvl).diff().dropna()
+    assert mom.abs().max() < 0.02  # <2%/month — smooth, no ±20pp reconstruction blowup
+
+
+def test_compute_from_levels_generic():
+    """The generalized entry works on arbitrary level dicts (the path China reuses)."""
+    idx = pd.date_range("2010-01-01", periods=180, freq="MS")
+    lvl = pd.Series(100 * (1.002 ** np.arange(180)), index=idx)
+    out = be.compute_from_levels({"g": (lvl, True)}, {"i": (lvl, True)})
+    assert out is not None and "growth" in out and "inflation" in out
+    assert out["revised"] is True
+
+
 def test_grading_row_contract():
     """The forward-grading row must carry the two q1 signs + realized placeholders (null now)."""
     res = {"growth": {"q1": -1, "forcing_intensity": 1.0},
