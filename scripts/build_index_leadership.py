@@ -88,6 +88,27 @@ def _read_json(p: Path):
         return None
 
 
+def _market_state() -> dict | None:
+    """The canonical US market-state snapshot (engine.market_state → data/market_state/
+    latest.json): {verdict, color, score, label_*, headline_*, asof}. The macro backdrop
+    the COILING (counter-trend bottoming) list must respect — bottoming into a risk-off
+    tape is the riskiest trade there is."""
+    return _read_json(config.data_dir() / "market_state" / "latest.json")
+
+
+def _macro_severity(ms: dict | None) -> str | None:
+    if not ms:
+        return None
+    c, v = (ms.get("color") or "").lower(), (ms.get("verdict") or "").upper()
+    if c == "red" or "RISK_OFF" in v:
+        return "risk_off"
+    if c == "yellow" or v in ("MIXED", "NEUTRAL"):
+        return "mixed"
+    if c == "green" or "RISK_ON" in v:
+        return "risk_on"
+    return None
+
+
 def _etf_close(ticker: str) -> pd.Series | None:
     p = config.data_dir() / "yahoo" / f"{ticker}.parquet"
     if not p.exists():
@@ -141,6 +162,8 @@ def compute(site: Path) -> dict | None:
     tab_out: dict[str, dict] = {}
     as_of = None
     spy = _etf_close("SPY")  # coil rs-hold benchmark for the baskets tab
+    macro = _market_state()
+    macro_sev = _macro_severity(macro)  # 'risk_on' | 'mixed' | 'risk_off' | None
 
     for tab, cfg in TABS.items():
         board = _read_json(site / cfg["json"])
@@ -182,6 +205,9 @@ def compute(site: Path) -> dict | None:
         # Phase 2 — confirm each COILING (RRG 'improving') candidate against the higher
         # timeframe: run the multi-factor coil assessment and DROP the ones that are only a
         # bounce inside a confirmed weekly / 2-week / monthly downtrend (stage='knife').
+        # Phase 3 — the MACRO backdrop veto: bottoming is counter-trend, so a risk-off broad
+        # tape holds coils back — no 'primed' call against a risk-off market, a score haircut,
+        # and a macro_caution flag ("let washouts confirm before buying").
         coil_bench = rep_close if cfg["rep"] else spy
         coiled, n_knife = [], 0
         for e in within["coiling"][:20]:
@@ -189,6 +215,10 @@ def compute(site: Path) -> dict | None:
             if ca and ca["stage"] == "knife":
                 n_knife += 1
                 continue
+            if ca and macro_sev == "risk_off":
+                ca = {**ca, "macro_caution": True,
+                      "stage": "coiling" if ca["stage"] == "primed" else ca["stage"],
+                      "coil_score": round(max(0.0, ca["coil_score"] - 10.0), 1)}
             coiled.append({**e, "coil": ca} if ca else e)
         coiled.sort(key=lambda e: (e.get("coil") or {}).get("coil_score", -1.0), reverse=True)
 
@@ -237,6 +267,9 @@ def compute(site: Path) -> dict | None:
                          "las": tab_out[rs_tab]["las"], "why": why} if rs_tab else None),
         "leader_now": ({"tab": cross["leader_now"], "label": tab_out[cross["leader_now"]]["label"],
                         "rs_ratio": tab_out[cross["leader_now"]]["rs_ratio"]} if cross["leader_now"] else None),
+        "macro": ({"severity": macro_sev, "verdict": macro.get("verdict"), "color": macro.get("color"),
+                   "score": macro.get("score"), "label_en": macro.get("label_en"),
+                   "label_zh": macro.get("label_zh"), "asof": macro.get("asof")} if macro else None),
         "tabs": tab_out,
         "drivers": {
             "ratios": ratios,
@@ -253,8 +286,10 @@ def compute(site: Path) -> dict | None:
                   "(graded RSI divergence, multi-timeframe turn, volatility contraction, RS-hold, deterioration "
                   "easing, above-rising-trend) AND survive a weekly / 2-week / monthly downtrend veto — a bounce "
                   "inside a confirmed higher-timeframe bear is dropped (stage='knife'), not shown as 'about to "
-                  "run'. A 4-point z-score is noisy — raw legs shown. DISPLAY-ONLY rotation-timing / watchlist "
-                  "ordering (bottom-timing is a drawdown lever, not return-alpha); confirm before acting."),
+                  "run'. In a RISK-OFF broad-market backdrop (engine.market_state) coils are additionally held "
+                  "back — no 'primed' call, a score haircut, a macro-caution flag. A 4-point z-score is noisy — "
+                  "raw legs shown. DISPLAY-ONLY rotation-timing / watchlist ordering (bottom-timing is a "
+                  "drawdown lever, not return-alpha); confirm before acting."),
     }
 
 

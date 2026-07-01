@@ -86,7 +86,13 @@
         + '<div class="cm">20d ' + signed(r.mom20, 1) + ' · 60d ' + signed(r.mom60, 1) + (r.pctile != null ? ' · ' + L('pctile', '分位') + ' ' + num(r.pctile, 0) : '') + '</div></div>';
     }).join('');
     var drivers = chips ? '<div class="lead-drivers"><div class="dh">' + L('Why — leadership drivers (observable ratios, not a regime label)', '为什么——领导驱动（可观测比率，非状态标签）') + '</div><div class="chips">' + chips + '</div></div>' : '';
-    el.innerHTML = '<div class="lead-head"><h2>🧭 ' + L('Index leadership rotation', '指数领导轮动') + '</h2><span class="asof">' + L('as of ' + (d.as_of || '—'), '截至 ' + (d.as_of || '—')) + '</span></div>' + hero + tbl + drivers;
+    var mac = d.macro, macLine = '';
+    if (mac) {
+      var dot = mac.color === 'red' ? '🔴' : mac.color === 'yellow' ? '🟡' : mac.color === 'green' ? '🟢' : '⚪';
+      var held = mac.severity === 'risk_off' ? L(' — coil calls held back (let washouts confirm)', ' — 蓄势信号已收敛（待清洗确认）') : '';
+      macLine = '<div class="lead-macro">' + L('Macro backdrop', '宏观背景') + ': ' + dot + ' ' + L(mac.label_en || mac.verdict || '—', mac.label_zh || mac.verdict || '—') + (mac.score != null ? ' <span style="color:var(--muted)">(' + mac.score + '/100)</span>' : '') + held + '</div>';
+    }
+    el.innerHTML = '<div class="lead-head"><h2>🧭 ' + L('Index leadership rotation', '指数领导轮动') + '</h2><span class="asof">' + L('as of ' + (d.as_of || '—'), '截至 ' + (d.as_of || '—')) + '</span></div>' + hero + macLine + tbl + drivers;
     wrapTbls(el);
   }
 
@@ -100,7 +106,8 @@
       return '<div class="lcard" style="border-left-color:' + qi[2] + '">' + head
         + '<div class="lc-row">' + stageBadge(co.stage) + ' <span class="pill ' + (e.regime_side || 'neutral') + '">' + esc(e.regime_state || '—') + '</span></div>'
         + '<div class="lc-tf">' + L('higher TF', '更高周期') + ': ' + chips + (co.htf_turning ? ' <span style="color:var(--up)">' + L('confirming', '确认中') + '</span>' : '') + '</div>'
-        + '<div class="lc-meta">' + L('coil', '蓄势') + ' ' + num(co.coil_score, 0) + '/100' + (e.rs_60d != null ? ' · RS60 ' + signed(e.rs_60d, 1) : '') + '</div></div>';
+        + '<div class="lc-meta">' + L('coil', '蓄势') + ' ' + num(co.coil_score, 0) + '/100' + (e.rs_60d != null ? ' · RS60 ' + signed(e.rs_60d, 1) : '') + '</div>'
+        + (co.macro_caution ? '<div class="lc-macro">⚠ ' + L('macro risk-off — confirm the tape', '宏观避险——请确认大盘') + '</div>' : '') + '</div>';
     }
     return '<div class="lcard" style="border-left-color:' + qi[2] + '">' + head
       + '<div class="lc-row">' + quadPill(e.quadrant) + ' <span class="pill ' + (e.regime_side || 'neutral') + '">' + esc(e.regime_state || '—') + '</span></div>'
