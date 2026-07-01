@@ -62,6 +62,10 @@ FLAGS: list[dict] = [
     {"path": "notify.discord.enabled", "label": "Discord alerts",
      "category": "Notifications", "requires": ["DISCORD_WEBHOOK_URL"],
      "note": "Daily snapshot + fired alerts to a Discord webhook."},
+    {"path": "notify.experiments_alerts", "label": "Experiment-ready pings",
+     "category": "Notifications", "requires": [],
+     "note": "Ping telegram/discord when a tracked experiment's results become ready "
+             "(verdict advances or a come-back date arrives). See the Experiments tab."},
 
     # ---- News / data feeds --------------------------------------------------
     {"path": "macro_news.enabled", "label": "Macro news layer (GDELT)",

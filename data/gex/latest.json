@@ -6,15 +6,15 @@
    "spot": 7499.36,
    "regime": "long",
    "tier": "full",
-   "net_gex_bn": 52.83,
-   "gamma_flip": 7407.67,
-   "dist_to_flip_pct": 1.22,
-   "iv30": 13.47,
+   "net_gex_bn": 51.83,
+   "gamma_flip": 7405.99,
+   "dist_to_flip_pct": 1.25,
+   "iv30": 13.59,
    "put_call_oi_ratio": 1.03,
    "call_wall": 7500.0,
    "put_wall": 7300.0,
    "max_pain": 7300.0,
-   "daily_move_pct": 0.85
+   "daily_move_pct": 0.86
   },
   "NDX": {
    "spot": 30276.35,
@@ -32,17 +32,17 @@
   },
   "RUT": {
    "spot": 3024.37,
-   "regime": "long",
+   "regime": "short",
    "tier": "full",
-   "net_gex_bn": 0.0,
-   "gamma_flip": 3024.25,
-   "dist_to_flip_pct": 0.0,
-   "iv30": 19.75,
+   "net_gex_bn": -0.0,
+   "gamma_flip": 3024.48,
+   "dist_to_flip_pct": -0.0,
+   "iv30": 19.87,
    "put_call_oi_ratio": 1.76,
    "call_wall": 3050.0,
-   "put_wall": 2885.0,
+   "put_wall": 2850.0,
    "max_pain": 2965.0,
-   "daily_move_pct": 1.24
+   "daily_move_pct": 1.25
   },
   "SPY": {
    "spot": 746.77,
@@ -102,8 +102,8 @@
   }
  },
  "market": {
-  "skew": 144.46,
-  "skew_asof": "2026-06-29",
+  "skew": 149.6,
+  "skew_asof": "2026-06-30",
   "index_pc_ratio": 1.103,
   "equity_pc_ratio": 1.124,
   "put_call_asof": "2026-06-30"

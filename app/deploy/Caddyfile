@@ -1,18 +1,30 @@
-# Caddyfile — static origin for mastermind-x.com, behind Cloudflare.
+# Caddyfile — static origin for mastermind-x.com, behind the TencentEdgeOne CDN
+# (migrated from Cloudflare — the CF-specific notes below now mean "the CDN edge").
 #
-# Cloudflare terminates public TLS at its edge and connects back to this origin.
-# `tls internal` serves Caddy's self-signed cert on :443 so the CF<->origin hop is
-# still encrypted; set Cloudflare SSL/TLS mode to **Full** (NOT "Full (strict)",
-# which would reject a self-signed origin cert). To upgrade later, replace
-# `tls internal` with a Cloudflare *Origin Certificate* (`tls /path/cert.pem /path/key.pem`)
-# and switch CF to "Full (strict)".
+# The CDN terminates public TLS at its edge and connects back to this origin.
+# `tls internal` serves Caddy's self-signed cert on :443 so the edge<->origin hop
+# is still encrypted; the CDN's origin-fetch/SSL mode must ACCEPT a self-signed
+# cert (Cloudflare's "Full", or EdgeOne's equivalent non-strict HTTPS origin pull).
+# To upgrade later, replace `tls internal` with a CDN Origin Certificate
+# (`tls /path/cert.pem /path/key.pem`) and switch the edge to strict verification.
+#
+# HTTPS ENFORCEMENT: Force-HTTPS is the EDGE's job — enable "Force HTTPS" + HSTS in
+# the EdgeOne console. Cloudflare used to redirect http->https AND auto-upgrade
+# stray mixed content; EdgeOne does neither by default, so that toggle is now what
+# stops http://mastermind-x.com from serving plaintext. This origin deliberately
+# does NOT redirect (an origin redirect behind a CDN can loop the edge's origin
+# pull — see disable_redirects below); it only ADDS the HSTS response header on the
+# site block, which is safe to emit from behind the CDN and hardens return visits.
 #
 # Pre-launch: the whole site is served but marked noindex so it can't be crawled
 # before launch. Product login (Supabase) arrives in Slice 2; for a private beta
 # right now, front this with Cloudflare Access (email OTP, zero code).
 
 {
-	# CF owns the public redirect; don't fight it.
+	# The CDN edge owns the public http->https redirect for the proxied hosts; don't
+	# fight it with Caddy's automatic upgrade, which can loop the edge's origin pull.
+	# Only the grey-cloud admin.* host (direct, no CDN) declares its own explicit
+	# http:// redirect block below — disable_redirects just suppresses the AUTO ones.
 	auto_https disable_redirects
 	# Trust Cloudflare's forwarded client IP (so logs show the real visitor).
 	servers {
@@ -39,10 +51,13 @@ mastermind-x.com, www.mastermind-x.com {
 		# Basic hardening.
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
+		# Enforce HTTPS on return visits (the edge should set this too). 1 year,
+		# matching admin.*; no includeSubDomains — other subdomains manage their own.
+		Strict-Transport-Security "max-age=31536000"
 		-Server
 	}
 
-	# Self-signed origin cert; pair with Cloudflare SSL mode = "Full".
+	# Self-signed origin cert; pair with the CDN's non-strict HTTPS origin pull.
 	tls internal
 
 	# Access logs go to journald (`journalctl -u caddy`). We deliberately do NOT

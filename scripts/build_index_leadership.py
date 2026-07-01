@@ -68,6 +68,33 @@ DRIVERS = [
      ("ex-tech broadening — rotation out of tech", "非科技扩散——资金轮出科技")),
 ]
 
+# The macro CAUSE behind the observed leadership ratios — answering the user's "is it quads?
+# rates? liquidity?". Maps the slow growth×inflation quad (engine.regime → regime_timeline.json)
+# to the EXPECTED size/style/tech tilt (evidence base: engine.playbook). An ODDS-TILT + veto,
+# not a rule — the codebase's own backtests find no stable monthly cross-sector edge from quad
+# alone (momentum-persistence is the reliable part), so the page shows it as context to compare
+# against what is ACTUALLY leading, never as a signal.
+REGIME_TILT = {
+    "Q1": {"name": ("Goldilocks", "金发女孩"), "axes": ("growth↑ · inflation↓", "增长↑ · 通胀↓"),
+           "tilt": ("growth ≥ value, long-duration tech can lead (disinflation); broadens if liquidity expands",
+                    "成长≥价值，长久期科技可领涨（去通胀）；流动性扩张则广度扩散")},
+    "Q2": {"name": ("Reflation", "再通胀"), "axes": ("growth↑ · inflation↑", "增长↑ · 通胀↑"),
+           "tilt": ("value / cyclicals & small-caps lead, ex-tech broadening (rising rates cap duration)",
+                    "价值/周期与小盘领涨，非科技扩散（利率上行压制久期）")},
+    "Q3": {"name": ("Stagflation", "滞胀"), "axes": ("growth↓ · inflation↑", "增长↓ · 通胀↑"),
+           "tilt": ("large-cap defensive, value > growth, ex-tech (rising real rates hurt duration) — historically the weakest quad",
+                    "大盘防御，价值>成长，非科技（实际利率上行伤久期）——历史上最弱象限")},
+    "Q4": {"name": ("Deflation / growth-scare", "通缩 / 增长恐慌"), "axes": ("growth↓ · inflation↓", "增长↓ · 通胀↓"),
+           "tilt": ("large-cap quality & defensives; growth / duration can bid late if real rates fall",
+                    "大盘优质与防御；若实际利率下行，成长/久期后段可获买盘")},
+}
+_LIQ_MOD = {
+    "expanding": (" · liquidity expanding supports small-caps & broadening (risk-on)",
+                  " · 流动性扩张支撑小盘与广度（风险偏好）"),
+    "contracting": (" · liquidity contracting favors large-cap & narrowing (risk-off)",
+                    " · 流动性收缩利好大盘与收窄（避险）"),
+}
+
 
 def _clean(o):
     if isinstance(o, np.generic):
@@ -107,6 +134,34 @@ def _macro_severity(ms: dict | None) -> str | None:
     if c == "green" or "RISK_ON" in v:
         return "risk_on"
     return None
+
+
+def _regime_context(site: Path) -> dict | None:
+    """The slow growth×inflation quad backdrop (engine.regime → site/regime_timeline.json)
+    mapped to the EXPECTED leadership tilt — the macro CAUSE to compare against the observed
+    ratios. Distinct from the fast market-state tape (`macro`): the quad can be Goldilocks
+    while the tape is risk-off. Odds-tilt, not a rule (see REGIME_TILT)."""
+    d = _read_json(site / "regime_timeline.json")
+    if not d:
+        return None
+
+    def _last(k):
+        v = d.get(k) or []
+        return v[-1] if v else None
+
+    quad = _last("quad")
+    if quad not in REGIME_TILT:
+        return None
+    liq = (_last("liq") or "").lower()
+    m = REGIME_TILT[quad]
+    mod = _LIQ_MOD.get(liq, ("", ""))
+    return {
+        "quad": quad, "name_en": m["name"][0], "name_zh": m["name"][1],
+        "axes_en": m["axes"][0], "axes_zh": m["axes"][1],
+        "growth": _last("g"), "inflation": _last("i"), "conf": _last("conf"),
+        "liquidity": liq or None, "as_of": _last("dates"),
+        "tilt_en": m["tilt"][0] + mod[0], "tilt_zh": m["tilt"][1] + mod[1],
+    }
 
 
 def _etf_close(ticker: str) -> pd.Series | None:
@@ -273,6 +328,7 @@ def compute(site: Path) -> dict | None:
         "macro": ({"severity": macro_sev, "verdict": macro.get("verdict"), "color": macro.get("color"),
                    "score": macro.get("score"), "label_en": macro.get("label_en"),
                    "label_zh": macro.get("label_zh"), "asof": macro.get("asof")} if macro else None),
+        "regime": _regime_context(site),
         "tabs": tab_out,
         "drivers": {
             "ratios": ratios,

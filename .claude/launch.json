@@ -7,6 +7,13 @@
       "runtimeArgs": ["-c", "import os,functools,http.server,socketserver;h=functools.partial(http.server.SimpleHTTPRequestHandler,directory='site');socketserver.TCPServer(('',int(os.environ.get('PORT') or 8847)),h).serve_forever()"],
       "port": 8847,
       "autoPort": true
+    },
+    {
+      "name": "macro-admin",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "admin", "--port", "8791"],
+      "port": 8791,
+      "autoPort": false
     }
   ]
 }

@@ -1,14 +1,14 @@
 {
   "schema": "masterminds.latest.v2",
   "n": 3,
-  "built": "2026-07-01 01:52 UTC",
+  "built": "2026-07-01 04:08 UTC",
   "asof": "2026-06-30",
   "stale_after_min": 1440,
   "cards": [
     {
       "key": "mm_conservative",
       "name": "Mastermind \u2014 Conservative",
-      "cagr": 7.92,
+      "cagr": 7.91,
       "sharpe": 1.13,
       "maxdd": -17.3,
       "asof": "2026-06-30",
@@ -55,7 +55,7 @@
     {
       "key": "mm_moderate",
       "name": "Mastermind \u2014 Moderate",
-      "cagr": 11.49,
+      "cagr": 11.48,
       "sharpe": 1.07,
       "maxdd": -24.1,
       "asof": "2026-06-30",
@@ -102,7 +102,7 @@
     {
       "key": "mm_aggressive",
       "name": "Mastermind \u2014 Aggressive",
-      "cagr": 17.33,
+      "cagr": 17.31,
       "sharpe": 1.0,
       "maxdd": -34.9,
       "asof": "2026-06-30",

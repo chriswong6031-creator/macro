@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
   "as_of": "2026-07-01",
-  "generated_utc": "2026-07-01T03:20:05.433706+00:00",
+  "generated_utc": "2026-07-01T05:12:10.685339+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties.",
   "regime_read": null,
   "brain_present": false,
@@ -11,7 +11,7 @@
     "open": 0,
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
-  "n_signals": 108,
+  "n_signals": 107,
   "signals": [
     {
       "ticker": "DELL",
@@ -304,42 +304,6 @@
       "clamped": null
     },
     {
-      "ticker": "PLTR",
-      "signal_score": 66,
-      "conviction": "high",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.4,
-      "convergence_score": 4,
-      "channels": [
-        "affiliation",
-        "github_momentum",
-        "gov_contract",
-        "retail_buzz"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -35.3,
-      "extended": false,
-      "affiliations": [
-        {
-          "actor": "Marjorie Taylor Greene",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        },
-        {
-          "actor": "Cathie Wood",
-          "rel": "AFFILIATES_WITH",
-          "kind": "fund"
-        }
-      ],
-      "n_affiliated_actors": 2,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "INTC",
       "signal_score": 64,
       "conviction": "medium",
@@ -378,7 +342,7 @@
         "special_situation"
       ],
       "trump_linked": false,
-      "rs_vs_spy_60d": null,
+      "rs_vs_spy_60d": -0.2,
       "extended": false,
       "affiliations": [
         {
@@ -796,6 +760,41 @@
         }
       ],
       "n_affiliated_actors": 3,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "PLTR",
+      "signal_score": 51,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.1,
+      "convergence_score": 3,
+      "channels": [
+        "affiliation",
+        "gov_contract",
+        "retail_buzz"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Marjorie Taylor Greene",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Cathie Wood",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 2,
       "thesis": null,
       "second_order": [],
       "falsifier": null,

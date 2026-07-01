@@ -3122,6 +3122,16 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("index leadership build failed: %s", e)
 
+    # Experiments registry — the running-experiments manifest (marketdata/experiments.json)
+    # read by the admin console's Experiments tab: every accruing track-record / calibration /
+    # PIT-vintage / parked-research / data-collection accrual with a computed come-back date +
+    # a "results ready" flag, so the owner is told exactly when to return for the next step.
+    try:
+        from engine import experiments_registry
+        experiments_registry.build(site)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("experiments registry build failed: %s", e)
+
     # --- history page: the longer-window charts + lifespan base rates ----------
     from engine.playbook import QUAD_SHORT, next_quads_line, transition_stats
     trans = transition_stats(hist["quad"])
