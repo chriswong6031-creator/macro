@@ -1,0 +1,37 @@
+{# Shared regime-probability panel (v1): the informed HMM's soft P(Quad) + transition odds +
+   hazard, replacing the |score|*agreement coin-flip "confidence". Included by dashboard.html.j2
+   (US) and china.html.j2. Uses the parent's t()/help()/td() (include is with-context) + latest.
+   DISPLAY-ONLY; hidden until a render writes latest.regime_hmm (guarded, degrade-never-raise). #}
+{% if latest.regime_hmm and latest.regime_hmm.regime_probs %}
+{% set _h = latest.regime_hmm %}
+{% set _RQN = {'Q1':['Goldilocks','理想增长'],'Q2':['Reflation','再通胀'],'Q3':['Stagflation','滞胀'],'Q4':['Growth-scare','增长恐慌']} %}
+<div class="panel span12 bfwd">
+  <div class="bfwd-head">
+    <h3>{{ t('Regime probability','周期概率') }} · {{ t('how solid is the current read','当前判断有多稳固') }}</h3>
+    {{ help("A 4-state Gaussian hidden Markov model over the growth/inflation history: instead of forcing today into one box with a made-up confidence number, it gives the PROBABILITY of each regime, plus the odds of a change next month (the hazard) and how long this regime typically lasts. The bars are soft membership; today's read is dominated by one quad only when the model is genuinely confident. This is a probabilistic reading of the CURRENT regime — the forward path is the base-effect strip below. Display-only; it does not drive any position.",
+             "对增长／通胀历史拟合的四状态高斯隐马尔可夫模型：不再用一个人为的置信度把今天硬塞进某个格子，而是给出每个周期的概率，以及下月发生转换的几率（风险率）和该周期通常持续多久。柱状为软归属；只有当模型确有把握时，今日读数才会由单一象限主导。这是对当前周期的概率读数 —— 前瞻路径见下方基数效应条。仅作展示，不驱动任何仓位。") }}
+  </div>
+  <div class="rhmm-main">
+    <div class="rhmm-bars">
+      {% for q in ['Q1','Q2','Q3','Q4'] %}
+      {% set _p = _h.regime_probs[q] %}
+      <span class="rhmm-q">{{ t(_RQN[q][0], _RQN[q][1]) }}</span>
+      <span class="rhmm-track"><span class="rhmm-fill" style="width:{{ (_p*100)|round(1) }}%;background:var(--q{{ q[1] }})"></span></span>
+      <span class="rhmm-pct">{{ (_p*100)|round|int }}%</span>
+      {% endfor %}
+    </div>
+    <div class="rhmm-side">
+      <div><span class="k">{{ t('Stability','稳定性') }}</span> —
+        {{ t('in','处于') }} <b>{{ t(_RQN[_h.modal_quad][0], _RQN[_h.modal_quad][1]) }}</b>
+        {{ t('for ~','约') }}{{ _h.time_in_regime_months }} {{ t('months','个月') }}·
+        <b>{{ (_h.hazard*100)|round|int }}%</b> {{ t('chance of a regime change next month','下月发生周期转换的几率') }}{% if _h.expected_dwell_months %} ({{ t('typical run ~','通常持续约') }}{{ _h.expected_dwell_months }} {{ t('mo','个月') }}){% endif %}
+      </div>
+      <div style="margin-top:6px"><span class="k">{{ t('Next month','下月') }}</span> —
+        {% for q, p in _h.next_quad_probs|dictsort(by='value', reverse=true) %}{% if p > 0.03 %}<span class="rhmm-chip q-{{ q }}" style="background:var(--q{{ q[1] }})">{{ (p*100)|round|int }}% {{ t(_RQN[q][0], _RQN[q][1]) }}</span>{% endif %}{% endfor %}
+      </div>
+    </div>
+  </div>
+  <p class="bfwd-note">{{ t('Gaussian HMM on the ' ~ _h.n_obs ~ '-day growth/inflation history; states are the four quads (emissions + monthly transitions estimated from the regime record). Soft P(Quad) replaces the old |score|×agreement "confidence"; the ~' ~ ((_h.hazard*100)|round|int) ~ '%/month hazard is itself a read on how persistent the coincident regime is. Display-only, not yet validated for sizing.',
+       '对 ' ~ _h.n_obs ~ ' 天增长／通胀历史拟合的高斯 HMM；状态即四个象限（发射分布与月度转移由周期记录估计）。软 P(象限) 取代旧的 |分数|×一致度“置信度”；约 ' ~ ((_h.hazard*100)|round|int) ~ '%/月 的风险率本身反映了同期周期的持续性。仅作展示，尚未验证用于仓位。') }}</p>
+</div>
+{% endif %}

@@ -563,6 +563,14 @@
     {% if latest.confirming %}<p class="note" style="margin:14px 0 0;padding-top:11px;border-top:1px solid var(--hair);text-transform:none">{{ t('Confirming', '确认') }}: {{ latest.confirming|join(', ') }}{% if latest.contradicting %} · {{ t('Contradicting', '矛盾') }}: {{ latest.contradicting|join(', ') }}{% endif %}</p>{% endif %}
   </div>
 
+  {# Regime probability (HMM P(Quad)) + base-effect forward path — shared partials, same as the
+     US dashboard. Hidden until a china rebuild writes latest.regime_hmm / latest.base_effect. #}
+  {% include "_regime_prob_panel.html.j2" %}
+
+  {% set be_note_en = 'CPI, PPI and industrial production publish YoY only, so the monthly level is reconstructed from the YoY series (revised, not point-in-time); the path is anchored to the actual latest YoY.' %}
+  {% set be_note_zh = 'CPI、PPI 与工业产出仅公布同比，故月度水平由同比序列重建（修订数据，非时点）；路径锚定至实际最新同比。' %}
+  {% include "_base_effect_strip.html.j2" %}
+
   {# AI Daily Brief — the single in-page doorway to the cross-asset LLM synthesis
      (aibrief.html). Replaces the old inline AI Master Brief panel. #}
   <a class="panel span12 aibrief-card" href="aibrief.html">
