@@ -37,10 +37,13 @@ from typing import Mapping, Sequence
 import numpy as np
 import pandas as pd
 
+from engine import bottom_radar as _br
+from engine import cycles as _cyc
 from engine.subsector_rotation import _rotation_metrics, _zscore
 
 # trading-day windows for the rolling horizons (match subsector_rotation's MOM set).
 _HZ_BARS = {"1W": 5, "1M": 21, "3M": 63, "6M": 126, "1Y": 252}
+_BW = "2W-FRI"  # the bi-weekly (2-week) bar — the timeframe the user names as "2W"
 
 
 # ----------------------------------------------------------------- primitives ----
@@ -227,4 +230,103 @@ def ratio_read(num: pd.Series, den: pd.Series) -> dict | None:
         "mom20": _mom(20), "mom60": _mom(60),
         "above200": (bool(r.iloc[-1] > ma200) if ma200 is not None and not pd.isna(ma200) else None),
         "pctile": pctile,
+    }
+
+
+# ------------------------------------------------- coil confirmation (Phase 2) ----
+# A multi-factor confirmation that a laggard turning up (RRG 'improving') is a DURABLE
+# coil, not a bounce inside a higher-timeframe downtrend. Reuses the validated, standalone,
+# close-only leg helpers (bottom_radar) + the per-timeframe indicator engine (cycles._tf_state)
+# — adds NO new signal math. DISPLAY-ONLY: bottom-timing is a drawdown / watchlist-ORDERING
+# lever, not return-alpha (bottom_radar's honesty contract). The point the user asked for:
+# guard against "a 3D technical bounce in a 2W/1M bear that is just showing its teeth".
+
+_COIL_W = {"divergence": 0.24, "mtf_turn": 0.24, "vol_contract": 0.14,
+           "rs_hold": 0.16, "deter_easing": 0.10, "trend": 0.12}
+
+
+def _tf_falling(s: dict) -> bool:
+    """A timeframe is FALLING when momentum just crossed down, or is negative and NOT
+    turning up (curling/approaching/crossing up) — a confirmed higher-TF downtrend."""
+    if not s:
+        return False
+    if s.get("macd_cross_dn"):
+        return True
+    return (not s.get("macd_pos") and not s.get("macd_cross_up")
+            and not s.get("macd_curl_up") and not s.get("macd_approaching_up"))
+
+
+def _tf_dir(s: dict) -> str:
+    if not s:
+        return "na"
+    if _br._tf_up(s):
+        return "up"
+    if _tf_falling(s):
+        return "down"
+    return "flat"
+
+
+def _above_rising_200(close: pd.Series) -> tuple[bool | None, bool | None]:
+    c = close.dropna()
+    if len(c) < 210:
+        return None, None
+    ma = c.rolling(200).mean()
+    above = bool(c.iloc[-1] > ma.iloc[-1]) if pd.notna(ma.iloc[-1]) else None
+    rising = bool(ma.iloc[-1] > ma.iloc[-21]) if pd.notna(ma.iloc[-21]) else None
+    return above, rising
+
+
+def coil_assess(close: pd.Series | None, bench: pd.Series | None = None) -> dict | None:
+    """Confirm a bottoming/coil candidate. Returns coil_score (0-100), a stage, the
+    W/2W/M/3D trend directions, and the per-leg breakdown — or None if uncomputable.
+
+    stage: 'knife'   — bounce inside a confirmed weekly / 2-week / monthly downtrend (VETOED);
+           'primed'  — turning up, above a rising 200-DMA, higher-TF confirming (durable coil);
+           'coiling' — turning up but higher-TF not yet confirming / below trend;
+           'watch'   — no lead (no divergence, no MTF turn) yet.
+    """
+    if close is None:
+        return None
+    c = close.dropna()
+    if len(c) < 220:
+        return None
+    try:
+        mtf = _cyc.mtf_snapshot(c) or {}
+        bw = _cyc._tf_state(c.resample(_BW).last().dropna())
+    except Exception:  # noqa: BLE001
+        return None
+    W, M, D3 = mtf.get("W") or {}, mtf.get("M") or {}, mtf.get("3D") or {}
+
+    htf_falling = _tf_falling(W) or _tf_falling(bw) or _tf_falling(M)
+    htf_turning = bool(_br._tf_up(W) or _br._tf_up(bw))
+    above200, rising200 = _above_rising_200(c)
+
+    legs = {
+        "divergence": _br._divergence_grade(c, mtf),
+        "mtf_turn": float(np.clip(sum(w * _br._tf_up(mtf.get(tf, {})) for tf, w in _br._TF_W.items()), 0, 1)),
+        "vol_contract": _br._vol_contraction(c),
+        "rs_hold": _br._rs_hold(c, bench),
+        "deter_easing": _br._deter_easing(c, bench),
+        "trend": (1.0 if (above200 and rising200) else 0.5 if above200 else 0.0),
+    }
+    score = 100.0 * sum(_COIL_W[k] * legs[k] for k in _COIL_W)
+    if htf_turning:
+        score = min(100.0, score + 8.0)  # higher-TF is confirming the turn
+    lead = legs["divergence"] > 0 or legs["mtf_turn"] >= 0.2
+
+    if htf_falling:
+        stage = "knife"
+    elif not lead:
+        stage = "watch"
+    elif above200 and rising200 and (htf_turning or legs["divergence"] >= 0.6):
+        stage = "primed"
+    else:
+        stage = "coiling"
+
+    return {
+        "coil_score": round(score, 1), "stage": stage, "lead": lead,
+        "htf_falling": htf_falling, "htf_turning": htf_turning,
+        "above200": above200, "rising200": rising200,
+        "tf": {"W": _tf_dir(W), "2W": _tf_dir(bw), "M": _tf_dir(M), "3D": _tf_dir(D3)},
+        "legs": {k: round(v, 2) for k, v in legs.items()},
     }
