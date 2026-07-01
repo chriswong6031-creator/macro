@@ -42,6 +42,86 @@ def _patch_fire_series(frame):
     return orig
 
 
+def test_labels_are_strictly_forward_provable_by_hand():
+    """The label at t must be the min/max of closes STRICTLY in (t, t+H], provable
+    on a handcrafted monotone series — NOT the old shift(-1).rolling(H) which
+    reached back to close[t-1]/close[t]. This validates the label CONSTRUCTION
+    directly, so it cannot be satisfied by the same contamination it guards."""
+    H = BT.LABEL_H
+    assert H == 3
+    # Monotone-descending closes so every forward window has an unambiguous min.
+    close = pd.Series(
+        [100.0, 90.0, 80.0, 70.0, 60.0, 50.0, 40.0, 30.0],
+        index=pd.date_range("2024-01-01", periods=8),
+    )
+    down, up = BT._labels(close)
+    # Reconstruct fwd_min / fwd_max independently from the definition (t, t+H].
+    for i in range(len(close)):
+        window = close.iloc[i + 1: i + 1 + H]           # strictly forward, H bars
+        if len(window) < H:                              # last H rows: no full future
+            assert not bool(down.iloc[i]) and not bool(up.iloc[i]), (
+                f"row {i} must be unlabeled (insufficient forward data)")
+            continue
+        exp_down = (window.min() / close.iloc[i] - 1.0) <= -BT.LABEL_THR
+        exp_up = (window.max() / close.iloc[i] - 1.0) >= BT.LABEL_THR
+        assert bool(down.iloc[i]) == bool(exp_down), f"down mismatch at row {i}"
+        assert bool(up.iloc[i]) == bool(exp_up), f"up mismatch at row {i}"
+
+
+def test_labels_invariant_to_prior_bars():
+    """Anti-overlap invariant: perturbing ONLY the prior bar close[t-1] must NOT
+    change the label at t. The label legitimately depends on close[t] as the
+    entry/reference base (forward return is measured from it) and on the closes
+    in (t, t+H] — but it must never look BACKWARD. The OLD construction FAILS
+    this because its shift(-1).rolling(H) window reached back to close[t-1]."""
+    H = BT.LABEL_H
+    rng = np.random.default_rng(11)
+    base = pd.Series(
+        60000.0 * np.cumprod(1 + rng.normal(0, 0.02, 200)),
+        index=pd.date_range("2024-01-01", periods=200),
+    )
+    down0, up0 = BT._labels(base)
+    # Only labels at rows t in [1, N-H-1] are testable: they have both a prior bar
+    # and a full forward window.
+    for t in range(1, len(base) - H):
+        pert = base.copy()
+        pert.iloc[t - 1] = base.iloc[t - 1] * 2.0     # slam ONLY the prior bar
+        downp, upp = BT._labels(pert)
+        assert bool(downp.iloc[t]) == bool(down0.iloc[t]), (
+            f"down label at {t} changed when close[t-1] moved — backward leak!")
+        assert bool(upp.iloc[t]) == bool(up0.iloc[t]), (
+            f"up label at {t} changed when close[t-1] moved — backward leak!")
+
+
+def test_old_buggy_construction_would_fail_the_invariant():
+    """Guard-the-guard: the *old* shift(-1).rolling(H).min() construction MUST
+    violate the prior-bar anti-overlap invariant (so we know the new test has
+    teeth and isn't vacuously passing on any construction)."""
+    H = BT.LABEL_H
+    rng = np.random.default_rng(5)
+    base = pd.Series(
+        60000.0 * np.cumprod(1 + rng.normal(0, 0.03, 150)),
+        index=pd.date_range("2024-01-01", periods=150),
+    )
+
+    def _old_labels(close):
+        fwd_min = close.shift(-1).rolling(H).min()
+        fwd_max = close.shift(-1).rolling(H).max()
+        return (fwd_min / close - 1.0) <= -BT.LABEL_THR, (fwd_max / close - 1.0) >= BT.LABEL_THR
+
+    down0, up0 = _old_labels(base)
+    violated = False
+    for t in range(1, len(base) - H):
+        pert = base.copy()
+        pert.iloc[t - 1] = base.iloc[t - 1] * 2.0     # slam ONLY the prior bar
+        downp, upp = _old_labels(pert)
+        if (bool(downp.iloc[t]) != bool(down0.iloc[t])
+                or bool(upp.iloc[t]) != bool(up0.iloc[t])):
+            violated = True
+            break
+    assert violated, "old construction should leak the prior bar — invariant has no teeth otherwise"
+
+
 def test_validate_passes_when_leg_leads():
     sig = _sig_with_drops()
     close = sig["close"]
@@ -72,6 +152,53 @@ def test_validate_fails_when_leg_stops_leading():
         BT.radar.fire_series = orig
     assert v["ok"] and v["all_pass"] is False
     assert v["legs"]["d2"]["status"] == "demoted"
+
+
+def test_validate_marks_thin_but_leading_leg_insufficient_n():
+    """A leg whose edge clears its floor+p but has < MIN_HOLDOUT_N holdout fires
+    must be 'insufficient_n' (watch), NOT 'leading' — u1 (14 fires) is exactly
+    this case. It is a non-pass and the radar zeroes its act points."""
+    sig = _sig_with_drops()
+    down, _ = BT._labels(sig["close"])
+    # Perfect leader (fires on the down-event bars) but THINNED to < MIN_HOLDOUT_N
+    # holdout fires so the edge is real yet the sample is inadequate.
+    holdout_mask = sig.index >= pd.Timestamp(BT.HOLDOUT_START)
+    d2 = down.fillna(False).copy()
+    fire_pos = [i for i in range(len(d2)) if bool(d2.iloc[i]) and holdout_mask[i]]
+    keep = set(fire_pos[: max(0, BT.MIN_HOLDOUT_N - 5)])   # keep only a few holdout fires
+    thin = d2.copy()
+    for i in fire_pos:
+        if i not in keep:
+            thin.iloc[i] = False
+    fires = pd.DataFrame({"d2": thin}, index=sig.index)
+    orig = _patch_fire_series(fires)
+    try:
+        v = BT.validate(sig)
+    finally:
+        BT.radar.fire_series = orig
+    leg = v["legs"]["d2"]
+    assert leg["n_fires_holdout"] < BT.MIN_HOLDOUT_N
+    assert leg["status"] == "insufficient_n"
+    assert leg["pass"] is False
+    assert v["all_pass"] is False
+
+
+def test_radar_zeroes_insufficient_n_leg():
+    """The radar must zero act points for an 'insufficient_n' leg, same as
+    'demoted' — a thin sample cannot award act-tier weight."""
+    import engine.btc_impulse_radar_backtest as bt
+    orig = bt.load_gate
+    bt.load_gate = lambda: {"legs": {"d2": {"status": "leading"},
+                                     "d3": {"status": "leading"},
+                                     "u1": {"status": "insufficient_n"}}}
+    try:
+        out = R.compute()
+    finally:
+        bt.load_gate = orig
+    if not out.get("ok"):
+        return
+    u1 = next(l for l in out["up"]["legs"] if l["key"] == "u1_sopr")
+    assert u1["demoted"] is True and u1["points"] == 0.0
 
 
 def test_main_exit_code_reflects_pass(monkeypatch_free=True):
