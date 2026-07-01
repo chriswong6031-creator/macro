@@ -37,6 +37,8 @@ pandas) so it is trivially unit-testable and reused by every ``build_*_library``
 """
 from __future__ import annotations
 
+import functools
+import json
 import math
 from typing import Any
 
@@ -565,6 +567,23 @@ _IDIO_TAX_MAX = 0.5
 _KNIFE_R = {"none": 0.0, "watch": 0.2, "elevated": 0.55, "high": 0.85}
 
 
+@functools.lru_cache(maxsize=1)
+def _gex_gate_scored() -> bool:
+    """GEX may enter the per-stock SCORE only after scripts/validate_gex.py writes
+    data/gex/gate.json with scored=true (the gamma regime beat a forward realized-vol
+    null on its own accrued history). Absent / closed -> display-only, honoring the repo's
+    validate-before-weight doctrine (cf. engine/vol_regime.load_gate). Cached: the gate
+    cannot change mid-build. Until it opens, GEX carries zero weight and zero entry tilt."""
+    try:
+        from lib import config
+        p = config.data_dir() / "gex" / "gate.json"
+        if p.exists():
+            return bool(json.loads(p.read_text()).get("scored", False))
+    except Exception:  # noqa: BLE001 — a missing/broken gate must never break scoring
+        pass
+    return False
+
+
 def _risk_idio(rec: dict) -> tuple[float, dict]:
     """0..1 idiosyncratic risk + the present components (renormalized over what is present)."""
     comps: dict[str, float] = {}
@@ -588,17 +607,20 @@ def _risk_idio(rec: dict) -> tuple[float, dict]:
     # gamma or a vol-hole EXPANSION = amplified moves = higher gap risk; a deep long-gamma pin =
     # suppressed vol = low risk; a coiled band is armed gap risk. Reads the joined confirmer
     # levels (rich), else the raw gamma sign (back-compat). A neutral regime is no longer silent.
-    _gc_lv = (rec.get("gex_confirm") or {}).get("levels") or {}
-    _regime = _gc_lv.get("regime") or (rec.get("gex") or {}).get("gamma_regime")
-    _vh = _gc_lv.get("vol_hole_state")
-    if _vh == "EXPANSION" or _regime == "short":
-        comps["gex"] = 0.6
-    elif _vh in ("COILED_UP", "COILED_DOWN"):
-        comps["gex"] = 0.4
-    elif _regime == "long":
-        comps["gex"] = 0.1
-    elif _regime is not None or _vh is not None:
-        comps["gex"] = 0.3
+    # GATED (validate-before-weight): contributes to the score only once validate_gex.py opens
+    # data/gex/gate.json; until then GEX stays display-only and never touches the tiering.
+    if _gex_gate_scored():
+        _gc_lv = (rec.get("gex_confirm") or {}).get("levels") or {}
+        _regime = _gc_lv.get("regime") or (rec.get("gex") or {}).get("gamma_regime")
+        _vh = _gc_lv.get("vol_hole_state")
+        if _vh == "EXPANSION" or _regime == "short":
+            comps["gex"] = 0.6
+        elif _vh in ("COILED_UP", "COILED_DOWN"):
+            comps["gex"] = 0.4
+        elif _regime == "long":
+            comps["gex"] = 0.1
+        elif _regime is not None or _vh is not None:
+            comps["gex"] = 0.3
     if rec.get("fragility"):
         comps["fragility"] = 0.5
     if not comps:
@@ -761,7 +783,9 @@ def _axis_entry(rec: dict) -> tuple[float | None, list[str], bool]:
     vq = _vol_squeeze_tilt(rec.get("vol_squeeze"))
     if vq is not None:
         conf += vq; present.append("vol-squeeze")
-    gq = _gex_confirm_tilt(rec.get("gex_confirm"))
+    # GATED (validate-before-weight): the GEX entry tilt is applied only once data/gex/gate.json
+    # is open; until then options positioning stays display-only and never nudges the entry axis.
+    gq = _gex_confirm_tilt(rec.get("gex_confirm")) if _gex_gate_scored() else None
     if gq is not None:
         conf += gq; present.append("options")
     # NOTE: the forward-cone risk SHAPE (anticipation asymmetry) is deliberately NOT a scored entry
