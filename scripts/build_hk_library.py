@@ -686,8 +686,12 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             except Exception as ex:  # noqa: BLE001 — additive, never fatal
                 log.debug("hk risk-sizing for %s failed (%s)", t, ex)
             # entry-timing gauge — when & at what price to buy (reads rec['ladder']).
+            # Gate on the SAME MACD-2D x StochRSI-3D confluence as the board (mirrors the
+            # US pattern in build_stock_library): a "buy now / partial" with no fresh
+            # confluence cross reads "awaiting confluence", never an open entry window.
             try:
-                es = entry_signal.assess(close_s, None, rec)
+                es = entry_signal.assess(close_s, None, rec,
+                                         buyable=signal_gate.is_buyable(sig_verdict.get(t)))
                 if es:
                     e["entry_signal"] = es
             except Exception as ex:  # noqa: BLE001 — additive, never fatal

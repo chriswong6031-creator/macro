@@ -494,8 +494,12 @@ def main(alpha: dict | None = None) -> dict | None:
         # ---- Entry-timing gauge (engine/entry_signal) — the SECOND gauge ------------
         # Conviction answers "own it?"; this answers "buy now / at what price / when?".
         # Reads the already-calibrated rec['ladder']/cycle; high is None on CA (close-only).
+        # Gate on the SAME MACD-2D x StochRSI-3D confluence as the board (mirrors the
+        # US pattern in build_stock_library): a "buy now / partial" with no fresh
+        # confluence cross reads "awaiting confluence", never an open entry window.
         try:
-            es = entry_signal.assess(close, high, rec)
+            es = entry_signal.assess(close, high, rec,
+                                     buyable=signal_gate.is_buyable(sig_verdict.get(ticker)))
             if es:
                 rec["entry_signal"] = es
                 entry_sig[ticker] = es                           # attached to board rows below
