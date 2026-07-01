@@ -343,6 +343,11 @@ def main():
 
     env = Environment(loader=FileSystemLoader(str(ROOT / "templates")),
                       trim_blocks=True, lstrip_blocks=True, autoescape=False)
+    try:                                       # _navlinks references t()/td()/tr() i18n globals
+        from engine import i18n
+        env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+    except Exception:  # noqa: BLE001 — degrade to English-only rather than crash the build
+        env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
     html = env.get_template("btc_strategy.html.j2").render(**ctx)
     out = ROOT / "site" / "btc_strategy.html"
     out.write_text(html, encoding="utf-8")

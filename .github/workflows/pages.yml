@@ -37,6 +37,11 @@ jobs:
       # last-good site live instead of shipping a "menu with no padding". See PR #471.
       - name: guard — nav menu must keep a top gap
         run: python3 scripts/check_nav_gap.py site
+      # Guard: refuse to deploy if a page renders the shared nav but is missing the
+      # Research mega-menu (a frozen nav from an out-of-loop builder or hand-static
+      # page). Keeps the last-good site live instead of shipping an inconsistent menu.
+      - name: guard — shared-nav pages must carry the Research mega-menu
+        run: python3 scripts/check_nav_mega.py site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site/
