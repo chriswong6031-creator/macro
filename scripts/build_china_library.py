@@ -50,6 +50,27 @@ CSI300_ETF = "510300.SS"   # cap-weighted A-share market proxy for the residual-
 JUNK_SECTOR = "A-share"    # yfinance fallback bucket → route to the engine's skip sentinel
 
 
+def _name_data_through(ticker: str | None) -> str | None:
+    """The ACTUAL last data date for a board name (YYYY-MM-DD) — its china_stocks close store's
+    newest bar, ETF store as fallback. Additive freshness field, distinct from the board as_of."""
+    if not ticker:
+        return None
+    for g in ("china_stocks", "china"):
+        try:
+            d = store.last_date(g, str(ticker))
+        except Exception:  # noqa: BLE001
+            d = None
+        if d is not None:
+            return str(d)
+    return None
+
+
+def _data_through() -> str | None:
+    """Board-level data_through: the CSI300 benchmark's last bar (the settled-session anchor every
+    excess/relative read is measured against). Additive; never renames as_of."""
+    return _name_data_through(CSI300_ETF)
+
+
 # ── per-ticker analyze() fan-out (mirrors build_stock_library's process pool) ──
 # The ~795-name China universe runs the GIL-bound engine.cycles.analyze per name;
 # fan it across processes so the daily build doesn't pay it serially. Knobs match
@@ -739,7 +760,8 @@ def main(alpha: dict | None = None) -> dict | None:
     try:
         _mp = config.data_dir() / "china_margin_detail" / "detail.parquet"
         if _mp.exists():
-            _md = pd.read_parquet(_mp)
+            from collectors._drip import latest_snapshot
+            _md = latest_snapshot(pd.read_parquet(_mp), "date")  # append-only PIT → latest session
             for _, _r in _md.iterrows():
                 fb, fbp = china_signals._f(_r.get("fin_balance")), china_signals._f(_r.get("fin_balance_prior"))
                 chg = ((fb / fbp - 1.0) * 100.0) if (fb and fbp and fbp > 0) else None
@@ -1208,6 +1230,12 @@ def main(alpha: dict | None = None) -> dict | None:
             if quality_badge.get(t):
                 r["quality"] = quality_badge[t]      # fundamental-quality chip (DISPLAY only, not sort)
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
+            # additive per-row data_through: the ACTUAL last data date for this name, distinct from
+            # the board as_of (a name pulled a session behind the board reads as stale downstream).
+            # ADDITIVE field only — never renames as_of; the Mastermind bot consumes this contract.
+            _dt = _name_data_through(t)
+            if _dt:
+                r["data_through"] = _dt
         wide["eligible"] = len(eligible_rows)
         wide["universe"] = len(cand)
         wide["quality_screen"] = {           # honest report of what the screen actually did
@@ -1224,19 +1252,45 @@ def main(alpha: dict | None = None) -> dict | None:
         if qvix_reg:                         # the market vol-regime banner (GEX-analog for A-shares)
             wide["qvix_regime"] = qvix_reg
         # board-ORDER forward ledger (keystone): log today's ranked top-N so the BOARD earns trust
-        # (the per-name grader does not observe blend_sorted order). Only the nightly `daily` (which
-        # commits data/) persists it; render lanes discard the data/ write. grade() is "accruing"
-        # until forward returns mature. This is the honest prerequisite for a hard extension veto.
+        # (the per-name grader does not observe blend_sorted order). grade() is "accruing" until
+        # forward returns mature. This is the honest prerequisite for a hard extension veto.
+        # LEDGER-INTEGRITY GATES (CN-1 §W6-CN), replacing the keep-first accident:
+        #   • asia-lane gate: CN_LANE env selects the lane. Only the asia collection lane (which
+        #     commits data/) persists; render lanes pass a non-asia lane and are refused. Default
+        #     'asia' keeps the current call correct (the asia build is the only one that commits).
+        #   • partial-session refusal: a board whose price panel was collected before the A-share
+        #     close settled (<07:00 UTC on the board date) is refused — no mid-session partial board.
+        #   • coverage metadata: stamp the panel collection UTC + partial_session onto the artifact.
         try:
-            _bn = china_standout_track.append_board(wide["buy"], asof=as_of)
+            _lane = os.environ.get("CN_LANE", "asia")
+            _sess = china_standout_track.session_status(as_of)
+            wide["coverage"] = {
+                "as_of": as_of, "data_through": _data_through(),
+                "panel_collected_utc": _sess.get("collected_utc"),
+                "panel_collected_hour_utc": _sess.get("collected_hour_utc"),
+                "partial_session": bool(_sess.get("partial_session")),
+                "session_note": _sess.get("reason"), "lane": _lane,
+            }
+            _bn = china_standout_track.append_board(wide["buy"], asof=as_of, lane=_lane)
             _bt = china_standout_track.grade()
             if _bt.get("available"):
                 wide["board_track"] = _bt
                 setups["board_track"] = _bt
-            log.info("china standout board-track: logged top-%d (ledger=%d, graded=%s)",
-                     min(60, len(wide["buy"])), _bn, _bt.get("n_graded"))
+            setups["coverage"] = wide["coverage"]
+            log.info("china standout board-track: logged top-%d (ledger=%d, graded=%s, lane=%s, partial=%s)",
+                     min(60, len(wide["buy"])), _bn, _bt.get("n_graded"), _lane,
+                     wide["coverage"]["partial_session"])
         except Exception as e:  # noqa: BLE001 — telemetry, never fatal
             log.warning("china standout board-track failed (%s)", e)
+        # Validated sleeve-size chip (W6-CN Fix 1) — thread the risk_radar_intl gross_factor
+        # into the board header as a DISPLAY chip. Regime sizes sleeves, never vetoes names.
+        # Passport: basis=measured, validation=cn_forward_log.jsonl (the repo's only closed loop).
+        try:
+            from engine.risk_radar_intl import cn_sleeve_chip
+            wide["sleeve_chip"] = cn_sleeve_chip()
+            log.info("china stocks sleeve chip: %s", wide["sleeve_chip"].get("label_en"))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("china stocks sleeve chip failed (%s)", e)
         (site / "factordata" / "china_standouts.json").write_text(
             json.dumps(wide, separators=(",", ":"), default=str))
         log.info("wrote china_standouts.json (%d buy of %d eligible / %d universe)",

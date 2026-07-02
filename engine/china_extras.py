@@ -139,13 +139,8 @@ def margin_positioning(mktcap_by: dict[str, float] | None = None) -> dict[str, d
     """Per-name financing balance (亿), its ~20-trading-day change %, and financing as a
     share of market cap (mktcap in 亿). A crowding/leverage backdrop, not a signal."""
     mktcap_by = mktcap_by or {}
-    p = config.data_dir() / "china_margin_detail" / "detail.parquet"
-    if not p.exists():
-        return {}
-    try:
-        df = pd.read_parquet(p)
-    except Exception as e:  # noqa: BLE001
-        log.warning("china_extras: margin unreadable (%s)", e)
+    df = _read_table("china_margin_detail", "detail")     # latest-session slice of the PIT history
+    if df is None or df.empty:
         return {}
     out: dict[str, dict] = {}
     for _, r in df.iterrows():
@@ -180,15 +175,25 @@ def _clip01(x):
     return _clip(x, 0.0, 1.0)
 
 
+# append-only drip caches now hold a PIT HISTORY (multiple dates). Every legacy consumer here
+# expects a single-day per-ticker snapshot, so slice to the newest date on read. Map group→date col.
+_DRIP_DATE_COL = {"china_zt_pool": "date", "china_margin_detail": "date", "china_lhb": "asof"}
+
+
 def _read_table(group: str, name: str) -> "pd.DataFrame | None":
     p = config.data_dir() / group / f"{name}.parquet"
     if not p.exists():
         return None
     try:
-        return pd.read_parquet(p)
+        df = pd.read_parquet(p)
     except Exception as e:  # noqa: BLE001
         log.warning("china_extras: %s/%s unreadable (%s)", group, name, e)
         return None
+    dc = _DRIP_DATE_COL.get(group)
+    if dc and dc in (df.columns if df is not None else []):
+        from collectors._drip import latest_snapshot
+        return latest_snapshot(df, dc)                     # single-day snapshot from PIT history
+    return df
 
 
 def comment() -> dict[str, dict]:

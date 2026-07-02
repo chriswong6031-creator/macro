@@ -28,6 +28,7 @@ import logging
 import pandas as pd
 
 from lib import config, store
+from collectors import _drip
 from collectors.china_analyst import to_ticker, _num
 
 log = logging.getLogger("china_margin_detail")
@@ -79,9 +80,20 @@ def _first_populated(dates: list[str]) -> tuple[str, dict] | tuple[None, None]:
     return None, None
 
 
+def _stored_sessions() -> set[str]:
+    """Financing-balance session `date`s already on disk (append-only PIT history)."""
+    if not OUT.exists():
+        return set()
+    try:
+        return set(pd.read_parquet(OUT, columns=["date"])["date"].astype(str).unique())
+    except Exception:  # noqa: BLE001
+        return set()
+
+
 def refresh() -> int:
-    """Latest financing balance per name + its value ~20 trading days earlier.
-    Best-effort; returns names written (0 on failure). Idempotent within a UTC day."""
+    """Latest financing balance per name + its value ~20 trading days earlier, APPENDED to the
+    point-in-time history (keep-last per session `date`). Best-effort; returns names in the latest
+    session (0 on failure / already-stored). Idempotent within a UTC day."""
     asof_today = pd.Timestamp.utcnow().strftime("%Y-%m-%d")
     if OUT.exists():
         try:
@@ -106,27 +118,59 @@ def refresh() -> int:
     prior_slice = dates[max(0, ci - LOOKBACK_TD - 2): ci - LOOKBACK_TD + 1] or dates[:1]
     prior_date, prior = _first_populated(prior_slice)
     prior = prior or {}
+    cur_iso = pd.to_datetime(cur_date).strftime("%Y-%m-%d")
+    if cur_iso in _stored_sessions():                     # append-only idempotency = per SESSION
+        log.info("china margin detail: session %s already stored", cur_iso)
+        return 0
     rows = []
     asof = asof_today
     for t, fb in cur.items():
         rows.append({"ticker": t, "fin_balance": fb,
                      "fin_balance_prior": prior.get(t),
-                     "date": pd.to_datetime(cur_date).strftime("%Y-%m-%d"),
+                     "date": cur_iso,
                      "prior_date": (pd.to_datetime(prior_date).strftime("%Y-%m-%d")
                                     if prior_date else None),
                      "asof": asof})
     if not rows:
         return 0
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(rows).to_parquet(OUT, index=False)
-    log.info("china margin detail: wrote %s (%d names, %s vs %s)",
-             OUT, len(rows), cur_date, prior_date)
-    return len(rows)
+    n = _drip.append_snapshot(OUT, rows, date_col="date")
+    log.info("china margin detail: appended %s (%d names, %s vs %s)",
+             OUT, n, cur_date, prior_date)
+    return n
+
+
+def backfill(start: str, end: str) -> int:
+    """Range-backfill per-name financing-balance PIT history for [start, end] (YYYY-MM-DD). akshare's
+    stock_margin_detail_{sse,szse}(date) serves per-date history. Appends each populated session
+    (keep-last per session `date`); skips sessions already stored. Returns NEW sessions appended.
+    (No prior-diff on backfilled rows — fin_balance_prior is left None; the PIT level is the record.)"""
+    asof = pd.Timestamp.utcnow().strftime("%Y-%m-%d")
+    have = _stored_sessions()
+    added = 0
+    for d in pd.bdate_range(start, end):
+        iso = d.strftime("%Y-%m-%d")
+        if iso in have:
+            continue
+        m = _detail_for(d.strftime("%Y%m%d"))
+        if not m:
+            continue
+        rows = [{"ticker": t, "fin_balance": fb, "fin_balance_prior": None,
+                 "date": iso, "prior_date": None, "asof": asof} for t, fb in m.items()]
+        _drip.append_snapshot(OUT, rows, date_col="date")
+        added += 1
+        log.info("china margin detail backfill: session %s (%d names)", iso, len(rows))
+    log.info("china margin detail backfill: %d new sessions [%s..%s]", added, start, end)
+    return added
 
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    argparse.ArgumentParser().parse_args()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--backfill", nargs=2, metavar=("START", "END"),
+                    help="range-backfill per-name financing-balance PIT history [START END]")
+    a = ap.parse_args()
+    if a.backfill:
+        return 0 if backfill(a.backfill[0], a.backfill[1]) else 0
     return 0 if refresh() else 1
 
 

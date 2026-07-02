@@ -66,6 +66,10 @@ FLAG_LABELS: dict[str, tuple[str, str]] = {
 
 
 # --------------------------------------------------------------------------- io
+# append-only drip caches carry a PIT history now; this engine wants the latest single-day snapshot.
+_DRIP_DATE_COL = {"china_zt_pool": "date", "china_margin_detail": "date", "china_lhb": "asof"}
+
+
 def _read(group: str, file: str) -> pd.DataFrame | None:
     """Read data/<group>/<file>.parquet, or None on any miss/error."""
     p = config.data_dir() / group / f"{file}.parquet"
@@ -76,6 +80,10 @@ def _read(group: str, file: str) -> pd.DataFrame | None:
     except Exception as e:  # noqa: BLE001 — a broken cache must never break a build
         log.warning("china_crowding: %s/%s unreadable (%s)", group, file, e)
         return None
+    dc = _DRIP_DATE_COL.get(group)
+    if dc and df is not None and dc in df.columns:
+        from collectors._drip import latest_snapshot
+        df = latest_snapshot(df, dc)                        # single-day snapshot from PIT history
     return df if df is not None and len(df) else None
 
 
@@ -147,12 +155,19 @@ def _pctile_flags(series: pd.Series, thr: float) -> set[str]:
 
 # ------------------------------------------------------------------- leg builders
 def _margin_froth() -> set[str]:
-    """Per-name financing crowding: top-pctile financing-balance names.
+    """Per-name financing crowding: top-pctile financing-balance NORMALIZED BY float market cap.
 
-    PREFERS the GATED Tushare margin_detail snapshot (data/tushare/margin.parquet, cleaner per-name
-    融资余额) when it is not stale relative to the free cache (asof-aware — a frozen Tushare token must
-    not beat a fresh free source, masterplan §W6-CN fix 4), else the free china_margin_detail cache.
-    Ranks the raw financing balance cross-sectionally (or a fin_pct_float column if present)."""
+    W6-CN Fix 6 (research/CHINA_ENGINE_REASSESSMENT.md §medium-problems):
+    The original implementation ranked RAW 融资余额 (financing balance in CNY) cross-sectionally,
+    which is purely a large-cap detector (~1,100 names 'crowded' just by size). Fix: normalize
+    margin balance by circulating market cap (circ_mv_yi from tushare/valuation.parquet) to get
+    a float-leverage ratio. Falls back to fin_pct_float if available, then to raw balance only
+    as a last resort (with a degradation note). This measures ACTUAL leverage intensity per name.
+
+    Source selection is ASOF-AWARE (masterplan §W6-CN fix 4): prefer the GATED Tushare
+    margin_detail snapshot only when it is not stale relative to the free china_margin_detail
+    cache — a frozen Tushare token must not beat a fresh free source.
+    """
     tv = _read("tushare", "margin")
     free = _read("china_margin_detail", "detail")
     df, _src = prefer_tushare(tv if (tv is not None and _ticker_col(tv) is not None) else None, free)
@@ -163,10 +178,47 @@ def _margin_froth() -> set[str]:
         return set()
     df = df.copy()
     df.index = df[tcol].astype(str)
-    vcol = _col(df, "fin_pct_float", "pct_float", "fin_balance")
-    if not vcol:
+
+    # Prefer fin_pct_float (already normalized) if present
+    vcol = _col(df, "fin_pct_float", "pct_float")
+    if vcol:
+        return _pctile_flags(df[vcol], _MARGIN_PCTILE)
+
+    # No float-normalized column: compute fin_balance / circ_mv ourselves.
+    bal_col = _col(df, "fin_balance", "融资余额", "balance")
+    if not bal_col:
         return set()
-    return _pctile_flags(df[vcol], _MARGIN_PCTILE)
+
+    # Read circ_mv from tushare/valuation.parquet — asof-aware (masterplan §W6-CN fix 4):
+    # a frozen valuation plane must not silently supply stale float caps. If it is stale vs
+    # the free anchor, prefer_tushare returns None and we fall back to raw balance below.
+    val, _vsrc = prefer_tushare(_read("tushare", "valuation"), _read("china_a_val", "pe"))
+    if _vsrc != "tushare":
+        val = None
+    circ_mv = None
+    if val is not None:
+        vtcol = _ticker_col(val)
+        mvcol = _col(val, "circ_mv_yi", "circ_mv", "流通市值")
+        if vtcol and mvcol:
+            val = val.copy()
+            val.index = val[vtcol].astype(str)
+            circ_mv = pd.to_numeric(val[mvcol], errors="coerce")
+
+    bal = pd.to_numeric(df[bal_col], errors="coerce")
+    if circ_mv is not None and not circ_mv.empty:
+        # Align on common tickers and compute leverage ratio
+        common = bal.index.intersection(circ_mv.index)
+        if len(common) >= 50:
+            ratio = bal.loc[common] / circ_mv.loc[common].replace(0, float("nan"))
+            ratio = ratio.dropna()
+            if len(ratio) >= 50:
+                log.debug("china_crowding margin_froth: normalized by circ_mv (%d names)", len(ratio))
+                return _pctile_flags(ratio, _MARGIN_PCTILE)
+        log.debug("china_crowding margin_froth: circ_mv join too sparse (%d common) — using raw balance", len(common))
+
+    # Last resort: raw balance (known to be a large-cap detector; logged)
+    log.debug("china_crowding margin_froth: no circ_mv available — raw balance (size proxy caveat)")
+    return _pctile_flags(bal, _MARGIN_PCTILE)
 
 
 def _pledge_tail() -> set[str]:
@@ -222,22 +274,54 @@ def _attention_spike() -> set[str]:
 
 
 def _rich_valuation() -> set[str]:
-    """mean(PE,PB) pctile >= 80 per-name; fallback to whole-A market level.
+    """mean(PE,PB) pctile >= 80 per-name vs OWN HISTORY; fallback to whole-A market level.
+
+    W6-CN Fix 6 (research/CHINA_ENGINE_REASSESSMENT.md §medium-problems):
+    The original implementation used the Tushare CROSS-SECTIONAL pe_pctile/pb_pctile, which
+    ranks each name against ALL other A-shares AT ONE MOMENT. Because A-share PE/PB are
+    roughly uniformly distributed cross-sectionally, this produced ~1,100 names 'rich' daily
+    by construction (the top-quintile of a uniform distribution is exactly 20%). Fix: prefer
+    the HISTORICAL percentile (each name's PE/PB vs its OWN trailing history), which measures
+    actual richness relative to where that name historically traded.
+
+    The china_valuation percentile cache (data/china_a_valuation/ or tushare/valuation.parquet)
+    may carry both cross-sectional and historical variants. We prefer columns ending in '_hist'
+    or '_own' before falling back to the cross-sectional ones. If only cross-sectional columns
+    are available, we issue a debug note and proceed (behaviour is unchanged from the pre-fix
+    code, but the degradation is now explicit).
 
     If no per-name PE/PB cache exists, falls back to the whole-A valuation anchor: when
     the broad market sits in its top valuation decile, the whole universe inherits the
-    rich-valuation leg (so the conjunction can still gate on regime froth)."""
+    rich-valuation leg (so the conjunction can still gate on regime froth).
+    """
     df = _valuation_df()
     if df is not None:
         tcol = _ticker_col(df)
-        pe = _col(df, "pe_pctile", "pe_pctile10y")
-        pb = _col(df, "pb_pctile", "pb_pctile10y")
-        if tcol and (pe or pb):
+        if tcol:
             d = df.copy()
             d.index = d[tcol].astype(str)
-            parts = [pd.to_numeric(d[c], errors="coerce") for c in (pe, pb) if c]
-            mean_pctile = sum(parts) / len(parts)
-            return _pctile_flags(mean_pctile, _VALUATION_PCTILE)
+            # Prefer vs-own-history percentile columns (suffixed _hist, _own, _10y, or _5y)
+            pe_hist = _col(df, "pe_pctile_hist", "pe_pctile_own", "pe_pctile_10y")
+            pb_hist = _col(df, "pb_pctile_hist", "pb_pctile_own", "pb_pctile_10y")
+            if pe_hist or pb_hist:
+                parts = [pd.to_numeric(d[c], errors="coerce") for c in (pe_hist, pb_hist) if c]
+                mean_pctile = sum(parts) / len(parts)
+                mean_pctile = mean_pctile.dropna()
+                if len(mean_pctile) >= 50:
+                    log.debug("china_crowding rich_valuation: using vs-own-history pctile (%d names)", len(mean_pctile))
+                    return _pctile_flags(mean_pctile, _VALUATION_PCTILE)
+
+            # Fallback: cross-sectional percentile columns (pre-fix behaviour, now explicit)
+            pe = _col(df, "pe_pctile", "pe_pctile10y")
+            pb = _col(df, "pb_pctile", "pb_pctile10y")
+            if pe or pb:
+                parts = [pd.to_numeric(d[c], errors="coerce") for c in (pe, pb) if c]
+                mean_pctile = sum(parts) / len(parts)
+                mean_pctile = mean_pctile.dropna()
+                if len(mean_pctile) >= 50:
+                    log.debug("china_crowding rich_valuation: only cross-sectional pctile available "
+                              "(uniform-rank caveat — ~%d names 'rich' by construction)", len(mean_pctile) // 5)
+                    return _pctile_flags(mean_pctile, _VALUATION_PCTILE)
 
     # Fallback: whole-A market level — if rich, every name inherits the leg.
     anchor = _market_anchor()

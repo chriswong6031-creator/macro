@@ -360,7 +360,11 @@ def _seats_by_ticker() -> dict[str, dict]:
     except Exception as e:  # noqa: BLE001
         log.debug("china_lhb unreadable (%s)", e)
         return {}
-    if not {"ticker", "inst_net_buy_yi"}.issubset(d.columns):
+    # china_lhb is append-only (PIT history) now; take the latest collection snapshot (keyed by asof).
+    if "asof" in d.columns:
+        from collectors._drip import latest_snapshot
+        d = latest_snapshot(d, "asof")
+    if d is None or not {"ticker", "inst_net_buy_yi"}.issubset(d.columns):
         return {}
     d = d.copy()
     d["inst_net_buy_yi"] = pd.to_numeric(d["inst_net_buy_yi"], errors="coerce")

@@ -36,11 +36,18 @@ log = logging.getLogger(__name__)
 
 SCHEMA = "china_discovery.v1"
 
-# weights over the present LEADING legs (renormalized over whichever fire)
+# weights over the present LEADING legs (renormalized over whichever fire).
+#
+# SIGN-FLIP NOTE (research/CHINA_ENGINE_REASSESSMENT.md §W6-CN Fix 2):
+#   block_premium was previously +0.24 (treated as accumulation).
+#   Measured: block-trade PREMIUM on dip names = −0.60%/5d (t≈−2.8) — DRAINS alpha.
+#   Premium = institutional unload disguised as a handoff, not conviction accumulation.
+#   Removed from the positive scoring legs; now emitted as a DEMOTION chip on the
+#   candidate row (block_premium_demotion=True). The MIN_LEGS count excludes it so
+#   a name can only qualify via genuinely positive legs.
 _LEG_WEIGHTS = {
-    "inst_accum": 0.34,
-    "block_premium": 0.24,
-    "buyback": 0.22,
+    "inst_accum": 0.50,       # bumped: only validated positive leg in this module
+    "buyback": 0.30,
     "attention_rising": 0.20,
 }
 _BUYBACK_CAP = 0.40       # buyback is a CONFIRMER, capped (spec Stage 1 / 6a)
@@ -64,6 +71,10 @@ def _clip01(x: float) -> float:
 # --------------------------------------------------------------------------- #
 # collector parquet readers — each degrades to {} (never raises)
 # --------------------------------------------------------------------------- #
+# append-only drip caches carry a PIT history now; slice to the latest single-day snapshot on read.
+_DRIP_DATE_COL = {"china_zt_pool": "date", "china_margin_detail": "date", "china_lhb": "asof"}
+
+
 def _read_parquet(group: str, file: str):
     """Read data/<group>/<file>.parquet → DataFrame, or None on any failure."""
     try:
@@ -71,6 +82,12 @@ def _read_parquet(group: str, file: str):
         if not p.exists():
             return None
         df = pd.read_parquet(p)
+        if df is None or df.empty:
+            return None
+        dc = _DRIP_DATE_COL.get(group)
+        if dc and dc in df.columns:
+            from collectors._drip import latest_snapshot
+            df = latest_snapshot(df, dc)                    # single-day snapshot from PIT history
         return df if df is not None and not df.empty else None
     except Exception as e:  # noqa: BLE001 — a missing/corrupt cache must never break a build
         log.debug("china_discovery: read %s/%s failed (%s)", group, file, e)
@@ -303,22 +320,24 @@ def build(today: date | None = None) -> dict:
         inst, block, bb, att = {}, {}, {}, {}
 
     universe = _bundle_universe()
+    # Include block tickers so we can emit block_premium_demotion chips even on names
+    # that don't qualify via positive legs (they won't make it past MIN_LEGS check).
     tickers = set(inst) | set(block) | set(bb) | set(att)
     by_ticker: dict[str, dict] = {}
 
     for t in tickers:
-        # the present leading legs, each contributing a [0,1] value
+        # the present POSITIVE leading legs, each contributing a [0,1] value.
+        # block_premium is NOT included here — it is a DEMOTION (measured −0.60%/5d,
+        # t≈−2.8; see research/CHINA_ENGINE_REASSESSMENT.md §W6-CN Fix 2).
         legs: dict[str, float] = {}
         if t in inst:
             legs["inst_accum"] = _clip01(inst[t]["inst_accum_score"])
-        if t in block:
-            legs["block_premium"] = _clip01(max(block[t]["block_score"], 0.0))
         if t in bb:
             legs["buyback"] = min(_BUYBACK_CAP, _clip01(bb[t]["buyback_score"]))
         if t in att:
             legs["attention_rising"] = _clip01(att[t]["attention_rising"])
 
-        if len(legs) < _MIN_LEGS:                      # need ≥2 leading legs
+        if len(legs) < _MIN_LEGS:                      # need ≥2 positive leading legs
             continue
 
         tw = sum(_LEG_WEIGHTS[k] for k in legs) or 1.0
@@ -326,15 +345,28 @@ def build(today: date | None = None) -> dict:
         haircut = _runup_haircut(t)
         score = round(_clip01(raw * (0.6 + 0.4 * haircut)), 3)
 
+        # block_premium = DEMOTION chip (do NOT count in legs or score; display only).
+        # A premium block trade on a reversal-candidate name signals institutional UNLOADING,
+        # not accumulation. Wired as a warning chip, never a positive leg.
+        block_prem_demotion = None
+        if t in block and block[t].get("block_score", 0.0) > 0:
+            block_prem_demotion = {
+                "avg_premium_pct": block[t].get("avg_premium_pct"),
+                "block_amt_yi": block[t].get("block_amt_yi"),
+                "note": ("DEMOTION: premium block trade measured −0.60%/5d on dip names "
+                         "(t≈−2.8). Signals institutional unload, not accumulation. "
+                         "research/CHINA_ENGINE_REASSESSMENT.md §W6-CN Fix 2."),
+            }
+
         reasons = []
         if "inst_accum" in legs:
             reasons.append(f"机构吸筹 (LHB inst net-buy, {inst[t]['n_inst_buy']} seats)")
-        if "block_premium" in legs:
-            reasons.append(f"block premium +{block[t]['avg_premium_pct']:.1f}%")
         if "buyback" in legs:
             reasons.append("buyback in progress")
         if "attention_rising" in legs:
             reasons.append("attention rank rising")
+        if block_prem_demotion:
+            reasons.append(f"⚠ block premium +{block[t].get('avg_premium_pct', 0):.1f}% (demotion flag)")
 
         by_ticker[t] = {
             "ticker": t, "name": _name_for(t),
@@ -344,7 +376,8 @@ def build(today: date | None = None) -> dict:
             "off_desk": t not in universe,
             "reason": "; ".join(reasons),
             "inst_accum_score": legs.get("inst_accum"),
-            "block_score": legs.get("block_premium"),
+            "block_score": None,         # legacy field nulled — block_premium is no longer scored
+            "block_premium_demotion": block_prem_demotion,   # DEMOTION chip (display only)
             "buyback_score": legs.get("buyback"),
             "attention_rising": legs.get("attention_rising"),
         }
@@ -359,8 +392,13 @@ def build(today: date | None = None) -> dict:
         "candidates": cands,
         "off_desk": off_desk,
         "n": len(cands), "n_off_desk": len(off_desk),
-        "sources": {"inst_accum": len(inst), "block_premium": len(block),
+        "sources": {"inst_accum": len(inst), "block_premium_demotion": len(block),
                     "buyback": len(bb), "attention": len(att)},
+        # Sign-flip note: block_premium was previously a +0.24 positive leg.
+        # Measured −0.60%/5d (t≈−2.8) → DEMOTION chip only. See §W6-CN Fix 2.
+        "sign_flip_note": ("block_premium removed from positive legs; emitted as demotion chip. "
+                           "LHB hotmoney_score weight flipped to −0.10 in china_altdata. "
+                           "Source: research/CHINA_ENGINE_REASSESSMENT.md §W6-CN Fix 2."),
     }
 
 

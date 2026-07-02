@@ -44,6 +44,30 @@ def main() -> int:
                     "scripts.seed_china_ths_baskets) — skipping")
         return 0
 
+    # Validated sleeve-size chip (W6-CN Fix 1) — thread risk_radar_intl gross_factor into the
+    # THS baskets JSON header as a DISPLAY chip. Regime sizes sleeves, never vetoes names.
+    try:
+        from engine.risk_radar_intl import cn_sleeve_chip
+        data["sleeve_chip"] = cn_sleeve_chip()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("china THS baskets: sleeve chip failed (%s)", e)
+
+    # Validated AI-semis slice confirmer (W6-CN Fix 3 — #773) — wire global AI-semis
+    # (SMH/SOXX/TSM 4w-mom) → next-week CN CPO/PCB/storage_chip tailwind chip.
+    # Display chip + JSON field; no name-level gating. t=3.27, horse-race stable.
+    try:
+        from engine.cn_ai_semis_confirmer import compute as _semis_compute, is_target_basket
+        semis_chip = _semis_compute()
+        data["ai_semis_confirmer"] = semis_chip
+        # Also annotate each AI-supply basket row with the chip
+        for b in data.get("baskets", []):
+            if is_target_basket(b.get("id", "")):
+                b["ai_semis_confirmer"] = semis_chip
+        log.info("THS baskets AI-semis confirmer: %s (mom_4w=%s)",
+                 semis_chip.get("state"), semis_chip.get("semis_mom_4w"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("china THS baskets: AI-semis confirmer failed (%s)", e)
+
     fdir = site / "chinabasketdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets_ths.json").write_text(json.dumps(data, separators=(",", ":"), default=str))

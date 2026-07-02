@@ -52,6 +52,14 @@ def main() -> int:
         log.warning("china_sector_central: grader failed: %s", e)
         data["grader"] = {"available": False, "note": "grader error"}
 
+    # Validated sleeve-size chip (W6-CN Fix 1) — thread risk_radar_intl gross_factor into the
+    # sector central JSON header. Display chip only; regime sizes sleeves, never vetoes names.
+    try:
+        from engine.risk_radar_intl import cn_sleeve_chip
+        data["sleeve_chip"] = cn_sleeve_chip()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("china_sector_central: sleeve chip failed (%s)", e)
+
     payload = "window.SECTOR_CENTRAL=" + json.dumps(data, separators=(",", ":"), ensure_ascii=False) + ";\n"
     (site / "sector_central_china_data.js").write_text(payload, encoding="utf-8")
     fdir = site / "chinasectordata"
