@@ -42,7 +42,7 @@ def test_all_present_no_dark(tmp_path):
     _make_parquet(fred_dir / "BBB.parquet")
 
     cfg = _minimal_cfg({"bottleneck": {"AAA": "col_a", "BBB": "col_b"}})
-    doc = audit_groups(cfg=cfg, data_dir=tmp_path, asof=date.today())
+    doc = audit_groups(cfg=cfg, data_dir=tmp_path, asof=date.today(), out_dir=tmp_path / "q_out")
 
     assert doc["any_dark"] is False
     assert len(doc["groups"]) == 1
@@ -62,7 +62,7 @@ def test_below_50pct_marks_dark(tmp_path):
     # BBB and CCC are absent
 
     cfg = _minimal_cfg({"power": {"AAA": "col_a", "BBB": "col_b", "CCC": "col_c"}})
-    doc = audit_groups(cfg=cfg, data_dir=tmp_path, asof=date.today())
+    doc = audit_groups(cfg=cfg, data_dir=tmp_path, asof=date.today(), out_dir=tmp_path / "q_out")
 
     assert doc["any_dark"] is True
     g = doc["groups"][0]
@@ -80,7 +80,7 @@ def test_exactly_50pct_not_dark(tmp_path):
     # BBB absent → 1/2 = 50%
 
     cfg = _minimal_cfg({"grp": {"AAA": "col_a", "BBB": "col_b"}})
-    doc = audit_groups(cfg=cfg, data_dir=tmp_path, asof=date.today(), min_present_pct=50.0)
+    doc = audit_groups(cfg=cfg, data_dir=tmp_path, asof=date.today(), min_present_pct=50.0, out_dir=tmp_path / "q_out")
 
     g = doc["groups"][0]
     assert g["pct_present"] == 50.0
@@ -104,7 +104,7 @@ def test_stale_parquet_counts_as_absent(tmp_path):
 
     cfg = _minimal_cfg({"grp": {"OLD": "old_col", "NEW": "new_col"}})
     # NEW parquet is absent too — so 0/2 = 0%, dark
-    doc = audit_groups(cfg=cfg, data_dir=tmp_path, asof=date.today())
+    doc = audit_groups(cfg=cfg, data_dir=tmp_path, asof=date.today(), out_dir=tmp_path / "q_out")
 
     g = doc["groups"][0]
     assert "OLD" in g["missing"]   # stale → treated as missing
@@ -124,7 +124,7 @@ def test_multi_group_one_dark(tmp_path):
         "group_ok": {"G1A": "a", "G1B": "b"},
         "group_dark": {"G2X": "x", "G2Y": "y", "G2Z": "z"},
     })
-    doc = audit_groups(cfg=cfg, data_dir=tmp_path, asof=date.today())
+    doc = audit_groups(cfg=cfg, data_dir=tmp_path, asof=date.today(), out_dir=tmp_path / "q_out")
 
     names = {g["group"]: g for g in doc["groups"]}
     assert names["group_ok"]["dark"] is False
@@ -157,7 +157,7 @@ def test_empty_group_skipped(tmp_path):
 
     cfg = _minimal_cfg({"empty_grp": {}, "real_grp": {"A": "col_a"}})
     _make_parquet(fred_dir / "A.parquet")
-    doc = audit_groups(cfg=cfg, data_dir=tmp_path, asof=date.today())
+    doc = audit_groups(cfg=cfg, data_dir=tmp_path, asof=date.today(), out_dir=tmp_path / "q_out")
 
     group_names = [g["group"] for g in doc["groups"]]
     assert "empty_grp" not in group_names
