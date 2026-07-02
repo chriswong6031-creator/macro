@@ -20,8 +20,9 @@ DISCIPLINE not prediction. Five subsystems, all PURE/additive (never raise into 
   2 DURABILITY  durability()    persistence, breadth, cohesion, rolling Hurst, trend
                                 health  (DISPLAY-ONLY — coincident, confirms not forecasts)
   3 CROWDING    engine.theme_crowding  (DISPLAY-ONLY, asymmetric down-size)
-  4 ROTATION    rotation_radar()  buffered leadership-change, breadth-of-rotation,
-                                  one-dominant-narrative (absorption + HHI)  (DISPLAY)
+  4 ROTATION    rotation_radar()  single-snapshot leadership read (rank-1 vs rank-2
+                                  + margin), breadth-of-rotation, one-dominant-narrative
+                                  (absorption + HHI)  (DISPLAY)
   5 ALLOCATE    allocate()      the low-turnover ruleset → SUGGESTED target weights
 
 Output (compute_narrative_rotation) is one JSON payload + an ai_handoff contract (the
@@ -387,10 +388,12 @@ def _r(x, nd: int = 3):
 # 4 · ROTATION — leadership handoff radar + one-narrative detector (DISPLAY-ONLY)
 # =========================================================================== #
 def rotation_radar(preps: list[dict], ranks: dict, durab: dict, s: dict) -> dict:
-    """Buffered leadership read + breadth-of-rotation + the one-dominant-narrative
-    (absorption + leadership HHI) regime. DISPLAY-ONLY — flags a CONFIRMED handoff,
-    never predicts the next narrative (Phase-0 / Molchanov-Stangl: rotation timing has
-    no edge even with foresight)."""
+    """Single-snapshot leadership read (rank-1 vs rank-2 + margin) + breadth-of-rotation
+    + the one-dominant-narrative (absorption + leadership HHI) regime. NO buffering or
+    hysteresis: a leadership flip registers the day the scores cross — `margin` is
+    exposed so a consumer MAY buffer on it, but nothing here does. DISPLAY-ONLY —
+    never gates allocate(), never predicts the next narrative (Phase-0 /
+    Molchanov-Stangl: rotation timing has no edge even with foresight)."""
     ordered = sorted(ranks.items(), key=lambda kv: kv[1].get("rank", 99))
     leader_id = ordered[0][0] if ordered else None
     chall_id = ordered[1][0] if len(ordered) > 1 else None
