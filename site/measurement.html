@@ -1,0 +1,1972 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Cycle Measurement Hub — Mastermind</title>
+<meta name="description" content="First real self-measurement for the Cycle Intelligence program: turn P/R, cone coverage, reliability/Brier — honestly reported including all failed gates.">
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ── Measurement Hub — page-specific styles ──────────────────────────────── */
+body{margin:0;padding-top:24px}
+.mh-wrap{max-width:1100px;margin:0 auto;padding:0 16px 80px}
+.mh-hero{padding:40px 0 28px;border-bottom:1px solid var(--border,rgba(255,255,255,.08));margin-bottom:32px}
+.mh-kicker{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted,#8899aa);margin-bottom:10px}
+.mh-kicker .hb{display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:var(--warn,#f59e0b);margin-right:6px}
+.mh-title{font-size:clamp(1.5rem,4vw,2.2rem);font-weight:800;line-height:1.2;
+  margin:0 0 12px;color:var(--text,#e2e8f0)}
+.mh-doctrine{font-size:.92rem;line-height:1.65;color:var(--muted,#8899aa);
+  max-width:800px;margin:0 0 16px}
+.mh-verdict{background:color-mix(in srgb,var(--warn,#f59e0b) 8%,var(--surface,#0f1629));
+  border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 25%,transparent);
+  border-radius:10px;padding:16px 20px;margin-top:20px;
+  font-size:.88rem;line-height:1.6;color:var(--text,#e2e8f0)}
+.mh-verdict strong{color:var(--warn,#f59e0b)}
+
+/* ── Section headings ────────────────────────────────────────────────────── */
+.mh-section{margin-bottom:48px}
+.mh-sh{display:flex;align-items:baseline;gap:12px;margin:0 0 16px}
+.mh-sh h2{font-size:1.15rem;font-weight:700;margin:0;color:var(--text,#e2e8f0)}
+.mh-sh .mh-sh-sub{font-size:.78rem;color:var(--muted,#8899aa)}
+
+/* ── Engine tabs ─────────────────────────────────────────────────────────── */
+.mh-tabs{display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap}
+.mh-tab{padding:7px 14px;border-radius:7px;border:1px solid var(--border,rgba(255,255,255,.1));
+  background:transparent;color:var(--muted,#8899aa);font-size:.82rem;cursor:pointer;
+  transition:all .15s}
+.mh-tab.on{background:var(--blue,#3b82f6);border-color:var(--blue,#3b82f6);
+  color:#fff;font-weight:600}
+
+/* ── Engine panel ────────────────────────────────────────────────────────── */
+.mh-engine{display:none}
+.mh-engine.on{display:block}
+.mh-eng-hd{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.mh-eng-name{font-size:1rem;font-weight:700;color:var(--text,#e2e8f0)}
+.mh-eng-epoch{font-size:.72rem;color:var(--muted,#8899aa);
+  background:color-mix(in srgb,var(--text) 8%,transparent);
+  padding:3px 8px;border-radius:4px;font-family:monospace}
+
+/* ── Cohort badges ───────────────────────────────────────────────────────── */
+.mh-cohorts{display:grid;grid-template-columns:repeat(auto-fit,minmax(480px,1fr));gap:20px}
+.mh-cohort{border:1px solid var(--border,rgba(255,255,255,.08));border-radius:10px;
+  padding:20px;background:var(--card,rgba(255,255,255,.03))}
+.mh-cohort-hd{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.mh-cohort-badge{font-size:.7rem;font-weight:700;letter-spacing:.1em;
+  padding:3px 8px;border-radius:4px}
+.badge-backtest{background:color-mix(in srgb,var(--blue,#3b82f6) 20%,transparent);
+  color:var(--blue,#3b82f6);border:1px solid color-mix(in srgb,var(--blue) 35%,transparent)}
+.badge-live{background:color-mix(in srgb,var(--up,#22c55e) 20%,transparent);
+  color:var(--up,#22c55e);border:1px solid color-mix(in srgb,var(--up) 35%,transparent)}
+.mh-cohort-meta{font-size:.75rem;color:var(--muted,#8899aa)}
+
+/* ── Primitive blocks ────────────────────────────────────────────────────── */
+.mh-primitive{margin-bottom:18px;padding:14px;border-radius:8px;
+  background:color-mix(in srgb,var(--text) 4%,transparent)}
+.mh-prim-title{font-size:.78rem;font-weight:700;color:var(--text,#e2e8f0);
+  margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.mh-prim-gate{font-size:.68rem;font-family:monospace;padding:2px 6px;border-radius:3px;
+  background:color-mix(in srgb,var(--muted) 15%,transparent);color:var(--muted,#8899aa)}
+
+/* ── Verdict badges ──────────────────────────────────────────────────────── */
+.verdict{display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:700;
+  padding:3px 8px;border-radius:4px;letter-spacing:.05em}
+.verdict::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%}
+.verdict-fail{background:color-mix(in srgb,var(--down,#ef4444) 18%,transparent);
+  color:var(--down,#ef4444);border:1px solid color-mix(in srgb,var(--down) 35%,transparent)}
+.verdict-fail::before{background:var(--down,#ef4444)}
+.verdict-miscal{background:color-mix(in srgb,var(--warn,#f59e0b) 18%,transparent);
+  color:var(--warn,#f59e0b);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+.verdict-miscal::before{background:var(--warn,#f59e0b)}
+.verdict-pass{background:color-mix(in srgb,var(--up,#22c55e) 18%,transparent);
+  color:var(--up,#22c55e);border:1px solid color-mix(in srgb,var(--up) 35%,transparent)}
+.verdict-pass::before{background:var(--up,#22c55e)}
+.verdict-accruing{background:color-mix(in srgb,var(--blue,#3b82f6) 18%,transparent);
+  color:var(--blue,#3b82f6);border:1px solid color-mix(in srgb,var(--blue) 35%,transparent)}
+.verdict-accruing::before{background:var(--blue,#3b82f6)}
+.verdict-none{background:color-mix(in srgb,var(--muted) 18%,transparent);
+  color:var(--muted,#8899aa);border:1px solid color-mix(in srgb,var(--muted) 25%,transparent)}
+.verdict-none::before{background:var(--muted,#8899aa)}
+
+/* ── Metric rows ─────────────────────────────────────────────────────────── */
+.mh-metric-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.mh-metric{padding:10px 12px;border-radius:6px;
+  background:color-mix(in srgb,var(--text) 3%,transparent);
+  border:1px solid var(--border,rgba(255,255,255,.06))}
+.mh-metric-label{font-size:.68rem;color:var(--muted,#8899aa);margin-bottom:4px}
+.mh-metric-val{font-size:.95rem;font-weight:700;color:var(--text,#e2e8f0)}
+.mh-metric-ci{font-size:.68rem;color:var(--muted,#8899aa)}
+.mh-metric-note{font-size:.68rem;color:var(--muted,#8899aa);margin-top:4px;line-height:1.4}
+
+/* ── Gate ledger table ───────────────────────────────────────────────────── */
+.mh-gate-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.mh-gate-table{width:100%;min-width:560px;border-collapse:collapse;font-size:.8rem}
+.mh-gate-table th{text-align:left;padding:8px 12px;font-size:.72rem;font-weight:700;
+  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
+  text-transform:uppercase;letter-spacing:.08em}
+.mh-gate-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
+  color:var(--text,#e2e8f0);vertical-align:top;line-height:1.45}
+.mh-gate-table tr:last-child td{border-bottom:none}
+.mh-gate-table .gate-id{font-family:monospace;font-size:.75rem;font-weight:700;
+  white-space:nowrap;color:var(--text,#e2e8f0)}
+.mh-gate-table .gate-result{font-size:.75rem;color:var(--muted,#8899aa);
+  max-width:340px;line-height:1.4}
+.mh-gate-fam{font-size:.68rem;font-family:monospace;
+  padding:2px 6px;border-radius:3px;
+  background:color-mix(in srgb,var(--text) 8%,transparent);
+  color:var(--muted,#8899aa)}
+.mh-gate-sec{padding:12px 0 6px;font-size:.72rem;font-weight:700;letter-spacing:.1em;
+  color:var(--muted,#8899aa);text-transform:uppercase;border-top:1px solid var(--border,rgba(255,255,255,.06));
+  margin-top:8px;grid-column:1/-1}
+
+/* ── Collinearity panel ──────────────────────────────────────────────────── */
+.mh-collin{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
+@media(max-width:640px){.mh-collin{grid-template-columns:1fr}}
+.mh-collin-block{padding:14px;border-radius:8px;
+  background:color-mix(in srgb,var(--text) 4%,transparent);
+  border:1px solid var(--border,rgba(255,255,255,.06))}
+.mh-collin-block h4{font-size:.8rem;font-weight:700;margin:0 0 8px;
+  color:var(--text,#e2e8f0)}
+.mh-collin-block ul{margin:0;padding-left:18px;font-size:.8rem;
+  color:var(--muted,#8899aa);line-height:1.7}
+.mh-collin-block li{margin-bottom:2px}
+.mh-collin-block li strong{color:var(--text,#e2e8f0)}
+
+/* ── Accruing experiments table ──────────────────────────────────────────── */
+.mh-exp-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.mh-exp-table{width:100%;min-width:480px;border-collapse:collapse;font-size:.8rem}
+.mh-exp-table th{text-align:left;padding:8px 12px;font-size:.72rem;font-weight:700;
+  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
+  text-transform:uppercase;letter-spacing:.08em}
+.mh-exp-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
+  color:var(--text,#e2e8f0);vertical-align:top}
+.mh-exp-table tr:last-child td{border-bottom:none}
+.mh-exp-name{font-weight:600;font-size:.82rem;color:var(--text,#e2e8f0)}
+.mh-exp-what{font-size:.75rem;color:var(--muted,#8899aa);margin-top:3px}
+.mh-exp-cb{font-family:monospace;font-size:.75rem}
+
+/* ── Provenance footer ───────────────────────────────────────────────────── */
+.mh-provenance{margin-top:48px;padding:20px;border-radius:10px;
+  border:1px solid var(--border,rgba(255,255,255,.07));
+  background:color-mix(in srgb,var(--text) 3%,transparent)}
+.mh-prov-title{font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted,#8899aa);margin-bottom:14px}
+.mh-prov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.mh-prov-cell{font-size:.75rem}
+.mh-prov-cell dt{color:var(--muted,#8899aa);margin-bottom:2px}
+.mh-prov-cell dd{font-family:monospace;color:var(--text,#e2e8f0);word-break:break-all}
+
+/* ── Cone recal info ─────────────────────────────────────────────────────── */
+.mh-recal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:12px}
+.mh-recal-card{padding:16px;border-radius:8px;
+  background:color-mix(in srgb,var(--warn,#f59e0b) 6%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 20%,transparent)}
+.mh-recal-card h4{font-size:.82rem;font-weight:700;color:var(--text,#e2e8f0);margin:0 0 10px}
+.mh-recal-stat{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:.8rem;margin-bottom:5px}
+.mh-recal-stat .lbl{color:var(--muted,#8899aa)}
+.mh-recal-stat .val{font-weight:700;color:var(--warn,#f59e0b)}
+.mh-recal-note{font-size:.72rem;color:var(--muted,#8899aa);margin-top:10px;line-height:1.4}
+
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
+@media(max-width:600px){
+  .mh-cohorts{grid-template-columns:1fr}
+  .mh-metric-grid{grid-template-columns:1fr 1fr}
+  .mh-gate-table,.mh-exp-table{font-size:.73rem}
+  .mh-gate-table td,.mh-exp-table td{padding:7px 8px}
+}
+</style>
+</head>
+<body>
+
+
+<nav class="site-nav">
+  
+
+
+    <div class="nav-links">
+    
+    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMIND</span>
+    </a>
+    
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">Finviz's 268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">Finviz 268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+          </div>
+        </div>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="china_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsectors_china.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+          </div>
+        </div>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+            <a href="baskets_china_ths.html">🧺 <span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
+            <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Big-money flow into names &amp; sectors · velocity · accel</span><span class="l-zh">主力资金流入个股与板块 · 流速 · 加速度</span></span></a>
+            <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+            <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+            <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="hk_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">HK universe · sector treemap · turnover-sized</span><span class="l-zh">港股全景 · 板块树图 · 按成交额</span></span></a>
+        <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Southbound + A-share big-money velocity</span><span class="l-zh">南向 + A股主力资金流速</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="canada_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">TSX universe · sector treemap · market-cap</span><span class="l-zh">TSX全景 · 板块树图 · 按市值</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+        <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+            <a href="btc_strategy.html">🎛️ <span class="l-en">BTC Strategy</span><span class="l-zh">BTC策略</span><span class="d"><span class="l-en">Cycle vs risk-allocation · backtested</span><span class="l-zh">周期 vs 风险配置 · 已回测</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (0 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
+    <div class="nav-dd nav-mega-dd">
+      <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu nav-mega" role="menu">
+        
+        <div class="nav-mega-feat">
+          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic">🛰️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
+          <a class="nm-feat" href="reports.html"><span class="nm-ic">📰</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
+        </div>
+        <div class="nav-mega-grid">
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
+            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
+            <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
+            <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
+            <a class="nav-mega-item" href="impulse.html"><span class="nm-ic">🚀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span></span><span class="d"><span class="l-en">Early-ignition momentum · velocity · accel</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Smart Money & Catalysts</span><span class="l-zh">聪明钱与催化</span></div>
+            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic">💼</span><span class="nm-tx"><span class="nm-t"><span class="l-en">13F Smart-Money</span><span class="l-zh">13F 聪明钱</span></span><span class="d"><span class="l-en">Super-investor trades graded — who rotated right</span><span class="l-zh">超级投资者交易评分 · 谁轮动正确</span></span></span></a>
+            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic">🐳</span><span class="nm-tx"><span class="nm-t"><span class="l-en">ETF & Fund Flows</span><span class="l-zh">ETF与基金流</span></span><span class="d"><span class="l-en">Real per-name conviction in fund holdings</span><span class="l-zh">基金持仓中的真实个股押注</span></span></span></a>
+            <a class="nav-mega-item" href="congress_trades.html"><span class="nm-ic">🗳️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span></span><span class="d"><span class="l-en">Politician disclosures · scored to copy</span><span class="l-zh">政界披露 · 评分跟单</span></span></span></a>
+            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic">📊</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signal convergence · influence graph · actionable</span><span class="l-zh">信号汇聚 · 影响力图谱 · 可操作</span></span></span></a>
+            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic">⚡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></span></a>
+            <a class="nav-mega-item" href="ipo.html"><span class="nm-ic">🆕</span><span class="nm-tx"><span class="nm-t"><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Cycles & Cross-Asset</span><span class="l-zh">周期与跨资产</span></div>
+            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic">🔄</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
+            <a class="nav-mega-item" href="markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></span></a>
+            <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic">🧭</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
+            <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
+            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
+            <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
+            <a class="nav-mega-item" href="transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
+            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
+            <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
+            <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
+            <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic">🧮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
+            <a class="nav-mega-item" href="factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock — US, China, HK, Canada & more…"
+      data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ <span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="mh-wrap">
+
+  
+  <header class="mh-hero">
+    <div class="mh-kicker"><span class="hb"></span> <span class="l-en">Cycle Intelligence · Measurement Hub</span><span class="l-zh">周期智慧 · 测量中心</span></div>
+    <h1 class="mh-title"><span class="l-en">Measured, not asserted</span><span class="l-zh">已测量，而非断言</span></h1>
+    <p class="mh-doctrine">
+      <span class="l-en">This program's measurement doctrine: every number the platform plots must be backed by a
+      stored, leak-free, pre-registered artifact — or it does not ship with the word "validated."
+      Backfilled and prospective cohorts are always reported separately (ruling A6).
+      A bad number honestly measured is the product; a good number laundered through imprecise language is a liability.
+      The scorecards below are the first real walk-forward track record for the Cycle Intelligence suite —
+      12,519 PIT month-end stamps across US sectors, country ETFs and China Shenwan sectors, 2010–2026,
+      price basis (epoch: price_v1 / zz14_v0).</span>
+      <span class="l-zh">本程序的测量原则：平台展示的每一个数字，必须有存储的、无前视偏差的、预注册的文物作支撑——否则不得使用"已验证"一词。
+      回测与实盘队列始终分开报告（规则A6）。
+      诚实测量出的差数据就是产品；经过模糊语言掩饰的好数据才是负债。
+      以下记分卡是周期智慧套件的首份真实前向跟踪记录——
+      涵盖美国板块、国家ETF及中国申万板块，共12,519个逐点时间戳，
+      2010–2026年，价格基准（版本：price_v1 / zz14_v0）。</span>
+    </p>
+
+    <div class="mh-verdict">
+      <strong><span class="l-en">Consolidated verdict (§6.6)</span><span class="l-zh">综合裁定（§6.6）</span>：</strong>
+      <span class="l-en">Descriptive structure (confirmed turns, phase wheel, risk/vol clustering) has measurable substance.
+      Every predictive claim tested — position deciles, ladder ordering, turn projections, directional labels —
+      fails its pre-registered gate. Phase 3 (honest surfaces + tripwires + regime context) is the product.
+      Predictive and sizing outputs proceed only through their pre-registered gates, feature-set bound by the collinearity verdict.</span>
+      <span class="l-zh">描述性结构（已确认拐点、阶段轮盘、风险/波动聚集）具有可测量的实质。
+      迄今测试的所有预测性主张——仓位十分位、阶梯排序、拐点推演、方向标签——均未通过其预注册门槛。
+      第三阶段（诚实展示 + 预警触点 + 周期背景）即为产品本身。
+      预测与仓位信号仅在通过其已注册门槛后方可发布，特征集以共线性裁定为约束。</span>
+    </div>
+  </header>
+
+  
+  <section class="mh-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">The Scorecards</span><span class="l-zh">记分卡</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Per engine — US / Country / China — never pooled (A6)</span><span class="l-zh">按引擎分类——美国/国家/中国——不混合（A6）</span></span>
+    </div>
+
+    <div class="mh-tabs" id="mh-eng-tabs" role="tablist">
+      
+      
+      <button class="mh-tab on"
+              data-eng="sector_cycles"
+              role="tab"
+              aria-selected="true">
+        <span class="l-en">US Sector Cycles</span><span class="l-zh">美国板块周期</span>
+      </button>
+      
+      
+      
+      <button class="mh-tab"
+              data-eng="country_cycles"
+              role="tab"
+              aria-selected="false">
+        <span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span>
+      </button>
+      
+      
+      
+      <button class="mh-tab"
+              data-eng="china_sector_cycles"
+              role="tab"
+              aria-selected="false">
+        <span class="l-en">China Sector Cycles</span><span class="l-zh">中国板块周期</span>
+      </button>
+      
+      
+    </div>
+
+    
+    
+    <div class="mh-engine on" id="mh-eng-sector_cycles">
+      <div class="mh-eng-hd">
+        <span class="mh-eng-name"><span class="l-en">US Sector Cycles</span><span class="l-zh">美国板块周期</span></span>
+        <span class="mh-eng-epoch">
+          basis=price_v1 · zz=zz14_v0 · fp=1f313352836b
+        </span>
+        <span class="mh-metric-note" style="margin-left:auto">
+          <span class="l-en">1937 total stamps</span><span class="l-zh">共 1937 个时间戳</span>
+        </span>
+      </div>
+
+      <div class="mh-cohorts">
+        
+        <div class="mh-cohort">
+          <div class="mh-cohort-hd">
+            <span class="mh-cohort-badge badge-backtest">
+              BACKTEST n=1881
+            </span>
+            <span class="mh-cohort-meta">
+              <span class="l-en">187m · 11 instruments</span><span class="l-zh">187个月 · 11个标的</span>
+            </span>
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Turn Precision / Recall</span><span class="l-zh">拐点精准率 / 召回率</span>
+              <span class="mh-prim-gate">CC-3</span>
+              
+              <span class="verdict verdict-fail">
+                <span class="l-en">FALSIFIED</span><span class="l-zh">已证伪</span>
+              </span>
+              
+            </div>
+            
+            <div class="mh-metric-grid">
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Precision</span><span class="l-zh">精准率</span></div>
+                <div class="mh-metric-val">7.5%</div>
+                <div class="mh-metric-ci">[5.4%, 10.3%]</div>
+              </div>
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Recall</span><span class="l-zh">召回率</span></div>
+                <div class="mh-metric-val">28.9%</div>
+                <div class="mh-metric-ci">[21.4%, 37.9%]</div>
+              </div>
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Timing error (median/IQR)</span><span class="l-zh">时间误差（中位/四分距）</span></div>
+                <div class="mh-metric-val">-0.99m / 3.02m</div>
+                <div class="mh-metric-ci"><span class="l-en">n=33 matched turns</span><span class="l-zh">n=33 匹配拐点</span></div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">n_eff</span><span class="l-zh">有效样本n</span></div>
+                <div class="mh-metric-val">422.0</div>
+                <div class="mh-metric-ci"><span class="l-en">month-block bootstrap</span><span class="l-zh">月块自助法</span></div>
+              </div>
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Bar: precision & recall Wilson-lo &gt; 0.5. Independent truth: realized-extrema oracle (ruling A6) — not the same ZigZag detector.</span>
+              <span class="l-zh">门槛：精准率与召回率威尔逊下界 &gt; 0.5。独立真值：已实现极值预言机（规则A6）——非同一ZigZag检测器。</span>
+            </div>
+            
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Cone Coverage vs 80% nominal</span><span class="l-zh">锥形覆盖率 vs 80% 名义值</span>
+              <span class="mh-prim-gate">CC-1</span>
+              
+              <span class="verdict verdict-miscal">
+                <span class="l-en">TOO TIGHT</span><span class="l-zh">锥形过窄</span>
+              </span>
+              
+            </div>
+            
+            <div class="mh-metric-grid">
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Coverage (headline)</span><span class="l-zh">覆盖率（整体）</span></div>
+                <div class="mh-metric-val">18.8%</div>
+                <div class="mh-metric-ci">[15.4%, 22.7%] n=442</div>
+              </div>
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Coverage (fwd-only)</span><span class="l-zh">覆盖率（仅前向）</span></div>
+                <div class="mh-metric-val">26.6%</div>
+                <div class="mh-metric-ci">[21.9%, 32.0%] n=289</div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Recal multiplier</span><span class="l-zh">重校倍数</span></div>
+                <div class="mh-metric-val">8.191×</div>
+                <div class="mh-metric-ci"><span class="l-en">to reach 80% coverage</span><span class="l-zh">达到 80% 覆盖率</span></div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Overdue fraction</span><span class="l-zh">过期比例</span></div>
+                <div class="mh-metric-val">34.6%</div>
+                <div class="mh-metric-ci"><span class="l-en">projections past proj_central date</span><span class="l-zh">推演日期已过的比例</span></div>
+              </div>
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Headline coverage dominated by overdue projections (re-anchoring repaint, cycles-core-4). Forward-only slice isolates cone calibration from projection-engine pathology — watch this once projection model is replaced (D5).</span>
+              <span class="l-zh">整体覆盖率受过期推演影响较大（重锚化重绘，cycles-core-4）。仅前向切片将锥形校准与推演引擎缺陷隔离——推演模型更换后（D5）请关注此指标。</span>
+            </div>
+            
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Reliability / Brier Skill vs Base Rate</span><span class="l-zh">可靠性 / 布莱尔技能分 vs 基础率</span>
+              <span class="mh-prim-gate">CC-2</span>
+            </div>
+            
+            
+            <div class="mh-metric-grid">
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label">
+                  <span class="l-en">Signal skill score</span><span class="l-zh">信号技能分</span>
+                  <span class="verdict verdict-fail" style="margin-left:4px;font-size:.65rem">FALSIFIED</span>
+                </div>
+                <div class="mh-metric-val">-1.538</div>
+                <div class="mh-metric-ci"><span class="l-en">hit 43.0% vs base 65.9% (n=642)</span><span class="l-zh">命中率 43.0% vs 基础率 65.9%（n=642）</span></div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label">
+                  <span class="l-en">Stance skill score</span><span class="l-zh">姿态技能分</span>
+                  <span class="verdict verdict-fail" style="margin-left:4px;font-size:.65rem">FALSIFIED</span>
+                </div>
+                <div class="mh-metric-val">-1.309</div>
+                <div class="mh-metric-ci"><span class="l-en">hit 48.1% vs base 65.9% (n=1257)</span><span class="l-zh">命中率 48.1% vs 基础率 65.9%（n=1257）</span></div>
+              </div>
+              
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Skill vs per-instrument base rate (63d horizon). Negative skill = directional labels do not beat an always-predict-majority coin. Reported honestly, not hidden.</span>
+              <span class="l-zh">技能分相对各标的自身基础率（63天窗口）。负技能分 = 方向标签未能超越永远预测多数方向的随机策略。如实报告，不作掩盖。</span>
+            </div>
+          </div>
+
+        </div>
+        
+        <div class="mh-cohort">
+          <div class="mh-cohort-hd">
+            <span class="mh-cohort-badge badge-live">
+              LIVE n=56
+            </span>
+            <span class="mh-cohort-meta">
+              <span class="l-en">1m · 56 instruments</span><span class="l-zh">1个月 · 56个标的</span>
+            </span>
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Turn Precision / Recall</span><span class="l-zh">拐点精准率 / 召回率</span>
+              <span class="mh-prim-gate">CC-3</span>
+              
+              <span class="verdict verdict-fail">
+                <span class="l-en">FALSIFIED</span><span class="l-zh">已证伪</span>
+              </span>
+              
+            </div>
+            
+            <div class="mh-metric-grid">
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Precision</span><span class="l-zh">精准率</span></div>
+                <div class="mh-metric-val">0.0%</div>
+                <div class="mh-metric-ci">[0.0%, 6.4%]</div>
+              </div>
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Recall</span><span class="l-zh">召回率</span></div>
+                <div class="mh-metric-val">0.0%</div>
+                <div class="mh-metric-ci">[0.0%, 3.8%]</div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">n_eff</span><span class="l-zh">有效样本n</span></div>
+                <div class="mh-metric-val">56.0</div>
+                <div class="mh-metric-ci"><span class="l-en">month-block bootstrap</span><span class="l-zh">月块自助法</span></div>
+              </div>
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Bar: precision & recall Wilson-lo &gt; 0.5. Independent truth: realized-extrema oracle (ruling A6) — not the same ZigZag detector.</span>
+              <span class="l-zh">门槛：精准率与召回率威尔逊下界 &gt; 0.5。独立真值：已实现极值预言机（规则A6）——非同一ZigZag检测器。</span>
+            </div>
+            
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Cone Coverage vs 80% nominal</span><span class="l-zh">锥形覆盖率 vs 80% 名义值</span>
+              <span class="mh-prim-gate">CC-1</span>
+              
+              <span class="verdict verdict-accruing">
+                <span class="l-en">ACCRUING</span><span class="l-zh">accruing</span>
+              </span>
+              
+            </div>
+            
+            <div class="mh-metric-grid">
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Coverage (headline)</span><span class="l-zh">覆盖率（整体）</span></div>
+                <div class="mh-metric-val">0.0%</div>
+                <div class="mh-metric-ci">[0.0%, 25.9%] n=11</div>
+              </div>
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Coverage (fwd-only)</span><span class="l-zh">覆盖率（仅前向）</span></div>
+                <div class="mh-metric-val">0.0%</div>
+                <div class="mh-metric-ci">[0.0%, 56.2%] n=3</div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Recal multiplier</span><span class="l-zh">重校倍数</span></div>
+                <div class="mh-metric-val">18.979×</div>
+                <div class="mh-metric-ci"><span class="l-en">to reach 80% coverage</span><span class="l-zh">达到 80% 覆盖率</span></div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Overdue fraction</span><span class="l-zh">过期比例</span></div>
+                <div class="mh-metric-val">66.1%</div>
+                <div class="mh-metric-ci"><span class="l-en">projections past proj_central date</span><span class="l-zh">推演日期已过的比例</span></div>
+              </div>
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Headline coverage dominated by overdue projections (re-anchoring repaint, cycles-core-4). Forward-only slice isolates cone calibration from projection-engine pathology — watch this once projection model is replaced (D5).</span>
+              <span class="l-zh">整体覆盖率受过期推演影响较大（重锚化重绘，cycles-core-4）。仅前向切片将锥形校准与推演引擎缺陷隔离——推演模型更换后（D5）请关注此指标。</span>
+            </div>
+            
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Reliability / Brier Skill vs Base Rate</span><span class="l-zh">可靠性 / 布莱尔技能分 vs 基础率</span>
+              <span class="mh-prim-gate">CC-2</span>
+            </div>
+            
+            
+            <div class="mh-metric-grid">
+              
+              
+              
+              <div class="mh-metric-note">
+                <span class="l-en">ACCRUING — not yet matured</span><span class="l-zh">积累中——尚未成熟</span>
+              </div>
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Skill vs per-instrument base rate (63d horizon). Negative skill = directional labels do not beat an always-predict-majority coin. Reported honestly, not hidden.</span>
+              <span class="l-zh">技能分相对各标的自身基础率（63天窗口）。负技能分 = 方向标签未能超越永远预测多数方向的随机策略。如实报告，不作掩盖。</span>
+            </div>
+          </div>
+
+        </div>
+        
+      </div>
+    </div>
+    
+    
+    
+    <div class="mh-engine" id="mh-eng-country_cycles">
+      <div class="mh-eng-hd">
+        <span class="mh-eng-name"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span>
+        <span class="mh-eng-epoch">
+          basis=price_v1 · zz=zz14_v0 · fp=1f313352836b
+        </span>
+        <span class="mh-metric-note" style="margin-left:auto">
+          <span class="l-en">5769 total stamps</span><span class="l-zh">共 5769 个时间戳</span>
+        </span>
+      </div>
+
+      <div class="mh-cohorts">
+        
+        <div class="mh-cohort">
+          <div class="mh-cohort-hd">
+            <span class="mh-cohort-badge badge-backtest">
+              BACKTEST n=5738
+            </span>
+            <span class="mh-cohort-meta">
+              <span class="l-en">187m · 31 instruments</span><span class="l-zh">187个月 · 31个标的</span>
+            </span>
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Turn Precision / Recall</span><span class="l-zh">拐点精准率 / 召回率</span>
+              <span class="mh-prim-gate">CC-3</span>
+              
+              <span class="verdict verdict-fail">
+                <span class="l-en">FALSIFIED</span><span class="l-zh">已证伪</span>
+              </span>
+              
+            </div>
+            
+            <div class="mh-metric-grid">
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Precision</span><span class="l-zh">精准率</span></div>
+                <div class="mh-metric-val">10.9%</div>
+                <div class="mh-metric-ci">[9.3%, 12.8%]</div>
+              </div>
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Recall</span><span class="l-zh">召回率</span></div>
+                <div class="mh-metric-val">25.5%</div>
+                <div class="mh-metric-ci">[22.0%, 29.4%]</div>
+              </div>
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Timing error (median/IQR)</span><span class="l-zh">时间误差（中位/四分距）</span></div>
+                <div class="mh-metric-val">0.99m / 2.97m</div>
+                <div class="mh-metric-ci"><span class="l-en">n=135 matched turns</span><span class="l-zh">n=135 匹配拐点</span></div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">n_eff</span><span class="l-zh">有效样本n</span></div>
+                <div class="mh-metric-val">1191.0</div>
+                <div class="mh-metric-ci"><span class="l-en">month-block bootstrap</span><span class="l-zh">月块自助法</span></div>
+              </div>
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Bar: precision & recall Wilson-lo &gt; 0.5. Independent truth: realized-extrema oracle (ruling A6) — not the same ZigZag detector.</span>
+              <span class="l-zh">门槛：精准率与召回率威尔逊下界 &gt; 0.5。独立真值：已实现极值预言机（规则A6）——非同一ZigZag检测器。</span>
+            </div>
+            
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Cone Coverage vs 80% nominal</span><span class="l-zh">锥形覆盖率 vs 80% 名义值</span>
+              <span class="mh-prim-gate">CC-1</span>
+              
+              <span class="verdict verdict-miscal">
+                <span class="l-en">TOO TIGHT</span><span class="l-zh">锥形过窄</span>
+              </span>
+              
+            </div>
+            
+            <div class="mh-metric-grid">
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Coverage (headline)</span><span class="l-zh">覆盖率（整体）</span></div>
+                <div class="mh-metric-val">28.3%</div>
+                <div class="mh-metric-ci">[25.9%, 30.9%] n=1235</div>
+              </div>
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Coverage (fwd-only)</span><span class="l-zh">覆盖率（仅前向）</span></div>
+                <div class="mh-metric-val">34.7%</div>
+                <div class="mh-metric-ci">[31.5%, 38.0%] n=805</div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Recal multiplier</span><span class="l-zh">重校倍数</span></div>
+                <div class="mh-metric-val">3.567×</div>
+                <div class="mh-metric-ci"><span class="l-en">to reach 80% coverage</span><span class="l-zh">达到 80% 覆盖率</span></div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Overdue fraction</span><span class="l-zh">过期比例</span></div>
+                <div class="mh-metric-val">34.8%</div>
+                <div class="mh-metric-ci"><span class="l-en">projections past proj_central date</span><span class="l-zh">推演日期已过的比例</span></div>
+              </div>
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Headline coverage dominated by overdue projections (re-anchoring repaint, cycles-core-4). Forward-only slice isolates cone calibration from projection-engine pathology — watch this once projection model is replaced (D5).</span>
+              <span class="l-zh">整体覆盖率受过期推演影响较大（重锚化重绘，cycles-core-4）。仅前向切片将锥形校准与推演引擎缺陷隔离——推演模型更换后（D5）请关注此指标。</span>
+            </div>
+            
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Reliability / Brier Skill vs Base Rate</span><span class="l-zh">可靠性 / 布莱尔技能分 vs 基础率</span>
+              <span class="mh-prim-gate">CC-2</span>
+            </div>
+            
+            
+            <div class="mh-metric-grid">
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label">
+                  <span class="l-en">Signal skill score</span><span class="l-zh">信号技能分</span>
+                  <span class="verdict verdict-fail" style="margin-left:4px;font-size:.65rem">FALSIFIED</span>
+                </div>
+                <div class="mh-metric-val">-1.198</div>
+                <div class="mh-metric-ci"><span class="l-en">hit 46.0% vs base 56.5% (n=2075)</span><span class="l-zh">命中率 46.0% vs 基础率 56.5%（n=2075）</span></div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label">
+                  <span class="l-en">Stance skill score</span><span class="l-zh">姿态技能分</span>
+                  <span class="verdict verdict-fail" style="margin-left:4px;font-size:.65rem">FALSIFIED</span>
+                </div>
+                <div class="mh-metric-val">-1.191</div>
+                <div class="mh-metric-ci"><span class="l-en">hit 46.2% vs base 56.5% (n=3900)</span><span class="l-zh">命中率 46.2% vs 基础率 56.5%（n=3900）</span></div>
+              </div>
+              
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Skill vs per-instrument base rate (63d horizon). Negative skill = directional labels do not beat an always-predict-majority coin. Reported honestly, not hidden.</span>
+              <span class="l-zh">技能分相对各标的自身基础率（63天窗口）。负技能分 = 方向标签未能超越永远预测多数方向的随机策略。如实报告，不作掩盖。</span>
+            </div>
+          </div>
+
+        </div>
+        
+        <div class="mh-cohort">
+          <div class="mh-cohort-hd">
+            <span class="mh-cohort-badge badge-live">
+              LIVE n=31
+            </span>
+            <span class="mh-cohort-meta">
+              <span class="l-en">1m · 31 instruments</span><span class="l-zh">1个月 · 31个标的</span>
+            </span>
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Turn Precision / Recall</span><span class="l-zh">拐点精准率 / 召回率</span>
+              <span class="mh-prim-gate">CC-3</span>
+              
+              <span class="verdict verdict-accruing">
+                <span class="l-en">ACCRUING</span><span class="l-zh">积累中</span>
+              </span>
+              
+            </div>
+            
+            <div class="mh-metric-grid">
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Precision</span><span class="l-zh">精准率</span></div>
+                <div class="mh-metric-val">0.0%</div>
+                <div class="mh-metric-ci">[0.0%, 11.0%]</div>
+              </div>
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Recall</span><span class="l-zh">召回率</span></div>
+                <div class="mh-metric-val">0.0%</div>
+                <div class="mh-metric-ci">[0.0%, 0.8%]</div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">n_eff</span><span class="l-zh">有效样本n</span></div>
+                <div class="mh-metric-val">31.0</div>
+                <div class="mh-metric-ci"><span class="l-en">month-block bootstrap</span><span class="l-zh">月块自助法</span></div>
+              </div>
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Bar: precision & recall Wilson-lo &gt; 0.5. Independent truth: realized-extrema oracle (ruling A6) — not the same ZigZag detector.</span>
+              <span class="l-zh">门槛：精准率与召回率威尔逊下界 &gt; 0.5。独立真值：已实现极值预言机（规则A6）——非同一ZigZag检测器。</span>
+            </div>
+            
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Cone Coverage vs 80% nominal</span><span class="l-zh">锥形覆盖率 vs 80% 名义值</span>
+              <span class="mh-prim-gate">CC-1</span>
+              
+              <span class="verdict verdict-accruing">
+                <span class="l-en">ACCRUING</span><span class="l-zh">accruing</span>
+              </span>
+              
+            </div>
+            
+            <div class="mh-metric-grid">
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Coverage (headline)</span><span class="l-zh">覆盖率（整体）</span></div>
+                <div class="mh-metric-val">0.0%</div>
+                <div class="mh-metric-ci">[0.0%, 11.0%] n=31</div>
+              </div>
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Coverage (fwd-only)</span><span class="l-zh">覆盖率（仅前向）</span></div>
+                <div class="mh-metric-val">0.0%</div>
+                <div class="mh-metric-ci">[0.0%, 49.0%] n=4</div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Recal multiplier</span><span class="l-zh">重校倍数</span></div>
+                <div class="mh-metric-val">8.892×</div>
+                <div class="mh-metric-ci"><span class="l-en">to reach 80% coverage</span><span class="l-zh">达到 80% 覆盖率</span></div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Overdue fraction</span><span class="l-zh">过期比例</span></div>
+                <div class="mh-metric-val">87.1%</div>
+                <div class="mh-metric-ci"><span class="l-en">projections past proj_central date</span><span class="l-zh">推演日期已过的比例</span></div>
+              </div>
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Headline coverage dominated by overdue projections (re-anchoring repaint, cycles-core-4). Forward-only slice isolates cone calibration from projection-engine pathology — watch this once projection model is replaced (D5).</span>
+              <span class="l-zh">整体覆盖率受过期推演影响较大（重锚化重绘，cycles-core-4）。仅前向切片将锥形校准与推演引擎缺陷隔离——推演模型更换后（D5）请关注此指标。</span>
+            </div>
+            
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Reliability / Brier Skill vs Base Rate</span><span class="l-zh">可靠性 / 布莱尔技能分 vs 基础率</span>
+              <span class="mh-prim-gate">CC-2</span>
+            </div>
+            
+            
+            <div class="mh-metric-grid">
+              
+              
+              
+              <div class="mh-metric-note">
+                <span class="l-en">ACCRUING — not yet matured</span><span class="l-zh">积累中——尚未成熟</span>
+              </div>
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Skill vs per-instrument base rate (63d horizon). Negative skill = directional labels do not beat an always-predict-majority coin. Reported honestly, not hidden.</span>
+              <span class="l-zh">技能分相对各标的自身基础率（63天窗口）。负技能分 = 方向标签未能超越永远预测多数方向的随机策略。如实报告，不作掩盖。</span>
+            </div>
+          </div>
+
+        </div>
+        
+      </div>
+    </div>
+    
+    
+    
+    <div class="mh-engine" id="mh-eng-china_sector_cycles">
+      <div class="mh-eng-hd">
+        <span class="mh-eng-name"><span class="l-en">China Sector Cycles</span><span class="l-zh">中国板块周期</span></span>
+        <span class="mh-eng-epoch">
+          basis=price_v1 · zz=zz14_v0 · fp=1f313352836b
+        </span>
+        <span class="mh-metric-note" style="margin-left:auto">
+          <span class="l-en">5081 total stamps</span><span class="l-zh">共 5081 个时间戳</span>
+        </span>
+      </div>
+
+      <div class="mh-cohorts">
+        
+        <div class="mh-cohort">
+          <div class="mh-cohort-hd">
+            <span class="mh-cohort-badge badge-backtest">
+              BACKTEST n=4869
+            </span>
+            <span class="mh-cohort-meta">
+              <span class="l-en">186m · 31 instruments</span><span class="l-zh">186个月 · 31个标的</span>
+            </span>
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Turn Precision / Recall</span><span class="l-zh">拐点精准率 / 召回率</span>
+              <span class="mh-prim-gate">CC-3</span>
+              
+              <span class="verdict verdict-fail">
+                <span class="l-en">FALSIFIED</span><span class="l-zh">已证伪</span>
+              </span>
+              
+            </div>
+            
+            <div class="mh-metric-grid">
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Precision</span><span class="l-zh">精准率</span></div>
+                <div class="mh-metric-val">23.0%</div>
+                <div class="mh-metric-ci">[20.3%, 26.0%]</div>
+              </div>
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Recall</span><span class="l-zh">召回率</span></div>
+                <div class="mh-metric-val">36.9%</div>
+                <div class="mh-metric-ci">[32.9%, 41.1%]</div>
+              </div>
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Timing error (median/IQR)</span><span class="l-zh">时间误差（中位/四分距）</span></div>
+                <div class="mh-metric-val">0.0m / 2.04m</div>
+                <div class="mh-metric-ci"><span class="l-en">n=197 matched turns</span><span class="l-zh">n=197 匹配拐点</span></div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">n_eff</span><span class="l-zh">有效样本n</span></div>
+                <div class="mh-metric-val">810.0</div>
+                <div class="mh-metric-ci"><span class="l-en">month-block bootstrap</span><span class="l-zh">月块自助法</span></div>
+              </div>
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Bar: precision & recall Wilson-lo &gt; 0.5. Independent truth: realized-extrema oracle (ruling A6) — not the same ZigZag detector.</span>
+              <span class="l-zh">门槛：精准率与召回率威尔逊下界 &gt; 0.5。独立真值：已实现极值预言机（规则A6）——非同一ZigZag检测器。</span>
+            </div>
+            
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Cone Coverage vs 80% nominal</span><span class="l-zh">锥形覆盖率 vs 80% 名义值</span>
+              <span class="mh-prim-gate">CC-1</span>
+              
+              <span class="verdict verdict-miscal">
+                <span class="l-en">TOO TIGHT</span><span class="l-zh">锥形过窄</span>
+              </span>
+              
+            </div>
+            
+            <div class="mh-metric-grid">
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Coverage (headline)</span><span class="l-zh">覆盖率（整体）</span></div>
+                <div class="mh-metric-val">35.9%</div>
+                <div class="mh-metric-ci">[32.7%, 39.1%] n=856</div>
+              </div>
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Coverage (fwd-only)</span><span class="l-zh">覆盖率（仅前向）</span></div>
+                <div class="mh-metric-val">41.4%</div>
+                <div class="mh-metric-ci">[37.7%, 45.3%] n=640</div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Recal multiplier</span><span class="l-zh">重校倍数</span></div>
+                <div class="mh-metric-val">3.118×</div>
+                <div class="mh-metric-ci"><span class="l-en">to reach 80% coverage</span><span class="l-zh">达到 80% 覆盖率</span></div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Overdue fraction</span><span class="l-zh">过期比例</span></div>
+                <div class="mh-metric-val">25.2%</div>
+                <div class="mh-metric-ci"><span class="l-en">projections past proj_central date</span><span class="l-zh">推演日期已过的比例</span></div>
+              </div>
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Headline coverage dominated by overdue projections (re-anchoring repaint, cycles-core-4). Forward-only slice isolates cone calibration from projection-engine pathology — watch this once projection model is replaced (D5).</span>
+              <span class="l-zh">整体覆盖率受过期推演影响较大（重锚化重绘，cycles-core-4）。仅前向切片将锥形校准与推演引擎缺陷隔离——推演模型更换后（D5）请关注此指标。</span>
+            </div>
+            
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Reliability / Brier Skill vs Base Rate</span><span class="l-zh">可靠性 / 布莱尔技能分 vs 基础率</span>
+              <span class="mh-prim-gate">CC-2</span>
+            </div>
+            
+            
+            <div class="mh-metric-grid">
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label">
+                  <span class="l-en">Signal skill score</span><span class="l-zh">信号技能分</span>
+                  <span class="verdict verdict-fail" style="margin-left:4px;font-size:.65rem">FALSIFIED</span>
+                </div>
+                <div class="mh-metric-val">-1.159</div>
+                <div class="mh-metric-ci"><span class="l-en">hit 46.0% vs base 50.7% (n=1677)</span><span class="l-zh">命中率 46.0% vs 基础率 50.7%（n=1677）</span></div>
+              </div>
+              
+              
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Skill vs per-instrument base rate (63d horizon). Negative skill = directional labels do not beat an always-predict-majority coin. Reported honestly, not hidden.</span>
+              <span class="l-zh">技能分相对各标的自身基础率（63天窗口）。负技能分 = 方向标签未能超越永远预测多数方向的随机策略。如实报告，不作掩盖。</span>
+            </div>
+          </div>
+
+        </div>
+        
+        <div class="mh-cohort">
+          <div class="mh-cohort-hd">
+            <span class="mh-cohort-badge badge-live">
+              LIVE n=212
+            </span>
+            <span class="mh-cohort-meta">
+              <span class="l-en">2m · 53 instruments</span><span class="l-zh">2个月 · 53个标的</span>
+            </span>
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Turn Precision / Recall</span><span class="l-zh">拐点精准率 / 召回率</span>
+              <span class="mh-prim-gate">CC-3</span>
+              
+              <span class="verdict verdict-fail">
+                <span class="l-en">FALSIFIED</span><span class="l-zh">已证伪</span>
+              </span>
+              
+            </div>
+            
+            <div class="mh-metric-grid">
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Precision</span><span class="l-zh">精准率</span></div>
+                <div class="mh-metric-val">0.0%</div>
+                <div class="mh-metric-ci">[0.0%, 5.7%]</div>
+              </div>
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Recall</span><span class="l-zh">召回率</span></div>
+                <div class="mh-metric-val">0.0%</div>
+                <div class="mh-metric-ci">[0.0%, 0.8%]</div>
+              </div>
+              
+              
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">n_eff</span><span class="l-zh">有效样本n</span></div>
+                <div class="mh-metric-val">63.0</div>
+                <div class="mh-metric-ci"><span class="l-en">month-block bootstrap</span><span class="l-zh">月块自助法</span></div>
+              </div>
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Bar: precision & recall Wilson-lo &gt; 0.5. Independent truth: realized-extrema oracle (ruling A6) — not the same ZigZag detector.</span>
+              <span class="l-zh">门槛：精准率与召回率威尔逊下界 &gt; 0.5。独立真值：已实现极值预言机（规则A6）——非同一ZigZag检测器。</span>
+            </div>
+            
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Cone Coverage vs 80% nominal</span><span class="l-zh">锥形覆盖率 vs 80% 名义值</span>
+              <span class="mh-prim-gate">CC-1</span>
+              
+              <span class="verdict verdict-accruing">
+                <span class="l-en">ACCRUING</span><span class="l-zh">accruing</span>
+              </span>
+              
+            </div>
+            
+            <div class="mh-metric-note">
+              <span class="l-en">ACCRUING</span><span class="l-zh">积累中</span>
+            </div>
+            
+          </div>
+
+          
+          
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Reliability / Brier Skill vs Base Rate</span><span class="l-zh">可靠性 / 布莱尔技能分 vs 基础率</span>
+              <span class="mh-prim-gate">CC-2</span>
+            </div>
+            
+            
+            <div class="mh-metric-grid">
+              
+              
+              
+              <div class="mh-metric-note">
+                <span class="l-en">ACCRUING — not yet matured</span><span class="l-zh">积累中——尚未成熟</span>
+              </div>
+              
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Skill vs per-instrument base rate (63d horizon). Negative skill = directional labels do not beat an always-predict-majority coin. Reported honestly, not hidden.</span>
+              <span class="l-zh">技能分相对各标的自身基础率（63天窗口）。负技能分 = 方向标签未能超越永远预测多数方向的随机策略。如实报告，不作掩盖。</span>
+            </div>
+          </div>
+
+        </div>
+        
+      </div>
+    </div>
+    
+    
+  </section>
+
+  
+  
+  <section class="mh-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Cone Recalibration Multipliers</span><span class="l-zh">锥形重校倍数</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Replaces lerp(1.5,13) hand constants — bound to realized timing-error distribution</span><span class="l-zh">替换 lerp(1.5,13) 手动常数——基于实测时间误差分布</span></span>
+    </div>
+    <p style="font-size:.82rem;color:var(--muted,#8899aa);max-width:700px;margin:0 0 16px;line-height:1.6">
+      <span class="l-en">The new cone half-width = quantile(|timing_err|, 0.80) from the realized turn-timing error distribution.
+      Headline multipliers are dominated by chronically overdue projections; the forward-only multiplier is the number to watch once a gated projection model replaces the current median-half-cycle engine (D5).</span>
+      <span class="l-zh">新锥形半宽 = 实测拐点时间误差分布的 quantile(|时间误差|, 0.80)。
+      整体倍数受慢性过期推演影响偏大；一旦门控推演模型取代当前中位半周期引擎（D5），请关注仅前向倍数。</span>
+    </p>
+    <div class="mh-recal-grid">
+      
+      <div class="mh-recal-card">
+        <h4>Sector Cycles</h4>
+        <div class="mh-recal-stat">
+          <span class="lbl"><span class="l-en">Headline mult</span><span class="l-zh">整体倍数</span></span>
+          <span class="val">8.191×</span>
+        </div>
+        <div class="mh-recal-stat">
+          <span class="lbl"><span class="l-en">Forward-only mult</span><span class="l-zh">仅前向倍数</span></span>
+          <span class="val">7.657×</span>
+        </div>
+        <div class="mh-recal-stat">
+          <span class="lbl"><span class="l-en">Empirical coverage</span><span class="l-zh">实测覆盖率</span></span>
+          <span class="val" style="color:var(--down,#ef4444)">18.8%</span>
+        </div>
+        <div class="mh-recal-stat">
+          <span class="lbl"><span class="l-en">Overdue fraction</span><span class="l-zh">过期比例</span></span>
+          <span class="val" style="color:var(--warn,#f59e0b)">34.6%</span>
+        </div>
+        <div class="mh-recal-note">
+          <span class="l-en">Epoch: price_v1 / zz14_v0. BACKTEST cohort. Ships to cone_recalibration.json — replaces lerp hand constants at build.</span>
+          <span class="l-zh">版本：price_v1 / zz14_v0。回测队列。已写入 cone_recalibration.json——在构建时替换手动常数。</span>
+        </div>
+      </div>
+      
+      <div class="mh-recal-card">
+        <h4>Country Cycles</h4>
+        <div class="mh-recal-stat">
+          <span class="lbl"><span class="l-en">Headline mult</span><span class="l-zh">整体倍数</span></span>
+          <span class="val">3.567×</span>
+        </div>
+        <div class="mh-recal-stat">
+          <span class="lbl"><span class="l-en">Forward-only mult</span><span class="l-zh">仅前向倍数</span></span>
+          <span class="val">3.291×</span>
+        </div>
+        <div class="mh-recal-stat">
+          <span class="lbl"><span class="l-en">Empirical coverage</span><span class="l-zh">实测覆盖率</span></span>
+          <span class="val" style="color:var(--down,#ef4444)">28.3%</span>
+        </div>
+        <div class="mh-recal-stat">
+          <span class="lbl"><span class="l-en">Overdue fraction</span><span class="l-zh">过期比例</span></span>
+          <span class="val" style="color:var(--warn,#f59e0b)">34.8%</span>
+        </div>
+        <div class="mh-recal-note">
+          <span class="l-en">Epoch: price_v1 / zz14_v0. BACKTEST cohort. Ships to cone_recalibration.json — replaces lerp hand constants at build.</span>
+          <span class="l-zh">版本：price_v1 / zz14_v0。回测队列。已写入 cone_recalibration.json——在构建时替换手动常数。</span>
+        </div>
+      </div>
+      
+      <div class="mh-recal-card">
+        <h4>China Sector Cycles</h4>
+        <div class="mh-recal-stat">
+          <span class="lbl"><span class="l-en">Headline mult</span><span class="l-zh">整体倍数</span></span>
+          <span class="val">3.118×</span>
+        </div>
+        <div class="mh-recal-stat">
+          <span class="lbl"><span class="l-en">Forward-only mult</span><span class="l-zh">仅前向倍数</span></span>
+          <span class="val">2.949×</span>
+        </div>
+        <div class="mh-recal-stat">
+          <span class="lbl"><span class="l-en">Empirical coverage</span><span class="l-zh">实测覆盖率</span></span>
+          <span class="val" style="color:var(--down,#ef4444)">35.9%</span>
+        </div>
+        <div class="mh-recal-stat">
+          <span class="lbl"><span class="l-en">Overdue fraction</span><span class="l-zh">过期比例</span></span>
+          <span class="val" style="color:var(--warn,#f59e0b)">25.2%</span>
+        </div>
+        <div class="mh-recal-note">
+          <span class="l-en">Epoch: price_v1 / zz14_v0. BACKTEST cohort. Ships to cone_recalibration.json — replaces lerp hand constants at build.</span>
+          <span class="l-zh">版本：price_v1 / zz14_v0。回测队列。已写入 cone_recalibration.json——在构建时替换手动常数。</span>
+        </div>
+      </div>
+      
+    </div>
+  </section>
+  
+
+  
+  <section class="mh-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Gate Ledger</span><span class="l-zh">门槛台账</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Pre-registered gates — criteria frozen at W0.4 (2026-07-02). Criteria never move after data is seen.</span><span class="l-zh">预注册门槛——标准于W0.4冻结（2026-07-02）。数据可见后标准不得更改。</span></span>
+    </div>
+    <p style="font-size:.82rem;color:var(--muted,#8899aa);max-width:700px;margin:0 0 16px;line-height:1.6">
+      <span class="l-en">BH-FDR applied within each gate family (q=0.10). A gate whose success threshold, judging data, or FDR family is edited after data has been seen is void — the edit itself is the finding. All FAILED gates are rendered as FAILED, not omitted.</span>
+      <span class="l-zh">本-霍克斯伯格FDR在每个门槛族内应用（q=0.10）。若门槛成功阈值、判据数据或FDR族在数据可见后被修改，则该门槛作废——修改行为本身即为发现。所有失败门槛均如实展示为失败，不予省略。</span>
+    </p>
+    <div class="mh-gate-wrap">
+    <table class="mh-gate-table">
+      <thead>
+        <tr>
+          <th><span class="l-en">Gate</span><span class="l-zh">门槛</span></th>
+          <th><span class="l-en">Family</span><span class="l-zh">族</span></th>
+          <th><span class="l-en">Claim</span><span class="l-zh">主张</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+          <th><span class="l-en">Result / Notes</span><span class="l-zh">结果/备注</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        
+        <tr>
+          <td class="gate-id">KG-1</td>
+          <td><span class="mh-gate-fam">keystone</span></td>
+          <td style="font-size:.78rem">Position deciles carry forward drawdown-adjusted signal</td>
+          <td>
+            
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            
+          </td>
+          <td class="gate-result">NO-EDGE — every decile return-gap CI straddles zero at 21/63/126d</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">KG-2</td>
+          <td><span class="mh-gate-fam">keystone</span></td>
+          <td style="font-size:.78rem">Phases carry forward drawdown-adjusted signal</td>
+          <td>
+            
+            <span class="verdict verdict-pass"><span class="l-en">PASS</span><span class="l-zh">通过</span></span>
+            
+          </td>
+          <td class="gate-result">REFINE — Peak→shallower DD [+1.2%,+5.0%]; Trough→deeper DD [−10.0%,−1.9%] at 63d. Decays post-2018 (walk-forward fragility)</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">KG-3</td>
+          <td><span class="mh-gate-fam">keystone</span></td>
+          <td style="font-size:.78rem">LADDER inversion (low-pos/DECLINE > high-pos/FRESH-BUY on dd-adj)</td>
+          <td>
+            
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            
+          </td>
+          <td class="gate-result">INCONCLUSIVE — all 9 era×horizon cells straddle zero; point estimate leans opposite direction</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">KG-4</td>
+          <td><span class="mh-gate-fam">keystone</span></td>
+          <td style="font-size:.78rem">Signal (BUY/SELL) precedes its promised move</td>
+          <td>
+            
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            
+          </td>
+          <td class="gate-result">NO-EDGE — signal cells straddle 0 on both return and drawdown channels</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">KG-5</td>
+          <td><span class="mh-gate-fam">keystone</span></td>
+          <td style="font-size:.78rem">Walk-forward stability of KG-1/2 effects</td>
+          <td>
+            
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            
+          </td>
+          <td class="gate-result">FAIL — Phase DD signal significant pre-2018, straddles zero post-2018</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">CC-1 (sector_cycles)</td>
+          <td><span class="mh-gate-fam">calibration</span></td>
+          <td style="font-size:.78rem">Sector cycles cone band is calibrated</td>
+          <td>
+            
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            
+          </td>
+          <td class="gate-result">MISCALIBRATED — empirical 0.188 vs nominal 0.80 [CI 0.154,0.227]; recal multiplier 8.19×</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">CC-1 (country_cycles)</td>
+          <td><span class="mh-gate-fam">calibration</span></td>
+          <td style="font-size:.78rem">Country cycles cone band is calibrated</td>
+          <td>
+            
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            
+          </td>
+          <td class="gate-result">MISCALIBRATED — empirical 0.283 vs nominal 0.80 [CI 0.259,0.309]; recal multiplier 3.57×</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">CC-1 (china_sector_cycles)</td>
+          <td><span class="mh-gate-fam">calibration</span></td>
+          <td style="font-size:.78rem">China sector cycles cone band is calibrated</td>
+          <td>
+            
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            
+          </td>
+          <td class="gate-result">MISCALIBRATED — empirical 0.359 vs nominal 0.80 [CI 0.327,0.391]; recal multiplier 3.12×</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">CC-2 (sector_cycles/signal)</td>
+          <td><span class="mh-gate-fam">calibration</span></td>
+          <td style="font-size:.78rem">Sector cycles signal labels are honest (Brier skill > base rate)</td>
+          <td>
+            
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            
+          </td>
+          <td class="gate-result">FALSIFIED — skill −1.538, hit 0.430 vs base 0.659 (n=642)</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">CC-2 (sector_cycles/stance)</td>
+          <td><span class="mh-gate-fam">calibration</span></td>
+          <td style="font-size:.78rem">Sector cycles stance is honest (Brier skill > base rate)</td>
+          <td>
+            
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            
+          </td>
+          <td class="gate-result">FALSIFIED — skill −1.309, hit 0.481 vs base 0.659 (n=1257)</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">CC-2 (country_cycles/signal)</td>
+          <td><span class="mh-gate-fam">calibration</span></td>
+          <td style="font-size:.78rem">Country cycles signal labels are honest</td>
+          <td>
+            
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            
+          </td>
+          <td class="gate-result">FALSIFIED — skill −1.198, hit 0.460 vs base 0.565 (n=2075)</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">CC-2 (country_cycles/stance)</td>
+          <td><span class="mh-gate-fam">calibration</span></td>
+          <td style="font-size:.78rem">Country cycles stance is honest</td>
+          <td>
+            
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            
+          </td>
+          <td class="gate-result">FALSIFIED — skill −1.191, hit 0.462 vs base 0.565 (n=3900)</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">CC-2 (china_sector_cycles/signal)</td>
+          <td><span class="mh-gate-fam">calibration</span></td>
+          <td style="font-size:.78rem">China sector cycles signal labels are honest</td>
+          <td>
+            
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            
+          </td>
+          <td class="gate-result">FALSIFIED — skill −1.159, hit 0.460 vs base 0.507 (n=1677)</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">CC-3 (sector_cycles)</td>
+          <td><span class="mh-gate-fam">turn_pr</span></td>
+          <td style="font-size:.78rem">Sector cycles turn P/R factual (not circular)</td>
+          <td>
+            
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            
+          </td>
+          <td class="gate-result">FALSIFIED — prec 0.075 [0.054,0.103], rec 0.289 [0.214,0.379]; Wilson-lo far below 0.5 (n_eff=422)</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">CC-3 (country_cycles)</td>
+          <td><span class="mh-gate-fam">turn_pr</span></td>
+          <td style="font-size:.78rem">Country cycles turn P/R factual</td>
+          <td>
+            
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            
+          </td>
+          <td class="gate-result">FALSIFIED — prec 0.109 [0.093,0.128], rec 0.255 [0.220,0.294] (n_eff=1191)</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">CC-3 (china_sector_cycles)</td>
+          <td><span class="mh-gate-fam">turn_pr</span></td>
+          <td style="font-size:.78rem">China sector cycles turn P/R factual</td>
+          <td>
+            
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            
+          </td>
+          <td class="gate-result">FALSIFIED — prec 0.230 [0.203,0.260], rec 0.369 [0.329,0.411] (n_eff=810)</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">CL-1</td>
+          <td><span class="mh-gate-fam">collinearity</span></td>
+          <td style="font-size:.78rem">state_score and pos_osc are redundant (near-collinear price transforms)</td>
+          <td>
+            
+            <span class="verdict verdict-pass"><span class="l-en">PASS</span><span class="l-zh">通过</span></span>
+            
+          </td>
+          <td class="gate-result">CONFIRMED — rho(state_score, pos_osc) = −0.968; VIF(pos_osc)=29.8, VIF(state_score)=25.8</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">CL-2</td>
+          <td><span class="mh-gate-fam">collinearity</span></td>
+          <td style="font-size:.78rem">≥1 leg carries independent risk-channel information</td>
+          <td>
+            
+            <span class="verdict verdict-pass"><span class="l-en">PASS</span><span class="l-zh">通过</span></span>
+            
+          </td>
+          <td class="gate-result">CONFIRMED — 4 risk-channel survivors: trend_pass_f, mom_score, rs_63d_f, vol_pctile (63d)</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">CL-3</td>
+          <td><span class="mh-gate-fam">collinearity</span></td>
+          <td style="font-size:.78rem">Dimension reduction justified (5 PCs explain ≥90%)</td>
+          <td>
+            
+            <span class="verdict verdict-pass"><span class="l-en">PASS</span><span class="l-zh">通过</span></span>
+            
+          </td>
+          <td class="gate-result">CONFIRMED — 5 of 8 PCs explain 91.2% of variance</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">HZ-up-1m</td>
+          <td><span class="mh-gate-fam">hazard</span></td>
+          <td style="font-size:.78rem">Peak-hazard 1-month beats Kaplan-Meier baseline</td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="gate-result">—</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">HZ-dn-1m</td>
+          <td><span class="mh-gate-fam">hazard</span></td>
+          <td style="font-size:.78rem">Trough-hazard 1-month beats KM</td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="gate-result">—</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">BC-1</td>
+          <td><span class="mh-gate-fam">calibration</span></td>
+          <td style="font-size:.78rem">LADDER_SCORE / tier cuts are earned, not asserted</td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="gate-result">—</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">DL-1</td>
+          <td><span class="mh-gate-fam">decision</span></td>
+          <td style="font-size:.78rem">Hazard cone earns its place over the IQR band</td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="gate-result">—</td>
+        </tr>
+        
+        <tr>
+          <td class="gate-id">LL-A</td>
+          <td><span class="mh-gate-fam">leadlag</span></td>
+          <td style="font-size:.78rem">Some ordered pair's lagged Δphase-position leads</td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="gate-result">—</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  
+  
+  <section class="mh-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Collinearity Verdict (W2.5)</span><span class="l-zh">共线性裁定（W2.5）</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Binding for W4.2 (hazard) + W4.6 (calibration) feature sets</span><span class="l-zh">约束W4.2（风险）与W4.6（校准）的特征集</span></span>
+    </div>
+    <p style="font-size:.82rem;color:var(--muted,#8899aa);max-width:700px;margin:0 0 16px;line-height:1.6">
+      <span class="l-en">Pooled panel: 12504 PIT monthly stamps (2010–2026). State_score × pos_osc ρ=−0.968 (VIF~30): confluence was ONE price signal in three coats. The de-duplicated feature set is now binding for all downstream hazard and calibration waves.</span>
+      <span class="l-zh">合并面板：12504 个逐点月度时间戳（2010–2026）。state_score × pos_osc ρ=−0.968（VIF~30）：汇聚度实为一个价格信号披着三件外衣。去重后特征集现对所有下游风险与校准波次具有约束力。</span>
+    </p>
+    <div class="mh-collin">
+      <div class="mh-collin-block">
+        <h4><span class="l-en">Redundant legs (|rho|&gt;0.8 or VIF&gt;5)</span><span class="l-zh">冗余腿（|相关系数|&gt;0.8 或 VIF&gt;5）</span></h4>
+        <ul>
+          
+          
+          <li><strong>state_score|pos_osc</strong> — ρ=-0.9675</li>
+          
+          
+          
+          
+          <li><strong>state_score</strong> — VIF=25.79</li>
+          
+          <li><strong>pos_osc</strong> — VIF=29.78</li>
+          
+          
+        </ul>
+      </div>
+      <div class="mh-collin-block">
+        <h4><span class="l-en">Risk-channel survivors (partial-corr CI excl. 0)</span><span class="l-zh">风险信道幸存者（偏相关CI不含0）</span></h4>
+        <ul>
+          
+          <li><strong>trend_pass_f</strong></li>
+          
+          <li><strong>mom_score</strong></li>
+          
+          <li><strong>rs_63d_f</strong></li>
+          
+          <li><strong>vol_pctile</strong></li>
+          
+        </ul>
+        
+        <div style="margin-top:10px;font-size:.78rem;color:var(--muted,#8899aa)">
+          <span class="l-en">PCA: 5 of 8 legs explain ≥90% variance — dimension reduction justified.</span>
+          <span class="l-zh">PCA：8条腿中的5条解释≥90%方差——维度压缩有依据。</span>
+        </div>
+        
+      </div>
+    </div>
+  </section>
+  
+
+  
+  
+  <section class="mh-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Accruing Measurements</span><span class="l-zh">积累中的测量</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Cycle-measurement entries from the experiments registry</span><span class="l-zh">实验注册表中的周期测量条目</span></span>
+    </div>
+    <div class="mh-exp-wrap">
+    <table class="mh-exp-table">
+      <thead>
+        <tr>
+          <th><span class="l-en">Experiment</span><span class="l-zh">实验</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+          <th><span class="l-en">Come-back date</span><span class="l-zh">复查日期</span></th>
+          <th><span class="l-en">Next step</span><span class="l-zh">下一步</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>
+            <div class="mh-exp-name">Sector Central Grader (Forward Return + Hit-Rate)</div>
+            <div class="mh-exp-what">Forward returns + hit-rate + rank-IC of US Sector Central calls (basket + sector, tiered Constructive/Neutral/Reduce/Cautious) at 21/63/126 trading-day horizons.</div>
+          </td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="mh-exp-cb">2026-07-28</td>
+          <td style="font-size:.76rem;color:var(--muted,#8899aa)">Monitor forward IC stability, flag conviction-return inversions; use for sector rotation validation.</td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div class="mh-exp-name">Anticipation Engine Forward Cone (Phase-0 direction skill)</div>
+            <div class="mh-exp-what">Multi-horizon conditional forward-return quantile cone + drawdown distribution; short-horizon direction measured coin-flip (Brier ~0, TOSS-UP); legs not passing Phase-0 are display-only.</div>
+          </td>
+          <td>
+            
+            <span class="verdict verdict-pass"><span class="l-en">PROVEN</span><span class="l-zh">已证实</span></span>
+            
+          </td>
+          <td class="mh-exp-cb">2026-07-15</td>
+          <td style="font-size:.76rem;color:var(--muted,#8899aa)">anticipation_phase0.py publishes gate verdicts -> anticipation.py activates/deactivates legs; direction stays TOSS-UP where Brier~0. Output site/anticipation.json.</td>
+        </tr>
+        
+        <tr>
+          <td>
+            <div class="mh-exp-name">Cycle PIT Backfill — W2.3 price-basis stamps</div>
+            <div class="mh-exp-what">Price-basis (W2.2 epoch) PIT month-end stamps for 11 US sectors + 24 country ETFs + 7 aggregates + 31 China Shenwan sectors. Provenance=backfilled; graders join via engine.grading_stats.load_graded_log(). Manifest at data/<engine>/backfill_manifest.json.</div>
+          </td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="mh-exp-cb">on_W2.4_grader_launch</td>
+          <td style="font-size:.76rem;color:var(--muted,#8899aa)">W2.4 graders consume this via load_graded_log(); re-run on basis_version bump.</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    </div>
+  </section>
+  
+
+  
+  <div class="mh-provenance">
+    <div class="mh-prov-title"><span class="l-en">Provenance</span><span class="l-zh">来源溯源</span></div>
+    <div class="mh-prov-grid">
+      <dl class="mh-prov-cell">
+        <dt><span class="l-en">Build date</span><span class="l-zh">构建日期</span></dt>
+        <dd>2026-07-02</dd>
+      </dl>
+      <dl class="mh-prov-cell">
+        <dt><span class="l-en">Generated at (UTC)</span><span class="l-zh">生成时间（UTC）</span></dt>
+        <dd>2026-07-02T22:23:21.808100Z</dd>
+      </dl>
+      
+      <dl class="mh-prov-cell">
+        <dt>sector_cycles</dt>
+        <dd>price_v1 / zz14_v0 / fp:1f313352836b</dd>
+      </dl>
+      
+      <dl class="mh-prov-cell">
+        <dt>country_cycles</dt>
+        <dd>price_v1 / zz14_v0 / fp:1f313352836b</dd>
+      </dl>
+      
+      <dl class="mh-prov-cell">
+        <dt>china_sector_cycles</dt>
+        <dd>price_v1 / zz14_v0 / fp:1f313352836b</dd>
+      </dl>
+      
+      <dl class="mh-prov-cell">
+        <dt><span class="l-en">Fingerprint consistent</span><span class="l-zh">指纹一致</span></dt>
+        <dd>YES</dd>
+      </dl>
+    </div>
+    <div style="margin-top:12px;font-size:.72rem;color:var(--muted,#8899aa);line-height:1.5">
+      <span class="l-en">Ruling A6: BACKTEST (provenance=backfilled, price_v1 basis) and LIVE (provenance=prospective) cohorts never blended in one number. A BACKTEST number never promotes a user-facing MEASURED badge; only a matured LIVE cohort (n_eff≥40) can. All artifacts: data/&lt;engine&gt;/scorecards/. Builder: scripts/build_measurement.py.</span>
+      <span class="l-zh">规则A6：回测（来源=回填，price_v1基准）与实盘（来源=前瞻）队列不得混入同一数值。回测数字不得推动用户可见的"已测量"徽章；仅成熟的实盘队列（n_eff≥40）可晋升。所有文物：data/&lt;engine&gt;/scorecards/。构建器：scripts/build_measurement.py。</span>
+    </div>
+  </div>
+
+</div>
+
+<script src="measurementdata/measurement_data.js"></script>
+<script>
+(function(){
+  "use strict";
+  // Engine tab switching
+  var tabs = document.querySelectorAll('.mh-tab');
+  var panels = document.querySelectorAll('.mh-engine');
+  tabs.forEach(function(tab){
+    tab.addEventListener('click', function(){
+      var eng = tab.getAttribute('data-eng');
+      tabs.forEach(function(t){ t.classList.remove('on'); t.setAttribute('aria-selected','false'); });
+      panels.forEach(function(p){ p.classList.remove('on'); });
+      tab.classList.add('on');
+      tab.setAttribute('aria-selected','true');
+      var panel = document.getElementById('mh-eng-' + eng);
+      if(panel) panel.classList.add('on');
+    });
+  });
+
+  // Verify data loaded
+  if(typeof window.MEASUREMENT === 'undefined'){
+    console.error('measurement.html: window.MEASUREMENT not loaded — check measurementdata/measurement_data.js');
+  } else {
+    var d = window.MEASUREMENT;
+    var engs = d.engines || [];
+    // A6 assertion: confirm BACKTEST and LIVE are separate
+    engs.forEach(function(eng){
+      if(eng.missing) return;
+      var cohorts = eng.cohorts || {};
+      if(cohorts.BACKTEST && cohorts.LIVE){
+        var bt = cohorts.BACKTEST, lv = cohorts.LIVE;
+        if(bt.n_stamps === lv.n_stamps && bt.n_stamps > 0){
+          console.error('A6 VIOLATION: ' + eng.engine + ' BACKTEST n==' + bt.n_stamps + ' equals LIVE n — cohorts may be blended!');
+        }
+      }
+    });
+    console.log('measurement.html: MEASUREMENT loaded; ' + engs.length + ' engines; ' + (d.gate_ledger||[]).length + ' gates');
+  }
+
+  // Mobile horizontal-overflow guard (375px)
+  try{
+    var sw = document.body.scrollWidth, vw = window.innerWidth;
+    if(sw > vw + 4) console.warn('measurement.html: horizontal overflow at ' + vw + 'px (scrollWidth=' + sw + ')');
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
