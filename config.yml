@@ -1545,6 +1545,14 @@ stock_search:
     DKNG:  {name: "DraftKings", sector: "Consumer Discretionary"}
     POOL:  {name: "Pool Corp", sector: "Consumer Discretionary"}
     OSCR:  {name: "Oscar Health", sector: "Health Care"}
+    # ADR sensor mini-set (W0-4 — INTL-49; collected in yahoo.adr_sensors)
+    ASML:  {name: "ASML Holding (ADR)", sector: "Information Technology"}
+    LVMUY: {name: "LVMH (ADR)", sector: "Consumer Discretionary"}
+    BHP:   {name: "BHP Group (ADR)", sector: "Materials"}
+    RIO:   {name: "Rio Tinto (ADR)", sector: "Materials"}
+    VALE:  {name: "Vale (ADR)", sector: "Materials"}
+    HSBC:  {name: "HSBC Holdings (ADR)", sector: "Financials"}
+    SONY:  {name: "Sony Group (ADR)", sector: "Consumer Discretionary"}
 
 watchlist:
   enabled: true                   # client-side holdings watchlist page (needs stock_search)
@@ -4935,6 +4943,19 @@ yahoo:
     rate_pricing: ["ZQ=F"]        # 30-day fed funds front contract — LOW CONFIDENCE input
     crypto: [BTC-USD, ETH-USD, SOL-USD]   # deep daily history (BTC 2014->); Coinbase = intraday-quality OHLC
     crypto_fut: ["BTC=F"]                 # CME (regulated) Bitcoin front-month future -> institutional carry / basis (D-vec-CME; daily 2021->)
+    # ADR sensor mini-set (W0-4 of INTL_FIX_MASTERPLAN — INTL-49).
+    # US-listed ADRs / proxies for key intl bellwethers: deep history, US-session
+    # timing (kills timezone lag-1 ambiguity), keyless yfinance.
+    # TSM already exists in stock_search.extra_tickers and is collected via that path.
+    # These go into data/yahoo/<TICKER>.parquet; no engine wiring yet (context-tier
+    # until they clear the lead-lag kernel, W4 of the masterplan).
+    adr_sensors: [ASML,    # ASML Holding — EUV lithography monopoly, Asia-semi C6 basket
+                  LVMUY,   # LVMH ADR — luxury→China-consumer read-through, C7 basket
+                  BHP,     # BHP Group — global commodities / China CapEx bellwether
+                  RIO,     # Rio Tinto — mining cycle, global demand read
+                  VALE,    # Vale — iron ore / EM growth proxy
+                  HSBC,    # HSBC Holdings — HK/global banking stress sensor
+                  SONY]    # Sony Group — Japan consumer/tech / Asia-semi adjacent
 
 
 # --------------------------------------------------------------------------- #
