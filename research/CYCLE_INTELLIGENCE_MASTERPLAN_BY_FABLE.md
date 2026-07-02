@@ -379,3 +379,16 @@ W0.4 ran on 8,344 leak-free PIT stamps (11 US sectors + 24 countries, month-end 
   `scripts/keystone_position_gate_phase0.py`, `research/cycle_masterplan/W04_KEYSTONE_VERDICT.md`,
   `research/cycle_masterplan/PREREGISTRATION.md` (all downstream gates + BH-FDR budget, frozen),
   `data/research/keystone_tr0/` (backfill + study tables). Runtime ~15–17 min.
+- 2026-07-02 — **W1.2 SHIPPED** (#940): `engine/cycle_ontology.py` compiled contract + generated JS:
+  `canonical_position()` (100·Φ(z)), `classify_phase()` with hysteresis, `detect_turns()` ZigZag v2
+  with `confirmed_at` + NP-6 fix, `resolve_state()` full 5×8 crosswalk, `transition_signal()`,
+  `match_turns()`, `project_next()` (§4.5 overdue semantics), `export_payload()`. 36 tests.
+- 2026-07-02 — **W1.6 SHIPPED** (#946): resolve_state live in `_record_core` + `_project_next` overdue
+  rewrite. `engine/sector_cycles._record_core` now emits `pos_v2` (canonical_position), `phase_v2` +
+  `phase_v2_age_bars` (hysteresis-aware classify_phase), `stance`/`divergence`/`tone` (resolve_state) —
+  all additive alongside byte-identical legacy fields. `_project_next` delegated to `onto.project_next`:
+  central anchored at last confirmed turn (not TODAY); overdue cycles emit `overdue=True + overdue_frac`
+  instead of silently walking forward; lo/hi band edges also anchored at last_confirmed + IQR_half.
+  `cycle_forward_log` extended with 5 new columns (pos_v2, phase_v2, stance, divergence, overdue).
+  17 new tests (tone→color guard A18, legacy byte-identity, overdue emission, no-forward-walking proof,
+  lo/hi anchoring, hysteresis persistence, forward log schema + keep-FIRST). 67/67 relevant tests pass.
