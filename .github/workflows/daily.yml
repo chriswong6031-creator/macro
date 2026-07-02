@@ -580,6 +580,14 @@ jobs:
           cat /tmp/radar_score.log
           [ "$rc" -ne 0 ] && echo "::warning title=radar_scorer::rc=$rc (non-fatal)"
           exit 0
+      - name: US Buy Board ledger (snapshot today + retro-grade matured boards vs SPY/sector)
+        # Appends today's committed us_standouts.json to data/us_board_ledger/snapshots.jsonl,
+        # then reconstructs every past board from git history + snapshots and grades every
+        # matured row (5/10/21d, next-bar entry) vs SPY and the name's sector ETF -> writes
+        # data/us_board_ledger/retro_grades.parquet + site/factordata/us_board_track.json.
+        # Context-only (never feeds a score); the ledger accrues forward from here. The commit
+        # step below (git add data/ site/) lands both artifacts. Idempotent per as_of. Resilient.
+        run: python -m scripts.grade_us_board --nightly || true
       - name: Calibration Hub (unified self-improvement observability; display-only)
         # Consolidates every Phase-C desk's track_record + the Trial Ledger into one
         # surface (data/calibration/summary.json + site/calibration.html). Runs after the
