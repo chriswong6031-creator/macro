@@ -324,6 +324,62 @@ def snapshot(profile: "RadarProfile", root=None) -> dict:
                 "disclaimer": _DISCLAIMER}
 
 
+def cn_sleeve_chip(root=None) -> dict:
+    """Return a DISPLAY-ONLY sleeve-size chip from the validated CN drawdown radar.
+
+    Called by the five China surfaces (china_stocks board, sector_central, baskets_china,
+    subsectors_china, sector_cycles_china) to thread the risk_radar_intl gross_factor into
+    their emitted JSON without re-ranking names or gating inclusion.
+
+    Masterplan W6-CN rule: regime sizes sleeves, never vetoes names.
+
+    Passport:
+      basis: measured
+      validation: risk_radar_intl ledger (data/risk_radar_intl/cn_forward_log.jsonl)
+      consumers: china_stocks board header, sector_central, baskets_china,
+                 subsectors_china, sector_cycles_china (display chips only)
+    """
+    try:
+        r = snapshot(CN_PROFILE, root)
+        state = r.get("state") or "unknown"
+        gross = r.get("gross_factor", 1.0)
+        as_of = r.get("asof", "")
+        can_force = bool(r.get("can_force", False))
+        dominant = r.get("dominant_label_en") or "no driver elevated"
+        dominant_zh = r.get("dominant_label_zh") or "无驱动升高"
+        return {
+            "sleeve_factor": round(float(gross), 2),
+            "radar_state": state,
+            "radar_as_of": as_of,
+            "can_force": can_force,
+            # Human-readable display string for the board header chip
+            "label_en": f"Sleeve ×{gross:.2f} — CN drawdown radar: {state}",
+            "label_zh": f"仓位 ×{gross:.2f} — CN回撤雷达：{state}",
+            "dominant_driver_en": dominant,
+            "dominant_driver_zh": dominant_zh,
+            # Signal passport (research/ENGINE_FIX_MASTERPLAN.md §W6-CN)
+            "passport": {
+                "basis": "measured",
+                "validation": "risk_radar_intl ledger (cn_forward_log.jsonl)",
+                "consumers": ["china_stocks", "sector_central_china", "baskets_china",
+                              "subsectors_china", "sector_cycles_china"],
+                "display_only": True,
+                "note": ("Validated forward-drawdown composite on external drivers (US rate shocks, "
+                         "USD/CNH, US-China yield gap, breadth). Sizes the SLEEVE, never vetoes names. "
+                         "Lift: caution 1.97–3.13x, composite 2.07x p=0.01 (2016+ era)."),
+            },
+        }
+    except Exception as e:  # noqa: BLE001 — sleeve chip is additive, never fatal
+        log.warning("cn_sleeve_chip failed (%s); returning neutral", e)
+        return {
+            "sleeve_factor": 1.0, "radar_state": None, "radar_as_of": None,
+            "can_force": False,
+            "label_en": "Sleeve ×1.00 — CN drawdown radar: unavailable",
+            "label_zh": "仓位 ×1.00 — CN回撤雷达：不可用",
+            "passport": {"basis": "measured", "display_only": True, "degraded": True},
+        }
+
+
 # === per-market profiles =====================================================
 # Composite-percentile bands shared across markets (calibrated: elevated+ ≈ top ~12% of
 # history AND gated on a broad break; see research/ harness). Probability surfaces are each

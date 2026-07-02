@@ -168,6 +168,58 @@ def extension_read(close: pd.Series, tech: dict | None = None, ticker: str = "",
 
 
 # ---------------------------------------------------------------------------
+# ZT / 连板 guard — hard rule: zt/limit-up continuation signals must NEVER
+# enter any buy-rank with a positive sign. Chase-veto and froth-breadth only.
+# research/CHINA_ENGINE_REASSESSMENT.md §W6-CN Fix 2.
+# ---------------------------------------------------------------------------
+def is_zt_chasing(ext_score: dict | None) -> bool:
+    """Return True when an extension_score dict indicates zt/limit-up chasing context.
+
+    A name is zt-chasing when EITHER:
+      (a) limit_up=True AND the name has already run (ret20 >= 8% → extended=True), OR
+      (b) extended=True AND score > 0.6 (pure momentum chase, with or without limit-up).
+
+    This is the CHASE-VETO gate: a name that passes this check MUST NOT appear with a
+    positive buy-rank or accumulate/BUY signal label. It may only appear as:
+      - a froth/breadth context chip (crowding, attention spike)
+      - a veto/caution note on any surface that shows extension context
+
+    Always False (non-blocking) when ext_score is None or missing fields — callers that
+    have no extension read are not affected.
+    """
+    if not ext_score:
+        return False
+    extended = bool(ext_score.get("extended", False))
+    limit_up = bool(ext_score.get("limit_up", False))
+    score = float(ext_score.get("score", 0.0))
+    # Case (a): limit-up + cumulative run = chase (the buy became exit liquidity)
+    # Case (b): pure extension without limit-up (parabolic momentum chase)
+    return bool(limit_up and extended) or bool(extended and score >= 0.60)
+
+
+def assert_zt_not_positive(ext_score: dict | None, signal_label: str) -> None:
+    """Guard assertion: raise AssertionError if a zt/limit-up chasing name is labelled
+    positive (BUY, accumulate, etc.). Call from build scripts and tests to enforce the rule.
+
+    Usage:
+        from engine.china_signals import assert_zt_not_positive
+        assert_zt_not_positive(row.get("extension_score"), row.get("verdict"))
+    """
+    if not is_zt_chasing(ext_score):
+        return
+    positive_labels = {"buy", "accumulate", "entry_open", "strong buy",
+                       "BUY", "ACCUMULATE", "ENTRY OPEN"}
+    label_lower = (signal_label or "").strip().upper()
+    for pl in positive_labels:
+        if pl.upper() in label_lower:
+            raise AssertionError(
+                f"zt/连板 chasing name cannot have a positive signal label '{signal_label}'. "
+                "zt/限涨 continuation = chase-veto and froth-breadth context ONLY. "
+                "research/CHINA_ENGINE_REASSESSMENT.md §W6-CN Fix 2."
+            )
+
+
+# ---------------------------------------------------------------------------
 # QVIX vol-regime confirmer — the GEX-analog (INVERTED vs US)
 # ---------------------------------------------------------------------------
 QVIX_DEFAULTS = {"panic_z": 2.0, "elevated_z": 1.0, "calm_z": -1.0, "win": 60}
