@@ -1,27 +1,198 @@
 {
+  "version": "w2.7-loro-v1",
+  "generated_at": "2026-07-02T12:32:51Z",
   "signal": {
-    "roc_threshold": -1.25,
+    "roc_threshold": -1.0,
     "diffusion_max": 50.0,
     "min_consecutive_m": 3,
     "lookahead_window_m": 18,
     "max_lead_window_m": 24
   },
   "measured": {
+    "method": "LORO",
     "operating_point": {
-      "roc_threshold": -1.25,
+      "roc_threshold": -1.0,
       "diffusion_max": 50.0,
       "min_consecutive_m": 3
     },
-    "calibration_lag_m": 1,
-    "calibration_window": "1985-01-01..present (revised data, 1m publication lag)",
-    "endo_recessions": 3,
-    "endo_caught": 3,
-    "false_positives": 3,
-    "mean_lead_months": 5.7,
-    "median_lead_months": 7.0,
+    "extra_uniform_lag_m": 0,
+    "vintage_used": true,
+    "leg_basis": {
+      "AWHMAN": {
+        "tier": "leading",
+        "basis": "revised",
+        "revised": true,
+        "pub_lag_m": 1
+      },
+      "ICSA": {
+        "tier": "leading",
+        "basis": "vintage",
+        "revised": false,
+        "pub_lag_m": 0
+      },
+      "PERMIT": {
+        "tier": "leading",
+        "basis": "revised",
+        "revised": true,
+        "pub_lag_m": 1
+      },
+      "NEWORDER": {
+        "tier": "leading",
+        "basis": "revised",
+        "revised": true,
+        "pub_lag_m": 1
+      },
+      "SPY": {
+        "tier": "leading",
+        "basis": "revised",
+        "revised": true,
+        "pub_lag_m": 0
+      },
+      "BAMLH0A0HYM2": {
+        "tier": "leading",
+        "basis": "revised",
+        "revised": true,
+        "pub_lag_m": 0
+      },
+      "T10Y3M": {
+        "tier": "leading",
+        "basis": "revised",
+        "revised": true,
+        "pub_lag_m": 0
+      },
+      "UMCSENT": {
+        "tier": "leading",
+        "basis": "vintage",
+        "revised": false,
+        "pub_lag_m": 1
+      },
+      "PAYEMS": {
+        "tier": "coincident",
+        "basis": "vintage",
+        "revised": false,
+        "pub_lag_m": 1
+      },
+      "W875RX1": {
+        "tier": "coincident",
+        "basis": "revised",
+        "revised": true,
+        "pub_lag_m": 1
+      },
+      "CMRMTSPL": {
+        "tier": "coincident",
+        "basis": "revised",
+        "revised": true,
+        "pub_lag_m": 2
+      },
+      "INDPRO": {
+        "tier": "coincident",
+        "basis": "vintage",
+        "revised": false,
+        "pub_lag_m": 1
+      },
+      "UEMPMEAN": {
+        "tier": "lagging",
+        "basis": "revised",
+        "revised": true,
+        "pub_lag_m": 1
+      },
+      "ISRATIO": {
+        "tier": "lagging",
+        "basis": "revised",
+        "revised": true,
+        "pub_lag_m": 2
+      },
+      "BUSLOANS": {
+        "tier": "lagging",
+        "basis": "revised",
+        "revised": true,
+        "pub_lag_m": 1
+      },
+      "MPRIME": {
+        "tier": "lagging",
+        "basis": "revised",
+        "revised": true,
+        "pub_lag_m": 0
+      },
+      "CUSR0000SAS": {
+        "tier": "lagging",
+        "basis": "revised",
+        "revised": true,
+        "pub_lag_m": 1
+      }
+    },
+    "calibration_window": "1985-01-01..present (per-leg publication lags; vintage=on)",
+    "oos_endogenous": 3,
+    "oos_caught": 2,
+    "oos_catch_rate": 0.667,
+    "oos_catch_rate_jeffreys95": [
+      0.179,
+      0.961
+    ],
+    "oos_mean_lead_months": 10.5,
+    "oos_median_lead_months": 10.5,
+    "oos_mean_lead_boot95": [
+      7.0,
+      14.0
+    ],
+    "consensus_false_positives": 5,
+    "per_holdout": [
+      {
+        "held_out_peak": "1990-07",
+        "train_operating_point": {
+          "roc_threshold": -1.5,
+          "diffusion_max": 50.0,
+          "min_consecutive_m": 2
+        },
+        "train_endo_caught": 2,
+        "train_n_endogenous": 2,
+        "oos_caught": false,
+        "oos_lead_months": null,
+        "config_false_positives": 3
+      },
+      {
+        "held_out_peak": "2001-03",
+        "train_operating_point": {
+          "roc_threshold": -1.0,
+          "diffusion_max": 50.0,
+          "min_consecutive_m": 3
+        },
+        "train_endo_caught": 2,
+        "train_n_endogenous": 2,
+        "oos_caught": true,
+        "oos_lead_months": 7.0,
+        "config_false_positives": 5
+      },
+      {
+        "held_out_peak": "2007-12",
+        "train_operating_point": {
+          "roc_threshold": -1.0,
+          "diffusion_max": 50.0,
+          "min_consecutive_m": 3
+        },
+        "train_endo_caught": 2,
+        "train_n_endogenous": 2,
+        "oos_caught": true,
+        "oos_lead_months": 14.0,
+        "config_false_positives": 5
+      }
+    ],
+    "in_sample_reference": {
+      "operating_point": {
+        "roc_threshold": -1.0,
+        "diffusion_max": 50.0,
+        "min_consecutive_m": 3
+      },
+      "endo_caught": 3,
+      "endo_recessions": 3,
+      "mean_lead_months": 10.7,
+      "median_lead_months": 11.0,
+      "false_positives": 5,
+      "note": "IN-SAMPLE (fit and scored on the same 1985+ window) \u2014 reference only, NOT the headline. See out-of-sample stats above."
+    },
     "pit_era_caught": 2,
     "pit_era_recessions": 2,
-    "pit_era_false_positives": 2,
-    "caveat": "Revised data for the leading legs (no local ALFRED key) \u2014 leads are an upper bound. Effective N ~3 endogenous recessions in the PIT era. COVID-2020 is exogenous and excluded from lead stats."
+    "pit_era_false_positives": 4,
+    "caveat": "Out-of-sample (leave-one-recession-out) on N\u22483 endogenous recessions \u2014 even the OOS estimate is underpowered; the Jeffreys interval on the catch rate is wide. Vintage (initial-release) data for legs with ALFRED coverage (ICSA/UMCSENT/PAYEMS/INDPRO); the rest use revised data so their leads are an upper bound. COVID-2020 is exogenous and excluded from lead stats."
   }
 }

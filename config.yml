@@ -1989,23 +1989,20 @@ engine:
     trend_smooth_m: 6               # blue line = EMA span (months) over the 6-month momentum
     diffusion_window_m: 6           # breadth horizon: share of legs rising over this window
     rebase: 100.0                   # index level rebased to this at first valid month
-    live_lag_m: 1                   # publication lag applied to natively-MONTHLY legs on the
-                                    # LIVE snapshot (audit #39): the calibration and the shipped
-                                    # 5.7m-lead / 3-FP stats were measured at lag_m=1 (May payrolls
-                                    # aren't knowable in May). Running live at 0 leaked one month
-                                    # of look-ahead AND flipped the phase clock (contraction<->
-                                    # recovery) vs the calibrated frame. Set to 1 so the live signal
-                                    # fires on the SAME frame its advertised stats describe. The
-                                    # daily leading legs (SPY/curve/HY) are unaffected (knowable
-                                    # intramonth). shadow_lag_m below carries the legacy 0 read.
-    shadow_lag_m: 0                 # emit the pre-fix (unlagged) reading as a SHADOW field for one
-                                    # nightly cycle so the phase-clock flip is transparent, then retire.
-    signal:                         # CB 3 D's — CALIBRATED (scripts/validate_business_cycle.py
-                                    # writes the live operating point to the calibration JSON,
-                                    # which WINS over these defaults; kept in sync here).
-                                    # 1985+: 3/3 endogenous recessions caught, 3 false alarms in
-                                    # 40y (1995/2002/2022 growth scares), ~7-month median lead,
-                                    # measured at the 1-month publication lag (== live_lag_m).
+    live_lag_m: 0                   # EXTRA uniform lag stacked on top of the per-leg PUB_LAG_M
+                                    # publication schedule (engine/business_cycle.py). W2.7 replaced
+                                    # the old single uniform live lag with a per-leg release-calendar
+                                    # table applied SYMMETRICALLY on the live and validation paths
+                                    # (macro-regime-6). The per-leg table IS the publication lag now;
+                                    # this stays 0 (a nonzero value stress-shifts everything further).
+    shadow_lag_m: 0                 # emit a SHADOW phase clock at this extra lag if it differs from
+                                    # live_lag_m; both 0 by default → no shadow. Transparency hook only.
+    signal:                         # CB 3 D's — CALIBRATED (scripts/validate_business_cycle.py writes
+                                    # the LORO operating point to the calibration JSON, which wins over
+                                    # these defaults ONLY when version-matched + fresh, else these are
+                                    # used with a warning; macro-regime-miss). Headline stats are now
+                                    # OUT-OF-SAMPLE (leave-one-recession-out); see the validation report.
+                                    # These defaults are the LORO consensus operating point.
       roc_threshold: -1.25          # leading 6-month momentum below this = depth+duration (index units)
       diffusion_max: 50.0           # leading 6-month diffusion at/below this = broad weakening (CB-canonical)
       min_consecutive_m: 3          # both conditions must hold this many months (whipsaw filter)

@@ -31,6 +31,24 @@ HONESTY: there are only ~7 modern US recessions (≈3 inside FRED's 1997+ point-
 vintage window), so the effective sample is tiny and any tuned rule is overfit-prone.
 This is a recession-RISK timeline, not a crash oracle. See
 research/BUSINESS_CYCLE_MODEL.md and reports/business-cycle-validation.md.
+
+LIVE vs VALIDATION data basis (W2.7 / pillar D6):
+  • The VALIDATION path (scripts/validate_business_cycle.py) is now point-in-time where
+    it can be: it (a) calibrates the operating point LEAVE-ONE-RECESSION-OUT (each
+    recession scored by a rule chosen on the OTHERS — no in-sample headline), and
+    (b) reads INITIAL-RELEASE (never-revised) values for the legs that have local ALFRED
+    vintages (VINTAGE_SERIES; currently ICSA/UMCSENT leading, PAYEMS/INDPRO coincident)
+    so the backtest sees what was knowable. Legs with no vintage coverage stay on revised
+    data and are flagged revised=True in the calibration artifact — measured leads on
+    those legs remain an upper bound.
+  • The LIVE nowcast keeps LATEST-REVISED data (use_vintage=False). That is CORRECT for
+    now-casting: today you want the best current estimate of last month, not the noisy
+    first print. Only the backtest needs the first print, to avoid look-ahead.
+  • Publication lag is now a per-leg schedule (PUB_LAG_M) applied SYMMETRICALLY on both
+    paths (macro-regime-6), replacing the old asymmetric "0 live / uniform 1 in harness".
+  • The live recession threshold is resolved by an explicit, logged order: a
+    version-matched + fresh calibration JSON wins; otherwise the config default is used
+    and a warning is logged (macro-regime-miss). The old code silently preferred the JSON.
 """
 from __future__ import annotations
 
@@ -73,31 +91,126 @@ LAGGING = [
 ]
 TIERS = {"leading": LEADING, "coincident": COINCIDENT, "lagging": LAGGING}
 
+# --- publication-lag table (macro-regime-6 fix, W2.7) ------------------------
+# Per-leg release lag in MONTHS from a series' reference month to the month it first
+# becomes public. Applied SYMMETRICALLY on both the live and the validation paths from
+# THIS single table (replacing the old asymmetric "0 live / uniform 1 in the harness"
+# handling). Daily/weekly legs (SPY/curve/HY/claims) are knowable intramonth → lag 0.
+# For natively-monthly legs the number is the whole-month floor of the real release
+# schedule (a May reference figure published in June is not knowable IN May → lag 1):
+#
+#   leg           series        real release schedule                       lag_m
+#   ------------  ------------  ------------------------------------------  -----
+#   mfg hours     AWHMAN        Employment Situation, ~1st Fri of next mo     1
+#   init claims   ICSA          weekly (Thu), intramonth-knowable             0
+#   permits       PERMIT        New Residential Construction, ~mid next mo    1
+#   cap orders    NEWORDER      Durable Goods, ~26th of next mo               1
+#   equities      SPY           daily, intramonth-knowable                    0
+#   HY spread     BAMLH0A0HYM2  daily, intramonth-knowable                    0
+#   curve slope   T10Y3M        daily, intramonth-knowable                    0
+#   sentiment     UMCSENT       final ~end of same mo, but revised → treat    1
+#   payrolls      PAYEMS        Employment Situation, ~1st Fri of next mo     1
+#   real income   W875RX1       Personal Income, ~end of next mo              1
+#   mfg+trade     CMRMTSPL      Manufacturing & Trade, ~2 mo delay            2
+#   ind prod      INDPRO        G.17, ~mid next mo                            1
+#   unemp dur     UEMPMEAN      Employment Situation, ~1st Fri of next mo     1
+#   inv/sales     ISRATIO       Manufacturing & Trade, ~2 mo delay           2
+#   C&I loans     BUSLOANS      H.8, monthly aggregate ~early next mo         1
+#   prime rate    MPRIME        moves with the Fed, knowable within month     0
+#   CPI services  CUSR0000SAS   CPI, ~mid next mo                             1
+#
+# The base `lag_m` argument (from the calibration harness) is ADDED to this per-leg
+# floor, so a keyed run can still stress a uniform extra lag on top of the schedule.
+PUB_LAG_M = {
+    "AWHMAN": 1, "ICSA": 0, "PERMIT": 1, "NEWORDER": 1, "SPY": 0,
+    "BAMLH0A0HYM2": 0, "T10Y3M": 0, "UMCSENT": 1,
+    "PAYEMS": 1, "W875RX1": 1, "CMRMTSPL": 2, "INDPRO": 1,
+    "UEMPMEAN": 1, "ISRATIO": 2, "BUSLOANS": 1, "MPRIME": 0, "CUSR0000SAS": 1,
+}
+
+# --- vintage (initial-release) coverage (G2 fix, W2.7) -----------------------
+# Store-name -> FRED series id that backs an ALFRED initial-release lookup
+# (collectors.fred.as_of_series). Only the legs with a local vintage matrix appear
+# here; a leg absent from this map is scored on REVISED data in the validation path
+# and is flagged revised=True in the calibration artifact. The live nowcast always
+# uses latest-revised data (that is correct for now-casting) regardless of this map.
+VINTAGE_SERIES = {
+    "ICSA": "ICSA", "UMCSENT": "UMCSENT",   # leading legs with vintages
+    "PAYEMS": "PAYEMS", "INDPRO": "INDPRO",  # coincident legs with vintages
+}
+
 _CAL_PATH = lambda: config.data_dir() / "regime" / "business_cycle_calibration.json"
+
+# calibration artifact schema version — bumped whenever the calibration method or the
+# operating-point contract changes, so the live threshold-override guard can refuse a
+# stale/foreign JSON (macro-regime-miss fix, W2.7).
+CALIBRATION_VERSION = "w2.7-loro-v1"
 
 
 # --- component → monthly series ----------------------------------------------
-def _component_monthly(group: str, name: str, column: str, lag_m: int = 0) -> pd.Series | None:
+def _vintage_monthly(name: str) -> pd.Series | None:
+    """Initial-release (never-revised) month-end series for a leg with ALFRED coverage.
+
+    Reads the FIRST-published value per reference period from the local vintage matrix
+    (collectors.fred.initial_release) — the leak-free input a point-in-time backtest
+    should see, instead of the latest-revised value the live store keeps. Returns None
+    when the leg has no vintage coverage or the matrix is absent (caller then falls back
+    to the revised store series and flags the leg revised=True)."""
+    sid = VINTAGE_SERIES.get(name)
+    if sid is None:
+        return None
+    try:
+        from collectors import fred as _fred  # local import: collector is heavy/optional
+    except Exception:  # noqa: BLE001
+        return None
+    s = _fred.initial_release(sid)
+    if s is None or len(s) == 0:
+        return None
+    s = pd.to_numeric(s, errors="coerce").dropna()
+    if s.empty:
+        return None
+    # period index (month-start) -> month-end to match the store path
+    m = s.copy()
+    m.index = pd.to_datetime(m.index) + pd.offsets.MonthEnd(0)
+    return m.groupby(m.index).last().sort_index()
+
+
+def _component_monthly(group: str, name: str, column: str, lag_m: int = 0,
+                       use_vintage: bool = False) -> pd.Series | None:
     """One component as a month-end series. Daily/weekly inputs (equities, claims,
     spreads) collapse to the monthly MEAN (the CB convention for the S&P 500 leg);
     natively-monthly inputs take the month's value.
 
-    `lag_m` shifts natively-MONTHLY series forward by N months — the publication lag
-    a point-in-time backtest needs (May payrolls aren't knowable in May). It is 0 on
-    the live path (the store already holds only released data) and set by the
-    validation harness. Daily/weekly legs are knowable within the month, so unshifted."""
-    df = store.read(group, name)
-    if df is None or column not in df.columns:
-        return None
-    s = pd.to_numeric(df[column], errors="coerce").dropna()
-    if s.empty:
-        return None
-    per_month = s.groupby(s.index.to_period("M")).size().median()
-    monthly_native = not (per_month and per_month > 1.5)
-    g = s.resample("ME")
-    m = (g.last() if monthly_native else g.mean()).dropna()
-    if monthly_native and lag_m:
-        m = m.shift(int(lag_m))
+    Publication lag (macro-regime-6): natively-monthly legs are shifted forward by
+    ``PUB_LAG_M[name] + lag_m`` months — the per-leg release schedule (May payrolls
+    aren't knowable in May) PLUS any uniform extra lag the caller stresses. The per-leg
+    floor is applied on BOTH the live and the validation paths from the same table, so
+    the handling is symmetric. Daily/weekly legs are knowable within the month (per-leg
+    lag 0) and unshifted.
+
+    Vintage (G2): when ``use_vintage`` is set and the leg has ALFRED coverage
+    (VINTAGE_SERIES), the monthly LEVEL is taken from the initial-release matrix so the
+    backtest sees what was first published, not later revisions. The live nowcast passes
+    use_vintage=False and keeps latest-revised data (correct for now-casting)."""
+    src = _vintage_monthly(name) if use_vintage else None
+    if src is not None:
+        m = src
+        monthly_native = True  # vintage legs are all natively monthly
+    else:
+        df = store.read(group, name)
+        if df is None or column not in df.columns:
+            return None
+        s = pd.to_numeric(df[column], errors="coerce").dropna()
+        if s.empty:
+            return None
+        per_month = s.groupby(s.index.to_period("M")).size().median()
+        monthly_native = not (per_month and per_month > 1.5)
+        g = s.resample("ME")
+        m = (g.last() if monthly_native else g.mean()).dropna()
+    if monthly_native:
+        shift = int(PUB_LAG_M.get(name, 0)) + int(lag_m)
+        if shift:
+            m = m.shift(shift)
     return m.dropna() if len(m) else None
 
 
@@ -108,15 +221,18 @@ def _causal_z(s: pd.Series, lookback: int, min_p: int) -> pd.Series:
     return (s - mu) / sd.replace(0, np.nan)
 
 
-def _leg_contributions(legs: list, cfg: dict, lag_m: int = 0) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
+def _leg_contributions(legs: list, cfg: dict, lag_m: int = 0,
+                       use_vintage: bool = False) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
     """Per-leg standardized monthly contributions + sign-adjusted levels, on a shared
     month-end index. A positive series uses a log change (≈ % change, scale-stable);
-    a series that can cross zero (the curve spread) uses a plain difference."""
+    a series that can cross zero (the curve spread) uses a plain difference.
+
+    ``use_vintage`` routes vintage-covered legs through the initial-release matrix (G2)."""
     lookback, min_m = cfg["z_lookback_m"], cfg["z_min_months"]
     contribs: dict[str, pd.Series] = {}
     levels: dict[str, pd.Series] = {}
     for group, name, col, sign in legs:
-        x = _component_monthly(group, name, col, lag_m=lag_m)
+        x = _component_monthly(group, name, col, lag_m=lag_m, use_vintage=use_vintage)
         if x is None or len(x) < min_m + 2:
             continue
         chg = np.log(x).diff() if bool((x > 0).all()) else x.diff()
@@ -127,10 +243,11 @@ def _leg_contributions(legs: list, cfg: dict, lag_m: int = 0) -> tuple[pd.DataFr
     return pd.DataFrame(contribs), pd.DataFrame(levels)
 
 
-def tier_index(legs: list, cfg: dict, min_legs: int = 2, lag_m: int = 0) -> pd.DataFrame | None:
+def tier_index(legs: list, cfg: dict, min_legs: int = 2, lag_m: int = 0,
+               use_vintage: bool = False) -> pd.DataFrame | None:
     """Build one tier: a rebased cumulative-standardized index plus its 6-month
     momentum (red), EMA trend (blue), diffusion (breadth) and live leg count."""
-    contribs, levels = _leg_contributions(legs, cfg, lag_m=lag_m)
+    contribs, levels = _leg_contributions(legs, cfg, lag_m=lag_m, use_vintage=use_vintage)
     if contribs is None:
         return None
     avail = contribs.notna().sum(axis=1)
@@ -150,14 +267,18 @@ def tier_index(legs: list, cfg: dict, min_legs: int = 2, lag_m: int = 0) -> pd.D
                          "diffusion": diffusion, "n_legs": avail})
 
 
-def cycle_frame(cfg: dict | None = None, lag_m: int = 0) -> pd.DataFrame | None:
+def cycle_frame(cfg: dict | None = None, lag_m: int = 0,
+                use_vintage: bool = False) -> pd.DataFrame | None:
     """Monthly frame: per-tier index/mom6/trend/diffusion + the coincident/lagging
     ratio (itself a classic leading read) + the NBER recession flag (ground truth).
 
-    `lag_m` applies a publication lag to natively-monthly inputs for point-in-time
-    backtests; it stays 0 on the live path. The NBER truth column is never lagged."""
+    `lag_m` applies an EXTRA uniform publication lag on top of the per-leg PUB_LAG_M
+    schedule (both applied symmetrically live and in the harness). ``use_vintage``
+    routes vintage-covered legs through the initial-release matrix for the point-in-time
+    backtest; the live path leaves it False (latest-revised = correct for now-casting).
+    The NBER truth column is never lagged and never vintaged."""
     cfg = cfg or config.load()["engine"]["business_cycle"]
-    tiers = {k: tier_index(v, cfg, lag_m=lag_m) for k, v in TIERS.items()}
+    tiers = {k: tier_index(v, cfg, lag_m=lag_m, use_vintage=use_vintage) for k, v in TIERS.items()}
     tiers = {k: v for k, v in tiers.items() if v is not None}
     if "leading" not in tiers:
         return None
@@ -169,7 +290,16 @@ def cycle_frame(cfg: dict | None = None, lag_m: int = 0) -> pd.DataFrame | None:
     if "coincident" in tiers and "lagging" in tiers:
         ratio = (out["coincident_index"] / out["lagging_index"].replace(0, np.nan)).dropna()
         if not ratio.empty:
-            cl = 100.0 * ratio / ratio.iloc[0]
+            # Causal rebase (macro-regime-5): anchor to the FIRST-VALID value of the
+            # ratio's own history, which is fixed the moment that first month exists and
+            # never moves as later data arrives — so appending months cannot rewrite the
+            # historical level. (The old `ratio.iloc[0]` after a full-frame dropna picked
+            # whatever the earliest surviving row happened to be; still a constant, but its
+            # identity shifted when leg coverage changed. The derived cl_ratio_mom6 is a
+            # difference and thus scale-invariant either way — this fixes the LEVEL so any
+            # future consumer that charts cl_ratio sees a real-time-consistent line.)
+            anchor = float(ratio.iloc[0])
+            cl = 100.0 * ratio / anchor if anchor else pd.Series(dtype=float)
             out["cl_ratio"] = cl.reindex(idx)
             out["cl_ratio_mom6"] = out["cl_ratio"] - out["cl_ratio"].shift(int(cfg["roc_window_m"]))
     rec = _component_monthly("fred", "USREC", "nber_recession")
@@ -205,6 +335,61 @@ def _load_calibration() -> dict:
     return {}
 
 
+# max age (days) before a calibration JSON is considered stale for the LIVE override.
+# The operating point is calibrated against ~decade-spaced NBER recessions, not intraday
+# data, so it does not need frequent refreshing — but an artifact older than this (or one
+# with no timestamp) should not silently drive the live signal without a re-run.
+_CAL_MAX_AGE_DAYS = 400
+
+
+def _resolve_signal_cfg(cfg: dict, cal: dict) -> tuple[dict, dict]:
+    """Explicit, LOGGED resolution order for the live recession threshold
+    (macro-regime-miss fix). Returns (resolved_cfg, resolution_meta).
+
+    Order:
+      1. Use the calibration-JSON operating point IF it is (a) version-matched to
+         CALIBRATION_VERSION and (b) fresh (generated_at within _CAL_MAX_AGE_DAYS).
+      2. Otherwise fall back to the config default and LOG A WARNING naming the reason —
+         the old code silently preferred the JSON with no version/staleness check, so a
+         hand-edited or stale artifact could drive the live "recession signal on/off"
+         invisibly.
+    The harness always passes an explicit cfg and never hits this path."""
+    sig_cal = cal.get("signal") if cal else None
+    meta = {"threshold_source": "config_default", "reason": None,
+            "calibration_version": cal.get("version") if cal else None,
+            "calibration_generated_at": cal.get("generated_at") if cal else None}
+    if not sig_cal:
+        meta["reason"] = "no calibration signal block"
+        return cfg, meta
+    ver = cal.get("version")
+    if ver != CALIBRATION_VERSION:
+        meta["reason"] = (f"calibration version {ver!r} != expected "
+                          f"{CALIBRATION_VERSION!r} — using config default")
+        log.warning("business_cycle: %s", meta["reason"])
+        return cfg, meta
+    gen = cal.get("generated_at")
+    age_days = None
+    if gen:
+        try:
+            now = pd.Timestamp.now(tz="UTC").tz_localize(None)
+            age_days = (now - pd.Timestamp(gen).tz_localize(None)).days
+        except Exception:  # noqa: BLE001 — unparseable stamp is treated as stale
+            age_days = None
+    if age_days is None:
+        meta["reason"] = "calibration has no parseable generated_at — using config default"
+        log.warning("business_cycle: %s", meta["reason"])
+        return cfg, meta
+    if age_days > _CAL_MAX_AGE_DAYS:
+        meta["reason"] = (f"calibration is {age_days}d old (> {_CAL_MAX_AGE_DAYS}d) — "
+                          "using config default; re-run validate_business_cycle")
+        log.warning("business_cycle: %s", meta["reason"])
+        return cfg, meta
+    # fresh + version-matched → the calibrated operating point wins
+    meta.update({"threshold_source": "calibration", "reason": "version-matched + fresh",
+                 "calibration_age_days": age_days})
+    return dict(cfg, signal=dict(cfg["signal"], **sig_cal)), meta
+
+
 def _phase(lead_mom: float | None, coin_mom: float | None) -> tuple[str, str]:
     """Four-phase cycle clock from the leading & coincident momentum signs."""
     if lead_mom is None or coin_mom is None:
@@ -230,9 +415,10 @@ def _f(v) -> float | None:
 
 
 def _phase_at_lag(cfg: dict, lag_m: int) -> dict | None:
-    """The leading/coincident momentum + phase clock computed at a given publication
-    lag — used to emit the legacy (unlagged) SHADOW reading beside the live one so the
-    lag-fix's effect on the phase clock is transparent for one cycle (audit #39)."""
+    """The leading/coincident momentum + phase clock computed at a given EXTRA uniform
+    lag (stacked on the per-leg PUB_LAG_M schedule) — used to emit an optional SHADOW
+    reading beside the live one when config sets a differing shadow_lag_m (transparency
+    hook for any publication-lag transition)."""
     fr = cycle_frame(cfg, lag_m=lag_m)
     if fr is None or fr.empty or "leading_mom6" not in fr.columns:
         return None
@@ -246,23 +432,31 @@ def _phase_at_lag(cfg: dict, lag_m: int) -> dict | None:
 
 
 def business_cycle_snapshot(frame: pd.DataFrame | None = None, cfg: dict | None = None) -> dict:
-    """Latest tier readings, the 3-D's recession-signal state, the cycle phase, and
-    the MEASURED lead/false-positive stats (from the calibration JSON). Degrades to a
-    minimal dict if the store has no data, so the run never crashes.
+    """Latest tier readings, the 3-D's recession-signal state, the cycle phase, and the
+    OUT-OF-SAMPLE (LORO) lead/false-positive stats (from the calibration JSON). Degrades
+    to a minimal dict if the store has no data, so the run never crashes.
 
-    The live frame is built at `live_lag_m` (default 1) so the signal fires on the SAME
-    publication-lag frame its calibration and advertised lead/FP stats were measured on
-    (audit #39). The pre-fix unlagged reading is carried as `shadow` for one cycle so the
-    phase-clock flip is transparent. Explicit `frame`/`cfg` (the harness) bypass this."""
+    Publication lag is the per-leg PUB_LAG_M schedule applied symmetrically on live and
+    validation paths; `live_lag_m` (default 0) is an extra uniform lag on top. The live
+    recession threshold is resolved via `_resolve_signal_cfg` (calibration if
+    version-matched + fresh, else config default with a logged warning; macro-regime-miss)
+    and the resolution is surfaced as `calibration_resolution`. Explicit `frame`/`cfg`
+    (the validation harness) bypass the resolver and the shadow."""
     live_frame_supplied = frame is not None
     cfg = cfg or config.load()["engine"]["business_cycle"]
     cal = _load_calibration()
-    # the calibrated operating point (scripts/validate_business_cycle.py) WINS over the
-    # config defaults for the live signal — so the panel fires on the measured threshold,
-    # not a placeholder. The harness passes explicit cfgs, so it is unaffected.
-    if cal.get("signal"):
-        cfg = dict(cfg, signal=dict(cfg["signal"], **cal["signal"]))
-    live_lag_m = int(cfg.get("live_lag_m", 1))
+    # Explicit, LOGGED threshold resolution (macro-regime-miss): the calibration operating
+    # point drives the live signal ONLY if it is version-matched + fresh, else the config
+    # default is used with a warning. The harness passes an explicit cfg and never uses cal.
+    if not live_frame_supplied:
+        cfg, cal_resolution = _resolve_signal_cfg(cfg, cal)
+    else:
+        cal_resolution = {"threshold_source": "explicit_cfg", "reason": "harness-supplied cfg"}
+    # `live_lag_m` is now an EXTRA uniform lag stacked ON TOP of the per-leg PUB_LAG_M
+    # schedule (which already carries each leg's real publication lag symmetrically on
+    # both paths). It defaults to 0 — the per-leg table is the publication lag; a nonzero
+    # value stress-shifts everything further. The harness records the extra lag used.
+    live_lag_m = int(cfg.get("live_lag_m", 0))
     shadow_lag_m = int(cfg.get("shadow_lag_m", 0))
     frame = cycle_frame(cfg, lag_m=live_lag_m) if frame is None else frame
     if frame is None or frame.empty:
@@ -351,28 +545,28 @@ def business_cycle_snapshot(frame: pd.DataFrame | None = None, cfg: dict | None 
     caveat_zh = ("有效样本极小（现代美国衰退约 7 次，可点对点回溯约 3 次）——这是衰退"
                  "“风险”时间线，并非崩盘预言。领先时长以 NBER 日期为准，详见验证报告。")
 
-    # Lag passport + SHADOW legacy reading (audit #39): the live signal now fires at the
-    # calibrated publication lag; the pre-fix unlagged phase clock is emitted beside it so
-    # the flip (contraction<->recovery on the leading momentum sign) is transparent. Skipped
-    # when an explicit frame is supplied (the validation harness passes its own).
+    # Optional legacy SHADOW reading — only emitted if config still sets shadow_lag_m to a
+    # value that differs from the live extra lag (default: both 0, so no shadow). Kept as a
+    # transparency hook for any future lag-transition, not as a standing artifact.
     shadow = None
     if not live_frame_supplied and shadow_lag_m != live_lag_m:
         leg = _phase_at_lag(cfg, shadow_lag_m)
         if leg is not None:
             leg["is_shadow"] = True
-            leg["note"] = ("legacy pre-fix reading at lag_m=0 (unlagged monthly legs); the live "
-                           "reading above now fires at the CALIBRATED lag_m={} so it matches the "
-                           "advertised lead/FP stats. Retire after one nightly cycle confirms "
-                           "stability.".format(live_lag_m))
+            leg["note"] = ("shadow phase clock at extra lag_m={} (vs live extra lag_m={}); the "
+                           "live reading above uses the per-leg PUB_LAG_M publication schedule."
+                           .format(shadow_lag_m, live_lag_m))
             shadow = leg
     lag_passport = {
-        "basis": "measured",
-        "live_lag_m": live_lag_m,
-        "calibrated_lag_m": (measured or {}).get("calibration_lag_m", 1),
-        "leak_removed": bool(live_lag_m >= 1),
-        "note": ("Live monthly legs shifted by live_lag_m so the signal fires on the same "
-                 "publication-lag frame the 5.7m-lead/3-FP stats were calibrated on (audit #39). "
-                 "Daily leading legs (SPY/curve/HY) are knowable intramonth and unshifted."),
+        "basis": "per_leg_schedule",
+        "extra_uniform_lag_m": live_lag_m,
+        "per_leg_lag_m": dict(PUB_LAG_M),
+        "symmetric": True,
+        "note": ("Publication lag is a per-leg schedule (PUB_LAG_M) applied symmetrically on "
+                 "the live and validation paths (macro-regime-6). Daily leading legs "
+                 "(SPY/curve/HY/claims) are knowable intramonth → lag 0; monthly hard data "
+                 "carry their real release lag (1-2 months). `extra_uniform_lag_m` is any "
+                 "additional uniform stress lag on top (default 0)."),
     }
 
     return {
@@ -385,6 +579,7 @@ def business_cycle_snapshot(frame: pd.DataFrame | None = None, cfg: dict | None 
         "phase": {"label": ph_en, "label_zh": ph_zh},
         "measured": measured,
         "calibrated": bool(measured),
+        "calibration_resolution": cal_resolution,
         "lag_passport": lag_passport,
         "shadow": shadow,
         "spark_recession": (_spark(frame["nber_recession"], dec=0)

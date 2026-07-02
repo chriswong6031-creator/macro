@@ -89,6 +89,35 @@ def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float] | None:
     return (round(lo, 3), round(hi, 3))
 
 
+def jeffreys_ci(k: int, n: int, *, cred: float = 0.95, draws: int = 20000,
+                seed: int = BOOT_SEED) -> tuple[float, float] | None:
+    """Jeffreys (Bayesian) credible interval for a binomial proportion k/n.
+
+    The Jeffreys prior is Beta(1/2, 1/2), so the posterior is Beta(k+1/2, n-k+1/2) and
+    the interval is its central `cred` quantiles. This is the recommended small-n interval
+    for a rate: it never collapses to a zero-width [1,1] at k==n (unlike a naive Wald or a
+    3/3-catch point estimate), which is exactly the honesty this recession harness needs
+    when reporting an OUT-OF-SAMPLE catch rate on N≈3 recessions.
+
+    Pure-numpy: quantiles are taken from `draws` deterministic Beta samples (no scipy).
+    Returns (lo, hi) rounded to 3 dp, or None when n == 0.
+
+    Edge cases::
+
+        jeffreys_ci(3, 3)  → e.g. (0.44, 1.0)   # NOT (1.0, 1.0): honest about N=3
+        jeffreys_ci(0, 3)  → e.g. (0.0, 0.56)   # upper bound well above 0
+        jeffreys_ci(0, 0)  → None
+    """
+    if n == 0:
+        return None
+    a, b = k + 0.5, (n - k) + 0.5
+    rng = np.random.default_rng(seed)
+    samples = rng.beta(a, b, size=int(draws))
+    lo = float(np.percentile(samples, 100 * (1 - cred) / 2))
+    hi = float(np.percentile(samples, 100 * (1 + cred) / 2))
+    return (round(max(0.0, lo), 3), round(min(1.0, hi), 3))
+
+
 def block_bootstrap_ci(
     dates: np.ndarray,
     vals: np.ndarray,
