@@ -224,9 +224,15 @@ def _names_by_len() -> list[str]:
 #
 # Seeded from audit finding §ticker-generic-noun (机器人 measured 22/22 FP).
 # Review other short/common 3-char names (e.g. 中芯, 天合, 海控) for addition.
-_GENERIC_NOUN_NAMES: frozenset[str] = frozenset({
-    "机器人",   # 300024.SZ — "robot(s)" in standard Chinese; audit: 22/22 FP
-})
+#
+# W2: the canonical copy now lives in engine.entity_resolver.GENERIC_NOUNS (spec
+# §2.5) — this is a re-export so this module's tag_tickers keeps working while the
+# blocklist has ONE source of truth. Degrade to the local seed if the shared module
+# is unavailable (leaf import safety).
+try:
+    from engine.entity_resolver import GENERIC_NOUNS as _GENERIC_NOUN_NAMES
+except Exception:  # noqa: BLE001
+    _GENERIC_NOUN_NAMES = frozenset({"机器人"})
 
 # Matches a 6-digit A-share exchange code in close proximity to the name match.
 _ADJACENT_CODE_RE = re.compile(r"\d{6}")
