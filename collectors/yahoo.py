@@ -49,7 +49,8 @@ class YahooAdapter(Adapter):
         # for every theme member — without this, _theme_excess returns None and the
         # grading ledger stays pending forever.
         for theme in (config.load().get("themes") or {}).values():
-            for t in (theme.get("tickers") or []):
+            # (theme or {}): a bare `some_theme:` YAML key yields None — never crash collect
+            for t in ((theme or {}).get("tickers") or []):
                 if t and not str(t).startswith("^"):
                     out.append(t)
         return list(dict.fromkeys(out))
