@@ -47,6 +47,14 @@ on:
       - "engine/btc_leverage_cascade.py"
       - "engine/options_flow.py"
       - "templates/**"
+      # W1.5 cycle-intelligence gates: ontology JS drift, forward-log writer, grading_stats.
+      - "scripts/gen_ontology_js.py"
+      - "engine/cycle_ontology.py"
+      - "site/cycle_ontology.js"
+      - "engine/cycle_forward_log.py"
+      - "tests/test_cycle_forward_log.py"
+      - "engine/grading_stats.py"
+      - "tests/test_grading_stats.py"
   workflow_dispatch:
 
 permissions:
@@ -138,3 +146,53 @@ jobs:
         run: python3 scripts/check_badge_passport.py site
       - name: spine contract + partial-pooling safety tests
         run: python -m pytest tests/test_spine.py tests/test_pooling.py -q
+
+  cycle-ontology-js:
+    # W1.5 (A10/A12 ruling): the generated site/cycle_ontology.js must exactly match what
+    # engine/cycle_ontology.py produces at HEAD.  A PR that edits the engine but forgets to
+    # regenerate the JS — or hand-edits the committed JS — fails RED here.  The flag-day
+    # axis-flip (ONTOLOGY_AXIS constant) makes a stale committed JS especially dangerous: it
+    # could ship a half-v2 site.  Runs only when relevant files change (paths filter above).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pyyaml
+      - name: ontology JS must not drift from engine (gen_ontology_js --check)
+        run: python3 -m scripts.gen_ontology_js --check
+
+  cycle-forward-log:
+    # W1.5 (W0.2 acceptance): four acceptance criteria for the shared forward-log writer.
+    # A regression here silently breaks prospective cone-coverage grading for every cycle
+    # family (US sectors + country cycles).  Hard gate: the keep-FIRST invariant and
+    # proj_lo/hi columns are structural contracts for W2.3+ measurement.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: forward-log writer contract tests (keep-FIRST, cone edges, never-raise)
+        run: python -m pytest tests/test_cycle_forward_log.py -q
+
+  cycle-grading-stats:
+    # W1.5 (W1.1 acceptance): the grading_stats shared library must have exactly one
+    # cone_coverage implementation (no silent second definition), and the China-grader
+    # refactor must be numerically identical to the pre-refactor path on fixed inputs.
+    # Catching a regression here is critical: this library feeds every grader in the
+    # measurement engine.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml scipy
+      - name: grading_stats library tests (wilson_ci, fdr_bh, cone_coverage, china regression)
+        run: python -m pytest tests/test_grading_stats.py -q

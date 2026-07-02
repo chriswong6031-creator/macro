@@ -1,0 +1,156 @@
+name: cycle-calibration
+# W1.5 ops lane — cycle-intelligence calibration, validation, and forward-log
+# integrity checks. Runs on its own concurrency group so it never blocks (and
+# is never blocked by) the main pipeline-batch lane (weekly / backfill /
+# special-sits) or the pipeline-daily lane.
+#
+# Semantics: every step is either:
+#   HARD    — failure blocks this lane but never the main pipeline (abort-lane)
+#   LOG     — failure is annotated + written to the run summary but the job
+#             continues and the exit code stays 0 (log-and-skip / fail-open)
+#
+# All steps are guarded: if the script or test file doesn't exist, the step
+# is a no-op.  This makes the workflow safe to merge before every downstream
+# wave has landed.
+#
+# Future calibration / backfill steps (D2 backfill.py, D5 hazard fits, D4
+# basis-audit, epoch-homogeneity check, stale-tape report) slot in below the
+# existing steps — each must declare its semantics and runtime estimate.
+
+on:
+  schedule:
+    - cron: "0 18 1 * *"    # 1st of each month, 18:00 UTC — outside the weekly
+                             # Saturday window so the two lanes never queue
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Dedicated lane — completely isolated from pipeline-batch (weekly/backfill/
+  # special-sits) and pipeline-daily (daily.yml).  cancel-in-progress:false so
+  # a slow calibration run is never silently dropped by a concurrent dispatch.
+  group: cycle-calibration
+  cancel-in-progress: false
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60    # generous: the lane is currently cheap (tests only);
+                           # raise when heavy D2/D5 fits are added
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        run: |
+          pip install --quiet pytest pandas numpy pyarrow pyyaml scipy
+
+      # ── HARD: gen_ontology_js --check ──────────────────────────────────────
+      # The generated site/cycle_ontology.js must exactly match what
+      # engine/cycle_ontology.py produces.  A drift here means pages could ship
+      # stale ontology data.  Semantics: ABORT-LANE (hard failure).
+      # Added: W1.5.  Script merged: W1.2 (#940).
+      - name: "HARD | gen_ontology_js --check (ontology JS not drifted)"
+        run: |
+          if [ ! -f scripts/gen_ontology_js.py ]; then
+            echo "scripts/gen_ontology_js.py not present — skipping (pre-W1.2)"
+            exit 0
+          fi
+          python3 -m scripts.gen_ontology_js --check
+
+      # ── HARD: forward-log writer tests ─────────────────────────────────────
+      # Four acceptance criteria for the W0.2 shared forward-log writer:
+      # keep-FIRST invariant, cone-edge ordering, never-raise on empty input,
+      # proj_lo/hi populated.  Semantics: ABORT-LANE (hard failure).
+      # Added: W1.5.  Tests merged: wave/w0-2-3-forward-logs-and-basis (#913).
+      - name: "HARD | forward-log writer tests (keep-FIRST, cone edges)"
+        run: |
+          if [ ! -f tests/test_cycle_forward_log.py ]; then
+            echo "tests/test_cycle_forward_log.py not present — skipping (pre-W0.2)"
+            exit 0
+          fi
+          python -m pytest tests/test_cycle_forward_log.py -q
+
+      # ── HARD: grading_stats library tests ──────────────────────────────────
+      # Covers wilson_ci, block_bootstrap_ci, fdr_bh, cone_coverage,
+      # effective_n, dd_verdict, entry_pos, assert_convention, and the
+      # China-grader regression (refactored == pre-refactor on fixed inputs).
+      # Semantics: ABORT-LANE (hard failure).
+      # Added: W1.5.  Tests merged: W1.1 (#939).
+      - name: "HARD | grading_stats library tests (one implementation, no split)"
+        run: |
+          if [ ! -f tests/test_grading_stats.py ]; then
+            echo "tests/test_grading_stats.py not present — skipping (pre-W1.1)"
+            exit 0
+          fi
+          python -m pytest tests/test_grading_stats.py -q
+
+      # ── Slot: D2 PIT backfill integrity check (planned, W2.3) ──────────────
+      # When merged: python -m scripts.check_backfill_integrity --warn
+      # Semantics: LOG-AND-SKIP (fail-open; stale backfill stays in place).
+      # Estimated runtime: ~5 min on 2-core.
+      # - name: "LOG | backfill.parquet epoch homogeneity (planned W2.3)"
+      #   run: |
+      #     if [ ! -f scripts/check_backfill_integrity.py ]; then exit 0; fi
+      #     python -m scripts.check_backfill_integrity --warn || true
+
+      # ── Slot: D4 price-basis audit (planned, W2.2) ─────────────────────────
+      # When merged: python -m scripts.audit_price_basis --report
+      # Semantics: LOG-AND-SKIP (basis audit informs; never blocks calibration).
+      # - name: "LOG | price-basis audit report (planned W2.2)"
+      #   run: |
+      #     if [ ! -f scripts/audit_price_basis.py ]; then exit 0; fi
+      #     python -m scripts.audit_price_basis --report || true
+
+      # ── Slot: D3 stale-tape check (planned, W3.x) ──────────────────────────
+      # When merged: python -m scripts.check_cycle_tape_freshness --warn
+      # Semantics: LOG-AND-SKIP (stale tape writes DATA_MISSING chip; lane continues).
+      # - name: "LOG | stale-tape freshness check (planned W3)"
+      #   run: |
+      #     if [ ! -f scripts/check_cycle_tape_freshness.py ]; then exit 0; fi
+      #     python -m scripts.check_cycle_tape_freshness --warn || true
+
+      # ── Slot: D5 hazard model freshness (planned, W4.2+) ───────────────────
+      # When merged: python -m scripts.check_hazard_model_freshness
+      # Semantics: LOG-AND-SKIP (>100d stale degrades to prior + writes warning;
+      #   never blocks lane).
+      # Estimated runtime: <1 min (stat check; no refit here).
+      # - name: "LOG | hazard model freshness (<100d stale) (planned W4.2)"
+      #   run: |
+      #     if [ ! -f scripts/check_hazard_model_freshness.py ]; then exit 0; fi
+      #     python -m scripts.check_hazard_model_freshness || true
+
+      # ── Failure summary ─────────────────────────────────────────────────────
+      # Runs even when a HARD step above failed so CI gets a readable summary.
+      # This is the minimal alert pattern consistent with this repo: the hard
+      # steps already annotate via GitHub's ::error:: mechanism; this step adds
+      # a structured summary table for the run page.
+      #
+      # Note: the repo's production alerting path is python -m scripts.notify
+      # (Telegram/Discord secrets).  That script reads run_status.json which is
+      # only written by the main pipeline; wiring it here would fire on test
+      # noise.  Until the calibration lane writes its own status artifact, the
+      # GitHub annotation + run-summary is the alert mechanism.  See OPS_GATES.md
+      # §5 for the gap registry.
+      - name: calibration failure summary
+        if: failure()
+        run: |
+          {
+            echo "## cycle-calibration failure summary — $(date -u +%F)"
+            echo ""
+            echo "One or more HARD gates failed in this run.  Check the step"
+            echo "annotations above for details."
+            echo ""
+            echo "| Gate | Status |"
+            echo "|---|---|"
+            echo "| gen_ontology_js --check | see above |"
+            echo "| test_cycle_forward_log  | see above |"
+            echo "| test_grading_stats      | see above |"
+            echo ""
+            echo "Action: fix the failing script/test and re-dispatch this"
+            echo "workflow.  The main pipeline-batch lane is unaffected."
+          } >> "$GITHUB_STEP_SUMMARY"
