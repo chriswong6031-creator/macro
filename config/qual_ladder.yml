@@ -268,3 +268,30 @@ lexical.sfed_sentiment_z:
   notes: >
     SF-Fed sentiment z-score. D7 one-shot harness (separate from EPU/GPR).
     Retire on fail, publish verdict.
+
+# ---------------------------------------------------------------------------
+# COMMUNIQUÉ DIFF — W4 B1 (spec D9 / Appendix P4). Discrete, dated phrase-diff
+# events (APPEARED / DROPPED / LEAD_SHIFT) from official Chinese policy corpora.
+# The ONE China path to standalone validation; the forward log starts accruing
+# TODAY. Registered at SHADOW: computed + claim-registered + graded nightly,
+# never rendered as conviction. All claims are SALIENCE-ONLY (direction=0)
+# because phrase polarity is human-review PROVISIONAL (§5) — UNSIGNED events are
+# safe immediately; a signed phrase→return map is deferred (D9). No scored
+# consumers, so the Claim Passport linter has nothing to gate.
+# ---------------------------------------------------------------------------
+communique_diff.event_kind:
+  field: event_kind
+  artifact_glob: "site/communique_diff/latest.json"
+  producer: engine/communique_diff.py
+  claim_family: communique_diff
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    Communiqué Diff event type (APPEARED/DROPPED/LEAD_SHIFT) over ~44 canonical
+    policy formulas (适度宽松, 房住不炒, 新质生产力, 反内卷, …). Salience-only
+    qledger claims (desk=communique_diff, direction=0, horizon 21). SHADOW lane:
+    accruing a forward log against 510300.SS (China event-move bench, [P1]/D4).
+    Eligible for CONFIRMER only after n_dates>=25 with wilson_ci_low>0 — and only
+    once phrase polarity is human-REVIEWED so the direction can leave 0.

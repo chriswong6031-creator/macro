@@ -1,0 +1,319 @@
+# data/china_official/phrase_book.yml — the Communiqué Diff phrase book (W4 B1).
+#
+# Spec: research/QUALITATIVE_INTELLIGENCE_UPGRADE_BY_FABLE.md D9, §2.2, Appendix
+# P4 ("44-formula phrase-book seed (needs human review)"). The ~44 canonical
+# formulas of Chinese official policy language whose APPEARANCE, DISAPPEARANCE, or
+# elevation moves whole sectors (适度宽松 reappearing, 房住不炒 dropping, …).
+#
+# EACH ENTRY:
+#   zh:            the canonical formula (verbatim; the string the diff engine matches)
+#   gloss:         short English gloss
+#   domain:        monetary | fiscal | property | industrial | growth | reform |
+#                  regulation | tech | consumption | employment | external | politics
+#   polarity:      +1 risk-ON / easing / pro-growth ; -1 risk-OFF / tightening /
+#                  restrictive ; 0 neutral-or-ambiguous. THIS IS A HUMAN-REVIEW FIELD.
+#   review_status: PROVISIONAL until a human confirms polarity.
+#   variants:      OPTIONAL list of equivalent surface forms that count as the SAME
+#                  formula (e.g. 适度宽松 ~ 适度宽松的货币政策). The engine matches
+#                  the canonical `zh` OR any variant.
+#
+# CRITICAL RISK NOTE (spec §5 "Phrase-book subjectivity"): polarity labels are
+# context-dependent and are marked PROVISIONAL — they must NOT drive a signed
+# signal until a human reviews them. The Communiqué Diff engine emits
+# APPEARED / DROPPED / lead-shift events as SALIENCE-ONLY (direction=0) qledger
+# claims regardless of polarity, so UNSIGNED events are safe to accrue immediately.
+# polarity rides along for display + future signed use only.
+#
+# review_status meanings:
+#   PROVISIONAL  — seeded by machine/spec; polarity NOT yet human-confirmed.
+#   REVIEWED     — a human confirmed zh/gloss/domain/polarity.
+#   DISPUTED     — a human flagged the entry as context-dependent / unreliable.
+
+schema: communique_diff.phrase_book.v1
+seeded_at: "2026-07-02"
+review_note: >
+  All entries PROVISIONAL. Polarity is a human-review field; nothing signed until
+  reviewed. The engine emits salience-only events, so appearance/disappearance is
+  safe to accrue today.
+
+phrases:
+  # --- monetary policy stance -------------------------------------------------
+  - zh: 适度宽松
+    gloss: moderately loose (monetary policy)
+    domain: monetary
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [适度宽松的货币政策, 适度宽松货币政策]
+  - zh: 稳健的货币政策
+    gloss: prudent monetary policy
+    domain: monetary
+    polarity: 0
+    review_status: PROVISIONAL
+    variants: [稳健货币政策, 稳健中性]
+  - zh: 灵活适度
+    gloss: flexible and appropriate (liquidity)
+    domain: monetary
+    polarity: 1
+    review_status: PROVISIONAL
+  - zh: 降准降息
+    gloss: RRR and rate cuts
+    domain: monetary
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [降息降准]
+  - zh: 保持流动性合理充裕
+    gloss: keep liquidity reasonably ample
+    domain: monetary
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [流动性合理充裕, 合理充裕]
+  - zh: 稳健中性
+    gloss: prudent and neutral
+    domain: monetary
+    polarity: -1
+    review_status: PROVISIONAL
+  - zh: 超常规逆周期调节
+    gloss: extraordinary counter-cyclical adjustment
+    domain: monetary
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [超常规逆周期]
+  - zh: 逆周期调节
+    gloss: counter-cyclical adjustment
+    domain: monetary
+    polarity: 1
+    review_status: PROVISIONAL
+  - zh: 跨周期调节
+    gloss: cross-cyclical adjustment
+    domain: monetary
+    polarity: 0
+    review_status: PROVISIONAL
+    variants: [跨周期设计]
+
+  # --- fiscal -----------------------------------------------------------------
+  - zh: 积极的财政政策
+    gloss: proactive fiscal policy
+    domain: fiscal
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [积极财政政策]
+  - zh: 更加积极的财政政策
+    gloss: more proactive fiscal policy
+    domain: fiscal
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [更加积极]
+  - zh: 提高赤字率
+    gloss: raise the deficit ratio
+    domain: fiscal
+    polarity: 1
+    review_status: PROVISIONAL
+  - zh: 特别国债
+    gloss: special treasury bonds
+    domain: fiscal
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [超长期特别国债]
+  - zh: 专项债
+    gloss: local-government special bonds
+    domain: fiscal
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [地方政府专项债, 专项债券]
+  - zh: 化债
+    gloss: local debt resolution
+    domain: fiscal
+    polarity: 0
+    review_status: PROVISIONAL
+    variants: [化解地方债务风险, 一揽子化债]
+
+  # --- property ---------------------------------------------------------------
+  - zh: 房住不炒
+    gloss: houses are for living, not speculation
+    domain: property
+    polarity: -1
+    review_status: PROVISIONAL
+    variants: [房子是用来住的不是用来炒的]
+  - zh: 止跌回稳
+    gloss: (property market) stop falling and stabilize
+    domain: property
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [房地产市场止跌回稳]
+  - zh: 保交楼
+    gloss: ensure delivery of pre-sold homes
+    domain: property
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [保交楼保民生]
+  - zh: 收储
+    gloss: government acquisition of housing inventory
+    domain: property
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [收购存量商品房]
+  - zh: 因城施策
+    gloss: city-specific property policy
+    domain: property
+    polarity: 1
+    review_status: PROVISIONAL
+
+  # --- industrial / new productive forces -------------------------------------
+  - zh: 新质生产力
+    gloss: new quality productive forces
+    domain: industrial
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [发展新质生产力]
+  - zh: 反内卷
+    gloss: anti "involution" (curb ruinous price competition)
+    domain: industrial
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [综合整治内卷式竞争, 内卷式竞争, 防止内卷]
+  - zh: 供给侧结构性改革
+    gloss: supply-side structural reform
+    domain: reform
+    polarity: 0
+    review_status: PROVISIONAL
+    variants: [供给侧改革]
+  - zh: 去产能
+    gloss: cut excess capacity
+    domain: industrial
+    polarity: -1
+    review_status: PROVISIONAL
+    variants: [化解过剩产能]
+  - zh: 制造业当家
+    gloss: manufacturing as the mainstay
+    domain: industrial
+    polarity: 1
+    review_status: PROVISIONAL
+  - zh: 国产替代
+    gloss: domestic substitution
+    domain: tech
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [自主可控]
+  - zh: 科技自立自强
+    gloss: sci-tech self-reliance
+    domain: tech
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [高水平科技自立自强]
+  - zh: 人工智能
+    gloss: artificial intelligence (as elevated policy priority)
+    domain: tech
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [人工智能+, 人工智能行动]
+
+  # --- growth / overall stance ------------------------------------------------
+  - zh: 稳中求进
+    gloss: seek progress while maintaining stability
+    domain: growth
+    polarity: 0
+    review_status: PROVISIONAL
+    variants: [稳中求进工作总基调]
+  - zh: 以进促稳
+    gloss: promote stability through progress
+    domain: growth
+    polarity: 1
+    review_status: PROVISIONAL
+  - zh: 稳增长
+    gloss: stabilize growth
+    domain: growth
+    polarity: 1
+    review_status: PROVISIONAL
+  - zh: 稳预期
+    gloss: stabilize expectations
+    domain: growth
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [稳预期强信心]
+  - zh: 扩大内需
+    gloss: expand domestic demand
+    domain: consumption
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [着力扩大内需, 全方位扩大国内需求]
+  - zh: 提振消费
+    gloss: boost consumption
+    domain: consumption
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [大力提振消费]
+  - zh: 稳就业
+    gloss: stabilize employment
+    domain: employment
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [就业优先]
+
+  # --- reform / distribution --------------------------------------------------
+  - zh: 共同富裕
+    gloss: common prosperity
+    domain: reform
+    polarity: 0
+    review_status: PROVISIONAL
+  - zh: 全国统一大市场
+    gloss: unified national market
+    domain: reform
+    polarity: 0
+    review_status: PROVISIONAL
+    variants: [建设全国统一大市场]
+  - zh: 民营经济
+    gloss: private-sector economy (support)
+    domain: reform
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [民营经济促进法, 支持民营经济]
+  - zh: 高质量发展
+    gloss: high-quality development
+    domain: growth
+    polarity: 0
+    review_status: PROVISIONAL
+
+  # --- regulation -------------------------------------------------------------
+  - zh: 防范化解风险
+    gloss: prevent and defuse risks
+    domain: regulation
+    polarity: -1
+    review_status: PROVISIONAL
+    variants: [防范化解重大风险, 守住不发生系统性风险的底线]
+  - zh: 强监管
+    gloss: strengthened regulation
+    domain: regulation
+    polarity: -1
+    review_status: PROVISIONAL
+    variants: [严监管]
+  - zh: 平台经济
+    gloss: platform economy (posture)
+    domain: regulation
+    polarity: 0
+    review_status: PROVISIONAL
+    variants: [促进平台经济健康发展]
+  - zh: 资本无序扩张
+    gloss: disorderly expansion of capital
+    domain: regulation
+    polarity: -1
+    review_status: PROVISIONAL
+    variants: [防止资本无序扩张]
+
+  # --- external ---------------------------------------------------------------
+  - zh: 高水平对外开放
+    gloss: high-level opening-up
+    domain: external
+    polarity: 1
+    review_status: PROVISIONAL
+    variants: [扩大高水平对外开放, 对外开放]
+  - zh: 统一战线
+    gloss: united front
+    domain: politics
+    polarity: 0
+    review_status: PROVISIONAL
+  - zh: 高水平安全
+    gloss: high-level security (elevated)
+    domain: politics
+    polarity: -1
+    review_status: PROVISIONAL
+    variants: [统筹发展和安全, 安全发展]
