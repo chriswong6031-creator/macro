@@ -110,50 +110,52 @@ def enabled() -> bool:
     return bool(_cfg().get("enabled", False))
 
 
-def _client(cfg: dict):
-    """Anthropic client via the Claude-Code OAuth token (Bearer + oauth beta header), or an
-    API key. Returns (client, default_headers) or (None, None). Never raises."""
-    try:
-        import anthropic
-    except ImportError:
-        return None, None
-    token = config.secret(cfg.get("oauth_token_env", "CLAUDE_CODE_OAUTH_TOKEN"))
-    if token:
-        headers = {"anthropic-beta": OAUTH_BETA}
-        try:  # OAuth tokens go on Authorization: Bearer (auth_token=), NEVER x-api-key
-            return anthropic.Anthropic(auth_token=token, default_headers=headers), headers
-        except Exception:  # noqa: BLE001
-            return None, None
-    key = config.secret(cfg.get("api_key_env", "ANTHROPIC_API_KEY"))
-    if key:
-        try:
-            return anthropic.Anthropic(api_key=key), {}
-        except Exception:  # noqa: BLE001
-            return None, None
-    return None, None
-
-
 def _make_call(cfg: dict):
     """Return a call(model, system, user) -> (text|None, degraded|None). Caches the stable
-    system block (cache_control) so the per-theme rubric is reused across calls."""
-    client, _ = _client(cfg)
-    if client is None:
+    system block (cache_control) so the per-theme rubric is reused across calls.
+
+    W5 ITEM 1 — 401-fallback: uses engine.llm_auth.make_call() so an expired OAuth
+    token triggers a fallback to ANTHROPIC_API_KEY, with degraded_reason
+    "auth_invalid:<provider>" distinguishing auth failures from content errors.
+
+    Note: narrative_brain uses TWO model ids (durability=sonnet, rotation=opus).
+    build_providers() produces providers keyed to opus_model; when the durability
+    (sonnet) call is made, the model id is overridden inside _do_call via the
+    `model` argument passed to call() — the client itself is model-agnostic.
+    """
+    from engine import llm_auth
+
+    # Build providers using the rotation model (opus) as the primary model.
+    # For durability calls the caller passes a different model id; the client
+    # supports any model on the same endpoint.
+    providers = llm_auth.build_providers(
+        cfg, opus_model=cfg.get("models", {}).get("rotation", "claude-opus-4-8"))
+    if not providers:
         return None
     max_tokens = int(cfg.get("max_tokens", 6000))
 
     def call(model: str, system: str, user: str):
-        try:
+        # Override the model id in each provider for this specific call
+        call_providers = [{**p, "model": model} for p in providers]
+
+        def _do_call(client, _model: str):
             resp = client.messages.create(
-                model=model, max_tokens=max_tokens,
-                system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
+                model=_model, max_tokens=max_tokens,
+                system=[{"type": "text", "text": system,
+                         "cache_control": {"type": "ephemeral"}}],
                 messages=[{"role": "user", "content": user}])
             if getattr(resp, "stop_reason", None) == "refusal":
                 return None, "refusal"
             text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
             return (text, None) if text else (None, "empty_reply")
-        except Exception as e:  # noqa: BLE001 — degrade, never raise
+
+        try:
+            text, reason, _used = llm_auth.make_call(
+                call_providers, _do_call, context="narrative_brain")
+        except Exception as e:  # noqa: BLE001
             log.warning("narrative_brain call failed (%s): %s", model, e)
             return None, "llm_error"
+        return text, reason
 
     return call
 

@@ -361,30 +361,40 @@ def _call_model(source_text: str, context: str, cfg: dict) -> tuple[str | None, 
     client = _client(cfg)
     if client is None:
         return None, "no_client_or_key"
-    try:
+    from engine import llm_auth
+
+    env_var = cfg.get("api_key_env", "DEEPSEEK_API_KEY")
+    providers = [{"name": "deepseek", "env_var": env_var, "cred": "present",
+                  "client": client, "model": model}]
+
+    def _do_call(_client, _model: str):
         kw: dict = {
-            "model": model,
+            "model": _model,
             "max_tokens": int(cfg.get("max_tokens", 1500)),
             "system": CATALYST_SYSTEM,
             "messages": [{"role": "user", "content": user}],
-            "temperature": 0,          # determinism kit: greedy decode where supported
+            "temperature": 0,
         }
-        # seed is a beta param on some providers; pass it when the SDK accepts it
         try:
             kw["seed"] = 0
-            resp = client.messages.create(**kw)
+            resp = _client.messages.create(**kw)
         except TypeError:
             del kw["seed"]
-            resp = client.messages.create(**kw)
+            resp = _client.messages.create(**kw)
         if getattr(resp, "stop_reason", None) in ("refusal", "max_tokens"):
             return None, f"stop_{resp.stop_reason}"
         text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
-        if text:
-            _reply_cache_put(phash, text, cfg)  # cache successful reply
         return (text or None), (None if text else "empty_reply")
+
+    try:
+        text, reason, _ = llm_auth.make_call(providers, _do_call, context="catalyst_tone")
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("catalyst_tone model call failed (%s)", e)
         return None, "llm_error"
+
+    if text:
+        _reply_cache_put(phash, text, cfg)
+    return text, reason
 
 
 # --------------------------------------------------------------------------- #

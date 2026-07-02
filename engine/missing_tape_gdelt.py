@@ -57,7 +57,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # --------------------------------------------------------------------------- #
 # constants
 # --------------------------------------------------------------------------- #
-_GDELT_BASE = "https://api.gdeltproject.org/api/v2/timeline/timeline"
+_GDELT_BASE = "https://api.gdeltproject.org/api/v2/doc/doc"
 _UA = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -68,7 +68,7 @@ _PACE_SECONDS: float = 5.0
 # Minimum data points before computing z-score (avoids spurious early flags).
 _MIN_Z_WINDOW: int = 5
 
-_COLS = ("date", "zh_tone", "en_tone", "spread", "spread_expanding_z")
+_COLS = ("date", "zh_tone", "en_tone", "spread", "spread_expanding_z", "fetch_status")
 
 
 # --------------------------------------------------------------------------- #
@@ -109,7 +109,11 @@ def _save_series(df: pd.DataFrame, data_root: Path) -> None:
 # GDELT API
 # --------------------------------------------------------------------------- #
 def _gdelt_url(query: str, smoothing: int = 0, maxrecords: int = 1000) -> str:
-    """Build the GDELT timelinetone API URL for a given query string."""
+    """Build the GDELT doc/doc timelinetone API URL for a given query string.
+
+    W4 ITEM 2: endpoint changed from /api/v2/timeline/timeline (404) to
+    /api/v2/doc/doc with mode=timelinetone (the correct GDELT v2 doc endpoint).
+    """
     params = {
         "query": query,
         "mode": "timelinetone",
@@ -120,28 +124,48 @@ def _gdelt_url(query: str, smoothing: int = 0, maxrecords: int = 1000) -> str:
     return f"{_GDELT_BASE}?{urllib.parse.urlencode(params)}"
 
 
-def _fetch_gdelt(url: str, timeout: int = 30) -> list[dict]:
-    """Fetch GDELT timelinetone JSON.  Returns list of {date, value} dicts.
-    Returns [] on any error.  Never raises."""
+def _fetch_gdelt(url: str, timeout: int = 30) -> tuple[list[dict], str]:
+    """Fetch GDELT timelinetone JSON from the doc/doc endpoint.
+
+    Returns (records, fetch_status) where:
+      records:       list of {date, value} dicts (empty on any failure).
+      fetch_status:  "ok" | "empty" | "http_<N>" | "error"
+
+    W4 ITEM 2: 4xx/5xx HTTP responses are no longer swallowed silently —
+    they are logged as WARNING with the status code and recorded in fetch_status.
+    Never raises.
+    """
     try:
         req = urllib.request.Request(url, headers={"User-Agent": _UA})
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            raw = resp.read()
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                status = resp.getcode()
+                raw = resp.read()
+        except urllib.error.HTTPError as http_exc:
+            LOG.warning("GDELT fetch HTTP %d for %s — check endpoint or rate limit",
+                        http_exc.code, url[:120])
+            return [], f"http_{http_exc.code}"
+        if status != 200:
+            LOG.warning("GDELT fetch non-200 status %d for %s", status, url[:120])
+            return [], f"http_{status}"
         data = json.loads(raw)
-        # GDELT v2 timelinetone response shape:
+        # GDELT v2 doc/doc timelinetone response shape:
         # {"timeline": [{"series": [{"date": "YYYYMMDDHHMMSS", "value": float}, ...]}]}
         # or flat: {"timeline": [{"date": ..., "value": ...}]}
         timeline = data.get("timeline", [])
         if not timeline:
-            return []
+            LOG.debug("GDELT fetch returned empty timeline for %s", url[:80])
+            return [], "empty"
         first = timeline[0]
         if "series" in first:
-            return first["series"]
-        # flat list
-        return timeline
+            records = first["series"]
+        else:
+            # flat list
+            records = timeline
+        return records, "ok"
     except Exception as exc:
-        LOG.debug("GDELT fetch %s → %s", url[:100], exc)
-        return []
+        LOG.debug("GDELT fetch error %s → %s", url[:100], exc)
+        return [], "error"
 
 
 def _parse_gdelt_date(raw: str) -> str | None:
@@ -270,25 +294,30 @@ def update(
     # Onshore (Chinese-language, sourced from China)
     _pace()
     zh_url = _gdelt_url("China sourcelang:chinese sourcecountry:China")
-    zh_records = _fetch_gdelt(zh_url)
+    zh_records, zh_status = _fetch_gdelt(zh_url)
     n_requests += 1
     zh_by_date = _series_to_dict(zh_records)
-    LOG.info("zh tone: %d data points", len(zh_by_date))
+    LOG.info("zh tone: %d data points (fetch_status=%s)", len(zh_by_date), zh_status)
 
     if max_requests is not None and n_requests >= max_requests:
         LOG.info("max_requests=%d reached after zh fetch, skipping en", max_requests)
         en_by_date: dict[str, float] = {}
+        en_status = "skipped"
     else:
         _pace()
         en_url = _gdelt_url("China sourcelang:english")
-        en_records = _fetch_gdelt(en_url)
+        en_records, en_status = _fetch_gdelt(en_url)
         n_requests += 1
         en_by_date = _series_to_dict(en_records)
-        LOG.info("en tone: %d data points", len(en_by_date))
+        LOG.info("en tone: %d data points (fetch_status=%s)", len(en_by_date), en_status)
 
     # Build rows for missing dates where we have both lanes
     missing_set = set(missing_dates)
     all_dates = sorted(missing_set & (set(zh_by_date) | set(en_by_date)))
+
+    # Combined fetch status: "ok" if both lanes ok, else the non-ok status.
+    fetch_status_combined = "ok" if (zh_status == "ok" and en_status in ("ok", "skipped")) else \
+        f"zh:{zh_status},en:{en_status}"
 
     for d in all_dates:
         zh_v = zh_by_date.get(d)
@@ -302,6 +331,7 @@ def update(
             "en_tone": round(en_v, 4),
             "spread": round(spread, 4),
             "spread_expanding_z": float("nan"),  # recomputed below
+            "fetch_status": fetch_status_combined,
         })
 
     if not new_rows:

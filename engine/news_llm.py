@@ -173,9 +173,11 @@ def _xjson(text: str):
 # --------------------------------------------------------------------------- #
 # batch summarise + score
 # --------------------------------------------------------------------------- #
-def _summarise_batch(items: list[dict], client, model: str) -> dict[int, dict]:
+def _summarise_batch_raw(items: list[dict], client, model: str) -> dict[int, dict]:
     """One model call for up to len(items) headlines. items: [{i,title,blurb}].
-    Returns {i: {summary, importance, tone}}. Degrade to {} on any failure."""
+    Returns {i: {summary, importance, tone}}. Raises on auth errors (so
+    llm_auth.make_call can detect 401 and trigger provider fallback); degrades
+    to {} on other failures."""
     lines = []
     for it in items:
         blurb = (it.get("blurb") or "").strip()
@@ -183,36 +185,38 @@ def _summarise_batch(items: list[dict], client, model: str) -> dict[int, dict]:
                      + (f' | BLURB: {blurb[:240]}' if blurb else ""))
     user = "Items:\n" + "\n".join(lines)
     max_tok = min(4000, 90 * len(items) + 200)
-    try:
-        resp = client.messages.create(
-            model=model, max_tokens=max_tok, system=SYSTEM,
-            messages=[{"role": "user", "content": user}])
-        if getattr(resp, "stop_reason", "") == "refusal":
-            return {}
-        text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
-        parsed = _xjson(text)
-        if not isinstance(parsed, list):
-            return {}
-        out: dict[int, dict] = {}
-        for row in parsed:
-            if not isinstance(row, dict) or "i" not in row:
-                continue
-            try:
-                idx = int(row["i"])
-            except (ValueError, TypeError):
-                continue
-            summ = str(row.get("summary", "")).strip()[:200]
-            try:
-                imp = max(0, min(100, int(row.get("importance", 50))))
-            except (ValueError, TypeError):
-                imp = 50
-            tone = str(row.get("tone", "neutral")).lower()
-            tone = tone if tone in ("pos", "neg", "neutral") else "neutral"
-            out[idx] = {"summary": summ, "importance": imp, "tone": tone}
-        return out
-    except Exception as e:  # noqa: BLE001 — degrade, never raise
-        log.warning("news_llm batch failed (%s)", e)
+    # NOTE: we do NOT catch all exceptions here — auth errors must propagate to
+    # llm_auth.make_call() so it can detect 401 and try the next provider.
+    resp = client.messages.create(
+        model=model, max_tokens=max_tok, system=SYSTEM,
+        messages=[{"role": "user", "content": user}])
+    if getattr(resp, "stop_reason", "") == "refusal":
         return {}
+    text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
+    parsed = _xjson(text)
+    if not isinstance(parsed, list):
+        return {}
+    out: dict[int, dict] = {}
+    for row in parsed:
+        if not isinstance(row, dict) or "i" not in row:
+            continue
+        try:
+            idx = int(row["i"])
+        except (ValueError, TypeError):
+            continue
+        summ = str(row.get("summary", "")).strip()[:200]
+        try:
+            imp = max(0, min(100, int(row.get("importance", 50))))
+        except (ValueError, TypeError):
+            imp = 50
+        tone = str(row.get("tone", "neutral")).lower()
+        tone = tone if tone in ("pos", "neg", "neutral") else "neutral"
+        out[idx] = {"summary": summ, "importance": imp, "tone": tone}
+    return out
+
+
+# backward-compat alias (tests may import _summarise_batch directly)
+_summarise_batch = _summarise_batch_raw
 
 
 def annotate(headlines: list[dict], batch_size: int | None = None,
@@ -222,31 +226,51 @@ def annotate(headlines: list[dict], batch_size: int | None = None,
     disabled / on any error. Caps total model calls at `max_batches`.
 
     Headlines lacking a usable title are skipped. Existing `summary` fields are
-    preserved (only filled when blank), so provider-supplied blurbs win."""
+    preserved (only filled when blank), so provider-supplied blurbs win.
+
+    W5 ITEM 1 — 401-fallback: uses engine.llm_auth.build_providers() so that an
+    expired OAuth token triggers a per-batch fallback to the next provider. Each
+    batch independently tries the full waterfall (dead providers are skipped at
+    process level via llm_auth).
+    """
     if not headlines:
         return headlines
-    prov = _provider()
-    if prov is None or not bool(_cfg().get("enabled", True)):
-        return headlines
-    provider, cred, model = prov
     cfg = _cfg()
+    if not bool(cfg.get("enabled", True)):
+        return headlines
+
+    from engine import llm_auth
+    haiku = _classify_model()
+    ds_model = cfg.get("deepseek_model", DEFAULT_DEEPSEEK)
+    providers = llm_auth.build_providers(cfg, opus_model=haiku, deepseek_model=ds_model)
+    if not providers:
+        return headlines
+
     bs = int(batch_size or cfg.get("batch_size", 12))
     mb = int(max_batches or cfg.get("max_batches", 12))
-    try:
-        client = _client(provider, cred)
-    except Exception as e:  # noqa: BLE001
-        log.warning("news_llm client init failed (%s)", e)
-        return headlines
 
     # Build the worklist: index every headline that wants enrichment.
     work = [(n, h) for n, h in enumerate(headlines) if (h.get("title") or "").strip()]
     batches = [work[i:i + bs] for i in range(0, len(work), bs)][:mb]
     calls = 0
+    provider_used_log: list[str] = []
     for batch in batches:
         items = [{"i": gi, "title": h.get("title", ""),
                   "blurb": h.get("summary") or h.get("description") or ""}
                  for gi, h in batch]
-        res = _summarise_batch(items, client, model)
+
+        def _do_call(client, model: str):
+            return _summarise_batch_raw(items, client, model), None
+
+        try:
+            raw_res, _, pused = llm_auth.make_call(providers, _do_call, context="news_llm")
+        except Exception as e:  # noqa: BLE001
+            log.warning("news_llm batch call error (%s)", e)
+            raw_res, pused = None, None
+
+        res = raw_res or {}
+        if pused:
+            provider_used_log.append(pused)
         calls += 1
         for gi, h in batch:
             r = res.get(gi)
@@ -256,8 +280,10 @@ def annotate(headlines: list[dict], batch_size: int | None = None,
                 h["summary"] = r["summary"]
             h["llm_importance"] = r.get("importance")
             h["llm_tone"] = r.get("tone")
+
     if calls:
-        log.info("news_llm: %d batch call(s) via %s/%s", calls, provider, model)
+        providers_str = ",".join(sorted(set(provider_used_log))) or "none"
+        log.info("news_llm: %d batch call(s) via %s", calls, providers_str)
     return headlines
 
 
