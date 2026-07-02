@@ -323,3 +323,147 @@ class TestPlaceboSampler:
         threshold = float(df["score"].median())
         low_cn = df[df["score"] < threshold]
         assert len(low_cn) == 3  # ev4, ev5, ev6
+
+    # ---------------------------------------------------------------------- #
+    # W1 placebo-strength tests (D3 bias correction)
+    # ---------------------------------------------------------------------- #
+
+    def test_covered_ticker_preference(self, fake_root):
+        """Sampler biases toward LOW events with covered tickers before falling back.
+
+        Fixture LOW events:
+          ev4 (score=0.5): ticker=600519.SS → has price → covered
+          ev5 (score=0.6): ticker=MISSING.SS → no price → uncovered
+          ev6 (score=0.7): no tickers at all → uncovered
+
+        With k_cn=3 we can fill all 3 from the LOW pool (1 covered, 2 uncovered).
+        The covered event (ev4) MUST appear in the CN sample.
+        We verify by checking that at least one CN placebo entity claim has
+        scope.key == '600519.SS' (ev4's ticker).
+        """
+        # k=6 → k_cn=3, k_us=3; CN low pool = ev4(covered), ev5(uncovered), ev6(uncovered)
+        placebo.run(fake_root, asof="2026-07-02", k=6)
+        claims = q.load_claims(fake_root)
+        cn_placebo = [c for c in claims if c.get("is_placebo") and c.get("corpus") == "cn"]
+        # 600519.SS (ev4's covered ticker) should appear as an entity claim
+        entity_keys = {c["scope"]["key"] for c in cn_placebo if c["scope"]["type"] == "entity"}
+        assert "600519.SS" in entity_keys, (
+            f"Expected covered ticker 600519.SS in CN placebo entity claims; got {entity_keys}"
+        )
+
+    def test_fallback_accounting(self, fake_root):
+        """n_fallback counts events that landed on the no-covered-ticker path."""
+        # k=6 → k_cn=3: 1 covered (ev4), 2 uncovered (ev5, ev6) → n_cn_fallback=2
+        # k_us=3: US events have no tickers at all → all 3 are fallback → n_us_fallback=3
+        # total n_fallback = 5
+        result = placebo.run(fake_root, asof="2026-07-02", k=6, dry_run=True)
+        assert "n_fallback" in result, "n_fallback key missing from run() summary"
+        # CN: 2 fallback (ev5+ev6); US: 3 fallback (no tickers in fixture)
+        assert result["n_fallback"] == 5, (
+            f"Expected n_fallback=5, got {result['n_fallback']}"
+        )
+
+    def test_fallback_accounting_all_covered(self, fake_root):
+        """When covered pool satisfies demand fully, n_fallback == 0.
+
+        Extend fixture with a new events file that has only covered tickers.
+        """
+        # Write a fresh CN events parquet with only covered low-importance events
+        all_covered_events = [
+            {"event_id": f"cov{i}", "first_seen_utc": "2026-06-21T01:00:00+00:00",
+             "seendate": "2026-06-21", "title": f"T{i}", "summary": "",
+             "url": "http://x", "domain": "x", "source": "s", "theme": "macro",
+             "source_tier": 2, "baskets": "", "tickers": "600519.SS",
+             "score": 0.1 * i, "sentiment": 0.0, "scheduled_ref": ""}
+            for i in range(1, 11)  # 10 low events all with covered ticker
+        ]
+        # Add 2 HIGH events to set median above 0
+        all_covered_events += [
+            {"event_id": "high1", "first_seen_utc": "2026-06-22T01:00:00+00:00",
+             "seendate": "2026-06-22", "title": "High1", "summary": "",
+             "url": "http://x", "domain": "x", "source": "s", "theme": "macro",
+             "source_tier": 1, "baskets": "", "tickers": "000333.SZ",
+             "score": 2.0, "sentiment": 1.0, "scheduled_ref": ""},
+            {"event_id": "high2", "first_seen_utc": "2026-06-23T01:00:00+00:00",
+             "seendate": "2026-06-23", "title": "High2", "summary": "",
+             "url": "http://x", "domain": "x", "source": "s", "theme": "macro",
+             "source_tier": 1, "baskets": "", "tickers": "000333.SZ",
+             "score": 3.0, "sentiment": 1.0, "scheduled_ref": ""},
+        ]
+        df = pd.DataFrame(all_covered_events)
+        events_path = fake_root / "data" / "china_news_vector" / "events.parquet"
+        df.to_parquet(events_path, index=False)
+
+        result = placebo.run(fake_root, asof="2026-07-03", k=4, dry_run=True)
+        # CN covered pool has 10 events (all low, all 600519.SS covered), US has 0 tickers
+        # k_cn=2, k_us=2 → CN gets 2 covered, US gets 2 uncovered → total fallback = 2
+        assert result["n_fallback"] <= 2, (
+            f"Expected n_fallback<=2 (only US fallback), got {result['n_fallback']}"
+        )
+
+    def test_covered_ticker_entity_not_bench_basket(self, fake_root):
+        """Covered-ticker placebo claims must be entity-scope (not bench basket).
+
+        The bench-basket path (scope_key == bench ticker) produces excess ≡ 0.
+        Entity claims against real tickers produce non-degenerate |excess|.
+        """
+        placebo.run(fake_root, asof="2026-07-02", k=6)
+        claims = q.load_claims(fake_root)
+        cn_placebo = [c for c in claims if c.get("is_placebo") and c.get("corpus") == "cn"]
+        entity_claims = [c for c in cn_placebo if c["scope"]["type"] == "entity"]
+        # ev4 → 600519.SS with 2 horizons = 2 entity claims minimum
+        assert len(entity_claims) >= 2, (
+            f"Expected ≥2 entity-scope CN placebo claims; got {len(entity_claims)}: "
+            f"{[c['scope'] for c in cn_placebo]}"
+        )
+        # Confirm those entity claims are NOT pointing at the bench itself
+        bench_keys = {placebo._CN_BENCH, placebo._US_BENCH}
+        for c in entity_claims:
+            assert c["scope"]["key"] not in bench_keys, (
+                f"Entity placebo claim scope.key is the bench (degenerate): {c['scope']}"
+            )
+
+    def test_placebo_path_field_recorded(self, fake_root):
+        """placebo_path field records 'covered_ticker' or 'fallback_no_ticker'."""
+        placebo.run(fake_root, asof="2026-07-02", k=6)
+        claims = q.load_claims(fake_root)
+        placebo_claims = [c for c in claims if c.get("is_placebo")]
+        valid_paths = {"covered_ticker", "fallback_no_ticker"}
+        for c in placebo_claims:
+            path = c.get("placebo_path")
+            assert path in valid_paths, (
+                f"placebo_path={path!r} not in {valid_paths}: {c}"
+            )
+        # At least one claim on covered_ticker path (ev4 → 600519.SS)
+        covered_path_claims = [c for c in placebo_claims if c.get("placebo_path") == "covered_ticker"]
+        assert covered_path_claims, "Expected at least one claim with placebo_path='covered_ticker'"
+
+    def test_determinism_covered_sample(self, fake_root):
+        """Same asof produces identical sampled event ids across two dry runs."""
+        import scripts.sample_qledger_placebo as _p
+        import random
+
+        asof = "2026-07-04"
+        rng1 = random.Random(_p._asof_seed(asof))
+        rng2 = random.Random(_p._asof_seed(asof))
+
+        cn_low = _p._load_cn_low_importance(fake_root)
+        us_all = _p._load_us_events(fake_root)
+        k = 6
+
+        sample1, _ = _p._biased_sample(cn_low, k - k // 2, rng1, "cn", fake_root)
+        sample2, _ = _p._biased_sample(cn_low, k - k // 2, rng2, "cn", fake_root)
+
+        assert sorted(sample1.index.tolist()) == sorted(sample2.index.tolist()), (
+            "Same asof seed produced different CN samples — not deterministic"
+        )
+
+    def test_idempotency_covered_ticker(self, fake_root):
+        """Re-running placebo for same asof after the fix does not duplicate claims."""
+        placebo.run(fake_root, asof="2026-07-02", k=6)
+        n_after_first = len(q.load_claims(fake_root))
+        placebo.run(fake_root, asof="2026-07-02", k=6)
+        n_after_second = len(q.load_claims(fake_root))
+        assert n_after_first == n_after_second, (
+            f"Duplicate claims created: {n_after_first} → {n_after_second}"
+        )
