@@ -1,0 +1,413 @@
+"""The Outcome Spine — the one shared signal-id → outcome substrate (Masterplan §W4, audit #13).
+
+The audit's core finding (#13): the suite is full of accountability ledgers whose grades
+are "computed, logged, and discarded from every downstream arithmetic step". The loop only
+ever closed inside the LLM context window. #13 says the missing piece is *"a shared
+signal-id/outcome contract that exists nowhere in either codebase"*. This module IS that
+contract.
+
+WHAT A SPINE ROW IS
+-------------------
+Every decision-facing signal writes ONE prediction row when it fires::
+
+    {signal_id, engine, version, family, as_of, symbol, universe, horizon,
+     score, size_binding, direction, meta}
+
+  * ``signal_id``   — stable id for THIS prediction (``{engine}:{as_of}:{symbol}:{horizon}``).
+  * ``engine``      — the emitter ("us_board", "altdata_conv", "desk:ai_desk", …).
+  * ``version``     — ``engine@version`` so a re-tuned engine's rows are separable.
+  * ``family``      — the POOLING family this row shrinks toward (see engine.pooling): the
+                      lane / channel / desk group. n=5 in a family of 6 moves a little
+                      instead of nothing.
+  * ``as_of``       — the decision date (the bar the signal fired on).
+  * ``symbol`` / ``universe`` — the graded name (or a universe tag for aggregate theses).
+  * ``horizon``     — trading-day horizon the prediction is about.
+  * ``score``       — the emitter's own conviction/rank score (signed if directional).
+  * ``size_binding``— True iff this row actually *sized real (paper) money* (a hard filter
+                      so the loop can weight the rows that mattered, not display-only noise).
+  * ``direction``   — +1 long / -1 short / 0 neutral-context (drives sign-safe grading).
+
+MATURATION — one grader, never a second convention
+---------------------------------------------------
+Rows do NOT carry an outcome at emission. They MATURE through engine.grading (the W1c
+survivorship-aware next-bar grader) exactly like every other track record — so the spine
+never re-derives a subtly-different (flattering) fill/return convention. ``graded_rows``
+joins predictions to matured forward returns and returns the outcome panel the pooling
+engine and the IC-aware alert severity read.
+
+ADAPTERS, NOT DUPLICATES
+------------------------
+The FIRST emitters already keep rich ledgers. Rather than double-log, this module ADAPTS
+their existing artifacts into spine rows:
+  * ``adapt_us_board``   — the US board retro/forward ledger (scripts/grade_us_board.py,
+    data/us_board_ledger/retro_grades.parquet) → per (as_of, lane, ticker, horizon) rows,
+    already next-bar-filled and excess-vs-SPY graded. Both lanes (buy + watch/laggard).
+  * ``adapt_altdata``    — the alt-data convergence ledger (engine.altdata_ledger,
+    data/altdata/{theses,scored}.jsonl) → per-thesis rows carrying the co-firing channel
+    set so engine.altdata_signals can estimate the same-event penalty (#23).
+  * ``adapt_desk_scorer``— every Phase-C desk's scored.jsonl (engine.desk_scorer) → per-thesis
+    rows keyed by ``family="desk:{name}"`` so engine.desk_scorer can pool desk weights (#13).
+
+Design: pure pandas/pyarrow, degrade-never-raise (a missing ledger yields an empty frame
+with the canonical columns, never a crash), append-only + idempotent on ``signal_id``. This
+is a LIBRARY — callers pass their own root; it reads config only for the default path.
+"""
+from __future__ import annotations
+
+import json
+import logging
+from dataclasses import dataclass, asdict, field
+from pathlib import Path
+from typing import Iterable
+
+import numpy as np
+import pandas as pd
+
+log = logging.getLogger(__name__)
+
+__all__ = [
+    "SpinePrediction",
+    "COLUMNS",
+    "spine_path",
+    "emit",
+    "load",
+    "graded_rows",
+    "measured_ic",
+    "adapt_us_board",
+    "adapt_altdata",
+    "adapt_desk_scorer",
+    "rebuild_from_adapters",
+]
+
+SCHEMA = "spine.predictions.v1"
+
+# The canonical row contract. Every adapter and every direct emitter yields exactly these.
+COLUMNS = [
+    "signal_id", "engine", "version", "family", "as_of", "symbol", "universe",
+    "horizon", "score", "size_binding", "direction", "event_key", "outcome_excess",
+    "outcome_graded", "graded_at", "meta",
+]
+
+
+@dataclass
+class SpinePrediction:
+    """One decision-facing prediction. ``outcome_*`` stay None until maturation."""
+    signal_id: str
+    engine: str
+    family: str
+    as_of: str
+    symbol: str
+    horizon: int
+    score: float
+    direction: int = 1
+    size_binding: bool = False
+    version: str = "v1"
+    universe: str = ""
+    # ``event_key`` groups predictions that share ONE underlying event (e.g. every alt-data
+    # channel lit by the same 8-K). The pooling / convergence layers collapse a shared
+    # event_key to ONE effective observation (#23 co-firing penalty). Defaults to the row's
+    # own (symbol, as_of) — i.e. "one event per name per day" unless the emitter knows better.
+    event_key: str = ""
+    outcome_excess: float | None = None      # matured excess-vs-benchmark forward return
+    outcome_graded: bool = False
+    graded_at: str | None = None
+    meta: dict = field(default_factory=dict)
+
+    def __post_init__(self):
+        if not self.event_key:
+            self.event_key = f"{self.symbol}:{self.as_of}"
+
+    def as_row(self) -> dict:
+        d = asdict(self)
+        d["meta"] = json.dumps(d.get("meta") or {}, default=str)
+        return d
+
+
+# --------------------------------------------------------------------------- #
+# io — append-only parquet, idempotent on signal_id
+# --------------------------------------------------------------------------- #
+def spine_path(root=None) -> Path:
+    from lib import config
+    base = config.data_dir() if root is None else (Path(root) / "data")
+    p = base / "spine" / "predictions.parquet"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def _empty() -> pd.DataFrame:
+    df = pd.DataFrame({c: pd.Series(dtype="object") for c in COLUMNS})
+    return df
+
+
+def load(root=None) -> pd.DataFrame:
+    """The full predictions frame (canonical columns), or an empty frame. Never raises."""
+    p = spine_path(root)
+    if not p.exists():
+        return _empty()
+    try:
+        df = pd.read_parquet(p)
+        for c in COLUMNS:
+            if c not in df.columns:
+                df[c] = None
+        return df[COLUMNS]
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("spine.load failed: %s", e)
+        return _empty()
+
+
+def emit(rows: Iterable[SpinePrediction | dict], root=None) -> int:
+    """Append prediction rows, de-duped on ``signal_id`` (last-wins). Returns rows written.
+
+    Idempotent: re-emitting the same signal_id updates it (so a maturation pass can rewrite
+    the row with its outcome without duplicating). Degrade-never-raise."""
+    try:
+        new = [r.as_row() if isinstance(r, SpinePrediction) else dict(r) for r in rows]
+        if not new:
+            return 0
+        nf = pd.DataFrame(new)
+        for c in COLUMNS:
+            if c not in nf.columns:
+                nf[c] = None
+        nf = nf[COLUMNS]
+        cur = load(root)
+        merged = pd.concat([cur, nf], ignore_index=True)
+        # last write wins per signal_id (keeps the most recently-graded copy)
+        merged = merged.drop_duplicates(subset=["signal_id"], keep="last").reset_index(drop=True)
+        merged.to_parquet(spine_path(root), index=False)
+        return len(new)
+    except Exception as e:  # noqa: BLE001
+        log.warning("spine.emit failed: %s", e)
+        return 0
+
+
+# --------------------------------------------------------------------------- #
+# maturation / measured IC — reads matured rows; never grades a second way
+# --------------------------------------------------------------------------- #
+def graded_rows(root=None, *, size_binding_only: bool = False) -> pd.DataFrame:
+    """Matured rows only (outcome_graded True and a finite outcome_excess). This is the
+    single panel the pooling engine and IC-aware alert severity consume."""
+    df = load(root)
+    if df.empty:
+        return df
+    g = df[df["outcome_graded"].fillna(False).astype(bool)].copy()
+    g["outcome_excess"] = pd.to_numeric(g["outcome_excess"], errors="coerce")
+    g = g[np.isfinite(g["outcome_excess"])]
+    if size_binding_only:
+        g = g[g["size_binding"].fillna(False).astype(bool)]
+    return g.reset_index(drop=True)
+
+
+def _signed_outcome(g: pd.DataFrame) -> pd.Series:
+    """The direction-aware realized excess: a SHORT/veto (direction -1) that avoided a loser
+    earns POSITIVE credit (sign-inverted) — so attribution and calibration agree in sign
+    (audit #17). direction 0 (context) keeps the raw excess (no directional claim)."""
+    d = pd.to_numeric(g["direction"], errors="coerce").fillna(1)
+    signed = g["outcome_excess"].where(d == 0, g["outcome_excess"] * np.sign(d.replace(0, 1)))
+    return signed
+
+
+def _effective_n(g: pd.DataFrame) -> int:
+    """Distinct-event count: rows sharing an ``event_key`` count as ONE observation. This is
+    the co-firing collapse (#23) — N same-event channels are one, not N, pieces of evidence."""
+    if g.empty:
+        return 0
+    return int(g["event_key"].nunique())
+
+
+def measured_ic(root=None, *, engine=None, family=None, horizon=None,
+                size_binding_only: bool = False) -> dict:
+    """Measured forward edge for a slice of the spine. Returns::
+
+        {"n": <rows>, "n_eff": <distinct events>, "hit_rate": .., "mean_excess": ..,
+         "ic": <sign-aware mean signed excess>, "wrong_sign": <bool>}
+
+    ``ic`` here is the direction-aware MEAN signed excess (a simple, robust edge proxy — the
+    pooling engine consumes the raw signed outcomes, this is the human-facing summary). n_eff
+    is the co-firing-collapsed effective sample. Empty slice → n=0 cold-start dict (never a
+    crash, never a fabricated number)."""
+    g = graded_rows(root, size_binding_only=size_binding_only)
+    if engine is not None:
+        g = g[g["engine"] == engine]
+    if family is not None:
+        g = g[g["family"] == family]
+    if horizon is not None:
+        g = g[pd.to_numeric(g["horizon"], errors="coerce") == int(horizon)]
+    g = g.reset_index(drop=True)
+    n = len(g)
+    if n == 0:
+        return {"n": 0, "n_eff": 0, "hit_rate": None, "mean_excess": None,
+                "ic": None, "wrong_sign": False}
+    signed = _signed_outcome(g)
+    mean_signed = float(signed.mean())
+    return {
+        "n": n,
+        "n_eff": _effective_n(g),
+        "hit_rate": round(float((signed > 0).mean()), 4),
+        "mean_excess": round(float(g["outcome_excess"].mean()), 5),
+        "ic": round(mean_signed, 5),
+        "wrong_sign": bool(mean_signed < 0),
+    }
+
+
+# --------------------------------------------------------------------------- #
+# ADAPTERS — read the existing ledgers into spine rows (no duplicate logging)
+# --------------------------------------------------------------------------- #
+def adapt_us_board(root=None) -> list[SpinePrediction]:
+    """US board ledger → spine rows. Reads data/us_board_ledger/retro_grades.parquet (already
+    next-bar-filled and excess-vs-SPY graded by scripts/grade_us_board.py). BOTH lanes: the
+    ``buy`` lane is size-binding (direction +1), ``watch``/``laggards`` are context (0) so
+    they still accrue IC but never claim to have sized money."""
+    from lib import config
+    base = config.data_dir() if root is None else (Path(root) / "data")
+    p = base / "us_board_ledger" / "retro_grades.parquet"
+    if not p.exists():
+        return []
+    try:
+        df = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("adapt_us_board read failed: %s", e)
+        return []
+    out: list[SpinePrediction] = []
+    for _, r in df.iterrows():
+        lane = str(r.get("lane", ""))
+        ex = r.get("excess_spy")
+        as_of = str(r.get("as_of", ""))
+        tk = str(r.get("ticker", ""))
+        h = r.get("horizon")
+        if not as_of or not tk or h is None:
+            continue
+        # laggards is a SHORT-lean lane (we expect it to underperform) → direction -1 so a
+        # correctly-avoided loser earns positive credit; buy/watch are long-lean.
+        direction = -1 if lane in ("laggards", "laggard") else 1
+        out.append(SpinePrediction(
+            signal_id=f"us_board:{as_of}:{tk}:{lane}:{int(h)}",
+            engine="us_board", family=f"us_board:{('laggards' if direction < 0 else lane)}",
+            as_of=as_of, symbol=tk, horizon=int(h),
+            score=float(r["composite_z"]) if pd.notna(r.get("composite_z")) else 0.0,
+            direction=direction,
+            size_binding=(lane == "buy"),
+            universe="us_1500",
+            outcome_excess=float(ex) if pd.notna(ex) else None,
+            outcome_graded=pd.notna(ex),
+            meta={"lane": lane, "position": _num(r.get("position"))},
+        ))
+    return out
+
+
+def adapt_altdata(root=None) -> list[SpinePrediction]:
+    """Alt-data convergence ledger → spine rows carrying the co-firing channel set. Reads the
+    theses (channels, entry) and the matured outcomes (scored.jsonl). ``event_key`` is the
+    THESIS id — every channel that co-fired on the same name/day is one event, so downstream
+    can penalise same-event correlation (#23) instead of counting channels as independent."""
+    from engine.altdata_ledger import _LEDGER, _SCORED, _p
+    from engine.desk_scorer import load_jsonl, dedupe_by_id
+    from lib import config
+    r = Path(root) if root else config.ROOT
+    theses = dedupe_by_id(load_jsonl(_p(r, _LEDGER)))
+    scored = dedupe_by_id(load_jsonl(_p(r, _SCORED)))
+    out: list[SpinePrediction] = []
+    for tid, th in theses.items():
+        sc = scored.get(tid) or {}
+        outcome = sc.get("outcome")
+        realized = sc.get("realized")
+        graded = outcome in ("hit", "miss") and realized is not None
+        chans = th.get("channels") or []
+        tk = th.get("ticker") or ""
+        as_of = th.get("state_asof") or ""
+        score = float(th.get("convergence_score") or len(chans))
+        # For a convergence thesis the realized number is the rel_return vs SPY; 'miss' means
+        # it UNDERperformed. outcome_excess carries the signed realized excess directly.
+        out.append(SpinePrediction(
+            signal_id=f"altdata_conv:{tid}",
+            engine="altdata_conv", family="altdata:convergence",
+            as_of=as_of, symbol=tk, horizon=th.get("horizon_d") or 63,
+            score=score, direction=1, size_binding=False, universe="us_altdata",
+            event_key=tid,   # the co-firing collapse key: one thesis = one event
+            outcome_excess=float(realized) if graded else None,
+            outcome_graded=bool(graded),
+            meta={"channels": list(chans), "trump_linked": bool(th.get("trump_linked")),
+                  "convergence_score": int(score)},
+        ))
+    return out
+
+
+# Desk scored.jsonl locations, keyed by desk name → its family. Mirrors master_brain._DESK_TRACKS
+# but points at the per-thesis scored rows (richer than the aggregate track_record.json).
+_DESK_SCORED = {
+    "ai_desk":       ("data", "ai_desk", "scored.jsonl"),
+    "policy_intent": ("data", "policy_intent", "scored.jsonl"),
+    "radar":         ("data", "radar", "scored.jsonl"),
+    "stock_desk":    ("data", "stock_desk", "scored.jsonl"),
+    "demand_chain":  ("data", "demand_chain", "scored.jsonl"),
+    "narrative_brain": ("data", "narrative_brain", "scored.jsonl"),
+    "thematic_desk": ("data", "thematic_desk", "scored.jsonl"),
+}
+
+
+def adapt_desk_scorer(root=None, desks: dict | None = None) -> list[SpinePrediction]:
+    """Every Phase-C desk's scored.jsonl → spine rows keyed ``family="desk:{name}"``. The
+    desk 'family' is what engine.desk_scorer pools toward the cross-desk mean so a cold desk
+    (n=5) shrinks to the family prior instead of keeping full equal-weight (#13/#19). The
+    realized rel_return becomes outcome_excess; a 'miss' is a negative-signed outcome so a
+    reliably-wrong desk's pooled weight can go NEGATIVE (sign-safety)."""
+    from lib import config
+    from engine.desk_scorer import load_jsonl
+    r = Path(root) if root else config.ROOT
+    desks = desks or _DESK_SCORED
+    out: list[SpinePrediction] = []
+    for name, parts in desks.items():
+        rows = load_jsonl(Path(r).joinpath(*parts))
+        for sr in rows:
+            outcome = sr.get("outcome")
+            if outcome not in ("hit", "miss"):
+                continue           # unscored/expired/open carry no outcome
+            realized = sr.get("realized")
+            sid = sr.get("id")
+            if sid is None:
+                continue
+            # 'hit'/'miss' is the falsifier verdict; realized is the signed rel_return where
+            # available. When realized is absent, encode the verdict as ±1 so the sign still
+            # flows (a hit is a correct call → positive; a miss → negative).
+            if realized is None:
+                excess = 1.0 if outcome == "hit" else -1.0
+            else:
+                excess = float(realized) if outcome == "hit" else -abs(float(realized))
+            out.append(SpinePrediction(
+                signal_id=f"desk:{name}:{sid}",
+                engine=f"desk:{name}", family=f"desk:{name}",
+                as_of=str(sr.get("check_by") or ""), symbol=str(sr.get("subject") or name),
+                horizon=63, score=1.0, direction=1, size_binding=False,
+                universe="desks",
+                outcome_excess=excess, outcome_graded=True,
+                meta={"conviction": sr.get("conviction"), "lean": sr.get("lean"),
+                      "kind": sr.get("kind"), "outcome": outcome,
+                      "dir_ok": sr.get("directionally_correct")},
+            ))
+    return out
+
+
+def rebuild_from_adapters(root=None) -> dict:
+    """Run every adapter and emit their rows into the spine. Idempotent (signal_id de-dupe).
+    Returns a per-emitter count report. This is the single call a build step makes to keep the
+    spine current from the existing ledgers — an adapter, not a second logger."""
+    report: dict[str, int] = {}
+    for name, fn in (("us_board", adapt_us_board),
+                     ("altdata_conv", adapt_altdata),
+                     ("desk_scorer", adapt_desk_scorer)):
+        try:
+            rows = fn(root=root)
+            report[name] = emit(rows, root=root)
+        except Exception as e:  # noqa: BLE001
+            log.warning("spine adapter %s failed: %s", name, e)
+            report[name] = 0
+    report["total_rows"] = int(load(root).shape[0])
+    report["graded_rows"] = int(graded_rows(root).shape[0])
+    return report
+
+
+def _num(x):
+    try:
+        v = float(x)
+        return v if np.isfinite(v) else None
+    except (TypeError, ValueError):
+        return None

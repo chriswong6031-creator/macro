@@ -73,6 +73,23 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("china baskets: sleeve chip failed (%s)", e)
 
+    # attach each basket's cycle record (engine.china_sector_cycles, written by
+    # scripts.build_china_sector_cycles) so BOTH the overview payload (baskets.json + the
+    # rendered page, e.g. the Leadership Health "contested" read) AND the per-theme detail
+    # pages can see it. MUST run BEFORE the JSON write / overview render below — it used to
+    # sit after them, so only detail pages ever saw cycle data (the stale-label problem).
+    # Optional + ordering-safe: absent map (cycles not built yet) simply omits the record.
+    try:
+        cyc_map_p = site / "chinasectordata" / "sector_cycles_basket_map.json"
+        if cyc_map_p.exists():
+            cyc_map = json.loads(cyc_map_p.read_text())
+            for b in data.get("baskets", []):
+                cyc = cyc_map.get(b.get("id"))
+                if cyc:
+                    b["cycle"] = cyc
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("china baskets cycle-map attach failed: %s", e)
+
     fdir = site / "chinabasketdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
@@ -92,21 +109,10 @@ def main() -> int:
         bench_en="CSI 300", bench_zh="沪深300",
         generated_utc=built)
     (site / "baskets_china.html").write_text(html)
-    # attach each basket's cycle record (engine.china_sector_cycles, written by
-    # scripts.build_china_sector_cycles) so the per-theme page can draw a cyclical mini-chart.
-    # Optional + ordering-safe: absent map (cycles not built yet) simply omits the chart.
-    try:
-        cyc_map_p = site / "chinasectordata" / "sector_cycles_basket_map.json"
-        if cyc_map_p.exists():
-            cyc_map = json.loads(cyc_map_p.read_text())
-            for b in data.get("baskets", []):
-                cyc = cyc_map.get(b.get("id"))
-                if cyc:
-                    b["cycle"] = cyc
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("china baskets cycle-map attach failed: %s", e)
 
     # per-theme detail pages (site/basket_china/<id>.html) + the shared desk renderer
+    # (basket cycle records were attached above, before the JSON write, so the detail
+    # builder still sees b["cycle"] exactly as before)
     try:
         from scripts.build_theme_detail import build_detail_pages
         build_detail_pages(data, site, env, "china")

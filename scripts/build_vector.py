@@ -2231,10 +2231,21 @@ def build_override_shadow(sig: pd.DataFrame, gate: dict, ct: dict, acfg: dict,
             close=close, bottom_sig=sig.get("bottom_pressure"))
         raw_source = "local ungated recompute (pre-W0; same inputs, midterm_gate disabled)"
     gate_mask = btc_signals.midterm_blackout(sig.index, mg_cfg)
-    # parity: re-masking raw with the gate must reproduce the live gated series — if this
-    # ever breaks, the recompute has drifted from allocation() and the panel says so.
+    # parity: re-applying the override's release fraction to raw must reproduce the live
+    # gated series — if this ever breaks, the recompute has drifted from allocation()/
+    # btc_overrides.apply() and the panel says so. Post-W4 the release shape is the frac
+    # column (calendar tranche spine + Class-1), NOT the legacy election-day mask — the
+    # legacy re-mask is only the correct oracle when the frac column is absent (pre-W4
+    # frames), because the W4 spine deliberately reshapes 2018/2022 history (D4).
     try:
-        _re = raw["alloc_optimal"].mask(gate_mask, 0.0)
+        if "override_release_frac" in sig.columns:
+            _frac = sig["override_release_frac"]
+            _re = raw["alloc_optimal"].mask(_frac <= 0.0, 0.0)
+            _part = (_frac > 0.0) & (_frac < 1.0)
+            if _part.any():
+                _re = _re.mask(_part, raw["alloc_optimal"] * _frac)
+        else:
+            _re = raw["alloc_optimal"].mask(gate_mask, 0.0)
         parity_ok = bool(np.allclose(_re.fillna(-9), sig["alloc_optimal"].fillna(-9), atol=1e-9))
     except Exception:  # noqa: BLE001
         parity_ok = False
@@ -2443,6 +2454,38 @@ def main() -> int:
     (config.data_dir() / "vector").mkdir(parents=True, exist_ok=True)
     sig.to_parquet(config.data_dir() / "vector" / "signals.parquet")
 
+    # W4 grading surfaces: append new re-entry events to the reentry ledger
+    # (idempotent) and write the owner-view arming status. DISPLAY/GRADING
+    # ONLY — the allocation path never reads these; the DAT chip is advisory.
+    try:
+        from engine import btc_dat, btc_overrides
+        _vcfg_full = config.load()["vector"]
+        btc_overrides.sync_ledger(sig, _vcfg_full)
+        _re_path = config.data_dir() / "vector" / "reentry_status.json"
+        _prev_fire = None
+        if _re_path.exists():
+            try:
+                _prev_fire = json.loads(_re_path.read_text()).get("pre_window_mvrv_fire")
+            except Exception:  # noqa: BLE001 — a corrupt status never blocks the rebuild
+                pass
+        _restat = btc_overrides.build_status(sig, _vcfg_full, dat=btc_dat.compute())
+        _re_path.write_text(json.dumps(_restat, indent=1))
+        # D5 (owner decision 2026-07-02): a fresh PRE-WINDOW MVRV-Z<0 print raises an
+        # OWNER ALERT ONLY — no sleeve, no sizing authority. Telegram is the owner's
+        # ops channel (scripts/notify daily snapshot + sentinels); the subscriber alert
+        # stream (btc_alerts) must never carry this (D2). Fires once per fresh print.
+        _fire = _restat.get("pre_window_mvrv_fire")
+        if _fire and _fire != _prev_fire:
+            from scripts.notify import send_telegram
+            send_telegram(
+                "🟠 <b>BTC OWNER ALERT (D5)</b>: fresh MVRV-Z&lt;0 print on "
+                f"{_fire}, BEFORE the re-entry window opens "
+                f"({_restat.get('window_start')}). Per owner decision D5 this is an "
+                "alert only — no pre-window sleeve, sizing stays 100% cash until the "
+                "calendar spine. Details: admin console → BTC Override.")
+    except Exception as e:  # noqa: BLE001 — grading surfaces never break the build
+        log.warning("re-entry ledger/status build failed: %s", e)
+
     cpath = config.data_dir() / "vector" / "calibration.json"
     calib = json.loads(cpath.read_text()) if cpath.exists() else {
         "meta": {"span": f"{sig.index.min().date()}..{sig.index.max().date()}"},
@@ -2483,7 +2526,10 @@ def main() -> int:
     # after a structural-invalidation release the calendar still says "midterm year" but the
     # gate no longer suppresses sizing (gate.released marks it).
     _mg_cfg = _acfg.get("midterm_gate") or {}
-    gate = btc_signals.gate_state(sig.index[-1], _mg_cfg, sig=sig)
+    # W4: vector_cfg lets the stamped release date read as the projected-window
+    # open (re-engagement begins there), not the retired election-day calendar.
+    gate = btc_signals.gate_state(sig.index[-1], _mg_cfg, sig=sig,
+                                  vector_cfg=config.load()["vector"])
 
     # Cycle-thesis MONITOR (engine/btc_cycle_thesis.py): turns the halving/midterm-cycle
     # conviction into a watched thesis — projected bottom window + falsifier flags (dampening /

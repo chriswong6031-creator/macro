@@ -74,7 +74,7 @@ def _summarize(raw: pd.DataFrame, sym: str, cfg: dict) -> pd.DataFrame | None:
                                "strike_window_pct", "max_expiry_days") if k in gx}
     ecfg["r"] = gx.get("r", 0.043)
     ecfg["q"] = (cfg.get("div_yield") or {}).get(sym, 0.0)
-    summ = compute_gex(sub[["K", "T", "iv", "oi", "is_call", "expiry"]], spot, ecfg)
+    summ = compute_gex(sub[["K", "T", "iv", "oi", "is_call", "expiry"]], spot, ecfg, symbol=sym)
     asof = pd.Timestamp(sub["asof"].iloc[0]).normalize()
     return pd.DataFrame({k: [summ.get(k)] for k in SUMMARY_KEYS}, index=[asof])
 

@@ -2385,10 +2385,10 @@
       </div>
       {% endif %}
       {% if _su and _su.dispersion_regime %}{% set _dr = _su.dispersion_regime %}
-      <div class="nb-disp disp-{{ _dr.state }}" title="Cross-sectional dispersion regime — the dial for WHEN stock-selection pays. When names fan out (high dispersion / low pairwise correlation) selection earns the most and the book takes more gross (×{{ _dr.gross_mult }}); a macro-driven tape (low dispersion / high correlation) mutes it (de-gross to cash). Dispersion percentile {{ _dr.dispersion_pctile }} · avg pairwise corr {{ _dr.avg_corr }}. Sizes SELECTION conviction; never market direction. · 横截面离散度状态 — 选股何时有效的拨盘。">
+      <div class="nb-disp disp-{{ _dr.state }}" title="Cross-sectional dispersion regime — the read for WHEN stock-selection tends to pay. When names fan out (high dispersion / low pairwise correlation) selection historically earns more; a macro-driven tape (low dispersion / high correlation) mutes it. DISPLAY-ONLY: the state does NOT move the book's gross (live ×1.0). The suggested tilt (shadow ×{{ _dr.shadow_gross_mult }}) is a hand-picked prior with no measured edge on this universe and would gross UP into high-VIX stress — clamped off until a survivorship-clean selection-IR edge is measured (US_BOARD_MEASUREMENT §Study 3). Dispersion percentile {{ _dr.dispersion_pctile }} · avg pairwise corr {{ _dr.avg_corr }}. · 横截面离散度状态 — 仅供参考，不影响仓位。">
         <span class="disp-ic">{{ '🎯' if _dr.state == 'lean_in' else ('🌫️' if _dr.state == 'lean_out' else '⚖️') }}</span>
         <b><span class="l-en">{{ _dr.label }}</span><span class="l-zh">{{ _dr.label_zh }}</span></b>
-        <span class="disp-meta">{{ t('gross', '总仓') }} ×{{ _dr.gross_mult }}{% if _dr.avg_corr is not none %} · {{ t('avg corr', '平均相关') }} {{ _dr.avg_corr }}{% endif %}</span>
+        <span class="disp-meta">{{ t('context', '参考') }}{% if _dr.avg_corr is not none %} · {{ t('avg corr', '平均相关') }} {{ _dr.avg_corr }}{% endif %} · <span class="disp-shadow" title="shadow prior — not applied to sizing">{{ t('suggested', '建议倾向') }} ×{{ _dr.shadow_gross_mult }}</span></span>
       </div>
       {% endif %}
       {# W6-US fix 6: concentration banner — surfaces the effective-bets count so users

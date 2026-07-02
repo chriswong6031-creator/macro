@@ -842,6 +842,243 @@ def run_rollover_fit(region: str = "us") -> dict:
             "verdict": "ship_fitted_weights" if beats else "keep_hand_weights"}
 
 
+# =========================================================================== #
+# P2b — intra-basket breadth-DIVERGENCE Phase-0 kill-test (PRE-REGISTERED).
+# Target: forward 21d BASKET drawdown — NEVER forward return (the one validated channel
+# in this repo is drawdown; directional early leader-detection measured a coin-flip and
+# CN drivers ran 0/152 vs FWER, so any CN read of this detector stays descriptive-only).
+# Proxy mapping: the SPDR sector panel is ONE basket — members = the 9-11 sector ETFs,
+# level = the EW compounded mean return (the same documented stand-in as _panel_breadth;
+# 11 broad sectors are a coarse member set — reported, not hidden).
+# Two gates, DECLARED HERE BEFORE THE RUN:
+#   G1 STANDALONE  — purged/embargoed 5-fold OOS top-third lift of the divergence risk
+#                    score vs base P(dd21<-8%); the date-blocked bootstrap CI of the
+#                    pooled OOS lift must exclude 1.0.
+#   G2 INCREMENTAL — divergence joins the rollover logistic as a 6th sign-constrained leg
+#                    (prior weight 0.0, so it must EARN weight against the L2 pull);
+#                    require fit6_lift > hand_lift + 0.05 (the run_rollover_fit bar) AND
+#                    fit6_lift > fit5_lift AND full-fit w6 > 0.02. Overlap with below_50d
+#                    (0.859 of the fitted rollover mass) is the null hypothesis.
+# Verdicts: ship_sizing_leg (G1+G2) / redundant_with_rollover (G1 only) /
+# weak_separation (G1 fails). In ALL cases the live texture ships DISPLAY-ONLY — the
+# verdict only controls the displayed grade (engine.basket_breadth_divergence cites it
+# exactly like theme_scoring._signal_calibration cites the label calibration).
+# =========================================================================== #
+def run_breadth_divergence(region: str = "us") -> dict:
+    from engine import basket_breadth_divergence as bd
+    spec = REGION_SECTORS[region]
+    P = sector_prices(region, monthly=False)
+    spy = _adj(spec["bench"], spec["group"])
+    if P.empty or spy is None or P.shape[1] < 4:
+        return {"error": "insufficient proxy data"}
+    spy = spy.reindex(P.index).ffill()
+    rets = P.pct_change(fill_method=None)
+    lvl = (1.0 + rets.mean(axis=1).fillna(0.0)).cumprod()      # EW panel level = "the basket"
+    S = bd.series(P, lvl)
+    if S is None:
+        return {"error": "divergence series unavailable"}
+    risk_v = S["risk"].to_numpy()
+    legs_v = S["legs"].to_numpy()                              # (gap, participation, stealth)
+    lvl_v = lvl.to_numpy()
+
+    rows = []
+    for i in range(max(Z_LB, 200), len(lvl_v) - 22, STEP):
+        r = risk_v[i]
+        if not np.isfinite(r):
+            continue
+        dd = _fwd_dd(lvl_v, i, 21)
+        if not np.isfinite(dd) or not np.all(np.isfinite(legs_v[i])):
+            continue
+        rows.append((float(r), float(legs_v[i][0]), float(legs_v[i][1]), float(legs_v[i][2]),
+                     1.0 if dd < DD_RISK else 0.0, float(i)))
+    if len(rows) < 300:
+        return {"error": "thin", "n": len(rows)}
+    A = np.array(rows, float)
+    p, L3, y, ev = A[:, 0], A[:, 1:4], A[:, 4], A[:, 5]
+    base = float(y.mean())
+
+    led = TrialLedger()
+    led.log_grid([{"legs": "gap+participation+stealth", "weights": list(bd._BD_HAND),
+                   "l2": 1.0}], family="baskets_breadth_divergence",
+                 info_cutoff="2026-06-30", source="calibrate_baskets:breadth_divergence")
+    led.log_declared_budget(12, family="baskets_breadth_divergence",
+                            reason="bd design variants considered: pin gate / ramp span / "
+                                   "stealth floor / hand-weight splits")
+
+    # ---- G1 standalone: purged 5-fold OOS top-third lift + date-blocked bootstrap CI
+    k, emb = 5, 21
+    n = len(p)
+    bounds = np.linspace(0, n, k + 1).astype(int)
+    oos_fire = np.zeros(n, bool)
+    used = np.zeros(n, bool)
+    fold_lifts = []
+    for j in range(k):
+        lo, hi = int(bounds[j]), int(bounds[j + 1])
+        test = np.zeros(n, bool); test[lo:hi] = True
+        if not test.any():
+            continue
+        blo, bhi = ev[test].min(), ev[test].max()
+        train = (~test) & ((ev < blo - emb) | (ev > bhi + emb))
+        if train.sum() < 100 or test.sum() < 40:
+            continue
+        thr = float(np.quantile(p[test], 2 / 3))   # top-third rank cut (score-only, no y)
+        fire = test & ((p > 0) if thr <= 0 else (p >= thr))   # zero-inflated guard: a 0
+        # threshold would "fire" the whole fold and dilute the read to lift 1 by definition
+        used |= test
+        oos_fire |= fire
+        bte = float(y[test].mean())
+        if int(fire.sum()) >= 15 and bte > 0:
+            fold_lifts.append(float(y[fire].mean()) / bte)
+    lift_oos = round(float(np.mean(fold_lifts)), 2) if fold_lifts else None
+    lift_ci = None
+    if used.sum() and oos_fire.sum() >= 20:
+        uev, rng = np.unique(ev[used]), np.random.default_rng(7)
+        rows_by_bar = {b: np.where(used & (ev == b))[0] for b in uev}
+        lifts = []
+        for _ in range(800):                        # date-blocked: resample whole BARS
+            pick = rng.choice(uev, size=len(uev), replace=True)
+            ridx = np.concatenate([rows_by_bar[b] for b in pick])
+            fb = oos_fire[ridx]; b2 = float(y[ridx].mean())
+            if int(fb.sum()) >= 15 and b2 > 0:
+                lifts.append(float(y[ridx][fb].mean()) / b2)
+        if lifts:
+            lift_ci = [round(float(np.percentile(lifts, 2.5)), 2),
+                       round(float(np.percentile(lifts, 97.5)), 2)]
+    g1 = bool(lift_ci is not None and lift_ci[0] > 1.0)
+    # house reliability/Platt read on the same score (secondary, reported not gating)
+    confidence = _calibrate_confidence(list(p), list(y), list(ev), "fwd_dd21<-8%")
+    confidence.pop("reliability", None); confidence.pop("platt", None)   # keep the JSON lean
+
+    # standalone 3-leg weight fit (only ever wired live if the FULL verdict ships)
+    HAND3 = np.array(bd._BD_HAND, float)
+    w3, _b3 = _fit_logistic_signed(L3, y, HAND3, l2=1.0)
+    w3sum = float(w3.sum()) or 1.0
+    wired3 = [round(float(x) / w3sum, 3) for x in w3]
+
+    # ---- G2 incremental: divergence as the 6th sign-constrained rollover leg
+    feats = {c: _rs_features(P[c].dropna().reindex(P.index), spy) for c in P.columns}
+    HAND5 = np.array([0.30, 0.25, 0.20, 0.15, 0.10])
+    rows6 = []
+    for c, f in feats.items():
+        px = P[c].to_numpy()
+        rs_p = f["rs_pctile"].to_numpy(); az = f["accel_z"].to_numpy(); r5 = f["r5"].to_numpy()
+        az5 = f["accel_z"].shift(5).to_numpy()
+        ma50 = P[c].rolling(50, min_periods=25).mean().to_numpy()
+        for i in range(max(Z_LB, 200), len(px) - 22, STEP):
+            rp, a, r6 = rs_p[i], az[i], risk_v[i]
+            if not (np.isfinite(rp) and np.isfinite(a) and np.isfinite(r6)):
+                continue
+            dd = _fwd_dd(px, i, 21)
+            if not np.isfinite(dd):
+                continue
+            l1 = 1.0 if rp >= 0.8 else 0.0
+            l2_ = 1.0 if (np.isfinite(az5[i]) and a < az5[i] and a < 0) else 0.0
+            l3 = 1.0 if a < -0.4 else 0.0
+            l4 = 1.0 if (np.isfinite(ma50[i]) and px[i] < ma50[i]) else 0.0
+            l5 = 1.0 if (np.isfinite(r5[i]) and r5[i] < -0.01 and rp > 0.7) else 0.0
+            rows6.append((l1, l2_, l3, l4, l5, float(r6),
+                          1.0 if dd < DD_RISK else 0.0, float(i)))
+    g2 = False
+    inc = {"n": len(rows6)}
+    if len(rows6) >= 500:
+        A6 = np.array(rows6, float)
+        A6 = A6[np.argsort(A6[:, 7], kind="stable")]           # bar-sorted → contiguous folds
+        X6, y6, ev6 = A6[:, :6], A6[:, 6], A6[:, 7]
+        X5 = X6[:, :5]
+        hand_score = (X5 @ HAND5) / HAND5.sum()
+        prior6 = np.concatenate([HAND5, [0.0]])                # divergence must EARN weight
+        b6 = np.linspace(0, len(X6), k + 1).astype(int)
+        fit5_l, fit6_l, hand_l, w6_folds = [], [], [], []
+        for j in range(k):
+            lo, hi = int(b6[j]), int(b6[j + 1])
+            test = np.zeros(len(X6), bool); test[lo:hi] = True
+            if not test.any():
+                continue
+            blo, bhi = ev6[test].min(), ev6[test].max()
+            train = (~test) & ((ev6 < blo - emb) | (ev6 > bhi + emb))
+            if train.sum() < 200 or test.sum() < 50:
+                continue
+            w5f, b5f = _fit_logistic_signed(X5[train], y6[train], HAND5, l2=1.0)
+            w6f, b6f = _fit_logistic_signed(X6[train], y6[train], prior6, l2=1.0)
+            w6_folds.append(round(float(w6f[5]), 3))
+            bte = float(y6[test].mean()) or 1.0
+            for score, store in ((1.0 / (1.0 + np.exp(-(X5[test] @ w5f + b5f))), fit5_l),
+                                 (1.0 / (1.0 + np.exp(-(X6[test] @ w6f + b6f))), fit6_l),
+                                 (hand_score[test], hand_l)):
+                fire = score >= np.quantile(score, 2 / 3)
+                if int(fire.sum()) >= 20:
+                    store.append(float(y6[test][fire].mean()) / bte)
+        fit5 = round(float(np.mean(fit5_l)), 2) if fit5_l else None
+        fit6 = round(float(np.mean(fit6_l)), 2) if fit6_l else None
+        hand = round(float(np.mean(hand_l)), 2) if hand_l else None
+        wfull6, _bf6 = _fit_logistic_signed(X6, y6, prior6, l2=1.0)
+        g2 = bool(fit6 is not None and hand is not None
+                  and fit6 > hand + 0.05                      # the run_rollover_fit bar
+                  and (fit5 is None or fit6 > fit5)           # adds over the 5-leg FIT too
+                  and float(wfull6[5]) > 0.02)                # ...and actually earned weight
+        inc.update({"base_rate": round(float(y6.mean()), 3),
+                    "oos_lift_hand5": hand, "oos_lift_fit5": fit5, "oos_lift_fit6": fit6,
+                    "w6_full_fit": round(float(wfull6[5]), 3), "w6_by_fold": w6_folds,
+                    "full_fit_weights": [round(float(x), 3) for x in wfull6]})
+
+    verdict = ("ship_sizing_leg" if (g1 and g2)
+               else "redundant_with_rollover" if g1 else "weak_separation")
+    return {"universe": "proxy_spdr_sectors", "n_assets": int(P.shape[1]),
+            "span": [str(P.index.min().date()), str(P.index.max().date())],
+            "n": int(n), "base_rate": round(base, 3),
+            "n_trials": led.effective_n("baskets_breadth_divergence"),
+            "target": "fwd_dd21<-8% (basket drawdown — never forward return)",
+            "legs": ["gap(pinned, basket_off_high−member_dd_med ramp 3→20pp)",
+                     "participation(Δpct50_5d<-5pp | pct50<=0.5, pinned)",
+                     "stealth(rising below-50d count 10d & share>=0.3 | share>=0.7, pinned)"],
+            "hand_weights": [round(float(x), 2) for x in HAND3.tolist()],
+            "fitted_leg_weights": [round(float(x), 3) for x in w3],
+            "wired_weights": wired3,
+            "g1_standalone": {"pass": g1, "oos_topthird_lift": lift_oos,
+                              "lift_ci": lift_ci, "n_fired_oos": int(oos_fire.sum()),
+                              "k_folds": len(fold_lifts)},
+            "g2_incremental": {"pass": g2, **inc},
+            "confidence": confidence,
+            "verdict": verdict,
+            "note": "Display-only texture in ALL cases; the verdict only controls the "
+                    "displayed grade. CN/HK reads are descriptive-only regardless "
+                    "(US-proxy verdict cited cross-market, 0/152-FWER CN prior)."}
+
+
+def _print_bd(r: dict) -> None:
+    if r.get("error"):
+        print(f"\n=== BREADTH-DIVERGENCE PHASE-0: {r['error']} ==="); return
+    print(f"\n=== BREADTH-DIVERGENCE PHASE-0 ({r.get('n_assets')} sector ETFs as one basket, "
+          f"{r.get('span', ['?', '?'])[0]}→{r.get('span', ['?', '?'])[1]}) ===")
+    print(f"  target {r.get('target')}   n {r.get('n')}  base {r.get('base_rate')}  "
+          f"n_trials {r.get('n_trials')}")
+    g1, g2 = r.get("g1_standalone", {}), r.get("g2_incremental", {})
+    print(f"  G1 standalone:  top-third OOS lift {g1.get('oos_topthird_lift')}  "
+          f"CI {g1.get('lift_ci')}  n_fired {g1.get('n_fired_oos')}  → pass={g1.get('pass')}")
+    print(f"  G2 incremental: hand5 {g2.get('oos_lift_hand5')}  fit5 {g2.get('oos_lift_fit5')}  "
+          f"fit6 {g2.get('oos_lift_fit6')}  w6 {g2.get('w6_full_fit')}  → pass={g2.get('pass')}")
+    print(f"  leg weights: hand {r.get('hand_weights')} fitted {r.get('fitted_leg_weights')}")
+    print(f"  >>> VERDICT: {r.get('verdict')}  (texture ships display-only in all cases)")
+
+
+def main_bd() -> int:
+    """Standalone Phase-0 entry (`--bd`): run ONLY run_breadth_divergence and merge its
+    verdict block ADDITIVELY into data/strategies/baskets_calibration.json under
+    'breadth_divergence_fit' — existing keys are never disturbed."""
+    res = run_breadth_divergence("us")
+    _print_bd(res)
+    p = config.data_dir() / "strategies" / "baskets_calibration.json"
+    try:
+        d = json.loads(p.read_text()) if p.exists() else {}
+    except Exception:  # noqa: BLE001 — a corrupt file must not block the additive write
+        d = {}
+    d["breadth_divergence_fit"] = res
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(d, indent=2, default=str))
+    log.info("wrote %s (breadth_divergence_fit, additive)", p)
+    return 0
+
+
 # --------------------------------------------------------------------------- #
 # LIVE universe — full-fidelity labels, descriptive context only (never a gate)
 # --------------------------------------------------------------------------- #
@@ -1042,6 +1279,10 @@ def main(do_live: bool = False) -> int:
         print(f"  fitted weights: {rf['fitted_weights']}")
         print(f"  OOS top-third lift: hand {rf['oos_lift_hand']}  vs fitted {rf['oos_lift_fitted']}  "
               f"(reliability skill {rf['reliability_skill']})  → {rf['verdict']}")
+
+    log.info("running P2b breadth-divergence Phase-0 kill-test…")
+    out["breadth_divergence_fit"] = run_breadth_divergence("us")
+    _print_bd(out["breadth_divergence_fit"])
     if do_live:
         log.info("running LIVE universe (3y baskets, descriptive)…")
         out["live"] = run_live("us")
@@ -1062,4 +1303,6 @@ def main(do_live: bool = False) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main("--live" in sys.argv))
+    # `--bd` runs ONLY the P2b breadth-divergence Phase-0 and merges its verdict block
+    # additively into the existing calibration JSON (the full main() rerun is ~minutes).
+    sys.exit(main_bd() if "--bd" in sys.argv else main("--live" in sys.argv))

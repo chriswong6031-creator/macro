@@ -263,18 +263,20 @@ def test_event_snapshot_disabled():
 
 
 def test_event_snapshot_no_headlines():
-    oc, of = ct._cfg, ct._fetch_event_headlines
+    oc, of, og = ct._cfg, ct._fetch_event_headlines, ct._gdelt_snapshot_get
     ct._cfg = lambda: {"enabled": True, "event_enabled": True, "llm_min_confidence": "high"}
     ct._fetch_event_headlines = lambda today, cfg: []
+    ct._gdelt_snapshot_get = lambda today, cfg: None  # no cached snapshot for this date
     try:
         assert ct.event_snapshot("2026-06-14") is None
     finally:
-        ct._cfg, ct._fetch_event_headlines = oc, of
+        ct._cfg, ct._fetch_event_headlines, ct._gdelt_snapshot_get = oc, of, og
 
 
 def test_event_snapshot_stubbed():
-    oc, of, om = ct._cfg, ct._fetch_event_headlines, ct._call_model
+    oc, of, om, og = ct._cfg, ct._fetch_event_headlines, ct._call_model, ct._gdelt_snapshot_get
     ct._cfg = lambda: {"enabled": True, "event_enabled": True, "llm_min_confidence": "high"}
+    ct._gdelt_snapshot_get = lambda today, cfg: None  # force fallthrough to fetch stub
     ct._fetch_event_headlines = lambda today, cfg: [
         "Stocks plunge as Fed signals higher-for-longer", "Treasury yields spike on hot inflation"]
     reply = json.dumps({"tone_score": 0.7, "risk_delta": 0.6, "shock_reversible": "persistent",
@@ -288,7 +290,7 @@ def test_event_snapshot_stubbed():
         assert ev["shock_reversible"] == "persistent"   # citation verified against the headline
         assert ev["doc_id"].startswith("event_")
     finally:
-        ct._cfg, ct._fetch_event_headlines, ct._call_model = oc, of, om
+        ct._cfg, ct._fetch_event_headlines, ct._call_model, ct._gdelt_snapshot_get = oc, of, om, og
 
 
 def test_norm_matches_unicode_and_mojibake_dashes():

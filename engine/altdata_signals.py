@@ -119,6 +119,74 @@ _CH = {
 }
 
 
+# --------------------------------------------------------------------------- co-firing #23
+# Channels that fire on the SAME underlying corporate event are ONE observation, not N. The
+# audit (#23): of 120 theses, special_situation appears in 73, material_8k 27 — a single 8-K
+# can mint a multi-channel "high" tier because convergence_score counts distinct channels as
+# independent. We group channels into event CLUSTERS; the co-firing-adjusted score counts
+# clusters (independent evidence), not raw channels. This estimate uses the channel taxonomy
+# directly (channels within a cluster co-fire on one event); it degrades to the raw count when
+# a channel is unmapped (conservative — never over-penalises an unknown channel).
+_EVENT_CLUSTER = {
+    # a single 8-K / material corporate event lights several of these at once
+    "material_8k": "corp_event", "clinical_phase3_start": "corp_event",
+    "fda_approval": "corp_event", "fda_label_expansion": "corp_event",
+    "earnings_beat": "corp_event", "gov_grant": "corp_event", "gov_grant_accel": "corp_event",
+    # one political/trump narrative lights these together
+    "trump": "trump", "lobbying": "trump", "lobbying_spike": "trump",
+    # congressional disclosure cluster (one filing window)
+    "congress_buy": "congress", "congress_cluster": "congress",
+    # insider filing cluster (one Form-4 window)
+    "insider_buy": "insider", "insider_cluster": "insider", "insider_mspr": "insider",
+    # soft social / retail buzz co-move
+    "retail_buzz": "buzz", "news_sentiment": "buzz", "cnbc_pick": "buzz",
+    # contract flow cluster
+    "gov_contract": "contract", "gov_contract_accel": "contract",
+}
+
+
+def cofiring_adjusted_score(chans: list) -> int:
+    """Independent-evidence count: channels that co-fire on ONE event collapse to a single
+    observation (#23). An unmapped channel keeps its own cluster (conservative). This is the
+    number a tier should be built on — a single corporate event can no longer mint a
+    multi-channel 'high'."""
+    if not chans:
+        return 0
+    clusters = {_EVENT_CLUSTER.get(str(c), f"solo:{c}") for c in chans}
+    return len(clusters)
+
+
+def convergence_tier(chans: list, trump: bool) -> dict:
+    """Accrual-aware, co-firing-penalized tier (#23). Returns::
+
+        {"tier", "raw_score", "cofiring_score", "n_scored", "hit_rate", "basis"}
+
+    ``tier`` is built on the CO-FIRING-ADJUSTED score (independent events), not the raw
+    channel count. ``basis`` is 'prior' until the spine's convergence ledger has n>0 matured
+    outcomes — then it becomes 'measured' and cites the real hit-rate. The 'weight by track
+    record' language is only honest once n_scored>0, so the caller can gate it."""
+    raw = len(chans or [])
+    cof = cofiring_adjusted_score(chans or [])
+    # tier off the ADJUSTED score: 'high' needs >=3 INDEPENDENT events (or 2 + a distinct
+    # trump event), so one 8-K lighting 3 channels (cof=1) can no longer be 'high'.
+    tier = "high" if (cof >= 3 or (cof >= 2 and trump)) else "medium" if cof >= 2 else "low"
+    n_scored, hit_rate, basis = 0, None, "prior"
+    try:
+        from engine import spine
+        m = spine.measured_ic(engine="altdata_conv", family="altdata:convergence")
+        n_scored = int(m.get("n") or 0)
+        if n_scored > 0:
+            hit_rate = m.get("hit_rate")
+            basis = "measured"
+            # a measured NULL/negative edge demotes 'high'→'medium' (honest override)
+            if m.get("wrong_sign") and tier == "high":
+                tier = "medium"
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        pass
+    return {"tier": tier, "raw_score": raw, "cofiring_score": cof,
+            "n_scored": n_scored, "hit_rate": hit_rate, "basis": basis}
+
+
 def chip(rec: dict | None) -> dict | None:
     """Shape a by_ticker record into a display-only stock-page chip, or None."""
     if not rec:
@@ -128,13 +196,22 @@ def chip(rec: dict | None) -> dict | None:
         return None
     score = int(rec.get("convergence_score", 0) or 0)
     trump = bool(rec.get("trump_linked"))
-    tier = "high" if (score >= 3 or (score >= 2 and trump)) else "medium" if score >= 2 else "low"
+    # #23: tier off the co-firing-adjusted independent-event count, accrual-aware.
+    tinfo = convergence_tier(chans, trump)
+    tier = tinfo["tier"]
+    cof = tinfo["cofiring_score"]
     labels = [{"en": _CH.get(c, (c, c))[0], "zh": _CH.get(c, (c, c))[1]} for c in chans]
-    if score >= 2:
-        head = {"en": f"{score}-channel alt-data convergence", "zh": f"{score}通道替代数据汇聚"}
-    else:
+    if cof >= 2:
+        # headline the INDEPENDENT-event count (#23), noting when channels collapsed
+        collapsed = "" if cof == score else f" (from {score} channels)"
+        collapsed_zh = "" if cof == score else f"（{score}通道去相关后）"
+        head = {"en": f"{cof}-event alt-data convergence{collapsed}",
+                "zh": f"{cof}独立事件替代数据汇聚{collapsed_zh}"}
+    elif score >= 1:
         en, zh = _CH.get(chans[0], (chans[0], chans[0]))
         head = {"en": en, "zh": zh}
+    else:
+        head = {"en": "alt-data signal", "zh": "替代数据信号"}
     en_bits, zh_bits = [], []
     if rec.get("congress_members"):
         en_bits.append(f"{rec['congress_members']} in Congress net-buying")
@@ -151,14 +228,30 @@ def chip(rec: dict | None) -> dict | None:
     if rec.get("trump_side"):
         en_bits.append(f"Donald Trump {rec['trump_side']}")
         zh_bits.append(f"特朗普{'买入' if rec['trump_side'] == 'buy' else '卖出'}")
+    # #23: the caveat is honest about the ledger's ACTUAL maturity. Only once the spine's
+    # convergence ledger has n>0 matured outcomes does "weight by track record" mean anything;
+    # until then it is an explicit n=0 PRIOR, not an earned weight.
+    n_scored, basis = tinfo["n_scored"], tinfo["basis"]
+    if basis == "measured" and n_scored > 0:
+        hr = tinfo.get("hit_rate")
+        hr_txt = f" (hit-rate {hr:.0%}, n={n_scored})" if hr is not None else f" (n={n_scored})"
+        caveat_en = ("Public-record alt-data convergence — the unusual-activity layer. Graded "
+                     f"vs SPY in the Signal Intelligence ledger{hr_txt}; weight by that track "
+                     "record, not a standalone trade signal.")
+        caveat_zh = ("公开记录替代数据汇聚——异常活动层。在信号情报战绩中对标普评分"
+                     f"（命中率约，n={n_scored}）；据该战绩权衡，而非独立交易信号。")
+    else:
+        caveat_en = ("Public-record alt-data convergence — the unusual-activity layer. "
+                     "TRACK RECORD ACCRUING (n=0 matured): this tier is a PRIOR, not an earned "
+                     "weight; the vs-SPY ledger has not matured. Context only, never a trade signal.")
+        caveat_zh = ("公开记录替代数据汇聚——异常活动层。战绩累积中（已到期 n=0）："
+                     "此层级为先验，非已验证权重；对标普战绩尚未到期。仅作背景，绝非交易信号。")
     return {
-        "tier": tier, "score": score, "trump_linked": trump, "channels": labels,
+        "tier": tier, "score": score,
+        "cofiring_score": cof, "n_scored": n_scored, "basis": basis, "hit_rate": tinfo.get("hit_rate"),
+        "trump_linked": trump, "channels": labels,
         "headline": head,
         "detail": {"en": "; ".join(en_bits) or "alt-data signal present",
                    "zh": "；".join(zh_bits) or "存在替代数据信号"},
-        "caveat": {"en": "Public-record alt-data convergence — the unusual-activity layer. Graded "
-                         "vs SPY in the Signal Intelligence ledger; weight by that track record, "
-                         "not a standalone trade signal.",
-                   "zh": "公开记录替代数据汇聚——异常活动层。在信号情报战绩中对标普评分；据该战绩权衡，"
-                         "而非独立交易信号。"},
+        "caveat": {"en": caveat_en, "zh": caveat_zh},
     }

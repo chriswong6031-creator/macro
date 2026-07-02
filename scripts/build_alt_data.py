@@ -49,6 +49,16 @@ def main() -> int:
         picks = altdata_picks.build_picks(feed, by_ticker)
         track = altdata_ledger.rebuild(by_ticker) or {}
 
+        # W4 outcome spine: adapt the just-rebuilt ledgers (alt-data convergence, US board,
+        # desks) into shared prediction rows so the pooling / IC-aware layers can read one
+        # signal-id→outcome substrate. Adapter, not a duplicate logger; never fatal.
+        try:
+            from engine import spine
+            rep = spine.rebuild_from_adapters()
+            log.info("spine rebuilt from adapters: %s", rep)
+        except Exception as e:  # noqa: BLE001
+            log.warning("spine rebuild skipped (%s)", e)
+
         # optional gated LLM extractors — grow the graph w/ candidate edges (no-op w/o key)
         for mod, label in (("engine.influence.extract", "influence"),
                            ("engine.trumpflow.extract", "trumpflow")):

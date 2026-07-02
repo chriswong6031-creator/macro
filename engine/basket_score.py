@@ -211,16 +211,26 @@ def rollover_risk(lvl: pd.Series, fp: dict | None, fp5: dict | None,
 
 
 def theme_textures(lvl: pd.Series, fp: dict | None, fp5: dict | None,
-                   crowd: dict | None, breadth_d: dict | None, perf: dict | None) -> dict:
-    """All four per-theme textures + the basket RSI (one call per basket)."""
+                   crowd: dict | None, breadth_d: dict | None, perf: dict | None,
+                   mc_closes: pd.DataFrame | None = None) -> dict:
+    """All four per-theme textures + the basket RSI (one call per basket).
+
+    `mc_closes` (optional, ADDITIVE): the dated live-masked member close matrix. When
+    present it feeds the intra-basket breadth-DIVERGENCE texture (level pinned near its
+    high while the members roll over one by one — engine.basket_breadth_divergence, a
+    display-only de-risk read). None-safe skip keeps every existing caller byte-identical."""
     rsi = _rsi(lvl)
     rs_p = (fp or {}).get("rs_pctile")
-    return {
+    out = {
         "bull_age": bull_age(lvl),
         "overbought": overbought(lvl, rs_p, crowd),
         "clean_entry": clean_entry(lvl, fp, breadth_d, rsi),
         "rollover_risk": rollover_risk(lvl, fp, fp5, breadth_d, perf),
     }
+    if mc_closes is not None:
+        from engine import basket_breadth_divergence as _bd   # local: keeps import graph light
+        out["breadth_divergence"] = _bd.breadth_divergence(mc_closes, lvl)
+    return out
 
 
 def act_now_stocks(members: list, theme: dict) -> dict:

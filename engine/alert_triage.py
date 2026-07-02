@@ -78,11 +78,14 @@ _COMMODITY_TIER = {
 }
 # Theme-rotation reads (engine.theme_alerts) are tactical CONTEXT — a thematic-basket
 # rotation is never a standalone cross-asset sizer, so the loudest a topping/breakdown
-# gets is 'watch'; a leadership reshuffle is 'context'.
+# gets is 'watch'. leadership_rotation is debounced at the source (theme_alerts: held #1
+# for 2 consecutive builds + >=3-point composite margin over rank-2), so one that fires
+# is a persistent, decisive handoff — 'watch', not 'context'. Unbuffered it re-fired on
+# every photo-finish rank wobble (6+ rotations in 6 sessions, China book 2026-06).
 _THEMES_TIER = {
     "theme_topping": "watch", "theme_deteriorating": "watch",
     "theme_emerging": "watch", "reco_change": "watch",
-    "leadership_rotation": "context",
+    "leadership_rotation": "watch",
 }
 # Forming-narrative detections (engine.emergence_alerts) are a CONTEXT watchlist — a newly
 # coherent group of names carries no validated forward edge, so it never rises above context.
@@ -193,6 +196,70 @@ def severity_band(tier: str, raw_sev: str) -> str:
     if tier == "watch":
         return "major" if high else "minor"
     return "minor"
+
+
+# Alert (source, type) → its severity governance. Two forms:
+#   * ("spine", engine, family) — the band is bounded by that spine emitter's MEASURED IC.
+#   * ("documented_null",)      — a DOCUMENTED near-zero-IC emitter with no spine of its own
+#     yet (#42's exact case: narrative-rotation entered_book/left_book, rank-IC≈0 per
+#     baskets_calibration). Its band is capped to 'minor' NOW — the honest prior — and it will
+#     upgrade to spine-measured governance the moment a rotation spine emitter accrues n>0.
+# Everything absent here is untouched (its hardcoded band stands).
+_IC_GOVERNED = {
+    ("rotation", "entered_book"): ("documented_null",),
+    ("rotation", "left_book"):    ("documented_null",),
+    ("rotation", "leadership_rotation"): ("documented_null",),
+    ("altdata", "convergence"):   ("spine", "altdata_conv", "altdata:convergence"),
+}
+_BAND_RANK = {"minor": 0, "major": 1, "critical": 2}
+_RANK_BAND = {v: k for k, v in _BAND_RANK.items()}
+# The measured-IC severity policy (#42 durable form): the hardcoded per-event severity is a
+# PRIOR that measured performance overrides — bounded. A validated positive edge (mean signed
+# excess > 0 over a meaningful n) is allowed its hardcoded band; a measured-NULL or WRONG-SIGN
+# emitter (or a documented-null one) is CAPPED to 'minor' so it can't crowd the board's top.
+# Below MIN_N a SPINE-governed emitter is still cold — we neither promote nor demote (honest
+# accrual). A documented-null emitter is capped regardless (its ~0 IC is already established).
+_IC_MIN_N = 12
+_IC_POS_THRESH = 0.0      # signed IC strictly > 0 to keep a promoted band
+
+
+def _cap_to_minor(band: str) -> str:
+    return _RANK_BAND[min(_BAND_RANK.get(band, 0), _BAND_RANK["minor"])]
+
+
+def ic_severity_cap(source: str, type_: str, band: str, root=None) -> tuple[str, dict]:
+    """Bound ``band`` by the emitter's measured / documented edge (#42). Returns (band, note).
+
+    Policy:
+      * not governed → band unchanged (hardcoded band stands);
+      * documented-null emitter → band capped at 'minor' (its ~0 IC is established);
+      * spine-governed + cold (n < _IC_MIN_N) → band unchanged (accruing prior);
+      * spine-governed + measured IC ≤ 0 → band capped at 'minor' (null / wrong-sign);
+      * spine-governed + measured IC > 0 → band unchanged (measured edge earns its band).
+
+    Degrade-never-raise: any spine read failure returns the band unchanged."""
+    gov = _IC_GOVERNED.get((source, type_))
+    if not gov:
+        return band, {}
+    if gov[0] == "documented_null":
+        capped = _cap_to_minor(band)
+        return capped, {"ic_state": "documented_null", "capped_from": band,
+                        "note": "documented rank-IC≈0 emitter — capped so it can't outrank "
+                                "validated risk-off signals"}
+    try:
+        from engine import spine
+        _, engine, family = gov
+        m = spine.measured_ic(root=root, engine=engine, family=family)
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        return band, {}
+    n = int(m.get("n") or 0)
+    ic = m.get("ic")
+    if n < _IC_MIN_N or ic is None:
+        return band, {"ic_state": "accruing", "ic_n": n}
+    if ic <= _IC_POS_THRESH:
+        return _cap_to_minor(band), {"ic_state": "null_or_wrong_sign", "ic": ic, "ic_n": n,
+                                     "capped_from": band}
+    return band, {"ic_state": "validated", "ic": ic, "ic_n": n}
 
 
 def action_for(tier: str, band: str, ca_tag: str) -> tuple[str, str]:
@@ -463,6 +530,9 @@ def build_triage(days: int = 30, today: date | None = None,
     for a in raw:
         tier = a["tier"]
         band = severity_band(tier, a["raw_sev"])
+        # #42: measured-IC severity — the hardcoded band is a prior; a spine-measured null /
+        # wrong-sign emitter is capped so it can't outrank validated risk-off signals.
+        band, ic_note = ic_severity_cap(a["source"], a["type"], band)
         ca_tag = cross_asset_tag(a["type"], ca_verdict)
         age = max(0.0, (today_ts - pd.Timestamp(a["ts"]).normalize()).days)
         score, comp = priority(tier, band, age, ca_tag)
@@ -481,6 +551,7 @@ def build_triage(days: int = 30, today: date | None = None,
             "validation": _validation(a["source"], a["type"], a.get("edge", ""),
                                       a.get("edge_zh", ""), reg, rule_sc,
                                       a.get("detail", "")),
+            "ic_severity": ic_note,
         })
 
     # collapse re-fires of the same (source,type,asset) within the window: keep the

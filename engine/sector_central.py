@@ -74,18 +74,23 @@ SPDR_TO_FINVIZ = {
 # =========================================================================== #
 # market context — the validated regime GATE + heatmap/flow display context
 # =========================================================================== #
-def _regime_anchor() -> dict:
+def _regime_anchor(latest: dict | None = None) -> dict:
     """The validated US risk posture. There is NO engine.masterminds.regime_state() to call;
     the US analogue is data/regime/latest.json + engine.conditions.macro_risk_score (the
     validated risk-OFF scalar). Returns a normalized market read with a risk-on scalar in
-    [-1,+1] and a [0,1] gate factor for bullish convictions."""
-    d = {}
-    try:
-        p = config.data_dir() / "regime" / "latest.json"
-        if p.exists():
-            d = json.loads(p.read_text()) or {}
-    except Exception as e:  # noqa: BLE001
-        log.warning("central: regime latest.json unreadable: %s", e)
+    [-1,+1] and a [0,1] gate factor for bullish convictions.
+
+    `latest`: an already-assembled latest.json dict (the coherence assert passes the IN-MEMORY
+    latest for THIS run — before it is written to disk — so the gate is validated against the
+    same-run risk read, not the previous run's persisted file). Default None → read from disk."""
+    d = latest if isinstance(latest, dict) and latest else {}
+    if not d:
+        try:
+            p = config.data_dir() / "regime" / "latest.json"
+            if p.exists():
+                d = json.loads(p.read_text()) or {}
+        except Exception as e:  # noqa: BLE001
+            log.warning("central: regime latest.json unreadable: %s", e)
 
     quad, quad_name = d.get("quad"), d.get("quad_name")
     liquidity = d.get("liquidity_overlay") or d.get("liquidity")

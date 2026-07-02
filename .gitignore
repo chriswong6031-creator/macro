@@ -116,3 +116,7 @@ site/subsectorohlc/
 site/subsectorohlc_china/
 site/subsectorohlc_russell/
 site/subsectorohlc_nasdaq/
+
+# A/B risk-gate per-day divergence dump (~3MB, 13k+ rows) — the committed summary
+# (calibration/ab_risk_gate.json) carries the stats + the event-window replay rows.
+calibration/ab_risk_gate_divergence.jsonl

@@ -1,0 +1,61 @@
+{
+ "asof": "2026-07-01",
+ "config": {
+  "membership_min_present": 3,
+  "membership_max_prune_pct": 20.0,
+  "membership_max_prune_abs": 3
+ },
+ "n_suites": 4,
+ "n_pruned": 0,
+ "n_refused": 0,
+ "suites": [
+  {
+   "suite": "baskets_intl",
+   "cache": "data/intl_search/closes.parquet",
+   "skipped": false,
+   "note": "",
+   "n_baskets": 17,
+   "n_members": 279,
+   "n_off_cache": 0,
+   "pruned": [],
+   "refused": false,
+   "reasons": []
+  },
+  {
+   "suite": "baskets_china",
+   "cache": "data/china_search/closes.parquet",
+   "skipped": false,
+   "note": "",
+   "n_baskets": 22,
+   "n_members": 285,
+   "n_off_cache": 0,
+   "pruned": [],
+   "refused": false,
+   "reasons": []
+  },
+  {
+   "suite": "baskets_canada",
+   "cache": "data/canada_search/closes.parquet",
+   "skipped": false,
+   "note": "",
+   "n_baskets": 16,
+   "n_members": 167,
+   "n_off_cache": 0,
+   "pruned": [],
+   "refused": false,
+   "reasons": []
+  },
+  {
+   "suite": "baskets_hk",
+   "cache": "data/hk_search/closes_deep.parquet",
+   "skipped": false,
+   "note": "",
+   "n_baskets": 14,
+   "n_members": 155,
+   "n_off_cache": 0,
+   "pruned": [],
+   "refused": false,
+   "reasons": []
+  }
+ ]
+}

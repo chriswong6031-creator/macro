@@ -420,6 +420,21 @@ class TestBtcLeverageCascade:
         )
         assert result["derisk_cap"] == 0.5
 
+    def test_oi_only_risk_carries_gated_out_reliability_contract(self, monkeypatch):
+        """Audit #46: the OI-only de-risk field is anti-predictive standalone (lift ~0.36), so it
+        must carry a FIELD-LEVEL reliability contract with gated_out=True + direction_reliable=
+        False — a template may not render it directionally. cascade_risk (the conjunction gate)
+        is the intended read and is NOT gated out."""
+        _patch_store(monkeypatch)
+        from engine import btc_leverage_cascade
+        df = self._make_df(n=300, funding_annual_pct=80.0, funding_z=2.5,
+                           oi_mcap_ratio=0.08, oi_change=0.05)
+        result = btc_leverage_cascade.compute(sig_df=df)
+        rel = result["reliability"]
+        assert rel["oi_only_risk"]["gated_out"] is True
+        assert rel["oi_only_risk"]["direction_reliable"] is False
+        assert rel["cascade_risk"]["gated_out"] is False
+
     def test_low_risk_on_low_funding_and_declining_oi(self, monkeypatch):
         """Low funding + declining OI → cascade_risk = 'low', no derisk_cap."""
         _patch_store(monkeypatch)

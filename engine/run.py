@@ -536,6 +536,22 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("risk-state failed: %s", e)
         latest["risk_state"] = None
+    # Risk unification (P2-B', audit #4): RE-FUSE regime_one.fused_risk with the LIVE
+    # risk_state (the positioning/blow-off detector) now that it exists. regime_one runs
+    # BEFORE risk_state above, so its first fused_risk read is quad-prior-only; this folds
+    # in the positioning leg (max-cautious) so the SHADOW fused gate + the bot prior see it.
+    # SHADOW — does NOT drive the live sector-central gate (the 2026-06-23 replay did not
+    # pass; scripts/ab_risk_gate.py). Re-persist regime_one.json so the artifact carries the
+    # fused gate + directives. Additive, never fatal.
+    try:
+        if latest.get("regime_one") and latest.get("risk_state"):
+            from engine import regime_one as _r1re
+            latest["regime_one"] = _r1re.refuse(latest["regime_one"], latest["risk_state"])
+            _r1re_path = p / "regime_one.json"
+            with open(_r1re_path, "w") as _r1refh:
+                json.dump(latest["regime_one"], _r1refh, indent=2, default=str)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("regime-one re-fuse failed: %s", e)
     # Risk Radar v2 (engine/risk_radar.py): the EVIDENCE-GATED, regime-typed, genuinely-leading
     # successor to risk_state — scare-typed sub-scores (credit/rates/bubble/growth + vol display-
     # only) built ONLY from signals that pass the strict day-level-lift backtest gate, loud+early,
@@ -611,6 +627,20 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("mtf-signals leaf failed: %s", e)
         latest["mtf_signals"] = None
+    # Risk COHERENCE assert (P2-B', audit #4) — the "can never contradict on a stress day"
+    # guarantee. Verifies (A) the three gross tables agree (single source), (B) the live
+    # sector-central gate basis is still MRS (no silent flip; the 06-23 replay didn't pass),
+    # and (C) no stress-day contradiction (a loud risk-off banner/fused/risk_state while the
+    # live conviction gate sizes risk-on — the exact #4 hazard). Non-strict by default (logs
+    # loudly); strict under COHERENCE_STRICT=1 (CI) so a real contradiction stops the build.
+    try:
+        from engine.regime_coherence import assert_coherence
+        latest["risk_coherence"] = assert_coherence(latest, strict=None)
+    except Exception as e:  # noqa: BLE001 — the assert may raise CoherenceError under strict
+        if e.__class__.__name__ == "CoherenceError":
+            raise
+        log.error("risk coherence assert failed to run: %s", e)
+        latest["risk_coherence"] = None
     with open(p / "latest.json", "w") as fh:
         json.dump(latest, fh, indent=2, default=str)
     log.info("regime %s (%s) conf=%.2f liq=%s cycle=%s transition=%s",

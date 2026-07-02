@@ -252,11 +252,29 @@ def build() -> str:
     # if the engine is taking a buyable-washout redeploy but the LLM reads the shock as a
     # regime break, defer the buy. Off (no DeepSeek key) -> mechanical recommendation stands.
     # Logged forward for future validation. (engine.spvector_overlay; preserved across the merge.)
+    #
+    # W7 #33 spvector veto fix: `on_stress_day` was always False (default), making
+    # context_snapshot() skip event_snapshot() and always use the FOMC digest whose
+    # shock_reversible is always 'unknown' → 0 vetoes in 202 log rows. Fix: derive
+    # `on_stress_day` from the SAME mechanical capitulation trigger the redeploy leg
+    # uses (capitulation_score >= 2: VRP-pctile>0.90 / VIX>30 / COT washout). This is
+    # a DEFINED stress flag with a real definition; the LLM veto remains LOG-ONLY
+    # (shadow) — it never moves a live weight until the overlay log accrues precision.
     overlay = {"enabled": False}
     try:
         from engine import spvector_overlay as sov
         glide_w = float(ea.glide_path(rs).reindex(spy.index, method="ffill").fillna(1.0).iloc[-1])
-        overlay = sov.live_overlay(glide_w, float(alloc.iloc[-1]), snapshot=sov.context_snapshot())
+        # Determine stress day from the mechanical capitulation_score (same trigger as redeploy)
+        _cap_score = cf.get("capitulation_score")
+        _is_stress_day = bool(
+            _cap_score is not None
+            and _cap_score.notna().any()
+            and int(_cap_score.dropna().iloc[-1]) >= 2
+        )
+        overlay = sov.live_overlay(
+            glide_w, float(alloc.iloc[-1]),
+            snapshot=sov.context_snapshot(on_stress_day=_is_stress_day),
+        )
         sov.log_overlay(overlay, asof=spy.index[-1].strftime("%Y-%m-%d"))
     except Exception:  # noqa: BLE001 — advisory overlay must never break the page
         overlay = {"enabled": False}

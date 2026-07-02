@@ -47,16 +47,36 @@ def test_book_vol_between_idio_and_fully_correlated():
     assert 0.20 / np.sqrt(3) < v < 0.20                     # between diversified and undiversified
 
 
-def test_dispersion_lean_in_when_names_fan_out():
-    n, idx = 300, pd.bdate_range("2023-01-01", periods=300)
+def _fan_out_panel():
+    idx = pd.bdate_range("2023-01-01", periods=300)
     rng = np.random.default_rng(5)
     # LOW dispersion early (everything moves together), HIGH dispersion recently (names fan out)
     low = pd.DataFrame(rng.normal(0, 0.005, (200, 40)), index=idx[:200]) \
         .add(rng.normal(0, 0.02, (200, 1)))                # shared market shock => high corr
     high = pd.DataFrame(rng.normal(0, 0.05, (100, 40)), index=idx[200:])  # idiosyncratic => dispersed
-    panel = pd.concat([low, high])
-    r = dispersion.assess(panel)
-    assert r is not None and r["state"] == "lean_in" and r["gross_mult"] > 1.0
+    return pd.concat([low, high])
+
+
+def test_dispersion_lean_in_state_detected_but_gross_clamped():
+    # Audit #20 / passport rule: the STATE is still detected and displayed, but the LIVE
+    # gross dial is clamped to 1.0 (display-only) — it must NEVER gross the book up on a
+    # hand-picked tercile with no measured edge. The hand-picked magnitude survives as a
+    # SHADOW so a future measured promotion is one config change.
+    r = dispersion.assess(_fan_out_panel())
+    assert r is not None and r["state"] == "lean_in"
+    assert r["gross_mult"] == 1.0                          # CLAMPED — no live up-gross
+    assert r["shadow_gross_mult"] > 1.0                    # prior preserved for promotion
+    assert r["passport"]["basis"] == "prior"
+    assert r["passport"]["verdict"].startswith("display-only")
+    assert r["passport"]["validation"]["survives"] is False
+
+
+def test_dispersion_gross_dial_is_display_only_invariant():
+    # No dispersion state may bind sizing while the dial is display-only — clamp is invariant.
+    r = dispersion.assess(_fan_out_panel())
+    assert r["gross_mult"] == 1.0
+    assert set(dispersion._SHADOW_GROSS.values()) == {1.20, 1.0, 0.75}
+    assert dispersion._LIVE_CLAMP == 1.0
 
 
 def test_dispersion_thin_panel_is_none():

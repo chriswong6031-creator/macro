@@ -52,6 +52,30 @@ def _tag(key: str, en: str, zh: str) -> dict:
 # ---------------------------------------------------------------------------
 REPORTS: list[dict] = [
     {
+        "slug": "report_ai_master_plan",
+        "template": "report_ai_master_plan.html.j2",
+        "date": "2026-07-01",
+        "read_min": 26,
+        "title_en": "The AI Master Plan",
+        "title_zh": "AI 总体规划",
+        "dek_en": "Strip the White House AI Action Plan to its mechanisms and it stops being "
+                  "industrial policy and becomes the refinancing of the United States — a "
+                  "physical-stock strategy that is bubble-dependent by design. A full decode: "
+                  "the five levers, why the state went long its own bubble, where the losses are "
+                  "pre-routed, and the predictive pathway that schedules the pop for after the "
+                  "buildout, after the midterms, and onshore.",
+        "dek_zh": "剥开白宫《AI 行动计划》看机制，它就不再是产业政策，而是美国的再融资工程 —— 一套在设计上依赖"
+                  "泡沫的“物理存量”战略。全面解码：五个杠杆、国家为何做多自己的泡沫、损失被预先路由到何处，"
+                  "以及那条把破裂“安排”在建设完成后、中期选举后、并在本土发生的预测路径。",
+        "tags": [
+            _tag("ai", "AI", "AI"),
+            _tag("macro", "Macro", "宏观"),
+            _tag("fed", "Fed", "美联储"),
+            _tag("china", "China", "中国"),
+            _tag("credit", "Credit", "信用"),
+        ],
+    },
+    {
         "slug": "report_bessent_jun24",
         "template": "report_bessent_jun24.html.j2",
         "date": "2026-06-24",

@@ -156,6 +156,7 @@ def all_adapters() -> dict:
         ("china_flows", "collectors.china_flows", "ChinaFlowsAdapter"),        # AH premium / limit-up / ETF shares
         ("china_qvix", "collectors.china_qvix", "ChinaQvixAdapter"),           # 300/50ETF option-implied vol ("China VIX") — fear/euphoria + drawdown
         ("china_credit", "collectors.china_credit", "ChinaCreditAdapter"),     # 社融 TSF (mofcom, legacy-SSL)
+        ("china_tushare", "collectors.china_tushare", "ChinaTushareAdapter"),  # gated Tushare plane (mktcap/moneyflow/margin/chips) — never CI-invoked before, froze 2026-06-21
         ("china_property", "collectors.china_property", "ChinaPropertyAdapter"),  # 70-city price breadth + climate + CGB + rebar/iron-ore
         ("china_pboc", "collectors.china_pboc", "ChinaPbocAdapter"),           # PBoC corridor legs: FX reserves+gold / repo fixings FR007 / USD-CNY ref (engine/china_policy_watch.py)
         ("china_yield_spread", "collectors.china_yield_spread", "ChinaYieldSpreadAdapter"),  # CN vs US sovereign curve + slope + CN-US spread — ACCRUING (no engine consumer yet)
@@ -562,6 +563,17 @@ def main() -> int:
                  "sources this shard did not refresh.", args.only or "-",
                  args.group or "-", args.exclude_group or "-")
     else:
+        # Membership↔cache reconciler runs FIRST: it may prune basket members that drifted
+        # off a rebuilt *_search close cache (dated changelog entry), so the read-only
+        # audits grade the healed state. Its guard refusals abort like the gate; its own
+        # crash is non-fatal like any audit's.
+        from scripts import reconcile_membership
+        try:
+            reconcile_membership.run()
+        except reconcile_membership.PruneGuardError:
+            raise
+        except Exception as e:  # noqa: BLE001 — a safety net's crash must not abort the run
+            log.error("[reconcile] membership reconciler crashed (non-fatal): %s", e)
         run_quality_audits()
 
     return 0 if ok > 0 else 1

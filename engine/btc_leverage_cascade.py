@@ -269,11 +269,26 @@ def compute(sig_df: pd.DataFrame | None = None) -> dict:
             "funding_z": round(fz_last, 2) if fz_last is not None else None,
             "oi_mcap_ratio": round(oi_ratio_last, 4) if oi_ratio_last is not None else None,
             "oi_change": round(oi_chg_last, 4) if oi_chg_last is not None else None,
+            # audit #46 — FIELD-LEVEL reliability contract. The OI-only de-risk field is
+            # self-confessed anti-predictive standalone (measured lift ~0.36 — worse than a
+            # coin flip), so it is gated_out: a template MUST NOT render `oi_only_risk`
+            # directionally (as a crash/de-risk CALL). It stays as a crowding TEXTURE only.
+            "reliability": {
+                "oi_only_risk": {"gated_out": True, "direction_reliable": False,
+                                 "basis": "measured", "lift": 0.36,
+                                 "note": "OI percentile is anti-predictive standalone — crowding "
+                                         "texture only, never a directional de-risk call"},
+                "cascade_risk": {"gated_out": False, "direction_reliable": True,
+                                 "note": "the funding-AND-OI conjunction gate is the intended, "
+                                         "one-sided de-risk read"},
+            },
             "note": (
                 "Display-only, ONE-SIDED (de-risk gate only — never adds exposure). "
                 "Reads OKX funding (the only US-CI-accessible source; Binance/Bybit "
                 "are geo-blocked). cascade_risk='high' when sustained high funding "
-                "AND stretched OI coincide. derisk_cap is a display suggestion only."
+                "AND stretched OI coincide. derisk_cap is a display suggestion only. "
+                "oi_only_risk is a crowding texture (anti-predictive standalone), NOT a "
+                "directional call — see reliability.oi_only_risk.gated_out."
             ),
         }
     except Exception as e:

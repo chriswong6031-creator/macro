@@ -84,6 +84,9 @@ DEFAULTS = dict(
 )
 
 GATE_PATH = "vol_regime/gate.json"     # relative to the data dir; written by the validator
+OVERLAY_GATE_PATH = "vol_regime/basket_overlay_gate.json"  # additive-value gate for the OVERLAY
+# (as opposed to the leg-scoring gate above): does the REGIME-STATE caution haircut add value
+# OVER the mechanical vol-target? Written by scripts/validate_vol_regime.py's book-overlay study.
 
 
 # --------------------------------------------------------------------------- #
@@ -285,6 +288,33 @@ def load_gate(data_dir: Path | None = None) -> dict:
     return {"legs": {}, "composite": {"scored": False}}
 
 
+def load_overlay_gate(data_dir: Path | None = None) -> dict:
+    """Read data/vol_regime/basket_overlay_gate.json — the additive-value verdict for the
+    REGIME-STATE caution haircut (audit #30 firewall). The regime-state caution leg binds
+    real basket gross ONLY when its own OOS study says it adds value over the mechanical
+    vol-target: ``regime_marginal_over_voltarget == True``. Absent/malformed -> a CLOSED
+    gate (caution is display-only), matching the validate-before-weight default. The
+    mechanical vol-target is a documented sizing mechanism, not gated by this file."""
+    try:
+        from lib import config
+        p = (data_dir or config.data_dir()) / OVERLAY_GATE_PATH
+        if p.exists():
+            g = json.loads(p.read_text())
+            if isinstance(g, dict):
+                return g
+    except Exception as e:  # noqa: BLE001 — a missing/broken gate must never break the build
+        log.warning("vol_regime: overlay gate read failed (%s) — caution display-only", e)
+    return {"regime_marginal_over_voltarget": False, "live_overlay_helps": False,
+            "note": "missing/unreadable overlay gate -> caution display-only (validate-first)"}
+
+
+def regime_caution_scored(data_dir: Path | None = None, gate: dict | None = None) -> bool:
+    """True when the regime-state caution haircut has PASSED its additive-value gate and is
+    therefore allowed to bind real gross. Default False (display-only) — the firewall."""
+    g = gate if gate is not None else load_overlay_gate(data_dir)
+    return bool(g.get("regime_marginal_over_voltarget"))
+
+
 def asof_index(frame: pd.DataFrame):
     """The single coherent as-of date: the last row where ALL available scored legs are
     present (so the composite isn't read off a stale partial date), falling back to the
@@ -481,7 +511,8 @@ def is_risk_off(regime: str | None) -> bool:
     return regime in RISK_OFF_STATES
 
 
-def sizing_overlay(snap: dict | None, cfg: dict | None = None) -> dict:
+def sizing_overlay(snap: dict | None, cfg: dict | None = None,
+                   overlay_gate: dict | None = None) -> dict:
     """Translate a published regime snapshot into ONE subtract-only gross-sizing decision a
     consumer can apply. Returns a ``gross_scalar`` in [gross_floor, 1.0] (NEVER > 1.0) plus an
     honest breakdown. Two independent, subtract-only levers, both bounded by gross_floor:
@@ -490,23 +521,38 @@ def sizing_overlay(snap: dict | None, cfg: dict | None = None) -> dict:
         capital-efficiency rule. It is a sizing mechanism, not an alpha claim, so it applies
         ALWAYS (independent of the validation gate) — this is the live lever today.
       • REGIME-STATE caution: an extra haircut when the published kill-switch STATE label is
-        risk-off (warning / backwardation-stress). Deepened by the continuous SCORED composite
-        ONLY when the gate is OPEN (snap['scored_active']) — gate closed => the scored channel
-        contributes 0 (display-only), exactly the validate-first firewall the engine lives by.
+        risk-off (warning / backwardation-stress). VALIDATE-BEFORE-WEIGHT (audit #30): this leg
+        binds gross ONLY when basket_overlay_gate.json says it adds value over the mechanical
+        vol-target (``regime_marginal_over_voltarget``). The current gate says it does NOT
+        (live_overlay_helps=false), so the caution is COMPUTED and reported for display but does
+        NOT multiply into ``gross_scalar`` — surfaced as ``regime_caution_shadow`` with a
+        passport. Deepened by the continuous SCORED composite ONLY when the leg is both gated-on
+        AND snap['scored_active'].
 
     NEVER touches selection / rank — it scales gross only. ``snap`` absent/empty -> a no-op
     (gross_scalar 1.0, active False); a consumer then applies no overlay (never imputes a regime).
     """
     cf = {**OVERLAY_DEFAULTS, **(cfg or {})}
     floor = float(cf["gross_floor"])
+    og = overlay_gate if overlay_gate is not None else load_overlay_gate()
+    caution_scored = regime_caution_scored(gate=og)   # False by default -> caution display-only
     out = {
-        "schema": "vol_regime.sizing.v1",
-        "gross_scalar": 1.0, "mech_scalar": 1.0, "regime_caution": 1.0, "scored_cut": 1.0,
+        "schema": "vol_regime.sizing.v2",
+        "gross_scalar": 1.0, "mech_scalar": 1.0, "regime_caution": 1.0,
+        "regime_caution_shadow": 1.0, "caution_scored": caution_scored, "scored_cut": 1.0,
         "regime": None, "scored_active": False, "active": False, "reasons": [],
-        "note": ("Subtract-only gross-sizing overlay: mechanical vol-target sizing (always-on) "
-                 "+ a regime-state risk caution (kill-switch). Drawdown / capital-efficiency, "
-                 "NOT alpha; never lifts gross or rank. The continuous SCORED regime score "
-                 "deepens the cut only when data/vol_regime/gate.json is open."),
+        "note": ("Subtract-only gross-sizing overlay: mechanical vol-target sizing (always-on, "
+                 "validated) is the ONLY lever that binds gross today. The regime-state caution "
+                 "is DISPLAY-ONLY (failed its additive-value gate over vol-target, "
+                 "basket_overlay_gate.json regime_marginal_over_voltarget=false) — shown as a "
+                 "shadow, not applied. NOT alpha; never lifts gross or rank."),
+        "caution_passport": {
+            "basis": "measured", "verdict": ("scored" if caution_scored else "display-only"),
+            "validation": {"artifact": "data/vol_regime/basket_overlay_gate.json",
+                           "regime_marginal_over_voltarget": bool(og.get("regime_marginal_over_voltarget")),
+                           "live_overlay_helps": bool(og.get("live_overlay_helps")),
+                           "asof": og.get("asof")},
+        },
     }
     if not cf["enabled"] or not isinstance(snap, dict) or snap.get("available") is False:
         return out
@@ -516,7 +562,7 @@ def sizing_overlay(snap: dict | None, cfg: dict | None = None) -> dict:
     out["scored_active"] = scored_active
     reasons: list[str] = []
 
-    # 1) MECHANICAL vol-target (subtract-only; always-on — not gated)
+    # 1) MECHANICAL vol-target (subtract-only; always-on — validated, not gated)
     mech = 1.0
     vt = snap.get("vol_target_scalar")
     if cf["use_vol_target"] and vt is not None and np.isfinite(float(vt)):
@@ -526,28 +572,44 @@ def sizing_overlay(snap: dict | None, cfg: dict | None = None) -> dict:
                            "above target — mechanical capital-efficiency cut)")
     out["mech_scalar"] = _r(mech)
 
-    # 2) REGIME-STATE caution (published kill-switch label; gate-independent risk read)
+    # 2) REGIME-STATE caution (published kill-switch label). Computed for display; binds gross
+    #    ONLY when it has passed its additive-value gate (audit #30 validate-before-weight).
     caution = 1.0
     if regime == "backwardation-stress":
         caution = float(cf["stress_haircut"])
-        reasons.append(f"backwardation-stress regime — gross capped to {caution:.0%} (risk-off "
-                       "kill-switch state)")
     elif regime == "warning":
         caution = float(cf["warning_haircut"])
-        reasons.append(f"warning regime — gross trimmed to {caution:.0%} (fragility building)")
-    out["regime_caution"] = _r(caution)
-
-    # 3) GATED scored deepener — the continuous validated composite only bites when the gate is
-    #    OPEN and reading risk-off. Gate closed => no contribution (display-only).
+    out["regime_caution_shadow"] = _r(caution)
+    # 3) GATED scored deepener — the continuous validated composite only bites when the caution
+    #    leg is gated-on, the leg-gate is OPEN (scored_active) and reading risk-off.
     scored_cut = 1.0
     sc = snap.get("scored_score")
-    if scored_active and is_risk_off(regime) and sc is not None and np.isfinite(float(sc)) and float(sc) < 0:
+    if (caution_scored and scored_active and is_risk_off(regime)
+            and sc is not None and np.isfinite(float(sc)) and float(sc) < 0):
         scored_cut = max(1.0 + float(cf["scored_extra"]) * float(sc), floor)  # sc<0 -> <1.0
-        reasons.append(f"validated regime score {float(sc):+.2f} (gate OPEN) deepens the cut "
-                       f"to {scored_cut:.0%}")
     out["scored_cut"] = _r(scored_cut)
 
-    gross = max(min(mech * caution * scored_cut, 1.0), floor)
+    if caution_scored:
+        # gate PASSED: the caution (and its scored deepener) bind gross as before
+        out["regime_caution"] = _r(caution)
+        if caution < 1.0 and regime == "backwardation-stress":
+            reasons.append(f"backwardation-stress regime — gross capped to {caution:.0%} (risk-off "
+                           "kill-switch state)")
+        elif caution < 1.0 and regime == "warning":
+            reasons.append(f"warning regime — gross trimmed to {caution:.0%} (fragility building)")
+        if scored_cut < 1.0:
+            reasons.append(f"validated regime score {float(sc):+.2f} (gate OPEN) deepens the cut "
+                           f"to {scored_cut:.0%}")
+        gross = max(min(mech * caution * scored_cut, 1.0), floor)
+    else:
+        # gate CLOSED (current state): caution is DISPLAY-ONLY. Only the mechanical vol-target
+        # binds gross. Surface the shadow so a consumer can see what the caution WOULD do.
+        out["regime_caution"] = 1.0
+        if caution < 1.0:
+            reasons.append(f"{regime} regime — caution shadow {caution:.0%} is DISPLAY-ONLY "
+                           "(failed additive-value gate over vol-target; not applied to gross)")
+        gross = max(min(mech, 1.0), floor)
+
     out["gross_scalar"] = _r(gross)
     out["active"] = gross < 1.0
     out["reasons"] = reasons

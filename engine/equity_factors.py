@@ -46,6 +46,44 @@ FACTOR_LABELS = {
 _SUE_PANEL_CACHE: list = []
 
 
+def _load_ic_scorecard() -> dict:
+    """Read data/edgar/ic_scorecard.json — the deep-history (leak-free) per-factor IC/FDR
+    verdict. Absent/malformed -> {} (then the ranking composite falls back to the safe legs
+    hard-list). Audit #25: the RANKING composite may only consume legs this scorecard blesses."""
+    try:
+        import json
+        p = config.data_dir() / "edgar" / "ic_scorecard.json"
+        if p.exists():
+            d = json.loads(p.read_text())
+            if isinstance(d, dict):
+                return d
+    except Exception as e:  # noqa: BLE001 — a missing/broken scorecard must never break the build
+        log.warning("equity_factors: ic_scorecard read failed (%s)", e)
+    return {}
+
+
+def _rank_leg_weights(candidate_legs: list[str], scorecard: dict) -> dict[str, float]:
+    """Audit #25 firewall — the legs allowed into the RANK-facing composite, IC-weighted with
+    a SIGN constraint. A leg qualifies only if its measured mean_ic is POSITIVE (a negative-IC
+    leg like low_vol -0.021 or investment -0.003 would rank names in an anti-predictive
+    direction). Weight = positive mean_ic (magnitude-aware); FDR-survivors get a small bonus.
+    Empty -> the caller keeps the display composite out of the rank path entirely."""
+    facs = (scorecard or {}).get("factors") or {}
+    weights: dict[str, float] = {}
+    for leg in candidate_legs:
+        meta = facs.get(leg)
+        if not isinstance(meta, dict):
+            continue                              # unmeasured leg -> excluded from rank key
+        mic = meta.get("mean_ic")
+        if mic is None or float(mic) <= 0:
+            continue                              # negative / zero IC -> excluded (sign constraint)
+        w = float(mic)
+        if meta.get("survives_fdr"):
+            w *= 1.5                               # the lone FDR survivor leads
+        weights[leg] = w
+    return weights
+
+
 def _sue_signal(asof, price_date, index) -> "pd.Series | None":
     """Point-in-time raw SUE per ticker, reindexed to the factor universe. `asof` (a
     date) is the backtest rebalance; live mode (asof=None) uses the latest price date.
@@ -432,8 +470,29 @@ def compute_factors(asof=None, universe: str = "broad") -> dict | None:
     avail = fac[composite_legs].notna()
     comp = fac[composite_legs].where(avail).mean(axis=1)
     comp[avail.sum(axis=1) < 3] = np.nan                          # need >=3 legs
-    fac["composite"] = comp
-    all_factors = [c for c in fac.columns if c != "composite"]    # incl. standalone accruals / low_beta
+    fac["composite"] = comp                                       # DISPLAY composite (blind EW mean)
+
+    # Audit #25 — the RANK-facing composite. The blind equal-weight composite carries negative-IC
+    # FDR-failing legs (low_vol -0.021, investment -0.003) and its OWN scorecard grades it
+    # anti-predictive (ic_ir -0.049). So the board-ranking key is a SEPARATE IC-weighted composite
+    # over ONLY the scorecard-passing (positive-IC) legs. Applied on the LIVE path only; a
+    # point-in-time backtest run (asof set) keeps the raw composite so it can't contaminate the
+    # scorecard that this very firewall reads.
+    rank_legs: list[str] = []
+    if asof is None:
+        rw = _rank_leg_weights(composite_legs, _load_ic_scorecard())
+        rank_legs = [c for c in composite_legs if c in rw]
+        if rank_legs:
+            wser = pd.Series({c: rw[c] for c in rank_legs})
+            ravail = fac[rank_legs].notna()
+            wsum = ravail.mul(wser, axis=1).sum(axis=1)
+            crank = (fac[rank_legs].where(ravail).mul(wser, axis=1).sum(axis=1)) / wsum.where(wsum > 0)
+            crank[ravail.sum(axis=1) < min(2, len(rank_legs))] = np.nan
+            fac["composite_rank"] = crank
+    if "composite_rank" not in fac.columns:
+        fac["composite_rank"] = fac["composite"]                  # PIT / no-scorecard fallback
+    all_factors = [c for c in fac.columns
+                   if c not in ("composite", "composite_rank")]   # incl. standalone accruals / low_beta
 
     # attach descriptive cols
     ns = _names_sectors(universe)
@@ -474,6 +533,15 @@ def compute_factors(asof=None, universe: str = "broad") -> dict | None:
     leaders = {c: top(c, n) for c in all_factors}
     laggards = {c: top(c, n, asc=True) for c in all_factors}
 
+    # audit #25 — per-leg FDR badges for the DISPLAY leaderboard (keep all legs, badge failers)
+    sc_facs = (_load_ic_scorecard().get("factors") or {})
+    fdr_badges = {c: {"mean_ic": (sc_facs.get(c) or {}).get("mean_ic"),
+                      "ic_ir": (sc_facs.get(c) or {}).get("ic_ir"),
+                      "survives_fdr": bool((sc_facs.get(c) or {}).get("survives_fdr")),
+                      "negative_ic": ((sc_facs.get(c) or {}).get("mean_ic") is not None
+                                      and float((sc_facs.get(c) or {}).get("mean_ic")) < 0)}
+                  for c in fac.columns if c not in ("composite_rank",) and c in sc_facs}
+
     meta_json = {}
     mp = config.data_dir() / "edgar" / "_meta.json"
     if mp.exists():
@@ -491,8 +559,21 @@ def compute_factors(asof=None, universe: str = "broad") -> dict | None:
         "leadership": leadership,
         "leaders": leaders,
         "laggards": laggards,
-        "composite_top": top("composite", n),
-        "composite_bottom": top("composite", n, asc=True),
+        # RANK-facing board keys use the IC-weighted, scorecard-passing composite (audit #25).
+        "composite_top": top("composite_rank", n),
+        "composite_bottom": top("composite_rank", n, asc=True),
+        # the blind equal-weight display composite is kept for the leaderboard, honestly badged.
+        "composite_display_top": top("composite", n),
+        "composite_display_bottom": top("composite", n, asc=True),
+        "rank_legs": rank_legs,                       # which legs the rank composite is built from
+        "fdr_badges": fdr_badges,                     # per-leg IC/FDR verdict for the leaderboard
+        "composite_passport": {
+            "rank_basis": "ic_weighted_scorecard_passing" if rank_legs else "display_fallback",
+            "excluded_legs": [c for c in composite_legs if c not in rank_legs and asof is None],
+            "note": ("board rank uses ONLY positive-IC scorecard legs (IC-weighted, sign-"
+                     "constrained); negative-IC / FDR-failing legs are display-only badges "
+                     "and cannot order a board a trader sizes from (audit #25)"),
+            "artifact": "data/edgar/ic_scorecard.json"},
         "insider": _insider_block(ns, d["mktcap"] if "mktcap" in d.columns else None),
         "table": table.reset_index().rename(columns={"index": "ticker"}).to_dict("records"),
     }

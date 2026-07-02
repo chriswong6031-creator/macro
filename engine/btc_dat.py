@@ -36,6 +36,7 @@ Config keys (under btc_dat:):
   json_path: "data/dat_holdings.json"   # relative to repo root
   margin_haircut: 0.78   # fraction of avg_cost → approximate forced-sell level
   parity_band: 0.05      # |premium_pct| <= 5 → parity
+  stale_after_days: 14   # asof older than this → stale=true (manual feed health)
 
 Dependencies: pandas, numpy (already in repo).  No new pip deps.
 """
@@ -103,6 +104,7 @@ def compute(holdings_path: str | None = None,
 
         margin_haircut = float(cfg.get("margin_haircut", 0.78))
         parity_band = float(cfg.get("parity_band", 0.05))
+        stale_after_days = int(cfg.get("stale_after_days", 14))
 
         # ------------------------------------------------------------------ #
         # Load holdings JSON
@@ -190,10 +192,23 @@ def compute(holdings_path: str | None = None,
             margin_trigger_usd = avg_cost * margin_haircut
             forced_sell_distance_pct = (btc_price / margin_trigger_usd - 1.0) * 100.0
 
+        # Staleness of the hand-maintained drop (W4: this feed advises the
+        # owner's re-entry view but must never veto sizing — a stale manual
+        # JSON silently hard-blocking a buy window would be worse than no chip).
+        age_days: int | None = None
+        stale = True
+        try:
+            age_days = int((pd.Timestamp.now().normalize() - pd.Timestamp(asof)).days)
+            stale = age_days > stale_after_days
+        except (TypeError, ValueError):
+            pass  # unparseable asof stays stale=True
+
         return {
             "ok": True,
             "display_only": True,
             "asof": asof,
+            "age_days": age_days,
+            "stale": stale,
             "ticker": ticker,
             "entity_name": entity_name,
             "btc_held": btc_held,

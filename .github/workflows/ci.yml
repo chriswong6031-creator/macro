@@ -32,6 +32,21 @@ on:
       - "tests/test_grading.py"
       - "tests/test_trial_ledger.py"
       - "tests/test_trial_registration_lint.py"
+      # W4 outcome spine: the shared signal-id→outcome contract + partial-pooling + badge passport.
+      - "engine/spine.py"
+      - "engine/pooling.py"
+      - "engine/passport.py"
+      - "engine/desk_scorer.py"
+      - "engine/alert_triage.py"
+      - "engine/altdata_signals.py"
+      - "scripts/check_badge_passport.py"
+      - "tests/test_spine.py"
+      - "tests/test_pooling.py"
+      # audit #46 reliability-contract guard: a gated-out field must not render directionally.
+      - "scripts/check_reliability_contract.py"
+      - "engine/btc_leverage_cascade.py"
+      - "engine/options_flow.py"
+      - "templates/**"
   workflow_dispatch:
 
 permissions:
@@ -101,5 +116,25 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: trial-registration lint (no new unregistered harness)
         run: python3 scripts/check_trial_registration.py
+      - name: reliability-contract guard (no gated field rendered directionally, audit #46)
+        run: python3 scripts/check_reliability_contract.py
       - name: grading rebuild + trial ledger tests
         run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py -q
+
+  outcome-spine:
+    # W4 (audit #13/#19/#23/#41/#42): the outcome spine + partial-pooling closed loop. The
+    # badge-passport ratchet (#41) fails RED if a desk brief renders a conviction badge with no
+    # provenance passport; the spine/pooling tests prove the four safety properties (sign-safety,
+    # trust-region, cold-start, arming) that gate grades moving deterministic weights.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: badge-passport ratchet (no new conviction badge without a passport)
+        run: python3 scripts/check_badge_passport.py site
+      - name: spine contract + partial-pooling safety tests
+        run: python -m pytest tests/test_spine.py tests/test_pooling.py -q

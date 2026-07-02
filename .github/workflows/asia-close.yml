@@ -105,6 +105,9 @@ jobs:
           run_py "build china a-share dashboard (build_china)"        scripts.build_china
           run_py "china sector desk (build_china_sector_desk)"        scripts.build_china_sector_desk
           run_py "china sector cycles (build_china_sector_cycles)"    scripts.build_china_sector_cycles
+          # grade the cycles' own forward log (falsifiability loop) — AFTER the cycles build
+          # so today's stamp is already appended; reads committed data/, writes site/ only.
+          run_py "china cycles forward-log grader (build_china_cycles_scorecard)" scripts.build_china_cycles_scorecard
           run_py "china sector central (build_china_sector_central)"  scripts.build_china_sector_central
           run_py "capital flow velocity — CN/HK (build_flow_velocity)" scripts.build_flow_velocity
           run_py "china subsector confluence (build_subsector_confluence --china)" scripts.build_subsector_confluence --china

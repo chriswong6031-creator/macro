@@ -78,6 +78,13 @@
   footer { color:var(--muted); font-size:11.5px; margin-top:26px; border-top:1px solid var(--line); padding-top:12px; max-width:95ch; }
   .pfx { color:var(--muted); }
   .asof { font-size:12px; color:var(--muted); margin-left:auto; }
+  /* ---- cross-market AI-semis confirmer chip (lite/THS page; display-only) ---- */
+  .semis-chip { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 10px; background:var(--panel2);
+    border:1px solid var(--line); border-radius:9px; padding:8px 12px; margin:10px 0 0; font-size:12.5px; }
+  .semis-chip .sx-tag { font-size:10.5px; color:var(--muted); font-style:italic; }
+  .semis-badge { display:inline-block; font-size:10px; font-weight:650; border:1px solid var(--line);
+    border-radius:6px; padding:0 6px; margin-left:6px; color:var(--muted); vertical-align:1px; }
+  .semis-badge.on { color:var(--up); border-color:color-mix(in srgb, var(--up) 40%, var(--line)); }
 </style>
 </head>
 <body>
@@ -114,6 +121,8 @@
       "A-share thematic baskets that mirror 同花顺 (Tonghuashun) concept boards — we adopt THS's themes and their member lists verbatim, filtered to the free china_search price cache. Equal-weighted, point-in-time dated membership, buy-and-hold between changes. Benchmarked to the CSI 300 (沪深300). A monitoring/structure frame, not a buy list.",
       '镜像同花顺概念板块的 A 股主题篮子 — 直接采用同花顺的主题及其成分股，并按免费 china_search 价格缓存过滤。等权重、按时点日期管理成分、调整间买入持有。以沪深 300 为基准。仅作监测/结构参考，并非买入清单。') }}
       <a href="baskets_china.html" style="white-space:nowrap">→ {{ t('curated baskets', '精选篮子') }}</a></p>
+    {# cross-market AI-semis confirmer (rendered client-side; empty when unavailable) #}
+    <div id="semis-chip"></div>
     {% else %}
     <p class="tagline">{{ t(
       'Curated A-share thematic baskets — every membership decision dated and documented; equal-weighted, monthly-rebalanced, buy-and-hold between rebalances. Benchmarked to the CSI 300 (沪深300). Where a listed sector ETF approximates the theme the basket is cross-checked against it daily. A monitoring/structure frame, not a buy list.',
@@ -207,6 +216,8 @@ const fmtPct = x => x==null ? '—' : (x>=0?'+':'')+(x*100).toFixed(1)+'%';
 const fmtZ   = x => x==null ? '—' : (x>=0?'+':'')+x.toFixed(1)+'σ';
 const cls    = x => x==null ? 'muted' : (x>=0?'pos':'neg');
 const esc    = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// bilingual span pair (local name — the non-lite page also loads baskets_desk.js, which owns `L`)
+const _bl    = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 const lastIdx = a => { for(let i=a.length-1;i>=0;i--) if(a[i]!=null) return i; return -1; };
 const hzLabel = c => c==='ytd'?'YTD':c;
 
@@ -325,8 +336,11 @@ function renderCards(){
       .sort((a,c)=>((c.perf?.[bhz]?.rel)??-9)-((a.perf?.[bhz]?.rel)??-9))
       .map(b=>{ const spk=sparkTail(ratio(CHART.baskets[b.id]));
         const ref=b.reference?` · ${LANG()==='zh'?'对标':'tracks'} ${esc(b.reference.label)} (r ${b.reference.corr.toFixed(2)})`:'';
+        // tiny cross-market confirmer badge on AI-supply baskets (context only, not a signal)
+        const sx=b.ai_semis_confirmer;
+        const sxBadge=(sx&&sx.on!=null)?`<span class="semis-badge ${sx.on?'on':''}" title="cross-market confirmer — global semis momentum context, not a buy signal (SMH/SOXX/TSM 4w-mom ${sx.semis_mom_4w==null?'—':sx.semis_mom_4w})">${_bl('AI-semis '+(sx.state||''),'全球AI半导体 '+(sx.on?'开启':'关闭'))}</span>`:'';
         return `<div class="card" style="--c:${colorOf[b.id]}" data-id="${b.id}">
-          <div class="nm"><span class="dot" style="background:${colorOf[b.id]}"></span>${esc(bn(b))}</div>
+          <div class="nm"><span class="dot" style="background:${colorOf[b.id]}"></span>${esc(bn(b))}${sxBadge}</div>
           <div class="meta">${b.n_members}${memberW}${since} ${esc(b.created)}${ref}</div>
           <div class="th">${esc(bth(b))}</div>
           <div class="perf">${kpi(hzLabel(bhz),b.perf?.[bhz])}${kpi('YTD',b.perf?.ytd)}<span class="spark">${sparkSvg(spk,{w:96,h:30,color:colorOf[b.id]})}</span></div>
@@ -377,6 +391,20 @@ function renderModeTabs(){
   renderTabs(document.getElementById('chart-modes'), [['rel',VS()],['abs', LANG()==='zh'?'绝对':'Absolute']], chartMode, v=>{ chartMode=v; renderChart(); });
 }
 
+// ---- page-level cross-market AI-semis confirmer chip (lite/THS page; #semis-chip host only
+// exists there). Honest copy: momentum CONTEXT from global semis, never a buy signal. ----
+function renderSemisChip(){
+  const host=document.getElementById('semis-chip'); if(!host) return;
+  const c=BASKETS.ai_semis_confirmer;
+  if(!c||!c.state||c.state==='unavailable'){ host.innerHTML=''; return; }
+  const col=c.on===true?'var(--up)':'var(--muted)';
+  host.innerHTML=`<div class="semis-chip" style="border-left:3px solid ${col}">
+    <b style="color:${col}">${c.on?'⚡':'·'} ${_bl(esc(c.label_en||('AI-semis confirmer: '+c.state)),esc(c.label_zh||c.label_en||''))}</b>
+    ${c.as_of?`<span class="muted" style="font-size:11px">${_bl('as of','截至')} ${esc(c.as_of)}</span>`:''}
+    <span class="sx-tag">${_bl('cross-market confirmer — global semis momentum context, not a buy signal','跨市场确认信号 — 全球半导体动量背景，非买入信号')}</span>
+  </div>`;
+}
+
 function renderAll(){ renderStory(); renderModeTabs(); renderBTable(); renderChart(); renderCards(); renderDetails(); }
 
 function boot(){
@@ -388,7 +416,7 @@ function boot(){
   rel.querySelector('.rangeN').onchange=function(){ const n=Math.min(600,Math.max(5,parseInt(this.value,10)||252)); chartRange=n; rel.querySelectorAll('button').forEach(x=>x.classList.remove('on')); renderChart(); };
   renderTabs(document.getElementById('hz-tabs'), HZ_TABS.map(h=>[h,hzLabel(h)]), bhz, v=>{ bhz=v; localStorage.setItem('cnfw-hz',v); renderCards(); renderDetails(); });
   initChartDefaults();
-  renderStory(); renderBTable(); renderChart(); renderCards(); renderDetails();{% if not lite %} deskBoot();{% endif %}
+  renderStory(); renderBTable(); renderChart(); renderCards(); renderDetails(); renderSemisChip();{% if not lite %} deskBoot();{% endif %}
   if(location.hash.startsWith('#b-')) setTimeout(()=>openBasket(location.hash.slice(3)),200);
   {% if not lite %}if(location.hash.startsWith('#theme-')) setTimeout(()=>openTheme(location.hash.slice(7)),250);{% endif %}
   document.addEventListener('langchange',()=>{ if(chart){chart.applyOptions(chartOpts());} renderAll(); });
