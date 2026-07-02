@@ -1,0 +1,93 @@
+{
+ "asof": "2026-07-02",
+ "audit": "price_basis",
+ "config": {
+  "price_max_gap_days": 4,
+  "price_move_alert_pct": 20,
+  "price_recent_days": 120,
+  "macro_revision_alert_pct": 5,
+  "macro_stale_days": 45,
+  "universe_min_bars": 250,
+  "abort_fail_pct": 5,
+  "warn_fail_pct": 1,
+  "macro_outlier_z": 5,
+  "email_alerts": false
+ },
+ "n": 53,
+ "n_failed": 0,
+ "fail_pct": 0.0,
+ "n_flags": 0,
+ "universes": [
+  {
+   "name": "dual_basis_present",
+   "n": 42,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 0,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": []
+  },
+  {
+   "name": "basis_preserving",
+   "n": 4,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 0,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": []
+  },
+  {
+   "name": "golden_fixture",
+   "n": 1,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 0,
+   "skipped": false,
+   "note": "XLU: 25 tr turns vs 27 price turns; 2 differ (flip is real)",
+   "failed": [],
+   "flags": []
+  },
+  {
+   "name": "no_tr_in_structure",
+   "n": 2,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 0,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": []
+  },
+  {
+   "name": "basis_homogeneous",
+   "n": 2,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 0,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": []
+  },
+  {
+   "name": "narratives_versioned",
+   "n": 2,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 0,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": []
+  }
+ ],
+ "divergence_stats": {
+  "max_rel": 1.5571,
+  "min_frac_dividend": 0.992,
+  "checked": 4
+ }
+}

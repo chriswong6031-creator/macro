@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-02T12:35:57.640628+00:00",
+  "generated_at": "2026-07-02T12:49:05.556477+00:00",
   "grade_horizons": [
     5,
     21,
@@ -58,6 +58,26 @@
       }
     },
     "cn_importance_v0": {
+      "5": {
+        "n_obs": 362,
+        "n_dates": 8,
+        "hit_rate": null,
+        "excess_mean": 0.022139,
+        "wilson_ci_low": null,
+        "state": "ACCRUING"
+      }
+    },
+    "us_importance_v0_pit": {
+      "5": {
+        "n_obs": 8,
+        "n_dates": 1,
+        "hit_rate": null,
+        "excess_mean": -0.01265,
+        "wilson_ci_low": null,
+        "state": "ACCRUING"
+      }
+    },
+    "cn_importance_v0_pit": {
       "5": {
         "n_obs": 362,
         "n_dates": 8,
@@ -128,6 +148,26 @@
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
+    },
+    "us_importance_v0_pit": {
+      "5": {
+        "n_obs": 8,
+        "n_dates": 1,
+        "hit_rate": null,
+        "excess_mean": -0.01265,
+        "wilson_ci_low": null,
+        "state": "ACCRUING"
+      }
+    },
+    "cn_importance_v0_pit": {
+      "5": {
+        "n_obs": 362,
+        "n_dates": 8,
+        "hit_rate": null,
+        "excess_mean": 0.022139,
+        "wilson_ci_low": null,
+        "state": "ACCRUING"
+      }
     }
   },
   "placebo_magnitude": {
@@ -153,8 +193,8 @@
     }
   },
   "counts": {
-    "n_claims": 4457,
-    "n_grades": 2228,
+    "n_claims": 5125,
+    "n_grades": 2598,
     "n_placebo": 342,
     "n_rejected": 0
   },
@@ -218,6 +258,35 @@
       }
     },
     "cn_importance_v0": {
+      "5": {
+        "eligible": false,
+        "reason": "n_dates=8 < 25 required. State: ACCRUING. Need 17 more independent date clusters.",
+        "n_dates": 8,
+        "wilson_ci_low": null,
+        "current_state": "ACCRUING",
+        "demote": false,
+        "pinned_reason": ""
+      },
+      "21": {
+        "eligible": false,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters.",
+        "n_dates": 0,
+        "wilson_ci_low": null,
+        "current_state": "UNGRADED",
+        "demote": false,
+        "pinned_reason": ""
+      },
+      "63": {
+        "eligible": false,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters.",
+        "n_dates": 0,
+        "wilson_ci_low": null,
+        "current_state": "UNGRADED",
+        "demote": false,
+        "pinned_reason": ""
+      }
+    },
+    "cn_importance_v0_pit": {
       "5": {
         "eligible": false,
         "reason": "n_dates=8 < 25 required. State: ACCRUING. Need 17 more independent date clusters.",
@@ -332,7 +401,36 @@
         "demote": false,
         "pinned_reason": ""
       }
+    },
+    "us_importance_v0_pit": {
+      "5": {
+        "eligible": false,
+        "reason": "n_dates=1 < 25 required. State: ACCRUING. Need 24 more independent date clusters.",
+        "n_dates": 1,
+        "wilson_ci_low": null,
+        "current_state": "ACCRUING",
+        "demote": false,
+        "pinned_reason": ""
+      },
+      "21": {
+        "eligible": false,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters.",
+        "n_dates": 0,
+        "wilson_ci_low": null,
+        "current_state": "UNGRADED",
+        "demote": false,
+        "pinned_reason": ""
+      },
+      "63": {
+        "eligible": false,
+        "reason": "n_dates=0 < 25 required. State: UNGRADED. Need 25 more independent date clusters.",
+        "n_dates": 0,
+        "wilson_ci_low": null,
+        "current_state": "UNGRADED",
+        "demote": false,
+        "pinned_reason": ""
+      }
     }
   },
-  "ladder_states_at": "2026-07-02T12:35:58.139908+00:00"
+  "ladder_states_at": "2026-07-02T12:49:06.320540+00:00"
 }

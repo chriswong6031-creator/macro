@@ -228,6 +228,86 @@ novelty_v0.importance_score:
     Eligible for CONFIRMER after n_dates>=25 with wilson_ci_low>0 vs matched control.
 
 # ---------------------------------------------------------------------------
+# NOVELTY-V0 US/CN CHALLENGER TAPES — shadow_importance_v0 claim families
+# (registered by scripts/shadow_importance_v0.py at claim_family level)
+# ---------------------------------------------------------------------------
+us_importance_v0:
+  field: importance_v0
+  artifact_glob: "data/qledger/claims.jsonl"
+  producer: scripts/shadow_importance_v0.py
+  claim_family: us_importance_v0
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    US lane novelty-v0 challenger claims. Registered per covered ticker+band (HIGH/LOW)
+    per horizon (5d/21d). Graded nightly against SPY. SUPERSEDED by
+    us_importance_v0_pit below (W3 backfill had echo_stats look-ahead: future
+    corroboration items inflated the breadth/corroboration score). Retained for
+    audit trail only — the duel report reads _pit families.
+  superseded_by: us_importance_v0_pit
+  superseded_reason: >
+    W3 backfill ran echo_stats WITHOUT asof filter; future corroborators (items
+    crawled after the item's seendate) could inflate corroboration (W_CORROBORATION=0.28
+    weight), biasing importance_v0 scores upward. Fixed in W4 (qbus.echo_stats now
+    takes asof parameter; importance_v0.score_components passes it).
+
+cn_importance_v0:
+  field: importance_v0
+  artifact_glob: "data/qledger/claims.jsonl"
+  producer: scripts/shadow_importance_v0.py
+  claim_family: cn_importance_v0
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    CN lane novelty-v0 challenger claims. Registered per covered ticker+band (HIGH/LOW)
+    per horizon (5d/21d). Graded nightly against 510300.SS. SUPERSEDED by
+    cn_importance_v0_pit below for the same look-ahead reason as us_importance_v0.
+  superseded_by: cn_importance_v0_pit
+  superseded_reason: >
+    Same echo_stats look-ahead as us_importance_v0 (W4 fix). Additionally the W3
+    backfill ran pd.to_datetime without utc=True, coercing the 938-row CN lane's
+    tz-aware seendate strings to NaT, so the entire CN novelty lane silently
+    returned novelty_z=None. Both bugs are now fixed in qbus._subject_daily_counts.
+
+# ---------------------------------------------------------------------------
+# NOVELTY-V0 PIT-CORRECT TAPES — clean re-backfill after W4 bug fixes
+# These are the tapes that should be used for the duel report going forward.
+# ---------------------------------------------------------------------------
+us_importance_v0_pit:
+  field: importance_v0
+  artifact_glob: "data/qledger/claims.jsonl"
+  producer: scripts/shadow_importance_v0_pit.py
+  claim_family: us_importance_v0_pit
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    US lane novelty-v0 PIT-correct challenger claims (W4 re-backfill). Uses
+    qbus.echo_stats with asof filter (no future corroboration look-ahead) and
+    qbus._subject_daily_counts with utc=True tz normalisation. These are the
+    correct challenger claims for the duel scoreboard.
+
+cn_importance_v0_pit:
+  field: importance_v0
+  artifact_glob: "data/qledger/claims.jsonl"
+  producer: scripts/shadow_importance_v0_pit.py
+  claim_family: cn_importance_v0_pit
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    CN lane novelty-v0 PIT-correct challenger claims (W4 re-backfill). Uses
+    utc=True tz normalisation so CN seendate strings are no longer coerced to NaT,
+    and echo_stats asof filter prevents future-corroboration inflation. These are
+    the correct challenger claims for the duel scoreboard.
+
+# ---------------------------------------------------------------------------
 # EPU / GPR / SF-FED — D7 one-shot re-aim harness (SHADOW pending single run)
 # ---------------------------------------------------------------------------
 lexical.epu_z:
@@ -268,6 +348,33 @@ lexical.sfed_sentiment_z:
   notes: >
     SF-Fed sentiment z-score. D7 one-shot harness (separate from EPU/GPR).
     Retire on fail, publish verdict.
+
+# ---------------------------------------------------------------------------
+# COMMUNIQUÉ DIFF — W4 B1 (spec D9 / Appendix P4). Discrete, dated phrase-diff
+# events (APPEARED / DROPPED / LEAD_SHIFT) from official Chinese policy corpora.
+# The ONE China path to standalone validation; the forward log starts accruing
+# TODAY. Registered at SHADOW: computed + claim-registered + graded nightly,
+# never rendered as conviction. All claims are SALIENCE-ONLY (direction=0)
+# because phrase polarity is human-review PROVISIONAL (§5) — UNSIGNED events are
+# safe immediately; a signed phrase→return map is deferred (D9). No scored
+# consumers, so the Claim Passport linter has nothing to gate.
+# ---------------------------------------------------------------------------
+communique_diff.event_kind:
+  field: event_kind
+  artifact_glob: "site/communique_diff/latest.json"
+  producer: engine/communique_diff.py
+  claim_family: communique_diff
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    Communiqué Diff event type (APPEARED/DROPPED/LEAD_SHIFT) over ~44 canonical
+    policy formulas (适度宽松, 房住不炒, 新质生产力, 反内卷, …). Salience-only
+    qledger claims (desk=communique_diff, direction=0, horizon 21). SHADOW lane:
+    accruing a forward log against 510300.SS (China event-move bench, [P1]/D4).
+    Eligible for CONFIRMER only after n_dates>=25 with wilson_ci_low>0 — and only
+    once phrase polarity is human-REVIEWED so the direction can leave 0.
 
 # ---------------------------------------------------------------------------
 # MISSING-TAPE — China Censorship-Survivorship Guard (W4-B2, spec D8)

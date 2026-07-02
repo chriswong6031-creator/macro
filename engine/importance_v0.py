@@ -235,24 +235,21 @@ def clean_df(df):
     (YYYY-MM-DD) and whose rows all carry a resolvable date — the volume basis
     novelty/crowding count against.
 
-    WHY (two coupled upstream bugs this read-side guard works around):
+    WHY (the upstream bugs this read-side guard works around, now FIXED in qbus
+    as of W4 but clean_df is retained for explicit pre-normalisation by callers
+    that want to share one clean snapshot across many score_components calls):
 
-      1. The current store mixes tz-AWARE (`…+00:00`) and tz-NAIVE
-         (`2026-06-21 19:33:54`) seendate strings in one column. qbus's internal
-         `pd.to_datetime(errors='coerce')` is tz-naive and coerces the tz-mixed
-         column almost entirely to NaT (only the 406 aware US rows survive) — so
-         the WHOLE 938-row CN lane silently reads novelty_z=None.
-      2. Where a row IS NaT (998 rows carry NaT for both seendate AND
-         _crawled_at — the stale `news_vector` accrual), qbus._subject_daily_counts
-         RAISES `TypeError: Cannot compare NaT` the moment a *matched* subject row
-         is NaT, which qbus.novelty_z swallows into None.
+      1. The store previously mixed tz-AWARE and tz-NAIVE seendate strings.
+         qbus._subject_daily_counts now uses utc=True + .map(ts.date()) so the
+         tz-mixed column no longer causes NaT.  clean_df normalises on the
+         read-side anyway for callers that pass a raw store snapshot.
+      2. Dateless rows (both seendate AND _crawled_at empty) cannot anchor a
+         daily count; we drop them here so per-item scoring always has a valid
+         asof, matching the score_store behaviour (which also calls clean_df).
 
-    Normalising seendate to a single date-only format (parsed with
-    `format='mixed', utc=True`, then `.dt.date`) makes qbus's downstream tz-naive
-    parse uniform and NaT-free. A row with no usable date in either column cannot
-    contribute to any daily volume count, so it is dropped — the PIT-safe basis
-    for the z-scores. The proper fix (tz-aware + NaT-guarded parsing inside
-    qbus._subject_daily_counts) belongs in qbus and is flagged for the integrator.
+    Normalising seendate to a date-only ISO string keeps qbus's downstream parse
+    fast (format='mixed', utc=True, .dt.strftime('%Y-%m-%d')). A row with no
+    usable date is dropped — the PIT-safe basis for the z-scores.
     PURE (no clock). Never raises."""
     try:
         import pandas as pd
@@ -294,7 +291,10 @@ def score_components(item: dict, asof, df=None) -> dict:
         if subject else None
     novelty = _novelty_feature(nz)
 
-    echo = qbus.echo_stats(str(item.get("event_key") or ""), df=df)
+    # Pass asof to echo_stats so corroboration is PIT-filtered: only items seen
+    # on or before the scoring date count as corroborators (W4 bug-fix, see
+    # qbus.echo_stats for the full explanation).
+    echo = qbus.echo_stats(str(item.get("event_key") or ""), df=df, asof=asof)
     breadth = _breadth_feature(echo)
     # (b) corroboration is novelty-GATED breadth: within-window echo of a LOW-novelty
     # subject (breadth high but novelty low) must NOT inflate the score. Multiply

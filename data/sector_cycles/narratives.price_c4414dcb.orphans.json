@@ -1,0 +1,320 @@
+{
+  "_note": "Orphaned narrative legs — retained for review, NEVER plotted.",
+  "baskets": {},
+  "epoch": "price_c4414dcb",
+  "prev_epoch": "tr_v0",
+  "sectors": {
+    "xlb": {
+      "legs": {
+        "2022-04-20": {
+          "body": "Materials got hammered (-21.1%, #10) as copper logged its biggest quarterly decline since 2011, slumping below $7,000/tonne on China's COVID lockdowns, an +8.1% DXY surge that made metals dearer, and Fed-hiking recession fears. This wasn't sector-specific — it was a slowdown/deflation-scare quad where cyclicals (-17.5%) were dumped far harder than defensives (-8.9%), and copper-over-gold cratered -18.3 — but the strong-dollar headwind made miners (Freeport) and chemicals (Dow, LyondellBasell) the worst of the cyclical bunch.",
+          "body_zh": "材料板块遭重创（-21.1%，第10），铜价创2011年以来最大季度跌幅，跌破每吨7,000美元，背后是中国新冠封控、美元飙升+8.1%抬高金属价格以及美联储加息引发的衰退担忧。这并非板块独有——而是增长放缓/通缩恐慌象限，周期股（-17.5%）被抛售远甚于防御股（-8.9%），铜金比暴跌-18.3——但强势美元逆风使矿企（自由港）与化工股（陶氏、利安德巴塞尔）成为周期板块中最差的一类。",
+          "drivers": [
+            "copper crash",
+            "China COVID lockdowns",
+            "strong dollar +8.1% DXY",
+            "slowdown/deflation-scare quad"
+          ],
+          "drivers_zh": [
+            "铜价崩跌",
+            "中国新冠封控",
+            "强势美元（+8.1% DXY）",
+            "放缓/通缩恐慌象限"
+          ],
+          "prev_key": "2022-04-20",
+          "prev_key_chain": [
+            "2022-04-20"
+          ],
+          "reason": "no turn within tolerance",
+          "status": "orphaned",
+          "title": "Copper crash meets recession risk-off",
+          "title_zh": "铜价崩跌叠加衰退避险"
+        }
+      }
+    },
+    "xle": {
+      "legs": {
+        "2015-01-15": {
+          "body": "After hitting ~$44/bbl intraday in late January 2015, WTI rebounded ~27% to ~$60 by late April, lifting Energy +14.6% to lead all sectors (#1/11) in a sharp risk-on rebound. The catalyst was a combination of accelerating US rig-count declines (the oil rig count fell sharply from its late-2014 peak by April), short-covering, and a seasonal demand pickup that temporarily stabilised the supply glut narrative. Cyclicals (+8.5%) led defensives (-0.3%), VIX compressed from 22 to 13, and the reflation-quad read held even as dollar strength (+3.0% DXY) was a headwind.",
+          "body_zh": "WTI在2015年1月底触及约44美元/桶后，到4月下旬反弹约27%至60美元左右，能源板块大涨+14.6%，领跑所有板块（第1/11），呈现强劲风险偏好反弹。催化剂是美国钻机数量快速下滑（油气钻机数从2014年底高点到4月大幅回落）、空头回补以及季节性需求回升，暂时稳定了供应过剩叙事。周期板块（+8.5%）跑赢防御板块（-0.3%），VIX从22压缩至13，再通胀象限维持，尽管美元强势（+3.0% DXY）形成逆风。",
+          "drivers": [
+            "reflation quad / short-covering",
+            "oil bounce $44 to $60",
+            "US rig count decline",
+            "VIX compression 22-13"
+          ],
+          "drivers_zh": [
+            "再通胀象限/空头回补",
+            "原油从44美元反弹至60美元",
+            "美国钻机数下滑",
+            "VIX从22压缩至13"
+          ],
+          "prev_key": "2015-01-15",
+          "prev_key_chain": [
+            "2015-01-15"
+          ],
+          "reason": "no turn within tolerance",
+          "status": "orphaned",
+          "title": "Dead-cat bounce: oversold crude sparks brief rally",
+          "title_zh": "死猫反弹：超跌原油引发短暂反弹"
+        },
+        "2015-04-29": {
+          "body": "Energy dropped -28.1% (#9) from late April to August 2015 as the China stock-market bubble burst (CSI 300 fell ~34% in weeks; Black Monday August 24 wiped trillions globally), reviving fears of a Chinese hard landing and oil demand collapse. WTI fell back toward $40 as the supply glut reasserted and the China-led commodity rout hit all raw materials. This was a violent risk-off: VIX spiked 13 to 36, cyclicals (-14.4%) dramatically underperformed defensives (-5.6%), and oil fell -32.9%. Materials and Energy were the hardest cyclical casualties.",
+          "body_zh": "从2015年4月底至8月，能源板块暴跌-28.1%（排名第9），中国A股泡沫破裂（沪深300数周内暴跌约34%，8月24日'黑色星期一'让全球蒸发数万亿），中国硬着陆与石油需求崩塌的担忧再度发酵。供应过剩重新占主导，WTI再度跌向40美元，以中国需求为核心的大宗商品暴跌打击了所有原材料。这是剧烈的风险规避：VIX从13飙至36，周期板块（-14.4%）大幅跑输防御板块（-5.6%），油价下跌-32.9%。材料和能源是受损最重的周期板块。",
+          "drivers": [
+            "China stock market crash Aug 2015",
+            "oil glut reassert / WTI toward $40",
+            "VIX spike 13-36",
+            "deflation-scare quad"
+          ],
+          "drivers_zh": [
+            "中国股市崩盘（2015年8月）",
+            "供应过剩重现/WTI跌向40美元",
+            "VIX从13飙至36",
+            "通缩恐慌象限"
+          ],
+          "prev_key": "2015-04-29",
+          "prev_key_chain": [
+            "2015-04-29"
+          ],
+          "reason": "no turn within tolerance",
+          "status": "orphaned",
+          "title": "China crash, oil glut rout -- Energy worst again",
+          "title_zh": "中国股灾、油价过剩再度重创——能源再次垫底"
+        },
+        "2019-08-27": {
+          "body": "Energy gained +14.4% (#4) from late August 2019 to early January 2020 as the US-China trade war de-escalated toward the Phase One deal signed January 15, 2020, and oil steadied on OPEC+ compliance (+15.2% oil). The September 14, 2019 Saudi Aramco Abqaiq drone attack briefly spiked oil, adding a geopolitical premium. Cyclicals (+14.0%) led defensives (+8.5%) in a modest reflation quad, VIX compressed 20 to 14, and semis surged +29.2% in a tech-led melt-up. Energy participation was real but not outsized -- Financials and Tech led more convincingly as the trade-truce catalyst was growth-sector specific.",
+          "body_zh": "从2019年8月底至2020年1月初，能源板块上涨+14.4%（排名第4），中美贸易战局势缓和，双方向2020年1月15日签署的第一阶段协议推进，油价在OPEC+执行率支撑下企稳（+15.2%）。2019年9月14日沙特阿美阿布凯克无人机袭击事件短暂推高油价，带来地缘政治溢价。周期板块（+14.0%）跑赢防御板块（+8.5%），处于温和再通胀象限，VIX从20压缩至14，半导体大涨+29.2%推动科技领先。能源参与了反弹但并不突出——金融和科技凭借贸易停火催化剂更具说服力地领涨。",
+          "drivers": [
+            "US-China Phase One deal progress",
+            "oil +15.2% / OPEC+ discipline",
+            "Abqaiq drone attack Sep 2019 geopolitical spike",
+            "reflation quad / VIX 20-14"
+          ],
+          "drivers_zh": [
+            "中美第一阶段协议推进",
+            "原油+15.2%/OPEC+执行率",
+            "2019年9月阿布凯克无人机袭击地缘政治溢价",
+            "再通胀象限/VIX从20降至14"
+          ],
+          "prev_key": "2019-08-27",
+          "prev_key_chain": [
+            "2019-08-27"
+          ],
+          "reason": "no turn within tolerance",
+          "status": "orphaned",
+          "title": "US-China Phase One truce, oil steadies -- modest Energy rally",
+          "title_zh": "中美第一阶段停火、油价企稳——能源温和反弹"
+        },
+        "2020-01-06": {
+          "body": "Energy cratered -60.6% (#11) from January 6 to March 18, 2020 in the worst Energy selloff of the modern era. Two simultaneous shocks hit: first, COVID-19 spread globally from late January, crushing demand expectations (WTI futures briefly went negative in April); second, the March 6 OPEC+ meeting collapse -- Russia rejected Saudi proposals for deeper cuts and Saudi Arabia launched a price war, slashing prices $8/bbl to customers and targeting max output, sending WTI to $22 on March 20. VIX spiked 14 to 76, defensives (-14.1%) massively outperformed cyclicals (-35.6%), and Energy was worst by a record margin.",
+          "body_zh": "从2020年1月6日至3月18日，能源板块暴跌-60.6%（第11），这是现代史上最惨烈的能源板块跌势。两场同步冲击接踵而至：其一，新冠肺炎从1月下旬开始全球蔓延，摧毁需求预期（WTI期货4月一度跌为负值）；其二，3月6日OPEC+会议破裂——俄罗斯拒绝沙特提出的进一步减产，沙特随即发动价格战，向客户降价每桶8美元并追求最大产量，推动WTI在3月20日跌至22美元。VIX从14飙至76，防御板块（-14.1%）大幅跑赢周期板块（-35.6%），能源以历史性的差距垫底。",
+          "drivers": [
+            "COVID-19 demand destruction",
+            "Russia-Saudi price war March 2020",
+            "oil to $22 / OPEC+ breakdown",
+            "VIX 14-76 / flight-to-safety"
+          ],
+          "drivers_zh": [
+            "新冠疫情需求摧毁",
+            "2020年3月俄沙价格战",
+            "油价跌至22美元/OPEC+破裂",
+            "VIX从14飙至76/避险"
+          ],
+          "prev_key": "2020-01-06",
+          "prev_key_chain": [
+            "2020-01-06"
+          ],
+          "reason": "no turn within tolerance",
+          "status": "orphaned",
+          "title": "COVID + Saudi-Russia price war -- XLE falls 60%",
+          "title_zh": "新冠疫情+沙特-俄罗斯价格战——XLE暴跌60%"
+        },
+        "2023-03-17": {
+          "body": "Energy ground higher only +34.2% (#6) over a long stretch -- a laggard not because it was broken but because it was starved: this was the tech/semis-led AI melt-up (SMH +96.6%, growth over value +30.3) where Comm +79.3%, Financials +68.8% and Tech +65.1% soaked up the flows, and the dollar firmed (+3.6% DXY) against Energy. OPEC+ Saudi voluntary cuts defended a ~$70-90 Brent band while majors returned record cash (~$114bn in 2023), but a flat oil tape simply could not compete with AI for capital.",
+          "body_zh": "能源在漫长阶段中仅缓涨+34.2%（第6）——跑输不是因为它坏了，而是被冷落：这是科技/半导体主导的AI逼空上涨（SMH +96.6%，成长跑赢价值+30.3），通信+79.3%、金融+68.8%、科技+65.1%吸走了资金，美元走强（+3.6% DXY）也对能源不利。沙特自愿减产领衔的OPEC+捍卫约70-90美元布伦特区间，巨头返还创纪录现金（2023年约1140亿美元），但横盘的油价根本无法在资本争夺中与AI抗衡。",
+          "drivers": [
+            "tech-led risk-on",
+            "starved (out of favor)",
+            "strong dollar headwind",
+            "OPEC+ Saudi cuts + record buybacks"
+          ],
+          "drivers_zh": [
+            "科技主导的风险偏好",
+            "被冷落（失宠）",
+            "强美元逆风",
+            "OPEC+沙特减产+创纪录回购"
+          ],
+          "prev_key": "2023-03-17",
+          "prev_key_chain": [
+            "2023-03-17"
+          ],
+          "reason": "no turn within tolerance",
+          "status": "orphaned",
+          "title": "Range-bound crude lags the AI melt-up",
+          "title_zh": "区间震荡的原油跑输AI逼空上涨"
+        },
+        "2024-11-22": {
+          "body": "Crude drifted in a narrow ~$73 Brent range as weak Chinese demand and a looming non-OPEC surplus capped prices and OPEC+ delayed unwinding cuts again, leaving Energy worst (-14.3%, #11). The broad tape was narrow and mega-cap-led (equal-weight lagged cap-weight by -4.5%) with growth over value (+9.2), so even as the index barely moved (SPY -1.6%), unloved value-cyclical Energy was left behind. A hawkish December Fed cut added to the overhang.",
+          "body_zh": "中国需求疲软和迫近的非OPEC过剩压制价格、OPEC+再度推迟解除减产，原油在约73美元布伦特窄幅区间徘徊，能源垫底（-14.3%，第11）。大盘狭窄且由巨头主导（等权跑输市值加权-4.5%），成长跑赢价值（+9.2），因此即便指数几乎未动（SPY -1.6%），不受待见的价值-周期能源仍被甩在后面。12月美联储鹰派降息加重了隐忧。",
+          "drivers": [
+            "narrow breadth",
+            "growth over value",
+            "weak demand / OPEC+ delay",
+            "hawkish Fed"
+          ],
+          "drivers_zh": [
+            "市场广度狭窄",
+            "成长跑赢价值",
+            "需求疲软/OPEC+推迟",
+            "鹰派美联储"
+          ],
+          "prev_key": "2024-11-22",
+          "prev_key_chain": [
+            "2024-11-22"
+          ],
+          "reason": "no turn within tolerance",
+          "status": "orphaned",
+          "title": "Soft oil, OPEC+ delay -- narrow mega-cap tape leaves Energy behind",
+          "title_zh": "油价疲软、OPEC+推迟——巨头主导的窄幅盘面把能源甩在后面"
+        },
+        "2024-12-19": {
+          "body": "Oil rallied to start 2025, Brent jumping toward a five-month high above $80 on cold-weather demand, fresh Russia sanctions, China-stimulus hopes and inventory draws, and Energy led at #1 (+14.8%) even as SPY fell -3.1%. The rotation favored value: defensives (+5.9%) and Energy beat cyclicals (+1.0%) while growth cracked (semis -10.0%, growth-value -12.5), aided by a falling dollar (-4.2% DXY) tailwind. Producer discipline kept the firmer tape supporting XLE's dividends and buybacks into early April.",
+          "body_zh": "2025年开年油价上涨，布伦特在寒冷天气需求、新一轮对俄制裁、中国刺激预期和库存去化推动下跳升至80美元上方的五个月高点；即便SPY下跌-3.1%，能源仍以第1领涨（+14.8%）。轮动偏向价值：防御板块（+5.9%）和能源跑赢周期板块（+1.0%），而成长走弱（半导体-10.0%、成长减价值-12.5），美元下行（-4.2% DXY）形成顺风。生产商纪律使坚挺的盘面支撑XLE的分红和回购直至4月初。",
+          "drivers": [
+            "value over growth rotation",
+            "weak dollar tailwind",
+            "broadening breadth",
+            "winter demand + Russia sanctions"
+          ],
+          "drivers_zh": [
+            "价值跑赢成长轮动",
+            "弱美元顺风",
+            "市场广度扩张",
+            "冬季需求+对俄制裁"
+          ],
+          "prev_key": "2024-12-19",
+          "prev_key_chain": [
+            "2024-12-19"
+          ],
+          "reason": "no turn within tolerance",
+          "status": "orphaned",
+          "title": "New-year crude rally -- Energy leads as growth wobbles",
+          "title_zh": "新年原油上涨——成长摇摆，能源领涨"
+        },
+        "2025-04-08": {
+          "body": "From the tariff low, crude recovered through 2025 and then exploded in early 2026 when the Iran-Israel war erupted: Brent rocketed from ~$72 toward ~$120 by mid-March 2026 as a Strait-of-Hormuz threat to ~20% of world oil flows handed Energy the #1 spot (+68.9%). This was the rare leg where Energy led not as a hedge but as the catalyst -- a reflation quad (oil +67.2%) with a weak-dollar (-2.7% DXY) tailwind, even as semis (+108.6%) and a narrow mega-cap tape ran alongside. War-risk windfall cash flows powered XLE's massive rally into late March 2026 (2026 = house view).",
+          "body_zh": "从关税低点起，原油在2025年逐步复苏，随后在2026年初伊朗-以色列战争爆发时暴涨：霍尔木兹海峡威胁到全球约20%的石油流动，使布伦特到2026年3月中旬从约72美元飙升至约120美元，能源因此登上第1（+68.9%）。这是少见的一段——能源不是作为对冲、而是作为催化剂领涨——处于再通胀象限（原油+67.2%）并伴随弱美元（-2.7% DXY）顺风，尽管同期半导体（+108.6%）与狭窄的巨头盘面并行。战争风险带来的超额现金流推动XLE在2026年3月底前大幅上涨（2026年为本站观点）。",
+          "drivers": [
+            "reflation quad / sector catalyst",
+            "weak dollar tailwind",
+            "Iran war + Hormuz risk premium",
+            "windfall cash flows"
+          ],
+          "drivers_zh": [
+            "再通胀象限/板块催化",
+            "弱美元顺风",
+            "伊朗战争+霍尔木兹风险溢价",
+            "超额现金流"
+          ],
+          "prev_key": "2025-04-08",
+          "prev_key_chain": [
+            "2025-04-08"
+          ],
+          "reason": "collided onto 2025-04-08 (already bound)",
+          "status": "orphaned",
+          "title": "Iran-Hormuz supershock -- Energy leads its own war rally",
+          "title_zh": "伊朗-霍尔木兹超级冲击——能源主导自己的战争行情"
+        }
+      }
+    },
+    "xli": {
+      "legs": {
+        "2018-12-24": {
+          "body": "XLI bottomed on December 24, 2018 and rallied +44.2% through February 2020, powered by a decisive Fed pivot: Powell's January 2019 remarks acknowledged cross-currents and signaled patience, then the Fed cut rates three times in 2019 (July, September, October) in a mid-cycle adjustment. The U.S.-China Phase 1 trade deal framework (reached October 2019, signed January 2020) reduced tariff tail-risk on industrial supply chains. Tech and semis led (SMH +89.3%, growth over value +22.5) in a melt-up pulling cyclicals broadly higher; however, Boeing's 737 MAX grounding (March 13, 2019) was a notable XLI-specific drag that kept the sector at rank #4 rather than outright leadership, and the copper-gold ratio falling -26.0% warned of a late-cycle slowdown ahead.",
+          "body_zh": "XLI于2018年12月24日触底，随后至2020年2月反弹+44.2%，由美联储决定性转向驱动：2019年1月鲍威尔讲话承认交叉逆流并暗示耐心，之后2019年三次降息（7月、9月、10月），完成周期中段调整。中美第一阶段贸易协议框架（2019年10月达成、2020年1月签署）降低了工业供应链的关税尾部风险。科技与半导体领涨（SMH +89.3%，成长跑赢价值+22.5），融涨行情拉动周期股整体上行；然而，波音737 MAX停飞（2019年3月13日）是XLI特有的拖累，令其排名仅第4而非领头，且铜金比下跌-26.0%预警了前方的晚周期放缓。",
+          "drivers": [
+            "Fed pivot and three 2019 rate cuts",
+            "Phase 1 U.S.-China trade deal framework",
+            "tech and semis-led risk-on melt-up",
+            "Boeing 737 MAX drag offsetting gains",
+            "mid-cycle manufacturing stabilization"
+          ],
+          "drivers_zh": [
+            "美联储转向/2019年三次降息",
+            "中美第一阶段贸易协议",
+            "科技/半导体领涨风险偏好融涨",
+            "波音737 MAX拖累抵消涨幅",
+            "周期中段制造业稳定"
+          ],
+          "prev_key": "2018-12-24",
+          "prev_key_chain": [
+            "2018-12-24"
+          ],
+          "reason": "collided onto 2018-12-24 (already bound)",
+          "status": "orphaned",
+          "title": "Fed pivot and Phase 1 trade deal rekindle risk appetite",
+          "title_zh": "美联储转向+第一阶段贸易协议重燃风险偏好"
+        }
+      }
+    },
+    "xlre": {
+      "legs": {
+        "2024-11-27": {
+          "body": "Post-election yields backed up and the 10Y returned toward mid-2024 highs (TLT -3.3%), undoing the duration tailwind. The April-2025 reciprocal-tariff crash then dragged the sector to its April-8 low — but as a defensive REITs cushioned the blow (-16.6%, rank #6), with defensives down only -8.6% versus cyclicals -18.7% in a true flight-to-safety as VIX exploded 14 to 52.",
+          "body_zh": "大选后收益率回升、10年期重回2024年年中高位（TLT-3.3%），抵消了久期顺风。随后2025年4月的对等关税崩盘将板块拖向4月8日低点——但作为防御资产，REIT缓冲了冲击（-16.6%，排名第6），在真正的避险中防御股仅跌-8.6%、周期股跌-18.7%，其间VIX由14爆升至52。",
+          "drivers": [
+            "yields rebound",
+            "duration headwind",
+            "flight-to-safety",
+            "tariff crash"
+          ],
+          "drivers_zh": [
+            "收益率回升",
+            "久期逆风",
+            "避险",
+            "关税崩盘"
+          ],
+          "prev_key": "2024-11-27",
+          "prev_key_chain": [
+            "2024-11-27"
+          ],
+          "reason": "no turn within tolerance",
+          "status": "orphaned",
+          "title": "Yields rebound, then tariff flight-to-safety",
+          "title_zh": "收益率回升，继而关税避险"
+        }
+      }
+    },
+    "xlv": {
+      "legs": {
+        "2015-09-28": {
+          "body": "XLV rebounded 56% from the September 2015 trough to November 2018, keeping pace with SPY (+55.6%) and ranking #4/11 in a tech-led reflation tape. The ACA-era managed care sector continued compounding earnings with fewer newly-insured headwinds; FDA drug approvals accelerated sharply (novel approvals roughly doubled by 2018 vs 2015), fueling large-scale pharma and biotech M&A waves; and Trump's American Patients First drug-pricing blueprint (released May 11, 2018) created short-lived headwinds that, being a non-binding framework, ultimately proved less severe than feared. The macro environment was tech-led risk-on (semis +111%, growth minus value +18) which kept defensives lagging cyclicals (43.7% vs 53.8%), but the sector's internal earnings growth sustained a respectable absolute return.",
+          "body_zh": "XLV自2015年9月低点至2018年11月反弹56%，与SPY（+55.6%）基本同步，在科技主导的再通胀行情中排名第4/11。ACA时代管理式医疗板块持续复利盈利，参保人扩张阻力减小；FDA药品审批大幅提速（2018年新药审批量较2015年近乎翻倍），推动大规模制药与生物科技并购浪潮；特朗普《美国患者优先》药价蓝图（2018年5月11日发布）虽带来短暂阻力，但因属非约束性框架，最终影响低于市场担忧。宏观环境为科技主导的风险偏好（半导体+111%、成长跑赢价值+18），令防御股持续落后周期股（43.7% vs 53.8%），但板块内部盈利增长支撑了可观的绝对回报。",
+          "drivers": [
+            "FDA approval acceleration",
+            "biotech M&A wave",
+            "ACA earnings compounding",
+            "tech-led risk-on",
+            "Trump drug blueprint limited impact"
+          ],
+          "drivers_zh": [
+            "FDA审批加速",
+            "生物科技并购浪潮",
+            "ACA盈利复利",
+            "科技主导风险偏好",
+            "特朗普药价蓝图影响有限"
+          ],
+          "prev_key": "2015-09-28",
+          "prev_key_chain": [
+            "2015-09-28"
+          ],
+          "reason": "collided onto 2015-07-20 (already bound)",
+          "status": "orphaned",
+          "title": "Cyclical rebound, FDA surge, managed care M&A",
+          "title_zh": "周期股反弹、FDA审批激增与管理式医疗并购"
+        }
+      }
+    }
+  }
+}

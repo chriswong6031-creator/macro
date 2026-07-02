@@ -1,0 +1,1 @@
+{"schema":"communique_diff.v1","asof":"2026-07-02","events":[],"cold_start_organs":["csrc","ndrc","pboc","peoples_daily","state_council"],"counts":{"n_events":0,"n_appeared":0,"n_dropped":0,"n_lead_shift":0,"n_cold_start_organs":5},"n_qbus":0,"n_claims":0,"is_context_only":true}

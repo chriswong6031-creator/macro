@@ -2584,6 +2584,26 @@ china_news:
   base_url: https://api.deepseek.com/anthropic   # omit / null for native Anthropic
   api_key_env: DEEPSEEK_API_KEY
 
+# Communiqué Diff (W4 B1) — discrete, dated phrase-diff events from official Chinese
+# policy corpora (collectors/china_official_corpora.py + engine/communique_diff.py).
+# The ONE China path to standalone validation (spec D9 / Appendix P4): rather than a
+# bag-of-words tone, detect APPEARED / DROPPED / lead-item-shift of ~44 canonical
+# formulas across a running window of official documents. SALIENCE-ONLY (direction=0)
+# because phrase polarity is human-review PROVISIONAL; the forward log accrues today.
+# Browser UA + pacing (gov.cn is IP-reputation-sensitive [P4], the FREDGRAPH_UA
+# pattern). CONTEXT-ONLY, never a scoring input. See config/qual_ladder.yml.
+china_official:
+  enabled: true                   # MASTER SWITCH for the official-corpora collector
+  request_pace_s: 1.0             # politeness pause between leaf fetches + between organs
+  timeout_s: 15
+  max_docs_per_organ: 12          # document leaves fetched per organ per crawl
+  max_body_chars: 20000           # cap stored body text per document
+  min_title: 6                    # skip anchor "titles" shorter than this
+  fetch_bodies: true              # pull each leaf's body (else title-only, faster/politer)
+communique_diff:
+  window_days: 30                 # trailing comparable-document window per organ
+  corpus_read_days: null          # read the full accrued corpus (null) or the last N day-files
+
 # China News powerhouse — multi-source wire + PIT event bus + media-sentiment
 # (engine/china_news_intel.py + collectors/china_news_wire.py). The China sibling of
 # news_vector: a first-print, point-in-time, keep-FIRST headline log across several free
