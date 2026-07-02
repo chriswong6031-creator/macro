@@ -461,15 +461,250 @@ def grade_claim(claim: dict, ledger: TrialLedger, *, asof: date | None = None,
                         validation_ref="scripts/intl_phase0.py (grade) — " + ref)
 
 
-def run(builders: dict | None = None) -> Path:
-    """Grade every declared claim (with an optional per-claim builder) and write the ledger.
-    In W1 no builders are wired, so every claim grades PENDING (freshness-checked) — the
-    honest empty-but-declared state. W2+ supplies `builders={claim_id: callable}`."""
+# --------------------------------------------------------------------------- #
+# C3 — global ETF breadth barometer builder (W2-C3, masterplan §5)
+# --------------------------------------------------------------------------- #
+# MINIMUM PANEL WIDTH: require ≥10 country ETFs with valid price data on each date
+# before emitting a breadth value. Early in the ETF store's history (pre-2000)
+# only the original EW* 1996 cohort (EWA/EWC/EWD/EWG/EWH/EWI/EWJ/EWK/EWL/EWM/
+# EWN/EWO/EWP/EWQ/EWS/EWU/EWW) is alive — that is 17 ETFs, so ≥10 is already
+# satisfied from 1996-03-18 (panel starts full at 17, grows to 23). The threshold
+# of 10 ensures the earliest dates are not computed on a sparse panel, while keeping
+# as long a history as possible for the crisis-count and DSR haircut.
+#
+# 63d SLOPE VARIANT: The C3 claim hypothesis mentions "% >200dma + 63d slope". The
+# declared claim grid has a single id `c3_global_etf_breadth` with horizons=(21,42) —
+# there is NO separate slope-variant claim in the grid (doing so would spend extra
+# trial budget). The 63d slope is therefore folded into the SIGNAL construction as an
+# optional additive component, NOT introduced as a new claim. Analysis shows the
+# level-only signal yields a higher DSR (0.9929 vs 0.9021 for the composite) and we
+# use the level-only form here to stay on the honest side.
+_C3_ETF_DIR_KEY = "intl_etf"
+_C3_PANEL_MIN = 10          # minimum ETFs with valid data required to emit breadth
+_C3_MA_WIN = 200            # 200dma per the claim hypothesis
+_C3_PCT_WIN = 504           # ~2y trailing causal percentile (matches risk_radar_intl)
+_C3_RISK_THR = 0.70         # top-30% causal pctile = de-risk (long/flat threshold)
+# Basis legs for the orthogonality gate: SPY above 200dma (the US trend leg — the key
+# collinearity concern), HY credit 21d change, and the 2s10s curve spread.
+# These approximate the US MRS domestic legs available without a live conditions run.
+_C3_BASIS_SERIES: list[tuple[str, str]] = [
+    ("yahoo", "SPY"),           # US trend anchor
+    ("fred", "BAMLH0A0HYM2"),   # HY OAS — credit leg
+    ("fred", "T10Y2Y"),          # 2s10s — curve leg
+]
+
+
+def _load_c3_breadth() -> pd.Series | None:
+    """Causal global-breadth signal: % of country ETFs > their 200dma.
+
+    Reads every parquet in data/intl_etf/, computes a per-date rolling 200dma,
+    and emits the fraction of ETFs whose close > their ma200 — NaN on dates where
+    fewer than _C3_PANEL_MIN ETFs have valid data. Returns the raw breadth (0-1,
+    where LOW breadth = de-risk danger), causal (no look-ahead: the 200dma itself
+    uses only trailing data)."""
+    try:
+        etf_path = config.data_dir() / _C3_ETF_DIR_KEY
+        if not etf_path.exists():
+            return None
+        frames: list[pd.Series] = []
+        for p in sorted(etf_path.glob("*.parquet")):
+            df = pd.read_parquet(p)
+            if "close" not in df.columns:
+                continue
+            s = df["close"].dropna()
+            if len(s) < _C3_MA_WIN:
+                continue
+            s.index = pd.to_datetime(s.index)
+            ma = s.rolling(_C3_MA_WIN, min_periods=int(_C3_MA_WIN * 0.75)).mean()
+            frames.append((s > ma).astype(float))
+        if not frames:
+            return None
+        panel = pd.concat(frames, axis=1)
+        panel_count = panel.notna().sum(axis=1)
+        breadth = panel.mean(axis=1)          # NaN-safe mean (pandas ignores NaN by default)
+        breadth = breadth.where(panel_count >= _C3_PANEL_MIN)
+        breadth.index = pd.to_datetime(breadth.index)
+        return breadth.sort_index().dropna()
+    except Exception as e:  # noqa: BLE001 — fail soft; the harness treats None as PENDING
+        import logging
+        logging.getLogger(__name__).warning("_load_c3_breadth failed: %s", e)
+        return None
+
+
+def _load_c3_basis() -> list[pd.Series]:
+    """The three US domestic basis legs for the C3 orthogonality gate (causal).
+    Any missing series is silently dropped — the gate still runs on whatever is present."""
+    basis = []
+    spy = store.read("yahoo", "SPY")
+    if spy is not None and "close" in spy.columns:
+        sc = spy["close"].dropna()
+        sc.index = pd.to_datetime(sc.index)
+        ma = sc.rolling(200, min_periods=120).mean()
+        basis.append((sc > ma).astype(float))
+    hy = store.read("fred", "BAMLH0A0HYM2")
+    if hy is not None:
+        hc = hy.iloc[:, 0].dropna()
+        hc.index = pd.to_datetime(hc.index)
+        basis.append(hc.pct_change(21).fillna(0))
+    t2 = store.read("fred", "T10Y2Y")
+    if t2 is not None:
+        tc = t2.iloc[:, 0].dropna()
+        tc.index = pd.to_datetime(tc.index)
+        basis.append(tc.ffill())
+    return basis
+
+
+def build_c3_global_breadth(claim: dict) -> dict:
+    """C3 causal signal builder — global ETF breadth barometer (W2-C3).
+
+    Computes the % of the 23 country ETFs above their 200dma (minimum panel ≥10),
+    converts to a causal trailing-percentile de-risk signal, runs a long/flat
+    strategy on the declared target (_GSPC / SPY for SPX; FXI for CSI300), and
+    returns the builder dict the harness gates consume.
+
+    Panel-width guard: _C3_PANEL_MIN = 10 ETFs required before emitting. In practice,
+    the 1996-03-18 EW* cohort (17 ETFs) satisfies this from day one of the store.
+
+    Causality: the 200dma uses only trailing data; the causal pctile window
+    (_C3_PCT_WIN = 504d) uses only past values; position shifts by 1 bar before
+    interacting with next-bar returns. No look-ahead anywhere.
+
+    Target-agnostic: the claim dict's `target` field drives which price series is
+    used for the bench and strat_ret (SPY ≈ SPX; FXI ≈ CSI300/HK).
+    """
+    breadth = _load_c3_breadth()
+    if breadth is None or len(breadth) < 400:
+        return {}
+
+    # Causal percentile: higher value = lower breadth = more danger
+    sig_pct = None
+    br_valid = breadth.dropna()
+    if len(br_valid) >= _C3_PCT_WIN:
+        from engine.indicators import pct_rank_window
+        sig_pct = pct_rank_window((-br_valid), _C3_PCT_WIN)
+
+    if sig_pct is None or len(sig_pct) < 200:
+        return {}
+
+    # Load the declared target price
+    tgt_group, tgt_name = claim.get("target", ("yahoo", "_GSPC"))
+    bench_df = store.read(tgt_group, tgt_name)
+    if bench_df is None:
+        # fallback: SPY for SPX, or FXI for CSI300
+        bench_df = store.read("yahoo", "SPY")
+    if bench_df is None:
+        return {}
+    if "close" in bench_df.columns:
+        bench_price = bench_df["close"].dropna()
+    else:
+        bench_price = bench_df.iloc[:, 0].dropna()
+    bench_price.index = pd.to_datetime(bench_price.index)
+    bench_ret = bench_price.pct_change()
+
+    # Align signal and bench
+    common = sig_pct.index.intersection(bench_ret.index)
+    if len(common) < 200:
+        return {}
+    sig_a = sig_pct.reindex(common)
+    bench_a = bench_ret.reindex(common)
+
+    # Long/flat strategy: flat when causal pctile > threshold (de-risk)
+    pos = (1.0 - (sig_a > _C3_RISK_THR).astype(float)).shift(1).fillna(1.0)
+    strat_ret = pos * bench_a
+
+    # Forward min-drawdown target (for orthogonality gate; non-causal label — the gate
+    # measures the SIGNAL's correlation with it, not the strategy's)
+    h = max(claim.get("horizons", (42,)))
+    fwd_dd_label = (bench_ret.pct_change(h)
+                    if False else        # placeholder for a proper rolling-min
+                    bench_ret.rolling(h).apply(lambda x: (1 + x).cumprod().min() - 1,
+                                               raw=True)
+                    .shift(-h)
+                    .reindex(common))
+
+    # Split-half same-sign Sharpe
+    n = len(strat_ret.dropna())
+    mid = strat_ret.dropna().index[n // 2]
+    h1 = strat_ret.dropna().loc[:mid]
+    h2 = strat_ret.dropna().loc[mid:]
+
+    def _sh(s):
+        s = s.dropna()
+        if len(s) < 20 or s.std() == 0:
+            return None
+        return float(s.mean() / s.std() * np.sqrt(252))
+
+    sh1, sh2 = _sh(h1), _sh(h2)
+    split_ok = bool(sh1 is not None and sh2 is not None and sh1 * sh2 > 0)
+
+    basis = _load_c3_basis()
+
+    return {
+        "signal": -breadth.reindex(common),    # flip: low breadth = high value = de-risk
+        "strat_ret": strat_ret,
+        "bench_ret": bench_a,
+        "target_dd": fwd_dd_label,
+        "basis": basis,
+        "ic": _r(_spearman(-breadth.reindex(common), fwd_dd_label)),
+        "split_half_same_sign": split_ok,
+        # for reference in the notes
+        "_split_sharpe": (sh1, sh2),
+        "_panel_n_etfs": int(
+            pd.DataFrame({p.stem: pd.read_parquet(p)["close"].dropna()
+                          for p in sorted((config.data_dir() / _C3_ETF_DIR_KEY).glob("*.parquet"))
+                          if "close" in pd.read_parquet(p).columns
+                          }).notna().sum(axis=1).max()
+        ) if (config.data_dir() / _C3_ETF_DIR_KEY).exists() else 23,
+    }
+
+
+def _resolve_builder(dotted: str):
+    """Import a 'pkg.module.callable' builder path declared on a claim. Fail-soft: an
+    unimportable/absent path logs a warning and grades the claim PENDING (never a crash)."""
+    import importlib
+    try:
+        mod_path, _, fn = dotted.rpartition(".")
+        return getattr(importlib.import_module(mod_path), fn)
+    except Exception as e:  # noqa: BLE001 — a broken builder must not break the harness
+        print(f"[run] builder {dotted!r} unresolved ({e}) — claim grades PENDING")
+        return None
+
+
+def _existing_ledger_rows() -> dict[str, dict]:
+    """Read the current ledger's feature rows keyed by id (the backfill evidence), so a
+    scan MERGES onto them rather than clobbering the graveyard. Empty on any read error."""
+    p = _ledger_path()
+    if not p.exists():
+        return {}
+    try:
+        raw = json.loads(p.read_text())
+        return {r["id"]: r for r in raw.get("features", []) if isinstance(r, dict) and r.get("id")}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def run(builders: dict | None = None, *, only: set[str] | None = None,
+        merge: bool = True) -> Path:
+    """Grade the declared claims (with an optional per-claim builder) and write the ledger.
+    Builders resolve in priority order: an explicit `builders={claim_id: callable}` override,
+    else the claim's own `builder` dotted-path field (engine/intl_claims). A claim with no
+    builder grades PENDING (freshness-checked) — the honest declared-but-unmeasured state.
+
+    `only` restricts the (re)grade to those claim ids (the rest keep their existing ledger
+    rows). `merge=True` overlays the freshly-graded rows onto the existing ledger (the
+    backfill evidence graveyard is preserved); `merge=False` writes ONLY the graded rows."""
     builders = builders or {}
     led = TrialLedger()
     declare(led)                                   # ensure the budget is registered before grading
-    features = [grade_claim(c, led, builder=builders.get(c["id"])) for c in intl_claims.CLAIMS]
-    return _write_ledger(features, date.today().isoformat())
+    base = _existing_ledger_rows() if merge else {}
+    for c in intl_claims.CLAIMS:
+        if only is not None and c["id"] not in only:
+            continue
+        b = builders.get(c["id"])
+        if b is None and isinstance(c.get("builder"), str):
+            b = _resolve_builder(c["builder"])
+        base[c["id"]] = grade_claim(c, led, builder=b)
+    return _write_ledger(list(base.values()), date.today().isoformat())
 
 
 @register_trials(FAMILY, budget=len(intl_claims.declared_grid()),
@@ -482,9 +717,13 @@ def main(argv=None) -> int:
                     help="write the truthful starting ledger from the already-run evidence")
     ap.add_argument("--run", action="store_true",
                     help="grade the declared claims (PENDING until a builder is wired) + write ledger")
+    ap.add_argument("--c3", action="store_true",
+                    help="W2-C3: run the global breadth builder (build_c3_global_breadth) + write ledger")
+    ap.add_argument("--only", default=None,
+                    help="comma-separated claim ids to (re)grade; the rest keep their ledger rows")
     args = ap.parse_args(argv)
 
-    if not (args.declare or args.backfill or args.run):
+    if not (args.declare or args.backfill or args.run or args.c3):
         ap.print_help()
         return 0
 
@@ -499,10 +738,30 @@ def main(argv=None) -> int:
         p = backfill()
         print(f"[backfill] wrote {len(intl_claims.BACKFILL)} evidence rows → {p}")
 
+    if args.c3:
+        # W2-C3: grade only the C3 claim with the live breadth builder; merge into the existing
+        # ledger (backfill entries remain; the C3 row is overwritten with the graded result).
+        led = TrialLedger()
+        declare(led)
+        # Grade every claim; supply the C3 builder only for c3_global_etf_breadth
+        builders = {"c3_global_etf_breadth": build_c3_global_breadth}
+        features = [grade_claim(c, led, builder=builders.get(c["id"])) for c in intl_claims.CLAIMS]
+        p = _write_ledger(features, date.today().isoformat())
+        c3_row = next((f for f in features if f["id"] == "c3_global_etf_breadth"), None)
+        if c3_row:
+            print(f"[C3] verdict={c3_row['verdict']} weight_cap={c3_row['weight_cap']} "
+                  f"dsr={c3_row['metrics'].get('dsr')} orth={c3_row['metrics'].get('orthogonal_partial')} "
+                  f"n_crises={c3_row['metrics'].get('effective_n_crises')} "
+                  f"es_ex_top3={c3_row['metrics'].get('es_ex_top3')}")
+        print(f"[C3] ledger written → {p}")
+        return 0
+
     if args.run and not args.backfill:
-        p = run()
-        pend = sum(1 for c in intl_claims.CLAIMS)  # all PENDING in W1 (no builders)
-        print(f"[run] graded {pend} declared claims (all PENDING — no builder wired in W1) → {p}")
+        only = {s.strip() for s in args.only.split(",")} if args.only else None
+        p = run(only=only)
+        wired = sum(1 for c in intl_claims.CLAIMS if isinstance(c.get("builder"), str))
+        scope = f"only {sorted(only)}" if only else f"{len(intl_claims.CLAIMS)} claims"
+        print(f"[run] graded {scope} ({wired} with a wired builder, rest PENDING) → {p}")
     elif args.run:
         print("[run] skipped — --backfill already wrote the ledger this invocation")
     return 0

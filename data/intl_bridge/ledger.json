@@ -237,7 +237,73 @@
       "freshness_sla_days": 5,
       "validation_ref": "engine/risk_radar_intl.py (validated #711/#718); engine/risk_radar_intl_audit.py (forward-log + can_force governance)",
       "kill": false,
-      "notes": "NOTE-ONLY entry. This engine EXISTS on main with committed forward logs and its OWN can_force maturation gate (\u226530 graded, \u22658 alerts, realized lift \u22651.25\u00d7). Composite \u226510%/42d drawdown lift 2.07\u00d7 (p=0.01), CSI300-confirmed. The intl_bridge does NOT duplicate its machinery \u2014 it defers to risk_radar_intl_audit.scorecard for the CN/HK/CA governance. Listed CONTEXT here for registry completeness."
+      "notes": "NOTE-ONLY entry. This engine EXISTS on main with committed forward logs and its OWN can_force maturation gate (>=30 graded, >=8 alerts, realized lift >=1.25x). Composite >=10%/42d drawdown lift 2.07x (p=0.01), CSI300-confirmed. The intl_bridge does NOT duplicate its machinery \u2014 it defers to risk_radar_intl_audit.scorecard for the CN/HK/CA governance. Listed CONTEXT here for registry completeness."
+    },
+    {
+      "id": "c3_global_etf_breadth",
+      "channel": "C3",
+      "hypothesis": "% of country ETFs > 200dma (+63d slope) below threshold leads SPX/CSI300 \u22655% drawdowns at 21-42d (global analog of risk_radar_intl breadth).",
+      "direction": "de-risk",
+      "verdict": "CONFIRMED",
+      "weight_cap": 0.2,
+      "metrics": {
+        "ic": -0.198,
+        "dsr": 0.9326,
+        "split_half_same_sign": true,
+        "effective_n_crises": 6,
+        "es_ex_top3": 0.0078,
+        "orthogonal_partial": -0.1209
+      },
+      "gates": {
+        "freshness": true,
+        "promotion": "na",
+        "orthogonality": true,
+        "crisis_count": true,
+        "crisis_independent_es": true
+      },
+      "source_series": [
+        "intl_etf/EWJ",
+        "intl_etf/EWG",
+        "intl_etf/EWU",
+        "intl_etf/EWY",
+        "intl_etf/EWA",
+        "intl_etf/EWQ"
+      ],
+      "freshness_sla_days": 8,
+      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 Breadth-collapse is the STRONGEST leg inside risk_radar_intl",
+      "kill": false,
+      "notes": "Breadth-collapse is the STRONGEST leg inside risk_radar_intl.CN (lift 1.97-3.13\u00d7). Gate: orthogonality vs US radar's domestic legs. Seams: US risk_radar Tier-B leg (INTL-38) + a risk_radar_intl profile leg. | all hard gates pass; cap scaled by 6 independent crises"
+    },
+    {
+      "id": "c1_china_global_beta",
+      "channel": "C1",
+      "hypothesis": "High global-beta China names get size/stop dampening when the global risk state deteriorates (port of hk_global_beta, Vasicek-shrunk).",
+      "direction": "de-risk",
+      "verdict": "CONTEXT",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": -0.17,
+        "dsr": 0.0002,
+        "split_half_same_sign": true,
+        "effective_n_crises": 1,
+        "es_ex_top3": -0.0194,
+        "orthogonal_partial": -0.4691
+      },
+      "gates": {
+        "freshness": true,
+        "promotion": "na",
+        "orthogonality": true,
+        "crisis_count": false,
+        "crisis_independent_es": false
+      },
+      "source_series": [
+        "yahoo/FXI",
+        "yahoo/SPY"
+      ],
+      "freshness_sla_days": 5,
+      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 HK validated ~2x transmission; China A couples less (~2x ratio, china_global_factors) \u2014 measure, don't assume",
+      "kill": true,
+      "notes": "HK validated ~2x transmission; China A couples less (~2x ratio, china_global_factors) \u2014 measure, don't assume. Gate: incremental over CN RORO. Seam (post-promotion): china_name_score._tailwind + conviction_profile ctx. | weak/unstable \u2014 shown as context, never sized"
     }
   ]
 }

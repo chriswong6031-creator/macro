@@ -319,10 +319,14 @@ def _fetch_gdelt(cfg: dict, today: date) -> tuple[list[dict], str | None]:
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("news_vector gdelt fetch failed (%s)", e)
         reason = "fetch_error"
-    try:
-        cache.write_text(json.dumps({"articles": articles, "degraded_reason": reason}))
-    except Exception:  # noqa: BLE001
-        pass
+    # Only cache SUCCESSFUL responses (articles present).  A failed/empty response
+    # (rate_limited, fetch_error, no_headlines) must NOT be cached — caching it would
+    # suppress retries for the full 12-hour TTL and silently stall the accrual store.
+    if articles:
+        try:
+            cache.write_text(json.dumps({"articles": articles, "degraded_reason": reason}))
+        except Exception:  # noqa: BLE001
+            pass
     return articles, reason
 
 
@@ -342,10 +346,52 @@ def _allowlist(cfg: dict) -> list[str]:
 # --------------------------------------------------------------------------- #
 # public: daily ingest (Action-step) — fetch -> gate -> keep-FIRST accrue
 # --------------------------------------------------------------------------- #
+_FRESHNESS_WARN_DAYS = 3  # warn when newest event is older than this
+
+
+def _check_freshness(path: "Path", today: date) -> dict:
+    """Return a freshness dict {age_days, newest_event, warn}.
+    Broken ≠ quiet: always logs a WARNING when the store is stale (age > threshold).
+    PURE-ish (reads parquet but no network). Never raises."""
+    try:
+        import pandas as pd
+        if not path.exists():
+            log.warning("news_vector freshness: events.parquet missing — store never written")
+            return {"age_days": None, "newest_event": None, "warn": True, "reason": "missing"}
+        df = pd.read_parquet(path)
+        if df.empty:
+            log.warning("news_vector freshness: events.parquet is empty")
+            return {"age_days": None, "newest_event": None, "warn": True, "reason": "empty"}
+        newest_str = str(df["first_seen_utc"].max())[:10]
+        try:
+            newest = date.fromisoformat(newest_str)
+        except (ValueError, TypeError):
+            log.warning("news_vector freshness: cannot parse newest date %r", newest_str)
+            return {"age_days": None, "newest_event": newest_str, "warn": True,
+                    "reason": "unparseable_date"}
+        age = (today - newest).days
+        warn = age > _FRESHNESS_WARN_DAYS
+        if warn:
+            log.warning(
+                "news_vector freshness WARNING: newest event %s is %d days old "
+                "(threshold %d) — accrual may be stalled (check GDELT rate-limit "
+                "or fetch_cache for cached failures)",
+                newest_str, age, _FRESHNESS_WARN_DAYS,
+            )
+        return {"age_days": age, "newest_event": newest_str, "warn": warn}
+    except Exception as e:  # noqa: BLE001
+        log.warning("news_vector freshness check failed (%s)", e)
+        return {"age_days": None, "newest_event": None, "warn": True, "reason": str(e)}
+
+
 def ingest(today: date | None = None) -> dict | None:
     """Fetch the narrative slice, build event records, and accrue them append-only
     (keep-FIRST). Returns a small summary; None when the master switch is off.
-    NEVER raises into the pipeline."""
+    NEVER raises into the pipeline.
+
+    Freshness check is ALWAYS run (even when fetch degrades) so a stale store is
+    never quiet — a WARNING is logged when newest event exceeds _FRESHNESS_WARN_DAYS.
+    """
     cfg = _cfg()
     if not cfg.get("enabled", False):
         return None
@@ -364,11 +410,62 @@ def ingest(today: date | None = None) -> dict | None:
         n_new = len(merged) - before
         log.info("news_vector: %d raw -> %d gated -> %d new events (%d total)",
                  len(raw), len(records), n_new, len(merged))
+        freshness = _check_freshness(path, today)
         return {"schema": SCHEMA, "is_context_only": True, "asof": today.isoformat(),
                 "n_raw": len(raw), "n_gated": len(records), "n_new": n_new,
-                "n_total": int(len(merged)), "degraded_reason": reason if not records else None}
+                "n_total": int(len(merged)), "degraded_reason": reason if not records else None,
+                "freshness": freshness}
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("news_vector ingest failed (%s)", e)
+        return None
+
+
+def ingest_to_qbus(today: date | None = None) -> dict | None:
+    """Wire all accrued news_vector events into qbus (append_items, keep-FIRST).
+    Reads from the local events.parquet store (populated by `ingest()`), maps to
+    the qbus schema with ``timestamp_quality=CRAWL_BOUNDED`` (news_vector events
+    are bounded only by our crawl time, not publisher-stated), and calls
+    ``qbus.append_items``.  Returns a summary dict; None on any failure.
+
+    This is a LEAF boundary call — it stamps ``_crawled_at`` at call time and
+    passes it down; qbus library code never touches the clock."""
+    try:
+        import pandas as pd
+        from engine import qbus
+
+        path = _events_path()
+        if not path.exists():
+            log.debug("news_vector.ingest_to_qbus: events.parquet not found; skipping")
+            return None
+        df = pd.read_parquet(path)
+        if df.empty:
+            return {"desk": "news_vector", "n_wired": 0}
+
+        today = today or date.today()
+        crawled_at = datetime.now(timezone.utc).isoformat()
+
+        rows: list[dict] = []
+        for r in df.itertuples(index=False):
+            rows.append({
+                "desk": "news_vector",
+                "source": str(r.domain or ""),
+                "url": str(r.url or ""),
+                "title": str(r.title or ""),
+                "seendate": str(r.first_seen_utc or ""),
+                "_crawled_at": crawled_at,
+                "timestamp_quality": "CRAWL_BOUNDED",
+                "lang": "en",
+                "entities": [],
+                "themes": [str(r.theme)] if r.theme else [],
+                "importance_raw": float(2 - r.source_tier) if r.source_tier in (1, 2) else 0.0,
+            })
+
+        result = qbus.append_items(rows, assign_keys=True)
+        n_wired = len(result) if result is not None else 0
+        log.info("news_vector.ingest_to_qbus: wired %d rows into qbus", n_wired)
+        return {"desk": "news_vector", "n_wired": n_wired, "asof": today.isoformat()}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("news_vector.ingest_to_qbus failed (%s)", e)
         return None
 
 

@@ -65,7 +65,7 @@
       "file": "engine/name_score.py",
       "symbol": "_tailwind",
       "line_ref": 139,
-      "notes": "Per-name buy-readiness tailwind multiplier bounded [0.85, 1.15]. Maps to china_name_score._tailwind in masterplan ADJ-5; the shim now lives in engine/name_score.py. C1 China global-beta size-dampener wires here (W2)."
+      "notes": "Per-name buy-readiness tailwind multiplier bounded [0.85, 1.15]. Maps to china_name_score._tailwind in masterplan ADJ-5; the shim now lives in engine/name_score.py. C1 China global-beta size-dampener was the candidate for this seam but graded CONTEXT (W2) — NOT wired. This hook stays available for a future CONFIRMED de-risk leg."
     },
     {
       "seam": "risk_radar_intl post-can_force override",
@@ -113,7 +113,15 @@
       "file": "engine/hk_global_beta.py",
       "symbol": "compute_global_betas",
       "line_ref": 65,
-      "notes": "Causal rolling beta to lagged S&P factor, Vasicek-shrunk. Currently display/context (per-name risk EXPOSURE, not selection alpha). C1 would promote it to scoring via name_score._tailwind."
+      "notes": "Causal rolling beta to lagged S&P factor, Vasicek-shrunk. Currently display/context (per-name risk EXPOSURE, not selection alpha). C1 ported this to the China book (engine/cn_global_beta.py) but the CN dampener graded CONTEXT — the HK read stays display/context, not promoted."
+    },
+    {
+      "seam": "engine/cn_global_beta.py — display/context input (C1, MEASURED CONTEXT)",
+      "kind": "display",
+      "file": "engine/cn_global_beta.py",
+      "symbol": "compute_global_betas",
+      "line_ref": 63,
+      "notes": "C1 port of hk_global_beta to the A-share panel: causal 252d beta to lagged S&P, Vasicek-shrunk. MEASURED CONTEXT (W2): transmission ~half of HK (HK/China ratio ~2.4x), beta->fwd-DD link real but UNCONDITIONAL, RORO-conditional dampener edge wrong-signed, crisis effective-N=1. Display/context only — NOT wired into name_score._tailwind. See scripts/c1_cn_global_beta.py + data/intl_bridge/ledger.json (C1)."
     },
     {
       "seam": "engine/forex_dollar.py — display only",

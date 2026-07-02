@@ -759,10 +759,71 @@ REGISTRY: list[dict] = [
                 ("constructible proxy", "front-price-level confound, wrong-sign IC −0.16"),
                 ("path", "CME / Bloomberg / Quandl-Stevens expired-contract history")]),
 
-    # ---- INTL BRIDGE (W1 2026-07-02 — the intl graveyard, published like every other family) ----
-    # Registry mirror of data/intl_bridge/ledger.json (engine/intl_claims.BACKFILL). CONTEXT
-    # verdicts → display tier; PENDING (validated-but-gates-unrun / budget-killed) → pending tier.
-    # Every number is quoted from the report in `source`; nothing here is wired into a score (W2).
+    # ---- INTL BRIDGE (W1 2026-07-02 + W2-C1/C3 2026-07-02) ----
+    # Registry mirror of data/intl_bridge/ledger.json (engine/intl_claims.BACKFILL + C1/C3 graded).
+    # CONFIRMED verdict (C3) → confirmer tier (all gates pass; not wired to a scorer yet — W4).
+    # CONTEXT verdicts (incl. C1, measured weaker than HK) → display tier; PENDING → pending tier.
+    # Every number is quoted from its report in `source`.
+
+    # C3 CONFIRMED (W2-C3 2026-07-02): global ETF breadth barometer
+    _row("Global country-ETF breadth barometer  (C3 — CONFIRMED)",
+         "全球国家ETF广度晴雨表（C3 — 已确认）", "Intl / global risk", "confirmer",
+         why="CONFIRMED (all hard gates pass). % of 23 country ETFs > their 200dma; causal "
+             "trailing pctile de-risk signal (top-30% = flat). DSR 0.9326 (N=17 intl_bridge "
+             "budget). Orthogonality: global breadth corr 0.68 with SPY trend but residual "
+             "surviving frac = 0.62 after partialing out SPY/HY OAS/T10Y2Y — PASSES (>= 0.50). "
+             "6/6 pre-declared crises covered. ES reduction ex top-3 windows = +0.0078 (not "
+             "crisis-only). Split-half Sharpe both positive. Panel: 23 ETFs from 1996-03-18, "
+             "min-panel >= 10 (satisfied from day 1 with the 1996 cohort of 17 ETFs). "
+             "FXI/CSI300 target shows stronger MaxDD cut (-39.3% vs -72.7%) and near-pure "
+             "orthogonality (surviving frac 0.97). W4: wire as US radar Tier-B leg (INTL-38) + "
+             "risk_radar_intl profile leg once the forward log accrues.",
+         why_zh="已确认（所有严格门均通过）。23只国家ETF高于200日均线的百分比；"
+                "因果尾部百分位降险信号（前30%=空仓）。DSR 0.9326（N=17 intl_bridge预算）。"
+                "正交性：全球广度与SPY趋势相关0.68，但剔除SPY/信用利差/收益曲线后残差存活分数=0.62 >= 0.50。"
+                "6/6预声明危机均覆盖。去除前3大回撤窗口后期望损失降幅=+0.0078（非仅危机）。两半夏普均为正。"
+                "W4：有前瞻日志后，作为美国雷达Tier-B腿（INTL-38）+ risk_radar_intl配置腿接入。",
+         source="reports/intl-global-breadth-phase0.md (W2-C3 2026-07-02); "
+                "data/intl_bridge/ledger.json (c3_global_etf_breadth); "
+                "scripts/intl_phase0.py build_c3_global_breadth()",
+         horizon="21/42d fwd drawdown (SPX + CSI300)", dsr=0.9326,
+         wired="not wired (CONFIRMED; W4 will wire as US risk_radar Tier-B + intl profile leg; "
+               "no scoring seam touched in W2)",
+         extra=[("DSR", "0.9326 (N=17 intl_bridge budget, >= 0.90)"),
+                ("orthogonal surviving frac", "0.62 vs SPY/HY/curve basis (>= 0.50, PASSES)"),
+                ("effective_n_crises", "6/6 (all declared crises covered)"),
+                ("ES ex top-3 windows", "+0.0078 (not crisis-only)"),
+                ("split-half Sharpe", "H1 +0.45, H2 +1.11 (same sign)"),
+                ("FXI MaxDD cut", "strat -39.3% vs bench -72.7%"),
+                ("panel", "23 ETFs 1996-03-18 to 2026-07-01; min-panel=10 threshold")]),
+
+    # ---- INTL BRIDGE remaining entries (C1 CONTEXT; C2/C4/C8 pending; display graveyard) ----
+    _row("China per-name global-beta size-dampener  (C1 — the v1 flagship)",
+         "中国个股全球贝塔仓位抑制器（C1 — v1 旗舰）", "China A", "display",
+         why="MEASURED and REFUTED as a de-risk timing signal (W2). Port of hk_global_beta to the "
+             "A-share panel: causal 252d beta to S&P-500 (overnight-lagged), Vasicek-shrunk. "
+             "Transmission is HALF of HK's — HK/China ratio ~2.4× (HK SPY-beta 0.49 vs CSI300 0.20), "
+             "exactly the china_global_factors prior. The per-name beta→forward-drawdown link is real "
+             "but UNCONDITIONAL (rank-IC −0.17, t≈−13; orthogonality vs the CN RORO PASSES) — beta is "
+             "beta. The specific dampener MECHANISM fails: conditioning on the global risk state being "
+             "off makes the hi-minus-lo drawdown spread WEAKER, not stronger (off −2.3pp vs on −2.9pp; "
+             "incremental +0.6pp, wrong sign). Crisis-count effective-N=1 (the ~5y china_search panel "
+             "spans only the 2022 rate bear), DSR≈0, ES-ex-top3 negative. CONTEXT, weight_cap 0, "
+             "kill=True — NOT wired into china_name_score._tailwind.",
+         why_zh="已测量并否决其作为降险择时信号（W2）。将 hk_global_beta 移植到 A 股面板：对标普500（隔夜滞后）"
+                "的因果252日贝塔，Vasicek 收缩。传导仅为香港的一半——港/华比约 2.4×（港 SPY-贝塔 0.49 对 沪深300 0.20），"
+                "正合 china_global_factors 先验。个股贝塔→前瞻回撤关系真实但无条件（秩IC −0.17，t≈−13；相对中国RORO正交通过）"
+                "——贝塔就是贝塔。具体抑制器机制失败：以全球风险状态转弱为条件反而使高减低回撤价差更弱（风险关 −2.3pp 对 风险开 −2.9pp；"
+                "增量 +0.6pp，符号相反）。危机计数有效N=1（约5年面板仅含2022利率熊市），DSR≈0，剔除前三ES为负。"
+                "CONTEXT，权重上限0，kill=True——未接入 china_name_score._tailwind。",
+         source="scripts/c1_cn_global_beta.py + scripts/intl_phase0.py (grade); "
+                "engine/cn_global_beta.py; data/intl_bridge/ledger.json (C1)",
+         horizon="21/42d fwd drawdown", ic=-0.169,
+         wired="not wired — CONTEXT (measured weaker than HK; dampener mechanism refuted)",
+         extra=[("HK/China transmission", "~2.4× (HK 0.49 vs CSI300 0.20 SPY-beta)"),
+                ("beta→DD rank-IC", "−0.17 (t≈−13, unconditional)"),
+                ("RORO-conditional edge", "+0.6pp (WRONG sign — dampener refuted)"),
+                ("crisis effective-N", "1 (panel ~5y, 2022 bear only)")]),
     _row("Intl macro de-risk sleeve  (pooled JP/EZ/GB/KR — C2)",
          "国际宏观降险组合（JP/EZ/GB/KR 合并 — C2）", "Intl macro", "pending",
          why="The strongest intl prior in the repo — but NOT yet cleared for a wire. Pooled "

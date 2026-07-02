@@ -220,3 +220,97 @@ def test_legacy_21d_history_no_proxy_flag(monkeypatch):
     assert t["broadening_state"] == "RISING"
     assert t.get("basis_days") is not None and t["basis_days"] >= tr.ACCEL_LOOKBACK_DAYS
     assert not t.get("broadening_proxy")    # no proxy when real window is available
+
+
+# ---- W2a (P1-A): coverage-normalised breadth tests --------------------------------
+
+def _latest_frame_with_cov():
+    """Latest frame with n_covering / breadth_cov columns (simulating the new collector)."""
+    return pd.DataFrame(
+        {
+            "net_up_30d": [10.0, 8.0, 6.0, 1.0],
+            "breadth": [0.9, 0.8, 0.7, 0.5],
+            "est_chg_30d": [5.0, 4.0, 3.0, 1.0],
+            "est_chg_90d": [20.0, 18.0, 15.0, 2.0],
+            "n_analysts": [4.0, 4.0, 4.0, 1.0],     # reviser counts (small — would saturate)
+            # n_covering = total coverage, larger than revisers → de-saturates breadth_cov
+            "n_covering": [20.0, 16.0, 12.0, 3.0],  # 3 < MIN_COVERING (5) → last excluded
+            # breadth_cov = (up-dn) / n_covering
+            "breadth_cov": [10.0 / 20, 8.0 / 16, 6.0 / 12, 1.0 / 3],
+            "asof": pd.Timestamp("2026-06-16"),
+        },
+        index=["MU", "WDC", "STX", "SNDK"],
+    )
+
+
+def test_breadth_cov_computed_from_n_covering_not_n_analysts(monkeypatch):
+    """(a) breadth_cov must be derived from n_covering, never n_analysts.
+
+    Verify: breadth_cov == (up-dn)/n_covering; the theme rollup uses n_covering-weighted
+    mean of valid per-member breadth_cov values (n_covering >= MIN_COVERING).
+    SNDK has n_covering=3 < MIN_COVERING(5) → excluded from rollup.
+    """
+    _patch(monkeypatch, _latest_frame_with_cov())
+    out = tr.compute_theme_revisions(write_ledger=False)
+    t = out["themes"]["memory_storage"]
+
+    # breadth_cov must be present
+    assert t["breadth_cov"] is not None, "breadth_cov must be computed when n_covering is present"
+
+    # verify rollup arithmetic: coverage-weighted mean over MU(20), WDC(16), STX(12)
+    # weights: 20, 16, 12; values: 10/20=0.5, 8/16=0.5, 6/12=0.5
+    expected = (0.5 * 20 + 0.5 * 16 + 0.5 * 12) / (20 + 16 + 12)
+    assert abs(t["breadth_cov"] - expected) < 0.001, (
+        f"breadth_cov rollup wrong: expected ~{expected:.4f}, got {t['breadth_cov']}"
+    )
+
+    # CRITICAL: breadth_cov must NOT equal what n_analysts would give
+    # n_analysts are the reviser counts (4,4,4) — breadth = (up-dn)/n_analysts
+    # If we'd used n_analysts instead, the value would be ~1.0 (saturated), not 0.5
+    assert t["breadth_cov"] < t["breadth"], (
+        "breadth_cov must be lower than legacy reviser-share when n_covering > n_analysts "
+        "(de-saturation); if they are equal, n_analysts was substituted"
+    )
+
+
+def test_breadth_cov_none_when_n_covering_absent(monkeypatch):
+    """(b) When n_covering is not in the latest frame, breadth_cov must be None.
+
+    HARD HONESTY RULE: must never substitute n_analysts (the reviser count) for n_covering.
+    """
+    # Use the legacy frame which has no n_covering / breadth_cov columns
+    _patch(monkeypatch, _latest_frame())
+    out = tr.compute_theme_revisions(write_ledger=False)
+    t = out["themes"]["memory_storage"]
+
+    # breadth_cov must be absent — not substituted
+    assert t["breadth_cov"] is None, (
+        "breadth_cov must be None when n_covering is absent; "
+        "n_analysts (reviser count) must NOT be substituted"
+    )
+
+    # legacy breadth is unaffected
+    assert t["breadth"] is not None, "legacy breadth must still be computed"
+
+
+def test_breadth_cov_none_when_fewer_than_min_members_have_coverage(monkeypatch):
+    """(b) Theme breadth_cov = None when fewer than MIN_MEMBERS_COV members have breadth_cov."""
+    # Give only 2 members n_covering — below MIN_MEMBERS_COV (3)
+    latest = pd.DataFrame(
+        {
+            "net_up_30d": [10.0, 8.0, 6.0],
+            "breadth": [0.9, 0.8, 0.7],
+            "n_analysts": [4.0, 4.0, 4.0],
+            "n_covering": [20.0, float("nan"), 12.0],  # WDC has no coverage → only 2 valid
+            "breadth_cov": [10.0 / 20, float("nan"), 6.0 / 12],
+            "asof": pd.Timestamp("2026-06-16"),
+        },
+        index=["MU", "WDC", "STX"],
+    )
+    _patch(monkeypatch, latest)
+    out = tr.compute_theme_revisions(write_ledger=False)
+    t = out["themes"]["memory_storage"]
+    # Only MU and STX qualify (WDC has NaN n_covering) — 2 < MIN_MEMBERS_COV(3) → None
+    assert t["breadth_cov"] is None, (
+        "breadth_cov must be None when fewer than MIN_MEMBERS_COV members have coverage data"
+    )
