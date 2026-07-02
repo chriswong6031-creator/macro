@@ -343,8 +343,8 @@
     </div>
     {% endif %}
     <div class="fx-web-foot">{{ t(
-      'W4a: HEAT = n_lit_sources / n_available_sources × earliness. 5 distinct data sources (physical · demand · guidance · altdata · edgar-scarcity — the old subsector-scarcity + discovery-echo counted the same EDGAR parquet twice; now one source). Dark sources leave the denominator — no outage penalty. Earliness from attention engine (Q3); absent below 2 usable legs → neutral 0.5. Numeric physical bonus ×1.15. Threshold 0.40 PROVISIONAL pending shadow calibration.',
-      'W4a：热度＝点亮数据源数/可用数据源数×早期度。5个独立数据源（物理·需求·指引·替代数据·edgar稀缺——原子行业稀缺+发现回声使用同一EDGAR数据集，现计为一个）。暗数据源排除在分母外。早期度来自注意力引擎（Q3）；少于2个可用腿时缺失→中性0.5。数字物理奖励×1.15。阈值0.40暂定，待影子校准。') }}</div>
+      'W4a: HEAT = n_lit_sources / n_available_sources × earliness (dropped, not filled, when absent). 5 distinct data sources (physical · demand · guidance · altdata · edgar-scarcity — the old subsector-scarcity + discovery-echo counted the same EDGAR parquet twice; now one source). Dark sources leave the denominator — no outage penalty. Earliness from attention engine (Q3); absent below 2 usable legs → factor dropped. Numeric physical bonus ×1.15. Threshold 0.40 PROVISIONAL pending shadow calibration. Note: heat compares agreement among AVAILABLE surfaces only — themes with different data coverage are not on a fully comparable scale.',
+      'W4a：热度＝点亮数据源数/可用数据源数×早期度（缺失时直接舍弃，不填充）。5个独立数据源（物理·需求·指引·替代数据·edgar稀缺——原子行业稀缺+发现回声使用同一EDGAR数据集，现计为一个）。暗数据源排除在分母外。早期度来自注意力引擎（Q3）；少于2个可用腿时直接舍弃因子。数字物理奖励×1.15。阈值0.40暂定，待影子校准。注：热度仅比较各自可用数据源之间的共振程度——数据覆盖度不同的主题不具有完全可比性。') }}</div>
 
     {# ---- AI analyst reasoning over the convergence (lights up when a credential is present) ---- #}
     {# W4b owns this block — no changes here per worktree isolation rule #}

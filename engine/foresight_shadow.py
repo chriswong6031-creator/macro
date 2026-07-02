@@ -47,17 +47,16 @@ log = logging.getLogger(__name__)
 SHADOW_GRID: dict[str, list] = {
     "lang_z_cutoff":  [1.0, 1.5, 2.0],
     "broad_hi_pctile": [70.0, 80.0, 90.0],
-    # W4a (PROVISIONAL) heat_threshold candidates for the convergence board.
+    # W4a heat_threshold candidates for the convergence board.
     # The live value is 0.40 (engine/foresight_convergence.HEAT_HOT), set as
-    # provisional pending shadow calibration.  These candidates accrue evidence
-    # so the threshold can be promoted when the forward evidence clears the BY-FDR
-    # bar.  NOTE: heat_threshold is a DISPLAY threshold on the convergence board,
-    # not a stage parameter — wiring it into _compute_stage_for_param would require
-    # a convergence-board recompute (not a stage recompute), so it is registered here
-    # as the NEXT registry entry but NOT yet wired into _stage_under_candidate.
-    # When wired, the shadow log rows should carry "type": "heat" to distinguish them
-    # from the stage-level shadow rows already in shadow_log.jsonl.
-    # "heat_threshold": [0.30, 0.40, 0.50],   # NEXT entry — not yet wired
+    # provisional pending shadow calibration — chosen to be REACHABLE under the
+    # new denominator semantics so the board is not永-empty; NOT evidence-based.
+    # heat_threshold is a DISPLAY threshold, not a stage parameter, so rows here
+    # carry type="heat" and are logged to shadow_log.jsonl separately from the
+    # stage-level rows.  Grading of heat-verdict rows is not yet wired into
+    # grade_shadow — the promotion report lists heat_threshold as
+    # "accruing, grading not yet wired" (honestly labeled).
+    "heat_threshold": [0.30, 0.40, 0.50],
 }
 
 # Live values (imported from the engines that own them — never duplicated here)
@@ -71,6 +70,11 @@ def _live_broad_hi_pctile() -> float:
     return _BROAD_HI_PCTILE
 
 
+def _live_heat_threshold() -> float:
+    from engine.foresight_convergence import HEAT_HOT
+    return HEAT_HOT
+
+
 def _live_value(param: str) -> float | None:
     """Return the current live value for a shadow parameter."""
     try:
@@ -78,6 +82,8 @@ def _live_value(param: str) -> float | None:
             return _live_lang_z_cutoff()
         if param == "broad_hi_pctile":
             return _live_broad_hi_pctile()
+        if param == "heat_threshold":
+            return _live_heat_threshold()
     except Exception as e:  # noqa: BLE001
         log.debug("_live_value(%s) failed: %s", param, e)
     return None
@@ -274,6 +280,10 @@ def _compute_shadow_stages_inner(
     new_lines: list[str] = []
 
     for param, candidates in SHADOW_GRID.items():
+        # heat_threshold is a convergence-board parameter, not a stage parameter —
+        # it is handled by compute_heat_shadow() below, not here.
+        if param == "heat_threshold":
+            continue
         for candidate in candidates:
             for k in keys:
                 if (param, candidate, k, asof) in seen:
@@ -299,6 +309,96 @@ def _compute_shadow_stages_inner(
     if new_lines:
         with p.open("a") as fh:
             fh.write("\n".join(new_lines) + "\n")
+
+    return len(new_lines)
+
+
+# ---------------------------------------------------------------------------
+# Heat-threshold shadow accrual (separate from stage shadow — type="heat")
+# ---------------------------------------------------------------------------
+
+def compute_heat_shadow(
+    convergence_payload: dict | None = None,
+    asof: str | None = None,
+) -> int:
+    """Accrue heat-verdict shadow rows for the heat_threshold candidates.
+
+    For each candidate in SHADOW_GRID["heat_threshold"], recomputes whether each
+    theme would be classified as HEATING (heat >= candidate) and logs one row per
+    (candidate, theme, asof) to shadow_log.jsonl with type="heat".
+
+    Grading of heat-verdict rows is not yet wired into grade_shadow — the promotion
+    report lists heat_threshold as "accruing, grading not yet wired" (honestly labeled).
+    Dedup discipline: one row per (param="heat_threshold", candidate, theme, asof).
+    Non-fatal.  Returns the number of new rows appended.
+    """
+    try:
+        return _compute_heat_shadow_inner(convergence_payload, asof)
+    except Exception as e:  # noqa: BLE001
+        log.warning("compute_heat_shadow failed (non-fatal): %s", e)
+        return 0
+
+
+def _compute_heat_shadow_inner(
+    convergence_payload: dict | None,
+    asof: str | None,
+) -> int:
+    candidates = SHADOW_GRID.get("heat_threshold")
+    if not candidates:
+        return 0
+    if not convergence_payload or not convergence_payload.get("ranked"):
+        return 0
+
+    if asof is None:
+        asof = convergence_payload.get("asof") or datetime.now(timezone.utc).date().isoformat()
+
+    p = config.data_dir() / "foresight" / "shadow_log.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+
+    # Build dedup set — heat rows keyed by (param, candidate, theme, asof)
+    seen: set[tuple] = set()
+    if p.exists():
+        for line in p.read_text().splitlines():
+            if not line.strip():
+                continue
+            try:
+                e = json.loads(line)
+                if e.get("type") == "heat":
+                    seen.add((e.get("param"), e.get("candidate"), e.get("theme"), e.get("asof")))
+            except Exception:  # noqa: BLE001
+                continue
+
+    ts = datetime.now(timezone.utc).isoformat()
+    live_threshold = _live_heat_threshold()
+    new_lines: list[str] = []
+
+    for item in convergence_payload["ranked"]:
+        theme = item.get("theme")
+        heat = item.get("heat")
+        if not theme or heat is None:
+            continue
+        for candidate in candidates:
+            if ("heat_threshold", candidate, theme, asof) in seen:
+                continue
+            row = {
+                "type":      "heat",
+                "param":     "heat_threshold",
+                "candidate": candidate,
+                "theme":     theme,
+                "asof":      asof,
+                "ts":        ts,
+                "heat":      heat,
+                "heating":   bool(heat >= candidate and item.get("n_lit", 0) >= 1),
+                "live_threshold": live_threshold,
+                "live_heating":   bool(heat >= live_threshold and item.get("n_lit", 0) >= 1),
+                "note":      "accruing, grading not yet wired",
+            }
+            new_lines.append(json.dumps(row, separators=(",", ":")))
+
+    if new_lines:
+        with p.open("a") as fh:
+            fh.write("\n".join(new_lines) + "\n")
+        log.info("heat_threshold shadow: %d new rows appended (asof=%s)", len(new_lines), asof)
 
     return len(new_lines)
 

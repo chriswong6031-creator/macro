@@ -101,21 +101,42 @@ def _theme_ew_returns(
     return result
 
 
-def _build_corr_matrix(returns: dict[str, pd.Series]) -> tuple[pd.DataFrame, list[str]]:
-    """Build pairwise correlation matrix.  Returns (corr_df, themes_included).
+def _build_corr_matrix(returns: dict[str, pd.Series]) -> tuple[pd.DataFrame, list[str], int]:
+    """Build pairwise correlation matrix.  Returns (corr_df, themes_included, n_low_overlap_pairs).
 
-    Themes with insufficient overlap after alignment are dropped."""
+    Themes with insufficient per-column counts after alignment are dropped.
+    Pairwise NaN cells (two themes with disjoint history) are filled with 0.0
+    (uncorrelated assumption) so a single bad pair cannot NaN-propagate through
+    eigvalsh and disable ENB for all themes.  The count of filled pairs is logged
+    as a warning and surfaced in the payload."""
     if not returns:
-        return pd.DataFrame(), []
+        return pd.DataFrame(), [], 0
     df = pd.DataFrame(returns)
     df = df.dropna(how="all")
-    # Drop columns with too few non-NaN rows
+    # Drop columns with too few non-NaN rows (per-column guard — F3 is the pairwise gap)
     df = df.loc[:, df.notna().sum() >= MIN_DAYS]
     if df.shape[1] < 2:
-        return pd.DataFrame(), list(df.columns)
+        return pd.DataFrame(), list(df.columns), 0
     corr = df.corr()
+
+    # F3: fill off-diagonal NaN cells with 0.0 (uncorrelated assumption) so that
+    # two disjoint-history themes produce ρ=0 rather than NaN → eigvalsh NaN → ENB None.
+    n_low_overlap_pairs = 0
     themes = list(corr.columns)
-    return corr, themes
+    n = len(themes)
+    for i in range(n):
+        for j in range(i + 1, n):
+            if pd.isna(corr.iloc[i, j]):
+                n_low_overlap_pairs += 1
+                corr.iloc[i, j] = 0.0
+                corr.iloc[j, i] = 0.0
+                log.warning(
+                    "ENB: insufficient pairwise overlap for (%s, %s) < %d days — "
+                    "filling correlation with 0.0 (uncorrelated assumption)",
+                    themes[i], themes[j], MIN_DAYS,
+                )
+
+    return corr, themes, n_low_overlap_pairs
 
 
 def _enb(corr: pd.DataFrame) -> float | None:
@@ -269,7 +290,7 @@ def compute_enb(
             "note": "No return series available — data/yahoo/*.parquet absent or too short.",
         }
 
-    corr, themes = _build_corr_matrix(returns)
+    corr, themes, n_low_overlap_pairs = _build_corr_matrix(returns)
     enb_all = _enb(corr) if not corr.empty else None
     membership_raw = _cluster_themes(corr, themes) if len(themes) >= 2 else {t: f"c_{t}" for t in themes}
     membership = _name_clusters(membership_raw)
@@ -277,11 +298,14 @@ def compute_enb(
     # ENB over constructive subset
     enb_constructive: float | None = None
     n_constructive_in_matrix = 0
+    n_low_overlap_pairs_constructive = 0
     if constructive_themes and len(constructive_themes) >= 2:
         c_keys = [t for t in constructive_themes if t in returns]
         n_constructive_in_matrix = len(c_keys)
         if len(c_keys) >= 2:
-            c_corr, c_themes = _build_corr_matrix({k: returns[k] for k in c_keys})
+            c_corr, c_themes, n_low_overlap_pairs_constructive = _build_corr_matrix(
+                {k: returns[k] for k in c_keys}
+            )
             enb_constructive = _enb(c_corr) if not c_corr.empty else None
 
     today_str = date.today().isoformat()
@@ -293,12 +317,14 @@ def compute_enb(
         "n_constructive_in_matrix": n_constructive_in_matrix,
         "clusters":                membership,
         "n_constructive_requested": len(constructive_themes) if constructive_themes else 0,
+        "n_low_overlap_pairs":     n_low_overlap_pairs,
         "note": (
             f"ENB = (Σλ)²/Σλ² (participation ratio) over eigenvalues of the "
             f"{len(themes)}×{len(themes)} theme correlation matrix ({WINDOW_DAYS}d window). "
             f"Clustering: scipy average-linkage at distance threshold 1−{CLUSTER_CORR_THRESH}=0.3 "
             f"(greedy fallback if unavailable). "
-            f"ENB_all={enb_all}, ENB_constructive={enb_constructive}."
+            f"ENB_all={enb_all}, ENB_constructive={enb_constructive}. "
+            f"Pairwise NaN pairs filled with 0.0 (uncorrelated): {n_low_overlap_pairs}."
         ),
     }
 
@@ -345,10 +371,15 @@ def _append_log(payload: dict) -> None:
 
 
 def load_cluster_membership(asof: str | None = None) -> dict[str, str]:
-    """Return {theme: cluster_id} for the requested date (default: latest logged date).
+    """Return {theme: cluster_id} for the requested date (default: today, then latest).
+
+    Prefers today's row so that when compute_enb(write_log=True) runs before
+    load_cluster_membership() in the same build, the fresh clusters are consumed.
+    Falls back to the most recent logged row when today is absent (e.g. first run
+    of the day before ENB recomputes, or during test injection).
 
     Used by foresight_convergence.py and foresight_sizing.py to consume ENB clusters
-    without re-running the compute (which is done nightly).
+    without re-running the compute (which is done nightly in build_foresight.py).
 
     Returns {} when the log is absent or has no valid rows for the date."""
     p = config.data_dir() / "foresight" / "enb_log.jsonl"
@@ -375,6 +406,10 @@ def load_cluster_membership(asof: str | None = None) -> dict[str, str]:
             return {}
         return matches[0].get("clusters") or {}
 
-    # Latest date
+    # Prefer today; fall back to the most recent logged row
     rows.sort(key=lambda r: r["asof"])
+    today_str = date.today().isoformat()
+    today_rows = [r for r in rows if r["asof"] == today_str]
+    if today_rows:
+        return today_rows[-1].get("clusters") or {}
     return rows[-1].get("clusters") or {}

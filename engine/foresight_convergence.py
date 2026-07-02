@@ -247,17 +247,21 @@ def compute_convergence(
         # Gate: below 2 usable legs, earliness is absent (per spec Q3)
         if n_legs_live < 2:
             e_val = None
-        # Fallback: when earliness is absent, use a neutral 0.5 for the heat formula
-        # so heat reflects source convergence alone rather than forcing zero
-        earliness_effective = e_val if e_val is not None else 0.5
+        # F1: when earliness is absent, DROP the factor entirely rather than
+        # default-filling 0.5 (absence-laundered-as-measurement pathology).
+        # heat = n_lit / n_available alone; the factor is only applied when
+        # earliness is genuinely measured (n_legs_live >= 2).
         earliness_absent = e_val is None
 
-        # --- heat = n_lit / n_available × earliness (+ physical bonus when numeric) ---
+        # --- heat = n_lit / n_available [× earliness if available] (+ physical bonus) ---
         n_lit = len(lit_sources)
         if n_available == 0:
             heat = 0.0
         else:
-            raw = (n_lit / n_available) * earliness_effective
+            raw = n_lit / n_available
+            # Earliness factor: applied ONLY when measured (n_legs_live >= 2)
+            if not earliness_absent:
+                raw = raw * e_val
             # Physical BONUS (not penalty): numeric TIGHT/SOLD_OUT adds +15%; text-only does NOT
             numeric_physical = _is_physical_numeric(r, power_tight)
             if numeric_physical:
@@ -274,6 +278,7 @@ def compute_convergence(
             "source_available": source_available,
             "earliness": round(e_val, 3) if e_val is not None else None,
             "earliness_absent": earliness_absent,
+            "earliness_available": not earliness_absent,
             "n_earliness_legs": n_legs_live,
             "physical_confirmed": _is_physical_numeric(r, power_tight),
             "heat": heat,
@@ -338,17 +343,23 @@ def compute_convergence(
         "n_meta_drivers": len(meta_drivers),
         "heat_threshold": HEAT_HOT,
         "heat_threshold_note": (
-            "PROVISIONAL — set at 0.40 pending shadow calibration. "
-            "See engine/foresight_shadow.SHADOW_GRID for the heat_threshold candidate grid."
+            "PROVISIONAL — chosen to be REACHABLE under the new denominator semantics so "
+            "the board is not永-empty — NOT evidence-based; shadow calibration pending. "
+            "Candidates [0.30, 0.40, 0.50] are wired in foresight_shadow.SHADOW_GRID and "
+            "accrue heat-verdict rows in shadow_log.jsonl (type='heat'); grading not yet "
+            "wired — labeled 'accruing' in the promotion report."
         ),
         "note": (
-            "W4a rebuild: HEAT = n_lit_sources / n_available_sources × earliness, where "
-            "sources are 5 distinct data feeds (physical · demand · guidance · altdata · "
-            "edgar_scarcity — the old subsector_scarcity + discovery_echo were one EDGAR "
-            "parquet, now counted once).  Dark sources leave the denominator — no outage "
-            "penalty.  Earliness from engine/foresight_earliness.py (attention-based, Q3); "
-            "absent below 2 usable legs → neutral 0.5.  Physical numeric bonus ×1.15 when "
-            "genuinely TIGHT/SOLD_OUT.  Threshold 0.40 PROVISIONAL.  Meta-driver cards emit "
-            "for ≥3 co-heating same-cluster themes."
+            "W4a rebuild: HEAT = n_lit_sources / n_available_sources [× earliness when "
+            "measured — dropped, not filled, when absent].  5 distinct data feeds "
+            "(physical · demand · guidance · altdata · edgar_scarcity — the old "
+            "subsector_scarcity + discovery_echo were one EDGAR parquet, now counted once). "
+            "Dark sources leave the denominator — no outage penalty.  Earliness from "
+            "engine/foresight_earliness.py (attention-based, Q3); absent below 2 usable legs "
+            "→ factor DROPPED (not laundered as neutral 0.5).  Physical numeric bonus ×1.15 "
+            "when genuinely TIGHT/SOLD_OUT.  Threshold 0.40 PROVISIONAL.  Meta-driver cards "
+            "emit for ≥3 co-heating same-cluster themes.  Cross-theme heats reflect "
+            "agreement among AVAILABLE surfaces only — themes with different data coverage "
+            "are not on a fully comparable scale."
         ),
     }

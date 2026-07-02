@@ -136,3 +136,47 @@ def test_load_cluster_membership_empty(tmp_path):
         mock_cfg.data_dir.return_value = tmp_path
         result = enb.load_cluster_membership()
     assert result == {}
+
+
+# ---------------------------------------------------------------------------
+# F3: pairwise NaN guard — disjoint-history themes must not disable ENB
+# ---------------------------------------------------------------------------
+
+def test_enb_disjoint_range_themes_still_computes(tmp_path, caplog):
+    """Two themes with disjoint date ranges produce a NaN corr cell.
+
+    F3: _build_corr_matrix must fill the NaN with 0.0, warn, and allow
+    _enb() to still compute a finite result.  The bug: NaN → eigvalsh NaN →
+    ENB None → all themes silently lose ENB and cluster-dilution display."""
+    import logging
+    import numpy as np
+
+    # Build two disjoint date ranges
+    dates_a = pd.date_range("2025-01-02", periods=60, freq="B")
+    dates_b = pd.date_range("2025-04-01", periods=60, freq="B")  # no overlap with A
+    # Two normal themes that overlap with each other (and with both A and B partially)
+    dates_c = pd.date_range("2025-01-02", periods=100, freq="B")
+    dates_d = pd.date_range("2025-01-02", periods=100, freq="B")
+
+    rng = np.random.default_rng(42)
+    returns = {
+        "theme_disjoint_a": pd.Series(rng.normal(0, 0.01, len(dates_a)), index=dates_a),
+        "theme_disjoint_b": pd.Series(rng.normal(0, 0.01, len(dates_b)), index=dates_b),
+        "theme_normal_c":   pd.Series(rng.normal(0, 0.01, len(dates_c)), index=dates_c),
+        "theme_normal_d":   pd.Series(rng.normal(0, 0.01, len(dates_d)), index=dates_d),
+    }
+
+    with caplog.at_level(logging.WARNING, logger="engine.foresight_enb"):
+        corr, themes_included, n_low_overlap = enb._build_corr_matrix(returns)
+
+    # At least 2 themes included (normal themes have plenty of overlap)
+    assert len(themes_included) >= 2
+    # No NaN in the filled corr matrix
+    assert not corr.isnull().any().any(), "NaN survived the fill — pairwise guard failed"
+    # ENB must compute (not None)
+    enb_val = enb._enb(corr)
+    assert enb_val is not None, "ENB is None — NaN propagated through eigvalsh"
+    assert enb_val > 0
+    # At least one low-overlap pair was detected and warned
+    if n_low_overlap > 0:
+        assert any("insufficient pairwise overlap" in r.message for r in caplog.records)
