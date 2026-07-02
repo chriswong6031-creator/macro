@@ -466,3 +466,79 @@ html[data-theme="light"] .cyc-chip.on { color: #fff; }
 @media (prefers-reduced-motion: reduce) {
   .cyc-page *, .mmc-series, .cyc-card, .cyc-panel { transition: none !important; animation: none !important; }
 }
+
+/* ============================================================================
+   W3.2 — engine-backed two-tier (MEASURED / FRAME) rendering
+   ----------------------------------------------------------------------------
+   Tone-NEUTRAL tier colours (ruling A3): MEASURED/FRAME are evidence classes,
+   NOT up/down signals — they must not read as bullish/bearish, so they use
+   --text / --muted neutrals, never --up/--down (which the zh flip would recolour).
+   ========================================================================== */
+
+/* staleness banner (W0.1 — analyst notes only; engine reads are live) */
+.stale-banner { font-size: 11.5px; font-weight: 600; padding: 7px 12px; border-radius: 9px; margin: 2px 0 8px; line-height: 1.4; }
+.stale-banner.stale-amber { color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); border: 1px solid color-mix(in srgb, var(--warn) 34%, transparent); }
+.stale-banner.stale-red { color: var(--down); background: color-mix(in srgb, var(--down) 12%, transparent); border: 1px solid color-mix(in srgb, var(--down) 40%, transparent); }
+
+/* tier chip + hover "how computed" (the ONLY user-facing tier words) */
+.cc-badges { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex: none; }
+.cyc-tier { position: relative; font-size: 9.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 999px; white-space: nowrap; cursor: help; }
+.cyc-tier.tier-measured { color: var(--text); background: color-mix(in srgb, var(--text) 10%, transparent); border: 1px solid color-mix(in srgb, var(--text) 30%, transparent); }
+.cyc-tier.tier-frame { color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, transparent); border: 1px dashed color-mix(in srgb, var(--muted) 45%, transparent); }
+/* the hover "how computed" micro-line — proxy/basis/epoch/fitness detail */
+.cyc-tier-h { display: none; position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; width: max-content; max-width: 230px;
+  font-size: 10.5px; font-weight: 500; letter-spacing: 0; text-transform: none; text-align: left; line-height: 1.35;
+  color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px;
+  box-shadow: 0 8px 22px rgba(0,0,0,.28); pointer-events: none; }
+.cyc-tier:hover .cyc-tier-h, .cyc-tier:focus .cyc-tier-h { display: block; }
+
+/* tolerance delta note (hand-opinion vs engine position) */
+.cc-tol { font-size: 10px; color: var(--muted); margin-top: 8px; font-variant-numeric: tabular-nums;
+  border-top: 1px dashed var(--line); padding-top: 7px; }
+.cc-tol.loud { color: var(--warn); }
+.cc-elapsed { font-size: 10.5px; color: var(--warn); background: color-mix(in srgb, var(--warn) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 28%, transparent); border-radius: 8px; padding: 5px 8px; margin: 4px 0 8px; line-height: 1.35; }
+
+/* FRAME scorecard: curated timeline + A8 text + monitors + reserved tripwire slot */
+.cyc-card.card-frame { border-style: dashed; }
+.cyc-card.card-frame::before { opacity: .4; height: 2px; }
+.cc-timeline { height: 44px; margin: 10px -4px 6px; }
+.cc-frame-a8 { font-size: 11px; line-height: 1.5; color: var(--muted); }
+.cc-frame-a8 b { color: var(--text); font-weight: 700; }
+.cc-frame-note { color: var(--muted); opacity: .8; }
+.cc-tripwire:empty { display: none; }                    /* W3.3 fills this */
+.cc-monitors { font-size: 9.5px; color: var(--muted); margin-top: 8px; letter-spacing: .01em; border-top: 1px dashed var(--line); padding-top: 6px; }
+.cc-monitors span { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .8; }
+
+/* FRAME / MEASURED chip in the toggle row */
+.cyc-chip.chip-frame { border-style: dashed; opacity: .82; }
+
+/* detail-panel additions */
+.cyc-howline { font-size: 10.5px; line-height: 1.5; color: var(--muted); background: var(--panel2);
+  border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; margin-bottom: 14px; }
+.cyc-facts .fv .fv-sub { font-size: 10px; font-weight: 500; color: var(--muted); }
+.cyc-opinion-badge { font-size: 8.5px; font-weight: 800; letter-spacing: .09em; padding: 1px 6px; border-radius: 999px;
+  color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, transparent); border: 1px dashed color-mix(in srgb, var(--muted) 40%, transparent);
+  vertical-align: middle; cursor: help; }
+.cyc-asof-mini { font-size: 10px; font-weight: 500; color: var(--muted); letter-spacing: 0; text-transform: none; }
+.cyc-tol-line { font-size: 11px; line-height: 1.5; color: var(--muted); margin-top: 9px; border-top: 1px dashed var(--line); padding-top: 8px; font-variant-numeric: tabular-nums; }
+.cyc-tol-line.loud { color: var(--warn); }
+.cyc-dual-hint { font-size: 9px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; vertical-align: middle;
+  padding: 2px 6px; border-radius: 999px; color: var(--muted); background: color-mix(in srgb, var(--muted) 10%, transparent); border: 1px solid var(--line); }
+
+/* secular strip on DUAL focus panels (compact frame timeline beneath the measured facts) */
+.cyc-secular { border-top: 1px dashed var(--line); padding-top: 14px; }
+.cyc-secular .cyc-lbl { display: flex; align-items: center; gap: 8px; }
+.cyc-secular .cyc-tier { cursor: default; }
+.cyc-secular-strip { height: 42px; margin: 6px -4px 6px; }
+.cyc-secular-txt { font-size: 11.5px; line-height: 1.5; color: var(--muted); margin: 4px 0 0; }
+
+/* the focus-title tier badge sits inline — keep it from crowding the title */
+.cyc-ftitle .cyc-tier { font-size: 9px; vertical-align: middle; margin-left: 4px; cursor: help; }
+
+/* scorecard sparks + FRAME timelines are SINGLE-series (uncluttered), so their engine turn
+   markers should always show — override the hero's "focus-only" peak/trough hiding. */
+.cc-spark .mmc-series .mmc-mk-peak, .cc-spark .mmc-series .mmc-mk-trough,
+.cc-timeline .mmc-series .mmc-mk-peak, .cc-timeline .mmc-series .mmc-mk-trough,
+.cyc-secular-strip .mmc-series .mmc-mk-peak, .cyc-secular-strip .mmc-series .mmc-mk-trough { opacity: .9; }

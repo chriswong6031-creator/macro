@@ -1,37 +1,44 @@
 /* ============================================================================
-   cycle_app.js — Cycle Intelligence Dashboard · orchestration
+   cycle_app.js — Cycle Intelligence Dashboard · orchestration (ENGINE-BACKED, D3-W3.2)
    ----------------------------------------------------------------------------
-   Synthesises each cycle's oscillator + regime-conditioned projection from
-   cycle_data.js, composes mm_charts.js into the hero overlay and the scorecard
-   sparklines (SAME synthesis → single source of truth), and wires the focus
-   interaction, the default↔focused detail panel, scorecard light-up sync, and
-   the mobile bottom sheet.
+   The flagship no longer synthesises a cosine from hand-typed numbers.  Every
+   MEASURED band's oscillator, turns and projection come from window.CYCLE_ENGINE
+   (built by scripts/build_cycle.py over the proxy registry's live tapes); FRAME
+   bands render the curated turning-point timeline + the A8 leg-length text with
+   NOTHING resolving to a scalar position.  DUAL cards stack a MEASURED chart above
+   a thin secular FRAME strip.  The hand-drawn cosine is retired for measured bands;
+   the curated prose survives as a dated, clearly-labelled OPINION overlay.
+
+   Two user-facing words only (ruling A3): MEASURED and FRAME.  proxy / monthly /
+   basis / epoch / fitness live in a hover "how computed" line, never as chips.
    ========================================================================== */
 (function () {
   "use strict";
 
-  var TROUGH = 6, PEAK = 94, MID = 50;
-  var META = window.CYCLE_META, CYCLES = window.CYCLES, PHASES = window.CYCLE_PHASES;
+  var ENGINE = window.CYCLE_ENGINE;
+  if (!ENGINE) return;                                   // engine data is mandatory
+  // legacy curated seed (phase hues + regime block still come from cycle_data.js)
+  var SEED_META = window.CYCLE_META || {};
+  var PHASES = window.CYCLE_PHASES || {};
+
+  var XDOM = ENGINE.xDomain || [2004, 2031];
+  var AS_OF = ENGINE.as_of || SEED_META.asOf || "";
+  var ORDER = (ENGINE.order || []).slice();
+  var CY = ENGINE.cycles || {};
+  var REGIME = ENGINE.regime || (SEED_META.regime || {});
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-  /* ---- wall-clock TODAY (W0.1) -------------------------------------------
-     Derive the current decimal year from the live system clock so the Now dot,
-     history/projection split, and turn-elapsed detection are always accurate.
-     META.today (a frozen literal) is kept only as a data-as-of fallback if
-     Date() is somehow unavailable. */
+  /* ---- wall-clock TODAY (W0.1) -------------------------------------------- */
   function yfNow(d) {
-    var y = d.getFullYear();
-    var start = new Date(y, 0, 1), end = new Date(y + 1, 0, 1);
-    return y + (d - start) / (end - start);
+    var y = d.getFullYear(), a = new Date(y, 0, 1), b = new Date(y + 1, 0, 1);
+    return y + (d - a) / (b - a);
   }
   var TODAY = (function () {
     try { var n = new Date(); if (isFinite(n.getTime())) return yfNow(n); } catch (e) {}
-    return META.today;    // frozen fallback only
+    return SEED_META.today || (XDOM[0] + XDOM[1]) / 2;
   }());
 
-  /* ---- i18n: EN default, 中文 when <html data-lang="zh"> --------------------
-     Short UI strings are inline L(en, zh) pairs; long per-cycle/regime prose is
-     looked up from window.CYCLE_ZH (cycle_i18n.js) with graceful EN fallback. */
+  /* ---- i18n: EN default, 中文 when <html data-lang="zh"> ------------------- */
   function curLang() { return document.documentElement.getAttribute("data-lang") === "zh" ? "zh" : "en"; }
   function L(en, zh) { return curLang() === "zh" ? zh : en; }
   function zc(id, field, en) { if (curLang() !== "zh") return en; var z = (window.CYCLE_ZH && window.CYCLE_ZH.cycles || {})[id]; return z && z[field] != null && z[field] !== "" ? z[field] : en; }
@@ -42,19 +49,13 @@
   function turnWord(nt, cap) { return nt === "peak" ? L(cap ? "Peak" : "peak", "见顶") : L(cap ? "Trough" : "trough", "筑底"); }
 
   /* ---- small helpers ----------------------------------------------------- */
-  function yf(t) { var p = String(t).split("-"); return +p[0] + ((+p[1] || 6) - 0.5) / 12; }
+  function yf(t) { if (t == null) return null; var p = String(t).split("-"); return +p[0] + ((+p[1] || 6) - 0.5) / 12; }
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
-  function lerp(a, b, t) { return a + (b - a) * t; }
-  function cos(x, xa, ya, xb, yb) {
-    if (xb === xa) return yb;
-    var t = clamp((x - xa) / (xb - xa), 0, 1);
-    return ya + (yb - ya) * (0.5 - 0.5 * Math.cos(Math.PI * t));
-  }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function fmtMon(t) {
     if (!t) return ""; var p = String(t).split("-"), m = (+p[1] || 6), yy = String(p[0]).slice(2);
     return curLang() === "zh" ? (yy + "年" + m + "月") : (MONTHS[m - 1] + " ’" + yy);
   }
-  function fmtY(t) { return String(t).split("-")[0]; }
   function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
   function zone(y) {
     return y >= 82 ? L("Euphoric · topping", "狂热 · 见顶") : y >= 62 ? L("Late-cycle", "周期晚期") :
@@ -68,154 +69,209 @@
   };
   function tiltLab(t) { return L(t.lab, t.zh); }
 
-  /* ---- oscillator + projection synthesis (the model) --------------------- */
-  function build(c) {
-    var turns = c.turns.map(function (tp) {
-      return { x: yf(tp.t), y: tp.k === "peak" ? PEAK : TROUGH, k: tp.k, e: tp.e, v: tp.v, t: tp.t };
-    });
-    var n = turns.length, last = turns[n - 1];
-    var nextY = c.proj.nextTurn === "peak" ? PEAK : TROUGH;
-
-    // W0.1: use wall-clock TODAY (no frozen literal); META.today is now data as-of only.
-    var today = TODAY;
-
-    // W0.1: NO Math.max push-forward. Use the hand-typed central date as-is.
-    // When tcRaw < today the projection window has elapsed; we render a dimmed
-    // "window passed" state instead of silently shifting the turn into the future.
-    var tcRaw = yf(c.proj.central);
-    var elapsed = tcRaw < today;   // true = turn date is in the past
-
-    // In the elapsed case keep tc/te/tl at the original hand-typed dates so the
-    // projection leg draws to where the research said, then dims — not pushed right.
-    // In the normal case guard against a non-positive (tt - today) denominator in
-    // legVal by clamping tc to at least today + 0.001 (one day buffer is enough;
-    // the elapsed branch already handles the tcRaw < today case separately).
-    var tc, te, tl, projEnd, relax;
-    relax = c.proj.nextTurn === "peak" ? 58 : 42;
-    if (elapsed) {
-      tc = tcRaw;
-      te = yf(c.proj.low);
-      tl = yf(c.proj.high);
-      projEnd = Math.max(tc, tl) + 0.1;    // draw to last plausible turn then stop
-    } else {
-      tc = tcRaw;
-      te = clamp(yf(c.proj.low), today + 0.05, tc);
-      tl = Math.max(yf(c.proj.high), tc + 0.1);
-      projEnd = Math.min(META.xDomain[1], tl + 0.35 * (tl - today));
+  /* ---- tier vocabulary (ruling A3: exactly MEASURED / FRAME) --------------
+     The tone-neutral chip is the ONLY user-facing tier word.  Everything else
+     (proxy / monthly / basis / epoch / fitness) rides a hover "how computed"
+     line — never a competing chip.  zh: 已测量 / 框架. */
+  function tierChip(band) {
+    if (band.tier === "measured") return { lab: L("MEASURED", "已测量"), cls: "tier-measured" };
+    return { lab: L("FRAME", "框架"), cls: "tier-frame" };
+  }
+  // "how computed" hover text (dual-span-free: title attr is plain EN per house rule;
+  // the visible micro-line uses L()). Carries proxy/basis/epoch/fitness detail.
+  function measuredBasisLine(band) {
+    var basisMap = {
+      spot: L("spot price", "现货价"), futures_cont: L("continuous futures", "连续期货"),
+      fred_level: L("FRED level series", "FRED 水平序列"), etf_tr: L("ETF, total-return basis", "ETF · 全收益口径"),
+      etf_px: L("ETF, price basis", "ETF · 价格口径"), index_px: L("index, price basis", "指数 · 价格口径"),
+      equity_px: L("equity proxy, price basis", "股票代理 · 价格口径")
+    };
+    var ref = band.ref ? band.ref.split(":").pop() : "";
+    var basis = basisMap[band.basis] || band.basis || "";
+    var s = ref + " · " + basis;
+    if (band.invert) s += " · " + L("inverted (risk-on)", "已反向（风险偏好）");
+    if (band.freq === "M") s += " · " + L("monthly", "月度");
+    return s;
+  }
+  function howComputed(card, band) {
+    // the full disclosure line under a MEASURED chart: series, basis, epoch, span, n_turns.
+    var bits = [measuredBasisLine(band)];
+    if (band.series_first && band.series_last) bits.push(band.series_first + " → " + band.series_last);
+    if (band.n_turns_all != null) bits.push(band.n_turns_all + " " + L("turns", "拐点"));
+    if (band.proxy && band.fitness) {
+      var f = band.fitness;
+      bits.push(L("proxy timing: " + f.matched + "/" + f.n_hand + " hand turns matched",
+                  "代理择时：" + f.matched + "/" + f.n_hand + " 个人工拐点匹配")
+                + (f.low_confidence ? L(" (low-n)", "（小样本）") : ""));
     }
+    return bits.join(" · ");
+  }
 
-    // Anchor the curve to the research-grounded CURRENT position (now.pos) so the
-    // line passes through it at TODAY — faithful amplitude, not just time-fraction.
-    // The current leg is one cosine (last turn → next turn) reparametrised in time
-    // on each side of TODAY so value(today) === now.pos and value(turn) === nextY.
-    var nowPos = clamp(c.now.pos != null ? c.now.pos : (last.y + nextY) / 2, 4, 96);
-    var ratio = clamp((nowPos - last.y) / (nextY - last.y), 0.02, 0.98);
-    var uNow = Math.acos(1 - 2 * ratio) / Math.PI;          // cosine param where value === now.pos
-    function legVal(x, tt) {
-      if (x <= today) {
-        var u = today <= last.x ? 1 : ((x - last.x) / (today - last.x)) * uNow;
-        return last.y + (nextY - last.y) * (0.5 - 0.5 * Math.cos(Math.PI * clamp(u, 0, 1)));
+  /* ---- MODEL: build a hero series from an engine MEASURED band ------------
+     The engine's `osc` is the 0-100 detrended-stochastic oscillator that IS the
+     cross-cycle overlay axis — so the hero line is the engine's own read, not a
+     synthesised cosine.  The projection draws from the engine's proj (anchored at
+     the last CONFIRMED turn, W1.6): dashed toward the next-turn direction at
+     central_x, with a timing cone (low→high).  Overdue → dimmed, no fresh cone. */
+  var NEAR_PEAK = 92, NEAR_TROUGH = 8;
+  function measuredBand(card) {
+    var b = null;
+    (card.bands || []).forEach(function (bd) { if (bd.tier === "measured" && !b) b = bd; });
+    return b;
+  }
+  function frameBand(card) {
+    var b = null;
+    (card.bands || []).forEach(function (bd) { if (bd.tier === "frame") b = bd; });
+    return b;
+  }
+
+  function buildMeasured(card) {
+    var band = measuredBand(card);
+    if (!band) return null;
+    var osc = (band.osc || []).slice().sort(function (a, c) { return a.x - c.x; });
+    // DISPLAY smoothing only: the raw detrended-STOCHASTIC oscillator is high-frequency
+    // (jumps 0↔100 between weekly bars), which turns a 19-line overlay into a scribble.
+    // A short trailing EMA gives a legible cycle line WITHOUT moving any turn / position /
+    // projection (those are the engine's confirmed pivots, plotted as markers, untouched).
+    var hist = emaSmooth(osc.map(function (p) { return { x: p.x, y: clamp(p.v, 0, 100) }; }), 0.28);
+    // trim to points ≤ today (osc is causal but a monthly stamp can post one period ahead)
+    hist = hist.filter(function (p) { return p.x <= TODAY + 0.02; });
+    var lastPt = hist.length ? hist[hist.length - 1] : { x: TODAY, y: (band.now && band.now.pos) || 50 };
+    var pj = band.proj || null;
+    var nowPos = band.now && band.now.pos != null ? band.now.pos : lastPt.y;
+
+    var proj = [], cone = [], elapsed = false, tc = null;
+    if (pj) {
+      var nextTrough = pj.nextTurn === "trough";
+      var nextY = nextTrough ? NEAR_TROUGH : NEAR_PEAK;
+      tc = yf(pj.central);
+      var te = yf(pj.low), tl = yf(pj.high);
+      elapsed = !!pj.overdue || (tc != null && tc < TODAY);
+      var from = { x: lastPt.x, y: lastPt.y };
+      if (elapsed) {
+        // overdue: draw the projected leg to its ORIGINAL (engine) central date, dimmed —
+        // never push it forward (W0.1 doctrine, enforced by W1.6's anchored projection).
+        var end = Math.max(tc || from.x, from.x + 0.05);
+        proj = rampTo(from, { x: end, y: nextY });
+      } else {
+        proj = rampTo(from, { x: tc, y: nextY });
+        // timing cone: early (te) vs late (tl) turn dates → a spread band that widens with
+        // horizon.  Amplitude of the engine's own IQR half-cycle, NOT a magic lerp.
+        var lo = [], hi = [];
+        var eLeg = rampTo(from, { x: Math.max(te || tc, from.x + 0.02), y: nextY });
+        var lLeg = rampTo(from, { x: Math.max(tl || tc, from.x + 0.05), y: nextY });
+        cone = coneBetween(eLeg, lLeg, proj);
       }
-      // Guard: if tt <= today (elapsed branch), division by zero is avoided because
-      // the elapsed case only calls legVal for x <= today (no proj/cone generated).
-      // In the normal branch tt > today is guaranteed by the tc clamping above.
-      var denom = tt - today;
-      var u2 = denom > 0 ? uNow + ((x - today) / denom) * (1 - uNow) : 1;
-      if (x <= tt) return last.y + (nextY - last.y) * (0.5 - 0.5 * Math.cos(Math.PI * clamp(u2, 0, 1)));
-      return cos(x, tt, nextY, projEnd, relax);
     }
-    var center = function (x) { return legVal(x, tc); };
-    var withTurn = function (x, tt) { return legVal(x, tt); };
-
-    // historical dense polyline through every dated turn
-    var hist = [], step = 0.16;
-    for (var i = 0; i < n - 1; i++) {
-      var a = turns[i], b = turns[i + 1];
-      for (var x = a.x; x < b.x - 1e-6; x += step) hist.push({ x: x, y: cos(x, a.x, a.y, b.x, b.y) });
-    }
-    hist.push({ x: last.x, y: last.y });
-    // continue the CURRENT leg (last real turn → today) as solid history
-    for (var xx = last.x + step; xx <= today; xx += step) hist.push({ x: xx, y: center(xx) });
-    hist.push({ x: today, y: center(today) });
-
-    // W0.1: elapsed-turn handling — projection leg/cone drawn to original hand-typed
-    // dates but flagged as elapsed (rendered dimmed/greyed by the caller).
-    // Normal case: full forward projection + cone.
-    var proj = [], cone = [];
-    if (elapsed) {
-      // Draw the projection leg from last turn to the hand-typed tc (all in the past),
-      // rendered dimmed so the reader sees "this was the projected window".
-      for (var xpe = last.x; xpe <= projEnd + 1e-6; xpe += step) {
-        proj.push({ x: xpe, y: cos(xpe, last.x, last.y, Math.max(tc, last.x + 0.01), nextY) });
-      }
-      // No cone in elapsed state — the window has passed.
-    } else {
-      for (var xp = today; xp <= projEnd + 1e-6; xp += step) proj.push({ x: xp, y: center(xp) });
-
-      // uncertainty cone: timing spread (early/central/late) + amplitude growing with horizon
-      var tlt = c.proj.tilt, hiW = tlt === "tailwind" ? 1.35 : tlt === "headwind" ? 0.7 : 1, loW = tlt === "headwind" ? 1.35 : tlt === "tailwind" ? 0.7 : 1;
-      for (var xc = today; xc <= projEnd + 1e-6; xc += step) {
-        var vs = [withTurn(xc, te), center(xc), withTurn(xc, tl)];
-        var lo = Math.min(vs[0], vs[1], vs[2]), hi = Math.max(vs[0], vs[1], vs[2]);
-        var amp = lerp(1.5, 13, clamp((xc - today) / (projEnd - today), 0, 1));
-        cone.push({ x: xc, lo: clamp(lo - amp * loW, 2, 98), hi: clamp(hi + amp * hiW, 2, 98) });
-      }
-    }
-
-    var markers = turns.filter(function (t) { return t.x >= META.xDomain[0] - 0.2; })
-      .map(function (t) { return { x: t.x, y: t.y, kind: t.k, label: fmtMon(t.t), sub: t.e }; });
-    var nowY = center(today);
-    markers.push({ x: today, y: nowY, kind: "now", label: "Now", sub: c.now.phaseLabel });
-
-    // legPct: clamp to [0,1]; if elapsed push to 1 (>100% is displayed as "window elapsed")
-    var legPct = elapsed ? 1 : clamp((today - last.x) / Math.max(tc - last.x, 0.001), 0, 1);
-
     return {
-      id: c.id, color: c.accent, label: c.name, width: 2,
-      hist: hist, proj: proj, cone: cone, markers: markers,
-      nowY: nowY, tc: tc, te: te, tl: tl, projEnd: projEnd,
-      legPct: legPct, elapsed: elapsed, c: c
+      id: card.id, color: card.accent, label: card.name, width: 2,
+      hist: hist, proj: proj, cone: cone,
+      markers: turnMarkers(card, band, lastPt),
+      nowY: lastPt.y, nowPos: nowPos, elapsed: elapsed, tc: tc,
+      band: band, card: card
     };
   }
 
-  var MODELS = {}, ORDER = [];
-  CYCLES.forEach(function (c) { MODELS[c.id] = build(c); ORDER.push(c.id); });
+  // trailing EMA over {x,y} points — DISPLAY smoothing for the noisy stochastic osc line.
+  // Purely cosmetic: the plotted turn markers + engine position/projection are unaffected.
+  function emaSmooth(pts, alpha) {
+    if (!pts.length) return pts;
+    var out = [{ x: pts[0].x, y: pts[0].y }], prev = pts[0].y;
+    for (var i = 1; i < pts.length; i++) { prev = alpha * pts[i].y + (1 - alpha) * prev; out.push({ x: pts[i].x, y: prev }); }
+    return out;
+  }
+
+  // a monotone time-ramp from a→b using a cosine ease (keeps the familiar cycle-curve feel)
+  function rampTo(a, b) {
+    var out = [], step = 0.08;
+    if (b.x <= a.x) return [{ x: a.x, y: a.y }, { x: a.x + 0.02, y: b.y }];
+    for (var x = a.x; x < b.x - 1e-6; x += step) {
+      var t = clamp((x - a.x) / (b.x - a.x), 0, 1);
+      out.push({ x: x, y: a.y + (b.y - a.y) * (0.5 - 0.5 * Math.cos(Math.PI * t)) });
+    }
+    out.push({ x: b.x, y: b.y });
+    return out;
+  }
+  // build a {x,lo,hi} cone enclosing the early/central/late projection legs
+  function coneBetween(early, late, center) {
+    var byX = {};
+    function add(arr) { arr.forEach(function (p) { var k = p.x.toFixed(3); (byX[k] || (byX[k] = { x: p.x, v: [] })).v.push(p.y); }); }
+    add(early); add(late); add(center);
+    return Object.keys(byX).map(function (k) { return byX[k]; })
+      .sort(function (a, b) { return a.x - b.x; })
+      .map(function (o) {
+        var lo = Math.min.apply(null, o.v), hi = Math.max.apply(null, o.v);
+        var pad = clamp((o.x - center[0].x) * 6, 0.5, 10);          // widens with horizon
+        return { x: o.x, lo: clamp(lo - pad, 2, 98), hi: clamp(hi + pad, 2, 98) };
+      });
+  }
+  function turnMarkers(card, band, lastPt) {
+    var ms = [];
+    (band.turns || []).forEach(function (t) {
+      if (t.x == null || t.osc == null) return;
+      if (t.x < XDOM[0] - 0.2) return;
+      if (t.provisional) return;                     // provisional pivots aren't confirmed turns
+      ms.push({ x: t.x, y: clamp(t.osc, 0, 100), kind: t.k, label: fmtMon(t.t), sub: turnSub(card, t) });
+    });
+    ms.push({ x: lastPt.x, y: lastPt.y, kind: "now", label: L("Now", "当前"),
+              sub: zc(card.id, "phaseLabel", (band.now && band.now.phaseLabel) || "") });
+    return ms;
+  }
+  // marker tooltip subtitle: the coincident curated event if a hand turn sits nearby, else px
+  function turnSub(card, t) {
+    var seed = matchSeedTurn(card, t);
+    if (seed && seed.e) return seed.e;
+    return t.px != null ? (L("level ", "水平 ") + t.px) : "";
+  }
+  function matchSeedTurn(card, engineTurn) {
+    // the OPINION overlay carries curated events; the frame band (if any) carries turns[].
+    var fb = frameBand(card);
+    var pool = (fb && fb.turns) || [];
+    var ex = yf(engineTurn.t), best = null, bd = 99;
+    pool.forEach(function (s) { if (s.k === engineTurn.k) { var d = Math.abs(yf(s.t) - ex); if (d < bd) { bd = d; best = s; } } });
+    return bd <= 0.6 ? best : null;
+  }
+
+  // MODELS: only MEASURED / DUAL cards contribute an oscillator model to the hero.
+  var MODELS = {};
+  ORDER.forEach(function (id) {
+    var card = CY[id];
+    if (card && card.card_tier === "measured") MODELS[id] = buildMeasured(card);
+  });
+  var HERO_ORDER = ORDER.filter(function (id) { return MODELS[id] && MODELS[id].hist && MODELS[id].hist.length; });
 
   /* ---- hero overlay ------------------------------------------------------ */
   var heroChart = null, state = { focus: null };
-
   function heroSpec() {
     return {
-      xDomain: META.xDomain, yDomain: [0, 100],
-      xTicks: window.MMChart.niceYearTicks(META.xDomain[0] + 1, META.xDomain[1], 5),
-      yTicks: [{ v: TROUGH, label: L("Trough", "底部") }, { v: MID, label: L("Mid", "中位") }, { v: PEAK, label: L("Peak", "顶部") }],
+      xDomain: XDOM, yDomain: [0, 100],
+      xTicks: window.MMChart.niceYearTicks(XDOM[0] + 1, XDOM[1], 5),
+      yTicks: [{ v: NEAR_TROUGH, label: L("Trough", "底部") }, { v: 50, label: L("Mid", "中位") }, { v: NEAR_PEAK, label: L("Peak", "顶部") }],
       padding: { t: 16, r: 16, b: 28, l: 46 },
       bands: [
         { y0: 0, y1: 35, color: "var(--down)", opacity: 0.05, label: L("washed-out", "超卖") },
         { y0: 35, y1: 65, color: "var(--muted)", opacity: 0.04, label: L("mid-cycle", "中段") },
         { y0: 65, y1: 100, color: "var(--warn)", opacity: 0.055, label: L("euphoric", "狂热") }
       ],
-      guides: [{ x: META.today, label: L("TODAY", "当前"), kind: "today" }],
+      guides: [{ x: TODAY, label: L("TODAY", "当前"), kind: "today" }],
       animate: true, crosshair: true, zoom: true,
-      series: ORDER.map(function (id) { return MODELS[id]; }),
+      series: HERO_ORDER.map(function (id) { return MODELS[id]; }),
       tip: heroTip,
       onPick: function (id) { toggleFocus(id); },
       onZoom: function (domain, zoomed) { var z = document.getElementById("cyc-zoom"); if (z) z.classList.toggle("zoomed", zoomed); }
     };
   }
-
   function heroTip(d, pt, xVal) {
-    var c = d.c, rising = pt.b ? pt.b.y >= pt.a.y : true;
-    var near = Math.abs(xVal - META.today) < 0.06;
+    var card = d.card, rising = pt.b ? pt.b.y >= pt.a.y : true;
+    var near = Math.abs(xVal - TODAY) < 0.06;
     var fy = Math.floor(xVal), fmo = clamp(Math.floor((xVal - fy) * 12), 0, 11);
     var ds = near ? L("Now", "当前") : (curLang() === "zh" ? (fy + "年" + (fmo + 1) + "月") : (MONTHS[fmo] + " " + fy));
-    var head = '<div class="mmc-tip-h"><span class="dot" style="background:' + d.color + '"></span>' + zc(c.id, "name", c.name) + '</div>';
+    var head = '<div class="mmc-tip-h"><span class="dot" style="background:' + d.color + '"></span>' + zc(card.id, "name", card.name) + '</div>';
     var yr = '<div class="mmc-tip-yr">' + ds + '</div>';
     var z = '<div class="mmc-tip-z">' + zone(pt.y) + ' · ' + (rising ? L("rising", "上行") : L("easing", "回落")) + '</div>';
-    var ph = near ? '<div class="mmc-tip-ph">' + zc(c.id, "phaseLabel", c.now.phaseLabel) + '</div>' : '';
+    var ph = near ? '<div class="mmc-tip-ph">' + zc(card.id, "phaseLabel", (d.band.now && d.band.now.phaseLabel) || "") + '</div>' : '';
     return head + yr + z + ph;
   }
-
   function mountHero() {
     var node = document.getElementById("cyc-chart");
     if (!node) return;
@@ -224,15 +280,15 @@
     buildGroups();
   }
 
-  /* ---- zoom controls (presets + reset; wheel/drag handled by the engine) -- */
+  /* ---- zoom controls ----------------------------------------------------- */
   function buildZoom() {
     var z = document.getElementById("cyc-zoom");
     if (!z) return;
     var presets = [
-      { label: L("Full", "全部"), d: META.xDomain },
-      { label: L("15y", "15年"), d: [2016, 2031] },
-      { label: L("8y", "8年"), d: [2021, 2030] },
-      { label: L("Cycle", "本轮"), d: [2024, 2029] }
+      { label: L("Full", "全部"), d: XDOM },
+      { label: L("15y", "15年"), d: [XDOM[1] - 15, XDOM[1]] },
+      { label: L("8y", "8年"), d: [XDOM[1] - 9, XDOM[1] - 1] },
+      { label: L("Cycle", "本轮"), d: [Math.round(TODAY) - 2, Math.round(TODAY) + 3] }
     ];
     z.innerHTML = '<span class="cyc-zhint">' + L("scroll · drag", "滚动 · 拖拽") + '</span>' +
       presets.map(function (p, i) { return '<button class="cyc-zbtn" data-i="' + i + '">' + p.label + '</button>'; }).join("") +
@@ -243,36 +299,37 @@
     z.querySelector("#cyc-zreset").addEventListener("click", function () { if (heroChart) heroChart.resetZoom(); });
   }
 
-  /* ---- phase filter — group by WHERE each cycle stands (topping → bottoming)
-     so co-phased (correlated) assets cluster together. It DIMS rather than hides,
-     so the chip/card layout never collapses and the chart never shifts; filtered
-     scorecards shuffle to the top, the rest dim (the same mechanic as focus). --- */
+  /* ---- phase filter — MEASURED cards bucket by engine phase; FRAME cards get
+     their own bucket ("Frames — structural") so a curated frame NEVER shares a
+     ranked position bucket with a measured read (audit A-1 root disease). ----- */
   var PHASE_FILTER = [
     { key: "Peak", label: "Topping", zh: "见顶" },
     { key: "Expansion", label: "Expanding", zh: "扩张中" },
     { key: "Downturn", label: "Rolling over", zh: "回落中" },
     { key: "Recovery", label: "Recovering", zh: "复苏中" },
-    { key: "Trough", label: "Bottoming", zh: "筑底中" }
+    { key: "Trough", label: "Bottoming", zh: "筑底中" },
+    { key: "Frame", label: "Frames", zh: "框架" }
   ];
-  var byId = {};
-  CYCLES.forEach(function (c) { byId[c.id] = c; });
+  function cardPhase(card) {
+    if (card.card_tier !== "measured") return "Frame";
+    var mb = measuredBand(card);
+    return (mb && mb.now && mb.now.phase) || "Frame";
+  }
   var phaseState = {};
   function buildGroups() {
     var host = document.getElementById("cyc-groups");
     if (!host) return;
     var counts = {};
-    CYCLES.forEach(function (c) { counts[c.now.phase] = (counts[c.now.phase] || 0) + 1; });
+    ORDER.forEach(function (id) { var p = cardPhase(CY[id]); counts[p] = (counts[p] || 0) + 1; });
     PHASE_FILTER.forEach(function (p) { phaseState[p.key] = true; });
     host.innerHTML = '<span class="cyc-glabel">' + L("Where they stand", "所处阶段") + '</span>' +
       PHASE_FILTER.map(function (p) {
-        var hue = (PHASES[p.key] || {}).hue || "var(--muted)";
+        var hue = p.key === "Frame" ? "var(--muted)" : ((PHASES[p.key] || {}).hue || "var(--muted)");
         return '<button class="cyc-gchip on" data-k="' + p.key + '" style="--ph:' + hue + '"><span class="gdot"></span>' + L(p.label, p.zh) + ' <i>' + (counts[p.key] || 0) + '</i></button>';
       }).join("") +
-      '<button class="cyc-gall" id="cyc-gall" title="' + L("Show all phases", "显示全部") + '"><span class="ga-dots">' +
-        PHASE_FILTER.map(function (p) { return '<i style="background:' + ((PHASES[p.key] || {}).hue || "var(--muted)") + '"></i>'; }).join("") +
+      '<button class="cyc-gall" id="cyc-gall" title="Show all phases"><span class="ga-dots">' +
+        PHASE_FILTER.map(function (p) { return '<i style="background:' + (p.key === "Frame" ? "var(--muted)" : ((PHASES[p.key] || {}).hue || "var(--muted)")) + '"></i>'; }).join("") +
       '</span>' + L("Select all", "全选") + '</button>';
-    // single-select: clicking a phase ISOLATES it (deselects the rest); clicking
-    // the already-isolated phase, or the Select-all button, restores all.
     host.querySelectorAll(".cyc-gchip").forEach(function (b) {
       b.addEventListener("click", function () {
         var k = b.getAttribute("data-k");
@@ -293,22 +350,22 @@
       b.classList.toggle("on", !!phaseState[b.getAttribute("data-k")]);
     });
     var gall = document.getElementById("cyc-gall");
-    if (gall) gall.classList.toggle("active", !allOn);   // glows when a filter is active
+    if (gall) gall.classList.toggle("active", !allOn);
     applyGroupFilter();
   }
   function applyGroupFilter() {
     var allOff = PHASE_FILTER.every(function (p) { return !phaseState[p.key]; });
     var hidden = {};
     document.querySelectorAll(".cyc-card").forEach(function (cd) {
-      var c = byId[cd.getAttribute("data-id")]; if (!c) return;
-      var inF = allOff || phaseState[c.now.phase];   // empty selection == no filter
+      var card = CY[cd.getAttribute("data-id")]; if (!card) return;
+      var inF = allOff || phaseState[cardPhase(card)];
       cd.classList.toggle("gdim", !inF);
-      cd.style.order = inF ? "0" : "1";              // shuffle filtered-in to the top
-      if (!inF) hidden[c.id] = true;
+      cd.style.order = inF ? "0" : "1";
+      if (!inF) hidden[card.id] = true;
     });
     document.querySelectorAll(".cyc-chip").forEach(function (b) {
-      var c = byId[b.getAttribute("data-id")]; if (!c) return;
-      b.classList.toggle("gdim", !(allOff || phaseState[c.now.phase]));
+      var card = CY[b.getAttribute("data-id")]; if (!card) return;
+      b.classList.toggle("gdim", !(allOff || phaseState[cardPhase(card)]));
     });
     if (heroChart) heroChart.setHidden(hidden);
   }
@@ -318,12 +375,14 @@
     var wrap = document.getElementById("cyc-chips");
     if (!wrap) return;
     wrap.innerHTML = "";
-    CYCLES.forEach(function (c) {
+    ORDER.forEach(function (id) {
+      var card = CY[id]; if (!card) return;
       var b = el("button", "cyc-chip");
-      b.setAttribute("data-id", c.id);
-      b.style.setProperty("--c", c.accent);
-      b.innerHTML = '<span class="dot"></span><span class="nm">' + zc(c.id, "short", c.short) + '</span>';
-      b.addEventListener("click", function () { toggleFocus(c.id); });
+      b.setAttribute("data-id", id);
+      b.style.setProperty("--c", card.accent);
+      if (card.card_tier !== "measured") b.classList.add("chip-frame");
+      b.innerHTML = '<span class="dot"></span><span class="nm">' + zc(id, "short", card.short) + '</span>';
+      b.addEventListener("click", function () { toggleFocus(id); });
       wrap.appendChild(b);
     });
   }
@@ -336,67 +395,172 @@
     Object.keys(sparks).forEach(function (k) { try { sparks[k].destroy(); } catch (e) {} });
     sparks = {};
     grid.innerHTML = "";
-    CYCLES.forEach(function (c) {
-      var m = MODELS[c.id], ph = PHASES[c.now.phase] || {};
-      var card = el("article", "cyc-card");
-      card.setAttribute("data-id", c.id);
-      card.style.setProperty("--c", c.accent);
-      var tilt = TILT[c.proj.tilt] || TILT.mixed;
-      var pct = Math.round(m.legPct * 100);
-      var legLab = curLang() === "zh" ? ("距下次" + turnWord(c.proj.nextTurn, false) + " " + pct + "%") : (pct + "% to next " + c.proj.nextTurn);
-      var elapsedChip = m.elapsed
-        ? '<div class="cc-elapsed">' + L("Projection window passed — awaiting re-research", "投影窗口已过 — 待重新研究") + '</div>'
-        : '';
-      card.innerHTML =
-        '<div class="cc-top">' +
-          '<div class="cc-id"><span class="cc-dot"></span><div><div class="cc-nm">' + zc(c.id, "name", c.name) + '</div>' +
-          '<div class="cc-px">' + zc(c.id, "proxy", c.proxy) + '</div></div></div>' +
-          '<div class="cc-phase" style="--ph:' + (ph.hue || "var(--muted)") + '">' + phaseChip(c.now.phase) + '</div>' +
+    ORDER.forEach(function (id) {
+      var card = CY[id]; if (!card) return;
+      (card.card_tier === "measured" ? measuredCard : frameCard)(grid, card);
+    });
+  }
+
+  function tierBadge(band, card) {
+    var t = tierChip(band);
+    var hint = band.tier === "measured"
+      ? measuredBasisLine(band)
+      : L("curated history — not a measured cycle", "人工整理的历史 — 非实测周期");
+    // title attr is plain-English per house rule; the visible chip text is dual via L()
+    var titleEn = band.tier === "measured"
+      ? ("MEASURED · engine-computed from " + (band.ref || "") + " (" + (band.basis || "") + ")")
+      : "FRAME · curated turning-point history, not a graded cycle";
+    return '<span class="cyc-tier ' + t.cls + '" title="' + esc(titleEn) + '">' + t.lab +
+      '<span class="cyc-tier-h">' + esc(hint) + '</span></span>';
+  }
+
+  function measuredCard(grid, card) {
+    var m = MODELS[card.id];
+    var band = measuredBand(card);
+    // defensive: a measured card should always have a model + band + now; if the tape was
+    // too short (record_series → None) and a frame band exists, render the frame instead.
+    if (!m || !band || !band.now) { if (frameBand(card)) frameCard(grid, card); return; }
+    var ph = PHASES[band.now.phase] || {};
+    var carddiv = el("article", "cyc-card");
+    carddiv.setAttribute("data-id", card.id);
+    carddiv.style.setProperty("--c", card.accent);
+    var pj = band.proj || {};
+    var overdue = !!pj.overdue;
+    var nextTW = pj.nextTurn ? turnWord(pj.nextTurn, false) : "";
+    // leg progress = fraction of the median half-cycle elapsed since last confirmed turn.
+    var legPct = overdue ? 100 : Math.round(clamp((pj.overdue_frac != null ? pj.overdue_frac : 0), 0, 1) * 100);
+    var legLab = overdue
+      ? L("turn window passed", "拐点窗口已过")
+      : (curLang() === "zh" ? ("距下次" + nextTW + " " + legPct + "%") : (legPct + "% to next " + pj.nextTurn));
+    var elapsedChip = overdue
+      ? '<div class="cc-elapsed">' + L("Turn window elapsed — engine projection anchored at last confirmed turn", "拐点窗口已过 — 引擎投影锚定于上次确认拐点") + '</div>'
+      : '';
+    var tolNote = band.tolerance
+      ? '<div class="cc-tol' + (band.tolerance.loud ? ' loud' : '') + '">' +
+        L("engine " + band.tolerance.engine_pos + " vs opinion " + band.tolerance.hand_pos + " (Δ" + (band.tolerance.delta > 0 ? "+" : "") + band.tolerance.delta + ")",
+          "引擎 " + band.tolerance.engine_pos + " vs 观点 " + band.tolerance.hand_pos + "（Δ" + (band.tolerance.delta > 0 ? "+" : "") + band.tolerance.delta + "）") +
+        '</div>'
+      : '';
+    carddiv.innerHTML =
+      '<div class="cc-top">' +
+        '<div class="cc-id"><span class="cc-dot"></span><div><div class="cc-nm">' + zc(card.id, "name", card.name) + '</div>' +
+        '<div class="cc-px">' + esc(measuredBasisLine(band)) + '</div></div></div>' +
+        '<div class="cc-badges">' + tierBadge(band, card) +
+          '<div class="cc-phase" style="--ph:' + (ph.hue || "var(--muted)") + '">' + phaseChip(band.now.phase) + '</div>' +
         '</div>' +
-        '<div class="cc-spark"></div>' +
-        elapsedChip +
-        '<div class="cc-meta">' +
-          '<div class="cc-leg"><div class="cc-leg-bar"><i style="width:' + pct + '%"></i></div>' +
-            '<div class="cc-leg-lab">' + legLab + '</div></div>' +
-          '<div class="cc-next"><span class="cc-arrow">' + (c.proj.nextTurn === "peak" ? "▲" : "▼") + '</span>' +
-            '<span>' + turnWord(c.proj.nextTurn, true) + ' ≈ ' + fmtMon(c.proj.central) + '</span>' +
-            '<span class="cc-tilt ' + tilt.cls + '">' + tilt.ar + ' ' + tiltLab(tilt) + '</span></div>' +
-        '</div>';
-      card.addEventListener("click", function () { toggleFocus(c.id); });
-      grid.appendChild(card);
-      // sparkline — same model, no axes/bands/crosshair
-      var sp = card.querySelector(".cc-spark");
-      sparks[c.id] = window.MMChart.create(sp, {
-        xDomain: [Math.max(META.xDomain[0], m.hist.length ? m.hist[0].x : 2004), m.projEnd],
-        yDomain: [0, 100], padding: { t: 8, r: 6, b: 8, l: 6 },
-        crosshair: false, animate: true, zoom: false,
-        series: [{ id: c.id, color: c.accent, width: 2, hist: m.hist, proj: m.proj, cone: m.cone,
-                   markers: [{ x: META.today, y: m.nowY, kind: "now" }] }]
-      });
+      '</div>' +
+      '<div class="cc-spark"></div>' +
+      elapsedChip +
+      '<div class="cc-meta">' +
+        '<div class="cc-leg"><div class="cc-leg-bar"><i style="width:' + legPct + '%"></i></div>' +
+          '<div class="cc-leg-lab">' + legLab + '</div></div>' +
+        '<div class="cc-next"><span class="cc-arrow">' + (pj.nextTurn === "peak" ? "▲" : "▼") + '</span>' +
+          '<span>' + turnWord(pj.nextTurn, true) + ' ≈ ' + fmtMon(pj.central) + '</span></div>' +
+      '</div>' +
+      tolNote;
+    carddiv.addEventListener("click", function () { toggleFocus(card.id); });
+    grid.appendChild(carddiv);
+    // sparkline — the SAME engine model, no axes/bands/crosshair
+    var sp = carddiv.querySelector(".cc-spark");
+    var x0 = m.hist.length ? m.hist[0].x : XDOM[0];
+    var xEnd = m.tc != null && !m.elapsed ? m.tc + 0.4 : (m.hist.length ? m.hist[m.hist.length - 1].x + 0.5 : XDOM[1]);
+    // spark markers: the engine's CONFIRMED turns in-window (visible on the single-series
+    // spark via the .cc-spark CSS override) + the Now dot.
+    var sparkMarks = (m.markers || []).filter(function (mk) { return mk.kind !== "now" && mk.x >= x0 - 0.1; });
+    sparkMarks.push({ x: m.hist.length ? m.hist[m.hist.length - 1].x : TODAY, y: m.nowY, kind: "now" });
+    sparks[card.id] = window.MMChart.create(sp, {
+      xDomain: [Math.max(XDOM[0], x0), xEnd],
+      yDomain: [0, 100], padding: { t: 8, r: 6, b: 8, l: 6 },
+      crosshair: false, animate: true, zoom: false,
+      series: [{ id: card.id, color: card.accent, width: 2, hist: m.hist, proj: m.proj, cone: m.cone,
+                 markers: sparkMarks }]
+    });
+  }
+
+  function frameCard(grid, card) {
+    var band = frameBand(card);
+    if (!band) return;
+    var carddiv = el("article", "cyc-card card-frame");
+    carddiv.setAttribute("data-id", card.id);
+    carddiv.style.setProperty("--c", card.accent);
+    var a8 = a8Text(band);
+    var mon = (band.monitors || []).map(function (r) { return r.split(":").pop(); });
+    carddiv.innerHTML =
+      '<div class="cc-top">' +
+        '<div class="cc-id"><span class="cc-dot"></span><div><div class="cc-nm">' + zc(card.id, "name", card.name) + '</div>' +
+        '<div class="cc-px">' + esc(zc(card.id, "proxy", (card.opinion && card.opinion.proxy) || "")) + '</div></div></div>' +
+        '<div class="cc-badges">' + tierBadge(band, card) + '</div>' +
+      '</div>' +
+      '<div class="cc-timeline"></div>' +
+      '<div class="cc-frame-a8">' + a8 + '</div>' +
+      '<div class="cc-tripwire" data-slot="tripwire"></div>' +      // reserved for W3.3
+      (mon.length ? '<div class="cc-monitors"><span>' + L("Monitors", "监测指标") + '</span> ' + esc(mon.join(" · ')")) + '</div>' : '');
+    carddiv.addEventListener("click", function () { toggleFocus(card.id); });
+    grid.appendChild(carddiv);
+    mountTimeline(carddiv.querySelector(".cc-timeline"), card, band);
+  }
+
+  // A8 pattern: "last major turn {date} ({N}y ago); prior up-legs ran {list}".  Pure text,
+  // nothing resolves to a scalar position.
+  function a8Text(band) {
+    var lt = band.last_turn, ys = band.years_since_last;
+    var ups = (band.leg_lengths && band.leg_lengths.ups) || [];
+    var head = lt
+      ? L("Last major " + lt.k + " " + fmtMon(lt.t) + (ys != null ? " (" + ys + "y ago)" : ""),
+          "上一次重大" + turnWord(lt.k, true) + " " + fmtMon(lt.t) + (ys != null ? "（" + ys + " 年前）" : ""))
+      : "";
+    var legs = ups.length
+      ? L("Prior up-legs ran " + ups.map(function (v) { return v + "y"; }).join(", "),
+          "此前的上行段历时 " + ups.map(function (v) { return v + " 年"; }).join("、"))
+      : L("Too few turns to list prior legs", "拐点过少，无法列出此前周期段");
+    var win = band.typical_window
+      ? L(" · typical window " + Math.floor(band.typical_window.lo) + "–" + Math.ceil(band.typical_window.hi),
+          " · 典型窗口 " + Math.floor(band.typical_window.lo) + "–" + Math.ceil(band.typical_window.hi))
+      : "";
+    return '<b>' + head + '.</b> ' + legs + '<span class="cc-frame-note">' + win + '</span>';
+  }
+
+  // FRAME timeline: the curated turns[] as dots on a single horizontal band (no oscillator).
+  // The curated turning-point HISTORY is the crown-jewel content — show it all (no window
+  // clip): a FRAME clock's 1970s/1980s pivots ARE the point of the card (A8 "prior legs").
+  function mountTimeline(node, card, band) {
+    if (!node) return;
+    var turns = (band.turns || []).slice();
+    var xs = turns.map(function (t) { return yf(t.t); });
+    var x0 = xs.length ? Math.min.apply(null, xs) : XDOM[0];
+    var x1 = xs.length ? Math.max.apply(null, xs) : XDOM[1];
+    // pad the window so the typical-turn hatch (if any) shows
+    if (band.typical_window) x1 = Math.max(x1, band.typical_window.hi);
+    x1 = Math.max(x1, TODAY);
+    var series = [{
+      id: card.id, color: card.accent, width: 0, hist: [{ x: x0, y: 50 }, { x: x1, y: 50 }],
+      markers: turns.map(function (t) {
+        return { x: yf(t.t), y: 50, kind: t.k, label: fmtMon(t.t), sub: t.e };
+      }).concat([{ x: TODAY, y: 50, kind: "now", label: L("Now", "当前") }])
+    }];
+    window.MMChart.create(node, {
+      xDomain: [x0 - 0.5, x1 + 0.5], yDomain: [0, 100],
+      padding: { t: 4, r: 8, b: 16, l: 8 }, crosshair: false, animate: true, zoom: false,
+      xTicks: window.MMChart.niceYearTicks(Math.ceil(x0), Math.floor(x1), 4),
+      series: series
     });
   }
 
   /* ---- focus orchestration ----------------------------------------------- */
   function toggleFocus(id) { setFocus(state.focus === id ? null : id); }
-
   function setFocus(id) {
     state.focus = id;
-    if (heroChart) heroChart.focus(id);
-    // chips
+    if (heroChart) heroChart.focus(MODELS[id] ? id : null);   // frame cards have no hero line
     document.querySelectorAll(".cyc-chip").forEach(function (b) {
       b.classList.toggle("on", b.getAttribute("data-id") === id);
       b.classList.toggle("off", !!id && b.getAttribute("data-id") !== id);
     });
-    // cards
     document.querySelectorAll(".cyc-card").forEach(function (cd) {
       cd.classList.toggle("lit", cd.getAttribute("data-id") === id);
       cd.classList.toggle("dim", !!id && cd.getAttribute("data-id") !== id);
     });
-    // panel
     renderPanel(id);
-    // mobile sheet auto-expand on focus (desktop underbar is always visible)
     if (id && window.innerWidth <= 880) expandSheet(true);
-    // hash — note: deliberately NO auto-scroll, focusing must not move the viewport
     try { history.replaceState(null, "", id ? "#" + id : location.pathname + location.search); } catch (e) {}
   }
 
@@ -405,76 +569,138 @@
     var def = document.getElementById("cyc-panel-default");
     var foc = document.getElementById("cyc-panel-focus");
     if (!def || !foc) return;
-    if (!id) {
-      foc.classList.remove("show"); def.classList.add("show");
-      return;
-    }
-    foc.innerHTML = focusHTML(CYCLES.filter(function (c) { return c.id === id; })[0]);
+    if (!id || !CY[id]) { foc.classList.remove("show"); def.classList.add("show"); return; }
+    foc.innerHTML = focusHTML(CY[id]);
     var back = foc.querySelector(".cyc-back");
     if (back) back.addEventListener("click", function () { setFocus(null); });
     def.classList.remove("show"); foc.classList.add("show");
   }
 
-  function focusHTML(c) {
-    var m = MODELS[c.id], ph = PHASES[c.now.phase] || {}, tilt = TILT[c.proj.tilt] || TILT.mixed;
-    function fact(k, v) { return '<div class="f"><div class="fk">' + k + '</div><div class="fv">' + v + '</div></div>'; }
-    var pct = Math.round(m.legPct * 100);
-    var posVal = curLang() === "zh" ? ("距下一拐点 " + pct + "%") : (pct + "% to next turn");
-    var lenVal = c.period.central + L(" yr (", " 年 (") + c.period.low + "–" + c.period.high + ")";
-    var elapsedBanner = m.elapsed
-      ? '<div class="cyc-elapsed-panel">' + L("Projection window passed — awaiting re-research", "投影窗口已过 — 待重新研究") + '</div>'
-      : '';
-    return '' +
+  function factRow(k, v) { return '<div class="f"><div class="fk">' + k + '</div><div class="fv">' + v + '</div></div>'; }
+
+  function focusHTML(card) {
+    var measured = card.card_tier === "measured";
+    var mb = measuredBand(card), fb = frameBand(card);
+    var op = card.opinion || {};
+    var ph = (measured && mb.now && PHASES[mb.now.phase]) || {};
+    var head =
       '<div class="cyc-grp cyc-grp-full">' +
         '<button class="cyc-back">' + L("← All cycles", "← 全部周期") + '</button>' +
-        '<div class="cyc-fhead" style="--c:' + c.accent + '">' +
-          '<div class="cyc-ftitle">' + zc(c.id, "name", c.name) + '</div>' +
-          '<div class="cyc-fsub">' + zc(c.id, "proxy", c.proxy) + '</div>' +
-          '<div class="cyc-fchips">' +
-            '<span class="cyc-pchip" style="--ph:' + (ph.hue || "var(--muted)") + '">' + zc(c.id, "phaseLabel", c.now.phaseLabel) + '</span>' +
-            '<span class="cyc-tchip ' + tilt.cls + '">' + tilt.ar + ' ' + tiltLab(tilt) + '</span>' +
-          '</div>' +
+        '<div class="cyc-fhead" style="--c:' + card.accent + '">' +
+          '<div class="cyc-ftitle">' + zc(card.id, "name", card.name) +
+            ' ' + focusTierBadge(measured ? mb : fb, card) + (card.dual ? ' ' + dualHint() : '') + '</div>' +
+          '<div class="cyc-fsub">' + esc(zc(card.id, "proxy", op.proxy || card.name)) + '</div>' +
+          (measured
+            ? '<div class="cyc-fchips">' +
+                '<span class="cyc-pchip" style="--ph:' + (ph.hue || "var(--muted)") + '">' + zc(card.id, "phaseLabel", (mb.now && mb.now.phaseLabel) || "") + '</span>' +
+              '</div>'
+            : '') +
         '</div>' +
-        elapsedBanner +
-        '<p class="cyc-arche">' + zc(c.id, "archetype", c.archetype) + '</p>' +
-      '</div>' +
-      '<div class="cyc-grp cyc-grp-3">' +
-        '<div class="cyc-facts">' +
-          fact(L("Last trough", "上次底部"), fmtMon(c.now.lastTrough)) +
-          fact(L("Last peak", "上次顶部"), fmtMon(c.now.lastPeak)) +
-          fact(L("Next " + c.proj.nextTurn, "下次" + turnWord(c.proj.nextTurn, true)), fmtMon(c.proj.central)) +
-          fact(L("Est. range", "预计区间"), fmtMon(c.proj.low) + " – " + fmtMon(c.proj.high)) +
-          fact(L("Typical length", "典型周期"), lenVal) +
-          fact(L("Position", "当前位置"), posVal) +
-        '</div>' +
-      '</div>' +
-      '<div class="cyc-grp cyc-grp-3">' +
-        '<div class="cyc-read"><div class="cyc-lbl">' + L("The read", "解读") + '</div><p>' + zc(c.id, "read", c.now.read) + '</p></div>' +
-        '<div class="cyc-fals"><div class="cyc-lbl">' + L("Falsifier", "证伪条件") + '</div><p>' + zc(c.id, "falsifier", c.proj.falsifier) + '</p></div>' +
-      '</div>' +
-      '<div class="cyc-grp cyc-grp-3">' +
-        '<div class="cyc-drivers"><div class="cyc-lbl">' + L("Swing factors", "关键变量") + '</div><ul>' +
-          zcArr(c.id, "drivers", c.proj.drivers).map(function (d) { return "<li>" + d + "</li>"; }).join("") + '</ul></div>' +
-        '<div class="cyc-regnote">' + zc(c.id, "regimeNote", c.regimeNote) + '</div>' +
+        '<p class="cyc-arche">' + zc(card.id, "archetype", op.archetype || "") + '</p>' +
       '</div>';
+
+    var facts = measured ? measuredFacts(card, mb) : frameFacts(card, fb);
+    var opinion = opinionBlock(card, op, mb);
+    var secular = (measured && fb) ? secularStrip(card, fb) : "";
+    return head + facts + secular + opinion;
+  }
+  function focusTierBadge(band, card) { return tierBadge(band, card); }
+  function dualHint() { return '<span class="cyc-dual-hint">' + L("dual", "双轨") + '</span>'; }
+
+  function measuredFacts(card, band) {
+    var pj = band.proj || {};
+    var h = band.health || {};
+    var provisional = (band.turns || []).some(function (t) { return t.provisional; });
+    return '<div class="cyc-grp cyc-grp-3"><div class="cyc-facts">' +
+      factRow(L("Series", "序列"), esc((band.ref || "").split(":").pop()) + ' <span class="fv-sub">' + esc(measuredBasisLine(band).split(" · ").slice(1).join(" · ")) + '</span>') +
+      factRow(L("History", "历史区间"), (band.series_first || "?") + " → " + (band.series_last || "?")) +
+      factRow(L("Confirmed turns", "已确认拐点"), (band.n_turns_all != null ? band.n_turns_all : "—") + (provisional ? L(" · +1 provisional", " · +1 待确认") : "")) +
+      factRow(L("Last turn", "上次拐点"), (function () {
+        var lt = null; (band.turns || []).forEach(function (t) { if (!t.provisional) lt = t; });
+        return lt ? (fmtMon(lt.t) + " " + turnWord(lt.k, false)) : "—";
+      })()) +
+      factRow(L("Next " + (pj.nextTurn || "turn"), "下次" + turnWord(pj.nextTurn, true)), fmtMon(pj.central) + (pj.overdue ? L(" · overdue", " · 已过期") : "")) +
+      factRow(L("Est. window", "预计区间"), fmtMon(pj.low) + " – " + fmtMon(pj.high)) +
+      factRow(L("Typical length", "典型周期"), (pj.period_yrs ? (pj.period_yrs.median + L(" yr (", " 年 (") + pj.period_yrs.lo + "–" + pj.period_yrs.hi + ")") : "—")) +
+      factRow(L("Position", "当前位置"), '<b>' + (band.now && band.now.pos != null ? band.now.pos : "—") + '</b> ' + L("(engine)", "（引擎）")) +
+      '</div>' +
+      '<div class="cyc-howline">' + L("How computed", "计算方式") + ': ' + esc(howComputed(card, band)) + '</div>' +
+      '</div>';
+  }
+
+  function frameFacts(card, band) {
+    var lt = band.last_turn;
+    var ups = (band.leg_lengths && band.leg_lengths.ups) || [];
+    var downs = (band.leg_lengths && band.leg_lengths.downs) || [];
+    return '<div class="cyc-grp cyc-grp-3"><div class="cyc-facts">' +
+      factRow(L("Tier", "层级"), L("FRAME — structural clock, not graded", "框架 — 结构性时钟，不评分")) +
+      factRow(L("Curated turns", "整理拐点"), (band.turns || []).length) +
+      factRow(L("Last major turn", "上次重大拐点"), lt ? (fmtMon(lt.t) + " " + turnWord(lt.k, false) + (band.years_since_last != null ? L(" · " + band.years_since_last + "y ago", " · " + band.years_since_last + " 年前") : "")) : "—") +
+      factRow(L("Prior up-legs", "此前上行段"), ups.length ? ups.map(function (v) { return v + L("y", "年"); }).join(", ") : "—") +
+      factRow(L("Prior down-legs", "此前下行段"), downs.length ? downs.map(function (v) { return v + L("y", "年"); }).join(", ") : "—") +
+      factRow(L("Typical window", "典型窗口"), band.typical_window ? (Math.floor(band.typical_window.lo) + "–" + Math.ceil(band.typical_window.hi) + " " + turnWord(band.typical_window.next, false)) : "—") +
+      '</div>' +
+      '<div class="cyc-howline">' + L("FRAME cards show curated timing only — no oscillator, no position gauge, no forecast cone.",
+        "框架卡片仅展示人工整理的时点 — 无振荡指标、无位置刻度、无预测锥。") + '</div>' +
+      '</div>';
+  }
+
+  // secular strip on DUAL cards (compact condensed frame timeline beneath the measured chart)
+  function secularStrip(card, fb) {
+    var lt = fb.last_turn, ys = fb.years_since_last;
+    var ups = (fb.leg_lengths && fb.leg_lengths.ups) || [];
+    var txt = lt
+      ? L("Secular frame: last major " + lt.k + " " + fmtMon(lt.t) + (ys != null ? " (" + ys + "y ago)" : "") + (ups.length ? "; prior up-legs " + ups.map(function (v) { return v + "y"; }).join(", ") : ""),
+          "长周期框架：上一次重大" + turnWord(lt.k, true) + " " + fmtMon(lt.t) + (ys != null ? "（" + ys + " 年前）" : "") + (ups.length ? "；此前上行段 " + ups.map(function (v) { return v + " 年"; }).join("、") : ""))
+      : "";
+    return '<div class="cyc-grp cyc-grp-full cyc-secular">' +
+      '<div class="cyc-lbl">' + L("Secular frame", "长周期框架") + ' <span class="cyc-tier tier-frame">' + L("FRAME", "框架") + '</span></div>' +
+      '<div class="cyc-secular-strip"></div>' +
+      '<p class="cyc-secular-txt">' + esc(txt) + '</p>' +
+      '</div>';
+  }
+
+  function opinionBlock(card, op, mb) {
+    var tolLine = "";
+    if (mb && mb.tolerance) {
+      var t = mb.tolerance;
+      tolLine = '<div class="cyc-tol-line' + (t.loud ? ' loud' : '') + '">' +
+        L("Engine reads position " + t.engine_pos + "; the dated opinion said " + t.hand_pos + " (Δ" + (t.delta > 0 ? "+" : "") + t.delta + "). The engine number is what's plotted.",
+          "引擎读数为 " + t.engine_pos + "；该期观点为 " + t.hand_pos + "（Δ" + (t.delta > 0 ? "+" : "") + t.delta + "）。图中绘制的是引擎数值。") +
+        '</div>';
+    }
+    var drivers = zcArr(card.id, "drivers", op.drivers || []);
+    return '<div class="cyc-grp cyc-grp-3">' +
+        '<div class="cyc-read"><div class="cyc-lbl">' + L("Analyst note", "分析师注记") +
+          ' <span class="cyc-opinion-badge" title="Dated analyst opinion — not an engine output">' + L("OPINION", "观点") + '</span>' +
+          '<span class="cyc-asof-mini"> · ' + L("as of ", "截至 ") + esc(op.as_of || AS_OF) + '</span></div>' +
+          '<p>' + zc(card.id, "read", op.read || "") + '</p>' + tolLine + '</div>' +
+        '<div class="cyc-fals"><div class="cyc-lbl">' + L("Falsifier", "证伪条件") +
+          ' <span class="cyc-opinion-badge">' + L("OPINION", "观点") + '</span></div>' +
+          '<p>' + zc(card.id, "falsifier", op.falsifier || "") + '</p></div>' +
+      '</div>' +
+      (drivers.length || op.regimeNote ?
+        '<div class="cyc-grp cyc-grp-3">' +
+          (drivers.length ? '<div class="cyc-drivers"><div class="cyc-lbl">' + L("Swing factors", "关键变量") + '</div><ul>' +
+            drivers.map(function (d) { return "<li>" + esc(d) + "</li>"; }).join("") + '</ul></div>' : '') +
+          (op.regimeNote ? '<div class="cyc-regnote">' + zc(card.id, "regimeNote", op.regimeNote) + '</div>' : '') +
+        '</div>' : '');
   }
 
   /* ---- default panel content (regime + cross-cycle map) ------------------ */
   function buildDefaultPanel() {
     var def = document.getElementById("cyc-panel-default");
     if (!def) return;
-    var R = META.regime;
+    var R = REGIME || {};
     var zst = (window.CYCLE_ZH && window.CYCLE_ZH.regime && window.CYCLE_ZH.regime.stats) || [];
     var zh = curLang() === "zh";
-    var stats = R.stats.map(function (s, i) {
+    var stats = (R.stats || []).map(function (s, i) {
       var k = zh && zst[i] ? zst[i].k : s.k, note = zh && zst[i] ? zst[i].note : s.note;
-      return '<div class="rg-stat"><div class="rg-k">' + k + '</div><div class="rg-v">' + s.v + '</div><div class="rg-n">' + note + '</div></div>';
+      return '<div class="rg-stat"><div class="rg-k">' + esc(k) + '</div><div class="rg-v">' + esc(s.v) + '</div><div class="rg-n">' + esc(note) + '</div></div>';
     }).join("");
 
-    // cross-cycle buckets by direction-aware phase (a low cycle DESCENDING is
-    // "declining", not "recovering" — level alone can't tell them apart)
-    var buckets = { Peak: [], Expansion: [], Downturn: [], Recovery: [], Trough: [] };
-    CYCLES.forEach(function (c) { (buckets[c.now.phase] || (buckets[c.now.phase] = [])).push(c); });
+    var buckets = { Peak: [], Expansion: [], Downturn: [], Recovery: [], Trough: [], Frame: [] };
+    ORDER.forEach(function (id) { var card = CY[id]; (buckets[cardPhase(card)] || (buckets[cardPhase(card)] = [])).push(card); });
     function row(title, list, note) {
       if (!list.length) return "";
       var chips = list.map(function (c) {
@@ -485,14 +711,14 @@
 
     def.innerHTML = '' +
       '<div class="cyc-grp cyc-grp-full">' +
-        '<div class="cyc-lbl">' + L("Macro regime · ", "宏观环境 · ") + META.asOf + '</div>' +
-        '<div class="rg-head"><div class="rg-label">' + zr("label", R.label) + '</div><div class="rg-sub">' + zr("sub", R.sub) + '</div></div>' +
-        '<p class="rg-headline">' + zr("headline", R.headline) + '</p>' +
+        '<div class="cyc-lbl">' + L("Macro regime · ", "宏观环境 · ") + esc(AS_OF) + '</div>' +
+        '<div class="rg-head"><div class="rg-label">' + zr("label", R.label || "") + '</div><div class="rg-sub">' + zr("sub", R.sub || "") + '</div></div>' +
+        '<p class="rg-headline">' + zr("headline", R.headline || "") + '</p>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
         '<div class="cyc-lbl">' + L("Conditions", "环境指标") + '</div>' +
         '<div class="rg-stats">' + stats + '</div>' +
-        '<p class="rg-tilt">' + zr("tilt", R.tilt) + '</p>' +
+        '<p class="rg-tilt">' + zr("tilt", R.tilt || "") + '</p>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
         '<div class="cyc-lbl">' + L("Where the cycles stand", "各周期所处位置") + '</div>' +
@@ -502,14 +728,15 @@
           row(L("Rolling over", "回落中"), buckets.Downturn, L("declining", "下行中")) +
           row(L("Recovering", "复苏中"), buckets.Recovery, L("early up-leg", "上行初段")) +
           row(L("Bottoming", "筑底中"), buckets.Trough, L("washed-out · cheap", "超卖 · 便宜")) +
+          row(L("Frames · structural", "框架 · 结构性"), buckets.Frame, L("curated, ungraded", "人工整理 · 不评分")) +
         '</div>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
         '<div class="cyc-lbl">' + L("How to read", "如何解读") + '</div>' +
         '<ul class="cyc-how">' +
-          '<li>' + L("<b>Solid</b> lines are observed history; <b>dashed + shaded cone</b> is the projected path and its uncertainty.", "<b>实线</b>为已观测历史；<b>虚线 + 阴影锥</b>为推演路径及其不确定性。") + '</li>' +
-          '<li>' + L("Each <b>● dot</b> on the TODAY line is where that cycle sits right now — high = euphoric/late, low = washed-out/stressed.", "TODAY 线上的每个 <b>● 圆点</b>是该周期当下所处的位置——越高=狂热/晚期，越低=超卖/承压。") + '</li>' +
-          '<li>' + L("<b>Tap a cycle</b> (chip, card, or its line) to focus it; tap again to return here.", "<b>点按某个周期</b>（标签、卡片或其曲线）以聚焦；再次点按返回此处。") + '</li>' +
+          '<li>' + L("<b>MEASURED</b> cards plot the engine's own oscillator, turns and projection — computed live from the backing tape, not typed by hand.", "<b>已测量</b>卡片绘制引擎自身的振荡指标、拐点与投影 — 由底层数据实时计算，而非人工录入。") + '</li>' +
+          '<li>' + L("<b>FRAME</b> cards show only the curated turning-point timeline and how long prior legs ran — no position, no forecast. They are structural clocks, not graded cycles.", "<b>框架</b>卡片仅展示人工整理的拐点时间线以及此前周期段的时长 — 无位置、无预测。它们是结构性时钟，而非评分周期。") + '</li>' +
+          '<li>' + L("The dated <b>OPINION</b> note is analyst prose, clearly separated from the engine numbers; where they disagree, the card shows the delta.", "带日期的<b>观点</b>注记是分析师文字，与引擎数值明确分离；两者不一致时，卡片会标示差值。") + '</li>' +
         '</ul>' +
       '</div>';
 
@@ -519,48 +746,47 @@
     def.classList.add("show");
   }
 
-  /* ---- mobile bottom sheet ----------------------------------------------- */
-  function expandSheet(on) {
-    var sheet = document.getElementById("cyc-detail");
-    if (sheet) sheet.classList.toggle("expanded", on !== false);
+  /* ---- secular strip chart mount (DUAL focus panels) --------------------- */
+  function mountSecularStrips() {
+    document.querySelectorAll(".cyc-secular-strip").forEach(function (node) {
+      var foc = node.closest(".cyc-panel");
+      var id = state.focus;
+      if (!id || !CY[id]) return;
+      var fb = frameBand(CY[id]);
+      if (fb) mountTimeline(node, CY[id], fb);
+    });
   }
+
+  /* ---- mobile bottom sheet ----------------------------------------------- */
+  function expandSheet(on) { var s = document.getElementById("cyc-detail"); if (s) s.classList.toggle("expanded", on !== false); }
   function initSheet() {
-    var sheet = document.getElementById("cyc-detail");
-    var handle = document.getElementById("cyc-handle");
+    var sheet = document.getElementById("cyc-detail"), handle = document.getElementById("cyc-handle");
     if (!sheet || !handle) return;
     handle.addEventListener("click", function () { sheet.classList.toggle("expanded"); });
-    var startY = 0, startExpanded = false, dragging = false;
-    handle.addEventListener("touchstart", function (e) { startY = e.touches[0].clientY; startExpanded = sheet.classList.contains("expanded"); dragging = true; }, { passive: true });
+    var startY = 0, dragging = false;
+    handle.addEventListener("touchstart", function (e) { startY = e.touches[0].clientY; dragging = true; }, { passive: true });
     handle.addEventListener("touchmove", function (e) {
       if (!dragging) return;
       var dy = e.touches[0].clientY - startY;
-      if (dy < -30) sheet.classList.add("expanded");
-      else if (dy > 40) sheet.classList.remove("expanded");
+      if (dy < -30) sheet.classList.add("expanded"); else if (dy > 40) sheet.classList.remove("expanded");
     }, { passive: true });
     handle.addEventListener("touchend", function () { dragging = false; });
   }
 
-  /* ---- staleness banner (W0.1) -------------------------------------------
-     When more than 14 days have passed since the dataset was last curated,
-     show an amber (14–59 d) or red (≥ 60 d) banner near the page header.
-     Uses L(en, zh) so no translated text appears in HTML attributes. */
+  /* ---- staleness banner (W0.1) ------------------------------------------- */
   function renderStalenessBanner() {
     var host = document.getElementById("cyc-stale-banner");
     if (!host) return;
-    var asOf = META.asOf || "";
-    var asOfYear = asOf ? yf(asOf) : TODAY;
+    var asOfYear = AS_OF ? yf(AS_OF) : TODAY;
     var days = Math.round((TODAY - asOfYear) * 365.25);
     if (days < 14) { host.innerHTML = ""; return; }
     var cls = days >= 60 ? "stale-red" : "stale-amber";
     host.innerHTML = '<div class="stale-banner ' + cls + '">' +
-      L("Curated dataset as of " + asOf + " — " + days + " days old",
-        "精选数据截至 " + asOf + " — 已 " + days + " 天未更新") +
-      '</div>';
+      L("Analyst notes as of " + AS_OF + " — " + days + " days old (engine reads are live)",
+        "分析师注记截至 " + AS_OF + " — 已 " + days + " 天（引擎读数为实时）") + '</div>';
   }
 
-  /* ---- language switch: re-render the JS-drawn DOM, preserving filter + focus
-     (the hero chart re-renders itself on `langchange`; its tooltip reads the
-     language live). ------------------------------------------------------- */
+  /* ---- language switch --------------------------------------------------- */
   function rerender() {
     var savedFocus = state.focus, savedPhase = {};
     PHASE_FILTER.forEach(function (p) { savedPhase[p.key] = phaseState[p.key]; });
@@ -568,22 +794,26 @@
     mountCards();
     buildDefaultPanel();
     buildZoom();
-    buildGroups();                                              // resets phaseState
+    buildGroups();
     PHASE_FILTER.forEach(function (p) { phaseState[p.key] = savedPhase[p.key]; });
-    syncGroups();                                               // re-apply filter to fresh DOM
+    syncGroups();
     renderStalenessBanner();
-    if (heroChart) {                                            // refresh axis/band labels + keep zoom-reset chip in sync
+    if (heroChart) {
       heroChart.spec = heroSpec();
       heroChart.resize();
-      var v = heroChart.getView(), f = META.xDomain, z = document.getElementById("cyc-zoom");
-      if (z) z.classList.toggle("zoomed", v[0] > f[0] + 1e-3 || v[1] < f[1] - 1e-3);
+      var v = heroChart.getView(), z = document.getElementById("cyc-zoom");
+      if (z) z.classList.toggle("zoomed", v[0] > XDOM[0] + 1e-3 || v[1] < XDOM[1] - 1e-3);
     }
     if (savedFocus) setFocus(savedFocus); else renderPanel(null);
+    mountSecularStrips();
   }
+
+  // re-mount the secular strip AFTER a focus render (the panel HTML is rebuilt each time)
+  var _origRenderPanel = renderPanel;
+  renderPanel = function (id) { _origRenderPanel(id); setTimeout(mountSecularStrips, 0); };
 
   /* ---- boot -------------------------------------------------------------- */
   function boot() {
-    if (!META || !CYCLES) return;
     mountChips();
     mountHero();
     buildDefaultPanel();
@@ -591,11 +821,9 @@
     renderStalenessBanner();
     initSheet();
     document.addEventListener("langchange", rerender);
-    // deep-link focus
     var h = (location.hash || "").replace("#", "");
-    if (h && MODELS[h]) setTimeout(function () { setFocus(h); }, 350);
+    if (h && CY[h]) setTimeout(function () { setFocus(h); }, 350);
   }
-
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
 })();
