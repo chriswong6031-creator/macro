@@ -282,6 +282,11 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
             "altdata_members": (cd or {}).get("leading_members"),
             "glut_band": gband,
             "glut_score": (gl or {}).get("glut_score"),
+            # W2c: demand per-name divergence + bottleneck PPI for score de-circularization
+            # (P1-C): passed through so foresight_score axes can read real inputs
+            # without default-filling. One hunk addition only — does not touch stage logic.
+            "divergence_share": (dm or {}).get("divergence_share"),
+            "ppi_yoy_latest": (bn or {}).get("ppi_yoy_latest"),
         })
     # rank by edge remaining (stage), then surface AI-capex beneficiaries, then by the
     # sharpest physical/estimate read available (tightness if known, else revision breadth)
