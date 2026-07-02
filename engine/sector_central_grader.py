@@ -39,18 +39,32 @@ def _yahoo_panel():
 
 
 def _basket_levels() -> dict:
-    """Equal-weight basket level series keyed by raw basket id (for grading basket calls)."""
+    """Equal-weight basket level series keyed by basket id — reads the FROZEN store only.
+
+    W3.8: The live-recompute path (compute_baskets()) is REPLACED by the frozen
+    basket-level parquet (data/basket_levels/us.parquet).  This kills the look-ahead /
+    survivorship leak: grades are computed on PIT-frozen series, not on today's
+    membership projected backward.
+
+    Before the first freeze (data/basket_levels/us.parquet absent or empty) this
+    returns an empty dict — the grader will report 'accruing from <freeze_start>'
+    for all basket calls, which is the honest behaviour (see grade()).
+    """
     out = {}
     try:
-        from engine.baskets import compute_baskets
-        bd = compute_baskets()
-        ch = (bd or {}).get("chart") or {}
-        if ch.get("dates"):
-            idx = pd.to_datetime(ch["dates"])
-            for bid, lv in (ch.get("baskets") or {}).items():
-                out[bid] = pd.Series(lv, index=idx, dtype="float64").dropna()
-    except Exception:  # noqa: BLE001
-        pass
+        from engine.basket_freeze import read_frozen
+        df = read_frozen("us")
+        if df is None or df.empty:
+            log.info("basket_levels[us]: no frozen store yet — basket grading accruing")
+            return out
+        for col in df.columns:
+            if col.endswith("__level_tr"):
+                bid = col[: -len("__level_tr")]
+                s = df[col].dropna()
+                if not s.empty:
+                    out[bid] = s
+    except Exception as e:  # noqa: BLE001
+        log.warning("basket_levels[us]: frozen read failed: %s", e)
     return out
 
 
@@ -106,24 +120,72 @@ def append_central_log(data: dict) -> int:
         return 0
 
 
-def _fwd_return(row: pd.Series, h: int, panel, basket_lvl: dict) -> float | None:
+def _mhash_stable(basket_id: str, d0: pd.Timestamp, h: int, frozen_df) -> bool:
+    """Return True iff the membership hash is stable over the forward window [d0, d0+h].
+
+    A grade is INVALIDATED (returns False) when the mhash changes within the forward
+    window — this means the basket's composition changed mid-horizon and the return
+    is not attributable to the same membership the call was made on.
+
+    frozen_df may be None (no frozen store yet) — returns False so the grade is dropped.
+    """
+    if frozen_df is None or frozen_df.empty:
+        return False
+    col = f"{basket_id}__mhash"
+    if col not in frozen_df.columns:
+        return False
+    # window: d0 through d0 + h trading-day equivalent (calendar)
+    window = frozen_df.loc[
+        (frozen_df.index >= d0) & (frozen_df.index <= d0 + pd.Timedelta(days=h * 2))
+    ][col].dropna()
+    if window.empty:
+        return False   # no frozen data in window → can't grade
+    return window.nunique() == 1   # stable iff exactly one unique hash
+
+
+def _fwd_return(row: pd.Series, h: int, panel, basket_lvl: dict,
+                frozen_df=None) -> tuple[float | None, str | None]:
     """Realized return from the call to call_date + h trading days, NEXT-BAR filled
     (W1c, audit #15): the call fires on d0's close but is entered on the next bar, so the
     same-bar ``iloc[0]`` denominator no longer flatters the read (sector = SPDR close;
-    basket = EW level). None if the horizon hasn't elapsed / series missing."""
+    basket = EW level). None if the horizon hasn't elapsed / series missing.
+
+    W3.8: basket calls additionally check membership-hash stability over the forward
+    window.  Returns (return_float | None, invalidation_reason | None).  When a
+    non-None invalidation_reason is returned the grade must be DROPPED (not scored).
+    """
     try:
         d0 = pd.Timestamp(row["date"])
         if row.get("kind") == "sector" and pd.notna(row.get("ticker")):
             s = panel[row["ticker"]].dropna() if (panel is not None and row["ticker"] in panel.columns) else None
+            fr = grading.grade_next_bar_return(s, str(d0.date()), h) if s is not None and not s.empty else None
+            return fr, None
         else:
-            s = basket_lvl.get(row.get("basket_id"))
-        return grading.grade_next_bar_return(s, str(d0.date()), h) if s is not None and not s.empty else None
+            bid = row.get("basket_id")
+            s = basket_lvl.get(bid)
+            if s is None or s.empty:
+                return None, None
+            # W3.8: membership-hash stability check before grading
+            if not _mhash_stable(bid, d0, h, frozen_df):
+                return None, "membership_changed"
+            fr = grading.grade_next_bar_return(s, str(d0.date()), h)
+            return fr, None
     except Exception:  # noqa: BLE001
-        return None
+        return None, None
 
 
 def grade() -> dict | None:
-    """Score every matured call. Returns a scorecard {n_calls, n_graded, dates, by_horizon}."""
+    """Score every matured call. Returns a scorecard {n_calls, n_graded, dates, by_horizon}.
+
+    W3.8 changes:
+    - Basket forward returns read from the FROZEN store (data/basket_levels/us.parquet) only.
+      The live compute_baskets() path is gone from _basket_levels().
+    - Grades whose forward window spans a membership-hash change are INVALIDATED
+      (dropped with reason 'membership_changed'; counted in invalidated_membership).
+    - Pre-freeze basket calls are NOT graded: if the frozen store doesn't exist yet
+      (or has no data for the basket's call date), the scorecard reports
+      'accruing from <freeze_start>' — the permanent survivorship hole (D4-N3 / R1).
+    """
     p = config.data_dir() / _STORE[0] / _STORE[1]
     if not p.exists():
         return {"available": False, "note": "no calls logged yet"}
@@ -136,17 +198,44 @@ def grade() -> dict | None:
 
     panel = _yahoo_panel()
     basket_lvl = _basket_levels()
+
+    # Load frozen DataFrame for membership-hash checks (W3.8)
+    frozen_df = None
+    freeze_start = None
+    try:
+        from engine.basket_freeze import read_frozen, freeze_start_date
+        frozen_df = read_frozen("us")
+        freeze_start = freeze_start_date("us")
+    except Exception:  # noqa: BLE001
+        pass
+
     bench = None
     if panel is not None and "SPY" in panel.columns:
         bench = panel["SPY"].dropna()
 
-    out = {"available": True, "n_calls": int(len(df)),
-           "dates": sorted(df["date"].dropna().unique().tolist()),
-           "horizons_d": list(_HORIZONS_D), "by_horizon": {}}
+    out = {
+        "available": True, "n_calls": int(len(df)),
+        "dates": sorted(df["date"].dropna().unique().tolist()),
+        "horizons_d": list(_HORIZONS_D), "by_horizon": {},
+        # W3.8 transparency fields
+        "freeze_start": freeze_start,
+        "pre_freeze_note": (
+            f"Basket grading accruing from {freeze_start} (W3.8 freeze date). "
+            "Pre-freeze basket calls are not graded: the series before this date is "
+            "permanently survivorship-contaminated (D4-N3)."
+            if freeze_start else
+            "Basket grading not yet started (no frozen store). "
+            "Basket calls will accrue once the first freeze runs."
+        ),
+    }
     for h in _HORIZONS_D:
         recs = []
+        n_invalidated_membership = 0
         for _i, row in df.iterrows():
-            fr = _fwd_return(row, h, panel, basket_lvl)
+            fr, inv_reason = _fwd_return(row, h, panel, basket_lvl, frozen_df=frozen_df)
+            if inv_reason == "membership_changed":
+                n_invalidated_membership += 1
+                continue
             if fr is None:
                 continue
             br = None
@@ -157,7 +246,10 @@ def grade() -> dict | None:
                          "label": row.get("label"), "fwd": fr,
                          "excess": (fr - br) if br is not None else None})
         if len(recs) < 3:
-            out["by_horizon"][f"{h}d"] = {"n": len(recs), "note": "accruing"}
+            out["by_horizon"][f"{h}d"] = {
+                "n": len(recs), "note": "accruing",
+                "invalidated_membership": n_invalidated_membership,
+            }
             continue
         g = pd.DataFrame(recs)
         up = g[g["dir"] == "up"]; dn = g[g["dir"] == "down"]
@@ -179,6 +271,7 @@ def grade() -> dict | None:
             "mean_excess_vs_bench": (round(float(g["excess"].dropna().mean()), 4)
                                      if g["excess"].notna().any() else None),
             "by_tier": by_tier,
+            "invalidated_membership": n_invalidated_membership,
         }
     out["n_graded"] = max((v.get("n", 0) for v in out["by_horizon"].values()), default=0)
     return out
