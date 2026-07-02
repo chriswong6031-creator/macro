@@ -393,6 +393,35 @@
   .tcard details > summary { font-size:11.5px; margin:6px 0 0; }
   .tcard .why { font-size:11.5px; color:var(--muted); margin:5px 0 0; max-width:none; }
 
+  /* ---- mobile: 2-up compact desk cards ----
+     On phones the desk would otherwise stack one big card per row and scroll on and on.
+     Pack two smaller cards per row + shrink type/padding so more fits per screen; the
+     3-row cap (data-showmore-rows) then keeps the initial list short. Decorative micro-
+     tags (shape-read labels) are dropped here to keep the dense card legible when narrow. */
+  @media (max-width:680px){
+    .desk { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .desk .tcard { padding:9px 9px 8px; border-left-width:3px; border-radius:9px; }
+    .desk .tcard .top { gap:5px; }
+    .desk .tcard .nm { font-size:12.5px; }
+    .desk .tcard .sc { font-size:17px; } .desk .tcard .sc small { font-size:9px; }
+    .desk .tlabel { font-size:8.5px; letter-spacing:.02em; padding:1px 5px; }
+    .desk .treco { font-size:8.5px; padding:1px 5px; }
+    .desk .tcard .subrow { flex-wrap:wrap; gap:4px 7px; margin:6px 0 5px; font-size:10.5px; }
+    .desk .tcard .subrow .spark svg { width:52px; height:18px; }
+    .desk .cbar { height:6px; margin:6px 0 5px; }
+    .desk .termstrip { font-size:9.5px; gap:3px 5px; }
+    .desk .tsc { padding:1px 4px; }
+    .desk .termstrip .tspat, .desk .termstrip .tstag, .desk .flipcap .tstag { display:none; }
+    .desk .flipcap { font-size:9.5px; }
+    .desk .txrow { gap:3px 5px; margin:2px 0 5px; font-size:9.5px; }
+    .desk .tflag { font-size:9px; padding:1px 4px; }
+    .desk .tstats { font-size:9.5px; gap:3px 5px; } .desk .tpill { padding:1px 5px; }
+    .desk .treason { font-size:10.5px; line-height:1.35; }
+    .desk .tcard details > summary { font-size:10.5px; }
+    .desk .tcard .why { font-size:10.5px; }
+    .desk .detail-link { font-size:10.5px; margin-top:6px; padding-top:6px; }
+  }
+
   /* ---- 5-day rotation ---- */
   .rotwrap { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
   @media (max-width:640px){ .rotwrap{ grid-template-columns:1fr; } }
@@ -540,7 +569,8 @@
     <p class="sub"><span class="l-en">Every theme scored 0–100 from transparent legs — trend, breadth, ±3% impulse, macro tailwind and a crowding penalty — then labeled (dominant / emerging / fading / deteriorating) with an actionable read. The verb accounts for dominant themes topping out vs less-dominant themes just emerging.</span><span class="l-zh">每个主题以透明分项打分 0–100 — 趋势、广度、±3% 脉冲、宏观顺风与拥挤惩罚 — 并标注（主导／新兴／退潮／走弱）及可执行结论。结论会区分见顶的主导主题与刚刚新兴的次主导主题。</span></p>
     <div class="mctx" id="macro-ctx"></div>
     <p class="muted" id="theme-disclaimer" style="font-size:11.5px;margin:0 0 11px"></p>
-    <div class="desk" id="theme-desk"></div>
+    
+    <div class="desk" id="theme-desk" data-showmore-rows="3"></div>
   </section>
 
   <section id="concentration-section">
@@ -601,7 +631,7 @@
 
   <footer>
     <span class="l-en">Read-only analytics for informational purposes only — not investment advice. Equal-weighted, point-in-time dated membership, buy-and-hold between changes, over the FREE hk_search HK-listed price cache (~5y, HSI/HSCEI names), benchmarked to the Hang Seng Index. Membership was curated with knowledge of the period, so the series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest and not a buy list. See LIMITATIONS.md.</span><span class="l-zh">仅供参考的只读分析 — 非投资建议。等权重、按时点日期管理成分、调整间买入持有，基于免费的 china_search 大市值 A 股价格缓存（约 5 年），以恒生指数 (HSI) 为基准。成分在已知该期间表现下整理，故为事后选取的描述性序列 — 并非样本外回测，也非买入清单。参见 LIMITATIONS.md。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-07-02 10:30 UTC</span>.
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-07-02 10:52 UTC</span>.
   </footer>
 
 <script src="lightweight-charts.js"></script>
@@ -825,6 +855,5 @@ if(document.readyState!=='loading') boot(); else document.addEventListener('DOMC
 </script>
 <script src="allocation_scorecard.js"></script>
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

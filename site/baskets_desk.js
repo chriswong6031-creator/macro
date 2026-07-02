@@ -153,6 +153,8 @@ function renderThemeDesk(){
   if(!THEME||!(THEME.themes||[]).length){ if(sec) sec.style.display='none'; return; }
   document.getElementById('theme-desk').innerHTML=(THEME.themes||[]).map(themeCard).join('');
   const d=THEME.disclaimer||{}; document.getElementById('theme-disclaimer').innerHTML=L(esc(d.en||''),esc(d.zh||''));
+  // cap the freshly-built desk at 3 rows behind a "show more" (theme.js, idempotent).
+  try{ if(window.initShowMore) window.initShowMore(); }catch(e){}
 }
 function renderMacroCtx(){
   if(!THEME) return;

@@ -96,6 +96,16 @@
   .sb-table th.sorted .sarrow { opacity:.9; color:var(--link); }
   /* ---- standout-stock cards (ported from the US dashboard) ------------------- */
   .nbgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(212px,1fr)); gap:10px; margin-top:11px; }
+  /* mobile: pack the standout cards 2-up so the list doesn't scroll on and on (paired with the
+     3-row cap via data-showmore-rows + theme.js). Cards are already overflow-guarded + compact. */
+  @media (max-width:680px){
+    .nbgrid[data-showmore-rows]{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .nbgrid[data-showmore-rows] .nb-tk{ font-size:13px; }
+    .nbgrid[data-showmore-rows] .nb-px{ font-size:12px; }
+    /* let the header wrap so the signal badge + price drop to a new line instead of being
+       clipped by the card's overflow:hidden when the column is this narrow. */
+    .nbgrid[data-showmore-rows] .nb-top{ flex-wrap:wrap; row-gap:2px; }
+  }
   a.nbcard { background:var(--panel2,var(--panel)); border:1px solid var(--line); border-radius:10px;
              padding:9px 11px 10px; border-left:3px solid var(--muted); display:flex;
              flex-direction:column; gap:4px; min-width:0; overflow:hidden;
@@ -1190,7 +1200,7 @@
       <span><b><span class="l-en">Two gauges</span><span class="l-zh">两个量表</span></b>: <span class="l-en">Conviction (is it worth owning) + a separate Entry gauge (when & at what price)</span><span class="l-zh">确信度（是否值得持有）＋ 独立的入场量表（何时、以何价）</span></span>
       <span class="lg-sep">·</span><span><b><span class="l-en">Edge basis</span><span class="l-zh">优势来源</span></b>: <span class="l-en">Reversal context — validated but high-variance, not a buy list</span><span class="l-zh">均值回归参考 — 已验证但高波动，非买入清单</span></span>
     </div>
-    <div class="nbgrid" data-showmore="12">
+    <div class="nbgrid" data-showmore-rows="3">
     
       
       <a class="nbcard nb-up" href="china_lookup.html#600267.SS">
@@ -12161,7 +12171,7 @@
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-02 10:06 UTC ·
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-02 10:29 UTC ·
   <span class="l-en">Free public data (yfinance + Eastmoney), mechanical &amp; backtested · not investment advice</span><span class="l-zh">免费公开数据（yfinance + 东方财富），机械化并经回测 · 非投资建议</span><br>
   <span class="l-en">Sector ETFs ~5y history (display-grade RS); regime &amp; ladder calibrated on the deep 2006–2026 panel.</span><span class="l-zh">板块ETF约5年历史（展示级相对强弱）；周期与阶梯基于2006–2026深度样本校准。</span>
 </div>
@@ -12191,6 +12201,5 @@ window.__CHART_SWAP__ = {
     else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
   });
 </script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

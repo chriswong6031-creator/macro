@@ -1304,22 +1304,42 @@
     });
   }
 
-  /* ---- progressive "show more" for standout-stock card grids ---------------
-     Any element with [data-showmore="N"] shows its first N child cards and hides
-     the rest behind a control bar that reveals them in chunks of N (staggered
-     fade-in), or all at once, and can collapse back. Language-aware labels.
-     No-ops when total <= N, so it's safe to add the attribute unconditionally. */
+  /* ---- progressive "show more" for card grids ------------------------------
+     Two collapse modes on any grid, chosen by attribute:
+       • [data-showmore="N"]      — show N cards, reveal N more per click (fixed count).
+       • [data-showmore-rows="R"] — show R *rows*, reveal R more per click. The column
+         count is read live from the grid's computed grid-template-columns, so "3 rows"
+         means 3 on a wide 1-col layout, 6 on a 2-col phone, 9 on a 3-col desktop — and
+         it re-clamps to whole rows on resize/orientation change. This keeps big, dense
+         card lists (e.g. the Theme Rotation Desk) short on every width instead of
+         scrolling on and on.
+     Both reveal in staggered chunks, offer "Show all", and collapse back. Language-aware.
+     Card mode no-ops when total <= N; row mode keeps the bar wired so a resize that drops
+     a column can surface it. Safe to add the attribute unconditionally + idempotent. */
   function smBL(en, zh) { return '<span class="l-en">' + en + '</span><span class="l-zh">' + zh + '</span>'; }
   function initShowMore() {
-    document.querySelectorAll('[data-showmore]').forEach(function (grid) {
+    document.querySelectorAll('[data-showmore],[data-showmore-rows]').forEach(function (grid) {
       if (grid.dataset.smInit) return;            // idempotent
-      grid.dataset.smInit = '1';
-      var step = parseInt(grid.getAttribute('data-showmore'), 10) || 12;
+      var rowMode = grid.hasAttribute('data-showmore-rows');
+      var rowStep = Math.max(1, parseInt(grid.getAttribute('data-showmore-rows'), 10) || 3);
+      var cardStep = Math.max(1, parseInt(grid.getAttribute('data-showmore'), 10) || 12);
       var items = [].filter.call(grid.children, function (el) { return el.nodeType === 1; });
       var total = items.length;
-      if (total <= step) return;                  // nothing to collapse
-      var shown = step;
-      items.forEach(function (el, i) { if (i >= shown) el.classList.add('sm-hidden'); });
+      // Live column count from the resolved grid tracks ("330px 330px 330px" → 3);
+      // "none"/empty (not a grid / display:none, e.g. an inactive tab) falls back to 1.
+      function colCount() {
+        var tpl = (window.getComputedStyle(grid).getPropertyValue('grid-template-columns') || '').trim();
+        if (!tpl || tpl === 'none') return 1;
+        return Math.max(1, tpl.split(/\s+/).filter(Boolean).length);
+      }
+      function pageSize() { return rowMode ? rowStep * colCount() : cardStep; }
+      if (!rowMode && total <= cardStep) { grid.dataset.smInit = '1'; return; }  // fixed mode: nothing to collapse
+      grid.dataset.smInit = '1';
+      // State is "how many pages are revealed" (a page = R rows in row mode) rather than a raw
+      // card count, so a reflow to a new column count always resolves to a WHOLE number of rows
+      // and preserves the number of rows the reader opened. showAll pins to the full list.
+      var pages = 1, showAll = false, shown = 0;
+      function target() { return showAll ? total : Math.min(pages * pageSize(), total); }
 
       var bar = document.createElement('div'); bar.className = 'sm-bar';
       var count = document.createElement('span'); count.className = 'sm-count';
@@ -1331,6 +1351,7 @@
       grid.parentNode.insertBefore(bar, grid.nextSibling);
 
       function render(animateFrom) {
+        shown = target();
         items.forEach(function (el, i) {
           var show = i < shown;
           if (show && el.classList.contains('sm-hidden')) {
@@ -1348,7 +1369,7 @@
                                '已显示 <b>' + shown + '</b> / <b>' + total + '</b>');
         var remaining = total - shown;
         if (remaining > 0) {
-          var next = Math.min(step, remaining);
+          var next = Math.min(pageSize(), remaining);
           more.className = 'sm-btn';
           more.innerHTML = '<span class="sm-ic">▾</span>' + smBL('Show ' + next + ' more', '再显示 ' + next + ' 个');
           all.style.display = '';
@@ -1358,19 +1379,39 @@
           more.innerHTML = '<span class="sm-ic">▾</span>' + smBL('Show fewer', '收起');
           all.style.display = 'none';
         }
+        // if one page already covers everything at this width, there's nothing to collapse
+        bar.style.display = (total <= pageSize()) ? 'none' : '';
       }
       more.addEventListener('click', function () {
         if (shown >= total) {                      // collapse back to the first page
-          shown = step; render();
+          pages = 1; showAll = false; render();
           grid.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } else {
-          var from = shown; shown = Math.min(shown + step, total); render(from);
+          var from = shown; pages += 1; render(from);
         }
       });
-      all.addEventListener('click', function () { var from = shown; shown = total; render(from); });
+      all.addEventListener('click', function () { var from = shown; showAll = true; render(from); });
+      if (rowMode) {
+        // Re-resolve only when the grid reflows to a NEW column count — so it always lands on a
+        // whole number of rows. window 'resize' covers viewport/orientation changes; a
+        // ResizeObserver additionally catches an inactive tab becoming visible (display:none →
+        // grid) that a resize listener would miss. Both share one debounced, col-gated pass.
+        var lastCols = colCount(), rz;
+        var reflow = function () {
+          clearTimeout(rz);
+          rz = setTimeout(function () {
+            var cols = colCount();
+            if (cols === lastCols) return;         // ignore height-only changes (e.g. our own reveals)
+            lastCols = cols; render();
+          }, 140);
+        };
+        window.addEventListener('resize', reflow);
+        if (window.ResizeObserver) { try { new ResizeObserver(reflow).observe(grid); } catch (e) {} }
+      }
       render();
     });
   }
+  window.initShowMore = initShowMore;             // exposed so client-rendered grids can re-trigger after populating
 
   // Wrap wide data tables in a horizontal-scroll container so they scroll WITHIN their
   // card on narrow screens instead of bleeding past the viewport (mobile fix). Runs before

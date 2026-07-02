@@ -599,6 +599,16 @@
   /* ---- standout-stock cards ------------------------------------------------- */
   .nbgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
             gap: 10px; margin-top: 11px; }
+  /* mobile: pack the standout cards 2-up so the list doesn't scroll on and on (paired with the
+     3-row cap via data-showmore-rows + theme.js). Cards are already overflow-guarded + compact. */
+  @media (max-width:680px){
+    .nbgrid[data-showmore-rows]{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .nbgrid[data-showmore-rows] .nb-tk{ font-size:13px; }
+    .nbgrid[data-showmore-rows] .nb-px{ font-size:12px; }
+    /* let the header wrap so the signal badge + price drop to a new line instead of being
+       clipped by the card's overflow:hidden when the column is this narrow. */
+    .nbgrid[data-showmore-rows] .nb-top{ flex-wrap:wrap; row-gap:2px; }
+  }
   a.nbcard { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
             padding: 9px 11px 10px; border-left: 3px solid var(--muted);
             display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow: hidden;
@@ -1787,7 +1797,7 @@
       
       
       
-      <div class="nbgrid" data-showmore="12">
+      <div class="nbgrid" data-showmore-rows="3">
       
       
       
@@ -7435,6 +7445,5 @@ window.__CHART_SWAP__ = {
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>
