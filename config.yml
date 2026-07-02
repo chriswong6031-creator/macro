@@ -4830,3 +4830,16 @@ yahoo:
     crypto: [BTC-USD, ETH-USD, SOL-USD]   # deep daily history (BTC 2014->); Coinbase = intraday-quality OHLC
     crypto_fut: ["BTC=F"]                 # CME (regulated) Bitcoin front-month future -> institutional carry / basis (D-vec-CME; daily 2021->)
 
+
+# --------------------------------------------------------------------------- #
+# PIT truth layer (engine/pit.py, masterplan W1a). SHADOW-only — the live regime
+# path never reads this section; it configures the leak-free 'release' frame used
+# by scripts/shadow_pit_regime.py to measure the leakage tax.
+# --------------------------------------------------------------------------- #
+pit:
+  # Per-column release-lag overrides (merged over engine.pit.DEFAULT_RELEASE_LAGS
+  # AND over first-party learned lags). Only needed to override a static prior;
+  # every documented default lives in engine/pit.py. Shape:
+  #   release_lags:
+  #     core_pce: {lag_bd: 20, cadence: M, note: "..."}
+  release_lags: {}

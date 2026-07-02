@@ -76,6 +76,14 @@ def _run_one(key: str, cls, full_history: bool):
     res.source = key
     log.info("%s -> %s (%d rows, last %s) [%.1fs]%s", key, res.status, res.rows,
              res.last_date, dt, f" err={res.error}" if res.error else "")
+    # PIT release-lag recorder (masterplan W1a): append {source, fetch_ts, last_obs_date}
+    # so a first-party release calendar accrues going forward. Wrapped so it can NEVER
+    # break the collect pipeline; the live engine never reads this log.
+    try:
+        from engine.pit_lag_recorder import record_fetch_result
+        record_fetch_result(res, group=getattr(adapter, "group", key))
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        pass
     return res, round(dt, 1)
 
 
@@ -433,6 +441,19 @@ def main() -> int:
                 log.info("FRED vintages fresh — skip")
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("FRED vintages step failed: %s", e)
+        # PIT release-lag recorder, PER FRED SERIES (a release calendar needs series-level
+        # granularity, not one adapter-wide last_date). Reads each stored series' last obs
+        # date from the store — cheap, additive, and can never break collection.
+        try:
+            from collectors.fred import FredAdapter as _FA
+            from engine.pit_lag_recorder import record
+            from lib import store as _store
+            for _sid in _FA()._all_series():
+                _ld = _store.last_date("fred", _sid)
+                if _ld is not None:
+                    record(_sid, _ld, group="fred")
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.debug("FRED per-series PIT lag record skipped: %s", e)
 
     # Point-in-time index-membership ledger (go-forward survivorship fix): record
     # who is in the S&P 1500 each run so the universe history compounds. Cheap,
