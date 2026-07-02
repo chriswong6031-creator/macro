@@ -78,11 +78,14 @@ _COMMODITY_TIER = {
 }
 # Theme-rotation reads (engine.theme_alerts) are tactical CONTEXT — a thematic-basket
 # rotation is never a standalone cross-asset sizer, so the loudest a topping/breakdown
-# gets is 'watch'; a leadership reshuffle is 'context'.
+# gets is 'watch'. leadership_rotation is debounced at the source (theme_alerts: held #1
+# for 2 consecutive builds + >=3-point composite margin over rank-2), so one that fires
+# is a persistent, decisive handoff — 'watch', not 'context'. Unbuffered it re-fired on
+# every photo-finish rank wobble (6+ rotations in 6 sessions, China book 2026-06).
 _THEMES_TIER = {
     "theme_topping": "watch", "theme_deteriorating": "watch",
     "theme_emerging": "watch", "reco_change": "watch",
-    "leadership_rotation": "context",
+    "leadership_rotation": "watch",
 }
 # Forming-narrative detections (engine.emergence_alerts) are a CONTEXT watchlist — a newly
 # coherent group of names carries no validated forward edge, so it never rises above context.
