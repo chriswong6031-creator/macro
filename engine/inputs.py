@@ -18,11 +18,45 @@ from lib import config, store
 log = logging.getLogger(__name__)
 
 
-def _yahoo_close(name: str) -> pd.Series | None:
+def _yahoo_close(name: str, basis: str = "tr") -> pd.Series | None:
+    """Read one yahoo close series by basis.
+
+    basis="tr"    — total-return (split+div adjusted).  Reads the ``close``
+                    column.  This is the default and is byte-identical to all
+                    callers written before W1.3 — no caller behaviour changes
+                    without an explicit opt-in.
+    basis="price" — split-adjusted, dividend-UNadjusted (the structure-math
+                    basis for ZigZag / detrended-osc / DCL).  Reads the
+                    ``close_price`` column added by the W1.3 backfill.  Raises
+                    KeyError with guidance if the column is absent (pre-backfill
+                    ticker or dead name).
+    """
     df = store.read("yahoo", name)
-    if df is None or "close" not in df.columns:
+    if df is None:
         return None
-    return df["close"]
+    if basis == "price":
+        if "close_price" in df.columns:
+            s = df["close_price"]
+            s.attrs["price_basis"] = "price"
+            return s
+        # Pre-backfill or dead-name ticker: fall back to TR with a loud warning.
+        # The caller can detect degraded basis via .attrs['price_basis'] == 'tr_fallback'.
+        if "close" in df.columns:
+            log.warning(
+                "yahoo/%s: close_price column absent (pre-backfill); "
+                "falling back to close (TR basis) — run scripts/backfill_price_basis.py",
+                name,
+            )
+            s = df["close"]
+            s.attrs["price_basis"] = "tr_fallback"
+            return s
+        return None
+    # default basis="tr"
+    if "close" not in df.columns:
+        return None
+    s = df["close"]
+    s.attrs["price_basis"] = "tr"
+    return s
 
 
 def _fred(col_by_sid: dict[str, str]) -> dict[str, pd.Series]:
@@ -34,12 +68,23 @@ def _fred(col_by_sid: dict[str, str]) -> dict[str, pd.Series]:
     return out
 
 
-def yahoo_closes() -> pd.DataFrame:
+def yahoo_closes(basis: str = "tr") -> pd.DataFrame:
+    """Return a wide DataFrame of yahoo EOD closes aligned on a business-day index.
+
+    basis="tr" (default) — total-return adjusted close.  Byte-identical to all
+        callers written before W1.3; every existing caller continues to work
+        without changes.
+    basis="price" — split-adjusted, dividend-UNadjusted close (W1.3 addition).
+        Requires the ``close_price`` column to exist in the yahoo parquets
+        (populated by scripts/backfill_price_basis.py).  Tickers that lack the
+        column fall back to TR and are tagged with .attrs['price_basis']='tr_fallback'.
+    """
     cfg = config.load()["yahoo"]["tickers"]
     cols = {}
     for grp in cfg.values():
         for t in grp:
-            s = _yahoo_close(t.replace("^", "_").replace("=", "_").replace("/", "_"))
+            s = _yahoo_close(t.replace("^", "_").replace("=", "_").replace("/", "_"),
+                             basis=basis)
             if s is not None:
                 cols[t] = s
     return pd.DataFrame(cols).sort_index()
