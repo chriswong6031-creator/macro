@@ -1,10 +1,10 @@
 {
   "schema": "subsector_rotation.track_record.v1",
-  "as_of": "2026-07-01",
-  "generated_at": "2026-07-01T03:28:29.077271+00:00",
+  "as_of": "2026-07-02",
+  "generated_at": "2026-07-02T06:52:34.340686+00:00",
   "is_context_only": true,
-  "n_snapshots": 1072,
-  "n_days": 4,
+  "n_snapshots": 1340,
+  "n_days": 5,
   "horizons": {
     "5": {
       "n_matured": 0,

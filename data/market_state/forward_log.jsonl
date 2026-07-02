@@ -1,3 +1,4 @@
 {"asof":"2026-06-26","verdict":"RISK_OFF","score":28,"raw_score":61,"radar_state":"caution","radar_top":91,"amp":3,"amp_keys":["conjunction","two_plus_scares","complacency"],"severe_gated":true,"logged_at":"2026-06-28T10:12:17+00:00","graded":null}
 {"asof":"2026-06-29","verdict":"RISK_OFF","score":34,"raw_score":62,"radar_state":"caution","radar_top":87,"amp":2,"amp_keys":["two_plus_scares","complacency"],"severe_gated":true,"logged_at":"2026-06-30T00:32:20+00:00","graded":null}
 {"asof":"2026-06-30","verdict":"RISK_OFF","score":28,"raw_score":67,"radar_state":"caution","radar_top":83,"amp":3,"amp_keys":["conjunction","two_plus_scares","complacency"],"severe_gated":true,"logged_at":"2026-07-01T01:14:23+00:00","graded":null}
+{"asof":"2026-07-01","verdict":"MIXED","score":50,"raw_score":71,"radar_state":"caution","radar_top":75,"amp":1,"amp_keys":["complacency"],"severe_gated":false,"logged_at":"2026-07-02T06:52:27+00:00","graded":null}

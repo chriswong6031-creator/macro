@@ -1,5 +1,5 @@
 {
-  "date": "Jul 01, 2026",
+  "date": "Jul 02, 2026",
   "regime": "US growth premium",
   "favored": [
     "USD"
@@ -8,73 +8,73 @@
   "pairs": {
     "EURUSD": {
       "label": "EUR/USD",
-      "quote": 1.1409,
-      "chg": -1.8,
+      "quote": 1.1388,
+      "chg": -1.9,
       "action": "FLAT",
-      "score": -9.5
+      "score": -10.0
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.324,
-      "chg": -1.4,
+      "quote": 1.3291,
+      "chg": -0.3,
       "action": "FLAT",
-      "score": 7.9
+      "score": 8.1
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 162.724,
-      "chg": 1.5,
+      "quote": 162.347,
+      "chg": 1.1,
       "action": "SHORT",
-      "score": -44.9
+      "score": -43.4
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.8091,
-      "chg": 1.4,
+      "quote": 0.8088,
+      "chg": 1.2,
       "action": "LONG",
-      "score": 25.7
+      "score": 22.6
     },
     "AUDUSD": {
       "label": "AUD/USD",
-      "quote": 0.6894,
-      "chg": -1.8,
+      "quote": 0.6897,
+      "chg": -1.4,
       "action": "SHORT",
-      "score": -32.3
+      "score": -34.1
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.4213,
+      "quote": 1.4215,
       "chg": 1.9,
       "action": "LONG",
-      "score": 26.3
+      "score": 28.1
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.5267,
+      "quote": 17.529,
       "chg": 0.4,
       "action": "SHORT",
-      "score": -23.4
+      "score": -20.8
     },
     "USDBRL": {
       "label": "USD/BRL",
-      "quote": 5.169,
-      "chg": -0.4,
+      "quote": 5.1747,
+      "chg": -0.3,
       "action": "FLAT",
-      "score": 8.6
+      "score": 8.3
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.7625,
-      "chg": -0.2,
+      "quote": 6.7555,
+      "chg": -0.3,
       "action": "FLAT",
       "score": 15.0
     }
   },
   "dollar_desk": {
-    "lean": "mixed backdrop",
+    "lean": "dollar-supportive backdrop",
     "real_rate_regime": "Restrictive real yields",
-    "real_rate_z": 0.53,
-    "fed_path_bps": 43.0,
+    "real_rate_z": 0.63,
+    "fed_path_bps": 39.0,
     "fed_path_lean": "steady",
     "usd_pos_pctile": 73.0,
     "usd_pos_state": "neutral",
@@ -82,8 +82,8 @@
     "usd_valuation": "fair",
     "trend": "up",
     "trend_n_up": 4,
-    "liquidity_dir": "soft",
-    "smile_confidence": "medium",
+    "liquidity_dir": "supportive",
+    "smile_confidence": "high",
     "triple_red": false
   },
   "transmission": {
@@ -111,16 +111,18 @@
     "unstable": []
   },
   "regime_radar": {
-    "as_of": "2026-07-01",
-    "dominant": null,
-    "active": [],
+    "as_of": "2026-07-02",
+    "dominant": "em_crisis_capital_flight",
+    "active": [
+      "em_crisis_capital_flight"
+    ],
     "intensity": {
-      "carry_unwind": 8.6,
-      "dollar_wrecking_ball": 29.1,
-      "em_crisis_capital_flight": 32.6,
+      "carry_unwind": 9.0,
+      "dollar_wrecking_ball": 23.2,
+      "em_crisis_capital_flight": 40.5,
       "haven_flight_risk_off": 0,
-      "reflation_risk_on": 0,
-      "intervention_risk": 15.0
+      "reflation_risk_on": 50.0,
+      "intervention_risk": 1.6
     }
   }
 }

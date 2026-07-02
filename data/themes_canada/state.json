@@ -1,4 +1,11 @@
 {
+  "_debounce": {
+    "lead": {
+      "displayed": "ca_banks",
+      "pending": null
+    },
+    "reco": {}
+  },
   "ca_asset_mgrs": {
     "label": "deteriorating",
     "name": "Asset Managers & Alternatives",

@@ -1,20 +1,19 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 0.17,
+  "roro": -0.009,
   "cap_recent": true,
-  "fear_built": 0.5,
-  "roro_velocity": 0.055,
-  "vel_pctile": 0.617,
-  "legs_up": 2,
+  "fear_built": 0.504,
+  "roro_velocity": -0.094,
+  "vel_pctile": 0.29,
+  "legs_up": 1,
   "legs_total": 7,
   "flipped_legs": [
-    "vix",
-    "vix_term"
+    "hy_oas"
   ],
-  "days_since_last_snap": 12,
-  "fear_rebuilding": false,
-  "vix_term": 0.866,
+  "days_since_last_snap": 13,
+  "fear_rebuilding": true,
+  "vix_term": 0.873,
   "status": "dormant",
   "gates": {
     "velocity": false,
@@ -25,14 +24,9 @@
   "min_legs": 4,
   "flipped_legs_named": [
     {
-      "key": "vix",
-      "en": "VIX",
-      "zh": "\u6ce2\u52a8\u7387 VIX"
-    },
-    {
-      "key": "vix_term",
-      "en": "VIX term structure",
-      "zh": "VIX \u671f\u9650\u7ed3\u6784"
+      "key": "hy_oas",
+      "en": "HY credit spread",
+      "zh": "\u9ad8\u6536\u76ca\u4fe1\u7528\u5229\u5dee"
     }
   ],
   "magnitude_band": null

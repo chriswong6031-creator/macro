@@ -1,9 +1,9 @@
 {
   "schema": "thematic_desk.v1",
-  "as_of": "2026-07-01",
+  "as_of": "2026-07-02",
   "scored_total": 0,
-  "open": 51,
-  "unscored_soft": 2,
+  "open": 55,
+  "unscored_soft": 3,
   "overall": {
     "n": 0,
     "hits": 0,

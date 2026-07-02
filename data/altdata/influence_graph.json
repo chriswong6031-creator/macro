@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-07-01T04:15:14.465413+00:00",
+  "generated_utc": "2026-07-02T07:56:13.839130+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -801,11 +801,12 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.75,
+      "alt_score": 3,
+      "alt_weighted": 1.1,
       "alt_channels": [
         "affiliation",
-        "cnbc_pick"
+        "cnbc_pick",
+        "hf_model_momentum"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -847,12 +848,13 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.3,
+      "alt_score": 4,
+      "alt_weighted": 1.8,
       "alt_channels": [
         "13f_add",
         "affiliation",
-        "special_situation"
+        "special_situation",
+        "trump"
       ],
       "top_holder": {
         "owner": "BEZOS JEFFREY P",
@@ -894,11 +896,12 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_score": 3,
+      "alt_weighted": 1.4,
       "alt_channels": [
         "affiliation",
-        "patent_cluster"
+        "patent_cluster",
+        "trump"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1090,12 +1093,13 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 2.25,
+      "alt_score": 6,
+      "alt_weighted": 2.6,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "app_demand",
+        "hf_model_momentum",
         "material_8k",
         "special_situation"
       ],
@@ -1253,11 +1257,12 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_score": 3,
+      "alt_weighted": 1.4,
       "alt_channels": [
         "affiliation",
-        "special_situation"
+        "special_situation",
+        "trump"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1408,6 +1413,27 @@
         "title": "Institution",
         "shares": 66622798
       }
+    },
+    {
+      "ticker": "DHR",
+      "actors": [
+        {
+          "actor": "Jim Cramer",
+          "kind": "influencer",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 1.0,
+      "alt_channels": [
+        "affiliation",
+        "trump"
+      ],
+      "top_holder": null
     },
     {
       "ticker": "ABTC",
@@ -1630,31 +1656,19 @@
         "affiliation"
       ],
       "top_holder": null
-    },
-    {
-      "ticker": "DHR",
-      "actors": [
-        {
-          "actor": "Jim Cramer",
-          "kind": "influencer",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": null
     }
   ],
   "recent": [],
   "n_candidates": 0,
   "filings": [
+    {
+      "date": "2026-07-01",
+      "form": "425",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126027019/ef20077163_425.htm"
+    },
     {
       "date": "2026-06-29",
       "form": "S-1",
@@ -1721,19 +1735,11 @@
     },
     {
       "date": "2026-06-10",
-      "form": "8-K",
-      "company": "Hut 8 Corp.",
-      "ticker": "HUT",
-      "items": "1.01,2.03,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926071952/tm2617190d1_8k.htm"
-    },
-    {
-      "date": "2026-06-10",
-      "form": "8-K",
+      "form": "425",
       "company": "Trump Media & Technology Group Corp.",
       "ticker": null,
-      "items": "7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126024735/ef20075853_8k.htm"
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126024736/ef20075853_425.htm"
     },
     {
       "date": "2026-06-10",
@@ -1745,11 +1751,11 @@
     },
     {
       "date": "2026-06-10",
-      "form": "425",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126024736/ef20075853_425.htm"
+      "form": "8-K",
+      "company": "Hut 8 Corp.",
+      "ticker": "HUT",
+      "items": "1.01,2.03,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926071952/tm2617190d1_8k.htm"
     }
   ]
 }

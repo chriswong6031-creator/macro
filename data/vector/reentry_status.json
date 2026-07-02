@@ -1,0 +1,46 @@
+{
+ "schema": "btc_reentry_status.v2",
+ "asof": "2026-07-02",
+ "state": "armed_pending_window",
+ "enabled": true,
+ "halt_from": null,
+ "engagement_year": 2026,
+ "window_start": "2026-10-01",
+ "window_end": "2026-12-10",
+ "release_frac": 0.0,
+ "schedule": [
+  {
+   "tranche": 1,
+   "weight": 0.4,
+   "scheduled": "2026-10-01",
+   "filled": false,
+   "fill_date": null,
+   "cause": null
+  },
+  {
+   "tranche": 2,
+   "weight": 0.3,
+   "scheduled": "2026-10-31",
+   "filled": false,
+   "fill_date": null,
+   "cause": null
+  },
+  {
+   "tranche": 3,
+   "weight": 0.3,
+   "scheduled": "2026-11-30",
+   "filled": false,
+   "fill_date": null,
+   "cause": null
+  }
+ ],
+ "events": [],
+ "accelerator": {
+  "enabled": true,
+  "rule": "fresh MVRV-Z<0 (>=90d above prior) OR fresh bottom_pressure>=0.45 (>=20d below prior), inside the window \u2014 pulls the NEXT scheduled tranche forward; never blocks, never vetoes, never adds size",
+  "mvrv_z_last": 0.2193,
+  "bottom_pressure_last": 0.3256
+ },
+ "pre_window_mvrv_fire": null,
+ "owner_note": "Calendar spine is the authority (W1 trigger eval failed all evidence triggers). Tranches size against the engine's RAW allocation. Halt with vector.allocation.midterm_gate.reentry.halt_from (Class-1 D1 release is not haltable)."
+}

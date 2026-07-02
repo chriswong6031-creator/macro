@@ -1,0 +1,11 @@
+{
+  "tone_score": 0,
+  "guidance_direction": "on_hold",
+  "risk_delta": 0,
+  "shock_reversible": "unknown",
+  "confidence": "medium",
+  "evidence": [
+    {"field": "tone_score", "quote_span": "decided to maintain"},
+    {"field": "guidance_direction", "quote_span": "decided to maintain"}
+  ]
+}

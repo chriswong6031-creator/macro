@@ -1,20 +1,20 @@
 {
   "n": 4,
-  "built": "2026-07-01 04:08 UTC",
+  "built": "2026-07-02 07:45 UTC",
   "cards": [
     {
       "key": "income_vector",
       "name": "China Income Vector",
-      "cagr": 7.36,
-      "sharpe": 0.9,
+      "cagr": 7.44,
+      "sharpe": 0.91,
       "maxdd": -17.2,
       "experimental": false
     },
     {
       "key": "cn_credit_vol",
       "name": "Credit-Impulse + Vol-Managed",
-      "cagr": 8.15,
-      "sharpe": 0.67,
+      "cagr": 7.18,
+      "sharpe": 0.61,
       "maxdd": -23.3,
       "experimental": true
     },
@@ -29,9 +29,9 @@
     {
       "key": "cn_credit_margin",
       "name": "Credit + Margin-Euphoria Guard",
-      "cagr": 4.11,
-      "sharpe": 0.46,
-      "maxdd": -21.9,
+      "cagr": 3.72,
+      "sharpe": 0.42,
+      "maxdd": -22.3,
       "experimental": true
     }
   ]
