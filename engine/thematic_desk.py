@@ -435,6 +435,10 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         "track_record": state.get("track_record"), "confidence": "low",
         "macro_narrative": state.get("macro_narrative"),    # coincident backdrop, for display
         "raw_text": None, "degraded_reason": None, "disclaimer": DISCLAIMER,
+        # #41 badge honesty: the desk's conviction badge carries an honest provenance passport
+        # (measured·n / accruing·n=0), derived from the outcome spine, so a cold lean can't read
+        # as an earned edge. Set here so every return path (incl. degraded) carries it.
+        "passport": _ad._desk_passport(f"thematic_{region}"),
     }
     # adversarial panel (default on) → desk-head adjudication; analyst-only fallback.
     panel_on = bool((cfg.get("panel") or {}).get("enabled", True))

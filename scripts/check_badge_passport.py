@@ -66,10 +66,10 @@ def scan(site_dir: Path) -> tuple[set[str], set[str]]:
 
 # Frozen 2026-07-01: desk briefs that predate the passport helper. Adopting engine.passport in
 # the builder (add ``brief["passport"] = passport_from_spine(...)`` ) removes the file here.
-# THIS LIST ONLY SHRINKS.
-LEGACY_NO_PASSPORT = frozenset({
-    "site/policy_intent.json",
-})
+# THIS LIST ONLY SHRINKS. 2026-07-02: fully drained — every desk builder now emits a passport
+# (engine.thematic_desk + engine.policy_intent_desk adopted it), so the ratchet is maximally
+# tight: any conviction-bearing desk brief without a passport now fails RED.
+LEGACY_NO_PASSPORT = frozenset()
 
 
 def main(argv=None) -> int:
