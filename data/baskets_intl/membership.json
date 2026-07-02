@@ -1345,13 +1345,6 @@
           "rationale": "🇪🇺 EZ · Kering Sa"
         },
         {
-          "ticker": "MONC.MI",
-          "added": "2021-06-15",
-          "removed": null,
-          "name": "Moncler",
-          "rationale": "🇪🇺 EZ · Moncler"
-        },
-        {
           "ticker": "RI.PA",
           "added": "2021-06-15",
           "removed": null,
@@ -1364,6 +1357,11 @@
           "date": "2021-06-15",
           "action": "create",
           "note": "Seeded Luxury & Premium Brands — equal-weight cross-country members."
+        },
+        {
+          "date": "2026-07-01",
+          "action": "remove",
+          "note": "MONC.MI: removed — Moncler dropped out of the intl_search universe/close cache, so its price history is no longer computable (cache-validation contract: every member must be a live close-cache column). 10 members remain."
         }
       ]
     },
