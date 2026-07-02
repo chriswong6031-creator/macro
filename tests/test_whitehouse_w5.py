@@ -8,6 +8,8 @@ Covers:
      correct direction + SHADOW family; macro fallback when no tickers.
   4. no_provider health: health.provider=='' and evaluated==0 when no key set.
   5. seed-free model call: _call_model is clean (no seed kwarg; TypeError gone).
+  6. import guard: a broken/poisoned transitive import of engine.qledger logs
+     at ERROR (loud); only a genuinely-absent qledger module skips quietly.
 
 All LLM calls are monkeypatched — no network, no API calls.
 
@@ -257,6 +259,78 @@ def test_qledger_adapter_idempotent(tmp_path: Path = None) -> None:
     claims = [json.loads(l) for l in claims_path.read_text().splitlines() if l.strip()]
     # still only 3 claims (one per ticker), not 6
     assert len(claims) == 3
+
+
+# ---------------------------------------------------------------------------
+# 4b. qledger import guard — real dependency failures must be LOUD
+# ---------------------------------------------------------------------------
+def _capture_guard_logs(import_error: BaseException) -> tuple[list, Path]:
+    """Run _register_wh_claim with engine.qledger's import failing as given;
+    return (captured log records, claims dir). Works under pytest and the
+    standalone runner (no caplog)."""
+    import logging
+    d = Path(tempfile.mkdtemp())
+    rec = {
+        "id": _TARIFF_ITEM["id"],
+        "tone": "headwind",
+        "published": "2026-07-01T14:00:00+00:00",
+        "tickers": [{"symbol": "INTC", "direction": "benefit"}],
+        "banner_days": 5,
+        "importance": 82,
+    }
+
+    records: list = []
+
+    class _Cap(logging.Handler):
+        def emit(self, r):  # noqa: D102
+            records.append(r)
+
+    h = _Cap(level=logging.DEBUG)
+    old_level = bw.log.level
+    bw.log.addHandler(h)
+    bw.log.setLevel(logging.DEBUG)
+    try:
+        with patch("importlib.import_module", side_effect=import_error):
+            bw._register_wh_claim(rec, d)
+    finally:
+        bw.log.removeHandler(h)
+        bw.log.setLevel(old_level)
+    return records, d
+
+
+def test_qledger_guard_loud_on_poisoned_transitive_dep() -> None:
+    """W5 regression: when engine.qledger fails to import because a transitive
+    dep (numpy/pandas) is broken or poisoned in sys.modules, the adapter must
+    log at ERROR — not silently skip as 'qledger optional' at debug."""
+    import logging
+    failures = [
+        # pandas' wrapper when numpy import breaks (ImportError, name=None)
+        ImportError("Unable to import required dependency numpy."),
+        # numpy genuinely missing from the env (MNFE naming the DEP, not qledger)
+        ModuleNotFoundError("No module named 'numpy'", name="numpy"),
+        # sys.modules poisoning: None entry halts the import
+        ImportError("import of engine.qledger halted; None in sys.modules",
+                    name="engine.qledger"),
+    ]
+    for err in failures:
+        records, d = _capture_guard_logs(err)
+        errs = [r for r in records if r.levelno >= logging.ERROR]
+        assert errs, f"{err!r} must log at ERROR, not be swallowed as optional"
+        assert "required production dependency" in errs[0].getMessage().lower()
+        assert not (d / "data" / "qledger" / "claims.jsonl").exists()
+
+
+def test_qledger_guard_quiet_only_when_module_absent() -> None:
+    """Only a genuinely-absent engine.qledger module (stripped checkout) may
+    skip quietly — a single DEBUG line, nothing at WARNING or above."""
+    import logging
+    for name in ("engine.qledger", "engine"):
+        err = ModuleNotFoundError(f"No module named '{name}'", name=name)
+        records, d = _capture_guard_logs(err)
+        loud = [r for r in records if r.levelno >= logging.WARNING]
+        assert not loud, f"genuine absence ({name}) must stay quiet, got: {loud}"
+        assert any(r.levelno == logging.DEBUG for r in records)
+        assert not (d / "data" / "qledger" / "claims.jsonl").exists()
 
 
 # ---------------------------------------------------------------------------
