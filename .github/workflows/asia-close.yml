@@ -63,6 +63,8 @@ jobs:
           key: hk-stocks-ohlc-${{ github.run_id }}
           restore-keys: hk-stocks-ohlc-
       - name: collect China/HK data (graceful degradation — never fails on one source)
+        env:
+          TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}  # unfreezes the gated tushare plane (dead since 2026-06-21: collectors silently no-op without it — see CHINA_ENGINE_REASSESSMENT)
         run: python -m scripts.collect --group asia
       - name: commit collected asia data
         run: |
