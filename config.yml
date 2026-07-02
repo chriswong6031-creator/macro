@@ -2972,6 +2972,7 @@ forex:
     breakeven_10y: [fred, T10YIE]       # 10y inflation breakeven — real-vs-reflation smile arm
     fed_bs:       [fred, WALCL]          # Fed balance sheet (weekly) — USD-liquidity leg
     on_rrp:       [fred, RRPONTSYD]      # overnight RRP (daily) — net-liquidity drain
+    tga:          [treasury, tga]        # Treasury General Account — the 3rd net-liq drain (audit #28)
     reer_us:      [fred, RBUSBIS]        # US BIS real-effective rate — dollar valuation (monthly, lagged)
 
   cnh:                                  # offshore(CNH)-onshore(CNY) basis = China stress / capital-flow gauge

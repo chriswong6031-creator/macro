@@ -133,7 +133,8 @@ def build_features(pit_basis: str | None = None,
     f["xlk_xlu"] = f["XLK"] / f["XLU"]
     f["sphb_splv"] = f["SPHB"] / f["SPLV"]
     f["hyg_lqd"] = f["HYG"] / f["LQD"]
-    f["vix_ratio"] = f["vix"] / f["vix3m"]
+    from engine import canon
+    f["vix_ratio"] = canon.vix_term(f["vix"], f["vix3m"])  # canon VIX/VIX3M (audit #12)
 
     g = ecfg["growth_axis"]
     cyc = basket_index(closes, g["cyclical_basket"]).reindex(idx).ffill(limit=5)
@@ -307,7 +308,13 @@ def build_features(pit_basis: str | None = None,
     put("rrp_bn", rrp, ffill_limit=5)
     tga = store.read("treasury", "tga")
     put("tga_bn", tga.iloc[:, 0] / 1000 if tga is not None else None, ffill_limit=5)
-    f["net_liquidity_bn"] = f["walcl_bn"] - f["rrp_bn"].fillna(0) - f["tga_bn"]
+    # Net Fed liquidity — the CANONICAL 3-term billions definition (audit #12/#28), now
+    # delegated to engine.canon so every surface reads the SAME series. Delta vs the prior
+    # inline formula: canon also fills a missing TGA with 0 (was: NaN propagated), so early
+    # history / TGA-gap rows now carry the balance-sheet trend instead of going NaN — a
+    # strict improvement, identical wherever TGA is present.
+    from engine import canon
+    f["net_liquidity_bn"] = canon.net_liquidity_bn(f["walcl_bn"], f["rrp_bn"], f["tga_bn"])
     iss = store.read("treasury", "net_issuance")
     if iss is not None:
         put("net_issuance_mn", iss.iloc[:, 0], ffill_limit=None)

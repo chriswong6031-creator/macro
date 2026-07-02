@@ -140,9 +140,11 @@ def build_frame(vix: pd.Series, vix3m: pd.Series | None, vix9d: pd.Series | None
     legs: dict[str, pd.Series] = {}
 
     # 1) TERM-STRUCTURE slope: VIX/VIX3M. Contango (<1) = calm; backwardation (>=1) = stress.
+    # Uses canon.vix_term (audit #12) — the ONE VIX-term basis shared with conditions.py's
+    # `vix_term` and vol_shock's `_f_vix_term`, so the three surfaces can no longer drift.
     if vix3m is not None:
-        v3 = vix3m.reindex(out.index).astype(float)
-        out["ts_slope"] = vix / v3
+        from engine import canon
+        out["ts_slope"] = canon.vix_term(vix, vix3m.reindex(out.index))
         legs["ts_slope"] = -_z(out["ts_slope"], zw)        # low slope (contango) -> risk-on +
     # near-term front-end: VIX9D/VIX (>1 = acute near stress) — CONTEXT only
     if vix9d is not None:
