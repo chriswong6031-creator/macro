@@ -22,6 +22,9 @@ from datetime import datetime, timezone
 from .paths import DATA
 
 _ARTIFACT = DATA / "vector" / "override_shadow.json"
+# W4 staged-re-entry arming status (btc_overrides.build_status via build_vector) —
+# carries the D5 pre-window MVRV-Z<0 owner-alert field; the tab renders it as a banner.
+_REENTRY = DATA / "vector" / "reentry_status.json"
 
 
 def _age_hours(stamp: str | None) -> float | None:
@@ -45,4 +48,9 @@ def panel() -> dict:
                            "Run a build (or wait for the nightly) to populate it.")}
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "reason": f"could not read override_shadow.json: {e}"}
-    return {"ok": True, "age_hours": _age_hours(d.get("generated_at")), **d}
+    try:
+        reentry = json.loads(_REENTRY.read_text())
+    except Exception:  # noqa: BLE001 — absent until the first post-W4 build; degrade
+        reentry = None
+    return {"ok": True, "age_hours": _age_hours(d.get("generated_at")),
+            "reentry": reentry, **d}
