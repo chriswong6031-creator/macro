@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-01T10:54:43.260838+00:00",
-  "as_of": "2026-07-01",
+  "generated_utc": "2026-07-02T00:03:13.222658+00:00",
+  "as_of": "2026-07-02",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -6471,7 +6471,7 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 19,
+        "count": 18,
         "items": "8.01"
       },
       {
@@ -6485,18 +6485,13 @@
         "items": "1.01, 5.02, 7.01, 8.01"
       },
       {
-        "ticker": "ACGL",
-        "count": 5,
-        "items": "1.01, 2.03, 5.02, 7.01, 8.01"
-      },
-      {
         "ticker": "APLD",
         "count": 5,
         "items": "1.01, 2.03, 7.01, 8.01"
       },
       {
-        "ticker": "USAR",
-        "count": 5,
+        "ticker": "ACGL",
+        "count": 4,
         "items": "1.01, 2.03, 5.02, 7.01, 8.01"
       },
       {
@@ -6520,19 +6515,14 @@
         "items": "1.01, 5.02, 7.01, 8.01"
       },
       {
-        "ticker": "HON",
-        "count": 4,
-        "items": "1.01, 2.01, 5.02, 7.01, 8.01"
-      },
-      {
-        "ticker": "JPM",
-        "count": 4,
-        "items": "5.02, 7.01, 8.01"
-      },
-      {
         "ticker": "PSKY",
         "count": 4,
         "items": "7.01, 8.01"
+      },
+      {
+        "ticker": "USAR",
+        "count": 4,
+        "items": "1.01, 2.03, 5.02, 7.01, 8.01"
       },
       {
         "ticker": "XEL",
@@ -6575,11 +6565,6 @@
         "items": "1.01, 2.03, 7.01, 8.01"
       },
       {
-        "ticker": "CMCSA",
-        "count": 3,
-        "items": "8.01"
-      },
-      {
         "ticker": "COF",
         "count": 3,
         "items": "7.01, 8.01"
@@ -6593,6 +6578,21 @@
         "ticker": "DTE",
         "count": 3,
         "items": "7.01, 8.01"
+      },
+      {
+        "ticker": "FITB",
+        "count": 3,
+        "items": "7.01, 8.01"
+      },
+      {
+        "ticker": "HON",
+        "count": 3,
+        "items": "1.01, 2.01, 5.02, 7.01, 8.01"
+      },
+      {
+        "ticker": "HOOD",
+        "count": 3,
+        "items": "1.01, 2.03, 5.02, 7.01, 8.01"
       }
     ],
     "special_situations": [
@@ -42364,34 +42364,6 @@
         "top_issue": "Housing"
       },
       {
-        "ticker": "ONTO",
-        "spend_usd": 30000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Trade (domestic/foreign)"
-      },
-      {
-        "ticker": "ATRO",
-        "spend_usd": 20000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Transportation"
-      },
-      {
-        "ticker": "ATSG",
-        "spend_usd": 20000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Aviation/Airlines/Airports"
-      },
-      {
-        "ticker": "FFAI",
-        "spend_usd": 15000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Automotive Industry"
-      },
-      {
         "ticker": "WPRT",
         "spend_usd": 10000.0,
         "filings": 1,
@@ -42406,18 +42378,46 @@
         "top_issue": "Energy/Nuclear"
       },
       {
-        "ticker": "LRN",
-        "spend_usd": 5000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Budget/Appropriations"
-      },
-      {
         "ticker": "BLMN",
         "spend_usd": 0.0,
         "filings": 2,
         "spike_x": null,
         "top_issue": null
+      },
+      {
+        "ticker": "DLTR",
+        "spend_usd": 0.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Taxation/Internal Revenue Code"
+      },
+      {
+        "ticker": "GMS",
+        "spend_usd": 0.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Defense"
+      },
+      {
+        "ticker": "GNSS",
+        "spend_usd": 0.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Environment/Superfund"
+      },
+      {
+        "ticker": "HL",
+        "spend_usd": 0.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Natural Resources"
+      },
+      {
+        "ticker": "HUBB",
+        "spend_usd": 0.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Energy/Nuclear"
       }
     ],
     "offexchange": [
@@ -45756,6 +45756,17 @@
         "why": "activist_13d: 13D activist campaign \u00b7 gov_contract: $200,334,672 awarded \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 8.01) \u00b7 news_sentiment: 0.78 bullish news (50 art) \u00b7 trump: DELL TECHNOLOGIES INC CL C"
       },
       {
+        "ticker": "HOOD",
+        "score": 3,
+        "weighted_score": 1.95,
+        "channel_list": [
+          "insider_cluster",
+          "material_8k",
+          "special_situation"
+        ],
+        "why": "insider_cluster: 3 insiders, $47,955,128 net \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 5.02, 7.01, 8.01) \u00b7 special_situation: Capital Returns"
+      },
+      {
         "ticker": "BIIB",
         "score": 4,
         "weighted_score": 1.9,
@@ -45838,17 +45849,6 @@
         "why": "clinical_phase3_start: 9 new Phase-3 \u00b7 fda_label_expansion: WELLCOVORIN \u00b7 special_situation: M&A / Divestitures"
       },
       {
-        "ticker": "CMCSA",
-        "score": 3,
-        "weighted_score": 1.45,
-        "channel_list": [
-          "material_8k",
-          "special_situation",
-          "trump"
-        ],
-        "why": "material_8k: 3 material 8-Ks (items 8.01) \u00b7 special_situation: M&A / Divestitures \u00b7 trump: COMCAST CORP NEW CLASS A"
-      },
-      {
         "ticker": "AXON",
         "score": 2,
         "weighted_score": 1.4,
@@ -45877,16 +45877,6 @@
           "special_situation"
         ],
         "why": "insider_cluster: 11 insiders, $53,591,973 net \u00b7 special_situation: Divestitures"
-      },
-      {
-        "ticker": "HOOD",
-        "score": 2,
-        "weighted_score": 1.4,
-        "channel_list": [
-          "insider_cluster",
-          "special_situation"
-        ],
-        "why": "insider_cluster: 3 insiders, $47,955,128 net \u00b7 special_situation: Capital Returns"
       },
       {
         "ticker": "LILA",
@@ -45928,7 +45918,7 @@
           "patent_cluster",
           "special_situation"
         ],
-        "why": "material_8k: 4 material 8-Ks (items 1.01, 2.01, 5.02, 7.01, 8.01) \u00b7 patent_cluster: 37 grants, 24 IPC classes \u00b7 special_situation: Spin-Offs"
+        "why": "material_8k: 3 material 8-Ks (items 1.01, 2.01, 5.02, 7.01, 8.01) \u00b7 patent_cluster: 37 grants, 24 IPC classes \u00b7 special_situation: Spin-Offs"
       },
       {
         "ticker": "AMD",
@@ -46005,6 +45995,16 @@
           "unusual_options"
         ],
         "why": "special_situation: M&A / Divestitures \u00b7 unusual_options: 3.37\u00d7 vol/OI, call-skew"
+      },
+      {
+        "ticker": "PFE",
+        "score": 2,
+        "weighted_score": 1.05,
+        "channel_list": [
+          "clinical_phase3_start",
+          "fda_label_expansion"
+        ],
+        "why": "clinical_phase3_start: 10 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: IBRANCE"
       }
     ]
   }
