@@ -103,7 +103,10 @@ def _echo_report(df, days: int, today: date, top_n: int = 20) -> dict:
                 desks=("desk", lambda x: sorted(set(x))),
                 first_seen=(
                     "seendate",
-                    lambda x: min(str(v) for v in x if str(v) and str(v) != "nan") or "",
+                    lambda x: min(
+                        (str(v) for v in x if str(v) and str(v) != "nan"),
+                        default="",
+                    ),
                 ),
                 sample_title=("title", "first"),
             )
