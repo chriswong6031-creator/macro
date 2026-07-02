@@ -54,10 +54,23 @@
                 letter-spacing:.1em; text-transform:uppercase; padding:3px 9px; border-radius:6px; }
 
   .noresults { max-width:1060px; margin:30px auto; text-align:center; color:var(--muted); font-size:14px; display:none; }
+  @media (max-width:760px){
+    body{ padding-left:14px; padding-right:14px; }
+    .rep-hero h1{ font-size:24px; }
+    .rep-hero .lede{ font-size:14px; }
+    .controls{ margin-top:16px; gap:8px 12px; }
+    .search-box{ flex:1 1 100%; }
+    .rescount{ margin-left:0; }
+  }
   @media (max-width:640px){
-    .report-row { grid-template-columns:58px minmax(0,1fr); }
+    .report-row { grid-template-columns:54px minmax(0,1fr); gap:14px; padding:16px 12px; }
+    .report-row.feat{ padding:18px 14px; }
     .rr-aside { grid-column:2; flex-direction:row; align-items:center; gap:12px; }
+    .rr-arrow{ display:none; }
     .rr-date .day { font-size:21px; }
+    .rr-title{ font-size:16.5px; }
+    .report-row.feat .rr-title{ font-size:18.5px; }
+    .rr-dek{ font-size:13px; }
   }
 {% endblock %}
 

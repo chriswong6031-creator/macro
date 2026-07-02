@@ -1,0 +1,1899 @@
+{% extends "article_base.html.j2" %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+
+{% block art_kicker %}{{ t('Policy Decode · United States · AI Buildout', '政策解码 · 美国 · AI 建设') }}{% endblock %}
+
+{% block head_extra %}
+<style>
+{% raw %}
+  /* ===== AI Master Plan — figures, stat band, pull-quote, hero aurora ===== */
+  .fig { margin:22px 0; border:1px solid var(--line); border-radius:16px; background:var(--panel);
+         padding:15px 17px 13px; box-shadow:var(--card-shadow); overflow:hidden; }
+  .fig > svg { display:block; width:100%; height:auto; }
+  .fig-h { font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--link);
+           font-weight:700; margin:0 0 11px; display:flex; align-items:center; gap:8px; }
+  .fig-h::before { content:""; width:18px; height:2px; border-radius:2px; flex:0 0 auto;
+                   background:linear-gradient(90deg,#5b8def,#c77dff); }
+  .fig figcaption { margin-top:11px; font-size:11.5px; color:var(--muted); line-height:1.5;
+                    border-top:1px dashed var(--line); padding-top:9px; }
+
+  /* at-a-glance stat band */
+  .statband { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:18px 0 4px; }
+  .stat { background:var(--panel2); border:1px solid var(--line); border-radius:12px;
+          padding:13px 14px; position:relative; overflow:hidden; }
+  .stat::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+                  background:var(--sc,var(--link)); }
+  .stat .sv { display:block; font-size:23px; font-weight:750; color:var(--text);
+              font-variant-numeric:tabular-nums; letter-spacing:-.01em; line-height:1.05; }
+  .stat .sl { font-size:11px; color:var(--muted); line-height:1.35; margin-top:6px; display:block; }
+
+  /* single-sentence compression pull-quote */
+  .pquote { position:relative; margin:16px 0 8px; padding:24px 28px; border-radius:18px;
+            border:1px solid var(--line); overflow:hidden;
+            background:linear-gradient(135deg, color-mix(in srgb,#5b8def 15%,var(--panel)),
+                                                color-mix(in srgb,#c77dff 13%,var(--panel))); }
+  .pquote::before { content:"\201C"; position:absolute; top:-16px; left:16px; font-size:96px; line-height:1;
+                    color:var(--link); opacity:.20; font-family:Georgia,"Times New Roman",serif; }
+  .pquote p { position:relative; font-size:19px; line-height:1.5; font-weight:600; color:var(--text);
+              margin:0; letter-spacing:-.005em; }
+  html[data-lang="zh"] .pquote p { letter-spacing:0; }
+
+  /* hero: a slow drifting aurora behind the standard accent bar (reduced-motion safe) */
+  .art-hero::before { z-index:2; }
+  .art-hero > * { position:relative; z-index:1; }
+  .art-hero::after { content:""; position:absolute; inset:0; z-index:0; pointer-events:none; opacity:.5;
+      background:
+        radial-gradient(58% 120% at 12% -12%, color-mix(in srgb,#5b8def 30%,transparent), transparent 60%),
+        radial-gradient(52% 120% at 92% 4%, color-mix(in srgb,#c77dff 26%,transparent), transparent 62%),
+        radial-gradient(46% 120% at 64% 120%, color-mix(in srgb,#e0973a 18%,transparent), transparent 60%);
+      animation:amp-hero 16s ease-in-out infinite alternate; }
+  @keyframes amp-hero { from { transform:translate3d(-2%,0,0) scale(1); }
+                        to   { transform:translate3d(3%,1.5%,0) scale(1.07); } }
+
+  @media (max-width:760px){ .statband { grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:600px){
+    .statband { gap:8px; }
+    .stat .sv { font-size:20px; }
+    .pquote { padding:18px 18px; }
+    .pquote p { font-size:16px; }
+    .fig { padding:12px 12px 11px; border-radius:14px; }
+  }
+  @media (prefers-reduced-motion: reduce){ .art-hero::after { animation:none; } }
+{% endraw %}
+</style>
+{% endblock %}
+
+{% block art_toc %}
+  <a href="#levers"><span class="l-en">1 · The five levers</span><span class="l-zh">1 · 五个杠杆</span></a>
+  <a href="#bubble"><span class="l-en">2 · A planned bubble?</span><span class="l-zh">2 · 泡沫是计划的吗</span></a>
+  <a href="#pop"><span class="l-en">3 · The pop mechanism</span><span class="l-zh">3 · 破裂机制</span></a>
+  <a href="#refi"><span class="l-en">4 · Refinancing the U.S.</span><span class="l-zh">4 · 为美国再融资</span></a>
+  <a href="#warsh"><span class="l-en">5 · Warsh — the put moved</span><span class="l-zh">5 · 沃什 —— put 换位</span></a>
+  <a href="#china"><span class="l-en">6 · China — two lists</span><span class="l-zh">6 · 中国 —— 两张名单</span></a>
+  <a href="#losses"><span class="l-en">7 · Where losses land</span><span class="l-zh">7 · 损失落点</span></a>
+  <a href="#pathway"><span class="l-en">8 · The predictive pathway</span><span class="l-zh">8 · 预测路径</span></a>
+  <a href="#portfolio"><span class="l-en">9 · Portfolio translation</span><span class="l-zh">9 · 组合转译</span></a>
+  <a href="#verdict"><span class="l-en">The one sentence</span><span class="l-zh">一句话结论</span></a>
+  <a href="#sources"><span class="l-en">Sources</span><span class="l-zh">资料来源</span></a>
+{% endblock %}
+
+{% block art_body %}
+{% raw %}
+<div class="callout key"><span class="co-h"><span class="l-en">Bottom line</span><span class="l-zh">核心结论</span></span> <span class="l-en">Strip the White House’s AI Action Plan to its mechanisms and it stops being industrial policy and becomes the <strong>refinancing of the United States</strong>. The objective function is not equity prices — it is a <strong>physical stock</strong>: gigawatts, fabs and installed compute on U.S. soil, plus toll and equity rights over the global AI stack. Under that objective, overbuilding beats underbuilding, the plan is structurally <em>bubble-dependent</em> and deliberately <em>bubble-amplifying</em>, and the state has quietly gone <strong>long its own bubble</strong>. What follows decodes the five levers, the four financing legs, where the losses are pre-routed, and the predictive pathway to 2027.</span><span class="l-zh">剥开白宫《AI 行动计划》看机制，它就不再是产业政策，而是<strong>美国的再融资工程</strong>。它的目标函数不是股价 —— 而是一种<strong>物理存量</strong>：千兆瓦、晶圆厂与安装在美国本土的算力，外加对全球 AI 技术栈的收费权与股权。在这个目标下，过度建设优于建设不足，这个计划在结构上<em>依赖泡沫</em>、并有意<em>放大泡沫</em>，而国家已悄然<strong>做多自己的泡沫</strong>。下文解码五个杠杆、四条融资腿、损失被预先路由到何处，以及通往 2027 年的预测路径。</span></div>
+<div class="statband">
+  <div class="stat" style="--sc:#5b8def"><span class="sv">$725B</span><span class="sl"><span class="l-en">2026 hyperscaler capex, +77% y/y</span><span class="l-zh">2026年超大云厂商资本开支，同比 +77%</span></span></div>
+  <div class="stat" style="--sc:#e0973a"><span class="sv">86%</span><span class="sl"><span class="l-en">Micron FQ4 gross-margin guide</span><span class="l-zh">美光第四季度毛利率指引</span></span></div>
+  <div class="stat" style="--sc:#c77dff"><span class="sv">$38.09T</span><span class="sl"><span class="l-en">U.S. gross national debt</span><span class="l-zh">美国国债总额</span></span></div>
+  <div class="stat" style="--sc:#3fb6c0"><span class="sv">25%</span><span class="sl"><span class="l-en">Treasury toll on each China H200</span><span class="l-zh">每颗对华 H200 的财政部通行费</span></span></div>
+  <div class="stat" style="--sc:#e0607a"><span class="sv">40–45%</span><span class="sl"><span class="l-en">Base-case odds of a 2027 credit event</span><span class="l-zh">2027年信用事件的基准概率</span></span></div>
+</div>
+
+<h2 id="levers"><span class="num">1</span><span class="l-en">What the plan actually is</span><span class="l-zh">计划到底是什么</span></h2>
+<div class="callout lead"><span class="co-h"><span class="l-en">Strip away the marketing</span><span class="l-zh">剥开营销语言</span></span> <span class="l-en">The official document is <em>"Winning the AI Race: America's AI Action Plan"</em> (July 2025) — 90+ federal policy actions across three pillars: Accelerating Innovation, Building American AI Infrastructure, and Leading in International Diplomacy and Security, framed internally as "Build, Baby, Build" and an explicit rejection of "radical climate dogma and bureaucratic red tape." But the pillars are marketing. Strip the plan to mechanisms and it is <strong>five interlocking levers</strong>.</span><span class="l-zh">官方文件是《赢得 AI 竞赛：美国 AI 行动计划》（2025 年 7 月）——它包含三大支柱下的 90 多项联邦政策行动：加速创新、建设美国 AI 基础设施，以及在国际外交与安全中保持领先。内部叙事被包装为"Build, Baby, Build"，并明确否定"激进气候教条和官僚繁文缛节"。但这些支柱只是营销语言。剥开外壳看机制，这个计划实际上由<strong>五个互相咬合的杠杆</strong>组成。</span></div>
+
+<h3><span class="l-en">Lever 1 — Maximize physical throughput</span><span class="l-zh">杠杆 1 — 最大化物理吞吐量</span></h3>
+<p><span class="l-en">Executive orders accelerate federal permitting for large-scale AI data centers — streamlining environmental reviews, expanding FAST-41 coverage, and promoting federal and contaminated lands for project siting — plus a Commerce financial-support initiative (loans, grants, tax incentives) for data centers needing 100+ MW of new generation where sponsors commit at least <strong>$500M</strong> in capex. The February 24, 2026 State of the Union added a hyperscaler power pledge: signatories build, bring, or buy new generation sufficient to meet their data-center demand and cover the full cost of delivery infrastructure, negotiating separate rate structures with utilities — that last part exists because electricity affordability was becoming a midterm liability.</span><span class="l-zh">行政令通过简化环境审查、扩大 FAST-41 覆盖范围、推动联邦土地和受污染土地用于项目建设，加快大型 AI 数据中心的联邦许可审批；同时，商务部推出金融支持计划（贷款、补助、税收激励），针对需要新增 100MW 以上发电能力、且发起方承诺至少 <strong>5 亿美元</strong>资本开支的数据中心项目。2026 年 2 月 24 日的国情咨文进一步加入了超大云厂商的电力承诺：签署方必须建设、带入或购买足够满足自身数据中心需求的新发电能力，并承担交付基础设施的全部成本，与公用事业公司谈判单独的费率结构——最后这一点之所以存在，是因为电价可负担性已经开始成为中期选举负担。</span></p>
+
+<h3><span class="l-en">Lever 2 — Force the capex onshore with a tariff stick</span><span class="l-zh">杠杆 2 — 用关税大棒迫使资本开支回流本土</span></h3>
+<p><span class="l-en">The January 14, 2026 Section 232 proclamation is the sharpest instrument and widely misread. It imposes <strong>25%</strong> ad valorem duties on a narrow category of advanced chips defined by TPP and DRAM-bandwidth thresholds (H200/MI325X class) — but with broad exemptions for U.S. data centers, startups, R&D, and public sector, meaning it deliberately does <em>not</em> tax the domestic buildout. Phase 2, after trade negotiations conclude, holds "broader tariffs at a rate of duty that is significant" plus a tariff-offset program rewarding companies investing in U.S. semiconductor production — a loaded gun pointed at Taiwan, Korea, and Japan to force fab investment stateside.</span><span class="l-zh">2026 年 1 月 14 日的 Section 232 公告是最锋利、也最容易被误读的工具。它对一小类先进芯片征收 <strong>25%</strong> 从价税，这类芯片以 TPP 与 DRAM 带宽门槛定义（H200/MI325X 级别）；但同时对美国数据中心、初创企业、研发与公共部门提供广泛豁免。这意味着它有意<em>不</em>对美国国内建设征税。第二阶段在贸易谈判结束后，将保留"税率显著的更广泛关税"，并设立关税抵扣计划，奖励投资美国半导体生产的公司——这是一把指向台湾、韩国和日本的上膛枪，目的在于迫使晶圆厂投资迁往美国。</span></p>
+<div class="callout warn"><span class="co-h"><span class="l-en">Live catalyst — today</span><span class="l-zh">当前催化点 — 就是今天</span></span> <span class="l-en">By <strong>July 1, 2026 — today</strong> — Commerce must deliver Trump an update on the data-center semiconductor market so he can determine whether to modify the tariff. The report's language on datacenter chips is a discrete tariff-relief lever the administration can pull before the midterms.</span><span class="l-zh">到 <strong>2026 年 7 月 1 日——也就是今天</strong>——商务部必须向特朗普提交数据中心半导体市场更新报告，以便他决定是否调整关税。这份报告关于数据中心芯片的措辞，是政府可以在中期选举前动用的一个独立关税缓释杠杆。</span></div>
+
+<h3><span class="l-en">Lever 3 — Turn the state into a toll collector on the AI trade</span><span class="l-zh">杠杆 3 — 把国家变成 AI 贸易的收费站</span></h3>
+<p><span class="l-en">H200 sales to China were approved with the U.S. government taking <strong>25%</strong> of sales; China cleared ByteDance, Alibaba and Tencent for <strong>400,000+</strong> units, while Blackwell remains restricted. The export-license structure even requires chips to route through the U.S. for third-party testing, triggering the 25% Section 232 tariff and aligning it with the 25% China sales fee. Add tariff revenue, and the government has built itself a royalty stream on the boom.</span><span class="l-zh">美国批准向中国销售 H200，同时美国政府抽取 <strong>25%</strong> 销售额；中国方面已批准字节跳动、阿里巴巴和腾讯购买 <strong>40 万多颗</strong> H200，而 Blackwell 仍受限制。出口许可结构甚至要求芯片经由美国进行第三方测试，从而触发 25% Section 232 关税，并与 25% 的中国销售分成形成一致。再加上关税收入，政府已经给自己搭建了一个从繁荣中收取版税的收入流。</span></p>
+
+<h3><span class="l-en">Lever 4 — State-capitalism scaffolding</span><span class="l-zh">杠杆 4 — 国家资本主义脚手架</span></h3>
+<p><span class="l-en">Trump signed an executive order calling for a federal sovereign wealth fund, and the administration has already taken stakes in Intel, IBM and other quantum and critical-mineral companies. Intel is the template: a <strong>9.9%</strong> stake worth roughly <strong>$8.9B</strong>, largely by converting CHIPS Act grants into equity. As of June 2026 this is extending to the labs themselves: Trump said the federal government may take direct equity stakes in leading AI companies, naming <strong>OpenAI, Anthropic, and xAI</strong> — under a framework where OpenAI would donate equity rather than sell it, seeding a "Public Wealth Fund," with proceeds distributed to Americans Alaska-style.</span><span class="l-zh">特朗普签署行政令，要求建立联邦主权财富基金；政府也已经持有英特尔、IBM 以及其他量子和关键矿产公司的股权。英特尔是模板：美国政府持有约 <strong>9.9%</strong> 股份，价值约 <strong>89 亿美元</strong>，很大程度上是把《芯片法案》补助转换成股权。到 2026 年 6 月，这种做法正在延伸到 AI 实验室本身：特朗普表示联邦政府可能直接持有领先 AI 公司的股权，点名 <strong>OpenAI、Anthropic 和 xAI</strong>——在这一框架下，OpenAI 将捐赠股权而不是出售股权，用于种子化一个"公共财富基金"，并以阿拉斯加式分红把收益分配给美国人。</span></p>
+<p><span class="l-en">On the demand side: the Genesis Mission EO (Nov 2025); in May 2026 the Department of War announced agreements with eight leading AI companies to deploy their capabilities on classified networks; and a June 2026 national-security memorandum directed rapid onboarding of advanced models and buildout of high-security computing facilities.</span><span class="l-zh">需求侧则有：2025 年 11 月的 Genesis Mission 行政令；2026 年 5 月，"战争部"（原文 Department of War）宣布与八家领先 AI 公司达成协议，在机密网络上部署其能力；2026 年 6 月，一份国家安全备忘录又要求快速接入先进模型，并建设高安全级别计算设施。</span></p>
+
+<h3><span class="l-en">Lever 5 — Narrative and political management</span><span class="l-zh">杠杆 5 — 叙事与政治管理</span></h3>
+<p><span class="l-en">Sacks (who stepped down as czar in March 2026): "In Q1, AI was already 75% of GDP growth… stopping progress in AI would be equivalent to halting the U.S. economy," while acknowledging "polls may show that AI is not popular, but economic growth is." The Public Wealth Fund is the answer to that unpopularity — pre-distribution to buy consent, against a backdrop of roughly <strong>49,000</strong> jobs already lost to AI in 2026 through April, on top of <strong>~55,000</strong> in 2025.</span><span class="l-zh">Sacks（2026 年 3 月卸任 AI czar）表示："一季度，AI 已经贡献了 GDP 增长的 75%……阻止 AI 进步等同于让美国经济停摆。"同时他承认，"民调可能显示 AI 不受欢迎，但经济增长受欢迎。"公共财富基金就是对这种不受欢迎的回应——用预先分配收益来购买同意，背景则是 2026 年截至 4 月，约 <strong>4.9 万</strong>个岗位已因 AI 流失，加上 2025 年的约 <strong>5.5 万</strong>个。</span></p>
+
+<h3><span class="l-en">The five levers at a glance</span><span class="l-zh">五个杠杆一览</span></h3>
+<table class="data">
+<tr>
+<th><span class="l-en">Lever</span><span class="l-zh">杠杆</span></th>
+<th><span class="l-en">Mechanism</span><span class="l-zh">机制</span></th>
+<th><span class="l-en">What it does</span><span class="l-zh">它做什么</span></th>
+</tr>
+<tr>
+<td><span class="l-en"><strong>1. Physical throughput</strong></span><span class="l-zh"><strong>1. 物理吞吐量</strong></span></td>
+<td><span class="l-en">Permit-acceleration EOs (FAST-41, federal/contaminated land) + Commerce loans/grants/tax for 100+ MW sites ($500M capex floor); Feb 24 2026 hyperscaler power pledge.</span><span class="l-zh">许可加速行政令（FAST-41、联邦/受污染土地）+ 商务部对 100MW+ 项目的贷款/补助/税收（5 亿美元资本开支门槛）；2026 年 2 月 24 日超大云厂商电力承诺。</span></td>
+<td><span class="l-en">Removes supply-side friction; forces hyperscalers to self-fund generation and defuses the electricity-price midterm liability.</span><span class="l-zh">移除供给侧摩擦；迫使超大云厂商自筹发电，化解电价这一中期选举负担。</span></td>
+</tr>
+<tr>
+<td><span class="l-en"><strong>2. Tariff stick</strong></span><span class="l-zh"><strong>2. 关税大棒</strong></span></td>
+<td><span class="l-en">Jan 14 2026 Section 232: 25% duty on H200/MI325X-class chips, but exempts U.S. data centers/startups/R&D/public sector. Phase 2 = "significant" broader tariffs + investment offset.</span><span class="l-zh">2026 年 1 月 14 日 Section 232：对 H200/MI325X 级芯片征 25% 税，但豁免美国数据中心/初创/研发/公共部门。第二阶段 = 税率"显著"的更广泛关税 + 投资抵扣。</span></td>
+<td><span class="l-en">Taxes everything except the domestic buildout; loaded gun at Taiwan/Korea/Japan to force fabs onshore. <em>Live: today's Commerce report.</em></span><span class="l-zh">对国内建设以外的一切征税；指向台湾/韩国/日本、迫使晶圆厂回流的上膛枪。<em>当前：今天的商务部报告。</em></span></td>
+</tr>
+<tr>
+<td><span class="l-en"><strong>3. Toll collector</strong></span><span class="l-zh"><strong>3. 收费站</strong></span></td>
+<td><span class="l-en">25% U.S. cut on H200 sales to China (400,000+ units for ByteDance/Alibaba/Tencent); chips route through U.S. for testing, aligning the 25% tariff with the 25% fee.</span><span class="l-zh">对华 H200 销售美国抽 25%（字节/阿里/腾讯 40 万+ 颗）；芯片经美国测试，使 25% 关税与 25% 分成对齐。</span></td>
+<td><span class="l-en">Builds a state royalty stream on the boom; Blackwell withheld.</span><span class="l-zh">为国家搭建从繁荣中收取版税的收入流；Blackwell 保留不放。</span></td>
+</tr>
+<tr>
+<td><span class="l-en"><strong>4. State-capitalism scaffolding</strong></span><span class="l-zh"><strong>4. 国家资本主义脚手架</strong></span></td>
+<td><span class="l-en">Sovereign-wealth-fund EO; Intel 9.9% / ~$8.9B (CHIPS-to-equity); prospective donated equity from OpenAI/Anthropic/xAI; Genesis Mission EO; Dept of War deals + June 2026 NSM.</span><span class="l-zh">主权财富基金行政令；英特尔 9.9% / 约 89 亿美元（补助转股权）；OpenAI/Anthropic/xAI 潜在捐赠股权；Genesis Mission 行政令；战争部协议 + 2026 年 6 月国安备忘录。</span></td>
+<td><span class="l-en">Installs the plumbing to take equity and mandate demand; positions the state long its own bubble.</span><span class="l-zh">安装拿股权、指令需求的管道；使国家做多自己的泡沫。</span></td>
+</tr>
+<tr>
+<td><span class="l-en"><strong>5. Narrative &amp; political management</strong></span><span class="l-zh"><strong>5. 叙事与政治管理</strong></span></td>
+<td><span class="l-en">Sacks framing (AI = 75% of Q1 GDP growth; "halting AI = halting the economy"); Public Wealth Fund pre-distribution against ~49,000 AI jobs lost 2026 YTD + ~55,000 in 2025.</span><span class="l-zh">Sacks 叙事（AI = 一季度 GDP 增长 75%；"阻止 AI = 让经济停摆"）；公共财富基金预分配，对冲 2026 年至今约 4.9 万 + 2025 年约 5.5 万 AI 流失岗位。</span></td>
+<td><span class="l-en">Reframes existential stakes and buys consent for an unpopular boom.</span><span class="l-zh">重构生死存亡式赌注，为不受欢迎的繁荣购买同意。</span></td>
+</tr>
+</table>
+
+<h3><span class="l-en">The unifying logic</span><span class="l-zh">统一逻辑</span></h3>
+<p><span class="l-en">This is a <strong>physical-stock</strong> strategy, not an equity-price strategy. The objective function is gigawatts, fabs, and installed compute on U.S. soil, plus toll and equity rights over the global stack. Bessent stated the calculus outright: "the biggest risk when it comes to AI is China getting ahead of the US." Under that objective, <strong>overbuilding is strictly preferred to underbuilding</strong>, and equity prices matter only as the financing mechanism.</span><span class="l-zh">这是一套"物理存量"战略，不是一套"股价"战略。它的目标函数是千兆瓦、晶圆厂，以及安装在美国土地上的算力，同时在全球技术栈上获取收费权与股权权利。Bessent 把计算方式说得非常直白："谈到 AI，最大的风险是中国领先美国。"在这个目标函数下，<strong>过度建设严格优于建设不足</strong>；股价只是在融资机制上重要。</span></p>
+<div class="callout key"><span class="co-h"><span class="l-en">Read this way</span><span class="l-zh">这样理解</span></span> <span class="l-en">The three pillars are the pitch; the five levers are the machine. Every lever adds demand or removes friction, and not one leans against valuations — the setup that becomes decisive in <a href="report_bessent_jun24.html">the refinancing frame</a> and the <a href="report_warsh_fomc.html">disabled Fed put</a>.</span><span class="l-zh">三大支柱是话术，五个杠杆才是机器。每一个杠杆都在增加需求或移除摩擦，没有一个反制估值——这一布局在<a href="report_bessent_jun24.html">再融资框架</a>与<a href="report_warsh_fomc.html">失灵的 Fed put</a>中变得决定性。</span></div>
+
+<figure class="fig" id="fig-levers">
+  <div class="fig-h"><span class="l-en">Figure 1 · The five interlocking levers</span><span class="l-zh">图 1 · 五个互锁的杠杆</span></div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 470" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" role="img" font-family="-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif">
+<title>Five interlocking levers converging into installed compute on U.S. soil</title>
+<desc>Five labelled policy mechanisms — physical throughput, tariff stick, state toll collector, state-capitalism scaffolding, and narrative management — each feed a converging dashed-energy arrow into a central pulsing slab representing gigawatts, fabs and installed compute on U.S. soil, plus toll and equity rights over the global stack.</desc>
+<style>
+  .levers-t{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;}
+  .levers-title{fill:var(--text);font-size:19px;font-weight:700;}
+  .levers-sub{fill:var(--muted);font-size:12.5px;}
+  .levers-lname{fill:var(--text);font-size:13.5px;font-weight:600;}
+  .levers-ltag{fill:var(--muted);font-size:11.5px;}
+  .levers-num{fill:var(--text);font-size:13px;font-weight:700;}
+  .levers-slabT{fill:var(--text);font-size:14.5px;font-weight:700;}
+  .levers-slabS{fill:var(--muted);font-size:12.5px;}
+  .levers-cap{fill:var(--muted);font-size:11px;letter-spacing:.06em;}
+  .levers-node{fill:var(--panel2);stroke:var(--line);stroke-width:1.4;}
+  .levers-flow{stroke-dasharray:7 9;animation:levers-flow 2.4s linear infinite;}
+  .levers-g1{animation:levers-spin 9s linear infinite;transform-origin:center;transform-box:fill-box;}
+  .levers-g2{animation:levers-spin-r 11s linear infinite;transform-origin:center;transform-box:fill-box;}
+  .levers-glow{animation:levers-pulse 4s ease-in-out infinite;transform-origin:center;transform-box:fill-box;}
+  .levers-draw{stroke-dasharray:1400;stroke-dashoffset:1400;animation:levers-draw 2.2s ease-out forwards;}
+  @keyframes levers-flow{to{stroke-dashoffset:-160;}}
+  @keyframes levers-spin{to{transform:rotate(360deg);}}
+  @keyframes levers-spin-r{to{transform:rotate(-360deg);}}
+  @keyframes levers-pulse{0%,100%{opacity:.30;}50%{opacity:.62;}}
+  @keyframes levers-draw{to{stroke-dashoffset:0;}}
+  @media (prefers-reduced-motion: reduce){ [class*="levers-"]{ animation:none !important; stroke-dashoffset:0 !important; } }
+</style>
+
+<defs>
+  <radialGradient id="levers-slabglow" cx="50%" cy="50%" r="60%">
+    <stop offset="0%" stop-color="#5b8def" stop-opacity="0.55"/>
+    <stop offset="100%" stop-color="#5b8def" stop-opacity="0"/>
+  </radialGradient>
+  <marker id="levers-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#5b8def"/>
+  </marker>
+  <clipPath id="levers-frameclip"><rect x="18" y="52" width="824" height="400" rx="12"/></clipPath>
+</defs>
+
+<!-- frame -->
+<rect x="18" y="52" width="824" height="400" rx="12" fill="var(--panel)" stroke="var(--line)" stroke-width="1.2"/>
+
+<!-- header -->
+<text class="levers-t levers-title" x="30" y="34">Five interlocking levers &#8594; compute on U.S. soil</text>
+<text class="levers-t levers-cap l-en" x="30" y="466">MECHANISM MAP &#183; AI ACTION PLAN 2025&#8211;26</text>
+<text class="levers-t levers-cap l-zh" x="30" y="466">机制图 &#183; AI 行动计划 2025&#8211;26</text>
+
+<g clip-path="url(#levers-frameclip)">
+<!-- ============ converging flow arrows (behind nodes) ============ -->
+<!-- each from lever hub toward slab left edge ~ (588,252) -->
+<g fill="none" stroke-width="2.4" marker-end="url(#levers-arrow)">
+  <path class="levers-flow" d="M188,108 C320,130 430,180 574,224"/>
+  <path class="levers-flow" d="M170,188 C310,200 430,214 574,240"/>
+  <path class="levers-flow" d="M162,262 C300,262 430,262 574,258"/>
+  <path class="levers-flow" d="M170,336 C310,326 430,312 574,278"/>
+  <path class="levers-flow" d="M188,412 C320,392 430,344 574,296"/>
+</g>
+<!-- faint guide underlays -->
+<g fill="none" stroke="var(--line)" stroke-width="1" opacity="0.35">
+  <path d="M188,108 C320,130 430,180 574,224"/>
+  <path d="M170,188 C310,200 430,214 574,240"/>
+  <path d="M162,262 C300,262 430,262 574,262"/>
+  <path d="M170,336 C310,326 430,312 574,278"/>
+  <path d="M188,412 C320,392 430,344 574,296"/>
+</g>
+</g>
+
+<!-- ============ FIVE LEVER NODES ============ -->
+<!-- reusable gear drawn per node -->
+
+<!-- Lever 1 : throughput -->
+<g>
+  <g class="levers-g1" transform="translate(148,108)">
+    <circle class="levers-node" r="22"/>
+    <g fill="var(--muted)">
+      <rect x="-3" y="-30" width="6" height="9" rx="1.5"/><rect x="-3" y="21" width="6" height="9" rx="1.5"/>
+      <rect x="21" y="-3" width="9" height="6" rx="1.5"/><rect x="-30" y="-3" width="9" height="6" rx="1.5"/>
+      <rect x="14" y="-24" width="6" height="9" rx="1.5" transform="rotate(45)"/>
+      <rect x="14" y="15" width="6" height="9" rx="1.5" transform="rotate(-45)"/>
+    </g>
+    <circle r="9" fill="none" stroke="#46b87a" stroke-width="3"/>
+  </g>
+  <text class="levers-t levers-num" x="148" y="112" text-anchor="middle">1</text>
+  <text class="levers-t levers-lname l-en" x="182" y="98">Maximize physical throughput</text>
+  <text class="levers-t levers-lname l-zh" x="182" y="98">最大化物理吞吐量</text>
+  <text class="levers-t levers-ltag l-en" x="182" y="115">permits &#183; power</text>
+  <text class="levers-t levers-ltag l-zh" x="182" y="115">许可 &#183; 电力</text>
+</g>
+
+<!-- Lever 2 : tariff stick -->
+<g>
+  <g class="levers-g2" transform="translate(130,188)">
+    <circle class="levers-node" r="22"/>
+    <g fill="var(--muted)">
+      <rect x="-3" y="-30" width="6" height="9" rx="1.5"/><rect x="-3" y="21" width="6" height="9" rx="1.5"/>
+      <rect x="21" y="-3" width="9" height="6" rx="1.5"/><rect x="-30" y="-3" width="9" height="6" rx="1.5"/>
+      <rect x="14" y="-24" width="6" height="9" rx="1.5" transform="rotate(45)"/>
+      <rect x="14" y="15" width="6" height="9" rx="1.5" transform="rotate(-45)"/>
+    </g>
+    <circle r="9" fill="none" stroke="#e0973a" stroke-width="3"/>
+  </g>
+  <text class="levers-t levers-num" x="130" y="192" text-anchor="middle">2</text>
+  <text class="levers-t levers-lname l-en" x="164" y="178">Tariff stick &#8212; force capex onshore</text>
+  <text class="levers-t levers-lname l-zh" x="164" y="178">关税大棒 &#183; 迫使资本开支回流</text>
+  <text class="levers-t levers-ltag l-en" x="164" y="195">Section 232</text>
+  <text class="levers-t levers-ltag l-zh" x="164" y="195">Section 232</text>
+</g>
+
+<!-- Lever 3 : toll collector -->
+<g>
+  <g class="levers-g1" transform="translate(120,262)">
+    <circle class="levers-node" r="22"/>
+    <g fill="var(--muted)">
+      <rect x="-3" y="-30" width="6" height="9" rx="1.5"/><rect x="-3" y="21" width="6" height="9" rx="1.5"/>
+      <rect x="21" y="-3" width="9" height="6" rx="1.5"/><rect x="-30" y="-3" width="9" height="6" rx="1.5"/>
+      <rect x="14" y="-24" width="6" height="9" rx="1.5" transform="rotate(45)"/>
+      <rect x="14" y="15" width="6" height="9" rx="1.5" transform="rotate(-45)"/>
+    </g>
+    <circle r="9" fill="none" stroke="#e0973a" stroke-width="3"/>
+  </g>
+  <text class="levers-t levers-num" x="120" y="266" text-anchor="middle">3</text>
+  <text class="levers-t levers-lname l-en" x="154" y="252">State as toll collector</text>
+  <text class="levers-t levers-lname l-zh" x="154" y="252">国家充当收费站</text>
+  <text class="levers-t levers-ltag l-en" x="154" y="269">25% China H200 fee</text>
+  <text class="levers-t levers-ltag l-zh" x="154" y="269">对华 H200 抽成 25%</text>
+</g>
+
+<!-- Lever 4 : state-capitalism scaffolding -->
+<g>
+  <g class="levers-g2" transform="translate(130,336)">
+    <circle class="levers-node" r="22"/>
+    <g fill="var(--muted)">
+      <rect x="-3" y="-30" width="6" height="9" rx="1.5"/><rect x="-3" y="21" width="6" height="9" rx="1.5"/>
+      <rect x="21" y="-3" width="9" height="6" rx="1.5"/><rect x="-30" y="-3" width="9" height="6" rx="1.5"/>
+      <rect x="14" y="-24" width="6" height="9" rx="1.5" transform="rotate(45)"/>
+      <rect x="14" y="15" width="6" height="9" rx="1.5" transform="rotate(-45)"/>
+    </g>
+    <circle r="9" fill="none" stroke="#c77dff" stroke-width="3"/>
+  </g>
+  <text class="levers-t levers-num" x="130" y="340" text-anchor="middle">4</text>
+  <text class="levers-t levers-lname l-en" x="164" y="326">State-capitalism scaffolding</text>
+  <text class="levers-t levers-lname l-zh" x="164" y="326">国家资本主义脚手架</text>
+  <text class="levers-t levers-ltag l-en" x="164" y="343">SWF &#183; equity stakes</text>
+  <text class="levers-t levers-ltag l-zh" x="164" y="343">主权基金 &#183; 股权</text>
+</g>
+
+<!-- Lever 5 : narrative -->
+<g>
+  <g class="levers-g1" transform="translate(148,412)">
+    <circle class="levers-node" r="22"/>
+    <g fill="var(--muted)">
+      <rect x="-3" y="-30" width="6" height="9" rx="1.5"/><rect x="-3" y="21" width="6" height="9" rx="1.5"/>
+      <rect x="21" y="-3" width="9" height="6" rx="1.5"/><rect x="-30" y="-3" width="9" height="6" rx="1.5"/>
+      <rect x="14" y="-24" width="6" height="9" rx="1.5" transform="rotate(45)"/>
+      <rect x="14" y="15" width="6" height="9" rx="1.5" transform="rotate(-45)"/>
+    </g>
+    <circle r="9" fill="none" stroke="#5b8def" stroke-width="3"/>
+  </g>
+  <text class="levers-t levers-num" x="148" y="416" text-anchor="middle">5</text>
+  <text class="levers-t levers-lname l-en" x="182" y="402">Narrative &amp; political management</text>
+  <text class="levers-t levers-lname l-zh" x="182" y="402">叙事与政治管理</text>
+  <text class="levers-t levers-ltag l-en" x="182" y="419">consent &#183; framing</text>
+  <text class="levers-t levers-ltag l-zh" x="182" y="419">购买同意 &#183; 话术</text>
+</g>
+
+<!-- ============ CENTER SLAB ============ -->
+<g transform="translate(588,180)">
+  <!-- soft pulsing glow -->
+  <ellipse class="levers-glow" cx="112" cy="72" rx="150" ry="118" fill="url(#levers-slabglow)"/>
+  <!-- solid slab -->
+  <rect class="levers-draw" x="0" y="0" width="224" height="144" rx="10" fill="var(--panel2)" stroke="#5b8def" stroke-width="2"/>
+  <rect x="0" y="0" width="224" height="144" rx="10" fill="#5b8def" fill-opacity="0.07"/>
+  <line x1="16" y1="72" x2="208" y2="72" stroke="var(--line)" stroke-width="1"/>
+  <!-- top line -->
+  <text class="levers-t levers-slabT l-en" x="112" y="34" text-anchor="middle">Gigawatts &#183; Fabs</text>
+  <text class="levers-t levers-slabT l-en" x="112" y="54" text-anchor="middle">Installed compute on U.S. soil</text>
+  <text class="levers-t levers-slabT l-zh" x="112" y="34" text-anchor="middle">千兆瓦 &#183; 晶圆厂</text>
+  <text class="levers-t levers-slabT l-zh" x="112" y="54" text-anchor="middle">美国本土算力</text>
+  <!-- second line -->
+  <text class="levers-t levers-slabS l-en" x="112" y="98" text-anchor="middle">+ toll &amp; equity rights</text>
+  <text class="levers-t levers-slabS l-en" x="112" y="116" text-anchor="middle">over the global stack</text>
+  <text class="levers-t levers-slabS l-zh" x="112" y="98" text-anchor="middle">+ 对全球技术栈的</text>
+  <text class="levers-t levers-slabS l-zh" x="112" y="116" text-anchor="middle">收费权与股权</text>
+</g>
+
+<!-- convergence caption under slab -->
+<text class="levers-t levers-sub l-en" x="700" y="360" text-anchor="middle">Everything converges onshore</text>
+<text class="levers-t levers-sub l-zh" x="700" y="360" text-anchor="middle">一切向美国本土汇聚</text>
+</svg>
+  <figcaption><span class="l-en">Five interlocking policy levers — throughput, tariff stick, toll collection, state-capitalism scaffolding, and narrative management — converge into installed compute on U.S. soil plus toll and equity rights over the global stack.</span><span class="l-zh">五个互相咬合的政策杠杆——物理吞吐、关税大棒、收费站、国家资本主义脚手架与叙事管理——共同汇聚为美国本土算力，以及对全球技术栈的收费权与股权。</span></figcaption>
+</figure>
+
+<h2 id="bubble"><span class="num">2</span><span class="l-en">Was the bubble part of the plan?</span><span class="l-zh">泡沫是计划的一部分吗</span></h2>
+<div class="callout lead"><span class="co-h"><span class="l-en">The blunt answer</span><span class="l-zh">直白答案</span></span> <span class="l-en">They didn't author the bubble — but the plan is structurally bubble-<em>dependent</em>, deliberately bubble-<em>amplifying</em>, and the state has positioned itself <strong>long the bubble</strong>.</span><span class="l-zh">他们不是泡沫的原创者——但这个计划在结构上<em>依赖</em>泡沫、有意<em>放大</em>泡沫，而且国家已经把自己摆到了<strong>泡沫的多头位置</strong>。</span></div>
+
+<h3><span class="l-en">Not authored</span><span class="l-zh">不是原创者</span></h3>
+
+<p><span class="l-en">The melt-up predates the second term. There is no evidence anyone in the administration forecast hardware economics at current levels — Micron's numbers verify as <strong>nearly beyond parody</strong>. No policy document anticipated 86% memory margins <em>(unverified as intent)</em>.</span><span class="l-zh">这轮暴涨早在第二任期之前就已经开始。目前没有证据显示政府中有人预判了当前水平下的硬件经济性——美光的数据几乎<strong>荒诞到像讽刺</strong>。没有任何政策文件预期过 86% 的内存毛利率<em>（作为意图尚未验证）</em>。</span></p>
+
+<table class="data">
+<tr><th><span class="l-en">Micron</span><span class="l-zh">美光</span></th><th><span class="l-en">FQ3-26</span><span class="l-zh">2026 财年第三季度</span></th><th><span class="l-en">Year-ago</span><span class="l-zh">一年前</span></th><th><span class="l-en">FQ4-26 guide</span><span class="l-zh">第四季度指引</span></th></tr>
+<tr><td><span class="l-en">Revenue</span><span class="l-zh">收入</span></td><td class="num">$41.5B</td><td class="num">—</td><td class="num">$50.0B</td></tr>
+<tr><td><span class="l-en">Non-GAAP gross margin</span><span class="l-zh">非 GAAP 毛利率</span></td><td class="num">84.9%</td><td class="num">39%</td><td class="num">~86%</td></tr>
+<tr><td><span class="l-en">Net income</span><span class="l-zh">净利润</span></td><td class="num">$28.24B</td><td class="num">$1.89B</td><td class="num">—</td></tr>
+</table>
+
+<h3><span class="l-en">Amplified — documentable through revealed preference</span><span class="l-zh">被放大——可通过显性偏好记录下来</span></h3>
+
+<p><span class="l-en">Every lever adds demand or removes friction:</span><span class="l-zh">每一个杠杆都在增加需求或移除摩擦：</span></p>
+
+<ul>
+<li><span class="l-en">Permitting reform removes <strong>supply friction</strong>;</span><span class="l-zh">许可改革移除<strong>供给摩擦</strong>；</span></li>
+<li><span class="l-en">The tariff exempts the domestic buildout while taxing everything else;</span><span class="l-zh">关税豁免国内建设，同时对其他路径征税；</span></li>
+<li><span class="l-en">Reopening China (H200) adds demand; Gulf full-stack export packages add demand; federal procurement mandates add demand;</span><span class="l-zh">重新开放中国 H200 销售增加需求；海湾国家全栈出口包增加需求；联邦采购指令增加需求；</span></li>
+<li><span class="l-en">Bessent's claim that financial deregulation has "unlocked some $3 trillion in lending capacity" widens the credit pipe funding the capex.</span><span class="l-zh">Bessent 声称金融监管放松"释放了约 3 万亿美元贷款能力"，这又扩大了为资本开支融资的信贷管道。</span></li>
+</ul>
+
+<p><span class="l-en"><strong>Not a single policy dampens AI demand or leans against valuations.</strong> The government's own balance sheet now benefits from froth: <strong>25%</strong> of China chip revenue, tariff receipts, a <strong>9.9%</strong> Intel position, and a prospective donated stake in OpenAI ahead of an IPO targeting up to <strong>$1 trillion</strong> as early as September 2026.</span><span class="l-zh"><strong>没有任何一项政策在压低 AI 需求或反制估值。</strong>政府自己的资产负债表也已经从泡沫中受益：<strong>25%</strong> 的中国芯片收入、关税收入、<strong>9.9%</strong> 的英特尔持股，以及 OpenAI 在最早可能于 2026 年 9 月、目标估值最高 <strong>1 万亿美元</strong> IPO 前，潜在捐赠给政府的股权。</span></p>
+
+<div class="callout warn"><span class="co-h"><span class="l-en">The tell: existential, not valuation, language</span><span class="l-zh">真正的信号：生死存亡式，而非估值式语言</span></span> <span class="l-en">Sacks: "There will be no federal bailout for AI" — then weeks later, "a reversal would risk recession." Bessent invoked Greenspan: "the tech boom doubled productivity… could we do at least that or more?" — pointing to hyperscalers poised to spend <strong>$750 billion</strong> on AI. That is the 1999 playbook: productivity narrative as valuation justification.</span><span class="l-zh">Sacks 说："不会有联邦政府为 AI 兜底。"几周后又说："反转会带来衰退风险。"Bessent 引用格林斯潘："科技繁荣使生产率翻倍……我们能不能至少做到同样甚至更多？"并指向超大云厂商准备在 AI 上花费 <strong>7500 亿美元</strong>。这就是 1999 年剧本：用生产率叙事为估值辩护。</span></div>
+
+<h3><span class="l-en">The precise answer</span><span class="l-zh">更精确的答案</span></h3>
+
+<p><span class="l-en">They were expecting — <strong>engineering</strong> — a scarcity-driven capex supercycle onshore, and accepted froth as the cost of speed. The specific hardware-pricing bubble (memory at 86% GM, RAM prices surging <span class="r-pos">+90%</span> in Q1 2026) is an <em>emergent consequence</em> they now have to manage, because it crossed from asset prices into consumer prices — Apple raised product prices June 26 due to chip costs, triggering another KOSPI trading suspension.</span><span class="l-zh">他们预期并<strong>工程化</strong>了一轮由稀缺驱动、在美国本土发生的资本开支超级周期，并接受泡沫作为速度的成本。具体的硬件价格泡沫（内存 86% 毛利率、2026 年一季度 RAM 价格暴涨 <span class="r-pos">+90%</span>）是一个<em>"涌现后果"</em>，现在他们必须管理它，因为它已经从资产价格传导到了消费者价格——苹果在 6 月 26 日因芯片成本上升而提高产品价格，引发 KOSPI 又一次交易暂停。</span></p>
+
+<div class="callout key"><span class="co-h"><span class="l-en">Bottom line</span><span class="l-zh">核心结论</span></span> <span class="l-en">Froth was the accepted <strong>cost of speed</strong>, not the goal. The consumer-price spillover — 86% memory margins bleeding into product prices — is the emergent problem they now own.</span><span class="l-zh">泡沫是被接受的<strong>速度成本</strong>，而非目标。传导至消费端的溢出效应——86% 的内存毛利率渗入产品价格——是他们如今必须承担的涌现问题。</span></div>
+
+<h2 id="pop"><span class="num">3</span><span class="l-en">The pop — mechanism &amp; the toolkit</span><span class="l-zh">破裂 —— 机制与工具箱</span></h2>
+<div class="callout lead"><span class="co-h"><span class="l-en">The mechanism in one line</span><span class="l-zh">机制一句话概括</span></span> <span class="l-en">The administration is not trying to prevent the pop. It is trying to control <em>when</em> it happens, <em>who</em> absorbs the loss, and <em>what</em> the state owns on the other side. To read the toolkit, first read the pressure it is built to release.</span><span class="l-zh">政府并不是要阻止泡沫破裂，而是要控制破裂<em>发生的时间</em>、<em>由谁</em>承担损失，以及破裂之后<em>国家</em>拥有什么。要读懂这套工具箱，先要读懂它被设计来释放的压力。</span></div>
+
+<h3><span class="l-en">Hyperscaler capex / FCF reality (2026)</span><span class="l-zh">超大云厂商资本开支 / 自由现金流现实（2026）</span></h3>
+
+<p><span class="l-en">Google, Amazon, Microsoft, and Meta plan <strong>$725 billion</strong> of 2026 capex, <span class="r-pos">+77%</span> from <strong>$410B</strong> in 2025, with Goldman projecting <strong>$5.3 trillion</strong> cumulative FY25–FY30. The free cash flow that once funded this is already gone.</span><span class="l-zh">Google、Amazon、Microsoft 与 Meta 计划在 2026 年投入 <strong>7250 亿美元</strong>资本开支，较 2025 年的 <strong>4100 亿美元</strong>增长 <span class="r-pos">+77%</span>；高盛预计 2025–2030 财年累计资本开支为 <strong>5.3 万亿美元</strong>。曾经为此提供资金的自由现金流已经消失。</span></p>
+
+<table class="data">
+<tr><th><span class="l-en">Company / signal</span><span class="l-zh">公司 / 信号</span></th><th><span class="l-en">Free cash flow reality</span><span class="l-zh">自由现金流现实</span></th></tr>
+<tr><td><span class="l-en">Amazon</span><span class="l-zh">Amazon</span></td><td><span class="l-en">Projected <span class="r-neg">negative $17–28B</span> FCF</span><span class="l-zh">预计自由现金流为<span class="r-neg">负 170–280 亿美元</span></span></td></tr>
+<tr><td><span class="l-en">Alphabet</span><span class="l-zh">Alphabet</span></td><td><span class="l-en">FCF down <span class="r-neg">~90%</span> to <strong>$8.2B</strong></span><span class="l-zh">自由现金流下降 <span class="r-neg">约 90%</span> 至 <strong>82 亿美元</strong></span></td></tr>
+<tr><td><span class="l-en">Meta</span><span class="l-zh">Meta</span></td><td><span class="l-en">Single-digit billions at guidance midpoint</span><span class="l-zh">指引中点仅剩个位数十亿美元</span></td></tr>
+<tr><td><span class="l-en">Evercore warning</span><span class="l-zh">Evercore 警告</span></td><td><span class="l-en">Forward FCF below the 2022 <strong>"yellow flag"</strong> lows, toward a <strong>"red flag"</strong> moment</span><span class="l-zh">前瞻自由现金流已跌破 2022 年<strong>“黄灯”</strong>低点，接近<strong>“红灯”</strong>时刻</span></td></tr>
+</table>
+
+<p><span class="l-en">With internal cash exhausted, funding has shifted to <strong>leverage and equity issuance</strong>: Alphabet netted <strong>~$85 billion</strong> from a secondary offering; Nvidia raised <strong>$25 billion</strong> in its first debt sale of the AI boom; SpaceX followed its <strong>$85.7B</strong> IPO with a <strong>$25B</strong> bond offering days later; and roughly <strong>half</strong> of Morgan Stanley's estimated <strong>$3 trillion</strong> in 2025–28 datacenter spend is covered by private credit. Most telling: <strong>$49 billion</strong> of Q1 2026 hyperscaler "other income" came explicitly from equity stakes in private companies — the largest share of earnings from other income in at least a decade.</span><span class="l-zh">内部现金枯竭后，融资已经转向<strong>杠杆与股权发行</strong>：Alphabet 通过二次发行净筹<strong>约 850 亿美元</strong>；Nvidia 在 AI 繁荣中首次发债，融资 <strong>250 亿美元</strong>；SpaceX 在 <strong>857 亿美元</strong> IPO 后数日又发行 <strong>250 亿美元</strong>债券；同时，Morgan Stanley 估计 2025–2028 年数据中心支出约 <strong>3 万亿美元</strong>，其中大约<strong>一半</strong>由私人信贷覆盖。最能说明问题的是：2026 年一季度超大云厂商“其他收入”中的 <strong>490 亿美元</strong>明确来自对私人公司的股权投资——这是至少十年来利润中来自其他收入占比最高的一次。</span></p>
+
+<h3><span class="l-en">June 2026 was the dress rehearsal</span><span class="l-zh">2026 年 6 月是彩排</span></h3>
+
+<p><span class="l-en"><strong>June 5:</strong> a jobs report (<strong>172,000</strong> vs. <strong>80,000</strong> expected) sent the Nasdaq to its worst week in over a year (<span class="r-neg">−4.7%</span>) — good news as bad news, the classic late-regime signature. <strong>June 23:</strong> KOSPI halted trading to prevent a crash; Samsung and SK Hynix <span class="r-neg">−12%</span> in a morning; the slump went global June 24–25, with Oracle closing its worst week since the dot-com bubble at <span class="r-neg">−19%</span>. Micron and SanDisk dropped <span class="r-neg">~13%</span> in a single session — a leverage-driven unwind, <em>not</em> a demand collapse — after which Micron's earnings and guidance appeared to put doubts about the AI rally at ease.</span><span class="l-zh"><strong>6 月 5 日：</strong>就业报告（<strong>17.2 万</strong> vs 预期 <strong>8 万</strong>）让 Nasdaq 创下一年多以来最糟糕一周（<span class="r-neg">−4.7%</span>）——好消息变坏消息，典型的周期末期信号。<strong>6 月 23 日：</strong>KOSPI 暂停交易以防崩盘；三星与 SK 海力士一上午跌 <span class="r-neg">12%</span>；跌势在 6 月 24–25 日蔓延全球，Oracle 创下自互联网泡沫以来最差周表现，收跌 <span class="r-neg">19%</span>。美光与 SanDisk 单日跌 <span class="r-neg">约 13%</span>——这是杠杆驱动的去杠杆，<em>而非</em>需求崩塌——随后美光财报与指引似乎平息了市场对 AI 反弹的怀疑。</span></p>
+
+<div class="callout warn"><span class="co-h"><span class="l-en">The mapped path</span><span class="l-zh">已勾勒的路径</span></span> <span class="l-en">Capital Economics' path: a "blow-off phase" to S&amp;P <strong>8,250</strong> by end-2026, then a <span class="r-neg">21%</span> collapse to <strong>6,500</strong> by end-2027.</span><span class="l-zh">Capital Economics 的路径：到 2026 年末，标普 500 进入“最后冲刺阶段”至 <strong>8250 点</strong>，然后到 2027 年末下跌 <span class="r-neg">21%</span> 至 <strong>6500 点</strong>。</span></div>
+
+<h3><span class="l-en">The Fed put is structurally disabled — for now</span><span class="l-zh">“Fed put”目前在结构上失灵</span></h3>
+
+<p><span class="l-en">Warsh was confirmed <strong>54–45</strong> — the closest in the modern era — and sworn in <strong>May 22, 2026</strong>. Trump appointed him to cut. Instead: since the Iran war began in late February, inflation flared to CPI <strong>4.2%</strong> in May — the highest since April 2023. At his first meeting, <strong>nine</strong> officials signaled support for higher rates, <strong>six</strong> for two quarter-point increases — a sharp change from March. The dot plot confirmed even one 2026 cut is no longer the base case. As of June 30 at Sintra: <em>"we've all looked around, and we've seen that prices are too high."</em> See <a href="report_warsh_fomc.html">The Warsh Shock</a> for the full account.</span><span class="l-zh">Warsh 以 <strong>54–45</strong> 票获确认——现代历史上最接近的票数——并于 <strong>2026 年 5 月 22 日</strong>宣誓就职。特朗普任命他是为了降息。但自 2 月下旬伊朗战争开始后，通胀升温，5 月 CPI 达到 <strong>4.2%</strong>，为 2023 年 4 月以来最高。第一次会议上，<strong>9 名</strong>官员支持更高利率，<strong>6 名</strong>官员支持加息两次、每次 25 个基点——相比 3 月出现明显转变。点阵图确认，即便一次 2026 年降息也不再是基准情形。到 6 月 30 日辛特拉会议时，Warsh 表示：<em>“我们都环顾四周，看见价格太高了。”</em> 详见 <a href="report_warsh_fomc.html">The Warsh Shock</a>。</span></p>
+
+<div class="callout key"><span class="co-h"><span class="l-en">The self-defeating loop</span><span class="l-zh">自我拆台的循环</span></span> <span class="l-en">The boom the administration engineered generates the inflation that disables the tool that would cushion the boom's unwind.</span><span class="l-zh">政府自己工程化出的繁荣，正在制造通胀；而这种通胀又使得原本可以缓冲繁荣反转的工具失效。</span></div>
+
+<h3><span class="l-en">Administration toolkit — deployment order</span><span class="l-zh">政府工具箱——部署顺序</span></h3>
+
+<table class="data scn">
+<tr><th><span class="l-en">Tier</span><span class="l-zh">层级</span></th><th><span class="l-en">Status</span><span class="l-zh">状态</span></th><th><span class="l-en">What it does</span><span class="l-zh">作用</span></th></tr>
+<tr><td><span class="l-en"><strong>Tier 1</strong></span><span class="l-zh"><strong>第一层</strong></span></td><td><span class="l-en">Running now</span><span class="l-zh">正在运行</span></td><td><span class="l-en">Narrative management and deal flow; demand valves (wider China access, Gulf/allied export packages, federal procurement acceleration); tariff relief live via today's Commerce datacenter-chip review; credit-channel lubrication in lieu of rate cuts (Bessent's <strong>$3T</strong> lending-capacity deregulation; the Commerce loan/grant facility for 100MW+ datacenters).</span><span class="l-zh">叙事管理与交易流；需求阀门（扩大中国准入、海湾 / 盟友出口包、加速联邦采购）；今天商务部数据中心芯片审查提供的关税缓释；在不能降息时润滑信贷渠道（Bessent 的 <strong>3 万亿美元</strong>贷款能力监管放松、商务部针对 100MW+ 数据中心的贷款 / 补助工具）。</span></td></tr>
+<tr><td><span class="l-en"><strong>Tier 2</strong></span><span class="l-zh"><strong>第二层</strong></span></td><td><span class="l-en">Pre-positioned</span><span class="l-zh">预先部署</span></td><td><span class="l-en">Selective socialization of strategic nodes under a "no bailout" brand. Official line: "There will be no federal bailout for AI" (Sacks); Bloomberg reports the administration "rules out AI backstop." Treat as cheap talk — OpenAI's CFO already said in November the government would have to "backstop the guarantee that allows the financing to happen" against <strong>$1.4 trillion</strong> of commitments. The machinery being assembled (sovereign wealth fund EO, CHIPS-to-equity conversions, donated-equity Public Wealth Fund) is exactly the plumbing you'd install <em>before</em> a distress round, so rescue can be branded as public ownership rather than bailout.</span><span class="l-zh">以“不是救助”的品牌，对战略节点进行选择性社会化。官方口径是：“不会有联邦政府为 AI 兜底”（Sacks）；彭博报道称政府“排除 AI 后盾”。这应当被视为廉价话术——OpenAI CFO 早在 11 月就说，面对 <strong>1.4 万亿美元</strong>融资承诺，政府必须“为使融资可行的担保兜底”。正在搭建的机器（主权财富基金行政令、《芯片法案》补助转股权、公共财富基金的捐赠股权）正是你会在困境融资<em>前</em>安装的管道，这样救助就可以被包装成公共所有权，而不是 bailout。</span></td></tr>
+<tr><td><span class="l-en"><strong>Tier 3</strong></span><span class="l-zh"><strong>第三层</strong></span></td><td><span class="l-en">Implicit endgame <em>(inference)</em></span><span class="l-zh">隐含终局 <em>（推论）</em></span></td><td><span class="l-en">Loss allocation. Equity holders and private credit absorb the writedown; the state keeps the physical assets, toll streams, and equity positions; genuinely strategic nodes get rescued under national-security framing.</span><span class="l-zh">损失分配。股东与私人信贷承受减记；国家保留物理资产、收费流与股权头寸；真正具有战略意义的节点在国家安全叙事下得到救援。</span></td></tr>
+</table>
+
+<h3><span class="l-en">What they cannot fix</span><span class="l-zh">他们修不了什么</span></h3>
+
+<p><span class="l-en"><strong>Hyperscaler ROI.</strong> If inference economics don't cover depreciation plus capital cost, no export approval, procurement contract, or wealth fund restores a <strong>$725B</strong> private capex run-rate. The one honest sentence in the entire administration posture is Sacks's — <em>"a reversal would risk recession"</em> — which is an admission, not a policy. See <a href="report_bessent_jun24.html">The Bessent Bridge</a> for how the credit-channel plumbing is actually being routed.</span><span class="l-zh"><strong>超大云厂商的投资回报率。</strong>如果推理经济性无法覆盖折旧加资本成本，那么无论出口许可、采购合同还是财富基金，都无法恢复 <strong>7250 亿美元</strong>的私人资本开支年化速度。整个政府姿态中最诚实的一句话正是 Sacks 的话——<em>“反转会带来衰退风险”</em>——这是一种承认，不是一项政策。信贷渠道管道的实际布设方式，详见 <a href="report_bessent_jun24.html">The Bessent Bridge</a>。</span></p>
+
+<figure class="fig" id="fig-capex">
+  <div class="fig-h"><span class="l-en">Figure 2 · The capex supercycle vs. free cash flow</span><span class="l-zh">图 2 · 资本开支超级周期 vs 自由现金流</span></div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 480" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" role="img" font-family="-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif">
+<title>Hyperscaler capex supercycle and vanished free cash flow</title>
+<desc>Bar chart of combined Google, Amazon, Microsoft and Meta capex rising from 410 billion dollars in 2025 to a planned 725 billion in 2026 (up 77 percent), with a Goldman note of roughly 5.3 trillion cumulative FY25 to FY30, and a red strip showing free cash flow going negative across Amazon, Alphabet and an Evercore yellow-to-red flag warning.</desc>
+<style>
+.capex-t{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;}
+.capex-title{fill:var(--text);font-size:20px;font-weight:700;}
+.capex-sub{fill:var(--muted);font-size:12.5px;}
+.capex-axis{fill:var(--muted);font-size:12px;}
+.capex-yr{fill:var(--text);font-size:14px;font-weight:600;}
+.capex-val{fill:var(--text);font-size:16px;font-weight:700;}
+.capex-lab{fill:var(--muted);font-size:12px;}
+.capex-strip-h{fill:var(--text);font-size:13px;font-weight:700;}
+.capex-chip-t{fill:var(--text);font-size:12.5px;font-weight:600;}
+.capex-chip-s{fill:var(--muted);font-size:11.5px;}
+.capex-callout-t{fill:var(--text);font-size:12.5px;font-weight:600;}
+.capex-grid{stroke:var(--line);stroke-width:1;opacity:.5;}
+.capex-axisline{stroke:var(--line);stroke-width:1.4;}
+.capex-bar25{transform-origin:0 360px;animation:capex-grow25 1.3s cubic-bezier(.22,1,.36,1) forwards;}
+.capex-bar26{transform-origin:0 360px;animation:capex-grow26 1.6s cubic-bezier(.22,1,.36,1) .25s forwards;transform:scaleY(0);}
+.capex-plus{opacity:0;animation:capex-fadein .6s ease 1.5s forwards;}
+.capex-arrow{stroke-dasharray:5 4;animation:capex-flow 2.2s linear infinite;}
+.capex-chip{animation:capex-pulse 3.2s ease-in-out infinite;transform-origin:center;}
+.capex-chip:nth-of-type(2){animation-delay:.5s;}
+.capex-chip:nth-of-type(3){animation-delay:1s;}
+.capex-callout{opacity:0;animation:capex-fadein .8s ease 1.9s forwards;}
+@keyframes capex-grow25{from{transform:scaleY(0);}to{transform:scaleY(1);}}
+@keyframes capex-grow26{from{transform:scaleY(0);}to{transform:scaleY(1);}}
+@keyframes capex-fadein{to{opacity:1;}}
+@keyframes capex-flow{to{stroke-dashoffset:-18;}}
+@keyframes capex-pulse{0%,100%{opacity:.9;}50%{opacity:.55;}}
+@media (prefers-reduced-motion: reduce){ [class*="capex-"]{ animation:none !important; opacity:1 !important; transform:none !important;} }
+</style>
+
+<text class="capex-t capex-title l-en" x="40" y="38">The capex supercycle — and the free cash flow it consumed</text>
+<text class="capex-t capex-title l-zh" x="40" y="38">资本开支超级周期 — 以及被它吞噬的自由现金流</text>
+<text class="capex-t capex-sub l-en" x="40" y="59">Combined hyperscaler capex · Google + Amazon + Microsoft + Meta ($B)</text>
+<text class="capex-t capex-sub l-zh" x="40" y="59">超大云厂商合计资本开支 · Google + Amazon + Microsoft + Meta（十亿美元）</text>
+
+<!-- chart area: x 40..470, baseline y=360, top y=90 -->
+<!-- gridlines for 0,200,400,600,800 mapped: 800->90, 0->360 -->
+<g>
+<line class="capex-grid" x1="90" y1="360" x2="470" y2="360"/>
+<line class="capex-grid" x1="90" y1="292.5" x2="470" y2="292.5"/>
+<line class="capex-grid" x1="90" y1="225" x2="470" y2="225"/>
+<line class="capex-grid" x1="90" y1="157.5" x2="470" y2="157.5"/>
+<line class="capex-grid" x1="90" y1="90" x2="470" y2="90"/>
+<text class="capex-t capex-axis" x="82" y="364" text-anchor="end">0</text>
+<text class="capex-t capex-axis" x="82" y="296.5" text-anchor="end">200</text>
+<text class="capex-t capex-axis" x="82" y="229" text-anchor="end">400</text>
+<text class="capex-t capex-axis" x="82" y="161.5" text-anchor="end">600</text>
+<text class="capex-t capex-axis" x="82" y="94" text-anchor="end">800</text>
+<line class="capex-axisline" x1="90" y1="90" x2="90" y2="360"/>
+<line class="capex-axisline" x1="90" y1="360" x2="470" y2="360"/>
+</g>
+
+<!-- 2025 bar: 410 -> height = 410/800*270 = 138.4 -> top y = 221.6 -->
+<g class="capex-bar25">
+<rect x="150" y="221.6" width="90" height="138.4" rx="3" fill="#5b8def" fill-opacity="0.28" stroke="#5b8def" stroke-width="1.5"/>
+</g>
+<text class="capex-t capex-val" x="195" y="212" text-anchor="middle">$410B</text>
+<text class="capex-t capex-yr" x="195" y="382" text-anchor="middle">2025</text>
+
+<!-- 2026 bar: 725 -> height = 725/800*270 = 244.7 -> top y = 115.3 -->
+<g class="capex-bar26">
+<rect x="300" y="115.3" width="90" height="244.7" rx="3" fill="#e0973a" fill-opacity="0.30" stroke="#e0973a" stroke-width="1.6"/>
+</g>
+<text class="capex-t capex-val" x="345" y="106" text-anchor="middle">$725B</text>
+<text class="capex-t capex-yr" x="345" y="382" text-anchor="middle">2026</text>
+<text class="capex-t capex-lab l-en" x="345" y="398" text-anchor="middle">planned</text>
+<text class="capex-t capex-lab l-zh" x="345" y="398" text-anchor="middle">计划</text>
+
+<!-- +77% growth annotation -->
+<g class="capex-plus">
+<path class="capex-arrow" d="M240,190 C270,150 275,140 300,128" fill="none" stroke="#46b87a" stroke-width="2"/>
+<rect x="398" y="110" width="62" height="26" rx="13" fill="#46b87a" fill-opacity="0.18" stroke="#46b87a" stroke-width="1.4"/>
+<text class="capex-t" x="429" y="127.5" text-anchor="middle" fill="#46b87a" font-size="15" font-weight="700">+77%</text>
+</g>
+
+<!-- Goldman cumulative callout -->
+<g class="capex-callout">
+<rect x="90" y="415" width="380" height="46" rx="8" fill="var(--panel2)" stroke="var(--line)" stroke-width="1"/>
+<rect x="90" y="415" width="4" height="46" rx="2" fill="#e0973a"/>
+<text class="capex-t capex-callout-t l-en" x="106" y="434">Goldman: ~$5.3T cumulative capex, FY25–FY30</text>
+<text class="capex-t capex-callout-t l-zh" x="106" y="434">高盛：2025–2030 财年累计资本开支约 5.3 万亿美元</text>
+<text class="capex-t capex-chip-s l-en" x="106" y="452">The scarcity-driven, onshore supercycle they engineered</text>
+<text class="capex-t capex-chip-s l-zh" x="106" y="452">他们工程化的、由稀缺驱动、本土发生的超级周期</text>
+</g>
+
+<!-- divider -->
+<line class="capex-grid" x1="500" y1="90" x2="500" y2="461" stroke-dasharray="3 4"/>
+
+<!-- FCF strip -->
+<g>
+<circle cx="530" cy="102" r="4" fill="#e0607a"/>
+<text class="capex-t capex-strip-h l-en" x="544" y="107">Free cash flow: gone</text>
+<text class="capex-t capex-strip-h l-zh" x="544" y="107">自由现金流：已消失</text>
+</g>
+
+<!-- chip 1 Amazon -->
+<g class="capex-chip">
+<rect x="530" y="126" width="300" height="60" rx="9" fill="#e0607a" fill-opacity="0.12" stroke="#e0607a" stroke-width="1.4"/>
+<text class="capex-t" x="548" y="150" fill="#e0607a" font-size="17" font-weight="700">−$17–28B</text>
+<text class="capex-t capex-chip-t l-en" x="670" y="150">Amazon FCF</text>
+<text class="capex-t capex-chip-t l-zh" x="670" y="150">Amazon 自由现金流</text>
+<text class="capex-t capex-chip-s l-en" x="548" y="171">Guided free cash flow swings negative</text>
+<text class="capex-t capex-chip-s l-zh" x="548" y="171">指引自由现金流转负</text>
+</g>
+
+<!-- chip 2 Alphabet -->
+<g class="capex-chip">
+<rect x="530" y="196" width="300" height="60" rx="9" fill="#e0607a" fill-opacity="0.12" stroke="#e0607a" stroke-width="1.4"/>
+<text class="capex-t" x="548" y="220" fill="#e0607a" font-size="17" font-weight="700">−90% → $8.2B</text>
+<text class="capex-t capex-chip-t l-en" x="700" y="220">Alphabet FCF</text>
+<text class="capex-t capex-chip-t l-zh" x="700" y="220">Alphabet 自由现金流</text>
+<text class="capex-t capex-chip-s l-en" x="548" y="241">Free cash flow collapses ~90% YoY</text>
+<text class="capex-t capex-chip-s l-zh" x="548" y="241">自由现金流同比暴跌约 90%</text>
+</g>
+
+<!-- chip 3 Evercore flag -->
+<g class="capex-chip">
+<rect x="530" y="266" width="300" height="60" rx="9" fill="#d98b30" fill-opacity="0.14" stroke="#d98b30" stroke-width="1.4"/>
+<!-- yellow to red flag transition -->
+<rect x="548" y="284" width="16" height="16" rx="3" fill="#d98b30"/>
+<text class="capex-t" x="572" y="297" fill="var(--muted)" font-size="15" font-weight="700">→</text>
+<rect x="590" y="284" width="16" height="16" rx="3" fill="#e0607a"/>
+<text class="capex-t capex-chip-t l-en" x="620" y="290">Evercore: yellow flag</text>
+<text class="capex-t capex-chip-t l-zh" x="620" y="290">Evercore：黄灯</text>
+<text class="capex-t capex-chip-t l-en" x="620" y="308" fill="#e0607a">→ red flag</text>
+<text class="capex-t capex-chip-t l-zh" x="620" y="308" fill="#e0607a">→ 红灯</text>
+</g>
+
+<!-- financing footnote -->
+<g class="capex-callout">
+<text class="capex-t capex-chip-s l-en" x="530" y="352">Below 2022 "yellow-light" low; funding shifts to leverage &amp; equity</text>
+<text class="capex-t capex-chip-s l-zh" x="530" y="352">跌破 2022 年"黄灯"低点；融资转向杠杆与股权发行</text>
+<text class="capex-t capex-chip-s l-en" x="530" y="372">Alphabet raised ~$85B net via a secondary offering</text>
+<text class="capex-t capex-chip-s l-zh" x="530" y="372">Alphabet 通过二次发行净筹约 850 亿美元</text>
+</g>
+</svg>
+  <figcaption><span class="l-en">Hyperscaler capex leaps 77% to a planned $725B in 2026 (Goldman: ~$5.3T cumulative FY25–FY30) as free cash flow turns negative across Amazon, Alphabet and Evercore's yellow-to-red warning.</span><span class="l-zh">超大云厂商资本开支跃升 77% 至 2026 年计划的 7250 亿美元（高盛：2025–2030 财年累计约 5.3 万亿美元），而 Amazon、Alphabet 的自由现金流转负、Evercore 由黄灯逼近红灯。</span></figcaption>
+</figure>
+
+<figure class="fig" id="fig-toolkit">
+  <div class="fig-h"><span class="l-en">Figure 3 · The toolkit — deployment order</span><span class="l-zh">图 3 · 工具箱 · 部署顺序</span></div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 500" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" role="img" font-family="-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif">
+  <title>The administration's toolkit — deployment order</title>
+  <desc>Three stacked policy tiers deployed top to bottom: Tier 1 (running now) narrative, demand valves, tariff relief and credit lubrication; Tier 2 (pre-positioned) the "no bailout" sovereign-fund plumbing; Tier 3 (implicit endgame, inferred) loss allocation onto equity and private credit while the state keeps hard assets, tolls and equity.</desc>
+  <style>
+    .toolkit-t{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;}
+    .toolkit-title{fill:var(--text);font-size:19px;font-weight:700;}
+    .toolkit-sub{fill:var(--muted);font-size:12.5px;}
+    .toolkit-tierlabel{font-size:15px;font-weight:700;}
+    .toolkit-tiernum{font-size:11.5px;font-weight:600;letter-spacing:.05em;}
+    .toolkit-item{fill:var(--text);font-size:12.5px;}
+    .toolkit-itemmuted{fill:var(--muted);font-size:12px;}
+    .toolkit-tag{fill:var(--muted);font-size:11.5px;font-style:italic;}
+    .toolkit-axis{fill:var(--muted);font-size:11.5px;font-weight:600;letter-spacing:.06em;}
+
+    
+
+    .toolkit-dot{animation:toolkit-pulse 2.6s ease-in-out infinite;transform-origin:center;transform-box:fill-box;}
+    @keyframes toolkit-pulse{0%,100%{opacity:1;}50%{opacity:.28;}}
+    .toolkit-ring{animation:toolkit-ring 2.6s ease-out infinite;transform-origin:center;transform-box:fill-box;}
+    @keyframes toolkit-ring{0%{transform:scale(.6);opacity:.6;}80%,100%{transform:scale(2.4);opacity:0;}}
+
+    .toolkit-glow{animation:toolkit-travel 4.4s ease-in-out infinite;}
+    @keyframes toolkit-travel{0%{transform:translateY(0);opacity:0;}12%{opacity:.9;}88%{opacity:.9;}100%{transform:translateY(330px);opacity:0;}}
+
+    .toolkit-dash{stroke-dasharray:7 6;animation:toolkit-drift 5.5s linear infinite;}
+    @keyframes toolkit-drift{to{stroke-dashoffset:-52;}}
+
+    .toolkit-band{animation:toolkit-rise .9s ease-out both;}
+    .toolkit-b2{animation-delay:.16s;}
+    .toolkit-b3{animation-delay:.32s;}
+    @keyframes toolkit-rise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+    @media (prefers-reduced-motion: reduce){ [class*="toolkit-"]{ animation:none !important; } }
+  </style>
+
+  <defs>
+    <radialGradient id="toolkit-glowgrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#5b8def" stop-opacity=".9"/>
+      <stop offset="100%" stop-color="#5b8def" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Title -->
+  <text class="toolkit-t toolkit-title l-en" x="70" y="34">The administration's toolkit — deployment order</text>
+  <text class="toolkit-t toolkit-title l-zh" x="70" y="34">政府工具箱 — 部署顺序</text>
+  <text class="toolkit-t toolkit-sub l-en" x="70" y="53">Three tiers, deployed top to bottom as stress escalates</text>
+  <text class="toolkit-t toolkit-sub l-zh" x="70" y="53">随压力升级，自上而下部署的三个层级</text>
+
+  <!-- Escalation arrow (left rail) -->
+  <g>
+    <line x1="34" y1="82" x2="34" y2="424" stroke="var(--line)" stroke-width="2"/>
+    <path d="M34 424 l-6 -11 h12 z" fill="var(--muted)"/>
+    <circle class="toolkit-glow" cx="34" cy="90" r="13" fill="url(#toolkit-glowgrad)"/>
+    <text class="toolkit-t toolkit-axis l-en" x="20" y="255" transform="rotate(-90 20 255)" text-anchor="middle">DEPLOY ORDER</text>
+    <text class="toolkit-t toolkit-axis l-zh" x="20" y="255" transform="rotate(-90 20 255)" text-anchor="middle">部署顺序</text>
+  </g>
+
+  <!-- ================= TIER 1 ================= -->
+  <g class="toolkit-band">
+    <rect x="70" y="78" width="720" height="108" rx="12" fill="#5b8def" fill-opacity="0.12" stroke="#5b8def" stroke-width="1.6"/>
+    <!-- header row -->
+    <g transform="translate(88,99)">
+      <text class="toolkit-t toolkit-tiernum l-en" x="0" y="0" fill="#5b8def">TIER 1 · RUNNING NOW</text>
+      <text class="toolkit-t toolkit-tiernum l-zh" x="0" y="0" fill="#5b8def">第一层 · 正在运行</text>
+      <!-- live pulse dot -->
+      <circle class="toolkit-ring" cx="182" cy="-4" r="4" fill="none" stroke="#3fb6c0" stroke-width="1.4"/>
+      <circle class="toolkit-dot" cx="182" cy="-4" r="4" fill="#3fb6c0"/>
+    </g>
+    <!-- four sub-valves as compact columns -->
+    <g transform="translate(90,127)">
+      <line x1="0" y1="0" x2="0" y2="44" stroke="#5b8def" stroke-width="2" opacity=".55"/>
+      <text class="toolkit-t toolkit-item l-en" x="10" y="6" font-weight="700">Narrative &amp; deal flow</text>
+      <text class="toolkit-t toolkit-item l-zh" x="10" y="6" font-weight="700">叙事与交易撮合</text>
+      <text class="toolkit-t toolkit-itemmuted l-en" x="10" y="24">keep demand and valuations up</text>
+      <text class="toolkit-t toolkit-itemmuted l-zh" x="10" y="24">托住需求与估值</text>
+    </g>
+    <g transform="translate(268,127)">
+      <line x1="0" y1="0" x2="0" y2="44" stroke="#5b8def" stroke-width="2" opacity=".55"/>
+      <text class="toolkit-t toolkit-item l-en" x="10" y="6" font-weight="700">Demand valves</text>
+      <text class="toolkit-t toolkit-item l-zh" x="10" y="6" font-weight="700">需求阀门</text>
+      <text class="toolkit-t toolkit-itemmuted l-en" x="10" y="24">China access · Gulf packages · procurement</text>
+      <text class="toolkit-t toolkit-itemmuted l-zh" x="10" y="24">中国准入 · 海湾出口包 · 联邦采购</text>
+    </g>
+    <g transform="translate(500,127)">
+      <line x1="0" y1="0" x2="0" y2="44" stroke="#5b8def" stroke-width="2" opacity=".55"/>
+      <text class="toolkit-t toolkit-item l-en" x="10" y="6" font-weight="700">Tariff relief</text>
+      <text class="toolkit-t toolkit-item l-zh" x="10" y="6" font-weight="700">关税缓释</text>
+      <text class="toolkit-t toolkit-itemmuted l-en" x="10" y="24">today's Commerce chip review</text>
+      <text class="toolkit-t toolkit-itemmuted l-zh" x="10" y="24">今日商务部芯片审查</text>
+    </g>
+    <g transform="translate(648,127)">
+      <line x1="0" y1="0" x2="0" y2="44" stroke="#5b8def" stroke-width="2" opacity=".55"/>
+      <text class="toolkit-t toolkit-item l-en" x="10" y="6" font-weight="700">Credit lubrication</text>
+      <text class="toolkit-t toolkit-item l-zh" x="10" y="6" font-weight="700">信贷渠道润滑</text>
+      <text class="toolkit-t toolkit-itemmuted l-en" x="10" y="24">~$3T lending capacity</text>
+      <text class="toolkit-t toolkit-itemmuted l-zh" x="10" y="24">约 $3T 贷款能力</text>
+    </g>
+  </g>
+
+  <!-- ================= TIER 2 ================= -->
+  <g class="toolkit-band toolkit-b2">
+    <rect x="70" y="200" width="720" height="98" rx="12" fill="#e0973a" fill-opacity="0.11" stroke="#e0973a" stroke-width="1.6"/>
+    <g transform="translate(88,221)">
+      <text class="toolkit-t toolkit-tiernum l-en" x="0" y="0" fill="#d98b30">TIER 2 · PRE-POSITIONED</text>
+      <text class="toolkit-t toolkit-tiernum l-zh" x="0" y="0" fill="#d98b30">第二层 · 预先部署</text>
+    </g>
+    <text class="toolkit-t toolkit-tierlabel l-en" x="88" y="248" fill="var(--text)">&#8220;No bailout&#8221; branding over the machinery</text>
+    <text class="toolkit-t toolkit-tierlabel l-zh" x="88" y="248" fill="var(--text)">以&#8220;不是救助&#8221;的品牌，覆盖真正的机器</text>
+    <!-- three plumbing chips -->
+    <g transform="translate(88,262)">
+      <rect x="0" y="0" width="188" height="24" rx="6" fill="#e0973a" fill-opacity=".16" stroke="#e0973a" stroke-opacity=".5"/>
+      <text class="toolkit-t toolkit-item l-en" x="94" y="16" text-anchor="middle">Sovereign wealth fund EO</text>
+      <text class="toolkit-t toolkit-item l-zh" x="94" y="16" text-anchor="middle">主权财富基金行政令</text>
+    </g>
+    <g transform="translate(288,262)">
+      <rect x="0" y="0" width="188" height="24" rx="6" fill="#e0973a" fill-opacity=".16" stroke="#e0973a" stroke-opacity=".5"/>
+      <text class="toolkit-t toolkit-item l-en" x="94" y="16" text-anchor="middle">CHIPS-to-equity conversions</text>
+      <text class="toolkit-t toolkit-item l-zh" x="94" y="16" text-anchor="middle">CHIPS 补贴转股权</text>
+    </g>
+    <g transform="translate(488,262)">
+      <rect x="0" y="0" width="212" height="24" rx="6" fill="#e0973a" fill-opacity=".16" stroke="#e0973a" stroke-opacity=".5"/>
+      <text class="toolkit-t toolkit-item l-en" x="106" y="16" text-anchor="middle">Donated-equity Public Wealth Fund</text>
+      <text class="toolkit-t toolkit-item l-zh" x="106" y="16" text-anchor="middle">捐赠股权公共财富基金</text>
+    </g>
+    <text class="toolkit-t toolkit-tag l-en" x="716" y="255" text-anchor="end">the plumbing installed BEFORE a distress round</text>
+    <text class="toolkit-t toolkit-tag l-zh" x="716" y="255" text-anchor="end">在困境融资前就装好的管道</text>
+  </g>
+
+  <!-- ================= TIER 3 ================= -->
+  <g class="toolkit-band toolkit-b3">
+    <rect class="toolkit-dash" x="70" y="312" width="720" height="112" rx="12" fill="#e0607a" fill-opacity="0.07" stroke="#e0607a" stroke-width="1.6" stroke-opacity=".85"/>
+    <g transform="translate(88,334)">
+      <text class="toolkit-t toolkit-tiernum l-en" x="0" y="0" fill="#e0607a">TIER 3 · IMPLICIT ENDGAME</text>
+      <text class="toolkit-t toolkit-tiernum l-zh" x="0" y="0" fill="#e0607a">第三层 · 隐含终局</text>
+      <text class="toolkit-t toolkit-tag l-en" x="192" y="0" fill="#e0607a" opacity=".85">(inference)</text>
+      <text class="toolkit-t toolkit-tag l-zh" x="192" y="0" fill="#e0607a" opacity=".85">（推论）</text>
+    </g>
+    <text class="toolkit-t toolkit-tierlabel l-en" x="88" y="362" fill="var(--text)" opacity=".92">Loss allocation</text>
+    <text class="toolkit-t toolkit-tierlabel l-zh" x="88" y="362" fill="var(--text)" opacity=".92">损失分配</text>
+    <!-- left: who absorbs -->
+    <g transform="translate(88,378)">
+      <text class="toolkit-t toolkit-item l-en" x="0" y="12">Equity + private credit absorb the writedown</text>
+      <text class="toolkit-t toolkit-item l-zh" x="0" y="12">股东与私人信贷承受减记</text>
+      <text class="toolkit-t toolkit-itemmuted l-en" x="0" y="32">State keeps physical assets, tolls, equity</text>
+      <text class="toolkit-t toolkit-itemmuted l-zh" x="0" y="32">国家保留物理资产、收费流与股权</text>
+    </g>
+    <!-- divider -->
+    <line x1="470" y1="372" x2="470" y2="410" stroke="var(--line)" stroke-width="1" opacity=".6"/>
+    <g transform="translate(492,378)">
+      <text class="toolkit-t toolkit-item l-en" x="0" y="12">Strategic nodes rescued</text>
+      <text class="toolkit-t toolkit-item l-zh" x="0" y="12">战略节点获得救援</text>
+      <text class="toolkit-t toolkit-itemmuted l-en" x="0" y="32">under national-security framing</text>
+      <text class="toolkit-t toolkit-itemmuted l-zh" x="0" y="32">在国家安全叙事下</text>
+    </g>
+  </g>
+
+  <!-- footnote -->
+  <text class="toolkit-t toolkit-tag l-en" x="70" y="446">Tier 3 is inferred — the only framing consistent with all observed behaviour.</text>
+  <text class="toolkit-t toolkit-tag l-zh" x="70" y="446">第三层为推论 — 唯一能与全部已观察行为一致的框架。</text>
+</svg>
+  <figcaption><span class="l-en">The administration's AI toolkit as three tiers deployed top to bottom — demand and credit valves running now, the "no-bailout" sovereign-fund plumbing pre-positioned, and an inferred endgame where equity and private credit absorb losses while the state keeps hard assets, tolls and equity.</span><span class="l-zh">政府 AI 工具箱的三层部署顺序 — 需求与信贷阀门正在运行，"不是救助"的主权基金管道预先安装，隐含终局（推论）中股东与私人信贷承受减记、国家保留物理资产、收费流与股权。</span></figcaption>
+</figure>
+
+<h2 id="refi"><span class="num">4</span><span class="l-en">The real thesis — refinancing the United States</span><span class="l-zh">真正的论点 —— 为美国再融资</span></h2>
+<div class="callout lead"><span class="co-h"><span class="l-en">The frame that unlocks everything</span><span class="l-zh">解锁一切的框架</span></span> <span class="l-en">This is not industrial policy. It is the refinancing of the United States. Once you hold that frame, every apparently disconnected policy snaps into a single machine.</span><span class="l-zh">这不是产业政策，而是美国的再融资工程。一旦采用这个框架，所有看似分散的政策都会拼成一台机器。</span></div>
+
+<p><span class="l-en">Start from the constraint nobody in the administration frames as the constraint. Gross national debt hit <strong>$38.09 trillion</strong>, up <strong>$2.18 trillion</strong> in a year, with deficits running <strong>6–7% of GDP</strong> in non-crisis conditions. Foreign official demand for duration is structurally impaired. The genuine problem facing this administration is not "win the AI race" — it is <em>how does the United States refinance itself at tolerable rates while running wartime deficits in peacetime</em>.</span><span class="l-zh">从政府没有公开表述的约束条件开始看。美国国债总额已达 <strong>38.09 万亿美元</strong>，一年增加 <strong>2.18 万亿美元</strong>；在非危机环境下，赤字仍运行在 <strong>GDP 的 6–7%</strong>。海外官方部门对长期久期的需求在结构上受损。摆在本届政府面前的真正问题不是"赢得 AI 竞赛"，而是：<em>在和平时期运行战时赤字的情况下，美国如何以可承受利率为自己再融资</em>。</span></p>
+
+<h3><span class="l-en">The four legs of the refinancing machine</span><span class="l-zh">再融资机器的四条腿</span></h3>
+
+<table class="data">
+<tr>
+<th><span class="l-en">Leg</span><span class="l-zh">支腿</span></th>
+<th><span class="l-en">Mechanism</span><span class="l-zh">机制</span></th>
+<th><span class="l-en">Load-bearing facts</span><span class="l-zh">承重事实</span></th>
+</tr>
+<tr>
+<td><span class="l-en"><strong>Growth</strong></span><span class="l-zh"><strong>增长腿</strong></span></td>
+<td><span class="l-en">AI capex <em>is</em> the business cycle; hot nominal GDP keeps the debt/GDP arithmetic alive. The bubble is the denominator strategy.</span><span class="l-zh">AI 资本开支<em>就是</em>商业周期本身；高温名义 GDP 维持债务／GDP 算术可持续。泡沫就是分母战略。</span></td>
+<td><span class="l-en">AI = <strong>75%</strong> of Q1 2026 GDP growth; nominal spending growth <strong>5.9%</strong>; business investment displaced the consumer as top GDP contributor.</span><span class="l-zh">AI 贡献 2026 年一季度 GDP 增长的 <strong>75%</strong>；名义支出增长 <strong>5.9%</strong>；企业投资取代消费者成为 GDP 最大贡献项。</span></td>
+</tr>
+<tr>
+<td><span class="l-en"><strong>Funding</strong></span><span class="l-zh"><strong>融资腿</strong></span></td>
+<td><span class="l-en">A <strong>front-end absorption complex</strong> — Fed bills + stablecoin bills + MMFs + deregulated dealer balance sheets — lets Treasury run bills-heavy issuance indefinitely without testing the long end.</span><span class="l-zh">一个<strong>短端吸收复合体</strong>——美联储买国库券 + 稳定币买国库券 + 货币市场基金 + 放松监管后的交易商资产负债表——让财政部可以长期偏重发行短债，而不用真正测试长端。</span></td>
+<td><span class="l-en">Stablecoins to <strong>$3T</strong> by 2030; GENIUS reserves = cash / deposits / repo / Treasuries with <strong>≤93 days</strong> maturity; BIS: a <strong>$3.5B</strong> inflow lowers 3-mo bill yields <strong>up to 4bp in 10 days</strong>. Fed ended QT Dec 2025.</span><span class="l-zh">稳定币到 2030 年增至 <strong>3 万亿美元</strong>；GENIUS 储备 = 现金／存款／回购／剩余期限 <strong>≤93 天</strong>的国债；BIS：<strong>35 亿美元</strong>流入可在 <strong>10 天内使 3 个月国库券收益率最多下降 4 个基点</strong>。美联储 2025 年 12 月结束 QT。</span></td>
+</tr>
+<tr>
+<td><span class="l-en"><strong>Dollar</strong></span><span class="l-zh"><strong>美元腿</strong></span></td>
+<td><span class="l-en">The Dollar Milkshake as deliberate statecraft: global savings channeled into dollar AI assets by design, sustaining dollar demand despite the deficit. Bessent's Greenspan framing is term-premium management.</span><span class="l-zh">"美元奶昔"作为有意的国家战略：全球储蓄被政策设计导入美元 AI 资产，在赤字轨迹恶化下仍维持美元需求。Bessent 的格林斯潘框架就是期限溢价管理。</span></td>
+<td><span class="l-en">MGX's <strong>$49B</strong> AI fund into OpenAI + Anthropic; allies buy "full-stack AI export packages"; China pays a <strong>25%</strong> Treasury toll on every H200.</span><span class="l-zh">MGX <strong>490 亿美元</strong> AI 基金投向 OpenAI 与 Anthropic；盟友购买"全栈 AI 出口包"；中国为每颗 H200 向美国财政部支付 <strong>25%</strong> 通行费。</span></td>
+</tr>
+<tr>
+<td><span class="l-en"><strong>Participation</strong></span><span class="l-zh"><strong>参与腿</strong></span></td>
+<td><span class="l-en">The state has made itself long its own bubble.</span><span class="l-zh">国家已经做多自己的泡沫。</span></td>
+<td><span class="l-en"><strong>25%</strong> of Nvidia's China revenue; Section 232 tariff receipts; a <strong>9.9%</strong> Intel stake; donated OpenAI equity into a Public Wealth Fund ahead of a <strong>~$1T</strong> IPO.</span><span class="l-zh">Nvidia 中国收入的 <strong>25%</strong>；Section 232 关税收入；<strong>9.9%</strong> 的英特尔持股；OpenAI 在约 <strong>1 万亿美元</strong> IPO 前向公共财富基金捐赠的股权。</span></td>
+</tr>
+</table>
+
+<p><span class="l-en"><strong>The growth leg.</strong> AI capex is not a sector story; it is the business cycle itself. Sacks stated it without euphemism: AI was 75% of GDP growth in Q1 2026, and business investment has displaced the consumer as the top GDP contributor. Nominal GDP running hot (5.9% spending growth) is what keeps tax receipts up and debt/GDP arithmetic alive. <em>The bubble is the denominator strategy.</em></span><span class="l-zh"><strong>增长腿。</strong> AI 资本开支不是一个行业故事；它就是商业周期本身。Sacks 毫不委婉地说过：AI 在 2026 年一季度贡献了 GDP 增长的 75%，企业投资已取代消费者成为 GDP 最大贡献项。名义 GDP 保持高温（支出增长 5.9%），正是维持税收收入和债务／GDP 算术可持续的东西。<em>泡沫就是分母战略。</em></span></p>
+
+<p><span class="l-en"><strong>The funding leg.</strong> Bessent became the first Treasury Secretary to publicly position stablecoins as a future pillar of U.S. debt financing, projecting the sector grows tenfold to $3 trillion by 2030 and stating GENIUS-regulated stablecoins will "lead to a surge in demand for US Treasuries." GENIUS reserve rules hard-wire this: reserves must be cash, deposits, repo, or Treasuries with ≤93 days remaining maturity — every dollar of stablecoin growth is a mandatory bill purchase. The BIS has quantified the mechanism: a $3.5B stablecoin inflow lowers 3-month bill yields by up to 4bp within 10 days, with effects that <em>increase</em> under Treasury market stress. The Fed ended QT in December 2025 and is again growing its balance sheet through reserve-management purchases of T-bills. Layer on Bessent's claim that financial deregulation has "unlocked some $3 trillion in lending capacity."</span><span class="l-zh"><strong>融资腿。</strong> Bessent 成为第一位公开把稳定币定位为未来美国债务融资支柱的财政部长。他预计该行业到 2030 年增长十倍至 3 万亿美元，并表示 GENIUS 监管下的稳定币将"带来美国国债需求激增"。GENIUS 储备规则把这个机制硬编码：储备必须是现金、存款、回购或剩余期限不超过 93 天的美国国债——每一美元稳定币增长都是强制性国库券购买。BIS 已经量化这一机制：35 亿美元稳定币流入会在 10 天内使 3 个月国库券收益率最多下降 4 个基点，而且在国债市场压力下影响还会<em>增强</em>。美联储在 2025 年 12 月结束 QT，并通过储备管理性质的国库券购买重新扩张资产负债表。再叠加 Bessent 声称金融监管放松"释放了约 3 万亿美元贷款能力"。</span></p>
+
+<div class="callout key"><span class="co-h"><span class="l-en">The front-end absorption complex</span><span class="l-zh">短端吸收复合体</span></span> <span class="l-en">Fed bills + stablecoin bills + MMFs + deregulated dealer balance sheets — a stack that lets Treasury run bills-heavy issuance indefinitely without testing the long end.</span><span class="l-zh">美联储买国库券 + 稳定币买国库券 + 货币市场基金 + 放松监管后的交易商资产负债表——这一堆栈让财政部可以长期偏重发行短债，而不用真正测试长端。</span></div>
+
+<p><span class="l-en"><strong>The dollar leg.</strong> This is the Dollar Milkshake implemented as deliberate statecraft rather than emergent flow. Gulf sovereigns recycle petrodollars into U.S. AI equity — MGX closed a $49 billion AI fund backing OpenAI and Anthropic. Allies buy "full-stack AI export packages." China pays a 25% Treasury toll on every H200. Global savings are being channeled into dollar-denominated AI assets by policy design, sustaining dollar demand <em>despite</em> the deficit trajectory. Bessent's Greenspan framing is not analysis; it is term-premium management — he needs the market to believe the 1990s analogy so the long end stays anchored while the rest runs.</span><span class="l-zh"><strong>美元腿。</strong> 这就是"美元奶昔"从自然流动变成有意的国家战略。海湾主权资本把石油美元回流到美国 AI 股权——MGX 完成了一个 490 亿美元 AI 基金，支持 OpenAI 与 Anthropic。盟友购买"全栈 AI 出口包"。中国为每一颗 H200 向美国财政部支付 25% 通行费。全球储蓄正在被政策设计导入美元计价 AI 资产，从而在赤字轨迹恶化的情况下仍<em>维持</em>美元需求。Bessent 的格林斯潘框架不是分析，而是期限溢价管理——他需要市场相信 1990 年代类比，才能让长端保持锚定，同时其他部分继续运行。</span></p>
+
+<p><span class="l-en"><strong>The participation leg.</strong> The state has made itself long its own bubble: 25% of Nvidia's China revenue, Section 232 tariff receipts, the 9.9% Intel stake, and negotiated donated equity from OpenAI into a Public Wealth Fund ahead of a ~$1T IPO.</span><span class="l-zh"><strong>参与腿。</strong> 国家已经做多自己的泡沫：Nvidia 中国收入的 25%、Section 232 关税收入、9.9% 的英特尔持股，以及 OpenAI 在约 1 万亿美元 IPO 前向公共财富基金谈判捐赠的股权。</span></p>
+
+<div class="callout warn"><span class="co-h"><span class="l-en">Conclusion (inference)</span><span class="l-zh">结论（推论）</span></span> <span class="l-en">The AI trade is the collateral base of the current U.S. fiscal-monetary regime. This explains why not one policy lever dampens AI demand, why "a reversal would risk recession" is spoken as a warning rather than a plan, why the government keeps taking equity, and why the crisis toolkit being assembled is credit-plumbing rather than rate policy. <em>(Inference — but the only frame consistent with all observed behavior.)</em></span><span class="l-zh">AI 交易是当前美国财政－货币制度的抵押品基础。这解释了为什么没有任何政策杠杆压低 AI 需求，为什么"反转会带来衰退风险"被当成警告而不是计划，为什么政府不断拿股权，以及为什么正在组装的危机工具是信贷管道而不是利率政策。<em>（推论——但这是唯一能与所有已观察行为一致的框架。）</em></span></div>
+
+<figure class="fig" id="fig-machine">
+  <div class="fig-h"><span class="l-en">Figure 4 · The refinancing machine</span><span class="l-zh">图 4 · 再融资机器</span></div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 470" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="machine-title machine-desc" font-family="-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif">
+  <title id="machine-title">The refinancing machine — four legs feeding one core</title>
+  <desc id="machine-desc">A central core labelled "Refinance the U.S." receives four inbound channels — a growth leg (green), funding leg (teal), dollar leg (gold) and participation leg (purple) — with particles flowing continuously inward. The conclusion below reads: the AI trade is the collateral base of the U.S. fiscal–monetary regime.</desc>
+
+  <defs>
+    <radialGradient id="machine-coreGrad" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#5b8def" stop-opacity="0.28"/>
+      <stop offset="60%" stop-color="#5b8def" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#5b8def" stop-opacity="0.03"/>
+    </radialGradient>
+    <filter id="machine-soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3.2"/>
+    </filter>
+  </defs>
+
+  <style>
+    .machine-t{ font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif; }
+    
+    .machine-flow{ stroke-dasharray:2 12; animation:machine-flow 3.2s linear infinite; }
+    .machine-flow-t{ animation-delay:-0.8s; }
+    .machine-flow-f{ animation-delay:-1.6s; }
+    .machine-flow-d{ animation-delay:-2.4s; }
+    @keyframes machine-flow{ to{ stroke-dashoffset:-140; } }
+    .machine-pulse{ transform-origin:440px 235px; animation:machine-pulse 4.5s ease-in-out infinite; }
+    @keyframes machine-pulse{ 0%,100%{ transform:scale(1); opacity:0.85; } 50%{ transform:scale(1.05); opacity:1; } }
+    .machine-glow{ transform-origin:440px 235px; animation:machine-glow 4.5s ease-in-out infinite; }
+    @keyframes machine-glow{ 0%,100%{ opacity:0.35; } 50%{ opacity:0.7; } }
+    .machine-arr{ animation:machine-arr 2.6s ease-in-out infinite; }
+    @keyframes machine-arr{ 0%,100%{ opacity:0.35; } 50%{ opacity:1; } }
+    @media (prefers-reduced-motion: reduce){ [class*="machine-"]{ animation:none !important; } }
+  </style>
+
+  <!-- title -->
+  <text class="machine-t l-en" x="440" y="30" text-anchor="middle" fill="var(--text)" font-size="19" font-weight="700">The refinancing machine — four legs feeding one core</text>
+  <text class="machine-t l-zh" x="440" y="30" text-anchor="middle" fill="var(--text)" font-size="19" font-weight="700">再融资机器 —— 四条腿供养一个核心</text>
+
+  <!-- ============ CHANNELS (drawn under nodes) ============ -->
+  <!-- GROWTH  top-left  green -->
+  <path d="M 214 150 L 372 208" fill="none" stroke="#46b87a" stroke-width="8" stroke-opacity="0.16" stroke-linecap="round"/>
+  <path d="M 214 150 L 372 208" fill="none" stroke="#46b87a" stroke-width="2.4" class="machine-flow" stroke-linecap="round"/>
+  <!-- FUNDING  bottom-left  teal -->
+  <path d="M 214 320 L 372 262" fill="none" stroke="#3fb6c0" stroke-width="8" stroke-opacity="0.16" stroke-linecap="round"/>
+  <path d="M 214 320 L 372 262" fill="none" stroke="#3fb6c0" stroke-width="2.4" class="machine-flow machine-flow-f" stroke-linecap="round"/>
+  <!-- DOLLAR  top-right  gold -->
+  <path d="M 666 150 L 508 208" fill="none" stroke="#e0973a" stroke-width="8" stroke-opacity="0.16" stroke-linecap="round"/>
+  <path d="M 666 150 L 508 208" fill="none" stroke="#e0973a" stroke-width="2.4" class="machine-flow machine-flow-t" stroke-linecap="round"/>
+  <!-- PARTICIPATION  bottom-right  purple -->
+  <path d="M 666 320 L 508 262" fill="none" stroke="#c77dff" stroke-width="8" stroke-opacity="0.16" stroke-linecap="round"/>
+  <path d="M 666 320 L 508 262" fill="none" stroke="#c77dff" stroke-width="2.4" class="machine-flow machine-flow-d" stroke-linecap="round"/>
+
+  <!-- inbound arrowheads -->
+  <path d="M 366 210 l 12 -1 l -6 9 z" fill="#46b87a" class="machine-arr"/>
+  <path d="M 366 260 l 12 1 l -6 -9 z" fill="#3fb6c0" class="machine-arr"/>
+  <path d="M 514 210 l -12 -1 l 6 9 z" fill="#e0973a" class="machine-arr"/>
+  <path d="M 514 260 l -12 1 l 6 -9 z" fill="#c77dff" class="machine-arr"/>
+
+  <!-- ============ CORE ============ -->
+  <circle cx="440" cy="235" r="96" fill="url(#machine-coreGrad)" class="machine-glow" filter="url(#machine-soft)"/>
+  <g class="machine-pulse">
+    <circle cx="440" cy="235" r="74" fill="var(--panel2)" stroke="#5b8def" stroke-width="1.6" stroke-opacity="0.9"/>
+    <circle cx="440" cy="235" r="82" fill="none" stroke="#5b8def" stroke-width="1" stroke-opacity="0.4"/>
+  </g>
+  <text class="machine-t l-en" x="440" y="216" text-anchor="middle" fill="var(--text)" font-size="16" font-weight="700">Refinance the U.S.</text>
+  <text class="machine-t l-zh" x="440" y="216" text-anchor="middle" fill="var(--text)" font-size="16" font-weight="700">为美国再融资</text>
+  <text class="machine-t l-en" x="440" y="238" text-anchor="middle" fill="var(--muted)" font-size="10.5">at tolerable rates —</text>
+  <text class="machine-t l-zh" x="440" y="238" text-anchor="middle" fill="var(--muted)" font-size="10.5">以可承受利率 ——</text>
+  <text class="machine-t l-en" x="440" y="252" text-anchor="middle" fill="var(--muted)" font-size="10.5">wartime deficits</text>
+  <text class="machine-t l-zh" x="440" y="252" text-anchor="middle" fill="var(--muted)" font-size="10.5">和平时期的</text>
+  <text class="machine-t l-en" x="440" y="265" text-anchor="middle" fill="var(--muted)" font-size="10.5">in peacetime</text>
+  <text class="machine-t l-zh" x="440" y="265" text-anchor="middle" fill="var(--muted)" font-size="10.5">战时赤字</text>
+
+  <!-- ============ LEG NODES ============ -->
+  <!-- GROWTH -->
+  <g>
+    <rect x="24" y="98" width="196" height="70" rx="9" fill="var(--panel2)" stroke="var(--line)"/>
+    <rect x="24" y="98" width="4" height="70" rx="2" fill="#46b87a"/>
+    <text class="machine-t l-en" x="40" y="120" fill="#46b87a" font-size="13" font-weight="700">GROWTH leg</text>
+    <text class="machine-t l-zh" x="40" y="120" fill="#46b87a" font-size="13" font-weight="700">增长腿</text>
+    <text class="machine-t l-en" x="40" y="137" fill="var(--muted)" font-size="10">AI capex = the business cycle;</text>
+    <text class="machine-t l-zh" x="40" y="137" fill="var(--muted)" font-size="10">AI资本开支即商业周期本身；</text>
+    <text class="machine-t l-en" x="40" y="151" fill="var(--muted)" font-size="10">75% of Q1 GDP growth;</text>
+    <text class="machine-t l-zh" x="40" y="151" fill="var(--muted)" font-size="10">贡献一季度GDP增长75%；</text>
+    <text class="machine-t l-en" x="40" y="164" fill="var(--muted)" font-size="10">nominal GDP runs hot</text>
+    <text class="machine-t l-zh" x="40" y="164" fill="var(--muted)" font-size="10">名义GDP保持高温</text>
+  </g>
+
+  <!-- FUNDING -->
+  <g>
+    <rect x="24" y="302" width="196" height="70" rx="9" fill="var(--panel2)" stroke="var(--line)"/>
+    <rect x="24" y="302" width="4" height="70" rx="2" fill="#3fb6c0"/>
+    <text class="machine-t l-en" x="40" y="324" fill="#3fb6c0" font-size="13" font-weight="700">FUNDING leg</text>
+    <text class="machine-t l-zh" x="40" y="324" fill="#3fb6c0" font-size="13" font-weight="700">融资腿</text>
+    <text class="machine-t l-en" x="40" y="341" fill="var(--muted)" font-size="10">Front-end absorption complex:</text>
+    <text class="machine-t l-zh" x="40" y="341" fill="var(--muted)" font-size="10">短端吸收复合体：</text>
+    <text class="machine-t l-en" x="40" y="355" fill="var(--muted)" font-size="10">Fed + stablecoin (GENIUS) bills</text>
+    <text class="machine-t l-zh" x="40" y="355" fill="var(--muted)" font-size="10">美联储＋稳定币(GENIUS)买国库券</text>
+    <text class="machine-t l-en" x="40" y="368" fill="var(--muted)" font-size="10">+ MMFs + dealer capacity</text>
+    <text class="machine-t l-zh" x="40" y="368" fill="var(--muted)" font-size="10">＋货币基金＋交易商资产负债表</text>
+  </g>
+
+  <!-- DOLLAR -->
+  <g>
+    <rect x="660" y="98" width="196" height="70" rx="9" fill="var(--panel2)" stroke="var(--line)"/>
+    <rect x="852" y="98" width="4" height="70" rx="2" fill="#e0973a"/>
+    <text class="machine-t l-en" x="840" y="120" text-anchor="end" fill="#e0973a" font-size="13" font-weight="700">DOLLAR leg</text>
+    <text class="machine-t l-zh" x="840" y="120" text-anchor="end" fill="#e0973a" font-size="13" font-weight="700">美元腿</text>
+    <text class="machine-t l-en" x="840" y="137" text-anchor="end" fill="var(--muted)" font-size="10">Dollar Milkshake by policy;</text>
+    <text class="machine-t l-zh" x="840" y="137" text-anchor="end" fill="var(--muted)" font-size="10">政策化的“美元奶昔”；</text>
+    <text class="machine-t l-en" x="840" y="151" text-anchor="end" fill="var(--muted)" font-size="10">Gulf recycles into U.S. AI equity;</text>
+    <text class="machine-t l-zh" x="840" y="151" text-anchor="end" fill="var(--muted)" font-size="10">海湾资本回流美国AI股权；</text>
+    <text class="machine-t l-en" x="840" y="164" text-anchor="end" fill="var(--muted)" font-size="10">25% China toll to Treasury</text>
+    <text class="machine-t l-zh" x="840" y="164" text-anchor="end" fill="var(--muted)" font-size="10">中国销售25%通行费入财政部</text>
+  </g>
+
+  <!-- PARTICIPATION -->
+  <g>
+    <rect x="660" y="302" width="196" height="70" rx="9" fill="var(--panel2)" stroke="var(--line)"/>
+    <rect x="852" y="302" width="4" height="70" rx="2" fill="#c77dff"/>
+    <text class="machine-t l-en" x="840" y="324" text-anchor="end" fill="#c77dff" font-size="13" font-weight="700">PARTICIPATION leg</text>
+    <text class="machine-t l-zh" x="840" y="324" text-anchor="end" fill="#c77dff" font-size="13" font-weight="700">参与腿</text>
+    <text class="machine-t l-en" x="840" y="341" text-anchor="end" fill="var(--muted)" font-size="10">The state is long its own bubble:</text>
+    <text class="machine-t l-zh" x="840" y="341" text-anchor="end" fill="var(--muted)" font-size="10">国家做多自己的泡沫：</text>
+    <text class="machine-t l-en" x="840" y="355" text-anchor="end" fill="var(--muted)" font-size="10">25% Nvidia China rev, 9.9% Intel,</text>
+    <text class="machine-t l-zh" x="840" y="355" text-anchor="end" fill="var(--muted)" font-size="10">英伟达中国收入25%、英特尔9.9%、</text>
+    <text class="machine-t l-en" x="840" y="368" text-anchor="end" fill="var(--muted)" font-size="10">donated OpenAI equity</text>
+    <text class="machine-t l-zh" x="840" y="368" text-anchor="end" fill="var(--muted)" font-size="10">OpenAI捐赠股权</text>
+  </g>
+
+  <!-- ============ CONCLUSION ============ -->
+  <line x1="150" y1="408" x2="730" y2="408" stroke="var(--line)" stroke-width="1"/>
+  <text class="machine-t l-en" x="440" y="432" text-anchor="middle" fill="var(--text)" font-size="12.5" font-weight="600">Conclusion: the AI trade is the collateral base of the U.S. fiscal–monetary regime.</text>
+  <text class="machine-t l-zh" x="440" y="432" text-anchor="middle" fill="var(--text)" font-size="12.5" font-weight="600">结论：AI交易是美国财政—货币制度的抵押品基础。</text>
+</svg>
+  <figcaption><span class="l-en">The refinancing machine: growth, funding, dollar and participation legs all feed one core — refinancing U.S. wartime deficits at tolerable rates — making the AI trade the regime's collateral base.</span><span class="l-zh">再融资机器：增长、融资、美元与参与四条腿供养同一核心——以可承受利率为美国的战时赤字再融资——使AI交易成为该制度的抵押品基础。</span></figcaption>
+</figure>
+
+<h2 id="warsh"><span class="num">5</span><span class="l-en">Warsh decoded — the put moved</span><span class="l-zh">沃什解码 —— put 换了位置</span></h2>
+<div class="callout lead"><span class="co-h"><span class="l-en">The put didn't die — it moved</span><span class="l-zh">put 没死，只是换了位置</span></span> <span class="l-en">Warsh's hawkish debut was not a repudiation of his agenda; it was a down payment on it. The front-end tightening buys the credibility that lets Treasury run the absorption complex at the long end. The Fed put has not been withdrawn — its lever has been handed to a different desk.</span><span class="l-zh">Warsh 的鹰派首秀并非对其议程的否定，而是为其支付的首付款。短端收紧买来的信誉，让财政部得以在长端运行吸收复合体。Fed put 并未被撤走——它的操纵杆只是被交到了另一张办公桌上。</span></div>
+
+<p><span class="l-en">Warsh campaigned as a <em>dove</em> — arguing the Fed was "backward-looking" and too slow to cut, with PIMCO expecting <strong>2–3 cuts in 2026</strong> toward <strong>2.75–3%</strong>. The Iran war, <strong>4.2% CPI</strong>, and memory-driven goods inflation forced the hawkish posture at his first meeting. But his <em>structural</em> agenda never changed.</span><span class="l-zh">Warsh 竞选／游说时是一个<em>鸽派</em>——他认为美联储"向后看"、降息太慢；PIMCO 预期 <strong>2026 年降息 2–3 次</strong>，政策利率降至 <strong>2.75–3%</strong>。伊朗战争、<strong>4.2% CPI</strong> 以及内存驱动的商品通胀，迫使他在第一次会议上采取鹰派姿态。但他的<em>结构性</em>议程从未改变。</span></p>
+
+<h3><span class="l-en">The structural agenda that never moved</span><span class="l-zh">从未改变的结构性议程</span></h3>
+
+<ul>
+<li><span class="l-en"><strong>A new Treasury–Fed Accord</strong> under which "the Fed chair and the Treasury secretary can describe to markets plainly… 'This is our objective for the size of the Fed's balance sheet.'"</span><span class="l-zh"><strong>推动新的财政部–美联储协议</strong>，让"美联储主席和财政部长可以清楚地向市场描述……'这就是我们对美联储资产负债表规模的目标'"。</span></li>
+<li><span class="l-en"><strong>A shift toward shorter duration</strong>, potentially involving Fannie and Freddie.</span><span class="l-zh"><strong>转向更短久期</strong>，可能涉及房利美和房地美。</span></li>
+<li><span class="l-en"><strong>The abolition of forward guidance.</strong></span><span class="l-zh"><strong>废除前瞻指引。</strong></span></li>
+</ul>
+
+<p><span class="l-en">Former Fed officials see what this is. Lacker warns of "a less constructive agreement that lets the Treasury use the Fed's balance sheet to bypass Congress"; one former senior official said that, followed to its logical conclusion, "the Fed could lose control of its balance sheet." Lacker's proposed division — <strong>Fed does monetary policy, <em>Treasury does credit policy</em></strong> — is the actual operating doctrine being installed.</span><span class="l-zh">前美联储官员看得很清楚。Lacker 警告，可能出现"一种不那么建设性的协议，使财政部能够利用美联储资产负债表绕过国会"；另一位前高级官员表示，如果逻辑走到尽头，"美联储可能失去对其资产负债表的控制"。Lacker 提出的分工——<strong>美联储做货币政策，<em>财政部做信贷政策</em></strong>——正是正在安装的实际操作原则。</span></p>
+
+<h3><span class="l-en">Read as realpolitik</span><span class="l-zh">用现实政治来读</span></h3>
+
+<p><span class="l-en"><strong>Warsh's front-end hawkishness is the credibility purchase that protects the long end</strong> while Treasury runs the absorption complex. Trump's serenity — "We have a very good guy over there now… I'm guided by what he wants" — reflects Bessent's tutoring ("the bond market has taken out more governments than howitzers") and a shared expectation the hawkish posture is <em>seasonal</em>: Bessent is already scripting the pivot ("gas prices will come back down, inflation will come back to target"), and Warsh has pre-built his exit ramp by framing AI as ultimately deflationary. <em>(inference)</em></span><span class="l-zh"><strong>Warsh 的短端鹰派姿态，是为保护长端而购买的信誉</strong>，以便财政部运行短端吸收复合体。特朗普的平静——"我们现在那边有一个很好的人……我听他的"——反映出 Bessent 的辅导（"债券市场推翻的政府比榴弹炮更多"）以及一个共同预期：鹰派姿态是<em>季节性的</em>。Bessent 已经在写转向脚本（"汽油价格会回来，通胀会回到目标"），而 Warsh 也通过把 AI 描述为长期通缩力量，预先修好了退路。<em>（推论）</em></span></p>
+
+<h3><span class="l-en">Operational consequence: who responds first</span><span class="l-zh">操作后果：谁先响应</span></h3>
+
+<p><span class="l-en">In a crack, first responders are <strong>not rate cuts.</strong> Crisis management is migrating from the technocratic Fed to the political Treasury, converting "who gets rescued" from a rules question into a <strong>loyalty question.</strong> The order of first responders:</span><span class="l-zh">当市场出现裂缝时，第一响应者<strong>不是降息。</strong>危机管理正在从技术官僚式的美联储转移到政治性的财政部；"谁被救"从规则问题变成<strong>忠诚问题。</strong>第一响应的顺序：</span></p>
+
+<table class="data scn">
+<tr><th><span class="l-en">First responder</span><span class="l-zh">第一响应工具</span></th><th><span class="l-en">Status / operator</span><span class="l-zh">状态／执行方</span></th></tr>
+<tr><td><span class="l-en">Bill purchases</span><span class="l-zh">国库券购买</span></td><td><span class="l-en">Already running</span><span class="l-zh">已经在运行</span></td></tr>
+<tr><td><span class="l-en">Treasury buyback capacity expansion</span><span class="l-zh">扩大财政部回购能力</span></td><td><span class="l-en">Treasury</span><span class="l-zh">财政部</span></td></tr>
+<tr><td><span class="l-en">Standing repo facility</span><span class="l-zh">常设回购便利</span></td><td><span class="l-en">Fed plumbing</span><span class="l-zh">美联储管道</span></td></tr>
+<tr><td><span class="l-en">Regulatory forbearance</span><span class="l-zh">监管宽容</span></td><td><span class="l-en">Discretionary</span><span class="l-zh">自由裁量</span></td></tr>
+<tr><td><span class="l-en">Commerce 100MW+ loan / grant facility</span><span class="l-zh">商务部 100MW+ 贷款／补助工具</span></td><td><span class="l-en">Commerce</span><span class="l-zh">商务部</span></td></tr>
+<tr><td><span class="l-en"><strong>Treasury-led, politically discretionary equity injections into strategic nodes</strong></span><span class="l-zh"><strong>财政部主导、带政治自由裁量的战略节点股权注入</strong></span></td><td><span class="l-en"><strong>Decisive</strong></span><span class="l-zh"><strong>最关键</strong></span></td></tr>
+</table>
+
+<div class="callout warn"><span class="co-h"><span class="l-en">The enforcement mechanism: the Anthropic episode</span><span class="l-zh">执行机制：Anthropic 事件</span></span> <span class="l-en">If discretionary rescue is the carrot, exclusion is the stick. The Anthropic episode — a federal usage ban and a "supply-chain risk" designation after it refused Pentagon terms without safety guardrails, now in litigation, and pointedly absent from the equity talks — demonstrates the enforcement mechanism on the other side of the ledger. When rescue is a loyalty question, the answer can be no.</span><span class="l-zh">如果自由裁量的救援是胡萝卜，排除就是大棒。Anthropic 事件——拒绝在没有安全护栏的情况下接受五角大楼条款后，遭联邦使用禁令，被贴上"供应链风险"标签，目前诉讼中，并明显缺席股权谈判——展示了账本另一侧的执行机制。当救援成为忠诚问题时，答案可以是"不"。</span></div>
+
+<p><span class="l-en">This doctrine is the connective tissue of the regime. For the shock that installed the hawkish posture, see <a href="report_warsh_fomc.html">The Warsh Shock</a>; for the fiscal architecture Treasury is building underneath it, see <a href="report_bessent_jun24.html">The Bessent Bridge</a>.</span><span class="l-zh">这一教义是整个体制的连接组织。关于安装鹰派姿态的那次冲击，见 <a href="report_warsh_fomc.html">The Warsh Shock</a>；关于财政部在其下方构建的财政架构，见 <a href="report_bessent_jun24.html">The Bessent Bridge</a>。</span></p>
+
+<figure class="fig" id="fig-put">
+  <div class="fig-h"><span class="l-en">Figure 5 · The put didn’t die — it moved</span><span class="l-zh">图 5 · put 没死 —— 只是换了位置</span></div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 440" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="put-title put-desc" font-family="-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif">
+  <title id="put-title">The put didn't die — it moved</title>
+  <desc id="put-desc">A glowing PUT orb travels along an arc from a dimmed, disabled Federal Reserve building on the left to an active, lit Treasury vault on the right, illustrating how crisis management migrates from the technocratic Fed to the political Treasury.</desc>
+  <style>
+    .put-t{font-size:12px}
+    
+    .put-head{font-size:21px;font-weight:700;letter-spacing:.2px}
+    .put-lab{font-size:15px;font-weight:700}
+    .put-sub{font-size:11px}
+    .put-cap{font-size:11.5px}
+    .put-orblab{font-size:11px;font-weight:700;letter-spacing:.5px}
+
+    .put-arc-flow{stroke-dasharray:5 9;animation:put-dash 3.2s linear infinite}
+    @keyframes put-dash{to{stroke-dashoffset:-56}}
+
+    .put-orb{animation:put-travel 7s ease-in-out infinite}
+    @keyframes put-travel{
+      0%{transform:translate(0,0)}
+      6%{transform:translate(0,0)}
+      50%{transform:translate(430px,-46px)}
+      94%{transform:translate(430px,-46px)}
+      100%{transform:translate(0,0)}
+    }
+    .put-orb-glow{animation:put-pulse 2.6s ease-in-out infinite}
+    @keyframes put-pulse{0%,100%{opacity:.35;r:20}50%{opacity:.6;r:26}}
+
+    .put-treasury-lit{animation:put-arrive 7s ease-in-out infinite}
+    @keyframes put-arrive{0%,20%{opacity:.15}50%,90%{opacity:.95}100%{opacity:.15}}
+
+    .put-fed-flicker{animation:put-flicker 5s ease-in-out infinite}
+    @keyframes put-flicker{0%,100%{opacity:.32}47%{opacity:.32}50%{opacity:.18}53%{opacity:.32}}
+
+    .put-drift{animation:put-drift 7s ease-in-out infinite}
+    @keyframes put-drift{0%,8%{opacity:0}20%{opacity:.9}80%{opacity:.9}92%,100%{opacity:0}}
+
+    @media (prefers-reduced-motion: reduce){ [class*="put-"]{ animation:none !important; } }
+  </style>
+
+  <defs>
+    <radialGradient id="put-orbgrad" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#fff6dd"/>
+      <stop offset="35%" stop-color="#e0973a"/>
+      <stop offset="100%" stop-color="#e0607a"/>
+    </radialGradient>
+    <radialGradient id="put-vaultglow" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#3fb6c0" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#3fb6c0" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="put-soft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <clipPath id="put-arcclip"><path d="M175 232 Q430 96 685 186 L685 260 L175 260 Z"/></clipPath>
+  </defs>
+
+  <!-- frame -->
+  <rect x="1" y="1" width="858" height="438" rx="14" fill="var(--panel)" stroke="var(--line)"/>
+
+  <!-- heading -->
+  <text class="put-t l-en put-head" x="32" y="42" fill="var(--text)">The put didn&#8217;t die — it moved</text>
+  <text class="put-t l-zh put-head" x="32" y="42" fill="var(--text)">兜底期权没有消失 —— 它转移了</text>
+  <line x1="32" y1="56" x2="828" y2="56" stroke="var(--line)"/>
+
+  <!-- ======================= FED (dim, left) ======================= -->
+  <g class="put-fed-flicker" transform="translate(60,96)">
+    <!-- steps -->
+    <rect x="-4" y="128" width="188" height="10" rx="2" fill="var(--panel2)" stroke="var(--line)"/>
+    <rect x="10" y="118" width="160" height="10" rx="2" fill="var(--panel2)" stroke="var(--line)"/>
+    <!-- columns -->
+    <g fill="var(--panel2)" stroke="var(--line)">
+      <rect x="22" y="58" width="17" height="60"/>
+      <rect x="52" y="58" width="17" height="60"/>
+      <rect x="82" y="58" width="17" height="60"/>
+      <rect x="112" y="58" width="17" height="60"/>
+      <rect x="142" y="58" width="17" height="60"/>
+    </g>
+    <!-- entablature -->
+    <rect x="10" y="44" width="160" height="16" rx="2" fill="var(--panel2)" stroke="var(--line)"/>
+    <!-- pediment -->
+    <path d="M2 44 L90 8 L178 44 Z" fill="var(--panel2)" stroke="var(--line)"/>
+    <circle cx="90" cy="30" r="7" fill="none" stroke="var(--muted)"/>
+  </g>
+  <!-- disabled slash + monetary purple hint -->
+  <g transform="translate(60,96)">
+    <circle cx="90" cy="70" r="52" fill="none" stroke="#c77dff" stroke-opacity="0.28" stroke-width="4"/>
+    <line x1="55" y1="35" x2="125" y2="105" stroke="#c77dff" stroke-opacity="0.32" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <text class="put-t l-en put-lab" x="150" y="266" text-anchor="middle" fill="var(--muted)">Fed</text>
+  <text class="put-t l-zh put-lab" x="150" y="266" text-anchor="middle" fill="var(--muted)">美联储</text>
+  <text class="put-t l-en put-sub" x="150" y="286" text-anchor="middle" fill="var(--muted)">rate cuts — structurally disabled</text>
+  <text class="put-t l-zh put-sub" x="150" y="286" text-anchor="middle" fill="var(--muted)">降息 —— 结构性失灵</text>
+  <text class="put-t l-en put-sub" x="150" y="302" text-anchor="middle" fill="var(--muted)">4.2% CPI · 9 dots hawkish</text>
+  <text class="put-t l-zh put-sub" x="150" y="302" text-anchor="middle" fill="var(--muted)">CPI 4.2% · 点阵图偏鹰</text>
+
+  <!-- ======================= TREASURY (lit, right) ======================= -->
+  <!-- glow halo -->
+  <circle class="put-treasury-lit" cx="750" cy="150" r="96" fill="url(#put-vaultglow)"/>
+  <g transform="translate(672,90)">
+    <!-- vault body -->
+    <rect x="0" y="34" width="156" height="104" rx="6" fill="var(--panel2)" stroke="#3fb6c0" stroke-opacity="0.7" stroke-width="1.5"/>
+    <!-- roof band -->
+    <rect x="-6" y="20" width="168" height="16" rx="3" fill="var(--panel2)" stroke="#3fb6c0" stroke-opacity="0.6"/>
+    <path d="M-6 20 L78 -2 L162 20 Z" fill="var(--panel2)" stroke="#3fb6c0" stroke-opacity="0.6"/>
+    <!-- vault door -->
+    <circle cx="78" cy="86" r="34" fill="var(--panel)" stroke="#3fb6c0" stroke-width="2"/>
+    <circle class="put-treasury-lit" cx="78" cy="86" r="34" fill="none" stroke="#e0973a" stroke-width="2"/>
+    <circle cx="78" cy="86" r="22" fill="none" stroke="#3fb6c0" stroke-opacity="0.6"/>
+    <g stroke="#e0973a" stroke-width="2.2" stroke-linecap="round" class="put-treasury-lit">
+      <line x1="78" y1="52" x2="78" y2="68"/>
+      <line x1="78" y1="104" x2="78" y2="120"/>
+      <line x1="44" y1="86" x2="60" y2="86"/>
+      <line x1="96" y1="86" x2="112" y2="86"/>
+    </g>
+    <circle cx="78" cy="86" r="5" fill="#e0973a"/>
+    <!-- gold coin dollar -->
+    <text x="78" y="90" text-anchor="middle" font-size="12" font-weight="700" fill="#e0973a" opacity="0">$</text>
+  </g>
+
+  <text class="put-t l-en put-lab" x="750" y="256" text-anchor="middle" fill="var(--text)">Treasury</text>
+  <text class="put-t l-zh put-lab" x="750" y="256" text-anchor="middle" fill="var(--text)">财政部</text>
+  <text class="put-t l-en put-sub" x="750" y="276" text-anchor="middle" fill="#3fb6c0">bills · buybacks · standing repo</text>
+  <text class="put-t l-zh put-sub" x="750" y="276" text-anchor="middle" fill="#3fb6c0">国库券 · 回购 · 常设回购</text>
+  <text class="put-t l-en put-sub" x="750" y="292" text-anchor="middle" fill="#3fb6c0">Commerce loans · equity injections</text>
+  <text class="put-t l-zh put-sub" x="750" y="292" text-anchor="middle" fill="#3fb6c0">商务部贷款 · 自由裁量股权注入</text>
+
+  <!-- ======================= ARC ======================= -->
+  <path d="M175 214 Q430 78 685 168" fill="none" stroke="var(--line)" stroke-width="1.5"/>
+  <path class="put-arc-flow" d="M175 214 Q430 78 685 168" fill="none" stroke="#e0973a" stroke-width="2" stroke-opacity="0.75" stroke-linecap="round"/>
+
+  <!-- drifting particle sparks along arc region -->
+  <g clip-path="url(#put-arcclip)">
+    <circle class="put-drift" cx="300" cy="150" r="2.2" fill="#e0973a"/>
+    <circle class="put-drift" cx="480" cy="118" r="2" fill="#e0607a"/>
+    <circle class="put-drift" cx="600" cy="150" r="2.2" fill="#e0973a"/>
+  </g>
+
+  <!-- arrowhead into Treasury -->
+  <path d="M685 168 l-13 -3 l6 10 z" fill="#e0973a"/>
+
+  <!-- ======================= THE PUT ORB ======================= -->
+  <g class="put-orb" transform="translate(0,0)">
+    <g transform="translate(175,214)">
+      <circle class="put-orb-glow" cx="0" cy="0" r="22" fill="url(#put-orbgrad)" filter="url(#put-soft)"/>
+      <circle cx="0" cy="0" r="15" fill="url(#put-orbgrad)"/>
+      <circle cx="0" cy="0" r="15" fill="none" stroke="#fff6dd" stroke-opacity="0.55"/>
+      <text class="put-t l-en put-orblab" x="0" y="-24" text-anchor="middle" fill="var(--text)">THE PUT</text>
+      <text class="put-t l-zh put-orblab" x="0" y="-24" text-anchor="middle" fill="var(--text)">兜底期权</text>
+    </g>
+  </g>
+
+  <!-- ======================= CAPTION ======================= -->
+  <line x1="32" y1="352" x2="828" y2="352" stroke="var(--line)"/>
+  <text class="put-t l-en put-cap" x="430" y="378" text-anchor="middle" fill="var(--text)">Crisis management migrates from the technocratic Fed to the political Treasury.</text>
+  <text class="put-t l-zh put-cap" x="430" y="378" text-anchor="middle" fill="var(--text)">危机管理从技术官僚式美联储转移到政治性财政部。</text>
+  <text class="put-t l-en put-cap" x="430" y="398" text-anchor="middle" fill="var(--muted)">&#8220;Who gets rescued&#8221; stops being a rule and becomes a loyalty question.</text>
+  <text class="put-t l-zh put-cap" x="430" y="398" text-anchor="middle" fill="var(--muted)">&#8220;谁被救&#8221;从规则问题变成忠诚问题。</text>
+  <text class="put-t l-en put-cap" x="430" y="420" text-anchor="middle" fill="#e0607a" font-weight="700">The put didn&#8217;t die — it moved.</text>
+  <text class="put-t l-zh put-cap" x="430" y="420" text-anchor="middle" fill="#e0607a" font-weight="700">兜底期权没有消失 —— 它转移了。</text>
+</svg>
+  <figcaption><span class="l-en">A glowing PUT orb migrates along an arc from a dimmed, disabled Fed to an active, lit Treasury vault — the rescue function moves from technocratic monetary policy to political fiscal discretion.</span><span class="l-zh">发光的"兜底期权"沿弧线从失灵变暗的美联储流向明亮活跃的财政部金库——救助职能从技术官僚式货币政策转移到政治性财政自由裁量。</span></figcaption>
+</figure>
+
+<h2 id="china"><span class="num">6</span><span class="l-en">The China track — two lists, one negotiation</span><span class="l-zh">中国路线 —— 两张名单，一场谈判</span></h2>
+<div class="callout lead"><span class="co-h"><span class="l-en">The real structure</span><span class="l-zh">真实结构</span></span> <span class="l-en">The actual architecture is a <strong>two-track managed-interdependence bargain</strong> — visible only when the two lists are juxtaposed. One track is loud and made for cameras; the other is quiet and severs supply chains. Reading them together is the entire trade.</span><span class="l-zh">真实结构是一个<strong>双轨管理型相互依赖交易</strong>——只有把两张名单并排看才清楚。一条轨道高调、为镜头而设；另一条低调、真正会切断供应链。把两者放在一起读，才是这笔交易的全部。</span></div>
+
+<p><span class="l-en"><strong>Track one (loud):</strong> the Pentagon's 1260H list expanded June 8 by 65 entities — capturing Alibaba, Baidu, BYD, CATL and NIO — with procurement bans effective June 30, 2026 and product bans June 30, 2027. Hawk theater with real teeth. <strong>BABA is now a designated Chinese Military Company, with the entity-level procurement ban having taken effect as of this report.</strong></span><span class="l-zh"><strong>第一轨（高调）：</strong>五角大楼 1260H 名单在 6 月 8 日扩容 65 家实体——覆盖阿里巴巴、百度、比亚迪、宁德时代、蔚来——采购禁令于 2026 年 6 月 30 日生效，产品禁令于 2027 年 6 月 30 日生效。这是鹰派剧场，但有真实杀伤力。<strong>BABA 现在已被指定为中国军事公司，实体级采购禁令已在本报告发布时生效。</strong></span></p>
+
+<p><span class="l-en"><strong>Track two (quiet):</strong> the Commerce Entity List — the instrument that actually severs supply chains — has not been updated since October 2025, the longest gap in more than a decade, while CXMT, DeepSeek and 100+ other Chinese firms have cleared interagency review but sit unpublished, attributed to "extensive negotiations with China." A former Commerce official states trade policy is overriding the national-security tool. The February trial balloon — CXMT/YMTC posted as <em>removed</em> from 1260H, withdrawn within an hour after hawk backlash — and their restoration in June, weeks after a Trump–Xi Beijing summit, shows the live tug-of-war between the dealmaker faction (Bessent/Lutnick) and congressional hawks, who are simultaneously pushing a two-year statutory Blackwell ban.</span><span class="l-zh"><strong>第二轨（低调）：</strong>商务部实体清单——真正会切断供应链的工具——自 2025 年 10 月以来一直没有更新，这是十多年来最长的间隔；与此同时，CXMT、DeepSeek 以及另外 100 多家中国企业已通过跨部门审查，却仍未公布，理由是正在与中国进行"广泛谈判"。一位前商务部官员表示，贸易政策正在压过国家安全工具。2 月的试探气球——CXMT / YMTC 一度被公布为从 1260H 名单<em>移除</em>，但在鹰派反弹后不到一小时撤回——以及它们在 6 月恢复上榜（特朗普–习近平北京峰会后数周），展示了交易派（Bessent / Lutnick）与国会鹰派之间的现场拉扯，后者同时推动两年法定 Blackwell 禁令。</span></p>
+
+<table class="data">
+<tr>
+<th><span class="l-en"></span><span class="l-zh"></span></th>
+<th><span class="l-en">Track one — loud (1260H)</span><span class="l-zh">第一轨——高调（1260H）</span></th>
+<th><span class="l-en">Track two — quiet (Entity List)</span><span class="l-zh">第二轨——低调（实体清单）</span></th>
+</tr>
+<tr>
+<th><span class="l-en">Instrument</span><span class="l-zh">工具</span></th>
+<td><span class="l-en">Pentagon 1260H — Chinese Military Company designation</span><span class="l-zh">五角大楼 1260H——中国军事公司认定</span></td>
+<td><span class="l-en">Commerce Entity List — the tool that actually severs supply chains</span><span class="l-zh">商务部实体清单——真正会切断供应链的工具</span></td>
+</tr>
+<tr>
+<th><span class="l-en">Latest action</span><span class="l-zh">最新动作</span></th>
+<td><span class="l-en">Expanded June 8 by 65 entities (Alibaba, Baidu, BYD, CATL, NIO)</span><span class="l-zh">6 月 8 日扩容 65 家实体（阿里巴巴、百度、比亚迪、宁德时代、蔚来）</span></td>
+<td><span class="l-en">No update since October 2025 — longest gap in more than a decade</span><span class="l-zh">自 2025 年 10 月以来未更新——十多年来最长间隔</span></td>
+</tr>
+<tr>
+<th><span class="l-en">Effective dates</span><span class="l-zh">生效日期</span></th>
+<td><span class="l-en">Procurement bans June 30, 2026; product bans June 30, 2027</span><span class="l-zh">采购禁令 2026 年 6 月 30 日；产品禁令 2027 年 6 月 30 日</span></td>
+<td><span class="l-en">CXMT, DeepSeek + 100+ firms cleared review but sit unpublished</span><span class="l-zh">CXMT、DeepSeek 及 100 多家企业已过审但仍未公布</span></td>
+</tr>
+<tr>
+<th><span class="l-en">Real function</span><span class="l-zh">真实功能</span></th>
+<td><span class="l-en">Hawk theater with real teeth — signaling and procurement exclusion</span><span class="l-zh">有真实杀伤力的鹰派剧场——发信号与采购排除</span></td>
+<td><span class="l-en">Standing hostage — frozen as leverage, "extensive negotiations with China"</span><span class="l-zh">常设人质——冻结作为筹码，"正与中国进行广泛谈判"</span></td>
+</tr>
+<tr>
+<th><span class="l-en">Who drives it</span><span class="l-zh">谁在主导</span></th>
+<td><span class="l-en">Congressional hawks (also pushing two-year statutory Blackwell ban)</span><span class="l-zh">国会鹰派（同时推动两年法定 Blackwell 禁令）</span></td>
+<td><span class="l-en">Dealmaker faction (Bessent/Lutnick); trade policy overriding security tool</span><span class="l-zh">交易派（Bessent / Lutnick）；贸易政策压过安全工具</span></td>
+</tr>
+</table>
+
+<h3><span class="l-en">The bargain</span><span class="l-zh">这笔交易</span></h3>
+
+<p><span class="l-en">America sells previous-generation compute — the H200, two generations behind Blackwell/Rubin — for cash, dependency, and a <strong>25% Treasury toll</strong>; withholds the frontier; freezes the Entity List as the standing hostage; and keeps CXMT's Entity List addition in its pocket. China accepts the toll — <strong>400K+ H200 units</strong> cleared for ByteDance, Alibaba and Tencent — while sprinting on domestic substitution.</span><span class="l-zh">美国出售上一代算力——H200，落后 Blackwell / Rubin 两代——换取现金、依赖性和 <strong>25% 财政部通行费</strong>；保留前沿产品；冻结实体清单作为常设人质；把 CXMT 加入实体清单的选项留在口袋里。中国接受通行费——字节跳动、阿里、腾讯获准购买 <strong>40 万多颗 H200</strong>——同时全力推进国产替代。</span></p>
+
+<div class="callout key"><span class="co-h"><span class="l-en">The masterstroke nobody has priced</span><span class="l-zh">市场没有定价的妙手</span></span> <span class="l-en">Apple is lobbying the administration for approval to buy CXMT DRAM, seeking a <strong>written guarantee CXMT won't be Entity-Listed</strong> — after raising prices <strong>$100–500 per product</strong> on June 25 (its worst single-day stock drop since April 2025) because memory prices <strong>quadrupled in three quarters</strong> as Micron, Samsung and SK Hynix redirected wafers to HBM. Tim Cook: "everything needs to be on the table." The administration holds an anti-inflation weapon that is also a China concession that is also a discipline device against the U.S. memory oligopoly — let Chinese consumer DRAM into American supply chains to break the memory-CPI spiral its own AI policy created. Whether it fires depends on which hurts more by September: memory-driven electronics inflation, or the hawks.</span><span class="l-zh">苹果正在游说政府批准其购买 CXMT DRAM，并寻求<strong>书面保证 CXMT 不会被列入实体清单</strong>——此前苹果已在 6 月 25 日把产品价格上调 <strong>100–500 美元</strong>（股价创 2025 年 4 月以来最差单日跌幅），原因是美光、三星和 SK 海力士把晶圆产能转向 HBM 后，内存价格在三个季度内<strong>翻了四倍</strong>。Tim Cook 表示："一切都需要摆上桌面。"政府手里握着一个反通胀武器，同时它又是一个对中国的让步，也是一个约束美国内存寡头的纪律工具——允许中国消费级 DRAM 进入美国供应链，以打破其自身 AI 政策制造出的内存 - CPI 螺旋。它是否会开火，取决于到 9 月时哪一边更痛：内存驱动的电子产品通胀，还是鹰派压力。</span></div>
+
+<p><span class="l-en">Given that today's Commerce report explicitly empowers Trump to modify the semiconductor tariff, and given four Pennsylvania toss-up House seats are contested substantially on electricity/affordability, there are meaningful odds — <strong>~35–40%</strong> (<em>estimate</em>) — of consumer-memory relief action before the midterms: CXMT accommodation, tariff carve-outs, or public jawboning.</span><span class="l-zh">考虑到今天的商务部报告明确赋予特朗普修改半导体关税的能力，又考虑到宾夕法尼亚州四个摇摆众议院席位很大程度上围绕电价 / 可负担性竞争，合理概率——<strong>约 35–40%</strong>（<em>估计</em>）——是：中期选举前会出现消费内存缓释行动——CXMT 妥协、关税豁免，或公开口头施压。</span></p>
+
+<h2 id="losses"><span class="num">7</span><span class="l-en">Where the losses land — the transmission map</span><span class="l-zh">损失落在哪里 —— 传导图</span></h2>
+<div class="callout lead"><span class="co-h"><span class="l-en">The equity market is not the fuse</span><span class="l-zh">股市不是引信</span></span> <span class="l-en">The tape everyone watches is a distraction. The load-bearing failure runs through <strong>credit</strong> — and the losses have been deliberately pre-routed away from the banks and into the places the Fed's new doctrine says it will not go.</span><span class="l-zh">人人紧盯的行情只是干扰。真正的承重断点在于<strong>信用</strong>——而损失已被有意预先绕开银行、路由到美联储新教义声明不会介入的领域。</span></div>
+
+<p><span class="l-en">Oracle's total debt exceeds <strong>$130 billion</strong> against <strong>$248 billion</strong> in new lease commitments; its 5-year CDS has risen <span class="r-neg">~310%</span> to a sixteen-year high; Moody's has it on negative watch; and by January 2026 JPMorgan was struggling to find investors for the Stargate debt syndication. CoreWeave's <strong>$7.5B</strong> GPU-collateralized facility at ~11% variable began repayments in January 2026 precisely as collateral value declined sharply. The datacenter ABS market stands at ~$25 billion against projected take-out needs approaching $300 billion — <em>a funding cliff, not a gap</em>.</span><span class="l-zh">Oracle 总债务超过 <strong>1300 亿美元</strong>，同时有 <strong>2480 亿美元</strong>新租赁承诺；其 5 年期 CDS 已上涨 <span class="r-neg">约 310%</span>，至 16 年高点；Moody's 将其列入负面观察；到 2026 年 1 月，JPMorgan 已难以为 Stargate 债务银团找到投资者。CoreWeave <strong>75 亿美元</strong>、以 GPU 为抵押、利率约 11% 浮动的贷款工具，恰好在抵押品价值大幅下跌时，于 2026 年 1 月开始还款。数据中心 ABS 市场规模约 250 亿美元，而预计的接盘需求接近 3000 亿美元——<em>这不是资金缺口，而是融资悬崖</em>。</span></p>
+
+<table class="data">
+<tr>
+<th><span class="l-en">Credit-stress datapoint</span><span class="l-zh">信用压力数据点</span></th>
+<th><span class="l-en">Reading</span><span class="l-zh">读数</span></th>
+<th><span class="l-en">Signal</span><span class="l-zh">信号</span></th>
+</tr>
+<tr>
+<td><span class="l-en">Oracle total debt</span><span class="l-zh">Oracle 总债务</span></td>
+<td class="num"><span class="l-en">&gt; $130B</span><span class="l-zh">&gt; 1300 亿美元</span></td>
+<td><span class="l-en">vs $248B new lease commitments</span><span class="l-zh">对应 2480 亿美元新租赁承诺</span></td>
+</tr>
+<tr>
+<td><span class="l-en">Oracle 5-year CDS</span><span class="l-zh">Oracle 5 年期 CDS</span></td>
+<td class="num"><span class="r-neg">+310%</span></td>
+<td><span class="l-en">to a 16-year high; Moody's negative watch</span><span class="l-zh">至 16 年高点；Moody's 负面观察</span></td>
+</tr>
+<tr>
+<td><span class="l-en">Stargate debt syndication</span><span class="l-zh">Stargate 债务银团</span></td>
+<td class="num"><span class="l-en">Jan 2026</span><span class="l-zh">2026 年 1 月</span></td>
+<td><span class="l-en">JPMorgan struggling to place investors</span><span class="l-zh">JPMorgan 难以找到投资者</span></td>
+</tr>
+<tr>
+<td><span class="l-en">CoreWeave GPU-collateralized facility</span><span class="l-zh">CoreWeave GPU 抵押贷款工具</span></td>
+<td class="num"><span class="l-en">$7.5B @ ~11% var.</span><span class="l-zh">75 亿美元 / 约 11% 浮动</span></td>
+<td><span class="l-en">Repayments began Jan 2026 as collateral value fell</span><span class="l-zh">2026 年 1 月开始还款，恰逢抵押品贬值</span></td>
+</tr>
+<tr>
+<td><span class="l-en">Datacenter ABS market</span><span class="l-zh">数据中心 ABS 市场</span></td>
+<td class="num"><span class="l-en">~$25B</span><span class="l-zh">约 250 亿美元</span></td>
+<td><span class="l-en">vs ~$300B take-out needs — a funding cliff</span><span class="l-zh">对应约 3000 亿美元接盘需求——融资悬崖</span></td>
+</tr>
+</table>
+
+<h3><span class="l-en">Loss routing: the pain is architected to land in the shadows</span><span class="l-zh">损失路径：痛苦被设计成落在阴影之中</span></h3>
+
+<p><span class="l-en">Per the Fed's own studies: banks' direct AI-adjacent exposure is only <strong>0.8% of assets</strong> — the banking system has been deliberately insulated — but up to <strong>a quarter</strong> of bank lending to nonbanks flows to private credit firms (versus <strong>1% in 2013</strong>), major life insurers hold nearly <strong>$1 trillion</strong> in private credit, and state pensions (NY, PA) are invested in the Blue Owl vehicles behind Meta's SPVs and Oracle's datacenter financings. The pain is architected to land in <strong>NBFI space — private credit, insurance, pensions</strong> — exactly where <a href="report_warsh_fomc.html">Warsh's doctrine</a> says the Fed should not go and where Lacker's division assigns responsibility to Treasury.</span><span class="l-zh">按美联储自己的研究：银行对 AI 邻近资产的直接敞口仅占资产 <strong>0.8%</strong>——银行系统被有意隔离；但银行对非银机构贷款中，多达<strong>四分之一</strong>流向私人信贷公司（<strong>2013 年仅 1%</strong>），大型寿险公司持有近 <strong>1 万亿美元</strong>私人信贷，纽约州、宾夕法尼亚州等州养老金也投资于 Blue Owl 工具，而这些工具支持了 Meta 的 SPV 与 Oracle 的数据中心融资。痛苦被设计成落在<strong>非银金融机构——私人信贷、保险、养老金</strong>——这正是 <a href="report_warsh_fomc.html">Warsh 教义</a>中美联储不应介入、而 Lacker 分工中交给财政部负责的地方。</span></p>
+
+<div class="callout key"><span class="co-h"><span class="l-en">Unlike 2008</span><span class="l-zh">不同于 2008 年</span></span> <span class="l-en">Where losses sat inside the levered banking system and <em>forced</em> a Fed rescue, this time losses are pre-routed <em>around</em> the banks into vehicles whose rescue is discretionary, political, and Treasury-controlled — the difference between a crisis that forces your hand and a crisis that hands you the assets. <em>(inference)</em></span><span class="l-zh">2008 年损失位于加杠杆银行系统内部，<em>迫使</em>美联储救援；这一次，损失被预先绕开银行、路由到救援更具自由裁量、更具政治性、由财政部控制的工具中——这是一场迫使你出手的危机，与一场把资产交到你手上的危机之间的区别。<em>（推论）</em></span></div>
+
+<h3><span class="l-en">The scheduled fuse is accounting, not demand</span><span class="l-zh">预定引信是会计，不是需求</span></h3>
+
+<p><span class="l-en">Goldman's May 2026 analysis identified <strong>GPU useful life</strong> as the single variable with the largest impact on capital requirements through 2031: shortening from five years to three pushes cumulative 2026–31 depreciation from <strong>~$3 trillion to ~$4 trillion</strong>. Burry's arithmetic — <strong>$176 billion</strong> of understated depreciation 2026–28, Oracle and Meta operating income more than <strong>20%</strong> above economic reality — collides with Nvidia's annual architecture cadence (Hopper '22, Blackwell '24, Rubin '26, Rubin Ultra '27). Amazon already broke ranks, shortening lives citing accelerating AI pace; Meta extended to <strong>5.5 years</strong> — proof useful life is a <em>management lever, not an engineering fact</em>. The FY2026 10-K season (Jan–Feb 2027) is when auditors and the SEC comment-letter process force this into the open.</span><span class="l-zh">高盛 2026 年 5 月的分析指出，<strong>GPU 有用寿命</strong>是影响 2031 年前资本需求的最大单一变量：从五年缩短到三年，会把 2026–2031 年累计折旧从<strong>约 3 万亿美元推至约 4 万亿美元</strong>。Burry 的算术——2026–2028 年低估折旧 <strong>1760 亿美元</strong>，Oracle 与 Meta 经营收入比经济现实高出 <strong>20%</strong> 以上——与 Nvidia 的年度架构节奏相撞（Hopper 2022、Blackwell 2024、Rubin 2026、Rubin Ultra 2027）。Amazon 已率先打破队形，以 AI 迭代加速为由缩短使用寿命；Meta 则延长至 <strong>5.5 年</strong>——这证明有用寿命是<em>管理层杠杆，而不是工程事实</em>。2026 财年 10-K 季（2027 年 1–2 月）将是审计师与 SEC 评论函流程迫使其公开化的时点。</span></p>
+
+<div class="callout warn"><span class="co-h"><span class="l-en">The lever is set, not engineered</span><span class="l-zh">杠杆是设定出来的，不是工程决定的</span></span> <span class="l-en">Amazon shortens, Meta extends — the same fleet of chips, two opposite depreciation schedules. Useful life is where the reckoning is timed: the 10-K season is the moment the accounting fuse is lit whether demand cracks or not.</span><span class="l-zh">Amazon 缩短、Meta 延长——同一批芯片，两条相反的折旧表。有用寿命正是清算被择时之处：无论需求是否破裂，10-K 季都是会计引信被点燃的时刻。</span></div>
+
+<figure class="fig" id="fig-losses">
+  <div class="fig-h"><span class="l-en">Figure 6 · The transmission map — routed around the banks</span><span class="l-zh">图 6 · 传导图 —— 绕开银行</span></div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="losses-title losses-desc" font-family="-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif">
+<title id="losses-title">Where the losses land — routed around the banks</title>
+<desc id="losses-desc">A left-to-right flow diagram. Losses from AI equity and the credit chain flow past a deliberately insulated banks box (only 0.8% of assets) and are routed into three NBFI vehicles: private credit, insurance, and pensions. Unlike 2008, the rescue of these vehicles is discretionary and Treasury-controlled.</desc>
+<style>
+  .losses-t{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;}
+  .losses-title{fill:var(--text);font-size:19px;font-weight:700;}
+  .losses-sub{fill:var(--muted);font-size:12.5px;}
+  .losses-head{fill:var(--text);font-size:14px;font-weight:700;}
+  .losses-lbl{fill:var(--text);font-size:13px;font-weight:600;}
+  .losses-mut{fill:var(--muted);font-size:12px;}
+  .losses-chip{fill:var(--muted);font-size:12px;}
+  .losses-cap{fill:var(--muted);font-size:12px;}
+  .losses-num{font-size:12px;font-weight:700;}
+  .losses-panel{fill:var(--panel2);stroke:var(--line);stroke-width:1;}
+  .losses-card{fill:var(--panel);stroke:var(--line);stroke-width:1;}
+
+  /* main flow channel — animated flowing dashes */
+  .losses-chan{fill:none;stroke:#e0607a;stroke-width:15;stroke-opacity:0.16;stroke-linecap:round;}
+  .losses-flow{fill:none;stroke:#e0607a;stroke-width:5;stroke-linecap:round;
+    stroke-dasharray:18 20;animation:losses-flow 3.2s linear infinite;}
+  @keyframes losses-flow{to{stroke-dashoffset:-76;}}
+
+  /* target red fill pulse */
+  .losses-tgtfill{fill:#e0607a;animation:losses-pulse 3.6s ease-in-out infinite;}
+  .losses-t2{animation-delay:.5s;}
+  .losses-t3{animation-delay:1s;}
+  @keyframes losses-pulse{0%,100%{opacity:.12;}50%{opacity:.30;}}
+
+  /* soft draw-on of the bypass arrow head glow */
+  .losses-glow{animation:losses-glow 3.6s ease-in-out infinite;}
+  @keyframes losses-glow{0%,100%{opacity:.35;}50%{opacity:.85;}}
+
+  /* insulated banks: subtle green breathing ring */
+  .losses-ring{animation:losses-ring 4.5s ease-in-out infinite;}
+  @keyframes losses-ring{0%,100%{opacity:.5;}50%{opacity:.9;}}
+
+  @media (prefers-reduced-motion: reduce){ [class*="losses-"]{ animation:none !important; } }
+</style>
+
+<defs>
+  <marker id="losses-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#e0607a"/>
+  </marker>
+</defs>
+
+<!-- Title -->
+<text class="losses-t losses-title" x="32" y="34">
+  <tspan class="l-en">Where the losses land — routed around the banks</tspan>
+  <tspan class="l-zh">损失落在何处 —— 绕开银行的路由</tspan>
+</text>
+
+<!-- ===================== SOURCE (left) ===================== -->
+<rect class="losses-panel" x="32" y="66" width="212" height="352" rx="12"/>
+<text class="losses-t losses-head" x="48" y="94">
+  <tspan class="l-en">AI equity + the credit chain</tspan>
+  <tspan class="l-zh">AI 股权 + 信用链条</tspan>
+</text>
+<text class="losses-t losses-mut" x="48" y="116" font-style="italic">
+  <tspan class="l-en">credit is the fuse, not equity</tspan>
+  <tspan class="l-zh">信用才是引信，而非股市</tspan>
+</text>
+
+<!-- chips -->
+<g>
+  <rect class="losses-card" x="48" y="132" width="180" height="52" rx="8"/>
+  <text class="losses-t losses-chip" x="60" y="153">
+    <tspan class="l-en">Oracle total debt</tspan>
+    <tspan class="l-zh">Oracle 总债务</tspan>
+  </text>
+  <text class="losses-t losses-num" x="60" y="173" fill="#e0607a">&gt; $130B<tspan class="losses-mut" dx="8" fill="var(--muted)" font-weight="400">·  CDS +310%</tspan></text>
+</g>
+<g>
+  <rect class="losses-card" x="48" y="196" width="180" height="70" rx="8"/>
+  <text class="losses-t losses-chip" x="60" y="217">
+    <tspan class="l-en">Datacenter ABS</tspan>
+    <tspan class="l-zh">数据中心 ABS</tspan>
+  </text>
+  <text class="losses-t losses-num" x="60" y="237" fill="var(--text)">~$25B</text>
+  <text class="losses-t losses-chip" x="60" y="255">
+    <tspan class="l-en">vs take-out wall</tspan>
+    <tspan class="l-zh">对接盘墙</tspan>
+    <tspan class="losses-num" dx="6" fill="#e0607a">~$300B</tspan>
+  </text>
+</g>
+
+<!-- little scaled bar: ABS vs wall -->
+<g>
+  <rect x="48" y="286" width="180" height="8" rx="4" fill="#e0607a" fill-opacity="0.18"/>
+  <rect x="48" y="286" width="15" height="8" rx="4" fill="#3fb6c0"/>
+  <text class="losses-t losses-mut" x="48" y="312" font-size="11">
+    <tspan class="l-en">funded vs. wall of maturities</tspan>
+    <tspan class="l-zh">已融资 对 到期偿付墙</tspan>
+  </text>
+</g>
+
+<!-- source emitter -->
+<text class="losses-t losses-lbl" x="48" y="352" fill="#e0607a">
+  <tspan class="l-en">Losses originate here</tspan>
+  <tspan class="l-zh">损失从此发源</tspan>
+</text>
+<circle cx="58" cy="378" r="6" fill="#e0607a" class="losses-glow"/>
+<text class="losses-t losses-mut" x="74" y="382" font-size="11">
+  <tspan class="l-en">shareholders + private-credit write-downs</tspan>
+  <tspan class="l-zh">股东 + 私人信贷承受减记</tspan>
+</text>
+
+<!-- ===================== MIDDLE: insulated banks ===================== -->
+<!-- flow channel: from source, curves UP and OVER the banks box, then down into targets -->
+<!-- background wide channel -->
+<path class="losses-chan" d="M244,388 C330,388 300,150 400,150 C470,150 480,150 560,150"/>
+<path class="losses-flow" d="M244,388 C330,388 300,150 400,150 C470,150 480,150 560,150"/>
+
+<!-- branch splits to three targets -->
+<path class="losses-chan" d="M560,150 C600,150 610,168 636,168"/>
+<path class="losses-flow" d="M560,150 C600,150 610,168 636,168"/>
+<path class="losses-chan" d="M560,150 C610,150 612,258 636,258"/>
+<path class="losses-flow" d="M560,150 C610,150 612,258 636,258" style="animation-delay:.4s"/>
+<path class="losses-chan" d="M560,150 C615,150 614,348 636,348"/>
+<path class="losses-flow" d="M560,150 C615,150 614,348 636,348" style="animation-delay:.8s"/>
+
+<!-- insulated banks box, sitting UNDER the bypassing arc -->
+<g>
+  <rect x="300" y="240" width="184" height="120" rx="12" fill="var(--panel)" stroke="#46b87a" stroke-width="1.5" stroke-dasharray="5 4" class="losses-ring"/>
+  <rect x="300" y="240" width="184" height="120" rx="12" fill="#46b87a" fill-opacity="0.06"/>
+  <text class="losses-t losses-head" x="392" y="272" text-anchor="middle" fill="var(--text)">
+    <tspan class="l-en">BANKS</tspan>
+    <tspan class="l-zh">银行</tspan>
+  </text>
+  <text class="losses-t losses-num" x="392" y="298" text-anchor="middle" fill="#46b87a" font-size="18">0.8%</text>
+  <text class="losses-t losses-mut" x="392" y="317" text-anchor="middle" font-size="11">
+    <tspan class="l-en">of assets exposed</tspan>
+    <tspan class="l-zh">资产敞口占比</tspan>
+  </text>
+  <text class="losses-t losses-lbl" x="392" y="340" text-anchor="middle" fill="#46b87a" font-size="12">
+    <tspan class="l-en">deliberately insulated</tspan>
+    <tspan class="l-zh">被有意隔离</tspan>
+  </text>
+  <!-- flow-bypasses tag -->
+  <text class="losses-t losses-mut" x="392" y="220" text-anchor="middle" font-size="11.5" font-style="italic">
+    <tspan class="l-en">the main flow bypasses ↑</tspan>
+    <tspan class="l-zh">主流量绕行 ↑</tspan>
+  </text>
+</g>
+
+<!-- ===================== DESTINATION (right): NBFI ===================== -->
+<text class="losses-t losses-head" x="636" y="94">
+  <tspan class="l-en">NBFI space — pain by design</tspan>
+  <tspan class="l-zh">非银金融机构 —— 痛苦被设计于此</tspan>
+</text>
+<text class="losses-t losses-mut" x="636" y="112" font-size="11.5">
+  <tspan class="l-en">where losses are pre-routed to absorb</tspan>
+  <tspan class="l-zh">损失被预先路由至此吸收</tspan>
+</text>
+
+<!-- target 1: Private credit -->
+<g>
+  <rect x="636" y="142" width="212" height="52" rx="10" class="losses-card"/>
+  <rect x="636" y="142" width="212" height="52" rx="10" class="losses-tgtfill"/>
+  <rect x="636" y="142" width="212" height="52" rx="10" fill="none" stroke="#e0607a" stroke-width="1.2"/>
+  <text class="losses-t losses-lbl" x="656" y="167">
+    <tspan class="l-en">Private credit</tspan>
+    <tspan class="l-zh">私人信贷</tspan>
+  </text>
+  <text class="losses-t losses-mut" x="656" y="184" font-size="11">
+    <tspan class="l-en">¼ of bank NBFI loans (was 1% in 2013)</tspan>
+    <tspan class="l-zh">银行对非银贷款的四分之一（2013 仅 1%）</tspan>
+  </text>
+</g>
+<!-- target 2: Insurance -->
+<g>
+  <rect x="636" y="232" width="212" height="52" rx="10" class="losses-card"/>
+  <rect x="636" y="232" width="212" height="52" rx="10" class="losses-tgtfill losses-t2"/>
+  <rect x="636" y="232" width="212" height="52" rx="10" fill="none" stroke="#e0607a" stroke-width="1.2"/>
+  <text class="losses-t losses-lbl" x="656" y="257">
+    <tspan class="l-en">Insurance</tspan>
+    <tspan class="l-zh">保险</tspan>
+    <tspan class="losses-num" dx="8" fill="#e0607a">~$1T</tspan>
+  </text>
+  <text class="losses-t losses-mut" x="656" y="274" font-size="11">
+    <tspan class="l-en">life insurers' private-credit holdings</tspan>
+    <tspan class="l-zh">寿险公司持有的私人信贷（约 1 万亿）</tspan>
+  </text>
+</g>
+<!-- target 3: Pensions -->
+<g>
+  <rect x="636" y="322" width="212" height="52" rx="10" class="losses-card"/>
+  <rect x="636" y="322" width="212" height="52" rx="10" class="losses-tgtfill losses-t3"/>
+  <rect x="636" y="322" width="212" height="52" rx="10" fill="none" stroke="#e0607a" stroke-width="1.2"/>
+  <text class="losses-t losses-lbl" x="656" y="347">
+    <tspan class="l-en">Pensions (NY, PA)</tspan>
+    <tspan class="l-zh">养老金（纽约、宾州）</tspan>
+  </text>
+  <text class="losses-t losses-mut" x="656" y="364" font-size="11">
+    <tspan class="l-en">state funds in Blue Owl vehicles</tspan>
+    <tspan class="l-zh">州养老金投向相关工具</tspan>
+  </text>
+</g>
+
+<!-- arrowheads into targets (glow) -->
+<circle cx="636" cy="168" r="4.5" fill="#e0607a" class="losses-glow"/>
+<circle cx="636" cy="258" r="4.5" fill="#e0607a" class="losses-glow" style="animation-delay:.5s"/>
+<circle cx="636" cy="348" r="4.5" fill="#e0607a" class="losses-glow" style="animation-delay:1s"/>
+
+<!-- ===================== bottom caption ===================== -->
+<line x1="32" y1="438" x2="848" y2="438" stroke="var(--line)" stroke-width="1"/>
+<text class="losses-t losses-cap" x="32" y="460">
+  <tspan class="l-en">Unlike 2008 (losses inside the banks → forced Fed rescue), losses are pre-routed into vehicles whose</tspan>
+  <tspan class="l-zh">不同于 2008 年（损失在银行内部 → 迫使美联储救援），这次损失被预先路由到救援更具自由裁量、</tspan>
+</text>
+<text class="losses-t losses-cap" x="32" y="478">
+  <tspan class="l-en">rescue is discretionary and Treasury-controlled.</tspan>
+  <tspan class="l-zh">由财政部控制的工具中。</tspan>
+  <tspan dx="4" fill="var(--muted)" font-style="italic">(inference / 推论)</tspan>
+</text>
+</svg>
+  <figcaption><span class="l-en">Losses from AI equity and the credit chain are routed around a deliberately insulated banking system (0.8% of assets) into NBFI vehicles — private credit, insurance, and pensions — whose rescue is discretionary and Treasury-controlled.</span><span class="l-zh">AI 股权与信用链条的损失绕开被有意隔离的银行系统（占资产 0.8%），预先路由至私人信贷、保险与养老金等非银工具——其救援更具自由裁量、由财政部掌控。</span></figcaption>
+</figure>
+
+<figure class="fig" id="fig-deprec">
+  <div class="fig-h"><span class="l-en">Figure 7 · The scheduled fuse — GPU useful life</span><span class="l-zh">图 7 · 预定引信 —— GPU 有用寿命</span></div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 470" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" role="img" font-family="-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif">
+<title>The scheduled fuse is accounting — GPU useful life</title>
+<desc>Two paired bars comparing cumulative 2026–31 hyperscaler depreciation under a five-year GPU useful life (about $3.0T baseline) versus a three-year useful life (about $4.0T), a roughly $1T understated-cost delta. Below, a timeline of Nvidia's architecture cadence (Hopper 2022, Blackwell 2024, Rubin 2026, Rubin Ultra 2027) forcing shorter lives, with notes on Burry's $176B estimate and useful life as a management lever, triggered by the FY2026 10-K season in Jan–Feb 2027.</desc>
+<style>
+.deprec-t{font-size:13px;fill:var(--text)}
+.deprec-mut{font-size:11.5px;fill:var(--muted)}
+.deprec-head{font-size:19px;fill:var(--text);font-weight:600}
+.deprec-sub{font-size:12.5px;fill:var(--muted)}
+.deprec-val{font-size:20px;fill:var(--text);font-weight:700}
+.deprec-axis{stroke:var(--line);stroke-width:1}
+.deprec-grid{stroke:var(--line);stroke-width:1;stroke-dasharray:2 5;opacity:.55}
+.deprec-bar5{fill:#5b8def;opacity:.30;stroke:#5b8def;stroke-width:1.5}
+.deprec-bar3{fill:#e0607a;opacity:.30;stroke:#e0607a;stroke-width:1.5}
+.deprec-delta{fill:#e0607a;opacity:.16;stroke:#e0607a;stroke-width:1.2;stroke-dasharray:4 3}
+.deprec-grow3{transform-box:fill-box;transform-origin:bottom;animation:deprec-grow 4.5s cubic-bezier(.5,0,.2,1) infinite}
+.deprec-growd{transform-box:fill-box;transform-origin:bottom;animation:deprec-growd 4.5s cubic-bezier(.5,0,.2,1) infinite}
+@keyframes deprec-grow{0%,14%{transform:scaleY(.752)}42%,88%{transform:scaleY(1)}100%{transform:scaleY(.752)}}
+@keyframes deprec-growd{0%,14%{transform:scaleY(0);opacity:0}30%{opacity:0}44%,88%{transform:scaleY(1);opacity:1}100%{transform:scaleY(0);opacity:0}}
+.deprec-arrow{animation:deprec-pulse 2.6s ease-in-out infinite}
+.deprec-arrowlbl{animation:deprec-pulse 2.6s ease-in-out infinite}
+@keyframes deprec-pulse{0%,100%{opacity:.55}50%{opacity:1}}
+.deprec-tickline{stroke:var(--line);stroke-width:1.4;stroke-dasharray:640;stroke-dashoffset:640;animation:deprec-draw 4s ease-out infinite}
+@keyframes deprec-draw{0%{stroke-dashoffset:640}40%,100%{stroke-dashoffset:0}}
+.deprec-tick{opacity:0;animation:deprec-fade 4s ease-out infinite}
+@keyframes deprec-fade{0%,18%{opacity:0}40%,100%{opacity:1}}
+.deprec-tk1{animation-delay:.15s}.deprec-tk2{animation-delay:.9s}.deprec-tk3{animation-delay:1.65s}.deprec-tk4{animation-delay:2.4s}
+.deprec-chip{fill:var(--panel2);stroke:var(--line);stroke-width:1}
+@media (prefers-reduced-motion:reduce){[class*="deprec-"]{animation:none!important;transform:none!important;stroke-dashoffset:0!important;opacity:1!important}.deprec-growd{opacity:1!important}}
+</style>
+
+<text x="26" y="34" class="deprec-head l-en">The scheduled fuse is accounting — GPU useful life</text>
+<text x="26" y="34" class="deprec-head l-zh">预定引信是会计——GPU 有用寿命</text>
+<text x="26" y="54" class="deprec-sub l-en">Cumulative 2026–31 hyperscaler depreciation swings ~$1T on one assumption</text>
+<text x="26" y="54" class="deprec-sub l-zh">仅凭一项假设，2026–31 累计折旧就摆动约 1 万亿美元</text>
+
+<line x1="130" y1="90" x2="130" y2="298" class="deprec-axis"/>
+<line x1="130" y1="298" x2="470" y2="298" class="deprec-axis"/>
+<line x1="130" y1="298" x2="470" y2="298" class="deprec-grid" opacity="0"/>
+<g class="deprec-mut" text-anchor="end">
+<line x1="130" y1="298" x2="470" y2="298" class="deprec-grid"/>
+<line x1="130" y1="246" x2="470" y2="246" class="deprec-grid"/><text x="124" y="250">$1T</text>
+<line x1="130" y1="194" x2="470" y2="194" class="deprec-grid"/><text x="124" y="198">$2T</text>
+<line x1="130" y1="142" x2="470" y2="142" class="deprec-grid"/><text x="124" y="146">$3T</text>
+<line x1="130" y1="90" x2="470" y2="90" class="deprec-grid"/><text x="124" y="94">$4T</text>
+<text x="124" y="302">0</text>
+</g>
+
+<rect x="185" y="142" width="86" height="156" rx="3" class="deprec-bar5"/>
+<text x="228" y="132" text-anchor="middle" class="deprec-val" fill="#5b8def">$3.0T</text>
+<text x="228" y="316" text-anchor="middle" class="deprec-t l-en">5-year life</text>
+<text x="228" y="316" text-anchor="middle" class="deprec-t l-zh">5 年寿命</text>
+<text x="228" y="332" text-anchor="middle" class="deprec-mut l-en">baseline</text>
+<text x="228" y="332" text-anchor="middle" class="deprec-mut l-zh">基准情形</text>
+
+<rect x="330" y="90" width="86" height="208" rx="3" class="deprec-bar3 deprec-grow3"/>
+<rect x="330" y="90" width="86" height="52" rx="3" class="deprec-delta deprec-growd"/>
+<text x="373" y="80" text-anchor="middle" class="deprec-val" fill="#e0607a">$4.0T</text>
+<text x="373" y="316" text-anchor="middle" class="deprec-t l-en">3-year life</text>
+<text x="373" y="316" text-anchor="middle" class="deprec-t l-zh">3 年寿命</text>
+<text x="373" y="332" text-anchor="middle" class="deprec-mut l-en">shortened</text>
+<text x="373" y="332" text-anchor="middle" class="deprec-mut l-zh">缩短寿命</text>
+
+<g class="deprec-arrow">
+<line x1="440" y1="142" x2="440" y2="94" stroke="#e0607a" stroke-width="2"/>
+<path d="M440 88 l-5 10 h10 z" fill="#e0607a"/>
+</g>
+<g class="deprec-arrowlbl">
+<rect x="452" y="96" width="120" height="42" rx="5" fill="#e0607a" opacity=".14"/>
+<text x="462" y="114" class="deprec-t" fill="#e0607a" font-weight="700">+$1T</text>
+<text x="462" y="130" class="deprec-mut l-en" fill="#e0607a">understated cost surfaces</text>
+<text x="462" y="130" class="deprec-mut l-zh" fill="#e0607a">被低估的成本浮现</text>
+</g>
+
+<g transform="translate(596,90)">
+<rect x="0" y="0" width="222" height="70" rx="7" class="deprec-chip"/>
+<circle cx="18" cy="20" r="5" fill="#e0607a"/>
+<text x="30" y="24" class="deprec-t" font-weight="600">Burry</text>
+<text x="14" y="44" class="deprec-mut l-en">$176B understated depreciation</text>
+<text x="14" y="44" class="deprec-mut l-zh">低估折旧 1760 亿美元</text>
+<text x="14" y="60" class="deprec-mut">2026–28</text>
+</g>
+<g transform="translate(596,172)">
+<rect x="0" y="0" width="222" height="86" rx="7" class="deprec-chip"/>
+<circle cx="18" cy="20" r="5" fill="#e0973a"/>
+<text x="30" y="24" class="deprec-t l-en" font-weight="600">A management lever</text>
+<text x="30" y="24" class="deprec-t l-zh" font-weight="600">管理层杠杆</text>
+<text x="14" y="44" class="deprec-mut l-en">not an engineering fact:</text>
+<text x="14" y="44" class="deprec-mut l-zh">而非工程事实：</text>
+<text x="14" y="61" class="deprec-mut l-en">Amazon shortened;</text>
+<text x="14" y="61" class="deprec-mut l-zh">亚马逊缩短寿命；</text>
+<text x="14" y="77" class="deprec-mut l-en">Meta extended to 5.5y</text>
+<text x="14" y="77" class="deprec-mut l-zh">Meta 延长至 5.5 年</text>
+</g>
+
+<text x="26" y="366" class="deprec-t l-en" font-weight="600">Nvidia architecture cadence forces shorter lives</text>
+<text x="26" y="366" class="deprec-t l-zh" font-weight="600">英伟达架构节奏迫使寿命缩短</text>
+<line x1="90" y1="404" x2="730" y2="404" class="deprec-tickline"/>
+<g class="deprec-tick deprec-tk1">
+<line x1="180" y1="396" x2="180" y2="412" class="deprec-axis"/>
+<circle cx="180" cy="404" r="4.5" fill="#5b8def"/>
+<text x="180" y="432" text-anchor="middle" class="deprec-t">Hopper</text>
+<text x="180" y="392" text-anchor="middle" class="deprec-mut">'22</text>
+</g>
+<g class="deprec-tick deprec-tk2">
+<line x1="350" y1="396" x2="350" y2="412" class="deprec-axis"/>
+<circle cx="350" cy="404" r="4.5" fill="#3fb6c0"/>
+<text x="350" y="432" text-anchor="middle" class="deprec-t">Blackwell</text>
+<text x="350" y="392" text-anchor="middle" class="deprec-mut">'24</text>
+</g>
+<g class="deprec-tick deprec-tk3">
+<line x1="520" y1="396" x2="520" y2="412" class="deprec-axis"/>
+<circle cx="520" cy="404" r="4.5" fill="#e0973a"/>
+<text x="520" y="432" text-anchor="middle" class="deprec-t">Rubin</text>
+<text x="520" y="392" text-anchor="middle" class="deprec-mut">'26</text>
+</g>
+<g class="deprec-tick deprec-tk4">
+<line x1="690" y1="396" x2="690" y2="412" class="deprec-axis"/>
+<circle cx="690" cy="404" r="4.5" fill="#e0607a"/>
+<text x="690" y="432" text-anchor="middle" class="deprec-t">Rubin Ultra</text>
+<text x="690" y="392" text-anchor="middle" class="deprec-mut">'27</text>
+</g>
+
+<line x1="26" y1="450" x2="814" y2="450" class="deprec-grid"/>
+<text x="26" y="465" class="deprec-mut l-en">Trigger: FY2026 10-K season (Jan–Feb 2027) — auditors &amp; SEC comment letters force disclosure</text>
+<text x="26" y="465" class="deprec-mut l-zh">触发点：2026 财年 10-K 季（2027 年 1–2 月）——审计师与 SEC 评论函迫使其公开化</text>
+</svg>
+  <figcaption><span class="l-en">Cutting GPU useful life from five years to three lifts cumulative 2026–31 hyperscaler depreciation from ~$3.0T to ~$4.0T — a ~$1T understated cost the FY2026 10-K season will surface.</span><span class="l-zh">将 GPU 有用寿命从五年缩短至三年，会把 2026–31 累计折旧从约 3 万亿美元推至约 4 万亿美元——2026 财年 10-K 季将迫使这约 1 万亿美元被低估的成本浮现。</span></figcaption>
+</figure>
+
+<h2 id="pathway"><span class="num">8</span><span class="l-en">The predictive pathway</span><span class="l-zh">预测路径</span></h2>
+<div class="callout lead"><span class="co-h"><span class="l-en">The through-line</span><span class="l-zh">主线</span></span> <span class="l-en">The pathway resolves in three phases: an <strong>engineered blow-off</strong> into the November election, a <strong>support withdrawal</strong> as the political floor drops, and a <strong>2027 resolution</strong> that runs through three branches. In every branch the state's real objective survives.</span><span class="l-zh">这条路径分三个阶段展开：进入 11 月选举的<strong>工程化最后冲刺</strong>、政治底板下降带来的<strong>支持撤退</strong>，以及分成三条分支的 <strong>2027 年解决</strong>。无论哪条分支，国家真正的目标都能存活。</span></div>
+
+<h3><span class="l-en">Phase 1 — now through November 3, 2026 (the engineered blow-off)</span><span class="l-zh">第一阶段 — 从现在到 2026 年 11 月 3 日（工程化的最后冲刺）</span></h3>
+
+<p><span class="l-en">Every administration incentive converges on maximum support: today's Commerce report as a tariff-relief lever, wealth-fund populism, and the OpenAI IPO (~September, up to $1T) as both a liquidity event and constituency creation. Post-Iran-ceasefire gas declines give Bessent his disinflation prints; Warsh softens rhetoric with the "AI is deflationary" ramp pre-built. See <a href="report_warsh_fomc.html">The Warsh Shock</a> and <a href="report_bessent_jun24.html">The Bessent Bridge</a>.</span><span class="l-zh">所有政府激励都指向最大支持：今天的商务部报告可作为关税缓释杠杆；财富基金民粹主义；OpenAI IPO（约 9 月，最高约 1 万亿美元）既是流动性事件，也是利益共同体创造。伊朗停火后油价下行，给 Bessent 带来通胀回落数据；Warsh 通过"AI 是通缩力量"的预设退路软化言辞。参见 <a href="report_warsh_fomc.html">The Warsh Shock</a> 与 <a href="report_bessent_jun24.html">The Bessent Bridge</a>。</span></p>
+
+<ul>
+<li><span class="l-en"><strong>Base case (~60%, estimate):</strong> grind higher into the election, with June-style leverage flushes along the way.</span><span class="l-zh"><strong>基准情形（约 60%，估计）：</strong>一路震荡上行进入选举，途中伴随类似 6 月的杠杆清洗。</span></li>
+<li><span class="l-en"><strong>Adverse tail (~15–20%):</strong> CPI refuses to roll, 9 dots become a September hike, and a pre-election air pocket opens.</span><span class="l-zh"><strong>负面尾部（约 15–20%）：</strong>CPI 拒绝回落，9 个点阵图支持者变成 9 月加息，选前出现真空下跌。</span></li>
+</ul>
+
+<p><span class="l-en">The <strong>October 27–28 FOMC</strong> sits six days before the election.</span><span class="l-zh"><strong>10 月 27–28 日 FOMC</strong> 距离选举只有六天。</span></p>
+
+<h3><span class="l-en">Phase 2 — November 2026 through mid-2027 (the support withdrawal)</span><span class="l-zh">第二阶段 — 2026 年 11 月至 2027 年中（支持撤退）</span></h3>
+
+<p><span class="l-en">The political floor drops regardless of outcome: post-election, the administration no longer needs to hold the tape. If the GOP loses the House — a live risk — expect investigations, dead preemption, and a hostile appropriations posture layered onto the depreciation reckoning and the first honest hyperscaler capex-language downshift.</span><span class="l-zh">无论结果如何，选后政治底板都会下降：政府不再需要托住盘面。如果共和党失去众议院——这是现实风险——那么预期会出现调查、联邦预先排除立法失效、敌对拨款姿态，并叠加折旧清算以及超大云厂商首次真实地下调资本开支措辞。</span></p>
+
+<p><span class="l-en">Why the House loss is live risk:</span><span class="l-zh">为何失去众议院是现实风险：</span></p>
+<ul>
+<li><span class="l-en">75 projects worth $130B blocked in Q1 2026;</span><span class="l-zh">2026 年一季度已有价值 1300 亿美元的 75 个项目被阻止；</span></li>
+<li><span class="l-en">four PA toss-ups fought on electricity prices;</span><span class="l-zh">宾州四个摇摆席位围绕电价竞争；</span></li>
+<li><span class="l-en">~60% of Trump voters worried about AI and ~80% wanting more regulation;</span><span class="l-zh">约 60% 特朗普选民担心 AI、约 80% 希望加强监管；</span></li>
+<li><span class="l-en">Republicans (Mace, Fishback) running against data centers.</span><span class="l-zh">共和党人（Mace、Fishback）也在反数据中心议题上竞选。</span></li>
+</ul>
+
+<div class="callout warn"><span class="co-h"><span class="l-en">The regime break to watch</span><span class="l-zh">需要盯住的制度断点</span></span> <span class="l-en">The first <strong>"optimization" / "digestion"</strong> phrasing in hyperscaler guidance is the tell — that is the regime break.</span><span class="l-zh">超大云厂商指引中第一次出现<strong>"优化" / "消化"</strong>措辞就是信号——这就是制度断点。</span></div>
+
+<h3><span class="l-en">Phase 3 — 2027 (resolution)</span><span class="l-zh">第三阶段 — 2027 年（解决）</span></h3>
+
+<p><span class="l-en">Three branches. Probabilities are <em>estimates</em>.</span><span class="l-zh">三条分支。概率为<em>估计</em>。</span></p>
+
+<table class="data scn">
+<tr>
+<th><span class="l-en">Outcome</span><span class="l-zh">结果</span></th>
+<th><span class="l-en">Odds</span><span class="l-zh">概率</span></th>
+<th><span class="l-en">Mechanism &amp; market path</span><span class="l-zh">机制与市场路径</span></th>
+</tr>
+<tr>
+<td><span class="l-en"><strong>(a) Validation</strong></span><span class="l-zh"><strong>(a) 验证成功</strong></span></td>
+<td class="num"><span class="l-en">~25%</span><span class="l-zh">约 25%</span></td>
+<td><span class="l-en">AI revenue closes the gap (Google Cloud's $460B backlog is the bulls' best datapoint), the Greenspan analogy holds, the cycle extends; memory stays supply-constrained "beyond 2027" and SCA floors never get tested.</span><span class="l-zh">AI 收入补上缺口（Google Cloud 的 4600 亿美元 backlog 是多头最强数据点），格林斯潘类比成立，周期延长；内存供给紧张"持续到 2027 年以后"，SCA 底价从未被测试。</span></td>
+</tr>
+<tr>
+<td><span class="l-en"><strong>(b) Credit event</strong></span><span class="l-zh"><strong>(b) 信用事件</strong></span></td>
+<td class="num"><span class="l-en">~40–45%</span><span class="l-zh">约 40–45%</span></td>
+<td><span class="l-en">A break in the Oracle / neocloud / OpenAI-commitment chain (OpenAI's $1.4T of commitments against ~$13B revenue is the obvious candidate, or the $300B ABS take-out wall) → NBFI stress → Treasury-led rescue of strategic nodes via the sovereign fund at marked-down prices, "no bailout" maintained for equity holders while the state consolidates assets. Equities <span class="r-neg">−30–50%</span> from peak; memory <span class="r-neg">−60%+</span> regardless of floors; Warsh cutting hard into the demand destruction only <em>after</em> the drawdown.</span><span class="l-zh">Oracle / neocloud / OpenAI 承诺链条发生断裂（OpenAI 以约 130 亿美元收入支撑 1.4 万亿美元承诺，是最明显候选；或 3000 亿美元 ABS 接盘墙）→ 非银金融机构压力 → 财政部通过主权基金以折价价格主导救援战略节点；对股东仍维持"没有 bailout"的说法，同时国家整合资产。股市较峰值下跌 <span class="r-neg">−30–50%</span>；内存不管底价如何都会走 <span class="r-neg">−60% 以上</span>标准周期；Warsh 只有在需求毁灭已经发生<em>之后</em>才会大幅降息。</span></td>
+</tr>
+<tr>
+<td><span class="l-en"><strong>(c) Managed digestion</strong></span><span class="l-zh"><strong>(c) 可控消化</strong></span></td>
+<td class="num"><span class="l-en">~30%</span><span class="l-zh">约 30%</span></td>
+<td><span class="l-en">Capex plateaus rather than breaks; multiple compression grinds without a credit event (Capital Economics path: <span class="num">8,250</span> → <span class="num">6,500</span>).</span><span class="l-zh">资本开支平台化而不是断裂，估值倍数压缩缓慢进行，没有信用事件（Capital Economics 路径：<span class="num">8,250</span> → <span class="num">6,500</span>）。</span></td>
+</tr>
+</table>
+
+<div class="callout key"><span class="co-h"><span class="l-en">The plan survives every branch</span><span class="l-zh">计划在每条分支中都存活</span></span> <span class="l-en">In every branch, the administration's actual objective — installed U.S. compute, fabs, and gigawatts, plus state equity and toll positions — survives. <strong>The plan does not require the bubble to end well. It requires the bubble to end late and to end onshore.</strong></span><span class="l-zh">无论哪条分支，政府真正的目标——安装在美国境内的算力、晶圆厂与千兆瓦，以及国家股权和收费头寸——都能存活下来。<strong>这个计划并不要求泡沫善终。它只要求泡沫晚点结束，并且在美国本土结束。</strong></span></div>
+
+<figure class="fig" id="fig-pathway">
+  <div class="fig-h"><span class="l-en">Figure 8 · The predictive pathway</span><span class="l-zh">图 8 · 预测路径</span></div>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="pathway-title pathway-desc" font-family="-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif">
+  <title id="pathway-title">The predictive pathway — schedule the pop, don't prevent it</title>
+  <desc id="pathway-desc">An S&amp;P 500 path chart across three phases: an engineered blow-off to about 8,250 by end-2026, then a 21% fall to about 6,500 by end-2027, with event markers and a Phase-3 probability tree showing validation (~25%), credit event (~40-45%) and managed digestion (~30%).</desc>
+  <style>
+    .pathway-t{font-family:-apple-system,'Segoe UI',Roboto,Helvetica,sans-serif;}
+    
+    .pathway-line{stroke-dasharray:1400;stroke-dashoffset:1400;animation:pathway-draw 3.4s ease-out .3s forwards;}
+    .pathway-area{opacity:0;animation:pathway-fill 1.6s ease-out 2.6s forwards;}
+    .pathway-band{opacity:0;animation:pathway-bandfade .9s ease-out forwards;}
+    .pathway-b1{animation-delay:.6s;}
+    .pathway-b2{animation-delay:1.4s;}
+    .pathway-b3{animation-delay:2.2s;}
+    .pathway-mk{opacity:0;animation:pathway-mkin .7s ease-out forwards;}
+    .pathway-mk1{animation-delay:1.1s;}
+    .pathway-mk2{animation-delay:1.9s;}
+    .pathway-mk3{animation-delay:2.7s;}
+    .pathway-branch{transform:scaleX(0);transform-origin:left center;animation:pathway-grow 1s cubic-bezier(.2,.8,.3,1) forwards;}
+    .pathway-brA{animation-delay:3.3s;}
+    .pathway-brB{animation-delay:3.5s;}
+    .pathway-brC{animation-delay:3.7s;}
+    .pathway-node{opacity:0;animation:pathway-nodein .6s ease-out forwards;}
+    .pathway-nA{animation-delay:4.1s;}
+    .pathway-nB{animation-delay:4.3s;}
+    .pathway-nC{animation-delay:4.5s;}
+    .pathway-pulse{animation:pathway-pulse 3.2s ease-in-out 4.6s infinite;}
+    .pathway-dash{stroke-dasharray:5 6;animation:pathway-flow 3s linear infinite;}
+    @keyframes pathway-draw{to{stroke-dashoffset:0;}}
+    @keyframes pathway-fill{to{opacity:1;}}
+    @keyframes pathway-bandfade{to{opacity:1;}}
+    @keyframes pathway-mkin{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+    @keyframes pathway-grow{to{transform:scaleX(1);}}
+    @keyframes pathway-nodein{to{opacity:1;}}
+    @keyframes pathway-pulse{0%,100%{opacity:.85;}50%{opacity:1;filter:drop-shadow(0 0 5px #e0607a);}}
+    @keyframes pathway-flow{to{stroke-dashoffset:-22;}}
+    @media (prefers-reduced-motion: reduce){[class*="pathway-"]{animation:none !important;transform:none !important;stroke-dashoffset:0 !important;opacity:1 !important;}}
+  </style>
+  <defs>
+    <linearGradient id="pathway-areaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5b8def" stop-opacity="0.32"/>
+      <stop offset="55%" stop-color="#5b8def" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#5b8def" stop-opacity="0.01"/>
+    </linearGradient>
+    <clipPath id="pathway-plotClip"><rect x="56" y="60" width="512" height="210"/></clipPath>
+  </defs>
+
+  <!-- Heading -->
+  <text class="pathway-t l-en" x="28" y="30" font-size="19" font-weight="700" fill="var(--text)">The predictive pathway — schedule the pop, don't prevent it</text>
+  <text class="pathway-t l-zh" x="28" y="30" font-size="19" font-weight="700" fill="var(--text)">预测路径 —— 安排泡沫破裂的时点，而非阻止它</text>
+  <text class="pathway-t l-en" x="28" y="49" font-size="12.5" fill="var(--muted)">S&amp;P 500 path, three phases (Capital Economics)</text>
+  <text class="pathway-t l-zh" x="28" y="49" font-size="12.5" fill="var(--muted)">标普 500 三阶段路径（Capital Economics）</text>
+
+  <!-- ===== CHART AREA ===== -->
+  <!-- gridlines -->
+  <g stroke="var(--line)" stroke-width="1" opacity="0.5">
+    <line x1="56" y1="60" x2="568" y2="60"/>
+    <line x1="56" y1="112" x2="568" y2="112"/>
+    <line x1="56" y1="164" x2="568" y2="164"/>
+    <line x1="56" y1="216" x2="568" y2="216"/>
+    <line x1="56" y1="270" x2="568" y2="270"/>
+  </g>
+  <!-- y labels -->
+  <g font-size="11" fill="var(--muted)" text-anchor="end">
+    <text x="50" y="64">8,500</text>
+    <text x="50" y="116">7,750</text>
+    <text x="50" y="168">7,000</text>
+    <text x="50" y="220">6,250</text>
+  </g>
+
+  <!-- area fill (drawn under line) -->
+  <path class="pathway-area" clip-path="url(#pathway-plotClip)" fill="url(#pathway-areaGrad)"
+        d="M56,168 C130,150 190,120 250,96 C300,76 340,64 400,66 C440,68 470,86 500,132 C530,178 550,202 568,214 L568,270 L56,270 Z"/>
+
+  <!-- price line: rise to blow-off ~8,250 near end-2026, fall -21% to ~6,500 end-2027 -->
+  <path class="pathway-line" fill="none" stroke="#5b8def" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+        d="M56,168 C130,150 190,120 250,96 C300,76 340,64 400,66 C440,68 470,86 500,132 C530,178 550,202 568,214"/>
+
+  <!-- peak marker ~8,250 -->
+  <g class="pathway-mk pathway-mk2">
+    <circle cx="400" cy="66" r="4" fill="#e0973a"/>
+    <text class="pathway-t" x="400" y="55" font-size="11.5" font-weight="700" text-anchor="middle" fill="#e0973a">~8,250</text>
+  </g>
+  <!-- trough marker ~6,500 -->
+  <g class="pathway-mk pathway-mk3">
+    <circle cx="568" cy="214" r="4" fill="#e0607a"/>
+    <text class="pathway-t l-en" x="562" y="234" font-size="11.5" font-weight="700" text-anchor="end" fill="#e0607a">~6,500 (−21%)</text>
+    <text class="pathway-t l-zh" x="562" y="234" font-size="11.5" font-weight="700" text-anchor="end" fill="#e0607a">~6,500（−21%）</text>
+  </g>
+
+  <!-- ===== PHASE BANDS ===== -->
+  <!-- Phase 1: x 56 -> 350 (now -> Nov 3 2026) -->
+  <g class="pathway-band pathway-b1">
+    <rect x="56" y="278" width="294" height="46" rx="5" fill="#46b87a" fill-opacity="0.10" stroke="var(--line)"/>
+    <text class="pathway-t l-en" x="64" y="294" font-size="11.5" font-weight="700" fill="#46b87a">Phase 1 · now → Nov 3, 2026</text>
+    <text class="pathway-t l-zh" x="64" y="294" font-size="11.5" font-weight="700" fill="#46b87a">第一阶段 · 现在 → 2026 年 11 月 3 日</text>
+    <text class="pathway-t l-en" x="64" y="311" font-size="10.5" fill="var(--muted)">Engineered blow-off · ~60% grind higher</text>
+    <text class="pathway-t l-zh" x="64" y="311" font-size="10.5" fill="var(--muted)">工程化最后冲刺 · 约 60% 震荡上行</text>
+  </g>
+  <!-- Phase 2: x 350 -> 470 -->
+  <g class="pathway-band pathway-b2">
+    <rect x="354" y="278" width="126" height="46" rx="5" fill="#d98b30" fill-opacity="0.10" stroke="var(--line)"/>
+    <text class="pathway-t l-en" x="361" y="294" font-size="10.5" font-weight="700" fill="#d98b30">Phase 2 · → mid-2027</text>
+    <text class="pathway-t l-zh" x="361" y="294" font-size="10.5" font-weight="700" fill="#d98b30">第二阶段 · → 2027 中</text>
+    <text class="pathway-t l-en" x="361" y="309" font-size="9.5" fill="var(--muted)">Support withdrawal;</text>
+    <text class="pathway-t l-zh" x="361" y="309" font-size="9.5" fill="var(--muted)">撤走支撑；观察</text>
+    <text class="pathway-t l-en" x="361" y="320" font-size="9.5" fill="var(--muted)">first "digestion" guidance</text>
+    <text class="pathway-t l-zh" x="361" y="320" font-size="9.5" fill="var(--muted)">首次"消化"指引</text>
+  </g>
+  <!-- Phase 3: x 470 -> 568 -->
+  <g class="pathway-band pathway-b3">
+    <rect x="484" y="278" width="84" height="46" rx="5" fill="#e0607a" fill-opacity="0.10" stroke="var(--line)"/>
+    <text class="pathway-t l-en" x="491" y="294" font-size="10.5" font-weight="700" fill="#e0607a">Phase 3 · 2027</text>
+    <text class="pathway-t l-zh" x="491" y="294" font-size="10.5" font-weight="700" fill="#e0607a">第三阶段 · 2027</text>
+    <text class="pathway-t l-en" x="491" y="311" font-size="9.5" fill="var(--muted)">Resolution</text>
+    <text class="pathway-t l-zh" x="491" y="311" font-size="9.5" fill="var(--muted)">最终结局</text>
+  </g>
+
+  <!-- ===== EVENT MARKERS on timeline ===== -->
+  <g stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3" opacity="0.7">
+    <line x1="230" y1="60" x2="230" y2="272"/>
+    <line x1="350" y1="60" x2="350" y2="272"/>
+    <line x1="480" y1="60" x2="480" y2="272"/>
+  </g>
+  <!-- OpenAI IPO ~Sep -->
+  <g class="pathway-mk pathway-mk1">
+    <circle cx="230" cy="60" r="3.2" fill="#e0973a"/>
+    <text class="pathway-t l-en" x="230" y="118" font-size="10" text-anchor="middle" fill="var(--text)">OpenAI IPO ~Sep</text>
+    <text class="pathway-t l-zh" x="230" y="118" font-size="10" text-anchor="middle" fill="var(--text)">OpenAI IPO ~9月</text>
+    <text class="pathway-t" x="230" y="131" font-size="9.5" text-anchor="middle" fill="var(--muted)">(up to $1T)</text>
+  </g>
+  <!-- Midterms Nov 3 -->
+  <g class="pathway-mk pathway-mk2">
+    <circle cx="350" cy="60" r="3.2" fill="#5b8def"/>
+    <text class="pathway-t l-en" x="350" y="150" font-size="10" text-anchor="middle" fill="var(--text)">Midterms</text>
+    <text class="pathway-t l-zh" x="350" y="150" font-size="10" text-anchor="middle" fill="var(--text)">中期选举</text>
+    <text class="pathway-t" x="350" y="163" font-size="9.5" text-anchor="middle" fill="var(--muted)">Nov 3</text>
+  </g>
+  <!-- FY26 10-K season -->
+  <g class="pathway-mk pathway-mk3">
+    <circle cx="480" cy="60" r="3.2" fill="#c77dff"/>
+    <text class="pathway-t l-en" x="474" y="85" font-size="10" text-anchor="end" fill="var(--text)">FY26 10-K season</text>
+    <text class="pathway-t l-zh" x="474" y="85" font-size="10" text-anchor="end" fill="var(--text)">FY26 10-K 季</text>
+    <text class="pathway-t" x="474" y="98" font-size="9.5" text-anchor="end" fill="var(--muted)">Jan–Feb 2027</text>
+  </g>
+
+  <!-- ===== PHASE-3 PROBABILITY TREE (right side) ===== -->
+  <g>
+    <text class="pathway-t l-en" x="612" y="70" font-size="12.5" font-weight="700" fill="var(--text)">Phase 3 · how it resolves</text>
+    <text class="pathway-t l-zh" x="612" y="70" font-size="12.5" font-weight="700" fill="var(--text)">第三阶段 · 结局分布</text>
+
+    <!-- trunk node -->
+    <circle cx="612" cy="160" r="5" fill="var(--panel2)" stroke="var(--line)" stroke-width="1.5"/>
+    <text class="pathway-t l-en" x="600" y="164" font-size="10.5" text-anchor="end" fill="var(--muted)">2027</text>
+    <text class="pathway-t l-zh" x="600" y="164" font-size="10.5" text-anchor="end" fill="var(--muted)">2027</text>
+
+    <!-- branch connectors (dashed flow) -->
+    <path class="pathway-dash" d="M617,160 C650,160 660,104 700,104" fill="none" stroke="#46b87a" stroke-width="1.6"/>
+    <path class="pathway-dash" d="M617,160 C655,160 665,186 700,186" fill="none" stroke="#e0607a" stroke-width="1.6"/>
+    <path class="pathway-dash" d="M617,160 C650,160 660,258 700,258" fill="none" stroke="#d98b30" stroke-width="1.6"/>
+
+    <!-- (a) Validation ~25% green -->
+    <g class="pathway-node pathway-nA">
+      <rect x="700" y="86" width="176" height="42" rx="6" fill="#46b87a" fill-opacity="0.12" stroke="#46b87a" stroke-opacity="0.5"/>
+    </g>
+    <g class="pathway-branch pathway-brA">
+      <rect x="700" y="90" height="6" rx="3" fill="#46b87a" width="44"/>
+    </g>
+    <text class="pathway-t l-en" x="710" y="102" font-size="11" font-weight="700" fill="#46b87a">Validation · ~25%</text>
+    <text class="pathway-t l-zh" x="710" y="102" font-size="11" font-weight="700" fill="#46b87a">验证兑现 · ~25%</text>
+    <text class="pathway-t l-en" x="710" y="121" font-size="9.5" fill="var(--muted)">AI revenue closes gap; cycle extends</text>
+    <text class="pathway-t l-zh" x="710" y="121" font-size="9.5" fill="var(--muted)">AI 收入补上缺口；周期延长</text>
+
+    <!-- (b) Credit event ~40-45% red (largest, pulses) -->
+    <g class="pathway-node pathway-nB pathway-pulse">
+      <rect x="700" y="164" width="176" height="52" rx="6" fill="#e0607a" fill-opacity="0.14" stroke="#e0607a" stroke-opacity="0.6"/>
+    </g>
+    <g class="pathway-branch pathway-brB">
+      <rect x="700" y="172" height="6" rx="3" fill="#e0607a" width="78"/>
+    </g>
+    <text class="pathway-t l-en" x="710" y="184" font-size="11" font-weight="700" fill="#e0607a">Credit event · 40–45%</text>
+    <text class="pathway-t l-zh" x="710" y="184" font-size="11" font-weight="700" fill="#e0607a">信用事件 · 40–45%</text>
+    <text class="pathway-t l-en" x="710" y="200" font-size="9.5" fill="var(--muted)">Chain breaks → NBFI stress →</text>
+    <text class="pathway-t l-zh" x="710" y="200" font-size="9.5" fill="var(--muted)">链条断裂 → 非银承压 →</text>
+    <text class="pathway-t l-en" x="710" y="211" font-size="9.5" fill="var(--muted)">Treasury rescue; equities −30 to −50%</text>
+    <text class="pathway-t l-zh" x="710" y="211" font-size="9.5" fill="var(--muted)">财政部救援；股市 −30 至 −50%</text>
+
+    <!-- (c) Managed digestion ~30% amber -->
+    <g class="pathway-node pathway-nC">
+      <rect x="700" y="240" width="176" height="42" rx="6" fill="#d98b30" fill-opacity="0.12" stroke="#d98b30" stroke-opacity="0.5"/>
+    </g>
+    <g class="pathway-branch pathway-brC">
+      <rect x="700" y="244" height="6" rx="3" fill="#d98b30" width="53"/>
+    </g>
+    <text class="pathway-t l-en" x="710" y="256" font-size="11" font-weight="700" fill="#d98b30">Managed digestion · ~30%</text>
+    <text class="pathway-t l-zh" x="710" y="256" font-size="11" font-weight="700" fill="#d98b30">有序消化 · ~30%</text>
+    <text class="pathway-t l-en" x="710" y="275" font-size="9.5" fill="var(--muted)">Capex plateaus; 8,250 → 6,500</text>
+    <text class="pathway-t l-zh" x="710" y="275" font-size="9.5" fill="var(--muted)">资本开支见顶；8,250 → 6,500</text>
+  </g>
+
+  <!-- ===== BOTTOM LINE ===== -->
+  <line x1="28" y1="352" x2="872" y2="352" stroke="var(--line)" stroke-width="1"/>
+  <text class="pathway-t l-en" x="28" y="380" font-size="13.5" font-weight="700" fill="var(--text)">The plan does not require the bubble to end well.</text>
+  <text class="pathway-t l-zh" x="28" y="380" font-size="13.5" font-weight="700" fill="var(--text)">这个计划并不要求泡沫善终 ——</text>
+  <text class="pathway-t l-en" x="28" y="402" font-size="13.5" font-weight="700" fill="var(--text)">It requires it to end <tspan fill="#e0973a">LATE</tspan> and to end <tspan fill="#5b8def">ONSHORE</tspan>.</text>
+  <text class="pathway-t l-zh" x="28" y="402" font-size="13.5" font-weight="700" fill="var(--text)">它只要求泡沫<tspan fill="#e0973a">晚点</tspan>结束、并在<tspan fill="#5b8def">美国本土</tspan>结束。</text>
+
+  <!-- legend for phase/tree probability meaning -->
+  <g font-size="10.5">
+    <rect x="28" y="420" width="11" height="11" rx="2" fill="#46b87a" fill-opacity="0.5" stroke="#46b87a"/>
+    <text class="pathway-t l-en" x="45" y="429" fill="var(--muted)">upside / validation</text>
+    <text class="pathway-t l-zh" x="45" y="429" fill="var(--muted)">上行 / 验证</text>
+    <rect x="168" y="420" width="11" height="11" rx="2" fill="#d98b30" fill-opacity="0.5" stroke="#d98b30"/>
+    <text class="pathway-t l-en" x="185" y="429" fill="var(--muted)">warning / digestion</text>
+    <text class="pathway-t l-zh" x="185" y="429" fill="var(--muted)">警示 / 消化</text>
+    <rect x="320" y="420" width="11" height="11" rx="2" fill="#e0607a" fill-opacity="0.5" stroke="#e0607a"/>
+    <text class="pathway-t l-en" x="337" y="429" fill="var(--muted)">stress / credit event</text>
+    <text class="pathway-t l-zh" x="337" y="429" fill="var(--muted)">压力 / 信用事件</text>
+  </g>
+</svg>
+  <figcaption><span class="l-en">S&P 500 three-phase pathway — engineered blow-off to ~8,250 by end-2026, then −21% to ~6,500 by end-2027, with a Phase-3 probability tree (validation ~25%, credit event 40–45%, managed digestion ~30%).</span><span class="l-zh">标普 500 三阶段路径 —— 到 2026 年末工程化冲高至约 8,250 点，再到 2027 年末回落 21% 至约 6,500 点，并附第三阶段概率树（验证 ~25%、信用事件 40–45%、有序消化 ~30%）。</span></figcaption>
+</figure>
+
+<h2 id="portfolio"><span class="num">9</span><span class="l-en">Portfolio translation</span><span class="l-zh">组合转译</span></h2>
+<div class="callout lead"><span class="co-h"><span class="l-en">Read-only translation</span><span class="l-zh">仅供分析的转译</span></span> <span class="l-en">This section maps the regime thesis onto four instruments. It is informational analysis, <strong>not investment advice</strong> — the point is to name what each position is <em>actually</em> a bet on once the AI-boom-as-statecraft frame is applied.</span><span class="l-zh">本节把制度假说映射到四个标的上。这是信息性分析，<strong>并非投资建议</strong>——目的是在"AI 繁荣即治国术"这一框架下，指出每个头寸<em>实际上</em>在押注什么。</span></div>
+
+<h3><span class="l-en">MU (Micron) — a credit trade wearing momentum clothes</span><span class="l-zh">MU（美光）——一笔穿着动量外衣的信用交易</span></h3>
+
+<p><span class="l-en">The bull case is intact but has <strong>changed species</strong>. This is no longer a commodity-cycle trade; it is a <strong>credit trade on hyperscaler solvency</strong> — the $100B RPO with floors above all prior cycle peaks — wearing a momentum trade's volatility. The transmission channel is proven: a <span class="r-neg">−13%</span> single-session beta to KOSPI leverage flushes.</span><span class="l-zh">多头逻辑仍然成立，但<strong>物种已经改变</strong>。它不再是商品周期交易，而是一笔<strong>关于超大云厂商偿付能力的信用交易</strong>——1000 亿美元 RPO，且底价高于以往所有周期峰值——同时穿着动量交易的波动外衣。传导渠道已被验证：KOSPI 杠杆清洗时单日 <span class="r-neg">−13%</span> 的 beta。</span></p>
+
+<p><span class="l-en">Three tripwires define the risk surface:</span><span class="l-zh">三个触发器界定了风险面：</span></p>
+
+<table class="data">
+<tr><th><span class="l-en">Tripwire</span><span class="l-zh">触发器</span></th><th><span class="l-en">What it threatens</span><span class="l-zh">威胁何处</span></th></tr>
+<tr><td><span class="l-en"><strong>(1)</strong> The CXMT / consumer-DRAM political valve</span><span class="l-zh"><strong>（1）</strong>CXMT／消费级 DRAM 政治阀门</span></td><td><span class="l-en">Caps the consumer-pricing tail, <em>not</em> the datacenter book — but headline risk is real.</span><span class="l-zh">限制的是消费定价尾部，<em>而非</em>数据中心订单簿——但标题风险真实存在。</span></td></tr>
+<tr><td><span class="l-en"><strong>(2)</strong> The July 1 Commerce report language on datacenter chips</span><span class="l-zh"><strong>（2）</strong>7 月 1 日商务部关于数据中心芯片的报告措辞</span></td><td><span class="l-en">Directly frames the DC demand narrative Micron is levered to.</span><span class="l-zh">直接塑造美光所杠杆押注的数据中心需求叙事。</span></td></tr>
+<tr><td><span class="l-en"><strong>(3)</strong> Any hyperscaler useful-life revision</span><span class="l-zh"><strong>（3）</strong>任何超大云厂商对有用寿命的修订</span></td><td><span class="l-en">Mechanically raises buyers' reported cost of hardware they are contracted to keep buying.</span><span class="l-zh">机械性抬高买方继续按合约购买硬件的报告成本。</span></td></tr>
+</table>
+
+<p><span class="l-en">The FQ4 guide of <span class="num">$50B</span> revenue at <span class="num">~86%</span> gross margin is the <strong>top of the visible staircase</strong>. From here, the marginal news distribution is asymmetric.</span><span class="l-zh">第四财季 <span class="num">500 亿美元</span>收入、<span class="num">约 86%</span> 毛利率的指引，是<strong>可见台阶的顶部</strong>。从这里开始，边际新闻分布是不对称的。</span></p>
+
+<div class="callout key"><span class="co-h"><span class="l-en">Takeaway</span><span class="l-zh">一句话结论</span></span> <span class="l-en">Own it as a hyperscaler-solvency credit position, size it for momentum-grade drawdowns, and watch the three tripwires — the upside staircase is now mostly climbed.</span><span class="l-zh">把它当作超大云厂商偿付能力的信用头寸持有，按动量级别的回撤来定仓位，并盯住三个触发器——向上的台阶大多已经爬完。</span></div>
+
+<h3><span class="l-en">COIN / BTC / stablecoins — a Treasury-policy volume tailwind</span><span class="l-zh">COIN／BTC／稳定币——一股由财政部政策驱动的交易量顺风</span></h3>
+
+<p><span class="l-en">The refinancing-regime thesis is <strong>structurally significant</strong>: GENIUS makes Circle and Tether <em>quasi-fiscal institutions</em> whose growth is now <strong>Treasury policy</strong> (Bessent's $3T target). That is a secular volume tailwind independent of crypto beta.</span><span class="l-zh">再融资制度假说具有<strong>结构性意义</strong>：GENIUS 使 Circle 与 Tether 成为<em>准财政机构</em>，其增长如今就是<strong>财政部政策</strong>（Bessent 的 3 万亿美元目标）。这是一股独立于加密 beta 的长期交易量顺风。</span></p>
+
+<p><span class="l-en"><strong>Sequencing matters.</strong> In Phase 2/3 risk-off, BTC trades as <em>high-beta duration first</em>. The sovereign liquidity response — bill purchases, buybacks, facilities, eventual Warsh cuts — is the <strong>Phase 3 bid</strong> the liquidity-rotation model should be armed for.</span><span class="l-zh"><strong>顺序很重要。</strong>在第二／第三阶段 risk-off 中，BTC 会<em>先作为高 beta 久期资产交易</em>。主权流动性回应——国库券购买、回购、工具、最终 Warsh 降息——才是流动性轮动模型应当为之准备的<strong>第三阶段买盘</strong>。</span></p>
+
+<div class="callout key"><span class="co-h"><span class="l-en">Takeaway</span><span class="l-zh">一句话结论</span></span> <span class="l-en">The structural bid (stablecoin volume) and the cyclical bid (sovereign liquidity) arrive on different clocks — hold the secular thesis through a Phase 2/3 duration flush that precedes the Phase 3 liquidity turn.</span><span class="l-zh">结构性买盘（稳定币交易量）与周期性买盘（主权流动性）遵循不同时钟——在先于第三阶段流动性转向的第二／第三阶段久期清洗中，持有这一长期逻辑。</span></div>
+
+<h3><span class="l-en">DXY / gold — dollar-up-gold-up is the regime signature</span><span class="l-zh">DXY／黄金——美元涨、黄金涨即是制度特征</span></h3>
+
+<p><span class="l-en">The Dollar Milkshake is <strong>operative and intentional</strong> during the boom phase — hawkish <a href="report_warsh_fomc.html">Warsh</a>, global capital suction into dollar AI assets, and the dollar's best day in a year on his first press conference.</span><span class="l-zh">在繁荣阶段，"美元奶昔"<strong>正在运行，而且是有意为之</strong>——鹰派的 <a href="report_warsh_fomc.html">Warsh</a>、全球资本被吸入美元 AI 资产，以及他首次新闻发布会当天美元创下一年最佳单日表现。</span></p>
+
+<p><span class="l-en">Gold is the <strong>anti-bloc instrument</strong>. It bids on exactly two things this regime produces: (i) the fiscal-dominance odor from the Accord (the bear-steepening / independence-fear channel), and (ii) accumulation by states outside the AI-dollar loop. Dollar-up-gold-up is <em>not a contradiction</em> here — it is the regime signature.</span><span class="l-zh">黄金是<strong>反阵营工具</strong>。它买的正是这个制度会制造的两样东西：（一）来自 Accord 的财政主导气味（熊陡／独立性担忧渠道）；（二）处在 AI–美元循环之外的国家的积累。在这里，美元涨、黄金涨<em>并不矛盾</em>——这正是制度特征。</span></p>
+
+<div class="callout key"><span class="co-h"><span class="l-en">Takeaway</span><span class="l-zh">一句话结论</span></span> <span class="l-en">Do not treat a strong dollar as bearish for gold this cycle — both are bidding on the same fiscal-dominance / capital-suction regime, so a simultaneous rally confirms the thesis rather than breaking it.</span><span class="l-zh">本周期不要把强美元当成利空黄金——两者都在押注同一个财政主导／资本吸虹制度，因此两者同涨是在确认逻辑，而非打破逻辑。</span></div>
+
+<h3><span class="l-en">BABA — urgent, separate workstream</span><span class="l-zh">BABA——紧急，需单独开研究流</span></h3>
+
+<p><span class="l-en">Flag as <strong>urgent</strong>: the 1260H designation landed June 8, and the procurement ban is <strong>live as of June 30, 2026</strong>. This is a structural overhang distinct from the AI-boom thesis and warrants a separate workstream.</span><span class="l-zh">标记为<strong>紧急</strong>：1260H 指定于 6 月 8 日落地，采购禁令<strong>已于 2026 年 6 月 30 日生效</strong>。这是一个独立于 AI 繁荣逻辑的结构性压制，值得单独开一个研究流。</span></p>
+
+<div class="callout warn"><span class="co-h"><span class="l-en">Takeaway</span><span class="l-zh">一句话结论</span></span> <span class="l-en">The position now carries a live, entity-level policy risk that the boom framework does not price — do not fold it into the AI-trade book; assess it on its own designation-and-ban timeline.</span><span class="l-zh">该头寸现在承载着繁荣框架并未定价的、实体级的现行政策风险——不要把它并入 AI 交易账本；应按其自身的指定与禁令时间线单独评估。</span></div>
+
+<h2 id="verdict"><span class="l-en">The one-sentence compression</span><span class="l-zh">一句话压缩</span></h2>
+<div class="pquote"><p><span class="l-en">The administration is not trying to <em>prevent</em> the pop; it is trying to <em>schedule</em> it — after the buildout, after the midterms, after the state has its equity, with the losses pre-routed to private credit and the rescue authority pre-moved from the Fed to the Treasury. Everything else is communications strategy.</span><span class="l-zh">政府并不是试图<em>阻止</em>泡沫破裂；它是在试图<em>安排</em>破裂的时间 —— 在建设完成后、在中期选举后、在国家拿到股权之后，同时让损失预先路由到私人信贷，并把救援权从美联储预先转移到财政部。其他一切都是沟通策略。</span></p></div>
+
+<h2 id="sources"><span class="l-en">Sources &amp; method</span><span class="l-zh">资料来源与方法</span></h2>
+<div class="sources">
+<p><strong><span class="l-en">Primary</span><span class="l-zh">一手来源</span>:</strong> <span class="l-en">White House / ai.gov policy documents, Federal Register proclamations (Section 232), SEC filings (Micron 8-K / 10-Q and FQ3-26 materials), Treasury press releases and TBAC reports, Federal Reserve / FOMC communications, BIS working papers, and Congressional Research (GENIUS Act text).</span><span class="l-zh">白宫 / ai.gov 政策文件、《联邦公报》公告（Section 232）、SEC 文件（美光 8-K / 10-Q 及 2026 财年三季度材料）、财政部新闻稿与 TBAC 报告、美联储 / FOMC 沟通、BIS 工作论文，以及国会研究（GENIUS 法案文本）。</span></p>
+<p><strong><span class="l-en">Coverage</span><span class="l-zh">媒体报道</span>:</strong> <span class="l-en">CNBC, Reuters, Bloomberg, Fortune, NPR, CSET, Brookings, Stanford HAI, ITIF, WilmerHale, Quinn Emanuel, Ropes &amp; Gray, Oxford Economics, PIMCO, Lawfare, Grist and The Hill, as cited inline through the research process.</span><span class="l-zh">CNBC、Reuters、Bloomberg、Fortune、NPR、CSET、Brookings、Stanford HAI、ITIF、WilmerHale、Quinn Emanuel、Ropes &amp; Gray、Oxford Economics、PIMCO、Lawfare、Grist 与 The Hill，均在研究过程中随文引用。</span></p>
+<p><strong><span class="l-en">Related reports</span><span class="l-zh">相关报告</span>:</strong> <a href="report_bessent_jun24.html"><span class="l-en">The Bessent Bridge</span><span class="l-zh">贝森特之桥</span></a> · <a href="report_warsh_fomc.html"><span class="l-en">The Warsh Shock</span><span class="l-zh">沃什冲击</span></a></p>
+<p class="mut"><span class="l-en">Probability estimates and inference-flagged claims are the author’s analytical judgment, not sourced facts. Point-in-time; figures may be revised. Informational only — not investment advice.</span><span class="l-zh">概率估计与标注为推论的主张属作者的分析判断，并非来源事实。为特定时点快照，数据可能被修订。仅供参考，不构成投资建议。</span></p>
+</div>
+
+{% endraw %}
+{% endblock %}
