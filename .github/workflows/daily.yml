@@ -305,6 +305,13 @@ jobs:
           # data/smart_money/* snapshots + the breadth/yahoo price caches; returns 0 on error.
           run_py "13F smart-money tracker (build_smart_money)" scripts.build_smart_money
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
+          # Buy Board 2.0 — SHADOW (W6-US, us_standouts_v2). AFTER build_site: it REUSES the
+          # freshly-written factordata/us_standouts.json + setups.json (no recompute, ~0.4s) and
+          # the rotation artifacts (sector_central / subsector_confluence / index_leadership /
+          # subsector_rotation / baskets) through tolerant readers. Writes an UNLINKED preview
+          # (us_stocks_v2.html) + the shadow JSON — nothing live consumes it. main() swallows all
+          # failures and returns 0, so this can NEVER break the render.
+          run_py "buy board 2.0 shadow (build_stock_board_v2)" scripts.build_stock_board_v2
           # Impulse Tracker — AFTER build_site (a US-stocks sibling page): writes impulse.html +
           # factordata/impulse.json from the breadth close/volume caches + the regime read
           # (engine.run, above). Reactive early-ignition momentum screen; display/context only.

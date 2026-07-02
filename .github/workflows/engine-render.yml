@@ -165,6 +165,10 @@ jobs:
             run_py "alternative data desk (build_alt_data)"        scripts.build_alt_data
             run_py "13F smart-money tracker (build_smart_money)"   scripts.build_smart_money
             run_py "macro dashboard + US stocks (build_site)"      scripts.build_site
+            # Buy Board 2.0 SHADOW (W6-US) — AFTER build_site, reuses its us_standouts.json +
+            # setups.json + the rotation artifacts (tolerant readers). Unlinked preview + shadow
+            # JSON only; main() returns 0 on any failure so it can never break the render.
+            run_py "buy board 2.0 shadow (build_stock_board_v2)"   scripts.build_stock_board_v2
             run_py "congressional trades desk (build_congress)"    scripts.build_congress
           }
 
