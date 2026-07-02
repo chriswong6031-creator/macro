@@ -165,6 +165,7 @@ def all_adapters() -> dict:
         ("china_sectors", "collectors.china_sectors", "ChinaSectorsAdapter"),  # Shenwan (申万) L1 industry indices — authoritative deep sector history (1999/2014->) for the Sector Desk + pathway engine (free analogue of the GS China sector baskets)
         ("china_news", "collectors.china_news", "ChinaNewsAdapter"),           # CCTV 新闻联播 official policy-tone series (keyless; display-only news/sentiment panel)
         ("china_news_wire", "collectors.china_news_wire", "ChinaNewsWireAdapter"),  # multi-source flash-wire daily tone -> media-sentiment index (engine/china_news_intel.py)
+        ("china_official_corpora", "collectors.china_official_corpora", "ChinaOfficialCorporaAdapter"),  # official policy corpora (State Council/PBOC/NDRC/CSRC/People's Daily) -> date-keyed parquet + qbus; feeds the Communiqué Diff (engine/communique_diff.py, W4 B1)
         # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md
         # (macro reused from china_macro; flows reused from china_connect/china_flows)
         ("hk_prices", "collectors.hk_prices", "HkPriceAdapter"),
