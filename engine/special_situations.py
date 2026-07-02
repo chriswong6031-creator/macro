@@ -909,12 +909,17 @@ def mastermind_emit() -> dict:
     _attach_priors(list(by_ticker.values()))
 
     # P1.2 merger-arb book: attach spread economics + surface a risk-arb context list for
-    # the trading brain (announced cash deals with a price). Context only, never a size.
+    # the trading brain (announced CASH deals with a price). Context only, never a size.
+    # Cash-only gate: cash+stock deals have a floating stock leg whose value is unknown
+    # without a stock-leg-aware spread model; treating them as fixed-price produces absurd
+    # annualized spreads (UROY +1308%/yr, MCHX +979%/yr seen in audit).  Non-cash deals
+    # remain in by_ticker for the event catalog — they just don't enter the sorted arb book.
     _enrich_arb(list(by_ticker.values()))
     risk_arb = sorted(
         ({"ticker": r.get("ticker"), "company": r.get("company"), "category": r.get("category"),
           "source": r.get("source"), **r["arb"]}
-         for r in by_ticker.values() if r.get("arb")),
+         for r in by_ticker.values()
+         if r.get("arb") and r["arb"].get("consideration") == "cash"),
         key=lambda a: (a.get("annualized_pct") is not None, a.get("annualized_pct") or -1e9),
         reverse=True)
 
