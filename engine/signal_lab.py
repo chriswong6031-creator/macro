@@ -964,6 +964,42 @@ REGISTRY: list[dict] = [
                 ("SPY MaxDD cut (signal era)", "+0.6pp (below the 1pp door)"),
                 ("Calmar strat vs B&H", "0.105 < 0.153 (return crushed)"),
                 ("diverge-fire frequency", "~3% of days (votes≥2 + equities calm)")]),
+    _row("Asia-semi read-through basket  (TSM+ASML ADRs → SMH — C6)",
+         "亚洲半导体传导篮（台积电+阿斯麦ADR → SMH — C6）", "Asia-semi", "display",
+         why="W4 VERDICT: CONTEXT — do NOT wire. ONE pre-registered EW Asia-semi basket "
+             "(TSM + ASML, US-listed ADRs chosen ON PURPOSE to kill the timezone lag) graded vs "
+             "SMH through the lead-lag kernel (HAC-t + BH-FDR + split-half) with ±2 trading-day "
+             "earnings-print excision (12.8% of rows, INTL-49). The lag-0 correlation is huge "
+             "(HAC-t +15.9, mean +0.82, FDR-reject, split-half stable) — but that is MECHANICAL "
+             "CO-MEMBERSHIP (TSM + ASML are two of SMH's largest holdings), not a lead. NO lag>=1 "
+             "link survives: lag1 HAC-t −1.67 (q_FDR 0.16, negative — it mirrors SMH's OWN lag-1 "
+             "mean-reversion of −0.05), lag2/3/5 all |t|<2.1 and non-surviving. Because the ADRs "
+             "trade in the US session there is not even the timezone-transmission lag-1 the raw "
+             "local-index screen had — only same-day co-membership. The lead-lag kernel is the "
+             "binding gate (ADJ-4): its pass excludes lag-0 by construction. Orthogonality vs "
+             "SMH's OWN 5d/21d momentum leaves a wrong-signed residual (+0.07) — the basket adds "
+             "nothing beyond 'semis lead semis'. weight_cap 0, kill=True — stock_score._axis_tailwind "
+             "(the would-be DOWNGRADE-only seam) UNCHANGED.",
+         why_zh="W4 结论：CONTEXT——请勿接入。一个预注册的等权亚洲半导体篮（台积电 + 阿斯麦，特意选用美股ADR"
+                "以消除时区滞后），经领先滞后核（HAC-t + BH-FDR + 半样本），并剔除每次财报前后±2交易日窗口"
+                "（占12.8%行，INTL-49），对 SMH 评分。滞后0相关极大（HAC-t +15.9，均值 +0.82，通过FDR，半样本"
+                "稳定）——但这是机械式成分重叠（台积电+阿斯麦是 SMH 最大持仓之二），并非领先。无任何滞后≥1"
+                "存活：滞后1 HAC-t −1.67（q 0.16，为负——与 SMH 自身滞后1均值回归 −0.05 一致），滞后2/3/5 "
+                "均 |t|<2.1。因 ADR 在美股时段交易，连原始本地指数筛查中的时区传导滞后1也没有——只剩同日成分"
+                "重叠。领先滞后核是约束门（ADJ-4），其判定按构造排除滞后0。相对 SMH 自身5日/21日动量的正交性"
+                "留下错号残差（+0.07）——篮子在'半导体领先半导体'之外无增量。权重上限0，kill=True——"
+                "stock_score._axis_tailwind（本应是仅降级的接入口）未变。",
+         source="reports/intl-semi-readthrough-phase0.md (W4-C6 2026-07-02); "
+                "scripts/c6_asia_semi_readthrough.py + scripts/intl_phase0.py --c6 (grade); "
+                "data/intl_bridge/ledger.json (c6_asia_semi_readthrough); "
+                "data/intl_bridge/c6_earnings_dates.json (print-excision source)",
+         horizon="5d fwd (lead-lag kernel)", ic=0.157, dsr=0.446,
+         wired="not wired — CONTEXT (lag-0 co-membership only; no lag>=1 lead survives the kernel)",
+         extra=[("lag-0 HAC-t (co-membership)", "+15.9 (mean +0.82 — mechanical, TSM+ASML in SMH)"),
+                ("lag-1 HAC-t", "−1.67 (q_FDR 0.16, does NOT survive; negative)"),
+                ("lag>=1 kernel survivors", "0 (no tradeable lead; ADRs remove timezone lag)"),
+                ("orthogonality vs SMH own momentum", "+0.07 residual (wrong sign; nothing beyond semis-lead-semis)"),
+                ("print rows excised (±2td)", "838 (12.8%)")]),
     _row("Intl trend de-risk overlays  (price + total-return ETFs — C3)",
          "国际趋势降险叠加（价格指数 + 总回报ETF — C3）", "Intl ETF", "display",
          why="Two ports, one honest verdict: trend on tradeable intl is dead. The PRICE-index "

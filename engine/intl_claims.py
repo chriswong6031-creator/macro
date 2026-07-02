@@ -571,6 +571,57 @@ BACKFILL: list[dict] = [
                  "flattens out of good days without avoiding the bad ones. DSR 0.98 is SPY drift. "
                  "conditions._macro_risk_legs UNCHANGED — no MRS leg added. weight_cap 0.",
     },
+    # W4-C6 — Asia-semi aggregate read-through (graded 2026-07-02, scripts/intl_phase0.py --c6)
+    # VERDICT: CONTEXT — do NOT wire. The ONE pre-registered EW Asia-semi basket (TSM + ASML,
+    # the declared source_series — US-listed ADRs chosen ON PURPOSE per §4.4 to kill the
+    # lag-1 timezone ambiguity) shows, through the lead-lag kernel with ±2td earnings-print
+    # excision (12.8% of rows excised, INTL-49), a MASSIVE contemporaneous lag-0 correlation
+    # with SMH (HAC-t +15.9, mean +0.82, FDR-reject, split-half stable) — but that is
+    # MECHANICAL CO-MEMBERSHIP (TSM+ASML are two of SMH's largest holdings), NOT a lead. NO
+    # lag>=1 link survives: lag1 HAC-t −1.67 (q_FDR 0.16, does not reject; split-half FALSE;
+    # its sign is negative, mirroring SMH's OWN lag-1 mean-reversion −0.05), lag2/3/5 all
+    # |t|<2.1 and non-surviving. So there is no tradeable lead AND — because the ADRs trade
+    # in the US session — not even the timezone-transmission lag-1 the raw local-index screen
+    # (cross-asset-leadlag-phase0) had: the ADR design removed the overnight carry-in, leaving
+    # only same-day co-membership. The lead-lag kernel is the BINDING gate (ADJ-4): its pass
+    # excludes lag0 by construction, so a claim with no surviving lag>=1 is CONTEXT no matter
+    # its other gates. (For completeness the de-risk overlay also fails gate f — the basket-
+    # rolling-over long/flat book does cut SMH MaxDD 10.1pp but the DSR is 0.45 and split-half
+    # Sharpe sign-flips; and orthogonality vs SMH's OWN 5d/21d momentum leaves a wrong-signed
+    # residual +0.07 — the basket adds nothing beyond 'semis lead semis'.) Truthful negative,
+    # weight_cap 0, kill=True. stock_score._axis_tailwind (the would-be DOWNGRADE-only seam)
+    # is UNCHANGED — the harness wires nothing this wave regardless of verdict, and CONTEXT
+    # means nothing to wire ever.
+    {
+        "id": "c6_asia_semi_readthrough",
+        "channel": "C6",
+        "hypothesis": "One EW Asia-semi sensor basket (TSM + ASML, US-listed ADRs) leads SMH at "
+                      "the pre-registered 5d horizon, earnings-print windows excised.",
+        "direction": "de-risk",
+        "verdict": "CONTEXT",
+        "weight_cap": 0.0,
+        "metrics": {"ic": 0.1568, "dsr": 0.4463, "split_half_same_sign": False,
+                    "effective_n_crises": 5, "es_ex_top3": 0.0061, "orthogonal_partial": 0.0724},
+        "gates": {"deflated_sharpe": "fail", "split_half": "fail", "leave_one_crisis_out": "pass",
+                  "orthogonality": "fail", "crisis_independent_es": "pass",
+                  "drawdown_reduction": "fail", "lead_lag_kernel": "fail", "freshness": "pass"},
+        "source_series": ["yahoo/TSM", "yahoo/ASML"],
+        "freshness_sla_days": 5,
+        "validation_ref": "reports/intl-semi-readthrough-phase0.md (W4-C6, 2026-07-02); "
+                          "scripts/c6_asia_semi_readthrough.py + scripts/intl_phase0.py --c6 (grade); "
+                          "data/intl_bridge/c6_earnings_dates.json (print-excision source)",
+        "kill": True,
+        "notes": "W4-C6 VERDICT: CONTEXT (do NOT wire). EW TSM+ASML ADR basket vs SMH through the "
+                 "lead-lag kernel (±2td print excision, 12.8% of rows). lag-0 co-membership is huge "
+                 "(HAC-t +15.9, mean +0.82, FDR-reject) but MECHANICAL — TSM+ASML are two of SMH's "
+                 "largest holdings, not a lead. NO lag>=1 link survives FDR + split-half: lag1 HAC-t "
+                 "−1.67 (q 0.16, negative — mirrors SMH's own lag-1 mean-reversion), lag2/3/5 all "
+                 "|t|<2.1. The ADR design deliberately removed the overnight timezone lag, so there "
+                 "is not even the transmission-read lag-1 the raw local-index screen had — only "
+                 "same-day co-membership. The lead-lag kernel is the binding gate (ADJ-4). Orthogonality "
+                 "vs SMH's OWN 5d/21d momentum leaves a wrong-signed residual (+0.07): nothing beyond "
+                 "'semis lead semis'. stock_score._axis_tailwind UNCHANGED — nothing wired. weight_cap 0.",
+    },
     # W2-C3 — global ETF breadth barometer (graded 2026-07-02, scripts/intl_phase0.py --c3)
     # Live run result: CONFIRMED. N=23 ETFs, panel>=10 threshold, 200dma, causal pctile-504d,
     # top-30% de-risk. DSR 0.9326 (intl_bridge N=17). All hard gates pass.
