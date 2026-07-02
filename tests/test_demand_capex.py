@@ -9,7 +9,8 @@ from engine import demand_chain as dc
 
 FAKE_SIG = {"ai_datacenter": {"yoy_pct": 69.0, "yoy_prev_pct": 50.4, "trend": "accelerating",
                               "total_latest_bn": 378.7, "fy_latest": 2025,
-                              "spenders": ["MSFT", "GOOGL", "AMZN", "META", "ORCL"]}}
+                              "spenders": ["MSFT", "GOOGL", "AMZN", "META", "ORCL"],
+                              "series": [[2023, 230.0], [2024, 270.0], [2025, 378.7]]}}
 
 
 def _patch(monkeypatch, sig=None, themes=None):
@@ -18,6 +19,13 @@ def _patch(monkeypatch, sig=None, themes=None):
     monkeypatch.setattr(dx.config, "load", lambda: {"themes": themes or {
         "memory_storage": {"name": "Memory"}, "ai_semiconductors": {"name": "AI Semis"},
         "semicap_equipment": {"name": "WFE"}, "cybersecurity": {"name": "Cyber"}}})
+    # W2b: stub the new helpers that call config.data_dir() to avoid KeyError in unit tests
+    monkeypatch.setattr(dx, "_membership_map", lambda: {
+        "memory_storage": [], "ai_semiconductors": [], "semicap_equipment": [],
+        "data_center_power": [], "grid_electrification": [], "nuclear_power": []})
+    monkeypatch.setattr(dx, "_revisions_map", lambda: {})
+    monkeypatch.setattr(dx, "_rpo_cache", lambda: {})
+    monkeypatch.setattr(dx, "_chain_track_record", lambda: None)
 
 
 def test_projects_capex_onto_ai_themes(monkeypatch):
