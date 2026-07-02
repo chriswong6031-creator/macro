@@ -21,6 +21,7 @@ from lib import config
 class HkStockPriceAdapter(Adapter):
     name = "hk_stocks"
     group = "hk_stocks"
+    overwrite_overlap = True   # yfinance auto_adjust=True → seam-free re-adjust of the refresh window
 
     def __init__(self) -> None:
         self.cfg = config.load()["hk"]["stock_prices"]

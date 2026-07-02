@@ -146,7 +146,8 @@ def all_adapters() -> dict:
         ("treasury_auctions", "collectors.treasury_auctions", "TreasuryAuctionsAdapter"),  # TreasuryDirect auction RESULTS -> supply-absorption panel (display-only)
         # China A-share dashboard — see research/CHINA_DATA_AUDIT.md
         ("china_prices", "collectors.china_prices", "ChinaPriceAdapter"),
-        ("china_stocks", "collectors.china_stock_prices", "ChinaStockPriceAdapter"),  # per-NAME daily OHLC (high/low) for the signal engine — research/signal_engine/MULTICOUNTRY_DATA.md
+        ("china_stocks", "collectors.china_stock_prices", "ChinaStockPriceAdapter"),  # per-NAME daily OHLC (high/low, ADJUSTED) for the signal engine — research/signal_engine/MULTICOUNTRY_DATA.md
+        ("china_stocks_raw", "collectors.china_stock_raw", "ChinaStockRawPriceAdapter"),  # RAW (nominal) per-NAME OHLC for level/limit/gap/A-H logic — masterplan §W6-CN fix 3
         ("china_macro", "collectors.china_macro", "ChinaMacroAdapter"),
         ("china_breadth", "collectors.china_breadth", "ChinaBreadthAdapter"),
         ("china_universe", "collectors.china_universe", "ChinaUniverseAdapter"),  # broad A-share SEARCH set (decoupled from breadth)

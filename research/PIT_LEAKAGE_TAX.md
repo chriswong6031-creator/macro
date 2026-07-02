@@ -173,3 +173,16 @@ The original verdict stands with one refinement: the **ECI quarterly lag (120+ d
 - `scripts/shadow_pit_regime.py` — the harness. `--full` for whole span, default last-5y.
 - `calibration/leakage_tax.json` — the published measurement.
 - `tests/test_pit_accessor.py` — as-of leak invariant, byte-identical regression, calendar/learned-lag sanity.
+
+## Addendum 2026-07-02 — W1-CN China board leakage tax (shadow)
+**Harness:** `scripts/shadow_pit_china.py` · **Artifact:** `calibration/leakage_tax_china.json` · **Status:** SHADOW (no live path touched).
+W1 (`engine/pit.py`, `scripts/shadow_pit_regime.py`) covers only the US FRED/ALFRED macro legs; it replays ZERO of the China standout board. This harness ports the truncated-replay discipline (`tests/test_vector_pit.py`) to the board's own features and measures three point-in-time taxes.
+- **Price-vintage tax** (17 git-committed panel vintage pairs, 3 mid-session partial-bar pairs excluded): **5.1%** of names had their last-2d closes revised >0.4% between vintages (the combine_first-seam band; median 0.83%, max 29.4%). At the looser >0.1% band 10.9%. The git-committed `china_search/closes.parquet` is a free ALFRED-analog vintage matrix.
+- **Bucket-completeness tax** (2026-06-30, n=385): washout-2W flag flips **7.0%** between the live (incomplete final 2W bucket) and a completed-bucket backtest — a completed-bucket grade scores a different signal than users saw. `bucket_end` is persisted next to `asof` in the artifact.
+- **Bucket-completeness tax** (2026-07-01, n=385): washout-2W flag flips **8.3%** between the live (incomplete final 2W bucket) and a completed-bucket backtest — a completed-bucket grade scores a different signal than users saw. `bucket_end` is persisted next to `asof` in the artifact.
+- **Plane tax** (2026-06-30, n=59): replaying washout-2W on the WRONG price plane (search cache vs deep OHLC store) flips **5.1%** of rows; the correct-plane replay reproduces the live ledger flag 100.0%. Features must replay on their OWN store — `universe()` overlays the deep store and shifts the 2W bucket phase.
+- **Plane tax** (2026-07-01, n=60): replaying washout-2W on the WRONG price plane (search cache vs deep OHLC store) flips **1.7%** of rows; the correct-plane replay reproduces the live ledger flag 100.0%. Features must replay on their OWN store — `universe()` overlays the deep store and shifts the 2W bucket phase.
+- **rev_z** (2026-06-30): causally clean live (both ends observed closes); replay fragility is screened-set churn **0.1%** (current ST/mktcap/membership snapshot vs as-of), not a value leak.
+- **rev_z** (2026-07-01): causally clean live (both ends observed closes); replay fragility is screened-set churn **0.0%** (current ST/mktcap/membership snapshot vs as-of), not a value leak.
+
+**Verdict:** honest numbers, no demotion recommended on these alone — this sizes the taxes so any future 'grade the cascade / washout' work replays on the correct plane, persists bucket_end, and treats git panels as the vintage matrix.

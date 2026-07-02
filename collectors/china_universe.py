@@ -17,12 +17,23 @@ Data planes (both free, verified 2026-06-13):
 
 Outputs (committed — small; gives the engine CI job the data via git pull, no
 fragile cross-job actions/cache):
-  data/china_search/closes.parquet   wide [date x ticker] adjusted closes
+  data/china_search/closes.parquet   wide [date x ticker] adjusted closes (APPEND-ONLY with
+      BOUNDED retention — names leaving the top-N keep their frozen history columns for
+      ~2y (frozen_retention_days) then age out, so the file stays small; see below)
   data/china_search/members.parquet  index=ticker; name / name_zh / name_en / sector / mktcap_yi
+  data/china_search/dropped.parquet  ticker → dropped_date marker for names that left the live
+      top-N (append-only; cleared if a name re-enters). Lets consumers tell "current" from "frozen".
   data/china_search/coverage.parquet 1-row daily time series (n_stocks) for run_status
 
 build_china_library.universe() reads these FIRST so real names win over the
 ticker-as-name fallback from the breadth cache.
+
+SURVIVORSHIP NOTE: before the append-only fix (masterplan §W6-CN), this collector
+retroactively DELETED a dropped name's entire history column every run — worse than
+snapshot survivorship, because it erased the deep-decliner failure cases the reversal
+signal specifically buys. Every china_search-derived backtest statistic produced from
+the pre-fix committed history (e.g. the 0.58 reversal Sharpe) is therefore an UPPER
+BOUND until the panel is re-accrued append-only.
 """
 from __future__ import annotations
 
@@ -36,6 +47,47 @@ from collectors.base import Adapter
 from lib import config
 
 log = logging.getLogger(__name__)
+
+
+def _overwrite_overlap(fresh: pd.DataFrame, prev: pd.DataFrame) -> pd.DataFrame:
+    """Merge a fresh wide-closes pull over a prior one WITHOUT a combine_first seam.
+
+    For dividend/split-ADJUSTED (auto_adjust=True) closes the fresh pull's window is the
+    corrected truth for every bar it covers, so it fully overwrites its own date span
+    [fresh.min, fresh.max]; only prior rows strictly OLDER than the fresh window (deep
+    history the short refresh did not reach) are carried forward. Columns present only in
+    ``prev`` are preserved whole (append-only history). NaN-only fresh columns fall back to
+    prev so a name the fresh pull failed to return keeps its history.
+    """
+    if prev is None or prev.empty:
+        return fresh.sort_index()
+    if fresh is None or fresh.empty:
+        return prev.sort_index()
+    # defensive: a duplicated column label makes df[col] return a DataFrame → later boolean
+    # checks would raise 'truth value of a Series is ambiguous'. Dedup keeps the last.
+    fresh = fresh.loc[:, ~fresh.columns.duplicated(keep="last")]
+    prev = prev.loc[:, ~prev.columns.duplicated(keep="last")]
+    lo = fresh.index.min()
+    full_index = prev.index.union(fresh.index)
+    out = pd.DataFrame(index=full_index)
+    for col in dict.fromkeys(list(prev.columns) + list(fresh.columns)):
+        pcol = prev[col].reindex(full_index) if col in prev.columns else pd.Series(index=full_index, dtype="float64")
+        if col in fresh.columns and fresh[col].notna().sum() > 0:
+            # fresh OWNS its whole date span [lo, fresh.max] — every bar there is on the
+            # NEW re-adjusted basis. prev only fills rows STRICTLY OLDER than lo (deep history
+            # the refresh did not reach). A trading day the fresh pull skipped inside its own
+            # window is LEFT NaN, NOT backfilled from prev: a stale un-re-adjusted prev value
+            # on the new basis would recreate the exact seam this function exists to erase
+            # (and the signal engines tolerate a NaN gap far better than a wrong level).
+            # This matches lib.store.upsert(overwrite_overlap=True), which also drops prev
+            # inside the fresh window — the two seam-free merges stay consistent.
+            fcol = fresh[col].reindex(full_index)
+            out[col] = fcol.where(full_index >= lo, pcol)
+        else:
+            # prev-only column (dropped name) or fresh-miss → carry the WHOLE prev history
+            # forward untouched (append-only, no retroactive deletion).
+            out[col] = pcol
+    return out.sort_index()
 
 
 def _to_ticker(sina_symbol: str) -> str | None:
@@ -86,6 +138,7 @@ class ChinaUniverseAdapter(Adapter):
         self.dir = config.data_dir() / "china_search"
         self.closes_path = self.dir / "closes.parquet"
         self.members_path = self.dir / "members.parquet"
+        self.dropped_path = self.dir / "dropped.parquet"   # append-only frozen-history marker table
 
     # -- universe (Sina) -------------------------------------------------------
     def _sina_universe(self) -> pd.DataFrame:
@@ -296,18 +349,69 @@ class ChinaUniverseAdapter(Adapter):
             age = (pd.Timestamp.utcnow().tz_localize(None) - prev_closes.index.max()).days
             new = [t for t in tickers if t not in prev_closes.columns]
             fresh = self._download_closes(tickers, "1mo" if age <= 21 else period)
-            closes = fresh.combine_first(prev_closes)
+            # SEAM-FREE merge for auto_adjust=True closes: a re-adjusted history is a coherent
+            # whole, so the fresh pull must FULLY OVERWRITE its own date window (not combine_first,
+            # which keeps stale un-re-adjusted prev values at the refresh edge → a permanent basis
+            # step that biases rev_z and can fabricate crosses). Only prev rows OLDER than the fresh
+            # window are carried forward. See lib.store.upsert / masterplan §W6-CN fix 2.
+            closes = _overwrite_overlap(fresh, prev_closes)
             if new:                                       # backfill deep history for new entrants
                 deep = self._download_closes(new, period)
-                closes = deep.combine_first(closes)
+                closes = _overwrite_overlap(deep, closes)
         else:
             closes = self._download_closes(tickers, period)
-        # trim to the current universe (keeps the committed file bounded)
-        closes = closes[[t for t in tickers if t in closes.columns]].dropna(axis=1, how="all")
+        closes = closes.dropna(axis=1, how="all")
 
-        live = closes.shape[1]
-        log.info("china_universe coverage: %d/%d names have closes (%.0f%%)",
-                 live, len(tickers), 100 * live / max(1, len(tickers)))
+        # APPEND-ONLY history (do NOT retroactively trim to the current top-N — that
+        # physically deleted dropped names' history every run, erasing exactly the
+        # deep-decliner failure cases the reversal signal buys, so china_search-based
+        # stats were an upper bound). Names that leave the current universe keep their
+        # frozen columns; a dropped-date marker table records when each left the live set
+        # so downstream consumers can distinguish "current" from "frozen" without a
+        # retroactive-deletion survivorship leak. See research/ENGINE_FIX_MASTERPLAN.md §W6-CN.
+        current = set(tickers)
+        prev_cols = set(prev_closes.columns) if prev_closes is not None else set()
+
+        # Record names that were in the universe last run but dropped out of the current
+        # top-N (append-only; a name re-entering the top-N is un-marked so the marker is a
+        # point-in-time record of the *latest* transition, never a hard delete).
+        today_ts = pd.Timestamp.utcnow().tz_localize(None).normalize()
+        today = str(today_ts.date())
+        newly_dropped = sorted(prev_cols - current)
+        prev_dropped = (pd.read_parquet(self.dropped_path)
+                        if self.dropped_path.exists() else pd.DataFrame(columns=["ticker", "dropped_date"]))
+        drop_map = dict(zip(prev_dropped.get("ticker", []), prev_dropped.get("dropped_date", [])))
+        for t in newly_dropped:
+            drop_map.setdefault(t, today)                            # keep the FIRST-seen drop date
+        for t in current:
+            drop_map.pop(t, None)                                    # re-entrant: clear the marker
+
+        # BOUNDED retention: keep a dropped name's frozen history for frozen_retention_days
+        # (default ~2y) — long enough that no live reversal window (63d) or forward grader
+        # (≤21d) references it, but bounding the committed file so append-only does not grow
+        # without limit (the docstring's "committed — small" contract). A column is pruned only
+        # AFTER its retention window; the reversal-failure cases the signal buys are preserved
+        # for the whole backtest-relevant lookback.
+        retention_days = int(self.cfg.get("frozen_retention_days", 730))
+        aged_out = {t for t, d in drop_map.items()
+                    if t not in current
+                    and (today_ts - pd.Timestamp(d)).days > retention_days}
+        if aged_out:
+            closes = closes[[c for c in closes.columns if c not in aged_out]]
+            for t in aged_out:
+                drop_map.pop(t, None)
+            log.info("china_universe: pruned %d frozen columns aged out past %dd retention",
+                     len(aged_out), retention_days)
+        dropped_df = pd.DataFrame(
+            [{"ticker": t, "dropped_date": d} for t, d in sorted(drop_map.items())]
+        )
+
+        cover_cols = [t for t in closes.columns if t in current]     # coverage counted on the LIVE set
+        live = len(cover_cols)
+        log.info("china_universe coverage: %d/%d live names have closes (%.0f%%); "
+                 "closes file carries %d columns (incl. %d frozen-history names)",
+                 live, len(tickers), 100 * live / max(1, len(tickers)),
+                 closes.shape[1], len(dropped_df))
         if live < len(tickers) * 0.6:
             raise RuntimeError(f"china_universe closes too sparse: {live}/{len(tickers)}")
 
@@ -317,8 +421,11 @@ class ChinaUniverseAdapter(Adapter):
 
         if not full_history:
             closes.to_parquet(self.closes_path)
+            if not dropped_df.empty:
+                dropped_df.to_parquet(self.dropped_path, index=False)
         members[["name", "name_zh", "name_en", "sector", "mktcap_yi"]].to_parquet(self.members_path)
 
-        cov = pd.DataFrame({"n_stocks": [len(members)]},
+        cov = pd.DataFrame({"n_stocks": [len(members)], "n_columns": [closes.shape[1]],
+                            "n_dropped": [len(dropped_df)]},
                            index=pd.DatetimeIndex([closes.index.max()], name="date"))
         return {"coverage": cov}

@@ -610,6 +610,29 @@ def main(alpha: dict | None = None) -> dict | None:
         except Exception as e:  # noqa: BLE001 — additive context, never fatal
             log.warning("china context drip %s skipped (%s)", _mod, e)
 
+    # Register the GATED Tushare drip plane in run_status/health (masterplan §W6-CN fix 4).
+    # These drips run here (not in the collect.py adapter loop), so a frozen/token-less
+    # Tushare plane was previously INVISIBLE to run_status — it silently no-ops and the last
+    # committed parquet freezes. Record each table's data-through date + staleness state so a
+    # freeze is loud, and consumers (via engine.tushare_freshness) already de-prefer stale rows.
+    try:
+        from engine.tushare_freshness import staleness_badge
+        from lib import store as _store
+        _t_tables = {"valuation": 1, "margin": 1, "moneyflow": 1, "chips": 1,
+                     "broker": 30, "forecast": 30}   # table → expected cadence (days)
+        _t_health = {tbl: staleness_badge(tbl, expected_cadence_days=cad)
+                     for tbl, cad in _t_tables.items()}
+        _st = _store.read_status()
+        _st.setdefault("tushare", {})["health"] = _t_health
+        _st["tushare"]["asof"] = str(pd.Timestamp.utcnow())
+        _store.write_status(_st)
+        _stale = [b["table"] for b in _t_health.values() if b["state"] in ("stale", "dead")]
+        if _stale:
+            log.warning("tushare plane STALE/DEAD (invisible-freeze guard): %s — free fallbacks "
+                        "preferred at consume time; check TUSHARE_TOKEN", _stale)
+    except Exception as e:  # noqa: BLE001 — health registration must never break a build
+        log.warning("tushare health registration failed (%s)", e)
+
     # sector-neutral residual-alpha leg — computed here if not passed in by build_china
     if alpha is None:
         alpha = compute_china_alpha()
@@ -623,6 +646,10 @@ def main(alpha: dict | None = None) -> dict | None:
     # market caps (亿) for the fundamentals valuation pass + Chinese names (for the ST screen) — best-effort
     mktcap_by: dict[str, float] = {}
     name_zh_by: dict[str, str] = {}
+    _PLACEHOLDER_MCAP = 30.0     # china_universe seeds CSI/config extras with a 30.0亿 sentinel; 46% of
+    #                              members carry it exactly. It is NOT a real cap — feeding it into
+    #                              Altman-Z distress zones / P-S coloring fabricates readings from a
+    #                              constant. Thread the sentinel to UNKNOWN (masterplan §W6-CN fix 5).
     try:
         mp = config.data_dir() / "china_search" / "members.parquet"
         if mp.exists():
@@ -632,12 +659,57 @@ def main(alpha: dict | None = None) -> dict | None:
             tcol = "ticker" if "ticker" in mdf.columns else mdf.columns[0]
             if "mktcap_yi" in mdf.columns:
                 mktcap_by = {str(r[tcol]): float(r["mktcap_yi"])
-                             for _, r in mdf.iterrows() if pd.notna(r.get("mktcap_yi"))}
+                             for _, r in mdf.iterrows()
+                             if pd.notna(r.get("mktcap_yi")) and float(r["mktcap_yi"]) != _PLACEHOLDER_MCAP}
             if "name_zh" in mdf.columns:
                 name_zh_by = {str(r[tcol]): str(r["name_zh"])
                               for _, r in mdf.iterrows() if pd.notna(r.get("name_zh"))}
+        # prefer real per-name caps from Tushare valuation total_mv_yi (asof-gated so a frozen
+        # gated plane can't reintroduce stale caps) — fills exactly the placeholder-dropped names.
+        try:
+            from engine.tushare_freshness import prefer_tushare as _prefer_tv
+            tv = pd.read_parquet(config.data_dir() / "tushare" / "valuation.parquet")
+            chosen, _src = _prefer_tv(tv if "total_mv_yi" in tv.columns else None,
+                                      pd.read_parquet(config.data_dir() / "china_a_val" / "pe.parquet")
+                                      if (config.data_dir() / "china_a_val" / "pe.parquet").exists() else None)
+            if _src == "tushare" and chosen is not None and "total_mv_yi" in chosen.columns:
+                real = {str(r["ticker"]): float(r["total_mv_yi"])
+                        for _, r in chosen.iterrows()
+                        if pd.notna(r.get("ticker")) and pd.notna(r.get("total_mv_yi")) and float(r["total_mv_yi"]) > 0}
+                mktcap_by = {**real, **mktcap_by}     # real caps fill the placeholder gaps; keep any Sina real caps
+                log.info("china mktcap: filled %d names from Tushare total_mv_yi (placeholders dropped)", len(real))
+        except Exception as _te:  # noqa: BLE001 — Tushare cap overlay is additive
+            log.debug("china tushare mktcap overlay skipped (%s)", _te)
     except Exception as e:  # noqa: BLE001
         log.debug("china mktcap/name load failed: %s", e)
+
+    # ST/*ST/退 delisting-risk flags from a field that ACTUALLY CARRIES the prefix.
+    # ADVERSARIAL CHECK (masterplan §W6-CN fix 5): the Sina-sourced members.parquet name_zh
+    # strips the ST prefix entirely (0/1494 matches), so the name_zh-keyed ST screen was
+    # SILENTLY BLIND — a known-ST name in the universe (600777.SS) reads as "新潮能源" here while
+    # Tushare moneyflow carries it as "*ST新潮". Source ST status from the Tushare moneyflow name
+    # field (512 ST names on its latest snapshot) which preserves the prefix. Asof-gated so a
+    # frozen gated plane cannot resurrect a name that has since been un-ST'd or delisted.
+    st_flag_by: dict[str, bool] = {}
+    try:
+        from engine.tushare_freshness import frame_asof as _tf_asof
+        mfp = config.data_dir() / "tushare" / "moneyflow.parquet"
+        if mfp.exists():
+            mf = pd.read_parquet(mfp)
+            if "name" in mf.columns and "ticker" in mf.columns:
+                # keep only the latest snapshot row per ticker (the current ST status)
+                if "trade_date" in mf.columns:
+                    mf = mf.sort_values("trade_date").drop_duplicates("ticker", keep="last")
+                for _, r in mf.iterrows():
+                    nm = str(r.get("name", ""))
+                    if nm:
+                        st_flag_by[str(r["ticker"])] = is_st(nm, None)
+                _n_st = sum(1 for v in st_flag_by.values() if v)
+                log.info("china ST screen: sourced %d ST/*ST/退 flags from Tushare moneyflow "
+                         "(through %s); Sina name_zh dropped the prefix (0 matches)",
+                         _n_st, _tf_asof(mf))
+    except Exception as _se:  # noqa: BLE001 — additive; falls back to name_zh screen
+        log.debug("china ST-flag source unavailable (%s)", _se)
 
     # live China net-liquidity regime — the single macro conviction modifier on the
     # ladder (CN has no macro_risk/VIX leg, unlike the US build)
@@ -764,7 +836,9 @@ def main(alpha: dict | None = None) -> dict | None:
                        if c is not None and c.last_valid_index() is not None), default=None)
 
     def _tradability_ok(_t: str) -> bool:
-        if is_st(name_zh_by.get(_t), None):
+        # ST from the Tushare name field (carries the prefix) OR the name_zh fallback (usually
+        # blind — see the ST-flag sourcing above). Fail-CLOSED: either source flags → drop.
+        if st_flag_by.get(_t, False) or is_st(name_zh_by.get(_t), None):
             screen_drop["st"] += 1
             return False
         _cap = mktcap_by.get(_t)
