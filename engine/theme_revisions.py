@@ -23,9 +23,11 @@ W1c (P1-B): adaptive broadening lookback + 30v90 drift proxy.
   - ACCEL_LOOKBACK_DAYS (21d) is now the *preference*; if only MIN_ACCEL_DAYS (10d) is
     available the real derivative is computed on that shorter window and `basis_days` is
     set to reflect the actual window used — the read is honest about its basis.
-  - When no ≥MIN_ACCEL_DAYS prior snapshot exists, a proxy is computed from per-member
-    est_chg_30d vs est_chg_90d: 30d drift > 90d pace ⇒ accelerating.  Output gains
-    `proxy: True` and `basis: "drift_30v90"` so consumers can distinguish real from proxy.
+  - When no ≥MIN_ACCEL_DAYS prior snapshot exists, a display-only proxy is computed from per-member
+    est_chg_30d vs est_chg_90d: 30d drift > 90d pace ⇒ accelerating.  The directional read is
+    emitted as `broadening_proxy_state` (+ `broadening_proxy: True`, `basis: "drift_30v90"`)
+    while `broadening_state` STAYS INSUFFICIENT_HISTORY — the level-derived proxy must never
+    reach the scored acceleration axis, which cannot see the proxy flag.
   - Falls back to INSUFFICIENT_HISTORY only when neither the archive nor the proxy inputs
     are present.
 """
@@ -45,6 +47,9 @@ MIN_ANALYSTS = 3            # thin-coverage guard — a name needs >=3 estimates
 FLAT_BAND = 0.10           # |breadth| < this = "not yet firing" (PRECIPICE-compatible)
 ACCEL_LOOKBACK_DAYS = 21   # preferred PIT span for the broadening derivative
 MIN_ACCEL_DAYS = 10        # minimum PIT span — compute real accel on shorter window if needed
+PROXY_DEADBAND = 0.5       # |median 30v90 drift-diff| (pct-pts/mo) below this = FLAT_LOW —
+                           # keeps the sign-only proxy from being more trigger-happy than
+                           # the real _accel_state path (which gates on breadth + accel)
 
 WEIGHTS = {"breadth": "mean member net-up share [-1,1]",
            "est_drift_90d": "median member 90d consensus-EPS drift %",
@@ -98,12 +103,15 @@ def _broadening_proxy(members: list[str], latest: pd.DataFrame) -> dict | None:
     """Drift-proxy for broadening when no ≥MIN_ACCEL_DAYS prior snapshot exists.
 
     Compares est_chg_30d vs est_chg_90d per member: if the 30d drift is stronger than
-    the annualised 90d pace, the revision wave is accelerating.  Uses the same state
-    vocabulary as _broadening (RISING/FLAT_LOW/ROLLING/MIXED) but adds proxy:True and
-    basis:"drift_30v90" so downstream consumers can distinguish real from proxy.
+    the annualised 90d pace, the revision wave is accelerating. The directional read is
+    emitted as `broadening_proxy_state` (same vocabulary as _broadening) while
+    `broadening_state` stays INSUFFICIENT_HISTORY — the proxy is level-derived from a
+    single snapshot, so it must never reach the consumers that score/stage the real PIT
+    accel (foresight_score's acceleration axis reads `broadening_state` with no way to
+    see the proxy flag, which the cascade drops at its boundary).
 
-    Returns None when the proxy inputs are absent (no est_chg_30d/est_chg_90d columns
-    or no covered members with MIN_ANALYSTS coverage).
+    Returns None when the proxy inputs are absent or all-NaN (no est_chg_30d/est_chg_90d
+    columns, no covered members with MIN_ANALYSTS coverage, or NaN-only drift).
     """
     if not {"est_chg_30d", "est_chg_90d", "n_analysts"}.issubset(latest.columns):
         return None
@@ -119,20 +127,35 @@ def _broadening_proxy(members: list[str], latest: pd.DataFrame) -> dict | None:
 
     # annualise the 90d rate to a 30d equivalent: pace_30d = est_chg_90d / 3
     # positive difference = 30d drift is running *ahead* of the 90d pace => accelerating
+    # (drop NaN member rows first — an all-NaN median is nan, and `nan > 0` is False,
+    # which would fall through to a confident FLAT_LOW built from no data)
     pace_30d = covered["est_chg_90d"] / 3.0
-    drift_diff = covered["est_chg_30d"] - pace_30d
+    drift_diff = (covered["est_chg_30d"] - pace_30d).dropna()
+    if drift_diff.empty:
+        return None                 # no usable drift inputs -> INSUFFICIENT_HISTORY
     median_diff = float(drift_diff.median())
+    if median_diff != median_diff:  # residual NaN guard
+        return None
 
-    # proxy breadth-direction signal: sign of median drift-diff
-    if median_diff > 0:
+    # proxy direction with a small deadband — the real _accel_state path requires a
+    # material accel + positive breadth, so a sign-only proxy would be systematically
+    # more trigger-happy than the read it stands in for
+    if median_diff > PROXY_DEADBAND:
         state = "RISING"
-    elif median_diff < 0:
+    elif median_diff < -PROXY_DEADBAND:
         state = "ROLLING"
     else:
         state = "FLAT_LOW"
 
     return {
-        "broadening_state": state,
+        # HOUSE RULE (display-only first): the level-derived proxy must NOT flow into
+        # `broadening_state` — the cascade copies only that field into its rows (the
+        # proxy flag is dropped at the boundary) and foresight_score's acceleration
+        # axis (weight 0.20) scores it identically to a real PIT accel. Until a real
+        # ≥MIN_ACCEL_DAYS window exists, the scored/staged field stays
+        # INSUFFICIENT_HISTORY and the directional read lives in its own field.
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "broadening_proxy_state": state,
         "broadening_proxy": True,
         "basis": "drift_30v90",
         "basis_days": None,         # no PIT window
@@ -253,6 +276,7 @@ def theme_revisions_for(theme_key: str, name: str, members: list[str],
         out["basis_days"] = bn["basis_days"]
     if bn.get("broadening_proxy"):
         out["broadening_proxy"] = True
+        out["broadening_proxy_state"] = bn.get("broadening_proxy_state")
         out["basis"] = bn.get("basis", "drift_30v90")
         if bn.get("proxy_drift_diff") is not None:
             out["proxy_drift_diff"] = bn["proxy_drift_diff"]

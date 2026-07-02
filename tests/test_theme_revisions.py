@@ -136,10 +136,54 @@ def test_proxy_state_when_no_history(monkeypatch):
     _patch(monkeypatch, latest, hist=None)
     out = tr.compute_theme_revisions(write_ledger=False)
     t = out["themes"]["memory_storage"]
-    assert t["broadening_state"] == "RISING"
+    # the SCORED/staged field stays INSUFFICIENT_HISTORY (the cascade drops the proxy
+    # flag at its boundary and foresight_score's acceleration axis would score a
+    # level-derived proxy identically to a real PIT accel) — the directional read
+    # lives in its own broadening_proxy_state field
+    assert t["broadening_state"] == "INSUFFICIENT_HISTORY"
+    assert t.get("broadening_proxy_state") == "RISING"
     assert t.get("broadening_proxy") is True
     assert t.get("basis") == "drift_30v90"
     assert t["breadth_accel"] is None       # no PIT derivative available
+
+
+def test_proxy_all_nan_est_chg_degrades_to_insufficient_history(monkeypatch):
+    """All-NaN est_chg inputs must NOT produce a confident FLAT_LOW from no data, and
+    must not leak a NaN proxy_drift_diff into the (strict-JSON) payload."""
+    latest = pd.DataFrame(
+        {"net_up_30d": [10.0, 8.0, 6.0],
+         "breadth": [0.9, 0.8, 0.7],
+         "est_chg_30d": [float("nan")] * 3,
+         "est_chg_90d": [float("nan")] * 3,
+         "n_analysts": [12.0, 10.0, 8.0],
+         "asof": pd.Timestamp("2026-06-16")},
+        index=["MU", "WDC", "STX"],
+    )
+    _patch(monkeypatch, latest, hist=None)
+    out = tr.compute_theme_revisions(write_ledger=False)
+    t = out["themes"]["memory_storage"]
+    assert t["broadening_state"] == "INSUFFICIENT_HISTORY"
+    assert not t.get("broadening_proxy")
+    v = t.get("proxy_drift_diff")
+    assert v is None or v == v              # never a NaN in the payload
+
+
+def test_proxy_deadband_maps_small_diff_to_flat_low(monkeypatch):
+    """|median 30v90 diff| below PROXY_DEADBAND → FLAT_LOW proxy read, not RISING —
+    the sign-only proxy must not be more trigger-happy than the real accel path."""
+    latest = pd.DataFrame(
+        {"net_up_30d": [10.0, 8.0, 6.0],
+         "breadth": [0.9, 0.8, 0.7],
+         "est_chg_30d": [5.1, 5.05, 5.2],    # barely above 90d/3 = 5.0
+         "est_chg_90d": [15.0, 15.0, 15.0],
+         "n_analysts": [12.0, 10.0, 8.0],
+         "asof": pd.Timestamp("2026-06-16")},
+        index=["MU", "WDC", "STX"],
+    )
+    _patch(monkeypatch, latest, hist=None)
+    out = tr.compute_theme_revisions(write_ledger=False)
+    t = out["themes"]["memory_storage"]
+    assert t.get("broadening_proxy_state") == "FLAT_LOW"
 
 
 def test_proxy_inputs_absent_gives_insufficient_history(monkeypatch):
