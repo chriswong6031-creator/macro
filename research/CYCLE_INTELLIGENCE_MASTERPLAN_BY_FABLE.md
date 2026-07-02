@@ -308,7 +308,7 @@ design.
 1. **The keystone gate may return "no edge."** If W0.4 finds position/phase deciles carry no forward
    drawdown-adjusted signal, phases 3–5 shrink drastically and the honest product is tripwires + regime
    context + measurement — the doctrine survives even if the prediction thesis doesn't. This is a feature
-   of the plan, not a failure mode.
+   of the plan, not a failure mode. **→ FIRED 2026-07-02: see §6.5.**
 2. **Most hazard cells will likely ship PRIOR initially** (R1's power analysis: absolute Brier gaps ~0.011
    at ~90 effective blocks). The plan says so up front; the KM prior is itself a large upgrade over the
    re-anchoring median projection.
@@ -322,10 +322,53 @@ design.
 
 ---
 
+## 6.5 · Post-keystone re-steer (2026-07-02 — BINDING on all downstream waves)
+
+W0.4 ran on 8,344 leak-free PIT stamps (11 US sectors + 24 countries, month-end 2005–2026, spanning
+2008/2020/2022). Full verdict: `research/cycle_masterplan/W04_KEYSTONE_VERDICT.md`. Findings:
+
+- **Position → forward RETURN: NO-EDGE.** Every decile's gap-vs-base CI straddles 0 at 21/63/126d.
+- **The only reproducible signal is RISK-ONLY and phase-keyed — with an inverted sign:** Peak phases →
+  *shallower* forward drawdowns (63d p10-DD gap CI [+1.2%, +5.0%]), Trough → *deeper* ([−10.0%, −1.9%]).
+  This is a vol-clustering fact (troughs live in high-vol regimes), not a timing signal — and it decays
+  post-2018. Per doctrine #9 it may inform *risk sizing only*, never direction.
+- **The audit's LADDER-inversion headline did NOT survive PIT + month-block bootstrap** — inconclusive on
+  all 9 era×horizon cells. The true finding stands as the audit's other observation: *no ladder state
+  separates from its base rate.* Treat the china `ladder_calibration.json` ordering as a point-estimate
+  artifact.
+
+**Scope consequences (binding):**
+1. **W4.1–W4.4 (hazard + conditional cells) are demoted to a decision-gated research track** (DL-1/DL-2
+   in `PREREGISTRATION.md`) — not a v1 sizing/cone engine. They may still ship as MEASURED research
+   surfaces if their pre-registered gates pass; nothing they produce touches a card until then.
+2. **W4.6 binding calibration is re-scoped to the risk channel** — there is no return-channel ordering to
+   bind. The `mean_fwd/|dd_p10|` metric is denominator-dominated (ranks states by ambient vol);
+   vol-residualize or fit risk/return channels separately. Expect pre-registered gate BC-1 to FAIL — that
+   is the correct outcome; wave prompts must not assume it passes.
+3. **W1.2's phase-hysteresis fix must land before W2.4** grades any phase-conditioned promise, or the
+   graders inherit the phase-wobble noise the keystone study had to average through.
+4. **Phases 0–3 are unchanged and now carry the product:** ontology coherence, honest measurement,
+   engine-backed flagships, tripwires, MEASURED/FRAME, regime context. The platform's value proposition
+   is *disciplined honesty + risk context*, with prediction claims earned cell-by-cell through the ledger
+   — exactly what §6.1 pre-committed to.
+
+---
+
 ## Status log
 
 - 2026-07-02 — Masterplan authored (14-agent design fleet + 4-agent red team; arbitration §1). Supporting
-  docs committed under `research/cycle_masterplan/`. Waves not yet started.
+  docs committed under `research/cycle_masterplan/`.
+- 2026-07-02 — **W0.2+W0.3 SHIPPED** (#913): `engine/cycle_forward_log.py`; US sector + country forward
+  logs stamp for the first time (56+31 rows day-one) incl. `proj_lo/hi` cone edges; China grader
+  basis-declared excess (`benchmark_close_price()`; NB: for the 000001.SS *index* TR≡price — the basis bug
+  is real for ETF benchmarks only); engine-owned "read" primary, narrative demoted to dated Analyst note.
+  36/36 tests.
+- 2026-07-02 — **W0.1 SHIPPED** (#914): wall-clock TODAY on both flagships; `Math.max` push-forward
+  deleted; elapsed turns render "window passed" chip + dimmed cone; staleness banners (amber 14d/red 60d);
+  "Live read" → "Curated read".
+- 2026-07-02 — **W0.4 SHIPPED** (#929): keystone gate run — verdict + re-steer in §6.5;
+  `PREREGISTRATION.md` frozen (28 downstream gates with E[pass|null] + BH-FDR families);
+  `data/research/keystone_tr0/` (basis:tr, epoch:tr_v0, research-only per ruling A1).
 - 2026-07-02 — **W0.4 (keystone gate) SHIPPED.** TR-v0 PIT backfill (8,344 month-end stamps, 11 US sectors +
   24 country ETFs, 2005–2026) + walk-forward position/phase predictive-power study; PIT invariance verified.
   **VERDICT: position deciles = NO-EDGE (return channel); phase = risk-only, regime-fragile drawdown signal
