@@ -38,6 +38,7 @@ def test_china_contract_and_marketcap_sizing():
     assert p["stock_url"] == "china_lookup.html#"
     assert p["size_label_zh"] == "市值"
     assert p["size_basis"] == "marketcap"
+    assert p["tile_label"] == "name"        # tiles labelled by company name, not the code
     assert p["n_tiles"] == 3
 
     # market cap drives tile size
@@ -64,6 +65,7 @@ def test_weight_proxy_then_equal_fallback():
     p = mh.build_market_heatmap("canada", cons, closes,
                                 weights={"601398.SS": 8.0, "600519.SS": 4.0, "000001.SZ": 2.0})
     assert p["size_basis"] == "weight_proxy"
+    assert p["tile_label"] == "ticker"      # Canada keeps the ticker (no opt-in)
     sizes = {t["t"]: t["size"] for t in p["tiles"]}
     assert sizes["601398.SS"] > sizes["000001.SZ"]
 
@@ -90,6 +92,7 @@ def test_hk_size_label_is_turnover():
     assert p["currency"] == "HKD"
     assert p["stockdata_dir"] == "hkstockdata"
     assert p["size_label_en"] == "Avg turnover"
+    assert p["tile_label"] == "name"
 
 
 def test_empty_constituents_returns_empty_payload():
