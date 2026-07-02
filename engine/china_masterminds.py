@@ -38,8 +38,8 @@ import numpy as np
 import pandas as pd
 
 from engine import active_alloc as aa
-from engine.china_strategies import (CHINA_CASH_PCT, _cnclose, _credit_derisk,
-                                      _margin_derisk, _vol_derisk)
+from engine.china_strategies import (CHINA_CASH_PCT, _CREDIT_EXEC_LAG, _cnclose,
+                                      _credit_derisk, _margin_derisk, _vol_derisk)
 from engine.cross_asset_trend import tsmom_alloc
 
 # universe (asset -> class); income/bond/gold are the carry-bearing defensive sleeves
@@ -85,7 +85,14 @@ DEFAULT_PROFILE = "moderate"
 _START = pd.Timestamp("2013-08-01")        # CGB(2013-03) + gold(2013-07) spine live
 _REBAL = 5                                 # weekly rebalance (trading days)
 _LAG = 2
-_LAG_CREDIT = 22                           # ~1-month publication lag on the monthly TSF print
+# Credit leg is now stamped by _credit_derisk() at its PUBLICATION-availability
+# date (day~16 of the following month, from the collector's availability_date
+# column), so only a small residual execution lag remains — NOT the old fixed
+# 22-trading-day guess, which (stamped at reference-month-start) landed ~10 days
+# BEFORE the real ~day 9-15 TSF release: a systematic look-ahead on China's most
+# market-moving macro print (audit #27). Sourced from china_strategies so both
+# consumers stay in lockstep.
+_LAG_CREDIT = _CREDIT_EXEC_LAG
 W_TREND, W_CARRY, W_REGIME, W_XMOM = 0.30, 0.15, 0.40, 0.15
 # within-REGIME leg weights (sum→1 over whichever legs resolve) — single source of truth for
 # both _derisk_score() and the live regime_state() transparency panel.

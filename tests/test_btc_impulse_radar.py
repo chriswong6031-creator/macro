@@ -83,10 +83,20 @@ def _run(sig, dvol=None, sopr=None, hourly=None):
         frames[("coinbase", "btc_hourly")] = hourly
     orig = R.store
     R.store = _Store(frames)
+    # Isolate the radar's leg-summation/ladder logic from the LIVE falsifier
+    # verdict: these tests assert compute behaviour, not gate policy (that is
+    # covered in test_btc_impulse_falsifier). Force an all-'leading' gate so a
+    # real-world demotion (act points zeroed on disk) can't spuriously fail them.
+    import engine.btc_impulse_radar_backtest as bt
+    orig_gate = bt.load_gate
+    bt.load_gate = lambda: {"legs": {"d2": {"status": "leading"},
+                                     "d3": {"status": "leading"},
+                                     "u1": {"status": "leading"}}}
     try:
         return R.compute(sig)
     finally:
         R.store = orig
+        bt.load_gate = orig_gate
 
 
 # --------------------------------------------------------------------------- #

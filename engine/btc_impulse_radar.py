@@ -226,8 +226,14 @@ def compute(sig_df: pd.DataFrame | None = None) -> dict:
             log.debug("falsifier gate load skipped: %s", e)
 
         def _gate(key, pts):
-            """Zero an act leg's points + flag it if the falsifier demoted it."""
-            if gate_legs.get(key, {}).get("status") == "demoted":
+            """Zero an act leg's points + flag it if the falsifier did not bless it.
+
+            Only status 'leading' keeps act points. 'demoted' (edge decayed) and
+            'insufficient_n' (edge ok but < MIN_HOLDOUT_N holdout fires, e.g. u1)
+            both zero the leg — a thin sample cannot award act-tier weight.
+            """
+            status = gate_legs.get(key, {}).get("status")
+            if status in ("demoted", "insufficient_n"):
                 return {"points": 0.0, "fired_today": False, "days_since": None, "demoted": True}
             return pts
 

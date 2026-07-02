@@ -10,15 +10,20 @@ repo's `validate-leading-legs` pattern. `main()` also exits non-zero when a
 pre-registered act leg fails, so CI fails loudly on a regression.
 
 Legs + floors (pre-registered; raising a floor or adding a leg is the only
-allowed knob, and it must be deliberate):
+allowed knob, and it must be deliberate). A leg earns 'leading' only with BOTH
+an edge clearing its lift floor + permutation p<=0.05 AND >= MIN_HOLDOUT_N
+holdout fires — a thin sample cannot award act-tier weight:
   d2  DVOL range-jolt  (DOWN)  holdout lift >= 1.5   — the strongest leg
   d3  SOPR profit-spike(DOWN)  holdout lift >= 1.3
   u1  SOPR capitulation(UP)    holdout lift >= 1.3   (reactive bounce caller)
 
 Label (the locked taxonomy): DOWN = forward-min over (t,t+3] <= -5%; UP =
-forward-max over (t,t+3] >= +5%. All features come from btc_impulse_radar's
-shared causal condition builders, so the gate cannot drift from the live legs.
-Deterministic (fixed RNG seed) so CI is reproducible.
+forward-max over (t,t+3] >= +5%. The label at row t uses closes STRICTLY in
+(t, t+3] — invariant to close[t] and every prior bar — so it can never overlap
+a same-day-firing trigger (the prior `shift(-1).rolling(3)` construction leaked
+the prior + signal bars, inflating same-day legs like u1). All features come
+from btc_impulse_radar's shared causal condition builders, so the gate cannot
+drift from the live legs. Deterministic (fixed RNG seed) so CI is reproducible.
 """
 from __future__ import annotations
 
@@ -38,6 +43,8 @@ LABEL_H = 3                           # forward horizon (trading days)
 LABEL_THR = 0.05                      # +-5%
 PERM_N = 2000                         # block-permutation shuffles
 P_MAX = 0.05
+MIN_HOLDOUT_N = 30                    # per-leg holdout-fire floor; below this a leg
+                                      # is 'insufficient-n' (watch), not 'leading'
 
 LEGS = {
     "d2": {"dir": "down", "floor": 1.5, "label": "Vol-of-vol jolt (DVOL range)"},
@@ -47,8 +54,22 @@ LEGS = {
 
 
 def _labels(close: pd.Series):
-    fwd_min = close.shift(-1).rolling(LABEL_H).min()
-    fwd_max = close.shift(-1).rolling(LABEL_H).max()
+    """Strictly-forward labels: at row t use closes in (t, t+LABEL_H] ONLY.
+
+    The label at t must be invariant to close[t] and every prior bar so it can
+    never overlap the trigger. `FixedForwardWindowIndexer(window_size=H)` at
+    position p spans [close[p], ..., close[p+H-1]]; `.shift(-1)` then moves that
+    aggregate back one row so the value landing at t is over (close[t+1] ...
+    close[t+H]) = the forward window (t, t+H]. The window requires a full H bars
+    of *future* data, so the final H rows are NaN (no forward outcome yet) —
+    matching the ledger's `pos + LABEL_H >= len(close)` skip. (The old
+    `close.shift(-1).rolling(H).min()` computed min(close[t-1], close[t],
+    close[t+1]) — it leaked the prior and signal bars and reached only 1 day
+    forward, directly overlapping same-day-firing triggers like u1.)
+    """
+    idx = pd.api.indexers.FixedForwardWindowIndexer(window_size=LABEL_H)
+    fwd_min = close.rolling(idx, min_periods=LABEL_H).min().shift(-1)
+    fwd_max = close.rolling(idx, min_periods=LABEL_H).max().shift(-1)
     return (fwd_min / close - 1.0) <= -LABEL_THR, (fwd_max / close - 1.0) >= LABEL_THR
 
 
@@ -112,15 +133,28 @@ def validate(sig_df: pd.DataFrame | None = None) -> dict:
             base_f, lift_f, n_f = _lift(fire, label, full)
             base_h, lift_h, n_h = _lift(fire, label, holdout)
             p = _perm_p(fire, label, full, lift_f, rng)
-            passed = (
+            edge_ok = (
                 pd.notna(lift_h) and lift_h >= spec["floor"]
                 and pd.notna(p) and p <= P_MAX
             )
+            enough_n = n_h >= MIN_HOLDOUT_N
+            passed = bool(edge_ok and enough_n)
+            # Status vocabulary: a leg only earns 'leading' (act points kept) with
+            # BOTH an edge that clears its floor/p AND >= MIN_HOLDOUT_N holdout
+            # fires. Edge-ok but thin (u1, 14 fires) -> 'insufficient_n' (watch);
+            # edge failed -> 'demoted'. Both non-leading states zero act points.
+            if passed:
+                status = "leading"
+            elif edge_ok and not enough_n:
+                status = "insufficient_n"
+            else:
+                status = "demoted"
             all_pass = all_pass and passed
             out[key] = {
-                "status": "leading" if passed else "demoted",
+                "status": status,
                 "pass": bool(passed),
                 "dir": spec["dir"], "label": spec["label"], "floor": spec["floor"],
+                "min_holdout_n": MIN_HOLDOUT_N,
                 "lift_full": round(lift_f, 3) if pd.notna(lift_f) else None,
                 "lift_holdout": round(lift_h, 3) if pd.notna(lift_h) else None,
                 "perm_p": round(p, 4) if pd.notna(p) else None,
@@ -129,9 +163,12 @@ def validate(sig_df: pd.DataFrame | None = None) -> dict:
         return {"ok": True, "asof": str(df.index[-1].date()), "all_pass": all_pass,
                 "holdout_start": HOLDOUT_START, "label": f"fwd({LABEL_H}d) +-{int(LABEL_THR*100)}%",
                 "legs": out,
-                "note": ("Pre-registered act-tier legs re-validated leak-free. A leg "
-                         "is DEMOTED (act points zeroed by the radar) if its 2024+ "
-                         "holdout lift falls below its floor or its permutation p>0.05.")}
+                "note": ("Pre-registered act-tier legs re-validated leak-free on "
+                         "strictly-forward labels (t, t+3]. A leg is DEMOTED (act "
+                         "points zeroed by the radar) if its 2024+ holdout lift "
+                         "falls below its floor or its permutation p>0.05, and marked "
+                         f"INSUFFICIENT_N (also zeroed) if it has <{MIN_HOLDOUT_N} "
+                         "holdout fires.")}
     except Exception as e:  # noqa: BLE001 — falsifier is additive, never fatal to the build
         return {"ok": False, "reason": f"{type(e).__name__}: {e}"}
 

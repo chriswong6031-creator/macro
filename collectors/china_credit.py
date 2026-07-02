@@ -25,6 +25,25 @@ from collectors.base import Adapter
 
 log = logging.getLogger(__name__)
 
+# Conservative TSF publication-availability model. NBS/PBoC release the prior
+# month's Total Social Financing between ~day 9 and day 15 of the FOLLOWING month
+# (occasionally slipping later). The parquet is indexed at reference-month START
+# (e.g. April data -> 2026-04-01) for other consumers that key on reference dates;
+# a print is only actually ACTABLE from its availability date. We stamp that as
+# day 16 of the following month — a conservative upper bound on the real release
+# so a backtest can never peek at the impulse before the market saw it. Used both
+# to populate the additive `availability_date` column here and by the engine's
+# `availability_stamp()` re-indexer that the credit legs consume.
+TSF_RELEASE_DOM = 16   # day-of-month of the following month (conservative bound)
+
+
+def tsf_availability_date(reference_month_start: pd.Timestamp) -> pd.Timestamp:
+    """Conservative date a reference-month TSF print becomes actable:
+    day TSF_RELEASE_DOM of the FOLLOWING calendar month."""
+    ref = pd.Timestamp(reference_month_start).normalize()
+    nxt = (ref + pd.offsets.MonthBegin(1))            # first of the following month
+    return nxt.replace(day=TSF_RELEASE_DOM)
+
 _UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36")
 _URL = "https://data.mofcom.gov.cn/datamofcom/front/gnmy/shrzgmQuery"
@@ -81,4 +100,8 @@ class ChinaCreditAdapter(Adapter):
         out = out.dropna(how="all").sort_index()
         if out.empty or "tsf_total" not in out.columns:
             raise ValueError("china_credit: no usable TSF columns parsed")
+        # ADDITIVE: keep the reference-month-start index (other consumers key on it),
+        # but attach the conservative publication-availability date per row so credit
+        # legs can act only AFTER the print was actually released (no ~10d look-ahead).
+        out["availability_date"] = [tsf_availability_date(d) for d in out.index]
         return {"tsf": out}
