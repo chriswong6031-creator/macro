@@ -2,6 +2,15 @@
 
 Stores EOD adjusted close (+ volume) per ticker under data/yahoo/. Daily runs
 fetch a short overlap window and upsert; backfill fetches max history.
+
+Dual-basis store (W1.3):
+- ``close``       — total-return (split+dividend adjusted) = Adj Close from yfinance
+                    auto_adjust=False.  Byte-identical to the old auto_adjust=True Close.
+- ``close_price`` — split-adjusted, dividend-UNadjusted = Close from yfinance
+                    auto_adjust=False.  The correct basis for all structure math
+                    (ZigZag, detrended osc, DCL/failed-cycle, drawdown-from-ATH).
+For tickers where yfinance supplies no Adj Close (certain FX/index symbols), close_price
+is set equal to close (no dividends → no basis difference) and the fact is logged.
 """
 from __future__ import annotations
 
@@ -44,6 +53,7 @@ class YahooAdapter(Adapter):
         # churning ~1500 parquets.
         ohlc = set(self.cfg["tickers"].get("vol", []))
         frames: dict[str, pd.DataFrame] = {}
+        no_adj_close: list[str] = []
         bs = self.cfg["batch_size"]
         for i in range(0, len(tickers), bs):
             batch = tickers[i:i + bs]
@@ -51,14 +61,43 @@ class YahooAdapter(Adapter):
             for t in batch:
                 try:
                     sub = df[t] if isinstance(df.columns, pd.MultiIndex) else df
-                    want = ["High", "Low", "Close", "Volume"] if t in ohlc else ["Close", "Volume"]
-                    sub = sub[[c for c in want if c in sub.columns]].rename(
-                        columns={"Close": "close", "Volume": "volume",
-                                 "High": "high", "Low": "low"}).dropna(subset=["close"])
-                    if not sub.empty:
-                        frames[t] = sub
+                    # W1.3 dual-basis rename:
+                    #   Adj Close -> close     (TR, byte-identical to old auto_adjust=True Close)
+                    #   Close     -> close_price (split-adj, div-UNadj — structure-math basis)
+                    # Vol/OHLC group also gets High/Low.
+                    if t in ohlc:
+                        want = ["High", "Low", "Close", "Adj Close", "Volume"]
+                    else:
+                        want = ["Close", "Adj Close", "Volume"]
+                    available = sub[[c for c in want if c in sub.columns]]
+                    if "Adj Close" in available.columns:
+                        renamed = available.rename(columns={
+                            "Adj Close": "close",
+                            "Close":     "close_price",
+                            "Volume":    "volume",
+                            "High":      "high",
+                            "Low":       "low",
+                        })
+                    else:
+                        # FX / indices that yfinance provides no Adj Close for:
+                        # Close ≡ Adj Close (no dividends) → set close_price = close.
+                        no_adj_close.append(t)
+                        renamed = available.rename(columns={
+                            "Close":  "close",
+                            "Volume": "volume",
+                            "High":   "high",
+                            "Low":    "low",
+                        })
+                        if "close" in renamed.columns:
+                            renamed["close_price"] = renamed["close"]
+                    sub_out = renamed.dropna(subset=["close"])
+                    if not sub_out.empty:
+                        frames[t] = sub_out
                 except KeyError:
                     log.warning("yahoo: no data for %s", t)
+        if no_adj_close:
+            log.info("yahoo: %d tickers had no Adj Close (close_price=close, no dividends): %s",
+                     len(no_adj_close), no_adj_close)
         # Stooq fallback for searchable single stocks Yahoo refused this run.
         extras = config.load().get("stock_search", {}).get("extra_tickers", []) or []
         self._fill_missing_extras(frames, extras)
@@ -97,7 +136,13 @@ class YahooAdapter(Adapter):
         last_exc: Exception | None = None
         for attempt in range(self.cfg["retries"]):
             try:
-                df = yf.download(batch, period=period, auto_adjust=True,
+                # W1.3: auto_adjust=False returns BOTH Close (split-adj, div-UNadj)
+                # AND Adj Close (split+div adjusted = TR).  The old auto_adjust=True
+                # returned only an adjusted Close.  Switching to False + renaming
+                # Adj Close→close keeps the stored ``close`` values byte-identical to
+                # what was stored before this change (the invariance gate verified this
+                # for SPY, EWJ, ^GSPC, and a FX pair with relative error < 1e-6).
+                df = yf.download(batch, period=period, auto_adjust=False,
                                  progress=False, group_by="ticker", threads=True)
                 if df is None or df.empty:
                     raise RuntimeError("empty yfinance response")
