@@ -22,10 +22,9 @@ SCHEMA DECISION (W3b review N2 — file split):
   so no consumer needs defensive filtering. Historical mixed rows in shadow_log.jsonl
   from before the split are tolerated by the reader (field-presence filter).
 
-NOTE (W3b review N1): the grading LOOP in ``_grade_rows`` is currently a copy of
-``foresight_grader.grade()``'s core (the statistical helpers ARE imported, not copied).
-Extracting a shared helper is tracked as a follow-up — any change to grading semantics
-MUST be applied in both places until then.
+GRADING CORE (W3b review N1, resolved): shadow slices are graded by the SHARED core
+``foresight_grader.grade_ledger_rows`` — the same function ``grade()`` runs on the live
+ledgers — so live and shadow semantics cannot drift.
 """
 from __future__ import annotations
 
@@ -302,9 +301,10 @@ def grade_shadow(today: pd.Timestamp | None = None, write: bool = True) -> dict:
     stage-role semantics — thesis/exit/control) but into a SEPARATE output
     ``data/foresight/shadow_track_record.json``, keyed by (param, candidate).
 
-    Reuses the grading internals from ``engine.foresight_grader`` (refactored core
-    helper ``_grade_rows``).  Shadow ledger rows (identified by the presence of "param"
-    and "stage" fields) are filtered from ``shadow_log.jsonl`` and graded per-slice.
+    Reuses the shared grading core ``engine.foresight_grader.grade_ledger_rows`` (the
+    same one ``grade()`` runs on the live ledgers).  Shadow ledger rows (identified by
+    the presence of "param" and "stage" fields) are filtered from ``shadow_log.jsonl``
+    and graded per-slice.
     """
     try:
         return _grade_shadow_inner(today, write)
@@ -314,10 +314,7 @@ def grade_shadow(today: pd.Timestamp | None = None, write: bool = True) -> dict:
 
 
 def _grade_shadow_inner(today: pd.Timestamp | None, write: bool) -> dict:
-    from engine.foresight_grader import (
-        HORIZONS, HORIZON_DAYS, _closes, _fdr_significant,
-        _non_overlapping, _stage_direction, _theme_excess, _wilson,
-    )
+    from engine.foresight_grader import HORIZONS, _closes, grade_ledger_rows
 
     if today is None:
         today = pd.Timestamp.now().normalize()
@@ -373,8 +370,7 @@ def _grade_shadow_inner(today: pd.Timestamp | None, write: bool) -> dict:
 
     graded_slices: dict[str, dict] = {}
     for slice_key, rows in slices.items():
-        graded_slices[slice_key] = _grade_rows(rows, today, themes_cfg, spy,
-                                                HORIZONS, HORIZON_DAYS)
+        graded_slices[slice_key] = grade_ledger_rows(rows, today, themes_cfg, spy)
 
     summary = {
         "updated": str(today.date()),
@@ -402,137 +398,6 @@ def _grade_shadow_inner(today: pd.Timestamp | None, write: bool) -> dict:
             log.warning("shadow_track_record write failed (non-fatal): %s", e)
 
     return summary
-
-
-def _grade_rows(
-    rows: list[dict],
-    today: pd.Timestamp,
-    themes_cfg: dict,
-    spy,
-    horizons: list[int],
-    canonical_horizon: int,
-) -> dict:
-    """Grade a list of ledger rows (stage-based) into a grading summary dict.
-
-    This is the shared core used by both grade_shadow (for shadow slices) and the
-    promotion report (for comparison slices).  It reuses all the statistical helpers
-    from foresight_grader without copying any logic.
-    """
-    from engine.foresight_grader import (
-        _non_overlapping, _stage_direction, _theme_excess, _wilson, _binom_sf, _fdr_significant,
-    )
-
-    by_stage: dict[str, dict] = {}
-    by_theme: dict[str, dict] = {}
-    by_stage_h: dict[int, dict[str, dict]] = {h: {} for h in horizons}
-    by_theme_h: dict[int, dict[str, dict]] = {h: {} for h in horizons}
-
-    n_total = n_graded = 0
-    n_pending = 0
-    n_pending_h: dict[int, int] = {h: 0 for h in horizons}
-
-    for e in rows:
-        theme = e.get("theme")
-        asof = e.get("asof")
-        stage = e.get("stage") or "UNKNOWN"
-        if not theme or not asof or theme not in themes_cfg:
-            continue
-        direction = _stage_direction(stage)
-        n_total += 1
-        start = pd.Timestamp(asof)
-        members = e.get("members") or (themes_cfg.get(theme) or {}).get("tickers") or []
-        mature_at_canonical = False
-
-        for h in horizons:
-            end = start + pd.Timedelta(days=h)
-            if today < end:
-                n_pending_h[h] += 1
-                continue
-            excess = _theme_excess(members, start, end, spy)
-            if excess is None:
-                n_pending_h[h] += 1
-                continue
-            hit = None if direction is None else (excess * direction) > 0
-            sb_h = by_stage_h[h].setdefault(stage, {"n": 0, "n_dir": 0, "hits": 0, "sum_excess": 0.0})
-            tb_h = by_theme_h[h].setdefault(theme, {"n": 0, "n_dir": 0, "hits": 0, "sum_excess": 0.0})
-            for b in (sb_h, tb_h):
-                b["n"] += 1
-                b["sum_excess"] += excess
-                if hit is not None:
-                    b["n_dir"] += 1
-                    b["hits"] += 1 if hit else 0
-            if h == canonical_horizon:
-                mature_at_canonical = True
-                sb = by_stage.setdefault(stage, {"n": 0, "n_dir": 0, "hits": 0, "sum_excess": 0.0})
-                tb = by_theme.setdefault(theme, {"n": 0, "n_dir": 0, "hits": 0, "sum_excess": 0.0, "obs": []})
-                for b in (sb, tb):
-                    b["n"] += 1
-                    b["sum_excess"] += excess
-                    if hit is not None:
-                        b["n_dir"] += 1
-                        b["hits"] += 1 if hit else 0
-                if hit is not None:
-                    tb["obs"].append((start, hit))
-
-        if mature_at_canonical:
-            n_graded += 1
-        else:
-            n_pending += 1
-
-    def _finalize(bucket: dict) -> None:
-        for b in bucket.values():
-            b["hit_rate"] = round(b["hits"] / b["n_dir"], 3) if b["n_dir"] else None
-            b["avg_excess_pct"] = round(100.0 * b["sum_excess"] / b["n"], 2) if b["n"] else None
-            b["ci95"] = _wilson(b["hits"], b["n_dir"])
-            b.pop("sum_excess", None)
-
-    pvals: dict[str, float] = {}
-    for t, b in by_theme.items():
-        indep = _non_overlapping(b.pop("obs"), canonical_horizon)
-        b["n_independent"] = len(indep)
-        pvals[t] = _binom_sf(sum(indep), len(indep))
-    sig = _fdr_significant(pvals)
-    for t, b in by_theme.items():
-        b["p_value"] = round(pvals[t], 4)
-        b["significant_fdr"] = t in sig
-
-    _finalize(by_stage)
-    _finalize(by_theme)
-    for h in horizons:
-        _finalize(by_stage_h[h])
-        _finalize(by_theme_h[h])
-
-    pooled_hits = sum(b["hits"] for b in by_stage.values())
-    pooled_n_dir = sum(b["n_dir"] for b in by_stage.values())
-
-    by_horizon = {}
-    for h in horizons:
-        h_hits = sum(b["hits"] for b in by_stage_h[h].values())
-        h_dir = sum(b["n_dir"] for b in by_stage_h[h].values())
-        h_total = sum(b["n"] for b in by_stage_h[h].values())
-        by_horizon[str(h)] = {
-            "horizon_days": h,
-            "n_graded": h_total,
-            "n_directional": h_dir,
-            "n_pending": n_pending_h[h],
-            "pooled_hit_rate": round(h_hits / h_dir, 3) if h_dir else None,
-            "pooled_ci95": _wilson(h_hits, h_dir),
-            "by_stage": by_stage_h[h],
-            "by_theme": by_theme_h[h],
-        }
-
-    return {
-        "n_total": n_total,
-        "n_graded": n_graded,
-        "n_pending": n_pending,
-        "pooled_n_directional": pooled_n_dir,
-        "pooled_hit_rate": round(pooled_hits / pooled_n_dir, 3) if pooled_n_dir else None,
-        "pooled_ci95": _wilson(pooled_hits, pooled_n_dir),
-        "n_significant_fdr": len(sig),
-        "by_stage": by_stage,
-        "by_theme": by_theme,
-        "by_horizon": by_horizon,
-    }
 
 
 # ---------------------------------------------------------------------------
