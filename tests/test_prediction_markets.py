@@ -60,3 +60,40 @@ def test_build_panel_with_change():
 def test_build_panel_none_on_empty():
     assert pme.build_panel(pd.DataFrame(), {"x": {}}) is None
     assert pme.build_panel(None, {}) is None
+
+
+# INTL-48 — _fetch_active must paginate to reach low-volume events (recession)
+def test_fetch_active_paginates(monkeypatch):
+    """_fetch_active must combine pages until empty; low-volume events past page 1 are captured."""
+    page0 = [{"title": f"Event {i}", "markets": [1], "volume": 1000 - i} for i in range(100)]
+    page1 = [{"title": "US recession by end of 2026?", "markets": [{"outcomePrices": ["0.115", "0.885"],
+              "groupItemTitle": "US recession by end of 2026?"}], "volume": 1000}]
+
+    call_log: list = []
+
+    def fake_http_get(url, retries, params):
+        offset = int(params.get("offset", 0))
+        call_log.append(offset)
+
+        class FakeResp:
+            def json(inner_self):  # noqa: N805
+                return page0 if offset == 0 else page1 if offset == 100 else []
+        return FakeResp()
+
+    adapter = pmc.PredictionMarketsAdapter()
+    monkeypatch.setattr(adapter, "http_get", fake_http_get)
+    events = adapter._fetch_active()
+    # Must have issued at least two page requests
+    assert len(call_log) >= 2
+    titles = [e["title"] for e in events]
+    assert "US recession by end of 2026?" in titles, "recession event must be in the combined list"
+
+
+def test_match_event_recession():
+    """match_event must find recession by substring match regardless of case."""
+    evs = [
+        {"title": "US recession by end of 2026?", "endDate": "2026-12-31T00:00:00Z",
+         "markets": [{"outcomePrices": ["0.115"], "groupItemTitle": "Yes"}], "volume": 1000},
+    ]
+    ev = pmc.match_event(evs, "recession", "max_volume")
+    assert ev is not None and "recession" in ev["title"].lower()

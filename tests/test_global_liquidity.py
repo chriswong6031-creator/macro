@@ -57,3 +57,29 @@ def test_snapshot_smoke(monkeypatch):
 def test_snapshot_degrades_no_data(monkeypatch):
     monkeypatch.setattr(gl, "_fred_series", lambda sid: None)
     assert gl.snapshot({"banks": {"fed": {"series": "WALCL"}}}) is None
+
+
+# INTL-51 — per-bank as-of dates must be surfaced in the snapshot
+def test_snapshot_asof_by_bank(monkeypatch):
+    """snapshot() must return asof_by_bank with a date per bank and expose raw_asof on each bank dict."""
+    raw = pd.Series(np.linspace(8.0e6, 9.0e6, len(_IDX)), index=_IDX)
+    monkeypatch.setattr(gl, "_fred_series", lambda sid: raw.copy())
+    monkeypatch.setattr(gl, "_fx_to_usd", lambda key, inv: pd.Series(1.10, index=_IDX))
+    cfg = {"banks": {
+        "fed": {"series": "WALCL",      "unit_mult": 1e6, "fx": None,       "invert": False, "label_en": "Fed", "label_zh": "美联储"},
+        "ecb": {"series": "ECBASSETSW", "unit_mult": 1e6, "fx": "EURUSD=X", "invert": False, "label_en": "ECB", "label_zh": "欧洲央行"}},
+        "impulse_windows_w": [13, 52]}
+    s = gl.snapshot(cfg)
+    assert s is not None
+    # asof_by_bank must be a dict with a key per bank
+    asof_map = s.get("asof_by_bank")
+    assert isinstance(asof_map, dict)
+    assert set(asof_map.keys()) == {"fed", "ecb"}
+    # Each value must be a non-empty date string
+    for bid, asof_str in asof_map.items():
+        assert isinstance(asof_str, str) and len(asof_str) == 10, \
+            f"bank {bid!r}: asof_by_bank value should be YYYY-MM-DD, got {asof_str!r}"
+    # Each bank dict in the banks list must also carry raw_asof
+    for b in s["banks"]:
+        assert "raw_asof" in b, f"bank {b['id']!r} dict missing raw_asof"
+        assert isinstance(b["raw_asof"], str) and len(b["raw_asof"]) == 10
