@@ -38,37 +38,29 @@ SHARED_ASSETS = ("mm_charts.js", "cycle.css")             # the shared cycle des
 
 def _load_narratives(root: Path) -> dict:
     """NARR keyed by the chart series id: countries by ticker.lower() (ewj…), aggregates
-    likewise (efa…). Merges the file's `sectors` + `baskets` maps. Optional."""
-    f = root / "data" / "country_cycles" / "narratives.json"
-    if not f.exists():
-        return {}
-    try:
-        doc = json.loads(f.read_text(encoding="utf-8"))
-    except Exception as e:  # noqa: BLE001
-        log.warning("country_cycles: narratives.json unreadable (%s) — rendering without", e)
-        return {}
-    if not isinstance(doc, dict):
-        return {}
-    narr = dict(doc.get("sectors", {}))
-    narr.update(doc.get("baskets", {}) or {})
-    return narr
+    likewise (efa…). Merges the file's `sectors` + `baskets` maps. Optional.
+
+    W2.1: epoch-aware — resolves narratives.<epoch>.json for the engine's current epoch,
+    falling back to the legacy un-suffixed file (tagged tr_v0). Country baskets keep their
+    un-prefixed keying. Zero behaviour change today."""
+    from scripts._narrative_epoch import resolve_narratives
+    res = resolve_narratives("country_cycles", root / "data" / "country_cycles", "narratives")
+    if res["stale_quarantined"]:
+        log.warning("country_cycles: narratives stale-quarantined (epoch %s) — rendering without",
+                    res["epoch"])
+    return res["map"]
 
 
 def _load_dna(root: Path) -> dict:
-    """SECTOR_DNA cycle-cause profiles, same id keying as narratives (ticker.lower())."""
-    f = root / "data" / "country_cycles" / "cycle_dna.json"
-    if not f.exists():
-        return {}
-    try:
-        doc = json.loads(f.read_text(encoding="utf-8"))
-    except Exception as e:  # noqa: BLE001
-        log.warning("country_cycles: cycle_dna.json unreadable (%s) — rendering without DNA", e)
-        return {}
-    if not isinstance(doc, dict):
-        return {}
-    dna = dict(doc.get("sectors", {}))
-    dna.update(doc.get("baskets", {}) or {})
-    return dna
+    """SECTOR_DNA cycle-cause profiles, same id keying as narratives (ticker.lower()).
+
+    W2.1: epoch-aware (resolves cycle_dna.<epoch>.json, falls back to legacy cycle_dna.json)."""
+    from scripts._narrative_epoch import resolve_narratives
+    res = resolve_narratives("country_cycles", root / "data" / "country_cycles", "cycle_dna")
+    if res["stale_quarantined"]:
+        log.warning("country_cycles: cycle_dna stale-quarantined (epoch %s) — rendering without DNA",
+                    res["epoch"])
+    return res["map"]
 
 
 def main() -> int:
