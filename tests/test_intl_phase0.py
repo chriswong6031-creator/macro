@@ -221,7 +221,10 @@ def test_backfill_encodes_the_expected_verdicts(tmp_path, monkeypatch):
     monkeypatch.setattr(H.config, "data_dir", lambda: tmp_path)
     H.backfill()
     by_id = {f["id"]: f for f in _read_ledger()["features"]}
-    assert by_id["c2_intl_macro_sleeve"]["verdict"] == "PENDING"
+    # W2 (C2): graded against the US-book target → CONTEXT (DSR 0.83 < the 0.90 door;
+    # residual DD-content vs the 5 US MRS legs marginal). Was PENDING in W1.
+    assert by_id["c2_intl_macro_sleeve"]["verdict"] == "CONTEXT"
+    assert by_id["c2_intl_macro_sleeve"]["kill"] is True
     assert by_id["intl_trend_overlay"]["verdict"] == "CONTEXT"
     assert by_id["intl_tr_trend"]["verdict"] == "CONTEXT"
     assert by_id["forex_per_pair_conviction"]["verdict"] == "CONTEXT"
@@ -240,18 +243,45 @@ def test_backfill_encodes_the_expected_verdicts(tmp_path, monkeypatch):
 
 
 # --------------------------------------------------------------------------- #
-# 6. run() — writes a full declared ledger (all PENDING in W1, no builders)
+# 6. run() — dotted-path builder resolution + merge-preserves-graveyard (W2)
 # --------------------------------------------------------------------------- #
-def test_run_writes_pending_ledger_for_every_claim(tmp_path, monkeypatch):
+def test_run_with_no_builders_grades_every_claim_pending(tmp_path, monkeypatch):
+    """With data_dir at an empty tmp (no source parquets → freshness fail-closed) and no
+    explicit builders, every CLAIM grades PENDING — the honest declared-but-unmeasured state."""
     monkeypatch.setattr(H.config, "data_dir", lambda: tmp_path)
-    # point the trial ledger at a throwaway path so we don't touch the real one
-    monkeypatch.setattr(H, "TrialLedger",
-                        lambda *a, **k: TrialLedger(tmp_path / "led.jsonl", *a[1:], **k)
-                        if False else TrialLedger(tmp_path / "led.jsonl"))
-    H.run()
-    payload = _read_ledger()
-    assert len(payload["features"]) == len(intl_claims.CLAIMS)
-    assert all(f["verdict"] == "PENDING" for f in payload["features"])
+    monkeypatch.setattr(H, "TrialLedger", lambda *a, **k: TrialLedger(tmp_path / "led.jsonl"))
+    H.run(builders={})
+    by_id = {f["id"]: f for f in _read_ledger()["features"]}
+    assert by_id["c1_china_global_beta"]["verdict"] == "PENDING"
+    assert by_id["c2_intl_macro_sleeve"]["verdict"] == "PENDING"    # no data on the empty tmp
+    assert all(f["weight_cap"] == 0.0 for f in by_id.values())      # nothing wired
+
+
+def test_run_merge_preserves_graveyard_only_rows(tmp_path, monkeypatch):
+    """merge=True overlays freshly-graded CLAIM rows onto the EXISTING ledger, so graveyard-
+    only evidence rows (not in CLAIMS — e.g. crossmarket_leadlag) are never clobbered. This
+    guards the 'never regress a known verdict' contract across re-runs."""
+    monkeypatch.setattr(H.config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(H, "TrialLedger", lambda *a, **k: TrialLedger(tmp_path / "led.jsonl"))
+    # seed an existing ledger with a graveyard-only row + a stale CLAIM row
+    H.backfill()   # writes the BACKFILL evidence (incl. crossmarket_leadlag, not a CLAIM)
+    H.run(builders={})   # regrade the CLAIMS; graveyard-only rows must survive the merge
+    by_id = {f["id"]: f for f in _read_ledger()["features"]}
+    assert "crossmarket_leadlag" in by_id, "graveyard-only backfill row was clobbered"
+    assert by_id["crossmarket_leadlag"]["verdict"] == "CONTEXT"
+    assert all(f["weight_cap"] == 0.0 for f in by_id.values())
+
+
+def test_run_only_scopes_the_regrade(tmp_path, monkeypatch):
+    """`only=` restricts the regrade to the named claim ids; the rest keep their ledger rows."""
+    monkeypatch.setattr(H.config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(H, "TrialLedger", lambda *a, **k: TrialLedger(tmp_path / "led.jsonl"))
+    H.backfill()
+    before = {f["id"]: f for f in _read_ledger()["features"]}
+    H.run(builders={}, only={"c1_china_global_beta"})
+    after = {f["id"]: f for f in _read_ledger()["features"]}
+    # the un-scoped c4_reer_value row is untouched (kept from the existing ledger)
+    assert after["c4_reer_value"] == before["c4_reer_value"]
 
 
 # --------------------------------------------------------------------------- #
