@@ -206,8 +206,8 @@
     </div>
   </div>
   <p class="tagline" style="margin-top:10px">{{ t(
-    'Equal-weight by design — the momentum rank has ~0 forward information coefficient on the clean universe, so we ride the trending leaders without betting conviction on the exact order. Crowded themes are trimmed toward cash (a sizing caution, never a sell or a short).',
-    '刻意采用等权 — 在干净样本上动量排名的前瞻信息系数约为0，因此我们持有处于趋势中的领跑者，但不对其精确排序押注信心。拥挤主题被向现金削减（仅为仓位审慎，绝非卖出或做空）。') }}</p>
+    'Equal-weight by design — the momentum rank has ~0 forward information coefficient on the clean universe, so we ride the trending leaders without betting conviction on the exact order.' + (' Crowding is shown as a sizing caution but is NOT applied to weight — basket-aggregate crowding has no measured forward-drawdown edge, so trimming it only leaked exposure to cash. When it earns a measured edge, freed weight is redistributed across the other leaders, never leaked to cash.' if not d.allocation.crowd_trim_gate.scored else ' Crowded themes are trimmed and the freed weight is redistributed across the other trending leaders (never to cash) — a sizing caution, never a sell or a short.'),
+    '刻意采用等权 — 在干净样本上动量排名的前瞻信息系数约为0，因此我们持有处于趋势中的领跑者，但不对其精确排序押注信心。' + ('拥挤度仅作为仓位提示展示，但不影响权重——篮子层面的拥挤度没有可测的前向回撤优势，削减它只会把仓位漏向现金。待其取得可测优势后，被削减的权重将在其他领跑者之间再分配，绝不漏向现金。' if not d.allocation.crowd_trim_gate.scored else '拥挤主题被削减，释放的权重再分配到其他趋势领跑者（绝不漏向现金）——仅为仓位审慎，绝非卖出或做空。')) }}</p>
   {% if d.allocation.de_overlapped %}
   <p class="tagline" style="margin-top:6px">🧮 {{ t('De-overlapped for diversification', '为分散去重叠') }} — {{ t(
     'held to ≤1 per parent super-theme so the book is not four flavours of one trade. Displaced (still trending, just a lower slot)',

@@ -1146,9 +1146,19 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
     vr_line = vr_line_zh = ""
     _vr = vol_regime if isinstance(vol_regime, dict) else None
     _vro = (config.load()["engine"].get("vol_regime_overlay") or {})
+    # VALIDATE-BEFORE-WEIGHT (audit #30): the regime-state caution failed its additive-value gate
+    # over the mechanical vol-target (basket_overlay_gate.json regime_marginal_over_voltarget=false),
+    # so it may NOT bind a real ladder SCORE. The headwind penalty applies ONLY when the caution
+    # leg is gated-on; otherwise the caution stays as a display-only line (no score change).
+    try:
+        from engine import vol_regime as _vrm
+        _caution_scored = _vrm.regime_caution_scored()
+    except Exception:  # noqa: BLE001 — never break the ladder build
+        _caution_scored = False
     vr_on = bool(_vr and _vro.get("enabled", True))
     vr_state = (_vr or {}).get("regime")
-    if vr_on and state in LIQ_NUDGE_STATES and vr_state in ("warning", "backwardation-stress"):
+    if (vr_on and _caution_scored and state in LIQ_NUDGE_STATES
+            and vr_state in ("warning", "backwardation-stress")):
         _rhead = float(_vro.get("ladder_headwind", 7))
         sev = 1.0 if vr_state == "backwardation-stress" else 0.6     # warning is the milder state
         # gate-open scored composite (risk-off) deepens the caution, capped so it never exceeds 1.5x
@@ -1169,6 +1179,18 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
                           f"（{_sn}——期限结构倒挂/债券波动率承压），全市场回撤风险升高。"
                           "此环境下买入形态历史上回撤更深——应要求更多确认并降低仓位。"
                           "这是风险/仓位提示，并非预测。")
+    elif (vr_on and not _caution_scored and state in LIQ_NUDGE_STATES
+            and vr_state in ("warning", "backwardation-stress")):
+        # DISPLAY-ONLY caution: risk-off regime is shown as context but does NOT dock the score
+        # (its additive-value gate over vol-target is closed). No vr_pen, no vr_effect.
+        _sn = "backwardation-stress" if vr_state == "backwardation-stress" else "warning"
+        vr_line = ("Vol-regime context (display-only): the index vol-regime is risk-off "
+                   f"({_sn}). This caution failed its additive-value test over mechanical "
+                   "vol-targeting, so it does NOT dock this setup's score — shown as awareness "
+                   "only. Size via the mechanical vol-target, not this label.")
+        vr_line_zh = ("波动率状态（仅供参考）：指数波动率处于风险偏离状态"
+                      f"（{_sn}）。此提示未通过相对机械式波动率目标的增量价值检验，"
+                      "因此不扣减本形态评分——仅作提示。请以机械式波动率目标控制仓位。")
 
     disp = STATE_DISPLAY[state]
     plain = cycle_plain(cyc)

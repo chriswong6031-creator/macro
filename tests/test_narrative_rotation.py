@@ -13,6 +13,7 @@ import hashlib
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from engine import narrative_rotation as nr
 
@@ -59,7 +60,10 @@ def test_abs_gate_and_hurst_and_13612w():
     assert h_trend is not None
 
 
-def test_allocate_weights_sum_caps_and_crowding_trim():
+def test_allocate_weights_sum_caps_and_crowding_trim_display_only():
+    # Audit #30 validate-before-weight: basket-aggregate crowding has NO forward-drawdown edge,
+    # so the crowding trim is DISPLAY-ONLY — it must NOT dock the crowded leader's weight nor
+    # leak to cash. The intended trim is surfaced as a shadow.
     preps = [_prep(b, d) for b, d in
              [("a", 0.0016), ("b", 0.0013), ("c", 0.0011), ("d", 0.0009), ("e", 0.0006)]]
     ranks = nr.rank_themes(preps)
@@ -69,11 +73,46 @@ def test_allocate_weights_sum_caps_and_crowding_trim():
                             {"idx": preps[0]["lvl"].index})
     alloc = nr.allocate(preps, ranks, crowd, rot)
     w = {x["id"]: x["weight"] for x in alloc["weights"]}
+    by_id = {x["id"]: x for x in alloc["weights"]}
     assert abs(sum(w.values()) + alloc["cash"] - 1.0) < 1e-6           # fully accounted
     assert all(v <= nr.POS_CAP + 1e-9 for v in w.values())            # position cap
-    # the crowded leader is trimmed below the equal-weight base (down-size → cash)
-    assert w["a"] < 1.0 / nr.N_HOLD - 1e-9
     assert alloc["directional"] is False
+    # gate is CLOSED by default -> trim NOT applied; leader stays at equal-weight base
+    assert alloc["crowd_trim_gate"]["scored"] is False
+    assert by_id["a"]["weight"] == pytest.approx(1.0 / nr.N_HOLD, abs=1e-9)
+    assert by_id["a"]["crowd_trim_shadow"] > 0                         # shadow surfaced
+    assert by_id["a"]["crowd_trim_applied"] is False
+
+
+def test_crowding_trim_redistributes_not_to_cash_when_scored(monkeypatch):
+    # When the trim IS gated on, freed weight redistributes across the other held themes
+    # (water-fill), never leaks to cash — total held exposure is preserved vs the un-crowded book.
+    monkeypatch.setattr(nr, "CROWD_TRIM_SCORED", True)
+    # all strongly trending (distinct parents) so several pass the eligibility gate and land in `top`
+    preps = [_prep(b, d) for b, d in
+             [("a", 0.0026), ("b", 0.0024), ("c", 0.0022), ("d", 0.0020)]]
+    for p in preps:                                 # distinct parents so de-overlap keeps all
+        p["parent"] = p["id"]
+    ranks = nr.rank_themes(preps)
+    rot = nr.rotation_radar(preps, ranks, {p["id"]: {"bar": 0.6} for p in preps},
+                            {"idx": preps[0]["lvl"].index})
+
+    crowd_none = {p["id"]: {"crowding_z": None, "crowded": False} for p in preps}
+    base_alloc = nr.allocate(preps, ranks, crowd_none, rot)
+    base_held = sum(x["weight"] for x in base_alloc["weights"])
+
+    crowd = dict(crowd_none)
+    crowd["a"] = {"crowding_z": 1.6, "crowded": True}          # crowd one held leader
+    alloc = nr.allocate(preps, ranks, crowd, rot)
+    by_id = {x["id"]: x for x in alloc["weights"]}
+    held_sum = sum(x["weight"] for x in alloc["weights"])
+    if "a" in by_id and len(alloc["weights"]) >= 2:
+        assert by_id["a"]["crowd_trim_applied"] is True
+        assert by_id["a"]["weight"] < base_alloc["weights"][0]["weight"] + 1e-9
+        # freed weight went to peers, not cash: total held exposure preserved (per-name weights
+        # are rounded to 3 dp, so allow the accumulated rounding slack, not a cash leak)
+        assert held_sum == pytest.approx(base_held, abs=2e-3)
+        assert alloc["cash"] == pytest.approx(base_alloc["cash"], abs=2e-3)
 
 
 def test_crash_overlay_halves(monkeypatch):

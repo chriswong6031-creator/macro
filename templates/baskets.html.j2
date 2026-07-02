@@ -838,11 +838,21 @@ function renderRegimeSizing(){
   if(reg<100) factors.push(`${L('risk regime','风险状态')} ${reg}%`);
   if(sc<100) factors.push(`${L('signal mix','信号组合')} ${sc}%`);
   const decompStr=factors.length>1?`${factors.join(' · ')} → ${pct}%`:factors[0];
+  // Audit #30: the regime-state caution failed its additive-value gate over the mechanical
+  // vol-target, so it is DISPLAY-ONLY (not applied to gross). Surface the shadow so the user
+  // still sees the risk-off context without it silently docking exposure.
+  const cautionScored=!!(rs.caution_passport&&rs.caution_passport.verdict==='scored');
+  const shadow=Math.round((rs.regime_caution_shadow||1)*100);
+  let shadowLine='';
+  if(!cautionScored && shadow<100 && regLbl){
+    shadowLine=`<div class="rs-note muted xs" style="opacity:.85">${L('Note: the vol-regime is risk-off ('+regLbl+'), which would suggest a further ×'+shadow+'% caution — but that caution has no measured drawdown edge over plain vol-targeting, so it is shown for awareness only and does NOT reduce your positions.','提示：波动率状态偏离风险（'+regLbl+'），本会再施加约 ×'+shadow+'% 的审慎——但该审慎相较单纯波动率目标没有可测的回撤优势，因此仅作提示，不会减少您的仓位。')}</div>`;
+  }
   host.innerHTML=`<div class="rs-chip" style="border-left:3px solid ${sev}">
     <div class="rs-head"><span class="rs-ic">⚠</span>
-      <span class="rs-main">${L('Choppy markets — basket positions trimmed to','市场波动加大 — 篮子仓位已缩减至常规水平的')} <b>${pct}%</b>${L(' of normal','')}${regLbl?' ('+regLbl+')':''}</span></div>
+      <span class="rs-main">${L('Choppy markets — basket positions trimmed to','市场波动加大 — 篮子仓位已缩减至常规水平的')} <b>${pct}%</b>${L(' of normal','')}${(cautionScored&&regLbl)?' ('+regLbl+')':''}</span></div>
     <div class="rs-decomp muted sm">${L('How it\'s set','计算方式')}: ${decompStr}${demoted?` · ${demoted} ${L('theme(s) eased to hold-only','个主题降为仅持有')}`:''}</div>
     <div class="rs-note muted xs">${L('Why: when the market gets more volatile we automatically hold smaller positions to limit losses. This only changes how much you hold — never which baskets are worth owning.','原因：市场波动加大时，我们会自动减小仓位以控制回撤。这只调整持仓大小，绝不改变哪些篮子值得持有。')}</div>
+    ${shadowLine}
   </div>`;
 }
 function renderConcentration(){
