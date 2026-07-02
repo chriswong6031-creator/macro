@@ -318,16 +318,31 @@
       'HEAT = independent leading surfaces (physical bottleneck · demand · guidance · insider/award · subsector scarcity · discovery echo) converging on one theme, weighted by earliness (inverse to how priced the revisions already are) and gated by a physical correlate. Multi-surface agreement raises precision; earliness keeps it ahead of the crowd. Not a return forecast — forward-graded like every leg.',
       '热度＝独立领先面（物理瓶颈·需求·指引·内部人/中标·子行业短缺·发现回声）在单一主题上的共振，按早期度（与预期被定价程度相反）加权，并以物理佐证为门槛。多面一致提升精度；早期度使其领先人群。非收益预测——与每条腿一样前瞻评分。') }}</div>
 
+    {# ---- Thesis monitor chip — renders whenever monitor is present (no credential needed) ---- #}
+    {# W4b: un-nested from the analyst block so BROKEN fires even without a credential.         #}
+    {% if monitor and (monitor.n_open or monitor.n_broken or monitor.n_weakening) %}
+    <div class="fx-mon-strip{% if monitor.n_broken %} fx-mon-broken{% elif monitor.n_weakening %} fx-mon-weakening{% endif %}">
+      <span class="fx-mon-label">{{ t('Thesis monitor', '论点监视器') }}</span>
+      <span class="fx-mon-counts">
+        {% if monitor.n_broken %}<span class="fx-mon-b">{{ monitor.n_broken }} {{ t('BROKEN', '已失效') }}</span>{% endif %}
+        {% if monitor.n_weakening %}<span class="fx-mon-w">{{ monitor.n_weakening }} {{ t('weakening', '走弱') }}</span>{% endif %}
+        {% if not monitor.n_broken and not monitor.n_weakening %}<span class="fx-mon-ok">{{ monitor.n_open }} {{ t('intact', '稳定') }}</span>{% endif %}
+      </span>
+      {%- if monitor.n_deterministic is defined %}<span class="fx-mon-src">{{ monitor.n_deterministic }} {{ t('det', '确定性') }}{% if monitor.n_llm %} · {{ monitor.n_llm }} {{ t('LLM', 'LLM') }}{% endif %}</span>{% endif %}
+    </div>
+    {% endif %}
+
     {# ---- AI analyst reasoning over the convergence (lights up when a credential is present) ---- #}
     {% if analyst and analyst.regime_read %}
     <div class="fx-ai">
-      <div class="fx-ai-h">🧠 {{ t('AI analyst read', 'AI 分析师解读') }}{% if monitor and (monitor.n_broken or monitor.n_weakening) %} <span class="fx-ai-mon">{% if monitor.n_broken %}{{ monitor.n_broken }} {{ t('thesis broken', '论点失效') }}{% endif %}{% if monitor.n_weakening %}{% if monitor.n_broken %} · {% endif %}{{ monitor.n_weakening }} {{ t('weakening', '走弱') }}{% endif %}</span>{% endif %}</div>
+      <div class="fx-ai-h">🧠 {{ t('AI analyst read', 'AI 分析师解读') }}</div>
       <div class="fx-ai-regime">{{ analyst.regime_read }}</div>
       {% for th in analyst.theses %}
       <div class="fx-ai-th">
         <div class="fx-ai-mech"><b>{{ th.theme.replace('_',' ')|title }}</b> <span class="fx-ai-conf c-{{ th.confidence }}">{{ th.confidence }}</span> — {{ th.mechanism }}</div>
-        {% if th.non_obvious %}<div class="fx-ai-no">🔎 {{ t('non-obvious', '非显性') }}: {{ th.non_obvious }}</div>{% endif %}
-        {% if th.kill_criteria %}<div class="fx-ai-kill">{{ t('kills if', '失效条件') }}: {% for k in th.kill_criteria %}<span class="fx-kc">{{ k }}</span>{% endfor %}</div>{% endif %}
+        {% if th.non_obvious %}<div class="fx-ai-no">{{ t('non-obvious', '非显性') }}: {{ th.non_obvious }}</div>{% endif %}
+        {% if th.kill_criteria %}<div class="fx-ai-kill">{{ t('kills if', '失效条件') }}: {% for k in th.kill_criteria %}{% if k is string %}<span class="fx-kc">{{ k }}</span>{% endif %}{% endfor %}</div>{% endif %}
+        {%- if th.n_grounded is not none and th.n_total_evidence %}<div class="fx-ai-cit">{{ t('Citation grounding', '引用核实') }}: {{ th.n_grounded }}/{{ th.n_total_evidence }}</div>{% endif %}
       </div>
       {% endfor %}
       <div class="fx-ai-foot">{{ analyst.disclaimer }} {{ t('The deterministic monitor re-checks each thesis against its convergence every build and flags BROKEN before the tape confirms. The model is FORBIDDEN to forecast a price.', '确定性监视器每次构建都依据其共振重新核验每个论点，并在行情确认前标记失效。模型被禁止预测价格。') }}</div>
