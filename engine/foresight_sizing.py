@@ -51,6 +51,16 @@ HIGH_ATTENTION = 0.50              # revision breadth above this = crowded (the 
 GLUT_ON = {"GLUT_FORMING", "GLUT"}
 THESIS_STAGES = {"PRECIPICE", "BROADENING"}
 
+
+def _is_thesis_stage(stage: str | None) -> bool:
+    """Prefix-tolerant thesis-stage check: the evidence-labeled variants
+    (PRECIPICE (text)/(fingerprint), BROADENING (...)) ARE thesis stages for the
+    CONSTRUCTIVE set (the concentration truth must count them — post-W5 the desk's
+    thesis flags are mostly variants), even though sizing keeps them at WATCH
+    (unconfirmed evidence never sizes). Mirrors the grader's _stage_direction."""
+    s = stage or ""
+    return s.startswith("PRECIPICE") or s.startswith("BROADENING")
+
 # Earliness tilt bounds: [TILT_MIN, TILT_MAX]
 EARLINESS_TILT_MIN = 0.75
 EARLINESS_TILT_MAX = 1.25
@@ -102,6 +112,12 @@ def _posture(r: dict) -> dict:
     if stage == "PRECIPICE" and not physical:
         return {"band": "WATCH", "derisk": False,
                 "note": "text-only (no physical correlate) — watch, no size until the bottleneck confirms"}
+    # evidence-labeled variants (text/fingerprint): constructive for the concentration
+    # display, but unconfirmed evidence NEVER sizes — honest note, not "nothing here"
+    if _is_thesis_stage(stage):
+        return {"band": "WATCH", "derisk": False,
+                "note": "thesis on unconfirmed evidence (text/fingerprint) — watch, "
+                        "no size until real-time physical confirms"}
     return {"band": "WATCH", "derisk": False, "note": "nothing actionable yet"}
 
 
@@ -188,7 +204,7 @@ def _load_enb_data(rows: list[dict]) -> tuple[dict[str, str], dict[str, float]]:
                 themes_cfg = c.get("themes") or {}
                 constructive = [
                     r.get("theme") for r in rows
-                    if r.get("stage") in THESIS_STAGES or (r.get("score") or 0) >= 55
+                    if _is_thesis_stage(r.get("stage")) or (r.get("score") or 0) >= 55
                 ]
                 result = compute_enb(themes_cfg, write_log=True, constructive_themes=constructive)
                 if result:
@@ -213,7 +229,10 @@ def _load_enb_data(rows: list[dict]) -> tuple[dict[str, str], dict[str, float]]:
                     if len(c_keys) < 2:
                         enb_by_cluster[cid] = 1.0
                         continue
-                    c_corr, _ = _build_corr_matrix({k: returns[k] for k in c_keys})
+                    # 3-tuple since the W4a F3 fix (corr, themes, n_low_overlap_pairs) —
+                    # the old 2-unpack raised and was SWALLOWED by the except, silently
+                    # disabling every per-cluster ENB (the camouflage pattern again)
+                    c_corr, _, _ = _build_corr_matrix({k: returns[k] for k in c_keys})
                     enb_c = _enb(c_corr)
                     enb_by_cluster[cid] = enb_c if enb_c is not None else 1.0
             except Exception as e:  # noqa: BLE001
@@ -269,7 +288,7 @@ def _size_mult(r: dict, posture: dict,
 
 def _portfolio(rows: list[dict], enb_constructive: float | None = None) -> dict:
     """The concentration truth: constructive themes + ENB-based sizing note."""
-    constructive = [r for r in rows if r.get("stage") in THESIS_STAGES
+    constructive = [r for r in rows if _is_thesis_stage(r.get("stage"))
                     or (r.get("score") or 0) >= 55]
     n = len(constructive)
     derisk = [r.get("theme") for r in rows if (r.get("size_detail") or {}).get("derisk")]
@@ -326,7 +345,7 @@ def annotate_sizing(cascade: dict | None) -> dict | None:
         # Compute constructive ENB for the portfolio summary
         constructive_keys = [
             r.get("theme") for r in rows
-            if r.get("stage") in THESIS_STAGES or (r.get("score") or 0) >= 55
+            if _is_thesis_stage(r.get("stage")) or (r.get("score") or 0) >= 55
         ]
         enb_constructive: float | None = None
         if len(constructive_keys) >= 2 and clusters:

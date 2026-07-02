@@ -208,3 +208,32 @@ def test_annotate_adds_fields_and_is_none_safe():
     r = out["themes"][0]
     assert r["size_band"] == "STARTER" and r["derisk"] is False and "size_mult" in r
     assert out["sizing"]["n_constructive"] == 1
+
+
+def test_variant_thesis_stages_count_constructive_but_do_not_size():
+    """Integration regression: PRECIPICE (fingerprint)/(text) variants must count in
+    the CONSTRUCTIVE set (the ENB concentration line renders) while their posture
+    stays WATCH with the honest unconfirmed-evidence note (never STARTER/CORE)."""
+    from engine.foresight_sizing import _is_thesis_stage, _posture
+    assert _is_thesis_stage("PRECIPICE (fingerprint)")
+    assert _is_thesis_stage("BROADENING (text)")
+    assert not _is_thesis_stage("RE-RATING")
+    p = _posture({"stage": "PRECIPICE (fingerprint)", "glut_band": None,
+                  "revision_breadth": 0.1, "entry_ready": False,
+                  "bottleneck_band": "TIGHTENING (fingerprint)"})
+    assert p["band"] == "WATCH"
+    assert "unconfirmed" in p["note"]
+    c = _posture({"stage": "BROADENING (text)", "glut_band": None,
+                  "revision_breadth": 0.2, "entry_ready": False,
+                  "bottleneck_band": "TIGHT (text)"})
+    assert c["band"] == "WATCH"
+
+
+def test_load_enb_data_unpacks_corr_matrix_3tuple():
+    """Signature-drift regression: _build_corr_matrix returns a 3-tuple (W4a F3);
+    _load_enb_data must not silently lose every per-cluster ENB to an unpack error."""
+    from engine.foresight_sizing import _load_enb_data
+    rows = [{"theme": "memory_storage", "stage": "PRECIPICE (fingerprint)", "score": 50}]
+    clusters, enb_by_cluster = _load_enb_data(rows)
+    if clusters:  # live data present in this checkout
+        assert enb_by_cluster, "per-cluster ENB silently empty — unpack drift regressed"
