@@ -92,7 +92,22 @@ fred:
     # base-effect inflation levels (engine/base_effect.py) — absent from the store per
     # scripts/audit_alfred_depth.py; a keyed collect run backfills them so the base-effect
     # inflation legs upgrade from latest-revision (revised=True) to point-in-time.
-    CPIAUCSL, CPILFESL, PCEPILFE, PCEPI, PPIFIS]
+    CPIAUCSL, CPILFESL, PCEPILFE, PCEPI, PPIFIS,
+    # W3a: bottleneck/power series for the PIT foresight cascade backtest (§3.3).
+    # ALFRED vintage coverage for NAICS-detail CAPUTLG/PPI series is plausible but
+    # unverified — some detail series have short or no vintage history. On a keyed
+    # collect run these land and upgrade the Wave 3a replay from latest-revised
+    # (look-ahead-contaminated, labeled) to genuine point-in-time. If ALFRED has no
+    # vintage history for a given series it simply returns empty and the backtest
+    # falls back to the latest-revised truncated path, labeled `pit: false`.
+    # Large-matrix ALFRED warning (see comment above): these are monthly series with
+    # ~1 initial-release row per period — bounded, no timeout risk. Economy-wide legs
+    # (MNFCTRIRSA, AMTMUO, AMTMVS) are already partially covered above (ISRATIO,
+    # NEWORDER) but repeated here for completeness and explicit backtest labeling.
+    CAPUTLG3344S, CAPUTLG334S, CAPUTLG331S,
+    MNFCTRIRSA, AMTMUO, AMTMVS,
+    PCU334413334413, PCU331110331110,
+    IPG2211S, CAPUTLG2211S, WPU0543]
   series:
     rates:
       DGS2: us2y
