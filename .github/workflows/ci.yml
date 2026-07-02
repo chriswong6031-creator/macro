@@ -55,6 +55,12 @@ on:
       - "tests/test_cycle_forward_log.py"
       - "engine/grading_stats.py"
       - "tests/test_grading_stats.py"
+      # W3.6 cross-page cycle-consistency gate (R3-M3): same instrument must show the
+      # same pos_v2/phase_v2 across every page (cycle/country/markets/sector) or carry a
+      # declared basis label.  Also the phase-coherence regression (pos_v2 vs phase_v2).
+      - "scripts/check_cycle_consistency.py"
+      - "tests/test_cycle_consistency.py"
+      - "tests/test_cycle_ontology.py"
   workflow_dispatch:
 
 permissions:
@@ -199,3 +205,23 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml scipy
       - name: grading_stats library tests (wilson_ci, fdr_bh, cone_coverage, china regression)
         run: python -m pytest tests/test_grading_stats.py -q
+
+  cycle-consistency:
+    # W3.6 (R3-M3): the SAME instrument must show the SAME pos_v2/phase_v2 across every
+    # page that renders it (cycle.html flagship / country_cycles / markets.html / sector),
+    # within tolerance, OR carry a declared basis label explaining the difference.  A page
+    # that recomputes or freezes a stale value fails RED here.  Also runs the phase-coherence
+    # regression (no pos_v2 ≥ 85 with a Trough/Recovery phase_v2 without divergence) — the
+    # guard against the mixed-vocabulary bug the W3.6 kernel fix closed.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: same instrument agrees across pages (or declares its basis)
+        run: python3 scripts/check_cycle_consistency.py site
+      - name: consistency + phase-coherence regression tests
+        run: python -m pytest tests/test_cycle_consistency.py tests/test_cycle_ontology.py -q
