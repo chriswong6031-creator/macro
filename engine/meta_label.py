@@ -382,7 +382,13 @@ def _run_meta_label_impl(df: pd.DataFrame | None, cfg: dict | None) -> dict:
     df = df.loc[cfg["start_date"]:].copy()
 
     variant = cfg["primary_variant"]
-    acol = f"alloc_{variant}"
+    # Override-Registry (W0): use the pure engine series (alloc_<variant>_raw)
+    # as the primary-event column so training events are not erased during gated
+    # windows.  The gate-suppressed final alloc_* column would erase all 2026
+    # events, silently removing a calendar year from the training set.  Fall back
+    # to alloc_<variant> for backwards compatibility with pre-W0 parquet snapshots.
+    acol_raw = f"alloc_{variant}_raw"
+    acol = acol_raw if acol_raw in df.columns else f"alloc_{variant}"
     if acol not in df.columns or "close" not in df.columns:
         return {"available": False, "reason": f"missing {acol}/close in signal frame"}
 
