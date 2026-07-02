@@ -343,3 +343,165 @@ def test_full_pipeline_first_run(tmp_path):
     for key in ("schema", "as_of", "n_snapshots", "n_matured", "ic_all",
                 "by_bucket", "by_state", "note"):
         assert key in result, f"Missing key: {key}"
+
+
+# ---------------------------------------------------------------------------
+# Brief §9 — Radar clock unification tests
+# ---------------------------------------------------------------------------
+
+def test_snapshot_stamps_horizon_d_from_hypotheses(tmp_path):
+    """snapshot() reads horizon_d from hypotheses in radar.json and stamps it on rows."""
+    _write_membership(tmp_path, {"ai_infra": "SMH"})
+    # radar.json with hypotheses carrying horizon_d=63
+    p = tmp_path / "site" / "basketdata"
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "radar.json").write_text(json.dumps({
+        "flags": [
+            {"basket": "ai_infra", "state": "POSITIVE_DIVERGENCE", "edge_score": 80},
+        ],
+        "hypotheses": [
+            {"subject": "ai_infra", "horizon_d": 63, "id": "2026-06-20-radar-ai_infra"},
+        ],
+    }))
+    _write_radar_ticker_json(tmp_path, [])
+
+    n = ric.snapshot(today=date(2026, 6, 20), root=tmp_path)
+    assert n == 1
+
+    snap_file = tmp_path / "data" / "radar" / "edge_snapshots.jsonl"
+    rows = [json.loads(l) for l in snap_file.read_text().splitlines()]
+    assert len(rows) == 1
+    assert rows[0].get("horizon_d") == 63, (
+        "Expected horizon_d=63 to be stamped on the snapshot row"
+    )
+
+
+def test_63d_snapshot_not_matured_by_21d_pass_before_21_days(tmp_path):
+    """A snapshot stamped with horizon_d=63 must NOT be counted matured by the 21d
+    IC pass when fewer than 21 calendar days of price data have elapsed.
+
+    Concretely: snapshot dated today; we run compute_ic with horizon_d=21 today.
+    The row has horizon_d=63, so it is excluded from the 21d eligible set entirely.
+    """
+    # Write a snapshot with horizon_d=63, dated today (0 days old)
+    _write_snapshots(tmp_path, [
+        {"date": "2026-06-20", "kind": "basket", "subject": "ai_infra",
+         "ticker": "SMH", "edge_score": 80, "state": "POSITIVE_DIVERGENCE",
+         "horizon_d": 63},
+    ])
+
+    # Even if covers returns True, the row is excluded from the 21d horizon pass
+    # because its horizon_d=63 != 21.
+    with patch.object(ric, "_covers", return_value=True), \
+         patch.object(ric, "_fwd_rel_return", return_value=0.05):
+        result = ric.compute_ic(today=date(2026, 6, 20), horizon_d=21, root=tmp_path)
+
+    # The 21d primary block must show n_matured=0 (row excluded by horizon mismatch)
+    assert result["n_matured"] == 0, (
+        "horizon_d=63 snapshot must not appear in the 21d maturity count"
+    )
+    # But it should appear in the 63d horizon block (once enough time has passed —
+    # here today==snap_date so still too fresh, but eligible set is non-empty)
+    block_63 = result.get("by_horizon", {}).get("63", {})
+    # Still not matured (0 days old < 63), but the eligible set is non-zero
+    # We can check that the snapshot is not excluded by horizon filter:
+    assert block_63 is not None, "by_horizon['63'] block must be present"
+    # n_matured=0 because 0 days < 63 days required, but no error/exclusion
+    assert block_63["n_matured"] == 0
+
+
+def test_legacy_snapshot_without_horizon_d_gradeable_at_all_horizons(tmp_path):
+    """A legacy snapshot lacking `horizon_d` should be eligible at every horizon
+    (backward-compatible — treat as gradeable at all)."""
+    # Snapshot 70 days old — old enough for both 21d and 63d horizons
+    snap_date = "2026-04-21"   # 70 days before 2026-06-30
+    rows = [
+        {"date": snap_date, "kind": "basket", "subject": f"b{i}",
+         "ticker": f"T{i}", "edge_score": 50 + i * 5,
+         "state": "POSITIVE_DIVERGENCE"}  # no horizon_d field — legacy
+        for i in range(5)
+    ]
+    _write_snapshots(tmp_path, rows)
+
+    fwd_map = {f"T{i}": 0.01 * (i + 1) for i in range(5)}
+
+    with patch.object(ric, "_fwd_rel_return", side_effect=lambda t, *a, **k: fwd_map.get(t)), \
+         patch.object(ric, "_covers", return_value=True):
+        result = ric.compute_ic(today=date(2026, 6, 30), horizons=[21, 63], root=tmp_path)
+
+    # Legacy rows should appear in both horizon blocks
+    block_21 = result["by_horizon"]["21"]
+    block_63 = result["by_horizon"]["63"]
+    assert block_21["n_matured"] == 5, "Legacy rows must be gradeable at 21d"
+    assert block_63["n_matured"] == 5, "Legacy rows must be gradeable at 63d"
+
+
+def test_compute_ic_emits_per_horizon_blocks(tmp_path):
+    """compute_ic() output must contain by_horizon with blocks for each requested horizon."""
+    result = ric.compute_ic(today=date(2026, 6, 20), horizons=[21, 63], root=tmp_path)
+    assert "by_horizon" in result, "compute_ic must emit by_horizon"
+    assert "21" in result["by_horizon"], "by_horizon must have '21' block"
+    assert "63" in result["by_horizon"], "by_horizon must have '63' block"
+    # Each block must have the required keys
+    for h_key in ("21", "63"):
+        block = result["by_horizon"][h_key]
+        for key in ("n_matured", "ic_all", "by_bucket", "by_state", "note"):
+            assert key in block, f"by_horizon['{h_key}'] missing key: {key}"
+
+
+def test_compute_ic_legacy_top_level_fields_are_primary_horizon(tmp_path):
+    """Legacy top-level fields (n_matured, ic_all, by_bucket, by_state) must
+    reflect the primary horizon_d (21d default) — backward compat for consumers."""
+    snap_date = "2026-04-21"  # 70 days before 2026-06-30
+    rows = [
+        {"date": snap_date, "kind": "basket", "subject": f"b{i}",
+         "ticker": f"T{i}", "edge_score": 50 + i * 5,
+         "state": "POSITIVE_DIVERGENCE",
+         "horizon_d": 21}  # explicit 21d snapshot
+        for i in range(5)
+    ]
+    _write_snapshots(tmp_path, rows)
+
+    fwd_map = {f"T{i}": 0.01 * (i + 1) for i in range(5)}
+    with patch.object(ric, "_fwd_rel_return", side_effect=lambda t, *a, **k: fwd_map.get(t)), \
+         patch.object(ric, "_covers", return_value=True):
+        result = ric.compute_ic(today=date(2026, 6, 30), horizon_d=21,
+                                horizons=[21, 63], root=tmp_path)
+
+    # Top-level n_matured must match the 21d block
+    block_21 = result["by_horizon"]["21"]
+    assert result["n_matured"] == block_21["n_matured"]
+    assert result["ic_all"] == block_21["ic_all"]
+    assert result["by_bucket"] == block_21["by_bucket"]
+
+
+def test_radar_constants_exported(tmp_path):
+    """Verify the new named constants exist and have the expected values in radar.py."""
+    from engine import radar as r
+    assert r.SEED_HORIZON_D == 63, "SEED_HORIZON_D must be 63"
+    assert r.CHECK_BY_PAD_D == 91, "CHECK_BY_PAD_D must be 91"
+    # Back-compat alias must still be present
+    assert r.HORIZON_D == r.SEED_HORIZON_D, "HORIZON_D alias must equal SEED_HORIZON_D"
+
+
+def test_hypotheses_stamped_horizon_d(tmp_path):
+    """_hypotheses() must stamp horizon_d=SEED_HORIZON_D on every hypothesis."""
+    from engine import radar as r
+
+    mem = {"ai_infra": {"etf_proxy": "SMH"}}
+    flags = [
+        {"basket": "ai_infra", "state": "POSITIVE_DIVERGENCE", "salience": 0.8,
+         "note": "test note"},
+    ]
+    hypotheses = r._hypotheses(flags, mem, "2026-06-20")
+    assert len(hypotheses) == 1
+    h = hypotheses[0]
+    assert h["horizon_d"] == r.SEED_HORIZON_D, (
+        f"hypothesis horizon_d {h['horizon_d']} != SEED_HORIZON_D {r.SEED_HORIZON_D}"
+    )
+    # check_by should be CHECK_BY_PAD_D calendar days from asof
+    expected_check_by = (pd.Timestamp("2026-06-20") + pd.Timedelta(days=r.CHECK_BY_PAD_D)
+                         ).date().isoformat()
+    assert h["check_by"] == expected_check_by, (
+        f"check_by {h['check_by']} != expected {expected_check_by}"
+    )

@@ -389,24 +389,31 @@ def test_backtest_agg_stage_groups():
 
 
 def test_backtest_run_edgar_filing_date_entry(tmp_path, monkeypatch):
-    """run_edgar enters at the first close on/after the FILING date and forward-returns it."""
+    """run_edgar enters at the first close STRICTLY AFTER the filing date (+1bd, PIT fix).
+
+    The price on the filing day itself (idx[7]=2026-06-10) is set to 50; the next business
+    day (idx[8]=2026-06-11) is set to 100. If entry were on the filing date, r5 would be
+    computed off 50 and would be 1.20 (a 120% gain).  With the correct +1bd entry it is
+    0.10 (a 10% gain from 100 to 110), confirming the look-ahead leak is closed.
+    """
     import pandas as pd
     monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
     monkeypatch.setattr(sse, "_universe_caps", lambda: ({1: "ABC"}, {"ABC": 500.0}))
     (tmp_path / "special_situations").mkdir()
-    # one classifiable activist situation on ABC, filed 2026-06-10
+    # filed 2026-06-10 == idx[7]
     _events([{"id": "1", "form_type": "SC 13D", "company": "ABC Inc", "cik": "1",
               "items": None, "date_filed": "2026-06-10"}]
             ).to_parquet(tmp_path / "special_situations" / "events.parquet")
-    # a price panel where ABC rises 10% over 5 trading days from entry
-    idx = pd.bdate_range("2026-06-01", periods=20)   # idx[7] == 2026-06-10 (entry)
+    idx = pd.bdate_range("2026-06-01", periods=20)   # idx[7]=2026-06-10, idx[8]=2026-06-11
+    prices = [100.0] * 7 + [50.0] + [100.0] * 4 + [110.0] * 8  # filing-day spike at idx[7]
     (tmp_path / "breadth").mkdir()
-    pd.DataFrame({"ABC": [100.0] * 12 + [110.0] * 8}, index=idx).to_parquet(
-        tmp_path / "breadth" / "_closes_cache.parquet")   # entry 100 -> +5d (idx[12]) 110
+    pd.DataFrame({"ABC": prices}, index=idx).to_parquet(
+        tmp_path / "breadth" / "_closes_cache.parquet")
     btdf = bt.run_edgar()
     row = btdf.set_index("ticker").loc["ABC"]
     assert row["category"] == "Activist Campaigns" and row["stage"] in ("initiated", "—")
-    assert round(row["r5"], 4) == 0.10                            # 100 -> 110 over 5 days
+    # entry at idx[8]=100, +5d=idx[13]=110: r5 = 0.10 (NOT 1.20 from the filing-day 50)
+    assert round(row["r5"], 4) == 0.10
 
 
 def test_summary_lane_llm_ready_gate(monkeypatch):

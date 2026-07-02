@@ -50,6 +50,15 @@ def main() -> int:
         if src.exists():
             shutil.copy2(src, site / asset)
 
+    # Refresh the `now` stanzas (level / %-off-ATH) from on-disk parquets.
+    # Fail-soft: a missing/stale series is skipped; the hand-written value is kept.
+    try:
+        from scripts.refresh_markets_now import refresh as _refresh_now
+        n = _refresh_now(config.data_dir(), site / "markets_data.js")
+        log.info("refresh_markets_now: patched %d market(s)", n)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("refresh_markets_now failed (non-fatal): %s", exc)
+
     log.info("built site/markets.html (global market cycles)")
     return 0
 

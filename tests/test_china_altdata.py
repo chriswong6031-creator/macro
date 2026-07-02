@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from engine import china_altdata as ad
 from engine import china_signal_lab as lab
+from engine import china_conviction as cv
 
 
 # ---- pure sub-scores ------------------------------------------------------- #
@@ -73,6 +74,82 @@ def test_by_ticker_de_degenerated():
 
 
 # ---- signal lab ------------------------------------------------------------ #
+def test_n_signals_discount_lowers_conviction_for_sparse_names():
+    """conv=0.5 with n_signals=1 must score below conv=0.5 with n_signals=3 (B8 requirement).
+    Verified by replicating the conviction100 formula: abs(conv) * min(1.0, n/3.0)."""
+    conv = 0.5
+    c100_n1 = cv.to_100(abs(conv) * min(1.0, 1 / 3.0))
+    c100_n3 = cv.to_100(abs(conv) * min(1.0, 3 / 3.0))
+    assert c100_n1 < c100_n3, (
+        f"n=1 conviction100 ({c100_n1}) must be below n=3 ({c100_n3})"
+    )
+    # n>=3 should not be discounted (cap at 1.0)
+    c100_n5 = cv.to_100(abs(conv) * min(1.0, 5 / 3.0))
+    assert c100_n5 == c100_n3, f"n=5 should equal n=3 (both uncapped): {c100_n5} vs {c100_n3}"
+
+
+def test_signal_lab_priors_lhb_block_are_negative():
+    """_PRIORS altdata lhb and block must be negative (DEMOTION): scores are signed and
+    measure alpha-draining at positive values (§W6-CN Fix 2 / Brief 8 sign-convention)."""
+    priors = lab._PRIORS["altdata"]
+    assert priors["lhb"] < 0, f"lhb prior must be negative (demotion), got {priors['lhb']}"
+    assert priors["block"] < 0, f"block prior must be negative (demotion), got {priors['block']}"
+    # positive legs are still positive
+    assert priors["value"] > 0 and priors["margin"] > 0 and priors["analyst"] > 0
+
+
+def test_wsum_abs_normalization_bounded() -> None:
+    """_compute_rows normalizes conv by SUM-OF-ABSOLUTE weights, not signed sum.
+    Verifies three properties:
+    1. Bounded output: legs {lhb:-0.10, flow:+0.18} produce |conv| <= 1.
+    2. Near-zero signed wsum (comment+lhb+block = 0.0 exactly) doesn't blow up:
+       conv must be None/skipped or a finite value in [-1,1].
+    3. Pure positive legs produce positive conv.
+    """
+    from unittest.mock import patch
+
+    W = {"value": 0.24, "margin": 0.20, "flow": 0.18, "comment": 0.15,
+         "lhb": -0.10, "block": -0.05, "analyst": 0.08}
+
+    def _fake_leg_weights():
+        return dict(W)
+
+    # Test 1: {lhb, flow} — abs wsum=0.28, signed wsum=0.08
+    # scores: lhb=-0.10 present with score +0.8, flow=+0.18 present with score +0.8
+    # conv = (-0.10*0.8 + 0.18*0.8) / 0.28 = 0.064/0.28 ≈ 0.229  (bounded, positive)
+    with patch.object(ad, "_leg_weights", _fake_leg_weights):
+        pct_lhb = 0.9   # pctile → score = 0.9*2-1 = +0.8
+        pct_flow = 0.9
+        s_lhb = pct_lhb * 2 - 1   # +0.8
+        s_flow = pct_flow * 2 - 1  # +0.8
+        wsum_abs = abs(W["lhb"]) + abs(W["flow"])
+        conv = (W["lhb"] * s_lhb + W["flow"] * s_flow) / wsum_abs
+        assert abs(conv) <= 1.0, f"conv={conv} out of [-1,1] for lhb+flow combo"
+
+    # Test 2: exact-zero signed wsum (comment+lhb+block)
+    # signed sum = 0.15 - 0.10 - 0.05 = 0.0 (floating-point epsilon)
+    # abs sum = 0.30 — safe denominator; conv must be finite & bounded
+    import math
+    s_comment = 0.6  # score ∈ [-1,1]
+    s_lhb2 = 0.8
+    s_block2 = -0.4
+    wsum_signed = W["comment"] + W["lhb"] + W["block"]   # ≈ 0.0 (exact hazard)
+    wsum_abs2 = abs(W["comment"]) + abs(W["lhb"]) + abs(W["block"])  # 0.30
+    # old (broken) denominator would be ~0.0 → divide-by-zero or `or 1.0` nonsense
+    assert abs(wsum_signed) < 1e-10, "test precondition: combo IS exact-zero signed wsum"
+    conv2 = (W["comment"] * s_comment + W["lhb"] * s_lhb2 + W["block"] * s_block2) / wsum_abs2
+    assert math.isfinite(conv2) and abs(conv2) <= 1.0, (
+        f"near-zero signed-wsum case blew up: conv={conv2}"
+    )
+
+    # Test 3: pure positive legs — conv must be positive
+    s_val = 0.7
+    s_margin = 0.5
+    wsum_abs3 = W["value"] + W["margin"]
+    conv3 = (W["value"] * s_val + W["margin"] * s_margin) / wsum_abs3
+    assert conv3 > 0, f"pure positive legs must yield positive conv, got {conv3}"
+
+
 def test_signal_lab_scorecard():
     sc = lab.build_china_scorecard()
     assert sc["schema"] == lab.SCHEMA

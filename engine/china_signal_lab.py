@@ -17,9 +17,18 @@ TIERS = ("scored", "confirmer", "display", "pending", "killed")
 
 # Per-consumer DEFAULT priors (used until china_validation earns weights). Keys = leg names the
 # consumer's combine() expects.
+#
+# lhb (龙虎榜) and block (大宗交易) carry NEGATIVE priors because both scores are SIGNED
+# (hotmoney_score = net_buy/p90; block_score = premium/8.0 clipped to [-1,1]) and the research
+# shows they are ALPHA-DRAINING at positive score values on dip names:
+#   lhb:   −1.43%/21d fill-realistic excess, cluster-t≈−2.2 (931 obs, §W6-CN Fix 2)
+#   block: −0.60%/5d on the premium leg, t≈−2.8 (§W6-CN Fix 2)
+# Positive priors would invert the demotion. The magnitude mirrors _W_DEFAULT in china_altdata.
 _PRIORS = {
-    "altdata": {"value": 0.24, "margin": 0.20, "flow": 0.18, "comment": 0.15, "lhb": 0.10,
-                "block": 0.05, "analyst": 0.08},
+    "altdata": {"value": 0.24, "margin": 0.20, "flow": 0.18, "comment": 0.15,
+                "lhb": -0.10,   # DEMOTION — signed score, measured alpha-drain on dip names
+                "block": -0.05, # DEMOTION — signed score, premium=unload, t≈−2.8
+                "analyst": 0.08},
     "conviction": {"radar": 0.40, "altdata": 0.22, "news": 0.20, "policy": 0.10,
                    "conditions": 0.08},
 }

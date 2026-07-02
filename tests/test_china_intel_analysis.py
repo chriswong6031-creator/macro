@@ -95,6 +95,45 @@ def test_conviction_not_crushed_by_absent_legs():
     assert rows[0]["composite_conviction"] > 30   # NOT crushed to ~2
 
 
+def test_what_matters_skips_past_dated_scheduled():
+    """Audit fix B6a: scheduled_ahead items whose date < today must not appear on the board.
+    Previously days=max(0,...) clamped expired catalysts to salience=1.0 and topped the board."""
+    from datetime import date, timedelta
+    past_ev = {"date": (date.today() - timedelta(days=5)).isoformat(),
+               "name_en": "LPR Decision", "name_zh": "LPR决议",
+               "md": "Jun-22", "md_zh": "6月22日"}
+    news_feed = {"scheduled_ahead": [past_ev]}
+    result = an._what_matters([], [], news_feed, {})
+    scheduled = [r for r in result if r["kind"] == "scheduled"]
+    assert scheduled == [], "past-dated scheduled item must be excluded from what_matters"
+
+
+def test_analyze_news_stale_flag(monkeypatch):
+    """Audit fix B6a: when feed asof lags analysis asof by >3 days, news_stale=True and
+    the news sentiment z-score is excluded from what_matters salience ranking."""
+    from datetime import date, timedelta
+    stale_feed = {"asof": (date.today() - timedelta(days=10)).isoformat(),
+                  "scheduled_ahead": []}
+    fresh_sent = {"z": 2.5, "band": "fearful", "label_en": "fearful", "label_zh": "恐慌",
+                  "n_days": 30}
+    import engine.china_altdata as ad
+    monkeypatch.setattr(ad, "convergence_map", lambda: {})
+
+    def fake_read(rel):
+        if rel == "chinanews/feed.json":
+            return stale_feed
+        if rel == "chinanews/sentiment.json":
+            return fresh_sent
+        return None
+
+    monkeypatch.setattr(an, "_read", fake_read)
+    result = an.analyze()
+    assert result["news_stale"] is True
+    # sentiment z-score must be absent from what_matters when feed is stale
+    news_items = [w for w in result["what_matters"] if w["kind"] == "news"]
+    assert news_items == [], "stale feed must exclude news salience item from what_matters"
+
+
 def test_news_leg_is_contrarian():
     """Review fix: news is contrarian (sign_expected -1) — fearful tape confirms a positive
     divergence; greedy tape dissents."""

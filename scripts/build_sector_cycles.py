@@ -91,6 +91,14 @@ def main() -> int:
         log.warning("sector_cycles: no data — skipped")
         return 0
 
+    # W0.2: append prospective forward-log stamp (keep-FIRST per (date,id), additive)
+    try:
+        from engine.cycle_forward_log import append_forward_log
+        n_stamped = append_forward_log(data, "sector_cycles")
+        log.info("sector_cycles: forward log: %d rows stamped", n_stamped)
+    except Exception as e:  # noqa: BLE001
+        log.warning("sector_cycles: forward log append skipped: %s", e)
+
     narr = _load_narratives(root)
     dna = _load_dna(root)
 

@@ -138,18 +138,22 @@ def _compact(pboc: dict | None, intel: dict) -> dict:
 def snapshot(asof: date | str | None = None) -> dict | None:
     """Full China Policy Watch view-model + the compact latest.json payload. Never raises."""
     try:
-        from engine import china_pboc_stance
+        from engine import china_pboc_stance, policy_dates
         pboc = china_pboc_stance.snapshot(asof)
         intel = _intel()
         prints = _nbs_prints()
         feed = _policy_feed()
         if pboc is None and not prints and not intel:
             return None
+        # Audit fix: annotate the intel substrate with live date status so the template can
+        # surface the intel age and warn when the hand-authored intel.json is stale (>14d).
+        intel_dates = policy_dates.annotate(intel)
         return {
             "schema": SCHEMA, "is_context_only": True,
             "asof": (str(asof) if asof else (pboc or {}).get("asof") or str(date.today())),
             "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
             "pboc": pboc, "nbs_prints": prints, "policy_feed": feed, "intel": intel,
+            "intel_dates": intel_dates,
             "latest": _compact(pboc, intel),
         }
     except Exception as e:  # noqa: BLE001 — additive, never fatal

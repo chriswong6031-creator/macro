@@ -140,6 +140,17 @@ def _policy_for(t: str, sectors: list, pidx: dict) -> dict | None:
     return None
 
 
+def _policy_usable(facet: dict | None) -> bool:
+    """A policy facet is usable for direction/flags/gap only when its conviction is not
+    low or absent.  Low-conviction leans contribute NOTHING — the flags go dark while all
+    shipped leans are ungraded.  A future n_graded>0 condition can be added here in one
+    place once the scoreboard (W1) ships grades."""
+    if not facet:
+        return False
+    conv = facet.get("conviction")
+    return conv not in (None, "low")
+
+
 # --------------------------------------------------------------------------- #
 # News velocity — day-over-day n_recent (accruing ledger; None until history exists)
 # --------------------------------------------------------------------------- #
@@ -208,7 +219,7 @@ def _dirs(v: dict, policy: dict | None) -> dict:
     if v.get("standout"):
         lab = (standout.get("label") or "").upper()
         sd = -1 if ("AVOID" in lab or "DOWN" in (standout.get("state") or "").upper()) else 1
-    pd = policy.get("dir") if policy else None
+    pd = policy.get("dir") if _policy_usable(policy) else None
     return {"news": nd, "alt": ad, "radar": rd, "standout": sd, "policy": pd}
 
 
@@ -353,7 +364,9 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = Non
     policy = _policy_for(t, sectors, pidx)
     dirs = _dirs(v, policy)
 
-    present = [k for k in ("news", "alt", "radar", "standout") if v.get(k)] + (["policy"] if policy else [])
+    # a low-conviction policy facet must contribute NOTHING — it must not inflate
+    # composite (via len(present)) nor appear in source_mix / n_facets.
+    present = [k for k in ("news", "alt", "radar", "standout") if v.get(k)] + (["policy"] if _policy_usable(policy) else [])
     nz = [d for d in dirs.values() if d not in (None, 0)]
     up = sum(1 for d in nz if d > 0)
     dn = sum(1 for d in nz if d < 0)
@@ -381,7 +394,9 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = Non
 
     flags = []
     stealth = dirs["alt"] == 1 and radar.get("state") == "POSITIVE_DIVERGENCE" and quiet_news
-    policy_early = (bool(policy and policy["dir"] == 1) and dirs["alt"] == 1
+    # early_edge requires a USABLE policy lean (conviction not low/absent); a low-conviction
+    # thesis cannot trigger the flag — the UI must go dark while leans are ungraded.
+    policy_early = (_policy_usable(policy) and policy["dir"] == 1 and dirs["alt"] == 1
                     and (dirs["radar"] or 0) >= 0 and quiet_news)
     if policy_early:
         flags.append("early_edge")              # the policy-confirmed stealth setup (the superset)
@@ -395,9 +410,10 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = Non
     # but guard explicitly so the two can never co-fire if _dirs ever changes)
     if dirs["alt"] == -1 and (dirs["radar"] or 0) <= 0 and not loud_bull and not (up >= 3 and dn == 0):
         flags.append("fading")
-    if policy and lean != 0 and policy["dir"] == lean and policy["dir"] != 0:
+    # policy_aligned / policy_conflict only fire when the facet is USABLE
+    if _policy_usable(policy) and lean != 0 and policy["dir"] == lean and policy["dir"] != 0:
         flags.append("policy_aligned")
-    if policy and lean != 0 and policy["dir"] == -lean:
+    if _policy_usable(policy) and lean != 0 and policy["dir"] == -lean:
         flags.append("policy_conflict")
     if nv.get("spike"):
         flags.append("velocity_spike")
@@ -455,12 +471,12 @@ def _read_for(flags: list, lean: int, n_confirm: int, policy: dict | None,
     if stage == "emerging":
         return (f"A leading desk is firing {('ahead of ' + str(g) + ' still-quiet ') if g else 'into a quiet '}"
                 f"lagging desk{'s' if g != 1 else ''}, with ~{pct}% of the move still ahead"
-                + (" and a policy tailwind" if policy and policy.get("dir") == 1 else "")
+                + (" and a policy tailwind" if _policy_usable(policy) and policy.get("dir") == 1 else "")
                 + (" plus a fresh catalyst" if "catalyst" in flags else "")
                 + " — pre-consensus, where the edge is.")
     if "early_edge" in flags or "stealth_accumulation" in flags:
         return ("Smart money + radar are positioning into a quiet tape"
-                + (" with a policy tailwind" if policy and policy.get("dir") == 1 else "")
+                + (" with a policy tailwind" if _policy_usable(policy) and policy.get("dir") == 1 else "")
                 + f" — stealth accumulation, ~{pct}% of the move still ahead.")
     if stage == "early":
         return f"A leading desk leads, the tape is still catching up — early, ~{pct}% edge remaining."

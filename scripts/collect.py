@@ -187,6 +187,10 @@ def all_adapters() -> dict:
         ("intl_prices", "collectors.intl_prices", "IntlPriceAdapter"),         # yfinance indices + vol + FX
         ("intl_macro", "collectors.intl_macro", "IntlMacroAdapter"),           # FRED OECD CSV + ECB (degrade per-series)
         ("intl_universe", "collectors.intl_universe", "IntlUniverseAdapter"),  # pooled top-N per market via iShares UCITS holdings CSVs
+        # W0-1 INTL substrate: 23-ticker country-ETF total-return OHLCV store (NOT in daily
+        # critical path — lives in intl_etf.yml weekly workflow; registered here so
+        # `scripts/collect --only intl_etf` works for manual / backfill runs).
+        ("intl_etf", "collectors.intl_etf", "IntlEtfAdapter"),                 # data/intl_etf/<TICKER>.parquet, weekly
         # crypto (Bitcoin Vector) — see research/VECTOR_DATA_AUDIT.md
         ("coinmetrics", "collectors.coinmetrics", "CoinMetricsAdapter"),
         ("bgeo", "collectors.bgeo", "BgeoAdapter"),
@@ -584,6 +588,11 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — a safety net's crash must not abort the run
             log.error("[reconcile] membership reconciler crashed (non-fatal): %s", e)
         run_quality_audits()
+
+    # qledger nightly grader — runs after quality audits so the parquet layer is
+    # fully refreshed. Non-fatal: a grader crash must not abort the collection run.
+    from scripts.grade_qledger import run_as_collect_step as _grade_qledger
+    _grade_qledger()
 
     return 0 if ok > 0 else 1
 

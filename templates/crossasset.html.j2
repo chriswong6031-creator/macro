@@ -86,7 +86,13 @@
     <table class="ca" style="margin-top:8px">
       <tr><th>{{ t('central bank', '央行') }}</th><th class="r">{{ t('assets ($T)', '资产($万亿)') }}</th><th class="r">{{ t('share', '占比') }}</th><th style="width:38%"></th></tr>
       {% for b in liquidity.banks %}
-      <tr><td><b>{{ t(b.label_en, b.label_zh) }}</b></td>
+      {% set _asof_age = '' %}
+      {% if b.raw_asof %}
+        {% set _asof_label %}<span class="muted sm" style="font-weight:400;margin-left:4px">{{ b.raw_asof }}</span>{% endset %}
+      {% else %}
+        {% set _asof_label = '' %}
+      {% endif %}
+      <tr><td><b>{{ t(b.label_en, b.label_zh) }}</b>{{ _asof_label|safe }}</td>
         <td class="r">{{ b.usd_tn }}</td><td class="r muted">{{ b.share }}%</td>
         <td><span class="sbar" style="width:100%"><i style="left:0;width:{{ b.share|round|int }}%;background:var(--muted)"></i></span></td></tr>
       {% endfor %}
