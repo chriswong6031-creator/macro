@@ -480,7 +480,8 @@ def midterm_blackout(index, cfg: dict | None) -> pd.Series:
     return mask
 
 
-def gate_state(asof, cfg: dict | None, sig: pd.DataFrame | None = None) -> dict:
+def gate_state(asof, cfg: dict | None, sig: pd.DataFrame | None = None,
+               vector_cfg: dict | None = None) -> dict:
     """The ONE stamped gated-state object every display surface consumes
     (Override-Registry W3/N6). Builders stamp this dict onto their page context
     (and onto buy-side objects as `suppressed_by_blackout`); templates read
@@ -493,11 +494,27 @@ def gate_state(asof, cfg: dict | None, sig: pd.DataFrame | None = None) -> dict:
     stamp reflects the ACTUAL masking state — after a structural-invalidation
     release the calendar still says "midterm year" but the gate no longer
     suppresses sizing, and the stamped flag must not claim it does. `released`
-    marks an in-window Class-1 release."""
+    marks an in-window Class-1 release.
+
+    W4 (staged re-entry, owner D4): sig's override_active is release-fraction
+    aware — partial tranche fills keep the stamp active past election day, so
+    buy-side suppression tracks the REAL gate span. Pass `vector_cfg` so
+    `release` reads as the projected-window open (where re-engagement begins)
+    instead of the retired election-day calendar; without sig, the flag then
+    stays conservatively active through window_end (fills unknowable).
+    `release_frac` (0..1) rides along for the owner surfaces."""
     dt = pd.Timestamp(asof)
     cfg = cfg or {}
     active = bool(midterm_blackout([dt], cfg).iloc[0])
     released = False
+    frac = None
+    rcfg = cfg.get("reentry") or {}
+    window = None
+    if rcfg.get("enabled") and cfg.get("enabled", False) and vector_cfg \
+            and int(dt.year) % 4 == 2:
+        from engine.btc_overrides import _projected_window
+        window = _projected_window(pd.Timestamp(year=int(dt.year), month=1, day=1),
+                                   vector_cfg)
     if sig is not None and len(sig) and "override_active" in sig.columns:
         row = sig[sig.index <= dt]
         if len(row):
@@ -505,13 +522,26 @@ def gate_state(asof, cfg: dict | None, sig: pd.DataFrame | None = None) -> dict:
             active = bool(r.get("override_active"))
             rel = r.get("override_released")
             released = bool(rel) if pd.notna(rel) else False
+            fr = r.get("override_release_frac")
+            frac = float(fr) if pd.notna(fr) else None
+    elif window is not None and not active:
+        # calendar-only fallback: past election day the W4 schedule may still
+        # be filling (fills unknowable without sig) → stay conservative until
+        # the last scheduled fill could have completed
+        offsets = rcfg.get("schedule_offsets_d") or [0, 30, 60]
+        last_fill = window[0] + pd.Timedelta(days=int(max(offsets)))
+        active = bool(pd.Timestamp(year=int(dt.year), month=1, day=1) <= dt <= last_fill)
     release = None
     if active:
-        release = (_us_election_date(dt.year)
-                   - pd.Timedelta(days=int(cfg.get("buy_lead_days", 0)))).strftime("%Y-%m-%d")
+        if window is not None:
+            release = window[0].strftime("%Y-%m-%d")   # re-engagement begins here
+        else:
+            release = (_us_election_date(dt.year)
+                       - pd.Timedelta(days=int(cfg.get("buy_lead_days", 0)))).strftime("%Y-%m-%d")
     return {"override_id": "midterm_blackout", "active": active,
             "year": int(dt.year) if active else None, "release": release,
-            "released": released}
+            "released": released, "release_frac": frac,
+            "window_end": window[1].strftime("%Y-%m-%d") if window else None}
 
 
 def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
@@ -1778,9 +1808,15 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     # structural-invalidation release rule (owner D1) can fire — a confirmed
     # new-ATH close sequence steps the gate down to the raw allocation.
     from engine import btc_overrides
+    # W4 (staged re-entry, owner D4): vector_cfg supplies the projected-window
+    # calendar (cycle_phase_clock.tops); mvrv_z + bottom_pressure feed the
+    # evidence ACCELERATORS (pull scheduled fills earlier only — never veto).
     al = btc_overrides.apply(al, cfg["allocation"],
                              ctx={"close": inputs["price"]["close"],
-                                  "overrides": cfg.get("overrides")})
+                                  "overrides": cfg.get("overrides"),
+                                  "vector_cfg": cfg,
+                                  "mvrv_z": va["mvrv_z"] if "mvrv_z" in va.columns else None,
+                                  "bottom_pressure": bp})
     al["bottom_pressure"] = bp
 
     out = pd.concat([inputs["price"][["close"]], mom, rk, bf, st, gg, al,

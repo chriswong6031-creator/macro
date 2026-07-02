@@ -3248,9 +3248,11 @@ vector:
         (cash) from Jan 1 of a midterm year until ~election day to avoid the
         projected drawdown window.
       basis_n: 3                        # n=3 prior midterm cycles (machine-read)
-      scope: "midterm years (year%4==2), Jan 1 → election day"
-      dof_cost: 4                       # 3 (gate: decision-to-gate + year%4==2 selector + window shape)
+      scope: "midterm years (year%4==2), Jan 1 → staged re-entry (W4 window spine) or legacy election day"
+      dof_cost: 6                       # 3 (gate: decision-to-gate + year%4==2 selector + window shape)
                                         # + 1 (Class-1 confirm window N=5 — registered W2, never re-tuned)
+                                        # + 2 (W4 re-entry: tranche schedule shape + the accelerator rule;
+                                        #      spine dates derive from the thesis window = no new evidence DOF)
       release_rules:
         - kind: calendar                # self-release at ~election day (buy_lead_days offset,
                                         # params at vector.allocation.midterm_gate)
@@ -3263,6 +3265,11 @@ vector:
         - kind: structural_invalidation
           signal: new_ath_close
           confirm_days: 5               # PRE-COMMITTED (masterplan §4 N2); counted in dof_cost — never re-tune
+        # W4 STAGED RE-ENTRY — owner decision D4; masterplan N5 REDESIGNED after the
+        # W1 trigger eval (all evidence triggers failed the pre-registered bar → the
+        # calendar spine holds authority; evidence only accelerates fills).
+        - kind: staged_reentry
+          params_ref: vector.allocation.midterm_gate.reentry
       falsifier_authority: class1       # the falsifier is wired to the sizing object it polices (N2)
       grading_spec:
         benchmark: raw_allocation       # graded against the engine's own raw series
@@ -3352,7 +3359,28 @@ vector:
     # ALL variants, so the backtest reflects the rule too. n=3 midterms of BTC history.
     midterm_gate:
       enabled: true
-      buy_lead_days: 0            # release the gate this many days BEFORE election day (0 = at the vote)
+      buy_lead_days: 0            # LEGACY release (applies ONLY when no projected window is computable, e.g. 2014)
+      # W4 — staged auto re-entry (owner D4; masterplan N5 as REDESIGNED after the
+      # W1 trigger eval failed ALL evidence triggers — research/BTC_REENTRY_TRIGGER_EVAL.md).
+      # CALENDAR SPINE = the authority: the release edge moves off election day onto
+      # the thesis monitor's projected bottom window (cycle top + 360d; 2026: Oct 1 —
+      # the old calendar released AFTER the projected bottom). Tranches fill ON
+      # SCHEDULE (T1 at window open, T2 +30d, T3 +60d), each sized against the
+      # engine's RAW allocation — deterministic, zero evidence DOF. Evidence acts as
+      # ACCELERATOR only (pulls the NEXT scheduled fill earlier; never blocks/vetoes).
+      # Class-1 structural invalidation (D1) composes: earliest full release wins;
+      # NOT haltable. halt_from freezes the spine + accelerators (owner switch).
+      reentry:
+        enabled: true
+        tranches: [0.40, 0.30, 0.30]     # pre-committed spine weights
+        schedule_offsets_d: [0, 30, 60]  # fill days after window open (top+360d)
+        halt_from: null                  # owner HALT: ISO date — freeze fills from this date
+        ledger_from: "2026-01-01"        # engagements before the registry era are not retro-ledgered
+        accelerator:
+          enabled: true
+          # W1-registered fresh-cross definitions (BTC_REENTRY_TRIGGER_EVAL.md):
+          mvrv_z_fresh_cross: {level: 0.0, min_days_above: 90}
+          bottom_pressure_fresh_cross: {level: 0.45, min_days_below: 20}
     # Tier-1b blend: fold the CALIBRATION-CONFIRMED deep-history valuation tails
     # into the (momentum, risk) grid as contrarian overrides. Gated — the
     # allocation backtest must not degrade (see reports/vector-calibration.md).
@@ -3689,6 +3717,7 @@ vector:
   btc_dat:
     json_path: "data/dat_holdings.json"   # manual 8-K-sourced MSTR/DAT drop (NOT 13F)
     margin_haircut: 0.78          # forced-sell trigger ~ avg_cost x this (≈ -22%)
+    stale_after_days: 14          # asof older than this → stale flag (manual feed; ~weekly 8-K cadence)
   btc_leverage_cascade:
     high_funding_annual_pct: 50   # annualized funding above this = "high"
     sustain_days: 3               # consecutive days of high funding to flag a cascade

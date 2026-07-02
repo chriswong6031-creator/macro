@@ -35,8 +35,12 @@ log = logging.getLogger(__name__)
 # Projected-bottom window = last cycle TOP + the historical down-leg, bracketed. Observed
 # down-legs were 364d (2017-top) and 378d (2021-top); center ~371d. We widen to a window so
 # the chip reads as a zone, not false precision.
-_WIN_LEAD_D = 360     # window opens this many days after the cycle top
-_WIN_TRAIL_D = 430    # window closes this many days after the cycle top (past 378d + buffer)
+# PUBLIC: the W4 staged re-entry (engine/btc_overrides.py) keys its tranche
+# spine off these same constants — ONE source of truth for "the projected window".
+WIN_LEAD_D = 360      # window opens this many days after the cycle top
+WIN_TRAIL_D = 430     # window closes this many days after the cycle top (past 378d + buffer)
+_WIN_LEAD_D = WIN_LEAD_D
+_WIN_TRAIL_D = WIN_TRAIL_D
 # Pivot-staleness tolerance: reuse _extreme()'s ±21d pivot-date window (the existing,
 # pre-committed imprecision allowance for hand-recorded config pivots — NOT a new knob).
 _PIVOT_SLACK_D = 21

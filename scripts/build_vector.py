@@ -2443,6 +2443,19 @@ def main() -> int:
     (config.data_dir() / "vector").mkdir(parents=True, exist_ok=True)
     sig.to_parquet(config.data_dir() / "vector" / "signals.parquet")
 
+    # W4 grading surfaces: append new re-entry events to the reentry ledger
+    # (idempotent) and write the owner-view arming status. DISPLAY/GRADING
+    # ONLY — the allocation path never reads these; the DAT chip is advisory.
+    try:
+        from engine import btc_dat, btc_overrides
+        _vcfg_full = config.load()["vector"]
+        btc_overrides.sync_ledger(sig, _vcfg_full)
+        _restat = btc_overrides.build_status(sig, _vcfg_full, dat=btc_dat.compute())
+        (config.data_dir() / "vector" / "reentry_status.json").write_text(
+            json.dumps(_restat, indent=1))
+    except Exception as e:  # noqa: BLE001 — grading surfaces never break the build
+        log.warning("re-entry ledger/status build failed: %s", e)
+
     cpath = config.data_dir() / "vector" / "calibration.json"
     calib = json.loads(cpath.read_text()) if cpath.exists() else {
         "meta": {"span": f"{sig.index.min().date()}..{sig.index.max().date()}"},
@@ -2483,7 +2496,10 @@ def main() -> int:
     # after a structural-invalidation release the calendar still says "midterm year" but the
     # gate no longer suppresses sizing (gate.released marks it).
     _mg_cfg = _acfg.get("midterm_gate") or {}
-    gate = btc_signals.gate_state(sig.index[-1], _mg_cfg, sig=sig)
+    # W4: vector_cfg lets the stamped release date read as the projected-window
+    # open (re-engagement begins there), not the retired election-day calendar.
+    gate = btc_signals.gate_state(sig.index[-1], _mg_cfg, sig=sig,
+                                  vector_cfg=config.load()["vector"])
 
     # Cycle-thesis MONITOR (engine/btc_cycle_thesis.py): turns the halving/midterm-cycle
     # conviction into a watched thesis — projected bottom window + falsifier flags (dampening /
