@@ -23,6 +23,7 @@ import logging
 from datetime import datetime, timezone
 
 from lib import config
+from engine.altdata_brain import _EXTENDED_PP  # shared constant for extension threshold
 
 log = logging.getLogger(__name__)
 
@@ -41,11 +42,19 @@ def _det_conviction(weighted: float, count: int) -> str:
 
 
 def _signal_score(weighted: float, conviction: str, action: str, rs, extended: bool,
-                  n_actors: int) -> int:
+                  n_actors: int, source: str = "brain") -> int:
     """Composite 0-100 actionable score. Deterministic weight is the spine; the brain's
-    conviction + price confirmation adjust it; extension and a bearish action dock it."""
+    conviction + price confirmation adjust it; extension and a bearish action dock it.
+
+    Conviction bonus is ONLY added for brain-sourced theses — on the deterministic path,
+    conviction is derived FROM the same weighted_score that drives the base, so adding it
+    back would double-count the same signal.
+    """
     base = min(60.0, (weighted or 0) * 32.0)
-    base += {"high": 25, "medium": 12, "low": 0}.get(conviction, 0)
+    # Only add conviction bonus when the brain provided it independently; deterministic
+    # conviction is a function of weighted/count so it is already embedded in the base.
+    if source == "brain":
+        base += {"high": 25, "medium": 12, "low": 0}.get(conviction, 0)
     base += {"ACCUMULATE": 8, "WATCH": 0, "AVOID": -30}.get(action, 0)
     if rs is not None:
         base += max(-8.0, min(10.0, rs / 3.0))        # mild confirm; never the whole story
@@ -82,18 +91,22 @@ def build_mastermind(by_ticker: dict | None, brain: dict | None, influence: dict
         if count < 2 and not th and n_actors == 0:
             continue
         rs = (th or {}).get("rs_vs_spy_60d", rs_by.get(tk))
-        extended = bool((th or {}).get("extended"))
+        # Brain flag OR deterministic: a name already >_EXTENDED_PP above SPY has no entry left.
+        # Without the brain the flag never came from th, so we derive it from rs directly.
+        extended = bool((th or {}).get("extended")) or (rs is not None and rs > _EXTENDED_PP)
+        source = "brain" if th else "deterministic"
         if th:
             conviction, action, lean = th.get("conviction", "low"), th.get("action", "WATCH"), th.get("lean")
         else:
             conviction, action, lean = _det_conviction(weighted, count), "WATCH", None
         signals.append({
             "ticker": tk,
-            "signal_score": _signal_score(weighted, conviction, action, rs, extended, n_actors),
+            "signal_score": _signal_score(weighted, conviction, action, rs, extended, n_actors,
+                                          source=source),
             "conviction": conviction,
             "action": action,
             "direction": _direction(lean, action),
-            "source": "brain" if th else "deterministic",
+            "source": source,
             "weighted_score": round(weighted, 2),
             "convergence_score": count,
             "channels": rec.get("channels", []),
@@ -124,6 +137,9 @@ def build_mastermind(by_ticker: dict | None, brain: dict | None, influence: dict
             "An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties."),
         "regime_read": (brain or {}).get("regime_read"),
         "brain_present": bool(brain and brain.get("theses")),
+        # brain_usable = present AND not degraded; downstream (template + bot) should de-rate
+        # the conviction board when False — scores are deterministic only, not graded vs SPY.
+        "brain_usable": bool(brain and brain.get("theses") and not brain.get("degraded_reason")),
         "calibration": {
             "n_scored": cal.get("scored_total"), "hit_rate": (cal.get("overall") or {}).get("hit_rate"),
             "open": cal.get("open"), "note": cal.get("calibration_note"),

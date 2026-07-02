@@ -136,9 +136,15 @@
   </section>
 
   {# ---------- CONVICTION BOARD ---------- #}
+  {# brain_usable: brain ran successfully AND is not degraded; when False scores are deterministic only #}
+  {% set brain_usable = mastermind.brain_usable if mastermind else false %}
   <section class="sid-sec">
     <h2>🎯 {{ t('Conviction board', '置信榜') }}
-      <span class="h-note">{{ t('ranked actionable signals — convergence × affiliation × AI conviction, graded vs SPY', '已排名的可操作信号——汇聚×关联×AI置信，对标普评分') }}</span></h2>
+      {% if brain_usable %}
+      <span class="h-note">{{ t('ranked actionable signals — convergence × affiliation × AI conviction, graded vs SPY', '已排名的可操作信号——汇聚×关联×AI置信，对标普评分') }}</span>
+      {% else %}
+      <span class="h-note mut">{{ t('deterministic convergence only — AI read unavailable; nothing graded yet', '仅确定性汇聚——AI解读不可用；尚无对标普评分') }}</span>
+      {% endif %}</h2>
     {% if mastermind and mastermind.signals %}
     <div class="conv-list">
       {% for sg in mastermind.signals[:14] %}

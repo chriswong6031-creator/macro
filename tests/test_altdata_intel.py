@@ -263,3 +263,80 @@ def test_emit_deterministic_when_no_brain(tmp_path):
     assert aaa["source"] == "deterministic" and aaa["action"] == "WATCH"
     assert aaa["conviction"] == "high"                       # weighted 1.7 >= high band
     assert out["brain_present"] is False
+
+
+# =========================================================================== emit honesty (W0 audit fixes)
+
+def test_emit_det_conviction_no_double_count(tmp_path):
+    """(a) Deterministic path: conviction bonus must NOT be added back to the score.
+    A name with count=4, weighted=1.8 must score identically regardless of whether
+    _det_conviction returns 'high' or 'medium' — both are derived from the same weighted
+    base that already drives the score spine."""
+    by_ticker = {"as_of": "x", "tickers": {
+        # count=4 → _det_conviction="high"; weighted=1.8 → base = min(60, 1.8*32) = 57.6
+        "HI": {"ticker": "HI", "convergence_score": 4, "weighted_score": 1.8,
+               "channels": ["a", "b", "c", "d"], "trump_linked": False},
+        # count=4 → _det_conviction="high" BUT force a scenario where we need to check
+        # the medium path: weighted=0.5 (below _W_MED=0.9) but count>=4 → still "high"
+        # We directly test _signal_score for the medium case to isolate the guard
+    }}
+    out = EM.build_mastermind(by_ticker, {}, {}, {}, {}, root=tmp_path, top=10)
+    hi = out["signals"][0]
+    assert hi["source"] == "deterministic"
+    # Directly verify that changing conviction label does not affect deterministic score
+    from engine.altdata_emit import _signal_score
+    score_high = _signal_score(1.8, "high", "WATCH", None, False, 0, source="deterministic")
+    score_med  = _signal_score(1.8, "medium", "WATCH", None, False, 0, source="deterministic")
+    assert score_high == score_med, (
+        f"deterministic score must be conviction-label-invariant: high={score_high}, med={score_med}")
+
+
+def test_emit_det_extended_clamp_from_rs(tmp_path):
+    """(b) Deterministic extended flag: rs > _EXTENDED_PP triggers the −15 dock even with
+    no brain, and rs <= _EXTENDED_PP does not."""
+    by_ticker = {"as_of": "x", "tickers": {
+        "EXT": {"ticker": "EXT", "convergence_score": 3, "weighted_score": 1.5,
+                "channels": ["a", "b", "c"], "trump_linked": False},
+        "NON": {"ticker": "NON", "convergence_score": 3, "weighted_score": 1.5,
+                "channels": ["a", "b", "c"], "trump_linked": False},
+    }}
+    # Supply rs via the picks artifact (rs_by map in build_mastermind)
+    picks_ext  = {"picks": [{"ticker": "EXT", "rs_vs_spy_60d": 40.0},
+                             {"ticker": "NON", "rs_vs_spy_60d": 10.0}]}
+    out = EM.build_mastermind(by_ticker, {}, {}, picks_ext, {}, root=tmp_path, top=10)
+    by_tk = {s["ticker"]: s for s in out["signals"]}
+    assert by_tk["EXT"]["extended"] is True,  "rs=40 > 35 → extended must be True"
+    assert by_tk["NON"]["extended"] is False, "rs=10 ≤ 35 → extended must be False"
+    # EXT gets the −15 dock; NON does not — so EXT must score lower.
+    # (The exact gap also includes the rs-confirm bonus difference, so we test direction only.)
+    assert by_tk["EXT"]["signal_score"] < by_tk["NON"]["signal_score"], (
+        f"extended name must score lower; got EXT={by_tk['EXT']['signal_score']}, NON={by_tk['NON']['signal_score']}")
+    # Verify the -15 dock fires in isolation via _signal_score (same rs → isolates the extended flag)
+    from engine.altdata_emit import _signal_score
+    score_ext = _signal_score(1.5, "medium", "WATCH", 20.0, True,  0, source="deterministic")
+    score_non = _signal_score(1.5, "medium", "WATCH", 20.0, False, 0, source="deterministic")
+    assert score_non - score_ext == 15, (
+        f"isolated −15 dock check failed: non={score_non}, ext={score_ext}")
+
+
+def test_emit_brain_usable_flag(tmp_path):
+    """(c) brain_usable is emitted and correctly False when brain is degraded."""
+    by_ticker = {"as_of": "x", "tickers": {
+        "AAA": {"ticker": "AAA", "convergence_score": 2, "weighted_score": 1.0,
+                "channels": ["a", "b"], "trump_linked": False},
+    }}
+    # Healthy brain: theses present, no degraded_reason
+    brain_ok = {"theses": [{"ticker": "AAA", "conviction": "high", "action": "ACCUMULATE",
+                             "lean": "overweight", "extended": False, "thesis": "t",
+                             "second_order": [], "rs_vs_spy_60d": 5, "falsifier": {}}]}
+    out_ok = EM.build_mastermind(by_ticker, brain_ok, {}, {}, {}, root=tmp_path, top=10)
+    assert out_ok["brain_usable"] is True, "healthy brain → brain_usable should be True"
+
+    # Degraded brain: degraded_reason is set
+    brain_deg = {"theses": [], "degraded_reason": "no_client_or_token"}
+    out_deg = EM.build_mastermind(by_ticker, brain_deg, {}, {}, {}, root=tmp_path, top=10)
+    assert out_deg["brain_usable"] is False, "degraded brain → brain_usable should be False"
+
+    # No brain at all
+    out_none = EM.build_mastermind(by_ticker, {}, {}, {}, {}, root=tmp_path, top=10)
+    assert out_none["brain_usable"] is False, "absent brain → brain_usable should be False"
