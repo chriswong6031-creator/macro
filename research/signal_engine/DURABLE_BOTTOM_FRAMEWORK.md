@@ -352,3 +352,34 @@ filter-style pass was judged NOT APPLICABLE to a bonus-shaped ship (it tests sub
 folds + basket OOS carry the time-generalization burden here). Caveats attached: cohort map covers
 ~500 sector-mapped names (S&P + sector baskets) — unmapped names get no cohort and no bonus; the edge
 is washout-regime-conditional (quiet in low-vol bull legs); effective n < printed n (overlapping fires).
+
+**Wave-3 pre-registration (2026-07-02, written BEFORE the runs):** (A) CN/HK replication — CN panel
+`china_search/closes.parquet` (≥800 bars, EVAL_START 2022-09-01, time halves at the 2024-09-24
+stimulus pivot; sector cohort via `china_search/members.parquet` (12 sectors, all ≥6 members),
+theme cohort via `baskets_china/membership.json`), HK panel `hk_search/closes_deep.parquet`
+(EVAL_START 2012-01-01, halves at 2020-01-01; sector via `hk_breadth/constituents.parquet`).
+Close-only markets: low_stop5 + H4 skipped. **G-CN gate:** COILED-vs-noncoiled_washout clean15
+spread ≥ 3pp, same sign both halves, stop5 not worse by >1pp, n_COILED ≥ 400, per-name majority
+≥ 55% (names with ≥3 fires each side). **G-HK gate:** same with n_COILED ≥ 200. **Robustness
+(both):** spread sign preserved at clean10/clean20, dead-money lower. Ship per-market iff that
+market passes gate + robustness. CN honesty caveat pre-declared: ~3.3y eval, one macro regime.
+(B) Trigger-speed study inside COILED (deep US panel): triggers {m2d_s3d, m2d_s3d_early,
+stochlead3d, m2d_s2d, m1d_s3d} × {inside, outside} the COILED state (state = washout_ctx AND
+sector cohort ≥ 0.4, computed daily; div excluded from the state). **B-PASS for a faster trigger
+iff inside COILED:** clean15 within 2pp of m2d_s3d-inside, stop5 not worse by >2pp, capture
+economics better (median premium-over-trough lower OR recall_B15 higher), ticker-half sign-stable.
+B informs wave-4 fire-layer design; nothing from B ships this wave.
+
+**Wave-3 results (2026-07-02, harness `wave3.py`, audited clean — zero critical/major):**
+
+| date | candidate | verdict | numbers | where |
+|---|---|---|---|---|
+| 2026-07-02 | **G-CN replication** (1,382 names, 20,502 m2d fires, 28,688 events) | **PASS — ship CN** | COILED n=10,784: clean15 35.57 vs 28.24 (+7.33pp), stop5 45.72 vs 51.93 (−6.21pp better), dead-money 5.06 vs 6.36; halves +6.08 / +11.46 (both +); per-name majority 59.3% of 1,139; STAR additive (37.56 / 45.00). Theme cohort weaker but consistent (+2.07pp). Pre-declared caveat stands: 3.3y, ONE macro cycle — re-grade when a second CN regime accrues | WAVE3_REPORT.md, wave3_cn |
+| 2026-07-02 | **G-HK replication** (157 names, 8,576 fires) | **FAIL — do NOT ship HK** | spread −0.84pp (wrong sign), halves FLIP (−2.99/+1.63), per-name minority 46.1%, clean10 inverts; STAR is the WORST HK cell (32.57/48.05 — divergence actively hurts on HK). Mechanism read: 157 names / ~12 sectors + macro-correlated market → cohort washout is near-universal in HK drawdowns (76% of fires already in washout) and carries no discrimination | WAVE3_REPORT.md, wave3_hk |
+| 2026-07-02 | **Tencent case (0700.HK)** | trap axis NOT solved on HK — recorded honestly | COILED flagged the 2021-23 sector-wide trap bounces as buyable (STAR once, 2021-08-11, stopped out): ~6 COILED stop-outs/dead fires vs one caught turn (2022-11-02, +97% MFE). It DID admit the 2025 turn (STAR 2025-01-28 +34.6%, COILED 2025-05-02 +13.4%) but missed the first 2024-08 leg. The name that motivated the trap axis is where the cohort mechanism breaks — HK trap discrimination needs a different lever (open) | tencent_case in wave3_hk |
+| 2026-07-02 | **B: trigger speed inside COILED** (US deep panel) | **m1d_s3d = the COILED-architecture vindication; wave-4 nominee** | Only m1d_s3d has its stop advantage CREATED by the state (inside-gap −1.20pp vs outside +0.51pp): inside COILED n=3,787, stop5 37.87 (BETTER than m2d baseline 39.07), clean15 37.68 (−1.61, within gate), premium 6.43% vs 7.96%, lead 3d vs 6d, half-stable. m2d_s3d_early passes the gate but its stop edge is trigger-native (no state interaction); stochlead3d FAILS (clean15 −2.06); m2d_s2d FAILS (no capture gain). Unconditionally m1d was the WORST trigger of the 2026-06 campaign (−8.65pp DD) — inside COILED it is the best: selectivity successfully relocated from lag to state. Nothing ships from B (pre-registered); wave-4 = COILED×m1d fire layer through the full gate battery | WAVE3_REPORT.md, wave3_triggers T-B |
+
+**Wave-3 ship record (2026-07-02):** CN gets the COILED graded bonus (same +0.25/+0.40 shape,
+additive inside `_cn_bonus` beside WASHOUT_BONUS/EXT_PENALTY), chip + `china_standout_track`
+ledger fields; the anti-chase EXT_PENALTY stays orthogonal. HK gets NOTHING (gate failed).
+CN re-grade trigger: when the forward ledger accrues a second macro regime.

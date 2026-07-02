@@ -307,3 +307,104 @@ class TestBullDiv:
             "(stoch HL after oscillator partial recovery during Phase 3). "
             "n=370, L1≈320, L2≈361, d3[L1]≈0, d3[L2]≈54."
         )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 6. CN wiring shape tests (wave-3 ship record 2026-07-02)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestCNWiringShape:
+    """Validates the CN-wiring paths that build_china_library.py exercises:
+      • assess() is JSON-safe when washout=None / cohort=None (thin-history CN name path)
+      • cohort_fractions produces correct peer fractions for a 12-sector CN shape:
+        30 names in one sector → each name sees exactly 29 peers.
+    """
+
+    def test_assess_json_safe_thin_history(self):
+        """CN thin-history path: assess(None, None, False) must be json.dumps-safe.
+
+        build_china_library._coil_wash / _coil_d can both be None for a name with
+        insufficient bars. assess() must not produce NaN or non-serialisable values."""
+        cases = [
+            (None, None, False),   # fully thin: both washout and cohort missing
+            (None, None, True),    # thin with div=True (bull_div still fires on some series)
+            (True, None, False),   # washout present but cohort unavailable (sector <5 peers)
+            (False, None, True),
+        ]
+        for washout, cohort, div in cases:
+            r = coiled.assess(washout=washout, cohort_frac=cohort, div=div)
+            # must be a dict
+            assert isinstance(r, dict), f"assess returned non-dict for ({washout},{cohort},{div})"
+            # must survive json.dumps(allow_nan=False) — NaN would raise ValueError
+            try:
+                json.dumps(r, allow_nan=False)
+            except (ValueError, TypeError) as e:
+                pytest.fail(
+                    f"json.dumps(allow_nan=False) failed for assess({washout},{cohort},{div}): {e}"
+                )
+            # coiled must be False when cohort_frac is None (H6 requires cohort evidence)
+            assert r["coiled"] is False, (
+                f"assess({washout},{cohort},{div}) set coiled=True despite cohort=None"
+            )
+            # bonus must be exactly 0.0 when not coiled
+            assert r["bonus"] == 0.0, (
+                f"assess({washout},{cohort},{div}) non-zero bonus despite coiled=False: {r['bonus']}"
+            )
+
+    def test_cohort_fractions_cn_shape_30_names_one_sector(self):
+        """12-sector CN shape: 30 names in the same sector → each sees 29 peers.
+
+        A real CN universe has ~30 names per broad Shenwan L1 sector. This test
+        verifies that cohort_fractions correctly excludes the focal ticker from its
+        own peer count, so each name sees exactly 29 (not 30) peers.
+
+        Setup: 30 names, all in sector 'Banks', all with d=10.0 (below threshold 30).
+        Every name should see 29 peers all below threshold → cohort_frac = 29/29 = 1.0.
+        """
+        tickers = [f"60{i:04d}.SS" for i in range(30)]
+        latest_d  = {t: 10.0 for t in tickers}      # all below d_thresh=30
+        sector_of = {t: "Banks" for t in tickers}   # all same sector
+
+        result = coiled.cohort_fractions(latest_d, sector_of)
+
+        for t in tickers:
+            frac = result.get(t)
+            assert frac is not None, f"{t} got None fraction (expected 29 peers >= min_peers=5)"
+            assert abs(frac - 1.0) < 1e-9, (
+                f"{t} fraction={frac:.6f}, expected 1.0 "
+                "(29 peers all below d_thresh=30, self-excluded)"
+            )
+
+    def test_cohort_fractions_cn_shape_mixed_sectors(self):
+        """12 sectors × ~30 names: cross-sector isolation — names in different sectors
+        do NOT count each other as peers."""
+        import itertools
+        sectors = [f"Sector{i}" for i in range(12)]
+        # 30 names per sector; first half of each sector has d=10 (below 30), rest d=70
+        tickers_by_sector: dict[str, list] = {}
+        latest_d: dict[str, float] = {}
+        sector_of: dict[str, str] = {}
+        for sec in sectors:
+            names = [f"{sec}_{j}" for j in range(30)]
+            tickers_by_sector[sec] = names
+            for j, t in enumerate(names):
+                d = 10.0 if j < 15 else 70.0     # first 15 below, last 15 above
+                latest_d[t] = d
+                sector_of[t] = sec
+
+        result = coiled.cohort_fractions(latest_d, sector_of)
+
+        for sec, names in tickers_by_sector.items():
+            for j, t in enumerate(names):
+                frac = result.get(t)
+                assert frac is not None, f"{t} got None fraction — expected 29 peers"
+                # focal ticker excluded → 29 peers; 15 below if j>=15, else 14 below (self excluded)
+                if j < 15:
+                    # focal has d=10 (below): peers = 29; of those, 14 are below (not counting self)
+                    expected = 14 / 29
+                else:
+                    # focal has d=70 (above): peers = 29; of those, 15 are below
+                    expected = 15 / 29
+                assert abs(frac - expected) < 1e-9, (
+                    f"{t} (j={j}) sector={sec}: frac={frac:.6f}, expected={expected:.6f}"
+                )

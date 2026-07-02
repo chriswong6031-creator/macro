@@ -140,6 +140,7 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
             continue
         ext = r.get("extension") or {}
         sig = r.get("signal") or {}
+        _cb = r.get("coiled") or {}
         out.append({
             "date": str(asof), "ticker": str(tk), "board_rank": i + 1,
             "tier": sig.get("tier_cascade"),
@@ -147,6 +148,12 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
             "extended": bool(ext.get("extended")),
             "washout": bool(r.get("washout_2w")),
             "level": r.get("price"),
+            # COILED wave-3 CN columns (wave-3 ship record 2026-07-02). New columns appended
+            # to existing parquet rows via pd.concat schema union — old rows read fine (missing
+            # cols become NaN, which pd.concat handles transparently; bool() of NaN = False).
+            "coiled":        bool(_cb.get("coiled")),
+            "coiled_star":   bool(_cb.get("star")),
+            "coiled_cohort": _cb.get("cohort"),
         })
     if not out:
         return 0
