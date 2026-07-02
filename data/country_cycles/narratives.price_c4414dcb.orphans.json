@@ -1,0 +1,183 @@
+{
+  "_note": "Orphaned narrative legs — retained for review, NEVER plotted.",
+  "baskets": {
+    "eem": {
+      "legs": {
+        "2015-04": {
+          "body": "From April 2015 to January 2016, EEM fell 34.4% as the leverage-fueled bubble in China's A-share market deflated, the PBOC delivered a surprise yuan devaluation in August 2015, and commodity prices slumped. A strengthening dollar compounded the pain for USD-denominated EM assets as the Fed moved toward its first rate hike since 2006 (delivered December 2015). EM currencies broadly weakened, amplifying the dollar-terms loss beyond what local indices alone registered.",
+          "body_zh": "2015年4月至2016年1月，EEM下跌34.4%。中国A股市场杠杆驱动的泡沫破裂，中国人民银行于2015年8月意外宣布人民币贬值，大宗商品价格下挫。美元走强进一步压制了以美元计价的新兴市场资产，美联储迈向自2006年以来的首次加息（于2015年12月落地）。新兴市场货币普遍走弱，使美元计价跌幅远超本地指数所显示的幅度。",
+          "drivers": [
+            "China A-share bubble burst & August 2015 yuan devaluation",
+            "Commodity weakness (oil, copper, iron ore)",
+            "Fed first-hike approach, USD strength",
+            "EM capital outflows & currency depreciation"
+          ],
+          "prev_key": "2015-04",
+          "prev_key_chain": [
+            "2015-04"
+          ],
+          "reason": "no turn within tolerance",
+          "status": "orphaned",
+          "title": "China Bust & Dollar Squeeze",
+          "title_zh": "中国泡沫破裂与美元挤压"
+        }
+      }
+    },
+    "ilf": {
+      "legs": {
+        "2020-03": {
+          "body": "From March 2020 to June 2021, ILF rallied about 113% as commodity prices surged on China's infrastructure stimulus and a global manufacturing rebound. Iron ore rose toward and past $200/t and copper hit multi-year highs, lifting Vale and the broader complex. The BRL partly recovered from its 2020 lows, supporting USD returns, and the region's agricultural exporters benefited from robust Chinese demand.",
+          "body_zh": "从2020年3月至2021年6月，ILF反弹约113%，大宗商品价格在中国基础设施刺激和全球制造业反弹推动下激增。铁矿石升向并突破200美元/吨，铜价创多年新高，提振淡水河谷及整个大宗商品板块。雷亚尔从2020年低位部分回升，支撑美元回报，本地区农产品出口商受益于中国旺盛需求。",
+          "drivers": [
+            "Iron ore surge toward $200/t on China stimulus",
+            "Copper at multi-year highs",
+            "BRL partial recovery",
+            "Strong Chinese demand for the region's exports"
+          ],
+          "prev_key": "2020-03",
+          "prev_key_chain": [
+            "2020-03"
+          ],
+          "reason": "collided onto 2020-03-23 (already bound)",
+          "status": "orphaned",
+          "title": "Commodity supercycle recovery",
+          "title_zh": "大宗商品超级周期复苏"
+        }
+      }
+    },
+    "vxus": {
+      "legs": {
+        "2021-09": {
+          "body": "The Fed's hawkish pivot and the fastest hiking cycle in four decades pushed the DXY to a 20-year high by late 2022, a severe FX headwind for VXUS. Russia's February 2022 invasion of Ukraine delivered an asymmetric energy shock to gas-dependent Europe, compressing equity multiples; the euro fell below parity with the dollar in July 2022, and EM currencies buckled under tighter global financial conditions. The leg fell roughly 29% over about 13 months.",
+          "body_zh": "美联储鹰派转向及四十年来最快的加息周期将美元指数推至2022年底的20年高位，对VXUS形成严重汇率逆风。2022年2月俄罗斯入侵乌克兰对依赖天然气的欧洲造成非对称能源冲击，压制股票估值倍数；2022年7月欧元兑美元跌破平价，全球金融条件收紧令新兴市场货币承压。该下行段历时约13个月，累计跌幅约29%。",
+          "drivers": [
+            "Fed fastest hiking cycle in 40 years, DXY 20-year high",
+            "Russia-Ukraine energy shock hitting Europe",
+            "EUR/USD below parity July 2022",
+            "EM FX buckling under tighter conditions"
+          ],
+          "prev_key": "2021-09",
+          "prev_key_chain": [
+            "2021-09"
+          ],
+          "reason": "no turn within tolerance",
+          "status": "orphaned",
+          "title": "Fed tightening, strong dollar, energy shock",
+          "title_zh": "美联储收紧，美元走强，能源冲击"
+        }
+      }
+    }
+  },
+  "epoch": "price_c4414dcb",
+  "prev_epoch": "tr_v0",
+  "sectors": {
+    "ewi": {
+      "legs": {
+        "2021-11": {
+          "body": "From November 2021 into October 2022 EWI fell about 35%. The ECB wound down PEPP and pivoted toward rate hikes by mid-2022, while the Russia-Ukraine war drove an energy shock that pressured Italy's external balance. Draghi's government collapsed in July 2022, bringing snap elections and renewed political risk. EUR/USD fell from roughly 1.13 to near parity (about 0.97), amplifying the USD-denominated loss.",
+          "body_zh": "2021年11月至2022年10月，EWI下跌约35%。欧央行结束PEPP并于2022年中转向加息，俄乌战争引发的能源冲击令意大利对外平衡承压。2022年7月德拉吉政府倒台，触发提前大选与政治风险回归。欧元/美元从约1.13跌至接近平价（约0.97），放大以美元计价的跌幅。",
+          "drivers": [
+            "ECB ended PEPP and turned to rate hikes — policy tailwind reversed",
+            "Russia-Ukraine war energy shock hurt Italy's external balance",
+            "Draghi government collapse July 2022 — snap elections, political uncertainty",
+            "EUR/USD fell toward parity, amplifying the USD-denominated drawdown"
+          ],
+          "drivers_zh": [
+            "欧央行结束PEPP并转向加息，政策顺风逆转",
+            "俄乌战争能源冲击拖累意大利对外平衡",
+            "2022年7月德拉吉政府倒台，触发提前大选与政治不确定性",
+            "欧元/美元跌向平价，放大以美元计价跌幅"
+          ],
+          "prev_key": "2021-11",
+          "prev_key_chain": [
+            "2021-11"
+          ],
+          "reason": "no turn within tolerance",
+          "status": "orphaned",
+          "title": "ECB Tightening & Political Risk Return",
+          "title_zh": "欧央行收紧与政治风险回归"
+        }
+      }
+    },
+    "ews": {
+      "legs": {
+        "2011-10": {
+          "body": "From October 2011 through mid-2014, EWS climbed about 49% as global risk appetite recovered on central-bank liquidity support and a steadier China growth outlook. Singapore's banks and trade-linked names benefited from improving regional activity, and the SGD held broadly stable to slightly firmer against the USD, adding a modest currency tailwind to dollar-denominated returns.",
+          "body_zh": "2011 年 10 月至 2014 年中，受全球央行流动性支持及中国增长预期趋稳提振，全球风险偏好回升，EWS 上涨约 49%。新加坡银行及贸易相关个股受益于区域活动改善，新加坡元对美元维持稳中略升，为美元计价回报提供温和汇率顺风。",
+          "drivers": [
+            "Central-bank liquidity support",
+            "Steadier China growth outlook",
+            "Improving regional activity",
+            "SGD broadly stable to firmer vs USD"
+          ],
+          "drivers_zh": [
+            "全球央行流动性支持",
+            "中国增长预期趋稳",
+            "区域活动改善",
+            "新加坡元对美元稳中略升"
+          ],
+          "prev_key": "2011-10",
+          "prev_key_chain": [
+            "2011-10"
+          ],
+          "reason": "collided onto 2011-10-03 (already bound)",
+          "status": "orphaned",
+          "title": "Post-Trough Asian Risk Recovery",
+          "title_zh": "触底后亚洲风险资产复苏"
+        },
+        "2020-03": {
+          "body": "From March 2020 to November 2021, EWS gained about 67% as global liquidity flooded back and Singapore's banks stabilized then resumed dividend growth. Improving regional trade and a broad reopening recovery supported earnings. The SGD recovered alongside the global reflation trade, supporting USD returns.",
+          "body_zh": "2020 年 3 月至 2021 年 11 月，全球流动性大幅回涌，新加坡银行股息企稳后重回增长，EWS 上涨约 67%。区域贸易改善及广泛的重启复苏支撑盈利，新加坡元随全球再通胀交易回升，美元计价回报同步改善。",
+          "drivers": [
+            "Global QE liquidity surge",
+            "Singapore bank dividend recovery",
+            "Regional trade & reopening recovery",
+            "SGD reflation appreciation"
+          ],
+          "drivers_zh": [
+            "全球量化宽松推动流动性回升",
+            "新加坡银行股息恢复增长",
+            "区域贸易与重启复苏",
+            "新加坡元随再通胀回升"
+          ],
+          "prev_key": "2020-03",
+          "prev_key_chain": [
+            "2020-03"
+          ],
+          "reason": "collided onto 2020-03-23 (already bound)",
+          "status": "orphaned",
+          "title": "Post-COVID Liquidity Recovery",
+          "title_zh": "疫后流动性复苏"
+        }
+      }
+    },
+    "eza": {
+      "legs": {
+        "2015-04": {
+          "body": "From April 2015 to January 2016, EZA fell 45% in one of its sharpest USD drawdowns. China's industrial slowdown crushed commodity prices globally, while South Africa was hit by drought and electricity shortages. Domestically, President Zuma's abrupt December 2015 firing of Finance Minister Nhlanhla Nene sent the rand to record lows — past R15 per dollar — amplifying the equity loss for USD investors.",
+          "body_zh": "2015年4月至2016年1月，EZA以美元计价下跌45%，是该ETF历史上最大跌幅之一。中国工业放缓重创全球大宗商品价格，南非同期遭遇干旱与电力短缺。国内方面，祖马总统于2015年12月突然解除财政部长尼内职务，兰特跌至历史低位、跌破15兑1美元，进一步放大了美元投资者的损失。",
+          "drivers": [
+            "China commodity demand collapse",
+            "ZAR crash on Nhlanhla Nene firing",
+            "South Africa drought & load-shedding",
+            "Global EM risk-off"
+          ],
+          "drivers_zh": [
+            "中国大宗商品需求崩溃",
+            "解除尼内职务引发兰特崩跌",
+            "南非干旱与电力短缺",
+            "全球新兴市场避险"
+          ],
+          "prev_key": "2015-04",
+          "prev_key_chain": [
+            "2015-04"
+          ],
+          "reason": "no turn within tolerance",
+          "status": "orphaned",
+          "title": "Commodity Crash & ZAR Slump",
+          "title_zh": "大宗商品崩溃与兰特急跌"
+        }
+      }
+    }
+  }
+}

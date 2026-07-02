@@ -2109,7 +2109,8 @@ def bottom_confidence_fields(bc: dict) -> dict:
 def analyze(close: pd.Series, high: pd.Series | None = None,
             kind: str = "equity", liquidity: str | None = None,
             macro_drag: float | None = None, macro_beta: float = 0.0,
-            vix_ctx: dict | None = None, vol_regime: dict | None = None) -> dict:
+            vix_ctx: dict | None = None, vol_regime: dict | None = None,
+            price: pd.Series | None = None) -> dict:
     """`liquidity` = live US net-liquidity regime ("expanding"/"contracting"/
     "neutral", from engine.regime.liquidity_overlay), threaded into the ladder as
     an orthogonal macro conviction modifier. None => no liquidity context (keeps
@@ -2124,15 +2125,32 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
     `vol_regime` = the published INDEX vol-regime snapshot (engine.vol_regime.published_snapshot:
     {regime, scored_score, scored_active, vol_target_scalar, ...}). In a risk-off kill-switch
     regime it adds a UNIFORM, subtract-only, buy-setup-only sizing caution (deepened only when its
-    validation gate is open). Defaults keep every existing caller unchanged."""
-    cyc = cycle_state(close, high, kind)
+    validation gate is open). Defaults keep every existing caller unchanged.
+
+    `price` (W2.2 substrate seam, ruling A13 — D4-owned, D1-reviewed) = the STRUCTURE-MATH
+    basis series (split-adjusted, dividend-UNadjusted `close_price`).  When supplied, the
+    structure-sensitive pieces — trough/pivot detection, DCL invalidation levels, the
+    failed-cycle test (`cycle_state`, `signal_age`), and the drawdown-from-200d washout
+    read — run on `price`, while the MACD / StochRSI / RSI momentum stats (`mtf_snapshot`,
+    `early_signals`) stay on the passed `close` (the TR series, so a return/momentum stat
+    keeps dividend fidelity).  This is D4 §7's structure-vs-momentum split.
+
+    Default `price=None` reproduces the CURRENT behaviour BYTE-IDENTICALLY: everything runs
+    on `close`.  This is the substrate seam ONLY — the split is a basis change, not an algo
+    change; the momentum functions are unaffected and every structure function is called
+    exactly as before, just on a different series.  D1 owns cycles.py conceptually; this
+    change adds a substrate parameter and its wiring, nothing more."""
+    # STRUCTURE basis: price when supplied (structure math is dividend-un-inflated), else
+    # close (byte-identical legacy path).  MOMENTUM always runs on `close` (the TR series).
+    struct = price if price is not None else close
+    cyc = cycle_state(struct, high, kind)
     mtf = mtf_snapshot(close, kind)
     early = early_signals(close, cyc, mtf)
     lad = ladder_state(cyc, mtf, early, liquidity=liquidity,
                        macro_drag=macro_drag, macro_beta=macro_beta, vol_regime=vol_regime)
-    wo = washout(close, cyc, vix_ctx) if cyc else {}
+    wo = washout(struct, cyc, vix_ctx) if cyc else {}
     if lad:
-        age = signal_age(close, lad["state"], high, kind)
+        age = signal_age(struct, lad["state"], high, kind)
         if age:
             lad.update(signal_age_fields(lad["state"], lad["score"], age))
         regime = {"regime": lad.get("regime", "neutral")}
@@ -2147,7 +2165,8 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
         # filter (weekly bear-recovering/basing + 3-day fresh-from-oversold + daily just-
         # crossed/about), excluding the overextended chase, so a mid-weekly-bear falling
         # knife OR an already-run leader can no longer be surfaced as a buy card.
-        cc = close.dropna()
+        # ext_pct is a 200d-DISTANCE (a structure / drawdown read) → use the structure basis.
+        cc = struct.dropna()
         ext_pct = None
         if len(cc) >= 200:
             sma200 = float(cc.iloc[-200:].mean())

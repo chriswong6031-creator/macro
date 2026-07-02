@@ -116,9 +116,17 @@ def _agg_accent(i: int, n: int) -> str:
 
 
 def _build_one(ticker: str, meta: dict, closes: pd.DataFrame, win_start: pd.Timestamp,
-               *, kind: str, group: str, accent: str) -> dict | None:
+               *, kind: str, group: str, accent: str,
+               closes_px: pd.DataFrame | None = None) -> dict | None:
     """One market ETF -> its full cycle record, off the ETF's own USD close tape.
-    Reuses engine.sector_cycles._record_core (identical turn/phase/projection math)."""
+    Reuses engine.sector_cycles._record_core (identical turn/phase/projection math).
+
+    W2.2: structure math runs on the ETF's USD close_price (from `closes_px`) when
+    present; RS-vs-SPY stays on the TR panel.  A ticker absent from the price panel is
+    stamped tr_fallback (declared close_price gap) — never silent.  NB: the USD-ETF price
+    basis is still USD-denominated (FX decomposition to a local-currency cycle is the
+    SEPARATE D4-W5 wave); W2.2 only removes the dividend-total-return inflation from the
+    structure math, not the FX confound."""
     full = closes[ticker].dropna() if ticker in closes else pd.Series(dtype=float)
     if len(full) < 300:
         log.warning("intl_cycles: %s too thin (%d rows) — skipped", ticker, len(full))
@@ -127,7 +135,9 @@ def _build_one(ticker: str, meta: dict, closes: pd.DataFrame, win_start: pd.Time
     # (Switzerland) but a wild EM (Brazil/Turkey) swings that much in weeks — scale the
     # threshold up with realised vol so the turn count stays an intermediate-cycle read,
     # not noise. Calm markets stay near the 14% baseline.
-    core = sc._record_core(full, win_start, full.index[-1], pct=sc._zz_pct_for(full))
+    price = sc._price_series(closes_px, ticker, full)
+    core = sc._record_core(full, win_start, full.index[-1], pct=sc._zz_pct_for(full),
+                           price=price)
     if core is None:
         return None
     flag = meta.get("flag", "")
@@ -163,8 +173,17 @@ def compute(asof: str | None = None) -> dict | None:
         return None
     if closes is None or closes.empty:
         return None
+    # W2.2 price-basis panel for the structure math (never fatal).
+    try:
+        closes_px = yahoo_closes(basis="price")
+    except Exception as e:  # noqa: BLE001
+        log.warning("intl_cycles: cannot load price-basis panel (%s) — structure math "
+                    "falls back to TR (labeled tr_fallback)", e)
+        closes_px = None
     if asof:
         closes = closes[closes.index <= pd.Timestamp(asof)]
+        if closes_px is not None:
+            closes_px = closes_px[closes_px.index <= pd.Timestamp(asof)]
     last_ts = closes.index[-1]
     win_start = last_ts - pd.DateOffset(years=sc.WINDOW_YEARS)
 
@@ -177,7 +196,8 @@ def compute(asof: str | None = None) -> dict | None:
         for k, tk in enumerate(tks):
             try:
                 rec = _build_one(tk, COUNTRIES[tk], closes, win_start, kind="sector",
-                                 group=region, accent=_accent(region, k, len(tks)))
+                                 group=region, accent=_accent(region, k, len(tks)),
+                                 closes_px=closes_px)
             except Exception as e:  # noqa: BLE001
                 log.exception("intl_cycles: %s failed: %s", tk, e)
                 rec = None
@@ -196,7 +216,7 @@ def compute(asof: str | None = None) -> dict | None:
         try:
             rec = _build_one(tk, AGGREGATES[tk], closes, win_start, kind="basket",
                              group=AGGREGATES[tk].get("group", "Aggregate"),
-                             accent=_agg_accent(i, len(akeys)))
+                             accent=_agg_accent(i, len(akeys)), closes_px=closes_px)
         except Exception as e:  # noqa: BLE001
             log.exception("intl_cycles: aggregate %s failed: %s", tk, e)
             rec = None

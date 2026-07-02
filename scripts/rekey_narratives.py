@@ -65,13 +65,13 @@ ENGINES: dict[str, dict] = {
     "sector_cycles": {
         "dir":       "sector_cycles",
         "has_dna":   True,
-        "basis":     "close_tr",
+        "basis":     "close_price",   # W2.2: flipped to the price structure basis.
         "zz_pct":    14.0,
     },
     "country_cycles": {
         "dir":       "country_cycles",
         "has_dna":   True,
-        "basis":     "close_tr",
+        "basis":     "close_price",   # W2.2: flipped to the price structure basis.
         "zz_pct":    14.0,
     },
     "china_sector_cycles": {

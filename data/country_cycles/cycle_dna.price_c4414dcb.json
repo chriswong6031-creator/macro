@@ -1,0 +1,977 @@
+{
+  "_rekey_stats": {
+    "exact": 0,
+    "legless_carried": 31,
+    "new": 0,
+    "orphaned": 0,
+    "series": 31,
+    "shifted": 0,
+    "turn_keyed": false,
+    "worst_shifts": []
+  },
+  "baskets": {
+    "aaxj": {
+      "drivers": [
+        "China policy cycle (credit, stimulus, regulatory stance)",
+        "Taiwan and Korea semiconductor capex wave (AI, memory)",
+        "USD direction vs Asian currencies (CNY, KRW, TWD)",
+        "EM global risk appetite and Fed rate trajectory",
+        "India structural growth as a diversifying weight"
+      ],
+      "drivers_zh": [
+        "中国政策周期（信贷、刺激、监管立场）",
+        "台湾与韩国半导体资本开支浪潮（AI、存储）",
+        "美元方向对亚洲货币（人民币、韩元、台币）的影响",
+        "新兴市场全球风险偏好与美联储利率路径",
+        "印度结构性增长作为分散化权重"
+      ],
+      "summary": "AAXJ is a high-beta, tech-heavy Asia ex-Japan composite. China is the largest single weight (roughly a third including Hong Kong), followed by Taiwan, India and South Korea; by mid-2026 Taiwan's weight has risen materially on the semiconductor surge. Its cycle is structurally driven by three interlocking forces: China's policy and growth cycle, the global semiconductor capex wave anchored in Taiwan and Korea, and the USD and EM liquidity backdrop. Bull legs tend to begin when global risk appetite recovers, China growth expectations stabilise or re-accelerate, and the dollar softens; bear legs reflect the reverse — Fed tightening compressing EM multiples, China regulatory or growth shocks, or Taiwan/Korea tech-cycle downturns. Because the ETF is USD-denominated, Asian currency depreciation compresses USD returns even when local markets hold up. Tops have historically coincided with China credit tightening, US rate peaks turning into tighter-for-longer rhetoric, or sector blow-offs in tech. Troughs have been carved by extreme EM risk-off, China stimulus signals, or credible Fed pivot expectations.",
+      "summary_zh": "AAXJ是一只高贝塔、科技重仓的亚洲（除日本）综合ETF。中国是单一最大权重（含香港约占三分之一），其后依次为台湾、印度与韩国；到2026年年中，台湾权重因半导体行情而明显上升。其周期结构由三股力量主导：中国政策与增长周期、以台湾和韩国为核心的全球半导体资本开支浪潮，以及美元与新兴市场流动性环境。牛市通常在全球风险偏好回暖、中国增长预期企稳或上修、美元走弱三者共振时启动；熊市则是上述条件逆转——美联储紧缩压制新兴市场估值、中国监管或增长冲击、或台韩科技周期下行。由于ETF以美元计价，亚洲货币贬值（人民币、韩元、台币）即便本地市场企稳，也会明显压缩美元回报。历史顶部往往与中国信贷收紧、美国利率由峰值转向更长时间高位的预期、或科技板块的阶段性泡沫破裂相吻合；底部则由极端新兴市场风险厌恶、中国刺激信号或美联储明确转向预期所铸就。",
+      "top_signals": [
+        "China credit impulse turning negative or a major regulatory shock",
+        "USD breaking higher on a hawkish Fed surprise, compressing EM multiples",
+        "Taiwan/Korea semiconductor order books rolling over after the AI capex peak",
+        "AAXJ position above 85/100 with RS already fading vs SPY"
+      ],
+      "top_signals_zh": [
+        "中国信贷冲量转负或重大监管冲击",
+        "美联储超预期鹰派推动美元走强，压制新兴市场估值",
+        "AI资本开支峰值后台韩半导体订单回落",
+        "AAXJ位置超过85/100且相对标普500相对强度已见顶回落"
+      ]
+    },
+    "eem": {
+      "drivers": [
+        "USD direction (DXY inverse)",
+        "China policy & credit cycle",
+        "EM-Asia semiconductor demand (TSMC/Samsung/SK Hynix)",
+        "Commodity prices (oil, metals; LatAm/EMEA weight)",
+        "Fed rate path & global risk appetite",
+        "EM currency basket vs USD"
+      ],
+      "drivers_zh": [
+        "美元方向（DXY反向驱动）",
+        "中国政策与信贷周期",
+        "亚洲半导体需求（台积电/三星/SK海力士）",
+        "大宗商品价格（原油、金属，影响拉美/EMEA权重）",
+        "美联储利率路径与全球风险偏好",
+        "新兴市场货币篮子对美元走势"
+      ],
+      "summary": "EEM is a market-cap-weighted proxy for the emerging world, dominated by China (roughly 25-30%), Taiwan (around 20%), India (around 18%), and South Korea (around 12%), making it simultaneously a bet on Asian technology supply chains, Chinese policy cycles, and commodity-linked EM currencies. Its cycles are structurally driven by the US dollar — a weakening dollar has tended to be a prerequisite for a durable EM bull leg, easing dollar-denominated debt burdens and drawing capital toward higher-yielding EM assets. Peaks tend to cluster around Fed tightening cycles and/or China credit slowdowns; troughs typically require both a Fed pivot signal and evidence of stabilizing Chinese growth. The growing weight of Taiwan and South Korea tech means semiconductor cycles now co-drive EEM alongside the traditional commodity and EM-currency channels. FX amplification is a defining feature: every leg in USD terms combines local-equity moves with the EM currency basket versus the dollar.",
+      "summary_zh": "EEM是新兴世界的市值加权综合代理，目前由中国（约25-30%）、台湾（约20%）、印度（约18%）、韩国（约12%）主导，因此同时是亚洲科技供应链、中国政策周期与大宗商品挂钩型新兴市场货币的组合押注。其周期结构上由美元主导——美元走弱往往是持续性新兴市场牛市腿的先决条件，因为它能减轻美元计价债务负担并将资本吸引至收益率更高的新兴市场资产。顶部往往聚集在美联储紧缩周期和/或中国信贷放缓附近；底部通常需要美联储政策转向信号与中国增长企稳的双重确认。随着台湾和韩国科技权重提升，半导体周期现在与传统大宗商品和新兴市场货币渠道共同驱动EEM。汇率放大效应是其定义性特征：每一段以美元计量的涨跌，均叠加了本地股票走势与新兴市场货币篮子对美元的变化。",
+      "top_signals": [
+        "Peak flags: Fed pivots to tightening, USD (DXY) breaks higher, China credit impulse turns negative, EM equity flows reverse to outflows",
+        "Trough flags: Fed signals easing or pause, DXY rolls over from a multi-month high, China announces credible stimulus, commodity prices stabilize after a correction"
+      ],
+      "top_signals_zh": [
+        "顶部信号：美联储转向紧缩、美元指数向上突破、中国信贷脉冲转负、新兴市场资金流出",
+        "底部信号：美联储暗示宽松或暂停加息、美元指数从多月高位回落、中国推出可信刺激政策、大宗商品价格在调整后企稳"
+      ]
+    },
+    "efa": {
+      "drivers": [
+        "EUR/USD and JPY/USD FX translation",
+        "ECB/BoJ vs Fed policy differential",
+        "Global risk appetite and EM spillover",
+        "European sovereign and banking stress",
+        "Energy and commodity price cycles",
+        "US policy uncertainty driving de-dollarisation flows"
+      ],
+      "drivers_zh": [
+        "欧元/美元与日元/美元汇率转换",
+        "欧央行/日央行与美联储政策差异",
+        "全球风险偏好与新兴市场溢出",
+        "欧洲主权债务与银行业压力",
+        "能源与大宗商品价格周期",
+        "美国政策不确定性驱动去美元化资金流"
+      ],
+      "summary": "EFA is structurally a euro-centric, USD-sensitive multi-bloc basket -- roughly two-thirds Europe, about one-fifth Japan, and the remainder in other Pacific markets. Its cycle is governed by three interlocking forces: EUR/USD and JPY/USD exchange rates (which translate local-currency returns into USD gains or losses), ECB and BoJ policy posture relative to the Fed, and the global risk-appetite cycle that sets how much premium investors assign to cheaper non-US valuations. Up-legs have required at least one of a falling dollar, a European re-rating catalyst (an ECB backstop or fiscal expansion), or a synchronised global growth upswing; down-legs have come from dollar strength, European financial or energy stress, or broad risk-off episodes. The index's heavy bank, industrial, and energy weighting means European sovereign stress and commodity shocks hit it disproportionately hard.",
+      "summary_zh": "EFA结构上以欧元区为核心、对美元高度敏感，约三分之二为欧洲、约五分之一为日本、其余为其他亚太市场。其周期由三大相互交织的力量驱动：欧元/美元和日元/美元汇率（将本币回报转换为美元收益或损失）、欧央行与日央行相对美联储的政策立场，以及决定投资者愿为非美市场估值折价给予多少溢价的全球风险偏好周期。上升腿通常至少需要美元走弱、欧洲重新定价催化剂（欧央行背书或财政扩张）或同步全球增长三者之一；下行腿则源于美元走强、欧洲金融或能源压力或全面避险情绪。该指数银行、工业与能源权重偏高，欧洲主权债务压力和大宗商品冲击对其打击尤为明显。",
+      "top_signals": [
+        "Peak cue: EUR/USD stalls or reverses after extended dollar weakness; ECB shifts hawkish",
+        "Peak cue: EAFE valuation premium vs history closes; European banks underperform",
+        "Trough cue: EUR/USD bottoms alongside European credit-spread compression",
+        "Trough cue: Global PMI breadth turns up; BoJ and ECB both on easing path"
+      ],
+      "top_signals_zh": [
+        "见顶信号：欧元/美元在美元持续走弱后停滞或反转；欧央行转向鹰派",
+        "见顶信号：EAFE估值溢价相对历史收窄；欧洲银行股落后",
+        "见底信号：欧元/美元触底，同时欧洲信用利差收窄",
+        "见底信号：全球PMI广度回升；日央行与欧央行均处于宽松路径"
+      ]
+    },
+    "ilf": {
+      "drivers": [
+        "Brazil weight ~50-55%: BRL/USD is the dominant FX lever on USD returns",
+        "Commodity complex: iron ore and copper (Vale), oil (Petrobras) drive earnings",
+        "Global risk appetite: EM-vs-DM rotation determines flows",
+        "Brazil political/fiscal risk: spending discipline and elections are the key swing factor",
+        "China demand: marginal buyer of iron ore, copper, and soybeans from the region"
+      ],
+      "drivers_zh": [
+        "巴西约占50-55%权重：雷亚尔/美元是美元回报的主导汇率杠杆",
+        "大宗商品组合：铁矿石与铜（淡水河谷）、原油（巴西国家石油公司）驱动盈利",
+        "全球风险偏好：新兴市场与发达市场轮动决定资金流向",
+        "巴西政治/财政风险：支出纪律与选举是关键摆动因素",
+        "中国需求：本地区铁矿石、铜与大豆的边际买家"
+      ],
+      "summary": "ILF is a USD-priced proxy for Latin American large-caps (S&P Latin America 40), with Brazil typically ~50-55% of weight, followed by Mexico and Chile. Its largest constituents are Brazilian miners, energy, and banks — Vale, Petrobras, Itau, Nu Holdings — so every cycle is a compound of local equity moves AND the BRL/MXN versus the USD: a depreciating real can erase local-currency gains in dollar terms. The index is deeply commodity-sensitive, with iron ore, oil, and copper driving earnings at the top names, and China is the marginal buyer of those exports. The two most reliable regime-switchers are Brazilian political/fiscal risk (corruption cycles, fiscal slippage) and global EM-vs-DM risk appetite. Tops tend to coincide with currency exhaustion and fiscal slippage; troughs tend to coincide with commodity washouts and political/fiscal crisis climaxes.",
+      "summary_zh": "ILF是以美元计价的拉丁美洲大盘股代理工具（标普拉美40指数），巴西通常占权重约50-55%，其次为墨西哥和智利。最大成分股为巴西矿业、能源与银行股——淡水河谷、巴西国家石油公司、伊塔乌、Nu Holdings——因此每一个周期都是本地股市表现与雷亚尔/比索兑美元汇率变动的叠加：雷亚尔贬值可将本币涨幅在美元口径下抹去。指数对大宗商品高度敏感，铁矿石、原油和铜主导头部成分股盈利，而中国是这些出口品的边际买家。最可靠的两个政权切换器是巴西政治/财政风险（腐败周期、财政滑坡）以及全球新兴市场与发达市场的风险偏好。顶部往往与货币耗尽和财政滑坡同步；底部则倾向于与大宗商品深度洗盘及政治/财政危机高峰重合。",
+      "top_signals": [
+        "BRL/USD trend reversal: the real stabilizing after a selloff is the primary trough signal",
+        "China industrial activity: PMI expansion lifts iron ore and copper demand, supporting the region",
+        "Brazil fiscal/political shock: fiscal-rule breach or sovereign downgrade risk marks distribution tops",
+        "Commodity-price exhaustion at cycle highs combined with BRL weakness flags a coming downturn"
+      ],
+      "top_signals_zh": [
+        "雷亚尔/美元趋势反转：雷亚尔在抛售后企稳是主要底部信号",
+        "中国工业活动：制造业PMI扩张提振铁矿石和铜需求，支撑整个地区",
+        "巴西财政/政治冲击：财政规则突破或主权评级下调风险标志着分配顶部",
+        "大宗商品价格在周期高位耗尽叠加雷亚尔走弱，预示即将到来的下行"
+      ]
+    },
+    "vgk": {
+      "drivers": [
+        "EUR/USD and GBP/USD FX transmission",
+        "ECB policy cycle and real-rate differential vs Fed",
+        "European energy import costs (gas and oil prices)",
+        "China demand for European luxury goods and capital goods",
+        "Global risk-on/risk-off rotation into cyclicals and banks"
+      ],
+      "drivers_zh": [
+        "欧元/美元与英镑/美元汇率传导",
+        "欧央行政策周期及与美联储的实际利率差",
+        "欧洲能源进口成本（天然气与油价）",
+        "中国对欧洲奢侈品及资本品的需求",
+        "全球风险偏好轮动对周期股与银行股的影响"
+      ],
+      "summary": "VGK is a broad developed-Europe basket spanning the UK, France, Germany, Switzerland, the Netherlands, and the Nordic markets, making it acutely sensitive to three interlocking forces: the EUR/USD and GBP/USD exchange rate (which amplifies or negates local equity moves for USD-based holders), the global risk-appetite cycle (European cyclicals, banks, and luxury goods dominate the index), and energy-price shocks given the continent's import dependence. Tops have coincided with stretched EUR valuations, hawkish ECB pivots, and global growth scares, while troughs have aligned with peak pessimism on European sovereign risk, energy crises, or recession fears - moments where both sentiment and currency were simultaneously washed out. The September 2022 to February 2026 advance is the longest sustained up-move in the 15-year window, built on the energy-crisis floor, Chinese reopening demand for European luxury and industrials, and persistent USD softening that amplified USD-denominated returns.",
+      "summary_zh": "VGK涵盖英国、法国、德国、瑞士、荷兰及北欧等主要发达欧洲市场，其走势受三大核心力量主导：欧元/美元与英镑/美元汇率（可放大或抵消本地股票涨跌）、全球风险偏好周期（欧洲周期股、银行股与奢侈品股在指数中占主导），以及能源价格冲击（欧洲高度依赖能源进口）。历史顶部往往与欧元估值偏高、欧央行鹰派转向及全球增长担忧同步出现；历史底部则一致出现在欧洲主权风险、能源危机或衰退恐慌情绪极度悲观之际，彼时股票与货币双双超卖。2022年9月至2026年2月的上涨是15年窗口内持续时间最长的走势，由能源危机筑底、中国重开拉动欧洲奢侈品与工业品需求以及美元持续走软共同驱动。",
+      "top_signals": [
+        "EUR/USD reaching multi-year highs flags currency stretch near tops",
+        "ECB pivoting to rate cuts alongside weakening PMIs flags trough setup",
+        "Energy price spikes compressing European margins signal drawdown risk",
+        "China stimulus announcements catalyze European luxury and industrial re-ratings"
+      ],
+      "top_signals_zh": [
+        "欧元/美元触及多年高位，意味着顶部附近汇率已过度拉伸",
+        "欧央行在PMI走弱时转向降息，往往是底部形成的先行信号",
+        "能源价格飙升压缩欧洲企业利润率，预示回调风险上升",
+        "中国刺激政策公告往往催化欧洲奢侈品与工业股的重新定价"
+      ]
+    },
+    "vpl": {
+      "drivers": [
+        "BOJ policy pivot (yield curve control, rate normalization path)",
+        "JPY/USD: yen moves amplify or compress USD returns",
+        "Japan corporate governance reform (ROE targets, buybacks)",
+        "Korea semiconductor/memory cycle (Samsung, SK Hynix)",
+        "Australia commodity cycle (iron ore, energy prices)",
+        "Global risk appetite for export cyclicals and broad USD direction"
+      ],
+      "drivers_zh": [
+        "日本央行政策转向（收益率曲线控制、利率正常化路径）",
+        "日元/美元：日元波动放大或压缩美元回报",
+        "日本公司治理改革（ROE目标、股票回购）",
+        "韩国半导体/存储周期（三星、SK海力士）",
+        "澳大利亚大宗商品周期（铁矿石、能源价格）",
+        "全球对出口周期股的风险偏好与美元整体方向"
+      ],
+      "summary": "VPL tracks the FTSE Developed Asia Pacific index: Japan dominates at roughly 56% of weight, with South Korea (~18%), Australia (~16%), plus smaller Hong Kong, Singapore, and New Zealand sleeves. It is structurally a Japan-plus-Korea-tech-plus-Australia-commodity proxy. Because it is a USD ETF, every leg compounds the local equity move with the yen (and to a lesser degree the won and Aussie dollar) versus the dollar: when the yen weakens, USD returns are muted even as Tokyo rallies in local terms; when the yen strengthens, USD returns overshoot or get crushed depending on direction. Japan's cycle is driven by BOJ policy pivots, global risk appetite for export cyclicals (autos, machinery, semiconductors), and the pace of corporate governance reform. Korea adds the global semiconductor/memory cycle (Samsung, SK Hynix). Australia adds commodity sensitivity (iron ore, energy) and RBA dynamics. Troughs in VPL tend to coincide with global risk-off events, while peaks have repeatedly clustered around BOJ tightening signals or sharp yen-appreciation episodes that compress USD returns even when local markets hold.",
+      "summary_zh": "VPL追踪富时发达亚太指数：日本以约56%的权重占主导，韩国（约18%）、澳大利亚（约16%），以及较小的香港、新加坡和新西兰部分。本质上是「日本+韩国科技+澳大利亚大宗商品」的代理组合。由于是美元ETF，每一段走势的美元回报都叠加了日元（以及程度较小的韩元和澳元）兑美元的汇率影响：日元走弱时即便东京本地上涨，美元回报也会受压；日元走强时，美元回报则会随方向被放大或被压垮。日本周期由日本央行政策转向、全球对出口周期股（汽车、机械、半导体）的风险偏好以及公司治理改革进程驱动。韩国带来全球半导体/存储周期（三星、SK海力士）。澳大利亚带来大宗商品敏感性（铁矿石、能源）和澳联储动态。VPL的低点往往与全球风险规避事件同步，而峰值则多次集中在日本央行紧缩信号或日元急升行情前后——即便本地市场企稳，美元回报也会被压缩。",
+      "top_signals": [
+        "Trough signal: global risk-off flight sells Pacific equities in tandem; yen often bid as a safe haven",
+        "Trough signal: BOJ leans dovish or delays normalization, lifting rate-sensitive sectors",
+        "Peak signal: sharp yen appreciation compresses USD returns even as local indices hold",
+        "Peak signal: BOJ tightening accelerates or global cyclical/semiconductor demand rolls over"
+      ],
+      "top_signals_zh": [
+        "低点信号：全球风险规避抛售令太平洋股市同步下跌，日元常获避险买盘",
+        "低点信号：日本央行转向偏鸽或推迟正常化，提振利率敏感板块",
+        "峰值信号：日元急升压缩美元回报，即便本地指数企稳",
+        "峰值信号：日本央行紧缩加速，或全球周期性/半导体需求见顶回落"
+      ]
+    },
+    "vxus": {
+      "drivers": [
+        "USD cycle: unhedged FX is the single largest performance multiplier",
+        "Global growth sync: outperforms when non-US PMIs converge upward with the US",
+        "Valuation spread vs SPY: wide ex-US discounts have historically preceded multi-year outperformance",
+        "EM currency beta: EM FX amplifies both drawdowns and recoveries",
+        "Policy divergence: Fed vs ECB/BOJ rate gaps drive relative flows"
+      ],
+      "drivers_zh": [
+        "美元周期：未对冲的汇率敞口是最大的业绩放大器",
+        "全球增长同步：非美PMI与美国同步回升时跑赢",
+        "相对SPY估值价差：非美大幅折价后历史上往往引发多年超额回报",
+        "新兴市场货币贝塔：新兴市场汇率对回调与复苏均有放大作用",
+        "政策分化：美联储与欧央行/日央行的利率差驱动相对资金流向"
+      ],
+      "summary": "VXUS is a broad all-world ex-US wrapper whose cycles are driven by three interlocking forces: the US dollar cycle, global growth synchronization, and ex-US versus US equity valuation spreads. Because the ETF is unhedged, every leg reflects local equity returns AND the net move of a trade-weighted foreign-currency basket versus the USD -- dollar bear phases amplify up-legs, dollar bull phases amplify down-legs. Tops tend to form when US growth and rates diverge upward from the rest of the world, lifting the dollar and compressing overseas multiples; troughs tend to coincide with a peaking dollar, a synchronized global recovery, and wide ex-US valuation discounts to US equities. Europe (the largest regional weight), Japan, and EM Asia are the biggest swing factors, and EM currencies add a second amplification layer that makes deep drawdowns sharper and early-cycle bounces steeper than a developed-market-only basket.",
+      "summary_zh": "VXUS是覆盖全球除美国全部资产的宽基ETF，其周期由三大相互交织的力量驱动：美元周期、全球经济增长同步性，以及非美相对美股的估值价差。由于该ETF不做货币对冲，每一个上行或下行段都同时反映本地股票回报与外汇兑美元的综合变动——美元熊市放大上涨、美元牛市放大下跌。顶部通常在美国增长与利率相对全球显著偏高时形成，推升美元并压制海外估值倍数；低谷则往往与美元见顶、全球同步复苏及非美相对美股估值大幅折价同步出现。欧洲（区域权重最大）、日本和亚洲新兴市场是三大摆动因子，新兴市场货币还提供第二层放大效应，使深度回调更陡峭、早周期反弹强于纯发达市场篮子。",
+      "top_signals": [
+        "Top signals: DXY turning to sustained strength + US-vs-rest-of-world growth divergence widening + ex-US earnings revisions rolling over",
+        "Trough signals: DXY rolling over from a multi-year high + synchronized global PMI upturn + ex-US P/E at a historically wide discount to the S&P 500"
+      ],
+      "top_signals_zh": [
+        "顶部信号：美元指数转入持续走强 + 美国与其他国家增长差距扩大 + 非美盈利预期下修",
+        "低谷信号：美元指数从多年高位回落 + 全球PMI同步回升 + 非美市盈率相对标普500折价扩大至历史极端水平"
+      ]
+    }
+  },
+  "detector_version": 2,
+  "epoch": "price_c4414dcb",
+  "note": "Cycle-DNA (structural drivers + top/trough tells) per market for country_cycles.html.",
+  "prev_epoch": "tr_v0",
+  "rekeyed_from": 1,
+  "sectors": {
+    "ech": {
+      "drivers": [
+        "Copper price cycle (global supply/demand + China buildout)",
+        "Chilean peso vs USD (amplifies commodity moves)",
+        "Political/policy risk (constitution, left-right regime shifts)",
+        "Lithium & battery metals demand (SQM weight)",
+        "China growth impulse (largest copper buyer)",
+        "Global risk appetite / EM risk-on/off flows"
+      ],
+      "drivers_zh": [
+        "铜价周期（全球供需与中国基建需求）",
+        "智利比索兑美元（放大大宗商品波动）",
+        "政治/政策风险（制宪进程、左右政府更替）",
+        "锂矿及电池金属需求（SQM权重）",
+        "中国经济增长冲量（最大铜买家）",
+        "全球风险偏好与新兴市场资金流向"
+      ],
+      "summary": "ECH is overwhelmingly a copper-and-peso proxy: Chile produces roughly one-quarter of the world's copper, and the ETF's materials and financials backbone means commodity cycles, not domestic earnings growth, dictate the multi-year swings. The USD-denominated return is a double lever — copper up tends to pull both Chilean equities and the Chilean peso higher, compounding gains; copper down reverses both. Political risk is a secondary but significant amplifier: the 2019 social uprising and the 2020-2023 constitutional rewrite saga repeatedly moved the peso and stretched ECH drawdowns and recoveries beyond what pure commodity mechanics would imply. Notably, markets treated the resolution of constitutional uncertainty (both referendum rejections, in 2022 and 2023) as a positive, since it removed the tail risk of radical mining and property reform. Tops tend to form when copper is elevated and political sentiment is buoyant; troughs are deepest when a commodity downturn coincides with domestic or global stress. Lithium (SQM) adds a second commodity dimension, tying the ETF to battery-metals demand as well.",
+      "summary_zh": "ECH 本质上是铜价与比索的双重代理：智利生产全球约四分之一的铜，ETF以材料和金融板块为主，意味着大宗商品周期而非国内盈利增长主导多年级别的涨跌。美元计价回报具有双重杠杆——铜价上涨往往同时推升智利股市与比索，收益叠加；铜价下跌则两者齐跌。政治风险是第二个重要放大器：2019年社会动荡与2020-2023年的制宪进程反复扰动比索，并将ECH的回撤与修复拉长至超出纯大宗商品逻辑的程度。值得注意的是，市场把制宪不确定性的消除（2022年与2023年两次公投否决）解读为利好，因为这消除了激进矿业与产权改革的尾部风险。顶部通常形成于铜价高位且政治情绪乐观之时；底部最深处往往是大宗商品下行与国内或全球压力叠加之际。锂矿（SQM）增添了第二个商品维度，令ETF同时受电池金属需求影响。",
+      "top_signals": [
+        "Copper at multi-year highs + CLP at a cyclical peak vs USD",
+        "Political uncertainty resolved + EM inflows surge",
+        "Constitutional referendum rejection removing far-left or far-right policy tail risk",
+        "ECH at 80-100 cycle position after an 80%+ run"
+      ],
+      "top_signals_zh": [
+        "铜价创多年新高 + 比索兑美元处于周期高位",
+        "政治不确定性消除 + 新兴市场资金大规模流入",
+        "制宪公投否决，消除极左或极右政策尾部风险",
+        "ECH周期位置升至80-100且涨幅已超80%"
+      ]
+    },
+    "eido": {
+      "drivers": [
+        "Rupiah/USD — dual equity+FX drag in every down-leg",
+        "Current-account deficit sensitivity to USD strength and capital flows",
+        "Commodity export cycle: coal, palm oil, nickel price regimes",
+        "Fiscal/policy credibility — populist spending and central-bank-independence fears raise the risk premium",
+        "EM risk-appetite: 'Fragile Five' archetype, high beta to global risk-off"
+      ],
+      "drivers_zh": [
+        "印尼盾/美元——每次下跌段的股票与汇率双重拖累",
+        "经常账户赤字对美元走强和资本流动的敏感性",
+        "大宗商品出口周期：煤炭、棕榈油、镍的价格周期",
+        "财政/政策公信力——民粹支出与央行独立性担忧推升风险溢价",
+        "新兴市场风险偏好：'脆弱五国'原型，对全球避险高度敏感"
+      ],
+      "summary": "Indonesia (EIDO) is the emerging-market cycle most dominated by a single structural vulnerability: the rupiah. The USD-listed ETF is a joint bet on Indonesian equities AND the rupiah vs the dollar, so every global risk-off episode that strengthens the dollar hits it from both directions at once, making it a textbook Fragile-Five high-beta name. Tops have formed when the current-account deficit widens amid USD strength and capital outflows; troughs emerge after the rupiah stabilizes, commodity prices recover, or domestic reform catalysts pull foreign capital back in. The deepest down-legs (2013 taper tantrum, 2014-15 commodity bear, 2026 fiscal-credibility shock) all paired currency weakness with falling local equities. Major up-legs have been commodity-led (coal, palm oil, nickel) combined with dollar softness or domestic reform. The ETF's multi-year USD return is negative, underscoring how persistent currency drag can overwhelm decent local-equity performance for dollar-based investors.",
+      "summary_zh": "印尼（EIDO）是新兴市场中最受单一结构性脆弱性主导的国家ETF：其周期高度受印尼盾左右。这只以美元计价的ETF本质上是印尼股票与印尼盾兑美元的双重押注，因此每次全球避险、美元走强，它就会同时遭受股票和汇率两个方向的冲击，是典型的'脆弱五国'高贝塔标的。历次顶部均在经常账户赤字扩大、美元走强及资本外流时形成；底部则往往在印尼盾企稳、大宗商品价格回升或国内改革催化剂重新吸引外资后出现。最深的下跌段（2013年缩减恐慌、2014-15年大宗商品熊市、2026年财政公信力冲击）均是汇率走弱叠加本地股票下跌。主要上升段则由大宗商品（煤炭、棕榈油、镍）景气叠加美元走软或国内改革驱动。该ETF多年美元计价总回报为负，深刻揭示了持续的汇率拖累如何抵消尚可的本地股票表现。",
+      "top_signals": [
+        "Rupiah stabilization + BI policy on hold signals trough exhaustion",
+        "Current-account deficit narrowing (commodity recovery or import compression) marks a cycle turn",
+        "Persistent USD strength + BI FX-reserve drawdown flags top/distribution",
+        "Foreign-outflow waves (index downgrades, policy-credibility shocks) accelerate down-legs"
+      ],
+      "top_signals_zh": [
+        "印尼盾企稳+印尼央行停止收紧，信号底部衰竭",
+        "经常账户赤字收窄（大宗商品回升或进口压缩）标志周期转折",
+        "美元持续走强+央行外汇储备消耗，是顶部/派发信号",
+        "外资流出潮（指数下调、政策公信力冲击）加速下跌段"
+      ]
+    },
+    "epol": {
+      "drivers": [
+        "Eurozone growth cycle",
+        "PLN/USD FX amplifier",
+        "NBP rate policy",
+        "Energy & commodity prices",
+        "EU fund flows",
+        "Geopolitical risk premium (Russia proximity)"
+      ],
+      "drivers_zh": [
+        "欧元区增长周期",
+        "兹罗提/美元汇率放大效应",
+        "波兰国家银行利率政策",
+        "能源与大宗商品价格",
+        "欧盟基金流入",
+        "地缘政治风险溢价（毗邻俄罗斯）"
+      ],
+      "summary": "Poland is a mid-size Central European emerging market whose cycle is anchored to the eurozone economy and NATO security architecture. EPOL's USD returns layer PLN/USD currency risk on top of Warsaw Stock Exchange dynamics, so a strengthening dollar — common in global risk-off episodes — amplifies drawdowns, and a recovering zloty amplifies up-legs. The index is concentrated in financials (banks) and energy/materials, so domestic credit conditions, NBP interest-rate policy, and commodity prices exert outsized influence. Geopolitical proximity to Russia creates a distinct risk-premium dynamic: when Eastern European tensions escalate, Polish equities and the zloty tend to sell off together, compounding USD-denominated losses, while de-escalation drives sharp re-rating. Poland's strongest bull legs have come from the combination of EU structural-fund inflows, eurozone recovery cycles, and — most powerfully in the 2023-2026 run — the political pivot to a pro-EU government that unlocked frozen EU funds.",
+      "summary_zh": "波兰是一个中等规模的中欧新兴市场，其周期锚定于欧元区经济与北约安全框架。EPOL的美元回报在华沙证交所本地表现之上叠加了兹罗提/美元汇率风险，因此全球避险时常见的美元走强会放大跌幅，而兹罗提回升则放大涨幅。指数集中于金融（银行）和能源/材料板块，国内信贷环境、波兰国家银行利率政策及大宗商品价格均产生超额影响。与俄罗斯的地缘毗邻形成独特的风险溢价机制：东欧紧张局势升级时，波兰股市与兹罗提往往同步下跌，加剧美元计价损失，而局势缓和则带来大幅重估。波兰最强劲的牛市来自欧盟结构性基金流入、欧元区复苏周期，以及在2023-2026年行情中最为关键的——转向亲欧盟政府并解锁冻结的欧盟资金。",
+      "top_signals": [
+        "Trough: PLN stabilizes after a sharp selloff, eurozone PMI bottoms, EU fund disbursement accelerates",
+        "Top: PLN at cycle highs vs USD, Warsaw banking index overbought, eurozone PMI rolling over",
+        "Risk-off spike: Eastern-Europe geopolitical escalation plus a strengthening USD together = compounded drawdown",
+        "Recovery: EU funds unlocked / political re-rating, NBP easing, commodity price recovery"
+      ],
+      "top_signals_zh": [
+        "谷底信号：兹罗提在急跌后企稳，欧元区PMI触底，欧盟资金拨付加速",
+        "顶部信号：兹罗提对美元处于周期高位，华沙银行指数超买，欧元区PMI开始下行",
+        "风险规避信号：东欧地缘政治升级叠加美元走强，两者共振造成成倍跌幅",
+        "复苏信号：欧盟资金解锁/政治重估、波兰国家银行宽松、大宗商品价格回升"
+      ]
+    },
+    "ewa": {
+      "drivers": [
+        "Iron ore & commodity price cycle",
+        "China demand & stimulus expectations",
+        "AUD/USD exchange rate",
+        "Big Four bank earnings cycle",
+        "Global risk appetite (RORO)",
+        "RBA rate cycle vs Fed"
+      ],
+      "drivers_zh": [
+        "铁矿石及大宗商品价格周期",
+        "中国需求与刺激政策预期",
+        "澳元/美元汇率",
+        "四大银行盈利周期",
+        "全球风险偏好（RORO）",
+        "澳储行与美联储利率周期差"
+      ],
+      "summary": "Australia's EWA cycle is anchored to three interlocking forces: global commodity prices (iron ore, coal and LNG dominate export earnings), the Chinese demand cycle (China absorbs roughly a third of Australian exports), and the AUD/USD exchange rate, which amplifies every local move for a USD investor. Bull legs tend to begin when China stimulus expectations firm, commodity prices bottom and the AUD recovers from oversold levels; bear legs are typically driven by China slowdown fears, commodity-price collapses or sharp AUD devaluations. The Australian equity market is heavily concentrated in financials (the Big Four banks) and materials (BHP, Rio Tinto), so shocks in either group can override macro tailwinds. Historically, tops have coincided with stretched commodity prices and a firm AUD, while troughs have formed during synchronized global risk-off episodes or sharp AUD sell-offs.",
+      "summary_zh": "EWA的周期由三大相互交织的力量主导：全球大宗商品价格（铁矿石、煤炭、液化天然气占出口收入主导地位）、中国需求周期（中国吸收约三分之一的澳大利亚出口）以及澳元/美元汇率——后者对以美元计价的投资者而言会放大每一次本地市场的涨跌。牛市腿通常在中国刺激预期升温、大宗商品价格触底、澳元从超卖水平回升时启动；熊市腿则往往由中国经济放缓担忧、大宗商品价格崩塌或澳元急剧贬值所驱动。澳大利亚股市高度集中于金融（四大银行）和材料（必和必拓、力拓）板块，单一板块的冲击可以压过宏观顺风。从历史上看，顶部通常伴随大宗商品价格偏高且澳元走强，底部则形成于全球同步风险规避或澳元大幅抛售期间。",
+      "top_signals": [
+        "Iron ore breaking higher alongside firming Chinese steel demand flags a trough",
+        "AUD/USD recovering after extended weakness signals returning buying pressure",
+        "Stretched cycle position (>80/100) plus slowing China demand and rolling-over iron ore flags a top",
+        "Sharply negative rs_63d vs SPY combined with AUD weakness often marks near-trough conditions"
+      ],
+      "top_signals_zh": [
+        "铁矿石价格上行并伴随中国钢铁需求回升，预示底部信号",
+        "澳元/美元在长期弱势后回升，显示买盘重现",
+        "周期位置偏高（超过80/100）叠加中国需求放缓和铁矿石价格回落，预示顶部",
+        "相对SPY的63日相对强弱急剧转负叠加澳元走弱，往往是接近底部的特征"
+      ]
+    },
+    "ewc": {
+      "drivers": [
+        "Oil & gas price cycle",
+        "CAD/USD exchange rate",
+        "Base metals & gold",
+        "US economic linkage via USMCA",
+        "Canadian bank credit cycle",
+        "Global risk appetite / EM demand"
+      ],
+      "drivers_zh": [
+        "油气价格周期",
+        "加元/美元汇率",
+        "基础金属与黄金",
+        "USMCA框架下与美国的经济联动",
+        "加拿大银行信贷周期",
+        "全球风险偏好与新兴市场需求"
+      ],
+      "summary": "Canada's EWC cycle is overwhelmingly driven by commodity prices — energy (oil and gas) and materials (gold, potash, lumber) together account for a large share of the TSX. As a result, EWC peaks tend to coincide with commodity upcycles or risk-on rallies, while troughs align with oil crashes, global demand slumps, or trade disruption. The Canadian dollar amplifies these swings: a strong USD typically compresses USD-denominated returns for EWC holders, making currency a second-order but persistent drag during Fed tightening cycles. Canadian banks, the other large sector weighting, add a domestic-credit and housing-cycle overlay. Over the 15-year window, EWC moves have been large-amplitude but fewer in number than more volatile EM markets, reflecting Canada's status as a commodity-exporting developed market tightly coupled to the US economic cycle via the USMCA trade relationship.",
+      "summary_zh": "EWC的周期主要由大宗商品价格驱动——能源（石油与天然气）及原材料（黄金、钾肥、木材）合计占TSX指数相当大的权重。因此，EWC的阶段性高点往往与大宗商品上行周期或风险偏好上行相吻合，低点则常与油价暴跌、全球需求萎缩或贸易摩擦对应。加元的汇率走势会放大这种波动：强美元时代，美元计价的EWC回报往往受到压制，在美联储紧缩周期中这是一个持续性的拖累因素。加拿大银行股是另一大权重板块，叠加国内信贷与房地产周期。过去15年，EWC的波动幅度较大但波段次数少于新兴市场，体现出加拿大作为大宗商品出口型发达国家、通过USMCA与美国经济周期高度绑定的特征。",
+      "top_signals": [
+        "Sustained WTI break above/below key levels flags inflection",
+        "CAD/USD trend reversal often leads EWC by 4-6 weeks",
+        "TSX Energy + Materials breadth thrust marks cycle lows",
+        "US recession signals historically precede EWC peak-to-trough by 1-2 quarters"
+      ],
+      "top_signals_zh": [
+        "WTI油价持续突破关键位是EWC转折的先行信号",
+        "加元/美元趋势反转通常领先EWC 4-6周",
+        "TSX能源及原材料板块广度共振往往标志周期底部",
+        "美国衰退信号历史上领先EWC顶峰至谷底约1-2个季度"
+      ]
+    },
+    "ewd": {
+      "drivers": [
+        "SEK/USD FX amplifier",
+        "Riksbank monetary stance",
+        "Floating-rate mortgage transmission",
+        "Global manufacturing and export demand",
+        "Property and banking index weight",
+        "Risk appetite for small European markets"
+      ],
+      "drivers_zh": [
+        "SEK/USD汇率放大效应",
+        "瑞典央行货币政策立场",
+        "浮动利率抵押贷款传导机制",
+        "全球制造业与出口需求",
+        "地产及银行板块在指数中的权重",
+        "全球对小型欧洲市场的风险偏好"
+      ],
+      "summary": "Sweden is a small, export-driven developed market with outsized exposure to global manufacturing cycles, European financial conditions, and domestic real-estate leverage. EWD's cycle is dictated by three interlocking forces: the Riksbank's monetary stance, the SEK/USD exchange rate which amplifies or erodes dollar-denominated returns, and the heavy weight of rate-sensitive property and banking stocks in the index. Tops tend to form when the SEK is rich, domestic property is stretched, and global PMIs roll over; troughs arrive after Riksbank easing, a depreciated SEK, and a recovery in global risk appetite. Sweden avoided the worst of the 2020 COVID contraction via lighter restrictions and a SEK 700bn Riksbank QE program, with GDP falling only about 3% in 2020 versus far steeper drops across the EU. The 2022 bear was unusually severe because Sweden's largely floating-rate mortgage market transmitted Riksbank hikes (zero to 4.0% by 2023) directly into household balance sheets, compressing listed property stocks by 50% or more.",
+      "summary_zh": "瑞典是一个小型出口导向型发达市场，高度依赖全球制造业周期、欧洲金融环境以及国内房地产杠杆。EWD的周期由三大相互交织的力量驱动：瑞典央行的货币政策立场、SEK/USD汇率（直接放大或侵蚀美元计价回报），以及指数中高度利率敏感型地产和银行股的权重。顶部通常在SEK偏贵、国内房地产过热、全球PMI掉头向下时形成；底部则在央行宽松、SEK已贬值且全球风险偏好回暖时出现。瑞典凭借相对宽松的疫情管控和7000亿克朗的央行量化宽松计划，2020年GDP仅萎缩约3%，远好于欧盟普遍更深的跌幅。2022年熊市异常惨烈，原因在于以浮动利率为主的抵押贷款市场将央行加息（2023年从零升至4.0%）直接传导至居民资产负债表，上市地产公司股价腰斩逾50%。",
+      "top_signals": [
+        "SEK/USD rich after a strong multi-quarter run",
+        "Swedish real estate prices rolling over after rapid appreciation",
+        "Riksbank signaling the end of its easing cycle",
+        "Global PMI composite turning negative after synchronized expansion"
+      ],
+      "top_signals_zh": [
+        "SEK/USD在多季度强势后估值偏高",
+        "瑞典房价在快速上涨后掉头向下",
+        "瑞典央行释放结束宽松周期的信号",
+        "全球PMI综合指数在同步扩张后转为负值"
+      ]
+    },
+    "ewg": {
+      "drivers": [
+        "Industrials and autos dominate DAX (cyclical beta)",
+        "EUR/USD amplifies or offsets local DAX moves for USD investors",
+        "Global trade volume and manufacturing PMI cycle",
+        "ECB policy and eurozone credit spreads",
+        "Energy cost regime (gas, power prices)",
+        "Fiscal impulse (infrastructure and defense spending)"
+      ],
+      "drivers_zh": [
+        "工业和汽车主导DAX（高周期性贝塔）",
+        "欧元兑美元放大或抵消DAX本地涨跌（对美元投资者）",
+        "全球贸易量与制造业PMI周期",
+        "欧洲央行政策及欧元区信用利差",
+        "能源成本体系（天然气、电价）",
+        "财政脉冲（基建与国防支出）"
+      ],
+      "summary": "EWG is a highly cyclical, export-and-industry-heavy market whose USD returns are driven by three overlapping forces: the DAX's outsize weight in industrials, autos, chemicals, and financials; the EUR/USD exchange rate (a weaker euro depresses USD-denominated returns even when the DAX rises locally); and global risk appetite, since Germany's export machine is acutely sensitive to world trade volumes. Peaks have tended to coincide with EUR strength alongside strong global growth expectations; troughs have arrived when energy shocks, credit stress, or trade-war fears hit alongside EUR weakness. The loss of cheap Russian pipeline gas since 2022 added a structural energy-cost overhang on German industrial margins. Cycle lengths have run roughly 1-2 years peak-to-trough, with recoveries historically sharp once the macro catalyst clears.",
+      "summary_zh": "EWG是一个高度周期性、以出口和工业为主导的市场，其美元回报由三股力量交织驱动：DAX指数对工业、汽车、化工和金融板块的高度集中；欧元兑美元汇率（即使DAX本地上涨，欧元走弱也会压低美元计价回报）；以及全球风险偏好（德国出口机器对全球贸易量极为敏感）。历次顶部往往伴随欧元走强与全球增长预期高涨；底部则在能源冲击、信贷压力或贸易战恐慌叠加欧元走弱时形成。2022年以来廉价俄罗斯管道天然气的切断给德国工业利润率带来结构性能源成本压力。峰谷周期通常为1至2年，一旦宏观催化剂消退，反弹往往迅猛。",
+      "top_signals": [
+        "Trough signal: EUR/USD bottoming with ECB policy pivot and global PMI uptick",
+        "Trough signal: German energy prices normalizing; credit spreads compressing",
+        "Top signal: EUR/USD peak with DAX stretched vs SPY; PMI rolling over",
+        "Top signal: Trade-war escalation or energy shock hitting export-oriented sectors"
+      ],
+      "top_signals_zh": [
+        "低谷信号：欧元兑美元触底，欧洲央行政策转向，全球PMI回升",
+        "低谷信号：德国能源价格趋于正常化，信用利差收窄",
+        "顶部信号：欧元兑美元见顶，DAX相对标普500估值拉伸，PMI开始回落",
+        "顶部信号：贸易战升级或能源冲击打击出口导向板块"
+      ]
+    },
+    "ewh": {
+      "drivers": [
+        "HKD-USD peg: no FX buffer, US rate cycle transmits directly",
+        "China macro & credit cycle: lending and property drive earnings",
+        "Beijing regulatory risk: tech and property-developer rules",
+        "Financials concentration: banks and insurers dominate index weight",
+        "Global risk appetite: EM risk-on/off swings amplified by thin liquidity"
+      ],
+      "drivers_zh": [
+        "港元与美元联系汇率：无汇率缓冲，美国利率周期直接传导",
+        "中国宏观与信贷周期：贷款及房地产驱动企业盈利",
+        "北京监管风险：科技及房地产开发商政策",
+        "金融股高度集中：银行与保险主导指数权重",
+        "全球风险偏好：新兴市场风险情绪波动被稀薄流动性放大"
+      ],
+      "summary": "EWH is structurally a China-proxy with a dollar peg: the HKD is fixed to the USD, so the ETF carries no FX cushion for USD investors and all volatility is pure equity volatility. The Hang Seng is heavily concentrated in financials and China-linked technology, making it acutely sensitive to Beijing's regulatory posture, mainland property-sector health, and US interest rates transmitted via the peg. Cycles in EWH are characteristically long and violent: multi-year bull runs powered by mainland capital inflows and China credit expansion, followed by sharp drawdowns triggered by regulatory shocks or global liquidity tightening. Tops typically follow stretched valuations after mainland-driven euphoria; troughs tend to be event-driven capitulations that overshoot to the downside.",
+      "summary_zh": "EWH 在结构上是一个挂钩美元的中国代理市场：港元与美元固定汇率，令 USD 投资者缺乏汇率缓冲，所有波动均为纯股票波动。恒生指数高度集中于金融股及与中国内地相关的科技股，对北京监管立场、内地房地产健康状况以及通过联系汇率传导的美国利率极为敏感。EWH 的周期特征是长而剧烈：由内地资金流入和中国信贷扩张驱动的多年牛市，随后因监管冲击或全球流动性收紧而急剧回调。顶部通常伴随内地情绪驱动的估值过度扩张，而底部则往往是超跌的事件驱动式投降。",
+      "top_signals": [
+        "Trough cue: capitulation on a China policy shock or property-default wave, washed-out breadth, depressed valuations, mainland selling exhausted",
+        "Top cue: mainland-driven euphoria stretches valuations, heavy southbound inflows, HK property sentiment rising in tandem",
+        "FX watch: HKD pinned to the weak-side convertibility undertaking (7.85) signals stress and tighter HKD liquidity",
+        "Regulatory pivot: a surprise PBOC/CSRC easing cycle is the most reliable trough catalyst"
+      ],
+      "top_signals_zh": [
+        "底部信号：中国政策冲击或房地产违约潮引发的投降式抛售，市场广度极度超卖，估值低迷，内地抛压耗尽",
+        "顶部信号：内地情绪驱动估值过度扩张，南向资金大量涌入，香港楼市情绪同步升温",
+        "汇率观察：港元贴近弱方兑换保证（7.85）预示市场压力及港元流动性收紧",
+        "监管转向：人民银行/中证监出人意料的宽松周期是最可靠的底部催化剂"
+      ]
+    },
+    "ewi": {
+      "drivers": [
+        "BTP-Bund spread: sovereign risk premium is Italy's primary cycle valve",
+        "EUR/USD: currency amplifies every USD-denominated move in both directions",
+        "ECB policy: rate path and QE/QT toggle rewires financials, Italy's largest sector",
+        "Banking sector health: bank net interest margins and credit quality set the tone",
+        "Global risk appetite: Italy as a high-beta proxy for European risk-on/off"
+      ],
+      "drivers_zh": [
+        "BTP-德债利差：主权风险溢价是意大利的核心周期阀门",
+        "欧元/美元：汇率在每轮美元计价波动中双向放大",
+        "欧央行政策：利率路径与QE/QT转换重塑金融股定价，金融是最大权重板块",
+        "银行业健康度：银行净息差与信贷质量决定市场基调",
+        "全球风险偏好：意大利是欧洲风险开关最敏感的高贝塔代理"
+      ],
+      "summary": "Italy (EWI) is a high-beta peripheral European market whose cycles are driven by three overlapping forces: sovereign risk premium (the BTP-Bund spread), EUR/USD dynamics, and the global risk-appetite toggle. Because EWI is USD-denominated, a weakening euro mechanically deepens drawdowns and a strengthening euro amplifies rallies in USD terms, making currency a second-order amplifier on every move. The index is heavily concentrated in financials and energy, so banking-sector health, ECB policy, and commodity cycles act as primary cycle accelerators. Troughs have historically aligned with sovereign stress, risk-off flight-to-quality, or political standoffs with the EU; recoveries have followed ECB credibility backstops (Draghi's 2012 pledge, PEPP) and compressing BTP spreads. The 2022-2026 super-cycle rally — the longest and largest in the window — was powered by ECB rate hikes widening Italian bank net interest margins, EU recovery-fund disbursements anchoring sovereign credibility, and a globally synchronized risk-on episode.",
+      "summary_zh": "意大利ETF（EWI）是高贝塔欧洲外围市场，周期受三重力量主导：主权风险溢价（BTP-德债利差）、欧元兑美元走势，以及全球风险偏好开关。由于EWI以美元计价，欧元走弱在美元维度机械性地加深下跌、欧元走强则放大上涨，汇率始终是每轮行情的二阶放大器。指数高度集中于金融和能源，因此银行业健康状况、欧央行政策与大宗商品周期是主要的周期加速器。历史低点通常与主权压力、避险抛售或与欧盟的政治对峙同步；复苏则往往跟随欧央行公信力背书（德拉吉2012年承诺、PEPP）与BTP利差收窄。2022-2026年超级上行周期由欧央行加息扩大意大利银行净息差、欧盟复苏基金拨款锚定主权公信力，以及全球同步风险偏好上升共同驱动。",
+      "top_signals": [
+        "BTP-Bund spread compression historically marks stretched conditions; sharp widening flags stress",
+        "EUR/USD topping or breaking multi-year support amplifies Italy drawdown risk in USD terms",
+        "ECB forward-guidance pivots tend to mark cycle inflections for financials-heavy EWI",
+        "Italy political shocks (snap elections, EU budget standoffs) have historically been buy signals near troughs, not tops"
+      ],
+      "top_signals_zh": [
+        "BTP-德债利差压缩历史上标志估值偏高；急剧走阔则预警压力",
+        "欧元/美元见顶或跌破多年支撑，意味着以美元计价的意大利资产将承受额外跌幅",
+        "欧央行前瞻指引转向往往是金融股主导的EWI周期拐点",
+        "意大利政治冲击（提前大选、与欧盟预算对峙）历史上是低点附近的买入信号而非顶部信号"
+      ]
+    },
+    "ewj": {
+      "drivers": [
+        "USD/JPY direction (yen strength caps local rallies but aids USD holders; rapid yen weakness amplifies USD losses)",
+        "BOJ policy stance: YCC, negative rates, and the pace of rate normalisation",
+        "Global risk appetite: Japan is a high-beta DM market in risk-on/risk-off rotations",
+        "Exporter earnings: autos and electronics dominate index weight; trade volumes and tariffs matter",
+        "Domestic reflation: wage growth, corporate-governance reform, and the capex cycle"
+      ],
+      "drivers_zh": [
+        "美元兑日元走向（日元升值压制本地涨势但利好美元持有者；日元急贬则放大美元损失）",
+        "日银政策立场：收益率曲线控制、负利率及加息正常化节奏",
+        "全球风险偏好：日本是风险偏好切换中的高弹性发达市场",
+        "出口商盈利：汽车与电子主导指数权重，贸易量与关税影响显著",
+        "国内再通胀：薪资增长、公司治理改革及资本支出周期"
+      ],
+      "summary": "Japan's USD-listed cycle is uniquely double-layered: every EWJ move reflects both the Nikkei's local performance AND the yen-dollar rate, making currency regime shifts the single most powerful lever. Abenomics (2012-2015) demonstrated this vividly, as a roughly 36% yen depreciation amplified export-sector gains into a 61% USD return for EWJ — with about half of that return pure currency translation. The reverse also holds: when the yen collapses faster than stocks can gain, USD returns suffer even as the Nikkei rises in local terms, as in 2021-2022 when EWJ fell 33% in dollars while local equities were roughly flat. Japan's index is heavily weighted toward exporters (autos, machinery, electronics) and financials, making it acutely sensitive to global trade volumes, USD/JPY direction, and BOJ policy stance. Cycle peaks have tended to coincide with yen exhaustion or global risk-off shocks; troughs are typically set by BOJ policy pivots, global reflation impulses, or deeply oversold exporter valuations.",
+      "summary_zh": "EWJ的周期具有独特的双重结构：每次波动既反映日经的本地涨跌，也包含日元兑美元汇率变动，因此货币机制转换是最强的单一驱动力。安倍经济学（2012-2015年）是最典型的案例——日元贬值约36%将出口板块收益放大，推动EWJ以美元计上涨61%，其中约一半来自纯货币折算。反向逻辑同样成立：当日元贬值速度快于股市上涨时，即便日经以日元计上涨，美元回报仍会受损——2021至2022年日经以日元计大致持平，EWJ却以美元计下跌33%。日本指数高度集中于出口商（汽车、机械、电子）与金融股，对全球贸易量、美元兑日元走势及日银政策取向极为敏感。周期顶部往往与日元贬值耗尽或全球避险冲击重合；底部则通常由日银政策转向、全球再通胀或出口商估值严重低估所奠定。",
+      "top_signals": [
+        "Yen regime flip: sharp JPY appreciation compresses USD returns even if the Nikkei holds — signals a peak/turn approach for dollar holders",
+        "BOJ policy surprise: an unexpected hike or YCC abandonment can trigger a carry-trade unwind and sharp EWJ selloff",
+        "Global risk-off: EWJ underperforms in USD terms as the yen's safe-haven bid fights equity losses",
+        "Exporter valuation washout: forward P/E at multi-year lows with a weak USD/JPY often marks a cycle trough"
+      ],
+      "top_signals_zh": [
+        "日元机制反转：日元急升压缩美元回报，即便日经坚挺，也预示美元持有者接近顶部/转折",
+        "日银政策意外：意外加息或放弃收益率曲线控制可引发套息交易平仓，EWJ急跌",
+        "全球避险模式：日元避险买盘与股市下跌对冲，EWJ美元回报落后",
+        "出口商估值洗牌：远期市盈率处于多年低位叠加美元兑日元走弱，通常预示周期底部"
+      ]
+    },
+    "ewl": {
+      "drivers": [
+        "Defensive sector concentration: Novartis + Roche + Nestle dominate index weight",
+        "CHF safe-haven FX: franc appreciation penalizes USD-based returns, depreciation helps",
+        "Global risk appetite: drives de-risking liquidation even of defensive names",
+        "Pharma earnings cycle: patent cycles, pipeline catalysts, drug-pricing policy",
+        "ECB/SNB rate divergence: shapes EUR/CHF and Swiss equity/bond valuations"
+      ],
+      "drivers_zh": [
+        "防御性行业集中：诺华+罗氏+雀巢主导指数权重",
+        "瑞郎避险属性：升值拖累美元回报，贬值则有助",
+        "全球风险偏好：驱动去风险清仓，防御股亦难幸免",
+        "制药盈利周期：专利到期、研发催化剂与药品定价政策",
+        "欧央行/瑞央行利率分化：决定欧元/瑞郎与瑞士股债估值"
+      ],
+      "summary": "Switzerland's ETF cycle is dominated by three structural forces. First, extreme index concentration in healthcare (Novartis, Roche) and consumer staples (Nestle), which together make up a large share of index weight and give EWL a defensive, low-beta profile. Second, the safe-haven CHF, which is a double-edged FX overlay: a surging franc on flight-to-quality drags USD returns even when local equities are flat, while a weakening franc lets local gains translate more fully for USD investors. Third, global pharma and defensive earnings cycles, which set the tempo of multi-year up-legs. Because the giants are dollar-earning multinationals, a strong CHF also compresses their reported CHF earnings, layering a fundamental headwind onto the pure currency-translation loss. Tops tend to form after sustained defensive outperformance or sharp CHF appreciation; troughs cluster around global risk-off liquidation events where even Swiss defensives are sold, only to recover faster than cyclical peers.",
+      "summary_zh": "EWL的周期由三股结构性力量主导。其一，医疗（诺华、罗氏）与消费必需品（雀巢）的极度集中，合计占指数较大权重，赋予EWL防御性、低贝塔特征。其二，避险瑞郎构成双刃汇率叠加：避险资金推升瑞郎时，即便本地股市持平也会拖累美元回报；瑞郎走弱时则使本地涨幅更充分地传导给美元投资者。其三，全球制药与防御性盈利周期决定多年上升趋势的节奏。由于三大巨头均为赚取美元的跨国公司，瑞郎走强还会压缩其瑞郎报告盈利，在纯汇率折算损失之外叠加一层基本面阻力。顶部往往在防御性超额收益持续较久或瑞郎大幅升值后出现；底部则集中于全球风险规避清仓时期，即便瑞士防御股亦遭抛售，但随后反弹快于周期性同类。",
+      "top_signals": [
+        "CHF surges sharply vs USD and EUR simultaneously on safe-haven flows",
+        "Pharma (Novartis, Roche) valuation premium to European peers at multi-year highs",
+        "SNB signals tightening or greater CHF tolerance, pressuring exporters",
+        "EWL cycle position above 75 after a sustained defensive-outperformance streak"
+      ],
+      "top_signals_zh": [
+        "瑞郎同时对美元和欧元大幅升值，显示避险资金涌入",
+        "诺华、罗氏相对欧洲同业估值溢价达多年高位",
+        "瑞央行释放收紧或更容忍瑞郎走强信号，挤压出口商",
+        "EWL周期位置升至75以上且防御性超额收益已持续较长时间"
+      ]
+    },
+    "ewn": {
+      "drivers": [
+        "ASML order-book cycle (~22-23% ETF weight)",
+        "EUR/USD exchange rate",
+        "ECB monetary policy stance",
+        "Global semiconductor / AI capex cycle",
+        "Shell / energy price overlay",
+        "Dutch export-trade conditions"
+      ],
+      "drivers_zh": [
+        "ASML订单周期（权重约22%-23%）",
+        "欧元/美元汇率",
+        "欧洲央行货币政策立场",
+        "全球半导体/AI资本支出周期",
+        "壳牌/能源价格叠加",
+        "荷兰出口贸易状况"
+      ],
+      "summary": "The Netherlands (EWN) cycle is structurally dominated by ASML, which is roughly 22-23% of EWN's portfolio, making the ETF a de-facto leveraged proxy for global semiconductor capex and AI-chip-equipment sentiment. Tops and troughs align tightly with ASML's order-book cycles rather than with broad European macro. A second, persistent amplifier is the EUR/USD rate: because EWN is USD-denominated, euro appreciation adds a tailwind on top of local gains, while euro weakness drags on USD-translated returns even when local equities rise. Energy names such as Shell add a secondary commodity overlay. Dutch equities broadly benefit from ECB easing and global risk-on phases and suffer during tightening, energy shocks, or trade disruption, given the Netherlands' outsized role as a European export hub.",
+      "summary_zh": "荷兰（EWN）的周期结构高度集中于ASML，其在EWN中的权重约为22%-23%，使该ETF实际上成为全球半导体资本支出与AI芯片设备情绪的杠杆化代理工具。因此，周期顶点与低谷高度契合于ASML的订单周期，而非欧洲宏观大环境。第二个持续性放大器是欧元/美元汇率：由于EWN以美元计价，欧元升值在本地涨幅之上提供顺风，而欧元走弱则在本地股票上涨时仍拖累美元计价回报。壳牌等能源股构成次级大宗商品叠加层。受益于欧洲央行宽松及全球风险偏好阶段，荷兰股票整体走强；而在欧央行收紧、能源冲击或贸易受阻时则承压，原因在于荷兰是欧洲重要的出口枢纽。",
+      "top_signals": [
+        "ASML order intake collapse signals a cycle top; a surge off a trough signals a base",
+        "EUR/USD breaking a multi-month trend reverses the currency amplifier",
+        "ECB pivot to tightening compresses multiples on the growth-heavy AEX",
+        "AEX diverging from global semi-equipment peers flags a local exhaustion top"
+      ],
+      "top_signals_zh": [
+        "ASML订单骤降预示周期顶部；订单从低点激增则预示筑底",
+        "欧元/美元突破多月趋势反转货币放大效应",
+        "欧洲央行转向收紧压缩以成长股为主的AEX估值倍数",
+        "AEX与全球半导体设备同类股票出现背离，预示局部顶部耗竭"
+      ]
+    },
+    "ewp": {
+      "drivers": [
+        "ECB rate cycle & sovereign-spread compression",
+        "Bank NIM: Santander/BBVA/CaixaBank earnings leverage",
+        "EUR/USD: euro strength amplifies USD-denominated returns",
+        "EM exposure: Brazil/Mexico/Turkey revenues for mega-banks",
+        "Tourism GDP: ~12-13% of economy, post-recession rebound lever",
+        "EU recovery & structural funds: fiscal impulse since 2021"
+      ],
+      "drivers_zh": [
+        "欧洲央行利率周期与主权利差收窄",
+        "银行净息差：桑坦德/BBVA/CaixaBank盈利杠杆",
+        "欧元/美元：欧元走强放大美元计价回报",
+        "新兴市场敞口：大行巴西/墨西哥/土耳其业务收入",
+        "旅游业GDP：约占经济12-13%，衰退后反弹利器",
+        "欧盟复苏与结构基金：2021年以来的财政脉冲"
+      ],
+      "summary": "Spain's cycle is defined by its sensitivity to ECB credit policy and Eurozone sovereign risk premiums. The IBEX 35 is dominated by large universal banks whose profitability swings sharply with European rate cycles, and by multinationals with heavy emerging-market exposure (Santander and BBVA derive large revenues from Brazil, Mexico, Turkey and Argentina), making Spanish equities a leveraged proxy on both European monetary policy and global EM risk appetite. Cycle troughs have coincided with sovereign-debt stress or broad EM risk-off episodes; peaks have tracked ECB accommodation and synchronized DM expansion. The EUR/USD component is critical: EWP's USD-denominated returns are amplified when the euro strengthens and dampened when it weakens, adding a second-order layer beyond the IBEX itself. Spain's structural tourism dependency (roughly 12-13% of GDP) embeds additional cyclical momentum into recoveries.",
+      "summary_zh": "西班牙市场周期高度依赖欧洲央行信贷政策与欧元区主权风险溢价。IBEX 35由大型全能银行主导，其盈利能力随欧洲利率周期大幅波动；桑坦德与BBVA在巴西、墨西哥、土耳其、阿根廷拥有大量收入来源，使西班牙股市成为欧洲货币政策与全球新兴市场风险偏好的双重杠杆代理。周期底部往往与主权债务压力或新兴市场风险厌恶高峰重合，顶部则对应欧洲央行宽松与发达市场同步扩张。欧元/美元汇率至关重要：欧元升值时EWP的美元回报被放大，贬值时则受压制，构成IBEX本身之外的二阶波动层。西班牙旅游业约占GDP的12-13%，为市场复苏注入额外周期动能。",
+      "top_signals": [
+        "Trough signal: Spanish 10y spread vs Bund blows out; IBEX bank valuations collapse to deep-distress lows",
+        "Trough signal: EUR/USD at multi-year lows compressing USD returns; EM stress in Brazil/Mexico/Turkey peaks",
+        "Peak signal: ECB pivots to cuts and bank NIM expectations roll over; IBEX valuations stretched vs history",
+        "Peak signal: EUR/USD at multi-year highs inflating USD-denominated NAV; tourist arrivals plateau"
+      ],
+      "top_signals_zh": [
+        "底部信号：西班牙10年期与德国国债利差大幅走阔；IBEX银行估值跌至深度困境低位",
+        "底部信号：欧元/美元处于多年低位压缩美元回报；巴西/墨西哥/土耳其新兴市场压力见顶",
+        "顶部信号：欧洲央行转向降息，银行净息差预期见顶回落；IBEX估值相对历史明显偏高",
+        "顶部信号：欧元/美元处于多年高位虚增美元净值；游客到访量增长停滞"
+      ]
+    },
+    "ewq": {
+      "drivers": [
+        "ECB policy and euro direction",
+        "Luxury and global earnings cycle",
+        "French political and fiscal risk premium",
+        "Eurozone sovereign spreads",
+        "Global risk-on/risk-off sentiment"
+      ],
+      "drivers_zh": [
+        "欧央行政策与欧元走势",
+        "奢侈品及全球盈利周期",
+        "法国政治与财政风险溢价",
+        "欧元区主权利差",
+        "全球风险偏好变化"
+      ],
+      "summary": "France's equity cycle is anchored in globally-oriented large-caps across luxury goods, aerospace, energy, and industrials, whose earnings are tied to global growth more than to the domestic economy alone. The USD-listed ETF adds a EUR/USD layer that can amplify or dilute local returns by 5-15% per year, making ECB policy stance and euro direction central cycle variables. Major troughs have consistently followed Eurozone systemic stress or global risk-off events, resolved by ECB intervention or a political clearing event. Tops have emerged when global growth expectations moderate, the euro overshoots, or domestic political and fiscal uncertainty peaks. The 2022-2026 up-leg showed that France can sustain a long recovery while carrying persistent fiscal deficits, provided the ECB backstop remains credible.",
+      "summary_zh": "法国股市周期以奢侈品、航空航天、能源和工业领域的全球化大盘股为锚，这些公司的盈利更多与全球增长挂钩，而非仅依赖国内经济。该USD计价ETF额外叠加了欧元/美元汇率层，可使本地回报每年被放大或稀释5-15%，令欧央行政策立场与欧元走向成为核心周期变量。历次重要低点均发生在欧元区系统性压力或全球避险事件之后，由欧央行干预或政治格局清晰化来化解。顶部往往出现在全球增长预期放缓、欧元过度升值或国内政治与财政不确定性达到峰值之时。2022至2026年的上行阶段证明，只要欧央行信用背书依然可信，法国可以在财政赤字高企的背景下持续较长时间的复苏。",
+      "top_signals": [
+        "OAT-Bund spread widening signals French political/fiscal stress at tops",
+        "EUR/USD reversal coinciding with CAC 40 peak",
+        "ECB pivot to easing marks troughs",
+        "Luxury sector earnings miss or global demand warning at cycle peaks"
+      ],
+      "top_signals_zh": [
+        "法德国债利差扩大预示法国顶部的政治与财政压力",
+        "欧元/美元反转与CAC 40见顶同步",
+        "欧央行转向宽松标志周期低点",
+        "奢侈品盈利预警或全球需求走弱出现于周期顶部"
+      ]
+    },
+    "ews": {
+      "drivers": [
+        "Bank NIM sensitivity to the global rate cycle",
+        "SGD NEER managed-float caps FX volatility",
+        "Asian trade and regional growth proxy",
+        "Diversified financials/industrials/telecom mix",
+        "Global risk-on / risk-off as the primary beta driver"
+      ],
+      "drivers_zh": [
+        "银行净息差对全球利率周期敏感",
+        "新加坡元 NEER 管理浮动平抑汇率波动",
+        "亚洲贸易与区域增长代理指标",
+        "金融/工业/电信多元化结构",
+        "全球风险偏好是主要贝塔驱动因子"
+      ],
+      "summary": "Singapore's EWS is concentrated but not single-sector: financials are the largest block at roughly 38% of the index (DBS is the dominant single name, with OCBC and UOB also material), alongside meaningful weights in industrials, consumer/property, and telecom names such as Keppel, SingTel and ST Engineering. This makes the ETF a hybrid play on global credit and rate cycles, Asian trade and regional risk appetite rather than a pure bank basket. The SGD is a managed float that the Monetary Authority of Singapore (MAS) steers via a nominal effective exchange rate (NEER) band, so USD/SGD moves are policy-mediated and far less volatile than typical EM currencies, dampening both upside and downside in dollar terms. Cycle tops have tended to coincide with peak global risk appetite, while troughs track global liquidity crunches and broad EM/Asia risk-off episodes. The 2022-2026 upcycle (+118%) is the strongest in the 15-year window, helped by higher-for-longer rates lifting bank net interest margins and a broad recovery in global and regional risk appetite.",
+      "summary_zh": "EWS 集中但并非单一行业：金融股是最大板块，约占指数 38%（星展为权重最大个股，华侨、大华亦有可观权重），同时凯德、新电信、新科工程等工业、消费/地产与电信名亦占相当比例。因此该 ETF 是对全球信贷与利率周期、亚洲贸易及区域风险偏好的混合敞口，而非纯粹的银行篮子。新加坡元由金管局通过 NEER 区间主动管理，汇率波动远低于一般新兴市场货币，对 EWS 的美元涨跌起平抑作用。周期顶部通常出现在全球风险偏好高峰，低谷则与全球流动性收缩及新兴市场/亚洲整体风险规避同步。2022—2026 年的上涨周期（+118%）是 15 年窗口中最强的一轮，得益于高息环境提振银行净息差以及全球与区域风险偏好的广泛回升。",
+      "top_signals": [
+        "MAS NEER band tightening / easing shifts often mark cycle turns",
+        "Singapore bank NIM guidance downgrades or dividend cuts can flag a trough",
+        "Global PMI contraction below 50 combined with USD strength signals risk-off pressure",
+        "Flattening Asian yield curves alongside fading risk appetite can warn of a cycle top"
+      ],
+      "top_signals_zh": [
+        "金管局 NEER 区间收紧或放松常是周期转折信号",
+        "新加坡银行净息差指引下调或削减股息可能预示低谷",
+        "全球 PMI 跌破 50 叠加美元走强是风险规避压力信号",
+        "亚洲收益率曲线趋平叠加风险偏好减弱可能预警周期顶部"
+      ]
+    },
+    "ewt": {
+      "drivers": [
+        "TSMC + chip supply-chain ~two-thirds to three-quarters of index weight",
+        "Global semiconductor demand cycle (mobile to server to AI)",
+        "Fed rate cycle drives USD/TWD and global risk appetite",
+        "China cross-strait geopolitical risk premium",
+        "US-China tech export controls and supply-chain realignment",
+        "TWD FX amplifies USD-denominated returns"
+      ],
+      "drivers_zh": [
+        "台积电及芯片供应链约占指数权重三分之二至四分之三",
+        "全球半导体需求周期（移动端→服务器→AI）",
+        "美联储加息周期驱动美元/台币与全球风险偏好",
+        "两岸地缘政治风险溢价",
+        "美中科技出口管制与供应链重组",
+        "新台币汇率对美元计价回报的放大效应"
+      ],
+      "summary": "Taiwan's equity cycle is driven almost entirely by the global semiconductor capex and demand cycle, with TSMC and its supply-chain ecosystem accounting for roughly two-thirds to three-quarters of the index. Tops have historically coincided with semiconductor inventory gluts, sharp Fed tightening, or China-shock risk-off episodes; troughs have been set by global policy easing and the onset of new demand up-cycles (mobile, server/cloud, AI). The TWD is a secondary amplifier: when global risk appetite is on, foreign inflows strengthen the currency and lift USD returns, while risk-off TWD weakness clips them. Cross-strait tension and US-China tech restrictions add an asymmetric geopolitical downside tail unique to this market that rarely prices in fully at peaks.",
+      "summary_zh": "台湾股市周期几乎完全由全球半导体资本开支与需求周期驱动，台积电及其供应链生态约占指数权重的三分之二至四分之三。历史顶部通常出现于半导体库存过剩、美联储激进加息或中国冲击引发的风险规避阶段；底部则由全球政策宽松及新一轮需求上行周期（移动端、服务器/云、AI）奠定。新台币是次级放大器：全球风险偏好上行时，外资流入推升汇率并放大美元回报；风险规避时台币走弱则侵蚀美元收益。两岸紧张局势与美中科技限制构成该市场独有的非对称地缘下行尾部风险，在高峰期通常未被充分定价。",
+      "top_signals": [
+        "Rising semiconductor inventory days and TSMC guidance cuts signal a cycle peak",
+        "TWD weakening vs USD alongside foreign outflows flags a risk-off top",
+        "TAIEX valuation premium well above its historical average marks stretch",
+        "New-order collapse at the ODM/PCB supply-chain tier confirms demand weakness"
+      ],
+      "top_signals_zh": [
+        "半导体库存天数上升、台积电下调展望预示周期顶部",
+        "台币对美元走弱叠加外资净流出，标志风险规避顶部",
+        "台湾加权指数估值显著高于历史均值为估值过热信号",
+        "ODM/PCB供应链环节新订单崩塌确认需求走弱"
+      ]
+    },
+    "ewu": {
+      "drivers": [
+        "Sterling/GBP-USD as a return amplifier in both directions",
+        "FTSE 100 commodity and energy weight (oil majors, miners)",
+        "UK political and fiscal-credibility risk premium (Brexit, gilt crisis)",
+        "Global risk appetite and synchronized DM growth cycles",
+        "Bank of England rate policy vs Fed divergence"
+      ],
+      "drivers_zh": [
+        "英镑/GBP-USD汇率双向放大收益与亏损",
+        "富时100大宗商品与能源板块权重（石油巨头、矿商）",
+        "英国政治与财政公信力风险溢价（脱欧、国债危机）",
+        "全球风险偏好与发达市场同步增长周期",
+        "英格兰银行利率政策与美联储的分化"
+      ],
+      "summary": "EWU is shaped by three interlocking forces: sterling acting as a political-risk and fiscal-credibility barometer (Brexit, the 2022 gilt crisis), the FTSE 100's heavy weighting in commodity exporters and global financials that makes it a partial commodity and USD play in dollar terms, and the UK's persistent valuation discount to other developed markets. Cycle peaks tend to coincide with GBP strength and synchronized global growth; troughs follow sterling or fiscal shocks and sharp commodity drawdowns. Because EWU is USD-denominated, a falling pound compounds equity losses for dollar investors even when local shares hold steady (the index's overseas earners can even rise on a weak pound). The 2016 Brexit referendum and the 2022 Truss gilt crisis are the clearest structural fingerprints of this market.",
+      "summary_zh": "EWU的周期特征由三股力量交织塑造：英镑作为政治风险与财政公信力的晴雨表（脱欧、2022年英国国债危机）、富时100对大宗商品出口商及全球金融股的高度集中（令其在美元计价下部分等同于商品/美元行情），以及英国市场相对其他发达市场的长期折价。周期顶部通常与英镑走强及全球同步增长重合；底部则往往伴随英镑或财政冲击及大宗商品急跌。由于ETF以美元计价，英镑贬值会在本地股票之上进一步放大美元投资者的亏损（而指数中的海外营收股甚至会因弱英镑而上涨）。2016年脱欧公投和2022年特拉斯预算危机，是该市场最清晰的结构性特征。",
+      "top_signals": [
+        "Top: GBP/USD breaking multi-month highs plus commodity rally stalling",
+        "Top: FTSE 100 valuation rich to its own history plus UK political stability",
+        "Trough: sterling or gilt crisis plus deeply oversold reading",
+        "Trough: commodity cycle turning up plus UK fiscal credibility restored"
+      ],
+      "top_signals_zh": [
+        "顶部信号：GBP/USD突破多月高位且大宗商品涨势趋缓",
+        "顶部信号：富时100估值高于自身历史且英国政治趋于稳定",
+        "底部信号：英镑或英国国债危机且超卖程度极深",
+        "底部信号：大宗商品周期回升且英国财政公信力修复"
+      ]
+    },
+    "eww": {
+      "drivers": [
+        "MXN/USD exchange rate dominates USD-denominated returns",
+        "US trade policy, tariffs, and NAFTA/USMCA framework",
+        "Oil prices and Pemex fiscal health",
+        "Domestic political risk and institutional credibility",
+        "US manufacturing cycle and nearshoring FDI flows"
+      ],
+      "drivers_zh": [
+        "比索兑美元汇率主导美元计价回报",
+        "美国贸易政策、关税及NAFTA/USMCA框架",
+        "油价与Pemex财政状况",
+        "国内政治风险与制度公信力",
+        "美国制造业周期及近岸制造直接投资流向"
+      ],
+      "summary": "Mexico's equity cycle turns on three interlocking forces: the MXN/USD exchange rate, the US trade and tariff relationship, and the domestic macro and political backdrop. Because EWW is USD-denominated, a falling peso can erase local-market gains entirely while a strong peso amplifies them — FX is often the dominant swing factor in any given leg. Oil and energy receipts set the fiscal floor: Pemex weakness or falling crude drains the federal budget (oil historically supplied roughly a third of public-sector revenue) and pressures the currency. Peaks tend to coincide with peso strength, easy US financial conditions, and strong US manufacturing and nearshoring demand; troughs follow peso sell-offs, US protectionist shocks, or domestic political and reform uncertainty. The index is concentrated in consumer, financial, and telecom names, making it less commodity-driven than Brazil but more FX-sensitive than most EM peers.",
+      "summary_zh": "墨西哥股市周期由三股相互交织的力量主导：比索兑美元汇率、美墨贸易与关税关系，以及国内宏观与政治背景。由于EWW以美元计价，比索贬值可完全抵消本地股市涨幅，而比索升值则起放大效应——汇率往往是任一波段的主导变量。石油收入是财政底线：Pemex业绩恶化或油价下跌会侵蚀联邦预算（历史上石油约占公共部门收入三分之一）并施压汇率。周期顶部往往出现在比索强势、美国金融条件宽松、美国制造业及近岸需求旺盛时期；底部则多发生在比索大幅贬值、美国贸易保护主义冲击或国内政治与改革不确定性上升之后。指数集中于消费、金融和电信板块，商品驱动低于巴西，但汇率敏感性高于大多数新兴市场同类。",
+      "top_signals": [
+        "Peso strengthening against USD flags a cycle trough lift-off",
+        "US tariff escalation or trade shock flags an accelerated drawdown",
+        "Pemex credit stress or oil collapse triggers a fiscal-FX feedback loop",
+        "Consumer/financial sector breadth expansion flags a sustained up-leg"
+      ],
+      "top_signals_zh": [
+        "比索对美元走强是周期谷底启动信号",
+        "美国关税升级或贸易冲击预示加速下跌",
+        "Pemex信用风险或油价崩跌触发财政-汇率负反馈",
+        "消费/金融板块广度扩张标志持续上升行情"
+      ]
+    },
+    "ewy": {
+      "drivers": [
+        "Memory chip cycle (Samsung + SK Hynix)",
+        "KRW/USD exchange rate",
+        "Global risk appetite / dollar index",
+        "Domestic political stability",
+        "Export demand from US & China tech sector",
+        "Fed rate path via EM capital flows"
+      ],
+      "drivers_zh": [
+        "内存芯片周期（三星+SK海力士）",
+        "韩元/美元汇率",
+        "全球风险偏好/美元指数",
+        "国内政治稳定性",
+        "美国与中国科技部门需求",
+        "美联储利率路径对新兴市场资本流动的影响"
+      ],
+      "summary": "South Korea (EWY) is among the most semiconductor-concentrated major country ETFs: Samsung Electronics and SK Hynix together routinely account for roughly 40-55% of index weight, making EWY behave more like a leveraged memory-chip cycle play than a diversified country basket. Tops have historically coincided with memory ASP/inventory peaks, stretched valuations, and global risk-off; troughs have aligned with memory downcycles, Fed-driven dollar strength and EM outflows, or acute domestic political shocks. The KRW/USD rate is a permanent secondary driver -- a ~10% KRW depreciation mechanically subtracts roughly that amount from EWY's USD return even if the local KOSPI is flat. Korea outperforms SPY sharply in global tech upcycles and lags severely when risk appetite collapses or the dollar strengthens, producing some of the largest amplitude swings among country ETFs.",
+      "summary_zh": "韩国（EWY）是半导体集中度最高的主要国家ETF之一：三星电子与SK海力士合计权重通常约40-55%，使EWY的表现更像一支杠杆式内存芯片周期产品，而非分散化的国家篮子。顶部历史上往往对应内存均价/库存峰值、估值拉伸及全球风险规避；底部则与内存下行周期、美联储紧缩引发的美元走强与新兴市场资金外流，或国内政治冲击相吻合。韩元/美元汇率是永久性的二阶驱动因素——韩元贬值约10%，即便KOSPI本地指数持平，EWY美元收益率也将同步缩水约10%。韩国在全球科技上行周期中大幅跑赢SPY，而在风险偏好崩塌或美元走强时严重落后，振幅是国家ETF中最大的之一。",
+      "top_signals": [
+        "Memory inventory/ASP cycle turning (lead times, contract pricing)",
+        "KRW/USD direction at key levels (~1,300 vs 1,440+)",
+        "Samsung/SK Hynix guidance revisions",
+        "Global PMI and US tech capex outlook"
+      ],
+      "top_signals_zh": [
+        "内存库存/均价周期转折（交货期与合约定价）",
+        "韩元/美元方向性突破关键水平（约1300 vs 1440+）",
+        "三星/SK海力士盈利指引修正",
+        "全球PMI与美国科技资本开支预期"
+      ]
+    },
+    "ewz": {
+      "drivers": [
+        "Iron ore & crude oil price cycle (Vale + Petrobras heavy index weight)",
+        "BRL/USD — procyclical currency amplifier",
+        "Brazil fiscal credibility & Selic rate path",
+        "Global EM risk appetite / USD cycle",
+        "Political regime re-rating (elections, impeachments)",
+        "China commodity demand impulse"
+      ],
+      "drivers_zh": [
+        "铁矿石与原油价格周期（淡水河谷+巴油指数权重高）",
+        "雷亚尔/美元——顺周期汇率放大器",
+        "巴西财政公信力与Selic利率路径",
+        "全球新兴市场风险偏好/美元周期",
+        "政治政权重新定价（选举、弹劾）",
+        "中国大宗商品需求冲击"
+      ],
+      "summary": "EWZ is structurally a commodity-and-carry play wrapped in a highly volatile political wrapper. The ETF's index is dominated by Petrobras, Vale, and the major banks — so iron ore, crude oil, agricultural prices, and global risk appetite jointly set the floor and ceiling of each cycle. The BRL is procyclical: it amplifies gains in commodity booms and deepens losses in risk-off episodes, making USD-denominated swings far larger than the underlying local-currency moves. Political regime changes — Dilma's impeachment, Bolsonaro's election, Lula's return — have each produced sharp re-rating jolts. Brazil's chronic fiscal-credibility problem (primary deficits, rising public debt-to-GDP) acts as a permanent drag on multiples, capping sustainable upside and shortening cycles relative to DM peers. Tops have typically formed when commodity prices and the BRL are near cycle highs together; troughs form after political or fiscal shocks that collapse the real.",
+      "summary_zh": "EWZ在结构上是一个裹着高波动政治外衣的大宗商品与套息组合。ETF指数以巴西国家石油公司、淡水河谷及主要银行为主导，铁矿石、原油、农产品价格与全球风险偏好共同决定每轮周期的底部与顶部。雷亚尔具有顺周期性：在大宗商品繁荣时放大涨幅，在风险规避时加深跌幅，使美元计价的波动远大于本币涨跌。政治政权更迭——迪尔玛下台、博索纳罗当选、卢拉回归——每次都引发剧烈的重新定价。巴西长期财政公信力问题（基本赤字、债务/GDP持续攀升）对估值倍数构成永久性拖累，令可持续上行空间受限、周期相对发达市场更短。顶部通常在大宗商品价格与雷亚尔同步处于周期高位时形成；底部则在政治或财政冲击令雷亚尔崩跌后出现。",
+      "top_signals": [
+        "BRL at multi-year highs + commodity prices peaking + fiscal slippage = top setup",
+        "Sharp BRL devaluation + primary deficit widening + political shock = trough setup",
+        "EWZ outperforming EM peers for 6+ months signals late-cycle stretch",
+        "High Selic + falling inflation expectations = BRL carry peak, watch for reversal"
+      ],
+      "top_signals_zh": [
+        "雷亚尔多年高位+大宗商品价格见顶+财政滑坡=顶部信号组合",
+        "雷亚尔急贬+基本赤字扩大+政治冲击=底部形成条件",
+        "EWZ持续跑赢新兴市场同类标的逾6个月，往往预示周期末段拉伸",
+        "高Selic利率+通胀预期下行=雷亚尔套息峰值，警惕反转"
+      ]
+    },
+    "eza": {
+      "drivers": [
+        "ZAR/USD currency multiplier",
+        "Gold & PGM commodity prices",
+        "Domestic political regime (ANC reform credibility)",
+        "China industrial demand",
+        "EM global risk-on/risk-off",
+        "Load-shedding / energy infrastructure"
+      ],
+      "drivers_zh": [
+        "兰特/美元汇率乘数效应",
+        "黄金与铂族金属价格",
+        "国内政治格局（ANC改革公信力）",
+        "中国工业需求",
+        "新兴市场整体风险偏好",
+        "电力短缺与能源基础设施"
+      ],
+      "summary": "South Africa via EZA is a high-beta, commodity-and-politics-driven EM market where USD returns stack three compounding layers: JSE equity prices, the rand-dollar exchange rate, and global risk appetite. Cycles are frequently triggered by domestic political inflection points — leadership changes, election outcomes, cabinet shocks — that either unlock or destroy investor confidence in the reform story. The commodity tilt (gold, platinum-group metals, miners) amplifies global commodity cycles and ties EZA to China's industrial demand and broad USD strength. Tops have tended to coincide with peak political optimism and elevated commodity prices; troughs with governance crises, load-shedding paralysis, or EM-wide risk-off. EZA's 15-year cycle amplitude is extreme — legs running roughly 35% to 160% — because the currency multiplier sits on top of an already volatile equity market.",
+      "summary_zh": "EZA所代表的南非市场是一个高贝塔、受大宗商品与政治双重驱动的新兴市场。美元计价回报叠加约翰内斯堡交易所股价、兰特汇率与全球风险偏好三个层面。市场周期常由国内政治拐点触发——领导层更迭、选举结果、内阁震荡——这些因素决定投资者对改革前景的信心。大宗商品敞口（黄金、铂族金属、矿业股）放大了全球商品周期的影响，并将EZA与中国工业需求和美元走势绑定。顶部通常出现在政治乐观情绪高峰叠加商品价格走高之际，谷底则多与治理危机、电力短缺或新兴市场整体避险相关。过去15年EZA的周期振幅极为剧烈——单边行情幅度大致在35%至160%之间，汇率乘数效应是关键放大器。",
+      "top_signals": [
+        "Rand at multi-year strength + commodity prices elevated + political reform euphoria",
+        "EZA position >80/100 after a >100% up leg",
+        "Rand weakening on EM risk-off or political shock",
+        "JSE resources sector lagging broad EM"
+      ],
+      "top_signals_zh": [
+        "兰特处于多年强势区间 + 大宗商品价格高位 + 政治改革乐观情绪高涨",
+        "EZA周期位置超过80/100且此前单边上涨超100%",
+        "新兴市场避险或政治冲击导致兰特走弱",
+        "约翰内斯堡资源股跑输新兴市场整体"
+      ]
+    },
+    "fxi": {
+      "drivers": [
+        "Beijing policy cycle: stimulus on/off is the primary lever",
+        "CNY/USD rate: RMB depreciation erodes USD returns even when local equities rise",
+        "Regulatory risk: sudden crackdowns (tech, property, education) create binary drawdowns",
+        "Global risk appetite: FXI sells off sharply in broad EM risk-off episodes",
+        "Property and credit cycle: developer/bank stress transmits directly through index weights",
+        "US-China geopolitical temperature: tariff escalation reprices the China equity risk premium"
+      ],
+      "drivers_zh": [
+        "北京政策周期：刺激开关是最主要的驱动杠杆",
+        "人民币/美元汇率：即使本地股市上涨，人民币贬值也会侵蚀美元回报",
+        "监管风险：突然的行业整治（科技、地产、教育）制造二元式回撤",
+        "全球风险偏好：新兴市场整体风险规避时FXI会大幅下跌",
+        "地产与信贷周期：开发商及银行压力通过指数权重直接传导",
+        "中美地缘政治温度：关税升级重新定价中国股权风险溢价"
+      ],
+      "summary": "FXI tracks China's largest H-share and red-chip companies listed in Hong Kong — concentrated in state-owned financials, energy, and a handful of internet giants — so every cycle carries a dual overlay: onshore Chinese equity fundamentals plus the CNY/HKD-versus-USD exchange rate. The structural driver is policy: Beijing's stimulus pulses, regulatory campaigns, and credit cycles dominate far more than the global earnings cycle that drives developed-market ETFs. Peaks have arrived when leverage, policy euphoria, or foreign-inflow narratives became extended; troughs have been marked by regulatory shock, property-sector stress, or geopolitical escalation. The concentrated, low-diversification basket amplifies both policy-easing rallies and crackdown drawdowns. Over the trailing 15-year window the rolling return is only about +5% in USD terms — large tactical swings have been nearly fully offset by FX headwinds and the absence of durable per-share earnings growth.",
+      "summary_zh": "FXI追踪在香港上市的中国最大H股及红筹股，集中于国有金融、能源以及少数互联网巨头，因此每轮周期均叠加双重因素：中国境内股票基本面与人民币/港元兑美元汇率。其结构性驱动力是政策——北京的刺激脉冲、监管运动与信贷周期，远比主导发达市场ETF的全球盈利周期更为关键。峰值往往出现在杠杆、政策乐观或外资流入叙事过度拉伸之时；低谷则多由监管冲击、房地产压力或地缘政治升级触发。高度集中、低分散度的持仓既放大了政策宽松期的涨幅，也加剧了打压期的回撤。过去15年滚动窗口的美元回报仅约+5%——巨大的战术性波动几乎被汇率逆风和缺乏可持续每股盈利增长所完全抵消。",
+      "top_signals": [
+        "Trough signal: PBOC rate/RRR cuts plus an explicit Politburo pledge to stabilize markets, alongside national-team buying, has repeatedly marked durable lows",
+        "Trough signal: deeply compressed valuations and extreme negative RS-versus-SPY readings have historically preceded multi-month bounces",
+        "Top signal: surging onshore margin debt plus state-media 'bull market' euphoria preceded both the 2015 and 2018 peaks",
+        "Top signal: renewed CNY depreciation pressure emerging alongside equity gains signals foreign capital is hedging rather than adding"
+      ],
+      "top_signals_zh": [
+        "低谷信号：央行降息降准叠加政治局明确'稳市场'承诺及国家队买入，屡次标志着持久底部",
+        "低谷信号：估值极度压缩与相对标普500极端负值，历史上通常预示数月反弹",
+        "顶部信号：境内融资余额飙升叠加官方媒体'牛市'鼓吹，在2015年和2018年峰值前均出现",
+        "顶部信号：股市上涨同时人民币贬值压力再现，表明外资在对冲而非加仓"
+      ]
+    },
+    "inda": {
+      "drivers": [
+        "FII flow: foreign inflows/outflows are the dominant short-cycle swing factor",
+        "INR/USD: rupee direction compounds or offsets local equity returns for USD investors",
+        "Domestic growth cycle: GDP, capex, and credit drive earnings re-rating",
+        "Global rates and DXY: higher US rates and a stronger dollar trigger EM outflows that hit India hard",
+        "Domestic policy events: elections, fiscal policy, and RBI stance shift sentiment",
+        "Oil price: India is a large net oil importer, so crude spikes pressure margins and the current account"
+      ],
+      "drivers_zh": [
+        "外资（FII）流动：外资流入/流出是主导短周期波动的核心因素",
+        "印卢/美元汇率：卢比走势对美元投资者的回报具有叠加或对冲效应",
+        "国内增长周期：GDP、资本开支与信贷驱动盈利重估",
+        "全球利率与美元指数：美国利率上行、美元走强引发新兴市场资金外流，印度首当其冲",
+        "国内政策事件：大选、财政政策、印度储备银行立场转变均影响市场情绪",
+        "油价：印度是大型石油净进口国，油价上涨压缩利润率并扩大经常账户赤字"
+      ],
+      "summary": "India's cycle is driven by the interplay of domestic growth narratives, foreign institutional investor (FII) flow sensitivity, rupee direction versus the USD, and periodic valuation resets. As a large, domestically-oriented EM, INDA responds strongly to global risk-on/risk-off through the FII channel: when global dollar liquidity tightens, FIIs sell and the rupee tends to weaken at the same time, compounding the USD-return drawdown. Tops tend to be stretched-valuation events where earnings expectations and FII inflows peak together; troughs are typically driven by global rate or liquidity shocks (and occasionally domestic policy disruptions) that trigger simultaneous equity and currency selloffs. The structural bull since 2013 has been punctuated by sharp but recoverable drawdowns -- taper tantrum, EM/China scare, demonetization, COVID -- each followed by resumption of the long-term growth premium. For USD-based investors, INR/USD direction can meaningfully amplify or blunt local-equity returns over a cycle leg.",
+      "summary_zh": "印度市场周期由国内增长叙事、外资（FII）流动敏感性、卢比兑美元走势以及周期性估值重置共同驱动。作为一个以内需为主的大型新兴市场，INDA通过FII渠道对全球风险偏好变化反应强烈——当全球美元流动性收紧时，FII倾向于抛售，卢比往往同步走弱，从而放大以美元计价的回撤。市场顶部通常出现在估值拉伸、盈利预期与FII流入同步见顶之时；底部则多由全球利率或流动性冲击（有时叠加国内政策扰动）引发，表现为股市与货币的同步下跌。2013年以来的结构性牛市被多次急促但可恢复的回撤所打断——缩债恐慌、新兴市场/中国恐慌、去货币化、新冠——每次之后均恢复长期增长溢价。对美元投资者而言，印卢汇率走向可在一个周期内显著放大或削弱本地股票回报。",
+      "top_signals": [
+        "Trough signals: rupee stabilizing after a sharp fall, FII selling exhaustion, RBI rate or liquidity pivot",
+        "Top signals: stretched Nifty/Sensex valuations, sustained strong FII inflows, INR firming with hot-money characteristics",
+        "Key watch: Brent crude direction (import cost) and the US 10-year yield (EM flow trigger)",
+        "Cycle elongation risk: sustained domestic retail participation can extend tops beyond what FII data alone implies"
+      ],
+      "top_signals_zh": [
+        "底部信号：卢比在急跌后企稳，FII抛售力竭，印度储备银行降息或注入流动性",
+        "顶部信号：Nifty/Sensex估值拉伸，FII持续大幅净流入，卢比呈热钱驱动式走强",
+        "关键观察：布伦特原油走向（进口成本）及美国10年期国债收益率（新兴市场资金触发器）",
+        "周期延长风险：持续的国内散户参与可使顶部延长，超出单纯FII数据所示的预期"
+      ]
+    },
+    "tur": {
+      "drivers": [
+        "TRY/USD exchange rate — dominant return driver in USD terms",
+        "CBRT credibility and real interest rate policy",
+        "Current account deficit and external financing needs",
+        "Global EM risk appetite and the USD strength cycle",
+        "Domestic political risk and geopolitical positioning"
+      ],
+      "drivers_zh": [
+        "TRY/USD汇率——美元回报的核心驱动",
+        "土央行公信力与实际利率政策",
+        "经常账户赤字与外部融资需求",
+        "全球新兴市场风险偏好及美元周期",
+        "国内政治风险与地缘政治定位"
+      ],
+      "summary": "Turkey (TUR) is among the most FX-dominated country ETFs in EM: the lira has lost roughly 90%+ against the USD since 2013, so even powerful local equity bull markets can deliver flat or negative USD returns. Cycles are driven by three overlapping forces — the TRY/USD exchange rate, domestic inflation and CBRT credibility, and global EM risk appetite. USD-term bull legs require either a temporary lira stabilization or local equity surges violent enough to outpace FX drag (most extreme in 2021-22, when Borsa Istanbul acted as an inflation hedge). Tops form when lira stress re-emerges, the current-account deficit widens, or EMFX selling accelerates; troughs form when policy orthodoxy is restored, real rates turn positive, and global risk appetite rebounds.",
+      "summary_zh": "土耳其（TUR）是新兴市场中受汇率驱动最显著的国家ETF之一：自2013年以来里拉兑美元已贬值约九成以上，因此即便本地股市出现强劲牛市，以美元计价的回报也可能持平甚至为负。周期由三重力量叠加驱动：TRY/USD汇率、国内通胀与土央行公信力、全球新兴市场风险偏好。美元口径的牛市需要里拉阶段性企稳，或本地涨幅猛烈到足以抵消汇损（2021-22年最为极端，当时博尔萨伊斯坦布尔成为通胀对冲工具）。顶部通常在里拉压力重现、经常账户赤字扩大或新兴市场货币遭抛售时形成；低点则多在政策回归正统、实际利率转正、全球风险偏好回暖后触发。",
+      "top_signals": [
+        "TRY depreciation accelerating vs EM peers — top signal",
+        "Rate cuts under political pressure while inflation stays elevated",
+        "Current account deficit widening as external financing tightens",
+        "Reform/orthodoxy reversal eroding foreign-investor confidence"
+      ],
+      "top_signals_zh": [
+        "里拉相对新兴市场同类货币加速贬值——顶部信号",
+        "通胀高企之际央行在政治压力下降息",
+        "经常账户赤字扩大、外部融资收紧",
+        "改革/正统路线逆转削弱外资信心"
+      ]
+    }
+  }
+}
