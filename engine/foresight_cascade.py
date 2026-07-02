@@ -283,34 +283,82 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
     return payload
 
 
+_HEARTBEAT_DAYS = 7   # log a row for a theme even when stage is unchanged if ≥this many days old
+
+
 def _append_ledger(payload: dict) -> None:
-    """Append-only: one row per (theme, asof) for PRECIPICE/BROADENING flags — the
-    actionable thesis stages, graded forward against basket return + drawdown."""
+    """Append-only: one row per (theme, asof) for ALL stages — including RE-RATING/WATCH/
+    UNKNOWN/GLUT-RISK — so the negative calls ("do not chase") become graded, testable claims
+    and the ledger starts accruing immediately.
+
+    Dedup strategy (keeps append-only guarantee + non-overlap meaningful):
+      • Hard skip: (theme, asof) already logged → idempotent re-runs stay clean.
+      • Stage transition: log when a theme's stage differs from its most-recent logged stage.
+      • Weekly heartbeat: log anyway if the last logged row for that theme is >7 days old,
+        even when the stage is unchanged (so the grader has recent observations to mature).
+
+    PIT membership snapshot (leak-free): tickers captured AT LOG TIME, not from today's config.
+    """
     d = config.data_dir() / "foresight"
     d.mkdir(parents=True, exist_ok=True)
     p = d / "log.jsonl"
-    seen = set()
+
+    # Build two indexes over existing rows:
+    #   seen_pairs  — (theme, asof) exact dedup (idempotency across same-day re-runs)
+    #   last_logged — theme -> (last_asof_date, last_stage) for transition/heartbeat logic
+    seen_pairs: set[tuple] = set()
+    last_logged: dict[str, tuple] = {}   # theme -> (last_date, last_stage)
+
     if p.exists():
         for line in p.read_text().splitlines():
             try:
                 e = json.loads(line)
-                seen.add((e.get("theme"), e.get("asof")))
+                t, a, s = e.get("theme"), e.get("asof"), e.get("stage")
+                if t and a:
+                    seen_pairs.add((t, a))
+                    try:
+                        d_date = datetime.fromisoformat(a).date()
+                    except Exception:  # noqa: BLE001
+                        continue
+                    prev = last_logged.get(t)
+                    if prev is None or d_date > prev[0]:
+                        last_logged[t] = (d_date, s)
             except Exception:  # noqa: BLE001
                 continue
+
     ts = datetime.now(timezone.utc).isoformat()
     asof = payload.get("asof")
-    # snapshot theme membership AT FLAG TIME so the grader can grade the basket point-in-time
-    # (not today's config, which may have added winners after the fact).
+    try:
+        asof_date = datetime.fromisoformat(asof).date() if asof else None
+    except Exception:  # noqa: BLE001
+        asof_date = None
+
+    # snapshot theme membership AT FLAG TIME (PIT — not today's config).
     cfg_themes = (config.load() or {}).get("themes") or {}
     lines = []
     for r in payload["themes"]:
-        if r["stage"] not in ("PRECIPICE", "BROADENING") or (r["theme"], asof) in seen:
+        theme = r["theme"]
+        stage = r["stage"]
+
+        # hard dedup: same (theme, asof) already written — idempotent
+        if (theme, asof) in seen_pairs:
             continue
+
+        prev = last_logged.get(theme)
+        if prev is not None:
+            prev_date, prev_stage = prev
+            stage_changed = (stage != prev_stage)
+            days_since = (asof_date - prev_date).days if asof_date and prev_date else None
+            heartbeat_due = days_since is not None and days_since >= _HEARTBEAT_DAYS
+            if not stage_changed and not heartbeat_due:
+                continue    # same stage logged recently — skip until transition or heartbeat
+
         lines.append(json.dumps({
-            "theme": r["theme"], "asof": asof, "ts": ts, "stage": r["stage"],
+            "theme": theme, "asof": asof, "ts": ts, "stage": stage,
             "bottleneck_band": r["bottleneck_band"], "revision_breadth": r["revision_breadth"],
-            "members": (cfg_themes.get(r["theme"]) or {}).get("tickers") or [],
+            "members": (cfg_themes.get(theme) or {}).get("tickers") or [],
         }, separators=(",", ":")))
+
     if lines:
         with p.open("a") as fh:
             fh.write("\n".join(lines) + "\n")
