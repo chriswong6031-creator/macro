@@ -146,7 +146,11 @@ html[data-theme="dark"] .rchip{background:var(--grid)}
   {% endif %}
 
   <!-- ===== ALLOCATION DESK · the decision (shared with the Vector command center) ===== -->
-  {% if rec and rec.ok and not (midterm and midterm.active) %}
+  {# Fix #34: use rec.suppressed_by_blackout (stamped in build_vector.py) as the
+     authoritative guard — this and vector.html.j2 now read the same flag so the
+     two pages cannot drift. The `and not (midterm and midterm.active)` is kept as a
+     belt-and-suspenders fallback for any legacy rec object missing the stamped key. #}
+  {% if rec and rec.ok and not rec.suppressed_by_blackout and not (midterm and midterm.active) %}
   {% set rt = rec.tone %}{% set L = rec.levels %}
   <div class="grid cols-2">
     <div class="card deck t-{{ rt }}">

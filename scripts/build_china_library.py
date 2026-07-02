@@ -868,8 +868,12 @@ def main(alpha: dict | None = None) -> dict | None:
         # Conviction answers "own it?"; this answers "buy now / at what price / when?".
         # Reads the cycle/ladder (CN recs carry the same ladder) — market-agnostic. China
         # `high` is None (close-only caches); assess() tolerates that.
+        # Gate the entry gauge on the SAME MACD-2D x StochRSI-3D confluence as the board
+        # (mirrors the US pattern in build_stock_library): a daily-cycle "buy now / partial"
+        # with no fresh confluence cross reads "awaiting confluence", never an open entry.
         try:
-            es = entry_signal.assess(close, high, rec)
+            es = entry_signal.assess(close, high, rec,
+                                     buyable=signal_gate.is_buyable(sig_verdict.get(ticker)))
             if es:
                 rec["entry_signal"] = es
         except Exception as e:  # noqa: BLE001 — additive, never fatal
