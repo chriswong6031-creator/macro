@@ -273,8 +273,12 @@
       /* the hamburger accordion caps each open dropdown at max-height:600px
          (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
          taller, so raise the cap for it (0,6,0 wins) — the parent flyout
-         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow. */
-      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px}}
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (0 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
     </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="../intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
@@ -344,7 +348,7 @@
 
 <footer>
   <span class="l-en">Read-only analytics — not investment advice. Theme scores and textures are a transparent focus/structure lens, NOT a validated forward-edge buy list: cross-sectional theme momentum has ~0 rank-IC and the baskets are hindsight-curated. Per-member conviction is the same per-stock Conviction Profile used on the stock dashboard, shown with its honest trust tier; it is an event-edge screen, never an order.</span><span class="l-zh">只读分析 — 非投资建议。主题评分与纹理是透明的聚焦/结构透镜，并非经验证的前瞻买入清单：横截面主题动量 rank-IC≈0，且篮子为事后筛选。成分股信念采用股票看板同一套信念档案，附带诚实的信任层级；它是事件型筛选，绝非下单指令。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-02 07:46 UTC</span>.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-02 08:38 UTC</span>.
 </footer>
 
 <script>
@@ -714,6 +718,5 @@ function boot(){
 if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
 </script>
 <script src="../theme.js"></script>
-<script defer data-whb data-root="../" src="../wh_banner.js"></script>
 </body>
 </html>

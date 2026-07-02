@@ -300,8 +300,12 @@
       /* the hamburger accordion caps each open dropdown at max-height:600px
          (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
          taller, so raise the cap for it (0,6,0 wins) — the parent flyout
-         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow. */
-      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px}}
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (0 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
     </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="../intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
@@ -1639,9 +1643,7 @@
         <li><span class="l-en">Bigger picture is mixed (no clear trend for a daily long)</span><span class="l-zh">大局为混合（对日线多头而言属趋势不明）</span></li><li><span class="l-en">Macro: US net liquidity expanding — a tailwind on the odds</span><span class="l-zh">宏观：美国净流动性扩张——对概率属顺风</span></li><li><span class="l-en">Swing low printed (buyers rejected the low)</span><span class="l-zh">摆动低点已现（买方拒绝了该低点）</span></li>
       </ul>
       
-      <p class="macro-caution">⚠ <span class="l-en">Macro-risk headwind: aggregate macro risk is elevated and this is a macro-sensitive (cyclical) name — buy setups here have historically taken deeper drawdowns, so demand extra confirmation and smaller size. A risk/sizing caution, not a forecast.</span><span class="l-zh">宏观风险逆风：总体宏观风险偏高，且该标的对宏观较敏感（周期性）——在此环境下买入形态历史上回撤更深，因此应要求更多确认并降低仓位。这是风险/仓位提示，并非预测。</span></p>
       
-      <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>6.2</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>69.2%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>0.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
       <p class="muted" style="font-size:12px; margin:4px 0"><span class="l-en">fwd P/E</span><span class="l-zh">预期市盈率</span> <b>6.2</b> · <span class="l-en">rev growth</span><span class="l-zh">营收增长</span> <b>69.2%</b> · <span class="l-en">margin</span><span class="l-zh">利润率</span> <b>0.0%</b> <span class="help">?<span class="tip"><span class="l-en">Best-effort weekly valuation snapshot from free sources — LOW CONFIDENCE, rough context only.</span><span class="l-zh">来自免费数据源的尽力而为的每周估值快照 — 低可信度，仅供粗略参考。</span></span></span></p>
       
@@ -1966,6 +1968,5 @@
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
-<script defer data-whb data-root="../" src="../wh_banner.js"></script>
 </body>
 </html>
