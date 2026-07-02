@@ -1,0 +1,207 @@
+{
+  "generated_at": "2026-07-02T05:05:56.655199",
+  "wave": "W1.4",
+  "added": {
+    "MU": {
+      "source": "yahoo",
+      "first_date": "1984-06-01",
+      "last_date": "2026-07-01",
+      "rows": 10602,
+      "added_by": "W1.4"
+    },
+    "ALB": {
+      "source": "yahoo",
+      "first_date": "1994-02-22",
+      "last_date": "2026-07-01",
+      "rows": 8143,
+      "added_by": "W1.4"
+    },
+    "SQM": {
+      "source": "yahoo",
+      "first_date": "1993-09-21",
+      "last_date": "2026-07-01",
+      "rows": 8250,
+      "added_by": "W1.4"
+    },
+    "DBA": {
+      "source": "yahoo",
+      "first_date": "2007-01-05",
+      "last_date": "2026-07-01",
+      "rows": 4902,
+      "added_by": "W1.4"
+    },
+    "GC=F": {
+      "source": "yahoo",
+      "first_date": "2000-12-27",
+      "last_date": "2026-07-02",
+      "rows": 6264,
+      "added_by": "W1.4"
+    },
+    "HG=F": {
+      "source": "yahoo",
+      "first_date": "2000-12-28",
+      "last_date": "2026-07-02",
+      "rows": 6262,
+      "added_by": "W1.4"
+    },
+    "SI=F": {
+      "source": "yahoo",
+      "first_date": "2000-12-29",
+      "last_date": "2026-07-02",
+      "rows": 6260,
+      "added_by": "W1.4"
+    },
+    "NG=F": {
+      "source": "yahoo",
+      "first_date": "2000-08-30",
+      "last_date": "2026-07-02",
+      "rows": 6489,
+      "added_by": "W1.4"
+    },
+    "ZC=F": {
+      "source": "yahoo",
+      "first_date": "2000-07-17",
+      "last_date": "2026-07-02",
+      "rows": 6495,
+      "added_by": "W1.4"
+    },
+    "PL=F": {
+      "source": "yahoo",
+      "first_date": "1997-10-29",
+      "last_date": "2026-07-02",
+      "rows": 6511,
+      "added_by": "W1.4"
+    },
+    "PA=F": {
+      "source": "yahoo",
+      "first_date": "1998-09-28",
+      "last_date": "2026-07-02",
+      "rows": 6522,
+      "added_by": "W1.4"
+    },
+    "^SOX": {
+      "source": "yahoo",
+      "first_date": "1994-05-04",
+      "last_date": "2026-07-01",
+      "rows": 8094,
+      "added_by": "W1.4"
+    },
+    "SOXX": {
+      "source": "yahoo",
+      "first_date": "2001-07-13",
+      "last_date": "2026-07-01",
+      "rows": 6278,
+      "added_by": "W1.4"
+    },
+    "XHB": {
+      "source": "yahoo",
+      "first_date": "2006-02-06",
+      "last_date": "2026-07-01",
+      "rows": 5132,
+      "added_by": "W1.4"
+    },
+    "USDSEK=X": {
+      "source": "yahoo",
+      "first_date": "2001-07-16",
+      "last_date": "2026-07-02",
+      "rows": 6319,
+      "added_by": "W1.4"
+    },
+    "USDSGD=X": {
+      "source": "yahoo",
+      "first_date": "2003-12-01",
+      "last_date": "2026-07-02",
+      "rows": 5872,
+      "added_by": "W1.4"
+    },
+    "USDIDR=X": {
+      "source": "yahoo",
+      "first_date": "2001-06-28",
+      "last_date": "2026-07-02",
+      "rows": 6314,
+      "added_by": "W1.4"
+    },
+    "USDCLP=X": {
+      "source": "yahoo",
+      "first_date": "2003-12-01",
+      "last_date": "2026-07-02",
+      "rows": 5854,
+      "added_by": "W1.4"
+    },
+    "USDZAR=X": {
+      "source": "yahoo",
+      "first_date": "2003-12-01",
+      "last_date": "2026-07-01",
+      "rows": 5873,
+      "added_by": "W1.4"
+    },
+    "USDTRY=X": {
+      "source": "yahoo",
+      "first_date": "2005-01-03",
+      "last_date": "2026-07-01",
+      "rows": 5588,
+      "added_by": "W1.4"
+    },
+    "USDPLN=X": {
+      "source": "yahoo",
+      "first_date": "2003-12-01",
+      "last_date": "2026-07-01",
+      "rows": 5858,
+      "added_by": "W1.4"
+    },
+    "USDHKD=X": {
+      "source": "yahoo",
+      "first_date": "2001-07-16",
+      "last_date": "2026-07-01",
+      "rows": 6317,
+      "added_by": "W1.4"
+    },
+    "CSUSHPISA": {
+      "source": "fred",
+      "first_date": "1987-01-01",
+      "last_date": "2026-03-01",
+      "rows": 471,
+      "added_by": "W1.4",
+      "note": "Case-Shiller Home Price Index, seasonally adjusted monthly"
+    },
+    "DCOILWTICO": {
+      "source": "fred",
+      "first_date": "1986-01-02",
+      "last_date": "2026-06-29",
+      "rows": 10191,
+      "added_by": "W1.4",
+      "note": "WTI Crude Oil spot price daily"
+    },
+    "DHHNGSP": {
+      "source": "fred",
+      "first_date": "1997-01-07",
+      "last_date": "2026-06-29",
+      "rows": 7401,
+      "added_by": "W1.4",
+      "note": "Henry Hub natural gas spot price daily"
+    }
+  },
+  "skipped": {
+    "CCJ": {
+      "source": "yahoo",
+      "reason": "already present",
+      "first_collected": "unknown"
+    },
+    "BAMLH0A0HYM2": {
+      "source": "fred",
+      "reason": "already present (HY OAS)",
+      "first_collected": "unknown"
+    },
+    "VIXCLS": {
+      "source": "fred",
+      "reason": "already present (VIX)",
+      "first_collected": "unknown"
+    },
+    "DGS30": {
+      "source": "fred",
+      "reason": "already present (30y yield)",
+      "first_collected": "unknown"
+    }
+  },
+  "failed": {}
+}
