@@ -452,6 +452,11 @@ function renderEntries(){
     const v=x.action==='enter'?['ENTER','建仓']:['ACCUMULATE','加仓'];
     buy.push(`<a class="prow" href="basket/${bid(x.id)}.html"><span class="pverb" style="color:#16a34a;border-color:#16a34a">${L(v[0],v[1])}</span>
       <span class="pn">${L(esc(x.name),esc(x.name_zh))}${sbBadge(x.id)}</span><span class="pw">${x.score}</span></a>`); }); }
+  // in-favour themes WITHOUT a clean entry (the honest act_now split) — shown, never hidden,
+  // with a muted "wait for a pullback" verb. Descriptive presentation, not a signal.
+  if(an && an.add_on_pullback){ an.add_on_pullback.filter(x=>!held.has(x.id)).forEach(x=>{
+    buy.push(`<a class="prow" href="basket/${bid(x.id)}.html" title="${esc(x.reason_en||'in favour, but no clean-entry setup right now')}"><span class="pverb" style="color:var(--warn);border-color:var(--warn)">${L('WAIT — PULLBACK','等待回调')}</span>
+      <span class="pn">${L(esc(x.name),esc(x.name_zh))}${sbBadge(x.id)}</span><span class="pw">${x.score}</span></a>`); }); }
   // REDUCE/AVOID: (US) act_now reduce + crowded held + de-overlapped displaced (context)
   let sell=[];
   if(an && an.reduce){ an.reduce.forEach(x=>{ const v=x.action==='avoid'?['AVOID','回避','#ef4444']:['TRIM','减仓','#f97316'];

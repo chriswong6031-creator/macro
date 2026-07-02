@@ -225,9 +225,12 @@
   .adc .v { font-size:17px; font-weight:700; font-variant-numeric:tabular-nums; }
   /* ---- what to act on now ---- */
   .anwrap { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .anwrap.three { grid-template-columns:1fr 1fr 1fr; }
+  @media (max-width:980px){ .anwrap.three{ grid-template-columns:1fr; } }
   @media (max-width:680px){ .anwrap{ grid-template-columns:1fr; } }
   .ancol { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 13px; }
   .anh { margin:0 0 4px; font-size:13px; } .anh.buy { color:var(--up); } .anh.red { color:var(--down); }
+  .anh.wait { color:var(--warn); }
   .anrow { display:flex; align-items:center; gap:9px; padding:7px 4px; border-top:1px solid var(--line); border-radius:7px; color:inherit; }
   .anrow:hover { background:var(--panel2); }
   .anverb { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; white-space:nowrap; }
@@ -306,10 +309,10 @@
 
   <section id="actnow-section" style="margin-top:6px">
     <h2><span class="idx">★</span>✅ {{ t('What to act on now', '现在该做什么') }}
-      <span class="sect-tag">{{ t('buy / add · reduce / avoid', '买入加仓 · 减仓回避') }}</span></h2>
+      <span class="sect-tag">{{ t('buy now · wait for a pullback · reduce / avoid', '立即买入 · 等待回调 · 减仓回避') }}</span></h2>
     <p class="sub">{{ t(
-      'The executional shortlist — themes with a clean entry to buy or add right now, and themes to reduce or avoid. Click any theme to see the specific stocks to act on. If nothing has a clean entry, the right move is patience.',
-      '可执行清单 — 当前具备干净入场点、值得买入或加仓的主题，以及应减仓或回避的主题。点击任一主题可查看应操作的具体个股。若无干净入场点，最佳操作是耐心等待。') }}</p>
+      'The executional shortlist, split honestly: "Buy now" lists only in-favour themes that ALSO have a clean entry setup right now; in-favour themes without one sit in the wait-for-a-pullback column — being in favour is not the same as being buyable today. Plus the reduce / avoid side. Click any theme to see the specific stocks. If nothing has a clean entry, the right move is patience.',
+      '可执行清单，如实拆分："立即买入"仅列出既被看好、又当前具备干净入场点的主题；被看好但无干净入场点的主题列于"等待回调"一栏 — 被看好并不等于当下可买。另有减仓/回避一侧。点击任一主题可查看具体个股。若无干净入场点，最佳操作是耐心等待。') }}</p>
     <div id="regime-sizing-chip"></div>
     <div id="actnow"></div>
   </section>
@@ -812,11 +815,19 @@ function renderActNow(){
       <span class="rn">${L(esc(x.name),esc(x.name_zh))}</span>
       <span class="anwhy muted sm">${esc((x.reasons||[]).join(' · '))}</span>
       <span class="ansc">${x.score}</span></a>`;};
-  const buys=a.buy||[], red=a.reduce||[];
+  // wait-for-a-pullback rows: same reco verb (muted) + the honest per-theme reason.
+  const rowWait=x=>{const ac=ACT[x.action]||['','',cssv('--muted')];
+    return `<a class="anrow" href="basket/${x.id}.html">
+      <span class="anverb" style="color:${ac[2]};border-color:${ac[2]};opacity:.72">${L(ac[0],ac[1])}</span>
+      <span class="rn">${L(esc(x.name),esc(x.name_zh))}</span>
+      <span class="anwhy muted sm">${x.reason_en?L(esc(x.reason_en),esc(x.reason_zh||x.reason_en)):esc((x.reasons||[]).join(' · '))}</span>
+      <span class="ansc">${x.score}</span></a>`;};
+  const buys=a.buy||[], wait=a.add_on_pullback||[], red=a.reduce||[];
   const moreBtn=n=>n>5?`<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">${L('Show more','显示更多')} ▾</span><span class="lm-hide">${L('Show less','收起')} ▴</span></button>`:'';
-  const anCol=(cls,head,arr,empty)=>`<div class="ancol lst-wrap"><h4 class="anh ${cls}">${head} <span class="muted sm">(${arr.length})</span></h4>${arr.length?`<div class="anlist lst-collapse is-collapsed">${arr.map(row).join('')}</div>${moreBtn(arr.length)}`:`<div class="muted sm" style="padding:10px 2px">${empty}</div>`}</div>`;
-  document.getElementById('actnow').innerHTML=`<div class="anwrap">
-    ${anCol('buy',`✅ ${L('Buy / add now','现在买入 / 加仓')}`,buys,L('Nothing has a clean entry right now — patience.','当前无干净入场点 — 耐心等待。'))}
+  const anCol=(cls,head,arr,empty,rowFn)=>`<div class="ancol lst-wrap"><h4 class="anh ${cls}">${head} <span class="muted sm">(${arr.length})</span></h4>${arr.length?`<div class="anlist lst-collapse is-collapsed">${arr.map(rowFn||row).join('')}</div>${moreBtn(arr.length)}`:`<div class="muted sm" style="padding:10px 2px">${empty}</div>`}</div>`;
+  document.getElementById('actnow').innerHTML=`<div class="anwrap three">
+    ${anCol('buy',`✅ ${L('Buy now (clean entry)','立即买入（干净入场）')}`,buys,L('Nothing has a clean entry right now — patience.','当前无干净入场点 — 耐心等待。'))}
+    ${anCol('wait',`⏳ ${L('In favour — no clean entry, wait for a pullback','看好 — 无干净入场点，等待回调')}`,wait,L('none','无'),rowWait)}
     ${anCol('red',`🔻 ${L('Reduce / avoid','减仓 / 回避')}`,red,L('none','无'))}
   </div>`;
 }

@@ -121,9 +121,12 @@
   .adc .v { font-size:17px; font-weight:700; font-variant-numeric:tabular-nums; }
   /* ---- what to act on now ---- */
   .anwrap { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .anwrap.three { grid-template-columns:1fr 1fr 1fr; }
+  @media (max-width:980px){ .anwrap.three{ grid-template-columns:1fr; } }
   @media (max-width:680px){ .anwrap{ grid-template-columns:1fr; } }
   .ancol { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 13px; }
   .anh { margin:0 0 4px; font-size:13px; } .anh.buy { color:var(--up); } .anh.red { color:var(--down); }
+  .anh.wait { color:var(--warn); }
   .anrow { display:flex; align-items:center; gap:9px; padding:7px 4px; border-top:1px solid var(--line); border-radius:7px; color:inherit; }
   .anrow:hover { background:var(--panel2); }
   .anverb { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; white-space:nowrap; }
@@ -136,6 +139,20 @@
   .rs-ic { font-size:14px; } .rs-main { font-size:13px; } .rs-main b { font-variant-numeric:tabular-nums; }
   .rs-decomp { margin-top:3px; font-variant-numeric:tabular-nums; }
   .rs-note { margin-top:4px; font-style:italic; line-height:1.45; }
+  /* ---- Leadership Health (display-only shape/fragility reads) ---- */
+  .tflag.mut { color:var(--muted); border-color:var(--line); font-weight:600; }
+  .flipcap { font-size:10.5px; color:var(--warn); margin:3px 0 0; font-variant-numeric:tabular-nums; }
+  .termstrip { display:flex; flex-wrap:wrap; align-items:center; gap:4px 7px; margin:2px 0 6px; font-size:10.5px; }
+  .tsc { background:var(--panel2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; color:var(--muted); }
+  .tsc b { font-variant-numeric:tabular-nums; font-weight:650; }
+  .tsc.pos b { color:var(--up); } .tsc.neg b { color:var(--down); }
+  .tspat { font-weight:650; color:var(--text); opacity:.85; }
+  .tstag { color:var(--muted); font-size:9.5px; border:1px solid var(--line); border-radius:5px; padding:0 4px; }
+  /* validated sleeve-size chip (CN drawdown radar; payload-gated, display-only) */
+  .sleeve-chip { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 10px; background:var(--panel2);
+    border:1px solid var(--line); border-radius:9px; padding:8px 12px; margin:8px 0 2px; font-size:12.5px; }
+  .sleeve-chip .sl-main b { font-weight:680; }
+  .sleeve-chip .sl-tag { font-size:10.5px; font-style:italic; }
 </style>
 <div class="nav-ctrls" style="justify-content:flex-end;margin:4px 0 0">
     <div class="bell" id="theme-bell">
@@ -143,12 +160,14 @@
       <div class="bell-menu" id="bell-menu" role="menu"></div>
     </div>
 </div>
+  {# validated sleeve-size chip (rendered client-side; empty for markets without one) #}
+  <div id="sleeve-chip"></div>
   <section id="actnow-section" style="margin-top:6px">
     <h2><span class="idx">★</span>✅ {{ t('What to act on now', '现在该做什么') }}
-      <span class="sect-tag">{{ t('buy / add · reduce / avoid', '买入加仓 · 减仓回避') }}</span></h2>
+      <span class="sect-tag">{{ t('buy now · wait for a pullback · reduce / avoid', '立即买入 · 等待回调 · 减仓回避') }}</span></h2>
     <p class="sub">{{ t(
-      'The executional shortlist — themes with a clean entry to buy or add right now, and themes to reduce or avoid. Click any theme to see the specific stocks to act on. If nothing has a clean entry, the right move is patience.',
-      '可执行清单 — 当前具备干净入场点、值得买入或加仓的主题，以及应减仓或回避的主题。点击任一主题可查看应操作的具体个股。若无干净入场点，最佳操作是耐心等待。') }}</p>
+      'The executional shortlist, split honestly: "Buy now" lists only in-favour themes that ALSO have a clean entry setup right now; in-favour themes without one sit in the wait-for-a-pullback column — being in favour is not the same as being buyable today. Plus the reduce / avoid side. Click any theme to see the specific stocks. If nothing has a clean entry, the right move is patience.',
+      '可执行清单，如实拆分："立即买入"仅列出既被看好、又当前具备干净入场点的主题；被看好但无干净入场点的主题列于"等待回调"一栏 — 被看好并不等于当下可买。另有减仓/回避一侧。点击任一主题可查看具体个股。若无干净入场点，最佳操作是耐心等待。') }}</p>
     <div id="regime-sizing-chip"></div>
     <div id="actnow"></div>
   </section>

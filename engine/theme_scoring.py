@@ -474,6 +474,68 @@ def _label(score: float, fp: dict, perf: dict, breadth: dict, delta_5d: float | 
     return "neutral"
 
 
+def _flip_distance(score: float, fp: dict, perf: dict, breadth: dict, delta_5d: float | None,
+                   mtf: dict | None = None, tape: dict | None = None) -> dict:
+    """DISPLAY-ONLY distance-to-label-change meter. Pure arithmetic over the SAME literals
+    _label() reads — no new thresholds, no new logic; it reconstructs the rollover-guard
+    inequality (delta_5d <= -0.015 with the other guard legs at their CURRENT truth values)
+    and the mom_pos flip, so it can never disagree with _label(). Descriptive — a shape /
+    fragility read, not a forecast.
+
+      route_a_bps — bps of ADDITIONAL 5-day relative loss until the rollover guard would fire,
+                    None when the other guard legs (net_nh<=0, score>=62, mom_pos, breadth_ok,
+                    not long_dn) already block it. <=0 means the 5d threshold is already crossed.
+      route_b_pp  — the 20d relative return in pp (distance of mom_pos to flipping at 0).
+      nearest_route — "a"/"b"/None: the smaller positive remaining gap (compared in bps).
+    """
+    d5 = (delta_5d or 0.0)                                   # same coalescing as _label()
+    r20 = (perf.get("20d") or {}).get("rel")
+    mom_pos = (r20 or 0.0) > 0
+    pct50 = breadth.get("pct50")
+    net_nh = (breadth.get("nh", 0) - breadth.get("nl", 0))
+    breadth_ok = (pct50 is None or pct50 >= 0.5) and net_nh >= 0
+    long_dn = _long_below_trend(mtf, fp)
+    other_legs = (net_nh <= 0 and score >= 62 and mom_pos and breadth_ok and not long_dn)
+
+    route_a = round((d5 + 0.015) * 10000.0, 1) if other_legs else None
+    route_b = round((r20 or 0.0) * 100.0, 2)
+
+    # sessions estimate from the trailing realized daily relative move (|5d rel| / 5) —
+    # purely the same literal, tagged descriptive; None when the pace is flat/unknown.
+    sessions = None
+    avg_daily = abs(d5) / 5.0
+    if route_a is not None and route_a > 0 and avg_daily > 0:
+        sessions = max(1, int(round(route_a / (avg_daily * 10000.0))))
+
+    a_gap = route_a if (route_a is not None and route_a > 0) else None
+    b_gap = (route_b * 100.0) if route_b > 0 else None       # pp -> bps for comparison
+    if a_gap is not None and (b_gap is None or a_gap <= b_gap):
+        nearest = "a"
+    elif b_gap is not None:
+        nearest = "b"
+    else:
+        nearest = None
+
+    if route_a is None:
+        note_en = ("Rollover guard not armed — the other guard legs (net new highs / score / "
+                   "20d momentum / breadth / long trend) do not currently line up. Descriptive — "
+                   "a shape read, not a forecast.")
+        note_zh = ("回落护栏未就位 — 其余护栏条件（净新高/评分/20日动量/广度/长期趋势）当前"
+                   "未同时满足。描述性 — 形态读数，非预测。")
+    elif route_a > 0:
+        sess_en = f" (≈{sessions} bad session{'s' if sessions != 1 else ''} at the recent pace)" \
+            if sessions is not None else ""
+        sess_zh = f"（按近期节奏约{sessions}个坏交易日）" if sessions is not None else ""
+        note_en = (f"{int(round(route_a))} bps of further 5-day relative loss from FADING"
+                   f"{sess_en} — descriptive, not a forecast.")
+        note_zh = f"距「退潮」还有{int(round(route_a))}个基点的5日相对回撤{sess_zh} — 描述性，非预测。"
+    else:
+        note_en = ("The 5-day rollover threshold is already crossed — descriptive, not a forecast.")
+        note_zh = "5日回落阈值已越过 — 描述性，非预测。"
+    return {"route_a_bps": route_a, "route_b_pp": route_b, "route_a_sessions_est": sessions,
+            "nearest_route": nearest, "note_en": note_en, "note_zh": note_zh}
+
+
 def _reco(label: str, macro: float, crowd_pen: float, fp: dict,
           mtf: dict | None = None, tape: dict | None = None) -> str:
     below_trend = _long_below_trend(mtf, fp)     # drawdown-control gate (the validated channel)
@@ -707,6 +769,8 @@ def compute_theme_intel(region: str = "us") -> dict | None:
 
         delta_5d = (perf.get("5d") or {}).get("rel")
         label = _label(score, fp, perf, breadth_d, delta_5d, mtf, tape)
+        # display-only distance-to-label-change meter — same literals as _label(), no new logic
+        flip_dist = _flip_distance(score, fp, perf, breadth_d, delta_5d, mtf, tape)
         reco = _reco(label, macro_g, crowd_pen, fp, mtf, tape)
         # SUBTRACT-ONLY vol-regime caution: in a risk-off kill-switch regime, stand the
         # aggressive recos DOWN to "hold" (never the reverse, never touches score/rank). This
@@ -749,6 +813,7 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             "regime_demoted": regime_demoted,
             "reasons": reasons,
             "signal_strength": _signal_strength(label, cal),
+            "flip_distance": flip_dist,
 
             "rs_pctile": _r(fp.get("rs_pctile")),
             "accel_z": _r(fp.get("accel_z")),
@@ -853,12 +918,17 @@ def compute_theme_intel(region: str = "us") -> dict | None:
     # WHAT TO ACT ON NOW — the prioritized theme-level BUY list (enter the emerging clean
     # ones first, then accumulate the dominant-not-extended), plus the reduce/avoid side.
     # Display-only: a focus list, not an order. If nothing qualifies the UI says "patience".
+    # HONEST SPLIT (no reco logic touched): the section copy promises "themes with a clean
+    # entry", so "buy" carries ONLY the constructive recos whose clean_entry texture flag is
+    # true; the rest move — visibly, never hidden — to "add_on_pullback" (in favour on the
+    # desk read, but no clean-entry setup right now). Descriptive presentation, not a signal.
     def _act(th, action):
         ce = th["textures"].get("clean_entry") or {}
         return {"id": th["id"], "name": th["name"], "name_zh": th["name_zh"],
                 "score": th["score"], "action": action,
                 "action_en": RECOS[action][0], "action_zh": RECOS[action][1],
                 "label": th["label"], "entry_quality": ce.get("quality"),
+                "clean_entry": bool(ce.get("flag")),
                 "reasons": (th.get("reasons") or [])[:2]}
     enter_buys = sorted([_act(t, "enter") for t in themes if t["reco"] == "enter"],
                         key=lambda x: -(x["entry_quality"] or 0))
@@ -866,7 +936,19 @@ def compute_theme_intel(region: str = "us") -> dict | None:
                       key=lambda x: -x["score"])
     reduce_ = sorted([_act(t, t["reco"]) for t in themes if t["reco"] in ("trim", "avoid")],
                      key=lambda x: x["score"])
-    act_now = {"buy": enter_buys + acc_buys, "reduce": reduce_}
+    constructive = enter_buys + acc_buys
+    add_on_pullback = []
+    for x in constructive:
+        if x["clean_entry"]:
+            continue
+        q = x.get("entry_quality")
+        qs = f"{int(round(q * 100))}%" if q is not None else "—"
+        add_on_pullback.append({**x,
+            "reason_en": f"in favour ({x['action_en'].lower()}) but no clean-entry setup right "
+                         f"now — entry quality {qs}",
+            "reason_zh": f"看好（{x['action_zh']}）但当前无干净入场点 — 入场质量 {qs}"})
+    act_now = {"buy": [x for x in constructive if x["clean_entry"]],
+               "add_on_pullback": add_on_pullback, "reduce": reduce_}
 
     return {
         "as_of": idx.max().strftime("%Y-%m-%d"),
