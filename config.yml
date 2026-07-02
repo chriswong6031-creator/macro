@@ -4734,10 +4734,12 @@ intl:
       fred:
         yield_10y: IRLTLT01JPM156N
         short_3m: IR3TIB01JPM156N
-        cpi_yoy: CPALTT01JPM659N
+        # CPALTT01JPM659N (OECD MEI headline) discontinued 2021-06 — no live keyless
+        # FRED replacement found (all OECD JP CPI variants freeze at 2021-06 or 404).
+        # Series removed; JP real_yield is gated on CPI freshness and will show N/A.
         unemployment: LRHUTTTTJPM156S
         gdp: JPNRGDPEXP
-        m2: MYAGM2JPM189S
+        # MYAGM2JPM189S discontinued 2017-02 — removed (M2 not displayed on intl page).
     KR:
       name: South Korea
       name_zh: 韩国
@@ -4752,10 +4754,12 @@ intl:
       fred:
         yield_10y: IRLTLT01KRM156N
         short_3m: IR3TIB01KRM156N
-        cpi_yoy: CPALTT01KRM659N
+        # CPALTT01KRM659N (OECD MEI headline) discontinued 2023-11. Replaced with
+        # KORCPICORMINMEI (OECD core CPI YoY, current through 2025-04; monthly).
+        cpi_yoy: KORCPICORMINMEI
         unemployment: LRHUTTTTKRM156S
         gdp: NGDPRSAXDCKRQ
-        m2: MYAGM2KRM189S
+        # MYAGM2KRM189S discontinued 2017-05 — removed (M2 not displayed on intl page).
     TW:
       name: Taiwan
       name_zh: 台湾
@@ -4819,7 +4823,7 @@ intl:
         cpi_yoy: CPALTT01GBM659N
         unemployment: LRHUTTTTGBM156S
         gdp: NGDPRSAXDCGBQ
-        m2: MABMM301GBM189S
+        # MABMM301GBM189S discontinued 2023-11 — removed (M2 not displayed on intl page).
     EZ:
       name: Eurozone
       name_zh: 欧元区
@@ -4835,9 +4839,11 @@ intl:
         yield_10y: IRLTLT01EZM156N
         short_3m: IR3TIB01EZM156N
         cpi_yoy: CP0000EZ19M086NEST   # Eurostat HICP index (current; engine auto-computes YoY)
-        unemployment: LRHUTTTTEZM156S
+        # LRHUTTTTEZM156S (OECD MEI) discontinued 2023-01 — no live keyless FRED replacement
+        # found (all OECD/Eurostat EZ monthly unemployment variants 404 or equally stale).
+        # Series removed; unemployment display will show N/A for EZ.
         gdp: CLVMNACSCAB1GQEA19
-        m2: MYAGM2EZM196N
+        # MYAGM2EZM196N discontinued 2017-03 — removed (M2 not displayed on intl page).
 
   # -- Engine (uniform across countries) --------------------------------------
   engine:

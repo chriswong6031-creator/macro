@@ -116,6 +116,73 @@ def is_connection_error(exc: Exception) -> bool:
             or "connection aborted" in s or "connection refused" in s)
 
 
+def detect_stale_series(
+    group: str,
+    frames: dict[str, pd.DataFrame],
+    cadence_days: int,
+    *,
+    multiplier: float = 3.0,
+) -> list[dict]:
+    """Frozen-tail detector: after a SUCCESSFUL 200-OK fetch, compare each series'
+    stored last-observation date against the expected cadence.
+
+    A series is "frozen" when its last observation is older than
+    ``cadence_days * multiplier`` days — i.e. multiple release cycles have passed
+    without any new data. This catches discontinued upstream series that return
+    200-OK with stale history (the failure mode that silently killed JP/KR CPI,
+    EZ unemployment, and the intl M2 group: FRED kept serving historical data with
+    a frozen tail, so is_connection_error and the adapter-level stale check both
+    missed it).
+
+    Returns a list of ``{group, series, last_obs, cadence_days, age_days}`` dicts
+    for every frozen tail detected; empty list if all series are live.  Non-fatal
+    by design — the caller writes these to run_status["stale_series"] for the
+    health surface.
+    """
+    today = datetime.now(timezone.utc).date()
+    threshold = int(cadence_days * multiplier)
+    stale: list[dict] = []
+    for name, df in frames.items():
+        try:
+            df_clean = df.dropna(how="all")
+            if df_clean.empty:
+                continue
+            last_obs: date = pd.Timestamp(df_clean.index.max()).date()
+            age = (today - last_obs).days
+            if age > threshold:
+                log.warning(
+                    "stale_series detected: %s/%s last_obs=%s age=%dd (threshold=%dd, "
+                    "cadence=%dd×%.1f)",
+                    group, name, last_obs, age, threshold, cadence_days, multiplier,
+                )
+                stale.append({
+                    "group": group,
+                    "series": name,
+                    "last_obs": str(last_obs),
+                    "cadence_days": cadence_days,
+                    "age_days": age,
+                })
+        except Exception:  # noqa: BLE001 — staleness check must never crash the run
+            pass
+    return stale
+
+
+def _write_stale_series(new_entries: list[dict]) -> None:
+    """Merge new stale-series entries into run_status["stale_series"], keyed by
+    group+series so repeated runs deduplicate and update the last_obs timestamp."""
+    if not new_entries:
+        return
+    status = store.read_status()
+    existing: list[dict] = status.get("stale_series", [])
+    by_key = {(e["group"], e["series"]): e for e in existing}
+    for entry in new_entries:
+        by_key[(entry["group"], entry["series"])] = {
+            **entry, "detected_at": datetime.now(timezone.utc).isoformat()
+        }
+    status["stale_series"] = list(by_key.values())
+    store.write_status(status)
+
+
 def _breaker_state() -> dict:
     return store.read_status().get("circuit_breaker", {})
 
@@ -168,8 +235,21 @@ def run_adapter(adapter: Adapter, full_history: bool = False,
             age = (datetime.now(timezone.utc).date() - last.date()).days
             if age > stale_after_days:
                 status = "stale"
+        # Frozen-tail detector: a 200-OK fetch whose last observation never advances
+        # (series discontinued upstream) is invisible to is_connection_error. Compare
+        # each fetched series' last observation against cadence. Non-fatal; writes
+        # named stale_series entries to run_status.json for the health surface.
+        stale_found = detect_stale_series(
+            adapter.group, frames, cadence_days=stale_after_days)
+        if stale_found:
+            _write_stale_series(stale_found)
+            notes = [f"frozen tail: {e['series']} last={e['last_obs']} age={e['age_days']}d"
+                     for e in stale_found]
+        else:
+            notes = []
         res = FetchResult(adapter.name, status, rows=rows,
-                          last_date=str(last.date()) if last is not None else None)
+                          last_date=str(last.date()) if last is not None else None,
+                          notes=notes)
     except Exception as e:  # noqa: BLE001 — degrade, never crash the run
         if adapter.expected_failure:
             log.info("adapter %s blocked (known): %s", adapter.name, e)
