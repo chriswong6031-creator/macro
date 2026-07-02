@@ -40,6 +40,7 @@ from engine.cycles import _tf_state, analyze  # noqa: E402 — _tf_state: 2W Sto
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
 from engine.setups import CN_ALPHA_WEIGHT, dedupe_dual_class, setup_score  # noqa: E402
 from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's alignment gate)
+from engine import coiled  # noqa: E402  — wave-3-validated COILED cohort-washout ranking bonus (CN gate: clean15 +7.33pp, stop5 −6.21pp better, n=10,784; display/ranking only; HK failed gate — CN only)
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
 
@@ -875,6 +876,13 @@ def main(alpha: dict | None = None) -> dict | None:
 
     recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
     sig_verdict: dict[str, dict] = {}       # owner's confluence T1->T4 cascade verdict per name
+    # COILED wave-3 CN ranking bonus: per-name inputs collected in the loop; cohort_fractions
+    # computed AFTER the loop (cross-sectional). CN gate: clean15 +7.33pp, stop5 −6.21pp, n=10,784.
+    # HK failed its gate — touch NOTHING in HK.
+    _coil_d:      dict[str, float | None] = {}
+    _coil_wash:   dict[str, bool | None]  = {}
+    _coil_div:    dict[str, bool]         = {}
+    _coil_sector: dict[str, str | None]   = {}
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
@@ -883,6 +891,15 @@ def main(alpha: dict | None = None) -> dict | None:
         # gate. It NEVER changes which names are eligible (alignment stays the inclusion gate) —
         # it only adds the per-card tier badge and re-ranks WITHIN the aligned buy list (below).
         sig_verdict[ticker] = signal_gate.gate(ticker, close)
+        # COILED wave-3 CN ranking bonus: collect per-name inputs for cohort computation below.
+        # All four assignments are guarded as one block; any failure leaves dicts empty for this name.
+        try:
+            _coil_d[ticker]      = coiled.weekly_d_last(close)
+            _coil_wash[ticker]   = coiled.washout_ctx(close)
+            _coil_div[ticker]    = coiled.bull_div(close)
+            _coil_sector[ticker] = sector or None
+        except Exception:  # noqa: BLE001 — additive, never fatal
+            pass
         if alpha_pt.get(ticker):            # additive: absent => no alpha panel for this name
             rec["alpha"] = alpha_pt[ticker]
             sc = _setup_score(rec)
@@ -1169,8 +1186,27 @@ def main(alpha: dict | None = None) -> dict | None:
     # "Already ran" is handled ORTHOGONALLY by EXT_PENALTY below, not by demoting every T1.
     CN_TIER_FRAC, CN_WN_FLOOR = 0.30, 0.60
 
+    # COILED wave-3 CN ranking bonus: cohort_fractions is cross-sectional (requires the full
+    # universe), so it is computed here AFTER the loop. Both steps try/except guarded; failure
+    # degrades gracefully to empty dict (board continues without the bonus, never fatal).
+    coiled_by: dict[str, dict] = {}
+    try:
+        _coil_frac = coiled.cohort_fractions(_coil_d, _coil_sector)
+        coiled_by = {
+            t: coiled.assess(_coil_wash.get(t), _coil_frac.get(t), bool(_coil_div.get(t)))
+            for t in sig_verdict
+        }
+    except Exception as _e:  # noqa: BLE001 — additive; board degrades gracefully without bonus
+        log.warning("china coiled bonus skipped (%s)", _e)
+        coiled_by = {}
+
     def _cn_bonus(r):
+        # wave-3 CN gate: clean15 +7.33pp, stop5 −6.21pp better, n=10,784. ADDITIVE beside:
+        #   • WASHOUT_BONUS (own-name 2W StochRSI reclaim, orthogonal own-name signal)
+        #   • EXT_PENALTY (anti-chase extension demote, orthogonal anti-chase)
+        # A name with both washout_2w AND coiled legitimately stacks both bonuses.
         b = WASHOUT_BONUS if r.get("washout_2w") else 0.0
+        b += ((coiled_by.get(r.get("ticker")) or {}).get("bonus") or 0.0)
         ext = float((r.get("extension") or {}).get("score") or 0.0)
         return b - EXT_PENALTY * ext                    # net additive lift/penalty on the 0..1 blend
 
@@ -1210,6 +1246,12 @@ def main(alpha: dict | None = None) -> dict | None:
         for r in eligible_rows:
             r["align_tier"] = _atier(r.get("ticker"))        # context chip only (shown if aligned/near)
             r["signal"] = signal_gate.compact(sig_verdict.get(r.get("ticker")))
+            # COILED wave-3 CN chip: attach assess() dict when the name qualifies as coiled or
+            # at least has a washout_ctx signal (same pattern as US build_stock_library.py).
+            _t = r.get("ticker")
+            cb = coiled_by.get(_t)
+            if cb and (cb.get("coiled") or cb.get("washout_ctx")):
+                r["coiled"] = cb
         setups = {"as_of": as_of, "rank_by": "confluence",
                   "buy": eligible_rows[:110], "laggards": laggards}
         (site / "factordata" / "china_setups.json").write_text(

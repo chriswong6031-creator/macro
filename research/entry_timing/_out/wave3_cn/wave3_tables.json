@@ -1,0 +1,392 @@
+{
+  "_meta": {
+    "panel": "cn",
+    "n_names": 1382,
+    "eval_start": "2022-09-01",
+    "half_cut": "2024-09-24",
+    "min_bars": 800,
+    "workers": 6,
+    "runtime_s": 323.3
+  },
+  "T1": {
+    "m2d_s3d": [
+      {
+        "label": "ALL",
+        "n": 20502,
+        "stop5": 47.93,
+        "clean10": 39.99,
+        "clean15": 32.62,
+        "clean20": 27.19,
+        "clean30": 19.55,
+        "clean15_h189": 33.45,
+        "dead_money": 6.69,
+        "med_mfe63": 12.46,
+        "med_mae63": -8.58
+      },
+      {
+        "label": "in_washout",
+        "n": 17357,
+        "stop5": 47.99,
+        "clean10": 40.02,
+        "clean15": 32.86,
+        "clean20": 27.44,
+        "clean30": 20.16,
+        "clean15_h189": 33.39,
+        "dead_money": 5.55,
+        "med_mfe63": 12.89,
+        "med_mae63": -8.92
+      },
+      {
+        "label": "COILED",
+        "n": 10784,
+        "stop5": 45.72,
+        "clean10": 43.03,
+        "clean15": 35.57,
+        "clean20": 29.95,
+        "clean30": 22.11,
+        "clean15_h189": 36.09,
+        "dead_money": 5.06,
+        "med_mfe63": 14.65,
+        "med_mae63": -8.3
+      },
+      {
+        "label": "noncoiled_washout",
+        "n": 6490,
+        "stop5": 51.93,
+        "clean10": 34.88,
+        "clean15": 28.24,
+        "clean20": 23.17,
+        "clean30": 16.86,
+        "clean15_h189": 28.75,
+        "dead_money": 6.36,
+        "med_mfe63": 9.91,
+        "med_mae63": -10.31
+      },
+      {
+        "label": "STAR",
+        "n": 2500,
+        "stop5": 45.0,
+        "clean10": 44.56,
+        "clean15": 37.56,
+        "clean20": 31.32,
+        "clean30": 22.76,
+        "clean15_h189": 37.92,
+        "dead_money": 4.56,
+        "med_mfe63": 15.73,
+        "med_mae63": -8.29
+      },
+      {
+        "label": "coiled_no_div",
+        "n": 8284,
+        "stop5": 45.93,
+        "clean10": 42.56,
+        "clean15": 34.97,
+        "clean20": 29.54,
+        "clean30": 21.91,
+        "clean15_h189": 35.54,
+        "dead_money": 5.21,
+        "med_mfe63": 14.33,
+        "med_mae63": -8.3
+      },
+      {
+        "label": "div_only_noncoiled",
+        "n": 1496,
+        "stop5": 52.94,
+        "clean10": 33.36,
+        "clean15": 27.61,
+        "clean20": 21.79,
+        "clean30": 16.04,
+        "clean15_h189": 28.34,
+        "dead_money": 7.09,
+        "med_mfe63": 9.14,
+        "med_mae63": -10.66
+      }
+    ],
+    "base3d": [
+      {
+        "label": "ALL",
+        "n": 13316,
+        "stop5": 48.89,
+        "clean10": 38.74,
+        "clean15": 31.53,
+        "clean20": 26.16,
+        "clean30": 18.32,
+        "clean15_h189": 32.46,
+        "dead_money": 6.8,
+        "med_mfe63": 11.81,
+        "med_mae63": -8.74
+      },
+      {
+        "label": "COILED",
+        "n": 7392,
+        "stop5": 47.78,
+        "clean10": 40.54,
+        "clean15": 33.36,
+        "clean20": 27.96,
+        "clean30": 20.09,
+        "clean15_h189": 34.19,
+        "dead_money": 4.99,
+        "med_mfe63": 13.76,
+        "med_mae63": -8.51
+      }
+    ]
+  },
+  "T3": [
+    {
+      "cut": "pre_half",
+      "cohort_type": "sector",
+      "stratum": "COILED",
+      "label": "COILED_pre_half",
+      "n": 7388,
+      "stop5": 51.81,
+      "clean10": 37.01,
+      "clean15": 29.79,
+      "clean20": 24.68,
+      "clean30": 17.92,
+      "clean15_h189": 30.1,
+      "dead_money": 4.43,
+      "med_mfe63": 13.78,
+      "med_mae63": -9.54
+    },
+    {
+      "cut": "pre_half",
+      "cohort_type": "sector",
+      "stratum": "noncoiled_washout",
+      "label": "ncw_pre_half",
+      "n": 4225,
+      "stop5": 56.0,
+      "clean10": 30.44,
+      "clean15": 23.72,
+      "clean20": 18.79,
+      "clean30": 12.76,
+      "clean15_h189": 24.02,
+      "dead_money": 5.14,
+      "med_mfe63": 8.38,
+      "med_mae63": -12.22
+    },
+    {
+      "cut": "post_half",
+      "cohort_type": "sector",
+      "stratum": "COILED",
+      "label": "COILED_post_half",
+      "n": 3396,
+      "stop5": 32.45,
+      "clean10": 56.12,
+      "clean15": 48.14,
+      "clean20": 41.43,
+      "clean30": 31.21,
+      "clean15_h189": 49.12,
+      "dead_money": 6.45,
+      "med_mfe63": 16.55,
+      "med_mae63": -5.62
+    },
+    {
+      "cut": "post_half",
+      "cohort_type": "sector",
+      "stratum": "noncoiled_washout",
+      "label": "ncw_post_half",
+      "n": 2265,
+      "stop5": 44.33,
+      "clean10": 43.18,
+      "clean15": 36.69,
+      "clean20": 31.35,
+      "clean30": 24.5,
+      "clean15_h189": 37.57,
+      "dead_money": 8.65,
+      "med_mfe63": 12.9,
+      "med_mae63": -7.23
+    },
+    {
+      "cut": "all",
+      "cohort_type": "theme",
+      "stratum": "COILED_theme",
+      "label": "COILED_theme_all",
+      "n": 1966,
+      "stop5": 47.0,
+      "clean10": 42.27,
+      "clean15": 34.44,
+      "clean20": 28.94,
+      "clean30": 21.21,
+      "clean15_h189": 34.74,
+      "dead_money": 4.43,
+      "med_mfe63": 13.26,
+      "med_mae63": -8.56
+    },
+    {
+      "cut": "all",
+      "cohort_type": "theme",
+      "stratum": "noncoiled_theme",
+      "label": "ncw_theme_all",
+      "n": 1217,
+      "stop5": 48.48,
+      "clean10": 38.46,
+      "clean15": 32.37,
+      "clean20": 27.86,
+      "clean30": 21.45,
+      "clean15_h189": 32.95,
+      "dead_money": 5.51,
+      "med_mfe63": 11.39,
+      "med_mae63": -9.37
+    },
+    {
+      "cut": "pre_half",
+      "cohort_type": "theme",
+      "stratum": "COILED_theme",
+      "label": "COILED_theme_pre_half",
+      "n": 1324,
+      "stop5": 51.74,
+      "clean10": 37.54,
+      "clean15": 29.61,
+      "clean20": 24.7,
+      "clean30": 17.75,
+      "clean15_h189": 29.83,
+      "dead_money": 3.25,
+      "med_mfe63": 13.08,
+      "med_mae63": -9.69
+    },
+    {
+      "cut": "pre_half",
+      "cohort_type": "theme",
+      "stratum": "noncoiled_theme",
+      "label": "ncw_theme_pre_half",
+      "n": 820,
+      "stop5": 52.8,
+      "clean10": 33.66,
+      "clean15": 27.68,
+      "clean20": 23.41,
+      "clean30": 17.8,
+      "clean15_h189": 27.93,
+      "dead_money": 4.63,
+      "med_mfe63": 9.5,
+      "med_mae63": -10.94
+    },
+    {
+      "cut": "post_half",
+      "cohort_type": "theme",
+      "stratum": "COILED_theme",
+      "label": "COILED_theme_post_half",
+      "n": 642,
+      "stop5": 37.23,
+      "clean10": 52.02,
+      "clean15": 44.39,
+      "clean20": 37.69,
+      "clean30": 28.35,
+      "clean15_h189": 44.86,
+      "dead_money": 6.85,
+      "med_mfe63": 14.37,
+      "med_mae63": -5.79
+    },
+    {
+      "cut": "post_half",
+      "cohort_type": "theme",
+      "stratum": "noncoiled_theme",
+      "label": "ncw_theme_post_half",
+      "n": 397,
+      "stop5": 39.55,
+      "clean10": 48.36,
+      "clean15": 42.07,
+      "clean20": 37.03,
+      "clean30": 28.97,
+      "clean15_h189": 43.32,
+      "dead_money": 7.3,
+      "med_mfe63": 15.72,
+      "med_mae63": -6.61
+    }
+  ],
+  "T4": {
+    "coiled_vs_ncw": {
+      "n_names_qualifying": 1139,
+      "pct_coiled_wins_clean15": 59.26
+    },
+    "star_vs_nonstar_washout": {
+      "n_names_qualifying": 724,
+      "pct_star_wins_clean15": 54.83
+    }
+  },
+  "T5": [
+    {
+      "label": "Q1",
+      "n": 4324,
+      "stop5": 52.47,
+      "clean10": 34.34,
+      "clean15": 27.87,
+      "clean20": 22.71,
+      "clean30": 16.12,
+      "clean15_h189": 28.38,
+      "dead_money": 6.41,
+      "med_mfe63": 9.16,
+      "med_mae63": -10.83
+    },
+    {
+      "label": "Q2",
+      "n": 4397,
+      "stop5": 51.19,
+      "clean10": 35.87,
+      "clean15": 28.63,
+      "clean20": 23.88,
+      "clean30": 17.9,
+      "clean15_h189": 29.32,
+      "dead_money": 5.84,
+      "med_mfe63": 11.41,
+      "med_mae63": -9.76
+    },
+    {
+      "label": "Q3",
+      "n": 4248,
+      "stop5": 45.01,
+      "clean10": 44.75,
+      "clean15": 37.95,
+      "clean20": 32.25,
+      "clean30": 24.65,
+      "clean15_h189": 38.44,
+      "dead_money": 4.57,
+      "med_mfe63": 16.18,
+      "med_mae63": -7.78
+    },
+    {
+      "label": "Q4",
+      "n": 4305,
+      "stop5": 43.39,
+      "clean10": 45.09,
+      "clean15": 37.0,
+      "clean20": 30.94,
+      "clean30": 22.0,
+      "clean15_h189": 37.38,
+      "dead_money": 5.37,
+      "med_mfe63": 15.05,
+      "med_mae63": -8.01
+    },
+    {
+      "label": "Q4_minus_Q1",
+      "clean15_spread": 9.13,
+      "spearman_r": 0.8,
+      "spearman_p": 0.2
+    }
+  ],
+  "T8": {
+    "ALL": {
+      "n_fires": 20502,
+      "recall_B15": 49.19,
+      "recall_B30": 49.69,
+      "trap_fire_rate": 38.04,
+      "med_premium": NaN,
+      "med_lead": NaN
+    },
+    "COILED": {
+      "n_fires": 10784,
+      "recall_B15": 34.29,
+      "recall_B30": 39.83,
+      "trap_fire_rate": 22.4,
+      "med_premium": 10.2,
+      "med_lead": 6.0
+    },
+    "STAR": {
+      "n_fires": 2500,
+      "recall_B15": 8.46,
+      "recall_B30": 10.76,
+      "trap_fire_rate": 6.18,
+      "med_premium": NaN,
+      "med_lead": NaN
+    }
+  }
+}
