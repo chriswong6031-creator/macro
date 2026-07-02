@@ -112,6 +112,7 @@ jobs:
           FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}   # Finnhub analyst/insider-MSPR/earnings trio (collectors/finnhub_altdata.py); free tier; FINNHUB_KEY also accepted
           SAM_API_KEY: ${{ secrets.SAM_API_KEY }}           # SAM.gov pre-award solicitations (collectors/sam_gov.py); free key (entity reg); absent -> 'blocked', non-fatal
           GITHUB_TOKEN: ${{ github.token }}                 # GitHub star velocity (collectors/github_repos.py); the auto-injected workflow token reads public-repo metadata at 1000/hr — no new secret needed
+          TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}       # gated CN moneyflow/chips/margin plane (collectors/tushare_*.py); silently no-ops absent — was frozen 2026-06-21→ (CHINA_ENGINE_REASSESSMENT)
         run: |
           if [ -n "$FRED_API_KEY" ]; then echo "::notice::FRED_API_KEY present — using official API"; else echo "::warning::FRED_API_KEY ABSENT — check repo Settings > Secrets and variables > Actions > Repository secrets"; fi
           # --exclude-group asia: China/HK collectors run in their own asia-close shard
