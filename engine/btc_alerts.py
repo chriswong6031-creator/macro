@@ -35,7 +35,7 @@ ANCHOR = {"risk_regime": "#risk", "structure_shift": "#structure",
           "momentum_trigger": "#momentum", "allocation_change": "#allocation",
           "fundamentals": "#bfi", "leadership": "#crossasset",
           "market_mode": "#allocation", "risk_extreme": "#risk",
-          "flash_crash": "#flash",
+          "flash_crash": "#flash", "override_release": "#allocation",
           "impulse_warn_down": "#impulse", "impulse_trigger_down": "#impulse",
           "impulse_warn_up": "#impulse", "oi_crowding_derisk": "#leverage"}
 
@@ -84,6 +84,9 @@ CONVICTION = {
     "structure_shift":  {"tier": "watch",   "signal": "structure",  "whipsaw": "structure_state"},
     "momentum_trigger": {"tier": "watch",   "signal": "momentum",   "whipsaw": "momentum_state"},
     "allocation_change":{"tier": "watch",   "signal": None,         "whipsaw": None},
+    # Class-1 auto-release of a registered override (W2) — act-tier: a pre-committed
+    # structural falsifier fired and sizing authority returned to the engine.
+    "override_release": {"tier": "act",     "signal": None,         "whipsaw": None},
     "market_mode":      {"tier": "context", "signal": None,         "whipsaw": "market_mode"},
     "leadership":       {"tier": "context", "signal": None,         "whipsaw": "alt_cycle_leader"},
     # forward impulse radar (engine/btc_impulse_radar.py) — act-tier LEADING crosses
@@ -165,6 +168,12 @@ def _conviction(type_: str) -> dict:
     elif type_ == "flash_crash":
         edge = "Real-time risk event — act on it, don't wait for confirmation."
         edge_zh = "实时风险事件 — 应立即行动，无需等待确认。"
+    elif type_ == "override_release":
+        edge = ("Pre-committed structural falsifier — the release rule was registered "
+                "in advance and fired mechanically; sizing returns to the engine's "
+                "validated strategy output.")
+        edge_zh = ("预先承诺的结构性证伪条件——解除规则事先登记、机械触发；"
+                   "仓位交还给引擎经验证的策略输出。")
     elif type_ in ("impulse_warn_down", "impulse_trigger_down"):
         edge = ("Forward de-risk window from a verified LEADING precursor cross "
                 "(impulse radar). Holdout-validated, leak-free; act early — the "
@@ -308,6 +317,36 @@ def daily_state_events(sig: pd.DataFrame) -> list[dict]:
                        {"alloc_pct": pct}, str(to),
                        headline_zh=f"配置调整为 {pct}% BTC",
                        detail_zh=f"最优策略从 {frm_pct}% 调整为 {pct}% BTC{attrib_zh}。"))
+
+    # Class-1 AUTO-RELEASE (W2, owner D1): the override's own structural falsifier
+    # fired and the gate stepped down to the engine's raw allocation. HIGH priority —
+    # this is the cycle thesis being declared structurally wrong, mid-window.
+    # Subscriber-safe copy per owner D2: name the "proprietary cycle timer" and the
+    # structural invalidation; NO n=3 / discretionary / mechanism internals.
+    if "override_released" in sig.columns:
+        rel_state = (sig["override_released"].fillna(0).astype(bool)
+                     .map({True: "released", False: "armed"}))
+        for ts, frm, to in _transitions(rel_state):
+            if to != "released":
+                continue          # only the release edge is an event; re-arming is silent
+            px = close.get(ts, float("nan"))
+            raw = sig.get("alloc_optimal_raw")
+            raw_pct = (int(round(float(raw.get(ts)) * 100))
+                       if raw is not None and pd.notna(raw.get(ts)) else None)
+            raw_note = (f" Allocation steps to the engine's strategy output ({raw_pct}%)."
+                        if raw_pct is not None else
+                        " Allocation steps to the engine's strategy output.")
+            raw_note_zh = (f"配置转为引擎策略输出（{raw_pct}%）。" if raw_pct is not None
+                           else "配置转为引擎策略输出。")
+            out.append(_ev("override_release", ts, "high",
+                           "Cycle timer released — structural invalidation",
+                           f"The proprietary cycle timer released ahead of schedule: price "
+                           f"structure invalidated its cycle-markdown premise (a sustained new "
+                           f"all-time high).{raw_note} BTC ${px:,.0f}.",
+                           {"alloc_raw_pct": raw_pct}, "released",
+                           headline_zh="周期计时器已解除——结构性失效",
+                           detail_zh=f"专有周期计时器提前解除：价格结构使其周期下行前提失效"
+                                     f"（持续创出历史新高）。{raw_note_zh}BTC ${px:,.0f}。"))
 
     if "bfi_zone" in sig.columns:
         for ts, frm, to in _transitions(sig["bfi_zone"]):

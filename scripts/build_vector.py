@@ -260,13 +260,19 @@ def _cond_up_prob(df: pd.DataFrame, cfg: dict, horizon: int):
     # Falls back to the halving phase if the bottom-anchored column is absent.
     cph, cpct = df.get("cphase_phase"), df.get("cphase_pct")
     cyc = df.get("cycle_phase")
+    # W2 (masterplan N2): a structurally INVALIDATED markdown leg (new all-time-high
+    # close during the claimed markdown) carries ZERO cycle authority — its bearish
+    # tilt is the falsified thesis still steering the probability. Zero it.
+    cst = df.get("cphase_status")
+    cph_invalidated = bool(cst is not None and pd.notna(cst.iloc[-1])
+                           and cst.iloc[-1] == "invalidated")
     if cfg.get("cycle_tilt_pp") and cph is not None and pd.notna(cph.iloc[-1]):
         ct = cfg["cycle_tilt_pp"] / 100.0
         tz = cfg.get("cycle_top_zone", 0.85)
         in_zone = cpct is not None and pd.notna(cpct.iloc[-1]) and cpct.iloc[-1] >= tz
         if cph.iloc[-1] == "markup":
             tilt += -ct if in_zone else ct
-        elif cph.iloc[-1] == "markdown":
+        elif cph.iloc[-1] == "markdown" and not cph_invalidated:
             tilt += ct if in_zone else -ct
     elif cyc is not None and pd.notna(cyc.iloc[-1]) and cfg.get("cycle_tilt_pp"):
         ct = cfg["cycle_tilt_pp"] / 100.0
@@ -2140,33 +2146,34 @@ def build_allocation_page(env, site: Path, sig: pd.DataFrame, cards: dict,
 
 def _override_falsifier_health(ct: dict, gate: dict, vcfg: dict) -> dict:
     """Falsifier health WITH EVALUABILITY (Override-Registry W3/N6). The subscriber card
-    shows the four thesis falsifiers as green/amber/red; the owner view must additionally
+    shows the thesis falsifiers as green/amber/red; the owner view must additionally
     say which of them can structurally FIRE while the gate is on — "4/4 green" is a lie
-    when two of the four are built so they cannot trip in-window. This is the honest
-    pre-W2 read; W2 repairs the falsifiers themselves, after which the structural entries
-    below flip to evaluable and this map degrades to a no-op annotation."""
-    cpc = vcfg.get("cycle_phase_clock") or {}
+    when a falsifier is built so it cannot trip in-window. POST-W2 read: the falsifier
+    repair (halving-anchored desync + timing, running-ATH invalidation, pivot-staleness
+    alarm) made every entry evaluable; the map now documents WHY each one can fire."""
     ws, we = ct.get("window_start") or "—", ct.get("window_end") or "—"
-    rel = gate.get("release") or "—"
-    dn = int(cpc.get("down_days", 364))
+    hwe = ct.get("halving_window_end") or "—"
     # key -> (status, why). status: "evaluable" = can fire today; "in_window" = time-gated
     # but CAN fire inside the gate window (counts as evaluable); "structural" = cannot fire
-    # in-window as built (the W2 repair list).
+    # in-window as built (empty since the W2 repair).
     known = {
         "dampening": ("in_window",
                       f"Fires only once the projected bottom window opens ({ws}) — a "
                       f"fair-comparison guard, and that date is inside the gate window."),
         "structure": ("evaluable",
-                      "1064/364 invalidation can fire any day (anchor-dependent until W2's "
-                      "running-ATH rewrite, but it does fire)."),
-        "timing": ("structural",
-                   f"OVERDUE can only fire after the window closes ({we}) — by then the gate "
-                   f"has already self-released ({rel}). W2 re-derives the window from halving "
-                   f"structure so it can fire in-window."),
-        "desync": ("structural",
-                   f"Computes the projected bottom as peak+{dn}d and never reads the halving "
-                   f"clock it claims to police — as built it is a constant. W2 anchors it to "
-                   f"the actual halving date."),
+                      "W2: anchor-INDEPENDENT — a new all-time-high daily close (vs the "
+                      "running historical max, sticky per leg) can fire any day; it also "
+                      "drives the Class-1 auto-release (new ATH × 5 confirm closes)."),
+        "timing": ("in_window",
+                   f"W2: escalates to WATCH past the halving clock's worst historical case "
+                   f"({hwe} — inside the gate window), ALERT past the peak-anchored trail "
+                   f"({we})."),
+        "desync": ("evaluable",
+                   "W2: anchored to the actual halving date via the observed halving→bottom "
+                   "gaps — measures real halving-vs-midterm calendar drift."),
+        "pivot_staleness": ("evaluable",
+                            "W2: recorded config top vs the live running ATH — fires when the "
+                            "hand-set pivot registry goes stale (markup legs exempt)."),
     }
     items = []
     for f in ct.get("flags") or []:
@@ -2179,8 +2186,9 @@ def _override_falsifier_health(ct: dict, gate: dict, vcfg: dict) -> dict:
         "items": items, "evaluable": n_eval, "total": len(items),
         "headline": f"{n_eval}/{len(items)} evaluable" if items else "monitor unavailable",
         "all_green_is_honest": bool(items) and n_eval == len(items),
-        "note": ("Pre-W2: green on a falsifier that cannot structurally fire in-window is "
-                 "vacuous, not reassuring. W2 (falsifier repair) makes all four evaluable."),
+        "note": ("Post-W2: every falsifier can structurally fire in-window (halving-anchored "
+                 "timing/desync, running-ATH invalidation, pivot-staleness alarm), so green "
+                 "now means 'watched and holding', not 'unable to trip'."),
     }
 
 
@@ -2471,8 +2479,11 @@ def main() -> int:
     # W3 (Override-Registry N6): ONE stamped gated-state object — engine.btc_signals.gate_state —
     # consumed by vector.html.j2 / vector_allocation.html.j2 / btc_strategy; templates read
     # gate.active and never re-derive the window per-template.
+    # W2 (Class-1 auto-release): pass `sig` so the stamp reflects the ACTUAL masking state —
+    # after a structural-invalidation release the calendar still says "midterm year" but the
+    # gate no longer suppresses sizing (gate.released marks it).
     _mg_cfg = _acfg.get("midterm_gate") or {}
-    gate = btc_signals.gate_state(sig.index[-1], _mg_cfg)
+    gate = btc_signals.gate_state(sig.index[-1], _mg_cfg, sig=sig)
 
     # Cycle-thesis MONITOR (engine/btc_cycle_thesis.py): turns the halving/midterm-cycle
     # conviction into a watched thesis — projected bottom window + falsifier flags (dampening /
