@@ -1,0 +1,394 @@
+{
+  "version": "1.0.0",
+  "detector_version": 2,
+  "provenance": "engine/cycle_ontology.py:write_stance_matrix()",
+  "generated_from": "CROSSWALK + STANCES constants in cycle_ontology.py",
+  "n_cells": 42,
+  "n_phases": 5,
+  "n_ladder_states": 8,
+  "matrix": [
+    {
+      "phase": "Trough",
+      "ladder": "DECLINE",
+      "stance": "AVOID",
+      "divergence": false,
+      "tone": "bearish",
+      "note_key": "none"
+    },
+    {
+      "phase": "Recovery",
+      "ladder": "DECLINE",
+      "stance": "AVOID",
+      "divergence": true,
+      "tone": "bearish",
+      "note_key": "decline_recovery"
+    },
+    {
+      "phase": "Expansion",
+      "ladder": "DECLINE",
+      "stance": "WAIT",
+      "divergence": true,
+      "tone": "neutral",
+      "note_key": "decline_expansion"
+    },
+    {
+      "phase": "Peak",
+      "ladder": "DECLINE",
+      "stance": "TRIM",
+      "divergence": false,
+      "tone": "caution",
+      "note_key": "none"
+    },
+    {
+      "phase": "Downturn",
+      "ladder": "DECLINE",
+      "stance": "AVOID",
+      "divergence": false,
+      "tone": "bearish",
+      "note_key": "none"
+    },
+    {
+      "phase": "Trough",
+      "ladder": "BOTTOM WATCH",
+      "stance": "GET READY",
+      "divergence": false,
+      "tone": "anticipatory",
+      "note_key": "none"
+    },
+    {
+      "phase": "Recovery",
+      "ladder": "BOTTOM WATCH",
+      "stance": "GET READY",
+      "divergence": false,
+      "tone": "anticipatory",
+      "note_key": "none"
+    },
+    {
+      "phase": "Expansion",
+      "ladder": "BOTTOM WATCH",
+      "stance": "WAIT",
+      "divergence": false,
+      "tone": "neutral",
+      "note_key": "none"
+    },
+    {
+      "phase": "Peak",
+      "ladder": "BOTTOM WATCH",
+      "stance": "COUNTERTREND ONLY",
+      "divergence": true,
+      "tone": "caution",
+      "note_key": "peak_buy_signal"
+    },
+    {
+      "phase": "Downturn",
+      "ladder": "BOTTOM WATCH",
+      "stance": "WAIT",
+      "divergence": false,
+      "tone": "neutral",
+      "note_key": "none"
+    },
+    {
+      "phase": "Trough",
+      "ladder": "TURN SIGNALED",
+      "stance": "BUY",
+      "divergence": false,
+      "tone": "bullish",
+      "note_key": "none"
+    },
+    {
+      "phase": "Recovery",
+      "ladder": "TURN SIGNALED",
+      "stance": "BUY",
+      "divergence": false,
+      "tone": "bullish",
+      "note_key": "none"
+    },
+    {
+      "phase": "Expansion",
+      "ladder": "TURN SIGNALED",
+      "stance": "BUY",
+      "divergence": false,
+      "tone": "bullish",
+      "note_key": "none"
+    },
+    {
+      "phase": "Peak",
+      "ladder": "TURN SIGNALED",
+      "stance": "COUNTERTREND ONLY",
+      "divergence": true,
+      "tone": "caution",
+      "note_key": "peak_buy_signal"
+    },
+    {
+      "phase": "Trough",
+      "ladder": "FRESH BUY",
+      "stance": "BUY",
+      "divergence": false,
+      "tone": "bullish",
+      "note_key": "none"
+    },
+    {
+      "phase": "Recovery",
+      "ladder": "FRESH BUY",
+      "stance": "BUY",
+      "divergence": false,
+      "tone": "bullish",
+      "note_key": "none"
+    },
+    {
+      "phase": "Expansion",
+      "ladder": "FRESH BUY",
+      "stance": "BUY",
+      "divergence": false,
+      "tone": "bullish",
+      "note_key": "none"
+    },
+    {
+      "phase": "Peak",
+      "ladder": "FRESH BUY",
+      "stance": "COUNTERTREND ONLY",
+      "divergence": true,
+      "tone": "caution",
+      "note_key": "peak_buy_signal"
+    },
+    {
+      "phase": "Trough",
+      "ladder": "RALLY ON",
+      "stance": "HOLD",
+      "divergence": true,
+      "tone": "bullish",
+      "note_key": "sell_in_trough"
+    },
+    {
+      "phase": "Recovery",
+      "ladder": "RALLY ON",
+      "stance": "HOLD",
+      "divergence": false,
+      "tone": "bullish",
+      "note_key": "none"
+    },
+    {
+      "phase": "Expansion",
+      "ladder": "RALLY ON",
+      "stance": "HOLD",
+      "divergence": false,
+      "tone": "bullish",
+      "note_key": "none"
+    },
+    {
+      "phase": "Peak",
+      "ladder": "RALLY ON",
+      "stance": "HOLD",
+      "divergence": false,
+      "tone": "bullish",
+      "note_key": "none"
+    },
+    {
+      "phase": "Downturn",
+      "ladder": "RALLY ON",
+      "stance": "HOLD",
+      "divergence": true,
+      "tone": "bullish",
+      "note_key": "sell_in_downturn"
+    },
+    {
+      "phase": "Trough",
+      "ladder": "TOP WATCH",
+      "stance": "WAIT",
+      "divergence": true,
+      "tone": "neutral",
+      "note_key": "sell_in_trough"
+    },
+    {
+      "phase": "Recovery",
+      "ladder": "TOP WATCH",
+      "stance": "HOLD",
+      "divergence": false,
+      "tone": "bullish",
+      "note_key": "none"
+    },
+    {
+      "phase": "Expansion",
+      "ladder": "TOP WATCH",
+      "stance": "TRIM",
+      "divergence": false,
+      "tone": "caution",
+      "note_key": "none"
+    },
+    {
+      "phase": "Peak",
+      "ladder": "TOP WATCH",
+      "stance": "TRIM",
+      "divergence": false,
+      "tone": "caution",
+      "note_key": "none"
+    },
+    {
+      "phase": "Downturn",
+      "ladder": "TOP WATCH",
+      "stance": "TRIM",
+      "divergence": false,
+      "tone": "caution",
+      "note_key": "none"
+    },
+    {
+      "phase": "Trough",
+      "ladder": "ROLLING OVER",
+      "stance": "WAIT",
+      "divergence": true,
+      "tone": "neutral",
+      "note_key": "sell_in_trough"
+    },
+    {
+      "phase": "Recovery",
+      "ladder": "ROLLING OVER",
+      "stance": "WAIT",
+      "divergence": true,
+      "tone": "neutral",
+      "note_key": "decline_recovery"
+    },
+    {
+      "phase": "Expansion",
+      "ladder": "ROLLING OVER",
+      "stance": "TRIM",
+      "divergence": false,
+      "tone": "caution",
+      "note_key": "none"
+    },
+    {
+      "phase": "Peak",
+      "ladder": "ROLLING OVER",
+      "stance": "SELL",
+      "divergence": false,
+      "tone": "bearish",
+      "note_key": "none"
+    },
+    {
+      "phase": "Downturn",
+      "ladder": "ROLLING OVER",
+      "stance": "SELL",
+      "divergence": false,
+      "tone": "bearish",
+      "note_key": "none"
+    },
+    {
+      "phase": "Trough",
+      "ladder": "COUNTERTREND BOUNCE",
+      "stance": "HIGH-RISK BOUNCE",
+      "divergence": false,
+      "tone": "caution",
+      "note_key": "none"
+    },
+    {
+      "phase": "Recovery",
+      "ladder": "COUNTERTREND BOUNCE",
+      "stance": "HIGH-RISK BOUNCE",
+      "divergence": false,
+      "tone": "caution",
+      "note_key": "none"
+    },
+    {
+      "phase": "Expansion",
+      "ladder": "COUNTERTREND BOUNCE",
+      "stance": "HIGH-RISK BOUNCE",
+      "divergence": false,
+      "tone": "caution",
+      "note_key": "none"
+    },
+    {
+      "phase": "Peak",
+      "ladder": "COUNTERTREND BOUNCE",
+      "stance": "HIGH-RISK BOUNCE",
+      "divergence": false,
+      "tone": "caution",
+      "note_key": "none"
+    },
+    {
+      "phase": "Downturn",
+      "ladder": "COUNTERTREND BOUNCE",
+      "stance": "HIGH-RISK BOUNCE",
+      "divergence": false,
+      "tone": "caution",
+      "note_key": "none"
+    },
+    {
+      "phase": "Downturn",
+      "ladder": "TURN SIGNALED",
+      "stance": "COUNTERTREND ONLY",
+      "divergence": true,
+      "tone": "caution",
+      "pos_gate": ">=55"
+    },
+    {
+      "phase": "Downturn",
+      "ladder": "TURN SIGNALED",
+      "stance": "GET READY",
+      "divergence": false,
+      "tone": "anticipatory",
+      "pos_gate": "<55"
+    },
+    {
+      "phase": "Downturn",
+      "ladder": "FRESH BUY",
+      "stance": "COUNTERTREND ONLY",
+      "divergence": true,
+      "tone": "caution",
+      "pos_gate": ">=55"
+    },
+    {
+      "phase": "Downturn",
+      "ladder": "FRESH BUY",
+      "stance": "BUY",
+      "divergence": false,
+      "tone": "bullish",
+      "pos_gate": "<55"
+    }
+  ],
+  "stances": {
+    "AVOID": {
+      "en": "Avoid",
+      "zh": "回避",
+      "tone": "bearish"
+    },
+    "WAIT": {
+      "en": "Wait",
+      "zh": "观望",
+      "tone": "neutral"
+    },
+    "GET READY": {
+      "en": "Get Ready",
+      "zh": "准备",
+      "tone": "anticipatory"
+    },
+    "BUY": {
+      "en": "Buy",
+      "zh": "买入",
+      "tone": "bullish"
+    },
+    "HOLD": {
+      "en": "Hold",
+      "zh": "持有",
+      "tone": "bullish"
+    },
+    "TRIM": {
+      "en": "Trim",
+      "zh": "减仓",
+      "tone": "caution"
+    },
+    "SELL": {
+      "en": "Sell",
+      "zh": "卖出",
+      "tone": "bearish"
+    },
+    "COUNTERTREND ONLY": {
+      "en": "Countertrend Only",
+      "zh": "仅限逆势短线",
+      "tone": "caution"
+    },
+    "HIGH-RISK BOUNCE": {
+      "en": "High-Risk Bounce",
+      "zh": "高风险反弹",
+      "tone": "caution"
+    }
+  }
+}
