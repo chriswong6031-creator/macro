@@ -34,6 +34,7 @@ from datetime import date, datetime, timedelta, timezone
 
 from lib import config
 from engine import news_common as nc
+from engine import qbus as _qbus          # W2: unified item/event store
 
 log = logging.getLogger(__name__)
 
@@ -96,6 +97,27 @@ def enabled() -> bool:
 
 
 # --------------------------------------------------------------------------- #
+# W2: entity tagging via entity_resolver for GDELT items (P3 precision gate).
+# --------------------------------------------------------------------------- #
+def _gdelt_tag(text: str, emap: dict) -> list[str]:
+    """Tag US tickers from GDELT free text using entity_resolver.resolve_us
+    (layered: alias → token → name_resolver) then fall back to the classic
+    match_entities (megacap-alias + ticker-token scan) for the long tail.
+    Returns a sorted, deduped list. Never raises."""
+    try:
+        from engine import entity_resolver as er
+        hits: set[str] = set()
+        for r in er.resolve_us(text):
+            if r.get("confidence", 0) >= 0.75:   # us_alias / us_token / us_name
+                hits.add(r["ticker"])
+        # fill in match_entities for any entities the resolver's universe missed
+        hits.update(nc.match_entities(text, emap))
+        return sorted(hits)
+    except Exception:  # noqa: BLE001
+        return sorted(nc.match_entities(text, emap))
+
+
+# --------------------------------------------------------------------------- #
 # normalisation
 # --------------------------------------------------------------------------- #
 def _domain_of(url: str) -> str:
@@ -106,11 +128,52 @@ def _domain_of(url: str) -> str:
         return ""
 
 
+# P2: timestamp_quality per feed (spec §2.4, Appendix P2).
+# GDELT provides no publisher timestamp (the seendate is our crawl time) →
+# CRAWL_BOUNDED. All RSS / provider feeds carry a publisher-stated pubDate →
+# PUBLISHER_STATED. Back-dating sanity check applied at the RSS normalize step.
+_PROVIDER_TQ: dict[str, str] = {
+    "gdelt": "CRAWL_BOUNDED",
+    "polygon": "PUBLISHER_STATED",
+    "finnhub": "PUBLISHER_STATED",
+    "rss": "PUBLISHER_STATED",
+    "quiver": "PUBLISHER_STATED",
+}
+_BACKDATE_LIMIT_H = 48.0   # pubDate > 48h behind crawl time → suspect_backdated
+
+
+def _check_backdated(seendate_iso: str, crawled_at_iso: str) -> bool:
+    """True when a publisher-stated pubDate is more than 48h earlier than our
+    crawl time (P2 back-dating sanity check). Returns False on any parse error."""
+    if not seendate_iso or not crawled_at_iso:
+        return False
+    try:
+        from engine.qkernel import _parse_iso
+        pub = _parse_iso(seendate_iso)
+        crawl = _parse_iso(crawled_at_iso)
+        if pub is None or crawl is None:
+            return False
+        return (crawl - pub).total_seconds() / 3600.0 > _BACKDATE_LIMIT_H
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def _normalise(title: str, url: str, domain: str, seendate: str, source: str,
                tickers: list[str], summary: str, sentiment: str | None,
-               provider: str, relevance: float, now: datetime) -> dict | None:
+               provider: str, relevance: float, now: datetime,
+               _crawled_at: str = "", _desk: str = "financial_news",
+               _themes: list[str] | None = None,
+               _emit_qbus: bool = True) -> dict | None:
     """Build a scored headline dict, or None if it should be dropped (off-allowlist
-    GDELT). Provider-tagged items keep a tier-3 floor so PR-wire domains survive."""
+    GDELT). Provider-tagged items keep a tier-3 floor so PR-wire domains survive.
+
+    W2 additions:
+      • _crawled_at  — ISO crawl timestamp (boundary-stamped by the caller).
+        When empty, now.isoformat() is used (acceptable at the call boundary).
+      • timestamp_quality — assigned per-provider (P2 table); PUBLISHER_STATED
+        feeds get the RSS back-dating sanity check (P2 recommendation).
+      • qbus row emitted via qbus.append_items (fire-and-forget; never raises).
+    """
     title = (title or "").strip()
     if not title:
         return None
@@ -129,11 +192,42 @@ def _normalise(title: str, url: str, domain: str, seendate: str, source: str,
         else:
             return None         # unfiltered GDELT web result not in the allowlist
     q = nc.quality_score(title, domain, seendate, relevance=relevance, now=now, tier=tier)
-    return {"title": title, "url": url, "domain": domain,
-            "source": source or domain, "seendate": seendate,
-            "summary": (summary or "").strip(), "tickers": sorted(set(tickers or [])),
-            "sentiment": sentiment, "tier": tier, "quality": q,
-            "_id": nc.event_id(title, domain)}
+
+    crawled_at = _crawled_at or now.isoformat()
+    tq = _PROVIDER_TQ.get(provider, "PUBLISHER_STATED")
+    suspect_backdated = False
+    if tq == "PUBLISHER_STATED":
+        suspect_backdated = _check_backdated(seendate, crawled_at)
+
+    out = {"title": title, "url": url, "domain": domain,
+           "source": source or domain, "seendate": seendate,
+           "summary": (summary or "").strip(), "tickers": sorted(set(tickers or [])),
+           "sentiment": sentiment, "tier": tier, "quality": q,
+           "_id": nc.event_id(title, domain)}
+    if suspect_backdated:
+        out["suspect_backdated"] = True
+
+    # W2: emit a qbus row so the same wire item is counted once across desks.
+    if _emit_qbus:
+        try:
+            row = {
+                "desk": _desk,
+                "source": source or domain,
+                "url": url,
+                "title": title,
+                "seendate": seendate,
+                "_crawled_at": crawled_at,
+                "timestamp_quality": tq,
+                "entities": list(tickers or []),
+                "themes": list(_themes or []),
+                "importance_raw": float(relevance),
+                "lang": "en",
+            }
+            _qbus.append_items([row])
+        except Exception:  # noqa: BLE001 — never raise into the build
+            pass
+
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -147,6 +241,7 @@ def _polygon_news(cfg: dict, now: datetime) -> list[dict]:
     params = {"order": "desc", "sort": "published_utc", "limit": "1000",
               "published_utc.gte": since, "apiKey": key}
     out: list[dict] = []
+    crawled_at = now.isoformat()   # W2: stamp at ingest boundary
     try:
         import requests
         r = requests.get("https://api.polygon.io/v2/reference/news", params=params, timeout=30)
@@ -167,7 +262,8 @@ def _polygon_news(cfg: dict, now: datetime) -> list[dict]:
             dom = _domain_of(pub.get("homepage_url") or a.get("article_url", ""))
             h = _normalise(a.get("title", ""), a.get("article_url", ""), dom,
                            a.get("published_utc", ""), pub.get("name", dom), tks,
-                           a.get("description", ""), sent, "polygon", 1.0, now)
+                           a.get("description", ""), sent, "polygon", 1.0, now,
+                           _crawled_at=crawled_at)
             if h:
                 h["per_ticker_sentiment"] = {k: {"positive": "pos", "negative": "neg",
                                                  "neutral": "neutral"}.get(v)
@@ -187,6 +283,7 @@ def _finnhub_news(cfg: dict, now: datetime) -> tuple[list[dict], list[dict]]:
     if not key:
         return [], []
     market, company = [], []
+    crawled_at = now.isoformat()   # W2: stamp at ingest boundary
     try:
         import time
 
@@ -201,7 +298,8 @@ def _finnhub_news(cfg: dict, now: datetime) -> tuple[list[dict], list[dict]]:
                 rel = [t.upper() for t in str(a.get("related", "")).split(",") if t.strip()]
                 h = _normalise(a.get("headline", ""), a.get("url", ""),
                                _domain_of(a.get("url", "")), iso, a.get("source", ""),
-                               rel, a.get("summary", ""), None, "finnhub", 0.95, now)
+                               rel, a.get("summary", ""), None, "finnhub", 0.95, now,
+                               _crawled_at=crawled_at)
                 if h:
                     market.append(h)
         # per-megacap company news (small, bounded set)
@@ -221,7 +319,8 @@ def _finnhub_news(cfg: dict, now: datetime) -> tuple[list[dict], list[dict]]:
                                if isinstance(dt, (int, float)) and dt else "")
                         h = _normalise(a.get("headline", ""), a.get("url", ""),
                                        _domain_of(a.get("url", "")), iso, a.get("source", ""),
-                                       [t], a.get("summary", ""), None, "finnhub", 1.0, now)
+                                       [t], a.get("summary", ""), None, "finnhub", 1.0, now,
+                                       _crawled_at=crawled_at)
                         if h:
                             company.append(h)
                     time.sleep(0.2)
@@ -247,6 +346,7 @@ def _quiver_news(cfg: dict, emap: dict, now: datetime) -> list[dict]:
             return []
         df = pd.read_parquet(p)
         out: list[dict] = []
+        crawled_at = now.isoformat()   # W2: stamp at ingest boundary
         for _, r in df.tail(int(cfg.get("quiver_max", 60))).iterrows():
             title = str(r.get("headline") or "").strip()
             if not title or title.lower() == "nan":
@@ -264,7 +364,7 @@ def _quiver_news(cfg: dict, emap: dict, now: datetime) -> list[dict]:
                 iso = str(tval or "")
             summ = str(r.get("summary") or "")[:240]
             h = _normalise(title, url, _domain_of(url) or "quiverquant.com", iso, "Quiver",
-                           tks, summ, None, "quiver", 0.7, now)
+                           tks, summ, None, "quiver", 0.7, now, _crawled_at=crawled_at)
             if h:
                 out.append(h)
         return out
@@ -289,9 +389,13 @@ def _rss_news(cfg: dict, emap: dict, now: datetime) -> dict:
         log.warning("news_rss import failed (%s)", e)
         return {"market": [], "company": [], "sectors": {}}
 
+    crawled_at = now.isoformat()   # W2: stamp at ingest boundary (PIT)
+
     def _norm(a: dict, tks: list[str]) -> dict | None:
+        # W2: pass _crawled_at so back-dating check and qbus row get the boundary stamp.
         return _normalise(a["title"], a["url"], a["domain"], a["seendate"], a["source"],
-                          tks, a.get("summary", ""), None, "rss", 1.0, now)
+                          tks, a.get("summary", ""), None, "rss", 1.0, now,
+                          _crawled_at=crawled_at)
 
     market: list[dict] = []
     try:
@@ -355,24 +459,28 @@ def _gdelt_thematic(cfg: dict, emap: dict, now: datetime) -> dict:
         # keep only title-relevant GDELT items (drops body-only tangential matches)
         return bool(tks) or bool(_MARKET_TITLE.search(title or ""))
 
+    crawled_at = now.isoformat()   # W2: stamp at the ingest boundary (PIT)
     raw, _ = nc.gdelt_fetch(_MARKET_QUERY + _GEO, mx, win, now=now)
     for a in raw:
-        tks = sorted(nc.match_entities(a["title"], emap))
+        # W2: use entity_resolver.resolve_us for higher-precision GDELT tagging
+        tks = _gdelt_tag(a["title"], emap)
         if not _gate(a["title"], tks):
             continue
         h = _normalise(a["title"], a["url"], a["domain"], a["seendate"],
-                       a["domain"], tks, "", None, "gdelt", 0.85, now)
+                       a["domain"], tks, "", None, "gdelt", 0.85, now,
+                       _crawled_at=crawled_at)
         if h:
             market.append(h)
     for etf, q in _SECTOR_QUERIES.items():
         raw, _ = nc.gdelt_fetch(q + _GEO, mx, win, now=now)
         items = []
         for a in raw:
-            tks = sorted(nc.match_entities(a["title"], emap))
+            tks = _gdelt_tag(a["title"], emap)   # W2: entity_resolver
             if not _gate(a["title"], tks):
                 continue
             h = _normalise(a["title"], a["url"], a["domain"], a["seendate"],
-                           a["domain"], tks, "", None, "gdelt", 0.8, now)
+                           a["domain"], tks, "", None, "gdelt", 0.8, now,
+                           _crawled_at=crawled_at, _themes=[etf])
             if h:
                 h["sector_tag"] = etf
                 items.append(h)
