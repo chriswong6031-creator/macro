@@ -221,6 +221,30 @@ def main() -> int:
         _build_anticipation()                             # anticipation.html + per-ticker cones
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("anticipation page (via build_baskets) failed: %s", e)
+
+    # W3.8 — FREEZE US basket levels + membership hashes (append-only, PIT).
+    # Runs AFTER compute_baskets() and the chart pop, so both `data` (BASKETS metadata)
+    # and `chart` (level matrix) are in scope.  Additive + never fatal: a freeze failure
+    # skips today's snapshot without breaking the page.  The grader reports
+    # "accruing from <date>" for any day the freeze was skipped.
+    try:
+        from engine.basket_freeze import freeze_domain, FreezeSkipped
+        from engine.baskets import _membership as _us_mem
+        from engine.equity_factors import _closes as _us_closes
+        _us_mem_data = _us_mem()
+        try:
+            _us_cl = _us_closes()
+        except Exception:  # noqa: BLE001
+            _us_cl = None
+        # chart was popped from data above and is still in scope
+        _freeze_payload = {"chart": chart}
+        _freeze_result = freeze_domain("us", _freeze_payload, _us_cl, _us_mem_data)
+        log.info("basket_freeze[us]: %s", _freeze_result)
+    except FreezeSkipped as e:
+        log.error("basket_freeze[us]: SKIPPED (churn guard): %s", e)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("basket_freeze[us]: failed: %s", e)
+
     return 0
 
 

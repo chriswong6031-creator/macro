@@ -95,6 +95,24 @@ def main() -> int:
         (site / "lightweight-charts.js").write_text(lwc.read_text())
     log.info("wrote %s/baskets_hk.html (%d baskets, %d categories, %d KB)",
              site, len(data["baskets"]), len(data.get("categories", [])), len(html) // 1024)
+
+    # W3.8 — FREEZE HK basket levels + membership hashes (append-only, PIT).
+    # chart was popped from data above and is still in scope.
+    try:
+        from engine.basket_freeze import freeze_domain, FreezeSkipped
+        from engine.baskets_hk import _membership as _hk_mem, _closes as _hk_closes
+        _hk_mem_data = _hk_mem()
+        try:
+            _hk_cl = _hk_closes()
+        except Exception:  # noqa: BLE001
+            _hk_cl = None
+        _freeze_result = freeze_domain("hk", {"chart": chart}, _hk_cl, _hk_mem_data)
+        log.info("basket_freeze[hk]: %s", _freeze_result)
+    except FreezeSkipped as e:
+        log.error("basket_freeze[hk]: SKIPPED (churn guard): %s", e)
+    except Exception as e:  # noqa: BLE001
+        log.error("basket_freeze[hk]: failed: %s", e)
+
     return 0
 
 
