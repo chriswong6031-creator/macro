@@ -24,9 +24,12 @@ extrapolates the 2D MACD histogram forward from PAST bars only; it never reads t
 """
 from __future__ import annotations
 
+import os
+
 import numpy as np
 import pandas as pd
 
+from engine.hysteresis import hysteretic_not_topped   # W6 #22 veto debounce (opt-in)
 from engine.technicals import rsi   # faithful Wilder RSI (== Pine ta.rsi)
 
 RSI_LEN, FAST_LEN, BASE_LEN, SIG_LEN = 14, 14, 60, 5
@@ -44,7 +47,22 @@ MIN_HISTORY = 200
 
 WEIGHTS = {"T1": 1.0, "T2": 0.8, "T3": 0.6, "T4": 0.4}
 _BLANK = {"tier": None, "weight": 0.0, "sub": None, "eligible": False,
-          "bars_to_cross": None, "asof": None, "not_topped": True, "ticks": None}
+          "bars_to_cross": None, "asof": None, "not_topped": True, "ticks": None,
+          "provisional": False}
+
+
+def _veto_confirm() -> int:
+    """Confirm length for the not-topped veto (env ``VETO_HYSTERESIS_CONFIRM``). Unset/1 = the
+    incumbent single-bar veto, unchanged. >=2 = the N-bar Schmitt debounce (engine/hysteresis):
+    the veto only trips/clears after N consecutive daily bars agree, killing the one-bar
+    appear/vanish/reappear flicker. Measured at confirm=2 on the W6 #22 replay (219 US names):
+    flicker 1.6% -> 0.0%, flip rate 7.2% -> 4.4%, recall 97.7%, precision 95.6%
+    (calibration/provisional_replay.json veto_hysteresis). OPT-IN per the masterplan flip
+    criterion — the single-bar flicker measured small, so this is offered, not forced."""
+    try:
+        return max(1, int(os.environ.get("VETO_HYSTERESIS_CONFIRM", "1")))
+    except (TypeError, ValueError):
+        return 1
 
 
 def _ema(s, span):
@@ -188,6 +206,14 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         stoch_bear = k3n < d3n                          # k below d -> rolled over / not crossed up
         macd_bear  = m3n < s3n                          # 3D RSI-MACD outright below signal
         not_topped = not (stoch_ob or stoch_bear or macd_bear)
+        confirm = _veto_confirm()
+        if confirm > 1:
+            # Hysteretic veto (opt-in, see _veto_confirm): debounce the PER-DAY veto stream —
+            # the same daily basis the W6 #22 replay measured flicker on — so one noisy bar on
+            # the provisional resample tail can no longer blank/re-admit a name. NaN warmup days
+            # compare False on every leg -> constructive, matching the scalar's float-NaN path.
+            nt_raw = ~((k3_d >= OB) | (d3_d >= OB) | (k3_d < d3_d) | (m3_d < s3_d))
+            not_topped = bool(hysteretic_not_topped(nt_raw, confirm=confirm).iloc[-1])
 
         # 3D-tick age of the operative buy arrow: the §7 take/pending DATE if supplied, else the
         # raw 3D RSI-MACD cross. Exposed on every return (incl. blank) so the caller can age a
@@ -233,6 +259,11 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
             "bars_to_cross": (round(float(btc_last), 2)
                               if (tier in ("T3", "T4") and pd.notna(btc_last)) else None),
             "asof": str(di[last].date()), "not_topped": True, "ticks": ticks,
+            # PROVISIONAL basis (W6 #22): T3 is a projection off the INCOMPLETE 2D resample tail
+            # and repaints at a measured 23.8% US / 15.1% CN of fresh fires when the bucket
+            # completes — above the ~15% flip criterion. T1/T2 measured fine (5.3%/8.8%), so
+            # only T3 carries the flag (calibration/provisional_replay.json repaint.by_tier).
+            "provisional": tier == "T3",
         }
     except Exception:
         return dict(_BLANK)

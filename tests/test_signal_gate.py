@@ -45,7 +45,8 @@ def test_buy_signal_is_slim_and_json_safe():
     full = {"eligible": True, "tier_cascade": "T2", "tier_sub": "deep", "ticks": 1,
             "bars_to_cross": None, "last": {"price": float("nan")}, "result": {"big": "payload"}}
     slim = buy_signal(full)
-    assert set(slim) == {"eligible", "tier_cascade", "tier_sub", "ticks", "bars_to_cross"}
+    assert set(slim) == {"eligible", "tier_cascade", "tier_sub", "ticks", "bars_to_cross",
+                         "provisional"}   # provisional = the T3 partial-bucket badge (W6 #22)
     assert "last" not in slim and "result" not in slim          # no NaN-prone / heavy fields
     json.dumps(slim, allow_nan=False)                            # must not raise
     assert is_buyable(slim) is True                              # slim still gates correctly

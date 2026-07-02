@@ -93,7 +93,8 @@ def is_buyable(v: dict | None) -> bool:
 
 _VERDICT_KEYS = ("eligible", "tier", "sub", "reason", "state", "above200",
                  "weekly_bull", "early_now", "asof", "last",
-                 "tier_cascade", "weight", "tier_sub", "bars_to_cross", "fresh_bars", "ticks")
+                 "tier_cascade", "weight", "tier_sub", "bars_to_cross", "fresh_bars", "ticks",
+                 "provisional")
 
 
 def _bars_since(daily_close, marker) -> int | None:
@@ -195,6 +196,11 @@ def gate(ticker: str, daily_close) -> dict:
     v["weight"] = confluence_tiers.WEIGHTS.get(tier_c, 0.0)
     v["tier_sub"] = casc.get("sub")           # deep|shallow (display modifier; equal weight)
     v["bars_to_cross"] = casc.get("bars_to_cross")
+    # PROVISIONAL-basis flag (W6 #22): a T3 grade is projected off the incomplete 2D resample
+    # tail and repaints at a measured 23.8% US / 15.1% CN of fresh fires — above the ~15% flip
+    # criterion (T1/T2 measured 5.3%/8.8%, fine). Boards badge it so the trader knows the tier
+    # may vanish when the bucket completes (calibration/provisional_replay.json).
+    v["provisional"] = bool(casc.get("provisional")) and tier_c == "T3"
     if tier_c and not v.get("eligible"):      # T2/T4 (or a fresh re-trigger) extend eligibility
         v.update(eligible=True, reason=f"tier {tier_c} (weight {v['weight']})")
     v["result"] = res
@@ -269,7 +275,7 @@ def compact(v: dict | None) -> dict:
 # us_stocks.html + the discovery Buy-zone picks). Unlike compact() it drops the §7 marker
 # payload ("last"/"state"/...) — those can carry NaN, and the boards only need the tier +
 # freshness — so it is safe to persist with allow_nan=False. is_buyable() reads from this.
-_BUY_KEYS = ("eligible", "tier_cascade", "tier_sub", "ticks", "bars_to_cross")
+_BUY_KEYS = ("eligible", "tier_cascade", "tier_sub", "ticks", "bars_to_cross", "provisional")
 
 
 def buy_signal(v: dict | None) -> dict:
