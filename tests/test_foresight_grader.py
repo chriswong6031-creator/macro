@@ -142,3 +142,104 @@ def test_non_overlapping_dedup():
            (pd.Timestamp("2026-03-01"), 1), (pd.Timestamp("2026-06-01"), 0)]   # last is >90d after first kept
     indep = gr._non_overlapping(obs, 90)
     assert indep == [1, 0]                            # 2026-01-01 then 2026-06-01 (others overlap)
+
+
+# ---- W0a: new tests for multi-horizon grading + old-format tolerance ----
+
+def test_multi_horizon_produces_per_horizon_slices(monkeypatch, tmp_path):
+    """A flag logged 65 days ago is graded at 30d and 60d but still pending at 90d."""
+    closes = {"MU": _series(140), "WDC": _series(135), "SPY": _series(110)}
+    _patch(monkeypatch, tmp_path,
+           [{"theme": "memory_storage", "asof": "2026-04-01", "stage": "PRECIPICE"}], closes)
+    # today = 2026-06-05 → 65d elapsed → mature at 30/60, pending at 90
+    s = gr.grade(today=pd.Timestamp("2026-06-05"), write=False)
+    assert s["n_graded"] == 0    # canonical 90d not yet mature
+    assert s["n_pending"] >= 1
+    bh = s["by_horizon"]
+    assert "30" in bh and "60" in bh and "90" in bh
+    assert bh["30"]["n_graded"] == 1   # 30d matured
+    assert bh["60"]["n_graded"] == 1   # 60d matured
+    assert bh["90"]["n_graded"] == 0   # 90d not yet
+    assert bh["90"]["n_pending"] == 1
+
+
+def test_multi_horizon_independent_maturity(monkeypatch, tmp_path):
+    """Horizons mature independently; a control-arm (RE-RATING) row grades at every horizon
+    but carries NO hit-rate — forward excess only (beta, not skill)."""
+    closes = {"MU": _series(150), "WDC": _series(145), "SPY": _series(105)}
+    _patch(monkeypatch, tmp_path,
+           [{"theme": "memory_storage", "asof": "2026-02-01", "stage": "RE-RATING"}], closes)
+    # 2026-06-01 = ~120d → all horizons mature
+    s = gr.grade(today=pd.Timestamp("2026-06-01"), write=False)
+    bh = s["by_horizon"]
+    for h in ["30", "60", "90"]:
+        assert bh[h]["n_graded"] == 1
+        # only control rows graded → no directional rows → no pooled hit-rate
+        assert bh[h]["n_directional"] == 0
+        assert bh[h]["pooled_hit_rate"] is None
+    assert s["n_graded"] == 1   # canonical 90d graded (control rows still count as graded)
+
+
+def test_control_arm_rerating_reports_excess_not_hit(monkeypatch, tmp_path):
+    """RE-RATING is a control arm: theme >> SPY yields avg_excess > 0 but hit_rate=None —
+    a crowded theme continuing to run must never be published as a 'hit' (beta ≠ skill)."""
+    closes = {"MU": _series(150), "WDC": _series(145), "SPY": _series(105)}
+    _patch(monkeypatch, tmp_path,
+           [{"theme": "memory_storage", "asof": "2026-01-01", "stage": "RE-RATING"}], closes)
+    s = gr.grade(today=pd.Timestamp("2026-06-01"), write=False)
+    b = s["by_stage"]["RE-RATING"]
+    assert b["n"] == 1 and b["n_dir"] == 0
+    assert b["hit_rate"] is None and b["ci95"] is None
+    assert b["avg_excess_pct"] is not None and b["avg_excess_pct"] > 0
+    # control rows are excluded from the sign test / FDR machinery entirely
+    assert s["by_theme"]["memory_storage"]["n_independent"] == 0
+    assert s["pooled_hit_rate"] is None and s["pooled_n_directional"] == 0
+
+
+def test_glut_risk_stage_is_exit_direction(monkeypatch, tmp_path):
+    """GLUT-RISK rows from the foresight ledger are negative calls: theme << SPY = HIT."""
+    closes = {"MU": _series(90), "WDC": _series(85), "SPY": _series(115)}
+    _patch(monkeypatch, tmp_path,
+           [{"theme": "memory_storage", "asof": "2026-01-01", "stage": "GLUT-RISK"}], closes)
+    s = gr.grade(today=pd.Timestamp("2026-06-01"), write=False)
+    b = s["by_stage"]["GLUT-RISK"]
+    assert b["n_dir"] == 1 and b["hits"] == 1 and b["hit_rate"] == 1.0
+
+
+def test_text_grade_precipice_inherits_thesis_direction(monkeypatch, tmp_path):
+    """'PRECIPICE (text)' (the W1a text-grade stage) inherits the thesis role: outperform = hit."""
+    closes = {"MU": _series(150), "WDC": _series(145), "SPY": _series(105)}
+    _patch(monkeypatch, tmp_path,
+           [{"theme": "memory_storage", "asof": "2026-01-01", "stage": "PRECIPICE (text)"}], closes)
+    s = gr.grade(today=pd.Timestamp("2026-06-01"), write=False)
+    b = s["by_stage"]["PRECIPICE (text)"]
+    assert b["n_dir"] == 1 and b["hits"] == 1 and b["hit_rate"] == 1.0
+
+
+def test_old_single_horizon_ledger_rows_tolerated(monkeypatch, tmp_path):
+    """Old-format rows (no 'horizons' field) are tolerated — graded at each HORIZONS entry."""
+    closes = {"MU": _series(140), "WDC": _series(135), "SPY": _series(110)}
+    # old-format row: no 'horizons' key, just asof + stage (original format)
+    old_row = {"theme": "memory_storage", "asof": "2026-01-01", "stage": "PRECIPICE"}
+    _patch(monkeypatch, tmp_path, [old_row], closes)
+    s = gr.grade(today=pd.Timestamp("2026-06-01"), write=False)
+    # should grade at all horizons without error
+    assert s["n_graded"] == 1
+    bh = s["by_horizon"]
+    assert all(bh[str(h)]["n_graded"] == 1 for h in [30, 60, 90])
+
+
+def test_by_horizon_in_output_structure(monkeypatch, tmp_path):
+    """by_horizon key exists in output with correct structure keys."""
+    closes = {"MU": _series(140), "WDC": _series(135), "SPY": _series(110)}
+    _patch(monkeypatch, tmp_path,
+           [{"theme": "memory_storage", "asof": "2026-01-01", "stage": "WATCH"}], closes)
+    s = gr.grade(today=pd.Timestamp("2026-06-01"), write=False)
+    assert "by_horizon" in s
+    assert "horizons" in s
+    assert s["horizons"] == [30, 60, 90]
+    for h_key in ["30", "60", "90"]:
+        assert h_key in s["by_horizon"]
+        bh = s["by_horizon"][h_key]
+        assert "horizon_days" in bh and "n_graded" in bh and "n_pending" in bh
+        assert "by_stage" in bh and "by_theme" in bh
