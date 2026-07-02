@@ -178,6 +178,67 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("regime-hmm layer failed: %s", e)
         latest["regime_hmm"] = None
+    # Regime One (engine/regime_one.py, masterplan W2): the canonical regime artifact
+    # with an HONEST decomposition — tape (coincident market-proxy, labelled coincident)
+    # vs macro (econ legs on the leak-free release frame) vs forward (causal FILTERED
+    # P(Quad) + base_effect) vs fused_risk (5-state + versioned gross + inflection-aware
+    # confidence). Plus FLIP ATTRIBUTION: a renormalization-driven quad flip (a dead feed
+    # vanishing from the weighted sum) is VETOED and the label freezes, degraded (#3).
+    # SHADOW artifact — publishes ALONGSIDE the legacy regime; ZERO behavioral change to
+    # any current consumer this wave (P2-A). Additive, fail-isolated, negligible runtime.
+    try:
+        from engine import base_effect as _be_r1
+        from engine import regime_one as _r1
+        # base_effect on the leak-free path: thread as_of + vintages so CPI/PCE/PPI read
+        # revised=False where vintage coverage exists (#16/#809), unlike run.py:149's call.
+        _r1_bex = latest.get("base_effect")   # the revised-finals base_effect as fallback
+        try:
+            from collectors.fred import load_vintages as _lv
+            _r1_bex = _be_r1.compute(as_of=asof, vintages=_lv())
+        except Exception:  # noqa: BLE001 — fall back to the revised-finals base_effect
+            _r1_bex = latest.get("base_effect")
+        _r1_rel = _r1.build_release_axis_row()
+        _r1_prev = None
+        _r1_path = p / "regime_one.json"
+        if _r1_path.exists():
+            try:
+                _r1_prev = json.loads(_r1_path.read_text())
+            except Exception:  # noqa: BLE001
+                _r1_prev = None
+        _r1_out = _r1.compute(full, _r1_rel, _r1_bex, latest, prev=_r1_prev, data_dir=p)
+        latest["regime_one"] = _r1_out
+        with open(_r1_path, "w") as _r1fh:
+            json.dump(_r1_out, _r1fh, indent=2, default=str)
+        # Freshness ledger (#32): append-only compact per-component freshness alongside
+        # regime history so every session is forever auditable as full-data vs degraded.
+        # No retro-reconstruction (c_ columns were dropped — impossible); accrues NOW.
+        _fl_path = p / "freshness_ledger.jsonl"
+        _fl_today = _r1_out["asof"]
+        _fl_last = None
+        if _fl_path.exists():
+            _fll = _fl_path.read_text().splitlines()
+            if _fll:
+                try:
+                    _fl_last = json.loads(_fll[-1]).get("asof")
+                except Exception:  # noqa: BLE001
+                    _fl_last = None
+        if _fl_last != _fl_today:  # one row per session, idempotent across same-day rebuilds
+            with open(_fl_path, "a") as _flh:
+                _flh.write(json.dumps({
+                    "asof": _fl_today,
+                    "quad": _r1_out["legacy_quad"],
+                    "label_quad": _r1_out["label_quad"],
+                    "freshness_bitmask": _r1_out["freshness_bitmask"],
+                    "degraded": _r1_out["degraded"],
+                }, default=str) + "\n")
+        # append today's causal-HMM forward call to its grading ledger (#16 accrual)
+        try:
+            _r1.accrue_hmm_row(p.parent)   # p = data/regime; data_dir = data/
+        except Exception:  # noqa: BLE001 — accrual is best-effort
+            pass
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("regime-one layer failed: %s", e)
+        latest["regime_one"] = None
     # Catalyst tone (LLM Tier-A): a DIGEST of the most recent public catalyst (FOMC
     # statement) as honest CONTEXT only. Default-off LEAF (engine/catalyst_tone.py);
     # None when disabled or nothing recent. NEVER enters the deterministic scoring path.

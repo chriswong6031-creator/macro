@@ -144,9 +144,13 @@ def test_modelled_release_lands_after_period_end(monkeypatch):
     ref = pd.Series([1.0, 2.0, 3.0],
                     index=pd.to_datetime(["2020-01-01", "2020-02-01", "2020-03-01"]))
     monkeypatch.setattr(pit, "_reference_series", lambda col: ref)
-    rel = pit._modelled_release("core_cpi")  # monthly, lag_bd=8
-    # Jan value should surface after Jan month-end (2020-01-31) + 8 business days
-    expected = pd.Timestamp("2020-01-31") + 8 * pd.offsets.BDay()
+    rel = pit._modelled_release("core_cpi")  # monthly; effective lag = #809-measured 32 bd
+    # Jan value should surface after Jan month-end (2020-01-31) + the EFFECTIVE lag.
+    # _effective_lag_bd prefers the #809-measured lag (lag_bd_measured=32) over the
+    # old optimistic 8-bd prior (see research/PIT_LEAKAGE_TAX.md addendum).
+    eff = pit._effective_lag_bd(pit.DEFAULT_RELEASE_LAGS["core_cpi"])
+    assert eff == 32, "core_cpi effective release lag should use the #809-measured 32 bd"
+    expected = pd.Timestamp("2020-01-31") + eff * pd.offsets.BDay()
     assert rel.index[0] == expected
     assert (rel.index > ref.index).all(), "release date must be after the reference stamp"
     assert list(rel.values) == [1.0, 2.0, 3.0]

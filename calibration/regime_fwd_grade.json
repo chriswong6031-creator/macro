@@ -1,0 +1,71 @@
+{
+  "schema": "regime_fwd_grade.v1",
+  "as_of": "2026-06-30",
+  "min_grade_n": 20,
+  "base_effect": {
+    "growth": {
+      "n_total_rows": 1,
+      "n_matured": 0,
+      "n_directional": 0,
+      "hits": 0,
+      "hit_rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 1.0,
+      "horizon_bd": 63,
+      "verdict": {
+        "status": "accruing",
+        "gradeable": false,
+        "distance_to_decision": 20,
+        "reason": "only 0/20 matured rows; ~20 more sessions to a first verdict"
+      }
+    },
+    "inflation": {
+      "n_total_rows": 1,
+      "n_matured": 0,
+      "n_directional": 0,
+      "hits": 0,
+      "hit_rate": 0.0,
+      "wilson_lo": 0.0,
+      "wilson_hi": 1.0,
+      "horizon_bd": 63,
+      "verdict": {
+        "status": "accruing",
+        "gradeable": false,
+        "distance_to_decision": 20,
+        "reason": "only 0/20 matured rows; ~20 more sessions to a first verdict"
+      }
+    }
+  },
+  "causal_hmm": {
+    "n_total_rows": 1,
+    "n_matured": 0,
+    "hits": 0,
+    "hit_rate": 0.0,
+    "wilson_lo": 0.0,
+    "wilson_hi": 1.0,
+    "horizon_bd": 21,
+    "note": "causal-filtered modal quad vs realized quad at +21bd",
+    "verdict": {
+      "status": "accruing",
+      "gradeable": false,
+      "distance_to_decision": 20,
+      "reason": "only 0/20 matured rows; ~20 more sessions to a first verdict"
+    }
+  },
+  "base_effect_pit": {
+    "vintages_loaded": true,
+    "n_vintage_series": 26,
+    "pit_revised_flag": false,
+    "latest_call_revised_flag": true,
+    "growth_series_revised": {
+      "INDPRO": false,
+      "PAYEMS": false
+    },
+    "inflation_series_revised": {
+      "CPILFESL": false,
+      "PCEPILFE": false
+    },
+    "note": "run.py should thread as_of + load_vintages() into base_effect.compute on the SHADOW regime_one path so CPI/PCE/PPI read leak-free (revised=False where vintage coverage exists: CPI 1997+, PCE 2000+, PPI 2014+)."
+  },
+  "note": "SHADOW gate (#16). No promotion happens here \u2014 this measures accrual and issues an accrual-aware go/no-go. Forward calls are 1 row/session; mature at +63bd (base_effect) / +21bd (HMM)."
+}

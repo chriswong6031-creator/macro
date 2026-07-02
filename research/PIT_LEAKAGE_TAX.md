@@ -186,3 +186,16 @@ W1 (`engine/pit.py`, `scripts/shadow_pit_regime.py`) covers only the US FRED/ALF
 - **rev_z** (2026-07-01): causally clean live (both ends observed closes); replay fragility is screened-set churn **0.0%** (current ST/mktcap/membership snapshot vs as-of), not a value leak.
 
 **Verdict:** honest numbers, no demotion recommended on these alone — this sizes the taxes so any future 'grade the cascade / washout' work replays on the correct plane, persists bucket_end, and treats git panels as the vintage matrix.
+
+---
+
+## Addendum 2026-07-01 — W2 Regime One consumes these numbers (P2-A)
+
+**Artifacts:** `engine/regime_one.py` → `data/regime/regime_one.json`, `data/regime/freshness_ledger.jsonl`, `data/regime/regime_fwd_hmm.jsonl`; `scripts/validate_regime_fwd.py` → `calibration/regime_fwd_grade.json`. **Status:** SHADOW (publishes alongside the legacy regime; zero consumer flips this wave).
+
+W2's Regime One turns the leakage-tax findings from a measurement into structure:
+- **The #809 measured lags are now in `DEFAULT_RELEASE_LAGS`** as `lag_bd_measured` (CPI 32bd/~45cal, core PCE 42bd/~59cal, PPI 31bd/~43cal, ECI 86bd/~120cal, continued_claims 9bd). `pit._effective_lag_bd()` prefers measured > prior for the non-vintaged calendar fallback; the vintaged legs (26/26) still use the true `realtime_start` as-of join, so only CPI-detail (`cpi_core_services`, `cpi_shelter`) actually change. The old CPI 8-bd prior was optimistic by ~24 bd.
+- **The 84.2%-agreement / inflation-axis-inflection finding is encoded as an explicit confidence input**, not a footnote: `regime_one.fused_risk.confidence` drops (uncertainty 0.35 vs 0.05) whenever the coincident tape inflation axis and the leak-free macro (release-frame) inflation axis DISAGREE on sign — the live analog of the Q1↔Q2 inflection confusion the tax measured.
+- **The market-leg-hysteresis-dominates-flips finding drives flip attribution**: since the confirmed quad moves on the market legs, a quad flip that is *majority renormalization* (a dead econ leg vanishing from the weighted sum, `axes.py:77-79`) is now VETOED — the label freezes and `degraded` is published. Chaos-tested: killing payrolls+indpro flips the raw quad Q1→Q4 but regime_one holds Q1 (100% renorm share) and caps gross at 0.90.
+- **#16 unblocked and wired**: `scripts/validate_regime_fwd.py` (the gate that never existed) now matures + grades base_effect and the causal-HMM forward calls with accrual-aware Wilson CIs, and the SHADOW regime_one base_effect runs `revised=False` (leak-free CPI/PCE/PPI) by threading `as_of` + `load_vintages()` — verified `revised(pit)=False` vs `revised(run.py-legacy-call)=True`.
+- **HMM honesty**: the P(Quad) history emitted by regime_one is the FILTERED (causal, forward-alpha) series — each point conditions only on data up to that day — flagged `smoothed_hindsight: false`. The full-sample smoothed `predict_proba` series stays confined to `engine/regime_hmm.py`'s display chart.
