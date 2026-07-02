@@ -11,11 +11,8 @@ from engine import demand_chain as dc
 
 # ── Shared fixtures ────────────────────────────────────────────────────────────
 
-# A pool signal with 4 years of data so we can test lagged/indirect shifts.
-# Series: 2022=100B, 2023=120B, 2024=200B, 2025=300B
-# yoy_2025 = +50%, yoy_2024 = +66.7% -> trend = accelerating
-# Shifted -1 year (lagged): uses 2022-2024, yoy_2024 = +66.7%, yoy_2023 = +20% -> accelerating
-# Shifted -2 years (indirect): uses 2022-2023, yoy_2023 = +20%, no prev -> peaking -> COOLING
+# A pool signal with 4 years of data (2022=100B → 2025=300B, trend accelerating).
+# All tiers share this CURRENT read; tier lag is metadata only (transmission_lag_q).
 RICH_SIG_SERIES = [[2022, 100.0], [2023, 120.0], [2024, 200.0], [2025, 300.0]]
 RICH_SIG = {
     "ai_datacenter": {
@@ -71,93 +68,68 @@ def _patch(monkeypatch, sig=None, themes=None, membership=None, revisions=None, 
     monkeypatch.setattr(dx, "_chain_track_record", lambda: track_record)
 
 
-# ── (a) Tiers produce DIFFERENT bands when pool has a direction change ─────────
+# ── (a) One current band for all tiers; lag is METADATA, never a band shift ───
 
 class TestPerTierLag:
-    """Verify that direct/lagged/indirect tiers produce distinct demand_band values
-    when the pool series has a direction change across years (the rich 4-year series)."""
+    """Review-corrected semantics: every tier shares ONE current pool band; the tier
+    transmission lag (~quarters) is metadata (transmission_lag_q + lag_note). The old
+    annual-shift approach re-read the 2023 capex dip as the power themes' CURRENT
+    demand — the exact inverse of the truth — and was review-rejected."""
 
-    def test_direct_sees_current_trend(self, monkeypatch):
+    def test_all_tiers_share_current_band(self, monkeypatch):
         _patch(monkeypatch, sig=RICH_SIG)
         out = dx.compute_demand_capex()
-        # direct tier should see the current-year trend: +50% (accelerating)
-        assert out["themes"]["memory_storage"]["demand_band"] == "ACCELERATING"
-        assert out["themes"]["ai_semiconductors"]["demand_band"] == "ACCELERATING"
-
-    def test_indirect_sees_earlier_trend_differs_from_direct(self, monkeypatch):
-        _patch(monkeypatch, sig=RICH_SIG)
-        out = dx.compute_demand_capex()
-        direct_band = out["themes"]["memory_storage"]["demand_band"]
-        indirect_band = out["themes"]["data_center_power"]["demand_band"]
-        # With 4 data points and a direction change, indirect (+2 steps) MUST differ
-        assert direct_band != indirect_band, (
-            f"Expected direct ({direct_band}) != indirect ({indirect_band}); "
-            "per-tier lag should produce distinct bands on a series with direction change"
+        bands = {v["demand_band"] for v in out["themes"].values()}
+        assert bands == {"ACCELERATING"}, (
+            f"All tiers must share the CURRENT pool band; got {bands}"
         )
 
-    def test_all_six_bands_produced(self, monkeypatch):
+    def test_transmission_lag_metadata_by_tier(self, monkeypatch):
         _patch(monkeypatch, sig=RICH_SIG)
         out = dx.compute_demand_capex()
-        assert len(out["themes"]) == 6
-        bands = [v["demand_band"] for v in out["themes"].values()]
-        # At least two distinct bands (not all identical)
-        assert len(set(bands)) >= 2, f"All themes share the same band: {bands}"
+        assert out["themes"]["memory_storage"]["transmission_lag_q"] == 0      # direct
+        assert out["themes"]["semicap_equipment"]["transmission_lag_q"] == 1   # lagged
+        assert out["themes"]["data_center_power"]["transmission_lag_q"] == 2   # indirect
+        assert "lag" in out["themes"]["data_center_power"]["lag_note"]
 
-    def test_lag_applied_true_for_sufficient_history(self, monkeypatch):
+    def test_no_inverted_read_regression(self, monkeypatch):
+        """REGRESSION GUARD (review blocker): a strongly positive current pool
+        (capex_yoy > 0) must NEVER coexist with a CONTRACTING band on any tier —
+        the inverted-read class where 2-year-stale data was reported as current."""
         _patch(monkeypatch, sig=RICH_SIG)
         out = dx.compute_demand_capex()
-        # All tiers have 4 data points; lagged needs 3, indirect needs 4 → all True
         for theme, v in out["themes"].items():
-            assert v["lag_applied"] is True, f"lag_applied should be True for {theme}"
-
-    def test_direct_lag_applied_true(self, monkeypatch):
-        """lag_applied=True for direct tiers (n_steps=0, trivially applied)."""
-        _patch(monkeypatch, sig=RICH_SIG)
-        out = dx.compute_demand_capex()
-        assert out["themes"]["memory_storage"]["lag_applied"] is True
+            if (v.get("capex_yoy") or 0) > 0:
+                assert v["demand_band"] != "CONTRACTING", (
+                    f"{theme}: CONTRACTING band next to capex_yoy="
+                    f"{v['capex_yoy']} — inverted read"
+                )
 
 
-# ── (b) Short history → lag_applied False, no fabrication ────────────────────
+# ── (b) Short history degrades honestly (band always the real current read) ───
 
 class TestShortHistory:
-    """When the pool series is too short to shift (2 data points), lagged and
-    indirect tiers fall back to the unshifted read with lag_applied: False."""
+    """Short pool history changes nothing about the band (it is always the current
+    read); lag metadata is static per tier."""
 
     def test_short_history_degrades_gracefully(self, monkeypatch):
         _patch(monkeypatch, sig=SHORT_SIG)
         out = dx.compute_demand_capex()
         assert out is not None
 
-    def test_short_history_lag_applied_false_for_lagged(self, monkeypatch):
-        """lagged tier needs ≥3 data points (n_steps+2); 2 points → lag_applied False."""
-        _patch(monkeypatch, sig=SHORT_SIG)
-        out = dx.compute_demand_capex()
-        # semicap_equipment is "lagged" (n_steps=1), needs 3 pts, has 2 → not applied
-        assert out["themes"]["semicap_equipment"]["lag_applied"] is False
-
-    def test_short_history_lag_applied_false_for_indirect(self, monkeypatch):
-        """indirect tier needs ≥4 data points (n_steps+2); 2 points → lag_applied False."""
-        _patch(monkeypatch, sig=SHORT_SIG)
-        out = dx.compute_demand_capex()
-        # data_center_power is "indirect" (n_steps=2), needs 4 pts, has 2 → not applied
-        assert out["themes"]["data_center_power"]["lag_applied"] is False
-
     def test_short_history_no_fabrication(self, monkeypatch):
-        """When history is too short, the band uses the current unshifted read, not None
-        and not a made-up value — it degrades to the real current read honestly."""
+        """The band is the real current read — never None, never a made-up value."""
         _patch(monkeypatch, sig=SHORT_SIG)
         out = dx.compute_demand_capex()
-        # All bands must be real strings from the _BAND dict, never None
         for theme, v in out["themes"].items():
             assert v["demand_band"] in dx._BAND.values(), (
                 f"{theme}: demand_band {v['demand_band']!r} is not a valid band string"
             )
 
-    def test_short_history_direct_still_applied(self, monkeypatch):
-        """Direct tier (n_steps=0) always has lag_applied=True regardless of history."""
+    def test_short_history_lag_metadata_unaffected(self, monkeypatch):
         _patch(monkeypatch, sig=SHORT_SIG)
         out = dx.compute_demand_capex()
-        assert out["themes"]["memory_storage"]["lag_applied"] is True
+        assert out["themes"]["data_center_power"]["transmission_lag_q"] == 2
 
 
 # ── (c) Divergence share with min-3 gate ──────────────────────────────────────
@@ -336,7 +308,7 @@ class TestOutputContract:
     }
     # Wave 2b new per-theme keys + types
     W2B_THEME_KEYS = {
-        "lag_applied": bool,
+        "transmission_lag_q": int,
         "n_ahead": int,
         "n_at_risk": int,
         "n_covered": int,

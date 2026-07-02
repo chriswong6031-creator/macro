@@ -16,9 +16,9 @@ grading of the underlying name-level theses lives in engine/demand_ledger.py; th
 pure display context for the cascade. Returns None cleanly when statements aren't cached.
 
 Wave 2b additions (P1-D):
-- Per-tier lag structure: direct tiers see the current-quarter pool trend; lagged tiers see it
-  shifted +1 annual step; indirect +2 (annual-cadence data). When history is too short to
-  shift, the unshifted read is used with lag_applied: False.
+- Per-tier transmission lag as METADATA (transmission_lag_q 0/1/2 + lag_note): every tier
+  shares ONE current pool band; the annual-shift approach was review-rejected (a 1-2 YEAR
+  shift for a ~2-QUARTER lag re-read the 2023 capex dip as the power themes' current demand).
 - Per-name divergence: theme demand read = share of members ahead-of-consensus (n_ahead /
   n_covered), min 3 covered. Reuses engine/demand_chain._divergence (import, not copy).
 - Supplier-side RPO confirmer: reads data/edgar/rpo.parquet cache (read-only — no network
@@ -51,13 +51,6 @@ AI_CAPEX_THEMES = {
     "nuclear_power": "indirect",       # nuclear / SMR for data centers
 }
 
-# Number of annual steps the pool signal is shifted per strength tier.
-# Annual-cadence data — implement the shift honestly on the yearly series from _aggregate.
-_LAG_STEPS: dict[str, int] = {
-    "direct": 0,
-    "lagged": 1,
-    "indirect": 2,
-}
 
 _BAND = {
     "accelerating": "ACCELERATING",
@@ -82,45 +75,29 @@ def _statements():
     return df if (df is not None and not df.empty) else None
 
 
-def _shifted_band(sig: dict, n_steps: int) -> tuple[str, bool]:
-    """Compute the demand band for a tier that sees the pool signal with a lag.
+# Tier transmission lags in QUARTERS (hyperscaler capex leads beneficiary revenue
+# ~2-4q; direct tiers feel it first, indirect last). The lag is METADATA — a timing
+# note on when the current pool read arrives — NEVER a shift of the annual series:
+# review finding — shifting the annual pool back "2 steps" for a ~2-QUARTER lag
+# overstated it ~4x and re-read the 2023 capex-digestion dip as the power themes'
+# CURRENT demand (CONTRACTING next to capex_yoy=+69 on the same card — the exact
+# inverse of the truth for the themes whose bull case IS the live capex wave).
+# All tiers therefore share ONE current pool band; per-name divergence + RPO carry
+# the cross-theme discrimination. Quarterly capex (companyfacts fp=Q1..Q3) would
+# enable a genuine per-quarter tier shift — a future collector wave, not this one.
+_TRANSMISSION_LAG_Q = {"direct": 0, "lagged": 1, "indirect": 2}
 
-    The pool's annual series (list of [fy, total_bn]) is shifted back n_steps years
-    so direct tiers see the current trend while lagged/indirect see an earlier read.
-    When history is too short (fewer than n_steps+2 data points), we degrade to the
-    unshifted read with lag_applied=False rather than fabricating a read.
 
-    Returns (band_str, lag_applied).
-    """
-    from engine import demand_chain as dc
+def _tier_band(sig: dict, strength: str) -> tuple[str, int, str]:
+    """One CURRENT pool band for every tier + the tier's transmission lag as metadata.
 
-    series = sig.get("series") or []
-    # series is [[fy, total_bn], ...] sorted ascending
-    if n_steps == 0 or len(series) < n_steps + 2:
-        # Not enough history to shift — use current read honestly
-        lag_applied = n_steps == 0
-        trend = sig.get("trend", "unknown")
-        band = _BAND.get(trend, "UNKNOWN")
-        return band, lag_applied
-
-    # Shift: the view for this tier is n_steps years back in the series.
-    # We look at what the trend WOULD HAVE BEEN at that earlier point in history.
-    # Take the slice ending n_steps periods before the end.
-    shifted_series = series[: len(series) - n_steps]
-    if len(shifted_series) < 2:
-        return _BAND.get(sig.get("trend", "unknown"), "UNKNOWN"), False
-
-    # Compute yoy and yoy_prev from the shifted series
-    latest_val = shifted_series[-1][1]   # total_bn at shifted "latest"
-    prior_val = shifted_series[-2][1]    # total_bn at shifted "prior"
-    yoy = round((latest_val / prior_val - 1.0) * 100.0, 1) if prior_val else None
-    yoy_prev = None
-    if len(shifted_series) >= 3 and shifted_series[-3][1]:
-        yoy_prev = round((prior_val / shifted_series[-3][1] - 1.0) * 100.0, 1)
-
-    trend = dc._trend(yoy, yoy_prev)
+    Returns (band_str, transmission_lag_q, timing_note)."""
+    trend = sig.get("trend", "unknown")
     band = _BAND.get(trend, "UNKNOWN")
-    return band, True
+    lag_q = _TRANSMISSION_LAG_Q.get(strength, 0)
+    note = ("feels the pool now" if lag_q == 0
+            else f"pool read arrives with ~{lag_q}q transmission lag")
+    return band, lag_q, note
 
 
 def _membership_map() -> dict[str, list[str]]:
@@ -297,15 +274,16 @@ def compute_demand_capex() -> dict | None:
     DISPLAY-ONLY. Returns None when the demand signal can't be computed.
 
     Wave 2b enrichments (P1-D):
-    - Per-tier lag structure: direct=current, lagged=+1y, indirect=+2y; lag_applied flag.
+    - Per-tier transmission lag as metadata: transmission_lag_q (0/1/2) + lag_note; the
+      band itself is the CURRENT pool read for every tier (see _tier_band).
     - Per-name divergence: n_ahead/n_at_risk/n_covered/divergence_share per theme.
     - RPO supplier confirmer: median YoY RPO growth per theme from cache (read-only).
     - Sign honesty: sign_note + chain_track_record from engine/demand_ledger.py.
 
     Output shape (cascade-compat): top-level keys themes {theme: {demand_band, strength,
     capex_yoy, ...}}, pool_bn, pool_yoy, pool_trend preserved. New per-theme keys:
-    lag_applied, n_ahead, n_at_risk, n_covered, divergence_share, rpo_growth_yoy, rpo_n.
-    New top-level keys: sign_note, chain_track_record.
+    transmission_lag_q, lag_note, n_ahead, n_at_risk, n_covered, divergence_share,
+    rpo_growth_yoy, rpo_n. New top-level keys: sign_note, chain_track_record.
     """
     df = _statements()
     if df is None:
@@ -329,10 +307,10 @@ def compute_demand_capex() -> dict | None:
         if theme not in cfg_themes:
             continue
 
-        # Per-tier lag structure — direct tiers see current pool trend;
-        # lagged +1 annual step; indirect +2 annual steps.
-        n_steps = _LAG_STEPS.get(strength, 0)
-        demand_band, lag_applied = _shifted_band(sig, n_steps)
+        # One CURRENT pool band for every tier; the tier lag is timing METADATA
+        # (see _tier_band — the annual-shift approach was review-rejected as an
+        # inverted read). Discrimination comes from divergence_share + RPO below.
+        demand_band, lag_q, lag_note = _tier_band(sig, strength)
 
         # Per-name divergence — reuses demand_chain._divergence (not copied)
         members = membership.get(theme, [])
@@ -352,8 +330,9 @@ def compute_demand_capex() -> dict | None:
             "total_latest_bn": sig.get("total_latest_bn"),
             "fy_latest": sig.get("fy_latest"),
             "customers": sig.get("spenders"),
-            # --- Wave 2b: per-tier lag ---
-            "lag_applied": lag_applied,
+            # --- Wave 2b: per-tier transmission lag (metadata, never a band shift) ---
+            "transmission_lag_q": lag_q,
+            "lag_note": lag_note,
             # --- Wave 2b: per-name divergence ---
             "n_ahead": div_info["n_ahead"],
             "n_at_risk": div_info["n_at_risk"],
