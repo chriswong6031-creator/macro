@@ -186,6 +186,10 @@ def _row_features(r: dict) -> dict:
         "spot_sector_etf": _dig(r, ("conviction", "spotlight", "sector", "etf")),
         "off_high": _num(r.get("off_high")),
         "dispersion_state": None,  # filled from board-level below
+        # COILED wave-2 ranking bonus fields (forward-ledger; None when absent/pre-schema)
+        "coiled":        bool((r.get("coiled") or {}).get("coiled")),
+        "coiled_star":   bool((r.get("coiled") or {}).get("star")),
+        "coiled_cohort": (r.get("coiled") or {}).get("cohort"),
     }
 
 

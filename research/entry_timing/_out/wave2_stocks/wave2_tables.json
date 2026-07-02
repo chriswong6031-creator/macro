@@ -1,0 +1,532 @@
+{
+  "_meta": {
+    "panel": "stocks",
+    "n_names": 211,
+    "eval_start": "2012-01-01",
+    "min_bars": 1500,
+    "workers": 6,
+    "runtime_s": 73.5,
+    "cohort_source_note": "stocks panel sector cohort: constituents.parquet (503 tickers)",
+    "purge_method": "T2: 180 calendar days after each fold boundary date"
+  },
+  "T1": {
+    "m2d_s3d": [
+      {
+        "label": "ALL",
+        "n": 12797,
+        "stop5": 40.6,
+        "clean10": 45.52,
+        "clean15": 34.34,
+        "clean20": 25.08,
+        "clean30": 12.36,
+        "clean15_h189": 38.46,
+        "dead_money": 14.6,
+        "med_mfe63": 9.34,
+        "med_mae63": -5.19
+      },
+      {
+        "label": "in_washout",
+        "n": 6645,
+        "stop5": 41.94,
+        "clean10": 45.01,
+        "clean15": 35.77,
+        "clean20": 28.14,
+        "clean30": 15.76,
+        "clean15_h189": 37.94,
+        "dead_money": 8.38,
+        "med_mfe63": 11.22,
+        "med_mae63": -6.17
+      },
+      {
+        "label": "COILED",
+        "n": 3174,
+        "stop5": 39.07,
+        "clean10": 47.95,
+        "clean15": 39.29,
+        "clean20": 31.35,
+        "clean30": 18.3,
+        "clean15_h189": 41.18,
+        "dead_money": 7.28,
+        "med_mfe63": 12.42,
+        "med_mae63": -5.73
+      },
+      {
+        "label": "noncoiled_washout",
+        "n": 3417,
+        "stop5": 44.54,
+        "clean10": 42.46,
+        "clean15": 32.6,
+        "clean20": 25.26,
+        "clean30": 13.4,
+        "clean15_h189": 35.06,
+        "dead_money": 9.48,
+        "med_mfe63": 10.21,
+        "med_mae63": -6.64
+      },
+      {
+        "label": "STAR",
+        "n": 847,
+        "stop5": 34.71,
+        "clean10": 51.48,
+        "clean15": 41.09,
+        "clean20": 32.47,
+        "clean30": 18.77,
+        "clean15_h189": 44.04,
+        "dead_money": 6.26,
+        "med_mfe63": 13.18,
+        "med_mae63": -5.3
+      },
+      {
+        "label": "coiled_no_div",
+        "n": 2327,
+        "stop5": 40.65,
+        "clean10": 46.67,
+        "clean15": 38.63,
+        "clean20": 30.94,
+        "clean30": 18.13,
+        "clean15_h189": 40.14,
+        "dead_money": 7.65,
+        "med_mfe63": 12.26,
+        "med_mae63": -5.86
+      },
+      {
+        "label": "div_only_noncoiled",
+        "n": 893,
+        "stop5": 45.58,
+        "clean10": 40.31,
+        "clean15": 30.91,
+        "clean20": 22.96,
+        "clean30": 11.31,
+        "clean15_h189": 33.37,
+        "dead_money": 8.51,
+        "med_mfe63": 9.9,
+        "med_mae63": -6.83
+      }
+    ],
+    "base3d": [
+      {
+        "label": "ALL",
+        "n": 8020,
+        "stop5": 40.92,
+        "clean10": 45.19,
+        "clean15": 34.28,
+        "clean20": 24.49,
+        "clean30": 11.56,
+        "clean15_h189": 38.42,
+        "dead_money": 14.76,
+        "med_mfe63": 9.2,
+        "med_mae63": -5.24
+      },
+      {
+        "label": "COILED",
+        "n": 2399,
+        "stop5": 40.06,
+        "clean10": 47.52,
+        "clean15": 37.47,
+        "clean20": 29.01,
+        "clean30": 15.88,
+        "clean15_h189": 39.85,
+        "dead_money": 7.63,
+        "med_mfe63": 11.77,
+        "med_mae63": -5.92
+      }
+    ]
+  },
+  "T2": [
+    {
+      "fold": 0,
+      "fold_start": "2012-01-03",
+      "fold_end": "2015-03-04",
+      "n_coiled": 382,
+      "n_noncoiled": 488,
+      "clean15_spread": -2.76,
+      "stop5_spread": 2.53,
+      "purge_note": "180 calendar days after fold boundary"
+    },
+    {
+      "fold": 1,
+      "fold_start": "2015-08-31",
+      "fold_end": "2017-12-04",
+      "n_coiled": 407,
+      "n_noncoiled": 517,
+      "clean15_spread": 13.96,
+      "stop5_spread": -9.3,
+      "purge_note": "180 calendar days after fold boundary"
+    },
+    {
+      "fold": 2,
+      "fold_start": "2018-06-04",
+      "fold_end": "2020-09-18",
+      "n_coiled": 601,
+      "n_noncoiled": 773,
+      "clean15_spread": 12.25,
+      "stop5_spread": -8.49,
+      "purge_note": "180 calendar days after fold boundary"
+    },
+    {
+      "fold": 3,
+      "fold_start": "2021-03-17",
+      "fold_end": "2023-05-11",
+      "n_coiled": 769,
+      "n_noncoiled": 555,
+      "clean15_spread": 8.7,
+      "stop5_spread": -10.34,
+      "purge_note": "180 calendar days after fold boundary"
+    },
+    {
+      "fold": 4,
+      "fold_start": "2023-11-07",
+      "fold_end": "2025-12-26",
+      "n_coiled": 490,
+      "n_noncoiled": 596,
+      "clean15_spread": 8.75,
+      "stop5_spread": -6.55,
+      "purge_note": "180 calendar days after fold boundary"
+    }
+  ],
+  "T4": {
+    "coiled_vs_ncw": {
+      "n_names_qualifying": 209,
+      "pct_coiled_wins_clean15": 65.55
+    },
+    "star_vs_nonstar_washout": {
+      "n_names_qualifying": 180,
+      "pct_star_wins_clean15": 62.22
+    }
+  },
+  "T5": [
+    {
+      "label": "Q1",
+      "n": 1661,
+      "stop5": 45.33,
+      "clean10": 41.6,
+      "clean15": 31.55,
+      "clean20": 24.26,
+      "clean30": 13.31,
+      "clean15_h189": 34.44,
+      "dead_money": 9.99,
+      "med_mfe63": 10.19,
+      "med_mae63": -6.89
+    },
+    {
+      "label": "Q2",
+      "n": 1756,
+      "stop5": 43.79,
+      "clean10": 43.28,
+      "clean15": 33.6,
+      "clean20": 26.2,
+      "clean30": 13.5,
+      "clean15_h189": 35.65,
+      "dead_money": 9.0,
+      "med_mfe63": 10.26,
+      "med_mae63": -6.34
+    },
+    {
+      "label": "Q3",
+      "n": 1595,
+      "stop5": 41.76,
+      "clean10": 44.95,
+      "clean15": 36.87,
+      "clean20": 30.66,
+      "clean30": 16.61,
+      "clean15_h189": 38.18,
+      "dead_money": 7.84,
+      "med_mfe63": 11.09,
+      "med_mae63": -6.5
+    },
+    {
+      "label": "Q4",
+      "n": 1579,
+      "stop5": 36.35,
+      "clean10": 50.98,
+      "clean15": 41.74,
+      "clean20": 32.05,
+      "clean30": 20.01,
+      "clean15_h189": 44.21,
+      "dead_money": 6.71,
+      "med_mfe63": 13.83,
+      "med_mae63": -5.23
+    },
+    {
+      "label": "Q4_minus_Q1",
+      "clean15_spread": 10.19,
+      "spearman_r": 1.0,
+      "spearman_p": 0.0
+    }
+  ],
+  "T6": [
+    {
+      "cohort_threshold": 0.3,
+      "peer_d_threshold": 25,
+      "peer_d_note": "proxy(stored_D<30_base)",
+      "n_coiled": 3785,
+      "n_noncoiled": 2806,
+      "coiled_clean15": 38.31,
+      "ncw_clean15": 32.47,
+      "clean15_spread": 5.84,
+      "coiled_stop5": 39.6,
+      "ncw_stop5": 45.01,
+      "stop5_spread": -5.41
+    },
+    {
+      "cohort_threshold": 0.3,
+      "peer_d_threshold": 30,
+      "peer_d_note": "exact",
+      "n_coiled": 3785,
+      "n_noncoiled": 2806,
+      "coiled_clean15": 38.31,
+      "ncw_clean15": 32.47,
+      "clean15_spread": 5.84,
+      "coiled_stop5": 39.6,
+      "ncw_stop5": 45.01,
+      "stop5_spread": -5.41
+    },
+    {
+      "cohort_threshold": 0.4,
+      "peer_d_threshold": 25,
+      "peer_d_note": "proxy(stored_D<30_base)",
+      "n_coiled": 3174,
+      "n_noncoiled": 3417,
+      "coiled_clean15": 39.29,
+      "ncw_clean15": 32.6,
+      "clean15_spread": 6.69,
+      "coiled_stop5": 39.07,
+      "ncw_stop5": 44.54,
+      "stop5_spread": -5.47
+    },
+    {
+      "cohort_threshold": 0.4,
+      "peer_d_threshold": 30,
+      "peer_d_note": "exact",
+      "n_coiled": 3174,
+      "n_noncoiled": 3417,
+      "coiled_clean15": 39.29,
+      "ncw_clean15": 32.6,
+      "clean15_spread": 6.69,
+      "coiled_stop5": 39.07,
+      "ncw_stop5": 44.54,
+      "stop5_spread": -5.47
+    },
+    {
+      "cohort_threshold": 0.5,
+      "peer_d_threshold": 25,
+      "peer_d_note": "proxy(stored_D<30_base)",
+      "n_coiled": 2615,
+      "n_noncoiled": 3976,
+      "coiled_clean15": 39.43,
+      "ncw_clean15": 33.45,
+      "clean15_spread": 5.98,
+      "coiled_stop5": 38.39,
+      "ncw_stop5": 44.22,
+      "stop5_spread": -5.82
+    },
+    {
+      "cohort_threshold": 0.5,
+      "peer_d_threshold": 30,
+      "peer_d_note": "exact",
+      "n_coiled": 2615,
+      "n_noncoiled": 3976,
+      "coiled_clean15": 39.43,
+      "ncw_clean15": 33.45,
+      "clean15_spread": 5.98,
+      "coiled_stop5": 38.39,
+      "ncw_stop5": 44.22,
+      "stop5_spread": -5.82
+    }
+  ],
+  "T7": {
+    "within_coiled_trap": [
+      {
+        "label": "COILED_trap_T",
+        "n": 1637,
+        "stop5": 38.91,
+        "clean10": 47.53,
+        "clean15": 38.67,
+        "clean20": 30.18,
+        "clean30": 16.92,
+        "clean15_h189": 40.32,
+        "dead_money": 6.54,
+        "med_mfe63": 12.72,
+        "med_mae63": -5.93
+      },
+      {
+        "label": "COILED_trap_F",
+        "n": 1537,
+        "stop5": 39.23,
+        "clean10": 48.41,
+        "clean15": 39.95,
+        "clean20": 32.6,
+        "clean30": 19.78,
+        "clean15_h189": 42.09,
+        "dead_money": 8.07,
+        "med_mfe63": 12.17,
+        "med_mae63": -5.52
+      }
+    ],
+    "failed2_within_star": [
+      {
+        "label": "STAR_failed2_T",
+        "n": 455,
+        "stop5": 37.36,
+        "clean10": 50.33,
+        "clean15": 40.66,
+        "clean20": 33.19,
+        "clean30": 19.34,
+        "clean15_h189": 43.74,
+        "dead_money": 6.37,
+        "med_mfe63": 13.06,
+        "med_mae63": -5.11
+      },
+      {
+        "label": "STAR_failed2_F",
+        "n": 392,
+        "stop5": 31.63,
+        "clean10": 52.81,
+        "clean15": 41.58,
+        "clean20": 31.63,
+        "clean30": 18.11,
+        "clean15_h189": 44.39,
+        "dead_money": 6.12,
+        "med_mfe63": 13.22,
+        "med_mae63": -5.6
+      }
+    ],
+    "failed2_within_all": [
+      {
+        "label": "ALL_failed2_T",
+        "n": 4619,
+        "stop5": 40.81,
+        "clean10": 46.61,
+        "clean15": 36.35,
+        "clean20": 27.63,
+        "clean30": 14.74,
+        "clean15_h189": 39.47,
+        "dead_money": 11.06,
+        "med_mfe63": 10.43,
+        "med_mae63": -5.39
+      },
+      {
+        "label": "ALL_failed2_F",
+        "n": 8178,
+        "stop5": 40.47,
+        "clean10": 44.9,
+        "clean15": 33.2,
+        "clean20": 23.64,
+        "clean30": 11.02,
+        "clean15_h189": 37.89,
+        "dead_money": 16.61,
+        "med_mfe63": 8.83,
+        "med_mae63": -5.08
+      }
+    ],
+    "fromos3_x_coiled_2x2": [
+      {
+        "label": "fromos3_T_COILED_T",
+        "n": 2614,
+        "stop5": 39.48,
+        "clean10": 47.63,
+        "clean15": 38.83,
+        "clean20": 30.99,
+        "clean30": 17.94,
+        "clean15_h189": 40.86,
+        "dead_money": 7.04,
+        "med_mfe63": 12.45,
+        "med_mae63": -5.77
+      },
+      {
+        "label": "fromos3_T_COILED_F",
+        "n": 5983,
+        "stop5": 40.82,
+        "clean10": 45.16,
+        "clean15": 33.08,
+        "clean20": 23.55,
+        "clean30": 10.41,
+        "clean15_h189": 38.04,
+        "dead_money": 16.9,
+        "med_mfe63": 8.63,
+        "med_mae63": -4.95
+      },
+      {
+        "label": "fromos3_F_COILED_T",
+        "n": 560,
+        "stop5": 37.14,
+        "clean10": 49.46,
+        "clean15": 41.43,
+        "clean20": 33.04,
+        "clean30": 20.0,
+        "clean15_h189": 42.68,
+        "dead_money": 8.39,
+        "med_mfe63": 12.06,
+        "med_mae63": -5.45
+      },
+      {
+        "label": "fromos3_F_COILED_F",
+        "n": 3640,
+        "stop5": 41.57,
+        "clean10": 43.98,
+        "clean15": 32.09,
+        "clean20": 22.12,
+        "clean30": 10.38,
+        "clean15_h189": 36.79,
+        "dead_money": 17.23,
+        "med_mfe63": 8.63,
+        "med_mae63": -5.2
+      }
+    ]
+  },
+  "T8": {
+    "ALL": {
+      "n_fires": 12797,
+      "recall_B15": 20.8,
+      "recall_B30": 18.91,
+      "trap_fire_rate": 17.18,
+      "med_premium": NaN,
+      "med_lead": NaN
+    },
+    "COILED": {
+      "n_fires": 3174,
+      "recall_B15": 12.48,
+      "recall_B30": 13.11,
+      "trap_fire_rate": 9.25,
+      "med_premium": 8.49,
+      "med_lead": 6.0
+    },
+    "STAR": {
+      "n_fires": 847,
+      "recall_B15": 3.36,
+      "recall_B30": 3.34,
+      "trap_fire_rate": 2.77,
+      "med_premium": NaN,
+      "med_lead": NaN
+    }
+  },
+  "T9": {
+    "durable_tol5": {
+      "n_events": 11030,
+      "n_coiled_fires": 3174,
+      "n_star_fires": 847,
+      "recall_ALL": 20.65,
+      "recall_COILED": 12.28,
+      "recall_STAR": 3.35,
+      "label_def": "hold floor=P0*0.95 (5% tol), liftoff=+20%, horizon=126d"
+    },
+    "durable_lift30": {
+      "n_events": 7843,
+      "n_coiled_fires": 3174,
+      "n_star_fires": 847,
+      "recall_ALL": 20.11,
+      "recall_COILED": 12.23,
+      "recall_STAR": 3.26,
+      "label_def": "hold floor=P0*0.97 (3% tol), liftoff=+30%, horizon=126d"
+    },
+    "durable_h189": {
+      "n_events": 9644,
+      "n_coiled_fires": 3174,
+      "n_star_fires": 847,
+      "recall_ALL": 21.09,
+      "recall_COILED": 12.62,
+      "recall_STAR": 3.42,
+      "label_def": "hold floor=P0*0.97 (3% tol), liftoff=+20%, horizon=189d"
+    }
+  }
+}

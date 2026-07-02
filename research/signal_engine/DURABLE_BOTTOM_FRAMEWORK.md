@@ -332,3 +332,23 @@ gate would gut recall, §9.3 asymmetry). Take it through `walk_forward.py` (trai
 ≥70%-of-names OOS) + the B30/label-sensitivity re-read + the basket-panel (2014+, 990 names,
 survivorship-honest) generalization before any engine wiring. H5 trap_state dead-money veto and
 the failed2 inversion are wave-2 side studies.
+
+| date | candidate | verdict | numbers | where |
+|---|---|---|---|---|
+| 2026-07-01 | **Wave 2** — COILED validation: time folds, basket-panel OOS, barrier/label sensitivity, side studies (harness `wave2.py`, adversarially audited — a CRITICAL date-index serialization bug that would have leaked end-of-history cohort values was caught and fixed BEFORE the runs) | **ALL PRE-REGISTERED GATES PASS → SHIP as graded ranking bonus** | see rows below | research/entry_timing/WAVE2_REPORT.md |
+| 2026-07-01 | G1 time-fold stability (deep panel, 5 folds, 180d purge) | PASS | clean15 spread positive 4/5 folds (+13.96/+12.25/+8.70/+8.75; fold-0 2012-15 −2.76 — the edge sleeps in low-vol bull legs with nothing to detect); pooled +6.69pp; COILED stop5 better every passing fold | T2 |
+| 2026-07-01 | G2 basket-panel replication (2,336 names, 102,408 fires — the decisive OOS) | **PASS, edge LARGER OOS** | COILED n=6,842: clean15 38.70 vs 31.16 (+7.54pp), stop5 40.22 vs 45.86 (−5.64pp better), dead-money 6.15 vs 8.33; both time halves positive; per-name majority 65.2% of 492 names | T1/T3/T4 baskets |
+| 2026-07-01 | G3 robustness | PASS | spread positive at every barrier (+10/+15/+20/+30) and 189d horizon on BOTH panels; B30/tol5/lift30/h189 label re-reads consistent (T9) | T1/T9 |
+| 2026-07-01 | G4 ranking monotonicity | PASS — **graded, not binary** | cohort-fraction quartiles perfectly monotone both panels (Spearman 1.0), Q4−Q1 ≈ +10pp (baskets 30.78→41.28) | T5 |
+| 2026-07-01 | STAR additivity (bull_div co-condition) | HOLDS OOS | baskets STAR n=1,766: clean15 39.69, stop5 37.83 (−2.4pp vs COILED). div WITHOUT cohort is actively BAD (31.63/48.46) — H3 is a co-condition only, never standalone | T1 |
+| 2026-07-01 | Side studies | closed | trap_state veto adds nothing once COILED; failed2 inversion REPLICATES (serial failure = MR fuel, never a veto); COILED rescues deep-capitulation (fromos3) fires (38.83 vs 33.08 clean15); theme cohort works (+5.9pp) but sector cohort sharper — theme = fallback for unmapped names | T7/T3 |
+
+**Ship record (2026-07-01):** COILED ships as a **graded ranking bonus + display chip + forward-ledger
+fields** on the US standout board (CN washout-bonus precedent, `_combine_key` lift), NEVER a hard gate
+(basket T8: COILED recalls only 7.35% of durable bottoms vs 59.71% for all fires — a hard gate would
+gut recall ~88%). Board-ORDER methodology ownership stays with W6-US Buy Board 2.0; this bonus is the
+first wave-2-validated input to that redesign, and the #812 ledger grades it forward. The `walk_forward.py`
+filter-style pass was judged NOT APPLICABLE to a bonus-shaped ship (it tests subset-filters; the T2
+folds + basket OOS carry the time-generalization burden here). Caveats attached: cohort map covers
+~500 sector-mapped names (S&P + sector baskets) — unmapped names get no cohort and no bonus; the edge
+is washout-regime-conditional (quiet in low-vol bull legs); effective n < printed n (overlapping fires).

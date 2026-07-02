@@ -50,6 +50,7 @@ from engine import vol_squeeze  # noqa: E402  — single-stock volatility black 
 from engine import gex_confirm  # noqa: E402  — dealer-gamma verifier/confirmer
 from engine import options_ivspread  # noqa: E402  — Cremers-Weinbaum call−put IV-spread confirmer
 from engine import demand_chain as dchain  # noqa: E402
+from engine import coiled  # noqa: E402  — wave-2-validated COILED ranking bonus (display/ranking only)
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -1182,6 +1183,10 @@ def main() -> int:
         log.info("stock library: analysed %d names in %.0fs (serial)", len(uni), time.time() - t0)
 
     sig_verdict: dict[str, dict] = {}   # owner's confluence cascade verdict per name (T1->T4)
+    _coil_d: dict[str, float | None] = {}       # weekly StochRSI D per name (for cohort fractions)
+    _coil_wash: dict[str, bool | None] = {}     # washout context per name
+    _coil_div: dict[str, bool] = {}             # bullish divergence per name
+    _coil_sector: dict[str, str | None] = {}    # sector per name (for cohort grouping)
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
@@ -1190,6 +1195,15 @@ def main() -> int:
         # gate. It NEVER changes which names are eligible (alignment stays the inclusion gate) —
         # it only adds the per-card tier badge and re-ranks WITHIN the aligned set (below).
         sig_verdict[ticker] = signal_gate.gate(ticker, close)
+        # COILED wave-2 ranking bonus: collect per-name inputs for cohort computation below.
+        # All four lines are guarded as one block; failure leaves dicts empty for this name.
+        try:
+            _coil_d[ticker]      = coiled.weekly_d_last(close)
+            _coil_wash[ticker]   = coiled.washout_ctx(close)
+            _coil_div[ticker]    = coiled.bull_div(close)
+            _coil_sector[ticker] = sector or None
+        except Exception:
+            pass
         if fpanels.get(ticker):
             rec.update(fpanels[ticker])
         if flows.get(ticker):
@@ -1530,6 +1544,18 @@ def main() -> int:
                      sum(1 for v in sig_verdict.values() if signal_gate.is_buyable(v)))
         except Exception as e:  # noqa: BLE001 — additive; discovery falls back to recompute
             log.warning("signal_gate.json write skipped (%s)", e)
+    # COILED wave-2 ranking bonus: compute cohort fractions once (cross-sectional, after loop),
+    # then build per-ticker assess() dict. Both steps try/except guarded; failure -> empty dict.
+    coiled_by: dict[str, dict] = {}
+    try:
+        _coil_frac = coiled.cohort_fractions(_coil_d, _coil_sector)
+        coiled_by = {
+            t: coiled.assess(_coil_wash.get(t), _coil_frac.get(t), bool(_coil_div.get(t)))
+            for t in sig_verdict
+        }
+    except Exception as _e:  # noqa: BLE001 — additive; board degrades gracefully without bonus
+        log.warning("coiled bonus skipped (%s)", _e)
+        coiled_by = {}
     # cross-sectional "Top setups" — selection (sector-neutral residual alpha) ×
     # timing (cycle entry + reversal overlay), surfaced on the macro dashboard's
     # "Standout individual stocks" board (read by build_site one build later, since
@@ -1600,6 +1626,8 @@ def main() -> int:
         # alignment tier by the owner's confluence weighted blend (conviction percentile +
         # 0.5 * cascade weight) so the strongest confluence entries (T1>T2>T3>T4) rise. Names
         # with no confluence verdict keep their conviction rank (weight 0 = no boost, not buried).
+        # The wave-2-validated COILED cohort-washout bonus lifts a coiled name ~half a tier,
+        # star (with bullish divergence) ~0.8 tier; framework ledger 2026-07-01.
         _czs = sorted((p.get("composite_z") or 0.0) for _t, p, _ti in buyable)
         _bn = len(_czs) or 1
 
@@ -1607,7 +1635,8 @@ def main() -> int:
             t, p, tier = x
             w = (sig_verdict.get(t) or {}).get("weight") or 0.0
             pct = bisect.bisect_right(_czs, p.get("composite_z") or 0.0) / _bn
-            return (0 if tier == "aligned" else 1, -(pct + 0.5 * w))
+            return (0 if tier == "aligned" else 1,
+                    -(pct + 0.5 * w + ((coiled_by.get(t) or {}).get("bonus") or 0.0)))
         buyable = sorted(buyable, key=_combine_key)
 
         # W6-US fix 6: soft per-sector cap + dual-class dedup on the wide board.
@@ -1694,6 +1723,9 @@ def main() -> int:
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
             if demand_chip.get(t):                 # L2 demand-divergence flag for the board chip
                 r["demand"] = demand_chip[t]
+            cb = coiled_by.get(t)                  # COILED wave-2 ranking bonus chip (display only)
+            if cb and (cb.get("coiled") or cb.get("washout_ctx")):
+                r["coiled"] = cb
             # W6-US fix 8: emit cand_depth_pct from the ladder onto every board row so
             # it is a first-class field available for the US-2 ledger study (depth vs
             # forward returns for FRESH-BUY rows). NOT a gate — we do NOT filter on it
