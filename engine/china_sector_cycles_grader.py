@@ -53,20 +53,23 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
+from engine import grading_stats as _gs
+
 log = logging.getLogger(__name__)
 
 SCHEMA = "china_sector_cycles.grader.v1"
 
 # ── PRE-REGISTERED GATES — fixed before any stamp had matured; do NOT tune ──────────
 HORIZONS = (21, 63)     # trading-BAR forward windows: the doctrine's 21d/63d MaxDD horizons.
-MIN_EARN_N = 40         # mirrors engine.index_leadership_track._MIN_PROVEN_N. WHY: below
-                        # ~40 matured obs every CI here is wide enough to fit any story —
-                        # so the cell is "accruing", FULL STOP; no effect size, however
-                        # spectacular, can upgrade a thin cell.
-BOOT_DRAWS = 800        # date-blocked bootstrap (the scripts/calibrate_baskets
-BOOT_SEED = 7           # _calibrate_confidence pattern): resample whole stamp DATES with
-                        # replacement so same-day cross-sectionally correlated rows move
-                        # together — an i.i.d. row bootstrap understates the CI width.
+
+# Shared constants from engine.grading_stats (library-not-copy — D2 §2.3):
+MIN_EARN_N = _gs.MIN_N_DEFAULT  # 40. mirrors engine.index_leadership_track._MIN_PROVEN_N.
+                                # WHY: below ~40 matured obs every CI here is wide enough
+                                # to fit any story — "accruing", full stop.
+BOOT_DRAWS = _gs.BOOT_DRAWS    # 800. date-blocked bootstrap draws.
+BOOT_SEED = _gs.BOOT_SEED      # 7. deterministic seed.
+CONVENTION = _gs.CONVENTION    # "first_close_strictly_after_stamp" — the ONLY legal anchor.
+
 RETURN_MIN_EDGE = 0.05  # WHY: the return claim stays merely 'inconclusive' while its Wilson
                         # CI still admits ≥ +5pp over base; once the CI-hi drops below
                         # base+5pp the claim can't even pay A-share round-trip costs —
@@ -74,7 +77,6 @@ RETURN_MIN_EDGE = 0.05  # WHY: the return claim stays merely 'inconclusive' whil
 SIG_EUPHORIA = 65.0     # euphoria-side signature = score > 65: the Stretched (>65) /
                         # Overheated (>85) bands of engine.china_sector_pathway._position —
                         # the code's own washout(0)↔euphoria(100) vocabulary.
-CONVENTION = "first_close_strictly_after_stamp"   # the ONLY legal forward anchor (bar i+1).
 
 # DRAWDOWN earning gate (pre-registered): earning ⇔ n_matured ≥ MIN_EARN_N AND the
 # date-blocked bootstrap CI on (conditional mean MaxDD − base mean MaxDD) sits ENTIRELY
@@ -105,85 +107,40 @@ def _now_iso() -> str:
 
 
 # ─────────────────────────────────────────────────── forward-window primitives ──────
+# Delegated to engine.grading_stats (library-not-copy, D2 §2.3). Local names preserved
+# so internal call-sites do not need to change.
 
 def _entry_pos(idx: pd.DatetimeIndex, stamp: pd.Timestamp) -> int | None:
-    """Position of the FIRST bar STRICTLY AFTER the stamp date — the bar-i+1 anchor.
-    searchsorted(side='right') can never return the stamp bar itself."""
-    j = int(idx.searchsorted(stamp, side="right"))
-    return j if j < len(idx) else None
+    """Bar-i+1 anchor — delegates to grading_stats.entry_pos (one implementation)."""
+    return _gs.entry_pos(idx, stamp)
 
 
 def _fwd(px: pd.Series, stamp: pd.Timestamp, h: int) -> dict | None:
-    """Realized forward window of h TRADING BARS on the series' own calendar, anchored
-    at the first close strictly after `stamp`. Returns {entry, exit, ret, maxdd} or
-    None while the window has not fully matured (no partial windows — ever).
-    maxdd = deepest peak-to-trough drawdown WITHIN the window (≤ 0)."""
-    idx = px.index
-    j = _entry_pos(idx, stamp)
-    if j is None or j + h >= len(idx):
-        return None
-    if not idx[j] > stamp:   # structurally impossible; belt-and-braces vs the known trap
-        raise ValueError("look-ahead guard: forward anchor must be strictly after the stamp")
-    win = px.iloc[j:j + h + 1].to_numpy(dtype=float)
-    ret = float(win[-1] / win[0] - 1.0)
-    dd = float((win / np.maximum.accumulate(win) - 1.0).min())
-    return {"entry": idx[j], "exit": idx[j + h], "ret": ret, "maxdd": dd}
+    """Forward window — delegates to grading_stats.fwd_window (one implementation)."""
+    return _gs.fwd_window(px, stamp, h)
 
 
-# ─────────────────────────────────────────────────────────────── statistics ─────────
+# ─────────────────────────────────────────────────────────────────── statistics ─────────
+# Delegated to engine.grading_stats (library-not-copy, D2 §2.3).
 
 def _wilson(k: int, n: int) -> tuple[float, float] | None:
-    try:
-        from engine.china_sector_pathway import _wilson as w   # reuse, don't reinvent
-        return w(k, n)
-    except Exception:  # noqa: BLE001
-        return None
+    """Wilson CI — delegates to grading_stats.wilson_ci (one implementation)."""
+    return _gs.wilson_ci(k, n)
 
 
 def _boot_gap_ci(dates: np.ndarray, vals: np.ndarray, mask: np.ndarray) -> list | None:
-    """Date-blocked bootstrap 95% CI on (conditional mean − base mean)."""
-    uniq = np.unique(dates)
-    if mask.sum() == 0 or len(uniq) < 2:
-        return None
-    by = {d: np.where(dates == d)[0] for d in uniq}
-    rng = np.random.default_rng(BOOT_SEED)
-    gaps = []
-    for _ in range(BOOT_DRAWS):
-        pick = rng.choice(uniq, size=len(uniq), replace=True)
-        ridx = np.concatenate([by[d] for d in pick])
-        m = mask[ridx]
-        if int(m.sum()) == 0:
-            continue
-        gaps.append(float(vals[ridx][m].mean() - vals[ridx].mean()))
-    if len(gaps) < BOOT_DRAWS // 2:
-        return None
-    return [round(float(np.percentile(gaps, 2.5)), 4),
-            round(float(np.percentile(gaps, 97.5)), 4)]
+    """Date-blocked bootstrap CI — delegates to grading_stats.block_bootstrap_ci."""
+    return _gs.block_bootstrap_ci(dates, vals, mask)
 
 
 def _dd_verdict(n: int, ci: list | None) -> str:
-    if n < MIN_EARN_N:
-        return "accruing"          # pre-registered: thin cell, full stop
-    if ci is None:
-        return "inconclusive"
-    if ci[1] < 0:
-        return "earning"           # conditional drawdowns strictly deeper than base
-    if ci[0] > 0:
-        return "falsified"         # strictly SHALLOWER — the topping claim proven wrong
-    return "inconclusive"
+    """Drawdown verdict — delegates to grading_stats.dd_verdict (one implementation)."""
+    return _gs.dd_verdict(n, ci)
 
 
 def _rate_verdict(n: int, ci: tuple | None, base: float | None) -> str:
-    """Return/calibration channels: NEVER 'earning' (doctrine — no directional trading
-    verdict). A favourable CI is reported honestly but capped at 'inconclusive'."""
-    if n < MIN_EARN_N:
-        return "accruing"
-    if ci is None or base is None:
-        return "inconclusive"
-    if ci[1] < base + RETURN_MIN_EDGE:
-        return "falsified"         # the CI rules out even a small tradeable edge
-    return "inconclusive"
-
+    """Return/calibration verdict — delegates to grading_stats.rate_verdict."""
+    return _gs.rate_verdict(n, ci, base, min_edge=RETURN_MIN_EDGE)
 
 # ──────────────────────────────────────────────────────────────── state flags ───────
 
