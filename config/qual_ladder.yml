@@ -1,0 +1,270 @@
+# config/qual_ladder.yml — Qualitative-Signal Promotion Ladder Registry
+#
+# Spec reference: §2.1 (Claim Passport), §3 (promotion protocol),
+# research/QUALITATIVE_INTELLIGENCE_UPGRADE_BY_FABLE.md
+#
+# LADDER STATES (§3):
+#   DISPLAY    — rendered, salience-eligible, NO arithmetic on traded pages
+#   SHADOW     — computed + claim-registered + graded nightly; never rendered as conviction
+#   CONFIRMER  — passed §3 gate: n_dates>=25, wilson_ci_low>0 vs matched control,
+#                incremental info over price+VIX, block-bootstrap stable
+#   SCORED     — composite-level re-validation + 63d OOS accrual
+#
+# AUTO-DEMOTION: rolling-window CI falls below zero → back one rung, pinned with
+# reason/date (narrative_regime precedent).
+#
+# HONEST SEEDING (2026-07-02): per the scoreboard facts in the W3 brief —
+#   placebo entity |excess|=6.17% (n=158), hand china_news HIGH/LOW ≈6.3/6.6% (n=230/262)
+#   → indistinguishable from placebo → NOTHING has passed the §3 gate yet.
+#   All fields start DISPLAY or SHADOW. The two known leaks (altdata→scored pages,
+#   policy lean→intel_hub) are DISPLAY with grandfathered:true and an explicit
+#   gated_by note so the linter passes today and the debt is visible.
+#
+# FIELD CONVENTIONS:
+#   field:        the Python attribute/key name as read from the data artifact
+#   producer:     engine module that emits the field
+#   claim_family: qledger claim_family tag (for track_record.json grouping)
+#   ladder_state: DISPLAY | SHADOW | CONFIRMER | SCORED
+#   max_weight:   maximum allowed weight in any composite (null = display-only / no cap yet)
+#   grandfathered: true = W0 interim gate keeps the read alive; MUST be removed once
+#                  the §3 gate produces a verdict
+#   gated_by:     the W0 code-level gate that limits blast radius while UNGRADED
+#   scored_consumers: list of engine modules that consume this field in a scoring
+#                     context (used by the linter); CONFIRMER+ required for scored reads
+
+# ---------------------------------------------------------------------------
+# ALTDATA — Signal Intelligence Desk (engine/altdata_emit.py → site/altdata/*.json)
+# ---------------------------------------------------------------------------
+altdata.signal_score:
+  field: signal_score
+  artifact_glob: "site/altdata/mastermind.json"
+  producer: engine/altdata_emit.py
+  claim_family: altdata
+  ladder_state: DISPLAY
+  max_weight: null
+  grandfathered: true
+  gated_by: >
+    W0 gate: 'n_scored>0' condition on altdata artifact; the field's arithmetic
+    consumption in radar_ticker/radar_plus/intelligence is retained for display
+    ranking only (not as a direction-signed bet) until §3 gate clears.
+  scored_consumers:
+    - engine/radar_ticker.py
+    - engine/radar_plus.py
+    - engine/intelligence.py
+    - engine/intel_hub.py
+  notes: >
+    altdata signal_score at 5d is indistinguishable from placebo (§2.1 scoreboard fact).
+    Arithmetic reads in scored consumers are grandfathered with n_scored>0 gate; must
+    be re-evaluated when n_dates>=25 in the qledger track record.
+
+altdata.conviction:
+  field: conviction
+  artifact_glob: "site/altdata/mastermind.json"
+  producer: engine/altdata_emit.py
+  claim_family: altdata
+  ladder_state: DISPLAY
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: Conviction label (EXTENDED/STANDARD/WATCHLIST/AVOID); display only.
+
+altdata.action:
+  field: action
+  artifact_glob: "site/altdata/mastermind.json"
+  producer: engine/altdata_emit.py
+  claim_family: altdata
+  ladder_state: DISPLAY
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: Action string (AVOID/BUY ZONE/etc.); display label only.
+
+altdata.direction:
+  field: direction
+  artifact_glob: "site/altdata/mastermind.json"
+  producer: engine/altdata_emit.py
+  claim_family: altdata
+  ladder_state: DISPLAY
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: Directional sign from altdata composite; salience-only per §2.3.
+
+# ---------------------------------------------------------------------------
+# POLICY LEAN — Policy Watch desk (engine/intel_hub.py gated via _policy_usable)
+# ---------------------------------------------------------------------------
+policy.dir:
+  field: dir
+  artifact_glob: "data/intel_hub/policy*.json"
+  producer: engine/intel_hub.py
+  claim_family: policy_watch
+  ladder_state: DISPLAY
+  max_weight: null
+  grandfathered: true
+  gated_by: >
+    W0 gate: '_policy_usable(facet)' in intel_hub.py — conviction not in (None,'low').
+    Consumes policy direction for early_edge/gap_mult flags; grandfathered because all
+    current leans are low/ungraded → gate effectively dark. Must be removed once §3
+    clears for the policy_watch claim_family.
+  scored_consumers:
+    - engine/intel_hub.py
+  notes: >
+    Policy lean direction used in early_edge, gap_mult, and read_for flags.
+    The _policy_usable gate is the W0 mitigation; this entry makes the debt explicit.
+
+policy.conviction:
+  field: conviction
+  artifact_glob: "data/intel_hub/policy*.json"
+  producer: engine/intel_hub.py
+  claim_family: policy_watch
+  ladder_state: DISPLAY
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: Policy conviction label; gating field for _policy_usable.
+
+# ---------------------------------------------------------------------------
+# CHINA INTEL — china_intel_analysis.py signals
+# ---------------------------------------------------------------------------
+china_intel.news_dir:
+  field: news_dir
+  artifact_glob: "site/china_intel/intel.json"
+  producer: engine/china_intel_analysis.py
+  claim_family: china_news
+  ladder_state: DISPLAY
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    News direction from china_news pipeline. At 5d, hand china_news HIGH band
+    |excess|=6.30% is indistinguishable from placebo 6.17% (scoreboard fact §3).
+    Salience-only per §2.3/D5 until backfill grades (W4).
+
+china_intel.policy_dir:
+  field: policy_dir
+  artifact_glob: "site/china_intel/intel.json"
+  producer: engine/china_intel_analysis.py
+  claim_family: china_policy
+  ladder_state: DISPLAY
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: China policy direction (binary from policy_term threshold). Salience-only.
+
+china_intel.lean:
+  field: lean
+  artifact_glob: "site/china_intel/intel.json"
+  producer: engine/china_intel_analysis.py
+  claim_family: china_intel
+  ladder_state: DISPLAY
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    Net lean from up/down vote count over contributing desks.
+    Salience-eligible; direction side unproven per §2.3.
+
+china_intel.importance_score:
+  field: importance_score
+  artifact_glob: "site/china_intel/intel.json"
+  producer: engine/china_intel_analysis.py
+  claim_family: china_news
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    Hand-formula importance score (HIGH/MID/LOW banding). In SHADOW lane — graded
+    nightly vs placebo tape per §2.1/D3. Must reach n_dates>=25 with wilson_ci_low>0
+    before any scored-context read is permitted.
+
+# ---------------------------------------------------------------------------
+# RADAR — radar.py / radar_ic.py signals (display scores, not scored-composite inputs)
+# ---------------------------------------------------------------------------
+radar.divergence_z:
+  field: divergence_z
+  artifact_glob: "site/radar/radar.json"
+  producer: engine/radar.py
+  claim_family: radar
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    Radar divergence z-score. Per spec §2.1: "DISPLAY/CONTEXT — never fused into
+    the radar's own divergence z-score" (radar_plus docstring). In SHADOW lane for
+    multi-horizon grading (5/21/63d via qledger). Not yet a scored composite input.
+
+radar.edge_score:
+  field: edge_score
+  artifact_glob: "site/radar/radar_plus.json"
+  producer: engine/radar_plus.py
+  claim_family: radar
+  ladder_state: DISPLAY
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    Ranking/salience axis built from price+breadth legs. The confirm.alt leg that
+    feeds edge_score consumes altdata.signal_score (grandfathered entry above covers
+    that read). edge_score itself is display ranking, not a scored conviction claim.
+
+# ---------------------------------------------------------------------------
+# NOVELTY-V0 SHADOW LANE — §3/D6: challenger vs hand formula, not yet CONFIRMER
+# ---------------------------------------------------------------------------
+novelty_v0.importance_score:
+  field: importance_score
+  artifact_glob: "site/qledger/novelty_v0.json"
+  producer: engine/qbus.py
+  claim_family: novelty_v0
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    Novelty-first deterministic v0 (§3/D6): importance_v0 = f(novelty-z, cross-source
+    corroboration, source_tier, scheduled-surprise validity) with attention-crowding
+    penalty. SHADOW lane only — champion-challenger vs hand formula, graded daily.
+    Eligible for CONFIRMER after n_dates>=25 with wilson_ci_low>0 vs matched control.
+
+# ---------------------------------------------------------------------------
+# EPU / GPR / SF-FED — D7 one-shot re-aim harness (SHADOW pending single run)
+# ---------------------------------------------------------------------------
+lexical.epu_z:
+  field: epu_z
+  artifact_glob: "data/conditions/*.json"
+  producer: engine/conditions.py
+  claim_family: epu_gpr
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    EPU z-score. D7: one-shot re-aim at VIX-orthogonal cross-sectional dispersion
+    target via shadow lane. Pass → bounded DISPLAY→CONFIRMER promotion. Fail →
+    retire family, publish verdict. Currently pinned_off (phase0 falsified vs VIX).
+
+lexical.gpr_z:
+  field: gpr_z
+  artifact_glob: "data/conditions/*.json"
+  producer: engine/conditions.py
+  claim_family: epu_gpr
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    GPR z-score. Same D7 one-shot harness as epu_z. Retire on fail.
+
+lexical.sfed_sentiment_z:
+  field: sfed_sentiment_z
+  artifact_glob: "data/conditions/*.json"
+  producer: engine/conditions.py
+  claim_family: sfed_sentiment
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    SF-Fed sentiment z-score. D7 one-shot harness (separate from EPU/GPR).
+    Retire on fail, publish verdict.
