@@ -31,7 +31,12 @@ TIGHT_BANDS = {"TIGHT", "SOLD_OUT"}
 # Text-only bands (leg6 language alone, no numeric FRED confirmation)
 TEXT_BANDS = {"TIGHT (text)", "TIGHTENING (text)"}
 LOOSE_BANDS = {"LOOSE"}
-BROAD_HI = 0.50            # breadth above this = revisions already broad (late)
+BROAD_HI = 0.50            # breadth above this = revisions already broad (late).
+                           # W2a (P1-A): used only as fallback when fewer than
+                           # _PCTILE_MIN_THEMES themes have revision data; otherwise the
+                           # cross-sectional ~80th-percentile replaces this absolute cut.
+_BROAD_HI_PCTILE = 80.0   # W2a: "already broad" = above this daily cross-sectional percentile
+_PCTILE_MIN_THEMES = 8     # W2a: minimum theme count for percentile to be meaningful
 _STAGE_RANK = {"PRECIPICE": 0, "PRECIPICE (text)": 0, "BROADENING": 1,
                "BROADENING (text)": 1, "RE-RATING": 2, "GLUT-RISK": 3,
                "WATCH": 4, "UNKNOWN": 5}
@@ -40,7 +45,52 @@ _STAGE_RANK = {"PRECIPICE": 0, "PRECIPICE (text)": 0, "BROADENING": 1,
 GLUT_BANDS = {"GLUT_FORMING", "GLUT"}
 
 
-def _stage(bn: dict | None, rv: dict | None, glut_band: str | None = None) -> tuple[str, str]:
+def _compute_broad_hi_threshold(rv_themes: dict) -> tuple[float, str]:
+    """W2a (P1-A): daily cross-sectional ~80th-percentile breadth threshold.
+
+    Computes the threshold that separates "already broad (late)" from the distribution
+    of all themes' breadth values in this build — so the late-line adapts to tape-wide
+    revision waves instead of classifying 44% of the universe as late via an absolute cut.
+
+    Scale selection (NEVER mix scales in one percentile):
+      - If ≥ half the themes have breadth_cov, run the percentile on breadth_cov values.
+      - Otherwise run on legacy breadth for all themes.
+      - If n_themes < _PCTILE_MIN_THEMES, a percentile over ≤7 points is noise: fall back
+        to BROAD_HI absolute constant.
+
+    Returns (threshold, basis) where basis is one of:
+      "percentile_cov"     — percentile over breadth_cov (≥ half themes have it)
+      "percentile_legacy"  — percentile over legacy breadth (fewer than half have breadth_cov)
+      "absolute_fallback"  — BROAD_HI constant (fewer than _PCTILE_MIN_THEMES themes)
+    """
+    import numpy as np
+
+    themes_with_rv = {k: v for k, v in rv_themes.items() if v is not None}
+    n = len(themes_with_rv)
+    if n < _PCTILE_MIN_THEMES:
+        return BROAD_HI, "absolute_fallback"
+
+    # count themes that have breadth_cov
+    cov_values = [v["breadth_cov"] for v in themes_with_rv.values()
+                  if v.get("breadth_cov") is not None]
+    legacy_values = [v["breadth"] for v in themes_with_rv.values()
+                     if v.get("breadth") is not None]
+
+    # NEVER mix scales: if ≥ half the themes have breadth_cov, use breadth_cov for all
+    if len(cov_values) >= n / 2 and len(cov_values) >= _PCTILE_MIN_THEMES:
+        threshold = float(np.percentile(cov_values, _BROAD_HI_PCTILE))
+        return threshold, "percentile_cov"
+
+    # otherwise use legacy breadth for all (avoids mixed-scale comparison)
+    if len(legacy_values) >= _PCTILE_MIN_THEMES:
+        threshold = float(np.percentile(legacy_values, _BROAD_HI_PCTILE))
+        return threshold, "percentile_legacy"
+
+    return BROAD_HI, "absolute_fallback"
+
+
+def _stage(bn: dict | None, rv: dict | None, glut_band: str | None = None,
+           broad_hi_threshold: float = BROAD_HI) -> tuple[str, str]:
     """Return (stage, rationale). Honest about missing tiers.
 
     Text-grade stages (Q6.3 / §P0-B): when bottleneck_band is TIGHT (text) or
@@ -48,6 +98,11 @@ def _stage(bn: dict | None, rv: dict | None, glut_band: str | None = None) -> tu
     emits PRECIPICE (text) / BROADENING (text) — visually distinct, graded separately,
     score still capped at TEXT_ONLY_CAP=50. Rationale always says
     'text-only — awaiting numeric physical confirmation'.
+
+    W2a (P1-A): `broad_hi_threshold` is the daily cross-sectional ~80th-percentile
+    breadth value computed in compute_foresight_cascade (replacing the constant BROAD_HI
+    absolute cut).  Callers not supplying it fall back to the BROAD_HI constant (used
+    in tests and for the n_themes < _PCTILE_MIN_THEMES fallback).
     """
     band = (bn or {}).get("band")
     tight = band in TIGHT_BANDS
@@ -60,7 +115,7 @@ def _stage(bn: dict | None, rv: dict | None, glut_band: str | None = None) -> tu
     lvl = (rv or {}).get("level_state")
     flat = lvl == "FLAT_LOW" or (breadth is not None and abs(breadth) < 0.10)
     positive = breadth is not None and breadth > 0
-    broad_hi = breadth is not None and breadth > BROAD_HI
+    broad_hi = breadth is not None and breadth > broad_hi_threshold
     rv_known = rv is not None and breadth is not None
     glut_on = glut_band in GLUT_BANDS
 
@@ -224,12 +279,17 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         return None
     disloc = _dislocation_context()
 
+    # W2a (P1-A): compute the daily cross-sectional ~80th-percentile breadth threshold
+    # BEFORE the theme loop.  This single threshold applies to all themes in this build
+    # (scale-consistent — uses breadth_cov when ≥ half the themes have it, else legacy).
+    broad_hi_threshold, late_line_basis = _compute_broad_hi_threshold(rv_themes)
+
     rows = []
     for k in keys:
         bn, rv, dm, gl = bn_themes.get(k), rv_themes.get(k), dm_themes.get(k), gl_themes.get(k)
         gd, cd = gd_themes.get(k), cd_themes.get(k)
         gband = (gl or {}).get("band")
-        stage, rationale = _stage(bn, rv, gband)
+        stage, rationale = _stage(bn, rv, gband, broad_hi_threshold=broad_hi_threshold)
         # demand is a LEADING confirmation/conviction modifier on the rationale, not a
         # stage-changer (the stage is bottleneck x revision x exit-risk; demand reinforces).
         # Include text thesis stages so demand context shows even for text-only themes.
@@ -297,6 +357,10 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         "dislocation": disloc,
         "demand_pool": {"bn": (demand or {}).get("pool_bn"), "yoy": (demand or {}).get("pool_yoy"),
                         "trend": (demand or {}).get("pool_trend")} if demand else None,
+        # W2a (P1-A): late-line breadth threshold used in this build.  Surface for the
+        # health surface / methodology panel so downstream can see which basis was used.
+        "late_line_basis": late_line_basis,
+        "late_line_threshold": round(broad_hi_threshold, 4),
         "note": ("display-only; STAGE = where the leading edge is. T1 bottleneck LEADS, T2 "
                  "demand confirms, T3 guidance pre-signals the revision, T4 revisions confirm, "
                  "exit-risk caps the late ones; the 0-100 score ranks edge+quality. ENTRY is "

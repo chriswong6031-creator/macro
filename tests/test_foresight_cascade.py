@@ -333,3 +333,112 @@ def test_precipice_text_in_cascade(monkeypatch, tmp_path):
     assert r["bottleneck_text_only"] is True
     # score must be capped at 50
     assert r["score"] <= 50.0
+
+
+# ---- W2a (P1-A): percentile late-line tests ----------------------------------------
+
+def _rv_themes_with_breadth(vals: dict[str, float]) -> dict:
+    """Helper: build rv_themes dict from theme -> breadth mapping."""
+    return {k: {"breadth": v, "level_state": "POSITIVE", "name": k}
+            for k, v in vals.items()}
+
+
+def _rv_themes_with_breadth_cov(vals: dict[str, float], cov_vals: dict[str, float]) -> dict:
+    """Helper: build rv_themes dict with both breadth and breadth_cov."""
+    out = {}
+    for k, v in vals.items():
+        out[k] = {"breadth": v, "level_state": "POSITIVE", "name": k}
+        if k in cov_vals:
+            out[k]["breadth_cov"] = cov_vals[k]
+    return out
+
+
+def test_percentile_lateline_85th_flags_broad_50th_does_not():
+    """(c) Percentile late-line: a theme at the 85th percentile flags RE-RATING (broad);
+    a theme at the 50th percentile does NOT — even when both are > 0.50 absolute."""
+    # 10 themes with breadth_cov values spanning 0.1 to 1.0
+    # 80th pctile of [0.1,0.2,...,1.0] = 0.82 (numpy.percentile computes linear interp)
+    rv_themes = _rv_themes_with_breadth_cov(
+        {f"t{i}": (i + 1) / 10 for i in range(10)},
+        {f"t{i}": (i + 1) / 10 for i in range(10)},
+    )
+    threshold, basis = fc._compute_broad_hi_threshold(rv_themes)
+    assert basis == "percentile_cov", f"expected percentile_cov, got {basis}"
+
+    # t8 has breadth_cov=0.9 — above 80th pctile (~0.82) → broad
+    bn_tight = {"band": "TIGHT", "tightness": 0.9}
+    rv_t8 = {"breadth": 0.9, "breadth_cov": 0.9, "level_state": "POSITIVE"}
+    stage_late, _ = fc._stage(bn_tight, rv_t8, broad_hi_threshold=threshold)
+    assert stage_late == "RE-RATING", (
+        f"theme at 85th pctile breadth_cov (0.9) should be RE-RATING, got {stage_late}"
+    )
+
+    # t4 has breadth_cov=0.5 — below 80th pctile (~0.82); also > 0.50 absolute cut
+    # With percentile: NOT broad → BROADENING (tight band + positive revisions)
+    rv_t4 = {"breadth": 0.5, "breadth_cov": 0.5, "level_state": "POSITIVE"}
+    stage_early, _ = fc._stage(bn_tight, rv_t4, broad_hi_threshold=threshold)
+    assert stage_early in ("BROADENING", "PRECIPICE"), (
+        f"theme at 50th pctile breadth_cov (0.5) should not be RE-RATING, got {stage_early}"
+    )
+    # Specifically: with absolute BROAD_HI=0.50 this would be RE-RATING; with percentile it's not
+    stage_absolute, _ = fc._stage(bn_tight, rv_t4, broad_hi_threshold=fc.BROAD_HI)
+    # Verify the test premise: 0.5 > BROAD_HI (0.50) is false (equal, not >), so BROADENING
+    # regardless. Use 0.51 to make the contrast clear:
+    rv_just_over = {"breadth": 0.51, "breadth_cov": 0.51, "level_state": "POSITIVE"}
+    stage_just_over_absolute, _ = fc._stage(bn_tight, rv_just_over, broad_hi_threshold=fc.BROAD_HI)
+    stage_just_over_pctile, _ = fc._stage(bn_tight, rv_just_over, broad_hi_threshold=threshold)
+    assert stage_just_over_absolute == "RE-RATING", (
+        "0.51 > BROAD_HI=0.50 absolute → RE-RATING (test premise)"
+    )
+    assert stage_just_over_pctile != "RE-RATING", (
+        "0.51 is at ~30th pctile — percentile threshold should NOT flag it as RE-RATING"
+    )
+
+
+def test_percentile_lateline_fewer_than_8_themes_uses_absolute_fallback():
+    """(d) n_themes < _PCTILE_MIN_THEMES (8) → absolute fallback BROAD_HI constant."""
+    # Only 5 themes — below the minimum for percentile to be meaningful
+    rv_themes = _rv_themes_with_breadth_cov(
+        {f"t{i}": 0.9 for i in range(5)},
+        {f"t{i}": 0.9 for i in range(5)},
+    )
+    threshold, basis = fc._compute_broad_hi_threshold(rv_themes)
+    assert basis == "absolute_fallback", (
+        f"fewer than {fc._PCTILE_MIN_THEMES} themes should use absolute_fallback, got {basis}"
+    )
+    assert threshold == fc.BROAD_HI
+
+
+def test_percentile_lateline_mixed_availability_uses_single_scale():
+    """(e) Mixed breadth_cov availability: if fewer than half themes have breadth_cov,
+    run the percentile on legacy breadth for ALL — never mix scales."""
+    # 10 themes: only 3 have breadth_cov (fewer than half=5) → must use legacy breadth
+    vals = {f"t{i}": (i + 1) / 10 for i in range(10)}
+    cov_vals = {f"t{i}": (i + 1) / 10 for i in range(3)}    # only t0, t1, t2 have coverage
+    rv_themes = _rv_themes_with_breadth_cov(vals, cov_vals)
+    threshold, basis = fc._compute_broad_hi_threshold(rv_themes)
+    assert basis == "percentile_legacy", (
+        f"fewer than half themes have breadth_cov → must use legacy breadth, got basis={basis}"
+    )
+    # threshold should be the ~80th pctile of legacy breadth values [0.1..1.0]
+    import numpy as np
+    expected_threshold = float(np.percentile(list(vals.values()), fc._BROAD_HI_PCTILE))
+    assert abs(threshold - expected_threshold) < 0.001
+
+
+def test_percentile_lateline_surfaced_in_cascade_payload():
+    """(c) late_line_basis and late_line_threshold surfaced in cascade payload."""
+    # Build a cascade with >=8 themes so percentile fires
+    rv_themes_dict = {f"theme_{i}": {"name": f"T{i}", "breadth": (i + 1) / 10,
+                                      "level_state": "POSITIVE"}
+                      for i in range(10)}
+    out = fc.compute_foresight_cascade(
+        bottleneck={"themes": {}},
+        revisions={"themes": rv_themes_dict},
+        demand={"themes": {}}, glut={"themes": {}}, write_ledger=False,
+    )
+    assert out is not None
+    assert "late_line_basis" in out, "late_line_basis must be surfaced in cascade payload"
+    assert out["late_line_basis"] in ("percentile_cov", "percentile_legacy", "absolute_fallback")
+    assert "late_line_threshold" in out
+    assert isinstance(out["late_line_threshold"], float)
