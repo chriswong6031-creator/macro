@@ -105,14 +105,17 @@ def triple_barrier_labels(close: pd.Series, events, horizon: int, mult: float = 
     out: dict = {}
     for ts in events:
         i = pos.get(ts)
-        if i is None or i + 1 >= n or not np.isfinite(arr[i]) or not np.isfinite(sig[i]):
+        if i is None:
             continue
-        p0 = arr[i]
-        band = mult * sig[i] * np.sqrt(horizon)
+        f = i + 1                                # NEXT-BAR fill (W1c, audit #15)
+        if f + 1 >= n or not np.isfinite(arr[f]) or not np.isfinite(sig[f]):
+            continue
+        p0 = arr[f]
+        band = mult * sig[f] * np.sqrt(horizon)
         up, dn = p0 * (1.0 + band), p0 * (1.0 - band)
-        j_end = min(i + horizon, n - 1)
+        j_end = min(f + horizon, n - 1)
         label = None
-        for j in range(i + 1, j_end + 1):
+        for j in range(f + 1, j_end + 1):        # walk strictly forward of the fill
             if not np.isfinite(arr[j]):
                 continue
             if arr[j] >= up:
@@ -128,11 +131,16 @@ def triple_barrier_labels(close: pd.Series, events, horizon: int, mult: float = 
 
 
 def forward_sign_labels(close: pd.Series, events, horizon: int) -> pd.Series:
-    """Simpler meta-label: 1 if the close-to-close forward return over `horizon` days
-    is strictly positive (the primary's long made money), else 0. Indexed on the events
-    that had `horizon` days of forward data."""
+    """Simpler meta-label: 1 if the forward return over `horizon` days is strictly
+    positive (the primary's long made money), else 0. Indexed on the events that had
+    `horizon` days of forward data.
+
+    NEXT-BAR fill (W1c, audit #15): entry = the close of the bar AFTER the event
+    (``close.shift(-1)``), return measured to ``horizon`` bars past that fill
+    (``close.shift(-horizon-1)``) — the honest convention shared with engine.grading /
+    validation.py, replacing the pre-W1c same-bar denominator that flattered the label."""
     close = pd.to_numeric(close, errors="coerce")
-    fwd = close.shift(-horizon) / close - 1.0
+    fwd = close.shift(-horizon - 1) / close.shift(-1) - 1.0
     f = fwd.reindex(pd.Index(events))
     y = (f > 0).astype(float)
     return y[f.notna()].sort_index()

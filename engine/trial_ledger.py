@@ -250,4 +250,74 @@ class TrialLedger:
         return sorted(set(self._seen) | set(self._declared))
 
 
-__all__ = ["TrialLedger", "DEFAULT_PATH"]
+class register_trials:
+    """Declare a harness's multiple-testing BUDGET at the top of its run — W1d "trial
+    budgets with teeth". Usable as a decorator OR a context manager; either way it writes
+    a ``declared_budget`` row for ``family`` to the persistent ledger BEFORE the search
+    runs, so a CI lint (scripts/check_trial_registration.py) can prove every
+    ``validate_*``/``*_phase0`` harness registered, and ``walk_forward._mt_bump`` can source
+    an honest ``n_trials`` from it.
+
+    Decorator::
+
+        @register_trials("commodity_tsmom", budget=48,
+                         reason="8 windows x 3 lookbacks x 2 stops")
+        def main():
+            ...
+
+    Context::
+
+        with register_trials("commodity_tsmom", budget=48):
+            best = sweep(GRID)
+
+    ``budget`` is an HONEST UPPER BOUND on the configs the harness explores (itemized grid
+    size + the variants tried during research). It is a FLOOR on ``effective_n`` — it can
+    only raise the DSR haircut, never lower it (anti-gaming). ``basis`` stamps how the count
+    was arrived at: ``'itemized'`` (exact grid), ``'estimated'`` (a documented upper-bound
+    guess — better than the zero it replaces), or ``'frozen-quote'`` (a legacy hardcoded N
+    being migrated). ``expiry`` optionally date-stamps a frozen-quote per the passport rule.
+    Idempotent: re-running a harness does not inflate N (dedup on family+n+reason)."""
+
+    def __init__(self, family: str, budget: int, *, reason: str | None = None,
+                 basis: str = "itemized", expiry: str | None = None,
+                 ledger: "TrialLedger | None" = None) -> None:
+        if not family:
+            raise ValueError("register_trials needs a non-empty family")
+        self.family = family
+        self.budget = int(budget)
+        self.basis = basis
+        note = reason or ""
+        if basis and basis != "itemized":
+            note = f"[{basis}] {note}".strip()
+        if expiry:
+            note = f"{note} (expiry {expiry})".strip()
+        self.reason = note or None
+        self.ledger = ledger
+
+    def _write(self) -> None:
+        led = self.ledger if self.ledger is not None else TrialLedger()
+        led.log_declared_budget(self.budget, family=self.family, reason=self.reason)
+
+    # -- context-manager form --
+    def __enter__(self) -> "register_trials":
+        self._write()
+        return self
+
+    def __exit__(self, *exc) -> bool:
+        return False
+
+    # -- decorator form --
+    def __call__(self, fn):
+        import functools
+
+        @functools.wraps(fn)
+        def wrapper(*a, **kw):
+            self._write()
+            return fn(*a, **kw)
+        # expose the declared budget for introspection/CI
+        wrapper.__trial_family__ = self.family
+        wrapper.__trial_budget__ = self.budget
+        return wrapper
+
+
+__all__ = ["TrialLedger", "DEFAULT_PATH", "register_trials"]

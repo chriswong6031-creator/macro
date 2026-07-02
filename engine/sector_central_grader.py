@@ -21,6 +21,7 @@ import logging
 import numpy as np
 import pandas as pd
 
+from engine import grading  # W1c: shared next-bar-fill grader
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -106,20 +107,17 @@ def append_central_log(data: dict) -> int:
 
 
 def _fwd_return(row: pd.Series, h: int, panel, basket_lvl: dict) -> float | None:
-    """Realized return from the call date to call_date + h trading days (sector = SPDR close;
-    basket = EW level), or None if the horizon hasn't elapsed / series missing."""
+    """Realized return from the call to call_date + h trading days, NEXT-BAR filled
+    (W1c, audit #15): the call fires on d0's close but is entered on the next bar, so the
+    same-bar ``iloc[0]`` denominator no longer flatters the read (sector = SPDR close;
+    basket = EW level). None if the horizon hasn't elapsed / series missing."""
     try:
         d0 = pd.Timestamp(row["date"])
         if row.get("kind") == "sector" and pd.notna(row.get("ticker")):
             s = panel[row["ticker"]].dropna() if (panel is not None and row["ticker"] in panel.columns) else None
         else:
             s = basket_lvl.get(row.get("basket_id"))
-        if s is None or s.empty:
-            return None
-        s = s[s.index >= d0]
-        if len(s) <= h:
-            return None
-        return float(s.iloc[h] / s.iloc[0] - 1.0)
+        return grading.grade_next_bar_return(s, str(d0.date()), h) if s is not None and not s.empty else None
     except Exception:  # noqa: BLE001
         return None
 
@@ -153,9 +151,8 @@ def grade() -> dict | None:
                 continue
             br = None
             if bench is not None:
-                d0 = pd.Timestamp(row["date"]); bb = bench[bench.index >= d0]
-                if len(bb) > h:
-                    br = float(bb.iloc[h] / bb.iloc[0] - 1.0)
+                d0 = pd.Timestamp(row["date"])
+                br = grading.grade_next_bar_return(bench, str(d0.date()), h)  # next-bar fill (W1c)
             recs.append({"date": row["date"], "score": row.get("score"), "dir": row.get("dir"),
                          "label": row.get("label"), "fwd": fr,
                          "excess": (fr - br) if br is not None else None})
