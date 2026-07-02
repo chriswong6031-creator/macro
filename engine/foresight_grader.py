@@ -50,6 +50,22 @@ DELISTING_GAP_DAYS = 14    # last close >this before `end` => delisted (use it);
 FDR_Q = 0.10               # Benjamini-Yekutieli false-discovery rate (dependence-robust)
 
 
+def _stage_direction(stage: str) -> int | None:
+    """Grading role of a stage. THESIS stages are positive calls (hit = outperform SPY,
+    +1); EXIT stages are negative calls (hit = underperform, -1); everything else
+    (RE-RATING / WATCH / UNKNOWN) is a CONTROL ARM (None) — the desk's own do-not-chase /
+    nothing-here reads, graded for forward excess ONLY so the claim can be validated,
+    NEVER as a hit-rate: a crowded RE-RATING theme that keeps running is beta, not desk
+    skill, and rendering it as a "hit" would publish beta as skill. Prefix-tolerant so
+    the text-grade variants ("PRECIPICE (text)") inherit the thesis role."""
+    s = (stage or "").upper()
+    if s.startswith("PRECIPICE") or s.startswith("BROADENING"):
+        return +1
+    if "GLUT" in s:
+        return -1
+    return None
+
+
 # --------------------------------------------------------------------------- price access
 _DEAD = {"path": None, "by_ticker": {}}
 
@@ -210,7 +226,10 @@ def grade(today: pd.Timestamp | None = None, write: bool = True) -> dict:
     themes = (config.load() or {}).get("themes") or {}
     spy = _closes("SPY")
 
-    sources = [("foresight/log.jsonl", None, +1), ("glut_watch/log.jsonl", "GLUT-EXIT", -1)]
+    # per-row direction comes from the stage's ROLE (thesis +1 / exit -1 / control None) —
+    # a blanket +1 on the whole foresight ledger would grade a RE-RATING theme that keeps
+    # running as a "hit", publishing beta as skill. Glut ledger rows stay forced exit (-1).
+    sources = [("foresight/log.jsonl", None, None), ("glut_watch/log.jsonl", "GLUT-EXIT", -1)]
 
     # per-horizon accumulators: by_stage_h[h][stage] and by_theme_h[h][theme]
     by_stage_h: dict[int, dict[str, dict]] = {h: {} for h in HORIZONS}
@@ -226,21 +245,20 @@ def grade(today: pd.Timestamp | None = None, write: bool = True) -> dict:
     # per-horizon pending counts (a row pending at 30d is also pending at 60/90d)
     n_pending_h: dict[int, int] = {h: 0 for h in HORIZONS}
 
-    for rel, force_stage, direction in sources:
+    for rel, force_stage, force_dir in sources:
         for e in _read_ledger(rel):
             theme = e.get("theme")
             asof = e.get("asof")
             stage = force_stage or e.get("stage") or "UNKNOWN"
             if not theme or not asof or theme not in themes:
                 continue
+            direction = force_dir if force_dir is not None else _stage_direction(stage)
             n_total += 1
             start = pd.Timestamp(asof)
 
             # POINT-IN-TIME membership: the snapshot logged at flag time, else today's config
             members = e.get("members") or (themes.get(theme) or {}).get("tickers") or []
 
-            # track whether this row ever grades at any horizon (for n_graded + n_pending logic)
-            graded_any = False
             mature_at_canonical = False
 
             for h in HORIZONS:
@@ -254,25 +272,32 @@ def grade(today: pd.Timestamp | None = None, write: bool = True) -> dict:
                     n_pending_h[h] += 1
                     continue   # price data not yet available — keep pending
 
-                hit = (excess * direction) > 0
-                sb_h = by_stage_h[h].setdefault(stage, {"n": 0, "hits": 0, "sum_excess": 0.0})
-                tb_h = by_theme_h[h].setdefault(theme, {"n": 0, "hits": 0, "sum_excess": 0.0})
+                # control-arm rows (direction None) carry NO hit — forward excess only
+                hit = None if direction is None else (excess * direction) > 0
+                sb_h = by_stage_h[h].setdefault(stage, {"n": 0, "n_dir": 0, "hits": 0, "sum_excess": 0.0})
+                tb_h = by_theme_h[h].setdefault(theme, {"n": 0, "n_dir": 0, "hits": 0, "sum_excess": 0.0})
                 for b in (sb_h, tb_h):
                     b["n"] += 1
-                    b["hits"] += 1 if hit else 0
                     b["sum_excess"] += excess
+                    if hit is not None:
+                        b["n_dir"] += 1
+                        b["hits"] += 1 if hit else 0
 
-                graded_any = True
                 if h == HORIZON_DAYS:
                     mature_at_canonical = True
                     # populate canonical buckets (for FDR gate + legacy pooled stats)
-                    sb = by_stage.setdefault(stage, {"n": 0, "hits": 0, "sum_excess": 0.0})
-                    tb = by_theme.setdefault(theme, {"n": 0, "hits": 0, "sum_excess": 0.0, "obs": []})
+                    sb = by_stage.setdefault(stage, {"n": 0, "n_dir": 0, "hits": 0, "sum_excess": 0.0})
+                    tb = by_theme.setdefault(theme, {"n": 0, "n_dir": 0, "hits": 0, "sum_excess": 0.0, "obs": []})
                     for b in (sb, tb):
                         b["n"] += 1
-                        b["hits"] += 1 if hit else 0
                         b["sum_excess"] += excess
-                    tb["obs"].append((start, hit))
+                        if hit is not None:
+                            b["n_dir"] += 1
+                            b["hits"] += 1 if hit else 0
+                    # sign test / FDR run on DIRECTIONAL obs only — control arms make no
+                    # skill claim, so they must not enter the significance machinery
+                    if hit is not None:
+                        tb["obs"].append((start, hit))
 
             # n_graded counts rows mature at the canonical horizon; n_pending counts those that
             # have not yet matured there (regardless of shorter-horizon status)
@@ -286,9 +311,11 @@ def grade(today: pd.Timestamp | None = None, write: bool = True) -> dict:
 
     def _finalize_bucket(bucket: dict) -> None:
         for b in bucket.values():
-            b["hit_rate"] = round(b["hits"] / b["n"], 3) if b["n"] else None
+            # hit_rate over DIRECTIONAL rows only; control-arm buckets (n_dir=0) get None
+            # and report avg_excess_pct alone — never a fabricated skill number
+            b["hit_rate"] = round(b["hits"] / b["n_dir"], 3) if b["n_dir"] else None
             b["avg_excess_pct"] = round(100.0 * b["sum_excess"] / b["n"], 2) if b["n"] else None
-            b["ci95"] = _wilson(b["hits"], b["n"])
+            b["ci95"] = _wilson(b["hits"], b["n_dir"])
             b.pop("sum_excess", None)
 
     # per-theme sign test on NON-OVERLAPPING (independent) flags at the canonical 90d horizon —
@@ -311,19 +338,24 @@ def grade(today: pd.Timestamp | None = None, write: bool = True) -> dict:
         _finalize_bucket(by_stage_h[h])
         _finalize_bucket(by_theme_h[h])
 
+    # pooled hit stats over DIRECTIONAL rows only (thesis + exit stages); control-arm
+    # rows are still counted in n_graded but make no hit claim
     pooled_hits = sum(b["hits"] for b in by_stage.values())
+    pooled_n_dir = sum(b["n_dir"] for b in by_stage.values())
 
     # per-horizon summary slices (stage + theme buckets; no FDR repetition)
     by_horizon = {}
     for h in HORIZONS:
         h_hits = sum(b["hits"] for b in by_stage_h[h].values())
+        h_dir = sum(b["n_dir"] for b in by_stage_h[h].values())
         h_total = sum(b["n"] for b in by_stage_h[h].values())
         by_horizon[str(h)] = {
             "horizon_days": h,
             "n_graded": h_total,
+            "n_directional": h_dir,
             "n_pending": n_pending_h[h],
-            "pooled_hit_rate": round(h_hits / h_total, 3) if h_total else None,
-            "pooled_ci95": _wilson(h_hits, h_total),
+            "pooled_hit_rate": round(h_hits / h_dir, 3) if h_dir else None,
+            "pooled_ci95": _wilson(h_hits, h_dir),
             "by_stage": by_stage_h[h],
             "by_theme": by_theme_h[h],
         }
@@ -333,8 +365,9 @@ def grade(today: pd.Timestamp | None = None, write: bool = True) -> dict:
         "horizons": HORIZONS,
         "horizon_days": HORIZON_DAYS,    # canonical horizon (legacy + FDR gate)
         "n_total": n_total, "n_graded": n_graded, "n_pending": n_pending,
-        "pooled_hit_rate": round(pooled_hits / n_graded, 3) if n_graded else None,
-        "pooled_ci95": _wilson(pooled_hits, n_graded),
+        "pooled_n_directional": pooled_n_dir,
+        "pooled_hit_rate": round(pooled_hits / pooled_n_dir, 3) if pooled_n_dir else None,
+        "pooled_ci95": _wilson(pooled_hits, pooled_n_dir),
         "fdr_q": FDR_Q,
         "n_significant_fdr": len(sig),
         "by_stage": by_stage,           # canonical 90d stage buckets
@@ -343,13 +376,19 @@ def grade(today: pd.Timestamp | None = None, write: bool = True) -> dict:
         "note": ("forward-only, survivorship-free (delisted members graded at their loss, no "
                  "look-ahead past a small settlement window), point-in-time basket membership. "
                  "Each flag is graded at 30/60/90d independently — shorter horizons yield early "
-                 "reads while 90d accrues. Hit-rates carry a Wilson 95% CI; the per-theme sign "
-                 "test runs on NON-OVERLAPPING flags only and the FDR gate is Benjamini-Yekutieli "
-                 "(dependence-robust — valid under arbitrary dependence from overlapping horizons "
-                 "+ shared SPY benchmark), on the canonical 90d horizon only (avoids multiplying "
-                 "the FDR surface). Residual hole: a delisting within ~2wk of a flag's horizon-end "
-                 "drops to pending. Old single-horizon rows are tolerated and graded at each "
-                 "HORIZONS entry. n_graded=0 until 30d flags mature — never a fabricated hit-rate."),
+                 "reads while 90d accrues. HIT-RATES ARE SKILL CLAIMS and exist only for "
+                 "directional stages: thesis (PRECIPICE/BROADENING, hit = outperform) and exit "
+                 "(GLUT, hit = underperform). RE-RATING/WATCH/UNKNOWN are CONTROL ARMS — their "
+                 "forward excess validates the do-not-chase claim but is never a hit-rate (a "
+                 "crowded theme continuing to run is beta, not skill) and they are excluded from "
+                 "the sign test/FDR. Hit-rates carry a Wilson 95% CI over directional flags; the "
+                 "per-theme sign test runs on NON-OVERLAPPING directional flags only and the FDR "
+                 "gate is Benjamini-Yekutieli (dependence-robust — valid under arbitrary "
+                 "dependence from overlapping horizons + shared SPY benchmark), on the canonical "
+                 "90d horizon only (avoids multiplying the FDR surface). Residual hole: a "
+                 "delisting within ~2wk of a flag's horizon-end drops to pending. Old "
+                 "single-horizon rows are tolerated and graded at each HORIZONS entry. "
+                 "n_graded=0 until 30d flags mature — never a fabricated hit-rate."),
     }
     if write:
         try:

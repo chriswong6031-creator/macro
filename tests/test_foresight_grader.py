@@ -164,7 +164,8 @@ def test_multi_horizon_produces_per_horizon_slices(monkeypatch, tmp_path):
 
 
 def test_multi_horizon_independent_maturity(monkeypatch, tmp_path):
-    """Horizons mature independently: 30d hit rate exists before 90d does."""
+    """Horizons mature independently; a control-arm (RE-RATING) row grades at every horizon
+    but carries NO hit-rate — forward excess only (beta, not skill)."""
     closes = {"MU": _series(150), "WDC": _series(145), "SPY": _series(105)}
     _patch(monkeypatch, tmp_path,
            [{"theme": "memory_storage", "asof": "2026-02-01", "stage": "RE-RATING"}], closes)
@@ -173,10 +174,46 @@ def test_multi_horizon_independent_maturity(monkeypatch, tmp_path):
     bh = s["by_horizon"]
     for h in ["30", "60", "90"]:
         assert bh[h]["n_graded"] == 1
-        assert bh[h]["pooled_hit_rate"] is not None
-    # RE-RATING is a negative call: theme >> SPY → miss (excess > 0 → direction=+1 → hit=True,
-    # but RE-RATING rows ARE still graded — the grader does not filter by stage)
-    assert s["n_graded"] == 1   # canonical 90d graded
+        # only control rows graded → no directional rows → no pooled hit-rate
+        assert bh[h]["n_directional"] == 0
+        assert bh[h]["pooled_hit_rate"] is None
+    assert s["n_graded"] == 1   # canonical 90d graded (control rows still count as graded)
+
+
+def test_control_arm_rerating_reports_excess_not_hit(monkeypatch, tmp_path):
+    """RE-RATING is a control arm: theme >> SPY yields avg_excess > 0 but hit_rate=None —
+    a crowded theme continuing to run must never be published as a 'hit' (beta ≠ skill)."""
+    closes = {"MU": _series(150), "WDC": _series(145), "SPY": _series(105)}
+    _patch(monkeypatch, tmp_path,
+           [{"theme": "memory_storage", "asof": "2026-01-01", "stage": "RE-RATING"}], closes)
+    s = gr.grade(today=pd.Timestamp("2026-06-01"), write=False)
+    b = s["by_stage"]["RE-RATING"]
+    assert b["n"] == 1 and b["n_dir"] == 0
+    assert b["hit_rate"] is None and b["ci95"] is None
+    assert b["avg_excess_pct"] is not None and b["avg_excess_pct"] > 0
+    # control rows are excluded from the sign test / FDR machinery entirely
+    assert s["by_theme"]["memory_storage"]["n_independent"] == 0
+    assert s["pooled_hit_rate"] is None and s["pooled_n_directional"] == 0
+
+
+def test_glut_risk_stage_is_exit_direction(monkeypatch, tmp_path):
+    """GLUT-RISK rows from the foresight ledger are negative calls: theme << SPY = HIT."""
+    closes = {"MU": _series(90), "WDC": _series(85), "SPY": _series(115)}
+    _patch(monkeypatch, tmp_path,
+           [{"theme": "memory_storage", "asof": "2026-01-01", "stage": "GLUT-RISK"}], closes)
+    s = gr.grade(today=pd.Timestamp("2026-06-01"), write=False)
+    b = s["by_stage"]["GLUT-RISK"]
+    assert b["n_dir"] == 1 and b["hits"] == 1 and b["hit_rate"] == 1.0
+
+
+def test_text_grade_precipice_inherits_thesis_direction(monkeypatch, tmp_path):
+    """'PRECIPICE (text)' (the W1a text-grade stage) inherits the thesis role: outperform = hit."""
+    closes = {"MU": _series(150), "WDC": _series(145), "SPY": _series(105)}
+    _patch(monkeypatch, tmp_path,
+           [{"theme": "memory_storage", "asof": "2026-01-01", "stage": "PRECIPICE (text)"}], closes)
+    s = gr.grade(today=pd.Timestamp("2026-06-01"), write=False)
+    b = s["by_stage"]["PRECIPICE (text)"]
+    assert b["n_dir"] == 1 and b["hits"] == 1 and b["hit_rate"] == 1.0
 
 
 def test_old_single_horizon_ledger_rows_tolerated(monkeypatch, tmp_path):
