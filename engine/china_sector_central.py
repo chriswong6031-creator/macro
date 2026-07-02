@@ -168,9 +168,16 @@ def _state_score(now: dict) -> tuple[float, dict]:
 
 
 def _forward_tilt(rec: dict) -> tuple[float | None, dict | None]:
-    """The honest forward tilt. PRIMARY: china_sector_pathway Wilson-CI conditional (4 GS
-    sectors) — the only validated forward input. Returns a tilt in [-1,+1] scaled by sample
-    confidence, or None where no pathway exists (then the cycle projection is rhythm-only)."""
+    """The honest forward tilt. PRIMARY: china_sector_pathway conditional (4 GS sectors) — a
+    display-only, evidence-gated conditioning input (NOT alpha, NOT a forecast). Returns a tilt
+    in [-1,+1] scaled by sample confidence, or None where no pathway exists (then the cycle
+    projection is rhythm-only).
+
+    W2.6: the pathway's conditional now reports n_months + a DATE-BLOCKED bootstrap CI on the
+    (cond − base) LIFT (era-stabilized composite). The old level-CI-straddles-base test is
+    equivalent to lift-CI-straddles-0; effective independent sample (n_eff) is used for the
+    confidence shrink because the overlapping monthly windows make raw n_months over-count.
+    """
     pw = rec.get("pathway")
     if not pw:
         return None, None
@@ -179,16 +186,20 @@ def _forward_tilt(rec: dict) -> tuple[float | None, dict | None]:
     if not h:
         return None, {"has_pathway": True}
     lift = float(h.get("lift") or 0.0)               # cond_rate − base_rate
-    n = int(h.get("n") or 0)
-    ci_lo, ci_hi = h.get("ci_lo"), h.get("ci_hi")
+    n = int(h.get("n_months") or 0)
+    n_eff = float(h.get("n_eff") or 0.0)
+    lift_lo, lift_hi = h.get("lift_ci_lo"), h.get("lift_ci_hi")
     base = float(h.get("base_rate") or 0.5)
-    # confidence: shrink the tilt when the CI straddles the base rate or n is small
-    straddles = (ci_lo is not None and ci_hi is not None and ci_lo <= base <= ci_hi)
-    conf = float(np.clip(n / 60.0, 0.3, 1.0)) * (0.5 if straddles else 1.0)
+    # confidence: shrink the tilt when the LIFT CI straddles zero (no separation from base) or
+    # the EFFECTIVE sample is small. With ~6-month overlap n_eff ≪ n_months, so confidence stays
+    # honestly low even when raw n_months looks comfortable — the point of the W2.6 CI fix.
+    straddles = (lift_lo is not None and lift_hi is not None and lift_lo <= 0.0 <= lift_hi)
+    conf = float(np.clip((n_eff if n_eff > 0 else n) / 30.0, 0.2, 1.0)) * (0.5 if straddles else 1.0)
     tilt = float(np.clip(lift * 6.0, -1, 1)) * conf   # lift ~±0.17 → ~±1 before conf
     return tilt, {"cond_rate": h.get("cond_rate"), "base_rate": h.get("base_rate"),
-                  "ci_lo": ci_lo, "ci_hi": ci_hi, "n": n, "h": h.get("h"),
-                  "tercile": (pw.get("setup") or {}).get("tercile"),
+                  "lift_ci_lo": lift_lo, "lift_ci_hi": lift_hi, "n_months": n, "n_eff": n_eff,
+                  "h": h.get("h"), "tercile": (pw.get("setup") or {}).get("tercile"),
+                  "composition_version": h.get("composition_version"),
                   "lift": round(lift, 3), "confidence": round(conf, 2),
                   "narrative_en": pw.get("narrative_en"), "narrative_zh": pw.get("narrative_zh")}
 
@@ -298,10 +309,17 @@ def _trace(state_d, fwd_d, mkt, mom_d, crowd, early, euphoric) -> list[dict]:
     if fwd_d and fwd_d.get("cond_rate") is not None:
         cr, br = round(fwd_d["cond_rate"] * 100), round(fwd_d["base_rate"] * 100)
         stance = "bullish" if fwd_d.get("lift", 0) > 0.03 else "bearish" if fwd_d.get("lift", 0) < -0.03 else "neutral"
-        t.append({"layer": "Forward odds", "tier": "validated", "stance": stance,
-                  "en": f"{cr}% forward-{fwd_d.get('h')}m positive vs {br}% base "
-                        f"(CI {round((fwd_d.get('ci_lo') or 0)*100)}–{round((fwd_d.get('ci_hi') or 0)*100)}%, n={fwd_d.get('n')})",
-                  "zh": f"未来{fwd_d.get('h')}个月上涨概率 {cr}%（基准 {br}%，样本 {fwd_d.get('n')}）"})
+        # W2.6: report the block-bootstrap LIFT band (pp) + n_months/n_eff, never a raw
+        # overlapping-window count as if independent; tier is "display" not "validated" (the
+        # pathway is display-only conditioning — doctrine, not alpha; matches the caveat).
+        lift_lo, lift_hi = fwd_d.get("lift_ci_lo"), fwd_d.get("lift_ci_hi")
+        band = (f", lift {round((lift_lo)*100)}–{round((lift_hi)*100)}pp"
+                if (lift_lo is not None and lift_hi is not None) else "")
+        neff = fwd_d.get("n_eff")
+        nstr = f"n={fwd_d.get('n_months')}mo" + (f", n_eff≈{neff}" if neff else "")
+        t.append({"layer": "Forward odds", "tier": "display", "stance": stance,
+                  "en": f"{cr}% forward-{fwd_d.get('h')}m positive vs {br}% base ({nstr}{band})",
+                  "zh": f"未来{fwd_d.get('h')}个月上涨概率 {cr}%（基准 {br}%，月度样本 {fwd_d.get('n_months')}）"})
     rstance = "bullish" if (mkt.get("risk_on") or 0) > 0.1 else "bearish" if (mkt.get("risk_on") or 0) < -0.1 else "neutral"
     quad_name = mkt.get("quad_name")
     quad_zh = _QUAD_ZH.get(quad_name, quad_name) if quad_name else (mkt.get("quad") or "—")

@@ -892,21 +892,40 @@
 
   function _pwNarr(pw) { return curLang() === "zh" ? (pw.narrative_zh || pw.narrative_en || "") : (pw.narrative_en || ""); }
   function _pwCaveat(pw) { return curLang() === "zh" ? (pw.caveat_zh || pw.caveat_en || "") : (pw.caveat_en || ""); }
-  // evidence-gated conditional forward odds (the 4 GS sectors only) — Wilson-CI conditioning,
-  // never a buy signal. Rendered only when the record carries a `pathway` block.
+  // evidence-gated conditional forward odds (the 4 GS sectors only) — display-only
+  // conditioning, never a buy signal. Rendered only when the record carries a `pathway` block.
+  // W2.6: the CI is a DATE-BLOCKED bootstrap on the (conditional − base) lift; we report
+  // n_months + n_eff (never the raw overlapping n) and disclose the fixed constituent set +
+  // the month the composite becomes defined (era-stabilization, audit china-sector-cycles-1/2).
   function pathwayHTML(s) {
     var pw = s.pathway; if (!pw) return "";
     var cond = pw.conditional || {}, h = cond.h6 || cond.h3 || null, setup = pw.setup || {};
-    var legs = setup.legs || [];
+    var comp = pw.composition || {}, legs = setup.legs || [];
     var odds = "";
     if (h) {
       var pr = Math.round(h.cond_rate * 100), base = Math.round(h.base_rate * 100), hz = h.h || 6;
-      var ci = Math.round(h.ci_lo * 100) + "–" + Math.round(h.ci_hi * 100) + "%";
+      // lift band from the block-bootstrap gap CI (in percentage points), honestly labeled.
+      var loPP = (h.lift_ci_lo != null) ? Math.round(h.lift_ci_lo * 100) : null;
+      var hiPP = (h.lift_ci_hi != null) ? Math.round(h.lift_ci_hi * 100) : null;
+      var excl = (loPP != null && (loPP > 0 || hiPP < 0));
+      var ci = (loPP != null) ? (loPP + "–" + hiPP + "pp") : L("n/a", "无");
       var liftCls = h.lift > 0.03 ? "t-up" : h.lift < -0.03 ? "t-down" : "t-mix";
+      var nStr = "n=" + h.n_months + "mo" + (h.n_eff != null ? " (n_eff≈" + h.n_eff + ")" : "");
+      var ciTag = (loPP != null)
+        ? (L("lift ", "超额 ") + ci + (excl ? "" : L(" · CI ⊃ base", " · 含基准")))
+        : "";
       odds = '<div class="sc-pw-odds"><div class="sc-pw-big ' + liftCls + '">' + pr + '%</div>' +
         '<div class="sc-pw-meta"><div class="sc-pw-line">' + L("forward-" + hz + "m positive", "未来" + hz + "个月上涨") + '</div>' +
-        '<div class="sc-pw-sub">' + L("vs ", "基准 ") + base + L("% base", "%") + ' · ' + L("CI ", "置信 ") + ci + ' · n=' + h.n + '</div></div></div>';
+        '<div class="sc-pw-sub">' + L("vs ", "基准 ") + base + L("% base", "%") + ' · ' + ciTag + ' · ' + nStr + '</div></div></div>';
     }
+    // era-disclosure chip: which legs the composite averages + when it becomes defined.
+    var compLine = comp.version
+      ? '<div class="sc-pw-comp" title="' + L("fixed constituent set · block-bootstrap CI", "固定因子集合 · 分块自助置信区间") + '">' +
+          L("composite: ", "复合口径：") + (comp.n_required_legs || (comp.required_legs || []).length) + L(" legs", " 项因子") +
+          (comp.active_legs_now != null ? " (" + comp.active_legs_now + L(" live", " 齐备") + ")" : "") +
+          (comp.first_all_legs_live ? " · " + L("from ", "起自 ") + comp.first_all_legs_live : "") +
+        '</div>'
+      : "";
     var legChips = legs.slice(0, 4).map(function (lg) {
       var cls = lg.stance === "bullish" ? "pw-bull" : lg.stance === "bearish" ? "pw-bear" : "pw-neu";
       return '<span class="sc-pw-leg ' + cls + '">' + L(lg.label_en, lg.label_zh) + '</span>';
@@ -914,7 +933,7 @@
     return '<div class="cyc-grp cyc-grp-3 sc-pathway">' +
       '<div class="cyc-lbl">' + L("Evidence-gated forward odds", "经证据门槛的前瞻概率") +
         ' <span class="sc-pw-badge" title="' + L("conditional · display-only", "条件化 · 仅展示") + '">⚗︎</span></div>' +
-      odds +
+      odds + compLine +
       (legChips ? '<div class="sc-pw-legs"><span class="sc-pw-legk">' + L("Lead cluster now", "当前领先因子") + '</span>' + legChips + '</div>' : "") +
       (_pwNarr(pw) ? '<p class="sc-pw-narr">' + _pwNarr(pw) + '</p>' : "") +
       (_pwCaveat(pw) ? '<p class="sc-pw-caveat">' + _pwCaveat(pw) + '</p>' : "") +

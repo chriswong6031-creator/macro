@@ -44,10 +44,14 @@ def test_zigzag_flat_series_no_turns():
 
 
 def test_wilson_interval_bounds():
-    lo, hi = pw._wilson(8, 10)
+    # W2.6: the bespoke pathway._wilson was ported to the shared grading_stats.wilson_ci and
+    # the pathway now uses a date-blocked bootstrap for its conditional CI. Assert the shared
+    # primitive still behaves, and that the pathway no longer carries a private copy.
+    from engine.grading_stats import wilson_ci
+    lo, hi = wilson_ci(8, 10)
     assert 0.0 <= lo <= 0.8 <= hi <= 1.0
-    lo0, hi0 = pw._wilson(0, 0)
-    assert (lo0, hi0) == (0.0, 0.0)
+    assert wilson_ci(0, 0) is None
+    assert not hasattr(pw, "_wilson"), "the bespoke Wilson-on-overlap path must be gone (W2.6)"
 
 
 def test_expanding_z_is_leak_free():
@@ -100,10 +104,16 @@ def test_pathway_snapshot_contract():
         assert s["bbg"].startswith("GSXAC")
         assert s["setup"]["tercile"] in ("low", "mid", "high")
         assert s["caveat_en"] and s["narrative_en"]
+        # W2.6 era-stabilization: fixed constituent set disclosed + composite defined only
+        # from the all-legs-live month; conditional CI is a block-bootstrap lift band, n_months.
+        comp = s.get("composition") or {}
+        assert comp.get("version") and comp.get("first_all_legs_live")
         for h, c in s["conditional"].items():
             assert 0.0 <= c["cond_rate"] <= 1.0
-            assert c["ci_lo"] <= c["cond_rate"] <= c["ci_hi"]
-            assert c["n"] >= 8
+            assert c["n_months"] >= 8 and 1.0 <= c["n_eff"] <= c["n_months"]
+            assert c["composition_version"] == comp["version"]
+            if c.get("lift_ci_lo") is not None:
+                assert c["lift_ci_lo"] <= c["lift_ci_hi"]
 
 
 @pytest.mark.skipif(not HAVE_DATA, reason="china_sectors data plane absent")

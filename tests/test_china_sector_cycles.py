@@ -94,8 +94,19 @@ def test_compute_contract():
     assert len(pw_sectors) == 4
     for s in pw_sectors:
         assert s["pathway"]["caveat_en"]
+        # W2.6 era-stabilization: every pathway block discloses its fixed constituent set and
+        # the month the composite becomes DEFINED (all legs live), stamped as a version.
+        comp = s["pathway"].get("composition") or {}
+        assert comp.get("version") and comp.get("required_legs")
+        assert comp.get("first_all_legs_live")   # composite undefined before this month
         for c in (s["pathway"].get("conditional") or {}).values():
-            assert c["ci_lo"] <= c["cond_rate"] <= c["ci_hi"]
+            # NEW schema: block-bootstrap CI on the LIFT (gap vs base), n_months (not raw
+            # overlapping n), n_eff overlap-deflator, and the composition stamp on every cell.
+            assert 0.0 <= c["cond_rate"] <= 1.0 and 0.0 <= c["base_rate"] <= 1.0
+            assert c["n_months"] >= 1 and c["n_eff"] >= 1.0 and c["n_eff"] <= c["n_months"]
+            assert c["composition_version"] == comp["version"]
+            if c.get("lift_ci_lo") is not None:
+                assert c["lift_ci_lo"] <= c["lift_ci_hi"]
     # at least some sectors carry the washout↔euphoria signature
     assert any((s["now"].get("signature") or {}).get("score") is not None for s in data["sectors"])
     # JSON-serialisable with no NaN / Infinity
