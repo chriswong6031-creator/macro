@@ -140,18 +140,41 @@ def entry_open_first(rows: list[dict]) -> list[dict]:
     'Buy zone — entry open now' (entry_signal.status == 'buy_now') lead the strip,
     then by the displayed conviction score (high → low).
 
+    W6-US fix 5: 'buy_now' only floats a name to the top when composite_z > 0
+    (i.e. the name has positive multi-factor conviction). This prevents a sparse binary
+    flag on a negative-edge name (e.g. ETN: composite_z -0.047) from unilaterally
+    seizing slot #1.  Names with composite_z <= 0 and status=='buy_now' are treated
+    as not-open for sorting purposes and fall to their bottoming-alignment position.
+
+    Soft invariant: after sorting, if slot #1 has negative alpha we log a warning.
+
     Stable: rows that tie on (entry-open?, score) keep the caller's prior order, so the
-    validated bottoming-alignment / confluence rank still settles ties — it just no
-    longer outranks an open entry window or a higher score. Reads the SAME fields the
-    cards render (entry_signal.status + conviction.score), so the board order always
-    matches the visible entry badge and score. Best-effort: a row missing either field
-    sorts as not-open / lowest-score within its group."""
+    validated bottoming-alignment / confluence rank still settles ties. Best-effort: a
+    row missing either field sorts as not-open / lowest-score within its group."""
+    import logging as _log
+    _logger = _log.getLogger(__name__)
+
     def _key(r):
         es = r.get("entry_signal") or {}
-        sc = (r.get("conviction") or {}).get("score")
-        return (0 if es.get("status") == "buy_now" else 1,
-                -(sc if sc is not None else -1.0))
-    return sorted(rows, key=_key)
+        c = r.get("conviction") or {}
+        sc = c.get("score")
+        czr = c.get("composite_z")
+        cz = float(czr) if czr is not None else 0.0
+        # only honour buy_now if composite_z > 0 (positive conviction)
+        is_open = (es.get("status") == "buy_now") and (cz > 0)
+        return (0 if is_open else 1, -(sc if sc is not None else -1.0))
+
+    result = sorted(rows, key=_key)
+    # soft invariant: warn if slot #1 has negative alpha (not fatal, but tracked)
+    if result:
+        _top = result[0]
+        _top_alpha = _top.get("alpha")
+        if _top_alpha is not None and _top_alpha < 0:
+            _logger.warning(
+                "entry_open_first: slot #1 is %s with negative alpha %.2f — "
+                "bottoming-alignment may be placing a weak name at the top",
+                _top.get("ticker"), _top_alpha)
+    return result
 
 
 # minimum aligned names a standout strip shows before it backfills with NEAR-aligned
