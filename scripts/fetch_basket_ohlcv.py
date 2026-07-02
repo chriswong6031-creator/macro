@@ -92,6 +92,17 @@ def _finviz_tickers(filters: list[str]) -> list[str]:
     return sorted(out)
 
 
+def _scrub_placeholder_prices(df: pd.DataFrame) -> pd.DataFrame:
+    """Zero/negative "prices" are vendor placeholders, not trades (e.g. DEC shipped ~3y of
+    all-zero OHLC rows with nonzero volume from before its US listing). Mask them to NaN —
+    the same guard engine/basket_index applies at read time — and drop rows left with no
+    price at all. Runs on the MERGED frame so a refresh purges prior garbage instead of
+    re-persisting it via combine_first."""
+    px = [c for c in ("open", "high", "low", "close") if c in df.columns]
+    df[px] = df[px].where(df[px] > 0)
+    return df[df[px].notna().any(axis=1)]
+
+
 def _download_ohlcv(tickers: list[str]) -> dict[str, pd.DataFrame]:
     """Per-ticker OHLCV frames, deep from START. Reuses the breadth yfinance pattern
     (crumb/cookie auth that works headless), batched with retry+backoff. group_by=ticker
@@ -175,6 +186,7 @@ def main(argv: list[str] | None = None) -> int:
         merged.index = pd.DatetimeIndex(merged.index)
         merged.index.name = "Date"
         merged = merged.sort_index()[COLS]
+        merged = _scrub_placeholder_prices(merged)
         merged.to_parquet(out_p)
         wrote += 1
     if blank:
