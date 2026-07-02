@@ -21,6 +21,7 @@ from jinja2 import Environment, FileSystemLoader  # noqa: E402
 from engine import (altdata, altdata_alerts, altdata_brain, altdata_emit,  # noqa: E402
                     altdata_ledger, altdata_picks, altdata_signals)
 from engine.influence import graph as influence_graph  # noqa: E402
+from engine.qledger_ui import chips_for_desks, load_track_record  # noqa: E402
 from lib import config  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
@@ -84,10 +85,21 @@ def main() -> int:
     site.mkdir(exist_ok=True)
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
+
+    # qledger honesty chips: read the ledger track-record and derive chip state
+    # for each desk rendered on this page.  Never fatal — absent ledger → UNGRADED chips.
+    qledger_chips: dict = {}
+    try:
+        tr = load_track_record(config.ROOT)
+        qledger_chips = chips_for_desks(["alt_data"], tr)
+    except Exception as e:  # noqa: BLE001
+        log.debug("qledger chips skipped (%s)", e)
+
     try:
         html = env.get_template("alt_data.html.j2").render(
             feed=feed, alerts=alerts, track=track, influence=influence, picks=picks,
             brain=brain, mastermind=mastermind, generated_utc=built,
+            qledger_chips=qledger_chips,
             active_section="research", active_page="alt_data",
         )
     except Exception as e:  # noqa: BLE001
