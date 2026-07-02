@@ -126,7 +126,12 @@ def grade() -> dict | None:
     bench = None
     try:
         from engine import china_sector_index as csi
-        bench = csi.benchmark_close()
+        # W0.3 / D4 benchmark basis-match: use price-basis benchmark so that
+        # excess = sector_price − bench_price (same basis). benchmark_close_price()
+        # prefers 'close_price' (D4-W1 dual-basis) with a logged fallback to 'close'
+        # (TR) — for 000001.SS these are empirically identical (no dividend adjustment
+        # on equity indices), so the fallback is safe while D4-W1 is pending.
+        bench = csi.benchmark_close_price()
     except Exception:  # noqa: BLE001
         pass
 

@@ -56,6 +56,59 @@ SECTORS: dict[str, dict] = {
 }
 
 GROUP_ZH = {"Growth": "成长", "Cyclical": "周期", "Defensive": "防御", "Rate-sens": "利率敏感", "Thematic": "主题"}
+
+# W0.3 — engine-owned read: zh phase labels for the generated sentence.
+PHASE_ZH = {
+    "Trough":    "筑底阶段",
+    "Recovery":  "复苏阶段",
+    "Expansion": "扩张阶段",
+    "Peak":      "顶部阶段",
+    "Downturn":  "下行阶段",
+}
+
+
+def _engine_read(name: str, phase: str, pos: float, above200: bool,
+                 proj: dict | None, rs_63d: float | None,
+                 rs_rank: int | None) -> tuple[str, str]:
+    """Generate a factual, templated engine-owned read sentence (EN + ZH).
+    Pure function of the engine's computed fields — no hand-editing required.
+    Doctrine (masterplan §4 W0.3): the engine owns every plotted number; narrative
+    may annotate but the ENGINE read is primary and is always present."""
+    phase_short = (PHASES.get(phase) or {}).get("short", phase)
+    phase_zh = PHASE_ZH.get(phase, phase)
+    pos_int = int(round(pos))
+
+    # trend context
+    trend_en = "above" if above200 else "below"
+    trend_zh = "位于" if above200 else "低于"
+
+    # RS context (optional — omit if not computed)
+    if rs_63d is not None and rs_rank is not None:
+        sign = "+" if rs_63d >= 0 else ""
+        rs_en = f" RS vs SPY: {sign}{rs_63d:.1f}% (rank #{rs_rank})."
+        rs_zh = f"相对标普RS：{sign}{rs_63d:.1f}%（排名第{rs_rank}）。"
+    elif rs_63d is not None:
+        sign = "+" if rs_63d >= 0 else ""
+        rs_en = f" RS vs SPY: {sign}{rs_63d:.1f}%."
+        rs_zh = f"相对标普RS：{sign}{rs_63d:.1f}%。"
+    else:
+        rs_en = rs_zh = ""
+
+    # projection context (optional)
+    if proj and proj.get("central") and proj.get("nextTurn"):
+        nt = proj["nextTurn"]          # "peak" or "trough"
+        cen = proj["central"]          # YYYY-MM
+        proj_en = f" Next projected {nt}: {cen}."
+        next_zh = "顶部" if nt == "peak" else "底部"
+        proj_zh = f"预计下一{next_zh}：{cen}。"
+    else:
+        proj_en = proj_zh = ""
+
+    read_en = (f"{name} is in a {phase_short} phase (cycle position {pos_int}/100), "
+               f"{trend_en} its 200-day.{rs_en}{proj_en}")
+    read_zh = (f"{name}{phase_zh}（周期位置 {pos_int}/100），"
+               f"{trend_zh}200日均线。{rs_zh}{proj_zh}")
+    return read_en, read_zh
 CATEGORY_ZH = {
     "AI & Technology": "AI 与科技", "Artificial Intelligence": "人工智能",
     "Consumer Cyclical": "周期性消费", "Consumer Defensive": "防御性消费",
@@ -340,9 +393,33 @@ def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp
             "lastTrough": last_trough, "lastPeak": last_peak,
             "above200d": above200, "ret_win_pct": ret_win,
             "dc_phase": (res.get("cycle") or {}).get("dc_phase"),
-            "read": None,           # narrative.json fills the live read
+            # W0.3: engine-owned read generated in build_sector/build_basket after RS is
+            # available (set to None here; overwritten by _set_engine_read).
+            "read": None, "read_zh": None,
         },
     }
+
+
+def _set_engine_read(rec: dict) -> None:
+    """W0.3: populate nw.read + nw.read_zh from the engine's own computed fields.
+    Called AFTER _apply_leadership so RS data is present. Overrides the None sentinel
+    set in _record_core — the engine now owns the read field (doctrine §1). The
+    narrative.json 'now' string demoted to 'analyst_note' in the JS (see sector_cycles.js)."""
+    nw = rec.get("now")
+    if nw is None:
+        return
+    name = rec.get("name") or rec.get("ticker") or rec.get("id") or "Series"
+    read_en, read_zh = _engine_read(
+        name=name,
+        phase=nw.get("phase") or "Expansion",
+        pos=nw.get("pos") or 50.0,
+        above200=bool(nw.get("above200d")),
+        proj=rec.get("proj"),
+        rs_63d=nw.get("rs_63d"),
+        rs_rank=nw.get("rs_rank"),
+    )
+    nw["read"] = read_en
+    nw["read_zh"] = read_zh
 
 
 def _apply_leadership(rec: dict, lead: dict) -> None:
@@ -380,6 +457,7 @@ def build_sector(ticker: str, meta: dict, closes: pd.DataFrame,
                 "group": meta["group"], "group_zh": GROUP_ZH.get(meta["group"], meta["group"]),
                 "accent": meta["accent"]})
     _apply_leadership(rec, _leadership(closes, ticker))
+    _set_engine_read(rec)    # W0.3: populate engine-owned read after RS is available
     return rec
 
 
@@ -432,6 +510,7 @@ def build_basket(bid: str, bmeta: dict, win_start: pd.Timestamp, last_ts: pd.Tim
                 "coverage": (cmeta or {}).get("coverage_pct"),
                 "n_members": (cmeta or {}).get("n_live")})
     _apply_leadership(rec, _basket_rs(full, spy))
+    _set_engine_read(rec)    # W0.3: populate engine-owned read after RS is available
     return rec
 
 

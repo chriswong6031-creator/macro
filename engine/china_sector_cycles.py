@@ -336,6 +336,7 @@ def append_forward_log(data: dict) -> int:
             "signature": sig.get("score"), "signal": nw.get("signal"),
             "above200d": nw.get("above200d"), "rs_63d": nw.get("rs_63d"), "rs_rank": nw.get("rs_rank"),
             "proj_next": pr.get("nextTurn"), "proj_central": pr.get("central"),
+            "proj_lo": pr.get("low"), "proj_hi": pr.get("high"),  # cone-edge columns (N-D2-1 fix)
             "pathway_cond_rate": h6.get("cond_rate"), "pathway_base_rate": h6.get("base_rate"),
             "pathway_tercile": (pw.get("setup") or {}).get("tercile"),
         })

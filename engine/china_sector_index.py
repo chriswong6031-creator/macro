@@ -115,6 +115,44 @@ def benchmark_close() -> pd.Series | None:
     return df["close"].dropna().sort_index()
 
 
+def benchmark_close_price() -> pd.Series | None:
+    """W0.3 / D4 benchmark basis-match: return the PRICE-basis (split-adjusted,
+    dividend-unadjusted) Shanghai Composite close for graders that compare against
+    price-return Shenwan sectors (audit finding: excess = sector_price − bench_TR
+    carries chronic dividend-yield drift).
+
+    Prefers the 'close_price' column (written by the D4-W1 dual-basis collector update).
+    Falls back to 'close' (TR) with a logged warning when 'close_price' is absent —
+    for 000001.SS (an equity *index*, not an ETF) auto_adjust=True and auto_adjust=False
+    produce identical values (indices carry no dividend adjustments in yfinance), so the
+    fallback is empirically equivalent but is documented to prevent silent confusion when
+    the contract extends to ETF benchmarks.
+
+    basis_fallback: True on the returned object means the caller is on a degraded path.
+    """
+    df = store.read("china", BENCHMARK)
+    if df is None:
+        return None
+    if "close_price" in df.columns:
+        s = df["close_price"].dropna().sort_index()
+        s.attrs["basis"] = "price"
+        s.attrs["basis_fallback"] = False
+        return s
+    # fallback: empirically equivalent for 000001.SS but logged so D4-W1 can confirm
+    if "close" not in df.columns:
+        return None
+    log.debug(
+        "china_sector_index.benchmark_close_price: 'close_price' column absent in %s store "
+        "(D4-W1 dual-basis collector not yet run). Falling back to 'close' (TR). "
+        "For 000001.SS this is empirically equivalent (no yfinance dividend adjustment on indices).",
+        BENCHMARK,
+    )
+    s = df["close"].dropna().sort_index()
+    s.attrs["basis"] = "tr_fallback"
+    s.attrs["basis_fallback"] = True
+    return s
+
+
 # ------------------------------------------------------ cap-weighted constituents ----
 
 def _search_closes() -> pd.DataFrame | None:
