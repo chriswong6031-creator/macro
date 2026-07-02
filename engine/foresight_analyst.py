@@ -10,7 +10,14 @@ pattern a human would miss in the noise, and what concrete observation would KIL
 It is an EXTRACTOR + JUDGE, never an oracle. Code-enforced honesty (the house contract):
   - It reasons ONLY from the evidence pack; it cites the surface behind every claim.
   - It is FORBIDDEN to forecast a price, a return %, or a directional bet — a deterministic
-    linter strips any thesis that does (the model adds reasoning, never a number).
+    linter strips any thesis that violates this from the mechanism field ONLY (the one field
+    that MUST be clean to have any thesis at all); violations in OTHER fields are CLAMPED
+    (the offending fragment is replaced with "[forecast removed]") so the thesis is kept.
+    See _clamp_forecast() and _clamp_all_fields().
+  - CITATION GROUNDING (W4b): every evidence item is checked against the evidence pack that
+    was fed to the model.  Items not found as substrings of the pack are tagged
+    "ungrounded": true and excluded from display copy; kept in the ledger for audit.
+    n_grounded/n_total are surfaced per thesis.
   - Every thesis is logged with the deterministic HEAT it was built on, so engine/thesis_monitor
     can fire "THESIS BROKEN" the moment that convergence decays — fully reproducible.
   - No credential -> graceful no-op (returns None), exactly like engine/altdata_brain. The
@@ -32,9 +39,32 @@ log = logging.getLogger(__name__)
 MAX_ITEMS = 8                      # bound the daily call (cost) — the top convergences only
 LEDGER = ("data", "foresight", "analyst_theses.jsonl")
 # language that would make a claim a price/return FORECAST — the no-forecast guardrail
+#
+# REGEX NOTES (B1 fix):
+#  - \$\s*\d[\d,.]* — matches "$120", "$ 1,200" etc. as a full NUMBER token (not "$1" of "$120")
+#  - \d[\d,.]*\s*% — matches "20%", "1,200%" etc. as a full number-percent token
+#  - reach\s+\d+ by — catches "reach 120 by Q4" style patterns
+#  These replacements widen the match to the full number token, fixing the sub-fragment bug.
 _FORECAST_RE = re.compile(
-    r"(price target|\bPT\b|will (?:rise|fall|go|reach|hit|double|triple)|%\s*(?:up|down|gain|return|upside|downside)"
-    r"|\bupside\b|\bdownside\b|\$\d|\d+\s*%|expect[a-z]* (?:a )?(?:return|gain|move)|target of)", re.I)
+    r"(price target|\bPT\b|will (?:rise|fall|go|reach|hit|double|triple)"
+    r"|%\s*(?:up|down|gain|return|upside|downside)"
+    r"|\bupside\b|\bdownside\b"
+    r"|\$\s*\d[\d,.]*"          # full $ number token — e.g. "$120" not just "$1" of "$120"
+    r"|\d[\d,.]*\s*%"           # full %-number token — e.g. "20%" not "20" only
+    r"|reach\s+\d[\d,.]*\s+by"  # "reach 120 by Q4" style
+    r"|expect[a-z]* (?:a )?(?:return|gain|move)|target of)", re.I)
+
+# Fields that can be CLAMPED (stripped) vs dropped — mechanism is the hard gate.
+# NOTE (B1 fix): evidence and kill_criteria are NOT mutated in-place; instead items that
+# match are tagged forecast_suspect=True and excluded from display.  Only free-prose
+# fields (mechanism handled separately, non_obvious/dissent/regime_read*) are clamped.
+_CLAMPABLE_PROSE_FIELDS = ("regime_read", "regime_read_zh", "dissent", "non_obvious")
+# List fields that use forecast_suspect tagging (not in-place mutation)
+_SUSPECT_LIST_FIELDS = ("kill_criteria", "evidence")
+# All fields considered for clamping (union — for logging)
+_CLAMPABLE_FIELDS = _CLAMPABLE_PROSE_FIELDS + _SUSPECT_LIST_FIELDS
+# Fields that are lists of strings (need item-level handling)
+_LIST_FIELDS = ("kill_criteria", "evidence")
 
 
 def _cfg() -> dict:
@@ -126,35 +156,228 @@ def _strip_fence(text: str) -> str:
 
 
 def _has_forecast(thesis: dict) -> bool:
-    """True if any reasoning field smells like a price/return forecast (no-forecast guardrail)."""
-    for f in ("mechanism", "non_obvious", "dissent"):
-        if _FORECAST_RE.search(str(thesis.get(f) or "")):
-            return True
-    return False
+    """True if the MECHANISM field smells like a price/return forecast.
+    This is the HARD GATE — only mechanism is checked here; other fields are clamped."""
+    return bool(_FORECAST_RE.search(str(thesis.get("mechanism") or "")))
 
 
-def _parse(text: str, valid_themes: set[str]) -> dict | None:
+def _clamp_string(s: str) -> tuple[str, list[str]]:
+    """Strip forecast fragments from a free-prose string.
+    Returns (clamped_str, [removed fragments]).
+    Replaces the ENTIRE matched forecast phrase (the full regex group), never a sub-fragment."""
+    removed: list[str] = []
+
+    def _replace(m: re.Match) -> str:  # type: ignore[type-arg]
+        removed.append(m.group(0))
+        return "[forecast removed]"
+
+    clamped = _FORECAST_RE.sub(_replace, s)
+    return clamped, removed
+
+
+def _clamp_all_fields(thesis: dict) -> tuple[dict, list[str]]:
+    """Clamp forecast language from non-mechanism fields.  Returns (clamped_thesis, removed_fragments).
+
+    B1 FIX — two-tier treatment:
+      Free-prose fields (dissent, non_obvious, regime_read*): mutated in-place — the offending
+        phrase is replaced with "[forecast removed]".
+      List fields (evidence, kill_criteria): NOT mutated — items that match are tagged
+        forecast_suspect=True (kept in ledger, excluded from display_copy); the list itself
+        is preserved so grounding can check the ORIGINAL strings.
+
+    The thesis is KEPT (not dropped) even when violations are found in these fields.
+    """
+    all_removed: list[str] = []
+    clamped = dict(thesis)
+
+    # Prose fields: in-place mutation safe (no grounding dependency)
+    for field in _CLAMPABLE_PROSE_FIELDS:
+        val = thesis.get(field)
+        if val is None or not isinstance(val, str):
+            continue
+        c, rem = _clamp_string(val)
+        clamped[field] = c
+        all_removed.extend(rem)
+
+    # List fields: tag forecast_suspect items; do NOT mutate the string
+    for field in _SUSPECT_LIST_FIELDS:
+        val = thesis.get(field)
+        if val is None or not isinstance(val, list):
+            continue
+        new_list = []
+        for item in val:
+            if isinstance(item, str) and _FORECAST_RE.search(item):
+                matched = _FORECAST_RE.findall(item)
+                all_removed.extend(matched if isinstance(matched[0], str) else
+                                   [m[0] if isinstance(m, tuple) else m for m in matched])
+                log.info("foresight_analyst: forecast_suspect item in %s: %r", field, item[:80])
+                new_list.append({"text": item, "forecast_suspect": True})
+            else:
+                new_list.append(item)
+        clamped[field] = new_list
+
+    return clamped, all_removed
+
+
+def _build_pack_text(pack: list[dict]) -> str:
+    """Flatten the evidence pack into a single normalised text for substring matching."""
+    return " ".join(
+        _normalise(str(v))
+        for item in pack
+        for v in _flatten_values(item)
+        if v is not None
+    )
+
+
+def _flatten_values(obj: object, _depth: int = 0) -> list:
+    """Recursively collect all leaf values from a dict/list."""
+    if _depth > 6:
+        return [str(obj)]
+    if isinstance(obj, dict):
+        result = []
+        for v in obj.values():
+            result.extend(_flatten_values(v, _depth + 1))
+        return result
+    if isinstance(obj, list):
+        result = []
+        for v in obj:
+            result.extend(_flatten_values(v, _depth + 1))
+        return result
+    return [obj]
+
+
+def _normalise(s: str) -> str:
+    """Normalise for case-insensitive, whitespace-collapsed substring matching.
+
+    B1b: unicode folding applied to BOTH sides (pack text and evidence item) before
+    the substring check, so curly-quote variants in LLM output match ASCII pack text.
+    """
+    # Unicode typographic quote/dash folding
+    s = s.replace("‘", "'").replace("’", "'")   # LEFT/RIGHT SINGLE QUOTATION MARK
+    s = s.replace("“", '"').replace("”", '"')   # LEFT/RIGHT DOUBLE QUOTATION MARK
+    s = s.replace("–", "-").replace("—", "-")   # EN DASH / EM DASH
+    return re.sub(r"\s+", " ", s).strip().lower()
+
+
+def _check_evidence_grounding(evidence_items: list, pack_text: str) -> tuple[list, int, int]:
+    """Check each evidence item against the pack text.
+
+    Returns (annotated_items, n_grounded, n_total).
+    An item is 'grounded' if it (or a meaningful fragment of it) appears as a
+    case-insensitive, whitespace-normalised substring of pack_text.
+    Items that are too short (<4 chars) are accepted as trivially present.
+    """
+    annotated: list = []
+    n_grounded = 0
+    n_total = 0
+
+    for item in evidence_items:
+        if not isinstance(item, str):
+            annotated.append(item)
+            continue
+        n_total += 1
+        normalised = _normalise(item)
+        if len(normalised) < 4:
+            # Too short to meaningfully check — treat as grounded
+            annotated.append(item)
+            n_grounded += 1
+            continue
+        grounded = normalised in pack_text
+        if grounded:
+            annotated.append(item)
+            n_grounded += 1
+        else:
+            # Tag as ungrounded — excluded from display, kept in ledger
+            annotated.append({"text": item, "ungrounded": True})
+            log.info("foresight_analyst: ungrounded evidence item in pack: %r", item[:80])
+
+    return annotated, n_grounded, n_total
+
+
+def _parse(text: str, valid_themes: set[str], pack: list[dict] | None = None) -> dict | None:
+    """Parse and validate LLM reply.
+
+    Changes vs pre-W4b:
+    - Forecast filter now covers ALL output fields (not just mechanism/non_obvious/dissent):
+      mechanism = hard drop gate; other fields = clamp and keep.
+    - Citation grounding: evidence items checked against the pack text; ungrounded items
+      tagged and excluded from display copy, kept in ledger.
+    """
     try:
         obj = json.loads(_strip_fence(text))
     except Exception:  # noqa: BLE001
         return None
     if not isinstance(obj, dict):
         return None
+
+    # Build pack text for citation grounding
+    pack_text = _build_pack_text(pack or [])
+
+    # Clamp regime_read / regime_read_zh at top level
+    regime_read = str(obj.get("regime_read") or "")
+    regime_read_zh = str(obj.get("regime_read_zh") or "")
+    regime_read, _ = _clamp_string(regime_read)
+    regime_read_zh, _ = _clamp_string(regime_read_zh)
+
     theses = []
     for th in (obj.get("theses") or []):
         if not isinstance(th, dict) or th.get("theme") not in valid_themes:
             continue
         if not th.get("mechanism") or not th.get("kill_criteria"):
             continue
-        if _has_forecast(th):                       # no-forecast guardrail: drop, don't display
-            log.info("foresight_analyst: dropped a thesis with forecast language (%s)", th.get("theme"))
+
+        # HARD GATE: mechanism contains a forecast -> drop the whole thesis
+        if _has_forecast(th):
+            log.info("foresight_analyst: dropped thesis (mechanism forecast): %s", th.get("theme"))
             continue
-        if th.get("confidence") not in ("low", "medium", "high"):
-            th["confidence"] = "low"
-        theses.append({k: th.get(k) for k in
-                       ("theme", "mechanism", "non_obvious", "kill_criteria", "evidence", "dissent", "confidence")})
-    return {"regime_read": obj.get("regime_read"), "regime_read_zh": obj.get("regime_read_zh"),
-            "theses": theses, "confidence": obj.get("confidence") or "low"}
+
+        # B1 FIX: CITATION GROUNDING runs FIRST, on the ORIGINAL (unclamped) strings.
+        # This ensures clamping cannot corrupt evidence strings before the grounding check.
+        raw_evidence = (th.get("evidence") or [])
+        # Only pass plain strings to grounding — skip any dicts already in the list
+        plain_evidence = [e for e in raw_evidence if isinstance(e, str)]
+        annotated_evidence, n_grounded, n_total = _check_evidence_grounding(
+            plain_evidence, pack_text
+        )
+
+        # Now CLAMP other fields (prose fields mutated; list fields tagged forecast_suspect)
+        # We work on a copy that already has grounded evidence annotations in place.
+        th_with_grounded = {**th, "evidence": annotated_evidence}
+        clamped, removed = _clamp_all_fields(th_with_grounded)
+        if removed:
+            log.info("foresight_analyst: clamped forecast language from %s in %s: %r",
+                     list(set(
+                         f for f in _CLAMPABLE_FIELDS
+                         if any(r in str(th.get(f) or "") for r in removed)
+                     )),
+                     th.get("theme"), removed)
+            clamped["_forecast_clamped"] = removed  # kept in ledger, not displayed
+
+        # After clamp, the evidence list may contain grounding dicts AND forecast_suspect dicts.
+        # Build display-only evidence: exclude items tagged ungrounded or forecast_suspect.
+        final_evidence = clamped.get("evidence") or []
+        clamped["n_grounded"] = n_grounded
+        clamped["n_total_evidence"] = n_total
+        clamped["evidence_display"] = [
+            e for e in final_evidence
+            if isinstance(e, str)  # dicts are either ungrounded or forecast_suspect — exclude both
+        ]
+
+        if clamped.get("confidence") not in ("low", "medium", "high"):
+            clamped["confidence"] = "low"
+
+        theses.append({k: clamped.get(k) for k in (
+            "theme", "mechanism", "non_obvious", "kill_criteria", "evidence",
+            "evidence_display", "dissent", "confidence",
+            "n_grounded", "n_total_evidence", "_forecast_clamped",
+        )})
+
+    return {
+        "regime_read": regime_read,
+        "regime_read_zh": regime_read_zh,
+        "theses": theses,
+        "confidence": obj.get("confidence") or "low",
+    }
 
 
 def compute_foresight_analyst(convergence: dict | None, cascade: dict | None = None,
@@ -184,7 +407,7 @@ def compute_foresight_analyst(convergence: dict | None, cascade: dict | None = N
     if not text:
         log.info("foresight_analyst: no usable reply (%s)", degraded)
         return None
-    out = _parse(text, valid)
+    out = _parse(text, valid, pack=pack)
     if out is None:
         return None
     out["asof"] = convergence.get("asof")
@@ -227,6 +450,10 @@ def _append_ledger(out: dict, convergence: dict) -> None:
             "kill_criteria": th.get("kill_criteria"),
             "heat_at_open": h.get("heat"), "physical_at_open": h.get("physical_confirmed"),
             "n_surfaces_at_open": h.get("n_signals"),
+            # W4b audit fields
+            "n_grounded": th.get("n_grounded"),
+            "n_total_evidence": th.get("n_total_evidence"),
+            "_forecast_clamped": th.get("_forecast_clamped"),
         }, separators=(",", ":")))
     if lines:
         with p.open("a") as fh:

@@ -372,18 +372,25 @@
       "channel": "C6",
       "hypothesis": "One EW Asia-semi sensor basket (TSM+ASML+\u2026) leads SMH at ONE pre-registered horizon, earnings-print windows excised (overnight risk carry-in).",
       "direction": "de-risk",
-      "verdict": "PENDING",
+      "verdict": "CONTEXT",
       "weight_cap": 0.0,
       "metrics": {
-        "ic": null,
-        "dsr": null,
-        "split_half_same_sign": null,
-        "effective_n_crises": null,
-        "es_ex_top3": null,
-        "orthogonal_partial": null
+        "ic": 0.1568,
+        "dsr": 0.4463,
+        "split_half_same_sign": false,
+        "effective_n_crises": 5,
+        "es_ex_top3": 0.0061,
+        "orthogonal_partial": 0.0724,
+        "maxdd_cut": 0.1014
       },
       "gates": {
-        "freshness": false
+        "freshness": true,
+        "promotion": "na",
+        "orthogonality": true,
+        "crisis_count": true,
+        "crisis_independent_es": true,
+        "drawdown_reduction": false,
+        "lead_lag_kernel": false
       },
       "source_series": [
         "yahoo/TSM",
@@ -391,8 +398,8 @@
       ],
       "freshness_sla_days": 5,
       "validation_ref": "scripts/intl_phase0.py (grade) \u2014 Context tier until it clears the lead-lag kernel; if only lag-1 survives \u2192 transmission read (honest de-risk confirmer)",
-      "kill": false,
-      "notes": "Context tier until it clears the lead-lag kernel; if only lag-1 survives \u2192 transmission read (honest de-risk confirmer). Seam if promoted: stock_score._axis_tailwind, DOWNGRADE-capable only. | freshness SLA violated on disk \u2014 leg zeroed (fail-closed)"
+      "kill": true,
+      "notes": "Context tier until it clears the lead-lag kernel; if only lag-1 survives \u2192 transmission read (honest de-risk confirmer). Seam if promoted: stock_score._axis_tailwind, DOWNGRADE-capable only. | lead-lag kernel: no lag>=1 link survives FDR + split-half \u2014 contemporaneous co-membership / transmission read, not a tradeable lead"
     },
     {
       "id": "c7_luxury_china_consumer",

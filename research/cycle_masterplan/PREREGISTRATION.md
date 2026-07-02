@@ -196,3 +196,35 @@ feature simply does not ship.
 - 2026-07-02 — Ledger created at W0.4. KG-1..5 judged this wave (see
   `W04_KEYSTONE_VERDICT.md`); all downstream gates registered, criteria frozen. No
   amendments.
+
+---
+
+## 11 · W2.5 Collinearity gate (post-registration, 2026-07-02)
+
+**Honestly labeled post-registration entry.** This gate was not in the original
+ledger (W0.4 was focused on predictive-power; W2.5 was a measurement/prerequisite
+wave added after the keystone re-steer §6.5). It is added here as a results-only
+entry: the criteria were defined in the W2.5 wave prompt and in R4 §U2 (BEFORE the
+study ran), and are reported below as-found with no post-hoc adjustment.
+
+| id | claim | pre-registered criterion | judged by | result | date |
+|---|---|---|---|---|---|
+| **CL-1** | state_score and pos_osc are redundant (near-collinear price transforms) | pooled \|rho\| > 0.80 OR VIF > 5.0 | `data/cycle_ontology/collinearity_phase0.json` → `verdict.redundant_pairs` + `verdict.high_vif_legs` | **CONFIRMED** — rho(state_score, pos_osc) = −0.968; VIF(pos_osc) = 29.8, VIF(state_score) = 25.8 | 2026-07-02 |
+| **CL-2** | at least one leg carries independent risk-channel information (partial-corr CI excludes 0) | ≥1 leg's partial-corr with forward max-drawdown has bootstrapped 95% CI excluding 0 on ≥1 horizon | same artifact → `verdict.risk_channel_survivors` | **CONFIRMED** — 4 survivors: trend_pass_f, mom_score, rs_63d_f, vol_pctile (63d horizon) | 2026-07-02 |
+| **CL-3** | 90% of variance captured by fewer PCs than legs (dimension reduction justified) | n_pcs_for_90pct < n_legs (8) | same artifact → `pooled.pca.n_pcs_for_90pct` | **CONFIRMED** — 5 PCs (of 8 legs) explain 91.2% of variance | 2026-07-02 |
+
+**Binding consequence (gates W4.2 and W4.6):** W4.2 (hazard fit) and W4.6 (binding
+calibration) MUST NOT include both `state_score` and `pos_osc` as separate features.
+The de-duplicated feature set is: ONE representative from the collinear pair (use
+`pos_osc` as the simpler representative) + `trend_pass_f` + `mom_score` +
+`rs_63d_f` + `vol_pctile` + `amp_proxy` (low VIF=1.1, retained) + `osc_slope_f`
+(low VIF=1.7, retained) + macro-regime axis (non-price, assumed orthogonal — to be
+measured when PIT regime backfill exists). If PCA orthogonalization is preferred,
+use the top 5 loadings stored as a committed artifact.
+
+**Study details:** 12,504 pooled PIT monthly stamps (11 US sectors, 31 country ETFs,
+31 China Shenwan sectors; 2010-12-31 → 2026-06-30). Month-block bootstrap, 800 draws,
+seed=7. Script: `scripts/collinearity_phase0.py`. Full tables in artifact JSON.
+
+**Skipped legs (disclosed):** macro-regime quad/liquidity (no PIT backfill; P-D5-1
+revision leak); age-in-phase (deferred to D5-W1 hazard panel).

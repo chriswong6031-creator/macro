@@ -964,6 +964,42 @@ REGISTRY: list[dict] = [
                 ("SPY MaxDD cut (signal era)", "+0.6pp (below the 1pp door)"),
                 ("Calmar strat vs B&H", "0.105 < 0.153 (return crushed)"),
                 ("diverge-fire frequency", "~3% of days (votes≥2 + equities calm)")]),
+    _row("Asia-semi read-through basket  (TSM+ASML ADRs → SMH — C6)",
+         "亚洲半导体传导篮（台积电+阿斯麦ADR → SMH — C6）", "Asia-semi", "display",
+         why="W4 VERDICT: CONTEXT — do NOT wire. ONE pre-registered EW Asia-semi basket "
+             "(TSM + ASML, US-listed ADRs chosen ON PURPOSE to kill the timezone lag) graded vs "
+             "SMH through the lead-lag kernel (HAC-t + BH-FDR + split-half) with ±2 trading-day "
+             "earnings-print excision (12.8% of rows, INTL-49). The lag-0 correlation is huge "
+             "(HAC-t +15.9, mean +0.82, FDR-reject, split-half stable) — but that is MECHANICAL "
+             "CO-MEMBERSHIP (TSM + ASML are two of SMH's largest holdings), not a lead. NO lag>=1 "
+             "link survives: lag1 HAC-t −1.67 (q_FDR 0.16, negative — it mirrors SMH's OWN lag-1 "
+             "mean-reversion of −0.05), lag2/3/5 all |t|<2.1 and non-surviving. Because the ADRs "
+             "trade in the US session there is not even the timezone-transmission lag-1 the raw "
+             "local-index screen had — only same-day co-membership. The lead-lag kernel is the "
+             "binding gate (ADJ-4): its pass excludes lag-0 by construction. Orthogonality vs "
+             "SMH's OWN 5d/21d momentum leaves a wrong-signed residual (+0.07) — the basket adds "
+             "nothing beyond 'semis lead semis'. weight_cap 0, kill=True — stock_score._axis_tailwind "
+             "(the would-be DOWNGRADE-only seam) UNCHANGED.",
+         why_zh="W4 结论：CONTEXT——请勿接入。一个预注册的等权亚洲半导体篮（台积电 + 阿斯麦，特意选用美股ADR"
+                "以消除时区滞后），经领先滞后核（HAC-t + BH-FDR + 半样本），并剔除每次财报前后±2交易日窗口"
+                "（占12.8%行，INTL-49），对 SMH 评分。滞后0相关极大（HAC-t +15.9，均值 +0.82，通过FDR，半样本"
+                "稳定）——但这是机械式成分重叠（台积电+阿斯麦是 SMH 最大持仓之二），并非领先。无任何滞后≥1"
+                "存活：滞后1 HAC-t −1.67（q 0.16，为负——与 SMH 自身滞后1均值回归 −0.05 一致），滞后2/3/5 "
+                "均 |t|<2.1。因 ADR 在美股时段交易，连原始本地指数筛查中的时区传导滞后1也没有——只剩同日成分"
+                "重叠。领先滞后核是约束门（ADJ-4），其判定按构造排除滞后0。相对 SMH 自身5日/21日动量的正交性"
+                "留下错号残差（+0.07）——篮子在'半导体领先半导体'之外无增量。权重上限0，kill=True——"
+                "stock_score._axis_tailwind（本应是仅降级的接入口）未变。",
+         source="reports/intl-semi-readthrough-phase0.md (W4-C6 2026-07-02); "
+                "scripts/c6_asia_semi_readthrough.py + scripts/intl_phase0.py --c6 (grade); "
+                "data/intl_bridge/ledger.json (c6_asia_semi_readthrough); "
+                "data/intl_bridge/c6_earnings_dates.json (print-excision source)",
+         horizon="5d fwd (lead-lag kernel)", ic=0.157, dsr=0.446,
+         wired="not wired — CONTEXT (lag-0 co-membership only; no lag>=1 lead survives the kernel)",
+         extra=[("lag-0 HAC-t (co-membership)", "+15.9 (mean +0.82 — mechanical, TSM+ASML in SMH)"),
+                ("lag-1 HAC-t", "−1.67 (q_FDR 0.16, does NOT survive; negative)"),
+                ("lag>=1 kernel survivors", "0 (no tradeable lead; ADRs remove timezone lag)"),
+                ("orthogonality vs SMH own momentum", "+0.07 residual (wrong sign; nothing beyond semis-lead-semis)"),
+                ("print rows excised (±2td)", "838 (12.8%)")]),
     _row("Intl trend de-risk overlays  (price + total-return ETFs — C3)",
          "国际趋势降险叠加（价格指数 + 总回报ETF — C3）", "Intl ETF", "display",
          why="Two ports, one honest verdict: trend on tradeable intl is dead. The PRICE-index "
@@ -1001,6 +1037,48 @@ REGISTRY: list[dict] = [
          wired="not shipped — transmission read / display context (CONTEXT)",
          extra=[("FX per-pair", "all fail DSR (best USDCAD 0.86)"),
                 ("lead/lag survivors", "5 split-half stable, ALL lag-1 (timezone)")]),
+    _row("European luxury → China-consumer read-through  (C7 — EW basket LVMUY+RMS.PA+CFR.SW)",
+         "欧洲奢侈品 → 中国消费者读透（C7 — 等权组合 LVMUY+RMS.PA+CFR.SW）", "China / Intl", "display",
+         why="W4-C7 VERDICT: CONTEXT — do NOT wire. The EW luxury basket (LVMUY ADR ~20y + "
+             "RMS.PA/CFR.SW ~5y locals) rolling-return trend-turn signal carries NO statistically "
+             "significant LEAD over FXI forward drawdowns at the declared 21d horizon. Lead-lag "
+             "kernel: lag=0 strongly significant (t=11.75, contemporaneous same-session co-movement "
+             "— luxury and FXI trade in overlapping US hours), but NO lagged link survives BH-FDR "
+             "(lag=1: t=−1.49, p=0.14; lag=2/5: not significant). This is a TRANSMISSION READ: "
+             "luxury and the Chinese consumer co-move in real-time, but the luxury basket does NOT "
+             "lead FXI at any lag that survives multiple-testing correction. Strategy DSR=0.16 (far "
+             "below the 0.90 door). Drawdown-reduction gate FAILS on Calmar: the flat-out-of-FXI "
+             "overlay has negative Calmar (−0.008) while B&H FXI is positive (+0.045), meaning the "
+             "strategy loses money while sitting out FXI recovery periods. Earnings-print excision: "
+             "271 bars NaN'd (±2td around LVMH/Hermès/Richemont prints — causal method). "
+             "Effective-N honesty: LVMUY has 4 crisis windows (20y), but the full 3-leg basket "
+             "window covers only 1 declared crisis (rate_22) — the bias toward LVMUY's own momentum "
+             "dominates. The validated channel is contemporaneous co-movement — useful as a display "
+             "confirmer ('luxury and FXI are co-moving today') but structurally unable to carry the "
+             "de-risk lead the C7 thesis required. weight_cap 0, kill=True; FXI target and all "
+             "scorer seams UNCHANGED.",
+         why_zh="W4-C7 结论：CONTEXT——不接线。等权奢侈品组合（LVMUY ADR ~20年 + RMS.PA/CFR.SW ~5年本地）"
+                "滚动收益趋势翻转信号，在预声明的21日期限内，对 FXI 前瞻回撤无统计显著的引导。引导-滞后核：滞后=0 "
+                "强显著（t=11.75，同期同时段共动——奢侈品与 FXI 在重叠的美国交易时段交易），但无滞后链路通过 "
+                "BH-FDR（滞后=1：t=−1.49，p=0.14；滞后=2/5：不显著）。这是传导读数：奢侈品与中国消费者实时共动，"
+                "但奢侈品组合在任何通过多重检验修正的滞后下均未领先 FXI。策略 DSR=0.16（远低于0.90门）。"
+                "回撤削减门因Calmar失败：空仓叠加层 Calmar 为负（−0.008），而买持 FXI 为正（+0.045），意味着"
+                "策略在 FXI 反弹期间踏空亏损。财报印发剔除：271根K线置NaN（LVMH/爱马仕/历峰公告±2交易日——因果方法）。"
+                "有效N诚实说明：LVMUY 有4个危机窗口（20年），但全三腿组合窗口仅含1个声明危机（rate_22）——以"
+                "LVMUY 自身动量为主导。已验证渠道为同期共动——可用作展示确认器（'今日奢侈品与 FXI 共动'），"
+                "但在结构上无法承担 C7 论题所需的降险引导。权重上限0，kill=True；FXI 目标及所有计分器缝合点不变。",
+         source="reports/intl-luxury-readthrough-phase0.md (W4-C7, 2026-07-02); "
+                "scripts/c7_luxury_readthrough.py + scripts/intl_phase0.py --c7; "
+                "data/intl_bridge/ledger.json (c7_luxury_china_consumer)",
+         horizon="21d fwd drawdown (FXI)", dsr=0.1609, ic=-0.0695,
+         wired="not wired — CONTEXT (no lagged lead survives BH-FDR; contemporaneous only)",
+         extra=[("lead-lag kernel lag=0 t-stat", "11.75 (contemporaneous; same-session overlap)"),
+                ("lag=1 HAC-t / p", "−1.49 / 0.14 (not significant; wrong sign)"),
+                ("BH-FDR survivors at lag≥1", "NONE"),
+                ("strategy DSR", "0.16 (far below 0.90 door)"),
+                ("drawdown-reduction Calmar", "−0.008 strat vs +0.045 B&H (value-destroyer)"),
+                ("earnings-print bars excised", "271 (±2td LVMH/Hermès/Richemont prints)"),
+                ("effective-N (LVMUY 20y)", "4 crises; full-basket overlap: 1 crisis (rate_22)")]),
     _row("China external-driver radar  (C3 — governed by risk_radar_intl)",
          "中国外部驱动雷达（C3 — 由 risk_radar_intl 治理）", "China A", "display",
          why="Note-only entry for registry completeness. The validated China external-driver radar "

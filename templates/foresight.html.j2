@@ -346,17 +346,32 @@
       'W4a: HEAT = n_lit_sources / n_available_sources × earliness (dropped, not filled, when absent). 5 distinct data sources (physical · demand · guidance · altdata · edgar-scarcity — the old subsector-scarcity + discovery-echo counted the same EDGAR parquet twice; now one source). Dark sources leave the denominator — no outage penalty. Earliness from attention engine (Q3); absent below 2 usable legs → factor dropped. Numeric physical bonus ×1.15. Threshold 0.40 PROVISIONAL pending shadow calibration. Note: heat compares agreement among AVAILABLE surfaces only — themes with different data coverage are not on a fully comparable scale.',
       'W4a：热度＝点亮数据源数/可用数据源数×早期度（缺失时直接舍弃，不填充）。5个独立数据源（物理·需求·指引·替代数据·edgar稀缺——原子行业稀缺+发现回声使用同一EDGAR数据集，现计为一个）。暗数据源排除在分母外。早期度来自注意力引擎（Q3）；少于2个可用腿时直接舍弃因子。数字物理奖励×1.15。阈值0.40暂定，待影子校准。注：热度仅比较各自可用数据源之间的共振程度——数据覆盖度不同的主题不具有完全可比性。') }}</div>
 
+    {# ---- Thesis monitor chip — renders whenever monitor is present (no credential needed) ---- #}
+    {# W4b: un-nested from the analyst block so BROKEN fires even without a credential.         #}
+    {% if monitor and (monitor.n_open or monitor.n_broken or monitor.n_weakening) %}
+    <div class="fx-mon-strip{% if monitor.n_broken %} fx-mon-broken{% elif monitor.n_weakening %} fx-mon-weakening{% endif %}">
+      <span class="fx-mon-label">{{ t('Thesis monitor', '论点监视器') }}</span>
+      <span class="fx-mon-counts">
+        {% if monitor.n_broken %}<span class="fx-mon-b">{{ monitor.n_broken }} {{ t('BROKEN', '已失效') }}</span>{% endif %}
+        {% if monitor.n_weakening %}<span class="fx-mon-w">{{ monitor.n_weakening }} {{ t('weakening', '走弱') }}</span>{% endif %}
+        {% if not monitor.n_broken and not monitor.n_weakening %}<span class="fx-mon-ok">{{ monitor.n_open }} {{ t('intact', '稳定') }}</span>{% endif %}
+      </span>
+      {%- if monitor.n_deterministic is defined %}<span class="fx-mon-src">{{ monitor.n_deterministic }} {{ t('det', '确定性') }}{% if monitor.n_llm %} · {{ monitor.n_llm }} {{ t('LLM', 'LLM') }}{% endif %}</span>{% endif %}
+    </div>
+    {% endif %}
+
     {# ---- AI analyst reasoning over the convergence (lights up when a credential is present) ---- #}
     {# W4b owns this block — no changes here per worktree isolation rule #}
     {% if analyst and analyst.regime_read %}
     <div class="fx-ai">
-      <div class="fx-ai-h">🧠 {{ t('AI analyst read', 'AI 分析师解读') }}{% if monitor and (monitor.n_broken or monitor.n_weakening) %} <span class="fx-ai-mon">{% if monitor.n_broken %}{{ monitor.n_broken }} {{ t('thesis broken', '论点失效') }}{% endif %}{% if monitor.n_weakening %}{% if monitor.n_broken %} · {% endif %}{{ monitor.n_weakening }} {{ t('weakening', '走弱') }}{% endif %}</span>{% endif %}</div>
+      <div class="fx-ai-h">🧠 {{ t('AI analyst read', 'AI 分析师解读') }}</div>
       <div class="fx-ai-regime">{{ analyst.regime_read }}</div>
       {% for th in analyst.theses %}
       <div class="fx-ai-th">
         <div class="fx-ai-mech"><b>{{ th.theme.replace('_',' ')|title }}</b> <span class="fx-ai-conf c-{{ th.confidence }}">{{ th.confidence }}</span> — {{ th.mechanism }}</div>
-        {% if th.non_obvious %}<div class="fx-ai-no">🔎 {{ t('non-obvious', '非显性') }}: {{ th.non_obvious }}</div>{% endif %}
-        {% if th.kill_criteria %}<div class="fx-ai-kill">{{ t('kills if', '失效条件') }}: {% for k in th.kill_criteria %}<span class="fx-kc">{{ k }}</span>{% endfor %}</div>{% endif %}
+        {% if th.non_obvious %}<div class="fx-ai-no">{{ t('non-obvious', '非显性') }}: {{ th.non_obvious }}</div>{% endif %}
+        {% if th.kill_criteria %}<div class="fx-ai-kill">{{ t('kills if', '失效条件') }}: {% for k in th.kill_criteria %}{% if k is string %}<span class="fx-kc">{{ k }}</span>{% endif %}{% endfor %}</div>{% endif %}
+        {%- if th.n_grounded is not none and th.n_total_evidence %}<div class="fx-ai-cit">{{ t('Citation grounding', '引用核实') }}: {{ th.n_grounded }}/{{ th.n_total_evidence }}</div>{% endif %}
       </div>
       {% endfor %}
       <div class="fx-ai-foot">{{ analyst.disclaimer }} {{ t('The deterministic monitor re-checks each thesis against its convergence every build and flags BROKEN before the tape confirms. The model is FORBIDDEN to forecast a price.', '确定性监视器每次构建都依据其共振重新核验每个论点，并在行情确认前标记失效。模型被禁止预测价格。') }}</div>

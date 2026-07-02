@@ -1,0 +1,1315 @@
+{
+  "schema": 1,
+  "study_date": "2026-07-02",
+  "branch": "wave/w2-5-collinearity",
+  "gates": [
+    "W4.2",
+    "W4.6"
+  ],
+  "constants": {
+    "CORR_HIGH": 0.8,
+    "VIF_HIGH": 5.0,
+    "PC_THRESHOLD": 0.9,
+    "SEED": 7,
+    "DRAWS": 800,
+    "FWD_HORIZONS": [
+      63,
+      126
+    ]
+  },
+  "legs_skipped": {
+    "macro_regime_quad_liquidity": "No PIT regime backfill in backfill.parquet; P-D5-1 revision leak if included. Assumed orthogonal to price legs.",
+    "age_in_phase": "Requires confirmed-turn history per stamp date; not in backfill.parquet. Deferred to D5-W1 hazard panel."
+  },
+  "determinism_test": {
+    "vif_collinear": {
+      "x1": 10000.0,
+      "x2": 10000.0,
+      "x3": 10000.0
+    },
+    "determinism_ok": true,
+    "expected_high_vif_leg": "x3",
+    "threshold": 5.0
+  },
+  "pooled": {
+    "n": 12504,
+    "leg_labels": {
+      "state_score": "Cycle-state score (0.6\u00b7pos + 0.4\u00b7phase_dir + \u00b10.12\u00b7signal)",
+      "trend_pass_f": "Trend-gate (above200d binary)",
+      "mom_score": "RS/momentum confirmer (capped \u00b10.30)",
+      "pos_osc": "Position oscillator (0-100; raw)",
+      "amp_proxy": "Amplitude proxy |pos-50|/50",
+      "rs_63d_f": "63d RS vs benchmark (raw, pct)",
+      "osc_slope_f": "Oscillator slope",
+      "vol_pctile": "Realized-vol expanding percentile (63d window)"
+    },
+    "pairwise_corr": {
+      "state_score|state_score": 1.0,
+      "state_score|trend_pass_f": -0.647,
+      "state_score|mom_score": -0.458,
+      "state_score|pos_osc": -0.9675,
+      "state_score|amp_proxy": 0.0255,
+      "state_score|rs_63d_f": -0.4103,
+      "state_score|osc_slope_f": -0.1761,
+      "state_score|vol_pctile": 0.2404,
+      "trend_pass_f|trend_pass_f": 1.0,
+      "trend_pass_f|mom_score": 0.5551,
+      "trend_pass_f|pos_osc": 0.6576,
+      "trend_pass_f|amp_proxy": 0.0334,
+      "trend_pass_f|rs_63d_f": 0.4141,
+      "trend_pass_f|osc_slope_f": 0.1255,
+      "trend_pass_f|vol_pctile": -0.1706,
+      "mom_score|mom_score": 1.0,
+      "mom_score|pos_osc": 0.5038,
+      "mom_score|amp_proxy": 0.1033,
+      "mom_score|rs_63d_f": 0.7174,
+      "mom_score|osc_slope_f": 0.1678,
+      "mom_score|vol_pctile": -0.0296,
+      "pos_osc|pos_osc": 1.0,
+      "pos_osc|amp_proxy": 0.0428,
+      "pos_osc|rs_63d_f": 0.4671,
+      "pos_osc|osc_slope_f": 0.3182,
+      "pos_osc|vol_pctile": -0.2286,
+      "amp_proxy|amp_proxy": 1.0,
+      "amp_proxy|rs_63d_f": 0.0753,
+      "amp_proxy|osc_slope_f": 0.012,
+      "amp_proxy|vol_pctile": 0.0457,
+      "rs_63d_f|rs_63d_f": 1.0,
+      "rs_63d_f|osc_slope_f": 0.1874,
+      "rs_63d_f|vol_pctile": 0.0665,
+      "osc_slope_f|osc_slope_f": 1.0,
+      "osc_slope_f|vol_pctile": 0.0179,
+      "vol_pctile|vol_pctile": 1.0
+    },
+    "vif": {
+      "state_score": 25.79,
+      "trend_pass_f": 2.05,
+      "mom_score": 2.49,
+      "pos_osc": 29.78,
+      "amp_proxy": 1.12,
+      "rs_63d_f": 2.24,
+      "osc_slope_f": 1.68,
+      "vol_pctile": 1.12
+    },
+    "pca": {
+      "explained_variance_ratios": [
+        0.4316,
+        0.1551,
+        0.1226,
+        0.1162,
+        0.0868,
+        0.0546,
+        0.0309,
+        0.0023
+      ],
+      "cumulative_variance": [
+        0.4316,
+        0.5866,
+        0.7093,
+        0.8254,
+        0.9122,
+        0.9668,
+        0.9977,
+        1.0
+      ],
+      "n_pcs_for_90pct": 5
+    },
+    "marginal": {
+      "fwd_ret_63d": {
+        "partial_corr": {
+          "state_score": -0.0551,
+          "trend_pass_f": -0.025,
+          "mom_score": 0.0692,
+          "pos_osc": -0.0293,
+          "amp_proxy": -0.0012,
+          "rs_63d_f": -0.1433,
+          "osc_slope_f": -0.0059,
+          "vol_pctile": 0.1361
+        },
+        "boot_ci_95": {
+          "state_score": [
+            -0.0946,
+            -0.0184
+          ],
+          "trend_pass_f": [
+            -0.0743,
+            0.0181
+          ],
+          "mom_score": [
+            0.0159,
+            0.1255
+          ],
+          "pos_osc": [
+            -0.0714,
+            0.0055
+          ],
+          "amp_proxy": [
+            -0.0426,
+            0.0414
+          ],
+          "rs_63d_f": [
+            -0.2212,
+            -0.0554
+          ],
+          "osc_slope_f": [
+            -0.0556,
+            0.0481
+          ],
+          "vol_pctile": [
+            0.0447,
+            0.2022
+          ]
+        }
+      },
+      "fwd_dd_63d": {
+        "partial_corr": {
+          "state_score": -0.0048,
+          "trend_pass_f": 0.0539,
+          "mom_score": 0.0702,
+          "pos_osc": 0.0098,
+          "amp_proxy": -0.0434,
+          "rs_63d_f": -0.1712,
+          "osc_slope_f": 0.0208,
+          "vol_pctile": -0.1384
+        },
+        "boot_ci_95": {
+          "state_score": [
+            -0.0536,
+            0.0412
+          ],
+          "trend_pass_f": [
+            0.0082,
+            0.1113
+          ],
+          "mom_score": [
+            0.0031,
+            0.1363
+          ],
+          "pos_osc": [
+            -0.0453,
+            0.0644
+          ],
+          "amp_proxy": [
+            -0.0899,
+            0.0087
+          ],
+          "rs_63d_f": [
+            -0.2563,
+            -0.0794
+          ],
+          "osc_slope_f": [
+            -0.0482,
+            0.0889
+          ],
+          "vol_pctile": [
+            -0.2177,
+            -0.0641
+          ]
+        }
+      },
+      "fwd_ret_126d": {
+        "partial_corr": {
+          "state_score": -0.0548,
+          "trend_pass_f": -0.0783,
+          "mom_score": 0.0006,
+          "pos_osc": -0.0093,
+          "amp_proxy": -0.008,
+          "rs_63d_f": -0.0555,
+          "osc_slope_f": -0.0049,
+          "vol_pctile": 0.1001
+        },
+        "boot_ci_95": {
+          "state_score": [
+            -0.0861,
+            -0.0213
+          ],
+          "trend_pass_f": [
+            -0.1144,
+            -0.0417
+          ],
+          "mom_score": [
+            -0.0615,
+            0.0569
+          ],
+          "pos_osc": [
+            -0.0477,
+            0.0254
+          ],
+          "amp_proxy": [
+            -0.0457,
+            0.0324
+          ],
+          "rs_63d_f": [
+            -0.1283,
+            0.0195
+          ],
+          "osc_slope_f": [
+            -0.0544,
+            0.0487
+          ],
+          "vol_pctile": [
+            0.0457,
+            0.1586
+          ]
+        }
+      },
+      "fwd_dd_126d": {
+        "partial_corr": {
+          "state_score": 0.0049,
+          "trend_pass_f": 0.0215,
+          "mom_score": 0.0102,
+          "pos_osc": 0.0221,
+          "amp_proxy": -0.0417,
+          "rs_63d_f": -0.0583,
+          "osc_slope_f": -0.0094,
+          "vol_pctile": -0.1476
+        },
+        "boot_ci_95": {
+          "state_score": [
+            -0.0369,
+            0.0421
+          ],
+          "trend_pass_f": [
+            -0.0259,
+            0.0757
+          ],
+          "mom_score": [
+            -0.061,
+            0.0865
+          ],
+          "pos_osc": [
+            -0.0235,
+            0.0699
+          ],
+          "amp_proxy": [
+            -0.0849,
+            0.0048
+          ],
+          "rs_63d_f": [
+            -0.1593,
+            0.0461
+          ],
+          "osc_slope_f": [
+            -0.0704,
+            0.0487
+          ],
+          "vol_pctile": [
+            -0.2303,
+            -0.0776
+          ]
+        }
+      }
+    }
+  },
+  "by_family": {
+    "us_sector": {
+      "n": 1881,
+      "leg_labels": {
+        "state_score": "Cycle-state score (0.6\u00b7pos + 0.4\u00b7phase_dir + \u00b10.12\u00b7signal)",
+        "trend_pass_f": "Trend-gate (above200d binary)",
+        "mom_score": "RS/momentum confirmer (capped \u00b10.30)",
+        "pos_osc": "Position oscillator (0-100; raw)",
+        "amp_proxy": "Amplitude proxy |pos-50|/50",
+        "rs_63d_f": "63d RS vs benchmark (raw, pct)",
+        "osc_slope_f": "Oscillator slope",
+        "vol_pctile": "Realized-vol expanding percentile (63d window)"
+      },
+      "pairwise_corr": {
+        "state_score|state_score": 1.0,
+        "state_score|trend_pass_f": -0.6038,
+        "state_score|mom_score": -0.4777,
+        "state_score|pos_osc": -0.9629,
+        "state_score|amp_proxy": -0.0701,
+        "state_score|rs_63d_f": -0.3375,
+        "state_score|osc_slope_f": -0.1855,
+        "state_score|vol_pctile": 0.3596,
+        "trend_pass_f|trend_pass_f": 1.0,
+        "trend_pass_f|mom_score": 0.5183,
+        "trend_pass_f|pos_osc": 0.6043,
+        "trend_pass_f|amp_proxy": -0.0789,
+        "trend_pass_f|rs_63d_f": 0.3553,
+        "trend_pass_f|osc_slope_f": 0.1503,
+        "trend_pass_f|vol_pctile": -0.3987,
+        "mom_score|mom_score": 1.0,
+        "mom_score|pos_osc": 0.5273,
+        "mom_score|amp_proxy": 0.1153,
+        "mom_score|rs_63d_f": 0.782,
+        "mom_score|osc_slope_f": 0.1946,
+        "mom_score|vol_pctile": -0.1213,
+        "pos_osc|pos_osc": 1.0,
+        "pos_osc|amp_proxy": 0.1461,
+        "pos_osc|rs_63d_f": 0.3877,
+        "pos_osc|osc_slope_f": 0.3382,
+        "pos_osc|vol_pctile": -0.339,
+        "amp_proxy|amp_proxy": 1.0,
+        "amp_proxy|rs_63d_f": 0.1471,
+        "amp_proxy|osc_slope_f": 0.0089,
+        "amp_proxy|vol_pctile": 0.0152,
+        "rs_63d_f|rs_63d_f": 1.0,
+        "rs_63d_f|osc_slope_f": 0.1397,
+        "rs_63d_f|vol_pctile": -0.001,
+        "osc_slope_f|osc_slope_f": 1.0,
+        "osc_slope_f|vol_pctile": 0.0446,
+        "vol_pctile|vol_pctile": 1.0
+      },
+      "vif": {
+        "state_score": 22.99,
+        "trend_pass_f": 2.0,
+        "mom_score": 3.27,
+        "pos_osc": 27.0,
+        "amp_proxy": 1.22,
+        "rs_63d_f": 2.67,
+        "osc_slope_f": 1.77,
+        "vol_pctile": 1.3
+      },
+      "pca": {
+        "explained_variance_ratios": [
+          0.4335,
+          0.1639,
+          0.126,
+          0.1222,
+          0.0772,
+          0.0507,
+          0.0241,
+          0.0025
+        ],
+        "cumulative_variance": [
+          0.4335,
+          0.5974,
+          0.7233,
+          0.8456,
+          0.9228,
+          0.9734,
+          0.9975,
+          1.0
+        ],
+        "n_pcs_for_90pct": 5
+      },
+      "marginal": {
+        "fwd_ret_63d": {
+          "partial_corr": {
+            "state_score": -0.068,
+            "trend_pass_f": -0.0095,
+            "mom_score": 0.0214,
+            "pos_osc": -0.051,
+            "amp_proxy": 0.0101,
+            "rs_63d_f": -0.0332,
+            "osc_slope_f": -0.0487,
+            "vol_pctile": 0.182
+          },
+          "boot_ci_95": {
+            "state_score": [
+              -0.1223,
+              -0.0081
+            ],
+            "trend_pass_f": [
+              -0.0734,
+              0.0557
+            ],
+            "mom_score": [
+              -0.0437,
+              0.0794
+            ],
+            "pos_osc": [
+              -0.1153,
+              0.021
+            ],
+            "amp_proxy": [
+              -0.0651,
+              0.077
+            ],
+            "rs_63d_f": [
+              -0.1098,
+              0.05
+            ],
+            "osc_slope_f": [
+              -0.1308,
+              0.029
+            ],
+            "vol_pctile": [
+              0.0901,
+              0.2606
+            ]
+          }
+        },
+        "fwd_dd_63d": {
+          "partial_corr": {
+            "state_score": 0.0088,
+            "trend_pass_f": 0.1212,
+            "mom_score": -0.0254,
+            "pos_osc": 0.0058,
+            "amp_proxy": -0.0089,
+            "rs_63d_f": 0.0016,
+            "osc_slope_f": 0.0187,
+            "vol_pctile": -0.0563
+          },
+          "boot_ci_95": {
+            "state_score": [
+              -0.0455,
+              0.0731
+            ],
+            "trend_pass_f": [
+              0.0372,
+              0.2026
+            ],
+            "mom_score": [
+              -0.0807,
+              0.0334
+            ],
+            "pos_osc": [
+              -0.0545,
+              0.08
+            ],
+            "amp_proxy": [
+              -0.0864,
+              0.0612
+            ],
+            "rs_63d_f": [
+              -0.0864,
+              0.0803
+            ],
+            "osc_slope_f": [
+              -0.0674,
+              0.0857
+            ],
+            "vol_pctile": [
+              -0.1539,
+              0.0345
+            ]
+          }
+        },
+        "fwd_ret_126d": {
+          "partial_corr": {
+            "state_score": -0.0421,
+            "trend_pass_f": -0.0459,
+            "mom_score": 0.016,
+            "pos_osc": 0.0043,
+            "amp_proxy": -0.0073,
+            "rs_63d_f": -0.0396,
+            "osc_slope_f": -0.1085,
+            "vol_pctile": 0.1968
+          },
+          "boot_ci_95": {
+            "state_score": [
+              -0.0921,
+              0.0117
+            ],
+            "trend_pass_f": [
+              -0.1043,
+              0.0204
+            ],
+            "mom_score": [
+              -0.0423,
+              0.0667
+            ],
+            "pos_osc": [
+              -0.055,
+              0.0659
+            ],
+            "amp_proxy": [
+              -0.0812,
+              0.0615
+            ],
+            "rs_63d_f": [
+              -0.1057,
+              0.0326
+            ],
+            "osc_slope_f": [
+              -0.1739,
+              -0.0367
+            ],
+            "vol_pctile": [
+              0.1081,
+              0.2804
+            ]
+          }
+        },
+        "fwd_dd_126d": {
+          "partial_corr": {
+            "state_score": 0.0352,
+            "trend_pass_f": 0.0809,
+            "mom_score": -0.046,
+            "pos_osc": 0.0422,
+            "amp_proxy": -0.0286,
+            "rs_63d_f": 0.0273,
+            "osc_slope_f": -0.02,
+            "vol_pctile": -0.0397
+          },
+          "boot_ci_95": {
+            "state_score": [
+              -0.0184,
+              0.0917
+            ],
+            "trend_pass_f": [
+              0.0071,
+              0.1506
+            ],
+            "mom_score": [
+              -0.1095,
+              0.0099
+            ],
+            "pos_osc": [
+              -0.0162,
+              0.1119
+            ],
+            "amp_proxy": [
+              -0.0876,
+              0.0296
+            ],
+            "rs_63d_f": [
+              -0.0433,
+              0.1028
+            ],
+            "osc_slope_f": [
+              -0.0934,
+              0.0384
+            ],
+            "vol_pctile": [
+              -0.1206,
+              0.0319
+            ]
+          }
+        }
+      }
+    },
+    "country": {
+      "n": 5738,
+      "leg_labels": {
+        "state_score": "Cycle-state score (0.6\u00b7pos + 0.4\u00b7phase_dir + \u00b10.12\u00b7signal)",
+        "trend_pass_f": "Trend-gate (above200d binary)",
+        "mom_score": "RS/momentum confirmer (capped \u00b10.30)",
+        "pos_osc": "Position oscillator (0-100; raw)",
+        "amp_proxy": "Amplitude proxy |pos-50|/50",
+        "rs_63d_f": "63d RS vs benchmark (raw, pct)",
+        "osc_slope_f": "Oscillator slope",
+        "vol_pctile": "Realized-vol expanding percentile (63d window)"
+      },
+      "pairwise_corr": {
+        "state_score|state_score": 1.0,
+        "state_score|trend_pass_f": -0.6884,
+        "state_score|mom_score": -0.4549,
+        "state_score|pos_osc": -0.9702,
+        "state_score|amp_proxy": -0.0358,
+        "state_score|rs_63d_f": -0.4428,
+        "state_score|osc_slope_f": -0.1609,
+        "state_score|vol_pctile": 0.3187,
+        "trend_pass_f|trend_pass_f": 1.0,
+        "trend_pass_f|mom_score": 0.5481,
+        "trend_pass_f|pos_osc": 0.6948,
+        "trend_pass_f|amp_proxy": 0.0888,
+        "trend_pass_f|rs_63d_f": 0.4523,
+        "trend_pass_f|osc_slope_f": 0.1278,
+        "trend_pass_f|vol_pctile": -0.3251,
+        "mom_score|mom_score": 1.0,
+        "mom_score|pos_osc": 0.4967,
+        "mom_score|amp_proxy": 0.1285,
+        "mom_score|rs_63d_f": 0.6819,
+        "mom_score|osc_slope_f": 0.1718,
+        "mom_score|vol_pctile": -0.1328,
+        "pos_osc|pos_osc": 1.0,
+        "pos_osc|amp_proxy": 0.0969,
+        "pos_osc|rs_63d_f": 0.5019,
+        "pos_osc|osc_slope_f": 0.301,
+        "pos_osc|vol_pctile": -0.2941,
+        "amp_proxy|amp_proxy": 1.0,
+        "amp_proxy|rs_63d_f": 0.0952,
+        "amp_proxy|osc_slope_f": 0.0003,
+        "amp_proxy|vol_pctile": -0.0328,
+        "rs_63d_f|rs_63d_f": 1.0,
+        "rs_63d_f|osc_slope_f": 0.2361,
+        "rs_63d_f|vol_pctile": -0.0574,
+        "osc_slope_f|osc_slope_f": 1.0,
+        "osc_slope_f|vol_pctile": 0.084,
+        "vol_pctile|vol_pctile": 1.0
+      },
+      "vif": {
+        "state_score": 28.92,
+        "trend_pass_f": 2.28,
+        "mom_score": 2.18,
+        "pos_osc": 32.85,
+        "amp_proxy": 1.13,
+        "rs_63d_f": 2.08,
+        "osc_slope_f": 1.73,
+        "vol_pctile": 1.18
+      },
+      "pca": {
+        "explained_variance_ratios": [
+          0.4481,
+          0.1491,
+          0.1275,
+          0.1062,
+          0.0831,
+          0.0487,
+          0.0353,
+          0.002
+        ],
+        "cumulative_variance": [
+          0.4481,
+          0.5972,
+          0.7247,
+          0.8309,
+          0.914,
+          0.9627,
+          0.998,
+          1.0
+        ],
+        "n_pcs_for_90pct": 5
+      },
+      "marginal": {
+        "fwd_ret_63d": {
+          "partial_corr": {
+            "state_score": -0.0141,
+            "trend_pass_f": -0.04,
+            "mom_score": 0.0193,
+            "pos_osc": 0.0161,
+            "amp_proxy": 0.047,
+            "rs_63d_f": -0.087,
+            "osc_slope_f": -0.0423,
+            "vol_pctile": 0.168
+          },
+          "boot_ci_95": {
+            "state_score": [
+              -0.0664,
+              0.0381
+            ],
+            "trend_pass_f": [
+              -0.1026,
+              0.027
+            ],
+            "mom_score": [
+              -0.0391,
+              0.0784
+            ],
+            "pos_osc": [
+              -0.0499,
+              0.0794
+            ],
+            "amp_proxy": [
+              -0.0112,
+              0.1079
+            ],
+            "rs_63d_f": [
+              -0.174,
+              0.0028
+            ],
+            "osc_slope_f": [
+              -0.1197,
+              0.037
+            ],
+            "vol_pctile": [
+              0.0796,
+              0.244
+            ]
+          }
+        },
+        "fwd_dd_63d": {
+          "partial_corr": {
+            "state_score": 0.0031,
+            "trend_pass_f": 0.0709,
+            "mom_score": -0.0421,
+            "pos_osc": 0.0221,
+            "amp_proxy": 0.0106,
+            "rs_63d_f": -0.0227,
+            "osc_slope_f": 0.0272,
+            "vol_pctile": -0.0627
+          },
+          "boot_ci_95": {
+            "state_score": [
+              -0.0531,
+              0.0654
+            ],
+            "trend_pass_f": [
+              -0.0038,
+              0.1476
+            ],
+            "mom_score": [
+              -0.0978,
+              0.0149
+            ],
+            "pos_osc": [
+              -0.0512,
+              0.0963
+            ],
+            "amp_proxy": [
+              -0.049,
+              0.0673
+            ],
+            "rs_63d_f": [
+              -0.1166,
+              0.0659
+            ],
+            "osc_slope_f": [
+              -0.0556,
+              0.1064
+            ],
+            "vol_pctile": [
+              -0.1564,
+              0.0195
+            ]
+          }
+        },
+        "fwd_ret_126d": {
+          "partial_corr": {
+            "state_score": -0.0031,
+            "trend_pass_f": -0.1049,
+            "mom_score": 0.0055,
+            "pos_osc": 0.0513,
+            "amp_proxy": 0.0462,
+            "rs_63d_f": -0.057,
+            "osc_slope_f": -0.0621,
+            "vol_pctile": 0.201
+          },
+          "boot_ci_95": {
+            "state_score": [
+              -0.0572,
+              0.0537
+            ],
+            "trend_pass_f": [
+              -0.1673,
+              -0.045
+            ],
+            "mom_score": [
+              -0.0577,
+              0.0752
+            ],
+            "pos_osc": [
+              -0.0086,
+              0.1122
+            ],
+            "amp_proxy": [
+              -0.0275,
+              0.102
+            ],
+            "rs_63d_f": [
+              -0.1549,
+              0.0373
+            ],
+            "osc_slope_f": [
+              -0.134,
+              0.0083
+            ],
+            "vol_pctile": [
+              0.1133,
+              0.2791
+            ]
+          }
+        },
+        "fwd_dd_126d": {
+          "partial_corr": {
+            "state_score": 0.0015,
+            "trend_pass_f": 0.0213,
+            "mom_score": -0.0525,
+            "pos_osc": 0.0347,
+            "amp_proxy": 0.0041,
+            "rs_63d_f": 0.018,
+            "osc_slope_f": -0.0293,
+            "vol_pctile": -0.0068
+          },
+          "boot_ci_95": {
+            "state_score": [
+              -0.0626,
+              0.065
+            ],
+            "trend_pass_f": [
+              -0.0539,
+              0.0941
+            ],
+            "mom_score": [
+              -0.1099,
+              0.0098
+            ],
+            "pos_osc": [
+              -0.0361,
+              0.1114
+            ],
+            "amp_proxy": [
+              -0.0559,
+              0.0568
+            ],
+            "rs_63d_f": [
+              -0.0611,
+              0.0882
+            ],
+            "osc_slope_f": [
+              -0.1152,
+              0.0553
+            ],
+            "vol_pctile": [
+              -0.091,
+              0.0652
+            ]
+          }
+        }
+      }
+    },
+    "cn_sector": {
+      "n": 4885,
+      "leg_labels": {
+        "state_score": "Cycle-state score (0.6\u00b7pos + 0.4\u00b7phase_dir + \u00b10.12\u00b7signal)",
+        "trend_pass_f": "Trend-gate (above200d binary)",
+        "mom_score": "RS/momentum confirmer (capped \u00b10.30)",
+        "pos_osc": "Position oscillator (0-100; raw)",
+        "amp_proxy": "Amplitude proxy |pos-50|/50",
+        "rs_63d_f": "63d RS vs benchmark (raw, pct)",
+        "osc_slope_f": "Oscillator slope",
+        "vol_pctile": "Realized-vol expanding percentile (63d window)"
+      },
+      "pairwise_corr": {
+        "state_score|state_score": 1.0,
+        "state_score|trend_pass_f": -0.61,
+        "state_score|mom_score": -0.4505,
+        "state_score|pos_osc": -0.9649,
+        "state_score|amp_proxy": 0.149,
+        "state_score|rs_63d_f": -0.4331,
+        "state_score|osc_slope_f": -0.1929,
+        "state_score|vol_pctile": 0.0841,
+        "trend_pass_f|trend_pass_f": 1.0,
+        "trend_pass_f|mom_score": 0.5777,
+        "trend_pass_f|pos_osc": 0.6279,
+        "trend_pass_f|amp_proxy": 0.0022,
+        "trend_pass_f|rs_63d_f": 0.4281,
+        "trend_pass_f|osc_slope_f": 0.1187,
+        "trend_pass_f|vol_pctile": 0.0914,
+        "mom_score|mom_score": 1.0,
+        "mom_score|pos_osc": 0.5012,
+        "mom_score|amp_proxy": 0.0683,
+        "mom_score|rs_63d_f": 0.7702,
+        "mom_score|osc_slope_f": 0.1527,
+        "mom_score|vol_pctile": 0.1309,
+        "pos_osc|pos_osc": 1.0,
+        "pos_osc|amp_proxy": -0.0769,
+        "pos_osc|rs_63d_f": 0.4951,
+        "pos_osc|osc_slope_f": 0.3371,
+        "pos_osc|vol_pctile": -0.0861,
+        "amp_proxy|amp_proxy": 1.0,
+        "amp_proxy|rs_63d_f": 0.0604,
+        "amp_proxy|osc_slope_f": 0.0265,
+        "amp_proxy|vol_pctile": 0.1723,
+        "rs_63d_f|rs_63d_f": 1.0,
+        "rs_63d_f|osc_slope_f": 0.1559,
+        "rs_63d_f|vol_pctile": 0.1859,
+        "osc_slope_f|osc_slope_f": 1.0,
+        "osc_slope_f|vol_pctile": -0.0676,
+        "vol_pctile|vol_pctile": 1.0
+      },
+      "vif": {
+        "state_score": 23.61,
+        "trend_pass_f": 2.07,
+        "mom_score": 3.03,
+        "pos_osc": 27.79,
+        "amp_proxy": 1.15,
+        "rs_63d_f": 2.8,
+        "osc_slope_f": 1.66,
+        "vol_pctile": 1.14
+      },
+      "pca": {
+        "explained_variance_ratios": [
+          0.4294,
+          0.1735,
+          0.1235,
+          0.0985,
+          0.0913,
+          0.0573,
+          0.024,
+          0.0024
+        ],
+        "cumulative_variance": [
+          0.4294,
+          0.6029,
+          0.7265,
+          0.825,
+          0.9163,
+          0.9736,
+          0.9976,
+          1.0
+        ],
+        "n_pcs_for_90pct": 5
+      },
+      "marginal": {
+        "fwd_ret_63d": {
+          "partial_corr": {
+            "state_score": -0.0847,
+            "trend_pass_f": -0.0362,
+            "mom_score": 0.1415,
+            "pos_osc": -0.0551,
+            "amp_proxy": -0.0296,
+            "rs_63d_f": -0.2189,
+            "osc_slope_f": 0.0213,
+            "vol_pctile": 0.0993
+          },
+          "boot_ci_95": {
+            "state_score": [
+              -0.135,
+              -0.0287
+            ],
+            "trend_pass_f": [
+              -0.1021,
+              0.0274
+            ],
+            "mom_score": [
+              0.0354,
+              0.2282
+            ],
+            "pos_osc": [
+              -0.1116,
+              0.0072
+            ],
+            "amp_proxy": [
+              -0.0948,
+              0.0389
+            ],
+            "rs_63d_f": [
+              -0.3438,
+              -0.0749
+            ],
+            "osc_slope_f": [
+              -0.0434,
+              0.08
+            ],
+            "vol_pctile": [
+              -0.0296,
+              0.2188
+            ]
+          }
+        },
+        "fwd_dd_63d": {
+          "partial_corr": {
+            "state_score": -0.0581,
+            "trend_pass_f": -0.0611,
+            "mom_score": 0.2311,
+            "pos_osc": -0.0418,
+            "amp_proxy": -0.1148,
+            "rs_63d_f": -0.318,
+            "osc_slope_f": 0.0181,
+            "vol_pctile": -0.1983
+          },
+          "boot_ci_95": {
+            "state_score": [
+              -0.1145,
+              0.0096
+            ],
+            "trend_pass_f": [
+              -0.1215,
+              0.0197
+            ],
+            "mom_score": [
+              0.0942,
+              0.3308
+            ],
+            "pos_osc": [
+              -0.1049,
+              0.0332
+            ],
+            "amp_proxy": [
+              -0.1946,
+              -0.0404
+            ],
+            "rs_63d_f": [
+              -0.4114,
+              -0.1902
+            ],
+            "osc_slope_f": [
+              -0.088,
+              0.1017
+            ],
+            "vol_pctile": [
+              -0.2817,
+              -0.0974
+            ]
+          }
+        },
+        "fwd_ret_126d": {
+          "partial_corr": {
+            "state_score": -0.1009,
+            "trend_pass_f": -0.0502,
+            "mom_score": 0.0004,
+            "pos_osc": -0.0573,
+            "amp_proxy": -0.022,
+            "rs_63d_f": -0.055,
+            "osc_slope_f": 0.044,
+            "vol_pctile": 0.001
+          },
+          "boot_ci_95": {
+            "state_score": [
+              -0.1401,
+              -0.054
+            ],
+            "trend_pass_f": [
+              -0.1021,
+              0.0036
+            ],
+            "mom_score": [
+              -0.0992,
+              0.1051
+            ],
+            "pos_osc": [
+              -0.0994,
+              -0.0109
+            ],
+            "amp_proxy": [
+              -0.0707,
+              0.027
+            ],
+            "rs_63d_f": [
+              -0.1645,
+              0.0556
+            ],
+            "osc_slope_f": [
+              -0.0127,
+              0.1016
+            ],
+            "vol_pctile": [
+              -0.081,
+              0.0901
+            ]
+          }
+        },
+        "fwd_dd_126d": {
+          "partial_corr": {
+            "state_score": -0.0607,
+            "trend_pass_f": -0.0348,
+            "mom_score": 0.0531,
+            "pos_osc": -0.0627,
+            "amp_proxy": -0.0939,
+            "rs_63d_f": -0.0393,
+            "osc_slope_f": 0.0222,
+            "vol_pctile": -0.288
+          },
+          "boot_ci_95": {
+            "state_score": [
+              -0.1149,
+              -0.0041
+            ],
+            "trend_pass_f": [
+              -0.0886,
+              0.0318
+            ],
+            "mom_score": [
+              -0.0984,
+              0.1919
+            ],
+            "pos_osc": [
+              -0.1254,
+              0.0028
+            ],
+            "amp_proxy": [
+              -0.1737,
+              -0.0073
+            ],
+            "rs_63d_f": [
+              -0.2271,
+              0.161
+            ],
+            "osc_slope_f": [
+              -0.0676,
+              0.0998
+            ],
+            "vol_pctile": [
+              -0.382,
+              -0.1802
+            ]
+          }
+        }
+      }
+    }
+  },
+  "verdict": {
+    "redundant_pairs": [
+      {
+        "pair": "state_score|pos_osc",
+        "rho": -0.9675
+      }
+    ],
+    "high_vif_legs": [
+      {
+        "leg": "state_score",
+        "vif": 25.79
+      },
+      {
+        "leg": "pos_osc",
+        "vif": 29.78
+      }
+    ],
+    "n_pcs_for_90pct": 5,
+    "redundant_legs": [
+      "state_score",
+      "pos_osc"
+    ],
+    "surviving_legs": [
+      "trend_pass_f",
+      "mom_score",
+      "amp_proxy",
+      "rs_63d_f",
+      "osc_slope_f",
+      "vol_pctile"
+    ],
+    "risk_channel_survivors": [
+      "trend_pass_f",
+      "mom_score",
+      "rs_63d_f",
+      "vol_pctile"
+    ],
+    "dd_partial_corr_table": {
+      "state_score": [
+        {
+          "horizon": "63d",
+          "partial_rho": -0.0048,
+          "ci_95": [
+            -0.0536,
+            0.0412
+          ],
+          "sig": false
+        },
+        {
+          "horizon": "126d",
+          "partial_rho": 0.0049,
+          "ci_95": [
+            -0.0369,
+            0.0421
+          ],
+          "sig": false
+        }
+      ],
+      "trend_pass_f": [
+        {
+          "horizon": "63d",
+          "partial_rho": 0.0539,
+          "ci_95": [
+            0.0082,
+            0.1113
+          ],
+          "sig": true
+        },
+        {
+          "horizon": "126d",
+          "partial_rho": 0.0215,
+          "ci_95": [
+            -0.0259,
+            0.0757
+          ],
+          "sig": false
+        }
+      ],
+      "mom_score": [
+        {
+          "horizon": "63d",
+          "partial_rho": 0.0702,
+          "ci_95": [
+            0.0031,
+            0.1363
+          ],
+          "sig": true
+        },
+        {
+          "horizon": "126d",
+          "partial_rho": 0.0102,
+          "ci_95": [
+            -0.061,
+            0.0865
+          ],
+          "sig": false
+        }
+      ],
+      "pos_osc": [
+        {
+          "horizon": "63d",
+          "partial_rho": 0.0098,
+          "ci_95": [
+            -0.0453,
+            0.0644
+          ],
+          "sig": false
+        },
+        {
+          "horizon": "126d",
+          "partial_rho": 0.0221,
+          "ci_95": [
+            -0.0235,
+            0.0699
+          ],
+          "sig": false
+        }
+      ],
+      "amp_proxy": [
+        {
+          "horizon": "63d",
+          "partial_rho": -0.0434,
+          "ci_95": [
+            -0.0899,
+            0.0087
+          ],
+          "sig": false
+        },
+        {
+          "horizon": "126d",
+          "partial_rho": -0.0417,
+          "ci_95": [
+            -0.0849,
+            0.0048
+          ],
+          "sig": false
+        }
+      ],
+      "rs_63d_f": [
+        {
+          "horizon": "63d",
+          "partial_rho": -0.1712,
+          "ci_95": [
+            -0.2563,
+            -0.0794
+          ],
+          "sig": true
+        },
+        {
+          "horizon": "126d",
+          "partial_rho": -0.0583,
+          "ci_95": [
+            -0.1593,
+            0.0461
+          ],
+          "sig": false
+        }
+      ],
+      "osc_slope_f": [
+        {
+          "horizon": "63d",
+          "partial_rho": 0.0208,
+          "ci_95": [
+            -0.0482,
+            0.0889
+          ],
+          "sig": false
+        },
+        {
+          "horizon": "126d",
+          "partial_rho": -0.0094,
+          "ci_95": [
+            -0.0704,
+            0.0487
+          ],
+          "sig": false
+        }
+      ],
+      "vol_pctile": [
+        {
+          "horizon": "63d",
+          "partial_rho": -0.1384,
+          "ci_95": [
+            -0.2177,
+            -0.0641
+          ],
+          "sig": true
+        },
+        {
+          "horizon": "126d",
+          "partial_rho": -0.1476,
+          "ci_95": [
+            -0.2303,
+            -0.0776
+          ],
+          "sig": true
+        }
+      ]
+    }
+  }
+}

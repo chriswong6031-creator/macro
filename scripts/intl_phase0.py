@@ -271,11 +271,27 @@ def leadlag_kernel(prod_by_claim: dict[str, pd.Series], *, hac_lags: int = 10,
                 split_same[cid] = bool(tp is not None and tq is not None and
                                        np.sign(tp) == np.sign(tq) and
                                        abs(tp) >= 2 and abs(tq) >= 2)
-        return {"tstats": {k: _r(v) for k, v in tstats.items()},
+        # A cross-market read-through is a tradeable LEAD only if a lag>=1 link both
+        # survives BH-FDR AND holds split-half same-sign-and-|t|>=2. The 'lag0' key is the
+        # mechanical CONTEMPORANEOUS co-membership baseline (the sensors ARE in the target
+        # ETF) — a huge lag0 correlation is NOT a lead, so it is EXCLUDED from `pass`. If
+        # only lag1 survives it is the timezone/overnight transmission read (ADJ-4 prior),
+        # still not a forecastable lead → `pass` requires a surviving lag>=1 that ALSO
+        # clears split-half (a transient lag1 that fails split-half is not a lead either).
+        def _is_lead(cid: str) -> bool:
+            if cid == "lag0":
+                return False
+            surv = bool((fdr.get(cid) or {}).get("reject"))
+            sh = split_same.get(cid, None)
+            # if no split provided, FDR-survival alone; with a split, require same-sign too
+            return bool(surv and (sh is None or sh))
+        lead_lags = [cid for cid in prod_by_claim if _is_lead(cid)]
+        return {"pass": bool(lead_lags), "lead_lags": lead_lags,
+                "tstats": {k: _r(v) for k, v in tstats.items()},
                 "means": {k: _r(v) for k, v in means.items()},
                 "fdr": fdr, "split_half_same_sign": split_same}
     except Exception as e:  # noqa: BLE001
-        return {"error": str(e)}
+        return {"pass": None, "error": str(e)}
 
 
 # --------------------------------------------------------------------------- #
@@ -301,16 +317,32 @@ def decide(claim: dict, *, dsr: float | None, gates: dict, split_half: bool | No
     # own). Only meaningful for de-risk claims; None (skipped) for anything else.
     ddr_ok = (gates.get("drawdown_reduction") or {}).get("pass") \
         if claim.get("direction") == "de-risk" else None
-    ran = [g for g in (dsr_ok, orth_ok, crisis_ok, es_ok, ddr_ok, split_half) if g is not None]
+    # gate (d) the lead-lag kernel — only present for cross-market read-through claims. `pass`
+    # is True only if a lag>=1 link survives FDR + split-half (lag-0 co-membership excluded).
+    # A cross-market claim whose kernel does NOT clear is a transmission/co-membership read,
+    # never a tradeable lead → it can never be CONFIRMED (it caps at CONTEXT below).
+    kernel = gates.get("lead_lag_kernel")
+    kernel_ran = isinstance(kernel, dict) and ("pass" in kernel)
+    kernel_ok = kernel.get("pass") if kernel_ran else None
+    ran = [g for g in (dsr_ok, orth_ok, crisis_ok, es_ok, ddr_ok, split_half, kernel_ok)
+           if g is not None]
     if not ran:
         return {"verdict": "PENDING", "weight_cap": 0.0,
                 "reason": "no gate evaluated (builder not implemented) — declared, not graded"}
+    # a cross-market claim whose lead-lag kernel finds no surviving lag>=1 lead is a
+    # transmission/co-membership read, NOT a tradeable lead — CONTEXT by construction
+    # (ADJ-4 standing prior). Decided up front so no other gate can promote it.
+    if kernel_ran and kernel_ok is False:
+        return {"verdict": "CONTEXT", "weight_cap": 0.0,
+                "reason": "lead-lag kernel: no lag>=1 link survives FDR + split-half — "
+                          "contemporaneous co-membership / transmission read, not a tradeable lead"}
 
     # CONFIRMED needs every hard gate to pass AND crisis-independent ES not to fail
     # (es_ok is not False allows the crisis_only flag through as a labelled circuit-breaker).
     # A de-risk leg that does not cut MaxDD vs B&H (ddr_ok is False) can NEVER be CONFIRMED.
     confirmed = all([dsr_ok, orth_ok is True, crisis_ok is True,
-                     bool(split_half)]) and es_ok is not False and ddr_ok is not False
+                     bool(split_half)]) and es_ok is not False and ddr_ok is not False \
+        and (kernel_ok is not False)   # a cross-market claim also needs its kernel to clear
     if confirmed:
         # weight scales with the honest independent-bear count (§4.2 gate 3), capped hard.
         n = effective_n_crises or 0
@@ -636,6 +668,15 @@ def grade_claim(claim: dict, ledger: TrialLedger, *, asof: date | None = None,
             g = drawdown_reduction_gate(strat, bench)
             gates["drawdown_reduction"] = g
             metrics["maxdd_cut"] = g.get("maxdd_cut")
+        # gate (d) LEAD-LAG KERNEL — the gate ADJ-4 demands for any cross-market claim.
+        # A builder for a read-through claim supplies `prod_by_lag` {lag → z_F(t)·z_L(t−k)};
+        # the kernel HAC-t + BH-FDRs across the lags + split-half. Its `pass` excludes the
+        # mechanical lag-0 co-membership baseline (the sensors are IN the target) — a lead
+        # needs a surviving lag>=1. No prod_by_lag → the gate simply does not run (None).
+        prods = b.get("prod_by_lag")
+        if isinstance(prods, dict) and prods:
+            g = leadlag_kernel(prods, split=b.get("leadlag_split"))
+            gates["lead_lag_kernel"] = g
         # split-half same-sign is the builder's job to report (it knows the signal's halves)
         split_half = b.get("split_half_same_sign")
         metrics["split_half_same_sign"] = split_half
@@ -912,11 +953,17 @@ def main(argv=None) -> int:
                          "via their declared builders + MERGE into the ledger")
     ap.add_argument("--c5c8", action="store_true",
                     help="W3 C5+C8: grade the global-rates leg + the leading-votes booster + write ledger")
+    ap.add_argument("--c6", action="store_true",
+                    help="W4-C6: grade the Asia-semi read-through (lead-lag kernel + print excision) "
+                         "via its declared builder + MERGE into the ledger")
+    ap.add_argument("--c7", action="store_true",
+                    help="W4-C7: grade the luxury→CN-consumer read-through via scripts.c7_luxury_readthrough.builder + write ledger")
     ap.add_argument("--only", default=None,
                     help="comma-separated claim ids to (re)grade; the rest keep their ledger rows")
     args = ap.parse_args(argv)
 
-    if not (args.declare or args.backfill or args.run or args.c3 or args.c4 or args.c5c8):
+    if not (args.declare or args.backfill or args.run or args.c3 or args.c4
+            or args.c5c8 or args.c6 or args.c7):
         ap.print_help()
         return 0
 
@@ -984,6 +1031,43 @@ def main(argv=None) -> int:
                       f"split_half={m.get('split_half_same_sign')}")
         print(f"[C5C8] ledger written → {p}")
         return 0
+
+    if args.c6:
+        # W4-C6: grade ONLY the Asia-semi read-through claim through its declared builder
+        # (scripts.c6_asia_semi_readthrough.builder — the EW TSM+ASML basket vs SMH through
+        # the lead-lag kernel with ±2td earnings-print excision), MERGING into the existing
+        # ledger so the C1-C5/C8 verdicts + backfill graveyard are preserved.
+        from scripts.c6_asia_semi_readthrough import builder as _c6b
+        p = run(builders={"c6_asia_semi_readthrough": _c6b},
+                only={"c6_asia_semi_readthrough"}, merge=True)
+        r = next((f for f in _existing_ledger_rows().values()
+                  if f["id"] == "c6_asia_semi_readthrough"), None)
+        if r:
+            m = r["metrics"]
+            print(f"[C6] verdict={r['verdict']} weight_cap={r['weight_cap']} "
+                  f"dsr={m.get('dsr')} ic={m.get('ic')} orth={m.get('orthogonal_partial')} "
+                  f"n_crises={m.get('effective_n_crises')} es_ex_top3={m.get('es_ex_top3')} "
+                  f"maxdd_cut={m.get('maxdd_cut')} kill={r['kill']}")
+            k = (r.get("gates") or {})
+            print(f"[C6] gates: {k}")
+        print(f"[C6] ledger written → {p}")
+        return 0
+
+    if args.c7:
+        # W4-C7: grade the luxury→CN-consumer read-through via its declared builder and
+        # MERGE into the existing ledger (backfill graveyard + prior graded claims preserved).
+        from scripts.c7_luxury_readthrough import builder as c7_builder
+        p = run(builders={"c7_luxury_china_consumer": c7_builder},
+                only={"c7_luxury_china_consumer"}, merge=True)
+        rows = _existing_ledger_rows()
+        r = rows.get("c7_luxury_china_consumer")
+        if r:
+            m = r["metrics"]
+            print(f"[C7] verdict={r['verdict']} weight_cap={r['weight_cap']} "
+                  f"dsr={m.get('dsr')} ic={m.get('ic')} orth={m.get('orthogonal_partial')} "
+                  f"n_crises={m.get('effective_n_crises')} es_ex_top3={m.get('es_ex_top3')} "
+                  f"split_half={m.get('split_half_same_sign')} kill={r.get('kill')}")
+        print(f"[C7] ledger written → {p}")
 
     if args.run and not args.backfill:
         only = {s.strip() for s in args.only.split(",")} if args.only else None

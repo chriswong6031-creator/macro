@@ -1,10 +1,10 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-02 17:08:53 UTC",
+  "built": "2026-07-02 18:55:23 UTC",
   "session": {
     "region": "us",
     "open": true,
-    "local_time": "2026-07-02 13:08 EDT"
+    "local_time": "2026-07-02 14:55 EDT"
   },
   "live_active": true,
   "stale": false,
@@ -18,15 +18,15 @@
   "movers": [
     {
       "sym": "SPY",
-      "chg_pct": -0.34
+      "chg_pct": -0.35
     },
     {
       "sym": "QQQ",
-      "chg_pct": -1.78
+      "chg_pct": -1.88
     },
     {
       "sym": "VIX",
-      "chg_pct": 0.48
+      "chg_pct": -0.18
     }
   ],
   "display": {
@@ -34,14 +34,14 @@
     "label_en": "Risk-off",
     "label_zh": "\u907f\u9669",
     "color": "red",
-    "score": 40,
-    "band_changed": true,
+    "score": 34,
+    "band_changed": false,
     "pending": null
   },
   "live": {
     "verdict": "RISK_OFF",
-    "score": 40,
-    "raw_score": 71,
+    "score": 34,
+    "raw_score": 70,
     "color": "red",
     "label_en": "Risk-off",
     "label_zh": "\u907f\u9669",
@@ -49,8 +49,8 @@
     "headline_zh": "\u907f\u9669 \u2014 \u5e02\u573a\u627f\u538b\u3001\u8d8b\u52bf\u5411\u4e0b\u3002\u4f18\u5148\u4fdd\u4f4f\u672c\u91d1\uff1b\u5f85\u6e05\u6d17\u786e\u8ba4\u540e\u518d\u4e70\u5165\u3002",
     "radar": {
       "state": "caution",
-      "state_ungated": "elevated",
-      "top_score": 82,
+      "state_ungated": "risk-off",
+      "top_score": 84,
       "label_en": "Growth scare / defensive rotation",
       "label_zh": "\u589e\u957f\u6050\u614c/\u9632\u5fa1\u8f6e\u52a8",
       "context_gate": {
@@ -58,8 +58,8 @@
         "spy_below_200dma": false,
         "breadth_weak": false
       },
-      "amp": 1,
-      "ceiling": 40,
+      "amp": 2,
+      "ceiling": 34,
       "alert": false,
       "conjunction": false
     },
@@ -102,7 +102,7 @@
     {
       "key": "trend",
       "label_en": "Trend & technicals",
-      "score": 88,
+      "score": 85,
       "basis": "live",
       "asof": "live"
     },

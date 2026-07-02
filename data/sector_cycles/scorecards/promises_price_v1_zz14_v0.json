@@ -1,0 +1,1399 @@
+{
+  "schema": "promises.v1",
+  "engine": "sector_cycles",
+  "as_of": "2026-07-02T18:59:30.481487+00:00",
+  "n_instruments": 56,
+  "n_stamps_total": 1937,
+  "epoch": {
+    "basis_version": "price_v1",
+    "zz_version": "zz14_v0",
+    "engine_fingerprint": "1f313352836b"
+  },
+  "field_horizon": {
+    "proj_turn": "time_to_next_turn",
+    "signal": "63d",
+    "stance": "63d",
+    "phase": "time_to_next_turn"
+  },
+  "nominal_cone": 0.8,
+  "gates": {
+    "turn_pr": "CC-3",
+    "cone": "CC-1",
+    "reliability": "CC-2",
+    "fdr_family": "turn_pr",
+    "fdr_q": 0.1
+  },
+  "cohorts": {
+    "BACKTEST": {
+      "cohort": "BACKTEST",
+      "n_stamps": 1881,
+      "n_months": 187,
+      "n_instruments": 11,
+      "turn_pr": {
+        "tolerance_rule": "tau = round(0.25 * median_half_cycle_months), clamped [1,3]",
+        "truth_definition": "realized_extrema_turns(min_move_pct=20, freq=M) \u2014 INDEPENDENT of the ZigZag detector (ruling A6): argmax/argmin of a leg reversed by >= 20%; does not consume detect_turns or any stamped field.",
+        "per_instrument": {
+          "xlb": {
+            "tau_months": 3,
+            "tp": 2,
+            "fp": 32,
+            "fn": 13,
+            "n_truth_turns": 15,
+            "precision": 0.059,
+            "precision_ci": [
+              0.016,
+              0.191
+            ],
+            "recall": 0.133,
+            "recall_ci": [
+              0.037,
+              0.379
+            ],
+            "timing_err": {
+              "median": -0.48,
+              "iqr": 2.48,
+              "p10": -2.46,
+              "p90": 1.51,
+              "n": 2,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "xlc": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 19,
+            "fn": 3,
+            "n_truth_turns": 3,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.168
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.562
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "xle": {
+            "tau_months": 3,
+            "tp": 4,
+            "fp": 42,
+            "fn": 10,
+            "n_truth_turns": 13,
+            "precision": 0.087,
+            "precision_ci": [
+              0.034,
+              0.203
+            ],
+            "recall": 0.286,
+            "recall_ci": [
+              0.117,
+              0.546
+            ],
+            "timing_err": {
+              "median": -0.49,
+              "iqr": 1.74,
+              "p10": -1.7,
+              "p90": 1.4,
+              "n": 4,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          },
+          "xlf": {
+            "tau_months": 3,
+            "tp": 4,
+            "fp": 35,
+            "fn": 10,
+            "n_truth_turns": 12,
+            "precision": 0.103,
+            "precision_ci": [
+              0.041,
+              0.236
+            ],
+            "recall": 0.286,
+            "recall_ci": [
+              0.117,
+              0.546
+            ],
+            "timing_err": {
+              "median": -0.99,
+              "iqr": 2.72,
+              "p10": -2.68,
+              "p90": 1.38,
+              "n": 4,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "xli": {
+            "tau_months": 3,
+            "tp": 6,
+            "fp": 41,
+            "fn": 7,
+            "n_truth_turns": 11,
+            "precision": 0.128,
+            "precision_ci": [
+              0.06,
+              0.252
+            ],
+            "recall": 0.462,
+            "recall_ci": [
+              0.232,
+              0.709
+            ],
+            "timing_err": {
+              "median": -1.51,
+              "iqr": 2.51,
+              "p10": -2.51,
+              "p90": 1.0,
+              "n": 6,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          },
+          "xlk": {
+            "tau_months": 3,
+            "tp": 5,
+            "fp": 27,
+            "fn": 7,
+            "n_truth_turns": 9,
+            "precision": 0.156,
+            "precision_ci": [
+              0.069,
+              0.318
+            ],
+            "recall": 0.417,
+            "recall_ci": [
+              0.193,
+              0.68
+            ],
+            "timing_err": {
+              "median": 1.02,
+              "iqr": 2.0,
+              "p10": -1.2,
+              "p90": 2.0,
+              "n": 5,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "xlp": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 37,
+            "fn": 6,
+            "n_truth_turns": 6,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.094
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.39
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "xlre": {
+            "tau_months": 3,
+            "tp": 4,
+            "fp": 14,
+            "fn": 3,
+            "n_truth_turns": 5,
+            "precision": 0.222,
+            "precision_ci": [
+              0.09,
+              0.452
+            ],
+            "recall": 0.571,
+            "recall_ci": [
+              0.25,
+              0.842
+            ],
+            "timing_err": {
+              "median": -1.48,
+              "iqr": 1.43,
+              "p10": -2.65,
+              "p90": -0.31,
+              "n": 4,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "xlu": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 52,
+            "fn": 8,
+            "n_truth_turns": 8,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.069
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.324
+            ],
+            "timing_err": {},
+            "verdict": "falsified"
+          },
+          "xlv": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 65,
+            "fn": 4,
+            "n_truth_turns": 4,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.056
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.49
+            ],
+            "timing_err": {},
+            "verdict": "falsified"
+          },
+          "xly": {
+            "tau_months": 3,
+            "tp": 8,
+            "fp": 45,
+            "fn": 10,
+            "n_truth_turns": 12,
+            "precision": 0.151,
+            "precision_ci": [
+              0.079,
+              0.271
+            ],
+            "recall": 0.444,
+            "recall_ci": [
+              0.246,
+              0.663
+            ],
+            "timing_err": {
+              "median": -0.51,
+              "iqr": 3.21,
+              "p10": -2.28,
+              "p90": 2.0,
+              "n": 8,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          }
+        },
+        "pooled": {
+          "tp": 33,
+          "fp": 409,
+          "fn": 81,
+          "precision": 0.075,
+          "precision_ci": [
+            0.054,
+            0.103
+          ],
+          "recall": 0.289,
+          "recall_ci": [
+            0.214,
+            0.379
+          ],
+          "timing_err": {
+            "median": -0.99,
+            "iqr": 3.02,
+            "p10": -2.96,
+            "p90": 2.0,
+            "n": 33,
+            "unit": "months"
+          },
+          "n_eff": 422.0,
+          "verdict": "falsified"
+        },
+        "fdr_passed": {
+          "xlb": false,
+          "xlc": false,
+          "xle": false,
+          "xlf": false,
+          "xli": false,
+          "xlk": false,
+          "xlp": false,
+          "xlre": false,
+          "xlu": false,
+          "xlv": false,
+          "xly": false
+        }
+      },
+      "cone_coverage": {
+        "nominal": 0.8,
+        "empirical": 0.188,
+        "ci": [
+          0.154,
+          0.227
+        ],
+        "n": 442,
+        "n_no_truth": 0,
+        "recal_halfwidth": 1484.2,
+        "recal_multiplier": 8.191,
+        "verdict": "too_tight",
+        "overdue_fraction": 0.346,
+        "forward_only": {
+          "nominal": 0.8,
+          "empirical": 0.266,
+          "ci": [
+            0.219,
+            0.32
+          ],
+          "n": 289,
+          "n_no_truth": 0,
+          "recal_halfwidth": 1518.4,
+          "recal_multiplier": 7.657,
+          "verdict": "too_tight"
+        }
+      },
+      "reliability": {
+        "signal": {
+          "n": 642,
+          "matured": 642,
+          "flat_n": 0,
+          "horizon_bars": 63,
+          "hit_rate": 0.43,
+          "hit_ci": [
+            0.392,
+            0.469
+          ],
+          "base_hit_rate": 0.659,
+          "brier": 0.5701,
+          "base_brier": 0.2246,
+          "skill_score": -1.538,
+          "verdict": "falsified"
+        },
+        "stance": {
+          "n": 1257,
+          "matured": 1257,
+          "flat_n": 596,
+          "horizon_bars": 63,
+          "hit_rate": 0.481,
+          "hit_ci": [
+            0.454,
+            0.509
+          ],
+          "base_hit_rate": 0.659,
+          "brier": 0.5187,
+          "base_brier": 0.2246,
+          "skill_score": -1.309,
+          "verdict": "falsified"
+        }
+      }
+    },
+    "LIVE": {
+      "cohort": "LIVE",
+      "n_stamps": 56,
+      "n_months": 1,
+      "n_instruments": 56,
+      "turn_pr": {
+        "tolerance_rule": "tau = round(0.25 * median_half_cycle_months), clamped [1,3]",
+        "truth_definition": "realized_extrema_turns(min_move_pct=20, freq=M) \u2014 INDEPENDENT of the ZigZag detector (ruling A6): argmax/argmin of a leg reversed by >= 20%; does not consume detect_turns or any stamped field.",
+        "per_instrument": {
+          "b-ai_agents": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-ai_infra": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-ai_neoclouds": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-ai_semiconductors": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-ai_software": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-big_pharma": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-critical_minerals": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-crypto": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-cybersecurity": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-data_center_power": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-defense": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-defensives": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-energy_complex": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-housing": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-industrial_distribution": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-insurance": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-mag7": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-managed_care": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-memory_storage": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-non_ai_software": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-non_ai_tech": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-nuclear_power": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-obesity_glp1": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-payments_fintech": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-power_grid": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-quantum_computing": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-regional_banks": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-reshoring": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-retail": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-robotics_automation": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-semicap_equipment": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-space_economy": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-travel": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-uranium_miners": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-us_sector_comm": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-us_sector_discretionary": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-us_sector_energy": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-us_sector_financials": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-us_sector_health": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-us_sector_industrials": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-us_sector_materials": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-us_sector_realestate": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-us_sector_staples": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-us_sector_tech": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "b-us_sector_utilities": {
+            "tau_months": 1,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0,
+            "n_truth_turns": 0,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": null,
+            "recall_ci": null,
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "xlb": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 15,
+            "n_truth_turns": 15,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.204
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "xlc": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 3,
+            "n_truth_turns": 3,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.562
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "xle": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 13,
+            "n_truth_turns": 13,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.228
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "xlf": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 12,
+            "n_truth_turns": 12,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.243
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "xli": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 11,
+            "n_truth_turns": 11,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.259
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "xlk": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 9,
+            "n_truth_turns": 9,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.299
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "xlp": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 6,
+            "n_truth_turns": 6,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.39
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "xlre": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 5,
+            "n_truth_turns": 5,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.434
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "xlu": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 8,
+            "n_truth_turns": 8,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.324
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "xlv": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 4,
+            "n_truth_turns": 4,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.49
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "xly": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 12,
+            "n_truth_turns": 12,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.243
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          }
+        },
+        "pooled": {
+          "tp": 0,
+          "fp": 56,
+          "fn": 98,
+          "precision": 0.0,
+          "precision_ci": [
+            0.0,
+            0.064
+          ],
+          "recall": 0.0,
+          "recall_ci": [
+            0.0,
+            0.038
+          ],
+          "timing_err": {},
+          "n_eff": 56.0,
+          "verdict": "falsified"
+        }
+      },
+      "cone_coverage": {
+        "nominal": 0.8,
+        "empirical": 0.0,
+        "ci": [
+          0.0,
+          0.259
+        ],
+        "n": 11,
+        "n_no_truth": 45,
+        "recal_halfwidth": 2130.0,
+        "recal_multiplier": 18.979,
+        "verdict": "accruing",
+        "overdue_fraction": 0.661,
+        "forward_only": {
+          "nominal": 0.8,
+          "empirical": 0.0,
+          "ci": [
+            0.0,
+            0.562
+          ],
+          "n": 3,
+          "n_no_truth": 16,
+          "recal_halfwidth": null,
+          "recal_multiplier": null,
+          "verdict": "accruing"
+        }
+      },
+      "reliability": {
+        "signal": {
+          "n": 0,
+          "hit_rate": null,
+          "verdict": "accruing",
+          "flat_n": 0,
+          "horizon_bars": 63
+        },
+        "stance": {
+          "n": 0,
+          "hit_rate": null,
+          "verdict": "accruing",
+          "flat_n": 1,
+          "horizon_bars": 63
+        }
+      }
+    }
+  }
+}

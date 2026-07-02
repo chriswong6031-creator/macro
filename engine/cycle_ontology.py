@@ -665,6 +665,172 @@ def detect_turns(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# §3.1b realized_extrema_turns() — INDEPENDENT ground-truth turns (ruling A6/C2)
+#
+# The audit's ruling A6 (masterplan §1) flags that grading the ZigZag detector's
+# projected turns against the SAME ZigZag detector's confirmed turns is circular —
+# "the detector grades itself".  W2.4's turn precision/recall therefore needs a
+# ground-truth turn set defined WITHOUT the ZigZag / detect_turns machinery.
+#
+# realized_extrema_turns() is that independent oracle.  It never calls
+# detect_turns / _detect_swings / find_troughs; it is a self-contained
+# forward-realized-move segmentation:
+#
+#   1. Walk the (optionally month-resampled) close series left→right holding a
+#      running extreme.  A candidate PEAK is the running MAX; a candidate TROUGH
+#      the running MIN.
+#   2. A candidate is PROMOTED to a confirmed turn the first time price REVERSES
+#      by >= min_move_pct FROM that extreme, in the OPPOSITE direction.  The turn
+#      DATE is the bar of the extreme (argmax/argmin); the CONFIRM date is the bar
+#      where the reversal threshold was first crossed.
+#   3. Turns strictly alternate peak/trough (a peak can only be followed by a
+#      trough and vice-versa), enforced by flipping the tracked direction on each
+#      promotion.
+#
+# This IS a threshold-reversal rule, like ZigZag — there is no threshold-free way
+# to define "a turn" on a noisy price series, and pretending otherwise would just
+# hide a threshold.  Independence is achieved along THREE axes the audit cares about:
+#
+#   (a) IMPLEMENTATION independence — a separate code path with no shared state,
+#       constants, or helpers with detect_turns.  A bug (or a deliberate tweak) in
+#       detect_turns cannot move a realized_extrema_turns output.
+#   (b) PARAMETER independence — its min_move_pct is a DISTINCT knob from the
+#       stamp-time ZigZag pct (14/18%).  The default (min_move_pct=20 for the
+#       "major move" bar) is deliberately DIFFERENT from the 14/18% stamp threshold,
+#       so ground truth is the set of *material* reversals, not the same swing set
+#       the detector already emitted.  test_promise_graders proves that perturbing
+#       the ZigZag pct changes detect_turns turns but NOT realized_extrema_turns.
+#   (c) BASIS/CADENCE independence — it grades against realized forward moves on the
+#       actual price path; it does not consume any stamped field (proj/phase/pos).
+#
+# The remaining shared axis — both read the same close series — is unavoidable and
+# CORRECT: ground truth for "did a turn happen in the price" must be a function of
+# the price.  The point of A6 is that truth must not be a function of the DETECTOR;
+# that is what this guarantees.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def realized_extrema_turns(
+    close: "pd.Series",
+    *,
+    series_id: str = "",
+    min_move_pct: float = 20.0,
+    freq: str = "M",
+) -> list[dict]:
+    """Independent ground-truth turns from forward-realized extrema (ruling A6/C2).
+
+    Ground truth for turn precision/recall (D2 §3.1) — defined WITHOUT the ZigZag
+    detector so the detector is never graded against itself.  A confirmed turn is
+    the argmax/argmin of a price leg that was subsequently reversed by at least
+    ``min_move_pct``, in the opposite direction.
+
+    Parameters
+    ----------
+    close        : pd.Series   Close price series (DatetimeIndex).  Graded on the
+                               SAME price basis the stamps were computed on
+                               (close_price for ETFs; Shenwan index close for CN).
+    series_id    : str         Identifier used to build turn_id strings.
+    min_move_pct : float       Minimum reversal (in %) FROM the extreme required to
+                               CONFIRM that the extreme was a turn.  This is the
+                               ONLY threshold; it is deliberately DISTINCT from the
+                               stamp-time ZigZag pct so truth is not the detector's
+                               own swing set (ruling A6).  Default 20% ("major move").
+    freq         : str         "M" resamples to month-end closes first (matches the
+                               monthly stamp cadence — a turn is dated to a month,
+                               which is the granularity projections carry).  "D"
+                               grades on the daily path.  Default "M".
+
+    Returns
+    -------
+    list[dict]   Confirmed turns (NEVER the provisional open leg), each::
+
+        {"turn_id": "<series_id>:<kind>:<YYYY-MM>",
+         "k": "peak"|"trough",
+         "date": "YYYY-MM-DD",       # bar of the extreme (the turn itself)
+         "t":    "YYYY-MM",          # month-quantized
+         "px":   <float>,            # price at the extreme
+         "confirmed_at": "YYYY-MM-DD",  # bar the reversal threshold was crossed
+         "confirm_lag_bars": <int>,
+         "min_move_pct": <float>,    # the threshold that confirmed it
+         "source": "realized_extrema"}   # provenance tag — NOT a detect_turns turn
+
+    Notes
+    -----
+    - Only CONFIRMED turns are returned; the final open leg (whose reversal has not
+      yet happened) is excluded — grading against an unconfirmed extreme would be a
+      look-ahead into the future the stamp could not have seen matter yet.
+    - Determinism: pure function of (close, min_move_pct, freq).  No RNG, no I/O.
+    """
+    if close is None:
+        return []
+    c = close.dropna()
+    if freq and freq.upper().startswith("M"):
+        # Month-end close: the projection cadence is monthly, so ground-truth turns
+        # are dated to a month.  Resampling FIRST (a) matches that granularity and
+        # (b) removes intramonth noise that would otherwise fragment a leg.
+        c = c.resample("ME").last().dropna()
+    arr = c.to_numpy(dtype=float)
+    idx = c.index
+    n = len(arr)
+    if n < 4:
+        return []
+
+    th = float(min_move_pct) / 100.0
+    turns: list[tuple[int, str, int]] = []   # (extreme_i, kind, confirm_i)
+
+    # Seed: track BOTH a running max and running min until the first material move
+    # decides the opening direction (mirrors the NP-6 dual-seed logic conceptually,
+    # but is a wholly separate code path — no shared state with detect_turns).
+    trend = 0                       # 0 unknown, +1 up-leg (seeking a peak), -1 down-leg
+    ext_i, ext_px = 0, arr[0]
+    ref_max_px, ref_max_i = arr[0], 0
+    ref_min_px, ref_min_i = arr[0], 0
+
+    for i in range(1, n):
+        p = arr[i]
+        if trend == 0:
+            if p > ref_max_px:
+                ref_max_px, ref_max_i = p, i
+            if p < ref_min_px:
+                ref_min_px, ref_min_i = p, i
+            # First material move decides direction AND retro-confirms the seed extreme.
+            if p >= ref_min_px * (1 + th):
+                turns.append((ref_min_i, "trough", i))
+                trend, ext_i, ext_px = 1, i, p
+            elif p <= ref_max_px * (1 - th):
+                turns.append((ref_max_i, "peak", i))
+                trend, ext_i, ext_px = -1, i, p
+        elif trend == 1:            # seeking a peak: track the running max
+            if p > ext_px:
+                ext_i, ext_px = i, p
+            elif p <= ext_px * (1 - th):   # reversed down >= th FROM the max → peak confirmed
+                turns.append((ext_i, "peak", i))
+                trend, ext_i, ext_px = -1, i, p
+        else:                       # trend == -1, seeking a trough: track running min
+            if p < ext_px:
+                ext_i, ext_px = i, p
+            elif p >= ext_px * (1 + th):   # reversed up >= th FROM the min → trough confirmed
+                turns.append((ext_i, "trough", i))
+                trend, ext_i, ext_px = 1, i, p
+
+    out: list[dict] = []
+    for ext_i, kind, conf_i in turns:
+        ts = idx[ext_i]
+        conf_ts = idx[min(conf_i, n - 1)]
+        out.append({
+            "turn_id":          f"{series_id}:{kind}:{ts.strftime('%Y-%m')}",
+            "k":                kind,
+            "date":             str(ts.date()),
+            "t":                ts.strftime("%Y-%m"),
+            "px":               round(float(arr[ext_i]), 4),
+            "confirmed_at":     str(conf_ts.date()),
+            "confirm_lag_bars": int(conf_i - ext_i),
+            "min_move_pct":     float(min_move_pct),
+            "source":           "realized_extrema",
+        })
+    return out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # §4.2 resolve_state() — crosswalk + overrides → stance, divergence, tone
 # ─────────────────────────────────────────────────────────────────────────────
 

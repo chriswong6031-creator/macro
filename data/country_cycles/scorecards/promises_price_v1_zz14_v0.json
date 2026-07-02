@@ -1,0 +1,1627 @@
+{
+  "schema": "promises.v1",
+  "engine": "country_cycles",
+  "as_of": "2026-07-02T18:59:31.570004+00:00",
+  "n_instruments": 31,
+  "n_stamps_total": 5769,
+  "epoch": {
+    "basis_version": "price_v1",
+    "zz_version": "zz14_v0",
+    "engine_fingerprint": "1f313352836b"
+  },
+  "field_horizon": {
+    "proj_turn": "time_to_next_turn",
+    "signal": "63d",
+    "stance": "63d",
+    "phase": "time_to_next_turn"
+  },
+  "nominal_cone": 0.8,
+  "gates": {
+    "turn_pr": "CC-3",
+    "cone": "CC-1",
+    "reliability": "CC-2",
+    "fdr_family": "turn_pr",
+    "fdr_q": 0.1
+  },
+  "cohorts": {
+    "BACKTEST": {
+      "cohort": "BACKTEST",
+      "n_stamps": 5738,
+      "n_months": 187,
+      "n_instruments": 31,
+      "turn_pr": {
+        "tolerance_rule": "tau = round(0.25 * median_half_cycle_months), clamped [1,3]",
+        "truth_definition": "realized_extrema_turns(min_move_pct=20, freq=M) \u2014 INDEPENDENT of the ZigZag detector (ruling A6): argmax/argmin of a leg reversed by >= 20%; does not consume detect_turns or any stamped field.",
+        "per_instrument": {
+          "aaxj": {
+            "tau_months": 3,
+            "tp": 1,
+            "fp": 31,
+            "fn": 9,
+            "n_truth_turns": 10,
+            "precision": 0.031,
+            "precision_ci": [
+              0.006,
+              0.157
+            ],
+            "recall": 0.1,
+            "recall_ci": [
+              0.018,
+              0.404
+            ],
+            "timing_err": {
+              "median": -2.0,
+              "iqr": 0.0,
+              "p10": -2.0,
+              "p90": -2.0,
+              "n": 1,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "ech": {
+            "tau_months": 2,
+            "tp": 4,
+            "fp": 43,
+            "fn": 10,
+            "n_truth_turns": 14,
+            "precision": 0.085,
+            "precision_ci": [
+              0.034,
+              0.199
+            ],
+            "recall": 0.286,
+            "recall_ci": [
+              0.117,
+              0.546
+            ],
+            "timing_err": {
+              "median": 0.51,
+              "iqr": 1.02,
+              "p10": 0.0,
+              "p90": 1.02,
+              "n": 4,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          },
+          "eem": {
+            "tau_months": 3,
+            "tp": 1,
+            "fp": 34,
+            "fn": 10,
+            "n_truth_turns": 11,
+            "precision": 0.029,
+            "precision_ci": [
+              0.005,
+              0.145
+            ],
+            "recall": 0.091,
+            "recall_ci": [
+              0.016,
+              0.377
+            ],
+            "timing_err": {
+              "median": 2.99,
+              "iqr": 0.0,
+              "p10": 2.99,
+              "p90": 2.99,
+              "n": 1,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "efa": {
+            "tau_months": 3,
+            "tp": 4,
+            "fp": 36,
+            "fn": 10,
+            "n_truth_turns": 12,
+            "precision": 0.1,
+            "precision_ci": [
+              0.04,
+              0.231
+            ],
+            "recall": 0.286,
+            "recall_ci": [
+              0.117,
+              0.546
+            ],
+            "timing_err": {
+              "median": 0.49,
+              "iqr": 1.25,
+              "p10": -0.71,
+              "p90": 1.01,
+              "n": 4,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          },
+          "eido": {
+            "tau_months": 3,
+            "tp": 6,
+            "fp": 28,
+            "fn": 7,
+            "n_truth_turns": 12,
+            "precision": 0.176,
+            "precision_ci": [
+              0.083,
+              0.335
+            ],
+            "recall": 0.462,
+            "recall_ci": [
+              0.232,
+              0.709
+            ],
+            "timing_err": {
+              "median": 0.49,
+              "iqr": 2.46,
+              "p10": -2.43,
+              "p90": 1.53,
+              "n": 6,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "epol": {
+            "tau_months": 3,
+            "tp": 5,
+            "fp": 33,
+            "fn": 9,
+            "n_truth_turns": 13,
+            "precision": 0.132,
+            "precision_ci": [
+              0.058,
+              0.273
+            ],
+            "recall": 0.357,
+            "recall_ci": [
+              0.163,
+              0.612
+            ],
+            "timing_err": {
+              "median": 0.0,
+              "iqr": 0.0,
+              "p10": -0.59,
+              "p90": 0.61,
+              "n": 5,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "ewa": {
+            "tau_months": 3,
+            "tp": 3,
+            "fp": 29,
+            "fn": 13,
+            "n_truth_turns": 16,
+            "precision": 0.094,
+            "precision_ci": [
+              0.032,
+              0.242
+            ],
+            "recall": 0.188,
+            "recall_ci": [
+              0.066,
+              0.43
+            ],
+            "timing_err": {
+              "median": 2.0,
+              "iqr": 0.49,
+              "p10": 1.22,
+              "p90": 2.0,
+              "n": 3,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "ewc": {
+            "tau_months": 3,
+            "tp": 3,
+            "fp": 54,
+            "fn": 13,
+            "n_truth_turns": 15,
+            "precision": 0.053,
+            "precision_ci": [
+              0.018,
+              0.144
+            ],
+            "recall": 0.188,
+            "recall_ci": [
+              0.066,
+              0.43
+            ],
+            "timing_err": {
+              "median": -1.97,
+              "iqr": 2.99,
+              "p10": -2.79,
+              "p90": 2.0,
+              "n": 3,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          },
+          "ewd": {
+            "tau_months": 3,
+            "tp": 3,
+            "fp": 27,
+            "fn": 14,
+            "n_truth_turns": 17,
+            "precision": 0.1,
+            "precision_ci": [
+              0.035,
+              0.256
+            ],
+            "recall": 0.176,
+            "recall_ci": [
+              0.062,
+              0.41
+            ],
+            "timing_err": {
+              "median": -1.02,
+              "iqr": 2.51,
+              "p10": -1.83,
+              "p90": 2.19,
+              "n": 3,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "ewg": {
+            "tau_months": 3,
+            "tp": 6,
+            "fp": 36,
+            "fn": 17,
+            "n_truth_turns": 19,
+            "precision": 0.143,
+            "precision_ci": [
+              0.067,
+              0.278
+            ],
+            "recall": 0.261,
+            "recall_ci": [
+              0.125,
+              0.465
+            ],
+            "timing_err": {
+              "median": -0.49,
+              "iqr": 2.51,
+              "p10": -2.0,
+              "p90": 1.51,
+              "n": 6,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          },
+          "ewh": {
+            "tau_months": 3,
+            "tp": 3,
+            "fp": 33,
+            "fn": 17,
+            "n_truth_turns": 19,
+            "precision": 0.083,
+            "precision_ci": [
+              0.029,
+              0.218
+            ],
+            "recall": 0.15,
+            "recall_ci": [
+              0.052,
+              0.36
+            ],
+            "timing_err": {
+              "median": -2.0,
+              "iqr": 2.5,
+              "p10": -2.77,
+              "p90": 1.23,
+              "n": 3,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "ewi": {
+            "tau_months": 3,
+            "tp": 5,
+            "fp": 37,
+            "fn": 18,
+            "n_truth_turns": 21,
+            "precision": 0.119,
+            "precision_ci": [
+              0.052,
+              0.25
+            ],
+            "recall": 0.217,
+            "recall_ci": [
+              0.097,
+              0.419
+            ],
+            "timing_err": {
+              "median": 1.02,
+              "iqr": 0.99,
+              "p10": -0.18,
+              "p90": 2.0,
+              "n": 5,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          },
+          "ewj": {
+            "tau_months": 3,
+            "tp": 8,
+            "fp": 40,
+            "fn": 13,
+            "n_truth_turns": 16,
+            "precision": 0.167,
+            "precision_ci": [
+              0.087,
+              0.296
+            ],
+            "recall": 0.381,
+            "recall_ci": [
+              0.208,
+              0.591
+            ],
+            "timing_err": {
+              "median": 1.0,
+              "iqr": 2.22,
+              "p10": -1.23,
+              "p90": 2.32,
+              "n": 8,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          },
+          "ewl": {
+            "tau_months": 3,
+            "tp": 1,
+            "fp": 34,
+            "fn": 10,
+            "n_truth_turns": 11,
+            "precision": 0.029,
+            "precision_ci": [
+              0.005,
+              0.145
+            ],
+            "recall": 0.091,
+            "recall_ci": [
+              0.016,
+              0.377
+            ],
+            "timing_err": {
+              "median": 0.99,
+              "iqr": 0.0,
+              "p10": 0.99,
+              "p90": 0.99,
+              "n": 1,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "ewn": {
+            "tau_months": 3,
+            "tp": 5,
+            "fp": 34,
+            "fn": 10,
+            "n_truth_turns": 13,
+            "precision": 0.128,
+            "precision_ci": [
+              0.056,
+              0.267
+            ],
+            "recall": 0.333,
+            "recall_ci": [
+              0.152,
+              0.583
+            ],
+            "timing_err": {
+              "median": 1.02,
+              "iqr": 4.01,
+              "p10": -2.0,
+              "p90": 2.0,
+              "n": 5,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "ewp": {
+            "tau_months": 3,
+            "tp": 6,
+            "fp": 39,
+            "fn": 15,
+            "n_truth_turns": 17,
+            "precision": 0.133,
+            "precision_ci": [
+              0.063,
+              0.262
+            ],
+            "recall": 0.286,
+            "recall_ci": [
+              0.138,
+              0.5
+            ],
+            "timing_err": {
+              "median": 0.0,
+              "iqr": 1.5,
+              "p10": -1.49,
+              "p90": 1.51,
+              "n": 6,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          },
+          "ewq": {
+            "tau_months": 3,
+            "tp": 4,
+            "fp": 36,
+            "fn": 15,
+            "n_truth_turns": 17,
+            "precision": 0.1,
+            "precision_ci": [
+              0.04,
+              0.231
+            ],
+            "recall": 0.211,
+            "recall_ci": [
+              0.085,
+              0.433
+            ],
+            "timing_err": {
+              "median": 1.02,
+              "iqr": 1.0,
+              "p10": -1.1,
+              "p90": 1.71,
+              "n": 4,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          },
+          "ews": {
+            "tau_months": 3,
+            "tp": 3,
+            "fp": 46,
+            "fn": 13,
+            "n_truth_turns": 16,
+            "precision": 0.061,
+            "precision_ci": [
+              0.021,
+              0.165
+            ],
+            "recall": 0.188,
+            "recall_ci": [
+              0.066,
+              0.43
+            ],
+            "timing_err": {
+              "median": -2.0,
+              "iqr": 2.48,
+              "p10": -2.77,
+              "p90": 1.2,
+              "n": 3,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          },
+          "ewt": {
+            "tau_months": 2,
+            "tp": 3,
+            "fp": 35,
+            "fn": 18,
+            "n_truth_turns": 20,
+            "precision": 0.079,
+            "precision_ci": [
+              0.027,
+              0.208
+            ],
+            "recall": 0.143,
+            "recall_ci": [
+              0.05,
+              0.346
+            ],
+            "timing_err": {
+              "median": -1.02,
+              "iqr": 0.99,
+              "p10": -1.78,
+              "p90": -0.2,
+              "n": 3,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "ewu": {
+            "tau_months": 3,
+            "tp": 2,
+            "fp": 40,
+            "fn": 11,
+            "n_truth_turns": 13,
+            "precision": 0.048,
+            "precision_ci": [
+              0.013,
+              0.158
+            ],
+            "recall": 0.154,
+            "recall_ci": [
+              0.043,
+              0.422
+            ],
+            "timing_err": {
+              "median": -0.02,
+              "iqr": 1.99,
+              "p10": -1.61,
+              "p90": 1.57,
+              "n": 2,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          },
+          "eww": {
+            "tau_months": 3,
+            "tp": 5,
+            "fp": 33,
+            "fn": 15,
+            "n_truth_turns": 19,
+            "precision": 0.132,
+            "precision_ci": [
+              0.058,
+              0.273
+            ],
+            "recall": 0.25,
+            "recall_ci": [
+              0.112,
+              0.469
+            ],
+            "timing_err": {
+              "median": 1.02,
+              "iqr": 2.0,
+              "p10": -0.59,
+              "p90": 2.0,
+              "n": 5,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "ewy": {
+            "tau_months": 3,
+            "tp": 5,
+            "fp": 31,
+            "fn": 18,
+            "n_truth_turns": 22,
+            "precision": 0.139,
+            "precision_ci": [
+              0.061,
+              0.287
+            ],
+            "recall": 0.217,
+            "recall_ci": [
+              0.097,
+              0.419
+            ],
+            "timing_err": {
+              "median": 1.02,
+              "iqr": 4.96,
+              "p10": -2.98,
+              "p90": 2.6,
+              "n": 5,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "ewz": {
+            "tau_months": 2,
+            "tp": 5,
+            "fp": 34,
+            "fn": 20,
+            "n_truth_turns": 24,
+            "precision": 0.128,
+            "precision_ci": [
+              0.056,
+              0.267
+            ],
+            "recall": 0.2,
+            "recall_ci": [
+              0.089,
+              0.391
+            ],
+            "timing_err": {
+              "median": 0.0,
+              "iqr": 2.04,
+              "p10": -1.59,
+              "p90": 1.57,
+              "n": 5,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "eza": {
+            "tau_months": 3,
+            "tp": 5,
+            "fp": 31,
+            "fn": 11,
+            "n_truth_turns": 14,
+            "precision": 0.139,
+            "precision_ci": [
+              0.061,
+              0.287
+            ],
+            "recall": 0.312,
+            "recall_ci": [
+              0.142,
+              0.556
+            ],
+            "timing_err": {
+              "median": 1.97,
+              "iqr": 0.03,
+              "p10": 1.38,
+              "p90": 2.6,
+              "n": 5,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "fxi": {
+            "tau_months": 3,
+            "tp": 12,
+            "fp": 32,
+            "fn": 10,
+            "n_truth_turns": 16,
+            "precision": 0.273,
+            "precision_ci": [
+              0.163,
+              0.418
+            ],
+            "recall": 0.545,
+            "recall_ci": [
+              0.347,
+              0.731
+            ],
+            "timing_err": {
+              "median": 1.0,
+              "iqr": 3.01,
+              "p10": -1.91,
+              "p90": 2.04,
+              "n": 12,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          },
+          "ilf": {
+            "tau_months": 3,
+            "tp": 3,
+            "fp": 35,
+            "fn": 16,
+            "n_truth_turns": 19,
+            "precision": 0.079,
+            "precision_ci": [
+              0.027,
+              0.208
+            ],
+            "recall": 0.158,
+            "recall_ci": [
+              0.055,
+              0.376
+            ],
+            "timing_err": {
+              "median": 1.02,
+              "iqr": 2.0,
+              "p10": -1.43,
+              "p90": 1.78,
+              "n": 3,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "inda": {
+            "tau_months": 3,
+            "tp": 3,
+            "fp": 33,
+            "fn": 7,
+            "n_truth_turns": 10,
+            "precision": 0.083,
+            "precision_ci": [
+              0.029,
+              0.218
+            ],
+            "recall": 0.3,
+            "recall_ci": [
+              0.108,
+              0.603
+            ],
+            "timing_err": {
+              "median": -1.02,
+              "iqr": 1.0,
+              "p10": -1.81,
+              "p90": -0.2,
+              "n": 3,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "tur": {
+            "tau_months": 2,
+            "tp": 7,
+            "fp": 35,
+            "fn": 21,
+            "n_truth_turns": 27,
+            "precision": 0.167,
+            "precision_ci": [
+              0.083,
+              0.306
+            ],
+            "recall": 0.25,
+            "recall_ci": [
+              0.127,
+              0.434
+            ],
+            "timing_err": {
+              "median": 0.99,
+              "iqr": 0.56,
+              "p10": -0.41,
+              "p90": 1.02,
+              "n": 7,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          },
+          "vgk": {
+            "tau_months": 3,
+            "tp": 3,
+            "fp": 30,
+            "fn": 13,
+            "n_truth_turns": 15,
+            "precision": 0.091,
+            "precision_ci": [
+              0.031,
+              0.236
+            ],
+            "recall": 0.188,
+            "recall_ci": [
+              0.066,
+              0.43
+            ],
+            "timing_err": {
+              "median": 1.02,
+              "iqr": 0.49,
+              "p10": 1.02,
+              "p90": 1.81,
+              "n": 3,
+              "unit": "months"
+            },
+            "verdict": "accruing"
+          },
+          "vpl": {
+            "tau_months": 3,
+            "tp": 9,
+            "fp": 43,
+            "fn": 5,
+            "n_truth_turns": 9,
+            "precision": 0.173,
+            "precision_ci": [
+              0.094,
+              0.297
+            ],
+            "recall": 0.643,
+            "recall_ci": [
+              0.388,
+              0.837
+            ],
+            "timing_err": {
+              "median": 1.02,
+              "iqr": 2.0,
+              "p10": -1.12,
+              "p90": 2.23,
+              "n": 9,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          },
+          "vxus": {
+            "tau_months": 3,
+            "tp": 2,
+            "fp": 38,
+            "fn": 6,
+            "n_truth_turns": 8,
+            "precision": 0.05,
+            "precision_ci": [
+              0.014,
+              0.165
+            ],
+            "recall": 0.25,
+            "recall_ci": [
+              0.071,
+              0.591
+            ],
+            "timing_err": {
+              "median": 1.51,
+              "iqr": 0.49,
+              "p10": 1.12,
+              "p90": 1.91,
+              "n": 2,
+              "unit": "months"
+            },
+            "verdict": "falsified"
+          }
+        },
+        "pooled": {
+          "tp": 135,
+          "fp": 1100,
+          "fn": 394,
+          "precision": 0.109,
+          "precision_ci": [
+            0.093,
+            0.128
+          ],
+          "recall": 0.255,
+          "recall_ci": [
+            0.22,
+            0.294
+          ],
+          "timing_err": {
+            "median": 0.99,
+            "iqr": 2.97,
+            "p10": -2.0,
+            "p90": 2.02,
+            "n": 135,
+            "unit": "months"
+          },
+          "n_eff": 1191.0,
+          "verdict": "falsified"
+        },
+        "fdr_passed": {
+          "aaxj": false,
+          "ech": false,
+          "eem": false,
+          "efa": false,
+          "eido": false,
+          "epol": false,
+          "ewa": false,
+          "ewc": false,
+          "ewd": false,
+          "ewg": false,
+          "ewh": false,
+          "ewi": false,
+          "ewj": false,
+          "ewl": false,
+          "ewn": false,
+          "ewp": false,
+          "ewq": false,
+          "ews": false,
+          "ewt": false,
+          "ewu": false,
+          "eww": false,
+          "ewy": false,
+          "ewz": false,
+          "eza": false,
+          "fxi": false,
+          "ilf": false,
+          "inda": false,
+          "tur": false,
+          "vgk": false,
+          "vpl": false,
+          "vxus": false
+        }
+      },
+      "cone_coverage": {
+        "nominal": 0.8,
+        "empirical": 0.283,
+        "ci": [
+          0.259,
+          0.309
+        ],
+        "n": 1235,
+        "n_no_truth": 0,
+        "recal_halfwidth": 396.0,
+        "recal_multiplier": 3.567,
+        "verdict": "too_tight",
+        "overdue_fraction": 0.348,
+        "forward_only": {
+          "nominal": 0.8,
+          "empirical": 0.347,
+          "ci": [
+            0.315,
+            0.38
+          ],
+          "n": 805,
+          "n_no_truth": 0,
+          "recal_halfwidth": 381.0,
+          "recal_multiplier": 3.291,
+          "verdict": "too_tight"
+        }
+      },
+      "reliability": {
+        "signal": {
+          "n": 2075,
+          "matured": 2075,
+          "flat_n": 0,
+          "horizon_bars": 63,
+          "hit_rate": 0.46,
+          "hit_ci": [
+            0.438,
+            0.481
+          ],
+          "base_hit_rate": 0.565,
+          "brier": 0.5402,
+          "base_brier": 0.2458,
+          "skill_score": -1.198,
+          "verdict": "falsified"
+        },
+        "stance": {
+          "n": 3900,
+          "matured": 3900,
+          "flat_n": 1756,
+          "horizon_bars": 63,
+          "hit_rate": 0.462,
+          "hit_ci": [
+            0.446,
+            0.477
+          ],
+          "base_hit_rate": 0.565,
+          "brier": 0.5385,
+          "base_brier": 0.2458,
+          "skill_score": -1.191,
+          "verdict": "falsified"
+        }
+      }
+    },
+    "LIVE": {
+      "cohort": "LIVE",
+      "n_stamps": 31,
+      "n_months": 1,
+      "n_instruments": 31,
+      "turn_pr": {
+        "tolerance_rule": "tau = round(0.25 * median_half_cycle_months), clamped [1,3]",
+        "truth_definition": "realized_extrema_turns(min_move_pct=20, freq=M) \u2014 INDEPENDENT of the ZigZag detector (ruling A6): argmax/argmin of a leg reversed by >= 20%; does not consume detect_turns or any stamped field.",
+        "per_instrument": {
+          "aaxj": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 10,
+            "n_truth_turns": 10,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.278
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ech": {
+            "tau_months": 2,
+            "tp": 0,
+            "fp": 1,
+            "fn": 14,
+            "n_truth_turns": 14,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.215
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "eem": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 11,
+            "n_truth_turns": 11,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.259
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "efa": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 12,
+            "n_truth_turns": 12,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.243
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "eido": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 12,
+            "n_truth_turns": 12,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.243
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "epol": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 13,
+            "n_truth_turns": 13,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.228
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ewa": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 16,
+            "n_truth_turns": 16,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.194
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ewc": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 15,
+            "n_truth_turns": 15,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.204
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ewd": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 17,
+            "n_truth_turns": 17,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.184
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ewg": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 19,
+            "n_truth_turns": 19,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.168
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ewh": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 19,
+            "n_truth_turns": 19,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.168
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ewi": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 21,
+            "n_truth_turns": 21,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.155
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ewj": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 16,
+            "n_truth_turns": 16,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.194
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ewl": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 11,
+            "n_truth_turns": 11,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.259
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ewn": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 13,
+            "n_truth_turns": 13,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.228
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ewp": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 17,
+            "n_truth_turns": 17,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.184
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ewq": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 17,
+            "n_truth_turns": 17,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.184
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ews": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 16,
+            "n_truth_turns": 16,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.194
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ewt": {
+            "tau_months": 2,
+            "tp": 0,
+            "fp": 1,
+            "fn": 20,
+            "n_truth_turns": 20,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.161
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ewu": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 13,
+            "n_truth_turns": 13,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.228
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "eww": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 19,
+            "n_truth_turns": 19,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.168
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ewy": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 22,
+            "n_truth_turns": 22,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.149
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ewz": {
+            "tau_months": 2,
+            "tp": 0,
+            "fp": 1,
+            "fn": 24,
+            "n_truth_turns": 24,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.138
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "eza": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 14,
+            "n_truth_turns": 14,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.215
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "fxi": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 16,
+            "n_truth_turns": 16,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.194
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "ilf": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 19,
+            "n_truth_turns": 19,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.168
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "inda": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 10,
+            "n_truth_turns": 10,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.278
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "tur": {
+            "tau_months": 2,
+            "tp": 0,
+            "fp": 1,
+            "fn": 27,
+            "n_truth_turns": 27,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.125
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "vgk": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 15,
+            "n_truth_turns": 15,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.204
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "vpl": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 9,
+            "n_truth_turns": 9,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.299
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          },
+          "vxus": {
+            "tau_months": 3,
+            "tp": 0,
+            "fp": 1,
+            "fn": 8,
+            "n_truth_turns": 8,
+            "precision": 0.0,
+            "precision_ci": [
+              0.0,
+              0.793
+            ],
+            "recall": 0.0,
+            "recall_ci": [
+              0.0,
+              0.324
+            ],
+            "timing_err": {},
+            "verdict": "accruing"
+          }
+        },
+        "pooled": {
+          "tp": 0,
+          "fp": 31,
+          "fn": 485,
+          "precision": 0.0,
+          "precision_ci": [
+            0.0,
+            0.11
+          ],
+          "recall": 0.0,
+          "recall_ci": [
+            0.0,
+            0.008
+          ],
+          "timing_err": {},
+          "n_eff": 31.0,
+          "verdict": "accruing"
+        }
+      },
+      "cone_coverage": {
+        "nominal": 0.8,
+        "empirical": 0.0,
+        "ci": [
+          0.0,
+          0.11
+        ],
+        "n": 31,
+        "n_no_truth": 0,
+        "recal_halfwidth": 1126.0,
+        "recal_multiplier": 8.892,
+        "verdict": "accruing",
+        "overdue_fraction": 0.871,
+        "forward_only": {
+          "nominal": 0.8,
+          "empirical": 0.0,
+          "ci": [
+            0.0,
+            0.49
+          ],
+          "n": 4,
+          "n_no_truth": 0,
+          "recal_halfwidth": null,
+          "recal_multiplier": null,
+          "verdict": "accruing"
+        }
+      },
+      "reliability": {
+        "signal": {
+          "n": 0,
+          "hit_rate": null,
+          "verdict": "accruing",
+          "flat_n": 0,
+          "horizon_bars": 63
+        },
+        "stance": {
+          "n": 0,
+          "hit_rate": null,
+          "verdict": "accruing",
+          "flat_n": 8,
+          "horizon_bars": 63
+        }
+      }
+    }
+  }
+}

@@ -199,7 +199,10 @@ def test_backfill_writes_schema_conformant_ledger(tmp_path, monkeypatch):
     assert len(payload["features"]) == len(intl_claims.BACKFILL)
     for f in payload["features"]:
         assert set(f.keys()) == _LEDGER_KEYS, f"feature {f.get('id')} keys drift"
-        assert set(f["metrics"].keys()) == _METRIC_KEYS
+        assert _METRIC_KEYS <= set(f["metrics"].keys()), (
+            f"feature {f.get('id')} missing required metric keys: "
+            f"{_METRIC_KEYS - set(f['metrics'].keys())}"
+        )
         assert f["verdict"] in ("CONFIRMED", "DIRECTIONAL", "CONTEXT", "INVERTED", "PENDING")
         assert 0.0 <= f["weight_cap"] <= 1.0
         assert f["validation_ref"], "every entry must quote its report"
