@@ -958,6 +958,23 @@ def gather_state(root: Path | None = None) -> dict:
     tracks = _desk_track_records(root)
     if tracks:
         state["desk_track_records"] = tracks
+    # W4 (#13): the SHADOW deterministic desk-weight vector from the outcome spine's
+    # partial-pooling. Computed alongside the context read; the live flip is gated behind the
+    # arm-by-evidence predicate (engine.pooling.arming). Surfaced so the divergence from
+    # equal-weight is visible and the loop is measurable — the brain sees which desks the
+    # spine down-weights, not just their hit-rates.
+    try:
+        from engine import desk_scorer as _ds
+        dw = _ds.desk_weights(root=root)
+        if dw and dw.get("per_desk"):
+            state["desk_weights_shadow"] = {
+                "armed": dw.get("armed"), "arming": dw.get("arming"),
+                "divergence_l1": dw.get("divergence_l1"),
+                "live_weights": dw.get("live_weights"),
+                "shadow_weights": dw.get("shadow_weights"),
+            }
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        pass
     # MTF buy-filter entry-quality BREADTH (the brain CONSUMING the mtf_signals leaf) —
     # a RISK / entry-quality calibration check (CHARTER §2). Surfaced ONLY when it
     # CONFLICTS with the macro regime read; one input among many, never scored.

@@ -43,6 +43,12 @@ log = logging.getLogger(__name__)
 GRACE_BD = 10           # business days past check_by with no data → expired
 TERMINAL = ("hit", "miss", "unscored", "expired")
 
+# The desks that participate in cross-desk pooling. Mirrors master_brain._DESK_TRACKS +
+# engine.spine._DESK_SCORED; the pooling "family" is this whole set (a cold desk shrinks
+# toward the cross-desk mean instead of keeping full equal weight).
+POOL_DESKS = ("ai_desk", "policy_intent", "radar", "stock_desk", "demand_chain",
+              "narrative_brain", "thematic_desk")
+
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -287,3 +293,101 @@ def run(*, ledger_path, scored_path, track_path, schema,
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("%s run failed: %s", log_label, e)
         return None
+
+
+# --------------------------------------------------------------------------- #
+# SHADOW deterministic desk weights — the first live client of the outcome spine.
+#
+# Audit #13: desk track records are CONTEXT-ONLY by explicit design (line 26 above) —
+# grades never enter a score/size/allocation, the loop closes only in the LLM prompt.
+# This is the SHADOW-FIRST implementation of the deterministic weight path (Masterplan
+# §W4): it computes the partial-pooled weights from the spine, emits them ALONGSIDE the
+# context read, and LOGS the divergence from equal-weight — but the actual flip to a live
+# deterministic weight stays gated behind the arm-by-evidence predicate (engine.pooling.
+# arming: ≥ MIN_FAMILY_N effective graded outcomes per family AND pooled-weights beat
+# equal-weight on held-out spine data). No env flag — it auto-arms by evidence and says so.
+# Until armed, this function CHANGES NOTHING; it only measures and reports.
+# --------------------------------------------------------------------------- #
+def desk_weights(root=None, *, persist: bool = True) -> dict:
+    """Compute the SHADOW partial-pooled desk-weight vector from the outcome spine, plus the
+    arming status and the divergence-from-equal-weight report. Returns a dict::
+
+        {"as_of", "armed", "arming", "equal_weight", "shadow_weights", "live_weights",
+         "divergence_l1", "per_desk": {desk: {n, mean, pooled_edge, shadow_w, ...}}, "note"}
+
+    ``live_weights`` == ``equal_weight`` until the family arms (SHADOW-FIRST safety); once the
+    arming predicate holds, ``live_weights`` becomes ``shadow_weights`` (trust-region-stepped
+    from the current live weights) and the loop is closed. Degrade-never-raise: any failure
+    returns the honest equal-weight cold-start with an explanatory note."""
+    from engine import spine, pooling
+    try:
+        root = Path(root) if root else config.ROOT
+        rows = spine.adapt_desk_scorer(root=root)
+        # group signed outcomes + event structure per desk family
+        by_desk: dict[str, list[float]] = {d: [] for d in POOL_DESKS}
+        events: list[dict] = []
+        for r in rows:
+            fam = r.family                                   # "desk:{name}"
+            name = fam.split(":", 1)[1] if ":" in fam else fam
+            if r.outcome_excess is None:
+                continue
+            by_desk.setdefault(name, []).append(float(r.outcome_excess))
+            events.append({"key": name, "event_key": r.event_key,
+                           "outcome": float(r.outcome_excess), "as_of": r.as_of})
+
+        keys = list(by_desk.keys())
+        eq = {k: 1.0 / len(keys) for k in keys} if keys else {}
+        members = pooling.member_stats_from_outcomes(by_desk)
+        edges = pooling.pooled_edges(members)
+        shadow = pooling.pooled_weights(members)
+        arm = pooling.arming(events)
+
+        # live weights: equal until armed, then trust-region-step toward the shadow vector.
+        if arm.armed:
+            live = pooling.trust_region_step(eq, shadow)
+            note = "ARMED — deterministic pooled desk weights are live (trust-region-stepped)."
+        else:
+            live = dict(eq)
+            note = f"SHADOW — live weights held at equal-weight ({arm.reason})."
+
+        divergence = round(sum(abs(shadow.get(k, 0) - eq.get(k, 0)) for k in keys), 4)
+        per_desk = {}
+        for m in members:
+            per_desk[m.key] = {
+                "n": int(m.n), "mean_signed": round(m.mean, 5),
+                "reliability": round(m.reliability(), 4),
+                "pooled_edge": round(edges.get(m.key, 0.0), 5),
+                "equal_w": round(eq.get(m.key, 0.0), 4),
+                "shadow_w": round(shadow.get(m.key, 0.0), 4),
+                "live_w": round(live.get(m.key, 0.0), 4),
+                "wrong_sign": bool(m.mean < 0 and m.n > 0),
+            }
+        out = {
+            "schema": "desk_weights.shadow.v1",
+            "as_of": date.today().isoformat(),
+            "armed": bool(arm.armed),
+            "arming": arm.to_dict(),
+            "equal_weight": {k: round(v, 4) for k, v in eq.items()},
+            "shadow_weights": {k: round(v, 4) for k, v in shadow.items()},
+            "live_weights": {k: round(v, 4) for k, v in live.items()},
+            "divergence_l1": divergence,
+            "per_desk": per_desk,
+            "note": note,
+        }
+        if persist:
+            try:
+                p = config.data_dir() if root == config.ROOT else (root / "data")
+                p = p / "desk_weights" / "shadow.json"
+                p.parent.mkdir(parents=True, exist_ok=True)
+                p.write_text(json.dumps(out, indent=2, default=str))
+            except Exception as e:  # noqa: BLE001
+                log.warning("desk_weights persist failed: %s", e)
+        return out
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("desk_weights failed (returning equal-weight cold-start): %s", e)
+        keys = list(POOL_DESKS)
+        eq = {k: round(1.0 / len(keys), 4) for k in keys}
+        return {"schema": "desk_weights.shadow.v1", "as_of": date.today().isoformat(),
+                "armed": False, "arming": {"armed": False, "reason": "error/cold-start"},
+                "equal_weight": eq, "shadow_weights": eq, "live_weights": eq,
+                "divergence_l1": 0.0, "per_desk": {}, "note": "cold-start / error → equal weight"}
