@@ -1,0 +1,170 @@
+{# ===================================================================== #}
+{#  Buy Board 2.0 — SHADOW preview (us_stocks_v2.html)                    #}
+{#  UNLINKED: deliberately NOT in _navlinks. Preview-only A/B surface.    #}
+{#  Renders the two lanes, the glyph PAIR (edge grade × entry state),     #}
+{#  group-context chips, the concentration banner, and per-lane passport  #}
+{#  summaries. Standalone page (theme.css only) — no shared nav include.  #}
+{# ===================================================================== #}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{# one row card: the glyph PAIR + chips. `lane` sets the accent. #}
+{% macro row_card(r, lane) -%}
+<a class="v2-card" data-lane="{{ lane }}" data-tone="{{ r.edge_glyph.tone }}"
+   href="stock.html?t={{ r.ticker }}">
+  <div class="v2-top">
+    <span class="v2-rank">#{{ r.rank }}</span>
+    <span class="v2-tk">{{ r.ticker }}</span>
+    {# GLYPH 1 — EDGE grade, colored by verdict (never green on a Lagging name) #}
+    <span class="glyph edge tone-{{ r.edge_glyph.tone }}"{% if r.edge_glyph.verdict %} title="{{ r.edge_glyph.verdict }}"{% endif %}>
+      {{ r.edge_glyph.grade }}</span>
+    {# GLYPH 2 — ENTRY state (tier + freshness) #}
+    <span class="glyph entry tone-{{ r.entry_glyph.tone }}">
+      {{ r.entry_glyph.tier or '—' }}{% if r.entry_glyph.freshness %} · {{ r.entry_glyph.freshness }}{% endif %}</span>
+    {% if r.provisional %}<span class="glyph prov">provisional</span>{% endif %}
+  </div>
+  <div class="v2-name">{{ r.name }}{% if r.sector %} · <span class="v2-sec">{{ r.sector }}</span>{% endif %}</div>
+  <div class="v2-lead">
+    <span class="lead-bar" style="--lead:{{ ((r.leadership or 0) * 50 + 50)|round|int }}"></span>
+    <span class="lead-txt">{{ t('leadership','行业领先') }} {{ '%+.2f'|format(r.leadership or 0) }} · {{ r.group_state }}</span>
+  </div>
+  {% if r.chips %}
+  <div class="v2-chips">
+    {% for c in r.chips %}<span class="chip tone-{{ c.tone }}">{{ c.label }}</span>{% endfor %}
+  </div>
+  {% endif %}
+  <div class="v2-foot">
+    <span class="fp">z {{ '%.2f'|format(r.composite_z) if r.composite_z is not none else '—' }}</span>
+    <span class="fp">α {{ '%+.2f'|format(r.alpha) if r.alpha is not none else '—' }}</span>
+    {% if r.edge_glyph.pctile is not none %}<span class="fp">edge pctl {{ (r.edge_glyph.pctile*100)|round|int }}</span>{% endif %}
+    {% if r.when.off_high is not none %}<span class="fp">off-high {{ '%.1f'|format(r.when.off_high) }}%</span>{% endif %}
+    {% if r.gates_passed.in_setups %}<span class="fp ok">in setups.json</span>{% endif %}
+  </div>
+</a>
+{%- endmacro %}
+{# concentration banner for a lane #}
+{% macro conc_banner(c) -%}
+<div class="conc {{ 'warn' if c.concentrated else '' }}">
+  {{ c.n }} {{ t('names','只') }} · {{ c.n_sectors }} {{ t('sectors','行业') }} ·
+  {{ t('top-2 share','前2行业占比') }} {{ (c.top2_sector_share*100)|round|int }}% ·
+  ≈ {{ c.effective_bets }} {{ t('effective bets','有效仓位') }}
+</div>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Buy Board 2.0 — shadow preview (dual-gated)</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||'';if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1360px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:22px; margin:0 0 2px; }
+  .lead-p { color:var(--muted); font-size:13px; margin:0 0 12px; max-width:900px; }
+  .shadow-tag { display:inline-block; font-size:11px; font-weight:800; letter-spacing:.04em;
+    color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line));
+    background:color-mix(in srgb,var(--warn) 12%,transparent); padding:2px 8px; border-radius:7px; margin-left:8px; }
+  /* stat strip */
+  .strip { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:0 0 14px; }
+  .stat { font-size:12px; color:var(--muted); padding:5px 12px; border:1px solid var(--line); border-radius:9px; background:var(--panel); }
+  .stat b { color:var(--text); font-size:14px; font-variant-numeric:tabular-nums; }
+  /* section heads */
+  .sec { display:flex; align-items:baseline; gap:10px; margin:22px 0 4px; }
+  .sec h2 { font-size:16px; margin:0; }
+  .sec .cnt { color:var(--muted); font-size:12.5px; font-variant-numeric:tabular-nums; }
+  .sub { color:var(--muted); font-size:12.5px; margin:0 0 8px; max-width:840px; }
+  .conc { font-size:12px; color:var(--muted); padding:6px 12px; border:1px dashed var(--line); border-radius:9px; margin:0 0 10px; display:inline-block; }
+  .conc.warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 45%,var(--line)); border-style:solid; }
+  /* grid + cards */
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; margin:4px 0 6px; }
+  .v2-card { display:flex; flex-direction:column; gap:7px; min-width:0; overflow:hidden;
+    background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--muted);
+    border-radius:12px; padding:12px 13px; transition:border-color .12s; }
+  .v2-card[data-lane="entry_open"] { border-left-color:var(--up); }
+  .v2-card[data-lane="setting_up"] { border-left-color:var(--warn); }
+  .v2-card:hover { border-color:var(--accent,var(--up)); }
+  .v2-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .v2-rank { font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .v2-tk { font-weight:800; font-size:15px; letter-spacing:.02em; }
+  .glyph { font-size:11px; font-weight:800; padding:2px 7px; border-radius:6px; border:1px solid var(--line);
+    font-variant-numeric:tabular-nums; }
+  .glyph.edge { min-width:22px; text-align:center; }
+  .glyph.tone-pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,var(--line)); background:color-mix(in srgb,var(--up) 10%,transparent); }
+  .glyph.tone-neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,var(--line)); background:color-mix(in srgb,var(--down) 10%,transparent); }
+  .glyph.tone-neutral { color:var(--muted); }
+  .glyph.tone-warm { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 40%,var(--line)); background:color-mix(in srgb,var(--warn) 10%,transparent); }
+  .glyph.prov { color:var(--muted); font-weight:600; border-style:dashed; }
+  .v2-name { font-size:12.5px; color:var(--text); }
+  .v2-sec { color:var(--muted); }
+  .v2-lead { display:flex; align-items:center; gap:8px; }
+  .lead-bar { flex:0 0 60px; height:5px; border-radius:3px; background:var(--line); position:relative; overflow:hidden; }
+  .lead-bar::after { content:""; position:absolute; inset:0 auto 0 0; width:calc(var(--lead)*1%);
+    background:linear-gradient(90deg,var(--down),var(--muted) 50%,var(--up)); }
+  .lead-txt { font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .v2-chips { display:flex; flex-wrap:wrap; gap:5px; }
+  .chip { font-size:11px; padding:2px 7px; border-radius:6px; border:1px solid var(--line); color:var(--muted); }
+  .chip.tone-pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,var(--line)); }
+  .chip.tone-neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,var(--line)); }
+  .chip.tone-warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
+  .chip.tone-warm { color:var(--warn); }
+  .v2-foot { display:flex; flex-wrap:wrap; gap:8px; font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .fp.ok { color:var(--up); }
+  .empty { color:var(--muted); font-size:13px; padding:14px; border:1px dashed var(--line); border-radius:10px; }
+  .pass { font-size:11.5px; color:var(--muted); margin:6px 0 0; }
+  .foot { color:var(--muted); font-size:11.5px; margin-top:26px; border-top:1px solid var(--line); padding-top:12px; }
+  code { font-size:11px; background:color-mix(in srgb,var(--muted) 12%,transparent); padding:1px 4px; border-radius:4px; }
+</style>
+</head>
+<body>
+<h1>{{ t('Buy Board 2.0','买入榜 2.0') }}<span class="shadow-tag">SHADOW · not live</span></h1>
+<p class="lead-p">{{ t(
+  'Names that are BOTH good to buy (trajectory up, not Lagging) AND a good entry, not chasing — hard-gated by the validated MACD-2D × StochRSI-3D confluence (the same gate that guards setups.json). Rotation context from sector / subsector / theme engines sets PRIORITY, never a gate. Two glyphs, never one fused score: EDGE grade (colored by verdict) and ENTRY state (tier + freshness).',
+  '同时满足“值得买入”（趋势向上、非落后）与“入场点好、不追高”——由已验证的 MACD-2D × StochRSI-3D 共振硬门槛把关（与 setups.json 同一门槛）。板块/子行业/主题轮动仅决定优先级，绝不作为门槛。两个字形，绝不融合为单一分数：优势评级（按判定着色）与入场状态（层级+新鲜度）。') }}</p>
+
+<div class="strip">
+  <span class="stat">{{ t('as of','截至') }} <b>{{ d.as_of }}</b></span>
+  <span class="stat">{{ t('candidates','候选') }} <b>{{ d.counts.candidates }}</b></span>
+  <span class="stat">{{ t('entry open','入场开放') }} <b>{{ d.counts.entry_open }}</b></span>
+  <span class="stat">{{ t('setting up','酝酿中') }} <b>{{ d.counts.setting_up }}</b></span>
+  <span class="stat">{{ t('knobs','参数') }} <b>{{ d.knobs_basis }}</b></span>
+</div>
+
+{# ---- ENTRY OPEN lane ---- #}
+<div class="sec"><h2>{{ t('Entry open','入场开放') }}</h2><span class="cnt">{{ d.counts.entry_open }} {{ t('names','只') }}</span></div>
+<p class="sub">{{ t('Both gates pass — a fresh confluence cross is live now. Ordered by group leadership → edge percentile → entry freshness. Zero fill pressure: however many qualify (an empty lane is honest).','双门槛通过——共振金叉刚刚触发。按行业领先→优势分位→入场新鲜度排序。零填充压力：合格多少就显示多少（空榜也是诚实的）。') }}</p>
+{{ conc_banner(d.concentration.entry_open) }}
+{% if d.lanes.entry_open %}
+<div class="grid">
+  {% for r in d.lanes.entry_open %}{{ row_card(r, 'entry_open') }}{% endfor %}
+</div>
+{% else %}
+<div class="empty">{{ t('No names clear both gates today. An empty actionable lane is honest — see Setting up for the pipeline.','今日无名单同时通过双门槛。空的可执行榜是诚实的——请看“酝酿中”了解在途标的。') }}</div>
+{% endif %}
+<p class="pass">{{ t('Passport','护照') }}: basis <code>dual-gate</code> · frame <code>cross-sectional</code> · rotation sources
+  {% for k,v in d.rotation_coverage.items() %}{{ k }}=<code>{{ 'ok' if not v.degraded else 'degraded' }}</code>{% if not loop.last %} · {% endif %}{% endfor %}</p>
+
+{# ---- SETTING UP lane ---- #}
+<div class="sec"><h2>{{ t('Setting up','酝酿中') }}</h2><span class="cnt">{{ d.counts.setting_up }} {{ t('names','只') }}</span></div>
+<p class="sub">{{ t('Trajectory passes and a cross is IMMINENT (projected tier / small bars-to-cross / early advance-warning). Every row is provisional — the “about to cross” detector is unvalidated until the W6 replay (audit #22).','趋势通过且金叉即将出现（预测层级/距离交叉很近/提前预警）。每行均为暂定——“即将交叉”检测在 W6 回放验证前尚未确认（审计 #22）。') }}</p>
+{{ conc_banner(d.concentration.setting_up) }}
+{% if d.lanes.setting_up %}
+<div class="grid">
+  {% for r in d.lanes.setting_up %}{{ row_card(r, 'setting_up') }}{% endfor %}
+</div>
+{% else %}
+<div class="empty">{{ t('No imminent-cross names today.','今日无即将交叉标的。') }}</div>
+{% endif %}
+
+<div class="foot">
+  {{ t('SHADOW artifact','影子产物') }} · <code>site/factordata/us_standouts_v2.json</code> ·
+  {{ t('built','构建于') }} {{ built }} ·
+  {{ t('reader contract','读取契约') }} v{{ d.reader_contract.version }} ·
+  {{ t('flips to live only when measured precision@k ≥ live board (US-2 ledger).','仅当实测 precision@k ≥ 现网榜单时才切换上线（US-2 记录簿）。') }}
+</div>
+</body>
+</html>

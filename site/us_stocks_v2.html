@@ -1,0 +1,430 @@
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Buy Board 2.0 — shadow preview (dual-gated)</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||'';if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1360px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:22px; margin:0 0 2px; }
+  .lead-p { color:var(--muted); font-size:13px; margin:0 0 12px; max-width:900px; }
+  .shadow-tag { display:inline-block; font-size:11px; font-weight:800; letter-spacing:.04em;
+    color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line));
+    background:color-mix(in srgb,var(--warn) 12%,transparent); padding:2px 8px; border-radius:7px; margin-left:8px; }
+  /* stat strip */
+  .strip { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:0 0 14px; }
+  .stat { font-size:12px; color:var(--muted); padding:5px 12px; border:1px solid var(--line); border-radius:9px; background:var(--panel); }
+  .stat b { color:var(--text); font-size:14px; font-variant-numeric:tabular-nums; }
+  /* section heads */
+  .sec { display:flex; align-items:baseline; gap:10px; margin:22px 0 4px; }
+  .sec h2 { font-size:16px; margin:0; }
+  .sec .cnt { color:var(--muted); font-size:12.5px; font-variant-numeric:tabular-nums; }
+  .sub { color:var(--muted); font-size:12.5px; margin:0 0 8px; max-width:840px; }
+  .conc { font-size:12px; color:var(--muted); padding:6px 12px; border:1px dashed var(--line); border-radius:9px; margin:0 0 10px; display:inline-block; }
+  .conc.warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 45%,var(--line)); border-style:solid; }
+  /* grid + cards */
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; margin:4px 0 6px; }
+  .v2-card { display:flex; flex-direction:column; gap:7px; min-width:0; overflow:hidden;
+    background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--muted);
+    border-radius:12px; padding:12px 13px; transition:border-color .12s; }
+  .v2-card[data-lane="entry_open"] { border-left-color:var(--up); }
+  .v2-card[data-lane="setting_up"] { border-left-color:var(--warn); }
+  .v2-card:hover { border-color:var(--accent,var(--up)); }
+  .v2-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .v2-rank { font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .v2-tk { font-weight:800; font-size:15px; letter-spacing:.02em; }
+  .glyph { font-size:11px; font-weight:800; padding:2px 7px; border-radius:6px; border:1px solid var(--line);
+    font-variant-numeric:tabular-nums; }
+  .glyph.edge { min-width:22px; text-align:center; }
+  .glyph.tone-pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,var(--line)); background:color-mix(in srgb,var(--up) 10%,transparent); }
+  .glyph.tone-neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,var(--line)); background:color-mix(in srgb,var(--down) 10%,transparent); }
+  .glyph.tone-neutral { color:var(--muted); }
+  .glyph.tone-warm { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 40%,var(--line)); background:color-mix(in srgb,var(--warn) 10%,transparent); }
+  .glyph.prov { color:var(--muted); font-weight:600; border-style:dashed; }
+  .v2-name { font-size:12.5px; color:var(--text); }
+  .v2-sec { color:var(--muted); }
+  .v2-lead { display:flex; align-items:center; gap:8px; }
+  .lead-bar { flex:0 0 60px; height:5px; border-radius:3px; background:var(--line); position:relative; overflow:hidden; }
+  .lead-bar::after { content:""; position:absolute; inset:0 auto 0 0; width:calc(var(--lead)*1%);
+    background:linear-gradient(90deg,var(--down),var(--muted) 50%,var(--up)); }
+  .lead-txt { font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .v2-chips { display:flex; flex-wrap:wrap; gap:5px; }
+  .chip { font-size:11px; padding:2px 7px; border-radius:6px; border:1px solid var(--line); color:var(--muted); }
+  .chip.tone-pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,var(--line)); }
+  .chip.tone-neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,var(--line)); }
+  .chip.tone-warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
+  .chip.tone-warm { color:var(--warn); }
+  .v2-foot { display:flex; flex-wrap:wrap; gap:8px; font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .fp.ok { color:var(--up); }
+  .empty { color:var(--muted); font-size:13px; padding:14px; border:1px dashed var(--line); border-radius:10px; }
+  .pass { font-size:11.5px; color:var(--muted); margin:6px 0 0; }
+  .foot { color:var(--muted); font-size:11.5px; margin-top:26px; border-top:1px solid var(--line); padding-top:12px; }
+  code { font-size:11px; background:color-mix(in srgb,var(--muted) 12%,transparent); padding:1px 4px; border-radius:4px; }
+</style>
+</head>
+<body>
+<h1><span class="l-en">Buy Board 2.0</span><span class="l-zh">买入榜 2.0</span><span class="shadow-tag">SHADOW · not live</span></h1>
+<p class="lead-p"><span class="l-en">Names that are BOTH good to buy (trajectory up, not Lagging) AND a good entry, not chasing — hard-gated by the validated MACD-2D × StochRSI-3D confluence (the same gate that guards setups.json). Rotation context from sector / subsector / theme engines sets PRIORITY, never a gate. Two glyphs, never one fused score: EDGE grade (colored by verdict) and ENTRY state (tier + freshness).</span><span class="l-zh">同时满足“值得买入”（趋势向上、非落后）与“入场点好、不追高”——由已验证的 MACD-2D × StochRSI-3D 共振硬门槛把关（与 setups.json 同一门槛）。板块/子行业/主题轮动仅决定优先级，绝不作为门槛。两个字形，绝不融合为单一分数：优势评级（按判定着色）与入场状态（层级+新鲜度）。</span></p>
+
+<div class="strip">
+  <span class="stat"><span class="l-en">as of</span><span class="l-zh">截至</span> <b>2026-06-30</b></span>
+  <span class="stat"><span class="l-en">candidates</span><span class="l-zh">候选</span> <b>81</b></span>
+  <span class="stat"><span class="l-en">entry open</span><span class="l-zh">入场开放</span> <b>10</b></span>
+  <span class="stat"><span class="l-en">setting up</span><span class="l-zh">酝酿中</span> <b>0</b></span>
+  <span class="stat"><span class="l-en">knobs</span><span class="l-zh">参数</span> <b>prior</b></span>
+</div>
+
+
+<div class="sec"><h2><span class="l-en">Entry open</span><span class="l-zh">入场开放</span></h2><span class="cnt">10 <span class="l-en">names</span><span class="l-zh">只</span></span></div>
+<p class="sub"><span class="l-en">Both gates pass — a fresh confluence cross is live now. Ordered by group leadership → edge percentile → entry freshness. Zero fill pressure: however many qualify (an empty lane is honest).</span><span class="l-zh">双门槛通过——共振金叉刚刚触发。按行业领先→优势分位→入场新鲜度排序。零填充压力：合格多少就显示多少（空榜也是诚实的）。</span></p>
+<div class="conc warn">
+  10 <span class="l-en">names</span><span class="l-zh">只</span> · 6 <span class="l-en">sectors</span><span class="l-zh">行业</span> ·
+  <span class="l-en">top-2 share</span><span class="l-zh">前2行业占比</span> 50% ·
+  ≈ 5.0 <span class="l-en">effective bets</span><span class="l-zh">有效仓位</span>
+</div>
+
+<div class="grid">
+  <a class="v2-card" data-lane="entry_open" data-tone="neutral"
+   href="stock.html?t=KDP">
+  <div class="v2-top">
+    <span class="v2-rank">#1</span>
+    <span class="v2-tk">KDP</span>
+    
+    <span class="glyph edge tone-neutral">
+      —</span>
+    
+    <span class="glyph entry tone-pos">
+      T2 · 2 bars ago</span>
+    
+  </div>
+  <div class="v2-name">Keurig Dr Pepper Inc · <span class="v2-sec">Consumer Staples</span></div>
+  <div class="v2-lead">
+    <span class="lead-bar" style="--lead:61"></span>
+    <span class="lead-txt"><span class="l-en">leadership</span><span class="l-zh">行业领先</span> +0.23 · improving</span>
+  </div>
+  
+  <div class="v2-chips">
+    <span class="chip tone-neutral">Sector: Cautious</span><span class="chip tone-pos">Subsector ENTRY-NOW: Beverages - Non-Alcoholic</span><span class="chip tone-pos">LAS Running</span><span class="chip tone-neutral">Theme: NEUTRAL</span>
+  </div>
+  
+  <div class="v2-foot">
+    <span class="fp">z —</span>
+    <span class="fp">α +0.86</span>
+    
+    
+    <span class="fp ok">in setups.json</span>
+  </div>
+</a><a class="v2-card" data-lane="entry_open" data-tone="neutral"
+   href="stock.html?t=DY">
+  <div class="v2-top">
+    <span class="v2-rank">#2</span>
+    <span class="v2-tk">DY</span>
+    
+    <span class="glyph edge tone-neutral">
+      —</span>
+    
+    <span class="glyph entry tone-pos">
+      T2 · just crossed</span>
+    
+  </div>
+  <div class="v2-name">Dycom Industries · <span class="v2-sec">Industrials</span></div>
+  <div class="v2-lead">
+    <span class="lead-bar" style="--lead:60"></span>
+    <span class="lead-txt"><span class="l-en">leadership</span><span class="l-zh">行业领先</span> +0.20 · improving</span>
+  </div>
+  
+  <div class="v2-chips">
+    <span class="chip tone-neutral">Sector: Constructive</span>
+  </div>
+  
+  <div class="v2-foot">
+    <span class="fp">z —</span>
+    <span class="fp">α +1.33</span>
+    
+    
+    <span class="fp ok">in setups.json</span>
+  </div>
+</a><a class="v2-card" data-lane="entry_open" data-tone="neutral"
+   href="stock.html?t=CMI">
+  <div class="v2-top">
+    <span class="v2-rank">#3</span>
+    <span class="v2-tk">CMI</span>
+    
+    <span class="glyph edge tone-neutral">
+      —</span>
+    
+    <span class="glyph entry tone-pos">
+      T2 · just crossed</span>
+    
+  </div>
+  <div class="v2-name">Cummins Inc · <span class="v2-sec">Industrials</span></div>
+  <div class="v2-lead">
+    <span class="lead-bar" style="--lead:55"></span>
+    <span class="lead-txt"><span class="l-en">leadership</span><span class="l-zh">行业领先</span> +0.11 · neutral</span>
+  </div>
+  
+  <div class="v2-chips">
+    <span class="chip tone-neutral">Sector: Constructive</span><span class="chip tone-neg">Subsector headwind: Specialty Industrial Machinery</span><span class="chip tone-warm">LAS Coiling</span><span class="chip tone-pos">RRG Leading</span><span class="chip tone-pos">Theme: DOMINANT</span>
+  </div>
+  
+  <div class="v2-foot">
+    <span class="fp">z —</span>
+    <span class="fp">α +1.43</span>
+    
+    
+    <span class="fp ok">in setups.json</span>
+  </div>
+</a><a class="v2-card" data-lane="entry_open" data-tone="neutral"
+   href="stock.html?t=GEV">
+  <div class="v2-top">
+    <span class="v2-rank">#4</span>
+    <span class="v2-tk">GEV</span>
+    
+    <span class="glyph edge tone-neutral">
+      —</span>
+    
+    <span class="glyph entry tone-pos">
+      T1 · just crossed</span>
+    
+  </div>
+  <div class="v2-name">Ge Vernova Inc · <span class="v2-sec">Industrials</span></div>
+  <div class="v2-lead">
+    <span class="lead-bar" style="--lead:55"></span>
+    <span class="lead-txt"><span class="l-en">leadership</span><span class="l-zh">行业领先</span> +0.11 · neutral</span>
+  </div>
+  
+  <div class="v2-chips">
+    <span class="chip tone-neutral">Sector: Constructive</span><span class="chip tone-neg">Subsector headwind: Specialty Industrial Machinery</span><span class="chip tone-warm">LAS Coiling</span><span class="chip tone-pos">RRG Leading</span><span class="chip tone-pos">Theme: DOMINANT</span>
+  </div>
+  
+  <div class="v2-foot">
+    <span class="fp">z —</span>
+    <span class="fp">α +0.91</span>
+    
+    
+    <span class="fp ok">in setups.json</span>
+  </div>
+</a><a class="v2-card" data-lane="entry_open" data-tone="neutral"
+   href="stock.html?t=SUPN">
+  <div class="v2-top">
+    <span class="v2-rank">#5</span>
+    <span class="v2-tk">SUPN</span>
+    
+    <span class="glyph edge tone-neutral">
+      —</span>
+    
+    <span class="glyph entry tone-pos">
+      T2 · 2 bars ago</span>
+    
+  </div>
+  <div class="v2-name">Supernus Pharmaceuticals, Inc. · <span class="v2-sec">Health Care</span></div>
+  <div class="v2-lead">
+    <span class="lead-bar" style="--lead:51"></span>
+    <span class="lead-txt"><span class="l-en">leadership</span><span class="l-zh">行业领先</span> +0.02 · neutral</span>
+  </div>
+  
+  <div class="v2-chips">
+    <span class="chip tone-neutral">Sector: Neutral</span>
+  </div>
+  
+  <div class="v2-foot">
+    <span class="fp">z —</span>
+    <span class="fp">α +0.71</span>
+    
+    
+    <span class="fp ok">in setups.json</span>
+  </div>
+</a><a class="v2-card" data-lane="entry_open" data-tone="neutral"
+   href="stock.html?t=HZO">
+  <div class="v2-top">
+    <span class="v2-rank">#6</span>
+    <span class="v2-tk">HZO</span>
+    
+    <span class="glyph edge tone-neutral">
+      —</span>
+    
+    <span class="glyph entry tone-pos">
+      T2 · 2 bars ago</span>
+    
+  </div>
+  <div class="v2-name">MarineMax, Inc. · <span class="v2-sec">Consumer Discretionary</span></div>
+  <div class="v2-lead">
+    <span class="lead-bar" style="--lead:42"></span>
+    <span class="lead-txt"><span class="l-en">leadership</span><span class="l-zh">行业领先</span> -0.15 · lagging</span>
+  </div>
+  
+  <div class="v2-chips">
+    <span class="chip tone-neutral">Sector: Neutral</span>
+  </div>
+  
+  <div class="v2-foot">
+    <span class="fp">z —</span>
+    <span class="fp">α +0.85</span>
+    
+    
+    <span class="fp ok">in setups.json</span>
+  </div>
+</a><a class="v2-card" data-lane="entry_open" data-tone="neutral"
+   href="stock.html?t=LCII">
+  <div class="v2-top">
+    <span class="v2-rank">#7</span>
+    <span class="v2-tk">LCII</span>
+    
+    <span class="glyph edge tone-neutral">
+      —</span>
+    
+    <span class="glyph entry tone-pos">
+      T2 · 2 bars ago</span>
+    
+  </div>
+  <div class="v2-name">LCI Industries · <span class="v2-sec">Consumer Discretionary</span></div>
+  <div class="v2-lead">
+    <span class="lead-bar" style="--lead:42"></span>
+    <span class="lead-txt"><span class="l-en">leadership</span><span class="l-zh">行业领先</span> -0.15 · lagging</span>
+  </div>
+  
+  <div class="v2-chips">
+    <span class="chip tone-neutral">Sector: Neutral</span>
+  </div>
+  
+  <div class="v2-foot">
+    <span class="fp">z —</span>
+    <span class="fp">α +0.78</span>
+    
+    
+    <span class="fp ok">in setups.json</span>
+  </div>
+</a><a class="v2-card" data-lane="entry_open" data-tone="neutral"
+   href="stock.html?t=PBF">
+  <div class="v2-top">
+    <span class="v2-rank">#8</span>
+    <span class="v2-tk">PBF</span>
+    
+    <span class="glyph edge tone-neutral">
+      —</span>
+    
+    <span class="glyph entry tone-pos">
+      T2 · just crossed</span>
+    
+  </div>
+  <div class="v2-name">PBF Energy · <span class="v2-sec">Energy</span></div>
+  <div class="v2-lead">
+    <span class="lead-bar" style="--lead:42"></span>
+    <span class="lead-txt"><span class="l-en">leadership</span><span class="l-zh">行业领先</span> -0.16 · lagging</span>
+  </div>
+  
+  <div class="v2-chips">
+    <span class="chip tone-neutral">Sector: Cautious</span>
+  </div>
+  
+  <div class="v2-foot">
+    <span class="fp">z —</span>
+    <span class="fp">α +0.86</span>
+    
+    
+    <span class="fp ok">in setups.json</span>
+  </div>
+</a><a class="v2-card" data-lane="entry_open" data-tone="neutral"
+   href="stock.html?t=OHI">
+  <div class="v2-top">
+    <span class="v2-rank">#9</span>
+    <span class="v2-tk">OHI</span>
+    
+    <span class="glyph edge tone-neutral">
+      —</span>
+    
+    <span class="glyph entry tone-pos">
+      T2 · 2 bars ago</span>
+    
+  </div>
+  <div class="v2-name">Omega Healthcare Investors · <span class="v2-sec">Real Estate</span></div>
+  <div class="v2-lead">
+    <span class="lead-bar" style="--lead:30"></span>
+    <span class="lead-txt"><span class="l-en">leadership</span><span class="l-zh">行业领先</span> -0.41 · lagging</span>
+  </div>
+  
+  <div class="v2-chips">
+    <span class="chip tone-neg">Sector: Reduce</span><span class="chip tone-pos">RRG Leading</span>
+  </div>
+  
+  <div class="v2-foot">
+    <span class="fp">z —</span>
+    <span class="fp">α +1.15</span>
+    
+    
+    <span class="fp ok">in setups.json</span>
+  </div>
+</a><a class="v2-card" data-lane="entry_open" data-tone="neutral"
+   href="stock.html?t=MAC">
+  <div class="v2-top">
+    <span class="v2-rank">#10</span>
+    <span class="v2-tk">MAC</span>
+    
+    <span class="glyph edge tone-neutral">
+      —</span>
+    
+    <span class="glyph entry tone-pos">
+      T2 · 2 bars ago</span>
+    
+  </div>
+  <div class="v2-name">Macerich · <span class="v2-sec">Real Estate</span></div>
+  <div class="v2-lead">
+    <span class="lead-bar" style="--lead:30"></span>
+    <span class="lead-txt"><span class="l-en">leadership</span><span class="l-zh">行业领先</span> -0.41 · lagging</span>
+  </div>
+  
+  <div class="v2-chips">
+    <span class="chip tone-neg">Sector: Reduce</span><span class="chip tone-pos">RRG Leading</span>
+  </div>
+  
+  <div class="v2-foot">
+    <span class="fp">z —</span>
+    <span class="fp">α +0.58</span>
+    
+    
+    <span class="fp ok">in setups.json</span>
+  </div>
+</a>
+</div>
+
+<p class="pass"><span class="l-en">Passport</span><span class="l-zh">护照</span>: basis <code>dual-gate</code> · frame <code>cross-sectional</code> · rotation sources
+  sector_central=<code>ok</code> · subsector_confluence=<code>ok</code> · index_leadership=<code>ok</code> · subsector_rotation=<code>ok</code> · baskets=<code>ok</code></p>
+
+
+<div class="sec"><h2><span class="l-en">Setting up</span><span class="l-zh">酝酿中</span></h2><span class="cnt">0 <span class="l-en">names</span><span class="l-zh">只</span></span></div>
+<p class="sub"><span class="l-en">Trajectory passes and a cross is IMMINENT (projected tier / small bars-to-cross / early advance-warning). Every row is provisional — the “about to cross” detector is unvalidated until the W6 replay (audit #22).</span><span class="l-zh">趋势通过且金叉即将出现（预测层级/距离交叉很近/提前预警）。每行均为暂定——“即将交叉”检测在 W6 回放验证前尚未确认（审计 #22）。</span></p>
+<div class="conc ">
+  0 <span class="l-en">names</span><span class="l-zh">只</span> · 0 <span class="l-en">sectors</span><span class="l-zh">行业</span> ·
+  <span class="l-en">top-2 share</span><span class="l-zh">前2行业占比</span> 0% ·
+  ≈ 0.0 <span class="l-en">effective bets</span><span class="l-zh">有效仓位</span>
+</div>
+
+<div class="empty"><span class="l-en">No imminent-cross names today.</span><span class="l-zh">今日无即将交叉标的。</span></div>
+
+
+<div class="foot">
+  <span class="l-en">SHADOW artifact</span><span class="l-zh">影子产物</span> · <code>site/factordata/us_standouts_v2.json</code> ·
+  <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-07-02 00:27 UTC ·
+  <span class="l-en">reader contract</span><span class="l-zh">读取契约</span> v1 ·
+  <span class="l-en">flips to live only when measured precision@k ≥ live board (US-2 ledger).</span><span class="l-zh">仅当实测 precision@k ≥ 现网榜单时才切换上线（US-2 记录簿）。</span>
+</div>
+</body>
+</html>
