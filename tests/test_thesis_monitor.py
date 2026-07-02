@@ -333,3 +333,134 @@ def test_legacy_status_transitions():
     assert tm._status_llm(opened, heat_now=0.68, phys_now=False, n_now=3) == "BROKEN"     # physical lost
     assert tm._status_llm(opened, heat_now=0.68, phys_now=True, n_now=1) == "BROKEN"      # below quorum
     assert tm._status_llm(opened, heat_now=0.68, phys_now=True, n_now=2) == "WEAKENING"   # lost a surface
+
+
+# ── N4 new regression tests ──────────────────────────────────────────────────
+
+# (a) two REAL builds same asof with write_state=True → counter does NOT double-increment
+def test_b2_same_asof_no_double_increment(monkeypatch, tmp_path):
+    """B2: two builds with the same cascade asof must not double-increment the consecutive counter.
+
+    Without the fix, run1 appends an update event, run2 appends a second event for the same
+    asof — and a WEAKENING criterion reaches BROKEN prematurely.
+    With the fix, run2 detects that (criterion_kind, asof) already logged and skips it.
+    """
+    _patch_paths(monkeypatch, tmp_path)
+    _write_log(tmp_path, [
+        {"theme": "memory_storage", "asof": "2026-07-02",
+         "stage": "PRECIPICE", "bottleneck_band": "AWAITING_DATA",
+         "revision_breadth": 0.1},
+    ])
+
+    # Run 1: write_state=True — WEAKENING on first build (no prior events → 1 of 2)
+    out1 = tm.compute_thesis_monitor(None, write_state=True)
+    assert out1 is not None
+    th1 = next(m for m in out1["monitored"] if m["theme"] == "memory_storage")
+    # band_loosens should be WEAKENING (1 of 2 needed)
+    assert th1["status"] == "WEAKENING"
+
+    # Run 2 same asof, write_state=True — must still be WEAKENING, NOT BROKEN
+    out2 = tm.compute_thesis_monitor(None, write_state=True)
+    assert out2 is not None
+    th2 = next(m for m in out2["monitored"] if m["theme"] == "memory_storage")
+    # B2 fix: deduplicated to one event per (criterion_kind, asof) → still WEAKENING
+    assert th2["status"] == "WEAKENING", (
+        "B2 regression: same-asof re-run incremented counter twice (BROKEN prematurely)"
+    )
+
+
+# (b) same theme in both producers → n_open=1, counted once in n_broken
+def test_b3_same_theme_both_producers_counted_once(monkeypatch, tmp_path):
+    """B3: when the same theme appears in both deterministic and LLM producers, it must appear
+    exactly once in monitored and be counted once in n_broken (not twice)."""
+    _patch_paths(monkeypatch, tmp_path)
+
+    # Deterministic: ag_fertilizer thesis, stage regressed → BROKEN
+    _write_det_ledger(tmp_path, [
+        {"theme": "ag_fertilizer", "opened": "2026-06-01",
+         "source": "deterministic", "stage_at_open": "PRECIPICE (text)",
+         "kill_criteria": [
+             {"kind": "stage_regressed_to_watch",
+              "detail": "cascade stage no longer thesis-stage"},
+         ]},
+    ])
+    _write_log(tmp_path, [
+        {"theme": "ag_fertilizer", "asof": "2026-07-02",
+         "stage": "WATCH", "bottleneck_band": None, "revision_breadth": 0.02},
+    ])
+    # LLM: same theme
+    _write_llm_ledger(tmp_path, [
+        {"theme": "ag_fertilizer", "asof": "2026-06-01",
+         "heat_at_open": 0.80, "physical_at_open": True, "n_surfaces_at_open": 3},
+    ])
+
+    # No convergence (so LLM heat-decay sees heat=0 → BROKEN anyway)
+    out = tm.compute_thesis_monitor(None, write_state=False)
+    assert out is not None
+    # Only ONE monitored row for ag_fertilizer (B3 dedup)
+    ag_rows = [m for m in out["monitored"] if m["theme"] == "ag_fertilizer"]
+    assert len(ag_rows) == 1, f"B3 regression: {len(ag_rows)} rows for same theme (expected 1)"
+    # n_open = 1 (the deduplicated row)
+    assert out["n_open"] == 1
+    # n_broken = 1 (BROKEN counted once)
+    assert out["n_broken"] == 1
+    # LLM enrichment fields were folded onto the deterministic row
+    assert ag_rows[0]["source"] == "deterministic"
+    assert "llm_status" in ag_rows[0]
+    assert out["n_llm"] == 1
+
+
+# (c) kill → close → re-flag → fresh thesis opens
+def test_b2b_kill_close_reflag_opens_fresh(monkeypatch, tmp_path):
+    """B2b: after a thesis is BROKEN and closed, a re-flag (new cascade thesis row) must
+    open a FRESH thesis header — not reuse the closed one."""
+    _patch_paths(monkeypatch, tmp_path)
+
+    # Epoch 1: thesis opened, then closed
+    _write_det_ledger(tmp_path, [
+        {"theme": "solar", "opened": "2026-05-01",
+         "source": "deterministic", "stage_at_open": "PRECIPICE",
+         "kill_criteria": [
+             {"kind": "stage_regressed_to_watch",
+              "detail": "cascade stage no longer thesis-stage"},
+         ]},
+        {"kind": "close", "theme": "solar", "reason": "BROKEN",
+         "ts": "2026-06-01T00:00:00+00:00"},
+    ])
+
+    # Current cascade: solar is back in PRECIPICE (re-flagged)
+    _write_log(tmp_path, [
+        {"theme": "solar", "asof": "2026-07-02",
+         "stage": "PRECIPICE", "bottleneck_band": "TIGHT", "revision_breadth": 0.05},
+    ])
+
+    out = tm.compute_thesis_monitor(None, write_state=False)
+    assert out is not None
+    # A fresh thesis must have been opened for solar (the closed epoch is excluded)
+    solar_rows = [m for m in out["monitored"] if m["theme"] == "solar"]
+    assert len(solar_rows) == 1
+    th = solar_rows[0]
+    # The re-opened thesis's opened date should be the new cascade flag's asof
+    assert th.get("opened") == "2026-07-02"
+    # Status should be INTACT (stage is still PRECIPICE)
+    assert th["status"] == "INTACT"
+
+
+# (g) opened == flag asof
+def test_b2b_opened_equals_flag_asof(monkeypatch, tmp_path):
+    """B2b: the 'opened' field in the thesis header must be the cascade flag row's asof,
+    not date.today()."""
+    _patch_paths(monkeypatch, tmp_path)
+    _write_log(tmp_path, [
+        {"theme": "ag_fertilizer", "asof": "2026-05-15",
+         "stage": "PRECIPICE (text)", "bottleneck_band": "TIGHT (text)",
+         "revision_breadth": 0.1, "members": ["CF"]},
+    ])
+
+    out = tm.compute_thesis_monitor(None, write_state=False)
+    assert out is not None
+    th = next(m for m in out["monitored"] if m["theme"] == "ag_fertilizer")
+    # B2b fix: opened == asof of the log row that opened the thesis
+    assert th.get("opened") == "2026-05-15", (
+        f"B2b regression: opened={th.get('opened')!r} expected '2026-05-15' (flag asof)"
+    )

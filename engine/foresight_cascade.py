@@ -367,6 +367,10 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
             # without default-filling. One hunk addition only — does not touch stage logic.
             "divergence_share": (dm or {}).get("divergence_share"),
             "ppi_yoy_latest": (bn or {}).get("ppi_yoy_latest"),
+            # N1 (W4b review): language_accel from the bottleneck leg6 — the text_accel_negative
+            # kill-criterion in thesis_monitor reads this field from the log row.
+            # Absent when there is no EDGAR language leg for the theme (None → UNVERIFIABLE).
+            "language_accel": (bn or {}).get("language_accel"),
         })
     # rank by edge remaining (stage), then surface AI-capex beneficiaries, then by the
     # sharpest physical/estimate read available (tightness if known, else revision breadth)
@@ -489,6 +493,12 @@ def _append_ledger(payload: dict) -> None:
         lines.append(json.dumps({
             "theme": theme, "asof": asof, "ts": ts, "stage": stage,
             "bottleneck_band": r["bottleneck_band"], "revision_breadth": r["revision_breadth"],
+            # N1 (W4b review): language_accel logged so thesis_monitor.text_accel_negative
+            # can evaluate the criterion from the cascade ledger row directly.
+            # None for themes without an EDGAR language leg → UNVERIFIABLE in the monitor.
+            "language_accel": r.get("language_accel"),
+            # N2 (W4b review): late_line_basis at log time, for breadth-basis auditing.
+            "late_line_basis": payload.get("late_line_basis"),
             "members": (cfg_themes.get(theme) or {}).get("tickers") or [],
         }, separators=(",", ":")))
 

@@ -39,14 +39,31 @@ log = logging.getLogger(__name__)
 MAX_ITEMS = 8                      # bound the daily call (cost) — the top convergences only
 LEDGER = ("data", "foresight", "analyst_theses.jsonl")
 # language that would make a claim a price/return FORECAST — the no-forecast guardrail
+#
+# REGEX NOTES (B1 fix):
+#  - \$\s*\d[\d,.]* — matches "$120", "$ 1,200" etc. as a full NUMBER token (not "$1" of "$120")
+#  - \d[\d,.]*\s*% — matches "20%", "1,200%" etc. as a full number-percent token
+#  - reach\s+\d+ by — catches "reach 120 by Q4" style patterns
+#  These replacements widen the match to the full number token, fixing the sub-fragment bug.
 _FORECAST_RE = re.compile(
-    r"(price target|\bPT\b|will (?:rise|fall|go|reach|hit|double|triple)|%\s*(?:up|down|gain|return|upside|downside)"
-    r"|\bupside\b|\bdownside\b|\$\d|\d+\s*%|expect[a-z]* (?:a )?(?:return|gain|move)|target of)", re.I)
+    r"(price target|\bPT\b|will (?:rise|fall|go|reach|hit|double|triple)"
+    r"|%\s*(?:up|down|gain|return|upside|downside)"
+    r"|\bupside\b|\bdownside\b"
+    r"|\$\s*\d[\d,.]*"          # full $ number token — e.g. "$120" not just "$1" of "$120"
+    r"|\d[\d,.]*\s*%"           # full %-number token — e.g. "20%" not "20" only
+    r"|reach\s+\d[\d,.]*\s+by"  # "reach 120 by Q4" style
+    r"|expect[a-z]* (?:a )?(?:return|gain|move)|target of)", re.I)
 
-# Fields that can be CLAMPED (stripped) vs dropped — mechanism is the hard gate
-_CLAMPABLE_FIELDS = ("kill_criteria", "evidence", "regime_read", "regime_read_zh", "dissent",
-                     "non_obvious")
-# Fields that are lists of strings (need item-level clamping)
+# Fields that can be CLAMPED (stripped) vs dropped — mechanism is the hard gate.
+# NOTE (B1 fix): evidence and kill_criteria are NOT mutated in-place; instead items that
+# match are tagged forecast_suspect=True and excluded from display.  Only free-prose
+# fields (mechanism handled separately, non_obvious/dissent/regime_read*) are clamped.
+_CLAMPABLE_PROSE_FIELDS = ("regime_read", "regime_read_zh", "dissent", "non_obvious")
+# List fields that use forecast_suspect tagging (not in-place mutation)
+_SUSPECT_LIST_FIELDS = ("kill_criteria", "evidence")
+# All fields considered for clamping (union — for logging)
+_CLAMPABLE_FIELDS = _CLAMPABLE_PROSE_FIELDS + _SUSPECT_LIST_FIELDS
+# Fields that are lists of strings (need item-level handling)
 _LIST_FIELDS = ("kill_criteria", "evidence")
 
 
@@ -145,7 +162,9 @@ def _has_forecast(thesis: dict) -> bool:
 
 
 def _clamp_string(s: str) -> tuple[str, list[str]]:
-    """Strip forecast fragments from a string.  Returns (clamped_str, [removed fragments])."""
+    """Strip forecast fragments from a free-prose string.
+    Returns (clamped_str, [removed fragments]).
+    Replaces the ENTIRE matched forecast phrase (the full regex group), never a sub-fragment."""
     removed: list[str] = []
 
     def _replace(m: re.Match) -> str:  # type: ignore[type-arg]
@@ -157,29 +176,45 @@ def _clamp_string(s: str) -> tuple[str, list[str]]:
 
 
 def _clamp_all_fields(thesis: dict) -> tuple[dict, list[str]]:
-    """Clamp forecast language from all non-mechanism fields.  Returns (clamped_thesis, removed).
-    The thesis is KEPT (not dropped) even when violations are found in these fields."""
+    """Clamp forecast language from non-mechanism fields.  Returns (clamped_thesis, removed_fragments).
+
+    B1 FIX — two-tier treatment:
+      Free-prose fields (dissent, non_obvious, regime_read*): mutated in-place — the offending
+        phrase is replaced with "[forecast removed]".
+      List fields (evidence, kill_criteria): NOT mutated — items that match are tagged
+        forecast_suspect=True (kept in ledger, excluded from display_copy); the list itself
+        is preserved so grounding can check the ORIGINAL strings.
+
+    The thesis is KEPT (not dropped) even when violations are found in these fields.
+    """
     all_removed: list[str] = []
     clamped = dict(thesis)
 
-    for field in _CLAMPABLE_FIELDS:
+    # Prose fields: in-place mutation safe (no grounding dependency)
+    for field in _CLAMPABLE_PROSE_FIELDS:
         val = thesis.get(field)
-        if val is None:
+        if val is None or not isinstance(val, str):
             continue
-        if field in _LIST_FIELDS and isinstance(val, list):
-            new_list = []
-            for item in val:
-                if isinstance(item, str):
-                    c, rem = _clamp_string(item)
-                    new_list.append(c)
-                    all_removed.extend(rem)
-                else:
-                    new_list.append(item)
-            clamped[field] = new_list
-        elif isinstance(val, str):
-            c, rem = _clamp_string(val)
-            clamped[field] = c
-            all_removed.extend(rem)
+        c, rem = _clamp_string(val)
+        clamped[field] = c
+        all_removed.extend(rem)
+
+    # List fields: tag forecast_suspect items; do NOT mutate the string
+    for field in _SUSPECT_LIST_FIELDS:
+        val = thesis.get(field)
+        if val is None or not isinstance(val, list):
+            continue
+        new_list = []
+        for item in val:
+            if isinstance(item, str) and _FORECAST_RE.search(item):
+                matched = _FORECAST_RE.findall(item)
+                all_removed.extend(matched if isinstance(matched[0], str) else
+                                   [m[0] if isinstance(m, tuple) else m for m in matched])
+                log.info("foresight_analyst: forecast_suspect item in %s: %r", field, item[:80])
+                new_list.append({"text": item, "forecast_suspect": True})
+            else:
+                new_list.append(item)
+        clamped[field] = new_list
 
     return clamped, all_removed
 
@@ -212,7 +247,15 @@ def _flatten_values(obj: object, _depth: int = 0) -> list:
 
 
 def _normalise(s: str) -> str:
-    """Normalise for case-insensitive, whitespace-collapsed substring matching."""
+    """Normalise for case-insensitive, whitespace-collapsed substring matching.
+
+    B1b: unicode folding applied to BOTH sides (pack text and evidence item) before
+    the substring check, so curly-quote variants in LLM output match ASCII pack text.
+    """
+    # Unicode typographic quote/dash folding
+    s = s.replace("‘", "'").replace("’", "'")   # LEFT/RIGHT SINGLE QUOTATION MARK
+    s = s.replace("“", '"').replace("”", '"')   # LEFT/RIGHT DOUBLE QUOTATION MARK
+    s = s.replace("–", "-").replace("—", "-")   # EN DASH / EM DASH
     return re.sub(r"\s+", " ", s).strip().lower()
 
 
@@ -288,8 +331,19 @@ def _parse(text: str, valid_themes: set[str], pack: list[dict] | None = None) ->
             log.info("foresight_analyst: dropped thesis (mechanism forecast): %s", th.get("theme"))
             continue
 
-        # CLAMP other fields (keep the thesis)
-        clamped, removed = _clamp_all_fields(th)
+        # B1 FIX: CITATION GROUNDING runs FIRST, on the ORIGINAL (unclamped) strings.
+        # This ensures clamping cannot corrupt evidence strings before the grounding check.
+        raw_evidence = (th.get("evidence") or [])
+        # Only pass plain strings to grounding — skip any dicts already in the list
+        plain_evidence = [e for e in raw_evidence if isinstance(e, str)]
+        annotated_evidence, n_grounded, n_total = _check_evidence_grounding(
+            plain_evidence, pack_text
+        )
+
+        # Now CLAMP other fields (prose fields mutated; list fields tagged forecast_suspect)
+        # We work on a copy that already has grounded evidence annotations in place.
+        th_with_grounded = {**th, "evidence": annotated_evidence}
+        clamped, removed = _clamp_all_fields(th_with_grounded)
         if removed:
             log.info("foresight_analyst: clamped forecast language from %s in %s: %r",
                      list(set(
@@ -299,18 +353,14 @@ def _parse(text: str, valid_themes: set[str], pack: list[dict] | None = None) ->
                      th.get("theme"), removed)
             clamped["_forecast_clamped"] = removed  # kept in ledger, not displayed
 
-        # CITATION GROUNDING on evidence array
-        raw_evidence = clamped.get("evidence") or []
-        annotated_evidence, n_grounded, n_total = _check_evidence_grounding(
-            raw_evidence, pack_text
-        )
-        clamped["evidence"] = annotated_evidence
+        # After clamp, the evidence list may contain grounding dicts AND forecast_suspect dicts.
+        # Build display-only evidence: exclude items tagged ungrounded or forecast_suspect.
+        final_evidence = clamped.get("evidence") or []
         clamped["n_grounded"] = n_grounded
         clamped["n_total_evidence"] = n_total
-        # Build display-only evidence (exclude ungrounded items from rendered copy)
         clamped["evidence_display"] = [
-            e for e in annotated_evidence
-            if isinstance(e, str)  # dict items are ungrounded
+            e for e in final_evidence
+            if isinstance(e, str)  # dicts are either ungrounded or forecast_suspect — exclude both
         ]
 
         if clamped.get("confidence") not in ("low", "medium", "high"):

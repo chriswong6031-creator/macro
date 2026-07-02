@@ -79,9 +79,16 @@ def test_compute_none_paths():
 # ── W4b: forecast clamp (d) ──────────────────────────────────────────────────
 
 def test_clamp_strips_price_from_kill_criteria_keeps_thesis():
-    """(d) Forecast fragment in kill_criteria is clamped, thesis is kept (not dropped)."""
+    """(d) Forecast fragment in kill_criteria is tagged forecast_suspect, thesis is kept.
+
+    B1 FIX: list fields (kill_criteria, evidence) are NOT mutated in-place; items that
+    match the forecast regex are tagged {"text": ..., "forecast_suspect": True} and kept
+    in the ledger but excluded from display copy.  The original text is preserved in
+    the dict so grounding can operate on it, and the forecast_suspect item is excluded
+    from evidence_display / any display pipeline.
+    """
     valid = {"memory_storage"}
-    # kill_criteria contains a price — should be clamped, not dropped
+    # kill_criteria contains a price — should be tagged, not in-place mutated
     text = json.dumps({"regime_read": "early supply read", "theses": [
         {"theme": "memory_storage",
          "mechanism": "supply tight while estimates are flat",           # no forecast here
@@ -96,13 +103,15 @@ def test_clamp_strips_price_from_kill_criteria_keeps_thesis():
     # Thesis is KEPT despite the forecast fragment in kill_criteria
     assert len(out["theses"]) == 1
     th = out["theses"][0]
-    # The clamped kill_criteria should have "[forecast removed]" in place of the offending fragment
-    kc_combined = " ".join(str(k) for k in (th["kill_criteria"] or []))
-    assert "[forecast removed]" in kc_combined
-    assert "20% return" not in kc_combined
-    # The first criterion (no forecast) should be intact
-    assert "bottleneck loosens to NEUTRAL" in kc_combined
-    # _forecast_clamped audit field should list what was removed
+    kc = th["kill_criteria"] or []
+    # The first criterion (no forecast) should be an intact plain string
+    plain = [k for k in kc if isinstance(k, str)]
+    assert any("bottleneck loosens to NEUTRAL" in s for s in plain)
+    # The forecast item should be tagged as forecast_suspect (a dict), NOT mutated in-place
+    suspects = [k for k in kc if isinstance(k, dict) and k.get("forecast_suspect")]
+    assert len(suspects) >= 1
+    assert "20% return" in suspects[0].get("text", "")  # original text preserved
+    # _forecast_clamped audit field should list what was matched
     assert th.get("_forecast_clamped") is not None
     assert len(th["_forecast_clamped"]) > 0
 
@@ -242,3 +251,117 @@ def test_grounding_check_case_insensitive():
     # "fabricated claim about 50% upside" is not in pack_text
     ungrounded = [e for e in annotated if isinstance(e, dict) and e.get("ungrounded")]
     assert len(ungrounded) >= 1
+
+
+# ── N4 new regression tests ──────────────────────────────────────────────────
+
+# (d) clamp-then-grounding: historical "capacity grew 20% last year" stays grounded
+def test_b1_grounding_runs_before_clamp_historical_evidence():
+    """B1 regression: grounding must run on the ORIGINAL string, before clamping.
+
+    'capacity grew 20% last year' contains '20%' which the old clamp would mutate to
+    '[forecast removed]% last year', so the grounding check could no longer find
+    'capacity grew 20% last year' in the pack — falsely ungrounded.
+
+    With the B1 fix, grounding runs first → the string is found → grounded.
+    Then the evidence item is tagged forecast_suspect (not mutated) so the original
+    text is preserved in the ledger.
+    """
+    # Build a pack that contains the historical text
+    pack_text = "capacity grew 20% last year supply tight"
+    items = ["capacity grew 20% last year"]
+    annotated, n_grounded, n_total = fa._check_evidence_grounding(items, pack_text)
+    assert n_total == 1
+    # Should be grounded (found in the pack) because grounding sees the original string
+    assert n_grounded == 1, (
+        "B1 regression: grounding ran AFTER clamp and lost the original evidence string"
+    )
+    assert all(isinstance(e, str) for e in annotated), (
+        "Evidence item should remain a plain string from grounding (not tagged ungrounded)"
+    )
+
+
+# (d) kill_criteria "-20% net revisions" should be tagged forecast_suspect, not mutated
+def test_b1_kill_criteria_negative_pct_tagged_not_mutated():
+    """B1 regression: '-20% net revisions' in kill_criteria must be tagged forecast_suspect
+    and the original text preserved — not mutated to '[forecast removed] net revisions'."""
+    valid = {"memory_storage"}
+    text = json.dumps({"regime_read": "r", "theses": [
+        {"theme": "memory_storage",
+         "mechanism": "supply tight while revisions are flat",
+         "kill_criteria": ["-20% net revisions trigger exit",
+                           "band loosens to NEUTRAL"],
+         "evidence": ["physical"],
+         "confidence": "low"},
+    ]})
+    out = fa._parse(text, valid)
+    assert out is not None
+    assert len(out["theses"]) == 1
+    th = out["theses"][0]
+    kc = th["kill_criteria"] or []
+    # The '-20% net revisions...' item should be tagged forecast_suspect (dict)
+    suspects = [k for k in kc if isinstance(k, dict) and k.get("forecast_suspect")]
+    assert len(suspects) >= 1
+    # The original text is preserved in the dict
+    assert "-20% net revisions" in suspects[0].get("text", "")
+    # The plain criterion 'band loosens to NEUTRAL' should be intact
+    plain = [k for k in kc if isinstance(k, str)]
+    assert any("band loosens" in s for s in plain)
+
+
+# (e) unicode-quote pack vs ASCII evidence → grounded
+def test_b1b_unicode_quote_evidence_grounded():
+    """B1b: evidence items with curly quotes (U+2018/U+2019/U+201C/U+201D) must match
+    ASCII pack text after unicode normalization on BOTH sides."""
+    # Pack text has ASCII quotes
+    pack_text = fa._build_pack_text([{
+        "theme": "memory_storage", "name": "Memory",
+        "evidence": {"rationale": "supply tight per management's latest call"},
+    }])
+    # Evidence item has curly apostrophe (U+2019)
+    curly_item = "supply tight per management’s latest call"
+    annotated, n_grounded, n_total = fa._check_evidence_grounding([curly_item], pack_text)
+    assert n_total == 1
+    assert n_grounded == 1, (
+        "B1b regression: curly-quote evidence item was not grounded against ASCII pack text"
+    )
+
+
+# (f) "$120 target" in mechanism → thesis dropped; in dissent → whole phrase removed cleanly
+def test_b1_dollar_120_in_mechanism_drops_thesis():
+    """B1 regression: '$120 target' in mechanism — the full '$120' number token must match,
+    and the thesis must be dropped (mechanism is the hard gate)."""
+    valid = {"memory_storage"}
+    text = json.dumps({"regime_read": "r", "theses": [
+        {"theme": "memory_storage",
+         "mechanism": "supply tight, $120 target in sight",   # full $120 matches → drop
+         "kill_criteria": ["band loosens"],
+         "evidence": ["physical"], "confidence": "low"},
+    ]})
+    out = fa._parse(text, valid)
+    assert out is not None
+    assert len(out["theses"]) == 0, "$120 in mechanism must drop the thesis"
+
+
+def test_b1_dollar_120_in_dissent_removed_cleanly():
+    """B1 regression: '$120 target' in dissent — the full '$120' token is replaced
+    with '[forecast removed]', leaving '20 target' BEHIND is the old bug (fixed).
+    With the wider regex \\$\\s*\\d[\\d,.]*, the full '$120' is matched."""
+    valid = {"memory_storage"}
+    text = json.dumps({"regime_read": "r", "theses": [
+        {"theme": "memory_storage",
+         "mechanism": "supply tight while revisions flat",
+         "kill_criteria": ["band loosens"],
+         "evidence": ["physical"],
+         "dissent": "bulls see a $120 target by year end",
+         "confidence": "low"},
+    ]})
+    out = fa._parse(text, valid)
+    assert out is not None
+    assert len(out["theses"]) == 1
+    dissent = out["theses"][0].get("dissent") or ""
+    assert "[forecast removed]" in dissent
+    # Old bug: "$1" matched, leaving "20 target" — verify stray digits are gone
+    assert "20 target" not in dissent, (
+        "B1 regex bug: '$1' of '$120' matched, leaving '20 target' as stray digits"
+    )
