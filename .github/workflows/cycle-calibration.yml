@@ -98,6 +98,37 @@ jobs:
       #     if [ ! -f scripts/check_backfill_integrity.py ]; then exit 0; fi
       #     python -m scripts.check_backfill_integrity --warn || true
 
+      # ── HARD: promise-grader unit tests (W2.4) ─────────────────────────────
+      # The three promise-graders (turn P/R, cone coverage, reliability) + the
+      # INDEPENDENT realized-extrema turn truth (ruling A6).  Covers: truth
+      # independence from ZigZag params, matching-rule correctness, cone-
+      # containment math, BACKTEST/LIVE separation, A2 projection dedup.
+      # Semantics: ABORT-LANE (hard failure).  Added: W2.4.
+      - name: "HARD | promise-grader tests (turn P/R, cone, reliability, A6 truth)"
+        run: |
+          if [ ! -f tests/test_promise_graders.py ]; then
+            echo "tests/test_promise_graders.py not present — skipping (pre-W2.4)"
+            exit 0
+          fi
+          python -m pytest tests/test_promise_graders.py -q
+
+      # ── LOG: run the three promise-graders → refresh the scorecards (W2.4) ──
+      # Regrades the 12,519 backfilled monthly PIT stamps + the live cohort and
+      # re-emits data/<engine>/scorecards/promises_<epoch>.json,
+      # data/cycle_ontology/cone_recalibration.json, and the W24 scorecard MD.
+      # Semantics: LOG-AND-SKIP (fail-open — a grader failure must never block the
+      # calibration lane; the last-good scorecard stays in place).  It reads only
+      # committed artifacts (backfill.parquet + price panel), does NO engine
+      # compute, and writes JSON — cheap (<1 min).  Guarded: no-op if the script
+      # is absent.  Estimated runtime: ~30 s on 2-core.
+      - name: "LOG | promise-graders → refresh scorecards (W2.4)"
+        run: |
+          if [ ! -f scripts/grade_promises.py ]; then
+            echo "scripts/grade_promises.py not present — skipping (pre-W2.4)"
+            exit 0
+          fi
+          python -m scripts.grade_promises --verbose || true
+
       # ── Slot: D4 price-basis audit (planned, W2.2) ─────────────────────────
       # When merged: python -m scripts.audit_price_basis --report
       # Semantics: LOG-AND-SKIP (basis audit informs; never blocks calibration).
