@@ -241,6 +241,8 @@ def _taper_points(s: pd.Series, recent_start: pd.Timestamp, value_fn=None) -> li
     the zoomed-out Max view. Turns/legs are detected on the full daily tape, so this purely
     cosmetic thinning never moves a pivot date."""
     s = s.dropna()
+    if s.empty:
+        return []
     old = s[s.index < recent_start].resample("ME").last().dropna()
     recent = s[s.index >= recent_start].resample("W-FRI").last().dropna()
     out = []
@@ -249,6 +251,13 @@ def _taper_points(s: pd.Series, recent_start: pd.Timestamp, value_fn=None) -> li
             continue
         out.append({"x": round(_yf(ts), 3), "v": round(float(value_fn(v) if value_fn else v), 2)})
     out.sort(key=lambda p: p["x"])
+    # anchor the line at the window's true first bar: the month-end resample would
+    # otherwise start the plot at the first month's CLOSE — up to a month of drift
+    # after the rebase base, so the "rebased to 100" line visibly starts off 100
+    first = {"x": round(_yf(s.index[0]), 3),
+             "v": round(float(value_fn(s.iloc[0]) if value_fn else s.iloc[0]), 2)}
+    if not out or first["x"] < out[0]["x"]:
+        out.insert(0, first)
     return out
 
 
