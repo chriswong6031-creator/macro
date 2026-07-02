@@ -118,6 +118,42 @@
   };
   function tiltOf(s) { return TILT[(s.proj || {}).tilt] || TILT.mixed; }
 
+  /* ---- W3.6: ontology STANCE + DIVERGENCE rendering ----------------------
+     The kernel (engine/cycle_ontology.resolve_state) stamps the resolved action
+     into now.stance / now.stance_zh / now.tone and the "clocks disagree" flag into
+     now.divergence / now.divergence_note{,_zh}.  JS renders those stamped outputs —
+     it never recomputes a stance (D1 doctrine).  tone → an existing root color token
+     so the zh up/down flip keeps working with zero new color logic (A18):
+       bullish → --up  (flips red/green in zh)   bearish → --down (flips in zh)
+       caution → --warn (no flip)   anticipatory → accent (no flip)   neutral → --muted (no flip)
+     Only the bullish/bearish tones ride flip-sensitive tokens; the direction-less
+     stances (WAIT / GET READY / TRIM / COUNTERTREND ONLY / HIGH-RISK BOUNCE) do not. */
+  var TONE_CLS = {
+    bullish: "st-bull", bearish: "st-bear", caution: "st-caut",
+    anticipatory: "st-antic", neutral: "st-neu"
+  };
+  function stanceLabel(nw) { return curLang() === "zh" ? (nw.stance_zh || nw.stance) : nw.stance; }
+  function stanceHTML(nw) {
+    if (!nw || !nw.stance) return "";
+    var cls = TONE_CLS[nw.tone] || "st-neu";
+    return '<span class="cc-stance ' + cls + '" title="' +
+      L("Resolved stance · engine", "综合策略 · 引擎") + '">' + stanceLabel(nw) + '</span>';
+  }
+  // amber "clocks disagree" chip — rendered ONLY when the cycle read and the timing
+  // ladder disagree (D1 §2.3).  Replaces two contradictory action badges with one honest chip.
+  function divergenceHTML(nw, opts) {
+    if (!nw || !nw.divergence) return "";
+    var full = opts && opts.full;
+    var note = curLang() === "zh" ? (nw.divergence_note_zh || nw.divergence_note) : nw.divergence_note;
+    var chip = '<span class="cc-diverge" title="' + (note ? esc(note) : "") + '">⚠︎ ' +
+      L("Clocks disagree", "时钟分歧") + '</span>';
+    if (!full) return chip;
+    // focus panel: chip + the full explanatory note line
+    return '<div class="cc-diverge-row">' + chip +
+      (note ? '<span class="cc-diverge-note">' + esc(note) + '</span>' : "") + '</div>';
+  }
+  function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
   /* ---- y-scaling: price (rebased, log/linear) vs cycle position (0–100) --- */
   function yval(v) { return state.mode === "osc" ? v : (state.scale === "log" ? log10(v) : v); }
 
@@ -782,6 +818,9 @@
       var nextTxt = s.proj ? (L("Next ", "下次") + (s.proj.nextTurn === "peak" ? "▲ " : "▼ ") + fmtMon(s.proj.central)) : L("—", "—");
       var sigHTML = nw.signal === "BUY" ? '<span class="cc-sig buy">' + L("BUY", "买入") + '</span>'
         : nw.signal === "SELL" ? '<span class="cc-sig sell">' + L("SELL", "卖出") + '</span>' : "";
+      // W3.6: the resolved stance is the only action-toned text (D1 §2.2); the amber
+      // "clocks disagree" chip replaces contradictory badge pairs when the clocks diverge.
+      var stanceTag = stanceHTML(nw), divTag = divergenceHTML(nw);
       var pxLine = isBasketRec(s)
         ? ((s.etf_proxy ? s.etf_proxy + " · " : "") + grpName(s))
         : (s.ticker + " · " + grpName(s));
@@ -789,7 +828,7 @@
         '<div class="cc-top">' +
           '<div class="cc-id"><span class="cc-dot"></span><div><div class="cc-nm">' + nm(s) + '</div>' +
           '<div class="cc-px">' + pxLine + '</div></div></div>' +
-          '<div class="cc-tags"><div class="cc-phase" style="--ph:' + phaseHue(nw.phase) + '">' + phaseLabel(s) + '</div>' + sigHTML + '</div>' +
+          '<div class="cc-tags"><div class="cc-phase" style="--ph:' + phaseHue(nw.phase) + '">' + phaseLabel(s) + '</div>' + stanceTag + divTag + sigHTML + '</div>' +
         '</div>' +
         '<div class="cc-spark"></div>' +
         '<div class="cc-meta">' +
@@ -1053,8 +1092,10 @@
           '<div class="cyc-fsub">' + subtitle + (nw.above200d ? L(" · above 200d", " · 200日上") : L(" · below 200d", " · 200日下")) + '</div>' +
           '<div class="cyc-fchips">' +
             '<span class="cyc-pchip" style="--ph:' + (ph.hue || "var(--muted)") + '">' + phaseLabel(s) + '</span>' +
+            stanceHTML(nw) +
             '<span class="cyc-tchip ' + tilt.cls + '">' + tilt.ar + ' ' + L(tilt.lab[0], tilt.lab[1]) + '</span>' +
           '</div>' +
+          divergenceHTML(nw, { full: true }) +
         '</div>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +

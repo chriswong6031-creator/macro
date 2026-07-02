@@ -490,3 +490,29 @@ MEASURED-prediction status.
   cards stack a secular strip; two-word MEASURED/FRAME badges + hover "how computed" (ruling A3); analyst
   prose demoted to dated OPINION overlay with hand-vs-engine delta notes. The audit's original page is no
   longer a drawing of an opinion.
+- 2026-07-02 — **W3.6 SHIPPED**: ontology page adoption + cross-page consistency gate + phase-coherence
+  fix. **PART A root cause (mixed vocabulary):** W1.6 fed the LEGACY range-stochastic `pos_now` into
+  `onto.classify_phase` while emitting the canonical z/CDF `pos_v2` — so `phase_v2`'s LEVEL was derived
+  from a *different* position than the record displayed. Because the two semantics genuinely disagree
+  (range-stochastic reads washed-out where z/CDF reads stretched — the audit's core finding), records like
+  EWU (`pos_v2=92.9`, `phase_v2='Trough'`) and EWC (`99.7`/`Trough`) carried a high position wearing a
+  trough label; markets.html (W3.5) rendered exactly that contradiction. **Fix (kernel):**
+  `engine/sector_cycles._record_core` now feeds `pos_v2` into BOTH `classify_phase` and `resolve_state`
+  (falling back to `pos_now` only when the canonical read is unavailable) so the whole v2 triple
+  (pos_v2 / phase_v2 / stance) is internally coherent; the LEGACY `phase`/`pos`/`signal` fields stay
+  driven by `pos_now` and are byte-identical (verified: 0 legacy fields changed vs HEAD). EWU/EWC now read
+  `Downturn` (a high position rolling over) — coherent. 8 forbidden records (3 sector + 5 country) → 0;
+  cycle.html flagship went from 6 mixed-vocabulary bands (uranium `76/Trough`, etc.) to 0.
+  **Coherence regression test** added (`tests/test_cycle_ontology.py`): no live record may carry
+  `pos_v2 ≥ 85` with a Trough/Recovery `phase_v2` (nor the mirror) without a divergence flag; a synthetic
+  EWU-pathology record is asserted to trip it. **PART B:** the shared `templates/sector_cycles.js` renders
+  the resolved STANCE (tone-driven color via existing root tokens — bullish→--up, bearish→--down both
+  zh-flip; caution/anticipatory/neutral flip-neutral, ruling A18) and the amber "clocks disagree"
+  divergence chip (D1 §2.3) on all three engine pages (sector / country / china); DOM-verified incl. the
+  zh flip; 0 contradictory badge pairs. **Cross-page consistency gate (R3-M3):**
+  `scripts/check_cycle_consistency.py` asserts the same (ticker, basis) tape shows the same pos_v2/phase_v2
+  across cycle.html / country_cycles / markets.html / sector (±2 pts, phase exact) OR carries a declared
+  basis label; wired into `ci.yml`. Current build PASSES — 7 same-tape groups agree exactly (the EWx
+  markets↔country ties, spread 0.00), 1 declared cross-tape difference (EEM etf_tr vs price, both labeled);
+  report at `research/cycle_masterplan/W36_CONSISTENCY_REPORT.md`. Checker fails on a synthetic same-tape
+  mismatch and on an undeclared cross-tape difference (tested).

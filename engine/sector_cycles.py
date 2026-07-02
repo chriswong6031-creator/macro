@@ -656,11 +656,22 @@ def record_series(full: pd.Series, *, win_start: pd.Timestamp, last_ts: pd.Times
     # phase_v2 + hysteresis: classify_phase from the ontology with the caller's
     # mutable pending dict so hysteresis state persists within this series's computation.
     # confirm_persist=0 (OFF) preserves behavioral continuity per D1 §2.1 / M-plan note.
+    #
+    # W3.6 COHERENCE FIX: classify_phase's LEVEL cut (§2.1) must read the SAME position
+    # semantic that the record emits as `pos_v2`.  W1.6 fed the LEGACY range-stochastic
+    # `pos_now` here while emitting the canonical z/CDF `pos_v2` — a mixed-vocabulary pair.
+    # Because the two semantics genuinely disagree (audit finding: range-stochastic reads
+    # washed-out where z/CDF reads stretched), that produced records like EWU pos_v2=92.9
+    # phase='Trough' — a high position wearing a trough label.  Feed `pos_v2` (fall back to
+    # `pos_now` only when the canonical read is unavailable) so the v2 phase/stance/pos
+    # triple is internally coherent.  The LEGACY `phase`/`pos`/`signal` fields above stay
+    # driven by `pos_now` and are byte-identical.
+    pos_for_v2 = pos_v2 if pos_v2 is not None else pos_now
     pending = _phase_pending if _phase_pending is not None else {}
     ph_read: dict = {}
     try:
         ph_read = onto.classify_phase(
-            pos_now, osc_slope,
+            pos_for_v2, osc_slope,
             mtf.get("W") or {}, mtf.get("3D") or {},
             confirm_persist=0, pending=pending,
         )
@@ -675,14 +686,21 @@ def record_series(full: pd.Series, *, win_start: pd.Timestamp, last_ts: pd.Times
         phase_v2 = phase  # fall back to legacy phase
         phase_v2_age_bars = 0
 
-    # resolve_state: full stance/divergence/tone from the 5×8 crosswalk
+    # resolve_state: full stance/divergence/tone from the 5×8 crosswalk.
+    # W3.6: pos-qualified crosswalk cells (Downturn × buy signals, §2.3) key off the SAME
+    # canonical position as phase_v2, not the legacy stochastic — coherent v2 triple.
     ladder_state = lad.get("state") or ""
     dc_phase = (res.get("cycle") or {}).get("dc_phase") if res else None
     failed_cycle = bool((res.get("cycle") or {}).get("failed_cycle")) if res else False
+    # W3.6: stamp the FULL resolved output (zh + divergence note + clocks) so the shared
+    # renderer displays stamped fields and never recomputes stance/divergence JS-side
+    # (D1 doctrine: "JS renders resolved fields the Python kernel stamped").
+    stance = divergence = tone = None
+    stance_zh = divergence_note = divergence_note_zh = clocks = None
     try:
         if ladder_state in onto.LADDER:
             rs_out = onto.resolve_state(
-                pos=pos_now, phase=phase_v2,
+                pos=pos_for_v2, phase=phase_v2,
                 phase_dir=ph_read.get("phase_dir", "rising"),
                 ladder_state=ladder_state,
                 dc_phase=dc_phase,
@@ -691,10 +709,13 @@ def record_series(full: pd.Series, *, win_start: pd.Timestamp, last_ts: pd.Times
             stance = rs_out["stance"]
             divergence = rs_out["divergence"]
             tone = rs_out["tone"]
-        else:
-            stance = divergence = tone = None
+            stance_zh = rs_out.get("stance_zh")
+            divergence_note = rs_out.get("divergence_note")
+            divergence_note_zh = rs_out.get("divergence_note_zh")
+            clocks = rs_out.get("clocks")
     except Exception:  # noqa: BLE001
         stance = divergence = tone = None
+        stance_zh = divergence_note = divergence_note_zh = clocks = None
 
     rec = {
         "price": price_pts, "osc": osc_pts, "turns": swings, "proj": proj,
@@ -723,6 +744,11 @@ def record_series(full: pd.Series, *, win_start: pd.Timestamp, last_ts: pd.Times
             "stance":          stance,
             "divergence":      divergence,
             "tone":            tone,
+            # ── W3.6: full resolved-state fields for the shared renderer ──
+            "stance_zh":         stance_zh,
+            "divergence_note":   divergence_note,
+            "divergence_note_zh": divergence_note_zh,
+            "clocks":            clocks,
             # W2.2: structure basis (mirrored here for the forward-log writer)
             "basis":           basis,
         },

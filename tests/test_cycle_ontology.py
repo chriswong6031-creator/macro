@@ -266,6 +266,78 @@ def test_live_output_sweep(json_path):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 4b. Position/phase coherence — the W3.6 regression guard (the ontology promise)
+#
+# No record may carry a high canonical position (pos_v2 ≥ 85) with a LOW-position
+# phase (Trough/Recovery), nor a low position (pos_v2 ≤ 15) with a HIGH-position
+# phase (Peak/Downturn), unless the record explicitly declares divergence.  This is
+# the guard against the W1.6 mixed-vocabulary bug (phase_v2 was classified from the
+# LEGACY range-stochastic `pos` while `pos_v2` used the canonical z/CDF — producing
+# records like EWU pos_v2=92.9 phase_v2='Trough').  The kernel fix feeds pos_v2 into
+# classify_phase so phase_v2 is DERIVED from pos_v2; this test locks that in on the
+# live build and would fail loudly if a future engine change re-introduced the split.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# phase level cuts (D1 §2.1): Peak/Downturn require pos ≥ 68; Trough/Recovery ≤ 32.
+_LOW_POS_PHASES = {"Trough", "Recovery"}   # phases that require a LOW position
+_HIGH_POS_PHASES = {"Peak", "Downturn"}    # phases that require a HIGH position
+
+
+def assert_record_coherent(now: dict, where: str = "") -> None:
+    """Raise AssertionError if a single now-block carries a forbidden pos_v2/phase_v2
+    combination without a divergence flag.  Reused by the synthetic-mismatch test."""
+    pos_v2 = now.get("pos_v2")
+    phase_v2 = now.get("phase_v2")
+    if pos_v2 is None or phase_v2 is None:
+        return
+    div = bool(now.get("divergence"))
+    if pos_v2 >= 85.0 and phase_v2 in _LOW_POS_PHASES:
+        assert div, (
+            f"{where}: pos_v2={pos_v2} (stretched) with phase_v2={phase_v2!r} "
+            f"(a low-position phase) and NO divergence flag — mixed-vocabulary record. "
+            f"phase_v2 must be derived from pos_v2 (W3.6 coherence guard)."
+        )
+    if pos_v2 <= 15.0 and phase_v2 in _HIGH_POS_PHASES:
+        assert div, (
+            f"{where}: pos_v2={pos_v2} (washed-out) with phase_v2={phase_v2!r} "
+            f"(a high-position phase) and NO divergence flag — mixed-vocabulary record. "
+            f"phase_v2 must be derived from pos_v2 (W3.6 coherence guard)."
+        )
+
+
+@pytest.mark.parametrize("json_path", _find_cycle_jsons() or [None])
+def test_live_pos_phase_coherence(json_path):
+    """No live record carries pos_v2 ≥ 85 with a Trough/Recovery phase (nor the mirror)
+    without a divergence flag — the W3.6 phase-coherence regression."""
+    if json_path is None:
+        pytest.skip("No live JSON files found; skipping coherence sweep")
+        return
+    with open(json_path) as fh:
+        data = json.load(fh)
+    for rec in _extract_records(data):
+        now = rec.get("now")
+        if not isinstance(now, dict):
+            continue
+        ticker = rec.get("ticker") or rec.get("id") or rec.get("name") or "?"
+        assert_record_coherent(now, where=f"{os.path.basename(json_path)}:{ticker}")
+
+
+def test_synthetic_mismatch_is_caught():
+    """The coherence guard FAILS on a synthetic mixed-vocabulary record (the exact
+    W1.6 EWU pathology) — proving the guard is not vacuous."""
+    bad = {"pos_v2": 92.9, "phase_v2": "Trough", "divergence": False}
+    with pytest.raises(AssertionError):
+        assert_record_coherent(bad, where="synthetic")
+    # mirror case
+    bad2 = {"pos_v2": 4.0, "phase_v2": "Peak", "divergence": False}
+    with pytest.raises(AssertionError):
+        assert_record_coherent(bad2, where="synthetic-mirror")
+    # a genuine divergence (flag set) is allowed
+    ok = {"pos_v2": 92.9, "phase_v2": "Trough", "divergence": True}
+    assert_record_coherent(ok, where="synthetic-ok")   # must not raise
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 5. Generated-JS sync (--check round-trip)
 # ─────────────────────────────────────────────────────────────────────────────
 
