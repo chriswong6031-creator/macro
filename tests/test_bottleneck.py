@@ -2,8 +2,13 @@
 TIGHT/SOLD_OUT band + HBM-template regime when the four physical legs all point to a
 squeeze (synthetic FRED fixtures, since the live series need network), and that it
 degrades to AWAITING_DATA when the store is empty. DISPLAY-ONLY contract.
+
+W1a additions: leg6_language weight (0.25), negated-hit exclusion, shadow log, unmapped
+theme language-only band, glut text leg from synthetic parquet (§3.6).
 """
 from __future__ import annotations
+
+import json
 
 import numpy as np
 import pandas as pd
@@ -78,3 +83,134 @@ def test_loose_regime(monkeypatch, tmp_path):
     t = out["themes"]["memory_storage"]
     assert t["regime"] is False
     assert t["band"] in ("LOOSE", "NEUTRAL")
+
+
+# ---- W1a: leg6_language weight, negated exclusion, shadow log, unmapped theme ----
+
+def test_leg6_weight_in_composite(monkeypatch, tmp_path):
+    """leg6_language enters the composite at 0.25 and rebalanced numeric legs sum to 0.75."""
+    from engine.bottleneck import WEIGHTS
+    # leg6 must be present at 0.25 (PROVISIONAL)
+    assert "leg6_language" in WEIGHTS
+    assert abs(WEIGHTS["leg6_language"] - 0.25) < 1e-9
+
+    # All 5 legs must sum to 1.0 (within float tolerance)
+    total = sum(WEIGHTS.values())
+    assert abs(total - 1.0) < 1e-6, f"weights sum to {total}, not 1.0"
+
+    # Numeric legs (leg1-4) sum to 0.75
+    numeric = sum(v for k, v in WEIGHTS.items() if k != "leg6_language")
+    assert abs(numeric - 0.75) < 1e-6, f"numeric legs sum to {numeric}, not 0.75"
+
+
+def _make_parquet(tmp_path, rows: list[dict], kind: str = "bottleneck") -> None:
+    """Write a synthetic hits parquet to tmp_path/edgar/{kind}_hits.parquet."""
+    import pathlib
+    p = pathlib.Path(tmp_path) / "edgar" / f"{kind}_hits.parquet"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(rows).to_parquet(p, index=False)
+
+
+def test_negated_hits_excluded_when_polarity_exists(monkeypatch, tmp_path):
+    """When polarity='negated', those hits must not count toward accel or filer count."""
+    from engine.bottleneck import _language_accel
+    import pathlib
+
+    # 3 hits for MU: 2 affirmative in recent window, 1 negated (must be excluded)
+    rows = [
+        {"id": "1", "ticker": "MU", "file_date": "2026-06-01", "phrase": "sold out",
+         "fetched": "2026-06-01", "polarity": None},       # fallback-b null = counts as affirmative
+        {"id": "2", "ticker": "MU", "file_date": "2026-06-15", "phrase": "on allocation",
+         "fetched": "2026-06-15", "polarity": None},
+        {"id": "3", "ticker": "MU", "file_date": "2026-06-10", "phrase": "sold out",
+         "fetched": "2026-06-10", "polarity": "negated"},   # must be EXCLUDED
+    ]
+    p = pathlib.Path(tmp_path) / "edgar" / "bottleneck_hits.parquet"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(rows).to_parquet(p, index=False)
+
+    accel, hits, n_filers = _language_accel(["MU"], parquet_path=p)
+    # Only 2 non-negated hits (id 1 and id 2) should count; id 3 is excluded
+    assert hits == 2, f"expected 2 non-negated hits, got {hits}"
+    assert n_filers >= 1
+
+
+def test_shadow_log_rows_written_for_3_cutoffs(monkeypatch, tmp_path):
+    """_shadow_log_cutoffs must write exactly 3 rows (one per cutoff) for a new theme/asof."""
+    monkeypatch.setattr(bn.config, "data_dir", lambda: tmp_path)
+    (tmp_path / "foresight").mkdir(parents=True, exist_ok=True)
+
+    # lang_accel=1.2 is above the 1.0 cutoff but below 1.5 and 2.0
+    bn._shadow_log_cutoffs("memory_storage", "2026-07-02", lang_accel=1.2, n_filers=3)
+
+    p = tmp_path / "foresight" / "shadow_log.jsonl"
+    assert p.exists(), "shadow_log.jsonl was not created"
+    rows = [json.loads(l) for l in p.read_text().splitlines() if l.strip()]
+    assert len(rows) == 3, f"expected 3 shadow rows, got {len(rows)}"
+    cutoffs = sorted(r["cutoff"] for r in rows)
+    assert cutoffs == sorted(bn.LANG_Z_SHADOW_CUTOFFS)
+    # accel 1.2 > cutoff 1.0 → TIGHT (text); ≤ 1.5 and ≤ 2.0 → TIGHTENING (text)
+    by_cutoff = {r["cutoff"]: r["would_be_band"] for r in rows}
+    assert by_cutoff[1.0] == "TIGHT (text)"
+    assert by_cutoff[1.5] == "TIGHTENING (text)"
+    assert by_cutoff[2.0] == "TIGHTENING (text)"
+
+
+def test_unmapped_theme_gets_language_only_band(monkeypatch, tmp_path):
+    """An unmapped theme (no THEME_MAP entry) can get TIGHT (text) / TIGHTENING (text)
+    from the language leg alone — band capped there, tightness=None."""
+    monkeypatch.setattr(bn.config, "load",
+                        lambda: {"themes": {"glp1_obesity": {"name": "GLP-1 Obesity",
+                                                              "tickers": ["LLY", "NVO"]}}})
+    monkeypatch.setattr(bn.config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(bn.store, "read", lambda group, name: None)
+
+    # Synthetic parquet: 2 distinct filers with positive accel in recent window
+    rows = [
+        {"id": "1", "ticker": "LLY", "file_date": "2026-06-01", "phrase": "on allocation",
+         "fetched": "2026-06-01", "polarity": None},
+        {"id": "2", "ticker": "NVO", "file_date": "2026-06-15", "phrase": "sold out",
+         "fetched": "2026-06-15", "polarity": None},
+    ]
+    _make_parquet(tmp_path, rows, "bottleneck")
+    (tmp_path / "foresight").mkdir(parents=True, exist_ok=True)
+
+    out = bn.compute_bottleneck(write_ledger=False)
+    assert out is not None, "bottleneck returned None even with language data"
+    t = out["themes"].get("glp1_obesity")
+    assert t is not None, "glp1_obesity theme missing from output"
+    assert t["text_only"] is True
+    assert t["band"] in ("TIGHT (text)", "TIGHTENING (text)", "NEUTRAL")
+    assert t["tightness"] is None   # no numeric legs
+    assert t["naics"] is None       # unmapped has no NAICS
+
+
+def test_glut_text_leg_from_synthetic_parquet(monkeypatch, tmp_path):
+    """§3.6: glut_watch picks up the leg6_glut_language from a synthetic glut_hits parquet."""
+    from engine import glut_watch as gw
+
+    monkeypatch.setattr(gw.config, "load",
+                        lambda: {"themes": {"memory_storage": {"name": "Memory",
+                                                                "tickers": ["MU", "WDC"]}}})
+    monkeypatch.setattr(gw.config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(gw._series.__func__ if hasattr(gw._series, '__func__') else gw,
+                        "__dummy__", None, raising=False)
+    # Patch _series to return None (no FRED data) so only language fires
+    monkeypatch.setattr(gw, "_series", lambda sid: None)
+
+    # Synthetic glut_hits parquet: 2 filers (MU, WDC) with capacity-adds language
+    rows = [
+        {"id": "1", "ticker": "MU", "file_date": "2026-06-01", "phrase": "capacity expansion",
+         "fetched": "2026-06-01", "polarity": None},
+        {"id": "2", "ticker": "WDC", "file_date": "2026-06-10", "phrase": "adding capacity",
+         "fetched": "2026-06-10", "polarity": None},
+    ]
+    _make_parquet(tmp_path, rows, "glut")
+
+    out = gw.compute_glut_watch(demand={"themes": {}}, write_ledger=False)
+    assert out is not None
+    t = out["themes"].get("memory_storage")
+    assert t is not None
+    # leg6_glut_language should be present in legs dict
+    assert "leg6_glut_language" in t["legs"]
+    assert t["glut_language_detail"]["provisional"] is True

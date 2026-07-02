@@ -28,9 +28,12 @@ from lib import config
 log = logging.getLogger(__name__)
 
 TIGHT_BANDS = {"TIGHT", "SOLD_OUT"}
+# Text-only bands (leg6 language alone, no numeric FRED confirmation)
+TEXT_BANDS = {"TIGHT (text)", "TIGHTENING (text)"}
 LOOSE_BANDS = {"LOOSE"}
 BROAD_HI = 0.50            # breadth above this = revisions already broad (late)
-_STAGE_RANK = {"PRECIPICE": 0, "BROADENING": 1, "RE-RATING": 2, "GLUT-RISK": 3,
+_STAGE_RANK = {"PRECIPICE": 0, "PRECIPICE (text)": 0, "BROADENING": 1,
+               "BROADENING (text)": 1, "RE-RATING": 2, "GLUT-RISK": 3,
                "WATCH": 4, "UNKNOWN": 5}
 
 
@@ -38,10 +41,19 @@ GLUT_BANDS = {"GLUT_FORMING", "GLUT"}
 
 
 def _stage(bn: dict | None, rv: dict | None, glut_band: str | None = None) -> tuple[str, str]:
-    """Return (stage, rationale). Honest about missing tiers."""
+    """Return (stage, rationale). Honest about missing tiers.
+
+    Text-grade stages (Q6.3 / §P0-B): when bottleneck_band is TIGHT (text) or
+    TIGHTENING (text) (language-only, no numeric FRED confirmation), the stage machine
+    emits PRECIPICE (text) / BROADENING (text) — visually distinct, graded separately,
+    score still capped at TEXT_ONLY_CAP=50. Rationale always says
+    'text-only — awaiting numeric physical confirmation'.
+    """
     band = (bn or {}).get("band")
     tight = band in TIGHT_BANDS
+    text_tight = band in TEXT_BANDS          # language-only signal, unconfirmed by FRED
     loose = band in LOOSE_BANDS
+    # bn_known: any real band (not None/AWAITING) including text bands
     bn_known = bn is not None and band not in (None, "AWAITING_DATA")
 
     breadth = (rv or {}).get("breadth")
@@ -67,7 +79,25 @@ def _stage(bn: dict | None, rv: dict | None, glut_band: str | None = None) -> tu
             return "WATCH", "revisions flat (bottleneck unknown)"
         return "WATCH", "revisions present (bottleneck unknown)"
 
-    # bottleneck known
+    # Text-only bands (language leg alone — no numeric FRED confirmation yet)
+    if text_tight and not tight:
+        if rv_known and flat:
+            return ("PRECIPICE (text)",
+                    "language signal TIGHT while revisions not yet firing — text-only; "
+                    "awaiting numeric physical confirmation")
+        if rv_known and broad_hi:
+            return ("RE-RATING",
+                    "language signal present but revisions already broad — runway maturing, "
+                    "do not chase (text-only)")
+        if positive:
+            return ("BROADENING (text)",
+                    "language signal TIGHT and revisions rising — text-only; "
+                    "awaiting numeric physical confirmation")
+        return ("PRECIPICE (text)",
+                "language signal TIGHT, revisions undetermined — text-only; "
+                "awaiting numeric physical confirmation")
+
+    # bottleneck known (numeric FRED legs)
     if tight and rv_known and flat:
         return "PRECIPICE", "supply TIGHT while revisions not yet firing — the early state"
     if tight and rv_known and broad_hi:
@@ -82,6 +112,7 @@ def _stage(bn: dict | None, rv: dict | None, glut_band: str | None = None) -> tu
 
 
 THESIS_STAGES = {"PRECIPICE", "BROADENING"}
+TEXT_THESIS_STAGES = {"PRECIPICE (text)", "BROADENING (text)"}
 BUYABLE_VERDICTS = {"buyable_washout"}
 
 
@@ -105,7 +136,14 @@ def _entry(stage: str, disloc: dict | None) -> tuple[bool, str]:
     """Entry overlay — detection tells you WHAT/that-it's-durable; the BUY waits for a
     dislocation/flush. 13D was right & ~9mo early; the real HBM entry was the early-2025
     tariff flush. So entry_ready only when a thesis-stage theme meets an active buyable
-    dislocation."""
+    dislocation.
+
+    Text thesis stages (PRECIPICE (text) / BROADENING (text)) are NOT entry-ready even on
+    a dislocation — they require numeric physical confirmation first.
+    """
+    if stage in TEXT_THESIS_STAGES:
+        return False, ("text-only thesis — awaiting numeric physical confirmation; "
+                       "no entry until FRED bottleneck leg fires")
     if stage not in THESIS_STAGES:
         if stage == "RE-RATING":
             return False, "late — revisions already broad; do not chase, wait for a reset"
@@ -193,9 +231,11 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         gband = (gl or {}).get("band")
         stage, rationale = _stage(bn, rv, gband)
         # demand is a LEADING confirmation/conviction modifier on the rationale, not a
-        # stage-changer (the stage is bottleneck x revision x exit-risk; demand reinforces)
+        # stage-changer (the stage is bottleneck x revision x exit-risk; demand reinforces).
+        # Include text thesis stages so demand context shows even for text-only themes.
+        _thesis_like = THESIS_STAGES | TEXT_THESIS_STAGES
         dband = (dm or {}).get("demand_band")
-        if dm and stage in THESIS_STAGES and dband in ("ACCELERATING", "STEADY"):
+        if dm and stage in _thesis_like and dband in ("ACCELERATING", "STEADY"):
             rationale += f" · customer capex {dband.lower()} (+{(dm.get('capex_yoy') or 0):.0f}% YoY) confirms demand"
         elif dm and dband in ("COOLING", "CONTRACTING") and stage != "GLUT-RISK":
             rationale += f" · CAUTION: customer capex {dband.lower()}"
@@ -203,7 +243,7 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         # (8-K language) front-runs the consensus revision. Reinforces a thesis stage,
         # cautions a late one; never changes the stage.
         guband = (gd or {}).get("guidance_band")
-        if gd and guband in ("RAISING", "BROAD-RAISE") and stage in THESIS_STAGES:
+        if gd and guband in ("RAISING", "BROAD-RAISE") and stage in _thesis_like:
             rationale += (f" · T3 guidance {guband.lower()}: {gd.get('n_raisers', 0)} "
                           "firm(s) pre-signaling above consensus (leads the revision)")
         elif gd and guband == "CUTTING" and stage != "GLUT-RISK":
@@ -212,7 +252,7 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         # only a tell while the theme is still early (a thesis stage); once revisions are broad
         # the same activity is just crowding, so it is NOT added to a late theme's rationale.
         cd_leading = (cd or {}).get("n_leading") or 0
-        if cd and cd_leading and stage in THESIS_STAGES:
+        if cd and cd_leading and stage in _thesis_like:
             rationale += f" · alt-data confirms (pre-revision): {cd.get('summary')}"
         entry_ready, entry_note = _entry(stage, disloc)
         rows.append({
@@ -223,6 +263,7 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
             "entry_ready": entry_ready,
             "entry_note": entry_note,
             "bottleneck_band": (bn or {}).get("band"),
+            "bottleneck_text_only": (bn or {}).get("text_only", False),
             "tightness": (bn or {}).get("tightness"),
             "bottleneck_regime": (bn or {}).get("regime"),
             "demand_band": dband,
