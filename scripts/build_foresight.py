@@ -140,6 +140,21 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("power_scarcity failed (non-fatal): %s", e)
         power = None
+    # ENB + cluster nightly log: written BEFORE convergence so load_cluster_membership()
+    # picks up today's clusters when convergence calls it.  Non-fatal.
+    try:
+        from engine.foresight_enb import compute_enb
+        constructive = [r["theme"] for r in (cascade.get("themes") or [])
+                        if r.get("stage") in ("PRECIPICE", "BROADENING") or (r.get("score") or 0) >= 55]
+        _enb_result = compute_enb(write_log=True, constructive_themes=constructive or None)
+        if _enb_result:
+            log.info("ENB log updated: enb_all=%.2f, n_themes=%d, n_low_overlap_pairs=%d",
+                     _enb_result.get("enb_all") or 0,
+                     _enb_result.get("n_themes_in_matrix") or 0,
+                     _enb_result.get("n_low_overlap_pairs") or 0)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("foresight_enb compute failed (non-fatal): %s", e)
+
     # Convergence ("neural web"): fuse every leaf into one heating-up read
     try:
         from engine.foresight_convergence import compute_convergence
@@ -147,6 +162,17 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("convergence failed (non-fatal): %s", e)
         convergence = None
+
+    # heat_threshold shadow rows: accrue after convergence is computed
+    try:
+        from engine.foresight_shadow import compute_heat_shadow
+        n_heat = compute_heat_shadow(
+            convergence_payload=convergence,
+            asof=(cascade or {}).get("asof"),
+        )
+        log.info("heat_threshold shadow: %d new rows accrued", n_heat)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("compute_heat_shadow failed (non-fatal): %s", e)
     # LLM analyst over the convergence (graceful no-op without a credential) + the deterministic
     # thesis monitor that fires when the convergence a thesis was built on decays.
     try:
