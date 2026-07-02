@@ -1,7 +1,9 @@
-"""Build the standalone China News powerhouse page + machine-readable feeds.
+"""Emit machine-readable China News intel artifacts (site/chinanews/*.json).
 
 Runs the multi-source ingest (akshare flash wires + state RSS → PIT event bus), then
-renders site/china_news.html and emits site/chinanews/{sentiment,feed,by_ticker}.json.
+writes site/chinanews/{sentiment,feed,by_ticker}.json.  The page site/china_news.html
+is rendered separately by build_china.py using engine/china_news.py's view model —
+this script owns ONLY the intel JSON artifacts.
 Callable standalone (`python -m scripts.build_china_news`) and importable (build()).
 CONTEXT-ONLY · never raises into the site build. See research/CHINA_INTEL_POWERHOUSE.md §1.
 """
@@ -11,14 +13,9 @@ import json
 import logging
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader
-
 from lib import config
 
 log = logging.getLogger(__name__)
-
-# theme.css / theme.js power the shared chrome (nav, dark mode, lang toggle)
-ASSETS = ("theme.css", "theme.js")
 
 
 def _site_dir() -> Path:
@@ -59,26 +56,16 @@ def build() -> dict | None:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("china news ingest failed (%s); rendering from accrued store", e)
 
-    # 2) assemble the page view-model
+    # 2) assemble the intel view-model
     news = ni.panel()
 
     site = _site_dir()
     site.mkdir(parents=True, exist_ok=True)
 
-    # 3) render the standalone page
-    env = Environment(
-        loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=False)
-    from engine import i18n
-    env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
-    html = env.get_template("china_news.html.j2").render(news=news)
-    (site / "china_news.html").write_text(html)
-    for a in ASSETS:
-        src = config.ROOT / "templates" / a
-        if src.exists() and not (site / a).exists():
-            (site / a).write_text(src.read_text())
-    log.info("wrote %s/china_news.html (%d KB)", site, len(html) // 1024)
-
-    # 4) machine-readable feeds (for the intel bus + future China Mastermind)
+    # 3) machine-readable feeds — written FIRST so data artifacts never freeze because
+    #    a downstream render fails (site/china_news.html is rendered by build_china.py
+    #    with engine/china_news.py's view model; this script owns ONLY the
+    #    site/chinanews/*.json intel artifacts).
     cndir = site / "chinanews"
     cndir.mkdir(parents=True, exist_ok=True)
     sent = ni.sentiment()
