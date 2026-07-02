@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-02T11:33:49.457968+00:00",
+  "generated_at": "2026-07-02T11:49:01.355832+00:00",
   "grade_horizons": [
     5,
     21,
@@ -90,10 +90,32 @@
       }
     }
   },
+  "placebo_magnitude": {
+    "5": {
+      "covered_ticker": {
+        "n_grades": 158,
+        "mean_abs_excess": 0.06173
+      },
+      "fallback_no_ticker": {
+        "n_grades": 120,
+        "mean_abs_excess": 0.0
+      },
+      "overall": {
+        "n_grades": 278,
+        "mean_abs_excess": 0.035084
+      }
+    },
+    "_meta": {
+      "n_placebo_claims": 342,
+      "n_covered_events": 39,
+      "n_fallback_events": 39,
+      "fallback_rate": 0.5
+    }
+  },
   "counts": {
-    "n_claims": 3467,
-    "n_grades": 1536,
-    "n_placebo": 20,
+    "n_claims": 3789,
+    "n_grades": 1800,
+    "n_placebo": 342,
     "n_rejected": 0
   }
 }

@@ -603,6 +603,83 @@ def _aggregate(claims: list[dict], grades: list[dict],
     return out
 
 
+def _placebo_magnitude(claims: list[dict], grades: list[dict]) -> dict:
+    """Compute per-horizon magnitude stats for the placebo tape (D3).
+
+    Reports the mean |excess| across ALL placebo grades at each horizon,
+    split by placebo_path ('covered_ticker' entity claims vs 'fallback_no_ticker'
+    bench-basket claims). The UI's scoreboard reads this to display the
+    "beat placebo" comparison.
+
+    n_fallback is the count of sampled events that had no covered ticker and
+    fell back to the bench-basket path (a diagnostic for placebo tape quality).
+    """
+    cid_meta = {c["claim_id"]: c for c in claims
+                if c.get("claim_id") and c.get("is_placebo")}
+    if not cid_meta:
+        return {}
+
+    per_h: dict[str, dict] = {}
+    for g in grades:
+        cid = g.get("claim_id")
+        c = cid_meta.get(cid)
+        if c is None:
+            continue
+        h = int(g.get("horizon_d", -1))
+        if h < 0:
+            continue
+        path = str(c.get("placebo_path") or "unknown")
+        exc = g.get("excess")
+        if exc is None:
+            continue
+        bucket = per_h.setdefault(str(h), {})
+        agg = bucket.setdefault(path, {"n": 0, "abs_excess_sum": 0.0})
+        agg["n"] += 1
+        agg["abs_excess_sum"] += abs(float(exc))
+
+    out: dict[str, dict] = {}
+    for h_str, paths in per_h.items():
+        h_out: dict[str, Any] = {}
+        total_n = 0
+        total_abs = 0.0
+        for path, agg in paths.items():
+            n = agg["n"]
+            mean_abs = round(agg["abs_excess_sum"] / n, 6) if n else None
+            h_out[path] = {"n_grades": n, "mean_abs_excess": mean_abs}
+            total_n += n
+            total_abs += agg["abs_excess_sum"]
+        h_out["overall"] = {
+            "n_grades": total_n,
+            "mean_abs_excess": round(total_abs / total_n, 6) if total_n else None,
+        }
+        out[h_str] = h_out
+
+    # Fallback rate: fraction of sampled events with no covered ticker
+    n_fallback_claims = sum(
+        1 for c in cid_meta.values() if c.get("placebo_path") == "fallback_no_ticker"
+    )
+    # Claims are registered per-horizon × per-ticker; count unique events instead
+    fallback_event_ids = {
+        c.get("event_id") for c in cid_meta.values()
+        if c.get("placebo_path") == "fallback_no_ticker"
+    }
+    covered_event_ids = {
+        c.get("event_id") for c in cid_meta.values()
+        if c.get("placebo_path") == "covered_ticker"
+    }
+    out["_meta"] = {
+        "n_placebo_claims": len(cid_meta),
+        "n_covered_events": len(covered_event_ids),
+        "n_fallback_events": len(fallback_event_ids),
+        "fallback_rate": (
+            round(len(fallback_event_ids) /
+                  (len(fallback_event_ids) + len(covered_event_ids)), 4)
+            if (fallback_event_ids or covered_event_ids) else None
+        ),
+    }
+    return out
+
+
 def compute_track_record(root: Path | str | None = None) -> dict:
     """Build the track_record.json payload — per desk and per claim-family, at
     each grade horizon. Does not write; `emit_track_record` persists it. Pure so
@@ -627,6 +704,7 @@ def compute_track_record(root: Path | str | None = None) -> dict:
         "graded_min_dates": GRADED_MIN_DATES,
         "by_desk": by_desk,
         "by_family": by_family,
+        "placebo_magnitude": _placebo_magnitude(claims, grades),  # D3 counterfactual
         "counts": {
             "n_claims": len(claims),
             "n_grades": len(grades),
