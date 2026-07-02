@@ -127,12 +127,18 @@ def recommend(sig: pd.DataFrame, master: dict | None, cones: dict | None,
     mom_bull = last.get("momentum_state") == "bull"
     mom_bear = last.get("momentum_state") == "bear"
 
-    # exposure anchor = the validated Kelly size (else the optimal grid), then widen to a band
+    # exposure anchor = the validated Kelly size (else the optimal grid), then widen to a band.
+    # Override-Registry (W0): anchor on alloc_optimal_raw when present — the rec-card
+    # band math should reflect what the engine actually wants, not the override-suppressed
+    # final value (the display blackout is already handled upstream; the band should not
+    # compound the suppression by anchoring at 0 during the gate window).
     kpct = None
     if kelly and kelly.get("size_pct") is not None:
         kpct = int(kelly["size_pct"])
     if kpct is None:
-        kpct = int(round(100 * (_f(last.get("alloc_optimal")) or 0.0)))
+        raw_anchor = _f(last.get("alloc_optimal_raw"))  # prefer pure-engine series (W0)
+        fallback = _f(last.get("alloc_optimal"))
+        kpct = int(round(100 * (raw_anchor if raw_anchor is not None else (fallback or 0.0))))
 
     def band(c, w):
         return max(0, min(100, c - w)), max(0, min(100, c + w))

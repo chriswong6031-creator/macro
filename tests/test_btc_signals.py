@@ -12,6 +12,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import btc_overrides as OV  # noqa: E402
 from engine import btc_signals as S  # noqa: E402
 from lib import config  # noqa: E402
 
@@ -234,23 +235,50 @@ def test_midterm_blackout_windows() -> None:
 
 
 def test_allocation_midterm_gate_forces_flat() -> None:
-    # an invest-everything setup (strong momentum, zero risk) spanning the 2022 midterm
-    # year: the gate must force 0 through the year, then release the grid at the vote.
+    # W0 REWRITE: allocation() is now PURE ENGINE — it no longer applies the gate.
+    # This test now exercises btc_overrides.apply(), which is where the gate lives.
+    # Verifies: final alloc_* forced 0.0 in the blackout window, *_raw columns are
+    # NOT zeroed, and override_active / override_id are correct.
     idx = pd.date_range("2022-01-01", "2023-06-30", freq="D")
     mom = pd.Series(1.0, index=idx)
     risk = pd.Series(0.0, index=idx)
     base = {**config.load()["vector"]["allocation"],
-            "conviction_sizing": False, "drawdown_brake": False, "bottom_overlay": False}
-    gated = S.allocation(mom, risk, {**base, "midterm_gate": {"enabled": True}})
-    ungated = S.allocation(mom, risk, {**base, "midterm_gate": {"enabled": False}})
-    # ungated would be fully invested the whole time
-    assert (ungated["alloc_optimal"] > 0).all()
-    # gated: flat through the blackout, invested again after the Nov 8 2022 vote
-    assert gated["alloc_optimal"].loc["2022-01-01":"2022-11-07"].eq(0.0).all()
-    assert (gated["alloc_optimal"].loc["2022-11-08":] > 0).all()
-    # the gate is the FINAL word — applies to every variant, not just optimal
-    for c in gated.columns:
-        assert gated[c].loc["2022-06-01":"2022-10-31"].eq(0.0).all()
+            "conviction_sizing": False, "drawdown_brake": False, "bottom_overlay": False,
+            "midterm_gate": {"enabled": False}}   # allocation() sees no gate
+    pure = S.allocation(mom, risk, base)
+
+    # pure engine output must be fully invested the whole window (strong mom, zero risk)
+    assert (pure["alloc_optimal"] > 0).all(), "pure allocation should be > 0 everywhere"
+
+    # apply the override via btc_overrides.apply
+    acfg = {**base, "midterm_gate": {"enabled": True}}
+    result = OV.apply(pure, acfg)
+
+    # final (gated): flat through the blackout, invested again after the Nov 8 2022 vote
+    assert result["alloc_optimal"].loc["2022-01-01":"2022-11-07"].eq(0.0).all(), \
+        "final alloc_optimal must be 0 during the 2022 blackout"
+    assert (result["alloc_optimal"].loc["2022-11-08":] > 0).all(), \
+        "final alloc_optimal must be > 0 after the 2022 vote"
+
+    # _raw columns must NOT be zeroed — they carry the pure engine output
+    assert (result["alloc_optimal_raw"] > 0).all(), \
+        "alloc_optimal_raw must remain > 0 (pure engine, not suppressed)"
+
+    # override_active must be True in the window, False after
+    assert result["override_active"].loc["2022-01-01":"2022-11-07"].all(), \
+        "override_active must be True inside the 2022 blackout"
+    assert not result["override_active"].loc["2022-11-08":].any(), \
+        "override_active must be False after the 2022 vote"
+
+    # override_id must name 'midterm_blackout' inside the window
+    assert (result["override_id"].loc["2022-01-01":"2022-11-07"] == "midterm_blackout").all()
+    assert (result["override_id"].loc["2022-11-08":] == "").all()
+
+    # the gate applies to every variant, not just optimal
+    alloc_cols = [c for c in result.columns if c.startswith("alloc_") and not c.endswith("_raw")]
+    for c in alloc_cols:
+        assert result[c].loc["2022-06-01":"2022-10-31"].eq(0.0).all(), \
+            f"{c} must be 0 in mid-blackout window"
 
 
 if __name__ == "__main__":

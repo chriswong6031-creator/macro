@@ -3231,6 +3231,26 @@ forex:
 # scripts/calibrate_vector.py and shipped to tooltips.
 # -----------------------------------------------------------------------------
 vector:
+  # Override-Registry (W0 masterplan).  Every rule that forces a size override
+  # on the engine output must be DECLARED here.  Params stay in their canonical
+  # config location (e.g. vector.allocation.midterm_gate) so existing consumers
+  # continue to read them unchanged; the registry entry is the governance record.
+  # Fields: id, thesis, basis_n, scope, dof_cost, release_rules, params_ref.
+  overrides:
+    - id: midterm_blackout
+      thesis: >
+        BTC has capitulated into every US midterm-election year (2014/2018/2022
+        all saw severe markdown into the November vote).  The strategy sits flat
+        (cash) from Jan 1 of a midterm year until ~election day to avoid the
+        projected drawdown window.
+      basis_n: 3                        # n=3 prior midterm cycles (machine-read)
+      scope: "midterm years (year%4==2), Jan 1 → election day"
+      dof_cost: 3                       # 3 DOF: decision-to-gate + year%4==2 selector + window shape
+      release_rules:
+        - "calendar: ~election day (buy_lead_days offset configurable)"
+        - "planned W2: structural invalidation — new-ATH daily close × 5 consecutive closes"
+      params_ref: vector.allocation.midterm_gate
+
   momentum:                       # vote ensemble -> [-1,+1]; their ±0.5 = triggers
     smooth_days: 3
     rsi_bull: 55
