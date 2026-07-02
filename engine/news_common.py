@@ -258,6 +258,12 @@ def is_low_value(title: str, domain: str = "", author: str = "") -> bool:
 # keep the `now=None` default here for backward-compat and inject the clock at
 # this boundary (not inside library code), which is the correct PIT idiom.
 # --------------------------------------------------------------------------- #
+# Compat re-export: engine.news_rss (and any legacy caller) reaches the ISO
+# parser via news_common._parse_iso. The canonical impl now lives in qkernel;
+# alias it here so the delegation is source-compatible.
+_parse_iso = _qk._parse_iso
+
+
 def recency_weight(seendate_iso: str, now: datetime | None = None,
                    half_life_h: float = 36.0) -> float:
     """Exponential time-decay in [0,1]: 1.0 now, 0.5 at one half-life. PURE.
