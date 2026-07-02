@@ -45,7 +45,22 @@ def yahoo_closes() -> pd.DataFrame:
     return pd.DataFrame(cols).sort_index()
 
 
-def build_features() -> pd.DataFrame:
+def build_features(pit_basis: str | None = None,
+                   pit_as_of: pd.Timestamp | str | None = None) -> pd.DataFrame:
+    """Assemble the daily feature frame.
+
+    pit_basis : SHADOW point-in-time control (audit #5/#14/#39, masterplan W1a).
+        None (default) -> current live behaviour, BYTE-IDENTICAL output (the live
+        render/collect path never passes this argument). 'release' -> the leak-free
+        frame: monthly/weekly revision-prone FRED econ columns are routed through
+        engine.pit so each historical row carries only what was available (and
+        initial-release, not latest-revised) on that day. 'reference'/'latest' route
+        the same columns through pit for A/B symmetry but reproduce current stamping.
+        Market data (rates/OAS/VIX/FX/equities) is never revised and is untouched by
+        any basis, so the frame stays internally consistent (avoids the partial-PIT
+        hazard of #14 for the SHADOW frame — a full leg set moves together).
+    pit_as_of : optional hard as-of cut passed through to engine.pit.series.
+    """
     cfg = config.load()
     ecfg = cfg["engine"]
     closes = yahoo_closes()
@@ -58,7 +73,23 @@ def build_features() -> pd.DataFrame:
     idx = pd.bdate_range(closes.index.min(), end)
     f = pd.DataFrame(index=idx)
 
+    # SHADOW PIT re-router: when pit_basis is set, the named revision-prone FRED econ
+    # columns are supplied by engine.pit on the requested basis instead of the live
+    # reference-stamped store series. Kept lazy so the default path never imports pit.
+    _pit_cols: set[str] = set()
+    _pit_series = None
+    if pit_basis is not None:
+        from engine import pit as _pitmod
+        _pit_series = _pitmod
+        _pit_cols = set(_pitmod.VINTAGED_SID_TO_COL.values()) | set(_pitmod.DEFAULT_RELEASE_LAGS)
+
     def put(name: str, s: pd.Series | None, ffill_limit: int | None = 5) -> None:
+        if _pit_series is not None and name in _pit_cols:
+            # route this revision-prone column through the PIT accessor at the same
+            # reindex/ffill contract used below, so axes/regime run unchanged.
+            f[name] = _pit_series.series(name, as_of=pit_as_of, basis=pit_basis,
+                                         index=idx, ffill_limit=ffill_limit)
+            return
         if s is None or s.empty:
             f[name] = np.nan
             return
