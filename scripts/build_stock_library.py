@@ -1644,6 +1644,65 @@ def main() -> int:
         wide["universe"] = len(cand)
         if disp_regime:                            # selection-regime gross dial (board + bot)
             wide["dispersion_regime"] = disp_regime
+
+        # --- W6-US fix 3: build-time honesty invariants ---
+        # (a) Band/verdict contradiction: band high/constructive while verdict is Lagging
+        #     or no-clear-edge is a regression guard for fix 2. After fix 2 this MUST be
+        #     empty; the invariant raises so future regressions don't silently slip through.
+        _band_verdict_violations: list[str] = []
+        for _r in wide["buy"]:
+            _c3 = _r.get("conviction") or {}
+            _v3 = (_c3.get("verdict") or "").lower()
+            _b3 = _c3.get("band") or ""
+            if _b3 in ("high", "constructive") and any(
+                    k in _v3 for k in ("lagging", "no clear edge")):
+                _band_verdict_violations.append(
+                    f"{_r.get('ticker')}: band={_b3}, verdict={_c3.get('verdict')}")
+        if _band_verdict_violations:
+            raise RuntimeError(
+                "W6-US invariant (a) FAILED — green band on lagging/no-edge name(s): "
+                + "; ".join(_band_verdict_violations))
+
+        # (b) BUY label with blocked signal: downgrade label+urgency so a row labeled
+        #     BUY/FRESH never shows urgency='now' when signal.last.quality=='block'.
+        #     We mutate the row (not just log) so the invariant enforces itself in the artifact.
+        _blocked_buy_count = 0
+        for _r in wide["buy"]:
+            _sig3 = _r.get("signal") or {}
+            _last3 = _sig3.get("last") or {}
+            if _last3.get("quality") == "block":
+                _blocked_buy_count += 1
+                # downgrade urgency from "now" to "caution" if present
+                if _r.get("urgency") == "now":
+                    _r["urgency"] = "caution"
+                # downgrade label: prefix with "(blocked)" marker
+                _lbl3 = _r.get("label")
+                if _lbl3 and "(blocked)" not in str(_lbl3):
+                    _r["label"] = f"{_lbl3} (blocked)"
+                _lbl3_zh = _r.get("label_zh")
+                if _lbl3_zh:
+                    _r["label_zh"] = f"{_lbl3_zh}（受阻）"
+        if _blocked_buy_count:
+            log.warning("W6-US invariant (b): %d BUY rows have signal.last.quality=block — "
+                        "urgency downgraded to caution, label suffixed (blocked)",
+                        _blocked_buy_count)
+
+        # (c) Confirmer chip renders for a scored:false gate.
+        # For GEX: verify the gate file agrees with _gex_gate_scored() at build time.
+        # This is a warning (not a raise) since the chip render is fixed in fix 4.
+        try:
+            from engine.stock_score import _gex_gate_scored
+            _gex_scored = _gex_gate_scored()
+            if not _gex_scored:
+                _gex_chip_rows = [_r.get("ticker") for _r in wide["buy"]
+                                  if ((_r.get("conviction") or {}).get("gex_confirm") or {}).get("verdict")]
+                if _gex_chip_rows:
+                    log.warning("W6-US invariant (c): GEX gate scored=False but %d buy rows have "
+                                "gex_confirm chip (fix 4 hides them in template): %s",
+                                len(_gex_chip_rows), _gex_chip_rows[:5])
+        except Exception as _e3:  # noqa: BLE001
+            log.debug("W6-US invariant (c) GEX check skipped: %s", _e3)
+
         (site / "factordata" / "us_standouts.json").write_text(
             json.dumps(_json_safe(wide), separators=(",", ":"), default=str, allow_nan=False))
         log.info("wrote us_standouts.json (%d buy · rank_by=%s · %d eligible / %d universe)",
