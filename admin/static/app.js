@@ -241,10 +241,36 @@ RENDER.vector = async () => {
   const d = await api("/api/vector_override");
   if (!d.ok) { v.innerHTML = card("BTC Override — owner view", `<div class="sub">${esc(d.reason || "not available")}</div>`); return; }
   const o = d.override || {}, cf = d.counterfactual || {}, pv = d.provenance || {}, fl = d.falsifiers || {}, sh = d.shadow || {};
+  const re = d.reentry || null;
   const rawOpt = cf.raw_pct && cf.raw_pct.optimal, gatedOpt = cf.gated_pct && cf.gated_pct.optimal;
   const damp = (pv.dampening_path_pct || []).map(x => `${x}%`).join(" → ");
+  // D5 (owner decision 2026-07-02): a PRE-WINDOW fresh MVRV-Z<0 print is an owner
+  // ALERT only — never a sleeve, never sizing. Banner + numbers, no buttons (D3).
+  const d5Banner = re && re.pre_window_mvrv_fire ? `
+    <div class="card" style="border-color:var(--warn);margin-bottom:10px">
+      <div class="big" style="color:var(--warn)">D5 OWNER ALERT — pre-window MVRV-Z&lt;0 fired ${esc(re.pre_window_mvrv_fire)}</div>
+      <div class="sub">Before the re-entry window opens (${esc(re.window_start || "?")}). Per D5: alert only — no pre-window sleeve, sizing stays 100% cash until the calendar spine. Class-2 remains shadow-graded.</div>
+    </div>` : "";
+  const reSection = re ? `
+    <div class="section">Staged re-entry (W4, D4) — calendar spine + accelerators</div>
+    <div class="card">
+      <div class="kv"><span>State</span><b><span class="statpill ${re.state === "fully_released" ? "s-ok" : re.state === "window_open_filling" ? "s-warn" : re.state === "armed_pending_window" ? "s-ok" : "s-bad"}">${esc(re.state || "?")}</span></b></div>
+      <div class="kv"><span>Window</span><b>${esc(re.window_start || "—")} → ${esc(re.window_end || "—")}</b></div>
+      <div class="kv"><span>Release fraction</span><b>${re.release_frac == null ? "—" : Math.round(100 * re.release_frac) + "%"}</b></div>
+      ${re.halt_from ? `<div class="kv"><span>OWNER HALT</span><b style="color:var(--bad)">frozen from ${esc(re.halt_from)}</b></div>` : ""}
+      <table style="margin-top:8px"><thead><tr><th>Tranche</th><th>Weight</th><th>Scheduled</th><th>Filled</th><th>Cause</th></tr></thead><tbody>
+        ${(re.schedule || []).map(t => `<tr><td>T${t.tranche}</td><td>${Math.round(100 * t.weight)}%</td><td class="mono">${esc(t.scheduled || "—")}</td>
+          <td>${t.filled ? `<span class="statpill s-ok">${esc(t.fill_date || "filled")}</span>` : `<span class="statpill s-warn">pending</span>`}</td>
+          <td class="sub">${esc(t.cause || "")}</td></tr>`).join("")}
+      </tbody></table>
+      <div class="sub" style="margin-top:8px">Accelerator ${re.accelerator && re.accelerator.enabled ? "armed" : "off"} · MVRV-Z ${re.accelerator ? re.accelerator.mvrv_z_last ?? "—" : "—"} · bottom-pressure ${re.accelerator ? re.accelerator.bottom_pressure_last ?? "—" : "—"}</div>
+      ${re.dat_advisory ? `<div class="sub">DAT forced-sell distance ${re.dat_advisory.forced_sell_distance_pct ?? "—"}% · advisory only${re.dat_advisory.stale ? ` · <b style="color:var(--warn)">feed stale (${re.dat_advisory.age_days ?? "?"}d)</b>` : ""}</div>` : ""}
+      <div class="note" style="margin-top:6px">${esc(re.owner_note || "")}</div>
+      <div class="note mono muted">as-of ${esc(re.asof || "?")} · halt switch: config vector.allocation.midterm_gate.reentry.halt_from (numbers only here — D3)</div>
+    </div>` : "";
   v.innerHTML = `
     <div class="sub" style="margin-bottom:10px">Owner view (D2) — subscribers keep the "Proprietary cycle timer" scrub. Everything below is the payload that scrub hides. Both-sides framing, no actions (D3).${d.stub ? ` <span class="statpill s-warn">W3 stub — W1 replaces with measured artifacts</span>` : ""}</div>
+    ${d5Banner}
     <div class="grid">
       ${card("Override status", `<div class="big" style="color:${o.active ? "var(--warn)" : "var(--ok)"}">${o.active ? "ACTIVE" : "off"}</div>
         <div class="sub">${esc(o.id || "?")} · ${o.active ? `releases ${esc(o.release || "?")}` : "not engaged"} · <b>${o.graded ? "graded" : "never graded"}</b></div>
@@ -268,6 +294,7 @@ RENDER.vector = async () => {
         <div class="note" style="margin-top:8px">${esc(sh.framing || "")}</div>
       ` : `<div class="sub">${esc(sh.reason || "no shadow data")}</div>`}
     </div>
+    ${reSection}
     <div class="section">Falsifiers — health × evaluability</div>
     <table><thead><tr><th>Falsifier</th><th>Level</th><th>Can it fire?</th><th>Reading</th></tr></thead><tbody>
       ${(fl.items || []).map(i => `<tr><td><b>${esc(i.key)}</b></td><td>${LEVEL_PILL(i.level)}</td><td>${EVAL_PILL(i.evaluability)}<div class="note" style="max-width:340px">${esc(i.why || "")}</div></td>

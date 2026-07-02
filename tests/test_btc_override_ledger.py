@@ -667,3 +667,25 @@ class TestRenderSummary:
         result = OL.render_summary(asof="2022-09-01", root=tmp_root)
         if "authority" in result:
             assert "MONITORING" in result["authority"]
+
+
+# --------------------------------------------------------------------------- #
+# Registry contract: config.yml grading_spec == the FROZEN v1 family
+# (acceptance-audit fix — W0 originally declared {benchmark, ledger} and every
+#  build logged a drift warning while the ledger fell back to the frozen set)
+# --------------------------------------------------------------------------- #
+
+class TestRegistryGradingSpecContract:
+    def test_config_grading_spec_matches_frozen_v1(self):
+        from lib import config
+        overrides = config.load()["vector"]["overrides"]
+        entry = next(o for o in overrides if o.get("id") == OL.OVERRIDE_ID)
+        gs = entry.get("grading_spec")
+        keys = set(gs) if isinstance(gs, list) else set((gs or {}).keys())
+        assert keys == set(OL.FROZEN_SUBCLAIMS_V1), (
+            "config.yml vector.overrides grading_spec must equal the FROZEN v1 "
+            "sub-claim family — the ledger ignores drift and warns on every build")
+
+    def test_grading_spec_source_is_registry(self):
+        from lib import config
+        assert OL._grading_spec(config.load()["vector"]) == "registry"
