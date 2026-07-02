@@ -50,6 +50,10 @@ def test_cross_refs_priced_for_easing():
 
 def test_conviction_names_surfaces_and_carries_note(monkeypatch):
     monkeypatch.setattr(an, "_read", lambda rel: None)
+    # Pin sign as proven so "news" appears in surfaces_confirming (the full contrarian path).
+    # When sign is unproven (the current live state), news_dir=0 and "news" is absent from
+    # surfaces_confirming — that is tested separately by test_sign_unproven_direction_is_zero.
+    monkeypatch.setattr(an, "_news_sign_proven", lambda: True)
     divs = [{"sector_etf": "512880.SS", "sector_en": "Brokers", "sector_zh": "券商",
              "sign": "positive", "strength": 0.5, "signal_key": "pboc_easing",
              "signal_en": "PBoC easing", "signal_zh": "央行宽松",
@@ -134,9 +138,11 @@ def test_analyze_news_stale_flag(monkeypatch):
     assert news_items == [], "stale feed must exclude news salience item from what_matters"
 
 
-def test_news_leg_is_contrarian():
-    """Review fix: news is contrarian (sign_expected -1) — fearful tape confirms a positive
-    divergence; greedy tape dissents."""
+def test_news_leg_is_contrarian(monkeypatch):
+    """When sign is proven, news is contrarian (sign_expected -1) — fearful tape confirms a
+    positive divergence; greedy tape dissents. (W3: news direction is 0 when sign is unproven —
+    that case is covered by test_sign_unproven_direction_is_zero.)"""
+    monkeypatch.setattr(an, "_news_sign_proven", lambda: True)
     base = {"sector_etf": "512880.SS", "sector_en": "Brokers", "sector_zh": "券商",
             "sign": "positive", "strength": 0.6, "signal_key": "pboc_easing",
             "signal_en": "E", "signal_zh": "E", "reliability": {"basis": "unproven", "n_resolved": 0}}
@@ -145,3 +151,85 @@ def test_news_leg_is_contrarian():
     greedy = an._conviction([dict(base)], feed, {"z": 0.9}, {}, {})
     assert fearful[0]["directions"]["news"] == 1     # fearful confirms positive
     assert greedy[0]["directions"]["news"] == -1     # greedy dissents
+
+
+# ---------------------------------------------------------------------------
+# W3 — salience/direction split tests  (spec §2.3 / D5)
+# ---------------------------------------------------------------------------
+
+_DIV_BASE = {
+    "sector_etf": "512880.SS", "sector_en": "Brokers", "sector_zh": "券商",
+    "sign": "positive", "strength": 0.6, "signal_key": "pboc_easing",
+    "signal_en": "E", "signal_zh": "E", "reliability": {"basis": "unproven", "n_resolved": 0},
+}
+_FEED_WITH_HITS = {"by_basket": {"cn_brokers": 4}}
+_SENT_FEARFUL = {"z": -0.9, "band": "fearful"}
+_SENT_GREEDY  = {"z":  0.9, "band": "supportive"}
+
+
+def test_sign_unproven_direction_is_zero(monkeypatch):
+    """spec §2.3 / D5: while sign is unproven, news_dir must be 0 regardless of z."""
+    monkeypatch.setattr(an, "_news_sign_proven", lambda: False)
+    for sent in (_SENT_FEARFUL, _SENT_GREEDY):
+        rows = an._conviction([dict(_DIV_BASE)], _FEED_WITH_HITS, sent, {}, {})
+        assert rows
+        c = rows[0]
+        assert c["directions"]["news"] == 0, "news direction must be 0 when sign is unproven"
+        assert c["sign_unproven"] is True
+        assert c["direction_basis"] == "salience_only"
+
+
+def test_sign_unproven_salience_preserved(monkeypatch):
+    """Salience (|z| × coverage) must be non-zero even when direction=0."""
+    monkeypatch.setattr(an, "_news_sign_proven", lambda: False)
+    rows = an._conviction([dict(_DIV_BASE)], _FEED_WITH_HITS, _SENT_FEARFUL, {}, {})
+    assert rows
+    c = rows[0]
+    assert c["salience"] > 0, "salience must be preserved even when sign is unproven"
+    assert c["direction"] == 0
+
+
+def test_sign_proven_re_enables_direction(monkeypatch):
+    """Once sign is proven+sign_ok, the contrarian direction must fire correctly."""
+    monkeypatch.setattr(an, "_news_sign_proven", lambda: True)
+    fearful = an._conviction([dict(_DIV_BASE)], _FEED_WITH_HITS, _SENT_FEARFUL, {}, {})
+    greedy  = an._conviction([dict(_DIV_BASE)], _FEED_WITH_HITS, _SENT_GREEDY,  {}, {})
+    assert fearful[0]["directions"]["news"] == 1,  "fearful tape should confirm positive divergence when sign proven"
+    assert greedy[0]["directions"]["news"]  == -1, "greedy tape should dissent when sign proven"
+    assert fearful[0]["sign_unproven"] is False
+    assert fearful[0]["direction_basis"] == "proven_contrarian"
+    assert fearful[0]["direction"] == 1
+
+
+def test_sign_unproven_no_news_hits(monkeypatch):
+    """No news hits → salience=0, direction=0, sign_unproven still set."""
+    monkeypatch.setattr(an, "_news_sign_proven", lambda: False)
+    rows = an._conviction([dict(_DIV_BASE)], {}, _SENT_FEARFUL, {}, {})
+    assert rows
+    c = rows[0]
+    assert c["salience"] == 0.0
+    assert c["direction"] == 0
+    assert c["sign_unproven"] is True
+
+
+def test_composite_not_inflated_by_unproven_sign(monkeypatch):
+    """The composite conviction must not change between fearful/greedy when sign is unproven
+    (because news_dir=0 in both cases, so the direction tally is identical)."""
+    monkeypatch.setattr(an, "_news_sign_proven", lambda: False)
+    fearful = an._conviction([dict(_DIV_BASE)], _FEED_WITH_HITS, _SENT_FEARFUL, {}, {})
+    greedy  = an._conviction([dict(_DIV_BASE)], _FEED_WITH_HITS, _SENT_GREEDY,  {}, {})
+    assert fearful and greedy
+    # composite should be equal (news_dir=0 for both; only |z| differs for salience_mag)
+    assert abs(fearful[0]["composite_conviction"] - greedy[0]["composite_conviction"]) < 5.0, (
+        "composite_conviction must not swing on the unproven contrarian sign"
+    )
+
+
+def test_row_carries_direction_fields(monkeypatch):
+    """Every conviction row must carry salience, direction, direction_basis, sign_unproven."""
+    monkeypatch.setattr(an, "_news_sign_proven", lambda: False)
+    rows = an._conviction([dict(_DIV_BASE)], _FEED_WITH_HITS, _SENT_FEARFUL, {}, {})
+    assert rows
+    c = rows[0]
+    for field in ("salience", "direction", "direction_basis", "sign_unproven"):
+        assert field in c, f"conviction row must carry '{field}' (spec §2.3)"

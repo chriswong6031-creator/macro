@@ -95,6 +95,11 @@ fred:
       OVXCLS: ovx_oil             # CBOE oil VIX (2007->); energy-sector VRP leg (index_direction)
     housing:
       MORTGAGE30US: mortgage_30y  # 30y mortgage rate (weekly, 1971->); homebuilder affordability leg
+      CSUSHPISA: case_shiller_sa  # Case-Shiller national HPI SA (1987->, monthly) — W1.4 deep seed (housing 18y clock + falsifier tripwires)
+      HOUST: housing_starts       # housing starts SAAR (1959->, monthly) — W1.4 housing falsifier leg (audit NP-6: only PERMIT was collected)
+    energy_cycles:                # W1.4 flagship-cycle spot levels (masterplan D3) — no dividend-basis issues
+      DCOILWTICO: wti_crude       # WTI spot (1986->, daily) — oil-cycle tape
+      DHHNGSP: henry_hub_spot     # Henry Hub spot (1997->, daily) — nat-gas-cycle tape
     dollar:
       DTWEXBGS: broad_dollar      # broad trade-weighted USD (2006->); better commodity driver than DXY for copper/oil (EM/China weight)
     liquidity:
@@ -4950,6 +4955,8 @@ yahoo:
     rate_pricing: ["ZQ=F"]        # 30-day fed funds front contract — LOW CONFIDENCE input
     crypto: [BTC-USD, ETH-USD, SOL-USD]   # deep daily history (BTC 2014->); Coinbase = intraday-quality OHLC
     crypto_fut: ["BTC=F"]                 # CME (regulated) Bitcoin front-month future -> institutional carry / basis (D-vec-CME; daily 2021->)
+    flagship_cycles: [MU, ALB, SQM, DBA, "^SOX", "NG=F", "ZC=F", "PL=F", "PA=F"]   # W1.4 cycle.html proxy tapes (masterplan D3 registry); PL=F/PA=F = platinum/palladium FUTURES — never bare PL (that's Planet Labs equity)
+    fx_decomp: ["USDSEK=X", "USDSGD=X", "USDIDR=X", "USDCLP=X", "USDZAR=X", "USDTRY=X", "USDPLN=X", "USDHKD=X"]   # W1.4 country-cycle FX-decomposition legs (masterplan D4/S4)
     # ADR sensor mini-set (W0-4 of INTL_FIX_MASTERPLAN — INTL-49).
     # US-listed ADRs / proxies for key intl bellwethers: deep history, US-session
     # timing (kills timezone lag-1 ambiguity), keyless yfinance.

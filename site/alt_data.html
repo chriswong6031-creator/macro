@@ -104,6 +104,18 @@
   .cov.empty { opacity:.4; }
   @media (max-width:760px){ .sid-stats{grid-template-columns:repeat(2,1fr);} .sid-grid{grid-template-columns:1fr;}
     .conv-row{grid-template-columns:52px 1fr;gap:10px;} }
+  /* qledger honesty chips (D10) */
+  .ql-chip { display:inline-flex; align-items:center; font:700 9.5px/1 var(--num);
+    letter-spacing:.05em; text-transform:uppercase; padding:3px 8px; border-radius:6px;
+    border:1px solid; white-space:nowrap; vertical-align:middle; min-width:0; }
+  .ql-chip-ungraded { background:color-mix(in srgb,var(--muted) 12%,transparent);
+    color:var(--muted); border-color:color-mix(in srgb,var(--muted) 30%,transparent); }
+  .ql-chip-accruing { background:color-mix(in srgb,var(--warn) 14%,transparent);
+    color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,transparent); }
+  .ql-chip-graded-pos { background:color-mix(in srgb,var(--up) 14%,transparent);
+    color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,transparent); }
+  .ql-chip-graded-neg { background:color-mix(in srgb,var(--down) 14%,transparent);
+    color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
 
 </style>
 
@@ -398,6 +410,7 @@
       <span class="chip">22 <span class="l-en">actors</span><span class="l-zh">人物</span> · 105 <span class="l-en">edges</span><span class="l-zh">关系</span></span>
       <span class="chip"><a class="feedlink" href="altdata/mastermind.json">mastermind.json ↗</a></span>
       <span class="chip"><a class="feedlink" href="altdata/feed.json">feed.json ↗</a></span>
+      <span class="ql-chip ql-chip-accruing"><span class="l-en">ACCRUING · 5/25 dates</span><span class="l-zh">累积中 · 5/25 日期</span></span>
     </div>
 
     <div class="sid-stats">
@@ -428,7 +441,8 @@
     <h2>🎯 <span class="l-en">Conviction board</span><span class="l-zh">置信榜</span>
       
       <span class="h-note mut"><span class="l-en">deterministic convergence only — AI read unavailable; nothing graded yet</span><span class="l-zh">仅确定性汇聚——AI解读不可用；尚无对标普评分</span></span>
-      </h2>
+      
+      <span class="ql-chip ql-chip-accruing"><span class="l-en">ACCRUING · 5/25 dates</span><span class="l-zh">累积中 · 5/25 日期</span></span></h2>
     
     <div class="conv-list">
       
@@ -1154,7 +1168,7 @@
       
       <div class="sid-card"><h3>📄 <span class="l-en">Material 8-K clusters</span><span class="l-zh">重大8-K集群</span> <span class="mut" style="font-size:11px;">30d</span></h3>
         <table class="sid-t"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th class="num"><span class="l-en">Count</span><span class="l-zh">数量</span></th><th><span class="l-en">Items</span><span class="l-zh">条目</span></th></tr></thead>
-        <tbody><tr><td class="tkc">NWS</td><td class="num">19</td><td class="mut">&lt;built-in method items of dict object at 0x10c2916c0&gt;</td></tr><tr><td class="tkc">MSTR</td><td class="num">6</td><td class="mut">&lt;built-in method items of dict object at 0x10c2921c0&gt;</td></tr><tr><td class="tkc">SPCX</td><td class="num">6</td><td class="mut">&lt;built-in method items of dict object at 0x1180e3900&gt;</td></tr><tr><td class="tkc">APLD</td><td class="num">5</td><td class="mut">&lt;built-in method items of dict object at 0x10c224980&gt;</td></tr><tr><td class="tkc">BLD</td><td class="num">5</td><td class="mut">&lt;built-in method items of dict object at 0x11878e740&gt;</td></tr><tr><td class="tkc">PSKY</td><td class="num">5</td><td class="mut">&lt;built-in method items of dict object at 0x10c291740&gt;</td></tr><tr><td class="tkc">ACGL</td><td class="num">4</td><td class="mut">&lt;built-in method items of dict object at 0x1180ce7c0&gt;</td></tr><tr><td class="tkc">ALGT</td><td class="num">4</td><td class="mut">&lt;built-in method items of dict object at 0x10c239180&gt;</td></tr><tr><td class="tkc">DELL</td><td class="num">4</td><td class="mut">&lt;built-in method items of dict object at 0x11878ce40&gt;</td></tr><tr><td class="tkc">FOX</td><td class="num">4</td><td class="mut">&lt;built-in method items of dict object at 0x11878c500&gt;</td></tr></tbody></table></div>
+        <tbody><tr><td class="tkc">NWS</td><td class="num">19</td><td class="mut">&lt;built-in method items of dict object at 0x10960dbc0&gt;</td></tr><tr><td class="tkc">MSTR</td><td class="num">6</td><td class="mut">&lt;built-in method items of dict object at 0x10960d9c0&gt;</td></tr><tr><td class="tkc">SPCX</td><td class="num">6</td><td class="mut">&lt;built-in method items of dict object at 0x10960f280&gt;</td></tr><tr><td class="tkc">APLD</td><td class="num">5</td><td class="mut">&lt;built-in method items of dict object at 0x109408700&gt;</td></tr><tr><td class="tkc">BLD</td><td class="num">5</td><td class="mut">&lt;built-in method items of dict object at 0x10ce8a5c0&gt;</td></tr><tr><td class="tkc">PSKY</td><td class="num">5</td><td class="mut">&lt;built-in method items of dict object at 0x10960de40&gt;</td></tr><tr><td class="tkc">ACGL</td><td class="num">4</td><td class="mut">&lt;built-in method items of dict object at 0x1096d7980&gt;</td></tr><tr><td class="tkc">ALGT</td><td class="num">4</td><td class="mut">&lt;built-in method items of dict object at 0x1093c0dc0&gt;</td></tr><tr><td class="tkc">DELL</td><td class="num">4</td><td class="mut">&lt;built-in method items of dict object at 0x10ce88d40&gt;</td></tr><tr><td class="tkc">FOX</td><td class="num">4</td><td class="mut">&lt;built-in method items of dict object at 0x10946a4c0&gt;</td></tr></tbody></table></div>
       
 
       

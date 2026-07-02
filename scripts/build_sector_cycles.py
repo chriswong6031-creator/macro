@@ -37,40 +37,30 @@ SHARED_ASSETS = ("mm_charts.js", "cycle.css")
 
 def _load_narratives(root: Path) -> dict:
     """NARR keyed by the chart's series id: sectors by ticker.lower() (xlk…), baskets
-    by the engine's "b-"+membership-key (b-mag7…). Merges the file's sectors+baskets."""
-    f = root / "data" / "sector_cycles" / "narratives.json"
-    if not f.exists():
-        return {}
-    try:
-        doc = json.loads(f.read_text(encoding="utf-8"))
-    except Exception as e:  # noqa: BLE001
-        log.warning("sector_cycles: narratives.json unreadable (%s) — page renders without narratives", e)
-        return {}
-    if not isinstance(doc, dict):
-        return {}
-    narr = dict(doc.get("sectors", {}))
-    for k, v in (doc.get("baskets", {}) or {}).items():
-        narr["b-" + k] = v
-    return narr
+    by the engine's "b-"+membership-key (b-mag7…). Merges the file's sectors+baskets.
+
+    W2.1: epoch-aware — resolves narratives.<epoch>.json for the engine's current epoch,
+    falling back to the legacy un-suffixed file (tagged tr_v0). Zero behaviour change
+    today (no flip → legacy file resolves exactly as before)."""
+    from scripts._narrative_epoch import resolve_narratives
+    res = resolve_narratives("sector_cycles", root / "data" / "sector_cycles", "narratives")
+    if res["stale_quarantined"]:
+        log.warning("sector_cycles: narratives stale-quarantined (epoch %s) — page renders without",
+                    res["epoch"])
+    return res["map"]
 
 
 def _load_dna(root: Path) -> dict:
     """SECTOR_DNA (the front-loaded "history rhymes" / cycle-cause profiles), same id keying as
-    narratives: sectors by ticker.lower(), baskets by "b-"+key. Optional — page renders without."""
-    f = root / "data" / "sector_cycles" / "cycle_dna.json"
-    if not f.exists():
-        return {}
-    try:
-        doc = json.loads(f.read_text(encoding="utf-8"))
-    except Exception as e:  # noqa: BLE001
-        log.warning("sector_cycles: cycle_dna.json unreadable (%s) — rendering without DNA", e)
-        return {}
-    if not isinstance(doc, dict):
-        return {}
-    dna = dict(doc.get("sectors", {}))
-    for k, v in (doc.get("baskets", {}) or {}).items():
-        dna["b-" + k] = v
-    return dna
+    narratives: sectors by ticker.lower(), baskets by "b-"+key. Optional — page renders without.
+
+    W2.1: epoch-aware (resolves cycle_dna.<epoch>.json, falls back to legacy cycle_dna.json)."""
+    from scripts._narrative_epoch import resolve_narratives
+    res = resolve_narratives("sector_cycles", root / "data" / "sector_cycles", "cycle_dna")
+    if res["stale_quarantined"]:
+        log.warning("sector_cycles: cycle_dna stale-quarantined (epoch %s) — rendering without DNA",
+                    res["epoch"])
+    return res["map"]
 
 
 def main() -> int:

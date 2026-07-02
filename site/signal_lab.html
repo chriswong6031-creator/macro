@@ -363,9 +363,9 @@
   <div class="chips">
     <span class="chip"><span class="dot d-scored"></span><b>6</b> <span class="l-en">scored</span><span class="l-zh">已计分</span></span>
     <span class="chip"><span class="dot d-confirmer"></span><b>18</b> <span class="l-en">confirmer</span><span class="l-zh">确认项</span></span>
-    <span class="chip"><span class="dot d-display"></span><b>17</b> <span class="l-en">display-only</span><span class="l-zh">仅展示</span></span>
+    <span class="chip"><span class="dot d-display"></span><b>20</b> <span class="l-en">display-only</span><span class="l-zh">仅展示</span></span>
     <span class="chip"><span class="dot d-killed"></span><b>9</b> <span class="l-en">killed (NO-GO)</span><span class="l-zh">已否决</span></span>
-    <span class="chip"><span class="dot d-pending"></span><b>0</b> <span class="l-en">pending</span><span class="l-zh">待接入</span></span>
+    <span class="chip"><span class="dot d-pending"></span><b>2</b> <span class="l-en">pending</span><span class="l-zh">待接入</span></span>
     
     <span class="chip ">🧮 <b>1</b>/11
       <span class="l-en">cross-sectional factors survive FDR</span><span class="l-zh">横截面因子通过 FDR</span></span>
@@ -1156,7 +1156,7 @@
 <div class="panel tier-panel ">
   <div class="tierhead">
     <span class="dot d-display" style="align-self:center"></span>
-    <h2><span class="l-en">Display-only — shown, but no validated edge</span><span class="l-zh">仅展示 — 显示但无验证边际</span> · 17</h2>
+    <h2><span class="l-en">Display-only — shown, but no validated edge</span><span class="l-zh">仅展示 — 显示但无验证边际</span> · 20</h2>
     <span class="bl"><span class="l-en">Rendered as a research lens or risk context. Failed Phase-0, un-backtestable, or still accruing history. NOT a buy signal.</span><span class="l-zh">作为研究视角或风险背景显示。未通过 Phase-0、无法回测或历史不足。并非买入信号。</span></span>
   </div>
   
@@ -1566,6 +1566,75 @@
         </td>
       </tr>
     
+      <tr class="sl-row" data-tier="display" data-mkt="Intl ETF"
+          data-text="intl trend de-risk overlays  (price + total-return etfs — c3) 国际趋势降险叠加（价格指数 + 总回报etf — c3） intl etf two ports, one honest verdict: trend on tradeable intl is dead. the price-index overlay cuts the tail for real (pooled maxdd −18.5% vs −57.0%, dd-reduction ci [5.9,25.1,48.1] excludes 0) but its sharpe edge fails split-half. the tradeable usd total-return etf overlay (ewj/ewg/ewu/ewy/ewa/ewq) fails dsr (0.848<0.90) and split-half sign-flips, and macro-gating harms korea (ewy −79.3% vs −74.1%, intl-50). context: crash-avoidance tail-insurance, never a scored alpha.">
+        <td>
+          <div class="sig"><span class="l-en">Intl trend de-risk overlays  (price + total-return ETFs — C3)</span><span class="l-zh">国际趋势降险叠加（价格指数 + 总回报ETF — C3）</span>
+            </div>
+          <div class="mkt">Intl ETF · overlay (daily) · not shipped — crash-avoidance risk-overlay (CONTEXT)</div>
+          <div class="extra">price-index DD-cut −18.5% vs −57.0% (CI excludes 0) · TR-ETF DSR 0.848 (<0.90), split-half sign-flip · macro-gate on EWY HARMS (−79.3% vs −74.1%)</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r neg">0.848</td>
+        <td class="r pos">+0.57</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Two ports, one honest verdict: trend on tradeable intl is dead. The PRICE-index overlay cuts the tail for real (pooled M…</span><span class="l-zh">两次移植，一个诚实结论：可交易国际标的的趋势已死。价格指数叠加确实削减尾部（合并回撤 −18.5% 对 −57.0%，区间不含零），但夏普边际未过两半。可交易美…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Two ports, one honest verdict: trend on tradeable intl is dead. The PRICE-index overlay cuts the tail for real (pooled MaxDD −18.5% vs −57.0%, DD-reduction CI [5.9,25.1,48.1] excludes 0) but its Sharpe edge FAILS split-half. The tradeable USD total-return ETF overlay (EWJ/EWG/EWU/EWY/EWA/EWQ) fails DSR (0.848<0.90) and split-half sign-flips, and macro-gating HARMS Korea (EWY −79.3% vs −74.1%, INTL-50). CONTEXT: crash-avoidance tail-insurance, never a scored alpha.  [reports/intl-trend-overlay-phase0.md + intl-tr-trend-phase0.md; data/intl_bridge/ledger.json (C3)]</span><span class="l-zh">两次移植，一个诚实结论：可交易国际标的的趋势已死。价格指数叠加确实削减尾部（合并回撤 −18.5% 对 −57.0%，区间不含零），但夏普边际未过两半。可交易美元总回报ETF叠加未过 DSR（0.848）且两半符号翻转，宏观门控还伤害韩国（EWY −79.3% 对 −74.1%）。CONTEXT：崩盘规避尾部保险，绝非计分阿尔法。  [reports/intl-trend-overlay-phase0.md + intl-tr-trend-phase0.md; data/intl_bridge/ledger.json (C3)]</span></span></span>
+          <div class="src">reports/intl-trend-overlay-phase0.md + intl-tr-trend-phase0.md; data/intl_bridge/ledger.json (C3)</div>
+        </td>
+      </tr>
+    
+      <tr class="sl-row" data-tier="display" data-mkt="Forex / cross-asset"
+          data-text="per-pair fx conviction + cross-market lead/lag  (c4/c8) 单对外汇信念 + 跨市场引导滞后（c4/c8） forex / cross-asset the two intl read-through channels that shipped as context. per-pair fx conviction: every pair fails dsr (best usdcad 0.8607<0.90, most ≈0) → no pair-level gating on equities, ever (intl-43). cross-market lead/lag: 7/150 pairs survive hac-t + bh-fdr and 5 are split-half stable — but all survivors are timezone lag-1 (us/global close → next asia open), a transmission read, not a forecastable lead. both are display context; the intl_bridge lead-lag kernel re-screens any new cross-market claim.">
+        <td>
+          <div class="sig"><span class="l-en">Per-pair FX conviction + cross-market lead/lag  (C4/C8)</span><span class="l-zh">单对外汇信念 + 跨市场引导滞后（C4/C8）</span>
+            </div>
+          <div class="mkt">Forex / cross-asset · varied · not shipped — transmission read / display context (CONTEXT)</div>
+          <div class="extra">FX per-pair all fail DSR (best USDCAD 0.86) · lead/lag survivors 5 split-half stable, ALL lag-1 (timezone)</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r neg">0.861</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">The two intl read-through channels that shipped as CONTEXT. Per-pair FX conviction: EVERY pair fails DSR (best USDCAD 0.…</span><span class="l-zh">两条以 CONTEXT 上线的国际读透渠道。单对外汇信念：每对都未过 DSR（最佳 USDCAD 0.8607，多数≈0）→ 绝不以对级门控股票（INTL-43…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">The two intl read-through channels that shipped as CONTEXT. Per-pair FX conviction: EVERY pair fails DSR (best USDCAD 0.8607<0.90, most ≈0) → no pair-level gating on equities, ever (INTL-43). Cross-market lead/lag: 7/150 pairs survive HAC-t + BH-FDR and 5 are split-half stable — but ALL survivors are timezone lag-1 (US/global close → next Asia open), a transmission read, not a forecastable lead. Both are display context; the intl_bridge lead-lag kernel re-screens any new cross-market claim.  [reports/forex-calibration.md + cross-asset-leadlag-phase0.md; data/intl_bridge/ledger.json (C4/C8)]</span><span class="l-zh">两条以 CONTEXT 上线的国际读透渠道。单对外汇信念：每对都未过 DSR（最佳 USDCAD 0.8607，多数≈0）→ 绝不以对级门控股票（INTL-43）。跨市场引导滞后：150对中7对通过 HAC-t + BH-FDR、5对两半稳定——但幸存者全是时区滞后1（美/全球收盘→次日亚洲开盘），是传导读数而非可预测的引导。均为展示背景；intl_bridge 引导滞后核对任何新的跨市场主张重新筛选。  [reports/forex-calibration.md + cross-asset-leadlag-phase0.md; data/intl_bridge/ledger.json (C4/C8)]</span></span></span>
+          <div class="src">reports/forex-calibration.md + cross-asset-leadlag-phase0.md; data/intl_bridge/ledger.json (C4/C8)</div>
+        </td>
+      </tr>
+    
+      <tr class="sl-row" data-tier="display" data-mkt="China A"
+          data-text="china external-driver radar  (c3 — governed by risk_radar_intl) 中国外部驱动雷达（c3 — 由 risk_radar_intl 治理） china a note-only entry for registry completeness. the validated china external-driver radar (breadth collapse, us rate shocks, us–cn differential, usd/cnh; composite ≥10%/42d drawdown lift 2.07×, p=0.01, csi300-confirmed) already runs on main with committed forward logs and its own can_force maturation gate (≥30 graded, ≥8 alerts, realized lift ≥1.25×). the intl_bridge does not duplicate its machinery — it defers to engine/risk_radar_intl_audit.scorecard for the cn/hk/ca governance. listed context here so the registry is complete, not because it lacks edge.">
+        <td>
+          <div class="sig"><span class="l-en">China external-driver radar  (C3 — governed by risk_radar_intl)</span><span class="l-zh">中国外部驱动雷达（C3 — 由 risk_radar_intl 治理）</span>
+            </div>
+          <div class="mkt">China A · 42d fwd drawdown · display-only on main until its own can_force gate matures (NOT duplicated by intl_bridge)</div>
+          <div class="extra">composite lift 2.07× (p=0.01), CSI300-confirmed · governance risk_radar_intl_audit.can_force (≥30 graded, ≥8 alerts, lift ≥1.25×)</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Note-only entry for registry completeness. The validated China external-driver radar (breadth collapse, US rate shocks, …</span><span class="l-zh">仅备注条目，用于登记完整性。已验证的中国外部驱动雷达（广度崩塌、美国利率冲击、美中利差、美元/离岸人民币；综合 ≥10%/42日回撤提升 2.07×，p=0.0…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Note-only entry for registry completeness. The validated China external-driver radar (breadth collapse, US rate shocks, US–CN differential, USD/CNH; composite ≥10%/42d drawdown lift 2.07×, p=0.01, CSI300-confirmed) already runs on main with committed forward logs and its OWN can_force maturation gate (≥30 graded, ≥8 alerts, realized lift ≥1.25×). The intl_bridge does NOT duplicate its machinery — it defers to engine/risk_radar_intl_audit.scorecard for the CN/HK/CA governance. Listed CONTEXT here so the registry is complete, not because it lacks edge.  [engine/risk_radar_intl.py (#711/#718) + risk_radar_intl_audit.py; data/intl_bridge/ledger.json (cn_external_radar)]</span><span class="l-zh">仅备注条目，用于登记完整性。已验证的中国外部驱动雷达（广度崩塌、美国利率冲击、美中利差、美元/离岸人民币；综合 ≥10%/42日回撤提升 2.07×，p=0.01，沪深300确认）已在 main 上运行，带提交的前瞻日志与自身的 can_force 成熟门。intl_bridge 不复制其机制——延用 risk_radar_intl_audit.scorecard 的中/港/加治理。此处列为 CONTEXT 仅为登记完整。  [engine/risk_radar_intl.py (#711/#718) + risk_radar_intl_audit.py; data/intl_bridge/ledger.json (cn_external_radar)]</span></span></span>
+          <div class="src">engine/risk_radar_intl.py (#711/#718) + risk_radar_intl_audit.py; data/intl_bridge/ledger.json (cn_external_radar)</div>
+        </td>
+      </tr>
+    
     </tbody>
   </table></div>
 </div>
@@ -1803,6 +1872,78 @@
   </table></div>
 </div>
 
+<div class="panel tier-panel ">
+  <div class="tierhead">
+    <span class="dot d-pending" style="align-self:center"></span>
+    <h2><span class="l-en">Validated — pending wiring on this branch</span><span class="l-zh">已验证 — 本分支待接入</span> · 2</h2>
+    <span class="bl"><span class="l-en">Passed validation but the code/wiring lives in a worktree or open PR, not yet on the branch this page was built from.</span><span class="l-zh">已通过验证，但代码/接线位于工作树或待合并 PR，尚未进入本页所基于的分支。</span></span>
+  </div>
+  
+  <div class="scroll"><table class="sl-table">
+    <thead><tr>
+      <th><span class="l-en">Signal</span><span class="l-zh">信号</span></th>
+      <th class="r">IC</th>
+      <th class="r">HAC t</th>
+      <th class="r">FDR q</th>
+      <th class="r">DSR<span class="help">?<span class="tip"><span class="l-en">Deflated Sharpe (López de Prado): probability the true Sharpe > 0 after haircutting for the number of trials, skew and kurtosis. >0.90 is our bar.</span><span class="l-zh">去偏夏普（López de Prado）：在按试验次数、偏度与峰度打折后，真实夏普 >0 的概率。门槛 >0.90。</span></span></span></th>
+      <th class="r"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span></th>
+      <th class="r"><span class="l-en">hit</span><span class="l-zh">命中</span></th>
+      <th class="r">n</th>
+      <th><span class="l-en">Verdict</span><span class="l-zh">结论</span></th>
+      <th><span class="l-en">Why</span><span class="l-zh">原因</span></th>
+    </tr></thead>
+    <tbody>
+    
+      <tr class="sl-row" data-tier="pending" data-mkt="Intl macro"
+          data-text="intl macro de-risk sleeve  (pooled jp/ez/gb/kr — c2) 国际宏观降险组合（jp/ez/gb/kr 合并 — c2） intl macro the strongest intl prior in the repo — but not yet cleared for a wire. pooled curve-inv + sahm + short-tightening de-risk sleeve: dsr 0.9978, split-half pass (+0.70/+0.76), leave-one-crisis-out holds, pooled maxdd −39.2% vs −55.4% b&h. pending (not confirmed) because the intl-specific gates the promotion gate does not cover are not yet run: orthogonality vs the 5 us mrs legs (growth-scare may overlap nfci/liquidity) + the crisis-independent expected-shortfall test. honest-n ~4 shared crises is the binding constraint. weight_cap stays 0 until w2 clears those gates.">
+        <td>
+          <div class="sig"><span class="l-en">Intl macro de-risk sleeve  (pooled JP/EZ/GB/KR — C2)</span><span class="l-zh">国际宏观降险组合（JP/EZ/GB/KR 合并 — C2）</span>
+            </div>
+          <div class="mkt">Intl macro · 21/42d fwd drawdown · not wired (W1 declared, W2 gates + measured weight → conditions._macro_risk_legs)</div>
+          <div class="extra">pooled MaxDD −39.2% vs −55.4% B&H · split-half Sharpe +0.70 / +0.76 · honest-N ~4 shared crises · unrun gates orthogonality + crisis-indep ES</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r yes">0.998</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-pending"><span class="l-en">PENDING</span><span class="l-zh">待接入</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">The strongest intl prior in the repo — but NOT yet cleared for a wire. Pooled curve-inv + Sahm + short-tightening de-ris…</span><span class="l-zh">仓库中最强的国际先验，但尚未获准接线。合并曲线倒挂+Sahm+短端收紧降险组合：DSR 0.9978，两半通过（+0.70/+0.76），逐危机剔除仍成立，合并…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">The strongest intl prior in the repo — but NOT yet cleared for a wire. Pooled curve-inv + Sahm + short-tightening de-risk sleeve: DSR 0.9978, split-half PASS (+0.70/+0.76), leave-one-crisis-out holds, pooled MaxDD −39.2% vs −55.4% B&H. PENDING (not CONFIRMED) because the intl-specific gates the promotion gate does not cover are NOT yet run: orthogonality vs the 5 US MRS legs (growth-scare may overlap NFCI/liquidity) + the crisis-independent expected-shortfall test. Honest-N ~4 shared crises is the binding constraint. Weight_cap stays 0 until W2 clears those gates.  [reports/intl-macro-sleeve-phase0.md; data/intl_bridge/ledger.json (C2)]</span><span class="l-zh">仓库中最强的国际先验，但尚未获准接线。合并曲线倒挂+Sahm+短端收紧降险组合：DSR 0.9978，两半通过（+0.70/+0.76），逐危机剔除仍成立，合并回撤 −39.2% 对 −55.4% 买入持有。标记为待接入而非已确认：晋升门未覆盖的国际专属门尚未运行（相对5条美国MRS腿的正交性 + 危机无关的期望损失）。诚实样本约4次共享危机为约束。权重上限保持0，直至W2通过这些门。  [reports/intl-macro-sleeve-phase0.md; data/intl_bridge/ledger.json (C2)]</span></span></span>
+          <div class="src">reports/intl-macro-sleeve-phase0.md; data/intl_bridge/ledger.json (C2)</div>
+        </td>
+      </tr>
+    
+      <tr class="sl-row" data-tier="pending" data-mkt="Dollar / macro"
+          data-text="broad-dollar reer value factor  (n=1 resurrection — c4) 宽美元 reer 价值因子（n=1 复活 — c4） dollar / macro a pre-registered n=1 hypothesis, not a quiet promotion. the broad-usd reer value factor (cheap = bullish usd) confirmed in both halves vs forward broad-usd returns (ic +0.077 pre / +0.060 post) — but it was killed inside the forex 60-trial family budget (dsr 0.0056 there). the honest path (intl-43) is to re-run it as n=1 with a trial budget separated from that family; pending that re-run.">
+        <td>
+          <div class="sig"><span class="l-en">Broad-dollar REER value factor  (N=1 resurrection — C4)</span><span class="l-zh">宽美元 REER 价值因子（N=1 复活 — C4）</span>
+            </div>
+          <div class="mkt">Dollar / macro · 21/63/126d · not wired (W3 N=1 re-run; display first)</div>
+          <div class="extra">IC pre / post +0.077 / +0.060 (both confirmed) · family-deflated DSR 0.0056 (budget-killed; N=1 value pending)</div>
+        </td>
+        <td class="r pos">+0.0650</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-pending"><span class="l-en">PENDING</span><span class="l-zh">待接入</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">A pre-registered N=1 hypothesis, not a quiet promotion. The broad-USD REER value factor (cheap = bullish USD) CONFIRMED …</span><span class="l-zh">预注册的 N=1 假设，而非悄然晋升。宽美元 REER 价值因子（便宜=看多美元）在两半均确认（IC +0.077/+0.060），但在外汇60试验家族预算内被…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">A pre-registered N=1 hypothesis, not a quiet promotion. The broad-USD REER value factor (cheap = bullish USD) CONFIRMED in BOTH halves vs forward broad-USD returns (IC +0.077 pre / +0.060 post) — but it was killed inside the forex 60-trial family budget (DSR 0.0056 there). The honest path (INTL-43) is to re-run it as N=1 with a trial budget separated from that family; PENDING that re-run.  [reports/forex-calibration.md; data/intl_bridge/ledger.json (C4 reer_value)]</span><span class="l-zh">预注册的 N=1 假设，而非悄然晋升。宽美元 REER 价值因子（便宜=看多美元）在两半均确认（IC +0.077/+0.060），但在外汇60试验家族预算内被否决（该处 DSR 0.0056）。诚实路径（INTL-43）是以独立于该家族的试验预算重跑为 N=1；待此重跑。  [reports/forex-calibration.md; data/intl_bridge/ledger.json (C4 reer_value)]</span></span></span>
+          <div class="src">reports/forex-calibration.md; data/intl_bridge/ledger.json (C4 reer_value)</div>
+        </td>
+      </tr>
+    
+    </tbody>
+  </table></div>
+</div>
+
 
 <div class="panel">
   <details class="method">
@@ -1826,8 +1967,8 @@
   <p class="muted sm" style="margin:0"><span class="l-en">Validation toolkit: engine/validation.py (deflated Sharpe, purged k-fold + embargo, block bootstrap, Newey-West HAC, Benjamini-Hochberg FDR, Brier/Platt calibration, cost-aware backtest). Verdicts are quoted from the named reports in reports/. The factor cross-section reads live from data/edgar/ic_scorecard.json.</span><span class="l-zh">验证工具：engine/validation.py（去偏夏普、净化 k 折+隔离、分块自助、Newey-West HAC、Benjamini-Hochberg FDR、Brier/Platt 校准、含成本回测）。结论引自 reports/ 中具名报告；因子横截面实时读取 data/edgar/ic_scorecard.json。</span></p>
   <p class="src" style="margin:8px 0 0">
     <span class="l-en">data span</span><span class="l-zh">数据区间</span> 2011-03-31..2025-12-31 ·
-    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-02 11:16 UTC ·
-    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-02 11:16 UTC</p>
+    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-02 11:41 UTC ·
+    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-02 11:41 UTC</p>
 </div>
 
 <script src="theme.js"></script>

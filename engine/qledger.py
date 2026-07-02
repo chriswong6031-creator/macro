@@ -724,3 +724,229 @@ def emit_track_record(root: Path | str | None = None) -> dict:
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     return payload
+
+
+# --------------------------------------------------------------------------- #
+# PROMOTION LADDER — §3 gate + auto-demote
+# --------------------------------------------------------------------------- #
+# Ladder rungs in order; a family can only move up one rung at a time (gate
+# required at each step) and can auto-demote if the rolling CI falls below 0.
+LADDER_RUNGS = ("DISPLAY", "SHADOW", "CONFIRMER", "SCORED")
+_RUNG_IDX = {r: i for i, r in enumerate(LADDER_RUNGS)}
+
+# Block-bootstrap: minimum number of distinct date clusters required to pass §3.
+PROMOTION_MIN_DATES = GRADED_MIN_DATES   # 25 — same constant, aliased for clarity
+
+
+class PromotionResult:
+    """Outcome of a promotion_check() call.
+
+    Attributes:
+        eligible:       True if the §3 gate would permit promotion to CONFIRMER.
+        reason:         Human-readable explanation of the gate result.
+        n_dates:        Number of independent date clusters in the grade set.
+        wilson_ci_low:  Wilson CI lower bound (None if n_dates == 0).
+        current_state:  derive_state() chip value.
+        demote:         True if the rolling CI has gone negative — auto-demote is warranted.
+        pinned_reason:  Suggested pin reason string (mirrors narrative_regime precedent).
+    """
+    __slots__ = ("eligible", "reason", "n_dates", "wilson_ci_low",
+                 "current_state", "demote", "pinned_reason")
+
+    def __init__(self, eligible: bool, reason: str, n_dates: int,
+                 ci_low: float | None, current_state: str,
+                 demote: bool = False, pinned_reason: str = "") -> None:
+        self.eligible = eligible
+        self.reason = reason
+        self.n_dates = n_dates
+        self.wilson_ci_low = ci_low
+        self.current_state = current_state
+        self.demote = demote
+        self.pinned_reason = pinned_reason
+
+    def as_dict(self) -> dict:
+        return {
+            "eligible": self.eligible,
+            "reason": self.reason,
+            "n_dates": self.n_dates,
+            "wilson_ci_low": self.wilson_ci_low,
+            "current_state": self.current_state,
+            "demote": self.demote,
+            "pinned_reason": self.pinned_reason,
+        }
+
+
+def promotion_check(claim_family: str, horizon: int,
+                    root: Path | str | None = None,
+                    control_only: bool = False) -> PromotionResult:
+    """Evaluate the §3 promotion gate for a claim_family at a given horizon.
+
+    §3 gate (SHADOW → CONFIRMER):
+      1. n_dates >= 25 (independent date clusters, the honest n [P1])
+      2. Wilson-CI lower bound of excess hit-rate vs matched control > 0 at the
+         claim's horizon (not vs SPY — vs control; SPY excess is the headline,
+         control excess is the gate)
+      3. Rolling check: if wilson_ci_low <= 0 on the trailing window → demote.
+
+    The block-bootstrap stability check (§3: "across date clusters") and the
+    incremental-information check ("incremental over price+VIX baseline") are
+    noted in the result but their implementation is deferred to the W6 composite
+    validator — this function gates on the two hard numeric criteria.
+
+    Args:
+        claim_family: The `claim_family` tag (matches qledger claims.jsonl rows).
+        horizon:      The horizon_d to check (typically 5, 21, or 63).
+        root:         Repo root; defaults to config.ROOT.
+        control_only: When True, evaluate excess vs control_ret rather than bench.
+                      §3 specifies "vs matched control" as the gate leg.
+
+    Returns:
+        PromotionResult with eligible/reason/n_dates/wilson_ci_low/demote.
+    """
+    root = _root(root)
+    claims = load_claims(root)
+    grades = load_grades(root)
+
+    # Index claims by claim_id for fast lookup
+    cid_meta = {
+        c["claim_id"]: c for c in claims
+        if c.get("claim_id") and c.get("claim_family") == claim_family
+        and not c.get("is_placebo")
+    }
+
+    if not cid_meta:
+        return PromotionResult(
+            eligible=False,
+            reason=f"No claims found for claim_family={claim_family!r}",
+            n_dates=0, ci_low=None,
+            current_state=STATE_UNGRADED,
+        )
+
+    # Collect grade rows at the target horizon for this family
+    hits = 0
+    graded_hits = 0
+    dates: set[str] = set()
+
+    for g in grades:
+        if int(g.get("horizon_d", -1)) != horizon:
+            continue
+        c = cid_meta.get(g.get("claim_id"))
+        if c is None:
+            continue
+        dates.add(_date_cluster(c.get("asof", "")))
+
+        hit = g.get("hit")
+        if hit is not None:
+            graded_hits += 1
+            # Use control_ret leg when control_only=True; fall back to primary leg
+            if control_only:
+                ctrl = g.get("control_ret")
+                subj = g.get("subject_ret")
+                bench = g.get("bench_ret")
+                if ctrl is not None and subj is not None and bench is not None:
+                    # excess vs control = subject_ret - control_ret
+                    ctrl_excess = subj - ctrl
+                    if ctrl_excess > 0:
+                        hits += 1
+                elif hit:
+                    hits += 1   # fall back to primary hit when control unavailable
+            elif hit:
+                hits += 1
+
+    n_dates = len(dates)
+    current_state = derive_state(n_dates)
+    ci_low = wilson_ci_low(hits, graded_hits) if graded_hits else None
+
+    # §3 gate criterion 1: n_dates
+    if n_dates < PROMOTION_MIN_DATES:
+        return PromotionResult(
+            eligible=False,
+            reason=(f"n_dates={n_dates} < {PROMOTION_MIN_DATES} required. "
+                    f"State: {current_state}. "
+                    f"Need {PROMOTION_MIN_DATES - n_dates} more independent date clusters."),
+            n_dates=n_dates, ci_low=ci_low,
+            current_state=current_state,
+        )
+
+    # §3 gate criterion 2: wilson_ci_low > 0
+    if ci_low is None:
+        return PromotionResult(
+            eligible=False,
+            reason=(f"n_dates={n_dates} OK but no directional hits recorded "
+                    f"(graded_hits={graded_hits}) — cannot compute Wilson CI. "
+                    f"Family may be salience-only (direction=0); salience families "
+                    f"gate on |excess| > placebo instead."),
+            n_dates=n_dates, ci_low=None,
+            current_state=current_state,
+        )
+
+    # Auto-demote check: CI <= 0 on a family that was previously above the bar
+    demote = ci_low <= 0.0
+    pinned_reason = ""
+    if demote:
+        pinned_reason = (
+            f"claim_family={claim_family!r} horizon={horizon}d: "
+            f"rolling Wilson CI lower bound={ci_low:.4f} <= 0 at "
+            f"n_dates={n_dates}. Auto-demote one rung. "
+            f"Pinned as of {_now_iso()[:10]} (narrative_regime precedent)."
+        )
+        return PromotionResult(
+            eligible=False,
+            reason=f"Wilson CI lower bound {ci_low:.4f} <= 0 — AUTO-DEMOTE warranted. "
+                   f"{pinned_reason}",
+            n_dates=n_dates, ci_low=ci_low,
+            current_state=current_state,
+            demote=True, pinned_reason=pinned_reason,
+        )
+
+    # Both gates pass
+    return PromotionResult(
+        eligible=True,
+        reason=(f"§3 gate PASS at horizon={horizon}d: "
+                f"n_dates={n_dates} >= {PROMOTION_MIN_DATES}, "
+                f"Wilson CI lower bound={ci_low:.4f} > 0. "
+                f"Block-bootstrap stability and incremental-information checks "
+                f"(price+VIX baseline) are delegated to the W6 composite validator."),
+        n_dates=n_dates, ci_low=ci_low,
+        current_state=current_state,
+    )
+
+
+def emit_ladder_states(root: Path | str | None = None,
+                       families: list[str] | None = None) -> dict:
+    """Run promotion_check at every GRADE_HORIZON for each claim_family found in
+    claims.jsonl and emit the results into track_record.json under 'ladder_states'.
+
+    Called by grade_qledger.py at end-of-collect so the ladder state is always
+    current alongside the grade stats. Returns the per-family results dict.
+    """
+    root = _root(root)
+    claims = load_claims(root)
+    all_families = families or list({
+        c.get("claim_family") or c.get("desk")
+        for c in claims
+        if not c.get("is_placebo") and (c.get("claim_family") or c.get("desk"))
+    })
+
+    results: dict[str, dict] = {}
+    for fam in sorted(all_families):
+        fam_res: dict[str, dict] = {}
+        for h in GRADE_HORIZONS:
+            pr = promotion_check(fam, h, root=root, control_only=True)
+            fam_res[str(h)] = pr.as_dict()
+        results[fam] = fam_res
+
+    # Merge into the existing track_record if it exists, else write fresh
+    tr_path = root.joinpath(*_TRACK_FILE)
+    payload: dict = {}
+    if tr_path.exists():
+        try:
+            payload = json.loads(tr_path.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001
+            payload = {}
+    payload["ladder_states"] = results
+    payload["ladder_states_at"] = _now_iso()
+    tr_path.parent.mkdir(parents=True, exist_ok=True)
+    tr_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2),
+                       encoding="utf-8")
+    return results
