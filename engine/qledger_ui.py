@@ -70,6 +70,17 @@ def load_track_record(root: Path | str | None = None) -> dict:
 # chip derivation
 # --------------------------------------------------------------------------- #
 
+# UI desk key → canonical `desk` value written by the W1 backfill adapters.
+# The pages address desks by their page-local names (`alt_data`, `news`) but the
+# ledger keys `by_desk` on the adapter's `desk` field (`altdata`, `china_news`).
+# Without this bridge the alt_data chip would read UNGRADED forever even after
+# grades land. Keys not present here pass through unchanged (radar, policy).
+_DESK_ALIAS = {
+    "alt_data": "altdata",
+    "news": "china_news",
+}
+
+
 def chip_for_desk(desk: str, track_record: dict | None) -> dict:
     """Build the chip dict for ONE desk from a loaded track_record payload.
 
@@ -78,10 +89,15 @@ def chip_for_desk(desk: str, track_record: dict | None) -> dict:
 
     The PRIMARY horizon is the smallest GRADE_HORIZONS value that has graded
     data for this desk (so grading shows up as early as the 5d clock, not 63d).
+
+    `desk` may be a page-local UI key (e.g. `alt_data`); it is resolved to the
+    canonical adapter `desk` value via `_DESK_ALIAS` before the ledger lookup.
     """
     tr = track_record or {}
     by_desk: dict = tr.get("by_desk") or {}
-    desk_stats: dict = by_desk.get(desk) or {}
+    ledger_key = _DESK_ALIAS.get(desk, desk)
+    # Prefer the aliased key, but accept the raw key too (direct desk addressing).
+    desk_stats: dict = by_desk.get(ledger_key) or by_desk.get(desk) or {}
 
     # Pick the smallest horizon with n_dates > 0
     best_h: int | None = None
