@@ -2388,6 +2388,16 @@
         <span class="disp-meta">{{ t('gross', '总仓') }} ×{{ _dr.gross_mult }}{% if _dr.avg_corr is not none %} · {{ t('avg corr', '平均相关') }} {{ _dr.avg_corr }}{% endif %}</span>
       </div>
       {% endif %}
+      {# W6-US fix 6: concentration banner — surfaces the effective-bets count so users
+         don't mistake 34 names for 34 independent ideas when the board is 2-sector concentrated.
+         A soft per-sector cap (5) is applied at build time; overflow goes to the watch strip.
+         Top-2-sector share and N sectors are emitted in concentration JSON. #}
+      {% if _su and _su.concentration is defined %}{% set _conc = _su.concentration %}
+      {% if _conc.top2_sector_share is not none and _conc.top2_sector_share >= 0.4 %}
+      <div class="nb-conc muted" title="Concentration note — a soft per-sector cap (5 names) is applied to prevent bottoming-alignment from flooding the board with one washed-out sector. Overflow names appear in the watch strip. Effective bets ≈ the number of distinct sectors. · 集中度说明——应用软性单板块上限（5个标的），防止筑底共振选出同一行业大量名称。超出上限的标的出现在观察名单中。有效押注 ≈ 不同行业数量。">
+        {{ t('Board', '榜单') }}: {{ _conc.n_names }} {{ t('names across', '个标的分布在') }} {{ _conc.n_sectors }} {{ t('sectors', '个行业') }} — {{ t('effective bets ≈', '有效押注 ≈') }} {{ _conc.n_sectors }}. {{ t('Top-2 sectors:', '前两大行业：') }} {{ '%d'|format((100 * _conc.top2_sector_share)|round|int) }}% {{ t('of board.', '的榜单。') }}{% if _conc.overflow_count %} {{ _conc.overflow_count }} {{ t('overflow names → watch strip.', '个溢出标的 → 观察名单。') }}{% endif %}
+      </div>
+      {% endif %}{% endif %}
       <div class="nbgrid" data-showmore="12">
       {% if _su %}
       {# BOTTOMING-ALIGNED board: shows only names whose weekly/3-day/daily cycles are

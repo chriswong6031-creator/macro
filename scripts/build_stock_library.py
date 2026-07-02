@@ -1609,9 +1609,67 @@ def main() -> int:
             pct = bisect.bisect_right(_czs, p.get("composite_z") or 0.0) / _bn
             return (0 if tier == "aligned" else 1, -(pct + 0.5 * w))
         buyable = sorted(buyable, key=_combine_key)
+
+        # W6-US fix 6: soft per-sector cap + dual-class dedup on the wide board.
+        # The same PER_SECTOR=5 cap that guards action_board.notable in build_site.py
+        # is now applied here so bottoming-alignment can't select all of one sector
+        # (live: 10 Industrials + 9 Utilities = 19/34 = 56% of buys).
+        # Soft: names that exceed the cap overflow into the watch strip instead of
+        # being discarded — the board is transparent about them.
+        # Dual-class dedup: names sharing a normalised company name (GOOG+GOOGL) keep
+        # only the first-ranked variant. Uses engine.setups.norm_company.
+        from engine.setups import norm_company as _norm_co
+        _WIDE_PER_SECTOR = 5
+        _by_sec_w: dict[str | None, int] = {}
+        _seen_name_w: set[str] = set()
+        _buyable_capped: list[tuple] = []
+        _buyable_overflow: list[tuple] = []
+        for _item in buyable:
+            _t6, _p6, _tier6 = _item
+            _r6 = row_by_t[_t6]
+            _nm6 = _norm_co(_r6.get("name"))
+            if _nm6 and _nm6 in _seen_name_w:
+                # dual-class dupe — drop silently
+                continue
+            if _nm6:
+                _seen_name_w.add(_nm6)
+            _sec6 = _r6.get("sector")
+            if _by_sec_w.get(_sec6, 0) < _WIDE_PER_SECTOR:
+                _by_sec_w[_sec6] = _by_sec_w.get(_sec6, 0) + 1
+                _buyable_capped.append(_item)
+            else:
+                _buyable_overflow.append(_item)
+        # overflow goes to watch (they are aligned, just over the soft cap)
+        buyable = _buyable_capped
+
+        # concentration stat for the banner
+        _sec_counts6 = {}
+        for _t6, _p6, _ti6 in buyable:
+            _s6 = row_by_t[_t6].get("sector")
+            _sec_counts6[_s6] = _sec_counts6.get(_s6, 0) + 1
+        _top2_share6 = sum(sorted(_sec_counts6.values(), reverse=True)[:2]) / max(len(buyable), 1)
+        _n_sectors6 = len(_sec_counts6)
+        _concentration_stat = {
+            "top2_sector_share": round(_top2_share6, 2),
+            "n_sectors": _n_sectors6,
+            "n_names": len(buyable),
+            "effective_bets": _n_sectors6,  # rough lower bound
+            "overflow_count": len(_buyable_overflow),
+        }
+        log.info("W6-US fix 6: sector cap applied — %d buy names, %d sectors, "
+                 "top-2 share %.0f%%, %d overflow to watch",
+                 len(buyable), _n_sectors6, 100 * _top2_share6, len(_buyable_overflow))
+
         buy_ids = {t for t, _, _ in buyable}
+        # overflow names join watch (only if positive conviction, no duplication)
+        _overflow_tickers = {t for t, _, _ in _buyable_overflow}
         watch = [(t, p) for t, p in scored
-                 if t not in buy_ids and (p.get("composite_z") or 0) > 0]
+                 if t not in buy_ids and (p.get("composite_z") or 0) > 0
+                 and t not in _overflow_tickers]
+        # prepend capped-overflow to watch in order (they are aligned — keep them visible)
+        _overflow_watch = [(t, row_by_t[t]) for t, _, _ in _buyable_overflow
+                           if (profiles.get(t) or {}).get("composite_z", 0) > 0]
+        watch = _overflow_watch + watch
 
         def _tag(t, tier):
             r = row_by_t[t]
@@ -1620,7 +1678,8 @@ def main() -> int:
         wide = {"as_of": alpha_asof, "rank_by": "bottoming-alignment", "gate_go": gate_go,
                 "buy": [_tag(t, tier) for t, _, tier in buyable[:120]],
                 "watch": [row_by_t[t] for t, _ in watch[:24]],
-                "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else []}
+                "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else [],
+                "concentration": _concentration_stat}
         eligible = len(aligned)
         for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
