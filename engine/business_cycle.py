@@ -229,10 +229,32 @@ def _f(v) -> float | None:
     return None if v is None or pd.isna(v) else float(v)
 
 
+def _phase_at_lag(cfg: dict, lag_m: int) -> dict | None:
+    """The leading/coincident momentum + phase clock computed at a given publication
+    lag — used to emit the legacy (unlagged) SHADOW reading beside the live one so the
+    lag-fix's effect on the phase clock is transparent for one cycle (audit #39)."""
+    fr = cycle_frame(cfg, lag_m=lag_m)
+    if fr is None or fr.empty or "leading_mom6" not in fr.columns:
+        return None
+    lm = fr["leading_mom6"].dropna()
+    cm = fr["coincident_mom6"].dropna() if "coincident_mom6" in fr.columns else pd.Series(dtype=float)
+    lead = float(lm.iloc[-1]) if len(lm) else None
+    coin = float(cm.iloc[-1]) if len(cm) else None
+    ph_en, ph_zh = _phase(lead, coin)
+    return {"lag_m": lag_m, "leading_mom6": lead, "coincident_mom6": coin,
+            "phase": {"label": ph_en, "label_zh": ph_zh}}
+
+
 def business_cycle_snapshot(frame: pd.DataFrame | None = None, cfg: dict | None = None) -> dict:
     """Latest tier readings, the 3-D's recession-signal state, the cycle phase, and
     the MEASURED lead/false-positive stats (from the calibration JSON). Degrades to a
-    minimal dict if the store has no data, so the run never crashes."""
+    minimal dict if the store has no data, so the run never crashes.
+
+    The live frame is built at `live_lag_m` (default 1) so the signal fires on the SAME
+    publication-lag frame its calibration and advertised lead/FP stats were measured on
+    (audit #39). The pre-fix unlagged reading is carried as `shadow` for one cycle so the
+    phase-clock flip is transparent. Explicit `frame`/`cfg` (the harness) bypass this."""
+    live_frame_supplied = frame is not None
     cfg = cfg or config.load()["engine"]["business_cycle"]
     cal = _load_calibration()
     # the calibrated operating point (scripts/validate_business_cycle.py) WINS over the
@@ -240,7 +262,9 @@ def business_cycle_snapshot(frame: pd.DataFrame | None = None, cfg: dict | None 
     # not a placeholder. The harness passes explicit cfgs, so it is unaffected.
     if cal.get("signal"):
         cfg = dict(cfg, signal=dict(cfg["signal"], **cal["signal"]))
-    frame = cycle_frame(cfg) if frame is None else frame
+    live_lag_m = int(cfg.get("live_lag_m", 1))
+    shadow_lag_m = int(cfg.get("shadow_lag_m", 0))
+    frame = cycle_frame(cfg, lag_m=live_lag_m) if frame is None else frame
     if frame is None or frame.empty:
         return {"available": False}
     sig = recession_signal(frame, cfg)
@@ -327,6 +351,30 @@ def business_cycle_snapshot(frame: pd.DataFrame | None = None, cfg: dict | None 
     caveat_zh = ("有效样本极小（现代美国衰退约 7 次，可点对点回溯约 3 次）——这是衰退"
                  "“风险”时间线，并非崩盘预言。领先时长以 NBER 日期为准，详见验证报告。")
 
+    # Lag passport + SHADOW legacy reading (audit #39): the live signal now fires at the
+    # calibrated publication lag; the pre-fix unlagged phase clock is emitted beside it so
+    # the flip (contraction<->recovery on the leading momentum sign) is transparent. Skipped
+    # when an explicit frame is supplied (the validation harness passes its own).
+    shadow = None
+    if not live_frame_supplied and shadow_lag_m != live_lag_m:
+        leg = _phase_at_lag(cfg, shadow_lag_m)
+        if leg is not None:
+            leg["is_shadow"] = True
+            leg["note"] = ("legacy pre-fix reading at lag_m=0 (unlagged monthly legs); the live "
+                           "reading above now fires at the CALIBRATED lag_m={} so it matches the "
+                           "advertised lead/FP stats. Retire after one nightly cycle confirms "
+                           "stability.".format(live_lag_m))
+            shadow = leg
+    lag_passport = {
+        "basis": "measured",
+        "live_lag_m": live_lag_m,
+        "calibrated_lag_m": (measured or {}).get("calibration_lag_m", 1),
+        "leak_removed": bool(live_lag_m >= 1),
+        "note": ("Live monthly legs shifted by live_lag_m so the signal fires on the same "
+                 "publication-lag frame the 5.7m-lead/3-FP stats were calibrated on (audit #39). "
+                 "Daily leading legs (SPY/curve/HY) are knowable intramonth and unshifted."),
+    }
+
     return {
         "available": True,
         "asof": asof,
@@ -337,6 +385,8 @@ def business_cycle_snapshot(frame: pd.DataFrame | None = None, cfg: dict | None 
         "phase": {"label": ph_en, "label_zh": ph_zh},
         "measured": measured,
         "calibrated": bool(measured),
+        "lag_passport": lag_passport,
+        "shadow": shadow,
         "spark_recession": (_spark(frame["nber_recession"], dec=0)
                             if "nber_recession" in frame.columns else None),
         "caveat": caveat,

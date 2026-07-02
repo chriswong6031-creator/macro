@@ -38,6 +38,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import business_cycle as bc  # noqa: E402
+from engine.trial_ledger import register_trials  # noqa: E402
 from lib import config  # noqa: E402
 
 # NBER peaks that were exogenous shocks, not slow business-cycle rollovers. A
@@ -149,9 +150,16 @@ def calibrate(frame: pd.DataFrame, cfg: dict) -> tuple[dict, list[dict]]:
     Diffusion stays CB-canonical (<=50)."""
     s = cfg["signal"]
     target_lead, min_lead_floor = 6.0, 3.0
+    thr_grid = np.round(np.arange(-0.5, -4.01, -0.25), 2)   # 15 thresholds
+    mc_grid = (1, 2, 3)                                     # x 3 durations = 45 configs
+    # Register the multiple-testing budget (W1d, CI-enforced): this lag re-calibration
+    # sweeps 45 (threshold x duration) configs against ~3 endogenous PIT-era recessions.
+    register_trials("business_cycle_recession_signal", budget=len(thr_grid) * len(mc_grid),
+                    reason="15 roc_thresholds x 3 durations vs NBER (audit #39 lag re-calibration)",
+                    basis="itemized")._write()
     grid = []
-    for thr in np.round(np.arange(-0.5, -4.01, -0.25), 2):
-        for mc in (1, 2, 3):
+    for thr in thr_grid:
+        for mc in mc_grid:
             grid.append(evaluate(frame, float(thr), float(s["diffusion_max"]), mc,
                                   int(s["max_lead_window_m"]), int(s["lookahead_window_m"])))
     max_caught = max(r["endo_caught"] for r in grid)
@@ -200,7 +208,8 @@ def main() -> None:
         "operating_point": {"roc_threshold": best["threshold"],
                             "diffusion_max": best["diffusion_max"],
                             "min_consecutive_m": best["min_consecutive_m"]},
-        "calibration_window": "1985-01-01..present (revised data, 1m publication lag)",
+        "calibration_lag_m": int(args.lag_months),   # the live signal MUST fire at this lag (#39)
+        "calibration_window": f"1985-01-01..present (revised data, {args.lag_months}m publication lag)",
         "endo_recessions": chosen["n_endogenous"],
         "endo_caught": chosen["endo_caught"],
         "false_positives": chosen["false_positives"],
@@ -314,6 +323,14 @@ up in those episodes — that it lights up in exactly those and nowhere else is 
   backtest to full point-in-time.
 - **COVID-2020 is exogenous** — no business-cycle model leads a pandemic. It is shown
   but excluded from the lead statistics.
+- **Live publication lag (audit #39):** these stats were measured at a
+  {args.lag_months}-month publication lag on the natively-monthly legs, and the LIVE
+  snapshot now fires at the SAME lag (`config engine.business_cycle.live_lag_m`) so the
+  advertised lead/FP numbers describe the signal that fires today. Running live at lag 0
+  leaked ~1 month of look-ahead (May payrolls aren't knowable in May) AND flipped the
+  phase clock (contraction↔recovery). A lag-0 re-fit "improves" the median lead by ~1
+  month, but that gain IS the leak. The pre-fix lag-0 reading ships as a marked shadow
+  for one cycle. Daily leading legs (S&P/curve/HY) are knowable intramonth → unshifted.
 - **Compare to the conditions layer:** this signal is intentionally separate from the
   `conditions.recession_risk` 0–100 blend; keeping Leading / Coincident / Lagging apart
   is what makes the lead-lag *sequence* legible.
