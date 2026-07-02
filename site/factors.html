@@ -1202,7 +1202,8 @@
   <!-- Composite leaders / laggards -->
   <div class="panel">
     <h2><span class="l-en">Multi-factor composite</span><span class="l-zh">多因子综合</span>
-      <span class="help">?<span class="tip"><span class="l-en">Equal-weight blend of value, quality, profitability, investment, payout and low-vol z-scores (a name needs at least 3 of them). The closest single thing to a smart-beta 'multifactor' tilt over the S&P 1500.</span><span class="l-zh">价值、质量、盈利、投资、派息与低波动 z 分数的等权混合（每只至少需 3 个）。</span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">The RANKING here uses only the factor legs that carry a POSITIVE measured information coefficient on the deep-history (leak-free) scorecard, IC-weighted with a sign constraint — negative-IC / FDR-failing legs (e.g. low-vol, investment) are EXCLUDED from the order because they rank names in an anti-predictive direction (the blind equal-weight composite's own scorecard grades it ic_ir -0.049). The per-leg leaderboards below still show every leg, badged with its IC/FDR verdict. Validate-before-weight: the order a trader sizes off cannot be moved by a leg the scorecard rejects.</span><span class="l-zh">此处排序仅采用在深度历史（无泄漏）评分卡上信息系数为正的因子腿，按 IC 加权并施加符号约束——负 IC／未通过 FDR 的腿（如低波动、投资）被排除，因为它们会使排序反向。下方各腿榜单仍展示全部腿并标注其 IC/FDR 结论。</span></span></span>
+      <span class="muted sm">· <span class="l-en">ranked by</span><span class="l-zh">排序依据</span>: Value · Quality · Profitability · Shareholder yield · <span class="l-en">excluded (negative IC)</span><span class="l-zh">已排除（负IC）</span>: Investment, Low volatility</span>
     </h2>
     <div class="twocol">
       <div>
@@ -1210,105 +1211,105 @@
         <table>
           <tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r">z</th><th class="r"><span class="l-en">mkt cap</span><span class="l-zh">市值</span></th></tr>
           
-          <tr><td><a href="stock.html#GNL"><b>GNL</b></a> <span class="muted sm">Global Net Lease, Inc.</span></td>
-            <td class="muted sm"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></td><td class="r zpos">+1.85</td>
-            <td class="r muted sm">$2B</td></tr>
-          
-          <tr><td><a href="stock.html#CARG"><b>CARG</b></a> <span class="muted sm">CarGurus</span></td>
-            <td class="muted sm"><span class="l-en">Communication Services</span><span class="l-zh">Communication Services</span></td><td class="r zpos">+1.74</td>
-            <td class="r muted sm">—</td></tr>
-          
-          <tr><td><a href="stock.html#DBX"><b>DBX</b></a> <span class="muted sm">Dropbox</span></td>
-            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zpos">+1.65</td>
-            <td class="r muted sm">—</td></tr>
-          
-          <tr><td><a href="stock.html#NOG"><b>NOG</b></a> <span class="muted sm">Northern Oil and Gas, </span></td>
-            <td class="muted sm"><span class="l-en">Energy</span><span class="l-zh">能源</span></td><td class="r zpos">+1.53</td>
-            <td class="r muted sm">$2B</td></tr>
-          
           <tr><td><a href="stock.html#ABR"><b>ABR</b></a> <span class="muted sm">Arbor Realty Trust</span></td>
-            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+1.46</td>
+            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+3.00</td>
             <td class="r muted sm">$1B</td></tr>
           
-          <tr><td><a href="stock.html#YELP"><b>YELP</b></a> <span class="muted sm">Yelp, Inc.</span></td>
-            <td class="muted sm"><span class="l-en">Communication Services</span><span class="l-zh">Communication Services</span></td><td class="r zpos">+1.39</td>
+          <tr><td><a href="stock.html#DXC"><b>DXC</b></a> <span class="muted sm">DXC Technology</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zpos">+2.84</td>
             <td class="r muted sm">$2B</td></tr>
           
           <tr><td><a href="stock.html#KMPR"><b>KMPR</b></a> <span class="muted sm">Kemper Corporation</span></td>
-            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+1.36</td>
+            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+2.83</td>
             <td class="r muted sm">$2B</td></tr>
           
-          <tr><td><a href="stock.html#HOG"><b>HOG</b></a> <span class="muted sm">Harley-Davidson</span></td>
-            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+1.32</td>
-            <td class="r muted sm">$3B</td></tr>
-          
-          <tr><td><a href="stock.html#BKNG"><b>BKNG</b></a> <span class="muted sm">Booking Holdings</span></td>
-            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+1.25</td>
-            <td class="r muted sm">$6B</td></tr>
-          
-          <tr><td><a href="stock.html#DXC"><b>DXC</b></a> <span class="muted sm">DXC Technology</span></td>
-            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zpos">+1.23</td>
-            <td class="r muted sm">$2B</td></tr>
-          
-          <tr><td><a href="stock.html#MGY"><b>MGY</b></a> <span class="muted sm">Magnolia Oil & Gas, Co</span></td>
-            <td class="muted sm"><span class="l-en">Energy</span><span class="l-zh">能源</span></td><td class="r zpos">+1.20</td>
-            <td class="r muted sm">—</td></tr>
-          
-          <tr><td><a href="stock.html#SAM"><b>SAM</b></a> <span class="muted sm">Boston Beer Company</span></td>
-            <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r zpos">+1.19</td>
+          <tr><td><a href="stock.html#CARG"><b>CARG</b></a> <span class="muted sm">CarGurus</span></td>
+            <td class="muted sm"><span class="l-en">Communication Services</span><span class="l-zh">Communication Services</span></td><td class="r zpos">+2.81</td>
             <td class="r muted sm">—</td></tr>
           
           <tr><td><a href="stock.html#RNG"><b>RNG</b></a> <span class="muted sm">RingCentral, Inc.</span></td>
-            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zpos">+1.17</td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zpos">+2.81</td>
+            <td class="r muted sm">—</td></tr>
+          
+          <tr><td><a href="stock.html#BKNG"><b>BKNG</b></a> <span class="muted sm">Booking Holdings</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+2.77</td>
+            <td class="r muted sm">$6B</td></tr>
+          
+          <tr><td><a href="stock.html#CHWY"><b>CHWY</b></a> <span class="muted sm">Chewy</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+2.69</td>
             <td class="r muted sm">—</td></tr>
           
           <tr><td><a href="stock.html#NAVI"><b>NAVI</b></a> <span class="muted sm">Navient</span></td>
-            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+1.11</td>
+            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+2.56</td>
             <td class="r muted sm">$1B</td></tr>
           
-          <tr><td><a href="stock.html#GPI"><b>GPI</b></a> <span class="muted sm">Group 1 Automotive, In</span></td>
-            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+1.08</td>
-            <td class="r muted sm">$4B</td></tr>
+          <tr><td><a href="stock.html#NEOG"><b>NEOG</b></a> <span class="muted sm">Neogen</span></td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zpos">+2.52</td>
+            <td class="r muted sm">$2B</td></tr>
           
-          <tr><td><a href="stock.html#AGO"><b>AGO</b></a> <span class="muted sm">Assured Guaranty Ltd.</span></td>
-            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+1.08</td>
-            <td class="r muted sm">$4B</td></tr>
-          
-          <tr><td><a href="stock.html#OXM"><b>OXM</b></a> <span class="muted sm">Oxford Industries, Inc</span></td>
-            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+1.06</td>
+          <tr><td><a href="stock.html#EMBC"><b>EMBC</b></a> <span class="muted sm">Embecta Corp.</span></td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zpos">+2.48</td>
             <td class="r muted sm">$0B</td></tr>
           
-          <tr><td><a href="stock.html#AGNT"><b>AGNT</b></a> <span class="muted sm">eXp World Holdings, In</span></td>
-            <td class="muted sm"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></td><td class="r zpos">+1.05</td>
-            <td class="r muted sm">$1B</td></tr>
+          <tr><td><a href="stock.html#HIMS"><b>HIMS</b></a> <span class="muted sm">Hims & Hers Health</span></td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zpos">+2.43</td>
+            <td class="r muted sm">—</td></tr>
           
-          <tr><td><a href="stock.html#BXMT"><b>BXMT</b></a> <span class="muted sm">Blackstone Mortgage Tr</span></td>
-            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+1.05</td>
-            <td class="r muted sm">$3B</td></tr>
+          <tr><td><a href="stock.html#WU"><b>WU</b></a> <span class="muted sm">Western Union</span></td>
+            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+2.43</td>
+            <td class="r muted sm">$2B</td></tr>
           
-          <tr><td><a href="stock.html#ADBE"><b>ADBE</b></a> <span class="muted sm">Adobe Inc.</span></td>
-            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zpos">+1.04</td>
-            <td class="r muted sm">$85B</td></tr>
+          <tr><td><a href="stock.html#SAM"><b>SAM</b></a> <span class="muted sm">Boston Beer Company</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r zpos">+2.42</td>
+            <td class="r muted sm">—</td></tr>
           
-          <tr><td><a href="stock.html#TFC"><b>TFC</b></a> <span class="muted sm">Truist Financial</span></td>
-            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+1.03</td>
-            <td class="r muted sm">$63B</td></tr>
+          <tr><td><a href="stock.html#DBX"><b>DBX</b></a> <span class="muted sm">Dropbox</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zpos">+2.39</td>
+            <td class="r muted sm">—</td></tr>
+          
+          <tr><td><a href="stock.html#ARR"><b>ARR</b></a> <span class="muted sm">Armour Residential REI</span></td>
+            <td class="muted sm"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></td><td class="r zpos">+2.37</td>
+            <td class="r muted sm">$2B</td></tr>
+          
+          <tr><td><a href="stock.html#AGO"><b>AGO</b></a> <span class="muted sm">Assured Guaranty Ltd.</span></td>
+            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+2.36</td>
+            <td class="r muted sm">$4B</td></tr>
           
           <tr><td><a href="stock.html#CAG"><b>CAG</b></a> <span class="muted sm">CAG</span></td>
-            <td class="muted sm"><span class="l-en">—</span><span class="l-zh">—</span></td><td class="r zpos">+1.03</td>
+            <td class="muted sm"><span class="l-en">—</span><span class="l-zh">—</span></td><td class="r zpos">+2.36</td>
             <td class="r muted sm">$7B</td></tr>
           
-          <tr><td><a href="stock.html#CART"><b>CART</b></a> <span class="muted sm">Maplebear Inc.</span></td>
-            <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r zpos">+1.02</td>
-            <td class="r muted sm">$12B</td></tr>
+          <tr><td><a href="stock.html#OXM"><b>OXM</b></a> <span class="muted sm">Oxford Industries, Inc</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+2.35</td>
+            <td class="r muted sm">$0B</td></tr>
           
-          <tr><td><a href="stock.html#SCHL"><b>SCHL</b></a> <span class="muted sm">Scholastic Corporation</span></td>
-            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+1.01</td>
-            <td class="r muted sm">$1B</td></tr>
+          <tr><td><a href="stock.html#NOG"><b>NOG</b></a> <span class="muted sm">Northern Oil and Gas, </span></td>
+            <td class="muted sm"><span class="l-en">Energy</span><span class="l-zh">能源</span></td><td class="r zpos">+2.30</td>
+            <td class="r muted sm">$2B</td></tr>
           
-          <tr><td><a href="stock.html#KR"><b>KR</b></a> <span class="muted sm">Kroger</span></td>
-            <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r zpos">+1.01</td>
-            <td class="r muted sm">$35B</td></tr>
+          <tr><td><a href="stock.html#YELP"><b>YELP</b></a> <span class="muted sm">Yelp, Inc.</span></td>
+            <td class="muted sm"><span class="l-en">Communication Services</span><span class="l-zh">Communication Services</span></td><td class="r zpos">+2.29</td>
+            <td class="r muted sm">$2B</td></tr>
+          
+          <tr><td><a href="stock.html#GPI"><b>GPI</b></a> <span class="muted sm">Group 1 Automotive, In</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+2.29</td>
+            <td class="r muted sm">$4B</td></tr>
+          
+          <tr><td><a href="stock.html#SPNT"><b>SPNT</b></a> <span class="muted sm">SiriusPoint Ltd.</span></td>
+            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zpos">+2.26</td>
+            <td class="r muted sm">$3B</td></tr>
+          
+          <tr><td><a href="stock.html#PVH"><b>PVH</b></a> <span class="muted sm">PVH Corp.</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+2.24</td>
+            <td class="r muted sm">$3B</td></tr>
+          
+          <tr><td><a href="stock.html#EPAM"><b>EPAM</b></a> <span class="muted sm">EPAM Systems</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zpos">+2.21</td>
+            <td class="r muted sm">$4B</td></tr>
+          
+          <tr><td><a href="stock.html#KBH"><b>KBH</b></a> <span class="muted sm">KB Home</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zpos">+2.20</td>
+            <td class="r muted sm">$4B</td></tr>
           
         </table>
       </div>
@@ -1317,104 +1318,104 @@
         <table>
           <tr><th><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">sector</span><span class="l-zh">板块</span></th><th class="r">z</th><th class="r"><span class="l-en">mkt cap</span><span class="l-zh">市值</span></th></tr>
           
-          <tr><td><a href="stock.html#VIAV"><b>VIAV</b></a> <span class="muted sm">VIAVI Solutions</span></td>
-            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-2.30</td>
-            <td class="r muted sm">$11B</td></tr>
-          
-          <tr><td><a href="stock.html#FN"><b>FN</b></a> <span class="muted sm">Fabrinet</span></td>
-            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.73</td>
-            <td class="r muted sm">$20B</td></tr>
-          
-          <tr><td><a href="stock.html#HOOD"><b>HOOD</b></a> <span class="muted sm">Robinhood Markets</span></td>
-            <td class="muted sm"><span class="l-en">Financials</span><span class="l-zh">金融</span></td><td class="r zneg">-1.70</td>
-            <td class="r muted sm">—</td></tr>
-          
-          <tr><td><a href="stock.html#ACMR"><b>ACMR</b></a> <span class="muted sm">ACM Research, Inc.</span></td>
-            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.69</td>
-            <td class="r muted sm">—</td></tr>
-          
-          <tr><td><a href="stock.html#TGTX"><b>TGTX</b></a> <span class="muted sm">TG Therapeutics, Inc.</span></td>
-            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-1.49</td>
-            <td class="r muted sm">$8B</td></tr>
-          
           <tr><td><a href="stock.html#STX"><b>STX</b></a> <span class="muted sm">Seagate Technology</span></td>
-            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.47</td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-2.37</td>
             <td class="r muted sm">$210B</td></tr>
           
-          <tr><td><a href="stock.html#LIF"><b>LIF</b></a> <span class="muted sm">Life360</span></td>
-            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.44</td>
-            <td class="r muted sm">$4B</td></tr>
+          <tr><td><a href="stock.html#TPR"><b>TPR</b></a> <span class="muted sm">Tapestry, Inc.</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zneg">-2.22</td>
+            <td class="r muted sm">$30B</td></tr>
           
-          <tr><td><a href="stock.html#TLN"><b>TLN</b></a> <span class="muted sm">Talen Energy</span></td>
-            <td class="muted sm"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></td><td class="r zneg">-1.42</td>
-            <td class="r muted sm">$18B</td></tr>
-          
-          <tr><td><a href="stock.html#AAON"><b>AAON</b></a> <span class="muted sm">AAON</span></td>
-            <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r zneg">-1.42</td>
-            <td class="r muted sm">$10B</td></tr>
+          <tr><td><a href="stock.html#VIR"><b>VIR</b></a> <span class="muted sm">Vir Biotechnology, Inc</span></td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-2.17</td>
+            <td class="r muted sm">$1B</td></tr>
           
           <tr><td><a href="stock.html#RCUS"><b>RCUS</b></a> <span class="muted sm">Arcus Biosciences, Inc</span></td>
-            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-1.38</td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-1.88</td>
             <td class="r muted sm">$4B</td></tr>
           
-          <tr><td><a href="stock.html#CLSK"><b>CLSK</b></a> <span class="muted sm">CleanSpark, Inc.</span></td>
-            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.36</td>
-            <td class="r muted sm">$4B</td></tr>
+          <tr><td><a href="stock.html#LRCX"><b>LRCX</b></a> <span class="muted sm">Lam Research</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.84</td>
+            <td class="r muted sm">$542B</td></tr>
           
-          <tr><td><a href="stock.html#CVNA"><b>CVNA</b></a> <span class="muted sm">Carvana</span></td>
-            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zneg">-1.33</td>
-            <td class="r muted sm">—</td></tr>
+          <tr><td><a href="stock.html#CTAS"><b>CTAS</b></a> <span class="muted sm">Cintas</span></td>
+            <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r zneg">-1.75</td>
+            <td class="r muted sm">$68B</td></tr>
           
-          <tr><td><a href="stock.html#ASTH"><b>ASTH</b></a> <span class="muted sm">Astrana Health, Inc.</span></td>
-            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-1.30</td>
+          <tr><td><a href="stock.html#WDC"><b>WDC</b></a> <span class="muted sm">Western Digital</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.74</td>
+            <td class="r muted sm">$217B</td></tr>
+          
+          <tr><td><a href="stock.html#CCI"><b>CCI</b></a> <span class="muted sm">Crown Castle</span></td>
+            <td class="muted sm"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></td><td class="r zneg">-1.71</td>
+            <td class="r muted sm">$33B</td></tr>
+          
+          <tr><td><a href="stock.html#PAYX"><b>PAYX</b></a> <span class="muted sm">Paychex</span></td>
+            <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r zneg">-1.60</td>
+            <td class="r muted sm">$35B</td></tr>
+          
+          <tr><td><a href="stock.html#LITE"><b>LITE</b></a> <span class="muted sm">Lumentum</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.55</td>
+            <td class="r muted sm">$61B</td></tr>
+          
+          <tr><td><a href="stock.html#SNDK"><b>SNDK</b></a> <span class="muted sm">Sandisk</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.54</td>
+            <td class="r muted sm">$336B</td></tr>
+          
+          <tr><td><a href="stock.html#ROIV"><b>ROIV</b></a> <span class="muted sm">Roivant Sciences</span></td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-1.28</td>
+            <td class="r muted sm">$25B</td></tr>
+          
+          <tr><td><a href="stock.html#FTRE"><b>FTRE</b></a> <span class="muted sm">Fortrea</span></td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-1.28</td>
             <td class="r muted sm">$2B</td></tr>
           
-          <tr><td><a href="stock.html#AVAV"><b>AVAV</b></a> <span class="muted sm">AeroVironment</span></td>
-            <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r zneg">-1.27</td>
-            <td class="r muted sm">$8B</td></tr>
+          <tr><td><a href="stock.html#BA"><b>BA</b></a> <span class="muted sm">Boeing</span></td>
+            <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r zneg">-1.19</td>
+            <td class="r muted sm">$219B</td></tr>
           
-          <tr><td><a href="stock.html#LGND"><b>LGND</b></a> <span class="muted sm">Ligand Pharmaceuticals</span></td>
-            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-1.27</td>
-            <td class="r muted sm">$6B</td></tr>
-          
-          <tr><td><a href="stock.html#SANM"><b>SANM</b></a> <span class="muted sm">Sanmina Corporation</span></td>
-            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.24</td>
-            <td class="r muted sm">$14B</td></tr>
-          
-          <tr><td><a href="stock.html#SITM"><b>SITM</b></a> <span class="muted sm">SiTime</span></td>
-            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.23</td>
-            <td class="r muted sm">$20B</td></tr>
-          
-          <tr><td><a href="stock.html#AXON"><b>AXON</b></a> <span class="muted sm">Axon Enterprise</span></td>
-            <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r zneg">-1.21</td>
-            <td class="r muted sm">$45B</td></tr>
-          
-          <tr><td><a href="stock.html#SNPS"><b>SNPS</b></a> <span class="muted sm">Synopsys</span></td>
-            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.20</td>
-            <td class="r muted sm">$85B</td></tr>
-          
-          <tr><td><a href="stock.html#DUOL"><b>DUOL</b></a> <span class="muted sm">Duolingo</span></td>
-            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zneg">-1.20</td>
-            <td class="r muted sm">—</td></tr>
-          
-          <tr><td><a href="stock.html#ARWR"><b>ARWR</b></a> <span class="muted sm">Arrowhead Pharmaceutic</span></td>
-            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-1.19</td>
-            <td class="r muted sm">$11B</td></tr>
+          <tr><td><a href="stock.html#CCOI"><b>CCOI</b></a> <span class="muted sm">Cogent Communications </span></td>
+            <td class="muted sm"><span class="l-en">Communication Services</span><span class="l-zh">Communication Services</span></td><td class="r zneg">-1.17</td>
+            <td class="r muted sm">$1B</td></tr>
           
           <tr><td><a href="stock.html#MARA"><b>MARA</b></a> <span class="muted sm">MARA Holdings, Inc.</span></td>
-            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.17</td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.09</td>
             <td class="r muted sm">$5B</td></tr>
           
-          <tr><td><a href="stock.html#DOCN"><b>DOCN</b></a> <span class="muted sm">DigitalOcean</span></td>
-            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-1.14</td>
-            <td class="r muted sm">$14B</td></tr>
+          <tr><td><a href="stock.html#CPK"><b>CPK</b></a> <span class="muted sm">Chesapeake Utilities C</span></td>
+            <td class="muted sm"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></td><td class="r zneg">-1.06</td>
+            <td class="r muted sm">$2897B</td></tr>
           
-          <tr><td><a href="stock.html#DY"><b>DY</b></a> <span class="muted sm">Dycom Industries</span></td>
-            <td class="muted sm"><span class="l-en">Industrials</span><span class="l-zh">工业</span></td><td class="r zneg">-1.12</td>
-            <td class="r muted sm">$15B</td></tr>
+          <tr><td><a href="stock.html#MRNA"><b>MRNA</b></a> <span class="muted sm">Moderna</span></td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-1.02</td>
+            <td class="r muted sm">$28B</td></tr>
           
-          <tr><td><a href="stock.html#DFH"><b>DFH</b></a> <span class="muted sm">Dream Finders Homes, I</span></td>
-            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zneg">-1.11</td>
+          <tr><td><a href="stock.html#CYTK"><b>CYTK</b></a> <span class="muted sm">Cytokinetics</span></td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-1.01</td>
+            <td class="r muted sm">$10B</td></tr>
+          
+          <tr><td><a href="stock.html#IART"><b>IART</b></a> <span class="muted sm">Integra Lifesciences H</span></td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-1.00</td>
+            <td class="r muted sm">$1B</td></tr>
+          
+          <tr><td><a href="stock.html#INTC"><b>INTC</b></a> <span class="muted sm">Intel</span></td>
+            <td class="muted sm"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td><td class="r zneg">-0.99</td>
+            <td class="r muted sm">$697B</td></tr>
+          
+          <tr><td><a href="stock.html#SBUX"><b>SBUX</b></a> <span class="muted sm">Starbucks</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></td><td class="r zneg">-0.99</td>
+            <td class="r muted sm">$116B</td></tr>
+          
+          <tr><td><a href="stock.html#ESS"><b>ESS</b></a> <span class="muted sm">Essex Property Trust</span></td>
+            <td class="muted sm"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></td><td class="r zneg">-0.99</td>
+            <td class="r muted sm">$19B</td></tr>
+          
+          <tr><td><a href="stock.html#LGND"><b>LGND</b></a> <span class="muted sm">Ligand Pharmaceuticals</span></td>
+            <td class="muted sm"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td><td class="r zneg">-0.98</td>
+            <td class="r muted sm">$6B</td></tr>
+          
+          <tr><td><a href="stock.html#TSN"><b>TSN</b></a> <span class="muted sm">Tyson Foods</span></td>
+            <td class="muted sm"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></td><td class="r zneg">-0.98</td>
             <td class="r muted sm">—</td></tr>
           
         </table>
@@ -2127,7 +2128,7 @@
 
   <div class="panel">
     <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Source: SEC EDGAR XBRL 'frames' API (free, keyless) for FY2025 fundamentals, joined to the S&P 1500 price universe; 1323 names with a full composite as of 2026-06-30. Fundamentals refresh weekly; ranks recompute daily with prices. Factors are decayed/crowded and free fundamentals are imperfect — treat as a research lens, not a buy list. See research/QUANT_FACTOR_EXPANSION.md and LIMITATIONS.md.</span><span class="l-zh">来源：SEC EDGAR XBRL ‘frames’ API（免费、无需密钥）的 FY2025 基本面，与标普 1500 价格域连接；截至 2026-06-30 有 1323 只具备完整综合分。基本面每周刷新，排名随价格每日重算。因子已衰减／拥挤且免费基本面并不完美 — 视作研究视角，而非买入清单。</span>
-      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-02 05:20 UTC</p>
+      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-02 05:41 UTC</p>
   </div>
   <script>
     (function(){
