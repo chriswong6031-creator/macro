@@ -1445,18 +1445,44 @@ def main() -> int:
     # within-market percentile display score (mutates the conviction blocks in place;
     # rec['conviction'] is the SAME object, so the per-stock JSONs pick it up below).
     stock_score.attach_panel_scores(profiles)
-    # US DISPLAYED score = the POTENTIAL (buy-readiness, edge-blended), not the comp-z
-    # percentile. Keep the percentile as rank_pctile; drop the now-inaccurate "within-board
-    # RANK" note. The board now ranks by front-running buy-readiness that still respects the
-    # validated event edge (it is blended in), framed as an experimental screen (forward-graded).
+    # W6-US fix 2: emit BOTH scores as first-class fields so nothing is hidden.
+    #   score_edge   = the within-market composite_z percentile (monotone with edge; the
+    #                  "how good is this name" read). This is what attach_panel_scores wrote
+    #                  into c["score"] before we overwrite it.
+    #   score_timing = the potential_score (buy-readiness blend: washout × trigger × survive
+    #                  × edge_mult). This is what the card historically displayed as "score".
+    # The PRIMARY displayed number stays score_timing (= legacy c["score"]) for continuity,
+    # but score_edge is emitted and the template can render it as a separate "edge percentile"
+    # meter. The band/color is now forced to agree with the verdict so a Lagging name with a
+    # high washout score can never wear a green/high band (build-time invariant enforced below).
+    # Backward-compat: the old "score" field = score_timing so downstream code reading
+    # c["score"] still gets the timing number; nothing outside us_stocks.html reads score_edge.
     for _safe, _rec in to_write:
         _c = _rec.get("conviction") or {}
         _pot = _c.get("potential")
         if not _pot:
             continue
+        # score_edge = the honest edge-percentile (overwritten by potential below)
+        _c["score_edge"] = _c.get("score")
+        # score_timing = the buy-readiness blend (legacy "score" for continuity)
+        _c["score_timing"] = _pot["score"]
+        # The PRIMARY displayed number is score_timing (buy-readiness), kept in "score"
+        # for backward-compat. The band is forced to the verdict-derived cap so the
+        # band color never contradicts the absolute edge verdict.
         _c["rank_pctile"] = _c.get("score")
         _c["score"] = _pot["score"]
-        _c["band"], _c["band_en"], _c["band_zh"] = _pot["band"], _pot["band_en"], _pot["band_zh"]
+        # Verdict-anchored band: never green/constructive/high on a Lagging or no-edge name.
+        # The potential band is used as-is for names with a positive verdict;
+        # for Lagging / no-clear-edge verdicts we cap at "neutral".
+        _verdict = (_c.get("verdict") or "").lower()
+        _lagging = any(k in _verdict for k in ("lagging", "no clear edge"))
+        if _lagging:
+            # cap to neutral regardless of washout depth
+            _c["band"] = "neutral"
+            _c["band_en"] = "neutral"
+            _c["band_zh"] = "中性"
+        else:
+            _c["band"], _c["band_en"], _c["band_zh"] = _pot["band"], _pot["band_en"], _pot["band_zh"]
         _notes = _c.get("notes")
         if _notes:
             _c["notes"] = [n for n in _notes if n.get("kind") != "rank"] or None
@@ -1583,9 +1609,67 @@ def main() -> int:
             pct = bisect.bisect_right(_czs, p.get("composite_z") or 0.0) / _bn
             return (0 if tier == "aligned" else 1, -(pct + 0.5 * w))
         buyable = sorted(buyable, key=_combine_key)
+
+        # W6-US fix 6: soft per-sector cap + dual-class dedup on the wide board.
+        # The same PER_SECTOR=5 cap that guards action_board.notable in build_site.py
+        # is now applied here so bottoming-alignment can't select all of one sector
+        # (live: 10 Industrials + 9 Utilities = 19/34 = 56% of buys).
+        # Soft: names that exceed the cap overflow into the watch strip instead of
+        # being discarded — the board is transparent about them.
+        # Dual-class dedup: names sharing a normalised company name (GOOG+GOOGL) keep
+        # only the first-ranked variant. Uses engine.setups.norm_company.
+        from engine.setups import norm_company as _norm_co
+        _WIDE_PER_SECTOR = 5
+        _by_sec_w: dict[str | None, int] = {}
+        _seen_name_w: set[str] = set()
+        _buyable_capped: list[tuple] = []
+        _buyable_overflow: list[tuple] = []
+        for _item in buyable:
+            _t6, _p6, _tier6 = _item
+            _r6 = row_by_t[_t6]
+            _nm6 = _norm_co(_r6.get("name"))
+            if _nm6 and _nm6 in _seen_name_w:
+                # dual-class dupe — drop silently
+                continue
+            if _nm6:
+                _seen_name_w.add(_nm6)
+            _sec6 = _r6.get("sector")
+            if _by_sec_w.get(_sec6, 0) < _WIDE_PER_SECTOR:
+                _by_sec_w[_sec6] = _by_sec_w.get(_sec6, 0) + 1
+                _buyable_capped.append(_item)
+            else:
+                _buyable_overflow.append(_item)
+        # overflow goes to watch (they are aligned, just over the soft cap)
+        buyable = _buyable_capped
+
+        # concentration stat for the banner
+        _sec_counts6 = {}
+        for _t6, _p6, _ti6 in buyable:
+            _s6 = row_by_t[_t6].get("sector")
+            _sec_counts6[_s6] = _sec_counts6.get(_s6, 0) + 1
+        _top2_share6 = sum(sorted(_sec_counts6.values(), reverse=True)[:2]) / max(len(buyable), 1)
+        _n_sectors6 = len(_sec_counts6)
+        _concentration_stat = {
+            "top2_sector_share": round(_top2_share6, 2),
+            "n_sectors": _n_sectors6,
+            "n_names": len(buyable),
+            "effective_bets": _n_sectors6,  # rough lower bound
+            "overflow_count": len(_buyable_overflow),
+        }
+        log.info("W6-US fix 6: sector cap applied — %d buy names, %d sectors, "
+                 "top-2 share %.0f%%, %d overflow to watch",
+                 len(buyable), _n_sectors6, 100 * _top2_share6, len(_buyable_overflow))
+
         buy_ids = {t for t, _, _ in buyable}
+        # overflow names join watch (only if positive conviction, no duplication)
+        _overflow_tickers = {t for t, _, _ in _buyable_overflow}
         watch = [(t, p) for t, p in scored
-                 if t not in buy_ids and (p.get("composite_z") or 0) > 0]
+                 if t not in buy_ids and (p.get("composite_z") or 0) > 0
+                 and t not in _overflow_tickers]
+        # prepend capped-overflow to watch in order (they are aligned — keep them visible)
+        _overflow_watch = [(t, row_by_t[t]) for t, _, _ in _buyable_overflow
+                           if (profiles.get(t) or {}).get("composite_z", 0) > 0]
+        watch = _overflow_watch + watch
 
         def _tag(t, tier):
             r = row_by_t[t]
@@ -1594,7 +1678,8 @@ def main() -> int:
         wide = {"as_of": alpha_asof, "rank_by": "bottoming-alignment", "gate_go": gate_go,
                 "buy": [_tag(t, tier) for t, _, tier in buyable[:120]],
                 "watch": [row_by_t[t] for t, _ in watch[:24]],
-                "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else []}
+                "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else [],
+                "concentration": _concentration_stat}
         eligible = len(aligned)
         for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
@@ -1609,6 +1694,30 @@ def main() -> int:
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
             if demand_chip.get(t):                 # L2 demand-divergence flag for the board chip
                 r["demand"] = demand_chip[t]
+            # W6-US fix 8: emit cand_depth_pct from the ladder onto every board row so
+            # it is a first-class field available for the US-2 ledger study (depth vs
+            # forward returns for FRESH-BUY rows). NOT a gate — we do NOT filter on it
+            # (F2 caution: min-depth would kill the best trend-continuation entries).
+            _lad8 = r.get("ladder") or {}
+            _cdp8 = _lad8.get("cand_depth_pct")
+            if _cdp8 is not None:
+                r["cand_depth_pct"] = _cdp8
+        # W6-US fix 8 (cont): log FRESH-BUY rows with shallow depth for US-2 ledger study.
+        # Shallow = cand_depth_pct < 5.0% (less than 5% pullback from the pre-cycle high).
+        # The live ETN case: off_high=-2.2%, cand_depth_pct likely ~2-3%.
+        # We DO NOT gate on depth (F2 caution: min-depth kills best trend-continuation entries).
+        _FB_SHALLOW_THRESHOLD = 5.0
+        _fb_shallow = [(r.get("ticker"), r.get("cand_depth_pct"), r.get("off_high"))
+                       for r in wide["buy"]
+                       if r.get("state") in ("FRESH BUY", "TURN SIGNALED")
+                       and r.get("cand_depth_pct") is not None
+                       and r["cand_depth_pct"] < _FB_SHALLOW_THRESHOLD]
+        if _fb_shallow:
+            log.info("W6-US fix 8: %d FRESH-BUY/TURN-SIGNALED rows with shallow depth "
+                     "(cand_depth_pct < %.1f%%) — logged for US-2 ledger study (NOT gated): %s",
+                     len(_fb_shallow), _FB_SHALLOW_THRESHOLD,
+                     [(t, f"{d:.1f}%", f"off_high={o:.1f}%" if o else None)
+                      for t, d, o in _fb_shallow])
         # ENTRY-OPEN-FIRST board order: names whose entry gauge reads "Buy zone — entry
         # open now" lead the strip, then by the displayed conviction score. Stable, so
         # the bottoming-alignment + confluence rank above only settles ties. Applied
@@ -1618,6 +1727,87 @@ def main() -> int:
         wide["universe"] = len(cand)
         if disp_regime:                            # selection-regime gross dial (board + bot)
             wide["dispersion_regime"] = disp_regime
+
+        # --- W6-US fix 7: urgency must respect the gated entry status ---
+        # Row-level urgency="now" is derived from the cycle-state dict, but the
+        # entry_signal.status is confluence-gated (entry_signal.py:167). When the gate
+        # says "await_confluence" the cycle has not confirmed, so urgency="now" is
+        # dishonest. We enforce: urgency="now" is only allowed when entry_signal.status
+        # is in {buy_now, partial}. Otherwise urgency is downgraded to the entry status.
+        _URGENCY_STATUS_MAP = {
+            "buy_now": "now", "partial": "now",
+            "await_confluence": "caution", "extended": "caution",
+        }
+        _urgency_downgrade_count = 0
+        for _r in wide["buy"] + wide["watch"]:
+            if _r.get("urgency") != "now":
+                continue
+            _es7 = (_r.get("entry_signal") or {}).get("status")
+            if _es7 not in ("buy_now", "partial", None):
+                _r["urgency"] = _URGENCY_STATUS_MAP.get(_es7, "caution")
+                _urgency_downgrade_count += 1
+        if _urgency_downgrade_count:
+            log.info("W6-US fix 7: %d rows had urgency=now with non-open entry status "
+                     "— downgraded to match entry_signal.status", _urgency_downgrade_count)
+
+        # --- W6-US fix 3: build-time honesty invariants ---
+        # (a) Band/verdict contradiction: band high/constructive while verdict is Lagging
+        #     or no-clear-edge is a regression guard for fix 2. After fix 2 this MUST be
+        #     empty; the invariant raises so future regressions don't silently slip through.
+        _band_verdict_violations: list[str] = []
+        for _r in wide["buy"]:
+            _c3 = _r.get("conviction") or {}
+            _v3 = (_c3.get("verdict") or "").lower()
+            _b3 = _c3.get("band") or ""
+            if _b3 in ("high", "constructive") and any(
+                    k in _v3 for k in ("lagging", "no clear edge")):
+                _band_verdict_violations.append(
+                    f"{_r.get('ticker')}: band={_b3}, verdict={_c3.get('verdict')}")
+        if _band_verdict_violations:
+            raise RuntimeError(
+                "W6-US invariant (a) FAILED — green band on lagging/no-edge name(s): "
+                + "; ".join(_band_verdict_violations))
+
+        # (b) BUY label with blocked signal: downgrade label+urgency so a row labeled
+        #     BUY/FRESH never shows urgency='now' when signal.last.quality=='block'.
+        #     We mutate the row (not just log) so the invariant enforces itself in the artifact.
+        _blocked_buy_count = 0
+        for _r in wide["buy"]:
+            _sig3 = _r.get("signal") or {}
+            _last3 = _sig3.get("last") or {}
+            if _last3.get("quality") == "block":
+                _blocked_buy_count += 1
+                # downgrade urgency from "now" to "caution" if present
+                if _r.get("urgency") == "now":
+                    _r["urgency"] = "caution"
+                # downgrade label: prefix with "(blocked)" marker
+                _lbl3 = _r.get("label")
+                if _lbl3 and "(blocked)" not in str(_lbl3):
+                    _r["label"] = f"{_lbl3} (blocked)"
+                _lbl3_zh = _r.get("label_zh")
+                if _lbl3_zh:
+                    _r["label_zh"] = f"{_lbl3_zh}（受阻）"
+        if _blocked_buy_count:
+            log.warning("W6-US invariant (b): %d BUY rows have signal.last.quality=block — "
+                        "urgency downgraded to caution, label suffixed (blocked)",
+                        _blocked_buy_count)
+
+        # (c) Confirmer chip renders for a scored:false gate.
+        # For GEX: verify the gate file agrees with _gex_gate_scored() at build time.
+        # This is a warning (not a raise) since the chip render is fixed in fix 4.
+        try:
+            from engine.stock_score import _gex_gate_scored
+            _gex_scored = _gex_gate_scored()
+            if not _gex_scored:
+                _gex_chip_rows = [_r.get("ticker") for _r in wide["buy"]
+                                  if ((_r.get("conviction") or {}).get("gex_confirm") or {}).get("verdict")]
+                if _gex_chip_rows:
+                    log.warning("W6-US invariant (c): GEX gate scored=False but %d buy rows have "
+                                "gex_confirm chip (fix 4 hides them in template): %s",
+                                len(_gex_chip_rows), _gex_chip_rows[:5])
+        except Exception as _e3:  # noqa: BLE001
+            log.debug("W6-US invariant (c) GEX check skipped: %s", _e3)
+
         (site / "factordata" / "us_standouts.json").write_text(
             json.dumps(_json_safe(wide), separators=(",", ":"), default=str, allow_nan=False))
         log.info("wrote us_standouts.json (%d buy · rank_by=%s · %d eligible / %d universe)",
