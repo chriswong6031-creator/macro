@@ -41,7 +41,9 @@ _W_DEFAULT = {"value": 0.24, "margin": 0.20, "flow": 0.18, "comment": 0.15,
               "lhb": -0.10,   # DEMOTION: measured −1.43%/21d on dip names (§W6-CN Fix 2)
               "block": -0.05, # DEMOTION: measured −0.60%/5d premium-block drag (§W6-CN Fix 2)
               "analyst": 0.08}
-_W = _W_DEFAULT   # back-compat alias
+# _W_DEFAULT is the live fallback returned by _leg_weights() when china_signal_lab has no
+# earned weights yet. Nothing should reference _W_DEFAULT directly; always go through
+# _leg_weights() so the earned-weights path is used when available.
 _CROWD_CHG = 25.0   # financing 20d change % above which we flag leverage crowding
 
 # PROBATIONARY confirmers — emit as chips and log to the forward ledger for accrual.
@@ -193,7 +195,11 @@ def _compute_rows(min_signals: int = 2) -> list[dict]:
         conv = sum(W.get(k, 0.0) * s for k, s in present.items()) / wsum
         side = "accumulate" if conv > 0.05 else ("distribute" if conv < -0.05 else "neutral")
         sign = 1 if conv > 0 else (-1 if conv < 0 else 0)
-        c100 = cv.to_100(abs(conv))
+        # n_signals corroboration discount: a single-leg name cannot top the board at 97.
+        # Scale linearly from 0→1/3 signals, capped at 1.0 for ≥3 legs. Matches the
+        # brief's requirement that conv=0.5 with n=1 scores below conv=0.5 with n=3.
+        n_present = len(present)
+        c100 = cv.to_100(abs(conv) * min(1.0, n_present / 3.0))
         _bk, ben, bzh = cv.signed_band(c100, sign)
         reasons = [k for k, s in present.items() if (s > 0) == (conv > 0) and abs(s) > 0.05]
         flags = list((crowd_map.get(t) or {}).get("flags") or [])

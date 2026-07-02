@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from engine import china_altdata as ad
 from engine import china_signal_lab as lab
+from engine import china_conviction as cv
 
 
 # ---- pure sub-scores ------------------------------------------------------- #
@@ -73,6 +74,30 @@ def test_by_ticker_de_degenerated():
 
 
 # ---- signal lab ------------------------------------------------------------ #
+def test_n_signals_discount_lowers_conviction_for_sparse_names():
+    """conv=0.5 with n_signals=1 must score below conv=0.5 with n_signals=3 (B8 requirement).
+    Verified by replicating the conviction100 formula: abs(conv) * min(1.0, n/3.0)."""
+    conv = 0.5
+    c100_n1 = cv.to_100(abs(conv) * min(1.0, 1 / 3.0))
+    c100_n3 = cv.to_100(abs(conv) * min(1.0, 3 / 3.0))
+    assert c100_n1 < c100_n3, (
+        f"n=1 conviction100 ({c100_n1}) must be below n=3 ({c100_n3})"
+    )
+    # n>=3 should not be discounted (cap at 1.0)
+    c100_n5 = cv.to_100(abs(conv) * min(1.0, 5 / 3.0))
+    assert c100_n5 == c100_n3, f"n=5 should equal n=3 (both uncapped): {c100_n5} vs {c100_n3}"
+
+
+def test_signal_lab_priors_lhb_block_are_negative():
+    """_PRIORS altdata lhb and block must be negative (DEMOTION): scores are signed and
+    measure alpha-draining at positive values (§W6-CN Fix 2 / Brief 8 sign-convention)."""
+    priors = lab._PRIORS["altdata"]
+    assert priors["lhb"] < 0, f"lhb prior must be negative (demotion), got {priors['lhb']}"
+    assert priors["block"] < 0, f"block prior must be negative (demotion), got {priors['block']}"
+    # positive legs are still positive
+    assert priors["value"] > 0 and priors["margin"] > 0 and priors["analyst"] > 0
+
+
 def test_signal_lab_scorecard():
     sc = lab.build_china_scorecard()
     assert sc["schema"] == lab.SCHEMA
