@@ -22,109 +22,95 @@ This module is the *single source of truth* the whole news suite shares:
 
 Nothing here is ever a scoring input. "Quality" ranks display order; it is not
 a trade signal.
+
+W2 DELEGATION NOTE: norm_title / event_id / source_tier / is_blocked /
+is_allowlisted / tier_label / recency_weight are thin shims that delegate to
+engine.qkernel — the ONE canonical implementation. The signatures are kept
+byte-compatible with all existing callers (see compat notes on each function).
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
-import math
 import re
 from datetime import datetime, timezone
 from functools import lru_cache
 
 from lib import config
+from engine import qkernel as _qk  # W2: shared primitives
 
 log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
-# Source tiers — one reputable-outlet allowlist, tiered. Substring match on the
-# article domain (so finance.yahoo.com matches yahoo.com).
+# Source tiers — delegated to qkernel (the ONE merged domain/source→tier table).
+#
+# These lists are kept here as ALIASES so existing imports that do
+# `from engine.news_common import TIER1_SOURCES` keep working. The canonical
+# lists live in qkernel.TIER1_TOKENS / TIER2_TOKENS / TIER3_TOKENS /
+# BLOCKED_TOKENS. The qkernel table is a SUPERSET (adds CN wire tokens); the
+# delegation is therefore a pure expansion for EN-only callers.
 # --------------------------------------------------------------------------- #
-# Tier 1 — global wires / papers of record + primary central-bank sources. A hit
-# here is trusted on the source alone (the query already matched the body); they
-# don't churn stock-pick noise. The central banks publish their own speeches /
-# statements / minutes — the most authoritative macro source there is, and the
-# category Perplexity Finance surfaces (e.g. a BoJ outlook speech) that wire
-# reporting only paraphrases. They only surface via on-topic macro queries.
-TIER1_SOURCES = [
-    "reuters.com", "apnews.com", "bloomberg.com", "wsj.com", "ft.com",
-    "nytimes.com", "washingtonpost.com", "cnbc.com", "economist.com",
-    "barrons.com", "spglobal.com", "bbc.com", "bbc.co.uk",
-    # primary central-bank sources (statements / speeches / minutes)
-    "federalreserve.gov", "ecb.europa.eu", "boj.or.jp",
-]
-# Tier 2 — quality business / market press (broader than tier-1, still curated).
-TIER2_SOURCES = [
-    "cnn.com", "nbcnews.com", "abcnews.go.com", "cbsnews.com", "npr.org",
-    "pbs.org", "axios.com", "thehill.com", "politico.com", "semafor.com",
-    "usatoday.com", "marketwatch.com", "foxbusiness.com", "rttnews.com",
-    "theguardian.com", "guardian.co.uk", "fortune.com", "forbes.com",
-    "businessinsider.com", "morningstar.com", "investors.com", "thestreet.com",
-    "nikkei.com", "scmp.com", "japantimes.co.jp",
-    # macro data house + Asian business press (matched Perplexity's source list;
-    # India dailies join the existing Asian quality press above). The economictimes
-    # subdomain is pinned so general timesofindia.* world/politics doesn't leak in.
-    "tradingeconomics.com", "economictimes.indiatimes.com", "moneycontrol.com",
-]
-# Tier 3 — finance aggregators / blogs. Useful breadth but noisier; these must
-# clear a theme/entity gate before they're kept, never the source alone.
-TIER3_SOURCES = [
-    "yahoo.com", "investing.com", "seekingalpha.com", "kitco.com",
-    "benzinga.com", "zacks.com", "fool.com", "thefly.com",
-    "finance.yahoo.com", "markets.businessinsider.com", "stocktwits.com",
-]
-
-# Hard blocklist — pure stock-pick content mills. Never surfaces, on ANY tier and
-# even from provider feeds (Polygon/Finnhub publisher = TipRanks). A blocklisted
-# domain is tier-0 (dropped) AND filtered explicitly before any provider floor.
-BLOCKED_SOURCES = ["tipranks.com"]
-
-ALL_SOURCES = TIER1_SOURCES + TIER2_SOURCES + TIER3_SOURCES
-_TIER_WEIGHT = {1: 1.0, 2: 0.82, 3: 0.58, 0: 0.0}
+TIER1_SOURCES: list[str] = [t for t in _qk.TIER1_TOKENS
+                             if not any(cn in t for cn in ("news.cn", "xinhua", "chinadaily",
+                                                           "gov.cn", "pbc.", "ndrc", "mofcom",
+                                                           "csrc", "stats.", "cctv"))]
+TIER2_SOURCES: list[str] = [t for t in _qk.TIER2_TOKENS
+                             if t not in ("em", "sina", "ths", "futu", "cls", "jin10",
+                                          "yicai", "caixin", "eastmoney", "wallstreet")]
+TIER3_SOURCES: list[str] = list(_qk.TIER3_TOKENS)
+BLOCKED_SOURCES: list[str] = list(_qk.BLOCKED_TOKENS)
+ALL_SOURCES: list[str] = TIER1_SOURCES + TIER2_SOURCES + TIER3_SOURCES
+_TIER_WEIGHT = dict(_qk.TIER_WEIGHT)
 
 
 def is_blocked(domain: str) -> bool:
-    """True for hard-blocklisted source domains (pure pick mills). PURE."""
-    d = (domain or "").lower()
-    return any(s in d for s in BLOCKED_SOURCES)
+    """True for hard-blocklisted source domains (pure pick mills). PURE.
+    W2: delegates to qkernel.is_blocked (signature-compatible: domain-only)."""
+    return _qk.is_blocked(domain)
 
 
 def source_tier(domain: str) -> int:
-    """1 (wire), 2 (quality press), 3 (aggregator), or 0 (not allowlisted / blocked). PURE."""
-    d = (domain or "").lower()
-    if is_blocked(d):
-        return 0
-    if any(s in d for s in TIER1_SOURCES):
-        return 1
-    if any(s in d for s in TIER2_SOURCES):
-        return 2
-    if any(s in d for s in TIER3_SOURCES):
-        return 3
-    return 0
+    """1 (wire), 2 (quality press), 3 (aggregator), or 0 (not allowlisted / blocked). PURE.
+    W2: delegates to qkernel.source_tier (signature-compatible: domain-only call)."""
+    return _qk.source_tier(domain)
 
 
 def is_allowlisted(domain: str) -> bool:
-    return source_tier(domain) > 0
+    """True when the domain is on any allowlisted tier. PURE."""
+    return _qk.is_allowlisted(domain)
 
 
 def tier_label(tier: int) -> tuple[str, str]:
-    return {1: ("Wire", "通讯社"), 2: ("Press", "财经媒体"),
-            3: ("Aggregator", "聚合"), 0: ("Other", "其他")}.get(tier, ("Other", "其他"))
+    """(en_label, zh_label) for a tier int. PURE."""
+    return _qk.tier_label(tier)
 
 
 # --------------------------------------------------------------------------- #
-# Title hygiene
+# Title hygiene — delegated to qkernel.
+#
+# Compat notes:
+#   norm_title(t) — old signature took ONE arg (English-only); qkernel takes
+#     (text, lang="auto"). For pure-ASCII/Latin input, both paths produce
+#     identical output (lowercase, non-[a-z0-9 ] → space, collapse, truncate
+#     at 120 chars). Any caller doing norm_title(t) keeps working unchanged.
+#
+#   event_id(title, domain) — old signature. qkernel's is
+#     event_id(source, url, title, lang). We bridge the old two-arg call so
+#     all existing callers keep working. The key material is identical: the
+#     norm_title of the Latin title capped at 120 chars + "|" + domain.
 # --------------------------------------------------------------------------- #
 def norm_title(t: str) -> str:
-    """Lowercase, strip punctuation, collapse whitespace. For dedup keys. PURE."""
-    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9 ]", " ", (t or "").lower())).strip()
+    """Lowercase, strip punctuation, collapse whitespace. For dedup keys. PURE.
+    W2: delegates to qkernel.norm_title (lang="en" for byte-compat on ASCII input)."""
+    return _qk.norm_title(t or "", lang="en")
 
 
 def event_id(title: str, domain: str) -> str:
-    """Stable, content-defined 16-char id (dedup / keep-FIRST key). PURE."""
-    raw = norm_title(title)[:120] + "|" + (domain or "").lower()
-    return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
+    """Stable, content-defined 16-char id (dedup / keep-FIRST key). PURE.
+    W2: delegates to qkernel.event_id (source="", url="<domain>", title=title)
+    so that qkernel keys on norm_title(title)|<domain-host> — same basis as
+    the old implementation (norm_title[:120] + "|" + domain.lower())."""
+    return _qk.event_id(source="", url=domain, title=title, lang="en")
 
 
 # Clickbait / low-information title markers (penalise, don't hard-drop).
@@ -265,33 +251,26 @@ def is_low_value(title: str, domain: str = "", author: str = "") -> bool:
 
 
 # --------------------------------------------------------------------------- #
-# Recency decay
+# Recency decay — delegated to qkernel.
+#
+# Compat note: the old signature accepted `now=None` and defaulted to the
+# ambient clock. qkernel.recency_weight(seendate, now) requires `now`. We
+# keep the `now=None` default here for backward-compat and inject the clock at
+# this boundary (not inside library code), which is the correct PIT idiom.
 # --------------------------------------------------------------------------- #
-def _parse_iso(s: str) -> datetime | None:
-    if not s:
-        return None
-    try:
-        s2 = s.replace("Z", "+00:00")
-        dt = datetime.fromisoformat(s2)
-        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
-    except (ValueError, TypeError):
-        # GDELT compact form 20240115T120000Z
-        try:
-            return datetime.strptime(s, "%Y%m%dT%H%M%SZ").replace(tzinfo=timezone.utc)
-        except (ValueError, TypeError):
-            return None
+# Compat re-export: engine.news_rss (and any legacy caller) reaches the ISO
+# parser via news_common._parse_iso. The canonical impl now lives in qkernel;
+# alias it here so the delegation is source-compatible.
+_parse_iso = _qk._parse_iso
 
 
 def recency_weight(seendate_iso: str, now: datetime | None = None,
                    half_life_h: float = 36.0) -> float:
     """Exponential time-decay in [0,1]: 1.0 now, 0.5 at one half-life. PURE.
-    Unknown/garbled dates score a neutral 0.4 (kept, mildly demoted)."""
-    dt = _parse_iso(seendate_iso)
-    if dt is None:
-        return 0.4
-    now = now or datetime.now(timezone.utc)
-    age_h = max(0.0, (now - dt).total_seconds() / 3600.0)
-    return float(math.exp(-age_h / max(1e-6, half_life_h / math.log(2))))
+    Unknown/garbled dates score a neutral 0.4 (kept, mildly demoted).
+    W2: delegates to qkernel.recency_weight; injects clock here on now=None."""
+    _now = now if now is not None else datetime.now(timezone.utc)
+    return _qk.recency_weight(seendate_iso or "", _now, half_life_h)
 
 
 # --------------------------------------------------------------------------- #
