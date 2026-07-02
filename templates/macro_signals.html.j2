@@ -101,9 +101,9 @@
         <div class="muted sm">{{ t('Cycle phase', '周期阶段') }}: <b>{{ td(BC.phase.label) }}</b>
           {% if SIG.conditions %} · {{ t('depth','深度') }} {{ '✓' if SIG.conditions.depth else '✗' }} · {{ t('breadth','广度') }} {{ '✓' if SIG.conditions.breadth else '✗' }}{% endif %}</div>
         {% if BC.shadow and BC.shadow.phase and BC.shadow.phase.label != BC.phase.label %}
-        <div class="muted sm" style="margin-top:4px;opacity:.7">{{ t('Pre-lag-fix (shadow)','修正前(影子)') }}: {{ td(BC.shadow.phase.label) }} — {{ t('now fires at the calibrated 1-mo publication lag (audit #39)','现按校准的1个月发布滞后触发') }}</div>
+        <div class="muted sm" style="margin-top:4px;opacity:.7">{{ t('Shadow phase','影子相位') }}: {{ td(BC.shadow.phase.label) }} — {{ t('at an alternate publication lag','按替代发布滞后') }}</div>
         {% endif %}
-        {% if M %}<div class="muted sm" style="margin-top:6px">{{ t('Caught (1985+)','已捕捉（1985+）') }} <b>{{ M.endo_caught }}/{{ M.endo_recessions }}</b> · {{ t('median lead','中位领先') }} ~{{ M.median_lead_months }}{{ t('mo','月') }} · {{ M.false_positives }} {{ t('false alarms/40y','误报/40年') }}</div>{% endif %}
+        {% if M and M.oos_caught is not none %}<div class="muted sm" style="margin-top:6px">{{ t('Out-of-sample (LORO, 1985+)','样本外（留一衰退，1985+）') }} <b>{{ M.oos_caught }}/{{ M.oos_endogenous }}</b> {{ t('caught','已捕捉') }} · {{ t('median lead','中位领先') }} ~{{ M.oos_median_lead_months }}{{ t('mo','月') }} · {{ M.consensus_false_positives }} {{ t('false alarms','误报') }}{% if M.oos_catch_rate_jeffreys95 %} · {{ t('95% CI','95%置信区间') }} {{ M.oos_catch_rate_jeffreys95[0] }}–{{ M.oos_catch_rate_jeffreys95[1] }}{% endif %}</div>{% endif %}
       </div>
       <div class="sub span6">
         <h3>{{ t('Tier momentum', '层级动量') }} <span class="muted sm">{{ t('6-month','6个月') }}</span></h3>

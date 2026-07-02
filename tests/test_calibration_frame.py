@@ -104,37 +104,42 @@ def test_drawdown_band_artifact_wins_over_fallback_when_present():
         assert bt == dict(conditions._DRAWDOWN_BAND_PIT_FALLBACK)
 
 
-# --- Leg 2: business-cycle live lag == calibrated lag -------------------------
-def test_live_lag_equals_calibrated_lag():
-    """Lag-config consistency: the config live_lag_m the live snapshot fires at must
-    equal the lag its calibration was measured at (the 5.7m-lead / 3-FP stats)."""
+# --- Leg 2: business-cycle publication-lag basis (W2.7 per-leg schedule) ------
+def test_live_extra_lag_matches_calibration_extra_lag():
+    """W2.7 consistency: publication lag is now a per-leg schedule (PUB_LAG_M) applied
+    symmetrically, and `live_lag_m` is only an EXTRA uniform lag (default 0). The live
+    extra lag must equal the extra lag the shipped calibration was measured at, so the
+    live signal fires on the same basis its OOS stats describe."""
     cfg = config.load()["engine"]["business_cycle"]
-    live_lag = int(cfg.get("live_lag_m", 1))
+    live_extra = int(cfg.get("live_lag_m", 0))
     cal_path = config.data_dir() / "regime" / "business_cycle_calibration.json"
     if not cal_path.exists():
         pytest.skip("no calibration artifact in this environment")
     cal = json.loads(cal_path.read_text())
-    cal_lag = int(cal.get("measured", {}).get("calibration_lag_m", 1))
-    assert live_lag == cal_lag, (
-        f"live signal fires at lag_m={live_lag} but its stats were calibrated at "
-        f"lag_m={cal_lag} — this is the audit-#39 leak")
-    assert live_lag >= 1, "lag_m=0 leaks a month of look-ahead on the monthly legs"
+    cal_extra = int(cal.get("measured", {}).get("extra_uniform_lag_m", 0))
+    assert live_extra == cal_extra, (
+        f"live extra lag {live_extra} != calibration extra lag {cal_extra}")
+    # the per-leg publication schedule is what actually removes the look-ahead now
+    assert bc.PUB_LAG_M["PAYEMS"] >= 1 and bc.PUB_LAG_M["SPY"] == 0
 
 
-def test_snapshot_carries_lag_passport_and_shadow():
-    """The live snapshot must ship a lag passport (basis measured, leak_removed) and,
-    while shadow_lag_m != live_lag_m, a MARKED shadow of the legacy unlagged reading."""
+def test_snapshot_carries_lag_passport_and_resolution():
+    """The live snapshot ships a per-leg lag passport and an explicit threshold-resolution
+    record (macro-regime-miss). A shadow only appears if config sets a differing extra lag."""
     frame = bc.cycle_frame()
     if frame is None or "leading_mom6" not in frame.columns:
         pytest.skip("store not populated")
     snap = bc.business_cycle_snapshot()   # LIVE path (no frame supplied)
     lp = snap["lag_passport"]
-    assert lp["basis"] == "measured"
-    assert lp["live_lag_m"] >= 1 and lp["leak_removed"] is True
-    # shadow present and correctly marked (config ships shadow_lag_m=0 != live_lag_m=1)
+    assert lp["basis"] == "per_leg_schedule"
+    assert lp["symmetric"] is True
+    assert lp["per_leg_lag_m"]["PAYEMS"] == bc.PUB_LAG_M["PAYEMS"]
+    # explicit, logged threshold resolution
+    res = snap["calibration_resolution"]
+    assert res["threshold_source"] in ("calibration", "config_default")
+    # shadow only when config ships a differing extra lag (default: both 0 → None)
     if snap.get("shadow") is not None:
         assert snap["shadow"]["is_shadow"] is True
-        assert snap["shadow"]["lag_m"] == 0
         assert "phase" in snap["shadow"]
 
 

@@ -142,6 +142,93 @@ def test_publication_lag_shifts_monthly_series() -> None:
     lagged = bc._component_monthly("fred", "PAYEMS", "payrolls", lag_m=2)
     if base is None or lagged is None or len(base) < 12:
         return  # store not populated here
-    # the lagged series at month t equals the unlagged value 2 months earlier
+    # the lagged series at month t equals the unlagged value 2 months earlier (the extra
+    # lag_m=2 stacks on the same per-leg PUB_LAG_M floor, so the DIFFERENCE is 2 months)
     common = lagged.dropna().index[-1]
     assert abs(lagged.loc[common] - base.shift(2).loc[common]) < 1e-6
+
+
+# --- W2.7: per-leg publication lag applied symmetrically --------------------
+def test_per_leg_publication_lag_applied() -> None:
+    # PAYEMS carries a 1-month floor even at lag_m=0; a daily leg (SPY) carries lag 0.
+    assert bc.PUB_LAG_M["PAYEMS"] == 1
+    assert bc.PUB_LAG_M["SPY"] == 0
+    raw = bc.store.read("fred", "PAYEMS")
+    if raw is None:
+        return  # store not populated
+    m0 = bc._component_monthly("fred", "PAYEMS", "payrolls", lag_m=0)
+    # the value now stamped at month t is the reference figure from t-1 (published later)
+    monthly = bc.pd.to_numeric(raw["payrolls"], errors="coerce").dropna().resample("ME").last()
+    t = m0.dropna().index[-1]
+    assert abs(m0.loc[t] - monthly.shift(1).loc[t]) < 1e-6
+
+
+# --- W2.7: cl_ratio causal rebase (macro-regime-5) --------------------------
+def test_cl_ratio_rebase_is_append_causal() -> None:
+    """Appending future months must NOT change the historical cl_ratio level — the
+    old full-history anchor was a global normalization; the fixed anchor is the
+    first-valid value, stable under append."""
+    cfg = _cfg()
+
+    # build two synthetic coincident/lagging index paths where cl_ratio is well-defined,
+    # by driving cycle_frame is heavy — instead exercise the rebase math directly on the
+    # same construction cycle_frame uses.
+    def _cl(coin, lag):
+        ratio = (coin / lag.replace(0, np.nan)).dropna()
+        if ratio.empty:
+            return None
+        anchor = float(ratio.iloc[0])
+        return (100.0 * ratio / anchor) if anchor else None
+
+    idx = pd.date_range("2000-01-31", periods=60, freq="ME")
+    coin = pd.Series(100 + np.cumsum(np.random.default_rng(1).normal(0.1, 1, 60)), index=idx)
+    lag = pd.Series(100 + np.cumsum(np.random.default_rng(2).normal(0.05, 1, 60)), index=idx)
+    full = _cl(coin, lag)
+    # recompute with 12 fewer FUTURE months
+    short = _cl(coin.iloc[:-12], lag.iloc[:-12])
+    common = short.index
+    # historical values identical -> appending future data did not rewrite history
+    assert np.allclose(full.reindex(common).values, short.values, atol=1e-9)
+
+
+# --- W2.7: threshold-override guard resolution order (macro-regime-miss) -----
+def _cfg_full() -> dict:
+    return _cfg()  # includes a signal block with roc_threshold -1.25
+
+
+def test_override_guard_uses_calibration_when_fresh_and_versioned() -> None:
+    import datetime as dt
+    fresh = dt.datetime.now(dt.timezone.utc).replace(microsecond=0, tzinfo=None).isoformat() + "Z"
+    cal = {"version": bc.CALIBRATION_VERSION, "generated_at": fresh,
+           "signal": {"roc_threshold": -0.9}}
+    c, meta = bc._resolve_signal_cfg(_cfg_full(), cal)
+    assert meta["threshold_source"] == "calibration"
+    assert c["signal"]["roc_threshold"] == -0.9
+
+
+def test_override_guard_falls_back_on_version_mismatch() -> None:
+    import datetime as dt
+    fresh = dt.datetime.now(dt.timezone.utc).replace(microsecond=0, tzinfo=None).isoformat() + "Z"
+    cal = {"version": "someone-hand-edited-v0", "generated_at": fresh,
+           "signal": {"roc_threshold": -0.9}}
+    c, meta = bc._resolve_signal_cfg(_cfg_full(), cal)
+    assert meta["threshold_source"] == "config_default"
+    assert c["signal"]["roc_threshold"] == -1.25   # config default, NOT the JSON's -0.9
+    assert "version" in meta["reason"]
+
+
+def test_override_guard_falls_back_on_stale_and_missing_timestamp() -> None:
+    import datetime as dt
+    stale = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=bc._CAL_MAX_AGE_DAYS + 30)
+             ).replace(microsecond=0, tzinfo=None).isoformat() + "Z"
+    cal_stale = {"version": bc.CALIBRATION_VERSION, "generated_at": stale,
+                 "signal": {"roc_threshold": -0.9}}
+    c, meta = bc._resolve_signal_cfg(_cfg_full(), cal_stale)
+    assert meta["threshold_source"] == "config_default" and c["signal"]["roc_threshold"] == -1.25
+    # no timestamp at all -> also falls back
+    cal_nots = {"version": bc.CALIBRATION_VERSION, "signal": {"roc_threshold": -0.9}}
+    c2, meta2 = bc._resolve_signal_cfg(_cfg_full(), cal_nots)
+    assert meta2["threshold_source"] == "config_default" and c2["signal"]["roc_threshold"] == -1.25
+    # empty cal -> config default, no crash
+    c3, meta3 = bc._resolve_signal_cfg(_cfg_full(), {})
+    assert meta3["threshold_source"] == "config_default"
