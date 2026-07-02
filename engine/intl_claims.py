@@ -167,11 +167,22 @@ CLAIMS: list[dict] = [
         "direction": "de-risk",
         "target": ("yahoo", "_GSPC"),
         "horizons": _DD_HORIZONS,
-        "source_series": [("bonds", "avg_10y"), ("bonds", "us_premium_bp")],
-        "freshness_sla_days": 5,
-        "builder": None,   # W3 (C5)
-        "notes": "avg_10y + us_premium_bp already computed in bond_health.json (INTL-15). "
-                 "Gate: orthogonality vs existing US curve/credit legs. Seam: MRS candidate leg.",
+        # W3 correction (documented): avg_10y + us_premium_bp dead-end in bond_health.json
+        # with NO history on disk (INTL-15) — store.last_date('bonds','avg_10y') is None, so
+        # the declared placeholders would trip the fail-closed freshness gate as MISSING and
+        # force PENDING regardless of the measurement. engine.global_rates reconstructs both
+        # aggregates causally from the underlying sovereign 10y legs the scorecard uses;
+        # source_series is re-pointed to those live on-disk inputs (US DGS10 + the deepest
+        # roster legs). Target/horizons/direction/channel are UNCHANGED — no new trial.
+        "source_series": [("fred", "DGS10"), ("sovereign", "ez_aaa_10y"),
+                          ("sovereign", "jgb_10y")],
+        "freshness_sla_days": 8,
+        "builder": "scripts.c5_global_rates.builder",   # W3 (C5) — causal global cost-of-capital leg
+        "notes": "avg_10y + us_premium_bp computed in bond_health.json but with NO history "
+                 "(INTL-15) → reconstructed causally by engine.global_rates from the same "
+                 "sovereign 10y legs. Gate: orthogonality vs existing US curve/credit MRS legs "
+                 "(the global 10y is plausibly ~US 10y + noise — a truthful CONTEXT is expected). "
+                 "Seam if it clears: MRS candidate leg.",
     },
     # -- C6 · Asia-semi aggregate read-through ----------------------------
     {
@@ -213,11 +224,22 @@ CLAIMS: list[dict] = [
         "direction": "de-risk",
         "target": ("yahoo", "_GSPC"),
         "horizons": _DD_HORIZONS,
-        "source_series": [("bonds", "hy_oas"), ("bonds", "curve_2s10s")],
-        "freshness_sla_days": 5,
-        "builder": None,   # W3 (C8) — already computed live; needs orthogonality gate + weight
+        # W3 correction (documented): the votes are computed live in cross_asset_confirm from
+        # bond_health.json + forex/latest.json (no vote HISTORY on disk), so the declared
+        # placeholders bonds/hy_oas + bonds/curve_2s10s do not exist as parquets (store.last_date
+        # is None → MISSING → fail-closed PENDING). scripts.c8_leading_votes reconstructs the
+        # three votes (credit / rates-vol / dollar) causally from their ACTUAL on-disk inputs,
+        # same-day-available. source_series re-pointed to those. Target/horizons/direction fixed.
+        "source_series": [("fred", "BAMLH0A0HYM2"), ("yahoo", "_MOVE"),
+                          ("fred", "DTWEXBGS")],
+        "freshness_sla_days": 8,
+        "builder": "scripts.c8_leading_votes.builder",   # W3 (C8) — reconstructed vote series
         "notes": "cross_asset_confirm is LIVE in run.py (INTL-46) but its leading legs are never "
-                 "consumed upstream of stock scoring. Needs only the orthogonality gate + measured weight.",
+                 "consumed upstream of stock scoring, and no vote HISTORY exists on disk → the "
+                 "votes (credit HY-band/widening, rates-vol MOVE-band/leads-VIX, dollar risk-off) "
+                 "are reconstructed causally from their input series. Gate: the credit/curve votes "
+                 "may be near-duplicates of the nfci/recession MRS legs — that is the orthogonality "
+                 "test. Needs only orthogonality + measured weight.",
     },
 ]
 
@@ -472,6 +494,82 @@ BACKFILL: list[dict] = [
                  "Composite >=10%/42d drawdown lift 2.07x (p=0.01), CSI300-confirmed. The intl_bridge "
                  "does NOT duplicate its machinery — it defers to risk_radar_intl_audit.scorecard "
                  "for the CN/HK/CA governance. Listed CONTEXT here for registry completeness.",
+    },
+    # W3-C5 — global cost-of-capital de-risk leg (graded 2026-07-02, scripts/intl_phase0.py --c5c8)
+    # VERDICT: CONTEXT — do NOT wire. The global 10y IS ~US 10y + noise (the US 10y is one of
+    # the seven roster legs, weight 0.42) — the C5 global-10y momentum signal correlates 0.948
+    # with the US-only 10y momentum, exactly the masterplan's honest prior. The binding failure
+    # is the drawdown-reduction gate measured over the SIGNAL-ACTIVE era (from 1963, the first
+    # flat day; the full _GSPC history includes the 1929-32 crash both books were long through,
+    # which is not a de-risk test): the long/flat strategy shaves only 1.1pp off SPY MaxDD
+    # (-55.66% vs -56.78% B&H) while HALVING the total return — its Calmar (0.115) is WORSE than
+    # buy-and-hold (0.137), so the overlay destroys value, it does not de-risk. A de-risk leg
+    # whose drawdown reduction is not cost-justified is CONTEXT no matter its DSR (the DSR 0.98
+    # is SPY drift: a mostly-long book inherits SPY's Sharpe; buy-and-hold SPY clears the door).
+    {
+        "id": "c5_global_rates",
+        "channel": "C5",
+        "hypothesis": "Rising GDP-weighted global 10y / widening US premium (global duration + "
+                      "growth-beta headwind) leads US equity drawdowns beyond the US curve/credit legs.",
+        "direction": "de-risk",
+        "verdict": "CONTEXT",
+        "weight_cap": 0.0,
+        "metrics": {"ic": -0.064, "dsr": 0.9797, "split_half_same_sign": True,
+                    "effective_n_crises": 6, "es_ex_top3": 0.0012, "orthogonal_partial": -0.1288},
+        "gates": {"deflated_sharpe": "spy-drift", "split_half": "pass",
+                  "leave_one_crisis_out": "pass", "orthogonality": "pass",
+                  "crisis_independent_es": "pass", "drawdown_reduction": "fail",
+                  "lead_lag_kernel": "na", "freshness": "pass"},
+        "source_series": ["fred/DGS10", "sovereign/ez_aaa_10y", "sovereign/jgb_10y"],
+        "freshness_sla_days": 8,
+        "validation_ref": "scripts/c5_global_rates.py + scripts/intl_phase0.py (grade, W3 C5); "
+                          "engine/global_rates.py; data/intl_bridge/ledger.json (C5)",
+        "kill": True,
+        "notes": "W3-C5 VERDICT: CONTEXT (do NOT wire). avg_10y + us_premium_bp reconstructed "
+                 "causally by engine.global_rates from the sovereign 10y roster (bond_health.json "
+                 "keeps only a snapshot, no history — INTL-15). The global 10y is ~US 10y + noise "
+                 "(the C5 rate-rise signal correlates 0.948 with the US-only 10y momentum; US is a "
+                 "0.42-weight roster leg), so it carries no orthogonal US-drawdown edge over the "
+                 "existing curve/credit MRS legs. The DECIDING gate is drawdown-reduction over the "
+                 "signal-active era (from 1963): the long/flat strategy cuts SPY MaxDD only 1.1pp "
+                 "(-55.7% vs -56.8% B&H) while HALVING total return — Calmar 0.115 < 0.137 B&H, so "
+                 "the overlay destroys value, it does not de-risk. DSR 0.98 is SPY drift, not an "
+                 "edge. conditions._macro_risk_legs UNCHANGED — no MRS leg added. weight_cap 0.",
+    },
+    # W3-C8 — cross-asset leading-votes fractional MRS booster (graded 2026-07-02, --c5c8)
+    # VERDICT: CONTEXT — do NOT wire. The credit/rates-vol votes are near-duplicates of the
+    # nfci/recession MRS legs (residual partial only -0.09), and over the signal-active era
+    # (from 2007) the votes>=2 while-equities-calm 'diverge' booster shaves only 0.6pp off SPY
+    # MaxDD (-56.15% vs -56.78% B&H) — BELOW the 1pp door — while cratering the return (Calmar
+    # 0.105 vs 0.153 B&H). It flattens out of good days without avoiding the bad ones.
+    {
+        "id": "c8_crossasset_leading_votes",
+        "channel": "C8",
+        "hypothesis": "cross_asset_confirm leading_caution_votes >= 2 while verdict='diverge' → "
+                      "a fractional MRS de-risk booster (credit + rates-vol + dollar votes).",
+        "direction": "de-risk",
+        "verdict": "CONTEXT",
+        "weight_cap": 0.0,
+        "metrics": {"ic": -0.0468, "dsr": 0.981, "split_half_same_sign": True,
+                    "effective_n_crises": 6, "es_ex_top3": 0.0001, "orthogonal_partial": -0.0899},
+        "gates": {"deflated_sharpe": "spy-drift", "split_half": "pass",
+                  "leave_one_crisis_out": "pass", "orthogonality": "pass",
+                  "crisis_independent_es": "pass", "drawdown_reduction": "fail",
+                  "lead_lag_kernel": "na", "freshness": "pass"},
+        "source_series": ["fred/BAMLH0A0HYM2", "yahoo/_MOVE", "fred/DTWEXBGS"],
+        "freshness_sla_days": 8,
+        "validation_ref": "scripts/c8_leading_votes.py + scripts/intl_phase0.py (grade, W3 C8); "
+                          "engine/cross_asset_confirm.py (vote defs); data/intl_bridge/ledger.json (C8)",
+        "kill": True,
+        "notes": "W3-C8 VERDICT: CONTEXT (do NOT wire). The three votes (credit HY-band/widening, "
+                 "rates-vol MOVE-band/leads-VIX, dollar risk-off) reconstructed causally from their "
+                 "input series (no vote history on disk — INTL-46). The credit/rates-vol votes are "
+                 "near-duplicates of the nfci/recession MRS legs (residual partial only -0.09). The "
+                 "DECIDING gate is drawdown-reduction over the signal-active era (from 2007): the "
+                 "votes>=2 while-equities-calm booster cuts SPY MaxDD only 0.6pp (-56.2% vs -56.8% "
+                 "B&H) — below the 1pp door — while cratering return (Calmar 0.105 < 0.153 B&H). It "
+                 "flattens out of good days without avoiding the bad ones. DSR 0.98 is SPY drift. "
+                 "conditions._macro_risk_legs UNCHANGED — no MRS leg added. weight_cap 0.",
     },
     # W2-C3 — global ETF breadth barometer (graded 2026-07-02, scripts/intl_phase0.py --c3)
     # Live run result: CONFIRMED. N=23 ETFs, panel>=10 threshold, 200dma, causal pctile-504d,

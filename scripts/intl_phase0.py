@@ -184,6 +184,68 @@ def crisis_independent_es_gate(strat_ret: pd.Series, bench_ret: pd.Series,
         return {"pass": None, "error": str(e)}
 
 
+def _calmar(r: pd.Series) -> float | None:
+    """Annualised return / |MaxDD| — the return earned per unit of worst drawdown. The
+    honest 'is this de-risk cost-justified?' unit: a de-risk overlay that shaves MaxDD but
+    craters the return has a WORSE Calmar than buy-and-hold and is destroying value."""
+    r = r.dropna()
+    dd = _maxdd(r)
+    if dd is None or dd >= 0 or len(r) < 60:
+        return None
+    ann = (1.0 + r).prod() ** (252.0 / len(r)) - 1.0
+    return float(ann / abs(dd))
+
+
+def drawdown_reduction_gate(strat_ret: pd.Series, bench_ret: pd.Series,
+                            *, min_cut: float = 0.01, active_eps: float = 1e-3) -> dict:
+    """Gate (f): a DE-RISK leg exists to CUT DRAWDOWNS *cost-effectively* — its long/flat
+    strategy must (i) reduce MaxDD vs buy-and-hold by at least `min_cut` (1pp) AND (ii) not
+    make the book's return-per-drawdown (Calmar) WORSE than buy-and-hold. This closes the
+    DSR blind-spot two ways: a leg that is long the book ~90% of the time inherits the
+    benchmark's own high Sharpe (buy-and-hold SPY clears the 0.90 DSR door on its own), so
+    DSR alone can't tell a real de-risk edge from SPY drift; and a leg that clips 1pp of
+    MaxDD while sacrificing half the total return is NOT de-risk, it is a return-killer that
+    a naive MaxDD-cut test would wave through. Both prongs must hold. A de-risk leg that
+    fails either is CONTEXT, no matter its DSR. Returns the measured MaxDD + Calmar of both
+    books so the ledger records the reduction and its cost, not a prior.
+
+    Fair window: both are compared over the SIGNAL-ACTIVE span — from the first bar the
+    strategy actually diverges from buy-and-hold (a flat position exists), to the end.
+    A crash that predates every signal input (both books were fully long through it, e.g.
+    _GSPC's 1929-32 crater vs a global-10y signal that starts 1962) is NOT a de-risk test:
+    including it makes strat==bench MaxDD by construction and hides the true reduction. We
+    anchor on `|strat-bench| > active_eps` (1e-3, well above the ~3bp per-bar backtest cost
+    drag) so the window is the period where the leg actually went flat and could have
+    changed the outcome — not the one-off entry-cost blip a fully-long book still pays."""
+    try:
+        s = strat_ret.dropna()
+        b = bench_ret.reindex(s.index).dropna()
+        s = s.reindex(b.index)
+        # signal-active window: from the first bar the position diverges from B&H onward.
+        diverge = (s - b).abs() > active_eps
+        t0 = diverge.index[diverge.to_numpy().argmax()] if bool(diverge.any()) else None
+        s_a = s.loc[t0:] if t0 is not None else s
+        b_a = b.loc[t0:] if t0 is not None else b
+        dd_s, dd_b = _maxdd(s_a), _maxdd(b_a)
+        if dd_s is None or dd_b is None:
+            return {"pass": None, "strat_maxdd": _r(dd_s), "bench_maxdd": _r(dd_b)}
+        # both MaxDDs are <= 0; a SHALLOWER strat MaxDD means dd_s > dd_b, so the reduction
+        # is dd_s - dd_b (positive = the strat's drawdown is shallower than buy-and-hold).
+        cut = dd_s - dd_b
+        cal_s, cal_b = _calmar(s_a), _calmar(b_a)
+        # cost-justified: the overlay must not lower return-per-drawdown vs B&H (a de-risk
+        # leg that shaves DD but tanks the return has a worse Calmar → it is destroying value,
+        # not de-risking). Skip the Calmar prong only if it is unmeasurable (fail-soft).
+        calmar_ok = True if (cal_s is None or cal_b is None) else bool(cal_s >= cal_b)
+        ok = bool(cut >= min_cut and calmar_ok)
+        return {"pass": ok, "strat_maxdd": _r(dd_s), "bench_maxdd": _r(dd_b),
+                "maxdd_cut": _r(cut), "strat_calmar": _r(cal_s), "bench_calmar": _r(cal_b),
+                "calmar_ok": calmar_ok,
+                "active_from": (str(t0.date()) if t0 is not None else None)}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        return {"pass": None, "error": str(e)}
+
+
 def leadlag_kernel(prod_by_claim: dict[str, pd.Series], *, hac_lags: int = 10,
                    split: str | None = None) -> dict:
     """Gate (d): the cross-market kernel (cross-asset-leadlag-phase0 method). `prod_by_claim`
@@ -234,15 +296,21 @@ def decide(claim: dict, *, dsr: float | None, gates: dict, split_half: bool | No
     orth_ok = (gates.get("orthogonality") or {}).get("pass")
     crisis_ok = (gates.get("crisis_count") or {}).get("pass")
     es_ok = (gates.get("crisis_independent_es") or {}).get("pass")
-    ran = [g for g in (dsr_ok, orth_ok, crisis_ok, es_ok, split_half) if g is not None]
+    # gate (f): a de-risk leg MUST cut MaxDD vs buy-and-hold. Closes the DSR blind-spot
+    # (a mostly-long book inherits the benchmark's Sharpe — B&H SPY clears 0.90 DSR on its
+    # own). Only meaningful for de-risk claims; None (skipped) for anything else.
+    ddr_ok = (gates.get("drawdown_reduction") or {}).get("pass") \
+        if claim.get("direction") == "de-risk" else None
+    ran = [g for g in (dsr_ok, orth_ok, crisis_ok, es_ok, ddr_ok, split_half) if g is not None]
     if not ran:
         return {"verdict": "PENDING", "weight_cap": 0.0,
                 "reason": "no gate evaluated (builder not implemented) — declared, not graded"}
 
     # CONFIRMED needs every hard gate to pass AND crisis-independent ES not to fail
     # (es_ok is not False allows the crisis_only flag through as a labelled circuit-breaker).
+    # A de-risk leg that does not cut MaxDD vs B&H (ddr_ok is False) can NEVER be CONFIRMED.
     confirmed = all([dsr_ok, orth_ok is True, crisis_ok is True,
-                     bool(split_half)]) and es_ok is not False
+                     bool(split_half)]) and es_ok is not False and ddr_ok is not False
     if confirmed:
         # weight scales with the honest independent-bear count (§4.2 gate 3), capped hard.
         n = effective_n_crises or 0
@@ -250,8 +318,10 @@ def decide(claim: dict, *, dsr: float | None, gates: dict, split_half: bool | No
         cap = round(MAX_WEIGHT_CAP * scale, 4)
         return {"verdict": "CONFIRMED", "weight_cap": cap,
                 "reason": f"all hard gates pass; cap scaled by {n} independent crises"}
-    # directionally real but one gate weak → half weight, de-risk-direction ONLY
-    if dsr_ok and (orth_ok is not False) and (crisis_ok is not False):
+    # directionally real but one gate weak → half weight, de-risk-direction ONLY. A de-risk
+    # leg that does NOT cut MaxDD vs B&H (ddr_ok is False) is not directionally real either —
+    # the whole point of a de-risk leg is to reduce drawdowns, so it cannot be half-weighted.
+    if dsr_ok and (orth_ok is not False) and (crisis_ok is not False) and (ddr_ok is not False):
         cap = round(MAX_WEIGHT_CAP * DIRECTIONAL_KEEP, 4) if claim["direction"] == "de-risk" else 0.0
         return {"verdict": "DIRECTIONAL", "weight_cap": cap,
                 "reason": "full holds but a robustness gate is weak — half weight, de-risk only"}
@@ -339,6 +409,7 @@ def _feature_row(claim: dict, verdict: dict, gates: dict, metrics: dict,
             "effective_n_crises": metrics.get("effective_n_crises"),
             "es_ex_top3": metrics.get("es_ex_top3"),
             "orthogonal_partial": metrics.get("orthogonal_partial"),
+            "maxdd_cut": metrics.get("maxdd_cut"),
         },
         "gates": {k: (v.get("pass") if isinstance(v, dict) and "pass" in v else "na")
                   for k, v in gates.items()},
@@ -501,7 +572,8 @@ def grade_claim(claim: dict, ledger: TrialLedger, *, asof: date | None = None,
     asof = asof or date.today()
     gates: dict = {}
     metrics: dict = {"ic": None, "dsr": None, "split_half_same_sign": None,
-                     "effective_n_crises": None, "es_ex_top3": None, "orthogonal_partial": None}
+                     "effective_n_crises": None, "es_ex_top3": None, "orthogonal_partial": None,
+                     "maxdd_cut": None}
 
     # gate (e) freshness — always evaluated (it reads disk, needs no builder)
     gates["freshness"] = freshness_gate(claim, asof)
@@ -558,6 +630,12 @@ def grade_claim(claim: dict, ledger: TrialLedger, *, asof: date | None = None,
             g = crisis_independent_es_gate(strat, bench)
             gates["crisis_independent_es"] = g
             metrics["es_ex_top3"] = g.get("es_reduction_ex_top3")
+        # gate (f) drawdown-reduction vs buy-and-hold (de-risk claims only) — the DSR
+        # blind-spot closer: a mostly-long book inherits the benchmark's Sharpe.
+        if strat is not None and bench is not None and claim.get("direction") == "de-risk":
+            g = drawdown_reduction_gate(strat, bench)
+            gates["drawdown_reduction"] = g
+            metrics["maxdd_cut"] = g.get("maxdd_cut")
         # split-half same-sign is the builder's job to report (it knows the signal's halves)
         split_half = b.get("split_half_same_sign")
         metrics["split_half_same_sign"] = split_half
@@ -832,11 +910,13 @@ def main(argv=None) -> int:
     ap.add_argument("--c4", action="store_true",
                     help="W3-C4: grade the dollar-channel claims (c4_reer_value N=1 + c4_cnh_basis) "
                          "via their declared builders + MERGE into the ledger")
+    ap.add_argument("--c5c8", action="store_true",
+                    help="W3 C5+C8: grade the global-rates leg + the leading-votes booster + write ledger")
     ap.add_argument("--only", default=None,
                     help="comma-separated claim ids to (re)grade; the rest keep their ledger rows")
     args = ap.parse_args(argv)
 
-    if not (args.declare or args.backfill or args.run or args.c3 or args.c4):
+    if not (args.declare or args.backfill or args.run or args.c3 or args.c4 or args.c5c8):
         ap.print_help()
         return 0
 
@@ -885,6 +965,24 @@ def main(argv=None) -> int:
                       f"n_crises={r['metrics'].get('effective_n_crises')} "
                       f"es_ex_top3={r['metrics'].get('es_ex_top3')} kill={r['kill']}")
         print(f"[C4] ledger written → {p}")
+        return 0
+
+    if args.c5c8:
+        # W3 C5+C8: grade the global-rates leg + the leading-votes booster via their own
+        # dotted-path builders (engine.intl_claims) and MERGE into the existing ledger so the
+        # backfill graveyard + prior graded claims (C1/C2/C3) are preserved.
+        ids = {"c5_global_rates", "c8_crossasset_leading_votes"}
+        p = run(only=ids, merge=True)
+        rows = {f["id"]: f for f in _existing_ledger_rows().values() if f["id"] in ids}
+        for cid in ("c5_global_rates", "c8_crossasset_leading_votes"):
+            r = rows.get(cid)
+            if r:
+                m = r["metrics"]
+                print(f"[{cid}] verdict={r['verdict']} weight_cap={r['weight_cap']} "
+                      f"dsr={m.get('dsr')} orth={m.get('orthogonal_partial')} "
+                      f"n_crises={m.get('effective_n_crises')} es_ex_top3={m.get('es_ex_top3')} "
+                      f"split_half={m.get('split_half_same_sign')}")
+        print(f"[C5C8] ledger written → {p}")
         return 0
 
     if args.run and not args.backfill:
