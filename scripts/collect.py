@@ -589,6 +589,11 @@ def main() -> int:
             log.error("[reconcile] membership reconciler crashed (non-fatal): %s", e)
         run_quality_audits()
 
+    # qledger nightly grader — runs after quality audits so the parquet layer is
+    # fully refreshed. Non-fatal: a grader crash must not abort the collection run.
+    from scripts.grade_qledger import run_as_collect_step as _grade_qledger
+    _grade_qledger()
+
     return 0 if ok > 0 else 1
 
 

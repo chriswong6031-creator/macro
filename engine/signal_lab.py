@@ -758,6 +758,100 @@ REGISTRY: list[dict] = [
          extra=[("blocker", "yahoo deletes expired contracts → no clean basis chain"),
                 ("constructible proxy", "front-price-level confound, wrong-sign IC −0.16"),
                 ("path", "CME / Bloomberg / Quandl-Stevens expired-contract history")]),
+
+    # ---- INTL BRIDGE (W1 2026-07-02 — the intl graveyard, published like every other family) ----
+    # Registry mirror of data/intl_bridge/ledger.json (engine/intl_claims.BACKFILL). CONTEXT
+    # verdicts → display tier; PENDING (validated-but-gates-unrun / budget-killed) → pending tier.
+    # Every number is quoted from the report in `source`; nothing here is wired into a score (W2).
+    _row("Intl macro de-risk sleeve  (pooled JP/EZ/GB/KR — C2)",
+         "国际宏观降险组合（JP/EZ/GB/KR 合并 — C2）", "Intl macro", "pending",
+         why="The strongest intl prior in the repo — but NOT yet cleared for a wire. Pooled "
+             "curve-inv + Sahm + short-tightening de-risk sleeve: DSR 0.9978, split-half PASS "
+             "(+0.70/+0.76), leave-one-crisis-out holds, pooled MaxDD −39.2% vs −55.4% B&H. "
+             "PENDING (not CONFIRMED) because the intl-specific gates the promotion gate does not "
+             "cover are NOT yet run: orthogonality vs the 5 US MRS legs (growth-scare may overlap "
+             "NFCI/liquidity) + the crisis-independent expected-shortfall test. Honest-N ~4 shared "
+             "crises is the binding constraint. Weight_cap stays 0 until W2 clears those gates.",
+         why_zh="仓库中最强的国际先验，但尚未获准接线。合并曲线倒挂+Sahm+短端收紧降险组合：DSR 0.9978，"
+                "两半通过（+0.70/+0.76），逐危机剔除仍成立，合并回撤 −39.2% 对 −55.4% 买入持有。"
+                "标记为待接入而非已确认：晋升门未覆盖的国际专属门尚未运行（相对5条美国MRS腿的正交性 + 危机无关的期望损失）。"
+                "诚实样本约4次共享危机为约束。权重上限保持0，直至W2通过这些门。",
+         source="reports/intl-macro-sleeve-phase0.md; data/intl_bridge/ledger.json (C2)",
+         horizon="21/42d fwd drawdown", dsr=0.9978,
+         wired="not wired (W1 declared, W2 gates + measured weight → conditions._macro_risk_legs)",
+         extra=[("pooled MaxDD", "−39.2% vs −55.4% B&H"), ("split-half Sharpe", "+0.70 / +0.76"),
+                ("honest-N", "~4 shared crises"), ("unrun gates", "orthogonality + crisis-indep ES")]),
+    _row("Broad-dollar REER value factor  (N=1 resurrection — C4)",
+         "宽美元 REER 价值因子（N=1 复活 — C4）", "Dollar / macro", "pending",
+         why="A pre-registered N=1 hypothesis, not a quiet promotion. The broad-USD REER value "
+             "factor (cheap = bullish USD) CONFIRMED in BOTH halves vs forward broad-USD returns "
+             "(IC +0.077 pre / +0.060 post) — but it was killed inside the forex 60-trial family "
+             "budget (DSR 0.0056 there). The honest path (INTL-43) is to re-run it as N=1 with a "
+             "trial budget separated from that family; PENDING that re-run.",
+         why_zh="预注册的 N=1 假设，而非悄然晋升。宽美元 REER 价值因子（便宜=看多美元）在两半均确认"
+                "（IC +0.077/+0.060），但在外汇60试验家族预算内被否决（该处 DSR 0.0056）。"
+                "诚实路径（INTL-43）是以独立于该家族的试验预算重跑为 N=1；待此重跑。",
+         source="reports/forex-calibration.md; data/intl_bridge/ledger.json (C4 reer_value)",
+         horizon="21/63/126d", ic=0.065,
+         wired="not wired (W3 N=1 re-run; display first)",
+         extra=[("IC pre / post", "+0.077 / +0.060 (both confirmed)"),
+                ("family-deflated DSR", "0.0056 (budget-killed; N=1 value pending)")]),
+    _row("Intl trend de-risk overlays  (price + total-return ETFs — C3)",
+         "国际趋势降险叠加（价格指数 + 总回报ETF — C3）", "Intl ETF", "display",
+         why="Two ports, one honest verdict: trend on tradeable intl is dead. The PRICE-index "
+             "overlay cuts the tail for real (pooled MaxDD −18.5% vs −57.0%, DD-reduction CI "
+             "[5.9,25.1,48.1] excludes 0) but its Sharpe edge FAILS split-half. The tradeable USD "
+             "total-return ETF overlay (EWJ/EWG/EWU/EWY/EWA/EWQ) fails DSR (0.848<0.90) and "
+             "split-half sign-flips, and macro-gating HARMS Korea (EWY −79.3% vs −74.1%, INTL-50). "
+             "CONTEXT: crash-avoidance tail-insurance, never a scored alpha.",
+         why_zh="两次移植，一个诚实结论：可交易国际标的的趋势已死。价格指数叠加确实削减尾部"
+                "（合并回撤 −18.5% 对 −57.0%，区间不含零），但夏普边际未过两半。可交易美元总回报ETF叠加"
+                "未过 DSR（0.848）且两半符号翻转，宏观门控还伤害韩国（EWY −79.3% 对 −74.1%）。"
+                "CONTEXT：崩盘规避尾部保险，绝非计分阿尔法。",
+         source="reports/intl-trend-overlay-phase0.md + intl-tr-trend-phase0.md; "
+                "data/intl_bridge/ledger.json (C3)",
+         horizon="overlay (daily)", dsr=0.848, sharpe=0.575,
+         wired="not shipped — crash-avoidance risk-overlay (CONTEXT)",
+         extra=[("price-index DD-cut", "−18.5% vs −57.0% (CI excludes 0)"),
+                ("TR-ETF DSR", "0.848 (<0.90), split-half sign-flip"),
+                ("macro-gate on EWY", "HARMS (−79.3% vs −74.1%)")]),
+    _row("Per-pair FX conviction + cross-market lead/lag  (C4/C8)",
+         "单对外汇信念 + 跨市场引导滞后（C4/C8）", "Forex / cross-asset", "display",
+         why="The two intl read-through channels that shipped as CONTEXT. Per-pair FX conviction: "
+             "EVERY pair fails DSR (best USDCAD 0.8607<0.90, most ≈0) → no pair-level gating on "
+             "equities, ever (INTL-43). Cross-market lead/lag: 7/150 pairs survive HAC-t + BH-FDR "
+             "and 5 are split-half stable — but ALL survivors are timezone lag-1 (US/global close → "
+             "next Asia open), a transmission read, not a forecastable lead. Both are display "
+             "context; the intl_bridge lead-lag kernel re-screens any new cross-market claim.",
+         why_zh="两条以 CONTEXT 上线的国际读透渠道。单对外汇信念：每对都未过 DSR（最佳 USDCAD 0.8607，"
+                "多数≈0）→ 绝不以对级门控股票（INTL-43）。跨市场引导滞后：150对中7对通过 HAC-t + BH-FDR、"
+                "5对两半稳定——但幸存者全是时区滞后1（美/全球收盘→次日亚洲开盘），是传导读数而非可预测的引导。"
+                "均为展示背景；intl_bridge 引导滞后核对任何新的跨市场主张重新筛选。",
+         source="reports/forex-calibration.md + cross-asset-leadlag-phase0.md; "
+                "data/intl_bridge/ledger.json (C4/C8)",
+         horizon="varied", dsr=0.8607,
+         wired="not shipped — transmission read / display context (CONTEXT)",
+         extra=[("FX per-pair", "all fail DSR (best USDCAD 0.86)"),
+                ("lead/lag survivors", "5 split-half stable, ALL lag-1 (timezone)")]),
+    _row("China external-driver radar  (C3 — governed by risk_radar_intl)",
+         "中国外部驱动雷达（C3 — 由 risk_radar_intl 治理）", "China A", "display",
+         why="Note-only entry for registry completeness. The validated China external-driver radar "
+             "(breadth collapse, US rate shocks, US–CN differential, USD/CNH; composite ≥10%/42d "
+             "drawdown lift 2.07×, p=0.01, CSI300-confirmed) already runs on main with committed "
+             "forward logs and its OWN can_force maturation gate (≥30 graded, ≥8 alerts, realized "
+             "lift ≥1.25×). The intl_bridge does NOT duplicate its machinery — it defers to "
+             "engine/risk_radar_intl_audit.scorecard for the CN/HK/CA governance. Listed CONTEXT "
+             "here so the registry is complete, not because it lacks edge.",
+         why_zh="仅备注条目，用于登记完整性。已验证的中国外部驱动雷达（广度崩塌、美国利率冲击、美中利差、"
+                "美元/离岸人民币；综合 ≥10%/42日回撤提升 2.07×，p=0.01，沪深300确认）已在 main 上运行，"
+                "带提交的前瞻日志与自身的 can_force 成熟门。intl_bridge 不复制其机制——延用 "
+                "risk_radar_intl_audit.scorecard 的中/港/加治理。此处列为 CONTEXT 仅为登记完整。",
+         source="engine/risk_radar_intl.py (#711/#718) + risk_radar_intl_audit.py; "
+                "data/intl_bridge/ledger.json (cn_external_radar)",
+         horizon="42d fwd drawdown",
+         wired="display-only on main until its own can_force gate matures (NOT duplicated by intl_bridge)",
+         extra=[("composite lift", "2.07× (p=0.01), CSI300-confirmed"),
+                ("governance", "risk_radar_intl_audit.can_force (≥30 graded, ≥8 alerts, lift ≥1.25×)")]),
 ]
 
 

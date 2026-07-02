@@ -128,29 +128,18 @@ def test_existence_gate_opens_when_universe_absent() -> None:
         assert "ZFAKE" in syms  # gate open (no universe file) → nothing dropped
 
 
-def test_existence_gate_logs_dropped_ticker() -> None:
-    """A dropped ticker must produce a log.info message (checked via log propagation)."""
-    import io
+def test_existence_gate_logs_dropped_ticker(caplog) -> None:
+    """A dropped ticker must produce a log.info message (order-independent via caplog)."""
     from engine import whitehouse_brain as wb
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir)
         _make_universe_file(root, ["AAPL"])
         raw = [{"symbol": "NOTRL", "direction": "benefit", "rationale": "ghost"}]
-        # Capture log output via a stream handler
-        stream = io.StringIO()
-        handler = logging.StreamHandler(stream)
-        handler.setLevel(logging.DEBUG)
-        logger = logging.getLogger("engine.whitehouse_brain")
-        logger.addHandler(handler)
-        logger.setLevel(logging.DEBUG)
-        try:
+        with caplog.at_level(logging.DEBUG, logger="engine.whitehouse_brain"):
             wb._norm_tickers(raw, {}, root)
-            out = stream.getvalue()
-            assert "NOTRL" in out, (
-                f"dropped ticker must be logged at INFO level, got: {out!r}"
-            )
-        finally:
-            logger.removeHandler(handler)
+        assert "NOTRL" in caplog.text, (
+            f"dropped ticker must be logged at INFO level, got: {caplog.text!r}"
+        )
 
 
 def test_existence_gate_shape_check_still_applies() -> None:

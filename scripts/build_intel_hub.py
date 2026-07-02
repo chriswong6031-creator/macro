@@ -22,6 +22,7 @@ from datetime import date  # noqa: E402
 
 from lib import config  # noqa: E402
 from engine import intel_hub, hub_track_record  # noqa: E402
+from engine.qledger_ui import chips_for_desks, load_track_record  # noqa: E402
 
 log = logging.getLogger(__name__)
 
@@ -82,13 +83,25 @@ def build(write: bool = True) -> dict:
     if not hub.get("command"):                 # surface an empty fuse in the daily.yml logs
         log.warning("intel hub: empty command — feeders (intelligence/policy/radar) may be missing")
 
+    # qledger honesty chips: derive UNGRADED/ACCRUING/GRADED state for each desk
+    # rendered on the intelligence hub.  Never fatal — absent ledger → UNGRADED chips.
+    qledger_chips: dict = {}
+    try:
+        tr = load_track_record(root)
+        qledger_chips = chips_for_desks(
+            ["alt_data", "radar", "intel_hub", "policy", "news", "standout"], tr
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.debug("qledger chips skipped (%s)", exc)
+
     # render the page
     try:
         from jinja2 import Environment, FileSystemLoader, select_autoescape
         env = Environment(loader=FileSystemLoader(str(root / "templates")),
                           autoescape=select_autoescape(["html", "xml"]))
         html = env.get_template("intelligence_hub.html.j2").render(
-            hub=hub, built=datetime.now(timezone.utc).isoformat(), mode="intel_hub")
+            hub=hub, built=datetime.now(timezone.utc).isoformat(), mode="intel_hub",
+            qledger_chips=qledger_chips)
         (site / "intelligence_hub.html").write_text(html)
         log.info("built site/intelligence_hub.html")
     except Exception as e:  # noqa: BLE001

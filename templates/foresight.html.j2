@@ -7,7 +7,7 @@
 
 {# ---- band -> tone class helpers (house colour system) ---- #}
 {% macro bn_tone(band) -%}
-{%- if band in ('SOLD_OUT','TIGHT') -%}hot{%- elif band == 'TIGHTENING' -%}warn{%- elif band == 'LOOSE' -%}cool{%- else -%}mute{%- endif -%}
+{%- if band in ('SOLD_OUT','TIGHT') -%}hot{%- elif band in ('TIGHT (text)','TIGHTENING','TIGHTENING (text)') -%}warn{%- elif band == 'LOOSE' -%}cool{%- else -%}mute{%- endif -%}
 {%- endmacro %}
 {% macro dm_tone(band) -%}
 {%- if band in ('ACCELERATING','STEADY') -%}hot{%- elif band == 'COOLING' -%}warn{%- elif band == 'CONTRACTING' -%}cool{%- else -%}mute{%- endif -%}
@@ -410,8 +410,8 @@
       <div class="fx-strip">
         <div class="fx-leg {{ bn_tone(r.bottleneck_band) }}">
           <div class="lk">T1 · {{ t('Bottleneck', '瓶颈') }}</div>
-          <div class="lv">{{ (r.bottleneck_band or 'AWAITING').replace('_',' ') }}</div>
-          <div class="ld">{% if r.tightness is not none %}{{ t('tightness', '紧张度') }} {{ '%+.2f'|format(r.tightness) }}{% if r.bottleneck_regime %} · {{ t('regime on', '机制触发') }}{% endif %}{% else %}{{ t('FRED capacity pending', 'FRED 产能待采集') }}{% endif %}</div>
+          <div class="lv">{{ (r.bottleneck_band or 'AWAITING').replace('_',' ') }}{% if r.bottleneck_text_only %} <span class="fx-text-only" title="{{ t('text-only — awaiting numeric physical confirmation', '纯文本信号 — 待实物数据确认') }}">{{ t('text-only', '纯文本') }}</span>{% endif %}</div>
+          <div class="ld">{% if r.tightness is not none %}{{ t('tightness', '紧张度') }} {{ '%+.2f'|format(r.tightness) }}{% if r.bottleneck_regime %} · {{ t('regime on', '机制触发') }}{% endif %}{% elif r.bottleneck_text_only %}{{ t('provisional — shadow-calibration pending', '暂定 — 影子校准待完成') }}{% else %}{{ t('FRED capacity pending', 'FRED 产能待采集') }}{% endif %}</div>
         </div>
         <div class="fx-leg {{ dm_tone(r.demand_band) }}">
           <div class="lk">T2 · {{ t('Demand', '需求') }}</div>

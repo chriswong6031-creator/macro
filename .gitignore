@@ -65,6 +65,11 @@ data/macro/release_cache/
 # 全球财经快讯). Date-stamped & ephemeral — never commit. (The CCTV 新闻联播
 # policy-tone series data/china_news/cctv_tone.parquet IS versioned.)
 data/china_news/flash_cache/
+# CCTV 新闻联播 raw archive shards (W4 backfill). Projected ≈43MB total — under
+# the 150MB commit threshold, but shards are gitignored because the long backfill
+# scrape outlives this PR. A single follow-up commit will land all shards once the
+# scrape completes. The derived tone history (cctv_tone_history.parquet) IS versioned.
+data/china_news/cctv_archive/*.parquet
 
 # News-vector GDELT fetch cache (regenerable, date-stamped). The append-only PIT
 # event store data/news_vector/events.parquet is NOT ignored — it must persist &

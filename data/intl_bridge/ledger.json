@@ -1,0 +1,243 @@
+{
+  "asof": "2026-07-02",
+  "family": "intl_bridge",
+  "features": [
+    {
+      "id": "c2_intl_macro_sleeve",
+      "channel": "C2",
+      "hypothesis": "Pooled intl macro de-risk sleeve (curve+Sahm+tightening, JP/EZ/GB/KR) leads equity drawdowns \u2014 the strongest intl prior.",
+      "direction": "de-risk",
+      "verdict": "PENDING",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": null,
+        "dsr": 0.9978,
+        "split_half_same_sign": true,
+        "effective_n_crises": 4,
+        "es_ex_top3": null,
+        "orthogonal_partial": null
+      },
+      "gates": {
+        "deflated_sharpe": "pass",
+        "split_half": "pass",
+        "leave_one_crisis_out": "pass",
+        "orthogonality": "na",
+        "crisis_independent_es": "na",
+        "lead_lag_kernel": "na",
+        "freshness": "na"
+      },
+      "source_series": [
+        "intl_macro/JP_yield_10y",
+        "intl_macro/de_10y",
+        "intl_macro/GB_yield_10y"
+      ],
+      "freshness_sla_days": 45,
+      "validation_ref": "reports/intl-macro-sleeve-phase0.md",
+      "kill": false,
+      "notes": "STRONGEST prior: pooled DSR 0.9978 + split-half PASS + LOCO holds. PENDING (not CONFIRMED) because the intl-specific gates are NOT yet run: orthogonality vs the 5 US MRS legs + crisis-independent ES. Honest-N ~4 shared crises is the binding constraint. Cap stays 0 until W2 clears those gates."
+    },
+    {
+      "id": "intl_trend_overlay",
+      "channel": "C3",
+      "hypothesis": "200d-SMA trend overlay on foreign PRICE indices cuts the within-crisis drawdown (DD-side tail insurance).",
+      "direction": "de-risk",
+      "verdict": "CONTEXT",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": null,
+        "dsr": 0.9253,
+        "split_half_same_sign": false,
+        "effective_n_crises": 5,
+        "es_ex_top3": null,
+        "orthogonal_partial": null
+      },
+      "gates": {
+        "deflated_sharpe": "pass",
+        "split_half": "fail",
+        "leave_one_crisis_out": "pass",
+        "orthogonality": "na",
+        "crisis_independent_es": "na",
+        "lead_lag_kernel": "na",
+        "freshness": "na"
+      },
+      "source_series": [
+        "intl/_N225",
+        "intl/_GDAXI",
+        "intl/_FTSE",
+        "intl/_KS11"
+      ],
+      "freshness_sla_days": 5,
+      "validation_ref": "reports/intl-trend-overlay-phase0.md",
+      "kill": false,
+      "notes": "DD-cut is REAL (pooled MaxDD \u221218.5% vs \u221257.0%, bootstrap CI [5.9,25.1,48.1] excludes 0) but the Sharpe/return edge FAILS split-half (2H trend < B&H) and the megabear robustness. CONTEXT = tail-insurance, no scored alpha."
+    },
+    {
+      "id": "intl_tr_trend",
+      "channel": "C3",
+      "hypothesis": "Trend/macro overlays on tradeable USD total-return country ETFs (EWJ/EWG/EWU/EWY/EWA/EWQ) rescue the intl trend edge above confirmer.",
+      "direction": "de-risk",
+      "verdict": "CONTEXT",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": null,
+        "dsr": 0.848,
+        "split_half_same_sign": false,
+        "effective_n_crises": 5,
+        "es_ex_top3": null,
+        "orthogonal_partial": null
+      },
+      "gates": {
+        "deflated_sharpe": "fail",
+        "split_half": "fail",
+        "leave_one_crisis_out": "pass",
+        "orthogonality": "na",
+        "crisis_independent_es": "na",
+        "lead_lag_kernel": "na",
+        "freshness": "na"
+      },
+      "source_series": [
+        "intl_etf/EWJ",
+        "intl_etf/EWG",
+        "intl_etf/EWU",
+        "intl_etf/EWY"
+      ],
+      "freshness_sla_days": 8,
+      "validation_ref": "reports/intl-tr-trend-phase0.md",
+      "kill": false,
+      "notes": "ALL overlays land 'no' on the tradeable TR ETFs: pooled DSR 0.848 (<0.90), split-half Sharpe sign-flips (+0.24/\u22120.02), and macro-gating HARMS EWY (MaxDD \u221279.3% vs \u221274.1%, INTL-50). USD TR lacks the local indices' secular bear. Confirms: trend on tradeable intl is dead, same as the US kill."
+    },
+    {
+      "id": "forex_per_pair_conviction",
+      "channel": "C4",
+      "hypothesis": "Per-pair FX conviction (naive-bullish factor blend) times the base-vs-USD forward return \u2014 a tradeable pair-level signal.",
+      "direction": "de-risk",
+      "verdict": "CONTEXT",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": null,
+        "dsr": 0.8607,
+        "split_half_same_sign": null,
+        "effective_n_crises": null,
+        "es_ex_top3": null,
+        "orthogonal_partial": null
+      },
+      "gates": {
+        "deflated_sharpe": "fail",
+        "split_half": "na",
+        "leave_one_crisis_out": "na",
+        "orthogonality": "na",
+        "crisis_independent_es": "na",
+        "lead_lag_kernel": "na",
+        "freshness": "na"
+      },
+      "source_series": [
+        "forex/eurusd",
+        "forex/usdjpy",
+        "forex/audusd",
+        "forex/usdcad"
+      ],
+      "freshness_sla_days": 5,
+      "validation_ref": "reports/forex-calibration.md",
+      "kill": false,
+      "notes": "EVERY pair fails DSR (best USDCAD 0.8607 < 0.90; most \u22480). No pair-level gating on equities, ever (INTL-43). The REER value factor is split out as c4_reer_value."
+    },
+    {
+      "id": "c4_reer_value",
+      "channel": "C4",
+      "hypothesis": "Broad-dollar REER value factor (cheap = bullish USD) predicts forward broad-USD returns \u2014 pre-registered N=1 resurrection.",
+      "direction": "de-risk",
+      "verdict": "PENDING",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": 0.065,
+        "dsr": 0.0056,
+        "split_half_same_sign": true,
+        "effective_n_crises": null,
+        "es_ex_top3": null,
+        "orthogonal_partial": null
+      },
+      "gates": {
+        "deflated_sharpe": "fail",
+        "split_half": "pass",
+        "leave_one_crisis_out": "na",
+        "orthogonality": "na",
+        "crisis_independent_es": "na",
+        "lead_lag_kernel": "na",
+        "freshness": "na"
+      },
+      "source_series": [
+        "forex/broad_dollar",
+        "forex/reer_us"
+      ],
+      "freshness_sla_days": 10,
+      "validation_ref": "reports/forex-calibration.md",
+      "kill": false,
+      "notes": "Pre-registered N=1 resurrection (INTL-43): CONFIRMED in BOTH halves (IC +0.077/+0.060) but budget-killed inside the 60-trial forex family (DSR 0.0056 there). PENDING an N=1 re-run whose trial budget is separated from that family; the DSR quoted is the family-deflated value, not the N=1 value."
+    },
+    {
+      "id": "crossmarket_leadlag",
+      "channel": "C8",
+      "hypothesis": "Cross-market lead/lag links (150 pairs \u00d7 5 lags) forecast next-session moves in US/CN/HK.",
+      "direction": "de-risk",
+      "verdict": "CONTEXT",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": null,
+        "dsr": null,
+        "split_half_same_sign": true,
+        "effective_n_crises": null,
+        "es_ex_top3": null,
+        "orthogonal_partial": null
+      },
+      "gates": {
+        "deflated_sharpe": "na",
+        "split_half": "pass",
+        "leave_one_crisis_out": "na",
+        "orthogonality": "na",
+        "crisis_independent_es": "na",
+        "lead_lag_kernel": "pass",
+        "freshness": "na"
+      },
+      "source_series": [
+        "yahoo/_GSPC",
+        "yahoo/FXI"
+      ],
+      "freshness_sla_days": 5,
+      "validation_ref": "reports/cross-asset-leadlag-phase0.md",
+      "kill": false,
+      "notes": "HAC-t + BH-FDR across 150 pairs: 7/150 survive, 5 split-half stable \u2014 but ALL survivors are timezone lag-1 (US/global close \u2192 next Asia open). Transmission read, NOT a forecastable lead. CONTEXT."
+    },
+    {
+      "id": "cn_external_radar",
+      "channel": "C3",
+      "hypothesis": "China external-driver radar (breadth collapse, US rate shocks, US-CN differential, USD/CNH) lifts forward CSI300 drawdown probability.",
+      "direction": "de-risk",
+      "verdict": "CONTEXT",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": null,
+        "dsr": null,
+        "split_half_same_sign": null,
+        "effective_n_crises": null,
+        "es_ex_top3": null,
+        "orthogonal_partial": null
+      },
+      "gates": {
+        "deflated_sharpe": "na",
+        "split_half": "na",
+        "leave_one_crisis_out": "na",
+        "orthogonality": "na",
+        "crisis_independent_es": "na",
+        "lead_lag_kernel": "na",
+        "freshness": "na"
+      },
+      "source_series": [
+        "risk_radar_intl/cn_forward_log"
+      ],
+      "freshness_sla_days": 5,
+      "validation_ref": "engine/risk_radar_intl.py (validated #711/#718); engine/risk_radar_intl_audit.py (forward-log + can_force governance)",
+      "kill": false,
+      "notes": "NOTE-ONLY entry. This engine EXISTS on main with committed forward logs and its OWN can_force maturation gate (\u226530 graded, \u22658 alerts, realized lift \u22651.25\u00d7). Composite \u226510%/42d drawdown lift 2.07\u00d7 (p=0.01), CSI300-confirmed. The intl_bridge does NOT duplicate its machinery \u2014 it defers to risk_radar_intl_audit.scorecard for the CN/HK/CA governance. Listed CONTEXT here for registry completeness."
+    }
+  ]
+}

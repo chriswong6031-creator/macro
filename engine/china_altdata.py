@@ -191,7 +191,9 @@ def _compute_rows(min_signals: int = 2) -> list[dict]:
         present = {leg: pct[leg][t] * 2 - 1 for leg in pct if t in pct[leg]}
         if len(present) < min_signals:
             continue
-        wsum = sum(W.get(k, 0.0) for k in present) or 1.0
+        wsum = sum(abs(W.get(k, 0.0)) for k in present)
+        if not wsum:
+            continue
         conv = sum(W.get(k, 0.0) * s for k, s in present.items()) / wsum
         side = "accumulate" if conv > 0.05 else ("distribute" if conv < -0.05 else "neutral")
         sign = 1 if conv > 0 else (-1 if conv < 0 else 0)

@@ -76,8 +76,18 @@ def _acceleration(r: dict) -> float:
 
 
 def _bottleneck(r: dict) -> float | None:
-    """None when there is NO physical read (AWAITING) — triggers the text-only cap."""
+    """None when there is NO physical read (AWAITING or text-only) — triggers the
+    text-only cap (TEXT_ONLY_CAP=50).
+
+    Text-only bands (TIGHT (text) / TIGHTENING (text)) return None so the cap always
+    binds for unconfirmed language signals — the house rule: text-only capped without a
+    physical correlate. Only numeric FRED legs (TIGHT / SOLD_OUT / TIGHTENING / NEUTRAL /
+    LOOSE) count as physical confirmation.
+    """
     band = r.get("bottleneck_band")
+    # Text-only bands and AWAITING_DATA are not physical confirmation → None → cap fires
+    if r.get("bottleneck_text_only") or band in ("TIGHT (text)", "TIGHTENING (text)"):
+        return None
     base = {"SOLD_OUT": 1.0, "TIGHT": 0.8, "TIGHTENING": 0.55,
             "NEUTRAL": 0.35, "LOOSE": 0.1}.get(band)
     if base is None:

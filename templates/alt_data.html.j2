@@ -91,7 +91,24 @@
   .cov.empty { opacity:.4; }
   @media (max-width:760px){ .sid-stats{grid-template-columns:repeat(2,1fr);} .sid-grid{grid-template-columns:1fr;}
     .conv-row{grid-template-columns:52px 1fr;gap:10px;} }
+  /* qledger honesty chips (D10) */
+  .ql-chip { display:inline-flex; align-items:center; font:700 9.5px/1 var(--num);
+    letter-spacing:.05em; text-transform:uppercase; padding:3px 8px; border-radius:6px;
+    border:1px solid; white-space:nowrap; vertical-align:middle; min-width:0; }
+  .ql-chip-ungraded { background:color-mix(in srgb,var(--muted) 12%,transparent);
+    color:var(--muted); border-color:color-mix(in srgb,var(--muted) 30%,transparent); }
+  .ql-chip-accruing { background:color-mix(in srgb,var(--warn) 14%,transparent);
+    color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,transparent); }
+  .ql-chip-graded-pos { background:color-mix(in srgb,var(--up) 14%,transparent);
+    color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,transparent); }
+  .ql-chip-graded-neg { background:color-mix(in srgb,var(--down) 14%,transparent);
+    color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
 {% endblock %}
+
+{% macro ql_chip(chip) -%}
+{% if chip %}<span class="ql-chip {{ chip.css_class }}"><span class="l-en">{{ chip.label }}</span><span class="l-zh">{{ chip.label_zh }}</span></span>{% else %}<span class="ql-chip ql-chip-ungraded"><span class="l-en">UNGRADED · n=0</span><span class="l-zh">未评级 · n=0</span></span>{% endif %}
+{%- endmacro %}
+{% set _ad_chip = (qledger_chips or {}).get('alt_data') %}
 
 {% block content %}
 <div class="sid">
@@ -109,6 +126,7 @@
       {% if influence %}<span class="chip">{{ influence.n_actors }} {{ t('actors', '人物') }} · {{ influence.n_edges }} {{ t('edges', '关系') }}</span>{% endif %}
       <span class="chip"><a class="feedlink" href="altdata/mastermind.json">mastermind.json ↗</a></span>
       <span class="chip"><a class="feedlink" href="altdata/feed.json">feed.json ↗</a></span>
+      {{ ql_chip(_ad_chip) }}
     </div>
 
     <div class="sid-stats">
@@ -144,7 +162,8 @@
       <span class="h-note">{{ t('ranked actionable signals — convergence × affiliation × AI conviction, graded vs SPY', '已排名的可操作信号——汇聚×关联×AI置信，对标普评分') }}</span>
       {% else %}
       <span class="h-note mut">{{ t('deterministic convergence only — AI read unavailable; nothing graded yet', '仅确定性汇聚——AI解读不可用；尚无对标普评分') }}</span>
-      {% endif %}</h2>
+      {% endif %}
+      {{ ql_chip(_ad_chip) }}</h2>
     {% if mastermind and mastermind.signals %}
     <div class="conv-list">
       {% for sg in mastermind.signals[:14] %}

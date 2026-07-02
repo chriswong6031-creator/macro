@@ -252,3 +252,84 @@ def test_pit_membership_snapshot_in_all_stage_rows(monkeypatch, tmp_path):
     logged = [json.loads(r) for r in lines if r.strip()]
     assert len(logged) == 1
     assert set(logged[0]["members"]) == {"MU", "WDC"}   # PIT snapshot present
+
+
+# ---- W1a/b: text-grade PRECIPICE, text-only cap, negated exclusion, shadow log ----
+
+def test_text_tight_flat_revisions_yields_precipice_text():
+    """TIGHT (text) band + flat revisions → PRECIPICE (text), not PRECIPICE."""
+    bn = {"band": "TIGHT (text)", "tightness": None, "regime": False, "text_only": True}
+    rv = {"breadth": 0.04, "level_state": "FLAT_LOW"}
+    stage, rationale = fc._stage(bn, rv)
+    assert stage == "PRECIPICE (text)"
+    assert "text-only" in rationale
+
+
+def test_text_tight_rising_revisions_yields_broadening_text():
+    """TIGHT (text) band + rising revisions → BROADENING (text)."""
+    bn = {"band": "TIGHT (text)", "tightness": None, "regime": False, "text_only": True}
+    rv = {"breadth": 0.25, "level_state": "POSITIVE"}
+    stage, rationale = fc._stage(bn, rv)
+    assert stage == "BROADENING (text)"
+    assert "text-only" in rationale
+
+
+def test_text_only_cap_binds_at_50(monkeypatch):
+    """2 affirmative filers + flat revisions → PRECIPICE (text); text_only cap still at 50."""
+    from engine import foresight_score as fs
+
+    # A row that would score high physically but has text-only band
+    row = {
+        "stage": "PRECIPICE (text)",
+        "bottleneck_band": "TIGHT (text)",
+        "bottleneck_text_only": True,
+        "tightness": None,
+        "bottleneck_regime": False,
+        "demand_band": "ACCELERATING",
+        "capex_yoy": 69,
+        "demand_strength": "direct",
+        "revision_breadth": 0.04,
+        "revision_level": "FLAT_LOW",
+        "broadening_state": "FLAT_LOW",
+        "est_drift_90d": 5,
+        "glut_band": "STABLE",
+        "entry_ready": False,
+    }
+    s = fs.score_row(row)
+    assert s["physical_confirmed"] is False, "text-only must NOT count as physical confirmation"
+    assert s["score"] <= 50.0, f"text-only cap must bind: got {s['score']}"
+    assert any("text-only" in c for c in s["caps"])
+
+
+def test_text_only_entry_not_ready():
+    """Text thesis stages must never be entry-ready even with an active dislocation."""
+    ready, note = fc._entry("PRECIPICE (text)", {"active": True, "verdict": "buyable_washout"})
+    assert ready is False
+    assert "text-only" in note or "awaiting" in note.lower()
+
+    ready2, _ = fc._entry("BROADENING (text)", {"active": True, "verdict": "buyable_washout"})
+    assert ready2 is False
+
+
+def test_precipice_text_in_cascade(monkeypatch, tmp_path):
+    """compute_foresight_cascade with a TIGHT (text) bn + flat rv → PRECIPICE (text)
+    in the output, and bottleneck_text_only=True in the cascade row."""
+    bottleneck = {"themes": {
+        "glp1_obesity": {
+            "name": "GLP-1", "band": "TIGHT (text)", "tightness": None,
+            "regime": False, "text_only": True,
+        }
+    }}
+    revisions = {"themes": {
+        "glp1_obesity": {"name": "GLP-1", "breadth": 0.03, "level_state": "FLAT_LOW"},
+    }}
+    out = fc.compute_foresight_cascade(
+        bottleneck=bottleneck, revisions=revisions,
+        demand={"themes": {}}, glut={"themes": {}}, write_ledger=False,
+    )
+    assert out is not None
+    r = out["themes"][0]
+    assert r["stage"] == "PRECIPICE (text)"
+    assert r["bottleneck_text_only"] is True
+    # score must be capped at 50
+    assert r["score"] <= 50.0
