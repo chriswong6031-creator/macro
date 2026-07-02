@@ -165,7 +165,7 @@ def test_china_writer_has_proj_lo_hi_keys():
     """The china_sector_cycles.append_forward_log dict building now includes proj_lo/proj_hi."""
     import pathlib
 
-    src = pathlib.Path("/tmp/wave-w023/engine/china_sector_cycles.py").read_text()
+    src = (pathlib.Path(__file__).resolve().parent.parent / "engine" / "china_sector_cycles.py").read_text()
     # parse and look for proj_lo and proj_hi in the rows.append(…) dict
     assert '"proj_lo"' in src or "'proj_lo'" in src, (
         "china_sector_cycles.py: proj_lo key missing from append_forward_log rows"
