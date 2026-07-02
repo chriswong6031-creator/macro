@@ -1,0 +1,343 @@
+{
+ "meta": {
+  "generated": "2026-07-02T05:29:08.776093+00:00",
+  "mode": "full",
+  "shadow_only": true,
+  "note": "Provisional-basis tier replay (#22): each historical day replayed through the LIVE partial-bucket code path (signal_gate.gate on the truncated series) \u2014 the provisional-lane history the point-in-time validation never saw. Repaint = a fresh T1/T2/T3 that un-crosses when the bucket completes; edge = provisional-vs-completed next-bar-filled forward return (engine.grading); flicker = single-bar not-topped veto flip rate. Knob sweeps (#36) on the stop-out-vs-lead harness (walk_forward). No live artifact touched.",
+  "workers": 24,
+  "max_days": 250
+ },
+ "us_replay": {
+  "n_names": 219,
+  "n_days_total": 54585,
+  "n_fresh_fires": 3170,
+  "elapsed_s": 6515.3,
+  "repaint": {
+   "n": 3170,
+   "n_repaint": 257,
+   "repaint_rate": 0.0811,
+   "repaint_ci": [
+    0.0721,
+    0.0911
+   ],
+   "outcome_hist": {
+    "confirmed": 1946,
+    "held_into_completed": 963,
+    "repaint_veto_flicker": 256,
+    "downgraded": 4,
+    "repaint_uncross": 1
+   },
+   "by_tier": {
+    "T1": {
+     "n": 1369,
+     "repaint": 73,
+     "rate": 0.0533
+    },
+    "T2": {
+     "n": 1629,
+     "repaint": 143,
+     "rate": 0.0878
+    },
+    "T3": {
+     "n": 172,
+     "repaint": 41,
+     "rate": 0.2384
+    }
+   }
+  },
+  "edge": {
+   "n_provisional": 2212,
+   "n_completed": 958,
+   "by_horizon": {
+    "5d": {
+     "provisional_median_fwd": 0.00076,
+     "completed_median_fwd": 0.00178,
+     "delta": -0.00102,
+     "provisional_sign_flip_vs_completed": false
+    },
+    "10d": {
+     "provisional_median_fwd": 0.00511,
+     "completed_median_fwd": 0.00376,
+     "delta": 0.00135,
+     "provisional_sign_flip_vs_completed": false
+    },
+    "21d": {
+     "provisional_median_fwd": 0.00812,
+     "completed_median_fwd": 0.00312,
+     "delta": 0.005,
+     "provisional_sign_flip_vs_completed": false
+    }
+   }
+  },
+  "veto_flicker": {
+   "n_names": 219,
+   "median_flip_rate": 0.0723,
+   "median_flicker_rate": 0.0161,
+   "total_days": 54585,
+   "total_flickers": 1052
+  },
+  "veto_hysteresis": {
+   "n_names": 219,
+   "confirm": 2,
+   "single_bar": {
+    "precision": 0.9862,
+    "recall": 1.0,
+    "flip_rate": 0.0723,
+    "flicker_rate": 0.0161
+   },
+   "hysteretic": {
+    "precision": 0.9559,
+    "recall": 0.9772,
+    "flip_rate": 0.0442,
+    "flicker_rate": 0.0
+   }
+  },
+  "config": {
+   "max_days": 250,
+   "FRESH_TICKS": 2,
+   "lookahead": 4,
+   "horizons": [
+    5,
+    10,
+    21
+   ]
+  }
+ },
+ "cn_replay": {
+  "n_names": 60,
+  "n_days_total": 15000,
+  "n_fresh_fires": 898,
+  "elapsed_s": 1221.4,
+  "repaint": {
+   "n": 898,
+   "n_repaint": 49,
+   "repaint_rate": 0.0546,
+   "repaint_ci": [
+    0.0415,
+    0.0714
+   ],
+   "outcome_hist": {
+    "confirmed": 548,
+    "held_into_completed": 297,
+    "repaint_veto_flicker": 49,
+    "downgraded": 4
+   },
+   "by_tier": {
+    "T1": {
+     "n": 356,
+     "repaint": 7,
+     "rate": 0.0197
+    },
+    "T2": {
+     "n": 489,
+     "repaint": 34,
+     "rate": 0.0695
+    },
+    "T3": {
+     "n": 53,
+     "repaint": 8,
+     "rate": 0.1509
+    }
+   }
+  },
+  "edge": {
+   "n_provisional": 600,
+   "n_completed": 298,
+   "by_horizon": {
+    "5d": {
+     "provisional_median_fwd": -0.00137,
+     "completed_median_fwd": 0.0,
+     "delta": -0.00137,
+     "provisional_sign_flip_vs_completed": true
+    },
+    "10d": {
+     "provisional_median_fwd": 0.0028,
+     "completed_median_fwd": 0.00253,
+     "delta": 0.00027,
+     "provisional_sign_flip_vs_completed": false
+    },
+    "21d": {
+     "provisional_median_fwd": 0.00456,
+     "completed_median_fwd": 0.00395,
+     "delta": 0.00061,
+     "provisional_sign_flip_vs_completed": false
+    }
+   }
+  },
+  "veto_flicker": {
+   "n_names": 60,
+   "median_flip_rate": 0.0723,
+   "median_flicker_rate": 0.0141,
+   "total_days": 15000,
+   "total_flickers": 245
+  },
+  "veto_hysteresis": {
+   "n_names": 60,
+   "confirm": 2,
+   "single_bar": {
+    "precision": 0.986,
+    "recall": 1.0,
+    "flip_rate": 0.0723,
+    "flicker_rate": 0.0141
+   },
+   "hysteretic": {
+    "precision": 0.9565,
+    "recall": 0.9763,
+    "flip_rate": 0.0482,
+    "flicker_rate": 0.0
+   }
+  },
+  "config": {
+   "max_days": 250,
+   "FRESH_TICKS": 2,
+   "lookahead": 4,
+   "horizons": [
+    5,
+    10,
+    21
+   ]
+  }
+ },
+ "us_fresh_sweep": {
+  "family": "provisional_fresh_ticks_us",
+  "grid": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "incumbent": 2,
+  "per_config": {
+   "1": {
+    "n_names": 117,
+    "oos_stop_out_mean": 61.468,
+    "oos_n_names": 117,
+    "oos_stop_out_p50": 62.5,
+    "oos_expectancy_mean": 4.404,
+    "oos_win_rate_mean": 32.289,
+    "oos_n_trades_mean": 33.325
+   },
+   "2": {
+    "n_names": 117,
+    "oos_stop_out_mean": 61.619,
+    "oos_n_names": 117,
+    "oos_stop_out_p50": 62.5,
+    "oos_expectancy_mean": 4.346,
+    "oos_win_rate_mean": 32.164,
+    "oos_n_trades_mean": 33.556
+   },
+   "3": {
+    "n_names": 117,
+    "oos_stop_out_mean": 61.725,
+    "oos_n_names": 117,
+    "oos_stop_out_p50": 63.158,
+    "oos_expectancy_mean": 4.324,
+    "oos_win_rate_mean": 32.104,
+    "oos_n_trades_mean": 33.709
+   },
+   "4": {
+    "n_names": 117,
+    "oos_stop_out_mean": 61.785,
+    "oos_n_names": 117,
+    "oos_stop_out_p50": 63.158,
+    "oos_expectancy_mean": 4.308,
+    "oos_win_rate_mean": 32.024,
+    "oos_n_trades_mean": 33.932
+   }
+  },
+  "verdict": {
+   "ship": false,
+   "shipped_value": 2,
+   "basis": "anecdote, sweep: no-improvement-found",
+   "incumbent_oos_stop_out": 61.619,
+   "best_oos_stop_out": 61.468,
+   "margin_pp": 0.151
+  }
+ },
+ "cn_fresh_sweep": {
+  "family": "provisional_fresh_ticks_cn",
+  "grid": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "incumbent": 2,
+  "per_config": {
+   "1": {
+    "n_names": 120,
+    "oos_stop_out_mean": 73.333,
+    "oos_n_names": 120,
+    "oos_stop_out_p50": 73.684,
+    "oos_expectancy_mean": 3.733,
+    "oos_win_rate_mean": 21.712,
+    "oos_n_trades_mean": 39.308
+   },
+   "2": {
+    "n_names": 120,
+    "oos_stop_out_mean": 73.394,
+    "oos_n_names": 120,
+    "oos_stop_out_p50": 73.747,
+    "oos_expectancy_mean": 3.682,
+    "oos_win_rate_mean": 21.65,
+    "oos_n_trades_mean": 39.533
+   },
+   "3": {
+    "n_names": 120,
+    "oos_stop_out_mean": 73.415,
+    "oos_n_names": 120,
+    "oos_stop_out_p50": 73.81,
+    "oos_expectancy_mean": 3.664,
+    "oos_win_rate_mean": 21.642,
+    "oos_n_trades_mean": 39.717
+   },
+   "4": {
+    "n_names": 120,
+    "oos_stop_out_mean": 73.494,
+    "oos_n_names": 120,
+    "oos_stop_out_p50": 74.099,
+    "oos_expectancy_mean": 3.639,
+    "oos_win_rate_mean": 21.583,
+    "oos_n_trades_mean": 40.083
+   }
+  },
+  "verdict": {
+   "ship": false,
+   "shipped_value": 2,
+   "basis": "anecdote, sweep: no-improvement-found",
+   "incumbent_oos_stop_out": 73.394,
+   "best_oos_stop_out": 73.333,
+   "margin_pp": 0.061
+  }
+ },
+ "cn_blend": {
+  "family": "provisional_cn_blend",
+  "incumbents": {
+   "WASHOUT_BONUS": 0.5,
+   "EXT_PENALTY": 0.5,
+   "CN_TIER_FRAC": 0.3,
+   "CN_WN_FLOOR": 0.6
+  },
+  "harness": "board-order ledger (china_standout_track), NOT stop-out \u2014 these are ordering knobs, not entry signals",
+  "verdict": {
+   "ship": false,
+   "shipped_values": {
+    "WASHOUT_BONUS": 0.5,
+    "EXT_PENALTY": 0.5,
+    "CN_TIER_FRAC": 0.3,
+    "CN_WN_FLOOR": 0.6
+   },
+   "basis": "anecdote, sweep: ledger-immature (n_graded=0 < 8)"
+  },
+  "ledger": {
+   "available": true,
+   "n_rows": 120,
+   "dates": [
+    "2026-06-30",
+    "2026-07-01"
+   ],
+   "n_graded": 0,
+   "extended_vs_not": "insufficient (need n>=8 & >=5 extended)"
+  }
+ }
+}
