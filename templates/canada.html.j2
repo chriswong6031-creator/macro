@@ -52,6 +52,13 @@
   /* sector + standout cards */
   .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:11px; }
   .card { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:11px 13px; }
+  /* mobile: pack the standout cards 2-up so the list doesn't scroll on and on (paired with the
+     3-row cap via data-showmore-rows + theme.js). Scoped to the standout grid only — the sector
+     .cards grid keeps its own responsive layout. */
+  @media (max-width:680px){
+    .cards[data-showmore-rows]{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .cards[data-showmore-rows] .card{ padding:9px 10px; }
+  }
   /* The shared mtf.js paints a .mtf-grid of D/3D/W panels; theme.css forces
      repeat(3,1fr), which overflows the ~260px sector/benchmark cards (the
      "RSI 74 overbought" row spills past the edge). Let the timeframe panels
@@ -372,7 +379,7 @@
     {% if setups.eligible is defined %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ setups.buy|length }} {{ t('shown ·', '已显示 ·') }} {{ setups.eligible }} {{ t('cycle-aligned across weekly · 3-day · daily (bottoming, not a falling knife) · each card carries the unified Conviction profile (cycle state caps the verdict)', '在周线·3日·日线上周期共振（筑底，而非接飞刀）· 每张卡片附带统一确信度画像（周期状态会封顶结论）') }}</span>{% endif %}
     {{ help('Large-cap TSX names ranked by the VALIDATED sector-neutral residual-momentum leg (α, the positive-IC selection leg), with the cycle entry shown as timing context. Alpha-led like the US (Canada is momentum-persistent). Each card then carries the unified Conviction profile: four transparent axes (selection / entry / tailwind / quality) and one honest verdict. The price-cycle state is a HARD modifier — a name in a downtrend or topping can never read \'Buy\', it reads \'strong name, wrong tape\' — so this card and the stock\'s own page never disagree. The 0-100 score is a within-market percentile DISPLAY skin (not a probability). On Canada the selection leg is weak positive-IC CONTEXT and the axis weights are an unvalidated prior — the trust badge says so. Context, not personalized advice.', '按已验证的板块中性残差动量腿（α，正 IC 选股腿）排名的大盘 TSX 个股，并以周期入场作为时机背景。与美国一样采用 α 主导（加拿大动量具持续性）。每张卡片再附带统一确信度画像：四条透明维度（选股／入场／顺风／质量）与一个诚实结论。价格周期状态是硬性修正项——处于下行或做顶的个股永远不会显示"买入"，而显示"强势但趋势不利"——因此该卡片与个股自身页面永不矛盾。0-100 分是市场内百分位的展示皮肤（非概率）。在加拿大，选股腿为弱正 IC 背景，维度权重为未经验证的先验——信任徽标已注明。仅作背景，非个性化建议。') }}
   </h2>
-  <div class="cards" data-showmore="12">
+  <div class="cards" data-showmore-rows="3">
     {% for s in setups.buy %}
     {% set c = s.conviction %}
     <div class="card">

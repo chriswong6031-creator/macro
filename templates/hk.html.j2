@@ -214,6 +214,16 @@
   /* ---- standout-stock cards (mirror of the US dashboard) -------------------- */
   .nch { display: block; width: 100%; margin: 7px 0 5px; border-radius: 5px; background: var(--panel2); }
   .nbgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 10px; margin-top: 11px; }
+  /* mobile: pack the standout cards 2-up so the list doesn't scroll on and on (paired with the
+     3-row cap via data-showmore-rows + theme.js). Cards are already overflow-guarded + compact. */
+  @media (max-width:680px){
+    .nbgrid[data-showmore-rows]{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .nbgrid[data-showmore-rows] .nb-tk{ font-size:13px; }
+    .nbgrid[data-showmore-rows] .nb-px{ font-size:12px; }
+    /* let the header wrap so the signal badge + price drop to a new line instead of being
+       clipped by the card's overflow:hidden when the column is this narrow. */
+    .nbgrid[data-showmore-rows] .nb-top{ flex-wrap:wrap; row-gap:2px; }
+  }
   a.nbcard { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
             padding: 9px 11px 10px; border-left: 3px solid var(--muted);
             display: flex; flex-direction: column; gap: 4px; color: var(--text);
@@ -536,7 +546,7 @@
       {{ help("The HK names that pass a MULTI-TIMEFRAME BOTTOMING-ALIGNMENT gate first — weekly momentum NOT still falling (basing / turning / rising — never mid weekly bear), 3-day at or nearing a bullish cross, daily just crossed or about to — so a name the southbound crowd is accumulating INTO a fall (or a cheaper-and-cheaper A/H value leg) can no longer be sold as a buy. Survivors are then ranked by HK's three HONEST structural edges (the EDGE axis): <b>southbound smart-money flow</b> (the mainland Connect crowd, HK's dominant marginal buyer), <b>A/H value</b> (its H line cheap vs its A twin), and <b>beta-neutral relative strength</b> (leadership once global-risk beta is stripped). A 🟡 <b>near-aligned</b> tag marks a backfill name (weekly OK + one lower timeframe turning, not all three confirmed) shown only when too few are fully aligned. Strong-but-unaligned leaders sit in the WATCH strip below (wait for the weekly to turn). HK has <b>no selection alpha</b>, so the verdict never says 'Buy' and the trust tier reads 'screen' — a positioning / flow screen to size and confirm, not a validated buy list.", "先通过<b>多周期共振筑底</b>门槛的港股 —— 周线动量不再下行（筑底／转向／上行，绝非周线空头段）、3日处于或临近看多交叉、日线刚上穿或即将上穿 —— 因此被南向资金在下跌中加仓的个股（或越来越便宜的 A/H 价值腿）不再被当作买入。通过者再按香港三条诚实结构性优势（EDGE 轴）排序：<b>南向资金</b>（内地港股通主力边际买家）、<b>A/H 价值</b>（H 相对 A 便宜）、<b>贝塔中性相对强度</b>（剥离全球风险贝塔后的领先）。🟡 <b>临近共振</b>标记为补位项（周线合格＋某一较低周期转向，三周期未全部确认），仅在充分共振名称过少时显示。强但未共振的领涨股置于下方观察区（等待周线转向）。香港<b>无选股阿尔法</b>，故结论永不显示“买入”、信任等级为“筛选”。") }}
     </h2>
     <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Names whose weekly, 3-day and daily cycles are aligned to the upside, then ranked by the unified HK conviction (southbound flow + A/H value + beta-neutral relative strength). Each card shows the four-axis profile — <b>EDGE</b> is the fused HK signal — plus the mainland-flow and A/H-value chips. The cycle state caps every verdict; HK has no selection alpha so it never says "Buy". A 🟡 near-aligned card is an unconfirmed backfill.', '周线、3日与日线周期同向上行的个股，再按统一港股确信度排序（南向资金 + A/H 价值 + 贝塔中性相对强度）。每张卡片展示四轴画像 —— <b>EDGE</b> 为融合后的香港信号 —— 并附内地资金与 A/H 价值标签。周期状态封顶每个结论；香港无选股阿尔法，故永不显示“买入”。🟡 临近共振卡片为未确认的补位项。') }}</p>
-    <div class="nbgrid" data-showmore="12">
+    <div class="nbgrid" data-showmore-rows="3">
     {% for n in setups.buy %}
       {% set _d = n.dir or 'caution' %}
       {% set c = n.conviction %}
