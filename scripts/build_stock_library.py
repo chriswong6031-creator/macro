@@ -1704,6 +1704,28 @@ def main() -> int:
         if disp_regime:                            # selection-regime gross dial (board + bot)
             wide["dispersion_regime"] = disp_regime
 
+        # --- W6-US fix 7: urgency must respect the gated entry status ---
+        # Row-level urgency="now" is derived from the cycle-state dict, but the
+        # entry_signal.status is confluence-gated (entry_signal.py:167). When the gate
+        # says "await_confluence" the cycle has not confirmed, so urgency="now" is
+        # dishonest. We enforce: urgency="now" is only allowed when entry_signal.status
+        # is in {buy_now, partial}. Otherwise urgency is downgraded to the entry status.
+        _URGENCY_STATUS_MAP = {
+            "buy_now": "now", "partial": "now",
+            "await_confluence": "caution", "extended": "caution",
+        }
+        _urgency_downgrade_count = 0
+        for _r in wide["buy"] + wide["watch"]:
+            if _r.get("urgency") != "now":
+                continue
+            _es7 = (_r.get("entry_signal") or {}).get("status")
+            if _es7 not in ("buy_now", "partial", None):
+                _r["urgency"] = _URGENCY_STATUS_MAP.get(_es7, "caution")
+                _urgency_downgrade_count += 1
+        if _urgency_downgrade_count:
+            log.info("W6-US fix 7: %d rows had urgency=now with non-open entry status "
+                     "— downgraded to match entry_signal.status", _urgency_downgrade_count)
+
         # --- W6-US fix 3: build-time honesty invariants ---
         # (a) Band/verdict contradiction: band high/constructive while verdict is Lagging
         #     or no-clear-edge is a regression guard for fix 2. After fix 2 this MUST be
