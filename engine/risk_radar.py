@@ -54,6 +54,24 @@ _PCT_MINP = 63
 _FLOW_MIN_HISTORY = 252  # put/call & GEX legs stay INERT until this many rows accrue (deep history
                          # is not freely available, so they validate FORWARD via the Opus loop)
 
+# --- C3 global-breadth Tier-B leg (INTL Fix Masterplan §5 C3, CONFIRMED #938) --------------
+# % of the country ETFs in data/intl_etf/ above their 200dma → causal 504d percentile of
+# (-breadth), so HIGH value = LOW breadth = danger (the same "risk-rising" convention as
+# every other leg here). This is the exact validated C3 construction (DSR 0.9326, orthogonality
+# 62% surviving-fraction vs SPY/HY/curve; reports/intl-global-breadth-phase0.md). It rides as
+# Tier-B (display/escalator-only) — it never ORIGINATES a US state; it can only escalate a hot
+# Tier-A read, then a FORWARD-outcome log grades it before it is ever trusted (measured-weights,
+# not priors — masterplan §4.1). READ NOTE: risk_radar imports NOTHING from the intl modules
+# (leaf-purity in intl_feed is a separate contract); it reads data/intl_etf/ directly through
+# lib.config, exactly as it reads every other leg through lib.store.
+_GB_ETF_DIR = "intl_etf"      # data/intl_etf/*.parquet — the W0 country-ETF substrate (23 ETFs)
+_GB_MA_WIN = 200              # 200dma per the C3 spec
+_GB_PANEL_MIN = 10            # <10 alive ETFs on the last date → the leg zeroes itself (thin-panel)
+_GB_STALE_DAYS = 8            # last ETF obs older than this → the leg zeroes itself (stale store)
+_GB_VALIDATION_REF = ("C3 global-breadth barometer — reports/intl-global-breadth-phase0.md "
+                      "(CONFIRMED #938: DSR 0.9326, orthogonality 62% vs SPY/HY/curve, cap 0.20 "
+                      "de-risk-only). Tier-B: display/escalator-only, forward-graded before trusted.")
+
 # Per-leg calibration FROM THE STRICT RE-VALIDATION (research/RISK_ENGINE_V2_FINDINGS.md §8).
 # lift_2020 = measured day-level forward-lift in the 2020-2026 holdout at thr_pct; lead_d = typical
 # lead. These are DISPLAYED next to every alert (honest odds) and are the starting calibration the
@@ -74,6 +92,11 @@ _LEG_CALIB = {
     # until the Opus loop gates them on realized outcomes once mature). thr_pct provisional.
     "vol_putcall":      {"lift_2020": None, "lift_full": None, "lead_d": 5, "thr_pct": 0.85, "era_robust": False, "accruing": True},
     "vol_gex":          {"lift_2020": None, "lift_full": None, "lead_d": 3, "thr_pct": 0.85, "era_robust": False, "accruing": True},
+    # Tier-B GLOBAL breadth leg — CONFIRMED as a de-risk edge in its OWN phase-0 (C3, DSR 0.9326
+    # vs SPX, orthogonal to the domestic legs), but its lift AS A US-RADAR LEG has not yet been
+    # graded on this engine's forward-outcome log — so it enters accruing (lift_2020 unknown),
+    # display/escalator-only, never a US-state originator, until the audit loop matures it.
+    "global_breadth":   {"lift_2020": None, "lift_full": None, "lead_d": 21, "thr_pct": 0.70, "era_robust": False, "accruing": True},
 }
 _VALIDATED_MIN = 1.20   # a leg is a real LEADING leg only if its 2020+ lift clears this
 
@@ -95,6 +118,12 @@ _SCARES = {
     # vol = Tier-B (display/escalator-only). vol_term is weak; vol_putcall/vol_gex are INERT until
     # mature then auto-join (they're absent from leading_signals() until >=_FLOW_MIN_HISTORY rows).
     "vol":     {"tier": "B", "legs": [("vol_term", 0.5), ("vol_putcall", 0.3), ("vol_gex", 0.2)]},
+    # global = Tier-B (display/escalator-only). The C3 global-breadth barometer (INTL-38): the US
+    # book's window into the cross-market breadth channel. It carries a de-risk edge ORTHOGONAL to
+    # the domestic legs (C3 verdict), but rides Tier-B so it can only escalate a hot Tier-A read,
+    # never originate a US state on its own — and it accrues a forward-outcome log first. Its single
+    # leg is absent from leading_signals() when data/intl_etf is stale (>8d) or thin (<10 ETFs).
+    "global":  {"tier": "B", "legs": [("global_breadth", 1.0)]},
 }
 _SCARE_LABEL = {
     "credit":  ("Credit stress", "信用压力"),
@@ -102,6 +131,7 @@ _SCARE_LABEL = {
     "bubble":  ("Bubble / blow-off unwind", "泡沫/见顶回吐"),
     "growth":  ("Growth scare / defensive rotation", "增长恐慌/防御轮动"),
     "vol":     ("Volatility event", "波动率事件"),
+    "global":  ("Global breadth breakdown", "全球广度破位"),
 }
 
 # LOUD + EARLY tiers on the 0-100 sub-score scale. CALIBRATED via a band sweep vs forward
@@ -194,6 +224,50 @@ def _roc(s, n):
     return (s / s.shift(n) - 1.0) if s is not None else None
 
 
+def _global_breadth_raw() -> pd.Series | None:
+    """Causal global-breadth series: fraction of the data/intl_etf/ country ETFs above their
+    200dma on each date (NaN where fewer than _GB_PANEL_MIN ETFs are alive). This is the exact
+    validated C3 construction (reports/intl-global-breadth-phase0.md). Reads the parquet store
+    directly through lib.config — NO import of any intl module (risk_radar is a leaf w.r.t. them).
+    Returns None (leg absent) when the store is missing, thin, or stale so the leg fails soft."""
+    try:
+        etf_dir = config.data_dir() / _GB_ETF_DIR
+        if not etf_dir.exists():
+            return None
+        frames: list[pd.Series] = []
+        for p in sorted(etf_dir.glob("*.parquet")):
+            try:
+                df = pd.read_parquet(p, columns=["close"])
+            except Exception:  # noqa: BLE001 — a bad file drops out of the panel, never crashes
+                continue
+            s = df["close"].dropna()
+            if len(s) < _GB_MA_WIN:
+                continue
+            s.index = pd.to_datetime(s.index)
+            ma = s.rolling(_GB_MA_WIN, min_periods=int(_GB_MA_WIN * 0.75)).mean()
+            frames.append((s > ma).astype(float))
+        if not frames:
+            return None
+        panel = pd.concat(frames, axis=1, sort=False)
+        panel.index = pd.to_datetime(panel.index)
+        panel = panel.sort_index()
+        alive = panel.notna().sum(axis=1)
+        # STALE guard: if the last observation is older than the SLA, the leg zeroes itself
+        # (the store went stale; do not carry a frozen breadth read forward into a live radar).
+        last_obs = panel.index.max()
+        if (pd.Timestamp.today().normalize() - last_obs).days > _GB_STALE_DAYS:
+            return None
+        # THIN-PANEL guard: on the LAST date we need >=_GB_PANEL_MIN alive ETFs, else the read is
+        # too sparse to trust — zero the whole leg (never emit a value off a shrunken panel).
+        if int(alive.iloc[-1]) < _GB_PANEL_MIN:
+            return None
+        breadth = panel.mean(axis=1).where(alive >= _GB_PANEL_MIN)   # NaN before the panel fills
+        return breadth.dropna()
+    except Exception as e:  # noqa: BLE001 — additive; a store hiccup must not break the radar
+        log.warning("risk_radar global-breadth leg read failed: %s", e)
+        return None
+
+
 def leading_signals() -> pd.DataFrame:
     """DataFrame of causal 0-1 'risk-rising' percentiles, one column per leg, on the SPY trading
     calendar. Slower (FRED) series are ffilled onto trading days = causal (carries past forward).
@@ -256,6 +330,14 @@ def leading_signals() -> pd.DataFrame:
     gx = store.read("cboe", "gex")
     if gx is not None and len(gx) >= _FLOW_MIN_HISTORY and "net_gex_bn" in gx.columns:
         out["vol_gex"] = pcol(-gx["net_gex_bn"].astype(float))   # negative net GEX = dealer short-gamma
+    # Tier-B GLOBAL breadth leg (C3, INTL-38): % of country ETFs > 200dma → causal 504d percentile
+    # of (-breadth), so a global breadth COLLAPSE reads high on the same risk-rising scale. Absent
+    # (leg simply not added) when the intl_etf store is missing/stale/thin — degrade-don't-crash,
+    # exactly like the flow legs above. pcol() ffills the (daily) ETF breadth onto the SPY calendar
+    # and takes the causal 504d percentile, matching the C3 spec.
+    gb = _global_breadth_raw()
+    if gb is not None and len(gb) >= _PCT_MINP:
+        out["global_breadth"] = pcol(-gb)
     return out
 
 
@@ -418,12 +500,18 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
             lc = calib["legs"].get(leg, {})
             thr = float(lc.get("thr_pct", 0.90))
             if v is not None and not pd.isna(v) and v >= bands["watch"] / 100.0:
-                firing.append({
+                f = {
                     "leg": leg, "pctile": round(float(v), 3),
                     "confirmed": bool(v >= thr),     # at/above the strict-bar threshold
                     "lift_2020": lc.get("lift_2020"), "lead_d": lc.get("lead_d"),
                     "era_robust": bool(lc.get("era_robust", False)),
-                })
+                    "accruing": bool(lc.get("accruing", False)),
+                }
+                # the global-breadth leg carries its own validation provenance (C3) so the card can
+                # print WHERE the edge was proved — honest labelling for a Tier-B accruing leg.
+                if leg == "global_breadth":
+                    f["validation_ref"] = _GB_VALIDATION_REF
+                firing.append(f)
         firing.sort(key=lambda d: -d["pctile"])
         # lift-weighted score: a LEADING leg (high measured lift) outranks a coincident one
         # (e.g. the weak vol-level leg) when picking the dominant/named scare. Display keeps raw score.

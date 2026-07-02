@@ -162,6 +162,14 @@
       "symbol": "builder",
       "line_ref": 1,
       "notes": "W3-C4a: the broad-dollar REER value factor CONFIRMED through the harness on a SEPARATE single-trial budget (N=1, family c4_reer_value_n1) — DSR 0.9436 >= 0.90, split-half PASS, orthogonality vs the 5 US MRS legs PASS, crisis-count 4, crisis-indep ES PASS. weight_cap 0.1333, de-risk direction. NO CONSUMER WIRING this wave: the verdict is RECORDED and the leg is surfaced by the Layer-2 registry reader (intl_feed.features() → weight 0.1333), but NO scorer calls intl_feed so nothing sizes on it. Consumer wiring DEFERRED to a follow-up: the target scoring seam is an MRS candidate leg (conditions._macro_risk_legs) but W2-C2 showed the MRS orthogonality bar is high and this is a returns-predicting dollar factor, not a US-drawdown de-risk leg — a dedicated MRS-composite orthogonality gate must clear before it sizes positions."
+    },
+    {
+      "seam": "engine/risk_radar.py global_breadth — TIER-B (display/escalator-only) (C3, INTL-38)",
+      "kind": "display",
+      "file": "engine/risk_radar.py",
+      "symbol": "_global_breadth_raw",
+      "line_ref": 202,
+      "notes": "W4: the CONFIRMED C3 global-breadth barometer (% of data/intl_etf country ETFs > 200dma, causal 504d percentile; reports/intl-global-breadth-phase0.md, #938) wired into the US Risk Radar as a Tier-B leg 'global_breadth' inside the new 'global' scare-type. TIER-B = display/escalator-only: it can ESCALATE a hot Tier-A read (identical guardrail to the vol Tier-B scare) but can NEVER originate a US state from calm, and it enters ACCRUING (unvalidated as a US-radar leg) so _is_validated returns False and it cannot arm the conjunction escalator. The leg absents itself when data/intl_etf is stale (>8d) or thin (<10 alive ETFs) — degrade-don't-crash. The C3 weight_cap 0.20 governs its influence via the Tier-B escalate-only path (it never sizes a position; the US radar is a display/sizing-prior surface, not a scorer). The forward-outcome log (engine/risk_radar_audit) already logs the new 'global' scare in its per-scare record and grades the ENRICHED composite state vs realized SPY drawdowns; per-leg attribution beyond the scares dict does NOT exist in risk_radar_audit (composite-state grader) — a known gap noted in the masterplan status log."
     }
   ]
 }
