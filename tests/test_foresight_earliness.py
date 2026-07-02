@@ -151,52 +151,38 @@ def test_earliness_rank_percentile_ordering():
 # ---------------------------------------------------------------------------
 
 def test_missing_leg_shrinks_denominator():
-    """A theme with only 2 live legs and one with 4 live legs both produce valid earliness."""
-    themes_cfg = {
-        "two_legs": {"tickers": ["X"]},
-        "four_legs": {"tickers": ["Y"]},
-    }
-
-    # Two-leg theme: only news + tape available
-    def _cov_partial(members):
-        return {"two_legs": None, "four_legs": 5.0}
-
-    def _news_partial(keys):
-        return {"two_legs": 20.0, "four_legs": 20.0}
-
-    def _own_partial(members):
-        return {"two_legs": None, "four_legs": 2.0}
-
-    def _tape_partial(members):
-        return {"two_legs": 0.8, "four_legs": 0.8}
+    """A theme missing one usable leg still produces valid earliness from the rest
+    (per-theme denominator shrink). n=8 so the coverage floor (min(6, n)=6) is real:
+    cov is live for 6/8 themes (usable); t6/t7 lack it and are measured by 3 legs."""
+    n = 8
+    themes_cfg = {f"t{i}": {"tickers": [f"T{i}"]} for i in range(n)}
+    cov = {f"t{i}": float(i + 1) for i in range(6)}              # live for 6/8 -> usable
+    news = {f"t{i}": float(10 + i) for i in range(n)}            # live for all, varying
+    own = {f"t{i}": float(i % 4) for i in range(n)}              # varying
+    tape = {f"t{i}": 0.1 + 0.1 * i for i in range(n)}            # varying
 
     import engine.foresight_earliness as fe_mod
-    orig_cov = fe_mod._leg_coverage_arrival
-    orig_news = fe_mod._leg_news_flow
-    orig_own = fe_mod._leg_ownership_breadth
-    orig_tape = fe_mod._leg_tape_extension
+    orig = (fe_mod._leg_coverage_arrival, fe_mod._leg_news_flow,
+            fe_mod._leg_ownership_breadth, fe_mod._leg_tape_extension)
     try:
-        fe_mod._leg_coverage_arrival = _cov_partial
-        fe_mod._leg_news_flow = _news_partial
-        fe_mod._leg_ownership_breadth = _own_partial
-        fe_mod._leg_tape_extension = _tape_partial
+        fe_mod._leg_coverage_arrival = lambda m: dict(cov)
+        fe_mod._leg_news_flow = lambda k: dict(news)
+        fe_mod._leg_ownership_breadth = lambda m: dict(own)
+        fe_mod._leg_tape_extension = lambda m: dict(tape)
         result = fe.compute_foresight_earliness(themes_cfg=themes_cfg, write_log=False)
     finally:
-        fe_mod._leg_coverage_arrival = orig_cov
-        fe_mod._leg_news_flow = orig_news
-        fe_mod._leg_ownership_breadth = orig_own
-        fe_mod._leg_tape_extension = orig_tape
+        (fe_mod._leg_coverage_arrival, fe_mod._leg_news_flow,
+         fe_mod._leg_ownership_breadth, fe_mod._leg_tape_extension) = orig
 
     assert result is not None
     t = result["themes"]
-    # both themes must produce valid earliness
-    assert t["two_legs"]["earliness"] is not None, "2-leg theme must produce earliness"
-    assert t["four_legs"]["earliness"] is not None, "4-leg theme must produce earliness"
-    assert t["two_legs"]["n_legs_live"] == 2
-    assert t["four_legs"]["n_legs_live"] == 4
-    # legs show availability correctly
-    assert t["two_legs"]["legs"]["coverage_arrival"]["available"] is False
-    assert t["two_legs"]["legs"]["news_flow"]["available"] is True
+    # the theme missing cov is measured by 3 usable legs, the covered one by 4
+    assert t["t7"]["n_legs_live"] == 3
+    assert t["t0"]["n_legs_live"] == 4
+    assert t["t7"]["earliness"] is not None, "3-leg theme must produce earliness"
+    assert t["t0"]["earliness"] is not None, "4-leg theme must produce earliness"
+    assert t["t7"]["legs"]["coverage_arrival"]["available"] is False
+    assert t["t7"]["legs"]["news_flow"]["available"] is True
 
 
 # ---------------------------------------------------------------------------
@@ -369,3 +355,91 @@ def test_earliness_log_deduplication(tmp_path, monkeypatch):
     # each theme appears exactly once despite two runs
     assert themes_logged.count("alpha") == 1, "alpha must appear exactly once (dedup)"
     assert themes_logged.count("beta") == 1, "beta must appear exactly once (dedup)"
+
+
+# ---------------------------------------------------------------------------
+# Review-fix regression tests (Bug A + Bug B)
+# ---------------------------------------------------------------------------
+
+import contextlib
+
+
+@contextlib.contextmanager
+def _patched_legs(cov=None, news=None, own=None, tape=None):
+    """Temporarily swap the four leg functions; each arg is a dict or None (absent leg)."""
+    import engine.foresight_earliness as fe_mod
+    orig = (fe_mod._leg_coverage_arrival, fe_mod._leg_news_flow,
+            fe_mod._leg_ownership_breadth, fe_mod._leg_tape_extension)
+    fe_mod._leg_coverage_arrival = (lambda m: dict(cov or {}))
+    fe_mod._leg_news_flow = (lambda k: dict(news or {}))
+    fe_mod._leg_ownership_breadth = (lambda m: dict(own or {}))
+    fe_mod._leg_tape_extension = (lambda m: dict(tape or {}))
+    try:
+        yield fe_mod
+    finally:
+        (fe_mod._leg_coverage_arrival, fe_mod._leg_news_flow,
+         fe_mod._leg_ownership_breadth, fe_mod._leg_tape_extension) = orig
+
+
+def _cfg(n):
+    return {f"t{i}": {"tickers": [f"T{i}"]} for i in range(n)}
+
+
+def test_raw_unit_mixing_news_cannot_swamp(monkeypatch):
+    """REVIEW BUG A: legs are rank-percentiled per-leg BEFORE the mean — a huge-scale
+    news value must not swamp three small-scale legs. Theme t0 is LOUDEST on news but
+    QUIETEST on the other three legs; with per-leg percentiles it must NOT be the
+    latest theme (raw-mean would make it rank dead-last on earliness)."""
+    n = 8
+    cfg = _cfg(n)
+    # news: t0 = 500 (dominant raw scale), everyone else 1..7
+    news = {f"t{i}": (500.0 if i == 0 else float(i)) for i in range(n)}
+    # the other three legs: t0 is the LEAST attended; others rise with i
+    cov = {f"t{i}": float(i + 1) for i in range(n)}; cov["t0"] = 0.5
+    own = {f"t{i}": float(i) for i in range(n)}; own["t0"] = 0.0
+    tape = {f"t{i}": 0.1 * (i + 1) for i in range(n)}; tape["t0"] = 0.05
+    with _patched_legs(cov=cov, news=news, own=own, tape=tape):
+        out = fe.compute_foresight_earliness(themes_cfg=cfg, write_log=False)
+    e = {k: v["earliness"] for k, v in out["themes"].items()}
+    # t0: news pct = 1.0 but the other three legs pct ~0.0 → mean ≈ 0.25-0.3 →
+    # earliness HIGH, definitely not the minimum. t7 (high on 3 legs) must be later.
+    assert e["t0"] > e["t7"], (
+        f"raw news scale swamped the composite: t0={e['t0']} vs t7={e['t7']}")
+
+
+def test_degenerate_all_tied_leg_is_unusable(monkeypatch):
+    """REVIEW BUG B(ii): a leg whose live values are all tied carries no information —
+    themes measured ONLY by that leg must get earliness None, never a shared
+    fabricated midpoint."""
+    n = 8
+    cfg = _cfg(n)
+    own = {f"t{i}": 0.0 for i in range(n)}     # all-zero ownership (the live failure)
+    with _patched_legs(own=own):               # ownership is the ONLY live leg
+        out = fe.compute_foresight_earliness(themes_cfg=cfg, write_log=False)
+    for k, v in out["themes"].items():
+        assert v["earliness"] is None, f"{k}: fabricated earliness from an all-tied leg"
+        assert v["n_legs_live"] == 0
+
+
+def test_leg_below_min_coverage_is_unusable(monkeypatch):
+    """REVIEW BUG B(i): a leg live for only 2 of 8 themes is a noise percentile —
+    it must not count as a usable leg."""
+    n = 8
+    cfg = _cfg(n)
+    news = {"t0": 10.0, "t1": 30.0}            # only 2 of 8 themes covered
+    own = {f"t{i}": float(i) for i in range(n)}  # a real, varying leg for contrast
+    with _patched_legs(news=news, own=own):
+        out = fe.compute_foresight_earliness(themes_cfg=cfg, write_log=False)
+    # t0/t1 must count only the ownership leg (news unusable) → n_legs_live == 1
+    assert out["themes"]["t0"]["n_legs_live"] == 1
+    assert out["themes"]["t0"]["legs"]["news_flow"]["usable"] is False
+
+
+def test_underpricing_gated_on_n_legs_live():
+    """REVIEW BUG B(iii): a 1-leg earliness must not reach the score at full
+    confidence — _underpricing falls back to the revision-level label below 2 legs."""
+    from engine.foresight_score import _underpricing
+    thin = {"_earliness": 0.65, "_earliness_n_legs": 1, "revision_level": "POSITIVE"}
+    rich = {"_earliness": 0.65, "_earliness_n_legs": 3, "revision_level": "POSITIVE"}
+    assert _underpricing(rich) == 0.65
+    assert _underpricing(thin) == 0.35          # the coarse revision-level fallback

@@ -41,6 +41,9 @@ log = logging.getLogger(__name__)
 # earliness = 1 - rank_pct(mean of available attention legs).
 # "inverse" legs (where more = EARLIER) are inverted before entering the mean.
 _LEG_NAMES = ("coverage_arrival", "news_flow", "ownership_breadth", "tape_extension")
+# A leg counts only when at least this many themes carry it — a percentile over a
+# 2-3 theme cross-section is noise, not measurement (review Bug B gate i).
+LEG_MIN_COVERAGE = 6
 
 
 def _rank_pct(values: list[float | None]) -> list[float | None]:
@@ -48,11 +51,9 @@ def _rank_pct(values: list[float | None]) -> list[float | None]:
     Ties broken by averaging ranks. Returns floats in [0, 1]."""
     indexed = [(i, v) for i, v in enumerate(values) if v is not None]
     if len(indexed) < 2:
-        # with <2 valid values, rank-pct is undefined — return 0.5 for each valid
-        result = [None] * len(values)
-        for i, _ in indexed:
-            result[i] = 0.5
-        return result
+        # a percentile over <2 valid values is undefined — absent, never a fabricated
+        # midpoint (review minor: 0.5 here would launder absence as measurement)
+        return [None] * len(values)
     n = len(indexed)
     sorted_vals = sorted(indexed, key=lambda x: x[1])
     ranks: dict[int, float] = {}
@@ -261,28 +262,48 @@ def compute_foresight_earliness(
     own = _leg_ownership_breadth(theme_members)
     tape = _leg_tape_extension(theme_members)
 
-    # --- per-theme mean attention score (only over AVAILABLE legs) -------
-    # All four legs are "higher = more attention = later" so they combine directly.
-    # (tape_extension already returns 1-pct_from_high so near-high → high attention.)
+    # --- per-LEG cross-sectional rank-pct FIRST (review Bug A) -----------
+    # Legs are incommensurable in raw units (news velocity ~31 vs ownership counts
+    # {0,1,2} vs tape [0,1]) — a raw mean lets news swamp everything. Each leg is
+    # rank-percentiled independently across themes (per the module contract), THEN
+    # the per-leg percentiles are averaged. A leg is USABLE only when
+    # (i) >= LEG_MIN_COVERAGE themes carry it (a 3-theme percentile is noise), and
+    # (ii) its live values are not all tied (an all-zero ownership leg carries zero
+    # discrimination and would fabricate a shared "measurement" for 12+ themes —
+    # review Bug B).
+    raw_legs = {
+        "coverage_arrival": cov,
+        "news_flow": news,
+        "ownership_breadth": own,
+        "tape_extension": tape,
+    }
+    leg_pcts: dict[str, dict[str, float | None]] = {}
+    # coverage floor scales down for small desks: a leg covering 3 of 18 themes is
+    # noise, but 3 of 3 is the full cross-section
+    cov_floor = min(LEG_MIN_COVERAGE, len(theme_keys))
+    for name, series in raw_legs.items():
+        vals = [series.get(k) for k in theme_keys]
+        live_vals = [v for v in vals if v is not None]
+        usable = (len(live_vals) >= cov_floor
+                  and len(set(live_vals)) > 1)         # all-tied leg = no information
+        if not usable:
+            leg_pcts[name] = {k: None for k in theme_keys}
+            continue
+        pcts = _rank_pct(vals)
+        leg_pcts[name] = {k: pcts[i] for i, k in enumerate(theme_keys)}
+
     raw_scores: dict[str, float | None] = {}
     leg_values: dict[str, dict] = {}
-
+    usable_counts: dict[str, int] = {}
     for k in theme_keys:
-        legs = {
-            "coverage_arrival": cov.get(k),
-            "news_flow": news.get(k),
-            "ownership_breadth": own.get(k),
-            "tape_extension": tape.get(k),
-        }
-        live = {name: v for name, v in legs.items() if v is not None}
-        n_live = len(live)
-        if n_live == 0:
-            raw_scores[k] = None
-        else:
-            raw_scores[k] = float(np.mean(list(live.values())))
+        legs = {name: raw_legs[name].get(k) for name in raw_legs}
+        live_pcts = [leg_pcts[name][k] for name in raw_legs
+                     if leg_pcts[name][k] is not None]
+        raw_scores[k] = float(np.mean(live_pcts)) if live_pcts else None
+        usable_counts[k] = len(live_pcts)
         leg_values[k] = legs
 
-    # --- cross-sectional rank-pct ----------------------------------------
+    # --- cross-sectional rank-pct of the combined attention score --------
     score_list = [raw_scores[k] for k in theme_keys]
     rp_list = _rank_pct(score_list)
 
@@ -293,14 +314,18 @@ def compute_foresight_earliness(
         if earliness is not None:
             earliness = round(float(np.clip(earliness, 0.0, 1.0)), 4)
         legs = leg_values[k]
-        n_live = sum(1 for v in legs.values() if v is not None)
         result_themes[k] = {
             "earliness": earliness,
-            "n_legs_live": n_live,
+            # n_legs_live counts USABLE legs (post coverage/tie gates) — the number a
+            # downstream consumer must gate on; raw availability is in legs[..].available
+            "n_legs_live": usable_counts[k],
             "legs": {
                 name: {
                     "value": round(float(v), 4) if v is not None else None,
                     "available": v is not None,
+                    "usable": leg_pcts[name][k] is not None,
+                    "rank_pct": (round(leg_pcts[name][k], 4)
+                                 if leg_pcts[name][k] is not None else None),
                 }
                 for name, v in legs.items()
             },

@@ -144,11 +144,11 @@ def _bottleneck(r: dict) -> float | None:
 def _pricing_power(r: dict) -> float | None:
     """Pricing-power axis — real inputs only; None when no input is available.
 
-    Priority order (P1-C spec):
+    Priority order (matches the code below):
     1. PPI YoY trend from bottleneck engine (ppi_yoy_latest, the leg4 physical FRED series).
-    2. Member gross-margin trend from edgar_facts cached artifact (data/edgar/statements.parquet),
+    2. Tightness from the bottleneck engine (numeric physical read).
+    3. Member gross-margin trend from edgar_facts cached artifact (data/edgar/statements.parquet),
        if ≥2 theme members have data. Computed as recent FY vs prior FY median change.
-    3. Tightness from the bottleneck engine (numeric physical read).
     4. None → axis drops out.
 
     The former 0.4 hardcoded default is eliminated per the P1-C anti-laundering rule.
@@ -187,8 +187,12 @@ def _underpricing(r: dict) -> float | None:
 
     Note: earliness ∈ [0, 1], 1 = least attention (early). Used directly as underpricing.
     """
+    # n_legs_live gate (review Bug B iii): a composite carried by a single usable leg
+    # must not be consumed at full confidence — below 2 legs, fall through to the
+    # coarse revision-level fallback rather than publish a thin "measurement"
     earliness = r.get("_earliness")  # pre-computed in score_row
-    if earliness is not None:
+    n_legs = r.get("_earliness_n_legs")
+    if earliness is not None and (n_legs is None or n_legs >= 2):
         return round(float(_clamp(float(earliness), 0.0, 1.0)), 3)
 
     # Fallback: revision level label (coarse, but different from breadth float)
@@ -283,9 +287,9 @@ def _gross_margin_trend(members: list[str]) -> float | None:
 _EARLINESS_CACHE: dict | None = None
 
 
-def _get_earliness(theme: str) -> float | None:
-    """Retrieve earliness for a theme from the earliness engine.
-    Loads once per process run; None-safe (engine absent or failed → None)."""
+def _get_earliness(theme: str) -> tuple[float | None, int | None]:
+    """Retrieve (earliness, n_legs_live) for a theme from the earliness engine.
+    Loads once per process run; None-safe (engine absent or failed → (None, None))."""
     global _EARLINESS_CACHE  # noqa: PLW0603
     if _EARLINESS_CACHE is None:
         try:
@@ -295,7 +299,8 @@ def _get_earliness(theme: str) -> float | None:
         except Exception as e:  # noqa: BLE001
             log.debug("foresight_earliness load failed: %s", e)
             _EARLINESS_CACHE = {}
-    return (_EARLINESS_CACHE.get(theme) or {}).get("earliness")
+    t = _EARLINESS_CACHE.get(theme) or {}
+    return t.get("earliness"), t.get("n_legs_live")
 
 
 def score_row(r: dict, *, theme_members: list[str] | None = None) -> dict:
@@ -308,7 +313,10 @@ def score_row(r: dict, *, theme_members: list[str] | None = None) -> dict:
 
     # Pre-compute cross-axis inputs that require disk access (cached)
     r = dict(r)  # shallow copy so we don't mutate the cascade row
-    r.setdefault("_earliness", _get_earliness(theme))
+    if "_earliness" not in r:
+        e_val, e_legs = _get_earliness(theme)
+        r["_earliness"] = e_val
+        r["_earliness_n_legs"] = e_legs
     if r["_earliness"] is None and theme_members:
         # earliness engine not available — _underpricing will fall back to revision_level
         pass
