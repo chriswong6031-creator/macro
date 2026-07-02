@@ -47,6 +47,9 @@ class Adapter:
     stale_after_days: int = 5   # weekly/lagged sources override (COT: 12, H4.1: 10)
     expected_failure: str | None = None  # set to a reason string when a source is
     # known-broken (e.g. bot-blocked); failures then report status 'blocked'
+    overwrite_overlap: bool = False  # True for dividend/split-ADJUSTED series (yfinance
+    # auto_adjust=True): the fresh pull fully overwrites its own date span so a re-adjusted
+    # history leaves no combine_first basis seam. See lib.store.upsert / masterplan §W6-CN.
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         """Return {series_name: DataFrame indexed by date}. Raise on failure."""
@@ -156,7 +159,8 @@ def run_adapter(adapter: Adapter, full_history: bool = False,
             df = adapter.validate(series_name, df)
             merged = store.upsert(adapter.group, series_name, df,
                                   outlier_col=df.columns[0] if len(df.columns) == 1 else None,
-                                  normalize_index=getattr(adapter, "normalize_index", True))
+                                  normalize_index=getattr(adapter, "normalize_index", True),
+                                  overwrite_overlap=getattr(adapter, "overwrite_overlap", False))
             rows += len(df)
             last = max(filter(None, [last, merged.index.max()]))
         status = "ok"

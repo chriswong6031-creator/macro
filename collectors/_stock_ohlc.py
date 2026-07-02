@@ -49,11 +49,11 @@ def universe_columns(relpath: str, seed: list[str] | None = None) -> list[str]:
     return list(dict.fromkeys(out))
 
 
-def _download(batch: list[str], period: str, cfg: dict) -> pd.DataFrame:
+def _download(batch: list[str], period: str, cfg: dict, auto_adjust: bool = True) -> pd.DataFrame:
     last_exc: Exception | None = None
     for attempt in range(cfg["retries"]):
         try:
-            df = yf.download(batch, period=period, auto_adjust=True,
+            df = yf.download(batch, period=period, auto_adjust=auto_adjust,
                              progress=False, group_by="ticker", threads=True)
             if df is None or df.empty:
                 raise RuntimeError("empty yfinance response")
@@ -80,14 +80,20 @@ def _fetch_plan(tickers: list[str], group: str, full_history: bool) -> dict[str,
 
 
 def fetch_ohlc(tickers: list[str], group: str, cfg: dict,
-               full_history: bool) -> dict[str, pd.DataFrame]:
+               full_history: bool, auto_adjust: bool = True) -> dict[str, pd.DataFrame]:
     """Pull OHLC for ``tickers`` into ``{ticker: frame[close,high,low,volume]}``.
 
     Chunked (``batch_size``) with an inter-chunk ``sleep_s`` to stay under Yahoo's
     429 throttle on the ~1.5k-name first backfill. A chunk that fails permanently is
     SKIPPED (logged), not fatal — ``store.upsert`` is incremental so the next nightly
     run refills the gap. Raises only when *nothing* came back (so the circuit breaker
-    can act on a truly dead endpoint)."""
+    can act on a truly dead endpoint).
+
+    ``auto_adjust`` — True (default) is the dividend/split-ADJUSTED total-return plane
+    the confluence/reversal signals use. False is the RAW/nominal price plane needed for
+    level, limit-up/gap and honest A/H-premium logic (there is no raw A-share close
+    anywhere else in the repo — masterplan §W6-CN fix 3). The raw plane stores to a
+    SEPARATE group so the two planes never mix."""
     frames: dict[str, pd.DataFrame] = {}
     bs = int(cfg.get("batch_size", 50))
     sleep_s = float(cfg.get("sleep_s", 2.0))
@@ -97,7 +103,7 @@ def fetch_ohlc(tickers: list[str], group: str, cfg: dict,
             if not batch:
                 continue
             try:
-                df = _download(batch, period, cfg)
+                df = _download(batch, period, cfg, auto_adjust=auto_adjust)
             except Exception as e:  # noqa: BLE001 — one dead chunk must not kill the rest
                 log.warning("stock_ohlc[%s]: chunk of %d failed permanently (%s); skipping",
                             group, len(batch), e)

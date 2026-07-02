@@ -29,6 +29,7 @@ import pandas as pd
 
 from lib import config
 from collectors.china_analyst import _num
+from engine.tushare_freshness import prefer_tushare
 
 log = logging.getLogger("china_crowding")
 
@@ -91,12 +92,18 @@ def _valuation_df() -> pd.DataFrame | None:
 
     PREFERS the GATED Tushare daily_basic snapshot (data/tushare/valuation.parquet) — a per-NAME
     cross-section that lets ``rich_valuation`` fire stock-by-stock; its pe_pctile/pb_pctile are
-    already 0..100. Falls back to the free whole-MARKET china_a_val anchor (one row/day) when the
-    Tushare token is absent — that path drives only the market-regime fallback leg. None if neither."""
+    already 0..100 — but ONLY when it is not stale relative to the free anchor (asof-aware; a
+    frozen Tushare token must not beat a fresh free source, masterplan §W6-CN fix 4). Falls back
+    to the free whole-MARKET china_a_val anchor (one row/day) otherwise. None if neither."""
     tv = _read("tushare", "valuation")
-    if tv is not None and "ticker" in tv.columns and ("pe_pctile" in tv.columns or "pb_pctile" in tv.columns):
-        return tv
-    return _market_valuation_df()
+    tv_ok = (tv is not None and "ticker" in tv.columns
+             and ("pe_pctile" in tv.columns or "pb_pctile" in tv.columns))
+    free = _market_valuation_df()
+    if tv_ok:
+        chosen, src = prefer_tushare(tv, _read("china_a_val", "pe"))
+        if src == "tushare":
+            return tv                                 # per-name path, fresh enough
+    return free
 
 
 def _market_valuation_df() -> pd.DataFrame | None:
@@ -157,13 +164,13 @@ def _margin_froth() -> set[str]:
     a float-leverage ratio. Falls back to fin_pct_float if available, then to raw balance only
     as a last resort (with a degradation note). This measures ACTUAL leverage intensity per name.
 
-    PREFERS the GATED Tushare margin_detail snapshot (data/tushare/margin.parquet) and falls
-    back to the free china_margin_detail cache. Reads circ_mv defensively (CN-2 is fixing the
-    asof preference separately; tolerate absence).
+    Source selection is ASOF-AWARE (masterplan §W6-CN fix 4): prefer the GATED Tushare
+    margin_detail snapshot only when it is not stale relative to the free china_margin_detail
+    cache — a frozen Tushare token must not beat a fresh free source.
     """
-    df = _read("tushare", "margin")
-    if df is None or _ticker_col(df) is None:
-        df = _read("china_margin_detail", "detail")
+    tv = _read("tushare", "margin")
+    free = _read("china_margin_detail", "detail")
+    df, _src = prefer_tushare(tv if (tv is not None and _ticker_col(tv) is not None) else None, free)
     if df is None:
         return set()
     tcol = _ticker_col(df)
@@ -182,8 +189,12 @@ def _margin_froth() -> set[str]:
     if not bal_col:
         return set()
 
-    # Read circ_mv from tushare/valuation.parquet (defensive — may be stale, see CN-2)
-    val = _read("tushare", "valuation")
+    # Read circ_mv from tushare/valuation.parquet — asof-aware (masterplan §W6-CN fix 4):
+    # a frozen valuation plane must not silently supply stale float caps. If it is stale vs
+    # the free anchor, prefer_tushare returns None and we fall back to raw balance below.
+    val, _vsrc = prefer_tushare(_read("tushare", "valuation"), _read("china_a_val", "pe"))
+    if _vsrc != "tushare":
+        val = None
     circ_mv = None
     if val is not None:
         vtcol = _ticker_col(val)

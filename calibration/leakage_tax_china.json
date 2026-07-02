@@ -1,0 +1,196 @@
+{
+  "meta": {
+    "generated": "2026-07-02T02:16:59.490831+00:00",
+    "mode": "full",
+    "shadow_only": true,
+    "board_dates": [
+      "2026-06-30",
+      "2026-07-01"
+    ],
+    "note": "W1-CN leakage tax on the china standout board features \u2014 plane, bucket-completeness and price-vintage taxes. Nothing here changes a live path; measurement product only."
+  },
+  "plane_tax": {
+    "2026-06-30": {
+      "available": true,
+      "board_date": "2026-06-30",
+      "n_names": 59,
+      "plane_flip_rate": 0.0508,
+      "plane_flips": 3,
+      "ledger_reproduce_rate": 1.0,
+      "ledger_mismatch": 0,
+      "examples": [
+        {
+          "ticker": "300765.SZ",
+          "deep": false,
+          "shallow": true
+        },
+        {
+          "ticker": "002101.SZ",
+          "deep": false,
+          "shallow": true
+        },
+        {
+          "ticker": "002415.SZ",
+          "deep": false,
+          "shallow": true
+        }
+      ]
+    },
+    "2026-07-01": {
+      "available": true,
+      "board_date": "2026-07-01",
+      "n_names": 60,
+      "plane_flip_rate": 0.0167,
+      "plane_flips": 1,
+      "ledger_reproduce_rate": 1.0,
+      "ledger_mismatch": 0,
+      "examples": [
+        {
+          "ticker": "601628.SS",
+          "deep": false,
+          "shallow": true
+        }
+      ]
+    }
+  },
+  "bucket_tax": {
+    "2026-06-30": {
+      "available": true,
+      "board_date": "2026-06-30",
+      "n_graded": 385,
+      "completed_vs_live_flip_rate": 0.0701,
+      "n_flips": 27,
+      "bucket_end_persisted_example": [
+        {
+          "ticker": "601398.SS",
+          "asof": "2026-06-30",
+          "bucket_end": "2026-06-30",
+          "washout_live": false,
+          "washout_completed": false
+        },
+        {
+          "ticker": "601939.SS",
+          "asof": "2026-06-30",
+          "bucket_end": "2026-06-30",
+          "washout_live": false,
+          "washout_completed": false
+        },
+        {
+          "ticker": "601288.SS",
+          "asof": "2026-06-30",
+          "bucket_end": "2026-06-30",
+          "washout_live": false,
+          "washout_completed": false
+        },
+        {
+          "ticker": "600941.SS",
+          "asof": "2026-06-30",
+          "bucket_end": "2026-06-30",
+          "washout_live": false,
+          "washout_completed": false
+        },
+        {
+          "ticker": "601988.SS",
+          "asof": "2026-06-30",
+          "bucket_end": "2026-06-30",
+          "washout_live": false,
+          "washout_completed": false
+        },
+        {
+          "ticker": "300750.SZ",
+          "asof": "2026-06-30",
+          "bucket_end": "2026-06-30",
+          "washout_live": false,
+          "washout_completed": false
+        }
+      ],
+      "note": "washout-2W flag repaint between the live (incomplete final bucket) and a completed-bucket backtest \u2014 persist bucket_end next to asof to grade the same signal users saw."
+    },
+    "2026-07-01": {
+      "available": true,
+      "board_date": "2026-07-01",
+      "n_graded": 385,
+      "completed_vs_live_flip_rate": 0.0831,
+      "n_flips": 32,
+      "bucket_end_persisted_example": [
+        {
+          "ticker": "601398.SS",
+          "asof": "2026-07-01",
+          "bucket_end": "2026-07-01",
+          "washout_live": false,
+          "washout_completed": false
+        },
+        {
+          "ticker": "601939.SS",
+          "asof": "2026-07-01",
+          "bucket_end": "2026-07-01",
+          "washout_live": false,
+          "washout_completed": false
+        },
+        {
+          "ticker": "601288.SS",
+          "asof": "2026-07-01",
+          "bucket_end": "2026-07-01",
+          "washout_live": false,
+          "washout_completed": false
+        },
+        {
+          "ticker": "600941.SS",
+          "asof": "2026-07-01",
+          "bucket_end": "2026-07-01",
+          "washout_live": false,
+          "washout_completed": false
+        },
+        {
+          "ticker": "601988.SS",
+          "asof": "2026-07-01",
+          "bucket_end": "2026-07-01",
+          "washout_live": false,
+          "washout_completed": false
+        },
+        {
+          "ticker": "300750.SZ",
+          "asof": "2026-07-01",
+          "bucket_end": "2026-07-01",
+          "washout_live": false,
+          "washout_completed": false
+        }
+      ],
+      "note": "washout-2W flag repaint between the live (incomplete final bucket) and a completed-bucket backtest \u2014 persist bucket_end next to asof to grade the same signal users saw."
+    }
+  },
+  "revz_causality": {
+    "2026-06-30": {
+      "available": true,
+      "board_date": "2026-06-30",
+      "n_full": 1479,
+      "n_trunc": 1480,
+      "screened_set_churn": 0.0007,
+      "rev_z_median_abs_drift": 0.04,
+      "note": "rev_z is causally clean live; the replay fragility is the screened-set membership churn (current ST/mktcap/membership vs as-of)."
+    },
+    "2026-07-01": {
+      "available": true,
+      "board_date": "2026-07-01",
+      "n_full": 1479,
+      "n_trunc": 1479,
+      "screened_set_churn": 0.0,
+      "rev_z_median_abs_drift": 0.0,
+      "note": "rev_z is causally clean live; the replay fragility is the screened-set membership churn (current ST/mktcap/membership vs as-of)."
+    }
+  },
+  "vintage_tax": {
+    "available": true,
+    "n_vintage_pairs": 17,
+    "partial_bar_pairs_excluded": 3,
+    "lookback_days": 2,
+    "names_compared": 25272,
+    "revised_rate_gt_0.1pct": 0.1088,
+    "revised_rate_gt_0.4pct": 0.051,
+    "revised_rate_gt_1pct": 0.0216,
+    "revised_median_pct": 0.83,
+    "revised_max_pct": 29.4,
+    "headline_revised_rate": 0.051,
+    "note": "fraction of names whose last-2d closes were revised >0.4% between successive git-committed panel vintages (the combine_first-seam band) \u2014 partial-bar commits excluded. >0.1% band also reported for reference."
+  }
+}
