@@ -88,19 +88,31 @@ def test_loose_regime(monkeypatch, tmp_path):
 # ---- W1a: leg6_language weight, negated exclusion, shadow log, unmapped theme ----
 
 def test_leg6_weight_in_composite(monkeypatch, tmp_path):
-    """leg6_language enters the composite at 0.25 and rebalanced numeric legs sum to 0.75."""
+    """W5a: all 7 legs (leg1-4, leg6, leg7, leg8) are present and sum to 1.0.
+    leg6_language at 0.20 PROVISIONAL; legs 7-8 at 0.075 each PROVISIONAL.
+    Numeric legs (1-4 + 7-8) sum to 0.80; language (leg6) = 0.20; total = 1.00."""
     from engine.bottleneck import WEIGHTS
-    # leg6 must be present at 0.25 (PROVISIONAL)
+    # All legs present
     assert "leg6_language" in WEIGHTS
-    assert abs(WEIGHTS["leg6_language"] - 0.25) < 1e-9
+    assert "leg7_member_inventory" in WEIGHTS
+    assert "leg8_member_backlog" in WEIGHTS
 
-    # All 5 legs must sum to 1.0 (within float tolerance)
+    # All 7 legs must sum to 1.0 (within float tolerance)
     total = sum(WEIGHTS.values())
     assert abs(total - 1.0) < 1e-6, f"weights sum to {total}, not 1.0"
 
-    # Numeric legs (leg1-4) sum to 0.75
+    # Language (leg6) + fingerprint (legs 7-8) = 0.35; FRED numeric (legs 1-4) = 0.65
+    lang_weight = WEIGHTS["leg6_language"]
+    fp_weight = WEIGHTS["leg7_member_inventory"] + WEIGHTS["leg8_member_backlog"]
+    fred_weight = sum(WEIGHTS[k] for k in ("leg1_capacity", "leg2_inventory",
+                                           "leg3_backlog", "leg4_pricing"))
+    assert abs(lang_weight + fp_weight + fred_weight - 1.0) < 1e-6, \
+        f"weight breakdown doesn't sum to 1.0: lang={lang_weight}, fp={fp_weight}, fred={fred_weight}"
+
+    # Numeric physical legs (FRED 1-4 + XBRL 7-8) together = total - language
     numeric = sum(v for k, v in WEIGHTS.items() if k != "leg6_language")
-    assert abs(numeric - 0.75) < 1e-6, f"numeric legs sum to {numeric}, not 0.75"
+    assert abs(numeric - (1.0 - lang_weight)) < 1e-6, \
+        f"numeric legs sum to {numeric}, expected {1.0 - lang_weight}"
 
 
 def _tightening_store():

@@ -30,6 +30,8 @@ log = logging.getLogger(__name__)
 TIGHT_BANDS = {"TIGHT", "SOLD_OUT"}
 # Text-only bands (leg6 language alone, no numeric FRED confirmation)
 TEXT_BANDS = {"TIGHT (text)", "TIGHTENING (text)"}
+# Fingerprint-only bands (annual XBRL member filings, no real-time FRED confirmation)
+FINGERPRINT_BANDS = {"TIGHT (fingerprint)", "TIGHTENING (fingerprint)"}
 LOOSE_BANDS = {"LOOSE"}
 BROAD_HI = 0.50            # breadth above this = revisions already broad (late).
 
@@ -74,8 +76,11 @@ def _compute_tier(numeric_band: str | None, theme_feed_summary: dict | None) -> 
                            # cross-sectional ~80th-percentile replaces this absolute cut.
 _BROAD_HI_PCTILE = 80.0   # W2a PROVISIONAL: uncalibrated default pending §3.2 shadow ledger
 _PCTILE_MIN_THEMES = 8     # W2a: minimum theme count for percentile to be meaningful
-_STAGE_RANK = {"PRECIPICE": 0, "PRECIPICE (text)": 0, "BROADENING": 1,
-               "BROADENING (text)": 1, "RE-RATING": 2, "GLUT-RISK": 3,
+_STAGE_RANK = {"PRECIPICE": 0, "PRECIPICE (text)": 0,
+               "PRECIPICE (fingerprint)": 0,
+               "BROADENING": 1, "BROADENING (text)": 1,
+               "BROADENING (fingerprint)": 1,
+               "RE-RATING": 2, "GLUT-RISK": 3,
                "WATCH": 4, "UNKNOWN": 5}
 
 
@@ -145,6 +150,7 @@ def _stage(bn: dict | None, rv: dict | None, glut_band: str | None = None,
     band = (bn or {}).get("band")
     tight = band in TIGHT_BANDS
     text_tight = band in TEXT_BANDS          # language-only signal, unconfirmed by FRED
+    fp_tight = band in FINGERPRINT_BANDS     # fingerprint-only (annual member filings)
     loose = band in LOOSE_BANDS
     # bn_known: any real band (not None/AWAITING) including text bands
     bn_known = bn is not None and band not in (None, "AWAITING_DATA")
@@ -181,6 +187,24 @@ def _stage(bn: dict | None, rv: dict | None, glut_band: str | None = None,
             return "WATCH", "revisions flat (bottleneck unknown)"
         return "WATCH", "revisions present (bottleneck unknown)"
 
+    # Fingerprint-only bands (annual XBRL member filings — no real-time FRED confirmation)
+    if fp_tight and not tight and not text_tight:
+        if rv_known and flat:
+            return ("PRECIPICE (fingerprint)",
+                    "fingerprint-only (annual member filings) TIGHT while revisions not yet firing — "
+                    "awaiting real-time physical confirmation")
+        if rv_known and broad_hi:
+            return ("RE-RATING",
+                    "fingerprint signal present but revisions already broad — runway maturing, "
+                    "do not chase (fingerprint-only, annual)")
+        if positive:
+            return ("BROADENING (fingerprint)",
+                    "fingerprint-only (annual member filings) TIGHT and revisions rising — "
+                    "awaiting real-time physical confirmation")
+        return ("PRECIPICE (fingerprint)",
+                "fingerprint-only (annual member filings) TIGHT, revisions undetermined — "
+                "awaiting real-time physical confirmation")
+
     # Text-only bands (language leg alone — no numeric FRED confirmation yet)
     if text_tight and not tight:
         if rv_known and flat:
@@ -215,6 +239,7 @@ def _stage(bn: dict | None, rv: dict | None, glut_band: str | None = None,
 
 THESIS_STAGES = {"PRECIPICE", "BROADENING"}
 TEXT_THESIS_STAGES = {"PRECIPICE (text)", "BROADENING (text)"}
+FINGERPRINT_THESIS_STAGES = {"PRECIPICE (fingerprint)", "BROADENING (fingerprint)"}
 BUYABLE_VERDICTS = {"buyable_washout"}
 
 
@@ -245,6 +270,9 @@ def _entry(stage: str, disloc: dict | None) -> tuple[bool, str]:
     """
     if stage in TEXT_THESIS_STAGES:
         return False, ("text-only thesis — awaiting numeric physical confirmation; "
+                       "no entry until FRED bottleneck leg fires")
+    if stage in FINGERPRINT_THESIS_STAGES:
+        return False, ("fingerprint-only thesis — awaiting real-time physical confirmation; "
                        "no entry until FRED bottleneck leg fires")
     if stage not in THESIS_STAGES:
         if stage == "RE-RATING":
@@ -361,8 +389,8 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
                                   late_line_basis=late_line_basis)
         # demand is a LEADING confirmation/conviction modifier on the rationale, not a
         # stage-changer (the stage is bottleneck x revision x exit-risk; demand reinforces).
-        # Include text thesis stages so demand context shows even for text-only themes.
-        _thesis_like = THESIS_STAGES | TEXT_THESIS_STAGES
+        # Include text and fingerprint thesis stages so demand context shows for all.
+        _thesis_like = THESIS_STAGES | TEXT_THESIS_STAGES | FINGERPRINT_THESIS_STAGES
         dband = (dm or {}).get("demand_band")
         if dm and stage in _thesis_like and dband in ("ACCELERATING", "STEADY"):
             rationale += f" · customer capex {dband.lower()} (+{(dm.get('capex_yoy') or 0):.0f}% YoY) confirms demand"
@@ -414,6 +442,7 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
             "entry_note": entry_note,
             "bottleneck_band": (bn or {}).get("band"),
             "bottleneck_text_only": (bn or {}).get("text_only", False),
+            "bottleneck_fingerprint_only": (bn or {}).get("fingerprint_only", False),
             "tightness": (bn or {}).get("tightness"),
             "bottleneck_regime": (bn or {}).get("regime"),
             "demand_band": dband,

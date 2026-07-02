@@ -221,6 +221,45 @@ def _assess_analyst(analyst: object) -> dict:
     return _leg("LIVE", None, "LLM analyst read present")
 
 
+def _assess_t1_fingerprint(themes: list[dict]) -> dict:
+    """T1 XBRL fingerprint (W5a): per-theme member-level inventory-days + RPO legs.
+
+    Status:
+      LIVE    — ≥1 theme has fingerprint n_legs_live ≥ 2 (both legs from its own members)
+      PARTIAL — ≥1 theme has fingerprint n_legs_live == 1 (only one leg active)
+      DARK    — no theme has any fingerprint data (statements.parquet absent or
+                no theme reaches the MIN_MEMBERS=3 gate for any leg)
+
+    The detail string surfaces n_themes_live/n_total (themes with ≥1 fingerprint leg).
+    Annual-cadence honesty: fingerprint is labeled "annual" in the payload.
+    """
+    if not themes:
+        return _leg("DARK", None, "no themes")
+
+    full_live = [t for t in themes
+                 if (t.get("fingerprint") or {}).get("n_legs_live", 0) >= 2]
+    partial_live = [t for t in themes
+                    if (t.get("fingerprint") or {}).get("n_legs_live", 0) == 1]
+    total_with_fp = len(full_live) + len(partial_live)
+    m = len(themes)
+
+    if total_with_fp == 0:
+        return _leg("DARK", f"0/{m}",
+                    f"0/{m} themes have a fingerprint leg — statements.parquet coverage "
+                    "may be thin or MIN_MEMBERS=3 gate not met for any theme; "
+                    "RPO coverage thin (software/agents baskets only)")
+    if full_live:
+        detail = f"{total_with_fp}/{m} ({len(full_live)} both legs)"
+        status = "LIVE" if total_with_fp == m else "PARTIAL"
+        return _leg(status, detail,
+                    f"{len(full_live)}/{m} themes have both fingerprint legs (inv-days + RPO); "
+                    f"{len(partial_live)} have 1 leg; basis=annual; weights PROVISIONAL")
+    # Only partial-live themes (1 leg each)
+    return _leg("PARTIAL", f"{total_with_fp}/{m}",
+                f"{total_with_fp}/{m} themes have 1 fingerprint leg (inventory-days only — "
+                "RPO coverage thin for non-software themes); basis=annual; weights PROVISIONAL")
+
+
 def _assess_monitor(monitor: object) -> dict:
     """Thesis monitor: payload not None."""
     if monitor is None:
@@ -272,23 +311,25 @@ def compute_foresight_health(
 
     try:
         legs = {
-            "t1_fred":    _assess_t1_fred(themes),
-            "t1_text":    _assess_t1_text(themes),
-            "t2_demand":  _assess_t2_demand(themes),
-            "t3_guidance": _assess_t3_guidance(themes),
-            "t4_level":   _assess_t4_level(themes),
-            "t4_accel":   _assess_t4_accel(themes),
-            "glut":       _assess_glut(themes),
-            "power":      _assess_power(power),
-            "confirmers": _assess_confirmers(themes),
-            "analyst":    _assess_analyst(analyst),
-            "monitor":    _assess_monitor(monitor),
-            "grading":    _assess_grading(track),
+            "t1_fred":         _assess_t1_fred(themes),
+            "t1_text":         _assess_t1_text(themes),
+            "t1_fingerprint":  _assess_t1_fingerprint(themes),   # W5a XBRL member fingerprints
+            "t2_demand":       _assess_t2_demand(themes),
+            "t3_guidance":     _assess_t3_guidance(themes),
+            "t4_level":        _assess_t4_level(themes),
+            "t4_accel":        _assess_t4_accel(themes),
+            "glut":            _assess_glut(themes),
+            "power":           _assess_power(power),
+            "confirmers":      _assess_confirmers(themes),
+            "analyst":         _assess_analyst(analyst),
+            "monitor":         _assess_monitor(monitor),
+            "grading":         _assess_grading(track),
         }
     except Exception as exc:  # noqa: BLE001
         log.warning("foresight_health: leg assessment failed: %s", exc)
         legs = {}
 
+    # t1_fingerprint omitted: annual XBRL cadence; mixing into real-time-leads count is misleading
     LEADING_LEGS = ("t1_fred", "t1_text", "t2_demand", "t3_guidance", "power")
     try:
         n_leading_live = sum(
