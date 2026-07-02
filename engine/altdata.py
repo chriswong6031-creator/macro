@@ -279,11 +279,24 @@ def _finnhub(dataset: str) -> pd.DataFrame | None:
 
 
 def analyst_trends(top: int = 25) -> list[dict]:
-    """Analyst recommendation tilt (Finnhub): (strongBuy+buy)/total per ticker, flagged `hot`
-    when the bullish share is high AND rising vs the prior month — a fresh upgrade cluster."""
+    """Analyst recommendation tilt (Finnhub): per-ticker bull ratio + revision-delta.
+
+    Fix #43a: `hot` (the convergence-channel trigger) is now based on the validated
+    REVISION-DELTA construction from engine.analyst_revisions, NOT the consensus level.
+    analyst_revisions.py:4-7 states the consensus level "is near-useless and
+    optimism-skewed … we score the DELTA, never the level." A ticker fires hot when
+    direction=='upgrading' (net-buy count rose vs prior snapshot) — the signal the
+    literature (Womack 1996; Barber-Lehavy-McNichols-Trueman 2001) validates.
+
+    The `bull_ratio` level is still carried as display context (never the trigger)
+    so callers that render it as a label continue working unchanged.
+    """
+    from engine import analyst_revisions  # local import to keep module boundary clean
     df = _finnhub("recommendation")
     if df is None or df.empty:
         return []
+    # Build the revision-delta map: {ticker -> {direction, revision_delta, ...}}
+    rev_map = analyst_revisions.revision_map(df)
     rows = []
     for _, r in df.iterrows():
         tk = _s(r.get("ticker"))
@@ -292,10 +305,13 @@ def analyst_trends(top: int = 25) -> list[dict]:
         if not tk or tot <= 0:
             continue
         bull = (((sb if pd.notna(sb) else 0) + (b if pd.notna(b) else 0)) / tot)
-        prev = _f(r.get("prev_buy"))
-        rising = pd.notna(prev) and ((sb if pd.notna(sb) else 0) + (b if pd.notna(b) else 0)) > prev
-        rows.append({"ticker": tk, "bull_ratio": round(bull, 2), "rising": bool(rising),
-                     "hot": bull >= 0.6 and bool(rising)})
+        # Use the validated revision-DELTA as the hot trigger (level is display-only context)
+        rev = rev_map.get(tk) or {}
+        upgrading = rev.get("direction") == "upgrading"
+        rows.append({"ticker": tk, "bull_ratio": round(bull, 2),
+                     "rising": upgrading,            # kept for backward-compat display label
+                     "revision_delta": rev.get("revision_delta"),
+                     "hot": upgrading})              # DELTA-based, not level-based
     rows.sort(key=lambda r: r["bull_ratio"], reverse=True)
     return rows[:top]
 

@@ -279,7 +279,34 @@ def _norm_sectors(raw, cfg: dict) -> list[dict]:
     return out
 
 
+def _known_universe(root: Path) -> set[str]:
+    """Load the known US-listed ticker universe from the signal_gate.json verdicts file.
+    This is the broadest reliable universe the repo has (built daily from the US stock
+    library, ~1600+ tickers). Falls back to an empty set if the file is absent so the
+    caller degrades gracefully — but callers must treat an empty set as 'gate open'
+    (no false drops when the universe file is missing)."""
+    p = root / "site" / "factordata" / "signal_gate.json"
+    if not p.exists():
+        return set()
+    try:
+        d = json.loads(p.read_text())
+        verdicts = d.get("verdicts") or {}
+        return set(verdicts.keys())
+    except Exception:  # noqa: BLE001
+        return set()
+
+
 def _norm_tickers(raw, cfg: dict, root: Path) -> list[dict]:
+    """Normalise and existence-gate LLM-proposed tickers.
+
+    Fix #43b: add an existence gate — each proposed ticker is validated against the
+    known US-listed universe (site/factordata/signal_gate.json). A hallucinated,
+    delisted, or misidentified ticker that passes the symbol-shape check but is not
+    in the universe is DROPPED with a log warning rather than reaching the every-page
+    banner. The universe is loaded lazily; when the file is absent the gate opens
+    (no false drops) so the desk degrades to the old shape-only check.
+    """
+    universe = _known_universe(root)          # empty set when file missing → gate open
     out, seen = [], set()
     for t in (raw or [])[: int(cfg.get("max_tickers", 8))]:
         if not isinstance(t, dict):
@@ -289,6 +316,10 @@ def _norm_tickers(raw, cfg: dict, root: Path) -> list[dict]:
         if not sym or len(sym) > 6 or not all(c.isalnum() or c in ".-" for c in sym):
             continue
         if sym in seen:
+            continue
+        # existence gate: if the universe is loaded and the ticker isn't in it, drop it
+        if universe and sym not in universe:
+            log.info("whitehouse_brain: dropped unknown/delisted ticker %s (not in universe)", sym)
             continue
         seen.add(sym)
         direction = str(t.get("direction", "")).strip().lower()
