@@ -481,7 +481,11 @@
         }
       },
       "now": "The AI Agents and Applications basket is in a post-crash Recovery phase, sitting at just 18.1% of its prior cycle range after shedding 49.5% peak-to-trough between October 2025 and April 2026, the deepest drawdown in the AI complex, reflecting the basket's speculative, zero-profit, long-duration profile. The tape has turned reflation/growth-up (Tech +24.3%, Energy +21.5%, cyclicals +11.2% vs defensives +6.9%, DXY +3.4%), with VIX subdued in a 14-18 range, semis surging +67.9%, and high-beta crushing low-vol (+20.7%), all classic signals that the highest-beta AI corner finds its footing early in a recovery. However, a stronger dollar (DXY +3.4%) is a mild headwind for global-revenue names, and growth still trails value (-15.2%) on a trailing basis, meaning the basket's longest-duration, least-profitable components remain under pressure. The signal is BUY at a prime entry, but rs_rank of 37 versus the broader universe reflects the basket has not yet reclaimed leadership versus SPY; the setup hinges on whether the June 2026 Hormuz ceasefire sustains, enterprise agent adoption converts pilots to recurring revenue, and rates stabilize to permit multiple re-expansion.",
-      "now_zh": "AI智能体与应用篮子处于崩跌后的复苏期，历经2025年10月至2026年4月49.5%的峰谷跌幅（整个AI板块中最深），当前仅处于前周期区间的18.1%位置。行情已转为再通胀/增长向上格局（科技+24.3%、能源+21.5%、周期股+11.2% vs 防御股+6.9%、DXY +3.4%），VIX低位运行于14-18区间，芯片股飙升+67.9%，高贝塔大幅跑赢低波动（+20.7%）——这是贝塔最高的AI领域在复苏初期企稳的经典信号。然而美元走强（DXY +3.4%）对全球营收个股构成温和阻力，成长在滚动基础上仍跑输价值（-15.2%），意味着久期最长、盈利最差的成分股仍承压。信号为\"买入\"，处于黄金入场点，但相对全市场的rs_rank为37，表明篮子尚未夺回对SPY的领涨地位；后续走势取决于2026年6月霍尔木兹停火能否持续、企业智能体将试点转化为经常性收入，以及利率是否趋稳以支撑估值重扩张。"
+      "now_zh": "AI智能体与应用篮子处于崩跌后的复苏期，历经2025年10月至2026年4月49.5%的峰谷跌幅（整个AI板块中最深），当前仅处于前周期区间的18.1%位置。行情已转为再通胀/增长向上格局（科技+24.3%、能源+21.5%、周期股+11.2% vs 防御股+6.9%、DXY +3.4%），VIX低位运行于14-18区间，芯片股飙升+67.9%，高贝塔大幅跑赢低波动（+20.7%）——这是贝塔最高的AI领域在复苏初期企稳的经典信号。然而美元走强（DXY +3.4%）对全球营收个股构成温和阻力，成长在滚动基础上仍跑输价值（-15.2%），意味着久期最长、盈利最差的成分股仍承压。信号为\"买入\"，处于黄金入场点，但相对全市场的rs_rank为37，表明篮子尚未夺回对SPY的领涨地位；后续走势取决于2026年6月霍尔木兹停火能否持续、企业智能体将试点转化为经常性收入，以及利率是否趋稳以支撑估值重扩张。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ai_infra": {
       "legs": {
@@ -847,7 +851,11 @@
         }
       },
       "now": "AI Infrastructure is topping after a near-vertical 465% run off the April 2025 tariff low, a textbook macro risk-on melt-up (SMH +271%, VIX collapsed 45 to 17) driven by resurgent hyperscaler capex commitments ($725B guided for 2026). The basket sits at the 84.7th percentile of its range (phase: topping), RS rank 5 vs peers, above the 200-day with a SELL signal. The current quad is reflation/growth-up (cyclicals +11.2% vs defensives +6.9%, oil +19.2%, copper-gold +18.3%), led by Tech +24.3% and Energy, while Comm (-9.6%) and Discretionary (-5.2%) lag. The June 2026 Broadcom guidance miss (Q3 AI chip revenue guided at $16B vs $17.2B expected, full-year target unchanged) cracked leadership just as the Fed dot-plot turned hawkish and the DXY firmed +3.4% — classic topping fingerprint: the AI-capex narrative is intact but marginal numbers are disappointing into a tighter-money, stronger-dollar tape, and high-beta positions amplify any wobble in hyperscaler capex confidence.",
-      "now_zh": "AI基础设施在2025年4月关税低点飙升465%后进入顶部区域，这是一次教科书式的宏观风险偏好熔涨（SMH +271%，VIX从45崩至17），由超大规模云厂商资本开支承诺（2026年预计7250亿美元）驱动。篮子处于历史分位84.7%（阶段：筑顶），相对强度排名第5，位于200日均线上方并出现卖出信号。当前象限为再通胀/增长向上（周期股+11.2% vs 防御股+6.9%，油价+19.2%，铜金比+18.3%），由科技+24.3%和能源领涨，通信（-9.6%）和非必需消费品（-5.2%）落后。2026年6月Broadcom业绩指引失望（第三季度AI芯片营收展望160亿美元，低于市场预期172亿美元且未上调全年目标），令领导地位动摇，恰逢美联储点阵图转鹰、DXY走强+3.4%——经典的顶部特征：AI资本开支叙事完整，但边际数据令人失望，面临更紧缩的货币环境，高贝塔头寸现在放大任何超大规模云厂商资本开支信心的波动。"
+      "now_zh": "AI基础设施在2025年4月关税低点飙升465%后进入顶部区域，这是一次教科书式的宏观风险偏好熔涨（SMH +271%，VIX从45崩至17），由超大规模云厂商资本开支承诺（2026年预计7250亿美元）驱动。篮子处于历史分位84.7%（阶段：筑顶），相对强度排名第5，位于200日均线上方并出现卖出信号。当前象限为再通胀/增长向上（周期股+11.2% vs 防御股+6.9%，油价+19.2%，铜金比+18.3%），由科技+24.3%和能源领涨，通信（-9.6%）和非必需消费品（-5.2%）落后。2026年6月Broadcom业绩指引失望（第三季度AI芯片营收展望160亿美元，低于市场预期172亿美元且未上调全年目标），令领导地位动摇，恰逢美联储点阵图转鹰、DXY走强+3.4%——经典的顶部特征：AI资本开支叙事完整，但边际数据令人失望，面临更紧缩的货币环境，高贝塔头寸现在放大任何超大规模云厂商资本开支信心的波动。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "semis.top_2026.v1",
+      "prev_revision": null
     },
     "ai_neoclouds": {
       "legs": {
@@ -1261,7 +1269,11 @@
         }
       },
       "now": "AI Neoclouds and HPC Hosting sits in an Expansion/Trending phase ranked #2 in relative strength at the 50.2 percentile of its historical range, having surged 570% off the April 8, 2025 Liberation Day trough. The current reflation/growth-up quad (cyclicals +11.2% vs defensives +6.9%, copper-gold +18.3%, oil +19.2%) provided the macro backdrop for this highest-beta AI-infrastructure cohort to lead; Tech ranks first sector (+24.3%) and SMH has risen sharply off the April low. Notably, breadth is actually BROADENING here (equal-weight RSP beating cap-weight SPY by +2.9%), arguing against a classic narrow late-stage top, even as high-beta excess remains stretched (SPHB-SPLV +20.7%) and DXY has firmed +3.4% (a headwind for capital-intensive borrowers). The first real macro test is Broadcom's June 3, 2026 print: despite a record AI-chip quarter ($10.8B, +143%) and a raised full-year AI guide (~$56B), the stock fell ~10-13% because investors had priced an even bigger raise — a sign the buildout's bar is now extreme rather than evidence GPU-leasing economics are breaking.",
-      "now_zh": "AI新云与高性能算力托管处于扩张/趋势阶段，相对强度排名第2，处于历史区间50.2百分位，自2025年4月8日\"解放日\"底部已飙升570%。当前再通胀/增长向上象限（周期股+11.2% vs 防御股+6.9%、铜金比+18.3%、油价+19.2%）为这一最高贝塔AI基础设施板块领涨提供了宏观背景；科技位列第一强势板块（+24.3%），SMH自4月低点大幅上涨。值得注意的是，当前广度实际在转宽（等权RSP跑赢市值加权SPY +2.9%），与典型的窄幅周期后期顶部相悖，尽管高贝塔溢价仍偏高（SPHB-SPLV +20.7%）、美元指数走强+3.4%（对重资本借贷方构成阻力）。首个真正的宏观考验是博通2026年6月3日财报：尽管AI芯片单季创纪录（108亿美元，+143%）并上调全年AI指引（约560亿美元），股价仍下跌约10-13%，因投资者已price-in更大幅度的上调——这表明产能建设的预期门槛已极高，而非GPU租赁经济效益破裂的证据。"
+      "now_zh": "AI新云与高性能算力托管处于扩张/趋势阶段，相对强度排名第2，处于历史区间50.2百分位，自2025年4月8日\"解放日\"底部已飙升570%。当前再通胀/增长向上象限（周期股+11.2% vs 防御股+6.9%、铜金比+18.3%、油价+19.2%）为这一最高贝塔AI基础设施板块领涨提供了宏观背景；科技位列第一强势板块（+24.3%），SMH自4月低点大幅上涨。值得注意的是，当前广度实际在转宽（等权RSP跑赢市值加权SPY +2.9%），与典型的窄幅周期后期顶部相悖，尽管高贝塔溢价仍偏高（SPHB-SPLV +20.7%）、美元指数走强+3.4%（对重资本借贷方构成阻力）。首个真正的宏观考验是博通2026年6月3日财报：尽管AI芯片单季创纪录（108亿美元，+143%）并上调全年AI指引（约560亿美元），股价仍下跌约10-13%，因投资者已price-in更大幅度的上调——这表明产能建设的预期门槛已极高，而非GPU租赁经济效益破裂的证据。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ai_semiconductors": {
       "legs": {
@@ -1709,7 +1721,11 @@
         }
       },
       "now": "The basket is in a Downturn/Rolling-over phase at the 87th percentile of its historical range after a +119% melt-up from the March-2026 trough to the June-2026 peak. The direct trigger for the rollover was Broadcom's June 5 2026 Q2 FY2026 earnings report: AI networking revenue of $4.1 billion missed the $17.2 billion Q3 guidance consensus and the full-year AI forecast was left unchanged, erasing over $1.3 trillion in chip-sector market cap in one session. The macro backdrop has shifted to a late-cycle reflation quad (cyclicals +11.2% vs defensives +6.9%, oil +19.2%) with a strengthening dollar (+3.4% DXY) capping long-duration multiples, and new Fed Chair Kevin Warsh is pricing in additional rate hikes. SMH remains up 67.9% from the 2026 trough but the high-beta premium is fading: breadth is broadening (RSP beat SPY by +2.9%), growth is underperforming value by -15.2%, and the basket holds a SELL signal having definitively rolled over from an extreme concentration high, the same structural pattern that preceded the July 2024 and January 2025 selloffs.",
-      "now_zh": "本篮子当前处于\"下行/见顶回落\"阶段，处于历史区间第87百分位，此前经历了从2026年3月低点至2026年6月高点+119%的急涨行情。近期回落的直接导火索是博通2026年6月5日发布的FY2026 Q2财报——AI网络营收41亿美元，低于市场对Q3指引的172亿美元预期，且未上调全年AI预测，单日蒸发全球芯片板块逾1.3万亿美元市值。宏观背景已转向周期末段再通胀象限（周期股+11.2% vs 防御股+6.9%，油价+19.2%），美元走强（DXY +3.4%）压制长久期估值，新任美联储主席凯文·沃什的政策预期偏鹰。SMH相对2026年低点仍涨67.9%，但高贝塔溢价正在消退：市场广度扩散（RSP跑赢SPY +2.9%），成长风格跑输价值-15.2%，该篮子已触发\"卖出\"信号，从极端集中高位明确回落，与2024年7月和2025年1月AI叙事前高后的形态高度吻合。"
+      "now_zh": "本篮子当前处于\"下行/见顶回落\"阶段，处于历史区间第87百分位，此前经历了从2026年3月低点至2026年6月高点+119%的急涨行情。近期回落的直接导火索是博通2026年6月5日发布的FY2026 Q2财报——AI网络营收41亿美元，低于市场对Q3指引的172亿美元预期，且未上调全年AI预测，单日蒸发全球芯片板块逾1.3万亿美元市值。宏观背景已转向周期末段再通胀象限（周期股+11.2% vs 防御股+6.9%，油价+19.2%），美元走强（DXY +3.4%）压制长久期估值，新任美联储主席凯文·沃什的政策预期偏鹰。SMH相对2026年低点仍涨67.9%，但高贝塔溢价正在消退：市场广度扩散（RSP跑赢SPY +2.9%），成长风格跑输价值-15.2%，该篮子已触发\"卖出\"信号，从极端集中高位明确回落，与2024年7月和2025年1月AI叙事前高后的形态高度吻合。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "semis.top_2026.v1",
+      "prev_revision": null
     },
     "ai_software": {
       "legs": {
@@ -2179,7 +2195,11 @@
         }
       },
       "now": "AI Software & Platforms is in an Expansion/Trending phase (pos 44.2, rs_rank 20) after the 22.5% June 2026 selloff triggered by Broadcom's guidance miss; it has since stabilized but remains below its 200-day moving average, signaling the bounce is still a recovery, not a resumption of trend. The backdrop is reflation/growth-up (cyclicals +11.2% vs defensives +6.9%; oil +19.2%; copper-gold +18.3%), with Tech leading at +24.3% and a broadening tape (RSP +2.9% vs SPY), suggesting the application layer is benefiting from the post-Broadcom relief rally but faces a genuine headwind: DXY +3.4% and growth lagging value by -15.2% compress the long-duration multiples that define this basket. The BUY signal reflects a high-beta bounce in a tech-led reflation quad, but the 200-day remains overhead and the growth-minus-value spread staying deeply negative argues caution until enterprise AI monetization (Copilot seat ramp now at 20M paid seats, Palantir AIP bookings) accelerates enough to justify re-rating.",
-      "now_zh": "AI软件与平台处于扩张/趋势阶段(仓位44.2，相对强度排名20)，在2026年6月因博通业绩指引不及预期引发22.5%回撤后趋于稳定，但仍处于200日均线下方，反映当前反弹仍属修复性质而非趋势恢复。宏观背景为再通胀/增长向上象限(周期股+11.2% vs 防御股+6.9%；油价+19.2%；铜金比+18.3%)，科技以+24.3%领涨、市场广度转宽(RSP跑赢SPY +2.9%)，显示应用层受益于博通事件后的风险偏好回归，但面临真实阻力：DXY +3.4%与成长大幅跑输价值(-15.2%)持续压制长久期估值倍数。买入信号反映科技引领再通胀象限下的高贝塔反弹，但200日均线悬于头顶、成长-价值价差维持深度负值，在企业AI变现(Copilot付费席位已达2000万、Palantir AIP订单)加速验证前需保持谨慎——当前为周期中段反弹，而非新一轮超级周期启动。"
+      "now_zh": "AI软件与平台处于扩张/趋势阶段(仓位44.2，相对强度排名20)，在2026年6月因博通业绩指引不及预期引发22.5%回撤后趋于稳定，但仍处于200日均线下方，反映当前反弹仍属修复性质而非趋势恢复。宏观背景为再通胀/增长向上象限(周期股+11.2% vs 防御股+6.9%；油价+19.2%；铜金比+18.3%)，科技以+24.3%领涨、市场广度转宽(RSP跑赢SPY +2.9%)，显示应用层受益于博通事件后的风险偏好回归，但面临真实阻力：DXY +3.4%与成长大幅跑输价值(-15.2%)持续压制长久期估值倍数。买入信号反映科技引领再通胀象限下的高贝塔反弹，但200日均线悬于头顶、成长-价值价差维持深度负值，在企业AI变现(Copilot付费席位已达2000万、Palantir AIP订单)加速验证前需保持谨慎——当前为周期中段反弹，而非新一轮超级周期启动。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "big_pharma": {
       "legs": {
@@ -2545,7 +2565,11 @@
         }
       },
       "now": "Big Pharma is in a Downturn phase (pos 32.4, Rolling over) at a weak RS rank of 40 versus SPY, sitting behind a reflation/growth-up tape that is not its moment: Tech leads +24.3%, Energy +21.5%, Industrials +15.8%, while defensives average only +6.9% against cyclicals +11.2%. A stronger dollar (+3.4% DXY), broadening breadth (RSP beating SPY by +2.9%), rising oil (+19.2%), and a copper-gold ratio up +18.3% all point to a reflationary, cyclical-led regime where low-beta dividend names like Merck, Pfizer, Bristol-Myers, AbbVie, and J&J are crowded out. The group peaked in late February 2026 after a +42% recovery from the May 2025 MFN-shock trough and has now rolled over: the Most-Favored-Nation executive order's negotiating pressure has not abated, RFK Jr. at HHS injects ongoing FDA and vaccine-pathway uncertainty, and the structural patent cliff (Keytruda LOE 2028, Pfizer multi-product cliff) weighs on pipeline visibility. Without a meaningful macro risk-off rotation or a hard recession scare to drive a flight-to-safety bid, Big Pharma stays a value/yield holding-pattern laggard in the current reflation wave.",
-      "now_zh": "大型药企处于下行阶段（位置32.4，见顶回落），相对于标普500的强弱排名仅40位，在当前反通胀/增长向上的行情中明显落后：科技股领涨+24.3%、能源+21.5%、工业+15.8%，而防御股平均仅+6.9%，周期股+11.2%。美元走强（DXY +3.4%）、市场走阔（RSP跑赢SPY +2.9%）、油价上涨（+19.2%）、铜金比攀升（+18.3%），共同指向一个反通胀、周期主导的环境，低贝塔分红型的默沙东、辉瑞、百时美施贵宝、艾伯维、强生等难以获得资金青睐。该组别于2026年2月下旬见顶，自2025年5月MFN冲击低点反弹+42%后再度转弱：最惠国定价行政令的谈判压力未消，RFK Jr.执掌卫生与公共服务部带来持续的FDA/疫苗审批路径不确定性，专利悬崖（Keytruda 2028年独占权到期、辉瑞多产品专利到期）继续压制管线能见度。若没有显著的宏观避险轮动或衰退恐慌驱动的防御性买盘，大型药企仍将是当前反通胀浪潮中的价值/收益滞留者。"
+      "now_zh": "大型药企处于下行阶段（位置32.4，见顶回落），相对于标普500的强弱排名仅40位，在当前反通胀/增长向上的行情中明显落后：科技股领涨+24.3%、能源+21.5%、工业+15.8%，而防御股平均仅+6.9%，周期股+11.2%。美元走强（DXY +3.4%）、市场走阔（RSP跑赢SPY +2.9%）、油价上涨（+19.2%）、铜金比攀升（+18.3%），共同指向一个反通胀、周期主导的环境，低贝塔分红型的默沙东、辉瑞、百时美施贵宝、艾伯维、强生等难以获得资金青睐。该组别于2026年2月下旬见顶，自2025年5月MFN冲击低点反弹+42%后再度转弱：最惠国定价行政令的谈判压力未消，RFK Jr.执掌卫生与公共服务部带来持续的FDA/疫苗审批路径不确定性，专利悬崖（Keytruda 2028年独占权到期、辉瑞多产品专利到期）继续压制管线能见度。若没有显著的宏观避险轮动或衰退恐慌驱动的防御性买盘，大型药企仍将是当前反通胀浪潮中的价值/收益滞留者。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "critical_minerals": {
       "legs": {
@@ -2935,7 +2959,11 @@
         }
       },
       "now": "Critical Minerals & Rare Earths sits at a confirmed \"Bottoming\" trough (pos 1.6, range floor, RS-rank #34), posting a -32% selloff from the May-2026 peak. The macro backdrop is stagflation-ish: defensives are bid (defensives avg +4.0% vs cyclicals +0.1%), the dollar is firmer (DXY +3.4%), and oil has collapsed (-27.2%) — all classic headwinds for high-beta materials. Copper-gold is positive (+13.7%) and breadth is modestly broad (RSP-SPY +3.1%), confirming this is a sector-specific washout rather than a systemic risk-off. The direct catalyst was China's June 22, 2026 sanctioning of MP Materials and USA Rare Earth (plus a 46-firm US procurement ban) — paradoxically bullish for the long-run ex-China supply thesis but a short-term seller in a weakened tape. The Pentagon backstop (DoD as MP's largest shareholder, $110/kg NdPr price floor, $725M metallization loan) provides structural support at the lows. The basket is at the absolute floor of its historical range in a policy-driven name where every catalyst — escalation or de-escalation — triggers violent reversals.",
-      "now_zh": "关键矿产与稀土处于确认的\"筑底\"低谷（pos 1.6，区间底部，RS排名第34位），从2026年5月高点下跌-32%。宏观背景为类滞胀regime：防御板块受追捧（防御均值+4.0%对周期+0.1%），美元转强（DXY +3.4%），油价暴跌（-27.2%）——均为高贝塔材料的典型逆风。铜金比正向（+13.7%），广度略宽（RSP-SPY +3.1%），证实这是板块特定的洗盘而非系统性风险出清。直接催化剂为中国2026年6月22日制裁MP Materials和USA Rare Earth（另加46家美国企业采购禁令）——对长期去中国化供应逻辑悖论地利好，但在已疲弱的行情中触发短线抛售。五角大楼后盾（DoD为MP最大股东、110美元/公斤镨钕下限、7.25亿美元金属化贷款）在低位提供结构性支撑。篮子处于历史区间绝对底部，身为政策驱动标的，每条催化剂——中国升级或降级——均触发剧烈反转。"
+      "now_zh": "关键矿产与稀土处于确认的\"筑底\"低谷（pos 1.6，区间底部，RS排名第34位），从2026年5月高点下跌-32%。宏观背景为类滞胀regime：防御板块受追捧（防御均值+4.0%对周期+0.1%），美元转强（DXY +3.4%），油价暴跌（-27.2%）——均为高贝塔材料的典型逆风。铜金比正向（+13.7%），广度略宽（RSP-SPY +3.1%），证实这是板块特定的洗盘而非系统性风险出清。直接催化剂为中国2026年6月22日制裁MP Materials和USA Rare Earth（另加46家美国企业采购禁令）——对长期去中国化供应逻辑悖论地利好，但在已疲弱的行情中触发短线抛售。五角大楼后盾（DoD为MP最大股东、110美元/公斤镨钕下限、7.25亿美元金属化贷款）在低位提供结构性支撑。篮子处于历史区间绝对底部，身为政策驱动标的，每条催化剂——中国升级或降级——均触发剧烈反转。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "copper.trough_in.v1",
+      "prev_revision": null
     },
     "crypto": {
       "legs": {
@@ -3397,7 +3425,11 @@
         }
       },
       "now": "Crypto & digital assets (IBIT-proxied exchanges, miners and bitcoin-treasury names -- COIN, MSTR and miners) is trending (pos 35, RS rank 12) and remains the highest-beta theme on the board -- the purest risk-appetite barometer here, leading on the way up and on the way down. Everything is a leveraged bet on Bitcoin: COIN's volumes, MSTR's stack and miner economics all swing on the coin. After the late-2025 pullback the basket put in a ~86% rally into June 2026. The 2026 oil-shock/hawkish-Fed backdrop is a headwind -- high-beta crypto hates rising real rates and a firmer dollar (DXY +3.4%) -- but the current reflation/growth-up tape (SPHB-SPLV +20.7, SMH +67.9%) plus structural tailwinds (post-halving supply, the maturing spot-ETF complex, corporate treasury adoption) keep the floor higher than in past cycles. The basket sits at pos 35 (mid-range), well off the Dec-2024 peak -- not yet a late-cycle signal -- and still-elevated high-beta premium (SPHB-SPLV +20.7) gives crypto the macro tailwind it needs, though growth-minus-value at -15.2 and the strong dollar are the key risks to watch.",
-      "now_zh": "加密与数字资产（以IBIT代理的交易所、矿企及比特币储备名称——COIN、MSTR与矿企）当前处于趋势扩张期（位置35，RS排名12），仍是全场最高贝塔主题——纯粹的风险偏好晴雨表，上涨领先、下跌亦领先。一切本质上是对比特币的杠杆押注：COIN成交量、MSTR的持仓与矿企经济均随币价波动。2025年末回调后，篮子在2026年6月前录得约86%的反弹。2026年油价冲击/美联储偏鹰背景是阻力——高贝塔加密讨厌实际利率上行与更强势的美元（DXY+3.4%）——但当前再通胀/增长向上的市场（SPHB-SPLV+20.7、SMH+67.9%）加上结构性顺风（减半后供给、日趋成熟的现货ETF体系、企业储备需求）使底部高于以往周期。篮子位于pos 35（中位区间），远离2024年12月顶部——尚未出现晚周期信号——高贝塔溢价（SPHB-SPLV+20.7）仍赋予加密宏观顺风，但成长跑输价值-15.2与强势美元是需要持续关注的关键风险。"
+      "now_zh": "加密与数字资产（以IBIT代理的交易所、矿企及比特币储备名称——COIN、MSTR与矿企）当前处于趋势扩张期（位置35，RS排名12），仍是全场最高贝塔主题——纯粹的风险偏好晴雨表，上涨领先、下跌亦领先。一切本质上是对比特币的杠杆押注：COIN成交量、MSTR的持仓与矿企经济均随币价波动。2025年末回调后，篮子在2026年6月前录得约86%的反弹。2026年油价冲击/美联储偏鹰背景是阻力——高贝塔加密讨厌实际利率上行与更强势的美元（DXY+3.4%）——但当前再通胀/增长向上的市场（SPHB-SPLV+20.7、SMH+67.9%）加上结构性顺风（减半后供给、日趋成熟的现货ETF体系、企业储备需求）使底部高于以往周期。篮子位于pos 35（中位区间），远离2024年12月顶部——尚未出现晚周期信号——高贝塔溢价（SPHB-SPLV+20.7）仍赋予加密宏观顺风，但成长跑输价值-15.2与强势美元是需要持续关注的关键风险。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cybersecurity": {
       "legs": {
@@ -3895,7 +3927,11 @@
         }
       },
       "now": "Cybersecurity sits at the 87th price percentile in a Topping phase, ranked 9th of 11 GICS sectors on relative strength, meaning the sector remains well-bid but is no longer at the tip of the spear. The current quad is reflation/growth-up (cyclicals +11.2% vs defensives +6.9%, oil +19.2%, copper-gold +18.3%), which historically favors cyclical and energy leadership over high-beta software. Tech still leads at +24.3% and semis (SMH +67.9%) are outperforming, so the risk-on melt-up that carried cyber from the Feb-2026 trough is intact -- but breadth is broadening (RSP beat SPY +2.9%), the dollar is firming (+3.4% DXY), and growth has lagged value by -15.2%, all classic late-cycle signals that argue for rotation out of stretched growth software. Cyber has compounded a +64% rally into a stretched valuation, and the regime environment points to consolidation or mean-reversion rather than another extension leg.",
-      "now_zh": "网络安全处于价格第87百分位的\"见顶\"阶段，相对强度在11个GICS板块中排名第9——仍受追捧，但已不再领跑。当前象限为再通胀/增长向上（周期股+11.2% vs 防御板块+6.9%，油+19.2%，铜金+18.3%），历史上利好周期/能源而非高贝塔软件。科技仍领涨（+24.3%），半导体（SMH +67.9%）表现强劲，2月低点以来+64%的风险偏好行情尚未终结——但市场广度扩散（RSP跑赢SPY +2.9%）、美元走强（DXY +3.4%）、成长跑输价值（-15.2%），均为典型的周期末期信号，预示过度拉伸的成长软件面临轮动压力。网络安全估值已偏高，当前宏观环境指向盘整或均值回归，而非再度拉升。"
+      "now_zh": "网络安全处于价格第87百分位的\"见顶\"阶段，相对强度在11个GICS板块中排名第9——仍受追捧，但已不再领跑。当前象限为再通胀/增长向上（周期股+11.2% vs 防御板块+6.9%，油+19.2%，铜金+18.3%），历史上利好周期/能源而非高贝塔软件。科技仍领涨（+24.3%），半导体（SMH +67.9%）表现强劲，2月低点以来+64%的风险偏好行情尚未终结——但市场广度扩散（RSP跑赢SPY +2.9%）、美元走强（DXY +3.4%）、成长跑输价值（-15.2%），均为典型的周期末期信号，预示过度拉伸的成长软件面临轮动压力。网络安全估值已偏高，当前宏观环境指向盘整或均值回归，而非再度拉升。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "data_center_power": {
       "legs": {
@@ -4235,7 +4271,11 @@
         }
       },
       "now": "Data-Center Power and Cooling is in a rolling-over downturn phase (pos 53.9, rs_rank 14) after an extraordinary +287% run off the April-2025 tariff trough — one of the largest legs in the basket's history. The tape is still in a reflation/growth-up quad and Tech remains the nominal leadership (Tech +24.3%, ahead of Energy +21.5% and Industrials +15.8%), but the character is shifting from narrow to broad: equal-weight is now beating cap-weight by +2.9% and value is beating growth by 15.2 points, signaling the mega-cap, semis-led engine that drove this basket is sharing the bid rather than monopolizing it. A stronger dollar (DXY +3.4%) adds a headwind to international capital-equipment contracts. The basket remains above its 200-day average and the structural AI electricity super-cycle thesis is intact (order backlogs at record highs), but the near-term setup is a pause/consolidation as the market re-examines the pace of hyperscaler AI-capex deployment after a near-vertical re-rating.",
-      "now_zh": "数据中心电力与散热处于\"见顶回落\"的下行阶段（仓位53.9，相对强度排名第14），在自2025年4月关税低点累计上涨287%后进入调整——这是该篮子历史上最大的上涨腿之一。当前仍处于反通胀/经济上行象限，科技仍是名义领涨（科技+24.3%，高于能源+21.5%和工业+15.8%），但市场性质正从窄幅转向广泛：等权现已跑赢市值权+2.9%，价值跑赢成长达15.2个百分点，意味着驱动该篮子的巨头、半导体领涨引擎正在\"分享\"而非\"垄断\"买盘。美元走强（DXY +3.4%）为该板块国际资本设备合同增添阻力。篮子仍在200日均线上方，AI电力超级周期结构性逻辑依旧成立（订单积压创历史新高），但近期走势偏向震荡/整固，市场正在重新审视超大规模厂商AI资本开支部署节奏。"
+      "now_zh": "数据中心电力与散热处于\"见顶回落\"的下行阶段（仓位53.9，相对强度排名第14），在自2025年4月关税低点累计上涨287%后进入调整——这是该篮子历史上最大的上涨腿之一。当前仍处于反通胀/经济上行象限，科技仍是名义领涨（科技+24.3%，高于能源+21.5%和工业+15.8%），但市场性质正从窄幅转向广泛：等权现已跑赢市值权+2.9%，价值跑赢成长达15.2个百分点，意味着驱动该篮子的巨头、半导体领涨引擎正在\"分享\"而非\"垄断\"买盘。美元走强（DXY +3.4%）为该板块国际资本设备合同增添阻力。篮子仍在200日均线上方，AI电力超级周期结构性逻辑依旧成立（订单积压创历史新高），但近期走势偏向震荡/整固，市场正在重新审视超大规模厂商AI资本开支部署节奏。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "defense": {
       "legs": {
@@ -4649,7 +4689,11 @@
         }
       },
       "now": "Defense & Aerospace sits in a \"value coiled spring\" bottoming posture (pos 9.0, RS rank #42, tagged Bottoming, below its 200-day) even as the macro backdrop — reflation/growth-up quad, oil +19.2%, copper-gold +18.3%, DXY +3.4% — rewards cyclicals (+11.2%) far more than defensives (+6.9%). The current melt-up since late March 2026 is narrow and tech/semis-led (SMH +67.9%, growth-value gap -15.2%, RSP-SPY +2.9%), which historically pulls flows toward AI-beta and away from the steady-yield primes. A stronger dollar (DXY +3.4%) is an incremental headwind for the multinational exporters (RTX, LMT, GD). The basket carries BUY signal, but confirmation requires either an order-flow catalyst (large supplemental appropriation, NATO procurement award) or a regime rotation into value and broad cyclicals — neither of which is yet present in a tape still dominated by semiconductor momentum.",
-      "now_zh": "国防与航空航天处于\"价值弹簧蓄势\"筑底状态（位置 9.0、相对强度排名第 42、标记为底部整理、低于 200 日均线），即便宏观背景——再通胀/增长上行象限、油价 +19.2%、铜金比 +18.3%、DXY +3.4%——奖励周期股（+11.2%）远多于防御（+6.9%）。2026 年 3 月底以来的融涨行情狭窄且由科技/半导体主导（SMH +67.9%、成长-价值差 -15.2%、RSP-SPY +2.9%），历史上这会把资金拉向 AI 贝塔，而非稳定收益的主承包商。强势美元（DXY +3.4%）对跨国出口商（RTX、LMT、GD）构成额外逆风。篮子携带 BUY 信号，但确认需要订单流催化剂（大型补充拨款、北约采购合同）或市场向价值和广泛周期股的 regime 轮动——在半导体动能依然主导的行情中，两者均尚未出现。"
+      "now_zh": "国防与航空航天处于\"价值弹簧蓄势\"筑底状态（位置 9.0、相对强度排名第 42、标记为底部整理、低于 200 日均线），即便宏观背景——再通胀/增长上行象限、油价 +19.2%、铜金比 +18.3%、DXY +3.4%——奖励周期股（+11.2%）远多于防御（+6.9%）。2026 年 3 月底以来的融涨行情狭窄且由科技/半导体主导（SMH +67.9%、成长-价值差 -15.2%、RSP-SPY +2.9%），历史上这会把资金拉向 AI 贝塔，而非稳定收益的主承包商。强势美元（DXY +3.4%）对跨国出口商（RTX、LMT、GD）构成额外逆风。篮子携带 BUY 信号，但确认需要订单流催化剂（大型补充拨款、北约采购合同）或市场向价值和广泛周期股的 regime 轮动——在半导体动能依然主导的行情中，两者均尚未出现。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "defensives": {
       "legs": {
@@ -4889,7 +4933,11 @@
         }
       },
       "now": "Defensives sit at cycle position 38.4 (below mid-cycle), RS rank 31 out of peers, in a confirmed uptrend above the 200-day with a BUY signal, yet clearly lagging in the current reflation/growth-up quad. The live backdrop is a textbook defensive headwind: Tech (+24.3%), Energy (+21.5%), and Industrials (+15.8%) are dominating while the basket has gained roughly 6.9% versus cyclicals at +11.2% — the classic configuration where a yield-curve-up, oil-led reflation regime drains flows out of staples and utilities (note this is a value-led reflation, growth-minus-value is actually -15.2%, with the index pulled by a narrow semis melt-up, SMH +67.9%). An oil shock (crude +19.2%, DXY +3.4%) adds a secondary headwind: the stronger dollar pressures the multinational earnings base of consumer staples names while higher energy costs squeeze staples operating margins. The rate-sensitive utility leg faces some friction from a firm dollar, though TLT is roughly flat (+1.1%) and VIX is still only 14-18 — not yet spiking enough to trigger a genuine flight-to-safety bid. This basket remains the portfolio shock absorber — its relative strength will improve sharply only if the reflation narrative breaks, credit spreads widen materially, or a genuine risk-off catalyst drives VIX above 25-30.",
-      "now_zh": "防御板块处于周期位置38.4（低于中轨），RS排名31，价格确认站上200日均线并发出买入信号，但在当前再通胀/增长向上象限中明显落后。实时环境是教科书式的防御逆风：科技（+24.3%）、能源（+21.5%）与工业（+15.8%）主导市场，而本篮子仅上涨约6.9%，周期股达+11.2%——收益率曲线上行、油价领涨的再通胀格局将资金从必需品和公用事业抽离的经典配置（须注意这是价值主导的再通胀，成长相对价值实为-15.2%，指数由窄幅半导体融涨拉动，SMH+67.9%）。油价冲击（原油+19.2%，DXY+3.4%）带来额外阻力：强势美元压制必需品跨国巨头海外收益，高能源成本则挤压经营利润率。对利率敏感的公用事业腿受制于偏强美元，但TLT大致持平（+1.1%），VIX仅14-18，尚不足以触发真正的避险买盘。该篮子仍是组合的减震器——唯有再通胀叙事瓦解、信用利差大幅走阔或风险规避驱使VIX显著推升至25-30上方时，其相对强度才会明显改善。"
+      "now_zh": "防御板块处于周期位置38.4（低于中轨），RS排名31，价格确认站上200日均线并发出买入信号，但在当前再通胀/增长向上象限中明显落后。实时环境是教科书式的防御逆风：科技（+24.3%）、能源（+21.5%）与工业（+15.8%）主导市场，而本篮子仅上涨约6.9%，周期股达+11.2%——收益率曲线上行、油价领涨的再通胀格局将资金从必需品和公用事业抽离的经典配置（须注意这是价值主导的再通胀，成长相对价值实为-15.2%，指数由窄幅半导体融涨拉动，SMH+67.9%）。油价冲击（原油+19.2%，DXY+3.4%）带来额外阻力：强势美元压制必需品跨国巨头海外收益，高能源成本则挤压经营利润率。对利率敏感的公用事业腿受制于偏强美元，但TLT大致持平（+1.1%），VIX仅14-18，尚不足以触发真正的避险买盘。该篮子仍是组合的减震器——唯有再通胀叙事瓦解、信用利差大幅走阔或风险规避驱使VIX显著推升至25-30上方时，其相对强度才会明显改善。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "energy_complex": {
       "legs": {
@@ -5275,7 +5323,11 @@
         }
       },
       "now": "The US Energy Complex is in a Downturn phase (Rolling over), with the war premium from the 2026 Iran/Strait-of-Hormuz crisis now unwinding following the mid-June 2026 ceasefire framework. The basket peaked on 2026-05-19 and has begun rolling over despite a nominally constructive tape: reflation/growth-up quad with oil still +19.2% ytd, copper-gold +18.3%, Energy a top-sector leader (+21.5%, behind Tech +24.3%). The direct headwind is a strengthening dollar (DXY +3.4%), which historically acts as a mechanical drag on dollar-denominated commodity producers. RS rank sits at 44 (below median), and cycle position is 44.3 — mid-cycle after the geopolitical spike. With the geopolitical bid fading and OPEC+ supply policy fluid, the energy complex is transitioning from supply-shock leadership to a more fundamentals-driven range as the market reprices from Hormuz-crisis levels toward normalised Brent around $87-90.",
-      "now_zh": "美国能源综合目前处于\"回落\"阶段，2026年伊朗/霍尔木兹海峡危机带来的战争溢价随6月中旬停火框架落地而正在消散。本篮子于2026年5月19日见顶并开始回落，尽管表面宏观环境仍属利多：再通胀/增长向上象限，油价年初至今仍涨+19.2%，铜金比+18.3%，能源为领涨板块之一（+21.5%，仅次于科技+24.3%）。直接逆风来自美元走强（DXY +3.4%），历史上对以美元计价的大宗商品生产商构成机械性拖累。相对强度排名为44（低于中位），周期位置44.3——处于地缘冲击飙升后的中段。随着地缘溢价消退、OPEC+供给政策仍存变数，能源综合正从供应冲击领涨模式过渡至基本面驱动的区间整理，市场将从霍尔木兹危机估值水平向布伦特均衡价格87-90美元重新定价。"
+      "now_zh": "美国能源综合目前处于\"回落\"阶段，2026年伊朗/霍尔木兹海峡危机带来的战争溢价随6月中旬停火框架落地而正在消散。本篮子于2026年5月19日见顶并开始回落，尽管表面宏观环境仍属利多：再通胀/增长向上象限，油价年初至今仍涨+19.2%，铜金比+18.3%，能源为领涨板块之一（+21.5%，仅次于科技+24.3%）。直接逆风来自美元走强（DXY +3.4%），历史上对以美元计价的大宗商品生产商构成机械性拖累。相对强度排名为44（低于中位），周期位置44.3——处于地缘冲击飙升后的中段。随着地缘溢价消退、OPEC+供给政策仍存变数，能源综合正从供应冲击领涨模式过渡至基本面驱动的区间整理，市场将从霍尔木兹危机估值水平向布伦特均衡价格87-90美元重新定价。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "oil.regime_shift.v1",
+      "prev_revision": null
     },
     "housing": {
       "legs": {
@@ -5737,7 +5789,11 @@
         }
       },
       "now": "The Housing Chain sits in an Expansion phase at position 40.2 (RS rank 18), just off its June 2026 peak and in the aftermath of a sharp +22.5% rate-relief rally triggered by the mid-June Hormuz ceasefire. The current reflation/growth-up quad (cyclicals +11.2% vs defensives +6.9%, oil +19.2%, copper-gold +18.3%, RSP beat SPY +2.9%) is broadly supportive for cyclicals, but housing remains hostage to the mortgage rate path. The stronger DXY (+3.4%) and sticky post-Hormuz CPI mean mortgage rates have not structurally broken lower, so this remains a tactical relief bounce rather than the start of a new affordability recovery cycle. The basket's BUY signal and above-200d posture argue for continuation, but the next CPI print and any Fed hawkishness revision are the binary catalysts that will determine whether this becomes a sustained leg.",
-      "now_zh": "住房产业链处于扩张阶段，位置40.2（RS排名第18），刚从2026年6月高点回落，此前因霍尔木兹停火触发了+22.5%的利率减压急促反弹。当前再通胀/增长上行象限（周期+11.2% vs 防御+6.9%、油+19.2%、铜金比+18.3%、RSP跑赢SPY+2.9%）总体利多周期股，但住房走势仍取决于抵押贷款利率路径。美元走强（DXY+3.4%）与停火后粘性CPI意味着抵押贷款利率未能结构性下行，本轮反弹仍属战术性减压，而非新一轮负担能力复苏周期的起点。板块BUY信号与站上200日线支持续涨，但下一个CPI数据及美联储任何鹰派修正都是二元催化剂。"
+      "now_zh": "住房产业链处于扩张阶段，位置40.2（RS排名第18），刚从2026年6月高点回落，此前因霍尔木兹停火触发了+22.5%的利率减压急促反弹。当前再通胀/增长上行象限（周期+11.2% vs 防御+6.9%、油+19.2%、铜金比+18.3%、RSP跑赢SPY+2.9%）总体利多周期股，但住房走势仍取决于抵押贷款利率路径。美元走强（DXY+3.4%）与停火后粘性CPI意味着抵押贷款利率未能结构性下行，本轮反弹仍属战术性减压，而非新一轮负担能力复苏周期的起点。板块BUY信号与站上200日线支持续涨，但下一个CPI数据及美联储任何鹰派修正都是二元催化剂。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "housing.bubble_peak.v1",
+      "prev_revision": null
     },
     "industrial_distribution": {
       "legs": {
@@ -6103,7 +6159,11 @@
         }
       },
       "now": "Industrial Distribution & Capital Goods (Grainger/Fastenal-type MRO distributors, equipment rental, short-cycle tooling) is in an Expansion/Trending phase at RS-rank #17 (pos 67.2), up +58% off the April-8, 2025 tariff-crash low in an explosive reflation/growth-up regime (cyclicals +11.2% vs defensives +6.9%, equal-weight beating cap-weight +2.9%, oil +19.2%, copper-gold +18.3%). The basket is the late-cycle quality compounder within XLI — Industrials sector (up 15.8%) ranks third among SPDR sectors behind Tech and Energy, and the thesis is straightforward: restock + nonresidential construction + AI/electrification/reshoring picks-and-shovels demand. A stronger dollar (DXY +3.4%) is a mild headwind for multinational revenues, but the broad reflation mandate is clearly intact. With VIX compressing from 52 to 14-18 and high-beta outpacing low-vol by +20.7%, risk appetite remains open; the basket delivers steady, lower-beta cyclical returns rather than parabolic AI torque — which is precisely why it holds its positioning (RS #17) rather than leading, but also cushions against speculative unwinds.",
-      "now_zh": "工业分销与资本品板块（格雷杰/法士特型MRO分销商、设备租赁、短周期工具）处于扩张/趋势阶段，相对强度排名第17（位置67.2），较2025年4月8日关税崩盘低点上涨58%，当前处于爆发性再通胀/增长上行regime（周期股+11.2%对防御+6.9%，等权重跑赢市值加权+2.9%，油价+19.2%，铜金比+18.3%）。该篮子是XLI工业股中的后周期优质复利品种——工业板块（+15.8%）在标普行业ETF中位列第三，仅次于科技与能源，核心逻辑是：补库存+非住宅建设需求+AI/电气化/回流制造的\"锄头与镐\"需求。美元走强（DXY +3.4%）对跨国收入构成温和阻力，但宏观再通胀信号依然清晰。随着VIX从52压缩至14-18，高贝塔跑赢低波动+20.7%，风险偏好窗口保持开放；该篮子提供稳健、低贝塔的周期回报而非抛物线AI弹性——这正是其相对强度排名第17而非领涨的原因，但也使其在投机性逆转中更具抗跌性。"
+      "now_zh": "工业分销与资本品板块（格雷杰/法士特型MRO分销商、设备租赁、短周期工具）处于扩张/趋势阶段，相对强度排名第17（位置67.2），较2025年4月8日关税崩盘低点上涨58%，当前处于爆发性再通胀/增长上行regime（周期股+11.2%对防御+6.9%，等权重跑赢市值加权+2.9%，油价+19.2%，铜金比+18.3%）。该篮子是XLI工业股中的后周期优质复利品种——工业板块（+15.8%）在标普行业ETF中位列第三，仅次于科技与能源，核心逻辑是：补库存+非住宅建设需求+AI/电气化/回流制造的\"锄头与镐\"需求。美元走强（DXY +3.4%）对跨国收入构成温和阻力，但宏观再通胀信号依然清晰。随着VIX从52压缩至14-18，高贝塔跑赢低波动+20.7%，风险偏好窗口保持开放；该篮子提供稳健、低贝塔的周期回报而非抛物线AI弹性——这正是其相对强度排名第17而非领涨的原因，但也使其在投机性逆转中更具抗跌性。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "business.cycle_trough.v1",
+      "prev_revision": null
     },
     "insurance": {
       "legs": {
@@ -6291,7 +6351,11 @@
         }
       },
       "now": "Insurance & Brokers is in a mid-cycle Expansion/Trending phase (pos 36.5, rs_rank 28 vs SPY), holding above its 200-day moving average with a BUY signal and a 477.6% cumulative return from inception -- though currently underperforming in a reflation/growth-up tape where Tech (+24.3%) and Energy (+21.5%) lead while Financials (-2.7%) lag. The current setup is low-drama: dollar firming (+3.4% DXY), VIX compressing (14 to 18), equal-weight breadth beating cap-weight by +2.9% -- insurance is the stay-put compounder, not the rotation leader. Commercial P&C pricing is softening after the record 2022-2025 hard market cycle, putting mild pressure on underwriting margins; but broker fee streams (Marsh, Aon, Gallagher) remain durable, and elevated reinvestment yields on float portfolios (Fed still restrictive) continue to underpin investment income -- with the 2026 oil/Hormuz shock a mild net positive here (more investment income, no credit blow-up). In a tape where high-beta is outperforming low-vol by +20.7 points, relative underperformance is expected and is not a thesis break.",
-      "now_zh": "保险与经纪处于周期中段扩张/趋势阶段（仓位36.5、相对排名28），仍在200日均线之上，维持买入信号，累计回报477.6%——但在当前反通胀/增长向上行情中相对落后，科技（+24.3%）与能源（+21.5%）领涨，金融（-2.7%）承压。当前格局低波动：美元走强（DXY +3.4%）、VIX收敛（14至18）、等权指数跑赢市值加权+2.9%，保险是\"持有复利\"而非轮动领头羊。商业P&C定价在2022-2025超级硬市场后开始软化，承保利润承压；但经纪商手续费流（达信、怡安、高博）依然稳健，美联储维持限制性利率使浮存金组合再投资收益率居高，持续支撑投资收益——2026年油价/霍尔木兹冲击在此处偏正面（投资收益增加、无信用爆雷）。在高贝塔跑赢低波动+20.7个百分点的行情中，篮子相对落后属于预期内，并非论点破裂。"
+      "now_zh": "保险与经纪处于周期中段扩张/趋势阶段（仓位36.5、相对排名28），仍在200日均线之上，维持买入信号，累计回报477.6%——但在当前反通胀/增长向上行情中相对落后，科技（+24.3%）与能源（+21.5%）领涨，金融（-2.7%）承压。当前格局低波动：美元走强（DXY +3.4%）、VIX收敛（14至18）、等权指数跑赢市值加权+2.9%，保险是\"持有复利\"而非轮动领头羊。商业P&C定价在2022-2025超级硬市场后开始软化，承保利润承压；但经纪商手续费流（达信、怡安、高博）依然稳健，美联储维持限制性利率使浮存金组合再投资收益率居高，持续支撑投资收益——2026年油价/霍尔木兹冲击在此处偏正面（投资收益增加、无信用爆雷）。在高贝塔跑赢低波动+20.7个百分点的行情中，篮子相对落后属于预期内，并非论点破裂。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "credit.spread_regime.v1",
+      "prev_revision": null
     },
     "mag7": {
       "legs": {
@@ -6755,7 +6819,11 @@
         }
       },
       "now": "The Magnificent Seven are rolling over in a Downturn/Rolling-over phase, sitting at only the 34th percentile of their historical range with a relative-strength rank of just 25 vs the full universe. The current tape is reflation/growth-up (cyclicals +11.2%, oil +19.2%, copper-gold +18.3%) but the composition is toxic for the cohort: DXY +3.4% creates a revenue headwind for multinationals, growth is lagging value by -15.2 percentage points, and crucially breadth is broadening (RSP +2.9% vs SPY) - the opposite of the narrow mega-cap melt-ups that define the seven's bull legs. Tech still leads YTD but Comm and Discretionary (two other seven-heavy GICS weights) are deep in the red (-9.6%, -5.2%), and semis - up 67.9% from the April 2025 trough - have stalled after the Broadcom-led June 2026 wipeout. The seven are losing their single most reliable driver: concentrated flows into a narrow AI-capex leadership tape, and are now the market's source of drag rather than its engine.",
-      "now_zh": "七巨头正处于\"下行/见顶回落\"阶段，仅处于历史区间第34百分位，相对强度排名仅25。"
+      "now_zh": "七巨头正处于\"下行/见顶回落\"阶段，仅处于历史区间第34百分位，相对强度排名仅25。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "managed_care": {
       "legs": {
@@ -7361,7 +7429,11 @@
         }
       },
       "now": "Managed Care & Insurers is pinned at pos 99.7 with RS rank #4 — a violent, idiosyncratic recovery from a genuine industry crisis that has now fully repriced. The current tape is reflation/growth-up (Tech +24.3%, Energy +21.5%, high-beta minus low-vol +20.7%) yet this low-beta defensive basket is leading from the wrong side of the style spectrum, confirming the recovery is stock-specific, not a macro beta trade. Q1-2026 MCR improved to ~83.9%, UNH raised 2026 EPS guidance, and CMS finalized favorable 2027 MA rates (~2.48%), completing the earnings repricing cycle. At Topping with the full fundamental thesis now in the price, the honest read is that the easy recovery gain is done — utilization normalization, GLP-1 cost trajectories, and the next MA rate proposal are the live risks, and pos 99.7 is exactly where you watch for exhaustion rather than chase.",
-      "now_zh": "管理式医疗与保险板块当前位置99.7、RS排名第4——一场真实行业危机后的剧烈个体化复苏已完全重新定价。当前大盘处于再通胀/增长向上行情（科技+24.3%、能源+21.5%、高贝塔减低波+20.7%），而这一低贝塔防御型篮子却从市场风格的对立面领跑，印证复苏是个股驱动而非宏观贝塔交易。2026一季度MCR改善至约83.9%、UNH上调2026年EPS指引、CMS敲定有利的2027年MA费率（约2.48%），盈利重定价周期已完成。在基本面论点完全反映于股价的见顶阶段，客观判断是容易获得的复苏收益已告终——利用率正常化、GLP-1成本轨迹及下一轮MA费率提案是现实风险，pos 99.7正是该警惕衰竭、而非追涨的位置。"
+      "now_zh": "管理式医疗与保险板块当前位置99.7、RS排名第4——一场真实行业危机后的剧烈个体化复苏已完全重新定价。当前大盘处于再通胀/增长向上行情（科技+24.3%、能源+21.5%、高贝塔减低波+20.7%），而这一低贝塔防御型篮子却从市场风格的对立面领跑，印证复苏是个股驱动而非宏观贝塔交易。2026一季度MCR改善至约83.9%、UNH上调2026年EPS指引、CMS敲定有利的2027年MA费率（约2.48%），盈利重定价周期已完成。在基本面论点完全反映于股价的见顶阶段，客观判断是容易获得的复苏收益已告终——利用率正常化、GLP-1成本轨迹及下一轮MA费率提案是现实风险，pos 99.7正是该警惕衰竭、而非追涨的位置。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "memory_storage": {
       "legs": {
@@ -7775,7 +7847,11 @@
         }
       },
       "now": "Memory, HBM & Storage is topping at the 95th percentile with an rs_rank of 1 — the No. 1 basket across the entire US universe. The 2025-04-04 rally leg produced an extraordinary +1,754% return as a genuine DRAM/HBM/NAND undersupply super-cycle aligned with the strongest semis-led risk-on tape in decades (SMH +271.1% vs SPY +49.0%, VIX 45→17). The current reflation/growth-up quad (cyclicals +11.2% vs defensives +6.9%, oil +19.2%, copper-gold +18.3%) is still constructive, but breadth is narrowing back after the peak (RSP +2.9% vs SPY), the dollar has firmed +3.4%, and a SELL signal has been triggered. At these levels the basket sits in textbook topping territory — the same mega-cap-led narrow-breadth structure that preceded every prior peak is in place, and the high-beta premium (SPHB-SPLV +20.7) that amplified the rally now creates maximum downside exposure if the regime cools or AI-capex guidance disappoints.",
-      "now_zh": "内存、HBM与存储正在95百分位见顶，相对强度排名全美篮子第一。2025-04-04起涨腿创下惊人+1,754%回报，真实的DRAM/HBM/NAND供不应求超级周期与近几十年最强半导体领涨风险偏好行情交汇（SMH +271.1% 对 SPY +49.0%，VIX 45→17）。当前再通胀/增长向上象限（周期股+11.2%对防御股+6.9%，油+19.2%，铜金+18.3%）基调仍积极，但广度在见顶后趋窄，美元走强+3.4%，卖出信号已触发。在当前位置，篮子处于典型见顶形态——过去每次峰值前共有的大盘股领涨、市场广度狭窄结构已然形成，此前放大涨势的高贝塔溢价（SPHB-SPLV +20.7）在政策转向或AI资本开支指引令市场失望时将带来最大下行暴露。"
+      "now_zh": "内存、HBM与存储正在95百分位见顶，相对强度排名全美篮子第一。2025-04-04起涨腿创下惊人+1,754%回报，真实的DRAM/HBM/NAND供不应求超级周期与近几十年最强半导体领涨风险偏好行情交汇（SMH +271.1% 对 SPY +49.0%，VIX 45→17）。当前再通胀/增长向上象限（周期股+11.2%对防御股+6.9%，油+19.2%，铜金+18.3%）基调仍积极，但广度在见顶后趋窄，美元走强+3.4%，卖出信号已触发。在当前位置，篮子处于典型见顶形态——过去每次峰值前共有的大盘股领涨、市场广度狭窄结构已然形成，此前放大涨势的高贝塔溢价（SPHB-SPLV +20.7）在政策转向或AI资本开支指引令市场失望时将带来最大下行暴露。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "semis.top_2026.v1",
+      "prev_revision": null
     },
     "non_ai_software": {
       "legs": {
@@ -8219,7 +8295,11 @@
         }
       },
       "now": "Non-AI Software is in an Expansion/Trending phase (cycle position 39.3, rs_rank 38 -- mid-pack), sitting below the 200-day moving average with a BUY signal but without confirmed breakout. The current macro quad is reflation/growth-up with cyclicals +11.2% vs defensives +6.9%, a firming dollar (+3.4% DXY), and oil +19.2% -- a combination that historically pressures long-duration software via a higher-discount-rate headwind even as the broad tape rallies. After a -27% pullback into the June 25 trough, breadth has broadened (+2.9% RSP vs SPY) and the post-Hormuz-ceasefire AI-monetization narrative now competes with a newly hawkish Fed bias under Chair Warsh, who markets price for a second 2026 hike by December. Semis have broken sharply higher (SMH +67.9%) while Non-AI Software lags -- consistent with a tape rewarding AI-capex hardware over legacy SaaS. The basket is recovering from a deep trough but remains hostage to the rate narrative: any renewed higher-for-longer re-pricing would compress long-duration multiples again, while a Fed pause or growth moderation would be a durable tailwind.",
-      "now_zh": "非AI软件处于扩张/趋势阶段（周期位置39.3，相对强弱排名38，属中游水平），价格仍在200日均线下方，有买入信号但尚未确认突破。当前宏观象限为再通胀/增长向上，周期股+11.2%对防御股+6.9%，美元走强（DXY+3.4%），油价+19.2%——这一组合历史上会通过抬高贴现率来压制长久期软件，即便大盘整体走强。在6月25日触底（-27%回调）后，市场广度已扩散（RSP跑赢SPY+2.9%），霍尔木兹停火后的AI货币化叙事与Warsh主导下的美联储新鹰派倾向（市场定价2026年底前还有第二次加息）形成博弈。半导体大幅突破（SMH+67.9%），而非AI软件明显落后——与行情奖励AI资本开支硬件、而非传统SaaS的特征吻合。篮子正从深度低谷中修复，但仍受利率叙事左右：任何\"更长期更高利率\"的重新定价都将再度压缩长久期估值，而美联储暂停加息或增长预期下修则将成为持续顺风。"
+      "now_zh": "非AI软件处于扩张/趋势阶段（周期位置39.3，相对强弱排名38，属中游水平），价格仍在200日均线下方，有买入信号但尚未确认突破。当前宏观象限为再通胀/增长向上，周期股+11.2%对防御股+6.9%，美元走强（DXY+3.4%），油价+19.2%——这一组合历史上会通过抬高贴现率来压制长久期软件，即便大盘整体走强。在6月25日触底（-27%回调）后，市场广度已扩散（RSP跑赢SPY+2.9%），霍尔木兹停火后的AI货币化叙事与Warsh主导下的美联储新鹰派倾向（市场定价2026年底前还有第二次加息）形成博弈。半导体大幅突破（SMH+67.9%），而非AI软件明显落后——与行情奖励AI资本开支硬件、而非传统SaaS的特征吻合。篮子正从深度低谷中修复，但仍受利率叙事左右：任何\"更长期更高利率\"的重新定价都将再度压缩长久期估值，而美联储暂停加息或增长预期下修则将成为持续顺风。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "non_ai_tech": {
       "legs": {
@@ -8667,7 +8747,11 @@
         }
       },
       "now": "Non-AI Tech and Hardware is topping at the 89th cycle percentile with a SELL signal as of late June 2026. The basket was swept up in the broad April 2025 to June 2026 tech melt-up (SMH +252.4%), but is now stalling against multiple headwinds: the dollar has firmed +3.4% DXY since the cycle low, a direct headwind for multinational hardware and networking names; growth is underperforming value by -15.2%; and breadth is broadening (RSP beat SPY +2.9%), a classic late-cycle rotation away from the narrow mega-cap tech leadership that carried this basket. The rs_rank of 7 out of 11 GICS sectors signals the basket has already slipped behind in the current rotation. A Broadcom earnings miss on AI revenue guidance in early June 2026 triggered a broad semiconductor sector selloff that accelerated the topping process, while healthcare and financials have rotated to the lead, which is historically a reliable sign that the non-AI hardware cycle peak is in or imminent.",
-      "now_zh": "截至2026年6月下旬，非AI科技与硬件处于周期第89百分位顶部，信号为\"卖出\"。该篮子被2025年4月至2026年6月的广泛科技飙升裹挟（SMH +252.4%），但如今面临多重阻力：美元自本轮周期低点以来走强+3.4%（DXY），对跨国硬件和网络名字构成直接逆风；成长跑输价值-15.2%；市场广度扩散（RSP跑赢SPY +2.9%），这是周期晚期从窄幅大盘股科技领涨向外轮动的经典信号。相对强度排名7/11意味着该篮子在当前轮动中已落后。2026年6月初博通AI收入指引不及预期引发半导体板块大幅抛售，顶部形成进程加速；医疗和金融板块先后占据领涨地位，这历来是非AI硬件周期见顶或即将见顶的可靠信号。"
+      "now_zh": "截至2026年6月下旬，非AI科技与硬件处于周期第89百分位顶部，信号为\"卖出\"。该篮子被2025年4月至2026年6月的广泛科技飙升裹挟（SMH +252.4%），但如今面临多重阻力：美元自本轮周期低点以来走强+3.4%（DXY），对跨国硬件和网络名字构成直接逆风；成长跑输价值-15.2%；市场广度扩散（RSP跑赢SPY +2.9%），这是周期晚期从窄幅大盘股科技领涨向外轮动的经典信号。相对强度排名7/11意味着该篮子在当前轮动中已落后。2026年6月初博通AI收入指引不及预期引发半导体板块大幅抛售，顶部形成进程加速；医疗和金融板块先后占据领涨地位，这历来是非AI硬件周期见顶或即将见顶的可靠信号。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "nuclear_power": {
       "legs": {
@@ -9135,7 +9219,11 @@
         }
       },
       "now": "The basket is in a confirmed Recovery / Prime Entry phase (pos 7.9%, rs_rank 32) after the -39% blow-off unwind from the October 2025 peak and the subsequent -22% stagflation-ish pullback into June 2026. The current macro is a reflation/growth-up quad led by Tech (+24.3%), Energy (+21.5%) and Industrials (+15.8%), with Financials, Discretionary and Comm lagging; VIX is calm (14-18), oil has surged +19.2%, and equal-weight breadth is positive (+2.9%). The nuclear/SMR basket is still below its 200-day MA and trading below SPY's rs_rank (32 vs benchmark), reflecting positioning washout rather than any deterioration in the AI-baseload structural thesis. The dollar's firmness (DXY +3.4%) and the absence of a fresh near-term catalyst keep immediate re-entry on a beta-chasing basis cautious, but the setup rhymes with post-flush troughs where durable demand-side conviction has historically re-priced the group sharply higher.",
-      "now_zh": "该篮子处于已确认的修复/优选入场阶段（仓位7.9%，相对强弱排名32），此前经历了2025年10月高点的-39%喷发顶部平仓，以及随后至2026年6月的-22%类滞胀回落。当前宏观为再通胀/增长向上象限，领涨板块为科技（+24.3%）、能源（+21.5%）和工业（+15.8%），金融、可选消费与通信落后；VIX平稳（14-18），油价大涨+19.2%，等权广度为正（+2.9%）。核电/SMR篮子仍处于200日均线下方，相对强弱排名低于基准（32对SPY），反映的是仓位超卖出清，而非AI基荷结构性逻辑受损。美元走强（DXY +3.4%）以及缺乏近期明确催化剂，令纯粹追贝塔的立即再入场需保持谨慎，但当前形态与历史上基本面需求侧信念坚实、超跌后大幅重估前的底部高度相似。"
+      "now_zh": "该篮子处于已确认的修复/优选入场阶段（仓位7.9%，相对强弱排名32），此前经历了2025年10月高点的-39%喷发顶部平仓，以及随后至2026年6月的-22%类滞胀回落。当前宏观为再通胀/增长向上象限，领涨板块为科技（+24.3%）、能源（+21.5%）和工业（+15.8%），金融、可选消费与通信落后；VIX平稳（14-18），油价大涨+19.2%，等权广度为正（+2.9%）。核电/SMR篮子仍处于200日均线下方，相对强弱排名低于基准（32对SPY），反映的是仓位超卖出清，而非AI基荷结构性逻辑受损。美元走强（DXY +3.4%）以及缺乏近期明确催化剂，令纯粹追贝塔的立即再入场需保持谨慎，但当前形态与历史上基本面需求侧信念坚实、超跌后大幅重估前的底部高度相似。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "obesity_glp1": {
       "legs": {
@@ -9501,7 +9589,11 @@
         }
       },
       "now": "GLP-1 & Obesity is in an Expansion/Trending phase at position 44.1, holding a BUY signal and trading above its 200-day moving average with RS rank #15 — strong but not yet peak-crowded. The current macro backdrop (reflation/growth-up quad, Tech +24.3%, semis +67.9%, high-beta crushing low-vol by +20.7%) rewards the group's high-beta, high-conviction profile. The live fundamental story is the pivot from injectable duopoly to oral oligopoly: Novo Nordisk's oral Wegovy (FDA-approved December 2025) is in commercial launch, and Lilly's orforglipron (approval expected 2026) carries the Street's projected long-run share edge given its no-food/no-timing restriction convenience. Both giants signed White House MFN-preemptive deals capping starter-dose orals near $149/month — a deliberate margin-for-volume reset that trades near-term pricing compression for a vastly larger addressable population. Equal-weight breadth beating cap-weight by +2.9% suggests broad market participation, which dilutes the flow-concentration premium that super-charged this basket in the narrow-tape 2022-2024 melt-up; the key risk is whether volume ramp offsets the pricing reset before consensus earnings estimates need to come down.",
-      "now_zh": "GLP-1与减肥药处于扩张/趋势阶段，仓位44.1，持有买入信号，价格位于200日均线上方，RS排名第15——强势但尚未进入拥挤峰值区。当前宏观背景（反通胀/增长向上象限，科技+24.3%，半导体+67.9%，高贝塔大幅跑赢低波动+20.7%）有利于该篮子的高贝塔、高确信度画像。当前基本面叙事正从注射剂双寡头向口服剂多寡头转型：诺和诺德口服Wegovy（2025年12月获FDA批准）已进入商业化阶段，礼来orforglipron（预计2026年获批）凭借无饮食/无时间限制的便利性优势，获华尔街预期更大的长期市场份额。两大巨头均与白宫签署抢先应对MFN政策的定价协议，将口服起始剂量封顶约149美元/月——以短期利润率压缩换取大幅扩大的可及人群。等权重跑赢市值权重+2.9%意味着市场参与度更广，这削弱了2022-2024年窄幅行情融涨期为该篮子注入超额收益的资金集中溢价；核心风险在于销量增长能否在共识盈利预期下修前抵消定价重置。"
+      "now_zh": "GLP-1与减肥药处于扩张/趋势阶段，仓位44.1，持有买入信号，价格位于200日均线上方，RS排名第15——强势但尚未进入拥挤峰值区。当前宏观背景（反通胀/增长向上象限，科技+24.3%，半导体+67.9%，高贝塔大幅跑赢低波动+20.7%）有利于该篮子的高贝塔、高确信度画像。当前基本面叙事正从注射剂双寡头向口服剂多寡头转型：诺和诺德口服Wegovy（2025年12月获FDA批准）已进入商业化阶段，礼来orforglipron（预计2026年获批）凭借无饮食/无时间限制的便利性优势，获华尔街预期更大的长期市场份额。两大巨头均与白宫签署抢先应对MFN政策的定价协议，将口服起始剂量封顶约149美元/月——以短期利润率压缩换取大幅扩大的可及人群。等权重跑赢市值权重+2.9%意味着市场参与度更广，这削弱了2022-2024年窄幅行情融涨期为该篮子注入超额收益的资金集中溢价；核心风险在于销量增长能否在共识盈利预期下修前抵消定价重置。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "payments_fintech": {
       "legs": {
@@ -10059,7 +10151,11 @@
         }
       },
       "now": "Payments & Fintech sits in Prime Entry recovery (pos 15.1), below its 200-day moving average, after a ~29% drawdown from the August 2025 peak driven by the Iran/Hormuz oil shock and a Fed shift back toward hiking bias (CPI 4.2%). The current macro regime is reflation/growth-up — Tech leads +24.3%, semis +67.9%, cyclicals beat defensives (11.2% vs 6.9%) — but the basket itself lags badly (Financials -2.7%, Discretionary -5.2%), meaning the broad recovery has not yet rotated into consumer-facing fintech. Growth-minus-value has reversed sharply (-15.2%), the dollar is firm (+3.4% DXY), and Financials remain a laggard, all consistent with a sector that needs explicit rate/consumer relief to re-engage. The mid-June 2026 Hormuz ceasefire and oil reversal provide the first real catalyst for softer Fed language and eased consumer pressure. The durable V/MA toll-road core anchors the setup; the high-beta disruptors (PayPal, Block, Affirm) are still digesting the damage. RS rank 27/34 confirms institutions have not yet rotated in, making this an early-cycle re-entry window rather than a confirmed thrust.",
-      "now_zh": "支付与金融科技处于黄金入场修复期（位置15.1），低于200日均线，此前自2025年8月高点回落约29%，由伊朗/霍尔木兹石油冲击与美联储重回加息倾向（CPI 4.2%）驱动。当前宏观环境为再通胀/增长向上——科技领涨+24.3%、半导体+67.9%、周期股跑赢防御股（11.2%对6.9%）——但篮子本身明显落后（金融-2.7%、非必需消费-5.2%），意味着广泛复苏尚未轮动至面向消费者的金融科技。成长-价值大幅反转（-15.2%）、美元走强（DXY+3.4%）、金融板块持续滞后，均与需要明确利率/消费端利好才能重新参与的板块特征一致。6月中旬霍尔木兹停火与油价回落为美联储措辞软化和消费压力缓解提供了首个真实催化剂。耐用的V/MA过路收费核心稳定这一布局；高贝塔颠覆者（PayPal、Block、Affirm）仍在消化损伤。相对强弱排名27/34确认机构尚未轮动，使其成为早周期重新入场窗口，而非已确认的突破。"
+      "now_zh": "支付与金融科技处于黄金入场修复期（位置15.1），低于200日均线，此前自2025年8月高点回落约29%，由伊朗/霍尔木兹石油冲击与美联储重回加息倾向（CPI 4.2%）驱动。当前宏观环境为再通胀/增长向上——科技领涨+24.3%、半导体+67.9%、周期股跑赢防御股（11.2%对6.9%）——但篮子本身明显落后（金融-2.7%、非必需消费-5.2%），意味着广泛复苏尚未轮动至面向消费者的金融科技。成长-价值大幅反转（-15.2%）、美元走强（DXY+3.4%）、金融板块持续滞后，均与需要明确利率/消费端利好才能重新参与的板块特征一致。6月中旬霍尔木兹停火与油价回落为美联储措辞软化和消费压力缓解提供了首个真实催化剂。耐用的V/MA过路收费核心稳定这一布局；高贝塔颠覆者（PayPal、Block、Affirm）仍在消化损伤。相对强弱排名27/34确认机构尚未轮动，使其成为早周期重新入场窗口，而非已确认的突破。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "credit.spread_regime.v1",
+      "prev_revision": null
     },
     "power_grid": {
       "legs": {
@@ -10403,7 +10499,11 @@
         }
       },
       "now": "Power & Grid Buildout is currently in a bottoming phase (pos=9, rs_rank=21) after a 17% autumn-2025 dip and a +36% grind back into May 2026 that stalled without confirming a new trend breakout. The macro backdrop is a reflation/growth-up quad: oil surged +19.2%, copper-gold +18.3%, cyclicals beat defensives (11.2% vs 6.9%), and semis ripped (SMH +67.9%) — all structurally supportive for the group's multi-year grid-capex thesis. However, a firmer dollar (DXY +3.4%) and a low RS rank (21 of universe) signal that this is still a positioning-rebuilding phase rather than a confirmed leadership leg; the equal-weight beat of +2.9% indicates broadening rather than narrow mega-cap leadership, consistent with the group grinding higher alongside industrial cyclicals rather than leading. The multi-year backlog story — transformer supply tightness, AI-datacenter interconnection queues, aging T&D replacement — remains structurally intact, but conviction requires a fresh trending breakout above the Jan-2025 peak.",
-      "now_zh": "电力与电网板块目前处于筑底阶段（位置9，相对强弱排名21），历经2025年秋季回调17%与2026年5月前+36%的缓步回升后，尚未确认新的趋势突破。宏观背景为再通胀/增长向上象限：油价大涨+19.2%、铜金比+18.3%、周期股跑赢防御股（11.2%对6.9%），半导体SMH飙升+67.9%——均从结构上支撑该组别的多年期电网资本开支主线。然而，美元偏强（DXY +3.4%）与偏低的相对强弱排名（21）表明当前仍是仓位重建阶段，而非确认领涨腿；等权跑赢+2.9%反映广度扩散而非巨头领涨，与该组别跟随工业周期股回升而非领跑市场一致。多年期积压故事——变压器供应紧缺、AI数据中心并网排队、老化输配电更换——在结构上仍然完整，但需突破2025年1月高点才能确认新趋势。"
+      "now_zh": "电力与电网板块目前处于筑底阶段（位置9，相对强弱排名21），历经2025年秋季回调17%与2026年5月前+36%的缓步回升后，尚未确认新的趋势突破。宏观背景为再通胀/增长向上象限：油价大涨+19.2%、铜金比+18.3%、周期股跑赢防御股（11.2%对6.9%），半导体SMH飙升+67.9%——均从结构上支撑该组别的多年期电网资本开支主线。然而，美元偏强（DXY +3.4%）与偏低的相对强弱排名（21）表明当前仍是仓位重建阶段，而非确认领涨腿；等权跑赢+2.9%反映广度扩散而非巨头领涨，与该组别跟随工业周期股回升而非领跑市场一致。多年期积压故事——变压器供应紧缺、AI数据中心并网排队、老化输配电更换——在结构上仍然完整，但需突破2025年1月高点才能确认新趋势。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "quantum_computing": {
       "legs": {
@@ -10487,7 +10587,11 @@
         }
       },
       "now": "Quantum Computing is in a post-peak Expansion/Trending phase (pos 36.7%, rs_rank 8, signal BUY, above 200d MA) within a reflation/growth-up quad: Tech leads at +24.3%, semis (SMH) are up +67.9%, high-beta outperforms low-vol by +20.7%, oil is +19.2% and copper-gold +18.3 — a classic cyclicals-over-defensives risk-on tape (cyclicals +11.2% vs defensives +6.9%). The May 21, 2026 US Department of Commerce announcement of $2.0B in CHIPS Act incentives — letters of intent with $1B to IBM and ~$100M each to nine quantum companies including pure-plays D-Wave, Rigetti, and Infleqtion, in exchange for government equity stakes — re-anchored institutional conviction and triggered 20-30%+ single-day surges in pure-play names. The sector has recovered from its Oct 2025 peak correction, with the government-funding narrative now supplementing the AI-adjacency melt-up logic. Notably, breadth is broadening here (equal-weight RSP beat SPY by +2.9%, broad participation) rather than the narrow mega-cap tape of the prior melt-up legs, while value is leading growth (growth-value -15.2%); the firming dollar (+3.4% DXY) is a mild headwind, but with semis leading and risk appetite elevated, quantum remains the highest-beta expression of the AI-chip-adjacency theme.",
-      "now_zh": "量子计算目前处于峰值后扩张/趋势阶段（位置36.7%，相对强度排名第8，信号为买入，站上200日均线），行情处于再通胀/成长上行象限：科技板块领涨+24.3%，半导体（SMH）大涨+67.9%，高贝塔跑赢低波动+20.7%，油价+19.2%、铜金比+18.3——典型的周期股压倒防御股的风险偏好格局（周期股+11.2% 对 防御股+6.9%）。2026年5月21日，美国商务部宣布20亿美元《芯片法案》激励意向书——IBM获10亿美元，含纯正标的D-Wave、Rigetti、Infleqtion在内的九家量子公司各获约1亿美元，以政府入股为交换条件——重新锚定机构信心，纯正量子标的单日暴涨逾20-30%。板块已从2025年10月高点回调中复苏，政府拨款叙事如今与AI邻接飙升逻辑相互补充。值得注意的是，本轮市场广度正在扩张（等权RSP跑赢SPY +2.9%，广泛参与），而非此前飙升腿的狭窄大盘股行情，且价值跑赢成长（成长-价值-15.2%）；美元走强（+3.4% DXY）构成温和阻力，但半导体引领、风险偏好高企，量子计算仍是AI芯片邻接主题中贝塔最高的表达方式。"
+      "now_zh": "量子计算目前处于峰值后扩张/趋势阶段（位置36.7%，相对强度排名第8，信号为买入，站上200日均线），行情处于再通胀/成长上行象限：科技板块领涨+24.3%，半导体（SMH）大涨+67.9%，高贝塔跑赢低波动+20.7%，油价+19.2%、铜金比+18.3——典型的周期股压倒防御股的风险偏好格局（周期股+11.2% 对 防御股+6.9%）。2026年5月21日，美国商务部宣布20亿美元《芯片法案》激励意向书——IBM获10亿美元，含纯正标的D-Wave、Rigetti、Infleqtion在内的九家量子公司各获约1亿美元，以政府入股为交换条件——重新锚定机构信心，纯正量子标的单日暴涨逾20-30%。板块已从2025年10月高点回调中复苏，政府拨款叙事如今与AI邻接飙升逻辑相互补充。值得注意的是，本轮市场广度正在扩张（等权RSP跑赢SPY +2.9%，广泛参与），而非此前飙升腿的狭窄大盘股行情，且价值跑赢成长（成长-价值-15.2%）；美元走强（+3.4% DXY）构成温和阻力，但半导体引领、风险偏好高企，量子计算仍是AI芯片邻接主题中贝塔最高的表达方式。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "regional_banks": {
       "legs": {
@@ -10901,7 +11005,11 @@
         }
       },
       "now": "Regional Banks (KRE) sit in an Expansion/Trending phase at position 56.3, having rallied +68% from the April 2025 tariff-crash trough and logging 328% cumulative return since 2014. The live regime is reflation/growth-up (cyclicals +11.2% vs defensives +6.9%, oil +19.2%, copper-gold +18.3%), which is structurally favorable for banks via a steeper curve and better loan demand. Yet Financials lag at -2.7%, flagging a cross-current: the 2026 Iran/Hormuz oil shock and a Fed in hiking bias threaten commercial real estate loan books and compress risk appetite for economically sensitive lenders. At RS rank #16 and mid-range positioning above the 200-day, KRE is a participate-but-monitor-credit basket: NIM has stabilized as deposit costs roll over, the deregulation/M&A cycle is intact, but the CRE maturity wall in 2026-2027 and the oil-shock inflation tail remain live risks that can reprice the group quickly.",
-      "now_zh": "区域银行（KRE）处于扩张/趋势中阶段，位置56.3，自2025年4月关税崩盘低点反弹+68%，自2014年以来累计回报328%。当前行情为再通胀/增长向上（周期股+11.2%对防御股+6.9%，油价+19.2%，铜金比+18.3%），通过曲线趋陡和贷款需求改善结构上有利于银行板块。然而金融板块落后-2.7%，显示逆流：2026年伊朗/霍尔木兹石油冲击及美联储加息倾向威胁商业地产贷款账簿并压制对经济敏感型贷款机构的风险偏好。在200日均线上方、RS排名第16位、仓位居中，KRE是\"参与但监控信用\"的篮子：NIM随存款成本回落而企稳，放松监管/并购周期完好，但2026-2027年商业地产到期墙及油价冲击通胀尾风仍是可快速重新定价整组的活跃风险。"
+      "now_zh": "区域银行（KRE）处于扩张/趋势中阶段，位置56.3，自2025年4月关税崩盘低点反弹+68%，自2014年以来累计回报328%。当前行情为再通胀/增长向上（周期股+11.2%对防御股+6.9%，油价+19.2%，铜金比+18.3%），通过曲线趋陡和贷款需求改善结构上有利于银行板块。然而金融板块落后-2.7%，显示逆流：2026年伊朗/霍尔木兹石油冲击及美联储加息倾向威胁商业地产贷款账簿并压制对经济敏感型贷款机构的风险偏好。在200日均线上方、RS排名第16位、仓位居中，KRE是\"参与但监控信用\"的篮子：NIM随存款成本回落而企稳，放松监管/并购周期完好，但2026-2027年商业地产到期墙及油价冲击通胀尾风仍是可快速重新定价整组的活跃风险。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "credit.spread_regime.v1",
+      "prev_revision": null
     },
     "reshoring": {
       "legs": {
@@ -11291,7 +11399,11 @@
         }
       },
       "now": "Reshoring & Industrial Capex is in a Peak/Topping phase at the end of a +100% leg off the April-8 2025 Liberation Day low, with an RS rank of 11 and a cycle-gauge position of 77.4 — elevated but not yet in confirmed reversal. The current quad is reflation/growth-up (cyclicals +11.2% vs defensives +6.9%, oil +19.2%, copper-gold +18.3%), exactly the macro environment where this basket thrives. Tech (+24.3%) and Energy (+21.5%) lead while Industrials ranks third at +15.8%, confirming the basket rides a broadening recovery rather than leading it. The structural bid from CHIPS/IRA/IIJA policy spend and the $600-725 billion AI-datacenter-power capex super-cycle are live demand engines. A strengthening dollar (DXY +3.4%) is a mild headwind for the basket's industrial multinationals; at rs_rank 11 in a topping phase, the risk of a policy reversal (tariff escalation, Fed-pivot fear) or simple mean-reversion from the extraordinary two-leg run since 2022 warrants close monitoring.",
-      "now_zh": "回流与工业资本开支处于峰值/顶部阶段，自2025年4月8日\"解放日\"低点完成+100%涨幅，相对强度排名第11位，周期位置计量表显示77.4——偏高但尚未确认见顶。当前宏观象限为再通胀/增长上行（周期股+11.2%对防御+6.9%，油价+19.2%，铜金比+18.3%），正是该篮子最受益的宏观环境。科技（+24.3%）和能源（+21.5%）领涨，工业排名第三（+15.8%），证实篮子搭乘广泛复苏而非引领。CHIPS/IRA/IIJA政策开支及6000-7250亿美元AI数据中心电力资本开支超级周期是活跃需求引擎。美元走强（DXY+3.4%）对篮子内工业跨国企业是温和逆风；在顶部阶段RS排名第11位，政策驱动反转（关税升级、美联储转向预期）或仅仅是自2022年以来非凡双腿行情的均值回归风险，均值得密切关注。"
+      "now_zh": "回流与工业资本开支处于峰值/顶部阶段，自2025年4月8日\"解放日\"低点完成+100%涨幅，相对强度排名第11位，周期位置计量表显示77.4——偏高但尚未确认见顶。当前宏观象限为再通胀/增长上行（周期股+11.2%对防御+6.9%，油价+19.2%，铜金比+18.3%），正是该篮子最受益的宏观环境。科技（+24.3%）和能源（+21.5%）领涨，工业排名第三（+15.8%），证实篮子搭乘广泛复苏而非引领。CHIPS/IRA/IIJA政策开支及6000-7250亿美元AI数据中心电力资本开支超级周期是活跃需求引擎。美元走强（DXY+3.4%）对篮子内工业跨国企业是温和逆风；在顶部阶段RS排名第11位，政策驱动反转（关税升级、美联储转向预期）或仅仅是自2022年以来非凡双腿行情的均值回归风险，均值得密切关注。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "business.cycle_trough.v1",
+      "prev_revision": null
     },
     "retail": {
       "legs": {
@@ -11609,7 +11721,11 @@
         }
       },
       "now": "Retail is at a Trough/Bottoming phase (pos 15.6, RS rank 39 — bottom tertile of all series), printing a BUY signal and still above the 200-day moving average. The macro quad is reflation/growth-up (cyclicals +11.2% vs defensives +6.9%, oil +19.2%, copper-gold +18.3%), which is structurally a cyclical tailwind, but two cross-currents cap the basket: (1) a firmer dollar (DXY +3.4%) raises import costs for the goods-heavy retailers that anchor this basket; and (2) the 2026 Iran/Hormuz oil shock pushed gasoline and CPI higher, squeezing the real purchasing power of the lower- and middle-income households that drive Walmart, Costco, and dollar-store traffic. Breadth is broadening (RSP beat SPY +2.9%) and high-beta leads low-vol (+20.7%), but Discretionary still lags at -5.2%, signaling that the rotation has not yet fully arrived for this sub-sector. The setup rhymes with prior reflation-trough entries where the consumer held up better than feared before eventually re-rating higher.",
-      "now_zh": "零售处于波谷/筑底阶段（位置15.6，RS排名39，落入末三分之一），触发买入信号且仍在200日均线上方。宏观象限为再通胀/增长向上（周期板块+11.2% vs 防御+6.9%，油+19.2%，铜金+18.3%），理应形成顺周期顺风，但两股逆流压制篮子：（1）美元走强（DXY+3.4%）推高以商品为主的零售商进口成本；（2）2026年伊朗/霍尔木兹油价冲击拉高汽油与CPI，挤压沃尔玛、Costco及折扣店中低收入核心客群的实际购买力。市场广度扩张（RSP跑赢SPY+2.9%），高贝塔领先低波动（+20.7%），但可选消费仍落后-5.2%，显示轮动尚未完全触及该子板块。当前形态与过往再通胀底部入场点高度吻合，届时消费者表现往往好于预期，最终带动重新估值。"
+      "now_zh": "零售处于波谷/筑底阶段（位置15.6，RS排名39，落入末三分之一），触发买入信号且仍在200日均线上方。宏观象限为再通胀/增长向上（周期板块+11.2% vs 防御+6.9%，油+19.2%，铜金+18.3%），理应形成顺周期顺风，但两股逆流压制篮子：（1）美元走强（DXY+3.4%）推高以商品为主的零售商进口成本；（2）2026年伊朗/霍尔木兹油价冲击拉高汽油与CPI，挤压沃尔玛、Costco及折扣店中低收入核心客群的实际购买力。市场广度扩张（RSP跑赢SPY+2.9%），高贝塔领先低波动（+20.7%），但可选消费仍落后-5.2%，显示轮动尚未完全触及该子板块。当前形态与过往再通胀底部入场点高度吻合，届时消费者表现往往好于预期，最终带动重新估值。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "robotics_automation": {
       "legs": {
@@ -12071,7 +12187,11 @@
         }
       },
       "now": "The basket is \"Rolling over\" at RS-rank 23 (position 35.9), off a parabolic +90% run from the April-8 2025 tariff-crash low to a May-26 2026 peak. The current reflation/growth-up quad (cyclicals +11.2% vs defensives +6.9%, oil +19.2%, copper-gold +18.3%) would normally support cyclical industrials, but the basket is losing relative strength as the market broadens away from the narrow-breadth, semis-led leadership that drove the prior leg. A stronger dollar (DXY +3.4%) is a structural headwind for the globally-sourced hardware supply chains at the core of this group, and growth lagging value (-15.2%) signals de-rating pressure on the long-duration automation multiples. The basket is digesting its largest post-COVID bull leg in a sticky-CPI 2026 environment where capital-equipment buyers face higher financing costs and tariff uncertainty — the near-term setup is consolidation/distribution.",
-      "now_zh": "篮子处于\"见顶回落\"阶段，RS 排名 23（仓位 35.9），距 2025 年 4 月 8 日关税崩盘低点至 2026 年 5 月 26 日高点的 +90% 抛物线行情已告一段落。当前再通胀/增长上行象限（周期股 +11.2% 对防御 +6.9%、油价 +19.2%、铜金比 +18.3%）通常支撑周期工业，但篮子正失去相对强势，因行情从此前驱动腿段的窄幅市场、半导体领跑格局向更广泛参与切换。美元走强（DXY +3.4%）是该板块全球化硬件供应链的结构性逆风，成长落后价值（-15.2%）则预示长久期自动化估值面临去溢价压力。篮子在粘性 CPI 的 2026 年背景下消化新冠后最大的牛市腿段——资本设备买家面临更高融资成本与关税不确定性，近期格局为盘整/派发。"
+      "now_zh": "篮子处于\"见顶回落\"阶段，RS 排名 23（仓位 35.9），距 2025 年 4 月 8 日关税崩盘低点至 2026 年 5 月 26 日高点的 +90% 抛物线行情已告一段落。当前再通胀/增长上行象限（周期股 +11.2% 对防御 +6.9%、油价 +19.2%、铜金比 +18.3%）通常支撑周期工业，但篮子正失去相对强势，因行情从此前驱动腿段的窄幅市场、半导体领跑格局向更广泛参与切换。美元走强（DXY +3.4%）是该板块全球化硬件供应链的结构性逆风，成长落后价值（-15.2%）则预示长久期自动化估值面临去溢价压力。篮子在粘性 CPI 的 2026 年背景下消化新冠后最大的牛市腿段——资本设备买家面临更高融资成本与关税不确定性，近期格局为盘整/派发。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "semicap_equipment": {
       "legs": {
@@ -12363,7 +12483,11 @@
         }
       },
       "now": "Semiconductor Equipment (WFE) is in a confirmed topping phase at the 97th percentile of its historical range, with SMH +67.9% and the basket massively extended off its April 2025 low. The current reflation/growth-up quad (cyclicals +11.2% vs defensives +6.9%, oil +19.2%, copper-gold +18.3%) and broader tape (RSP +2.9% vs SPY) confirm the bull regime is intact, but this is the same tape structure that has historically preceded WFE reversals. The dollar is stronger (+3.4% DXY), a structural headwind for these multinational equipment names (ASML, AMAT, LRCX, KLAC all carry 30-50% non-US revenue), and the high-beta spread (SPHB-SPLV +20.7) is at a historically stretched level. RS rank 6 shows WFE is still outperforming most sectors but is no longer a breakaway leader. WFE fundamentals remain solid (SEMI projects a record $139B global equipment market in 2026), but the cycle analog, valuation percentile, and macro positioning all argue for near-term digestion or a coming air pocket into the next down-leg.",
-      "now_zh": "半导体设备（WFE）已处于确认的顶部阶段，位于历史区间第97百分位，SMH较此前高点大涨+67.9%，篮子从2025年4月低点大幅飙升。当前再通胀/增长向上象限（周期股+11.2% 对 防御板块+6.9%，油价+19.2%，铜金比+18.3%）及更宽广的市场（RSP跑赢SPY +2.9%）确认牛市格局仍在，但这恰恰是历史上WFE多次见顶时的相同市场结构。美元走强（DXY +3.4%）对ASML、AMAT、LRCX、KLAC等高度依赖非美收入的跨国设备公司构成结构性逆风。高贝塔利差（SPHB-SPLV +20.7）处于历史极度拉伸水平。相对强度排名第6位，WFE仍跑赢多数板块但已不再是绝对领涨者。WFE基本面依然扎实（SEMI预测2026年全球设备市场规模达创纪录1390亿美元），但周期类比、估值百分位和宏观定位均指向近期消化或即将到来的下行空档。"
+      "now_zh": "半导体设备（WFE）已处于确认的顶部阶段，位于历史区间第97百分位，SMH较此前高点大涨+67.9%，篮子从2025年4月低点大幅飙升。当前再通胀/增长向上象限（周期股+11.2% 对 防御板块+6.9%，油价+19.2%，铜金比+18.3%）及更宽广的市场（RSP跑赢SPY +2.9%）确认牛市格局仍在，但这恰恰是历史上WFE多次见顶时的相同市场结构。美元走强（DXY +3.4%）对ASML、AMAT、LRCX、KLAC等高度依赖非美收入的跨国设备公司构成结构性逆风。高贝塔利差（SPHB-SPLV +20.7）处于历史极度拉伸水平。相对强度排名第6位，WFE仍跑赢多数板块但已不再是绝对领涨者。WFE基本面依然扎实（SEMI预测2026年全球设备市场规模达创纪录1390亿美元），但周期类比、估值百分位和宏观定位均指向近期消化或即将到来的下行空档。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "semis.top_2026.v1",
+      "prev_revision": null
     },
     "space_economy": {
       "legs": {
@@ -12849,7 +12973,11 @@
         }
       },
       "now": "Space Economy (RKLB/ASTS/LUNR/Earth-obs cluster) is in a \"Rolling over\" downturn at RS rank 33 (pos 43.9), having shed -42% from the late-May-2026 all-time high of ~$151 on RKLB. The macro backdrop is reflation/growth-up (cyclicals 11.2% vs defensives 6.9%, oil +19.2%, copper-gold +18.3%, DXY +3.4%), which should be broadly friendly for cyclicals, but the basket is being dragged by two distinct headwinds: (1) a Neutron rocket Stage-1 tank rupture during qualification testing that pushed maiden flight to Q4 2026, erasing the near-term milestone catalyst; and (2) SpaceX's Nasdaq debut in June 2026 creating a \"capital siphon\" effect — investors rotated out of RKLB-style proxies into the real thing, with RKLB falling ~13% on SpaceX's listing day. Growth-value spread is -15.2%, the dollar is firming (+3.4% DXY), and high-beta themes are broadly underperforming — the classic setup for this basket to lag even a constructive index tape. It remains above its 200-day moving average (above200d=true), so the structural bull case (defense-space build-out, $2.2B backlog, SDA contracts) is intact; the question is whether the milestone-delay and SpaceX-siphon headwinds resolve before the next risk-on impulse arrives.",
-      "now_zh": "太空经济板块（RKLB/ASTS/LUNR/对地观测集群）正处于\"见顶回落\"下行阶段，相对强度排名第33位（仓位43.9），自2026年5月底RKLB历史高点约151美元已跌去约42%。宏观背景为再通胀/增长上行（周期股+11.2%对防御+6.9%、油价+19.2%、铜金+18.3%、DXY+3.4%），理论上有利于周期股，但板块面临双重逆风：(1) Neutron火箭一级储箱在资格测试中破裂，首飞推迟至2026年第四季度，近期里程碑催化剂消失；(2) SpaceX于2026年6月登陆纳斯达克产生\"资金虹吸\"效应，RKLB当日跌约13%。成长-价值利差为-15.2%，美元转强（DXY+3.4%），高贝塔主题普遍跑输——这是该篮子即便在指数温和上涨时也落后的经典格局。目前仍在200日均线之上（above200d=true），国防航天建设期基本面（22亿美元积压、SDA合同）完好；问题在于里程碑延期和SpaceX虹吸逆风能否在下一轮风险偏好脉冲到来前消化。"
+      "now_zh": "太空经济板块（RKLB/ASTS/LUNR/对地观测集群）正处于\"见顶回落\"下行阶段，相对强度排名第33位（仓位43.9），自2026年5月底RKLB历史高点约151美元已跌去约42%。宏观背景为再通胀/增长上行（周期股+11.2%对防御+6.9%、油价+19.2%、铜金+18.3%、DXY+3.4%），理论上有利于周期股，但板块面临双重逆风：(1) Neutron火箭一级储箱在资格测试中破裂，首飞推迟至2026年第四季度，近期里程碑催化剂消失；(2) SpaceX于2026年6月登陆纳斯达克产生\"资金虹吸\"效应，RKLB当日跌约13%。成长-价值利差为-15.2%，美元转强（DXY+3.4%），高贝塔主题普遍跑输——这是该篮子即便在指数温和上涨时也落后的经典格局。目前仍在200日均线之上（above200d=true），国防航天建设期基本面（22亿美元积压、SDA合同）完好；问题在于里程碑延期和SpaceX虹吸逆风能否在下一轮风险偏好脉冲到来前消化。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "travel": {
       "legs": {
@@ -13407,7 +13535,11 @@
         }
       },
       "now": "Travel & Experiences is in a confirmed topping phase (pos 78, RS rank 13) after a +78% surge off the April 2025 tariff-crash low. The basket sits extended above its 200-day with experiential demand still robust, but the macro regime is shifting from pure risk-on to a late-cycle reflation squeeze: oil +19.2% on the leg and DXY +3.4% are a dual headwind — higher jet-fuel costs biting airline margins while a stronger dollar crimps international travel economics. The reflation/growth-up quad still runs (cyclicals +11.2% vs defensives +6.9%) and breadth is modestly positive (RSP +2.9% vs SPY), but Discretionary is already lagging (-5.2%) even as Tech (+24.3%) leads — a classic late-cycle divergence where the high-beta consumer groups peak before the broad market. As the highest-beta consumer-cyclical basket, Travel & Experiences now offers unfavorable risk/reward: the mid-June 2026 Strait of Hormuz ceasefire MOU (signed June 17) relieved some of the oil spike, but the strait was briefly re-closed days later and structural cost pressure plus a consumer strained by cumulative inflation make a fresh upleg difficult to sustain.",
-      "now_zh": "旅行与体验篮子处于明确的顶部阶段（位置78，相对强度排名13），从2025年4月关税崩盘低点反弹+78%后已过度延伸。体验式消费需求仍具韧性，但宏观环境正从纯粹的风险偏好切换至晚周期再通胀压缩：本段油价+19.2%、DXY+3.4%构成双重逆风——更高的航空燃油成本侵蚀航空公司利润，而强美元压缩国际旅游经济学。再通胀/增长向上象限仍在运行（周期+11.2% vs 防御+6.9%），广度温和偏正（等权RSP+2.9% vs SPY），但可选消费已落后（-5.2%），而科技（+24.3%）领涨——这是经典的晚周期特征：高贝塔消费板块先于大盘见顶。作为最高贝塔的消费周期篮子，旅行与体验目前风险回报不利：2026年6月中旬霍尔木兹海峡停火谅解备忘录（6月17日签署）缓解了部分油价飙升，但海峡数日后一度再度关闭，加之结构性成本压力以及被累积通胀压榨的消费者，使新一轮上行难以持续。"
+      "now_zh": "旅行与体验篮子处于明确的顶部阶段（位置78，相对强度排名13），从2025年4月关税崩盘低点反弹+78%后已过度延伸。体验式消费需求仍具韧性，但宏观环境正从纯粹的风险偏好切换至晚周期再通胀压缩：本段油价+19.2%、DXY+3.4%构成双重逆风——更高的航空燃油成本侵蚀航空公司利润，而强美元压缩国际旅游经济学。再通胀/增长向上象限仍在运行（周期+11.2% vs 防御+6.9%），广度温和偏正（等权RSP+2.9% vs SPY），但可选消费已落后（-5.2%），而科技（+24.3%）领涨——这是经典的晚周期特征：高贝塔消费板块先于大盘见顶。作为最高贝塔的消费周期篮子，旅行与体验目前风险回报不利：2026年6月中旬霍尔木兹海峡停火谅解备忘录（6月17日签署）缓解了部分油价飙升，但海峡数日后一度再度关闭，加之结构性成本压力以及被累积通胀压榨的消费者，使新一轮上行难以持续。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "uranium_miners": {
       "legs": {
@@ -13941,7 +14073,11 @@
         }
       },
       "now": "Uranium miners sit in a deep bottoming phase (pos 1.1, rs_rank 43, below the 200-day) after a -42% slide from the January 2026 peak, their fourth consecutive major selloff since the November 2021 bull-market top. The current macro is a reflation/growth-up quad (oil +19.2%, copper-gold +18.3%, cyclicals +11.2% vs defensives +6.9%, broad participation with equal-weight beating cap-weight by +2.9%), which structurally favors commodity and cyclical themes and is the correct regime for a uranium recovery bid. However, the stronger dollar (DXY +3.4%) remains a direct headwind for the materials complex, and the group has not yet reclaimed its 200-day moving average. The rs_rank of 43 signals the group is underperforming the median sector. The washout from the January 2026 high has been severe enough (-42% in five months) to qualify as a reset that historically precedes multi-month re-accumulation, and the supply-deficit and AI-baseload thesis remains structurally intact, but a confirmed spot-price turn and macro regime confirmation are still required before the trough becomes a durable launch.",
-      "now_zh": "铀矿商处于深度筑底阶段（位置1.1、相对强度排名43、低于200日均线），自2026年1月高点下跌42%，为2021年11月牛市顶部以来的第四次连续重大回调。当前宏观为再通胀/增长向上象限（油价+19.2%、铜金比+18.3%、周期股+11.2%对防御股+6.9%、等权跑赢市值加权+2.9%），结构上有利于大宗商品与周期主题，是铀股修复买盘的正确环境。但美元走强（DXY +3.4%）仍为材料板块的直接逆风，且该组别尚未收复200日均线。相对强度排名43显示该组别跑输中位行业。自2026年1月高点的深度洗盘（五个月内-42%）在历史上是多月再积累阶段的前兆，供给短缺与AI基础负荷电力逻辑依然结构性成立——但确认筑底为持续性启动点，仍需现货价见底确认与宏观象限配合。"
+      "now_zh": "铀矿商处于深度筑底阶段（位置1.1、相对强度排名43、低于200日均线），自2026年1月高点下跌42%，为2021年11月牛市顶部以来的第四次连续重大回调。当前宏观为再通胀/增长向上象限（油价+19.2%、铜金比+18.3%、周期股+11.2%对防御股+6.9%、等权跑赢市值加权+2.9%），结构上有利于大宗商品与周期主题，是铀股修复买盘的正确环境。但美元走强（DXY +3.4%）仍为材料板块的直接逆风，且该组别尚未收复200日均线。相对强度排名43显示该组别跑输中位行业。自2026年1月高点的深度洗盘（五个月内-42%）在历史上是多月再积累阶段的前兆，供给短缺与AI基础负荷电力逻辑依然结构性成立——但确认筑底为持续性启动点，仍需现货价见底确认与宏观象限配合。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "uranium.supply_squeeze.v1",
+      "prev_revision": null
     },
     "us_sector_comm": {
       "legs": {
@@ -14233,7 +14369,11 @@
         }
       },
       "now": "Communication Services (EW) is in a confirmed Trough/Bottoming phase (rs_rank 41/100, below the 200-day MA, -9.6% in the current window vs SPY +6.3%). Despite a reflation/growth-up macro quad with cyclicals outperforming defensives by 4.3pp, Comm is the worst laggard alongside Discretionary and Financials. The sector is weighed down by two sector-specific overhangs that override the broad reflation tailwind: (1) AI capex-trap anxiety — Alphabet's 2026 capex guide of $175-185B and Meta's $115-135B raise return-on-investment doubts as monetization lags spending; and (2) regulatory/legal pressure — fresh antitrust and privacy rulings are raising liability cost estimates for the two largest names. Equal-weight breadth (+2.9% RSP beat) signals broad participation elsewhere, but Comm is not among the beneficiaries. Growth minus value at -15.2 is a significant headwind for a sector whose free-cash-flow value rests heavily on outer-year AI monetization. A durable turn would require either a deceleration in capex guidance or a new digital-ad demand catalyst to re-rate earnings.",
-      "now_zh": "通信服务（等权）目前处于确认的底部/筑底阶段（相对强弱排名41/100，股价位于200日均线以下，当前窗口期内下跌9.6%，而标普500上涨6.3%）。尽管宏观处于再通胀/增长向上象限（周期股跑赢防御股4.3个百分点），通信服务仍是最弱板块之一。板块承压于两大特有阻力：(1) AI资本支出陷阱——谷歌2026年资本支出指引1750-1850亿美元、Meta 1150-1350亿美元，在货币化滞后于投入的背景下引发资本回报疑虑；(2) 监管/法律压力——新反垄断及隐私裁决使板块前两大权重股的潜在负债成本大幅上升。等权指数跑赢市值加权指数2.9个百分点，说明其他板块普遍参与行情，但通信服务并不在受益之列。成长股vs价值股利差-15.2对依赖远期AI货币化的板块构成重大逆风。板块持续反转需资本支出指引降温或数字广告需求出现新催化剂以重估盈利预期。"
+      "now_zh": "通信服务（等权）目前处于确认的底部/筑底阶段（相对强弱排名41/100，股价位于200日均线以下，当前窗口期内下跌9.6%，而标普500上涨6.3%）。尽管宏观处于再通胀/增长向上象限（周期股跑赢防御股4.3个百分点），通信服务仍是最弱板块之一。板块承压于两大特有阻力：(1) AI资本支出陷阱——谷歌2026年资本支出指引1750-1850亿美元、Meta 1150-1350亿美元，在货币化滞后于投入的背景下引发资本回报疑虑；(2) 监管/法律压力——新反垄断及隐私裁决使板块前两大权重股的潜在负债成本大幅上升。等权指数跑赢市值加权指数2.9个百分点，说明其他板块普遍参与行情，但通信服务并不在受益之列。成长股vs价值股利差-15.2对依赖远期AI货币化的板块构成重大逆风。板块持续反转需资本支出指引降温或数字广告需求出现新催化剂以重估盈利预期。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "us_sector_discretionary": {
       "legs": {
@@ -14733,7 +14873,11 @@
         }
       },
       "now": "Consumer Discretionary (EW) is in early Recovery phase at 27.2% of cycle range - a prime entry zone per the model, though RS rank of 30th percentile confirms the sector still lags most peers. The current macro backdrop is a reflation/growth-up quad: cyclicals outperform defensives (11.2% vs 6.9%), oil +19.2%, copper-gold +18.3%, yet Discretionary itself is down 5.2% YTD and ranks among the bottom two sectors alongside Comm Services (-9.6%), while Tech (+24.3%) and Energy (+21.5%) lead. A firmer dollar (+3.4% DXY) is a headwind for import-dependent retailers and auto companies. Broadening breadth (RSP outpacing SPY by +2.9%) historically precedes catch-up in lagging cyclicals, and the sector holding above its 200-day MA keeps the technical structure constructive. The BUY signal reflects depressed cycle positioning rather than current price momentum; confirmation would require consumer spending data to stabilize and, ideally, dollar pressure to ease.",
-      "now_zh": "非必需消费（等权）处于复苏阶段初期，周期位置27.2%，属于\"黄金入场\"区间，但相对强度排名仅第30百分位，仍落后于大多数板块。当前格局为再通胀/增长向上：周期股跑赢防御股（+11.2% vs +6.9%），油价涨+19.2%，铜金比+18.3%，但非必需消费年初至今下跌5.2%，与通讯服务（-9.6%）居底部，科技（+24.3%）和能源（+21.5%）领跑。美元强势（DXY+3.4%）对依赖进口的零售商和汽车企业构成压力。等权跑赢市值加权+2.9%，历史上往往预示落后板块均值回归补涨。板块处于200日均线上方，技术结构尚佳。BUY信号来自周期低位而非价格动量，确认信号需要消费支出数据企稳并美元压力缓解。"
+      "now_zh": "非必需消费（等权）处于复苏阶段初期，周期位置27.2%，属于\"黄金入场\"区间，但相对强度排名仅第30百分位，仍落后于大多数板块。当前格局为再通胀/增长向上：周期股跑赢防御股（+11.2% vs +6.9%），油价涨+19.2%，铜金比+18.3%，但非必需消费年初至今下跌5.2%，与通讯服务（-9.6%）居底部，科技（+24.3%）和能源（+21.5%）领跑。美元强势（DXY+3.4%）对依赖进口的零售商和汽车企业构成压力。等权跑赢市值加权+2.9%，历史上往往预示落后板块均值回归补涨。板块处于200日均线上方，技术结构尚佳。BUY信号来自周期低位而非价格动量，确认信号需要消费支出数据企稳并美元压力缓解。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "us_sector_energy": {
       "legs": {
@@ -15233,7 +15377,11 @@
         }
       },
       "now": "Energy (Equal-Weight) is in a confirmed Downturn phase (phase score 41.1, RS rank 45 vs SPY peers), rolling over from the March 2026 peak that was driven by the Iran-war oil shock. The sector had been the YTD leader (up ~39% at peak) but has reversed sharply as the U.S.-Iran interim peace agreement announced in mid-June 2026 opened the path to Strait of Hormuz reopening, causing WTI to drop from above $110 to the low $70s. Current ctx shows oil +19.2% YTD (still elevated) and DXY +3.4% (a headwind), while broader market tone is reflation/growth-up with cyclicals outperforming defensives — yet energy itself is lagging as the geopolitical risk premium collapses. The setup is a post-supply-shock mean-reversion: the sector is still above its 200-day but the 10-day/50-day moving average crossed bearishly on June 16, 2026, and refiner/midstream stocks are outperforming oil majors, signaling the market is already pricing in softer crude ahead.",
-      "now_zh": "能源（等权）处于确认的下行阶段（周期位置41.1，相对强度排名45），从2026年3月的高点回落——该高峰由伊朗战争石油冲击所驱动。板块在年内一度领涨（高点涨幅约39%），但随着美伊临时和平协议于2026年6月中旬宣布、霍尔木兹海峡重开预期升温，WTI原油从110美元以上跌回70美元低位，板块随之急剧回调。当前背景显示油价年内仍涨19.2%（仍处高位），美元指数涨3.4%（构成逆风），大市基调为再通胀/增长向上，周期板块整体跑赢防御板块——但能源板块本身已落后，地缘溢价正在消散。当前形态为供应冲击后的均值回归：板块仍在200日均线以上，但10日/50日均线于2026年6月16日形成死叉，炼油/中游股跑赢石油巨头，市场已在定价油价进一步走软。"
+      "now_zh": "能源（等权）处于确认的下行阶段（周期位置41.1，相对强度排名45），从2026年3月的高点回落——该高峰由伊朗战争石油冲击所驱动。板块在年内一度领涨（高点涨幅约39%），但随着美伊临时和平协议于2026年6月中旬宣布、霍尔木兹海峡重开预期升温，WTI原油从110美元以上跌回70美元低位，板块随之急剧回调。当前背景显示油价年内仍涨19.2%（仍处高位），美元指数涨3.4%（构成逆风），大市基调为再通胀/增长向上，周期板块整体跑赢防御板块——但能源板块本身已落后，地缘溢价正在消散。当前形态为供应冲击后的均值回归：板块仍在200日均线以上，但10日/50日均线于2026年6月16日形成死叉，炼油/中游股跑赢石油巨头，市场已在定价油价进一步走软。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "oil.regime_shift.v1",
+      "prev_revision": null
     },
     "us_sector_financials": {
       "legs": {
@@ -15629,7 +15777,11 @@
         }
       },
       "now": "Financials (Equal-Weight) is in an Expansion/Trending phase but sitting near mid-cycle (pos 48), having peaked in January 2026 after a 34.9% post-tariff-trough rally. The basket has pulled back to a lagging position, ranking only 24th across tracked series, with year-to-date returns of roughly -2.7% versus SPY +6.3%, making it the worst GICS sector performer in 2026 year-to-date. The reflation/growth-up quad (cyclicals +11.2%, oil +19.2%, copper-gold +18.3%) is broadly constructive for risk, but net interest margin uncertainty from a flat Fed, contracting mortgage originations, and aggressive capital rotation into AI-beneficiary megacap tech are keeping the equal-weight basket in consolidation. Broadening (RSP +2.9% vs SPY) is mildly supportive, but value-versus-growth remains deeply negative (-15.2%) and the DXY +3.4% creates an additional headwind for multinationals within the basket.",
-      "now_zh": "金融（等权）当前处于扩张/趋势运行阶段，但周期位置约在中值（pos 48），自2025年4月关税冲击低点至2026年1月高点累计反弹34.9%后，进入浅幅回调。该板块今年以来回报约-2.7%，在全部GICS板块中垫底，而标普500涨+6.3%。当前反通胀/增长上行格局（周期板块+11%、油价+19%、铜金比+18%）理论上有利于金融，但净息差压力、按揭发放量收缩以及资金持续流向AI受益型科技巨头，使得等权篮子承压。等权vs市值权重+2.9%小幅利好，但成长跑赢价值达-15.2%，美元指数+3.4%亦对跨国银行构成额外阻力，整体符合周期中段整固特征。"
+      "now_zh": "金融（等权）当前处于扩张/趋势运行阶段，但周期位置约在中值（pos 48），自2025年4月关税冲击低点至2026年1月高点累计反弹34.9%后，进入浅幅回调。该板块今年以来回报约-2.7%，在全部GICS板块中垫底，而标普500涨+6.3%。当前反通胀/增长上行格局（周期板块+11%、油价+19%、铜金比+18%）理论上有利于金融，但净息差压力、按揭发放量收缩以及资金持续流向AI受益型科技巨头，使得等权篮子承压。等权vs市值权重+2.9%小幅利好，但成长跑赢价值达-15.2%，美元指数+3.4%亦对跨国银行构成额外阻力，整体符合周期中段整固特征。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "credit.spread_regime.v1",
+      "prev_revision": null
     },
     "us_sector_health": {
       "legs": {
@@ -16025,7 +16177,11 @@
         }
       },
       "now": "Health Care (EW) is in an Expansion/Trending phase (pos 42.5, BUY signal, above the 200-day MA) but ranks a weak 26th of all series by RS. The current macro quad is reflation/growth-up -- cyclicals +11.2% vs defensives +6.9% -- which structurally drags on healthcare's relative performance as capital rotates into Energy (+21.5%) and Industrials (+15.8%). The sector has gained +22.7% since the Apr-2025 trough in absolute terms, but is one of the two biggest laggards in this rally, trailing SPY by roughly 26pp. The setup is defensive-beta participation in a cyclically-led tape: the sector benefits from the VIX retreat (52 to 18) and slight dollar softening (-1.6% DXY), but faces persistent headwinds from Medicare Advantage margin compression, ongoing CMS rate uncertainty under the current administration, and Medicaid reform risk. Semis +241% and high-beta outperformance of +111pp confirm the market is in a risk-on melt-up that historically leaves healthcare behind relative to SPY.",
-      "now_zh": "医疗保健（等权）目前处于扩张/趋势阶段（仓位42.5，买入信号，位于200日均线上方），但相对强度排名仅第26位。当前宏观象限为再通胀/增长向上，周期性行业（+11.2%）显著跑赢防御性行业（+6.9%），资金向能源和工业板块轮动，结构性压制医疗保健的相对表现。板块自2025年4月低点以来绝对收益约22.7%，但仍是本轮上涨中落后幅度最大的板块之一，跑输标普500指数约26个百分点。当前状态为防御性贝塔跟涨：受益于VIX回落（52至18）和美元小幅走弱（-1.6%），但Medicare Advantage利润率持续受压、CMS费率政策不确定性及医疗补助改革风险构成持续拖累。半导体（+241%）和高贝塔（+111pp）大幅跑赢，印证市场正处于风险偏好主导的融断行情，历史上此类环境往往令医疗保健相对标普500明显落后。"
+      "now_zh": "医疗保健（等权）目前处于扩张/趋势阶段（仓位42.5，买入信号，位于200日均线上方），但相对强度排名仅第26位。当前宏观象限为再通胀/增长向上，周期性行业（+11.2%）显著跑赢防御性行业（+6.9%），资金向能源和工业板块轮动，结构性压制医疗保健的相对表现。板块自2025年4月低点以来绝对收益约22.7%，但仍是本轮上涨中落后幅度最大的板块之一，跑输标普500指数约26个百分点。当前状态为防御性贝塔跟涨：受益于VIX回落（52至18）和美元小幅走弱（-1.6%），但Medicare Advantage利润率持续受压、CMS费率政策不确定性及医疗补助改革风险构成持续拖累。半导体（+241%）和高贝塔（+111pp）大幅跑赢，印证市场正处于风险偏好主导的融断行情，历史上此类环境往往令医疗保健相对标普500明显落后。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "us_sector_industrials": {
       "legs": {
@@ -16369,7 +16525,11 @@
         }
       },
       "now": "Industrials (Equal-Weight) is in an expansion/trending phase (pos 38.8, rs_rank 22), ranked 3rd among GICS sectors in the current window at +15.8%, trailing only Tech (+24.3%) and Energy (+21.5%). The backdrop is a reflation/growth-up quad: cyclicals outpace defensives by ~4 pp, oil +19.2%, copper/gold +18.3%, and equal-weight breadth beats cap-weight by +2.9 pp, all favoring cyclicals with real-asset exposure. The current rally leg from the April 2025 Liberation Day trough (+57.3%) is driven by the May 2025 US-China tariff truce (duties cut from 125% to 10%), renewed AI/data-center capex driving demand for electrical equipment, HVAC, and heavy construction, plus sustained elevated defense spending. The sector sits above its 200-day MA with a BUY signal; at cycle-position 38.8 it is mid-leg, not yet at a historic peak setup.",
-      "now_zh": "工业板块（等权）处于扩张/趋势阶段（周期位置38.8，相对强度排名第22），当前窗口涨幅15.8%，在11个GICS行业中位居第三，仅落后于科技（+24.3%）和能源（+21.5%）。宏观背景为再通胀/增长向上象限：周期性行业跑赢防御性行业约4个百分点，油价+19.2%，铜/金比+18.3%，等权跑赢市值加权+2.9个百分点，整体有利于具有实物资产敞口的周期股。本轮自2025年4月\"解放日\"低点启动的反弹（+57.3%）受益于：2025年5月中美关税休战（关税从125%降至10%）、AI/数据中心资本支出驱动电气设备与重型建筑需求，以及持续高位的国防开支。板块位于200日均线上方，信号为\"买入\"；周期位置38.8仍属中段，尚未达到历史顶部形态。"
+      "now_zh": "工业板块（等权）处于扩张/趋势阶段（周期位置38.8，相对强度排名第22），当前窗口涨幅15.8%，在11个GICS行业中位居第三，仅落后于科技（+24.3%）和能源（+21.5%）。宏观背景为再通胀/增长向上象限：周期性行业跑赢防御性行业约4个百分点，油价+19.2%，铜/金比+18.3%，等权跑赢市值加权+2.9个百分点，整体有利于具有实物资产敞口的周期股。本轮自2025年4月\"解放日\"低点启动的反弹（+57.3%）受益于：2025年5月中美关税休战（关税从125%降至10%）、AI/数据中心资本支出驱动电气设备与重型建筑需求，以及持续高位的国防开支。板块位于200日均线上方，信号为\"买入\"；周期位置38.8仍属中段，尚未达到历史顶部形态。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "business.cycle_trough.v1",
+      "prev_revision": null
     },
     "us_sector_materials": {
       "legs": {
@@ -16785,7 +16945,11 @@
         }
       },
       "now": "Materials (Equal-Weight) is in a Downturn rolling-over phase (cycle position 45.8, RS rank 36 out of 100, bottom-tertile vs SPY and sector peers). The basket holds above its 200-day moving average so the structural trend is intact, but momentum has faded since the Feb-2026 peak. The live rotation reads reflation/growth-up (cyclicals +11.2% vs defensives +6.9%, oil +19.2%, copper-gold +18.3%), nominally supportive for commodity producers, yet a DXY that has strengthened +3.4% is a direct headwind for materials multinationals. Broad participation (equal-weight beating cap-weight by +2.9%) provides mild underlying support, but Materials trails the cycle leaders (Tech +24.3%, Energy +21.5%, Industrials +15.8%). A hawkish Fed tone and stronger dollar are actively repricing copper toward 2026 lows (Bloomberg June 29 2026), consistent with the sector rolling over from a late-reflation cycle peak.",
-      "now_zh": "材料（等权）当前处于\"下行/滚顶\"阶段（周期位置45.8，相对强弱排名36，处于后三分之一区间）。价格仍位于200日均线之上，长期趋势未破，但动能自2026年2月高点以来明显衰减。当前轮动环境读数为\"通胀反弹/增长向上\"象限（顺周期板块+11.2%对比防御+6.9%，油价+19.2%，铜金比+18.3%），名义上对大宗商品生产商有利，但美元指数上涨3.4%对材料类跨国企业构成直接阻力。等权超越市值权重2.9%意味着参与面较广，提供一定支撑，但材料整体仍落后于领涨板块（科技+24.3%、能源+21.5%、工业+15.8%）。综合看，材料处于\"通胀反弹末期、涨势受阻\"格局，美联储偏鹰立场叠加强美元正在将铜价压至2026年低位，与板块从周期顶部滚落的节奏一致。"
+      "now_zh": "材料（等权）当前处于\"下行/滚顶\"阶段（周期位置45.8，相对强弱排名36，处于后三分之一区间）。价格仍位于200日均线之上，长期趋势未破，但动能自2026年2月高点以来明显衰减。当前轮动环境读数为\"通胀反弹/增长向上\"象限（顺周期板块+11.2%对比防御+6.9%，油价+19.2%，铜金比+18.3%），名义上对大宗商品生产商有利，但美元指数上涨3.4%对材料类跨国企业构成直接阻力。等权超越市值权重2.9%意味着参与面较广，提供一定支撑，但材料整体仍落后于领涨板块（科技+24.3%、能源+21.5%、工业+15.8%）。综合看，材料处于\"通胀反弹末期、涨势受阻\"格局，美联储偏鹰立场叠加强美元正在将铜价压至2026年低位，与板块从周期顶部滚落的节奏一致。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "us_sector_realestate": {
       "legs": {
@@ -17181,7 +17345,11 @@
         }
       },
       "now": "Real Estate (Equal-Weight) is in a Topping phase at the 94th percentile of its historical return window, posting a SELL signal after a 23.6% rally from the April 2025 trough. The current reflation/growth-up quad (cyclicals +11.2% vs defensives +6.9%, oil +19.2%, copper-gold +18.3%) is structurally hostile for rate-sensitive REITs: Tech and Energy dominate leadership by a wide margin while Real Estate sits at rs_rank 19 out of the full universe. A stronger DXY (+3.4%) adds friction to financing costs, and TLT has barely moved (+1.1%), meaning the yield relief that typically propels REIT rallies is absent. High-beta has crushed low-vol by +20.7 percentage points, signaling market appetite for risk assets far more levered than real estate. The basket is at a structural cycle peak with deteriorating relative strength, a setup that historically precedes multi-month drawdowns when yields plateau at elevated levels and growth momentum stays concentrated in cyclicals.",
-      "now_zh": "美国房地产（等权）板块目前处于\"见顶\"阶段，历史回报百分位高达94%，并发出SELL信号，自2025年4月低点已累计反弹23.6%。当前通胀/增长上行格局（周期股+11.2%、防御股+6.9%、油价+19.2%、铜金比+18.3%）对利率敏感型REITs明显不利：科技与能源主导轮动，房地产相对强弱排名仅第19位。美元持续走强（DXY +3.4%）加大融资成本压力，长债（TLT）几乎原地踏步（+1.1%），驱动REITs上涨的利率下行动力明显缺失。高贝塔大幅跑赢低波动20.7个百分点，反映市场资金追逐进攻性资产。综合来看，板块处于周期顶部区域、相对强弱恶化，历史上这一组合往往预示数月级别回调。"
+      "now_zh": "美国房地产（等权）板块目前处于\"见顶\"阶段，历史回报百分位高达94%，并发出SELL信号，自2025年4月低点已累计反弹23.6%。当前通胀/增长上行格局（周期股+11.2%、防御股+6.9%、油价+19.2%、铜金比+18.3%）对利率敏感型REITs明显不利：科技与能源主导轮动，房地产相对强弱排名仅第19位。美元持续走强（DXY +3.4%）加大融资成本压力，长债（TLT）几乎原地踏步（+1.1%），驱动REITs上涨的利率下行动力明显缺失。高贝塔大幅跑赢低波动20.7个百分点，反映市场资金追逐进攻性资产。综合来看，板块处于周期顶部区域、相对强弱恶化，历史上这一组合往往预示数月级别回调。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "housing.bubble_peak.v1",
+      "prev_revision": null
     },
     "us_sector_staples": {
       "legs": {
@@ -17421,7 +17589,11 @@
         }
       },
       "now": "Consumer Staples (Equal-Weight) is in an Expansion/Trending phase at 43.9% of its historical range (position 43.9), well above the 200-day moving average, with a BUY signal, but ranks only 29th in relative strength versus peers — confirming it is participating in the rally without leading it. The current regime is reflation/growth-up: cyclicals (+11.2%) are running well ahead of defensives (+6.9%), with Tech, Energy, and Industrials all posting double-digit YTD gains while Staples captures mid-single-digit gains. Oil up 19.2% and copper-gold +18.3% underscore the reflationary tilt, which structurally pulls flows away from bond-proxy defensives like Staples. The DXY is up 3.4%, a mild headwind for multinationals in the basket. Staples is above water and trending but is a laggard in this cyclical tape — consistent with its historical pattern of participation without leadership when growth assets are in the driver's seat.",
-      "now_zh": "必需消费（等权）目前处于扩张/趋势阶段，历史区间位置43.9%，站稳200日均线，系统信号为买入，但相对强度排名仅第29位，显示该板块跟随市场上涨而非领涨。当前宏观格局为再通胀/增长向上：周期股（+11.2%）明显领先防御股（+6.9%），科技、能源与工业均录得两位数涨幅，必需消费仅跟随。油价+19.2%、铜金比+18.3%强化了再通胀主题，在此环境下资金结构性流出类债券防御板块。美元指数上涨3.4%，对篮子内跨国企业构成温和阻力。整体而言，必需消费处于上涨但落后于周期股的典型状态，与历史上增长资产主导时该板块参与但不领跑的规律一致。"
+      "now_zh": "必需消费（等权）目前处于扩张/趋势阶段，历史区间位置43.9%，站稳200日均线，系统信号为买入，但相对强度排名仅第29位，显示该板块跟随市场上涨而非领涨。当前宏观格局为再通胀/增长向上：周期股（+11.2%）明显领先防御股（+6.9%），科技、能源与工业均录得两位数涨幅，必需消费仅跟随。油价+19.2%、铜金比+18.3%强化了再通胀主题，在此环境下资金结构性流出类债券防御板块。美元指数上涨3.4%，对篮子内跨国企业构成温和阻力。整体而言，必需消费处于上涨但落后于周期股的典型状态，与历史上增长资产主导时该板块参与但不领跑的规律一致。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "us_sector_tech": {
       "legs": {
@@ -17817,7 +17989,11 @@
         }
       },
       "now": "Technology (Equal-Weight) sits at the Topping phase (77.1 percentile of its historical range) with an RS rank of 10 out of 11 sectors — the top-ranked sector currently. The now_ctx confirms Tech is leading the tape at +24.3% YTD, with semis (SMH) +67.9%, in a reflation/growth-up quad (cyclicals +11.2% vs defensives +6.9%; oil +19.2%). However, a SELL signal is active at cycle position 77.1, consistent with late-cycle topping behavior. Growth-minus-value is deeply negative (-15.2%), a divergence from typical tech leadership regimes that warrants caution. Equal-weight breadth is marginally positive vs cap-weight (+2.9%), suggesting the rally has broadened somewhat but Tech remains the concentrated leader — a setup that historically precedes rotation fatigue.",
-      "now_zh": "科技（等权）目前处于周期顶部阶段（历史区间第77.1百分位），相对强度在11个板块中排名第一。当前背景显示科技年初至今涨幅达24.3%，半导体指数（SMH）+67.9%，处于再通胀/增长上行象限（周期性行业平均+11.2%，防御性行业+6.9%；油价+19.2%）。然而，在77.1的周期位置，系统发出卖出信号，与历史上的周期顶部特征一致。成长股相对价值股表现大幅落后（-15.2%），与典型的科技领涨周期形成背离，需保持警惕。等权相对市值加权略为领先（+2.9%），提示涨势有所扩散，但科技仍是集中领涨板块——历史上这类格局往往预示轮动疲劳即将到来。"
+      "now_zh": "科技（等权）目前处于周期顶部阶段（历史区间第77.1百分位），相对强度在11个板块中排名第一。当前背景显示科技年初至今涨幅达24.3%，半导体指数（SMH）+67.9%，处于再通胀/增长上行象限（周期性行业平均+11.2%，防御性行业+6.9%；油价+19.2%）。然而，在77.1的周期位置，系统发出卖出信号，与历史上的周期顶部特征一致。成长股相对价值股表现大幅落后（-15.2%），与典型的科技领涨周期形成背离，需保持警惕。等权相对市值加权略为领先（+2.9%），提示涨势有所扩散，但科技仍是集中领涨板块——历史上这类格局往往预示轮动疲劳即将到来。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "us_sector_utilities": {
       "legs": {
@@ -18161,7 +18337,11 @@
         }
       },
       "now": "Utilities (Equal-Weight) is in a Bottoming / Trough phase as of late June 2026, sitting near the 14th percentile of its historical range (pos=14.3) with an RS rank of 35 — deeply lagging the reflation-led tape where Tech (+24%), Energy (+21%), and Industrials (+16%) are dominating. The current macro quad is reflation/growth-up, exactly the environment that structurally disadvantages rate-sensitive defensives: cyclicals are running +11.2% vs defensives +6.9%, high-beta is beating low-vol by +20.7 points, and oil is up 19.2%. The sector is technically above its 200-day moving average and has triggered a cycle BUY signal — consistent with a late-cycle trough where rich cyclical valuations and extreme breadth divergence historically precede a mean-reversion bid into defensives. The AI data-center power demand secular tailwind (a multi-year capex supercycle for grid buildout) provides a fundamental floor, but the immediate macro setup remains a headwind until growth/reflation momentum stalls or rate expectations soften.",
-      "now_zh": "公用事业（等权）截至2026年6月下旬处于筑底/低谷阶段，历史区间位仅14.3分位，相对强度排名35——远落后于由再通胀主导的行情（科技+24%、能源+21%、工业+16%领涨）。当前宏观象限为再通胀/增长向上，正是利率敏感型防御板块结构性承压的环境：周期股跑赢防御股（+11.2% vs +6.9%），高Beta跑赢低波动达+20.7个百分点，油价涨幅19.2%。板块在技术上仍处于200日均线之上，并触发了周期BUY信号——这与历史上周期性低点特征吻合，在该时点大盘周期股估值偏贵、广度背离极端，历史上往往预示防御板块将迎来均值回归行情。AI数据中心电力需求驱动的多年资本支出超级周期提供了基本面底部支撑，但在增长/再通胀动能放缓或利率预期软化之前，近期宏观环境仍是阻力。"
+      "now_zh": "公用事业（等权）截至2026年6月下旬处于筑底/低谷阶段，历史区间位仅14.3分位，相对强度排名35——远落后于由再通胀主导的行情（科技+24%、能源+21%、工业+16%领涨）。当前宏观象限为再通胀/增长向上，正是利率敏感型防御板块结构性承压的环境：周期股跑赢防御股（+11.2% vs +6.9%），高Beta跑赢低波动达+20.7个百分点，油价涨幅19.2%。板块在技术上仍处于200日均线之上，并触发了周期BUY信号——这与历史上周期性低点特征吻合，在该时点大盘周期股估值偏贵、广度背离极端，历史上往往预示防御板块将迎来均值回归行情。AI数据中心电力需求驱动的多年资本支出超级周期提供了基本面底部支撑，但在增长/再通胀动能放缓或利率预期软化之前，近期宏观环境仍是阻力。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     }
   },
   "detector_version": 2,
@@ -18516,7 +18696,11 @@
         }
       },
       "now": "XLB is rolling over (RS rank #7 out of 11) after its 2025-2026 post-tariff-crash rally stalled. The sector is mid-pack year-to-date (+13.3%, #4) in a reflation/growth-up quad where cyclicals are beating defensives (11.2% vs 6.9%) and oil ripped +19.2%, but a +3.4% DXY (firmed by the Hormuz oil shock) is a direct headwind for dollar-priced metals and soft Chinese industrial demand is sapping the bid for copper and specialty chemicals. Copper-over-gold (+18.3) signals structural physical supply tightness rather than demand-driven momentum, and although breadth has broadened (equal-weight beat cap-weight by +2.9%), XLB's leadership role from the 2025 recovery has faded as Tech (+24.3%) and Energy (+21.5%) now absorb the bulk of cyclical flows. The current phase is a momentum plateau where the dollar ceiling and China demand drag prevent re-acceleration despite a supportive macro quad.",
-      "now_zh": "XLB正处于回落阶段（相对强度排名第7/11），2025-2026年关税崩跌后的反弹行情已告一段落。年初至今板块表现居中（+13.3%，排名第4），处于再通胀/增长向上象限——周期股整体跑赢防御股（11.2%对比6.9%），原油强势上涨（+19.2%）——但美元走强（DXY +3.4%，受霍尔木兹海峡油价冲击推动）对以美元计价的金属构成直接逆风，中国工业需求疲软也压制了铜及特种化工品的买盘。铜金比（+18.3）显示实物供应结构性紧张而非需求驱动的狂热，尽管市场广度已经扩散（等权重跑赢市值加权+2.9%），但2025年复苏期间XLB的领涨地位已褪色——科技（+24.3%）与能源（+21.5%）正吸走大部分周期性资金流入。当前阶段是动能高原期，美元天花板与中国需求拖累阻止了板块重新加速，尽管宏观象限仍具支撑。"
+      "now_zh": "XLB正处于回落阶段（相对强度排名第7/11），2025-2026年关税崩跌后的反弹行情已告一段落。年初至今板块表现居中（+13.3%，排名第4），处于再通胀/增长向上象限——周期股整体跑赢防御股（11.2%对比6.9%），原油强势上涨（+19.2%）——但美元走强（DXY +3.4%，受霍尔木兹海峡油价冲击推动）对以美元计价的金属构成直接逆风，中国工业需求疲软也压制了铜及特种化工品的买盘。铜金比（+18.3）显示实物供应结构性紧张而非需求驱动的狂热，尽管市场广度已经扩散（等权重跑赢市值加权+2.9%），但2025年复苏期间XLB的领涨地位已褪色——科技（+24.3%）与能源（+21.5%）正吸走大部分周期性资金流入。当前阶段是动能高原期，美元天花板与中国需求拖累阻止了板块重新加速，尽管宏观象限仍具支撑。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "xlc": {
       "legs": {
@@ -18704,7 +18888,11 @@
         }
       },
       "now": "BOTTOMING (RS #10, deeply washed out) — XLC is the tape's worst sector at -9.6% (rank 11/11) since the January 2026 peak while Tech (+24.3%) and a +67.9% semis melt-up (SMH) lead a high-beta-over-low-vol risk-on regime (+20.7%). The contradiction is that this is a growth-up/reflation quad where cyclicals beat defensives by +4.3 points, yet growth is LAGGING value by -15.2% — confirming the bid is in semis, energy, and industrials (the AI infrastructure build), not in Meta/Alphabet (the AI spend recipients). The AI capex trap narrative — Meta guiding 2026 capex up to $125-145bn (raised from $115-135bn) and Alphabet $180-190bn against decelerating revenue-growth signals — has repriced the mega-cap ad/platform names that constitute ~55% of XLC. With VIX calm (14-18), breadth broadening (equal-weight +2.9% over cap-weight), and oil at +19.2% (a reflation signal), the washout looks like structural neglect rather than panic liquidation, positioning XLC to recover if Q2 2026 earnings show AI monetization accelerating faster than capex consumption.",
-      "now_zh": "XLC目前处于底部形成阶段（相对强度排名第10），自2026年1月高点以来大幅落后，表现为标普11个板块中垫底（-9.6%），而科技板块（+24.3%）与半导体（SMH +67.9%）引领高贝塔跑赢低波动达+20.7%的风险偏好行情。矛盾之处在于：当前处于成长上行/再通胀象限，周期股跑赢防御股+4.3个百分点，但成长风格却大幅跑输价值风格-15.2%——确认此轮资金流向半导体、能源和工业（AI基础设施建设方），而非Meta/Alphabet（AI支出受益方）。\"资本开支陷阱\"叙事——Meta将2026年资本开支指引上调至1250-1450亿美元（原为1150-1350亿美元）、Alphabet指引1800-1900亿美元，而营收增速放缓——已重新定价占XLC约55%权重的大型科技广告/平台股。VIX平静（14-18）、市场广度扩散（等权重跑赢市值加权+2.9%）、油价上涨19.2%（再通胀信号），此波下跌更像是结构性忽视而非恐慌性清仓，若2026年二季度财报显示AI变现加速快于资本开支消耗，XLC有望迎来修复。"
+      "now_zh": "XLC目前处于底部形成阶段（相对强度排名第10），自2026年1月高点以来大幅落后，表现为标普11个板块中垫底（-9.6%），而科技板块（+24.3%）与半导体（SMH +67.9%）引领高贝塔跑赢低波动达+20.7%的风险偏好行情。矛盾之处在于：当前处于成长上行/再通胀象限，周期股跑赢防御股+4.3个百分点，但成长风格却大幅跑输价值风格-15.2%——确认此轮资金流向半导体、能源和工业（AI基础设施建设方），而非Meta/Alphabet（AI支出受益方）。\"资本开支陷阱\"叙事——Meta将2026年资本开支指引上调至1250-1450亿美元（原为1150-1350亿美元）、Alphabet指引1800-1900亿美元，而营收增速放缓——已重新定价占XLC约55%权重的大型科技广告/平台股。VIX平静（14-18）、市场广度扩散（等权重跑赢市值加权+2.9%）、油价上涨19.2%（再通胀信号），此波下跌更像是结构性忽视而非恐慌性清仓，若2026年二季度财报显示AI变现加速快于资本开支消耗，XLC有望迎来修复。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "xle": {
       "legs": {
@@ -19358,7 +19546,11 @@
         }
       },
       "now": "Energy is rolling over as of mid-2026, printing RS rank #11 -- the weakest sector -- even though it still sits #2 over the trailing window (+21.5%). The current tape is a tech/semis melt-up (SMH +67.9%, high-beta over low-vol +20.7%), and capital is rotating hard into AI growth away from the post-ceasefire oil-premium unwind: a mid-June 2026 Iran-Israel ceasefire and Hormuz-reopening expectations have drained the war-risk bid out of crude (-23.1% oil from the March 2026 peak), pulling XLE back below levels it held during the conflict. The reflation-quad backdrop (cyclicals +11.2% vs defensives +6.9%, oil +19.2% trailing) offers a re-bid scenario if the AI melt-up narrows, but a firming dollar (+3.4% DXY) and the narrow mega-cap tape suggest re-rotation is not imminent. XLE is a value/income play out of favor in a growth-led cycle phase.",
-      "now_zh": "截至2026年中，能源板块正在见顶回落，相对强弱排名第11——为最弱板块——尽管在拖尾窗口内仍以+21.5%位居第2。当前盘面是科技/半导体主导的逼空上涨（SMH +67.9%，高贝塔超低波动+20.7%），资金正大举从伊朗停火后的油价风险溢价抽离处轮动进入AI成长：2026年6月中旬停火及霍尔木兹重新开放预期已将战争风险溢价从原油中抽干（原油自3月高点下跌-23.1%），将XLE拉回战争期间所守位置以下。再通胀象限背景（周期+11.2%超防御+6.9%，石油+19.2%拖尾）为AI行情收窄时的重新竞价提供了可能，但美元走强（+3.4% DXY）与巨头主导的窄幅盘面表明再轮动并不迫切。XLE目前是在成长主导周期阶段不受待见的价值/收益型资产。"
+      "now_zh": "截至2026年中，能源板块正在见顶回落，相对强弱排名第11——为最弱板块——尽管在拖尾窗口内仍以+21.5%位居第2。当前盘面是科技/半导体主导的逼空上涨（SMH +67.9%，高贝塔超低波动+20.7%），资金正大举从伊朗停火后的油价风险溢价抽离处轮动进入AI成长：2026年6月中旬停火及霍尔木兹重新开放预期已将战争风险溢价从原油中抽干（原油自3月高点下跌-23.1%），将XLE拉回战争期间所守位置以下。再通胀象限背景（周期+11.2%超防御+6.9%，石油+19.2%拖尾）为AI行情收窄时的重新竞价提供了可能，但美元走强（+3.4% DXY）与巨头主导的窄幅盘面表明再轮动并不迫切。XLE目前是在成长主导周期阶段不受待见的价值/收益型资产。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "oil.regime_shift.v1",
+      "prev_revision": null
     },
     "xlf": {
       "legs": {
@@ -19899,7 +20091,11 @@
         }
       },
       "now": "XLF is in an Expansion/Trending phase, RS rank #5, sitting at the 51st percentile of its cycle range -- mid-cycle, not extended. The immediate picture is one of short-term underperformance: -2.7% (rank 9/11) in a tape dominated by a narrow semis-led melt-up (SMH +67.9%) where capital flows into Tech/Energy/Industrials and leaves cyclical-value banks behind. The underlying macro backdrop is constructive for financials structurally: a reflation/growth-up quad (cyclicals +11.2% vs defensives +6.9%, copper-gold +18.3%, oil +19.2%), broadening participation (equal-weight outperforming cap-weight by +2.9%), and a negative growth-minus-value spread (-15.2%) all favor value/banks on a rotation basis. Deregulation momentum, the M&A/capital-markets revival, and stable-to-widening NIM are the bull case; the 2026 Fed hiking-bias re-pricing and a stronger dollar (+3.4% DXY) add headwinds. XLF is not broken -- it is out of favor in a mega-cap growth melt-up, and a rotation from growth to value/breadth is the single catalyst to watch for re-acceleration.",
-      "now_zh": "XLF处于扩张/趋势阶段，RS排名第5，周期位置约51百分位——处于中段，尚未过热。短期表现承压：-2.7%（排名9/11），行情被半导体领涨的窄幅熔涨（SMH +67.9%）主导，资金流向科技/能源/工业，价值类银行被边缘化。宏观底色仍对金融板块整体有利：再通胀/增长上行象限（周期股+11.2% vs 防御股+6.9%，铜金比+18.3%，油价+19.2%），市场广度扩张（等权重领先市值加权+2.9%），成长-价值利差-15.2%均从轮动角度支持价值/银行。放松监管动能、并购/资本市场复苏及稳定至扩张的净息差构成多头逻辑；2026年美联储加息预期重新定价和强势美元（+3.4% DXY）形成逆风。XLF并未走坏——只是在大型股成长行情中暂时失宠，市场风格从成长向价值/广度的切换，是最值得关注的加速催化剂。"
+      "now_zh": "XLF处于扩张/趋势阶段，RS排名第5，周期位置约51百分位——处于中段，尚未过热。短期表现承压：-2.7%（排名9/11），行情被半导体领涨的窄幅熔涨（SMH +67.9%）主导，资金流向科技/能源/工业，价值类银行被边缘化。宏观底色仍对金融板块整体有利：再通胀/增长上行象限（周期股+11.2% vs 防御股+6.9%，铜金比+18.3%，油价+19.2%），市场广度扩张（等权重领先市值加权+2.9%），成长-价值利差-15.2%均从轮动角度支持价值/银行。放松监管动能、并购/资本市场复苏及稳定至扩张的净息差构成多头逻辑；2026年美联储加息预期重新定价和强势美元（+3.4% DXY）形成逆风。XLF并未走坏——只是在大型股成长行情中暂时失宠，市场风格从成长向价值/广度的切换，是最值得关注的加速催化剂。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "credit.spread_regime.v1",
+      "prev_revision": null
     },
     "xli": {
       "legs": {
@@ -20226,7 +20422,11 @@
         }
       },
       "now": "XLI is the genuine RS #2 sector leader in 2026 (+15.8% leg return, relative-strength rank 2, #3 by raw return behind Tech and Energy), powered by the reflation/growth-up quad where cyclicals (+11.2%) are decisively outrunning defensives (+6.9%). The setup is distinctively broad-based: equal-weight is beating cap-weight by +2.9%, oil is up +19.2% and copper-gold +18.3, confirming a physical-economy demand pulse rather than a financial-engineering melt-up. Industrials leadership rests on three durable structural pillars: AI-power/datacenter electrification capex (GE Vernova record data-center orders, Eaton transformer/switchgear shortage), reshoring-linked machinery orders, and elevated defense budgets, all of which proved resilient through the 2026 Iran/Hormuz oil-shock episode (blockade reimposed June 20, 2026). With VIX low (14-18) and the sector at pos 46.8 within the current rally leg off the April 2025 low, this reads as mid-expansion rather than a top signal; the key watch is whether ISM Manufacturing sustains above 50 and whether the semis bid (+67.9%) keeps capex orders flowing into industrial end-markets.",
-      "now_zh": "工业股板块（XLI）目前是2026年名副其实的相对强度第二领头板块（本轮上涨+15.8%、相对强度排名第2、按原始回报为第3，仅次于科技与能源），在再通胀/增长向上象限中大幅跑赢——周期股（+11.2%）对防御股（+6.9%）构成明显优势。当前行情具有鲜明的宽基特征：等权指数跑赢市值加权+2.9%，油价+19.2%、铜金比+18.3，印证的是实体经济需求脉冲而非金融工程式融涨。工业股领涨的结构性支柱有三：AI电力/数据中心电气化资本开支（GE Vernova数据中心订单创纪录、伊顿变压器/开关设备短缺）、回流制造业带动的机械订单，以及高位国防预算——即便在2026年伊朗/霍尔木兹油价冲击中（6月20日重新封锁海峡）也展现了韧性。VIX处于低位（14-18），板块自2025年4月低点以来处于本轮上涨的46.8%分位，更像扩张中段而非顶部信号；关键风险监测点在于ISM制造业能否维持50以上，以及半导体强劲买盘（+67.9%）能否持续将资本开支订单传导至工业终端市场。"
+      "now_zh": "工业股板块（XLI）目前是2026年名副其实的相对强度第二领头板块（本轮上涨+15.8%、相对强度排名第2、按原始回报为第3，仅次于科技与能源），在再通胀/增长向上象限中大幅跑赢——周期股（+11.2%）对防御股（+6.9%）构成明显优势。当前行情具有鲜明的宽基特征：等权指数跑赢市值加权+2.9%，油价+19.2%、铜金比+18.3，印证的是实体经济需求脉冲而非金融工程式融涨。工业股领涨的结构性支柱有三：AI电力/数据中心电气化资本开支（GE Vernova数据中心订单创纪录、伊顿变压器/开关设备短缺）、回流制造业带动的机械订单，以及高位国防预算——即便在2026年伊朗/霍尔木兹油价冲击中（6月20日重新封锁海峡）也展现了韧性。VIX处于低位（14-18），板块自2025年4月低点以来处于本轮上涨的46.8%分位，更像扩张中段而非顶部信号；关键风险监测点在于ISM制造业能否维持50以上，以及半导体强劲买盘（+67.9%）能否持续将资本开支订单传导至工业终端市场。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "business.cycle_trough.v1",
+      "prev_revision": null
     },
     "xlk": {
       "legs": {
@@ -20650,7 +20850,11 @@
         }
       },
       "now": "Tech is the undisputed #1 sector (RS rank 1, +24.3% vs SPY +6.3%) sitting at cycle position ~84/100 in a topping phase. The reflation/growth-up quad has been dominated by AI-capex spending by hyperscalers, with semis (SMH +67.9%) leading in a high-beta (+20.7% vs low-vol) tape. Critically, equal-weight is slightly outperforming cap-weight (+2.9%), suggesting early broadening beneath the leaders -- a late-cycle signature. The leg crested in early June 2026 when Broadcom (June 3 Q2 report) stuck to its existing full-year AI semiconductor target rather than raising it -- despite AI revenue up 143% -- detonating a $1T+ semis wipeout; XLK is now in distribution with the SELL signal active, growth underperforming value (-15.2% growth-value spread), and dollar strengthening (DXY +3.4%) providing a headwind to multinationals -- the classic setup preceding a major inflection.",
-      "now_zh": "科技板块以绝对优势蝉联第一（RS排名第1，+24.3% vs 标普+6.3%），周期位置约84/100，处于顶部阶段。再通胀/增长上行象限由超大规模云厂商的AI资本开支主导，半导体（SMH +67.9%）在高贝塔（+20.7% vs 低波动）的盘面中领涨。值得注意的是，等权微幅跑赢市值加权（+2.9%），显示领涨股之下出现初步扩散——这是周期晚期的典型特征。本轮上涨腿在2026年6月初见顶，博通（6月3日二季报）尽管AI营收同比大增143%，却仅维持而未上调全年AI芯片目标，引发超过1万亿美元的半导体市值蒸发；XLK目前处于派发阶段，卖出信号激活，成长股跑输价值（成长-价值价差-15.2%），强美元（DXY +3.4%）对跨国公司形成阻力——这是重大转折点前的经典布局。"
+      "now_zh": "科技板块以绝对优势蝉联第一（RS排名第1，+24.3% vs 标普+6.3%），周期位置约84/100，处于顶部阶段。再通胀/增长上行象限由超大规模云厂商的AI资本开支主导，半导体（SMH +67.9%）在高贝塔（+20.7% vs 低波动）的盘面中领涨。值得注意的是，等权微幅跑赢市值加权（+2.9%），显示领涨股之下出现初步扩散——这是周期晚期的典型特征。本轮上涨腿在2026年6月初见顶，博通（6月3日二季报）尽管AI营收同比大增143%，却仅维持而未上调全年AI芯片目标，引发超过1万亿美元的半导体市值蒸发；XLK目前处于派发阶段，卖出信号激活，成长股跑输价值（成长-价值价差-15.2%），强美元（DXY +3.4%）对跨国公司形成阻力——这是重大转折点前的经典布局。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "xlp": {
       "legs": {
@@ -20824,7 +21028,11 @@
         }
       },
       "now": "ROLLING OVER (RS #8) - staples are being starved, not broken: XLP is up ~8.8% YTD (rank #6) inside a reflation/growth-up quad where tech (+24.3%), energy (+21.5%), and industrials (+15.8%) are leading and cyclicals are outpacing defensives by ~430 bps (11.2% vs 6.9%). The 2025 flight-to-safety bid that lifted XLP has faded now that VIX has compressed toward the low-to-mid teens (14-18 range), high-beta over low-vol is running +20.7%, and semis are up 67.9%, all pulling flows away from low-vol defensive names. The value-over-growth rotation (growth minus value at -15.2%) is the one tail-risk for this configuration: if mega-cap leadership cracks and equal-weight continues to beat cap-weight (+2.9%), XLP could reclaim relative strength, but for now the sector is in a late-cycle starved-not-broken phase with no near-term catalyst for a defensive rotation.",
-      "now_zh": "滚顶（相对强弱排名第8）——必需消费品被边缘化，而非基本面受损：XLP年初至今涨约8.8%（排名第6），但身处反通胀/增长上行象限，科技（+24.3%）、能源（+21.5%）、工业（+15.8%）领跑，周期板块跑赢防御板块约430个基点（11.2%对6.9%）。曾支撑XLP的2025年避险买盘正在消退——VIX已回落至10多点的低位区间（14至18），高贝塔跑赢低波动+20.7%，半导体大涨67.9%，资金持续流出低波动防御性品种。成长跑输价值（成长减价值为-15.2%）是当前格局唯一的尾部风险：若大市值领涨股崩塌、等权重持续跑赢市值加权（+2.9%），XLP或重获相对强势；但当前板块仍处于被冷落而非受损的周期后期，无明显近期催化剂触发防御轮动。"
+      "now_zh": "滚顶（相对强弱排名第8）——必需消费品被边缘化，而非基本面受损：XLP年初至今涨约8.8%（排名第6），但身处反通胀/增长上行象限，科技（+24.3%）、能源（+21.5%）、工业（+15.8%）领跑，周期板块跑赢防御板块约430个基点（11.2%对6.9%）。曾支撑XLP的2025年避险买盘正在消退——VIX已回落至10多点的低位区间（14至18），高贝塔跑赢低波动+20.7%，半导体大涨67.9%，资金持续流出低波动防御性品种。成长跑输价值（成长减价值为-15.2%）是当前格局唯一的尾部风险：若大市值领涨股崩塌、等权重持续跑赢市值加权（+2.9%），XLP或重获相对强势；但当前板块仍处于被冷落而非受损的周期后期，无明显近期催化剂触发防御轮动。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "xlre": {
       "legs": {
@@ -21172,7 +21380,11 @@
         }
       },
       "now": "Real Estate is topping at RS rank #3 (pos ~81, SELL signal, above 200d), +12.1% YTD — an above-average absolute return that nonetheless trails the dominant risk-on melt-up where semis surged +67.9% and high-beta beat low-vol by +21 pts, starving the low-vol bond proxy of flows. The 2026 Iran/Hormuz oil shock has kept CPI elevated (~4.2%), imposing a Fed hiking bias that caps the duration trade (TLT only +1.1%); a stronger dollar (+3.4% DXY) adds a further headwind. Within-sector breadth is carried by AI-datacenter and industrial sub-REITs while office and retail lag; the reflation/growth-up quad (cyclicals +11.2% vs defensives +6.9%, oil +19.2%) means XLRE is riding coat-tails rather than leading, and with the sector ~80% through its cycle the risk/reward is skewing toward the next rate-driven selloff leg.",
-      "now_zh": "房地产板块处于筑顶阶段，相对强势排名第3（位置约81%，卖出信号，站上200日均线），年初至今上涨+12.1%——绝对收益尚可，但远落后于主导风险偏好的熔涨行情，半导体飙升+67.9%、高贝塔跑赢低波动+21个百分点，抽干了低波动债券替代品的资金流。2026年伊朗/霍尔木兹油价冲击令CPI居高不下（约4.2%），美联储鹰派倾向封住了久期交易（TLT仅+1.1%）；美元走强（DXY+3.4%）进一步构成宏观逆风。板块内部由AI数据中心和工业子REIT支撑，写字楼和零售类落后。再通胀/增长向上象限（周期股+11.2% vs 防御股+6.9%，油价+19.2%）意味着XLRE更多是顺势借力而非领涨；板块已完成约80%周期路径，风险/回报正向下一轮利率驱动的回调倾斜。"
+      "now_zh": "房地产板块处于筑顶阶段，相对强势排名第3（位置约81%，卖出信号，站上200日均线），年初至今上涨+12.1%——绝对收益尚可，但远落后于主导风险偏好的熔涨行情，半导体飙升+67.9%、高贝塔跑赢低波动+21个百分点，抽干了低波动债券替代品的资金流。2026年伊朗/霍尔木兹油价冲击令CPI居高不下（约4.2%），美联储鹰派倾向封住了久期交易（TLT仅+1.1%）；美元走强（DXY+3.4%）进一步构成宏观逆风。板块内部由AI数据中心和工业子REIT支撑，写字楼和零售类落后。再通胀/增长向上象限（周期股+11.2% vs 防御股+6.9%，油价+19.2%）意味着XLRE更多是顺势借力而非领涨；板块已完成约80%周期路径，风险/回报正向下一轮利率驱动的回调倾斜。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": "housing.bubble_peak.v1",
+      "prev_revision": null
     },
     "xlu": {
       "legs": {
@@ -21466,7 +21678,11 @@
         }
       },
       "now": "BOTTOMING (RS #9, pos 11.2%) — Utilities is being starved rather than broken: a tech/semis-led melt-up (SMH +67.9%, high-beta over low-vol +20.7%) is pulling capital out of low-vol defensives even as XLU still grinds +8.5% YTD. A strong dollar (+3.4% DXY) and a flat-to-firm rate backdrop (TLT only +1.1%) cap the bond proxy's re-rating room. The reflation/growth-up quad (cyclicals +11.2% vs defensives +6.9%; oil +19.2%) has not destroyed XLU — broadening breadth (equal-weight +2.9% over cap-weight) and the structural AI-datacenter electricity-demand thesis underpin a base. With VIX benign (14→18), any rotation off the narrow mega-cap tape or a yield rollover would trigger the next defensive re-rating leg.",
-      "now_zh": "触底中（RS排名第9，位置11.2%）——公用事业是被冷落而非走坏：科技/半导体引领的逼空行情（SMH +67.9%，高贝塔跑赢低波动 +20.7%）正将资金从低波动防御板块抽离，尽管XLU年初至今仍上涨+8.5%。强美元（+3.4% DXY）与企稳偏紧的利率环境（TLT仅+1.1%）压制着债券替代品的重估空间。通胀复苏/增长向上象限（周期股+11.2% vs 防御板块+6.9%；油价+19.2%）并未摧毁XLU——市场广度走宽（等权重跑赢市值加权+2.9%）与AI数据中心电力需求的结构性叙事构筑底部支撑。VIX仍温和（14→18），一旦狭窄的大盘股行情出现轮动或收益率回落，料将触发板块下一波防御性重估行情。"
+      "now_zh": "触底中（RS排名第9，位置11.2%）——公用事业是被冷落而非走坏：科技/半导体引领的逼空行情（SMH +67.9%，高贝塔跑赢低波动 +20.7%）正将资金从低波动防御板块抽离，尽管XLU年初至今仍上涨+8.5%。强美元（+3.4% DXY）与企稳偏紧的利率环境（TLT仅+1.1%）压制着债券替代品的重估空间。通胀复苏/增长向上象限（周期股+11.2% vs 防御板块+6.9%；油价+19.2%）并未摧毁XLU——市场广度走宽（等权重跑赢市值加权+2.9%）与AI数据中心电力需求的结构性叙事构筑底部支撑。VIX仍温和（14→18），一旦狭窄的大盘股行情出现轮动或收益率回落，料将触发板块下一波防御性重估行情。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "xlv": {
       "legs": {
@@ -21730,7 +21946,11 @@
         }
       },
       "now": "EXPANDING (RS #4 on the leg, #8/11 on the latest tape) — XLV is in the early-to-mid phase of a rally leg off the May 2025 tariff/policy washout low, up ~27% over the leg but currently lagging the freshest move (+3.3%, ranked #8/11) as a 2026 semis/AI melt-up dominates (SMH +68% on the recent window, high-beta over low-vol +21%). The macro quad is reflation/growth-up (cyclicals beating defensives), a regime that historically starves defensives. Yet XLV is holding above its 200-day and quietly improving relative traction: value is beating growth (growth minus value -15.2), broadening participation (equal-weight +2.9% over cap-weight) is leaking flows out of the narrow mega-cap tape, and managed care (UNH, HUM, CI) is catching a fresh bid on softening medical-cost trends (BofA upgraded UNH to Buy on June 4, 2026). Drug-pricing tail risk has largely cleared via the MFN manufacturer agreements struck from September through December 2025, stripping the binary policy overhang that crushed the sector in 2024-25. The setup is cheap-quality defensive rotation beginning to assert itself as the narrow tech tape shows early topping signals.",
-      "now_zh": "扩张阶段（当前反弹腿相对强度第4，最新行情中第8/11）——XLV正处于自2025年5月关税/政策洗盘低点以来当前反弹腿的早中期，整段涨幅约27%，但在最新一段行情中暂时落后（+3.3%，排名第8/11），因2026年半导体/AI逼空式上涨主导（近窗口SMH +68%、高贝塔减低波动+21%）。宏观象限为再通胀/经济向好（周期股跑赢防御股），该格局历史上往往令防御板块资金匮乏。但XLV正站稳200日均线上方并悄然改善相对强度：价值跑赢成长（成长减价值-15.2），市场广度扩散（等权重较市值加权+2.9%）令资金从窄幅大盘行情中外溢，管理式医疗（UNH、HUM、CI）受医疗成本趋势放缓提振获新买盘（美银于2026年6月4日将UNH上调至买入）。2025年9月至12月间陆续达成的MFN制造商协议已基本消除药品定价尾部风险，剥离了2024-25年打压板块的二元政策悬顶。整体格局是：随着窄幅科技行情出现早期见顶迹象，低估值优质防御资产的轮动开始显现。"
+      "now_zh": "扩张阶段（当前反弹腿相对强度第4，最新行情中第8/11）——XLV正处于自2025年5月关税/政策洗盘低点以来当前反弹腿的早中期，整段涨幅约27%，但在最新一段行情中暂时落后（+3.3%，排名第8/11），因2026年半导体/AI逼空式上涨主导（近窗口SMH +68%、高贝塔减低波动+21%）。宏观象限为再通胀/经济向好（周期股跑赢防御股），该格局历史上往往令防御板块资金匮乏。但XLV正站稳200日均线上方并悄然改善相对强度：价值跑赢成长（成长减价值-15.2），市场广度扩散（等权重较市值加权+2.9%）令资金从窄幅大盘行情中外溢，管理式医疗（UNH、HUM、CI）受医疗成本趋势放缓提振获新买盘（美银于2026年6月4日将UNH上调至买入）。2025年9月至12月间陆续达成的MFN制造商协议已基本消除药品定价尾部风险，剥离了2024-25年打压板块的二元政策悬顶。整体格局是：随着窄幅科技行情出现早期见顶迹象，低估值优质防御资产的轮动开始显现。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "xly": {
       "legs": {
@@ -22264,7 +22484,11 @@
         }
       },
       "now": "XLY is in a confirmed trough/bottoming phase (cycle position 31, RS rank #6 of 11, below its 200-day MA) after the oil-shock and stagflation selloff that ran from January to late March 2026. The current cross-asset tape is reflation/growth-up, with cyclicals recovering (+11.2% vs defensives +6.9%), the dollar firming (+3.4% DXY), oil firming (+19.2%) and semis exploding +67.9%, but XLY sits #10 of 11 at -5.2% because a hawkish Fed and elevated pump prices are still squeezing real consumer purchasing power. With Amazon and Tesla comprising roughly a third of the ETF, the setup is a leveraged catch-up trade that requires two unlocks: oil/gasoline softening enough to ease real-wage pressure and the Fed signaling a pause or cut. Neither has fully arrived — the Iran ceasefire keeps re-fracturing around the Strait of Hormuz — keeping the bounce tentative and below the 200-day even as breadth broadens (RSP beat SPY +2.9%).",
-      "now_zh": "XLY正处于确认的底部/筑底阶段（周期位置31，相对强度排名第6位，位于200日均线下方），此前经历了从2026年1月延续至3月底的油价冲击和滞胀抛售。"
+      "now_zh": "XLY正处于确认的底部/筑底阶段（周期位置31，相对强度排名第6位，位于200日均线下方），此前经历了从2026年1月延续至3月底的油价冲击和滞胀抛售。",
+      "as_of": "2026-06-27",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     }
   }
 }

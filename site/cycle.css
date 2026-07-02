@@ -620,3 +620,52 @@ html[data-theme="light"] .cyc-chip.on { color: #fff; }
 .tw-a17 { font-size: 10.5px; color: color-mix(in srgb, var(--down) 80%, var(--text)); margin-top: 2px; font-style: italic; }
 .tw-manual-note { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
 .tw-manual-note b { color: var(--warn); }
+
+/* ---- W3.4 — Analyst note TTL / staleness badges --------------------------
+   Follows the tw-tag design system (pill badges). Amber at >ttl_days, red at
+   >2×ttl_days. Uses --warn / --down neutral palette (same as stale-banner).
+   Never uses --up / --down zh-flipped colours (rule: staleness is neutral).
+   -------------------------------------------------------------------------- */
+.cyc-analyst-note { margin-top: 12px; padding: 10px 13px;
+  background: color-mix(in srgb, var(--muted) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--muted) 22%, transparent);
+  border-radius: 11px; }
+.cyc-analyst-note .cyc-lbl { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.sc-analyst-note-text { font-size: 12.5px; line-height: 1.55; color: var(--text); margin: 0; opacity: .9; }
+
+/* staleness badge (inline, beside the label) */
+.sc-narr-badge {
+  font-size: 9.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  padding: 1px 7px; border-radius: 999px; white-space: nowrap;
+  color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--muted) 22%, transparent);
+}
+.sc-narr-badge-amber {
+  color: var(--warn); background: color-mix(in srgb, var(--warn) 11%, transparent);
+  border-color: color-mix(in srgb, var(--warn) 30%, transparent);
+}
+.sc-narr-badge-red {
+  color: var(--down); background: color-mix(in srgb, var(--down) 10%, transparent);
+  border-color: color-mix(in srgb, var(--down) 30%, transparent);
+}
+
+/* archetype mechanism check failure chip */
+.sc-narr-arch-fail {
+  font-size: 10.5px; font-weight: 600;
+  color: var(--down); background: color-mix(in srgb, var(--down) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--down) 22%, transparent);
+  border-radius: 7px; padding: 3px 8px; margin-bottom: 6px;
+}
+.sc-narr-arch-manual {
+  font-size: 10.5px;
+  color: var(--warn); background: color-mix(in srgb, var(--warn) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 22%, transparent);
+  border-radius: 7px; padding: 3px 8px; margin-bottom: 6px;
+}
+
+/* revision provenance note */
+.sc-narr-revision {
+  font-size: 10.5px; color: var(--muted); font-style: italic;
+  margin-bottom: 6px; border-bottom: 1px dashed color-mix(in srgb, var(--muted) 22%, transparent);
+  padding-bottom: 5px;
+}
