@@ -848,8 +848,14 @@ def main() -> int:
             for _r in (json.loads(fp.read_text()) or {}).get("table", []):
                 if not _r.get("ticker"):
                     continue
-                if _r.get("composite") is not None:
-                    factor_z[_r["ticker"]] = _r["composite"]
+                # audit #25: the board TIEBREAK must use the scorecard-passing IC-weighted
+                # composite (composite_rank), NOT the blind equal-weight composite (ic_ir -0.049,
+                # anti-predictive). Fall back to composite only if the rank composite is absent.
+                _cz = _r.get("composite_rank")
+                if _cz is None:
+                    _cz = _r.get("composite")
+                if _cz is not None:
+                    factor_z[_r["ticker"]] = _cz
                 if _r.get("sue") is not None:
                     sue_z[_r["ticker"]] = _r["sue"]
                 _factor_legs[_r["ticker"]] = {k: _r.get(k) for k in

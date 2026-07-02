@@ -12,8 +12,49 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from engine.equity_factors import _winsor_z, compute_factors  # noqa: E402
+from engine.equity_factors import _rank_leg_weights, _winsor_z, compute_factors  # noqa: E402
 from lib import config  # noqa: E402
+
+
+# --------------------------------------------------------------------------- #
+# Audit #25 firewall — the board RANK key may only consume scorecard-passing legs.
+# --------------------------------------------------------------------------- #
+def _scorecard(**legs):
+    return {"factors": {k: dict(zip(("mean_ic", "ic_ir", "survives_fdr"), v))
+                        for k, v in legs.items()}}
+
+
+def test_rank_leg_weights_excludes_negative_ic_legs():
+    # investment (-0.003) and low_vol (-0.021) are anti-predictive FDR-failers — they must NOT
+    # appear in the rank key; positive-IC legs survive, IC-weighted; the FDR survivor leads.
+    sc = _scorecard(value=(0.0184, 0.223, False), quality=(0.0042, 0.073, False),
+                    profitability=(0.0141, 0.12, False), investment=(-0.0029, -0.036, False),
+                    payout=(0.0247, 0.298, True), low_vol=(-0.0209, -0.093, False))
+    legs = ["value", "quality", "profitability", "investment", "payout", "low_vol"]
+    w = _rank_leg_weights(legs, sc)
+    assert "investment" not in w and "low_vol" not in w      # negative-IC excluded
+    assert set(w) == {"value", "quality", "profitability", "payout"}
+    assert all(v > 0 for v in w.values())                    # sign constraint: strictly positive
+    assert w["payout"] > w["value"]                          # FDR survivor gets the bonus
+
+
+def test_rank_key_never_contains_a_negative_ic_leg_property():
+    # Property guard: for ANY scorecard, no leg with mean_ic <= 0 can enter the rank key.
+    import random
+    rng = random.Random(0)
+    legs = [f"f{i}" for i in range(8)]
+    for _ in range(200):
+        sc = _scorecard(**{l: (rng.uniform(-0.05, 0.05), rng.uniform(-0.3, 0.3),
+                              rng.random() < 0.2) for l in legs})
+        w = _rank_leg_weights(legs, sc)
+        for leg in w:
+            assert sc["factors"][leg]["mean_ic"] > 0         # invariant: no anti-predictive leg
+
+
+def test_rank_leg_weights_empty_when_no_scorecard():
+    # No scorecard -> no leg qualifies -> caller falls back to the display composite out of rank.
+    assert _rank_leg_weights(["value", "low_vol"], {}) == {}
+    assert _rank_leg_weights(["value"], {"factors": {"value": {"mean_ic": None}}}) == {}
 
 
 def test_winsor_z_centers_and_clips() -> None:
@@ -50,3 +91,10 @@ def test_compute_factors_shape_if_cache_present() -> None:
     cap = config.load()["edgar"]["factors"]["winsor_z"]
     for x in r["composite_top"] + r["composite_bottom"]:
         assert -cap <= x["z"] <= cap
+    # audit #25: the RANK composite (composite_top/bottom) draws only from scorecard-passing
+    # legs; the display composite is kept separately + badged.
+    assert "rank_legs" in r and "composite_display_top" in r and "fdr_badges" in r
+    from engine.equity_factors import _load_ic_scorecard
+    facs = (_load_ic_scorecard().get("factors") or {})
+    for leg in r["rank_legs"]:
+        assert facs.get(leg, {}).get("mean_ic", 0) > 0       # no anti-predictive leg in rank key
