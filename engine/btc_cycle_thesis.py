@@ -37,6 +37,9 @@ log = logging.getLogger(__name__)
 # the chip reads as a zone, not false precision.
 _WIN_LEAD_D = 360     # window opens this many days after the cycle top
 _WIN_TRAIL_D = 430    # window closes this many days after the cycle top (past 378d + buffer)
+# Pivot-staleness tolerance: reuse _extreme()'s ±21d pivot-date window (the existing,
+# pre-committed imprecision allowance for hand-recorded config pivots — NOT a new knob).
+_PIVOT_SLACK_D = 21
 # Dampening: flag when the current drawdown-from-peak is this much shallower than the mean of
 # prior cycle bears (e.g. prior mean ~−80%, current −52% -> gap 28pp -> flagged).
 _DAMPEN_GAP = 0.15
@@ -93,7 +96,6 @@ def _monitor(close: pd.Series, cfg: dict, sig, asof) -> dict:
     halvings = [_ts(d) for d in (cc.get("halving_dates") or [])]
     tops = [_ts(d) for d in (cpc.get("tops") or [])]
     bottoms = [_ts(d) for d in (cpc.get("bottoms") or [])]
-    down_days = float(cpc.get("down_days", 364))
 
     # --- where we are ---------------------------------------------------------
     past_halvings = [h for h in halvings if h <= now]
@@ -128,6 +130,27 @@ def _monitor(close: pd.Series, cfg: dict, sig, asof) -> dict:
         win_start = peak_date + pd.Timedelta(days=_WIN_LEAD_D)
         win_end = peak_date + pd.Timedelta(days=_WIN_TRAIL_D)
     in_window = bool(win_start is not None and win_start <= now <= win_end)
+
+    # --- halving-anchored bottom window (W2 falsifier repair, masterplan N8) ---
+    # The halving is the thesis's CAUSAL anchor, so the falsifiers must be able to
+    # measure against it. Window derived purely from the OBSERVED halving→next-bottom
+    # gaps of completed prior cycles (PIT: only bottoms known by `now`): bracket =
+    # [min gap, max gap], projection = median gap. Pre-committed structure, zero
+    # invented constants — NOT tuned to fire. With the shipped config this gives
+    # gaps 777/889/924d → window ≈ Jun 6 – Oct 31 2026, projection ≈ Sep 26 2026 —
+    # so the timing falsifier can escalate INSIDE the 2026 gate window (the old
+    # peak-anchored window closed ~37 days after the gate self-releases).
+    halving_gaps = []
+    for j, h in enumerate(halvings):
+        nxt_h = halvings[j + 1] if j + 1 < len(halvings) else None
+        nb = next((b for b in sorted(bottoms) if b > h), None)
+        if nb is not None and nb <= now and (nxt_h is None or nb < nxt_h):
+            halving_gaps.append(int((nb - h).days))
+    h_win_start = h_win_end = h_proj_bottom = None
+    if last_halving is not None and halving_gaps:
+        h_win_start = last_halving + pd.Timedelta(days=min(halving_gaps))
+        h_win_end = last_halving + pd.Timedelta(days=max(halving_gaps))
+        h_proj_bottom = last_halving + pd.Timedelta(days=int(np.median(halving_gaps)))
     # structure projection from btc_signals (PIT 1064/364), if available
     struct_pivot = struct_kind = struct_status = None
     if sig is not None and len(sig):
@@ -194,6 +217,27 @@ def _monitor(close: pd.Series, cfg: dict, sig, asof) -> dict:
             add("timing", "ok", f"Window passed ({win_end:%b %Y}); price has lifted off the low — "
                 f"a bottom may have formed on schedule.", f"窗口已过（{win_end:%Y-%m}）；价格已离开低点——底部或已如期形成。")
 
+    # HALVING-clock escalation (W2, N8): if the causal clock's own window has closed —
+    # `now` past [last halving + max observed halving→bottom gap] — and price still sits
+    # at the lows, the timing flag escalates NOW rather than waiting for the later
+    # peak-anchored bracket. Two-stage by design: WATCH past the halving clock's worst
+    # historical case, ALERT past the peak-anchored trail (the existing rule above).
+    halving_overdue = False
+    if (h_win_end is not None and now > h_win_end
+            and time_status in ("early", "in_window")):
+        h_low = float(close.loc[min(h_win_start, now):now].min())
+        halving_overdue = bool(px <= h_low * 1.03)   # same 3% no-lift-off convention as above
+        if halving_overdue:
+            flags[:] = [f for f in flags if f["key"] != "timing"]
+            add("timing", "watch",
+                f"Halving clock OVERDUE: past the halving-anchored window "
+                f"({h_win_start:%b %Y}–{h_win_end:%b %Y}, worst historical gap) and still near "
+                f"the lows — the causal clock has slipped even though the peak-anchored window "
+                f"({win_start:%b %Y}–{win_end:%b %Y}) is still open. Watch closely.",
+                f"减半时钟超期：已过减半锚定窗口（{h_win_start:%Y-%m} 至 {h_win_end:%Y-%m}，历史最长间隔）"
+                f"且仍在低位附近——因果时钟已偏移，尽管峰值锚定窗口（{win_start:%Y-%m} 至 "
+                f"{win_end:%Y-%m}）仍未关闭。需密切关注。")
+
     # 3) structure invalidation (1064/364 down-leg broke its high before bottoming)
     if struct_status == "invalidated":
         add("structure", "alert",
@@ -206,24 +250,56 @@ def _monitor(close: pd.Series, cfg: dict, sig, asof) -> dict:
     elif struct_status == "on_track":
         add("structure", "ok", "1064/364 down-leg on track.", "1064/364 下跌腿按节奏。")
 
-    # 4) desync — structure-projected bottom vs the midterm-election window
+    # 4) desync — the HALVING-anchored projected bottom vs the midterm-election window.
+    #    (W2 repair, masterplan N8: the old detector projected from the cycle TOP
+    #    (+down_days) — it never referenced the halving it claims to test, and both the
+    #    top and the election are fixed dates, so it was a cycle-constant that could
+    #    never fire. Now anchored on the actual halving (vector.cycle_clock.halving_dates)
+    #    via the observed halving→bottom gaps — it measures real halving-calendar drift.)
     desync_months = None
     desync_flag = False
-    if peak_date is not None:
-        proj_bottom = peak_date + pd.Timedelta(days=int(down_days))
-        # nearest US midterm year (Y%4==2) election ~ early November
-        my = proj_bottom.year if proj_bottom.year % 4 == 2 else (
-            proj_bottom.year + (2 - proj_bottom.year % 4) % 4)
-        midterm_elec = pd.Timestamp(year=my, month=11, day=4)
-        desync_months = round(abs((proj_bottom - midterm_elec).days) / 30.4, 1)
+    if h_proj_bottom is not None:
+        # nearest US midterm election (Y%4==2, ~early November) in EITHER direction —
+        # the old round-up-only pick mis-measured a January projection by ~3.7 years.
+        candidates = [pd.Timestamp(year=y, month=11, day=4)
+                      for y in range(h_proj_bottom.year - 3, h_proj_bottom.year + 4)
+                      if y % 4 == 2]
+        midterm_elec = min(candidates, key=lambda e: abs((h_proj_bottom - e).days))
+        desync_months = round(abs((h_proj_bottom - midterm_elec).days) / 30.4, 1)
         desync_flag = bool(desync_months > _DESYNC_MONTHS)
         add("desync", "watch" if desync_flag else "ok",
-            (f"Halving and political clocks DIVERGING (~{desync_months}mo apart) — trust the halving."
+            (f"Halving and political clocks DIVERGING (halving-anchored bottom ~{h_proj_bottom:%b %Y} "
+             f"vs midterm {midterm_elec:%b %Y}, ~{desync_months}mo apart) — trust the halving."
              if desync_flag else
-             f"Halving and midterm clocks aligned this cycle (projected bottom ~{proj_bottom:%b %Y}, "
-             f"midterm {midterm_elec:%b %Y})."),
-            (f"减半与政治周期出现背离（相差约 {desync_months} 个月）——以减半为准。" if desync_flag else
-             f"本轮减半与中期周期一致（预测底部约 {proj_bottom:%Y-%m}，中期 {midterm_elec:%Y-%m}）。"))
+             f"Halving and midterm clocks aligned this cycle (halving-anchored bottom "
+             f"~{h_proj_bottom:%b %Y}, midterm {midterm_elec:%b %Y})."),
+            (f"减半与政治周期出现背离（减半锚定底部约 {h_proj_bottom:%Y-%m}，中期 {midterm_elec:%Y-%m}，"
+             f"相差约 {desync_months} 个月）——以减半为准。" if desync_flag else
+             f"本轮减半与中期周期一致（减半锚定底部约 {h_proj_bottom:%Y-%m}，中期 {midterm_elec:%Y-%m}）。"))
+
+    # 5) pivot-staleness alarm (W2, masterplan N8): nothing previously detected that the
+    #    hand-recorded config pivots had gone stale vs a LIVE extreme. If the phase clock
+    #    claims we are PAST a top (last pivot = a top) yet price has set its running
+    #    all-time-high close more than the pivot tolerance AFTER that recorded top, the
+    #    anchor is dead — every phase/percent read downstream is fiction until config.yml
+    #    (vector.cycle_phase_clock.tops) is updated. Markup legs are exempt: new ATHs are
+    #    the EXPECTED behavior there, and the next top is only recordable in hindsight.
+    pivot_stale = False
+    past_bottoms = [b for b in bottoms if b <= now]
+    last_bottom = max(past_bottoms) if past_bottoms else None
+    if peak_date is not None and (last_bottom is None or peak_date > last_bottom):
+        hist = close.loc[:now]
+        ath_date = hist.idxmax()
+        pivot_stale = bool(ath_date > peak_date + pd.Timedelta(days=_PIVOT_SLACK_D))
+        if pivot_stale:
+            add("pivot_staleness", "alert",
+                f"STALE PIVOT REGISTRY: price set its all-time-high close on {ath_date:%Y-%m-%d}, "
+                f"after the last recorded cycle top ({peak_date:%Y-%m-%d}) — the configured pivots "
+                f"no longer describe the tape. Update vector.cycle_phase_clock.tops; every "
+                f"phase/timing read is unreliable until then.",
+                f"枢轴登记已过期：价格于 {ath_date:%Y-%m-%d} 创下历史最高收盘，晚于最后记录的周期顶部"
+                f"（{peak_date:%Y-%m-%d}）——配置的枢轴已无法描述行情。请更新 "
+                f"vector.cycle_phase_clock.tops；在此之前所有阶段/时点读数均不可靠。")
 
     # --- overall thesis status ------------------------------------------------
     levels = [f["level"] for f in flags]
@@ -253,6 +329,13 @@ def _monitor(close: pd.Series, cfg: dict, sig, asof) -> dict:
         "window_end": win_end.strftime("%Y-%m-%d") if win_end is not None else None,
         "in_window": in_window,
         "time_status": time_status if win_start is not None else "unknown",
+        # halving-anchored lens (W2, N8): derived from observed halving→bottom gaps
+        "halving_window_start": h_win_start.strftime("%Y-%m-%d") if h_win_start is not None else None,
+        "halving_window_end": h_win_end.strftime("%Y-%m-%d") if h_win_end is not None else None,
+        "halving_proj_bottom": h_proj_bottom.strftime("%Y-%m-%d") if h_proj_bottom is not None else None,
+        "halving_bottom_gaps_d": halving_gaps,
+        "halving_overdue": halving_overdue,
+        "pivot_stale": pivot_stale,
         "struct_next_pivot": struct_pivot, "struct_next_kind": struct_kind,
         "struct_status": struct_status,
         "desync_months": desync_months,

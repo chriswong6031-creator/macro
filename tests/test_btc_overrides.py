@@ -192,6 +192,190 @@ def test_buy_lead_days_releases_gate_early() -> None:
         "2022-10-26 should NOT be gated with buy_lead_days=14"
 
 
+# --------------------------------------------------------------------------- #
+# W2 — Class-1 AUTO-RELEASE (owner D1): new-ATH structural invalidation
+# --------------------------------------------------------------------------- #
+_CLASS1_REGISTRY = [{
+    "id": "midterm_blackout",
+    "dof_cost": 4,
+    "release_rules": [
+        {"kind": "calendar"},
+        {"kind": "structural_invalidation", "signal": "new_ath_close",
+         "confirm_days": 5},
+    ],
+}]
+
+
+def _release_scenario_close(idx: pd.DatetimeIndex,
+                            breaks: list[float],
+                            break_start: str) -> pd.Series:
+    """Synthetic replay tape: prior ATH = 100 (set through 2025), bear at 50 into the
+    2026 gate window, then the `breaks` closes from `break_start` onward, then back
+    to 90 (below the broken ATH — exercises stickiness)."""
+    close = pd.Series(50.0, index=idx)
+    close.loc[:"2025-12-31"] = 100.0                       # historical ATH = 100
+    start = pd.Timestamp(break_start)
+    for k, v in enumerate(breaks):
+        close.loc[start + pd.Timedelta(days=k)] = v
+    close.loc[start + pd.Timedelta(days=len(breaks)):] = 90.0
+    return close
+
+
+def test_class1_release_after_exactly_five_confirm_closes() -> None:
+    """The replay acceptance test (masterplan §5 W2): a synthetic new-ATH sequence
+    inside the 2026 gate window releases the gate on EXACTLY the 5th consecutive
+    confirm close — not the 1st, not the 4th — and the release is sticky for the
+    remainder of the window even after price falls back below the broken ATH."""
+    idx = pd.date_range("2025-06-01", "2026-12-31", freq="D")
+    pure = _pure_alloc(idx)
+    close = _release_scenario_close(idx, [101, 102, 103, 104, 105], "2026-08-01")
+    result = OV.apply(pure, _acfg(enabled=True),
+                      ctx={"close": close, "overrides": _CLASS1_REGISTRY})
+
+    rel = result["override_released"].astype(bool)
+    act = result["override_active"].astype(bool)
+    # masked (gate holds) from Jan 1 through the 4th confirm close…
+    assert act.loc["2026-01-01":"2026-08-04"].all()
+    assert not rel.loc["2026-01-01":"2026-08-04"].any()
+    assert result["alloc_optimal"].loc["2026-01-01":"2026-08-04"].eq(0.0).all()
+    # …released ON the 5th confirm close (2026-08-05), final steps down to raw…
+    assert rel.loc["2026-08-05"], "release must fire on the 5th consecutive confirm close"
+    assert not act.loc["2026-08-05":"2026-11-02"].any()
+    pd.testing.assert_series_equal(
+        result["alloc_optimal"].loc["2026-08-05":],
+        result["alloc_optimal_raw"].loc["2026-08-05":],
+        check_names=False, obj="final must equal raw after the release")
+    # …and STICKY through the window end although price fell back to 90 (< broken ATH).
+    assert rel.loc["2026-08-06":"2026-11-02"].all(), "release must be sticky in-window"
+    # outside the window the release state disarms (nothing left to release)
+    assert not rel.loc["2026-11-03":].any()
+
+
+def test_class1_failed_attempt_resets_and_does_not_release() -> None:
+    """Four consecutive closes above the broken ATH followed by a close back below it
+    must NOT release — 'consecutive' means consecutive; the counter resets."""
+    idx = pd.date_range("2025-06-01", "2026-12-31", freq="D")
+    pure = _pure_alloc(idx)
+    close = _release_scenario_close(idx, [101, 102, 103, 104, 99, 101, 102], "2026-08-01")
+    result = OV.apply(pure, _acfg(enabled=True),
+                      ctx={"close": close, "overrides": _CLASS1_REGISTRY})
+    assert not result["override_released"].astype(bool).any()
+    # the gate keeps masking through the whole 2026 window
+    assert result["alloc_optimal"].loc["2026-01-01":"2026-11-02"].eq(0.0).all()
+    assert result["override_active"].astype(bool).loc["2026-01-01":"2026-11-02"].all()
+
+
+def test_class1_requires_declared_rule_and_close() -> None:
+    """No declared structural_invalidation rule (or no close series) -> W0 behavior:
+    the gate holds through the window regardless of the tape. The registry is the
+    ship switch (owner D1 recorded there), not the code."""
+    idx = pd.date_range("2025-06-01", "2026-12-31", freq="D")
+    pure = _pure_alloc(idx)
+    close = _release_scenario_close(idx, [101, 102, 103, 104, 105], "2026-08-01")
+    # W0-style string release_rules — structurally undeclared
+    legacy = [{"id": "midterm_blackout", "dof_cost": 3,
+               "release_rules": ["calendar: ~election day"]}]
+    for ctx in (None,
+                {"close": close},                                    # no registry
+                {"overrides": _CLASS1_REGISTRY},                     # no close
+                {"close": close, "overrides": legacy}):              # rule not declared
+        result = OV.apply(pure, _acfg(enabled=True), ctx=ctx)
+        assert not result["override_released"].astype(bool).any()
+        assert result["alloc_optimal"].loc["2026-01-01":"2026-11-02"].eq(0.0).all()
+
+
+def test_class1_no_release_state_outside_gate_windows() -> None:
+    """A confirmed new-ATH sequence in a NON-gated year is a no-op: nothing to
+    release, final == raw everywhere, override_released stays 0."""
+    idx = pd.date_range("2024-01-01", "2025-12-31", freq="D")   # no midterm year
+    pure = _pure_alloc(idx)
+    close = pd.Series(100.0, index=idx)
+    close.loc["2025-06-01":] = 120.0                            # sustained new ATH
+    result = OV.apply(pure, _acfg(enabled=True),
+                      ctx={"close": close, "overrides": _CLASS1_REGISTRY})
+    assert not result["override_released"].astype(bool).any()
+    assert not result["override_active"].astype(bool).any()
+    pd.testing.assert_series_equal(result["alloc_optimal"], result["alloc_optimal_raw"],
+                                   check_names=False)
+
+
+def test_class1_ancient_ath_break_never_releases_later_windows() -> None:
+    """Regression (live-tape bug): the spliced price history starts mid-2014, so an
+    early SERIES-ATH break (2016-style) once confirmed must be CONSUMED — price then
+    sitting above that long-ago broken reference for a decade must not read as
+    'currently confirming' and spuriously release the 2018/2022/2026 gates."""
+    idx = pd.date_range("2015-01-01", "2026-12-31", freq="D")
+    pure = _pure_alloc(idx)
+    close = pd.Series(100.0, index=idx)                     # series starts at 100
+    close.loc["2015-06-01":"2015-06-05"] = [200.0, 201.0, 202.0, 203.0, 204.0]  # early break: fires 2015-06-05
+    close.loc["2015-06-06":] = 150.0                        # above the OLD ref (100) forever after…
+    result = OV.apply(pure, _acfg(enabled=True),
+                      ctx={"close": close, "overrides": _CLASS1_REGISTRY})
+    # …but no gate window may release: no NEW ATH ever prints again
+    assert not result["override_released"].astype(bool).any()
+    for probe in ("2018-06-01", "2022-06-01", "2026-06-01"):
+        assert result.loc[probe, "alloc_optimal"] == 0.0, f"gate must hold on {probe}"
+        assert bool(result.loc[probe, "override_active"])
+
+
+def test_ath_invalidation_confirmed_unit() -> None:
+    """Unit semantics of the confirm sequence: starts only on a genuine new-ATH close;
+    a plateau above the BROKEN reference counts (no fresh record needed); a touch of
+    the reference resets; missing closes reset; first bar can never fire. The confirm
+    is a one-bar EVENT (fires on the Nth close, then the machine resets)."""
+    idx = pd.date_range("2026-01-01", periods=12, freq="D")
+    #       ATH plateau=100  break  holds above broken ref=100 (no fresh records)  dip   re-break (ref now 103)
+    vals = [100, 100, 100,   103,   102.5, 102.4, 102.1, 102.05,                   99.0, 103.5, 104, 105]
+    conf = OV.ath_invalidation_confirmed(pd.Series(vals, index=idx), confirm_days=5)
+    # bars 3..7 are a 5-long sequence above the broken ATH (100): confirmed on bar 7
+    assert not conf.iloc[:7].any()
+    assert bool(conf.iloc[7])
+    # bar 8 closes back below the reference: reset — not confirmed
+    assert not conf.iloc[8:].any()   # the re-attempt (vs the raised ATH 103) only reaches streak 3
+    # NaN breaks a sequence
+    vals_nan = [100.0, 100.0, 100.0, 103.0, 104.0, np.nan, 105.0, 106.0, 107.0, 108.0, 109.0, 110.0]
+    conf_nan = OV.ath_invalidation_confirmed(pd.Series(vals_nan, index=idx), confirm_days=5)
+    assert not conf_nan.iloc[:10].any()   # NaN at bar 5 killed the first sequence
+    # sequence restarted at bar 6 (105 > ath 104): bars 6..10 = 5 consecutive -> bar 10
+    assert bool(conf_nan.iloc[10])
+    # a monotonically rising tape from bar 0 can only confirm from bar 5 (bar 0 has no prior ATH)
+    rising = OV.ath_invalidation_confirmed(
+        pd.Series(range(100, 112), index=idx, dtype=float), confirm_days=5)
+    assert not rising.iloc[:5].any() and bool(rising.iloc[5])
+
+
+def test_total_dof_sums_registry() -> None:
+    assert OV.total_dof({"overrides": [{"dof_cost": 4}, {"dof_cost": 2}]}) == 6
+    assert OV.total_dof({"overrides": [{}]}) == 1        # undeclared cost defaults to 1
+    assert OV.total_dof({"overrides": []}) == 0
+    assert OV.total_dof({}) == 0
+    # the LIVE registry must charge the pre-committed cost (3 gate + 1 confirm window)
+    assert OV.total_dof(config.load()["vector"]) >= 4
+
+
+def test_cond_up_prob_zeroes_invalidated_markdown_tilt() -> None:
+    """W2: a structurally INVALIDATED markdown leg must carry ZERO cycle tilt in the
+    conditional up-probability (scripts/build_vector._cond_up_prob)."""
+    from scripts.build_vector import _cond_up_prob
+    idx = pd.date_range("2025-01-01", periods=400, freq="D")
+    base = pd.DataFrame({
+        "close": 100.0,
+        "momentum_state": "bull",
+        "cphase_phase": "markdown",
+        "cphase_pct": 0.5,
+        "cphase_status": "on_track",
+    }, index=idx)
+    cfg = {"prob_min_cell_n": 10, "prob_shrink_alpha": 5.0, "macro_tilt_pp": 5,
+           "cycle_tilt_pp": 6, "cycle_top_zone": 0.85,
+           "prob_floor": 0.05, "prob_ceil": 0.95}
+    _, _, _, tilt_on_track = _cond_up_prob(base, cfg, 7)
+    assert tilt_on_track == -6, "markdown outside the reversal zone tilts down by cycle_tilt_pp"
+    inv = base.copy()
+    inv["cphase_status"] = "invalidated"
+    _, _, _, tilt_invalidated = _cond_up_prob(inv, cfg, 7)
+    assert tilt_invalidated == 0, "an invalidated markdown leg has zero cycle authority"
+
+
 if __name__ == "__main__":
     for fn in [
         test_parity_outside_blackout_windows,
@@ -201,6 +385,14 @@ if __name__ == "__main__":
         test_columns_and_dtypes,
         test_output_index_identical_to_input,
         test_buy_lead_days_releases_gate_early,
+        test_class1_release_after_exactly_five_confirm_closes,
+        test_class1_failed_attempt_resets_and_does_not_release,
+        test_class1_requires_declared_rule_and_close,
+        test_class1_no_release_state_outside_gate_windows,
+        test_class1_ancient_ath_break_never_releases_later_windows,
+        test_ath_invalidation_confirmed_unit,
+        test_total_dof_sums_registry,
+        test_cond_up_prob_zeroes_invalidated_markdown_tilt,
     ]:
         fn()
         print(f"PASS {fn.__name__}")

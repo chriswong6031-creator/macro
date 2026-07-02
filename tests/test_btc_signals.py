@@ -169,6 +169,51 @@ def test_cycle_phase_clock_status_invalidation_and_overdue() -> None:
     assert out2.loc["2021-06-01"]["cphase_status"] == "on_track"
 
 
+def test_cycle_phase_clock_ath_invalidation_anchor_independent_and_sticky() -> None:
+    """W2 (masterplan N8/N2): markdown structural invalidation = a NEW ALL-TIME-HIGH
+    daily close, NOT a break of the hand-set anchor date's close. Two properties:
+    (a) anchor-independence — a rally above the anchor-day close that stays below the
+        true running ATH must NOT invalidate (the old rule fired here);
+    (b) stickiness — once a genuine new-ATH close prints, the leg stays invalidated
+        even after price falls back."""
+    idx = pd.date_range("2020-01-01", "2023-06-30", freq="D")
+    close = pd.Series(100.0, index=idx)
+    close.loc["2021-02-28":"2021-03-10"] = 200.0   # the TRUE ATH (200), before the anchor date
+    close.loc["2021-03-11":"2021-07-31"] = 150.0   # anchor-day (2021-06-01) close = 150
+    close.loc["2021-08-01":"2021-08-10"] = 180.0   # > anchor close, < ATH — old rule fired here
+    close.loc["2021-08-11":"2022-01-31"] = 120.0
+    close.loc["2022-02-01"] = 210.0                # genuine new-ATH close
+    close.loc["2022-02-02":] = 120.0               # falls back — stickiness check
+    inp = {"price": pd.DataFrame({"close": close}, index=idx)}
+    cfg = {"bottoms": ["2020-06-01"], "tops": ["2021-06-01"],
+           "up_days": 365, "down_days": 365, "overdue_pct": 1.10}
+    out = S.cycle_phase_clock(inp, cfg)
+    # (a) 180 > anchor close (150) but < running ATH (200): NOT invalidated
+    assert out.loc["2021-08-05"]["cphase_status"] == "on_track"
+    assert out.loc["2022-01-15"]["cphase_status"] == "on_track"
+    # (b) the 210 close IS a new ATH -> invalidated, and sticky after the fallback
+    assert out.loc["2022-02-01"]["cphase_status"] == "invalidated"
+    assert out.loc["2022-03-01"]["cphase_status"] == "invalidated"
+    assert out.loc["2022-06-01"]["cphase_status"] == "invalidated"
+
+
+def test_gate_state_release_aware() -> None:
+    """W2: gate_state(sig=...) must reflect the ACTUAL masking state from the override
+    columns — after a Class-1 release the calendar says 'midterm year' but the gate no
+    longer suppresses sizing, and the stamped flag must not claim it does."""
+    idx = pd.date_range("2026-06-01", "2026-07-01", freq="D")
+    sig = pd.DataFrame({"override_active": 0, "override_released": 1}, index=idx)
+    g = S.gate_state("2026-07-01", {"enabled": True}, sig=sig)
+    assert g["active"] is False and g["released"] is True and g["release"] is None
+    # armed (unreleased) window: columns say masking is on -> active stands
+    sig2 = pd.DataFrame({"override_active": 1, "override_released": 0}, index=idx)
+    g2 = S.gate_state("2026-07-01", {"enabled": True}, sig=sig2)
+    assert g2["active"] is True and g2["released"] is False and g2["release"] == "2026-11-03"
+    # no sig (or pre-W0 parquet without the columns) -> calendar fallback, released False
+    g3 = S.gate_state("2026-07-01", {"enabled": True})
+    assert g3["active"] is True and g3["released"] is False
+
+
 def test_cycle_phase_clock_config_locks_1064_364() -> None:
     # regression lock on the accuracy claim: the shipped anchors must reproduce the
     # measured 1064/364 fit (up within 15d, down within 20d — the weaker leg).
@@ -312,11 +357,13 @@ if __name__ == "__main__":
                test_allocation_conviction_and_brake_unit_range,
                test_cycle_phase_clock_phase_and_projection,
                test_cycle_phase_clock_status_invalidation_and_overdue,
+               test_cycle_phase_clock_ath_invalidation_anchor_independent_and_sticky,
                test_cycle_phase_clock_config_locks_1064_364,
                test_cycle_phase_clock_no_lookahead,
                test_us_election_date,
                test_midterm_blackout_windows,
                test_gate_state_single_flag,
+               test_gate_state_release_aware,
                test_allocation_midterm_gate_forces_flat,
                test_no_lookahead_smoke]:
         fn()

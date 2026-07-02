@@ -480,23 +480,38 @@ def midterm_blackout(index, cfg: dict | None) -> pd.Series:
     return mask
 
 
-def gate_state(asof, cfg: dict | None) -> dict:
+def gate_state(asof, cfg: dict | None, sig: pd.DataFrame | None = None) -> dict:
     """The ONE stamped gated-state object every display surface consumes
     (Override-Registry W3/N6). Builders stamp this dict onto their page context
     (and onto buy-side objects as `suppressed_by_blackout`); templates read
     `gate.active` / `gate.release` and NEVER re-derive the window by hand — the
     hand-copied `and not (midterm and midterm.active)` guards are how the pages
     drifted. W0 re-declares the gate as `vector.overrides[0]`; `override_id`
-    here is the registry id it will carry."""
+    here is the registry id it will carry.
+
+    W2 (Class-1 auto-release, owner D1): pass `sig` (the compute_all frame) so the
+    stamp reflects the ACTUAL masking state — after a structural-invalidation
+    release the calendar still says "midterm year" but the gate no longer
+    suppresses sizing, and the stamped flag must not claim it does. `released`
+    marks an in-window Class-1 release."""
     dt = pd.Timestamp(asof)
     cfg = cfg or {}
     active = bool(midterm_blackout([dt], cfg).iloc[0])
+    released = False
+    if sig is not None and len(sig) and "override_active" in sig.columns:
+        row = sig[sig.index <= dt]
+        if len(row):
+            r = row.iloc[-1]
+            active = bool(r.get("override_active"))
+            rel = r.get("override_released")
+            released = bool(rel) if pd.notna(rel) else False
     release = None
     if active:
         release = (_us_election_date(dt.year)
                    - pd.Timedelta(days=int(cfg.get("buy_lead_days", 0)))).strftime("%Y-%m-%d")
     return {"override_id": "midterm_blackout", "active": active,
-            "year": int(dt.year) if active else None, "release": release}
+            "year": int(dt.year) if active else None, "release": release,
+            "released": released}
 
 
 def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
@@ -928,7 +943,15 @@ def cycle_phase_clock(inputs: dict, cfg: dict) -> pd.DataFrame:
     1067/1059/1050d (theory 1064), down-legs 364/378d (theory 364) -> mean-abs-err 7.2d, but
     only n=3 cycles (in-sample, 2-param) — so a soft CONTEXT/PRIOR, it tilts, never triggers.
     TIMING ONLY — not amplitude, and NO price target. PIT-honest: each row reads only the
-    pivots that had occurred on/before that date (no look-ahead)."""
+    pivots that had occurred on/before that date (no look-ahead).
+
+    STRUCTURAL INVALIDATION (W2, masterplan N8/N2): a markdown leg is invalidated by a
+    NEW ALL-TIME-HIGH daily close (close > running historical max of all prior closes) —
+    anchor-INDEPENDENT and zero-fit, replacing the old `close > close.asof(anchor_date)`
+    comparison whose hand-set anchor date made it fragile. The invalidation is STICKY for
+    the remainder of the leg (a structural break is an event, not a day-state). Markup
+    legs keep the anchor-low break rule (there is no anchor-free equivalent of "broke
+    the low that started the leg")."""
     px = inputs["price"]
     close = px["close"]
     idx = pd.to_datetime(px.index)
@@ -949,11 +972,18 @@ def cycle_phase_clock(inputs: dict, cfg: dict) -> pd.DataFrame:
 
     phase, anchor, length, days_in, nxt, kind, status = ([] for _ in range(7))
     cval = close.values
+    # running historical max of all PRIOR closes (causal: bar i sees closes < i) —
+    # the anchor-independent reference for markdown structural invalidation.
+    ath_prior = close.cummax().shift(1).values
+    leg = -1              # pivot index of the current leg (resets sticky state)
+    leg_invalidated = False
     for i, p in enumerate(pos):
         if p < 0:                                   # before the first anchor
             phase.append(None); anchor.append(None); length.append(np.nan)
             days_in.append(np.nan); nxt.append(None); kind.append(None); status.append(None)
             continue
+        if p != leg:
+            leg, leg_invalidated = p, False
         pdate, pkind = pivots[p]
         is_up = (pkind == "bottom")
         ph = "markup" if is_up else "markdown"
@@ -961,15 +991,27 @@ def cycle_phase_clock(inputs: dict, cfg: dict) -> pd.DataFrame:
         di = (idx[i] - pdate).days
         npiv = pdate + pd.Timedelta(days=int(ln))
         nk = "top" if is_up else "bottom"
-        # status: invalidated if price breaks the anchor's own extreme (new low under a
-        # markup's low / new high over a markdown's high); else overdue past the window.
         ap = pv_price[p]
-        if pd.notna(ap) and ((is_up and cval[i] < ap) or ((not is_up) and cval[i] > ap)):
-            stt = "invalidated"
-        elif di > ln * overdue:
-            stt = "overdue"
+        if is_up:
+            # markup: invalidated if price breaks the anchor bottom's own low.
+            if pd.notna(ap) and cval[i] < ap:
+                stt = "invalidated"
+            elif di > ln * overdue:
+                stt = "overdue"
+            else:
+                stt = "on_track"
         else:
-            stt = "on_track"
+            # markdown: STRUCTURAL invalidation = a new all-time-high daily close
+            # strictly after the anchor top (anchor-independent, sticky for the leg).
+            if (not leg_invalidated and di > 0 and pd.notna(ath_prior[i])
+                    and cval[i] > ath_prior[i]):
+                leg_invalidated = True
+            if leg_invalidated:
+                stt = "invalidated"
+            elif di > ln * overdue:
+                stt = "overdue"
+            else:
+                stt = "on_track"
         phase.append(ph); anchor.append(pdate.strftime("%Y-%m-%d")); length.append(ln)
         days_in.append(float(di)); nxt.append(npiv.strftime("%Y-%m-%d")); kind.append(nk)
         status.append(stt)
@@ -1732,10 +1774,13 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     # and any future entries) after the pure engine runs.  This emits the final
     # alloc_<name> columns (identical to pre-W0 live values), plus the new
     # alloc_<name>_raw, override_active, and override_id companion columns.
-    # Net result: gated alloc_* values are bit-identical to before; new columns
-    # ride along transparently through signals.parquet to all consumers.
+    # W2: ctx feeds the close series + the registry so the Class-1
+    # structural-invalidation release rule (owner D1) can fire — a confirmed
+    # new-ATH close sequence steps the gate down to the raw allocation.
     from engine import btc_overrides
-    al = btc_overrides.apply(al, cfg["allocation"])
+    al = btc_overrides.apply(al, cfg["allocation"],
+                             ctx={"close": inputs["price"]["close"],
+                                  "overrides": cfg.get("overrides")})
     al["bottom_pressure"] = bp
 
     out = pd.concat([inputs["price"][["close"]], mom, rk, bf, st, gg, al,
