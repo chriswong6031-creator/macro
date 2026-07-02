@@ -160,7 +160,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pyyaml
+        # cycle_ontology.py imports numpy+pandas at module top (canonical_position math),
+        # so gen_ontology_js — which imports it — needs them even though it only serialises
+        # the vocabulary payload. pyyaml alone made this gate crash-fail whenever triggered.
+        run: pip install pyyaml numpy pandas
       - name: ontology JS must not drift from engine (gen_ontology_js --check)
         run: python3 -m scripts.gen_ontology_js --check
 
