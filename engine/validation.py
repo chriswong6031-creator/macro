@@ -215,9 +215,45 @@ def ret_moments(r: pd.Series):
 _ret_moments = ret_moments
 
 
+def bootstrap_effective_t(returns, block: int = 21, B: int = 2000,
+                          seed: int = 7) -> dict:
+    """Block-bootstrap effective sample size for a daily strategy-return series.
+
+    Positively autocorrelated returns make the sqrt(T-1) SR error bar overconfident;
+    this replaces raw T with the autocorrelation-honest count (masterplan N7:
+    "block-bootstrap effective-N replacing raw sqrt(T-1)").
+
+    For each of B circular block-bootstrap resamples, compute the resample mean;
+    let v_boot = variance across those B means (ddof=1). Under iid sampling,
+    v_boot == var(r)/n, so t_eff = var(r, ddof=1) / v_boot recovers n exactly.
+    Under positive autocorrelation v_boot > var(r)/n, so t_eff < n — fewer effective
+    observations. Returns {"t_eff": int, "t_raw": n, "ratio": float, "block": int,
+    "B": int}, clamped to [30, n]. Returns {} when n < max(3*block, 60) or v_boot<=0.
+    """
+    r = np.asarray(returns.dropna() if hasattr(returns, "dropna") else returns, float)
+    n = len(r)
+    if n < max(3 * block, 60):
+        return {}
+    rng = np.random.default_rng(seed)
+    nb = int(np.ceil(n / block))
+    starts_grid = np.arange(block)
+    means = np.empty(B)
+    for k in range(B):
+        starts = rng.integers(0, n, nb)
+        idx = (starts[:, None] + starts_grid[None, :]).ravel()[:n] % n
+        means[k] = r[idx].mean()
+    v_boot = float(np.var(means, ddof=1))
+    if v_boot <= 0:
+        return {}
+    v_iid = float(np.var(r, ddof=1))
+    t_eff = int(np.clip(v_iid / v_boot, 30, n))
+    return {"t_eff": t_eff, "t_raw": n, "ratio": round(t_eff / n, 3),
+            "block": block, "B": B}
+
+
 def deflated_sharpe(sr_daily, skew, kurt, T, n_trials=None, sr_variance=None,
                     trading_year: float = 252, *, ledger=None,
-                    family: str | None = None) -> dict | None:
+                    family: str | None = None, t_eff: int | None = None) -> dict | None:
     """DSR for a strategy selected as the best of N tried configs.
     `sr_daily` = its per-period Sharpe; `sr_variance` = cross-trial variance of the
     per-period Sharpes (if None, fall back to the SR-estimator's own variance as a
@@ -234,7 +270,13 @@ def deflated_sharpe(sr_daily, skew, kurt, T, n_trials=None, sr_variance=None,
       understate. Pass a `engine.trial_ledger.TrialLedger` (duck-typed: anything with
       an `effective_n(family)` method works).
 
-    Exactly one of {`n_trials`, `ledger`} must be given; passing both is a ValueError."""
+    Exactly one of {`n_trials`, `ledger`} must be given; passing both is a ValueError.
+
+    `t_eff` (optional, keyword-only) — a block-bootstrap effective sample size from
+    `bootstrap_effective_t`. When provided and >= 3, the sqrt(T-1) confidence term and
+    the proxy floor both use Te = min(t_eff, T) instead of raw T. Autocorrelated daily
+    returns make the raw sqrt(T-1) overconfident; Te is the autocorrelation-honest count
+    (masterplan N7). When None/invalid: bit-for-bit identical to the original behavior."""
     if (ledger is not None) and (n_trials is not None):
         raise ValueError(
             "deflated_sharpe: pass EITHER a literal n_trials OR a ledger= handle, "
@@ -247,12 +289,18 @@ def deflated_sharpe(sr_daily, skew, kurt, T, n_trials=None, sr_variance=None,
             "counted at generation) or n_trials= (legacy literal)")
     if sr_daily is None or T is None or T < 3 or skew is None or kurt is None:
         return None
+    # Select the effective sample size: use t_eff if it is a valid int >= 3;
+    # otherwise fall back to raw T (bit-for-bit identical for commodity/forex callers).
+    if isinstance(t_eff, int) and t_eff >= 3:
+        Te = min(int(t_eff), int(T))
+    else:
+        Te = int(T)
     var_scaler = 1.0 - skew * sr_daily + ((kurt - 1.0) / 4.0) * sr_daily * sr_daily
     var_scaler = max(var_scaler, 1e-9)
-    # Floor the cross-trial SR variance at the null SR-sampling variance (~1/T):
+    # Floor the cross-trial SR variance at the null SR-sampling variance (~1/Te):
     # a handful of near-duplicate allocation variants understates true trial
     # dispersion, which would make the SR0 haircut too lenient. max() keeps it honest.
-    proxy = var_scaler / (T - 1)
+    proxy = var_scaler / (Te - 1)
     sr_variance = proxy if (sr_variance is None or sr_variance <= 0) else max(sr_variance, proxy)
     N = max(int(n_trials), 1)
     if N == 1:
@@ -260,12 +308,15 @@ def deflated_sharpe(sr_daily, skew, kurt, T, n_trials=None, sr_variance=None,
     else:
         z1, z2 = _norm_ppf(1 - 1.0 / N), _norm_ppf(1 - 1.0 / (N * np.e))
         sr0 = np.sqrt(sr_variance) * ((1 - EULER_GAMMA) * z1 + EULER_GAMMA * z2)
-    dsr = _norm_cdf((sr_daily - sr0) * np.sqrt(T - 1) / np.sqrt(var_scaler))
+    dsr = _norm_cdf((sr_daily - sr0) * np.sqrt(Te - 1) / np.sqrt(var_scaler))
     ann = float(np.sqrt(trading_year))
-    return {"dsr": round(float(dsr), 4),
-            "sr_daily": round(float(sr_daily), 6), "sr_annual": round(float(sr_daily) * ann, 2),
-            "sr0_daily": round(float(sr0), 6), "sr0_annual": round(float(sr0) * ann, 2),
-            "n_trials": N, "T": int(T), "skew": round(float(skew), 3), "kurt": round(float(kurt), 3)}
+    result = {"dsr": round(float(dsr), 4),
+              "sr_daily": round(float(sr_daily), 6), "sr_annual": round(float(sr_daily) * ann, 2),
+              "sr0_daily": round(float(sr0), 6), "sr0_annual": round(float(sr0) * ann, 2),
+              "n_trials": N, "T": int(T), "skew": round(float(skew), 3), "kurt": round(float(kurt), 3)}
+    if isinstance(t_eff, int) and t_eff >= 3:
+        result["t_eff"] = Te
+    return result
 
 
 def dsr_verdict(dsr: float) -> str:

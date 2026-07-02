@@ -81,6 +81,7 @@
       elPrice = el('vtm-price'), elAlloc = el('vtm-alloc');
   var playBtn = el('vtm-play');
   var ctx = canvas ? canvas.getContext('2d') : null;
+  var elGated = null;  // lazy-created chip for gated state
 
   var D = null, N = 0, idx = 0, playing = null;
 
@@ -95,7 +96,7 @@
     wire(); paint(); render();
   }).catch(function () { root.style.display = 'none'; });
 
-  // ---- canvas: phase ribbon + year ticks + playhead --------------------------
+  // ---- canvas: phase ribbon + year ticks + gated overlay + playhead ---------
   function paint() {
     if (!ctx || !N) return;
     var dpr = window.devicePixelRatio || 1;
@@ -115,6 +116,23 @@
       ctx.fillStyle = (PHASE[p] && PHASE[p].c) || '#888';
       ctx.fillRect(Math.floor(x0), 0, Math.ceil(x1 - x0) + 1, bandH);
       i = j + 1;
+    }
+
+    // Gated spans overlay (proprietary cycle timer active)
+    if (D.gated && D.gated.length === N) {
+      ctx.fillStyle = 'rgba(224, 164, 58, 0.9)';  // amber at ~0.9 alpha
+      var k = 0;
+      while (k < N) {
+        if (D.gated[k]) {
+          var g0 = k, g1 = k;
+          while (g1 + 1 < N && D.gated[g1 + 1]) g1++;
+          var gx0 = g0 / (N - 1) * W, gx1 = g1 / (N - 1) * W;
+          ctx.fillRect(Math.floor(gx0), bandH - 4, Math.ceil(gx1 - gx0) + 1, 4);
+          k = g1 + 1;
+        } else {
+          k++;
+        }
+      }
     }
 
     ctx.font = '10px Inter, system-ui, sans-serif';
@@ -185,7 +203,37 @@
     if (elRiskI) elRiskI.style.left = Math.max(0, Math.min(100, ri == null ? 50 : ri)) + '%';
     if (elRiskV) elRiskV.textContent = (ri == null ? '—' : Math.round(ri));
     elPrice.textContent = money(D.price[idx]);
-    if (elAlloc) elAlloc.textContent = (D.alloc[idx] == null ? '—' : D.alloc[idx] + '% BTC');
+    if (elAlloc) {
+      elAlloc.textContent = (D.alloc[idx] == null ? '—' : D.alloc[idx] + '% BTC');
+      // Lazy-create and manage the gated chip (proprietary cycle timer active)
+      if (!elGated && D.gated && D.gated.length === N) {
+        elGated = document.createElement('span');
+        elGated.id = 'vtm-gated';
+        elGated.style.fontSize = '10px';
+        elGated.style.padding = '1px 7px';
+        elGated.style.borderRadius = '999px';
+        elGated.style.marginLeft = '6px';
+        elGated.style.whiteSpace = 'nowrap';
+        elGated.style.verticalAlign = 'middle';
+        elGated.style.display = 'none';
+        elAlloc.insertAdjacentElement('afterend', elGated);
+      }
+      if (elGated && D.gated && D.gated.length === N) {
+        var isGated = D.gated[idx];
+        var amber = cssVar('--amber') || '#e0a43a';
+        elGated.style.color = amber;
+        elGated.style.background = 'color-mix(in srgb, ' + amber + ' 16%, transparent)';
+        if (isGated) {
+          elGated.style.display = '';
+          elGated.textContent = lang() === 'zh' ? '周期计时器生效中' : 'cycle timer active';
+          elGated.title = lang() === 'zh'
+            ? '此区间的配置由专有周期计时器强制持币观望——非引擎实时判断。'
+            : 'Allocation is held flat by the proprietary cycle timer during this span — not a live engine read.';
+        } else {
+          elGated.style.display = 'none';
+        }
+      }
+    }
   }
 
   // ---- navigation ------------------------------------------------------------
