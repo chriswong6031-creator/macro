@@ -216,6 +216,14 @@
   .sigrow .tpill { font-weight:600; }
   .tflag { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; }
   .tflag.up { color:var(--up); border-color:var(--up); } .tflag.dn { color:var(--down); border-color:var(--down); } .tflag.wn { color:var(--warn); border-color:var(--warn); }
+  /* ---- Leadership Health (contested label / flip-distance / term-structure) — parity with _baskets_desk.html.j2 ---- */
+  .flipcap { font-size:10.5px; color:var(--warn); margin:3px 0 0; font-variant-numeric:tabular-nums; }
+  .termstrip { display:flex; flex-wrap:wrap; align-items:center; gap:4px 7px; margin:2px 0 6px; font-size:10.5px; }
+  .tsc { background:var(--panel2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; color:var(--muted); }
+  .tsc b { font-variant-numeric:tabular-nums; font-weight:650; }
+  .tsc.pos b { color:var(--up); } .tsc.neg b { color:var(--down); }
+  .tspat { font-weight:650; color:var(--text); opacity:.85; }
+  .tstag { color:var(--muted); font-size:9.5px; border:1px solid var(--line); border-radius:5px; padding:0 4px; }
   .detail-link { display:inline-block; margin-top:8px; font-size:11.5px; color:var(--link); border-top:1px solid var(--line); padding-top:7px; width:100%; }
   .detail-link:hover { text-decoration:underline; }
   /* ---- concentration ---- */
@@ -805,7 +813,7 @@
 
   <footer>
     <span class="l-en">Read-only analytics for informational purposes only — not investment advice. Equal-weighted, point-in-time dated membership, buy-and-hold between changes, over the FREE S&amp;P-1500 price cache (~3y). Membership was curated with knowledge of the period, so the series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest and not a buy list. See LIMITATIONS.md.</span><span class="l-zh">仅供参考的只读分析 — 非投资建议。等权重、按时点日期管理成分、调整间买入持有，基于免费标普 1500 价格缓存（约 3 年）。成分在已知该期间表现下整理，故为事后选取的描述性序列 — 并非样本外回测，也非买入清单。参见 LIMITATIONS.md。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-07-02 06:24 UTC</span>.
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-07-02 06:56 UTC</span>.
   </footer>
 
 <script src="lightweight-charts.js"></script>
@@ -1022,6 +1030,61 @@ function compLegend(c){
     return `<span><span class="sw" style="background:${COMP_COLOR[k]}"></span>${L(COMP_LBL[k][0],COMP_LBL[k][1])} <b>${s}</b></span>`;
   }).join('')+`</div>`;
 }
+// ---- Leadership Health (display-only, deterministic — a shape/fragility read, not a forecast)
+// Ported verbatim from the shared desk renderer (templates/baskets_desk.js) for US-page parity.
+// The US overview payload attaches no per-basket `cycle` record (that map is a China-only
+// build step), so the cycle leg of the contested predicate silently drops out and the
+// predicate degrades to the remaining three legs — same behavior as the shared renderer.
+function _basketOf(id){ try{ return (((typeof BASKETS!=='undefined'&&BASKETS)||{}).baskets||[]).find(b=>b&&b.id===id)||null; }catch(e){ return null; } }
+// "early cracks": rollover band still low but reasons exist AND the theme is very extended.
+function earlyCracks(t){
+  const rr=(t.textures||{}).rollover_risk||{};
+  return rr.band==='low' && (rr.reasons||[]).length>0 && t.rs_pctile!=null && t.rs_pctile>=0.9;
+}
+// The faster counter-textures that DISAGREE with a constructive label. Each entry is
+// [en, zh] — purely descriptive, computed from already-published payload fields.
+function contestedTextures(t, cyc){
+  const rr=(t.textures||{}).rollover_risk||{};
+  const list=[];
+  if(cyc && (((cyc.turns||[]).some(x=>x&&x.provisional&&x.k==='peak')) || ((cyc.proj||{}).nextTurn==='trough')))
+    list.push(['cycle clock at a provisional peak / projecting a trough next','周期时钟处于临时顶部 / 推演下一拐点为底部']);
+  if(t.rs_pctile!=null && t.rs_pctile>=0.95)
+    list.push(['very extended (RS ≥95%ile)','相对强度极端延展（≥95分位）']);
+  if(rr.band==='elevated'||rr.band==='high')
+    list.push(['roll-over risk '+rr.band+(rr.reasons&&rr.reasons.length?': '+rr.reasons.join(' · '):''),'回落风险'+(rr.band_zh||rr.band)+(rr.reasons&&rr.reasons.length?'：'+rr.reasons.join(' · '):'')]);
+  else if(earlyCracks(t))
+    list.push(['early cracks: '+(rr.reasons||[]).join(' · '),'初现裂痕：'+(rr.reasons||[]).join(' · ')]);
+  if(t.delta_5d!=null && t.delta_5d<0)
+    list.push(['negative 5-day relative return ('+fmtPct(t.delta_5d)+')','5日相对收益为负（'+fmtPct(t.delta_5d)+'）']);
+  return list;
+}
+function isContested(t){
+  return (t.label==='dominant'||t.label==='emerging')
+    && contestedTextures(t,(_basketOf(t.id)||{}).cycle).length>=2;
+}
+// flip-distance micro-caption (engine-computed, same literals as the label logic)
+function flipCaption(t){
+  const fd=t.flip_distance||null;
+  if(!fd||!(t.label==='dominant'||t.label==='emerging')) return '';
+  if(fd.route_a_bps==null||fd.route_a_bps<=0) return '';
+  const bps=Math.round(fd.route_a_bps), s=fd.route_a_sessions_est;
+  return `<div class="flipcap" title="${esc(fd.note_en||'')}">${
+    L(`${bps} bps from FADING${s!=null?` (~${s} bad session${s!==1?'s':''})`:''}`,
+      `距「退潮」仅${bps}个基点${s!=null?`（约${s}个坏交易日）`:''}`)} <span class="tstag">${L('descriptive','描述性')}</span></div>`;
+}
+// momentum term-structure strip: 5d/20d/60d relative return + a deterministic pattern name.
+function termStrip(t){
+  const hz=['5d','20d','60d'];
+  const v=hz.map(h=>(((t.perf||{})[h])||{}).rel);
+  if(v.every(x=>x==null)) return '';
+  const cells=hz.map((h,i)=>`<span class="tsc ${cls(v[i])}">${h} <b>${fmtPct(v[i])}</b></span>`).join('');
+  const [a,b2,c]=v; let pat='mixed', patZh='震荡';
+  if(a!=null&&b2!=null&&c!=null&&a>0&&b2>0&&c>0){ pat='aligned up'; patZh='同向向上'; }
+  else if(a!=null&&c!=null&&a<0&&c>0){ pat='rolling from the front'; patZh='前端回落'; }
+  else if(a!=null&&b2!=null&&c!=null&&a<0&&b2<0&&c<0){ pat='aligned down'; patZh='同向向下'; }
+  return `<div class="termstrip" title="descriptive — a shape/fragility read, not a forecast">${cells}
+    <span class="tspat">${L(pat,patZh)}</span><span class="tstag">${L('shape read, not a signal','形态读数，非信号')}</span></div>`;
+}
 function themeCard(t){
   const lc=LABEL_COLOR[t.label]||LABEL_COLOR.neutral, rc=RECO_COLOR[t.reco]||RECO_COLOR.hold;
   const r20=t.perf&&t.perf['20d']?t.perf['20d'].rel:null;
@@ -1050,12 +1113,20 @@ function themeCard(t){
     sigPills.push(`<span class="tpill ${wc}" title="whale accumulation (Chaikin money-flow %ile): ${esc(tape.whale.label_en||'')}">🐋 ${Math.round(w)}${tape.whale.trend_5d>0?'↑':tape.whale.trend_5d<0?'↓':''}</span>`);}
   if(tape&&tape.flow&&tape.flow.cmf!=null){const f=tape.flow.cmf, fc=f>0.05?'up':f<-0.05?'dn':'';
     sigPills.push(`<span class="tpill ${fc}" title="net money flow (CMF): ${esc(tape.flow.label_en||'')}">${f>0.05?'▸ '+L('inflow','流入'):f<-0.05?'▸ '+L('outflow','流出'):'▸ '+L('flat','均衡')}</span>`);}
+  // Leadership Health: contested modifier on the label chip (display-only; the label itself
+  // and its color are untouched — the modifier only says faster textures disagree).
+  const contested=isContested(t);
+  const cTex=contested?contestedTextures(t,(_basketOf(t.id)||{}).cycle):[];
+  const labelChip = contested
+    ? `<span class="tlabel" style="background:${lc[0]};border:1px solid ${lc[1]};color:${lc[2]}" title="contested — faster descriptive textures disagree with the validated label: ${esc(cTex.map(x=>x[0]).join(' | '))}. A shape/fragility read, not a forecast.">${L(t.label_en+' · contested',(t.label_zh||t.label_en)+' · 存在分歧')}</span>`
+    : badge('tlabel',lc,t.label_en,t.label_zh);
   return `<div class="tcard" id="theme-${t.id}" style="--tc:${lc[2]}">
     <div class="top">
-      ${badge('tlabel',lc,t.label_en,t.label_zh)}
+      ${labelChip}
       <a class="nm" href="basket/${t.id}.html" title="open full theme detail">${L(esc(t.name),esc(t.name_zh))}</a>
       <span class="sc">${t.score}<small>/100</small></span>
     </div>
+    ${flipCaption(t)}
     <div class="subrow">
       <span>#${t.rank}</span>
       ${badge('treco',rc,t.reco_en,t.reco_zh)}
@@ -1063,6 +1134,7 @@ function themeCard(t){
       <span class="spark">${sparkSvg(spk,{w:84,h:24,color:lc[2]})}</span>
     </div>
     ${compBar(t.components,(THEME&&THEME.weights)||{trend:.26,breadth:.18,impulse:.07,macro:.18,mtf:.16,volhole:.05,crowding:.10})}
+    ${termStrip(t)}
     ${sigPills.length?`<div class="txrow sigrow">${sigPills.join('')}</div>`:''}
     <div class="txrow">
       <span class="tpill" title="bull-market age">${bullPill}</span>
@@ -1077,6 +1149,7 @@ function themeCard(t){
     </div>
     <details><summary>${L('why &amp; components','理由与分项')}</summary>
       <div class="why">${L(esc(t.reco_why_en),esc(t.reco_why_zh))}</div>
+      ${contested?`<div class="why" style="opacity:.9">${L('Contested — faster textures disagreeing with the label (descriptive, not a forecast)','存在分歧 — 与标签相悖的更快纹理（描述性，非预测）')}: ${cTex.map(x=>L(esc(x[0]),esc(x[1]))).join(' · ')}</div>`:''}
       ${ss?`<div class="why" style="opacity:.82">${L('Signal grade','信号评级')}: <b>${esc(ss.grade)}</b> — ${L(esc(ss.en||''),esc(ss.zh||''))}</div>`:''}
       ${compLegend(t.components)}
       ${top.length?`<div class="why">${L('leaders','领涨')}: ${top.map(x=>esc(x.ticker)).join(', ')}${t.leadership.breadth==='narrow'?' ⚠':''}</div>`:''}
