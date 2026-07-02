@@ -554,5 +554,93 @@
       "note": "Fire the alert only above the OUT-OF-SAMPLE min_confidence (a None gate means the lift CI did not clear 1.0 \u2014 keep firing but DON'T claim added precision). Display the Platt-recalibrated probability as the confidence number; show sub-threshold firings with a low-confidence badge (audit trail preserved)."
     },
     "GO": true
+  },
+  "breadth_divergence_fit": {
+    "universe": "proxy_spdr_sectors",
+    "n_assets": 11,
+    "span": [
+      "1998-12-22",
+      "2026-06-30"
+    ],
+    "n": 1330,
+    "base_rate": 0.07,
+    "n_trials": 12,
+    "target": "fwd_dd21<-8% (basket drawdown \u2014 never forward return)",
+    "legs": [
+      "gap(pinned, basket_off_high\u2212member_dd_med ramp 3\u219220pp)",
+      "participation(\u0394pct50_5d<-5pp | pct50<=0.5, pinned)",
+      "stealth(rising below-50d count 10d & share>=0.3 | share>=0.7, pinned)"
+    ],
+    "hand_weights": [
+      0.5,
+      0.3,
+      0.2
+    ],
+    "fitted_leg_weights": [
+      0.554,
+      0.0,
+      0.0
+    ],
+    "wired_weights": [
+      1.0,
+      0.0,
+      0.0
+    ],
+    "g1_standalone": {
+      "pass": false,
+      "oos_topthird_lift": 0.94,
+      "lift_ci": [
+        0.56,
+        1.06
+      ],
+      "n_fired_oos": 436,
+      "k_folds": 5
+    },
+    "g2_incremental": {
+      "pass": false,
+      "n": 12854,
+      "base_rate": 0.11,
+      "oos_lift_hand5": 1.08,
+      "oos_lift_fit5": 1.32,
+      "oos_lift_fit6": 1.32,
+      "w6_full_fit": 0.0,
+      "w6_by_fold": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "full_fit_weights": [
+        0.296,
+        0.0,
+        0.0,
+        0.857,
+        0.005,
+        0.0
+      ]
+    },
+    "confidence": {
+      "n": 1330,
+      "outcome": "fwd_dd21<-8%",
+      "base_rate": 0.07,
+      "skill_recal": -0.002,
+      "gate": null,
+      "gate_rejected": {
+        "min_confidence": 0.2,
+        "precision_oos": 0.059,
+        "recall_oos": 0.283,
+        "lift_oos": 0.84,
+        "lift_ci": [
+          0.53,
+          1.12
+        ],
+        "n_fired_oos": 376,
+        "k_folds": 5
+      },
+      "verdict": "weak_separation"
+    },
+    "verdict": "weak_separation",
+    "note": "Display-only texture in ALL cases; the verdict only controls the displayed grade. CN/HK reads are descriptive-only regardless (US-proxy verdict cited cross-market, 0/152-FWER CN prior)."
   }
 }
