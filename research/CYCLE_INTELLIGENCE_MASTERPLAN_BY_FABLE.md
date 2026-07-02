@@ -326,3 +326,13 @@ design.
 
 - 2026-07-02 — Masterplan authored (14-agent design fleet + 4-agent red team; arbitration §1). Supporting
   docs committed under `research/cycle_masterplan/`. Waves not yet started.
+- 2026-07-02 — **W0.4 (keystone gate) SHIPPED.** TR-v0 PIT backfill (8,344 month-end stamps, 11 US sectors +
+  24 country ETFs, 2005–2026) + walk-forward position/phase predictive-power study; PIT invariance verified.
+  **VERDICT: position deciles = NO-EDGE (return channel); phase = risk-only, regime-fragile drawdown signal
+  whose sign INVERTS the intuitive mapping (Peak→shallower DD, Trough→deeper); the LADDER inversion is NOT
+  confirmed (INCONCLUSIVE on all 9 era×horizon cells).** Program steer (§6.1 branch): REFINE toward
+  risk-lens + measurement + regime context; carry the hazard/conditional stack as a decision-gated research
+  surface (DL-1/DL-2), NOT a v1 position-return sizing engine. Deliverables:
+  `scripts/keystone_position_gate_phase0.py`, `research/cycle_masterplan/W04_KEYSTONE_VERDICT.md`,
+  `research/cycle_masterplan/PREREGISTRATION.md` (all downstream gates + BH-FDR budget, frozen),
+  `data/research/keystone_tr0/` (backfill + study tables). Runtime ~15–17 min.

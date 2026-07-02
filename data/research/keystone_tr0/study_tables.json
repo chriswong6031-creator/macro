@@ -1,0 +1,7998 @@
+{
+  "full": {
+    "21": {
+      "position_deciles": [
+        {
+          "label": "D1 (pos 0-10%)",
+          "n_rows": 831,
+          "n_months": 130,
+          "thin": false,
+          "mean_fwd_ret": 0.0073,
+          "mean_fwd_ret_ci": [
+            -0.018,
+            0.0307
+          ],
+          "ret_gap_vs_base": -0.0003,
+          "ret_gap_ci": [
+            -0.0226,
+            0.0202
+          ],
+          "p10_dd": -0.1666,
+          "p10_dd_ci": [
+            -0.2593,
+            -0.1181
+          ],
+          "p10_dd_gap_vs_base": -0.0537,
+          "p10_dd_gap_ci": [
+            -0.1459,
+            -0.0135
+          ],
+          "dd_adj_score": 0.0436,
+          "hit_rate": 0.5764,
+          "hit_rate_ci": [
+            0.5425,
+            0.6096
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": 0.0075
+        },
+        {
+          "label": "D2 (pos 10-20%)",
+          "n_rows": 831,
+          "n_months": 165,
+          "thin": false,
+          "mean_fwd_ret": 0.0078,
+          "mean_fwd_ret_ci": [
+            -0.0046,
+            0.0222
+          ],
+          "ret_gap_vs_base": 0.0002,
+          "ret_gap_ci": [
+            -0.0099,
+            0.0102
+          ],
+          "p10_dd": -0.1311,
+          "p10_dd_ci": [
+            -0.1509,
+            -0.1109
+          ],
+          "p10_dd_gap_vs_base": -0.0182,
+          "p10_dd_gap_ci": [
+            -0.0336,
+            -0.0016
+          ],
+          "dd_adj_score": 0.0594,
+          "hit_rate": 0.5343,
+          "hit_rate_ci": [
+            0.5003,
+            0.568
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": -0.0346
+        },
+        {
+          "label": "D3 (pos 20-30%)",
+          "n_rows": 831,
+          "n_months": 199,
+          "thin": false,
+          "mean_fwd_ret": 0.0068,
+          "mean_fwd_ret_ci": [
+            -0.0043,
+            0.0174
+          ],
+          "ret_gap_vs_base": -0.0007,
+          "ret_gap_ci": [
+            -0.0088,
+            0.0079
+          ],
+          "p10_dd": -0.133,
+          "p10_dd_ci": [
+            -0.1572,
+            -0.1103
+          ],
+          "p10_dd_gap_vs_base": -0.0201,
+          "p10_dd_gap_ci": [
+            -0.0372,
+            -0.0021
+          ],
+          "dd_adj_score": 0.0511,
+          "hit_rate": 0.5584,
+          "hit_rate_ci": [
+            0.5244,
+            0.5918
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": -0.0105
+        },
+        {
+          "label": "D4 (pos 30-40%)",
+          "n_rows": 831,
+          "n_months": 218,
+          "thin": false,
+          "mean_fwd_ret": 0.0076,
+          "mean_fwd_ret_ci": [
+            -0.0013,
+            0.0162
+          ],
+          "ret_gap_vs_base": 0.0,
+          "ret_gap_ci": [
+            -0.0065,
+            0.007
+          ],
+          "p10_dd": -0.112,
+          "p10_dd_ci": [
+            -0.1283,
+            -0.0959
+          ],
+          "p10_dd_gap_vs_base": 0.0009,
+          "p10_dd_gap_ci": [
+            -0.0105,
+            0.0126
+          ],
+          "dd_adj_score": 0.0678,
+          "hit_rate": 0.5608,
+          "hit_rate_ci": [
+            0.5268,
+            0.5942
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": -0.0081
+        },
+        {
+          "label": "D5 (pos 40-50%)",
+          "n_rows": 831,
+          "n_months": 225,
+          "thin": false,
+          "mean_fwd_ret": 0.0096,
+          "mean_fwd_ret_ci": [
+            0.0009,
+            0.0181
+          ],
+          "ret_gap_vs_base": 0.0021,
+          "ret_gap_ci": [
+            -0.0045,
+            0.0092
+          ],
+          "p10_dd": -0.1013,
+          "p10_dd_ci": [
+            -0.123,
+            -0.0875
+          ],
+          "p10_dd_gap_vs_base": 0.0116,
+          "p10_dd_gap_ci": [
+            -0.003,
+            0.0228
+          ],
+          "dd_adj_score": 0.0951,
+          "hit_rate": 0.6053,
+          "hit_rate_ci": [
+            0.5716,
+            0.638
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": 0.0364
+        },
+        {
+          "label": "D6 (pos 50-60%)",
+          "n_rows": 830,
+          "n_months": 220,
+          "thin": false,
+          "mean_fwd_ret": 0.0079,
+          "mean_fwd_ret_ci": [
+            -0.0005,
+            0.0157
+          ],
+          "ret_gap_vs_base": 0.0003,
+          "ret_gap_ci": [
+            -0.0059,
+            0.0066
+          ],
+          "p10_dd": -0.1007,
+          "p10_dd_ci": [
+            -0.1205,
+            -0.0894
+          ],
+          "p10_dd_gap_vs_base": 0.0122,
+          "p10_dd_gap_ci": [
+            -0.0052,
+            0.023
+          ],
+          "dd_adj_score": 0.078,
+          "hit_rate": 0.5771,
+          "hit_rate_ci": [
+            0.5432,
+            0.6103
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": 0.0082
+        },
+        {
+          "label": "D7 (pos 60-70%)",
+          "n_rows": 831,
+          "n_months": 206,
+          "thin": false,
+          "mean_fwd_ret": 0.0066,
+          "mean_fwd_ret_ci": [
+            -0.0012,
+            0.0151
+          ],
+          "ret_gap_vs_base": -0.0009,
+          "ret_gap_ci": [
+            -0.007,
+            0.0052
+          ],
+          "p10_dd": -0.0986,
+          "p10_dd_ci": [
+            -0.1061,
+            -0.0873
+          ],
+          "p10_dd_gap_vs_base": 0.0144,
+          "p10_dd_gap_ci": [
+            0.0054,
+            0.0249
+          ],
+          "dd_adj_score": 0.0673,
+          "hit_rate": 0.5584,
+          "hit_rate_ci": [
+            0.5244,
+            0.5918
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": -0.0105
+        },
+        {
+          "label": "D8 (pos 70-80%)",
+          "n_rows": 831,
+          "n_months": 190,
+          "thin": false,
+          "mean_fwd_ret": 0.0065,
+          "mean_fwd_ret_ci": [
+            -0.0009,
+            0.0137
+          ],
+          "ret_gap_vs_base": -0.0011,
+          "ret_gap_ci": [
+            -0.0077,
+            0.0054
+          ],
+          "p10_dd": -0.0996,
+          "p10_dd_ci": [
+            -0.1125,
+            -0.087
+          ],
+          "p10_dd_gap_vs_base": 0.0133,
+          "p10_dd_gap_ci": [
+            -0.0009,
+            0.0252
+          ],
+          "dd_adj_score": 0.0648,
+          "hit_rate": 0.5728,
+          "hit_rate_ci": [
+            0.5389,
+            0.606
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": 0.0039
+        },
+        {
+          "label": "D9 (pos 80-90%)",
+          "n_rows": 831,
+          "n_months": 169,
+          "thin": false,
+          "mean_fwd_ret": 0.01,
+          "mean_fwd_ret_ci": [
+            0.0031,
+            0.0173
+          ],
+          "ret_gap_vs_base": 0.0025,
+          "ret_gap_ci": [
+            -0.0051,
+            0.0095
+          ],
+          "p10_dd": -0.0903,
+          "p10_dd_ci": [
+            -0.1044,
+            -0.0826
+          ],
+          "p10_dd_gap_vs_base": 0.0226,
+          "p10_dd_gap_ci": [
+            0.0086,
+            0.0333
+          ],
+          "dd_adj_score": 0.1113,
+          "hit_rate": 0.5764,
+          "hit_rate_ci": [
+            0.5425,
+            0.6096
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": 0.0075
+        },
+        {
+          "label": "D10 (pos 90-100%)",
+          "n_rows": 831,
+          "n_months": 148,
+          "thin": false,
+          "mean_fwd_ret": 0.0054,
+          "mean_fwd_ret_ci": [
+            -0.0015,
+            0.0118
+          ],
+          "ret_gap_vs_base": -0.0022,
+          "ret_gap_ci": [
+            -0.0102,
+            0.0055
+          ],
+          "p10_dd": -0.0965,
+          "p10_dd_ci": [
+            -0.1053,
+            -0.0872
+          ],
+          "p10_dd_gap_vs_base": 0.0164,
+          "p10_dd_gap_ci": [
+            0.004,
+            0.0298
+          ],
+          "dd_adj_score": 0.0554,
+          "hit_rate": 0.5692,
+          "hit_rate_ci": [
+            0.5353,
+            0.6025
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": 0.0003
+        }
+      ],
+      "phases": [
+        {
+          "label": "Trough",
+          "n_rows": 1936,
+          "n_months": 200,
+          "thin": false,
+          "mean_fwd_ret": 0.0062,
+          "mean_fwd_ret_ci": [
+            -0.0072,
+            0.0189
+          ],
+          "ret_gap_vs_base": -0.0013,
+          "ret_gap_ci": [
+            -0.0113,
+            0.0084
+          ],
+          "p10_dd": -0.1403,
+          "p10_dd_ci": [
+            -0.1673,
+            -0.116
+          ],
+          "p10_dd_gap_vs_base": -0.0274,
+          "p10_dd_gap_ci": [
+            -0.0502,
+            -0.0092
+          ],
+          "dd_adj_score": 0.0443,
+          "hit_rate": 0.5511,
+          "hit_rate_ci": [
+            0.5289,
+            0.5732
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": -0.0178
+        },
+        {
+          "label": "Recovery",
+          "n_rows": 501,
+          "n_months": 128,
+          "thin": false,
+          "mean_fwd_ret": 0.0107,
+          "mean_fwd_ret_ci": [
+            -0.0108,
+            0.0337
+          ],
+          "ret_gap_vs_base": 0.0031,
+          "ret_gap_ci": [
+            -0.0168,
+            0.0241
+          ],
+          "p10_dd": -0.1509,
+          "p10_dd_ci": [
+            -0.2014,
+            -0.1147
+          ],
+          "p10_dd_gap_vs_base": -0.038,
+          "p10_dd_gap_ci": [
+            -0.0847,
+            -0.0044
+          ],
+          "dd_adj_score": 0.0706,
+          "hit_rate": 0.5649,
+          "hit_rate_ci": [
+            0.5211,
+            0.6076
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": -0.004
+        },
+        {
+          "label": "Expansion",
+          "n_rows": 1324,
+          "n_months": 215,
+          "thin": false,
+          "mean_fwd_ret": 0.0069,
+          "mean_fwd_ret_ci": [
+            -0.0004,
+            0.0151
+          ],
+          "ret_gap_vs_base": -0.0007,
+          "ret_gap_ci": [
+            -0.0081,
+            0.006
+          ],
+          "p10_dd": -0.1022,
+          "p10_dd_ci": [
+            -0.1187,
+            -0.0914
+          ],
+          "p10_dd_gap_vs_base": 0.0107,
+          "p10_dd_gap_ci": [
+            -0.0016,
+            0.02
+          ],
+          "dd_adj_score": 0.067,
+          "hit_rate": 0.568,
+          "hit_rate_ci": [
+            0.5411,
+            0.5944
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": -0.0009
+        },
+        {
+          "label": "Peak",
+          "n_rows": 2508,
+          "n_months": 217,
+          "thin": false,
+          "mean_fwd_ret": 0.0063,
+          "mean_fwd_ret_ci": [
+            0.0007,
+            0.012
+          ],
+          "ret_gap_vs_base": -0.0012,
+          "ret_gap_ci": [
+            -0.0074,
+            0.0045
+          ],
+          "p10_dd": -0.0977,
+          "p10_dd_ci": [
+            -0.1069,
+            -0.0878
+          ],
+          "p10_dd_gap_vs_base": 0.0153,
+          "p10_dd_gap_ci": [
+            0.0049,
+            0.0267
+          ],
+          "dd_adj_score": 0.0648,
+          "hit_rate": 0.5642,
+          "hit_rate_ci": [
+            0.5447,
+            0.5835
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": -0.0047
+        },
+        {
+          "label": "Downturn",
+          "n_rows": 2040,
+          "n_months": 226,
+          "thin": false,
+          "mean_fwd_ret": 0.01,
+          "mean_fwd_ret_ci": [
+            0.0009,
+            0.0188
+          ],
+          "ret_gap_vs_base": 0.0024,
+          "ret_gap_ci": [
+            -0.0049,
+            0.0095
+          ],
+          "p10_dd": -0.1017,
+          "p10_dd_ci": [
+            -0.1206,
+            -0.089
+          ],
+          "p10_dd_gap_vs_base": 0.0112,
+          "p10_dd_gap_ci": [
+            -0.0037,
+            0.0226
+          ],
+          "dd_adj_score": 0.098,
+          "hit_rate": 0.5931,
+          "hit_rate_ci": [
+            0.5717,
+            0.6143
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": 0.0242
+        }
+      ],
+      "timing_states": [
+        {
+          "label": "RALLY ON",
+          "n_rows": 1931,
+          "n_months": 231,
+          "thin": false,
+          "mean_fwd_ret": 0.0056,
+          "mean_fwd_ret_ci": [
+            -0.0042,
+            0.016
+          ],
+          "ret_gap_vs_base": -0.002,
+          "ret_gap_ci": [
+            -0.0099,
+            0.0058
+          ],
+          "p10_dd": -0.1114,
+          "p10_dd_ci": [
+            -0.1294,
+            -0.0944
+          ],
+          "p10_dd_gap_vs_base": 0.0015,
+          "p10_dd_gap_ci": [
+            -0.0137,
+            0.0158
+          ],
+          "dd_adj_score": 0.0502,
+          "hit_rate": 0.551,
+          "hit_rate_ci": [
+            0.5287,
+            0.5731
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": -0.0179
+        },
+        {
+          "label": "TURN SIGNALED",
+          "n_rows": 1294,
+          "n_months": 219,
+          "thin": false,
+          "mean_fwd_ret": 0.0068,
+          "mean_fwd_ret_ci": [
+            -0.0007,
+            0.0147
+          ],
+          "ret_gap_vs_base": -0.0007,
+          "ret_gap_ci": [
+            -0.0076,
+            0.0063
+          ],
+          "p10_dd": -0.1068,
+          "p10_dd_ci": [
+            -0.1213,
+            -0.0925
+          ],
+          "p10_dd_gap_vs_base": 0.0061,
+          "p10_dd_gap_ci": [
+            -0.0063,
+            0.0182
+          ],
+          "dd_adj_score": 0.0636,
+          "hit_rate": 0.5858,
+          "hit_rate_ci": [
+            0.5587,
+            0.6123
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": 0.0169
+        },
+        {
+          "label": "COUNTERTREND BOUNCE",
+          "n_rows": 1279,
+          "n_months": 208,
+          "thin": false,
+          "mean_fwd_ret": 0.0072,
+          "mean_fwd_ret_ci": [
+            -0.0024,
+            0.0177
+          ],
+          "ret_gap_vs_base": -0.0003,
+          "ret_gap_ci": [
+            -0.0083,
+            0.0082
+          ],
+          "p10_dd": -0.1173,
+          "p10_dd_ci": [
+            -0.1431,
+            -0.0993
+          ],
+          "p10_dd_gap_vs_base": -0.0044,
+          "p10_dd_gap_ci": [
+            -0.0294,
+            0.0112
+          ],
+          "dd_adj_score": 0.0615,
+          "hit_rate": 0.5778,
+          "hit_rate_ci": [
+            0.5505,
+            0.6046
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": 0.0089
+        },
+        {
+          "label": "BOTTOM WATCH",
+          "n_rows": 1257,
+          "n_months": 211,
+          "thin": false,
+          "mean_fwd_ret": 0.0094,
+          "mean_fwd_ret_ci": [
+            0.0015,
+            0.0174
+          ],
+          "ret_gap_vs_base": 0.0018,
+          "ret_gap_ci": [
+            -0.0045,
+            0.0082
+          ],
+          "p10_dd": -0.1131,
+          "p10_dd_ci": [
+            -0.129,
+            -0.1002
+          ],
+          "p10_dd_gap_vs_base": -0.0002,
+          "p10_dd_gap_ci": [
+            -0.012,
+            0.009
+          ],
+          "dd_adj_score": 0.0828,
+          "hit_rate": 0.5664,
+          "hit_rate_ci": [
+            0.5389,
+            0.5936
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": -0.0025
+        },
+        {
+          "label": "TOP WATCH",
+          "n_rows": 1027,
+          "n_months": 183,
+          "thin": false,
+          "mean_fwd_ret": 0.0039,
+          "mean_fwd_ret_ci": [
+            -0.0023,
+            0.0106
+          ],
+          "ret_gap_vs_base": -0.0036,
+          "ret_gap_ci": [
+            -0.01,
+            0.0028
+          ],
+          "p10_dd": -0.0979,
+          "p10_dd_ci": [
+            -0.1084,
+            -0.0878
+          ],
+          "p10_dd_gap_vs_base": 0.015,
+          "p10_dd_gap_ci": [
+            0.0035,
+            0.0271
+          ],
+          "dd_adj_score": 0.0402,
+          "hit_rate": 0.5316,
+          "hit_rate_ci": [
+            0.5011,
+            0.562
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": -0.0373
+        },
+        {
+          "label": "DECLINE",
+          "n_rows": 885,
+          "n_months": 156,
+          "thin": false,
+          "mean_fwd_ret": 0.015,
+          "mean_fwd_ret_ci": [
+            -0.0082,
+            0.0369
+          ],
+          "ret_gap_vs_base": 0.0075,
+          "ret_gap_ci": [
+            -0.0131,
+            0.0281
+          ],
+          "p10_dd": -0.1563,
+          "p10_dd_ci": [
+            -0.3198,
+            -0.1084
+          ],
+          "p10_dd_gap_vs_base": -0.0434,
+          "p10_dd_gap_ci": [
+            -0.2056,
+            -0.002
+          ],
+          "dd_adj_score": 0.0961,
+          "hit_rate": 0.6136,
+          "hit_rate_ci": [
+            0.5811,
+            0.6451
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": 0.0447
+        },
+        {
+          "label": "FRESH BUY",
+          "n_rows": 322,
+          "n_months": 111,
+          "thin": false,
+          "mean_fwd_ret": 0.001,
+          "mean_fwd_ret_ci": [
+            -0.0094,
+            0.0113
+          ],
+          "ret_gap_vs_base": -0.0065,
+          "ret_gap_ci": [
+            -0.0165,
+            0.0028
+          ],
+          "p10_dd": -0.1142,
+          "p10_dd_ci": [
+            -0.1288,
+            -0.0973
+          ],
+          "p10_dd_gap_vs_base": -0.0013,
+          "p10_dd_gap_ci": [
+            -0.0156,
+            0.0173
+          ],
+          "dd_adj_score": 0.009,
+          "hit_rate": 0.5652,
+          "hit_rate_ci": [
+            0.5106,
+            0.6183
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": -0.0037
+        },
+        {
+          "label": "ROLLING OVER",
+          "n_rows": 314,
+          "n_months": 116,
+          "thin": false,
+          "mean_fwd_ret": 0.014,
+          "mean_fwd_ret_ci": [
+            0.0028,
+            0.0276
+          ],
+          "ret_gap_vs_base": 0.0065,
+          "ret_gap_ci": [
+            -0.0043,
+            0.0189
+          ],
+          "p10_dd": -0.0832,
+          "p10_dd_ci": [
+            -0.1033,
+            -0.0738
+          ],
+          "p10_dd_gap_vs_base": 0.0297,
+          "p10_dd_gap_ci": [
+            0.011,
+            0.0414
+          ],
+          "dd_adj_score": 0.1688,
+          "hit_rate": 0.5828,
+          "hit_rate_ci": [
+            0.5276,
+            0.636
+          ],
+          "base_hit_rate": 0.5689,
+          "hit_gap_vs_base": 0.0139
+        }
+      ],
+      "signal": [
+        {
+          "label": "BUY",
+          "n_rows": 1357,
+          "n_months": 193,
+          "thin": false,
+          "mean_fwd_ret": 0.0094,
+          "mean_fwd_ret_ci": [
+            -0.0047,
+            0.0235
+          ],
+          "ret_gap_vs_base": 0.0007,
+          "ret_gap_ci": [
+            -0.0088,
+            0.0104
+          ],
+          "p10_dd": -0.1333,
+          "p10_dd_ci": [
+            -0.1603,
+            -0.1108
+          ],
+          "p10_dd_gap_vs_base": -0.0152,
+          "p10_dd_gap_ci": [
+            -0.0302,
+            -0.0024
+          ],
+          "dd_adj_score": 0.0702,
+          "hit_rate": 0.5542,
+          "hit_rate_ci": [
+            0.5276,
+            0.5804
+          ],
+          "base_hit_rate": 0.5683,
+          "hit_gap_vs_base": -0.0141
+        },
+        {
+          "label": "SELL",
+          "n_rows": 1726,
+          "n_months": 199,
+          "thin": false,
+          "mean_fwd_ret": 0.0081,
+          "mean_fwd_ret_ci": [
+            -0.0002,
+            0.0165
+          ],
+          "ret_gap_vs_base": -0.0006,
+          "ret_gap_ci": [
+            -0.0086,
+            0.007
+          ],
+          "p10_dd": -0.1006,
+          "p10_dd_ci": [
+            -0.12,
+            -0.0892
+          ],
+          "p10_dd_gap_vs_base": 0.0175,
+          "p10_dd_gap_ci": [
+            0.0021,
+            0.0294
+          ],
+          "dd_adj_score": 0.08,
+          "hit_rate": 0.5794,
+          "hit_rate_ci": [
+            0.5559,
+            0.6025
+          ],
+          "base_hit_rate": 0.5683,
+          "hit_gap_vs_base": 0.0111
+        }
+      ],
+      "inversion": {
+        "low_pos": {
+          "n_rows": 1662,
+          "n_months": 183,
+          "mean_fwd_ret": 0.0075,
+          "p10_dd": -0.1475,
+          "dd_adj_score": 0.051
+        },
+        "high_pos": {
+          "n_rows": 1662,
+          "n_months": 184,
+          "mean_fwd_ret": 0.0077,
+          "p10_dd": -0.0936,
+          "dd_adj_score": 0.0823
+        },
+        "ret_gap_low_minus_high": -0.0002,
+        "ret_gap_ci": [
+          -0.0186,
+          0.016
+        ],
+        "dd_adj_gap_low_minus_high": -0.0313,
+        "dd_adj_gap_ci": [
+          -0.1608,
+          0.116
+        ],
+        "verdict": "inconclusive"
+      }
+    },
+    "63": {
+      "position_deciles": [
+        {
+          "label": "D1 (pos 0-10%)",
+          "n_rows": 821,
+          "n_months": 128,
+          "thin": false,
+          "mean_fwd_ret": 0.01,
+          "mean_fwd_ret_ci": [
+            -0.0299,
+            0.0446
+          ],
+          "ret_gap_vs_base": -0.0148,
+          "ret_gap_ci": [
+            -0.0459,
+            0.0152
+          ],
+          "p10_dd": -0.2875,
+          "p10_dd_ci": [
+            -0.4323,
+            -0.2086
+          ],
+          "p10_dd_gap_vs_base": -0.0963,
+          "p10_dd_gap_ci": [
+            -0.2221,
+            -0.0223
+          ],
+          "dd_adj_score": 0.0347,
+          "hit_rate": 0.5664,
+          "hit_rate_ci": [
+            0.5323,
+            0.5999
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": -0.0613
+        },
+        {
+          "label": "D2 (pos 10-20%)",
+          "n_rows": 821,
+          "n_months": 162,
+          "thin": false,
+          "mean_fwd_ret": 0.023,
+          "mean_fwd_ret_ci": [
+            -0.0028,
+            0.0515
+          ],
+          "ret_gap_vs_base": -0.0017,
+          "ret_gap_ci": [
+            -0.0233,
+            0.0222
+          ],
+          "p10_dd": -0.2228,
+          "p10_dd_ci": [
+            -0.2654,
+            -0.1947
+          ],
+          "p10_dd_gap_vs_base": -0.0316,
+          "p10_dd_gap_ci": [
+            -0.0689,
+            -0.0074
+          ],
+          "dd_adj_score": 0.1034,
+          "hit_rate": 0.5871,
+          "hit_rate_ci": [
+            0.5531,
+            0.6203
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": -0.0406
+        },
+        {
+          "label": "D3 (pos 20-30%)",
+          "n_rows": 820,
+          "n_months": 195,
+          "thin": false,
+          "mean_fwd_ret": 0.0363,
+          "mean_fwd_ret_ci": [
+            0.0162,
+            0.0554
+          ],
+          "ret_gap_vs_base": 0.0116,
+          "ret_gap_ci": [
+            -0.0057,
+            0.0288
+          ],
+          "p10_dd": -0.2026,
+          "p10_dd_ci": [
+            -0.2339,
+            -0.1778
+          ],
+          "p10_dd_gap_vs_base": -0.0114,
+          "p10_dd_gap_ci": [
+            -0.0369,
+            0.0115
+          ],
+          "dd_adj_score": 0.1794,
+          "hit_rate": 0.6378,
+          "hit_rate_ci": [
+            0.6043,
+            0.67
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": 0.0101
+        },
+        {
+          "label": "D4 (pos 30-40%)",
+          "n_rows": 820,
+          "n_months": 216,
+          "thin": false,
+          "mean_fwd_ret": 0.0247,
+          "mean_fwd_ret_ci": [
+            0.0099,
+            0.0401
+          ],
+          "ret_gap_vs_base": -0.0001,
+          "ret_gap_ci": [
+            -0.013,
+            0.0113
+          ],
+          "p10_dd": -0.1862,
+          "p10_dd_ci": [
+            -0.2094,
+            -0.1679
+          ],
+          "p10_dd_gap_vs_base": 0.005,
+          "p10_dd_gap_ci": [
+            -0.0139,
+            0.0255
+          ],
+          "dd_adj_score": 0.1328,
+          "hit_rate": 0.611,
+          "hit_rate_ci": [
+            0.5772,
+            0.6438
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": -0.0167
+        },
+        {
+          "label": "D5 (pos 40-50%)",
+          "n_rows": 820,
+          "n_months": 220,
+          "thin": false,
+          "mean_fwd_ret": 0.0253,
+          "mean_fwd_ret_ci": [
+            0.0117,
+            0.0389
+          ],
+          "ret_gap_vs_base": 0.0005,
+          "ret_gap_ci": [
+            -0.0105,
+            0.0114
+          ],
+          "p10_dd": -0.1784,
+          "p10_dd_ci": [
+            -0.1918,
+            -0.1644
+          ],
+          "p10_dd_gap_vs_base": 0.0127,
+          "p10_dd_gap_ci": [
+            0.0004,
+            0.0313
+          ],
+          "dd_adj_score": 0.1418,
+          "hit_rate": 0.6207,
+          "hit_rate_ci": [
+            0.587,
+            0.6533
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": -0.007
+        },
+        {
+          "label": "D6 (pos 50-60%)",
+          "n_rows": 821,
+          "n_months": 218,
+          "thin": false,
+          "mean_fwd_ret": 0.0217,
+          "mean_fwd_ret_ci": [
+            0.0097,
+            0.0331
+          ],
+          "ret_gap_vs_base": -0.003,
+          "ret_gap_ci": [
+            -0.013,
+            0.0076
+          ],
+          "p10_dd": -0.1876,
+          "p10_dd_ci": [
+            -0.2196,
+            -0.1659
+          ],
+          "p10_dd_gap_vs_base": 0.0036,
+          "p10_dd_gap_ci": [
+            -0.0212,
+            0.0245
+          ],
+          "dd_adj_score": 0.116,
+          "hit_rate": 0.6163,
+          "hit_rate_ci": [
+            0.5826,
+            0.649
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": -0.0114
+        },
+        {
+          "label": "D7 (pos 60-70%)",
+          "n_rows": 819,
+          "n_months": 202,
+          "thin": false,
+          "mean_fwd_ret": 0.0257,
+          "mean_fwd_ret_ci": [
+            0.014,
+            0.0369
+          ],
+          "ret_gap_vs_base": 0.0009,
+          "ret_gap_ci": [
+            -0.0091,
+            0.011
+          ],
+          "p10_dd": -0.1662,
+          "p10_dd_ci": [
+            -0.1819,
+            -0.1517
+          ],
+          "p10_dd_gap_vs_base": 0.025,
+          "p10_dd_gap_ci": [
+            0.0087,
+            0.0454
+          ],
+          "dd_adj_score": 0.1544,
+          "hit_rate": 0.6508,
+          "hit_rate_ci": [
+            0.6175,
+            0.6827
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": 0.0231
+        },
+        {
+          "label": "D8 (pos 70-80%)",
+          "n_rows": 821,
+          "n_months": 189,
+          "thin": false,
+          "mean_fwd_ret": 0.0269,
+          "mean_fwd_ret_ci": [
+            0.0133,
+            0.0388
+          ],
+          "ret_gap_vs_base": 0.0022,
+          "ret_gap_ci": [
+            -0.0101,
+            0.0148
+          ],
+          "p10_dd": -0.1618,
+          "p10_dd_ci": [
+            -0.1955,
+            -0.1415
+          ],
+          "p10_dd_gap_vs_base": 0.0294,
+          "p10_dd_gap_ci": [
+            0.0072,
+            0.0504
+          ],
+          "dd_adj_score": 0.1665,
+          "hit_rate": 0.6541,
+          "hit_rate_ci": [
+            0.6209,
+            0.6858
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": 0.0264
+        },
+        {
+          "label": "D9 (pos 80-90%)",
+          "n_rows": 820,
+          "n_months": 167,
+          "thin": false,
+          "mean_fwd_ret": 0.0316,
+          "mean_fwd_ret_ci": [
+            0.0181,
+            0.045
+          ],
+          "ret_gap_vs_base": 0.0068,
+          "ret_gap_ci": [
+            -0.0059,
+            0.0188
+          ],
+          "p10_dd": -0.1568,
+          "p10_dd_ci": [
+            -0.1811,
+            -0.1436
+          ],
+          "p10_dd_gap_vs_base": 0.0344,
+          "p10_dd_gap_ci": [
+            0.0123,
+            0.0526
+          ],
+          "dd_adj_score": 0.2015,
+          "hit_rate": 0.6817,
+          "hit_rate_ci": [
+            0.649,
+            0.7127
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": 0.054
+        },
+        {
+          "label": "D10 (pos 90-100%)",
+          "n_rows": 821,
+          "n_months": 145,
+          "thin": false,
+          "mean_fwd_ret": 0.0225,
+          "mean_fwd_ret_ci": [
+            0.0042,
+            0.037
+          ],
+          "ret_gap_vs_base": -0.0023,
+          "ret_gap_ci": [
+            -0.0202,
+            0.0133
+          ],
+          "p10_dd": -0.1607,
+          "p10_dd_ci": [
+            -0.2117,
+            -0.1399
+          ],
+          "p10_dd_gap_vs_base": 0.0305,
+          "p10_dd_gap_ci": [
+            -0.0133,
+            0.0575
+          ],
+          "dd_adj_score": 0.1398,
+          "hit_rate": 0.6516,
+          "hit_rate_ci": [
+            0.6184,
+            0.6835
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": 0.0239
+        }
+      ],
+      "phases": [
+        {
+          "label": "Trough",
+          "n_rows": 1903,
+          "n_months": 197,
+          "thin": false,
+          "mean_fwd_ret": 0.0126,
+          "mean_fwd_ret_ci": [
+            -0.0112,
+            0.0341
+          ],
+          "ret_gap_vs_base": -0.0122,
+          "ret_gap_ci": [
+            -0.0292,
+            0.0059
+          ],
+          "p10_dd": -0.2389,
+          "p10_dd_ci": [
+            -0.3014,
+            -0.2049
+          ],
+          "p10_dd_gap_vs_base": -0.0477,
+          "p10_dd_gap_ci": [
+            -0.1,
+            -0.0191
+          ],
+          "dd_adj_score": 0.0527,
+          "hit_rate": 0.5786,
+          "hit_rate_ci": [
+            0.5562,
+            0.6006
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": -0.0491
+        },
+        {
+          "label": "Recovery",
+          "n_rows": 498,
+          "n_months": 126,
+          "thin": false,
+          "mean_fwd_ret": 0.0624,
+          "mean_fwd_ret_ci": [
+            0.0131,
+            0.1219
+          ],
+          "ret_gap_vs_base": 0.0376,
+          "ret_gap_ci": [
+            -0.0053,
+            0.0879
+          ],
+          "p10_dd": -0.2153,
+          "p10_dd_ci": [
+            -0.2741,
+            -0.1728
+          ],
+          "p10_dd_gap_vs_base": -0.0241,
+          "p10_dd_gap_ci": [
+            -0.0871,
+            0.0151
+          ],
+          "dd_adj_score": 0.2899,
+          "hit_rate": 0.6627,
+          "hit_rate_ci": [
+            0.62,
+            0.7028
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": 0.035
+        },
+        {
+          "label": "Expansion",
+          "n_rows": 1310,
+          "n_months": 212,
+          "thin": false,
+          "mean_fwd_ret": 0.02,
+          "mean_fwd_ret_ci": [
+            0.0052,
+            0.0367
+          ],
+          "ret_gap_vs_base": -0.0047,
+          "ret_gap_ci": [
+            -0.0167,
+            0.0072
+          ],
+          "p10_dd": -0.1816,
+          "p10_dd_ci": [
+            -0.1942,
+            -0.1659
+          ],
+          "p10_dd_gap_vs_base": 0.0096,
+          "p10_dd_gap_ci": [
+            -0.0052,
+            0.0281
+          ],
+          "dd_adj_score": 0.1104,
+          "hit_rate": 0.5916,
+          "hit_rate_ci": [
+            0.5648,
+            0.6179
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": -0.0361
+        },
+        {
+          "label": "Peak",
+          "n_rows": 2492,
+          "n_months": 214,
+          "thin": false,
+          "mean_fwd_ret": 0.0257,
+          "mean_fwd_ret_ci": [
+            0.0134,
+            0.0373
+          ],
+          "ret_gap_vs_base": 0.001,
+          "ret_gap_ci": [
+            -0.01,
+            0.0118
+          ],
+          "p10_dd": -0.1606,
+          "p10_dd_ci": [
+            -0.1813,
+            -0.1449
+          ],
+          "p10_dd_gap_vs_base": 0.0306,
+          "p10_dd_gap_ci": [
+            0.0121,
+            0.0502
+          ],
+          "dd_adj_score": 0.1603,
+          "hit_rate": 0.6553,
+          "hit_rate_ci": [
+            0.6364,
+            0.6737
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": 0.0276
+        },
+        {
+          "label": "Downturn",
+          "n_rows": 2001,
+          "n_months": 223,
+          "thin": false,
+          "mean_fwd_ret": 0.0289,
+          "mean_fwd_ret_ci": [
+            0.017,
+            0.0411
+          ],
+          "ret_gap_vs_base": 0.0041,
+          "ret_gap_ci": [
+            -0.0072,
+            0.0157
+          ],
+          "p10_dd": -0.1765,
+          "p10_dd_ci": [
+            -0.2096,
+            -0.158
+          ],
+          "p10_dd_gap_vs_base": 0.0147,
+          "p10_dd_gap_ci": [
+            -0.009,
+            0.0352
+          ],
+          "dd_adj_score": 0.1637,
+          "hit_rate": 0.6552,
+          "hit_rate_ci": [
+            0.6341,
+            0.6757
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": 0.0275
+        }
+      ],
+      "timing_states": [
+        {
+          "label": "RALLY ON",
+          "n_rows": 1901,
+          "n_months": 228,
+          "thin": false,
+          "mean_fwd_ret": 0.0211,
+          "mean_fwd_ret_ci": [
+            0.0076,
+            0.0343
+          ],
+          "ret_gap_vs_base": -0.0036,
+          "ret_gap_ci": [
+            -0.0143,
+            0.006
+          ],
+          "p10_dd": -0.1884,
+          "p10_dd_ci": [
+            -0.2249,
+            -0.1644
+          ],
+          "p10_dd_gap_vs_base": 0.0028,
+          "p10_dd_gap_ci": [
+            -0.0265,
+            0.0246
+          ],
+          "dd_adj_score": 0.1121,
+          "hit_rate": 0.6291,
+          "hit_rate_ci": [
+            0.6072,
+            0.6506
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": 0.0014
+        },
+        {
+          "label": "TURN SIGNALED",
+          "n_rows": 1275,
+          "n_months": 217,
+          "thin": false,
+          "mean_fwd_ret": 0.0221,
+          "mean_fwd_ret_ci": [
+            0.0102,
+            0.035
+          ],
+          "ret_gap_vs_base": -0.0027,
+          "ret_gap_ci": [
+            -0.0136,
+            0.0085
+          ],
+          "p10_dd": -0.18,
+          "p10_dd_ci": [
+            -0.1969,
+            -0.168
+          ],
+          "p10_dd_gap_vs_base": 0.0112,
+          "p10_dd_gap_ci": [
+            -0.004,
+            0.0268
+          ],
+          "dd_adj_score": 0.1226,
+          "hit_rate": 0.6188,
+          "hit_rate_ci": [
+            0.5918,
+            0.6451
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": -0.0089
+        },
+        {
+          "label": "COUNTERTREND BOUNCE",
+          "n_rows": 1252,
+          "n_months": 205,
+          "thin": false,
+          "mean_fwd_ret": 0.025,
+          "mean_fwd_ret_ci": [
+            0.0048,
+            0.0463
+          ],
+          "ret_gap_vs_base": 0.0002,
+          "ret_gap_ci": [
+            -0.017,
+            0.0164
+          ],
+          "p10_dd": -0.2075,
+          "p10_dd_ci": [
+            -0.2463,
+            -0.1748
+          ],
+          "p10_dd_gap_vs_base": -0.0163,
+          "p10_dd_gap_ci": [
+            -0.045,
+            0.0134
+          ],
+          "dd_adj_score": 0.1205,
+          "hit_rate": 0.6246,
+          "hit_rate_ci": [
+            0.5974,
+            0.651
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": -0.0031
+        },
+        {
+          "label": "BOTTOM WATCH",
+          "n_rows": 1253,
+          "n_months": 209,
+          "thin": false,
+          "mean_fwd_ret": 0.0221,
+          "mean_fwd_ret_ci": [
+            0.0053,
+            0.0391
+          ],
+          "ret_gap_vs_base": -0.0027,
+          "ret_gap_ci": [
+            -0.0166,
+            0.0101
+          ],
+          "p10_dd": -0.195,
+          "p10_dd_ci": [
+            -0.2267,
+            -0.1681
+          ],
+          "p10_dd_gap_vs_base": -0.0038,
+          "p10_dd_gap_ci": [
+            -0.032,
+            0.0175
+          ],
+          "dd_adj_score": 0.1131,
+          "hit_rate": 0.6225,
+          "hit_rate_ci": [
+            0.5953,
+            0.6489
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": -0.0052
+        },
+        {
+          "label": "TOP WATCH",
+          "n_rows": 1012,
+          "n_months": 180,
+          "thin": false,
+          "mean_fwd_ret": 0.0245,
+          "mean_fwd_ret_ci": [
+            0.0131,
+            0.0363
+          ],
+          "ret_gap_vs_base": -0.0002,
+          "ret_gap_ci": [
+            -0.0116,
+            0.0116
+          ],
+          "p10_dd": -0.1592,
+          "p10_dd_ci": [
+            -0.1796,
+            -0.1431
+          ],
+          "p10_dd_gap_vs_base": 0.032,
+          "p10_dd_gap_ci": [
+            0.0131,
+            0.0506
+          ],
+          "dd_adj_score": 0.1541,
+          "hit_rate": 0.6453,
+          "hit_rate_ci": [
+            0.6153,
+            0.6741
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": 0.0176
+        },
+        {
+          "label": "DECLINE",
+          "n_rows": 879,
+          "n_months": 153,
+          "thin": false,
+          "mean_fwd_ret": 0.0463,
+          "mean_fwd_ret_ci": [
+            0.0126,
+            0.0827
+          ],
+          "ret_gap_vs_base": 0.0215,
+          "ret_gap_ci": [
+            -0.0043,
+            0.0526
+          ],
+          "p10_dd": -0.2441,
+          "p10_dd_ci": [
+            -0.3458,
+            -0.1827
+          ],
+          "p10_dd_gap_vs_base": -0.0529,
+          "p10_dd_gap_ci": [
+            -0.1488,
+            0.0032
+          ],
+          "dd_adj_score": 0.1898,
+          "hit_rate": 0.6576,
+          "hit_rate_ci": [
+            0.6256,
+            0.6882
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": 0.0299
+        },
+        {
+          "label": "FRESH BUY",
+          "n_rows": 322,
+          "n_months": 111,
+          "thin": false,
+          "mean_fwd_ret": 0.0124,
+          "mean_fwd_ret_ci": [
+            -0.0151,
+            0.0365
+          ],
+          "ret_gap_vs_base": -0.0123,
+          "ret_gap_ci": [
+            -0.036,
+            0.0099
+          ],
+          "p10_dd": -0.1993,
+          "p10_dd_ci": [
+            -0.2234,
+            -0.1581
+          ],
+          "p10_dd_gap_vs_base": -0.0081,
+          "p10_dd_gap_ci": [
+            -0.0297,
+            0.0324
+          ],
+          "dd_adj_score": 0.0624,
+          "hit_rate": 0.5683,
+          "hit_rate_ci": [
+            0.5137,
+            0.6213
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": -0.0594
+        },
+        {
+          "label": "ROLLING OVER",
+          "n_rows": 310,
+          "n_months": 115,
+          "thin": false,
+          "mean_fwd_ret": 0.0208,
+          "mean_fwd_ret_ci": [
+            0.0015,
+            0.0447
+          ],
+          "ret_gap_vs_base": -0.0039,
+          "ret_gap_ci": [
+            -0.0209,
+            0.0159
+          ],
+          "p10_dd": -0.1701,
+          "p10_dd_ci": [
+            -0.1969,
+            -0.152
+          ],
+          "p10_dd_gap_vs_base": 0.021,
+          "p10_dd_gap_ci": [
+            -0.0033,
+            0.0435
+          ],
+          "dd_adj_score": 0.1225,
+          "hit_rate": 0.6097,
+          "hit_rate_ci": [
+            0.5543,
+            0.6623
+          ],
+          "base_hit_rate": 0.6277,
+          "hit_gap_vs_base": -0.018
+        }
+      ],
+      "signal": [
+        {
+          "label": "BUY",
+          "n_rows": 1344,
+          "n_months": 191,
+          "thin": false,
+          "mean_fwd_ret": 0.0286,
+          "mean_fwd_ret_ci": [
+            0.0062,
+            0.0494
+          ],
+          "ret_gap_vs_base": -0.0001,
+          "ret_gap_ci": [
+            -0.0145,
+            0.0132
+          ],
+          "p10_dd": -0.2147,
+          "p10_dd_ci": [
+            -0.2634,
+            -0.1832
+          ],
+          "p10_dd_gap_vs_base": -0.016,
+          "p10_dd_gap_ci": [
+            -0.0489,
+            0.0045
+          ],
+          "dd_adj_score": 0.1331,
+          "hit_rate": 0.6109,
+          "hit_rate_ci": [
+            0.5845,
+            0.6366
+          ],
+          "base_hit_rate": 0.6405,
+          "hit_gap_vs_base": -0.0296
+        },
+        {
+          "label": "SELL",
+          "n_rows": 1713,
+          "n_months": 196,
+          "thin": false,
+          "mean_fwd_ret": 0.0288,
+          "mean_fwd_ret_ci": [
+            0.0162,
+            0.0414
+          ],
+          "ret_gap_vs_base": 0.0001,
+          "ret_gap_ci": [
+            -0.0106,
+            0.0114
+          ],
+          "p10_dd": -0.1741,
+          "p10_dd_ci": [
+            -0.2123,
+            -0.1524
+          ],
+          "p10_dd_gap_vs_base": 0.0246,
+          "p10_dd_gap_ci": [
+            -0.0054,
+            0.0432
+          ],
+          "dd_adj_score": 0.1655,
+          "hit_rate": 0.6637,
+          "hit_rate_ci": [
+            0.641,
+            0.6857
+          ],
+          "base_hit_rate": 0.6405,
+          "hit_gap_vs_base": 0.0232
+        }
+      ],
+      "inversion": {
+        "low_pos": {
+          "n_rows": 1642,
+          "n_months": 180,
+          "mean_fwd_ret": 0.0165,
+          "p10_dd": -0.2508,
+          "dd_adj_score": 0.0658
+        },
+        "high_pos": {
+          "n_rows": 1641,
+          "n_months": 181,
+          "mean_fwd_ret": 0.027,
+          "p10_dd": -0.1588,
+          "dd_adj_score": 0.1702
+        },
+        "ret_gap_low_minus_high": -0.0105,
+        "ret_gap_ci": [
+          -0.0411,
+          0.0224
+        ],
+        "dd_adj_gap_low_minus_high": -0.1044,
+        "dd_adj_gap_ci": [
+          -0.2526,
+          0.0781
+        ],
+        "verdict": "inconclusive"
+      }
+    },
+    "126": {
+      "position_deciles": [
+        {
+          "label": "D1 (pos 0-10%)",
+          "n_rows": 811,
+          "n_months": 126,
+          "thin": false,
+          "mean_fwd_ret": 0.0384,
+          "mean_fwd_ret_ci": [
+            -0.0114,
+            0.0805
+          ],
+          "ret_gap_vs_base": -0.0107,
+          "ret_gap_ci": [
+            -0.0531,
+            0.0283
+          ],
+          "p10_dd": -0.352,
+          "p10_dd_ci": [
+            -0.4619,
+            -0.2684
+          ],
+          "p10_dd_gap_vs_base": -0.0841,
+          "p10_dd_gap_ci": [
+            -0.1862,
+            -0.009
+          ],
+          "dd_adj_score": 0.1091,
+          "hit_rate": 0.6042,
+          "hit_rate_ci": [
+            0.5701,
+            0.6373
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": -0.0493
+        },
+        {
+          "label": "D2 (pos 10-20%)",
+          "n_rows": 810,
+          "n_months": 160,
+          "thin": false,
+          "mean_fwd_ret": 0.0344,
+          "mean_fwd_ret_ci": [
+            -0.0034,
+            0.0781
+          ],
+          "ret_gap_vs_base": -0.0147,
+          "ret_gap_ci": [
+            -0.0491,
+            0.0179
+          ],
+          "p10_dd": -0.2953,
+          "p10_dd_ci": [
+            -0.3541,
+            -0.2511
+          ],
+          "p10_dd_gap_vs_base": -0.0274,
+          "p10_dd_gap_ci": [
+            -0.0906,
+            0.0075
+          ],
+          "dd_adj_score": 0.1165,
+          "hit_rate": 0.5716,
+          "hit_rate_ci": [
+            0.5373,
+            0.6053
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": -0.0819
+        },
+        {
+          "label": "D3 (pos 20-30%)",
+          "n_rows": 809,
+          "n_months": 193,
+          "thin": false,
+          "mean_fwd_ret": 0.0495,
+          "mean_fwd_ret_ci": [
+            0.0144,
+            0.0858
+          ],
+          "ret_gap_vs_base": 0.0004,
+          "ret_gap_ci": [
+            -0.0265,
+            0.0274
+          ],
+          "p10_dd": -0.2796,
+          "p10_dd_ci": [
+            -0.322,
+            -0.2477
+          ],
+          "p10_dd_gap_vs_base": -0.0117,
+          "p10_dd_gap_ci": [
+            -0.0441,
+            0.0182
+          ],
+          "dd_adj_score": 0.177,
+          "hit_rate": 0.6279,
+          "hit_rate_ci": [
+            0.5941,
+            0.6606
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": -0.0256
+        },
+        {
+          "label": "D4 (pos 30-40%)",
+          "n_rows": 810,
+          "n_months": 213,
+          "thin": false,
+          "mean_fwd_ret": 0.045,
+          "mean_fwd_ret_ci": [
+            0.0157,
+            0.071
+          ],
+          "ret_gap_vs_base": -0.0041,
+          "ret_gap_ci": [
+            -0.0258,
+            0.0151
+          ],
+          "p10_dd": -0.2619,
+          "p10_dd_ci": [
+            -0.2999,
+            -0.2385
+          ],
+          "p10_dd_gap_vs_base": 0.006,
+          "p10_dd_gap_ci": [
+            -0.0305,
+            0.0304
+          ],
+          "dd_adj_score": 0.1717,
+          "hit_rate": 0.6222,
+          "hit_rate_ci": [
+            0.5883,
+            0.655
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": -0.0313
+        },
+        {
+          "label": "D5 (pos 40-50%)",
+          "n_rows": 810,
+          "n_months": 219,
+          "thin": false,
+          "mean_fwd_ret": 0.0517,
+          "mean_fwd_ret_ci": [
+            0.0271,
+            0.0735
+          ],
+          "ret_gap_vs_base": 0.0026,
+          "ret_gap_ci": [
+            -0.0152,
+            0.0202
+          ],
+          "p10_dd": -0.2521,
+          "p10_dd_ci": [
+            -0.2932,
+            -0.2218
+          ],
+          "p10_dd_gap_vs_base": 0.0159,
+          "p10_dd_gap_ci": [
+            -0.0128,
+            0.0393
+          ],
+          "dd_adj_score": 0.205,
+          "hit_rate": 0.642,
+          "hit_rate_ci": [
+            0.6084,
+            0.6743
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": -0.0115
+        },
+        {
+          "label": "D6 (pos 50-60%)",
+          "n_rows": 810,
+          "n_months": 214,
+          "thin": false,
+          "mean_fwd_ret": 0.0452,
+          "mean_fwd_ret_ci": [
+            0.0271,
+            0.0622
+          ],
+          "ret_gap_vs_base": -0.0039,
+          "ret_gap_ci": [
+            -0.0189,
+            0.0112
+          ],
+          "p10_dd": -0.2579,
+          "p10_dd_ci": [
+            -0.2956,
+            -0.2315
+          ],
+          "p10_dd_gap_vs_base": 0.01,
+          "p10_dd_gap_ci": [
+            -0.0158,
+            0.034
+          ],
+          "dd_adj_score": 0.1753,
+          "hit_rate": 0.6494,
+          "hit_rate_ci": [
+            0.6159,
+            0.6815
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": -0.0041
+        },
+        {
+          "label": "D7 (pos 60-70%)",
+          "n_rows": 809,
+          "n_months": 200,
+          "thin": false,
+          "mean_fwd_ret": 0.061,
+          "mean_fwd_ret_ci": [
+            0.0453,
+            0.0761
+          ],
+          "ret_gap_vs_base": 0.0119,
+          "ret_gap_ci": [
+            -0.0037,
+            0.0264
+          ],
+          "p10_dd": -0.2181,
+          "p10_dd_ci": [
+            -0.2449,
+            -0.2005
+          ],
+          "p10_dd_gap_vs_base": 0.0498,
+          "p10_dd_gap_ci": [
+            0.0234,
+            0.0755
+          ],
+          "dd_adj_score": 0.2797,
+          "hit_rate": 0.6922,
+          "hit_rate_ci": [
+            0.6596,
+            0.723
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": 0.0387
+        },
+        {
+          "label": "D8 (pos 70-80%)",
+          "n_rows": 810,
+          "n_months": 184,
+          "thin": false,
+          "mean_fwd_ret": 0.0576,
+          "mean_fwd_ret_ci": [
+            0.0398,
+            0.0743
+          ],
+          "ret_gap_vs_base": 0.0085,
+          "ret_gap_ci": [
+            -0.0087,
+            0.0273
+          ],
+          "p10_dd": -0.2451,
+          "p10_dd_ci": [
+            -0.3015,
+            -0.2041
+          ],
+          "p10_dd_gap_vs_base": 0.0228,
+          "p10_dd_gap_ci": [
+            -0.0209,
+            0.0637
+          ],
+          "dd_adj_score": 0.2351,
+          "hit_rate": 0.6914,
+          "hit_rate_ci": [
+            0.6587,
+            0.7222
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": 0.0379
+        },
+        {
+          "label": "D9 (pos 80-90%)",
+          "n_rows": 809,
+          "n_months": 164,
+          "thin": false,
+          "mean_fwd_ret": 0.0527,
+          "mean_fwd_ret_ci": [
+            0.0347,
+            0.0697
+          ],
+          "ret_gap_vs_base": 0.0036,
+          "ret_gap_ci": [
+            -0.0128,
+            0.023
+          ],
+          "p10_dd": -0.2467,
+          "p10_dd_ci": [
+            -0.2905,
+            -0.2067
+          ],
+          "p10_dd_gap_vs_base": 0.0212,
+          "p10_dd_gap_ci": [
+            -0.0197,
+            0.0553
+          ],
+          "dd_adj_score": 0.2137,
+          "hit_rate": 0.7145,
+          "hit_rate_ci": [
+            0.6824,
+            0.7445
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": 0.061
+        },
+        {
+          "label": "D10 (pos 90-100%)",
+          "n_rows": 811,
+          "n_months": 142,
+          "thin": false,
+          "mean_fwd_ret": 0.0556,
+          "mean_fwd_ret_ci": [
+            0.0379,
+            0.0732
+          ],
+          "ret_gap_vs_base": 0.0065,
+          "ret_gap_ci": [
+            -0.0125,
+            0.0264
+          ],
+          "p10_dd": -0.2321,
+          "p10_dd_ci": [
+            -0.3075,
+            -0.1989
+          ],
+          "p10_dd_gap_vs_base": 0.0358,
+          "p10_dd_gap_ci": [
+            -0.0223,
+            0.0693
+          ],
+          "dd_adj_score": 0.2395,
+          "hit_rate": 0.7201,
+          "hit_rate_ci": [
+            0.6882,
+            0.7499
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": 0.0666
+        }
+      ],
+      "phases": [
+        {
+          "label": "Trough",
+          "n_rows": 1894,
+          "n_months": 194,
+          "thin": false,
+          "mean_fwd_ret": 0.0272,
+          "mean_fwd_ret_ci": [
+            -0.0048,
+            0.0577
+          ],
+          "ret_gap_vs_base": -0.0219,
+          "ret_gap_ci": [
+            -0.0486,
+            -0.0004
+          ],
+          "p10_dd": -0.3137,
+          "p10_dd_ci": [
+            -0.4003,
+            -0.2684
+          ],
+          "p10_dd_gap_vs_base": -0.0458,
+          "p10_dd_gap_ci": [
+            -0.1161,
+            -0.0094
+          ],
+          "dd_adj_score": 0.0869,
+          "hit_rate": 0.5776,
+          "hit_rate_ci": [
+            0.5552,
+            0.5997
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": -0.0759
+        },
+        {
+          "label": "Recovery",
+          "n_rows": 497,
+          "n_months": 125,
+          "thin": false,
+          "mean_fwd_ret": 0.0918,
+          "mean_fwd_ret_ci": [
+            0.0191,
+            0.1677
+          ],
+          "ret_gap_vs_base": 0.0427,
+          "ret_gap_ci": [
+            -0.0224,
+            0.1113
+          ],
+          "p10_dd": -0.2898,
+          "p10_dd_ci": [
+            -0.3492,
+            -0.2361
+          ],
+          "p10_dd_gap_vs_base": -0.0219,
+          "p10_dd_gap_ci": [
+            -0.0838,
+            0.0282
+          ],
+          "dd_adj_score": 0.3167,
+          "hit_rate": 0.6821,
+          "hit_rate_ci": [
+            0.6399,
+            0.7215
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": 0.0286
+        },
+        {
+          "label": "Expansion",
+          "n_rows": 1300,
+          "n_months": 209,
+          "thin": false,
+          "mean_fwd_ret": 0.0418,
+          "mean_fwd_ret_ci": [
+            0.009,
+            0.0714
+          ],
+          "ret_gap_vs_base": -0.0073,
+          "ret_gap_ci": [
+            -0.0298,
+            0.0145
+          ],
+          "p10_dd": -0.2615,
+          "p10_dd_ci": [
+            -0.3727,
+            -0.2274
+          ],
+          "p10_dd_gap_vs_base": 0.0064,
+          "p10_dd_gap_ci": [
+            -0.087,
+            0.0307
+          ],
+          "dd_adj_score": 0.16,
+          "hit_rate": 0.6331,
+          "hit_rate_ci": [
+            0.6065,
+            0.6588
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": -0.0204
+        },
+        {
+          "label": "Peak",
+          "n_rows": 2433,
+          "n_months": 211,
+          "thin": false,
+          "mean_fwd_ret": 0.0596,
+          "mean_fwd_ret_ci": [
+            0.0433,
+            0.0739
+          ],
+          "ret_gap_vs_base": 0.0105,
+          "ret_gap_ci": [
+            -0.0032,
+            0.0242
+          ],
+          "p10_dd": -0.2333,
+          "p10_dd_ci": [
+            -0.2821,
+            -0.2046
+          ],
+          "p10_dd_gap_vs_base": 0.0346,
+          "p10_dd_gap_ci": [
+            0.0004,
+            0.0618
+          ],
+          "dd_adj_score": 0.2553,
+          "hit_rate": 0.7164,
+          "hit_rate_ci": [
+            0.6982,
+            0.734
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": 0.0629
+        },
+        {
+          "label": "Downturn",
+          "n_rows": 1975,
+          "n_months": 220,
+          "thin": false,
+          "mean_fwd_ret": 0.0512,
+          "mean_fwd_ret_ci": [
+            0.035,
+            0.0675
+          ],
+          "ret_gap_vs_base": 0.0021,
+          "ret_gap_ci": [
+            -0.0138,
+            0.0187
+          ],
+          "p10_dd": -0.2491,
+          "p10_dd_ci": [
+            -0.2769,
+            -0.2217
+          ],
+          "p10_dd_gap_vs_base": 0.0188,
+          "p10_dd_gap_ci": [
+            -0.0033,
+            0.0461
+          ],
+          "dd_adj_score": 0.2056,
+          "hit_rate": 0.6552,
+          "hit_rate_ci": [
+            0.6339,
+            0.6758
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": 0.0017
+        }
+      ],
+      "timing_states": [
+        {
+          "label": "RALLY ON",
+          "n_rows": 1871,
+          "n_months": 225,
+          "thin": false,
+          "mean_fwd_ret": 0.0548,
+          "mean_fwd_ret_ci": [
+            0.0358,
+            0.0729
+          ],
+          "ret_gap_vs_base": 0.0057,
+          "ret_gap_ci": [
+            -0.0101,
+            0.0211
+          ],
+          "p10_dd": -0.2607,
+          "p10_dd_ci": [
+            -0.2892,
+            -0.2271
+          ],
+          "p10_dd_gap_vs_base": 0.0073,
+          "p10_dd_gap_ci": [
+            -0.0162,
+            0.0343
+          ],
+          "dd_adj_score": 0.2101,
+          "hit_rate": 0.6863,
+          "hit_rate_ci": [
+            0.6649,
+            0.7069
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": 0.0328
+        },
+        {
+          "label": "TURN SIGNALED",
+          "n_rows": 1254,
+          "n_months": 214,
+          "thin": false,
+          "mean_fwd_ret": 0.0429,
+          "mean_fwd_ret_ci": [
+            0.0182,
+            0.0677
+          ],
+          "ret_gap_vs_base": -0.0062,
+          "ret_gap_ci": [
+            -0.0254,
+            0.014
+          ],
+          "p10_dd": -0.2638,
+          "p10_dd_ci": [
+            -0.3221,
+            -0.2278
+          ],
+          "p10_dd_gap_vs_base": 0.0042,
+          "p10_dd_gap_ci": [
+            -0.0463,
+            0.0343
+          ],
+          "dd_adj_score": 0.1628,
+          "hit_rate": 0.6491,
+          "hit_rate_ci": [
+            0.6223,
+            0.675
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": -0.0044
+        },
+        {
+          "label": "COUNTERTREND BOUNCE",
+          "n_rows": 1244,
+          "n_months": 202,
+          "thin": false,
+          "mean_fwd_ret": 0.0447,
+          "mean_fwd_ret_ci": [
+            0.015,
+            0.0713
+          ],
+          "ret_gap_vs_base": -0.0044,
+          "ret_gap_ci": [
+            -0.026,
+            0.0177
+          ],
+          "p10_dd": -0.2809,
+          "p10_dd_ci": [
+            -0.3225,
+            -0.2465
+          ],
+          "p10_dd_gap_vs_base": -0.013,
+          "p10_dd_gap_ci": [
+            -0.0529,
+            0.0181
+          ],
+          "dd_adj_score": 0.1593,
+          "hit_rate": 0.6407,
+          "hit_rate_ci": [
+            0.6136,
+            0.6669
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": -0.0128
+        },
+        {
+          "label": "BOTTOM WATCH",
+          "n_rows": 1243,
+          "n_months": 206,
+          "thin": false,
+          "mean_fwd_ret": 0.0411,
+          "mean_fwd_ret_ci": [
+            0.0145,
+            0.0651
+          ],
+          "ret_gap_vs_base": -0.008,
+          "ret_gap_ci": [
+            -0.0274,
+            0.0096
+          ],
+          "p10_dd": -0.2673,
+          "p10_dd_ci": [
+            -0.3173,
+            -0.2343
+          ],
+          "p10_dd_gap_vs_base": 0.0007,
+          "p10_dd_gap_ci": [
+            -0.0467,
+            0.0286
+          ],
+          "dd_adj_score": 0.1537,
+          "hit_rate": 0.6323,
+          "hit_rate_ci": [
+            0.6052,
+            0.6587
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": -0.0212
+        },
+        {
+          "label": "TOP WATCH",
+          "n_rows": 985,
+          "n_months": 177,
+          "thin": false,
+          "mean_fwd_ret": 0.0501,
+          "mean_fwd_ret_ci": [
+            0.034,
+            0.0661
+          ],
+          "ret_gap_vs_base": 0.001,
+          "ret_gap_ci": [
+            -0.0136,
+            0.0164
+          ],
+          "p10_dd": -0.2375,
+          "p10_dd_ci": [
+            -0.2674,
+            -0.2119
+          ],
+          "p10_dd_gap_vs_base": 0.0304,
+          "p10_dd_gap_ci": [
+            0.0052,
+            0.0579
+          ],
+          "dd_adj_score": 0.2111,
+          "hit_rate": 0.6802,
+          "hit_rate_ci": [
+            0.6504,
+            0.7086
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": 0.0267
+        },
+        {
+          "label": "DECLINE",
+          "n_rows": 877,
+          "n_months": 151,
+          "thin": false,
+          "mean_fwd_ret": 0.0779,
+          "mean_fwd_ret_ci": [
+            0.0373,
+            0.1244
+          ],
+          "ret_gap_vs_base": 0.0288,
+          "ret_gap_ci": [
+            -0.0115,
+            0.0697
+          ],
+          "p10_dd": -0.3194,
+          "p10_dd_ci": [
+            -0.429,
+            -0.2374
+          ],
+          "p10_dd_gap_vs_base": -0.0515,
+          "p10_dd_gap_ci": [
+            -0.1556,
+            0.0287
+          ],
+          "dd_adj_score": 0.2439,
+          "hit_rate": 0.6534,
+          "hit_rate_ci": [
+            0.6213,
+            0.6841
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": -0.0001
+        },
+        {
+          "label": "FRESH BUY",
+          "n_rows": 321,
+          "n_months": 110,
+          "thin": false,
+          "mean_fwd_ret": 0.0177,
+          "mean_fwd_ret_ci": [
+            -0.0251,
+            0.0577
+          ],
+          "ret_gap_vs_base": -0.0314,
+          "ret_gap_ci": [
+            -0.0678,
+            0.0066
+          ],
+          "p10_dd": -0.2928,
+          "p10_dd_ci": [
+            -0.3907,
+            -0.2409
+          ],
+          "p10_dd_gap_vs_base": -0.0248,
+          "p10_dd_gap_ci": [
+            -0.1227,
+            0.0258
+          ],
+          "dd_adj_score": 0.0606,
+          "hit_rate": 0.5514,
+          "hit_rate_ci": [
+            0.4967,
+            0.6049
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": -0.1021
+        },
+        {
+          "label": "ROLLING OVER",
+          "n_rows": 304,
+          "n_months": 113,
+          "thin": false,
+          "mean_fwd_ret": 0.0373,
+          "mean_fwd_ret_ci": [
+            0.011,
+            0.0643
+          ],
+          "ret_gap_vs_base": -0.0118,
+          "ret_gap_ci": [
+            -0.0389,
+            0.0123
+          ],
+          "p10_dd": -0.2474,
+          "p10_dd_ci": [
+            -0.2826,
+            -0.2085
+          ],
+          "p10_dd_gap_vs_base": 0.0206,
+          "p10_dd_gap_ci": [
+            -0.0113,
+            0.0598
+          ],
+          "dd_adj_score": 0.1506,
+          "hit_rate": 0.6316,
+          "hit_rate_ci": [
+            0.576,
+            0.6838
+          ],
+          "base_hit_rate": 0.6535,
+          "hit_gap_vs_base": -0.0219
+        }
+      ],
+      "signal": [
+        {
+          "label": "BUY",
+          "n_rows": 1335,
+          "n_months": 188,
+          "thin": false,
+          "mean_fwd_ret": 0.0501,
+          "mean_fwd_ret_ci": [
+            0.0153,
+            0.0856
+          ],
+          "ret_gap_vs_base": -0.0043,
+          "ret_gap_ci": [
+            -0.0322,
+            0.0187
+          ],
+          "p10_dd": -0.2929,
+          "p10_dd_ci": [
+            -0.358,
+            -0.2555
+          ],
+          "p10_dd_gap_vs_base": -0.0223,
+          "p10_dd_gap_ci": [
+            -0.064,
+            0.0004
+          ],
+          "dd_adj_score": 0.1711,
+          "hit_rate": 0.6225,
+          "hit_rate_ci": [
+            0.5962,
+            0.6481
+          ],
+          "base_hit_rate": 0.6693,
+          "hit_gap_vs_base": -0.0468
+        },
+        {
+          "label": "SELL",
+          "n_rows": 1686,
+          "n_months": 193,
+          "thin": false,
+          "mean_fwd_ret": 0.0578,
+          "mean_fwd_ret_ci": [
+            0.0411,
+            0.0742
+          ],
+          "ret_gap_vs_base": 0.0034,
+          "ret_gap_ci": [
+            -0.0146,
+            0.024
+          ],
+          "p10_dd": -0.2436,
+          "p10_dd_ci": [
+            -0.288,
+            -0.209
+          ],
+          "p10_dd_gap_vs_base": 0.027,
+          "p10_dd_gap_ci": [
+            -0.0005,
+            0.0596
+          ],
+          "dd_adj_score": 0.2372,
+          "hit_rate": 0.7064,
+          "hit_rate_ci": [
+            0.6842,
+            0.7277
+          ],
+          "base_hit_rate": 0.6693,
+          "hit_gap_vs_base": 0.0371
+        }
+      ],
+      "inversion": {
+        "low_pos": {
+          "n_rows": 1621,
+          "n_months": 177,
+          "mean_fwd_ret": 0.0364,
+          "p10_dd": -0.3195,
+          "dd_adj_score": 0.114
+        },
+        "high_pos": {
+          "n_rows": 1620,
+          "n_months": 178,
+          "mean_fwd_ret": 0.0541,
+          "p10_dd": -0.2395,
+          "dd_adj_score": 0.2261
+        },
+        "ret_gap_low_minus_high": -0.0177,
+        "ret_gap_ci": [
+          -0.0601,
+          0.0214
+        ],
+        "dd_adj_gap_low_minus_high": -0.1121,
+        "dd_adj_gap_ci": [
+          -0.277,
+          0.0488
+        ],
+        "verdict": "inconclusive"
+      }
+    }
+  },
+  "pre_2018": {
+    "21": {
+      "position_deciles": [
+        {
+          "label": "D1 (pos 0-10%)",
+          "n_rows": 480,
+          "n_months": 75,
+          "thin": false,
+          "mean_fwd_ret": -0.0077,
+          "mean_fwd_ret_ci": [
+            -0.0475,
+            0.0313
+          ],
+          "ret_gap_vs_base": -0.0145,
+          "ret_gap_ci": [
+            -0.0492,
+            0.0208
+          ],
+          "p10_dd": -0.2352,
+          "p10_dd_ci": [
+            -0.3527,
+            -0.125
+          ],
+          "p10_dd_gap_vs_base": -0.1172,
+          "p10_dd_gap_ci": [
+            -0.2299,
+            -0.018
+          ],
+          "dd_adj_score": -0.0327,
+          "hit_rate": 0.5104,
+          "hit_rate_ci": [
+            0.4658,
+            0.5549
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": -0.0684
+        },
+        {
+          "label": "D2 (pos 10-20%)",
+          "n_rows": 480,
+          "n_months": 98,
+          "thin": false,
+          "mean_fwd_ret": 0.015,
+          "mean_fwd_ret_ci": [
+            -0.0036,
+            0.0333
+          ],
+          "ret_gap_vs_base": 0.0082,
+          "ret_gap_ci": [
+            -0.0057,
+            0.0228
+          ],
+          "p10_dd": -0.1406,
+          "p10_dd_ci": [
+            -0.1841,
+            -0.0993
+          ],
+          "p10_dd_gap_vs_base": -0.0226,
+          "p10_dd_gap_ci": [
+            -0.0555,
+            0.015
+          ],
+          "dd_adj_score": 0.1066,
+          "hit_rate": 0.6021,
+          "hit_rate_ci": [
+            0.5577,
+            0.6449
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": 0.0233
+        },
+        {
+          "label": "D3 (pos 20-30%)",
+          "n_rows": 478,
+          "n_months": 118,
+          "thin": false,
+          "mean_fwd_ret": 0.0076,
+          "mean_fwd_ret_ci": [
+            -0.0064,
+            0.0216
+          ],
+          "ret_gap_vs_base": 0.0008,
+          "ret_gap_ci": [
+            -0.0101,
+            0.0117
+          ],
+          "p10_dd": -0.1361,
+          "p10_dd_ci": [
+            -0.1612,
+            -0.1096
+          ],
+          "p10_dd_gap_vs_base": -0.0181,
+          "p10_dd_gap_ci": [
+            -0.0356,
+            0.0045
+          ],
+          "dd_adj_score": 0.0561,
+          "hit_rate": 0.5544,
+          "hit_rate_ci": [
+            0.5096,
+            0.5983
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": -0.0244
+        },
+        {
+          "label": "D4 (pos 30-40%)",
+          "n_rows": 480,
+          "n_months": 124,
+          "thin": false,
+          "mean_fwd_ret": 0.0063,
+          "mean_fwd_ret_ci": [
+            -0.0048,
+            0.0185
+          ],
+          "ret_gap_vs_base": -0.0005,
+          "ret_gap_ci": [
+            -0.009,
+            0.008
+          ],
+          "p10_dd": -0.1136,
+          "p10_dd_ci": [
+            -0.1325,
+            -0.0904
+          ],
+          "p10_dd_gap_vs_base": 0.0044,
+          "p10_dd_gap_ci": [
+            -0.0119,
+            0.0237
+          ],
+          "dd_adj_score": 0.0559,
+          "hit_rate": 0.5583,
+          "hit_rate_ci": [
+            0.5136,
+            0.6021
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": -0.0205
+        },
+        {
+          "label": "D5 (pos 40-50%)",
+          "n_rows": 479,
+          "n_months": 131,
+          "thin": false,
+          "mean_fwd_ret": 0.0127,
+          "mean_fwd_ret_ci": [
+            0.0011,
+            0.0241
+          ],
+          "ret_gap_vs_base": 0.0059,
+          "ret_gap_ci": [
+            -0.0037,
+            0.015
+          ],
+          "p10_dd": -0.1043,
+          "p10_dd_ci": [
+            -0.1258,
+            -0.079
+          ],
+          "p10_dd_gap_vs_base": 0.0138,
+          "p10_dd_gap_ci": [
+            -0.0051,
+            0.0393
+          ],
+          "dd_adj_score": 0.1221,
+          "hit_rate": 0.6347,
+          "hit_rate_ci": [
+            0.5906,
+            0.6765
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": 0.0559
+        },
+        {
+          "label": "D6 (pos 50-60%)",
+          "n_rows": 479,
+          "n_months": 125,
+          "thin": false,
+          "mean_fwd_ret": 0.0075,
+          "mean_fwd_ret_ci": [
+            -0.0005,
+            0.0157
+          ],
+          "ret_gap_vs_base": 0.0007,
+          "ret_gap_ci": [
+            -0.0068,
+            0.0079
+          ],
+          "p10_dd": -0.1055,
+          "p10_dd_ci": [
+            -0.1187,
+            -0.0867
+          ],
+          "p10_dd_gap_vs_base": 0.0125,
+          "p10_dd_gap_ci": [
+            -0.0056,
+            0.0312
+          ],
+          "dd_adj_score": 0.0714,
+          "hit_rate": 0.5971,
+          "hit_rate_ci": [
+            0.5525,
+            0.6401
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": 0.0183
+        },
+        {
+          "label": "D7 (pos 60-70%)",
+          "n_rows": 479,
+          "n_months": 118,
+          "thin": false,
+          "mean_fwd_ret": 0.0049,
+          "mean_fwd_ret_ci": [
+            -0.0042,
+            0.0134
+          ],
+          "ret_gap_vs_base": -0.0019,
+          "ret_gap_ci": [
+            -0.0107,
+            0.0064
+          ],
+          "p10_dd": -0.1008,
+          "p10_dd_ci": [
+            -0.1201,
+            -0.089
+          ],
+          "p10_dd_gap_vs_base": 0.0172,
+          "p10_dd_gap_ci": [
+            -0.0041,
+            0.0344
+          ],
+          "dd_adj_score": 0.049,
+          "hit_rate": 0.5658,
+          "hit_rate_ci": [
+            0.521,
+            0.6095
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": -0.013
+        },
+        {
+          "label": "D8 (pos 70-80%)",
+          "n_rows": 479,
+          "n_months": 111,
+          "thin": false,
+          "mean_fwd_ret": 0.0057,
+          "mean_fwd_ret_ci": [
+            -0.0026,
+            0.014
+          ],
+          "ret_gap_vs_base": -0.0011,
+          "ret_gap_ci": [
+            -0.01,
+            0.0079
+          ],
+          "p10_dd": -0.0989,
+          "p10_dd_ci": [
+            -0.1133,
+            -0.083
+          ],
+          "p10_dd_gap_vs_base": 0.0191,
+          "p10_dd_gap_ci": [
+            -0.0001,
+            0.0409
+          ],
+          "dd_adj_score": 0.0577,
+          "hit_rate": 0.5762,
+          "hit_rate_ci": [
+            0.5315,
+            0.6197
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": -0.0026
+        },
+        {
+          "label": "D9 (pos 80-90%)",
+          "n_rows": 479,
+          "n_months": 98,
+          "thin": false,
+          "mean_fwd_ret": 0.0094,
+          "mean_fwd_ret_ci": [
+            0.0002,
+            0.0191
+          ],
+          "ret_gap_vs_base": 0.0026,
+          "ret_gap_ci": [
+            -0.0065,
+            0.0124
+          ],
+          "p10_dd": -0.0898,
+          "p10_dd_ci": [
+            -0.1008,
+            -0.0799
+          ],
+          "p10_dd_gap_vs_base": 0.0282,
+          "p10_dd_gap_ci": [
+            0.0119,
+            0.0453
+          ],
+          "dd_adj_score": 0.1047,
+          "hit_rate": 0.5866,
+          "hit_rate_ci": [
+            0.542,
+            0.6299
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": 0.0078
+        },
+        {
+          "label": "D10 (pos 90-100%)",
+          "n_rows": 480,
+          "n_months": 87,
+          "thin": false,
+          "mean_fwd_ret": 0.0068,
+          "mean_fwd_ret_ci": [
+            -0.0014,
+            0.0151
+          ],
+          "ret_gap_vs_base": -0.0001,
+          "ret_gap_ci": [
+            -0.0086,
+            0.0103
+          ],
+          "p10_dd": -0.0966,
+          "p10_dd_ci": [
+            -0.1066,
+            -0.0813
+          ],
+          "p10_dd_gap_vs_base": 0.0214,
+          "p10_dd_gap_ci": [
+            0.0048,
+            0.0436
+          ],
+          "dd_adj_score": 0.07,
+          "hit_rate": 0.6021,
+          "hit_rate_ci": [
+            0.5577,
+            0.6449
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": 0.0233
+        }
+      ],
+      "phases": [
+        {
+          "label": "Trough",
+          "n_rows": 1077,
+          "n_months": 116,
+          "thin": false,
+          "mean_fwd_ret": 0.0027,
+          "mean_fwd_ret_ci": [
+            -0.0185,
+            0.0241
+          ],
+          "ret_gap_vs_base": -0.0041,
+          "ret_gap_ci": [
+            -0.0202,
+            0.0114
+          ],
+          "p10_dd": -0.1585,
+          "p10_dd_ci": [
+            -0.2463,
+            -0.1149
+          ],
+          "p10_dd_gap_vs_base": -0.0405,
+          "p10_dd_gap_ci": [
+            -0.1175,
+            -0.0037
+          ],
+          "dd_adj_score": 0.0171,
+          "hit_rate": 0.5469,
+          "hit_rate_ci": [
+            0.517,
+            0.5764
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": -0.0319
+        },
+        {
+          "label": "Recovery",
+          "n_rows": 314,
+          "n_months": 78,
+          "thin": false,
+          "mean_fwd_ret": 0.0123,
+          "mean_fwd_ret_ci": [
+            -0.0207,
+            0.0442
+          ],
+          "ret_gap_vs_base": 0.0055,
+          "ret_gap_ci": [
+            -0.0215,
+            0.0368
+          ],
+          "p10_dd": -0.1749,
+          "p10_dd_ci": [
+            -0.2213,
+            -0.1103
+          ],
+          "p10_dd_gap_vs_base": -0.0569,
+          "p10_dd_gap_ci": [
+            -0.0969,
+            0.0091
+          ],
+          "dd_adj_score": 0.0704,
+          "hit_rate": 0.5764,
+          "hit_rate_ci": [
+            0.5212,
+            0.6298
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": -0.0024
+        },
+        {
+          "label": "Expansion",
+          "n_rows": 835,
+          "n_months": 129,
+          "thin": false,
+          "mean_fwd_ret": 0.0084,
+          "mean_fwd_ret_ci": [
+            -0.004,
+            0.0213
+          ],
+          "ret_gap_vs_base": 0.0016,
+          "ret_gap_ci": [
+            -0.0087,
+            0.011
+          ],
+          "p10_dd": -0.1042,
+          "p10_dd_ci": [
+            -0.1214,
+            -0.0826
+          ],
+          "p10_dd_gap_vs_base": 0.0138,
+          "p10_dd_gap_ci": [
+            -0.0026,
+            0.0333
+          ],
+          "dd_adj_score": 0.0807,
+          "hit_rate": 0.588,
+          "hit_rate_ci": [
+            0.5543,
+            0.6209
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": 0.0092
+        },
+        {
+          "label": "Peak",
+          "n_rows": 1385,
+          "n_months": 125,
+          "thin": false,
+          "mean_fwd_ret": 0.0058,
+          "mean_fwd_ret_ci": [
+            -0.0016,
+            0.0137
+          ],
+          "ret_gap_vs_base": -0.001,
+          "ret_gap_ci": [
+            -0.0085,
+            0.007
+          ],
+          "p10_dd": -0.0971,
+          "p10_dd_ci": [
+            -0.1107,
+            -0.0844
+          ],
+          "p10_dd_gap_vs_base": 0.0209,
+          "p10_dd_gap_ci": [
+            0.0046,
+            0.04
+          ],
+          "dd_adj_score": 0.0602,
+          "hit_rate": 0.5783,
+          "hit_rate_ci": [
+            0.5521,
+            0.6041
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": -0.0005
+        },
+        {
+          "label": "Downturn",
+          "n_rows": 1182,
+          "n_months": 133,
+          "thin": false,
+          "mean_fwd_ret": 0.0092,
+          "mean_fwd_ret_ci": [
+            0.0007,
+            0.0188
+          ],
+          "ret_gap_vs_base": 0.0023,
+          "ret_gap_ci": [
+            -0.0055,
+            0.0098
+          ],
+          "p10_dd": -0.1037,
+          "p10_dd_ci": [
+            -0.1187,
+            -0.0882
+          ],
+          "p10_dd_gap_vs_base": 0.0143,
+          "p10_dd_gap_ci": [
+            -0.0,
+            0.029
+          ],
+          "dd_adj_score": 0.0885,
+          "hit_rate": 0.6024,
+          "hit_rate_ci": [
+            0.5742,
+            0.6299
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": 0.0236
+        }
+      ],
+      "timing_states": [
+        {
+          "label": "RALLY ON",
+          "n_rows": 1097,
+          "n_months": 143,
+          "thin": false,
+          "mean_fwd_ret": 0.0005,
+          "mean_fwd_ret_ci": [
+            -0.0147,
+            0.0158
+          ],
+          "ret_gap_vs_base": -0.0064,
+          "ret_gap_ci": [
+            -0.0163,
+            0.005
+          ],
+          "p10_dd": -0.124,
+          "p10_dd_ci": [
+            -0.1512,
+            -0.0945
+          ],
+          "p10_dd_gap_vs_base": -0.006,
+          "p10_dd_gap_ci": [
+            -0.0293,
+            0.0152
+          ],
+          "dd_adj_score": 0.0037,
+          "hit_rate": 0.526,
+          "hit_rate_ci": [
+            0.4964,
+            0.5554
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": -0.0528
+        },
+        {
+          "label": "TURN SIGNALED",
+          "n_rows": 786,
+          "n_months": 132,
+          "thin": false,
+          "mean_fwd_ret": 0.0079,
+          "mean_fwd_ret_ci": [
+            -0.0034,
+            0.0185
+          ],
+          "ret_gap_vs_base": 0.0011,
+          "ret_gap_ci": [
+            -0.0081,
+            0.01
+          ],
+          "p10_dd": -0.1112,
+          "p10_dd_ci": [
+            -0.1308,
+            -0.0864
+          ],
+          "p10_dd_gap_vs_base": 0.0068,
+          "p10_dd_gap_ci": [
+            -0.0113,
+            0.0283
+          ],
+          "dd_adj_score": 0.0711,
+          "hit_rate": 0.6081,
+          "hit_rate_ci": [
+            0.5736,
+            0.6417
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": 0.0293
+        },
+        {
+          "label": "COUNTERTREND BOUNCE",
+          "n_rows": 753,
+          "n_months": 124,
+          "thin": false,
+          "mean_fwd_ret": 0.0034,
+          "mean_fwd_ret_ci": [
+            -0.0099,
+            0.0155
+          ],
+          "ret_gap_vs_base": -0.0034,
+          "ret_gap_ci": [
+            -0.0137,
+            0.0058
+          ],
+          "p10_dd": -0.1283,
+          "p10_dd_ci": [
+            -0.2258,
+            -0.0993
+          ],
+          "p10_dd_gap_vs_base": -0.0103,
+          "p10_dd_gap_ci": [
+            -0.0999,
+            0.0119
+          ],
+          "dd_adj_score": 0.0267,
+          "hit_rate": 0.5857,
+          "hit_rate_ci": [
+            0.5501,
+            0.6203
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": 0.0069
+        },
+        {
+          "label": "BOTTOM WATCH",
+          "n_rows": 701,
+          "n_months": 121,
+          "thin": false,
+          "mean_fwd_ret": 0.0125,
+          "mean_fwd_ret_ci": [
+            0.0017,
+            0.0235
+          ],
+          "ret_gap_vs_base": 0.0057,
+          "ret_gap_ci": [
+            -0.003,
+            0.0142
+          ],
+          "p10_dd": -0.1094,
+          "p10_dd_ci": [
+            -0.1253,
+            -0.0896
+          ],
+          "p10_dd_gap_vs_base": 0.0086,
+          "p10_dd_gap_ci": [
+            -0.0057,
+            0.0265
+          ],
+          "dd_adj_score": 0.1144,
+          "hit_rate": 0.5934,
+          "hit_rate_ci": [
+            0.5567,
+            0.6292
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": 0.0146
+        },
+        {
+          "label": "TOP WATCH",
+          "n_rows": 600,
+          "n_months": 107,
+          "thin": false,
+          "mean_fwd_ret": 0.0047,
+          "mean_fwd_ret_ci": [
+            -0.0033,
+            0.0129
+          ],
+          "ret_gap_vs_base": -0.0021,
+          "ret_gap_ci": [
+            -0.0101,
+            0.0059
+          ],
+          "p10_dd": -0.0997,
+          "p10_dd_ci": [
+            -0.111,
+            -0.0847
+          ],
+          "p10_dd_gap_vs_base": 0.0183,
+          "p10_dd_gap_ci": [
+            0.0035,
+            0.0363
+          ],
+          "dd_adj_score": 0.0473,
+          "hit_rate": 0.565,
+          "hit_rate_ci": [
+            0.525,
+            0.6041
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": -0.0138
+        },
+        {
+          "label": "DECLINE",
+          "n_rows": 452,
+          "n_months": 85,
+          "thin": false,
+          "mean_fwd_ret": 0.0192,
+          "mean_fwd_ret_ci": [
+            -0.016,
+            0.0501
+          ],
+          "ret_gap_vs_base": 0.0124,
+          "ret_gap_ci": [
+            -0.0212,
+            0.0355
+          ],
+          "p10_dd": -0.1546,
+          "p10_dd_ci": [
+            -0.3473,
+            -0.1054
+          ],
+          "p10_dd_gap_vs_base": -0.0366,
+          "p10_dd_gap_ci": [
+            -0.2246,
+            0.0034
+          ],
+          "dd_adj_score": 0.1242,
+          "hit_rate": 0.6239,
+          "hit_rate_ci": [
+            0.5784,
+            0.6673
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": 0.0451
+        },
+        {
+          "label": "FRESH BUY",
+          "n_rows": 220,
+          "n_months": 70,
+          "thin": false,
+          "mean_fwd_ret": 0.0011,
+          "mean_fwd_ret_ci": [
+            -0.0123,
+            0.0133
+          ],
+          "ret_gap_vs_base": -0.0057,
+          "ret_gap_ci": [
+            -0.0196,
+            0.0064
+          ],
+          "p10_dd": -0.1112,
+          "p10_dd_ci": [
+            -0.1306,
+            -0.0893
+          ],
+          "p10_dd_gap_vs_base": 0.0068,
+          "p10_dd_gap_ci": [
+            -0.0142,
+            0.0331
+          ],
+          "dd_adj_score": 0.0102,
+          "hit_rate": 0.5909,
+          "hit_rate_ci": [
+            0.5249,
+            0.6538
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": 0.0121
+        },
+        {
+          "label": "ROLLING OVER",
+          "n_rows": 184,
+          "n_months": 68,
+          "thin": false,
+          "mean_fwd_ret": 0.0159,
+          "mean_fwd_ret_ci": [
+            -0.001,
+            0.0354
+          ],
+          "ret_gap_vs_base": 0.0091,
+          "ret_gap_ci": [
+            -0.0073,
+            0.0283
+          ],
+          "p10_dd": -0.0808,
+          "p10_dd_ci": [
+            -0.1152,
+            -0.063
+          ],
+          "p10_dd_gap_vs_base": 0.0372,
+          "p10_dd_gap_ci": [
+            0.0016,
+            0.0563
+          ],
+          "dd_adj_score": 0.1968,
+          "hit_rate": 0.6033,
+          "hit_rate_ci": [
+            0.5312,
+            0.6711
+          ],
+          "base_hit_rate": 0.5788,
+          "hit_gap_vs_base": 0.0245
+        }
+      ],
+      "signal": [
+        {
+          "label": "BUY",
+          "n_rows": 808,
+          "n_months": 117,
+          "thin": false,
+          "mean_fwd_ret": 0.0126,
+          "mean_fwd_ret_ci": [
+            -0.0071,
+            0.0329
+          ],
+          "ret_gap_vs_base": 0.0023,
+          "ret_gap_ci": [
+            -0.0098,
+            0.0149
+          ],
+          "p10_dd": -0.1423,
+          "p10_dd_ci": [
+            -0.1849,
+            -0.1057
+          ],
+          "p10_dd_gap_vs_base": -0.0225,
+          "p10_dd_gap_ci": [
+            -0.0508,
+            0.0021
+          ],
+          "dd_adj_score": 0.0888,
+          "hit_rate": 0.5928,
+          "hit_rate_ci": [
+            0.5586,
+            0.6262
+          ],
+          "base_hit_rate": 0.593,
+          "hit_gap_vs_base": -0.0002
+        },
+        {
+          "label": "SELL",
+          "n_rows": 993,
+          "n_months": 118,
+          "thin": false,
+          "mean_fwd_ret": 0.0085,
+          "mean_fwd_ret_ci": [
+            -0.0011,
+            0.018
+          ],
+          "ret_gap_vs_base": -0.0018,
+          "ret_gap_ci": [
+            -0.0123,
+            0.0077
+          ],
+          "p10_dd": -0.0999,
+          "p10_dd_ci": [
+            -0.1182,
+            -0.0875
+          ],
+          "p10_dd_gap_vs_base": 0.0199,
+          "p10_dd_gap_ci": [
+            -0.0013,
+            0.0379
+          ],
+          "dd_adj_score": 0.0853,
+          "hit_rate": 0.5932,
+          "hit_rate_ci": [
+            0.5623,
+            0.6233
+          ],
+          "base_hit_rate": 0.593,
+          "hit_gap_vs_base": 0.0002
+        }
+      ],
+      "inversion": {
+        "low_pos": {
+          "n_rows": 960,
+          "n_months": 108,
+          "mean_fwd_ret": 0.0036,
+          "p10_dd": -0.1802,
+          "dd_adj_score": 0.0202
+        },
+        "high_pos": {
+          "n_rows": 959,
+          "n_months": 106,
+          "mean_fwd_ret": 0.0081,
+          "p10_dd": -0.093,
+          "dd_adj_score": 0.0868
+        },
+        "ret_gap_low_minus_high": -0.0045,
+        "ret_gap_ci": [
+          -0.0305,
+          0.0198
+        ],
+        "dd_adj_gap_low_minus_high": -0.0666,
+        "dd_adj_gap_ci": [
+          -0.2172,
+          0.1216
+        ],
+        "verdict": "inconclusive"
+      }
+    },
+    "63": {
+      "position_deciles": [
+        {
+          "label": "D1 (pos 0-10%)",
+          "n_rows": 480,
+          "n_months": 75,
+          "thin": false,
+          "mean_fwd_ret": -0.0151,
+          "mean_fwd_ret_ci": [
+            -0.0696,
+            0.0356
+          ],
+          "ret_gap_vs_base": -0.0403,
+          "ret_gap_ci": [
+            -0.0909,
+            0.0067
+          ],
+          "p10_dd": -0.3869,
+          "p10_dd_ci": [
+            -0.4757,
+            -0.2391
+          ],
+          "p10_dd_gap_vs_base": -0.188,
+          "p10_dd_gap_ci": [
+            -0.2793,
+            -0.046
+          ],
+          "dd_adj_score": -0.039,
+          "hit_rate": 0.55,
+          "hit_rate_ci": [
+            0.5053,
+            0.5939
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": -0.0949
+        },
+        {
+          "label": "D2 (pos 10-20%)",
+          "n_rows": 480,
+          "n_months": 98,
+          "thin": false,
+          "mean_fwd_ret": 0.0462,
+          "mean_fwd_ret_ci": [
+            0.0094,
+            0.0862
+          ],
+          "ret_gap_vs_base": 0.021,
+          "ret_gap_ci": [
+            -0.0076,
+            0.0509
+          ],
+          "p10_dd": -0.2419,
+          "p10_dd_ci": [
+            -0.293,
+            -0.1821
+          ],
+          "p10_dd_gap_vs_base": -0.043,
+          "p10_dd_gap_ci": [
+            -0.0842,
+            0.0078
+          ],
+          "dd_adj_score": 0.1909,
+          "hit_rate": 0.6792,
+          "hit_rate_ci": [
+            0.6361,
+            0.7194
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": 0.0343
+        },
+        {
+          "label": "D3 (pos 20-30%)",
+          "n_rows": 478,
+          "n_months": 118,
+          "thin": false,
+          "mean_fwd_ret": 0.0408,
+          "mean_fwd_ret_ci": [
+            0.0127,
+            0.0741
+          ],
+          "ret_gap_vs_base": 0.0156,
+          "ret_gap_ci": [
+            -0.0049,
+            0.0364
+          ],
+          "p10_dd": -0.2111,
+          "p10_dd_ci": [
+            -0.2585,
+            -0.1755
+          ],
+          "p10_dd_gap_vs_base": -0.0122,
+          "p10_dd_gap_ci": [
+            -0.0421,
+            0.0141
+          ],
+          "dd_adj_score": 0.1932,
+          "hit_rate": 0.6695,
+          "hit_rate_ci": [
+            0.6261,
+            0.7101
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": 0.0246
+        },
+        {
+          "label": "D4 (pos 30-40%)",
+          "n_rows": 480,
+          "n_months": 124,
+          "thin": false,
+          "mean_fwd_ret": 0.0239,
+          "mean_fwd_ret_ci": [
+            0.0028,
+            0.0463
+          ],
+          "ret_gap_vs_base": -0.0013,
+          "ret_gap_ci": [
+            -0.0165,
+            0.0145
+          ],
+          "p10_dd": -0.1905,
+          "p10_dd_ci": [
+            -0.2143,
+            -0.1655
+          ],
+          "p10_dd_gap_vs_base": 0.0084,
+          "p10_dd_gap_ci": [
+            -0.0167,
+            0.0319
+          ],
+          "dd_adj_score": 0.1254,
+          "hit_rate": 0.6104,
+          "hit_rate_ci": [
+            0.5661,
+            0.653
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": -0.0345
+        },
+        {
+          "label": "D5 (pos 40-50%)",
+          "n_rows": 479,
+          "n_months": 131,
+          "thin": false,
+          "mean_fwd_ret": 0.0318,
+          "mean_fwd_ret_ci": [
+            0.0138,
+            0.0501
+          ],
+          "ret_gap_vs_base": 0.0066,
+          "ret_gap_ci": [
+            -0.008,
+            0.0226
+          ],
+          "p10_dd": -0.1823,
+          "p10_dd_ci": [
+            -0.1959,
+            -0.1599
+          ],
+          "p10_dd_gap_vs_base": 0.0166,
+          "p10_dd_gap_ci": [
+            -0.0039,
+            0.0425
+          ],
+          "dd_adj_score": 0.1742,
+          "hit_rate": 0.6764,
+          "hit_rate_ci": [
+            0.6333,
+            0.7168
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": 0.0315
+        },
+        {
+          "label": "D6 (pos 50-60%)",
+          "n_rows": 479,
+          "n_months": 125,
+          "thin": false,
+          "mean_fwd_ret": 0.0151,
+          "mean_fwd_ret_ci": [
+            -0.0004,
+            0.0291
+          ],
+          "ret_gap_vs_base": -0.0101,
+          "ret_gap_ci": [
+            -0.0235,
+            0.004
+          ],
+          "p10_dd": -0.1855,
+          "p10_dd_ci": [
+            -0.2171,
+            -0.1646
+          ],
+          "p10_dd_gap_vs_base": 0.0134,
+          "p10_dd_gap_ci": [
+            -0.0131,
+            0.045
+          ],
+          "dd_adj_score": 0.0814,
+          "hit_rate": 0.5992,
+          "hit_rate_ci": [
+            0.5547,
+            0.6421
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": -0.0457
+        },
+        {
+          "label": "D7 (pos 60-70%)",
+          "n_rows": 479,
+          "n_months": 118,
+          "thin": false,
+          "mean_fwd_ret": 0.0242,
+          "mean_fwd_ret_ci": [
+            0.0105,
+            0.0383
+          ],
+          "ret_gap_vs_base": -0.001,
+          "ret_gap_ci": [
+            -0.0144,
+            0.0135
+          ],
+          "p10_dd": -0.165,
+          "p10_dd_ci": [
+            -0.1819,
+            -0.1505
+          ],
+          "p10_dd_gap_vs_base": 0.0339,
+          "p10_dd_gap_ci": [
+            0.0086,
+            0.062
+          ],
+          "dd_adj_score": 0.1468,
+          "hit_rate": 0.643,
+          "hit_rate_ci": [
+            0.5991,
+            0.6846
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": -0.0019
+        },
+        {
+          "label": "D8 (pos 70-80%)",
+          "n_rows": 479,
+          "n_months": 111,
+          "thin": false,
+          "mean_fwd_ret": 0.0246,
+          "mean_fwd_ret_ci": [
+            0.0115,
+            0.0377
+          ],
+          "ret_gap_vs_base": -0.0006,
+          "ret_gap_ci": [
+            -0.0152,
+            0.0158
+          ],
+          "p10_dd": -0.1662,
+          "p10_dd_ci": [
+            -0.1861,
+            -0.1491
+          ],
+          "p10_dd_gap_vs_base": 0.0327,
+          "p10_dd_gap_ci": [
+            0.0066,
+            0.0634
+          ],
+          "dd_adj_score": 0.1482,
+          "hit_rate": 0.6555,
+          "hit_rate_ci": [
+            0.6119,
+            0.6967
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": 0.0106
+        },
+        {
+          "label": "D9 (pos 80-90%)",
+          "n_rows": 479,
+          "n_months": 98,
+          "thin": false,
+          "mean_fwd_ret": 0.0304,
+          "mean_fwd_ret_ci": [
+            0.014,
+            0.0491
+          ],
+          "ret_gap_vs_base": 0.0052,
+          "ret_gap_ci": [
+            -0.0122,
+            0.0233
+          ],
+          "p10_dd": -0.158,
+          "p10_dd_ci": [
+            -0.1757,
+            -0.1424
+          ],
+          "p10_dd_gap_vs_base": 0.0409,
+          "p10_dd_gap_ci": [
+            0.0141,
+            0.0672
+          ],
+          "dd_adj_score": 0.1923,
+          "hit_rate": 0.6785,
+          "hit_rate_ci": [
+            0.6354,
+            0.7188
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": 0.0336
+        },
+        {
+          "label": "D10 (pos 90-100%)",
+          "n_rows": 480,
+          "n_months": 87,
+          "thin": false,
+          "mean_fwd_ret": 0.03,
+          "mean_fwd_ret_ci": [
+            0.0131,
+            0.0457
+          ],
+          "ret_gap_vs_base": 0.0049,
+          "ret_gap_ci": [
+            -0.0149,
+            0.0239
+          ],
+          "p10_dd": -0.1441,
+          "p10_dd_ci": [
+            -0.171,
+            -0.1282
+          ],
+          "p10_dd_gap_vs_base": 0.0548,
+          "p10_dd_gap_ci": [
+            0.0193,
+            0.0823
+          ],
+          "dd_adj_score": 0.2084,
+          "hit_rate": 0.6875,
+          "hit_rate_ci": [
+            0.6447,
+            0.7273
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": 0.0426
+        }
+      ],
+      "phases": [
+        {
+          "label": "Trough",
+          "n_rows": 1077,
+          "n_months": 116,
+          "thin": false,
+          "mean_fwd_ret": 0.0061,
+          "mean_fwd_ret_ci": [
+            -0.0299,
+            0.0341
+          ],
+          "ret_gap_vs_base": -0.0191,
+          "ret_gap_ci": [
+            -0.0454,
+            0.0035
+          ],
+          "p10_dd": -0.2827,
+          "p10_dd_ci": [
+            -0.4292,
+            -0.2136
+          ],
+          "p10_dd_gap_vs_base": -0.0839,
+          "p10_dd_gap_ci": [
+            -0.2121,
+            -0.0287
+          ],
+          "dd_adj_score": 0.0217,
+          "hit_rate": 0.611,
+          "hit_rate_ci": [
+            0.5815,
+            0.6396
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": -0.0339
+        },
+        {
+          "label": "Recovery",
+          "n_rows": 314,
+          "n_months": 78,
+          "thin": false,
+          "mean_fwd_ret": 0.0857,
+          "mean_fwd_ret_ci": [
+            0.0187,
+            0.1565
+          ],
+          "ret_gap_vs_base": 0.0605,
+          "ret_gap_ci": [
+            -0.0003,
+            0.125
+          ],
+          "p10_dd": -0.247,
+          "p10_dd_ci": [
+            -0.3067,
+            -0.1547
+          ],
+          "p10_dd_gap_vs_base": -0.0481,
+          "p10_dd_gap_ci": [
+            -0.1067,
+            0.0354
+          ],
+          "dd_adj_score": 0.347,
+          "hit_rate": 0.7102,
+          "hit_rate_ci": [
+            0.6577,
+            0.7576
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": 0.0653
+        },
+        {
+          "label": "Expansion",
+          "n_rows": 835,
+          "n_months": 129,
+          "thin": false,
+          "mean_fwd_ret": 0.0229,
+          "mean_fwd_ret_ci": [
+            0.003,
+            0.0459
+          ],
+          "ret_gap_vs_base": -0.0023,
+          "ret_gap_ci": [
+            -0.0176,
+            0.0144
+          ],
+          "p10_dd": -0.1816,
+          "p10_dd_ci": [
+            -0.1955,
+            -0.1592
+          ],
+          "p10_dd_gap_vs_base": 0.0173,
+          "p10_dd_gap_ci": [
+            -0.0015,
+            0.0433
+          ],
+          "dd_adj_score": 0.1261,
+          "hit_rate": 0.6084,
+          "hit_rate_ci": [
+            0.5749,
+            0.6409
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": -0.0365
+        },
+        {
+          "label": "Peak",
+          "n_rows": 1385,
+          "n_months": 125,
+          "thin": false,
+          "mean_fwd_ret": 0.0293,
+          "mean_fwd_ret_ci": [
+            0.0163,
+            0.0426
+          ],
+          "ret_gap_vs_base": 0.0041,
+          "ret_gap_ci": [
+            -0.0096,
+            0.0196
+          ],
+          "p10_dd": -0.1564,
+          "p10_dd_ci": [
+            -0.1707,
+            -0.1417
+          ],
+          "p10_dd_gap_vs_base": 0.0425,
+          "p10_dd_gap_ci": [
+            0.0184,
+            0.07
+          ],
+          "dd_adj_score": 0.1874,
+          "hit_rate": 0.6744,
+          "hit_rate_ci": [
+            0.6492,
+            0.6985
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": 0.0295
+        },
+        {
+          "label": "Downturn",
+          "n_rows": 1182,
+          "n_months": 133,
+          "thin": false,
+          "mean_fwd_ret": 0.0232,
+          "mean_fwd_ret_ci": [
+            0.0091,
+            0.0374
+          ],
+          "ret_gap_vs_base": -0.0019,
+          "ret_gap_ci": [
+            -0.0176,
+            0.0117
+          ],
+          "p10_dd": -0.1802,
+          "p10_dd_ci": [
+            -0.2042,
+            -0.1578
+          ],
+          "p10_dd_gap_vs_base": 0.0187,
+          "p10_dd_gap_ci": [
+            -0.0075,
+            0.0454
+          ],
+          "dd_adj_score": 0.129,
+          "hit_rate": 0.6497,
+          "hit_rate_ci": [
+            0.6221,
+            0.6764
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": 0.0048
+        }
+      ],
+      "timing_states": [
+        {
+          "label": "RALLY ON",
+          "n_rows": 1097,
+          "n_months": 143,
+          "thin": false,
+          "mean_fwd_ret": 0.0212,
+          "mean_fwd_ret_ci": [
+            0.0066,
+            0.0374
+          ],
+          "ret_gap_vs_base": -0.0039,
+          "ret_gap_ci": [
+            -0.0179,
+            0.0096
+          ],
+          "p10_dd": -0.2021,
+          "p10_dd_ci": [
+            -0.2686,
+            -0.1639
+          ],
+          "p10_dd_gap_vs_base": -0.0033,
+          "p10_dd_gap_ci": [
+            -0.0585,
+            0.0292
+          ],
+          "dd_adj_score": 0.1051,
+          "hit_rate": 0.6454,
+          "hit_rate_ci": [
+            0.6166,
+            0.6732
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": 0.0005
+        },
+        {
+          "label": "TURN SIGNALED",
+          "n_rows": 786,
+          "n_months": 132,
+          "thin": false,
+          "mean_fwd_ret": 0.0255,
+          "mean_fwd_ret_ci": [
+            0.0074,
+            0.0439
+          ],
+          "ret_gap_vs_base": 0.0003,
+          "ret_gap_ci": [
+            -0.0138,
+            0.0146
+          ],
+          "p10_dd": -0.1819,
+          "p10_dd_ci": [
+            -0.2091,
+            -0.1639
+          ],
+          "p10_dd_gap_vs_base": 0.017,
+          "p10_dd_gap_ci": [
+            -0.0048,
+            0.0401
+          ],
+          "dd_adj_score": 0.14,
+          "hit_rate": 0.6387,
+          "hit_rate_ci": [
+            0.6045,
+            0.6715
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": -0.0062
+        },
+        {
+          "label": "COUNTERTREND BOUNCE",
+          "n_rows": 753,
+          "n_months": 124,
+          "thin": false,
+          "mean_fwd_ret": 0.0153,
+          "mean_fwd_ret_ci": [
+            -0.015,
+            0.0388
+          ],
+          "ret_gap_vs_base": -0.0099,
+          "ret_gap_ci": [
+            -0.0315,
+            0.0087
+          ],
+          "p10_dd": -0.2321,
+          "p10_dd_ci": [
+            -0.3014,
+            -0.1788
+          ],
+          "p10_dd_gap_vs_base": -0.0332,
+          "p10_dd_gap_ci": [
+            -0.0848,
+            0.0111
+          ],
+          "dd_adj_score": 0.066,
+          "hit_rate": 0.6242,
+          "hit_rate_ci": [
+            0.589,
+            0.6581
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": -0.0207
+        },
+        {
+          "label": "BOTTOM WATCH",
+          "n_rows": 701,
+          "n_months": 121,
+          "thin": false,
+          "mean_fwd_ret": 0.0297,
+          "mean_fwd_ret_ci": [
+            0.0016,
+            0.0549
+          ],
+          "ret_gap_vs_base": 0.0045,
+          "ret_gap_ci": [
+            -0.0153,
+            0.0229
+          ],
+          "p10_dd": -0.2025,
+          "p10_dd_ci": [
+            -0.2511,
+            -0.1609
+          ],
+          "p10_dd_gap_vs_base": -0.0036,
+          "p10_dd_gap_ci": [
+            -0.0409,
+            0.0343
+          ],
+          "dd_adj_score": 0.1467,
+          "hit_rate": 0.6591,
+          "hit_rate_ci": [
+            0.6232,
+            0.6932
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": 0.0142
+        },
+        {
+          "label": "TOP WATCH",
+          "n_rows": 600,
+          "n_months": 107,
+          "thin": false,
+          "mean_fwd_ret": 0.0286,
+          "mean_fwd_ret_ci": [
+            0.0117,
+            0.0449
+          ],
+          "ret_gap_vs_base": 0.0034,
+          "ret_gap_ci": [
+            -0.0126,
+            0.0208
+          ],
+          "p10_dd": -0.1592,
+          "p10_dd_ci": [
+            -0.1796,
+            -0.1394
+          ],
+          "p10_dd_gap_vs_base": 0.0397,
+          "p10_dd_gap_ci": [
+            0.0154,
+            0.0677
+          ],
+          "dd_adj_score": 0.1795,
+          "hit_rate": 0.675,
+          "hit_rate_ci": [
+            0.6365,
+            0.7113
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": 0.0301
+        },
+        {
+          "label": "DECLINE",
+          "n_rows": 452,
+          "n_months": 85,
+          "thin": false,
+          "mean_fwd_ret": 0.049,
+          "mean_fwd_ret_ci": [
+            -0.0035,
+            0.11
+          ],
+          "ret_gap_vs_base": 0.0239,
+          "ret_gap_ci": [
+            -0.0261,
+            0.0684
+          ],
+          "p10_dd": -0.2404,
+          "p10_dd_ci": [
+            -0.3883,
+            -0.1676
+          ],
+          "p10_dd_gap_vs_base": -0.0415,
+          "p10_dd_gap_ci": [
+            -0.1765,
+            0.0176
+          ],
+          "dd_adj_score": 0.204,
+          "hit_rate": 0.6704,
+          "hit_rate_ci": [
+            0.6257,
+            0.7121
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": 0.0255
+        },
+        {
+          "label": "FRESH BUY",
+          "n_rows": 220,
+          "n_months": 70,
+          "thin": false,
+          "mean_fwd_ret": 0.008,
+          "mean_fwd_ret_ci": [
+            -0.0216,
+            0.0383
+          ],
+          "ret_gap_vs_base": -0.0172,
+          "ret_gap_ci": [
+            -0.0455,
+            0.0081
+          ],
+          "p10_dd": -0.1997,
+          "p10_dd_ci": [
+            -0.2267,
+            -0.1493
+          ],
+          "p10_dd_gap_vs_base": -0.0008,
+          "p10_dd_gap_ci": [
+            -0.0276,
+            0.0501
+          ],
+          "dd_adj_score": 0.04,
+          "hit_rate": 0.5727,
+          "hit_rate_ci": [
+            0.5067,
+            0.6363
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": -0.0722
+        },
+        {
+          "label": "ROLLING OVER",
+          "n_rows": 184,
+          "n_months": 68,
+          "thin": false,
+          "mean_fwd_ret": 0.0214,
+          "mean_fwd_ret_ci": [
+            -0.004,
+            0.0499
+          ],
+          "ret_gap_vs_base": -0.0038,
+          "ret_gap_ci": [
+            -0.0285,
+            0.0261
+          ],
+          "p10_dd": -0.1762,
+          "p10_dd_ci": [
+            -0.2045,
+            -0.1481
+          ],
+          "p10_dd_gap_vs_base": 0.0227,
+          "p10_dd_gap_ci": [
+            -0.0078,
+            0.0532
+          ],
+          "dd_adj_score": 0.1216,
+          "hit_rate": 0.625,
+          "hit_rate_ci": [
+            0.5532,
+            0.6917
+          ],
+          "base_hit_rate": 0.6449,
+          "hit_gap_vs_base": -0.0199
+        }
+      ],
+      "signal": [
+        {
+          "label": "BUY",
+          "n_rows": 808,
+          "n_months": 117,
+          "thin": false,
+          "mean_fwd_ret": 0.033,
+          "mean_fwd_ret_ci": [
+            0.0045,
+            0.0592
+          ],
+          "ret_gap_vs_base": 0.0052,
+          "ret_gap_ci": [
+            -0.0115,
+            0.0211
+          ],
+          "p10_dd": -0.2391,
+          "p10_dd_ci": [
+            -0.2931,
+            -0.1855
+          ],
+          "p10_dd_gap_vs_base": -0.0364,
+          "p10_dd_gap_ci": [
+            -0.0767,
+            -0.008
+          ],
+          "dd_adj_score": 0.1379,
+          "hit_rate": 0.6386,
+          "hit_rate_ci": [
+            0.6049,
+            0.671
+          ],
+          "base_hit_rate": 0.648,
+          "hit_gap_vs_base": -0.0094
+        },
+        {
+          "label": "SELL",
+          "n_rows": 993,
+          "n_months": 118,
+          "thin": false,
+          "mean_fwd_ret": 0.0236,
+          "mean_fwd_ret_ci": [
+            0.0098,
+            0.0347
+          ],
+          "ret_gap_vs_base": -0.0042,
+          "ret_gap_ci": [
+            -0.0174,
+            0.0094
+          ],
+          "p10_dd": -0.1706,
+          "p10_dd_ci": [
+            -0.1915,
+            -0.1514
+          ],
+          "p10_dd_gap_vs_base": 0.0321,
+          "p10_dd_gap_ci": [
+            0.0035,
+            0.0696
+          ],
+          "dd_adj_score": 0.1381,
+          "hit_rate": 0.6556,
+          "hit_rate_ci": [
+            0.6255,
+            0.6845
+          ],
+          "base_hit_rate": 0.648,
+          "hit_gap_vs_base": 0.0076
+        }
+      ],
+      "inversion": {
+        "low_pos": {
+          "n_rows": 960,
+          "n_months": 108,
+          "mean_fwd_ret": 0.0155,
+          "p10_dd": -0.3009,
+          "dd_adj_score": 0.0517
+        },
+        "high_pos": {
+          "n_rows": 959,
+          "n_months": 106,
+          "mean_fwd_ret": 0.0302,
+          "p10_dd": -0.155,
+          "dd_adj_score": 0.1949
+        },
+        "ret_gap_low_minus_high": -0.0147,
+        "ret_gap_ci": [
+          -0.0602,
+          0.0271
+        ],
+        "dd_adj_gap_low_minus_high": -0.1432,
+        "dd_adj_gap_ci": [
+          -0.3161,
+          0.07
+        ],
+        "verdict": "inconclusive"
+      }
+    },
+    "126": {
+      "position_deciles": [
+        {
+          "label": "D1 (pos 0-10%)",
+          "n_rows": 480,
+          "n_months": 75,
+          "thin": false,
+          "mean_fwd_ret": 0.0232,
+          "mean_fwd_ret_ci": [
+            -0.0535,
+            0.0956
+          ],
+          "ret_gap_vs_base": -0.0241,
+          "ret_gap_ci": [
+            -0.0957,
+            0.0368
+          ],
+          "p10_dd": -0.4492,
+          "p10_dd_ci": [
+            -0.519,
+            -0.2969
+          ],
+          "p10_dd_gap_vs_base": -0.1793,
+          "p10_dd_gap_ci": [
+            -0.2438,
+            -0.0376
+          ],
+          "dd_adj_score": 0.0516,
+          "hit_rate": 0.5813,
+          "hit_rate_ci": [
+            0.5366,
+            0.6246
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": -0.0742
+        },
+        {
+          "label": "D2 (pos 10-20%)",
+          "n_rows": 480,
+          "n_months": 98,
+          "thin": false,
+          "mean_fwd_ret": 0.0584,
+          "mean_fwd_ret_ci": [
+            0.0029,
+            0.1211
+          ],
+          "ret_gap_vs_base": 0.0112,
+          "ret_gap_ci": [
+            -0.0344,
+            0.0596
+          ],
+          "p10_dd": -0.3205,
+          "p10_dd_ci": [
+            -0.4383,
+            -0.2509
+          ],
+          "p10_dd_gap_vs_base": -0.0506,
+          "p10_dd_gap_ci": [
+            -0.1688,
+            0.0106
+          ],
+          "dd_adj_score": 0.1823,
+          "hit_rate": 0.6146,
+          "hit_rate_ci": [
+            0.5703,
+            0.6571
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": -0.0409
+        },
+        {
+          "label": "D3 (pos 20-30%)",
+          "n_rows": 478,
+          "n_months": 118,
+          "thin": false,
+          "mean_fwd_ret": 0.0527,
+          "mean_fwd_ret_ci": [
+            0.008,
+            0.1039
+          ],
+          "ret_gap_vs_base": 0.0054,
+          "ret_gap_ci": [
+            -0.0284,
+            0.0384
+          ],
+          "p10_dd": -0.2875,
+          "p10_dd_ci": [
+            -0.3751,
+            -0.2469
+          ],
+          "p10_dd_gap_vs_base": -0.0175,
+          "p10_dd_gap_ci": [
+            -0.1065,
+            0.015
+          ],
+          "dd_adj_score": 0.1832,
+          "hit_rate": 0.6444,
+          "hit_rate_ci": [
+            0.6004,
+            0.686
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": -0.0111
+        },
+        {
+          "label": "D4 (pos 30-40%)",
+          "n_rows": 480,
+          "n_months": 124,
+          "thin": false,
+          "mean_fwd_ret": 0.0427,
+          "mean_fwd_ret_ci": [
+            0.0032,
+            0.0813
+          ],
+          "ret_gap_vs_base": -0.0046,
+          "ret_gap_ci": [
+            -0.0338,
+            0.0213
+          ],
+          "p10_dd": -0.2865,
+          "p10_dd_ci": [
+            -0.3712,
+            -0.2196
+          ],
+          "p10_dd_gap_vs_base": -0.0165,
+          "p10_dd_gap_ci": [
+            -0.0848,
+            0.0306
+          ],
+          "dd_adj_score": 0.1489,
+          "hit_rate": 0.6188,
+          "hit_rate_ci": [
+            0.5745,
+            0.6611
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": -0.0367
+        },
+        {
+          "label": "D5 (pos 40-50%)",
+          "n_rows": 479,
+          "n_months": 131,
+          "thin": false,
+          "mean_fwd_ret": 0.0583,
+          "mean_fwd_ret_ci": [
+            0.0257,
+            0.0884
+          ],
+          "ret_gap_vs_base": 0.0111,
+          "ret_gap_ci": [
+            -0.0116,
+            0.0346
+          ],
+          "p10_dd": -0.2536,
+          "p10_dd_ci": [
+            -0.3206,
+            -0.2045
+          ],
+          "p10_dd_gap_vs_base": 0.0163,
+          "p10_dd_gap_ci": [
+            -0.0163,
+            0.0577
+          ],
+          "dd_adj_score": 0.23,
+          "hit_rate": 0.6764,
+          "hit_rate_ci": [
+            0.6333,
+            0.7168
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": 0.0209
+        },
+        {
+          "label": "D6 (pos 50-60%)",
+          "n_rows": 479,
+          "n_months": 125,
+          "thin": false,
+          "mean_fwd_ret": 0.0375,
+          "mean_fwd_ret_ci": [
+            0.0142,
+            0.0595
+          ],
+          "ret_gap_vs_base": -0.0098,
+          "ret_gap_ci": [
+            -0.0311,
+            0.0134
+          ],
+          "p10_dd": -0.2568,
+          "p10_dd_ci": [
+            -0.2883,
+            -0.2261
+          ],
+          "p10_dd_gap_vs_base": 0.0131,
+          "p10_dd_gap_ci": [
+            -0.0152,
+            0.0548
+          ],
+          "dd_adj_score": 0.146,
+          "hit_rate": 0.6493,
+          "hit_rate_ci": [
+            0.6055,
+            0.6907
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": -0.0062
+        },
+        {
+          "label": "D7 (pos 60-70%)",
+          "n_rows": 479,
+          "n_months": 118,
+          "thin": false,
+          "mean_fwd_ret": 0.0554,
+          "mean_fwd_ret_ci": [
+            0.0361,
+            0.076
+          ],
+          "ret_gap_vs_base": 0.0081,
+          "ret_gap_ci": [
+            -0.0106,
+            0.0295
+          ],
+          "p10_dd": -0.2096,
+          "p10_dd_ci": [
+            -0.2429,
+            -0.1926
+          ],
+          "p10_dd_gap_vs_base": 0.0603,
+          "p10_dd_gap_ci": [
+            0.0292,
+            0.0935
+          ],
+          "dd_adj_score": 0.2643,
+          "hit_rate": 0.6701,
+          "hit_rate_ci": [
+            0.6268,
+            0.7108
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": 0.0146
+        },
+        {
+          "label": "D8 (pos 70-80%)",
+          "n_rows": 479,
+          "n_months": 111,
+          "thin": false,
+          "mean_fwd_ret": 0.0486,
+          "mean_fwd_ret_ci": [
+            0.0305,
+            0.0694
+          ],
+          "ret_gap_vs_base": 0.0014,
+          "ret_gap_ci": [
+            -0.0211,
+            0.0233
+          ],
+          "p10_dd": -0.2091,
+          "p10_dd_ci": [
+            -0.2466,
+            -0.1963
+          ],
+          "p10_dd_gap_vs_base": 0.0608,
+          "p10_dd_gap_ci": [
+            0.0264,
+            0.0951
+          ],
+          "dd_adj_score": 0.2326,
+          "hit_rate": 0.6848,
+          "hit_rate_ci": [
+            0.6418,
+            0.7248
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": 0.0293
+        },
+        {
+          "label": "D9 (pos 80-90%)",
+          "n_rows": 479,
+          "n_months": 98,
+          "thin": false,
+          "mean_fwd_ret": 0.0413,
+          "mean_fwd_ret_ci": [
+            0.0205,
+            0.0638
+          ],
+          "ret_gap_vs_base": -0.0059,
+          "ret_gap_ci": [
+            -0.0304,
+            0.0181
+          ],
+          "p10_dd": -0.23,
+          "p10_dd_ci": [
+            -0.2608,
+            -0.2041
+          ],
+          "p10_dd_gap_vs_base": 0.04,
+          "p10_dd_gap_ci": [
+            0.0068,
+            0.0861
+          ],
+          "dd_adj_score": 0.1797,
+          "hit_rate": 0.6889,
+          "hit_rate_ci": [
+            0.6461,
+            0.7288
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": 0.0334
+        },
+        {
+          "label": "D10 (pos 90-100%)",
+          "n_rows": 480,
+          "n_months": 87,
+          "thin": false,
+          "mean_fwd_ret": 0.0545,
+          "mean_fwd_ret_ci": [
+            0.0296,
+            0.0759
+          ],
+          "ret_gap_vs_base": 0.0073,
+          "ret_gap_ci": [
+            -0.0219,
+            0.0316
+          ],
+          "p10_dd": -0.2092,
+          "p10_dd_ci": [
+            -0.2322,
+            -0.1844
+          ],
+          "p10_dd_gap_vs_base": 0.0607,
+          "p10_dd_gap_ci": [
+            0.0323,
+            0.1039
+          ],
+          "dd_adj_score": 0.2607,
+          "hit_rate": 0.7271,
+          "hit_rate_ci": [
+            0.6855,
+            0.765
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": 0.0716
+        }
+      ],
+      "phases": [
+        {
+          "label": "Trough",
+          "n_rows": 1077,
+          "n_months": 116,
+          "thin": false,
+          "mean_fwd_ret": 0.0234,
+          "mean_fwd_ret_ci": [
+            -0.0246,
+            0.07
+          ],
+          "ret_gap_vs_base": -0.0239,
+          "ret_gap_ci": [
+            -0.0616,
+            0.0085
+          ],
+          "p10_dd": -0.3683,
+          "p10_dd_ci": [
+            -0.4842,
+            -0.2804
+          ],
+          "p10_dd_gap_vs_base": -0.0983,
+          "p10_dd_gap_ci": [
+            -0.2031,
+            -0.0299
+          ],
+          "dd_adj_score": 0.0634,
+          "hit_rate": 0.5812,
+          "hit_rate_ci": [
+            0.5515,
+            0.6104
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": -0.0743
+        },
+        {
+          "label": "Recovery",
+          "n_rows": 314,
+          "n_months": 78,
+          "thin": false,
+          "mean_fwd_ret": 0.1199,
+          "mean_fwd_ret_ci": [
+            0.0113,
+            0.2251
+          ],
+          "ret_gap_vs_base": 0.0726,
+          "ret_gap_ci": [
+            -0.0278,
+            0.1652
+          ],
+          "p10_dd": -0.3123,
+          "p10_dd_ci": [
+            -0.4382,
+            -0.2454
+          ],
+          "p10_dd_gap_vs_base": -0.0423,
+          "p10_dd_gap_ci": [
+            -0.2097,
+            0.0149
+          ],
+          "dd_adj_score": 0.3839,
+          "hit_rate": 0.7197,
+          "hit_rate_ci": [
+            0.6676,
+            0.7665
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": 0.0642
+        },
+        {
+          "label": "Expansion",
+          "n_rows": 835,
+          "n_months": 129,
+          "thin": false,
+          "mean_fwd_ret": 0.0423,
+          "mean_fwd_ret_ci": [
+            -0.0019,
+            0.0836
+          ],
+          "ret_gap_vs_base": -0.0049,
+          "ret_gap_ci": [
+            -0.0365,
+            0.0258
+          ],
+          "p10_dd": -0.2652,
+          "p10_dd_ci": [
+            -0.4754,
+            -0.2083
+          ],
+          "p10_dd_gap_vs_base": 0.0047,
+          "p10_dd_gap_ci": [
+            -0.1481,
+            0.0521
+          ],
+          "dd_adj_score": 0.1596,
+          "hit_rate": 0.6527,
+          "hit_rate_ci": [
+            0.6198,
+            0.6842
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": -0.0028
+        },
+        {
+          "label": "Peak",
+          "n_rows": 1385,
+          "n_months": 125,
+          "thin": false,
+          "mean_fwd_ret": 0.0556,
+          "mean_fwd_ret_ci": [
+            0.0387,
+            0.0731
+          ],
+          "ret_gap_vs_base": 0.0084,
+          "ret_gap_ci": [
+            -0.0125,
+            0.0287
+          ],
+          "p10_dd": -0.2081,
+          "p10_dd_ci": [
+            -0.2321,
+            -0.192
+          ],
+          "p10_dd_gap_vs_base": 0.0619,
+          "p10_dd_gap_ci": [
+            0.0354,
+            0.099
+          ],
+          "dd_adj_score": 0.2673,
+          "hit_rate": 0.7184,
+          "hit_rate_ci": [
+            0.6941,
+            0.7415
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": 0.0629
+        },
+        {
+          "label": "Downturn",
+          "n_rows": 1182,
+          "n_months": 133,
+          "thin": false,
+          "mean_fwd_ret": 0.0434,
+          "mean_fwd_ret_ci": [
+            0.0245,
+            0.0659
+          ],
+          "ret_gap_vs_base": -0.0038,
+          "ret_gap_ci": [
+            -0.0263,
+            0.0182
+          ],
+          "p10_dd": -0.2485,
+          "p10_dd_ci": [
+            -0.2689,
+            -0.2103
+          ],
+          "p10_dd_gap_vs_base": 0.0214,
+          "p10_dd_gap_ci": [
+            -0.0039,
+            0.0642
+          ],
+          "dd_adj_score": 0.1748,
+          "hit_rate": 0.6345,
+          "hit_rate_ci": [
+            0.6067,
+            0.6615
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": -0.021
+        }
+      ],
+      "timing_states": [
+        {
+          "label": "RALLY ON",
+          "n_rows": 1097,
+          "n_months": 143,
+          "thin": false,
+          "mean_fwd_ret": 0.0635,
+          "mean_fwd_ret_ci": [
+            0.0401,
+            0.0903
+          ],
+          "ret_gap_vs_base": 0.0162,
+          "ret_gap_ci": [
+            -0.0021,
+            0.0379
+          ],
+          "p10_dd": -0.2649,
+          "p10_dd_ci": [
+            -0.293,
+            -0.2126
+          ],
+          "p10_dd_gap_vs_base": 0.005,
+          "p10_dd_gap_ci": [
+            -0.0203,
+            0.051
+          ],
+          "dd_adj_score": 0.2396,
+          "hit_rate": 0.7037,
+          "hit_rate_ci": [
+            0.676,
+            0.73
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": 0.0482
+        },
+        {
+          "label": "TURN SIGNALED",
+          "n_rows": 786,
+          "n_months": 132,
+          "thin": false,
+          "mean_fwd_ret": 0.0409,
+          "mean_fwd_ret_ci": [
+            0.0051,
+            0.0747
+          ],
+          "ret_gap_vs_base": -0.0064,
+          "ret_gap_ci": [
+            -0.0316,
+            0.0186
+          ],
+          "p10_dd": -0.2596,
+          "p10_dd_ci": [
+            -0.348,
+            -0.2112
+          ],
+          "p10_dd_gap_vs_base": 0.0103,
+          "p10_dd_gap_ci": [
+            -0.0568,
+            0.0505
+          ],
+          "dd_adj_score": 0.1575,
+          "hit_rate": 0.6539,
+          "hit_rate_ci": [
+            0.62,
+            0.6864
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": -0.0016
+        },
+        {
+          "label": "COUNTERTREND BOUNCE",
+          "n_rows": 753,
+          "n_months": 124,
+          "thin": false,
+          "mean_fwd_ret": 0.0288,
+          "mean_fwd_ret_ci": [
+            -0.0063,
+            0.0635
+          ],
+          "ret_gap_vs_base": -0.0184,
+          "ret_gap_ci": [
+            -0.0469,
+            0.0111
+          ],
+          "p10_dd": -0.3138,
+          "p10_dd_ci": [
+            -0.3754,
+            -0.2563
+          ],
+          "p10_dd_gap_vs_base": -0.0438,
+          "p10_dd_gap_ci": [
+            -0.0878,
+            0.0052
+          ],
+          "dd_adj_score": 0.0918,
+          "hit_rate": 0.6215,
+          "hit_rate_ci": [
+            0.5863,
+            0.6555
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": -0.034
+        },
+        {
+          "label": "BOTTOM WATCH",
+          "n_rows": 701,
+          "n_months": 121,
+          "thin": false,
+          "mean_fwd_ret": 0.0437,
+          "mean_fwd_ret_ci": [
+            0.0059,
+            0.079
+          ],
+          "ret_gap_vs_base": -0.0036,
+          "ret_gap_ci": [
+            -0.0292,
+            0.0245
+          ],
+          "p10_dd": -0.2573,
+          "p10_dd_ci": [
+            -0.3369,
+            -0.2184
+          ],
+          "p10_dd_gap_vs_base": 0.0126,
+          "p10_dd_gap_ci": [
+            -0.0603,
+            0.0484
+          ],
+          "dd_adj_score": 0.1698,
+          "hit_rate": 0.6405,
+          "hit_rate_ci": [
+            0.6043,
+            0.6752
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": -0.015
+        },
+        {
+          "label": "TOP WATCH",
+          "n_rows": 600,
+          "n_months": 107,
+          "thin": false,
+          "mean_fwd_ret": 0.0548,
+          "mean_fwd_ret_ci": [
+            0.0324,
+            0.0763
+          ],
+          "ret_gap_vs_base": 0.0075,
+          "ret_gap_ci": [
+            -0.0135,
+            0.029
+          ],
+          "p10_dd": -0.226,
+          "p10_dd_ci": [
+            -0.2552,
+            -0.2017
+          ],
+          "p10_dd_gap_vs_base": 0.044,
+          "p10_dd_gap_ci": [
+            0.0166,
+            0.0862
+          ],
+          "dd_adj_score": 0.2424,
+          "hit_rate": 0.705,
+          "hit_rate_ci": [
+            0.6673,
+            0.7401
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": 0.0495
+        },
+        {
+          "label": "DECLINE",
+          "n_rows": 452,
+          "n_months": 85,
+          "thin": false,
+          "mean_fwd_ret": 0.0707,
+          "mean_fwd_ret_ci": [
+            -0.0013,
+            0.1558
+          ],
+          "ret_gap_vs_base": 0.0234,
+          "ret_gap_ci": [
+            -0.0445,
+            0.0878
+          ],
+          "p10_dd": -0.3421,
+          "p10_dd_ci": [
+            -0.4822,
+            -0.2236
+          ],
+          "p10_dd_gap_vs_base": -0.0722,
+          "p10_dd_gap_ci": [
+            -0.1959,
+            0.0384
+          ],
+          "dd_adj_score": 0.2066,
+          "hit_rate": 0.6239,
+          "hit_rate_ci": [
+            0.5784,
+            0.6673
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": -0.0316
+        },
+        {
+          "label": "FRESH BUY",
+          "n_rows": 220,
+          "n_months": 70,
+          "thin": false,
+          "mean_fwd_ret": 0.0023,
+          "mean_fwd_ret_ci": [
+            -0.0495,
+            0.055
+          ],
+          "ret_gap_vs_base": -0.045,
+          "ret_gap_ci": [
+            -0.0963,
+            0.0034
+          ],
+          "p10_dd": -0.3306,
+          "p10_dd_ci": [
+            -0.4938,
+            -0.2296
+          ],
+          "p10_dd_gap_vs_base": -0.0607,
+          "p10_dd_gap_ci": [
+            -0.2097,
+            0.0241
+          ],
+          "dd_adj_score": 0.007,
+          "hit_rate": 0.5318,
+          "hit_rate_ci": [
+            0.4659,
+            0.5966
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": -0.1237
+        },
+        {
+          "label": "ROLLING OVER",
+          "n_rows": 184,
+          "n_months": 68,
+          "thin": false,
+          "mean_fwd_ret": 0.0387,
+          "mean_fwd_ret_ci": [
+            0.0041,
+            0.0734
+          ],
+          "ret_gap_vs_base": -0.0086,
+          "ret_gap_ci": [
+            -0.0418,
+            0.0288
+          ],
+          "p10_dd": -0.214,
+          "p10_dd_ci": [
+            -0.2568,
+            -0.1953
+          ],
+          "p10_dd_gap_vs_base": 0.056,
+          "p10_dd_gap_ci": [
+            0.009,
+            0.0946
+          ],
+          "dd_adj_score": 0.1806,
+          "hit_rate": 0.6359,
+          "hit_rate_ci": [
+            0.5642,
+            0.702
+          ],
+          "base_hit_rate": 0.6555,
+          "hit_gap_vs_base": -0.0196
+        }
+      ],
+      "signal": [
+        {
+          "label": "BUY",
+          "n_rows": 808,
+          "n_months": 117,
+          "thin": false,
+          "mean_fwd_ret": 0.061,
+          "mean_fwd_ret_ci": [
+            0.0072,
+            0.1127
+          ],
+          "ret_gap_vs_base": 0.0097,
+          "ret_gap_ci": [
+            -0.0222,
+            0.0396
+          ],
+          "p10_dd": -0.3264,
+          "p10_dd_ci": [
+            -0.4488,
+            -0.2679
+          ],
+          "p10_dd_gap_vs_base": -0.0452,
+          "p10_dd_gap_ci": [
+            -0.1457,
+            -0.0134
+          ],
+          "dd_adj_score": 0.1868,
+          "hit_rate": 0.6485,
+          "hit_rate_ci": [
+            0.615,
+            0.6807
+          ],
+          "base_hit_rate": 0.6685,
+          "hit_gap_vs_base": -0.02
+        },
+        {
+          "label": "SELL",
+          "n_rows": 993,
+          "n_months": 118,
+          "thin": false,
+          "mean_fwd_ret": 0.0433,
+          "mean_fwd_ret_ci": [
+            0.0234,
+            0.0632
+          ],
+          "ret_gap_vs_base": -0.0079,
+          "ret_gap_ci": [
+            -0.0329,
+            0.0174
+          ],
+          "p10_dd": -0.2272,
+          "p10_dd_ci": [
+            -0.2657,
+            -0.2023
+          ],
+          "p10_dd_gap_vs_base": 0.0541,
+          "p10_dd_gap_ci": [
+            0.0142,
+            0.0896
+          ],
+          "dd_adj_score": 0.1906,
+          "hit_rate": 0.6848,
+          "hit_rate_ci": [
+            0.6552,
+            0.7129
+          ],
+          "base_hit_rate": 0.6685,
+          "hit_gap_vs_base": 0.0163
+        }
+      ],
+      "inversion": {
+        "low_pos": {
+          "n_rows": 960,
+          "n_months": 108,
+          "mean_fwd_ret": 0.0408,
+          "p10_dd": -0.3761,
+          "dd_adj_score": 0.1084
+        },
+        "high_pos": {
+          "n_rows": 959,
+          "n_months": 106,
+          "mean_fwd_ret": 0.0479,
+          "p10_dd": -0.2119,
+          "dd_adj_score": 0.2262
+        },
+        "ret_gap_low_minus_high": -0.0071,
+        "ret_gap_ci": [
+          -0.0704,
+          0.0569
+        ],
+        "dd_adj_gap_low_minus_high": -0.1178,
+        "dd_adj_gap_ci": [
+          -0.2967,
+          0.1198
+        ],
+        "verdict": "inconclusive"
+      }
+    }
+  },
+  "post_2018": {
+    "21": {
+      "position_deciles": [
+        {
+          "label": "D1 (pos 0-10%)",
+          "n_rows": 353,
+          "n_months": 55,
+          "thin": false,
+          "mean_fwd_ret": 0.0251,
+          "mean_fwd_ret_ci": [
+            0.0048,
+            0.0442
+          ],
+          "ret_gap_vs_base": 0.0166,
+          "ret_gap_ci": [
+            0.0007,
+            0.0339
+          ],
+          "p10_dd": -0.1209,
+          "p10_dd_ci": [
+            -0.1368,
+            -0.0991
+          ],
+          "p10_dd_gap_vs_base": -0.0141,
+          "p10_dd_gap_ci": [
+            -0.0275,
+            0.0096
+          ],
+          "dd_adj_score": 0.2079,
+          "hit_rate": 0.6516,
+          "hit_rate_ci": [
+            0.6005,
+            0.6994
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": 0.0961
+        },
+        {
+          "label": "D2 (pos 10-20%)",
+          "n_rows": 351,
+          "n_months": 68,
+          "thin": false,
+          "mean_fwd_ret": 0.0006,
+          "mean_fwd_ret_ci": [
+            -0.0202,
+            0.0224
+          ],
+          "ret_gap_vs_base": -0.0079,
+          "ret_gap_ci": [
+            -0.0229,
+            0.0089
+          ],
+          "p10_dd": -0.1262,
+          "p10_dd_ci": [
+            -0.1414,
+            -0.1071
+          ],
+          "p10_dd_gap_vs_base": -0.0194,
+          "p10_dd_gap_ci": [
+            -0.031,
+            -0.0038
+          ],
+          "dd_adj_score": 0.0049,
+          "hit_rate": 0.4615,
+          "hit_rate_ci": [
+            0.4101,
+            0.5138
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": -0.094
+        },
+        {
+          "label": "D3 (pos 20-30%)",
+          "n_rows": 351,
+          "n_months": 78,
+          "thin": false,
+          "mean_fwd_ret": 0.0059,
+          "mean_fwd_ret_ci": [
+            -0.0105,
+            0.0213
+          ],
+          "ret_gap_vs_base": -0.0026,
+          "ret_gap_ci": [
+            -0.0138,
+            0.0091
+          ],
+          "p10_dd": -0.1191,
+          "p10_dd_ci": [
+            -0.1409,
+            -0.0983
+          ],
+          "p10_dd_gap_vs_base": -0.0123,
+          "p10_dd_gap_ci": [
+            -0.0326,
+            0.0038
+          ],
+          "dd_adj_score": 0.0493,
+          "hit_rate": 0.5584,
+          "hit_rate_ci": [
+            0.5061,
+            0.6094
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": 0.0029
+        },
+        {
+          "label": "D4 (pos 30-40%)",
+          "n_rows": 352,
+          "n_months": 91,
+          "thin": false,
+          "mean_fwd_ret": 0.0102,
+          "mean_fwd_ret_ci": [
+            -0.0035,
+            0.0245
+          ],
+          "ret_gap_vs_base": 0.0017,
+          "ret_gap_ci": [
+            -0.0081,
+            0.013
+          ],
+          "p10_dd": -0.1079,
+          "p10_dd_ci": [
+            -0.1303,
+            -0.0885
+          ],
+          "p10_dd_gap_vs_base": -0.0012,
+          "p10_dd_gap_ci": [
+            -0.0157,
+            0.0166
+          ],
+          "dd_adj_score": 0.0945,
+          "hit_rate": 0.5625,
+          "hit_rate_ci": [
+            0.5103,
+            0.6134
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": 0.007
+        },
+        {
+          "label": "D5 (pos 40-50%)",
+          "n_rows": 351,
+          "n_months": 90,
+          "thin": false,
+          "mean_fwd_ret": 0.0044,
+          "mean_fwd_ret_ci": [
+            -0.0082,
+            0.0159
+          ],
+          "ret_gap_vs_base": -0.0041,
+          "ret_gap_ci": [
+            -0.0128,
+            0.0032
+          ],
+          "p10_dd": -0.0999,
+          "p10_dd_ci": [
+            -0.1277,
+            -0.0871
+          ],
+          "p10_dd_gap_vs_base": 0.0069,
+          "p10_dd_gap_ci": [
+            -0.0115,
+            0.0161
+          ],
+          "dd_adj_score": 0.0445,
+          "hit_rate": 0.5613,
+          "hit_rate_ci": [
+            0.509,
+            0.6122
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": 0.0058
+        },
+        {
+          "label": "D6 (pos 50-60%)",
+          "n_rows": 351,
+          "n_months": 92,
+          "thin": false,
+          "mean_fwd_ret": 0.0089,
+          "mean_fwd_ret_ci": [
+            -0.0082,
+            0.0253
+          ],
+          "ret_gap_vs_base": 0.0004,
+          "ret_gap_ci": [
+            -0.0117,
+            0.0112
+          ],
+          "p10_dd": -0.0938,
+          "p10_dd_ci": [
+            -0.1701,
+            -0.0822
+          ],
+          "p10_dd_gap_vs_base": 0.0129,
+          "p10_dd_gap_ci": [
+            -0.1107,
+            0.0234
+          ],
+          "dd_adj_score": 0.0947,
+          "hit_rate": 0.5385,
+          "hit_rate_ci": [
+            0.4862,
+            0.5899
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": -0.017
+        },
+        {
+          "label": "D7 (pos 60-70%)",
+          "n_rows": 352,
+          "n_months": 86,
+          "thin": false,
+          "mean_fwd_ret": 0.0084,
+          "mean_fwd_ret_ci": [
+            -0.0034,
+            0.0225
+          ],
+          "ret_gap_vs_base": -0.0001,
+          "ret_gap_ci": [
+            -0.0093,
+            0.0088
+          ],
+          "p10_dd": -0.0938,
+          "p10_dd_ci": [
+            -0.1061,
+            -0.083
+          ],
+          "p10_dd_gap_vs_base": 0.013,
+          "p10_dd_gap_ci": [
+            0.0037,
+            0.0239
+          ],
+          "dd_adj_score": 0.0897,
+          "hit_rate": 0.5511,
+          "hit_rate_ci": [
+            0.4989,
+            0.6023
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": -0.0044
+        },
+        {
+          "label": "D8 (pos 70-80%)",
+          "n_rows": 351,
+          "n_months": 78,
+          "thin": false,
+          "mean_fwd_ret": 0.0063,
+          "mean_fwd_ret_ci": [
+            -0.0052,
+            0.0171
+          ],
+          "ret_gap_vs_base": -0.0022,
+          "ret_gap_ci": [
+            -0.0108,
+            0.0058
+          ],
+          "p10_dd": -0.1065,
+          "p10_dd_ci": [
+            -0.1218,
+            -0.0862
+          ],
+          "p10_dd_gap_vs_base": 0.0002,
+          "p10_dd_gap_ci": [
+            -0.0119,
+            0.0195
+          ],
+          "dd_adj_score": 0.0595,
+          "hit_rate": 0.5726,
+          "hit_rate_ci": [
+            0.5204,
+            0.6233
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": 0.0171
+        },
+        {
+          "label": "D9 (pos 80-90%)",
+          "n_rows": 351,
+          "n_months": 73,
+          "thin": false,
+          "mean_fwd_ret": 0.0112,
+          "mean_fwd_ret_ci": [
+            0.0017,
+            0.0211
+          ],
+          "ret_gap_vs_base": 0.0026,
+          "ret_gap_ci": [
+            -0.0063,
+            0.0121
+          ],
+          "p10_dd": -0.0895,
+          "p10_dd_ci": [
+            -0.1124,
+            -0.0743
+          ],
+          "p10_dd_gap_vs_base": 0.0173,
+          "p10_dd_gap_ci": [
+            -0.0027,
+            0.0324
+          ],
+          "dd_adj_score": 0.1247,
+          "hit_rate": 0.5812,
+          "hit_rate_ci": [
+            0.529,
+            0.6317
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": 0.0257
+        },
+        {
+          "label": "D10 (pos 90-100%)",
+          "n_rows": 353,
+          "n_months": 60,
+          "thin": false,
+          "mean_fwd_ret": 0.0039,
+          "mean_fwd_ret_ci": [
+            -0.0067,
+            0.0151
+          ],
+          "ret_gap_vs_base": -0.0046,
+          "ret_gap_ci": [
+            -0.0156,
+            0.0079
+          ],
+          "p10_dd": -0.0984,
+          "p10_dd_ci": [
+            -0.1129,
+            -0.0859
+          ],
+          "p10_dd_gap_vs_base": 0.0084,
+          "p10_dd_gap_ci": [
+            -0.0055,
+            0.0269
+          ],
+          "dd_adj_score": 0.0399,
+          "hit_rate": 0.5156,
+          "hit_rate_ci": [
+            0.4636,
+            0.5673
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": -0.0399
+        }
+      ],
+      "phases": [
+        {
+          "label": "Trough",
+          "n_rows": 859,
+          "n_months": 84,
+          "thin": false,
+          "mean_fwd_ret": 0.0106,
+          "mean_fwd_ret_ci": [
+            -0.0057,
+            0.0264
+          ],
+          "ret_gap_vs_base": 0.0021,
+          "ret_gap_ci": [
+            -0.009,
+            0.0135
+          ],
+          "p10_dd": -0.1213,
+          "p10_dd_ci": [
+            -0.1376,
+            -0.1047
+          ],
+          "p10_dd_gap_vs_base": -0.0145,
+          "p10_dd_gap_ci": [
+            -0.0255,
+            -0.0035
+          ],
+          "dd_adj_score": 0.0875,
+          "hit_rate": 0.5565,
+          "hit_rate_ci": [
+            0.5231,
+            0.5894
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": 0.001
+        },
+        {
+          "label": "Recovery",
+          "n_rows": 187,
+          "n_months": 50,
+          "thin": false,
+          "mean_fwd_ret": 0.0079,
+          "mean_fwd_ret_ci": [
+            -0.0175,
+            0.0368
+          ],
+          "ret_gap_vs_base": -0.0006,
+          "ret_gap_ci": [
+            -0.0226,
+            0.0228
+          ],
+          "p10_dd": -0.1261,
+          "p10_dd_ci": [
+            -0.1416,
+            -0.0929
+          ],
+          "p10_dd_gap_vs_base": -0.0193,
+          "p10_dd_gap_ci": [
+            -0.0367,
+            0.012
+          ],
+          "dd_adj_score": 0.0624,
+          "hit_rate": 0.5455,
+          "hit_rate_ci": [
+            0.4739,
+            0.6152
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": -0.01
+        },
+        {
+          "label": "Expansion",
+          "n_rows": 489,
+          "n_months": 86,
+          "thin": false,
+          "mean_fwd_ret": 0.0042,
+          "mean_fwd_ret_ci": [
+            -0.0047,
+            0.0142
+          ],
+          "ret_gap_vs_base": -0.0043,
+          "ret_gap_ci": [
+            -0.0124,
+            0.0038
+          ],
+          "p10_dd": -0.1008,
+          "p10_dd_ci": [
+            -0.1227,
+            -0.0877
+          ],
+          "p10_dd_gap_vs_base": 0.006,
+          "p10_dd_gap_ci": [
+            -0.0094,
+            0.0187
+          ],
+          "dd_adj_score": 0.0415,
+          "hit_rate": 0.5337,
+          "hit_rate_ci": [
+            0.4894,
+            0.5775
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": -0.0218
+        },
+        {
+          "label": "Peak",
+          "n_rows": 1123,
+          "n_months": 92,
+          "thin": false,
+          "mean_fwd_ret": 0.0069,
+          "mean_fwd_ret_ci": [
+            -0.0013,
+            0.0163
+          ],
+          "ret_gap_vs_base": -0.0016,
+          "ret_gap_ci": [
+            -0.0094,
+            0.0074
+          ],
+          "p10_dd": -0.0978,
+          "p10_dd_ci": [
+            -0.1111,
+            -0.086
+          ],
+          "p10_dd_gap_vs_base": 0.009,
+          "p10_dd_gap_ci": [
+            -0.0003,
+            0.0236
+          ],
+          "dd_adj_score": 0.0709,
+          "hit_rate": 0.5467,
+          "hit_rate_ci": [
+            0.5175,
+            0.5757
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": -0.0088
+        },
+        {
+          "label": "Downturn",
+          "n_rows": 858,
+          "n_months": 93,
+          "thin": false,
+          "mean_fwd_ret": 0.0111,
+          "mean_fwd_ret_ci": [
+            -0.0072,
+            0.0287
+          ],
+          "ret_gap_vs_base": 0.0025,
+          "ret_gap_ci": [
+            -0.0107,
+            0.0141
+          ],
+          "p10_dd": -0.0988,
+          "p10_dd_ci": [
+            -0.1782,
+            -0.08
+          ],
+          "p10_dd_gap_vs_base": 0.008,
+          "p10_dd_gap_ci": [
+            -0.0851,
+            0.0239
+          ],
+          "dd_adj_score": 0.1119,
+          "hit_rate": 0.5804,
+          "hit_rate_ci": [
+            0.5471,
+            0.613
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": 0.0249
+        }
+      ],
+      "timing_states": [
+        {
+          "label": "RALLY ON",
+          "n_rows": 834,
+          "n_months": 88,
+          "thin": false,
+          "mean_fwd_ret": 0.0123,
+          "mean_fwd_ret_ci": [
+            0.0004,
+            0.0263
+          ],
+          "ret_gap_vs_base": 0.0038,
+          "ret_gap_ci": [
+            -0.0065,
+            0.0137
+          ],
+          "p10_dd": -0.0961,
+          "p10_dd_ci": [
+            -0.1103,
+            -0.0832
+          ],
+          "p10_dd_gap_vs_base": 0.0107,
+          "p10_dd_gap_ci": [
+            -0.0006,
+            0.0273
+          ],
+          "dd_adj_score": 0.1284,
+          "hit_rate": 0.5839,
+          "hit_rate_ci": [
+            0.5502,
+            0.6169
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": 0.0284
+        },
+        {
+          "label": "BOTTOM WATCH",
+          "n_rows": 556,
+          "n_months": 90,
+          "thin": false,
+          "mean_fwd_ret": 0.0054,
+          "mean_fwd_ret_ci": [
+            -0.0072,
+            0.017
+          ],
+          "ret_gap_vs_base": -0.0031,
+          "ret_gap_ci": [
+            -0.0111,
+            0.0058
+          ],
+          "p10_dd": -0.1171,
+          "p10_dd_ci": [
+            -0.137,
+            -0.0958
+          ],
+          "p10_dd_gap_vs_base": -0.0103,
+          "p10_dd_gap_ci": [
+            -0.0233,
+            0.0048
+          ],
+          "dd_adj_score": 0.046,
+          "hit_rate": 0.5324,
+          "hit_rate_ci": [
+            0.4908,
+            0.5735
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": -0.0231
+        },
+        {
+          "label": "COUNTERTREND BOUNCE",
+          "n_rows": 526,
+          "n_months": 84,
+          "thin": false,
+          "mean_fwd_ret": 0.0127,
+          "mean_fwd_ret_ci": [
+            -0.0037,
+            0.0307
+          ],
+          "ret_gap_vs_base": 0.0041,
+          "ret_gap_ci": [
+            -0.0093,
+            0.0185
+          ],
+          "p10_dd": -0.1021,
+          "p10_dd_ci": [
+            -0.1209,
+            -0.0882
+          ],
+          "p10_dd_gap_vs_base": 0.0047,
+          "p10_dd_gap_ci": [
+            -0.0097,
+            0.0194
+          ],
+          "dd_adj_score": 0.124,
+          "hit_rate": 0.5665,
+          "hit_rate_ci": [
+            0.5239,
+            0.6083
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": 0.011
+        },
+        {
+          "label": "TURN SIGNALED",
+          "n_rows": 508,
+          "n_months": 87,
+          "thin": false,
+          "mean_fwd_ret": 0.0051,
+          "mean_fwd_ret_ci": [
+            -0.0064,
+            0.0165
+          ],
+          "ret_gap_vs_base": -0.0034,
+          "ret_gap_ci": [
+            -0.0131,
+            0.0069
+          ],
+          "p10_dd": -0.1028,
+          "p10_dd_ci": [
+            -0.1219,
+            -0.0891
+          ],
+          "p10_dd_gap_vs_base": 0.004,
+          "p10_dd_gap_ci": [
+            -0.0084,
+            0.0174
+          ],
+          "dd_adj_score": 0.0493,
+          "hit_rate": 0.5512,
+          "hit_rate_ci": [
+            0.5077,
+            0.5939
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": -0.0043
+        },
+        {
+          "label": "DECLINE",
+          "n_rows": 433,
+          "n_months": 71,
+          "thin": false,
+          "mean_fwd_ret": 0.0107,
+          "mean_fwd_ret_ci": [
+            -0.0255,
+            0.0408
+          ],
+          "ret_gap_vs_base": 0.0021,
+          "ret_gap_ci": [
+            -0.0296,
+            0.0276
+          ],
+          "p10_dd": -0.1594,
+          "p10_dd_ci": [
+            -0.3393,
+            -0.0985
+          ],
+          "p10_dd_gap_vs_base": -0.0526,
+          "p10_dd_gap_ci": [
+            -0.2302,
+            0.0031
+          ],
+          "dd_adj_score": 0.0669,
+          "hit_rate": 0.6028,
+          "hit_rate_ci": [
+            0.556,
+            0.6478
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": 0.0473
+        },
+        {
+          "label": "TOP WATCH",
+          "n_rows": 427,
+          "n_months": 76,
+          "thin": false,
+          "mean_fwd_ret": 0.0028,
+          "mean_fwd_ret_ci": [
+            -0.0079,
+            0.0145
+          ],
+          "ret_gap_vs_base": -0.0057,
+          "ret_gap_ci": [
+            -0.0152,
+            0.004
+          ],
+          "p10_dd": -0.0915,
+          "p10_dd_ci": [
+            -0.1142,
+            -0.083
+          ],
+          "p10_dd_gap_vs_base": 0.0153,
+          "p10_dd_gap_ci": [
+            -0.0042,
+            0.0301
+          ],
+          "dd_adj_score": 0.0311,
+          "hit_rate": 0.4848,
+          "hit_rate_ci": [
+            0.4377,
+            0.5321
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": -0.0707
+        },
+        {
+          "label": "ROLLING OVER",
+          "n_rows": 130,
+          "n_months": 48,
+          "thin": false,
+          "mean_fwd_ret": 0.0114,
+          "mean_fwd_ret_ci": [
+            -0.0015,
+            0.0277
+          ],
+          "ret_gap_vs_base": 0.0029,
+          "ret_gap_ci": [
+            -0.0102,
+            0.0174
+          ],
+          "p10_dd": -0.0927,
+          "p10_dd_ci": [
+            -0.1098,
+            -0.0738
+          ],
+          "p10_dd_gap_vs_base": 0.0141,
+          "p10_dd_gap_ci": [
+            -0.0027,
+            0.0382
+          ],
+          "dd_adj_score": 0.1231,
+          "hit_rate": 0.5538,
+          "hit_rate_ci": [
+            0.4681,
+            0.6365
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": -0.0017
+        },
+        {
+          "label": "FRESH BUY",
+          "n_rows": 102,
+          "n_months": 41,
+          "thin": false,
+          "mean_fwd_ret": 0.0008,
+          "mean_fwd_ret_ci": [
+            -0.0133,
+            0.0155
+          ],
+          "ret_gap_vs_base": -0.0077,
+          "ret_gap_ci": [
+            -0.0214,
+            0.0048
+          ],
+          "p10_dd": -0.1173,
+          "p10_dd_ci": [
+            -0.1303,
+            -0.0835
+          ],
+          "p10_dd_gap_vs_base": -0.0105,
+          "p10_dd_gap_ci": [
+            -0.0259,
+            0.0175
+          ],
+          "dd_adj_score": 0.0067,
+          "hit_rate": 0.5098,
+          "hit_rate_ci": [
+            0.4142,
+            0.6047
+          ],
+          "base_hit_rate": 0.5555,
+          "hit_gap_vs_base": -0.0457
+        }
+      ],
+      "signal": [
+        {
+          "label": "BUY",
+          "n_rows": 549,
+          "n_months": 76,
+          "thin": false,
+          "mean_fwd_ret": 0.0045,
+          "mean_fwd_ret_ci": [
+            -0.0156,
+            0.028
+          ],
+          "ret_gap_vs_base": -0.0017,
+          "ret_gap_ci": [
+            -0.0155,
+            0.0135
+          ],
+          "p10_dd": -0.1265,
+          "p10_dd_ci": [
+            -0.1413,
+            -0.1017
+          ],
+          "p10_dd_gap_vs_base": -0.0132,
+          "p10_dd_gap_ci": [
+            -0.028,
+            0.0065
+          ],
+          "dd_adj_score": 0.0358,
+          "hit_rate": 0.4973,
+          "hit_rate_ci": [
+            0.4556,
+            0.539
+          ],
+          "base_hit_rate": 0.5335,
+          "hit_gap_vs_base": -0.0362
+        },
+        {
+          "label": "SELL",
+          "n_rows": 733,
+          "n_months": 81,
+          "thin": false,
+          "mean_fwd_ret": 0.0074,
+          "mean_fwd_ret_ci": [
+            -0.0071,
+            0.0221
+          ],
+          "ret_gap_vs_base": 0.0012,
+          "ret_gap_ci": [
+            -0.0094,
+            0.0114
+          ],
+          "p10_dd": -0.1017,
+          "p10_dd_ci": [
+            -0.1358,
+            -0.0827
+          ],
+          "p10_dd_gap_vs_base": 0.0116,
+          "p10_dd_gap_ci": [
+            -0.0085,
+            0.0299
+          ],
+          "dd_adj_score": 0.073,
+          "hit_rate": 0.5607,
+          "hit_rate_ci": [
+            0.5246,
+            0.5962
+          ],
+          "base_hit_rate": 0.5335,
+          "hit_gap_vs_base": 0.0272
+        }
+      ],
+      "inversion": {
+        "low_pos": {
+          "n_rows": 704,
+          "n_months": 76,
+          "mean_fwd_ret": 0.0129,
+          "p10_dd": -0.1243,
+          "dd_adj_score": 0.1038
+        },
+        "high_pos": {
+          "n_rows": 704,
+          "n_months": 78,
+          "mean_fwd_ret": 0.0075,
+          "p10_dd": -0.0951,
+          "dd_adj_score": 0.0792
+        },
+        "ret_gap_low_minus_high": 0.0054,
+        "ret_gap_ci": [
+          -0.0145,
+          0.0253
+        ],
+        "dd_adj_gap_low_minus_high": 0.0246,
+        "dd_adj_gap_ci": [
+          -0.1536,
+          0.2115
+        ],
+        "verdict": "inconclusive"
+      }
+    },
+    "63": {
+      "position_deciles": [
+        {
+          "label": "D1 (pos 0-10%)",
+          "n_rows": 342,
+          "n_months": 53,
+          "thin": false,
+          "mean_fwd_ret": 0.0363,
+          "mean_fwd_ret_ci": [
+            -0.0023,
+            0.0781
+          ],
+          "ret_gap_vs_base": 0.0121,
+          "ret_gap_ci": [
+            -0.0227,
+            0.0528
+          ],
+          "p10_dd": -0.188,
+          "p10_dd_ci": [
+            -0.2139,
+            -0.1673
+          ],
+          "p10_dd_gap_vs_base": -0.0061,
+          "p10_dd_gap_ci": [
+            -0.0302,
+            0.0254
+          ],
+          "dd_adj_score": 0.1932,
+          "hit_rate": 0.5731,
+          "hit_rate_ci": [
+            0.5202,
+            0.6244
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": -0.0305
+        },
+        {
+          "label": "D2 (pos 10-20%)",
+          "n_rows": 341,
+          "n_months": 64,
+          "thin": false,
+          "mean_fwd_ret": 0.0102,
+          "mean_fwd_ret_ci": [
+            -0.0208,
+            0.0452
+          ],
+          "ret_gap_vs_base": -0.014,
+          "ret_gap_ci": [
+            -0.041,
+            0.015
+          ],
+          "p10_dd": -0.2081,
+          "p10_dd_ci": [
+            -0.2239,
+            -0.1796
+          ],
+          "p10_dd_gap_vs_base": -0.0263,
+          "p10_dd_gap_ci": [
+            -0.044,
+            0.011
+          ],
+          "dd_adj_score": 0.0489,
+          "hit_rate": 0.5103,
+          "hit_rate_ci": [
+            0.4574,
+            0.5629
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": -0.0933
+        },
+        {
+          "label": "D3 (pos 20-30%)",
+          "n_rows": 341,
+          "n_months": 76,
+          "thin": false,
+          "mean_fwd_ret": 0.0189,
+          "mean_fwd_ret_ci": [
+            -0.0052,
+            0.0402
+          ],
+          "ret_gap_vs_base": -0.0053,
+          "ret_gap_ci": [
+            -0.0251,
+            0.0133
+          ],
+          "p10_dd": -0.1824,
+          "p10_dd_ci": [
+            -0.2013,
+            -0.1678
+          ],
+          "p10_dd_gap_vs_base": -0.0005,
+          "p10_dd_gap_ci": [
+            -0.0171,
+            0.0239
+          ],
+          "dd_adj_score": 0.1038,
+          "hit_rate": 0.5543,
+          "hit_rate_ci": [
+            0.5012,
+            0.6061
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": -0.0493
+        },
+        {
+          "label": "D4 (pos 30-40%)",
+          "n_rows": 341,
+          "n_months": 89,
+          "thin": false,
+          "mean_fwd_ret": 0.0259,
+          "mean_fwd_ret_ci": [
+            0.0057,
+            0.0472
+          ],
+          "ret_gap_vs_base": 0.0017,
+          "ret_gap_ci": [
+            -0.016,
+            0.0195
+          ],
+          "p10_dd": -0.1737,
+          "p10_dd_ci": [
+            -0.2048,
+            -0.1563
+          ],
+          "p10_dd_gap_vs_base": 0.0081,
+          "p10_dd_gap_ci": [
+            -0.0122,
+            0.0334
+          ],
+          "dd_adj_score": 0.1493,
+          "hit_rate": 0.6129,
+          "hit_rate_ci": [
+            0.5602,
+            0.6631
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": 0.0093
+        },
+        {
+          "label": "D5 (pos 40-50%)",
+          "n_rows": 341,
+          "n_months": 88,
+          "thin": false,
+          "mean_fwd_ret": 0.0183,
+          "mean_fwd_ret_ci": [
+            0.0016,
+            0.0359
+          ],
+          "ret_gap_vs_base": -0.006,
+          "ret_gap_ci": [
+            -0.0206,
+            0.0073
+          ],
+          "p10_dd": -0.1786,
+          "p10_dd_ci": [
+            -0.2346,
+            -0.1567
+          ],
+          "p10_dd_gap_vs_base": 0.0033,
+          "p10_dd_gap_ci": [
+            -0.0323,
+            0.0202
+          ],
+          "dd_adj_score": 0.1022,
+          "hit_rate": 0.5601,
+          "hit_rate_ci": [
+            0.5071,
+            0.6118
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": -0.0435
+        },
+        {
+          "label": "D6 (pos 50-60%)",
+          "n_rows": 340,
+          "n_months": 89,
+          "thin": false,
+          "mean_fwd_ret": 0.0317,
+          "mean_fwd_ret_ci": [
+            0.0134,
+            0.0526
+          ],
+          "ret_gap_vs_base": 0.0075,
+          "ret_gap_ci": [
+            -0.0072,
+            0.0224
+          ],
+          "p10_dd": -0.1803,
+          "p10_dd_ci": [
+            -0.2501,
+            -0.1505
+          ],
+          "p10_dd_gap_vs_base": 0.0016,
+          "p10_dd_gap_ci": [
+            -0.0557,
+            0.0277
+          ],
+          "dd_adj_score": 0.1757,
+          "hit_rate": 0.6441,
+          "hit_rate_ci": [
+            0.5919,
+            0.6931
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": 0.0405
+        },
+        {
+          "label": "D7 (pos 60-70%)",
+          "n_rows": 341,
+          "n_months": 82,
+          "thin": false,
+          "mean_fwd_ret": 0.0266,
+          "mean_fwd_ret_ci": [
+            0.0073,
+            0.045
+          ],
+          "ret_gap_vs_base": 0.0024,
+          "ret_gap_ci": [
+            -0.0113,
+            0.0158
+          ],
+          "p10_dd": -0.1678,
+          "p10_dd_ci": [
+            -0.2182,
+            -0.142
+          ],
+          "p10_dd_gap_vs_base": 0.0141,
+          "p10_dd_gap_ci": [
+            -0.0206,
+            0.0353
+          ],
+          "dd_adj_score": 0.1586,
+          "hit_rate": 0.6452,
+          "hit_rate_ci": [
+            0.593,
+            0.6941
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": 0.0416
+        },
+        {
+          "label": "D8 (pos 70-80%)",
+          "n_rows": 341,
+          "n_months": 78,
+          "thin": false,
+          "mean_fwd_ret": 0.0318,
+          "mean_fwd_ret_ci": [
+            0.007,
+            0.0537
+          ],
+          "ret_gap_vs_base": 0.0076,
+          "ret_gap_ci": [
+            -0.0099,
+            0.0247
+          ],
+          "p10_dd": -0.1571,
+          "p10_dd_ci": [
+            -0.2751,
+            -0.1331
+          ],
+          "p10_dd_gap_vs_base": 0.0248,
+          "p10_dd_gap_ci": [
+            -0.0725,
+            0.0476
+          ],
+          "dd_adj_score": 0.2025,
+          "hit_rate": 0.6569,
+          "hit_rate_ci": [
+            0.605,
+            0.7053
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": 0.0533
+        },
+        {
+          "label": "D9 (pos 80-90%)",
+          "n_rows": 341,
+          "n_months": 68,
+          "thin": false,
+          "mean_fwd_ret": 0.0298,
+          "mean_fwd_ret_ci": [
+            0.0041,
+            0.0525
+          ],
+          "ret_gap_vs_base": 0.0056,
+          "ret_gap_ci": [
+            -0.0123,
+            0.0213
+          ],
+          "p10_dd": -0.16,
+          "p10_dd_ci": [
+            -0.2787,
+            -0.1233
+          ],
+          "p10_dd_gap_vs_base": 0.0219,
+          "p10_dd_gap_ci": [
+            -0.0738,
+            0.053
+          ],
+          "dd_adj_score": 0.1863,
+          "hit_rate": 0.6833,
+          "hit_rate_ci": [
+            0.6321,
+            0.7304
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": 0.0797
+        },
+        {
+          "label": "D10 (pos 90-100%)",
+          "n_rows": 342,
+          "n_months": 57,
+          "thin": false,
+          "mean_fwd_ret": 0.0125,
+          "mean_fwd_ret_ci": [
+            -0.0203,
+            0.0397
+          ],
+          "ret_gap_vs_base": -0.0117,
+          "ret_gap_ci": [
+            -0.0425,
+            0.0134
+          ],
+          "p10_dd": -0.1932,
+          "p10_dd_ci": [
+            -0.3529,
+            -0.1348
+          ],
+          "p10_dd_gap_vs_base": -0.0114,
+          "p10_dd_gap_ci": [
+            -0.1563,
+            0.0521
+          ],
+          "dd_adj_score": 0.0649,
+          "hit_rate": 0.5965,
+          "hit_rate_ci": [
+            0.5437,
+            0.6471
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": -0.0071
+        }
+      ],
+      "phases": [
+        {
+          "label": "Trough",
+          "n_rows": 826,
+          "n_months": 81,
+          "thin": false,
+          "mean_fwd_ret": 0.021,
+          "mean_fwd_ret_ci": [
+            -0.0069,
+            0.0527
+          ],
+          "ret_gap_vs_base": -0.0032,
+          "ret_gap_ci": [
+            -0.0264,
+            0.023
+          ],
+          "p10_dd": -0.1974,
+          "p10_dd_ci": [
+            -0.2181,
+            -0.1797
+          ],
+          "p10_dd_gap_vs_base": -0.0155,
+          "p10_dd_gap_ci": [
+            -0.0331,
+            0.0149
+          ],
+          "dd_adj_score": 0.1064,
+          "hit_rate": 0.5363,
+          "hit_rate_ci": [
+            0.5022,
+            0.5701
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": -0.0673
+        },
+        {
+          "label": "Recovery",
+          "n_rows": 184,
+          "n_months": 48,
+          "thin": false,
+          "mean_fwd_ret": 0.0227,
+          "mean_fwd_ret_ci": [
+            -0.0181,
+            0.0587
+          ],
+          "ret_gap_vs_base": -0.0015,
+          "ret_gap_ci": [
+            -0.0361,
+            0.0308
+          ],
+          "p10_dd": -0.1872,
+          "p10_dd_ci": [
+            -0.203,
+            -0.1665
+          ],
+          "p10_dd_gap_vs_base": -0.0053,
+          "p10_dd_gap_ci": [
+            -0.025,
+            0.0285
+          ],
+          "dd_adj_score": 0.1211,
+          "hit_rate": 0.5815,
+          "hit_rate_ci": [
+            0.5093,
+            0.6504
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": -0.0221
+        },
+        {
+          "label": "Expansion",
+          "n_rows": 475,
+          "n_months": 83,
+          "thin": false,
+          "mean_fwd_ret": 0.015,
+          "mean_fwd_ret_ci": [
+            -0.0032,
+            0.0357
+          ],
+          "ret_gap_vs_base": -0.0092,
+          "ret_gap_ci": [
+            -0.025,
+            0.0048
+          ],
+          "p10_dd": -0.1808,
+          "p10_dd_ci": [
+            -0.2098,
+            -0.1601
+          ],
+          "p10_dd_gap_vs_base": 0.0011,
+          "p10_dd_gap_ci": [
+            -0.0166,
+            0.0252
+          ],
+          "dd_adj_score": 0.0829,
+          "hit_rate": 0.5621,
+          "hit_rate_ci": [
+            0.5172,
+            0.606
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": -0.0415
+        },
+        {
+          "label": "Peak",
+          "n_rows": 1107,
+          "n_months": 89,
+          "thin": false,
+          "mean_fwd_ret": 0.0213,
+          "mean_fwd_ret_ci": [
+            -0.0009,
+            0.0418
+          ],
+          "ret_gap_vs_base": -0.0029,
+          "ret_gap_ci": [
+            -0.019,
+            0.0112
+          ],
+          "p10_dd": -0.1684,
+          "p10_dd_ci": [
+            -0.2556,
+            -0.14
+          ],
+          "p10_dd_gap_vs_base": 0.0135,
+          "p10_dd_gap_ci": [
+            -0.0519,
+            0.04
+          ],
+          "dd_adj_score": 0.1265,
+          "hit_rate": 0.6314,
+          "hit_rate_ci": [
+            0.6026,
+            0.6594
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": 0.0278
+        },
+        {
+          "label": "Downturn",
+          "n_rows": 819,
+          "n_months": 90,
+          "thin": false,
+          "mean_fwd_ret": 0.0371,
+          "mean_fwd_ret_ci": [
+            0.0189,
+            0.0569
+          ],
+          "ret_gap_vs_base": 0.0128,
+          "ret_gap_ci": [
+            -0.0029,
+            0.0285
+          ],
+          "p10_dd": -0.17,
+          "p10_dd_ci": [
+            -0.2742,
+            -0.1437
+          ],
+          "p10_dd_gap_vs_base": 0.0118,
+          "p10_dd_gap_ci": [
+            -0.0713,
+            0.0348
+          ],
+          "dd_adj_score": 0.2179,
+          "hit_rate": 0.663,
+          "hit_rate_ci": [
+            0.6299,
+            0.6945
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": 0.0594
+        }
+      ],
+      "timing_states": [
+        {
+          "label": "RALLY ON",
+          "n_rows": 804,
+          "n_months": 85,
+          "thin": false,
+          "mean_fwd_ret": 0.021,
+          "mean_fwd_ret_ci": [
+            -0.0038,
+            0.0422
+          ],
+          "ret_gap_vs_base": -0.0032,
+          "ret_gap_ci": [
+            -0.0196,
+            0.0126
+          ],
+          "p10_dd": -0.1725,
+          "p10_dd_ci": [
+            -0.217,
+            -0.1516
+          ],
+          "p10_dd_gap_vs_base": 0.0094,
+          "p10_dd_gap_ci": [
+            -0.0128,
+            0.0375
+          ],
+          "dd_adj_score": 0.1215,
+          "hit_rate": 0.607,
+          "hit_rate_ci": [
+            0.5728,
+            0.6401
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": 0.0034
+        },
+        {
+          "label": "BOTTOM WATCH",
+          "n_rows": 552,
+          "n_months": 88,
+          "thin": false,
+          "mean_fwd_ret": 0.0123,
+          "mean_fwd_ret_ci": [
+            -0.0078,
+            0.0314
+          ],
+          "ret_gap_vs_base": -0.0119,
+          "ret_gap_ci": [
+            -0.0287,
+            0.0028
+          ],
+          "p10_dd": -0.1891,
+          "p10_dd_ci": [
+            -0.2472,
+            -0.1617
+          ],
+          "p10_dd_gap_vs_base": -0.0072,
+          "p10_dd_gap_ci": [
+            -0.0575,
+            0.0142
+          ],
+          "dd_adj_score": 0.0652,
+          "hit_rate": 0.5761,
+          "hit_rate_ci": [
+            0.5345,
+            0.6166
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": -0.0275
+        },
+        {
+          "label": "COUNTERTREND BOUNCE",
+          "n_rows": 499,
+          "n_months": 81,
+          "thin": false,
+          "mean_fwd_ret": 0.0397,
+          "mean_fwd_ret_ci": [
+            0.011,
+            0.0773
+          ],
+          "ret_gap_vs_base": 0.0154,
+          "ret_gap_ci": [
+            -0.01,
+            0.0451
+          ],
+          "p10_dd": -0.1729,
+          "p10_dd_ci": [
+            -0.193,
+            -0.1551
+          ],
+          "p10_dd_gap_vs_base": 0.009,
+          "p10_dd_gap_ci": [
+            -0.0105,
+            0.0397
+          ],
+          "dd_adj_score": 0.2293,
+          "hit_rate": 0.6253,
+          "hit_rate_ci": [
+            0.582,
+            0.6666
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": 0.0217
+        },
+        {
+          "label": "TURN SIGNALED",
+          "n_rows": 489,
+          "n_months": 85,
+          "thin": false,
+          "mean_fwd_ret": 0.0166,
+          "mean_fwd_ret_ci": [
+            -0.0013,
+            0.0335
+          ],
+          "ret_gap_vs_base": -0.0076,
+          "ret_gap_ci": [
+            -0.0233,
+            0.0056
+          ],
+          "p10_dd": -0.1789,
+          "p10_dd_ci": [
+            -0.2004,
+            -0.1569
+          ],
+          "p10_dd_gap_vs_base": 0.003,
+          "p10_dd_gap_ci": [
+            -0.011,
+            0.033
+          ],
+          "dd_adj_score": 0.0928,
+          "hit_rate": 0.5869,
+          "hit_rate_ci": [
+            0.5428,
+            0.6297
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": -0.0167
+        },
+        {
+          "label": "DECLINE",
+          "n_rows": 427,
+          "n_months": 68,
+          "thin": false,
+          "mean_fwd_ret": 0.0434,
+          "mean_fwd_ret_ci": [
+            0.008,
+            0.0786
+          ],
+          "ret_gap_vs_base": 0.0192,
+          "ret_gap_ci": [
+            -0.0091,
+            0.0505
+          ],
+          "p10_dd": -0.2458,
+          "p10_dd_ci": [
+            -0.3602,
+            -0.1664
+          ],
+          "p10_dd_gap_vs_base": -0.0639,
+          "p10_dd_gap_ci": [
+            -0.1655,
+            0.0054
+          ],
+          "dd_adj_score": 0.1767,
+          "hit_rate": 0.644,
+          "hit_rate_ci": [
+            0.5975,
+            0.688
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": 0.0404
+        },
+        {
+          "label": "TOP WATCH",
+          "n_rows": 412,
+          "n_months": 73,
+          "thin": false,
+          "mean_fwd_ret": 0.0186,
+          "mean_fwd_ret_ci": [
+            0.0017,
+            0.0356
+          ],
+          "ret_gap_vs_base": -0.0056,
+          "ret_gap_ci": [
+            -0.0198,
+            0.007
+          ],
+          "p10_dd": -0.1607,
+          "p10_dd_ci": [
+            -0.213,
+            -0.132
+          ],
+          "p10_dd_gap_vs_base": 0.0212,
+          "p10_dd_gap_ci": [
+            -0.0142,
+            0.0545
+          ],
+          "dd_adj_score": 0.116,
+          "hit_rate": 0.6019,
+          "hit_rate_ci": [
+            0.5539,
+            0.6481
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": -0.0017
+        },
+        {
+          "label": "ROLLING OVER",
+          "n_rows": 126,
+          "n_months": 47,
+          "thin": false,
+          "mean_fwd_ret": 0.02,
+          "mean_fwd_ret_ci": [
+            -0.0104,
+            0.0498
+          ],
+          "ret_gap_vs_base": -0.0042,
+          "ret_gap_ci": [
+            -0.0323,
+            0.02
+          ],
+          "p10_dd": -0.163,
+          "p10_dd_ci": [
+            -0.2364,
+            -0.1348
+          ],
+          "p10_dd_gap_vs_base": 0.0189,
+          "p10_dd_gap_ci": [
+            -0.0449,
+            0.0491
+          ],
+          "dd_adj_score": 0.1227,
+          "hit_rate": 0.5873,
+          "hit_rate_ci": [
+            0.5,
+            0.6694
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": -0.0163
+        },
+        {
+          "label": "FRESH BUY",
+          "n_rows": 102,
+          "n_months": 41,
+          "thin": false,
+          "mean_fwd_ret": 0.022,
+          "mean_fwd_ret_ci": [
+            -0.0209,
+            0.0617
+          ],
+          "ret_gap_vs_base": -0.0022,
+          "ret_gap_ci": [
+            -0.0455,
+            0.0334
+          ],
+          "p10_dd": -0.1832,
+          "p10_dd_ci": [
+            -0.247,
+            -0.1292
+          ],
+          "p10_dd_gap_vs_base": -0.0013,
+          "p10_dd_gap_ci": [
+            -0.0472,
+            0.0438
+          ],
+          "dd_adj_score": 0.1203,
+          "hit_rate": 0.5588,
+          "hit_rate_ci": [
+            0.4621,
+            0.6513
+          ],
+          "base_hit_rate": 0.6036,
+          "hit_gap_vs_base": -0.0448
+        }
+      ],
+      "signal": [
+        {
+          "label": "BUY",
+          "n_rows": 536,
+          "n_months": 74,
+          "thin": false,
+          "mean_fwd_ret": 0.022,
+          "mean_fwd_ret_ci": [
+            -0.011,
+            0.0534
+          ],
+          "ret_gap_vs_base": -0.0081,
+          "ret_gap_ci": [
+            -0.0315,
+            0.0156
+          ],
+          "p10_dd": -0.1882,
+          "p10_dd_ci": [
+            -0.2087,
+            -0.1666
+          ],
+          "p10_dd_gap_vs_base": 0.0,
+          "p10_dd_gap_ci": [
+            -0.0252,
+            0.0542
+          ],
+          "dd_adj_score": 0.1167,
+          "hit_rate": 0.569,
+          "hit_rate_ci": [
+            0.5268,
+            0.6103
+          ],
+          "base_hit_rate": 0.6298,
+          "hit_gap_vs_base": -0.0608
+        },
+        {
+          "label": "SELL",
+          "n_rows": 720,
+          "n_months": 78,
+          "thin": false,
+          "mean_fwd_ret": 0.036,
+          "mean_fwd_ret_ci": [
+            0.0119,
+            0.0626
+          ],
+          "ret_gap_vs_base": 0.006,
+          "ret_gap_ci": [
+            -0.0121,
+            0.0233
+          ],
+          "p10_dd": -0.1878,
+          "p10_dd_ci": [
+            -0.337,
+            -0.1326
+          ],
+          "p10_dd_gap_vs_base": 0.0003,
+          "p10_dd_gap_ci": [
+            -0.0897,
+            0.042
+          ],
+          "dd_adj_score": 0.1919,
+          "hit_rate": 0.675,
+          "hit_rate_ci": [
+            0.6399,
+            0.7082
+          ],
+          "base_hit_rate": 0.6298,
+          "hit_gap_vs_base": 0.0452
+        }
+      ],
+      "inversion": {
+        "low_pos": {
+          "n_rows": 683,
+          "n_months": 73,
+          "mean_fwd_ret": 0.0233,
+          "p10_dd": -0.1999,
+          "dd_adj_score": 0.1164
+        },
+        "high_pos": {
+          "n_rows": 683,
+          "n_months": 74,
+          "mean_fwd_ret": 0.0212,
+          "p10_dd": -0.177,
+          "dd_adj_score": 0.1195
+        },
+        "ret_gap_low_minus_high": 0.0021,
+        "ret_gap_ci": [
+          -0.0386,
+          0.0488
+        ],
+        "dd_adj_gap_low_minus_high": -0.0031,
+        "dd_adj_gap_ci": [
+          -0.2565,
+          0.2568
+        ],
+        "verdict": "inconclusive"
+      }
+    },
+    "126": {
+      "position_deciles": [
+        {
+          "label": "D1 (pos 0-10%)",
+          "n_rows": 331,
+          "n_months": 51,
+          "thin": false,
+          "mean_fwd_ret": 0.0498,
+          "mean_fwd_ret_ci": [
+            -0.0031,
+            0.1021
+          ],
+          "ret_gap_vs_base": -0.002,
+          "ret_gap_ci": [
+            -0.0457,
+            0.0488
+          ],
+          "p10_dd": -0.2515,
+          "p10_dd_ci": [
+            -0.281,
+            -0.2286
+          ],
+          "p10_dd_gap_vs_base": 0.009,
+          "p10_dd_gap_ci": [
+            -0.0269,
+            0.0595
+          ],
+          "dd_adj_score": 0.1979,
+          "hit_rate": 0.6133,
+          "hit_rate_ci": [
+            0.5598,
+            0.6642
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": -0.0373
+        },
+        {
+          "label": "D2 (pos 10-20%)",
+          "n_rows": 331,
+          "n_months": 63,
+          "thin": false,
+          "mean_fwd_ret": 0.0319,
+          "mean_fwd_ret_ci": [
+            -0.011,
+            0.0767
+          ],
+          "ret_gap_vs_base": -0.0199,
+          "ret_gap_ci": [
+            -0.0563,
+            0.0147
+          ],
+          "p10_dd": -0.255,
+          "p10_dd_ci": [
+            -0.2915,
+            -0.2175
+          ],
+          "p10_dd_gap_vs_base": 0.0055,
+          "p10_dd_gap_ci": [
+            -0.0359,
+            0.0584
+          ],
+          "dd_adj_score": 0.125,
+          "hit_rate": 0.577,
+          "hit_rate_ci": [
+            0.5232,
+            0.6291
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": -0.0736
+        },
+        {
+          "label": "D3 (pos 20-30%)",
+          "n_rows": 330,
+          "n_months": 71,
+          "thin": false,
+          "mean_fwd_ret": 0.0256,
+          "mean_fwd_ret_ci": [
+            -0.0082,
+            0.0601
+          ],
+          "ret_gap_vs_base": -0.0262,
+          "ret_gap_ci": [
+            -0.0559,
+            0.0018
+          ],
+          "p10_dd": -0.2572,
+          "p10_dd_ci": [
+            -0.2911,
+            -0.2256
+          ],
+          "p10_dd_gap_vs_base": 0.0032,
+          "p10_dd_gap_ci": [
+            -0.0292,
+            0.0491
+          ],
+          "dd_adj_score": 0.0995,
+          "hit_rate": 0.5576,
+          "hit_rate_ci": [
+            0.5036,
+            0.6102
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": -0.093
+        },
+        {
+          "label": "D4 (pos 30-40%)",
+          "n_rows": 331,
+          "n_months": 86,
+          "thin": false,
+          "mean_fwd_ret": 0.0498,
+          "mean_fwd_ret_ci": [
+            0.0226,
+            0.0768
+          ],
+          "ret_gap_vs_base": -0.002,
+          "ret_gap_ci": [
+            -0.0252,
+            0.0221
+          ],
+          "p10_dd": -0.2496,
+          "p10_dd_ci": [
+            -0.2685,
+            -0.2208
+          ],
+          "p10_dd_gap_vs_base": 0.0109,
+          "p10_dd_gap_ci": [
+            -0.01,
+            0.0495
+          ],
+          "dd_adj_score": 0.1996,
+          "hit_rate": 0.6224,
+          "hit_rate_ci": [
+            0.569,
+            0.6729
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": -0.0282
+        },
+        {
+          "label": "D5 (pos 40-50%)",
+          "n_rows": 330,
+          "n_months": 84,
+          "thin": false,
+          "mean_fwd_ret": 0.0366,
+          "mean_fwd_ret_ci": [
+            0.0081,
+            0.0646
+          ],
+          "ret_gap_vs_base": -0.0151,
+          "ret_gap_ci": [
+            -0.0369,
+            0.0059
+          ],
+          "p10_dd": -0.2554,
+          "p10_dd_ci": [
+            -0.3849,
+            -0.22
+          ],
+          "p10_dd_gap_vs_base": 0.0051,
+          "p10_dd_gap_ci": [
+            -0.0778,
+            0.0266
+          ],
+          "dd_adj_score": 0.1434,
+          "hit_rate": 0.597,
+          "hit_rate_ci": [
+            0.5432,
+            0.6485
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": -0.0536
+        },
+        {
+          "label": "D6 (pos 50-60%)",
+          "n_rows": 331,
+          "n_months": 86,
+          "thin": false,
+          "mean_fwd_ret": 0.0668,
+          "mean_fwd_ret_ci": [
+            0.0401,
+            0.0943
+          ],
+          "ret_gap_vs_base": 0.015,
+          "ret_gap_ci": [
+            -0.0059,
+            0.0332
+          ],
+          "p10_dd": -0.2556,
+          "p10_dd_ci": [
+            -0.3458,
+            -0.2074
+          ],
+          "p10_dd_gap_vs_base": 0.0048,
+          "p10_dd_gap_ci": [
+            -0.0532,
+            0.0409
+          ],
+          "dd_adj_score": 0.2614,
+          "hit_rate": 0.6798,
+          "hit_rate_ci": [
+            0.6277,
+            0.7277
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": 0.0292
+        },
+        {
+          "label": "D7 (pos 60-70%)",
+          "n_rows": 330,
+          "n_months": 80,
+          "thin": false,
+          "mean_fwd_ret": 0.0598,
+          "mean_fwd_ret_ci": [
+            0.0325,
+            0.088
+          ],
+          "ret_gap_vs_base": 0.0081,
+          "ret_gap_ci": [
+            -0.0124,
+            0.027
+          ],
+          "p10_dd": -0.2563,
+          "p10_dd_ci": [
+            -0.3313,
+            -0.2107
+          ],
+          "p10_dd_gap_vs_base": 0.0041,
+          "p10_dd_gap_ci": [
+            -0.0299,
+            0.0414
+          ],
+          "dd_adj_score": 0.2334,
+          "hit_rate": 0.6909,
+          "hit_rate_ci": [
+            0.6391,
+            0.7383
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": 0.0403
+        },
+        {
+          "label": "D8 (pos 70-80%)",
+          "n_rows": 331,
+          "n_months": 76,
+          "thin": false,
+          "mean_fwd_ret": 0.0718,
+          "mean_fwd_ret_ci": [
+            0.0431,
+            0.1032
+          ],
+          "ret_gap_vs_base": 0.0201,
+          "ret_gap_ci": [
+            -0.0013,
+            0.0406
+          ],
+          "p10_dd": -0.3015,
+          "p10_dd_ci": [
+            -0.3851,
+            -0.1939
+          ],
+          "p10_dd_gap_vs_base": -0.0411,
+          "p10_dd_gap_ci": [
+            -0.097,
+            0.0443
+          ],
+          "dd_adj_score": 0.2383,
+          "hit_rate": 0.7039,
+          "hit_rate_ci": [
+            0.6526,
+            0.7505
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": 0.0533
+        },
+        {
+          "label": "D9 (pos 80-90%)",
+          "n_rows": 330,
+          "n_months": 68,
+          "thin": false,
+          "mean_fwd_ret": 0.0633,
+          "mean_fwd_ret_ci": [
+            0.0344,
+            0.0933
+          ],
+          "ret_gap_vs_base": 0.0116,
+          "ret_gap_ci": [
+            -0.0089,
+            0.0339
+          ],
+          "p10_dd": -0.2815,
+          "p10_dd_ci": [
+            -0.3852,
+            -0.1769
+          ],
+          "p10_dd_gap_vs_base": -0.0211,
+          "p10_dd_gap_ci": [
+            -0.0903,
+            0.0578
+          ],
+          "dd_adj_score": 0.2249,
+          "hit_rate": 0.7515,
+          "hit_rate_ci": [
+            0.7022,
+            0.7951
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": 0.1009
+        },
+        {
+          "label": "D10 (pos 90-100%)",
+          "n_rows": 331,
+          "n_months": 56,
+          "thin": false,
+          "mean_fwd_ret": 0.0622,
+          "mean_fwd_ret_ci": [
+            0.0295,
+            0.0916
+          ],
+          "ret_gap_vs_base": 0.0104,
+          "ret_gap_ci": [
+            -0.0168,
+            0.0399
+          ],
+          "p10_dd": -0.2949,
+          "p10_dd_ci": [
+            -0.3926,
+            -0.1858
+          ],
+          "p10_dd_gap_vs_base": -0.0345,
+          "p10_dd_gap_ci": [
+            -0.115,
+            0.0639
+          ],
+          "dd_adj_score": 0.211,
+          "hit_rate": 0.713,
+          "hit_rate_ci": [
+            0.662,
+            0.7591
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": 0.0624
+        }
+      ],
+      "phases": [
+        {
+          "label": "Trough",
+          "n_rows": 817,
+          "n_months": 78,
+          "thin": false,
+          "mean_fwd_ret": 0.0324,
+          "mean_fwd_ret_ci": [
+            -0.0059,
+            0.0733
+          ],
+          "ret_gap_vs_base": -0.0194,
+          "ret_gap_ci": [
+            -0.0507,
+            0.014
+          ],
+          "p10_dd": -0.2612,
+          "p10_dd_ci": [
+            -0.2865,
+            -0.238
+          ],
+          "p10_dd_gap_vs_base": -0.0007,
+          "p10_dd_gap_ci": [
+            -0.0307,
+            0.0435
+          ],
+          "dd_adj_score": 0.1239,
+          "hit_rate": 0.5728,
+          "hit_rate_ci": [
+            0.5386,
+            0.6063
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": -0.0778
+        },
+        {
+          "label": "Recovery",
+          "n_rows": 183,
+          "n_months": 47,
+          "thin": false,
+          "mean_fwd_ret": 0.0436,
+          "mean_fwd_ret_ci": [
+            0.0023,
+            0.0805
+          ],
+          "ret_gap_vs_base": -0.0082,
+          "ret_gap_ci": [
+            -0.0453,
+            0.0266
+          ],
+          "p10_dd": -0.2401,
+          "p10_dd_ci": [
+            -0.2897,
+            -0.1999
+          ],
+          "p10_dd_gap_vs_base": 0.0203,
+          "p10_dd_gap_ci": [
+            -0.025,
+            0.0803
+          ],
+          "dd_adj_score": 0.1815,
+          "hit_rate": 0.6175,
+          "hit_rate_ci": [
+            0.5453,
+            0.6848
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": -0.0331
+        },
+        {
+          "label": "Expansion",
+          "n_rows": 465,
+          "n_months": 80,
+          "thin": false,
+          "mean_fwd_ret": 0.041,
+          "mean_fwd_ret_ci": [
+            0.009,
+            0.0757
+          ],
+          "ret_gap_vs_base": -0.0108,
+          "ret_gap_ci": [
+            -0.0352,
+            0.0143
+          ],
+          "p10_dd": -0.2596,
+          "p10_dd_ci": [
+            -0.3804,
+            -0.2273
+          ],
+          "p10_dd_gap_vs_base": 0.0008,
+          "p10_dd_gap_ci": [
+            -0.0722,
+            0.0277
+          ],
+          "dd_adj_score": 0.1578,
+          "hit_rate": 0.5978,
+          "hit_rate_ci": [
+            0.5527,
+            0.6414
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": -0.0528
+        },
+        {
+          "label": "Peak",
+          "n_rows": 1048,
+          "n_months": 86,
+          "thin": false,
+          "mean_fwd_ret": 0.0648,
+          "mean_fwd_ret_ci": [
+            0.038,
+            0.0905
+          ],
+          "ret_gap_vs_base": 0.013,
+          "ret_gap_ci": [
+            -0.0057,
+            0.0314
+          ],
+          "p10_dd": -0.2792,
+          "p10_dd_ci": [
+            -0.3804,
+            -0.2008
+          ],
+          "p10_dd_gap_vs_base": -0.0187,
+          "p10_dd_gap_ci": [
+            -0.0837,
+            0.0358
+          ],
+          "dd_adj_score": 0.2321,
+          "hit_rate": 0.7137,
+          "hit_rate_ci": [
+            0.6856,
+            0.7403
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": 0.0631
+        },
+        {
+          "label": "Downturn",
+          "n_rows": 793,
+          "n_months": 87,
+          "thin": false,
+          "mean_fwd_ret": 0.0628,
+          "mean_fwd_ret_ci": [
+            0.0368,
+            0.0883
+          ],
+          "ret_gap_vs_base": 0.011,
+          "ret_gap_ci": [
+            -0.0109,
+            0.0301
+          ],
+          "p10_dd": -0.2499,
+          "p10_dd_ci": [
+            -0.3381,
+            -0.2076
+          ],
+          "p10_dd_gap_vs_base": 0.0105,
+          "p10_dd_gap_ci": [
+            -0.0516,
+            0.0434
+          ],
+          "dd_adj_score": 0.2512,
+          "hit_rate": 0.686,
+          "hit_rate_ci": [
+            0.6529,
+            0.7173
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": 0.0354
+        }
+      ],
+      "timing_states": [
+        {
+          "label": "RALLY ON",
+          "n_rows": 774,
+          "n_months": 82,
+          "thin": false,
+          "mean_fwd_ret": 0.0424,
+          "mean_fwd_ret_ci": [
+            0.011,
+            0.0707
+          ],
+          "ret_gap_vs_base": -0.0094,
+          "ret_gap_ci": [
+            -0.0333,
+            0.0103
+          ],
+          "p10_dd": -0.2564,
+          "p10_dd_ci": [
+            -0.3115,
+            -0.207
+          ],
+          "p10_dd_gap_vs_base": 0.0041,
+          "p10_dd_gap_ci": [
+            -0.0343,
+            0.0441
+          ],
+          "dd_adj_score": 0.1655,
+          "hit_rate": 0.6615,
+          "hit_rate_ci": [
+            0.6274,
+            0.694
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": 0.0109
+        },
+        {
+          "label": "BOTTOM WATCH",
+          "n_rows": 542,
+          "n_months": 85,
+          "thin": false,
+          "mean_fwd_ret": 0.0377,
+          "mean_fwd_ret_ci": [
+            0.0075,
+            0.0688
+          ],
+          "ret_gap_vs_base": -0.0141,
+          "ret_gap_ci": [
+            -0.0352,
+            0.0058
+          ],
+          "p10_dd": -0.278,
+          "p10_dd_ci": [
+            -0.3913,
+            -0.222
+          ],
+          "p10_dd_gap_vs_base": -0.0175,
+          "p10_dd_gap_ci": [
+            -0.0777,
+            0.0229
+          ],
+          "dd_adj_score": 0.1355,
+          "hit_rate": 0.6218,
+          "hit_rate_ci": [
+            0.5802,
+            0.6616
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": -0.0288
+        },
+        {
+          "label": "COUNTERTREND BOUNCE",
+          "n_rows": 491,
+          "n_months": 78,
+          "thin": false,
+          "mean_fwd_ret": 0.0692,
+          "mean_fwd_ret_ci": [
+            0.0291,
+            0.1128
+          ],
+          "ret_gap_vs_base": 0.0174,
+          "ret_gap_ci": [
+            -0.0203,
+            0.0577
+          ],
+          "p10_dd": -0.2385,
+          "p10_dd_ci": [
+            -0.262,
+            -0.2181
+          ],
+          "p10_dd_gap_vs_base": 0.022,
+          "p10_dd_gap_ci": [
+            -0.0094,
+            0.068
+          ],
+          "dd_adj_score": 0.2901,
+          "hit_rate": 0.6701,
+          "hit_rate_ci": [
+            0.6273,
+            0.7102
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": 0.0195
+        },
+        {
+          "label": "TURN SIGNALED",
+          "n_rows": 468,
+          "n_months": 82,
+          "thin": false,
+          "mean_fwd_ret": 0.0464,
+          "mean_fwd_ret_ci": [
+            0.0161,
+            0.0758
+          ],
+          "ret_gap_vs_base": -0.0054,
+          "ret_gap_ci": [
+            -0.0301,
+            0.0179
+          ],
+          "p10_dd": -0.2732,
+          "p10_dd_ci": [
+            -0.3722,
+            -0.216
+          ],
+          "p10_dd_gap_vs_base": -0.0127,
+          "p10_dd_gap_ci": [
+            -0.0874,
+            0.0392
+          ],
+          "dd_adj_score": 0.1697,
+          "hit_rate": 0.641,
+          "hit_rate_ci": [
+            0.5966,
+            0.6832
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": -0.0096
+        },
+        {
+          "label": "DECLINE",
+          "n_rows": 425,
+          "n_months": 66,
+          "thin": false,
+          "mean_fwd_ret": 0.0855,
+          "mean_fwd_ret_ci": [
+            0.0476,
+            0.1272
+          ],
+          "ret_gap_vs_base": 0.0338,
+          "ret_gap_ci": [
+            0.0013,
+            0.0678
+          ],
+          "p10_dd": -0.2954,
+          "p10_dd_ci": [
+            -0.3628,
+            -0.218
+          ],
+          "p10_dd_gap_vs_base": -0.035,
+          "p10_dd_gap_ci": [
+            -0.1036,
+            0.0467
+          ],
+          "dd_adj_score": 0.2895,
+          "hit_rate": 0.6847,
+          "hit_rate_ci": [
+            0.639,
+            0.7271
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": 0.0341
+        },
+        {
+          "label": "TOP WATCH",
+          "n_rows": 385,
+          "n_months": 70,
+          "thin": false,
+          "mean_fwd_ret": 0.0429,
+          "mean_fwd_ret_ci": [
+            0.0172,
+            0.0698
+          ],
+          "ret_gap_vs_base": -0.0089,
+          "ret_gap_ci": [
+            -0.0318,
+            0.0117
+          ],
+          "p10_dd": -0.2541,
+          "p10_dd_ci": [
+            -0.3115,
+            -0.2076
+          ],
+          "p10_dd_gap_vs_base": 0.0063,
+          "p10_dd_gap_ci": [
+            -0.0303,
+            0.0482
+          ],
+          "dd_adj_score": 0.1689,
+          "hit_rate": 0.6416,
+          "hit_rate_ci": [
+            0.5925,
+            0.6878
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": -0.009
+        },
+        {
+          "label": "ROLLING OVER",
+          "n_rows": 120,
+          "n_months": 45,
+          "thin": false,
+          "mean_fwd_ret": 0.0351,
+          "mean_fwd_ret_ci": [
+            -0.0085,
+            0.0807
+          ],
+          "ret_gap_vs_base": -0.0167,
+          "ret_gap_ci": [
+            -0.0545,
+            0.0156
+          ],
+          "p10_dd": -0.277,
+          "p10_dd_ci": [
+            -0.3929,
+            -0.2082
+          ],
+          "p10_dd_gap_vs_base": -0.0166,
+          "p10_dd_gap_ci": [
+            -0.1066,
+            0.0472
+          ],
+          "dd_adj_score": 0.1268,
+          "hit_rate": 0.625,
+          "hit_rate_ci": [
+            0.5358,
+            0.7065
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": -0.0256
+        },
+        {
+          "label": "FRESH BUY",
+          "n_rows": 101,
+          "n_months": 40,
+          "thin": false,
+          "mean_fwd_ret": 0.0513,
+          "mean_fwd_ret_ci": [
+            0.0042,
+            0.1043
+          ],
+          "ret_gap_vs_base": -0.0005,
+          "ret_gap_ci": [
+            -0.0475,
+            0.046
+          ],
+          "p10_dd": -0.2504,
+          "p10_dd_ci": [
+            -0.3096,
+            -0.192
+          ],
+          "p10_dd_gap_vs_base": 0.0101,
+          "p10_dd_gap_ci": [
+            -0.037,
+            0.0744
+          ],
+          "dd_adj_score": 0.205,
+          "hit_rate": 0.5941,
+          "hit_rate_ci": [
+            0.4965,
+            0.6847
+          ],
+          "base_hit_rate": 0.6506,
+          "hit_gap_vs_base": -0.0565
+        }
+      ],
+      "signal": [
+        {
+          "label": "BUY",
+          "n_rows": 527,
+          "n_months": 71,
+          "thin": false,
+          "mean_fwd_ret": 0.0335,
+          "mean_fwd_ret_ci": [
+            -0.0038,
+            0.0727
+          ],
+          "ret_gap_vs_base": -0.0256,
+          "ret_gap_ci": [
+            -0.0531,
+            0.0009
+          ],
+          "p10_dd": -0.255,
+          "p10_dd_ci": [
+            -0.2865,
+            -0.2234
+          ],
+          "p10_dd_gap_vs_base": 0.0,
+          "p10_dd_gap_ci": [
+            -0.028,
+            0.0481
+          ],
+          "dd_adj_score": 0.1313,
+          "hit_rate": 0.5825,
+          "hit_rate_ci": [
+            0.54,
+            0.6239
+          ],
+          "base_hit_rate": 0.6705,
+          "hit_gap_vs_base": -0.088
+        },
+        {
+          "label": "SELL",
+          "n_rows": 693,
+          "n_months": 75,
+          "thin": false,
+          "mean_fwd_ret": 0.0786,
+          "mean_fwd_ret_ci": [
+            0.051,
+            0.107
+          ],
+          "ret_gap_vs_base": 0.0195,
+          "ret_gap_ci": [
+            -0.0006,
+            0.0398
+          ],
+          "p10_dd": -0.2538,
+          "p10_dd_ci": [
+            -0.3551,
+            -0.1945
+          ],
+          "p10_dd_gap_vs_base": 0.0012,
+          "p10_dd_gap_ci": [
+            -0.059,
+            0.0366
+          ],
+          "dd_adj_score": 0.3095,
+          "hit_rate": 0.7374,
+          "hit_rate_ci": [
+            0.7034,
+            0.7688
+          ],
+          "base_hit_rate": 0.6705,
+          "hit_gap_vs_base": 0.0669
+        }
+      ],
+      "inversion": {
+        "low_pos": {
+          "n_rows": 662,
+          "n_months": 70,
+          "mean_fwd_ret": 0.0408,
+          "p10_dd": -0.2525,
+          "dd_adj_score": 0.1616
+        },
+        "high_pos": {
+          "n_rows": 661,
+          "n_months": 72,
+          "mean_fwd_ret": 0.0628,
+          "p10_dd": -0.284,
+          "dd_adj_score": 0.221
+        },
+        "ret_gap_low_minus_high": -0.022,
+        "ret_gap_ci": [
+          -0.0721,
+          0.0325
+        ],
+        "dd_adj_gap_low_minus_high": -0.0594,
+        "dd_adj_gap_ci": [
+          -0.3318,
+          0.1937
+        ],
+        "verdict": "inconclusive"
+      }
+    }
+  },
+  "n_months_total": 258,
+  "n_stamps": 8344,
+  "n_matured": {
+    "21": 8309,
+    "63": 8204,
+    "126": 8099
+  }
+}
