@@ -49,6 +49,26 @@ def test_the_graveyard_is_shown():
         assert must in names, f"expected a killed signal mentioning {must!r}"
 
 
+def test_intl_bridge_graveyard_is_published():
+    """W1: the intl graveyard is published like every other signal family. CONTEXT
+    verdicts land in display, validated-but-unwired (C2 sleeve, C4 REER N=1) land in
+    pending — each cited to its exact report, none wired into a score."""
+    p = _payload()
+    rows = [r for t in p["tiers"] for r in t["rows"]]
+    intl = [r for r in rows if "intl_bridge/ledger.json" in r["source"]]
+    assert len(intl) >= 5, "the intl bridge registry mirror should be published"
+    blob = " ".join(r["name"] for r in intl).lower()
+    for must in ("c2", "c4", "c3", "radar"):
+        assert must in blob, f"expected an intl-bridge row mentioning {must!r}"
+    # the strongest prior sits in pending (validated, gates unrun) — not scored
+    pending = next((t for t in p["tiers"] if t["key"] == "pending"), None)
+    assert pending and any("C2" in r["name"] for r in pending["rows"])
+    # nothing intl is wired into a score in W1
+    for r in intl:
+        assert "not wired" in r["wired"] or "not shipped" in r["wired"] \
+            or "display-only" in r["wired"]
+
+
 def test_factor_cross_section_is_leak_free_and_data_driven():
     """The centerpiece: the leak-free PIT factor cross-section. Survivor count is
     read LIVE from ic_scorecard.json (so the page adapts to whichever branch's
@@ -79,7 +99,11 @@ def test_sue_demoted_after_deep_revalidation():
     assert sue is not None, "SUE should remain shown as display (deep-killed), not deleted"
     blob = (sue["why"] + " " + " ".join(v for _, v in sue["extra"])).lower()
     assert "deep" in blob and "0.0005" in blob                 # the deep-kill caveat is present
-    assert not any(t["key"] == "pending" for t in p["tiers"])  # nothing left pending
+    # SUE itself is not left pending (it is display-demoted). The pending tier, when present,
+    # holds the intl-bridge validated-but-unwired entries (W1) — not SUE.
+    pending = next((t for t in p["tiers"] if t["key"] == "pending"), None)
+    if pending:
+        assert not any("SUE" in r["name"] for r in pending["rows"])
 
 
 def test_insider_is_the_lone_fdr_survivor_but_only_a_confirmer():
