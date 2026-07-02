@@ -468,11 +468,14 @@ def _effective_T(returns: pd.Series, k: int = _EFFN_MAX_LAG) -> float:
     return float(T) / denom
 
 
-def _dsr_with_effN(m: dict, net_returns: pd.Series, n_trials: int,
+def _dsr_with_effN(m: dict, net_returns: pd.Series, ledger, family: str,
                    sr_var: float | None) -> dict | None:
     """Compute DSR on both raw T and effective T, return a compact dict.
 
-    Returns a dict with keys: dsr_raw_T, dsr_eff_T, T_raw, T_eff,
+    N comes from the Trial Ledger (`ledger`/`family`), same as the headline DSR
+    call — the declared budget already folds in override dof_cost (n_declared).
+
+    Returns a dict with keys: dsr_effN, dsr_legacy, T_raw, T_eff,
     rho_sum_K20, note.  Block-bootstrap refinement is deferred to W5.
     """
     T_raw = int(m.get("n_obs") or len(net_returns.dropna()))
@@ -483,11 +486,11 @@ def _dsr_with_effN(m: dict, net_returns: pd.Series, n_trials: int,
     m_eff["n_obs"] = max(int(T_eff), 2)
     dsr_eff = deflated_sharpe(m_eff.get("sharpe_daily"), m_eff.get("skew"),
                                m_eff.get("kurt"), m_eff["n_obs"],
-                               n_trials, sr_variance=sr_var,
+                               ledger=ledger, family=family, sr_variance=sr_var,
                                trading_year=TRADING_YEAR)
     dsr_raw_T = deflated_sharpe(m.get("sharpe_daily"), m.get("skew"),
                                  m.get("kurt"), T_raw,
-                                 n_trials, sr_variance=sr_var,
+                                 ledger=ledger, family=family, sr_variance=sr_var,
                                  trading_year=TRADING_YEAR)
     r = net_returns.dropna()
     rho_sum = sum(
@@ -785,8 +788,9 @@ def main() -> int:
             # W1 N7 companion diagnostic: Newey-West effective-N alongside the
             # native block-bootstrap t_eff above (two independent autocorrelation
             # corrections; agreement = robustness, divergence = investigate).
-            # Uses n_declared so the deflation is override-DOF-inclusive.
-            dsr["dsr_effN"] = _dsr_with_effN(m, net_series.dropna(), n_declared, sr_var)
+            # N comes from the same ledger as the headline call, whose declared
+            # budget (n_declared) is override-DOF-inclusive.
+            dsr["dsr_effN"] = _dsr_with_effN(m, net_series.dropna(), _led, "vector", sr_var)
         report["multiple_testing"] = dsr or {"dsr": None, "verdict": "insufficient data"}
 
         # W1 N7: Raw-series DSR — the pure engine without gate contamination.
@@ -795,15 +799,16 @@ def main() -> int:
             daily_srs_raw = [v["sharpe_daily"] for v in va_raw.values()
                              if v.get("sharpe_daily") is not None]
             sr_var_raw = float(np.var(daily_srs_raw, ddof=1)) if len(daily_srs_raw) >= 2 else None
-            # Raw track mirrors the gated track's honesty: override-DOF-inclusive
-            # n_declared + its own block-bootstrap effective-T.
+            # Raw track mirrors the gated track's honesty: the same ledger (its
+            # declared budget = override-DOF-inclusive n_declared) + its own
+            # block-bootstrap effective-T.
             col_raw_sel = f"alloc_{sel}_raw"
             net_raw = (backtest_core(close, df[col_raw_sel], cost_bps=cost_bps)["net"]
                        if col_raw_sel in df.columns else None)
             eff_raw = bootstrap_effective_t(net_raw) if net_raw is not None else None
             dsr_raw = deflated_sharpe(mr.get("sharpe_daily"), mr.get("skew"), mr.get("kurt"),
-                                      mr.get("n_obs"), n_declared, sr_variance=sr_var_raw,
-                                      trading_year=TRADING_YEAR,
+                                      mr.get("n_obs"), ledger=_led, family="vector",
+                                      sr_variance=sr_var_raw, trading_year=TRADING_YEAR,
                                       t_eff=(eff_raw or {}).get("t_eff"))
             if dsr_raw is not None:
                 dsr_raw["selected_variant"] = sel
@@ -820,7 +825,8 @@ def main() -> int:
                     "as of 2026-07. n_trials includes override dof_cost. RAW series.")
                 dsr_raw["effective_t"] = eff_raw if eff_raw else {"note": "raw column absent"}
                 if net_raw is not None:
-                    dsr_raw["dsr_effN"] = _dsr_with_effN(mr, net_raw.dropna(), n_declared, sr_var_raw)
+                    dsr_raw["dsr_effN"] = _dsr_with_effN(mr, net_raw.dropna(), _led, "vector",
+                                                         sr_var_raw)
             report["multiple_testing_raw"] = dsr_raw or {"dsr": None, "verdict": "insufficient data"}
 
         report["trial_log"] = {
