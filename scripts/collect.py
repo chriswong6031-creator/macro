@@ -470,6 +470,36 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.debug("FRED per-series PIT lag record skipped: %s", e)
 
+    # SEC company_tickers.json — monthly refresh (30-day mtime gate, same idiom as FRED
+    # vintages). engine/name_resolver reads this at query time; without it, coverage falls
+    # from ~10,528 to ~4,101 names, degrading silently on every entity-resolution call.
+    # Emit a coverage line so degradation is auditable in the collect log. Additive, never fatal.
+    try:
+        from collectors.edgar import fetch_company_tickers as _fetch_ct
+        from lib import config as _cfg_mod
+        import json as _ct_json
+        _ct_path = _cfg_mod.data_dir() / "edgar" / "company_tickers.json"
+        _ct_stale = (not _ct_path.exists() or
+                     (time.time() - _ct_path.stat().st_mtime) / 86400.0 >= 30)
+        if _ct_stale or args.full_history:
+            log.info("=== refreshing SEC company_tickers.json (monthly) ===")
+            ok = _fetch_ct(max_age_days=30, force=args.full_history)
+            if ok and _ct_path.exists():
+                _n_sec = len(_ct_json.loads(_ct_path.read_text()))
+                log.info("name_resolver coverage: %d SEC filers (company_tickers.json)", _n_sec)
+            else:
+                log.warning("name_resolver coverage: company_tickers.json fetch failed; "
+                            "coverage floor ~4,101 names (SEC file absent)")
+        else:
+            if _ct_path.exists():
+                _n_sec = len(_ct_json.loads(_ct_path.read_text()))
+            else:
+                _n_sec = 0
+            log.info("name_resolver coverage: %d SEC filers (company_tickers.json fresh, skip fetch)",
+                     _n_sec)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("company_tickers step failed: %s", e)
+
     # Point-in-time index-membership ledger (go-forward survivorship fix): record
     # who is in the S&P 1500 each run so the universe history compounds. Cheap,
     # additive, never fatal. See engine/universe_history.py.
@@ -597,6 +627,40 @@ def main() -> int:
         _shadow_impv0()
     except Exception as e:  # noqa: BLE001 — a shadow-lane crash must not abort the run
         log.error("[shadow_importance_v0] step crashed (non-fatal): %s", e)
+
+    # news_vector daily ingest — GDELT narrative-scope accrual (keep-FIRST, additive).
+    # The freshness check always runs so a stale store is never quiet. Retry-next-collect:
+    # if today's fetch was rate-limited or errored, the WARNING appears in this run's log
+    # and the next collect run will re-attempt (the 12h cache gate is bypassed on failure,
+    # so a failed fetch never silently blocks the next run). Non-fatal.
+    try:
+        from engine import news_vector as _nv
+        _nv_result = _nv.ingest()
+        if _nv_result is not None:
+            _nv_freshness = _nv_result.get("freshness", {})
+            _nv_stale_d = _nv_freshness.get("newest_event_age_days")
+            if _nv_result.get("degraded_reason"):
+                log.warning("news_vector ingest degraded (%s); will retry next collect "
+                            "(stale=%s days)", _nv_result["degraded_reason"],
+                            f"{_nv_stale_d:.1f}" if _nv_stale_d is not None else "?")
+            else:
+                log.info("news_vector: +%d events (%d total, newest age %.1fd)",
+                         _nv_result.get("n_new", 0), _nv_result.get("n_total", 0),
+                         _nv_stale_d if _nv_stale_d is not None else 0)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("news_vector ingest step failed: %s", e)
+
+    # qledger adapters — register today's claims from each desk so the nightly
+    # grader can grade them at maturity. Idempotent; non-fatal.
+    try:
+        from scripts.backfill_qledger_intel_hub import run as _hub_backfill
+        _hub_result = _hub_backfill(config.ROOT)
+        log.info("qledger intel_hub adapter: +%d claims (blocked=%d rejected=%d)",
+                 _hub_result.get("n_registered", 0),
+                 _hub_result.get("n_blocked", 0),
+                 _hub_result.get("n_rejected", 0))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("qledger intel_hub adapter failed: %s", e)
 
     # qledger nightly grader — runs after quality audits so the parquet layer is
     # fully refreshed. Non-fatal: a grader crash must not abort the collection run.

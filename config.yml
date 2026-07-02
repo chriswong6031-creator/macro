@@ -3984,7 +3984,21 @@ china:
     backoff_base_s: 5
     batch_size: 50
     sleep_s: 2.5                     # between chunks — Yahoo 429 mitigation on the ~1.5k-name backfill
-    seed: ["600519.SS","000001.SZ","300750.SZ","601398.SS","600036.SS","000858.SZ","601318.SS","600276.SS","002594.SZ","600900.SS","601988.SS","000333.SZ"]
+    seed: ["600519.SS","000001.SZ","300750.SZ","601398.SS","600036.SS","000858.SZ","601318.SS","600276.SS","002594.SZ","600900.SS","601988.SS","000333.SZ",
+           # W3 additions: 62 liquid A-share names tagged in china_news_vector/events.parquet
+           # but absent from data/china_search (not in the 1.5k search universe).
+           # All verified available in yfinance; 920xxx codes excluded (yahoo 404).
+           "000070.SZ","000799.SZ","001227.SZ","001308.SZ","002011.SZ","002100.SZ",
+           "002312.SZ","002402.SZ","002624.SZ","002674.SZ","002741.SZ","002979.SZ",
+           "002998.SZ","300002.SZ","300138.SZ","300145.SZ","300200.SZ","300364.SZ",
+           "300429.SZ","300436.SZ","300505.SZ","300537.SZ","300540.SZ","300547.SZ",
+           "300769.SZ","300841.SZ","300911.SZ","301096.SZ","301488.SZ","600598.SS",
+           "600693.SS","600702.SS","600779.SS","600975.SS","601016.SS","601918.SS",
+           "603031.SS","603198.SS","603341.SS","603444.SS","603477.SS","603565.SS",
+           "603589.SS","603800.SS","603871.SS","603936.SS","605020.SS","605366.SS",
+           "688117.SS","688166.SS","688181.SS","688198.SS","688260.SS","688328.SS",
+           "688334.SS","688349.SS","688376.SS","688380.SS","688488.SS","688512.SS",
+           "688530.SS","688786.SS"]
 
   # -- Plane B: macro via Eastmoney datacenter JSON (group=china_macro) --------
   # Report-name -> column parsing lives in collectors/china_macro.py (logic, not
