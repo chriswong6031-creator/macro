@@ -210,10 +210,12 @@ def _wh_reply_cache_put(prompt_hash: str, text: str, cfg: dict) -> None:
 def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | None]:
     """(reply_text, degraded_reason). Never raises.
 
-    Determinism kit (W7 #33): temperature=0 + seed=0 (where supported) to make
-    significance/activation judgments reproducible. Content-hash cache: the same
-    announcement body always yields the same graded record so the banner can't
-    toggle between runs.
+    Determinism kit: temperature=0 to make significance/activation judgments
+    reproducible. The Anthropic SDK does NOT support a `seed` parameter on
+    messages.create() — the parameter was never added to the API (verified W5);
+    passing it raises TypeError. Content-hash cache provides the idempotency
+    guarantee instead: the same announcement body always yields the same graded
+    record so the banner can't toggle between runs.
     """
     prov = _provider(cfg)
     if prov is None:
@@ -231,27 +233,20 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
         log.warning("whitehouse_brain client init failed (%s)", e)
         return None, "client_init_failed"
     try:
-        kw: dict = {
-            "model": model,
-            "max_tokens": int(cfg.get("max_tokens", 4000)),
-            "system": system,
-            "messages": [{"role": "user", "content": user}],
-            "temperature": 0,          # determinism kit: greedy decode where supported
-        }
-        try:
-            kw["seed"] = 0
-            resp = client.messages.create(**kw)
-        except TypeError:
-            del kw["seed"]
-            resp = client.messages.create(**kw)
+        resp = client.messages.create(
+            model=model,
+            max_tokens=int(cfg.get("max_tokens", 4000)),
+            system=system,
+            messages=[{"role": "user", "content": user}],
+            temperature=0,          # greedy decode — determinism where supported
+        )
         sr = getattr(resp, "stop_reason", None)
         if sr == "refusal":
             return None, "stop_refusal"
         text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
         if not text:
             return None, "empty_reply"
-        if text:
-            _wh_reply_cache_put(phash, text, cfg)  # cache successful reply
+        _wh_reply_cache_put(phash, text, cfg)  # cache successful reply
         return text, ("truncated" if sr == "max_tokens" else None)
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("whitehouse_brain model call failed (%s)", e)
@@ -263,7 +258,16 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
 # --------------------------------------------------------------------------- #
 def _recent_change(symbol: str, root: Path) -> float | None:
     """Last daily % change for a symbol from the committed data/yahoo cache, or None.
-    Display garnish for the ticker chips — purely best-effort, never fatal."""
+
+    Display garnish for the ticker chips — purely best-effort, never fatal.
+
+    NOTE: data/yahoo/*.parquet `close` is the dividend-adjusted TOTAL-RETURN price
+    (repo memory: yahoo-close-is-total-return). Day-over-day on TR-adjusted close
+    is a valid % change — the adjustment applies equally to both bars so the ratio
+    is correct and there is no dividend-reinvestment distortion within one day.
+    The field is labelled `chg_pct` (price-change percent on TR-adjusted close) to
+    be precise; it is display-only garnish on the ticker chip, never a signal.
+    """
     sym = (symbol or "").strip().upper()
     if not sym or not sym.replace(".", "").replace("-", "").isalnum():
         return None
@@ -278,6 +282,7 @@ def _recent_change(symbol: str, root: Path) -> float | None:
         prev, last = float(df["close"].iloc[-2]), float(df["close"].iloc[-1])
         if prev <= 0:
             return None
+        # chg_pct = day-over-day % on TR-adjusted close (both bars adjusted → ratio ok)
         return round((last / prev - 1.0) * 100.0, 2)
     except Exception:  # noqa: BLE001
         return None
