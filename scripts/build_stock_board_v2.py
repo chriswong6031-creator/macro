@@ -252,6 +252,7 @@ def _when_gate(row: dict) -> dict:
         "pass": passed,
         "buyable": buyable,
         "tier": tier,
+        "provisional": bool(sig.get("provisional")),   # T3 partial-bucket basis (W6 #22)
         "fresh_bars": fresh_bars,
         "fresh": fresh,
         "blocked": blocked,
@@ -391,7 +392,9 @@ def _build_row(row: dict, ctx: dict, lane: str, when: dict, what: dict,
                  ("buyable", "tier", "fresh_bars", "fresh", "blocked",
                   "block_reason", "extended_flag", "off_high")},
         "event_bonus": event,
-        "provisional": lane == "setting_up",   # audit #22 — partial-bucket caveat
+        # audit #22 — partial-bucket caveat: every SETTING_UP row, plus an ENTRY-OPEN T3
+        # (the replay measured T3 fresh fires repainting at 23.8% US / 15.1% CN)
+        "provisional": lane == "setting_up" or bool(when.get("provisional")),
         # --- edge inputs ---
         "alpha": row.get("alpha"),
         "composite_z": conv.get("composite_z"),

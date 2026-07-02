@@ -87,7 +87,8 @@ def _signal_verdicts(site: Path, closes) -> dict:
             casc = confluence_tiers.cascade(s, take_active=False)
             out[tk] = {"eligible": bool(casc.get("eligible")),
                        "tier_cascade": casc.get("tier"), "tier_sub": casc.get("sub"),
-                       "ticks": casc.get("ticks"), "bars_to_cross": casc.get("bars_to_cross")}
+                       "ticks": casc.get("ticks"), "bars_to_cross": casc.get("bars_to_cross"),
+                       "provisional": bool(casc.get("provisional"))}
         except Exception:  # noqa: BLE001 — one bad series must not 404 the page
             continue
     return out
@@ -217,6 +218,7 @@ def main() -> int:
             # confluence BUY signal (the hard gate) — display fields for the template chip
             "buyable": buyable, "sig_tier": tier, "sig_ticks": cv.get("ticks"),
             "sig_btc": cv.get("bars_to_cross"),
+            "sig_prov": bool(cv.get("provisional")),   # T3 provisional-basis badge (W6 #22)
             "sig_en": sg_en, "sig_zh": sg_zh, "sig_css": sg_css,
             "total_mom": a.get("total_mom"), "rev_1m": a.get("rev_1m"),
             "rev_pctile": a.get("rev_pctile"), "sector_rank": a.get("sector_rank"),

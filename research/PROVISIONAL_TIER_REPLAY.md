@@ -59,6 +59,15 @@ The masterplan's shadow-first rule: **live tier emission changes only if the rep
 
 **Flip criterion (recorded for the next maturity pass):** if a future full-universe or deeper-window run measures repaint > 15%/day OR a provisional-edge sign-flip at any horizon, split the emitted tiers into `confirmed` (completed buckets) and `provisional` (badged, with the measured repaint stat rendered), and turn on the hysteretic veto with `confirm` chosen by the replay's precision/recall table.
 
+## Shipped follow-up (2026-07-02)
+
+The recommended T3-only response above shipped (macro#878, same-day follow-up):
+
+- **`provisional: true` emitted on T3 fresh fires only** — `confluence_tiers.cascade` stamps the flag when the graded tier is T3 (the tier above the flip criterion); T1/T2/T4 never carry it. It flows through `signal_gate.gate` → `_VERDICT_KEYS`/`compact()` (standout cards, every country) and `_BUY_KEYS`/`buy_signal()` (setups.json, signal_gate.json → discovery), so every board artifact carries it after the next build. **Display-only**: `is_buyable`, tier weights and `blend_sorted` are untouched.
+- **Badges everywhere a T3 fresh tier renders** — a small dashed `provisional` pill (`.prov-flag`, warn-tinted) with the measured repaint stat in the tooltip (US 23.8% = 41/172, CN 15.1% = 8/53, from this artifact): `_sig_badge.html.j2` (all standout grids), the Top-setups strip (`dashboard.html.j2`), the discovery chip (`sig_prov`), and Buy Board 2.0 (an ENTRY-OPEN T3 is now flagged too, not just the SETTING-UP lane).
+- **Veto hysteresis wired, config-gated, default OFF** — `VETO_HYSTERESIS_CONFIRM=2` makes `cascade` debounce its per-day not-topped stream through `engine/hysteresis.hysteretic_not_topped` (the measured trade: flicker 1.6%→0.0%, flip 7.2%→4.4%, recall 97.7%, precision 95.6%); unset/`1` is byte-identical to the incumbent single-bar veto (pinned by test).
+- **Tests**: `tests/test_provisional_badge.py` (8) — the T3-iff invariant, end-to-end flag propagation on a pinned T3 fixture, env parsing, confirm=1 byte-parity, flicker-hold on a pinned wiggle day, and wiring-equals-library.
+
 ## Files
 
 - `engine/provisional_replay.py` — the replay engine (per-day live view + vectorized completed view, repaint / edge / flicker measurement). Reusable library.
