@@ -198,3 +198,23 @@ def test_accrue_columns_stable():
     m = ni.accrue(None, recs)
     assert list(m.columns) == list(ni._COLUMNS)
     assert isinstance(m, pd.DataFrame)
+
+
+# ---- generic-noun blocklist (§ticker-generic-noun audit finding) ------------ #
+def test_tag_tickers_generic_noun_no_code_no_tag():
+    """机器人 appearing generically (no adjacent exchange code) must NOT tag 300024.SZ.
+    Audit measured 22/22 false positives from sector-level robotics headlines."""
+    # Pure generic usage: 机器人 is the topic, not the company
+    assert "300024.SZ" not in ni.tag_tickers("全球机器人产业大会今日在沪开幕")
+    assert "300024.SZ" not in ni.tag_tickers("机器人板块午后拉升 多股涨停")
+    assert "300024.SZ" not in ni.tag_tickers("人形机器人量产提速 产业链受益")
+
+
+def test_tag_tickers_generic_noun_with_adjacent_code_tags():
+    """机器人(300024) or 机器人300024 adjacent in title must tag 300024.SZ — this is
+    the legitimate company-named usage where the code anchors the reference."""
+    result = ni.tag_tickers("机器人(300024)一季度净利润增长35%")
+    assert "300024.SZ" in result, f"Expected 300024.SZ in {result}"
+
+    result2 = ni.tag_tickers("300024机器人发布年报")
+    assert "300024.SZ" in result2, f"Expected 300024.SZ in {result2}"

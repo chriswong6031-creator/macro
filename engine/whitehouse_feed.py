@@ -71,7 +71,11 @@ def _to_iso(pubdate: str) -> str:
         from email.utils import parsedate_to_datetime
         dt = parsedate_to_datetime(pubdate)
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
+            # WH publishes in Eastern Time; a bare (naive) pubDate should be
+            # treated as ET, not UTC.  Assuming UTC introduced up to a +5h
+            # recency error (EST) when the WH omits the timezone offset.
+            from zoneinfo import ZoneInfo
+            dt = dt.replace(tzinfo=ZoneInfo("America/New_York"))
         return dt.astimezone(timezone.utc).isoformat()
     except (TypeError, ValueError, IndexError):
         return ""

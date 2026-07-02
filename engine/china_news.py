@@ -807,7 +807,11 @@ def _fetch_official_pages(cfg: dict, today: date | None = None) -> tuple[list[di
                     if not title_theme and not has_iso_date:
                         continue
                     theme = title_theme or page.get("theme") or "macro"
-                    items.append({"title": title, "summary": "", "url": href, "time": when,
+                    # Sanitise at write time so corrupted time fields (HTML page content
+                    # concatenated into `when` by _parse_dateish) never persist in cache
+                    # across TTL cycles.  See audit finding §PIT-write-guard.
+                    items.append({"title": title, "summary": "", "url": href,
+                                  "time": _clean_time(when or "", title),
                                   "theme": theme, "source": "official",
                                   "source_name": page.get("name", "Official"),
                                   "source_tier": page.get("tier", "official")})
@@ -910,7 +914,9 @@ def _fetch_news_pages(cfg: dict, today: date | None = None) -> tuple[list[dict],
                     theme = classify_theme(title) or page.get("theme") or "macro"
                     if source_lang != "zh" and theme == "macro" and "china" not in title.lower() and not when:
                         continue
-                    items.append({"title": title, "summary": "", "url": href, "time": when,
+                    # Sanitise at write time — same PIT-write-guard as _fetch_official_pages.
+                    items.append({"title": title, "summary": "", "url": href,
+                                  "time": _clean_time(when or "", title),
                                   "theme": theme, "source": page.get("source", "news_page"),
                                   "source_name": page.get("name", "News page"),
                                   "source_tier": page.get("tier", "global_wire"),
