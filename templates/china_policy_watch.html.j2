@@ -73,6 +73,26 @@
   <div class="callout warn"><span class="co-h">{{ t('How to read it', '如何解读') }}</span>{{ bl(pw.intel.regime_read.en, pw.intel.regime_read.zh) }}</div>
   {% endif %}
 
+  {# Intel substrate age — show age badge always; escalate to warn callout when stale (>14d). #}
+  {# pw.intel_dates is None-safe: policy_dates.annotate({}) returns stale=False on missing as_of. #}
+  {% set id = pw.intel_dates if pw.intel_dates else {} %}
+  {% set st = id.staleness if id.staleness else {} %}
+  {% if st.as_of %}
+  <p style="font-size:11.5px;color:var(--muted);margin:6px 0 2px">
+    {{ t('Intel substrate', '情报底稿') }}:
+    <span style="font-variant-numeric:tabular-nums">{{ st.as_of }}</span>
+    {% if st.age_days is not none %}
+    ({{ st.age_days }}{{ t('d ago', '日前') }})
+    {% endif %}
+  </p>
+  {% if st.stale %}
+  <div class="callout warn" style="margin-top:4px">
+    <span class="co-h">{{ t('Intel substrate may be stale', '情报底稿可能过时') }}</span>
+    {{ t('The curated intel.json (as_of', '手工整理的 intel.json（截至') }} {{ st.as_of }}{{ t(') has not been refreshed in >', '）已超过') }} 14{{ t(' days. Qualitative policy reads on this page may not reflect recent developments.', ' 天未更新。本页政策解读可能未反映最新进展。') }}
+  </div>
+  {% endif %}
+  {% endif %}
+
   <!-- ===== PBoC stance + rate corridor ===== -->
   {% if pw.pboc %}
   <h2 class="sec">🪙 {{ t('PBoC stance & rate corridor', '央行立场与利率走廊') }}</h2>

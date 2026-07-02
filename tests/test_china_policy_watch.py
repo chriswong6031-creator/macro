@@ -69,6 +69,54 @@ def test_compact_predictions_only_open():
     assert c["predictions"] == ["A"]
 
 
+# ---- intel_dates staleness plumbing --------------------------------------- #
+def test_snapshot_intel_dates_stale_flag(monkeypatch):
+    """Audit fix B6b: snapshot() must wire policy_dates.annotate(intel) into intel_dates,
+    and intel_dates.staleness.stale must be True when intel.as_of is >14d old."""
+    from datetime import date, timedelta
+    import engine.china_pboc_stance as ps
+
+    stale_as_of = (date.today() - timedelta(days=20)).isoformat()
+    stale_intel = {"as_of": stale_as_of, "thesis": {"en": "x", "zh": "x"},
+                   "predictions": [], "sector_policy": []}
+
+    monkeypatch.setattr(pw, "_intel", lambda: stale_intel)
+    monkeypatch.setattr(pw, "_nbs_prints", lambda: [])
+    monkeypatch.setattr(pw, "_policy_feed", lambda: [])
+    # provide minimal pboc so snapshot doesn't return None
+    monkeypatch.setattr(ps, "snapshot", lambda asof=None: {
+        "schema": ps.SCHEMA, "stance": "neutral", "stance_en": "Neutral",
+        "stance_zh": "中性", "rationale": {"en": "flat", "zh": "平稳"},
+        "corridor": [], "fx": {}, "last_moves": [], "asof": stale_as_of,
+    })
+
+    vm = pw.snapshot()
+    assert vm is not None, "snapshot must not return None with valid pboc stub"
+    assert "intel_dates" in vm, "intel_dates key must be present in snapshot output"
+    staleness = vm["intel_dates"]["staleness"]
+    assert staleness["stale"] is True, "intel staleness must be True for as_of >14d ago"
+    assert staleness["as_of"] == stale_as_of
+
+
+def test_snapshot_intel_dates_none_safe(monkeypatch):
+    """Audit fix B6b: snapshot() must not crash when intel.json has no as_of field."""
+    import engine.china_pboc_stance as ps
+
+    monkeypatch.setattr(pw, "_intel", lambda: {"thesis": {"en": "x", "zh": "x"}})
+    monkeypatch.setattr(pw, "_nbs_prints", lambda: [])
+    monkeypatch.setattr(pw, "_policy_feed", lambda: [])
+    monkeypatch.setattr(ps, "snapshot", lambda asof=None: {
+        "schema": ps.SCHEMA, "stance": "neutral", "stance_en": "Neutral",
+        "stance_zh": "中性", "rationale": {"en": "flat", "zh": "平稳"},
+        "corridor": [], "fx": {}, "last_moves": [], "asof": "2026-01-01",
+    })
+
+    vm = pw.snapshot()
+    assert vm is not None
+    # intel with no as_of → staleness.stale must be False (None age treated as not-stale)
+    assert vm["intel_dates"]["staleness"]["stale"] is False
+
+
 # ---- curated intel substrate ----------------------------------------------- #
 def test_intel_json_loads_and_has_sections():
     p = config.ROOT / "data" / "china_policy" / "intel.json"

@@ -399,13 +399,16 @@ def _cross_refs(policy: dict) -> list:
 def _what_matters(conviction: list, chains: list, news_feed: dict, news_sent: dict,
                   top_n: int = 5) -> list:
     items = []
-    # scheduled catalysts
+    # scheduled catalysts — skip items whose date has already passed; expired catalysts
+    # would otherwise score salience=1.0 (days clamped to 0) and top the board spuriously.
     for ev in (news_feed or {}).get("scheduled_ahead", [])[:3]:
         try:
             d = ev.get("date")
-            days = max(0, (date.fromisoformat(d) - date.today()).days) if d else 9
+            days = (date.fromisoformat(d) - date.today()).days if d else 9
         except (ValueError, TypeError):
             days = 9
+        if days < 0:
+            continue  # audit fix: past-dated catalysts must not appear on today's board
         items.append({"kind": "scheduled", "salience": round(1.0 / (1 + days), 3),
                       "label_en": f"{ev.get('name_en')} ({ev.get('md')})",
                       "label_zh": f"{ev.get('name_zh')}（{ev.get('md_zh') or ev.get('md')}）",
@@ -503,11 +506,25 @@ def analyze(prev: dict | None = None, asof: date | str | None = None) -> dict:
     except Exception:  # noqa: BLE001
         conv_map = {}
 
+    # Audit fix: detect a stale news feed so the caller knows the news leg is fabricating
+    # freshness.  If the feed's own asof lags the analysis asof by >3 days, mark it stale
+    # and pass an empty sent dict into what_matters so the stale z-score is excluded.
+    analysis_asof = date.fromisoformat(str(asof)) if asof else date.today()
+    news_stale = False
+    try:
+        feed_asof_raw = news_feed.get("asof")
+        if feed_asof_raw:
+            lag = (analysis_asof - date.fromisoformat(str(feed_asof_raw)[:10])).days
+            news_stale = lag > 3
+    except (ValueError, TypeError):
+        pass
+    news_sent_for_matters = {} if news_stale else news_sent
+
     divs = radar.get("divergences", []) if isinstance(radar, dict) else []
     conviction = _conviction(divs, news_feed, news_sent, conv_map, policy, conditions)
     chains = _chains(policy, news_feed)
     cross_refs = _cross_refs(policy)
-    what_matters = _what_matters(conviction, chains, news_feed, news_sent)
+    what_matters = _what_matters(conviction, chains, news_feed, news_sent_for_matters)
     what_changed = _what_changed(prev, conviction, policy, news_sent, altdata_mm, news_feed)
 
     # flagged tickers — names confirmed across surfaces (alt-data + radar lit + news theme)
@@ -517,6 +534,7 @@ def analyze(prev: dict | None = None, asof: date | str | None = None) -> dict:
         "schema": SCHEMA, "is_context_only": True,
         "asof": str(asof) if asof else str(date.today()),
         "generated_utc": datetime.now(timezone.utc).isoformat(),
+        "news_stale": news_stale,          # audit flag: news leg excluded from salience when True
         "conviction": conviction, "chains": chains, "cross_refs": cross_refs,
         "what_matters": what_matters, "what_changed": what_changed,
         "flagged_tickers": flagged,
