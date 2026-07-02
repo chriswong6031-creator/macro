@@ -287,11 +287,12 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
     from scripts import audit_common
     cfg = cfg or audit_common.quality_cfg()
     if audit_fns is None:
-        from scripts import audit_prices, audit_macro, audit_universe
+        from scripts import audit_prices, audit_macro, audit_universe, audit_fred_groups
         audit_fns = [
             ("prices", lambda: audit_prices.run(cfg=cfg)),
             ("macro", lambda: audit_macro.run(cfg=cfg)),
             ("universe", lambda: audit_universe.run(cfg=cfg)),
+            ("fred_groups", lambda: audit_fred_groups.audit_groups()),
         ]
 
     docs: list[tuple[str, dict]] = []
@@ -330,6 +331,14 @@ def run_quality_audits(cfg: dict | None = None, audit_fns: list | None = None) -
                 aborts.append(line)
             elif fp > warn_pct:
                 warns.append(line)
+        # group-coverage audits (fred_groups) key on `groups`+`any_dark`, not `universes` —
+        # surface dark groups in the gate summary so a repeat of the P0-A silent collection
+        # gap lands in warns, not just a log line buried inside the audit
+        if doc.get("any_dark"):
+            for g in doc.get("groups", []):
+                if g.get("dark"):
+                    warns.append(f"{name}/{g.get('group')}: {g.get('n_present')}/"
+                                 f"{g.get('n_total')} series present — group DARK")
         if doc.get("n_flags"):
             log.info("[quality] %s: %d soft flag(s) — logged, non-fatal", name, doc["n_flags"])
 

@@ -1,0 +1,257 @@
+{
+ "asof": "2026-07-02",
+ "audit": "fred_groups",
+ "stale_days": 45,
+ "min_present_pct": 50.0,
+ "any_dark": false,
+ "groups": [
+  {
+   "group": "rates",
+   "n_present": 7,
+   "n_total": 7,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "credit",
+   "n_present": 4,
+   "n_total": 4,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "risk",
+   "n_present": 2,
+   "n_total": 2,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "housing",
+   "n_present": 1,
+   "n_total": 1,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "dollar",
+   "n_present": 1,
+   "n_total": 1,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "liquidity",
+   "n_present": 5,
+   "n_total": 5,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "econ_confirm",
+   "n_present": 2,
+   "n_total": 2,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "labor",
+   "n_present": 5,
+   "n_total": 5,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "conditions",
+   "n_present": 6,
+   "n_total": 6,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "funding_stress",
+   "n_present": 2,
+   "n_total": 2,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "recession",
+   "n_present": 3,
+   "n_total": 3,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "nowcast",
+   "n_present": 2,
+   "n_total": 2,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "inflation_nowcast",
+   "n_present": 4,
+   "n_total": 4,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "inflation_releases",
+   "n_present": 10,
+   "n_total": 10,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "inflation_expectations",
+   "n_present": 3,
+   "n_total": 3,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "survey",
+   "n_present": 2,
+   "n_total": 2,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "curve",
+   "n_present": 5,
+   "n_total": 5,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "inflation_extra",
+   "n_present": 2,
+   "n_total": 2,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "bonds_extra",
+   "n_present": 9,
+   "n_total": 9,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "fed_path",
+   "n_present": 3,
+   "n_total": 3,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "cycle_leading",
+   "n_present": 4,
+   "n_total": 4,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "cycle_coincident",
+   "n_present": 2,
+   "n_total": 2,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "cycle_lagging",
+   "n_present": 5,
+   "n_total": 5,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "cycle_truth",
+   "n_present": 1,
+   "n_total": 1,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "fx_rates",
+   "n_present": 9,
+   "n_total": 9,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "fx_dollar_legs",
+   "n_present": 2,
+   "n_total": 2,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "fx_rates_short",
+   "n_present": 9,
+   "n_total": 9,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "fx_rates_long",
+   "n_present": 6,
+   "n_total": 6,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "fx_reer",
+   "n_present": 10,
+   "n_total": 10,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "bottleneck",
+   "n_present": 19,
+   "n_total": 19,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  },
+  {
+   "group": "power",
+   "n_present": 8,
+   "n_total": 8,
+   "pct_present": 100.0,
+   "dark": false,
+   "missing": []
+  }
+ ]
+}
