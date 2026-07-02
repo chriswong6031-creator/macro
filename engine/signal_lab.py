@@ -759,10 +759,10 @@ REGISTRY: list[dict] = [
                 ("constructible proxy", "front-price-level confound, wrong-sign IC −0.16"),
                 ("path", "CME / Bloomberg / Quandl-Stevens expired-contract history")]),
 
-    # ---- INTL BRIDGE (W1 2026-07-02 + W2-C3 2026-07-02) ----
-    # Registry mirror of data/intl_bridge/ledger.json (engine/intl_claims.BACKFILL + C3 graded).
+    # ---- INTL BRIDGE (W1 2026-07-02 + W2-C1/C3 2026-07-02) ----
+    # Registry mirror of data/intl_bridge/ledger.json (engine/intl_claims.BACKFILL + C1/C3 graded).
     # CONFIRMED verdict (C3) → confirmer tier (all gates pass; not wired to a scorer yet — W4).
-    # CONTEXT verdicts → display tier; PENDING → pending tier.
+    # CONTEXT verdicts (incl. C1, measured weaker than HK) → display tier; PENDING → pending tier.
     # Every number is quoted from its report in `source`.
 
     # C3 CONFIRMED (W2-C3 2026-07-02): global ETF breadth barometer
@@ -797,7 +797,33 @@ REGISTRY: list[dict] = [
                 ("FXI MaxDD cut", "strat -39.3% vs bench -72.7%"),
                 ("panel", "23 ETFs 1996-03-18 to 2026-07-01; min-panel=10 threshold")]),
 
-    # ---- INTL BRIDGE remaining entries (C2/C4/C8 pending; display graveyard) ----
+    # ---- INTL BRIDGE remaining entries (C1 CONTEXT; C2/C4/C8 pending; display graveyard) ----
+    _row("China per-name global-beta size-dampener  (C1 — the v1 flagship)",
+         "中国个股全球贝塔仓位抑制器（C1 — v1 旗舰）", "China A", "display",
+         why="MEASURED and REFUTED as a de-risk timing signal (W2). Port of hk_global_beta to the "
+             "A-share panel: causal 252d beta to S&P-500 (overnight-lagged), Vasicek-shrunk. "
+             "Transmission is HALF of HK's — HK/China ratio ~2.4× (HK SPY-beta 0.49 vs CSI300 0.20), "
+             "exactly the china_global_factors prior. The per-name beta→forward-drawdown link is real "
+             "but UNCONDITIONAL (rank-IC −0.17, t≈−13; orthogonality vs the CN RORO PASSES) — beta is "
+             "beta. The specific dampener MECHANISM fails: conditioning on the global risk state being "
+             "off makes the hi-minus-lo drawdown spread WEAKER, not stronger (off −2.3pp vs on −2.9pp; "
+             "incremental +0.6pp, wrong sign). Crisis-count effective-N=1 (the ~5y china_search panel "
+             "spans only the 2022 rate bear), DSR≈0, ES-ex-top3 negative. CONTEXT, weight_cap 0, "
+             "kill=True — NOT wired into china_name_score._tailwind.",
+         why_zh="已测量并否决其作为降险择时信号（W2）。将 hk_global_beta 移植到 A 股面板：对标普500（隔夜滞后）"
+                "的因果252日贝塔，Vasicek 收缩。传导仅为香港的一半——港/华比约 2.4×（港 SPY-贝塔 0.49 对 沪深300 0.20），"
+                "正合 china_global_factors 先验。个股贝塔→前瞻回撤关系真实但无条件（秩IC −0.17，t≈−13；相对中国RORO正交通过）"
+                "——贝塔就是贝塔。具体抑制器机制失败：以全球风险状态转弱为条件反而使高减低回撤价差更弱（风险关 −2.3pp 对 风险开 −2.9pp；"
+                "增量 +0.6pp，符号相反）。危机计数有效N=1（约5年面板仅含2022利率熊市），DSR≈0，剔除前三ES为负。"
+                "CONTEXT，权重上限0，kill=True——未接入 china_name_score._tailwind。",
+         source="scripts/c1_cn_global_beta.py + scripts/intl_phase0.py (grade); "
+                "engine/cn_global_beta.py; data/intl_bridge/ledger.json (C1)",
+         horizon="21/42d fwd drawdown", ic=-0.169,
+         wired="not wired — CONTEXT (measured weaker than HK; dampener mechanism refuted)",
+         extra=[("HK/China transmission", "~2.4× (HK 0.49 vs CSI300 0.20 SPY-beta)"),
+                ("beta→DD rank-IC", "−0.17 (t≈−13, unconditional)"),
+                ("RORO-conditional edge", "+0.6pp (WRONG sign — dampener refuted)"),
+                ("crisis effective-N", "1 (panel ~5y, 2022 bear only)")]),
     _row("Intl macro de-risk sleeve  (pooled JP/EZ/GB/KR — C2)",
          "国际宏观降险组合（JP/EZ/GB/KR 合并 — C2）", "Intl macro", "pending",
          why="The strongest intl prior in the repo — but NOT yet cleared for a wire. Pooled "

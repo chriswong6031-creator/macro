@@ -658,15 +658,53 @@ def build_c3_global_breadth(claim: dict) -> dict:
     }
 
 
-def run(builders: dict | None = None) -> Path:
-    """Grade every declared claim (with an optional per-claim builder) and write the ledger.
-    In W1 no builders are wired, so every claim grades PENDING (freshness-checked) — the
-    honest empty-but-declared state. W2+ supplies `builders={claim_id: callable}`."""
+def _resolve_builder(dotted: str):
+    """Import a 'pkg.module.callable' builder path declared on a claim. Fail-soft: an
+    unimportable/absent path logs a warning and grades the claim PENDING (never a crash)."""
+    import importlib
+    try:
+        mod_path, _, fn = dotted.rpartition(".")
+        return getattr(importlib.import_module(mod_path), fn)
+    except Exception as e:  # noqa: BLE001 — a broken builder must not break the harness
+        print(f"[run] builder {dotted!r} unresolved ({e}) — claim grades PENDING")
+        return None
+
+
+def _existing_ledger_rows() -> dict[str, dict]:
+    """Read the current ledger's feature rows keyed by id (the backfill evidence), so a
+    scan MERGES onto them rather than clobbering the graveyard. Empty on any read error."""
+    p = _ledger_path()
+    if not p.exists():
+        return {}
+    try:
+        raw = json.loads(p.read_text())
+        return {r["id"]: r for r in raw.get("features", []) if isinstance(r, dict) and r.get("id")}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def run(builders: dict | None = None, *, only: set[str] | None = None,
+        merge: bool = True) -> Path:
+    """Grade the declared claims (with an optional per-claim builder) and write the ledger.
+    Builders resolve in priority order: an explicit `builders={claim_id: callable}` override,
+    else the claim's own `builder` dotted-path field (engine/intl_claims). A claim with no
+    builder grades PENDING (freshness-checked) — the honest declared-but-unmeasured state.
+
+    `only` restricts the (re)grade to those claim ids (the rest keep their existing ledger
+    rows). `merge=True` overlays the freshly-graded rows onto the existing ledger (the
+    backfill evidence graveyard is preserved); `merge=False` writes ONLY the graded rows."""
     builders = builders or {}
     led = TrialLedger()
     declare(led)                                   # ensure the budget is registered before grading
-    features = [grade_claim(c, led, builder=builders.get(c["id"])) for c in intl_claims.CLAIMS]
-    return _write_ledger(features, date.today().isoformat())
+    base = _existing_ledger_rows() if merge else {}
+    for c in intl_claims.CLAIMS:
+        if only is not None and c["id"] not in only:
+            continue
+        b = builders.get(c["id"])
+        if b is None and isinstance(c.get("builder"), str):
+            b = _resolve_builder(c["builder"])
+        base[c["id"]] = grade_claim(c, led, builder=b)
+    return _write_ledger(list(base.values()), date.today().isoformat())
 
 
 @register_trials(FAMILY, budget=len(intl_claims.declared_grid()),
@@ -681,6 +719,8 @@ def main(argv=None) -> int:
                     help="grade the declared claims (PENDING until a builder is wired) + write ledger")
     ap.add_argument("--c3", action="store_true",
                     help="W2-C3: run the global breadth builder (build_c3_global_breadth) + write ledger")
+    ap.add_argument("--only", default=None,
+                    help="comma-separated claim ids to (re)grade; the rest keep their ledger rows")
     args = ap.parse_args(argv)
 
     if not (args.declare or args.backfill or args.run or args.c3):
@@ -717,9 +757,11 @@ def main(argv=None) -> int:
         return 0
 
     if args.run and not args.backfill:
-        p = run()
-        pend = sum(1 for c in intl_claims.CLAIMS)  # all PENDING in W1 (no builders)
-        print(f"[run] graded {pend} declared claims (all PENDING — no builder wired in W1) → {p}")
+        only = {s.strip() for s in args.only.split(",")} if args.only else None
+        p = run(only=only)
+        wired = sum(1 for c in intl_claims.CLAIMS if isinstance(c.get("builder"), str))
+        scope = f"only {sorted(only)}" if only else f"{len(intl_claims.CLAIMS)} claims"
+        print(f"[run] graded {scope} ({wired} with a wired builder, rest PENDING) → {p}")
     elif args.run:
         print("[run] skipped — --backfill already wrote the ledger this invocation")
     return 0

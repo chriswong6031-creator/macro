@@ -58,9 +58,11 @@ CLAIMS: list[dict] = [
         "direction": "de-risk",
         "target": ("yahoo", "FXI"),
         "horizons": _DD_HORIZONS,
-        "source_series": [("yahoo", "FXI"), ("yahoo", "_GSPC")],
+        # SPY is the HK-convention global-risk factor (hk_global_beta uses SPY, overnight-
+        # lagged); _GSPC on disk lags ~20d and would trip the fail-closed freshness gate.
+        "source_series": [("yahoo", "FXI"), ("yahoo", "SPY")],
         "freshness_sla_days": 5,
-        "builder": None,   # measured in W2 (C1)
+        "builder": "scripts.c1_cn_global_beta.builder",   # measured in W2 (C1)
         "notes": "HK validated ~2x transmission; China A couples less (~2x ratio, "
                  "china_global_factors) — measure, don't assume. Gate: incremental over CN RORO. "
                  "Seam (post-promotion): china_name_score._tailwind + conviction_profile ctx.",
