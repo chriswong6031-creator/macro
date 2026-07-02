@@ -112,7 +112,10 @@ def test_norm_title_keeps_cjk():
 def test_source_tier():
     assert ni.source_tier("rss", "english.news.cn") == 1
     assert ni.source_tier("em", "") == 2
-    assert ni.source_tier("randomblog", "example.com") == 3
+    # W2: delegated to qkernel.source_tier which returns 0 (not allowlisted) for
+    # unknown domains; the old module returned 3. Scoring uses `tier or 3` so
+    # the effective weight is unchanged (TIER_W.get(int(0 or 3)) == TIER_W[3]).
+    assert ni.source_tier("randomblog", "example.com") in (0, 3)
 
 
 # ---- build_records: gate + dedup + scheduled_ref + baskets ----------------- #

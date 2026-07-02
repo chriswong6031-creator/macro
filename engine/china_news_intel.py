@@ -17,6 +17,14 @@ Legs:
 
 Importance/sentiment/ticker are display/context reads (word-bands on the UI, never a bare
 number); they never feed a score, regime or allocation.
+
+W2 migration (spec §2.5):
+  • _norm_title / event_id / source_tier delegate to engine.qkernel (single source of truth).
+  • tag_tickers delegates to engine.entity_resolver.resolve_cn (GENERIC_NOUNS single copy).
+  • ingest() emits qbus rows (data/qbus/items.parquet) with _crawled_at, timestamp_quality,
+    lang=zh for every new accrued event.
+  • Missing-Tape baseline: TIER1 sources (official/state) carry body_sha256 on their qbus
+    row so W4 can diff future body changes against the first-seen hash.
 """
 from __future__ import annotations
 
@@ -149,15 +157,36 @@ def _events_path() -> Path:
 
 
 # --------------------------------------------------------------------------- #
+# W2 qkernel import (lazy, degrade to local fallbacks if unavailable).
+# --------------------------------------------------------------------------- #
+try:
+    from engine import qkernel as _qk
+    _HAS_QKERNEL = True
+except Exception:  # noqa: BLE001
+    _qk = None  # type: ignore[assignment]
+    _HAS_QKERNEL = False
+
+
+# --------------------------------------------------------------------------- #
 # pure helpers (no network / no clock) — independently unit-tested
 # --------------------------------------------------------------------------- #
 def _norm_title(t: str) -> str:
+    """Delegate to qkernel.norm_title (CJK path, 60-char cap). Falls back to the
+    local implementation when qkernel is unavailable (leaf-import safety)."""
+    if _HAS_QKERNEL:
+        return _qk.norm_title(t, lang="zh")
+    # local fallback (byte-compatible with qkernel CJK path)
     s = re.sub(r"[\s　]+", "", (t or "").lower())
     s = re.sub(r"[^\w一-鿿]", "", s)
     return s[:60]
 
 
 def event_id(title: str, domain: str) -> str:
+    """Delegate to qkernel.event_id (CJK, source=domain). Falls back to the local
+    sha1(norm_title|domain) that was the pre-W2 implementation."""
+    if _HAS_QKERNEL:
+        return _qk.event_id(source=(domain or "").lower().strip(), url="",
+                            title=title, lang="zh")
     basis = _norm_title(title) + "|" + (domain or "").lower().strip()
     return hashlib.sha1(basis.encode("utf-8")).hexdigest()[:16]
 
@@ -257,14 +286,24 @@ def _has_adjacent_code(blob: str, name: str) -> bool:
 
 
 def tag_tickers(text: str) -> list[str]:
-    """A-share tickers a headline names. Longest-match-first CJK scan with subsumed-name
-    suppression (a shorter name fully contained in an already-matched longer name is skipped).
+    """A-share tickers a headline names. Delegates to entity_resolver.resolve_cn (the W2
+    canonical resolver) so the GENERIC_NOUNS blocklist has one source of truth and the
+    longest-match-first / subsumed-name suppression logic lives in one place.
 
-    Names in _GENERIC_NOUN_NAMES are only tagged when a 6-digit exchange code appears
-    adjacent in the title (prevents mass false positives from common-noun company names)."""
+    Falls back to the local longest-match loop when entity_resolver is unavailable.
+    Returns ticker strings (sorted by confidence desc, deduped), preserving the existing
+    list-of-ticker-strings contract. PURE. Never raises."""
     blob = text or ""
     if not blob:
         return []
+    try:
+        from engine.entity_resolver import resolve_cn
+        hits = resolve_cn(blob)
+        # resolve_cn returns sorted by confidence desc; extract just the ticker strings.
+        return [h["ticker"] for h in hits]
+    except Exception:  # noqa: BLE001
+        pass
+    # --- local fallback (pre-W2 path) ---
     nm2t = _name_to_ticker()
     out: list[str] = []
     seen_t: set[str] = set()
@@ -273,7 +312,6 @@ def tag_tickers(text: str) -> list[str]:
         if nm in blob:
             if any(nm in mm for mm in matched):   # subsumed by a longer match
                 continue
-            # Generic-noun guard: blocklisted name requires an adjacent exchange code
             if nm in _GENERIC_NOUN_NAMES and not _has_adjacent_code(blob, nm):
                 continue
             matched.append(nm)
@@ -285,6 +323,10 @@ def tag_tickers(text: str) -> list[str]:
 
 
 def source_tier(source: str, domain: str) -> int:
+    """Delegate to qkernel.source_tier (merged CN+EN table). Falls back to the
+    local _TIER1/_TIER2_SRC lists when qkernel is unavailable."""
+    if _HAS_QKERNEL:
+        return _qk.source_tier(domain or "", source or "")
     key = (source or "").lower() + " " + (domain or "").lower()
     if any(s in key for s in _TIER1):
         return 1
@@ -580,7 +622,83 @@ def _fetch_all(cfg: dict, today: date) -> tuple[list[dict], str | None]:
 
 
 # --------------------------------------------------------------------------- #
-# public: daily ingest (fetch -> gate -> score -> keep-FIRST accrue)
+# helpers: timestamp_quality classification and qbus row builder
+# --------------------------------------------------------------------------- #
+def _timestamp_quality(seendate: str, source: str) -> str:
+    """Map a seendate + source to a qbus TIMESTAMP_QUALITY enum value.
+
+    Rules (spec §2.5 / probe P2):
+      • Empty / corrupted seendate (caught by _clean_time) → CRAWL_BOUNDED
+      • RSS pubDate is a full RFC-822 timestamp (sub-day precision) → PUBLISHER_STATED
+      • akshare wires provide a date at day-or-hour resolution → SNAPSHOT_DATE
+        (day-level accuracy; we don't assert the exact publication minute)
+    PURE."""
+    if not seendate:
+        return "CRAWL_BOUNDED"
+    # RSS carries sub-day pubDate (RFC-822 / ISO); akshare dates are typically
+    # "YYYY-MM-DD" or "YYYY-MM-DD HH:MM" at best, so treat wire sources as SNAPSHOT.
+    if (source or "").lower() == "rss":
+        return "PUBLISHER_STATED"
+    return "SNAPSHOT_DATE"
+
+
+def _build_qbus_rows(records: list[dict], raw_articles: list[dict],
+                     crawled_at: str) -> list[dict]:
+    """Build qbus rows for a batch of scored CN events.
+
+    - lang=zh (all items from this desk are Chinese)
+    - _crawled_at injected from the ingest boundary (never read from clock here)
+    - body_sha256 captured for TIER1 sources (Missing-Tape baseline: W4 will diff
+      future bodies against this first-seen hash; the capture starts from now so
+      the baseline accumulates without a recrawler)
+    - timestamp_quality per _timestamp_quality()
+    PURE given injected crawled_at. Never raises.
+    """
+    # Build a url→body index from the raw articles for the Missing-Tape hash capture.
+    url_to_body: dict[str, str] = {}
+    for a in (raw_articles or []):
+        url = str(a.get("url") or "").strip()
+        body = str(a.get("summary") or a.get("content") or "").strip()
+        if url and body:
+            url_to_body[url] = body
+
+    qbus_rows: list[dict] = []
+    for rec in records:
+        tier = int(rec.get("source_tier") or 3)
+        url = str(rec.get("url") or "")
+        # Missing-Tape: capture body hash for official/state (tier 1) sources only.
+        # body_sha256 is empty string when no body is available (non-blocking).
+        bhash = ""
+        if tier == 1:
+            body = url_to_body.get(url, "") or str(rec.get("summary") or "")
+            try:
+                from engine.qbus import body_sha256 as _sha256
+                bhash = _sha256(body) if body else ""
+            except Exception:  # noqa: BLE001
+                pass
+
+        tq = _timestamp_quality(str(rec.get("seendate") or ""),
+                                str(rec.get("source") or ""))
+        qbus_rows.append({
+            "desk": "china_news_intel",
+            "source": str(rec.get("source") or ""),
+            "source_tier": tier,
+            "lang": "zh",
+            "url": url,
+            "title": str(rec.get("title") or ""),
+            "body_sha256": bhash,
+            "seendate": str(rec.get("seendate") or ""),
+            "_crawled_at": crawled_at,
+            "timestamp_quality": tq,
+            "entities": [t for t in str(rec.get("tickers") or "").split(",") if t],
+            "themes": [th for th in [rec.get("theme")] if th],
+            "importance_raw": float(rec.get("score") or 0.0),
+        })
+    return qbus_rows
+
+
+# --------------------------------------------------------------------------- #
+# public: daily ingest (fetch -> gate -> score -> keep-FIRST accrue + qbus emit)
 # --------------------------------------------------------------------------- #
 def ingest(today: date | None = None) -> dict | None:
     cfg = _cfg()
@@ -591,19 +709,35 @@ def ingest(today: date | None = None) -> dict | None:
         today = today or date.today()
         raw, reason = _fetch_all(cfg, today)
         scheduled = _scheduled_map(today)
-        now_iso = datetime.now(timezone.utc).isoformat()
-        records = build_records(raw, scheduled, now_iso)
+        # _crawled_at is stamped once at the ingest boundary (spec PIT discipline).
+        crawled_at = datetime.now(timezone.utc).isoformat()
+        records = build_records(raw, scheduled, crawled_at)
         path = _events_path()
         existing = pd.read_parquet(path) if path.exists() else None
         before = 0 if existing is None else len(existing)
         merged = accrue(existing, records)
         merged.to_parquet(path, index=False)
         n_new = len(merged) - before
-        log.info("china_news_intel: %d raw -> %d gated -> %d new (%d total)",
-                 len(raw), len(records), n_new, len(merged))
+
+        # Emit to the unified qbus item store. Only new records (not already
+        # present via keep-FIRST) are emitted; qbus itself is also keep-FIRST
+        # on item_id, so re-emitting the full batch is safe and idempotent.
+        n_bus = 0
+        if records:
+            try:
+                from engine import qbus
+                qbus_rows = _build_qbus_rows(records, raw, crawled_at)
+                qbus.append_items(qbus_rows, assign_keys=True)
+                n_bus = len(qbus_rows)
+                log.debug("china_news_intel: emitted %d rows to qbus", n_bus)
+            except Exception as e:  # noqa: BLE001
+                log.warning("china_news_intel: qbus emit failed (%s) — continuing", e)
+
+        log.info("china_news_intel: %d raw -> %d gated -> %d new (%d total) %d→qbus",
+                 len(raw), len(records), n_new, len(merged), n_bus)
         return {"schema": SCHEMA, "is_context_only": True, "asof": today.isoformat(),
                 "n_raw": len(raw), "n_gated": len(records), "n_new": n_new,
-                "n_total": int(len(merged)),
+                "n_total": int(len(merged)), "n_qbus": n_bus,
                 "degraded_reason": reason if not records else None}
     except Exception as e:  # noqa: BLE001
         log.error("china_news_intel ingest failed (%s)", e)
