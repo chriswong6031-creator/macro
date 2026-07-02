@@ -5,36 +5,35 @@
     {
       "id": "c2_intl_macro_sleeve",
       "channel": "C2",
-      "hypothesis": "Pooled intl macro de-risk sleeve (curve+Sahm+tightening, JP/EZ/GB/KR) leads equity drawdowns \u2014 the strongest intl prior.",
+      "hypothesis": "Pooled intl macro de-risk sleeve (curve-inv + Sahm + short-tightening across JP/EZ/GB, \u22652 legs firing) leads US/CN equity drawdowns.",
       "direction": "de-risk",
-      "verdict": "PENDING",
+      "verdict": "CONTEXT",
       "weight_cap": 0.0,
       "metrics": {
         "ic": null,
-        "dsr": 0.9978,
+        "dsr": 0.8282,
         "split_half_same_sign": true,
-        "effective_n_crises": 4,
-        "es_ex_top3": null,
-        "orthogonal_partial": null
+        "effective_n_crises": 5,
+        "es_ex_top3": 0.0026,
+        "orthogonal_partial": -0.1669
       },
       "gates": {
-        "deflated_sharpe": "pass",
-        "split_half": "pass",
-        "leave_one_crisis_out": "pass",
-        "orthogonality": "na",
-        "crisis_independent_es": "na",
-        "lead_lag_kernel": "na",
-        "freshness": "na"
+        "freshness": true,
+        "promotion": "na",
+        "orthogonality": true,
+        "crisis_count": true,
+        "crisis_independent_es": true
       },
       "source_series": [
         "intl_macro/JP_yield_10y",
+        "intl_macro/JP_short_3m",
         "intl_macro/de_10y",
         "intl_macro/GB_yield_10y"
       ],
-      "freshness_sla_days": 45,
-      "validation_ref": "reports/intl-macro-sleeve-phase0.md",
-      "kill": false,
-      "notes": "STRONGEST prior: pooled DSR 0.9978 + split-half PASS + LOCO holds. PENDING (not CONFIRMED) because the intl-specific gates are NOT yet run: orthogonality vs the 5 US MRS legs + crisis-independent ES. Honest-N ~4 shared crises is the binding constraint. Cap stays 0 until W2 clears those gates."
+      "freshness_sla_days": 120,
+      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 Prior (pooled INTL sleeve vs INTL drawdowns): DSR 0",
+      "kill": true,
+      "notes": "Prior (pooled INTL sleeve vs INTL drawdowns): DSR 0.9978, split-half PASS. C2 tests the DECLARED target \u2014 US SPY forward drawdown \u2014 with orthogonality vs the 5 US MRS legs + crisis-independent ES. KR dropped from the pooled gate (INTL-50). Seam if it clears: conditions._macro_risk_legs \u2192 macro_risk_series \u00d7 sector_macro_beta. | weak/unstable \u2014 shown as context, never sized"
     },
     {
       "id": "intl_trend_overlay",
@@ -149,30 +148,24 @@
       "verdict": "PENDING",
       "weight_cap": 0.0,
       "metrics": {
-        "ic": 0.065,
-        "dsr": 0.0056,
-        "split_half_same_sign": true,
+        "ic": null,
+        "dsr": null,
+        "split_half_same_sign": null,
         "effective_n_crises": null,
         "es_ex_top3": null,
         "orthogonal_partial": null
       },
       "gates": {
-        "deflated_sharpe": "fail",
-        "split_half": "pass",
-        "leave_one_crisis_out": "na",
-        "orthogonality": "na",
-        "crisis_independent_es": "na",
-        "lead_lag_kernel": "na",
-        "freshness": "na"
+        "freshness": false
       },
       "source_series": [
         "forex/broad_dollar",
         "forex/reer_us"
       ],
       "freshness_sla_days": 10,
-      "validation_ref": "reports/forex-calibration.md",
+      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 CONFIRMED both halves (IC +0",
       "kill": false,
-      "notes": "Pre-registered N=1 resurrection (INTL-43): CONFIRMED in BOTH halves (IC +0.077/+0.060) but budget-killed inside the 60-trial forex family (DSR 0.0056 there). PENDING an N=1 re-run whose trial budget is separated from that family; the DSR quoted is the family-deflated value, not the N=1 value."
+      "notes": "CONFIRMED both halves (IC +0.065/+0.077/+0.060) but killed by the forex 60-trial budget. Pre-register as N=1, not a quiet promotion (INTL-43 discipline). | freshness SLA violated on disk \u2014 leg zeroed (fail-closed)"
     },
     {
       "id": "crossmarket_leadlag",
@@ -304,6 +297,140 @@
       "validation_ref": "scripts/intl_phase0.py (grade) \u2014 HK validated ~2x transmission; China A couples less (~2x ratio, china_global_factors) \u2014 measure, don't assume",
       "kill": true,
       "notes": "HK validated ~2x transmission; China A couples less (~2x ratio, china_global_factors) \u2014 measure, don't assume. Gate: incremental over CN RORO. Seam (post-promotion): china_name_score._tailwind + conviction_profile ctx. | weak/unstable \u2014 shown as context, never sized"
+    },
+    {
+      "id": "c4_cnh_basis",
+      "channel": "C4",
+      "hypothesis": "cnh_basis_bps widening (offshore CNH funding stress) leads CSI300 63d forward drawdowns \u2014 second China RORO leg beside the raw usdcnh leg.",
+      "direction": "de-risk",
+      "verdict": "PENDING",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": null,
+        "dsr": null,
+        "split_half_same_sign": null,
+        "effective_n_crises": null,
+        "es_ex_top3": null,
+        "orthogonal_partial": null
+      },
+      "gates": {
+        "freshness": false
+      },
+      "source_series": [
+        "forex/usdcnh",
+        "forex/cnh_basis"
+      ],
+      "freshness_sla_days": 5,
+      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 cny_shock is an established China driver fingerprint (china_market_drivers)",
+      "kill": false,
+      "notes": "cny_shock is an established China driver fingerprint (china_market_drivers). USDCNH history short \u2192 unmeasured in the standard split (INTL-44). | freshness SLA violated on disk \u2014 leg zeroed (fail-closed)"
+    },
+    {
+      "id": "c5_global_rates",
+      "channel": "C5",
+      "hypothesis": "Rising avg_10y / widening us_premium_bp (global duration/growth headwind) leads US equity drawdowns beyond the existing US curve/credit legs.",
+      "direction": "de-risk",
+      "verdict": "PENDING",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": null,
+        "dsr": null,
+        "split_half_same_sign": null,
+        "effective_n_crises": null,
+        "es_ex_top3": null,
+        "orthogonal_partial": null
+      },
+      "gates": {
+        "freshness": false
+      },
+      "source_series": [
+        "bonds/avg_10y",
+        "bonds/us_premium_bp"
+      ],
+      "freshness_sla_days": 5,
+      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 avg_10y + us_premium_bp already computed in bond_health",
+      "kill": false,
+      "notes": "avg_10y + us_premium_bp already computed in bond_health.json (INTL-15). Gate: orthogonality vs existing US curve/credit legs. Seam: MRS candidate leg. | freshness SLA violated on disk \u2014 leg zeroed (fail-closed)"
+    },
+    {
+      "id": "c6_asia_semi_readthrough",
+      "channel": "C6",
+      "hypothesis": "One EW Asia-semi sensor basket (TSM+ASML+\u2026) leads SMH at ONE pre-registered horizon, earnings-print windows excised (overnight risk carry-in).",
+      "direction": "de-risk",
+      "verdict": "PENDING",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": null,
+        "dsr": null,
+        "split_half_same_sign": null,
+        "effective_n_crises": null,
+        "es_ex_top3": null,
+        "orthogonal_partial": null
+      },
+      "gates": {
+        "freshness": false
+      },
+      "source_series": [
+        "yahoo/TSM",
+        "yahoo/ASML"
+      ],
+      "freshness_sla_days": 5,
+      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 Context tier until it clears the lead-lag kernel; if only lag-1 survives \u2192 transmission read (honest de-risk confirmer)",
+      "kill": false,
+      "notes": "Context tier until it clears the lead-lag kernel; if only lag-1 survives \u2192 transmission read (honest de-risk confirmer). Seam if promoted: stock_score._axis_tailwind, DOWNGRADE-capable only. | freshness SLA violated on disk \u2014 leg zeroed (fail-closed)"
+    },
+    {
+      "id": "c7_luxury_china_consumer",
+      "channel": "C7",
+      "hypothesis": "One EW luxury basket (LVMUY+\u2026) rolling over leads a CN-consumer target basket down \u2014 a policy-undistorted read on the Chinese consumer.",
+      "direction": "de-risk",
+      "verdict": "PENDING",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": null,
+        "dsr": null,
+        "split_half_same_sign": null,
+        "effective_n_crises": null,
+        "es_ex_top3": null,
+        "orthogonal_partial": null
+      },
+      "gates": {
+        "freshness": false
+      },
+      "source_series": [
+        "yahoo/LVMUY"
+      ],
+      "freshness_sla_days": 5,
+      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 Same discipline as C6: one aggregate, kernel-gated, context-tier default, de-risk grain first (luxury rolling over \u2192 trim CN-consumer conviction)",
+      "kill": false,
+      "notes": "Same discipline as C6: one aggregate, kernel-gated, context-tier default, de-risk grain first (luxury rolling over \u2192 trim CN-consumer conviction). | freshness SLA violated on disk \u2014 leg zeroed (fail-closed)"
+    },
+    {
+      "id": "c8_crossasset_leading_votes",
+      "channel": "C8",
+      "hypothesis": "cross_asset_confirm leading_caution_votes \u2265 2 while verdict=diverge \u2192 small MRS bump (credit + curve, the literature-lead legs).",
+      "direction": "de-risk",
+      "verdict": "PENDING",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": null,
+        "dsr": null,
+        "split_half_same_sign": null,
+        "effective_n_crises": null,
+        "es_ex_top3": null,
+        "orthogonal_partial": null
+      },
+      "gates": {
+        "freshness": false
+      },
+      "source_series": [
+        "bonds/hy_oas",
+        "bonds/curve_2s10s"
+      ],
+      "freshness_sla_days": 5,
+      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 cross_asset_confirm is LIVE in run",
+      "kill": false,
+      "notes": "cross_asset_confirm is LIVE in run.py (INTL-46) but its leading legs are never consumed upstream of stock scoring. Needs only the orthogonality gate + measured weight. | freshness SLA violated on disk \u2014 leg zeroed (fail-closed)"
     }
   ]
 }

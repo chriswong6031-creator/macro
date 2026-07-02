@@ -759,10 +759,11 @@ REGISTRY: list[dict] = [
                 ("constructible proxy", "front-price-level confound, wrong-sign IC −0.16"),
                 ("path", "CME / Bloomberg / Quandl-Stevens expired-contract history")]),
 
-    # ---- INTL BRIDGE (W1 2026-07-02 + W2-C1/C3 2026-07-02) ----
-    # Registry mirror of data/intl_bridge/ledger.json (engine/intl_claims.BACKFILL + C1/C3 graded).
+    # ---- INTL BRIDGE (W1 + W2 C1/C2/C3 2026-07-02 — the intl registry mirror) ----
+    # Registry mirror of data/intl_bridge/ledger.json (engine/intl_claims.BACKFILL + C1/C2/C3 graded).
     # CONFIRMED verdict (C3) → confirmer tier (all gates pass; not wired to a scorer yet — W4).
-    # CONTEXT verdicts (incl. C1, measured weaker than HK) → display tier; PENDING → pending tier.
+    # CONTEXT verdicts (C1 measured weaker than HK; C2 graded vs the US book) → display tier;
+    # PENDING → pending tier.
     # Every number is quoted from its report in `source`.
 
     # C3 CONFIRMED (W2-C3 2026-07-02): global ETF breadth barometer
@@ -797,7 +798,7 @@ REGISTRY: list[dict] = [
                 ("FXI MaxDD cut", "strat -39.3% vs bench -72.7%"),
                 ("panel", "23 ETFs 1996-03-18 to 2026-07-01; min-panel=10 threshold")]),
 
-    # ---- INTL BRIDGE remaining entries (C1 CONTEXT; C2/C4/C8 pending; display graveyard) ----
+    # ---- INTL BRIDGE remaining entries (C1 + C2 CONTEXT display graveyard; C4/C8 pending) ----
     _row("China per-name global-beta size-dampener  (C1 — the v1 flagship)",
          "中国个股全球贝塔仓位抑制器（C1 — v1 旗舰）", "China A", "display",
          why="MEASURED and REFUTED as a de-risk timing signal (W2). Port of hk_global_beta to the "
@@ -824,24 +825,31 @@ REGISTRY: list[dict] = [
                 ("beta→DD rank-IC", "−0.17 (t≈−13, unconditional)"),
                 ("RORO-conditional edge", "+0.6pp (WRONG sign — dampener refuted)"),
                 ("crisis effective-N", "1 (panel ~5y, 2022 bear only)")]),
-    _row("Intl macro de-risk sleeve  (pooled JP/EZ/GB/KR — C2)",
-         "国际宏观降险组合（JP/EZ/GB/KR 合并 — C2）", "Intl macro", "pending",
-         why="The strongest intl prior in the repo — but NOT yet cleared for a wire. Pooled "
-             "curve-inv + Sahm + short-tightening de-risk sleeve: DSR 0.9978, split-half PASS "
-             "(+0.70/+0.76), leave-one-crisis-out holds, pooled MaxDD −39.2% vs −55.4% B&H. "
-             "PENDING (not CONFIRMED) because the intl-specific gates the promotion gate does not "
-             "cover are NOT yet run: orthogonality vs the 5 US MRS legs (growth-scare may overlap "
-             "NFCI/liquidity) + the crisis-independent expected-shortfall test. Honest-N ~4 shared "
-             "crises is the binding constraint. Weight_cap stays 0 until W2 clears those gates.",
-         why_zh="仓库中最强的国际先验，但尚未获准接线。合并曲线倒挂+Sahm+短端收紧降险组合：DSR 0.9978，"
-                "两半通过（+0.70/+0.76），逐危机剔除仍成立，合并回撤 −39.2% 对 −55.4% 买入持有。"
-                "标记为待接入而非已确认：晋升门未覆盖的国际专属门尚未运行（相对5条美国MRS腿的正交性 + 危机无关的期望损失）。"
-                "诚实样本约4次共享危机为约束。权重上限保持0，直至W2通过这些门。",
-         source="reports/intl-macro-sleeve-phase0.md; data/intl_bridge/ledger.json (C2)",
-         horizon="21/42d fwd drawdown", dsr=0.9978,
-         wired="not wired (W1 declared, W2 gates + measured weight → conditions._macro_risk_legs)",
-         extra=[("pooled MaxDD", "−39.2% vs −55.4% B&H"), ("split-half Sharpe", "+0.70 / +0.76"),
-                ("honest-N", "~4 shared crises"), ("unrun gates", "orthogonality + crisis-indep ES")]),
+    _row("Intl macro de-risk sleeve  (pooled JP/EZ/GB → US book — C2)",
+         "国际宏观降险组合（JP/EZ/GB → 美国 — C2）", "Intl macro", "display",
+         why="W2 VERDICT: CONTEXT — do NOT wire. The prior DSR 0.9978 was the pooled INTL sleeve "
+             "predicting INTL drawdowns. C2 graded the DECLARED target — US SPY forward drawdown — "
+             "through the two gates the prior never ran: orthogonality vs the 5 US MRS legs + "
+             "crisis-independent ES. On the honest fully-specified window (2002-05, first date all "
+             "three markets carry all declared legs — no look-ahead), the sleeve-gated SPY strategy's "
+             "deflated Sharpe is 0.83, BELOW the 0.90 promotion door, and its residual forward-DD "
+             "content after partialing out the US legs is marginal and window-fragile (Spearman "
+             "−0.03..−0.17). It DOES cut SPY MaxDD modestly (−50.1% vs −56.8% B&H) but that overlaps "
+             "NFCI/liquidity/recession — no ORTHOGONAL edge that clears the door. A truthful negative: "
+             "against the US book the intl sleeve adds nothing the 5 US MRS legs don't already carry.",
+         why_zh="W2 结论：CONTEXT——不接线。此前 DSR 0.9978 是合并国际组合预测国际回撤。C2 针对预注册目标"
+                "（美国 SPY 前瞻回撤）运行了先前从未跑过的两道门：相对5条美国MRS腿的正交性 + 危机无关期望损失。"
+                "在诚实的完整规格窗口（2002-05，三市场首次全部携带全部声明腿——无前视），组合门控 SPY 策略的"
+                "去偏夏普为 0.83，低于 0.90 晋升门；剔除美国腿后的残差前瞻回撤含量微弱且随窗口漂移"
+                "（斯皮尔曼 −0.03..−0.17）。它确实小幅削减 SPY 回撤（−50.1% 对 −56.8%），但与 "
+                "NFCI/流动性/衰退重叠——无可过门的正交边际。诚实的负面结论：相对美国本册，国际组合并未新增内容。",
+         source="reports/intl-macro-sleeve-phase0.md; scripts/intl_phase0.py build_c2_sleeve; "
+                "data/intl_bridge/ledger.json (C2)",
+         horizon="21/42d fwd drawdown", dsr=0.8282,
+         wired="not wired — CONTEXT (DSR 0.83 < 0.90 door; residual DD-content vs US legs marginal)",
+         extra=[("US-book DSR", "0.83 (< 0.90 door)"), ("residual DD IC vs US legs", "−0.03..−0.17 (fragile)"),
+                ("SPY MaxDD cut", "−50.1% vs −56.8% B&H (overlaps NFCI/liq)"),
+                ("prior (INTL vs INTL)", "DSR 0.9978 — a different, easier test")]),
     _row("Broad-dollar REER value factor  (N=1 resurrection — C4)",
          "宽美元 REER 价值因子（N=1 复活 — C4）", "Dollar / macro", "pending",
          why="A pre-registered N=1 hypothesis, not a quiet promotion. The broad-USD REER value "
