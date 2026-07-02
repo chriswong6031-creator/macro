@@ -84,3 +84,35 @@ def test_build_flow_verdict_and_safety():
     p = of.build_flow("X", mdf, None, 100.0, exp)
     assert p["available"] and p["verdict"]["en"]
     assert p["dealer"] == {}          # no greeks -> dealer read absent, but flow still built
+
+
+def test_signed_fields_carry_gated_out_reliability_when_direction_soft(monkeypatch):
+    """Audit #46: with the signing calibration gate CLOSED (direction_reliable=False, the honest
+    default), the tick-rule SIGNED fields carry a field-level reliability contract with
+    gated_out=True so a template cannot render them directionally. Magnitude stays reliable."""
+    monkeypatch.setattr(of, "signing_gate",
+                        lambda: {"direction_reliable": False, "magnitude_reliable": True,
+                                 "net_sign_recovery": 0.41, "note": "no calibration yet"})
+    exp = pd.Timestamp("2026-06-18")
+    mdf = _minute([
+        ("O:X260618C00100000", "X", exp, True, 100.0, 1, 1.0, 10),
+        ("O:X260618C00100000", "X", exp, True, 100.0, 2, 2.0, 500),
+        ("O:X260618P00100000", "X", exp, False, 100.0, 1, 1.0, 300),
+    ])
+    p = of.build_flow("X", mdf, None, 100.0, exp)
+    rel = p["reliability"]
+    for f in ("net_premium_mn", "signed_pc", "net_call_vol", "net_put_vol"):
+        assert rel[f]["gated_out"] is True and rel[f]["direction_reliable"] is False
+    assert rel["net_premium_mn"]["magnitude_reliable"] is True
+    # the verdict frames direction as soft/approx, not a hard call
+    assert p["signing"]["direction_reliable"] is False
+
+
+def test_signed_fields_not_gated_when_calibration_passes(monkeypatch):
+    monkeypatch.setattr(of, "signing_gate",
+                        lambda: {"direction_reliable": True, "magnitude_reliable": True})
+    exp = pd.Timestamp("2026-06-18")
+    mdf = _minute([("O:X260618C00100000", "X", exp, True, 100.0, 1, 1.0, 10),
+                   ("O:X260618C00100000", "X", exp, True, 100.0, 2, 2.0, 500)])
+    p = of.build_flow("X", mdf, None, 100.0, exp)
+    assert p["reliability"]["net_premium_mn"]["gated_out"] is False
