@@ -215,7 +215,11 @@ def main():
         gate = midterm_blackout(close.index, mg)
         a_cycle = a_cycle.where(~gate, 0.0)
         a_risk = a_risk.where(~gate, 0.0)
-        gate_live = gate_state(close.index[-1], mg)
+        # W4: vector_cfg extends the stamped flag to the re-entry window (the
+        # gate no longer ends at election day; without sig this reads
+        # conservatively active through the last scheduled fill)
+        gate_live = gate_state(close.index[-1], mg,
+                               vector_cfg=config.load().get("vector", {}))
         gate_active_days = int(gate.sum())
         log.info("midterm-election blackout active on %d days", gate_active_days)
     except Exception as e:  # pragma: no cover - never break the page over the overlay
