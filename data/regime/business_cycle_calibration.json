@@ -12,6 +12,7 @@
       "diffusion_max": 50.0,
       "min_consecutive_m": 3
     },
+    "calibration_lag_m": 1,
     "calibration_window": "1985-01-01..present (revised data, 1m publication lag)",
     "endo_recessions": 3,
     "endo_caught": 3,

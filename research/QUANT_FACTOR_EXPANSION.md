@@ -223,12 +223,21 @@ checked). Two new signals cleared the bar and shipped; several intuitive ideas
 - **Macro-stress drawdown-risk gauge** (`engine/conditions.py drawdown_risk`,
   on macro.html): a LEAN 4-factor composite — recession-risk + NFCI + Excess Bond
   Premium + HY OAS (the curve & VIX legs were **dropped** because they tested
-  weak/coincident). MEASURED: P(≥10% drawdown in 63d) is monotone by band —
-  ~8% (base) → 26% (elevated) → 36% (high) → 38% (extreme). It beats `quad==Q4`
-  (~18%) and net-liquidity (an *anti*-signal). Honest framing: it is a
-  DRAWDOWN-RISK gauge, **not** a return forecast (risk-off rebounds) and **not** a
-  clean recession leader (it led in 2008 but lagged 2020/2022, and is credit-blind
-  to a 2022-style rates bear). Alert at the ≥80 crossing.
+  weak/coincident). **RE-ISSUED (audit #39, 2026-07-02)** on the leak-free PIT
+  ('release') frame with the LIVE jobless-**claims** composition (not the retired
+  Sahm leg) by `scripts/validate_drawdown_risk_pit.py` →
+  `data/regime/drawdown_risk_pit.json`. MEASURED, monotone by band (max-drawdown
+  definition, matching the label): **~19% (base) → 11% (low) → 28% (elevated) → 36%
+  (high) → 49% (extreme)**, 95% Wilson CIs, 1993–2026. The old table
+  (`~8%→26%→36%→38%`) was measured on **latest-revised** data + the **Sahm**-era
+  composition **and** implicitly on a point-to-point return (not the max-drawdown the
+  label claims); it reproduced none of those. The re-issued table is stronger and
+  cleaner. Honest framing: still a DRAWDOWN-RISK gauge, **not** a return forecast
+  (risk-off rebounds) and **not** a clean recession leader (led in 2008, lagged
+  2020/2022; credit-blind to a 2022-style rates bear). High/extreme bands are
+  episode-driven (2008/2020/2022), so treat as a RISK read, not a crash oracle.
+  Alert at the ≥80 crossing. The live gauge fires on the 'latest' frame; its bands sit
+  within CI of the PIT numbers (extreme 51% latest vs 49% PIT).
 - **Capitulation bounce gauge** (`engine/conditions.py capitulation`): counts how
   many of three panic signals fire — VRP percentile >0.90 (realized ≫ implied),
   VIX >30, COT spec washout (<10th pctile). MEASURED contrarian bounce: ≥1 signal

@@ -100,6 +100,9 @@
         <h3>{{ t('Recession signal', '衰退信号') }} · <span class="{{ 'neg' if on else 'pos' }}">{{ t('ON','触发') if on else t('OFF','未触发') }}</span> <span class="muted sm">{{ SIG.months_active }} {{ t('mo','月') }}</span></h3>
         <div class="muted sm">{{ t('Cycle phase', '周期阶段') }}: <b>{{ td(BC.phase.label) }}</b>
           {% if SIG.conditions %} · {{ t('depth','深度') }} {{ '✓' if SIG.conditions.depth else '✗' }} · {{ t('breadth','广度') }} {{ '✓' if SIG.conditions.breadth else '✗' }}{% endif %}</div>
+        {% if BC.shadow and BC.shadow.phase and BC.shadow.phase.label != BC.phase.label %}
+        <div class="muted sm" style="margin-top:4px;opacity:.7">{{ t('Pre-lag-fix (shadow)','修正前(影子)') }}: {{ td(BC.shadow.phase.label) }} — {{ t('now fires at the calibrated 1-mo publication lag (audit #39)','现按校准的1个月发布滞后触发') }}</div>
+        {% endif %}
         {% if M %}<div class="muted sm" style="margin-top:6px">{{ t('Caught (1985+)','已捕捉（1985+）') }} <b>{{ M.endo_caught }}/{{ M.endo_recessions }}</b> · {{ t('median lead','中位领先') }} ~{{ M.median_lead_months }}{{ t('mo','月') }} · {{ M.false_positives }} {{ t('false alarms/40y','误报/40年') }}</div>{% endif %}
       </div>
       <div class="sub span6">

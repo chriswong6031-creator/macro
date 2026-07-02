@@ -347,8 +347,9 @@ def ebp_widening(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
 
 
 def drawdown_risk_high(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
-    """Macro-stress (drawdown-risk) gauge crossing into the high band. MEASURED:
-    P(>=10% drawdown in 63d) ~36% in this band vs ~8% base (research §6)."""
+    """Macro-stress (drawdown-risk) gauge crossing into the high band. RE-ISSUED on
+    the PIT frame + claims composition (audit #39): P(>=10% drawdown in 63d) ~36% in
+    this band vs ~19% base (scripts/validate_drawdown_risk_pit.py)."""
     thr = config.load()["alerts"].get("drawdown_risk_high")
     if thr is None:
         return None
@@ -358,11 +359,14 @@ def drawdown_risk_high(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
     s = s.dropna()
     if len(s) < 2 or not (s.iloc[-2] < thr <= s.iloc[-1]):
         return None
+    from engine.conditions import _drawdown_band_table
+    bt = _drawdown_band_table()
+    hi, base = bt["high"], bt["base"]
     return Alert("drawdown_risk_high", "act",
                  f"Macro-stress gauge crossed into the HIGH band ({s.iloc[-1]:.0f}/100) — "
-                 f"P(>=10% drawdown in 3 months) ~36% vs ~8% base; size down, widen stops",
+                 f"P(>=10% drawdown in 3 months) ~{hi}% vs ~{base}% base; size down, widen stops",
                  message_zh=f"宏观压力指标进入高位区（{s.iloc[-1]:.0f}/100）— 未来三个月 >=10% 回撤"
-                            f"的概率约 36%（基准约 8%）；减小仓位、放宽止损")
+                            f"的概率约 {hi}%（基准约 {base}%）；减小仓位、放宽止损")
 
 
 def capitulation_signal(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
