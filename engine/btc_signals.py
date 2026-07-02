@@ -480,6 +480,25 @@ def midterm_blackout(index, cfg: dict | None) -> pd.Series:
     return mask
 
 
+def gate_state(asof, cfg: dict | None) -> dict:
+    """The ONE stamped gated-state object every display surface consumes
+    (Override-Registry W3/N6). Builders stamp this dict onto their page context
+    (and onto buy-side objects as `suppressed_by_blackout`); templates read
+    `gate.active` / `gate.release` and NEVER re-derive the window by hand — the
+    hand-copied `and not (midterm and midterm.active)` guards are how the pages
+    drifted. W0 re-declares the gate as `vector.overrides[0]`; `override_id`
+    here is the registry id it will carry."""
+    dt = pd.Timestamp(asof)
+    cfg = cfg or {}
+    active = bool(midterm_blackout([dt], cfg).iloc[0])
+    release = None
+    if active:
+        release = (_us_election_date(dt.year)
+                   - pd.Timedelta(days=int(cfg.get("buy_lead_days", 0)))).strftime("%Y-%m-%d")
+    return {"override_id": "midterm_blackout", "active": active,
+            "year": int(dt.year) if active else None, "release": release}
+
+
 def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
                val: pd.DataFrame | None = None,
                close: pd.Series | None = None,

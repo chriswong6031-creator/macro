@@ -234,6 +234,29 @@ def test_midterm_blackout_windows() -> None:
     assert not g14.loc["2022-10-26"] and g.loc["2022-10-26"]
 
 
+def test_gate_state_single_flag() -> None:
+    # W3 (Override-Registry N6): gate_state is the ONE stamped gated-state object every
+    # display surface reads — it must agree with midterm_blackout day-for-day and carry
+    # the release date templates show.
+    on = {"enabled": True}
+    g = S.gate_state("2026-07-01", on)
+    assert g["active"] and g["year"] == 2026 and g["release"] == "2026-11-03"
+    assert g["override_id"] == "midterm_blackout"
+    # release day itself is OFF (matches midterm_blackout's half-open window)
+    assert not S.gate_state("2026-11-03", on)["active"]
+    assert not S.gate_state("2025-07-01", on)["active"]   # non-midterm year
+    assert not S.gate_state("2026-07-01", {"enabled": False})["active"]
+    assert not S.gate_state("2026-07-01", None)["active"]
+    # buy_lead_days shifts the displayed release exactly like the mask
+    g14 = S.gate_state("2022-06-01", {"enabled": True, "buy_lead_days": 14})
+    assert g14["active"] and g14["release"] == "2022-10-25"
+    # agreement with the mask across a full span
+    idx = pd.date_range("2022-01-01", "2023-06-30", freq="D")
+    mask = S.midterm_blackout(idx, on)
+    for d in ("2022-01-01", "2022-11-07", "2022-11-08", "2023-06-30"):
+        assert S.gate_state(d, on)["active"] == bool(mask.loc[d])
+
+
 def test_allocation_midterm_gate_forces_flat() -> None:
     # W0 REWRITE: allocation() is now PURE ENGINE — it no longer applies the gate.
     # This test now exercises btc_overrides.apply(), which is where the gate lives.
@@ -293,6 +316,7 @@ if __name__ == "__main__":
                test_cycle_phase_clock_no_lookahead,
                test_us_election_date,
                test_midterm_blackout_windows,
+               test_gate_state_single_flag,
                test_allocation_midterm_gate_forces_flat,
                test_no_lookahead_smoke]:
         fn()

@@ -1,0 +1,261 @@
+{
+ "schema": "override_shadow.v0",
+ "stub": true,
+ "stub_note": "W3 stub of the W1 measurement artifact \u2014 live-computed, in-sample-labeled, never banked. W1 replaces with per-cycle attribution, breakeven CI fan and dual DSR/CV.",
+ "generated_at": "2026-07-02 03:40 UTC",
+ "audience": "OWNER ONLY (D2) \u2014 subscriber surfaces keep the 'Proprietary cycle timer' scrub",
+ "override": {
+  "id": "midterm_blackout",
+  "declared_in": "config.yml vector.allocation.midterm_gate (W0 re-declares as vector.overrides[0])",
+  "status": "DISCRETIONARY \u2014 human conviction override; sizes money, never graded (W1 grades it)",
+  "active": true,
+  "year": 2026,
+  "release": "2026-11-03",
+  "graded": false
+ },
+ "provenance": {
+  "basis_n": 3,
+  "basis": "midterm-year cycle bottoms 2015-01-14, 2018-12-15, 2022-11-21 \u2014 a soft prior riding the halving clock (n=3; overlapping, not independent)",
+  "prior_bears": [
+   {
+    "top": "2017-12-16",
+    "bottom": "2018-12-15",
+    "depth": -0.838,
+    "down_days": 364
+   },
+   {
+    "top": "2021-11-08",
+    "bottom": "2022-11-21",
+    "depth": -0.767,
+    "down_days": 378
+   }
+  ],
+  "dampening_path_pct": [
+   -84.0,
+   -77.0,
+   -53.0
+  ],
+  "dampening_note": "Amplitude is dampening cycle-over-cycle (institutionalisation) \u2014 the last leg is the CURRENT drawdown, still open, never banked.",
+  "pivot_fit_mae_days": 7.2,
+  "pivot_fit_note": "IN-SAMPLE: the same pivots also set the 1064/364 parameters \u2014 this is fit quality, not forecast skill."
+ },
+ "counterfactual": {
+  "asof": "2026-07-01",
+  "gated_pct": {
+   "conservative": 0.0,
+   "moderate": 0.0,
+   "aggressive": 0.0,
+   "optimal": 0.0
+  },
+  "raw_pct": {
+   "conservative": 22.7,
+   "moderate": 22.7,
+   "aggressive": 22.7,
+   "optimal": 22.7
+  },
+  "raw_source": "signals.parquet alloc_*_raw (W0 dual series)",
+  "parity_ok": true,
+  "ytd_raw_mean_pct": 16.1,
+  "ytd_raw_days_gt0": 101,
+  "ytd_days": 182
+ },
+ "falsifiers": {
+  "items": [
+   {
+    "key": "dampening",
+    "level": "ok",
+    "text": "Drawdown -53% so far vs ~-80% prior-bear avg (bear still developing).",
+    "evaluability": "in_window",
+    "evaluable": true,
+    "why": "Fires only once the projected bottom window opens (2026-10-01) \u2014 a fair-comparison guard, and that date is inside the gate window."
+   },
+   {
+    "key": "timing",
+    "level": "ok",
+    "text": "Pre-bottom: ~92d until the projected window opens (Oct 2026). Scale in, don't lump in.",
+    "evaluability": "structural",
+    "evaluable": false,
+    "why": "OVERDUE can only fire after the window closes (2026-12-10) \u2014 by then the gate has already self-released (2026-11-03). W2 re-derives the window from halving structure so it can fire in-window."
+   },
+   {
+    "key": "structure",
+    "level": "ok",
+    "text": "1064/364 down-leg on track.",
+    "evaluability": "evaluable",
+    "evaluable": true,
+    "why": "1064/364 invalidation can fire any day (anchor-dependent until W2's running-ATH rewrite, but it does fire)."
+   },
+   {
+    "key": "desync",
+    "level": "ok",
+    "text": "Halving and midterm clocks aligned this cycle (projected bottom ~Oct 2026, midterm Nov 2026).",
+    "evaluability": "structural",
+    "evaluable": false,
+    "why": "Computes the projected bottom as peak+364d and never reads the halving clock it claims to police \u2014 as built it is a constant. W2 anchors it to the actual halving date."
+   }
+  ],
+  "evaluable": 2,
+  "total": 4,
+  "headline": "2/4 evaluable",
+  "all_green_is_honest": false,
+  "note": "Pre-W2: green on a falsifier that cannot structurally fire in-window is vacuous, not reassuring. W2 (falsifier repair) makes all four evaluable."
+ },
+ "shadow": {
+  "ok": true,
+  "since": "2026-01-01",
+  "gated_return_pct": 0.0,
+  "raw_return_pct": -6.2,
+  "regret_pp": -6.2,
+  "series": [
+   {
+    "d": "2026-01-04",
+    "gated": 1.0,
+    "raw": 1.0
+   },
+   {
+    "d": "2026-01-11",
+    "gated": 1.0,
+    "raw": 0.9976
+   },
+   {
+    "d": "2026-01-18",
+    "gated": 1.0,
+    "raw": 0.9889
+   },
+   {
+    "d": "2026-01-25",
+    "gated": 1.0,
+    "raw": 0.9674
+   },
+   {
+    "d": "2026-02-01",
+    "gated": 1.0,
+    "raw": 0.9584
+   },
+   {
+    "d": "2026-02-08",
+    "gated": 1.0,
+    "raw": 0.9429
+   },
+   {
+    "d": "2026-02-15",
+    "gated": 1.0,
+    "raw": 0.9419
+   },
+   {
+    "d": "2026-02-22",
+    "gated": 1.0,
+    "raw": 0.9394
+   },
+   {
+    "d": "2026-03-01",
+    "gated": 1.0,
+    "raw": 0.9418
+   },
+   {
+    "d": "2026-03-08",
+    "gated": 1.0,
+    "raw": 0.9418
+   },
+   {
+    "d": "2026-03-15",
+    "gated": 1.0,
+    "raw": 0.9418
+   },
+   {
+    "d": "2026-03-22",
+    "gated": 1.0,
+    "raw": 0.9418
+   },
+   {
+    "d": "2026-03-29",
+    "gated": 1.0,
+    "raw": 0.9418
+   },
+   {
+    "d": "2026-04-05",
+    "gated": 1.0,
+    "raw": 0.9418
+   },
+   {
+    "d": "2026-04-12",
+    "gated": 1.0,
+    "raw": 0.9317
+   },
+   {
+    "d": "2026-04-19",
+    "gated": 1.0,
+    "raw": 0.9405
+   },
+   {
+    "d": "2026-04-26",
+    "gated": 1.0,
+    "raw": 0.9656
+   },
+   {
+    "d": "2026-05-03",
+    "gated": 1.0,
+    "raw": 0.9615
+   },
+   {
+    "d": "2026-05-10",
+    "gated": 1.0,
+    "raw": 0.9864
+   },
+   {
+    "d": "2026-05-17",
+    "gated": 1.0,
+    "raw": 0.9524
+   },
+   {
+    "d": "2026-05-24",
+    "gated": 1.0,
+    "raw": 0.9499
+   },
+   {
+    "d": "2026-05-31",
+    "gated": 1.0,
+    "raw": 0.9499
+   },
+   {
+    "d": "2026-06-07",
+    "gated": 1.0,
+    "raw": 0.9368
+   },
+   {
+    "d": "2026-06-14",
+    "gated": 1.0,
+    "raw": 0.9387
+   },
+   {
+    "d": "2026-06-21",
+    "gated": 1.0,
+    "raw": 0.9398
+   },
+   {
+    "d": "2026-06-28",
+    "gated": 1.0,
+    "raw": 0.9391
+   },
+   {
+    "d": "2026-07-05",
+    "gated": 1.0,
+    "raw": 0.9377
+   }
+  ],
+  "prior_cycles": [
+   {
+    "year": 2018,
+    "raw_at_same_elapsed_pct": -13.3,
+    "raw_by_release_pct": -19.9
+   },
+   {
+    "year": 2022,
+    "raw_at_same_elapsed_pct": -20.0,
+    "raw_by_release_pct": -15.2
+   }
+  ],
+  "framing": "Both sides (D3): the gate is ahead of the ungated engine by 6.2pp since Jan 1; in 2018 the ungated engine was -13.3% at this same point and finished the gate window at -19.9%; in 2022 the ungated engine was -20.0% at this same point and finished the gate window at -15.2%.",
+  "no_action_affordances": true
+ }
+}
