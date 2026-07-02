@@ -354,6 +354,38 @@ W0.4 ran on 8,344 leak-free PIT stamps (11 US sectors + 24 countries, month-end 
 
 ---
 
+## 6.6 · The first scorecards (2026-07-02 — BINDING addenda to §6.5)
+
+Phases 1–2 + W2.4/W2.5 completed the measurement core and produced the program's first real
+self-measurement (12,519 PIT stamps, 2010–2026, price basis). The verdicts, all against frozen
+pre-registered gates (`research/cycle_masterplan/W24_FIRST_SCORECARDS.md`, `W25_COLLINEARITY_VERDICT.md`):
+
+- **Turn-timing prediction is falsified as shipped.** Turn precision 0.075/0.109/0.230 (US/country/China)
+  vs the 0.5 bar — CC-3 FAIL on all engines. Cone coverage 0.19–0.36 vs nominal 0.80 — CC-1 MISCALIBRATED;
+  shipped recalibration multipliers: US 8.19×, country 3.57×, China 3.12× (`cone_recalibration.json`).
+  Directional labels carry negative Brier skill (CC-2 FAIL). Dominant cause isolated: 25–35% of projections
+  chronically overdue — the median-half-cycle projection engine is the weak link (watch the forward-only
+  cone slice once a gated projection model replaces it).
+- **The confluence was one signal in three coats.** `state_score`×`pos_osc` ρ=−0.968 (VIF~30);
+  `state_score` has ZERO marginal information. Binding de-duplicated feature set for W4.2/W4.6:
+  pos_osc + trend_pass + mom_score + rs_63d + vol_pctile + amp_proxy + osc_slope (+ regime axis, orthogonality
+  assumed not measured). Risk-channel survivors with CIs: rs_63d (strongest), vol_pctile (both horizons).
+- **Input repairs converged with the keystone:** China pathway lifts all straddle zero once era-stabilized
+  (consumption/auto flipped negative; n_eff≈1) while the pooled causal turn-signature gate is real
+  (CI [0.23,0.46] excludes 0); recession catch is 2/3 OOS not 3/3 (1990 missed; threshold −1.25→−1.0);
+  DC/IC theory bands lost to the data (equity (36,42)→fitted (23,44); crypto (56,70)→(22,45)) and the
+  fitted bands now bind.
+
+**The consolidated read:** descriptive structure (confirmed turns, phase wheel, risk/vol clustering,
+turn signatures) has measurable substance; every *predictive/conditioning* claim tested so far — position
+deciles, ladder ordering, pathway conditioning, turn projections, directional labels — fails its gate.
+Phase 3 (honest surfaces) is therefore the product; Phase 4 items proceed ONLY through their
+pre-registered gates, feature-set-bound by W2.5, with the W2.4 scorecards as the baseline any model must
+beat. FRAME/OPINION rendering and tripwires (W3.3+) carry the platform's value until something earns
+MEASURED-prediction status.
+
+---
+
 ## Status log
 
 - 2026-07-02 — Masterplan authored (14-agent design fleet + 4-agent red team; arbitration §1). Supporting
@@ -411,3 +443,50 @@ W0.4 ran on 8,344 leak-free PIT stamps (11 US sectors + 24 countries, month-end 
   basis_homogeneous, narratives_versioned) wired into `run_quality_audits` as the 5th audit. 13 new tests
   (analyze byte-identity + split, basis stamping + tr_fallback labeling, audit passes-on-flip +
   fails-on-regression); W2.1 rekey tests updated to the post-flip contract. 30+13 tests pass.
+- 2026-07-02 — **W1.1 SHIPPED** (#939): `engine/grading_stats.py` extracted (Wilson, date-blocked bootstrap,
+  effective-n, FDR-BH, ONE cone_coverage @0.80, bar-i+1 guards, keep-FIRST reader); china grader refactored
+  to import it, numerically identical. 80 tests.
+- 2026-07-02 — **W1.3 SHIPPED** (#945): dual-basis store — `close_price` on 237/238 yahoo parquets (+4.4MB);
+  invariance gate exact-PASS on all 4 asset classes; `yahoo_closes(basis=)`. Spec fixes: two-tier gate
+  tolerance for dividend re-scaling; atomic column-inject (upsert path would corrupt).
+- 2026-07-02 — **W1.5 SHIPPED** (#944): `cycle-calibration.yml` lane (own concurrency group) + 3 abort-lane
+  ci gates (ontology-js drift, forward-log, grading-stats) + `OPS_GATES.md` (11-gate register; weekly-lane
+  headroom ~25–40 min; D5 lead-lag must NOT land in pipeline-batch).
+- 2026-07-02 — **W1.4 SHIPPED** (#950 + review #956): flagship/futures/FX/local-index collector adds +
+  FRED deep seeds (CSUSHPISA 1987→, HOUST 1959→, DCOILWTICO 1986→, DHHNGSP 1997→). Review corrections:
+  sanitizer filenames (PL_F/_SOX/USD*_X), +7-line config edit replacing a YAML round-trip, datetime indices.
+- 2026-07-02 — **W2.1 SHIPPED** (#957): turn-epoch re-key migrator (`rekey_narratives.py` + epoch-aware
+  loaders + rekey guard); byte-identity proven; 89.2% rebind on a simulated threshold flip. Spec gaps found:
+  JS lookup keys stay date-form (turn_id travels inside legs); cycle_dna is legless; per-engine basket
+  prefixes. Also fixed the ontology-js ci gate (missing numpy).
+- 2026-07-02 — **W2.7 SHIPPED** (#959): business-cycle LORO recalibration — **3/3 in-sample → 2/3 OOS**
+  (1990 missed; Jeffreys CI [0.18,0.96]; threshold −1.25→−1.0); ALFRED-vintage validation where covered;
+  symmetric per-leg publication lags; causal cl_ratio; calibration-vs-config resolution guard.
+- 2026-07-02 — **W2.6 SHIPPED** (#961): China pathway era-stabilized (composite defined only from
+  all-legs-live 2019; composition_version stamped) + block-bootstrap CIs + causal pooled HARD gate.
+  **All four sectors' h6 lift CIs straddle zero (consumption/auto flipped negative; n_eff≈1)**; pooled
+  turn-signature evidence real (CI [0.23,0.46]). Central trace demoted validated→display.
+- 2026-07-02 — **W2.8 SHIPPED** (#981): DC/IC bands FIT from measured trough spacing (equity (36,42)→
+  (23,44) on 5,918 troughs; crypto (56,70)→(22,45)) and BIND via `cycle_bands_fit.json` with fallback;
+  per-preset cand_depth; country RS asof re-slice + thin_history flag; China spine truncation guard.
+- 2026-07-02 — **W3.1 SHIPPED** (#984): proxy registry (`engine/cycle_proxies.py`, bands schema; census
+  17 measured-daily / 2 proxy / 1 monthly / 4 frame-only / 6 frame bands) + `record_series()` kernel
+  (freq/invert/zz_abs/zz_standardize; _record_core = daily special case, byte-identical on all 3 engine
+  pages). MU→DRAM 8/10 and CCJ→U₃O₈ 4/4 fitness PASS (low-confidence, timing-only). Bug fixed en route:
+  business zz_abs must run on the z-scored series (41 junk turns → 8 real Kitchin turns).
+- 2026-07-02 — **W2.3 SHIPPED** (#985): production PIT backfill — **12,519 monthly stamps** (sector 1,881 /
+  country 5,738 / China 4,900; 2010–2026; 24.6 min; 6/6 PIT spot-checks; live logs untouched;
+  engine_fingerprint stamped). Daily-ladder cadence deferred (runtime), documented.
+- 2026-07-02 — **W2.5 SHIPPED** (#991): collinearity phase-0 — `state_score`×`pos_osc` ρ=−0.968 (VIF~30),
+  state_score zero marginal info; 5 PCs = 91.2%; binding de-duplicated feature set for W4.2/W4.6;
+  risk-channel survivors rs_63d + vol_pctile (CIs exclude 0). CL results appended to PREREGISTRATION.md.
+- 2026-07-02 — **W2.4 SHIPPED** (#992): the three promise-graders + FIRST REAL SCORECARDS (§6.6).
+  Independent realized-extrema turn truth (A6); BACKTEST/LIVE never blended; phase-appropriate horizons
+  (N3); cone recal multipliers shipped; 9 accruing measurements registered (N4); graders wired into the
+  calibration lane. CC-1/CC-2/CC-3 verdicts recorded against the frozen ledger.
+- 2026-07-02 — **W3.2 SHIPPED** (#995): cycle.html ENGINE-BACKED — build_cycle.py is a real builder
+  (`site/cycledata/cycle_engine.js`); MEASURED bands plot engine turns/osc/projections (hand cosine
+  retired); FRAME bands render curated timeline + leg-length list (no scalar position, ruling A8); DUAL
+  cards stack a secular strip; two-word MEASURED/FRAME badges + hover "how computed" (ruling A3); analyst
+  prose demoted to dated OPINION overlay with hand-vs-engine delta notes. The audit's original page is no
+  longer a drawing of an opinion.
