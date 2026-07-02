@@ -195,7 +195,9 @@ def _assess_monitor(monitor: object) -> dict:
         return _leg("DARK", None,
                     "thesis monitor absent — no theses to monitor yet "
                     "(monitor is only meaningful once PRECIPICE/BROADENING flags exist)")
-    n_th = len((monitor if isinstance(monitor, dict) else {}).get("theses") or [])
+    # real thesis_monitor payload keys: "n_open" (count) + "monitored" (list) — NOT "theses"
+    md = monitor if isinstance(monitor, dict) else {}
+    n_th = md.get("n_open") or len(md.get("monitored") or [])
     if n_th == 0:
         return _leg("PARTIAL", "0 theses",
                     "monitor present but 0 active theses — fires once a thesis stage is logged")

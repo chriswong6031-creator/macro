@@ -262,13 +262,34 @@ def test_analyst_live(tmp_path):
 
 
 def test_monitor_partial(tmp_path):
-    """Monitor present but 0 theses → PARTIAL."""
-    monitor = {"theses": []}
+    """Monitor present but 0 open theses → PARTIAL (real thesis_monitor payload shape)."""
+    monitor = {"n_open": 0, "monitored": []}
 
     with mock.patch("engine.foresight_health._health_log_path", return_value=tmp_path / "h.jsonl"):
         h = compute_foresight_health(cascade={"themes": []}, monitor=monitor)
 
     assert h["legs"]["monitor"]["status"] == "PARTIAL"
+
+
+def test_monitor_live(tmp_path):
+    """Monitor watching open theses → LIVE (pins the real payload contract: n_open/monitored)."""
+    monitor = {"n_open": 2, "monitored": [{"theme": "a"}, {"theme": "b"}]}
+
+    with mock.patch("engine.foresight_health._health_log_path", return_value=tmp_path / "h.jsonl"):
+        h = compute_foresight_health(cascade={"themes": []}, monitor=monitor)
+
+    assert h["legs"]["monitor"]["status"] == "LIVE"
+    assert "2" in (h["legs"]["monitor"]["detail"] or "")
+
+
+def test_monitor_live_from_monitored_list_only(tmp_path):
+    """n_open missing but monitored list present → still LIVE via the list-length fallback."""
+    monitor = {"monitored": [{"theme": "a"}]}
+
+    with mock.patch("engine.foresight_health._health_log_path", return_value=tmp_path / "h.jsonl"):
+        h = compute_foresight_health(cascade={"themes": []}, monitor=monitor)
+
+    assert h["legs"]["monitor"]["status"] == "LIVE"
 
 
 def test_grading_live(tmp_path):
