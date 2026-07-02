@@ -2435,6 +2435,15 @@ def main() -> int:
     (config.data_dir() / "vector").mkdir(parents=True, exist_ok=True)
     sig.to_parquet(config.data_dir() / "vector" / "signals.parquet")
 
+    # W1 Override-Registry: owner-only shadow artifact — compares gated vs raw
+    # engine equity since the 2026 midterm gate engaged, with prior-cycle context.
+    # Never breaks the build; isolated in try/except.
+    try:
+        from scripts.build_override_shadow import build as _build_override_shadow
+        _build_override_shadow(sig)
+    except Exception as _shadow_err:  # noqa: BLE001 — shadow is optional; never fatal
+        log.warning("override shadow (W1) failed (%s)", _shadow_err)
+
     cpath = config.data_dir() / "vector" / "calibration.json"
     calib = json.loads(cpath.read_text()) if cpath.exists() else {
         "meta": {"span": f"{sig.index.min().date()}..{sig.index.max().date()}"},
