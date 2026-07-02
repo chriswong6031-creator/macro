@@ -364,7 +364,9 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = Non
     policy = _policy_for(t, sectors, pidx)
     dirs = _dirs(v, policy)
 
-    present = [k for k in ("news", "alt", "radar", "standout") if v.get(k)] + (["policy"] if policy else [])
+    # a low-conviction policy facet must contribute NOTHING — it must not inflate
+    # composite (via len(present)) nor appear in source_mix / n_facets.
+    present = [k for k in ("news", "alt", "radar", "standout") if v.get(k)] + (["policy"] if _policy_usable(policy) else [])
     nz = [d for d in dirs.values() if d not in (None, 0)]
     up = sum(1 for d in nz if d > 0)
     dn = sum(1 for d in nz if d < 0)
@@ -469,12 +471,12 @@ def _read_for(flags: list, lean: int, n_confirm: int, policy: dict | None,
     if stage == "emerging":
         return (f"A leading desk is firing {('ahead of ' + str(g) + ' still-quiet ') if g else 'into a quiet '}"
                 f"lagging desk{'s' if g != 1 else ''}, with ~{pct}% of the move still ahead"
-                + (" and a policy tailwind" if policy and policy.get("dir") == 1 else "")
+                + (" and a policy tailwind" if _policy_usable(policy) and policy.get("dir") == 1 else "")
                 + (" plus a fresh catalyst" if "catalyst" in flags else "")
                 + " — pre-consensus, where the edge is.")
     if "early_edge" in flags or "stealth_accumulation" in flags:
         return ("Smart money + radar are positioning into a quiet tape"
-                + (" with a policy tailwind" if policy and policy.get("dir") == 1 else "")
+                + (" with a policy tailwind" if _policy_usable(policy) and policy.get("dir") == 1 else "")
                 + f" — stealth accumulation, ~{pct}% of the move still ahead.")
     if stage == "early":
         return f"A leading desk leads, the tape is still catching up — early, ~{pct}% edge remaining."

@@ -239,3 +239,30 @@ def test_gap_mult_equals_no_policy_when_low_conviction():
     assert d_low["leading_gap"] == d_none["leading_gap"], (
         f"leading_gap must be identical: no-policy={d_none['leading_gap']} low={d_low['leading_gap']}"
     )
+
+
+def test_composite_and_source_mix_unchanged_by_low_conviction_policy():
+    """A low-conviction facet must contribute NOTHING — it must not inflate
+    composite_conviction (via len(present)), n_facets, source_mix, or the human read."""
+    import tempfile
+    from pathlib import Path as P
+    from unittest.mock import patch
+
+    v = _make_v(with_alt=True)
+    vel = {"ACME": {"n_recent": 0, "prior_avg": None, "accel": None, "spike": False}}
+
+    with patch("engine.intel_hub._velocity_ledger_path", return_value=P(tempfile.mkdtemp()) / "x.jsonl"):
+        d_none = _dossier("ACME", v, _empty_pidx(), vel)
+        low_facet = _make_policy_facet(conviction="low", dir_=1)
+        pidx_low = {"by_ticker": {"ACME": low_facet}, "by_sector": {}, "regime": None}
+        d_low = _dossier("ACME", v, pidx_low, vel)
+
+    assert d_low["composite_conviction"] == d_none["composite_conviction"], (
+        f"low-conviction policy must not inflate composite: "
+        f"no-policy={d_none['composite_conviction']} low={d_low['composite_conviction']}"
+    )
+    assert d_low["n_facets"] == d_none["n_facets"]
+    assert "policy" not in d_low["source_mix"], f"source_mix={d_low['source_mix']}"
+    assert "policy tailwind" not in d_low["read"], (
+        f"human read must not claim a policy tailwind for a low-conviction lean: {d_low['read']}"
+    )
