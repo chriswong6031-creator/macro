@@ -418,7 +418,7 @@ def _trace(state_d, fwd, mkt, mom_d, crowd, early, stretched, beta, heat) -> lis
     t.append({"layer": "Regime gate", "tier": "validated", "stance": rstance,
               "en": f"{mkt.get('gate_state_en') or mkt.get('state_en')} (MRS {mkt.get('derisk_blended')}, {quad_name or mkt.get('quad') or '—'}, "
                     f"liquidity {mkt.get('liquidity') or '—'}) → gate ×{mkt.get('gate_factor')}{betatxt}",
-              "zh": f"{mkt.get('gate_state_zh') or mkt.get('gate_state_en') or mkt.get('state_en')}（宏观风险 {mkt.get('derisk_blended')}，{quad_zh}）→ 门控 ×{mkt.get('gate_factor')}{betatxt_zh}"})
+              "zh": f"{mkt.get('gate_state_zh') or mkt.get('state_zh') or mkt.get('gate_state_en') or mkt.get('state_en')}（宏观风险 {mkt.get('derisk_blended')}，{quad_zh}）→ 门控 ×{mkt.get('gate_factor')}{betatxt_zh}"})
     lead = mom_d.get("lead")
     t.append({"layer": "Momentum", "tier": "confirmer", "stance": lead,
               "en": f"RS #{mom_d.get('rs_rank') or '—'} — {lead} (focus lens, not alpha)"
