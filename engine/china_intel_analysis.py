@@ -106,12 +106,33 @@ def _roro_leg(conditions: dict, sign: str) -> tuple[int, float]:
         return 0, 0.0
 
 
+def _news_sign_proven() -> bool:
+    """Returns True iff china_validation has proven the news_sentiment sign (sign_ok=True,
+    proven=True for the news_sentiment family). Until CCTV backfill grades (W4), this returns
+    False — the contrarian sign (sign_expected=-1) has n_obs=0 and is structurally unfalsifiable.
+    spec §2.3 / D5: demote sign to weight-0 direction / salience-only until it clears the gate."""
+    try:
+        from engine import china_signal_lab
+        fams = china_signal_lab.load_validation()
+        ns = fams.get("news_sentiment") or {}
+        return bool(ns.get("proven") and ns.get("sign_ok"))
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def _conviction(divs: list, news_feed: dict, news_sent: dict, conv_map: dict, policy: dict,
                 conditions: dict | None = None) -> list:
     """Independence-WEIGHTED composite per fired divergence (mirrors intel_hub._dossier):
     5 signed legs (radar/altdata/news/policy/conditions) combined geometrically with earned
     weights, rewarded for INDEPENDENT agreement, docked by a falsifier; plus edge-remaining,
-    lifecycle stage, leading-gap and an opportunity_score the list is ranked by."""
+    lifecycle stage, leading-gap and an opportunity_score the list is ranked by.
+
+    spec §2.3 / D5 — salience/direction split for the news leg:
+      salience   = |z| × coverage (contributes to the magnitude backbone ALWAYS)
+      direction  = sign (which way) — ZERO until china_validation news_sentiment family is
+                   proven+sign_ok (CCTV backfill, W4). The row carries sign_unproven=True and
+                   direction_basis="salience_only" so the UI can label it honestly.
+    """
     from engine import china_basket_spine as sp
     from engine import china_conviction as cv
     try:
@@ -123,6 +144,7 @@ def _conviction(divs: list, news_feed: dict, news_sent: dict, conv_map: dict, po
                                    ("policy", .10), ("conditions", .08))]
     band = (news_sent or {}).get("band")
     by_basket = (news_feed or {}).get("by_basket") or {}
+    news_sign_proven = _news_sign_proven()
     out = []
     for d in divs or []:
         try:
@@ -155,13 +177,28 @@ def _conviction(divs: list, news_feed: dict, news_sent: dict, conv_map: dict, po
                 s = sum(conv_signed)
                 ad_side = 1 if s > 0 else (-1 if s < 0 else 0)
                 altdata_dir = 1 if (ad_side > 0) == (sign == "positive") and ad_side else (-1 if ad_side else 0)
-            # news is CONTRARIAN in China (validation sign_expected = -1): a fearful tape (z<0)
-            # confirms a positive divergence; a rich/greedy tape (z>0) confirms a negative one.
+            # spec §2.3 / D5 — salience/direction split for the news leg.
+            # SALIENCE: |z| × coverage — always contributes to the magnitude backbone; this is
+            # what we know (coverage of the story) without needing to know the direction.
+            # DIRECTION: the contrarian sign (sign_expected=-1) has n_obs=0 in china_validation
+            # (CCTV backfill not yet run). Until proven+sign_ok clears the gate (W4), news_dir
+            # is held at 0 — it does NOT steer direction. The salience path keeps news_mag so
+            # the leg still boosts salience (what matters) without injecting a direction.
             z = (news_sent or {}).get("z")
-            news_dir = 0
-            if news_hits and isinstance(z, (int, float)) and z != 0:
-                news_dir = 1 if ((z < 0 and sign == "positive") or (z > 0 and sign == "negative")) else -1
-            news_mag = (min(1.0, news_hits / 3.0) * (1.0 if news_dir > 0 else 0.5)) if news_hits else 0.0
+            # salience component: raw |z| presence (always)
+            news_salience_mag = (min(1.0, news_hits / 3.0) * min(1.0, abs(z) if isinstance(z, (int, float)) else 0.0)) if news_hits else 0.0
+            if news_sign_proven:
+                # proven path: contrarian sign is active — z<0 confirms positive divergence, z>0 confirms negative
+                news_dir = 0
+                if news_hits and isinstance(z, (int, float)) and z != 0:
+                    news_dir = 1 if ((z < 0 and sign == "positive") or (z > 0 and sign == "negative")) else -1
+                news_mag = (min(1.0, news_hits / 3.0) * (1.0 if news_dir > 0 else 0.5)) if news_hits else 0.0
+                news_direction_basis = "proven_contrarian"
+            else:
+                # unproven path (D5): direction = 0; salience preserved via news_mag = |z|-weighted coverage
+                news_dir = 0
+                news_mag = news_salience_mag
+                news_direction_basis = "salience_only"
             policy_term = _policy_term(d.get("signal_key"), policy)
             policy_dir = 1 if policy_term >= 0.7 else (-1 if policy_term <= 0.0 and (policy or {}).get("stance") == "tightening" else 0)
             cond_dir, cond_mag = _roro_leg(conditions, sign)
@@ -173,7 +210,8 @@ def _conviction(divs: list, news_feed: dict, news_sent: dict, conv_map: dict, po
             policy_c = policy_term if policy else None
             cond_c = cond_mag if cond_dir != 0 else None
             base = cv.combine(radar_mag, altdata_c, news_c, policy_c, cond_c, weights=wv)
-            # independence tally (legs that vote, aligned vs against the radar sign)
+            # independence tally — for direction tally, news_dir=0 when sign is unproven so it
+            # neither boosts up nor drags dn; it appears in the up count ONLY when sign is proven.
             legs = [("radar", 1, radar_mag), ("altdata", altdata_dir, altdata_mag),
                     ("news", news_dir, news_mag), ("policy", policy_dir, policy_term),
                     ("conditions", cond_dir, cond_mag)]
@@ -221,6 +259,12 @@ def _conviction(divs: list, news_feed: dict, news_sent: dict, conv_map: dict, po
                 "news_hits": news_hits, "news_band": band,
                 "directions": {"radar": 1, "altdata": altdata_dir, "news": news_dir,
                                "policy": policy_dir, "conditions": cond_dir},
+                # spec §2.3 — explicit salience/direction decomposition for the news leg.
+                # salience: what deserves attention (always honest). direction: sign (only when proven).
+                "salience": round(news_salience_mag, 3),
+                "direction": news_dir,
+                "direction_basis": news_direction_basis,
+                "sign_unproven": not news_sign_proven,
                 "net_confirm": net_confirm, "agreement": round(agreement, 2), "lean": lean,
                 "conf_bonus": round(conf_bonus, 3), "falsifier_penalty": fals,
                 "members": [{"ticker": t, "name": i.get("name"),
