@@ -9,7 +9,9 @@ forever. This audit is the tripwire.
 
 Check: HTTP HEAD the public anchors and compare Last-Modified against now. Per
 anchored dir we take the FRESHEST of `<dir>/_manifest.json` (put unconditionally on
-every successful publish, even no-delta days — the canonical freshness beacon) and,
+every successful FULL publish, even no-delta days — the canonical freshness beacon;
+partial lanes pass --no-manifest and leave it alone, which is why we take the
+freshest of the two anchors rather than the manifest alone) and,
 for the *stockdata search libraries, `<dir>/index.json` (fallback while the manifest
 rollout reaches every lane; content-hash skip means index only re-uploads on change,
 so it alone would false-alarm on no-delta weekends). A content-level probe parses

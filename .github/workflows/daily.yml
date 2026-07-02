@@ -978,7 +978,10 @@ jobs:
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         # stock_briefs writes stockdata/ai_desk_notes.json + ai_desk_track.json AFTER the engine
         # job's R2 upload, so sync them here or the shim fetches a stale copy from R2.
-        run: python -m scripts.publish_r2 --dirs stockdata || echo "::warning::R2 stockdata sync failed (non-fatal)"
+        # --no-manifest: this checkout holds ONLY the two git-committed stockdata files (the
+        # heavy store is R2-only), so a manifest built here would clobber the engine job's
+        # full ~5000-name one — and bulk consumers prune against that list.
+        run: python -m scripts.publish_r2 --dirs stockdata --no-manifest || echo "::warning::R2 stockdata sync failed (non-fatal)"
 
   publish:
     # GitHub Pages can't serve a /site folder from a branch — deploy the
