@@ -39,24 +39,32 @@ BROAD_HI = 0.50            # breadth above this = revisions already broad (late)
 # Tier W: text-breadth only; capped at WATCH-shelf, clearly labeled.
 #
 # Computed from data already on the row — no restructure of the stage machine.
-# Rule: Tier P if bottleneck_band is NOT (None, "AWAITING_DATA") and NOT a text-only
-# band, OR if a theme_feed_summary is present (orphan-rescue physical feed).
+# Rule: Tier P if the row has a live numeric_band (not None/AWAITING/text-only),
+# OR if a theme_feed_summary is present (orphan-rescue physical feed).
 # Tier W otherwise.
+#
+# Key insight: _NUMERIC_BANDS allow-list was the wrong abstraction.  The bottleneck
+# engine's anti-laundering guard overwrites the top-level `band` to "TIGHT (text)"
+# for FRED-mapped themes while retaining the real measurement in `numeric_band`.
+# Keying on `numeric_band` (passed explicitly by the caller) is the correct contract:
+#   - NEUTRAL/TIGHTENING/TIGHT/SOLD_OUT/LOOSE/GLUT_FORMING/GLUT in numeric_band → P
+#   - language-only themes (cybersecurity/solar) have numeric_band=None → W (correct)
 _TIER_P = "P"
 _TIER_W = "W"
-# Numeric FRED bands that qualify for Tier P
-_NUMERIC_BANDS = TIGHT_BANDS | LOOSE_BANDS | {"TIGHTENING", "GLUT_FORMING", "GLUT"}
 
 
-def _compute_tier(bottleneck_band: str | None, theme_feed_summary: dict | None) -> str:
+def _compute_tier(numeric_band: str | None, theme_feed_summary: dict | None) -> str:
     """Return 'P' (physical desk) or 'W' (watch shelf).
 
     Tier P when:
-      - bottleneck_band is a live numeric FRED band (TIGHT/SOLD_OUT/LOOSE/TIGHTENING/GLUT*); OR
+      - numeric_band is not None (theme has a live FRED-backed numeric measurement); OR
       - theme_feed_summary is present (orphan-rescue physical feed, e.g. FDA shortages).
-    Tier W otherwise (text-only / AWAITING_DATA / null).
+    Tier W otherwise (text-only / AWAITING_DATA / null — no numeric physical correlate).
+
+    `numeric_band` must be the row's `bn.get("numeric_band")`, NOT the top-level `band`
+    (which the anti-laundering guard may overwrite to "TIGHT (text)" for FRED-mapped themes).
     """
-    if bottleneck_band in _NUMERIC_BANDS:
+    if numeric_band is not None:
         return _TIER_P
     if theme_feed_summary is not None:
         return _TIER_P
@@ -388,9 +396,12 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
                 except Exception as _e:  # noqa: BLE001
                     log.debug("fda_scarcity chip format failed for %s: %s", k, _e)
 
-        # W5b: tier tag — P (physical desk) or W (watch shelf)
-        bn_band_for_tier = (bn or {}).get("band")
-        tier = _compute_tier(bn_band_for_tier, theme_feed_summary)
+        # W5b: tier tag — P (physical desk) or W (watch shelf).
+        # Use numeric_band (the raw FRED measurement), NOT the top-level band
+        # (which the anti-laundering guard rewrites to "TIGHT (text)" for FRED-mapped
+        # themes, obscuring the fact that they have a live numeric read).
+        bn_numeric_band = (bn or {}).get("numeric_band")
+        tier = _compute_tier(bn_numeric_band, theme_feed_summary)
 
         entry_ready, entry_note = _entry(stage, disloc)
         rows.append({

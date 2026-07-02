@@ -493,34 +493,80 @@ def test_late_line_provisional_flag_in_payload():
 # ── W5b (Q4): two-tier desk — tier tagging ───────────────────────────────────
 
 def test_tier_p_for_numeric_fred_band():
-    """(a) Tier P when bottleneck_band is a live numeric FRED band."""
+    """Tier spec contract for _compute_tier — tests the four cases the review specifies.
+
+    (a) numeric_band=NEUTRAL → P  (NEUTRAL is a live FRED composite read, not language-only)
+    (b) top band "TIGHT (text)" WITH live numeric_band=TIGHTENING → P
+        (anti-laundering guard rewrites top band; numeric_band retains the real measurement)
+    (c) numeric_band=None + top band NEUTRAL (language-only theme) → W
+        (cybersecurity/solar: NEUTRAL top band but no FRED leg → must stay W)
+    (d) numeric_band=None + live theme_feed_summary → P
+        (orphan-rescue: FDA shortage promotes glp1_obesity even with no FRED bottleneck)
+    """
     from engine.foresight_cascade import _compute_tier
-    for band in ("TIGHT", "SOLD_OUT", "LOOSE", "TIGHTENING", "GLUT_FORMING", "GLUT"):
-        assert _compute_tier(band, None) == "P", f"band={band} should be Tier P"
+
+    # (a) NEUTRAL is a live numeric FRED composite band → Tier P
+    assert _compute_tier("NEUTRAL", None) == "P", "NEUTRAL numeric_band should be Tier P"
+
+    # (a) Other numeric bands also qualify
+    for numeric_band in ("TIGHT", "SOLD_OUT", "LOOSE", "TIGHTENING", "GLUT_FORMING", "GLUT"):
+        assert _compute_tier(numeric_band, None) == "P", (
+            f"numeric_band={numeric_band} should be Tier P"
+        )
+
+    # (b) anti-laundering guard rewrites top band to "TIGHT (text)" but numeric_band
+    #     retains TIGHTENING — _compute_tier receives numeric_band, not top band → P
+    assert _compute_tier("TIGHTENING", None) == "P", (
+        "numeric_band=TIGHTENING (FRED-mapped theme with text top band) should be Tier P"
+    )
+
+    # (c) language-only theme: top band is NEUTRAL but numeric_band is None (no FRED leg)
+    #     → must stay Tier W (cybersecurity / solar case)
+    assert _compute_tier(None, None) == "W", (
+        "numeric_band=None (language-only theme) must be Tier W, NOT promoted by top-level band"
+    )
+
+    # (d) numeric_band=None but live theme_feed_summary → Tier P (orphan-rescue)
+    feed = {"source": "fda_shortages", "band": "SHORTAGE_ACTIVE", "label": "FDA shortage ACTIVE"}
+    assert _compute_tier(None, feed) == "P", (
+        "theme_feed_summary present → Tier P even with numeric_band=None"
+    )
 
 
-def test_tier_w_for_awaiting_and_null_bands():
-    """(a) Tier W when bottleneck_band is None, AWAITING_DATA, or a text-only band."""
+def test_tier_w_for_null_numeric_band():
+    """Tier W when numeric_band is None (no FRED measurement — language-only / AWAITING / null).
+
+    Note: _compute_tier now receives bn.get("numeric_band"), NOT the top-level band.
+    Themes with AWAITING_DATA or text-only top bands have numeric_band=None → Tier W.
+    """
     from engine.foresight_cascade import _compute_tier
-    for band in (None, "AWAITING_DATA", "TIGHT (text)", "TIGHTENING (text)"):
-        assert _compute_tier(band, None) == "W", f"band={band} should be Tier W"
+    # All these represent the numeric_band=None case (no live FRED read)
+    assert _compute_tier(None, None) == "W", "numeric_band=None → Tier W"
 
 
 def test_tier_p_for_theme_feed_summary_present():
-    """(a) Tier P when a theme_feed_summary is present (orphan-rescue feed) — even with
-    AWAITING_DATA bottleneck_band (FDA shortages rescue glp1_obesity into Tier P)."""
+    """Tier P when a theme_feed_summary is present (orphan-rescue feed) — even with
+    numeric_band=None (FDA shortages rescue glp1_obesity into Tier P when FRED leg absent)."""
     from engine.foresight_cascade import _compute_tier
     feed = {"source": "fda_shortages", "band": "SHORTAGE_ACTIVE", "label": "FDA shortage ACTIVE"}
     assert _compute_tier(None, feed) == "P"
-    assert _compute_tier("AWAITING_DATA", feed) == "P"
 
 
 def test_tier_field_in_cascade_rows():
-    """(a) Each cascade row has a 'tier' field of 'P' or 'W'."""
+    """Each cascade row has a 'tier' field of 'P' or 'W'.
+
+    Tier P requires numeric_band (the FRED-backed measurement) to be non-None.
+    The bottleneck engine populates numeric_band on FRED-mapped themes.
+    Language-only/AWAITING themes have numeric_band=None → Tier W.
+    """
     bottleneck = {"themes": {
-        "memory_storage": {"name": "Memory", "band": "TIGHT", "tightness": 0.9},
-        "glp1_obesity":   {"name": "GLP-1", "band": None},
-        "cybersecurity":  {"name": "Cyber", "band": "AWAITING_DATA"},
+        # memory_storage: real FRED leg → numeric_band present (e.g. TIGHT from PPI composite)
+        "memory_storage": {"name": "Memory", "band": "TIGHT", "tightness": 0.9,
+                           "numeric_band": "TIGHT"},
+        # glp1_obesity: no FRED bottleneck → numeric_band absent → Tier W (no feed either)
+        "glp1_obesity":   {"name": "GLP-1", "band": None, "numeric_band": None},
+        # cybersecurity: AWAITING_DATA top band, no FRED → numeric_band None → Tier W
+        "cybersecurity":  {"name": "Cyber", "band": "AWAITING_DATA", "numeric_band": None},
     }}
     revisions = {"themes": {
         "memory_storage": {"name": "Memory", "breadth": 0.1, "level_state": "FLAT_LOW"},
@@ -535,9 +581,9 @@ def test_tier_field_in_cascade_rows():
     )
     assert out is not None
     tiers = {r["theme"]: r["tier"] for r in out["themes"]}
-    assert tiers["memory_storage"] == "P"   # TIGHT = numeric FRED band → Tier P
-    assert tiers["glp1_obesity"]   == "W"   # band=None, no feed → Tier W
-    assert tiers["cybersecurity"]  == "W"   # AWAITING_DATA → Tier W
+    assert tiers["memory_storage"] == "P"   # numeric_band=TIGHT → Tier P
+    assert tiers["glp1_obesity"]   == "W"   # numeric_band=None, no feed → Tier W
+    assert tiers["cybersecurity"]  == "W"   # numeric_band=None → Tier W
 
 
 def test_tier_p_via_fda_feed_no_fred():
@@ -613,8 +659,27 @@ def test_fda_scarcity_resolved_band():
     assert "glut tell" in glp1["rationale"].lower() or "resolved" in glp1["rationale"].lower()
 
 
-def test_fda_scarcity_none_on_missing_cache():
-    """(c) Missing cache (df=None) → all themes return None."""
+def test_fda_scarcity_none_on_missing_cache(monkeypatch, tmp_path):
+    """(c) Missing cache → all themes return None.
+
+    Hermetic: monkeypatches the cache loader so the test never touches real disk data
+    (data/fda/shortages.parquet).  Without this patch the cache loader succeeds on
+    checkouts that already have the file, making the test pass for the wrong reason.
+    """
+    import engine.fda_scarcity as fda_mod
+
+    # Patch load_shortages_cache inside the fda_scarcity module to always raise,
+    # simulating a missing/broken cache independently of what is on disk.
+    def _no_cache():
+        raise FileNotFoundError("monkeypatched: no cache")
+
+    # The loader is imported lazily inside compute_fda_scarcity; patch the module
+    # so that `collectors.fda_shortages.load_shortages_cache` raises.
+    import sys
+    fake_collector = type(sys)("collectors.fda_shortages")
+    fake_collector.load_shortages_cache = _no_cache
+    monkeypatch.setitem(sys.modules, "collectors.fda_shortages", fake_collector)
+
     from engine.fda_scarcity import compute_fda_scarcity
     result = compute_fda_scarcity(df=None)
     assert isinstance(result, dict)
@@ -814,4 +879,83 @@ def test_jinja_watch_shelf_renders_and_pills_exclude_tier_w():
     # watch shelf comes after tier P cards section
     assert watch_shelf_pos > tier_p_cards_pos, (
         "watch shelf should render below Tier P cards"
+    )
+
+
+def test_jinja_tier_less_row_defaults_to_shelf():
+    """F4: a row with no 'tier' field must land on the watch shelf, not silently vanish.
+
+    Old cached JSON consumers (no tier key) must degrade visibly: the row appears in
+    the watch shelf instead of dropping out of both selectattr/rejectattr filters.
+    """
+    import sys
+    import pathlib
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+    from jinja2 import Environment, FileSystemLoader
+
+    repo = pathlib.Path(__file__).resolve().parent.parent
+    env = Environment(loader=FileSystemLoader(str(repo / "templates")), autoescape=True)
+    tmpl = env.get_template("foresight.html.j2")
+
+    # One row WITH tier=P, one WITHOUT tier key (simulates old cached JSON)
+    themes_data = [
+        {
+            "theme": "memory_storage", "name": "Memory & Storage",
+            "tier": "P", "stage": "PRECIPICE",
+            "bottleneck_band": "TIGHT", "bottleneck_text_only": False, "tightness": 0.9,
+            "bottleneck_regime": True, "demand_band": None, "demand_strength": None,
+            "capex_yoy": None, "revision_breadth": 0.05, "revision_level": "FLAT_LOW",
+            "broadening_state": "FLAT_LOW", "est_drift_90d": None,
+            "guidance_band": None, "guidance_net": None, "guidance_raisers": None,
+            "guidance_cutters": None, "altdata_summary": None, "n_altdata_leading": 0,
+            "altdata_members": None, "glut_band": None, "glut_score": None,
+            "theme_feed_summary": None,
+            "rationale": "supply TIGHT while revisions not yet firing",
+            "entry_ready": False, "entry_note": "thesis intact",
+            "score": 62, "score_detail": {"verdict": "high-conviction", "axes": {}, "caps": []},
+            "size_band": None, "size_note": None,
+        },
+        {
+            # NO 'tier' key — simulates old cached JSON row
+            "theme": "old_cached_theme", "name": "Old Cached Theme",
+            "stage": "WATCH",
+            "bottleneck_band": None, "bottleneck_text_only": False, "tightness": None,
+            "bottleneck_regime": False, "demand_band": None, "demand_strength": None,
+            "capex_yoy": None, "revision_breadth": 0.03, "revision_level": "FLAT_LOW",
+            "broadening_state": "FLAT_LOW", "est_drift_90d": None,
+            "guidance_band": None, "guidance_net": None, "guidance_raisers": None,
+            "guidance_cutters": None, "altdata_summary": None, "n_altdata_leading": 0,
+            "altdata_members": None, "glut_band": None, "glut_score": None,
+            "theme_feed_summary": None,
+            "rationale": "no bottleneck data yet",
+            "entry_ready": False, "entry_note": "not a thesis stage — no entry",
+            "score": 30, "score_detail": {"verdict": "watch", "axes": {}, "caps": []},
+            "size_band": None, "size_note": None,
+        },
+    ]
+    stage_counts = {"PRECIPICE": 1, "BROADENING": 0, "RE-RATING": 0,
+                    "GLUT-RISK": 0, "WATCH": 1, "UNKNOWN": 0}
+    html = tmpl.render(
+        cascade={"sizing": None, "demand_pool": None, "dislocation": None},
+        themes=themes_data,
+        stage_counts=stage_counts,
+        stage_order=["PRECIPICE", "BROADENING", "RE-RATING", "GLUT-RISK", "WATCH", "UNKNOWN"],
+        demand_pool=None, dislocation=None,
+        track={"foresight": 0, "bottleneck": 0, "glut": 0, "revisions": 0,
+               "guidance": 0, "emergence": 0, "subsector": 0, "recent": []},
+        grade=None, emergence=None, subsectors=None,
+        convergence=None, power=None, analyst=None, monitor=None, health=None,
+        asof="2026-07-02", generated_utc="2026-07-02 00:00 UTC",
+        nav_prefix="", active_section="research", active_page="foresight",
+    )
+    # Tier-less row must appear somewhere in the rendered HTML (not silently dropped)
+    assert "Old Cached Theme" in html, "tier-less row must not be silently dropped"
+    # The watch shelf must render (tier-less row defaults to W → shelf visible)
+    assert "fx-watch-shelf" in html, "watch shelf must render for tier-less row"
+    # The tier-less row must appear INSIDE the watch shelf (after fx-watch-shelf),
+    # not before it (which would mean it was rendered as a Tier P card)
+    shelf_pos = html.find("fx-watch-shelf")
+    theme_pos = html.find("Old Cached Theme")
+    assert theme_pos > shelf_pos, (
+        "tier-less row must land in the watch shelf, not in the Tier P cards section"
     )

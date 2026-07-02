@@ -435,8 +435,10 @@
   </div>
 
   {# ---- stage distribution (W5b: Tier P only; Tier W shown as a chip) ---- #}
+  {# F4: rows without a `tier` field (e.g. old cached JSON) default to 'W' so they
+     appear on the watch shelf instead of silently disappearing from both sections. #}
   {%- set _tier_p_themes = themes | selectattr('tier', 'equalto', 'P') | list -%}
-  {%- set _tier_w_themes = themes | selectattr('tier', 'equalto', 'W') | list -%}
+  {%- set _tier_w_themes = themes | rejectattr('tier', 'equalto', 'P') | list -%}
   {%- set _stage_counts_p = {} -%}
   {%- for r in _tier_p_themes -%}
     {%- set _s = r.stage -%}
@@ -449,7 +451,7 @@
     <span class="fx-stage-pill stg-{{ s }}"><span class="dot"></span>{{ s }} <span class="n">{{ _stage_counts_p[s] }}</span></span>
     {% endif %}{% endfor %}
     {% if _tier_w_themes %}
-    <span class="fx-watch-chip" title="{{ t('Tier W: text/breadth-only themes on the watch shelf — no numeric physical correlate', '观察层：仅文本/广度主题——无数值型物理佐证') }}">+{{ _tier_w_themes | length }} {{ t('on watch shelf', '在观察架') }}</span>
+    <span class="fx-watch-chip" title="Tier W: text/breadth-only themes on the watch shelf — no numeric physical correlate">+{{ _tier_w_themes | length }} {{ t('on watch shelf', '在观察架') }}</span>
     {% endif %}
   </div>
 
@@ -540,13 +542,15 @@
 
   {# Tier P: full physical-desk cards #}
   <div class="fx-cards">
-    {% for r in themes if r.tier == 'P' %}
+    {% for r in themes if (r.tier | default('W')) == 'P' %}
     {{ render_card(r) }}
     {% endfor %}
   </div>
 
-  {# W5b: Tier W watch shelf — compact rows, no full score breakdown #}
-  {%- set _w_themes = themes | selectattr('tier', 'equalto', 'W') | list -%}
+  {# W5b: Tier W watch shelf — compact rows, no full score breakdown.
+     F4: uses rejectattr('tier','equalto','P') so tier-less rows (old cached JSON)
+     degrade to the shelf instead of silently vanishing. #}
+  {%- set _w_themes = themes | rejectattr('tier', 'equalto', 'P') | list -%}
   {% if _w_themes %}
   <div class="fx-watch-shelf">
     <div class="fx-watch-header">
