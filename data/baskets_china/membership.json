@@ -673,13 +673,6 @@
           "rationale": "CNGR — ternary precursor leader (中伟新材)"
         },
         {
-          "ticker": "300073.SZ",
-          "added": "2021-06-15",
-          "removed": null,
-          "name_zh": "当升科技",
-          "rationale": "Easpring — NCM cathode (当升科技)"
-        },
-        {
           "ticker": "301358.SZ",
           "added": "2021-06-15",
           "removed": null,
@@ -713,6 +706,11 @@
           "date": "2021-06-15",
           "action": "create",
           "note": "Seeded Battery & Lithium — 17 equal-weight A-share members."
+        },
+        {
+          "date": "2026-07-01",
+          "action": "remove",
+          "note": "300073.SZ: removed — 当升科技 dropped out of the china_search universe/close cache, so its price history is no longer computable (cache-validation contract: every member must be a live close-cache column). 16 members remain."
         }
       ]
     },
@@ -1072,13 +1070,6 @@
           "rationale": "AVIC UAS — military drones (中无人机)"
         },
         {
-          "ticker": "600562.SS",
-          "added": "2021-06-15",
-          "removed": null,
-          "name_zh": "国睿科技",
-          "rationale": "Glarun — defense radar (国睿科技)"
-        },
-        {
           "ticker": "000733.SZ",
           "added": "2021-06-15",
           "removed": null,
@@ -1091,6 +1082,11 @@
           "date": "2021-06-15",
           "action": "create",
           "note": "Seeded Defense & Aerospace — 14 equal-weight A-share members."
+        },
+        {
+          "date": "2026-07-01",
+          "action": "remove",
+          "note": "600562.SS: removed — 国睿科技 dropped out of the china_search universe/close cache, so its price history is no longer computable (cache-validation contract: every member must be a live close-cache column). 13 members remain."
         }
       ]
     },
@@ -1408,13 +1404,6 @@
           "rationale": "Angel Yeast — yeast / food ingredients (安琪酵母)"
         },
         {
-          "ticker": "603345.SS",
-          "added": "2021-06-15",
-          "removed": null,
-          "name_zh": "安井食品",
-          "rationale": "Anjoy Foods — frozen prepared foods (安井食品)"
-        },
-        {
           "ticker": "603156.SS",
           "added": "2021-06-15",
           "removed": null,
@@ -1434,6 +1423,11 @@
           "date": "2021-06-15",
           "action": "create",
           "note": "Seeded Food & Beverage — 11 equal-weight A-share members."
+        },
+        {
+          "date": "2026-07-01",
+          "action": "remove",
+          "note": "603345.SS: removed — 安井食品 dropped out of the china_search universe/close cache, so its price history is no longer computable (cache-validation contract: every member must be a live close-cache column). 10 members remain."
         }
       ]
     },

@@ -69,13 +69,6 @@
           "removed": null,
           "name": "Laurentian Bank Of Canada",
           "rationale": "Laurentian Bank"
-        },
-        {
-          "ticker": "GSY.TO",
-          "added": "2021-06-14",
-          "removed": null,
-          "name": "Goeasy Ltd",
-          "rationale": "goeasy — non-prime consumer lender"
         }
       ],
       "changelog": [
@@ -88,6 +81,11 @@
           "date": "2026-06-18",
           "action": "expand",
           "note": "Expanded to 8 members."
+        },
+        {
+          "date": "2026-07-01",
+          "action": "remove",
+          "note": "GSY.TO: removed — Goeasy Ltd dropped out of the canada_search universe/close cache, so its price history is no longer computable (cache-validation contract: every member must be a live close-cache column). 7 members remain."
         }
       ]
     },
@@ -909,13 +907,6 @@
           "rationale": "CCL Industries — specialty labels/packaging"
         },
         {
-          "ticker": "WPK.TO",
-          "added": "2021-06-14",
-          "removed": null,
-          "name": "Winpak Ltd",
-          "rationale": "Winpak — packaging"
-        },
-        {
           "ticker": "LAC.TO",
           "added": "2021-06-14",
           "removed": null,
@@ -947,6 +938,11 @@
           "date": "2026-06-18",
           "action": "expand",
           "note": "Expanded to 9 members."
+        },
+        {
+          "date": "2026-07-01",
+          "action": "remove",
+          "note": "WPK.TO: removed — Winpak Ltd dropped out of the canada_search universe/close cache, so its price history is no longer computable (cache-validation contract: every member must be a live close-cache column). 8 members remain."
         }
       ]
     },
