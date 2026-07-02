@@ -144,7 +144,11 @@
         }
       },
       "now": "AI Compute and Optics is in a confirmed Expansion/Trending phase, sitting at the 52.6th percentile of its historical range and ranked 3rd of 31 Shenwan baskets by relative strength. The current leg (Apr 2025 to present) has produced +460% versus SHCOMP +31%, driven by the 15th Five-Year Plan AI capex mandate, surging 800G/1.6T optical module demand from domestic data-center build-outs, and the Huawei Ascend domestic chip ramp. Electronics (+75.5%) and Telecoms (+67.7%) are the clear Shenwan leaders while Agriculture, Beauty, and Retail sit in deep losses, a textbook growth-over-value risk-on tape with a growth premium of +18.2pp. Cyclicals are decisively outpacing defensives (+0.3% vs -12.1%) and SHCOMP is modestly positive (+1.6%), confirming that theme momentum rather than index beta is the dominant current driver.",
-      "now_zh": "AI算力与光模块板块目前处于扩张/上行趋势阶段，历史区间分位数为52.6%，在31个申万行业板块中相对强度排名第三。当前行情（2025年4月至今）累计涨幅达460%，远超同期上证综指31%的涨幅，核心驱动来自第十五个五年规划的AI算力投入强制目标、国内数据中心建设带来的800G/1.6T光模块订单爆发，以及华为昇腾国产替代进程加速。电子（+75.5%）和通信（+67.7%）领涨申万各行业，农业、美容、零售深度落后，典型的成长风格主导、风险偏好抬升行情（成长溢价+18.2个百分点）。周期板块明显跑赢防御（+0.3% vs -12.1%），上证综指温和上涨（+1.6%），表明当前以主题驱动为主而非纯粹的指数贝塔行情。"
+      "now_zh": "AI算力与光模块板块目前处于扩张/上行趋势阶段，历史区间分位数为52.6%，在31个申万行业板块中相对强度排名第三。当前行情（2025年4月至今）累计涨幅达460%，远超同期上证综指31%的涨幅，核心驱动来自第十五个五年规划的AI算力投入强制目标、国内数据中心建设带来的800G/1.6T光模块订单爆发，以及华为昇腾国产替代进程加速。电子（+75.5%）和通信（+67.7%）领涨申万各行业，农业、美容、零售深度落后，典型的成长风格主导、风险偏好抬升行情（成长溢价+18.2个百分点）。周期板块明显跑赢防御（+0.3% vs -12.1%），上证综指温和上涨（+1.6%），表明当前以主题驱动为主而非纯粹的指数贝塔行情。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_appliances": {
       "legs": {
@@ -310,7 +314,11 @@
         }
       },
       "now": "Home Appliances is currently in a Bottoming phase (-13.3% in the current window), ranking 9th of 31 Shenwan industries with only 33% of its recent return window positive and trading below its 200-day moving average. The tape is a growth-dominated, risk-on A-share market (SHCOMP +1.6%, cyclicals +0.3% vs defensives -12.1%, growth leading value by 18.2pp), driven by Electronics (+75.5%) and Telecoms (+67.7%) as the AI/DeepSeek thematic wave absorbs liquidity. Appliances are deep laggards in this configuration: the sector is a value/dividend/consumer-recovery play and does not benefit from the current technology-liquidity rotation. The trough-phase setup with a depressed rs_rank (9/31) and growth-value spread of +18.2pp suggests the sector is basing, but a catalyst inflection — either a growth/value style reversal, an escalation of trade-in (以旧换新) subsidies, or a sustained property-market stabilization signal — is needed before a new leadership leg can be confirmed.",
-      "now_zh": "家电板块目前处于筑底阶段（本窗口区间收益-13.3%），在31个申万行业中排名第9，近期收益窗口胜率仅33%，且股价低于200日均线。当前A股市场由成长风格主导（上证综指+1.6%，周期股+0.3%优于防御股-12.1%，成长/价值利差达18.2pp），电子（+75.5%）和通信（+67.7%）受益于DeepSeek人工智能主题行情。家电作为典型的价值/红利/消费复苏品种，在当前科技流动性轮动格局下深度跑输。板块申万排名低迷（9/31）、成长/价值利差高企，虽显示估值已处低位，但仍需等待成长/价值风格切换、以旧换新补贴政策加码或地产市场持续企稳信号，方可确认新一轮领涨行情启动。"
+      "now_zh": "家电板块目前处于筑底阶段（本窗口区间收益-13.3%），在31个申万行业中排名第9，近期收益窗口胜率仅33%，且股价低于200日均线。当前A股市场由成长风格主导（上证综指+1.6%，周期股+0.3%优于防御股-12.1%，成长/价值利差达18.2pp），电子（+75.5%）和通信（+67.7%）受益于DeepSeek人工智能主题行情。家电作为典型的价值/红利/消费复苏品种，在当前科技流动性轮动格局下深度跑输。板块申万排名低迷（9/31）、成长/价值利差高企，虽显示估值已处低位，但仍需等待成长/价值风格切换、以旧换新补贴政策加码或地产市场持续企稳信号，方可确认新一轮领涨行情启动。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_autos": {
       "legs": {
@@ -476,7 +484,11 @@
         }
       },
       "now": "Autos & NEV Makers is in a confirmed trough phase (pos=0.1, rs_rank=20/31, below 200-day MA, ret_win_pct=37.2%), having shed -26.1% since the September 2025 peak. The sector is the clear laggard in a market that has rotated sharply into Technology/AI and Telecoms — the current tape is GROWTH/RISK-ON but Autos are not participating: cyclicals are flat (+0.3%) while the sector is -22.3%, confirming sector-specific not broad-market headwinds. The live pressure is a simultaneous demand air-pocket (NEV tax exemption halved to 15,000 yuan from 30,000 yuan on 1-Jan-2026 caused December 2025 pull-forward and subsequent January cliff — BYD domestic NEV volumes fell ~53% YoY in January 2026) and a vicious price war deepening margin compression across the board. The broader tape (SHCOMP +3.7%, Electronics +69%, Telecoms +93%) is rotating into AI/semiconductor themes, starving Autos of fund flows while the fundamental earnings backdrop deteriorates.",
-      "now_zh": "汽车整车板块处于明确的底部阶段（相对强度排名20/31，位于200日均线下方，胜率37.2%），自2025年9月高点以来跌幅已达-26.1%。当前行情明显向科技/人工智能和电信板块轮动，汽车并未受益：周期股整体仅+0.3%，而汽车板块达-22.3%，确认为板块特有的结构性压力而非指数整体拖累。核心压力来自两端挤压：需求侧，新能源车购置税免税上限自2026年1月起减半至15,000元（原30,000元），导致2025年12月透支消费后，2026年1月销量出现断崖式下滑（比亚迪国内新能源销量同比降约53%）；供给侧，价格战持续激化，行业利润率受到严重压缩。与此同时，资金大量流入AI/半导体主题（电子+69%、电信+93%），进一步剥夺了汽车板块的增量资金。"
+      "now_zh": "汽车整车板块处于明确的底部阶段（相对强度排名20/31，位于200日均线下方，胜率37.2%），自2025年9月高点以来跌幅已达-26.1%。当前行情明显向科技/人工智能和电信板块轮动，汽车并未受益：周期股整体仅+0.3%，而汽车板块达-22.3%，确认为板块特有的结构性压力而非指数整体拖累。核心压力来自两端挤压：需求侧，新能源车购置税免税上限自2026年1月起减半至15,000元（原30,000元），导致2025年12月透支消费后，2026年1月销量出现断崖式下滑（比亚迪国内新能源销量同比降约53%）；供给侧，价格战持续激化，行业利润率受到严重压缩。与此同时，资金大量流入AI/半导体主题（电子+69%、电信+93%），进一步剥夺了汽车板块的增量资金。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_baijiu": {
       "legs": {
@@ -734,7 +746,11 @@
         }
       },
       "now": "Baijiu is deep in a major selloff leg that began Aug 26, 2025 and has erased 43.4% through June 2026, placing it at a confirmed trough (pos=0.0, rs_rank=21/31, below 200-day MA). The current cross-asset backdrop is a pure growth/tech-led tape: Electronics +96%, Telecoms +109% while Food and Bev (the baijiu proxy) sits at -29.9% in the same window, a 26pp growth-minus-value style gap that is the widest in this 5-year series. Fundamentally, the sector is in the deepest channel-inventory stress in years: wholesale Feitian Moutai prices fell 36% in 2025, 18 of 20 listed baijiu companies reported revenue and profit declines in 2025 annual results, and average industry inventory turnover bloated to roughly 1,400 days. Capital is rotating into AI, semiconductors, and Huawei-ecosystem hardware (DeepSeek catalyst January 2025, Huawei chip roadmap disclosures triggering a $240bn September 2025 rally), and baijiu's consumption-confidence story has no near-term catalyst while deflation persists and property wealth effects remain deeply negative.",
-      "now_zh": "白酒板块目前处于深度回调腿（2025年8月26日起），最大跌幅已达43.4%（截至2026年6月），处于周期底部（位置评分0.0，相对强度排名21/31，低于200日均线）。当前跨资产格局为纯成长/科技主导行情——电子+96%、通信+109%，而食品饮料（白酒代理）同期下跌29.9%，成长-价值风格利差高达26个百分点，为本系列五年内最宽。基本面层面，渠道库存压力达历史极值：飞天茅台批价2025年全年累计下降36%，20家A股白酒上市公司中18家2025年年报营收及净利均同比下滑，行业平均库存消化周期膨胀至约1,400天。资金流向信号明确：流动性正流入AI、半导体与华为生态硬件（DeepSeek催化剂2025年1月、华为芯片路线图发布引发2025年9月2,400亿美元级别行情），白酒消费信心逻辑在通缩延续、房产财富效应持续为负的背景下缺乏近期催化剂。"
+      "now_zh": "白酒板块目前处于深度回调腿（2025年8月26日起），最大跌幅已达43.4%（截至2026年6月），处于周期底部（位置评分0.0，相对强度排名21/31，低于200日均线）。当前跨资产格局为纯成长/科技主导行情——电子+96%、通信+109%，而食品饮料（白酒代理）同期下跌29.9%，成长-价值风格利差高达26个百分点，为本系列五年内最宽。基本面层面，渠道库存压力达历史极值：飞天茅台批价2025年全年累计下降36%，20家A股白酒上市公司中18家2025年年报营收及净利均同比下滑，行业平均库存消化周期膨胀至约1,400天。资金流向信号明确：流动性正流入AI、半导体与华为生态硬件（DeepSeek催化剂2025年1月、华为芯片路线图发布引发2025年9月2,400亿美元级别行情），白酒消费信心逻辑在通缩延续、房产财富效应持续为负的背景下缺乏近期催化剂。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_banks": {
       "legs": {
@@ -760,7 +776,11 @@
         }
       },
       "now": "Banks are in a post-peak corrective phase (-7.0% in the current window, rs_rank 11/31), having topped in July 2025 after a multi-year 68.6% high-dividend re-rating cycle. The current tape is a risk-on, growth-led rally: Electronics (+75.5%) and Telecoms (+67.7%) dominate, growth beats value by 18.2pp, and cyclicals (+0.3%) barely outpace a near-flat SHCOMP (+1.6%) while defensives sink (-12.1%). In this AI/electronics liquidity surge the defensive asset-famine bid for bank dividends has faded - with bond yields still compressed but risk appetite rotating back into thematic growth plays. Banks are a relative laggard waiting for either a risk-off shock (which would restore dividend-safety flows) or a new earnings/capital-injection catalyst to re-engage value buyers.",
-      "now_zh": "银行板块处于峰后回调阶段（当前窗口跌7.0%，相对强度排名31只中第11），在经历2025年7月高点前长达68.6%的高股息重估行情之后目前承压。当前市场为风险偏好回升、成长主导的行情：电子（+75.5%）和通信（+67.7%）领涨，成长跑赢价值18.2个百分点，上证综指仅涨1.6%。在AI/科技主题流动性涌入的背景下，\"资产荒\"驱动的银行高股息防御逻辑暂时退潮；债券利率仍低，但市场风险偏好已向主题成长轮动。银行需等待风险偏好逆转（资金重返防御高股息）或新一轮盈利/注资催化剂方可重新吸引价值型买盘。"
+      "now_zh": "银行板块处于峰后回调阶段（当前窗口跌7.0%，相对强度排名31只中第11），在经历2025年7月高点前长达68.6%的高股息重估行情之后目前承压。当前市场为风险偏好回升、成长主导的行情：电子（+75.5%）和通信（+67.7%）领涨，成长跑赢价值18.2个百分点，上证综指仅涨1.6%。在AI/科技主题流动性涌入的背景下，\"资产荒\"驱动的银行高股息防御逻辑暂时退潮；债券利率仍低，但市场风险偏好已向主题成长轮动。银行需等待风险偏好逆转（资金重返防御高股息）或新一轮盈利/注资催化剂方可重新吸引价值型买盘。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_battery": {
       "legs": {
@@ -966,7 +986,11 @@
         }
       },
       "now": "Battery & Lithium is in a confirmed trough/bottoming phase (position 25.6 out of 100, below 200-day MA, rs_rank 12/31 — deep in the laggard quadrant). The now_ctx shows it posted -3.8% in the current window while SHCOMP rose +1.6%, meaning it is severely under-participating in the current growth-led, risk-on tape. Electronics (+75.5%) and Telecoms (+67.7%) are absorbing liquidity while Battery & Lithium lags — consistent with AI/semiconductor themes pulling capital away from the EV supply chain complex. Cyclicals broadly lead defensives (+0.3% vs -12.1%) with an 18.2pp growth-over-value tilt, signaling this is a theme-driven liquidity rally rather than a battery-specific re-rating. Lithium carbonate prices pulled back ~15% from their May 2026 peak (CNY ~200,500/tonne) amid rising Guangzhou Futures Exchange inventories, early mine-restart signals from Australia, and sodium-battery competition anxiety, keeping Battery & Lithium in digestion mode after the massive April 2025-May 2026 bull leg.",
-      "now_zh": "锂电池板块目前处于经确认的底部磨底阶段（位置25.6/100，低于200日均线，强度排名12/31，深陷弱势区间）。当前窗口板块录得-3.8%，而上证指数上涨+1.6%，说明锂电在成长股主导的风险偏好行情中严重跑输。电子（+75.5%）和通信（+67.7%）是主线，成长/价值利差达18.2pp，体现的是人工智能/半导体主题驱动的流动性行情，而非锂电板块的基本面重估。碳酸锂价格自2026年5月峰值（约20万元/吨）回落约15%，广期所库存攀升、澳矿复产信号及钠离子电池替代威胁压制近期情绪，板块在2025年4月至2026年5月大牛腿后进入消化整固阶段。"
+      "now_zh": "锂电池板块目前处于经确认的底部磨底阶段（位置25.6/100，低于200日均线，强度排名12/31，深陷弱势区间）。当前窗口板块录得-3.8%，而上证指数上涨+1.6%，说明锂电在成长股主导的风险偏好行情中严重跑输。电子（+75.5%）和通信（+67.7%）是主线，成长/价值利差达18.2pp，体现的是人工智能/半导体主题驱动的流动性行情，而非锂电板块的基本面重估。碳酸锂价格自2026年5月峰值（约20万元/吨）回落约15%，广期所库存攀升、澳矿复产信号及钠离子电池替代威胁压制近期情绪，板块在2025年4月至2026年5月大牛腿后进入消化整固阶段。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_brokers": {
       "legs": {
@@ -1172,7 +1196,11 @@
         }
       },
       "now": "Brokers & Securities are in a Recovery phase (cycle position 22.5, rs_rank 6 of 31), sitting below the 200-day moving average with a BUY signal active but posting a -7.9% return in the current measurement window. The live tape is growth-led and risk-on — Electronics +75.5% and Telecoms +67.7% top the Shenwan board while SHCOMP is up just +1.6%, signalling a narrow theme-driven rally rather than a broad financial-beta surge. Growth outpaces value by 18.2pp, which historically rewards Computers and Electronics over Brokers; the sector is still in early recovery after the Aug-2025 to Apr-2026 selloff that accompanied a commodity-and-value rotation. A re-expansion of A-share daily turnover and margin financing balances would be the ignition catalyst for the next broker up-leg.",
-      "now_zh": "券商板块处于修复阶段（周期位置22.5，相对强弱排名31只中第6），仍位于200日均线下方，技术面发出买入信号，但当前窗口回报为-7.9%。当前市场为成长主导的风险偏好行情——申万电子+75.5%、通信+67.7%领涨，而上证综指仅+1.6%，反映窄基主题行情而非宽基金融贝塔上涨。成长跑赢价值18.2个百分点，历史上此类格局利好计算机与电子而非券商。板块在2025年8月至2026年4月下行（伴随商品/价值轮动）后处于早期修复区；若A股日均成交量及两融余额重新扩张，将是下一轮券商行情的引擎。"
+      "now_zh": "券商板块处于修复阶段（周期位置22.5，相对强弱排名31只中第6），仍位于200日均线下方，技术面发出买入信号，但当前窗口回报为-7.9%。当前市场为成长主导的风险偏好行情——申万电子+75.5%、通信+67.7%领涨，而上证综指仅+1.6%，反映窄基主题行情而非宽基金融贝塔上涨。成长跑赢价值18.2个百分点，历史上此类格局利好计算机与电子而非券商。板块在2025年8月至2026年4月下行（伴随商品/价值轮动）后处于早期修复区；若A股日均成交量及两融余额重新扩张，将是下一轮券商行情的引擎。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_coal": {
       "legs": {
@@ -1378,7 +1406,11 @@
         }
       },
       "now": "Coal (cn_coal) is in a confirmed Downturn phase (Rolling over), sitting at the 65th percentile of its historical range with a SELL signal and trading below its 200-day moving average. The current Shenwan cross-asset tape is a growth/tech-led RISK-ON rally: Electronics (+75.5%), Telecoms (+67.7%), and Building Materials (+48.1%) lead, while Coal posts only +8.9% -- ranking 16th of 31 industries and badly trailing the pack in a market that is up only +1.6% on SHCOMP. Cyclicals narrowly beat defensives (+0.3% vs -12.1%), but the 18.2pp growth-over-value style gap confirms this is a liquidity/AI-theme tape rather than a broad commodity/value cycle. Coal's modest gain in a surging market underlines its deteriorating relative strength: dividend/value positioning is being actively rotated out of in favor of tech-hardware and new-energy themes, consistent with the basket's SELL signal and below-200d posture.",
-      "now_zh": "煤炭板块（cn_coal）处于确认的下行阶段（\"滚顶回落\"），在历史区间中位于第65百分位，技术面发出卖出信号，且股价位于200日均线下方。当前申万行业横截面呈现成长/科技主导的风险偏好格局：电子（+75.5%）、通信（+67.7%）、建材（+48.1%）领涨，而煤炭仅录得+8.9%，在31个行业中排名第16位，在上证综指仅上涨1.6%的背景下大幅跑输。周期股小幅跑赢防御股（+0.3% vs -12.1%），但成长风格对价值风格的18.2pp溢价确认当前是流动性/AI主题驱动的行情，而非大宗商品/价值周期。煤炭在市场整体上涨背景下涨幅有限，表明其相对强度持续恶化：高股息/价值配置正被科技硬件与新能源主题主动替换，与该板块的卖出信号和位于200日均线下方的技术面相符。"
+      "now_zh": "煤炭板块（cn_coal）处于确认的下行阶段（\"滚顶回落\"），在历史区间中位于第65百分位，技术面发出卖出信号，且股价位于200日均线下方。当前申万行业横截面呈现成长/科技主导的风险偏好格局：电子（+75.5%）、通信（+67.7%）、建材（+48.1%）领涨，而煤炭仅录得+8.9%，在31个行业中排名第16位，在上证综指仅上涨1.6%的背景下大幅跑输。周期股小幅跑赢防御股（+0.3% vs -12.1%），但成长风格对价值风格的18.2pp溢价确认当前是流动性/AI主题驱动的行情，而非大宗商品/价值周期。煤炭在市场整体上涨背景下涨幅有限，表明其相对强度持续恶化：高股息/价值配置正被科技硬件与新能源主题主动替换，与该板块的卖出信号和位于200日均线下方的技术面相符。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_consumer_elec": {
       "legs": {
@@ -1562,7 +1594,11 @@
         }
       },
       "now": "Consumer Electronics (the Apple/Android supply chain: precision assembly, acoustics, display, PCB) sits at a 98th-percentile cycle position -- a confirmed Topping phase -- with the basket up 53.4% in the current window versus SHCOMP +1.6%. Shenwan Electronics leads the universe at +75.5% and Telecoms at +67.7%, while defensives (Agriculture, Beauty, Retail) average -12.1%. The growth-minus-value spread of +18.2pp and the cyclical-vs-defensive gap of 37pp signal a late-cycle, liquidity-driven tape. The proximate driver is the AI-phone upgrade narrative: DeepSeek on-device model proliferation, Huawei Mate/foldable premium ramp, and Apple iPhone 17 supply chain orders sustaining Chinese component makers. At rs_rank 2 of 31 and well above the 200-day moving average, the basket is at the highest relative-strength reading in its five-year history -- a configuration that historically precedes rotation-driven mean-reversion rather than further sustained outperformance.",
-      "now_zh": "消费电子（果链/AI手机供应链）当前处于98百分位，已进入顶部区间。本轮窗口篮子涨幅53.4%，远超沪综指+1.6%。申万电子子行业以+75.5%领跑全市场，通信紧随其后（+67.7%），而防御性板块（农业、美护、零售）均值-12.1%。成长-价值利差+18.2pp、周期vs防御37pp的极端分化，均指向流动性驱动的周期末段叙事：AI手机升级（DeepSeek端侧模型普及、华为Mate折叠旗舰、苹果iPhone 17供应链备货）是近端催化剂。篮子相对强度排名第2（共31只），远在200日均线上方——历史上此配置往往预示轮动性回调风险，而非持续超额收益的起点。"
+      "now_zh": "消费电子（果链/AI手机供应链）当前处于98百分位，已进入顶部区间。本轮窗口篮子涨幅53.4%，远超沪综指+1.6%。申万电子子行业以+75.5%领跑全市场，通信紧随其后（+67.7%），而防御性板块（农业、美护、零售）均值-12.1%。成长-价值利差+18.2pp、周期vs防御37pp的极端分化，均指向流动性驱动的周期末段叙事：AI手机升级（DeepSeek端侧模型普及、华为Mate折叠旗舰、苹果iPhone 17供应链备货）是近端催化剂。篮子相对强度排名第2（共31只），远在200日均线上方——历史上此配置往往预示轮动性回调风险，而非持续超额收益的起点。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_defense": {
       "legs": {
@@ -1728,7 +1764,11 @@
         }
       },
       "now": "Defense & Aerospace sits at cycle position 2.7 — trough-phase, bottoming after a -19.6% selloff from the January 2026 peak. The sector ranks 8th of 31 Shenwan industries in the current window, a sharp demotion from its prior leadership. The current tape is growth/cyclical-led (Electronics +75.5%, Telecoms +67.7%, growth-minus-value +18.2pp) while Defense has gained only +0.7%, lagging its own style peers by a wide margin. This under-participation is consistent with post-rally earnings disappointment and delivery-cycle exhaustion following the massive 2025 advance. The sector sits above its 200-day moving average and carries a 65.8% historical win-rate at trough-phase, suggesting the current positioning may be constructive for a mean-reversion entry rather than the start of a new structural bull leg.",
-      "now_zh": "国防航天板块处于本轮周期低位（周期得分2.7），自2026年1月高点累计回调19.6%，目前处于筑底阶段。板块在申万31个行业中排名第8，较此前领涨地位大幅滑落。当前市场为成长/周期风格主导（电子+75.5%、通信+67.7%，成长-价值利差+18.2pp），而军工本期涨幅仅0.7%，远落后于同属成长风格的行业。这一分化与2025年大幅上涨后业绩兑现不及预期、交付周期消化密切相关。板块仍在200日均线之上，历史上筑底阶段胜率达65.8%，当前或为均值回归的介入窗口，而非新一轮结构性牛市的起点。"
+      "now_zh": "国防航天板块处于本轮周期低位（周期得分2.7），自2026年1月高点累计回调19.6%，目前处于筑底阶段。板块在申万31个行业中排名第8，较此前领涨地位大幅滑落。当前市场为成长/周期风格主导（电子+75.5%、通信+67.7%，成长-价值利差+18.2pp），而军工本期涨幅仅0.7%，远落后于同属成长风格的行业。这一分化与2025年大幅上涨后业绩兑现不及预期、交付周期消化密切相关。板块仍在200日均线之上，历史上筑底阶段胜率达65.8%，当前或为均值回归的介入窗口，而非新一轮结构性牛市的起点。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_food_bev": {
       "legs": {
@@ -1874,7 +1914,11 @@
         }
       },
       "now": "Food & Beverage sits in a confirmed trough phase (pos=0.1, rs_rank 14 of 31, below 200-day MA, -10.4% in the current window) against a tape entirely dominated by AI-tech and cyclical growth. Electronics (+75.5%), Telecoms (+67.7%), and Building Materials (+48.1%) lead while defensives avg -12.1% -- the sector is being doubly penalized by both its defensive labeling and ongoing structural headwinds (baijiu inventory destocking, consumer price deflation, weak gifting/hospitality demand). The SHCOMP is only +1.6% and growth beats value by 18.2pp, signaling a liquidity-theme tape where food/bev earnings-quality and dividend appeal draws zero premium. The sector is in the late stage of the post-2024-trough laggard phase: it bounced nominally from the Jan 2024 low but that entire cycle was a tech-led surge in which food/bev was the bottom-3 performer, suggesting the sector has not yet found a genuinely catalyst-driven floor and needs either a macro shift toward consumption policy stimulus or a meaningful de-rating of growth valuations to rotate attention back.",
-      "now_zh": "食品饮料目前处于确认触底阶段（周期位置0.1，相对强弱排名31中第14，低于200日均线，本窗口下跌10.4%），整体市场被AI科技与周期成长主导。电子（+75.5%）、通信（+67.7%）、建材（+48.1%）领涨，防御性板块均值-12.1%——该板块因其防御属性叠加白酒库存去化、消费价格通缩、宴请礼赠需求疲弱等结构性压制而双重承压。上证综指仅+1.6%，成长/价值利差达18.2pp，市场呈现流动性驱动主题行情，食饮的业绩确定性与高股息特征无法获得溢价。板块处于2024年1月触底后的补涨尾声，但该轮反弹系科技主导，食饮全程垫底，尚未形成独立的催化剂驱动底部，需等待消费刺激政策落地或成长估值实质性回落方可驱动资金轮动。"
+      "now_zh": "食品饮料目前处于确认触底阶段（周期位置0.1，相对强弱排名31中第14，低于200日均线，本窗口下跌10.4%），整体市场被AI科技与周期成长主导。电子（+75.5%）、通信（+67.7%）、建材（+48.1%）领涨，防御性板块均值-12.1%——该板块因其防御属性叠加白酒库存去化、消费价格通缩、宴请礼赠需求疲弱等结构性压制而双重承压。上证综指仅+1.6%，成长/价值利差达18.2pp，市场呈现流动性驱动主题行情，食饮的业绩确定性与高股息特征无法获得溢价。板块处于2024年1月触底后的补涨尾声，但该轮反弹系科技主导，食饮全程垫底，尚未形成独立的催化剂驱动底部，需等待消费刺激政策落地或成长估值实质性回落方可驱动资金轮动。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_gold": {
       "legs": {
@@ -2040,7 +2084,11 @@
         }
       },
       "now": "China Gold Miners are at a trough/bottoming phase (pos=1.0, rs_rank=22/31), down -21% in the current window against a SHCOMP that is only +1.6%. The tape is a risk-on, growth-led beta rally in which Electronics (+75.5%) and Telecoms (+67.7%) dominate -- a classic AI/tech rotation that crowds out commodity names. Defensives average -12.1% while cyclicals average +0.3%, confirming the market is not broadly lifting materials. Gold miners are lagging because bullion has corrected sharply from its January 2026 all-time high (~$5,597/oz) toward the $4,000-4,200 range, retail gold trading access on the Shanghai Gold Exchange has been curtailed by major Chinese banks (ICBC, CCB, Postal Savings), and investor attention has pivoted decisively to domestic AI and semiconductor names. The sector sits well below its 200-day moving average with no buy signal active; the bottoming read is consistent with gold price correction finding a floor rather than any positive domestic catalyst having emerged yet.",
-      "now_zh": "中国黄金矿业板块当前处于筑底阶段（位置值1.0，相对强度排名22/31），本期窗口下跌-21%，而同期上证综指仅上涨1.6%。当前行情为成长风格主导的风险偏好上行，电子（+75.5%）与通信（+67.7%）领涨，资金集中流入AI/科技轮动，商品类板块明显承压。防御性行业均值-12.1%，周期性行业均值+0.3%，说明大盘并未全面拉动资源类。黄金矿业落后的核心原因在于金价已从2026年1月29日历史高点（约5597美元/盎司）大幅回调至4000-4200美元区间，多家主要银行（工行、建行、邮储银行等）已限制个人投资者通过上海黄金交易所参与黄金交易，同时资金大规模流入国内AI半导体板块。板块股价仍处于200日均线之下，无买入信号，筑底性质与金价回调寻底相符，尚无国内积极催化剂出现。"
+      "now_zh": "中国黄金矿业板块当前处于筑底阶段（位置值1.0，相对强度排名22/31），本期窗口下跌-21%，而同期上证综指仅上涨1.6%。当前行情为成长风格主导的风险偏好上行，电子（+75.5%）与通信（+67.7%）领涨，资金集中流入AI/科技轮动，商品类板块明显承压。防御性行业均值-12.1%，周期性行业均值+0.3%，说明大盘并未全面拉动资源类。黄金矿业落后的核心原因在于金价已从2026年1月29日历史高点（约5597美元/盎司）大幅回调至4000-4200美元区间，多家主要银行（工行、建行、邮储银行等）已限制个人投资者通过上海黄金交易所参与黄金交易，同时资金大规模流入国内AI半导体板块。板块股价仍处于200日均线之下，无买入信号，筑底性质与金价回调寻底相符，尚无国内积极催化剂出现。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_insurers": {
       "legs": {
@@ -2166,7 +2214,11 @@
         }
       },
       "now": "Insurers are in a confirmed Bottoming/Trough phase (rs_rank 17/31, below 200d MA, BUY signal triggered) after a -32.6% style-rotation selloff from the Jan-2026 peak. The current tape is a pure growth-over-value regime: Electronics +75.5%, Telecoms +67.7% lead while SHCOMP is barely +1.6% -- the index is flat but capital is violently rotating away from yield/dividend plays into AI/tech thematic names. Insurers face a dual headwind: the CGB 10-year yield near 1.73% record lows compresses new-business-value discount rates and investment spreads, while the DeepSeek/AI thematic boom has pulled discretionary institutional capital into semiconductor and telecoms hardware. The -26.1% current-window return versus a +1.6% SHCOMP shows extreme relative underperformance consistent with trough washout conditions; a mean-reversion entry requires either a CGB yield stabilisation signal or a growth/value style rotation reversal.",
-      "now_zh": "保险板块处于明确的筑底阶段（相对强弱排名17/31，股价位于200日均线下方，系统已触发买入信号），此前经历了自2026年1月高点以来-32.6%的风格轮动式暴跌。当前市场为纯粹的成长压制价值格局：电子+75.5%、电信+67.7%强势领跑，而上证综指仅微涨+1.6%，指数原地踏步，资本却在剧烈轮动，撤离股息/收益类资产。保险面临双重压力：10年期国债收益率跌至约1.73%历史低位，压缩新业务价值折现率与投资利差；DeepSeek/AI主题热潮将增量资金吸入半导体与电信硬件赛道，致使价值/高息板块极度失宠。当前窗口-26.1%的回报与上证+1.6%的强烈对比，显示出典型的周期底部超卖特征。胜率信号对应约23%的历史复苏概率，风险收益比逐步改善，但仍需催化剂触发，或为国债收益率企稳（央行政策转向），或为成长/价值风格轮动逆转。"
+      "now_zh": "保险板块处于明确的筑底阶段（相对强弱排名17/31，股价位于200日均线下方，系统已触发买入信号），此前经历了自2026年1月高点以来-32.6%的风格轮动式暴跌。当前市场为纯粹的成长压制价值格局：电子+75.5%、电信+67.7%强势领跑，而上证综指仅微涨+1.6%，指数原地踏步，资本却在剧烈轮动，撤离股息/收益类资产。保险面临双重压力：10年期国债收益率跌至约1.73%历史低位，压缩新业务价值折现率与投资利差；DeepSeek/AI主题热潮将增量资金吸入半导体与电信硬件赛道，致使价值/高息板块极度失宠。当前窗口-26.1%的回报与上证+1.6%的强烈对比，显示出典型的周期底部超卖特征。胜率信号对应约23%的历史复苏概率，风险收益比逐步改善，但仍需催化剂触发，或为国债收益率企稳（央行政策转向），或为成长/价值风格轮动逆转。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_med_devices": {
       "legs": {
@@ -2332,7 +2384,11 @@
         }
       },
       "now": "Medical Devices & TCM is at a confirmed trough (pos=0.10, rs_rank=18/31, below 200-day MA, -24.3% trailing). The current regime is an extreme growth-over-value rotation: Electronics +75.5% and Telecoms +67.7% lead while Medical Devices sits at -22.0%, a 22pp gap to the growth leaders (growth-minus-value +18.2pp, cyclicals +0.3% vs defensives -12.1%). Per Bloomberg (June 10, 2026), the CSI Healthcare Index trades at ~2.7x P/B, a record low below even the 2008 GFC trough, as domestic capital concentrates in AI-hardware and semiconductor names. No buy signal is active; the setup is structural bottoming-watch, not an imminent reversal.",
-      "now_zh": "医疗器械与中药目前处于明确底部区间（位置分位0.10，相对强弱排名18/31，股价低于200日均线，近期窗口回报-24.3%）。当前市场处于极端成长风格主导格局：电子（+75.5%）、通信（+67.7%）领涨，而医疗板块以-22.0%居于落后方，成长股较价值股溢价高达18.2个百分点。据彭博社2026年6月10日报道，沪深300医疗卫生指数市净率约2.7倍，创历史新低，低于2008年金融危机时的估值底部，折射出资金向AI算力及半导体硬件极度集中配置的结构性趋势。当前无买入信号，板块仍处于等待底部确认阶段。"
+      "now_zh": "医疗器械与中药目前处于明确底部区间（位置分位0.10，相对强弱排名18/31，股价低于200日均线，近期窗口回报-24.3%）。当前市场处于极端成长风格主导格局：电子（+75.5%）、通信（+67.7%）领涨，而医疗板块以-22.0%居于落后方，成长股较价值股溢价高达18.2个百分点。据彭博社2026年6月10日报道，沪深300医疗卫生指数市净率约2.7倍，创历史新低，低于2008年金融危机时的估值底部，折射出资金向AI算力及半导体硬件极度集中配置的结构性趋势。当前无买入信号，板块仍处于等待底部确认阶段。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_metals": {
       "legs": {
@@ -2498,7 +2554,11 @@
         }
       },
       "now": "Industrial Metals is currently in a Trough/Bottoming phase, sitting at the 13.9th percentile of its 5-year range with the basket below its 200-day moving average and no buy signal active. The now_ctx shows the basket returned -3.8% over the current window while the broader SHCOMP gained +1.6%, confirming persistent underperformance against the index. The tape is a growth/AI rotation: Electronics (+75.5%) and Telecoms (+67.7%) dominate while cyclicals average only +0.3% and defensives are -12.1%, meaning the basket is losing even in a risk-on environment — capital is flowing to theme-driven tech, not commodity exposure. A potential base is forming after the -32% drawdown from the January 2026 peak, but a catalyst re-engagement (renewed PBoC easing, confirmed infrastructure demand acceleration, or tariff de-escalation) is required to reverse the growth-over-value rotation.",
-      "now_zh": "有色金属板块当前处于\"底部整固\"阶段，位于5年历史区间的13.9百分位，股价仍低于200日均线，暂无买入信号触发。当前窗口内该板块回报率为-3.8%，而上证综指同期上涨1.6%，持续跑输大盘。市场风格为成长/AI主题主导：电子（+75.5%）与通信（+67.7%）领涨，周期板块均值仅+0.3%，防御板块均值-12.1%，即便在整体风险偏好改善的背景下，资金依然流向科技主题而非商品资产。经历1月高点以来-32%的回调后，估值初现底部特征，但需明确催化剂（如央行再度宽松、基建需求加速或关税局势缓和）才能实现由成长向价值/周期的风格切换。"
+      "now_zh": "有色金属板块当前处于\"底部整固\"阶段，位于5年历史区间的13.9百分位，股价仍低于200日均线，暂无买入信号触发。当前窗口内该板块回报率为-3.8%，而上证综指同期上涨1.6%，持续跑输大盘。市场风格为成长/AI主题主导：电子（+75.5%）与通信（+67.7%）领涨，周期板块均值仅+0.3%，防御板块均值-12.1%，即便在整体风险偏好改善的背景下，资金依然流向科技主题而非商品资产。经历1月高点以来-32%的回调后，估值初现底部特征，但需明确催化剂（如央行再度宽松、基建需求加速或关税局势缓和）才能实现由成长向价值/周期的风格切换。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_pharma_cxo": {
       "legs": {
@@ -2742,7 +2802,11 @@
         }
       },
       "now": "Innovative Pharma & CXO is in a Bottoming phase as of late June 2026, sitting at just 6.2% above its measured cycle floor and ranked 7th of 31 Shenwan universes — a laggard posture. The current tape is a liquidity-driven growth/tech rotation (Electronics +75.5%, Telecoms +67.7% YTD; SHCOMP +1.6%), with cyclicals marginally leading defensives and growth sectors outpacing value by 18.2pp. Pharma itself has a near-flat current-window return (+0.4%), not participating in the Electronics/AI-led beta rally — it remains in the shadow of the April 2026 Trump 100% branded-drug tariff order that continues to weigh on global licensing valuations despite the broader China-US trade-truce environment. The structural out-licensing pipeline (record Q1 2026 cross-border deals exceeding $60bn) provides a fundamental floor, but capital is rotating toward tech infrastructure names away from pharma.",
-      "now_zh": "创新药与CXO板块截至2026年6月下旬处于筑底阶段，绝对位置仅高于周期低点6.2%，在申万31个行业中排名第7，属于明显落后者。当前市场由电子（年初至今+75.5%）、通信（+67.7%）主导的流动性驱动成长行情，上证综指微涨1.6%，成长风格领先价值18.2个百分点。医药板块本期涨幅仅0.4%，未能跟上以电子/AI为核心的Beta行情——2026年4月2日特朗普签署对品牌药100%关税令的压制仍未消散，尽管中美贸易整体摩擦有所缓和。从基本面看，2026年一季度跨境授权交易超600亿美元创历史新高，为板块提供了坚实底部支撑，但资金当前更青睐科技基础设施方向。"
+      "now_zh": "创新药与CXO板块截至2026年6月下旬处于筑底阶段，绝对位置仅高于周期低点6.2%，在申万31个行业中排名第7，属于明显落后者。当前市场由电子（年初至今+75.5%）、通信（+67.7%）主导的流动性驱动成长行情，上证综指微涨1.6%，成长风格领先价值18.2个百分点。医药板块本期涨幅仅0.4%，未能跟上以电子/AI为核心的Beta行情——2026年4月2日特朗普签署对品牌药100%关税令的压制仍未消散，尽管中美贸易整体摩擦有所缓和。从基本面看，2026年一季度跨境授权交易超600亿美元创历史新高，为板块提供了坚实底部支撑，但资金当前更青睐科技基础设施方向。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_rare_earth": {
       "legs": {
@@ -2968,7 +3032,11 @@
         }
       },
       "now": "Rare Earth and Magnets is in an Expansion/Trending phase, ranked 5th of 31 Shenwan universes with a 65.4% return in the current window. The basket sits at 46.6% of its historical percentile range, trading above its 200-day moving average. The rotation context is a clear risk-on, growth-led tape: Electronics (+75.5%) and Telecoms (+67.7%) lead while Agriculture and Retail lag; cyclicals outperform defensives by 12.4pp and growth beats value by 18.2pp against a SHCOMP of only +1.6%. Rare earths are substantially outperforming the index, driven by structural re-rating: China export licensing for heavy rare earths (active since April 2025, partially eased under the Nov 2025 US-China truce, hard controls set to resume Nov 2026) has inverted the price signal domestically so onshore producers benefit as scarcity premium is exported abroad. Robotics, AI humanoid, and EV motor demand are the forward earnings narrative; Beijing April 2026 MIIT enforcement crackdown on illegal output further tightens domestic supply and supports elevated onshore prices.",
-      "now_zh": "稀土永磁板块处于扩张/趋势上行阶段，在31个申万行业宇宙中排名第5，当前窗口回报率达65.4%。板块位于历史百分位区间46.6%处，运行于200日均线上方。当前轮动格局明确偏向风险偏好与成长主导：电子(+75.5%)和通信(+67.7%)领涨，农业与零售垫底；周期跑赢防御12.4个百分点，成长跑赢价值18.2个百分点，而上证指数仅涨1.6%。稀土板块大幅跑赢指数，核心驱动在于结构性重估：2025年4月启动的重稀土出口许可证制度（2025年11月中美贸易休战期间部分放松，2026年11月硬性管控重启）在国内形成价格信号倒置——境内NdPr价格受压但企业议价权提升，稀缺溢价被出口至境外。机器人、AI人形机器人及新能源汽车电机需求构成盈利预期的前瞻叙事，工信部2026年4月针对违规超产的专项执法行动进一步收紧了国内供给格局。"
+      "now_zh": "稀土永磁板块处于扩张/趋势上行阶段，在31个申万行业宇宙中排名第5，当前窗口回报率达65.4%。板块位于历史百分位区间46.6%处，运行于200日均线上方。当前轮动格局明确偏向风险偏好与成长主导：电子(+75.5%)和通信(+67.7%)领涨，农业与零售垫底；周期跑赢防御12.4个百分点，成长跑赢价值18.2个百分点，而上证指数仅涨1.6%。稀土板块大幅跑赢指数，核心驱动在于结构性重估：2025年4月启动的重稀土出口许可证制度（2025年11月中美贸易休战期间部分放松，2026年11月硬性管控重启）在国内形成价格信号倒置——境内NdPr价格受压但企业议价权提升，稀缺溢价被出口至境外。机器人、AI人形机器人及新能源汽车电机需求构成盈利预期的前瞻叙事，工信部2026年4月针对违规超产的专项执法行动进一步收紧了国内供给格局。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_robotics": {
       "legs": {
@@ -3172,7 +3240,11 @@
         }
       },
       "now": "The basket is in a Topping phase (pos 69.2/100, rs_rank 4/31) after a +151.5% rally from the April 2025 tariff-shock trough. The current window is the most growth-dominant in the basket's recorded history: SHCOMP +27.5% over the full leg, Electronics (+144.9%) and Telecoms (+256.6%) leading, while defensives are flat (+0.2%) and cyclicals surged (+34.2%), yielding a growth-over-value spread of 58.8pp. The rally is driven by the May 2025 US-China 90-day tariff truce, the 15th Five-Year Plan's explicit elevation of embodied intelligence and humanoid robots to strategic national priority (China ships 90% of global humanoid units in 2026), and accelerating commercial supply-chain buildout with leading producers targeting over 75,000 unit annual capacity. With the basket +25.7% on the current sub-leg and approaching prior all-time peak levels, leadership is narrowing to Electronics and Telecoms -- a classic late-cycle growth-style extension -- and the position at 69.2/100 confirms the topping setup signaled in the phase label.",
-      "now_zh": "篮子当前处于顶部阶段（位置69.2/100，强度排名第4/31），自2025年4月关税冲击低点以来已上涨151.5%。当前为本系列有记录以来最强的成长主导行情：上证综指在本阶段涨幅达27.5%，电子（+144.9%）与通信（+256.6%）领涨，而防御性板块仅持平（+0.2%），成长股相对价值股溢价高达58.8个百分点。核心驱动包括：2025年5月中美90天关税休战带来的流动性回流、\"十五五\"规划将具身智能与人形机器人明确列为战略性新兴产业，以及人形机器人供应链商业化加速落地（中国2026年全球出货占比约90%）。篮子当前子阶段已涨25.7%并接近历史高点，领涨品种收窄至电子与通信，呈现典型周期末段动量集中特征，顶部信号已触发。"
+      "now_zh": "篮子当前处于顶部阶段（位置69.2/100，强度排名第4/31），自2025年4月关税冲击低点以来已上涨151.5%。当前为本系列有记录以来最强的成长主导行情：上证综指在本阶段涨幅达27.5%，电子（+144.9%）与通信（+256.6%）领涨，而防御性板块仅持平（+0.2%），成长股相对价值股溢价高达58.8个百分点。核心驱动包括：2025年5月中美90天关税休战带来的流动性回流、\"十五五\"规划将具身智能与人形机器人明确列为战略性新兴产业，以及人形机器人供应链商业化加速落地（中国2026年全球出货占比约90%）。篮子当前子阶段已涨25.7%并接近历史高点，领涨品种收窄至电子与通信，呈现典型周期末段动量集中特征，顶部信号已触发。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_semis": {
       "legs": {
@@ -3318,7 +3390,11 @@
         }
       },
       "now": "China semiconductors (半导体) sit at cycle position 93.7 — deep in the Topping phase after a 400.8% rally from the February 2024 trough. The basket carries the highest relative-strength rank (rs_rank=1) in the 31-sector universe, yet the now_ctx signals warn of distribution: Electronics (+75.5%) and Telecoms (+67.7%) are co-leading while defensives are being crushed (Agriculture -26.3%, Beauty -26.9%, Retail -31.1%), confirming an extreme growth-over-value rotation (+18.2pp). SHCOMP itself is up only +1.6% in the current window, meaning the sector's outperformance is now entirely theme-driven (DeepSeek V4 + Huawei Ascend ecosystem validation), not index beta. At 93.7 cycle position with leadership narrowing to two adjacent growth sectors and the broader market barely positive, the technical setup rhymes with prior exhaustion peaks.",
-      "now_zh": "中国半导体板块目前处于周期位置93.7，正处于见顶阶段——自2024年2月低点以来已累计上涨400.8%。该板块在31个申万行业中相对强度排名第一（rs_rank=1），但当前上下文信号已显示出分配迹象：电子（+75.5%）与通信（+67.7%）联袂领涨，而防御性板块遭到重创（农业-26.3%、美容-26.9%、零售-31.1%），确认成长极度跑赢价值（+18.2pp）。上证综指本窗口仅上涨1.6%，意味着板块超额收益完全由主题驱动（DeepSeek V4 + 华为昇腾生态落地），而非指数贝塔。在周期位置93.7、领涨品种收窄至两个相邻成长行业、大盘几乎停滞的情况下，技术形态与历次见顶前的衰竭特征高度相似。"
+      "now_zh": "中国半导体板块目前处于周期位置93.7，正处于见顶阶段——自2024年2月低点以来已累计上涨400.8%。该板块在31个申万行业中相对强度排名第一（rs_rank=1），但当前上下文信号已显示出分配迹象：电子（+75.5%）与通信（+67.7%）联袂领涨，而防御性板块遭到重创（农业-26.3%、美容-26.9%、零售-31.1%），确认成长极度跑赢价值（+18.2pp）。上证综指本窗口仅上涨1.6%，意味着板块超额收益完全由主题驱动（DeepSeek V4 + 华为昇腾生态落地），而非指数贝塔。在周期位置93.7、领涨品种收窄至两个相邻成长行业、大盘几乎停滞的情况下，技术形态与历次见顶前的衰竭特征高度相似。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_soe_value": {
       "legs": {
@@ -3404,7 +3480,11 @@
         }
       },
       "now": "SOE Blue Chips are at a cycle trough (pos = 0.0, rs_rank 19 of 31), down ~14% in the current window while SHCOMP is up 1.6%. The tape is unambiguously growth-led: Electronics and Telecoms are up 66–75% while this basket languishes at the laggard end. Growth is beating value by 18 pp — the opposite of the structural tailwind that drove the 2021–2023 re-rating cycle. The basket sits below its 200-day moving average with no active buy signal, and cyclicals barely edge defensives (+0.3% vs -12.1%), confirming the market is chasing AI/tech themes rather than dividend yield or policy-driven SOE re-rating. The near-term setup is bottoming but requires either a style rotation back toward value/yield or a new SASAC-driven catalyst to break the downtrend.",
-      "now_zh": "中特估板块当前处于周期底部（位置得分0.0，相对强度排名19/31），本窗口累计跌约14%，而上证综指同期涨1.6%。市场行情明显由成长风格主导：电子涨逾75%、通信涨近68%，而本篮子仍处垫底区域。成长对价值溢价高达18个百分点，与2021—2023年中特估重估行情中价值主导的格局截然相反。篮子股价位于200日均线下方，无有效买入信号。周期股与防御股差距微弱（+0.3% vs -12.1%），显示资金追逐AI/科技主题而非高股息/政策性央企重估逻辑。短期格局为磨底阶段，需等待风格切回价值/高息或新一轮国资委驱动的政策催化才能打破跌势。"
+      "now_zh": "中特估板块当前处于周期底部（位置得分0.0，相对强度排名19/31），本窗口累计跌约14%，而上证综指同期涨1.6%。市场行情明显由成长风格主导：电子涨逾75%、通信涨近68%，而本篮子仍处垫底区域。成长对价值溢价高达18个百分点，与2021—2023年中特估重估行情中价值主导的格局截然相反。篮子股价位于200日均线下方，无有效买入信号。周期股与防御股差距微弱（+0.3% vs -12.1%），显示资金追逐AI/科技主题而非高股息/政策性央企重估逻辑。短期格局为磨底阶段，需等待风格切回价值/高息或新一轮国资委驱动的政策催化才能打破跌势。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_software": {
       "legs": {
@@ -3570,7 +3650,11 @@
         }
       },
       "now": "Software & AI Apps is currently in a bottoming phase (Trough), sitting at the 2.3rd percentile of its historical range and below the 200-day moving average. The current leg shows -15.8% for the series while SHCOMP is only -3.4%, making this a pronounced underperformer in an otherwise mildly positive broad market. The environment is risk-on and growth-tilted (cyclicals +0.3% vs defensives -12.1%, growth outpacing value by 18.2pp), but leadership has rotated away from software-application names into Electronics (+75.5%) and Telecoms (+67.7%). The basket is being displaced within the growth bucket by AI hardware and infrastructure plays, with the market rewarding chip fabs and network operators over application-layer software whose subscription economics face disruption risk from agentic AI. A stabilization signal requires Shenwan Computers to recover relative to Electronics and a fresh xinchuang procurement cycle or AI-application monetization catalyst.",
-      "now_zh": "软件与AI应用目前处于筑底阶段，历史分位仅2.3%，股价低于200日均线。当前阶段本系列下跌15.8%，而上证综指仅跌3.4%，在整体温和正收益的大市中明显跑输。市场整体风险偏好尚可，成长风格占优（周期强于防御：+0.3% vs -12.1%，成长跑赢价值18.2pp），但领涨的是电子（+75.5%）和通信（+67.7%），软件持续落后。板块内部正经历从应用层软件向AI算力基础设施（芯片、通信网络）的轮动，智能体AI打破软件订阅壁垒的竞争担忧压制估值。若要出现底部信号，需申万计算机指数相对电子止跌回升，同时出现AI应用商业化加速或信创政策利好。"
+      "now_zh": "软件与AI应用目前处于筑底阶段，历史分位仅2.3%，股价低于200日均线。当前阶段本系列下跌15.8%，而上证综指仅跌3.4%，在整体温和正收益的大市中明显跑输。市场整体风险偏好尚可，成长风格占优（周期强于防御：+0.3% vs -12.1%，成长跑赢价值18.2pp），但领涨的是电子（+75.5%）和通信（+67.7%），软件持续落后。板块内部正经历从应用层软件向AI算力基础设施（芯片、通信网络）的轮动，智能体AI打破软件订阅壁垒的竞争担忧压制估值。若要出现底部信号，需申万计算机指数相对电子止跌回升，同时出现AI应用商业化加速或信创政策利好。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "cn_solar": {
       "legs": {
@@ -3756,7 +3840,11 @@
         }
       },
       "now": "Solar/PV is in a confirmed Downturn phase (rolling over from its May 2026 peak) despite the SHCOMP tape remaining mildly positive (+1.6%). The basket returned only +3.7% in the current window, ranking 15th of 31 Shenwan peers, while Electronics (+75.5%) and Telecoms (+67.7%) dominate the growth rotation. The tape is risk-on and growth-led (growth vs value +18.2pp), but leadership belongs to AI hardware and infrastructure names, not energy equipment. Solar remains below its 200-day moving average. The structural backdrop is still bearish: module capacity (~1,200 GW) roughly doubles global demand (~600 GW), the 22 largest PV firms posted combined CNY 10.5bn in Q1 2026 losses, and while polysilicon prices recovered +54% from their June 2025 record lows they have since rolled over amid renewed inventory builds. The May 2026 peak likely marks exhaustion of the MIIT supply-discipline narrative rather than a genuine fundamental turn.",
-      "now_zh": "光伏板块自2026年5月高点确认进入回落阶段，尽管上证综指小幅上涨（+1.6%）。本期篮子涨幅仅3.7%，在申万31个行业中排名第15位，处于下半区；而电子（+75.5%）、通信（+67.7%）主导成长行情。当前市场风险偏好明显（成长vs价值+18.2pp），但领涨的是AI硬件与新型基础设施板块，而非电力设备。光伏仍位于200日均线下方，结构性背景依然偏空：组件产能（约1200GW）约为全球需求（约600GW）的两倍，22家主要光伏企业2026年一季度合计亏损超105亿元；多晶硅价格虽从2025年6月历史低位反弹54%，但随库存再度积累已重新承压。2026年5月高点大概率标志着工信部主导的供给侧纪律叙事已被充分消化，而非基本面真正好转。"
+      "now_zh": "光伏板块自2026年5月高点确认进入回落阶段，尽管上证综指小幅上涨（+1.6%）。本期篮子涨幅仅3.7%，在申万31个行业中排名第15位，处于下半区；而电子（+75.5%）、通信（+67.7%）主导成长行情。当前市场风险偏好明显（成长vs价值+18.2pp），但领涨的是AI硬件与新型基础设施板块，而非电力设备。光伏仍位于200日均线下方，结构性背景依然偏空：组件产能（约1200GW）约为全球需求（约600GW）的两倍，22家主要光伏企业2026年一季度合计亏损超105亿元；多晶硅价格虽从2025年6月历史低位反弹54%，但随库存再度积累已重新承压。2026年5月高点大概率标志着工信部主导的供给侧纪律叙事已被充分消化，而非基本面真正好转。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     }
   },
   "epoch": "price_f224a71d",
@@ -4367,7 +4455,11 @@
         }
       },
       "now": "Agriculture is at a confirmed trough, ranked #29/31 Shenwan sectors (-26.3% this leg) while SHCOMP posts only +1.6%. The current tape is a pure growth/tech rotation — Electronics +75.5%, Telecoms +67.7%, Bldg Mat +48.1% lead by an 18.2pp growth premium — and Agriculture is a structural laggard: hog prices remain near multi-year lows with industry overcapacity still roughly 3 million breeding sows above the authorities' target, and no sector-specific policy catalyst has emerged. Cyclicals (+0.3%) barely beat defensives (-12.1%), confirming a narrow liquidity-driven theme rather than broad reflation. Agriculture sits in the abandoned quadrant: neither a growth theme nor a commodity/rate beneficiary in the current regime; a turn requires either a hog price recovery or a broad policy pivot combining PBOC easing and a food-security-focused No.1 Document.",
-      "now_zh": "农林牧渔确认处于底部阶段，申万行业排名倒数第三（#29/31，本轮-26.3%），上证指数仅微涨1.6%。当前市场为纯粹的成长/科技主题轮动——电子+75.5%、通信+67.7%、建材+48.1%领涨，成长溢价达18.2个百分点——农林牧渔为结构性落后者：生猪价格仍处低位，行业能繁母猪存栏超官方警戒线约300万头，缺乏板块特定催化剂。周期股（+0.3%）仅微超防御股（-12.1%），印证当前为流动性驱动的窄基行情而非广谱再通胀。农林牧渔被市场边缘化，既非成长主题也非利率/商品受益方；转机需待生猪价格实质性回升或宏观政策全面转向。"
+      "now_zh": "农林牧渔确认处于底部阶段，申万行业排名倒数第三（#29/31，本轮-26.3%），上证指数仅微涨1.6%。当前市场为纯粹的成长/科技主题轮动——电子+75.5%、通信+67.7%、建材+48.1%领涨，成长溢价达18.2个百分点——农林牧渔为结构性落后者：生猪价格仍处低位，行业能繁母猪存栏超官方警戒线约300万头，缺乏板块特定催化剂。周期股（+0.3%）仅微超防御股（-12.1%），印证当前为流动性驱动的窄基行情而非广谱再通胀。农林牧渔被市场边缘化，既非成长主题也非利率/商品受益方；转机需待生猪价格实质性回升或宏观政策全面转向。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801030": {
       "legs": {
@@ -4753,7 +4845,11 @@
         }
       },
       "now": "Chemicals (基础化工) is at a Trough/Bottoming phase as of late June 2026, sitting at cycle-position 22.5 with RS rank 6/31 on a trailing window where the sector returned +9.1% against a SHCOMP up only +1.6%. The tape is a pronounced growth-vs-value bifurcation: Electronics (+75.5%), Telecoms (+67.7%), and Building Materials (+48.1%) lead in a liquidity/AI-hardware-theme rally, while cyclicals as a group are barely positive (+0.3% avg) against defensives at -12.1%. Chemicals trails the growth leaders widely; sector re-leadership will likely require a PPI or commodity-price inflection, a broad-based macro stimulus second wave, or a growth-to-value rotation catalyst. The sector is above its 200-day moving average and a 96th-percentile return-window reading suggests the multi-year bottoming process is mature, but timing the next major rally leg depends on evidence of industrial-cycle turning.",
-      "now_zh": "基础化工目前处于筑底阶段（周期位置22.5，RS排名6/31），本窗口涨幅+9.1%，而同期上证综指仅涨1.6%。当前行情以AI与科技硬件主题驱动为主：电子（+75.5%）、通信（+67.7%）、建材（+48.1%）领涨，成长股相对价值股溢价高达18.2pp，化工板块在周期股中处于中游。板块若要重回申万行业前五，仍有赖于PPI上行、大宗商品价格企稳或市场风格从成长向价值切换。板块已站上200日均线，收益率窗口百分位达96%，显示底部成熟，但启动新一轮主升浪仍需工业周期见底的明确信号。"
+      "now_zh": "基础化工目前处于筑底阶段（周期位置22.5，RS排名6/31），本窗口涨幅+9.1%，而同期上证综指仅涨1.6%。当前行情以AI与科技硬件主题驱动为主：电子（+75.5%）、通信（+67.7%）、建材（+48.1%）领涨，成长股相对价值股溢价高达18.2pp，化工板块在周期股中处于中游。板块若要重回申万行业前五，仍有赖于PPI上行、大宗商品价格企稳或市场风格从成长向价值切换。板块已站上200日均线，收益率窗口百分位达96%，显示底部成熟，但启动新一轮主升浪仍需工业周期见底的明确信号。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801040": {
       "legs": {
@@ -5195,7 +5291,11 @@
         }
       },
       "now": "Steel (801040) is in a confirmed Trough/Bottoming phase as of late June 2026, down -19.6% over the current window and ranked 27th out of 31 Shenwan industries, deep in the laggard bucket. The tape is a growth-rotated risk-on rally: Electronics (+75.5%) and Telecoms (+67.7%) are dominating as Beijing's AI/tech five-year plan directs capital into new productive forces, while cyclicals broadly flat-line (+0.3% avg vs defensives -12.1%) and Steel is squeezed by four simultaneous headwinds: a property sector now in its fifth year of contraction, record export volumes facing escalating anti-dumping duties in the EU and Southeast Asia, intensifying US tariff barriers on Chinese steel (Section 232 metals tariffs were re-strengthened in 2026), and capital fleeing old-economy names into AI infrastructure. The sector sits at 0.3x of its cycle range, below its 200-day moving average, with no buy signal, yet the bottoming label and low cycle position suggest the risk/reward is beginning to shift.",
-      "now_zh": "钢铁（801040）截至2026年6月底处于确认的\"筑底\"阶段，当前窗口累计下跌19.6%，在申万31个行业中排名第27位，深陷落后板块。当前市场呈现成长风格主导的风险偏好行情：电子（+75.5%）和通信（+67.7%）借北京AI/科技五年规划之势领涨，周期股整体表现平淡（均值+0.3%，对比防御板块-12.1%），而钢铁同时承受四重压力——房地产行业进入下行周期第五年、出口量创历史新高但欧盟与东南亚反倾销税持续升级、对美出口面临关税壁垒强化（2026年美国重新加码232条款金属关税），以及资金加速从旧经济流向AI基础设施赛道。该板块处于周期区间的0.3倍分位，低于200日均线，尚无买入信号，但筑底标签与低位周期分位显示赔率正在改善。"
+      "now_zh": "钢铁（801040）截至2026年6月底处于确认的\"筑底\"阶段，当前窗口累计下跌19.6%，在申万31个行业中排名第27位，深陷落后板块。当前市场呈现成长风格主导的风险偏好行情：电子（+75.5%）和通信（+67.7%）借北京AI/科技五年规划之势领涨，周期股整体表现平淡（均值+0.3%，对比防御板块-12.1%），而钢铁同时承受四重压力——房地产行业进入下行周期第五年、出口量创历史新高但欧盟与东南亚反倾销税持续升级、对美出口面临关税壁垒强化（2026年美国重新加码232条款金属关税），以及资金加速从旧经济流向AI基础设施赛道。该板块处于周期区间的0.3倍分位，低于200日均线，尚无买入信号，但筑底标签与低位周期分位显示赔率正在改善。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801050": {
       "legs": {
@@ -5795,7 +5895,11 @@
         }
       },
       "now": "Nonferrous Metals (801050) is in a Trough/Bottoming phase as of late June 2026, sitting at just 12.3% of its historical percentile rank and below its 200-day moving average. The current window shows the sector ranked 10th/31 with a near-flat -0.5% return while SHCOMP gained +1.6%, underperforming a mildly bullish tape dominated by Electronics (+75.5%), Telecoms (+67.7%), and Bldg Mat (+48.1%) in an AI/liquidity-driven market where growth beat value by 18.2pp. Cyclicals averaged +0.3% vs defensives -12.1%, confirming risk-on conditions, yet Nonferrous Metals is not participating in the leadership rotation. The sector sits in a post-blow-off cooling phase after the January 2026 speculative peak — copper hit a record $13,387/t and gold broke $5,000/oz, driven by Chinese retail speculators piling into commodity futures — followed by the sharpest selloff since 2022. With an 81.3% historical return-win rate at trough positioning, asymmetric upside exists if PBOC easing and infrastructure capex re-accelerate copper/aluminum demand, but near-term leadership remains firmly in Electronics/Tech and the sector must reclaim its 200-day moving average to confirm trend resumption.",
-      "now_zh": "有色金属（801050）截至2026年6月底处于\"筑底\"阶段，历史分位数仅12.3%，价格跌破200日均线。当前窗口内，板块在全市场31个一级行业中排名第10，绝对回报接近持平（-0.5%），而上证综指同期上涨1.6%，跑输大盘。当前行情由AI/流动性主题主导——电子（+75.5%）、通信（+67.7%）领涨，成长/价值风格溢价高达18.2个百分点。周期股整体均值+0.3%优于防御股-12.1%，显示风险偏好尚可，但有色金属未能跟涨。板块正处于2026年1月投机性高点后的冷却阶段——铜价创历史纪录13387美元/吨、黄金破5000美元/盎司（主要由国内散户期货投机推动），随后经历近年最深度回调。当前历史胜率高达81.3%，若央行降准降息与基建发力重新提振铜铝需求，不对称上行空间可观；但短线领涨权仍在科技成长板块，有色须重返200日均线方可确认趋势回归。"
+      "now_zh": "有色金属（801050）截至2026年6月底处于\"筑底\"阶段，历史分位数仅12.3%，价格跌破200日均线。当前窗口内，板块在全市场31个一级行业中排名第10，绝对回报接近持平（-0.5%），而上证综指同期上涨1.6%，跑输大盘。当前行情由AI/流动性主题主导——电子（+75.5%）、通信（+67.7%）领涨，成长/价值风格溢价高达18.2个百分点。周期股整体均值+0.3%优于防御股-12.1%，显示风险偏好尚可，但有色金属未能跟涨。板块正处于2026年1月投机性高点后的冷却阶段——铜价创历史纪录13387美元/吨、黄金破5000美元/盎司（主要由国内散户期货投机推动），随后经历近年最深度回调。当前历史胜率高达81.3%，若央行降准降息与基建发力重新提振铜铝需求，不对称上行空间可观；但短线领涨权仍在科技成长板块，有色须重返200日均线方可确认趋势回归。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801080": {
       "legs": {
@@ -6287,7 +6391,11 @@
         }
       },
       "now": "Electronics (SW 801080) is at Phase Topping with a cycle-position score of 96.2 after a 200.5% rally from the April 2025 trough. The sector ranks #1/31 in the current leg (+75.5% this leg), leading all Shenwan industries by a wide margin. Growth is outperforming value by 18.2 pp and cyclicals are beating defensives, confirming a liquidity/theme-driven tape. The dominant drivers are domestic AI semiconductor localization (Huawei Ascend, Cambricon, Biren IPO pipeline), DeepSeek efficiency breakthrough validating China AI chip stack, and the post-US-China tariff truce (May 2025 90-day pause reducing tariffs from 145% to 30%) restoring export visibility. With position at 96.2 and a topping signal, risk/reward has shifted asymmetrically: comparable prior peaks (Jun-2015, Feb-2020, Feb-2025) each triggered 23-42% drawdowns within weeks.",
-      "now_zh": "电子板块（申万801080）当前处于见顶阶段，周期位置得分高达96.2，自2025年4月低点以来累计涨幅达200.5%，在31个申万一级行业中排名第一（本阶段涨幅75.5%）。成长跑赢价值18.2个百分点，周期板块跑赢防御板块，格局为纯流动性/主题驱动。核心催化剂：国产AI芯片替代加速（华为昇腾、寒武纪、壁仞IPO管线）、DeepSeek技术突破验证国产算力栈可行性、中美关税休战（2025年5月90天暂停，关税从145%降至30%）恢复出口能见度。96.2的高位叠加见顶信号意味着风险收益已严重不对称——历史上类似极端领涨时刻（2015年6月、2020年2月、2025年2月）均在数周内出现23%-42%的快速回撤。"
+      "now_zh": "电子板块（申万801080）当前处于见顶阶段，周期位置得分高达96.2，自2025年4月低点以来累计涨幅达200.5%，在31个申万一级行业中排名第一（本阶段涨幅75.5%）。成长跑赢价值18.2个百分点，周期板块跑赢防御板块，格局为纯流动性/主题驱动。核心催化剂：国产AI芯片替代加速（华为昇腾、寒武纪、壁仞IPO管线）、DeepSeek技术突破验证国产算力栈可行性、中美关税休战（2025年5月90天暂停，关税从145%降至30%）恢复出口能见度。96.2的高位叠加见顶信号意味着风险收益已严重不对称——历史上类似极端领涨时刻（2015年6月、2020年2月、2025年2月）均在数周内出现23%-42%的快速回撤。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801110": {
       "legs": {
@@ -6713,7 +6821,11 @@
         }
       },
       "now": "Home Appliances is in a Trough/Bottoming phase (pos: 9.0, rs_rank: 8/31, below its 200-day MA), returning -9.2% in the current window versus SHCOMP +1.6%. The current tape is a classic growth/tech rotation: Electronics +75.5%, Telecoms +67.7%, growth leading value by 18.2pp. Appliances sits 15th of 31 sectors, deep in the laggard bucket -- a property-linked, cash-generative, dividend-quality sector that receives no bid in a liquidity and AI-theme driven market. The sector is pressured by soft domestic demand (weak property completions, slower renovation activity) and US tariff headwinds on appliance exports, but is supported by the 2026 continuation of China's consumer-goods trade-in (yi jiu huan xin) subsidy scheme. The setup mirrors prior coiled-spring bottoms seen in late 2018 and late 2022 when growth-style dominance eventually faded; no leadership signal yet confirms that rotation has begun.",
-      "now_zh": "家用电器处于底部/筑底阶段（位置评分9.0，RS排名8/31，股价低于200日均线），当前窗口回报-9.2%，而上证综指上涨+1.6%。当前市场为典型的成长/科技行情：电子+75.5%、通信+67.7%，成长风格领先价值风格18.2个百分点。家电在31个申万行业中排名第15，深陷落后阵营——板块具有高地产关联度、价值属性及稳定现金流，在流动性驱动的AI科技行情中缺乏买盘。板块受内需疲软（楼盘竣工放缓、装修周期减弱）及出口关税压力拖累，但受2026年延续的以旧换新补贴政策支撑。当前格局与2018年底及2022年底的筑底形态相似，彼时成长风格最终消退触发价值轮动，但当前领涨信号尚未确认这一切换。"
+      "now_zh": "家用电器处于底部/筑底阶段（位置评分9.0，RS排名8/31，股价低于200日均线），当前窗口回报-9.2%，而上证综指上涨+1.6%。当前市场为典型的成长/科技行情：电子+75.5%、通信+67.7%，成长风格领先价值风格18.2个百分点。家电在31个申万行业中排名第15，深陷落后阵营——板块具有高地产关联度、价值属性及稳定现金流，在流动性驱动的AI科技行情中缺乏买盘。板块受内需疲软（楼盘竣工放缓、装修周期减弱）及出口关税压力拖累，但受2026年延续的以旧换新补贴政策支撑。当前格局与2018年底及2022年底的筑底形态相似，彼时成长风格最终消退触发价值轮动，但当前领涨信号尚未确认这一切换。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801120": {
       "legs": {
@@ -7219,7 +7331,11 @@
         }
       },
       "now": "Food & Beverage is in the Trough/Bottoming phase (pos=0.0, below 200d MA, rs_rank 26/31), down 22% in the current leg as of 2026-06-26. The now_ctx is decisively risk-on and growth-led: Electronics +75.5%, Telecoms +67.7%, Bldg Mat +48.1% lead; cyclicals beat defensives by 12.4pp and growth beats value by 18.2pp with SHCOMP +1.6%. Food & Beverage is the archetypal laggard in this AI/DeepSeek infrastructure tape: capital rotates into hard-tech while consumer staples are stranded. The structural headwind is a renewed May-2025 austerity crackdown (CCP revised Regulations on Practicing Thrift, 21,000+ violations investigated in May 2025) that re-energized the ban on official banquets and gifting, hitting the baijiu channel hard with Moutai wholesale prices down 20%+ from their 2023 peaks and distributors carrying excess inventory. Until a domestic demand catalyst (LPR cuts, income-support fiscal package, or policy signal that anti-corruption pressure eases) triggers a rotation back toward defensives/value, the sector remains structurally sidelined.",
-      "now_zh": "食品饮料目前处于底部筑底阶段（位置0.0，股价低于200日均线，申万行业排名26/31），本轮区间跌幅约22%。当前市场为明显的风险偏好+成长风格主导：电子+75.5%、通信+67.7%、建材+48.1%领涨，周期成长较消费防御跑赢12.4个百分点，成长超越价值18.2个百分点，上证综指+1.6%。食饮在当前以AI/DeepSeek数据基础设施为核心的流动性主题行情中是典型落后板块，资金持续流向半导体、算力板块。结构性压制来自2025年5月中共中央修订《厉行节约、反对浪费》规定，重申禁宴禁酒、大量核查违规，直击次高端及高端白酒核心渠道。叠加居民消费降级、渠道库存过剩、批价持续下滑，须等待LPR降息、收入提振或消费刺激政策落地，才有望触发防御/价值风格切换。"
+      "now_zh": "食品饮料目前处于底部筑底阶段（位置0.0，股价低于200日均线，申万行业排名26/31），本轮区间跌幅约22%。当前市场为明显的风险偏好+成长风格主导：电子+75.5%、通信+67.7%、建材+48.1%领涨，周期成长较消费防御跑赢12.4个百分点，成长超越价值18.2个百分点，上证综指+1.6%。食饮在当前以AI/DeepSeek数据基础设施为核心的流动性主题行情中是典型落后板块，资金持续流向半导体、算力板块。结构性压制来自2025年5月中共中央修订《厉行节约、反对浪费》规定，重申禁宴禁酒、大量核查违规，直击次高端及高端白酒核心渠道。叠加居民消费降级、渠道库存过剩、批价持续下滑，须等待LPR降息、收入提振或消费刺激政策落地，才有望触发防御/价值风格切换。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801130": {
       "legs": {
@@ -7677,7 +7793,11 @@
         }
       },
       "now": "Textiles & Apparel (801130) is in a Bottoming/Trough phase (pos=0.6) following a -57% drawdown from its Feb-2026 peak, ranked 17th of 31 Shenwan industries with a recent-window return of -11.1%. The now_ctx reveals a growth/tech-led tape (Electronics +75.5%, Telecoms +67.7%) where cyclicals broadly beat defensives (+0.3% vs -12.1%) on SHCOMP +1.6% — a risk-on but style-bifurcated rally that continues to leave consumer-discretionary/apparel names behind. Textiles is a double laggard: it underperforms both rallying cyclicals and falling defensives. The sector sits alongside Beauty and Retail — domestically-oriented consumer names structurally pressured by weak household income confidence, margin compression from yuan/cotton volatility, and persistent tariff risk on China's export-oriented mills. No buy signal is active (signal=null, below 200d MA), and rs_rank 14 with ret_win_pct of -33.6% confirms mean-reversion has not yet been endorsed by price leadership.",
-      "now_zh": "纺织服饰板块（801130）当前处于筑底/低谷阶段（pos=0.6），自2026年2月高点以来累计回撤57%，在申万31个一级行业中排名第17，近期窗口收益率为-11.1%。当前市场结构呈现成长/科技主导格局（电子+75.5%、通信+67.7%），周期股整体跑赢防御股（+0.3% vs -12.1%），上证综指微涨1.6%——属于风险偏好回升但风格高度分化的行情，消费可选/服装类个股持续被边缘化。纺织服饰呈现双重落后：既跑输上涨的周期股，也较防御股跌幅更大。板块与美容护理、商贸零售同属居民消费信心疲弱、棉价/汇率压缩利润、出口型工厂持续承受关税压力的结构性弱势领域。当前无买入信号（signal=null，股价位于200日均线下方），行业相对强弱排名第14、胜率窗口收益-33.6%，均显示均值回归行情尚未获得价格领导力确认。"
+      "now_zh": "纺织服饰板块（801130）当前处于筑底/低谷阶段（pos=0.6），自2026年2月高点以来累计回撤57%，在申万31个一级行业中排名第17，近期窗口收益率为-11.1%。当前市场结构呈现成长/科技主导格局（电子+75.5%、通信+67.7%），周期股整体跑赢防御股（+0.3% vs -12.1%），上证综指微涨1.6%——属于风险偏好回升但风格高度分化的行情，消费可选/服装类个股持续被边缘化。纺织服饰呈现双重落后：既跑输上涨的周期股，也较防御股跌幅更大。板块与美容护理、商贸零售同属居民消费信心疲弱、棉价/汇率压缩利润、出口型工厂持续承受关税压力的结构性弱势领域。当前无买入信号（signal=null，股价位于200日均线下方），行业相对强弱排名第14、胜率窗口收益-33.6%，均显示均值回归行情尚未获得价格领导力确认。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801140": {
       "legs": {
@@ -8079,7 +8199,11 @@
         }
       },
       "now": "Light Manufacturing (Shenwan 801140) is currently in a Bottoming/Trough phase (-14.9% this leg, ranked 20th/31), tracking below its 200-day moving average with rs_rank of 22. The tape is a strong risk-on, growth-led rotation: cyclicals led defensives by 12.4pp yet SHCOMP is barely positive (+1.6%), with leadership concentrated in Electronics (+75.5%), Telecoms (+67.7%), and Bldg Materials (+48.1%). Light Manufacturing is a deep laggard in this environment; its export-heavy, consumer-discretionary composition (household goods, paper, furniture, leisure products) receives no bid in a tape driven by domestic tech/semiconductor and AI-capex themes. The sector sits in the bottom third of the Shenwan universe, dragged by US tariff headwinds (peaking ~145% in April 2025, partially relieved by the May 2025 90-day truce but still elevated), subdued domestic consumer confidence, and rotation away from old-economy consumer cyclicals toward tech growth. A cyclical turn would require a consumer-reflation catalyst (LPR cuts, consumption subsidies) or a durable trade-truce deepening into export-demand recovery.",
-      "now_zh": "轻工制造（申万801140）目前处于筑底阶段（本轮下跌14.9%，排名第20/31位），运行于200日均线下方，相对强弱排名第22位。当前行情呈现强烈的风险偏好、成长风格主导格局——周期股跑赢防御股12.4个百分点，而上证综指仅微涨1.6%，领涨板块集中于电子（+75.5%）、通信（+67.7%）及建材（+48.1%）。轻工制造大幅落后：该板块以出口导向型消费品（家居用品、纸制品、家具、休闲产品）为主，无法受益于以国内科技/半导体及AI资本开支为驱动的行情。板块排名处于申万全行业后三分之一，受多重压制：美国关税高峰期达145%（2025年4月），5月达成90天停火协议后有所缓解但仍偏高；内需消费信心疲弱；市场资金持续从旧经济消费周期向科技成长轮动。板块反转需要消费刺激催化剂（LPR降息、消费补贴扩大）或贸易缓和持续深化带动出口需求实质性复苏。"
+      "now_zh": "轻工制造（申万801140）目前处于筑底阶段（本轮下跌14.9%，排名第20/31位），运行于200日均线下方，相对强弱排名第22位。当前行情呈现强烈的风险偏好、成长风格主导格局——周期股跑赢防御股12.4个百分点，而上证综指仅微涨1.6%，领涨板块集中于电子（+75.5%）、通信（+67.7%）及建材（+48.1%）。轻工制造大幅落后：该板块以出口导向型消费品（家居用品、纸制品、家具、休闲产品）为主，无法受益于以国内科技/半导体及AI资本开支为驱动的行情。板块排名处于申万全行业后三分之一，受多重压制：美国关税高峰期达145%（2025年4月），5月达成90天停火协议后有所缓解但仍偏高；内需消费信心疲弱；市场资金持续从旧经济消费周期向科技成长轮动。板块反转需要消费刺激催化剂（LPR降息、消费补贴扩大）或贸易缓和持续深化带动出口需求实质性复苏。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801150": {
       "legs": {
@@ -8565,7 +8689,11 @@
         }
       },
       "now": "China Pharma & Biotech (SW 801150) is in a bottoming/trough phase as of late June 2026, down -15.9% over the current window and ranked 21st of 31 Shenwan industries. The tape is a pure growth-rotation tape: Electronics (+75.5%) and Telecoms (+67.7%) are dominant leaders, SHCOMP is modestly positive (+1.6%), and cyclicals (+0.3%) are beating defensives (-12.1%) by 12.4pp while growth outperforms value by 18.2pp. Pharma is being abandoned in this AI/tech-driven liquidity rally — it is a defensive, earnings-yield sector with no momentum, while capital floods into semiconductor and telecoms themes. The sector is near the low of its cycle position (pos 1.2/100, rs_rank 18/31), below its 200-day moving average, but its 68.3% historical win rate at this trough phase suggests mean-reversion odds are building. A turn requires either a shift from growth/tech leadership back to defensives, or a fresh domestic policy signal (e.g., VBP easing, NHIS expansion, innovation incentives), neither of which is yet visible in the cross-asset rotation.",
-      "now_zh": "中国医药生物（申万801150）截至2026年6月底处于底部筑底阶段，本轮下跌-15.9%，在申万31个一级行业中排名第21。当前市场是纯粹的成长股行情：电子（+75.5%）和通信（+67.7%）领涨，上证综指仅小涨1.6%，周期股（+0.3%）跑赢防御股（-12.1%）达12.4个百分点，成长风格跑赢价值18.2个百分点。在AI/科技主题驱动的流动性行情中，医药板块遭到市场抛弃——其作为防御性、盈利收益率型行业，缺乏动量，而资金持续涌入半导体与通信主题。板块周期位置极低（1.2/100），相对强度排名18/31，股价位于200日均线下方，但历史胜率68.3%显示均值回归的胜算正在积累。行情反转的近期催化剂需等待市场风格从成长/科技切换回防御，或出现新一轮国内政策信号（如VBP松绑、医保扩目录、创新基金），目前跨资产轮动中均未显现。"
+      "now_zh": "中国医药生物（申万801150）截至2026年6月底处于底部筑底阶段，本轮下跌-15.9%，在申万31个一级行业中排名第21。当前市场是纯粹的成长股行情：电子（+75.5%）和通信（+67.7%）领涨，上证综指仅小涨1.6%，周期股（+0.3%）跑赢防御股（-12.1%）达12.4个百分点，成长风格跑赢价值18.2个百分点。在AI/科技主题驱动的流动性行情中，医药板块遭到市场抛弃——其作为防御性、盈利收益率型行业，缺乏动量，而资金持续涌入半导体与通信主题。板块周期位置极低（1.2/100），相对强度排名18/31，股价位于200日均线下方，但历史胜率68.3%显示均值回归的胜算正在积累。行情反转的近期催化剂需等待市场风格从成长/科技切换回防御，或出现新一轮国内政策信号（如VBP松绑、医保扩目录、创新基金），目前跨资产轮动中均未显现。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801160": {
       "legs": {
@@ -8871,7 +8999,11 @@
         }
       },
       "now": "China Utilities (Shenwan 801160) is currently in a Bottoming/Trough phase, sitting at the 28.4th percentile of its historical range and below its 200-day moving average. The sector has returned -0.7% in the current window, ranking 11th of 31 Shenwan industries, confirming defensive fatigue. The live tape is a sharp risk-on, growth-dominated regime: Electronics leads at +75.5%, Telecoms +67.7%, while defensives average -12.1% versus cyclicals at +0.3%. SHCOMP is only +1.6%, meaning this is a liquidity/theme rally not broad beta, with the growth/value spread blown out to +18.2pp. Utilities is a drag asset in this environment; institutional capital is rotating into AI hardware and telecom themes, and no near-term macro catalyst (rate cut, infrastructure stimulus, or power-demand re-rating) is visibly reversing the defensive underperformance.",
-      "now_zh": "公用事业（申万801160）当前处于筑底/低谷阶段，位于历史区间第28.4百分位，价格位于200日均线下方。本窗口期内收益率-0.7%，在31个申万行业中排名第11，印证了防御板块的疲态。当前市场为典型的风险偏好上行、成长风格主导格局：电子领涨+75.5%，通信+67.7%，而防御类平均-12.1%，周期类仅+0.3%。上证综指仅+1.6%，说明本轮上涨是流动性/主题驱动而非全面贝塔行情，成长/价值利差高达+18.2个百分点。在此环境下，公用事业沦为拖累资产，机构资金追逐AI硬件与通信主题，短期内缺乏利率下行、基建刺激或电力需求重估等能逆转防御跑输局面的催化剂。"
+      "now_zh": "公用事业（申万801160）当前处于筑底/低谷阶段，位于历史区间第28.4百分位，价格位于200日均线下方。本窗口期内收益率-0.7%，在31个申万行业中排名第11，印证了防御板块的疲态。当前市场为典型的风险偏好上行、成长风格主导格局：电子领涨+75.5%，通信+67.7%，而防御类平均-12.1%，周期类仅+0.3%。上证综指仅+1.6%，说明本轮上涨是流动性/主题驱动而非全面贝塔行情，成长/价值利差高达+18.2个百分点。在此环境下，公用事业沦为拖累资产，机构资金追逐AI硬件与通信主题，短期内缺乏利率下行、基建刺激或电力需求重估等能逆转防御跑输局面的催化剂。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801170": {
       "legs": {
@@ -9147,7 +9279,11 @@
         }
       },
       "now": "Transportation (Shenwan 801170) is currently in a Bottoming phase, ranking 18th of 31 Shenwan industries with a return of -13.3% against SHCOMP +1.6%. The tape is a pure AI/hardware-theme rotation: Electronics (+75.5%), Telecoms (+67.7%), and Building Materials (+48.1%) lead, while Transportation sits deep in the laggard half alongside Agriculture and Retail. Cyclicals barely edge defensives (+0.3% vs -12.1%), confirming this is narrow growth-style leadership excluding volume-sensitive, fuel-cost-exposed transport operators rather than broad risk-off. With pos=0.1 (bottom decile historically) and no active buy signal, Transportation is at a structural trough but has not yet catalyzed a mean-reversion rotation into the sector.",
-      "now_zh": "交通运输板块（申万801170）目前处于底部筑底阶段，在当前窗口期31个申万行业中排名第18，区间涨跌幅-13.3%，而同期上证综指上涨1.6%。当前行情为纯粹的AI/硬件主题轮动：电子（+75.5%）、通信（+67.7%）与建筑材料（+48.1%）领涨，交通运输深陷滞涨区间，与农林牧渔、商贸零售同处末尾。周期板块仅微幅领先防御（+0.3% vs -12.1%），表明这并非系统性风险规避，而是以成长风格为核心的结构性主题轮动，对运量敏感、燃油成本高企的运输类资产形成持续压制。历史分位pos=0.1（处于底部十分位），且无有效买入信号，板块已处于结构性底部区域，但尚未触发均值回归的轮动信号。"
+      "now_zh": "交通运输板块（申万801170）目前处于底部筑底阶段，在当前窗口期31个申万行业中排名第18，区间涨跌幅-13.3%，而同期上证综指上涨1.6%。当前行情为纯粹的AI/硬件主题轮动：电子（+75.5%）、通信（+67.7%）与建筑材料（+48.1%）领涨，交通运输深陷滞涨区间，与农林牧渔、商贸零售同处末尾。周期板块仅微幅领先防御（+0.3% vs -12.1%），表明这并非系统性风险规避，而是以成长风格为核心的结构性主题轮动，对运量敏感、燃油成本高企的运输类资产形成持续压制。历史分位pos=0.1（处于底部十分位），且无有效买入信号，板块已处于结构性底部区域，但尚未触发均值回归的轮动信号。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801180": {
       "legs": {
@@ -9793,7 +9929,11 @@
         }
       },
       "now": "Real Estate (801180) is at a Trough/Bottoming phase as of late June 2026, ranked 22nd out of 31 Shenwan industries with a current-leg return of -16.7%, a deep laggard in a market where SHCOMP is barely positive (+1.6%). The prevailing tape is risk-on and growth-led: Electronics +75.5%, Telecoms +67.7%, cyclicals outpacing defensives by 12.4pp and growth outpacing value by 18.2pp, a liquidity/AI-theme driven rotation. Real Estate is structurally sidelined in this environment: it is a policy-recovery value name, weighed down by persistent inventory overhang (~762 million sq m unsold as of mid-2025), ongoing month-on-month home price declines, and Vanke's S&P downgrade to CCC- in late 2025. The sector sits approximately 35% below its five-year-window high, below the 200-day moving average, with no buy signal active, suggesting a prolonged bottoming process requiring a decisive LPR cut or inventory clearance catalyst to reverse.",
-      "now_zh": "房地产板块（801180）截至2026年6月下旬处于\"筑底\"阶段，当前区间涨跌幅为-16.7%，在31个申万一级行业中排名第22位——相对于上证综指仅+1.6%的表现，属于明显落后板块。当前市场风格为风险偏好型、成长主导（电子+75.5%、通信+67.7%；周期板块+0.3% vs 防御板块-12.1%；成长溢价+18.2pct），由AI/科技主题流动性及资金从利率敏感型价值股撤离驱动。房地产在此行情中结构性受压：作为政策修复型价值板块，叠加约7.62亿平方米库存积压、万科等开发商被标普下调至CCC-评级、新房价格持续环比下跌等基本面拖累，板块距五年窗口高点累计跌幅约35%，无信号触发，股价低于200日均线——典型的磨底走势，等待决定性的降息或库存去化催化剂。"
+      "now_zh": "房地产板块（801180）截至2026年6月下旬处于\"筑底\"阶段，当前区间涨跌幅为-16.7%，在31个申万一级行业中排名第22位——相对于上证综指仅+1.6%的表现，属于明显落后板块。当前市场风格为风险偏好型、成长主导（电子+75.5%、通信+67.7%；周期板块+0.3% vs 防御板块-12.1%；成长溢价+18.2pct），由AI/科技主题流动性及资金从利率敏感型价值股撤离驱动。房地产在此行情中结构性受压：作为政策修复型价值板块，叠加约7.62亿平方米库存积压、万科等开发商被标普下调至CCC-评级、新房价格持续环比下跌等基本面拖累，板块距五年窗口高点累计跌幅约35%，无信号触发，股价低于200日均线——典型的磨底走势，等待决定性的降息或库存去化催化剂。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801200": {
       "legs": {
@@ -10349,7 +10489,11 @@
         }
       },
       "now": "Retail & Commerce (801200) is in a deep Trough/Bottoming phase as of late June 2026, sitting at just the 10th percentile of its historical range and ranked dead last (#31/31) in the Shenwan universe over the current leg. The sector is down -31.1% this leg while SHCOMP is only -3.3%, meaning the underperformance is structural rather than simple index beta. The now_ctx shows a pronounced growth/tech rotation: Electronics +75.5%, Telecoms +67.7%, and Building Materials +48.1% lead, while Retail sits alongside Beauty (-26.9%) and Agriculture (-26.3%) at the very bottom. Cyclicals (+0.3%) have broadly outperformed defensives (-12.1%), and Growth has beaten Value by 18.2pp, yet Retail has been left behind even in a risk-on tape, confirming that the sector's drag is idiosyncratic: weak domestic consumption, AI-driven capital rotation away from consumer platform stocks (Alibaba, JD, Meituan delivering flat-to-negative returns in 2026 as global funds favor AI hardware supply chain), and persistent household caution rather than a macro risk-off event.",
-      "now_zh": "商贸零售（801200）截至2026年6月下旬处于深度筑底阶段，位于历史区间后10%分位，在申万全行业排名垫底（第31/31）。本轮该板块累跌-31.1%，而上证综指仅-3.3%，显示跑输具有结构性特征。当前轮动背景下，科技成长主导市场（电子+75.5%、电信+67.7%、建材+48.1%领涨），周期优于防御（+0.3% vs -12.1%），成长跑赢价值18.2pp——但商贸在风险偏好回升环境中仍垫底，印证板块拖累来自内生因素：国内消费信心疲弱、资本向AI/科技链集中轮动（阿里巴巴、京东、美团2026年以来涨幅平淡乃至负数）、居民消费意愿持续低迷，而非宏观风险规避。"
+      "now_zh": "商贸零售（801200）截至2026年6月下旬处于深度筑底阶段，位于历史区间后10%分位，在申万全行业排名垫底（第31/31）。本轮该板块累跌-31.1%，而上证综指仅-3.3%，显示跑输具有结构性特征。当前轮动背景下，科技成长主导市场（电子+75.5%、电信+67.7%、建材+48.1%领涨），周期优于防御（+0.3% vs -12.1%），成长跑赢价值18.2pp——但商贸在风险偏好回升环境中仍垫底，印证板块拖累来自内生因素：国内消费信心疲弱、资本向AI/科技链集中轮动（阿里巴巴、京东、美团2026年以来涨幅平淡乃至负数）、居民消费意愿持续低迷，而非宏观风险规避。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801210": {
       "legs": {
@@ -10915,7 +11059,11 @@
         }
       },
       "now": "Consumer Services (social services sector, code 801210) is in a confirmed trough/bottoming phase as of late June 2026, ranked 25th of 31 Shenwan industries in the current leg with a -18.0% return. The tape is a classic AI-theme/hardware-growth rally: Electronics +75.5% and Telecoms +67.7% dominate while consumer-facing names (Retail -31.1%, Beauty -26.9%) are the hardest laggards alongside Services. The SHCOMP is barely positive at +1.6% but cyclicals (+0.3%) beat defensives (-12.1%) with a growth-minus-value spread of +18.2pp -- a narrow, theme-driven rotation into semiconductors and telecoms infrastructure, not a broad consumer recovery. Services faces a double squeeze: the post-Jan-2026 AI rerating actively pulls capital away from discretionary consumption names, while the structural demand overhang persists (household savings elevated, property wealth still deflating, consumer CPI near-flat). The sector sits below its 200-day average at the 20th historical percentile -- a position that has historically resolved higher once the AI/growth tape broadens or a consumer-stimulus catalyst re-prices domestic demand.",
-      "now_zh": "社会服务板块截至2026年6月下旬处于确认底部/筑底阶段，以-18.0%在31个申万一级行业中排名第25。本轮行情由AI主题与硬件科技主导——电子（+75.5%）、通信（+67.7%）强势领跑，而消费属性较强的零售（-31.1%）、美容护理（-26.9%）及社会服务均处最弱方阵。上证综指本轮仅涨+1.6%，但周期股（+0.3%）跑赢防御股（-12.1%），成长/价值溢价高达18.2pp，表明资金高度集中于科技主线而非消费复苏。社会服务双重承压：AI轮动持续抽离消费可选资金，结构性需求疲软（居民高储蓄、房地产财富缩水、CPI近零）尚未实质改善。板块处于200日均线下方、历史分位约20%区间，历史上该位置具备反弹潜力，但需等待AI行情扩散或消费刺激政策落地方能触发。"
+      "now_zh": "社会服务板块截至2026年6月下旬处于确认底部/筑底阶段，以-18.0%在31个申万一级行业中排名第25。本轮行情由AI主题与硬件科技主导——电子（+75.5%）、通信（+67.7%）强势领跑，而消费属性较强的零售（-31.1%）、美容护理（-26.9%）及社会服务均处最弱方阵。上证综指本轮仅涨+1.6%，但周期股（+0.3%）跑赢防御股（-12.1%），成长/价值溢价高达18.2pp，表明资金高度集中于科技主线而非消费复苏。社会服务双重承压：AI轮动持续抽离消费可选资金，结构性需求疲软（居民高储蓄、房地产财富缩水、CPI近零）尚未实质改善。板块处于200日均线下方、历史分位约20%区间，历史上该位置具备反弹潜力，但需等待AI行情扩散或消费刺激政策落地方能触发。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801230": {
       "legs": {
@@ -11389,7 +11537,11 @@
         }
       },
       "now": "Conglomerates are in a trough/bottoming phase (pos 7.6, rs_rank 6/31) after the violent May-June 2026 selloff (-21.4%, worst sector in the universe). The now_ctx shows a risk-on, growth-tilted tape where Electronics (+75.5%) and Telecoms (+67.7%) lead sharply while Agriculture and Retail lag; Conglomerates' +10.8% YTD (rank 5/31) reflects beta recovery from the June trough but is well below the sector leadership exhibited in the prior two major rallies. Cyclicals barely edge defensives (+0.3% vs -12.1%) with SHCOMP only +1.6%, signalling tentative, liquidity-driven stabilisation rather than full cyclical re-acceleration. Conglomerates are rebuilding from multi-standard-deviation oversold conditions which have historically preceded sharp reversals given the sector's outsized beta to A-share sentiment cycles.",
-      "now_zh": "综合板块正处于低谷/探底阶段（位置7.6，相对强弱排名第6/31），此前经历了2026年5至6月的剧烈抛售（跌幅-21.4%，全行业最差）。当前环境显示风险偏好改善、成长风格主导，电子（+75.5%）和通信（+67.7%）领涨，农林牧渔和零售大幅落后；综合板块年内涨幅+10.8%（排名5/31），反映从6月低点的贝塔反弹，但仍远低于前两次大行情的领涨水平。周期股仅微幅领先防御股（+0.3%对-12.1%），沪综指仅涨1.6%，信号显示当前是流动性驱动的试探性企稳，而非全面周期加速。综合板块正从极度超卖区域修复，历史上这往往是大幅反弹的前奏，因其对A股情绪周期具有超大贝塔弹性。"
+      "now_zh": "综合板块正处于低谷/探底阶段（位置7.6，相对强弱排名第6/31），此前经历了2026年5至6月的剧烈抛售（跌幅-21.4%，全行业最差）。当前环境显示风险偏好改善、成长风格主导，电子（+75.5%）和通信（+67.7%）领涨，农林牧渔和零售大幅落后；综合板块年内涨幅+10.8%（排名5/31），反映从6月低点的贝塔反弹，但仍远低于前两次大行情的领涨水平。周期股仅微幅领先防御股（+0.3%对-12.1%），沪综指仅涨1.6%，信号显示当前是流动性驱动的试探性企稳，而非全面周期加速。综合板块正从极度超卖区域修复，历史上这往往是大幅反弹的前奏，因其对A股情绪周期具有超大贝塔弹性。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801710": {
       "legs": {
@@ -11855,7 +12007,11 @@
         }
       },
       "now": "Building Materials (Shenwan 801710) is in a confirmed Topping phase at cycle position 87.8%, ranked #3/31 Shenwan industries with a +48.1% return in the current leg that began in September 2024. The current rally was launched by the PBOC's September 24, 2024 stimulus package (RRR -50bp, mortgage rate cuts, CNY 500bn equity swap facility) and is now sustained by a broad reflation and growth-style rotation; Electronics (+75.5%) and Telecoms (+67.7%) lead, confirming the tape is liquidity-driven and growth-themed, with Building Materials riding index beta rather than a property-fundamentals recovery. Cyclicals are outpacing defensives by 46pp and SHCOMP is up 48.9%, placing this sector firmly in late-cycle beta territory. With cycle position at 87.8% of its historical range and the phaseLabel reading Topping, the risk of rotation out of high-beta cyclicals into defensive or pure-growth themes is materially elevated.",
-      "now_zh": "建筑材料申万801710当前处于确认见顶阶段，周期位置达87.8%，本轮行情始于2024年9月，涨幅48.1%，在31个申万行业中排名第3。本轮上涨由2024年9月24日人民银行一揽子刺激政策驱动，包括降准50bp、存量按揭利率下调及5000亿元证券互换便利；电子涨75.5%与通信涨67.7%领涨，印证行情由流动性与主题轮动主导，建材跟随市场Beta上行而非受地产基本面改善驱动。周期股跑赢防御股46个百分点，上证综指涨幅达48.9%，板块已进入周期末段Beta阶段。当前周期位置处于历史区间87.8%高位，阶段标签显示见顶，从高Beta周期股切换至防御或科技成长主题的风险正在上升。"
+      "now_zh": "建筑材料申万801710当前处于确认见顶阶段，周期位置达87.8%，本轮行情始于2024年9月，涨幅48.1%，在31个申万行业中排名第3。本轮上涨由2024年9月24日人民银行一揽子刺激政策驱动，包括降准50bp、存量按揭利率下调及5000亿元证券互换便利；电子涨75.5%与通信涨67.7%领涨，印证行情由流动性与主题轮动主导，建材跟随市场Beta上行而非受地产基本面改善驱动。周期股跑赢防御股46个百分点，上证综指涨幅达48.9%，板块已进入周期末段Beta阶段。当前周期位置处于历史区间87.8%高位，阶段标签显示见顶，从高Beta周期股切换至防御或科技成长主题的风险正在上升。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801720": {
       "legs": {
@@ -12241,7 +12397,11 @@
         }
       },
       "now": "Construction is in a confirmed trough/bottoming phase as of late June 2026, sitting at just 2.4% above its cycle low with rs_rank 17/31, deep in the laggard half of Shenwan. The current tape is a growth-led cyclical-beta rally (Electronics +75.5%, Telecoms +67.7%; SHCOMP +1.6%), but Construction has posted only -5.1% in the current window (rank 13/31), confirming it has not yet caught the reflation bid. The persistent underperformance versus the cyclical average (+0.3%) reflects the dual drag of property-sector debt overhang curtailing private developer orderbooks and constrained local-government special-bond disbursement capacity, even as the May 2025 US-China tariff truce and DeepSeek-era tech optimism lifted the broad market. A genuine Construction re-rating requires either a fresh fiscal infrastructure push via special-bond quota expansion or property stabilisation that restores developer spending; neither is confirmed in the current price or rotation data.",
-      "now_zh": "建筑装饰板块截至2026年6月底处于确认筑底阶段，距周期低点仅2.4%，申万排名17/31，深陷滞后阵营。当前市场为成长主导的周期贝塔行情（电子+75.5%、通信+67.7%领涨，上证+1.6%），但建筑本窗口仅录得-5.1%（排名第13），尚未接棒反弹。相对周期股整体均值（+0.3%）的持续跑输，折射出房地产债务拖累与地方政府专项债放量空间受限的双重压力，即便5月中美关税休战及DeepSeek科技乐观情绪已提振大盘。板块真正再评级需新一轮基建财政冲量（专项债额度扩容）或地产企稳带动开发商订单回暖——当前价格与轮动数据尚无法确认上述催化剂落地。"
+      "now_zh": "建筑装饰板块截至2026年6月底处于确认筑底阶段，距周期低点仅2.4%，申万排名17/31，深陷滞后阵营。当前市场为成长主导的周期贝塔行情（电子+75.5%、通信+67.7%领涨，上证+1.6%），但建筑本窗口仅录得-5.1%（排名第13），尚未接棒反弹。相对周期股整体均值（+0.3%）的持续跑输，折射出房地产债务拖累与地方政府专项债放量空间受限的双重压力，即便5月中美关税休战及DeepSeek科技乐观情绪已提振大盘。板块真正再评级需新一轮基建财政冲量（专项债额度扩容）或地产企稳带动开发商订单回暖——当前价格与轮动数据尚无法确认上述催化剂落地。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801730": {
       "legs": {
@@ -12747,7 +12907,11 @@
         }
       },
       "now": "Power Equipment is in a Downturn phase (pos=33.9, RS rank 12/31), rolling over from the May 2026 peak that capped the April 2025-May 2026 +100% bull leg. The current window is a broad growth/cyclical tape (SHCOMP +1.6%, cyclicals +0.3% vs defensives -12.1%, growth leads value by 18.2pp) with Electronics and Telecoms leading the Shenwan board at +75% and +68%; Power Equipment's modest +1.8% (rank 8/31) confirms it is giving back relative leadership after its prior outperformance, consistent with mid-cycle consolidation or early distribution rather than a panic flush. The sector is trading below its 200-day moving average, signalling the post-peak mean-reversion has further to run before the next structural trough forms.",
-      "now_zh": "电力设备处于下行阶段（周期位置33.9，申万行业相对强弱排名12/31），正从2026年5月高点回落，此前完成了2025年4月至2026年5月累计+100%的强势上涨。当前市场风格为宽基成长/周期行情（上证综指+1.6%，周期板块+0.3%优于防御板块-12.1%，成长跑赢价值18.2pp），电子、通信领跑申万行业；电力设备仅微涨+1.8%（排名第8），表明前期超额收益正在消化，处于中途整理或初步派发阶段，而非恐慌性抛售。板块仍位于200日均线下方，表明2025年4月以来的均值回归行情尚未结束。"
+      "now_zh": "电力设备处于下行阶段（周期位置33.9，申万行业相对强弱排名12/31），正从2026年5月高点回落，此前完成了2025年4月至2026年5月累计+100%的强势上涨。当前市场风格为宽基成长/周期行情（上证综指+1.6%，周期板块+0.3%优于防御板块-12.1%，成长跑赢价值18.2pp），电子、通信领跑申万行业；电力设备仅微涨+1.8%（排名第8），表明前期超额收益正在消化，处于中途整理或初步派发阶段，而非恐慌性抛售。板块仍位于200日均线下方，表明2025年4月以来的均值回归行情尚未结束。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801740": {
       "legs": {
@@ -13313,7 +13477,11 @@
         }
       },
       "now": "Defense and Military (801740) is in a Trough/Bottoming phase as of late June 2026, at the 2.3rd percentile of its historical range. It ranks 14th of 31 Shenwan industries with a -6.8% return in the current window, a mid-tier laggard in a growth-style liquidity tape where Electronics (+75.5%) and Telecoms (+67.7%) lead with SHCOMP only +1.6%. Despite being nominally a growth sector, Defense is underperforming: it sits below its 200-day moving average and near-zero momentum reflects the lingering hangover from the May-June 2026 selloff triggered by the India-Pakistan ceasefire and profit-taking after the arms-export re-rating surge (AVIC Chengdu had surged 40%+ before sharply reversing). The setup is a classic post-spike base: valuations are near decadal lows, the 14th Five-Year Plan delivery cycle provides structural procurement support into the 2027 PLA centenary, but a fresh catalyst is needed to break back above the 200-day moving average.",
-      "now_zh": "国防军工（801740）截至2026年6月下旬处于底部/筑底阶段，历史百分位仅2.3%，在31个申万行业中排名第14，当前区间回报-6.8%。市场整体为成长风格流动性行情（成长-价值利差+18.2pp），电子（+75.5%）和通信（+67.7%）领涨，上证综指仅+1.6%。军工虽名义上属成长板块，却明显跑输：股价仍低于200日均线，动能近乎归零，反映2026年5-6月印巴停火后军贸重估退潮与获利回吐的持续消化（成飞集成一度暴涨逾40%后迅速反转）。当前态势为暴涨后经典蓄势形态：估值接近十年低位，十四五采购交付周期为2027年建军百年提供结构性支撑，但需新催化剂方能重返200日均线以上。"
+      "now_zh": "国防军工（801740）截至2026年6月下旬处于底部/筑底阶段，历史百分位仅2.3%，在31个申万行业中排名第14，当前区间回报-6.8%。市场整体为成长风格流动性行情（成长-价值利差+18.2pp），电子（+75.5%）和通信（+67.7%）领涨，上证综指仅+1.6%。军工虽名义上属成长板块，却明显跑输：股价仍低于200日均线，动能近乎归零，反映2026年5-6月印巴停火后军贸重估退潮与获利回吐的持续消化（成飞集成一度暴涨逾40%后迅速反转）。当前态势为暴涨后经典蓄势形态：估值接近十年低位，十四五采购交付周期为2027年建军百年提供结构性支撑，但需新催化剂方能重返200日均线以上。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801750": {
       "legs": {
@@ -13959,7 +14127,11 @@
         }
       },
       "now": "Computers is in a confirmed Trough/Bottoming phase as of late June 2026, ranked 19th of 31 Shenwan industries with a -14.1% return in the current window, lagging well behind Electronics (+75.5%), Telecoms (+67.7%), and Building Materials (+48.1%). The broader tape is unambiguously risk-on and growth-tilted (growth leads value by 18.2pp, cyclicals +0.3% vs defensives -12.1%, SHCOMP +1.6%), yet Computers is being left behind despite being the canonical growth/AI sector. This unusual divergence reflects the global 2026 SaaSpocalypse: AI is disrupting software pricing power, rotating institutional money from pure-play IT software names into hardware-infrastructure plays (Telecoms equipment, Electronics/chips). The sector sits at the 2.2nd percentile of its own historical range -- historically a strong mean-reversion setup -- but the leadership rotation back into Computers requires the AI-disruption-of-software narrative to peak first.",
-      "now_zh": "计算机板块截至2026年6月底处于明确的底部/筑底阶段，在申万31个行业中排名第19，当前窗口回报为-14.1%，显著落后于电子（+75.5%）、通信（+67.7%）和建材（+48.1%）。整体市场毫无疑问偏向风险偏好/成长风格（成长跑赢价值18.2pp，周期股+0.3% vs 防御股-12.1%，上证综指+1.6%），但计算机作为典型成长/AI板块却落后。这一异常背离反映的是2026年全球\"SaaS末日\"效应——AI正在颠覆软件的定价权，机构资金从纯IT软件个股轮动至硬件基础设施（通信设备、电子/芯片）。板块历史分位仅2.2%，历史上属于强均值回归区间，但领涨主线重返计算机需等待AI冲击软件的叙事见顶。"
+      "now_zh": "计算机板块截至2026年6月底处于明确的底部/筑底阶段，在申万31个行业中排名第19，当前窗口回报为-14.1%，显著落后于电子（+75.5%）、通信（+67.7%）和建材（+48.1%）。整体市场毫无疑问偏向风险偏好/成长风格（成长跑赢价值18.2pp，周期股+0.3% vs 防御股-12.1%，上证综指+1.6%），但计算机作为典型成长/AI板块却落后。这一异常背离反映的是2026年全球\"SaaS末日\"效应——AI正在颠覆软件的定价权，机构资金从纯IT软件个股轮动至硬件基础设施（通信设备、电子/芯片）。板块历史分位仅2.2%，历史上属于强均值回归区间，但领涨主线重返计算机需等待AI冲击软件的叙事见顶。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801760": {
       "legs": {
@@ -14565,7 +14737,11 @@
         }
       },
       "now": "Media (Shenwan 801760) is in a confirmed trough/bottoming phase as of late June 2026, ranked 26th of 31 Shenwan sectors with a -18.3% trailing return against a near-flat SHCOMP (+1.6%). Despite a growth-tilted tape where Electronics (+75.5%) and Telecoms (+67.7%) lead massively, Media has been left behind - a rotation within the growth complex from AI-content/AIGC themes toward hardware-infrastructure (semiconductors, network equipment) and old-economy cyclicals (Building Materials). The sector sits below its 200-day moving average at a cycle position of 0.10, near the historical floor. This is an intra-growth de-rating: the market is broadly risk-on and growth-positive (growth minus value +18.2pp), yet Media ranks near last, signaling that the AIGC enthusiasm driving the Jan-2026 peak has exhausted and capital has rotated to earlier-stage hardware plays. Historically this trough configuration - deep laggard while growth leads elsewhere - has preceded sharp mean-reversion rallies once a new AI-content catalyst or liquidity injection materializes.",
-      "now_zh": "传媒板块（申万801760）截至2026年6月下旬处于确认低谷/筑底阶段，在31个申万一级行业中排名第26，区间回报-18.3%，同期上证综指仅微涨1.6%。尽管市场整体偏成长风格（电子+75.5%、通信+67.7%领涨），传媒却明显落后——成长板块内部轮动已从AI内容/AIGC主题转向硬件基础设施（半导体、网络设备）及老周期行业（建材）。板块位于200日均线下方，周期位置仅0.10，接近历史底部区域。当前行情呈现\"成长内部估值分化\"：大盘整体偏风险偏好且成长领先（成长-价值利差+18.2pp），但传媒近乎垫底，表明推动2026年1月峰值的AIGC热情已经耗尽，资金向更上游的算力板块迁移。从历史规律看，这种\"成长主导但传媒深度落后\"的底部特征，往往是板块均值回归反弹的先行信号。"
+      "now_zh": "传媒板块（申万801760）截至2026年6月下旬处于确认低谷/筑底阶段，在31个申万一级行业中排名第26，区间回报-18.3%，同期上证综指仅微涨1.6%。尽管市场整体偏成长风格（电子+75.5%、通信+67.7%领涨），传媒却明显落后——成长板块内部轮动已从AI内容/AIGC主题转向硬件基础设施（半导体、网络设备）及老周期行业（建材）。板块位于200日均线下方，周期位置仅0.10，接近历史底部区域。当前行情呈现\"成长内部估值分化\"：大盘整体偏风险偏好且成长领先（成长-价值利差+18.2pp），但传媒近乎垫底，表明推动2026年1月峰值的AIGC热情已经耗尽，资金向更上游的算力板块迁移。从历史规律看，这种\"成长主导但传媒深度落后\"的底部特征，往往是板块均值回归反弹的先行信号。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801770": {
       "legs": {
@@ -15071,7 +15247,11 @@
         }
       },
       "now": "Telecoms is in a confirmed Topping phase (pos 98.6/100), ranked 2nd of 31 Shenwan industries with a 67.7% return on the current leg. The live ctx is emphatically growth/risk-on: SHCOMP +1.6%, cyclicals beating defensives by 13.4pp (0.3% vs -12.1%), and growth leading value by 18.2pp, with Electronics the only sector outperforming Telecoms. This is a late-stage beta stretch driven by the AI-compute and token-economy narrative: state carriers (China Mobile, China Telecom, China Unicom) began selling AI-token subscriptions in May 2026 at sub-10 yuan per month; Huawei MWC Shanghai 2026 (6G/optical/AI integration) amplified the theme. Daily token consumption has grown roughly 1000x to 140 trillion tokens per day by mid-2026. The sector is at near-maximum cycle position - historically a zone where Telecoms has topped sharply and rotated into value/defensives.",
-      "now_zh": "通信板块处于确认的顶部阶段（位置98.6/100），在申万31个行业中排名第2，本轮涨幅67.7%。当前市场环境明显偏向成长/风险偏好：上证指数+1.6%，周期股跑赢防御股13.4pp，成长风格领先价值18.2pp。核心主题是AI算力与算力代币化：2026年5月三大运营商推出AI token套餐，华为MWC上海2026展示6G/AI融合生态。当前位置接近历史极值，历史上此类高位往往是通信大幅见顶、风格切换至价值/防御的前兆。"
+      "now_zh": "通信板块处于确认的顶部阶段（位置98.6/100），在申万31个行业中排名第2，本轮涨幅67.7%。当前市场环境明显偏向成长/风险偏好：上证指数+1.6%，周期股跑赢防御股13.4pp，成长风格领先价值18.2pp。核心主题是AI算力与算力代币化：2026年5月三大运营商推出AI token套餐，华为MWC上海2026展示6G/AI融合生态。当前位置接近历史极值，历史上此类高位往往是通信大幅见顶、风格切换至价值/防御的前兆。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801780": {
       "legs": {
@@ -15293,7 +15473,11 @@
         }
       },
       "now": "Banks (Shenwan 801780) are in a confirmed trough/bottoming phase as of late June 2026, having shed ~20% from the July 2025 peak while SHCOMP itself gained +14.7% over the same window -- a rare negative divergence signalling structural rotation out of the sector rather than index beta. The tape is a textbook growth-over-value regime: cyclicals led defensives by 32pp and growth beat value by 46pp, with Electronics (+150%), Telecoms (+187%), and Building Materials (+73%) dominating while Banks rank 27/31. With a BUY signal triggered at a deeply oversold position reading of 7.4, the phase is a late-stage washout consistent with prior trough setups. A mean-reversion catalyst requires either a macro policy pivot (LPR/RRR cut), a growth-to-value rotation shift, or the AI-electronics rally losing steam.",
-      "now_zh": "银行板块（申万801780）截至2026年6月下旬已确认触底阶段，自2025年7月峰值回落约20%，而同期上证综指上涨14.7%——出现罕见背离，反映资金结构性流出银行板块而非指数系统性回调。当前行情为典型的成长压制价值格局：周期板块领先防御板块32个百分点，成长风格超越价值风格46个百分点，电子（+150%）、通信（+187%）、建材（+73%）强势主导，银行在31个申万行业中位列第27。板块位置仅7.4分位、买入信号触发，指向深度超卖后的末期洗盘，与历史上2018年之后的底部形态高度吻合。反弹触发条件：货币政策宽松（降准/降息）、成长切换价值风格，或AI-电子行情退潮。"
+      "now_zh": "银行板块（申万801780）截至2026年6月下旬已确认触底阶段，自2025年7月峰值回落约20%，而同期上证综指上涨14.7%——出现罕见背离，反映资金结构性流出银行板块而非指数系统性回调。当前行情为典型的成长压制价值格局：周期板块领先防御板块32个百分点，成长风格超越价值风格46个百分点，电子（+150%）、通信（+187%）、建材（+73%）强势主导，银行在31个申万行业中位列第27。板块位置仅7.4分位、买入信号触发，指向深度超卖后的末期洗盘，与历史上2018年之后的底部形态高度吻合。反弹触发条件：货币政策宽松（降准/降息）、成长切换价值风格，或AI-电子行情退潮。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801790": {
       "legs": {
@@ -15619,7 +15803,11 @@
         }
       },
       "now": "Non-bank Financials (brokers/securities) is in a Bottoming phase as of late June 2026, ranked 24th out of 31 Shenwan industries with a -17.8% return this leg, sitting below the 200-day moving average. The current tape is growth-and-tech led: Electronics (+75.5%) and Telecoms (+67.7%) dominate while SHCOMP is barely positive at +1.6%, leaving brokers far behind as capital chases AI-hardware and sovereign-tech themes rather than financial intermediaries. The BUY signal (win-rate 73.9%) reflects a mean-reversion setup from a deep trough, but the near-term headwind is the absence of a fresh policy catalyst: no new RRR/LPR cut or equity-market stimulus has been announced since the CSRC imposed slow-bull regulatory controls following January 2026's decade-high. Until a new capital-market reform round or stimulus cycle arrives, brokers are likely to continue lagging growth-beta peers.",
-      "now_zh": "非银金融（以券商为主）截至2026年6月下旬处于筑底阶段，在31个申万行业中排名第24，本段涨跌幅-17.8%，股价位于200日均线以下。当前市场以成长/科技风格主导，电子（+75.5%）和通信（+67.7%）领涨，上证综指仅+1.6%——资金追逐AI算力及科技自主化主题，券商显著冷落。BUY信号源于深度超跌后的均值回复胜率（73.9%），但近期阻力在于缺乏政策催化：自2026年1月上证创十年新高后监管推行\"慢牛\"管控，佣金及通道费用持续受压。在新一轮刺激政策或资本市场改革出台之前，券商短期大概率继续跑输成长主线。"
+      "now_zh": "非银金融（以券商为主）截至2026年6月下旬处于筑底阶段，在31个申万行业中排名第24，本段涨跌幅-17.8%，股价位于200日均线以下。当前市场以成长/科技风格主导，电子（+75.5%）和通信（+67.7%）领涨，上证综指仅+1.6%——资金追逐AI算力及科技自主化主题，券商显著冷落。BUY信号源于深度超跌后的均值回复胜率（73.9%），但近期阻力在于缺乏政策催化：自2026年1月上证创十年新高后监管推行\"慢牛\"管控，佣金及通道费用持续受压。在新一轮刺激政策或资本市场改革出台之前，券商短期大概率继续跑输成长主线。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801880": {
       "legs": {
@@ -16051,7 +16239,11 @@
         }
       },
       "now": "China Automobiles (Shenwan 801880) is in a Trough/Bottoming phase as of late June 2026, ranked 23rd out of 31 Shenwan industries with a -17.5% return in the current window. The tape is a growth-led, risk-on beta rally (SHCOMP +1.6%; cyclicals avg +0.3% vs defensives -12.1%; growth outpacing value by 18.2pp) driven by Electronics and Telecoms — Autos is lagging the cyclical pack. The domestic EV price war, the January 2026 halving of the NEV purchase-tax exemption, and a 19.5% YoY drop in January 2026 passenger-car sales are suppressing earnings visibility. The sector sits at 0.6 of its historical range and below its 200-day MA, consistent with a late-bear bottoming zone, but no buy signal has confirmed and relative strength (rs_rank 21/31) remains weak. A decisive government anti-price-war intervention or a renewed NEV trade-in subsidy programme would be the most likely catalyst to convert the bottoming setup into a confirmed trough entry.",
-      "now_zh": "中国汽车板块（申万801880）截至2026年6月底处于\"底部筑底\"阶段，在31个申万一级行业中排名第23，当前区间收益率为-17.5%。当前行情为成长股主导的风险偏好反弹（上证综指+1.6%；周期板块均值+0.3%，防御板块-12.1%；成长/价值利差+18.2ppt），领涨行业为电子和通信，汽车整体落后于周期板块均值。国内新能源车价格战持续、2026年1月新能源购置税减免减半，以及1月乘用车销量同比大跌19.5%，严重压制盈利预期。板块估值处于历史区间0.6分位、位于200日均线下方，与熊市末期筑底信号一致，但尚无明确买入信号，相对强度仍弱（排名21/31）。后续催化剂可能来自政府出台实质性反价格战政策或新一轮以旧换新补贴方案。"
+      "now_zh": "中国汽车板块（申万801880）截至2026年6月底处于\"底部筑底\"阶段，在31个申万一级行业中排名第23，当前区间收益率为-17.5%。当前行情为成长股主导的风险偏好反弹（上证综指+1.6%；周期板块均值+0.3%，防御板块-12.1%；成长/价值利差+18.2ppt），领涨行业为电子和通信，汽车整体落后于周期板块均值。国内新能源车价格战持续、2026年1月新能源购置税减免减半，以及1月乘用车销量同比大跌19.5%，严重压制盈利预期。板块估值处于历史区间0.6分位、位于200日均线下方，与熊市末期筑底信号一致，但尚无明确买入信号，相对强度仍弱（排名21/31）。后续催化剂可能来自政府出台实质性反价格战政策或新一轮以旧换新补贴方案。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801890": {
       "legs": {
@@ -16477,7 +16669,11 @@
         }
       },
       "now": "Machinery (Shenwan 801890) is currently in a Topping/Peak phase after an 84% rally from the April 2025 lows, its single largest up-leg on record. The sector sits at the 77th percentile of its range with a SELL signal. Within the current tape (SHCOMP +1.6%, cyclicals barely ahead of defensives at +0.3% vs -12.1%), Machinery ranks #4/31 with a +21.2% leg gain, trailing Electronics (+75.5%) and Telecoms (+67.7%) by a wide margin, signaling leadership is rotating away from hard machinery into purer AI-hardware plays. The current rally was powered by the DeepSeek AI breakthrough (Jan 2025), MIIT humanoid-robot policy mandates targeting 100,000 deployments by 2027, and the May 12 2025 US-China Geneva tariff truce (reciprocal tariffs reduced from 145% to 10% for 90 days, subsequently extended through Nov 2026). With cyclicals barely positive and defensives deeply negative, the tape is narrowing; Machinery's fading relative rank and topping-phase signal confirm late-cycle positioning within this growth-and-theme-driven leg.",
-      "now_zh": "机械设备（申万801890）当前处于顶部区域，自2025年4月低点累计上涨84%，创历史最大单段涨幅，估值分位处于77%，技术面已发出卖出信号。当前行情（上证综指+1.6%，周期股仅微弱领先防御股0.3% vs -12.1%）下，机械以+21.2%排名31个申万行业第4位，远落后于电子（+75.5%）和通信（+67.7%），表明领涨主线已向纯科技/AI硬件切换。本轮上涨由DeepSeek（2025年1月）、工信部人形机器人政策（2027年部署10万台目标）及2025年5月中美日内瓦关税休战（相互关税从145%降至10%）共同驱动。周期股涨幅微弱而防御股深度回调，行情正在收窄；机械相对排名下滑及顶部信号均表明本轮主题行情已进入尾声。"
+      "now_zh": "机械设备（申万801890）当前处于顶部区域，自2025年4月低点累计上涨84%，创历史最大单段涨幅，估值分位处于77%，技术面已发出卖出信号。当前行情（上证综指+1.6%，周期股仅微弱领先防御股0.3% vs -12.1%）下，机械以+21.2%排名31个申万行业第4位，远落后于电子（+75.5%）和通信（+67.7%），表明领涨主线已向纯科技/AI硬件切换。本轮上涨由DeepSeek（2025年1月）、工信部人形机器人政策（2027年部署10万台目标）及2025年5月中美日内瓦关税休战（相互关税从145%降至10%）共同驱动。周期股涨幅微弱而防御股深度回调，行情正在收窄；机械相对排名下滑及顶部信号均表明本轮主题行情已进入尾声。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801950": {
       "legs": {
@@ -16879,7 +17075,11 @@
         }
       },
       "now": "Coal (801950) is currently in a Rolling over downturn phase at position 48.2/100 with RS rank 25/31, below its 200-day moving average. Since peaking on 4 June 2026, the index has shed roughly 20.8% in three weeks, ranking dead last across all 31 Shenwan industries. The now_ctx shows SHCOMP barely flat (+1.6%) with a sharp growth/style tilt of +18.2pp favouring Electronics, Telecoms and Building Materials, while defensives average -12.1%. Coal is being actively penalised in an AI-infrastructure capex narrative tape (Electronics +75.5%, Telecoms +67.7%); thermal coal prices retreated from near three-year highs reached in early June after Indonesia tightened export controls, then fell back as Iran peace-deal expectations compressed the oil/gas/coal complex. No buy signal is present; the structure is consistent with a mid-cycle digestion after the April 2025 to June 2026 beta-lift.",
-      "now_zh": "煤炭板块（801950）当前处于\"滚顶回落\"下行阶段，位置指标48.2，相对强度排名25/31，股价低于200日均线。自2026年6月4日见顶以来，指数三周内回落约20.8%，在申万31个行业中垫底。当前板块轮动背景显示沪指仅微涨1.6%，成长/价值风格差高达+18.2百分点，电子（+75.5%）、通信（+67.7%）、建材（+48.1%）领涨，防御板块均值-12.1%。煤炭作为\"价值/周期\"标签，在AI基建主题驱动的流动性行情中被主动规避。印尼煤炭出口管制收紧曾助推力煤期货6月初触及近三年高点，但随后伊朗和谈预期压制油气燃料板块，煤炭随之回落。板块当前无买入信号，结构上与2025年4月至2026年6月贝塔修复后的中段消化吻合。"
+      "now_zh": "煤炭板块（801950）当前处于\"滚顶回落\"下行阶段，位置指标48.2，相对强度排名25/31，股价低于200日均线。自2026年6月4日见顶以来，指数三周内回落约20.8%，在申万31个行业中垫底。当前板块轮动背景显示沪指仅微涨1.6%，成长/价值风格差高达+18.2百分点，电子（+75.5%）、通信（+67.7%）、建材（+48.1%）领涨，防御板块均值-12.1%。煤炭作为\"价值/周期\"标签，在AI基建主题驱动的流动性行情中被主动规避。印尼煤炭出口管制收紧曾助推力煤期货6月初触及近三年高点，但随后伊朗和谈预期压制油气燃料板块，煤炭随之回落。板块当前无买入信号，结构上与2025年4月至2026年6月贝塔修复后的中段消化吻合。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801960": {
       "legs": {
@@ -17085,7 +17285,11 @@
         }
       },
       "now": "Oil & Petrochem is in a confirmed Trough/Bottoming phase as of late June 2026, ranked 12th out of 31 Shenwan industries with a return of -3.8% over the current window — deep underperformance versus the market. The dominant tape is a growth/AI-led rally (Electronics +75.5%, Telecoms +67.7%), structurally diverting capital away from old-economy energy names; the SHCOMP is only +1.6%, confirming the advance is narrow and sector-specific. Following the 2026 Iran-war supply-shock peak (Brent surging above $120/bbl in early March after the Hormuz blockade began 28 Feb), crude has collapsed back toward the $70-82/bbl range as US-Iran ceasefire negotiations advanced and the Strait partially reopened in late May-June 2026, eliminating the premium that drove the prior +77.6% surge. The sector sits at the bottom of the leadership table, pressured by the crude reversal, structural peak-oil-demand headwinds from accelerating EV penetration, and the dominant growth-style rotation.",
-      "now_zh": "石油石化板块截至2026年6月下旬处于明确的筑底阶段，在申万31个行业中排名第12，区间回报-3.8%，大幅落后大盘。当前市场由AI/半导体主导（电子+75.5%、通信+67.7%），资金持续从旧经济能源板块流出；上证综指仅+1.6%，确认涨势集中于科技主线而非商品。2026年伊核战争供给冲击高点（2月28日霍尔木兹海峡封锁后布伦特油价飙升至120美元/桶以上），随着美伊停火谈判推进、海峡5-6月部分重开，油价已回落至70-82美元/桶区间，前期+77.6%涨幅所依赖的供给冲击溢价基本消散。板块正消化油价逆转、新能源车渗透率上升带来的需求见顶压力，以及成长风格持续主导的三重压力，在本轮下跌中排名末位（31/31）。"
+      "now_zh": "石油石化板块截至2026年6月下旬处于明确的筑底阶段，在申万31个行业中排名第12，区间回报-3.8%，大幅落后大盘。当前市场由AI/半导体主导（电子+75.5%、通信+67.7%），资金持续从旧经济能源板块流出；上证综指仅+1.6%，确认涨势集中于科技主线而非商品。2026年伊核战争供给冲击高点（2月28日霍尔木兹海峡封锁后布伦特油价飙升至120美元/桶以上），随着美伊停火谈判推进、海峡5-6月部分重开，油价已回落至70-82美元/桶区间，前期+77.6%涨幅所依赖的供给冲击溢价基本消散。板块正消化油价逆转、新能源车渗透率上升带来的需求见顶压力，以及成长风格持续主导的三重压力，在本轮下跌中排名末位（31/31）。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801970": {
       "legs": {
@@ -17191,7 +17395,11 @@
         }
       },
       "now": "Environmental (801970) is in a confirmed Trough/Bottoming phase as of late June 2026, sitting at just 2.3% off its cycle low with an rs_rank of 11/31, deep in the bottom half of Shenwan peers. The current tape is a risk-on, growth-led beta rally (SHCOMP +1.6%, cyclicals +0.3% vs defensives -12.1%, growth outperforming value by 18.2pp) driven by Electronics and Telecoms, leaving Environmental behind with a -0.1% return ranked 9th. The sector peaked in May 2026 at +79.4% from the Sep-2024 trough and is now giving back gains as local-government budget constraints and the absence of fresh Environmental-specific policy catalysts weigh on project-flow sentiment; it has decoupled from the AI/tech leadership narrative that dominated since the Sep-2024 PBOC stimulus cycle.",
-      "now_zh": "环保板块（801970）截至2026年6月底处于确认的底部筑底阶段，距周期低点仅2.3%，在申万31个行业中排名第11，深陷下半区。当前市场呈风险偏好上行、成长驱动的贝塔行情（上证综指+1.6%，周期股+0.3% vs 防御股-12.1%，成长/价值溢价达18.2个百分点），由电子和通信板块领涨，环保未能受益。板块当期回报-0.1%、排名第9，表明其已与2024年9月刺激周期以来主导市场的科技/AI主线脱钩。环保已于2026年5月创出自2024年9月低点以来+79.4%的高点后进入高位回调，地方政府财政约束及缺乏环保专项政策催化剂共同压制项目流订单预期。"
+      "now_zh": "环保板块（801970）截至2026年6月底处于确认的底部筑底阶段，距周期低点仅2.3%，在申万31个行业中排名第11，深陷下半区。当前市场呈风险偏好上行、成长驱动的贝塔行情（上证综指+1.6%，周期股+0.3% vs 防御股-12.1%，成长/价值溢价达18.2个百分点），由电子和通信板块领涨，环保未能受益。板块当期回报-0.1%、排名第9，表明其已与2024年9月刺激周期以来主导市场的科技/AI主线脱钩。环保已于2026年5月创出自2024年9月低点以来+79.4%的高点后进入高位回调，地方政府财政约束及缺乏环保专项政策催化剂共同压制项目流订单预期。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "801980": {
       "legs": {
@@ -17397,7 +17605,11 @@
         }
       },
       "now": "Beauty & Care (801980) is in a confirmed trough, ranked #30/31 Shenwan industries with a -26.9% return in the current leg while SHCOMP is barely positive (+1.6%). The tape is a pure growth/AI-infrastructure rotation — Electronics (+75.5%) and Telecoms (+67.7%) are absorbing all incremental liquidity, leaving discretionary consumer names like Beauty entirely without sponsorship. Below its 200-day moving average, at position 0.1 within its cycle range, and with retail consumption growth still tracking near multi-year lows, the sector has no near-term catalyst unless Beijing delivers a targeted consumption stimulus or a broad market de-risking forces a defensive catch-up trade.",
-      "now_zh": "美容护理（801980）处于确认性底部，本轮行情在申万行业中排名第30/31，累计回报-26.9%，而上证综指仅微涨1.6%。当前行情完全由成长/AI基础设施主线主导，电子（+75.5%）和通信（+67.7%）吸收了绝大部分增量流动性，消费类板块尤其是美容护理缺乏资金青睐。板块股价位于200日均线下方，周期位置处于0.1（极低），国内消费增速仍处近年低位，若无针对性消费刺激政策出台或市场整体转向防御，板块短期缺乏反弹催化剂。"
+      "now_zh": "美容护理（801980）处于确认性底部，本轮行情在申万行业中排名第30/31，累计回报-26.9%，而上证综指仅微涨1.6%。当前行情完全由成长/AI基础设施主线主导，电子（+75.5%）和通信（+67.7%）吸收了绝大部分增量流动性，消费类板块尤其是美容护理缺乏资金青睐。板块股价位于200日均线下方，周期位置处于0.1（极低），国内消费增速仍处近年低位，若无针对性消费刺激政策出台或市场整体转向防御，板块短期缺乏反弹催化剂。",
+      "as_of": "2026-06-28",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     }
   },
   "version": "2026-06-28-15y"

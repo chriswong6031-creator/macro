@@ -108,6 +108,14 @@ def main() -> int:
     narr = _load_narratives(root)
     dna = _load_dna(root)
 
+    # W3.4: enrich NARR map with TTL / staleness / archetype-check metadata
+    try:
+        from scripts._narrative_ttl import enrich_narr_ttl
+        narr = enrich_narr_ttl(narr)
+        log.info("china_sector_cycles: narrative TTL enrichment applied")
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_sector_cycles: TTL enrichment skipped: %s", e)
+
     # Validated sleeve-size chip (W6-CN Fix 1) — thread risk_radar_intl gross_factor into the
     # sector cycles data payload as a DISPLAY chip. Regime sizes sleeves, never vetoes names.
     try:

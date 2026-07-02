@@ -92,6 +92,14 @@ def main() -> int:
     narr = _load_narratives(root)
     dna = _load_dna(root)
 
+    # W3.4: enrich NARR map with TTL / staleness / archetype-check metadata
+    try:
+        from scripts._narrative_ttl import enrich_narr_ttl
+        narr = enrich_narr_ttl(narr)
+        log.info("country_cycles: narrative TTL enrichment applied")
+    except Exception as e:  # noqa: BLE001
+        log.warning("country_cycles: TTL enrichment skipped: %s", e)
+
     # data JS (loaded directly by the page — no fetch, works on file:// + preview)
     payload = ("window.SECTOR_CYCLES=" + json.dumps(data, separators=(",", ":"), ensure_ascii=False) + ";\n"
                + "window.SECTOR_NARR=" + json.dumps(narr, separators=(",", ":"), ensure_ascii=False) + ";\n"

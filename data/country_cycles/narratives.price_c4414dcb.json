@@ -273,7 +273,11 @@
         }
       },
       "now": "AAXJ sits at a cycle Peak with a position of 81.5/100, well into stretched territory after a 95.5% rally from the April 2025 trough. The fund ranks first in relative strength among all tracked markets over the past 63 days (+7.3% vs SPY), led by Taiwan's TSMC-anchored AI semiconductor surge and South Korea's memory-chip recovery, with a broadly weaker USD lifting USD-denominated Asian returns. At this elevation the index is effectively pricing in sustained AI capex and benign US-Asia trade conditions; any demand-destruction signal or renewed dollar strength would pose material downside from current levels.",
-      "now_zh": "AAXJ目前处于周期顶峰，位置读数81.5/100，估值明显偏高——自2025年4月低点以来累计上涨95.5%。过去63个交易日相对标普500强出7.3个百分点，为所有跟踪市场中相对强度排名第一。台湾台积电主导的AI半导体行情与韩国存储芯片复苏共同领涨，美元走弱进一步放大了以美元计价的亚洲回报。在当前高位，市场已隐含AI资本开支持续扩张及美亚贸易环境平稳的预期，一旦需求侧出现降温信号或美元重新走强，回调风险不容忽视。"
+      "now_zh": "AAXJ目前处于周期顶峰，位置读数81.5/100，估值明显偏高——自2025年4月低点以来累计上涨95.5%。过去63个交易日相对标普500强出7.3个百分点，为所有跟踪市场中相对强度排名第一。台湾台积电主导的AI半导体行情与韩国存储芯片复苏共同领涨，美元走弱进一步放大了以美元计价的亚洲回报。在当前高位，市场已隐含AI资本开支持续扩张及美亚贸易环境平稳的预期，一旦需求侧出现降温信号或美元重新走强，回调风险不容忽视。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "eem": {
       "legs": {
@@ -453,7 +457,11 @@
         }
       },
       "now": "EEM (MSCI Emerging Markets) sits at a cycle peak with a position score of 81/100, having rallied roughly 90% in USD terms from its April 2025 trough. At pos 81 the index is extended — historically a zone where forward returns compress and risk-reward tilts toward caution. Relative strength versus SPY is mildly positive over the trailing 63 days (+5.1 RS), ranking second among all markets tracked, while the cycle model projects a turn toward trough centered around November 2026. As a USD-denominated EM proxy, the move blends local-equity gains across EM Asia with the EM currency basket versus the dollar, so dollar softness has amplified the USD-translated return.",
-      "now_zh": "EEM（MSCI新兴市场）当前处于周期顶部区域，位置分值81/100，自2025年4月低点以美元计累计反弹约90%。在81分位置，指数已明显偏高，历史规律显示前向回报趋于压缩，风险收益比向下偏斜。相对于SPY的63日相对强度微幅正值（+5.1），在全部市场中排名第二；周期模型预计下行拐点中枢约在2026年11月。作为美元计价的新兴市场代理，本轮涨幅叠加了新兴亚洲本地股票走势与新兴市场货币篮子对美元的变化，因此美元走弱放大了以美元衡量的回报。"
+      "now_zh": "EEM（MSCI新兴市场）当前处于周期顶部区域，位置分值81/100，自2025年4月低点以美元计累计反弹约90%。在81分位置，指数已明显偏高，历史规律显示前向回报趋于压缩，风险收益比向下偏斜。相对于SPY的63日相对强度微幅正值（+5.1），在全部市场中排名第二；周期模型预计下行拐点中枢约在2026年11月。作为美元计价的新兴市场代理，本轮涨幅叠加了新兴亚洲本地股票走势与新兴市场货币篮子对美元的变化，因此美元走弱放大了以美元衡量的回报。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "efa": {
       "legs": {
@@ -723,7 +731,11 @@
         }
       },
       "now": "EFA (MSCI EAFE) entered a Downturn phase as of end-June 2026, sitting at position 45/100 -- mid-cycle, neither washed-out nor at a stretched extreme. The ETF peaked in June 2026 after a 50.8% recovery from its April 2025 trough and has begun giving back gains, lagging SPY by about 4 points over the trailing 63 days. The fade follows a historic 2025 for developed ex-US equities: EFA returned roughly 31% in USD terms, with dollar weakness contributing a large share as US tariff and fiscal uncertainty pushed allocators to diversify away from US assets. The cycle model projects the next trough around November 2026, roughly five months out.",
-      "now_zh": "EFA（MSCI EAFE）截至2026年6月底进入回落阶段，位置指标约45/100，处于周期中段，既未超买也未触底洗盘。该ETF于2026年6月触峰——自2025年4月低点累计反弹50.8%——随后开始回吐涨幅，过去63个交易日较SPY落后约4个百分点。此次走弱发生在发达国际市场历史性的2025年之后：EFA当年以美元计价回报约31%，其中美元走弱贡献了很大一部分——美国关税与财政不确定性促使资产配置者分散减持美国资产。周期模型预计下一个低点约在2026年11月前后，距今约五个月。"
+      "now_zh": "EFA（MSCI EAFE）截至2026年6月底进入回落阶段，位置指标约45/100，处于周期中段，既未超买也未触底洗盘。该ETF于2026年6月触峰——自2025年4月低点累计反弹50.8%——随后开始回吐涨幅，过去63个交易日较SPY落后约4个百分点。此次走弱发生在发达国际市场历史性的2025年之后：EFA当年以美元计价回报约31%，其中美元走弱贡献了很大一部分——美国关税与财政不确定性促使资产配置者分散减持美国资产。周期模型预计下一个低点约在2026年11月前后，距今约五个月。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ilf": {
       "legs": {
@@ -914,7 +926,11 @@
         }
       },
       "now": "ILF sits in a Trough phase (position 13.7/100) after rolling over from an April 2026 peak. Over the past 63 days it has lagged SPY by 13.4 percentage points, a meaningful underperformance consistent with a risk-off rotation away from commodity-linked emerging markets. Because ILF is USD-priced, the drawdown reflects both softer local-currency Latin American equities and dollar strength compressing returns when translated back to USD. The ETF nonetheless remains above its 200-day moving average, so the broader uptrend off the January 2025 low is intact but under pressure.",
-      "now_zh": "ILF目前处于底部阶段（位置13.7/100），自2026年4月峰值后回落。过去63个交易日相对标普500落后13.4个百分点，属明显跑输，与资金撤离大宗商品挂钩新兴市场的风险偏好收缩走势一致。由于ILF以美元计价，本轮回撤同时反映拉美本币股市走弱以及美元走强对换算回美元后回报的压制。不过ETF仍高于200日均线，因此自2025年1月低点以来的上升趋势尚未被打破，但承压明显。"
+      "now_zh": "ILF目前处于底部阶段（位置13.7/100），自2026年4月峰值后回落。过去63个交易日相对标普500落后13.4个百分点，属明显跑输，与资金撤离大宗商品挂钩新兴市场的风险偏好收缩走势一致。由于ILF以美元计价，本轮回撤同时反映拉美本币股市走弱以及美元走强对换算回美元后回报的压制。不过ETF仍高于200日均线，因此自2025年1月低点以来的上升趋势尚未被打破，但承压明显。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "vgk": {
       "legs": {
@@ -1176,7 +1192,11 @@
         }
       },
       "now": "VGK (FTSE Developed Europe) sits in mid-Expansion at a cycle position score of 47.7/100, well off its February 2026 peak but still trading above its 200-day moving average. The ETF has lagged SPY by roughly 3.9 percentage points over the past 63 days, ranking fifth of the tracked universe. With the EUR/GBP currency tailwind that lifted the bloc through 2025 now less supportive and global growth expectations softening, cycle models project a trough as early as July 2026, suggesting the current pullback may have further to run.",
-      "now_zh": "VGK（富时发达欧洲ETF）目前处于扩张期中段，周期位置得分47.7/100，距2026年2月峰值已有明显回落，但仍站稳于200日均线之上。过去63个交易日相对SPY落后约3.9个百分点，在跟踪市场中排名第五。此前支撑欧洲资产的欧元与英镑汇率顺风已不再强劲，叠加全球增长预期走软，周期模型预计最早于2026年7月触及阶段性低点，当前回调可能尚未结束。"
+      "now_zh": "VGK（富时发达欧洲ETF）目前处于扩张期中段，周期位置得分47.7/100，距2026年2月峰值已有明显回落，但仍站稳于200日均线之上。过去63个交易日相对SPY落后约3.9个百分点，在跟踪市场中排名第五。此前支撑欧洲资产的欧元与英镑汇率顺风已不再强劲，叠加全球增长预期走软，周期模型预计最早于2026年7月触及阶段性低点，当前回调可能尚未结束。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "vpl": {
       "legs": {
@@ -1423,7 +1443,11 @@
         }
       },
       "now": "VPL (FTSE Developed Pacific) sits in its Peak phase at a cycle position of 73.8/100, having gained roughly 92% off the April 2025 trough, its sharpest upcycle in the 15-year window. The ETF shows mild positive relative strength versus SPY (+3.4% over 63 days, RS rank 3 of the global-bloc baskets), a relatively rare moment when the Pacific bloc keeps pace with US equities. The move is Japan-led (roughly 56% of fund weight), with South Korea (~18%) and Australia (~16%) the other major contributors, so the run reflects both Japanese governance-driven re-rating and Korean tech strength. At this elevated cycle position the fund is stretched rather than washed-out, with the model projecting the next trough around early 2027.",
-      "now_zh": "VPL（富时发达太平洋ETF）目前处于峰值阶段，周期位置为73.8/100，自2025年4月低点以来累计涨幅约92%，是15年窗口内涨幅最大的一次上行周期。该ETF相对标普500呈温和正向相对强度（63日+3.4%，在全球板块篮子中相对强度排名第3），是太平洋发达市场难得与美股同步的时期。上涨由日本主导（约占基金权重56%），韩国（约18%）和澳大利亚（约16%）为其余主要贡献者，因此本轮行情既反映了日本治理改革驱动的估值重估，也反映了韩国科技股的强势。当前周期位置偏高而非超卖，模型预测下一个低点约在2027年初。"
+      "now_zh": "VPL（富时发达太平洋ETF）目前处于峰值阶段，周期位置为73.8/100，自2025年4月低点以来累计涨幅约92%，是15年窗口内涨幅最大的一次上行周期。该ETF相对标普500呈温和正向相对强度（63日+3.4%，在全球板块篮子中相对强度排名第3），是太平洋发达市场难得与美股同步的时期。上涨由日本主导（约占基金权重56%），韩国（约18%）和澳大利亚（约16%）为其余主要贡献者，因此本轮行情既反映了日本治理改革驱动的估值重估，也反映了韩国科技股的强势。当前周期位置偏高而非超卖，模型预测下一个低点约在2027年初。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "vxus": {
       "legs": {
@@ -1616,7 +1640,11 @@
         }
       },
       "now": "VXUS (Vanguard Total International Stock ETF, FTSE Global ex-US) peaked in June 2026 and has entered an early Downturn, sitting at cycle position 57.4 out of 100 -- still in the upper half of its historical range and not yet washed out. Over the prior 63 trading days it lagged SPY by 2.3 percentage points, ranking 4th among the global/regional baskets, a modest rotation back toward US assets after a roughly 115% advance off the October 2022 low. The model projects the next trough around mid-2027 (about 1.8 years out), implying a gradual, drawn-out correction rather than a sharp flush.",
-      "now_zh": "VXUS（先锋全球除美国ETF，追踪富时全球除美指数）于2026年6月触顶，已进入初期下行阶段，周期位置为57.4/100，仍处于历史区间上半段，尚未深度超卖。过去63个交易日较SPY落后2.3个百分点，在全球/区域型篮子中排名第4，反映自2022年10月低点累计上涨约115%后，资金温和回流美国资产。模型预示下一个低谷约在2027年中（约1.8年后），意味着这是一次拉锯式、缓慢的回调，而非急速下跌。"
+      "now_zh": "VXUS（先锋全球除美国ETF，追踪富时全球除美指数）于2026年6月触顶，已进入初期下行阶段，周期位置为57.4/100，仍处于历史区间上半段，尚未深度超卖。过去63个交易日较SPY落后2.3个百分点，在全球/区域型篮子中排名第4，反映自2022年10月低点累计上涨约115%后，资金温和回流美国资产。模型预示下一个低谷约在2027年中（约1.8年后），意味着这是一次拉锯式、缓慢的回调，而非急速下跌。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     }
   },
   "detector_version": 2,
@@ -1911,7 +1939,11 @@
         }
       },
       "now": "ECH sits in a Trough phase with a cycle position of just 6.9 out of 100, near the washout floor. Over the prior quarter it lagged SPY by about 11 percentage points (RS rank 19th of 24 markets, sixth from the bottom) and its trailing-window return is roughly -22%. The big 2.3-year bull run (+111% from Oct 2023 to its Jan 2026 peak) has rolled over: ECH dropped about 20% into a March 2026 trough, staged a modest bounce to a lower high in April, and has since slid back toward the floor. The structural backdrop stays constructive longer term — Jose Antonio Kast won the December 2025 presidential election on a pro-market, fiscal-discipline platform (inaugurated March 2026), and Chile's central role in copper and lithium supply chains anchors the fundamental case — but the cycle read is firmly washed-out for now.",
-      "now_zh": "ECH 目前处于周期低谷阶段，周期位置仅为6.9/100，接近洗盘底部。过去一个季度相对标普500跑输约11个百分点（相对强弱排名第19/24，倒数第六），滚动窗口回报约为-22%。此前约2.3年的牛市（2023年10月至2026年1月高点累计上涨约111%）已经反转：ECH一度回落约20%至2026年3月低点，随后小幅反弹至4月的更低高点，此后再度滑向底部。中长期结构性背景仍偏积极——卡斯特以亲市场、财政纪律纲领赢得2025年12月总统大选（2026年3月就职），智利在铜与锂供应链中的核心地位为基本面提供支撑——但当前的周期读数明显处于超卖洗盘状态。"
+      "now_zh": "ECH 目前处于周期低谷阶段，周期位置仅为6.9/100，接近洗盘底部。过去一个季度相对标普500跑输约11个百分点（相对强弱排名第19/24，倒数第六），滚动窗口回报约为-22%。此前约2.3年的牛市（2023年10月至2026年1月高点累计上涨约111%）已经反转：ECH一度回落约20%至2026年3月低点，随后小幅反弹至4月的更低高点，此后再度滑向底部。中长期结构性背景仍偏积极——卡斯特以亲市场、财政纪律纲领赢得2025年12月总统大选（2026年3月就职），智利在铜与锂供应链中的核心地位为基本面提供支撑——但当前的周期读数明显处于超卖洗盘状态。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "eido": {
       "legs": {
@@ -2224,7 +2256,11 @@
         }
       },
       "now": "EIDO sits at a deep trough — cycle position 8.2 out of 100, below its 200-day moving average, and the worst-ranked country ETF in the universe with a -50.1% trailing return and roughly -34% relative strength vs SPY over the past 63 days. The 2026 collapse is a classic Fragile-Five dual hit: Indonesian equities AND the rupiah falling together. The triggers were a loss of policy credibility under President Prabowo — costly populist spending led by a ~$20bn free-meals program, fears over Bank Indonesia's independence, and a move to centralize palm-oil and coal exports — which combined with MSCI/FTSE index downgrades to force heavy foreign outflows (over $3bn). The rupiah sank toward record lows near 18,000/USD and the Jakarta Composite fell roughly 36% from its January 2026 peak. At a position of 8.2 the ETF is washed-out on a cycle basis, but the underlying macro and political risks are not yet resolved.",
-      "now_zh": "EIDO处于深度谷底——周期位置仅8.2/100，位于200日均线下方，是本宇宙中排名垫底的国家ETF，过去回报-50.1%，过去63日相对SPY的相对强弱约-34%。2026年的崩跌是典型的\"脆弱五国\"双重打击：印尼股票与印尼盾同步下跌。导火索是普拉博沃总统执政下政策公信力的下滑——以约200亿美元免费餐计划为代表的高成本民粹支出、对印尼央行独立性的担忧、以及将棕榈油和煤炭出口收归中央管控的举措——叠加MSCI/FTSE指数下调，迫使外资大规模流出（逾30亿美元）。印尼盾跌向接近18,000/美元的历史低位，雅加达综合指数较2026年1月高点跌约36%。周期位置8.2意味着技术上已极度超卖，但宏观与政治风险尚未消除。"
+      "now_zh": "EIDO处于深度谷底——周期位置仅8.2/100，位于200日均线下方，是本宇宙中排名垫底的国家ETF，过去回报-50.1%，过去63日相对SPY的相对强弱约-34%。2026年的崩跌是典型的\"脆弱五国\"双重打击：印尼股票与印尼盾同步下跌。导火索是普拉博沃总统执政下政策公信力的下滑——以约200亿美元免费餐计划为代表的高成本民粹支出、对印尼央行独立性的担忧、以及将棕榈油和煤炭出口收归中央管控的举措——叠加MSCI/FTSE指数下调，迫使外资大规模流出（逾30亿美元）。印尼盾跌向接近18,000/美元的历史低位，雅加达综合指数较2026年1月高点跌约36%。周期位置8.2意味着技术上已极度超卖，但宏观与政治风险尚未消除。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "epol": {
       "legs": {
@@ -2499,7 +2535,11 @@
         }
       },
       "now": "EPOL (iShares MSCI Poland ETF) registered a cycle peak in June 2026, capping an extraordinary 184% advance from its October 2023 trough, and the dashboard now reads it in Trough phase at a cycle position of 31.2 out of 100, meaning the ETF has already pulled back from that high. Relative strength versus the US has turned mildly negative over the past quarter (rs_63d -4.1%), ranking 8th among the tracked markets. The ETF still sits above its 200-day moving average, so the broader uptrend is not yet decisively broken. The model projects the next significant trough around November 2026, roughly five months out.",
-      "now_zh": "EPOL（iShares MSCI波兰ETF）于2026年6月触及周期峰值，为自2023年10月低点起184%的非凡涨幅画上句号。目前仪表盘将其读为\"谷底\"阶段，周期位置31.2（满分100），意味着ETF已从该高点回撤。相对于美国市场，近三个月相对强度略为负值（rs_63d -4.1%），在跟踪市场中排名第8。ETF仍处于200日均线上方，因此中期上升趋势尚未明确破坏。模型预测下一个显著低点约在2026年11月前后，距今约五个月。"
+      "now_zh": "EPOL（iShares MSCI波兰ETF）于2026年6月触及周期峰值，为自2023年10月低点起184%的非凡涨幅画上句号。目前仪表盘将其读为\"谷底\"阶段，周期位置31.2（满分100），意味着ETF已从该高点回撤。相对于美国市场，近三个月相对强度略为负值（rs_63d -4.1%），在跟踪市场中排名第8。ETF仍处于200日均线上方，因此中期上升趋势尚未明确破坏。模型预测下一个显著低点约在2026年11月前后，距今约五个月。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ewa": {
       "legs": {
@@ -2806,7 +2846,11 @@
         }
       },
       "now": "EWA is in Downturn at cycle position 34.7/100, having peaked in April 2026 and slipped since. Its 63-day relative strength of -10.4 versus SPY ranks 18th of the 24 country and regional markets tracked, placing it among the weaker performers as commodity-linked, China-demand-sensitive markets lag a US-led tape. The ETF still sits above its 200-day moving average, so the move reads as a correction within a longer uptrend rather than a structural breakdown, but near-term momentum is clearly negative.",
-      "now_zh": "EWA目前处于下行阶段，周期位置34.7/100，于2026年4月见顶后回落。过去63日相对SPY表现为-10.4，在所追踪的24个国家及区域市场中排名第18，属于表现较弱的一档，反映出在美股领涨的环境下，商品关联、对中国需求敏感的市场相对落后。ETF仍位于200日均线之上，因此该走势更像是长期上行趋势内的修正，而非结构性破位，但短期动能明显偏弱。"
+      "now_zh": "EWA目前处于下行阶段，周期位置34.7/100，于2026年4月见顶后回落。过去63日相对SPY表现为-10.4，在所追踪的24个国家及区域市场中排名第18，属于表现较弱的一档，反映出在美股领涨的环境下，商品关联、对中国需求敏感的市场相对落后。ETF仍位于200日均线之上，因此该走势更像是长期上行趋势内的修正，而非结构性破位，但短期动能明显偏弱。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ewc": {
       "legs": {
@@ -2986,7 +3030,11 @@
         }
       },
       "now": "EWC is in the Trough phase as of end-June 2026, sitting at a cycle position of just 20.9 out of 100 — historically washed-out territory. The ETF has shed about 7.8% relative to SPY over the trailing 63 days, ranking 13th of 24 markets tracked, as oil, base metals, and the Canadian dollar all face headwinds from global growth concerns and trade uncertainty. EWC still trades above its 200-day moving average, but the cycle model projects the next trough around November 2026, suggesting the current weakness may persist before a durable recovery takes hold.",
-      "now_zh": "截至2026年6月底，EWC处于周期低谷阶段，周期位置仅为20.9/100，属历史上的深度超卖区间。过去63个交易日，EWC相对标普500落后约7.8%，在24个追踪市场中排名第13。油价、基础金属及加元同时承压于全球增长忧虑与贸易不确定性，令EWC持续走弱。尽管EWC仍位于200日均线上方，周期模型预测下一个低谷或在2026年11月前后出现，当前弱势可能延续一段时间后才会迎来持久复苏。"
+      "now_zh": "截至2026年6月底，EWC处于周期低谷阶段，周期位置仅为20.9/100，属历史上的深度超卖区间。过去63个交易日，EWC相对标普500落后约7.8%，在24个追踪市场中排名第13。油价、基础金属及加元同时承压于全球增长忧虑与贸易不确定性，令EWC持续走弱。尽管EWC仍位于200日均线上方，周期模型预测下一个低谷或在2026年11月前后出现，当前弱势可能延续一段时间后才会迎来持久复苏。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ewd": {
       "legs": {
@@ -3206,7 +3254,11 @@
         }
       },
       "now": "EWD is currently in a Trough phase, sitting at just 20.7 out of 100 on the cycle position scale, deep in washed-out territory after peaking in February 2026 and pulling back sharply. The ETF has underperformed SPY by 7.3 percentage points over the past 63 trading days, the weakest developed-market relative strength in the cohort (RS rank 12). Sweden's small, export-tilted market is pressured by rotation away from smaller European markets and its residual sensitivity to rate-sensitive real-estate and banking sectors. The SEK, after a 16.8% rally vs. USD in 2025 (the best G10 currency and its strongest year since 2003), now offers limited incremental tailwind as the Riksbank holds at 1.75% with its easing cycle effectively complete.",
-      "now_zh": "EWD目前处于周期底部阶段，周期位置仅为20.7（满分100），在2026年2月触顶后明显回落，属于深度超卖区域。过去63个交易日，EWD相对标普500跑输7.3个百分点，是发达市场样本中相对强度最弱的（排名第12）。瑞典这一小型、出口导向的市场承压，源于资金从小型欧洲市场撤离，叠加该国房地产及银行板块对利率的高度敏感性。瑞典克朗（SEK）在2025年对美元升值16.8%（G10最强、为2003年以来最强年度涨幅），但随着瑞典央行将政策利率维持在1.75%、宽松周期基本结束，汇率的边际顺风效应已趋于减弱。"
+      "now_zh": "EWD目前处于周期底部阶段，周期位置仅为20.7（满分100），在2026年2月触顶后明显回落，属于深度超卖区域。过去63个交易日，EWD相对标普500跑输7.3个百分点，是发达市场样本中相对强度最弱的（排名第12）。瑞典这一小型、出口导向的市场承压，源于资金从小型欧洲市场撤离，叠加该国房地产及银行板块对利率的高度敏感性。瑞典克朗（SEK）在2025年对美元升值16.8%（G10最强、为2003年以来最强年度涨幅），但随着瑞典央行将政策利率维持在1.75%、宽松周期基本结束，汇率的边际顺风效应已趋于减弱。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ewg": {
       "legs": {
@@ -3386,7 +3438,11 @@
         }
       },
       "now": "EWG sits in Trough territory (pos 26.4/100), below its 200-day moving average and lagging SPY by 6.2% over the past quarter, ranking 11th of 24 markets tracked. The February 2026 peak near DAX 25,000 gave way to a sharp pullback driven by US tariffs on European goods (15% baseline framework, with autos and steel exposed) and persistent German industrial weakness after back-to-back GDP contractions in 2023 and 2024. The EUR/USD component has been a modest headwind, with the euro easing to roughly 1.15 after touching early-2026 highs near 1.19. The model projects the cycle trough around September 2026, implying continued digestion before a potential turn.",
-      "now_zh": "EWG目前处于周期低谷区间（位置26.4/100），已跌破200日均线，近三个月相对标普500落后6.2%，在24个追踪市场中排名第11。2026年2月DAX触及约25,000点高峰后，受美国关税冲击（欧洲商品15%基准框架，汽车和钢铁尤其承压）以及德国工业持续疲软（2023与2024连续两年GDP收缩）的拖累，市场急剧回落。欧元兑美元也构成温和阻力，欧元从2026年初约1.19的高位回落至约1.15。模型预计本轮低谷约于2026年9月确立，此后或迎来新的周期转折。"
+      "now_zh": "EWG目前处于周期低谷区间（位置26.4/100），已跌破200日均线，近三个月相对标普500落后6.2%，在24个追踪市场中排名第11。2026年2月DAX触及约25,000点高峰后，受美国关税冲击（欧洲商品15%基准框架，汽车和钢铁尤其承压）以及德国工业持续疲软（2023与2024连续两年GDP收缩）的拖累，市场急剧回落。欧元兑美元也构成温和阻力，欧元从2026年初约1.19的高位回落至约1.15。模型预计本轮低谷约于2026年9月确立，此后或迎来新的周期转折。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ewh": {
       "legs": {
@@ -3632,7 +3688,11 @@
         }
       },
       "now": "EWH sits at a cycle position of 0.3 out of 100, effectively the most washed-out reading in its 15-year window, having peaked in May 2026 and rolled over, with the ETF now below its 200-day moving average. Its 63-day relative strength of -18.1 versus SPY ranks 21st of 24 single countries, among the weakest in the universe, reflecting a flagging Hang Seng and a HKD-peg dynamic that offers USD investors no currency cushion. The post-tariff-truce rally from the April 2025 trough ran +70% into May 2026, but momentum has since reversed as US-China trade uncertainty resurfaces and Hong Kong's economy remains pressured by a multi-year property downturn and high US-linked interest rates transmitted through the peg. The cycle model projects a next trough around October 2026.",
-      "now_zh": "EWH 的周期位置仅为 0.3（满分 100），是 15 年窗口内几乎最低的超卖读数——ETF 于 2026 年 5 月见顶后回落，当前已跌破 200 日均线。相对标普 500 的 63 日强弱值为 -18.1，在 24 个单一国家中排名第 21，处于全市场最弱之列，反映出恒生指数走弱与港元与美元联系汇率的双重拖累，USD 投资者缺乏汇率缓冲。从 2025 年 4 月低点至 2026 年 5 月高点的涨幅达 70%，但随着美中贸易不确定性重燃、香港楼市多年低迷及通过联系汇率传导的高利率环境持续，行情已开始逆转。周期模型预计下一个低点约在 2026 年 10 月前后。"
+      "now_zh": "EWH 的周期位置仅为 0.3（满分 100），是 15 年窗口内几乎最低的超卖读数——ETF 于 2026 年 5 月见顶后回落，当前已跌破 200 日均线。相对标普 500 的 63 日强弱值为 -18.1，在 24 个单一国家中排名第 21，处于全市场最弱之列，反映出恒生指数走弱与港元与美元联系汇率的双重拖累，USD 投资者缺乏汇率缓冲。从 2025 年 4 月低点至 2026 年 5 月高点的涨幅达 70%，但随着美中贸易不确定性重燃、香港楼市多年低迷及通过联系汇率传导的高利率环境持续，行情已开始逆转。周期模型预计下一个低点约在 2026 年 10 月前后。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ewi": {
       "legs": {
@@ -3878,7 +3938,11 @@
         }
       },
       "now": "EWI sits in Expansion at a mid-cycle position of 56/100, having traced the longest and most powerful up-leg in the 15-year dataset — a 228% rally from the October 2022 trough to the current peak in June 2026. Relative strength vs SPY is essentially flat over the trailing quarter (+0.6%), a notable outcome for a peripheral European market that implies the local re-rating has broadly kept pace with US equities rather than lagging. The ETF remains above its 200-day moving average, but the model projects the next turn to be a trough around November 2026, consistent with a maturing leg this far above the prior base.",
-      "now_zh": "EWI目前处于扩张阶段，周期位置56/100，自2022年10月低点至2026年6月已累计上涨228%，是本15年数据集中最长、最强劲的上行走势。过去一个季度相对标普500的超额收益基本为零（+0.6%），对意大利这样的欧洲外围市场而言较为难得，说明其本地重新定价大体跟上了美股而非落后。ETF仍在200日均线以上，但模型预计下一个拐点为约2026年11月的阶段性低点，与这段已远高于此前基底的上行走势趋于成熟的判断一致。"
+      "now_zh": "EWI目前处于扩张阶段，周期位置56/100，自2022年10月低点至2026年6月已累计上涨228%，是本15年数据集中最长、最强劲的上行走势。过去一个季度相对标普500的超额收益基本为零（+0.6%），对意大利这样的欧洲外围市场而言较为难得，说明其本地重新定价大体跟上了美股而非落后。ETF仍在200日均线以上，但模型预计下一个拐点为约2026年11月的阶段性低点，与这段已远高于此前基底的上行走势趋于成熟的判断一致。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ewj": {
       "legs": {
@@ -4128,7 +4192,11 @@
         }
       },
       "now": "EWJ (Japan) is in an Expansion phase at cycle position 55 out of 100 — mid-range, neither washed-out nor stretched, and still above its 200-day moving average. The current leg up from the April 2025 trough has gained roughly 66%, one of the stronger developed-market runs in this window. Relative strength versus SPY over the past 63 days is modestly negative at -1.5%, ranking Japan 6th of 24 markets (upper-middle of the pack). The dominant near-term driver is a gradually firming yen — the BOJ raised its policy rate to 0.75% in December 2025 while Fed cuts narrow the US-Japan rate differential — set against the bank-led domestic re-rating; because EWJ is a USD-listed series, a strengthening yen is now an FX tailwind for dollar holders even as it caps local exporter upside. The cycle model projects a turn toward a trough around November 2026.",
-      "now_zh": "EWJ（日本）目前处于扩张阶段，周期位置约55/100，既未过度超卖也未过度拉伸，仍站在200日均线上方。自2025年4月低点以来本轮上涨幅度约66%，是本阶段发达市场中较强劲的行情之一。过去63个交易日相对SPY的强弱为-1.5%，在24个市场中排名第6（居中偏上）。当前核心驱动力是日元温和走强——日本银行于2025年12月加息至0.75%，同时美联储降息缩窄美日利差——叠加银行股领涨的国内重估；由于EWJ以美元计价，日元升值如今对美元持有者构成汇率顺风，但也压制本地出口商的上行空间。周期模型预计本轮扩张将于2026年11月前后转向见顶回落。"
+      "now_zh": "EWJ（日本）目前处于扩张阶段，周期位置约55/100，既未过度超卖也未过度拉伸，仍站在200日均线上方。自2025年4月低点以来本轮上涨幅度约66%，是本阶段发达市场中较强劲的行情之一。过去63个交易日相对SPY的强弱为-1.5%，在24个市场中排名第6（居中偏上）。当前核心驱动力是日元温和走强——日本银行于2025年12月加息至0.75%，同时美联储降息缩窄美日利差——叠加银行股领涨的国内重估；由于EWJ以美元计价，日元升值如今对美元持有者构成汇率顺风，但也压制本地出口商的上行空间。周期模型预计本轮扩张将于2026年11月前后转向见顶回落。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ewl": {
       "legs": {
@@ -4320,7 +4388,11 @@
         }
       },
       "now": "EWL (Switzerland) is in an Expansion phase at a cycle position of roughly 40/100, having pulled back from a February 2026 peak and now sitting in the lower half of its current up-leg, neither washed-out nor stretched. A firm safe-haven CHF drags USD-denominated returns for US investors even when local Swiss equities hold relatively stable, since EWL return = local equity x CHF/USD. Over the last 63 days EWL has lagged SPY by about 3.3 percentage points (rank 7 of the country set), a moderate underperformance consistent with the defensive, low-beta character of Swiss large-caps versus high-momentum US tech.",
-      "now_zh": "EWL（瑞士）当前处于扩张阶段，周期位置约40/100，已从2026年2月高峰回调，目前处于本轮上升行情的中下半段——既未洗盘充分，也谈不上超买。坚挺的避险瑞郎使以美元计价的EWL承受汇率拖累，即便瑞士本地股市相对稳定，因为EWL回报＝本地股票×瑞郎/美元。过去63日相对标普500落后约3.3个百分点（在国家序列中排第7），属温和落后，与瑞士大盘股低贝塔的防御特性、以及相对高动能美股的差距相符。"
+      "now_zh": "EWL（瑞士）当前处于扩张阶段，周期位置约40/100，已从2026年2月高峰回调，目前处于本轮上升行情的中下半段——既未洗盘充分，也谈不上超买。坚挺的避险瑞郎使以美元计价的EWL承受汇率拖累，即便瑞士本地股市相对稳定，因为EWL回报＝本地股票×瑞郎/美元。过去63日相对标普500落后约3.3个百分点（在国家序列中排第7），属温和落后，与瑞士大盘股低贝塔的防御特性、以及相对高动能美股的差距相符。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ewn": {
       "legs": {
@@ -4560,7 +4632,11 @@
         }
       },
       "now": "EWN sits at a cycle Peak with a position score of 91.4 out of 100, highly extended after an ~80% rally from the April 2025 trough -- one of the sharpest developed-market rebounds in this dataset. Relative strength vs. SPY over the trailing 63 days is +6.8%, ranking third globally, driven by AI-related semiconductor demand flowing to ASML and by a sharply weaker dollar that lifted USD-denominated returns through 2025. The model projects a turn to trough around October 2026, so the current stretch carries elevated mean-reversion risk even as momentum remains intact.",
-      "now_zh": "EWN目前处于周期顶峰，位置评分高达91.4/100，自2025年4月低点以来累计上涨约80%，为本数据集中发达市场涨幅最大的市场之一。过去63日相对标普500超额收益达+6.8%，全球排名第三，主要受益于AI相关半导体需求传导至ASML，以及2025年美元大幅走弱对美元计价回报的提振。模型预测下一个低点约在2026年10月，因此当前高位区间的均值回归风险不容忽视，尽管动能仍然完好。"
+      "now_zh": "EWN目前处于周期顶峰，位置评分高达91.4/100，自2025年4月低点以来累计上涨约80%，为本数据集中发达市场涨幅最大的市场之一。过去63日相对标普500超额收益达+6.8%，全球排名第三，主要受益于AI相关半导体需求传导至ASML，以及2025年美元大幅走弱对美元计价回报的提振。模型预测下一个低点约在2026年10月，因此当前高位区间的均值回归风险不容忽视，尽管动能仍然完好。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ewp": {
       "legs": {
@@ -4786,7 +4862,11 @@
         }
       },
       "now": "Spain's EWP sits in early Recovery at position 30/100 within the current cycle, pulled back from its June 2026 high but still holding above the 200-day moving average. The 63-day relative strength vs SPY is modestly negative (-0.9), placing it mid-pack among developed-market peers (RS rank 5). The IBEX 35's dominant banks (Santander, BBVA, CaixaBank) drove a roughly +247% advance off the October 2022 low, but the market is consolidating as ECB rate-cut expectations begin to compress the net-interest-margin tailwind. The cycle model projects the next trough around November 2026.",
-      "now_zh": "西班牙EWP目前处于复苏早期，周期位置30/100，已自2026年6月高点回落，但仍站稳200日均线上方。过去63日相对SPY强度为-0.9，在发达市场中处于中游（强度排名第5）。IBEX 35中占主导的银行股（桑坦德、BBVA、CaixaBank）推动指数自2022年10月低点累计上涨约247%，但随着欧洲央行降息预期开始压缩净息差优势，市场进入整固。周期模型预测下一个低点约在2026年11月前后。"
+      "now_zh": "西班牙EWP目前处于复苏早期，周期位置30/100，已自2026年6月高点回落，但仍站稳200日均线上方。过去63日相对SPY强度为-0.9，在发达市场中处于中游（强度排名第5）。IBEX 35中占主导的银行股（桑坦德、BBVA、CaixaBank）推动指数自2022年10月低点累计上涨约247%，但随着欧洲央行降息预期开始压缩净息差优势，市场进入整固。周期模型预测下一个低点约在2026年11月前后。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ewq": {
       "legs": {
@@ -5035,7 +5115,11 @@
         }
       },
       "now": "EWQ (iShares MSCI France ETF) is in an Expansion phase at cycle position 51.8/100, sitting mid-range after peaking in February 2026 and pulling back modestly. Relative strength vs SPY over the past 63 days is -5.5, making France one of the weakest single-country markets in developed Europe on this measure, weighed down by persistent political and fiscal headwinds that have kept the CAC 40 lagging Germany and Spain even as European equities broadly recovered. The USD-denominated ETF combines local equity performance with EUR/USD dynamics; euro strength provided a tailwind during the long up-leg, but fiscal-deficit concerns and political gridlock following Macron's 2024 snap election have capped upside. The model projects a cyclical trough around August 2026, suggesting the pullback may not yet be complete.",
-      "now_zh": "EWQ（iShares MSCI法国ETF）目前处于扩张期，周期位置51.8/100，于2026年2月触顶后小幅回落至中位区间。过去63个交易日相对标普500的强弱指标为-5.5，是发达欧洲单一国家市场中表现最弱的之一——法国政治与财政风险的拖累持续存在，即便欧洲整体回暖，CAC 40依然落后于德国和西班牙。该USD计价ETF同时反映本地股市走势与欧元/美元汇率变动；在漫长的上行阶段中，欧元走强曾带来顺风，但马克龙2024年提前选举后的政治僵局和财政赤字隐忧持续压制法国股市的上行空间。模型预计下一个周期低点约在2026年8月，意味着此轮调整可能尚未结束。"
+      "now_zh": "EWQ（iShares MSCI法国ETF）目前处于扩张期，周期位置51.8/100，于2026年2月触顶后小幅回落至中位区间。过去63个交易日相对标普500的强弱指标为-5.5，是发达欧洲单一国家市场中表现最弱的之一——法国政治与财政风险的拖累持续存在，即便欧洲整体回暖，CAC 40依然落后于德国和西班牙。该USD计价ETF同时反映本地股市走势与欧元/美元汇率变动；在漫长的上行阶段中，欧元走强曾带来顺风，但马克龙2024年提前选举后的政治僵局和财政赤字隐忧持续压制法国股市的上行空间。模型预计下一个周期低点约在2026年8月，意味着此轮调整可能尚未结束。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ews": {
       "legs": {
@@ -5203,7 +5287,11 @@
         }
       },
       "now": "EWS sits in a Recovery phase at position 24.4/100, having pulled back from its June 2026 cycle high while underperforming SPY by 5.8% over the past 63 days. The ETF still trades above its 200-day moving average, so the longer uptrend is intact, but the cycle model projects the next trough near December 2026, suggesting the current pullback phase may have further to run. The managed Singapore dollar has shown no strong appreciation versus USD, limiting the FX tailwind to dollar-denominated returns.",
-      "now_zh": "EWS 处于复苏阶段，位置读数 24.4/100，已自 2026 年 6 月的周期高点回落，近 63 日相对标普 500 落后约 5.8 个百分点。ETF 仍站在 200 日均线之上，长期上行趋势未破，但周期模型预计下一个低谷约在 2026 年 12 月，当前回调阶段可能尚未结束。受管理的新加坡元对美元缺乏明显升值动力，也限制了以美元计价 EWS 回报的汇率顺风。"
+      "now_zh": "EWS 处于复苏阶段，位置读数 24.4/100，已自 2026 年 6 月的周期高点回落，近 63 日相对标普 500 落后约 5.8 个百分点。ETF 仍站在 200 日均线之上，长期上行趋势未破，但周期模型预计下一个低谷约在 2026 年 12 月，当前回调阶段可能尚未结束。受管理的新加坡元对美元缺乏明显升值动力，也限制了以美元计价 EWS 回报的汇率顺风。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ewt": {
       "legs": {
@@ -5407,7 +5495,11 @@
         }
       },
       "now": "EWT sits at a cycle Peak (pos 89.9/100), near the top of its 15-year range, with Taiwan's market at record highs powered by the AI-driven semiconductor up-cycle anchored by TSMC. Relative strength vs SPY is strongly positive at +30.3% over the last 63 trading days, the second-strongest reading in the global coverage universe (rank 2 of 24). As a USD ETF, the return blends a powerful local-equity move with a broadly stable-to-firmer TWD. Total return is up ~564% since 2011 — the highest in the universe — so the market is stretched rather than washed out; the cycle projection points to a prospective trough around February 2027.",
-      "now_zh": "EWT目前处于周期高峰（位置89.9/100），接近15年区间顶部，台湾股市在以台积电为核心的AI半导体上行周期推动下创历史新高。过去63个交易日相对SPY的超额收益达+30.3%，位居全球覆盖市场（24个中第2）第二强。作为美元ETF，其回报同时反映强劲的本地股市表现与整体稳定偏强的新台币汇率。自2011年以来累计总回报约564%——为全球最高——故当前处于估值偏高而非超卖状态；周期模型预测约在2027年2月见底。"
+      "now_zh": "EWT目前处于周期高峰（位置89.9/100），接近15年区间顶部，台湾股市在以台积电为核心的AI半导体上行周期推动下创历史新高。过去63个交易日相对SPY的超额收益达+30.3%，位居全球覆盖市场（24个中第2）第二强。作为美元ETF，其回报同时反映强劲的本地股市表现与整体稳定偏强的新台币汇率。自2011年以来累计总回报约564%——为全球最高——故当前处于估值偏高而非超卖状态；周期模型预测约在2027年2月见底。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ewu": {
       "legs": {
@@ -5659,7 +5751,11 @@
         }
       },
       "now": "EWU sits at the extreme low end of its cycle range (position 1.3 out of 100), the most washed-out reading among tracked developed markets despite still trading above its 200-day average. The ETF peaked in February 2026 and has since lagged, with relative strength of -9.2% versus SPY over the past 63 trading days, ranking 16th of all markets. The FTSE 100's defensive, commodity, and financial tilt has not been enough to offset sterling softness and a global rotation toward US and Asian equities; the cycle model projects a trough around July 2026.",
-      "now_zh": "EWU目前处于周期区间的极低端（位置1.3/100），是被追踪的发达市场中最被抛售的标的，尽管仍位于200日均线上方。该ETF于2026年2月见顶后表现落后，过去63个交易日相对标普500的强度为-9.2%，在所有追踪市场中排名第16。英镑走软与全球资金转向美股及亚洲股市，抵消了富时100能源、金融等防御性板块的支撑；周期模型预计将在2026年7月前后触底。"
+      "now_zh": "EWU目前处于周期区间的极低端（位置1.3/100），是被追踪的发达市场中最被抛售的标的，尽管仍位于200日均线上方。该ETF于2026年2月见顶后表现落后，过去63个交易日相对标普500的强度为-9.2%，在所有追踪市场中排名第16。英镑走软与全球资金转向美股及亚洲股市，抵消了富时100能源、金融等防御性板块的支撑；周期模型预计将在2026年7月前后触底。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "eww": {
       "legs": {
@@ -5941,7 +6037,11 @@
         }
       },
       "now": "EWW reads as a cycle Trough (pos 4.5/100): after an 80%-plus rebound that peaked in February 2026, the ETF has rolled over and given back enough ground to register a fresh oversold cycle low, though it still sits above its 200-day average. It has lagged SPY by roughly 8 percentage points over the past 63 days, pressured by a softer Mexican peso and the tariff overhang from the second Trump administration. The nearshoring optimism that powered the 2022-2024 rally has cooled as USMCA-compliance friction and judicial-reform uncertainty weigh on fresh foreign direct investment. At this depth the tape is washed out, but a firmer peso or tariff de-escalation would be needed to confirm a new up-leg.",
-      "now_zh": "EWW当前处于周期谷底（位置4.5/100）：在一轮逾80%的反弹于2026年2月见顶后，该ETF回落并跌出新的超卖周期低点读数，但仍位于200日均线上方。过去63个交易日中，它相对标普500跑输约8个百分点，受比索走软及特朗普第二任期关税阴云施压。此前2022至2024年间支撑行情的近岸制造业热潮已降温，USMCA合规摩擦及司法改革不确定性打压了新增外商直接投资。从周期深度看技术面已超卖，但若缺乏比索企稳或关税缓和，新一轮上升行情难以确认。"
+      "now_zh": "EWW当前处于周期谷底（位置4.5/100）：在一轮逾80%的反弹于2026年2月见顶后，该ETF回落并跌出新的超卖周期低点读数，但仍位于200日均线上方。过去63个交易日中，它相对标普500跑输约8个百分点，受比索走软及特朗普第二任期关税阴云施压。此前2022至2024年间支撑行情的近岸制造业热潮已降温，USMCA合规摩擦及司法改革不确定性打压了新增外商直接投资。从周期深度看技术面已超卖，但若缺乏比索企稳或关税缓和，新一轮上升行情难以确认。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ewy": {
       "legs": {
@@ -6199,7 +6299,11 @@
         }
       },
       "now": "EWY sits at a cycle Peak with position 79.9/100, having rebounded roughly 88% off its March 2026 trough in just three months -- one of the fastest re-accelerations in its history. It is the top relative-strength performer in the country-ETF universe, outpacing SPY by nearly 40 percentage points over the trailing 63 days, driven by an AI-memory (HBM) upcycle that has made SK Hynix and Samsung -- together more than half of KOSPI market cap -- the focal point of global flows. That same concentration is the key fragility: with two semiconductor names dominating the index, the upside is leveraged but so is the downside if memory earnings expectations wobble. Currency is a permanent amplifier -- KRW strength boosts EWY's USD return, while KRW weakness (as during the December 2024 martial-law shock, when the won fell toward 1,440-1,480/USD) cuts into dollar performance.",
-      "now_zh": "EWY目前处于周期顶峰，位置值79.9/100，自2026年3月低点以来仅三个月便反弹约88%，是其历史上最急速的再加速之一。该ETF是国家ETF体系中相对强度排名第一的市场，过去63个交易日跑赢SPY近40个百分点，核心驱动力是AI内存（HBM）上行周期——SK海力士与三星合计占KOSPI市值逾半，成为全球资金汇聚的焦点。这一高度集中正是关键脆弱点：两只半导体龙头主导指数，使涨幅被杠杆化放大，但内存盈利预期一旦动摇，跌幅亦会被同等放大。汇率是永久性放大器——韩元升值提升EWY美元回报，而韩元贬值（如2024年12月戒严冲击期间韩元贬至约1440-1480/美元）则侵蚀美元收益。"
+      "now_zh": "EWY目前处于周期顶峰，位置值79.9/100，自2026年3月低点以来仅三个月便反弹约88%，是其历史上最急速的再加速之一。该ETF是国家ETF体系中相对强度排名第一的市场，过去63个交易日跑赢SPY近40个百分点，核心驱动力是AI内存（HBM）上行周期——SK海力士与三星合计占KOSPI市值逾半，成为全球资金汇聚的焦点。这一高度集中正是关键脆弱点：两只半导体龙头主导指数，使涨幅被杠杆化放大，但内存盈利预期一旦动摇，跌幅亦会被同等放大。汇率是永久性放大器——韩元升值提升EWY美元回报，而韩元贬值（如2024年12月戒严冲击期间韩元贬至约1440-1480/美元）则侵蚀美元收益。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "ewz": {
       "legs": {
@@ -6494,7 +6598,11 @@
         }
       },
       "now": "EWZ sits deep in a Trough at position 5.8/100, having reversed sharply off its April 2026 peak after a powerful prior advance. Its 63-day relative strength versus SPY is −18.5, among the weakest readings in the universe (RS rank 22 of 24), and total return over the 15-year window is roughly −9.5% in USD terms, underscoring how punishing the currency drag has been. The structural pattern is familiar: the preceding Dec-2024 to Apr-2026 leg (+96%) was driven largely by global USD weakness and a BRL carry rebound rather than domestic reform, and EWZ remains hostage to commodity prices, Brazil's fiscal credibility, and a procyclical real.",
-      "now_zh": "EWZ深陷周期低谷，当前位置仅为5.8/100，从2026年4月峰值急剧反转，此前曾大幅上涨。过去63日相对SPY的强弱为−18.5，属本数据库最弱之列（强弱排名第22/24位）；15年观察窗口内以美元计的累计总回报约为−9.5%，凸显汇率阻力的侵蚀力度。其结构性特征一如既往：此前2024年12月至2026年4月的涨势（+96%）主要由全球美元走弱与雷亚尔套息回归驱动，而非国内改革；EWZ仍受制于大宗商品价格、巴西财政公信力及顺周期的雷亚尔。"
+      "now_zh": "EWZ深陷周期低谷，当前位置仅为5.8/100，从2026年4月峰值急剧反转，此前曾大幅上涨。过去63日相对SPY的强弱为−18.5，属本数据库最弱之列（强弱排名第22/24位）；15年观察窗口内以美元计的累计总回报约为−9.5%，凸显汇率阻力的侵蚀力度。其结构性特征一如既往：此前2024年12月至2026年4月的涨势（+96%）主要由全球美元走弱与雷亚尔套息回归驱动，而非国内改革；EWZ仍受制于大宗商品价格、巴西财政公信力及顺周期的雷亚尔。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "eza": {
       "legs": {
@@ -6752,7 +6860,11 @@
         }
       },
       "now": "EZA sits at a cycle position of 1.7 out of 100 — essentially a multi-year trough — after peaking in February 2026 and selling off sharply into a March 2026 low. The ETF is below its 200-day moving average and has trailed SPY by 13.7 percentage points over the past 63 days, reflecting both a JSE equity pullback and renewed rand weakness against the dollar. The drawdown caps the exhaustion of the long 2023-2026 GNU re-rating rally, the largest up-leg in this market's 15-year record. The cycle model projects the next inflection as a potential turn higher around September 2026, consistent with this market's history of sharp mean-reversion off washed-out troughs.",
-      "now_zh": "EZA当前周期位置仅为1.7/100，接近多年低点——2026年2月触顶后急剧回落，并于2026年3月探底。目前仍处于200日均线下方，过去63个交易日相对标普500跑输13.7个百分点，反映出约翰内斯堡证券交易所股市下跌与兰特对美元走弱的双重压力。此次回落标志着2023至2026年国家团结政府（GNU）重新定价行情的动能耗尽——那是该市场15年记录中最大的单边上升行情。周期模型预计下一个拐点为2026年9月前后可能出现的向上转折，这与该市场在极度超卖低点后往往强劲均值回归的历史一致。"
+      "now_zh": "EZA当前周期位置仅为1.7/100，接近多年低点——2026年2月触顶后急剧回落，并于2026年3月探底。目前仍处于200日均线下方，过去63个交易日相对标普500跑输13.7个百分点，反映出约翰内斯堡证券交易所股市下跌与兰特对美元走弱的双重压力。此次回落标志着2023至2026年国家团结政府（GNU）重新定价行情的动能耗尽——那是该市场15年记录中最大的单边上升行情。周期模型预计下一个拐点为2026年9月前后可能出现的向上转折，这与该市场在极度超卖低点后往往强劲均值回归的历史一致。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "fxi": {
       "legs": {
@@ -6998,7 +7110,11 @@
         }
       },
       "now": "FXI sits at an extreme trough (position 0.3/100), having shed roughly 23.5% from its October 2025 peak amid renewed US-China trade tensions and a firmer USD that weighed on both Chinese equities and the renminbi. Relative strength versus SPY is deeply negative at -22.1, ranking it 23rd of 24 markets — a stark divergence as US equities held up while China rolled over. The ETF trades below its 200-day moving average. The cycle model projects a potential turn toward a new peak around December 2026, implying the market may be trying to base near these washed-out levels.",
-      "now_zh": "FXI处于极端低谷（位置0.3/100），自2025年10月峰值以来下跌约23.5%，受美中贸易摩擦再起及美元走强拖累，中国股市与人民币同步承压。相对强度较标普500指数大幅落后（-22.1，在24个市场中排名第23），与美股的韧性形成鲜明分化。ETF现位于200日均线下方。周期模型预测下一个峰值或于2026年12月前后出现，暗示市场可能正在这一超卖水平附近尝试筑底。"
+      "now_zh": "FXI处于极端低谷（位置0.3/100），自2025年10月峰值以来下跌约23.5%，受美中贸易摩擦再起及美元走强拖累，中国股市与人民币同步承压。相对强度较标普500指数大幅落后（-22.1，在24个市场中排名第23），与美股的韧性形成鲜明分化。ETF现位于200日均线下方。周期模型预测下一个峰值或于2026年12月前后出现，暗示市场可能正在这一超卖水平附近尝试筑底。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "inda": {
       "legs": {
@@ -7314,7 +7430,11 @@
         }
       },
       "now": "India (INDA) is in an Expansion phase after troughing in March 2026, but sits at only 39.1/100 of its cycle range and remains below its 200-day moving average -- the recovery is young and the market has not yet reclaimed the ground lost in the 2025-2026 correction. Relative strength versus SPY is firmly negative over the past 63 days (-8.2%), ranking 14th among tracked markets, consistent with an EM laggard still in catch-up mode against US equities. The model's projected next turn is a peak around November 2026, implying roughly a five-month expansion window from here, though the below-200d, low-cycle-position read argues for confirmation before pressing the recovery.",
-      "now_zh": "印度（INDA）于2026年3月触底后进入扩张阶段，但当前周期位置仅为39.1/100，仍位于200日均线下方——复苏尚处早期，市场尚未收复2025至2026年调整中失去的失地。相对于SPY的63日相对强度明显为负（-8.2%），在被跟踪市场中排名第14，符合一个仍在追赶美股的新兴市场落后者特征。模型预计下一个转折点（峰值）约在2026年11月，意味着从当前起约有五个月的扩张窗口；但鉴于价格仍处200日均线下方、周期位置偏低，宜在确认后再追高复苏。"
+      "now_zh": "印度（INDA）于2026年3月触底后进入扩张阶段，但当前周期位置仅为39.1/100，仍位于200日均线下方——复苏尚处早期，市场尚未收复2025至2026年调整中失去的失地。相对于SPY的63日相对强度明显为负（-8.2%），在被跟踪市场中排名第14，符合一个仍在追赶美股的新兴市场落后者特征。模型预计下一个转折点（峰值）约在2026年11月，意味着从当前起约有五个月的扩张窗口；但鉴于价格仍处200日均线下方、周期位置偏低，宜在确认后再追高复苏。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     },
     "tur": {
       "legs": {
@@ -7665,7 +7785,11 @@
         }
       },
       "now": "TUR is in Downturn phase at position 54.8/100, having peaked in May 2026 — mid-cycle, neither washed-out nor overextended. The ETF is down roughly 10% relative to SPY over the past 63 days, ranking 17th of 24 single-country markets tracked. Despite local Istanbul indices repeatedly hitting nominal record highs on lira-depreciation mechanics, the USD-denominated ETF shows a net negative 15-year window return (about -4%), underscoring how chronic TRY devaluation erodes USD-investor gains. The model projects the next trough around October 2026.",
-      "now_zh": "TUR目前处于下行阶段，位置指数54.8/100，于2026年5月见顶——处于周期中段，既未超卖也未明显过热。过去63个交易日相对SPY下跌约10%，在24个被跟踪的单一国家市场中排名第17。尽管伊斯坦布尔本地股指因里拉持续贬值而屡创名义新高，但以美元计价的ETF在15年窗口内总回报为负（约-4%），凸显土耳其里拉长期贬值对美元投资者收益的侵蚀。模型预测下一个低点约在2026年10月。"
+      "now_zh": "TUR目前处于下行阶段，位置指数54.8/100，于2026年5月见顶——处于周期中段，既未超卖也未明显过热。过去63个交易日相对SPY下跌约10%，在24个被跟踪的单一国家市场中排名第17。尽管伊斯坦布尔本地股指因里拉持续贬值而屡创名义新高，但以美元计价的ETF在15年窗口内总回报为负（约-4%），凸显土耳其里拉长期贬值对美元投资者收益的侵蚀。模型预测下一个低点约在2026年10月。",
+      "as_of": "2026-07-02",
+      "ttl_days": 90,
+      "archetype_check": null,
+      "prev_revision": null
     }
   }
 }
