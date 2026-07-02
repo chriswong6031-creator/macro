@@ -258,10 +258,30 @@ def build(sig: pd.DataFrame | None = None) -> dict:
     out_dir = config.data_dir() / "vector"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "override_shadow.json"
-    out_path.write_text(json.dumps(shadow, indent=2, default=str))
-    log.info("override_shadow: wrote %s", out_path)
 
-    return shadow
+    # MERGE, don't clobber: build_vector writes the W3 v0 payload (the admin
+    # BTC Override panel's schema) just before calling us. Overlay the W1
+    # measured fields onto it — panel keys preserved, stub -> measured. If no
+    # v0 payload exists (standalone run), write the measured payload alone.
+    payload = shadow
+    if out_path.exists():
+        try:
+            base = json.loads(out_path.read_text())
+            if isinstance(base, dict) and base.get("schema", "").startswith("override_shadow"):
+                base.update({k: v for k, v in shadow.items()})
+                base["schema"] = "override_shadow.v1"
+                base["stub"] = False
+                base["stub_note"] = ("v1: W1 measured overlay merged onto the W3 panel payload "
+                                     "(weekly gated-vs-raw series, prior-cycle same-point context, "
+                                     "cum gap). Per-cycle attribution + breakeven fan live in "
+                                     "data/vector/gate_attribution.json.")
+                payload = base
+        except Exception as merge_err:  # noqa: BLE001 — fall back to standalone write
+            log.warning("override_shadow: v0 merge failed (%s); writing standalone", merge_err)
+    out_path.write_text(json.dumps(payload, indent=2, default=str))
+    log.info("override_shadow: wrote %s (schema=%s)", out_path, payload.get("schema"))
+
+    return payload
 
 
 def _headline(shadow: dict) -> str:

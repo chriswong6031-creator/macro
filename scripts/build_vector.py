@@ -2435,15 +2435,6 @@ def main() -> int:
     (config.data_dir() / "vector").mkdir(parents=True, exist_ok=True)
     sig.to_parquet(config.data_dir() / "vector" / "signals.parquet")
 
-    # W1 Override-Registry: owner-only shadow artifact — compares gated vs raw
-    # engine equity since the 2026 midterm gate engaged, with prior-cycle context.
-    # Never breaks the build; isolated in try/except.
-    try:
-        from scripts.build_override_shadow import build as _build_override_shadow
-        _build_override_shadow(sig)
-    except Exception as _shadow_err:  # noqa: BLE001 — shadow is optional; never fatal
-        log.warning("override shadow (W1) failed (%s)", _shadow_err)
-
     cpath = config.data_dir() / "vector" / "calibration.json"
     calib = json.loads(cpath.read_text()) if cpath.exists() else {
         "meta": {"span": f"{sig.index.min().date()}..{sig.index.max().date()}"},
@@ -2501,6 +2492,14 @@ def main() -> int:
         build_override_shadow(sig, gate, cycle_thesis, _acfg, config.load()["vector"])
     except Exception as e:  # noqa: BLE001
         log.error("override_shadow artifact failed (%s)", e)
+    # W1 measurement overlay: MERGES the measured shadow (weekly gated-vs-raw series,
+    # prior-cycle same-point context, cum gap) INTO the W3 v0 payload above — single
+    # artifact, panel keys preserved, stub -> measured. Runs AFTER the stub by design.
+    try:
+        from scripts.build_override_shadow import build as _w1_shadow_merge
+        _w1_shadow_merge(sig)
+    except Exception as _shadow_err:  # noqa: BLE001 — shadow is optional; never fatal
+        log.warning("override shadow W1 overlay failed (%s)", _shadow_err)
 
     # W5 override forward-grading ledger (monitoring only)
     try:
