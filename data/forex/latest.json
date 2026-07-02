@@ -72,6 +72,9 @@
   },
   "dollar_desk": {
     "lean": "dollar-supportive backdrop",
+    "lean_zh": "\u504f\u591a\u7f8e\u5143\u80cc\u666f",
+    "lean_net": 3,
+    "lean_n": 3,
     "real_rate_regime": "Restrictive real yields",
     "real_rate_z": 0.63,
     "fed_path_bps": 39.0,
