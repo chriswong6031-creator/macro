@@ -446,7 +446,11 @@ def _desk_latest(desk: dict) -> dict:
     rr, fp, po = desk.get("real_rate"), desk.get("fed_path"), desk.get("positioning")
     va, trd, lq = desk.get("valuation"), desk.get("trend"), desk.get("liquidity")
     sm = desk.get("smile") or {}
-    out = {"lean": desk.get("lean")}
+    # lean_zh + lean_net let a DISPLAY consumer (e.g. the sector-page dollar-context chip,
+    # W3-C4b) render the lean bilingually and know its direction (+ = dollar-supportive) —
+    # display only, never a scored input.
+    out = {"lean": desk.get("lean"), "lean_zh": desk.get("lean_zh"),
+           "lean_net": desk.get("lean_net"), "lean_n": desk.get("lean_n")}
     if rr:
         out.update(real_rate_regime=rr.get("regime"), real_rate_z=rr.get("real_z"))
     if fp:

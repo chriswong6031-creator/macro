@@ -129,7 +129,23 @@
       "file": "engine/forex_dollar.py",
       "symbol": "dollar_desk",
       "line_ref": 324,
-      "notes": "Full broad-dollar lean written to data/forex/latest.json for display only (INTL-45). No US small-cap/cyclical context flag consumes it yet. C4b promotion path."
+      "notes": "Full broad-dollar lean written to data/forex/latest.json for display only (INTL-45). W3-C4b now surfaces this lean as a DISPLAY-ONLY context chip on dollar-sensitive US sector pages (scripts/build_site.py::_dollar_context). Still display-only: it never enters basket_score.py or any scored leg. The only dollar factor that cleared a gate is c4_reer_value (N=1 REER, not wired)."
+    },
+    {
+      "seam": "scripts/build_site.py::_dollar_context — DISPLAY ONLY (C4b)",
+      "kind": "display",
+      "file": "scripts/build_site.py",
+      "symbol": "_dollar_context",
+      "line_ref": 2118,
+      "notes": "W3-C4b: reads dollar_desk.lean from data/forex/latest.json and renders a bilingual headwind/tailwind CONTEXT chip on dollar-sensitive US sector pages (templates/sector.html.j2 s.dollar_ctx). DISPLAY-ONLY and UNVALIDATED FOR SIZING — the direction shown is the MECHANISM (strong USD hurts multinational/commodity/export cyclicals), never a measured coefficient (per-pair dollar conviction all fails DSR, INTL-43). Touches no score."
+    },
+    {
+      "seam": "templates/sector.html.j2 s.dollar_ctx — DISPLAY ONLY (C4b)",
+      "kind": "display",
+      "file": "templates/sector.html.j2",
+      "symbol": "dollar_ctx",
+      "line_ref": 247,
+      "notes": "W3-C4b render site: the dollar-lean context chip on the US sector detail page, alongside the rate/inflation transmission overlay. Bilingual t() dual-span, labeled 'context only, not sized'. DISPLAY-ONLY."
     },
     {
       "seam": "engine/forex_regime.py — display only",
@@ -138,6 +154,14 @@
       "symbol": "_sub_intensity",
       "line_ref": 136,
       "notes": "6 FX regime scenarios with Wilson-CI. Display only; 60-trial family all fail DSR (best USDCAD 0.86 < 0.90). No pair-level equity gating ever (INTL-43)."
+    },
+    {
+      "seam": "scripts/c4_reer_value.py — CONFIRMED N=1 leg, consumer wiring DEFERRED (C4a)",
+      "kind": "display",
+      "file": "scripts/c4_reer_value.py",
+      "symbol": "builder",
+      "line_ref": 1,
+      "notes": "W3-C4a: the broad-dollar REER value factor CONFIRMED through the harness on a SEPARATE single-trial budget (N=1, family c4_reer_value_n1) — DSR 0.9436 >= 0.90, split-half PASS, orthogonality vs the 5 US MRS legs PASS, crisis-count 4, crisis-indep ES PASS. weight_cap 0.1333, de-risk direction. NO CONSUMER WIRING this wave: the verdict is RECORDED and the leg is surfaced by the Layer-2 registry reader (intl_feed.features() → weight 0.1333), but NO scorer calls intl_feed so nothing sizes on it. Consumer wiring DEFERRED to a follow-up: the target scoring seam is an MRS candidate leg (conditions._macro_risk_legs) but W2-C2 showed the MRS orthogonality bar is high and this is a returns-predicting dollar factor, not a US-drawdown de-risk leg — a dedicated MRS-composite orthogonality gate must clear before it sizes positions."
     }
   ]
 }

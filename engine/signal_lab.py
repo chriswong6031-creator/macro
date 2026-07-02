@@ -850,21 +850,66 @@ REGISTRY: list[dict] = [
          extra=[("US-book DSR", "0.83 (< 0.90 door)"), ("residual DD IC vs US legs", "−0.03..−0.17 (fragile)"),
                 ("SPY MaxDD cut", "−50.1% vs −56.8% B&H (overlaps NFCI/liq)"),
                 ("prior (INTL vs INTL)", "DSR 0.9978 — a different, easier test")]),
-    _row("Broad-dollar REER value factor  (N=1 resurrection — C4)",
-         "宽美元 REER 价值因子（N=1 复活 — C4）", "Dollar / macro", "pending",
-         why="A pre-registered N=1 hypothesis, not a quiet promotion. The broad-USD REER value "
-             "factor (cheap = bullish USD) CONFIRMED in BOTH halves vs forward broad-USD returns "
-             "(IC +0.077 pre / +0.060 post) — but it was killed inside the forex 60-trial family "
-             "budget (DSR 0.0056 there). The honest path (INTL-43) is to re-run it as N=1 with a "
-             "trial budget separated from that family; PENDING that re-run.",
-         why_zh="预注册的 N=1 假设，而非悄然晋升。宽美元 REER 价值因子（便宜=看多美元）在两半均确认"
-                "（IC +0.077/+0.060），但在外汇60试验家族预算内被否决（该处 DSR 0.0056）。"
-                "诚实路径（INTL-43）是以独立于该家族的试验预算重跑为 N=1；待此重跑。",
-         source="reports/forex-calibration.md; data/intl_bridge/ledger.json (C4 reer_value)",
-         horizon="21/63/126d", ic=0.065,
-         wired="not wired (W3 N=1 re-run; display first)",
-         extra=[("IC pre / post", "+0.077 / +0.060 (both confirmed)"),
-                ("family-deflated DSR", "0.0056 (budget-killed; N=1 value pending)")]),
+    # C4a CONFIRMED (W3-C4a 2026-07-02): the N=1 REER resurrection cleared its own budget
+    _row("Broad-dollar REER value factor  (N=1 resurrection — C4a — CONFIRMED)",
+         "宽美元 REER 价值因子（N=1 复活 — C4a — 已确认）", "Dollar / macro", "confirmer",
+         why="CONFIRMED — the honest INTL-43 resurrection. The broad-USD REER value factor "
+             "(cheap = bullish USD, faithful to config forex.dollar_desk.valuation) CONFIRMED in "
+             "BOTH halves vs forward broad-USD returns at all three declared horizons (h=21 "
+             "+0.031/+0.030, h=63 +0.062/+0.056, h=126 +0.120/+0.099). Graded on its OWN "
+             "single-trial budget (trial_family c4_reer_value_n1) — the pre-registered N=1 door, "
+             "budget-separated from the forex 60-trial family (DSR 0.0056 there) AND the "
+             "intl_bridge N=17 family (DSR 0.40 there): de-risk long-flat DSR 0.9436 >= 0.90, "
+             "split-half PASS, orthogonality vs the 5 US MRS legs PASS (residual −0.130), "
+             "crisis-count 4, crisis-independent ES +0.0025. weight_cap 0.1333. NO consumer "
+             "wiring this wave: verdict recorded + surfaced by intl_feed at cap, but no scorer "
+             "consumes the feed — the MRS-composite orthogonality gate must clear first (W2-C2 "
+             "showed the bar is high and this is a returns-predicting factor, not a US-DD leg).",
+         why_zh="已确认——诚实的 INTL-43 复活。宽美元 REER 价值因子（便宜=看多美元，忠于 "
+                "config forex.dollar_desk.valuation）在两半、三个预声明期限均确认对未来宽美元回报"
+                "（h=21 +0.031/+0.030，h=63 +0.062/+0.056，h=126 +0.120/+0.099）。以独立单试验预算"
+                "（trial_family c4_reer_value_n1）评分——预注册的 N=1 门，与外汇60试验家族（该处 DSR "
+                "0.0056）及 intl_bridge N=17 家族（该处 DSR 0.40）分开：降险多-空仓 DSR 0.9436 >= 0.90，"
+                "两半通过，对5条美国 MRS 腿正交通过（残差 −0.130），危机计数4，去危机期望损失 +0.0025。"
+                "权重上限 0.1333。本波不接入消费者：结论已记录并由 intl_feed 以上限呈现，但无计分器消费"
+                "该源——须先通过 MRS 组合正交门。",
+         source="reports/forex-calibration.md (DOLLAR INDEX value); "
+                "reports/forex-reer-n1-phase0.md (W3-C4a N=1); "
+                "data/intl_bridge/ledger.json (c4_reer_value); "
+                "scripts/c4_reer_value.py + scripts/intl_phase0.py (grade, N=1 budget)",
+         horizon="21/63/126d fwd broad-USD return", dsr=0.9436, ic=0.0507,
+         wired="not wired this wave — CONFIRMED verdict recorded + surfaced at cap 0.1333; "
+               "no scorer consumes intl_feed (MRS-orthogonality gate deferred)",
+         extra=[("N=1 budget DSR", "0.9436 (>= 0.90 door)"),
+                ("vs intl_bridge N=17 / forex N=60", "0.40 / 0.0056 (budget-killed)"),
+                ("orthogonality vs 5 US MRS legs", "residual −0.130 (PASS, de-risk sign)"),
+                ("crises / crisis-indep ES", "4 / +0.0025 (PASS)")]),
+    # C4c INVERTED (W3-C4c 2026-07-02): the CNH offshore-onshore basis is the wrong-signed graveyard
+    _row("CNH offshore-onshore basis  (2nd China RORO leg? — C4c — INVERTED)",
+         "CNH 离岸-在岸基差（第二条中国 RORO 腿？ — C4c — 已反转）", "China / RORO", "display",
+         why="INVERTED — do NOT wire. Tested whether the offshore-minus-onshore CNH basis (a "
+             "funding-stress spread) adds orthogonal de-risk content beside the EXISTING raw "
+             "usdcnh RORO leg (offshore 20d move). It does not: graded at 42d DD vs FXI, rank-IC "
+             "~0.0003 (null), split-half sign-FLIPS, DSR 0.0013, and — the decider — the residual "
+             "after partialing out the raw usdcnh leg is WRONG-SIGNED (+0.121: wider basis → "
+             "SHALLOWER forward drawdown), with negative crisis-independent ES (−0.0095). USDCNH "
+             "history is short (2013+, ~2 China bears). Respecting W2-C1 (CN RORO legs already "
+             "carry beta content), a second basis leg double-counts. china_conditions RORO frame "
+             "UNCHANGED — no leg added.",
+         why_zh="已反转——请勿接入。测试 CNH 离岸减在岸基差（融资压力价差）是否在现有原始 usdcnh "
+                "RORO 腿（离岸20日动量）之外新增正交降险内容。并未：对 FXI 42日回撤评分，秩相关 "
+                "~0.0003（无效），两半符号翻转，DSR 0.0013，且——决定项——剔除原始 usdcnh 腿后的残差符号"
+                "错误（+0.121：基差越宽→未来回撤越浅），去危机期望损失为负（−0.0095）。USDCNH 历史短"
+                "（2013+，约2次中国熊市）。遵循 W2-C1（中国 RORO 腿已含贝塔内容），第二条基差腿重复计数。"
+                "china_conditions RORO 框架未变——未加腿。",
+         source="reports/forex-reer-n1-phase0.md (W3-C4c CNH-basis section); "
+                "data/intl_bridge/ledger.json (c4_cnh_basis); "
+                "scripts/c4_cnh_basis.py + scripts/intl_phase0.py (grade)",
+         horizon="21/42d fwd drawdown (FXI)", dsr=0.0013, ic=0.0003,
+         wired="not wired — INVERTED (wrong-signed residual vs existing raw usdcnh RORO leg)",
+         extra=[("residual vs raw usdcnh leg", "+0.121 (WRONG sign for a de-risk leg)"),
+                ("rank-IC vs FXI fwd DD", "~0 (0.0003); split-half sign-flips"),
+                ("crisis-indep ES", "−0.0095 (fails)")]),
     _row("Intl trend de-risk overlays  (price + total-return ETFs — C3)",
          "国际趋势降险叠加（价格指数 + 总回报ETF — C3）", "Intl ETF", "display",
          why="Two ports, one honest verdict: trend on tradeable intl is dead. The PRICE-index "

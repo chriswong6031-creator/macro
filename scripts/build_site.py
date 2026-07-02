@@ -2115,6 +2115,73 @@ def build_smartmoney_data(site: Path) -> dict | None:
     return sm
 
 
+# --------------------------------------------------------------------------- #
+# W3-C4b — dollar-desk lean → DISPLAY-ONLY sector context chip (masterplan §5 C4b)
+# --------------------------------------------------------------------------- #
+# The forex Dollar Desk computes a full broad-dollar LEAN (real-rate regime + trend stack +
+# liquidity + Fed path) → data/forex/latest.json. It was DISPLAY-only with no consumer
+# (INTL-45). C4b surfaces it as an honest CONTEXT headwind/tailwind chip on the US
+# cyclical/small-cap-relevant sector surfaces (sector.html). It is DISPLAY-ONLY and
+# UNVALIDATED for sizing — the forex 60-trial family found NO per-pair dollar conviction
+# that clears DSR (INTL-43), so this never touches basket_score.py or any scored leg. The
+# ONLY dollar factor that cleared a gate is c4_reer_value (the N=1 REER value factor), and
+# even that is not wired to a scorer. This chip is a mechanism read, not a sizing input.
+#
+# Sectors whose earnings are most dollar-sensitive: multinational/export/commodity-heavy
+# cyclicals (a STRONG dollar = a HEADWIND via cheaper commodities + FX-translation drag on
+# overseas revenue). Direction is stated as a mechanism, not a measured coefficient.
+_DOLLAR_SENSITIVE_SECTORS = {
+    # fund: (EN sensitivity note, ZH note) — the mechanism, not a validated coefficient
+    "XLE": ("energy — commodities priced in USD; a strong dollar caps oil/gas realizations",
+            "能源 —— 大宗商品以美元计价；强美元压制油气变现"),
+    "XLB": ("materials — global commodity revenue; a strong dollar is a translation + demand headwind",
+            "原材料 —— 全球大宗商品收入；强美元带来折算与需求逆风"),
+    "XLI": ("industrials — heavy overseas/export revenue; a strong dollar drags FX-translated sales",
+            "工业 —— 海外/出口收入占比高；强美元拖累外币折算销售"),
+    "XLK": ("technology — large overseas revenue mix; a strong dollar is a translation headwind",
+            "科技 —— 海外收入占比高；强美元带来折算逆风"),
+}
+
+
+def _dollar_context(site: Path, fund: str) -> dict | None:
+    """DISPLAY-ONLY dollar-desk context chip for a dollar-sensitive US sector (W3-C4b).
+    Reads the MEASURED broad-dollar lean from data/forex/latest.json and returns a bilingual
+    headwind/tailwind chip dict, or None (fail-soft) for a non-sensitive sector or missing
+    data. NEVER a scored input — labeled context/unvalidated-for-sizing on the page."""
+    note = _DOLLAR_SENSITIVE_SECTORS.get(fund)
+    if note is None:
+        return None
+    try:
+        p = config.data_dir() / "forex" / "latest.json"
+        if not p.exists():
+            return None
+        dd = (json.loads(p.read_text()) or {}).get("dollar_desk") or {}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("dollar-context read failed (%s)", e)
+        return None
+    lean = dd.get("lean")
+    if not lean:
+        return None
+    net = dd.get("lean_net")
+    # a dollar-SUPPORTIVE backdrop (net > 0) = HEADWIND for these dollar-sensitive cyclicals;
+    # dollar-SOFT (net < 0) = TAILWIND. Mixed/none = neutral context. Direction is the
+    # MECHANISM (strong USD hurts multinational/commodity revenue), never a measured coefficient.
+    if isinstance(net, (int, float)) and net >= 2:
+        tone, arrow = "headwind", "▼"
+        en = "Dollar headwind"; zh = "美元逆风"
+    elif isinstance(net, (int, float)) and net <= -2:
+        tone, arrow = "tailwind", "▲"
+        en = "Dollar tailwind"; zh = "美元顺风"
+    else:
+        tone, arrow = "neutral", "◇"
+        en = "Dollar mixed"; zh = "美元分化"
+    return {
+        "tone": tone, "arrow": arrow, "chip_en": en, "chip_zh": zh,
+        "lean_en": lean, "lean_zh": dd.get("lean_zh") or lean,
+        "note_en": note[0], "note_zh": note[1],
+    }
+
+
 def build_sector_pages(env: Environment, site: Path, generated: str,
                        alpha: dict | None = None, put_absent: bool = False,
                        rate_infl: dict | None = None) -> dict:
@@ -2282,6 +2349,7 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
              "mtf_json": _json2.dumps(res.get("mtf", {})), **res,
              "holdings": holdings,
              "rate_infl": (rate_infl or {}).get(fund),  # display-only macro overlay
+             "dollar_ctx": _dollar_context(site, fund),  # W3-C4b display-only dollar-lean chip
              "accumulation": accumulation_signals(fund, liquidity=liq,
                                                   macro_drag=drag, macro_beta=beta)}
         if alpha and fund in ETF_GICS:                 # within-sector residual-alpha leaders

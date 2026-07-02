@@ -228,16 +228,24 @@ def test_backfill_encodes_the_expected_verdicts(tmp_path, monkeypatch):
     assert by_id["intl_trend_overlay"]["verdict"] == "CONTEXT"
     assert by_id["intl_tr_trend"]["verdict"] == "CONTEXT"
     assert by_id["forex_per_pair_conviction"]["verdict"] == "CONTEXT"
-    assert by_id["c4_reer_value"]["verdict"] == "PENDING"
+    # W3-C4a: the REER value factor was resurrected on its own N=1 budget → CONFIRMED
+    # (was PENDING in W1/W2). W3-C4c: the CNH basis is INVERTED (wrong-signed residual).
+    assert by_id["c4_reer_value"]["verdict"] == "CONFIRMED"
+    assert by_id["c4_cnh_basis"]["verdict"] == "INVERTED"
+    assert by_id["c4_cnh_basis"]["kill"] is True
     assert by_id["crossmarket_leadlag"]["verdict"] == "CONTEXT"
     assert by_id["cn_external_radar"]["verdict"] == "CONTEXT"
-    # W2-C3 update: c3_global_etf_breadth is CONFIRMED (live run 2026-07-02) with non-zero cap;
-    # all OTHER backfill entries remain un-sized (not wired into any scorer)
+    # W2-C3 + W3-C4a: c3_global_etf_breadth AND c4_reer_value are the two CONFIRMED legs with
+    # non-zero caps in the LEDGER. A non-zero LEDGER cap is NOT scorer wiring — nothing in the
+    # scoring core imports the feed (see test_c4_dollar.py) — but every OTHER backfill entry
+    # remains un-sized (weight_cap 0) until its own gates clear.
     assert by_id["c3_global_etf_breadth"]["verdict"] == "CONFIRMED"
     assert by_id["c3_global_etf_breadth"]["weight_cap"] > 0.0
-    non_c3 = [f for f in by_id.values() if f["id"] != "c3_global_etf_breadth"]
-    assert all(f["weight_cap"] == 0.0 for f in non_c3), (
-        "all non-C3 backfill entries must remain un-sized until their own gates run")
+    assert by_id["c4_reer_value"]["weight_cap"] > 0.0
+    sized_ids = {"c3_global_etf_breadth", "c4_reer_value"}
+    unsized = [f for f in by_id.values() if f["id"] not in sized_ids]
+    assert all(f["weight_cap"] == 0.0 for f in unsized), (
+        "all non-CONFIRMED backfill entries must remain un-sized until their own gates run")
     # the strongest prior quotes its exact report path
     assert "intl-macro-sleeve-phase0.md" in by_id["c2_intl_macro_sleeve"]["validation_ref"]
 

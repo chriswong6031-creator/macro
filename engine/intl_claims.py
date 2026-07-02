@@ -117,9 +117,23 @@ CLAIMS: list[dict] = [
         "direction": "de-risk",   # a rich dollar is the risk-off tell for cyclicals/EM
         "target": ("forex", "broad_dollar"),
         "horizons": _TILT_HORIZONS + (126,),
-        "source_series": [("forex", "broad_dollar"), ("forex", "reer_us")],
-        "freshness_sla_days": 10,
-        "builder": None,   # W3 (C4a) — pre-registered N=1, budget-separated from the 60-trial family
+        # W3 correction (same shape as the C1 _GSPC→SPY re-point): the forex group stores
+        # JSON snapshots, not per-series parquets, so "forex/broad_dollar" would trip the
+        # fail-closed freshness gate (missing → PENDING). The engine's OWN driver map
+        # (config.yml forex.drivers) resolves broad_dollar → fred/DTWEXBGS and reer_us →
+        # fred/RBUSBIS — the actual on-disk causal series the calibration report graded.
+        # target/horizons/direction are UNCHANGED (no post-hoc grid edit).
+        "source_series": [("fred", "DTWEXBGS"), ("fred", "RBUSBIS")],
+        # RBUSBIS is the BIS monthly real broad effective exchange rate — a monthly print
+        # with a multi-week publishing lag (on disk ~2 months old between releases). 90d =
+        # ~2 monthly cadences: tolerant of the normal lag, still catches a DEAD series
+        # (years stale). DTWEXBGS is daily/live (~6d), well inside 90d.
+        "freshness_sla_days": 90,
+        "builder": "scripts.c4_reer_value.builder",   # W3 (C4a) — pre-registered N=1
+        # The N=1 budget separation (INTL-43 discipline): grade this ONE config on its OWN
+        # single-trial ledger family, NOT the intl_bridge budget (N=17) and NOT the forex
+        # 60-trial family that budget-killed it. This is the honest resurrection door.
+        "trial_family": "c4_reer_value_n1",
         "notes": "CONFIRMED both halves (IC +0.065/+0.077/+0.060) but killed by the forex 60-trial "
                  "budget. Pre-register as N=1, not a quiet promotion (INTL-43 discipline).",
     },
@@ -131,11 +145,18 @@ CLAIMS: list[dict] = [
         "direction": "de-risk",
         "target": ("yahoo", "FXI"),
         "horizons": _DD_HORIZONS,
-        "source_series": [("forex", "usdcnh"), ("forex", "cnh_basis")],
-        "freshness_sla_days": 5,
-        "builder": None,   # W3 (C4c)
+        # cnh_basis_bps = (offshore USDCNH − onshore USDCNY)/onshore × 1e4 (engine.forex_signals
+        # .cnh_basis). Offshore = yahoo/CNH_F (CME futures, live daily from 2013-02); onshore =
+        # fred/DEXCHUS (PBoC reference, ~2-week publishing lag). No standalone "forex/cnh_basis"
+        # parquet exists → point at the two raw inputs the basis is derived from (W3 correction).
+        "source_series": [("yahoo", "CNH_F"), ("fred", "DEXCHUS")],
+        # DEXCHUS lags ~2 weeks; CNH_F is same-day. 21d SLA tolerates the onshore publishing
+        # lag while still catching a dead feed.
+        "freshness_sla_days": 21,
+        "builder": "scripts.c4_cnh_basis.builder",   # W3 (C4c)
         "notes": "cny_shock is an established China driver fingerprint (china_market_drivers). "
-                 "USDCNH history short → unmeasured in the standard split (INTL-44).",
+                 "USDCNH history short (2013+) → unmeasured in the standard split (INTL-44). "
+                 "Orthogonality vs the EXISTING raw usdcnh RORO leg is the deciding gate.",
     },
     # -- C5 · Global-rates leaf -------------------------------------------
     {
@@ -332,21 +353,80 @@ BACKFILL: list[dict] = [
         "hypothesis": "Broad-dollar REER value factor (cheap = bullish USD) predicts forward "
                       "broad-USD returns — pre-registered N=1 resurrection.",
         "direction": "de-risk",
-        "verdict": "PENDING",
-        "weight_cap": 0.0,
-        "metrics": {"ic": 0.065, "dsr": 0.0056, "split_half_same_sign": True,
-                    "effective_n_crises": None, "es_ex_top3": None, "orthogonal_partial": None},
-        "gates": {"deflated_sharpe": "fail", "split_half": "pass", "leave_one_crisis_out": "na",
-                  "orthogonality": "na", "crisis_independent_es": "na", "lead_lag_kernel": "na",
-                  "freshness": "na"},
-        "source_series": ["forex/broad_dollar", "forex/reer_us"],
-        "freshness_sla_days": 10,
-        "validation_ref": "reports/forex-calibration.md",
+        # W3-C4a VERDICT: CONFIRMED. The honest INTL-43 resurrection. The factor (cheap dollar
+        # = bullish USD, faithful to config forex.dollar_desk.valuation) CONFIRMED forward
+        # broad-USD returns in BOTH halves at all three declared horizons (h=21 +0.031/+0.030,
+        # h=63 +0.062/+0.056, h=126 +0.120/+0.099). Graded through the FULL harness battery on
+        # its OWN single-trial budget (trial_family c4_reer_value_n1) — the pre-registered N=1
+        # door, budget-separated from the forex 60-trial family AND the intl_bridge N=17 family:
+        # de-risk long-flat book DSR = 0.9436 (>= 0.90 door), split-half PASS, orthogonality vs
+        # the 5 US MRS legs PASS (residual Spearman −0.130), crisis-count 4 PASS, crisis-indep
+        # ES +0.0025 PASS. Contrast: the SAME strategy under the intl_bridge N=17 budget DSRs
+        # to 0.40, and the forex 60-trial family DSR was 0.0056 — the budget separation is the
+        # whole resurrection. weight_cap 0.1333 (0.20 × (4−2)/3, scaled by 4 independent crises).
+        "verdict": "CONFIRMED",
+        "weight_cap": 0.1333,
+        "metrics": {"ic": 0.0507, "dsr": 0.9436, "split_half_same_sign": True,
+                    "effective_n_crises": 4, "es_ex_top3": 0.0025, "orthogonal_partial": -0.1301},
+        "gates": {"deflated_sharpe": "pass", "split_half": "pass", "leave_one_crisis_out": "pass",
+                  "orthogonality": "pass", "crisis_independent_es": "pass", "lead_lag_kernel": "na",
+                  "freshness": "pass"},
+        "source_series": ["fred/DTWEXBGS", "fred/RBUSBIS"],
+        "freshness_sla_days": 90,
+        "validation_ref": "reports/forex-calibration.md (DOLLAR INDEX value); "
+                          "reports/forex-reer-n1-phase0.md (W3-C4a N=1); "
+                          "scripts/c4_reer_value.py + scripts/intl_phase0.py (grade, N=1 budget)",
         "kill": False,
-        "notes": "Pre-registered N=1 resurrection (INTL-43): CONFIRMED in BOTH halves "
-                 "(IC +0.077/+0.060) but budget-killed inside the 60-trial forex family (DSR 0.0056 "
-                 "there). PENDING an N=1 re-run whose trial budget is separated from that family; "
-                 "the DSR quoted is the family-deflated value, not the N=1 value.",
+        "notes": "W3-C4a VERDICT: CONFIRMED (the pre-registered N=1 resurrection, INTL-43). "
+                 "CONFIRMED both halves at all 3 declared horizons; graded on a SEPARATE "
+                 "single-trial budget (c4_reer_value_n1) → de-risk long-flat DSR 0.9436 >= 0.90 "
+                 "(vs 0.40 under the intl_bridge N=17 budget, 0.0056 under the forex 60-trial "
+                 "family — the budget separation is the resurrection). Orthogonality vs the 5 US "
+                 "MRS legs PASS. weight_cap 0.1333 (4 independent crises). NO CONSUMER WIRING this "
+                 "wave: the CONFIRMED verdict is RECORDED and the leg is surfaced by the Layer-2 "
+                 "registry reader (intl_feed.features() → weight 0.1333, de-risk direction), but "
+                 "NO scorer calls intl_feed — nothing sizes on it. Consumer wiring DEFERRED to a "
+                 "follow-up: the target seam is an MRS candidate leg (conditions._macro_risk_legs) "
+                 "but W2-C2 showed the MRS orthogonality bar is high and this is a returns-"
+                 "predicting dollar factor, not a US-drawdown leg, so a dedicated MRS-composite "
+                 "orthogonality gate must clear before it sizes US positions.",
+    },
+    {
+        "id": "c4_cnh_basis",
+        "channel": "C4",
+        "hypothesis": "cnh_basis_bps widening (offshore CNH funding stress) leads CSI300/FXI "
+                      "forward drawdowns — candidate SECOND China RORO leg beside the raw usdcnh leg.",
+        "direction": "de-risk",
+        # W3-C4c VERDICT: INVERTED — do NOT wire. The offshore-minus-onshore CNH basis (a
+        # funding-stress spread) carries NO orthogonal de-risk content vs the EXISTING raw
+        # usdcnh RORO leg (offshore 20d move, china_conditions.roro_frame). Graded at the
+        # declared 42d DD horizon against FXI (CSI300 proxy on disk): rank-IC ~0.0003 (null),
+        # split-half sign-FLIPS, DSR 0.0013, and — the decider — the residual after partialing
+        # out the raw usdcnh leg is WRONG-SIGNED (Spearman +0.121: wider basis → SHALLOWER
+        # forward drawdown), plus crisis-independent ES is NEGATIVE (−0.0095: the gated book
+        # does not reduce expected-shortfall outside crises). Respecting W2-C1 (CN RORO legs
+        # already carry beta-type content), the basis double-counts the offshore-move leg with
+        # the wrong sign. Truthful negative — weight_cap 0, kill=True; the existing raw usdcnh
+        # RORO leg (china_conditions.py:161-163) is UNCHANGED, no second leg added.
+        "verdict": "INVERTED",
+        "weight_cap": 0.0,
+        "metrics": {"ic": 0.0003, "dsr": 0.0013, "split_half_same_sign": False,
+                    "effective_n_crises": 4, "es_ex_top3": -0.0095, "orthogonal_partial": 0.1214},
+        "gates": {"deflated_sharpe": "fail", "split_half": "fail", "leave_one_crisis_out": "pass",
+                  "orthogonality": "pass", "crisis_independent_es": "fail", "lead_lag_kernel": "na",
+                  "freshness": "pass"},
+        "source_series": ["yahoo/CNH_F", "fred/DEXCHUS"],
+        "freshness_sla_days": 21,
+        "validation_ref": "reports/forex-reer-n1-phase0.md (W3-C4c CNH-basis section); "
+                          "scripts/c4_cnh_basis.py + scripts/intl_phase0.py (grade)",
+        "kill": True,
+        "notes": "W3-C4c VERDICT: INVERTED (do NOT wire). The CNH offshore-onshore basis adds no "
+                 "orthogonal de-risk edge vs the existing raw usdcnh RORO leg — rank-IC ~0 vs FXI "
+                 "forward DD, split-half sign-flips, DSR 0.0013, and its residual after partialing "
+                 "the raw usdcnh leg is WRONG-SIGNED (+0.121) with negative crisis-independent ES. "
+                 "USDCNH history is short (2013+, ~2 China bears). Respecting W2-C1 (CN RORO legs "
+                 "already carry beta content), a second basis leg double-counts. NOT wired: "
+                 "china_conditions._macro/roro legs unchanged.",
     },
     {
         "id": "crossmarket_leadlag",
