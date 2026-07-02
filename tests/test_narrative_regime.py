@@ -1,9 +1,15 @@
-"""Tests for engine/narrative_regime.py — the NDI display banner (P1).
+"""Tests for engine/narrative_regime.py — the NDI display banner (RETIRED, D7).
 
-Gate A (scripts/narrative_regime_phase0.py) showed the text-uncertainty leg is
-redundant-or-worse with VIX for forward vol, so NDI is DISPLAY-ONLY. The load-
-bearing invariant these tests protect: `gate_multiplier` is PINNED to 1.0 — NDI
-must never silently become a scored conditioner — and the module stays a LEAF.
+Gate A (narrative_regime_phase0.py) falsified EPU+GPR on forward vol incremental
+over VIX. D7 salvage (narrative_realign_phase0.py, 2026-07-02) further falsified
+the VIX-orthogonal NDI residual AND SF-Fed sentiment residual on both VIX-blind
+targets (cross-sectional dispersion and complacency-fade timing). Family RETIRED.
+
+The load-bearing invariants these tests protect:
+  1. `gate_multiplier` is PERMANENTLY 1.0 — NDI must never become a scored conditioner.
+  2. `gate_status` is "retired" (was "pinned_off"; updated D7 2026-07-02).
+  3. `_FAMILY_RETIRED` is True — machine-readable retirement guard.
+  4. The module remains a LEAF — no scoring-core imports.
 
 Run as a plain script:  python tests/test_narrative_regime.py
 """
@@ -37,15 +43,17 @@ def test_pct_of_history():
 
 def test_compute_shape_and_gate_pinned():
     """compute() reads the real store; whatever it returns must be a context-only
-    dict with a PINNED no-op gate, or None — never a scored value."""
+    dict with a PERMANENTLY-PINNED no-op gate, or None — never a scored value."""
     out = nr.compute()
     if out is None:
         return                              # no data in this env — acceptable
     assert out["is_context_only"] is True
     assert out["schema"] == "narrative_regime.v1"
-    # THE invariant: the gate is a no-op and advertises itself as off
-    assert out["gate_multiplier"] == 1.0, "NDI gate must stay pinned at 1.0 (no scoring)"
-    assert out["gate_status"] == "pinned_off"
+    # THE invariant: gate is permanently pinned and family is retired (D7 2026-07-02)
+    assert out["gate_multiplier"] == 1.0, "NDI gate must stay permanently at 1.0"
+    assert out["gate_status"] == "retired", "gate_status must be 'retired' after D7"
+    assert out.get("family_retired") is True, "_FAMILY_RETIRED must propagate to compute()"
+    assert out.get("retire_date") == "2026-07-02"
     assert out["band"] in {"calm", "elevated", "high", "unknown"}
     if out.get("ndi") is not None:
         assert 0.0 <= out["ndi"] <= 100.0
@@ -60,6 +68,13 @@ def test_gate_multiplier_is_literally_pinned_in_source():
     is a hard literal 1.0. (Guards against a future edit quietly wiring it.)"""
     src = (ROOT / "engine" / "narrative_regime.py").read_text()
     assert '"gate_multiplier": 1.0' in src
+
+
+def test_family_retired_flag():
+    """_FAMILY_RETIRED must be True and _RETIRE_DATE must be the D7 date."""
+    assert nr._FAMILY_RETIRED is True, "_FAMILY_RETIRED must be True after D7 2026-07-02"
+    assert nr._RETIRE_DATE == "2026-07-02"
+    assert "D7" in nr._RETIRE_REASON or "salvage" in nr._RETIRE_REASON
 
 
 # --------------------------------------------------------------------------- #

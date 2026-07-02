@@ -1,20 +1,30 @@
 """Narrative-Dominance Index (NDI) — how policy/geo-narrative-driven the tape is.
 
-LEAF · DISPLAY/CONTEXT-ONLY · NO-OP GATE. Stage 3a of the narrative framework
-(memory narrative-quant-framework). Blends the text-uncertainty regime (EPU + the
-GPR THREAT component) with the market vol regime (VIX percentile) into one 0-100
-"how narrative-dominated is the regime right now" read — a STATE variable, never a
-direction.
+LEAF · DISPLAY/CONTEXT-ONLY · NO-OP GATE · FAMILY RETIRED. Stage 3a of the
+narrative framework (memory narrative-quant-framework). Blends the text-uncertainty
+regime (EPU + the GPR THREAT component) with the market vol regime (VIX percentile)
+into one 0-100 "how narrative-dominated is the regime right now" read — a STATE
+variable, never a direction.
 
-Its only intended downstream use is a SUBTRACT-ONLY conditioner on the existing
-momentum/technical signals (down-weight conviction, raise the confirmation bar when
-narrative dominates). That wiring is GATED: `gate_multiplier` is hard-pinned to 1.0
-(a no-op) until scripts/narrative_regime_phase0.py shows the text-uncertainty leg
-adds forward-realized-vol content INCREMENTAL OVER VIX (Gate A) and that existing
-signals degrade more in the narrative regime than in plain high-VIX (Gate B). The
-honest prior (and the framework's own skeptic) is that this bar is NOT cleared —
-that NDI is redundant with the dashboard's existing vol zoo — in which case NDI
-stays a display banner and `gate_multiplier` stays 1.0 forever.
+RETIREMENT RECORD (D7, 2026-07-02):
+  Gate A (narrative_regime_phase0.py, 2026-06) falsified EPU+GPR on forward vol
+  incremental over VIX. Gate D7 (narrative_realign_phase0.py, 2026-07-02) ran ONE
+  salvage pass of the VIX-orthogonal NDI residual against two VIX-blind targets:
+    (a) 21d forward cross-sectional sector-ETF dispersion — no horizon cleared FDR
+        (best q=0.41 at h=5d), and the first-half IC sign was NEGATIVE (IC=-0.010)
+        while the full-sample IC was positive — sign-unstable across halves. RETIRE.
+    (b) Complacency-fade timing (SPY below trailing 6m mean) — all ICs near-zero,
+        no horizon excl0. RETIRE.
+  The SF-Fed Daily News Sentiment residual (SFED_resid) got the same single pass on
+  the same targets: all ICs null, no excl0 at any horizon. RETIRE.
+
+  Result: the lexical-uncertainty family (EPU/GPR NDI + SFED sentiment-z) is
+  RETIRED. It ships as a display banner only; `gate_multiplier` is PERMANENTLY
+  pinned to 1.0. This module must NOT be revived or promoted without re-running a
+  full pre-registered harness on out-of-sample data — the D7 data is now in-sample.
+
+  DO NOT modify `gate_multiplier` or `gate_status` in this file. The
+  `_FAMILY_RETIRED` flag is a machine-readable guard the test suite asserts.
 
 LEAF discipline: imports only lib.config + lib.store; nothing in the scoring core
 imports it. Returns plain data or None; never raises into the build.
@@ -29,6 +39,18 @@ from lib import config, store
 log = logging.getLogger(__name__)
 
 SCHEMA = "narrative_regime.v1"
+
+# D7 retirement flag — machine-readable guard. Set True 2026-07-02 after D7 salvage
+# falsified both VIX-blind targets for EPU+GPR residual AND SFED sentiment residual.
+# Tests assert this is True and that gate_multiplier == 1.0 simultaneously.
+_FAMILY_RETIRED = True
+_RETIRE_DATE = "2026-07-02"
+_RETIRE_REASON = (
+    "D7 salvage 2026-07-02: VIX-orthogonal NDI residual and SFED sentiment residual "
+    "both null on (a) forward cross-sectional sector dispersion (best FDR q=0.41, "
+    "sign-unstable halves) and (b) complacency-fade timing (IC near-zero, no excl0). "
+    "Family retired — no further promotion without out-of-sample pre-registered harness."
+)
 
 DISCLAIMER_TEXT = (
     "Context only — not a signal. The Narrative-Dominance Index blends policy "
@@ -126,10 +148,14 @@ def compute(asof: date | str | None = None) -> dict | None:
             "ndi": ndi,
             "band": _band(ndi),
             "legs": legs,
-            # P2 hook — pinned to 1.0 (no-op) until Gate A & Gate B clear. NEVER read
-            # by any scoring module today; tests assert it stays 1.0.
+            # Permanently pinned: Gate A (phase0) and D7 salvage both falsified the
+            # lexical-uncertainty family. gate_multiplier MUST remain 1.0 forever;
+            # gate_status MUST remain "retired". Tests assert both invariants.
             "gate_multiplier": 1.0,
-            "gate_status": "pinned_off",
+            "gate_status": "retired",
+            "family_retired": _FAMILY_RETIRED,
+            "retire_date": _RETIRE_DATE,
+            "retire_reason": _RETIRE_REASON,
             "disclaimer": DISCLAIMER_TEXT,
             "disclaimer_zh": DISCLAIMER_TEXT_ZH,
         }
