@@ -62,6 +62,11 @@ def _extract_rows(data: dict) -> list[dict]:
     for rec in (data.get("sectors", []) + data.get("baskets", [])):
         nw = rec.get("now") or {}
         pr = rec.get("proj") or {}
+        # W2.2: per-record structure basis ("price" | "tr" | "tr_fallback").  A sector/
+        # country ETF flips to "price"; a member-TR basket stays "tr".  Stamped per row so
+        # the grader can enforce basis homogeneity (audit basis_version_homogeneous) and
+        # never pool a price-epoch stamp with a tr_v0 one.
+        basis = rec.get("basis") or nw.get("basis") or "tr"
         rows.append({
             "date": asof,
             "id": rec.get("id"),
@@ -85,6 +90,8 @@ def _extract_rows(data: dict) -> list[dict]:
             "stance":    nw.get("stance"),         # resolve_state() stance key
             "divergence": nw.get("divergence"),   # resolve_state() divergence flag
             "overdue":   pr.get("overdue"),        # projection overdue flag
+            # W2.2 basis stamp (additive) — the structure basis this stamp was computed on.
+            "basis":     basis,
         })
     return rows
 

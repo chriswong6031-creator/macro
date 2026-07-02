@@ -39,8 +39,13 @@ log = logging.getLogger("narrative_epoch")
 #   prepend "b-", country merges baskets verbatim (no prefix).  Preserving this per-engine
 #   is what keeps loading byte-identical to pre-W2.1.
 ENGINE_EPOCH_PARAMS: dict[str, dict] = {
-    "sector_cycles":       {"basis": "close_tr",    "zz_pct": 14.0, "basket_prefix": "b-"},
-    "country_cycles":      {"basis": "close_tr",    "zz_pct": 14.0, "basket_prefix": ""},
+    # W2.2: sector_cycles + country_cycles flipped to the close_price structure basis.
+    # current_epoch() now resolves to price_<hash>, so the loaders serve the migrated
+    # narratives.price_<hash>.json produced by scripts/rekey_narratives.py.  If that file
+    # is missing (a flip without a re-key), the guard quarantines rather than serving the
+    # stale tr_v0 legs against the re-dated turns.
+    "sector_cycles":       {"basis": "close_price", "zz_pct": 14.0, "basket_prefix": "b-"},
+    "country_cycles":      {"basis": "close_price", "zz_pct": 14.0, "basket_prefix": ""},
     "china_sector_cycles": {"basis": "close_price", "zz_pct": 18.0, "basket_prefix": "b-"},
 }
 
@@ -110,17 +115,18 @@ def resolve_narratives(
             log.warning("%s: %s unreadable (%s) — rendering without", engine, epoch_file.name, e)
             return {"map": {}, "epoch": epoch, "source": None, "stale_quarantined": False}
 
-    # 2. legacy un-suffixed file == the LEGACY_TR_EPOCH by definition.
-    #    Valid fallback ONLY when the engine still declares the legacy TR epoch, OR the
-    #    engine has never been flipped (the ships-today case — the legacy file *is* the
-    #    current bindings).  We treat "legacy file exists AND no epoch file" as the
-    #    zero-flip steady state → load legacy, tag it tr_v0.
-    if legacy.exists():
-        # REKEY GUARD: if the engine's computed epoch differs from the legacy tag AND a
-        # migration was expected, the legacy file may be mis-keyed for the new turns.
-        # In the shipping state no flip has happened, so we serve legacy verbatim (byte
-        # identical to pre-W2.1).  The guard fires only once a real epoch file is
-        # produced-then-removed, or a builder explicitly demands the new epoch.
+    # 2. no epoch file.  The legacy un-suffixed file IS the LEGACY_TR_EPOCH by definition,
+    #    so it is a valid fallback ONLY when the engine still declares the legacy TR epoch
+    #    (the pre-W2.1 / never-flipped steady state).
+    #
+    #    REKEY GUARD (W2.2): once an engine declares a NON-legacy epoch (a real basis/
+    #    threshold flip, e.g. sector_cycles → price_<hash>), the legacy file is keyed to the
+    #    OLD turns and would mis-bind against the re-dated ones.  Serving it silently is
+    #    exactly the basis-mix the masterplan forbids.  So: if the declared epoch is not the
+    #    legacy TR epoch AND no matching epoch file exists, QUARANTINE (empty map, loud warn,
+    #    stale_quarantined=True) rather than serve stale legs.
+    engine_is_legacy = (epoch == onto.LEGACY_TR_EPOCH)
+    if legacy.exists() and engine_is_legacy:
         try:
             doc = json.loads(legacy.read_text(encoding="utf-8"))
             return {"map": _flatten_doc(doc, bp), "epoch": onto.LEGACY_TR_EPOCH,
@@ -129,6 +135,15 @@ def resolve_narratives(
             log.warning("%s: %s unreadable (%s) — rendering without", engine, legacy.name, e)
             return {"map": {}, "epoch": onto.LEGACY_TR_EPOCH, "source": None,
                     "stale_quarantined": False}
+
+    if legacy.exists() and not engine_is_legacy:
+        log.warning(
+            "REKEY GUARD [%s]: engine declares epoch %r but %s.%s.json is MISSING; the "
+            "legacy %s.json is keyed to the OLD (tr_v0) turns and would mis-bind against the "
+            "re-dated ones. Run `python -m scripts.rekey_narratives --engine %s`. "
+            "Rendering STALE-QUARANTINED (no legs) rather than mis-keyed.",
+            engine, epoch, kind, epoch, kind, engine)
+        return {"map": {}, "epoch": epoch, "source": None, "stale_quarantined": True}
 
     # 3. nothing on disk — page renders without narratives (already the additive default).
     return {"map": {}, "epoch": epoch, "source": None, "stale_quarantined": False}

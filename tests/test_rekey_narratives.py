@@ -272,10 +272,29 @@ def test_rekey_engine_idempotent(tmp_path):
 # ─────────────────────────────────────────────────────────────────────────────
 # E. Epoch-aware loader + REKEY GUARD
 # ─────────────────────────────────────────────────────────────────────────────
-def test_loader_falls_back_to_legacy(tmp_path):
-    ddir = _fixture_engine(tmp_path)
+def test_loader_guard_fires_after_flip_when_epoch_file_missing(tmp_path):
+    """W2.2: once an engine declares a NON-legacy (price) epoch, a bare legacy file is no
+    longer a valid fallback — the guard quarantines rather than serve stale tr_v0 legs
+    against the re-dated turns.  (Pre-W2.2 this same fixture fell back to legacy; the flip
+    inverts that on purpose.)"""
+    ddir = _fixture_engine(tmp_path)   # only a legacy narratives.json exists
+    # sector_cycles now declares close_price → a non-legacy epoch
+    assert ne.current_epoch("sector_cycles") != LEGACY_TR_EPOCH
     res = ne.resolve_narratives("sector_cycles", ddir, "narratives")
-    assert res["epoch"] == LEGACY_TR_EPOCH        # legacy tagged tr_v0
+    assert res["stale_quarantined"] is True
+    assert res["map"] == {}
+
+
+def test_loader_still_falls_back_for_the_tr_v0_sentinel(tmp_path, monkeypatch):
+    """An engine whose current_epoch() is exactly the LEGACY_TR_EPOCH sentinel keeps its
+    byte-identical legacy fallback — the un-suffixed file IS that epoch by definition.  The
+    guard is scoped to NON-legacy (flipped) epochs only, so a genuinely-unflipped engine is
+    never quarantined."""
+    ddir = _fixture_engine(tmp_path)
+    # force current_epoch to return the tr_v0 sentinel for this engine
+    monkeypatch.setattr(ne, "current_epoch", lambda engine: LEGACY_TR_EPOCH)
+    res = ne.resolve_narratives("sector_cycles", ddir, "narratives")
+    assert res["epoch"] == LEGACY_TR_EPOCH
     assert res["stale_quarantined"] is False
     assert "xlk" in res["map"]
 
@@ -317,8 +336,10 @@ def test_rekey_guard_required_epoch_present_loads(tmp_path):
 def test_country_basket_prefix_preserved(tmp_path):
     ddir = tmp_path / "data" / "country_cycles"
     ddir.mkdir(parents=True)
-    (ddir / "narratives.json").write_text(json.dumps(
-        {"sectors": {"ewj": {"legs": {}}}, "baskets": {"efa": {"legs": {}}}}),
+    # country_cycles now declares a price epoch → write the epoch file (not the legacy one).
+    epoch = ne.current_epoch("country_cycles")
+    (ddir / f"narratives.{epoch}.json").write_text(json.dumps(
+        {"epoch": epoch, "sectors": {"ewj": {"legs": {}}}, "baskets": {"efa": {"legs": {}}}}),
         encoding="utf-8")
     res = ne.resolve_narratives("country_cycles", ddir, "narratives")
     # country keeps baskets UN-prefixed (no "b-")
@@ -327,25 +348,36 @@ def test_country_basket_prefix_preserved(tmp_path):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# F. Byte-identity of the CURRENT built narrative bindings (zero-behaviour-change)
+# F. W2.2: the flipped engines resolve their committed price-EPOCH narratives file;
+#    china (exempt, verbatim-carried) remains byte-identical to its legacy flatten.
 # ─────────────────────────────────────────────────────────────────────────────
 @pytest.mark.parametrize("engine,ddir,prefix", [
     ("sector_cycles", "sector_cycles", "b-"),
     ("country_cycles", "country_cycles", ""),
     ("china_sector_cycles", "china_sector_cycles", "b-"),
 ])
-@pytest.mark.parametrize("kind", ["narratives", "cycle_dna"])
-def test_builds_byte_identical_to_legacy_flatten(engine, ddir, prefix, kind):
-    """The epoch-aware loader returns EXACTLY what the pre-W2.1 loaders returned, on the
-    committed data files (no flip has happened, so the legacy file resolves)."""
-    f = ROOT / "data" / ddir / f"{kind}.json"
+def test_flipped_engines_resolve_epoch_file(engine, ddir, prefix):
+    """After the W2.2 flip every engine resolves a NON-quarantined epoch narratives file
+    (sector/country the re-keyed one, china the verbatim carry) and binds a full map."""
+    res = ne.resolve_narratives(engine, ROOT / "data" / ddir, "narratives")
+    assert res["stale_quarantined"] is False, f"{engine} quarantined — epoch file missing"
+    assert res["epoch"] == ne.current_epoch(engine)
+    assert res["source"] is not None
+    assert res["map"], f"{engine} resolved an empty narrative map"
+
+
+def test_china_carry_is_byte_identical_to_legacy_flatten():
+    """China spine is EXEMPT (D4-N1): its epoch narratives file is a VERBATIM carry of the
+    legacy file, so the flattened bindings are byte-identical to the pre-flip flatten
+    (the curated Shenwan turn history is preserved exactly, no re-key)."""
+    ddir = "china_sector_cycles"
+    f = ROOT / "data" / ddir / "narratives.json"
     if not f.exists():
         pytest.skip(f"{f} absent")
     doc = json.loads(f.read_text(encoding="utf-8"))
-    # reproduce the exact pre-W2.1 flatten
     legacy = dict(doc.get("sectors", {}))
     for k, v in (doc.get("baskets", {}) or {}).items():
-        legacy[prefix + k] = v
-    got = ne.resolve_narratives(engine, ROOT / "data" / ddir, kind)["map"]
+        legacy["b-" + k] = v
+    got = ne.resolve_narratives("china_sector_cycles", ROOT / "data" / ddir, "narratives")["map"]
     assert json.dumps(got, sort_keys=True, ensure_ascii=False) == \
            json.dumps(legacy, sort_keys=True, ensure_ascii=False)

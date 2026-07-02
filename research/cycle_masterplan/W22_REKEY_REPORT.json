@@ -1,0 +1,139 @@
+{
+  "wave": "W2.2",
+  "as_of": "2026-07-02",
+  "description": "Per-engine atomic price-basis flip re-key reports (tr_v0 -> price epoch).",
+  "engines": {
+    "sector_cycles": {
+      "new_epoch": "price_c4414dcb",
+      "prev_epoch": "tr_v0",
+      "narratives": {
+        "series": 56,
+        "exact": 875,
+        "shifted": 4,
+        "orphaned": 12,
+        "new": 17,
+        "orphan_rate_pct": 1.35,
+        "worst_shifts": [
+          {
+            "delta_days": 94,
+            "new_key": "2018-12-24",
+            "old_key": "2018-09-21",
+            "series": "xli"
+          },
+          {
+            "delta_days": 49,
+            "new_key": "2021-11-16",
+            "old_key": "2022-01-04",
+            "series": "xli"
+          },
+          {
+            "delta_days": 28,
+            "new_key": "2022-07-14",
+            "old_key": "2022-06-16",
+            "series": "xlf"
+          },
+          {
+            "delta_days": 27,
+            "new_key": "2022-07-14",
+            "old_key": "2022-06-17",
+            "series": "xli"
+          }
+        ]
+      },
+      "cycle_dna": {
+        "series": 56,
+        "turn_keyed": false,
+        "note": "legless per-series profile carried verbatim"
+      },
+      "orphaned_legs_retained": 12,
+      "forward_log_archived": "data/sector_cycles/forward_log.tr_v0.parquet"
+    },
+    "country_cycles": {
+      "new_epoch": "price_c4414dcb",
+      "prev_epoch": "tr_v0",
+      "narratives": {
+        "series": 31,
+        "exact": 247,
+        "shifted": 12,
+        "orphaned": 7,
+        "new": 296,
+        "orphan_rate_pct": 2.63,
+        "worst_shifts": [
+          {
+            "delta_days": 68,
+            "new_key": "2020-03-23",
+            "old_key": "2020-01",
+            "series": "ilf"
+          },
+          {
+            "delta_days": 68,
+            "new_key": "2020-03-23",
+            "old_key": "2020-01",
+            "series": "ews"
+          },
+          {
+            "delta_days": 60,
+            "new_key": "2014-05-16",
+            "old_key": "2014-07",
+            "series": "eido"
+          },
+          {
+            "delta_days": 55,
+            "new_key": "2024-05-21",
+            "old_key": "2024-07",
+            "series": "tur"
+          },
+          {
+            "delta_days": 49,
+            "new_key": "2011-10-03",
+            "old_key": "2011-08",
+            "series": "ews"
+          },
+          {
+            "delta_days": 39,
+            "new_key": "2012-07-24",
+            "old_key": "2012-06",
+            "series": "ewq"
+          },
+          {
+            "delta_days": 38,
+            "new_key": "2023-06-22",
+            "old_key": "2023-05",
+            "series": "tur"
+          },
+          {
+            "delta_days": 36,
+            "new_key": "2025-06-20",
+            "old_key": "2025-05",
+            "series": "tur"
+          },
+          {
+            "delta_days": 30,
+            "new_key": "2019-12-16",
+            "old_key": "2020-01",
+            "series": "vpl"
+          },
+          {
+            "delta_days": 26,
+            "new_key": "2014-06-19",
+            "old_key": "2014-07",
+            "series": "vxus"
+          }
+        ]
+      },
+      "cycle_dna": {
+        "series": 31,
+        "turn_keyed": false,
+        "note": "legless per-series profile carried verbatim"
+      },
+      "orphaned_legs_retained": 7,
+      "forward_log_archived": "data/country_cycles/forward_log.tr_v0.parquet"
+    }
+  },
+  "china_sector_cycles": {
+    "status": "EXEMPT (D4-N1)",
+    "reason": "Shenwan L1 already price-basis",
+    "action": "legacy narratives carried VERBATIM into price epoch (no re-key)",
+    "new_epoch": "price_f224a71d"
+  }
+}

@@ -392,3 +392,22 @@ W0.4 ran on 8,344 leak-free PIT stamps (11 US sectors + 24 countries, month-end 
   `cycle_forward_log` extended with 5 new columns (pos_v2, phase_v2, stance, divergence, overdue).
   17 new tests (tone→color guard A18, legacy byte-identity, overdue emission, no-forward-walking proof,
   lo/hi anchoring, hysteresis persistence, forward log schema + keep-FIRST). 67/67 relevant tests pass.
+- 2026-07-02 — **W2.2 SHIPPED**: atomic price-basis flips for US sector_cycles + country_cycles.
+  `cycles.analyze(price=)` structure-vs-momentum seam (ruling A13, D1-reviewed): structure math
+  (cycle_state trough/DCL/failed-cycle + washout) reads `price` when supplied, momentum (MACD/StochRSI/RS)
+  stays on the passed TR close; `price=None` is byte-identical to today (regression-tested).
+  `sector_cycles._record_core` gains a `price=` param + a `basis` stamp (price/tr/tr_fallback, never
+  silent); the 11 sector ETFs + 24 country + 7 aggregate ETFs flip their turns/osc/projection to
+  close_price, RS stays TR; thematic + amalgam baskets stay member-TR (basis 'tr', out of W2.2 scope, not
+  re-keyed). Ran `scripts/rekey_narratives.py` for real → `narratives.price_c4414dcb.json` +
+  `cycle_dna.price_c4414dcb.json` for both engines (China spine EXEMPT per D4-N1 — Shenwan already
+  price-basis — carried VERBATIM into `price_f224a71d`). Re-key: **sector** exact=875 shifted=4
+  orphaned=12 (1.35%) new=17, max shift 94d (xli 2018-09→2018-12); **country** exact=247 shifted=12
+  orphaned=7 (2.63%) new=296, max shift 68d (ilf). Archived tr_v0 forward logs →
+  `forward_log.tr_v0.parquet` (single-date, zero-matured = nothing lost); writer now stamps a `basis`
+  column and starts fresh price-epoch logs. `_narrative_epoch` guard now quarantines a flipped engine
+  whose epoch file is missing (no silent stale-leg mis-bind). New `scripts/audit_price_basis.py` (D4 §6/§8:
+  dual_basis_present, basis_preserving, no_tr_in_structure AST scan, golden_fixture XLU-flip proof,
+  basis_homogeneous, narratives_versioned) wired into `run_quality_audits` as the 5th audit. 13 new tests
+  (analyze byte-identity + split, basis stamping + tr_fallback labeling, audit passes-on-flip +
+  fails-on-regression); W2.1 rekey tests updated to the post-flip contract. 30+13 tests pass.

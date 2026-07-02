@@ -334,12 +334,57 @@ def _zz_pct_for(full: pd.Series) -> float:
     return float(min(55.0, _ZZ_PCT * max(1.0, vol / 0.22)))
 
 
+def _price_series(closes_px: pd.DataFrame | None, ticker: str,
+                  tr_full: pd.Series) -> pd.Series | None:
+    """Resolve a ticker's structure-basis (close_price) series from the price panel.
+
+    Returns:
+      - the ticker's close_price series (tagged .attrs['price_basis']='price') when present;
+      - a copy of the TR series tagged 'tr_fallback' when the ticker is ABSENT from the
+        price panel (a declared close_price gap) — so _record_core stamps basis:'tr_fallback'
+        and NEVER silently mixes a TR structure read into a price-epoch build;
+      - None when no price panel was supplied at all (the legacy TR-only path → basis 'tr').
+    """
+    if closes_px is None:
+        return None
+    if ticker in closes_px:
+        s = closes_px[ticker].dropna()
+        if not s.empty:
+            s = s.copy()
+            s.attrs["price_basis"] = "price"
+            return s
+    # ticker missing from the price panel → explicit, labeled TR fallback
+    fb = tr_full.copy()
+    fb.attrs["price_basis"] = "tr_fallback"
+    log.warning("sector_cycles: %s absent from close_price panel — structure basis "
+                "tr_fallback (declared gap; not silent)", ticker)
+    return fb
+
+
 def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp,
                  pct: float = _ZZ_PCT, *, series_id: str = "",
-                 _phase_pending: dict | None = None) -> dict | None:
+                 _phase_pending: dict | None = None,
+                 price: pd.Series | None = None) -> dict | None:
     """Shared cycle math for ANY close/level series (a sector ETF or a basket index):
     rebased-to-100 price + 0–100 oscillator series (weekly), ZigZag turns, the
     weekly/3-day MACD-confirmed phase, and the median-half-cycle projection.
+
+    W2.2 basis split (D4 §7): the STRUCTURE math — rebased price line, detrended
+    oscillator, ZigZag turns, next-turn projection, and `cycles.analyze` trough/DCL/
+    failed-cycle — runs on `price` (split-adj, dividend-UNadjusted `close_price`) when
+    supplied, so a dividend-inflated total-return tape can no longer push a turn date or
+    a drawdown level.  The MOMENTUM / RS math (MACD, StochRSI, RSI in `cycles.analyze`,
+    and RS-vs-SPY folded later in _apply_leadership) stays on `full` (the TR series) so a
+    return stat keeps dividend fidelity.
+
+    `price=None` (the legacy default) runs EVERYTHING on `full` — byte-identical to W1.6.
+    The emitted `now.basis` records which structure basis was actually used:
+      "price"        — structure math ran on the supplied close_price series;
+      "tr"           — legacy path (no price supplied);
+      "tr_fallback"  — price WAS requested but the series degraded to TR (the caller
+                       passed a series tagged .attrs['price_basis']=='tr_fallback', i.e.
+                       close_price was missing for this ticker — never silent, always
+                       labeled so the audit + graders can exclude it).
 
     W1.6 additions (data-only, no UI change):
     - pos_v2         : canonical_position() (100·Φ(z)) alongside legacy pos (range-stoch)
@@ -351,16 +396,32 @@ def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp
     - divergence     : resolve_state() divergence flag
     - tone           : stance tone (bullish|bearish|neutral|caution|anticipatory)
     - overdue        : whether the projection's central date has passed (new proj field)
-    Legacy fields (phase, pos, signal, timing_state, ...) are byte-identical to W0.3.
+    Legacy fields (phase, pos, signal, timing_state, ...) are byte-identical to W0.3
+    whenever price=None.
 
     Parameters
     ----------
+    price : the structure-math basis series (close_price).  None → legacy TR-only path.
     _phase_pending : mutable hysteresis dict, caller-owned (per-series). Pass None to
                      start fresh (default). The dict is mutated in-place by classify_phase;
                      callers that want hysteresis persistence across build iterations
                      should hold and pass the same dict per series.
     """
-    win = full[full.index >= win_start]
+    # ── basis resolution (D4 §7 structure-vs-momentum split) ────────────────────
+    # `struct` is what all structure math reads; `full` (TR) always drives momentum/RS.
+    if price is not None:
+        struct = price.replace([np.inf, -np.inf], np.nan).dropna()
+        struct = struct.reindex(full.index).dropna()  # align to the momentum tape's index
+        if struct.empty:
+            struct = full
+            basis = "tr_fallback"
+        else:
+            basis = "tr_fallback" if price.attrs.get("price_basis") == "tr_fallback" else "price"
+    else:
+        struct = full
+        basis = "tr"
+
+    win = struct[struct.index >= win_start]
     if len(win) < 60:
         return None
     base = float(win.iloc[0])
@@ -368,23 +429,28 @@ def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp
         return None
     recent_start = last_ts - pd.DateOffset(years=DEFAULT_WINDOW_YEARS)
     price_pts = _taper_points(win, recent_start, lambda v: v / base * 100.0)
-    osc_full = _detrended_osc(full)
+    osc_full = _detrended_osc(struct)
     osc_pts = _taper_points(osc_full[osc_full.index >= win_start], recent_start)
 
-    swings_all = _detect_swings(full, pct)
+    swings_all = _detect_swings(struct, pct)
     swings = [s for s in swings_all if s["x"] >= _yf(win_start) - 0.05]
     for s in swings:                           # attach rebased y + osc y for the chart
         s["rebased"] = round(s["px"] / base * 100.0, 2)
         oy = osc_full.reindex([pd.Timestamp(s["date"])], method="nearest")
         s["osc"] = round(float(oy.iloc[0]), 1) if len(oy) and pd.notna(oy.iloc[0]) else None
 
-    res = cycles.analyze(full, kind="equity")
+    # analyze: structure math on `struct` (price), momentum/MACD on `full` (TR) — the
+    # A13 substrate seam.  price=struct only when a distinct structure basis exists (a
+    # tr_fallback series would just pass TR twice, a no-op that keeps the legacy path).
+    res = cycles.analyze(full, kind="equity",
+                         price=(struct if basis == "price" else None))
     lad = (res or {}).get("ladder") or {}
     mtf = (res or {}).get("mtf") or {}
-    osc_clean = osc_full.dropna()
+    osc_clean = osc_full.dropna()               # osc_full is on `struct` (structure basis)
     pos_now = float(osc_clean.iloc[-1]) if len(osc_clean) else 50.0
     osc_slope = float(osc_clean.iloc[-1] - osc_clean.iloc[-22]) if len(osc_clean) > 22 else 0.0
-    above200 = bool(len(full) >= 200 and full.iloc[-1] > full.iloc[-200:].mean())
+    # above200 is a DRAWDOWN/trend read (structure) → measure on `struct`.
+    above200 = bool(len(struct) >= 200 and struct.iloc[-1] > struct.iloc[-200:].mean())
     phase, phase_label = _classify_phase(pos_now, osc_slope, mtf.get("W") or {},
                                          mtf.get("3D") or {}, above200)
     last_trough = next((s["t"] for s in reversed(swings) if s["k"] == "trough"), None)
@@ -397,9 +463,10 @@ def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp
               else "SELL" if pos_now >= 55 and osc_slope < -0.5 else None)
 
     # ── W1.6: new ontology fields (additive; legacy fields above unchanged) ──
-    # pos_v2: canonical 100·Φ(z) position from the ontology
+    # pos_v2: canonical 100·Φ(z) position from the ontology — a cycle-POSITION read
+    # (structure) → compute on `struct` (price basis when supplied).
     try:
-        pos_v2_series = onto.canonical_position(full, freq="D")
+        pos_v2_series = onto.canonical_position(struct, freq="D")
         pos_v2_clean = pos_v2_series.dropna()
         pos_v2 = round(float(pos_v2_clean.iloc[-1]), 2) if len(pos_v2_clean) else None
     except Exception:  # noqa: BLE001
@@ -451,6 +518,10 @@ def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp
     return {
         "price": price_pts, "osc": osc_pts, "turns": swings, "proj": proj,
         "n_turns_all": len(swings_all),
+        # W2.2: which structure basis this record's turns/osc/projection were computed on.
+        # "tr" = legacy TR-only path; "price" = close_price structure basis; "tr_fallback"
+        # = price requested but close_price missing → degraded to TR (never silent).
+        "basis": basis,
         "now": {
             # ── Legacy fields (byte-identical to W0.3) ──
             "phase": phase, "phaseLabel": phase_label, "pos": round(pos_now, 1),
@@ -471,6 +542,8 @@ def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp
             "stance":          stance,
             "divergence":      divergence,
             "tone":            tone,
+            # W2.2: structure basis (mirrored here for the forward-log writer)
+            "basis":           basis,
         },
     }
 
@@ -516,13 +589,20 @@ def _apply_leadership(rec: dict, lead: dict) -> None:
 
 
 def build_sector(ticker: str, meta: dict, closes: pd.DataFrame,
-                 win_start: pd.Timestamp) -> dict | None:
-    """One sector ETF -> its full cycle record (price, oscillator, turns, phase, projection)."""
+                 win_start: pd.Timestamp,
+                 closes_px: pd.DataFrame | None = None) -> dict | None:
+    """One sector ETF -> its full cycle record (price, oscillator, turns, phase, projection).
+
+    W2.2: `closes_px` = the price-basis (close_price) panel.  When present, the structure
+    math runs on this ticker's close_price series; RS/momentum stays on the TR `closes`
+    panel.  When a ticker is absent from `closes_px` (a declared close_price gap), the
+    per-record basis is stamped tr_fallback — never silent.  closes_px=None → legacy TR."""
     full = closes[ticker].dropna() if ticker in closes else pd.Series(dtype=float)
     if len(full) < 300:
         log.warning("sector_cycles: %s too thin (%d rows) — skipped", ticker, len(full))
         return None
-    core = _record_core(full, win_start, full.index[-1])
+    price = _price_series(closes_px, ticker, full)
+    core = _record_core(full, win_start, full.index[-1], price=price)
     if core is None:
         return None
     rec = dict(core)
@@ -676,7 +756,15 @@ def build_amalgam_family(ns: str, win_start: pd.Timestamp, last_ts: pd.Timestamp
 
 def compute(asof: str | None = None) -> dict | None:
     """Top-level: build every sector's cycle record + page meta. Returns None if the
-    close panel can't be loaded (build script then no-ops)."""
+    close panel can't be loaded (build script then no-ops).
+
+    W2.2: loads BOTH the TR panel (`closes`, momentum/RS basis) and the price panel
+    (`closes_px`, structure basis = close_price).  The 11 sector ETFs flip their
+    structure math (turns, oscillator, projection, DCL/failed-cycle) to close_price;
+    RS-vs-SPY stays on TR.  Thematic baskets + amalgam families keep their existing
+    member-TR candle (basis 'tr') — their member-level price-basis candle is out of
+    W2.2 scope (owned by the frozen-basket-levels wave), so their turns do NOT move
+    and are NOT re-keyed."""
     try:
         closes = yahoo_closes()
     except Exception as e:  # noqa: BLE001
@@ -684,15 +772,25 @@ def compute(asof: str | None = None) -> dict | None:
         return None
     if closes is None or closes.empty:
         return None
+    # price-basis panel for the structure math (never fatal — a load failure degrades
+    # every sector to a labeled tr_fallback rather than crashing the build).
+    try:
+        closes_px = yahoo_closes(basis="price")
+    except Exception as e:  # noqa: BLE001
+        log.warning("sector_cycles: cannot load price-basis panel (%s) — structure math "
+                    "falls back to TR (labeled tr_fallback)", e)
+        closes_px = None
     if asof:
         closes = closes[closes.index <= pd.Timestamp(asof)]
+        if closes_px is not None:
+            closes_px = closes_px[closes_px.index <= pd.Timestamp(asof)]
     last_ts = closes.index[-1]
     win_start = last_ts - pd.DateOffset(years=WINDOW_YEARS)
 
     sectors = []
     for tk, meta in SECTORS.items():
         try:
-            rec = build_sector(tk, meta, closes, win_start)
+            rec = build_sector(tk, meta, closes, win_start, closes_px=closes_px)
         except Exception as e:  # noqa: BLE001
             log.exception("sector_cycles: %s failed: %s", tk, e)
             rec = None
