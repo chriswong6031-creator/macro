@@ -362,10 +362,10 @@
   <p class="lead" style="margin:10px 0 0"><span class="l-en">What separates a dashboard from a model is honest validation. Every signal here goes through the same battery before it earns a place: rank-IC, a Newey-West (HAC) t-stat that respects overlapping windows, a Benjamini-Hochberg FDR q that controls for trying many ideas, and a Deflated Sharpe that haircuts for the same data-snooping. The point of this page is the graveyard: the signals we measured and refused to ship.</span><span class="l-zh">把仪表盘和模型区分开的，是诚实的验证。这里每个信号在获得位置前都经过同一套检验：秩相关 IC、尊重重叠窗口的 Newey-West (HAC) t 值、控制多重尝试的 Benjamini-Hochberg FDR q，以及为同样的数据窥探打折的去偏夏普 (DSR)。本页的重点是“信号墓地”：那些我们测量后拒绝上线的信号。</span></p>
   <div class="chips">
     <span class="chip"><span class="dot d-scored"></span><b>6</b> <span class="l-en">scored</span><span class="l-zh">已计分</span></span>
-    <span class="chip"><span class="dot d-confirmer"></span><b>18</b> <span class="l-en">confirmer</span><span class="l-zh">确认项</span></span>
-    <span class="chip"><span class="dot d-display"></span><b>20</b> <span class="l-en">display-only</span><span class="l-zh">仅展示</span></span>
+    <span class="chip"><span class="dot d-confirmer"></span><b>19</b> <span class="l-en">confirmer</span><span class="l-zh">确认项</span></span>
+    <span class="chip"><span class="dot d-display"></span><b>22</b> <span class="l-en">display-only</span><span class="l-zh">仅展示</span></span>
     <span class="chip"><span class="dot d-killed"></span><b>9</b> <span class="l-en">killed (NO-GO)</span><span class="l-zh">已否决</span></span>
-    <span class="chip"><span class="dot d-pending"></span><b>2</b> <span class="l-en">pending</span><span class="l-zh">待接入</span></span>
+    <span class="chip"><span class="dot d-pending"></span><b>1</b> <span class="l-en">pending</span><span class="l-zh">待接入</span></span>
     
     <span class="chip ">🧮 <b>1</b>/11
       <span class="l-en">cross-sectional factors survive FDR</span><span class="l-zh">横截面因子通过 FDR</span></span>
@@ -714,7 +714,7 @@
 <div class="panel tier-panel ">
   <div class="tierhead">
     <span class="dot d-confirmer" style="align-self:center"></span>
-    <h2><span class="l-en">Confirmer / context — validated, but not a standalone sizer</span><span class="l-zh">确认/背景 — 已验证，但非独立定量信号</span> · 18</h2>
+    <h2><span class="l-en">Confirmer / context — validated, but not a standalone sizer</span><span class="l-zh">确认/背景 — 已验证，但非独立定量信号</span> · 19</h2>
     <span class="bl"><span class="l-en">A measured forward edge used as context or a tiebreaker — never sized on its own.</span><span class="l-zh">有可测的前瞻性边际，用作背景或加分项 — 但不单独定仓。</span></span>
   </div>
   
@@ -1149,6 +1149,29 @@
         </td>
       </tr>
     
+      <tr class="sl-row" data-tier="confirmer" data-mkt="Intl / global risk"
+          data-text="global country-etf breadth barometer  (c3 — confirmed) 全球国家etf广度晴雨表（c3 — 已确认） intl / global risk confirmed (all hard gates pass). % of 23 country etfs > their 200dma; causal trailing pctile de-risk signal (top-30% = flat). dsr 0.9326 (n=17 intl_bridge budget). orthogonality: global breadth corr 0.68 with spy trend but residual surviving frac = 0.62 after partialing out spy/hy oas/t10y2y — passes (>= 0.50). 6/6 pre-declared crises covered. es reduction ex top-3 windows = +0.0078 (not crisis-only). split-half sharpe both positive. panel: 23 etfs from 1996-03-18, min-panel >= 10 (satisfied from day 1 with the 1996 cohort of 17 etfs). fxi/csi300 target shows stronger maxdd cut (-39.3% vs -72.7%) and near-pure orthogonality (surviving frac 0.97). w4: wire as us radar tier-b leg (intl-38) + risk_radar_intl profile leg once the forward log accrues.">
+        <td>
+          <div class="sig"><span class="l-en">Global country-ETF breadth barometer  (C3 — CONFIRMED)</span><span class="l-zh">全球国家ETF广度晴雨表（C3 — 已确认）</span>
+            </div>
+          <div class="mkt">Intl / global risk · 21/42d fwd drawdown (SPX + CSI300) · not wired (CONFIRMED; W4 will wire as US risk_radar Tier-B + intl profile leg; no scoring seam touched in W2)</div>
+          <div class="extra">DSR 0.9326 (N=17 intl_bridge budget, >= 0.90) · orthogonal surviving frac 0.62 vs SPY/HY/curve basis (>= 0.50, PASSES) · effective_n_crises 6/6 (all declared crises covered) · ES ex top-3 windows +0.0078 (not crisis-only) · split-half Sharpe H1 +0.45, H2 +1.11 (same sign) · FXI MaxDD cut strat -39.3% vs bench -72.7% · panel 23 ETFs 1996-03-18 to 2026-07-01; min-panel=10 threshold</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r yes">0.933</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-confirmer"><span class="l-en">CONFIRMER</span><span class="l-zh">确认项</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">CONFIRMED (all hard gates pass). % of 23 country ETFs > their 200dma; causal trailing pctile de-risk signal (top-30% = f…</span><span class="l-zh">已确认（所有严格门均通过）。23只国家ETF高于200日均线的百分比；因果尾部百分位降险信号（前30%=空仓）。DSR 0.9326（N=17 intl_bri…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">CONFIRMED (all hard gates pass). % of 23 country ETFs > their 200dma; causal trailing pctile de-risk signal (top-30% = flat). DSR 0.9326 (N=17 intl_bridge budget). Orthogonality: global breadth corr 0.68 with SPY trend but residual surviving frac = 0.62 after partialing out SPY/HY OAS/T10Y2Y — PASSES (>= 0.50). 6/6 pre-declared crises covered. ES reduction ex top-3 windows = +0.0078 (not crisis-only). Split-half Sharpe both positive. Panel: 23 ETFs from 1996-03-18, min-panel >= 10 (satisfied from day 1 with the 1996 cohort of 17 ETFs). FXI/CSI300 target shows stronger MaxDD cut (-39.3% vs -72.7%) and near-pure orthogonality (surviving frac 0.97). W4: wire as US radar Tier-B leg (INTL-38) + risk_radar_intl profile leg once the forward log accrues.  [reports/intl-global-breadth-phase0.md (W2-C3 2026-07-02); data/intl_bridge/ledger.json (c3_global_etf_breadth); scripts/intl_phase0.py build_c3_global_breadth()]</span><span class="l-zh">已确认（所有严格门均通过）。23只国家ETF高于200日均线的百分比；因果尾部百分位降险信号（前30%=空仓）。DSR 0.9326（N=17 intl_bridge预算）。正交性：全球广度与SPY趋势相关0.68，但剔除SPY/信用利差/收益曲线后残差存活分数=0.62 >= 0.50。6/6预声明危机均覆盖。去除前3大回撤窗口后期望损失降幅=+0.0078（非仅危机）。两半夏普均为正。W4：有前瞻日志后，作为美国雷达Tier-B腿（INTL-38）+ risk_radar_intl配置腿接入。  [reports/intl-global-breadth-phase0.md (W2-C3 2026-07-02); data/intl_bridge/ledger.json (c3_global_etf_breadth); scripts/intl_phase0.py build_c3_global_breadth()]</span></span></span>
+          <div class="src">reports/intl-global-breadth-phase0.md (W2-C3 2026-07-02); data/intl_bridge/ledger.json (c3_global_etf_breadth); scripts/intl_phase0.py build_c3_global_breadth()</div>
+        </td>
+      </tr>
+    
     </tbody>
   </table></div>
 </div>
@@ -1156,7 +1179,7 @@
 <div class="panel tier-panel ">
   <div class="tierhead">
     <span class="dot d-display" style="align-self:center"></span>
-    <h2><span class="l-en">Display-only — shown, but no validated edge</span><span class="l-zh">仅展示 — 显示但无验证边际</span> · 20</h2>
+    <h2><span class="l-en">Display-only — shown, but no validated edge</span><span class="l-zh">仅展示 — 显示但无验证边际</span> · 22</h2>
     <span class="bl"><span class="l-en">Rendered as a research lens or risk context. Failed Phase-0, un-backtestable, or still accruing history. NOT a buy signal.</span><span class="l-zh">作为研究视角或风险背景显示。未通过 Phase-0、无法回测或历史不足。并非买入信号。</span></span>
   </div>
   
@@ -1566,6 +1589,52 @@
         </td>
       </tr>
     
+      <tr class="sl-row" data-tier="display" data-mkt="China A"
+          data-text="china per-name global-beta size-dampener  (c1 — the v1 flagship) 中国个股全球贝塔仓位抑制器（c1 — v1 旗舰） china a measured and refuted as a de-risk timing signal (w2). port of hk_global_beta to the a-share panel: causal 252d beta to s&p-500 (overnight-lagged), vasicek-shrunk. transmission is half of hk's — hk/china ratio ~2.4× (hk spy-beta 0.49 vs csi300 0.20), exactly the china_global_factors prior. the per-name beta→forward-drawdown link is real but unconditional (rank-ic −0.17, t≈−13; orthogonality vs the cn roro passes) — beta is beta. the specific dampener mechanism fails: conditioning on the global risk state being off makes the hi-minus-lo drawdown spread weaker, not stronger (off −2.3pp vs on −2.9pp; incremental +0.6pp, wrong sign). crisis-count effective-n=1 (the ~5y china_search panel spans only the 2022 rate bear), dsr≈0, es-ex-top3 negative. context, weight_cap 0, kill=true — not wired into china_name_score._tailwind.">
+        <td>
+          <div class="sig"><span class="l-en">China per-name global-beta size-dampener  (C1 — the v1 flagship)</span><span class="l-zh">中国个股全球贝塔仓位抑制器（C1 — v1 旗舰）</span>
+            </div>
+          <div class="mkt">China A · 21/42d fwd drawdown · not wired — CONTEXT (measured weaker than HK; dampener mechanism refuted)</div>
+          <div class="extra">HK/China transmission ~2.4× (HK 0.49 vs CSI300 0.20 SPY-beta) · beta→DD rank-IC −0.17 (t≈−13, unconditional) · RORO-conditional edge +0.6pp (WRONG sign — dampener refuted) · crisis effective-N 1 (panel ~5y, 2022 bear only)</div>
+        </td>
+        <td class="r neg">-0.1690</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">MEASURED and REFUTED as a de-risk timing signal (W2). Port of hk_global_beta to the A-share panel: causal 252d beta to S…</span><span class="l-zh">已测量并否决其作为降险择时信号（W2）。将 hk_global_beta 移植到 A 股面板：对标普500（隔夜滞后）的因果252日贝塔，Vasicek 收缩。…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">MEASURED and REFUTED as a de-risk timing signal (W2). Port of hk_global_beta to the A-share panel: causal 252d beta to S&P-500 (overnight-lagged), Vasicek-shrunk. Transmission is HALF of HK's — HK/China ratio ~2.4× (HK SPY-beta 0.49 vs CSI300 0.20), exactly the china_global_factors prior. The per-name beta→forward-drawdown link is real but UNCONDITIONAL (rank-IC −0.17, t≈−13; orthogonality vs the CN RORO PASSES) — beta is beta. The specific dampener MECHANISM fails: conditioning on the global risk state being off makes the hi-minus-lo drawdown spread WEAKER, not stronger (off −2.3pp vs on −2.9pp; incremental +0.6pp, wrong sign). Crisis-count effective-N=1 (the ~5y china_search panel spans only the 2022 rate bear), DSR≈0, ES-ex-top3 negative. CONTEXT, weight_cap 0, kill=True — NOT wired into china_name_score._tailwind.  [scripts/c1_cn_global_beta.py + scripts/intl_phase0.py (grade); engine/cn_global_beta.py; data/intl_bridge/ledger.json (C1)]</span><span class="l-zh">已测量并否决其作为降险择时信号（W2）。将 hk_global_beta 移植到 A 股面板：对标普500（隔夜滞后）的因果252日贝塔，Vasicek 收缩。传导仅为香港的一半——港/华比约 2.4×（港 SPY-贝塔 0.49 对 沪深300 0.20），正合 china_global_factors 先验。个股贝塔→前瞻回撤关系真实但无条件（秩IC −0.17，t≈−13；相对中国RORO正交通过）——贝塔就是贝塔。具体抑制器机制失败：以全球风险状态转弱为条件反而使高减低回撤价差更弱（风险关 −2.3pp 对 风险开 −2.9pp；增量 +0.6pp，符号相反）。危机计数有效N=1（约5年面板仅含2022利率熊市），DSR≈0，剔除前三ES为负。CONTEXT，权重上限0，kill=True——未接入 china_name_score._tailwind。  [scripts/c1_cn_global_beta.py + scripts/intl_phase0.py (grade); engine/cn_global_beta.py; data/intl_bridge/ledger.json (C1)]</span></span></span>
+          <div class="src">scripts/c1_cn_global_beta.py + scripts/intl_phase0.py (grade); engine/cn_global_beta.py; data/intl_bridge/ledger.json (C1)</div>
+        </td>
+      </tr>
+    
+      <tr class="sl-row" data-tier="display" data-mkt="Intl macro"
+          data-text="intl macro de-risk sleeve  (pooled jp/ez/gb → us book — c2) 国际宏观降险组合（jp/ez/gb → 美国 — c2） intl macro w2 verdict: context — do not wire. the prior dsr 0.9978 was the pooled intl sleeve predicting intl drawdowns. c2 graded the declared target — us spy forward drawdown — through the two gates the prior never ran: orthogonality vs the 5 us mrs legs + crisis-independent es. on the honest fully-specified window (2002-05, first date all three markets carry all declared legs — no look-ahead), the sleeve-gated spy strategy's deflated sharpe is 0.83, below the 0.90 promotion door, and its residual forward-dd content after partialing out the us legs is marginal and window-fragile (spearman −0.03..−0.17). it does cut spy maxdd modestly (−50.1% vs −56.8% b&h) but that overlaps nfci/liquidity/recession — no orthogonal edge that clears the door. a truthful negative: against the us book the intl sleeve adds nothing the 5 us mrs legs don't already carry.">
+        <td>
+          <div class="sig"><span class="l-en">Intl macro de-risk sleeve  (pooled JP/EZ/GB → US book — C2)</span><span class="l-zh">国际宏观降险组合（JP/EZ/GB → 美国 — C2）</span>
+            </div>
+          <div class="mkt">Intl macro · 21/42d fwd drawdown · not wired — CONTEXT (DSR 0.83 < 0.90 door; residual DD-content vs US legs marginal)</div>
+          <div class="extra">US-book DSR 0.83 (< 0.90 door) · residual DD IC vs US legs −0.03..−0.17 (fragile) · SPY MaxDD cut −50.1% vs −56.8% B&H (overlaps NFCI/liq) · prior (INTL vs INTL) DSR 0.9978 — a different, easier test</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r neg">0.828</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">W2 VERDICT: CONTEXT — do NOT wire. The prior DSR 0.9978 was the pooled INTL sleeve predicting INTL drawdowns. C2 graded …</span><span class="l-zh">W2 结论：CONTEXT——不接线。此前 DSR 0.9978 是合并国际组合预测国际回撤。C2 针对预注册目标（美国 SPY 前瞻回撤）运行了先前从未跑过的…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">W2 VERDICT: CONTEXT — do NOT wire. The prior DSR 0.9978 was the pooled INTL sleeve predicting INTL drawdowns. C2 graded the DECLARED target — US SPY forward drawdown — through the two gates the prior never ran: orthogonality vs the 5 US MRS legs + crisis-independent ES. On the honest fully-specified window (2002-05, first date all three markets carry all declared legs — no look-ahead), the sleeve-gated SPY strategy's deflated Sharpe is 0.83, BELOW the 0.90 promotion door, and its residual forward-DD content after partialing out the US legs is marginal and window-fragile (Spearman −0.03..−0.17). It DOES cut SPY MaxDD modestly (−50.1% vs −56.8% B&H) but that overlaps NFCI/liquidity/recession — no ORTHOGONAL edge that clears the door. A truthful negative: against the US book the intl sleeve adds nothing the 5 US MRS legs don't already carry.  [reports/intl-macro-sleeve-phase0.md; scripts/intl_phase0.py build_c2_sleeve; data/intl_bridge/ledger.json (C2)]</span><span class="l-zh">W2 结论：CONTEXT——不接线。此前 DSR 0.9978 是合并国际组合预测国际回撤。C2 针对预注册目标（美国 SPY 前瞻回撤）运行了先前从未跑过的两道门：相对5条美国MRS腿的正交性 + 危机无关期望损失。在诚实的完整规格窗口（2002-05，三市场首次全部携带全部声明腿——无前视），组合门控 SPY 策略的去偏夏普为 0.83，低于 0.90 晋升门；剔除美国腿后的残差前瞻回撤含量微弱且随窗口漂移（斯皮尔曼 −0.03..−0.17）。它确实小幅削减 SPY 回撤（−50.1% 对 −56.8%），但与 NFCI/流动性/衰退重叠——无可过门的正交边际。诚实的负面结论：相对美国本册，国际组合并未新增内容。  [reports/intl-macro-sleeve-phase0.md; scripts/intl_phase0.py build_c2_sleeve; data/intl_bridge/ledger.json (C2)]</span></span></span>
+          <div class="src">reports/intl-macro-sleeve-phase0.md; scripts/intl_phase0.py build_c2_sleeve; data/intl_bridge/ledger.json (C2)</div>
+        </td>
+      </tr>
+    
       <tr class="sl-row" data-tier="display" data-mkt="Intl ETF"
           data-text="intl trend de-risk overlays  (price + total-return etfs — c3) 国际趋势降险叠加（价格指数 + 总回报etf — c3） intl etf two ports, one honest verdict: trend on tradeable intl is dead. the price-index overlay cuts the tail for real (pooled maxdd −18.5% vs −57.0%, dd-reduction ci [5.9,25.1,48.1] excludes 0) but its sharpe edge fails split-half. the tradeable usd total-return etf overlay (ewj/ewg/ewu/ewy/ewa/ewq) fails dsr (0.848<0.90) and split-half sign-flips, and macro-gating harms korea (ewy −79.3% vs −74.1%, intl-50). context: crash-avoidance tail-insurance, never a scored alpha.">
         <td>
@@ -1875,7 +1944,7 @@
 <div class="panel tier-panel ">
   <div class="tierhead">
     <span class="dot d-pending" style="align-self:center"></span>
-    <h2><span class="l-en">Validated — pending wiring on this branch</span><span class="l-zh">已验证 — 本分支待接入</span> · 2</h2>
+    <h2><span class="l-en">Validated — pending wiring on this branch</span><span class="l-zh">已验证 — 本分支待接入</span> · 1</h2>
     <span class="bl"><span class="l-en">Passed validation but the code/wiring lives in a worktree or open PR, not yet on the branch this page was built from.</span><span class="l-zh">已通过验证，但代码/接线位于工作树或待合并 PR，尚未进入本页所基于的分支。</span></span>
   </div>
   
@@ -1893,29 +1962,6 @@
       <th><span class="l-en">Why</span><span class="l-zh">原因</span></th>
     </tr></thead>
     <tbody>
-    
-      <tr class="sl-row" data-tier="pending" data-mkt="Intl macro"
-          data-text="intl macro de-risk sleeve  (pooled jp/ez/gb/kr — c2) 国际宏观降险组合（jp/ez/gb/kr 合并 — c2） intl macro the strongest intl prior in the repo — but not yet cleared for a wire. pooled curve-inv + sahm + short-tightening de-risk sleeve: dsr 0.9978, split-half pass (+0.70/+0.76), leave-one-crisis-out holds, pooled maxdd −39.2% vs −55.4% b&h. pending (not confirmed) because the intl-specific gates the promotion gate does not cover are not yet run: orthogonality vs the 5 us mrs legs (growth-scare may overlap nfci/liquidity) + the crisis-independent expected-shortfall test. honest-n ~4 shared crises is the binding constraint. weight_cap stays 0 until w2 clears those gates.">
-        <td>
-          <div class="sig"><span class="l-en">Intl macro de-risk sleeve  (pooled JP/EZ/GB/KR — C2)</span><span class="l-zh">国际宏观降险组合（JP/EZ/GB/KR 合并 — C2）</span>
-            </div>
-          <div class="mkt">Intl macro · 21/42d fwd drawdown · not wired (W1 declared, W2 gates + measured weight → conditions._macro_risk_legs)</div>
-          <div class="extra">pooled MaxDD −39.2% vs −55.4% B&H · split-half Sharpe +0.70 / +0.76 · honest-N ~4 shared crises · unrun gates orthogonality + crisis-indep ES</div>
-        </td>
-        <td class="r "><span class="muted">—</span></td>
-        <td class="r"><span class="muted">—</span></td>
-        <td class="r "><span class="muted">—</span></td>
-        <td class="r yes">0.998</td>
-        <td class="r "><span class="muted">—</span></td>
-        <td class="r"><span class="muted">—</span></td>
-        <td class="r">—</td>
-        <td><span class="pill v-pending"><span class="l-en">PENDING</span><span class="l-zh">待接入</span></span></td>
-        <td style="max-width:34ch">
-          <span class="muted sm"><span class="l-en">The strongest intl prior in the repo — but NOT yet cleared for a wire. Pooled curve-inv + Sahm + short-tightening de-ris…</span><span class="l-zh">仓库中最强的国际先验，但尚未获准接线。合并曲线倒挂+Sahm+短端收紧降险组合：DSR 0.9978，两半通过（+0.70/+0.76），逐危机剔除仍成立，合并…</span></span>
-          <span class="help">?<span class="tip"><span class="l-en">The strongest intl prior in the repo — but NOT yet cleared for a wire. Pooled curve-inv + Sahm + short-tightening de-risk sleeve: DSR 0.9978, split-half PASS (+0.70/+0.76), leave-one-crisis-out holds, pooled MaxDD −39.2% vs −55.4% B&H. PENDING (not CONFIRMED) because the intl-specific gates the promotion gate does not cover are NOT yet run: orthogonality vs the 5 US MRS legs (growth-scare may overlap NFCI/liquidity) + the crisis-independent expected-shortfall test. Honest-N ~4 shared crises is the binding constraint. Weight_cap stays 0 until W2 clears those gates.  [reports/intl-macro-sleeve-phase0.md; data/intl_bridge/ledger.json (C2)]</span><span class="l-zh">仓库中最强的国际先验，但尚未获准接线。合并曲线倒挂+Sahm+短端收紧降险组合：DSR 0.9978，两半通过（+0.70/+0.76），逐危机剔除仍成立，合并回撤 −39.2% 对 −55.4% 买入持有。标记为待接入而非已确认：晋升门未覆盖的国际专属门尚未运行（相对5条美国MRS腿的正交性 + 危机无关的期望损失）。诚实样本约4次共享危机为约束。权重上限保持0，直至W2通过这些门。  [reports/intl-macro-sleeve-phase0.md; data/intl_bridge/ledger.json (C2)]</span></span></span>
-          <div class="src">reports/intl-macro-sleeve-phase0.md; data/intl_bridge/ledger.json (C2)</div>
-        </td>
-      </tr>
     
       <tr class="sl-row" data-tier="pending" data-mkt="Dollar / macro"
           data-text="broad-dollar reer value factor  (n=1 resurrection — c4) 宽美元 reer 价值因子（n=1 复活 — c4） dollar / macro a pre-registered n=1 hypothesis, not a quiet promotion. the broad-usd reer value factor (cheap = bullish usd) confirmed in both halves vs forward broad-usd returns (ic +0.077 pre / +0.060 post) — but it was killed inside the forex 60-trial family budget (dsr 0.0056 there). the honest path (intl-43) is to re-run it as n=1 with a trial budget separated from that family; pending that re-run.">
@@ -1967,8 +2013,8 @@
   <p class="muted sm" style="margin:0"><span class="l-en">Validation toolkit: engine/validation.py (deflated Sharpe, purged k-fold + embargo, block bootstrap, Newey-West HAC, Benjamini-Hochberg FDR, Brier/Platt calibration, cost-aware backtest). Verdicts are quoted from the named reports in reports/. The factor cross-section reads live from data/edgar/ic_scorecard.json.</span><span class="l-zh">验证工具：engine/validation.py（去偏夏普、净化 k 折+隔离、分块自助、Newey-West HAC、Benjamini-Hochberg FDR、Brier/Platt 校准、含成本回测）。结论引自 reports/ 中具名报告；因子横截面实时读取 data/edgar/ic_scorecard.json。</span></p>
   <p class="src" style="margin:8px 0 0">
     <span class="l-en">data span</span><span class="l-zh">数据区间</span> 2011-03-31..2025-12-31 ·
-    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-02 11:41 UTC ·
-    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-02 11:41 UTC</p>
+    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-02 12:42 UTC ·
+    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-02 12:42 UTC</p>
 </div>
 
 <script src="theme.js"></script>
