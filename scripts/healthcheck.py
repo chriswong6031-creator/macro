@@ -74,6 +74,22 @@ def check_signal_sanity(now: datetime, cfg: dict | None = None) -> dict:
         return {"ok": True, "fail_reasons": [], "warnings": [f"signal_sanity check skipped: {e!r}"]}
 
 
+def check_r2_freshness(now: datetime) -> dict:
+    """LIVENESS of the PUBLIC R2 data plane (the heavy per-ticker stores the browser
+    fetches via templates/data_base.js). Every CI publish_r2 invocation is non-fatal and
+    the script no-ops without creds, so a dead plane is invisible everywhere but here.
+    Same degrade-never-raise shell as check_signal_sanity — a BUG in the probe can't take
+    the liveness check down — but a definitive STALE/DARK/FORBIDDEN verdict DOES fail the
+    heartbeat (that is the point). Network-indeterminate errors degrade to warnings
+    inside the probe itself."""
+    try:
+        from scripts import audit_r2  # stdlib-only, like this module
+        report = audit_r2.run(now=now)  # also persists data/quality/r2_audit.json
+        return {k: report[k] for k in ("ok", "fail_reasons", "warnings")}
+    except Exception as e:  # noqa: BLE001 — never let the add-on break liveness
+        return {"ok": True, "fail_reasons": [], "warnings": [f"r2 freshness check skipped: {e!r}"]}
+
+
 def _notify(report: dict) -> None:
     """Best-effort outbound alert reusing the existing notifier (Telegram/Discord);
     silent if the secrets aren't set. The non-zero exit is the primary signal."""
@@ -104,8 +120,14 @@ def main() -> int:
     report["fail_reasons"] = report["fail_reasons"] + sanity["fail_reasons"]
     report["warnings"] = report["warnings"] + sanity["warnings"]
     report["ok"] = report["ok"] and sanity["ok"]
+    # And the R2 public-data-plane tripwire: the site serves per-ticker stores from R2,
+    # published by non-fatal CI steps — stale/dark R2 must fail the heartbeat too.
+    r2 = check_r2_freshness(now)
+    report["fail_reasons"] = report["fail_reasons"] + r2["fail_reasons"]
+    report["warnings"] = report["warnings"] + r2["warnings"]
+    report["ok"] = report["ok"] and r2["ok"]
     print(f"last_run age: {report['age_hours']}h | circuit-broken: {report['tripped'] or 'none'} "
-          f"| signals: {'ok' if sanity['ok'] else 'FAIL'}")
+          f"| signals: {'ok' if sanity['ok'] else 'FAIL'} | r2: {'ok' if r2['ok'] else 'FAIL'}")
     for w in report["warnings"]:
         print(f"::warning::{w}")
     if report["ok"]:
