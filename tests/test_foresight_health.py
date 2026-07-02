@@ -299,3 +299,48 @@ def test_grading_live(tmp_path):
         h = compute_foresight_health(cascade={"themes": []}, track=track)
 
     assert h["legs"]["grading"]["status"] == "LIVE"
+
+
+# ── W1a: t1_text health flip ──────────────────────────────────────────────────
+
+def test_t1_text_live_when_text_bands_present(tmp_path):
+    """W1a: t1_text LIVE/PARTIAL when at least one theme has bottleneck_text_only=True."""
+    themes = [
+        dict(_theme(bottleneck_band="TIGHT (text)"), bottleneck_text_only=True),
+        dict(_theme(bottleneck_band="AWAITING_DATA"), bottleneck_text_only=False),
+    ]
+    cascade = {"themes": themes, "asof": "2026-07-02"}
+
+    with mock.patch("engine.foresight_health._health_log_path", return_value=tmp_path / "h.jsonl"):
+        h = compute_foresight_health(cascade=cascade)
+
+    assert h["legs"]["t1_text"]["status"] in ("LIVE", "PARTIAL")
+    # t1_text PARTIAL → mode FULL
+    assert h["mode"] == "FULL"
+    assert h["n_leading_live"] >= 1
+
+
+def test_t1_text_dark_when_no_text_bands(tmp_path):
+    """When cascade themes have no text-only bands, t1_text is DARK."""
+    themes = [_theme(bottleneck_band="AWAITING_DATA") for _ in range(3)]
+    cascade = {"themes": themes, "asof": "2026-07-02"}
+
+    with mock.patch("engine.foresight_health._health_log_path", return_value=tmp_path / "h.jsonl"):
+        h = compute_foresight_health(cascade=cascade)
+
+    assert h["legs"]["t1_text"]["status"] == "DARK"
+
+
+def test_t1_text_all_themes_have_text_band_returns_live(tmp_path):
+    """All themes with TIGHT (text) band → t1_text LIVE."""
+    themes = [
+        dict(_theme(bottleneck_band="TIGHT (text)"), bottleneck_text_only=True),
+        dict(_theme(bottleneck_band="TIGHTENING (text)"), bottleneck_text_only=True),
+    ]
+    cascade = {"themes": themes, "asof": "2026-07-02"}
+
+    with mock.patch("engine.foresight_health._health_log_path", return_value=tmp_path / "h.jsonl"):
+        h = compute_foresight_health(cascade=cascade)
+
+    assert h["legs"]["t1_text"]["status"] == "LIVE"
+    assert h["mode"] == "FULL"

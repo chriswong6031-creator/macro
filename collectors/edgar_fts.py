@@ -8,11 +8,22 @@ exact sentence at the filer level. We sweep a phrase dictionary across 10-K/10-Q
 keep only hits whose ticker is in our curated theme universe (config `themes:`), and store
 them so the engine can read mention FREQUENCY + ACCELERATION per theme.
 
+SNIPPET PROBE RESULT (2026-07-02): the EDGAR search-index endpoint returns ONLY metadata
+in _source (ciks, display_names, file_date, root_forms, adsh, …) — there is NO
+highlight/excerpt/snippet field in the JSON response. Fallback (b) from spec §P0-B is
+therefore in effect: polarity column = null for all rows, and the ≥2-distinct-filers gate
+carries the noise burden until a per-filing document fetcher lands (that is L-effort,
+out of scope for W1a/b). The polarity column is auditable — once a doc-fetcher lands
+it can populate affirmative/negated retroactively without schema changes.
+
 Bounded + drip + cached (mirrors collectors/edgar_rpo): refreshes only when the cache is
 stale, caps pages per phrase, reuses collectors.edgar_facts._get_json for the fair-access
-UA/pacing. Writes data/edgar/bottleneck_hits.parquet (phrase, form, file_date, cik,
-ticker, display_name), deduped by document id. Network failure is non-fatal — the engine's
-language leg simply stays None.
+UA/pacing.
+
+Outputs:
+  data/edgar/bottleneck_hits.parquet  (phrase, form, file_date, cik, ticker, display_name,
+                                       fetched, polarity[null])
+  data/edgar/glut_hits.parquet        (same schema; §3.6 glut text tier)
 """
 from __future__ import annotations
 
@@ -20,6 +31,7 @@ import logging
 import re
 import time
 from datetime import date, timedelta
+from pathlib import Path
 
 import pandas as pd
 
@@ -30,14 +42,25 @@ log = logging.getLogger("edgar_fts")
 
 FTS_URL = "https://efts.sec.gov/LATEST/search-index"
 FORMS = "10-K,10-Q,8-K"
+
+# ── Bottleneck (scarcity) phrase dictionary ──────────────────────────────────
 PHRASES = [
     "sold out", "capacity constrained", "supply constrained", "on allocation",
     "longer lead times", "extended lead times", "record backlog",
     "unable to meet demand", "demand exceeds supply", "tight supply",
 ]
+
+# ── Glut (capacity-adds) phrase dictionary  §3.6 ─────────────────────────────
+GLUT_PHRASES = [
+    "capacity expansion", "new fab", "adding capacity", "additional capacity",
+    "capacity coming online", "increased supply", "inventory normalization",
+    "excess inventory", "capacity ramp",
+]
+
 MAX_PAGES = 5              # 10 hits/page -> up to 50 most-recent hits per phrase
 LOOKBACK_DAYS = 400        # window swept (covers the engine's 240d accel window + margin)
 STALE_DAYS = 7             # skip refresh if the cache's newest fetch is younger than this
+
 # EDGAR display_names come in two shapes, both handled below:
 #   legacy   "COMPANY  (TICK, CIK 0001234567)"          — ticker + CIK in ONE paren
 #   current  "COMPANY  (TICK)  (CIK 0001234567)"        — ticker and CIK in SEPARATE parens
@@ -76,20 +99,6 @@ def _tickers_from_display(name: str) -> list[str]:
     return last                                 # legacy form (CIK lives inside the ticker paren)
 
 
-def _cache_path():
-    p = config.data_dir() / "edgar" / "bottleneck_hits.parquet"
-    p.parent.mkdir(parents=True, exist_ok=True)
-    return p
-
-
-def _theme_universe() -> set[str]:
-    themes = (config.load() or {}).get("themes") or {}
-    out: set[str] = set()
-    for spec in themes.values():
-        out.update(spec.get("tickers") or [])
-    return out
-
-
 def _parse_hit(h: dict) -> dict | None:
     src = h.get("_source") or {}
     names = src.get("display_names") or []
@@ -107,10 +116,14 @@ def _parse_hit(h: dict) -> dict | None:
         "form": (src.get("root_forms") or [src.get("file_type")] or [None])[0],
         "file_date": src.get("file_date"),
         "display_name": names[0],
+        # polarity: null — EDGAR FTS returns no snippet/highlight field (probe 2026-07-02).
+        # Fallback (b): the ≥2-distinct-filers gate carries the noise burden.
+        # A per-filing doc-fetcher (L-effort) can populate this retroactively in a later wave.
+        "polarity": None,
     }
 
 
-def _is_stale(p) -> bool:
+def _is_stale(p: Path) -> bool:
     if not p.exists():
         return True
     try:
@@ -123,22 +136,38 @@ def _is_stale(p) -> bool:
         return True
 
 
-def fetch_bottleneck_hits(force: bool = False, phrases: list[str] | None = None) -> pd.DataFrame | None:
-    """Sweep the phrase dictionary, filter to the theme universe, upsert the cache.
-    Returns the (filtered) frame, or the existing cache when fresh / on total failure."""
-    p = _cache_path()
-    if not force and not _is_stale(p):
-        log.info("edgar_fts cache fresh; skipping refresh")
-        return pd.read_parquet(p) if p.exists() else None
+def _theme_universe() -> set[str]:
+    themes = (config.load() or {}).get("themes") or {}
+    out: set[str] = set()
+    for spec in themes.values():
+        out.update(spec.get("tickers") or [])
+    return out
 
-    universe = _theme_universe()
-    if not universe:
-        return None
+
+def _sweep_phrases(
+    phrases: list[str],
+    universe: set[str],
+    cache_path: Path,
+    force: bool = False,
+) -> pd.DataFrame | None:
+    """Core sweep helper — shared by bottleneck and glut sweeps.
+
+    Queries EDGAR FTS for each phrase, filters to theme-universe tickers, upserts
+    the cache parquet at `cache_path`, and returns the result frame.
+
+    Returns None only on a total network failure on the very first request; otherwise
+    returns the (possibly cached) frame.
+    """
+    if not force and not _is_stale(cache_path):
+        log.info("edgar_fts cache fresh (%s); skipping refresh", cache_path.name)
+        return pd.read_parquet(cache_path) if cache_path.exists() else None
+
     enddt = date.today()
     startdt = enddt - timedelta(days=LOOKBACK_DAYS)
     rows: list[dict] = []
     first_request = True
-    for phrase in (phrases or PHRASES):
+
+    for phrase in phrases:
         for page in range(MAX_PAGES):
             url = (f'{FTS_URL}?q="{phrase.replace(" ", "+")}"&forms={FORMS}'
                    f"&startdt={startdt}&enddt={enddt}&from={page * 10}")
@@ -146,8 +175,9 @@ def fetch_bottleneck_hits(force: bool = False, phrases: list[str] | None = None)
             # network down / endpoint unreachable on the very first call -> abort the whole
             # sweep (don't grind through dozens of 40s timeouts) and keep any existing cache.
             if data is None and first_request:
-                log.warning("edgar_fts: EDGAR unreachable; keeping existing cache")
-                return pd.read_parquet(p) if p.exists() else None
+                log.warning("edgar_fts: EDGAR unreachable; keeping existing cache (%s)",
+                            cache_path.name)
+                return pd.read_parquet(cache_path) if cache_path.exists() else None
             first_request = False
             hits = ((data or {}).get("hits") or {}).get("hits") or []
             if not hits:
@@ -163,29 +193,83 @@ def fetch_bottleneck_hits(force: bool = False, phrases: list[str] | None = None)
 
     today = date.today().isoformat()
     if not rows:
-        log.info("edgar_fts: no in-universe hits this sweep")
+        log.info("edgar_fts: no in-universe hits this sweep (%s)", cache_path.name)
         # still stamp a fetch so we don't re-sweep every build on an empty window
-        if p.exists():
-            return pd.read_parquet(p)
+        if cache_path.exists():
+            return pd.read_parquet(cache_path)
         return None
+
     new = pd.DataFrame(rows)
     new["fetched"] = today
-    if p.exists():
+
+    if cache_path.exists():
         try:
-            old = pd.read_parquet(p)
+            old = pd.read_parquet(cache_path)
             new = pd.concat([old, new], ignore_index=True)
         except Exception:  # noqa: BLE001
             pass
+
+    # Ensure polarity column is always present (may not exist in old rows pre-W1a)
+    if "polarity" not in new.columns:
+        new["polarity"] = None
+
     new = new.drop_duplicates(subset=["id", "phrase"]).reset_index(drop=True)
-    new.to_parquet(p, index=False)
-    log.info("edgar_fts: %d bottleneck-language hits cached -> %s", len(new), p)
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    new.to_parquet(cache_path, index=False)
+    log.info("edgar_fts: %d hits cached -> %s", len(new), cache_path)
     return new
+
+
+# ── Public fetch functions ────────────────────────────────────────────────────
+
+def _bottleneck_cache_path() -> Path:
+    p = config.data_dir() / "edgar" / "bottleneck_hits.parquet"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def _glut_cache_path() -> Path:
+    p = config.data_dir() / "edgar" / "glut_hits.parquet"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def fetch_bottleneck_hits(force: bool = False,
+                          phrases: list[str] | None = None) -> pd.DataFrame | None:
+    """Sweep the bottleneck phrase dictionary, filter to the theme universe, upsert the cache.
+    Returns the (filtered) frame, or the existing cache when fresh / on total failure."""
+    universe = _theme_universe()
+    if not universe:
+        return None
+    return _sweep_phrases(
+        phrases=(phrases or PHRASES),
+        universe=universe,
+        cache_path=_bottleneck_cache_path(),
+        force=force,
+    )
+
+
+def fetch_glut_hits(force: bool = False,
+                    phrases: list[str] | None = None) -> pd.DataFrame | None:
+    """Sweep the glut (capacity-adds) phrase dictionary (§3.6). Same polarity-null
+    fallback as the bottleneck sweep — no snippet available from the FTS endpoint."""
+    universe = _theme_universe()
+    if not universe:
+        return None
+    return _sweep_phrases(
+        phrases=(phrases or GLUT_PHRASES),
+        universe=universe,
+        cache_path=_glut_cache_path(),
+        force=force,
+    )
 
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    df = fetch_bottleneck_hits(force=True)
-    print(f"rows: {0 if df is None else len(df)}")
+    df_bn = fetch_bottleneck_hits(force=True)
+    df_gl = fetch_glut_hits(force=True)
+    print(f"bottleneck rows: {0 if df_bn is None else len(df_bn)}")
+    print(f"glut rows:       {0 if df_gl is None else len(df_gl)}")
     return 0
 
 

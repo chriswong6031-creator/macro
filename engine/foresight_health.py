@@ -32,7 +32,8 @@ log = logging.getLogger(__name__)
 
 _AWAITING = {"AWAITING_DATA", "INSUFFICIENT_HISTORY"}
 _TIGHT_BANDS = {"TIGHT", "SOLD_OUT", "TIGHTENING"}
-_GLUT_BANDS = {"GLUT_FORMING", "GLUT", "TIGHTENING", "LOOSE", "BALANCED"}
+_GLUT_BANDS = {"GLUT_FORMING", "GLUT", "TIGHTENING", "LOOSE", "BALANCED",
+               "GLUT_FORMING (text)", "EARLY_GLUT", "STABLE"}
 _REAL_DEMAND = {"ACCELERATING", "STEADY", "COOLING", "CONTRACTING"}
 _REAL_GUIDANCE = {"RAISING", "BROAD-RAISE", "CUTTING", "NEUTRAL"}
 _REAL_BB = {"TIGHT", "SOLD_OUT", "TIGHTENING", "LOOSE", "BALANCED"}
@@ -62,17 +63,48 @@ def _assess_t1_fred(themes: list[dict]) -> dict:
 
 
 def _assess_t1_text(themes: list[dict]) -> dict:
-    """T1 text leg: EDGAR language accel (sold-out / on-allocation).
-    Currently wired into bottleneck.py but NOT added to legs/WEIGHTS, so this reads
-    from the cascade's bottleneck fields for any indirect signal of the text leg.
-    We check for non-null altdata confirmer summaries as the closest available proxy —
-    the text leg (language_hits) is computed but not surfaced in the cascade JSON yet."""
-    # The bottleneck text leg is architecturally not wired (P0-B is the fix).
-    # Until then: DARK with an honest why that explains what's missing.
+    """T1 text leg: EDGAR language accel (sold-out / on-allocation), leg6_language.
+
+    W1a wired: bottleneck.py now includes leg6_language in legs/WEIGHTS (0.25, PROVISIONAL).
+    Assessment:
+      LIVE    — ≥1 theme has a non-null language read (bottleneck_band not None/AWAITING_DATA,
+                OR bottleneck_text_only is True) indicating the parquet has data and is wired
+      PARTIAL — parquet exists and the collector has run but <18 themes have a language read
+      DARK    — data/edgar/bottleneck_hits.parquet absent or stale / no affirmative hits
+
+    We detect LIVE from the cascade themes: any theme with bottleneck_text_only=True or
+    any non-None bottleneck_band that is a text-only band implies the language leg fired.
+    Fallback: check parquet existence directly.
+    """
+    # Count themes with any evidence of the language leg being active
+    text_bands = {"TIGHT (text)", "TIGHTENING (text)"}
+    n_text = sum(1 for t in themes
+                 if t.get("bottleneck_text_only") or t.get("bottleneck_band") in text_bands)
+
+    if themes:
+        # Cascade was computed: use the theme fields as ground truth (they reflect the
+        # engine's actual output; parquet checks would double-count or diverge).
+        n, m = n_text, len(themes)
+        detail = f"{n}/{m}"
+        if n_text > 0:
+            if n_text < m:
+                return _leg("PARTIAL", detail,
+                            f"{n}/{m} themes have an active text-only band (TIGHT (text) / "
+                            "TIGHTENING (text)) — leg6_language wired, parquet live, "
+                            "weight 0.25 PROVISIONAL (shadow-calibration pending)")
+            return _leg("LIVE", detail,
+                        f"all {n} themes have a language read — leg6_language wired at 0.25 "
+                        "(PROVISIONAL); polarity=null (fallback b — no snippet from EDGAR FTS)")
+        # No text bands in the cascade — parquet may exist but threshold not cleared
+        return _leg("DARK", f"0/{m}",
+                    f"leg6_language wired but 0/{m} themes have a text-only band — "
+                    "parquet may be absent, empty, or no theme cleared the ≥2-distinct-filer "
+                    "threshold in the current window")
+
+    # No themes passed (cascade=None or empty) — no cascade means we cannot assess the
+    # language leg's contribution. Return DARK; a running cascade is required.
     return _leg("DARK", None,
-                "EDGAR text leg computed but not wired into the cascade band — "
-                "language_hits present in data/edgar/bottleneck_hits.parquet but "
-                "carries zero weight in the band (P0-B will fix this)")
+                "cascade not provided — cannot assess t1_text without cascade theme data")
 
 
 def _assess_t2_demand(themes: list[dict]) -> dict:

@@ -5,6 +5,8 @@ AWAITING_DATA when the store is empty. DISPLAY-ONLY contract.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
@@ -34,6 +36,10 @@ def _patch(monkeypatch, store):
     monkeypatch.setattr(bn.store, "read", lambda group, name: store.get(name))
     monkeypatch.setattr(gw.config, "load",
                         lambda: {"themes": {"memory_storage": {"name": "Memory", "tickers": ["MU"]}}})
+    # _glut_language_accel calls config.data_dir() before its parquet-existence guard,
+    # and the stubbed load() has no "storage" key -> point data_dir at an empty path
+    # (no glut_hits.parquet => language leg None), mirroring test_bottleneck.py
+    monkeypatch.setattr(gw.config, "data_dir", lambda: Path("/nonexistent-glut-test"))
 
 
 def test_glut_regime_fires(monkeypatch):
@@ -63,6 +69,7 @@ def test_awaiting_when_store_empty(monkeypatch):
     monkeypatch.setattr(bn.store, "read", lambda group, name: None)
     monkeypatch.setattr(gw.config, "load",
                         lambda: {"themes": {"memory_storage": {"name": "M", "tickers": ["MU"]}}})
+    monkeypatch.setattr(gw.config, "data_dir", lambda: Path("/nonexistent-glut-test"))
     out = gw.compute_glut_watch(demand={"themes": {}}, write_ledger=False)
     assert out["themes"]["memory_storage"]["band"] == "AWAITING_DATA"
     assert out["themes"]["memory_storage"]["regime"] is False
