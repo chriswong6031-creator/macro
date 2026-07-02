@@ -347,17 +347,35 @@ def _aggregate(ticker: str, trades: list, asof) -> dict:
 def _score(agg: dict, eng: dict) -> dict:
     cluster = agg["cluster_score"]
     tech, zone = eng.get("technical"), eng.get("zone")
-    tw = W_CLUSTER + W_TECHNICAL + W_ZONE
-    composite = (W_CLUSTER * cluster + W_TECHNICAL * (tech if tech is not None else 50.0)
-                 + W_ZONE * (zone if zone is not None else 50.0)) / tw
-    if eng.get("blocked") or eng.get("downtrend"):
-        composite *= 0.6
-    elif eng.get("extended"):
-        composite *= 0.85
-    act_now = bool(tech is not None and zone is not None and zone >= ACT_MIN_ZONE
+    covered = eng.get("covered", False)
+
+    if covered:
+        # Full composite: cluster + technical + zone with neutral fill-ins for missing legs.
+        tw = W_CLUSTER + W_TECHNICAL + W_ZONE
+        composite = (W_CLUSTER * cluster + W_TECHNICAL * (tech if tech is not None else 50.0)
+                     + W_ZONE * (zone if zone is not None else 50.0)) / tw
+        # Apply blocked/downtrend/extended multiplier vetoes only for covered names; an uncovered
+        # name has no engine to veto it, so letting these multipliers fire on stale/absent signals
+        # would be misleading and was also bypassed entirely before (composite used neutral fill-ins
+        # that dodged the check).  Keeping them under the covered branch restores the intended guard.
+        if eng.get("blocked") or eng.get("downtrend"):
+            composite *= 0.6
+        elif eng.get("extended"):
+            composite *= 0.85
+        unconfirmed = False
+    else:
+        # Uncovered: no engine read → only the cluster signal is real.  Use cluster-only composite
+        # (W_CLUSTER weight normalised to 1.0) and skip all multiplier vetoes.  The neutral 50.0
+        # gift previously awarded for missing technical/zone inflated uncovered scores by ~30 points,
+        # letting them outrank vetoed covered names.  Audit finding: brief #4.
+        composite = W_CLUSTER * cluster          # = 0.40 × cluster; intentionally un-normalised
+        unconfirmed = True
+
+    act_now = bool(covered and tech is not None and zone is not None and zone >= ACT_MIN_ZONE
                    and tech >= ACT_MIN_TECH and not (eng.get("blocked") or eng.get("downtrend") or eng.get("extended")))
     return {**agg, "name": None, "composite": round(composite, 1), "act_now": act_now,
-            "technical_score": tech, "zone_score": zone, "covered": eng.get("covered", False),
+            "unconfirmed": unconfirmed,
+            "technical_score": tech, "zone_score": zone, "covered": covered,
             "band": eng.get("band"), "verdict": eng.get("verdict"), "timing": eng.get("timing"),
             "sector_dir": eng.get("sector_dir"), "theme_dir": eng.get("theme_dir"),
             "trend_dir": eng.get("trend_dir"), "extended": eng.get("extended"),
@@ -398,7 +416,9 @@ def main() -> int:
             row = _score(agg, eng)
             row["name"] = sd.get("name")
             items.append(row)
-        items.sort(key=lambda a: a["composite"], reverse=True)
+        # Covered rows always rank above unconfirmed (uncovered) rows; within each bucket sort by
+        # composite descending.  The template receives a single list and is unchanged.
+        items.sort(key=lambda a: (1 if a["unconfirmed"] else 0, -a["composite"]))
 
         # attach company names to the recent-disclosure feed too
         for r in feed[:FEED_CAP]:
