@@ -184,7 +184,10 @@ def _breadth_frame(root):
 def _close_series(ticker: str, root) -> pd.Series | None:
     """Closes for an instrument. Prefers the per-ticker yahoo parquet (cols are
     lowercase 'close'); falls back to the S&P 1500 breadth close cache so subjects
-    beyond the ~153 yahoo names are still scorable. None if neither has it."""
+    beyond the ~153 yahoo names are still scorable; then to the China price
+    parquets (data/china_stocks/<ticker>.parquet A-share OHLCV, data/china/<t>.parquet
+    for CN benches like 510300.SS) so the qledger grader can price China
+    event-move claims and their 510300.SS benchmark. None if none has it."""
     try:
         df = pd.read_parquet(Path(root) / "data" / "yahoo" / f"{ticker}.parquet")
         s = df["close"].dropna()
@@ -197,6 +200,16 @@ def _close_series(ticker: str, root) -> pd.Series | None:
         s = bf[ticker].dropna()
         if len(s):
             return s.sort_index()
+    # China parquets — additive fallback, only reached when yahoo/breadth miss.
+    for sub in ("china_stocks", "china"):
+        try:
+            df = pd.read_parquet(Path(root) / "data" / sub / f"{ticker}.parquet")
+            s = df["close"].dropna()
+            s.index = pd.to_datetime(s.index)
+            if len(s):
+                return s.sort_index()
+        except Exception:  # noqa: BLE001
+            continue
     return None
 
 
