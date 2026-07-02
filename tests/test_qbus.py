@@ -1,0 +1,200 @@
+"""Tests for engine/qbus.py — the unified item/event store.
+
+Covers: schema normalization + timestamp_quality enum, event_key clustering on a
+paraphrase set (shared-subject gate + shingle similarity), keep-FIRST PIT
+discipline on append, novelty_z math (injected asof + df), and echo_stats
+cross-desk corroboration. Storage is redirected to a tmp path so no tracked
+parquet is touched.
+"""
+from __future__ import annotations
+
+import sys
+from datetime import date
+from pathlib import Path
+
+import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from engine import qbus  # noqa: E402
+
+
+def _row(**kw):
+    base = {"desk": "financial_news", "source": "reuters", "url": "", "title": "",
+            "seendate": "2026-06-19T12:00:00+00:00", "_crawled_at": "2026-06-19T12:05:00+00:00",
+            "entities": [], "themes": [], "lang": "en"}
+    base.update(kw)
+    return base
+
+
+# --------------------------------------------------------------------------- #
+# schema + timestamp_quality
+# --------------------------------------------------------------------------- #
+def test_normalize_row_fills_defaults():
+    r = qbus.normalize_row(_row(title="Fed holds rates", url="https://reuters.com/x",
+                                entities=["SPY"], themes=["monetary"]))
+    assert set(r.keys()) == set(qbus.COLUMNS)
+    assert r["item_id"] and len(r["item_id"]) == 16
+    assert r["source_tier"] == 1                      # reuters.com host
+    assert r["timestamp_quality"] == "CRAWL_BOUNDED"  # default
+    assert r["entities"] == "SPY" and r["themes"] == "monetary"
+
+
+def test_normalize_row_bad_timestamp_quality_defaults():
+    r = qbus.normalize_row(_row(title="x", timestamp_quality="NONSENSE"))
+    assert r["timestamp_quality"] == "CRAWL_BOUNDED"
+
+
+def test_normalize_row_valid_timestamp_quality_kept():
+    r = qbus.normalize_row(_row(title="x", timestamp_quality="DISCLOSURE_DATE"))
+    assert r["timestamp_quality"] == "DISCLOSURE_DATE"
+
+
+def test_body_sha256():
+    assert qbus.body_sha256("") == ""
+    assert qbus.body_sha256(None) == ""
+    assert len(qbus.body_sha256("hello")) == 64
+
+
+# --------------------------------------------------------------------------- #
+# event_key clustering — paraphrase set
+# --------------------------------------------------------------------------- #
+def test_event_key_clusters_paraphrases_sharing_subject():
+    rows = [
+        _row(title="Fed holds interest rates steady", entities=["SPY"], themes=["monetary"],
+             source="reuters", url="https://reuters.com/a"),
+        _row(title="Fed holds interest rates steady in June", entities=["SPY"], themes=["monetary"],
+             source="ap", url="https://apnews.com/b"),
+        _row(title="OPEC agrees to cut oil output", entities=["XLE"], themes=["energy"],
+             source="reuters", url="https://reuters.com/c"),
+    ]
+    out = qbus.assign_event_keys(rows, thresh=0.5, window_days=3)
+    keys = [r["event_key"] for r in out]
+    assert keys[0] == keys[1]        # the two Fed paraphrases collapse
+    assert keys[2] != keys[0]        # OPEC is a distinct event
+
+
+def test_event_key_requires_shared_subject():
+    # identical-ish titles but NO shared entity/theme should not merge.
+    rows = [
+        _row(title="Prices rise sharply", entities=["AAA"], themes=["t1"],
+             url="https://a.com/1"),
+        _row(title="Prices rise sharply", entities=["BBB"], themes=["t2"],
+             url="https://b.com/2"),
+    ]
+    out = qbus.assign_event_keys(rows, thresh=0.5, window_days=3)
+    assert out[0]["event_key"] != out[1]["event_key"]
+
+
+def test_event_key_window_gate():
+    # same story, but crawl days too far apart → not one event.
+    rows = [
+        _row(title="Fed holds rates steady", entities=["SPY"], themes=["monetary"],
+             seendate="2026-06-01T00:00:00+00:00", _crawled_at="2026-06-01T00:00:00+00:00"),
+        _row(title="Fed holds rates steady", entities=["SPY"], themes=["monetary"],
+             seendate="2026-06-20T00:00:00+00:00", _crawled_at="2026-06-20T00:00:00+00:00",
+             url="https://x.com/2"),
+    ]
+    out = qbus.assign_event_keys(rows, thresh=0.5, window_days=3)
+    assert out[0]["event_key"] != out[1]["event_key"]
+
+
+def test_event_key_deterministic_regardless_of_order():
+    a = _row(title="Fed holds rates steady", entities=["SPY"], themes=["monetary"],
+             source="ap", url="https://apnews.com/a", source_tier=2)
+    b = _row(title="Fed holds rates steady now", entities=["SPY"], themes=["monetary"],
+             source="reuters", url="https://reuters.com/b", source_tier=1)
+    k1 = {r["item_id"]: r["event_key"] for r in qbus.assign_event_keys([a, b], 0.4, 3)}
+    k2 = {r["item_id"]: r["event_key"] for r in qbus.assign_event_keys([b, a], 0.4, 3)}
+    assert k1 == k2   # representative (lowest tier) fixes the key regardless of order
+
+
+# --------------------------------------------------------------------------- #
+# append — keep-FIRST PIT discipline
+# --------------------------------------------------------------------------- #
+def test_append_keep_first_on_item_id(tmp_path, monkeypatch):
+    p = tmp_path / "items.parquet"
+    monkeypatch.setattr(qbus, "_events_path", lambda: p)
+    first = qbus.append_items([_row(title="Rate cut", url="https://reuters.com/x",
+                                    entities=["SPY"], seendate="2026-06-19T00:00:00+00:00")])
+    assert first is not None and len(first) == 1
+    orig_seen = first.iloc[0]["seendate"]
+    # a restatement of the SAME item (same host+title → same item_id) with a LATER
+    # seendate must NOT overwrite the original print.
+    merged = qbus.append_items([_row(title="Rate  cut!", url="https://reuters.com/x",
+                                     entities=["SPY"], seendate="2026-06-25T00:00:00+00:00")])
+    assert len(merged) == 1
+    assert merged.iloc[0]["seendate"] == orig_seen
+
+
+def test_read_items_none_when_absent(tmp_path, monkeypatch):
+    monkeypatch.setattr(qbus, "_events_path", lambda: tmp_path / "nope.parquet")
+    assert qbus.read_items() is None
+
+
+# --------------------------------------------------------------------------- #
+# novelty_z
+# --------------------------------------------------------------------------- #
+def _mk_df(rows):
+    return pd.DataFrame([qbus.normalize_row(r) for r in rows], columns=list(qbus.COLUMNS))
+
+
+def test_novelty_z_spike_is_positive():
+    # subject "NVDA" quiet for a month (1/day baseline), then 6 items today.
+    rows = []
+    for d in range(1, 30):
+        rows.append(_row(title=f"nvidia note {d}", entities=["NVDA"],
+                         seendate=f"2026-05-{d:02d}T00:00:00+00:00",
+                         _crawled_at=f"2026-05-{d:02d}T00:00:00+00:00",
+                         url=f"https://x.com/{d}"))
+    for k in range(6):
+        rows.append(_row(title=f"nvidia breaking {k}", entities=["NVDA"],
+                         seendate="2026-06-01T00:00:00+00:00",
+                         _crawled_at="2026-06-01T00:00:00+00:00",
+                         url=f"https://y.com/{k}"))
+    df = _mk_df(rows)
+    z = qbus.novelty_z("NVDA", date(2026, 6, 1), window_days=31, df=df)
+    assert z is not None and z > 1.0
+
+
+def test_novelty_z_flat_returns_zero_or_low():
+    rows = [_row(title=f"note {d}", entities=["AAA"],
+                 seendate=f"2026-05-{d:02d}T00:00:00+00:00",
+                 _crawled_at=f"2026-05-{d:02d}T00:00:00+00:00",
+                 url=f"https://x.com/{d}") for d in range(1, 20)]
+    # today (06-01) matches the flat baseline level (also 1) → not novel.
+    rows.append(_row(title="note today", entities=["AAA"],
+                     seendate="2026-06-01T00:00:00+00:00",
+                     _crawled_at="2026-06-01T00:00:00+00:00", url="https://x.com/today"))
+    df = _mk_df(rows)
+    z = qbus.novelty_z("AAA", date(2026, 6, 1), window_days=31, df=df)
+    assert z is not None and z <= 1.0
+
+
+def test_novelty_z_none_on_empty():
+    assert qbus.novelty_z("X", date(2026, 6, 1), df=_mk_df([])) is None
+
+
+# --------------------------------------------------------------------------- #
+# echo_stats
+# --------------------------------------------------------------------------- #
+def test_echo_stats_cross_desk_breadth():
+    rows = [
+        _row(title="Fed holds rates steady", desk="financial_news", source="reuters",
+             entities=["SPY"], themes=["monetary"], url="https://reuters.com/a"),
+        _row(title="Fed holds rates steady now", desk="china_news_intel", source="jin10",
+             entities=["SPY"], themes=["monetary"], url="https://jin10.com/b"),
+        _row(title="Fed holds rates steady in June", desk="financial_news", source="ap",
+             entities=["SPY"], themes=["monetary"], url="https://apnews.com/c"),
+    ]
+    clustered = qbus.assign_event_keys(rows, thresh=0.4, window_days=3)
+    df = pd.DataFrame(clustered, columns=list(qbus.COLUMNS))
+    key = clustered[0]["event_key"]
+    st = qbus.echo_stats(key, df=df)
+    assert st is not None
+    assert st["n_desks"] == 2 and st["breadth"] == 2
+    assert st["n_sources"] == 3 and st["n_items"] == 3
+
+
+def test_echo_stats_missing_key():
+    assert qbus.echo_stats("nope", df=_mk_df([_row(title="x", entities=["A"])])) is None
