@@ -362,10 +362,10 @@
   <p class="lead" style="margin:10px 0 0"><span class="l-en">What separates a dashboard from a model is honest validation. Every signal here goes through the same battery before it earns a place: rank-IC, a Newey-West (HAC) t-stat that respects overlapping windows, a Benjamini-Hochberg FDR q that controls for trying many ideas, and a Deflated Sharpe that haircuts for the same data-snooping. The point of this page is the graveyard: the signals we measured and refused to ship.</span><span class="l-zh">把仪表盘和模型区分开的，是诚实的验证。这里每个信号在获得位置前都经过同一套检验：秩相关 IC、尊重重叠窗口的 Newey-West (HAC) t 值、控制多重尝试的 Benjamini-Hochberg FDR q，以及为同样的数据窥探打折的去偏夏普 (DSR)。本页的重点是“信号墓地”：那些我们测量后拒绝上线的信号。</span></p>
   <div class="chips">
     <span class="chip"><span class="dot d-scored"></span><b>6</b> <span class="l-en">scored</span><span class="l-zh">已计分</span></span>
-    <span class="chip"><span class="dot d-confirmer"></span><b>19</b> <span class="l-en">confirmer</span><span class="l-zh">确认项</span></span>
-    <span class="chip"><span class="dot d-display"></span><b>22</b> <span class="l-en">display-only</span><span class="l-zh">仅展示</span></span>
+    <span class="chip"><span class="dot d-confirmer"></span><b>20</b> <span class="l-en">confirmer</span><span class="l-zh">确认项</span></span>
+    <span class="chip"><span class="dot d-display"></span><b>27</b> <span class="l-en">display-only</span><span class="l-zh">仅展示</span></span>
     <span class="chip"><span class="dot d-killed"></span><b>9</b> <span class="l-en">killed (NO-GO)</span><span class="l-zh">已否决</span></span>
-    <span class="chip"><span class="dot d-pending"></span><b>1</b> <span class="l-en">pending</span><span class="l-zh">待接入</span></span>
+    <span class="chip"><span class="dot d-pending"></span><b>0</b> <span class="l-en">pending</span><span class="l-zh">待接入</span></span>
     
     <span class="chip ">🧮 <b>1</b>/11
       <span class="l-en">cross-sectional factors survive FDR</span><span class="l-zh">横截面因子通过 FDR</span></span>
@@ -714,7 +714,7 @@
 <div class="panel tier-panel ">
   <div class="tierhead">
     <span class="dot d-confirmer" style="align-self:center"></span>
-    <h2><span class="l-en">Confirmer / context — validated, but not a standalone sizer</span><span class="l-zh">确认/背景 — 已验证，但非独立定量信号</span> · 19</h2>
+    <h2><span class="l-en">Confirmer / context — validated, but not a standalone sizer</span><span class="l-zh">确认/背景 — 已验证，但非独立定量信号</span> · 20</h2>
     <span class="bl"><span class="l-en">A measured forward edge used as context or a tiebreaker — never sized on its own.</span><span class="l-zh">有可测的前瞻性边际，用作背景或加分项 — 但不单独定仓。</span></span>
   </div>
   
@@ -1172,6 +1172,29 @@
         </td>
       </tr>
     
+      <tr class="sl-row" data-tier="confirmer" data-mkt="Dollar / macro"
+          data-text="broad-dollar reer value factor  (n=1 resurrection — c4a — confirmed) 宽美元 reer 价值因子（n=1 复活 — c4a — 已确认） dollar / macro confirmed — the honest intl-43 resurrection. the broad-usd reer value factor (cheap = bullish usd, faithful to config forex.dollar_desk.valuation) confirmed in both halves vs forward broad-usd returns at all three declared horizons (h=21 +0.031/+0.030, h=63 +0.062/+0.056, h=126 +0.120/+0.099). graded on its own single-trial budget (trial_family c4_reer_value_n1) — the pre-registered n=1 door, budget-separated from the forex 60-trial family (dsr 0.0056 there) and the intl_bridge n=17 family (dsr 0.40 there): de-risk long-flat dsr 0.9436 >= 0.90, split-half pass, orthogonality vs the 5 us mrs legs pass (residual −0.130), crisis-count 4, crisis-independent es +0.0025. weight_cap 0.1333. no consumer wiring this wave: verdict recorded + surfaced by intl_feed at cap, but no scorer consumes the feed — the mrs-composite orthogonality gate must clear first (w2-c2 showed the bar is high and this is a returns-predicting factor, not a us-dd leg).">
+        <td>
+          <div class="sig"><span class="l-en">Broad-dollar REER value factor  (N=1 resurrection — C4a — CONFIRMED)</span><span class="l-zh">宽美元 REER 价值因子（N=1 复活 — C4a — 已确认）</span>
+            </div>
+          <div class="mkt">Dollar / macro · 21/63/126d fwd broad-USD return · not wired this wave — CONFIRMED verdict recorded + surfaced at cap 0.1333; no scorer consumes intl_feed (MRS-orthogonality gate deferred)</div>
+          <div class="extra">N=1 budget DSR 0.9436 (>= 0.90 door) · vs intl_bridge N=17 / forex N=60 0.40 / 0.0056 (budget-killed) · orthogonality vs 5 US MRS legs residual −0.130 (PASS, de-risk sign) · crises / crisis-indep ES 4 / +0.0025 (PASS)</div>
+        </td>
+        <td class="r pos">+0.0507</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r yes">0.944</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-confirmer"><span class="l-en">CONFIRMER</span><span class="l-zh">确认项</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">CONFIRMED — the honest INTL-43 resurrection. The broad-USD REER value factor (cheap = bullish USD, faithful to config fo…</span><span class="l-zh">已确认——诚实的 INTL-43 复活。宽美元 REER 价值因子（便宜=看多美元，忠于 config forex.dollar_desk.valuation）…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">CONFIRMED — the honest INTL-43 resurrection. The broad-USD REER value factor (cheap = bullish USD, faithful to config forex.dollar_desk.valuation) CONFIRMED in BOTH halves vs forward broad-USD returns at all three declared horizons (h=21 +0.031/+0.030, h=63 +0.062/+0.056, h=126 +0.120/+0.099). Graded on its OWN single-trial budget (trial_family c4_reer_value_n1) — the pre-registered N=1 door, budget-separated from the forex 60-trial family (DSR 0.0056 there) AND the intl_bridge N=17 family (DSR 0.40 there): de-risk long-flat DSR 0.9436 >= 0.90, split-half PASS, orthogonality vs the 5 US MRS legs PASS (residual −0.130), crisis-count 4, crisis-independent ES +0.0025. weight_cap 0.1333. NO consumer wiring this wave: verdict recorded + surfaced by intl_feed at cap, but no scorer consumes the feed — the MRS-composite orthogonality gate must clear first (W2-C2 showed the bar is high and this is a returns-predicting factor, not a US-DD leg).  [reports/forex-calibration.md (DOLLAR INDEX value); reports/forex-reer-n1-phase0.md (W3-C4a N=1); data/intl_bridge/ledger.json (c4_reer_value); scripts/c4_reer_value.py + scripts/intl_phase0.py (grade, N=1 budget)]</span><span class="l-zh">已确认——诚实的 INTL-43 复活。宽美元 REER 价值因子（便宜=看多美元，忠于 config forex.dollar_desk.valuation）在两半、三个预声明期限均确认对未来宽美元回报（h=21 +0.031/+0.030，h=63 +0.062/+0.056，h=126 +0.120/+0.099）。以独立单试验预算（trial_family c4_reer_value_n1）评分——预注册的 N=1 门，与外汇60试验家族（该处 DSR 0.0056）及 intl_bridge N=17 家族（该处 DSR 0.40）分开：降险多-空仓 DSR 0.9436 >= 0.90，两半通过，对5条美国 MRS 腿正交通过（残差 −0.130），危机计数4，去危机期望损失 +0.0025。权重上限 0.1333。本波不接入消费者：结论已记录并由 intl_feed 以上限呈现，但无计分器消费该源——须先通过 MRS 组合正交门。  [reports/forex-calibration.md (DOLLAR INDEX value); reports/forex-reer-n1-phase0.md (W3-C4a N=1); data/intl_bridge/ledger.json (c4_reer_value); scripts/c4_reer_value.py + scripts/intl_phase0.py (grade, N=1 budget)]</span></span></span>
+          <div class="src">reports/forex-calibration.md (DOLLAR INDEX value); reports/forex-reer-n1-phase0.md (W3-C4a N=1); data/intl_bridge/ledger.json (c4_reer_value); scripts/c4_reer_value.py + scripts/intl_phase0.py (grade, N=1 budget)</div>
+        </td>
+      </tr>
+    
     </tbody>
   </table></div>
 </div>
@@ -1179,7 +1202,7 @@
 <div class="panel tier-panel ">
   <div class="tierhead">
     <span class="dot d-display" style="align-self:center"></span>
-    <h2><span class="l-en">Display-only — shown, but no validated edge</span><span class="l-zh">仅展示 — 显示但无验证边际</span> · 22</h2>
+    <h2><span class="l-en">Display-only — shown, but no validated edge</span><span class="l-zh">仅展示 — 显示但无验证边际</span> · 27</h2>
     <span class="bl"><span class="l-en">Rendered as a research lens or risk context. Failed Phase-0, un-backtestable, or still accruing history. NOT a buy signal.</span><span class="l-zh">作为研究视角或风险背景显示。未通过 Phase-0、无法回测或历史不足。并非买入信号。</span></span>
   </div>
   
@@ -1635,6 +1658,98 @@
         </td>
       </tr>
     
+      <tr class="sl-row" data-tier="display" data-mkt="China / RORO"
+          data-text="cnh offshore-onshore basis  (2nd china roro leg? — c4c — inverted) cnh 离岸-在岸基差（第二条中国 roro 腿？ — c4c — 已反转） china / roro inverted — do not wire. tested whether the offshore-minus-onshore cnh basis (a funding-stress spread) adds orthogonal de-risk content beside the existing raw usdcnh roro leg (offshore 20d move). it does not: graded at 42d dd vs fxi, rank-ic ~0.0003 (null), split-half sign-flips, dsr 0.0013, and — the decider — the residual after partialing out the raw usdcnh leg is wrong-signed (+0.121: wider basis → shallower forward drawdown), with negative crisis-independent es (−0.0095). usdcnh history is short (2013+, ~2 china bears). respecting w2-c1 (cn roro legs already carry beta content), a second basis leg double-counts. china_conditions roro frame unchanged — no leg added.">
+        <td>
+          <div class="sig"><span class="l-en">CNH offshore-onshore basis  (2nd China RORO leg? — C4c — INVERTED)</span><span class="l-zh">CNH 离岸-在岸基差（第二条中国 RORO 腿？ — C4c — 已反转）</span>
+            </div>
+          <div class="mkt">China / RORO · 21/42d fwd drawdown (FXI) · not wired — INVERTED (wrong-signed residual vs existing raw usdcnh RORO leg)</div>
+          <div class="extra">residual vs raw usdcnh leg +0.121 (WRONG sign for a de-risk leg) · rank-IC vs FXI fwd DD ~0 (0.0003); split-half sign-flips · crisis-indep ES −0.0095 (fails)</div>
+        </td>
+        <td class="r pos">+0.0003</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r neg">0.001</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">INVERTED — do NOT wire. Tested whether the offshore-minus-onshore CNH basis (a funding-stress spread) adds orthogonal de…</span><span class="l-zh">已反转——请勿接入。测试 CNH 离岸减在岸基差（融资压力价差）是否在现有原始 usdcnh RORO 腿（离岸20日动量）之外新增正交降险内容。并未：对 FX…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">INVERTED — do NOT wire. Tested whether the offshore-minus-onshore CNH basis (a funding-stress spread) adds orthogonal de-risk content beside the EXISTING raw usdcnh RORO leg (offshore 20d move). It does not: graded at 42d DD vs FXI, rank-IC ~0.0003 (null), split-half sign-FLIPS, DSR 0.0013, and — the decider — the residual after partialing out the raw usdcnh leg is WRONG-SIGNED (+0.121: wider basis → SHALLOWER forward drawdown), with negative crisis-independent ES (−0.0095). USDCNH history is short (2013+, ~2 China bears). Respecting W2-C1 (CN RORO legs already carry beta content), a second basis leg double-counts. china_conditions RORO frame UNCHANGED — no leg added.  [reports/forex-reer-n1-phase0.md (W3-C4c CNH-basis section); data/intl_bridge/ledger.json (c4_cnh_basis); scripts/c4_cnh_basis.py + scripts/intl_phase0.py (grade)]</span><span class="l-zh">已反转——请勿接入。测试 CNH 离岸减在岸基差（融资压力价差）是否在现有原始 usdcnh RORO 腿（离岸20日动量）之外新增正交降险内容。并未：对 FXI 42日回撤评分，秩相关 ~0.0003（无效），两半符号翻转，DSR 0.0013，且——决定项——剔除原始 usdcnh 腿后的残差符号错误（+0.121：基差越宽→未来回撤越浅），去危机期望损失为负（−0.0095）。USDCNH 历史短（2013+，约2次中国熊市）。遵循 W2-C1（中国 RORO 腿已含贝塔内容），第二条基差腿重复计数。china_conditions RORO 框架未变——未加腿。  [reports/forex-reer-n1-phase0.md (W3-C4c CNH-basis section); data/intl_bridge/ledger.json (c4_cnh_basis); scripts/c4_cnh_basis.py + scripts/intl_phase0.py (grade)]</span></span></span>
+          <div class="src">reports/forex-reer-n1-phase0.md (W3-C4c CNH-basis section); data/intl_bridge/ledger.json (c4_cnh_basis); scripts/c4_cnh_basis.py + scripts/intl_phase0.py (grade)</div>
+        </td>
+      </tr>
+    
+      <tr class="sl-row" data-tier="display" data-mkt="Global rates"
+          data-text="global cost-of-capital de-risk leg  (global 10y + us premium — c5) 全球资本成本降险腿（全球10年期 + 美国溢价 — c5） global rates w3 verdict: context — do not wire. the gdp-weighted global 10y level + us-vs-world premium are reconstructed causally by engine.global_rates from the sovereign 10y roster (the display card dead-ends both in bond_health.json with no history — intl-15). the honest prior — the global 10y is ~us 10y + noise — is confirmed by measurement: the c5 global-10y rise signal correlates 0.948 with the us-only 10y momentum (us is a 0.42-weight roster leg), so it carries no orthogonal duration edge over the existing us curve/credit mrs legs. the binding gate is drawdown-reduction over the signal-active era (from 1963): the long/flat strategy cuts spy maxdd only 1.1pp (−55.7% vs −56.8% b&h) while halving total return (calmar 0.115 < 0.137 b&h — not cost-justified). dsr 0.98 is spy drift, not an edge. weight_cap 0, kill=true — conditions._macro_risk_legs unchanged.">
+        <td>
+          <div class="sig"><span class="l-en">Global cost-of-capital de-risk leg  (global 10y + US premium — C5)</span><span class="l-zh">全球资本成本降险腿（全球10年期 + 美国溢价 — C5）</span>
+            </div>
+          <div class="mkt">Global rates · 21/42d fwd drawdown · not wired — CONTEXT (global 10y ≈ US 10y, corr 0.948; DD-cut not cost-justified)</div>
+          <div class="extra">global-10y vs US-10y mom corr 0.948 (≈ US 10y + noise) · residual DD partial vs US legs −0.129 (survives but weak) · SPY MaxDD cut (signal era) +1.1pp (−55.7% vs −56.8% B&H) · Calmar strat vs B&H 0.115 < 0.137 (return halved — not cost-justified)</div>
+        </td>
+        <td class="r neg">-0.0640</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r yes">0.980</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">W3 VERDICT: CONTEXT — do NOT wire. The GDP-weighted global 10y level + US-vs-world premium are reconstructed causally by…</span><span class="l-zh">W3 结论：CONTEXT——不接线。GDP加权全球10年期水平 + 美国对世界溢价由 engine.global_rates 从主权10年期名单因果重建（展示…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">W3 VERDICT: CONTEXT — do NOT wire. The GDP-weighted global 10y level + US-vs-world premium are reconstructed causally by engine.global_rates from the sovereign 10y roster (the display card dead-ends both in bond_health.json with no history — INTL-15). The honest prior — the global 10y is ~US 10y + noise — is confirmed by MEASUREMENT: the C5 global-10y rise signal correlates 0.948 with the US-only 10y momentum (US is a 0.42-weight roster leg), so it carries no orthogonal duration edge over the existing US curve/credit MRS legs. The binding gate is drawdown-reduction over the signal-active era (from 1963): the long/flat strategy cuts SPY MaxDD only 1.1pp (−55.7% vs −56.8% B&H) while HALVING total return (Calmar 0.115 < 0.137 B&H — not cost-justified). DSR 0.98 is SPY drift, not an edge. weight_cap 0, kill=True — conditions._macro_risk_legs UNCHANGED.  [scripts/c5_global_rates.py + scripts/intl_phase0.py (grade, W3 C5); engine/global_rates.py; data/intl_bridge/ledger.json (C5)]</span><span class="l-zh">W3 结论：CONTEXT——不接线。GDP加权全球10年期水平 + 美国对世界溢价由 engine.global_rates 从主权10年期名单因果重建（展示卡将两者困在 bond_health.json 无历史——INTL-15）。诚实先验——全球10年期≈美国10年期+噪声——经测量确认：C5 全球10年期上行信号与纯美国10年期动量相关 0.948（美国占名单0.42权重），故相对现有美国曲线/信用MRS腿无正交久期边际。约束门为降险时代（自1963起）的回撤削减：多/空策略仅削减 SPY 回撤 1.1pp（−55.7% 对 −56.8%），却使总回报腰斩（Calmar 0.115 < 0.137，不划算）。DSR 0.98 是 SPY 漂移，非边际。权重上限0，kill=True——conditions._macro_risk_legs 未变。  [scripts/c5_global_rates.py + scripts/intl_phase0.py (grade, W3 C5); engine/global_rates.py; data/intl_bridge/ledger.json (C5)]</span></span></span>
+          <div class="src">scripts/c5_global_rates.py + scripts/intl_phase0.py (grade, W3 C5); engine/global_rates.py; data/intl_bridge/ledger.json (C5)</div>
+        </td>
+      </tr>
+    
+      <tr class="sl-row" data-tier="display" data-mkt="Cross-asset"
+          data-text="cross-asset leading-caution votes booster  (credit+rates-vol+dollar — c8) 跨资产领先警戒票增强器（信用+利率波动+美元 — c8） cross-asset w3 verdict: context — do not wire. the three cross-asset caution votes (credit hy-band/widening, rates-vol move-band/leads-vix, dollar risk-off bid) are reconstructed causally from their on-disk inputs (no vote history on disk — intl-46). the votes>=2 while-equities-calm 'diverge' booster is context on two counts: the credit/rates-vol votes are near-duplicates of the nfci/recession mrs legs (residual dd partial only −0.090), and over the signal-active era (from 2007) the de-risk strategy cuts spy maxdd only 0.6pp (−56.2% vs −56.8% b&h — below the 1pp door) while cratering return (calmar 0.105 < 0.153 b&h). it flattens out of good days without avoiding the bad ones. dsr 0.98 is spy drift. weight_cap 0, kill=true — conditions._macro_risk_legs unchanged.">
+        <td>
+          <div class="sig"><span class="l-en">Cross-asset leading-caution votes booster  (credit+rates-vol+dollar — C8)</span><span class="l-zh">跨资产领先警戒票增强器（信用+利率波动+美元 — C8）</span>
+            </div>
+          <div class="mkt">Cross-asset · 21/42d fwd drawdown · not wired — CONTEXT (votes ≈ nfci/recession legs; DD-cut below door + return-killing)</div>
+          <div class="extra">residual DD partial vs US legs −0.090 (near-dup of nfci/recession) · SPY MaxDD cut (signal era) +0.6pp (below the 1pp door) · Calmar strat vs B&H 0.105 < 0.153 (return crushed) · diverge-fire frequency ~3% of days (votes≥2 + equities calm)</div>
+        </td>
+        <td class="r neg">-0.0470</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r yes">0.981</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">W3 VERDICT: CONTEXT — do NOT wire. The three cross-asset caution votes (credit HY-band/widening, rates-vol MOVE-band/lea…</span><span class="l-zh">W3 结论：CONTEXT——不接线。三张跨资产警戒票（信用 HY 带/走阔、利率波动 MOVE 带/领先VIX、美元避险买盘）从磁盘输入因果重建（磁盘无投票历…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">W3 VERDICT: CONTEXT — do NOT wire. The three cross-asset caution votes (credit HY-band/widening, rates-vol MOVE-band/leads-VIX, dollar risk-off bid) are reconstructed causally from their on-disk inputs (no vote history on disk — INTL-46). The votes>=2 while-equities-calm 'diverge' booster is CONTEXT on two counts: the credit/rates-vol votes are near-duplicates of the nfci/recession MRS legs (residual DD partial only −0.090), and over the signal-active era (from 2007) the de-risk strategy cuts SPY MaxDD only 0.6pp (−56.2% vs −56.8% B&H — below the 1pp door) while cratering return (Calmar 0.105 < 0.153 B&H). It flattens out of good days without avoiding the bad ones. DSR 0.98 is SPY drift. weight_cap 0, kill=True — conditions._macro_risk_legs UNCHANGED.  [scripts/c8_leading_votes.py + scripts/intl_phase0.py (grade, W3 C8); engine/cross_asset_confirm.py (vote defs); data/intl_bridge/ledger.json (C8)]</span><span class="l-zh">W3 结论：CONTEXT——不接线。三张跨资产警戒票（信用 HY 带/走阔、利率波动 MOVE 带/领先VIX、美元避险买盘）从磁盘输入因果重建（磁盘无投票历史——INTL-46）。票数≥2 且股市平静的'背离'增强器两点均属 CONTEXT：信用/利率波动票与 nfci/衰退 MRS 腿近乎重复（残差回撤偏相关仅 −0.090），且在降险时代（自2007起）降险策略仅削减 SPY 回撤 0.6pp（−56.2% 对 −56.8%，低于1pp门），却使回报暴跌（Calmar 0.105 < 0.153）。它在好日子空仓却躲不开坏日子。DSR 0.98 是 SPY 漂移。权重上限0，kill=True——conditions._macro_risk_legs 未变。  [scripts/c8_leading_votes.py + scripts/intl_phase0.py (grade, W3 C8); engine/cross_asset_confirm.py (vote defs); data/intl_bridge/ledger.json (C8)]</span></span></span>
+          <div class="src">scripts/c8_leading_votes.py + scripts/intl_phase0.py (grade, W3 C8); engine/cross_asset_confirm.py (vote defs); data/intl_bridge/ledger.json (C8)</div>
+        </td>
+      </tr>
+    
+      <tr class="sl-row" data-tier="display" data-mkt="Asia-semi"
+          data-text="asia-semi read-through basket  (tsm+asml adrs → smh — c6) 亚洲半导体传导篮（台积电+阿斯麦adr → smh — c6） asia-semi w4 verdict: context — do not wire. one pre-registered ew asia-semi basket (tsm + asml, us-listed adrs chosen on purpose to kill the timezone lag) graded vs smh through the lead-lag kernel (hac-t + bh-fdr + split-half) with ±2 trading-day earnings-print excision (12.8% of rows, intl-49). the lag-0 correlation is huge (hac-t +15.9, mean +0.82, fdr-reject, split-half stable) — but that is mechanical co-membership (tsm + asml are two of smh's largest holdings), not a lead. no lag>=1 link survives: lag1 hac-t −1.67 (q_fdr 0.16, negative — it mirrors smh's own lag-1 mean-reversion of −0.05), lag2/3/5 all |t|<2.1 and non-surviving. because the adrs trade in the us session there is not even the timezone-transmission lag-1 the raw local-index screen had — only same-day co-membership. the lead-lag kernel is the binding gate (adj-4): its pass excludes lag-0 by construction. orthogonality vs smh's own 5d/21d momentum leaves a wrong-signed residual (+0.07) — the basket adds nothing beyond 'semis lead semis'. weight_cap 0, kill=true — stock_score._axis_tailwind (the would-be downgrade-only seam) unchanged.">
+        <td>
+          <div class="sig"><span class="l-en">Asia-semi read-through basket  (TSM+ASML ADRs → SMH — C6)</span><span class="l-zh">亚洲半导体传导篮（台积电+阿斯麦ADR → SMH — C6）</span>
+            </div>
+          <div class="mkt">Asia-semi · 5d fwd (lead-lag kernel) · not wired — CONTEXT (lag-0 co-membership only; no lag>=1 lead survives the kernel)</div>
+          <div class="extra">lag-0 HAC-t (co-membership) +15.9 (mean +0.82 — mechanical, TSM+ASML in SMH) · lag-1 HAC-t −1.67 (q_FDR 0.16, does NOT survive; negative) · lag>=1 kernel survivors 0 (no tradeable lead; ADRs remove timezone lag) · orthogonality vs SMH own momentum +0.07 residual (wrong sign; nothing beyond semis-lead-semis) · print rows excised (±2td) 838 (12.8%)</div>
+        </td>
+        <td class="r pos">+0.1570</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r neg">0.446</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">W4 VERDICT: CONTEXT — do NOT wire. ONE pre-registered EW Asia-semi basket (TSM + ASML, US-listed ADRs chosen ON PURPOSE …</span><span class="l-zh">W4 结论：CONTEXT——请勿接入。一个预注册的等权亚洲半导体篮（台积电 + 阿斯麦，特意选用美股ADR以消除时区滞后），经领先滞后核（HAC-t + BH…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">W4 VERDICT: CONTEXT — do NOT wire. ONE pre-registered EW Asia-semi basket (TSM + ASML, US-listed ADRs chosen ON PURPOSE to kill the timezone lag) graded vs SMH through the lead-lag kernel (HAC-t + BH-FDR + split-half) with ±2 trading-day earnings-print excision (12.8% of rows, INTL-49). The lag-0 correlation is huge (HAC-t +15.9, mean +0.82, FDR-reject, split-half stable) — but that is MECHANICAL CO-MEMBERSHIP (TSM + ASML are two of SMH's largest holdings), not a lead. NO lag>=1 link survives: lag1 HAC-t −1.67 (q_FDR 0.16, negative — it mirrors SMH's OWN lag-1 mean-reversion of −0.05), lag2/3/5 all |t|<2.1 and non-surviving. Because the ADRs trade in the US session there is not even the timezone-transmission lag-1 the raw local-index screen had — only same-day co-membership. The lead-lag kernel is the binding gate (ADJ-4): its pass excludes lag-0 by construction. Orthogonality vs SMH's OWN 5d/21d momentum leaves a wrong-signed residual (+0.07) — the basket adds nothing beyond 'semis lead semis'. weight_cap 0, kill=True — stock_score._axis_tailwind (the would-be DOWNGRADE-only seam) UNCHANGED.  [reports/intl-semi-readthrough-phase0.md (W4-C6 2026-07-02); scripts/c6_asia_semi_readthrough.py + scripts/intl_phase0.py --c6 (grade); data/intl_bridge/ledger.json (c6_asia_semi_readthrough); data/intl_bridge/c6_earnings_dates.json (print-excision source)]</span><span class="l-zh">W4 结论：CONTEXT——请勿接入。一个预注册的等权亚洲半导体篮（台积电 + 阿斯麦，特意选用美股ADR以消除时区滞后），经领先滞后核（HAC-t + BH-FDR + 半样本），并剔除每次财报前后±2交易日窗口（占12.8%行，INTL-49），对 SMH 评分。滞后0相关极大（HAC-t +15.9，均值 +0.82，通过FDR，半样本稳定）——但这是机械式成分重叠（台积电+阿斯麦是 SMH 最大持仓之二），并非领先。无任何滞后≥1存活：滞后1 HAC-t −1.67（q 0.16，为负——与 SMH 自身滞后1均值回归 −0.05 一致），滞后2/3/5 均 |t|<2.1。因 ADR 在美股时段交易，连原始本地指数筛查中的时区传导滞后1也没有——只剩同日成分重叠。领先滞后核是约束门（ADJ-4），其判定按构造排除滞后0。相对 SMH 自身5日/21日动量的正交性留下错号残差（+0.07）——篮子在'半导体领先半导体'之外无增量。权重上限0，kill=True——stock_score._axis_tailwind（本应是仅降级的接入口）未变。  [reports/intl-semi-readthrough-phase0.md (W4-C6 2026-07-02); scripts/c6_asia_semi_readthrough.py + scripts/intl_phase0.py --c6 (grade); data/intl_bridge/ledger.json (c6_asia_semi_readthrough); data/intl_bridge/c6_earnings_dates.json (print-excision source)]</span></span></span>
+          <div class="src">reports/intl-semi-readthrough-phase0.md (W4-C6 2026-07-02); scripts/c6_asia_semi_readthrough.py + scripts/intl_phase0.py --c6 (grade); data/intl_bridge/ledger.json (c6_asia_semi_readthrough); data/intl_bridge/c6_earnings_dates.json (print-excision source)</div>
+        </td>
+      </tr>
+    
       <tr class="sl-row" data-tier="display" data-mkt="Intl ETF"
           data-text="intl trend de-risk overlays  (price + total-return etfs — c3) 国际趋势降险叠加（价格指数 + 总回报etf — c3） intl etf two ports, one honest verdict: trend on tradeable intl is dead. the price-index overlay cuts the tail for real (pooled maxdd −18.5% vs −57.0%, dd-reduction ci [5.9,25.1,48.1] excludes 0) but its sharpe edge fails split-half. the tradeable usd total-return etf overlay (ewj/ewg/ewu/ewy/ewa/ewq) fails dsr (0.848<0.90) and split-half sign-flips, and macro-gating harms korea (ewy −79.3% vs −74.1%, intl-50). context: crash-avoidance tail-insurance, never a scored alpha.">
         <td>
@@ -1678,6 +1793,29 @@
           <span class="muted sm"><span class="l-en">The two intl read-through channels that shipped as CONTEXT. Per-pair FX conviction: EVERY pair fails DSR (best USDCAD 0.…</span><span class="l-zh">两条以 CONTEXT 上线的国际读透渠道。单对外汇信念：每对都未过 DSR（最佳 USDCAD 0.8607，多数≈0）→ 绝不以对级门控股票（INTL-43…</span></span>
           <span class="help">?<span class="tip"><span class="l-en">The two intl read-through channels that shipped as CONTEXT. Per-pair FX conviction: EVERY pair fails DSR (best USDCAD 0.8607<0.90, most ≈0) → no pair-level gating on equities, ever (INTL-43). Cross-market lead/lag: 7/150 pairs survive HAC-t + BH-FDR and 5 are split-half stable — but ALL survivors are timezone lag-1 (US/global close → next Asia open), a transmission read, not a forecastable lead. Both are display context; the intl_bridge lead-lag kernel re-screens any new cross-market claim.  [reports/forex-calibration.md + cross-asset-leadlag-phase0.md; data/intl_bridge/ledger.json (C4/C8)]</span><span class="l-zh">两条以 CONTEXT 上线的国际读透渠道。单对外汇信念：每对都未过 DSR（最佳 USDCAD 0.8607，多数≈0）→ 绝不以对级门控股票（INTL-43）。跨市场引导滞后：150对中7对通过 HAC-t + BH-FDR、5对两半稳定——但幸存者全是时区滞后1（美/全球收盘→次日亚洲开盘），是传导读数而非可预测的引导。均为展示背景；intl_bridge 引导滞后核对任何新的跨市场主张重新筛选。  [reports/forex-calibration.md + cross-asset-leadlag-phase0.md; data/intl_bridge/ledger.json (C4/C8)]</span></span></span>
           <div class="src">reports/forex-calibration.md + cross-asset-leadlag-phase0.md; data/intl_bridge/ledger.json (C4/C8)</div>
+        </td>
+      </tr>
+    
+      <tr class="sl-row" data-tier="display" data-mkt="China / Intl"
+          data-text="european luxury → china-consumer read-through  (c7 — ew basket lvmuy+rms.pa+cfr.sw) 欧洲奢侈品 → 中国消费者读透（c7 — 等权组合 lvmuy+rms.pa+cfr.sw） china / intl w4-c7 verdict: context — do not wire. the ew luxury basket (lvmuy adr ~20y + rms.pa/cfr.sw ~5y locals) rolling-return trend-turn signal carries no statistically significant lead over fxi forward drawdowns at the declared 21d horizon. lead-lag kernel: lag=0 strongly significant (t=11.75, contemporaneous same-session co-movement — luxury and fxi trade in overlapping us hours), but no lagged link survives bh-fdr (lag=1: t=−1.49, p=0.14; lag=2/5: not significant). this is a transmission read: luxury and the chinese consumer co-move in real-time, but the luxury basket does not lead fxi at any lag that survives multiple-testing correction. strategy dsr=0.16 (far below the 0.90 door). drawdown-reduction gate fails on calmar: the flat-out-of-fxi overlay has negative calmar (−0.008) while b&h fxi is positive (+0.045), meaning the strategy loses money while sitting out fxi recovery periods. earnings-print excision: 271 bars nan'd (±2td around lvmh/hermès/richemont prints — causal method). effective-n honesty: lvmuy has 4 crisis windows (20y), but the full 3-leg basket window covers only 1 declared crisis (rate_22) — the bias toward lvmuy's own momentum dominates. the validated channel is contemporaneous co-movement — useful as a display confirmer ('luxury and fxi are co-moving today') but structurally unable to carry the de-risk lead the c7 thesis required. weight_cap 0, kill=true; fxi target and all scorer seams unchanged.">
+        <td>
+          <div class="sig"><span class="l-en">European luxury → China-consumer read-through  (C7 — EW basket LVMUY+RMS.PA+CFR.SW)</span><span class="l-zh">欧洲奢侈品 → 中国消费者读透（C7 — 等权组合 LVMUY+RMS.PA+CFR.SW）</span>
+            </div>
+          <div class="mkt">China / Intl · 21d fwd drawdown (FXI) · not wired — CONTEXT (no lagged lead survives BH-FDR; contemporaneous only)</div>
+          <div class="extra">lead-lag kernel lag=0 t-stat 11.75 (contemporaneous; same-session overlap) · lag=1 HAC-t / p −1.49 / 0.14 (not significant; wrong sign) · BH-FDR survivors at lag≥1 NONE · strategy DSR 0.16 (far below 0.90 door) · drawdown-reduction Calmar −0.008 strat vs +0.045 B&H (value-destroyer) · earnings-print bars excised 271 (±2td LVMH/Hermès/Richemont prints) · effective-N (LVMUY 20y) 4 crises; full-basket overlap: 1 crisis (rate_22)</div>
+        </td>
+        <td class="r neg">-0.0695</td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r neg">0.161</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-display"><span class="l-en">DISPLAY</span><span class="l-zh">仅展示</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">W4-C7 VERDICT: CONTEXT — do NOT wire. The EW luxury basket (LVMUY ADR ~20y + RMS.PA/CFR.SW ~5y locals) rolling-return tr…</span><span class="l-zh">W4-C7 结论：CONTEXT——不接线。等权奢侈品组合（LVMUY ADR ~20年 + RMS.PA/CFR.SW ~5年本地）滚动收益趋势翻转信号，在预…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">W4-C7 VERDICT: CONTEXT — do NOT wire. The EW luxury basket (LVMUY ADR ~20y + RMS.PA/CFR.SW ~5y locals) rolling-return trend-turn signal carries NO statistically significant LEAD over FXI forward drawdowns at the declared 21d horizon. Lead-lag kernel: lag=0 strongly significant (t=11.75, contemporaneous same-session co-movement — luxury and FXI trade in overlapping US hours), but NO lagged link survives BH-FDR (lag=1: t=−1.49, p=0.14; lag=2/5: not significant). This is a TRANSMISSION READ: luxury and the Chinese consumer co-move in real-time, but the luxury basket does NOT lead FXI at any lag that survives multiple-testing correction. Strategy DSR=0.16 (far below the 0.90 door). Drawdown-reduction gate FAILS on Calmar: the flat-out-of-FXI overlay has negative Calmar (−0.008) while B&H FXI is positive (+0.045), meaning the strategy loses money while sitting out FXI recovery periods. Earnings-print excision: 271 bars NaN'd (±2td around LVMH/Hermès/Richemont prints — causal method). Effective-N honesty: LVMUY has 4 crisis windows (20y), but the full 3-leg basket window covers only 1 declared crisis (rate_22) — the bias toward LVMUY's own momentum dominates. The validated channel is contemporaneous co-movement — useful as a display confirmer ('luxury and FXI are co-moving today') but structurally unable to carry the de-risk lead the C7 thesis required. weight_cap 0, kill=True; FXI target and all scorer seams UNCHANGED.  [reports/intl-luxury-readthrough-phase0.md (W4-C7, 2026-07-02); scripts/c7_luxury_readthrough.py + scripts/intl_phase0.py --c7; data/intl_bridge/ledger.json (c7_luxury_china_consumer)]</span><span class="l-zh">W4-C7 结论：CONTEXT——不接线。等权奢侈品组合（LVMUY ADR ~20年 + RMS.PA/CFR.SW ~5年本地）滚动收益趋势翻转信号，在预声明的21日期限内，对 FXI 前瞻回撤无统计显著的引导。引导-滞后核：滞后=0 强显著（t=11.75，同期同时段共动——奢侈品与 FXI 在重叠的美国交易时段交易），但无滞后链路通过 BH-FDR（滞后=1：t=−1.49，p=0.14；滞后=2/5：不显著）。这是传导读数：奢侈品与中国消费者实时共动，但奢侈品组合在任何通过多重检验修正的滞后下均未领先 FXI。策略 DSR=0.16（远低于0.90门）。回撤削减门因Calmar失败：空仓叠加层 Calmar 为负（−0.008），而买持 FXI 为正（+0.045），意味着策略在 FXI 反弹期间踏空亏损。财报印发剔除：271根K线置NaN（LVMH/爱马仕/历峰公告±2交易日——因果方法）。有效N诚实说明：LVMUY 有4个危机窗口（20年），但全三腿组合窗口仅含1个声明危机（rate_22）——以LVMUY 自身动量为主导。已验证渠道为同期共动——可用作展示确认器（'今日奢侈品与 FXI 共动'），但在结构上无法承担 C7 论题所需的降险引导。权重上限0，kill=True；FXI 目标及所有计分器缝合点不变。  [reports/intl-luxury-readthrough-phase0.md (W4-C7, 2026-07-02); scripts/c7_luxury_readthrough.py + scripts/intl_phase0.py --c7; data/intl_bridge/ledger.json (c7_luxury_china_consumer)]</span></span></span>
+          <div class="src">reports/intl-luxury-readthrough-phase0.md (W4-C7, 2026-07-02); scripts/c7_luxury_readthrough.py + scripts/intl_phase0.py --c7; data/intl_bridge/ledger.json (c7_luxury_china_consumer)</div>
         </td>
       </tr>
     
@@ -1941,55 +2079,6 @@
   </table></div>
 </div>
 
-<div class="panel tier-panel ">
-  <div class="tierhead">
-    <span class="dot d-pending" style="align-self:center"></span>
-    <h2><span class="l-en">Validated — pending wiring on this branch</span><span class="l-zh">已验证 — 本分支待接入</span> · 1</h2>
-    <span class="bl"><span class="l-en">Passed validation but the code/wiring lives in a worktree or open PR, not yet on the branch this page was built from.</span><span class="l-zh">已通过验证，但代码/接线位于工作树或待合并 PR，尚未进入本页所基于的分支。</span></span>
-  </div>
-  
-  <div class="scroll"><table class="sl-table">
-    <thead><tr>
-      <th><span class="l-en">Signal</span><span class="l-zh">信号</span></th>
-      <th class="r">IC</th>
-      <th class="r">HAC t</th>
-      <th class="r">FDR q</th>
-      <th class="r">DSR<span class="help">?<span class="tip"><span class="l-en">Deflated Sharpe (López de Prado): probability the true Sharpe > 0 after haircutting for the number of trials, skew and kurtosis. >0.90 is our bar.</span><span class="l-zh">去偏夏普（López de Prado）：在按试验次数、偏度与峰度打折后，真实夏普 >0 的概率。门槛 >0.90。</span></span></span></th>
-      <th class="r"><span class="l-en">Sharpe</span><span class="l-zh">夏普</span></th>
-      <th class="r"><span class="l-en">hit</span><span class="l-zh">命中</span></th>
-      <th class="r">n</th>
-      <th><span class="l-en">Verdict</span><span class="l-zh">结论</span></th>
-      <th><span class="l-en">Why</span><span class="l-zh">原因</span></th>
-    </tr></thead>
-    <tbody>
-    
-      <tr class="sl-row" data-tier="pending" data-mkt="Dollar / macro"
-          data-text="broad-dollar reer value factor  (n=1 resurrection — c4) 宽美元 reer 价值因子（n=1 复活 — c4） dollar / macro a pre-registered n=1 hypothesis, not a quiet promotion. the broad-usd reer value factor (cheap = bullish usd) confirmed in both halves vs forward broad-usd returns (ic +0.077 pre / +0.060 post) — but it was killed inside the forex 60-trial family budget (dsr 0.0056 there). the honest path (intl-43) is to re-run it as n=1 with a trial budget separated from that family; pending that re-run.">
-        <td>
-          <div class="sig"><span class="l-en">Broad-dollar REER value factor  (N=1 resurrection — C4)</span><span class="l-zh">宽美元 REER 价值因子（N=1 复活 — C4）</span>
-            </div>
-          <div class="mkt">Dollar / macro · 21/63/126d · not wired (W3 N=1 re-run; display first)</div>
-          <div class="extra">IC pre / post +0.077 / +0.060 (both confirmed) · family-deflated DSR 0.0056 (budget-killed; N=1 value pending)</div>
-        </td>
-        <td class="r pos">+0.0650</td>
-        <td class="r"><span class="muted">—</span></td>
-        <td class="r "><span class="muted">—</span></td>
-        <td class="r "><span class="muted">—</span></td>
-        <td class="r "><span class="muted">—</span></td>
-        <td class="r"><span class="muted">—</span></td>
-        <td class="r">—</td>
-        <td><span class="pill v-pending"><span class="l-en">PENDING</span><span class="l-zh">待接入</span></span></td>
-        <td style="max-width:34ch">
-          <span class="muted sm"><span class="l-en">A pre-registered N=1 hypothesis, not a quiet promotion. The broad-USD REER value factor (cheap = bullish USD) CONFIRMED …</span><span class="l-zh">预注册的 N=1 假设，而非悄然晋升。宽美元 REER 价值因子（便宜=看多美元）在两半均确认（IC +0.077/+0.060），但在外汇60试验家族预算内被…</span></span>
-          <span class="help">?<span class="tip"><span class="l-en">A pre-registered N=1 hypothesis, not a quiet promotion. The broad-USD REER value factor (cheap = bullish USD) CONFIRMED in BOTH halves vs forward broad-USD returns (IC +0.077 pre / +0.060 post) — but it was killed inside the forex 60-trial family budget (DSR 0.0056 there). The honest path (INTL-43) is to re-run it as N=1 with a trial budget separated from that family; PENDING that re-run.  [reports/forex-calibration.md; data/intl_bridge/ledger.json (C4 reer_value)]</span><span class="l-zh">预注册的 N=1 假设，而非悄然晋升。宽美元 REER 价值因子（便宜=看多美元）在两半均确认（IC +0.077/+0.060），但在外汇60试验家族预算内被否决（该处 DSR 0.0056）。诚实路径（INTL-43）是以独立于该家族的试验预算重跑为 N=1；待此重跑。  [reports/forex-calibration.md; data/intl_bridge/ledger.json (C4 reer_value)]</span></span></span>
-          <div class="src">reports/forex-calibration.md; data/intl_bridge/ledger.json (C4 reer_value)</div>
-        </td>
-      </tr>
-    
-    </tbody>
-  </table></div>
-</div>
-
 
 <div class="panel">
   <details class="method">
@@ -2013,8 +2102,8 @@
   <p class="muted sm" style="margin:0"><span class="l-en">Validation toolkit: engine/validation.py (deflated Sharpe, purged k-fold + embargo, block bootstrap, Newey-West HAC, Benjamini-Hochberg FDR, Brier/Platt calibration, cost-aware backtest). Verdicts are quoted from the named reports in reports/. The factor cross-section reads live from data/edgar/ic_scorecard.json.</span><span class="l-zh">验证工具：engine/validation.py（去偏夏普、净化 k 折+隔离、分块自助、Newey-West HAC、Benjamini-Hochberg FDR、Brier/Platt 校准、含成本回测）。结论引自 reports/ 中具名报告；因子横截面实时读取 data/edgar/ic_scorecard.json。</span></p>
   <p class="src" style="margin:8px 0 0">
     <span class="l-en">data span</span><span class="l-zh">数据区间</span> 2011-03-31..2025-12-31 ·
-    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-02 18:27 UTC ·
-    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-02 18:27 UTC</p>
+    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-02 19:03 UTC ·
+    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-02 19:03 UTC</p>
 </div>
 
 <script src="theme.js"></script>

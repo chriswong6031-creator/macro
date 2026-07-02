@@ -34,6 +34,43 @@ TEXT_BANDS = {"TIGHT (text)", "TIGHTENING (text)"}
 FINGERPRINT_BANDS = {"TIGHT (fingerprint)", "TIGHTENING (fingerprint)"}
 LOOSE_BANDS = {"LOOSE"}
 BROAD_HI = 0.50            # breadth above this = revisions already broad (late).
+
+# ── W5b: two-tier desk (Q4) ──────────────────────────────────────────────────
+# Tier P: theme has a nameable physical correlate (numeric FRED band OR per-theme
+#         feed like FDA drug shortages). These are eligible for every stage.
+# Tier W: text-breadth only; capped at WATCH-shelf, clearly labeled.
+#
+# Computed from data already on the row — no restructure of the stage machine.
+# Rule: Tier P if the row has a live numeric_band (not None/AWAITING/text-only),
+# OR if a theme_feed_summary is present (orphan-rescue physical feed).
+# Tier W otherwise.
+#
+# Key insight: _NUMERIC_BANDS allow-list was the wrong abstraction.  The bottleneck
+# engine's anti-laundering guard overwrites the top-level `band` to "TIGHT (text)"
+# for FRED-mapped themes while retaining the real measurement in `numeric_band`.
+# Keying on `numeric_band` (passed explicitly by the caller) is the correct contract:
+#   - NEUTRAL/TIGHTENING/TIGHT/SOLD_OUT/LOOSE/GLUT_FORMING/GLUT in numeric_band → P
+#   - language-only themes (cybersecurity/solar) have numeric_band=None → W (correct)
+_TIER_P = "P"
+_TIER_W = "W"
+
+
+def _compute_tier(numeric_band: str | None, theme_feed_summary: dict | None) -> str:
+    """Return 'P' (physical desk) or 'W' (watch shelf).
+
+    Tier P when:
+      - numeric_band is not None (theme has a live FRED-backed numeric measurement); OR
+      - theme_feed_summary is present (orphan-rescue physical feed, e.g. FDA shortages).
+    Tier W otherwise (text-only / AWAITING_DATA / null — no numeric physical correlate).
+
+    `numeric_band` must be the row's `bn.get("numeric_band")`, NOT the top-level `band`
+    (which the anti-laundering guard may overwrite to "TIGHT (text)" for FRED-mapped themes).
+    """
+    if numeric_band is not None:
+        return _TIER_P
+    if theme_feed_summary is not None:
+        return _TIER_P
+    return _TIER_W
                            # W2a (P1-A): used only as fallback when fewer than
                            # _PCTILE_MIN_THEMES themes have revision data; otherwise the
                            # cross-sectional ~80th-percentile replaces this absolute cut.
@@ -254,6 +291,7 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
                               glut: dict | None = None,
                               guidance: dict | None = None,
                               confirmers: dict | None = None,
+                              fda_scarcity: dict | None = None,
                               write_ledger: bool = True,
                               inputs_out: dict | None = None) -> dict | None:
     """Combine T1 (bottleneck) x T2 (demand) x T3 (guidance) x T4 (revisions) x exit-risk
@@ -310,6 +348,17 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         except Exception as e:  # noqa: BLE001
             log.warning("cascade: altdata_confirmers failed: %s", e)
             confirmers = None
+    # W5b: FDA drug-scarcity orphan-rescue feed — display chip for glp1_obesity and any
+    # future theme with an FDA shortage correlate. Non-fatal, degrades to None per theme.
+    # Generic name `theme_feed_summary` so future per-theme feeds (Pink Sheet, LBNL) reuse
+    # the same field without special-casing in the template.
+    if fda_scarcity is None:
+        try:
+            from engine.fda_scarcity import compute_fda_scarcity
+            fda_scarcity = compute_fda_scarcity()
+        except Exception as e:  # noqa: BLE001
+            log.warning("cascade: fda_scarcity failed (non-fatal): %s", e)
+            fda_scarcity = None
 
     if inputs_out is not None:
         inputs_out.update({"bottleneck": bottleneck, "revisions": revisions, "demand": demand,
@@ -362,11 +411,32 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         cd_leading = (cd or {}).get("n_leading") or 0
         if cd and cd_leading and stage in _thesis_like:
             rationale += f" · alt-data confirms (pre-revision): {cd.get('summary')}"
+
+        # W5b: per-theme physical feed chip (generic — any orphan-rescue feed populates here)
+        # FDA drug shortages for glp1_obesity; future feeds (Pink Sheet, LBNL) reuse same field.
+        theme_feed_summary: dict | None = None
+        if fda_scarcity is not None:
+            scarcity_row = fda_scarcity.get(k)
+            if scarcity_row is not None:
+                try:
+                    from engine.fda_scarcity import format_theme_feed_chip
+                    theme_feed_summary = format_theme_feed_chip(scarcity_row, k)
+                except Exception as _e:  # noqa: BLE001
+                    log.debug("fda_scarcity chip format failed for %s: %s", k, _e)
+
+        # W5b: tier tag — P (physical desk) or W (watch shelf).
+        # Use numeric_band (the raw FRED measurement), NOT the top-level band
+        # (which the anti-laundering guard rewrites to "TIGHT (text)" for FRED-mapped
+        # themes, obscuring the fact that they have a live numeric read).
+        bn_numeric_band = (bn or {}).get("numeric_band")
+        tier = _compute_tier(bn_numeric_band, theme_feed_summary)
+
         entry_ready, entry_note = _entry(stage, disloc)
         rows.append({
             "theme": k,
             "name": (rv or bn or dm or {}).get("name", k),
             "stage": stage,
+            "tier": tier,           # W5b: "P" (physical desk) | "W" (watch shelf)
             "rationale": rationale,
             "entry_ready": entry_ready,
             "entry_note": entry_note,
@@ -391,6 +461,8 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
             "altdata_members": (cd or {}).get("leading_members"),
             "glut_band": gband,
             "glut_score": (gl or {}).get("glut_score"),
+            # W5b: per-theme physical feed (generic slot — FDA shortages now, future feeds same field)
+            "theme_feed_summary": theme_feed_summary,
             # W2c: demand per-name divergence + bottleneck PPI for score de-circularization
             # (P1-C): passed through so foresight_score axes can read real inputs
             # without default-filling. One hunk addition only — does not touch stage logic.
