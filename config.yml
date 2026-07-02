@@ -3,6 +3,23 @@
 # ALL tunables live here. Nothing is hardcoded in /collectors or /engine.
 # =============================================================================
 
+# ---------------------------------------------------------------------------
+# llm_models — version-pinned model IDs (§2.4, P5, W5).
+# ALL hardcoded model literals in engine/* must read from here.
+# Datestamped IDs pin the model version; drift monitor re-scores on any change.
+# Three tiers:
+#   reasoning   — highest-capability; Opus or DeepSeek-Reasoner; used for the
+#                 altdata_brain committee call (per-cluster thesis).
+#   extraction  — mid-tier; used for qual_extraction.v1 8-K structured extraction
+#                 and catalyst_tone digest.  Haiku or DeepSeek-Flash.
+#   classify    — cheapest; used for news_llm batch summaries, tag labeling.
+#                 Haiku or DeepSeek-Chat.
+# ---------------------------------------------------------------------------
+llm_models:
+  reasoning:  "claude-opus-4-8"                  # altdata_brain committee thesis
+  extraction: "claude-haiku-4-5"                 # qual_extraction.v1 8-K lane + catalyst_tone
+  classify:   "claude-haiku-4-5"                 # news_llm batch summaries + tag labels
+
 storage:
   data_dir: data
   holdings_dir: data/holdings
@@ -2668,13 +2685,20 @@ financial_news:
 # no-op pass-through whenever no credential is present.
 # =============================================================================
 news_llm:
-  enabled: true                   # try to enrich; auto no-op when no key present
+  enabled: false                  # W5 P5 R3: DEFAULT OFF — zero silent spend. The
+                                  # annotator computes llm_importance/llm_tone but NO
+                                  # downstream consumer reads those fields (confirmed by
+                                  # grep: only build_news._blend_key uses them for sort,
+                                  # and the deterministic quality score is the primary key).
+                                  # Re-enable only after registering a scored consumer in
+                                  # config/qual_ladder.yml + a qledger claim family entry.
+                                  # See engine/news_llm.py module docstring for details.
   provider_order: [oauth, anthropic, deepseek]
   oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
   deepseek_key_env: DEEPSEEK_API_KEY
   anthropic_model: claude-haiku-4-5
   deepseek_model: deepseek-chat
-  batch_size: 12                  # headlines summarised per model call
+  batch_size: 12                  # headlines summarised per model call (when enabled)
   max_batches: 16                 # hard cap on model calls per build (cost guard)
 
 # =============================================================================
@@ -4953,6 +4977,24 @@ special_situations:                # event-driven Special Situations desk (displ
   # UK stays OFF: no direct RNS feed wired yet, and Google-News alone yields ~0 (feed recall).
   intl_uk: false
   intl_canada: true
+
+# ---------------------------------------------------------------------------
+# qual_extraction — citation-verified structured extraction from filing bodies
+# (engine/qual_extraction.py, W5 §2.4 / Appendix P5).
+# Wired to the 8-K lane in collectors/special_situations.py.
+# Model ID is read from llm_models.extraction above (no literal here).
+# ---------------------------------------------------------------------------
+qual_extraction:
+  enabled: true                     # master switch; default ON (Haiku cost is rounding error)
+  api_key_env: "ANTHROPIC_API_KEY"  # Anthropic key for Haiku; falls back to DEEPSEEK_API_KEY
+  # llm_base_url: null              # set to https://api.deepseek.com/anthropic to use DeepSeek
+  max_body_chars: 40000             # truncation cap before sending to model (matches doc_cache)
+  max_tokens: 1500                  # max reply tokens
+  confidence_floor: "low"           # below this, all interpretive fields collapse to neutral
+  importance_percentile: 80         # only extract from filings in the top N% importance slice
+                                    # (P5 cost table: "top-importance slice ~20%/day")
+  extract_per_build: 100            # hard cap on new extraction calls per build (cost guard)
+  reply_cache_dir: "data/qual_extraction/reply_cache"
 
 # ---------------------------------------------------------------------------
 # yahoo: EOD adjusted-close ticker config for the data/yahoo/ parquet store.

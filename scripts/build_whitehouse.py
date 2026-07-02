@@ -217,6 +217,34 @@ def _render_page(root: Path, rows: list[dict]) -> str:
 # --------------------------------------------------------------------------- #
 # pipeline
 # --------------------------------------------------------------------------- #
+def _health_line(items: list[dict], state: dict, evaluated: list[dict],
+                 n_activated: int, provider: str) -> dict:
+    """run_status-style health record written at end of every sentinel run.
+
+    Makes dark-vs-quiet permanently distinguishable:
+      posts_seen   — items currently on the WH feed (4-day window)
+      evaluated    — items that reached the brain this run (0 when no provider)
+      gate_scores  — importance histogram for evaluated items [{importance, activated}]
+      activated    — how many fired a banner this run
+      provider     — which auth path was used, or '' when absent (THE dark signal)
+      as_of        — UTC timestamp of this run
+    """
+    return {
+        "schema": "wh_health.v1",
+        "as_of": datetime.now(timezone.utc).isoformat(),
+        "posts_seen": len(items),
+        "seen_total": len((state or {}).get("seen", {})),
+        "evaluated": len(evaluated),
+        "activated": n_activated,
+        "provider": provider,
+        "gate_scores": [
+            {"id": r.get("id"), "importance": r.get("importance"),
+             "activated": bool(r.get("activated")), "degraded_reason": r.get("degraded_reason")}
+            for r in evaluated
+        ],
+    }
+
+
 def build(reeval: bool = False, page_only: bool = False) -> int:
     """Refresh the White House desk. page_only=True (the DAILY build's mode) skips the
     feed poll, the brain, and ALL ledger/state writes — it only RE-RENDERS the banner
@@ -242,15 +270,28 @@ def build(reeval: bool = False, page_only: bool = False) -> int:
         log.info("capping brain calls: %d new → %d (max_new_per_run)", len(todo), cap)
         todo = todo[:cap]
 
+    provider_label = wb.provider_label(cfg)
     if not wb.enabled():
         log.info("whitehouse_brain disabled — skipping evaluation")
         todo = []
+    elif not provider_label:
+        log.warning(
+            "whitehouse_brain: NO provider available "
+            "(CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY all absent) "
+            "— %d unseen items will be marked seen/inactive this run; "
+            "set one of those secrets to activate the desk",
+            len(todo),
+        )
+
+    evaluated: list[dict] = []
     for it in todo:
         rec = wb.evaluate(it, cfg, root)
+        evaluated.append(rec)
         wf.mark_seen(state, it, activated=rec.get("activated", False),
                      importance=rec.get("importance"))
         if rec.get("activated"):
             _append_ledger(root, rec)
+            _register_wh_claim(rec, root)           # qledger adapter (W5)
             try:
                 (site / "whdata").mkdir(parents=True, exist_ok=True)
                 (site / "whdata" / f"{rec['id']}.json").write_text(
@@ -261,10 +302,106 @@ def build(reeval: bool = False, page_only: bool = False) -> int:
             log.info("ALERT %s (imp=%s, %s): %s", rec["id"], rec["importance"],
                      rec["tone"], rec["banner_title"])
         else:
-            log.info("skip %s (imp=%s, not activated)", it["id"], rec.get("importance"))
+            log.info("skip %s (imp=%s, not activated, reason=%s)",
+                     it["id"], rec.get("importance"), rec.get("degraded_reason"))
     wf.save_processed(root, state)
 
+    # W5: health record — makes dark-vs-quiet permanently distinguishable
+    health = _health_line(items, state, evaluated, n_new_active, provider_label)
+    try:
+        hp = root / "data" / "whitehouse" / "health.json"
+        hp.parent.mkdir(parents=True, exist_ok=True)
+        hp.write_text(json.dumps(health, indent=2, default=str))
+        log.info(
+            "WH health: posts_seen=%d evaluated=%d activated=%d provider=%r",
+            health["posts_seen"], health["evaluated"], health["activated"],
+            health["provider"] or "(none — desk dark)",
+        )
+    except Exception as e:  # noqa: BLE001
+        log.warning("health.json write failed (%s)", e)
+
     return _rebuild_artifacts(root, site, cfg, now, n_new_active)
+
+
+def _register_wh_claim(rec: dict, root: Path) -> None:
+    """qledger adapter (W5): register one qledger claim per activated WH alert.
+
+    Scope: entity (named ticker) when tickers are present, else macro.
+    Direction: from tone (tailwind→+1, headwind→-1, mixed/neutral→0).
+    Timestamp quality: PUBLISHER_STATED (WH RSS pubDate has a stated TZ, W0 #12 fixed).
+    Claim family: whitehouse (registered in config/qual_ladder.yml at SHADOW).
+
+    One claim per ticker; a tone-only (no tickers) alert registers one macro claim.
+    All claims are context/display; none feed scoring arithmetic.
+    """
+    try:
+        from engine import qledger as ql
+    except ImportError:
+        log.debug("qledger not available — skipping claim registration")
+        return
+
+    tone_dir = {"tailwind": 1, "headwind": -1}.get(rec.get("tone", ""), 0)
+    published = (rec.get("published") or rec.get("generated_at") or "")[:10]
+    if not published:
+        log.debug("wh qledger: no published date on %s, skipping", rec.get("id"))
+        return
+
+    tickers = rec.get("tickers") or []
+    claims_to_register = []
+    if tickers:
+        for t in tickers:
+            sym = (t.get("symbol") or "").strip().upper()
+            if not sym:
+                continue
+            direction = {"benefit": 1, "hurt": -1}.get(t.get("direction", ""), tone_dir)
+            claims_to_register.append(ql.make_claim(
+                desk="whitehouse",
+                asof=published,
+                scope_type="entity",
+                scope_key=sym,
+                direction=direction,
+                horizon_d=int(rec.get("banner_days") or 3) * 1,
+                timestamp_quality="PUBLISHER_STATED",
+                claim_family="whitehouse",
+                extra={
+                    "source_id": rec.get("id"),
+                    "source_url": rec.get("source_url"),
+                    "tone": rec.get("tone"),
+                    "importance": rec.get("importance"),
+                    "is_context_only": True,
+                },
+            ))
+    else:
+        # no tickers — register a single macro/salience claim so the activation is
+        # tracked in the ledger even without entity-level grading
+        claims_to_register.append(ql.make_claim(
+            desk="whitehouse",
+            asof=published,
+            scope_type="macro",
+            scope_key="WH_POLICY",
+            direction=tone_dir,
+            horizon_d=int(rec.get("banner_days") or 3),
+            timestamp_quality="PUBLISHER_STATED",
+            bench="SPY",
+            claim_family="whitehouse",
+            extra={
+                "source_id": rec.get("id"),
+                "source_url": rec.get("source_url"),
+                "tone": rec.get("tone"),
+                "importance": rec.get("importance"),
+                "is_context_only": True,
+            },
+        ))
+
+    n_ok = 0
+    for claim in claims_to_register:
+        try:
+            stored = ql.register(claim, root)
+            if stored.get("status") != "rejected":
+                n_ok += 1
+        except Exception as e:  # noqa: BLE001
+            log.warning("qledger register failed for %s (%s)", claim.get("scope", {}).get("key"), e)
+    log.info("wh qledger: registered %d/%d claims for %s", n_ok, len(claims_to_register), rec.get("id"))
 
 
 def _rebuild_artifacts(root: Path, site: Path, cfg: dict, now: datetime,

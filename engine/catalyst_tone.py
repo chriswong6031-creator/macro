@@ -116,6 +116,24 @@ def enabled() -> bool:
     return bool(_cfg().get("enabled", False))
 
 
+def _extraction_model(cfg: dict) -> str:
+    """Return the version-pinned extraction model id (W5 — P5 R5).
+
+    Resolution order:
+    1. config['llm_models']['extraction']  (version-pinned, authoritative)
+    2. cfg['llm_model']                    (catalyst_tone section override)
+    3. hardcoded "deepseek-v4-flash"       (emergency fallback)
+
+    Does NOT raise — catalyst_tone may run outside the W5 llm_models requirement.
+    """
+    llm_models = config.load().get("llm_models") or {}
+    if llm_models.get("extraction"):
+        return str(llm_models["extraction"])
+    if cfg.get("llm_model"):
+        return str(cfg["llm_model"])
+    return "deepseek-v4-flash"
+
+
 # --------------------------------------------------------------------------- #
 # pure helpers (no network) — independently unit-tested
 # --------------------------------------------------------------------------- #
@@ -331,7 +349,7 @@ def _call_model(source_text: str, context: str, cfg: dict) -> tuple[str | None, 
     user) is checked FIRST — before any client/key check — so a cache hit never
     requires an API key and the same document always yields the SAME graded record.
     """
-    model = cfg.get("llm_model", "deepseek-v4-flash")
+    model = _extraction_model(cfg)
     user = (f"Document context: {context}\n\n"
             f"Document text follows between <doc> tags.\n<doc>\n{source_text}\n</doc>")
     # content-hash cache check — BEFORE the client/key check (no key needed on hit)
@@ -394,7 +412,7 @@ def digest_document(source_text: str, kind: str = "macro", doc_id: str | None = 
         "context": context,
         "asof": (asof.isoformat() if isinstance(asof, date) else asof),
         "digested_at": datetime.now(timezone.utc).isoformat(),
-        "model": cfg.get("llm_model", "deepseek-v4-flash"),
+        "model": _extraction_model(cfg),
         "tone_score": 0.0, "guidance_direction": "unknown",
         "risk_delta": 0.0, "shock_reversible": "unknown",
         "confidence": "low", "evidence": [],
