@@ -589,6 +589,15 @@ def main() -> int:
             log.error("[reconcile] membership reconciler crashed (non-fatal): %s", e)
         run_quality_audits()
 
+    # importance_v0 SHADOW lane (W3) — score the qbus store + register the
+    # novelty-first challenger's HIGH/LOW band claims BEFORE the grader so the
+    # same-night grade pass picks them up. Shadow-only; never rendered. Non-fatal.
+    try:
+        from scripts.shadow_importance_v0 import run_as_collect_step as _shadow_impv0
+        _shadow_impv0()
+    except Exception as e:  # noqa: BLE001 — a shadow-lane crash must not abort the run
+        log.error("[shadow_importance_v0] step crashed (non-fatal): %s", e)
+
     # qledger nightly grader — runs after quality audits so the parquet layer is
     # fully refreshed. Non-fatal: a grader crash must not abort the collection run.
     from scripts.grade_qledger import run_as_collect_step as _grade_qledger
