@@ -18,6 +18,16 @@ ai_semiconductors, semicap_equipment, ...). The `breadth_accel` broadening gauge
 point-in-time DERIVATIVE off history.parquet — it reports INSUFFICIENT_HISTORY until the
 PIT archive (which only began accruing recently) spans the lookback, so there is no
 look-ahead. Pure given the two existing stores; DISPLAY-ONLY, never a scored leg.
+
+W1c (P1-B): adaptive broadening lookback + 30v90 drift proxy.
+  - ACCEL_LOOKBACK_DAYS (21d) is now the *preference*; if only MIN_ACCEL_DAYS (10d) is
+    available the real derivative is computed on that shorter window and `basis_days` is
+    set to reflect the actual window used — the read is honest about its basis.
+  - When no ≥MIN_ACCEL_DAYS prior snapshot exists, a proxy is computed from per-member
+    est_chg_30d vs est_chg_90d: 30d drift > 90d pace ⇒ accelerating.  Output gains
+    `proxy: True` and `basis: "drift_30v90"` so consumers can distinguish real from proxy.
+  - Falls back to INSUFFICIENT_HISTORY only when neither the archive nor the proxy inputs
+    are present.
 """
 from __future__ import annotations
 
@@ -33,11 +43,12 @@ log = logging.getLogger(__name__)
 
 MIN_ANALYSTS = 3            # thin-coverage guard — a name needs >=3 estimates to count
 FLAT_BAND = 0.10           # |breadth| < this = "not yet firing" (PRECIPICE-compatible)
-ACCEL_LOOKBACK_DAYS = 21   # min PIT span before the broadening derivative is trustworthy
+ACCEL_LOOKBACK_DAYS = 21   # preferred PIT span for the broadening derivative
+MIN_ACCEL_DAYS = 10        # minimum PIT span — compute real accel on shorter window if needed
 
 WEIGHTS = {"breadth": "mean member net-up share [-1,1]",
            "est_drift_90d": "median member 90d consensus-EPS drift %",
-           "breadth_accel": "theme breadth now - breadth ~30d ago (PIT, the broadening gauge)"}
+           "breadth_accel": "theme breadth now - breadth ~prior_snapshot ago (PIT, the broadening gauge)"}
 
 
 def _latest() -> pd.DataFrame | None:
@@ -71,40 +82,126 @@ def _theme_breadth(rows: pd.DataFrame) -> float | None:
     return round(float(ok["breadth"].mean()), 3)
 
 
-def _broadening(theme: str, members: list[str], hist: pd.DataFrame | None,
-                breadth_now: float | None) -> tuple[float | None, str]:
-    """PIT derivative of theme breadth. Returns (breadth_accel, state).
-
-    INSUFFICIENT_HISTORY until history.parquet spans ACCEL_LOOKBACK_DAYS — no look-ahead."""
-    if breadth_now is None or hist is None:
-        return None, "INSUFFICIENT_HISTORY"
-    h = hist[hist["ticker"].isin(members)].copy()
-    if h.empty or "asof" not in h.columns:
-        return None, "INSUFFICIENT_HISTORY"
-    h["asof"] = pd.to_datetime(h["asof"])
-    asofs = sorted(h["asof"].unique())
-    if len(asofs) < 2:
-        return None, "INSUFFICIENT_HISTORY"
-    latest_asof = asofs[-1]
-    # the most recent snapshot at least ACCEL_LOOKBACK_DAYS before the latest
-    prior_candidates = [a for a in asofs
-                        if (latest_asof - a).days >= ACCEL_LOOKBACK_DAYS]
-    if not prior_candidates:
-        return None, "INSUFFICIENT_HISTORY"
-    prior_asof = prior_candidates[-1]
-    prev = _theme_breadth(h[h["asof"] == prior_asof].set_index("ticker"))
-    if prev is None:
-        return None, "INSUFFICIENT_HISTORY"
-    accel = round(breadth_now - prev, 3)
+def _accel_state(breadth_now: float, accel: float) -> str:
+    """Map (breadth_now, accel) to the canonical broadening state vocabulary."""
     if abs(breadth_now) < FLAT_BAND and accel <= 0:
-        state = "FLAT_LOW"          # PRECIPICE-compatible: revisions not yet firing
+        return "FLAT_LOW"   # PRECIPICE-compatible: revisions not yet firing
     elif accel > 0 and breadth_now > 0:
-        state = "RISING"            # revision wave underway -> runway
+        return "RISING"     # revision wave underway -> runway
     elif accel < 0 and breadth_now > 0:
-        state = "ROLLING"           # wave maturing
+        return "ROLLING"    # wave maturing
     else:
-        state = "MIXED"
-    return accel, state
+        return "MIXED"
+
+
+def _broadening_proxy(members: list[str], latest: pd.DataFrame) -> dict | None:
+    """Drift-proxy for broadening when no ≥MIN_ACCEL_DAYS prior snapshot exists.
+
+    Compares est_chg_30d vs est_chg_90d per member: if the 30d drift is stronger than
+    the annualised 90d pace, the revision wave is accelerating.  Uses the same state
+    vocabulary as _broadening (RISING/FLAT_LOW/ROLLING/MIXED) but adds proxy:True and
+    basis:"drift_30v90" so downstream consumers can distinguish real from proxy.
+
+    Returns None when the proxy inputs are absent (no est_chg_30d/est_chg_90d columns
+    or no covered members with MIN_ANALYSTS coverage).
+    """
+    if not {"est_chg_30d", "est_chg_90d", "n_analysts"}.issubset(latest.columns):
+        return None
+    present = [m for m in members if m in latest.index]
+    if not present:
+        return None
+    rows = latest.loc[present]
+    if isinstance(rows, pd.Series):
+        rows = rows.to_frame().T
+    covered = rows[rows["n_analysts"] >= MIN_ANALYSTS]
+    if covered.empty:
+        return None
+
+    # annualise the 90d rate to a 30d equivalent: pace_30d = est_chg_90d / 3
+    # positive difference = 30d drift is running *ahead* of the 90d pace => accelerating
+    pace_30d = covered["est_chg_90d"] / 3.0
+    drift_diff = covered["est_chg_30d"] - pace_30d
+    median_diff = float(drift_diff.median())
+
+    # proxy breadth-direction signal: sign of median drift-diff
+    if median_diff > 0:
+        state = "RISING"
+    elif median_diff < 0:
+        state = "ROLLING"
+    else:
+        state = "FLAT_LOW"
+
+    return {
+        "broadening_state": state,
+        "broadening_proxy": True,
+        "basis": "drift_30v90",
+        "basis_days": None,         # no PIT window
+        "breadth_accel": None,      # no derivative yet
+        "proxy_drift_diff": round(median_diff, 3),
+    }
+
+
+def _broadening(theme: str, members: list[str], hist: pd.DataFrame | None,
+                breadth_now: float | None,
+                latest: pd.DataFrame | None = None) -> dict:
+    """PIT derivative of theme breadth.  Returns a dict with broadening_state, breadth_accel,
+    basis_days, and optionally proxy/basis fields.
+
+    Adaptive lookback (W1c / P1-B):
+      1. Prefer a prior snapshot ≥ ACCEL_LOOKBACK_DAYS (21d) back — legacy behaviour.
+      2. Accept any prior snapshot ≥ MIN_ACCEL_DAYS (10d) back and set basis_days to the
+         actual window used so the read is honest about its shorter basis.
+      3. When no ≥MIN_ACCEL_DAYS snapshot exists, fall back to the drift proxy if latest
+         carries est_chg_30d/est_chg_90d; proxy:True is emitted alongside the state.
+      4. INSUFFICIENT_HISTORY only when even the proxy inputs are absent.
+
+    Never raises; always returns a dict.
+    """
+    no_history_result = {
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "breadth_accel": None,
+        "basis_days": None,
+    }
+
+    # --- attempt real PIT derivative ------------------------------------------
+    if breadth_now is not None and hist is not None:
+        h = hist[hist["ticker"].isin(members)].copy()
+        if not h.empty and "asof" in h.columns:
+            h["asof"] = pd.to_datetime(h["asof"])
+            asofs = sorted(h["asof"].unique())
+            if len(asofs) >= 2:
+                latest_asof = asofs[-1]
+                # prefer ≥21d; accept ≥10d
+                prior_candidates_full = [a for a in asofs
+                                         if (latest_asof - a).days >= ACCEL_LOOKBACK_DAYS]
+                prior_candidates_min = [a for a in asofs
+                                        if (latest_asof - a).days >= MIN_ACCEL_DAYS]
+
+                prior_asof = None
+                if prior_candidates_full:
+                    prior_asof = prior_candidates_full[-1]
+                elif prior_candidates_min:
+                    prior_asof = prior_candidates_min[-1]
+
+                if prior_asof is not None:
+                    prev = _theme_breadth(h[h["asof"] == prior_asof].set_index("ticker"))
+                    if prev is not None:
+                        basis_days = int((latest_asof - prior_asof).days)
+                        accel = round(breadth_now - prev, 3)
+                        state = _accel_state(breadth_now, accel)
+                        return {
+                            "broadening_state": state,
+                            "breadth_accel": accel,
+                            "basis_days": basis_days,
+                        }
+
+    # --- fall back to drift proxy when no PIT window ---------------------------
+    if latest is not None:
+        proxy = _broadening_proxy(members, latest)
+        if proxy is not None:
+            return proxy
+
+    return no_history_result
 
 
 def _level_state(breadth: float | None) -> str:
@@ -126,29 +223,40 @@ def theme_revisions_for(theme_key: str, name: str, members: list[str],
     covered = rows[rows["n_analysts"] >= MIN_ANALYSTS]
     breadth = _theme_breadth(rows)
     drift = (round(float(covered["est_chg_90d"].median()), 2)
-             if not covered.empty else None)
+             if (not covered.empty and "est_chg_90d" in covered.columns) else None)
     net_up_total = (round(float(covered["net_up_30d"].sum()), 1)
-                    if not covered.empty else None)
-    accel, broadening_state = _broadening(theme_key, members, hist, breadth)
+                    if (not covered.empty and "net_up_30d" in covered.columns) else None)
+    bn = _broadening(theme_key, members, hist, breadth, latest)
     # top member contributors for transparency (largest |breadth| with coverage)
     contrib = []
     for tk, r in covered.sort_values("breadth").iterrows():
-        contrib.append({"ticker": str(tk), "breadth": round(float(r["breadth"]), 2),
-                        "est_chg_90d": round(float(r["est_chg_90d"]), 1),
-                        "n_analysts": int(r["n_analysts"])})
-    return {
+        entry: dict = {"ticker": str(tk), "breadth": round(float(r["breadth"]), 2),
+                       "n_analysts": int(r["n_analysts"])}
+        if "est_chg_90d" in r.index:
+            entry["est_chg_90d"] = round(float(r["est_chg_90d"]), 1)
+        contrib.append(entry)
+    out = {
         "name": name,
         "breadth": breadth,
         "level_state": _level_state(breadth),
         "est_drift_90d": drift,
         "net_up_total": net_up_total,
-        "breadth_accel": accel,
-        "broadening_state": broadening_state,
+        "breadth_accel": bn.get("breadth_accel"),
+        "broadening_state": bn.get("broadening_state", "INSUFFICIENT_HISTORY"),
         "coverage": round(len(covered) / len(members), 2),
         "n_covered": int(len(covered)),
         "n_members": len(members),
         "members": contrib[:8],
     }
+    # surface the adaptive-lookback / proxy fields when present
+    if bn.get("basis_days") is not None:
+        out["basis_days"] = bn["basis_days"]
+    if bn.get("broadening_proxy"):
+        out["broadening_proxy"] = True
+        out["basis"] = bn.get("basis", "drift_30v90")
+        if bn.get("proxy_drift_diff") is not None:
+            out["proxy_drift_diff"] = bn["proxy_drift_diff"]
+    return out
 
 
 def compute_theme_revisions(write_ledger: bool = True) -> dict | None:
@@ -218,12 +326,18 @@ def _append_ledger(payload: dict) -> None:
     for key, t in payload["themes"].items():
         if (key, asof) in seen:
             continue
-        lines.append(json.dumps({
+        row = {
             "theme": key, "asof": asof, "ts": ts,
             "breadth": t["breadth"], "breadth_accel": t["breadth_accel"],
             "broadening_state": t["broadening_state"], "est_drift_90d": t["est_drift_90d"],
             "n_covered": t["n_covered"],
-        }, separators=(",", ":")))
+        }
+        if t.get("basis_days") is not None:
+            row["basis_days"] = t["basis_days"]
+        if t.get("broadening_proxy"):
+            row["broadening_proxy"] = True
+            row["basis"] = t.get("basis", "drift_30v90")
+        lines.append(json.dumps(row, separators=(",", ":")))
     if lines:
         with p.open("a") as fh:
             fh.write("\n".join(lines) + "\n")
