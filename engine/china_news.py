@@ -38,6 +38,7 @@ import re
 import xml.etree.ElementTree as ET
 from collections import Counter
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 
 from lib import config, store
@@ -213,9 +214,65 @@ def enabled() -> bool:
 # --------------------------------------------------------------------------- #
 # leg 1: official policy tone (CCTV 新闻联播) — keyless, from the stored series
 # --------------------------------------------------------------------------- #
-def _tone_stats(series, window: int, smooth: int) -> dict | None:
-    """Smooth the sparse daily tone, z-score the latest vs a trailing window. PURE
-    (takes a pandas Series). None if there's nothing usable."""
+
+# Long-history baseline path (written by scripts/rebuild_cctv_tone_history.py
+# after the W4 CCTV backfill completes).  When present it is used as the
+# reference distribution for z-scoring; when absent we fall back to the rolling
+# window (pre-backfill behaviour).  The tone_history file is small (<2 MB) and
+# IS committed to the repo.
+_TONE_HISTORY_PATH = Path(__file__).resolve().parent.parent / "data" / "china_news" / "cctv_tone_history.parquet"
+
+
+def _load_tone_history_baseline() -> "pd.Series | None":
+    """Load the long-run CCTV tone series (from scripts/rebuild_cctv_tone_history.py).
+
+    W4 baseline design — window-vs-long-history hybrid:
+      • When cctv_tone_history.parquet exists with ≥ 60 rows of real data (n_items > 0)
+        we use the FULL history mean/std as the z-score denominator.  This is the
+        honest choice: 90 days of live data (≈ 19 obs to date) is not a reliable
+        distribution; the 10-year series (≈ 3,800 days) IS.
+      • We still apply a 5-day smoothing to the live series BEFORE computing z so
+        that a single noisy day does not spike the z-score.
+      • The history itself is also smoothed (5-day rolling mean) before computing
+        baseline μ and σ — identical transformation applied to both distributions.
+      • Fall-back: if the history file is absent or has fewer than 60 ok rows, we
+        return None and the caller reverts to the rolling-window path.
+
+    Returns the smoothed long-history tone Series (DatetimeIndex) or None.
+    """
+    try:
+        if not _TONE_HISTORY_PATH.exists():
+            return None
+        import pandas as pd
+        hist = pd.read_parquet(_TONE_HISTORY_PATH)
+        if hist.empty or "tone" not in hist.columns:
+            return None
+        # Require at least 60 real broadcast days to trust the baseline
+        n_items = hist.get("n_items", hist["tone"].notna().astype(int))
+        if int((n_items > 0).sum()) < 60:
+            return None
+        s = pd.to_numeric(hist["tone"], errors="coerce")
+        # NaN days (empty/stub) are interpolated so the smoother doesn't skip them
+        s = s.interpolate(method="time", limit_direction="forward").dropna()
+        if s.empty:
+            return None
+        return s.rolling(5, min_periods=1).mean()
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_news._load_tone_history_baseline failed (%s)", e)
+        return None
+
+
+def _tone_stats(series, window: int, smooth: int,
+                history_baseline: "pd.Series | None" = None) -> dict | None:
+    """Smooth the sparse daily tone, z-score the latest vs the best available baseline.
+
+    Baseline priority (W4 hybrid):
+      1. long-history series from cctv_tone_history.parquet (history_baseline arg)
+         — used when present and has ≥ 60 real days.
+      2. trailing `window`-day window on the live series (pre-backfill fallback).
+
+    PURE (takes a pandas Series + optional baseline). None if there's nothing usable.
+    """
     try:
         import pandas as pd
         s = pd.to_numeric(series, errors="coerce").dropna()
@@ -223,12 +280,25 @@ def _tone_stats(series, window: int, smooth: int) -> dict | None:
             return None
         sm = s.rolling(max(int(smooth), 1), min_periods=1).mean()
         latest = float(sm.iloc[-1])
-        win = sm.tail(max(int(window), 2))
-        mu = float(win.mean())
-        sd = float(win.std(ddof=0))
+
+        if history_baseline is not None and len(history_baseline) >= 60:
+            # Long-history path: μ and σ come from the full 10-year baseline
+            mu = float(history_baseline.mean())
+            sd = float(history_baseline.std(ddof=1)) if len(history_baseline) > 1 else 0.0
+            baseline_source = "long_history"
+            baseline_n = int(len(history_baseline))
+        else:
+            # Fallback: rolling window on the live series
+            win = sm.tail(max(int(window), 2))
+            mu = float(win.mean())
+            sd = float(win.std(ddof=0))
+            baseline_source = "rolling_window"
+            baseline_n = int(len(s))
+
         z = (latest - mu) / sd if sd and not pd.isna(sd) and sd > 1e-9 else 0.0
         return {"value": round(latest, 3), "mean": round(mu, 3),
-                "z": round(float(z), 2), "n": int(len(s))}
+                "z": round(float(z), 2), "n": int(len(s)),
+                "baseline_source": baseline_source, "baseline_n": baseline_n}
     except Exception:  # noqa: BLE001
         return None
 
@@ -248,15 +318,23 @@ def _tone_band(stats: dict | None) -> tuple[str, str, str]:
 
 
 def policy_tone(asof: date | str | None = None) -> dict | None:
-    """Official policy-tone read from data/china_news/cctv_tone.parquet. Returns the
-    display dict (value/z/band/asof) or None when no tone history exists yet. Never
-    raises."""
+    """Official policy-tone read from data/china_news/cctv_tone.parquet.
+
+    Z-scores against the long-history CCTV baseline (cctv_tone_history.parquet)
+    when available (W4 re-baseline), falling back to the rolling 90-day window
+    when the history file hasn't been built yet (pre-backfill / fresh deploy).
+
+    Returns the display dict (value/z/band/asof/baseline_source) or None when no
+    tone history exists yet. Never raises.
+    """
     try:
         df = store.read("china_news", "cctv_tone")
         if df is None or df.empty or "tone" not in df.columns:
             return None
         cfg = _cfg()
-        stats = _tone_stats(df["tone"], cfg.get("tone_window", 90), cfg.get("tone_smooth", 5))
+        history_baseline = _load_tone_history_baseline()
+        stats = _tone_stats(df["tone"], cfg.get("tone_window", 90), cfg.get("tone_smooth", 5),
+                            history_baseline=history_baseline)
         if not stats:
             return None
         band, lab_en, lab_zh = _tone_band(stats)
@@ -265,6 +343,8 @@ def policy_tone(asof: date | str | None = None) -> dict | None:
             "value": stats["value"], "z": stats["z"], "n_days": stats["n"],
             "band": band, "label_en": lab_en, "label_zh": lab_zh,
             "asof": str(df.index.max().date()),
+            "baseline_source": stats.get("baseline_source", "rolling_window"),
+            "baseline_n": stats.get("baseline_n", stats["n"]),
         }
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("china_news.policy_tone failed (%s)", e)
