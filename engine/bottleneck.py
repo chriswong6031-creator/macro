@@ -297,12 +297,16 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
     ppi = _series(spec["ppi"]) if spec.get("ppi") else None
     leg4 = _z(_yoy(ppi))                                 # pricing power (industry PPI yoy)
 
+    # leg6 enters the COMPOSITE only past the ≥2-distinct-filers gate — a single filing
+    # must never move the weighted read (the spec's "filers gate carries the noise
+    # burden" applies to the composite path, not just the band relabel)
+    lang_z_gated = lang_z if (lang_z is not None and n_filers >= LANG_MIN_FILERS) else None
     legs = {
         "leg1_capacity":  leg1,
         "leg2_inventory": leg2,
         "leg3_backlog":   leg3,
         "leg4_pricing":   leg4,
-        "leg6_language":  lang_z,
+        "leg6_language":  lang_z_gated,
     }
     avail = {k: v for k, v in legs.items() if v is not None}
     numeric_avail = {k: v for k, v in avail.items() if k != "leg6_language"}
@@ -321,18 +325,36 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
         regime = all((numeric_legs[k] or 0) > 0 for k in numeric_legs) \
             and None not in numeric_legs.values()
 
+    # NUMERIC-ONLY composite — the sole discriminator for a plain (physically-confirmed)
+    # TIGHT/SOLD_OUT. Without it, leg6 tipping the combined composite over 0.75 LAUNDERS
+    # a text signal into a numeric band: text_only=False, TEXT_ONLY_CAP bypassed,
+    # physical_confirmed=True, hot tone, mislabeled ledger row (review finding:
+    # grid_electrification numeric 0.66 → combined 1.07 → shipped plain TIGHT @ 79.4).
+    if numeric_avail:
+        nwsum = sum(WEIGHTS[k] for k in numeric_avail)
+        numeric_composite = round(
+            sum(WEIGHTS[k] * v for k, v in numeric_avail.items()) / nwsum, 2)
+    else:
+        numeric_composite = None
+
     # Determine if we have only the language leg (no numeric FRED legs at all)
     text_only = not numeric_avail and lang_z is not None
 
     band = _band(composite, n, regime,
                  lang_accel=lang_accel, n_filers=n_filers, text_only=text_only)
 
-    # Text-band variant: when language alone clears TIGHT but numeric legs do NOT
     if not text_only and numeric_avail and composite is not None:
-        # Check whether language alone would push into TIGHT (text) territory
-        if (lang_z is not None and lang_z > LANG_Z_LIVE and n_filers >= LANG_MIN_FILERS
+        thresh = 1.5 if band == "SOLD_OUT" else 0.75
+        if band in ("TIGHT", "SOLD_OUT") and not (
+                numeric_composite is not None and numeric_composite > thresh):
+            # The combined composite cleared the threshold ONLY because of the text leg —
+            # the numeric legs alone do not confirm. Demote to the text variant so the
+            # cap binds, the tone stays warn, and the ledger row is honestly labeled.
+            band = "TIGHT (text)"
+            text_only = True
+        elif (lang_z_gated is not None and lang_z_gated > LANG_Z_LIVE
                 and band not in ("TIGHT", "SOLD_OUT", "TIGHT (text)")):
-            # Numeric legs are not yet at TIGHT/SOLD_OUT — language creates a text-only read
+            # Language alone clears TIGHT while numeric legs sit below it — text-only read
             band = "TIGHT (text)"
             text_only = True
 

@@ -103,6 +103,74 @@ def test_leg6_weight_in_composite(monkeypatch, tmp_path):
     assert abs(numeric - 0.75) < 1e-6, f"numeric legs sum to {numeric}, not 0.75"
 
 
+def _tightening_store():
+    """A fixture where the numeric legs read mid-strength (TIGHTENING, not TIGHT):
+    only cap-U and backlog are elevated; inventory and PPI are flat/neutral."""
+    n = 60
+    ramp = np.linspace(0, 1, n)
+    return {
+        "CAPUTLG3344S": _series(70 + 20 * ramp),         # leg1 z>0
+        "MNFCTRIRSA": _series(np.full(n, 1.4)),          # flat -> leg2 ~0
+        "AMTMUO": _series(100 + 80 * ramp),              # leg3 z>0
+        "AMTMVS": _series(np.full(n, 50.0)),
+        "PCU334413334413": _series(np.full(n, 100.0)),   # flat -> leg4 ~0
+    }
+
+
+def test_text_cannot_launder_numeric_tight(monkeypatch, tmp_path):
+    """ANTI-LAUNDERING REGRESSION (review blocker on grid_electrification): when the
+    numeric-only composite sits below the TIGHT threshold, a strong 2-filer language leg
+    must produce 'TIGHT (text)' (text_only=True, cap binds) — NEVER a plain numeric TIGHT
+    with physical_confirmed semantics."""
+    store = _tightening_store()
+    monkeypatch.setattr(bn.store, "read", lambda group, name: store.get(name))
+    monkeypatch.setattr(bn.config, "load",
+                        lambda: {"themes": {"memory_storage": {"name": "Memory",
+                                                               "tickers": ["MU", "WDC"]}}})
+    monkeypatch.setattr(bn.config, "data_dir", lambda: tmp_path)
+    # strong language: 4 recent affirmative hits across 2 distinct filers, none prior
+    rows = [
+        {"id": str(i), "ticker": t, "file_date": d, "phrase": "sold out",
+         "fetched": d, "polarity": None}
+        for i, (t, d) in enumerate([("MU", "2026-06-01"), ("MU", "2026-06-15"),
+                                    ("WDC", "2026-06-10"), ("WDC", "2026-06-20")])
+    ]
+    _make_parquet(tmp_path, rows, kind="bottleneck")
+
+    out = bn.compute_bottleneck(write_ledger=False)
+    t = out["themes"]["memory_storage"]
+    # invariant encoded directly: compare against the SAME fixture with no language.
+    # numerics-alone band is whatever it is; adding language must never upgrade it
+    # to a PLAIN numeric TIGHT/SOLD_OUT (only ever to the '(text)' variant).
+    import shutil
+    shutil.rmtree(tmp_path / "edgar")            # remove the language parquet
+    base = bn.compute_bottleneck(write_ledger=False)["themes"]["memory_storage"]
+    if base["band"] not in ("TIGHT", "SOLD_OUT"):
+        assert t["band"] not in ("TIGHT", "SOLD_OUT"), \
+            "text leg tipped the composite into a plain numeric TIGHT"
+        if t["band"] == "TIGHT (text)":
+            assert t.get("text_only") is True
+
+
+def test_single_filer_cannot_move_composite(monkeypatch, tmp_path):
+    """The >=2-distinct-filers gate applies to the COMPOSITE, not just the band relabel:
+    one filer's language must leave the composite identical to the no-language case."""
+    store = _tightening_store()
+    monkeypatch.setattr(bn.store, "read", lambda group, name: store.get(name))
+    monkeypatch.setattr(bn.config, "load",
+                        lambda: {"themes": {"memory_storage": {"name": "Memory",
+                                                               "tickers": ["MU"]}}})
+    monkeypatch.setattr(bn.config, "data_dir", lambda: tmp_path)
+    base = bn.compute_bottleneck(write_ledger=False)["themes"]["memory_storage"]["tightness"]
+    # now add a single-filer language burst
+    rows = [{"id": str(i), "ticker": "MU", "file_date": f"2026-06-{d:02d}",
+             "phrase": "sold out", "fetched": f"2026-06-{d:02d}", "polarity": None}
+            for i, d in enumerate([1, 5, 10, 15, 20])]
+    _make_parquet(tmp_path, rows, kind="bottleneck")
+    with_lang = bn.compute_bottleneck(write_ledger=False)["themes"]["memory_storage"]["tightness"]
+    assert with_lang == base, "single filer moved the weighted composite"
+
+
 def _make_parquet(tmp_path, rows: list[dict], kind: str = "bottleneck") -> None:
     """Write a synthetic hits parquet to tmp_path/edgar/{kind}_hits.parquet."""
     import pathlib

@@ -118,6 +118,11 @@ def _band(score: float | None, n: int, regime: bool) -> str:
     return "STABLE"
 
 
+# escalation order for the anti-laundering demotion check (text must never escalate the
+# band beyond what the numeric legs support)
+_BAND_RANK = {"AWAITING_DATA": 0, "STABLE": 0, "EARLY_GLUT": 1, "GLUT_FORMING": 2, "GLUT": 3}
+
+
 def _theme_glut(spec: dict, name: str, inv_mom: float | None, backlog_mom: float | None,
                 demand_band: str | None, tickers: list[str] | None = None) -> dict:
     cap_u = _series(spec["cap_u"])
@@ -143,13 +148,16 @@ def _theme_glut(spec: dict, name: str, inv_mom: float | None, backlog_mom: float
         import numpy as np  # noqa: PLC0415
         lang_z = round(float(np.clip(lang_accel, -2.0, 2.0)), 2)
 
+    # leg6 enters the composite only past the ≥2-distinct-filers gate (mirrors bottleneck:
+    # a single filing must never move the weighted read)
+    lang_z_gated = lang_z if (lang_z is not None and lang_filers >= LANG_MIN_FILERS) else None
     legs = {
         "leg1_caputil_rollover":  leg1,
         "leg2_inventory_restock": leg2,
         "leg3_backlog_drain":     leg3,
         "leg4_pricing_fade":      leg4,
         "leg5_supply_response":   leg5,
-        "leg6_glut_language":     lang_z,
+        "leg6_glut_language":     lang_z_gated,
     }
     avail = {k: v for k, v in legs.items() if v is not None}
     if not avail:
@@ -161,13 +169,28 @@ def _theme_glut(spec: dict, name: str, inv_mom: float | None, backlog_mom: float
         core = ["leg1_caputil_rollover", "leg2_inventory_restock", "leg3_backlog_drain", "leg4_pricing_fade"]
         regime = all((legs[k] or 0) > 0 for k in core) and all(legs[k] is not None for k in core)
 
+    # NUMERIC-ONLY score — the sole discriminator for a plain (numeric) glut band, same
+    # anti-laundering rule as bottleneck: text must never tip a numeric GLUT/GLUT_FORMING.
+    numeric_avail = {k: v for k, v in avail.items() if k != "leg6_glut_language"}
+    if numeric_avail:
+        nwsum = sum(WEIGHTS[k] for k in numeric_avail)
+        numeric_score = round(sum(WEIGHTS[k] * v for k, v in numeric_avail.items()) / nwsum, 2)
+    else:
+        numeric_score = None
+
     band = _band(score, n, regime)
+    if band not in ("AWAITING_DATA", "STABLE") and numeric_avail and score is not None:
+        numeric_band = _band(numeric_score, len(numeric_avail), regime)
+        if numeric_band != band and _BAND_RANK.get(band, 0) > _BAND_RANK.get(numeric_band, 0):
+            # The text leg escalated the band beyond what the numeric legs support —
+            # demote to the numeric read with a text marker so the exit clock never
+            # fires on language alone while claiming physical confirmation.
+            band = f"{band} (text)"
     # demand cross-check: a cooling capex pool brings the glut closer (display nuance only)
     if band in ("EARLY_GLUT", "GLUT_FORMING") and demand_band in ("COOLING", "CONTRACTING"):
         band = "GLUT_FORMING" if band == "EARLY_GLUT" else "GLUT"
 
     # Text-only glut band: language leg alone (no numeric FRED legs available)
-    numeric_avail = {k: v for k, v in avail.items() if k != "leg6_glut_language"}
     if not numeric_avail and lang_z is not None:
         # Language-only read; band capped at "GLUT_FORMING (text)"
         if lang_accel is not None and lang_accel > GLUT_LANG_Z_LIVE and lang_filers >= LANG_MIN_FILERS:
