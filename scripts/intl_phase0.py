@@ -522,10 +522,22 @@ def grade_claim(claim: dict, ledger: TrialLedger, *, asof: date | None = None,
         basis = b.get("basis") or []
         metrics["ic"] = _r(b.get("ic"))
 
-        # core verdict via the promotion gate (DSR ≥ 0.90 on the intl_bridge family)
+        # core verdict via the promotion gate. By default the DSR haircut deflates by the
+        # intl_bridge family budget (N=17). A claim MAY declare its own single-trial family
+        # (`trial_family`) — the pre-registered N=1 door (INTL-43): e.g. c4_reer_value was
+        # budget-killed inside the forex 60-trial family, so its honest resurrection grades
+        # on a SEPARATE single-config ledger, not the intl_bridge budget. One trial,
+        # documented — never a way to dodge the multiple-testing haircut for the rest.
         if strat is not None:
-            core = promotion_gate(returns=list(pd.Series(strat).dropna()),
-                                  trial_ledger=ledger, family=FAMILY, dsr_min=DSR_MIN)
+            tf = claim.get("trial_family")
+            if tf:
+                # dedicated N=1 (declared-budget-1) ledger for this claim only
+                n1 = TrialLedger.with_declared_budget(1, tf)
+                core = promotion_gate(returns=list(pd.Series(strat).dropna()),
+                                      trial_ledger=n1, family=tf, dsr_min=DSR_MIN)
+            else:
+                core = promotion_gate(returns=list(pd.Series(strat).dropna()),
+                                      trial_ledger=ledger, family=FAMILY, dsr_min=DSR_MIN)
             gates["promotion"] = core
             dsr = (core.get("gates", {}).get("deflated_sharpe") or {}).get("value")
             metrics["dsr"] = _r(dsr)
@@ -817,11 +829,14 @@ def main(argv=None) -> int:
                     help="grade the declared claims (live builders + truthful backfill) + write ledger")
     ap.add_argument("--c3", action="store_true",
                     help="W2-C3: run the global breadth builder (build_c3_global_breadth) + write ledger")
+    ap.add_argument("--c4", action="store_true",
+                    help="W3-C4: grade the dollar-channel claims (c4_reer_value N=1 + c4_cnh_basis) "
+                         "via their declared builders + MERGE into the ledger")
     ap.add_argument("--only", default=None,
                     help="comma-separated claim ids to (re)grade; the rest keep their ledger rows")
     args = ap.parse_args(argv)
 
-    if not (args.declare or args.backfill or args.run or args.c3):
+    if not (args.declare or args.backfill or args.run or args.c3 or args.c4):
         ap.print_help()
         return 0
 
@@ -851,6 +866,25 @@ def main(argv=None) -> int:
                   f"n_crises={c3_row['metrics'].get('effective_n_crises')} "
                   f"es_ex_top3={c3_row['metrics'].get('es_ex_top3')}")
         print(f"[C3] ledger written → {p}")
+        return 0
+
+    if args.c4:
+        # W3-C4: grade ONLY the two dollar-channel claims through their declared builders
+        # (scripts.c4_reer_value.builder — the N=1-budget-separated REER resurrection — and
+        # scripts.c4_cnh_basis.builder — the CSI300/FXI CNH-basis leg), MERGING into the
+        # existing ledger so the C1/C2/C3 verdicts + backfill graveyard are preserved.
+        c4_ids = {"c4_reer_value", "c4_cnh_basis"}
+        p = run(only=c4_ids, merge=True)
+        rows = _existing_ledger_rows()
+        for cid in sorted(c4_ids):
+            r = rows.get(cid)
+            if r:
+                print(f"[C4] {cid}: verdict={r['verdict']} weight_cap={r['weight_cap']} "
+                      f"dsr={r['metrics'].get('dsr')} ic={r['metrics'].get('ic')} "
+                      f"orth={r['metrics'].get('orthogonal_partial')} "
+                      f"n_crises={r['metrics'].get('effective_n_crises')} "
+                      f"es_ex_top3={r['metrics'].get('es_ex_top3')} kill={r['kill']}")
+        print(f"[C4] ledger written → {p}")
         return 0
 
     if args.run and not args.backfill:

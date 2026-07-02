@@ -22,6 +22,7 @@ Exit code 10 signals "content changed" (for the sentinel's optional fast-path);
 """
 from __future__ import annotations
 
+import importlib
 import json
 import logging
 import sys
@@ -334,27 +335,33 @@ def _register_wh_claim(rec: dict, root: Path) -> None:
     One claim per ticker; a tone-only (no tickers) alert registers one macro claim.
     All claims are context/display; none feed scoring arithmetic.
     """
+    # W5 ITEM 5: qledger is a hard prod dependency of the WH desk. The ONLY quiet
+    # skip is the module itself being absent (stripped/partial checkout) — proven
+    # by ModuleNotFoundError.name, not by string-matching the message. Everything
+    # else (missing/poisoned transitive dep like numpy, ABI mismatch, None in
+    # sys.modules, broken module init) is a production failure and must be loud.
+    # importlib.import_module is used instead of `from engine import qledger`
+    # because the from-form re-raises a missing submodule as a generic
+    # "cannot import name" ImportError, losing the ModuleNotFoundError.name signal.
     try:
-        from engine import qledger as ql
+        ql = importlib.import_module("engine.qledger")
+    except ModuleNotFoundError as _ie:
+        if _ie.name in ("engine", "engine.qledger"):
+            log.debug("qledger module absent from this checkout — skipping WH claim "
+                      "registration (never expected in prod, where engine/qledger.py ships)")
+            return
+        log.error(
+            "engine.qledger failed to import because dependency %r is missing/broken — "
+            "qledger is a REQUIRED production dependency of the WH desk, this is NOT "
+            "the optional no-qledger path. Claims for %s will NOT be registered. "
+            "Error: %s", _ie.name, rec.get("id"), _ie, exc_info=True)
+        return
     except ImportError as _ie:
-        # W5 ITEM 5: distinguish a DEV-mode intentional no-qledger path from a
-        # genuine production import failure. qledger is a hard prod dependency;
-        # a real import error (e.g. missing transitive dep, numpy ABI mismatch)
-        # must surface loudly rather than being silently swallowed.
-        #
-        # Heuristic: if the error message names "qledger" itself (i.e. the module
-        # simply isn't installed in this env), treat as optional dev path and log
-        # at DEBUG. Any other ImportError (broken dep, numpy poisoning, etc.) is
-        # a real prod failure → log.error so it appears in CI logs and alerts.
-        _ie_msg = str(_ie).lower()
-        if "qledger" in _ie_msg or "no module named 'engine.qledger'" in _ie_msg:
-            log.debug("qledger not installed in this env — skipping WH claim registration "
-                      "(expected in dev; set up the full engine package for prod)")
-        else:
-            log.error(
-                "qledger import failed with an unexpected error — this is a PRODUCTION "
-                "dependency failure, NOT a dev-mode no-qledger path. "
-                "Claim will NOT be registered. Error: %s", _ie, exc_info=True)
+        log.error(
+            "engine.qledger failed to import — qledger is a REQUIRED production "
+            "dependency of the WH desk, this is NOT the optional no-qledger path. "
+            "Claims for %s will NOT be registered. Error: %s",
+            rec.get("id"), _ie, exc_info=True)
         return
 
     tone_dir = {"tailwind": 1, "headwind": -1}.get(rec.get("tone", ""), 0)

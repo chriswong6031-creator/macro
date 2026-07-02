@@ -38,6 +38,13 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
+# ── spine truncation / staleness guard constants (sector-central-china-6) ───
+# If the cycle spine comes back from a truncated akshare scrape, we get silently
+# corrupted RS/signature data.  Guard thresholds are additive — degraded state
+# is flagged in the returned meta, never fatal.
+_SPINE_MIN_SECTORS = 4    # Shenwan L1 has ~10+ sectors; <4 = definitely truncated
+_SPINE_STALE_DAYS  = 3    # calendar days before flagging the spine asOf as stale
+
 # conviction tiers (score 0–100, after gate + context)
 TIERS = [
     (72, "Accumulate",   "积极配置", "up"),
@@ -354,6 +361,36 @@ def compute() -> dict | None:
         return None
     if not cyc or not cyc.get("sectors"):
         return None
+
+    # --- truncation / staleness guard (sector-central-china-6) ---
+    spine_degraded = False
+    spine_degraded_reason = None
+    n_spine_sectors = len(cyc.get("sectors", []))
+    if n_spine_sectors < _SPINE_MIN_SECTORS:
+        spine_degraded = True
+        spine_degraded_reason = (
+            f"spine has only {n_spine_sectors} sectors (< {_SPINE_MIN_SECTORS} min)"
+            " — possible truncated akshare scrape"
+        )
+        log.warning("central: %s — convictions will be degraded", spine_degraded_reason)
+    # check staleness
+    spine_as_of_str = cyc.get("meta", {}).get("asOf")
+    if spine_as_of_str:
+        try:
+            spine_as_of = pd.Timestamp(spine_as_of_str)
+            today = pd.Timestamp.today().normalize()
+            lag = (today - spine_as_of).days
+            if lag > _SPINE_STALE_DAYS:
+                stale_reason = (
+                    f"spine asOf={spine_as_of_str} is {lag} days stale"
+                    f" (>{_SPINE_STALE_DAYS})"
+                )
+                spine_degraded = True
+                spine_degraded_reason = stale_reason
+                log.warning("central: %s — convictions may reflect stale spine", stale_reason)
+        except Exception:  # noqa: BLE001
+            pass
+
     mkt = market_context()
 
     # basket membership (for crowding aggregation)
@@ -385,6 +422,8 @@ def compute() -> dict | None:
         "as_of": cyc["meta"]["asOf"],
         "meta": {"n_sectors": len(sectors), "n_baskets": len(baskets),
                  "region": "china", "experimental": True,
+                 "spine_degraded": spine_degraded,
+                 "spine_degraded_reason": spine_degraded_reason,
                  "method": "gated-confluence (research/ALLOCATION_CHINA_AUDIT.md)"},
         "market": mkt,
         "sectors": sectors,

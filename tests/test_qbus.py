@@ -175,6 +175,55 @@ def test_novelty_z_none_on_empty():
     assert qbus.novelty_z("X", date(2026, 6, 1), df=_mk_df([])) is None
 
 
+def test_novelty_z_survives_tz_mixed_store():
+    # live-store shape: EN rows carry tz-aware ISO stamps while CN rows carry
+    # tz-NAIVE strings in the SAME seendate column, with tz-aware rows FIRST.
+    # Row order matters: plain pd.to_datetime(errors="coerce") locks onto the
+    # format of the first value and NaT-ed every naive row after it, silently
+    # nulling the whole CN lane; the naive-side subject must still get a real z.
+    rows = []
+    for d in range(1, 10):  # tz-aware rows first, as on the live store
+        rows.append(_row(title=f"spy note {d}", entities=["SPY"],
+                         seendate=f"2026-05-{d:02d}T12:00:00+00:00",
+                         _crawled_at=f"2026-05-{d:02d}T12:05:00+00:00",
+                         url=f"https://en.example/{d}"))
+    for d in range(1, 30):  # naive-tz baseline for the CN-lane subject
+        rows.append(_row(title=f"pboc note {d}", entities=["PBOC"], lang="zh",
+                         seendate=f"2026-05-{d:02d} 09:30:00",
+                         _crawled_at=f"2026-05-{d:02d} 09:35:00",
+                         url=f"https://cn.example/{d}"))
+    for k in range(6):      # naive-tz spike on the asof day
+        rows.append(_row(title=f"pboc breaking {k}", entities=["PBOC"], lang="zh",
+                         seendate="2026-06-01 08:00:00",
+                         _crawled_at="2026-06-01 08:05:00",
+                         url=f"https://cn.example/b{k}"))
+    df = _mk_df(rows)
+    z = qbus.novelty_z("PBOC", date(2026, 6, 1), window_days=31, df=df)
+    assert z is not None and z > 1.0
+
+
+def test_novelty_z_ignores_dateless_rows_without_raising():
+    # dateless rows (NaT for BOTH seendate and _crawled_at — the stale
+    # news_vector accrual) must neither raise on the NaT-vs-date comparison
+    # (which swallowed into None) nor count toward the volume basis.
+    rows = [_row(title=f"note {d}", entities=["AAA"],
+                 seendate=f"2026-05-{d:02d} 10:00:00",
+                 _crawled_at=f"2026-05-{d:02d} 10:00:00",
+                 url=f"https://x.com/{d}") for d in range(1, 30)]
+    rows.append(_row(title="note today", entities=["AAA"],
+                     seendate="2026-06-01 10:00:00",
+                     _crawled_at="2026-06-01 10:00:00", url="https://x.com/today"))
+    for k in range(5):  # matched-subject dateless rows
+        rows.append(_row(title=f"stale accrual {k}", entities=["AAA"],
+                         seendate="", _crawled_at="",
+                         url=f"https://stale.example/{k}"))
+    df = _mk_df(rows)
+    z = qbus.novelty_z("AAA", date(2026, 6, 1), window_days=31, df=df)
+    # flat 1/day baseline and 1 real item today: if the dateless rows leaked
+    # into today's count the z would spike; if they raised, z would be None.
+    assert z is not None and z <= 1.0
+
+
 # --------------------------------------------------------------------------- #
 # echo_stats
 # --------------------------------------------------------------------------- #

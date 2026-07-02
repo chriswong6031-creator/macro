@@ -88,7 +88,10 @@ def test_project_next_alternates_and_ranges():
     proj = sc._project_next(turns, s.index[-1])
     assert proj is not None
     assert proj["nextTurn"] in ("peak", "trough")
-    assert proj["nextTurn"] != turns[-1]["k"]                # projects the OPPOSITE turn
+    # W1.6: projection anchors at the last CONFIRMED turn and projects its opposite
+    # (which matches the provisional open-leg extreme, so compare vs confirmed only)
+    last_confirmed = [t for t in turns if not t.get("provisional")][-1]
+    assert proj["nextTurn"] != last_confirmed["k"]
     assert proj["period_yrs"]["lo"] <= proj["period_yrs"]["median"] <= proj["period_yrs"]["hi"]
 
 

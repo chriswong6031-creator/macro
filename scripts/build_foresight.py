@@ -74,8 +74,10 @@ def main() -> int:
     try:
         from engine.foresight_cascade import compute_foresight_cascade
         # write_ledger=True so the daily build accrues the forward-grading record (deduped by
-        # theme+asof, so calling alongside engine/run.py's leaf is idempotent).
-        cascade = compute_foresight_cascade(write_ledger=True)
+        # theme+asof, so calling alongside engine/run.py's leaf is idempotent). inputs_out
+        # captures the resolved sub-objects for reuse by the shadow pass below.
+        cascade_inputs: dict = {}
+        cascade = compute_foresight_cascade(write_ledger=True, inputs_out=cascade_inputs)
     except Exception as e:  # noqa: BLE001
         log.warning("foresight cascade unavailable — skipping page: %s", e)
         return 0
@@ -97,18 +99,13 @@ def main() -> int:
         from engine.foresight_shadow import (
             compute_shadow_stages, grade_shadow, shadow_promotion_report,
         )
-        # Reuse already-computed cascade inputs (bottleneck + revisions + glut are consumed
-        # by compute_foresight_cascade above — shadow re-runs pure functions, no IO cost).
-        from engine.bottleneck import compute_bottleneck
-        from engine.theme_revisions import compute_theme_revisions
-        from engine.glut_watch import compute_glut_watch
-        _shadow_bn = compute_bottleneck(write_ledger=False)
-        _shadow_rv = compute_theme_revisions(write_ledger=False)
-        _shadow_gl = compute_glut_watch(demand=None, write_ledger=False)
+        # Reuse the EXACT sub-objects the cascade above resolved (via inputs_out) — the
+        # shadow pass re-runs pure stage functions on them, so recomputing the EDGAR/FRED-
+        # backed engines here would be redundant IO.
         n_shadow = compute_shadow_stages(
-            bottleneck=_shadow_bn,
-            revisions=_shadow_rv,
-            glut=_shadow_gl,
+            bottleneck=cascade_inputs.get("bottleneck"),
+            revisions=cascade_inputs.get("revisions"),
+            glut=cascade_inputs.get("glut"),
             asof=(cascade or {}).get("asof"),
         )
         log.info("shadow ledger: %d new rows appended", n_shadow)

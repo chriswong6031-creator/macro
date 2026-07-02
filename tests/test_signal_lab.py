@@ -50,10 +50,12 @@ def test_the_graveyard_is_shown():
 
 
 def test_intl_bridge_graveyard_is_published():
-    """The intl graveyard is published like every other signal family. CONTEXT verdicts
-    land in display, validated-but-unwired (C4 REER N=1) lands in pending — each cited to
-    its exact report, none wired into a score. W2 (C2): the macro-sleeve graded CONTEXT vs
-    the US book (DSR 0.83 < the 0.90 door) → it moves from pending to display."""
+    """The intl graveyard is published like every other signal family. CONTEXT/INVERTED
+    verdicts land in display, CONFIRMED-but-unwired legs (C3 breadth, C4a REER N=1) land in
+    confirmer — each cited to its exact report, none wired into a score. W2 (C2): the
+    macro-sleeve graded CONTEXT vs the US book (DSR 0.83 < the 0.90 door) → display. W3 (C4a):
+    the REER N=1 resurrection graded CONFIRMED → moves pending→confirmer; W3 (C4c): the CNH
+    basis graded INVERTED → display graveyard."""
     p = _payload()
     rows = [r for t in p["tiers"] for r in t["rows"]]
     intl = [r for r in rows if "intl_bridge/ledger.json" in r["source"]]
@@ -65,9 +67,13 @@ def test_intl_bridge_graveyard_is_published():
     display = next((t for t in p["tiers"] if t["key"] == "display"), None)
     assert display and any("C2" in r["name"] for r in display["rows"]), \
         "C2 macro-sleeve should be published in the display graveyard (CONTEXT verdict)"
-    # a pending intl entry still exists (C4 REER N=1 resurrection is still pending)
-    pending = next((t for t in p["tiers"] if t["key"] == "pending"), None)
-    assert pending and any("C4" in r["name"] or "REER" in r["name"] for r in pending["rows"])
+    # W3-C4a: the REER N=1 resurrection graded CONFIRMED → it sits in CONFIRMER now, not pending
+    confirmer = next((t for t in p["tiers"] if t["key"] == "confirmer"), None)
+    assert confirmer and any("REER" in r["name"] for r in confirmer["rows"]), \
+        "C4a REER N=1 should be published in the confirmer tier (CONFIRMED verdict)"
+    # W3-C4c: the CNH basis graded INVERTED → it sits in the DISPLAY graveyard
+    assert display and any("CNH" in r["name"] for r in display["rows"]), \
+        "C4c CNH-basis should be published in the display graveyard (INVERTED verdict)"
     # nothing intl is wired into a score
     for r in intl:
         assert "not wired" in r["wired"] or "not shipped" in r["wired"] \

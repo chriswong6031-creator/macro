@@ -145,27 +145,31 @@
       "channel": "C4",
       "hypothesis": "Broad-dollar REER value factor (cheap = bullish USD) predicts forward broad-USD returns \u2014 pre-registered N=1 resurrection.",
       "direction": "de-risk",
-      "verdict": "PENDING",
-      "weight_cap": 0.0,
+      "verdict": "CONFIRMED",
+      "weight_cap": 0.1333,
       "metrics": {
-        "ic": null,
-        "dsr": null,
-        "split_half_same_sign": null,
-        "effective_n_crises": null,
-        "es_ex_top3": null,
-        "orthogonal_partial": null
+        "ic": 0.0507,
+        "dsr": 0.9436,
+        "split_half_same_sign": true,
+        "effective_n_crises": 4,
+        "es_ex_top3": 0.0025,
+        "orthogonal_partial": -0.1301
       },
       "gates": {
-        "freshness": false
+        "freshness": true,
+        "promotion": "na",
+        "orthogonality": true,
+        "crisis_count": true,
+        "crisis_independent_es": true
       },
       "source_series": [
-        "forex/broad_dollar",
-        "forex/reer_us"
+        "fred/DTWEXBGS",
+        "fred/RBUSBIS"
       ],
-      "freshness_sla_days": 10,
+      "freshness_sla_days": 90,
       "validation_ref": "scripts/intl_phase0.py (grade) \u2014 CONFIRMED both halves (IC +0",
       "kill": false,
-      "notes": "CONFIRMED both halves (IC +0.065/+0.077/+0.060) but killed by the forex 60-trial budget. Pre-register as N=1, not a quiet promotion (INTL-43 discipline). | freshness SLA violated on disk \u2014 leg zeroed (fail-closed)"
+      "notes": "CONFIRMED both halves (IC +0.065/+0.077/+0.060) but killed by the forex 60-trial budget. Pre-register as N=1, not a quiet promotion (INTL-43 discipline). | all hard gates pass; cap scaled by 4 independent crises"
     },
     {
       "id": "crossmarket_leadlag",
@@ -303,27 +307,31 @@
       "channel": "C4",
       "hypothesis": "cnh_basis_bps widening (offshore CNH funding stress) leads CSI300 63d forward drawdowns \u2014 second China RORO leg beside the raw usdcnh leg.",
       "direction": "de-risk",
-      "verdict": "PENDING",
+      "verdict": "INVERTED",
       "weight_cap": 0.0,
       "metrics": {
-        "ic": null,
-        "dsr": null,
-        "split_half_same_sign": null,
-        "effective_n_crises": null,
-        "es_ex_top3": null,
-        "orthogonal_partial": null
+        "ic": 0.0003,
+        "dsr": 0.0013,
+        "split_half_same_sign": false,
+        "effective_n_crises": 4,
+        "es_ex_top3": -0.0095,
+        "orthogonal_partial": 0.1214
       },
       "gates": {
-        "freshness": false
+        "freshness": true,
+        "promotion": "na",
+        "orthogonality": true,
+        "crisis_count": true,
+        "crisis_independent_es": false
       },
       "source_series": [
-        "forex/usdcnh",
-        "forex/cnh_basis"
+        "yahoo/CNH_F",
+        "fred/DEXCHUS"
       ],
-      "freshness_sla_days": 5,
+      "freshness_sla_days": 21,
       "validation_ref": "scripts/intl_phase0.py (grade) \u2014 cny_shock is an established China driver fingerprint (china_market_drivers)",
-      "kill": false,
-      "notes": "cny_shock is an established China driver fingerprint (china_market_drivers). USDCNH history short \u2192 unmeasured in the standard split (INTL-44). | freshness SLA violated on disk \u2014 leg zeroed (fail-closed)"
+      "kill": true,
+      "notes": "cny_shock is an established China driver fingerprint (china_market_drivers). USDCNH history short (2013+) \u2192 unmeasured in the standard split (INTL-44). Orthogonality vs the EXISTING raw usdcnh RORO leg is the deciding gate. | residual content predicts the WRONG sign for a de-risk leg"
     },
     {
       "id": "c5_global_rates",

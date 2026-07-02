@@ -307,18 +307,34 @@ def _taper_points(s: pd.Series, recent_start: pd.Timestamp, value_fn=None) -> li
     return out
 
 
-def _leadership(close_full: pd.DataFrame, ticker: str, bench: str = "SPY") -> dict:
-    """RS vs SPY: 63d & 126d relative momentum + above-200d-trend of the ratio."""
+def _leadership(close_full: pd.DataFrame, ticker: str, bench: str = "SPY",
+                asof: pd.Timestamp | None = None) -> dict:
+    """RS vs SPY: 63d & 126d relative momentum + above-200d-trend of the ratio.
+
+    Parameters
+    ----------
+    asof : when provided, slice BOTH ticker and benchmark series to ≤ asof
+        before computing RS.  This makes historical/PIT rebuilds explicit and
+        verifiable.  In the live path `closes` is already sliced by compute(),
+        so asof is not strictly required there, but can be passed for clarity.
+    """
     if ticker not in close_full or bench not in close_full:
-        return {}
-    rs = (close_full[ticker] / close_full[bench]).dropna()
+        return {"thin_history": False}
+    t = close_full[ticker].dropna()
+    b = close_full[bench].dropna()
+    if asof is not None:
+        t = t[t.index <= asof]
+        b = b[b.index <= asof]
+    rs = (t / b.reindex(t.index).ffill()).dropna()
     if len(rs) < 210:
-        return {}
+        log.warning("_leadership: %s has only %d RS rows (< 210 min) — thin_history flagged",
+                    ticker, len(rs))
+        return {"thin_history": True, "rs_rows": len(rs)}
     m63 = float(rs.pct_change(63).iloc[-1] * 100)
     m126 = float(rs.pct_change(126).iloc[-1] * 100)
     ma200 = float(rs.rolling(200).mean().iloc[-1])
     return {"rs_63d": round(m63, 1), "rs_126d": round(m126, 1),
-            "rs_above_trend": bool(rs.iloc[-1] > ma200)}
+            "rs_above_trend": bool(rs.iloc[-1] > ma200), "thin_history": False}
 
 
 def _zz_pct_for(full: pd.Series) -> float:
@@ -576,6 +592,7 @@ def _apply_leadership(rec: dict, lead: dict) -> None:
     nw["rs_63d"] = lead.get("rs_63d")
     nw["rs_126d"] = lead.get("rs_126d")
     nw["rs_above_trend"] = lead.get("rs_above_trend")
+    nw["thin_history"] = lead.get("thin_history", False)  # W2.8: surface instead of silent drop
     up = nw["phase"] in ("Recovery", "Expansion")
     rs_strong = (lead.get("rs_63d") or 0) > 0 and lead.get("rs_above_trend")
     if up and rs_strong and nw["above200d"]:

@@ -634,6 +634,15 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — a shadow-lane crash must not abort the run
         log.error("[shadow_importance_v0] step crashed (non-fatal): %s", e)
 
+    # importance_v0 PIT-correct tape (W4) — the _pit families are the PRIMARY
+    # leak-free tape on the duel scoreboard (report_importance_duel), so they must
+    # accrue nightly alongside the W3 tape, not freeze at the one-shot backfill.
+    try:
+        from scripts.shadow_importance_v0_pit import run_as_collect_step as _shadow_impv0_pit
+        _shadow_impv0_pit()
+    except Exception as e:  # noqa: BLE001 — a shadow-lane crash must not abort the run
+        log.error("[shadow_importance_v0_pit] step crashed (non-fatal): %s", e)
+
     # news_vector daily ingest — GDELT narrative-scope accrual (keep-FIRST, additive).
     # The freshness check always runs so a stale store is never quiet. Retry-next-collect:
     # if today's fetch was rate-limited or errored, the WARNING appears in this run's log

@@ -212,25 +212,19 @@ def _read_ledger(rel: str) -> list[dict]:
     return out
 
 
-def grade(today: pd.Timestamp | None = None, write: bool = True) -> dict:
-    """Grade every matured flag survivorship-free + PIT at 30/60/90d horizons independently.
+def grade_ledger_rows(rows: list[dict], today: pd.Timestamp, themes: dict,
+                      spy: pd.Series | None) -> dict:
+    """Shared row-grading core: grade stage-carrying ledger rows survivorship-free + PIT at
+    each HORIZONS entry independently, returning pooled / by_stage / by_theme / by_horizon
+    slices. Used by grade() (live foresight + glut ledgers) and by
+    engine.foresight_shadow.grade_shadow() (per-candidate shadow slices) so the live and
+    shadow track records grade under ONE set of semantics that cannot drift (W3b review N1).
 
-    Each ledger row is graded at each horizon in HORIZONS once that horizon has matured; shorter
-    horizons yield early reads while the canonical 90d horizon accrues. The per-theme sign test
-    and BY-FDR gate run on the 90d horizon only (canonical) to avoid multiplying the FDR surface.
-    Old single-horizon rows (without a `horizons` field) are tolerated — they grade at every
-    horizon for which start+horizon < today and price data exists.
+    Each row needs theme/asof/stage (+ optional PIT `members` snapshot); its grading
+    direction comes from the stage's ROLE via _stage_direction (thesis +1 / exit -1 /
+    control None). The per-theme sign test and BY-FDR gate run on the canonical
+    HORIZON_DAYS horizon only.
     """
-    if today is None:
-        today = pd.Timestamp.now().normalize()
-    themes = (config.load() or {}).get("themes") or {}
-    spy = _closes("SPY")
-
-    # per-row direction comes from the stage's ROLE (thesis +1 / exit -1 / control None) —
-    # a blanket +1 on the whole foresight ledger would grade a RE-RATING theme that keeps
-    # running as a "hit", publishing beta as skill. Glut ledger rows stay forced exit (-1).
-    sources = [("foresight/log.jsonl", None, None), ("glut_watch/log.jsonl", "GLUT-EXIT", -1)]
-
     # per-horizon accumulators: by_stage_h[h][stage] and by_theme_h[h][theme]
     by_stage_h: dict[int, dict[str, dict]] = {h: {} for h in HORIZONS}
     by_theme_h: dict[int, dict[str, dict]] = {h: {} for h in HORIZONS}
@@ -245,69 +239,66 @@ def grade(today: pd.Timestamp | None = None, write: bool = True) -> dict:
     # per-horizon pending counts (a row pending at 30d is also pending at 60/90d)
     n_pending_h: dict[int, int] = {h: 0 for h in HORIZONS}
 
-    for rel, force_stage, force_dir in sources:
-        for e in _read_ledger(rel):
-            theme = e.get("theme")
-            asof = e.get("asof")
-            stage = force_stage or e.get("stage") or "UNKNOWN"
-            if not theme or not asof or theme not in themes:
-                continue
-            direction = force_dir if force_dir is not None else _stage_direction(stage)
-            n_total += 1
-            start = pd.Timestamp(asof)
+    for e in rows:
+        theme = e.get("theme")
+        asof = e.get("asof")
+        stage = e.get("stage") or "UNKNOWN"
+        if not theme or not asof or theme not in themes:
+            continue
+        direction = _stage_direction(stage)
+        n_total += 1
+        start = pd.Timestamp(asof)
 
-            # POINT-IN-TIME membership: the snapshot logged at flag time, else today's config
-            members = e.get("members") or (themes.get(theme) or {}).get("tickers") or []
+        # POINT-IN-TIME membership: the snapshot logged at flag time, else today's config
+        members = e.get("members") or (themes.get(theme) or {}).get("tickers") or []
 
-            mature_at_canonical = False
+        mature_at_canonical = False
 
-            for h in HORIZONS:
-                end = start + pd.Timedelta(days=h)
-                if today < end:
-                    n_pending_h[h] += 1
-                    continue   # horizon not yet matured
+        for h in HORIZONS:
+            end = start + pd.Timedelta(days=h)
+            if today < end:
+                n_pending_h[h] += 1
+                continue   # horizon not yet matured
 
-                excess = _theme_excess(members, start, end, spy)
-                if excess is None:
-                    n_pending_h[h] += 1
-                    continue   # price data not yet available — keep pending
+            excess = _theme_excess(members, start, end, spy)
+            if excess is None:
+                n_pending_h[h] += 1
+                continue   # price data not yet available — keep pending
 
-                # control-arm rows (direction None) carry NO hit — forward excess only
-                hit = None if direction is None else (excess * direction) > 0
-                sb_h = by_stage_h[h].setdefault(stage, {"n": 0, "n_dir": 0, "hits": 0, "sum_excess": 0.0})
-                tb_h = by_theme_h[h].setdefault(theme, {"n": 0, "n_dir": 0, "hits": 0, "sum_excess": 0.0})
-                for b in (sb_h, tb_h):
+            # control-arm rows (direction None) carry NO hit — forward excess only
+            hit = None if direction is None else (excess * direction) > 0
+            sb_h = by_stage_h[h].setdefault(stage, {"n": 0, "n_dir": 0, "hits": 0, "sum_excess": 0.0})
+            tb_h = by_theme_h[h].setdefault(theme, {"n": 0, "n_dir": 0, "hits": 0, "sum_excess": 0.0})
+            for b in (sb_h, tb_h):
+                b["n"] += 1
+                b["sum_excess"] += excess
+                if hit is not None:
+                    b["n_dir"] += 1
+                    b["hits"] += 1 if hit else 0
+
+            if h == HORIZON_DAYS:
+                mature_at_canonical = True
+                # populate canonical buckets (for FDR gate + legacy pooled stats)
+                sb = by_stage.setdefault(stage, {"n": 0, "n_dir": 0, "hits": 0, "sum_excess": 0.0})
+                tb = by_theme.setdefault(theme, {"n": 0, "n_dir": 0, "hits": 0, "sum_excess": 0.0, "obs": []})
+                for b in (sb, tb):
                     b["n"] += 1
                     b["sum_excess"] += excess
                     if hit is not None:
                         b["n_dir"] += 1
                         b["hits"] += 1 if hit else 0
+                # sign test / FDR run on DIRECTIONAL obs only — control arms make no
+                # skill claim, so they must not enter the significance machinery
+                if hit is not None:
+                    tb["obs"].append((start, hit))
 
-                if h == HORIZON_DAYS:
-                    mature_at_canonical = True
-                    # populate canonical buckets (for FDR gate + legacy pooled stats)
-                    sb = by_stage.setdefault(stage, {"n": 0, "n_dir": 0, "hits": 0, "sum_excess": 0.0})
-                    tb = by_theme.setdefault(theme, {"n": 0, "n_dir": 0, "hits": 0, "sum_excess": 0.0, "obs": []})
-                    for b in (sb, tb):
-                        b["n"] += 1
-                        b["sum_excess"] += excess
-                        if hit is not None:
-                            b["n_dir"] += 1
-                            b["hits"] += 1 if hit else 0
-                    # sign test / FDR run on DIRECTIONAL obs only — control arms make no
-                    # skill claim, so they must not enter the significance machinery
-                    if hit is not None:
-                        tb["obs"].append((start, hit))
-
-            # n_graded counts rows mature at the canonical horizon; n_pending counts those that
-            # have not yet matured there (regardless of shorter-horizon status)
-            if mature_at_canonical:
-                n_graded += 1
-            elif today < start + pd.Timedelta(days=HORIZON_DAYS):
-                n_pending += 1
-            else:
-                # canonical horizon elapsed but price data unavailable — pending, not graded
-                n_pending += 1
+        # n_graded counts rows mature at the canonical horizon; n_pending counts those that
+        # have not yet matured there (regardless of shorter-horizon status) — including rows
+        # whose canonical horizon elapsed but whose price data is unavailable
+        if mature_at_canonical:
+            n_graded += 1
+        else:
+            n_pending += 1
 
     def _finalize_bucket(bucket: dict) -> None:
         for b in bucket.values():
@@ -360,19 +351,56 @@ def grade(today: pd.Timestamp | None = None, write: bool = True) -> dict:
             "by_theme": by_theme_h[h],
         }
 
+    return {
+        "n_total": n_total,
+        "n_graded": n_graded,
+        "n_pending": n_pending,
+        "pooled_n_directional": pooled_n_dir,
+        "pooled_hit_rate": round(pooled_hits / pooled_n_dir, 3) if pooled_n_dir else None,
+        "pooled_ci95": _wilson(pooled_hits, pooled_n_dir),
+        "n_significant_fdr": len(sig),
+        "by_stage": by_stage,
+        "by_theme": by_theme,
+        "by_horizon": by_horizon,
+    }
+
+
+def grade(today: pd.Timestamp | None = None, write: bool = True) -> dict:
+    """Grade every matured flag survivorship-free + PIT at 30/60/90d horizons independently.
+
+    Each ledger row is graded at each horizon in HORIZONS once that horizon has matured; shorter
+    horizons yield early reads while the canonical 90d horizon accrues. The per-theme sign test
+    and BY-FDR gate run on the 90d horizon only (canonical) to avoid multiplying the FDR surface.
+    Old single-horizon rows (without a `horizons` field) are tolerated — they grade at every
+    horizon for which start+horizon < today and price data exists.
+    """
+    if today is None:
+        today = pd.Timestamp.now().normalize()
+    themes = (config.load() or {}).get("themes") or {}
+    spy = _closes("SPY")
+
+    # per-row direction comes from the stage's ROLE (thesis +1 / exit -1 / control None) —
+    # a blanket +1 on the whole foresight ledger would grade a RE-RATING theme that keeps
+    # running as a "hit", publishing beta as skill. Glut ledger rows are normalized to the
+    # forced "GLUT-EXIT" stage, whose role the shared core resolves to exit (-1).
+    rows = _read_ledger("foresight/log.jsonl")
+    rows += [dict(e, stage="GLUT-EXIT") for e in _read_ledger("glut_watch/log.jsonl")]
+
+    core = grade_ledger_rows(rows, today, themes, spy)
+
     summary = {
         "updated": str(today.date()),
         "horizons": HORIZONS,
         "horizon_days": HORIZON_DAYS,    # canonical horizon (legacy + FDR gate)
-        "n_total": n_total, "n_graded": n_graded, "n_pending": n_pending,
-        "pooled_n_directional": pooled_n_dir,
-        "pooled_hit_rate": round(pooled_hits / pooled_n_dir, 3) if pooled_n_dir else None,
-        "pooled_ci95": _wilson(pooled_hits, pooled_n_dir),
+        "n_total": core["n_total"], "n_graded": core["n_graded"], "n_pending": core["n_pending"],
+        "pooled_n_directional": core["pooled_n_directional"],
+        "pooled_hit_rate": core["pooled_hit_rate"],
+        "pooled_ci95": core["pooled_ci95"],
         "fdr_q": FDR_Q,
-        "n_significant_fdr": len(sig),
-        "by_stage": by_stage,           # canonical 90d stage buckets
-        "by_theme": by_theme,           # canonical 90d theme buckets + FDR
-        "by_horizon": by_horizon,       # per-horizon slices (30/60/90)
+        "n_significant_fdr": core["n_significant_fdr"],
+        "by_stage": core["by_stage"],       # canonical 90d stage buckets
+        "by_theme": core["by_theme"],       # canonical 90d theme buckets + FDR
+        "by_horizon": core["by_horizon"],   # per-horizon slices (30/60/90)
         "note": ("forward-only, survivorship-free (delisted members graded at their loss, no "
                  "look-ahead past a small settlement window), point-in-time basket membership. "
                  "Each flag is graded at 30/60/90d independently — shorter horizons yield early "
