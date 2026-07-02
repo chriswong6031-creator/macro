@@ -1,0 +1,350 @@
+{
+  "_meta": {
+    "panel": "stocks",
+    "trigger": "m2d_s3d",
+    "n_fires": 10286,
+    "boot": {
+      "n": 1000,
+      "alpha": 0.1,
+      "block_td": 63
+    },
+    "floors": {
+      "names": 60,
+      "blocks": 40
+    }
+  },
+  "G5a_existence": {
+    "PASS": false,
+    "n_floor_ok": true,
+    "based": {
+      "n": 6594,
+      "point": 40.598,
+      "lb90": 39.848,
+      "ub90": 41.401,
+      "n_names": 212,
+      "n_blocks": 56
+    },
+    "based_clean": {
+      "n": 6594,
+      "point": 33.743,
+      "lb90": 32.984,
+      "ub90": 34.546,
+      "n_names": 212,
+      "n_blocks": 56
+    },
+    "based_dead": {
+      "n": 6594,
+      "point": 15.863,
+      "lb90": 15.262,
+      "ub90": 16.458,
+      "n_names": 212,
+      "n_blocks": 56
+    },
+    "p2_stop5": {
+      "n": 6594,
+      "point": 40.598,
+      "lb90": 39.848,
+      "ub90": 41.401,
+      "n_names": 212,
+      "n_blocks": 56
+    },
+    "p2_clean": {
+      "n": 6594,
+      "point": 33.743,
+      "lb90": 32.984,
+      "ub90": 34.546,
+      "n_names": 212,
+      "n_blocks": 56
+    },
+    "fresh_stop5": {
+      "n": 10286,
+      "point": 40.181,
+      "lb90": 39.549,
+      "ub90": 40.791,
+      "n_names": 212,
+      "n_blocks": 56
+    },
+    "fresh_clean": {
+      "n": 10286,
+      "point": 34.912,
+      "lb90": 34.278,
+      "ub90": 35.557,
+      "n_names": 212,
+      "n_blocks": 56
+    },
+    "fresh_dead": {
+      "n": 10286,
+      "point": 14.923,
+      "lb90": 14.438,
+      "ub90": 15.393,
+      "n_names": 212,
+      "n_blocks": 56
+    },
+    "stop5_gap_ok": false,
+    "clean_gap_ok": true,
+    "ni_stop5": false,
+    "ni_clean": true,
+    "ni_dead": false,
+    "strict_superiority": false
+  },
+  "G5b_atr_honesty": {
+    "PASS": false,
+    "based_stop_atr": {
+      "n": 6594,
+      "point": 62.087,
+      "lb90": 61.318,
+      "ub90": 62.86,
+      "n_names": 212,
+      "n_blocks": 56
+    },
+    "p2_stop_atr": {
+      "n": 6594,
+      "point": 62.087,
+      "lb90": 61.318,
+      "ub90": 62.86,
+      "n_names": 212,
+      "n_blocks": 56
+    },
+    "fresh_stop_atr": {
+      "n": 10286,
+      "point": 60.558,
+      "lb90": 59.92,
+      "ub90": 61.179,
+      "n_names": 212,
+      "n_blocks": 56
+    }
+  },
+  "G5c_anecdote_independence": {
+    "PASS": false,
+    "excl_staples_hc": {
+      "based_stop5": {
+        "n": 5293,
+        "point": 41.205,
+        "lb90": 40.318,
+        "ub90": 42.066,
+        "n_names": 174,
+        "n_blocks": 56
+      },
+      "p2_stop5": {
+        "n": 5293,
+        "point": 41.205,
+        "lb90": 40.318,
+        "ub90": 42.066,
+        "n_names": 174,
+        "n_blocks": 56
+      },
+      "based_clean": {
+        "n": 5293,
+        "point": 34.121,
+        "lb90": 33.296,
+        "ub90": 34.912,
+        "n_names": 174,
+        "n_blocks": 56
+      },
+      "p2_clean": {
+        "n": 5293,
+        "point": 34.121,
+        "lb90": 33.296,
+        "ub90": 34.912,
+        "n_names": 174,
+        "n_blocks": 56
+      },
+      "ok": false
+    },
+    "excl_2025": {
+      "based_stop5": {
+        "n": 6161,
+        "point": 40.464,
+        "lb90": 39.687,
+        "ub90": 41.266,
+        "n_names": 212,
+        "n_blocks": 53
+      },
+      "p2_stop5": {
+        "n": 6161,
+        "point": 40.464,
+        "lb90": 39.687,
+        "ub90": 41.266,
+        "n_names": 212,
+        "n_blocks": 53
+      },
+      "based_clean": {
+        "n": 6161,
+        "point": 33.874,
+        "lb90": 33.079,
+        "ub90": 34.638,
+        "n_names": 212,
+        "n_blocks": 53
+      },
+      "p2_clean": {
+        "n": 6161,
+        "point": 33.874,
+        "lb90": 33.079,
+        "ub90": 34.638,
+        "n_names": 212,
+        "n_blocks": 53
+      },
+      "ok": false
+    }
+  },
+  "G5d_baskets_oos": {
+    "PASS": true,
+    "based_stop5": {
+      "n": 44952,
+      "point": 45.985,
+      "lb90": 45.675,
+      "ub90": 46.296,
+      "n_names": 2334,
+      "n_blocks": 44
+    },
+    "p2_stop5": {
+      "n": 44952,
+      "point": 45.985,
+      "lb90": 45.675,
+      "ub90": 46.296,
+      "n_names": 2334,
+      "n_blocks": 44
+    },
+    "dir_ok": true,
+    "n_ok": true,
+    "halves_same_sign": "True"
+  },
+  "G5e_launched_control_and_jnj": {
+    "PASS": false,
+    "launched_stop5": {
+      "n": 7958,
+      "point": 40.324,
+      "lb90": 39.597,
+      "ub90": 41.046,
+      "n_names": 212,
+      "n_blocks": 57
+    },
+    "launched_clean": {
+      "n": 7958,
+      "point": 33.777,
+      "lb90": 33.035,
+      "ub90": 34.522,
+      "n_names": 212,
+      "n_blocks": 57
+    },
+    "fresh_stop5": {
+      "n": 10286,
+      "point": 40.181,
+      "lb90": 39.549,
+      "ub90": 40.791,
+      "n_names": 212,
+      "n_blocks": 56
+    },
+    "fresh_clean": {
+      "n": 10286,
+      "point": 34.912,
+      "lb90": 34.278,
+      "ub90": 35.557,
+      "n_names": 212,
+      "n_blocks": 56
+    },
+    "control_ok": false,
+    "jnj_fixture_ok": true,
+    "jnj_msg": "JNJ@2026-06-05 i=16214 first_launch_off=6 OBP@j-i=7=True E_BASED_off=None E_RETEST_off=None -> PASS (excluded before launch via OB-persist)"
+  },
+  "G5f_h2_distinction": {
+    "PASS": true,
+    "evaluated": false,
+    "pooled_gap": 0.0,
+    "note": "not evaluated (pooled |gap| < 2pp)"
+  },
+  "G5g_per_name_majority": {
+    "PASS": true,
+    "deep": {
+      "frac": 1.0,
+      "n_names_qualifying": 212,
+      "threshold": 0.55,
+      "half_a_frac": 1.0,
+      "half_a_n": 106,
+      "half_b_frac": 1.0,
+      "half_b_n": 106,
+      "ticker_half_stable": true,
+      "pass": true
+    },
+    "baskets": {
+      "frac": 1.0,
+      "n_names_qualifying": 2323,
+      "threshold": 0.52,
+      "half_a_frac": 1.0,
+      "half_a_n": 1162,
+      "half_b_frac": 1.0,
+      "half_b_n": 1161,
+      "ticker_half_stable": true,
+      "pass": true
+    }
+  },
+  "G5i_placebo": {
+    "PASS": false,
+    "based_stop5": {
+      "n": 6594,
+      "point": 40.598,
+      "lb90": 39.848,
+      "ub90": 41.401,
+      "n_names": 212,
+      "n_blocks": 56
+    },
+    "dip7_stop5": {
+      "n": 6594,
+      "point": 20.109,
+      "lb90": 19.452,
+      "ub90": 20.766,
+      "n_names": 212,
+      "n_blocks": 57
+    },
+    "based_clean": {
+      "n": 6594,
+      "point": 33.743,
+      "lb90": 32.984,
+      "ub90": 34.546,
+      "n_names": 212,
+      "n_blocks": 56
+    },
+    "dip7_clean": {
+      "n": 6594,
+      "point": 48.665,
+      "lb90": 47.816,
+      "ub90": 49.527,
+      "n_names": 212,
+      "n_blocks": 57
+    }
+  },
+  "G5j_definitional_stability": {
+    "PASS": false,
+    "note": "3x3 sweep requires re-run under alternate knobs; harness stub records verdict-sign check to be filled by the full sweep runner (not on selftest)."
+  },
+  "G5r_retest": {
+    "PASS": false,
+    "retest_stop5": {
+      "n": 2405,
+      "point": 40.873,
+      "lb90": 39.65,
+      "ub90": 42.218,
+      "n_names": 212,
+      "n_blocks": 57
+    },
+    "retest_clean": {
+      "n": 2405,
+      "point": 33.306,
+      "lb90": 32.042,
+      "ub90": 34.588,
+      "n_names": 212,
+      "n_blocks": 57
+    },
+    "non_inferior_fresh": false,
+    "non_inferior_based": false,
+    "overlap_frac": 0.1331,
+    "overlap_ok": true,
+    "jnj_fixture_ok": true
+  },
+  "SHIP": {
+    "based_chip": false,
+    "retest_marker": false,
+    "g5j_folded_in": false,
+    "note": "NOT FINAL: G5j (3x3 maxup x trough sign-stability) is deferred to the external sweep runner and is NOT in `based_gates`, so this `based_chip` is provisional \u2014 the runner MUST fold in the G5j sweep result before treating SHIP as final. \u00a76 requires the BASED chip iff G5a-G5j; this file evaluates G5a-G5i only."
+  }
+}

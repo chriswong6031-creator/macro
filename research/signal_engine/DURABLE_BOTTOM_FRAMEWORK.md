@@ -418,3 +418,18 @@ RSI-MACD cross × 3D-stoch leg × weekly/RSI gates) on a name currently COILED, 
 Ships as **display chip + forward-ledger fields ONLY on US + CN** (no rank/bonus change — the
 ledger grades the marker live before it earns weight, per pre-registration). HK still gets
 nothing. Fold-2-style violent mean-reversion regimes are the marker's watch item.
+
+**Wave-5 results (2026-07-02, harness `wave5.py`, prereg `WAVE5_PREREG.md` v2, deep+baskets panels):**
+
+| date | candidate | verdict | numbers | where |
+|---|---|---|---|---|
+| 2026-07-02 | **BASED chip** (E_BASED = first j≥i+7 with BASED_j, m2d_s3d, deep) | **NO-SHIP — the state collapses onto its own parent** | **E_BASED ≡ P2 byte-identical on every axis, split, stratum, both triggers, both panels** (BASED_{i+7} = P2 admission condition by construction → E_BASED always enters at i+7 = P2). stocks n=6,594: stop5 40.60==P2 40.60 (gap 0.0pp, G5a needs ≤−3pp), clean15 33.74; vs FRESH mildly Pareto-INFERIOR (stop5 +0.42pp, clean15 −1.17pp → strict_superiority=false). G5a/G5b/G5c/G5e/G5i FAIL; G5j NOT RUN; G5d/G5f/G5g "pass" only because Δ=0 (hollow). Dropout: 33.3% launched by i+7, 2.6% broke; informative-dropout set EMPTY (every P2-eligible fire is BASED at i+7) | WAVE5_REPORT.md §2/§6 |
+| 2026-07-02 | **RETEST marker** (E_RETEST, frozen 2D re-cross, co-primary) | **NO-SHIP — misses tightened non-inferiority** | n=2,405 (overlap w/ incumbent 13.3% ✓, JNJ fixture ✓). stop5 40.87 vs FRESH+0.5=40.68 → over by 0.19pp (ni_fresh=false); clean15 33.31 vs FRESH−1=33.91 → under 0.60pp; ni_based=false. G5r FAIL. A genuinely distinct policy (not an identity) — a differently-parameterized retest is NOT falsified; the frozen §3 params (live blockers removed, RSI14<65+launch/broken/OB guard added) do not clear the tightened bar. 23.8% 2D provisional-repaint hazard | WAVE5_REPORT.md §6 |
+| 2026-07-02 | **BASED mechanism falsification** | **the operationalization, not the intuition, failed** | the pre-registered BASED_j state has no predicate beyond "didn't launch, didn't break" → co-extensive with the 7-day survival option (P2), which is itself mildly Pareto-inferior to entering fresh at i+1. Owner's KO/MCD "held base" intuition (advance/reclaim/level-content) is NOT isolated by this state. A wave-6 must add a DISTINGUISHING predicate (tightness or advance/level condition NOT co-extensive with survival-to-7) or it re-collapses onto P2. KM curve: bases convert to launches monotonically to i+30 (no i+24 plateau → window-extension unsupported, amendment #27 not activated) | WAVE5_REPORT.md §2/§5/§9 |
+| 2026-07-02 | Wave-5 descriptives | recorded | visibility-at-liftoff: incumbent gate blind to 67.8% of clean liftoffs (BASED framing MORE blind, 76.9%); natural re-trigger 77.6% of BASED windows already contain a fresh incumbent T1/T2/T3 re-fire (gate self-heals); anchor-divergence median 2.0 bars, only 6.1% >2-bar (ship_blocked=false, moot — nothing ships) | WAVE5_REPORT.md §8 |
+
+**Wave-5 ship record (2026-07-02):** **NOTHING SHIPS.** BASED chip fails G5a/b/c/e/i (+G5j not run);
+RETEST marker fails G5r. No `engine/coiled.py` / `build_stock_library.py` / `grade_us_board.py` /
+`dashboard.html.j2` touch triggered. `BUYABLE_TIERS`/`setups.json`/discovery gating untouched. The
+"basing after confluence" candidate is FALSIFIED *as operationalized* — the state carries zero
+selection over surviving 7 days. Re-open only via a wave-6 with a distinguishing BASED predicate.

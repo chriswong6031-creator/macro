@@ -1,0 +1,40 @@
+{
+  "_meta": {
+    "panel": "stocks",
+    "n_fires": 10286,
+    "trigger": "m2d_s3d"
+  },
+  "visibility_at_liftoff": {
+    "n_fresh_clean15": 3591,
+    "fresh_liftoff_invisible_frac": 0.6784,
+    "fresh_liftoff_n": 3591,
+    "based_liftoff_invisible_frac": 0.7688,
+    "based_liftoff_n": 6591,
+    "note": "tier_stream completed-bucket basis (\u00a77.12); liftoff = first close>=1.05*trailing-min"
+  },
+  "natural_retrigger": {
+    "n_based_windows": 6594,
+    "retrigger_frac": 0.776,
+    "note": "fresh incumbent T1/T2/T3 re-fire inside [i+7,i+24] (self-heal)"
+  },
+  "live_board_sizing": {
+    "surfaced_universe_size": 0,
+    "note": "sizing is owner-review only; full surfaced-vs-upstream-excluded split is produced by the ship-PR against the live board. Standouts json NOT found (run after render)"
+  },
+  "anchor_divergence": {
+    "n_live": 98,
+    "n_compared": 98,
+    "median_bar_delta": 2.0,
+    "frac_bar_delta_gt2": 0.0612,
+    "ext_delta": {
+      "median": -0.01365,
+      "mean": 0.1735,
+      "p10": -0.04882,
+      "p90": 0.01091,
+      "abs_median": 0.01808,
+      "frac_abs_gt_0p05": 0.1531
+    },
+    "ship_blocked": false,
+    "rule": ">2-bar disagreement on >20% of live names blocks ship (\u00a74 anchor study)"
+  }
+}
