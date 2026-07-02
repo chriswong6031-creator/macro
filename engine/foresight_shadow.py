@@ -11,20 +11,21 @@ shadow-grid candidate (varying ONE parameter at a time from the live values) and
 rows to ``data/foresight/shadow_log.jsonl``.  ``grade_shadow`` grades those rows exactly
 like live rows (same horizons, same survivorship, same stage-role semantics) into a
 separate ``data/foresight/shadow_track_record.json``, keyed by (param, candidate).
-``shadow_promotion_report`` compares each candidate's graded slice against the live slice
-and reports PROMOTABLE only on FDR-significant superiority.
+``shadow_promotion_report`` compares each candidate's POOLED slice against the live slice
+via a one-sided Fisher's exact test, with Benjamini-Yekutieli FDR applied ONCE across the
+whole candidate family, and reports PROMOTABLE only on family-FDR-significant superiority.
 
-SCHEMA DECISION (lang_z migration):
-  The W1a ``_shadow_log_cutoffs`` in ``engine/bottleneck.py`` writes *band-level* rows
-  (``cutoff``, ``would_be_band``, ``lang_accel``, ``n_filers``) to the same file.  Those
-  rows describe per-theme band variants, not per-theme STAGE variants, and are consumed by
-  the bottleneck grader rather than the cascade grader.  We do NOT supersede them: their
-  schema is deliberately different (band, not stage) and they serve a different consumer.
-  This module writes STAGE rows; bottleneck.py writes BAND rows.  Both live in
-  ``shadow_log.jsonl`` but are distinguished by the presence of the ``stage`` field (new)
-  vs ``would_be_band`` field (old).  The old rows are ignored by ``grade_shadow`` and
-  ``shadow_promotion_report``; new rows are ignored by any bottleneck-level consumer.
-  No double-logging of the same information; no silent schema collision.
+SCHEMA DECISION (W3b review N2 — file split):
+  The W1a band-level shadow rows (``cutoff``, ``would_be_band``) now live in their OWN
+  file, ``data/foresight/shadow_bands_log.jsonl`` (written by ``engine/bottleneck.py``).
+  This module owns ``shadow_log.jsonl`` (STAGE rows). The two schemas never share a file,
+  so no consumer needs defensive filtering. Historical mixed rows in shadow_log.jsonl
+  from before the split are tolerated by the reader (field-presence filter).
+
+NOTE (W3b review N1): the grading LOOP in ``_grade_rows`` is currently a copy of
+``foresight_grader.grade()``'s core (the statistical helpers ARE imported, not copied).
+Extracting a shared helper is tracked as a follow-up — any change to grading semantics
+MUST be applied in both places until then.
 """
 from __future__ import annotations
 
@@ -124,38 +125,52 @@ def _stage_under_candidate(
         return stage
 
     if param == "lang_z_cutoff":
-        # Vary the language-leg z-cutoff that determines whether a text-only accel
-        # crosses the TIGHT(text) threshold.  This requires rebuilding the bottleneck
-        # band for the theme under the shadow cutoff, then calling _stage.
-        # We read from bn_theme (already computed for this theme under the live cutoff);
-        # the ONLY thing we vary is the band classification for text-only themes.
+        # Vary the language-leg z-cutoff — FAITHFUL re-derivation of the live band
+        # logic (review B3: the previous approximation (a) lost the NUMERIC base band,
+        # so a live text-lifted theme stayed "(text)" even when the candidate cutoff
+        # would revert it to its numeric band, and (b) compared the RAW accel where
+        # the live engine compares the [-2,2]-CLIPPED z — both biased the calibration
+        # toward text-bands). Mirrors engine/bottleneck.py exactly:
+        #   language-only theme: lang_z > cutoff -> TIGHT (text); > 0 -> TIGHTENING
+        #                        (text); else NEUTRAL (all gated >= LANG_MIN_FILERS)
+        #   numeric theme      : base = numeric_band; a gated language read may lift a
+        #                        non-TIGHT base to TIGHT (text) iff clipped lang_z >
+        #                        cutoff — never to a plain numeric band (anti-laundering)
         if bn_theme is None:
             stage, _ = _stage(None, rv_theme, glut_band)
             return stage
 
-        # If the theme is not text-only under either live or shadow, the lang_z_cutoff
-        # variant only affects text-only path — numeric bands are unaffected.
-        text_only = bn_theme.get("text_only", False)
-        lang_accel = bn_theme.get("language_accel")
+        from engine.bottleneck import LANG_MIN_FILERS
+        lang_z = (bn_theme.get("leg6_detail") or {}).get("value")   # CLIPPED z, as live
         n_filers = bn_theme.get("language_n_filers", 0)
+        numeric_band = bn_theme.get("numeric_band")
 
-        if not text_only and lang_accel is None:
-            # numeric theme with no language signal — shadow cutoff has no effect
-            stage, _ = _stage(bn_theme, rv_theme, glut_band)
+        if lang_z is None or n_filers < LANG_MIN_FILERS:
+            # no gated language signal — the cutoff has no effect; the band is the
+            # numeric read (or the live band for themes with no legs at all)
+            base = dict(bn_theme, band=numeric_band or bn_theme.get("band"))
+            stage, _ = _stage(base, rv_theme, glut_band)
             return stage
 
-        # Rebuild the text-only band under the shadow cutoff
-        from engine.bottleneck import LANG_MIN_FILERS
-        shadow_bn = dict(bn_theme)
-        if lang_accel is not None and n_filers >= LANG_MIN_FILERS:
-            if lang_accel > candidate:
+        if numeric_band is None:
+            # language-only pass (unmapped theme): the text-only _band rules
+            if lang_z > candidate:
                 shadow_band = "TIGHT (text)"
-            elif lang_accel > 0:
+            elif lang_z > 0:
                 shadow_band = "TIGHTENING (text)"
             else:
                 shadow_band = "NEUTRAL"
+        elif numeric_band in ("TIGHT", "SOLD_OUT"):
+            # numeric legs already confirm — language cannot change the band
+            shadow_band = numeric_band
+        elif lang_z > candidate:
+            # language lifts a non-TIGHT numeric base to the text variant only
+            shadow_band = "TIGHT (text)"
         else:
-            shadow_band = bn_theme.get("band", "AWAITING_DATA")
+            # candidate cutoff above the theme's lang_z — the lift reverts to the
+            # true numeric band (the base the old approximation had lost)
+            shadow_band = numeric_band
+
         shadow_bn = dict(bn_theme, band=shadow_band)
         stage, _ = _stage(shadow_bn, rv_theme, glut_band)
         return stage
@@ -524,12 +539,42 @@ def _grade_rows(
 # Promotion report
 # ---------------------------------------------------------------------------
 
+def _fisher_exact_greater(c_hits: int, c_n: int, l_hits: int, l_n: int) -> float | None:
+    """One-sided Fisher's exact test: P(candidate hit-rate <= live | H0 same rate)
+    small = evidence the CANDIDATE is genuinely better than LIVE.
+
+    Hypergeometric upper tail via math.comb — no scipy dependency (matches the
+    grader's from-scratch _binom_sf convention). This is the candidate-vs-live test
+    the promotion rule requires (review B2: the old code consumed the per-theme
+    binomial-vs-COINFLIP p-value, which tests the wrong hypothesis — a candidate can
+    beat a coin while being indistinguishable from live).
+
+    Honesty note: the candidate and live slices grade overlapping flags, so the
+    independence assumption is approximate; the family-wide Benjamini-Yekutieli gate
+    (dependence-robust) is what makes the overall promotion rule defensible."""
+    import math
+    if min(c_n, l_n) <= 0:
+        return None
+    N, K, n = c_n + l_n, c_hits + l_hits, c_n
+    denom = math.comb(N, n)
+    if denom == 0:
+        return None
+    lo = max(0, n - (N - K))
+    hi = min(K, n)
+    p = sum(math.comb(K, k) * math.comb(N - K, n - k)
+            for k in range(max(c_hits, lo), hi + 1)) / denom
+    return min(1.0, max(0.0, p))
+
+
 def shadow_promotion_report(shadow_summary: dict | None = None) -> dict:
     """For each param, compare each shadow candidate's graded slice vs the live slice.
 
-    A candidate is PROMOTABLE only when its thesis-stage hit-rate beats live with
-    BY-FDR significance (``_fdr_significant`` from foresight_grader).  The report
-    documents evidence only — parameters NEVER auto-change.
+    A candidate is PROMOTABLE only when its POOLED thesis-stage hit-rate beats live
+    under a one-sided Fisher's exact test, with Benjamini-Yekutieli FDR applied ONCE
+    across the ENTIRE candidate family (review B1: per-candidate FDR with m=1 applies
+    no multiplicity penalty at all — six candidates at p=0.09 would all fire; the
+    family-wide gate promotes zero of them). The report documents evidence only —
+    parameters NEVER auto-change.
 
     When the ledger is sparse/empty (typical for ~30 days after a fresh deployment),
     the report honestly says "accruing, n=0" for each candidate rather than
@@ -560,6 +605,15 @@ def _promotion_report_inner(shadow_summary: dict | None) -> dict:
     candidates_report: list[dict] = []
     total_directional = live_n_dir
 
+    # PASS 1 — collect stats + ONE candidate-vs-live p-value per (param, candidate).
+    # The test is a one-sided Fisher's exact on the POOLED directional slices
+    # (candidate hits/n vs live hits/n) — the hypothesis the promotion rule actually
+    # claims (review B2). All p-values go into a SINGLE family dict so the BY-FDR
+    # correction spans the whole grid (review B1: per-candidate FDR with m=1 is no
+    # correction at all).
+    live_hits = round((live_hit_rate or 0.0) * live_n_dir) if live_n_dir else 0
+    family_pvals: dict[str, float] = {}
+    staged: list[dict] = []
     for param, candidates in SHADOW_GRID.items():
         live_val = _live_value(param)
         for candidate in candidates:
@@ -571,66 +625,58 @@ def _promotion_report_inner(shadow_summary: dict | None) -> dict:
             total_directional = max(total_directional, n_dir)
 
             accruing = n_dir == 0 or live_n_dir == 0
+            p_value = None
+            if not accruing and hit_rate is not None and live_hit_rate is not None:
+                c_hits = round(hit_rate * n_dir)
+                if candidate != live_val and hit_rate > live_hit_rate:
+                    p_value = _fisher_exact_greater(c_hits, n_dir, live_hits, live_n_dir)
+                    if p_value is not None:
+                        family_pvals[key] = p_value
+            staged.append({
+                "key": key, "param": param, "candidate": candidate,
+                "live_value": live_val, "n_graded": n_graded, "n_dir": n_dir,
+                "hit_rate": hit_rate, "accruing": accruing, "p_value": p_value,
+            })
 
-            # Promotion check: needs FDR-significant superiority of thesis hit-rate vs live.
-            # Build p-values: for each theme in the candidate slice that also has live data,
-            # compare hits via a one-sided binomial sign test (candidate better than live).
-            # Only possible when BOTH slices have directional observations.
+    # PASS 2 — ONE family-wide BY-FDR call over every candidate-vs-live comparison,
+    # then verdicts. PROMOTABLE requires membership in the corrected set.
+    sig_keys = _fdr_significant(family_pvals)
+    for st in staged:
+        fdr_sig = st["key"] in sig_keys
+        if st["accruing"]:
             verdict = "ACCRUING"
-            fdr_sig = False
-            if not accruing:
-                # Compare per-theme hit-rates between candidate and live using FDR
-                # Each theme's "improvement" = candidate hits/n_dir > live hits/n_dir
-                # We use a proportion-based test: candidate hit_rate > live hit_rate
-                # with significance via the candidate slice's per-theme FDR.
-                # Specifically: a candidate is PROMOTABLE when it has thesis hit-rate
-                # strictly above live AND its pooled_n_directional FDR significance
-                # is demonstrated by at least one theme with p < FDR threshold.
-                from engine.foresight_grader import FDR_Q
-                cand_by_theme = sl.get("by_theme") or {}
-                live_by_theme = live_slice.get("by_theme") or {}
-                # Collect p-values for themes where candidate has more hits than live
-                pvals: dict[str, float] = {}
-                for t, cb in cand_by_theme.items():
-                    lb = live_by_theme.get(t)
-                    if cb.get("n_dir", 0) > 0 and lb and lb.get("n_dir", 0) > 0:
-                        c_rate = cb.get("hit_rate") or 0.0
-                        l_rate = lb.get("hit_rate") or 0.0
-                        if c_rate > l_rate and cb.get("p_value") is not None:
-                            pvals[t] = cb["p_value"]
-                sig_themes = _fdr_significant(pvals)
-                fdr_sig = len(sig_themes) > 0
+        elif st["hit_rate"] is None or live_hit_rate is None:
+            verdict = "ACCRUING"
+        elif st["candidate"] == st["live_value"]:
+            verdict = "LIVE"
+        elif st["hit_rate"] > live_hit_rate and fdr_sig:
+            verdict = "PROMOTABLE"
+        elif st["hit_rate"] > live_hit_rate:
+            verdict = "BETTER_NOT_SIGNIFICANT"
+        elif st["hit_rate"] < live_hit_rate:
+            verdict = "WORSE"
+        else:
+            verdict = "EQUAL"
 
-                # Pooled verdict
-                if hit_rate is not None and live_hit_rate is not None:
-                    if hit_rate > live_hit_rate and fdr_sig:
-                        verdict = "PROMOTABLE"
-                    elif hit_rate > live_hit_rate:
-                        verdict = "BETTER_NOT_SIGNIFICANT"
-                    elif hit_rate < live_hit_rate:
-                        verdict = "WORSE"
-                    else:
-                        verdict = "EQUAL"
-                else:
-                    verdict = "ACCRUING"
-
-            entry = {
-                "param": param,
-                "candidate": candidate,
-                "live_value": live_val,
-                "is_live": candidate == live_val,
-                "n_graded": n_graded,
-                "n_directional": n_dir,
-                "hit_rate": hit_rate,
-                "live_hit_rate": live_hit_rate,
-                "live_n_directional": live_n_dir,
-                "fdr_significant": fdr_sig,
-                "verdict": verdict,
-                "accruing": accruing,
-            }
-            candidates_report.append(entry)
-            if verdict == "PROMOTABLE":
-                promotable[key] = entry
+        entry = {
+            "param": st["param"],
+            "candidate": st["candidate"],
+            "live_value": st["live_value"],
+            "is_live": st["candidate"] == st["live_value"],
+            "n_graded": st["n_graded"],
+            "n_directional": st["n_dir"],
+            "hit_rate": st["hit_rate"],
+            "live_hit_rate": live_hit_rate,
+            "live_n_directional": live_n_dir,
+            "p_value_vs_live": st["p_value"],
+            "n_family_comparisons": len(family_pvals),
+            "fdr_significant": fdr_sig,
+            "verdict": verdict,
+            "accruing": st["accruing"],
+        }
+        candidates_report.append(entry)
+        if verdict == "PROMOTABLE":
+            promotable[st["key"]] = entry
 
     report = {
         "generated": datetime.now(timezone.utc).isoformat(),
@@ -643,10 +689,14 @@ def _promotion_report_inner(shadow_summary: dict | None) -> dict:
         "candidates": candidates_report,
         "note": (
             "PARAMETERS NEVER AUTO-CHANGE. A candidate is PROMOTABLE only when its "
-            "thesis-stage hit-rate beats the live slice with BY-FDR significance. "
-            "Promotion requires a logged, dated, human-approved event. "
-            "Accruing = insufficient directional observations (typical for ~30 days). "
-            "Evidence accrues via the same grading machinery as the live desk."
+            "pooled thesis-stage hit-rate beats the live slice under a one-sided "
+            "Fisher's exact test, with Benjamini-Yekutieli FDR applied ONCE across "
+            "the entire candidate family (multiplicity across the grid is corrected; "
+            "6 dice rolls cannot fake a promotion). The candidate/live slices grade "
+            "overlapping flags, so Fisher's independence is approximate — BY's "
+            "dependence-robustness is the backstop. Promotion requires a logged, "
+            "dated, human-approved event. Accruing = insufficient directional "
+            "observations (typical for ~30 days)."
         ),
     }
     return report

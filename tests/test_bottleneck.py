@@ -211,8 +211,8 @@ def test_shadow_log_rows_written_for_3_cutoffs(monkeypatch, tmp_path):
     # lang_accel=1.2 is above the 1.0 cutoff but below 1.5 and 2.0
     bn._shadow_log_cutoffs("memory_storage", "2026-07-02", lang_accel=1.2, n_filers=3)
 
-    p = tmp_path / "foresight" / "shadow_log.jsonl"
-    assert p.exists(), "shadow_log.jsonl was not created"
+    p = tmp_path / "foresight" / "shadow_bands_log.jsonl"
+    assert p.exists(), "shadow_bands_log.jsonl was not created"
     rows = [json.loads(l) for l in p.read_text().splitlines() if l.strip()]
     assert len(rows) == 3, f"expected 3 shadow rows, got {len(rows)}"
     cutoffs = sorted(r["cutoff"] for r in rows)

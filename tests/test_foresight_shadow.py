@@ -577,3 +577,102 @@ def test_shadow_report_note_says_no_auto_change(monkeypatch, tmp_path):
     assert "NEVER AUTO-CHANGE" in grade.get("note", "") or \
            "NEVER AUTO-CHANGE" in grade.get("note", "").upper(), \
         "shadow track record note must state parameters never auto-change"
+
+
+# ---------------------------------------------------------------------------
+# W3b review-fix regression tests (B1 family-FDR, B2 candidate-vs-live, B3 fidelity)
+# ---------------------------------------------------------------------------
+
+def _slice(n_dir, hit_rate):
+    hits = round(hit_rate * n_dir)
+    return {
+        "n_graded": n_dir, "n_pending": 0,
+        "pooled_n_directional": n_dir, "pooled_hit_rate": hit_rate,
+        "n_significant_fdr": 0, "by_stage": {},
+        "by_theme": {"memory_storage": {
+            "n": n_dir, "n_dir": n_dir, "hits": hits, "hit_rate": hit_rate,
+            "p_value": 0.09, "significant_fdr": False, "n_independent": n_dir,
+            "avg_excess_pct": 1.0, "ci95": [0.3, 0.9]}},
+        "by_horizon": {},
+    }
+
+
+def test_family_fdr_six_marginal_candidates_promote_zero():
+    """REVIEW B1 REGRESSION: six candidates each marginally better than live must
+    promote ZERO under the family-wide BY-FDR — per-candidate FDR with m=1 would
+    have fired all six (the '6 dice rolls fake a PROMOTABLE' failure)."""
+    from engine.foresight_shadow import shadow_promotion_report, SHADOW_GRID
+    slices = {"live": _slice(30, 0.50)}
+    for param, cands in SHADOW_GRID.items():
+        for c in cands:
+            # marginally better: 19/30 vs 15/30 — Fisher one-sided p ≈ 0.15-0.2,
+            # never family-FDR significant across 6 comparisons
+            slices[f"{param}|{c}"] = _slice(30, 0.6333)
+    report = shadow_promotion_report({"slices": slices})
+    assert report["promotable"] == {}, (
+        f"marginal candidates promoted: {list(report['promotable'])}")
+    verdicts = {c["verdict"] for c in report["candidates"] if not c["is_live"]}
+    assert "BETTER_NOT_SIGNIFICANT" in verdicts
+    assert "PROMOTABLE" not in verdicts
+
+
+def test_candidate_vs_live_test_not_coinflip():
+    """REVIEW B2 REGRESSION: the promotion test is candidate-vs-LIVE, not
+    candidate-vs-coinflip. A candidate that crushes a coin (0.9 hit-rate) but with a
+    live slice at 0.85 and tiny n must NOT be significant."""
+    from engine.foresight_shadow import shadow_promotion_report
+    slices = {"live": _slice(20, 0.85), "lang_z_cutoff|1.0": _slice(20, 0.90)}
+    report = shadow_promotion_report({"slices": slices})
+    entry = [c for c in report["candidates"]
+             if c["param"] == "lang_z_cutoff" and c["candidate"] == 1.0][0]
+    assert entry["verdict"] in ("BETTER_NOT_SIGNIFICANT",), entry
+    assert entry["p_value_vs_live"] is not None and entry["p_value_vs_live"] > 0.10
+
+
+def test_fisher_exact_greater_sanity():
+    """Fisher helper: overwhelming superiority → tiny p; equality → p ~ large."""
+    from engine.foresight_shadow import _fisher_exact_greater
+    p_strong = _fisher_exact_greater(28, 30, 10, 30)   # 93% vs 33%
+    p_equal = _fisher_exact_greater(15, 30, 15, 30)
+    assert p_strong is not None and p_strong < 0.001
+    assert p_equal is not None and p_equal > 0.4
+    assert _fisher_exact_greater(1, 0, 5, 10) is None  # degenerate n
+
+
+def test_lang_z_shadow_reverts_to_numeric_band(monkeypatch, tmp_path):
+    """REVIEW B3 REGRESSION (numeric-lift path): a theme text-lifted live must revert
+    to its NUMERIC band (not a '(text)' variant) when the candidate cutoff exceeds
+    its clipped lang_z."""
+    from engine.foresight_shadow import _stage_under_candidate
+    bn_theme = {
+        "band": "TIGHT (text)", "text_only": True,       # live: lifted
+        "numeric_band": "TIGHTENING", "numeric_composite": 0.55,
+        "leg6_detail": {"value": 1.2}, "language_n_filers": 3,
+        "language_accel": 1.2,
+    }
+    rv_theme = {"breadth": 0.30, "level_state": "POSITIVE"}
+    # candidate 2.0 > lang_z 1.2 → the lift dissolves; band = numeric TIGHTENING →
+    # stage must NOT be a (text) thesis stage
+    stage = _stage_under_candidate("lang_z_cutoff", 2.0, bn_theme, rv_theme, None, {})
+    assert "(text)" not in stage, f"lift did not revert to numeric band: {stage}"
+
+
+def test_lang_z_shadow_uses_clipped_z_not_raw_accel(monkeypatch):
+    """REVIEW B3 REGRESSION (clip boundary): raw accel 3.0 clips to 2.0; at candidate
+    2.0 the live engine compares 2.0 > 2.0 = False → no TIGHT (text). The shadow must
+    agree (the old code compared raw 3.0 > 2.0 = True)."""
+    from engine.foresight_shadow import _stage_under_candidate
+    # stage-observable on the NUMERIC-LIFT path: clipped 2.0 > candidate 2.0 = False
+    # -> lift dissolves -> numeric TIGHTENING (non-thesis). Old code compared RAW
+    # 3.0 > 2.0 = True -> TIGHT (text) -> fake text thesis stage.
+    bn_theme = {
+        "band": "TIGHT (text)", "text_only": True,          # live: lifted
+        "numeric_band": "TIGHTENING", "numeric_composite": 0.55,
+        "leg6_detail": {"value": 2.0},                       # clipped z
+        "language_accel": 3.0,                               # raw accel
+        "language_n_filers": 3,
+    }
+    rv_theme = {"breadth": 0.05, "level_state": "FLAT_LOW"}
+    stage = _stage_under_candidate("lang_z_cutoff", 2.0, bn_theme, rv_theme, None, {})
+    assert "(text)" not in stage, (
+        f"shadow compared raw accel instead of clipped z: {stage}")
