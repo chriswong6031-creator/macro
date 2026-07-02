@@ -1001,6 +1001,48 @@ REGISTRY: list[dict] = [
          wired="not shipped — transmission read / display context (CONTEXT)",
          extra=[("FX per-pair", "all fail DSR (best USDCAD 0.86)"),
                 ("lead/lag survivors", "5 split-half stable, ALL lag-1 (timezone)")]),
+    _row("European luxury → China-consumer read-through  (C7 — EW basket LVMUY+RMS.PA+CFR.SW)",
+         "欧洲奢侈品 → 中国消费者读透（C7 — 等权组合 LVMUY+RMS.PA+CFR.SW）", "China / Intl", "display",
+         why="W4-C7 VERDICT: CONTEXT — do NOT wire. The EW luxury basket (LVMUY ADR ~20y + "
+             "RMS.PA/CFR.SW ~5y locals) rolling-return trend-turn signal carries NO statistically "
+             "significant LEAD over FXI forward drawdowns at the declared 21d horizon. Lead-lag "
+             "kernel: lag=0 strongly significant (t=11.75, contemporaneous same-session co-movement "
+             "— luxury and FXI trade in overlapping US hours), but NO lagged link survives BH-FDR "
+             "(lag=1: t=−1.49, p=0.14; lag=2/5: not significant). This is a TRANSMISSION READ: "
+             "luxury and the Chinese consumer co-move in real-time, but the luxury basket does NOT "
+             "lead FXI at any lag that survives multiple-testing correction. Strategy DSR=0.16 (far "
+             "below the 0.90 door). Drawdown-reduction gate FAILS on Calmar: the flat-out-of-FXI "
+             "overlay has negative Calmar (−0.008) while B&H FXI is positive (+0.045), meaning the "
+             "strategy loses money while sitting out FXI recovery periods. Earnings-print excision: "
+             "271 bars NaN'd (±2td around LVMH/Hermès/Richemont prints — causal method). "
+             "Effective-N honesty: LVMUY has 4 crisis windows (20y), but the full 3-leg basket "
+             "window covers only 1 declared crisis (rate_22) — the bias toward LVMUY's own momentum "
+             "dominates. The validated channel is contemporaneous co-movement — useful as a display "
+             "confirmer ('luxury and FXI are co-moving today') but structurally unable to carry the "
+             "de-risk lead the C7 thesis required. weight_cap 0, kill=True; FXI target and all "
+             "scorer seams UNCHANGED.",
+         why_zh="W4-C7 结论：CONTEXT——不接线。等权奢侈品组合（LVMUY ADR ~20年 + RMS.PA/CFR.SW ~5年本地）"
+                "滚动收益趋势翻转信号，在预声明的21日期限内，对 FXI 前瞻回撤无统计显著的引导。引导-滞后核：滞后=0 "
+                "强显著（t=11.75，同期同时段共动——奢侈品与 FXI 在重叠的美国交易时段交易），但无滞后链路通过 "
+                "BH-FDR（滞后=1：t=−1.49，p=0.14；滞后=2/5：不显著）。这是传导读数：奢侈品与中国消费者实时共动，"
+                "但奢侈品组合在任何通过多重检验修正的滞后下均未领先 FXI。策略 DSR=0.16（远低于0.90门）。"
+                "回撤削减门因Calmar失败：空仓叠加层 Calmar 为负（−0.008），而买持 FXI 为正（+0.045），意味着"
+                "策略在 FXI 反弹期间踏空亏损。财报印发剔除：271根K线置NaN（LVMH/爱马仕/历峰公告±2交易日——因果方法）。"
+                "有效N诚实说明：LVMUY 有4个危机窗口（20年），但全三腿组合窗口仅含1个声明危机（rate_22）——以"
+                "LVMUY 自身动量为主导。已验证渠道为同期共动——可用作展示确认器（'今日奢侈品与 FXI 共动'），"
+                "但在结构上无法承担 C7 论题所需的降险引导。权重上限0，kill=True；FXI 目标及所有计分器缝合点不变。",
+         source="reports/intl-luxury-readthrough-phase0.md (W4-C7, 2026-07-02); "
+                "scripts/c7_luxury_readthrough.py + scripts/intl_phase0.py --c7; "
+                "data/intl_bridge/ledger.json (c7_luxury_china_consumer)",
+         horizon="21d fwd drawdown (FXI)", dsr=0.1609, ic=-0.0695,
+         wired="not wired — CONTEXT (no lagged lead survives BH-FDR; contemporaneous only)",
+         extra=[("lead-lag kernel lag=0 t-stat", "11.75 (contemporaneous; same-session overlap)"),
+                ("lag=1 HAC-t / p", "−1.49 / 0.14 (not significant; wrong sign)"),
+                ("BH-FDR survivors at lag≥1", "NONE"),
+                ("strategy DSR", "0.16 (far below 0.90 door)"),
+                ("drawdown-reduction Calmar", "−0.008 strat vs +0.045 B&H (value-destroyer)"),
+                ("earnings-print bars excised", "271 (±2td LVMH/Hermès/Richemont prints)"),
+                ("effective-N (LVMUY 20y)", "4 crises; full-basket overlap: 1 crisis (rate_22)")]),
     _row("China external-driver radar  (C3 — governed by risk_radar_intl)",
          "中国外部驱动雷达（C3 — 由 risk_radar_intl 治理）", "China A", "display",
          why="Note-only entry for registry completeness. The validated China external-driver radar "

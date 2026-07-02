@@ -615,6 +615,74 @@ BACKFILL: list[dict] = [
                  "This adds information BEYOND the domestic US trend leg. "
                  "W4 US radar Tier-B leg is JUSTIFIED by this verdict.",
     },
+    # W4-C7 — luxury→CN-consumer aggregate read-through (graded 2026-07-02,
+    # scripts/intl_phase0.py --c7 via scripts/c7_luxury_readthrough.py)
+    # VERDICT: CONTEXT — do NOT wire. The EW luxury basket (LVMUY + RMS.PA + CFR.SW)
+    # rolling-return trend-turn signal carries NO statistically significant lead over FXI
+    # forward drawdowns at the declared 21d horizon. The lead-lag kernel confirms the
+    # standing ADJ-4 prior: lag=0 is strongly contemporaneous (t=11.75, same-session
+    # overlap — luxury and FXI trade in overlapping US hours), but NO lagged cross-market
+    # link survives BH-FDR (lag=1: t=−1.49 p=0.14; lag=2: t=1.04 p=0.30). This is a
+    # TRANSMISSION READ (luxury and Chinese consumer co-move in real-time), not a tradeable
+    # lead. The de-risk strategy DSR=0.16 (far below the 0.90 door) and the
+    # drawdown-reduction gate FAILS (the strategy has NEGATIVE Calmar −0.008 vs B&H
+    # FXI Calmar +0.045 — the flat-out-of-FXI-recovery overlay destroys value). Four
+    # hard-gate passes are noted: freshness, orthogonality (residual partial −0.061, just
+    # above the 0.03 floor), crisis-count 4/6 (LVMUY's 20y history covers GFC/eurozone/
+    # covid/rate_22), and crisis-independent ES +0.0076. But the signal mechanism itself
+    # is not predictive: the luxury trend-turn does NOT reliably lead China consumer
+    # drawdowns at any lag that survives multiple-testing correction. Earnings-print
+    # excision confirmed: 271 bars excised (±2td around LVMH/Hermès/Richemont prints)
+    # so the result is not contaminated by event spikes. The validated channel is
+    # contemporaneous co-movement — useful as a DISPLAY confirmer ("luxury and FXI are
+    # co-moving today") but structurally unable to carry the de-risk lead the thesis required.
+    # weight_cap 0, kill=True; FXI target and all scorer seams UNCHANGED.
+    {
+        "id": "c7_luxury_china_consumer",
+        "channel": "C7",
+        "hypothesis": "One EW luxury basket (LVMUY+RMS.PA+CFR.SW) trend-turn leads FXI "
+                      "forward drawdowns at 21d — a policy-undistorted CN-consumer read-through.",
+        "direction": "de-risk",
+        "verdict": "CONTEXT",
+        "weight_cap": 0.0,
+        "metrics": {
+            "ic": -0.0695,              # Spearman(luxury_trend_turn, FXI_fwd_DD21d)
+            "dsr": 0.1609,              # deflated-Sharpe on FXI long/flat strategy (N=17 trials)
+            "split_half_same_sign": True,   # Sharpe both halves positive (+0.19/+0.16) — a mirage:
+                                            # strategy near-always long → inherits FXI positive drift
+            "effective_n_crises": 4,        # GFC/eurozone/covid/rate_22 (LVMUY 20y)
+            "es_ex_top3": 0.0076,           # ES reduction ex top-3 DD windows PASSES
+            "orthogonal_partial": -0.0612,  # residual Spearman vs FXI-mom + CNH-RORO basis
+            "maxdd_cut": 0.0643,            # MaxDD cut passes (−66.3% vs −72.7% B&H)
+        },
+        "gates": {
+            "deflated_sharpe": "fail",      # DSR 0.16 << 0.90 — the signal is not predictive
+            "split_half": "pass",           # trivially: both halves near-long → FXI drift
+            "leave_one_crisis_out": "pass", # 4 crisis windows
+            "orthogonality": "pass",        # just above the 0.03 noise floor
+            "crisis_independent_es": "pass",
+            "drawdown_reduction": "fail",   # CALMAR KILLER: Calmar −0.008 vs +0.045 B&H
+            "lead_lag_kernel": "fail",      # NO lagged link survives BH-FDR; lag=0 only
+            "freshness": "pass",            # LVMUY 2026-07-02 (cold-seeded W4-C7)
+        },
+        "source_series": ["yahoo/LVMUY"],
+        "freshness_sla_days": 5,
+        "validation_ref": "reports/intl-luxury-readthrough-phase0.md (W4-C7, 2026-07-02); "
+                          "scripts/c7_luxury_readthrough.py + scripts/intl_phase0.py --c7",
+        "kill": True,
+        "notes": "W4-C7 VERDICT: CONTEXT (do NOT wire). EW luxury basket (LVMUY ~20y + "
+                 "RMS.PA/CFR.SW ~5y from intl_search/closes) rolling-return trend-turn "
+                 "signal: lead-lag kernel finds NO lagged cross-market link surviving "
+                 "BH-FDR (lag=1 t=−1.49 p=0.14); only lag=0 is significant (t=11.75, "
+                 "contemporaneous same-session co-movement). DSR=0.16, drawdown-reduction "
+                 "FAILS (negative Calmar). The validated information is SIMULTANEOUS "
+                 "co-movement — a transmission read, not a tradeable de-risk lead. "
+                 "271 earnings-print bars excised (±2td; causal method). Effective-N "
+                 "honesty: LVMUY has 20y (4 crises), but RMS.PA/CFR.SW only 5y (1 crisis) "
+                 "— the full 3-leg basket covers only 1 declared crisis window. "
+                 "The LVMUY-only signal's 4-crisis count passes the floor but the "
+                 "aggregate DSR fails decisively (0.16). weight_cap 0.",
+    },
 ]
 
 

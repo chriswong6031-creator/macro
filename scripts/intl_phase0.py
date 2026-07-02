@@ -912,11 +912,13 @@ def main(argv=None) -> int:
                          "via their declared builders + MERGE into the ledger")
     ap.add_argument("--c5c8", action="store_true",
                     help="W3 C5+C8: grade the global-rates leg + the leading-votes booster + write ledger")
+    ap.add_argument("--c7", action="store_true",
+                    help="W4-C7: grade the luxury→CN-consumer read-through via scripts.c7_luxury_readthrough.builder + write ledger")
     ap.add_argument("--only", default=None,
                     help="comma-separated claim ids to (re)grade; the rest keep their ledger rows")
     args = ap.parse_args(argv)
 
-    if not (args.declare or args.backfill or args.run or args.c3 or args.c4 or args.c5c8):
+    if not (args.declare or args.backfill or args.run or args.c3 or args.c4 or args.c5c8 or args.c7):
         ap.print_help()
         return 0
 
@@ -983,6 +985,23 @@ def main(argv=None) -> int:
                       f"n_crises={m.get('effective_n_crises')} es_ex_top3={m.get('es_ex_top3')} "
                       f"split_half={m.get('split_half_same_sign')}")
         print(f"[C5C8] ledger written → {p}")
+        return 0
+
+    if args.c7:
+        # W4-C7: grade the luxury→CN-consumer read-through via its declared builder and
+        # MERGE into the existing ledger (backfill graveyard + prior graded claims preserved).
+        from scripts.c7_luxury_readthrough import builder as c7_builder
+        p = run(builders={"c7_luxury_china_consumer": c7_builder},
+                only={"c7_luxury_china_consumer"}, merge=True)
+        rows = _existing_ledger_rows()
+        r = rows.get("c7_luxury_china_consumer")
+        if r:
+            m = r["metrics"]
+            print(f"[C7] verdict={r['verdict']} weight_cap={r['weight_cap']} "
+                  f"dsr={m.get('dsr')} ic={m.get('ic')} orth={m.get('orthogonal_partial')} "
+                  f"n_crises={m.get('effective_n_crises')} es_ex_top3={m.get('es_ex_top3')} "
+                  f"split_half={m.get('split_half_same_sign')} kill={r.get('kill')}")
+        print(f"[C7] ledger written → {p}")
         return 0
 
     if args.run and not args.backfill:
