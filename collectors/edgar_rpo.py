@@ -12,14 +12,22 @@ that the customer-capex chains don't reach.
 
 This reuses the proven edgar_facts fetch plumbing (companyfacts API + fair-access
 pacing + ticker→CIK map). Bounded to the software/agents baskets where RPO is a
-standard disclosure; names without the tag simply yield no rows. Writes
-data/edgar/rpo.parquet (ticker, fy, rpo, revenue, as_of). Drip + cache + resilient.
+standard disclosure; names without the tag simply yield no rows. Extended (W5a
+follow-up) to union in all config.themes member tickers so the Foresight Desk
+leg8_member_backlog can compute per-theme medians. Writes data/edgar/rpo.parquet
+(ticker, fy, rpo, revenue, as_of). Drip + cache + resilient.
+
+NEGATIVE CACHE (rpo_no_data.json): tickers that return no RPO rows from EDGAR are
+recorded with a timestamp so the drip budget is not wasted re-probing them on every
+run. TTL = NO_DATA_TTL_DAYS (default 90 days — RPO is an annual disclosure, so a
+ticker that doesn't tag it today almost certainly won't for months).
 """
 from __future__ import annotations
 
 import json
 import logging
 import time
+from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 
@@ -38,11 +46,46 @@ REV_TAGS = ["RevenueFromContractWithCustomerExcludingAssessedTax", "Revenues",
 RPO_BASKETS = ("ai_software", "non_ai_software", "ai_agents")
 KEEP_YEARS = 6
 
+# TTL for the negative cache (known-empty tickers). 90 days: RPO is annual and
+# a non-filer today is very unlikely to start filing within one quarter.
+NO_DATA_TTL_DAYS = 90
+
 
 def _cache_path():
     p = config.data_dir() / "edgar" / "rpo.parquet"
     p.parent.mkdir(parents=True, exist_ok=True)
     return p
+
+
+def _no_data_cache_path():
+    p = config.data_dir() / "edgar" / "rpo_no_data.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def _load_no_data_cache() -> dict[str, str]:
+    """Load the negative cache. Returns {ticker: iso_timestamp_str}."""
+    p = _no_data_cache_path()
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text())
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _save_no_data_cache(cache: dict[str, str]) -> None:
+    """Persist the negative cache atomically."""
+    _no_data_cache_path().write_text(json.dumps(cache, indent=2, sort_keys=True))
+
+
+def _is_no_data_fresh(ts_str: str) -> bool:
+    """Return True if the negative-cache entry is within TTL (suppress re-probe)."""
+    try:
+        recorded = datetime.fromisoformat(ts_str).replace(tzinfo=timezone.utc)
+        return datetime.now(tz=timezone.utc) - recorded < timedelta(days=NO_DATA_TTL_DAYS)
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def _concept(usgaap: dict, names: list[str], instant: bool) -> dict[int, float]:
@@ -77,27 +120,54 @@ def _rpo_for(cik: int) -> list[dict]:
 
 
 def _rpo_universe() -> list[str]:
-    """Tickers in the RPO-relevant baskets (software / agents)."""
-    p = config.data_dir() / "baskets" / "membership.json"
-    if not p.exists():
-        return []
-    baskets = (json.loads(p.read_text()).get("baskets") or {})
+    """Tickers in the RPO-relevant baskets (software / agents) UNION all config.themes members.
+
+    Self-maintaining: theme-member changes in config.yml flow automatically on the
+    next collect run (mirrors the pattern in collectors/yahoo.py). Many industrials
+    don't tag RevenueRemainingPerformanceObligation — the per-ticker failure handling
+    in _rpo_for covers that gracefully (returns []). The negative cache
+    (rpo_no_data.json) prevents the drip budget being wasted re-probing known-empty
+    tickers on every run.
+
+    Never removes existing names — only additive.
+    """
     out: set[str] = set()
-    for slug in RPO_BASKETS:
-        for m in (baskets.get(slug, {}).get("members") or []):
-            if not m.get("removed") and m.get("ticker"):
-                out.add(m["ticker"])
+
+    # --- leg A: software/agents baskets (original universe) ---
+    p = config.data_dir() / "baskets" / "membership.json"
+    if p.exists():
+        try:
+            baskets = (json.loads(p.read_text()).get("baskets") or {})
+        except Exception:  # noqa: BLE001
+            baskets = {}
+        for slug in RPO_BASKETS:
+            for m in (baskets.get(slug, {}).get("members") or []):
+                if not m.get("removed") and m.get("ticker"):
+                    out.add(m["ticker"])
+
+    # --- leg B: all config.themes members (W5a Foresight Desk leg8 unlock) ---
+    # (theme or {}): a bare `some_theme:` YAML key yields None — never crash collect
+    for theme in (config.load().get("themes") or {}).values():
+        for t in ((theme or {}).get("tickers") or []):
+            if t:
+                out.add(t)
+
     return sorted(out)
 
 
 def fetch_rpo(max_new: int = 80, tickers: list[str] | None = None) -> pd.DataFrame:
-    """Drip RPO for the software universe into data/edgar/rpo.parquet. Best-effort:
-    re-fetches names absent or older than ~25 days; never raises."""
+    """Drip RPO for the extended universe into data/edgar/rpo.parquet. Best-effort:
+    re-fetches names absent or older than ~25 days; skips known-empty tickers within
+    the NO_DATA_TTL_DAYS window; never raises."""
     cache = _cache_path()
     existing = pd.read_parquet(cache) if cache.exists() else pd.DataFrame()
     cik = _cik_map()
     universe = tickers or _rpo_universe()
     now = pd.Timestamp.utcnow().tz_localize(None)
+    now_iso = datetime.now(tz=timezone.utc).isoformat()
+
+    # Negative cache: tickers confirmed to have no RPO tag in EDGAR
+    no_data = _load_no_data_cache()
 
     def stale(t: str) -> bool:
         if existing.empty or t not in set(existing.get("ticker", [])):
@@ -108,15 +178,37 @@ def fetch_rpo(max_new: int = 80, tickers: list[str] | None = None) -> pd.DataFra
         except Exception:  # noqa: BLE001
             return True
 
-    todo = [t for t in universe if t in cik and stale(t)][:max_new]
-    log.info("edgar_rpo: %d in universe, %d with CIK, fetching %d", len(universe), len(cik), len(todo))
+    def skip_no_data(t: str) -> bool:
+        """True if ticker is in the negative cache and within TTL."""
+        ts = no_data.get(t)
+        return ts is not None and _is_no_data_fresh(ts)
+
+    todo = [t for t in universe if t in cik and stale(t) and not skip_no_data(t)][:max_new]
+    log.info(
+        "edgar_rpo: %d in universe, %d with CIK, %d neg-cached, fetching %d",
+        len(universe), len(cik), sum(1 for t in universe if skip_no_data(t)), len(todo),
+    )
     fresh = []
+    no_data_updated = False
     for t in todo:
         try:
-            for rec in _rpo_for(cik[t]):
-                fresh.append({"ticker": t, **rec, "as_of": now.isoformat()})
+            rows = _rpo_for(cik[t])
+            if rows:
+                for rec in rows:
+                    fresh.append({"ticker": t, **rec, "as_of": now.isoformat()})
+                # Clear from negative cache if it was there (ticker started filing)
+                if t in no_data:
+                    del no_data[t]
+                    no_data_updated = True
+            else:
+                # No RPO tag — record in negative cache to avoid re-probing
+                no_data[t] = now_iso
+                no_data_updated = True
+                log.debug("edgar_rpo: %s has no RPO tag — added to negative cache", t)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.debug("rpo %s failed: %s", t, e)
+    if no_data_updated:
+        _save_no_data_cache(no_data)
     if fresh:
         fdf = pd.DataFrame(fresh)
         keep = existing[~existing["ticker"].isin(fdf["ticker"])] if not existing.empty else existing
