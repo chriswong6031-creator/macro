@@ -179,6 +179,47 @@ china_intel.importance_score:
     before any scored-context read is permitted.
 
 # ---------------------------------------------------------------------------
+# NEWS SENTIMENT — china_validation news_sentiment timer family (W4)
+# ---------------------------------------------------------------------------
+china_validation.news_sentiment:
+  field: news_sentiment
+  artifact_glob: "data/china_validation/scorecard.json"
+  producer: engine/china_validation.py
+  claim_family: china_news
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    W4 CCTV backfill: blended CCTV+wire media-sentiment z-score validated as a
+    market-wide timer against CSI-300 forward returns (engine/china_validation.py
+    _validate_timer path). sign_expected=-1 (rich sentiment = contrarian fade).
+
+    Seeded at SHADOW per the ladder protocol (not yet DISPLAY because the direction
+    claim is demoted to salience-only per §2.3/D5 until the contrarian sign proves).
+
+    Gate requirements before any CONFIRMER promotion:
+      - n_dates >= 25 (not overlapping obs — use block-bootstrap dates)
+      - Wilson-CI lower bound of excess hit-rate vs CSI-300 matched control > 0
+      - Incremental info over price+VIX baseline (regime not level)
+      - Block-bootstrap stability across date clusters
+
+    W4 status: the 10-year CCTV tone history (cctv_tone_history.parquet, built by
+    scripts/rebuild_cctv_tone_history.py after the background scrape completes) is
+    used as the z-score baseline, making the ≥60-day and ≥25-obs requirements
+    SATISFIABLE for the first time. The news_sentiment validator in china_validation
+    will report non-zero n_obs once the history is available.
+
+    _news_sign_proven() auto-reactivation hook: engine/china_intel_analysis.py
+    calls _news_sign_proven() on each build; returns True iff proven=True AND
+    sign_ok=True in this scorecard entry. When the hook fires, the contrarian
+    direction becomes active in the conviction composite (proven_contrarian path).
+
+    finalize_cctv_backfill.py re-runs validate_all() after completion — this
+    entry's ladder_state must be manually promoted to CONFIRMER after the gate
+    clears, citing the scorecard n_dates and CI values.
+
+# ---------------------------------------------------------------------------
 # RADAR — radar.py / radar_ic.py signals (display scores, not scored-composite inputs)
 # ---------------------------------------------------------------------------
 radar.divergence_z:
