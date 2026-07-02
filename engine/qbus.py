@@ -302,11 +302,22 @@ def _subject_daily_counts(df, subject: str, asof: date,
                           window_days: int) -> tuple[float, list[float]]:
     """(today_count, trailing_daily_counts) for a subject (entity OR theme) over the
     `window_days` days BEFORE asof. Matches a row if `subject` is in its entities OR
-    themes. PURE (df + asof passed). Uses the seendate day (fallback _crawled_at)."""
+    themes. PURE (df + asof passed). Uses the seendate day (fallback _crawled_at).
+
+    Tz-mixed seendate handling: the store may contain a mix of tz-aware (ISO 8601
+    with +00:00 / Z) and tz-naive (plain datetime string) values in the same column.
+    A plain pd.to_datetime call without utc=True coerces tz-aware strings to NaT,
+    silently nulling the entire CN lane (~938 rows).  We parse with format="mixed"
+    and utc=True so all formats (tz-aware, tz-naive, Z-suffix) are first normalised
+    to UTC then stripped to a date.  Rows where BOTH seendate AND _crawled_at are
+    unparseable (empty / corrupted) map to None and never raise.
+    """
     import pandas as pd
-    day = pd.to_datetime(df["seendate"], errors="coerce")
-    fallback = pd.to_datetime(df["_crawled_at"], errors="coerce")
-    day = day.fillna(fallback).dt.date
+    day = pd.to_datetime(df["seendate"], errors="coerce", format="mixed", utc=True)
+    fallback = pd.to_datetime(df["_crawled_at"], errors="coerce", format="mixed", utc=True)
+    day = day.fillna(fallback)
+    # Convert to date objects; rows with NaT in both columns → None (not a crash).
+    day = day.map(lambda ts: ts.date() if pd.notna(ts) else None)
 
     def _hit(row_ents, row_thms) -> bool:
         return (subject in _split(row_ents)) or (subject in _split(row_thms))
@@ -364,19 +375,38 @@ def novelty_z(entity_or_theme: str, asof, window_days: int = 30,
 # --------------------------------------------------------------------------- #
 # echo — cross-desk corroboration for one event_key
 # --------------------------------------------------------------------------- #
-def echo_stats(event_key: str, df=None) -> dict | None:
+def echo_stats(event_key: str, df=None, asof=None) -> dict | None:
     """Cross-source/desk corroboration for one event_key:
       {n_sources, n_desks, n_items, first_seen, breadth}
     where breadth = distinct desks that carried the event (the "many independent
     desks saw this" primitive; 1 desk = no corroboration). first_seen = earliest
     _crawled_at (fallback seendate) across the cluster. Returns None if the key is
-    absent. Never raises."""
+    absent. Never raises.
+
+    asof (optional date | str): when supplied, only items whose _crawled_at (or
+    seendate when _crawled_at is absent) is <= asof are counted.  This is the
+    PIT discipline fix: the W3 backfill ran echo_stats WITHOUT an asof filter, so
+    future corroboration items (crawled AFTER the item's own seendate) could
+    inflate the breadth score.  Callers should always pass the item's own asof.
+    """
     try:
         if df is None:
             df = read_items()
         if df is None or len(df) == 0 or not event_key:
             return None
         sub = df[df["event_key"] == event_key]
+        # PIT filter — restrict to items seen on or before `asof`.
+        if asof is not None:
+            a = _asof_date(asof)
+            if a is not None:
+                import pandas as pd
+                crawl = pd.to_datetime(sub["_crawled_at"], errors="coerce",
+                                       format="mixed", utc=True)
+                seen = pd.to_datetime(sub["seendate"], errors="coerce",
+                                      format="mixed", utc=True)
+                stamp = crawl.fillna(seen)
+                stamp_date = stamp.map(lambda ts: ts.date() if pd.notna(ts) else None)
+                sub = sub[[d is not None and d <= a for d in stamp_date]]
         if len(sub) == 0:
             return None
         sources = {str(s) for s in sub["source"].tolist() if str(s)}
