@@ -1,9 +1,11 @@
 name: heartbeat
 # Dead-man's switch: the daily pipeline commits run_status.json with a last_run
 # timestamp + per-source circuit breakers. This runs on its own schedule and FAILS
-# if the pipeline looks dead (stale last_run, or a broad source outage). A failed
-# run trips GitHub's built-in failed-workflow notification — and, if the Telegram/
-# Discord secrets are set, scripts.healthcheck also pings them. See scripts/healthcheck.py.
+# if the pipeline looks dead (stale last_run, or a broad source outage), if the
+# committed signal boards break silently (signal_sanity), or if the PUBLIC R2 data
+# plane goes stale/dark (audit_r2 — the per-ticker stores the browser fetches). A
+# failed run trips GitHub's built-in failed-workflow notification — and, if the
+# Telegram/Discord secrets are set, scripts.healthcheck also pings them.
 on:
   schedule:
     - cron: "30 14 * * 1-5"   # 14:30 UTC weekdays — well after the 22:40-prev-day pipeline; weekend gap tolerated by the 96h staleness limit

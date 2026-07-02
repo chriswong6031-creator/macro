@@ -1,8 +1,10 @@
 """engine.foresight_cascade — the per-theme STAGE machine (T1 x T4). Verifies the stage
 logic on the four canonical states and that it ranks by edge remaining (PRECIPICE first)
-and degrades honestly when a tier is missing.
+and degrades honestly when a tier is missing. W0a additions: _append_ledger logs ALL stages
+with transition-dedup + heartbeat.
 """
 from __future__ import annotations
+import json
 
 from engine import foresight_cascade as fc
 
@@ -134,3 +136,119 @@ def test_glut_overrides_to_exit_risk():
     assert r["stage"] == "GLUT-RISK"
     assert r["glut_band"] == "GLUT_FORMING"
     assert "exit clock" in r["rationale"]
+
+
+# ---- W0a: _append_ledger logs ALL stages with transition-dedup + heartbeat ----
+
+def _make_payload(stages: dict[str, str], asof: str = "2026-07-01") -> dict:
+    """Minimal payload for _append_ledger with given theme->stage mapping."""
+    themes = []
+    for theme, stage in stages.items():
+        themes.append({
+            "theme": theme, "stage": stage,
+            "bottleneck_band": None, "revision_breadth": None,
+        })
+    return {"asof": asof, "themes": themes}
+
+
+def test_all_stages_get_logged(monkeypatch, tmp_path):
+    """_append_ledger must log ALL stages (not just PRECIPICE/BROADENING)."""
+    import engine.foresight_cascade as fc_mod
+    monkeypatch.setattr(fc_mod.config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(fc_mod.config, "load", lambda: {"themes": {
+        "memory_storage": {"tickers": ["MU"]},
+        "ai_semiconductors": {"tickers": ["NVDA"]},
+        "copper_steel_electrify": {"tickers": ["FCX"]},
+        "glp1_obesity": {"tickers": ["LLY"]},
+    }})
+    payload = _make_payload({
+        "memory_storage": "PRECIPICE",
+        "ai_semiconductors": "RE-RATING",
+        "copper_steel_electrify": "WATCH",
+        "glp1_obesity": "UNKNOWN",
+    })
+    (tmp_path / "foresight").mkdir(parents=True, exist_ok=True)
+    fc_mod._append_ledger(payload)
+    rows = [(tmp_path / "foresight" / "log.jsonl").read_text().splitlines()]
+    logged = [json.loads(r) for r in rows[0] if r.strip()]
+    stages_logged = {r["theme"]: r["stage"] for r in logged}
+    assert stages_logged["memory_storage"] == "PRECIPICE"
+    assert stages_logged["ai_semiconductors"] == "RE-RATING"
+    assert stages_logged["copper_steel_electrify"] == "WATCH"
+    assert stages_logged["glp1_obesity"] == "UNKNOWN"
+
+
+def test_transition_dedup_logs_on_change_skips_same_stage(monkeypatch, tmp_path):
+    """Log on stage transition; skip if same stage and within heartbeat window."""
+    import engine.foresight_cascade as fc_mod
+    monkeypatch.setattr(fc_mod.config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(fc_mod.config, "load",
+                        lambda: {"themes": {"memory_storage": {"tickers": ["MU"]}}})
+    (tmp_path / "foresight").mkdir(parents=True, exist_ok=True)
+
+    # day 1: initial log (asof 2026-07-01) — stage WATCH
+    fc_mod._append_ledger(_make_payload({"memory_storage": "WATCH"}, asof="2026-07-01"))
+    # day 3: same stage, 2 days later — within heartbeat window → NOT logged again
+    fc_mod._append_ledger(_make_payload({"memory_storage": "WATCH"}, asof="2026-07-03"))
+    # day 5: stage changes to RE-RATING → logged (transition)
+    fc_mod._append_ledger(_make_payload({"memory_storage": "RE-RATING"}, asof="2026-07-05"))
+
+    lines = (tmp_path / "foresight" / "log.jsonl").read_text().splitlines()
+    logged = [json.loads(r) for r in lines if r.strip()]
+    assert len(logged) == 2   # day-1 WATCH + day-5 RE-RATING; day-3 same-stage skip
+    assert logged[0]["stage"] == "WATCH" and logged[0]["asof"] == "2026-07-01"
+    assert logged[1]["stage"] == "RE-RATING" and logged[1]["asof"] == "2026-07-05"
+
+
+def test_heartbeat_logs_when_stage_unchanged_but_stale(monkeypatch, tmp_path):
+    """Even with unchanged stage, log when >7 days since last logged row (heartbeat)."""
+    import engine.foresight_cascade as fc_mod
+    monkeypatch.setattr(fc_mod.config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(fc_mod.config, "load",
+                        lambda: {"themes": {"memory_storage": {"tickers": ["MU"]}}})
+    (tmp_path / "foresight").mkdir(parents=True, exist_ok=True)
+
+    # day 1: WATCH logged
+    fc_mod._append_ledger(_make_payload({"memory_storage": "WATCH"}, asof="2026-07-01"))
+    # day 9: same stage WATCH but 8 days later → heartbeat fires → logged
+    fc_mod._append_ledger(_make_payload({"memory_storage": "WATCH"}, asof="2026-07-09"))
+
+    lines = (tmp_path / "foresight" / "log.jsonl").read_text().splitlines()
+    logged = [json.loads(r) for r in lines if r.strip()]
+    assert len(logged) == 2   # both logged: initial + heartbeat
+    assert logged[0]["asof"] == "2026-07-01"
+    assert logged[1]["asof"] == "2026-07-09"
+
+
+def test_same_day_reruns_are_idempotent(monkeypatch, tmp_path):
+    """Multiple runs on the same asof produce only one row per (theme, asof)."""
+    import engine.foresight_cascade as fc_mod
+    monkeypatch.setattr(fc_mod.config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(fc_mod.config, "load",
+                        lambda: {"themes": {"memory_storage": {"tickers": ["MU"]}}})
+    (tmp_path / "foresight").mkdir(parents=True, exist_ok=True)
+
+    payload = _make_payload({"memory_storage": "PRECIPICE"}, asof="2026-07-01")
+    fc_mod._append_ledger(payload)
+    fc_mod._append_ledger(payload)  # re-run same day
+    fc_mod._append_ledger(payload)  # and again
+
+    lines = (tmp_path / "foresight" / "log.jsonl").read_text().splitlines()
+    logged = [json.loads(r) for r in lines if r.strip()]
+    assert len(logged) == 1   # exactly one row — idempotent
+
+
+def test_pit_membership_snapshot_in_all_stage_rows(monkeypatch, tmp_path):
+    """members[] is captured at log time for ALL stage rows (not only thesis stages)."""
+    import engine.foresight_cascade as fc_mod
+    monkeypatch.setattr(fc_mod.config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(fc_mod.config, "load",
+                        lambda: {"themes": {"memory_storage": {"tickers": ["MU", "WDC"]}}})
+    (tmp_path / "foresight").mkdir(parents=True, exist_ok=True)
+
+    fc_mod._append_ledger(_make_payload({"memory_storage": "WATCH"}, asof="2026-07-01"))
+
+    lines = (tmp_path / "foresight" / "log.jsonl").read_text().splitlines()
+    logged = [json.loads(r) for r in lines if r.strip()]
+    assert len(logged) == 1
+    assert set(logged[0]["members"]) == {"MU", "WDC"}   # PIT snapshot present

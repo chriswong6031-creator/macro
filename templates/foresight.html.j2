@@ -497,7 +497,7 @@
   {# ---- forward-graded track record ---- #}
   <div class="fx-panel">
     <h2>{{ t('Forward-graded track record', '前瞻评分记录') }}</h2>
-    <div class="sub">{{ t('Every PRECIPICE / BROADENING flag is logged at fire time and graded forward vs SPY — <b>survivorship-free</b> (delisted members counted at their loss), on <b>point-in-time</b> basket membership, with a <b>Wilson 95% CI</b> and a <b>Benjamini-Hochberg FDR</b> gate so a small lucky sample can\'t read as edge. The ledgers began accruing recently, so until flags mature this is a flags-logged counter, never a fabricated hit-rate.', '每个 PRECIPICE / BROADENING 标记在触发时记录并对标普前瞻评分——<b>免幸存者偏差</b>（退市成分按其亏损计入）、采用<b>时点</b>篮子成分，并附<b>Wilson 95%置信区间</b>与<b>Benjamini-Hochberg FDR</b>门槛，使小样本的侥幸不会被读作优势。账本近期才开始累计，标记成熟前仅为计数，绝非编造命中率。') }}</div>
+    <div class="sub">{{ t('Every stage flag (PRECIPICE / BROADENING / RE-RATING / WATCH) is logged at fire time and graded forward vs SPY at 30, 60, and 90-day horizons independently — <b>survivorship-free</b> (delisted members counted at their loss), on <b>point-in-time</b> basket membership, with a <b>Wilson 95% CI</b> and a <b>Benjamini-Yekutieli FDR</b> gate (dependence-robust — more conservative than BH, valid under overlapping horizons and a shared benchmark) on the canonical 90d horizon so a small lucky sample can\'t read as edge. <b>Hit-rates are skill claims and exist only for the directional stages</b> (thesis: PRECIPICE/BROADENING = outperform; exit: GLUT = underperform); RE-RATING / WATCH are <b>control arms</b> — their forward excess validates the "do not chase" rule but is never scored as a hit-rate, because a crowded theme continuing to run is beta, not skill.', '每个阶段标记（PRECIPICE / BROADENING / RE-RATING / WATCH）在触发时记录并对标普在30、60、90天视野独立前瞻评分——<b>免幸存者偏差</b>（退市成分按其亏损计入）、采用<b>时点</b>篮子成分，并附<b>Wilson 95%置信区间</b>与<b>Benjamini-Yekutieli FDR</b>门槛（依赖稳健——比BH更保守，在视野重叠及共用基准下仍有效），在标准90天视野上确保小样本侥幸不被读作优势。<b>命中率是技能主张，仅适用于方向性阶段</b>（论点：PRECIPICE/BROADENING＝跑赢；退出：GLUT＝跑输）；RE-RATING / WATCH 为<b>对照组</b>——其前瞻超额用于检验“勿追高”规则，绝不计为命中率，因为已拥挤主题继续上涨是贝塔，不是技能。') }}</div>
     <div class="fx-rec">
       <span class="chip2"><b>{{ track.foresight }}</b> {{ t('cascade flags', '级联标记') }}</span>
       <span class="chip2"><b>{{ track.bottleneck }}</b> {{ t('bottleneck regimes', '瓶颈机制') }}</span>
@@ -511,13 +511,28 @@
     {% if grade %}
     <div class="fx-rec" style="margin-top:9px">
       {% if grade.n_graded and grade.n_graded > 0 %}
-        {% if grade.pooled_hit_rate is not none %}<span class="chip2"><b>{{ t('pooled', '合计') }}</b> {{ (grade.pooled_hit_rate*100)|round|int }}% ({{ grade.n_graded }}){% if grade.pooled_ci95 %} · {{ t('95% CI', '95%置信') }} {{ (grade.pooled_ci95[0]*100)|round|int }}–{{ (grade.pooled_ci95[1]*100)|round|int }}%{% endif %}</span>{% endif %}
+        {# STATE 3: graded — hit-rates ONLY for directional (thesis/exit) stages; control
+           arms (RE-RATING/WATCH/UNKNOWN) report forward excess alone — beta, not skill #}
+        {% if grade.pooled_hit_rate is not none %}<span class="chip2"><b>{{ t('pooled 90d', '合计90天') }}</b> {{ (grade.pooled_hit_rate*100)|round|int }}% ({{ grade.pooled_n_directional or grade.n_graded }}){% if grade.pooled_ci95 %} · {{ t('95% CI', '95%置信') }} {{ (grade.pooled_ci95[0]*100)|round|int }}–{{ (grade.pooled_ci95[1]*100)|round|int }}%{% endif %}</span>{% endif %}
         {% for stage, b in grade.by_stage.items() %}{% if b.n %}
-        <span class="chip2"><b>{{ stage }}</b> {{ t('hit-rate', '命中率') }} {{ (b.hit_rate*100)|round|int }}% ({{ b.hits }}/{{ b.n }}) · {{ t('excess', '超额') }} {{ '%+.1f'|format(b.avg_excess_pct) }}%</span>
+        {% if b.hit_rate is not none %}
+        <span class="chip2"><b>{{ stage }}</b> {{ t('hit-rate', '命中率') }} {{ (b.hit_rate*100)|round|int }}% ({{ b.hits }}/{{ b.n_dir if b.n_dir is defined else b.n }}) · {{ t('excess', '超额') }} {{ '%+.1f'|format(b.avg_excess_pct) }}%</span>
+        {% else %}
+        <span class="chip2"><b>{{ stage }}</b> {{ t('fwd excess', '前瞻超额') }} {% if b.avg_excess_pct is not none %}{{ '%+.1f'|format(b.avg_excess_pct) }}%{% else %}—{% endif %} (n={{ b.n }}) · {{ t('control arm — validates "do not chase", not a skill claim', '对照组——检验“勿追高”，非技能主张') }}</span>
+        {% endif %}
         {% endif %}{% endfor %}
-        <span class="chip2">✅ <b>{{ grade.n_significant_fdr }}</b> {{ t('themes significant at FDR', '主题在FDR下显著') }} {{ (grade.fdr_q*100)|round|int }}%</span>
+        <span class="chip2">✅ <b>{{ grade.n_significant_fdr }}</b> {{ t('themes significant at BY-FDR', '主题在BY-FDR下显著') }} {{ (grade.fdr_q*100)|round|int }}%</span>
+        {% if grade.by_horizon %}
+        {% for h, hs in grade.by_horizon.items() %}{% if hs.n_graded %}
+        <span class="chip2">{{ h }}{{ t('d', '天') }}: <b>{{ hs.n_graded }}</b> {{ t('graded', '已评分') }}{% if hs.pooled_hit_rate is not none %} · {{ (hs.pooled_hit_rate*100)|round|int }}%{% endif %}</span>
+        {% endif %}{% endfor %}
+        {% endif %}
+      {% elif grade.n_total and grade.n_total > 0 %}
+        {# STATE 2: logged but immature — flags are in the ledger, horizons still maturing #}
+        <span class="chip2">⏳ {{ t('accruing', '累计中') }} — <b>{{ grade.n_total }}</b> {{ t('flags logged', '个标记已记录') }}{% if grade.n_pending %} · <b>{{ grade.n_pending }}</b> {{ t('pending 90d maturity', '个待90天成熟') }}{% endif %}{% if grade.by_horizon %}{% for h, hs in grade.by_horizon.items() %}{% if hs.n_graded %} · <b>{{ hs.n_graded }}</b> {{ t('graded at', '已评') }} {{ h }}{{ t('d', '天') }}{% endif %}{% endfor %}{% endif %}</span>
       {% else %}
-        <span class="chip2">⏳ {{ t('accruing', '累计中') }} — <b>{{ grade.n_pending }}</b> {{ t('flags pending, graded forward over ~3mo vs SPY', '个标记待评分，约3个月后对标普前瞻评分') }}</span>
+        {# STATE 1: nothing logged yet — ledger is empty #}
+        <span class="chip2">📋 {{ t('no flags logged yet — ledger starts accruing on next build', '尚无标记记录——下次构建时账本开始累计') }}</span>
       {% endif %}
     </div>
     {% endif %}

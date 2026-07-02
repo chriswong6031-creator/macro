@@ -289,9 +289,13 @@ fred:
       # the physical correlate the semis/metals bottleneck can't give data-center-power / grid /
       # nuclear / solar). Keyless FRED; engine uses the first candidate per leg that resolves.
       IPG2211S: ip_electric_power     # IP: electric power generation (NAICS 2211) — demand/output
+      IPG2211A2N: ip_electric_power_alt  # IP: electric power alt id (NAICS 2211, annual; engine fallback)
       IPUTIL: ip_utilities            # IP: utilities (broader fallback)
       CAPUTLG2211S: cap_u_utilities   # cap-U electric power generation
+      CAPUTLG2211A2S: cap_u_utilities_alt  # cap-U electric power alt id (engine fallback)
+      # CAPUTLGMFS: cap_u_mfg_fs     # (non-existent on FRED — 404; kept as comment for audit trail)
       WPU0543: ppi_electric_power     # PPI: electric power
+      PCU221122221122: ppi_electric_power_alt  # PPI: electric power alt id (engine fallback)
       APU000072610: price_electricity # avg retail electricity price (US city avg, per kWh)
   retries: 3
   backoff_base_s: 5
@@ -2040,6 +2044,18 @@ notify:
   # (a forward track-record's verdict advances, or a come-back date arrives) so you don't
   # have to watch the admin Experiments tab. Fires once per experiment, on transition only.
   experiments_alerts: true
+
+# Public R2 data-plane freshness tripwire (scripts/audit_r2.py). The heavy per-ticker
+# stores are served to the live site from Cloudflare R2 (templates/data_base.js); every
+# CI publish is non-fatal and no-ops without creds, so ONLY this probe notices a dead
+# plane. Folded into the scheduled heartbeat via scripts/healthcheck.py (telegram + red
+# run) and run `--strict --max-age-hours 2` right after each publish in daily/asia CI.
+r2_data_plane:
+  public_base: "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev"
+  anchors: [stockdata, chinastockdata]  # freshest of <dir>/_manifest.json (put on EVERY successful publish) / <dir>/index.json
+  max_age_hours: 26   # both lanes republish daily, landing ~05-10 UTC; the 14:30 UTC heartbeat sees ~5-9h
+                      # fresh vs ~29-33h on the FIRST missed day — 26 trips on the first miss, ~30 can slide to day 2
+  asof_max_days: 6    # stockdata/SPY.json `asof` (content-level): last bar date; 3-day weekend + a holiday tolerated
 
 validation:
   start_date: "2007-01-01"
