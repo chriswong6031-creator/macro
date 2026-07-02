@@ -210,7 +210,7 @@ def _frame_record(cid: str, band: dict, seed_c: dict, today_x: float) -> dict:
              "hi": round(last_x + (period.get("high") or 0), 3),
              "next": ("trough" if last["k"] == "peak" else "peak")}
             if last_x is not None and period.get("low") is not None else None),
-        "tripwire": None,                 # reserved for W3.3 (tripwire compiler)
+        "tripwire": None,                 # W3.3: filled by compute() after evaluate_and_persist()
     }
 
 
@@ -265,6 +265,18 @@ def compute(root: Path) -> dict:
     fitness = (json.loads(fit_path.read_text(encoding="utf-8")).get("verdicts", {})
                if fit_path.exists() else cp.run_fitness(root).get("verdicts", {}))
 
+    # 2b · W3.3 — falsifier tripwire evaluation + latch persistence (non-fatal) ──────────────
+    #   evaluate_and_persist is a cheap series-read pass (no kernel runs).  It is additive:
+    #   if falsifiers.json is absent the call returns empty lists and the build continues.
+    tripwire_by_cycle: dict = {}
+    try:
+        from engine import falsifier_tripwires as ft
+        _tw_results, _tw_newly = ft.evaluate_and_persist(dispatch=True)
+        tripwire_by_cycle = ft.results_summary(_tw_results)
+        log.info("tripwires: %d evaluated, %d newly fired", len(_tw_results), len(_tw_newly))
+    except Exception as _tw_exc:
+        log.warning("tripwire evaluation failed (non-fatal): %s", _tw_exc)
+
     # 3 · the curated seed (turns + OPINION prose) — the frame-timeline + note source.
     seed = load_seed(root / "site" / "cycle_data.js")
     meta, by_id = seed["meta"], seed["by_id"]
@@ -315,6 +327,9 @@ def compute(root: Path) -> dict:
         if not bands_out:
             log.warning("cycle.%s: no bands emitted — dropping card", cid)
             continue
+        # W3.3: attach tripwire states for this cycle (if evaluated)
+        tw_states = tripwire_by_cycle.get(cid) or []
+
         engine[cid] = {
             "id": cid,
             "name": spec["name"],
@@ -325,12 +340,13 @@ def compute(root: Path) -> dict:
             "dual": bool(len(bands_out) > 1),
             "bands": bands_out,
             "opinion": _opinion(seed_c, meta),
+            "tripwires": tw_states,        # W3.3: per-tripwire states for the UI strip
         }
         order.append(cid)
 
     payload = {
         "version": 1,
-        "wave": "W3.2",
+        "wave": "W3.3",
         "as_of": meta.get("asOf"),
         "xDomain": meta.get("xDomain"),
         "regime": meta.get("regime"),
@@ -339,7 +355,11 @@ def compute(root: Path) -> dict:
         "census": {"cards": len(engine),
                    "measured_cards": sum(1 for c in engine.values() if c["card_tier"] == "measured"),
                    "frame_cards": sum(1 for c in engine.values() if c["card_tier"] == "frame"),
-                   "dual_cards": sum(1 for c in engine.values() if c["dual"])},
+                   "dual_cards": sum(1 for c in engine.values() if c["dual"]),
+                   "tripwires_total": sum(len(c.get("tripwires") or []) for c in engine.values()),
+                   "tripwires_fired": sum(
+                       sum(1 for tw in (c.get("tripwires") or []) if tw.get("state") == "FIRED")
+                       for c in engine.values())},
         "tolerance_ledger": tol_ledger,
     }
     return payload

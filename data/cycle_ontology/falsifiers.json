@@ -1,0 +1,579 @@
+[
+  {
+    "id": "semis.top_2026.v1",
+    "cycle": "semis",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "SOX record high ~14,655 marks a cycle top; broad upcycle is in",
+    "expires": "2027-06-30",
+    "coverage": "partial",
+    "dsl": {
+      "series": "yahoo:^SOX",
+      "op": "gt",
+      "value": 14655,
+      "sustain_bars": 1
+    },
+    "manual": {
+      "ttl_days": 90,
+      "last_reviewed": "2026-07-02",
+      "note": "Broadening breadth (no SOX A/D data feed); Broadcom AI outlook is an event-driven leg with no compilable proxy"
+    },
+    "source_prose": "SOX breaking above the 2026 record high ~14,655 on a sustained basis refutes the cycle-top thesis; breadth confirmation (SOX A/D line) and Broadcom AI revenue guide are manual residuals"
+  },
+  {
+    "id": "memory.dram_cycle.v1",
+    "cycle": "memory",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "DRAM ASP trough is in; memory upcycle underway",
+    "expires": "2027-06-30",
+    "coverage": "none",
+    "dsl": null,
+    "manual": {
+      "ttl_days": 90,
+      "last_reviewed": "2026-07-02",
+      "note": "All compilable legs require paywalled data: DRAM spot ASP (DRAMeXchange), spot DDR5 contract prices. No free proxy available."
+    },
+    "source_prose": "DRAM ASP turning negative quarter-over-quarter, or DDR5 spot prices breaking below contract floor, would refute the upcycle thesis. Both series are paywalled."
+  },
+  {
+    "id": "housing.bubble_peak.v1",
+    "cycle": "housing",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Housing cycle has turned; price appreciation and permit issuance confirm upcycle",
+    "expires": "2027-06-30",
+    "coverage": "full",
+    "dsl": {
+      "all": [
+        {
+          "series": "fred:CSUSHPISA",
+          "transform": "yoy_pct",
+          "op": "gt",
+          "value": 5,
+          "sustain_bars": 3
+        },
+        {
+          "series": "fred:PERMIT",
+          "op": "ge",
+          "value": 1500,
+          "sustain_bars": 2
+        }
+      ]
+    },
+    "manual": null,
+    "source_prose": "Case-Shiller HPI rising >5% YoY for 3+ months AND building permits >= 1,500K for 2+ months together refute a housing downturn thesis; either leg alone is insufficient"
+  },
+  {
+    "id": "business.cycle_trough.v1",
+    "cycle": "business",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Business cycle is in expansion; labor market and employment confirm growth regime",
+    "expires": "2027-06-30",
+    "coverage": "partial",
+    "dsl": {
+      "all": [
+        {
+          "series": "fred:SAHMREALTIME",
+          "op": "lt",
+          "value": 0.5
+        },
+        {
+          "series": "fred:PAYEMS",
+          "transform": "yoy_pct",
+          "op": "gt",
+          "value": 0
+        }
+      ]
+    },
+    "manual": {
+      "ttl_days": 90,
+      "last_reviewed": "2026-07-02",
+      "note": "ISM Manufacturing >54 is the canonical expansion confirmation leg but no free ISM feed is collected; DSL approximates via Sahm Rule + payroll growth"
+    },
+    "source_prose": "Sahm Rule below 0.5 (no recession signal) AND payroll growth positive YoY refute a business-cycle contraction thesis; ISM >54 is an uncompiled residual"
+  },
+  {
+    "id": "oil.regime_shift.v1",
+    "cycle": "oil",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Oil is in a structural range; extreme price moves signal regime shift",
+    "expires": "2027-06-30",
+    "coverage": "full",
+    "dsl": {
+      "any": [
+        {
+          "all": [
+            {
+              "series": "fred:DCOILWTICO",
+              "op": "lt",
+              "value": 55,
+              "sustain_bars": 42
+            }
+          ]
+        },
+        {
+          "all": [
+            {
+              "series": "fred:DCOILWTICO",
+              "op": "gt",
+              "value": 95,
+              "sustain_bars": 42
+            }
+          ]
+        }
+      ]
+    },
+    "manual": null,
+    "source_prose": "WTI crude sustained below $55 for 42 days (demand-collapse/OPEC+breakdown) or above $95 for 42 days (supply-shock upcycle) each refute the range-bound regime thesis"
+  },
+  {
+    "id": "copper.trough_in.v1",
+    "cycle": "copper",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Copper trough is in; industrial demand recovery supports a new upcycle",
+    "expires": "2027-06-30",
+    "coverage": "full",
+    "dsl": {
+      "any": [
+        {
+          "series": "yahoo:HG=F",
+          "op": "lt",
+          "value": 4.082,
+          "sustain_bars": 42
+        },
+        {
+          "series": "yahoo:HG=F",
+          "op": "gt",
+          "value": 6.804,
+          "sustain_bars": 42
+        }
+      ]
+    },
+    "manual": null,
+    "source_prose": "HG futures sustained below $4.082/lb (~$9,000/t) for 42 days refutes bullish trough-is-in thesis; sustained above $6.804/lb (~$15,000/t) confirms extreme upcycle overshoot. Both are regime-refuting extremes."
+  },
+  {
+    "id": "uranium.supply_squeeze.v1",
+    "cycle": "uranium",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Uranium supply squeeze is structural; spot U3O8 confirms persistent deficit",
+    "expires": "2027-06-30",
+    "coverage": "none",
+    "dsl": null,
+    "manual": {
+      "ttl_days": 90,
+      "last_reviewed": "2026-07-02",
+      "note": "Spot U3O8 price is paywalled (UxC, TradeTech). No free proxy available for uranium spot or term contract prices."
+    },
+    "source_prose": "Spot U3O8 breaking below $65/lb or above $120/lb would each refute the structural-squeeze thesis. Both series are paywalled with no free proxy."
+  },
+  {
+    "id": "gold.bull_intact.v1",
+    "cycle": "gold",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Gold secular bull is intact; real-rate repricing and de-dollarization support",
+    "expires": "2027-06-30",
+    "coverage": "full",
+    "dsl": {
+      "series": "yahoo:GC=F",
+      "op": "lt",
+      "value": 3300,
+      "sustain_bars": 21
+    },
+    "manual": null,
+    "source_prose": "Gold futures sustained below $3,300 for 21 days refutes the secular bull thesis and signals a structural break in the 2024-2026 upcycle"
+  },
+  {
+    "id": "bitcoin.cycle_position.v1",
+    "cycle": "bitcoin",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Bitcoin is in a post-halving bull cycle; on-chain and price structure confirm",
+    "expires": "2027-06-30",
+    "coverage": "full",
+    "dsl": {
+      "any": [
+        {
+          "series": "yahoo:BTC-USD",
+          "op": "gt",
+          "value": 126000
+        },
+        {
+          "series": "yahoo:BTC-USD",
+          "op": "lt",
+          "value": 64000
+        }
+      ]
+    },
+    "manual": null,
+    "source_prose": "BTC above $126,000 (blow-off top signal) or below $64,000 (bull-cycle invalidation) each refute the mid-bull cycle positioning thesis"
+  },
+  {
+    "id": "credit.spread_regime.v1",
+    "cycle": "credit",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Credit cycle is in benign expansion; spreads confirm risk appetite",
+    "expires": "2027-06-30",
+    "coverage": "partial",
+    "dsl": {
+      "any": [
+        {
+          "series": "fred:BAMLH0A0HYM2",
+          "op": "gt",
+          "value": 5.0
+        },
+        {
+          "series": "fred:BAMLH0A0HYM2",
+          "op": "le",
+          "value": 3.0,
+          "sustain_bars": 63
+        }
+      ]
+    },
+    "manual": {
+      "ttl_days": 90,
+      "last_reviewed": "2026-07-02",
+      "note": "Loan default rate (Fed Senior Loan Officer Survey net tightening) is a key confirmatory leg but no granular free feed is collected in this system"
+    },
+    "source_prose": "HY OAS spiking above 500bps refutes benign expansion; HY OAS sustained below 300bps for 63 days signals froth/complacency, also refuting a healthy-cycle thesis. Loan default rate is a manual residual."
+  },
+  {
+    "id": "shipping.bdi_cycle.v1",
+    "cycle": "shipping",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Shipping cycle is in recovery; BDI and container rates confirm global trade demand",
+    "expires": "2027-06-30",
+    "coverage": "none",
+    "dsl": null,
+    "manual": {
+      "ttl_days": 90,
+      "last_reviewed": "2026-07-02",
+      "note": "Baltic Dry Index (BDI) is paywalled. No free daily proxy for dry-bulk or container freight rates (Freightos FBX requires subscription)."
+    },
+    "source_prose": "BDI breaking below 1,000 or above 3,500 would each refute the cycle-recovery thesis. All shipping rate series are paywalled."
+  },
+  {
+    "id": "lithium.deficit_thesis.v1",
+    "cycle": "lithium",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Lithium structural deficit is intact; EV demand supports price floor",
+    "expires": "2027-06-30",
+    "coverage": "none",
+    "dsl": null,
+    "manual": {
+      "ttl_days": 90,
+      "last_reviewed": "2026-07-02",
+      "note": "Spot Li2CO3 (battery-grade, China) is paywalled (Fastmarkets, SMM). No free proxy for lithium carbonate or hydroxide spot prices."
+    },
+    "source_prose": "Spot Li2CO3 breaking below CNY 70,000/t or sustained recovery above CNY 120,000/t would each refute the current deficit/oversupply positioning. All series are paywalled."
+  },
+  {
+    "id": "agriculture.commodity_upcycle.v1",
+    "cycle": "agriculture",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Corn/grain complex is in structural upcycle driven by weather and energy costs",
+    "expires": "2027-06-30",
+    "coverage": "full",
+    "dsl": {
+      "series": "yahoo:ZC=F",
+      "op": "gt",
+      "value": 5.75,
+      "sustain_bars": 42
+    },
+    "manual": null,
+    "source_prose": "Corn futures sustained above $5.75/bu for 42 days confirms the grain upcycle thesis is intact (and thus fires as a regime-level falsifier for bearish/range views); sustained break below this level would invalidate the upcycle"
+  },
+  {
+    "id": "vol.regime_shift.v1",
+    "cycle": "vol",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Volatility is in a suppressed regime; VIX sub-20 reflects structural calm",
+    "expires": "2027-06-30",
+    "coverage": "full",
+    "dsl": {
+      "series": "fred:VIXCLS",
+      "op": "gt",
+      "value": 27.5,
+      "sustain_bars": 5
+    },
+    "manual": null,
+    "source_prose": "VIX sustained above 27.5 for 5 days refutes the suppressed-volatility regime thesis and signals structural risk-off transition"
+  },
+  {
+    "id": "biotech.upcycle.v1",
+    "cycle": "biotech",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Biotech is in a new upcycle; XBI breadth and M&A pipeline confirm",
+    "expires": "2027-06-30",
+    "coverage": "full",
+    "dsl": {
+      "any": [
+        {
+          "series": "yahoo:XBI",
+          "op": "lt",
+          "value": 122.5,
+          "sustain_bars": 21
+        },
+        {
+          "series": "yahoo:XBI",
+          "op": "gt",
+          "value": 175
+        }
+      ]
+    },
+    "manual": null,
+    "source_prose": "XBI sustained below $122.50 for 21 days refutes the upcycle thesis (new bear leg); XBI above $175 signals blow-off/froth that also refutes the early-upcycle positioning"
+  },
+  {
+    "id": "long-bonds.bear_steepener.v1",
+    "cycle": "long-bonds",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Long bonds have bottomed; 30yr yield peak and TLT recovery confirm duration is buyable",
+    "expires": "2027-06-30",
+    "coverage": "full",
+    "dsl": {
+      "any": [
+        {
+          "series": "fred:DGS30",
+          "op": "gt",
+          "value": 5.2
+        },
+        {
+          "series": "fred:DGS10",
+          "op": "gt",
+          "value": 4.9
+        },
+        {
+          "series": "yahoo:TLT",
+          "op": "lt",
+          "value": 83
+        }
+      ]
+    },
+    "manual": null,
+    "source_prose": "30yr yield above 5.2%, 10yr above 4.9%, or TLT below $83 each independently refute the long-bond bottoming/recovery thesis"
+  },
+  {
+    "id": "dollar.bear_cycle.v1",
+    "cycle": "dollar",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Dollar is in a structural bear cycle; DXY below 100 with declining inflation confirms",
+    "expires": "2027-06-30",
+    "coverage": "full",
+    "dsl": {
+      "all": [
+        {
+          "series": "yahoo:DX-Y.NYB",
+          "transform": "weekly_close",
+          "op": "lt",
+          "value": 97
+        },
+        {
+          "series": "fred:CPIAUCSL",
+          "transform": "yoy_pct",
+          "op": "lt",
+          "value": 4
+        }
+      ]
+    },
+    "manual": {
+      "ttl_days": 90,
+      "last_reviewed": "2026-07-02",
+      "note": "Dovish FOMC pivot (explicit rate-cut cycle initiation) is an event-driven leg; the compiled DXY + CPI legs proxy the macro outcome. Reclassified FULL as the proxy captures the signal adequately."
+    },
+    "source_prose": "DXY weekly close below 97 AND CPI YoY below 4% together refute a dollar-bull or sticky-inflation thesis; dovish FOMC pivot is a manual event residual proxied by these legs"
+  },
+  {
+    "id": "natural-gas.summer_squeeze.v1",
+    "cycle": "natural-gas",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Natural gas is in a seasonal squeeze; summer heat and LNG export demand confirm",
+    "expires": "2027-06-30",
+    "coverage": "partial",
+    "dsl": {
+      "series": "fred:DHHNGSP",
+      "op": "gt",
+      "value": 4.0,
+      "sustain_bars": 10,
+      "months": [7, 8, 9]
+    },
+    "manual": {
+      "ttl_days": 90,
+      "last_reviewed": "2026-07-02",
+      "note": "EIA storage vs 5-year seasonal average is the canonical structural-deficit indicator but EIA storage data is not currently collected in this system"
+    },
+    "source_prose": "Henry Hub above $4.00 for 10 days in Jul-Sep confirms summer squeeze; EIA storage deficit vs 5-yr average is an uncompiled residual leg"
+  },
+  {
+    "id": "iron-ore.china_demand.v1",
+    "cycle": "iron-ore",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Iron ore demand is supported by China construction recovery; 62% Fe seaborne confirms",
+    "expires": "2027-06-30",
+    "coverage": "none",
+    "dsl": null,
+    "manual": {
+      "ttl_days": 90,
+      "last_reviewed": "2026-07-02",
+      "note": "62% Fe seaborne spot price (SGX, Platts IODEX) is paywalled. No free daily proxy. SGX futures require exchange access."
+    },
+    "source_prose": "62% Fe spot breaking below $80/t or rising above $140/t would each refute the balanced-demand thesis. All seaborne iron ore price series are paywalled."
+  },
+  {
+    "id": "silver.gold-silver_ratio.v1",
+    "cycle": "silver",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Silver is in an industrial+monetary upcycle; gold-silver ratio compression confirms",
+    "expires": "2027-06-30",
+    "coverage": "partial",
+    "dsl": {
+      "series": "yahoo:SI=F",
+      "op": "gt",
+      "value": 72,
+      "sustain_bars": 5
+    },
+    "manual": {
+      "ttl_days": 90,
+      "last_reviewed": "2026-07-02",
+      "note": "Fed pivot to explicit rate cuts is an event-driven catalyst leg; silver above $72 proxies the monetary-premium capture but the Fed event itself has no compilable DSL"
+    },
+    "source_prose": "Silver futures above $72 for 5 days confirms the upcycle overshoot (blow-off refuter); Fed pivot to rate cuts is an uncompiled event residual"
+  },
+  {
+    "id": "em-equities.upcycle.v1",
+    "cycle": "em-equities",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "EM equities are in a new upcycle; DXY weakness and EM ATH breakout confirm",
+    "expires": "2027-06-30",
+    "coverage": "partial",
+    "dsl": {
+      "all": [
+        {
+          "series": "yahoo:EEM",
+          "op": "cross_above",
+          "value": 65.0
+        },
+        {
+          "series": "yahoo:DX-Y.NYB",
+          "op": "lt",
+          "value": 99
+        }
+      ]
+    },
+    "manual": {
+      "ttl_days": 90,
+      "last_reviewed": "2026-07-02",
+      "note": "MSCI-EM ATH rewritten to EEM ~$65 (approximate 2026 ATH level); MSCI-EM index itself is paywalled so EEM ETF is used as proxy. EEM level may drift from MSCI-EM index."
+    },
+    "source_prose": "EEM crossing above its 2026 ATH (~$65) AND DXY below 99 together confirm EM upcycle; MSCI-EM index (direct) is paywalled so EEM is used as proxy with manual review cadence"
+  },
+  {
+    "id": "japan.reflation_cycle.v1",
+    "cycle": "japan",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "Japan is in a structural reflation cycle; Nikkei ATH and weak yen confirm",
+    "expires": "2027-06-30",
+    "coverage": "full",
+    "dsl": {
+      "all": [
+        {
+          "series": "intl:^N225",
+          "op": "gt",
+          "value": 73000,
+          "sustain_bars": 21
+        },
+        {
+          "series": "yahoo:USDJPY=X",
+          "op": "ge",
+          "value": 160
+        }
+      ]
+    },
+    "manual": {
+      "ttl_days": 90,
+      "last_reviewed": "2026-07-02",
+      "note": "TOPIX A/D breadth line (broadening participation) is not collected; Nikkei + USDJPY proxy the macro reflation but breadth quality is a manual residual"
+    },
+    "source_prose": "Nikkei 225 sustained above 73,000 for 21 days AND USDJPY at or above 160 together confirm the yen-weak reflation cycle; TOPIX A/D breadth is an uncompiled residual"
+  },
+  {
+    "id": "pgms.platinum_premium.v1",
+    "cycle": "pgms",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "PGMs are in a supply-deficit upcycle; platinum premium vs gold and absolute level confirm",
+    "expires": "2027-06-30",
+    "coverage": "full",
+    "dsl": {
+      "any": [
+        {
+          "series": "yahoo:PL=F",
+          "op": "gt",
+          "value": 1900
+        },
+        {
+          "series": "yahoo:PL=F",
+          "transform": "ratio:yahoo:GC=F",
+          "op": "lt",
+          "value": 2.2
+        },
+        {
+          "series": "yahoo:PL=F",
+          "op": "lt",
+          "value": 1300
+        }
+      ]
+    },
+    "manual": null,
+    "source_prose": "Platinum above $1,900 (upcycle confirmed), or Pt/Au ratio below 2.2 (platinum outperforming on relative basis), or platinum below $1,300 (capitulation/bear market) each independently fire as regime-level falsifiers"
+  },
+  {
+    "id": "spx.bull_cycle.v1",
+    "cycle": "spx",
+    "version": 1,
+    "direction": "refutes",
+    "claim": "SPX is in a durable bull cycle; breadth and momentum confirm expansion regime",
+    "expires": "2027-06-30",
+    "coverage": "partial",
+    "dsl": {
+      "all": [
+        {
+          "series": "yahoo:^GSPC",
+          "op": "gt",
+          "value": 5800,
+          "sustain_bars": 5
+        },
+        {
+          "series": "fred:SAHMREALTIME",
+          "op": "lt",
+          "value": 0.5
+        }
+      ]
+    },
+    "manual": {
+      "ttl_days": 90,
+      "last_reviewed": "2026-07-02",
+      "note": "NYSE A/D line trend and SPX breadth (% above 200MA) are canonical bull-cycle confirmers but are not collected as time series in this system; DSL approximates via price level + Sahm Rule"
+    },
+    "source_prose": "SPX sustained above 5,800 with Sahm Rule below 0.5 approximates an intact bull cycle; breadth metrics (NYSE A/D, % above 200MA) are manual residuals not yet in the data pipeline"
+  }
+]

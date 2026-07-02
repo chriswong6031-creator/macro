@@ -442,6 +442,7 @@
         '</div>'
       : '';
     carddiv.innerHTML =
+      firedBannerHTML(card) +
       '<div class="cc-top">' +
         '<div class="cc-id"><span class="cc-dot"></span><div><div class="cc-nm">' + zc(card.id, "name", card.name) + '</div>' +
         '<div class="cc-px">' + esc(measuredBasisLine(band)) + '</div></div></div>' +
@@ -457,7 +458,8 @@
         '<div class="cc-next"><span class="cc-arrow">' + (pj.nextTurn === "peak" ? "▲" : "▼") + '</span>' +
           '<span>' + turnWord(pj.nextTurn, true) + ' ≈ ' + fmtMon(pj.central) + '</span></div>' +
       '</div>' +
-      tolNote;
+      tolNote +
+      tripwireStripHTML(card);
     carddiv.addEventListener("click", function () { toggleFocus(card.id); });
     grid.appendChild(carddiv);
     // sparkline — the SAME engine model, no axes/bands/crosshair
@@ -486,6 +488,7 @@
     var a8 = a8Text(band);
     var mon = (band.monitors || []).map(function (r) { return r.split(":").pop(); });
     carddiv.innerHTML =
+      firedBannerHTML(card) +
       '<div class="cc-top">' +
         '<div class="cc-id"><span class="cc-dot"></span><div><div class="cc-nm">' + zc(card.id, "name", card.name) + '</div>' +
         '<div class="cc-px">' + esc(zc(card.id, "proxy", (card.opinion && card.opinion.proxy) || "")) + '</div></div></div>' +
@@ -493,8 +496,8 @@
       '</div>' +
       '<div class="cc-timeline"></div>' +
       '<div class="cc-frame-a8">' + a8 + '</div>' +
-      '<div class="cc-tripwire" data-slot="tripwire"></div>' +      // reserved for W3.3
-      (mon.length ? '<div class="cc-monitors"><span>' + L("Monitors", "监测指标") + '</span> ' + esc(mon.join(" · ')")) + '</div>' : '');
+      tripwireStripHTML(card) +
+      (mon.length ? '<div class="cc-monitors"><span>' + L("Monitors", "监测指标") + '</span> ' + esc(mon.join(" · ")) + '</div>' : '');
     carddiv.addEventListener("click", function () { toggleFocus(card.id); });
     grid.appendChild(carddiv);
     mountTimeline(carddiv.querySelector(".cc-timeline"), card, band);
@@ -544,6 +547,149 @@
       xTicks: window.MMChart.niceYearTicks(Math.ceil(x0), Math.floor(x1), 4),
       series: series
     });
+  }
+
+  /* ---- W3.3: falsifier tripwire strip ------------------------------------- */
+  /* Ruling A17: FIRED is latched (sticky), but always shows current_leg status
+     so a recovered thesis shows "fired {date}; condition no longer met".
+     State colors use severity tokens, NOT up/down tokens — zh flip is bypassed.
+       ARMED        → green-neutral (.tw-armed)
+       FIRED        → red alert (.tw-fired)
+       MANUAL       → amber (.tw-manual)
+       DATA_MISSING → grey (.tw-missing)
+       EXPIRED      → grey (.tw-expired)                                       */
+  function tripwireStripHTML(card) {
+    var tws = card.tripwires || [];
+    if (!tws.length) return "";
+
+    var items = tws.map(function (tw) {
+      var cls = "tw-item tw-" + (tw.state || "armed").toLowerCase().replace(/_/g, "-");
+      var label = "", dot = "";
+
+      if (tw.state === "FIRED") {
+        dot = '<span class="tw-dot tw-dot-fired"></span>';
+        var dateStr = tw.fired_on ? tw.fired_on.slice(0, 7) : "";
+        var noLonger = (tw.current_leg === false)
+          ? " · " + L("condition no longer met", "条件已不再满足")
+          : "";
+        label = '<span class="l-en"><b>' + L("FIRED", "已触发") + '</b>' +
+                (dateStr ? " " + dateStr : "") + noLonger + '</span>' +
+                '<span class="l-zh"><b>已触发</b>' +
+                (dateStr ? " " + dateStr : "") + (tw.current_leg === false ? " · 条件已不再满足" : "") + '</span>';
+      } else if (tw.state === "ARMED") {
+        dot = '<span class="tw-dot tw-dot-armed"></span>';
+        label = '<span class="l-en">' + L("armed", "监控中") + '</span>' +
+                '<span class="l-zh">监控中</span>';
+      } else if (tw.state === "MANUAL") {
+        dot = '<span class="tw-dot tw-dot-manual"></span>';
+        var overdue = tw.overdue_days && tw.overdue_days > 0
+          ? " · " + L("review overdue " + tw.overdue_days + "d", "超期 " + tw.overdue_days + " 天")
+          : (tw.manual && tw.manual.last_reviewed
+              ? " · " + L("reviewed " + tw.manual.last_reviewed, "已审阅 " + tw.manual.last_reviewed)
+              : "");
+        label = '<span class="l-en">' + L("manual", "人工") + esc(overdue) + '</span>' +
+                '<span class="l-zh">人工' + (tw.overdue_days && tw.overdue_days > 0
+                  ? ' · 超期 ' + tw.overdue_days + ' 天' : '') + '</span>';
+      } else if (tw.state === "DATA_MISSING") {
+        dot = '<span class="tw-dot tw-dot-missing"></span>';
+        label = '<span class="l-en">' + L("data missing", "数据缺失") + '</span>' +
+                '<span class="l-zh">数据缺失</span>';
+      } else if (tw.state === "EXPIRED") {
+        dot = '<span class="tw-dot tw-dot-expired"></span>';
+        label = '<span class="l-en">' + L("expired", "已过期") + '</span>' +
+                '<span class="l-zh">已过期</span>';
+      } else {
+        dot = '<span class="tw-dot"></span>';
+        label = '<span class="l-en">' + esc(tw.state || "") + '</span>' +
+                '<span class="l-zh">' + esc(tw.state || "") + '</span>';
+      }
+
+      // claim tooltip (plain EN per house rule — no t() in attributes)
+      var titleStr = (tw.claim || "") + (tw.state === "FIRED" && tw.current_leg === false
+        ? " (condition no longer met — latch remains until v" + ((tw.version || 1) + 1) + ")"
+        : "");
+
+      return '<span class="' + cls + '" title="' + esc(titleStr) + '">' + dot + label + '</span>';
+    }).join("");
+
+    // summary prefix: count FIRED
+    var nFired = tws.filter(function (tw) { return tw.state === "FIRED"; }).length;
+    var nArmed = tws.filter(function (tw) { return tw.state === "ARMED"; }).length;
+    var summary = nFired
+      ? '<span class="tw-summary tw-summary-fired">' +
+          '<span class="l-en">' + L("⚠ " + nFired + " falsifier fired", "⚠ " + nFired + " 项证伪已触发") + '</span>' +
+          '<span class="l-zh">⚠ ' + nFired + ' 项证伪已触发</span>' +
+        '</span>'
+      : '<span class="tw-summary">' +
+          '<span class="l-en">' + L(nArmed + " conditions live", nArmed + " 项条件监控中") + '</span>' +
+          '<span class="l-zh">' + nArmed + ' 项条件监控中</span>' +
+        '</span>';
+
+    return '<div class="cc-tripwire tw-strip">' + summary + ' ' + items + '</div>';
+  }
+
+  /* FIRED banner: shown above the card when any tripwire is latched FIRED */
+  function firedBannerHTML(card) {
+    var tws = card.tripwires || [];
+    var fired = tws.filter(function (tw) { return tw.state === "FIRED" && tw.latched; });
+    if (!fired.length) return "";
+    var msgs = fired.map(function (tw) {
+      return esc(tw.claim) + (tw.fired_on ? " (" + tw.fired_on.slice(0, 10) + ")" : "");
+    });
+    var msgEn = "⚠ Falsifier fired: " + msgs.join("; ") + " — thesis refuted.";
+    var msgZh = "⚠ 证伪触发：" + msgs.join("；") + " — 论点已被否定。";
+    return '<div class="cc-fired-banner">' +
+      '<span class="l-en">' + msgEn + '</span>' +
+      '<span class="l-zh">' + msgZh + '</span>' +
+    '</div>';
+  }
+
+  /* focus panel tripwire detail block */
+  function focusTripwireBlock(card) {
+    var tws = card.tripwires || [];
+    if (!tws.length) return "";
+    var rows = tws.map(function (tw) {
+      var stateTag = tw.state === "FIRED"
+        ? '<span class="tw-tag tw-tag-fired">' + L("FIRED", "已触发") + '</span>'
+        : tw.state === "MANUAL"
+        ? '<span class="tw-tag tw-tag-manual">' + L("MANUAL", "人工") + '</span>'
+        : tw.state === "DATA_MISSING"
+        ? '<span class="tw-tag tw-tag-missing">' + L("DATA MISSING", "数据缺失") + '</span>'
+        : tw.state === "EXPIRED"
+        ? '<span class="tw-tag tw-tag-expired">' + L("EXPIRED", "已过期") + '</span>'
+        : '<span class="tw-tag tw-tag-armed">' + L("ARMED", "监控中") + '</span>';
+
+      var a17 = (tw.state === "FIRED" && tw.current_leg === false)
+        ? '<div class="tw-a17">' +
+            '<span class="l-en">Condition no longer met — latch stays until re-authored (v' + ((tw.version || 1) + 1) + ')</span>' +
+            '<span class="l-zh">条件已不再满足 — 锁存至重新编写（v' + ((tw.version || 1) + 1) + '）</span>' +
+          '</div>'
+        : "";
+
+      var manualNote = tw.state === "MANUAL" && tw.manual
+        ? '<div class="tw-manual-note">' +
+            '<span class="l-en">Manual falsifier: ' + esc(tw.manual.note || "") +
+            (tw.overdue_days && tw.overdue_days > 0
+              ? ' <b>Review overdue ' + tw.overdue_days + 'd</b>' : '') + '</span>' +
+            '<span class="l-zh">人工证伪：' + esc(tw.manual.note || "") +
+            (tw.overdue_days && tw.overdue_days > 0
+              ? ' <b>超期 ' + tw.overdue_days + ' 天</b>' : '') + '</span>' +
+          '</div>'
+        : "";
+
+      return '<div class="tw-focus-row">' +
+        '<div class="tw-focus-head">' + stateTag + ' <span class="tw-claim">' + esc(tw.claim) + '</span>' +
+        '<span class="tw-dir"> · ' + esc(tw.direction) + '</span></div>' +
+        a17 + manualNote +
+      '</div>';
+    }).join("");
+
+    return '<div class="cyc-grp cyc-grp-full">' +
+      '<div class="cyc-lbl">' + L("Falsifier tripwires", "证伪条件监控") + ' ' +
+        '<span class="cyc-tier tier-frame" title="W3.3 live-evaluated tripwires">' +
+          L("LIVE", "实时") + '</span></div>' +
+      '<div class="tw-focus-list">' + rows + '</div>' +
+    '</div>';
   }
 
   /* ---- focus orchestration ----------------------------------------------- */
@@ -602,7 +748,8 @@
     var facts = measured ? measuredFacts(card, mb) : frameFacts(card, fb);
     var opinion = opinionBlock(card, op, mb);
     var secular = (measured && fb) ? secularStrip(card, fb) : "";
-    return head + facts + secular + opinion;
+    var tripwires = focusTripwireBlock(card);
+    return head + facts + secular + opinion + tripwires;
   }
   function focusTierBadge(band, card) { return tierBadge(band, card); }
   function dualHint() { return '<span class="cyc-dual-hint">' + L("dual", "双轨") + '</span>'; }
