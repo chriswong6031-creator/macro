@@ -392,6 +392,102 @@ def backfill() -> Path:
 
 
 # --------------------------------------------------------------------------- #
+# C2 causal builder — the pooled intl macro de-risk sleeve vs the US book (W2)
+# --------------------------------------------------------------------------- #
+# The sleeve VALUE is produced leaf-side (engine.intl_sleeve, imports nothing from
+# the scoring core). This builder wraps it into the {signal, strat_ret, bench_ret,
+# target_dd, basis, split_half} contract grade_claim expects — grading the DECLARED
+# target (US SPY forward drawdown), with the 5 existing US MRS legs as the
+# orthogonality basis. Everything is CAUSAL: the sleeve is publication-lagged +
+# ffilled (engine.intl_sleeve), the strategy acts next-bar (backtest_core.shift(1)),
+# and the US-leg basis comes from the causal conditions_frame.
+_C2_HONEST_START = "2002-05-01"    # first date all 3 pooled markets carry ALL declared legs
+                                   # (JP_short_3m begins 2002-04) — no look-ahead, no post-hoc pick.
+
+
+def _spy_close():
+    """SPY/US-book price for the C2 target. _GSPC is the deepest US index on disk."""
+    df = store.read("yahoo", "_GSPC")
+    if df is None or df.empty:
+        return None
+    s = df["close"].copy()
+    s.index = pd.to_datetime(s.index)
+    return s[~s.index.duplicated(keep="last")].sort_index().dropna()
+
+
+def _forward_maxdd(px: pd.Series, h: int) -> pd.Series:
+    """Forward max-drawdown over the next h bars (<=0; deeper = more negative). Causal
+    label — the value at t looks FORWARD, so it is a target, never fed into the signal."""
+    vals = px.to_numpy()
+    out = np.full(len(px), np.nan)
+    for i in range(len(px)):
+        w = vals[i:i + h + 1]
+        if len(w) < 3:
+            continue
+        peak = np.maximum.accumulate(w)
+        out[i] = float((w / peak - 1.0).min())
+    return pd.Series(out, index=px.index)
+
+
+def _us_mrs_basis(idx) -> list[pd.Series]:
+    """The 5 existing US MRS legs (recession, drawdown, nfci, liquidity, transition) as
+    daily causal series — the orthogonality basis. Built exactly as the live engine does
+    (engine.conditions._macro_risk_legs off the causal conditions_frame + regime). Returns
+    [] fail-soft if the macro pipeline can't assemble (the orthogonality gate then no-ops)."""
+    try:
+        from engine.conditions import _macro_risk_legs
+        from engine.inputs import build_features
+        from engine.regime import classify
+        f = build_features()
+        regime = classify(f)
+        legs, _ = _macro_risk_legs(f, regime)
+    except Exception:  # noqa: BLE001 — additive; a missing pipeline must not crash the grade
+        return []
+    out = []
+    for nm in ("recession", "drawdown", "nfci", "liquidity", "transition"):
+        if nm in legs:
+            v, _a = legs[nm]
+            out.append(v.reindex(idx))
+    return out
+
+
+def build_c2_sleeve(claim: dict) -> dict:
+    """Causal builder for c2_intl_macro_sleeve — the pooled JP/EZ/GB de-risk sleeve graded
+    against US SPY forward drawdown. The signal is engine.intl_sleeve.pooled_feature (leaf
+    producer); the de-risk strategy holds SPY and glides to flat as the pooled fraction of
+    de-risking markets rises. Restricted to the honest fully-specified window (all declared
+    legs present) so no market contributes a partially-specified gate (no look-ahead)."""
+    from engine import intl_sleeve
+    from engine.validation import backtest_core, _sharpe
+    px = _spy_close()
+    if px is None:
+        return {}
+    px = px.loc[pd.Timestamp(_C2_HONEST_START):]
+    idx = px.index
+    feat = intl_sleeve.pooled_feature(idx).reindex(idx)
+    # de-risk strategy: SPY long/flat, gliding to flat as more markets de-risk. acted
+    # next-bar by backtest_core.shift(1); flat sleeve credited nothing (conservative).
+    alloc = (1.0 - feat.clip(0.0, 1.0)).fillna(1.0)
+    strat = backtest_core(px, alloc, cost_bps=3.0, cash_yield=None)["net"].reindex(idx)
+    bench = px.pct_change().reindex(idx)
+    h = int(claim["horizons"][0])                       # first DECLARED DD horizon (21) — no post-hoc pick
+    target_dd = _forward_maxdd(px, h)
+    basis = _us_mrs_basis(idx)
+    r = strat.dropna()
+    n = len(r)
+    s1 = _sharpe(r.iloc[:n // 2].to_numpy(), 252) if n >= 240 else float("nan")
+    s2 = _sharpe(r.iloc[n // 2:].to_numpy(), 252) if n >= 240 else float("nan")
+    split_same = bool(np.isfinite(s1) and np.isfinite(s2) and np.sign(s1) == np.sign(s2))
+    return {"signal": feat, "strat_ret": strat, "bench_ret": bench, "target_dd": target_dd,
+            "basis": basis, "split_half_same_sign": split_same, "ic": None}
+
+
+# The C2 builder is wired via the claim's `builder` dotted-path field
+# ("scripts.intl_phase0.build_c2_sleeve") + _resolve_builder in run() — the same
+# convention the C1 channel uses. No separate registry object is needed.
+
+
+# --------------------------------------------------------------------------- #
 # grade one claim (pluggable) — a claim with no builder DECLARES but grades PENDING
 # --------------------------------------------------------------------------- #
 def grade_claim(claim: dict, ledger: TrialLedger, *, asof: date | None = None,
@@ -684,7 +780,7 @@ def _existing_ledger_rows() -> dict[str, dict]:
 
 
 def run(builders: dict | None = None, *, only: set[str] | None = None,
-        merge: bool = True) -> Path:
+        merge: bool = True, asof: date | None = None) -> Path:
     """Grade the declared claims (with an optional per-claim builder) and write the ledger.
     Builders resolve in priority order: an explicit `builders={claim_id: callable}` override,
     else the claim's own `builder` dotted-path field (engine/intl_claims). A claim with no
@@ -692,7 +788,9 @@ def run(builders: dict | None = None, *, only: set[str] | None = None,
 
     `only` restricts the (re)grade to those claim ids (the rest keep their existing ledger
     rows). `merge=True` overlays the freshly-graded rows onto the existing ledger (the
-    backfill evidence graveyard is preserved); `merge=False` writes ONLY the graded rows."""
+    backfill evidence graveyard is preserved); `merge=False` writes ONLY the graded rows.
+    `asof` anchors the freshness gate to a chosen date (defaults to today) — the on-disk
+    monthly-macro vintage passes at today's asof under the per-claim SLA."""
     builders = builders or {}
     led = TrialLedger()
     declare(led)                                   # ensure the budget is registered before grading
@@ -703,7 +801,7 @@ def run(builders: dict | None = None, *, only: set[str] | None = None,
         b = builders.get(c["id"])
         if b is None and isinstance(c.get("builder"), str):
             b = _resolve_builder(c["builder"])
-        base[c["id"]] = grade_claim(c, led, builder=b)
+        base[c["id"]] = grade_claim(c, led, asof=asof, builder=b)
     return _write_ledger(list(base.values()), date.today().isoformat())
 
 
@@ -716,7 +814,7 @@ def main(argv=None) -> int:
     ap.add_argument("--backfill", action="store_true",
                     help="write the truthful starting ledger from the already-run evidence")
     ap.add_argument("--run", action="store_true",
-                    help="grade the declared claims (PENDING until a builder is wired) + write ledger")
+                    help="grade the declared claims (live builders + truthful backfill) + write ledger")
     ap.add_argument("--c3", action="store_true",
                     help="W2-C3: run the global breadth builder (build_c3_global_breadth) + write ledger")
     ap.add_argument("--only", default=None,
@@ -739,15 +837,14 @@ def main(argv=None) -> int:
         print(f"[backfill] wrote {len(intl_claims.BACKFILL)} evidence rows → {p}")
 
     if args.c3:
-        # W2-C3: grade only the C3 claim with the live breadth builder; merge into the existing
-        # ledger (backfill entries remain; the C3 row is overwritten with the graded result).
-        led = TrialLedger()
-        declare(led)
-        # Grade every claim; supply the C3 builder only for c3_global_etf_breadth
-        builders = {"c3_global_etf_breadth": build_c3_global_breadth}
-        features = [grade_claim(c, led, builder=builders.get(c["id"])) for c in intl_claims.CLAIMS]
-        p = _write_ledger(features, date.today().isoformat())
-        c3_row = next((f for f in features if f["id"] == "c3_global_etf_breadth"), None)
+        # W2-C3: grade ONLY the C3 claim with the live breadth builder and MERGE it into the
+        # existing ledger (backfill graveyard + other graded claims are preserved; the C3 row
+        # is overwritten with the graded result). Uses run(only=, merge=) so the graveyard is
+        # never clobbered regardless of build order.
+        p = run(builders={"c3_global_etf_breadth": build_c3_global_breadth},
+                only={"c3_global_etf_breadth"}, merge=True)
+        c3_row = next((f for f in _existing_ledger_rows().values()
+                       if f["id"] == "c3_global_etf_breadth"), None)
         if c3_row:
             print(f"[C3] verdict={c3_row['verdict']} weight_cap={c3_row['weight_cap']} "
                   f"dsr={c3_row['metrics'].get('dsr')} orth={c3_row['metrics'].get('orthogonal_partial')} "
@@ -759,9 +856,14 @@ def main(argv=None) -> int:
     if args.run and not args.backfill:
         only = {s.strip() for s in args.only.split(",")} if args.only else None
         p = run(only=only)
+        payload = json.loads(p.read_text())
+        by_v: dict[str, int] = {}
+        for feat in payload["features"]:
+            by_v[feat["verdict"]] = by_v.get(feat["verdict"], 0) + 1
         wired = sum(1 for c in intl_claims.CLAIMS if isinstance(c.get("builder"), str))
         scope = f"only {sorted(only)}" if only else f"{len(intl_claims.CLAIMS)} claims"
         print(f"[run] graded {scope} ({wired} with a wired builder, rest PENDING) → {p}")
+        print(f"[run] verdicts: {by_v}")
     elif args.run:
         print("[run] skipped — --backfill already wrote the ledger this invocation")
     return 0

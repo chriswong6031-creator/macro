@@ -50,9 +50,10 @@ def test_the_graveyard_is_shown():
 
 
 def test_intl_bridge_graveyard_is_published():
-    """W1: the intl graveyard is published like every other signal family. CONTEXT
-    verdicts land in display, validated-but-unwired (C2 sleeve, C4 REER N=1) land in
-    pending — each cited to its exact report, none wired into a score."""
+    """The intl graveyard is published like every other signal family. CONTEXT verdicts
+    land in display, validated-but-unwired (C4 REER N=1) lands in pending — each cited to
+    its exact report, none wired into a score. W2 (C2): the macro-sleeve graded CONTEXT vs
+    the US book (DSR 0.83 < the 0.90 door) → it moves from pending to display."""
     p = _payload()
     rows = [r for t in p["tiers"] for r in t["rows"]]
     intl = [r for r in rows if "intl_bridge/ledger.json" in r["source"]]
@@ -60,10 +61,14 @@ def test_intl_bridge_graveyard_is_published():
     blob = " ".join(r["name"] for r in intl).lower()
     for must in ("c2", "c4", "c3", "radar"):
         assert must in blob, f"expected an intl-bridge row mentioning {must!r}"
-    # the strongest prior sits in pending (validated, gates unrun) — not scored
+    # C2 now sits in DISPLAY (graveyard) — CONTEXT vs the US book, not scored
+    display = next((t for t in p["tiers"] if t["key"] == "display"), None)
+    assert display and any("C2" in r["name"] for r in display["rows"]), \
+        "C2 macro-sleeve should be published in the display graveyard (CONTEXT verdict)"
+    # a pending intl entry still exists (C4 REER N=1 resurrection is still pending)
     pending = next((t for t in p["tiers"] if t["key"] == "pending"), None)
-    assert pending and any("C2" in r["name"] for r in pending["rows"])
-    # nothing intl is wired into a score in W1
+    assert pending and any("C4" in r["name"] or "REER" in r["name"] for r in pending["rows"])
+    # nothing intl is wired into a score
     for r in intl:
         assert "not wired" in r["wired"] or "not shipped" in r["wired"] \
             or "display-only" in r["wired"]

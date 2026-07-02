@@ -78,11 +78,18 @@ CLAIMS: list[dict] = [
         "horizons": _DD_HORIZONS,
         "source_series": [("intl_macro", "JP_yield_10y"), ("intl_macro", "JP_short_3m"),
                           ("intl_macro", "de_10y"), ("intl_macro", "GB_yield_10y")],
-        "freshness_sla_days": 45,   # curve/short-rate publication lag; NOT the dead CPI series
-        "builder": None,   # orthogonality + ES gates run in W2 (C2)
-        "notes": "The repo's strongest intl result (pooled DSR 0.9978, split-half PASS). "
-                 "Drop KR from the pooled gate pending INTL-50 re-fit. Seam: "
-                 "conditions._macro_risk_legs → macro_risk_series × sector_macro_beta.",
+        # monthly macro + ~1m publication lag: a freshly-collected monthly print is
+        # ~35d old, and OECD/FRED monthly short/curve series routinely lag a full
+        # quarter before the next observation lands. 120d = ~2 monthly cadences with
+        # lag — tight enough to catch a DEAD series (years stale, e.g. the retired CPI
+        # ids) but not so tight it fails-closed on a live-but-quarterly-lagged print.
+        "freshness_sla_days": 120,
+        "builder": "scripts.intl_phase0.build_c2_sleeve",   # W2: causal pooled-sleeve builder
+        "notes": "Prior (pooled INTL sleeve vs INTL drawdowns): DSR 0.9978, split-half PASS. "
+                 "C2 tests the DECLARED target — US SPY forward drawdown — with orthogonality "
+                 "vs the 5 US MRS legs + crisis-independent ES. KR dropped from the pooled gate "
+                 "(INTL-50). Seam if it clears: conditions._macro_risk_legs → macro_risk_series "
+                 "× sector_macro_beta.",
     },
     # -- C3 · Global ETF breadth barometer --------------------------------
     {
@@ -222,24 +229,39 @@ BACKFILL: list[dict] = [
     {
         "id": "c2_intl_macro_sleeve",
         "channel": "C2",
-        "hypothesis": "Pooled intl macro de-risk sleeve (curve+Sahm+tightening, JP/EZ/GB/KR) "
-                      "leads equity drawdowns — the strongest intl prior.",
+        "hypothesis": "Pooled intl macro de-risk sleeve (curve+Sahm+tightening, JP/EZ/GB) "
+                      "leads US SPY drawdowns beyond the 5 existing US MRS legs.",
         "direction": "de-risk",
-        "verdict": "PENDING",
+        # W2 (macro C2) VERDICT: CONTEXT — do NOT wire. The prior DSR 0.9978 was the pooled
+        # INTL sleeve predicting INTL drawdowns; graded against the DECLARED target (US SPY
+        # forward drawdown) on the honest fully-specified window (2002-05, first date all
+        # three markets carry all their declared legs — no look-ahead), the sleeve-gated SPY
+        # strategy's deflated Sharpe is 0.83 — BELOW the 0.90 promotion door — and its residual
+        # forward-DD content after partialing out the 5 US MRS legs is marginal and
+        # window-fragile (Spearman −0.03 @2000-start, −0.17 @2002-start). crisis_count PASS (5),
+        # crisis-independent ES PASS (+0.0026), split-half PASS. The binding failure is the DSR
+        # door: against the US book the sleeve's growth-scare information largely overlaps what
+        # NFCI/liquidity/recession already capture. Truthful negative — weight_cap 0, kill=True.
+        "verdict": "CONTEXT",
         "weight_cap": 0.0,
-        "metrics": {"ic": None, "dsr": 0.9978, "split_half_same_sign": True,
-                    "effective_n_crises": 4, "es_ex_top3": None, "orthogonal_partial": None},
-        "gates": {"deflated_sharpe": "pass", "split_half": "pass", "leave_one_crisis_out": "pass",
-                  "orthogonality": "na", "crisis_independent_es": "na", "lead_lag_kernel": "na",
-                  "freshness": "na"},
-        "source_series": ["intl_macro/JP_yield_10y", "intl_macro/de_10y", "intl_macro/GB_yield_10y"],
-        "freshness_sla_days": 45,
-        "validation_ref": "reports/intl-macro-sleeve-phase0.md",
-        "kill": False,
-        "notes": "STRONGEST prior: pooled DSR 0.9978 + split-half PASS + LOCO holds. "
-                 "PENDING (not CONFIRMED) because the intl-specific gates are NOT yet run: "
-                 "orthogonality vs the 5 US MRS legs + crisis-independent ES. Honest-N ~4 shared "
-                 "crises is the binding constraint. Cap stays 0 until W2 clears those gates.",
+        "metrics": {"ic": None, "dsr": 0.8282, "split_half_same_sign": True,
+                    "effective_n_crises": 5, "es_ex_top3": 0.0026, "orthogonal_partial": -0.1669},
+        "gates": {"deflated_sharpe": "fail", "split_half": "pass", "leave_one_crisis_out": "pass",
+                  "orthogonality": "pass", "crisis_independent_es": "pass", "lead_lag_kernel": "na",
+                  "freshness": "pass"},
+        "source_series": ["intl_macro/JP_yield_10y", "intl_macro/JP_short_3m",
+                          "intl_macro/de_10y", "intl_macro/GB_yield_10y"],
+        "freshness_sla_days": 120,
+        "validation_ref": "reports/intl-macro-sleeve-phase0.md; scripts/intl_phase0.py "
+                          "build_c2_sleeve (W2 grade — US SPY target, honest 2002-05 window)",
+        "kill": True,
+        "notes": "W2 VERDICT: CONTEXT (do NOT wire). Prior DSR 0.9978 was the pooled INTL sleeve "
+                 "vs INTL drawdowns; against the DECLARED US SPY forward-drawdown target the "
+                 "sleeve-gated strategy DSR is 0.83 (< 0.90 door) and its residual DD-content vs "
+                 "the 5 US MRS legs is marginal/window-fragile (Spearman −0.03..−0.17). It DOES "
+                 "cut SPY MaxDD modestly (−50.1% vs −56.8% B&H) but that overlaps NFCI/liquidity/"
+                 "recession — no orthogonal edge that clears the door. EZ runs curve+short only "
+                 "(EZ unemployment dead, frozen 2023-01). KR dropped (INTL-50). weight_cap 0.",
     },
     {
         "id": "intl_trend_overlay",
