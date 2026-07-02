@@ -140,6 +140,17 @@ def _policy_for(t: str, sectors: list, pidx: dict) -> dict | None:
     return None
 
 
+def _policy_usable(facet: dict | None) -> bool:
+    """A policy facet is usable for direction/flags/gap only when its conviction is not
+    low or absent.  Low-conviction leans contribute NOTHING — the flags go dark while all
+    shipped leans are ungraded.  A future n_graded>0 condition can be added here in one
+    place once the scoreboard (W1) ships grades."""
+    if not facet:
+        return False
+    conv = facet.get("conviction")
+    return conv not in (None, "low")
+
+
 # --------------------------------------------------------------------------- #
 # News velocity — day-over-day n_recent (accruing ledger; None until history exists)
 # --------------------------------------------------------------------------- #
@@ -208,7 +219,7 @@ def _dirs(v: dict, policy: dict | None) -> dict:
     if v.get("standout"):
         lab = (standout.get("label") or "").upper()
         sd = -1 if ("AVOID" in lab or "DOWN" in (standout.get("state") or "").upper()) else 1
-    pd = policy.get("dir") if policy else None
+    pd = policy.get("dir") if _policy_usable(policy) else None
     return {"news": nd, "alt": ad, "radar": rd, "standout": sd, "policy": pd}
 
 
@@ -381,7 +392,9 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = Non
 
     flags = []
     stealth = dirs["alt"] == 1 and radar.get("state") == "POSITIVE_DIVERGENCE" and quiet_news
-    policy_early = (bool(policy and policy["dir"] == 1) and dirs["alt"] == 1
+    # early_edge requires a USABLE policy lean (conviction not low/absent); a low-conviction
+    # thesis cannot trigger the flag — the UI must go dark while leans are ungraded.
+    policy_early = (_policy_usable(policy) and policy["dir"] == 1 and dirs["alt"] == 1
                     and (dirs["radar"] or 0) >= 0 and quiet_news)
     if policy_early:
         flags.append("early_edge")              # the policy-confirmed stealth setup (the superset)
@@ -395,9 +408,10 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = Non
     # but guard explicitly so the two can never co-fire if _dirs ever changes)
     if dirs["alt"] == -1 and (dirs["radar"] or 0) <= 0 and not loud_bull and not (up >= 3 and dn == 0):
         flags.append("fading")
-    if policy and lean != 0 and policy["dir"] == lean and policy["dir"] != 0:
+    # policy_aligned / policy_conflict only fire when the facet is USABLE
+    if _policy_usable(policy) and lean != 0 and policy["dir"] == lean and policy["dir"] != 0:
         flags.append("policy_aligned")
-    if policy and lean != 0 and policy["dir"] == -lean:
+    if _policy_usable(policy) and lean != 0 and policy["dir"] == -lean:
         flags.append("policy_conflict")
     if nv.get("spike"):
         flags.append("velocity_spike")
