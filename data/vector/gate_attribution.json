@@ -1,0 +1,100 @@
+{
+  "per_cycle": [
+    {
+      "year": 2014,
+      "status": "COMPLETE",
+      "btc_window_return_pct": -27.74,
+      "engine_window_return_pct": 4.37,
+      "max_drawdown_avoided_pct": -29.92,
+      "recovery_180d_pct": -27.27,
+      "gate_pnl_pct": -4.18
+    },
+    {
+      "year": 2018,
+      "status": "COMPLETE",
+      "btc_window_return_pct": -52.16,
+      "engine_window_return_pct": -19.87,
+      "max_drawdown_avoided_pct": -56.59,
+      "recovery_180d_pct": -11.36,
+      "gate_pnl_pct": 24.8
+    },
+    {
+      "year": 2022,
+      "status": "COMPLETE",
+      "btc_window_return_pct": -61.14,
+      "engine_window_return_pct": -15.17,
+      "max_drawdown_avoided_pct": -61.32,
+      "recovery_180d_pct": 53.5,
+      "gate_pnl_pct": 17.88
+    },
+    {
+      "year": 2026,
+      "status": "PENDING",
+      "btc_window_return_pct": null,
+      "engine_window_return_pct": null,
+      "max_drawdown_avoided_pct": null,
+      "recovery_180d_pct": null,
+      "gate_pnl_pct": null
+    }
+  ],
+  "breakeven_fan": [
+    {
+      "depth_pct": -20,
+      "p5": -11.46,
+      "p50": -7.89,
+      "p95": -4.32,
+      "n_draws": 2000,
+      "point_estimate_pct": -7.89
+    },
+    {
+      "depth_pct": -30,
+      "p5": -4.76,
+      "p50": -1.18,
+      "p95": 2.39,
+      "n_draws": 2000,
+      "point_estimate_pct": -1.18
+    },
+    {
+      "depth_pct": -40,
+      "p5": 1.95,
+      "p50": 5.52,
+      "p95": 9.09,
+      "n_draws": 2000,
+      "point_estimate_pct": 5.52
+    },
+    {
+      "depth_pct": -50,
+      "p5": 8.65,
+      "p50": 12.23,
+      "p95": 15.8,
+      "n_draws": 2000,
+      "point_estimate_pct": 12.23
+    },
+    {
+      "depth_pct": -60,
+      "p5": 15.36,
+      "p50": 18.93,
+      "p95": 22.51,
+      "n_draws": 2000,
+      "point_estimate_pct": 18.93
+    },
+    {
+      "depth_pct": -70,
+      "p5": 22.06,
+      "p50": 25.64,
+      "p95": 29.21,
+      "n_draws": 2000,
+      "point_estimate_pct": 25.64
+    },
+    {
+      "depth_pct": -80,
+      "p5": 28.77,
+      "p50": 32.34,
+      "p95": 35.92,
+      "n_draws": 2000,
+      "point_estimate_pct": 32.34
+    }
+  ],
+  "label": "n=3 path shapes; illustrative, not calibrated",
+  "as_of": "2026-07-01"
+}
