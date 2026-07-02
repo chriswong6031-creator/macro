@@ -42,6 +42,7 @@ Only PUBLIC source documents are ever sent to the (third-party) model.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
@@ -229,6 +230,80 @@ def _apply_confidence_floor(rec: dict, threshold: str) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# content-hash cache — determinism kit (W7 #33)
+#
+# Graded calls (shock_reversible → spvector veto, tone_score → ledger) MUST be
+# reproducible: the SAME document on the SAME day must always yield the SAME
+# record. We guarantee this by keying on a SHA-256 of (model, system_prompt,
+# user_message) → the reply text is cached in data/catalyst/reply_cache/. A cache
+# HIT returns the old bytes directly — no second model call, no sampling noise.
+# The file is append-only-per-hash so two runs on the same day cannot diverge.
+# --------------------------------------------------------------------------- #
+def _prompt_hash(model: str, system: str, user: str) -> str:
+    """SHA-256 hex of (model‖system‖user) — key for the reply cache."""
+    h = hashlib.sha256()
+    for part in (model, system, user):
+        h.update(part.encode("utf-8"))
+    return h.hexdigest()
+
+
+def _reply_cache_path(prompt_hash: str, cfg: dict):
+    from pathlib import Path
+    cdir = config.ROOT / cfg.get("reply_cache_dir", "data/catalyst/reply_cache")
+    Path(cdir).mkdir(parents=True, exist_ok=True)
+    return Path(cdir) / f"{prompt_hash}.txt"
+
+
+def _reply_cache_get(prompt_hash: str, cfg: dict) -> str | None:
+    """Return cached reply text, or None on miss/error."""
+    p = _reply_cache_path(prompt_hash, cfg)
+    try:
+        return p.read_text() if p.exists() else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _reply_cache_put(prompt_hash: str, text: str, cfg: dict) -> None:
+    """Write reply text to cache. Idempotent (same hash → same file)."""
+    try:
+        _reply_cache_path(prompt_hash, cfg).write_text(text)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+# --------------------------------------------------------------------------- #
+# GDELT headline snapshot — determinism kit (W7 #33)
+#
+# Live GDELT headlines shift intraday, so the same dislocation day can feed a
+# DIFFERENT prompt on a second run → non-reproducible shock_reversible. Fix:
+# snapshot the fetched headlines to a dated artifact BEFORE scoring; on a cache
+# hit for the same date, reuse the snapshot instead of re-fetching.
+# --------------------------------------------------------------------------- #
+def _gdelt_snapshot_path(today: date, cfg: dict):
+    from pathlib import Path
+    cdir = config.ROOT / cfg.get("gdelt_snapshot_dir", "data/catalyst/gdelt_snapshots")
+    Path(cdir).mkdir(parents=True, exist_ok=True)
+    return Path(cdir) / f"gdelt_{today.isoformat()}.json"
+
+
+def _gdelt_snapshot_get(today: date, cfg: dict) -> list[str] | None:
+    """Return cached headlines for `today`, or None on miss."""
+    p = _gdelt_snapshot_path(today, cfg)
+    try:
+        return json.loads(p.read_text()) if p.exists() else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _gdelt_snapshot_put(today: date, headlines: list[str], cfg: dict) -> None:
+    """Write the headline list for `today`."""
+    try:
+        _gdelt_snapshot_path(today, cfg).write_text(json.dumps(headlines))
+    except Exception:  # noqa: BLE001
+        pass
+
+
+# --------------------------------------------------------------------------- #
 # the model call (DeepSeek V4 Flash via the Anthropic-compatible endpoint)
 # --------------------------------------------------------------------------- #
 def _client(cfg: dict):
@@ -249,22 +324,45 @@ def _client(cfg: dict):
 
 
 def _call_model(source_text: str, context: str, cfg: dict) -> tuple[str | None, str | None]:
-    """Return (reply_text, degraded_reason). Never raises."""
+    """Return (reply_text, degraded_reason). Never raises.
+
+    Determinism kit (W7 #33): temperature=0 + seed=0 so the provider samples as
+    deterministically as it can. Content-hash cache: the SHA-256 of (model, system,
+    user) is checked FIRST — before any client/key check — so a cache hit never
+    requires an API key and the same document always yields the SAME graded record.
+    """
+    model = cfg.get("llm_model", "deepseek-v4-flash")
+    user = (f"Document context: {context}\n\n"
+            f"Document text follows between <doc> tags.\n<doc>\n{source_text}\n</doc>")
+    # content-hash cache check — BEFORE the client/key check (no key needed on hit)
+    phash = _prompt_hash(model, CATALYST_SYSTEM, user)
+    cached = _reply_cache_get(phash, cfg)
+    if cached is not None:
+        log.debug("catalyst_tone: reply cache HIT (%s)", phash[:12])
+        return cached, None
     client = _client(cfg)
     if client is None:
         return None, "no_client_or_key"
-    user = (f"Document context: {context}\n\n"
-            f"Document text follows between <doc> tags.\n<doc>\n{source_text}\n</doc>")
     try:
-        resp = client.messages.create(
-            model=cfg.get("llm_model", "deepseek-v4-flash"),
-            max_tokens=int(cfg.get("max_tokens", 1500)),
-            system=CATALYST_SYSTEM,
-            messages=[{"role": "user", "content": user}],
-        )
+        kw: dict = {
+            "model": model,
+            "max_tokens": int(cfg.get("max_tokens", 1500)),
+            "system": CATALYST_SYSTEM,
+            "messages": [{"role": "user", "content": user}],
+            "temperature": 0,          # determinism kit: greedy decode where supported
+        }
+        # seed is a beta param on some providers; pass it when the SDK accepts it
+        try:
+            kw["seed"] = 0
+            resp = client.messages.create(**kw)
+        except TypeError:
+            del kw["seed"]
+            resp = client.messages.create(**kw)
         if getattr(resp, "stop_reason", None) in ("refusal", "max_tokens"):
             return None, f"stop_{resp.stop_reason}"
         text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
+        if text:
+            _reply_cache_put(phash, text, cfg)  # cache successful reply
         return (text or None), (None if text else "empty_reply")
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("catalyst_tone model call failed (%s)", e)
@@ -497,13 +595,25 @@ def _fetch_event_headlines(today: date, cfg: dict) -> list[str]:
 def event_snapshot(asof: date | str | None = None, context: str = "") -> dict | None:
     """Digest the current dislocation day's market news into a shock_reversible read.
     None when disabled, event-digest off, or no headlines. NEVER raises.
-    The digest text is PUBLIC headlines only (same firewall as the FOMC path)."""
+    The digest text is PUBLIC headlines only (same firewall as the FOMC path).
+
+    Determinism kit (W7 #33): GDELT headlines are snapshotted to a dated artifact
+    BEFORE scoring. On a second run for the same date the snapshot is reused instead
+    of re-fetching, so the input text feeding the graded shock_reversible call is
+    identical and the content-hash cache can serve the same reply. This makes the
+    veto reproducible even though GDELT headlines shift intraday.
+    """
     cfg = _cfg()
     if not cfg.get("enabled", False) or not cfg.get("event_enabled", True):
         return None
     try:
         today = _as_date(asof) or date.today()
-        headlines = _fetch_event_headlines(today, cfg)
+        # snapshot-before-score: reuse the dated snapshot if it exists, else fetch+persist
+        headlines = _gdelt_snapshot_get(today, cfg)
+        if headlines is None:
+            headlines = _fetch_event_headlines(today, cfg)
+            if headlines:
+                _gdelt_snapshot_put(today, headlines, cfg)
         if not headlines:
             return None
         text = "Market headlines around the dislocation:\n" + "\n".join(f"- {h}" for h in headlines)

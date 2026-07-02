@@ -29,6 +29,7 @@ imports it; the tickers it names feed no score, size, or allocation.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from datetime import datetime, timezone
@@ -177,27 +178,80 @@ def _client(provider: str, cred: str, cfg: dict):
     return anthropic.Anthropic(api_key=cred)
 
 
+def _wh_prompt_hash(model: str, system: str, user: str) -> str:
+    h = hashlib.sha256()
+    for part in (model, system, user):
+        h.update(part.encode("utf-8"))
+    return h.hexdigest()
+
+
+def _wh_reply_cache_path(prompt_hash: str, cfg: dict):
+    from pathlib import Path as _P
+    cdir = config.ROOT / cfg.get("reply_cache_dir", "data/whitehouse/reply_cache")
+    _P(cdir).mkdir(parents=True, exist_ok=True)
+    return _P(cdir) / f"{prompt_hash}.txt"
+
+
+def _wh_reply_cache_get(prompt_hash: str, cfg: dict) -> str | None:
+    p = _wh_reply_cache_path(prompt_hash, cfg)
+    try:
+        return p.read_text() if p.exists() else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _wh_reply_cache_put(prompt_hash: str, text: str, cfg: dict) -> None:
+    try:
+        _wh_reply_cache_path(prompt_hash, cfg).write_text(text)
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | None]:
-    """(reply_text, degraded_reason). Never raises."""
+    """(reply_text, degraded_reason). Never raises.
+
+    Determinism kit (W7 #33): temperature=0 + seed=0 (where supported) to make
+    significance/activation judgments reproducible. Content-hash cache: the same
+    announcement body always yields the same graded record so the banner can't
+    toggle between runs.
+    """
     prov = _provider(cfg)
     if prov is None:
         return None, "no_provider"
     provider, cred, model = prov
+    # content-hash cache check
+    phash = _wh_prompt_hash(model, system, user)
+    cached = _wh_reply_cache_get(phash, cfg)
+    if cached is not None:
+        log.debug("whitehouse_brain: reply cache HIT (%s)", phash[:12])
+        return cached, None
     try:
         client = _client(provider, cred, cfg)
     except Exception as e:  # noqa: BLE001
         log.warning("whitehouse_brain client init failed (%s)", e)
         return None, "client_init_failed"
     try:
-        resp = client.messages.create(
-            model=model, max_tokens=int(cfg.get("max_tokens", 4000)),
-            system=system, messages=[{"role": "user", "content": user}])
+        kw: dict = {
+            "model": model,
+            "max_tokens": int(cfg.get("max_tokens", 4000)),
+            "system": system,
+            "messages": [{"role": "user", "content": user}],
+            "temperature": 0,          # determinism kit: greedy decode where supported
+        }
+        try:
+            kw["seed"] = 0
+            resp = client.messages.create(**kw)
+        except TypeError:
+            del kw["seed"]
+            resp = client.messages.create(**kw)
         sr = getattr(resp, "stop_reason", None)
         if sr == "refusal":
             return None, "stop_refusal"
         text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
         if not text:
             return None, "empty_reply"
+        if text:
+            _wh_reply_cache_put(phash, text, cfg)  # cache successful reply
         return text, ("truncated" if sr == "max_tokens" else None)
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("whitehouse_brain model call failed (%s)", e)
