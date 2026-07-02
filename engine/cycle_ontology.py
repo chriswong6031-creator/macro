@@ -256,6 +256,77 @@ class TurnParams:
         return hashlib.sha1(s.encode()).hexdigest()[:8]
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# §3.3 / ruling A5 — turn_epoch: the ONE identity for a (basis, zz_params, detector)
+# tuple.  An epoch bump atomically re-keys narratives (scripts/rekey_narratives.py),
+# re-runs backfill, re-fits hazard, re-stamps the experiments registry (W4.8).
+#   file scheme: narratives.<epoch>.json
+#   collapse of the three former version keys (basis_version / detector_version /
+#   params_hash) into ONE stamp per D1-§3.3 + ruling A5.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# The legacy, un-suffixed narratives.json (data/*/narratives.json) is the CURRENT
+# total-return epoch by definition — it was researched against the close_tr, 14%-frozen
+# turn set that ships today.  Loaders that fall back to the un-suffixed file tag it with
+# this constant so provenance is never ambiguous.  (Matches the keystone gate's
+# EPOCH="tr_v0" stamp in scripts/keystone_position_gate_phase0.py.)
+LEGACY_TR_EPOCH = "tr_v0"
+
+# Human-readable prefix on every computed epoch tag so a filename reveals its basis at a
+# glance:  price_a1b2c3d4  /  tr_9f8e7d6c .
+_EPOCH_BASIS_PREFIX: dict[str, str] = {
+    "close_price": "price",
+    "close_tr":    "tr",
+}
+
+
+def turn_epoch(
+    basis: str,
+    zz_params: dict | float,
+    *,
+    detector_version: int = DETECTOR_VERSION,
+) -> str:
+    """The turn_epoch tag = short hash of (basis, zz_params, detector_version).
+
+    Ruling A5: ONE re-key scheme, D1-owned.  Any change to the price basis, the
+    ZigZag reversal threshold(s)/rule, or the detector algorithm produces a NEW epoch,
+    which the migrator re-keys narratives into (`narratives.<epoch>.json`).
+
+    Parameters
+    ----------
+    basis : str
+        "close_price" | "close_tr" (the price basis the turns were detected on).
+    zz_params : dict | float
+        The ZigZag parametrisation.  A bare float is treated as {"pct": <float>}.
+        Serialised canonically (sorted keys) so ordering never perturbs the hash.
+    detector_version : int
+        The ZigZag detector algorithm version (DETECTOR_VERSION by default).
+
+    Returns
+    -------
+    str
+        "<basis_prefix>_<8-hex>", e.g. "tr_1a2b3c4d" / "price_9f8e7d6c".
+
+    Notes
+    -----
+    This is a PURE function of its declared inputs — the same tuple always yields the
+    same tag, on any machine, forever.  That determinism is what lets a builder compute
+    "which narratives file is mine" without reading any state.
+    """
+    if isinstance(zz_params, (int, float)) and not isinstance(zz_params, bool):
+        zz_params = {"pct": float(zz_params)}
+    if not isinstance(zz_params, dict):
+        raise TypeError(f"turn_epoch: zz_params must be dict or float, got {type(zz_params).__name__}")
+
+    canon = json.dumps(
+        {"basis": basis, "zz": zz_params, "detector_version": int(detector_version)},
+        sort_keys=True, separators=(",", ":"),
+    )
+    h = hashlib.sha1(canon.encode()).hexdigest()[:8]
+    prefix = _EPOCH_BASIS_PREFIX.get(basis, basis.replace("close_", "") or "x")
+    return f"{prefix}_{h}"
+
+
 # Default turn detection thresholds per family
 TURN_DETECTOR_DEFAULTS: dict = {
     "pct_sector": 14.0,

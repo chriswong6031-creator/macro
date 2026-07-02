@@ -40,39 +40,28 @@ SHARED_ASSETS = ("mm_charts.js", "cycle.css")             # the shared cycle des
 
 def _load_narratives(root: Path) -> dict:
     """NARR keyed by the chart series id: sectors by Shenwan code (801080…), baskets by the
-    engine's "b-"+membership-key (b-cn_semis…). Optional — page renders without it."""
-    f = root / "data" / "china_sector_cycles" / "narratives.json"
-    if not f.exists():
-        return {}
-    try:
-        doc = json.loads(f.read_text(encoding="utf-8"))
-    except Exception as e:  # noqa: BLE001
-        log.warning("china_sector_cycles: narratives.json unreadable (%s) — rendering without", e)
-        return {}
-    if not isinstance(doc, dict):
-        return {}
-    narr = dict(doc.get("sectors", {}))
-    for k, v in (doc.get("baskets", {}) or {}).items():
-        narr["b-" + k] = v
-    return narr
+    engine's "b-"+membership-key (b-cn_semis…). Optional — page renders without it.
+
+    W2.1: epoch-aware — resolves narratives.<epoch>.json for the engine's current epoch,
+    falling back to the legacy un-suffixed file (tagged tr_v0). Zero behaviour change today."""
+    from scripts._narrative_epoch import resolve_narratives
+    res = resolve_narratives("china_sector_cycles", root / "data" / "china_sector_cycles", "narratives")
+    if res["stale_quarantined"]:
+        log.warning("china_sector_cycles: narratives stale-quarantined (epoch %s) — rendering without",
+                    res["epoch"])
+    return res["map"]
 
 
 def _load_dna(root: Path) -> dict:
-    """SECTOR_DNA cycle-cause profiles, same id keying as narratives (Shenwan code / "b-"+key)."""
-    f = root / "data" / "china_sector_cycles" / "cycle_dna.json"
-    if not f.exists():
-        return {}
-    try:
-        doc = json.loads(f.read_text(encoding="utf-8"))
-    except Exception as e:  # noqa: BLE001
-        log.warning("china_sector_cycles: cycle_dna.json unreadable (%s) — rendering without DNA", e)
-        return {}
-    if not isinstance(doc, dict):
-        return {}
-    dna = dict(doc.get("sectors", {}))
-    for k, v in (doc.get("baskets", {}) or {}).items():
-        dna["b-" + k] = v
-    return dna
+    """SECTOR_DNA cycle-cause profiles, same id keying as narratives (Shenwan code / "b-"+key).
+
+    W2.1: epoch-aware (resolves cycle_dna.<epoch>.json, falls back to legacy cycle_dna.json)."""
+    from scripts._narrative_epoch import resolve_narratives
+    res = resolve_narratives("china_sector_cycles", root / "data" / "china_sector_cycles", "cycle_dna")
+    if res["stale_quarantined"]:
+        log.warning("china_sector_cycles: cycle_dna stale-quarantined (epoch %s) — rendering without DNA",
+                    res["epoch"])
+    return res["map"]
 
 
 def _basket_cycle_map(data: dict) -> dict:
