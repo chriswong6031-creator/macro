@@ -283,13 +283,21 @@ def test_china_intel_analysis_emits_llm_synthesis_degraded_reason():
     except ImportError:
         return  # CI without the full engine
 
-    # Patch _read to return {} for any path (no disk access needed)
+    # Patch _read to return {} for any path (no disk access needed).
     import unittest.mock as mock
-    with mock.patch.object(cia, "_read", return_value={}):
-        # Also patch the china_altdata import inside analyze
-        with mock.patch.dict("sys.modules", {"engine.china_altdata": mock.MagicMock(
-                convergence_map=lambda: {})}):
-            result = cia.analyze(prev=None)
+    # NOTE (W5 integration): do NOT patch sys.modules here. A previous version used
+    # `mock.patch.dict("sys.modules", {"engine.china_altdata": MagicMock()})`, which
+    # snapshots-and-restores the WHOLE sys.modules dict. numpy's C extension cannot be
+    # reloaded once evicted ("cannot load module more than once per process"), so the
+    # restore left numpy=None process-wide and every later `import pandas` raised a
+    # masked ImportError — silently breaking the whitehouse qledger adapter tests when
+    # the suites ran in the same process. analyze() imports china_altdata lazily
+    # (`from engine import china_altdata; china_altdata.convergence_map()`), so patch
+    # the attribute on the real module instead — surgical and leak-free.
+    from engine import china_altdata as _cad
+    with mock.patch.object(cia, "_read", return_value={}), \
+            mock.patch.object(_cad, "convergence_map", return_value={}):
+        result = cia.analyze(prev=None)
 
     assert "llm_synthesis" in result, "llm_synthesis key missing from analyze() output"
     assert "llm_synthesis_degraded_reason" in result, (
