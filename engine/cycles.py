@@ -47,18 +47,78 @@ TROUGH_MIN_GAP = 18       # merge troughs closer than this (days)
 # it read as "stretched / bottoming" far too early, and `3B` (3 business days)
 # silently mishandles weekend bars — crypto uses 3-CALENDAR-day bars instead.
 CYCLE_PRESETS = {
-    "equity": {"dc_band": (36, 42), "dc_early": 12, "ic_band_w": (16, 26), "tf3": "3B"},
-    "crypto": {"dc_band": (56, 70), "dc_early": 18, "ic_band_w": (24, 40), "tf3": "3D"},
+    # cand_depth_bars: how many bars before the candidate low to scan for the prior
+    # swing high, used to measure the depth of the pullback.  Equity DC is ~36-42
+    # trading days so ~15 bars captures roughly one-third of the cycle (the typical
+    # correction leg).  Crypto DC is ~56-70 CALENDAR days, nearly double, so 30
+    # bars is the proportional equivalent.  FX DC is close to equity (30-44 days),
+    # so 15 bars is appropriate there too.
+    "equity": {"dc_band": (36, 42), "dc_early": 12, "ic_band_w": (16, 26), "tf3": "3B",
+               "cand_depth_bars": 15},
+    "crypto": {"dc_band": (56, 70), "dc_early": 18, "ic_band_w": (24, 40), "tf3": "3D",
+               "cand_depth_bars": 30},
     # FX MEASURED (research/FOREX_DASHBOARD.md): across the G10 majors the daily
     # cycle low recurs ~35 trading days apart (median; IQR 25-47) — close to equities
     # but shorter and NOISIER, so a wider band; the intermediate cycle is ~34 weeks
     # (vs ~16-26 for equities), nearly double. FX trades business days (3B, not 3D).
-    "fx": {"dc_band": (30, 44), "dc_early": 11, "ic_band_w": (26, 42), "tf3": "3B"},
+    "fx": {"dc_band": (30, 44), "dc_early": 11, "ic_band_w": (26, 42), "tf3": "3B",
+           "cand_depth_bars": 15},
 }
+
+# ── Fitted-band override (W2.8 cycles-core-2) ────────────────────────────────
+# Loaded lazily from data/regime/cycle_bands_fit.json on the first _preset() call.
+# When present, dc_band and ic_band_w override the hand-constants above per class.
+# All other preset fields (dc_early, tf3, cand_depth_bars) come from CYCLE_PRESETS.
+# On any load error the hand-constants are the unaffected fallback — never fatal.
+_FITTED_BANDS: dict = {}
+_FITTED_BANDS_LOADED: bool = False
+_FITTED_BANDS_LOGGED: set = set()   # track which kinds have been logged (once)
+
+
+def _load_fitted_bands() -> dict:
+    """Load cycle_bands_fit.json. Returns {} on any error (fallback to CYCLE_PRESETS)."""
+    try:
+        p = config.data_dir() / "regime" / "cycle_bands_fit.json"
+        if not p.exists():
+            return {}
+        import json as _json
+        d = _json.loads(p.read_text(encoding="utf-8"))
+        log.info("cycles: loaded fitted bands from %s", p)
+        return d
+    except Exception as e:  # noqa: BLE001
+        log.debug("cycles: fitted bands unavailable (%s) — using CYCLE_PRESETS constants", e)
+        return {}
 
 
 def _preset(kind: str) -> dict:
-    return CYCLE_PRESETS.get(kind, CYCLE_PRESETS["equity"])
+    """Return preset for `kind`, with dc_band / ic_band_w overridden by the fitted
+    artifact when available. All other fields come from CYCLE_PRESETS.  Falls back
+    to the equity preset for unknown kinds."""
+    global _FITTED_BANDS, _FITTED_BANDS_LOADED  # noqa: PLW0603
+    if not _FITTED_BANDS_LOADED:
+        _FITTED_BANDS = _load_fitted_bands()
+        _FITTED_BANDS_LOADED = True
+
+    base = dict(CYCLE_PRESETS.get(kind, CYCLE_PRESETS["equity"]))
+
+    fitted = _FITTED_BANDS.get(kind)
+    if fitted:
+        fdc = fitted.get("dc_band")
+        fic = fitted.get("ic_band_w")
+        if fdc and len(fdc) == 2 and fdc[0] > 0 and fdc[1] > fdc[0]:
+            if kind not in _FITTED_BANDS_LOGGED:
+                log.info("cycles: %s dc_band override %s → %s (fitted)", kind,
+                         base["dc_band"], tuple(fdc))
+                _FITTED_BANDS_LOGGED.add(kind)
+            base["dc_band"] = tuple(fdc)
+        if fic and len(fic) == 2 and fic[0] > 0 and fic[1] > fic[0]:
+            if (kind + "_ic") not in _FITTED_BANDS_LOGGED:
+                log.info("cycles: %s ic_band_w override %s → %s (fitted)", kind,
+                         base["ic_band_w"], tuple(fic))
+                _FITTED_BANDS_LOGGED.add(kind + "_ic")
+            base["ic_band_w"] = tuple(fic)
+
+    return base
 
 
 # ------------------------------------------------------------ indicators ----
@@ -237,7 +297,8 @@ def cycle_state(close: pd.Series, high: pd.Series | None = None,
         # stretched up-trend can't masquerade as a "fresh buy" (the TTWO/ECG case).
         pre = c.loc[:cand_ts]
         if len(pre) >= 2:
-            swing_hi = float(pre.iloc[-15:].max())
+            cand_depth_bars = p.get("cand_depth_bars", 15)
+            swing_hi = float(pre.iloc[-cand_depth_bars:].max())
             if swing_hi > 0:
                 cand_depth_pct = round(100.0 * (swing_hi - cand_price) / swing_hi, 1)
 

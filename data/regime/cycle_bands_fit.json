@@ -1,0 +1,48 @@
+{
+  "equity": {
+    "dc_band": [
+      23,
+      44
+    ],
+    "ic_band_w": [
+      13,
+      25
+    ],
+    "n_troughs": 5918,
+    "n_series": 35,
+    "method": "median\u00b1\u00bdIQR",
+    "fitted_on": "2026-07-02"
+  },
+  "crypto": {
+    "dc_band": [
+      22,
+      45
+    ],
+    "ic_band_w": [
+      11,
+      22
+    ],
+    "n_troughs": 104,
+    "n_series": 1,
+    "method": "median\u00b1\u00bdIQR",
+    "fitted_on": "2026-07-02"
+  },
+  "fx": {
+    "dc_band": [
+      0,
+      0
+    ],
+    "ic_band_w": [
+      0,
+      0
+    ],
+    "n_troughs": 0,
+    "n_series": 0,
+    "method": "median\u00b1\u00bdIQR",
+    "fitted_on": "2026-07-02"
+  },
+  "_meta": {
+    "fitted_on": "2026-07-02",
+    "note": "W2.8 phase-0 band fit \u2014 fallback constants remain in engine/cycles.py CYCLE_PRESETS"
+  }
+}
