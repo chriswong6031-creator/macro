@@ -132,6 +132,7 @@ def _pathway_block(gs_key: str) -> dict | None:
     return {
         "key": p.get("key"), "en": p.get("en"), "zh": p.get("zh"), "bbg": p.get("bbg"),
         "setup": p.get("setup"), "conditional": p.get("conditional"), "position": p.get("position"),
+        "composition": p.get("composition"),   # W2.6 era-disclosure (fixed constituent set)
         "narrative_en": p.get("narrative_en"), "narrative_zh": p.get("narrative_zh"),
         "caveat_en": p.get("caveat_en"), "caveat_zh": p.get("caveat_zh"),
         "as_of": p.get("as_of"),

@@ -35,11 +35,21 @@ def test_state_score_washout_is_bullish():
 
 def test_forward_tilt_only_with_pathway():
     assert cc._forward_tilt({})[0] is None
-    rec = {"pathway": {"conditional": {"h6": {"lift": 0.15, "n": 40, "ci_lo": 0.55,
-                                              "ci_hi": 0.85, "base_rate": 0.5, "cond_rate": 0.7, "h": 6}},
+    # W2.6 schema: n_months + n_eff + block-bootstrap LIFT band (lift_ci_lo/hi around 0).
+    rec = {"pathway": {"conditional": {"h6": {"lift": 0.15, "n_months": 24, "n_eff": 12.0,
+                                              "lift_ci_lo": 0.05, "lift_ci_hi": 0.30,
+                                              "base_rate": 0.5, "cond_rate": 0.7, "h": 6,
+                                              "composition_version": "v4-a+b+c+d-deadbeef"}},
                        "setup": {"tercile": "high"}}}
     tilt, d = cc._forward_tilt(rec)
-    assert tilt is not None and tilt > 0 and d["n"] == 40 and d["cond_rate"] == 0.7
+    assert tilt is not None and tilt > 0 and d["n_months"] == 24 and d["cond_rate"] == 0.7
+    # a LIFT CI that straddles zero must HALVE the confidence (no separation from base).
+    rec2 = {"pathway": {"conditional": {"h6": {"lift": 0.15, "n_months": 24, "n_eff": 12.0,
+                                               "lift_ci_lo": -0.05, "lift_ci_hi": 0.30,
+                                               "base_rate": 0.5, "cond_rate": 0.7, "h": 6}},
+                        "setup": {"tercile": "high"}}}
+    _tilt2, d2 = cc._forward_tilt(rec2)
+    assert d2["confidence"] < d["confidence"]
 
 
 def test_regime_gate_shrinks_bullish_conviction():
@@ -68,8 +78,8 @@ def test_reasoning_zh_has_no_english_leak():
     mkt = {"state_en": "Risk-off — de-risking", "state_zh": "风险偏离 — 降险中",
            "derisk_blended": 0.96, "quad": "Q3", "quad_name": "Stagflation",
            "liquidity": "neutral", "gate_factor": 0.2, "risk_on": -0.9}
-    fwd_d = {"cond_rate": 0.62, "base_rate": 0.5, "lift": 0.12, "ci_lo": 0.55,
-             "ci_hi": 0.7, "n": 40, "h": 6}
+    fwd_d = {"cond_rate": 0.62, "base_rate": 0.5, "lift": 0.12, "lift_ci_lo": 0.02,
+             "lift_ci_hi": 0.22, "n_months": 24, "n_eff": 12.0, "h": 6}
     cases = [("Beaten down", "深度超跌", "Trough"), ("Recovering", "修复回升", "Recovery"),
              ("Mid-cycle", "周期中段", "Expansion"), ("Stretched", "走高偏贵", "Peak"),
              ("Overheated", "过热", "Downturn")]

@@ -229,7 +229,7 @@ html[data-lang="zh"] .poskey .pk-lo{background:color-mix(in srgb,var(--green) 70
       <div class="cond">
         <div><div class="k">{{ t('Fwd 6m up-rate','未来6月上涨率') }}</div>
           <div class="v">{{ (h6.cond_rate*100)|int }}%<small> / {{ t('base','基准') }} {{ (h6.base_rate*100)|int }}%</small></div>
-          <div class="ci">{{ t('when setup ~ today','当配置类似今日') }} · 95% CI {{ (h6.ci_lo*100)|int }}–{{ (h6.ci_hi*100)|int }}% · n={{ h6.n }}</div></div>
+          <div class="ci">{{ t('when setup ~ today','当配置类似今日') }} · {% if h6.lift_ci_lo is not none %}{{ t('lift','超额') }} {{ (h6.lift_ci_lo*100)|int }}–{{ (h6.lift_ci_hi*100)|int }}pp · {% endif %}n={{ h6.n_months }}{{ t('mo','月') }}{% if h6.n_eff is not none %} (n_eff≈{{ h6.n_eff }}){% endif %}</div></div>
         <div><div class="k">{{ t('Median fwd 6m','未来6月中位') }}</div>
           <div class="v">{{ pc(h6.med_fwd_pct) }}</div>
           <div class="ci">{{ t('vs base','对比基准') }} {{ pc(h6.base_med_pct) }}</div></div>
