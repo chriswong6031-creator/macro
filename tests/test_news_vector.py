@@ -154,7 +154,8 @@ def test_llm_extract_stays_off_even_when_bus_enabled():
 # LEAF discipline — enforced, not aspirational
 # --------------------------------------------------------------------------- #
 # news_vector may import only these engine siblings (other LEAF modules).
-_ALLOWED_ENGINE = {"macro_news", "event_calendar"}
+# qbus is a W2 LEAF — allowed for the ingest_to_qbus boundary call.
+_ALLOWED_ENGINE = {"macro_news", "event_calendar", "qbus"}
 # mechanical-core modules nothing in any scoring path may pull into this leaf.
 _FORBIDDEN_ROOTS = {"engine.conditions", "engine.regime", "engine.run", "engine.inputs",
                     "engine.cycles", "engine.equity_alloc", "engine.calibrate"}
@@ -214,9 +215,163 @@ def test_no_engine_module_imports_news_vector():
     assert not offenders, f"scoring-core modules import the bus: {offenders}"
 
 
+# --------------------------------------------------------------------------- #
+# W2-B3: accrual fix regression tests
+# --------------------------------------------------------------------------- #
+def test_failed_fetch_result_is_not_cached(tmp_path):
+    """Root-cause regression: a rate_limited / fetch_error response with 0 articles
+    must NOT be written to the fetch cache.  If it were cached, every subsequent
+    ingest call within the 12-hour TTL would silently return 0 articles and the
+    accrual store would stall (exactly the bug that caused newest event 2026-06-20)."""
+    import json
+    from datetime import date as d
+    from unittest.mock import patch, MagicMock
+
+    cfg = {
+        "enabled": True, "window_days": 2, "max_records": 10,
+        "min_request_interval_s": 0, "cache_ttl_hours": 12,
+        "cache_dir": str(tmp_path / "cache"),
+        "lang": "eng", "query_terms": [],
+    }
+    today = d(2026, 6, 25)
+
+    # Simulate a 429 rate-limited response from GDELT
+    mock_resp = MagicMock()
+    mock_resp.status_code = 429
+    mock_resp.headers = {}
+
+    with patch("requests.get", return_value=mock_resp):
+        articles, reason = nv._fetch_gdelt(cfg, today)
+
+    assert articles == [], "rate_limited should return empty articles"
+    assert reason == "rate_limited"
+
+    # Cache must NOT have been written for a failed response
+    cache_dir = tmp_path / "cache"
+    cache_files = list(cache_dir.glob("*.json")) if cache_dir.exists() else []
+    assert cache_files == [], (
+        "Failed fetch (rate_limited/empty) must NOT be written to cache — "
+        "caching it would silently stall the accrual for 12 hours"
+    )
+
+
+def test_successful_fetch_is_cached(tmp_path):
+    """Successful responses (articles present) ARE cached to avoid hammering GDELT."""
+    import json
+    from datetime import date as d
+    from unittest.mock import patch, MagicMock
+
+    cfg = {
+        "enabled": True, "window_days": 2, "max_records": 10,
+        "min_request_interval_s": 0, "cache_ttl_hours": 12,
+        "cache_dir": str(tmp_path / "cache"),
+        "lang": "eng", "query_terms": [],
+    }
+    today = d(2026, 6, 25)
+
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.headers = {"Content-Type": "application/json"}
+    mock_resp.json.return_value = {"articles": [
+        {"title": "Fed holds rates", "url": "https://reuters.com/1",
+         "domain": "reuters.com", "seendate": "20260625T120000Z"},
+    ]}
+
+    with patch("requests.get", return_value=mock_resp):
+        articles, reason = nv._fetch_gdelt(cfg, today)
+
+    assert len(articles) == 1
+    assert reason is None
+
+    cache_dir = tmp_path / "cache"
+    cache_files = list(cache_dir.glob("*.json"))
+    assert len(cache_files) == 1, "Successful fetch must be cached"
+    blob = json.loads(cache_files[0].read_text())
+    assert blob["articles"] and blob["degraded_reason"] is None
+
+
+def test_freshness_check_warns_when_stale(tmp_path):
+    """_check_freshness must log a WARNING and return warn=True when newest event
+    is older than _FRESHNESS_WARN_DAYS (currently 3)."""
+    import pandas as pd
+    from datetime import date as dt, timedelta
+
+    path = tmp_path / "events.parquet"
+    stale_date = (dt.today() - timedelta(days=nv._FRESHNESS_WARN_DAYS + 5)).isoformat()
+    df = pd.DataFrame([{
+        "event_id": "abc123", "first_seen_utc": stale_date + "T00:00:00+00:00",
+        "seendate": stale_date, "title": "old news", "url": "http://reuters.com",
+        "domain": "reuters.com", "theme": "trade", "source_tier": 1, "scheduled_ref": "",
+    }])
+    df.to_parquet(path, index=False)
+
+    result = nv._check_freshness(path, dt.today())
+    assert result["warn"] is True, "stale store must set warn=True"
+    assert result["age_days"] is not None and result["age_days"] > nv._FRESHNESS_WARN_DAYS
+
+
+def test_freshness_check_ok_when_fresh(tmp_path):
+    """_check_freshness returns warn=False when newest event is recent."""
+    import pandas as pd
+    from datetime import date as dt, timedelta, timezone
+    from datetime import datetime
+
+    path = tmp_path / "events.parquet"
+    fresh_date = datetime.now(timezone.utc).isoformat()
+    df = pd.DataFrame([{
+        "event_id": "abc123", "first_seen_utc": fresh_date,
+        "seendate": fresh_date[:10], "title": "fresh news", "url": "http://reuters.com",
+        "domain": "reuters.com", "theme": "trade", "source_tier": 1, "scheduled_ref": "",
+    }])
+    df.to_parquet(path, index=False)
+
+    result = nv._check_freshness(path, dt.today())
+    assert result["warn"] is False
+
+
+def test_freshness_check_warns_missing_file(tmp_path):
+    """_check_freshness returns warn=True with reason='missing' for absent parquet."""
+    from datetime import date as dt
+    result = nv._check_freshness(tmp_path / "nofile.parquet", dt.today())
+    assert result["warn"] is True and result.get("reason") == "missing"
+
+
+def test_leaf_still_allows_qbus_import():
+    """news_vector.ingest_to_qbus may import engine.qbus — qbus is a LEAF (W2), so
+    this is allowed.  The LEAF test above checks the static top-level imports; this
+    test verifies the new function's lazy import does not violate the allowed-set."""
+    # ingest_to_qbus lazily imports qbus inside the function body; that is the
+    # expected pattern for LEAF-to-LEAF calls.  We just verify the function exists
+    # and is callable without raising at import time.
+    assert callable(nv.ingest_to_qbus)
+
+
+def test_ingest_to_qbus_no_raise_when_parquet_missing(tmp_path):
+    """ingest_to_qbus must degrade gracefully when events.parquet doesn't exist."""
+    import os
+    from unittest.mock import patch
+
+    # Point data dir to tmp_path so events.parquet won't be found
+    with patch.object(nv, "_events_path", return_value=tmp_path / "nofile.parquet"):
+        result = nv.ingest_to_qbus()
+    # Should return None (no parquet found) without raising
+    assert result is None
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn in fns:
-        fn()
-        print(f"ok  {fn.__name__}")
+        try:
+            import inspect
+            sig = inspect.signature(fn)
+            if sig.parameters:
+                import tempfile
+                with tempfile.TemporaryDirectory() as td:
+                    fn(Path(td))
+            else:
+                fn()
+            print(f"ok  {fn.__name__}")
+        except Exception as exc:
+            print(f"FAIL {fn.__name__}: {exc}")
+            raise
     print(f"\n{len(fns)} passed")

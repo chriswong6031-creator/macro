@@ -267,6 +267,41 @@ def _cache_age_days() -> float | None:
     return 999.0
 
 
+def fetch_company_tickers(max_age_days: int = 30, force: bool = False) -> bool:
+    """Fetch and cache the SEC broad CIK→ticker map (company_tickers.json).
+
+    Called once per month by the collector pipeline. The file is committed to
+    the repo (data/edgar/company_tickers.json) because:
+      • engine/name_resolver reads it keylessly at query time to reach ~10k-name
+        coverage (vs 4,101 without it).
+      • www.sec.gov enforces a declared User-Agent (SEC fair-access policy); our
+        email-bearing UA in config["edgar"]["user_agent"] satisfies that.
+      • special_situations.py has an independent copy (_ensure_company_tickers)
+        using the same endpoint — this collector variant makes the file available
+        regardless of whether special_situations is enabled.
+
+    Returns True if the cache is fresh (was already up to date or successfully
+    refreshed). Never raises.
+    """
+    cache = config.data_dir() / "edgar" / "company_tickers.json"
+    if not force and cache.exists():
+        try:
+            age_d = (datetime.now(timezone.utc).timestamp() - cache.stat().st_mtime) / 86400.0
+            if age_d < max_age_days:
+                return True
+        except Exception:  # noqa: BLE001
+            pass
+    data = _get_json(_cfg()["tickers_url"], _cfg()["retries"])
+    if data:
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(json.dumps(data))
+        log.info("edgar: cached company_tickers.json (%d filers)", len(data))
+        return True
+    log.warning("edgar: company_tickers.json fetch failed; cache %s",
+                "retained" if cache.exists() else "absent")
+    return False
+
+
 def fetch_fundamentals(force: bool = False, max_age_days: int = 7) -> pd.DataFrame:
     """Fetch (or load cached) the wide ticker-indexed fundamentals table."""
     cache = _cache_path()

@@ -500,9 +500,10 @@ edgar:
   base_url: https://data.sec.gov/api/xbrl/frames/us-gaap
   shares_url: https://data.sec.gov/api/xbrl/frames/dei   # dei:EntityCommonStockSharesOutstanding fallback
   tickers_url: https://www.sec.gov/files/company_tickers.json
-  # SEC fair-access requires a descriptive UA with a contact. Replace the email
-  # with your own if you fork this. Rate limit is 10 req/s; we make ~20 calls/run.
-  user_agent: "macro-dashboard research (personal; contact via repo issues)"
+  # SEC fair-access requires a descriptive UA with an email contact (enforced by
+  # www.sec.gov for company_tickers.json; data.sec.gov is more lenient). Replace
+  # with your own contact if you fork this. Rate limit: 10 req/s; ~20 calls/run.
+  user_agent: "macro-dashboard/1.0 research longr2512@gmail.com"
   retries: 3
   latest_fy: 2025                  # most recent COMPLETE fiscal year on EDGAR; auto-walks-back if sparse
   min_filers_ok: 800              # a frame with fewer than this is treated as not-yet-available

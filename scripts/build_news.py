@@ -137,7 +137,19 @@ def build(write: bool = True) -> dict:
     try:
         from engine import news_vector as nv
         if nv.enabled():
-            nv.ingest()
+            ingest_result = nv.ingest()
+            # freshness is always checked inside ingest(); surface stale-store
+            # warning so it appears in CI/build logs (broken ≠ quiet).
+            if ingest_result:
+                fr = ingest_result.get("freshness") or {}
+                if fr.get("warn"):
+                    log.warning(
+                        "news_vector store STALE: newest=%s age=%s days — "
+                        "check GDELT rate-limit or fetch_cache for cached failures",
+                        fr.get("newest_event"), fr.get("age_days"),
+                    )
+            # wire accrued events into qbus after each successful ingest
+            nv.ingest_to_qbus()
         narrative = nv.recent_panel()
     except Exception as e:  # noqa: BLE001
         log.error("news_vector failed: %s", e)
