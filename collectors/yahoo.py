@@ -42,6 +42,17 @@ class YahooAdapter(Adapter):
         # Skip ^-prefixed index symbols — they belong in the tickers groups.
         extra = config.load().get("stock_search", {}).get("extra_tickers", []) or []
         out.extend(t for t in extra if not str(t).startswith("^"))
+        # W3 — Foresight Desk theme members: derive from config.themes at collect
+        # time so future theme-member changes flow automatically (self-maintaining;
+        # no separate list to keep in sync). foresight_grader._closes + the tape-
+        # extension leg in foresight_score both require data/yahoo/<ticker>.parquet
+        # for every theme member — without this, _theme_excess returns None and the
+        # grading ledger stays pending forever.
+        for theme in (config.load().get("themes") or {}).values():
+            # (theme or {}): a bare `some_theme:` YAML key yields None — never crash collect
+            for t in ((theme or {}).get("tickers") or []):
+                if t and not str(t).startswith("^"):
+                    out.append(t)
         return list(dict.fromkeys(out))
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
