@@ -71,6 +71,10 @@ def _clip01(x: float) -> float:
 # --------------------------------------------------------------------------- #
 # collector parquet readers — each degrades to {} (never raises)
 # --------------------------------------------------------------------------- #
+# append-only drip caches carry a PIT history now; slice to the latest single-day snapshot on read.
+_DRIP_DATE_COL = {"china_zt_pool": "date", "china_margin_detail": "date", "china_lhb": "asof"}
+
+
 def _read_parquet(group: str, file: str):
     """Read data/<group>/<file>.parquet → DataFrame, or None on any failure."""
     try:
@@ -78,6 +82,12 @@ def _read_parquet(group: str, file: str):
         if not p.exists():
             return None
         df = pd.read_parquet(p)
+        if df is None or df.empty:
+            return None
+        dc = _DRIP_DATE_COL.get(group)
+        if dc and dc in df.columns:
+            from collectors._drip import latest_snapshot
+            df = latest_snapshot(df, dc)                    # single-day snapshot from PIT history
         return df if df is not None and not df.empty else None
     except Exception as e:  # noqa: BLE001 — a missing/corrupt cache must never break a build
         log.debug("china_discovery: read %s/%s failed (%s)", group, file, e)

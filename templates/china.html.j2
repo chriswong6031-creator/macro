@@ -1309,6 +1309,40 @@
     </p>
     {% endif %}
     <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Cycle entry + mean-reversion (the validated A-share effects), with residual relative strength as a light quality tiebreaker. Deep-history corrected: A-shares mean-revert — momentum is not an edge. A shortlist to size and confirm, not a buy list; cycle state is a drawdown/structure tool, not a timing oracle.', '周期入场 + 均值回归（A股已验证的效应），残差相对强度仅作轻量质量加权。经深度历史校正：A股均值回归 —— 动量并非优势。用于定仓与确认的名单，而非买入清单；周期状态是回撤/结构工具，而非择时神谕。') }}</p>
+
+    {# ── BOARD TRACK RECORD (honest forward ledger) ─────────────────────────────
+       The board earns trust over time: this logs the ranked top-N each session and grades the
+       forward CSI300-relative, fill-realistic (T+1) outcome. Display-only telemetry — the whole
+       point is to hold the board accountable, so it shows the honest "accruing" state until the
+       first maturities land (~21 sessions after the ledger's first date). #}
+    {% set bt = setups.board_track %}
+    {% if bt and bt.available %}
+    {% set cov = setups.coverage %}
+    <div class="nb-track" style="margin:14px 0 0;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:color-mix(in srgb,var(--link) 4%,var(--panel))">
+      <div style="font-weight:700;font-size:12.5px;margin-bottom:5px">📒 {{ t('Board track record', '榜单成绩单') }}
+        <span class="note" style="text-transform:none;font-weight:400">· {{ t('does the top of this board actually beat the index?', '本榜单头部是否真的跑赢指数？') }}</span>
+        {{ help("The honest forward ledger for the BOARD ORDER itself (not the per-name score). Every session we log the ranked top-N and, once matured, grade each pick's forward return RELATIVE to the CSI300 (510300.SS), measured from a fill-realistic T+1 (H+L)/2 entry — never the untradeable reference close, never a look-ahead marker date, with locked-limit days excluded. 'Hit vs CSI300' = the share of picks that beat the index (with a Wilson confidence interval for the small sample). A well-ordered board should show rank #1 outperforming (a NEGATIVE rank-IC) and extended names lagging. Display-only accountability telemetry — it accrues honestly and reads 'accruing' until enough picks mature.", "针对榜单排序本身（而非个股评分）的诚实前瞻账本。每个交易日记录排名靠前的名单，成熟后按相对沪深300（510300.SS）的前瞻收益打分，入场采用可成交的 T+1（最高+最低)/2 —— 绝不用无法成交的参考收盘价、绝不用带前视的标记日，且剔除一字涨停日。“跑赢沪深300”＝跑赢指数的占比（小样本附 Wilson 置信区间）。排序良好的榜单应显示第1名跑赢（rank-IC 为负）、已大涨个股落后。仅展示的问责遥测 —— 诚实累积，样本不足时显示“累积中”。") }}
+      </div>
+      {% set h21 = bt.by_horizon['21d'] %}
+      {% if h21 and h21.n and h21.n >= 8 %}
+      <div style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;font-size:12px">
+        <span><b>{{ t('Hit vs CSI300', '跑赢沪深300') }}</b> (21d): <span class="{{ 'pos' if h21.hit_vs_csi300 >= 0.5 else 'neg' }}"><b>{{ '%.0f'|format(h21.hit_vs_csi300 * 100) }}%</b></span>{% if h21.hit_ci %} <span class="note">CI {{ '%.0f'|format(h21.hit_ci[0]*100) }}–{{ '%.0f'|format(h21.hit_ci[1]*100) }}%</span>{% endif %}</span>
+        {% if h21.median_excess is not none %}<span><b>{{ t('Median excess', '超额中位数') }}</b>: <span class="{{ 'pos' if h21.median_excess >= 0 else 'neg' }}">{{ '%+.1f'|format(h21.median_excess * 100) }}%</span></span>{% endif %}
+        {% if h21.board_rank_ic is not none %}<span><b>{{ t('Rank-IC', '排序 IC') }}</b>: <span class="{{ 'pos' if h21.board_rank_ic <= 0 else 'neg' }}">{{ '%+.2f'|format(h21.board_rank_ic) }}</span> <span class="note">{{ t('(negative = well-ordered)', '（为负＝排序良好）') }}</span></span>{% endif %}
+        <span class="note">n={{ h21.n }}</span>
+      </div>
+      {% if h21.extended_fwd is not none and h21.not_extended_fwd is not none %}
+      <div style="font-size:11.5px;margin-top:4px" class="note">{{ t('Extended-tagged picks', '已大涨标记') }}: <span class="{{ 'pos' if h21.extended_fwd >= 0 else 'neg' }}">{{ '%+.1f'|format(h21.extended_fwd*100) }}%</span> {{ t('vs not-extended', '对比未大涨') }} <span class="{{ 'pos' if h21.not_extended_fwd >= 0 else 'neg' }}">{{ '%+.1f'|format(h21.not_extended_fwd*100) }}%</span> {{ t('(21d, CSI300-relative)', '（21日，相对沪深300）') }}</div>
+      {% endif %}
+      {% else %}
+      <div style="font-size:12px" class="note">{{ t('Accruing — no picks have matured yet. First 21-day maturities ~2026-07-29.', '累积中 —— 尚无成熟样本。首批21日成熟约在 2026-07-29。') }}{% if bt.dates %} <span class="l-en">Logging since {{ bt.dates[0] }} ({{ bt.n_rows }} rows).</span><span class="l-zh">自 {{ bt.dates[0] }} 起记录（{{ bt.n_rows }} 条）。</span>{% endif %}</div>
+      {% endif %}
+      <div style="font-size:10.5px;margin-top:5px" class="note">
+        <span class="l-en">Grading: CSI300-relative excess, fill-realistic T+1 {% if bt.grading and bt.grading.entry_basis == 't1_hl2' %}(H+L)/2 proxy{% else %}open{% endif %} entry, locked-limit days excluded, never marker-dated.</span><span class="l-zh">打分：相对沪深300 超额，可成交 T+1 {% if bt.grading and bt.grading.entry_basis == 't1_hl2' %}(最高+最低)/2 代理{% else %}开盘{% endif %}入场，剔除一字涨停日，绝不用标记日。</span>
+        {% if cov %} {% if cov.data_through %}<span class="l-en">Data through {{ cov.data_through }}.</span><span class="l-zh">数据截至 {{ cov.data_through }}。</span>{% endif %}{% if cov.partial_session %} <span class="neg"><b>{{ t('partial session — not logged', '盘中未收 —— 未记录') }}</b></span>{% endif %}{% endif %}
+      </div>
+    </div>
+    {% endif %}
   </div>
   {% endif %}
 

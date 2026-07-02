@@ -5,10 +5,17 @@ Mirrors ``collectors/china_prices.py``'s yfinance pull but keeps the **full OHLC
 (close/high/low/volume) that the MACD-RSI x StochRSI confluence + buy-filter need —
 versus the close+volume the index/ETF stores (``data/china`` / ``data/hk``) keep.
 Store layout matches ``data/stocks/*.parquet`` (the US deep-history store): one
-parquet per ticker, ``DatetimeIndex`` named ``Date``, columns ``[close, high, low,
-volume]`` float64. yfinance ``.SS``/``.SZ``/``.HK`` suffixes already match the
+parquet per ticker, ``DatetimeIndex`` named ``Date``, columns ``[open, close, high,
+low, volume]`` float64. yfinance ``.SS``/``.SZ``/``.HK`` suffixes already match the
 existing namespaces, so there is no remap. See
 ``research/signal_engine/MULTICOUNTRY_DATA.md`` for the source decision.
+
+``open`` was added (CN-1 masterplan §W6-CN) so the china_standout_track ledger can
+grade a TRUE T+1-open fill instead of the (H+L)/2 proxy — the dominant fill-realism
+uncertainty (+4.41% vs +2.13% at 21d). Legacy history has no Open until
+``scripts/backfill_stock_open.py`` re-pulls it; ``store.upsert`` merges the column
+in additively and every downstream reader treats it as optional, so the schema
+change is backward-compatible.
 """
 from __future__ import annotations
 
@@ -22,8 +29,8 @@ from lib import config, store
 
 log = logging.getLogger(__name__)
 
-_OHLC = ["Close", "High", "Low", "Volume"]
-_REN = {"Close": "close", "High": "high", "Low": "low", "Volume": "volume"}
+_OHLC = ["Open", "Close", "High", "Low", "Volume"]
+_REN = {"Open": "open", "Close": "close", "High": "high", "Low": "low", "Volume": "volume"}
 _DEEP_MIN_ROWS = 250  # already-deep names take the cheap 1mo window
 
 
@@ -98,7 +105,12 @@ def fetch_ohlc(tickers: list[str], group: str, cfg: dict,
             for t in batch:
                 try:
                     sub = df[t] if isinstance(df.columns, pd.MultiIndex) else df
-                    sub = sub[_OHLC].rename(columns=_REN).dropna(subset=["close"])
+                    # Open is preferred but optional: a yfinance response missing it (rare) must not
+                    # drop the whole name — keep every requested column that is present, require Close.
+                    cols = [c for c in _OHLC if c in sub.columns]
+                    if "Close" not in cols:
+                        raise KeyError("Close")
+                    sub = sub[cols].rename(columns=_REN).dropna(subset=["close"])
                     if not sub.empty:
                         frames[t] = sub.astype("float64")
                 except KeyError:
