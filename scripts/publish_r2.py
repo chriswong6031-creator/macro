@@ -12,7 +12,14 @@ ETag) means unchanged files aren't re-uploaded — most daily runs push only the
 Resilient by design: no-op (exit 0) when the R2_* creds are absent, like the other
 builders. Reads: R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET.
 
+Partial-tree invocations MUST pass --no-manifest: the manifest is rebuilt from the
+local tree, so a checkout holding only a dir's few git-committed files (the heavy
+store is R2-only) would replace the full ~5000-name manifest with a 2-name one —
+and bulk consumers prune against it. A guard blocks any manifest that shrinks the
+remote list by more than half (--force-manifest overrides for intentional culls).
+
 Usage: python -m scripts.publish_r2 [--dirs ohlc,stockdata,...] [--dry-run]
+                                    [--no-manifest] [--force-manifest]
 """
 from __future__ import annotations
 
@@ -86,7 +93,32 @@ def _remote_etags(s3, bucket: str, prefix: str) -> dict:
         tok = r.get("NextContinuationToken")
 
 
-def publish(dirs, dry_run: bool = False, workers: int = 32) -> int:
+def _remote_manifest(s3, bucket: str, d: str) -> dict | None:
+    """The manifest currently on R2 for dir `d` (via the S3 API — the public r2.dev
+    host 403s non-browser UAs), or None when absent/unparsable."""
+    try:
+        r = s3.get_object(Bucket=bucket, Key=f"{d}/_manifest.json")
+        return json.loads(r["Body"].read())
+    except Exception:
+        return None
+
+
+def _manifest_ok(new_count: int, remote: dict | None, floor: float = 0.5) -> tuple[bool, str]:
+    """May a freshly-built manifest replace `remote`? Bulk consumers sync AND PRUNE
+    against this list, so a partial-tree invocation must never clobber it: replacing
+    a ~5000-name manifest with the 2 git-committed stockdata files would make a
+    downstream mirror prune itself empty. Blocks when the new list is under `floor`
+    of the remote count; intentional universe culls that deep need --force-manifest."""
+    old = (remote or {}).get("count")
+    if not isinstance(old, int) or old <= 0:
+        return True, "no usable remote manifest"
+    if new_count < old * floor:
+        return False, f"would shrink the manifest {old} -> {new_count} files"
+    return True, f"{new_count} files (was {old})"
+
+
+def publish(dirs, dry_run: bool = False, workers: int = 32,
+            manifest: bool = True, force_manifest: bool = False) -> int:
     s3 = _client()
     if s3 is None:
         log.info("no R2 creds (R2_ENDPOINT/ACCESS_KEY_ID/SECRET_ACCESS_KEY) — skip")
@@ -125,7 +157,23 @@ def publish(dirs, dry_run: bool = False, workers: int = 32) -> int:
         # Manifest goes up LAST, after every file it lists is in place. The public
         # r2.dev host has no LIST endpoint, so bulk mirrors (e.g. the Mastermind bot's
         # vendored-feed R2 leg) need an authoritative name list to sync and prune against.
+        # Only FULL publishes may touch it (audit_r2's freshness tripwire anchors on its
+        # Last-Modified, and it takes freshest-of manifest/index — partial lanes skipping
+        # the put is fine); the shrink guard catches partial lanes that forget the flag.
+        if not manifest:
+            log.info("%s: manifest untouched (--no-manifest)", d)
+            continue
         names = sorted(p.relative_to(base).as_posix() for p in files)
+        ok, why = (True, "forced") if force_manifest else \
+            _manifest_ok(len(names), _remote_manifest(s3, bucket, d))
+        if not ok:
+            log.error("%s: manifest put BLOCKED — %s. This looks like a partial-tree "
+                      "invocation; pass --no-manifest for partial syncs "
+                      "(or --force-manifest for an intentional cull).", d, why)
+            print(f"::warning title=publish_r2 manifest guard::{d}: {why} — "
+                  "manifest NOT replaced (partial-tree invocation?)", flush=True)
+            continue
+        log.info("%s: manifest put — %s", d, why)
         s3.put_object(Bucket=bucket, Key=f"{d}/_manifest.json",
                       Body=json.dumps({"dir": d, "count": len(names), "files": names}).encode(),
                       ContentType="application/json")
@@ -139,9 +187,15 @@ def main() -> int:
                     help="comma-separated site/ subdirs to sync (default: the heavy stores)")
     ap.add_argument("--dry-run", action="store_true", help="report the delta, upload nothing")
     ap.add_argument("--workers", type=int, default=32)
+    ap.add_argument("--no-manifest", dest="manifest", action="store_false",
+                    help="sync files but leave _manifest.json untouched — REQUIRED for "
+                         "partial-tree invocations (checkout lacking the full dir)")
+    ap.add_argument("--force-manifest", action="store_true",
+                    help="override the shrink guard (intentional deep universe cull)")
     a = ap.parse_args()
     dirs = [d.strip() for d in a.dirs.split(",") if d.strip()]
-    return publish(dirs, dry_run=a.dry_run, workers=a.workers)
+    return publish(dirs, dry_run=a.dry_run, workers=a.workers,
+                   manifest=a.manifest, force_manifest=a.force_manifest)
 
 
 if __name__ == "__main__":
