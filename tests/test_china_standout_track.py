@@ -30,8 +30,12 @@ def _mk_ohlc(dates, closes, *, flat_at=None):
 
 @pytest.fixture
 def cn_store(tmp_path, monkeypatch):
-    """A synthetic china_stocks + china (CSI300 ETF) store 130 sessions long."""
+    """A synthetic china_stocks + china (CSI300 ETF) store 130 sessions long. Defaults the session
+    guard to SETTLED (no run_status stub) so append tests are deterministic; the partial-session
+    tests override read_status explicitly."""
     monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    import lib.store as lstore
+    monkeypatch.setattr(lstore, "read_status", lambda: {})   # no panel stamp → assumed settled
     dates = pd.bdate_range("2026-01-01", periods=130)
     return tmp_path, dates
 
@@ -117,6 +121,43 @@ def test_grade_never_anchors_on_marker_date_leak(cn_store):
     stale = fwd.iloc[21] / px[0] - 1.0
     assert stale > ex                                        # the leaky base overstates the return
     assert ex != pytest.approx(stale, abs=1e-3)
+
+
+def test_session_guard_flags_and_refuses_partial_board(cn_store, monkeypatch):
+    """A price panel collected before the A-share close settled (<07:00 UTC on the board date) is a
+    PARTIAL SESSION → append_board refuses it (replacing the keep-first accident)."""
+    tmp_path, dates = cn_store
+    import lib.store as lstore
+    monkeypatch.setattr(lstore, "read_status", lambda: {"sources": {
+        "china_stocks": {"checked_at": "2026-07-02T02:37:00+00:00", "last_date": "2026-07-02"}}})
+    sess = t.session_status("2026-07-02")
+    assert sess["partial_session"] is True and sess["collected_hour_utc"] == 2
+    n = t.append_board([{"ticker": "600000.SS", "price": 10.0}], asof="2026-07-02", lane="asia")
+    assert n == 0                                          # refused — no mid-session board in the ledger
+    assert not t._store_path().exists()                   # nothing was written
+
+
+def test_session_guard_accepts_settled_board(cn_store, monkeypatch):
+    """A panel collected AFTER the close settled (or a prior-session board) is NOT partial → appends."""
+    tmp_path, dates = cn_store
+    import lib.store as lstore
+    monkeypatch.setattr(lstore, "read_status", lambda: {"sources": {
+        "china_stocks": {"checked_at": "2026-07-02T12:30:00+00:00", "last_date": "2026-07-02"}}})
+    sess = t.session_status("2026-07-02")
+    assert sess["partial_session"] is False
+    n = t.append_board([{"ticker": "600000.SS", "price": 10.0}], asof="2026-07-02", lane="asia")
+    assert n == 1                                          # settled → logged
+
+
+def test_ledger_append_gated_to_asia_lane(cn_store):
+    """Explicit lane gate: a render lane (lane != 'asia') never persists a board."""
+    tmp_path, dates = cn_store
+    n = t.append_board([{"ticker": "600000.SS", "price": 10.0}], asof=str(dates[0].date()),
+                       lane="render")
+    assert n == 0 and not t._store_path().exists()
+    # lane=None preserves the legacy (asia-build) call
+    n2 = t.append_board([{"ticker": "600000.SS", "price": 10.0}], asof=str(dates[0].date()), lane=None)
+    assert n2 == 1
 
 
 def test_grade_end_to_end_publishes_conventions(cn_store):

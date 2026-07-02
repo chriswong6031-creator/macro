@@ -51,6 +51,12 @@ log = logging.getLogger(__name__)
 _HORIZONS_D = (21, 63)                    # ~1 / 3 months
 _TOP_DECILE = 0.10
 _STORE = "china_standout_track"
+# A-share session settles ~07:00 UTC (15:00 CST close). A price panel collected BEFORE that on the
+# board date carries a mid-session partial bar (93.9% of names differ from settled close, median
+# 1.2%). The ledger's integrity today rests on a keep-first ACCIDENT (a stale panel reuses the prior
+# as_of whose keys already exist, so the partial board is silently discarded). Make it explicit.
+_SESSION_SETTLE_UTC_H = 7
+_PANEL_SOURCE = "china_stocks"            # the run_status source whose checked_at = panel collection UTC
 _BENCH = "510300.SS"                      # CSI300 ETF — the ONLY China excess benchmark (data/china)
 # Board tickers are per-NAME A-shares (.SS/.SZ) that live in the china_stocks OHLC store; the small
 # handful of ETFs on a board fall back to the index/ETF store. The #791 bug read only `china` (30
@@ -64,11 +70,68 @@ def _store_path():
     return config.data_dir() / _STORE / "board.parquet"
 
 
-def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60) -> int:
+def session_status(asof: str | None = None) -> dict:
+    """Is the board's price panel a SETTLED session or a mid-session partial bar?
+
+    Reads run_status.json for the ``china_stocks`` source: ``checked_at`` (collection UTC) and
+    ``last_date`` (newest bar in the panel). A board is a PARTIAL SESSION when the panel's newest bar
+    IS the board date AND that panel was collected before ~07:00 UTC (before the A-share close
+    settled). Returns {partial_session, collected_utc, collected_hour_utc, last_date, reason}.
+    Fail-OPEN on missing status (treat as settled) — a missing stamp must not silently block a real
+    nightly board; the asia-lane gate below is the belt-and-braces."""
+    out = {"partial_session": False, "collected_utc": None, "collected_hour_utc": None,
+           "last_date": None, "reason": "no run_status — assumed settled"}
+    try:
+        st = store.read_status()
+        src = (st.get("sources") or {}).get(_PANEL_SOURCE) or {}
+        checked = src.get("checked_at")
+        last_date = src.get("last_date")
+        out["collected_utc"] = checked
+        out["last_date"] = last_date
+        if not checked:
+            return out
+        ts = pd.Timestamp(checked)
+        if ts.tzinfo is None:
+            ts = ts.tz_localize("UTC")
+        ts = ts.tz_convert("UTC")
+        out["collected_hour_utc"] = int(ts.hour)
+        # only the CURRENT session can be partial: if the panel's newest bar is the board date and it
+        # was collected before the close settled, the board-date bar is mid-session.
+        same_day = (asof is not None and last_date is not None and str(last_date) == str(asof))
+        if same_day and ts.hour < _SESSION_SETTLE_UTC_H:
+            out["partial_session"] = True
+            out["reason"] = (f"panel {_PANEL_SOURCE} for {asof} collected {ts.hour:02d}:xx UTC "
+                             f"(< {_SESSION_SETTLE_UTC_H:02d}:00 settle) — mid-session partial bar")
+        else:
+            out["reason"] = "settled (collected after session close or a prior-session board)"
+    except Exception as e:  # noqa: BLE001 — a guard failure must not block the ledger
+        out["reason"] = f"session-status unreadable: {e}"
+    return out
+
+
+def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
+                 lane: str | None = None) -> int:
     """Append today's ranked top-N standout rows. Each row is a china_standouts `buy` entry (already
     in board order); we stamp its 1-based board_rank + the fields the grade needs. Keep-FIRST per
-    (date, ticker). Returns the ledger row count after the merge. Best-effort — never raises."""
+    (date, ticker). Returns the ledger row count after the merge. Best-effort — never raises.
+
+    LEDGER-INTEGRITY GATES (CN-1 §W6-CN), replacing the keep-first accident:
+      • asia-lane gate: appends only from the asia collection lane (``lane == 'asia'``). The nightly
+        render lanes must NOT persist a board (they discard data/ writes anyway); passing lane=None
+        preserves the legacy call for the asia build, which is the only one that commits data/.
+      • partial-session refusal: if the board's price panel was collected before the A-share close
+        settled (session_status().partial_session), REFUSE the append — a mid-session board must
+        never win the date in the ledger."""
     if not rows or not asof:
+        return 0
+    # explicit asia-lane gate: a lane was passed and it is NOT asia → refuse (render lanes never
+    # persist). lane=None keeps the historical (asia-build) call working unchanged.
+    if lane is not None and lane != "asia":
+        log.info("china standout board-track: append gated (lane=%s, not asia)", lane)
+        return 0
+    sess = session_status(asof)
+    if sess.get("partial_session"):
+        log.warning("china standout board-track: REFUSING append — %s", sess.get("reason"))
         return 0
     out = []
     for i, r in enumerate(rows[:top_n]):
