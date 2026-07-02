@@ -1,0 +1,83 @@
+name: intl-etf-substrate
+# W0-1 of INTL_FIX_MASTERPLAN: weekly collection of the 23-ticker country-ETF
+# total-return OHLCV substrate (data/intl_etf/*.parquet).
+#
+# Design: NEVER enters the daily 100-min critical path (pipeline-daily concurrency
+# group). Runs in the pipeline-batch lane (shared with weekly.yml / backfill.yml),
+# which serialises with itself but never blocks daily. Separate job from weekly.yml
+# so a yfinance hiccup here can't cascade into the full weekly re-build.
+on:
+  schedule:
+    - cron: "0 12 * * 6"   # Saturday 12:00 UTC — two hours before the full weekly run
+  workflow_dispatch:        # allow manual trigger / backfill
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pipeline-batch     # serialises with backfill / weekly, never with daily
+  cancel-in-progress: false
+
+jobs:
+  collect-intl-etf:
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 30     # 23 tickers × yfinance — should finish in <5 min; 30 min guard
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+
+      - run: pip install -r requirements.txt
+
+      - name: collect intl-etf substrate (fail-closed coverage gate)
+        # Fail-soft wrapper: logs the failure as a ::error:: annotation (readable on
+        # the run page) and writes a NAMED failure to run_status.json, but does NOT
+        # abort the workflow — so a transient yfinance outage doesn't break the commit.
+        # The circuit breaker in base.py will open if 3 consecutive runs fail.
+        run: |
+          set +e
+          echo "::group::intl_etf collector"
+          python -m scripts.collect --only intl_etf > /tmp/intl_etf.log 2>&1
+          rc=$?
+          cat /tmp/intl_etf.log
+          echo "::endgroup::"
+          if [ "$rc" -ne 0 ]; then
+            echo "::error title=intl_etf failed (rc=$rc)::$(tail -n 2 /tmp/intl_etf.log | tr '\n' ' ' | tail -c 600)"
+            { echo "### intl_etf substrate collector failed (rc=$rc)"
+              echo '<details><summary>traceback</summary>'
+              echo
+              echo '```'
+              tail -n 40 /tmp/intl_etf.log
+              echo '```'
+              echo '</details>'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit 0
+
+      - name: commit intl-etf data
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/intl_etf/ data/run_status.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "no intl_etf changes to commit"
+            exit 0
+          fi
+          git commit -m "data(intl_etf): weekly substrate refresh $(date -u +%F)"
+          # Rebase-retry loop: a concurrent push (e.g. daily closing up at the same
+          # time) must not permanently fail this job.
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then
+              echo "pushed intl_etf data on attempt $i"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "push attempt $i lost a race; re-syncing"
+            sleep $((i * 5))
+          done
+          echo "::warning::could not push intl_etf data after 5 attempts (non-fatal)"
