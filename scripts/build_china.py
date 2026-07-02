@@ -910,7 +910,7 @@ def main() -> int:
                 import importlib
                 getattr(importlib.import_module(_mod), _fn)()
             except Exception as e:  # noqa: BLE001 — additive, never fatal
-                log.error("%s build failed (%s); skipping", _name, e)
+                log.error("%s build failed (%s); skipping", _name, e, exc_info=True)
         try:
             from scripts.build_china_intel import build as _build_china_intel
             _build_china_intel()      # fan-in 4 surfaces + analysis + hub for the China Mastermind
