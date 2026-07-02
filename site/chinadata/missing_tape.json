@@ -1,0 +1,9 @@
+{
+  "schema": "missing_tape.v0",
+  "as_of": "2026-07-02",
+  "deletion_rate": 0.0,
+  "divergence_z": null,
+  "flags": [],
+  "risk_level": "NONE",
+  "is_context_only": true
+}
