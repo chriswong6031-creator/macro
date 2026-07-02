@@ -1,0 +1,188 @@
+{
+  "schema": "ab_risk_gate.v1",
+  "gross_mapping_version": "2026-07-01.v1",
+  "generated_from": "2026-06-30",
+  "history_range": [
+    "1971-04-29",
+    "2026-06-30"
+  ],
+  "series_ab": {
+    "n_days": 14394,
+    "n_divergence": 13366,
+    "divergence_pct": 92.86,
+    "n_fused_more_cautious": 2528,
+    "n_mrs_more_cautious": 10838
+  },
+  "replay_2026_06_23": {
+    "available": true,
+    "event_day": "2026-06-23",
+    "window": [
+      "2026-06-16",
+      "2026-06-30"
+    ],
+    "caught_days": [],
+    "detector_live_on_event_day": false,
+    "fused_catches_where_mrs_failed": false,
+    "min_delta_gate_B_minus_A": 0.09,
+    "verdict": "MISSES",
+    "decision": "NO-FLIP \u2014 MRS retained in the live sector-central gate",
+    "note": "NO-FLIP. MRS is retained in the live gate. The fused gate NEVER de-grosses below MRS in the 06-23 window (delta = gate_B - gate_A is positive on every day; fused is structurally LOOSER because its discrete neutral/risk-on band = gross 1.00 while MRS's continuous 0.5+0.5*risk_on map is tighter mid-range). The live risk_state positioning detector had ZERO archived reading on the event day (its column is NaN through 06-23; it was built the next session). A flip would RAISE gross on caution days in the name of a risk fix \u2014 indefensible. Ship the harness + findings only.",
+    "future_retest_hypothesis": "The fused wiring (max-cautious quad-prior vs live positioning) COULD fire on day 0 of a future blow-off once the positioning legs (dealer gamma, mtf technical) accumulate live readings \u2014 but that is an untested HYPOTHESIS, not a mitigant of this verdict. Re-run this replay after the next positioning event with day-0 archive coverage."
+  },
+  "replay_rows": [
+    {
+      "date": "2026-06-16",
+      "quad": "Q1",
+      "mrs": 0.096,
+      "gate_A_mrs": 0.91,
+      "live_risk_state": null,
+      "risk_state_score": null,
+      "fused_state": "risk-on",
+      "gate_B_fused": 1.0,
+      "delta": 0.09,
+      "fused_more_cautious": false
+    },
+    {
+      "date": "2026-06-17",
+      "quad": "Q1",
+      "mrs": 0.2883,
+      "gate_A_mrs": 0.57,
+      "live_risk_state": null,
+      "risk_state_score": null,
+      "fused_state": "risk-on",
+      "gate_B_fused": 0.8,
+      "delta": 0.23,
+      "fused_more_cautious": false
+    },
+    {
+      "date": "2026-06-18",
+      "quad": "Q1",
+      "mrs": 0.2083,
+      "gate_A_mrs": 0.63,
+      "live_risk_state": null,
+      "risk_state_score": null,
+      "fused_state": "risk-on",
+      "gate_B_fused": 0.8,
+      "delta": 0.17,
+      "fused_more_cautious": false
+    },
+    {
+      "date": "2026-06-22",
+      "quad": "Q1",
+      "mrs": 0.2094,
+      "gate_A_mrs": 0.63,
+      "live_risk_state": null,
+      "risk_state_score": null,
+      "fused_state": "risk-on",
+      "gate_B_fused": 0.8,
+      "delta": 0.17,
+      "fused_more_cautious": false
+    },
+    {
+      "date": "2026-06-23",
+      "quad": "Q1",
+      "mrs": 0.2088,
+      "gate_A_mrs": 0.63,
+      "live_risk_state": null,
+      "risk_state_score": null,
+      "fused_state": "risk-on",
+      "gate_B_fused": 0.8,
+      "delta": 0.17,
+      "fused_more_cautious": false
+    },
+    {
+      "date": "2026-06-24",
+      "quad": "Q1",
+      "mrs": 0.2093,
+      "gate_A_mrs": 0.63,
+      "live_risk_state": "neutral",
+      "risk_state_score": 28.8,
+      "fused_state": "neutral",
+      "gate_B_fused": 0.8,
+      "delta": 0.17,
+      "fused_more_cautious": false
+    },
+    {
+      "date": "2026-06-25",
+      "quad": "Q1",
+      "mrs": 0.25,
+      "gate_A_mrs": 0.6,
+      "live_risk_state": "caution",
+      "risk_state_score": 40.0,
+      "fused_state": "caution",
+      "gate_B_fused": 0.72,
+      "delta": 0.12,
+      "fused_more_cautious": false
+    },
+    {
+      "date": "2026-06-26",
+      "quad": "Q1",
+      "mrs": 0.2504,
+      "gate_A_mrs": 0.6,
+      "live_risk_state": "caution",
+      "risk_state_score": 40.0,
+      "fused_state": "caution",
+      "gate_B_fused": 0.72,
+      "delta": 0.12,
+      "fused_more_cautious": false
+    },
+    {
+      "date": "2026-06-29",
+      "quad": "Q1",
+      "mrs": 0.2135,
+      "gate_A_mrs": 0.63,
+      "live_risk_state": "caution",
+      "risk_state_score": 40.0,
+      "fused_state": "caution",
+      "gate_B_fused": 0.72,
+      "delta": 0.09,
+      "fused_more_cautious": false
+    },
+    {
+      "date": "2026-06-30",
+      "quad": "Q1",
+      "mrs": 0.0969,
+      "gate_A_mrs": 0.91,
+      "live_risk_state": "neutral",
+      "risk_state_score": 22.5,
+      "fused_state": "neutral",
+      "gate_B_fused": 1.0,
+      "delta": 0.09,
+      "fused_more_cautious": false
+    }
+  ],
+  "gross_reconciliation": {
+    "shared_bands": {
+      "caution": {
+        "regime_one": 0.9,
+        "risk_state": 0.9,
+        "risk_radar": 0.9,
+        "gap": 0.0
+      },
+      "elevated": {
+        "regime_one": 0.78,
+        "risk_state": 0.78,
+        "risk_radar": 0.78,
+        "gap": 0.0
+      },
+      "risk-off": {
+        "regime_one": 0.6,
+        "risk_state": 0.6,
+        "risk_radar": 0.6,
+        "gap": 0.0
+      }
+    },
+    "risk_radar_extra": {
+      "watch": 0.97
+    },
+    "floor": {
+      "regime_one": 0.5,
+      "risk_state": 0.5,
+      "risk_radar": 0.5,
+      "gap": 0.0
+    },
+    "max_shared_gap": 0.0,
+    "reconciled": true,
+    "note": "All three route the shared bands through the SAME magnitudes (single-source RISK_STATE_GROSS). risk_radar adds only 'watch'=0.97 above the shared four; it does NOT emit a competing gross for the shared states."
+  }
+}

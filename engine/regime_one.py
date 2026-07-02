@@ -87,6 +87,11 @@ STATE_LABEL = {
 # market-internal legs; here we translate the quad honestly).
 _QUAD_RISK_PRIOR = {"Q1": "risk-on", "Q2": "neutral", "Q3": "elevated", "Q4": "risk-off"}
 
+# risk_state.py's 5-band vocabulary uses "risk_off" (underscore) internally; ours uses
+# "risk-off" (hyphen). One explicit map so the fusion below never drifts on the token.
+_RS_STATE_ALIAS = {"risk-on": "risk-on", "neutral": "neutral", "caution": "caution",
+                   "elevated": "elevated", "risk-off": "risk-off", "risk_off": "risk-off"}
+
 # tape (coincident market-proxy) vs macro (econ) leg partition of each axis.
 # These names match the c_{axis}_{leg} columns emitted by engine.axes.
 _TAPE_GROWTH = ("copper_gold", "xly_xlp", "us2y_direction", "iwm_spy",
@@ -432,13 +437,53 @@ def _inflation_axis_disagreement(tape: dict, macro: dict) -> dict:
     }
 
 
+def _rs_state(risk_state: dict | None) -> str | None:
+    """Normalize a live engine.risk_state snapshot's state token to our 5-state
+    vocabulary. None when unavailable (drops out of the max-cautious fusion)."""
+    if not risk_state:
+        return None
+    s = risk_state.get("state")
+    if s is None:
+        return None
+    return _RS_STATE_ALIAS.get(str(s))
+
+
+def _max_cautious(*states: str | None) -> str:
+    """The MOST cautious of a set of 5-states (higher index in STATE_ORDER = more
+    drawdown risk). This is the fusion rule that lets the equity-internal positioning
+    read (risk_state) OVERRIDE a benign quad prior — the exact 2026-06-23 lesson: the
+    quad stayed Q1 (risk-on) while positioning blew off, so the fused state must be able
+    to escalate on the positioning leg alone. None entries are ignored; default neutral."""
+    idx = -1
+    best = "neutral"
+    for s in states:
+        if s is None or s not in STATE_ORDER:
+            continue
+        j = STATE_ORDER.index(s)
+        if j > idx:
+            idx, best = j, s
+    return best
+
+
 def _fused_risk(tape: dict, macro: dict, legacy_quad: str, degraded: dict,
-                base_conf: float) -> dict:
+                base_conf: float, risk_state: dict | None = None) -> dict:
     """Fuse into the 5-state vocabulary with the single versioned gross table and a
-    confidence that degrades at inflections and on degraded (renorm-vetoed) days."""
+    confidence that degrades at inflections and on degraded (renorm-vetoed) days.
+
+    The fused state is the MAX-CAUTIOUS of the quad prior and the live equity-internal
+    RISK STATE (engine.risk_state — the positioning/blow-off detector built AFTER the
+    2026-06-23 failure). This is what lets fused_risk catch what MRS/quad miss: on a
+    positioning blow-off the quad can stay Q1 (risk-on) while risk_state escalates on
+    dealer-gamma / breadth-divergence / vol-structure legs the quad never sees."""
     # base state from the (frozen-if-vetoed) label quad
     quad = degraded["label_quad"]
-    state = _QUAD_RISK_PRIOR.get(quad, "neutral")
+    quad_state = _QUAD_RISK_PRIOR.get(quad, "neutral")
+
+    # fuse in the live equity-internal positioning read (max-cautious).
+    rs_state = _rs_state(risk_state)
+    state = _max_cautious(quad_state, rs_state)
+    positioning_override = bool(rs_state is not None
+                               and STATE_ORDER.index(rs_state) > STATE_ORDER.index(quad_state))
 
     infl = _inflation_axis_disagreement(tape, macro)
 
@@ -474,15 +519,67 @@ def _fused_risk(tape: dict, macro: dict, legacy_quad: str, degraded: dict,
         "confidence": conf,
         "inflation_inflection": infl,
         "degraded": degraded["degraded"],
-        "note": "5-state fused risk from the legacy-quad prior + inflection uncertainty; "
-                "gross via the single versioned RISK_STATE_GROSS table. SHADOW — no live "
-                "consumer flips this wave (risk-vocabulary unification is P2-B').",
+        # provenance of the fused state: quad prior vs the positioning (risk_state) read.
+        "quad_prior_state": quad_state,
+        "risk_state_state": rs_state,
+        "risk_state_score": (risk_state or {}).get("score"),
+        "positioning_override": positioning_override,
+        # first consumer of risk_state's sizing DIRECTIVES (favor_entries / cap_leadership) —
+        # previously emitted with ZERO consumers (audit #4). Carried onto the fused verdict.
+        "favor_entries": (risk_state or {}).get("favor_entries"),
+        "cap_leadership": (risk_state or {}).get("cap_leadership"),
+        "note": "5-state fused risk = MAX-CAUTIOUS(quad prior, live equity-internal risk_state) "
+                "+ inflection uncertainty; gross via the single versioned RISK_STATE_GROSS table. "
+                "The risk_state leg is the positioning/blow-off detector built after 2026-06-23, "
+                "so fused_risk can escalate when the quad stays benign.",
         "passport": _passport(basis="measured", frame="latest",
                               freshness={"asof": degraded.get("asof"),
                                          "expected_cadence": "D",
                                          "state": "degraded" if degraded["degraded"] else "fresh"},
                               n=tape.get("n_available", 0) + macro.get("n_available", 0)),
     }
+
+
+# --------------------------------------------------------------------------- #
+# The SINGLE conviction gate factor. Routes the fused 5-state through ONE gate
+# arithmetic so the sector-central conviction gate, the page banner, and the bot
+# prior are the SAME number. Retires the MRS-driven gate at sector_central.py.
+# --------------------------------------------------------------------------- #
+def fused_gate_factor(fused: dict, quad: str | None = None,
+                      liquidity: str | None = None) -> dict:
+    """The bullish-conviction gate factor in [0.2, 1.0] derived from the fused 5-state.
+
+    This REPLACES the MRS-driven gate arithmetic in engine.sector_central._regime_anchor
+    (which read conditions.macro_risk_score — the credit/recession scalar proven blind to
+    the 2026-06-23 positioning blow-off). The base gate is the fused state's gross_factor
+    (the single versioned table); quad/liquidity nudge exactly as the legacy gate did, so
+    the swap changes ONLY the risk driver, not the surrounding arithmetic.
+
+    Returns {gate_factor, base, quad_mult, liq_mult, basis} — basis names the driver so
+    the reasoning trace + coherence assert can verify the gate is fused-driven."""
+    base = float(fused.get("gross_factor") or 1.0)
+    gate = base
+    quad_lean = {"Q1": 1, "Q2": 1, "Q3": -1, "Q4": -1}.get(quad)
+    liq_lean = {"expanding": 1, "contracting": -1, "neutral": 0, "unknown": None}.get(liquidity)
+    quad_mult = liq_mult = 1.0
+    if quad_lean == -1:
+        quad_mult = 0.85
+        gate *= quad_mult
+    if liq_lean == -1:
+        liq_mult = 0.8
+        gate *= liq_mult
+    elif liq_lean == 1:
+        liq_mult = 1.1
+        gate = min(1.0, gate * liq_mult)
+    # on a degraded (renorm-vetoed) read, hold the gate no looser than 'caution' —
+    # the same conservative asymmetry _fused_risk applies to gross.
+    if fused.get("degraded"):
+        gate = min(gate, RISK_STATE_GROSS["caution"])
+    gate = round(float(np.clip(gate, 0.2, 1.0)), 2)
+    return {"gate_factor": gate, "base": round(base, 3),
+            "quad_mult": quad_mult, "liq_mult": liq_mult, "liquidity": liquidity,
+            "basis": "fused_risk", "gross_mapping_version": RISK_STATE_GROSS_VERSION,
+            "fused_label": fused.get("label")}
 
 
 # --------------------------------------------------------------------------- #
@@ -682,7 +779,8 @@ def decode_bitmask(mask: int) -> dict:
 # --------------------------------------------------------------------------- #
 def compute(full_regime: pd.DataFrame, release_axis_row: pd.Series | None,
             base_effect: dict | None, legacy_latest: dict,
-            prev: dict | None = None, data_dir=None) -> dict:
+            prev: dict | None = None, data_dir=None,
+            risk_state: dict | None = None) -> dict:
     """Build the regime_one artifact.
 
     Parameters
@@ -696,6 +794,10 @@ def compute(full_regime: pd.DataFrame, release_axis_row: pd.Series | None,
     legacy_latest : the legacy latest.json dict (for asof/quad/confidence).
     prev : the previously published regime_one dict (for flip attribution). None on
         first run.
+    risk_state : the live engine.risk_state snapshot (the equity-internal positioning /
+        blow-off detector). Fused into fused_risk as a MAX-CAUTIOUS leg so the fused
+        state can escalate on positioning alone when the quad stays benign (the
+        2026-06-23 lesson). If None, falls back to legacy_latest['risk_state'].
     """
     if data_dir is None:
         data_dir = config.data_dir()
@@ -712,9 +814,16 @@ def compute(full_regime: pd.DataFrame, release_axis_row: pd.Series | None,
         macro["passport"]["frame"] = "latest"
         macro["note"] += " [FALLBACK: release frame unavailable — reference legs used]"
 
+    if risk_state is None:
+        risk_state = (legacy_latest or {}).get("risk_state")
+
     flip = attribute_flip(prev, tape, macro, legacy_quad)
     forward = _forward_read(full_regime, base_effect, data_dir)
-    fused = _fused_risk(tape, macro, legacy_quad, flip, base_conf)
+    fused = _fused_risk(tape, macro, legacy_quad, flip, base_conf, risk_state=risk_state)
+    liquidity = (legacy_latest or {}).get("liquidity_overlay") or (legacy_latest or {}).get("liquidity")
+    # the gate dict carries `liquidity` publicly, so refuse() reads it back from there (no
+    # private field leaking into the persisted artifact).
+    fused["gate"] = fused_gate_factor(fused, quad=flip["label_quad"], liquidity=liquidity)
 
     out = {
         "schema": SCHEMA,
@@ -732,14 +841,69 @@ def compute(full_regime: pd.DataFrame, release_axis_row: pd.Series | None,
         "freshness_bitmask": freshness_bitmask(macro, flip["degraded"]),
         "_legacy_quad": legacy_quad,            # for the next run's flip attribution
         "gross_mapping_version": RISK_STATE_GROSS_VERSION,
+        # SHADOW: the 2026-06-23 replay acceptance gate FAILED (scripts/ab_risk_gate.py) —
+        # the fused gate never de-grosses below MRS in the event window (MRS's continuous map
+        # is structurally tighter mid-range), and the positioning detector had no archived
+        # reading on the event day. So MRS is NOT retired from the live sector-central gate this
+        # wave; fused_risk.gate is published SHADOW (a candidate + the bot's prior). The single
+        # gross table, magnitude reconciliation, coherence assert, and bot-prior consumption ship.
         "shadow": True,
-        "note": "SHADOW artifact — publishes alongside the legacy regime; zero behavioral "
-                "change to any current consumer this wave (P2-A). Risk-vocabulary "
-                "unification + MRS retirement is the next wave (P2-B').",
+        "fused_gate_status": "shadow-a-b (06-23 replay MISSED — no flip; see calibration/ab_risk_gate.json)",
+        "note": "Canonical DECOMPOSITION + SHADOW fused-risk verdict. fused_risk.gate is a shadow "
+                "candidate for the sector-central conviction gate and the bot's risk prior; the live "
+                "gate stays MRS-driven this wave (06-23 replay did not pass). The single versioned "
+                "RISK_STATE_GROSS table is now the ONE gross source across risk_state/risk_radar.",
     }
     if flip["degraded"]:
         out["degraded_reason"] = flip.get("degraded_reason")
     return out
+
+
+def refuse(regime_one_out: dict, risk_state: dict | None) -> dict:
+    """Re-fuse fused_risk (and its gate) with a live engine.risk_state snapshot that was
+    not available when compute() first ran (run.py computes risk_state AFTER regime_one).
+
+    Idempotent given the same inputs. Mutates + returns regime_one_out. The tape/macro/
+    flip attribution are unchanged — only the positioning (risk_state) leg is folded in.
+    This is what lets the LIVE fused_risk escalate on a positioning blow-off the quad
+    misses; the shadow A/B replay proves the behavior on 2026-06-23."""
+    if not regime_one_out:
+        return regime_one_out
+    fused = regime_one_out.get("fused_risk") or {}
+    flip = regime_one_out.get("flip_attribution") or {}
+    label_quad = regime_one_out.get("label_quad")
+    # rebuild the quad-prior + positioning fusion using the stored confidence inputs.
+    quad_state = _QUAD_RISK_PRIOR.get(label_quad, "neutral")
+    rs_state = _rs_state(risk_state)
+    new_state = _max_cautious(quad_state, rs_state)
+    # degraded re-escalation, mirroring _fused_risk.
+    if regime_one_out.get("degraded"):
+        cur = STATE_ORDER.index(new_state)
+        new_state = STATE_ORDER[min(cur + 1, len(STATE_ORDER) - 1)]
+    positioning_override = bool(rs_state is not None
+                               and STATE_ORDER.index(rs_state) > STATE_ORDER.index(quad_state))
+    gross = RISK_STATE_GROSS.get(new_state, 1.0)
+    if regime_one_out.get("degraded"):
+        gross = min(gross, RISK_STATE_GROSS["caution"])
+    gross = round(max(_GROSS_FLOOR, gross), 3)
+    en, zh = STATE_LABEL[new_state]
+    fused.update({
+        "label": new_state, "label_en": en, "label_zh": zh, "gross_factor": gross,
+        "quad_prior_state": quad_state, "risk_state_state": rs_state,
+        "risk_state_score": (risk_state or {}).get("score"),
+        "positioning_override": positioning_override,
+        # First real consumer of risk_state's sizing DIRECTIVES (favor_entries /
+        # cap_leadership) — previously emitted with ZERO consumers (audit #4). The fused
+        # verdict now carries them so the shadow gate + the bot prior can act on them.
+        "favor_entries": (risk_state or {}).get("favor_entries"),
+        "cap_leadership": (risk_state or {}).get("cap_leadership"),
+    })
+    # preserve the liquidity nudge from the gate compute()'d earlier (public field on the gate
+    # dict — no private key on the fused artifact).
+    liquidity = (fused.get("gate") or {}).get("liquidity")
+    fused["gate"] = fused_gate_factor(fused, quad=label_quad, liquidity=liquidity)
+    regime_one_out["fused_risk"] = fused
+    return regime_one_out
 
 
 def accrue_hmm_row(data_dir=None) -> bool:
