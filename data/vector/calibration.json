@@ -5204,19 +5204,27 @@
     }
   },
   "multiple_testing": {
-    "dsr": 0.9986,
+    "dsr": 0.9857,
     "sr_daily": 0.081826,
     "sr_annual": 1.56,
-    "sr0_daily": 0.036308,
-    "sr0_annual": 0.69,
+    "sr0_daily": 0.042728,
+    "sr0_annual": 0.82,
     "n_trials": 68,
     "T": 4200,
     "skew": 0.661,
     "kurt": 13.966,
+    "t_eff": 3033,
     "selected_variant": "optimal",
     "sr_variance_source": "max(cross-variant dispersion, null SR-sampling proxy)",
     "verdict": "SURVIVES multiple-testing (DSR\u22650.95)",
-    "note": "DSR = P(true Sharpe>0) after deflating for n_trials independent configs, sample length, skew & kurtosis. n_trials is a manual UPPER-BOUND of the signal/threshold/window variants explored \u2014 overestimating is the conservative direction (de Prado). Bump vector.calibration.n_trials as you try more. GATED series (live behavior).",
+    "effective_t": {
+      "t_eff": 3033,
+      "t_raw": 4200,
+      "ratio": 0.722,
+      "block": 21,
+      "B": 2000
+    },
+    "note": "DSR = P(true Sharpe>0) after deflating for n_trials independent configs, sample length, skew & kurtosis. n_trials is a manual UPPER-BOUND of the signal/threshold/window variants explored \u2014 overestimating is the conservative direction (de Prado). Bump vector.calibration.n_trials as you try more. The DSR statistic now uses a block-bootstrap effective sample size (T_eff) instead of raw sqrt(T-1), so autocorrelated daily returns no longer overstate confidence. GATED series (live behavior).",
     "dsr_effN": {
       "dsr_legacy": 0.9986,
       "dsr_effN": 0.9622,
@@ -5227,19 +5235,27 @@
     }
   },
   "multiple_testing_raw": {
-    "dsr": 0.9945,
+    "dsr": 0.9654,
     "sr_daily": 0.075012,
     "sr_annual": 1.43,
-    "sr0_daily": 0.036378,
-    "sr0_annual": 0.69,
+    "sr0_daily": 0.042628,
+    "sr0_annual": 0.81,
     "n_trials": 68,
     "T": 4200,
     "skew": 0.607,
     "kurt": 12.983,
+    "t_eff": 3059,
     "selected_variant": "optimal",
     "sr_variance_source": "max(cross-variant dispersion, null SR-sampling proxy)",
     "verdict": "SURVIVES multiple-testing (DSR\u22650.95)",
     "note": "DSR on the RAW (ungated) series \u2014 pure engine without override contamination. Pre-gate figure (0.9965) retired; this is the fresh dual-track compute as of 2026-07. n_trials includes override dof_cost. RAW series.",
+    "effective_t": {
+      "t_eff": 3059,
+      "t_raw": 4200,
+      "ratio": 0.728,
+      "block": 21,
+      "B": 2000
+    },
     "dsr_effN": {
       "dsr_legacy": 0.9945,
       "dsr_effN": 0.9236,
@@ -5251,15 +5267,11 @@
   },
   "trial_log": {
     "asof": "2026-07-01",
-    "n_trials_base": 65,
-    "n_trials_overrides": 3,
-    "n_trials_total": 68,
-    "override_dof_breakdown": [
-      {
-        "id": "midterm_blackout",
-        "dof_cost": 3
-      }
-    ],
+    "n_trials_config": 65,
+    "overrides_dof": {
+      "midterm_blackout": 3
+    },
+    "n_trials_declared": 68,
     "cost_bps_one_way": 10.0,
     "allocation_variants_tested": [
       "conservative",
@@ -5302,7 +5314,8 @@
       "vrp"
     ],
     "n_signal_families": 32,
-    "note": "Point-in-time trial ledger (overwritten each run). n_trials_total = n_trials_base (config upper-bound) + sum(dof_cost) across registered overrides (W1 N7). Raise n_trials_base as you try more configs; each new override must declare its dof_cost, which is ADDED here."
+    "fdr_note": "The 32-family band-edge screen is a multiple-comparison surface \u2014 at screen strength expect ~1-2 spuriously CONFIRMED families out of 32 under the null. Verdicts are hypothesis-generating only and should be treated as directional priors, not causal proofs. Sizing authority flows solely through the DSR-gated allocation backtest, whose N these signal families inflate via n_trials.",
+    "note": "Point-in-time trial ledger (overwritten each run). n_trials_declared = n_trials_config (upper-bound of configs explored) + sum(dof_cost) across registered overrides. Raise n_trials_config as you try more; each new override must declare its dof_cost, which is ADDED here."
   },
   "cross_validation": {
     "k_folds": 5,

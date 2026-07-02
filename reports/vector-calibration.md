@@ -449,32 +449,32 @@ OOF 7d direction: **Brier 0.2498** vs base 0.2483 (skill -0.006); Platt a=0.701,
 
 **SURVIVES multiple-testing (DSR≥0.95)** — shipped variant `optimal` (GATED / live behavior).
 
-- DSR (gated) — P(true Sharpe > 0): **0.9986**
-- Observed Sharpe 1.56 ann (0.081826/day); haircut threshold SR0 0.69 ann
+- DSR (gated) — P(true Sharpe > 0): **0.9857**
+- Observed Sharpe 1.56 ann (0.081826/day); haircut threshold SR0 0.82 ann
 - N=68 trials (upper-bound, incl. override dof_cost) · T=4200d · skew=0.661 · kurt=13.966 · SR-variance: max(cross-variant dispersion, null SR-sampling proxy)
 - **Effective-N haircut**: T_eff=2512.7 vs raw T=4200 (rho_sum_K20=0.3358); dsr_effN=0.9622 (dsr_legacy=0.9986). Block-bootstrap refinement: W5.
 
-> DSR = P(true Sharpe>0) after deflating for n_trials independent configs, sample length, skew & kurtosis. n_trials is a manual UPPER-BOUND of the signal/threshold/window variants explored — overestimating is the conservative direction (de Prado). Bump vector.calibration.n_trials as you try more. GATED series (live behavior).
+> DSR = P(true Sharpe>0) after deflating for n_trials independent configs, sample length, skew & kurtosis. n_trials is a manual UPPER-BOUND of the signal/threshold/window variants explored — overestimating is the conservative direction (de Prado). Bump vector.calibration.n_trials as you try more. The DSR statistic now uses a block-bootstrap effective sample size (T_eff) instead of raw sqrt(T-1), so autocorrelated daily returns no longer overstate confidence. GATED series (live behavior).
 
 ## Deflated Sharpe Ratio — RAW (ungated) series
 
 **SURVIVES multiple-testing (DSR≥0.95)** — variant `optimal` (RAW / pure engine).
 
 > Pre-gate figure (0.9965) retired as of 2026-07. This is the fresh dual-track compute. Raw series excludes midterm-blackout contamination.
-- DSR (raw) — P(true Sharpe > 0): **0.9945**
-- Observed Sharpe 1.43 ann; SR0 0.69 ann
+- DSR (raw) — P(true Sharpe > 0): **0.9654**
+- Observed Sharpe 1.43 ann; SR0 0.81 ann
 - N=68 trials · T=4200d · skew=0.607 · kurt=12.983
 - **Effective-N haircut**: T_eff=2523.0, dsr_effN=0.9236 (dsr_legacy=0.9945)
 
 > DSR on the RAW (ungated) series — pure engine without override contamination. Pre-gate figure (0.9965) retired; this is the fresh dual-track compute as of 2026-07. n_trials includes override dof_cost. RAW series.
 
-## Trial log (W1 N7 — n_trials breakdown)
+## Trial log (N7 — n_trials breakdown)
 
-As-of 2026-07-01: **n_trials_total=68** = n_trials_base=65 (config upper-bound) + n_trials_overrides=3 (sum of override dof_costs).
+As-of 2026-07-01: **n_trials_declared=68** = n_trials_config=65 (config upper-bound) + override dof_cost (registry).
   - override `midterm_blackout`: dof_cost=3
 32 signal families screened; allocation variants: conservative, moderate, aggressive, optimal; transaction cost 10.0bps one-way.
 
-> Point-in-time trial ledger (overwritten each run). n_trials_total = n_trials_base (config upper-bound) + sum(dof_cost) across registered overrides (W1 N7). Raise n_trials_base as you try more configs; each new override must declare its dof_cost, which is ADDED here.
+> Point-in-time trial ledger (overwritten each run). n_trials_declared = n_trials_config (upper-bound of configs explored) + sum(dof_cost) across registered overrides. Raise n_trials_config as you try more; each new override must declare its dof_cost, which is ADDED here.
 
 ## Ensemble capstone — does combining beat the heuristic?
 
