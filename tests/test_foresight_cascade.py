@@ -488,3 +488,330 @@ def test_late_line_provisional_flag_in_payload():
     c = compute_foresight_cascade(write_ledger=False)
     if c is not None:
         assert c.get("late_line_provisional") is True
+
+
+# ── W5b (Q4): two-tier desk — tier tagging ───────────────────────────────────
+
+def test_tier_p_for_numeric_fred_band():
+    """(a) Tier P when bottleneck_band is a live numeric FRED band."""
+    from engine.foresight_cascade import _compute_tier
+    for band in ("TIGHT", "SOLD_OUT", "LOOSE", "TIGHTENING", "GLUT_FORMING", "GLUT"):
+        assert _compute_tier(band, None) == "P", f"band={band} should be Tier P"
+
+
+def test_tier_w_for_awaiting_and_null_bands():
+    """(a) Tier W when bottleneck_band is None, AWAITING_DATA, or a text-only band."""
+    from engine.foresight_cascade import _compute_tier
+    for band in (None, "AWAITING_DATA", "TIGHT (text)", "TIGHTENING (text)"):
+        assert _compute_tier(band, None) == "W", f"band={band} should be Tier W"
+
+
+def test_tier_p_for_theme_feed_summary_present():
+    """(a) Tier P when a theme_feed_summary is present (orphan-rescue feed) — even with
+    AWAITING_DATA bottleneck_band (FDA shortages rescue glp1_obesity into Tier P)."""
+    from engine.foresight_cascade import _compute_tier
+    feed = {"source": "fda_shortages", "band": "SHORTAGE_ACTIVE", "label": "FDA shortage ACTIVE"}
+    assert _compute_tier(None, feed) == "P"
+    assert _compute_tier("AWAITING_DATA", feed) == "P"
+
+
+def test_tier_field_in_cascade_rows():
+    """(a) Each cascade row has a 'tier' field of 'P' or 'W'."""
+    bottleneck = {"themes": {
+        "memory_storage": {"name": "Memory", "band": "TIGHT", "tightness": 0.9},
+        "glp1_obesity":   {"name": "GLP-1", "band": None},
+        "cybersecurity":  {"name": "Cyber", "band": "AWAITING_DATA"},
+    }}
+    revisions = {"themes": {
+        "memory_storage": {"name": "Memory", "breadth": 0.1, "level_state": "FLAT_LOW"},
+        "glp1_obesity":   {"name": "GLP-1",  "breadth": 0.2, "level_state": "POSITIVE"},
+        "cybersecurity":  {"name": "Cyber",  "breadth": 0.15, "level_state": "FLAT_LOW"},
+    }}
+    out = fc.compute_foresight_cascade(
+        bottleneck=bottleneck, revisions=revisions,
+        demand={"themes": {}}, glut={"themes": {}},
+        fda_scarcity={},   # empty — no feed for these themes
+        write_ledger=False,
+    )
+    assert out is not None
+    tiers = {r["theme"]: r["tier"] for r in out["themes"]}
+    assert tiers["memory_storage"] == "P"   # TIGHT = numeric FRED band → Tier P
+    assert tiers["glp1_obesity"]   == "W"   # band=None, no feed → Tier W
+    assert tiers["cybersecurity"]  == "W"   # AWAITING_DATA → Tier W
+
+
+def test_tier_p_via_fda_feed_no_fred():
+    """(d) glp1_obesity tier-upgrades to P when theme_feed_summary is populated by fda_scarcity."""
+    bottleneck = {"themes": {
+        "glp1_obesity": {"name": "GLP-1", "band": "AWAITING_DATA"},
+    }}
+    revisions = {"themes": {
+        "glp1_obesity": {"name": "GLP-1", "breadth": 0.1, "level_state": "FLAT_LOW"},
+    }}
+    # Synthetic fda_scarcity dict — shortage active
+    fda_scarcity_data = {
+        "glp1_obesity": {
+            "band": "SHORTAGE_ACTIVE",
+            "n_active": 2,
+            "n_resolved": 0,
+            "molecules_checked": ["semaglutide"],
+            "details": ["Semaglutide Injection [Current/Limited Availability]"],
+            "rationale": "2 active shortage records",
+        }
+    }
+    out = fc.compute_foresight_cascade(
+        bottleneck=bottleneck, revisions=revisions,
+        demand={"themes": {}}, glut={"themes": {}},
+        fda_scarcity=fda_scarcity_data,
+        write_ledger=False,
+    )
+    assert out is not None
+    r = out["themes"][0]
+    assert r["theme"] == "glp1_obesity"
+    assert r["tier"] == "P", "FDA shortage feed should promote glp1_obesity to Tier P"
+    assert r["theme_feed_summary"] is not None
+    assert r["theme_feed_summary"]["band"] == "SHORTAGE_ACTIVE"
+
+
+# ── W5b (§3.4): FDA scarcity engine ─────────────────────────────────────────
+
+def _make_shortage_df(rows: list[dict]) -> "pd.DataFrame":
+    import pandas as pd
+    return pd.DataFrame(rows)
+
+
+def test_fda_scarcity_active_band():
+    """(b) Active shortage records → SHORTAGE_ACTIVE band."""
+    from engine.fda_scarcity import compute_fda_scarcity, SHORTAGE_ACTIVE
+    df = _make_shortage_df([
+        {"generic_name": "Semaglutide Injection", "status": "Current",
+         "availability": "Limited Availability", "initial_posting_date": "07/01/2023"},
+        {"generic_name": "Liraglutide Injection", "status": "Current",
+         "availability": "Unavailable", "initial_posting_date": "06/15/2022"},
+    ])
+    result = compute_fda_scarcity(df)
+    glp1 = result.get("glp1_obesity")
+    assert glp1 is not None
+    assert glp1["band"] == SHORTAGE_ACTIVE
+    assert glp1["n_active"] >= 2
+
+
+def test_fda_scarcity_resolved_band():
+    """(b) All shortage records resolved → SHORTAGE_RESOLVED (the glut tell)."""
+    from engine.fda_scarcity import compute_fda_scarcity, SHORTAGE_RESOLVED
+    df = _make_shortage_df([
+        {"generic_name": "Semaglutide Tablet", "status": "Resolved",
+         "availability": "", "initial_posting_date": "03/01/2022"},
+        {"generic_name": "Liraglutide Injection", "status": "Resolved",
+         "availability": "", "initial_posting_date": "07/18/2023"},
+    ])
+    result = compute_fda_scarcity(df)
+    glp1 = result.get("glp1_obesity")
+    assert glp1 is not None
+    assert glp1["band"] == SHORTAGE_RESOLVED
+    assert glp1["n_resolved"] >= 2
+    assert "glut tell" in glp1["rationale"].lower() or "resolved" in glp1["rationale"].lower()
+
+
+def test_fda_scarcity_none_on_missing_cache():
+    """(c) Missing cache (df=None) → all themes return None."""
+    from engine.fda_scarcity import compute_fda_scarcity
+    result = compute_fda_scarcity(df=None)
+    assert isinstance(result, dict)
+    for v in result.values():
+        assert v is None, f"expected None for missing cache, got {v}"
+
+
+def test_fda_scarcity_mixed_active_and_resolved():
+    """(b) Mixed active + resolved → SHORTAGE_ACTIVE wins (active takes priority)."""
+    from engine.fda_scarcity import compute_fda_scarcity, SHORTAGE_ACTIVE
+    df = _make_shortage_df([
+        {"generic_name": "Semaglutide Injection", "status": "Current",
+         "availability": "Unavailable", "initial_posting_date": "07/01/2023"},
+        {"generic_name": "Liraglutide Injection", "status": "Resolved",
+         "availability": "", "initial_posting_date": "06/15/2022"},
+    ])
+    result = compute_fda_scarcity(df)
+    glp1 = result.get("glp1_obesity")
+    assert glp1 is not None
+    assert glp1["band"] == SHORTAGE_ACTIVE
+
+
+def test_fda_scarcity_no_glp1_records():
+    """(b) No GLP-1 records in df → NONE band (not an error)."""
+    from engine.fda_scarcity import compute_fda_scarcity, BAND_NONE
+    df = _make_shortage_df([
+        {"generic_name": "Bupivacaine Hydrochloride", "status": "Current",
+         "availability": "Unavailable", "initial_posting_date": "07/01/2023"},
+    ])
+    result = compute_fda_scarcity(df)
+    glp1 = result.get("glp1_obesity")
+    assert glp1 is not None
+    assert glp1["band"] == BAND_NONE
+
+
+def test_theme_feed_summary_flows_into_glp1_row():
+    """(d) theme_feed_summary is populated on the glp1_obesity cascade row when
+    fda_scarcity has an active shortage for it."""
+    bottleneck = {"themes": {
+        "glp1_obesity": {"name": "GLP-1 / Obesity", "band": "AWAITING_DATA"},
+    }}
+    revisions = {"themes": {
+        "glp1_obesity": {"name": "GLP-1 / Obesity", "breadth": 0.05, "level_state": "FLAT_LOW"},
+    }}
+    fda_scarcity_data = {
+        "glp1_obesity": {
+            "band": "SHORTAGE_ACTIVE",
+            "n_active": 3,
+            "n_resolved": 0,
+            "molecules_checked": ["semaglutide", "tirzepatide", "liraglutide"],
+            "details": ["Semaglutide Injection [Current/Limited Availability]"],
+            "rationale": "3 active shortage records — demand exceeds supply",
+        }
+    }
+    out = fc.compute_foresight_cascade(
+        bottleneck=bottleneck, revisions=revisions,
+        demand={"themes": {}}, glut={"themes": {}},
+        fda_scarcity=fda_scarcity_data,
+        write_ledger=False,
+    )
+    assert out is not None
+    r = out["themes"][0]
+    assert r["theme"] == "glp1_obesity"
+    # feed summary must be present and correctly structured
+    tfs = r.get("theme_feed_summary")
+    assert tfs is not None, "theme_feed_summary should be populated for glp1_obesity"
+    assert tfs["band"] == "SHORTAGE_ACTIVE"
+    assert tfs["source"] == "fda_shortages"
+    assert "shortage" in tfs["label"].lower()
+    # stage is NOT changed by the feed — still driven by T1/T4
+    assert r["stage"] in ("WATCH", "PRECIPICE (text)", "PRECIPICE", "BROADENING",
+                          "RE-RATING", "UNKNOWN"), f"unexpected stage: {r['stage']}"
+
+
+def test_theme_feed_summary_none_when_no_fda_data():
+    """(c) theme_feed_summary is None when fda_scarcity is empty/absent."""
+    bottleneck = {"themes": {
+        "glp1_obesity": {"name": "GLP-1 / Obesity", "band": "AWAITING_DATA"},
+    }}
+    revisions = {"themes": {
+        "glp1_obesity": {"name": "GLP-1 / Obesity", "breadth": 0.1, "level_state": "FLAT_LOW"},
+    }}
+    out = fc.compute_foresight_cascade(
+        bottleneck=bottleneck, revisions=revisions,
+        demand={"themes": {}}, glut={"themes": {}},
+        fda_scarcity={},   # empty dict — no data for any theme
+        write_ledger=False,
+    )
+    assert out is not None
+    r = out["themes"][0]
+    assert r.get("theme_feed_summary") is None
+
+
+# ── W5b: Jinja render test — watch shelf renders; stage pills exclude Tier W ─
+
+def test_jinja_watch_shelf_renders_and_pills_exclude_tier_w():
+    """(e) Jinja render: Tier W themes appear in watch shelf; stage pills only count Tier P."""
+    import sys, os
+    sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent.parent))
+    from jinja2 import Environment, FileSystemLoader
+    import pathlib
+
+    repo = pathlib.Path(__file__).resolve().parent.parent
+    env = Environment(loader=FileSystemLoader(str(repo / "templates")), autoescape=True)
+    tmpl = env.get_template("foresight.html.j2")
+
+    # 2 Tier P themes (one TIGHT/numeric, one with FDA feed) + 1 Tier W
+    themes_data = [
+        {
+            "theme": "memory_storage", "name": "Memory & Storage",
+            "tier": "P", "stage": "PRECIPICE",
+            "bottleneck_band": "TIGHT", "bottleneck_text_only": False, "tightness": 0.9,
+            "bottleneck_regime": True, "demand_band": None, "demand_strength": None,
+            "capex_yoy": None, "revision_breadth": 0.05, "revision_level": "FLAT_LOW",
+            "broadening_state": "FLAT_LOW", "est_drift_90d": None,
+            "guidance_band": None, "guidance_net": None, "guidance_raisers": None,
+            "guidance_cutters": None, "altdata_summary": None, "n_altdata_leading": 0,
+            "altdata_members": None, "glut_band": None, "glut_score": None,
+            "theme_feed_summary": None,
+            "rationale": "supply TIGHT while revisions not yet firing",
+            "entry_ready": False, "entry_note": "thesis intact",
+            "score": 62, "score_detail": {"verdict": "high-conviction", "axes": {}, "caps": []},
+            "size_band": None, "size_note": None,
+        },
+        {
+            "theme": "glp1_obesity", "name": "GLP-1 / Obesity",
+            "tier": "P", "stage": "WATCH",
+            "bottleneck_band": "AWAITING_DATA", "bottleneck_text_only": False, "tightness": None,
+            "bottleneck_regime": False, "demand_band": None, "demand_strength": None,
+            "capex_yoy": None, "revision_breadth": 0.08, "revision_level": "FLAT_LOW",
+            "broadening_state": "FLAT_LOW", "est_drift_90d": None,
+            "guidance_band": None, "guidance_net": None, "guidance_raisers": None,
+            "guidance_cutters": None, "altdata_summary": None, "n_altdata_leading": 0,
+            "altdata_members": None, "glut_band": None, "glut_score": None,
+            "theme_feed_summary": {
+                "source": "fda_shortages", "theme": "glp1_obesity",
+                "band": "SHORTAGE_ACTIVE", "tone": "warn",
+                "label": "FDA shortage ACTIVE (3 records)",
+                "rationale": "3 active shortage records — demand exceeds supply",
+                "n_active": 3, "n_resolved": 0,
+            },
+            "rationale": "supply not tight; FDA shortage ACTIVE — demand exceeds supply",
+            "entry_ready": False, "entry_note": "not a thesis stage — no entry",
+            "score": 42, "score_detail": {"verdict": "watch", "axes": {}, "caps": []},
+            "size_band": None, "size_note": None,
+        },
+        {
+            "theme": "cybersecurity", "name": "Cybersecurity",
+            "tier": "W", "stage": "WATCH",
+            "bottleneck_band": None, "bottleneck_text_only": False, "tightness": None,
+            "bottleneck_regime": False, "demand_band": None, "demand_strength": None,
+            "capex_yoy": None, "revision_breadth": 0.12, "revision_level": "FLAT_LOW",
+            "broadening_state": "FLAT_LOW", "est_drift_90d": None,
+            "guidance_band": None, "guidance_net": None, "guidance_raisers": None,
+            "guidance_cutters": None, "altdata_summary": None, "n_altdata_leading": 0,
+            "altdata_members": None, "glut_band": None, "glut_score": None,
+            "theme_feed_summary": None,
+            "rationale": "supply not tight; nothing actionable yet",
+            "entry_ready": False, "entry_note": "not a thesis stage — no entry",
+            "score": 38, "score_detail": {"verdict": "watch", "axes": {}, "caps": []},
+            "size_band": None, "size_note": None,
+        },
+    ]
+    stage_counts = {"PRECIPICE": 1, "BROADENING": 0, "RE-RATING": 0,
+                    "GLUT-RISK": 0, "WATCH": 2, "UNKNOWN": 0}
+    html = tmpl.render(
+        cascade={"sizing": None, "demand_pool": None, "dislocation": None},
+        themes=themes_data,
+        stage_counts=stage_counts,
+        stage_order=["PRECIPICE", "BROADENING", "RE-RATING", "GLUT-RISK", "WATCH", "UNKNOWN"],
+        demand_pool=None, dislocation=None,
+        track={"foresight": 0, "bottleneck": 0, "glut": 0, "revisions": 0,
+               "guidance": 0, "emergence": 0, "subsector": 0, "recent": []},
+        grade=None, emergence=None, subsectors=None,
+        convergence=None, power=None, analyst=None, monitor=None, health=None,
+        asof="2026-07-02", generated_utc="2026-07-02 00:00 UTC",
+        nav_prefix="", active_section="research", active_page="foresight",
+    )
+    # Watch shelf must render with cybersecurity in it
+    assert "fx-watch-shelf" in html, "watch shelf container missing"
+    assert "Cybersecurity" in html
+    # Watch shelf caveat must contain the honesty text
+    assert "no numeric physical correlate" in html or "cannot reach a confirmed PRECIPICE" in html
+    # Stage pills region: stage counts are Tier P only — cybersecurity (Tier W, WATCH) excluded
+    # The pills only show Tier P themes: 1 PRECIPICE (memory_storage) + 1 WATCH (glp1_obesity,
+    # BUT glp1_obesity is Tier P despite WATCH stage because of FDA feed)
+    # Count "PRECIPICE" in the stage pills area (before watch shelf)
+    assert "PRECIPICE" in html  # Tier P PRECIPICE card renders
+    # Watch shelf chip ("+N on watch shelf") must appear
+    assert "watch shelf" in html.lower() or "观察架" in html
+    # FDA chip must appear for glp1_obesity
+    assert "FDA shortage ACTIVE" in html
+    # Cybersecurity should appear in watch shelf, not as a full card
+    # (It has tier=W so it should be in .fx-watch-rows not .fx-cards)
+    watch_shelf_pos = html.find("fx-watch-shelf")
+    tier_p_cards_pos = html.find("fx-cards")
+    # watch shelf comes after tier P cards section
+    assert watch_shelf_pos > tier_p_cards_pos, (
+        "watch shelf should render below Tier P cards"
+    )

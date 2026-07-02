@@ -200,6 +200,36 @@
   .fx-conf.lit { color:var(--info); border-color:color-mix(in srgb,var(--info) 38%,transparent);
                  background:color-mix(in srgb,var(--info) 10%,var(--panel)); }
 
+  /* W5b: per-theme physical feed chip (FDA shortages, future: Pink Sheet, LBNL) */
+  .fx-feed { display:inline-flex; align-items:center; gap:5px; margin:9px 8px 0 0; font-size:11px; font-weight:700;
+             padding:5px 11px; border-radius:8px; cursor:help; color:var(--muted);
+             border:1px solid var(--line); background:var(--panel2); }
+  .fx-feed.feed-warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 38%,transparent);
+                       background:color-mix(in srgb,var(--warn) 10%,var(--panel)); }
+  .fx-feed.feed-cool { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,transparent);
+                       background:color-mix(in srgb,var(--down) 10%,var(--panel)); }
+
+  /* W5b: watch shelf — Tier W compact rows */
+  .fx-watch-shelf { margin-top:18px; border:1px solid var(--line); border-left:5px solid var(--muted);
+                    border-radius:13px; background:var(--panel); padding:14px 16px; }
+  .fx-watch-header { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+  .fx-watch-title { font-size:14px; font-weight:800; color:var(--muted); }
+  .fx-watch-caveat { font-size:11.5px; color:var(--muted); line-height:1.45; margin-bottom:11px; }
+  .fx-watch-count { font-size:11px; font-weight:700; color:var(--muted); margin-left:auto; }
+  .fx-watch-rows { display:flex; flex-direction:column; gap:7px; }
+  .fx-wrow { display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; padding:7px 10px;
+             border:1px solid var(--line); border-radius:9px; background:var(--panel2); }
+  .fx-wrow .wname { font-size:13px; font-weight:800; color:var(--muted); }
+  .fx-wrow .wstage { font-size:10px; font-weight:800; padding:2px 7px; border-radius:6px;
+                     color:var(--c,var(--muted)); background:color-mix(in srgb,var(--c,var(--muted)) 14%,var(--panel2)); }
+  .fx-wrow .wbreadth { font-size:11px; color:var(--muted); }
+  .fx-wrow .wwhy { font-size:11.5px; color:var(--muted); flex:1 1 200px; }
+
+  /* W5b: watch-shelf chip in stage pills row */
+  .fx-watch-chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700;
+                   padding:5px 11px; border-radius:999px; border:1px dashed var(--muted);
+                   background:var(--panel2); color:var(--muted); cursor:help; }
+
   /* discovery panel */
   .fx-disco { border-left:5px solid var(--info); }
   .fx-disco-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(248px,1fr)); gap:11px; margin-top:4px; }
@@ -404,11 +434,23 @@
     </div>
   </div>
 
-  {# ---- stage distribution ---- #}
+  {# ---- stage distribution (W5b: Tier P only; Tier W shown as a chip) ---- #}
+  {%- set _tier_p_themes = themes | selectattr('tier', 'equalto', 'P') | list -%}
+  {%- set _tier_w_themes = themes | selectattr('tier', 'equalto', 'W') | list -%}
+  {%- set _stage_counts_p = {} -%}
+  {%- for r in _tier_p_themes -%}
+    {%- set _s = r.stage -%}
+    {%- if _s in stage_order -%}
+      {%- set _ = _stage_counts_p.update({_s: (_stage_counts_p.get(_s, 0) + 1)}) -%}
+    {%- endif -%}
+  {%- endfor -%}
   <div class="fx-stages">
-    {% for s in stage_order %}{% if stage_counts.get(s) %}
-    <span class="fx-stage-pill stg-{{ s }}"><span class="dot"></span>{{ s }} <span class="n">{{ stage_counts[s] }}</span></span>
+    {% for s in stage_order %}{% if _stage_counts_p.get(s) %}
+    <span class="fx-stage-pill stg-{{ s }}"><span class="dot"></span>{{ s }} <span class="n">{{ _stage_counts_p[s] }}</span></span>
     {% endif %}{% endfor %}
+    {% if _tier_w_themes %}
+    <span class="fx-watch-chip" title="{{ t('Tier W: text/breadth-only themes on the watch shelf — no numeric physical correlate', '观察层：仅文本/广度主题——无数值型物理佐证') }}">+{{ _tier_w_themes | length }} {{ t('on watch shelf', '在观察架') }}</span>
+    {% endif %}
   </div>
 
   {# ---- sizing & concentration — W4a: ENB line + cluster dilution (P2-C) ---- #}
@@ -445,53 +487,87 @@
     </div>
   </details>
 
-  {# ---- per-theme cards (sorted by edge remaining) ---- #}
+  {# ---- per-theme cards (W5b: Tier P = full cards; Tier W = compact watch shelf below) ---- #}
+  {# Macro to render a single theme card — used for both Tier P and Tier W full cards #}
+  {% macro render_card(r) %}
+  <article class="fx-card stg-{{ r.stage }}">
+    <div class="row1">
+      {% if r.score is defined and r.score is not none %}{% set sd = r.score_detail or {} %}
+      <span class="fx-score {{ {'high-conviction':'sc-hi','constructive':'sc-mid','watch':'sc-watch','low / late':'sc-low'}.get(sd.verdict, 'sc-low') }}"
+            title="{% for k, v in (sd.axes or {}).items() %}{{ k }} {{ v }}{% if not loop.last %} · {% endif %}{% endfor %}">
+        <span class="s">{{ r.score|round|int }}</span><span class="l">{{ t('score', '评分') }}</span>
+      </span>{% endif %}
+      <span class="nm">{{ r.name }}</span>
+      <span class="badge">{{ r.stage }}</span>
+      {% if r.demand_strength %}<span class="tagline">{{ t('AI-capex beneficiary', 'AI 资本开支受益') }} · {{ r.demand_strength }}</span>{% endif %}
+    </div>
+
+    <div class="fx-strip">
+      <div class="fx-leg {{ bn_tone(r.bottleneck_band) }}">
+        <div class="lk">T1 · {{ t('Bottleneck', '瓶颈') }}</div>
+        <div class="lv">{{ (r.bottleneck_band or 'AWAITING').replace('_',' ') }}{% if r.bottleneck_text_only %} <span class="fx-text-only" title="{{ t('text-only — awaiting numeric physical confirmation', '纯文本信号 — 待实物数据确认') }}">{{ t('text-only', '纯文本') }}</span>{% endif %}</div>
+        <div class="ld">{% if r.tightness is not none %}{{ t('tightness', '紧张度') }} {{ '%+.2f'|format(r.tightness) }}{% if r.bottleneck_regime %} · {{ t('regime on', '机制触发') }}{% endif %}{% elif r.bottleneck_text_only %}{{ t('provisional — shadow-calibration pending', '暂定 — 影子校准待完成') }}{% else %}{{ t('FRED capacity pending', 'FRED 产能待采集') }}{% endif %}</div>
+      </div>
+      <div class="fx-leg {{ dm_tone(r.demand_band) }}">
+        <div class="lk">T2 · {{ t('Demand', '需求') }}</div>
+        <div class="lv">{{ r.demand_band or '—' }}</div>
+        <div class="ld">{% if r.capex_yoy is not none %}{{ t('customer capex', '客户资本开支') }} +{{ r.capex_yoy|round|int }}% YoY{% else %}{{ t('not capex-linked', '非资本开支驱动') }}{% endif %}</div>
+      </div>
+      <div class="fx-leg {{ gd_tone(r.guidance_band) }}">
+        <div class="lk">T3 · {{ t('Guidance', '业绩指引') }}</div>
+        <div class="lv">{{ r.guidance_band or '—' }}</div>
+        <div class="ld">{% if r.guidance_band %}{% if r.guidance_raisers %}{{ r.guidance_raisers }} {{ t('raising', '上调') }}{% endif %}{% if r.guidance_raisers and r.guidance_cutters %} · {% endif %}{% if r.guidance_cutters %}{{ r.guidance_cutters }} {{ t('cutting', '下调') }}{% endif %}{% if not r.guidance_raisers and not r.guidance_cutters %}{{ t('balanced', '中性') }}{% endif %}{% else %}{{ t('no 8-K guidance', '无8-K指引') }}{% endif %}</div>
+      </div>
+      <div class="fx-leg {{ rv_tone(r.revision_level) }}">
+        <div class="lk">T4 · {{ t('Revisions', '预期修正') }}</div>
+        <div class="lv">{% if r.revision_breadth is not none %}{{ '%+.2f'|format(r.revision_breadth) }}{% else %}—{% endif %}</div>
+        <div class="ld">{% if r.est_drift_90d is not none %}{{ t('90d EPS drift', '90日EPS漂移') }} {{ '%+.0f'|format(r.est_drift_90d) }}%{% else %}{{ r.broadening_state or '' }}{% endif %}</div>
+      </div>
+    </div>
+
+    <p class="why">{{ r.rationale }}</p>
+    {% if r.size_band %}<span class="fx-size sz-{{ r.size_band }}" title="{{ r.size_note }}">⚖ {{ r.size_band }}</span>{% endif %}
+    {% if r.altdata_summary %}<span class="fx-conf{{ ' lit' if r.n_altdata_leading else '' }}" title="{{ (r.altdata_members or [])|join(', ') }}">🛰 {{ r.altdata_summary }}</span>{% endif %}
+    {# W5b: per-theme physical feed chip (FDA shortages → generic slot for future feeds) #}
+    {% if r.theme_feed_summary %}{% set tfs = r.theme_feed_summary %}
+    <span class="fx-feed feed-{{ tfs.tone or 'mute' }}" title="{{ tfs.rationale or '' }}">💊 {{ tfs.label }}</span>
+    {% endif %}
+    <span class="fx-entry {{ 'ready' if r.entry_ready else '' }}">{{ '✅' if r.entry_ready else '⏳' }} {{ r.entry_note }}</span>
+    {% if r.glut_band in ('GLUT_FORMING', 'GLUT') %}<span class="fx-exit">⚠️ {{ t('exit-risk', '退出风险') }}: {{ r.glut_band.replace('_',' ')|lower }}{% if r.glut_score is not none %} ({{ '%+.2f'|format(r.glut_score) }}){% endif %}</span>{% endif %}
+    {% if r.score_detail and r.score_detail.caps %}<div class="fx-cap">⚑ {{ t('score capped', '评分受限') }}: {{ r.score_detail.caps|join(' · ') }}</div>{% endif %}
+  </article>
+  {% endmacro %}
+
+  {# Tier P: full physical-desk cards #}
   <div class="fx-cards">
-    {% for r in themes %}
-    <article class="fx-card stg-{{ r.stage }}">
-      <div class="row1">
-        {% if r.score is defined and r.score is not none %}{% set sd = r.score_detail or {} %}
-        <span class="fx-score {{ {'high-conviction':'sc-hi','constructive':'sc-mid','watch':'sc-watch','low / late':'sc-low'}.get(sd.verdict, 'sc-low') }}"
-              title="{% for k, v in (sd.axes or {}).items() %}{{ k }} {{ v }}{% if not loop.last %} · {% endif %}{% endfor %}">
-          <span class="s">{{ r.score|round|int }}</span><span class="l">{{ t('score', '评分') }}</span>
-        </span>{% endif %}
-        <span class="nm">{{ r.name }}</span>
-        <span class="badge">{{ r.stage }}</span>
-        {% if r.demand_strength %}<span class="tagline">{{ t('AI-capex beneficiary', 'AI 资本开支受益') }} · {{ r.demand_strength }}</span>{% endif %}
-      </div>
-
-      <div class="fx-strip">
-        <div class="fx-leg {{ bn_tone(r.bottleneck_band) }}">
-          <div class="lk">T1 · {{ t('Bottleneck', '瓶颈') }}</div>
-          <div class="lv">{{ (r.bottleneck_band or 'AWAITING').replace('_',' ') }}{% if r.bottleneck_text_only %} <span class="fx-text-only" title="{{ t('text-only — awaiting numeric physical confirmation', '纯文本信号 — 待实物数据确认') }}">{{ t('text-only', '纯文本') }}</span>{% endif %}</div>
-          <div class="ld">{% if r.tightness is not none %}{{ t('tightness', '紧张度') }} {{ '%+.2f'|format(r.tightness) }}{% if r.bottleneck_regime %} · {{ t('regime on', '机制触发') }}{% endif %}{% elif r.bottleneck_text_only %}{{ t('provisional — shadow-calibration pending', '暂定 — 影子校准待完成') }}{% else %}{{ t('FRED capacity pending', 'FRED 产能待采集') }}{% endif %}</div>
-        </div>
-        <div class="fx-leg {{ dm_tone(r.demand_band) }}">
-          <div class="lk">T2 · {{ t('Demand', '需求') }}</div>
-          <div class="lv">{{ r.demand_band or '—' }}</div>
-          <div class="ld">{% if r.capex_yoy is not none %}{{ t('customer capex', '客户资本开支') }} +{{ r.capex_yoy|round|int }}% YoY{% else %}{{ t('not capex-linked', '非资本开支驱动') }}{% endif %}</div>
-        </div>
-        <div class="fx-leg {{ gd_tone(r.guidance_band) }}">
-          <div class="lk">T3 · {{ t('Guidance', '业绩指引') }}</div>
-          <div class="lv">{{ r.guidance_band or '—' }}</div>
-          <div class="ld">{% if r.guidance_band %}{% if r.guidance_raisers %}{{ r.guidance_raisers }} {{ t('raising', '上调') }}{% endif %}{% if r.guidance_raisers and r.guidance_cutters %} · {% endif %}{% if r.guidance_cutters %}{{ r.guidance_cutters }} {{ t('cutting', '下调') }}{% endif %}{% if not r.guidance_raisers and not r.guidance_cutters %}{{ t('balanced', '中性') }}{% endif %}{% else %}{{ t('no 8-K guidance', '无8-K指引') }}{% endif %}</div>
-        </div>
-        <div class="fx-leg {{ rv_tone(r.revision_level) }}">
-          <div class="lk">T4 · {{ t('Revisions', '预期修正') }}</div>
-          <div class="lv">{% if r.revision_breadth is not none %}{{ '%+.2f'|format(r.revision_breadth) }}{% else %}—{% endif %}</div>
-          <div class="ld">{% if r.est_drift_90d is not none %}{{ t('90d EPS drift', '90日EPS漂移') }} {{ '%+.0f'|format(r.est_drift_90d) }}%{% else %}{{ r.broadening_state or '' }}{% endif %}</div>
-        </div>
-      </div>
-
-      <p class="why">{{ r.rationale }}</p>
-      {% if r.size_band %}<span class="fx-size sz-{{ r.size_band }}" title="{{ r.size_note }}">⚖ {{ r.size_band }}</span>{% endif %}
-      {% if r.altdata_summary %}<span class="fx-conf{{ ' lit' if r.n_altdata_leading else '' }}" title="{{ (r.altdata_members or [])|join(', ') }}">🛰 {{ r.altdata_summary }}</span>{% endif %}
-      <span class="fx-entry {{ 'ready' if r.entry_ready else '' }}">{{ '✅' if r.entry_ready else '⏳' }} {{ r.entry_note }}</span>
-      {% if r.glut_band in ('GLUT_FORMING', 'GLUT') %}<span class="fx-exit">⚠️ {{ t('exit-risk', '退出风险') }}: {{ r.glut_band.replace('_',' ')|lower }}{% if r.glut_score is not none %} ({{ '%+.2f'|format(r.glut_score) }}){% endif %}</span>{% endif %}
-      {% if r.score_detail and r.score_detail.caps %}<div class="fx-cap">⚑ {{ t('score capped', '评分受限') }}: {{ r.score_detail.caps|join(' · ') }}</div>{% endif %}
-    </article>
+    {% for r in themes if r.tier == 'P' %}
+    {{ render_card(r) }}
     {% endfor %}
   </div>
+
+  {# W5b: Tier W watch shelf — compact rows, no full score breakdown #}
+  {%- set _w_themes = themes | selectattr('tier', 'equalto', 'W') | list -%}
+  {% if _w_themes %}
+  <div class="fx-watch-shelf">
+    <div class="fx-watch-header">
+      <span class="fx-watch-title">👁 {{ t('Watch shelf', '观察架') }}</span>
+      <span class="fx-watch-count">{{ _w_themes | length }} {{ t('theme(s)', '个主题') }}</span>
+    </div>
+    <p class="fx-watch-caveat">{{ t(
+      'These themes have no numeric physical correlate — cannot reach a confirmed PRECIPICE. Monitored for revision breadth and text signals only; promoted to the physical desk when a scarcity observable is established.',
+      '这些主题没有数值型物理佐证——无法达到经确认的 PRECIPICE。仅监测预期修正广度与文本信号；当建立可测量的稀缺观测值后升级至物理台。') }}</p>
+    <div class="fx-watch-rows">
+      {% for r in _w_themes %}
+      <div class="fx-wrow stg-{{ r.stage }}">
+        <span class="wname">{{ r.name }}</span>
+        <span class="wstage stg-{{ r.stage }}">{{ r.stage }}</span>
+        {% if r.revision_breadth is not none %}<span class="wbreadth">{{ t('breadth', '广度') }} {{ '%+.2f'|format(r.revision_breadth) }}</span>{% endif %}
+        <span class="wwhy">{{ r.rationale }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 
   {# ---- DISCOVERY: bottlenecks forming OUTSIDE the tracked themes ---- #}
   {% if emergence and emergence.candidates %}

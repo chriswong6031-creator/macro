@@ -71,6 +71,14 @@ def main() -> int:
         fetch_emergence_hits()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("edgar_emergence drip failed (non-fatal): %s", e)
+    # W5b: FDA drug-shortage drip — orphan-rescue physical feed for glp1_obesity.
+    # Fetches the openFDA drug/shortages endpoint (keyless, bounded, non-fatal).
+    # The cascade reads the cache; this drip keeps it fresh.
+    try:
+        from collectors.fda_shortages import fetch_shortages
+        fetch_shortages()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("fda_shortages drip failed (non-fatal): %s", e)
     try:
         from engine.foresight_cascade import compute_foresight_cascade
         # write_ledger=True so the daily build accrues the forward-grading record (deduped by
