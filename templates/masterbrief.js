@@ -35,7 +35,17 @@
     var body = document.getElementById("master-brief-body");
     if (!panel || !body || !BRIEF) return;
     var b = BRIEF;
-    if (b.degraded_reason && !b.regime_read) return;   // no usable brief -> stay hidden
+    // Degraded state: explicit render per spec §2.4 (degraded output is ABSENT, not neutral;
+    // surfaces must render their state, not stay silently hidden).
+    if (b.degraded_reason && !b.regime_read) {
+      body.innerHTML = '<p class="mb-deg">' + esc(
+        curLang() === "zh"
+          ? "AI 简报不可用（确定性模式）· " + b.degraded_reason
+          : "AI brief unavailable (deterministic only) · " + b.degraded_reason
+      ) + "</p>";
+      panel.style.display = "";
+      return;
+    }
     var lang = curLang(), t = LBL[lang];
     var summary = pick(b, lang, "summary"), regime = pick(b, lang, "regime_read"),
         rotation = pick(b, lang, "rotation_check"),
