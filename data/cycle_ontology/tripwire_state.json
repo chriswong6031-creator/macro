@@ -1,0 +1,194 @@
+{
+  "semis.top_2026.v1": {
+    "version": 1,
+    "state": "ARMED",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": false,
+    "as_of": "2026-07-02"
+  },
+  "memory.dram_cycle.v1": {
+    "version": 1,
+    "state": "MANUAL",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": null,
+    "as_of": "2026-07-02"
+  },
+  "housing.bubble_peak.v1": {
+    "version": 1,
+    "state": "DATA_MISSING",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": null,
+    "as_of": "2026-07-02"
+  },
+  "business.cycle_trough.v1": {
+    "version": 1,
+    "state": "DATA_MISSING",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": null,
+    "as_of": "2026-07-02"
+  },
+  "oil.regime_shift.v1": {
+    "version": 1,
+    "state": "ARMED",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": false,
+    "as_of": "2026-07-02"
+  },
+  "copper.trough_in.v1": {
+    "version": 1,
+    "state": "ARMED",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": false,
+    "as_of": "2026-07-02"
+  },
+  "uranium.supply_squeeze.v1": {
+    "version": 1,
+    "state": "MANUAL",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": null,
+    "as_of": "2026-07-02"
+  },
+  "gold.bull_intact.v1": {
+    "version": 1,
+    "state": "ARMED",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": false,
+    "as_of": "2026-07-02"
+  },
+  "bitcoin.cycle_position.v1": {
+    "version": 1,
+    "state": "FIRED",
+    "fired_on": "2026-07-02",
+    "latched": true,
+    "current_leg": true,
+    "as_of": "2026-07-02"
+  },
+  "credit.spread_regime.v1": {
+    "version": 1,
+    "state": "ARMED",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": false,
+    "as_of": "2026-07-02"
+  },
+  "shipping.bdi_cycle.v1": {
+    "version": 1,
+    "state": "MANUAL",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": null,
+    "as_of": "2026-07-02"
+  },
+  "lithium.deficit_thesis.v1": {
+    "version": 1,
+    "state": "MANUAL",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": null,
+    "as_of": "2026-07-02"
+  },
+  "agriculture.commodity_upcycle.v1": {
+    "version": 1,
+    "state": "FIRED",
+    "fired_on": "2026-07-02",
+    "latched": true,
+    "current_leg": true,
+    "as_of": "2026-07-02"
+  },
+  "vol.regime_shift.v1": {
+    "version": 1,
+    "state": "ARMED",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": false,
+    "as_of": "2026-07-02"
+  },
+  "biotech.upcycle.v1": {
+    "version": 1,
+    "state": "ARMED",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": false,
+    "as_of": "2026-07-02"
+  },
+  "long-bonds.bear_steepener.v1": {
+    "version": 1,
+    "state": "ARMED",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": false,
+    "as_of": "2026-07-02"
+  },
+  "dollar.bear_cycle.v1": {
+    "version": 1,
+    "state": "DATA_MISSING",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": null,
+    "as_of": "2026-07-02"
+  },
+  "natural-gas.summer_squeeze.v1": {
+    "version": 1,
+    "state": "ARMED",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": false,
+    "as_of": "2026-07-02"
+  },
+  "iron-ore.china_demand.v1": {
+    "version": 1,
+    "state": "MANUAL",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": null,
+    "as_of": "2026-07-02"
+  },
+  "silver.gold-silver_ratio.v1": {
+    "version": 1,
+    "state": "ARMED",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": false,
+    "as_of": "2026-07-02"
+  },
+  "em-equities.upcycle.v1": {
+    "version": 1,
+    "state": "ARMED",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": false,
+    "as_of": "2026-07-02"
+  },
+  "japan.reflation_cycle.v1": {
+    "version": 1,
+    "state": "ARMED",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": false,
+    "as_of": "2026-07-02"
+  },
+  "pgms.platinum_premium.v1": {
+    "version": 1,
+    "state": "FIRED",
+    "fired_on": "2026-07-02",
+    "latched": true,
+    "current_leg": true,
+    "as_of": "2026-07-02"
+  },
+  "spx.bull_cycle.v1": {
+    "version": 1,
+    "state": "DATA_MISSING",
+    "fired_on": null,
+    "latched": false,
+    "current_leg": null,
+    "as_of": "2026-07-02"
+  }
+}

@@ -210,8 +210,11 @@ def test_emitted_js_is_valid_and_scripttag(tmp_path):
     assert "fetch(" not in txt                          # NEVER a runtime fetch
     body = txt.split("window.CYCLE_ENGINE = ", 1)[1].rsplit(";", 1)[0]
     parsed = json.loads(body)                           # valid JSON → valid JS literal
-    assert parsed["wave"] == "W3.2"
+    assert parsed["wave"] in ("W3.2", "W3.3")   # W3.3 bumps the wave stamp
     assert parsed["cycles"] and parsed["order"]
+    # W3.3: every card has a tripwires field (may be empty list)
+    for cid, card in parsed["cycles"].items():
+        assert "tripwires" in card, f"{cid} missing tripwires field"
 
 
 def test_committed_engine_js_parses_if_present():
