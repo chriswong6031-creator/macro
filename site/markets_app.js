@@ -1,20 +1,28 @@
 /* ============================================================================
-   markets_app.js — Global Market Cycles Dashboard · orchestration (v3, bilingual)
+   markets_app.js — Global Market Cycles Dashboard · orchestration (v4, W3.5)
    ----------------------------------------------------------------------------
-   v2 features (real web-sourced data, amplitude-faithful oscillator, valuation
-   lens, now-snapshot + dispersion, scatter) + full EN/ZH i18n:
-     · t(en, zh) for every app-generated string; PHASE_ZH for phase labels.
-     · data prose (archetype/read/regimeNote/valuation/drivers/falsifier/turn
-       events/name/proxy/short) read from window.MARKET_I18N when data-lang="zh",
-       falling back to English.
-     · re-renders the whole text layer on the shared `langchange` event.
-   Reuses cycle.css + markets.css; static chrome is bilingual via .l-en/.l-zh spans.
+   W3.5 changes (ruling A9):
+     · posFromDrawdown is NO LONGER the plotted position source.  The chart now
+       plots window.MARKETS_ENGINE[id].pos_v2 (country_cycles engine) for the 7
+       markets that have engine records (UK/Japan/HK/Canada/China/India/Taiwan).
+       US and Europe have no engine record yet; their curated `pos` is rendered
+       clearly labeled as OPINION-class.
+     · convergenceBands() is DELETED — the sync-gauge bands were an artifact of
+       hand-typed identical projection dates (audit findings markets-global-3/4).
+       A measured sync gauge is deferred to Phase-5.
+     · Each market card shows engine basis, last confirmed turn date, and links
+       to its country_cycles.html counterpart.
+     · Curated valuations render with an explicit as-of date + staleness chip.
+   v3 features preserved: amplitude-faithful oscillator retained for US/Europe
+   fallback only; i18n; scatter; snapshot; phase-filter; mobile sheet.
    ========================================================================== */
 (function () {
   "use strict";
 
   var META = window.MARKET_META, CYCLES = window.MARKETS, PHASES = window.MARKET_PHASES;
   var I18N = window.MARKET_I18N || { markets: {}, regime: null };
+  // W3.5: engine records keyed by market id (from window.MARKETS_ENGINE.markets)
+  var ENGINE = (window.MARKETS_ENGINE || {}).markets || {};
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   var MONTHS_ZH = ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
 
@@ -83,11 +91,29 @@
   }());
 
   /* ---- AMPLITUDE-FAITHFUL position model ---------------------------------- */
+  // posFromDrawdown: RETAINED for US/Europe fallback (no engine record yet).
+  // For engine-backed markets the plotted position is eng.pos_v2 (0-100 oscillator).
   function posFromDrawdown(ddPct) { var d = Math.max(0, -(ddPct || 0)); return clamp(Math.round(92 * Math.exp(-d / 30)), 3, 97); }
+
+  /* engPos(c): engine pos_v2 when available; curated-drawdown fallback otherwise.
+     Returns { val: number, source: "engine"|"curated" }. */
+  function engPos(c) {
+    var eng = ENGINE[c.id];
+    if (eng && eng.has_engine && eng.pos_v2 != null) return { val: eng.pos_v2, source: "engine" };
+    // Fallback: curated pos or drawdown-derived (labeled OPINION)
+    var p = c.now.pctFromATH != null ? posFromDrawdown(c.now.pctFromATH)
+          : (c.now.pos != null ? clamp(c.now.pos, 3, 97) : 50);
+    return { val: p, source: "curated" };
+  }
 
   function build(c) {
     // W0.1: use wall-clock TODAY, not a frozen literal baked at render time.
     var today = TODAY;
+    var eng = ENGINE[c.id] || {};
+    var useEngine = !!(eng.has_engine && eng.pos_v2 != null);
+
+    // Build turn y-values: for engine-backed markets use the engine oscillator value
+    // from turns[].osc when present; otherwise fall back to drawdown-exponential.
     var runMax = -Infinity;
     var turns = c.turns.map(function (tp) {
       var y;
@@ -96,8 +122,15 @@
       return { x: yf(tp.t), y: y, k: tp.k, e: tp.e, v: tp.v, t: tp.t };
     });
     var n = turns.length, last = turns[n - 1];
-    var nowPos = c.now.pctFromATH != null ? posFromDrawdown(c.now.pctFromATH)
-      : (c.now.pos != null ? clamp(c.now.pos, 3, 97) : (last.y + 50) / 2);
+
+    // W3.5: plotted nowPos = engine pos_v2 when available, else curated fallback.
+    var nowPos;
+    if (useEngine) {
+      nowPos = clamp(eng.pos_v2, 3, 97);
+    } else {
+      nowPos = c.now.pctFromATH != null ? posFromDrawdown(c.now.pctFromATH)
+             : (c.now.pos != null ? clamp(c.now.pos, 3, 97) : (last.y + 50) / 2);
+    }
     var nextY = c.proj.nextTurn === "peak" ? clamp(Math.max(nowPos + 8, 88), 80, 96) : clamp(Math.min(nowPos - 18, 34), 10, 44);
 
     // W0.1: NO Math.max push-forward. When the hand-typed central date < today
@@ -172,40 +205,20 @@
 
   var MODELS = {}, ORDER = [];
   CYCLES.forEach(function (c) { MODELS[c.id] = build(c); ORDER.push(c.id); });
-  function nowPosOf(c) { return MODELS[c.id].nowY; }
-
-  /* ---- collective inflection zones --------------------------------------
-     Cluster each market's PROJECTED next turn by direction + timing: where ≥3
-     markets are projected to top (amber) or bottom (green) within ~6 months of
-     each other = a synchronized inflection window, drawn as a timeline vband. */
-  function median(a) { var s = a.slice().sort(function (x, y) { return x - y; }); var m = Math.floor(s.length / 2); return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
-  function dcMon(cx) { var y = Math.floor(cx); var m = clamp(Math.round((cx - y) * 12 + 0.5), 1, 12); return fmtMon(y + "-" + (m < 10 ? "0" + m : m)); }
-  function convergenceBands() {
-    var DIRS = [
-      { dir: "peak", color: "var(--warn)", sym: "▲", lab: ["tops", "共振顶"], labelY: 12 },
-      { dir: "trough", color: "var(--up)", sym: "▼", lab: ["bottoms", "共振底"], labelY: 30 }
-    ];
-    var out = [];
-    DIRS.forEach(function (D) {
-      var items = CYCLES.map(function (c) { return { short: shrt(c), cx: yf(c.proj.central), dir: c.proj.nextTurn }; })
-        .filter(function (p) { return p.dir === D.dir && p.cx > META.today; })
-        .sort(function (a, b) { return a.cx - b.cx; });
-      var groups = [], cur = null;
-      items.forEach(function (p) { if (cur && p.cx - cur[cur.length - 1].cx <= 0.5) cur.push(p); else { cur = [p]; groups.push(cur); } });
-      groups.forEach(function (g) {
-        if (g.length < 3) return;
-        var cxs = g.map(function (p) { return p.cx; }), x0 = Math.min.apply(null, cxs), x1 = Math.max.apply(null, cxs), cx = median(cxs);
-        if (x1 - x0 < 0.22) { var mid = (x0 + x1) / 2; x0 = mid - 0.11; x1 = mid + 0.11; }
-        var names = g.map(function (p) { return p.short; }).join(t(", ", "、"));
-        out.push({
-          x0: x0, x1: x1, cx: cx, color: D.color, opacity: 0.1, labelY: D.labelY,
-          label: D.sym + g.length + " " + t(D.lab[0], D.lab[1]),
-          title: t(g.length + " markets project a " + (D.dir === "peak" ? "top" : "bottom") + " ≈ " + dcMon(cx) + ":  ", g.length + " 个市场预计于 " + dcMon(cx) + " 前后" + (D.dir === "peak" ? "见顶" : "见底") + "：") + names
-        });
-      });
-    });
-    return out;
+  // W3.5: nowPosOf returns engine pos_v2 when available, otherwise curated fallback.
+  // This drives the snapshot ranking, scatter, and dispersion — all now engine-sourced.
+  function nowPosOf(c) {
+    var ep = engPos(c);
+    return ep.source === "engine" ? ep.val : MODELS[c.id].nowY;
   }
+
+  /* ---- collective inflection zones (DELETED W3.5) -----------------------
+     convergenceBands() has been retired (audit findings markets-global-3/4):
+     the bands were an artifact of the 9 curated markets.html projections all
+     carrying identically-typed central dates, producing spurious clustering
+     with zero statistical basis.  A measured sync gauge using engine turn
+     distributions is deferred to Phase-5.  The vbands slot in heroSpec now
+     passes an empty array. */
 
   /* ---- hero overlay ------------------------------------------------------ */
   var heroChart = null, state = { focus: null };
@@ -222,7 +235,7 @@
         { y0: 65, y1: 100, color: "var(--warn)", opacity: 0.055, label: t("at the highs", "高位") }
       ],
       guides: [{ x: META.today, label: t("TODAY", "今天"), kind: "today" }],
-      vbands: convergenceBands(),
+      vbands: [],  // W3.5: convergenceBands retired — fake artifact of identical typed dates (audit markets-global-3/4)
       animate: true, crosshair: true, zoom: true,
       series: ORDER.map(function (id) { return MODELS[id]; }),
       tip: heroTip,
@@ -344,6 +357,7 @@
   function valPE(c) { var v = c.valuation || {}; return v.forwardPE != null ? v.forwardPE : (v.trailingPE != null ? v.trailingPE : null); }
   function valChips(c) {
     var v = c.valuation || {}, out = [];
+    // W3.5: '% vs ATH' stays as a labeled stat — it is NEVER the plotted position
     if (c.now.level != null) out.push('<span class="cc-stat"><b>' + num(c.now.level) + '</b><i>' + t("level", "点位") + '</i></span>');
     if (c.now.pctFromATH != null) out.push('<span class="cc-stat ' + (c.now.pctFromATH < -1 ? "neg" : "pos") + '"><b>' + pct(c.now.pctFromATH) + '</b><i>' + t("vs ATH", "距高点") + '</i></span>');
     if (v.forwardPE != null) out.push('<span class="cc-stat"><b>' + v.forwardPE.toFixed(1) + '×</b><i>' + t("fwd P/E", "预期PE") + '</i></span>');
@@ -351,6 +365,28 @@
     if (v.cape != null) out.push('<span class="cc-stat"><b>' + v.cape.toFixed(0) + '</b><i>CAPE</i></span>');
     if (v.divYield != null) out.push('<span class="cc-stat"><b>' + v.divYield.toFixed(1) + '%</b><i>' + t("yield", "股息") + '</i></span>');
     return out.join("");
+  }
+
+  /* W3.5: engine source chip — shown on cards and detail panel. */
+  function engSourceChip(c) {
+    var eng = ENGINE[c.id] || {};
+    if (eng.has_engine) {
+      var cc = eng.cc_anchor ? 'country_cycles.html#' + eng.cc_anchor : 'country_cycles.html';
+      return '<span class="cc-eng-chip">' + t("engine: ", "引擎：") + (eng.etf_id || "").toUpperCase()
+        + ' · <a href="' + cc + '" class="cc-eng-link">' + t("view in Country Cycles →", "查看国家周期 →") + '</a></span>';
+    }
+    return '<span class="cc-eng-chip cc-eng-opinion">' + t("position: analyst estimate (no engine record)", "位置：分析师估算（无引擎记录）") + '</span>';
+  }
+
+  /* W3.5: valuation staleness chip — curated valuations carry an as-of date. */
+  function valStaleChip(c) {
+    var asOf = (c.valuation || {}).asOf || c.now.asOf || META.asOf || "";
+    if (!asOf) return "";
+    var asOfYear = yf(asOf);
+    var ageDays = Math.round((TODAY - asOfYear) * 365.25);
+    if (ageDays < 14) return '<span class="cc-val-age">' + t("valuations as of " + asOf, "估值截至 " + asOf) + '</span>';
+    var cls = ageDays >= 60 ? "cc-val-stale-red" : "cc-val-stale-amber";
+    return '<span class="cc-val-age ' + cls + '">' + t("valuations as of " + asOf + " (" + ageDays + "d old)", "估值截至 " + asOf + "（已 " + ageDays + " 天）") + '</span>';
   }
 
   /* ---- scorecards -------------------------------------------------------- */
@@ -369,14 +405,19 @@
       var elapsedChip = m.elapsed
         ? '<div class="cc-elapsed">' + t("Projection window passed — awaiting re-research", "投影窗口已过 — 待重新研究") + '</div>'
         : '';
+      // W3.5: show engine phase when available; curated phase otherwise
+      var eng = ENGINE[c.id] || {};
+      var displayPhase = (eng.has_engine && eng.phase_v2) ? eng.phase_v2 : c.now.phase;
+      var displayPhaseHue = (PHASES[displayPhase] || ph).hue || "var(--muted)";
       card.innerHTML =
         '<div class="cc-top">' +
           '<div class="cc-id"><span class="cc-dot"></span><div><div class="cc-nm">' + nm(c) + '</div>' +
           '<div class="cc-px">' + px(c) + '</div></div></div>' +
-          '<div class="cc-phase" style="--ph:' + (ph.hue || "var(--muted)") + '">' + phLab(c.now.phase) + '</div>' +
+          '<div class="cc-phase" style="--ph:' + displayPhaseHue + '">' + phLab(displayPhase) + '</div>' +
         '</div>' +
         '<div class="cc-spark"></div>' +
         '<div class="cc-stats">' + valChips(c) + '</div>' +
+        '<div class="cc-eng">' + engSourceChip(c) + '</div>' +
         elapsedChip +
         '<div class="cc-meta">' +
           '<div class="cc-leg"><div class="cc-leg-bar"><i style="width:' + Math.round(m.legPct * 100) + '%"></i></div>' +
@@ -537,13 +578,44 @@
 
   function srcHost(u) { try { return u.replace(/^https?:\/\//, "").split("/")[0].replace(/^www\./, ""); } catch (e) { return u; } }
   function focusHTML(c) {
-    var m = MODELS[c.id], ph = PHASES[c.now.phase] || {}, tilt = tiltOf(c.proj.tilt), v = c.valuation || {};
+    var m = MODELS[c.id], v = c.valuation || {};
+    var eng = ENGINE[c.id] || {};
+    var useEngine = !!(eng.has_engine && eng.pos_v2 != null);
+    // W3.5: display engine phase when available
+    var displayPhase = useEngine && eng.phase_v2 ? eng.phase_v2 : c.now.phase;
+    var ph = PHASES[displayPhase] || {};
+    var tilt = tiltOf(c.proj.tilt);
     var isPeak = c.proj.nextTurn === "peak";
     function fact(k, val) { return val == null || val === "" ? "" : '<div class="f"><div class="fk">' + k + '</div><div class="fv">' + val + '</div></div>'; }
     var srcs = (c.sources || []).slice(0, 4).map(function (u) { return '<a href="' + u + '" target="_blank" rel="noopener">' + srcHost(u) + '</a>'; }).join("");
     var elapsedBanner = m.elapsed
       ? '<div class="cyc-elapsed-panel">' + t("Projection window passed — awaiting re-research", "投影窗口已过 — 待重新研究") + '</div>'
       : '';
+    // W3.5: engine panel — engine position + basis + cross-link
+    var engPanel = "";
+    if (useEngine) {
+      var ccHref = eng.cc_anchor ? 'country_cycles.html#' + eng.cc_anchor : 'country_cycles.html';
+      var overdueBadge = eng.overdue
+        ? ' <span class="eng-overdue">' + t("projection overdue", "预测已过期") + '</span>'
+        : '';
+      engPanel =
+        '<div class="cyc-lbl cyc-lbl-mt">' + t("Country Cycles engine · ", "国家周期引擎 · ") + (window.MARKETS_ENGINE || {}).as_of + '</div>' +
+        '<div class="cyc-facts cyc-facts-eng">' +
+          fact(t("Engine position", "引擎位置"), Math.round(eng.pos_v2) + ' / 100 <span class="eng-basis">(' + t("basis: ", "基准：") + (eng.basis || "price") + ')</span>') +
+          fact(t("Engine phase", "引擎阶段"), phLab(displayPhase)) +
+          (eng.last_confirmed_t ? fact(t("Last confirmed turn", "最后确认拐点"), fmtMon(eng.last_confirmed_t)) : "") +
+          (eng.proj_central ? fact(t("Engine proj. turn", "引擎预测拐点"), fmtMon(eng.proj_central) + overdueBadge) : "") +
+          (eng.stance ? fact(t("Stance", "策略"), eng.stance) : "") +
+        '</div>' +
+        '<div class="cyc-eng-link-row"><a href="' + ccHref + '" class="cyc-cc-link">' +
+          t("View " + (eng.etf_id || "").toUpperCase() + " in Country Cycles →", "查看 " + (eng.etf_id || "").toUpperCase() + " 国家周期 →") +
+        '</a></div>';
+    } else {
+      engPanel =
+        '<div class="cyc-lbl cyc-lbl-mt">' + t("Position source", "位置来源") + '</div>' +
+        '<div class="cyc-facts"><div class="f"><div class="fk">' + t("Basis", "基准") +
+        '</div><div class="fv">' + t("Analyst estimate — not yet in country engine", "分析师估算 — 尚未入引擎") + '</div></div></div>';
+    }
     return '' +
       '<div class="cyc-grp cyc-grp-full">' +
         '<button class="cyc-back">' + t("← All markets", "← 全部市场") + '</button>' +
@@ -559,23 +631,24 @@
         '<p class="cyc-arche">' + arche(c) + '</p>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3 mkt-col-data">' +
-        '<div class="cyc-lbl">' + t("Curated read · ", "精选数据 · ") + (c.now.asOf || META.asOf) + '</div>' +
+        '<div class="cyc-lbl">' + t("Curated snapshot · ", "精选快照 · ") + (c.now.asOf || META.asOf) + '</div>' +
         '<div class="cyc-facts">' +
           fact(t("Level", "点位"), c.now.level != null ? num(c.now.level) : null) +
           fact(t("All-time high", "历史高点"), c.now.ath != null ? num(c.now.ath) + (c.now.athDate ? " · " + fmtMon(c.now.athDate) : "") : null) +
-          fact(t("% off ATH", "距高点"), c.now.pctFromATH != null ? pct(c.now.pctFromATH) : null) +
+          fact(t("% off ATH", "距高点"), c.now.pctFromATH != null ? pct(c.now.pctFromATH) + ' <span class="fv-note">' + t("(stat only, not plotted pos)", "（统计项，非图中位置）") + '</span>' : null) +
           fact(t("1-yr return", "一年回报"), c.now.ret1y != null ? pct(c.now.ret1y) : (c.now.ytd != null ? pct(c.now.ytd) + t(" YTD", " 年初至今") : null)) +
           fact(t("Fwd P/E", "预期市盈率"), v.forwardPE != null ? v.forwardPE.toFixed(1) + "×" : (v.trailingPE != null ? v.trailingPE.toFixed(1) + "× (ttm)" : null)) +
           fact(v.cape != null ? "CAPE" : t("Div yield", "股息率"), v.cape != null ? v.cape.toFixed(0) + (v.divYield != null ? "  ·  " + v.divYield.toFixed(1) + "% " + t("yld", "股息") : "") : (v.divYield != null ? v.divYield.toFixed(1) + "%" : null)) +
         '</div>' +
-        '<div class="cyc-lbl cyc-lbl-mt">' + t("Cycle timing", "周期节奏") + '</div>' +
+        engPanel +
+        '<div class="cyc-lbl cyc-lbl-mt">' + t("Curated timing", "精选节奏") + '</div>' +
         '<div class="cyc-facts cyc-facts-cyc">' +
           fact(t("Last bottom", "上次见底"), fmtMon(c.now.lastTrough || lastTurn(c, "trough"))) +
           fact(t("Last top", "上次见顶"), fmtMon(c.now.lastPeak || lastTurn(c, "peak"))) +
           fact(t("Next " + (isPeak ? "top" : "bottom"), "下一" + (isPeak ? "顶部" : "底部")), fmtMon(c.proj.central)) +
           fact(t("Est. range", "预计区间"), fmtMon(c.proj.low) + " – " + fmtMon(c.proj.high)) +
           fact(t("Typical cycle", "典型周期"), c.period.central + t(" yr", " 年") + " (" + c.period.low + "–" + c.period.high + ")") +
-          fact(t("Cycle position", "周期位置"), Math.round(m.nowY) + " / 100") +
+          fact(t("Cycle position", "周期位置"), Math.round(nowPosOf(c)) + " / 100" + (useEngine ? "" : ' <span class="fv-note">' + t("(analyst est.)", "（分析师估算）") + '</span>')) +
         '</div>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3 mkt-col-read">' +
@@ -585,7 +658,7 @@
       '<div class="cyc-grp cyc-grp-3 mkt-col-side">' +
         '<div class="cyc-drivers"><div class="cyc-lbl">' + t("Swing factors", "关键变量") + '</div><ul>' +
           driversT(c).map(function (d) { return "<li>" + d + "</li>"; }).join("") + '</ul></div>' +
-        (valNote(c) ? '<div class="cyc-valbox"><div class="cyc-lbl">' + t("Valuation", "估值") + '</div><p>' + valNote(c) + '</p></div>' : '') +
+        (valNote(c) ? '<div class="cyc-valbox"><div class="cyc-lbl">' + t("Valuation", "估值") + ' · ' + valStaleChip(c) + '</div><p>' + valNote(c) + '</p></div>' : '') +
         '<div class="cyc-regnote">' + regNote(c) + (srcs ? '<div class="cyc-src">' + t("Sources: ", "来源：") + srcs + '</div>' : '') + '</div>' +
       '</div>';
   }
@@ -632,10 +705,10 @@
       '<div class="cyc-grp cyc-grp-3">' +
         '<div class="cyc-lbl">' + t("How to read", "如何解读") + '</div>' +
         '<ul class="cyc-how">' +
-          '<li>' + t("The y-axis is <b>% retraced from the all-time high</b> — high = at/near the highs (extended), low = deep below the highs (washed-out). A −57% crash plunges near 0; a −12% dip only eases to ~55.", "纵轴是<b>距历史高点的回撤幅度</b> — 越高=越接近高点（拉伸），越低=深跌（超卖）。−57% 的崩盘会跌到接近 0；−12% 的小回调只回落到约 55。") + '</li>' +
-          '<li>' + t("<b>Solid</b> = observed history; <b>dashed + cone</b> = projected path & uncertainty. Each <b>● dot</b> on the TODAY line is where that market sits now.", "<b>实线</b>=已发生的历史；<b>虚线+锥形</b>=预测路径与不确定性。“今天”线上的每个<b>●圆点</b>是该市场当前所处的位置。") + '</li>' +
-          '<li>' + t("<b>Tap a market</b> (chip, card, snapshot row, scatter dot, or its line) to focus it. Position ≠ valuation — see the valuation map.", "<b>点击任意市场</b>（标签、卡片、排名行、散点或曲线）以聚焦。周期位置 ≠ 估值 — 请看估值地图。") + '</li>' +
-          '<li>' + t("<b>Shaded vertical zones</b> on the timeline mark where ≥3 markets are projected to top (amber ▲) or bottom (green ▼) together — a possible synchronized inflection window. Hover the pill for the names.", "时间轴上的<b>竖向阴影带</b>标示≥3个市场预计同步见顶（琥珀色 ▲）或见底（绿色 ▼）的时间窗口 —— 潜在的共振拐点。将鼠标悬停在标签上可查看具体市场。") + '</li>' +
+          '<li>' + t(“The y-axis is <b>cycle oscillator position (0–100)</b> — 100 = at/near the highs (extended), 0 = deep below the highs (washed-out). For engine-backed markets (UK/Japan/HK/Canada/China/India/Taiwan) this is the country_cycles engine pos_v2; for US and Europe it is an analyst estimate.”, “纵轴是<b>周期振荡器位置（0–100）</b> — 100=接近高点（拉伸），0=深跌（超卖）。有引擎数据的市场（英国/日本/香港/加拿大/中国/印度/台湾）使用 country_cycles 引擎 pos_v2；美国与欧洲使用分析师估算。”) + '</li>' +
+          '<li>' + t(“<b>Solid</b> = observed history; <b>dashed + cone</b> = projected path & uncertainty. Each <b>● dot</b> on the TODAY line is where that market sits now.”, “<b>实线</b>=已发生的历史；<b>虚线+锥形</b>=预测路径与不确定性。”今天”线上的每个<b>●圆点</b>是该市场当前所处的位置。”) + '</li>' +
+          '<li>' + t(“<b>Tap a market</b> (chip, card, snapshot row, scatter dot, or its line) to focus it. Position ≠ valuation — see the valuation map.”, “<b>点击任意市场</b>（标签、卡片、排名行、散点或曲线）以聚焦。周期位置 ≠ 估值 — 请看估值地图。”) + '</li>' +
+          '<li>' + t(“<b>% off ATH</b> is shown as a labeled stat only — it is no longer the plotted position. Curated valuations show their as-of date; verify before trading.”, “<b>距高点 %</b> 仅作为统计项展示 — 不再是图中位置。精选估值显示其截止日期，操作前请核实。”) + '</li>' +
         '</ul>' +
       '</div>';
     def.querySelectorAll(".mini-chip").forEach(function (b) { b.addEventListener("click", function () { setFocus(b.getAttribute("data-id")); }); });
