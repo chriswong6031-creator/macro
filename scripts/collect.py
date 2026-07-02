@@ -563,6 +563,17 @@ def main() -> int:
                  "sources this shard did not refresh.", args.only or "-",
                  args.group or "-", args.exclude_group or "-")
     else:
+        # Membership↔cache reconciler runs FIRST: it may prune basket members that drifted
+        # off a rebuilt *_search close cache (dated changelog entry), so the read-only
+        # audits grade the healed state. Its guard refusals abort like the gate; its own
+        # crash is non-fatal like any audit's.
+        from scripts import reconcile_membership
+        try:
+            reconcile_membership.run()
+        except reconcile_membership.PruneGuardError:
+            raise
+        except Exception as e:  # noqa: BLE001 — a safety net's crash must not abort the run
+            log.error("[reconcile] membership reconciler crashed (non-fatal): %s", e)
         run_quality_audits()
 
     return 0 if ok > 0 else 1
