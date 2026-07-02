@@ -5,7 +5,7 @@
     {
       "id": "c2_intl_macro_sleeve",
       "channel": "C2",
-      "hypothesis": "Pooled intl macro de-risk sleeve (curve-inv + Sahm + short-tightening across JP/EZ/GB, \u22652 legs firing) leads US/CN equity drawdowns.",
+      "hypothesis": "Pooled intl macro de-risk sleeve (curve+Sahm+tightening, JP/EZ/GB) leads US SPY drawdowns beyond the 5 existing US MRS legs.",
       "direction": "de-risk",
       "verdict": "CONTEXT",
       "weight_cap": 0.0,
@@ -18,11 +18,13 @@
         "orthogonal_partial": -0.1669
       },
       "gates": {
-        "freshness": true,
-        "promotion": "na",
-        "orthogonality": true,
-        "crisis_count": true,
-        "crisis_independent_es": true
+        "deflated_sharpe": "fail",
+        "split_half": "pass",
+        "leave_one_crisis_out": "pass",
+        "orthogonality": "pass",
+        "crisis_independent_es": "pass",
+        "lead_lag_kernel": "na",
+        "freshness": "pass"
       },
       "source_series": [
         "intl_macro/JP_yield_10y",
@@ -31,9 +33,9 @@
         "intl_macro/GB_yield_10y"
       ],
       "freshness_sla_days": 120,
-      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 Prior (pooled INTL sleeve vs INTL drawdowns): DSR 0",
+      "validation_ref": "reports/intl-macro-sleeve-phase0.md; scripts/intl_phase0.py build_c2_sleeve (W2 grade \u2014 US SPY target, honest 2002-05 window)",
       "kill": true,
-      "notes": "Prior (pooled INTL sleeve vs INTL drawdowns): DSR 0.9978, split-half PASS. C2 tests the DECLARED target \u2014 US SPY forward drawdown \u2014 with orthogonality vs the 5 US MRS legs + crisis-independent ES. KR dropped from the pooled gate (INTL-50). Seam if it clears: conditions._macro_risk_legs \u2192 macro_risk_series \u00d7 sector_macro_beta. | weak/unstable \u2014 shown as context, never sized"
+      "notes": "W2 VERDICT: CONTEXT (do NOT wire). Prior DSR 0.9978 was the pooled INTL sleeve vs INTL drawdowns; against the DECLARED US SPY forward-drawdown target the sleeve-gated strategy DSR is 0.83 (< 0.90 door) and its residual DD-content vs the 5 US MRS legs is marginal/window-fragile (Spearman \u22120.03..\u22120.17). It DOES cut SPY MaxDD modestly (\u221250.1% vs \u221256.8% B&H) but that overlaps NFCI/liquidity/recession \u2014 no orthogonal edge that clears the door. EZ runs curve+short only (EZ unemployment dead, frozen 2023-01). KR dropped (INTL-50). weight_cap 0."
     },
     {
       "id": "intl_trend_overlay",
@@ -156,20 +158,55 @@
         "orthogonal_partial": -0.1301
       },
       "gates": {
-        "freshness": true,
-        "promotion": "na",
-        "orthogonality": true,
-        "crisis_count": true,
-        "crisis_independent_es": true
+        "deflated_sharpe": "pass",
+        "split_half": "pass",
+        "leave_one_crisis_out": "pass",
+        "orthogonality": "pass",
+        "crisis_independent_es": "pass",
+        "lead_lag_kernel": "na",
+        "freshness": "pass"
       },
       "source_series": [
         "fred/DTWEXBGS",
         "fred/RBUSBIS"
       ],
       "freshness_sla_days": 90,
-      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 CONFIRMED both halves (IC +0",
+      "validation_ref": "reports/forex-calibration.md (DOLLAR INDEX value); reports/forex-reer-n1-phase0.md (W3-C4a N=1); scripts/c4_reer_value.py + scripts/intl_phase0.py (grade, N=1 budget)",
       "kill": false,
-      "notes": "CONFIRMED both halves (IC +0.065/+0.077/+0.060) but killed by the forex 60-trial budget. Pre-register as N=1, not a quiet promotion (INTL-43 discipline). | all hard gates pass; cap scaled by 4 independent crises"
+      "notes": "W3-C4a VERDICT: CONFIRMED (the pre-registered N=1 resurrection, INTL-43). CONFIRMED both halves at all 3 declared horizons; graded on a SEPARATE single-trial budget (c4_reer_value_n1) \u2192 de-risk long-flat DSR 0.9436 >= 0.90 (vs 0.40 under the intl_bridge N=17 budget, 0.0056 under the forex 60-trial family \u2014 the budget separation is the resurrection). Orthogonality vs the 5 US MRS legs PASS. weight_cap 0.1333 (4 independent crises). NO CONSUMER WIRING this wave: the CONFIRMED verdict is RECORDED and the leg is surfaced by the Layer-2 registry reader (intl_feed.features() \u2192 weight 0.1333, de-risk direction), but NO scorer calls intl_feed \u2014 nothing sizes on it. Consumer wiring DEFERRED to a follow-up: the target seam is an MRS candidate leg (conditions._macro_risk_legs) but W2-C2 showed the MRS orthogonality bar is high and this is a returns-predicting dollar factor, not a US-drawdown leg, so a dedicated MRS-composite orthogonality gate must clear before it sizes US positions."
+    },
+    {
+      "id": "c4_cnh_basis",
+      "channel": "C4",
+      "hypothesis": "cnh_basis_bps widening (offshore CNH funding stress) leads CSI300/FXI forward drawdowns \u2014 candidate SECOND China RORO leg beside the raw usdcnh leg.",
+      "direction": "de-risk",
+      "verdict": "INVERTED",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": 0.0003,
+        "dsr": 0.0013,
+        "split_half_same_sign": false,
+        "effective_n_crises": 4,
+        "es_ex_top3": -0.0095,
+        "orthogonal_partial": 0.1214
+      },
+      "gates": {
+        "deflated_sharpe": "fail",
+        "split_half": "fail",
+        "leave_one_crisis_out": "pass",
+        "orthogonality": "pass",
+        "crisis_independent_es": "fail",
+        "lead_lag_kernel": "na",
+        "freshness": "pass"
+      },
+      "source_series": [
+        "yahoo/CNH_F",
+        "fred/DEXCHUS"
+      ],
+      "freshness_sla_days": 21,
+      "validation_ref": "reports/forex-reer-n1-phase0.md (W3-C4c CNH-basis section); scripts/c4_cnh_basis.py + scripts/intl_phase0.py (grade)",
+      "kill": true,
+      "notes": "W3-C4c VERDICT: INVERTED (do NOT wire). The CNH offshore-onshore basis adds no orthogonal de-risk edge vs the existing raw usdcnh RORO leg \u2014 rank-IC ~0 vs FXI forward DD, split-half sign-flips, DSR 0.0013, and its residual after partialing the raw usdcnh leg is WRONG-SIGNED (+0.121) with negative crisis-independent ES. USDCNH history is short (2013+, ~2 China bears). Respecting W2-C1 (CN RORO legs already carry beta content), a second basis leg double-counts. NOT wired: china_conditions._macro/roro legs unchanged."
     },
     {
       "id": "crossmarket_leadlag",
@@ -237,9 +274,79 @@
       "notes": "NOTE-ONLY entry. This engine EXISTS on main with committed forward logs and its OWN can_force maturation gate (>=30 graded, >=8 alerts, realized lift >=1.25x). Composite >=10%/42d drawdown lift 2.07x (p=0.01), CSI300-confirmed. The intl_bridge does NOT duplicate its machinery \u2014 it defers to risk_radar_intl_audit.scorecard for the CN/HK/CA governance. Listed CONTEXT here for registry completeness."
     },
     {
+      "id": "c5_global_rates",
+      "channel": "C5",
+      "hypothesis": "Rising GDP-weighted global 10y / widening US premium (global duration + growth-beta headwind) leads US equity drawdowns beyond the US curve/credit legs.",
+      "direction": "de-risk",
+      "verdict": "CONTEXT",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": -0.064,
+        "dsr": 0.9797,
+        "split_half_same_sign": true,
+        "effective_n_crises": 6,
+        "es_ex_top3": 0.0012,
+        "orthogonal_partial": -0.1288
+      },
+      "gates": {
+        "deflated_sharpe": "spy-drift",
+        "split_half": "pass",
+        "leave_one_crisis_out": "pass",
+        "orthogonality": "pass",
+        "crisis_independent_es": "pass",
+        "drawdown_reduction": "fail",
+        "lead_lag_kernel": "na",
+        "freshness": "pass"
+      },
+      "source_series": [
+        "fred/DGS10",
+        "sovereign/ez_aaa_10y",
+        "sovereign/jgb_10y"
+      ],
+      "freshness_sla_days": 8,
+      "validation_ref": "scripts/c5_global_rates.py + scripts/intl_phase0.py (grade, W3 C5); engine/global_rates.py; data/intl_bridge/ledger.json (C5)",
+      "kill": true,
+      "notes": "W3-C5 VERDICT: CONTEXT (do NOT wire). avg_10y + us_premium_bp reconstructed causally by engine.global_rates from the sovereign 10y roster (bond_health.json keeps only a snapshot, no history \u2014 INTL-15). The global 10y is ~US 10y + noise (the C5 rate-rise signal correlates 0.948 with the US-only 10y momentum; US is a 0.42-weight roster leg), so it carries no orthogonal US-drawdown edge over the existing curve/credit MRS legs. The DECIDING gate is drawdown-reduction over the signal-active era (from 1963): the long/flat strategy cuts SPY MaxDD only 1.1pp (-55.7% vs -56.8% B&H) while HALVING total return \u2014 Calmar 0.115 < 0.137 B&H, so the overlay destroys value, it does not de-risk. DSR 0.98 is SPY drift, not an edge. conditions._macro_risk_legs UNCHANGED \u2014 no MRS leg added. weight_cap 0."
+    },
+    {
+      "id": "c8_crossasset_leading_votes",
+      "channel": "C8",
+      "hypothesis": "cross_asset_confirm leading_caution_votes >= 2 while verdict='diverge' \u2192 a fractional MRS de-risk booster (credit + rates-vol + dollar votes).",
+      "direction": "de-risk",
+      "verdict": "CONTEXT",
+      "weight_cap": 0.0,
+      "metrics": {
+        "ic": -0.0468,
+        "dsr": 0.981,
+        "split_half_same_sign": true,
+        "effective_n_crises": 6,
+        "es_ex_top3": 0.0001,
+        "orthogonal_partial": -0.0899
+      },
+      "gates": {
+        "deflated_sharpe": "spy-drift",
+        "split_half": "pass",
+        "leave_one_crisis_out": "pass",
+        "orthogonality": "pass",
+        "crisis_independent_es": "pass",
+        "drawdown_reduction": "fail",
+        "lead_lag_kernel": "na",
+        "freshness": "pass"
+      },
+      "source_series": [
+        "fred/BAMLH0A0HYM2",
+        "yahoo/_MOVE",
+        "fred/DTWEXBGS"
+      ],
+      "freshness_sla_days": 8,
+      "validation_ref": "scripts/c8_leading_votes.py + scripts/intl_phase0.py (grade, W3 C8); engine/cross_asset_confirm.py (vote defs); data/intl_bridge/ledger.json (C8)",
+      "kill": true,
+      "notes": "W3-C8 VERDICT: CONTEXT (do NOT wire). The three votes (credit HY-band/widening, rates-vol MOVE-band/leads-VIX, dollar risk-off) reconstructed causally from their input series (no vote history on disk \u2014 INTL-46). The credit/rates-vol votes are near-duplicates of the nfci/recession MRS legs (residual partial only -0.09). The DECIDING gate is drawdown-reduction over the signal-active era (from 2007): the votes>=2 while-equities-calm booster cuts SPY MaxDD only 0.6pp (-56.2% vs -56.8% B&H) \u2014 below the 1pp door \u2014 while cratering return (Calmar 0.105 < 0.153 B&H). It flattens out of good days without avoiding the bad ones. DSR 0.98 is SPY drift. conditions._macro_risk_legs UNCHANGED \u2014 no MRS leg added. weight_cap 0."
+    },
+    {
       "id": "c3_global_etf_breadth",
       "channel": "C3",
-      "hypothesis": "% of country ETFs > 200dma (+63d slope) below threshold leads SPX/CSI300 \u22655% drawdowns at 21-42d (global analog of risk_radar_intl breadth).",
+      "hypothesis": "% of country ETFs > 200dma below threshold leads SPX/CSI300 >=5% drawdowns at 21-42d (global analog of risk_radar_intl breadth).",
       "direction": "de-risk",
       "verdict": "CONFIRMED",
       "weight_cap": 0.2,
@@ -252,11 +359,12 @@
         "orthogonal_partial": -0.1209
       },
       "gates": {
-        "freshness": true,
-        "promotion": "na",
+        "deflated_sharpe": true,
+        "split_half": true,
         "orthogonality": true,
         "crisis_count": true,
-        "crisis_independent_es": true
+        "crisis_independent_es": true,
+        "freshness": true
       },
       "source_series": [
         "intl_etf/EWJ",
@@ -264,177 +372,33 @@
         "intl_etf/EWU",
         "intl_etf/EWY",
         "intl_etf/EWA",
-        "intl_etf/EWQ"
+        "intl_etf/EWQ",
+        "intl_etf/EIDO",
+        "intl_etf/EWT",
+        "intl_etf/EWZ",
+        "intl_etf/EZA",
+        "intl_etf/INDA"
       ],
       "freshness_sla_days": 8,
-      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 Breadth-collapse is the STRONGEST leg inside risk_radar_intl",
+      "validation_ref": "reports/intl-global-breadth-phase0.md (W2-C3, 2026-07-02); scripts/intl_phase0.py build_c3_global_breadth()",
       "kill": false,
-      "notes": "Breadth-collapse is the STRONGEST leg inside risk_radar_intl.CN (lift 1.97-3.13\u00d7). Gate: orthogonality vs US radar's domestic legs. Seams: US risk_radar Tier-B leg (INTL-38) + a risk_radar_intl profile leg. | all hard gates pass; cap scaled by 6 independent crises"
-    },
-    {
-      "id": "c1_china_global_beta",
-      "channel": "C1",
-      "hypothesis": "High global-beta China names get size/stop dampening when the global risk state deteriorates (port of hk_global_beta, Vasicek-shrunk).",
-      "direction": "de-risk",
-      "verdict": "CONTEXT",
-      "weight_cap": 0.0,
-      "metrics": {
-        "ic": -0.17,
-        "dsr": 0.0002,
-        "split_half_same_sign": true,
-        "effective_n_crises": 1,
-        "es_ex_top3": -0.0194,
-        "orthogonal_partial": -0.4691
-      },
-      "gates": {
-        "freshness": true,
-        "promotion": "na",
-        "orthogonality": true,
-        "crisis_count": false,
-        "crisis_independent_es": false
-      },
-      "source_series": [
-        "yahoo/FXI",
-        "yahoo/SPY"
-      ],
-      "freshness_sla_days": 5,
-      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 HK validated ~2x transmission; China A couples less (~2x ratio, china_global_factors) \u2014 measure, don't assume",
-      "kill": true,
-      "notes": "HK validated ~2x transmission; China A couples less (~2x ratio, china_global_factors) \u2014 measure, don't assume. Gate: incremental over CN RORO. Seam (post-promotion): china_name_score._tailwind + conviction_profile ctx. | weak/unstable \u2014 shown as context, never sized"
-    },
-    {
-      "id": "c4_cnh_basis",
-      "channel": "C4",
-      "hypothesis": "cnh_basis_bps widening (offshore CNH funding stress) leads CSI300 63d forward drawdowns \u2014 second China RORO leg beside the raw usdcnh leg.",
-      "direction": "de-risk",
-      "verdict": "INVERTED",
-      "weight_cap": 0.0,
-      "metrics": {
-        "ic": 0.0003,
-        "dsr": 0.0013,
-        "split_half_same_sign": false,
-        "effective_n_crises": 4,
-        "es_ex_top3": -0.0095,
-        "orthogonal_partial": 0.1214
-      },
-      "gates": {
-        "freshness": true,
-        "promotion": "na",
-        "orthogonality": true,
-        "crisis_count": true,
-        "crisis_independent_es": false
-      },
-      "source_series": [
-        "yahoo/CNH_F",
-        "fred/DEXCHUS"
-      ],
-      "freshness_sla_days": 21,
-      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 cny_shock is an established China driver fingerprint (china_market_drivers)",
-      "kill": true,
-      "notes": "cny_shock is an established China driver fingerprint (china_market_drivers). USDCNH history short (2013+) \u2192 unmeasured in the standard split (INTL-44). Orthogonality vs the EXISTING raw usdcnh RORO leg is the deciding gate. | residual content predicts the WRONG sign for a de-risk leg"
-    },
-    {
-      "id": "c5_global_rates",
-      "channel": "C5",
-      "hypothesis": "Rising avg_10y / widening us_premium_bp (global duration/growth headwind) leads US equity drawdowns beyond the existing US curve/credit legs.",
-      "direction": "de-risk",
-      "verdict": "CONTEXT",
-      "weight_cap": 0.0,
-      "metrics": {
-        "ic": -0.064,
-        "dsr": 0.9797,
-        "split_half_same_sign": true,
-        "effective_n_crises": 6,
-        "es_ex_top3": 0.0012,
-        "orthogonal_partial": -0.1288,
-        "maxdd_cut": 0.0112
-      },
-      "gates": {
-        "freshness": true,
-        "promotion": "na",
-        "orthogonality": true,
-        "crisis_count": true,
-        "crisis_independent_es": true,
-        "drawdown_reduction": false
-      },
-      "source_series": [
-        "fred/DGS10",
-        "sovereign/ez_aaa_10y",
-        "sovereign/jgb_10y"
-      ],
-      "freshness_sla_days": 8,
-      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 avg_10y + us_premium_bp computed in bond_health",
-      "kill": true,
-      "notes": "avg_10y + us_premium_bp computed in bond_health.json but with NO history (INTL-15) \u2192 reconstructed causally by engine.global_rates from the same sovereign 10y legs. Gate: orthogonality vs existing US curve/credit MRS legs (the global 10y is plausibly ~US 10y + noise \u2014 a truthful CONTEXT is expected). Seam if it clears: MRS candidate leg. | weak/unstable \u2014 shown as context, never sized"
-    },
-    {
-      "id": "c6_asia_semi_readthrough",
-      "channel": "C6",
-      "hypothesis": "One EW Asia-semi sensor basket (TSM+ASML+\u2026) leads SMH at ONE pre-registered horizon, earnings-print windows excised (overnight risk carry-in).",
-      "direction": "de-risk",
-      "verdict": "PENDING",
-      "weight_cap": 0.0,
-      "metrics": {
-        "ic": null,
-        "dsr": null,
-        "split_half_same_sign": null,
-        "effective_n_crises": null,
-        "es_ex_top3": null,
-        "orthogonal_partial": null
-      },
-      "gates": {
-        "freshness": false
-      },
-      "source_series": [
-        "yahoo/TSM",
-        "yahoo/ASML"
-      ],
-      "freshness_sla_days": 5,
-      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 Context tier until it clears the lead-lag kernel; if only lag-1 survives \u2192 transmission read (honest de-risk confirmer)",
-      "kill": false,
-      "notes": "Context tier until it clears the lead-lag kernel; if only lag-1 survives \u2192 transmission read (honest de-risk confirmer). Seam if promoted: stock_score._axis_tailwind, DOWNGRADE-capable only. | freshness SLA violated on disk \u2014 leg zeroed (fail-closed)"
+      "notes": "W2-C3 CONFIRMED. All hard gates pass. Panel: 23 ETFs from 1996-03-18 (17 alive at start; min-panel=10 satisfied from day 1). Orthogonality: global breadth corr 0.68 with SPY trend (collinearity concern); residual after SPY/HY/curve partial = 0.62 surviving frac \u2014 PASSES (>=0.50). This adds information BEYOND the domestic US trend leg. W4 US radar Tier-B leg is JUSTIFIED by this verdict."
     },
     {
       "id": "c7_luxury_china_consumer",
       "channel": "C7",
       "hypothesis": "One EW luxury basket (LVMUY+\u2026) rolling over leads a CN-consumer target basket down \u2014 a policy-undistorted read on the Chinese consumer.",
       "direction": "de-risk",
-      "verdict": "PENDING",
-      "weight_cap": 0.0,
-      "metrics": {
-        "ic": null,
-        "dsr": null,
-        "split_half_same_sign": null,
-        "effective_n_crises": null,
-        "es_ex_top3": null,
-        "orthogonal_partial": null
-      },
-      "gates": {
-        "freshness": false
-      },
-      "source_series": [
-        "yahoo/LVMUY"
-      ],
-      "freshness_sla_days": 5,
-      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 Same discipline as C6: one aggregate, kernel-gated, context-tier default, de-risk grain first (luxury rolling over \u2192 trim CN-consumer conviction)",
-      "kill": false,
-      "notes": "Same discipline as C6: one aggregate, kernel-gated, context-tier default, de-risk grain first (luxury rolling over \u2192 trim CN-consumer conviction). | freshness SLA violated on disk \u2014 leg zeroed (fail-closed)"
-    },
-    {
-      "id": "c8_crossasset_leading_votes",
-      "channel": "C8",
-      "hypothesis": "cross_asset_confirm leading_caution_votes \u2265 2 while verdict=diverge \u2192 small MRS bump (credit + curve, the literature-lead legs).",
-      "direction": "de-risk",
       "verdict": "CONTEXT",
       "weight_cap": 0.0,
       "metrics": {
-        "ic": -0.0468,
-        "dsr": 0.981,
+        "ic": -0.0695,
+        "dsr": 0.1609,
         "split_half_same_sign": true,
-        "effective_n_crises": 6,
-        "es_ex_top3": 0.0001,
-        "orthogonal_partial": -0.0899,
-        "maxdd_cut": 0.0063
+        "effective_n_crises": 4,
+        "es_ex_top3": 0.0076,
+        "orthogonal_partial": -0.0612,
+        "maxdd_cut": 0.0643
       },
       "gates": {
         "freshness": true,
@@ -445,14 +409,12 @@
         "drawdown_reduction": false
       },
       "source_series": [
-        "fred/BAMLH0A0HYM2",
-        "yahoo/_MOVE",
-        "fred/DTWEXBGS"
+        "yahoo/LVMUY"
       ],
-      "freshness_sla_days": 8,
-      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 cross_asset_confirm is LIVE in run",
+      "freshness_sla_days": 5,
+      "validation_ref": "scripts/intl_phase0.py (grade) \u2014 Same discipline as C6: one aggregate, kernel-gated, context-tier default, de-risk grain first (luxury rolling over \u2192 trim CN-consumer conviction)",
       "kill": true,
-      "notes": "cross_asset_confirm is LIVE in run.py (INTL-46) but its leading legs are never consumed upstream of stock scoring, and no vote HISTORY exists on disk \u2192 the votes (credit HY-band/widening, rates-vol MOVE-band/leads-VIX, dollar risk-off) are reconstructed causally from their input series. Gate: the credit/curve votes may be near-duplicates of the nfci/recession MRS legs \u2014 that is the orthogonality test. Needs only orthogonality + measured weight. | weak/unstable \u2014 shown as context, never sized"
+      "notes": "Same discipline as C6: one aggregate, kernel-gated, context-tier default, de-risk grain first (luxury rolling over \u2192 trim CN-consumer conviction). | weak/unstable \u2014 shown as context, never sized"
     }
   ]
 }
