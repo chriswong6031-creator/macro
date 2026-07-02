@@ -364,10 +364,54 @@ BACKFILL: list[dict] = [
                           "engine/risk_radar_intl_audit.py (forward-log + can_force governance)",
         "kill": False,
         "notes": "NOTE-ONLY entry. This engine EXISTS on main with committed forward logs and its "
-                 "OWN can_force maturation gate (≥30 graded, ≥8 alerts, realized lift ≥1.25×). "
-                 "Composite ≥10%/42d drawdown lift 2.07× (p=0.01), CSI300-confirmed. The intl_bridge "
+                 "OWN can_force maturation gate (>=30 graded, >=8 alerts, realized lift >=1.25x). "
+                 "Composite >=10%/42d drawdown lift 2.07x (p=0.01), CSI300-confirmed. The intl_bridge "
                  "does NOT duplicate its machinery — it defers to risk_radar_intl_audit.scorecard "
                  "for the CN/HK/CA governance. Listed CONTEXT here for registry completeness.",
+    },
+    # W2-C3 — global ETF breadth barometer (graded 2026-07-02, scripts/intl_phase0.py --c3)
+    # Live run result: CONFIRMED. N=23 ETFs, panel>=10 threshold, 200dma, causal pctile-504d,
+    # top-30% de-risk. DSR 0.9326 (intl_bridge N=17). All hard gates pass.
+    # Orthogonality basis: SPY trend, HY OAS (BAMLH0A0HYM2), T10Y2Y.
+    {
+        "id": "c3_global_etf_breadth",
+        "channel": "C3",
+        "hypothesis": "% of country ETFs > 200dma below threshold leads SPX/CSI300 >=5% "
+                      "drawdowns at 21-42d (global analog of risk_radar_intl breadth).",
+        "direction": "de-risk",
+        "verdict": "CONFIRMED",
+        "weight_cap": 0.20,         # scaled by 6 independent crises; MAX_WEIGHT_CAP=0.20
+        "metrics": {
+            "ic": -0.198,           # Spearman(-breadth, fwd_dd42/SPX) from harness run
+            "dsr": 0.9326,          # deflated-Sharpe on SPY/SPX long-flat strategy (N=17 trials)
+            "split_half_same_sign": True,       # H1/H2 Sharpe both positive
+            "effective_n_crises": 6,            # all 6 declared crises covered
+            "es_ex_top3": 0.0078,              # ES reduction ex top-3 DD windows
+            "orthogonal_partial": -0.1209,     # residual Spearman after SPY/HY/curve partial
+        },
+        "gates": {
+            "deflated_sharpe": True,    # DSR 0.9326 >= 0.90 with N=17 intl_bridge budget
+            "split_half": True,         # same-sign Sharpe both halves
+            "orthogonality": True,      # surviving frac 0.62 >= 0.50; |orth| 0.12 >= 0.03
+            "crisis_count": True,       # 6 independent crises
+            "crisis_independent_es": True,  # ES positive ex top-3 (not crisis_only)
+            "freshness": True,          # intl_etf store current through 2026-07-01
+        },
+        "source_series": [
+            "intl_etf/EWJ", "intl_etf/EWG", "intl_etf/EWU", "intl_etf/EWY",
+            "intl_etf/EWA", "intl_etf/EWQ", "intl_etf/EIDO", "intl_etf/EWT",
+            "intl_etf/EWZ", "intl_etf/EZA", "intl_etf/INDA",   # + 12 more in panel
+        ],
+        "freshness_sla_days": 8,
+        "validation_ref": "reports/intl-global-breadth-phase0.md (W2-C3, 2026-07-02); "
+                          "scripts/intl_phase0.py build_c3_global_breadth()",
+        "kill": False,
+        "notes": "W2-C3 CONFIRMED. All hard gates pass. Panel: 23 ETFs from 1996-03-18 "
+                 "(17 alive at start; min-panel=10 satisfied from day 1). "
+                 "Orthogonality: global breadth corr 0.68 with SPY trend (collinearity concern); "
+                 "residual after SPY/HY/curve partial = 0.62 surviving frac — PASSES (>=0.50). "
+                 "This adds information BEYOND the domestic US trend leg. "
+                 "W4 US radar Tier-B leg is JUSTIFIED by this verdict.",
     },
 ]
 
