@@ -133,6 +133,111 @@
     for (var i = 0; i < 110; i++) stars.push({ x: Math.random(), y: Math.random(), r: Math.random() * 1.1 + 0.3, p: Math.random() * 6.28 });
   }
 
+  // ---- city lights (dark only): clustered, twinkling metro glow on the night side ---
+  // A curated set of major world metros ([lon, lat, weight 1..3]). Each is precomputed
+  // ONCE (buildCities) into a CLUSTER of scattered specks — a warm-white core plus
+  // amber/orange satellites on a unit disc, each with its own twinkle phase + frequency
+  // and a lively "flasher" minority. drawCityLights() then paints them ADDITIVELY
+  // (globalCompositeOperation "lighter") so overlapping specks bloom into real
+  // "Earth-at-night" hotspots. Lights only appear on the night side (fading in through
+  // dusk via a soft terminator ramp), are limb-feathered by frontness(), scale with zoom,
+  // thin out on mobile, and freeze under prefers-reduced-motion.
+  var CITY_SEED = [
+    // North America
+    [-74.0, 40.7, 3], [-118.2, 34.0, 3], [-87.6, 41.9, 2], [-122.4, 37.8, 2], [-95.4, 29.8, 2],
+    [-80.2, 25.8, 2], [-79.4, 43.7, 2], [-73.6, 45.5, 1], [-123.1, 49.3, 1], [-122.3, 47.6, 1],
+    [-96.8, 32.8, 1], [-84.4, 33.7, 1], [-71.1, 42.4, 1], [-77.0, 38.9, 2], [-99.1, 19.4, 3],
+    // South America
+    [-58.4, -34.6, 2], [-46.6, -23.6, 3], [-43.2, -22.9, 2], [-70.7, -33.4, 1], [-77.0, -12.0, 1], [-74.1, 4.7, 1],
+    // Europe
+    [-0.13, 51.5, 3], [2.35, 48.9, 3], [13.4, 52.5, 2], [12.5, 41.9, 2], [9.2, 45.5, 2],
+    [-3.7, 40.4, 2], [2.17, 41.4, 1], [4.9, 52.4, 1], [8.68, 50.1, 1], [37.6, 55.8, 3],
+    [28.98, 41.0, 3], [30.5, 50.5, 1], [23.7, 37.98, 1], [-9.14, 38.7, 1], [18.07, 59.3, 1],
+    [16.37, 48.2, 1], [21.0, 52.2, 1], [24.9, 60.2, 1], [12.57, 55.7, 1],
+    // Africa
+    [31.24, 30.05, 3], [3.38, 6.5, 2], [28.05, -26.2, 2], [36.82, -1.29, 1], [-7.6, 33.6, 1],
+    [18.42, -33.9, 1], [15.3, -4.3, 1], [39.27, -6.8, 1],
+    // Middle East
+    [55.27, 25.2, 2], [46.72, 24.7, 2], [51.4, 35.7, 2], [34.78, 32.08, 1], [44.4, 33.3, 1], [50.0, 26.2, 1],
+    // East Asia — the Pearl River Delta (Guangzhou + HK) and Shanghai are single anchors:
+    // adjacent conurbations were merged out (Shenzhen→HK, Suzhou→Shanghai) so their halos
+    // don't stack into an additive white blowout under the "lighter" composite.
+    [139.7, 35.68, 3], [135.5, 34.7, 2], [126.98, 37.57, 3], [116.4, 39.9, 3], [121.47, 31.23, 3],
+    [113.26, 23.13, 2], [114.17, 22.28, 3], [121.56, 25.03, 2],
+    [104.07, 30.67, 2], [114.3, 30.6, 1], [108.9, 34.3, 1],
+    // South & Southeast Asia
+    [72.88, 19.08, 3], [77.2, 28.6, 3], [77.59, 12.97, 2], [88.36, 22.57, 2], [80.27, 13.08, 1],
+    [78.47, 17.4, 1], [100.5, 13.75, 2], [103.82, 1.35, 3], [106.8, -6.2, 3], [120.98, 14.6, 2],
+    [101.69, 3.14, 1], [106.7, 10.8, 2], [67.0, 24.86, 3], [90.4, 23.8, 2], [105.85, 21.03, 1],
+    // Oceania
+    [151.2, -33.87, 2], [144.96, -37.8, 2], [153.0, -27.5, 1], [115.86, -31.95, 1], [174.76, -36.85, 1]
+  ];
+  var cities = [], DUSK = 0.5;   // radians of dusk ramp past the terminator (lights swell in as a city rotates into night)
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function buildCities() {
+    cities = [];
+    for (var i = 0; i < CITY_SEED.length; i++) {
+      var s = CITY_SEED[i], w = s[2];
+      var n = (w === 3 ? 9 : w === 2 ? 6 : 3) + Math.round(rnd(0, 2));   // satellites, scaled to metro size
+      var pts = [];
+      // bright warm-white core at the cluster centre (gets a soft bloom)
+      pts.push({ ox: rnd(-0.12, 0.12), oy: rnd(-0.12, 0.12), rr: 1.6, tone: 0, glow: true,
+                 b: 0.72, a: 0.24, f: 2 * Math.PI / rnd(1500, 2600), ph: rnd(0, 6.28), i: 1 });
+      for (var j = 0; j < n; j++) {
+        var ang = rnd(0, 6.283), rad = Math.sqrt(Math.random());          // sqrt → even area fill across the disc
+        var flash = Math.random() < 0.16;                                 // lively minority that truly flashes
+        var tone = Math.random() < 0.14 ? 0 : (Math.random() < 0.78 ? 1 : 2);  // white / amber / orange
+        pts.push({ ox: Math.cos(ang) * rad, oy: Math.sin(ang) * rad,
+                   rr: rnd(0.5, 1.1), tone: tone, glow: false,
+                   b: flash ? 0.5 : 0.72, a: flash ? 0.5 : 0.24,
+                   f: 2 * Math.PI / (flash ? rnd(600, 1200) : rnd(1400, 2800)), ph: rnd(0, 6.28),
+                   i: rnd(0.5, 0.95) });
+      }
+      cities.push({ ll: [s[0], s[1]], w: w, rad: (w === 3 ? 1.5 : w === 2 ? 1.05 : 0.7), pts: pts });
+    }
+  }
+  function drawCityLights(t, ss) {
+    if (!cities.length) return;
+    var mob = W < 560;
+    var warm = PAL["--warn"], hot = PAL["--orange"], core = lerpColor(warm, "#ffffff", 0.55);
+    var spread = scale * (mob ? 0.011 : 0.014);       // cluster radius in px (tracks zoom)
+    var baseDot = Math.max(0.7, scale * 0.0065);      // speck radius in px (tracks zoom)
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";         // additive → clusters bloom like real city glow
+    for (var i = 0; i < cities.length; i++) {
+      var C = cities[i];
+      if (mob && C.w < 2) continue;                   // thin the field on small screens
+      var ll = C.ll;
+      if (!onFront(ll)) continue;                     // back hemisphere — hidden by the opaque disc
+      var dist = d3.geoDistance(ll, ss);
+      var nightF = (dist - Math.PI / 2) / DUSK; if (nightF <= 0) continue; if (nightF > 1) nightF = 1;
+      var frontF = frontness(ll); if (frontF <= 0) continue;
+      var xy = projection(ll); if (!xy) continue;
+      var vis = nightF * frontF, cr = spread * C.rad;
+      // diffuse airglow dome over big metros (skipped on mobile for perf)
+      if (C.w >= 2 && !mob) {
+        var hr = cr * 2.8, halo = ctx.createRadialGradient(xy[0], xy[1], 0, xy[0], xy[1], hr);
+        halo.addColorStop(0, rgba(warm, 0.07 * vis * (C.w - 0.5)));
+        halo.addColorStop(1, rgba(warm, 0));
+        ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(xy[0], xy[1], hr, 0, 6.283); ctx.fill();
+      }
+      var pts = C.pts, nn = mob ? Math.min(pts.length, 4) : pts.length;
+      for (var j = 0; j < nn; j++) {
+        var p = pts[j];
+        var tw = motionOK ? (p.b + p.a * Math.sin(t * p.f + p.ph)) : (p.b + p.a * 0.35);
+        if (tw <= 0) continue;
+        var a = vis * tw * p.i; if (a <= 0.008) continue; if (a > 0.66) a = 0.66;   // ceiling: additive "lighter" pile-ups saturate gracefully instead of clipping to white
+        var col = p.tone === 0 ? core : (p.tone === 1 ? warm : hot);
+        if (p.glow && !mob) { ctx.shadowColor = rgba(col, 0.85 * vis); ctx.shadowBlur = cr * 1.2; }
+        ctx.beginPath();
+        ctx.arc(xy[0] + p.ox * cr, xy[1] + p.oy * cr, baseDot * p.rr, 0, 6.283);
+        ctx.fillStyle = rgba(col, a); ctx.fill();
+        if (p.glow && !mob) ctx.shadowBlur = 0;
+      }
+    }
+    ctx.restore();
+  }
+
   // ---- subsolar point for the terminator -----------------------------------
   function subsolar() {
     var now = new Date();
@@ -224,16 +329,8 @@
     ctx.beginPath(); path(night);
     ctx.fillStyle = rgba(PAL["--bg"], dark ? 0.34 : 0.16); ctx.fill();
 
-    // city lights (night side, dark only)
-    if (dark) {
-      for (var ci = 0; ci < DATA.length; ci++) {
-        var ll = posMap[DATA[ci].cc]; if (!ll || !onFront(ll) || d3.geoDistance(ll, ss) < Math.PI / 2) continue;
-        var lxy = projection(ll); if (!lxy) continue;
-        var tw2 = motionOK ? (0.5 + 0.5 * Math.sin(t / 650 + ci)) : 0.8;
-        ctx.beginPath(); ctx.arc(lxy[0], lxy[1], 1.5, 0, 6.283);
-        ctx.fillStyle = rgba(PAL["--warn"], 0.4 + 0.45 * tw2); ctx.fill();
-      }
-    }
+    // city lights — clustered, twinkling metro glow on the night side (dark theme only)
+    if (dark) drawCityLights(t, ss);
 
     // shipping lanes + ships riding the ocean surface
     drawSeaRoutes(t, dark);
@@ -969,7 +1066,7 @@
 
   // ---- boot ----------------------------------------------------------------
   function boot(topo) {
-    buildGeometry(topo); buildRoutes(); readPalette(); buildStars(); buildIslands(); size();
+    buildGeometry(topo); buildRoutes(); readPalette(); buildStars(); buildCities(); buildIslands(); size();
     // The islands are built lazily (after a topo fetch + idle callback), so live.js's
     // first poll already ran against an empty DOM — nudge it to patch the fresh
     // .nb-px/.nb-chg index nodes now instead of waiting a full poll interval.
