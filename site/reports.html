@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script data-dbase src="data_base.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span> — <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span></title>
@@ -298,8 +299,12 @@
       /* the hamburger accordion caps each open dropdown at max-height:600px
          (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
          taller, so raise the cap for it (0,6,0 wins) — the parent flyout
-         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow. */
-      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px}}
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (0 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
     </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
@@ -407,18 +412,18 @@
   <a class="report-row feat" href="report_ai_master_plan.html"
      data-date="2026-07-01"
      data-tags="ai macro fed china credit"
-     data-search="the ai master plan strip the white house ai action plan to its mechanisms and it stops being industrial policy and becomes the refinancing of the united states — a physical-stock strategy that is bubble-dependent by design. a full decode: the five levers, why the state went long its own bubble, where the losses are pre-routed, and the predictive pathway that schedules the pop for after the buildout, after the midterms, and onshore. ai 总体规划 剥开白宫《ai 行动计划》看机制，它就不再是产业政策，而是美国的再融资工程 —— 一套在设计上依赖泡沫的“物理存量”战略。全面解码：五个杠杆、国家为何做多自己的泡沫、损失被预先路由到何处，以及那条把破裂“安排”在建设完成后、中期选举后、并在本土发生的预测路径。">
+     data-search="the ai master plan strip the white house ai action plan to its mechanisms and it stops being industrial policy and becomes the refinancing of the united states — a physical-stock strategy that is bubble-dependent by design. a full decode of the five levers, why the state went long its own bubble, and where the losses are pre-routed — with a predictive pathway revised july 2: the market read the schedule and began front-running it, so the blow-off is resequenced from into the midterms to after the midterm low. ai 总体规划 剥开白宫《ai 行动计划》看机制，它就不再是产业政策，而是美国的再融资工程 —— 一套在设计上依赖泡沫的“物理存量”战略。全面解码五个杠杆、国家为何做多自己的泡沫、损失被预先路由到何处 —— 并附 7 月 2 日修订的预测路径：市场已看懂时间表并开始抢跑，于是那场“blow-off 冲顶”被从“冲进中期选举”重排到“中期选举筑底之后”。">
     <span class="feat-badge"><span class="l-en">Latest</span><span class="l-zh">最新</span></span>
     <div class="rr-date"><span class="mo">JUL</span><span class="day">1</span><span class="yr">2026</span></div>
     <div class="rr-main">
       <div class="rr-title"><span class="l-en">The AI Master Plan</span><span class="l-zh">AI 总体规划</span></div>
-      <div class="rr-dek"><span class="l-en">Strip the White House AI Action Plan to its mechanisms and it stops being industrial policy and becomes the refinancing of the United States — a physical-stock strategy that is bubble-dependent by design. A full decode: the five levers, why the state went long its own bubble, where the losses are pre-routed, and the predictive pathway that schedules the pop for after the buildout, after the midterms, and onshore.</span><span class="l-zh">剥开白宫《AI 行动计划》看机制，它就不再是产业政策，而是美国的再融资工程 —— 一套在设计上依赖泡沫的“物理存量”战略。全面解码：五个杠杆、国家为何做多自己的泡沫、损失被预先路由到何处，以及那条把破裂“安排”在建设完成后、中期选举后、并在本土发生的预测路径。</span></div>
+      <div class="rr-dek"><span class="l-en">Strip the White House AI Action Plan to its mechanisms and it stops being industrial policy and becomes the refinancing of the United States — a physical-stock strategy that is bubble-dependent by design. A full decode of the five levers, why the state went long its own bubble, and where the losses are pre-routed — with a predictive pathway revised July 2: the market read the schedule and began front-running it, so the blow-off is resequenced from into the midterms to after the midterm low.</span><span class="l-zh">剥开白宫《AI 行动计划》看机制，它就不再是产业政策，而是美国的再融资工程 —— 一套在设计上依赖泡沫的“物理存量”战略。全面解码五个杠杆、国家为何做多自己的泡沫、损失被预先路由到何处 —— 并附 7 月 2 日修订的预测路径：市场已看懂时间表并开始抢跑，于是那场“blow-off 冲顶”被从“冲进中期选举”重排到“中期选举筑底之后”。</span></div>
       <div class="rr-tags">
         <span class="chip tag-ai"><span class="l-en">AI</span><span class="l-zh">AI</span></span><span class="chip tag-macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></span><span class="chip tag-fed"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span><span class="chip tag-china"><span class="l-en">China</span><span class="l-zh">中国</span></span><span class="chip tag-credit"><span class="l-en">Credit</span><span class="l-zh">信用</span></span>
       </div>
     </div>
     <div class="rr-aside">
-      <span>⏱ 26 <span class="l-en">min</span><span class="l-zh">分钟</span></span>
+      <span>⏱ 30 <span class="l-en">min</span><span class="l-zh">分钟</span></span>
       <span class="rr-arrow">→</span>
     </div>
   </a>

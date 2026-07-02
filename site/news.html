@@ -6,7 +6,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Market & Macro News — 2026-06-30</title>
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   /* ---------- shared Research-Reports chrome ---------- */
@@ -30,6 +30,9 @@
   .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
   .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
   .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
+  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
+  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
   footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
   
   body { padding-bottom:52px; }
@@ -333,8 +336,12 @@
       /* the hamburger accordion caps each open dropdown at max-height:600px
          (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
          taller, so raise the cap for it (0,6,0 wins) — the parent flyout
-         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow. */
-      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px}}
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (0 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
     </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
@@ -425,7 +432,7 @@
       </div>
       <div class="nx-stat warn">
         <span class="k"><span class="l-en">Narrative</span><span class="l-zh">叙事</span></span>
-        <span class="v">79.2</span>
+        <span class="v">71.6</span>
       </div>
       <div class="nx-stat info">
         <span class="k"><span class="l-en">Stories</span><span class="l-zh">条目</span></span>
@@ -479,39 +486,13 @@
       <section class="summary-card">
         <div class="sc-head">
           <h2><span class="l-en">Market Summary</span><span class="l-zh">市场摘要</span></h2>
-          <span class="sc-updated"><span class="live-dot"></span><span data-ts="2026-07-02T04:58:21.887093+00:00" class="rel-time"><span class="l-en">Updated</span><span class="l-zh">更新于</span></span></span>
+          <span class="sc-updated"><span class="live-dot"></span><span data-ts="2026-07-02T06:58:27.712036+00:00" class="rel-time"><span class="l-en">Updated</span><span class="l-zh">更新于</span></span></span>
         </div>
 
         
         <div id="newsFeed">
           
           <details class="na-item" open
-            data-theme="stocks" data-importance="high"
-            data-search="bondbloxx private credit clo etf declares $0.2555 dividend  seekingalpha.com seeking alpha - market currents stocks credit capital_return ">
-            <summary class="na-sum">
-              <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="na-htitle"><span class="l-en">BondBloxx Private Credit CLO ETF declares $0.2555 dividend</span><span class="l-zh">BondBloxx Private Credit CLO ETF declares $0.2555 dividend</span></span>
-              <span class="na-right">
-                <span class="na-src">Seeking Alpha - Market Currents</span>
-                <span class="na-imp high">81</span>
-                <span class="na-chev">▾</span>
-              </span>
-            </summary>
-            <div class="na-body">
-              <p class="na-summary"><span class="l-en">A <b>high</b>-impact <b>Stocks</b> headline, touching credit, capital return. Flagged because: stock-focused news source; tier-1 macro term. Reported by <b>Seeking Alpha - Market Currents</b> (stock_wire source).</span>
-<span class="l-zh">一条<b>high</b>影响级的<b>个股</b>新闻，涉及 credit、capital return。 入选原因：stock-focused news source；tier-1 macro term。 来源：<b>Seeking Alpha - Market Currents</b>。</span></p>
-              <div class="na-tags">
-                <span class="na-pill">credit</span><span class="na-pill">capital return</span>
-                
-              </div>
-              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-                <a class="na-read" href="https://seekingalpha.com/news/4609524-bondbloxx-private-credit-clo-etf-declares-0_2555-dividend?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-02T04:31:19+00:00"></span>
-              </div>
-            </div>
-          </details>
-          
-          <details class="na-item"
             data-theme="stocks" data-importance="high"
             data-search="stocks close out q2, nike earnings, egg prices and more in morning squawk  cnbc.com cnbc - tech stocks inflation earnings ">
             <summary class="na-sum">
@@ -564,32 +545,6 @@
           </details>
           
           <details class="na-item"
-            data-theme="stocks" data-importance="high"
-            data-search="world cup could boost the june jobs report by 40,000, goldman estimates  cnbc.com cnbc - stock blog stocks labor gld">
-            <summary class="na-sum">
-              <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="na-htitle"><span class="l-en">World Cup could boost the June jobs report by 40,000, Goldman estimates</span><span class="l-zh">World Cup could boost the June jobs report by 40,000, Goldman estimates</span></span>
-              <span class="na-right">
-                <span class="na-src">CNBC - Stock Blog</span>
-                <span class="na-imp high">74</span>
-                <span class="na-chev">▾</span>
-              </span>
-            </summary>
-            <div class="na-body">
-              <p class="na-summary"><span class="l-en">A <b>high</b>-impact <b>Stocks</b> headline in focus on GLD, touching labor. Flagged because: stock-focused news source; tier-1 macro term. Reported by <b>CNBC - Stock Blog</b> (stock_wire source).</span>
-<span class="l-zh">一条<b>high</b>影响级的<b>个股</b>新闻，聚焦 GLD，涉及 labor。 入选原因：stock-focused news source；tier-1 macro term。 来源：<b>CNBC - Stock Blog</b>。</span></p>
-              <div class="na-tags">
-                <span class="na-pill">labor</span>
-                <span class="na-pill tk">GLD</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-                <a class="na-read" href="https://www.cnbc.com/2026/07/01/world-cup-could-boost-the-june-jobs-report-by-40000-goldman-estimates.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-01T20:27:09+00:00"></span>
-              </div>
-            </div>
-          </details>
-          
-          <details class="na-item"
             data-theme="stocks" data-importance="medium"
             data-search="samsung electronics, sk hynix shares tumble over 7% as chip rout spreads from wall street  cnbc.com cnbc - tech stocks credit spy xlk">
             <summary class="na-sum">
@@ -610,85 +565,85 @@
               </div>
               <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
                 <a class="na-read" href="https://www.cnbc.com/2026/07/02/samsung-sk-hynix-shares-slide-kospi-tech-selloff-nasdaq.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-02T03:04:59+00:00"></span>
+                <span class="na-when rel-time" data-ts="2026-07-02T05:44:40+00:00"></span>
               </div>
             </div>
           </details>
           
           <details class="na-item"
             data-theme="stocks" data-importance="high"
-            data-search="compass diversified holdings non-cum red pfd registered series a declares $0.4531 dividend  seekingalpha.com seeking alpha - market currents stocks capital_return ">
+            data-search="jim cramer says the ai trade has shifted — and these stocks are leading now  cnbc.com cnbc - tech stocks fiscal_trade qqq">
             <summary class="na-sum">
               <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="na-htitle"><span class="l-en">Compass Diversified Holdings Non-Cum Red Pfd Registered Series A declares $0.4531 dividend</span><span class="l-zh">Compass Diversified Holdings Non-Cum Red Pfd Registered Series A declares $0.4531 dividend</span></span>
+              <span class="na-htitle"><span class="l-en">Jim Cramer says the AI trade has shifted — and these stocks are leading now</span><span class="l-zh">Jim Cramer says the AI trade has shifted — and these stocks are leading now</span></span>
               <span class="na-right">
-                <span class="na-src">Seeking Alpha - Market Currents</span>
+                <span class="na-src">CNBC - Tech</span>
                 <span class="na-imp high">74</span>
                 <span class="na-chev">▾</span>
               </span>
             </summary>
             <div class="na-body">
-              <p class="na-summary"><span class="l-en">A <b>high</b>-impact <b>Stocks</b> headline, touching capital return. Flagged because: stock-focused news source; tier-1 macro term. Reported by <b>Seeking Alpha - Market Currents</b> (stock_wire source).</span>
-<span class="l-zh">一条<b>high</b>影响级的<b>个股</b>新闻，涉及 capital return。 入选原因：stock-focused news source；tier-1 macro term。 来源：<b>Seeking Alpha - Market Currents</b>。</span></p>
+              <p class="na-summary"><span class="l-en">A <b>high</b>-impact <b>Stocks</b> headline in focus on QQQ, touching fiscal trade. Flagged because: stock-focused news source; market-sensitive term. Reported by <b>CNBC - Tech</b> (stock_wire source).</span>
+<span class="l-zh">一条<b>high</b>影响级的<b>个股</b>新闻，聚焦 QQQ，涉及 fiscal trade。 入选原因：stock-focused news source；market-sensitive term。 来源：<b>CNBC - Tech</b>。</span></p>
               <div class="na-tags">
-                <span class="na-pill">capital return</span>
-                
+                <span class="na-pill">fiscal trade</span>
+                <span class="na-pill tk">QQQ</span>
               </div>
               <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-                <a class="na-read" href="https://seekingalpha.com/news/4609529-compass-diversified-holdings-non-cum-red-pfd-registered-series-a-declares-0_4531-dividend?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-02T04:39:41+00:00"></span>
+                <a class="na-read" href="https://www.cnbc.com/2026/06/30/jim-cramer-ai-trade-shifted-stocks-leading-now.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-30T22:24:43+00:00"></span>
               </div>
             </div>
           </details>
           
           <details class="na-item"
-            data-theme="stocks" data-importance="high"
-            data-search="compass diversified holdings, 7.875% pfd series c declares $0.4922 dividend  seekingalpha.com seeking alpha - market currents stocks capital_return ">
+            data-theme="stocks" data-importance="medium"
+            data-search="coca-cola eyes $1b ipo for india bottling arm at nearly $10b valuation  seekingalpha.com seeking alpha - market currents stocks equities deals ">
             <summary class="na-sum">
               <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="na-htitle"><span class="l-en">Compass Diversified Holdings, 7.875% PFD Series C declares $0.4922 dividend</span><span class="l-zh">Compass Diversified Holdings, 7.875% PFD Series C declares $0.4922 dividend</span></span>
+              <span class="na-htitle"><span class="l-en">Coca-Cola eyes $1B IPO for India bottling arm at nearly $10B valuation</span><span class="l-zh">Coca-Cola eyes $1B IPO for India bottling arm at nearly $10B valuation</span></span>
               <span class="na-right">
                 <span class="na-src">Seeking Alpha - Market Currents</span>
-                <span class="na-imp high">74</span>
+                <span class="na-imp medium">67</span>
                 <span class="na-chev">▾</span>
               </span>
             </summary>
             <div class="na-body">
-              <p class="na-summary"><span class="l-en">A <b>high</b>-impact <b>Stocks</b> headline, touching capital return. Flagged because: stock-focused news source; tier-1 macro term. Reported by <b>Seeking Alpha - Market Currents</b> (stock_wire source).</span>
-<span class="l-zh">一条<b>high</b>影响级的<b>个股</b>新闻，涉及 capital return。 入选原因：stock-focused news source；tier-1 macro term。 来源：<b>Seeking Alpha - Market Currents</b>。</span></p>
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Stocks</b> headline, touching equities, deals. Flagged because: stock-focused news source; market-sensitive term. Reported by <b>Seeking Alpha - Market Currents</b> (stock_wire source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>个股</b>新闻，涉及 equities、deals。 入选原因：stock-focused news source；market-sensitive term。 来源：<b>Seeking Alpha - Market Currents</b>。</span></p>
               <div class="na-tags">
-                <span class="na-pill">capital return</span>
+                <span class="na-pill">equities</span><span class="na-pill">deals</span>
                 
               </div>
               <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-                <a class="na-read" href="https://seekingalpha.com/news/4609528-compass-diversified-holdings-7_875-percent-pfd-series-c-declares-0_4922-dividend?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-02T04:39:31+00:00"></span>
+                <a class="na-read" href="https://seekingalpha.com/news/4609537-coca-cola-eyes-1b-ipo-for-india-bottling-arm-at-nearly-10b-valuation?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-02T06:56:21+00:00"></span>
               </div>
             </div>
           </details>
           
           <details class="na-item"
-            data-theme="stocks" data-importance="high"
-            data-search="compass diversified 7.87% cum pfd b declares $0.4922 dividend  seekingalpha.com seeking alpha - market currents stocks capital_return ">
+            data-theme="stocks" data-importance="medium"
+            data-search="amazon developing custom on-device ai chips for echo and fire tv lineups: report  seekingalpha.com seeking alpha - market currents stocks stocks qqq xlk amzn">
             <summary class="na-sum">
               <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="na-htitle"><span class="l-en">Compass Diversified 7.87% CUM PFD B declares $0.4922 dividend</span><span class="l-zh">Compass Diversified 7.87% CUM PFD B declares $0.4922 dividend</span></span>
+              <span class="na-htitle"><span class="l-en">Amazon developing custom on-device AI chips for Echo and Fire TV lineups: report</span><span class="l-zh">Amazon developing custom on-device AI chips for Echo and Fire TV lineups: report</span></span>
               <span class="na-right">
                 <span class="na-src">Seeking Alpha - Market Currents</span>
-                <span class="na-imp high">74</span>
+                <span class="na-imp medium">60</span>
                 <span class="na-chev">▾</span>
               </span>
             </summary>
             <div class="na-body">
-              <p class="na-summary"><span class="l-en">A <b>high</b>-impact <b>Stocks</b> headline, touching capital return. Flagged because: stock-focused news source; tier-1 macro term. Reported by <b>Seeking Alpha - Market Currents</b> (stock_wire source).</span>
-<span class="l-zh">一条<b>high</b>影响级的<b>个股</b>新闻，涉及 capital return。 入选原因：stock-focused news source；tier-1 macro term。 来源：<b>Seeking Alpha - Market Currents</b>。</span></p>
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Stocks</b> headline in focus on QQQ, XLK, AMZN, touching stocks. Flagged because: stock-focused news source; stock catalyst theme. Reported by <b>Seeking Alpha - Market Currents</b> (stock_wire source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>个股</b>新闻，聚焦 QQQ、XLK、AMZN，涉及 stocks。 入选原因：stock-focused news source；stock catalyst theme。 来源：<b>Seeking Alpha - Market Currents</b>。</span></p>
               <div class="na-tags">
-                <span class="na-pill">capital return</span>
-                
+                <span class="na-pill">stocks</span>
+                <span class="na-pill tk">QQQ</span><span class="na-pill tk">XLK</span><span class="na-pill tk">AMZN</span>
               </div>
               <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-                <a class="na-read" href="https://seekingalpha.com/news/4609527-compass-diversified-7_87-percent-cum-pfd-b-declares-0_4922-dividend?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-02T04:39:14+00:00"></span>
+                <a class="na-read" href="https://seekingalpha.com/news/4609539-amazon-developing-custom-on-device-ai-chips-for-echo-and-fire-tv-lineups-report?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-02T06:11:54+00:00"></span>
               </div>
             </div>
           </details>
@@ -721,10 +676,10 @@
           
           <details class="na-item"
             data-theme="stocks" data-importance="medium"
-            data-search="microsoft joins consortium to build india-southeast asia undersea ai cable - report  seekingalpha.com seeking alpha - market currents stocks stocks qqq msft">
+            data-search="samsung details $90b south korea investment across chips, displays, batteries  seekingalpha.com seeking alpha - market currents stocks stocks xlk">
             <summary class="na-sum">
               <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="na-htitle"><span class="l-en">Microsoft joins consortium to build India-Southeast Asia undersea AI cable - report</span><span class="l-zh">Microsoft joins consortium to build India-Southeast Asia undersea AI cable - report</span></span>
+              <span class="na-htitle"><span class="l-en">Samsung details $90B South Korea investment across chips, displays, batteries</span><span class="l-zh">Samsung details $90B South Korea investment across chips, displays, batteries</span></span>
               <span class="na-right">
                 <span class="na-src">Seeking Alpha - Market Currents</span>
                 <span class="na-imp medium">60</span>
@@ -732,15 +687,67 @@
               </span>
             </summary>
             <div class="na-body">
-              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Stocks</b> headline in focus on QQQ, MSFT, touching stocks. Flagged because: stock-focused news source; stock catalyst theme. Reported by <b>Seeking Alpha - Market Currents</b> (stock_wire source).</span>
-<span class="l-zh">一条<b>medium</b>影响级的<b>个股</b>新闻，聚焦 QQQ、MSFT，涉及 stocks。 入选原因：stock-focused news source；stock catalyst theme。 来源：<b>Seeking Alpha - Market Currents</b>。</span></p>
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Stocks</b> headline in focus on XLK, touching stocks. Flagged because: stock-focused news source; stock catalyst theme. Reported by <b>Seeking Alpha - Market Currents</b> (stock_wire source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>个股</b>新闻，聚焦 XLK，涉及 stocks。 入选原因：stock-focused news source；stock catalyst theme。 来源：<b>Seeking Alpha - Market Currents</b>。</span></p>
               <div class="na-tags">
                 <span class="na-pill">stocks</span>
-                <span class="na-pill tk">QQQ</span><span class="na-pill tk">MSFT</span>
+                <span class="na-pill tk">XLK</span>
               </div>
               <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-                <a class="na-read" href="https://seekingalpha.com/news/4609519-microsoft-joins-consortium-to-build-india-southeast-asia-undersea-ai-cable---report?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-07-02T04:50:46+00:00"></span>
+                <a class="na-read" href="https://seekingalpha.com/news/4609536-samsung-details-90b-south-korea-investment-across-chips-displays-batteries?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-02T06:17:54+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="stocks" data-importance="medium"
+            data-search="asian markets mostly lower as wall street tech selloff weighs on sentiment  seekingalpha.com seeking alpha - market currents stocks stocks spy">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="na-htitle"><span class="l-en">Asian markets mostly lower as Wall Street tech selloff weighs on sentiment</span><span class="l-zh">Asian markets mostly lower as Wall Street tech selloff weighs on sentiment</span></span>
+              <span class="na-right">
+                <span class="na-src">Seeking Alpha - Market Currents</span>
+                <span class="na-imp medium">60</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Stocks</b> headline in focus on SPY, touching stocks. Flagged because: stock-focused news source; stock catalyst theme. Reported by <b>Seeking Alpha - Market Currents</b> (stock_wire source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>个股</b>新闻，聚焦 SPY，涉及 stocks。 入选原因：stock-focused news source；stock catalyst theme。 来源：<b>Seeking Alpha - Market Currents</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">stocks</span>
+                <span class="na-pill tk">SPY</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://seekingalpha.com/news/4609523-asian-markets-mostly-lower-as-wall-street-tech-selloff-weighs-on-sentiment?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-07-02T06:09:58+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="earnings" data-importance="medium"
+            data-search="maersk lifts 2026 profit outlook as strong freight rates defy earlier shipping gloom  yahoo.com yahoo finance - top stories earnings rates earnings guidance ">
+            <summary class="na-sum">
+              <span class="na-theme th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="na-htitle"><span class="l-en">Maersk Lifts 2026 Profit Outlook as Strong Freight Rates Defy Earlier Shipping Gloom</span><span class="l-zh">Maersk Lifts 2026 Profit Outlook as Strong Freight Rates Defy Earlier Shipping Gloom</span></span>
+              <span class="na-right">
+                <span class="na-src">Yahoo Finance - Top Stories</span>
+                <span class="na-imp medium">63</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Earnings</b> headline, touching rates, earnings, guidance. Flagged because: quality source; tier-1 macro term. Reported by <b>Yahoo Finance - Top Stories</b> (quality source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>业绩</b>新闻，涉及 rates、earnings、guidance。 入选原因：quality source；tier-1 macro term。 来源：<b>Yahoo Finance - Top Stories</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">rates</span><span class="na-pill">earnings</span><span class="na-pill">guidance</span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://finance.yahoo.com/markets/stocks/articles/maersk-lifts-2026-profit-outlook-185942402.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-30T18:59:42Z"></span>
               </div>
             </div>
           </details>
@@ -772,89 +779,11 @@
           </details>
           
           <details class="na-item"
-            data-theme="earnings" data-importance="medium"
-            data-search="profit from intel stock's high volatility with an advanced options trade: the short strangle  yahoo.com yahoo finance - top stories earnings fiscal_trade earnings intc">
-            <summary class="na-sum">
-              <span class="na-theme th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="na-htitle"><span class="l-en">Profit From Intel Stock's High Volatility With An Advanced Options Trade: The Short Strangle</span><span class="l-zh">Profit From Intel Stock's High Volatility With An Advanced Options Trade: The Short Strangle</span></span>
-              <span class="na-right">
-                <span class="na-src">Yahoo Finance - Top Stories</span>
-                <span class="na-imp medium">60</span>
-                <span class="na-chev">▾</span>
-              </span>
-            </summary>
-            <div class="na-body">
-              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Earnings</b> headline in focus on INTC, touching fiscal trade, earnings. Flagged because: quality source; market-sensitive term. Reported by <b>Yahoo Finance - Top Stories</b> (quality source).</span>
-<span class="l-zh">一条<b>medium</b>影响级的<b>业绩</b>新闻，聚焦 INTC，涉及 fiscal trade、earnings。 入选原因：quality source；market-sensitive term。 来源：<b>Yahoo Finance - Top Stories</b>。</span></p>
-              <div class="na-tags">
-                <span class="na-pill">fiscal trade</span><span class="na-pill">earnings</span>
-                <span class="na-pill tk">INTC</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-                <a class="na-read" href="https://www.investors.com/research/options/intel-stock/?src=A00220&yptr=yahoo" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-06-30T17:36:27Z"></span>
-              </div>
-            </div>
-          </details>
-          
-          <details class="na-item"
-            data-theme="capital_return" data-importance="medium"
-            data-search="this retail giant offers a high dividend and trades near buy zone  yahoo.com yahoo finance - top stories capital_return fiscal_trade capital_return ">
-            <summary class="na-sum">
-              <span class="na-theme th-capital_return"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></span>
-              <span class="na-htitle"><span class="l-en">This Retail Giant Offers A High Dividend And Trades Near Buy Zone</span><span class="l-zh">This Retail Giant Offers A High Dividend And Trades Near Buy Zone</span></span>
-              <span class="na-right">
-                <span class="na-src">Yahoo Finance - Top Stories</span>
-                <span class="na-imp medium">63</span>
-                <span class="na-chev">▾</span>
-              </span>
-            </summary>
-            <div class="na-body">
-              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Buybacks</b> headline, touching fiscal trade, capital return. Flagged because: quality source; tier-1 macro term. Reported by <b>Yahoo Finance - Top Stories</b> (quality source).</span>
-<span class="l-zh">一条<b>medium</b>影响级的<b>回购/分红</b>新闻，涉及 fiscal trade、capital return。 入选原因：quality source；tier-1 macro term。 来源：<b>Yahoo Finance - Top Stories</b>。</span></p>
-              <div class="na-tags">
-                <span class="na-pill">fiscal trade</span><span class="na-pill">capital return</span>
-                
-              </div>
-              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-                <a class="na-read" href="https://www.investors.com/research/the-income-investor/best-buy-bby-stock-dividend-buy-zone-income-investor/?src=A00220&yptr=yahoo" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-06-30T17:49:38Z"></span>
-              </div>
-            </div>
-          </details>
-          
-          <details class="na-item"
             data-theme="analyst" data-importance="medium"
-            data-search="nvidia stock is in the ‘twilight zone.’ these analysts say you should buy it now before it breaks free.  yahoo.com yahoo finance - top stories analyst analyst nvda">
+            data-search="amd’s ai cpu dominance prompts wells fargo to raise price target to $615  yahoo.com yahoo finance - top stories analyst analyst amd qqq">
             <summary class="na-sum">
               <span class="na-theme th-analyst"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
-              <span class="na-htitle"><span class="l-en">Nvidia Stock Is in the ‘Twilight Zone.’ These Analysts Say You Should Buy It Now Before It Breaks Free.</span><span class="l-zh">Nvidia Stock Is in the ‘Twilight Zone.’ These Analysts Say You Should Buy It Now Before It Breaks Free.</span></span>
-              <span class="na-right">
-                <span class="na-src">Yahoo Finance - Top Stories</span>
-                <span class="na-imp medium">60</span>
-                <span class="na-chev">▾</span>
-              </span>
-            </summary>
-            <div class="na-body">
-              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Analysts</b> headline in focus on NVDA, touching analyst. Flagged because: quality source; market-sensitive term. Reported by <b>Yahoo Finance - Top Stories</b> (quality source).</span>
-<span class="l-zh">一条<b>medium</b>影响级的<b>分析师</b>新闻，聚焦 NVDA，涉及 analyst。 入选原因：quality source；market-sensitive term。 来源：<b>Yahoo Finance - Top Stories</b>。</span></p>
-              <div class="na-tags">
-                <span class="na-pill">analyst</span>
-                <span class="na-pill tk">NVDA</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-                <a class="na-read" href="https://finance.yahoo.com/markets/stocks/articles/nvidia-stock-twilight-zone-analysts-175335898.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-06-30T17:53:35Z"></span>
-              </div>
-            </div>
-          </details>
-          
-          <details class="na-item"
-            data-theme="earnings" data-importance="medium"
-            data-search="anthropic launches claude science in bid to expand revenue streams ahead of ipo  yahoo.com yahoo finance - top stories earnings equities earnings deals ">
-            <summary class="na-sum">
-              <span class="na-theme th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="na-htitle"><span class="l-en">Anthropic launches Claude Science in bid to expand revenue streams ahead of IPO</span><span class="l-zh">Anthropic launches Claude Science in bid to expand revenue streams ahead of IPO</span></span>
+              <span class="na-htitle"><span class="l-en">AMD’s AI CPU Dominance Prompts Wells Fargo to Raise Price Target to $615</span><span class="l-zh">AMD’s AI CPU Dominance Prompts Wells Fargo to Raise Price Target to $615</span></span>
               <span class="na-right">
                 <span class="na-src">Yahoo Finance - Top Stories</span>
                 <span class="na-imp medium">56</span>
@@ -862,15 +791,67 @@
               </span>
             </summary>
             <div class="na-body">
-              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Earnings</b> headline, touching equities, earnings, deals. Flagged because: quality source; market-sensitive term. Reported by <b>Yahoo Finance - Top Stories</b> (quality source).</span>
-<span class="l-zh">一条<b>medium</b>影响级的<b>业绩</b>新闻，涉及 equities、earnings、deals。 入选原因：quality source；market-sensitive term。 来源：<b>Yahoo Finance - Top Stories</b>。</span></p>
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Analysts</b> headline in focus on AMD, QQQ, touching analyst. Flagged because: quality source; tier-1 macro term. Reported by <b>Yahoo Finance - Top Stories</b> (quality source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>分析师</b>新闻，聚焦 AMD、QQQ，涉及 analyst。 入选原因：quality source；tier-1 macro term。 来源：<b>Yahoo Finance - Top Stories</b>。</span></p>
               <div class="na-tags">
-                <span class="na-pill">equities</span><span class="na-pill">earnings</span><span class="na-pill">deals</span>
+                <span class="na-pill">analyst</span>
+                <span class="na-pill tk">AMD</span><span class="na-pill tk">QQQ</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.barrons.com/articles/amd-stock-price-target-wells-fargo-upgrade-8e1a758b?siteid=yhoof2&yptr=yahoo" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-30T18:53:00Z"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="earnings" data-importance="medium"
+            data-search="avav stock skyrockets as aerovironment reports blockbuster q4 earnings results  yahoo.com yahoo finance - top stories earnings earnings ">
+            <summary class="na-sum">
+              <span class="na-theme th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="na-htitle"><span class="l-en">AVAV Stock Skyrockets as AeroVironment Reports Blockbuster Q4 Earnings Results</span><span class="l-zh">AVAV Stock Skyrockets as AeroVironment Reports Blockbuster Q4 Earnings Results</span></span>
+              <span class="na-right">
+                <span class="na-src">Yahoo Finance - Top Stories</span>
+                <span class="na-imp medium">63</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Earnings</b> headline, touching earnings. Flagged because: quality source; tier-1 macro term. Reported by <b>Yahoo Finance - Top Stories</b> (quality source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>业绩</b>新闻，涉及 earnings。 入选原因：quality source；tier-1 macro term。 来源：<b>Yahoo Finance - Top Stories</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">earnings</span>
                 
               </div>
               <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-                <a class="na-read" href="https://finance.yahoo.com/technology/article/anthropic-launches-claude-science-in-bid-to-expand-revenue-streams-ahead-of-ipo-170000823.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
-                <span class="na-when rel-time" data-ts="2026-06-30T17:00:00Z"></span>
+                <a class="na-read" href="https://finance.yahoo.com/markets/stocks/articles/avav-stock-skyrockets-aerovironment-reports-193950000.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-30T19:39:50Z"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="deals" data-importance="medium"
+            data-search="exclusive-activist jana partners has new stake in everpure, sources  yahoo.com yahoo finance - top stories deals deals ">
+            <summary class="na-sum">
+              <span class="na-theme th-deals"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
+              <span class="na-htitle"><span class="l-en">Exclusive-Activist Jana Partners has new stake in Everpure, sources</span><span class="l-zh">Exclusive-Activist Jana Partners has new stake in Everpure, sources</span></span>
+              <span class="na-right">
+                <span class="na-src">Yahoo Finance - Top Stories</span>
+                <span class="na-imp medium">56</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Deals</b> headline, touching deals. Flagged because: quality source; market-sensitive term. Reported by <b>Yahoo Finance - Top Stories</b> (quality source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>并购/IPO</b>新闻，涉及 deals。 入选原因：quality source；market-sensitive term。 来源：<b>Yahoo Finance - Top Stories</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">deals</span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://finance.yahoo.com/markets/stocks/articles/exclusive-activist-jana-partners-stake-193258851.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-30T19:32:58Z"></span>
               </div>
             </div>
           </details>
@@ -988,8 +969,8 @@
 
         <div class="sc-foot">
           <span class="sc-srcs"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
-          <span><b>6</b> <span class="l-en">sources</span><span class="l-zh">来源</span> · 229 <span class="l-en">scanned</span><span class="l-zh">已扫描</span> · 18 <span class="l-en">kept</span><span class="l-zh">保留</span></span>
-          <span style="margin-left:auto">76 <span class="l-en">official</span><span class="l-zh">官方</span> · 153 RSS · 0 GDELT</span>
+          <span><b>6</b> <span class="l-en">sources</span><span class="l-zh">来源</span> · 228 <span class="l-en">scanned</span><span class="l-zh">已扫描</span> · 18 <span class="l-en">kept</span><span class="l-zh">保留</span></span>
+          <span style="margin-left:auto">76 <span class="l-en">official</span><span class="l-zh">官方</span> · 152 RSS · 0 GDELT</span>
         </div>
       </section>
 
@@ -1071,22 +1052,22 @@
         <div class="rail-line" style="display:block">
           <div class="rail-main" style="font-weight:700;margin-bottom:4px"><span class="l-en">Next Fed decision</span><span class="l-zh">下次美联储决议</span></div>
           
-          <div class="odds-row"><span class="o">No change</span><b>79.5%</b><span class="r-neg">-2.0</span></div>
+          <div class="odds-row"><span class="o">No change</span><b>80.5%</b><span class="r-pos">+1.0</span></div>
           
-          <div class="odds-row"><span class="o">25 bps increase</span><b>18.9%</b><span class="r-pos">+1.4</span></div>
+          <div class="odds-row"><span class="o">25 bps increase</span><b>17.7%</b><span class="r-neg">-1.2</span></div>
           
-          <div class="odds-row"><span class="o">25 bps decrease</span><b>1.1%</b><span class="r-neg">-0.1</span></div>
+          <div class="odds-row"><span class="o">25 bps decrease</span><b>0.9%</b><span class="r-neg">-0.3</span></div>
           
         </div>
         
         <div class="rail-line" style="display:block">
           <div class="rail-main" style="font-weight:700;margin-bottom:4px"><span class="l-en">Fed cuts this year</span><span class="l-zh">今年降息次数</span></div>
           
-          <div class="odds-row"><span class="o">0 (0 bps)</span><b>78.2%</b><span class="r-pos">+0.2</span></div>
+          <div class="odds-row"><span class="o">0 (0 bps)</span><b>78.0%</b><span class="r-neg">-0.3</span></div>
           
-          <div class="odds-row"><span class="o">1 (25 bps)</span><b>12.5%</b><span></span></div>
+          <div class="odds-row"><span class="o">1 (25 bps)</span><b>14.5%</b><span class="r-pos">+2.0</span></div>
           
-          <div class="odds-row"><span class="o">2 (50 bps)</span><b>3.5%</b><span class="r-neg">-1.1</span></div>
+          <div class="odds-row"><span class="o">2 (50 bps)</span><b>3.2%</b><span class="r-neg">-0.3</span></div>
           
         </div>
         
@@ -1096,14 +1077,14 @@
 
       <section class="rail-card">
         <h2><span class="l-en">Feed intelligence</span><span class="l-zh">新闻情报</span></h2>
-        <div class="rail-line"><div class="rail-date"><span class="l-en">Read</span><span class="l-zh">读数</span></div><div class="rail-main">6 high-impact items; dominant channel fiscal_trade; source mix stock_wire:8, tier1:4, quality:4</div></div>
+        <div class="rail-line"><div class="rail-date"><span class="l-en">Read</span><span class="l-zh">读数</span></div><div class="rail-main">3 high-impact items; dominant channel earnings; source mix stock_wire:8, tier1:4, quality:4</div></div>
         <div class="rail-line">
           <div class="rail-date"><span class="l-en">Channels</span><span class="l-zh">通道</span></div>
-          <div class="rail-main"><span class="rail-tag">fiscal_trade</span><span class="rail-tag">earnings</span><span class="rail-tag">capital_return</span><span class="rail-tag">analyst</span><span class="rail-tag">equities</span></div>
+          <div class="rail-main"><span class="rail-tag">earnings</span><span class="rail-tag">fiscal_trade</span><span class="rail-tag">stocks</span><span class="rail-tag">analyst</span><span class="rail-tag">equities</span></div>
         </div>
         <div class="rail-line">
           <div class="rail-date"><span class="l-en">Tickers</span><span class="l-zh">标的</span></div>
-          <div class="rail-main"><span class="rail-tag">MU</span><span class="rail-tag">NVDA</span><span class="rail-tag">GLD</span><span class="rail-tag">SPY</span><span class="rail-tag">XLK</span><span class="rail-tag">CRM</span></div>
+          <div class="rail-main"><span class="rail-tag">XLK</span><span class="rail-tag">QQQ</span><span class="rail-tag">MU</span><span class="rail-tag">SPY</span><span class="rail-tag">AMZN</span><span class="rail-tag">CRM</span></div>
         </div>
         
         <div class="rail-line"><div class="rail-date"><span class="l-en">SF-Fed</span><span class="l-zh">旧金山联储</span></div><div class="rail-main"><span class="l-en">Daily News Sentiment</span><span class="l-zh">每日新闻情绪</span>: <b class="r-pos"><span class="l-en">optimistic</span><span class="l-zh">乐观</span></b> · z +1.1</div></div>
@@ -1113,10 +1094,10 @@
       
       <section class="rail-card">
         <h2><span class="l-en">Narrative texture</span><span class="l-zh">叙事纹理</span></h2>
-        <div class="rail-line"><div class="rail-date">NDI</div><div class="rail-main"><b>79.2/100</b> · <span class="l-en">Elevated</span><span class="l-zh">偏高</span> <span class="mut">(<span class="l-en">display-only</span><span class="l-zh">仅展示</span>)</span></div></div>
-        <div class="rail-line"><div class="rail-date">EPU</div><div class="rail-main">95.1<span class="l-en">th pct</span><span class="l-zh">百分位</span></div></div>
-        <div class="rail-line"><div class="rail-date">GPR</div><div class="rail-main">92.2<span class="l-en">th pct</span><span class="l-zh">百分位</span> · <span class="l-en">led by</span><span class="l-zh">主导</span> <span class="l-en">acts</span><span class="l-zh">行动</span></div></div>
-        <div class="rail-line"><div class="rail-date">VIX</div><div class="rail-main">50.3<span class="l-en">th pct</span><span class="l-zh">百分位</span></div></div>
+        <div class="rail-line"><div class="rail-date">NDI</div><div class="rail-main"><b>71.6/100</b> · <span class="l-en">Elevated</span><span class="l-zh">偏高</span> <span class="mut">(<span class="l-en">display-only</span><span class="l-zh">仅展示</span>)</span></div></div>
+        <div class="rail-line"><div class="rail-date">EPU</div><div class="rail-main">79.6<span class="l-en">th pct</span><span class="l-zh">百分位</span></div></div>
+        <div class="rail-line"><div class="rail-date">GPR</div><div class="rail-main">92.7<span class="l-en">th pct</span><span class="l-zh">百分位</span> · <span class="l-en">led by</span><span class="l-zh">主导</span> <span class="l-en">threats</span><span class="l-zh">威胁</span></div></div>
+        <div class="rail-line"><div class="rail-date">VIX</div><div class="rail-main">42.4<span class="l-en">th pct</span><span class="l-zh">百分位</span></div></div>
       </section>
       
     </aside>

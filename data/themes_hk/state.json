@@ -1,4 +1,11 @@
 {
+  "_debounce": {
+    "lead": {
+      "displayed": "hk_banks",
+      "pending": null
+    },
+    "reco": {}
+  },
   "hk_banks": {
     "label": "emerging",
     "name": "Banks (H + HK)",

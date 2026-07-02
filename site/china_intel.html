@@ -6,7 +6,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><span class="l-en">China Intelligence</span><span class="l-zh">中国情报中心</span> — <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span></title>
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   /* ---------- shared Research-Reports chrome ---------- */
@@ -30,6 +30,9 @@
   .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
   .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
   .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
+  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
+  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
   footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
   
   .ci-hero { max-width:1060px; margin:18px auto 0; }
@@ -295,8 +298,12 @@
       /* the hamburger accordion caps each open dropdown at max-height:600px
          (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
          taller, so raise the cap for it (0,6,0 wins) — the parent flyout
-         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow. */
-      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px}}
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (0 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
     </style>
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
@@ -377,8 +384,8 @@
 <section class="ci-hero">
   <p class="eyebrow">🧠 <span class="l-en">China Intelligence</span><span class="l-zh">中国情报中心</span></p>
   <h1><span class="l-en">China Intelligence Hub</span><span class="l-zh">中国情报中心</span></h1>
-  <p class="lens"><span class="l-en">Central synthesis of five China surfaces — what matters most, cross-surface conviction, flagged tickers · context only · as of</span><span class="l-zh">五个中国面板的中央综合——最重要的事、跨面板共振、标记个股 · 仅供参考 · 截至</span> 2026-07-01
-   · <span class="l-en">freshest data</span><span class="l-zh">最新数据</span> 9<span class="l-en">d old</span><span class="l-zh">天</span></p>
+  <p class="lens"><span class="l-en">Central synthesis of five China surfaces — what matters most, cross-surface conviction, flagged tickers · context only · as of</span><span class="l-zh">五个中国面板的中央综合——最重要的事、跨面板共振、标记个股 · 仅供参考 · 截至</span> 2026-07-02
+   · <span class="l-en">freshest data</span><span class="l-zh">最新数据</span> 10<span class="l-en">d old</span><span class="l-zh">天</span></p>
 </section>
 
 <div class="ci-wrap">
@@ -392,7 +399,7 @@
     <span><span class="rk"><span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span></span>
       <span class="neu"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span></span>
     <span><span class="rk"><span class="l-en">Fear↔Euphoria</span><span class="l-zh">恐惧↔亢奋</span></span> <span class="l-en">Greed</span><span class="l-zh">贪婪</span></span>
-    <span><span class="rk">RORO</span> +0.08</span>
+    <span><span class="rk">RORO</span> +0.06</span>
     <span class="mut" style="font-size:11px"><span class="l-en">soft overlay — context, not a score leg</span><span class="l-zh">软性叠加——背景，非评分腿</span></span>
   </div>
   
@@ -431,9 +438,9 @@
       
       <tr>
         <td><b><span class="l-en">Coal</span><span class="l-zh">煤炭</span></b> <span class="sgn-pos">▲</span></td>
-        <td><span class="cc">52.0</span></td>
+        <td><span class="cc">50.6</span></td>
         <td><span class="bandpill b-high"><span class="l-en">Emerging</span><span class="l-zh">萌芽</span></span> <span class="sgn-pos">↑2</span></td>
-        <td><span class="cc">49.9</span> <span class="bandpill b-moderate"><span class="l-en">Moderate</span><span class="l-zh">中性</span></span></td>
+        <td><span class="cc">49.1</span> <span class="bandpill b-moderate"><span class="l-en">Moderate</span><span class="l-zh">中性</span></span></td>
         <td><div class="strength" style="width:64px" title="relative room vs crowd — not a % upside forecast"><i style="width:74%"></i></div></td>
         <td><span class="surf">radar</span><span class="surf">altdata</span></td>
         <td><span class="l-en">radar Sector net-flow → Coal · 4 alt-data members accumulating · emerging (leading the crowd)</span><span class="l-zh">雷达 板块净流入 → 煤炭 · 4 只成员吸筹 · 萌芽（领先于人群）</span><br><span class="mut" style="font-size:11px">陕西煤业 (601225.SS) · 山西焦煤 (000983.SZ) · 中国神华 (601088.SS)</span></td>
@@ -464,9 +471,9 @@
       
       <tr>
         <td><b><span class="l-en">Banks</span><span class="l-zh">银行</span></b> <span class="sgn-pos">▲</span></td>
-        <td><span class="cc">14.8</span></td>
+        <td><span class="cc">14.4</span></td>
         <td><span class="bandpill b-elevated"><span class="l-en">Early</span><span class="l-zh">早期</span></span> <span class="sgn-pos">↑1</span></td>
-        <td><span class="cc">40.6</span> <span class="bandpill b-moderate"><span class="l-en">Moderate</span><span class="l-zh">中性</span></span></td>
+        <td><span class="cc">40.1</span> <span class="bandpill b-moderate"><span class="l-en">Moderate</span><span class="l-zh">中性</span></span></td>
         <td><div class="strength" style="width:64px" title="relative room vs crowd — not a % upside forecast"><i style="width:63%"></i></div></td>
         <td><span class="surf">radar</span><span class="surf">altdata</span><span class="surf">news</span></td>
         <td><span class="l-en">radar Sector net-flow → Banks · 6 China headlines · 10 alt-data members accumulating · early (leading the crowd)</span><span class="l-zh">雷达 板块净流入 → 银行 · 该主题 6 条头条 · 10 只成员吸筹 · 早期（领先于人群）</span><br><span class="mut" style="font-size:11px">招商银行 (600036.SS) · 平安银行 (000001.SZ) · 宁波银行 (002142.SZ)</span></td>
@@ -572,7 +579,7 @@
   • NBS PMI (mfg + non-mfg) (Jun 30) — Scheduled high-impact China release ahead.
   • Media sentiment cautious / risk-tilted lean — z -2.06 over 10d.
 STACKED READS:
-  • Coal (positive) cc=49.9 [radar+altdata]
+  • Coal (positive) cc=49.1 [radar+altdata]
   • Semiconductors (negative) cc=41.3 [radar+altdata]
   • Semiconductors (negative) cc=36.2 [radar+altdata]
 News: media sentiment cautious (z -2.06), 196 events/7d
@@ -602,14 +609,14 @@ Radar divergences: Sector net-flow→Semiconductors negative; Southbound flow→
       <div class="ic">🛰️</div><div class="nm"><span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span></div>
       <div class="v">10</div>
       <div class="s"><span class="l-en">convergence watchlist</span><span class="l-zh">共振自选</span> · 4009 <span class="l-en">full-coverage</span><span class="l-zh">三源齐全</span></div>
-      <div class="age">2026-07-01</div>
+      <div class="age">2026-07-02</div>
       <div class="go"><span class="l-en">Open alt-data desk →</span><span class="l-zh">打开另类数据台 →</span></div>
     </a>
     <a class="scard" href="china_radar.html">
       <div class="ic">📡</div><div class="nm"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></div>
       <div class="v">5</div>
       <div class="s"><span class="l-en">active divergences</span><span class="l-zh">活跃背离</span> · <span class="l-en">ledger</span><span class="l-zh">台账</span> <span class="l-en">Unproven</span><span class="l-zh">未验证</span></div>
-      <div class="age">2026-07-01</div>
+      <div class="age">2026-07-02</div>
       <div class="go"><span class="l-en">Open radar →</span><span class="l-zh">打开雷达 →</span></div>
     </a>
   </div>
