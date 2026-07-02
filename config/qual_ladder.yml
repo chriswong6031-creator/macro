@@ -268,3 +268,26 @@ lexical.sfed_sentiment_z:
   notes: >
     SF-Fed sentiment z-score. D7 one-shot harness (separate from EPU/GPR).
     Retire on fail, publish verdict.
+
+# ---------------------------------------------------------------------------
+# WHITE HOUSE DESK — W5: policy alert qledger adapter
+# (scripts/build_whitehouse.py → engine/whitehouse_brain.py)
+# ---------------------------------------------------------------------------
+whitehouse.alert:
+  field: activated
+  artifact_glob: "data/whitehouse/alerts.jsonl"
+  producer: scripts/build_whitehouse.py
+  claim_family: whitehouse
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    One qledger claim per activated WH alert ticker (entity scope) or per macro
+    activation (macro scope, bench=SPY) when no tickers are named. Direction from
+    per-ticker direction ('benefit'→+1, 'hurt'→-1) or overall tone
+    (tailwind→+1, headwind→-1, mixed/neutral→0). Horizon = banner_days.
+    Timestamp quality: PUBLISHER_STATED (WH RSS pubDate, W0 #12 TZ fix applied).
+    SHADOW lane: graded nightly vs placebo tape after n_dates>=25 accrues.
+    is_context_only=True on every claim — this desk is display-only; activation
+    feeds no score, size, or allocation.
