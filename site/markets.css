@@ -82,12 +82,39 @@
   .mkt-dispersion { grid-template-columns: 1fr; }
 }
 
-/* ---- convergence legend swatch + timeline zones ------------------------- */
-.cyc-legend .lv { width: 16px; height: 9px; border-radius: 2px;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--warn) 60%, transparent), color-mix(in srgb, var(--up) 60%, transparent)); }
+/* ---- convergence legend swatch + timeline zones (W3.5: .lv swatch removed) */
 .mmc-vband { transition: opacity .3s ease; }
 .mmc-vlabel rect { filter: drop-shadow(0 1px 2px rgba(0,0,0,.28)); }
 .mmc-vlabel:hover rect { opacity: 1; }
+
+/* ---- W3.5: engine source chip (on cards + detail panel) ----------------- */
+.cc-eng { font-size: 10.5px; color: var(--muted); margin: 0 0 7px; line-height: 1.4; }
+.cc-eng-chip { display: inline-block; }
+.cc-eng-link { color: var(--link); text-decoration: none; }
+.cc-eng-link:hover { text-decoration: underline; }
+.cc-eng-opinion { color: color-mix(in srgb, var(--warn) 80%, var(--muted)); }
+
+/* ---- W3.5: valuation staleness chip in detail panel --------------------- */
+.cc-val-age { font-size: 10px; font-weight: 500; color: var(--muted); }
+.cc-val-stale-amber { color: var(--warn, #c98a2e); }
+.cc-val-stale-red { color: var(--down, #e06464); }
+
+/* ---- W3.5: inline fact note (stat-only label, analyst-est label) -------- */
+.cyc-facts .fv-note { font-size: 10px; color: var(--muted); font-weight: 400; }
+
+/* ---- W3.5: engine panel in detail view ---------------------------------- */
+.cyc-facts-eng .f .fk { min-width: 140px; }
+.eng-basis { font-size: 10px; color: var(--muted); font-weight: 400; }
+.eng-overdue { display: inline-block; background: color-mix(in srgb, var(--warn) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
+  color: var(--warn, #c98a2e); border-radius: 5px; font-size: 9.5px; padding: 1px 5px;
+  font-weight: 600; letter-spacing: .03em; vertical-align: middle; margin-left: 4px; }
+.cyc-eng-link-row { margin: 8px 0 4px; }
+.cyc-cc-link { display: inline-block; font-size: 11.5px; font-weight: 600;
+  color: var(--link); text-decoration: none; padding: 4px 10px; border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--link) 40%, var(--line));
+  background: color-mix(in srgb, var(--link) 8%, transparent); transition: background .18s; }
+.cyc-cc-link:hover { background: color-mix(in srgb, var(--link) 16%, transparent); text-decoration: none; }
 
 /* ---- compact focus panel (markets carries more content than cycle) ------ */
 .cyc-panels { padding: 15px 16px; }

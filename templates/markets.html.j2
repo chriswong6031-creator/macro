@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" class="cyc-page">
 {# Global Market Cycles — bespoke cycle-family page. Data/logic/styles are committed
-   site/ assets (markets_data.js / markets_app.js / mm_charts.js / markets_i18n.js /
-   cycle.css); this template owns only the page shell + the shared nav include, rendered
-   by scripts/build_markets.py into site/markets.html. #}
+   site/ assets; this template owns only the page shell + the shared nav include.
+   W3.5: markets_engine.js (window.MARKETS_ENGINE) is emitted by build_markets.py and
+   loaded BEFORE markets_app.js so the app can use engine pos_v2 as the plotted position.
+   Rendered by scripts/build_markets.py into site/markets.html. #}
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -25,10 +26,11 @@
       <div class="cyc-kicker"><span class="hb"></span> <span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></div>
       <h1 class="cyc-title"><span class="l-en">Where every market stands</span><span class="l-zh">各市场所处位置</span></h1>
       <p class="cyc-sub"><span class="l-en">Nine national equity markets on one clock — the US, UK, Europe, Japan, China, Hong Kong,
-        Taiwan, India and Canada, each plotted on real, web-sourced data. The y-axis is <b>how far each index has
-        retraced from its all-time high</b>: high = at the highs (extended), low = washed-out. Observed history
-        (solid) and a regime-conditioned projection (dashed, with an uncertainty cone), plus valuations — so you see
-        not just <em>when</em> in the cycle each market sits, but how <em>cheap or rich</em> it is there.</span><span class="l-zh">九个国家股市同框 —— 美国、英国、欧洲、日本、中国、香港、台湾、印度与加拿大，全部基于真实的网络数据。纵轴表示<b>每个指数距其历史高点回撤了多少</b>：越高=越接近高点（拉伸），越低=超卖。实线为已发生的历史，虚线（含不确定性锥形）为情景预测，并附估值 —— 让你不仅看到每个市场处于周期的<em>哪个阶段</em>，还能看到它在该位置是<em>便宜还是昂贵</em>。</span></p>
+        Taiwan, India and Canada. The y-axis is a <b>cycle oscillator (0–100)</b>: high = extended near record highs,
+        low = washed-out deep below them. Seven markets are engine-backed (country_cycles pos_v2);
+        US and Europe show analyst estimates until their proxies are added to the engine.
+        Observed history (solid), projection (dashed + uncertainty cone), and curated valuations with as-of dates
+        — so you see not just <em>when</em> in the cycle each market sits, but how <em>cheap or rich</em> it is there.</span><span class="l-zh">九个国家股市同框 —— 美国、英国、欧洲、日本、中国、香港、台湾、印度与加拿大。纵轴是<b>周期振荡器（0–100）</b>：高=接近历史高点（拉伸），低=深跌超卖。七个市场使用引擎数据（country_cycles pos_v2）；美国与欧洲的代理 ETF 尚未入引擎，显示分析师估算。实线为历史，虚线（含锥形区间）为预测，并附带标注截止日期的精选估值 —— 让你不仅看到每个市场处于周期的<em>哪个阶段</em>，还能看到它在该位置是<em>便宜还是昂贵</em>。</span></p>
     </div>
     <div class="cyc-ctrls">
       <span class="cyc-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> <span id="cyc-asof">…</span></span>
@@ -44,8 +46,7 @@
             <span><i class="ls"></i> <span class="l-en">History</span><span class="l-zh">历史</span></span>
             <span><i class="lp"></i> <span class="l-en">Projection</span><span class="l-zh">预测</span></span>
             <span><i class="lc"></i> <span class="l-en">Uncertainty</span><span class="l-zh">不确定性</span></span>
-            <span><i class="lv"></i> <span class="l-en">Convergence</span><span class="l-zh">共振拐点</span></span>
-          </div>
+          </div>{# W3.5: convergence legend item removed — convergenceBands() retired (fake artifact) #}
           <div class="cyc-zoom" id="cyc-zoom" aria-label="Zoom"></div>
         </div>
       </div>
@@ -91,8 +92,9 @@
 
 <script src="markets_i18n.js?v=2"></script>
 <script src="markets_data.js?v=2"></script>
+<script src="marketsdata/markets_engine.js?v=1"></script>
 <script src="mm_charts.js?v=2"></script>
-<script src="markets_app.js?v=6"></script>
+<script src="markets_app.js?v=7"></script>
 <script>try{document.getElementById('cyc-asof').textContent=(window.MARKET_META||{}).asOf||'';}catch(e){}</script>
 <script>
 /* markets_data.js staleness banner — INTL-47.
