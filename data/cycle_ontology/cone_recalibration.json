@@ -1,0 +1,78 @@
+{
+  "schema": "cone_recalibration.v1",
+  "generated_at": "2026-07-02T18:59:34.070650+00:00",
+  "nominal": 0.8,
+  "source": "engine.promise_graders.cone_grade (W2.4)",
+  "note": "recal_halfwidth = quantile(|timing_err|, nominal) from the realized turn-timing distribution; replaces lerp(1.5,13) / tilt(1.35,0.7). Use the forward_only multiplier when the projection points forward; the headline multiplier is dominated by chronically-overdue projections (W2.4 finding: re-anchoring repaint, cycles-core-4).",
+  "engines": {
+    "sector_cycles": {
+      "epoch": {
+        "basis_version": "price_v1",
+        "zz_version": "zz14_v0",
+        "engine_fingerprint": "1f313352836b"
+      },
+      "cohort": "BACKTEST",
+      "headline": {
+        "empirical": 0.188,
+        "n": 442,
+        "recal_halfwidth_days": 1484.2,
+        "recal_multiplier": 8.191,
+        "verdict": "too_tight"
+      },
+      "forward_only": {
+        "empirical": 0.266,
+        "n": 289,
+        "recal_halfwidth_days": 1518.4,
+        "recal_multiplier": 7.657,
+        "verdict": "too_tight"
+      },
+      "overdue_fraction": 0.346
+    },
+    "country_cycles": {
+      "epoch": {
+        "basis_version": "price_v1",
+        "zz_version": "zz14_v0",
+        "engine_fingerprint": "1f313352836b"
+      },
+      "cohort": "BACKTEST",
+      "headline": {
+        "empirical": 0.283,
+        "n": 1235,
+        "recal_halfwidth_days": 396.0,
+        "recal_multiplier": 3.567,
+        "verdict": "too_tight"
+      },
+      "forward_only": {
+        "empirical": 0.347,
+        "n": 805,
+        "recal_halfwidth_days": 381.0,
+        "recal_multiplier": 3.291,
+        "verdict": "too_tight"
+      },
+      "overdue_fraction": 0.348
+    },
+    "china_sector_cycles": {
+      "epoch": {
+        "basis_version": "price_v1",
+        "zz_version": "zz14_v0",
+        "engine_fingerprint": "1f313352836b"
+      },
+      "cohort": "BACKTEST",
+      "headline": {
+        "empirical": 0.359,
+        "n": 856,
+        "recal_halfwidth_days": 275.0,
+        "recal_multiplier": 3.118,
+        "verdict": "too_tight"
+      },
+      "forward_only": {
+        "empirical": 0.414,
+        "n": 640,
+        "recal_halfwidth_days": 259.0,
+        "recal_multiplier": 2.949,
+        "verdict": "too_tight"
+      },
+      "overdue_fraction": 0.252
+    }
+  }
+}
