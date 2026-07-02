@@ -716,8 +716,19 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             reco, regime_demoted = "hold", True
         reasons = (t_why + mtf_why + m_why + c_why)[:4] or ["mixed signals"]
 
-        # advanced display-only textures (bull age / overbought / clean entry / roll-over)
-        textures = basket_score.theme_textures(lvl, fp, fp5, crowd, breadth_d, perf)
+        # advanced display-only textures (bull age / overbought / clean entry / roll-over /
+        # intra-basket breadth divergence — mc_closes is additive; None-safe in theme_textures)
+        textures = basket_score.theme_textures(lvl, fp, fp5, crowd, breadth_d, perf,
+                                               mc_closes=mc_closes)
+        # achieved-lead-time forward log for the divergence texture: stamp elevated/high
+        # reads keyed (date, basket, region) — keep-first, so intraday rebuilds can't drift
+        # the stamp — so a later grader can measure the lead vs the fading/deteriorating
+        # label guard + the realized fwd 21d drawdown (T+1 convention). Never fatal.
+        try:
+            from engine import basket_breadth_divergence as _bd
+            _bd.log_stamp(bid, region, textures.get("breadth_divergence"), label, idx[i])
+        except Exception:  # noqa: BLE001 — accountability log is enrichment, never fatal
+            pass
         # this theme's advance/decline today (live members) — feeds the breadth-leadership read
         day_live = rets[present].where(mask).iloc[i].dropna()
         adv_i = int((day_live > 0).sum())
