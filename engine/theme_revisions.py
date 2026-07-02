@@ -51,9 +51,18 @@ PROXY_DEADBAND = 0.5       # |median 30v90 drift-diff| (pct-pts/mo) below this =
                            # keeps the sign-only proxy from being more trigger-happy than
                            # the real _accel_state path (which gates on breadth + accel)
 
+# W2a (P1-A): minimum n_covering (total analyst coverage count) to admit a name to the
+# coverage-weighted breadth_cov rollup.  Below this threshold the name is excluded from
+# the theme breadth_cov mean (the n_analysts reviser count is not substituted).
+MIN_COVERING = 5
+# W2a: minimum number of theme members with breadth_cov for the theme-level rollup
+# to be emitted.  When fewer members have the field, theme breadth_cov = None.
+MIN_MEMBERS_COV = 3
+
 WEIGHTS = {"breadth": "mean member net-up share [-1,1]",
            "est_drift_90d": "median member 90d consensus-EPS drift %",
-           "breadth_accel": "theme breadth now - breadth ~prior_snapshot ago (PIT, the broadening gauge)"}
+           "breadth_accel": "theme breadth now - breadth ~prior_snapshot ago (PIT, the broadening gauge)",
+           "breadth_cov": "W2a coverage-normalised breadth: mean of (up-dn)/n_covering over members with n_covering>=MIN_COVERING; None when fewer than MIN_MEMBERS_COV members have coverage data"}
 
 
 def _latest() -> pd.DataFrame | None:
@@ -85,6 +94,32 @@ def _theme_breadth(rows: pd.DataFrame) -> float | None:
     if ok.empty:
         return None
     return round(float(ok["breadth"].mean()), 3)
+
+
+def _theme_breadth_cov(rows: pd.DataFrame) -> float | None:
+    """W2a (P1-A): coverage-normalised breadth rollup.
+
+    Computes the coverage-weighted mean of `breadth_cov` (= (up-dn)/n_covering) over
+    members that have BOTH n_covering >= MIN_COVERING AND a non-null breadth_cov.
+
+    HARD HONESTY RULE: n_analysts (the reviser count) is NEVER substituted when
+    n_covering is absent.  If fewer than MIN_MEMBERS_COV members have the field,
+    returns None — no de-saturation for this theme in this build.
+    """
+    if "breadth_cov" not in rows.columns or "n_covering" not in rows.columns:
+        return None
+    ok = rows[
+        rows["n_covering"].notna() &
+        (rows["n_covering"] >= MIN_COVERING) &
+        rows["breadth_cov"].notna()
+    ]
+    if len(ok) < MIN_MEMBERS_COV:
+        return None
+    # coverage-weighted mean: heavier weight to more-covered names
+    weights = ok["n_covering"].astype(float)
+    if weights.sum() == 0:
+        return None
+    return round(float((ok["breadth_cov"] * weights).sum() / weights.sum()), 4)
 
 
 def _accel_state(breadth_now: float, accel: float) -> str:
@@ -250,6 +285,8 @@ def theme_revisions_for(theme_key: str, name: str, members: list[str],
     net_up_total = (round(float(covered["net_up_30d"].sum()), 1)
                     if (not covered.empty and "net_up_30d" in covered.columns) else None)
     bn = _broadening(theme_key, members, hist, breadth, latest)
+    # W2a (P1-A): coverage-normalised breadth rollup — additive, never replaces legacy
+    breadth_cov = _theme_breadth_cov(rows)
     # top member contributors for transparency (largest |breadth| with coverage)
     contrib = []
     for tk, r in covered.sort_values("breadth").iterrows():
@@ -257,6 +294,11 @@ def theme_revisions_for(theme_key: str, name: str, members: list[str],
                        "n_analysts": int(r["n_analysts"])}
         if "est_chg_90d" in r.index:
             entry["est_chg_90d"] = round(float(r["est_chg_90d"]), 1)
+        # W2a: surface per-member n_covering and breadth_cov for transparency
+        if "n_covering" in r.index and pd.notna(r["n_covering"]):
+            entry["n_covering"] = int(r["n_covering"])
+        if "breadth_cov" in r.index and pd.notna(r["breadth_cov"]):
+            entry["breadth_cov"] = round(float(r["breadth_cov"]), 4)
         contrib.append(entry)
     out = {
         "name": name,
@@ -270,6 +312,9 @@ def theme_revisions_for(theme_key: str, name: str, members: list[str],
         "n_covered": int(len(covered)),
         "n_members": len(members),
         "members": contrib[:8],
+        # W2a (P1-A): coverage-normalised breadth — None when coverage data unavailable
+        # HARD HONESTY RULE: this is absent (None) rather than substituted with n_analysts
+        "breadth_cov": breadth_cov,
     }
     # surface the adaptive-lookback / proxy fields when present
     if bn.get("basis_days") is not None:
