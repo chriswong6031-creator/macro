@@ -1,0 +1,136 @@
+{
+  "run_id": "2026-07-02T11:29:12.907921+00:00_50e27449f5ac",
+  "generated_at": "2026-07-02T11:29:12.927429+00:00",
+  "basis": "tr",
+  "epoch": "tr_v0",
+  "research_only": true,
+  "universe": {
+    "us_sector": [
+      "XLK",
+      "XLC",
+      "XLY",
+      "XLF",
+      "XLI",
+      "XLB",
+      "XLE",
+      "XLV",
+      "XLP",
+      "XLU",
+      "XLRE"
+    ],
+    "country": [
+      "EWG",
+      "EWU",
+      "EWQ",
+      "EWL",
+      "EWP",
+      "EWI",
+      "EWN",
+      "EWD",
+      "EWJ",
+      "EWA",
+      "EWH",
+      "EWS",
+      "EWC",
+      "FXI",
+      "INDA",
+      "EWT",
+      "EWY",
+      "EIDO",
+      "EWZ",
+      "EWW",
+      "ECH",
+      "EZA",
+      "TUR",
+      "EPOL"
+    ],
+    "skipped": "baskets + blocs (non-PIT membership; ruling A1/D2 \u00a70)"
+  },
+  "horizons_bars": [
+    21,
+    63,
+    126
+  ],
+  "wf_split": "2018-01-01",
+  "n_deciles": 10,
+  "min_months": 12,
+  "bootstrap": {
+    "draws": 800,
+    "seed": 7,
+    "blocks": "stamp months"
+  },
+  "convention": "first_close_strictly_after_stamp",
+  "n_month_ends": 258,
+  "n_stamps": 8344,
+  "n_matured": {
+    "21": 8309,
+    "63": 8204,
+    "126": 8099
+  },
+  "pit_spot_checks": [
+    {
+      "asof": "2024-03-31",
+      "ticker": "XLK",
+      "match": true,
+      "now": {
+        "phase": "Peak",
+        "pos": 84.3,
+        "signal": "SELL",
+        "osc_slope": -7.0,
+        "timing_state": "RALLY ON",
+        "dc_phase": "mid"
+      },
+      "proj_central": "2024-06"
+    },
+    {
+      "asof": "2017-10-31",
+      "ticker": "EWZ",
+      "match": true,
+      "now": {
+        "phase": "Downturn",
+        "pos": 59.8,
+        "signal": "SELL",
+        "osc_slope": -11.9,
+        "timing_state": "DECLINE",
+        "dc_phase": "mid"
+      },
+      "proj_central": "2018-02"
+    },
+    {
+      "asof": "2019-01-31",
+      "ticker": "XLF",
+      "match": true,
+      "now": {
+        "phase": "Recovery",
+        "pos": 25.9,
+        "signal": "BUY",
+        "osc_slope": 25.0,
+        "timing_state": "RALLY ON",
+        "dc_phase": "mid"
+      },
+      "proj_central": "2019-04"
+    }
+  ],
+  "pit_append_check": {
+    "asof": "2015-06-30",
+    "ticker": "XLK",
+    "match": true,
+    "world_a": {
+      "phase": "Trough",
+      "pos": 17.7,
+      "signal": null,
+      "osc_slope": -28.1,
+      "timing_state": "DECLINE"
+    },
+    "world_b": {
+      "phase": "Trough",
+      "pos": 17.7,
+      "signal": null,
+      "osc_slope": -28.1,
+      "timing_state": "DECLINE"
+    },
+    "proj_a": "2015-08",
+    "proj_b": "2015-08"
+  },
+  "git_sha": "50e27449f5ac"
+}
