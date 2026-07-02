@@ -2487,16 +2487,33 @@
           </div>
           {% set _basis = (c.axes.selection.basis or [])[:2] %}
           {% if _basis %}<div class="nb-basis">{% for b in _basis %}<span class="nbb nbb-{{ b.tier }}">{{ b.label }} {{ '%+.1f'|format(b.z) }}</span>{% endfor %}</div>{% endif %}
-          {# --- the VERIFIERS: dealer-gamma "Options check" + IV-spread directional lean + vol black hole --- #}
+          {# --- the VERIFIERS: dealer-gamma "Options check" + IV-spread directional lean + vol black hole ---
+             W6-US fix 4: GEX and IV-spread chips are HIDDEN when their gate is scored:false
+             (unvalidated, accruing history). A caution-only sublabel is shown instead when
+             the gate is closed and the verdict is non-neutral, so users see the data is accruing.
+             vol_squeeze is always shown — it has a scored weight in the entry axis. #}
           {% set _gc = c.gex_confirm %}{% set _vs = c.vol_squeeze %}{% set _iv = c.iv_spread_confirm %}
+          {# gate_scored=True means validated+weighted; False/absent means display-only → hide full chip #}
+          {% set _gc_scored = _gc and (_gc.gate_scored is defined and _gc.gate_scored) %}
+          {% set _iv_scored = _iv and (_iv.gate_scored is defined and _iv.gate_scored) %}
           {% set _sqshow = _vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION'] %}
-          {% set _ivshow = _iv and _iv.verdict in ['confirm','caution'] %}
-          {% if _gc or _sqshow or _ivshow %}
+          {% set _ivshow = _iv_scored and _iv.verdict in ['confirm','caution'] %}
+          {# unvalidated caution: show a muted "unvalidated — accruing" chip only when caution #}
+          {% set _gc_unval_caution = _gc and not _gc_scored and _gc.verdict == 'caution' %}
+          {% set _iv_unval_caution = _iv and not _iv_scored and _iv.verdict == 'caution' %}
+          {% if _gc_scored or _sqshow or _ivshow or _gc_unval_caution or _iv_unval_caution %}
           <div class="nb-vf">
-            {% if _gc %}{% set _gr = (_gc.reasons[0] if _gc.reasons else None) %}
-            <span class="nb-vchip vf-{{ _gc.verdict }}" title="Options check (dealer gamma){% if _gr %} — {{ _gr.en }}{% endif %}{% if _gc.levels.call_wall %} · call wall {{ _gc.levels.call_wall }}{% endif %}{% if _gc.levels.flip %} · flip {{ _gc.levels.flip }}{% endif %} · {{ _gc.caveat }} | 期权确认（做市商 Gamma）{% if _gr %} — {{ _gr.zh }}{% endif %} · {{ _gc.caveat_zh }}">{{ '✓' if _gc.verdict=='confirm' else ('⚠' if _gc.verdict=='caution' else '·') }} {{ t('Options', '期权') }} {% if _gc.verdict=='confirm' %}{{ t('confirm','确认') }}{% elif _gc.verdict=='caution' %}{{ t('caution','警示') }}{% else %}{{ t('neutral','中性') }}{% endif %}</span>{% endif %}
+            {# GEX chip: only when gate is scored=True (validated) #}
+            {% if _gc_scored %}{% set _gr = (_gc.reasons[0] if _gc.reasons else None) %}
+            <span class="nb-vchip vf-{{ _gc.verdict }}" title="Options check (dealer gamma){% if _gr %} — {{ _gr.en }}{% endif %}{% if _gc.levels.call_wall %} · call wall {{ _gc.levels.call_wall }}{% endif %}{% if _gc.levels.flip %} · flip {{ _gc.levels.flip }}{% endif %} · {{ _gc.caveat }} | 期权确认（做市商 Gamma）{% if _gr %} — {{ _gr.zh }}{% endif %} · {{ _gc.caveat_zh }}">{{ '✓' if _gc.verdict=='confirm' else ('⚠' if _gc.verdict=='caution' else '·') }} {{ t('Options', '期权') }} {% if _gc.verdict=='confirm' %}{{ t('confirm','确认') }}{% elif _gc.verdict=='caution' %}{{ t('caution','警示') }}{% else %}{{ t('neutral','中性') }}{% endif %}</span>
+            {% elif _gc_unval_caution %}
+            {# Unvalidated GEX caution: show a muted label so the data isn't silently hidden #}
+            <span class="nb-vchip vf-unval" title="Options positioning — unvalidated, accruing history (gate not yet open). Shows caution only; not in score. · 期权仓位——未验证，历史积累中（门控尚未开放）。仅显示警示；不计入分数。">⚠ {{ t('Options caution (unvalidated)', '期权警示（未验证）') }}</span>{% endif %}
+            {# IV-spread chip: only when gate is scored=True (validated) #}
             {% if _ivshow %}{% set _ir = (_iv.reasons[0] if _iv.reasons else None) %}
-            <span class="nb-vchip vf-{{ _iv.verdict }}" title="Options IV lean — Cremers-Weinbaum call−put implied-vol spread{% if _ir %} — {{ _ir.en }}{% endif %} · {{ _iv.caveat }} | 期权隐含波动率偏向 — Cremers-Weinbaum 看涨−看跌隐含波动率价差{% if _ir %} — {{ _ir.zh }}{% endif %} · {{ _iv.caveat_zh }}">{{ '↑' if _iv.verdict=='confirm' else '↓' }} {{ t('IV lean', 'IV偏向') }} {% if _iv.verdict=='confirm' %}{{ t('up','偏多') }}{% else %}{{ t('down','偏空') }}{% endif %}</span>{% endif %}
+            <span class="nb-vchip vf-{{ _iv.verdict }}" title="Options IV lean — Cremers-Weinbaum call−put implied-vol spread{% if _ir %} — {{ _ir.en }}{% endif %} · {{ _iv.caveat }} | 期权隐含波动率偏向 — Cremers-Weinbaum 看涨−看跌隐含波动率价差{% if _ir %} — {{ _ir.zh }}{% endif %} · {{ _iv.caveat_zh }}">{{ '↑' if _iv.verdict=='confirm' else '↓' }} {{ t('IV lean', 'IV偏向') }} {% if _iv.verdict=='confirm' %}{{ t('up','偏多') }}{% else %}{{ t('down','偏空') }}{% endif %}</span>
+            {% elif _iv_unval_caution %}
+            <span class="nb-vchip vf-unval" title="Options IV lean — Cremers-Weinbaum IV spread, unvalidated (accruing history, gate not open). Shows caution only. · 期权IV偏向——未验证（历史积累中，门控尚未开放）。仅显示警示。">⚠ {{ t('IV caution (unvalidated)', 'IV警示（未验证）') }}</span>{% endif %}
             {% if _sqshow %}
             <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" title="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %}{% if _vs.bbwp is not none %} · BBWP {{ _vs.bbwp }}{% endif %} — {{ _vs.caveat }} | 波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Move loading','蓄势待发') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% if _vs.volume_confirmed %} ✓{% endif %}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>{% endif %}
           </div>
