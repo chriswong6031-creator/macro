@@ -53,6 +53,11 @@ MAX_CASH = 0.60                  # breadth throttle ceiling
 ABSORB_DOMINANT = 0.72           # basket-return absorption above this = one-narrative regime
 MIN_HISTORY_D = 160              # skip a basket with too little history
 CROWD_TRIM = 0.5                 # crowding down-size strength (weight *= 1 - z·CROWD_TRIM)
+# Audit #30 validate-before-weight: the crowding trim's own gate (theme_crowding Phase-0) finds
+# NO forward-drawdown edge (Spearman ~0.07), so it does NOT bind allocation — DISPLAY-ONLY. Flip
+# True only when a forward-drawdown edge is measured on the actual thematic baskets (not the SPDR
+# proxy). When on, freed weight is redistributed (water-fill), never leaked to cash.
+CROWD_TRIM_SCORED = False
 
 
 # =========================================================================== #
@@ -491,13 +496,36 @@ def allocate(preps: list[dict], ranks: dict, crowd: dict, rot: dict,
     weights = {bid: base for bid in top}
     cash = 1.0 - base * len(top)                          # the breadth-driven cash escape
 
-    # crowding DOWN-SIZE overlay (asymmetric): trim a crowded theme, freed weight → cash
+    # crowding DOWN-SIZE overlay — VALIDATE-BEFORE-WEIGHT (audit #30). theme_crowding's OWN
+    # Phase-0 study finds basket-aggregate crowding has NO forward-drawdown edge (Spearman ~0.07
+    # on 27y); trimming ~half the held themes every run (crowding_z is centered ~0) leaked a
+    # persistent one-way drag straight to cash. So:
+    #   • the trim is DISPLAY-ONLY (CROWD_TRIM_SCORED=False) — computed and surfaced as a shadow
+    #     (crowd_trim_shadow) but NOT applied, until a forward-drawdown edge is measured; and
+    #   • if it is ever gated on, freed weight is REDISTRIBUTED across the other held themes
+    #     (water-fill), never leaked to cash (a crowding read is not a de-gross signal).
+    crowd_trim_shadow = {}
     for bid in top:
         cz = crowd.get(bid, {}).get("crowding_z")
-        if cz is not None and cz > 0:
-            trim = base * min(cz, 1.0) * CROWD_TRIM
-            weights[bid] -= trim
-            cash += trim
+        crowd_trim_shadow[bid] = round(base * min(cz, 1.0) * CROWD_TRIM, 4) \
+            if (cz is not None and cz > 0) else 0.0
+    if CROWD_TRIM_SCORED:
+        freed = 0.0
+        for bid in top:
+            trim = crowd_trim_shadow.get(bid, 0.0)
+            if trim > 0:
+                weights[bid] -= trim
+                freed += trim
+        # redistribute freed weight to the UN-trimmed held themes (water-fill), not to cash
+        recipients = [b for b in top if crowd_trim_shadow.get(b, 0.0) <= 0]
+        if freed > 0 and recipients:
+            add = freed / len(recipients)
+            for b in recipients:
+                weights[b] += add
+        elif freed > 0:                                  # everyone trimmed -> pro-rata back
+            tot = sum(weights[b] for b in top) or 1.0
+            for b in top:
+                weights[b] += freed * (weights[b] / tot)
 
     # position cap (dominant-narrative cap) — binds only at small N
     for bid in top:
@@ -518,6 +546,10 @@ def allocate(preps: list[dict], ranks: dict, crowd: dict, rot: dict,
              "vol_ann": _r(vols.get(b)),
              "crowding_z": crowd.get(b, {}).get("crowding_z"),
              "crowded": crowd.get(b, {}).get("crowded", False),
+             # display-only shadow: what the crowding trim WOULD subtract (not applied unless
+             # CROWD_TRIM_SCORED). Lets the page show the caution without the null-signal drag.
+             "crowd_trim_shadow": crowd_trim_shadow.get(b, 0.0),
+             "crowd_trim_applied": bool(CROWD_TRIM_SCORED and crowd_trim_shadow.get(b, 0.0) > 0),
              "val_z": ranks[b].get("val_z"), "val_upgrade": bool(ranks[b].get("val_upgrade")),
              "val_state": ranks[b].get("val_state")}
             for b in sorted(top, key=lambda x: ranks[x]["rank"])]
@@ -527,11 +559,24 @@ def allocate(preps: list[dict], ranks: dict, crowd: dict, rot: dict,
             "n_held": len(top), "crash_overlay": crash,
             "vol_overlay": vol_overlay,
             "de_overlapped": deoverlapped,
+            "crowd_trim_gate": {
+                "scored": bool(CROWD_TRIM_SCORED),
+                "basis": "measured",
+                "verdict": ("scored" if CROWD_TRIM_SCORED else "display-only"),
+                "note": ("basket-aggregate crowding has NO forward-drawdown edge "
+                         "(theme_crowding Phase-0, Spearman ~0.07 / 27y) — trim shown as a "
+                         "shadow, not applied; when scored, freed weight redistributes "
+                         "(water-fill) rather than leaking to cash"),
+                "artifact": "scripts/thematic_rotation_phase0.py"},
             "rule": (f"Equal-weight the top-{N_HOLD} themes above their own 200d trend "
                      "(the validated dual-momentum book), DE-OVERLAPPED to at most "
                      f"{MAX_PER_PARENT} per parent super-theme so the book stays diversified; "
-                     "idle slots sit in T-bills; crowded themes are trimmed toward cash; "
-                     f"capped at {int(POS_CAP*100)}%/theme."),
+                     "idle slots sit in T-bills; "
+                     + ("crowded themes are trimmed and the freed weight is redistributed across "
+                        "the other held themes; " if CROWD_TRIM_SCORED else
+                        "the crowding trim is display-only (no measured drawdown edge — not "
+                        "applied to weight); ")
+                     + f"capped at {int(POS_CAP*100)}%/theme."),
             "directional": False}
 
 

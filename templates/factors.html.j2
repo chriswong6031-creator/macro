@@ -447,7 +447,8 @@
   <!-- Composite leaders / laggards -->
   <div class="panel">
     <h2>{{ t('Multi-factor composite', '多因子综合') }}
-      {{ help("Equal-weight blend of value, quality, profitability, investment, payout and low-vol z-scores (a name needs at least 3 of them). The closest single thing to a smart-beta 'multifactor' tilt over the S&P 1500.", "价值、质量、盈利、投资、派息与低波动 z 分数的等权混合（每只至少需 3 个）。") }}
+      {{ help("The RANKING here uses only the factor legs that carry a POSITIVE measured information coefficient on the deep-history (leak-free) scorecard, IC-weighted with a sign constraint — negative-IC / FDR-failing legs (e.g. low-vol, investment) are EXCLUDED from the order because they rank names in an anti-predictive direction (the blind equal-weight composite's own scorecard grades it ic_ir -0.049). The per-leg leaderboards below still show every leg, badged with its IC/FDR verdict. Validate-before-weight: the order a trader sizes off cannot be moved by a leg the scorecard rejects.", "此处排序仅采用在深度历史（无泄漏）评分卡上信息系数为正的因子腿，按 IC 加权并施加符号约束——负 IC／未通过 FDR 的腿（如低波动、投资）被排除，因为它们会使排序反向。下方各腿榜单仍展示全部腿并标注其 IC/FDR 结论。") }}
+      {% if fac.rank_legs %}<span class="muted sm">· {{ t('ranked by','排序依据') }}: {% for l in fac.rank_legs %}{{ fac.factor_labels.get(l, l) }}{% if not loop.last %} · {% endif %}{% endfor %}{% if fac.composite_passport and fac.composite_passport.excluded_legs %} · {{ t('excluded (negative IC)','已排除（负IC）') }}: {% for l in fac.composite_passport.excluded_legs %}{{ fac.factor_labels.get(l, l) }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>{% endif %}
     </h2>
     <div class="twocol">
       <div>

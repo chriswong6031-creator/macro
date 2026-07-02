@@ -311,14 +311,30 @@ def build_flow(underlying: str, minute_df: pd.DataFrame, greeks_oi: pd.DataFrame
     dealer = measured_dealer(agg, greeks_oi, spot)
     newpos = vol_oi_newpos(agg, greeks_oi)
     positioning = oi_positioning(oi_today, prior_oi, spot, asof, prior_asof)
+    dir_ok = bool(gate.get("direction_reliable"))
     out = {"underlying": underlying, **summ, "dealer": dealer, "new_positions": newpos,
            "positioning": positioning,
            "signing": {"method": "minute tick-rule (no NBBO/trade-tape)",
-                       "direction_reliable": bool(gate.get("direction_reliable")),
+                       "direction_reliable": dir_ok,
                        "magnitude_reliable": bool(gate.get("magnitude_reliable", True)),
                        "per_trade_agreement": gate.get("per_trade_agreement"),
                        "net_sign_recovery": gate.get("net_sign_recovery"),
-                       "note": gate.get("note")}}
+                       "note": gate.get("note")},
+           # audit #46 — FIELD-LEVEL reliability contract. The tick-rule SIGNED fields carry a
+           # direction that is only trustworthy once the signing calibration gate passes; until
+           # then they are gated_out and a template MUST NOT render them directionally (as a
+           # bullish/bearish CALL). The magnitude fields (premium, volume, P/C, ΔOI) are signing-
+           # free and stay reliable. `net_sign_recovery` ~0.41 confirms the direction is soft.
+           "reliability": {
+               "net_premium_mn": {"gated_out": not dir_ok, "direction_reliable": dir_ok,
+                                  "magnitude_reliable": True,
+                                  "note": "signed by the minute tick-rule; direction soft until "
+                                          "the NBBO calibration gate passes — read magnitude only"},
+               "signed_pc": {"gated_out": not dir_ok, "direction_reliable": dir_ok,
+                             "note": "net-put/net-call from tick-rule signs — direction soft"},
+               "net_call_vol": {"gated_out": not dir_ok, "direction_reliable": dir_ok},
+               "net_put_vol": {"gated_out": not dir_ok, "direction_reliable": dir_ok},
+           }}
     out["verdict"] = _verdict(summ, dealer, newpos, gate, positioning)
     return out
 

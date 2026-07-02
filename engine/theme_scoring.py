@@ -596,7 +596,14 @@ def compute_theme_intel(region: str = "us") -> dict | None:
     rg_size = vol_regime.sizing_overlay(rg_snap, vol_regime.overlay_config())
     # graduated caution: WARNING shrinks gross (the rg_size scalar) but leaves recos intact;
     # only the hard backwardation-stress KILL-SWITCH stands the aggressive recos down to hold.
-    rg_kill = bool(rg_snap) and rg_snap.get("regime") == "backwardation-stress"
+    # VALIDATE-BEFORE-WEIGHT (audit #30): the regime-state caution failed its additive-value gate
+    # over the mechanical vol-target, so it may NOT bind a real reco decision. The reco-downgrade
+    # therefore fires ONLY when the caution leg is gated-on; otherwise it is display-only (the
+    # sizing_overlay already refuses to apply the caution to gross_scalar).
+    rg_caution_scored = vol_regime.regime_caution_scored()
+    rg_kill = (bool(rg_snap) and rg_snap.get("regime") == "backwardation-stress"
+               and rg_caution_scored)
+    rg_kill_shadow = bool(rg_snap) and rg_snap.get("regime") == "backwardation-stress"
     i = len(idx) - 1
     i5 = max(0, i - 5)
     ytd_anchor = idx[idx < pd.Timestamp(idx.max().year, 1, 1)].max() \

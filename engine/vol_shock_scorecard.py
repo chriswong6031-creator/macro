@@ -123,6 +123,50 @@ def _read_json(path: Path):
     return None
 
 
+def _gex_gate_scored() -> bool:
+    """The dealer-gamma regime may carry NON-ZERO weight in the fused gauge only after
+    scripts/validate_gex.py writes data/gex/gate.json with scored=true (the gamma regime beat
+    a forward realized-vol null on its own accrued history). Absent / closed -> the factor is
+    DISPLAY-ONLY and weighted 0 — audit #29 validate-before-weight, mirroring
+    engine.stock_score._gex_gate_scored. The dealer-gamma SIGN is an unobservable assumption;
+    it cannot be the heaviest factor in a forward-risk score while the gate is closed."""
+    try:
+        from lib import config
+        p = config.data_dir() / "gex" / "gate.json"
+        if p.exists():
+            return bool(json.loads(p.read_text()).get("scored", False))
+    except Exception:  # noqa: BLE001 — a missing/broken gate must never break the gauge
+        pass
+    return False
+
+
+def _products_disagree() -> dict | None:
+    """SPY vs SPX carry OPPOSITE assumption-signed gamma regimes on the SAME day surprisingly
+    often (audit #29: the long-call/short-put sign is unobservable, so index products contradict).
+    Rather than let whichever product resolves silently win, surface an explicit flag. Reads the
+    two published side-cars leak-free; returns None when it cannot compare."""
+    sd = _site_dir()
+    if sd is None:
+        return None
+    def _reg(name: str):
+        d = _read_json(sd / "gex" / f"{name}.json")
+        if not isinstance(d, dict):
+            return None, None
+        summ = d.get("summary") or d
+        return (summ.get("gamma_regime") or summ.get("regime")), (d.get("asof") or summ.get("asof"))
+    spy_r, spy_a = _reg("SPY")
+    spx_r, spx_a = _reg("SPX")
+    if spy_r is None or spx_r is None:
+        return None
+    return {"spy_regime": spy_r, "spx_regime": spx_r,
+            "spy_asof": spy_a, "spx_asof": spx_a,
+            "disagree": bool(spy_r != spx_r),
+            "note": ("SPY and SPX report OPPOSITE dealer-gamma regimes on the same underlying "
+                     "(the long-call/short-put sign is an unobservable assumption) — neither is "
+                     "canonical; read the gamma regime as assumption-driven, not observed."
+                     if spy_r != spx_r else "SPY and SPX agree on the gamma-regime sign today.")}
+
+
 # --------------------------------------------------------------------------- #
 # Input resolution — injected kwargs first, then leak-free fallbacks. Never I/O
 # that can block the build (every read is guarded; a miss just drops the factor).
@@ -416,6 +460,13 @@ def snapshot(latest: dict | None, vol_sentiment: dict | None = None,
     gx = _resolve_gex(latest, gex)
     # etf_pulse is accepted for forward-compat / caller symmetry; no factor reads it yet.
     _ = etf_pulse
+    # Audit #29 validate-before-weight: the dealer-gamma regime is assumption-signed and its
+    # validator (data/gex/gate.json) is structurally stuck at building_history (MIN_PER_BUCKET
+    # unreachable for constant-regime names, SPY/SPX contradict). Until the gate opens, the
+    # factor is DISPLAY-ONLY and weighted 0 — it cannot be the heaviest leg of a forward-risk
+    # score on an unobservable sign.
+    gex_scored = _gex_gate_scored()
+    products = _products_disagree()
 
     # (sub, value, note, base_weight, weight_factor) per factor — each guarded.
     specs: list[tuple] = []
@@ -451,6 +502,10 @@ def snapshot(latest: dict | None, vol_sentiment: dict | None = None,
                 else (r[0], r[1] if len(r) > 1 else None, r[2] if len(r) > 2 else "")
         base_w = float(w.get(key, 0.0))
         eff_w = base_w * (cfg["putcall_young_factor"] if young else 1.0)
+        gated_out = False
+        if key == "dealer_gamma" and not gex_scored:
+            eff_w = 0.0                       # audit #29: display-only until data/gex/gate.json opens
+            gated_out = True
         available = sub is not None and eff_w > 0
         label_en, label_zh = _LABELS.get(key, (key, key))
         entry = {
@@ -461,6 +516,20 @@ def snapshot(latest: dict | None, vol_sentiment: dict | None = None,
             "color": _color(float(sub)) if sub is not None else "#888",
             "points": None,
         }
+        if key == "dealer_gamma":
+            entry["gated_out"] = gated_out
+            entry["passport"] = {
+                "basis": "assumption",
+                "verdict": ("scored" if gex_scored else "display-only"),
+                "structurally_constant": True,     # single-name regimes are product attributes
+                "validation": {"artifact": "data/gex/gate.json", "scored": gex_scored},
+                "note": ("dealer long-call/short-put SIGN is unobservable from OI alone; "
+                         "single-name regimes are near-constant product attributes and the "
+                         "validator's MIN_PER_BUCKET is structurally unreachable for them. "
+                         "Weighted 0 in the score until the gate opens."),
+            }
+            if products is not None:
+                entry["products_disagree"] = products
         if available:
             den += eff_w
             num += eff_w * float(sub)
@@ -473,7 +542,8 @@ def snapshot(latest: dict | None, vol_sentiment: dict | None = None,
         asof = _asof(latest)
         return {"score": None, "band": None, "band_zh": None, "asof": asof,
                 "factors": entries, "why": None, "why_zh": None,
-                "n_available": 0, "disclaimer": _DISCLAIMER_EN,
+                "n_available": 0, "gex_gate_scored": gex_scored,
+                "gex_products_disagree": products, "disclaimer": _DISCLAIMER_EN,
                 "disclaimer_zh": _DISCLAIMER_ZH}
 
     score = num / den
@@ -499,6 +569,8 @@ def snapshot(latest: dict | None, vol_sentiment: dict | None = None,
         "n_available": n_available,
         "factors": entries,
         "why": why, "why_zh": why_zh,
+        "gex_gate_scored": gex_scored,          # audit #29: dealer_gamma weight is 0 when False
+        "gex_products_disagree": products,      # explicit SPY-vs-SPX contradiction flag
         "horizon_d": cfg["outcome_horizon_d"],
         "outcome_label_en": (f"realized SPY drawdown ≤ −{cfg['outcome_spy_move_pct']:.0f}% "
                              f"OR VIX intraday-high ≥ {cfg['outcome_vix_jump_mult']:.2g}× "

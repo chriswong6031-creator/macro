@@ -42,6 +42,11 @@ on:
       - "scripts/check_badge_passport.py"
       - "tests/test_spine.py"
       - "tests/test_pooling.py"
+      # audit #46 reliability-contract guard: a gated-out field must not render directionally.
+      - "scripts/check_reliability_contract.py"
+      - "engine/btc_leverage_cascade.py"
+      - "engine/options_flow.py"
+      - "templates/**"
   workflow_dispatch:
 
 permissions:
@@ -111,6 +116,8 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: trial-registration lint (no new unregistered harness)
         run: python3 scripts/check_trial_registration.py
+      - name: reliability-contract guard (no gated field rendered directionally, audit #46)
+        run: python3 scripts/check_reliability_contract.py
       - name: grading rebuild + trial ledger tests
         run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py -q
 

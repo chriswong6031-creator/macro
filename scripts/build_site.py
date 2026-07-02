@@ -2156,8 +2156,13 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
             for _r in (json.loads(_fp.read_text()) or {}).get("table", []):
                 if not _r.get("ticker"):
                     continue
-                if _r.get("composite") is not None:
-                    factor_z[_r["ticker"]] = _r["composite"]
+                # audit #25: tiebreak on the scorecard-passing rank composite, not the blind
+                # equal-weight composite (which its own scorecard grades anti-predictive).
+                _cz = _r.get("composite_rank")
+                if _cz is None:
+                    _cz = _r.get("composite")
+                if _cz is not None:
+                    factor_z[_r["ticker"]] = _cz
                 if _r.get("sue") is not None:
                     sue_z[_r["ticker"]] = _r["sue"]
     except Exception as e:  # noqa: BLE001 — additive, never fatal

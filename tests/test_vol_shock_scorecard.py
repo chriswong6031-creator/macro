@@ -44,17 +44,35 @@ def _vs_sentiment() -> dict:
 # Full-input fusion + invariants
 # --------------------------------------------------------------------------- #
 def test_full_input_score():
+    # Audit #29: dealer_gamma is DISPLAY-ONLY (weight 0) while data/gex/gate.json is closed, so
+    # only 8 of 9 factors are AVAILABLE (score-bearing) by default. The dealer_gamma row is still
+    # present + computed, just gated out of the weighted mean.
     snap = vss.snapshot(_full_latest(), vol_sentiment=_vs_sentiment())
     assert snap is not None
     assert snap["score"] is not None
     assert 0 <= snap["score"] <= 100
     assert snap["band"] in ("low", "elevated", "high", "extreme")
-    assert snap["n_available"] == 9          # every factor present
+    assert snap["n_available"] == 8          # 9 factors, dealer_gamma gated out (assumption sign)
     assert snap["why"] and snap["why_zh"]
     # every active factor carries the display contract
     for f in snap["factors"]:
         assert set(("key", "label", "label_zh", "value", "points", "weight",
                     "available", "sub", "color", "note")) <= set(f)
+    # the dealer_gamma row is present, gated out, and carries an assumption passport
+    dg = next(f for f in snap["factors"] if f["key"] == "dealer_gamma")
+    assert dg["gated_out"] is True and dg["weight"] == 0.0 and dg["available"] is False
+    assert dg["passport"]["basis"] == "assumption"
+    assert dg["passport"]["verdict"] == "display-only"
+
+
+def test_full_input_score_with_gate_open(monkeypatch):
+    # With the gate OPEN the dealer_gamma factor rejoins the weighted mean (all 9 available).
+    monkeypatch.setattr(vss, "_gex_gate_scored", lambda: True)
+    snap = vss.snapshot(_full_latest(), vol_sentiment=_vs_sentiment())
+    assert snap["n_available"] == 9
+    dg = next(f for f in snap["factors"] if f["key"] == "dealer_gamma")
+    assert dg["gated_out"] is False and dg["weight"] > 0 and dg["available"] is True
+    assert dg["passport"]["verdict"] == "scored"
 
 
 def test_points_sum_to_score():
@@ -64,12 +82,13 @@ def test_points_sum_to_score():
     assert abs(total - snap["score"]) <= 0.5
 
 
-def test_dealer_gamma_reads_market_gamma():
-    """Short-gamma near the flip => the dealer_gamma factor reads high."""
+def test_dealer_gamma_subscore_computed_even_when_gated_out():
+    """The dealer_gamma SUB-score is still computed for display (short-gamma near the flip reads
+    high) even though it is gated out of the weighted mean."""
     snap = vss.snapshot(_full_latest(), vol_sentiment=_vs_sentiment())
     dg = next(f for f in snap["factors"] if f["key"] == "dealer_gamma")
-    assert dg["available"]
-    assert dg["sub"] >= 75   # short gamma + near flip
+    assert dg["gated_out"] is True           # not scored while gate closed
+    assert dg["sub"] >= 75                    # short gamma + near flip still shown
 
 
 def test_short_gamma_raises_vs_long_gamma():
