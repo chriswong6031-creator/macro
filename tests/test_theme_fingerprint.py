@@ -95,12 +95,14 @@ class TestFingerprintLegs:
         tfp.reset_caches()
 
         stmts = pd.read_parquet(tmp_path / "edgar" / "statements.parquet")
-        val, n, fy = tfp._inv_days_trend(["MU", "WDC", "SNDK"], stmts)
+        val, n, fy, n_cogs, n_rev = tfp._inv_days_trend(["MU", "WDC", "SNDK"], stmts)
 
         assert val is not None, "should return a value with 3 reporting members"
         assert val > 0, f"falling inventory-days should yield positive leg; got {val}"
         assert n == 3, f"expected 3 reporting members, got {n}"
         assert fy == 2024
+        # No cogs column in this fixture → all revenue-based
+        assert n_cogs + n_rev == n
 
     def test_inv_days_trend_rising_is_negative(self, tmp_path):
         """Rising inventory-days (loosening) → negative leg7 value."""
@@ -115,7 +117,7 @@ class TestFingerprintLegs:
         _make_statements(tmp_path, rows)
         tfp.reset_caches()
         stmts = pd.read_parquet(tmp_path / "edgar" / "statements.parquet")
-        val, n, _ = tfp._inv_days_trend(["A", "B", "C"], stmts)
+        val, n, _, n_cogs, n_rev = tfp._inv_days_trend(["A", "B", "C"], stmts)
         assert val is not None
         assert val < 0, f"rising inventory-days should yield negative leg; got {val}"
 
@@ -160,7 +162,7 @@ class TestMinMembersGate:
         _make_statements(tmp_path, rows)
         tfp.reset_caches()
         stmts = pd.read_parquet(tmp_path / "edgar" / "statements.parquet")
-        val, n, _ = tfp._inv_days_trend(["MU", "WDC"], stmts)
+        val, n, _, n_cogs, n_rev = tfp._inv_days_trend(["MU", "WDC"], stmts)
         assert val is None, f"< 3 members should yield None, got {val}"
         assert n == 2
 
@@ -286,6 +288,16 @@ class TestUnmappedThemeFingerprint:
         assert t.get("fingerprint") is not None, "fingerprint payload should be attached"
         assert t["fingerprint"]["leg7_member_inventory"] is not None
 
+        # F2 FIX: band must be the fingerprint variant, NOT plain TIGHT/TIGHTENING
+        # (the core anti-overclaiming fix from the Opus review)
+        if t["band"] in ("TIGHT (fingerprint)", "TIGHTENING (fingerprint)"):
+            assert t.get("fingerprint_only") is True, \
+                "fingerprint_only must be True when band is a fingerprint variant"
+        # Plain TIGHT/TIGHTENING (without suffix) is not allowed for fingerprint-only themes
+        assert t["band"] not in ("TIGHT", "TIGHTENING", "SOLD_OUT"), \
+            f"Plain {t['band']!r} not allowed for fingerprint-only unmapped theme; " \
+            f"must be fingerprint variant or NEUTRAL"
+
     def test_unmapped_without_inv_data_remains_text_only(self, monkeypatch, tmp_path):
         """Unmapped theme with NO statements data (or < 3 reporters) stays text-only
         when only language data is present."""
@@ -322,6 +334,77 @@ class TestUnmappedThemeFingerprint:
             "with < 3 reporters, numeric_composite should be None"
         assert t["text_only"] is True, \
             "with < 3 reporters, theme should remain text_only"
+
+
+    def test_unmapped_strong_leg7_gets_fingerprint_band_not_plain_tight(
+            self, monkeypatch, tmp_path):
+        """Unmapped theme + strong leg7 (z≈2) must produce TIGHT (fingerprint), NOT plain TIGHT.
+        Score must be ≤ FINGERPRINT_CAP=60. physical_confirmed must be False."""
+        # 3 members with dramatically falling inventory (strong z≈2 leg7)
+        rows = [
+            {"ticker": "LLY",  "fy": 2023, "inventory": 10000, "revenue": 30000, "as_of": "2024-01-01"},
+            {"ticker": "LLY",  "fy": 2024, "inventory":  1000, "revenue": 34000, "as_of": "2024-01-01"},
+            {"ticker": "AMGN", "fy": 2023, "inventory":  8000, "revenue": 28000, "as_of": "2024-01-01"},
+            {"ticker": "AMGN", "fy": 2024, "inventory":   800, "revenue": 30000, "as_of": "2024-01-01"},
+            {"ticker": "HIMS", "fy": 2023, "inventory":  2000, "revenue":  5000, "as_of": "2024-01-01"},
+            {"ticker": "HIMS", "fy": 2024, "inventory":   200, "revenue":  6000, "as_of": "2024-01-01"},
+        ]
+        _make_statements(tmp_path, rows)
+
+        monkeypatch.setattr(bn.config, "load",
+                            lambda: {"themes": {"glp1_obesity": {"name": "GLP-1 Obesity",
+                                                                  "tickers": ["LLY", "AMGN", "HIMS"]}}})
+        monkeypatch.setattr(bn.config, "data_dir", lambda: tmp_path)
+        monkeypatch.setattr(bn.store, "read", lambda group, name: None)
+
+        out = bn.compute_bottleneck(write_ledger=False, data_dir=tmp_path)
+        assert out is not None
+        t = out["themes"].get("glp1_obesity")
+        assert t is not None
+
+        # THE FIX: band must be fingerprint variant, not plain TIGHT
+        assert t["band"] in ("TIGHT (fingerprint)", "TIGHTENING (fingerprint)", "NEUTRAL"), \
+            f"Expected fingerprint band variant or NEUTRAL, got {t['band']!r}"
+        assert t["band"] not in ("TIGHT", "TIGHTENING", "SOLD_OUT"), \
+            f"Plain TIGHT/TIGHTENING without (fingerprint) suffix is not allowed for fingerprint-only themes; got {t['band']!r}"
+
+        if t["band"] in ("TIGHT (fingerprint)", "TIGHTENING (fingerprint)"):
+            assert t.get("fingerprint_only") is True, "fingerprint_only must be True"
+
+        # Check via score that score ≤ 60 and physical_confirmed=False
+        from engine.foresight_score import FINGERPRINT_CAP, score_row
+
+        # Score a cascade row directly
+        cascade_row = {
+            "theme": "glp1_obesity",
+            "stage": "PRECIPICE (fingerprint)",
+            "bottleneck_band": t["band"],
+            "bottleneck_text_only": False,
+            "bottleneck_fingerprint_only": t.get("fingerprint_only", False),
+            "tightness": t.get("tightness"),
+            "bottleneck_regime": False,
+            "demand_band": None,
+            "capex_yoy": None,
+            "demand_strength": None,
+            "revision_breadth": None,
+            "revision_level": None,
+            "broadening_state": None,
+            "est_drift_90d": None,
+            "glut_band": None,
+            "entry_ready": False,
+            "ppi_yoy_latest": None,
+            "divergence_share": None,
+            "guidance_band": None,
+            "n_altdata_leading": 0,
+        }
+        if t["band"] in ("TIGHT (fingerprint)", "TIGHTENING (fingerprint)"):
+            s = score_row(cascade_row)
+            assert s["physical_confirmed"] is False, \
+                "physical_confirmed must be False for fingerprint-only themes"
+            assert s["score"] <= FINGERPRINT_CAP, \
+                f"Score {s['score']} exceeds FINGERPRINT_CAP={FINGERPRINT_CAP} for fingerprint-only"
+            assert any("fingerprint" in c for c in s["caps"]), \
+                f"fingerprint cap must appear in caps list, got {s['caps']}"
 
 
 # ---------------------------------------------------------------------------

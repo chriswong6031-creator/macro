@@ -329,7 +329,8 @@ def compute_foresight_health(
         log.warning("foresight_health: leg assessment failed: %s", exc)
         legs = {}
 
-    LEADING_LEGS = ("t1_fred", "t1_text", "t1_fingerprint", "t2_demand", "t3_guidance", "power")
+    # t1_fingerprint omitted: annual XBRL cadence; mixing into real-time-leads count is misleading
+    LEADING_LEGS = ("t1_fred", "t1_text", "t2_demand", "t3_guidance", "power")
     try:
         n_leading_live = sum(
             1 for k in LEADING_LEGS

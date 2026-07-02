@@ -94,54 +94,87 @@ def _load_rpo(data_dir: Path) -> pd.DataFrame | None:
 
 def _inv_days_trend(
     members: list[str], df: pd.DataFrame
-) -> tuple[float | None, int, int | None]:
-    """Median YoY change in inventory-days across theme members.
+) -> tuple[float | None, int, int | None, int, int]:
+    """Median YoY change in inventory days (COGS-based, revenue fallback) across theme members.
 
-    inventory_days = inventory / (revenue / 365).
-    YoY = recent_FY − prior_FY in days.
+    inventory_days = inventory / (cogs / 365) when cogs available, else inventory / (revenue / 365).
+    Uses COGS when present (more accurate cost-of-goods basis); falls back to revenue per member.
+    YoY = recent_FY − prior_FY in days; only when fy_latest == fy_prior + 1 (adjacency guard).
     Falling inventory-days = tightening → positive leg (sign inverted before return).
-    Returns (z_score, n_reporting, latest_fy | None).
+    Returns (z_score, n_reporting, latest_fy | None, n_cogs_based, n_revenue_based).
 
     z_score: median_yoy_change clipped to ±CLIP and sign-inverted so that
     falling days → positive value (same direction as bottleneck leg2).
     """
     if df is None or df.empty or not members:
-        return None, 0, None
+        return None, 0, None, 0, 0
     sub = df[df["ticker"].isin(members)].copy()
     if sub.empty:
-        return None, 0, None
+        return None, 0, None, 0, 0
 
-    # Need both inventory and revenue
-    sub = sub[sub["inventory"].notna() & sub["revenue"].notna() & (sub["revenue"] != 0)]
+    # Dedup (ticker, fy) before computing — keeps last row per pair
+    sub = sub.drop_duplicates(["ticker", "fy"], keep="last")
+
+    # Need inventory and at least one of cogs or revenue
+    has_cogs_col = "cogs" in sub.columns
+    sub = sub[sub["inventory"].notna()]
     if sub.empty:
-        return None, 0, None
+        return None, 0, None, 0, 0
 
-    sub["inv_days"] = sub["inventory"] / (sub["revenue"] / 365.0)
+    # Compute inv_days using COGS when available, else revenue
+    if has_cogs_col:
+        cogs_mask = sub["cogs"].notna() & (sub["cogs"] != 0)
+        rev_mask = (~cogs_mask) & sub["revenue"].notna() & (sub["revenue"] != 0)
+        sub = sub.copy()
+        sub["inv_days"] = np.nan
+        sub.loc[cogs_mask, "inv_days"] = sub.loc[cogs_mask, "inventory"] / (sub.loc[cogs_mask, "cogs"] / 365.0)
+        sub.loc[rev_mask, "inv_days"] = sub.loc[rev_mask, "inventory"] / (sub.loc[rev_mask, "revenue"] / 365.0)
+        sub["_used_cogs"] = cogs_mask
+    else:
+        sub = sub[sub["revenue"].notna() & (sub["revenue"] != 0)].copy()
+        if sub.empty:
+            return None, 0, None, 0, 0
+        sub["inv_days"] = sub["inventory"] / (sub["revenue"] / 365.0)
+        sub["_used_cogs"] = False
+
     sub = sub.dropna(subset=["inv_days"])
+    if sub.empty:
+        return None, 0, None, 0, 0
 
     trends: list[float] = []
     latest_fy = None
+    n_cogs_based = 0
+    n_revenue_based = 0
     for tkr, grp in sub.groupby("ticker"):
         grp = grp.sort_values("fy")
         if len(grp) < 2:
             continue
+        fy_latest = int(grp["fy"].iloc[-1])
+        fy_prior = int(grp["fy"].iloc[-2])
+        # Adjacency guard: only compute YoY when years are consecutive
+        if fy_latest != fy_prior + 1:
+            continue
         recent = float(grp["inv_days"].iloc[-1])
         prior = float(grp["inv_days"].iloc[-2])
-        fy_val = int(grp["fy"].iloc[-1])
-        if latest_fy is None or fy_val > latest_fy:
-            latest_fy = fy_val
+        if latest_fy is None or fy_latest > latest_fy:
+            latest_fy = fy_latest
         trends.append(recent - prior)
+        # Track denominator usage for latest row
+        if bool(grp["_used_cogs"].iloc[-1]):
+            n_cogs_based += 1
+        else:
+            n_revenue_based += 1
 
     n_reporting = len(trends)
     if n_reporting < MIN_MEMBERS:
-        return None, n_reporting, latest_fy
+        return None, n_reporting, latest_fy, n_cogs_based, n_revenue_based
 
     median_yoy = float(np.median(trends))
     # Invert sign: falling days (negative yoy) = tightening = positive leg
     inverted = -median_yoy
     # Normalize into ±CLIP range: scale by 1/30 (a 30-day change ≈ ±1.0)
     normed = float(np.clip(inverted / 30.0, -_CLIP, _CLIP))
-    return round(normed, 3), n_reporting, latest_fy
+    return round(normed, 3), n_reporting, latest_fy, n_cogs_based, n_revenue_based
 
 
 def _rpo_growth_trend(
@@ -155,12 +188,18 @@ def _rpo_growth_trend(
 
     z_score: median fractional YoY clipped to ±CLIP.
     (0.30 fractional = +30% YoY → ≈ +0.30 z; scaled so 100% YoY ≈ +1.0.)
+
+    Dedup: (ticker, fy) pairs deduplicated before computing (keeps last row).
+    Adjacency guard: only computes YoY when fy_latest == fy_prior + 1.
     """
     if df is None or df.empty or not members:
         return None, 0, None
     sub = df[df["ticker"].isin(members)].copy()
     if sub.empty:
         return None, 0, None
+
+    # Dedup (ticker, fy) before computing
+    sub = sub.drop_duplicates(["ticker", "fy"], keep="last")
 
     sub = sub[sub["rpo"].notna() & (sub["rpo"] > 0)]
 
@@ -170,13 +209,17 @@ def _rpo_growth_trend(
         grp = grp.sort_values("fy")
         if len(grp) < 2:
             continue
+        fy_latest = int(grp["fy"].iloc[-1])
+        fy_prior = int(grp["fy"].iloc[-2])
+        # Adjacency guard: only compute YoY when years are consecutive
+        if fy_latest != fy_prior + 1:
+            continue
         recent = float(grp["rpo"].iloc[-1])
-        prior = float(grp["rpo"].iloc[-1 - 1])   # immediately prior year
+        prior = float(grp["rpo"].iloc[-2])
         if prior == 0:
             continue
-        fy_val = int(grp["fy"].iloc[-1])
-        if latest_fy is None or fy_val > latest_fy:
-            latest_fy = fy_val
+        if latest_fy is None or fy_latest > latest_fy:
+            latest_fy = fy_latest
         # Fractional YoY growth; cap at 200% to prevent massive outliers
         yoy = (recent - prior) / prior
         trends.append(float(np.clip(yoy, -1.0, 2.0)))
@@ -215,7 +258,7 @@ def compute_theme_fingerprint(
     stmts = _load_statements(data_dir)
     rpo = _load_rpo(data_dir)
 
-    inv_z, inv_n, inv_fy = _inv_days_trend(members, stmts)
+    inv_z, inv_n, inv_fy, inv_n_cogs, inv_n_rev = _inv_days_trend(members, stmts)
     rpo_z, rpo_n, rpo_fy = _rpo_growth_trend(members, rpo)
 
     n_legs_live = sum(1 for v in (inv_z, rpo_z) if v is not None)
@@ -244,11 +287,15 @@ def compute_theme_fingerprint(
                 "min_required": MIN_MEMBERS,
                 "met_gate": inv_n >= MIN_MEMBERS,
                 "description": (
-                    "Median YoY change in inventory-days (inventory/(revenue/365)) "
-                    "across theme members. Negative YoY (falling) → tightening → "
-                    "positive value. Annual cadence; latest filed FY."
+                    "Median YoY change in inventory days (COGS-based, revenue fallback) "
+                    "across theme members. Uses COGS when available (more accurate), "
+                    "falls back to revenue. Negative YoY (falling) → tightening → "
+                    "positive value. Annual cadence; latest filed FY. "
+                    "Adjacency guard: only YoY when fiscal years are consecutive."
                 ),
                 "weight_provisional": 0.50,
+                "n_cogs_based": inv_n_cogs,
+                "n_revenue_based": inv_n_rev,
             },
             "leg8_member_backlog": {
                 "value": rpo_z,
@@ -259,7 +306,8 @@ def compute_theme_fingerprint(
                 "description": (
                     "Median YoY RPO (RevenueRemainingPerformanceObligation) growth "
                     "across theme members. Rising RPO → more backlog → tightening → "
-                    "positive value. Annual cadence; latest filed FY."
+                    "positive value. Annual cadence; latest filed FY. "
+                    "Adjacency guard: only YoY when fiscal years are consecutive."
                 ),
                 "weight_provisional": 0.50,
             },

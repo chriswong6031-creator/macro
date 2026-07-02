@@ -36,6 +36,7 @@ log = logging.getLogger(__name__)
 WEIGHTS = {"magnitude": 0.15, "acceleration": 0.20, "bottleneck": 0.20,
            "pricing_power": 0.15, "underpricing": 0.15, "purity": 0.08, "timing": 0.07}
 TEXT_ONLY_CAP = 50.0
+FINGERPRINT_CAP = 60.0   # annual XBRL fingerprint: higher than text-only but below FRED uncapped
 STAGE_CAP = {"RE-RATING": 60.0, "GLUT-RISK": 40.0, "WATCH": 45.0, "UNKNOWN": 35.0}
 
 
@@ -127,11 +128,24 @@ def _bottleneck(r: dict) -> float | None:
     binds for unconfirmed language signals — the house rule: text-only capped without a
     physical correlate. Only numeric FRED legs (TIGHT / SOLD_OUT / TIGHTENING / NEUTRAL /
     LOOSE) count as physical confirmation.
+
+    Fingerprint bands (TIGHT (fingerprint) / TIGHTENING (fingerprint)) return a moderate
+    value (TIGHT→0.6, TIGHTENING→0.4) so the bottleneck axis is not zero for annual XBRL.
+    However physical_confirmed stays False (checked via bottleneck_fingerprint_only in
+    score_row), and FINGERPRINT_CAP=60 applies instead of TEXT_ONLY_CAP=50.
+    Fingerprint axis values: TIGHT (fingerprint) → 0.6, TIGHTENING (fingerprint) → 0.4.
     """
     band = r.get("bottleneck_band")
     # Text-only bands and AWAITING_DATA are not physical confirmation → None → cap fires
     if r.get("bottleneck_text_only") or band in ("TIGHT (text)", "TIGHTENING (text)"):
         return None
+    # Fingerprint-only bands: annual XBRL — real physical data but annual cadence, not real-time.
+    # Returns a moderate axis value; physical_confirmed remains False (see score_row).
+    if band in ("TIGHT (fingerprint)", "TIGHTENING (fingerprint)"):
+        base = {"TIGHT (fingerprint)": 0.6, "TIGHTENING (fingerprint)": 0.4}.get(band, 0.4)
+        if r.get("bottleneck_regime"):
+            base = min(1.0, base + 0.1)
+        return base
     base = {"SOLD_OUT": 1.0, "TIGHT": 0.8, "TIGHTENING": 0.55,
             "NEUTRAL": 0.35, "LOOSE": 0.1}.get(band)
     if base is None:
@@ -325,6 +339,7 @@ def score_row(r: dict, *, theme_members: list[str] | None = None) -> dict:
         r.setdefault("_gross_margin_trend", _gross_margin_trend(theme_members))
 
     bn = _bottleneck(r)
+    is_fingerprint_only = r.get("bottleneck_fingerprint_only", False)
 
     # Compute each axis; None = no live input → axis excluded from weighted sum
     raw_axes: dict[str, float | None] = {
@@ -358,6 +373,12 @@ def score_row(r: dict, *, theme_members: list[str] | None = None) -> dict:
     if bn is None:
         score = min(score, TEXT_ONLY_CAP)
         caps.append(f"text-only (no physical bottleneck) -> capped at {TEXT_ONLY_CAP:.0f}")
+    elif is_fingerprint_only:
+        # Fingerprint-only (annual XBRL): higher than text-only cap but below FRED uncapped.
+        # physical_confirmed=False because annual cadence ≠ real-time FRED confirmation.
+        if score > FINGERPRINT_CAP:
+            score = FINGERPRINT_CAP
+            caps.append(f"fingerprint-only (annual XBRL) -> capped at {FINGERPRINT_CAP:.0f}")
     scap = STAGE_CAP.get(r.get("stage"))
     if scap is not None and score > scap:
         score = scap
@@ -372,6 +393,10 @@ def score_row(r: dict, *, theme_members: list[str] | None = None) -> dict:
         verdict = "watch"
     else:
         verdict = "low / late"
+
+    # physical_confirmed: True only for FRED-backed reads, NOT fingerprint-only or text-only.
+    physical_confirmed = bn is not None and not is_fingerprint_only
+
     return {
         "score": score,
         "base": base,
@@ -379,7 +404,7 @@ def score_row(r: dict, *, theme_members: list[str] | None = None) -> dict:
         "n_axes_live": n_axes_live,
         "caps": caps,
         "verdict": verdict,
-        "physical_confirmed": bn is not None,
+        "physical_confirmed": physical_confirmed,
         "earliness": r.get("_earliness"),
     }
 

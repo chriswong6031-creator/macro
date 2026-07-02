@@ -208,13 +208,32 @@ def _language_z(accel: float | None) -> float | None:
     return round(float(np.clip(accel, -2.0, 2.0)), 2)
 
 
+def _is_fingerprint_only(numeric_avail: dict) -> bool:
+    """Return True when the only numeric legs available are XBRL fingerprint legs.
+
+    fingerprint-only = numeric_avail is a non-empty subset of {leg7_member_inventory,
+    leg8_member_backlog} (no FRED legs 1-4 present). This is always the case for unmapped
+    themes — they have no FRED NAICS series at all. For mapped themes it would only trigger
+    if ALL of legs 1-4 are absent but a fingerprint exists (an edge case).
+    """
+    if not numeric_avail:
+        return False
+    _FINGERPRINT_LEGS = {"leg7_member_inventory", "leg8_member_backlog"}
+    return set(numeric_avail.keys()) <= _FINGERPRINT_LEGS
+
+
 def _band(composite: float | None, n_legs: int, regime: bool,
           lang_accel: float | None = None, n_filers: int = 0,
-          text_only: bool = False) -> str:
+          text_only: bool = False, fingerprint_only: bool = False) -> str:
     """Return a band string.
 
     text_only=True: only the language leg contributed (no numeric FRED legs). In this
     case the band is capped at 'TIGHT (text)' / 'TIGHTENING (text)' / None.
+
+    fingerprint_only=True: only XBRL fingerprint legs (leg7/leg8) contributed — annual
+    cadence, not real-time FRED. Tightening-direction bands get a '(fingerprint)' suffix
+    to mark them as annual-only and prevent conflation with FRED-backed reads.
+    LOOSE and NEUTRAL stay plain (only tightening-direction overclaims).
     """
     if text_only:
         if composite is None:
@@ -228,14 +247,28 @@ def _band(composite: float | None, n_legs: int, regime: bool,
     if composite is None:
         return "AWAITING_DATA"
     if regime and composite > 1.5:
-        return "SOLD_OUT"
-    if composite > 0.75:
-        return "TIGHT"
-    if composite > 0.25:
-        return "TIGHTENING"
-    if composite < -0.25:
-        return "LOOSE"
-    return "NEUTRAL"
+        band = "SOLD_OUT"
+    elif composite > 0.75:
+        band = "TIGHT"
+    elif composite > 0.25:
+        band = "TIGHTENING"
+    elif composite < -0.25:
+        band = "LOOSE"
+    else:
+        band = "NEUTRAL"
+
+    if fingerprint_only:
+        # Annual XBRL: emit fingerprint-variant for tightening-direction bands only.
+        # No SOLD_OUT on annual-only data (annual cadence can't confirm sold-out state).
+        if band == "TIGHT":
+            return "TIGHT (fingerprint)"
+        if band == "TIGHTENING":
+            return "TIGHTENING (fingerprint)"
+        if band == "SOLD_OUT":
+            return "TIGHT (fingerprint)"  # no SOLD_OUT on annual-only data
+        # LOOSE and NEUTRAL stay plain
+
+    return band
 
 
 def _shadow_log_cutoffs(theme_key: str, asof: str | None, lang_accel: float | None,
@@ -375,6 +408,12 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
             combined_composite = None
             n_u = 0
 
+        # Fingerprint numeric_band still makes a theme Tier P under #996's corrected gate
+        # — intentional (filed physical ≥ watch shelf); the cap+variant carries the honesty.
+        # For unmapped themes, _is_fingerprint_only is always True when has_numeric_fingerprint
+        # (they have no FRED legs at all — only legs 7-8 can be in unmapped_numeric).
+        fingerprint_only_flag = _is_fingerprint_only(unmapped_numeric) if has_numeric_fingerprint else False
+
         if text_only_unmapped:
             # Language-only: cap at TIGHT (text) — original behaviour
             text_composite = lang_z
@@ -382,21 +421,30 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
                          lang_accel=lang_accel, n_filers=n_filers, text_only=True)
             tightness_out = None
         else:
-            # Has numeric fingerprint legs: use full band logic (not text-only)
+            # Has numeric fingerprint legs: use fingerprint-variant band (not plain TIGHT)
             band = _band(combined_composite, n_u, False,
                          lang_accel=lang_accel, n_filers=n_filers,
-                         text_only=False)
+                         text_only=False, fingerprint_only=fingerprint_only_flag)
             tightness_out = combined_composite
-            # Anti-laundering: if numeric-only is not TIGHT, language can't make it TIGHT
-            if band in ("TIGHT", "SOLD_OUT") and (
+            # Anti-laundering: if numeric-only is not TIGHT, language can't make it TIGHT.
+            # Check both plain and fingerprint-variant TIGHT bands.
+            if band in ("TIGHT (fingerprint)", "TIGHT", "SOLD_OUT") and (
                     unmapped_numeric_composite is None
                     or unmapped_numeric_composite <= 0.75):
                 band = "TIGHT (text)"
                 text_only_unmapped = True
+                fingerprint_only_flag = False
                 tightness_out = None
 
+        # Recompute unmapped_numeric_band with fingerprint variant
+        if unmapped_numeric and unmapped_numeric_composite is not None and fingerprint_only_flag:
+            unmapped_numeric_band = _band(
+                unmapped_numeric_composite, len(unmapped_numeric), False,
+                fingerprint_only=True
+            )
+
         n_unmapped_legs = sum(1 for v in unmapped_legs.values() if v is not None)
-        return {
+        result = {
             "name": name,
             "naics": None,
             "band": band,
@@ -416,6 +464,10 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
             "text_only": text_only_unmapped,
             "fingerprint": fingerprint,
         }
+        if fingerprint_only_flag:
+            result["fingerprint_only"] = True
+            result["basis"] = "annual"
+        return result
 
     # --- MAPPED THEME (NAICS legs 1-4 available) ---
 
@@ -483,29 +535,36 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
     # machinery (engine/foresight_shadow.py) can re-derive candidate bands faithfully
     # (W3b review B3: an approximation that lost the numeric base band biased the
     # lang_z calibration toward text-bands)
-    numeric_band = (_band(numeric_composite, len(numeric_avail), regime)
+    # For mapped themes: fingerprint_only is True only when ALL FRED legs 1-4 are absent
+    # (all None in numeric_avail) but a fingerprint exists — a mapped-theme edge case.
+    mapped_fingerprint_only = _is_fingerprint_only(numeric_avail)
+    numeric_band = (_band(numeric_composite, len(numeric_avail), regime,
+                          fingerprint_only=mapped_fingerprint_only)
                     if numeric_avail else None)
 
     # Determine if we have only the language leg (no numeric FRED or XBRL legs at all)
     text_only = not numeric_avail and lang_z is not None
 
     band = _band(composite, n, regime,
-                 lang_accel=lang_accel, n_filers=n_filers, text_only=text_only)
+                 lang_accel=lang_accel, n_filers=n_filers, text_only=text_only,
+                 fingerprint_only=mapped_fingerprint_only)
 
     if not text_only and numeric_avail and composite is not None:
-        thresh = 1.5 if band == "SOLD_OUT" else 0.75
-        if band in ("TIGHT", "SOLD_OUT") and not (
+        thresh = 1.5 if band in ("SOLD_OUT", "TIGHT (fingerprint)") else 0.75
+        if band in ("TIGHT", "SOLD_OUT", "TIGHT (fingerprint)") and not (
                 numeric_composite is not None and numeric_composite > thresh):
             # The combined composite cleared the threshold ONLY because of the text leg —
             # the numeric legs alone do not confirm. Demote to the text variant so the
             # cap binds, the tone stays warn, and the ledger row is honestly labeled.
             band = "TIGHT (text)"
             text_only = True
+            mapped_fingerprint_only = False
         elif (lang_z_gated is not None and lang_z_gated > LANG_Z_LIVE
-                and band not in ("TIGHT", "SOLD_OUT", "TIGHT (text)")):
+                and band not in ("TIGHT", "SOLD_OUT", "TIGHT (text)", "TIGHT (fingerprint)")):
             # Language alone clears TIGHT while numeric legs sit below it — text-only read
             band = "TIGHT (text)"
             text_only = True
+            mapped_fingerprint_only = False
 
     # Shadow log for all themes with a language read
     _shadow_log_cutoffs(theme_key, asof, lang_accel, n_filers)
@@ -515,7 +574,7 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
         "n_filers": n_filers, "provisional": True,
     }
 
-    return {
+    result = {
         "name": name,
         "naics": spec["naics"],
         "band": band,
@@ -535,6 +594,10 @@ def _theme_bottleneck(theme_key: str, name: str, tickers: list[str], shared: dic
         "text_only": text_only,
         "fingerprint": fingerprint,
     }
+    if mapped_fingerprint_only:
+        result["fingerprint_only"] = True
+        result["basis"] = "annual"
+    return result
 
 
 def compute_bottleneck(write_ledger: bool = True, data_dir=None) -> dict | None:
@@ -632,7 +695,10 @@ def _append_ledger(payload: dict) -> None:
                 continue
     ts = datetime.now(timezone.utc).isoformat()
     asof = payload.get("asof")
-    loggable_bands = {"TIGHT", "SOLD_OUT", "TIGHT (text)", "TIGHTENING (text)"}
+    loggable_bands = {
+        "TIGHT", "SOLD_OUT", "TIGHT (text)", "TIGHTENING (text)",
+        "TIGHT (fingerprint)", "TIGHTENING (fingerprint)",
+    }
     lines = []
     for key, t in payload["themes"].items():
         if t["band"] not in loggable_bands or (key, asof) in seen:
@@ -641,6 +707,7 @@ def _append_ledger(payload: dict) -> None:
             "theme": key, "asof": asof, "ts": ts, "band": t["band"],
             "tightness": t["tightness"], "regime": t["regime"], "legs": t["legs"],
             "text_only": t.get("text_only", False),
+            "fingerprint_only": t.get("fingerprint_only", False),
         }, separators=(",", ":")))
     if lines:
         with p.open("a") as fh:
