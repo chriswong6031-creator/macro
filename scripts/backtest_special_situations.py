@@ -148,9 +148,12 @@ def run() -> pd.DataFrame:
 
 def run_edgar() -> pd.DataFrame:
     """P5.1 — point-in-time backtest from our OWN EDGAR detections: enter each classified
-    situation at the first close on/after its FILING date (no digest weekly lag), measure
+    situation at the first close STRICTLY AFTER its filing date (no digest weekly lag), measure
     forward returns by category AND lifecycle stage. This is the cleaner go-forward signal
-    the digest-date backtest only approximates."""
+    the digest-date backtest only approximates.
+
+    Entry is +1 business day after date_filed: EDGAR's daily index posts ~22:00 ET, so the
+    same-day close is a 4-6h look-ahead for any intraday filing — a PIT leak."""
     from engine import special_situations as sse
     df = sse.build_situations()
     if df.empty:
@@ -171,10 +174,12 @@ def run_edgar() -> pd.DataFrame:
         s = closes[tkr].dropna()
         if s.empty:
             continue
-        pos_all = idx.searchsorted(pd.Timestamp(r.date_filed))      # first close >= filing date
-        if pos_all >= len(idx):
+        # PIT fix: EDGAR's daily index posts ~22:00 ET — same-day close is a 4-6h look-ahead
+        # for intraday filings.  Enter at the first close STRICTLY AFTER date_filed (+1bd).
+        pos_filed = idx.searchsorted(pd.Timestamp(r.date_filed), side="right")
+        if pos_filed >= len(idx):
             continue
-        entry_actual = idx[pos_all]
+        entry_actual = idx[pos_filed]
         epos = s.index.searchsorted(entry_actual)
         if epos >= len(s) or s.index[epos] < entry_actual:
             continue

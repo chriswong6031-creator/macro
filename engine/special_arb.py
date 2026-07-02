@@ -146,7 +146,13 @@ def arb_metrics(deal_price: float | None, live_price: float | None, *,
     }
     up = _num(unaffected_price)
     if up is not None and up > 0:
-        out["downside_on_break_pct"] = round((up / lp - 1.0) * 100, 1)
+        dbp = round((up / lp - 1.0) * 100, 1)
+        if dbp < 0:
+            # only attach when the unaffected price is BELOW live (the stock ran up on the
+            # announcement); a positive value means the stock is already below its unaffected
+            # price — impossible for a bona-fide pending deal — so drop the field rather than
+            # surface a misleading "upside-on-break" figure, and suppress the spread badge.
+            out["downside_on_break_pct"] = dbp
     return out
 
 
