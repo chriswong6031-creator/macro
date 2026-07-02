@@ -1,0 +1,842 @@
+{
+  "stocks": {
+    "panel": "stocks",
+    "n_fires": 10286,
+    "donor_meta": {
+      "n_sectors": 11,
+      "sector_member_counts": {
+        "Information Technology": 19,
+        "Health Care": 19,
+        "Consumer Staples": 19,
+        "Industrials": 21,
+        "Utilities": 19,
+        "Materials": 19,
+        "Real Estate": 19,
+        "Consumer Discretionary": 18,
+        "Financials": 20,
+        "Energy": 18,
+        "Communication Services": 20
+      },
+      "n_ticker_sector_mapped": 10230,
+      "n_ticker_total": 10286
+    },
+    "donor_unwind": {
+      "P2": {
+        "full": {
+          "intact": {
+            "n": 4561,
+            "stop5": 41.26,
+            "clean15": 32.67,
+            "dead_money": 16.2,
+            "n_names": 212
+          },
+          "cracking": {
+            "n": 2033,
+            "stop5": 39.1,
+            "clean15": 36.15,
+            "dead_money": 15.1,
+            "n_names": 212
+          }
+        },
+        "time_halves": {
+          "pre2020": {
+            "intact": {
+              "n": 2689,
+              "stop5": 39.79,
+              "clean15": 32.24,
+              "dead_money": 20.27,
+              "n_names": 208
+            },
+            "cracking": {
+              "n": 1154,
+              "stop5": 37.44,
+              "clean15": 37.44,
+              "dead_money": 18.37,
+              "n_names": 208
+            }
+          },
+          "post2020": {
+            "intact": {
+              "n": 1872,
+              "stop5": 43.38,
+              "clean15": 33.28,
+              "dead_money": 10.36,
+              "n_names": 212
+            },
+            "cracking": {
+              "n": 879,
+              "stop5": 41.3,
+              "clean15": 34.47,
+              "dead_money": 10.81,
+              "n_names": 209
+            }
+          }
+        },
+        "y2025plus": {
+          "intact": {
+            "n": 238,
+            "stop5": 47.06,
+            "clean15": 26.89,
+            "dead_money": 12.61,
+            "n_names": 149
+          },
+          "cracking": {
+            "n": 195,
+            "stop5": 36.92,
+            "clean15": 37.95,
+            "dead_money": 9.23,
+            "n_names": 135
+          }
+        }
+      },
+      "E_RETEST": {
+        "full": {
+          "intact": {
+            "n": 1650,
+            "stop5": 41.58,
+            "clean15": 31.33,
+            "dead_money": 16.79,
+            "n_names": 212
+          },
+          "cracking": {
+            "n": 755,
+            "stop5": 39.34,
+            "clean15": 37.62,
+            "dead_money": 16.95,
+            "n_names": 206
+          }
+        },
+        "time_halves": {
+          "pre2020": {
+            "intact": {
+              "n": 930,
+              "stop5": 41.08,
+              "clean15": 30.32,
+              "dead_money": 21.18,
+              "n_names": 202
+            },
+            "cracking": {
+              "n": 468,
+              "stop5": 34.62,
+              "clean15": 39.96,
+              "dead_money": 21.37,
+              "n_names": 182
+            }
+          },
+          "post2020": {
+            "intact": {
+              "n": 720,
+              "stop5": 42.22,
+              "clean15": 32.64,
+              "dead_money": 11.11,
+              "n_names": 204
+            },
+            "cracking": {
+              "n": 287,
+              "stop5": 47.04,
+              "clean15": 33.8,
+              "dead_money": 9.76,
+              "n_names": 167
+            }
+          }
+        },
+        "y2025plus": {
+          "intact": {
+            "n": 100,
+            "stop5": 49.0,
+            "clean15": 27.0,
+            "dead_money": 17.0,
+            "n_names": 83
+          },
+          "cracking": {
+            "n": 75,
+            "stop5": 41.33,
+            "clean15": 41.33,
+            "dead_money": 8.0,
+            "n_names": 63
+          }
+        }
+      },
+      "E_FRESH": {
+        "full": {
+          "intact": {
+            "n": 6453,
+            "stop5": 41.24,
+            "clean15": 32.91,
+            "dead_money": 15.14,
+            "n_names": 212
+          },
+          "cracking": {
+            "n": 3833,
+            "stop5": 38.4,
+            "clean15": 38.27,
+            "dead_money": 14.56,
+            "n_names": 212
+          }
+        },
+        "time_halves": {
+          "pre2020": {
+            "intact": {
+              "n": 3604,
+              "stop5": 39.79,
+              "clean15": 31.52,
+              "dead_money": 18.78,
+              "n_names": 208
+            },
+            "cracking": {
+              "n": 2118,
+              "stop5": 36.87,
+              "clean15": 38.57,
+              "dead_money": 18.79,
+              "n_names": 208
+            }
+          },
+          "post2020": {
+            "intact": {
+              "n": 2849,
+              "stop5": 43.07,
+              "clean15": 34.68,
+              "dead_money": 10.53,
+              "n_names": 212
+            },
+            "cracking": {
+              "n": 1715,
+              "stop5": 40.29,
+              "clean15": 37.9,
+              "dead_money": 9.33,
+              "n_names": 212
+            }
+          }
+        },
+        "y2025plus": {
+          "intact": {
+            "n": 420,
+            "stop5": 48.57,
+            "clean15": 30.0,
+            "dead_money": 12.62,
+            "n_names": 196
+          },
+          "cracking": {
+            "n": 321,
+            "stop5": 39.88,
+            "clean15": 34.27,
+            "dead_money": 14.02,
+            "n_names": 177
+          }
+        }
+      }
+    },
+    "donor_predictions": {
+      "P2": {
+        "clean15_concentrates_cracking": true,
+        "dead_money_concentrates_intact": true,
+        "cracking_clean15": 36.15,
+        "intact_clean15": 32.67,
+        "cracking_dead_money": 15.1,
+        "intact_dead_money": 16.2
+      },
+      "E_RETEST": {
+        "clean15_concentrates_cracking": true,
+        "dead_money_concentrates_intact": false,
+        "cracking_clean15": 37.62,
+        "intact_clean15": 31.33,
+        "cracking_dead_money": 16.95,
+        "intact_dead_money": 16.79
+      },
+      "E_FRESH": {
+        "clean15_concentrates_cracking": true,
+        "dead_money_concentrates_intact": true,
+        "cracking_clean15": 38.27,
+        "intact_clean15": 32.91,
+        "cracking_dead_money": 14.56,
+        "intact_dead_money": 15.14
+      }
+    },
+    "spring": {
+      "full": {
+        "spring": {
+          "n": 442,
+          "stop5": 39.82,
+          "clean15": 33.71,
+          "dead_money": 13.8,
+          "n_names": 187
+        },
+        "no_spring": {
+          "n": 6152,
+          "stop5": 40.65,
+          "clean15": 33.75,
+          "dead_money": 16.01,
+          "n_names": 212
+        }
+      },
+      "by_gics_group": {
+        "staples_healthcare": {
+          "spring": {
+            "n": 81,
+            "stop5": 35.8,
+            "clean15": 32.1,
+            "dead_money": 12.35,
+            "n_names": 34
+          },
+          "no_spring": {
+            "n": 1220,
+            "stop5": 38.28,
+            "clean15": 32.21,
+            "dead_money": 20.49,
+            "n_names": 38
+          }
+        },
+        "rest": {
+          "spring": {
+            "n": 361,
+            "stop5": 40.72,
+            "clean15": 34.07,
+            "dead_money": 14.13,
+            "n_names": 153
+          },
+          "no_spring": {
+            "n": 4932,
+            "stop5": 41.24,
+            "clean15": 34.12,
+            "dead_money": 14.9,
+            "n_names": 174
+          }
+        }
+      },
+      "by_vol_quintile": {
+        "q1": {
+          "spring": {
+            "n": 83,
+            "stop5": 42.17,
+            "clean15": 27.71,
+            "dead_money": 30.12,
+            "n_names": 66
+          },
+          "no_spring": {
+            "n": 1236,
+            "stop5": 38.67,
+            "clean15": 30.34,
+            "dead_money": 28.64,
+            "n_names": 159
+          }
+        },
+        "q2": {
+          "spring": {
+            "n": 89,
+            "stop5": 30.34,
+            "clean15": 34.83,
+            "dead_money": 15.73,
+            "n_names": 68
+          },
+          "no_spring": {
+            "n": 1230,
+            "stop5": 38.94,
+            "clean15": 31.87,
+            "dead_money": 23.33,
+            "n_names": 190
+          }
+        },
+        "q3": {
+          "spring": {
+            "n": 95,
+            "stop5": 37.89,
+            "clean15": 38.95,
+            "dead_money": 13.68,
+            "n_names": 73
+          },
+          "no_spring": {
+            "n": 1223,
+            "stop5": 42.11,
+            "clean15": 33.03,
+            "dead_money": 16.68,
+            "n_names": 201
+          }
+        },
+        "q4": {
+          "spring": {
+            "n": 90,
+            "stop5": 50.0,
+            "clean15": 27.78,
+            "dead_money": 6.67,
+            "n_names": 71
+          },
+          "no_spring": {
+            "n": 1229,
+            "stop5": 38.97,
+            "clean15": 37.35,
+            "dead_money": 8.14,
+            "n_names": 208
+          }
+        },
+        "q5": {
+          "spring": {
+            "n": 85,
+            "stop5": 38.82,
+            "clean15": 38.82,
+            "dead_money": 3.53,
+            "n_names": 63
+          },
+          "no_spring": {
+            "n": 1234,
+            "stop5": 44.57,
+            "clean15": 36.14,
+            "dead_money": 3.24,
+            "n_names": 192
+          }
+        }
+      }
+    },
+    "spring_predictions": {
+      "full": {
+        "clean15_higher_spring": false,
+        "dead_money_lower_spring": true,
+        "spring_clean15": 33.71,
+        "no_spring_clean15": 33.75,
+        "spring_dead_money": 13.8,
+        "no_spring_dead_money": 16.01,
+        "spring_n": 442,
+        "no_spring_n": 6152
+      },
+      "staples_healthcare": {
+        "clean15_higher_spring": false,
+        "dead_money_lower_spring": true,
+        "spring_clean15": 32.1,
+        "no_spring_clean15": 32.21,
+        "spring_dead_money": 12.35,
+        "no_spring_dead_money": 20.49,
+        "spring_n": 81,
+        "no_spring_n": 1220
+      },
+      "low_vol_q1": {
+        "clean15_higher_spring": false,
+        "dead_money_lower_spring": false,
+        "spring_clean15": 27.71,
+        "no_spring_clean15": 30.34,
+        "spring_dead_money": 30.12,
+        "no_spring_dead_money": 28.64,
+        "spring_n": 83,
+        "no_spring_n": 1236
+      }
+    }
+  },
+  "baskets": {
+    "panel": "baskets",
+    "n_fires": 81260,
+    "donor_meta": {
+      "n_sectors": 11,
+      "sector_member_counts": {
+        "Health Care": 57,
+        "Information Technology": 72,
+        "Consumer Discretionary": 47,
+        "Financials": 75,
+        "Consumer Staples": 34,
+        "Industrials": 77,
+        "Utilities": 31,
+        "Materials": 26,
+        "Real Estate": 31,
+        "Energy": 21,
+        "Communication Services": 23
+      },
+      "n_ticker_sector_mapped": 18688,
+      "n_ticker_total": 81260
+    },
+    "donor_unwind": {
+      "P2": {
+        "full": {
+          "intact": {
+            "n": 28534,
+            "stop5": 46.27,
+            "clean15": 30.63,
+            "dead_money": 9.46,
+            "n_names": 2328
+          },
+          "cracking": {
+            "n": 16418,
+            "stop5": 45.48,
+            "clean15": 32.36,
+            "dead_money": 7.78,
+            "n_names": 2297
+          }
+        },
+        "time_halves": {
+          "pre2020": {
+            "intact": {
+              "n": 12684,
+              "stop5": 44.54,
+              "clean15": 30.72,
+              "dead_money": 13.91,
+              "n_names": 1869
+            },
+            "cracking": {
+              "n": 6088,
+              "stop5": 44.99,
+              "clean15": 30.78,
+              "dead_money": 11.42,
+              "n_names": 1781
+            }
+          },
+          "post2020": {
+            "intact": {
+              "n": 15850,
+              "stop5": 47.66,
+              "clean15": 30.56,
+              "dead_money": 5.89,
+              "n_names": 2328
+            },
+            "cracking": {
+              "n": 10330,
+              "stop5": 45.77,
+              "clean15": 33.29,
+              "dead_money": 5.63,
+              "n_names": 2287
+            }
+          }
+        },
+        "y2025plus": {
+          "intact": {
+            "n": 2896,
+            "stop5": 50.83,
+            "clean15": 27.94,
+            "dead_money": 6.42,
+            "n_names": 1730
+          },
+          "cracking": {
+            "n": 1482,
+            "stop5": 47.64,
+            "clean15": 34.68,
+            "dead_money": 4.18,
+            "n_names": 1187
+          }
+        }
+      },
+      "E_RETEST": {
+        "full": {
+          "intact": {
+            "n": 10555,
+            "stop5": 48.18,
+            "clean15": 28.77,
+            "dead_money": 11.38,
+            "n_names": 2187
+          },
+          "cracking": {
+            "n": 5623,
+            "stop5": 43.0,
+            "clean15": 35.5,
+            "dead_money": 8.82,
+            "n_names": 2029
+          }
+        },
+        "time_halves": {
+          "pre2020": {
+            "intact": {
+              "n": 4707,
+              "stop5": 45.57,
+              "clean15": 29.4,
+              "dead_money": 16.93,
+              "n_names": 1638
+            },
+            "cracking": {
+              "n": 2020,
+              "stop5": 42.13,
+              "clean15": 32.82,
+              "dead_money": 12.77,
+              "n_names": 1203
+            }
+          },
+          "post2020": {
+            "intact": {
+              "n": 5848,
+              "stop5": 50.27,
+              "clean15": 28.27,
+              "dead_money": 6.91,
+              "n_names": 2089
+            },
+            "cracking": {
+              "n": 3603,
+              "stop5": 43.49,
+              "clean15": 37.0,
+              "dead_money": 6.61,
+              "n_names": 1847
+            }
+          }
+        },
+        "y2025plus": {
+          "intact": {
+            "n": 945,
+            "stop5": 51.64,
+            "clean15": 26.77,
+            "dead_money": 8.36,
+            "n_names": 795
+          },
+          "cracking": {
+            "n": 599,
+            "stop5": 44.41,
+            "clean15": 37.06,
+            "dead_money": 5.51,
+            "n_names": 549
+          }
+        }
+      },
+      "E_FRESH": {
+        "full": {
+          "intact": {
+            "n": 50649,
+            "stop5": 48.61,
+            "clean15": 29.25,
+            "dead_money": 7.7,
+            "n_names": 2335
+          },
+          "cracking": {
+            "n": 30611,
+            "stop5": 44.7,
+            "clean15": 34.4,
+            "dead_money": 6.21,
+            "n_names": 2335
+          }
+        },
+        "time_halves": {
+          "pre2020": {
+            "intact": {
+              "n": 21574,
+              "stop5": 45.81,
+              "clean15": 29.86,
+              "dead_money": 11.47,
+              "n_names": 1902
+            },
+            "cracking": {
+              "n": 10402,
+              "stop5": 44.36,
+              "clean15": 32.91,
+              "dead_money": 9.77,
+              "n_names": 1851
+            }
+          },
+          "post2020": {
+            "intact": {
+              "n": 29075,
+              "stop5": 50.68,
+              "clean15": 28.81,
+              "dead_money": 4.9,
+              "n_names": 2335
+            },
+            "cracking": {
+              "n": 20209,
+              "stop5": 44.88,
+              "clean15": 35.17,
+              "dead_money": 4.38,
+              "n_names": 2335
+            }
+          }
+        },
+        "y2025plus": {
+          "intact": {
+            "n": 5513,
+            "stop5": 50.54,
+            "clean15": 27.53,
+            "dead_money": 6.26,
+            "n_names": 2242
+          },
+          "cracking": {
+            "n": 2817,
+            "stop5": 46.15,
+            "clean15": 34.01,
+            "dead_money": 3.98,
+            "n_names": 1874
+          }
+        }
+      }
+    },
+    "donor_predictions": {
+      "P2": {
+        "clean15_concentrates_cracking": true,
+        "dead_money_concentrates_intact": true,
+        "cracking_clean15": 32.36,
+        "intact_clean15": 30.63,
+        "cracking_dead_money": 7.78,
+        "intact_dead_money": 9.46
+      },
+      "E_RETEST": {
+        "clean15_concentrates_cracking": true,
+        "dead_money_concentrates_intact": true,
+        "cracking_clean15": 35.5,
+        "intact_clean15": 28.77,
+        "cracking_dead_money": 8.82,
+        "intact_dead_money": 11.38
+      },
+      "E_FRESH": {
+        "clean15_concentrates_cracking": true,
+        "dead_money_concentrates_intact": true,
+        "cracking_clean15": 34.4,
+        "intact_clean15": 29.25,
+        "cracking_dead_money": 6.21,
+        "intact_dead_money": 7.7
+      }
+    },
+    "spring": {
+      "full": {
+        "spring": {
+          "n": 3589,
+          "stop5": 45.14,
+          "clean15": 31.85,
+          "dead_money": 7.8,
+          "n_names": 1749
+        },
+        "no_spring": {
+          "n": 41363,
+          "stop5": 46.06,
+          "clean15": 31.21,
+          "dead_money": 8.93,
+          "n_names": 2334
+        }
+      },
+      "by_gics_group": {
+        "staples_healthcare": {
+          "spring": {
+            "n": 176,
+            "stop5": 42.05,
+            "clean15": 32.95,
+            "dead_money": 11.93,
+            "n_names": 75
+          },
+          "no_spring": {
+            "n": 2156,
+            "stop5": 41.93,
+            "clean15": 30.66,
+            "dead_money": 15.07,
+            "n_names": 91
+          }
+        },
+        "rest": {
+          "spring": {
+            "n": 3413,
+            "stop5": 45.3,
+            "clean15": 31.79,
+            "dead_money": 7.59,
+            "n_names": 1674
+          },
+          "no_spring": {
+            "n": 39207,
+            "stop5": 46.29,
+            "clean15": 31.24,
+            "dead_money": 8.6,
+            "n_names": 2243
+          }
+        }
+      },
+      "by_vol_quintile": {
+        "q1": {
+          "spring": {
+            "n": 687,
+            "stop5": 41.48,
+            "clean15": 30.57,
+            "dead_money": 21.69,
+            "n_names": 462
+          },
+          "no_spring": {
+            "n": 8304,
+            "stop5": 42.94,
+            "clean15": 29.38,
+            "dead_money": 22.76,
+            "n_names": 1194
+          }
+        },
+        "q2": {
+          "spring": {
+            "n": 687,
+            "stop5": 40.47,
+            "clean15": 35.37,
+            "dead_money": 10.33,
+            "n_names": 523
+          },
+          "no_spring": {
+            "n": 8303,
+            "stop5": 45.08,
+            "clean15": 30.42,
+            "dead_money": 12.3,
+            "n_names": 1491
+          }
+        },
+        "q3": {
+          "spring": {
+            "n": 717,
+            "stop5": 46.58,
+            "clean15": 31.38,
+            "dead_money": 5.86,
+            "n_names": 574
+          },
+          "no_spring": {
+            "n": 8273,
+            "stop5": 46.57,
+            "clean15": 31.61,
+            "dead_money": 6.55,
+            "n_names": 1708
+          }
+        },
+        "q4": {
+          "spring": {
+            "n": 777,
+            "stop5": 48.65,
+            "clean15": 30.12,
+            "dead_money": 2.19,
+            "n_names": 597
+          },
+          "no_spring": {
+            "n": 8213,
+            "stop5": 47.08,
+            "clean15": 32.3,
+            "dead_money": 2.61,
+            "n_names": 1834
+          }
+        },
+        "q5": {
+          "spring": {
+            "n": 721,
+            "stop5": 47.85,
+            "clean15": 32.04,
+            "dead_money": 0.14,
+            "n_names": 538
+          },
+          "no_spring": {
+            "n": 8270,
+            "stop5": 48.63,
+            "clean15": 32.35,
+            "dead_money": 0.34,
+            "n_names": 1843
+          }
+        }
+      }
+    },
+    "spring_predictions": {
+      "full": {
+        "clean15_higher_spring": true,
+        "dead_money_lower_spring": true,
+        "spring_clean15": 31.85,
+        "no_spring_clean15": 31.21,
+        "spring_dead_money": 7.8,
+        "no_spring_dead_money": 8.93,
+        "spring_n": 3589,
+        "no_spring_n": 41363
+      },
+      "staples_healthcare": {
+        "clean15_higher_spring": true,
+        "dead_money_lower_spring": true,
+        "spring_clean15": 32.95,
+        "no_spring_clean15": 30.66,
+        "spring_dead_money": 11.93,
+        "no_spring_dead_money": 15.07,
+        "spring_n": 176,
+        "no_spring_n": 2156
+      },
+      "low_vol_q1": {
+        "clean15_higher_spring": true,
+        "dead_money_lower_spring": true,
+        "spring_clean15": 30.57,
+        "no_spring_clean15": 29.38,
+        "spring_dead_money": 21.69,
+        "no_spring_dead_money": 22.76,
+        "spring_n": 687,
+        "no_spring_n": 8304
+      }
+    }
+  }
+}
