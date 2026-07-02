@@ -94,6 +94,48 @@ def test_weighting_modes_differ_but_stay_valid(patched_loader):
     assert (al["high"] >= al["low"] - 1e-9).all()
 
 
+def test_alpha_overlay_is_point_in_time_no_lookahead(patched_loader):
+    """Audit #44: the default alpha overlay must be point-in-time — its weights on any
+    past date depend ONLY on data up to that date. So truncating the calendar and
+    recomputing must reproduce the EARLIER portion of the full-calendar close curve
+    exactly. (The old static as-of-today vector FAILED this — future ranking reweighted
+    the whole past.) Also asserts meta.lookahead is False for the PIT path."""
+    members = _members(["AAA", "BBB", "CCC", "DDD", "EEE"])
+    idx = bi.deep_calendar(members)
+    cut = idx[len(idx) - 250]                                   # cut the last ~year off
+    full, meta_full = bi.consolidated_candle(members, idx, "alpha", pit=False)          # alpha_pit=True
+    trunc, _ = bi.consolidated_candle(members, idx[idx <= cut], "alpha", pit=False)
+    assert full is not None and trunc is not None
+    assert meta_full.get("lookahead") is False                 # PIT path discloses no look-ahead
+    cmp_end = idx[len(idx) - 400]                               # clearance from the truncation edge
+    a = full["close"].loc[:cmp_end].dropna()
+    b = trunc["close"].loc[:cmp_end].dropna()
+    j = a.index.intersection(b.index)
+    # rebased-to-1.0 curves must match bar-for-bar over the shared past
+    rel = ((a.loc[j] - b.loc[j]).abs() / a.loc[j].abs().clip(lower=1e-6))
+    assert float(rel.max()) < 1e-9, f"alpha overlay look-ahead: max rel diff {float(rel.max()):.2e}"
+
+
+def test_alpha_static_path_flags_lookahead(patched_loader):
+    """The opt-out legacy static vector (alpha_pit=False) must self-disclose via
+    meta.lookahead=True so a template can label it 'in-sample illustration'."""
+    members = _members(["AAA", "BBB", "CCC", "DDD", "EEE"])
+    idx = bi.deep_calendar(members)
+    _, meta = bi.consolidated_candle(members, idx, "alpha", pit=False, alpha_pit=False)
+    assert meta.get("lookahead") is True
+    # equal/relevance never look ahead
+    _, m_eq = bi.consolidated_candle(members, idx, "equal", pit=False)
+    assert m_eq.get("lookahead") is False
+
+
+def test_weight_variants_reports_no_lookahead(patched_loader):
+    members = _members(["AAA", "BBB", "CCC", "DDD", "EEE"])
+    idx = bi.deep_calendar(members)
+    v = bi.weight_variants(members, idx)
+    assert v.get("alpha_lookahead") is False                   # default overlay is PIT
+    assert "alpha" in v and "equal" in v
+
+
 def test_relevance_weight_uses_explicit_member_weight(patched_loader):
     members = [{"ticker": "AAA", "added": "2018-06-01", "removed": None, "weight": 5.0},
                {"ticker": "BBB", "added": "2018-06-01", "removed": None, "weight": 1.0},

@@ -47,7 +47,47 @@ log = logging.getLogger(__name__)
 
 OHLCV_COLS = ["open", "high", "low", "close", "volume"]
 ALPHA_CAP = 2.0            # alpha-tilt weight is capped at this × the equal weight
+ALPHA_LOOKBACK = 120       # trailing days of risk-adjusted strength for the alpha tilt
+ALPHA_REBAL = "MS"         # POINT-IN-TIME rebalance grid (month-start) — a strength
+                           # vector is recomputed from data up to each rebalance and
+                           # held forward, so no future ranking ever reweights the past
 _CACHE: dict[str, pd.DataFrame | None] = {}
+
+
+def _alpha_strength(seg: pd.DataFrame) -> pd.Series:
+    """Risk-adjusted trailing strength → capped softmax-ish tilt weight per column,
+    from a return window `seg` (already restricted to each member's live days).
+    Shared by the point-in-time grid so the tilt math has one definition."""
+    mu = seg.mean()
+    sd = seg.std().replace(0, np.nan)
+    strength = (mu / sd).replace([np.inf, -np.inf], np.nan)
+    sstd = strength.std()
+    denom = sstd if (sstd and np.isfinite(sstd)) else 1.0        # no spread → equal
+    z = (strength - strength.mean()) / denom
+    w = np.exp(np.clip(z.fillna(0.0), -1.5, 1.5))                # softmax-ish tilt
+    return (w / w.mean()).clip(1.0 / ALPHA_CAP, ALPHA_CAP)       # capped vs equal
+
+
+def _alpha_weights_pit(present: list[str], ret: pd.DataFrame, mask: pd.DataFrame) -> pd.DataFrame:
+    """POINT-IN-TIME alpha tilt: a DAILY weight matrix (idx × present). On each
+    monthly rebalance the trailing-ALPHA_LOOKBACK strength is recomputed using ONLY
+    returns up to that date, then held forward to the next rebalance. This replaces
+    the old single as-of-today vector that was applied across ALL history (audit #44:
+    today's momentum leaders over-weighted through their entire past — undisclosed
+    look-ahead). Before the first full lookback window the tilt is equal (1.0)."""
+    idx = ret.index
+    rr = ret[present].where(mask)
+    W = pd.DataFrame(1.0, index=idx, columns=present)            # equal until first rebal
+    rebal_dates = pd.date_range(idx.min(), idx.max(), freq=ALPHA_REBAL)
+    for rb in rebal_dates:
+        pos = idx.searchsorted(rb, side="right")                # strictly-past window end
+        if pos < ALPHA_LOOKBACK:
+            continue                                            # not enough history yet
+        seg = rr.iloc[pos - ALPHA_LOOKBACK:pos]                 # data KNOWN at the rebalance
+        w = _alpha_strength(seg).reindex(present).fillna(1.0)
+        # apply from this rebalance forward (until the next one overwrites it)
+        W.iloc[pos:] = w.to_numpy()
+    return W
 
 
 def _load_member_ohlcv(ticker: str) -> pd.DataFrame | None:
@@ -165,24 +205,20 @@ def _base_weights(members: list[dict], present: list[str], mode: str,
             wm[t] = max(float(w), 0.05)
         return pd.Series(wm).reindex(present).fillna(1.0)
     if mode == "alpha":
-        # trailing 120d risk-adjusted strength of each member (only over its live days), z-scored
+        # STATIC (in-sample) as-of-today strength vector — retained only for callers
+        # that explicitly opt out of point-in-time. The default alpha path is the
+        # point-in-time matrix in _alpha_weights_pit (audit #44). Emitting this vector
+        # across all history is look-ahead; consolidated_candle marks it accordingly.
         rr = ret[present].where(mask)
-        win = min(120, len(rr))
+        win = min(ALPHA_LOOKBACK, len(rr))
         seg = rr.iloc[-win:]
-        mu = seg.mean()
-        sd = seg.std().replace(0, np.nan)
-        strength = (mu / sd).replace([np.inf, -np.inf], np.nan)
-        sstd = strength.std()
-        denom = sstd if (sstd and np.isfinite(sstd)) else 1.0       # NaN/0 std → no spread → equal
-        z = (strength - strength.mean()) / denom
-        w = np.exp(np.clip(z.fillna(0.0), -1.5, 1.5))               # softmax-ish tilt
-        w = (w / w.mean()).clip(1.0 / ALPHA_CAP, ALPHA_CAP)         # capped vs equal
-        return w.reindex(present).fillna(1.0)
+        return _alpha_strength(seg).reindex(present).fillna(1.0)
     return pd.Series(1.0, index=present)                            # equal
 
 
 def consolidated_candle(members: list[dict], idx: pd.DatetimeIndex, mode: str = "equal",
-                        conv_map: dict | None = None, pit: bool = True
+                        conv_map: dict | None = None, pit: bool = True,
+                        alpha_pit: bool = True
                         ) -> tuple[pd.DataFrame | None, dict]:
     """The basket CANDLE on calendar `idx`: columns [open, high, low, close, dollar_vol, n_live],
     + a coverage/meta dict. None if fewer than 3 members resolve OHLCV. close is a LEVEL from 1.0.
@@ -190,7 +226,13 @@ def consolidated_candle(members: list[dict], idx: pd.DatetimeIndex, mode: str = 
     `members` are membership entries ({ticker, added, removed, weight?}); `idx` the basket
     calendar; `conv_map` ticker→conviction score for relevance weighting; `pit` selects strict
     point-in-time membership (True, perf-faithful) vs current-membership-over-full-history
-    (False, for the deep MTF/vol-hole technical read). See _live_mask."""
+    (False, for the deep MTF/vol-hole technical read). See _live_mask.
+
+    `alpha_pit` (mode=='alpha' only): True (default) recomputes the trailing-strength tilt
+    on a monthly rebalance grid and holds each vector forward — a point-in-time curve with
+    no look-ahead. False reproduces the legacy static as-of-today vector applied across all
+    history (an in-sample illustration); meta is stamped `lookahead: true` so any display
+    can disclose it. See _alpha_weights_pit / audit #44."""
     tickers = [m.get("ticker") for m in members if m.get("ticker")]
     loaded = {t: _load_member_ohlcv(t) for t in tickers}
     present = [t for t in tickers if loaded.get(t) is not None and not loaded[t].empty]
@@ -217,10 +259,17 @@ def consolidated_candle(members: list[dict], idx: pd.DatetimeIndex, mode: str = 
     r_open = open_ / prev_close - 1.0
 
     mask = _live_mask(members, idx, present, pit=pit, close=close)
-    base_w = _base_weights(members, present, mode, conv_map, r_close, mask)
 
     # daily renormalised weights over the live set
-    w = mask.astype(float) * base_w.reindex(present).to_numpy()
+    lookahead = False
+    if mode == "alpha" and alpha_pit:
+        # POINT-IN-TIME: a per-day tilt from a monthly rebalance grid (no look-ahead).
+        wmat = _alpha_weights_pit(present, r_close, mask)[present]
+        w = mask.astype(float) * wmat.to_numpy()
+    else:
+        base_w = _base_weights(members, present, mode, conv_map, r_close, mask)
+        w = mask.astype(float) * base_w.reindex(present).to_numpy()
+        lookahead = (mode == "alpha")           # static alpha vector = in-sample illustration
     wsum = w.sum(axis=1).replace(0, np.nan)
     w = w.div(wsum, axis=0)
 
@@ -260,6 +309,10 @@ def consolidated_candle(members: list[dict], idx: pd.DatetimeIndex, mode: str = 
         "coverage_pct": round(with_vol_now / n_live_now, 3) if n_live_now else None,
         "as_of": str(cand.index.max().date()) if not cand.empty else None,
         "start": str(cand.index.min().date()) if not cand.empty else None,
+        # True only for the legacy static alpha vector applied across all history — an
+        # in-sample illustration a template must disclose as look-ahead (audit #44).
+        # The default point-in-time alpha path (alpha_pit=True) sets this False.
+        "lookahead": lookahead,
     }
     return cand, meta
 
@@ -267,10 +320,16 @@ def consolidated_candle(members: list[dict], idx: pd.DatetimeIndex, mode: str = 
 def weight_variants(members: list[dict], idx: pd.DatetimeIndex,
                     conv_map: dict | None = None) -> dict:
     """The three weighting schemes' CLOSE levels (rebased to 1.0), for the comparison overlay.
-    Display-only — lets the user see how a conviction- or alpha-tilt reshapes the same basket."""
-    out = {}
+    Display-only — lets the user see how a conviction- or alpha-tilt reshapes the same basket.
+    The alpha curve is POINT-IN-TIME (monthly-rebalanced trailing strength, no look-ahead —
+    audit #44); `alpha_lookahead` reports whether any emitted curve used the legacy static
+    vector (always False here)."""
+    out: dict = {}
+    lookahead = False
     for mode in ("equal", "relevance", "alpha"):
-        cand, _ = consolidated_candle(members, idx, mode, conv_map)
+        cand, meta = consolidated_candle(members, idx, mode, conv_map)   # alpha_pit=True default
         if cand is not None and not cand["close"].dropna().empty:
             out[mode] = [None if pd.isna(v) else round(float(v), 5) for v in cand["close"].reindex(idx)]
+            lookahead = lookahead or bool(meta.get("lookahead"))
+    out["alpha_lookahead"] = lookahead
     return out
