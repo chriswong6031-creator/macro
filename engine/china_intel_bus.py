@@ -201,9 +201,14 @@ def _analysis_block() -> dict | None:
     a = _read_json("china_intel_analysis/analysis.json")
     if not isinstance(a, dict):
         return None
-    return {k: a.get(k) for k in
-            ("conviction", "chains", "cross_refs", "what_matters", "what_changed",
-             "flagged_tickers", "asof") if a.get(k) is not None}
+    out = {k: a.get(k) for k in
+           ("conviction", "chains", "cross_refs", "what_matters", "what_changed",
+            "flagged_tickers", "asof") if a.get(k) is not None}
+    # Carry the llm_synthesis degraded state so the template can render it explicitly
+    # per spec §2.4 (brain_usable = present AND not degraded_reason).
+    out["llm_synthesis"] = a.get("llm_synthesis")
+    out["llm_synthesis_degraded_reason"] = a.get("llm_synthesis_degraded_reason")
+    return out
 
 
 # --------------------------------------------------------------------------- #

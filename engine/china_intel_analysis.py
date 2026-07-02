@@ -587,7 +587,12 @@ def analyze(prev: dict | None = None, asof: date | str | None = None) -> dict:
         "_radar_fires": [f"{c.get('key')}->{c.get('sector_en')}" for c in conviction],
         "_stance": (policy or {}).get("stance"),
         "_sent_band": (news_sent or {}).get("band"),
+        # llm_synthesis: cross-surface AI synthesis is not wired yet (W5).
+        # Per spec §2.4: degraded output must be ABSENT, not neutral — emit the
+        # explicit degraded_reason so the template can render the state rather
+        # than silently showing nothing (brain_usable = present AND not degraded).
         "llm_synthesis": None,
+        "llm_synthesis_degraded_reason": "not_wired",
         "disclaimer_en": DISCLAIMER_EN, "disclaimer_zh": DISCLAIMER_ZH,
     }
 

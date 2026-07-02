@@ -146,6 +146,21 @@
   </table>
   {% endif %}
 
+  <!-- C1. LLM SYNTHESIS STATE — render explicitly when degraded (spec §2.4) -->
+  {# brain_usable = llm_synthesis is not None AND no llm_synthesis_degraded_reason #}
+  {% set _syn = b.analysis.llm_synthesis if b.analysis else none %}
+  {% set _syn_deg = b.analysis.llm_synthesis_degraded_reason if b.analysis else none %}
+  {% if _syn %}
+  {# Future: render the LLM cross-surface synthesis here when wired #}
+  <div class="ci-synthesis">🧠 {{ bl(_syn.summary, _syn.summary_zh or _syn.summary) }}</div>
+  {% elif _syn_deg %}
+  {# Degraded: render state explicitly rather than staying silent #}
+  <p class="ci-syn-deg mut" style="font-size:11.5px;margin:4px 0 8px">
+    🧠 {{ t('AI cross-surface synthesis', 'AI 跨面板综合') }}
+    <span>({{ t('deterministic only — AI read unavailable', '仅确定性——AI解读不可用') }} · {{ _syn_deg }})</span>
+  </p>
+  {% endif %}
+
   <!-- D. FLAGGED TICKERS -->
   {% if b.flagged_tickers %}
   <h2 class="sec">🏷️ {{ t('Flagged tickers', '标记个股') }}</h2>

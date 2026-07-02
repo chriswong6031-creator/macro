@@ -2685,13 +2685,20 @@ financial_news:
 # no-op pass-through whenever no credential is present.
 # =============================================================================
 news_llm:
-  enabled: true                   # try to enrich; auto no-op when no key present
+  enabled: false                  # W5 P5 R3: DEFAULT OFF — zero silent spend. The
+                                  # annotator computes llm_importance/llm_tone but NO
+                                  # downstream consumer reads those fields (confirmed by
+                                  # grep: only build_news._blend_key uses them for sort,
+                                  # and the deterministic quality score is the primary key).
+                                  # Re-enable only after registering a scored consumer in
+                                  # config/qual_ladder.yml + a qledger claim family entry.
+                                  # See engine/news_llm.py module docstring for details.
   provider_order: [oauth, anthropic, deepseek]
   oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
   deepseek_key_env: DEEPSEEK_API_KEY
   anthropic_model: claude-haiku-4-5
   deepseek_model: deepseek-chat
-  batch_size: 12                  # headlines summarised per model call
+  batch_size: 12                  # headlines summarised per model call (when enabled)
   max_batches: 16                 # hard cap on model calls per build (cost guard)
 
 # =============================================================================

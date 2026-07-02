@@ -1,8 +1,28 @@
 """News LLM processor — cheap batch summaries + relevance re-rank.
 
-GATED · DEGRADE-TO-NONE · CONTEXT-ONLY. The deterministic engine.news_common
-quality score already decides what's shown and in what order. This layer only
-*adds* two display niceties on top of the already-filtered headlines:
+GATED · DEGRADE-TO-NONE · CONTEXT-ONLY · DEFAULT OFF (W5 P5 R3).
+
+WHY DEFAULT OFF
+---------------
+The annotator computes ``llm_importance`` and ``llm_tone`` fields but NO
+downstream consumer reads them for scoring or allocation (confirmed by audit:
+only ``build_news._blend_key`` uses ``llm_importance`` as a 40% secondary sort
+weight; the deterministic quality score is always the primary key).  The
+``max_batches=16`` cap silently dropped ~87% of the tape even when enabled [P5].
+
+Re-enabling this module requires:
+  1. A registered scored-consumer entry in ``config/qual_ladder.yml`` (field
+     ``news_llm.llm_importance``) with ``ladder_state: DISPLAY`` minimum.
+  2. A qledger ``claim_family`` tag so the claim accrues a grade.
+  3. Flip ``news_llm.enabled: true`` in ``config.yml``.
+
+Until those are in place, the code path is preserved but the module is off.
+
+WHAT IT DOES (when enabled)
+---------------------------
+The deterministic engine.news_common quality score already decides what's shown
+and in what order. This layer only *adds* two display niceties on top of the
+already-filtered headlines:
 
   • a one-line plain-English summary (when the source gave none), and
   • an LLM "importance" hint (0-100) used as a SECONDARY sort key — it can

@@ -189,7 +189,17 @@
     AVOID:   { en: "Avoid", zh: "回避", c: "var(--down)" }
   };
   function brainHTML(b) {
-    if (!b || b.degraded_reason || !(b.assessments && b.assessments.length)) return "";
+    if (!b) return "";
+    // Degraded state: present but no usable assessments — render explicit degraded indicator
+    // (spec §2.4: degraded output is ABSENT, not neutral; surfaces must render their state).
+    var hasBrain = b.assessments && b.assessments.length;
+    if (b.degraded_reason || !hasBrain) {
+      var reason = b.degraded_reason || "no_assessments";
+      return '<div class="dr-nb dr-nb-degraded"><span class="dr-mut">🧠 ' +
+        bi("Narrative Brain", "叙事大脑") + ' · ' +
+        bi("deterministic only — AI read unavailable", "仅确定性——AI解读不可用") +
+        ' <span class="dr-nb-reason">(' + esc(reason) + ')</span></span></div>';
+    }
     var rows = b.assessments.map(function (a) {
       var v = NBV[a.verdict] || NBV.MONITOR;
       return '<div class="dr-nb-row">' +

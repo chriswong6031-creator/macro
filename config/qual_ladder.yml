@@ -468,3 +468,22 @@ extraction_8k.magnitude:
   notes: >
     LLM-extracted event magnitude (large/medium/small/unknown). Citation-verified.
     SHADOW only — no arithmetic consumption permitted until §3 gate clears.
+
+# ---------------------------------------------------------------------------
+# NEWS LLM — annotator OFF pending a registered consumer (W5 P5 R3)
+# ---------------------------------------------------------------------------
+news_llm.llm_importance:
+  field: llm_importance
+  artifact_glob: "site/news/*.json"
+  producer: engine/news_llm.py
+  claim_family: news_llm
+  ladder_state: DISPLAY
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    W5 P5 R3: news_llm annotator defaulted OFF in config (enabled:false). The field
+    is produced by engine/news_llm.py and consumed only by build_news._blend_key as
+    a 40% secondary sort weight — never a scoring or allocation input. Re-enabling
+    requires: (1) a scored_consumer entry here, (2) a qledger claim_family grade
+    target, (3) flip news_llm.enabled:true in config.yml. Until then: DISPLAY/off.
