@@ -151,6 +151,49 @@ def test_point_in_time_no_lookahead():
     print(f"ok test_point_in_time_no_lookahead (max rel diff {float(rel.max()):.5f})")
 
 
+def test_net_liquidity_mixed_unit_invariant():
+    """Audit #28: net liquidity must be a CONSISTENT-UNITS 3-term billions series
+    (WALCL/1000 - RRP - TGA/1000). Two invariants that the OLD /1e6 (trillions)
+    construction VIOLATED:
+
+      1. WALCL_bn — the Fed balance sheet, the dominant term — must be the LARGEST-
+         magnitude component (>= RRP_bn and >= TGA_bn in median). The old code put
+         WALCL in trillions (~6.7) making it SMALLER than a billions-scale RRP (~27),
+         which is the mixed-unit tell.
+      2. netliq.diff must NOT be (near-)perfectly correlated with -RRP.diff. Under the
+         old bug WALCL's daily change was ~1000x too small, so netliq velocity was a
+         pure -RRP proxy (corr ~1.0). Fixed, WALCL's balance-sheet trend contributes.
+    """
+    idx = pd.bdate_range("2000-01-01", "2027-01-01")
+    comps = anticipation._net_liquidity_bn(idx)
+    win = idx[idx >= idx[-1] - pd.Timedelta(days=365)]
+    mw = float(comps["walcl_bn"].reindex(win).median())
+    mr = float(comps["rrp_bn"].reindex(win).median())
+    mt = float(comps["tga_bn"].reindex(win).median())
+    if not (mw > 0):
+        print("skip test_net_liquidity_mixed_unit_invariant (no WALCL data)")
+        return
+
+    # Invariant 1: WALCL is the dominant (largest) component in correct units.
+    assert mw >= mr, f"WALCL_bn ({mw:.0f}) < RRP_bn ({mr:.0f}) — mixed-unit scaling!"
+    assert mw >= mt, f"WALCL_bn ({mw:.0f}) < TGA_bn ({mt:.0f}) — mixed-unit scaling!"
+
+    # Invariant 2: netliq velocity is not a pure -RRP proxy.
+    d_net = comps["netliq_bn"].reindex(win).diff()
+    d_negrrp = (-comps["rrp_bn"].reindex(win).diff())
+    corr = float(d_net.corr(d_negrrp))
+    assert corr < 0.99, f"netliq.diff is a pure -RRP proxy (corr {corr:.3f}) — WALCL annihilated!"
+
+    # Guard-the-guard: the OLD construction (WALCL /1e6, TGA dropped) MUST fail both.
+    old_walcl_tn = comps["walcl_bn"] / 1000.0                 # bn/1000 == the old /1e6 trillions
+    old_netliq = old_walcl_tn - comps["rrp_bn"]               # TGA dropped, as before
+    assert float(old_walcl_tn.reindex(win).median()) < mr, "old WALCL(trillions) should be < RRP(bn)"
+    old_corr = float(old_netliq.reindex(win).diff().corr(d_negrrp))
+    assert old_corr > 0.99, f"old netliq should be a pure -RRP proxy (got corr {old_corr:.3f})"
+    print(f"ok test_net_liquidity_mixed_unit_invariant "
+          f"(WALCL={mw:.0f} RRP={mr:.0f} TGA={mt:.0f} bn; corr new {corr:.2f} vs old {old_corr:.2f})")
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn in fns:

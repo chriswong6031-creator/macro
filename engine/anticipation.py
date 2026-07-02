@@ -80,6 +80,33 @@ def name_direction_scored(gate: dict | None = None) -> bool:
     return any((g.get(h) or {}).get("scored") for h in ("medium", "long"))
 
 
+def _net_liquidity_bn(idx: pd.Index) -> dict[str, pd.Series]:
+    """The CANONICAL 3-term Net Fed Liquidity in BILLIONS, mirroring
+    engine.inputs.py:279 (`walcl_bn - rrp_bn - tga_bn`). Returns the three scaled
+    components AND the composite so the mixed-unit invariant is directly testable.
+
+    Unit contract (the bug this fixes, audit #28):
+      * WALCL is FRED MILLIONS -> /1000 => billions. The old code used /1e6
+        (TRILLIONS); subtracting a billions-scale RRP then annihilated the
+        balance-sheet trend, reducing `m_netliq_vel` to a pure -RRP-velocity proxy.
+      * RRP (RRPONTSYD) is ALREADY billions -> no scaling.
+      * TGA (Treasury General Account) is millions -> /1000 => billions, and was
+        previously DROPPED entirely.
+    Missing RRP/TGA history contributes 0 (must not annihilate netliq pre-history).
+    """
+    F = Path("data/fred")
+    R = lambda s: s.reindex(idx).ffill()
+    col0 = lambda p: (lambda d: d[d.columns[0]])(pd.read_parquet(p))
+    walcl_bn = R(col0(F / "WALCL.parquet")) / 1000.0
+    rrp_bn = R(col0(F / "RRPONTSYD.parquet")).fillna(0.0)
+    try:
+        tga_bn = (R(col0(Path("data/treasury/tga.parquet"))) / 1000.0).fillna(0.0)
+    except Exception:
+        tga_bn = pd.Series(0.0, index=idx)
+    return {"walcl_bn": walcl_bn, "rrp_bn": rrp_bn, "tga_bn": tga_bn,
+            "netliq_bn": walcl_bn - rrp_bn - tga_bn}
+
+
 def macro_legs_frame() -> pd.DataFrame:
     """Date-indexed market overlay legs (oriented higher = more dangerous), forward-
     filled to daily. The single source of truth shared with the Phase-0 harness.
@@ -100,7 +127,11 @@ def macro_legs_frame() -> pd.DataFrame:
         hy = R(col0(F / "BAMLH0A0HYM2.parquet"))
         curve = R(col0(F / "T10Y3M.parquet"))
         dollar = R(col0(F / "DTWEXBGS.parquet"))
-        netliq = R(col0(F / "WALCL.parquet")) / 1e6 - R(col0(F / "RRPONTSYD.parquet"))
+        # Net Fed liquidity — canonical 3-term billions (WALCL/1000 - RRP - TGA/1000);
+        # see _net_liquidity_bn for the unit contract (audit #28). NOTE: forex_dollar.py
+        # keeps its own variant (drops TGA / inverts sign) — that is W3 Concept Canon
+        # scope and intentionally NOT touched here.
+        netliq = _net_liquidity_bn(idx)["netliq_bn"]
         nfci = R(col0(F / "NFCI.parquet"))
         g = pd.read_parquet(U / "gpr.parquet")
         gpr_l, gpr_act = R(g["gpr"]), R(g["gpr_act"])
