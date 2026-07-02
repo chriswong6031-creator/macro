@@ -35,7 +35,7 @@ BROAD_HI = 0.50            # breadth above this = revisions already broad (late)
                            # W2a (P1-A): used only as fallback when fewer than
                            # _PCTILE_MIN_THEMES themes have revision data; otherwise the
                            # cross-sectional ~80th-percentile replaces this absolute cut.
-_BROAD_HI_PCTILE = 80.0   # W2a: "already broad" = above this daily cross-sectional percentile
+_BROAD_HI_PCTILE = 80.0   # W2a PROVISIONAL: uncalibrated default pending §3.2 shadow ledger
 _PCTILE_MIN_THEMES = 8     # W2a: minimum theme count for percentile to be meaningful
 _STAGE_RANK = {"PRECIPICE": 0, "PRECIPICE (text)": 0, "BROADENING": 1,
                "BROADENING (text)": 1, "RE-RATING": 2, "GLUT-RISK": 3,
@@ -90,7 +90,8 @@ def _compute_broad_hi_threshold(rv_themes: dict) -> tuple[float, str]:
 
 
 def _stage(bn: dict | None, rv: dict | None, glut_band: str | None = None,
-           broad_hi_threshold: float = BROAD_HI) -> tuple[str, str]:
+           broad_hi_threshold: float = BROAD_HI,
+           late_line_basis: str = "absolute_fallback") -> tuple[str, str]:
     """Return (stage, rationale). Honest about missing tiers.
 
     Text-grade stages (Q6.3 / §P0-B): when bottleneck_band is TIGHT (text) or
@@ -115,7 +116,16 @@ def _stage(bn: dict | None, rv: dict | None, glut_band: str | None = None,
     lvl = (rv or {}).get("level_state")
     flat = lvl == "FLAT_LOW" or (breadth is not None and abs(breadth) < 0.10)
     positive = breadth is not None and breadth > 0
-    broad_hi = breadth is not None and breadth > broad_hi_threshold
+    # SCALE-MATCHED late-line comparison (review F1): a percentile_cov threshold lives on
+    # the breadth_cov scale (~0.1-0.3) — comparing it against legacy breadth (~0.5-1.0)
+    # would flag EVERY theme late the moment coverage accrues. The comparand must be the
+    # same field the threshold was computed from; a theme lacking breadth_cov in a
+    # cov-basis build is simply NOT flaggable as late (never legacy-vs-cov mixing).
+    if late_line_basis == "percentile_cov":
+        cov = (rv or {}).get("breadth_cov")
+        broad_hi = cov is not None and cov > broad_hi_threshold
+    else:
+        broad_hi = breadth is not None and breadth > broad_hi_threshold
     rv_known = rv is not None and breadth is not None
     glut_on = glut_band in GLUT_BANDS
 
@@ -289,7 +299,8 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         bn, rv, dm, gl = bn_themes.get(k), rv_themes.get(k), dm_themes.get(k), gl_themes.get(k)
         gd, cd = gd_themes.get(k), cd_themes.get(k)
         gband = (gl or {}).get("band")
-        stage, rationale = _stage(bn, rv, gband, broad_hi_threshold=broad_hi_threshold)
+        stage, rationale = _stage(bn, rv, gband, broad_hi_threshold=broad_hi_threshold,
+                                  late_line_basis=late_line_basis)
         # demand is a LEADING confirmation/conviction modifier on the rationale, not a
         # stage-changer (the stage is bottleneck x revision x exit-risk; demand reinforces).
         # Include text thesis stages so demand context shows even for text-only themes.
@@ -361,6 +372,9 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         # health surface / methodology panel so downstream can see which basis was used.
         "late_line_basis": late_line_basis,
         "late_line_threshold": round(broad_hi_threshold, 4),
+        # review F3: the 80th-percentile choice is an uncalibrated default pending the
+        # §3.2 shadow-threshold ledger (Wave 3b) — declared provisional, never truth
+        "late_line_provisional": True,
         "note": ("display-only; STAGE = where the leading edge is. T1 bottleneck LEADS, T2 "
                  "demand confirms, T3 guidance pre-signals the revision, T4 revisions confirm, "
                  "exit-risk caps the late ones; the 0-100 score ranks edge+quality. ENTRY is "

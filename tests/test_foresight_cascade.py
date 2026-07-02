@@ -442,3 +442,49 @@ def test_percentile_lateline_surfaced_in_cascade_payload():
     assert out["late_line_basis"] in ("percentile_cov", "percentile_legacy", "absolute_fallback")
     assert "late_line_threshold" in out
     assert isinstance(out["late_line_threshold"], float)
+
+
+def test_divergent_scales_cov_threshold_never_compared_to_legacy_breadth():
+    """REVIEW F1/F2 REGRESSION: when the basis is percentile_cov, _stage must compare
+    the theme's breadth_cov (same scale as the threshold), NEVER its legacy breadth.
+    De-saturated fixture: legacy breadth saturated ~0.9, breadth_cov ~0.10-0.27. Before
+    the fix, every theme's legacy 0.9 cleared the ~0.23 cov-scale threshold -> 12/12
+    RE-RATING (the exact inversion of the de-saturation this wave ships)."""
+    from engine.foresight_cascade import _compute_broad_hi_threshold, _stage
+    vals = {f"t{i}": 0.90 for i in range(12)}                       # saturated legacy
+    cov = {f"t{i}": 0.10 + 0.015 * i for i in range(12)}            # 0.10 .. 0.265
+    rv_themes = _rv_themes_with_breadth_cov(vals, cov)
+    thr, basis = _compute_broad_hi_threshold(rv_themes)
+    assert basis == "percentile_cov"
+    # mid-pack theme (t5, cov=0.175 < thr) must NOT flag RE-RATING despite legacy 0.9
+    stage_mid, _ = _stage(None, rv_themes["t5"], None,
+                          broad_hi_threshold=thr, late_line_basis=basis)
+    assert stage_mid != "RE-RATING", (
+        "cov-scale threshold was compared against legacy breadth — scale mixing")
+    # top-of-distribution theme (t11, cov=0.265 > thr) SHOULD flag late
+    stage_top, _ = _stage(None, rv_themes["t11"], None,
+                          broad_hi_threshold=thr, late_line_basis=basis)
+    assert stage_top == "RE-RATING"
+
+
+def test_cov_basis_theme_without_cov_not_flaggable_late():
+    """In a percentile_cov build, a theme lacking breadth_cov is NOT flaggable late —
+    it must never fall back to comparing legacy breadth against the cov threshold."""
+    from engine.foresight_cascade import _compute_broad_hi_threshold, _stage
+    vals = {f"t{i}": 0.95 for i in range(10)}
+    cov = {f"t{i}": 0.10 + 0.02 * i for i in range(9)}   # t9 has NO breadth_cov
+    rv_themes = _rv_themes_with_breadth_cov(vals, cov)
+    thr, basis = _compute_broad_hi_threshold(rv_themes)
+    assert basis == "percentile_cov"
+    stage, _ = _stage(None, rv_themes["t9"], None,
+                      broad_hi_threshold=thr, late_line_basis=basis)
+    assert stage != "RE-RATING"
+
+
+def test_late_line_provisional_flag_in_payload():
+    """REVIEW F3: the p80 percentile choice is uncalibrated pending the shadow ledger —
+    the payload must declare it provisional."""
+    from engine.foresight_cascade import compute_foresight_cascade
+    c = compute_foresight_cascade(write_ledger=False)
+    if c is not None:
+        assert c.get("late_line_provisional") is True
