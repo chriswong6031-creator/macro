@@ -152,7 +152,17 @@ def _bear_div(i, price, macd, hi, look=12):
 
 def _buy_filter(i, sig, bear, n):
     """The VALIDATED buy-filter: reclaim-and-hold + bearish-div veto + 200MA bar-raiser.
-    Returns (take: bool|None, reason). None = pending (last 1-2 bars can't confirm yet)."""
+    Returns (take: bool|None, reason). None = pending (last 1-2 bars can't confirm yet).
+
+    ⚠ MARKER-DATE GRADING IS FORBIDDEN (CN-1 masterplan §W6-CN). The ``held``/``reclaim`` tests
+    below read bars i+1/i+2 — i.e. the label at bar ``i`` is knowable only in the FUTURE relative to
+    ``i``. A 'take' marker therefore carries +5.7pp/10d of look-ahead (measured: +9.47%/10d 84.7%
+    from marker dates vs +3.77%/61.5% from the confirmation-day close). Any forward-return grader,
+    backtest, or chart-marker hit-rate MUST anchor on the first close at which the label was
+    KNOWABLE — never on the marker date itself. The china_standout_track ledger enforces this by
+    anchoring on the board-date close (post-confirmation) and measuring from the T+1 fill; see
+    tests/test_signal_quality_no_leak.py which pins that any grade off ``analyze`` markers overstates
+    forward returns. Do NOT grade forward returns from ``marker['date']``."""
     c, a = sig["close"], sig["above200"]
     if bear:
         return False, "veto: bearish divergence"

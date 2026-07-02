@@ -8,15 +8,35 @@ already ran / underperforms". This ledger closes that gap:
   • append_board(rows, asof) — append today's ranked top-N standout rows (board_rank, ticker, tier,
     setup, extended, washout, and the as-of close `level`) to an append-only, point-in-time store,
     keep-FIRST per (date, ticker) so a logged rank is never overwritten / leaked.
-  • grade() — for every matured row join the name's forward return (data/china close store) and
-    report, per horizon: TOP-decile vs rest mean forward return, the board RANK-IC (rank vs forward
-    — a well-ordered board has a NEGATIVE rank-IC: rank #1 should outperform), and EXTENDED-vs-not
-    forward (does the anti-chase demote actually flag underperformers?). "accruing" until enough.
+  • grade() — for every matured row join the name's forward return and report, per horizon:
+    TOP-decile vs rest mean forward return, the board RANK-IC (rank vs forward — a well-ordered
+    board has a NEGATIVE rank-IC: rank #1 should outperform), and EXTENDED-vs-not forward (does the
+    anti-chase demote actually flag underperformers?). "accruing" until enough.
+
+GRADING CONVENTIONS (locked in the SAME pass as the store-group fix so the first number ever
+published is unbiased — CN-1 masterplan §W6-CN):
+  • CSI300-RELATIVE excess, never absolute. Benchmark = 510300.SS (the CSI300 ETF, data/china).
+    An absolute A-share return conflates the reversal pick with the whole-market beta; the honest
+    question is "did the top-of-board beat the index it was picked from".
+  • FILL-REALISTIC entry. The logged reference `level` is the as-of CLOSE, which a retail user cannot
+    trade — the earliest legal fill is the NEXT session (T+1). Entry = T+1 (H+L)/2 (Open is not
+    collected for the whole store yet; (H+L)/2 with the high as the bound is the measured proxy —
+    +4.41%/21d vs +2.13% buy-the-high, the dominant fill uncertainty). Once collectors/_stock_ohlc
+    carries a real Open, upgrade the proxy to the true T+1 open (see ENTRY_BASIS below).
+  • EXCLUDE locked-limit-all-day rows on the entry day (high==low==close): genuinely unfillable
+    (0.22% of entries) — grading them fabricates a fill that never existed.
+  • FLAG pinned-at-limit reference closes (the as-of close sat at the ±limit): the measured bias
+    DOUBLES there (hit 50%→42.6%). We already grade every row from the T+1 fill (never the pinned
+    reference close), so the pin only carries an informational `pinned` flag in the output.
+  • NEVER grade from §7 marker dates. engine/signal_quality.py:161 resolves a 'take' label with the
+    NEXT bar's close (+5.7pp/10d look-ahead). This ledger anchors ONLY on the board-date close
+    (post-confirmation — verified safe 60/60), then fills T+1. The confirmation-day close is the
+    earliest legal anchor; the forward window starts at the T+1 fill.
 
 This is the honest prerequisite for promoting the anti-chase extension DEMOTE to a HARD veto: only
-once grade() shows extended top-of-board names underperform should the veto go live. Append-only,
-point-in-time, keep-first (leak-free). RESEARCH / display telemetry — never a trade trigger.
-Mirrors engine/name_score_grader. See [[signal-track-record-logger]]."""
+once grade() shows extended top-of-board names underperform (CSI300-relative, fill-realistic) should
+the veto go live. Append-only, point-in-time, keep-first (leak-free). RESEARCH / display telemetry —
+never a trade trigger. Mirrors engine/name_score_grader. See [[signal-track-record-logger]]."""
 from __future__ import annotations
 
 import logging
@@ -31,6 +51,13 @@ log = logging.getLogger(__name__)
 _HORIZONS_D = (21, 63)                    # ~1 / 3 months
 _TOP_DECILE = 0.10
 _STORE = "china_standout_track"
+_BENCH = "510300.SS"                      # CSI300 ETF — the ONLY China excess benchmark (data/china)
+# Board tickers are per-NAME A-shares (.SS/.SZ) that live in the china_stocks OHLC store; the small
+# handful of ETFs on a board fall back to the index/ETF store. The #791 bug read only `china` (30
+# ETFs) → 0/120 names resolved → n_graded=0 forever. Try names first, ETFs second.
+_PRICE_GROUPS = ("china_stocks", "china")
+ENTRY_BASIS = "t1_hl2"                    # T+1 (H+L)/2 proxy; upgrades to true T+1 open when collected
+_MIN_GRADED = 8                           # per-horizon rows required before a number is published
 
 
 def _store_path():
@@ -77,23 +104,89 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60) -> 
         return 0
 
 
-def _fwd_return(ticker: str, d0: pd.Timestamp, h: int) -> float | None:
-    try:
-        df = store.read("china", str(ticker))
-        if df is None or "close" not in df:
-            return None
-        s = pd.to_numeric(df["close"], errors="coerce").dropna()
-        s = s[s.index >= d0]
-        if len(s) <= h:
-            return None
-        return float(s.iloc[h] / s.iloc[0] - 1.0)
-    except Exception:  # noqa: BLE001
+def _price_frame(ticker: str) -> pd.DataFrame | None:
+    """OHLC frame for a board name — names resolve in china_stocks, ETFs in china. Returns the first
+    store that has the ticker, else None. (The #791 dead-on-arrival bug: only `china` was read.)"""
+    for g in _PRICE_GROUPS:
+        df = store.read(g, str(ticker))
+        if df is not None and "close" in df:
+            return df
+    return None
+
+
+def _bench_close() -> pd.Series | None:
+    """CSI300 (510300.SS) close series, for CSI300-relative excess. None if unavailable."""
+    df = store.read("china", _BENCH)
+    if df is None or "close" not in df:
         return None
+    return pd.to_numeric(df["close"], errors="coerce").dropna()
+
+
+def _t1_fill(df: pd.DataFrame, d0: pd.Timestamp) -> tuple[float | None, bool, bool]:
+    """Fill-realistic entry: the FIRST session strictly AFTER the board-date close (T+1). Returns
+    (fill_price, locked_limit, pinned). fill = (H+L)/2 proxy (or true Open if the column exists).
+    ``locked_limit`` = T+1 bar printed high==low==close (unfillable — caller must exclude).
+    ``pinned`` = the board-date reference CLOSE sat at that day's high==close (informational)."""
+    idx = df.index
+    after = idx[idx > d0]
+    if len(after) == 0:
+        return None, False, False
+    t1 = after[0]
+    row = df.loc[t1]
+    hi, lo = row.get("high"), row.get("low")
+    op = row.get("open") if "open" in df.columns else None
+    close = row.get("close")
+    locked = (hi is not None and lo is not None and close is not None
+              and pd.notna(hi) and pd.notna(lo) and pd.notna(close)
+              and float(hi) == float(lo) == float(close))
+    # pinned reference close: the board-date bar closed AT its own high (limit-up-style pin) — the
+    # reference the user saw was untradeable; we already grade from the T+1 fill so this is a flag.
+    ref = df.loc[d0] if d0 in df.index else None
+    pinned = bool(ref is not None and pd.notna(ref.get("high")) and pd.notna(ref.get("close"))
+                  and float(ref.get("high")) == float(ref.get("close")))
+    if op is not None and pd.notna(op):
+        fill = float(op)                                  # true T+1 open once collected
+    elif hi is not None and lo is not None and pd.notna(hi) and pd.notna(lo):
+        fill = (float(hi) + float(lo)) / 2.0              # (H+L)/2 proxy
+    elif close is not None and pd.notna(close):
+        fill = float(close)
+    else:
+        return None, locked, pinned
+    return fill, bool(locked), pinned
+
+
+def _fwd_excess(ticker: str, d0: pd.Timestamp, h: int,
+                bench: pd.Series | None) -> tuple[float | None, bool]:
+    """Fill-realistic, CSI300-RELATIVE forward excess over ``h`` sessions from a T+1 entry.
+
+    Returns (excess_or_None, pinned). excess = name (fill→+h close) − CSI300 (T+1→+h) return.
+    None when: the name doesn't resolve, T+1 is locked-limit (unfillable), or the horizon can't
+    mature. NEVER anchored on a §7 marker date — the anchor is the board-date close (post-
+    confirmation) and the return is measured from the earliest legal fill (T+1)."""
+    df = _price_frame(ticker)
+    if df is None:
+        return None, False
+    fill, locked, pinned = _t1_fill(df, d0)
+    if fill is None or locked:                            # unfillable → exclude, don't fabricate
+        return None, pinned
+    close = pd.to_numeric(df["close"], errors="coerce").dropna()
+    fwd = close[close.index > d0]                         # sessions after the board date (T+1, T+2, …)
+    if len(fwd) <= h:
+        return None, pinned
+    name_ret = float(fwd.iloc[h] / fill - 1.0)            # buy at the T+1 fill, exit +h sessions
+    if bench is None:
+        return name_ret, pinned                           # degrade to absolute if the ETF is missing
+    bslice = bench[bench.index > d0]
+    if len(bslice) <= h:
+        return None, pinned
+    bench_ret = float(bslice.iloc[h] / bslice.iloc[0] - 1.0)
+    return name_ret - bench_ret, pinned                   # CSI300-relative excess
 
 
 def grade() -> dict:
-    """Score every matured board row. {available, n_rows, dates, by_horizon} where each horizon
-    carries top-decile vs rest mean forward return, the board rank-IC, and extended-vs-not forward."""
+    """Score every matured board row, CSI300-relative + fill-realistic. {available, n_rows, dates,
+    grading, by_horizon} where each horizon carries top-decile vs rest mean forward EXCESS, the
+    board rank-IC, extended-vs-not forward excess, and a Wilson-CI hit rate vs CSI300."""
     p = _store_path()
     if not p.exists():
         return {"available": False, "note": "no board rows logged yet"}
@@ -104,22 +197,33 @@ def grade() -> dict:
     if df.empty:
         return {"available": False, "note": "empty"}
 
+    bench = _bench_close()
     out = {"available": True, "n_rows": int(len(df)),
            "dates": sorted(df["date"].dropna().unique().tolist()),
-           "horizons_d": list(_HORIZONS_D), "by_horizon": {}}
+           "horizons_d": list(_HORIZONS_D),
+           "grading": {
+               "benchmark": _BENCH, "relative": True, "entry_basis": ENTRY_BASIS,
+               "excludes_locked_limit": True, "flags_pinned": True,
+               "anchor": "board_close_then_t1_fill", "marker_dates": "forbidden",
+               "bench_available": bench is not None,
+           },
+           "by_horizon": {}}
     for h in _HORIZONS_D:
         recs = []
+        n_pinned = 0
         for _i, row in df.iterrows():
-            fr = _fwd_return(row["ticker"], pd.Timestamp(row["date"]), h)
-            if fr is None:
+            ex, pinned = _fwd_excess(row["ticker"], pd.Timestamp(row["date"]), h, bench)
+            if pinned:
+                n_pinned += 1
+            if ex is None:
                 continue
             recs.append({"date": row["date"], "rank": row.get("board_rank"),
-                         "extended": bool(row.get("extended")), "fwd": fr})
-        if len(recs) < 8:
+                         "extended": bool(row.get("extended")), "fwd": ex})
+        if len(recs) < _MIN_GRADED:
             out["by_horizon"][f"{h}d"] = {"n": len(recs), "note": "accruing"}
             continue
         g = pd.DataFrame(recs)
-        # board rank-IC per date (rank vs forward; NEGATIVE = a well-ordered board)
+        # board rank-IC per date (rank vs forward excess; NEGATIVE = a well-ordered board)
         ics = []
         for _d, sub in g.groupby("date"):
             if sub["rank"].nunique() >= 5:
@@ -131,14 +235,31 @@ def grade() -> dict:
         rest_fwd = float(g.tail(len(g) - k)["fwd"].mean()) if len(g) > k else None
         ext = g[g["extended"]]
         non = g[~g["extended"]]
+        hit = float((g["fwd"] > 0).mean())                # share beating CSI300
+        lo, hi = _wilson_ci(int((g["fwd"] > 0).sum()), int(len(g)))
         out["by_horizon"][f"{h}d"] = {
             "n": int(len(g)),
+            "hit_vs_csi300": round(hit, 4),
+            "hit_ci": [round(lo, 4), round(hi, 4)],
+            "median_excess": round(float(g["fwd"].median()), 4),
             "top_decile_fwd": round(top_fwd, 4),
             "rest_fwd": round(rest_fwd, 4) if rest_fwd is not None else None,
             "board_rank_ic": round(float(np.mean(ics)), 4) if ics else None, "n_ic_dates": len(ics),
             "extended_fwd": round(float(ext["fwd"].mean()), 4) if len(ext) >= 5 else None,
             "not_extended_fwd": round(float(non["fwd"].mean()), 4) if len(non) >= 5 else None,
             "n_extended": int(len(ext)),
+            "n_pinned": int(n_pinned),
         }
     out["n_graded"] = max((v.get("n", 0) for v in out["by_horizon"].values()), default=0)
     return out
+
+
+def _wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """Wilson score interval for a hit rate k/n (n>0). Honest small-sample bounds."""
+    if n <= 0:
+        return 0.0, 0.0
+    phat = k / n
+    denom = 1 + z * z / n
+    centre = (phat + z * z / (2 * n)) / denom
+    half = z * ((phat * (1 - phat) / n + z * z / (4 * n * n)) ** 0.5) / denom
+    return max(0.0, centre - half), min(1.0, centre + half)
