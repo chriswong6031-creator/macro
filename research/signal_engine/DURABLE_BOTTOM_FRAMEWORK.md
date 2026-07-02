@@ -383,3 +383,38 @@ B informs wave-4 fire-layer design; nothing from B ships this wave.
 additive inside `_cn_bonus` beside WASHOUT_BONUS/EXT_PENALTY), chip + `china_standout_track`
 ledger fields; the anti-chase EXT_PENALTY stays orthogonal. HK gets NOTHING (gate failed).
 CN re-grade trigger: when the forward ledger accrues a second macro regime.
+
+**Wave-4 pre-registration (2026-07-02, written BEFORE the runs):** the COILED-FIRE layer.
+Candidates, all evaluated INSIDE the daily COILED state (washout_ctx AND sector cohort ≥ 0.4)
+with an 8-trading-day per-name dedupe (first fire of any burst; the SAME dedupe applies to the
+reference): **C1** = m1d_s3d fires; **C2** = union(m1d_s3d, m2d_s3d) fires. **Reference R** =
+m2d_s3d fires (the current COILED platform). Base3d-ALL printed for context. Gates:
+- **G4a (deep-panel folds, 5 folds, 180d purge):** pooled stop5(C) ≤ stop5(R) + 0.5pp AND pooled
+  clean15(C) ≥ clean15(R) − 2pp; per fold (≥4/5): clean15(C) − clean15(R) ≥ −3pp AND
+  stop5(C) ≤ stop5(R) + 1pp.
+- **G4b (basket-panel OOS, decisive):** pooled non-inferiority as G4a; n(C-inside) ≥ 800;
+  per-name (names with ≥3 fires each side): median Δstop5 (C−R) ≤ 0 AND median Δclean15 ≥ −2pp.
+- **G4c (CN replication):** pooled non-inferiority as G4a; n(C-inside) ≥ 1,000.
+- **G4d (capture economics — the reason to ship; must pass on every shipping panel):** median
+  premium-over-trough(C) ≤ premium(R) − 1pp AND median lead(C) ≤ lead(R) AND recall_B15(C) ≥
+  recall_B15(R).
+**Ship rule:** the COILED-FIRE marker ships for a candidate iff G4a AND G4b AND G4d (US);
+CN inclusion additionally requires G4c. Ship shape THIS wave: display chip + forward-ledger
+fields ONLY — no rank/bonus change (the ledger must grade the fire marker live before it earns
+weight). Multiplicity acknowledged: two candidates × three panels; the union C2 is expected to
+win recall by construction — the real question is whether it pays for it on stop5/premium.
+
+**Wave-4 results (2026-07-02, harness `wave4.py`, audited clean — zero critical/major):**
+
+| date | candidate | verdict | numbers | where |
+|---|---|---|---|---|
+| 2026-07-02 | **C1 = m1d-inside-COILED (the wave-3 nominee)** | **NO-SHIP — fails capture on ALL panels** | recall_B15 below R everywhere (stocks 10.45 vs 12.39; baskets 6.02 vs 7.31; cn 33.69 vs 33.92); G4a pooled clean15 knife-edge fail (37.40 vs 37.55 bar, deduped-primary). Earliness bought by amputating recall — the framework's named failure mode, caught by the gate | WAVE4_REPORT.md |
+| 2026-07-02 | **C2 = union(m1d, m2d)-inside-COILED** | **SHIPS — US (stocks+baskets) AND CN; dedupe-robust on every clause** | stocks: n=4,694, stop5 38.41 (better than R 39.12), clean15 37.92 (−1.63, within bar), premium 7.02 vs 8.08, lead 3d vs 6d, recall 14.22 vs 12.39. baskets: n=9,951, non-inferior + recall 8.39 vs 7.31. cn: n=16,820, clean15 35.67, recall 44.02 vs 33.92 (+10.1pp — single-regime caveat applies). Folds 4/5 (fold-2 COVID→2022-top is the weak regime for the fast leg — forward ledger watches it) | WAVE4_REPORT.md T1-T5 |
+| 2026-07-02 | T4 paired first-fire economics | insight | on bottoms caught by BOTH sets, C2 fires first 57-61% of the time, median 2 trading days earlier (1d CN) — but at ~the SAME price (median paired premium improvement 0.0pp US). The cheaper pooled premium comes from catching MORE cheap events (the recall channel), not same-events-cheaper. The earliness prize is TIME + COVERAGE, not fill price | WAVE4_REPORT.md T4 |
+| 2026-07-02 | honest soft spot | recorded | C2 per-name clean15 win-rate sits just under 50% on every panel (39.5/45.6/44.9%) — the non-inferiority is carried by pooled medians, not a broad per-name majority. Gate-passing (pre-registered clauses are median-based) but flagged for the forward ledger | WAVE4_REPORT.md T3 |
+
+**Wave-4 ship record (2026-07-02):** the **COILED-FIRE marker** = a fresh C2 fire (union m1d/m2d
+RSI-MACD cross × 3D-stoch leg × weekly/RSI gates) on a name currently COILED, deduped 8 bars.
+Ships as **display chip + forward-ledger fields ONLY on US + CN** (no rank/bonus change — the
+ledger grades the marker live before it earns weight, per pre-registration). HK still gets
+nothing. Fold-2-style violent mean-reversion regimes are the marker's watch item.

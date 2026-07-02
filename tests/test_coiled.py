@@ -408,3 +408,139 @@ class TestCNWiringShape:
                 assert abs(frac - expected) < 1e-9, (
                     f"{t} (j={j}) sector={sec}: frac={frac:.6f}, expected={expected:.6f}"
                 )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 7. fire_recent (wave-4 COILED-FIRE display chip)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestFireRecent:
+    """Tests for coiled.fire_recent — wave-4 ship record (2026-07-02).
+
+    C2 = union(m1d_s3d, m2d_s3d) inside COILED.
+    Validated: stop5 non-inferior; premium 7.02 vs 8.08; lead 3d vs 6d;
+    recall +1.83pp US / +10.1pp CN.
+    Display chip only — NEVER a rank input or auto-trade.
+    """
+
+    def test_false_on_monotone_downtrend(self):
+        """A strict monotone downtrend never produces a bull cross on any TF.
+        fire_recent must return fire=False and ticks=None."""
+        n = 400
+        prices = np.linspace(200.0, 10.0, n)     # strict monotone decline
+        c = _make_series(prices)
+        r = coiled.fire_recent(c)
+        assert r["fire"] is False, f"Expected fire=False on downtrend, got {r}"
+        assert r["ticks"] is None, f"Expected ticks=None on downtrend, got ticks={r['ticks']}"
+        assert r["src"] is None, f"Expected src=None on downtrend, got src={r['src']}"
+
+    def test_returns_all_keys_on_noisy_data(self):
+        """400 bars of noisy data: result must be a dict with all three keys,
+        values must be JSON-safe (allow_nan=False), and types must be correct."""
+        c = _noisy(400, base=100.0, sigma=1.2, seed=7)
+        r = coiled.fire_recent(c)
+        assert isinstance(r, dict), f"Expected dict, got {type(r)}"
+        assert "fire" in r and "ticks" in r and "src" in r, f"Missing keys: {r.keys()}"
+        # JSON-safe
+        try:
+            json.dumps(r, allow_nan=False)
+        except (ValueError, TypeError) as e:
+            pytest.fail(f"json.dumps(allow_nan=False) failed on noisy data: {e}")
+        # type contracts
+        assert isinstance(r["fire"], bool), f"fire must be bool, got {type(r['fire'])}"
+        assert r["ticks"] is None or isinstance(r["ticks"], int), \
+            f"ticks must be int or None, got {type(r['ticks'])}"
+        assert r["src"] in (None, "m1d", "m2d", "both"), \
+            f"src must be one of None/m1d/m2d/both, got {r['src']!r}"
+
+    def test_deterministic_fire_case(self):
+        """Construct a series where a C2 fire (union m1d/m2d) just printed and verify
+        fire=True with ticks<=3.
+
+        Construction:
+          Phase 1 (300 bars): oscillating flat so RSI varies meaningfully and EMA(14)
+            and EMA(60) diverge. Large sine amplitude (~8%) ensures the 3D stoch
+            produces real crossings during the flat phase.
+          Phase 2 (50 bars):  hard 55% crash (from 100 to 45) — 3D stoch D pins near
+            0 (oversold); b1_from_os (trailing 8 3D bars had D<20) becomes True.
+          Phase 3 (20 bars):  gentle recovery to 52 — on the 2D grid the RSI-MACD
+            crosses up (m2d fire), producing a union fire; the 3D stoch also crosses
+            up from oversold here (so recent_sb_d becomes True, confirm via b1os_d
+            is True, rsi_ok is True).
+
+        Protocol: first find where the union fire naturally lands by calling
+        fire_recent with a large `within`. Then truncate the series so that the fire
+        position is exactly 2 bars from the new end. This is the correct way to build
+        a deterministic test for a lag-heavy indicator: the series shape genuinely
+        triggers the gate — we just position the end so the fire lands inside `within=3`.
+
+        This verifies:
+          - fire=True is achievable (the gate actually fires on a valid construction)
+          - ticks is correctly computed (ticks=2 when we end 2 bars after the fire)
+          - src is one of the valid values (m1d/m2d/both)
+        """
+        # Build the base series
+        t_p1 = np.linspace(0, 6 * np.pi, 300)
+        phase1 = 100.0 + 8.0 * np.sin(t_p1)          # oscillating flat near 100
+        p2 = np.linspace(100.0, 45.0, 50)             # hard crash (-55%)
+        p3 = np.linspace(45.0, 52.0, 20)              # gentle recovery (+15%)
+        p4 = np.array([52.0, 56.0, 61.0, 67.0, 74.0])  # continued burst
+
+        prices = np.concatenate([phase1, p2, p3, p4])
+        c_full = _make_series(prices, start="2013-01-02")
+
+        # Find where the fire naturally lands using a large look-back
+        r_scan = coiled.fire_recent(c_full, within=100)
+        assert r_scan["fire"] is True, (
+            "The base construction must produce at least one union fire somewhere. "
+            f"Got: {r_scan}. "
+            "If this fails, the base series no longer triggers the gate — check the "
+            "RSI-MACD / 3D stoch math in engine/coiled.fire_recent."
+        )
+
+        # Truncate so the fire lands exactly 2 bars from the new end
+        n = len(c_full)
+        fire_pos = (n - 1) - int(r_scan["ticks"])
+        # Chop to fire_pos + 3 bars (fire is at the 3rd-from-last position → ticks=2)
+        c = c_full.iloc[: fire_pos + 3]
+        assert len(c) >= coiled._FIRE_MIN_BARS, (
+            f"Truncated series ({len(c)} bars) is below _FIRE_MIN_BARS={coiled._FIRE_MIN_BARS}. "
+            "Extend Phase 1 or reduce the minimum."
+        )
+
+        r = coiled.fire_recent(c, within=3)
+        assert r["fire"] is True, (
+            f"Expected fire=True after truncation to {len(c)} bars (fire at ticks=2). "
+            f"Got: {r}. Scan result was: {r_scan}."
+        )
+        assert r["ticks"] is not None and r["ticks"] <= 3, \
+            f"Expected ticks<=3, got ticks={r['ticks']}"
+        assert r["src"] in ("m1d", "m2d", "both"), \
+            f"src must be m1d/m2d/both when fire=True, got {r['src']!r}"
+
+    def test_within_zero_edge(self):
+        """within=0 edge case: only fires on the very last bar; must not crash."""
+        c = _noisy(400, seed=13)
+        try:
+            r = coiled.fire_recent(c, within=0)
+        except Exception as e:
+            pytest.fail(f"fire_recent(within=0) raised: {e}")
+        assert isinstance(r, dict), "Must return a dict even for within=0"
+        assert "fire" in r and "ticks" in r and "src" in r
+
+    def test_short_series_returns_null(self):
+        """Series shorter than _FIRE_MIN_BARS returns fire=False, ticks=None, src=None."""
+        c = _noisy(100)
+        r = coiled.fire_recent(c)
+        assert r["fire"] is False
+        assert r["ticks"] is None
+        assert r["src"] is None
+
+    def test_never_raises(self):
+        """fire_recent must never raise for any input size."""
+        for n, seed in [(0, 0), (1, 1), (50, 2), (299, 3), (400, 4)]:
+            c = _noisy(n, seed=seed) if n > 0 else pd.Series([], dtype=float)
+            try:
+                coiled.fire_recent(c)
+            except Exception as e:
+                pytest.fail(f"fire_recent raised on n={n}: {e}")

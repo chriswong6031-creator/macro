@@ -190,6 +190,9 @@ def _row_features(r: dict) -> dict:
         "coiled":        bool((r.get("coiled") or {}).get("coiled")),
         "coiled_star":   bool((r.get("coiled") or {}).get("star")),
         "coiled_cohort": (r.get("coiled") or {}).get("cohort"),
+        # COILED-FIRE wave-4 display chip fields (forward-ledger; False/None pre-schema)
+        "coiled_fire":       bool((r.get("coiled") or {}).get("fire")),
+        "coiled_fire_ticks": (r.get("coiled") or {}).get("fire_ticks"),
     }
 
 

@@ -1,0 +1,219 @@
+{
+  "_meta": {
+    "panel": "cn",
+    "n_names": 1382,
+    "eval_start": "2022-09-01",
+    "min_bars": 800,
+    "workers": 6,
+    "runtime_s": 457.7,
+    "dedupe_window_bars": 8,
+    "sets": {
+      "R": "dedupe(m2d_s3d inside COILED)",
+      "C1": "dedupe(m1d_s3d inside COILED)",
+      "C2": "dedupe(union(m1d_s3d, m2d_s3d) inside COILED)"
+    }
+  },
+  "T1": [
+    {
+      "label": "base3d_ALL_context",
+      "n": 13316,
+      "fires_per_name_yr": 2.92,
+      "stop5": 48.89,
+      "clean10": 38.74,
+      "clean15": 31.53,
+      "clean20": 26.16,
+      "clean30": 18.32,
+      "clean15_h189": 32.46,
+      "dead_money": 6.8,
+      "med_mfe63": 11.81,
+      "med_mae63": -8.74,
+      "med_premium_over_trough": 13.2,
+      "med_lead": 8.0,
+      "recall_B15": 32.58,
+      "recall_B30": 37.26,
+      "trap_fire_rate": 22.73
+    },
+    {
+      "label": "R_deduped",
+      "n": 10258,
+      "fires_per_name_yr": 2.31,
+      "stop5": 45.87,
+      "clean10": 42.97,
+      "clean15": 35.54,
+      "clean20": 29.92,
+      "clean30": 22.1,
+      "clean15_h189": 36.02,
+      "dead_money": 5.03,
+      "med_mfe63": 14.66,
+      "med_mae63": -8.31,
+      "med_premium_over_trough": 10.42,
+      "med_lead": 6.0,
+      "recall_B15": 33.92,
+      "recall_B30": 39.25,
+      "trap_fire_rate": 22.14
+    },
+    {
+      "label": "R_undeduped",
+      "n": 10784,
+      "fires_per_name_yr": 2.43,
+      "stop5": 45.72,
+      "clean10": 43.03,
+      "clean15": 35.57,
+      "clean20": 29.95,
+      "clean30": 22.11,
+      "clean15_h189": 36.09,
+      "dead_money": 5.06,
+      "med_mfe63": 14.65,
+      "med_mae63": -8.3,
+      "med_premium_over_trough": 10.29,
+      "med_lead": 6.0,
+      "recall_B15": 34.29,
+      "recall_B30": 39.83,
+      "trap_fire_rate": 22.4
+    },
+    {
+      "label": "C1_deduped",
+      "n": 12805,
+      "fires_per_name_yr": 2.88,
+      "stop5": 46.19,
+      "clean10": 42.55,
+      "clean15": 36.19,
+      "clean20": 31.4,
+      "clean30": 23.78,
+      "clean15_h189": 36.77,
+      "dead_money": 4.94,
+      "med_mfe63": 15.36,
+      "med_mae63": -7.89,
+      "med_premium_over_trough": 8.26,
+      "med_lead": 3.0,
+      "recall_B15": 33.69,
+      "recall_B30": 37.13,
+      "trap_fire_rate": 24.16
+    },
+    {
+      "label": "C1_undeduped",
+      "n": 14521,
+      "fires_per_name_yr": 3.27,
+      "stop5": 45.98,
+      "clean10": 42.57,
+      "clean15": 36.17,
+      "clean20": 31.4,
+      "clean30": 23.69,
+      "clean15_h189": 36.82,
+      "dead_money": 4.87,
+      "med_mfe63": 15.36,
+      "med_mae63": -7.9,
+      "med_premium_over_trough": 8.13,
+      "med_lead": 3.0,
+      "recall_B15": 35.32,
+      "recall_B30": 39.72,
+      "trap_fire_rate": 24.8
+    },
+    {
+      "label": "C2_deduped",
+      "n": 16820,
+      "fires_per_name_yr": 3.78,
+      "stop5": 46.17,
+      "clean10": 42.37,
+      "clean15": 35.67,
+      "clean20": 30.68,
+      "clean30": 23.15,
+      "clean15_h189": 36.23,
+      "dead_money": 5.04,
+      "med_mfe63": 15.0,
+      "med_mae63": -8.12,
+      "med_premium_over_trough": 8.93,
+      "med_lead": 4.0,
+      "recall_B15": 44.02,
+      "recall_B30": 48.8,
+      "trap_fire_rate": 30.65
+    },
+    {
+      "label": "C2_undeduped",
+      "n": 24377,
+      "fires_per_name_yr": 5.48,
+      "stop5": 45.94,
+      "clean10": 42.66,
+      "clean15": 35.82,
+      "clean20": 30.69,
+      "clean30": 22.93,
+      "clean15_h189": 36.41,
+      "dead_money": 4.91,
+      "med_mfe63": 15.0,
+      "med_mae63": -8.1,
+      "med_premium_over_trough": 9.12,
+      "med_lead": 4.0,
+      "recall_B15": 44.96,
+      "recall_B30": 50.18,
+      "trap_fire_rate": 31.28
+    }
+  ],
+  "T3": [
+    {
+      "comparison": "C1_vs_R",
+      "n_qualifying_names": 1319,
+      "med_per_name_delta_stop5": 0.0,
+      "med_per_name_delta_clean15": 0.0,
+      "pct_names_C_wins_stop5": 45.79,
+      "pct_names_C_wins_clean15": 46.85
+    },
+    {
+      "comparison": "C2_vs_R",
+      "n_qualifying_names": 1325,
+      "med_per_name_delta_stop5": 0.0,
+      "med_per_name_delta_clean15": 0.0,
+      "pct_names_C_wins_stop5": 47.55,
+      "pct_names_C_wins_clean15": 44.91
+    }
+  ],
+  "T4": {
+    "n_paired_events": 3656,
+    "med_paired_prem_improvement_pp": 0.0,
+    "med_paired_days_earlier": 1.0,
+    "pct_events_C2_earlier": 57.55
+  },
+  "T5": [
+    {
+      "half": "even",
+      "set": "R",
+      "n": 5187,
+      "clean15": 36.24,
+      "stop5": 45.65
+    },
+    {
+      "half": "even",
+      "set": "C1",
+      "n": 6491,
+      "clean15": 35.85,
+      "stop5": 46.28
+    },
+    {
+      "half": "even",
+      "set": "C2",
+      "n": 8516,
+      "clean15": 35.72,
+      "stop5": 46.16
+    },
+    {
+      "half": "odd",
+      "set": "R",
+      "n": 5071,
+      "clean15": 34.83,
+      "stop5": 46.09
+    },
+    {
+      "half": "odd",
+      "set": "C1",
+      "n": 6314,
+      "clean15": 36.54,
+      "stop5": 46.1
+    },
+    {
+      "half": "odd",
+      "set": "C2",
+      "n": 8304,
+      "clean15": 35.62,
+      "stop5": 46.18
+    }
+  ]
+}

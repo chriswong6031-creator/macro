@@ -1193,6 +1193,7 @@ def main() -> int:
     _coil_wash: dict[str, bool | None] = {}     # washout context per name
     _coil_div: dict[str, bool] = {}             # bullish divergence per name
     _coil_sector: dict[str, str | None] = {}    # sector per name (for cohort grouping)
+    _coil_fire: dict[str, dict] = {}            # wave-4 COILED-FIRE marker per name (display only)
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
@@ -1203,11 +1204,14 @@ def main() -> int:
         sig_verdict[ticker] = signal_gate.gate(ticker, close)
         # COILED wave-2 ranking bonus: collect per-name inputs for cohort computation below.
         # All four lines are guarded as one block; failure leaves dicts empty for this name.
+        # Wave-4: also collect fire_recent for the COILED-FIRE display chip (display only,
+        # NO rank/bonus change — the ledger grades this live before it earns weight).
         try:
             _coil_d[ticker]      = coiled.weekly_d_last(close)
             _coil_wash[ticker]   = coiled.washout_ctx(close)
             _coil_div[ticker]    = coiled.bull_div(close)
             _coil_sector[ticker] = sector or None
+            _coil_fire[ticker]   = coiled.fire_recent(close)
         except Exception:
             pass
         if fpanels.get(ticker):
@@ -1552,6 +1556,7 @@ def main() -> int:
             log.warning("signal_gate.json write skipped (%s)", e)
     # COILED wave-2 ranking bonus: compute cohort fractions once (cross-sectional, after loop),
     # then build per-ticker assess() dict. Both steps try/except guarded; failure -> empty dict.
+    # Wave-4: merge COILED-FIRE fields into the assess dict (display chip only, NO rank change).
     coiled_by: dict[str, dict] = {}
     try:
         _coil_frac = coiled.cohort_fractions(_coil_d, _coil_sector)
@@ -1559,6 +1564,16 @@ def main() -> int:
             t: coiled.assess(_coil_wash.get(t), _coil_frac.get(t), bool(_coil_div.get(t)))
             for t in sig_verdict
         }
+        # Wave-4 COILED-FIRE: for names that are COILED and have a recent fire, inject the fire
+        # fields directly into the assess dict (JSON-safe; mutates in-place for row flow-through).
+        # NO bonus change, NO rank input — display chip + forward-ledger only.
+        for t, cb in coiled_by.items():
+            if cb.get("coiled"):
+                _fr = _coil_fire.get(t) or {}
+                if _fr.get("fire"):
+                    cb["fire"]       = True
+                    cb["fire_ticks"] = _fr.get("ticks")
+                    cb["fire_src"]   = _fr.get("src")
     except Exception as _e:  # noqa: BLE001 — additive; board degrades gracefully without bonus
         log.warning("coiled bonus skipped (%s)", _e)
         coiled_by = {}
