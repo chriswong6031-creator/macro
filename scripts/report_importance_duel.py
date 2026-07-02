@@ -47,7 +47,16 @@ from engine import qledger as q  # noqa: E402
 # The three tapes and how each names its HIGH/LOW band in the claim's extra{}.
 _CHAMPION_FAMILY = "china_news"
 _CHAMPION_BAND_KEY = "importance_band"
-_CHALLENGER_FAMILIES = ("us_importance_v0", "cn_importance_v0")
+# The W4 PIT-correct challenger families are the primary duel tapes.
+# The W3 biased families (without "_pit") are included for comparison so the
+# integrator can see how much the echo_stats look-ahead / tz-mixed NaT bugs
+# inflated scores.
+_CHALLENGER_FAMILIES = (
+    "us_importance_v0_pit",   # W4 PIT-correct (primary)
+    "cn_importance_v0_pit",   # W4 PIT-correct (primary)
+    "us_importance_v0",       # W3 biased (look-ahead echo_stats) — audit only
+    "cn_importance_v0",       # W3 biased (tz-mixed NaT + look-ahead) — audit only
+)
 _CHALLENGER_BAND_KEY = "band"
 
 
@@ -109,7 +118,13 @@ def _slice_stats(claims: list[dict], grades: list[dict],
 
 
 def build_report(root: Path | str | None = None) -> dict:
-    """Assemble the full duel payload from the ledger. Pure/read-only."""
+    """Assemble the full duel payload from the ledger. Pure/read-only.
+
+    The report includes BOTH the W3 biased families (us/cn_importance_v0) and the
+    W4 PIT-correct families (us/cn_importance_v0_pit) so the integrator can
+    measure the look-ahead bias quantitatively: the gap between the biased and
+    pit-correct HIGH band |excess| is the artefact of the W3 bugs.
+    """
     root = Path(root) if root else _ROOT
     claims = q.load_claims(root)
     grades = q.load_grades(root)
@@ -122,7 +137,7 @@ def build_report(root: Path | str | None = None) -> dict:
             "HIGH": _slice_stats(claims, grades, _CHAMPION_FAMILY, "HIGH", h),
             "LOW": _slice_stats(claims, grades, _CHAMPION_FAMILY, "LOW", h),
         }
-        # challenger — v0 bands per lane
+        # challenger — v0 bands per lane (both W3 biased and W4 PIT-correct)
         for fam in _CHALLENGER_FAMILIES:
             row[f"challenger_{fam}"] = {
                 "HIGH": _slice_stats(claims, grades, fam, "HIGH", h),
@@ -139,39 +154,47 @@ def _fmt_pct(v) -> str:
 
 
 def _print_report(rep: dict) -> None:
-    print("=" * 78)
+    print("=" * 86)
     print("IMPORTANCE DUEL — champion (hand) vs challenger (novelty-v0) vs placebo")
+    print("_pit = W4 PIT-correct (asof-filtered echo_stats + utc=True tz parse)")
     print("metric: mean |forward excess vs bench|  ·  n = honest independent dates")
-    print("=" * 78)
+    print("=" * 86)
+    _tape_rows = [
+        ("CHAMPION hand china_news",          "champion_china_news"),
+        ("CHALLENGER us_v0_pit [W4]",         "challenger_us_importance_v0_pit"),
+        ("CHALLENGER cn_v0_pit [W4]",         "challenger_cn_importance_v0_pit"),
+        ("CHALLENGER us_v0 [W3 biased]",      "challenger_us_importance_v0"),
+        ("CHALLENGER cn_v0 [W3 biased]",      "challenger_cn_importance_v0"),
+    ]
+    _verdict_tapes = [
+        ("hand",        "champion_china_news"),
+        ("v0-US-pit",   "challenger_us_importance_v0_pit"),
+        ("v0-CN-pit",   "challenger_cn_importance_v0_pit"),
+        ("v0-US-biased","challenger_us_importance_v0"),
+        ("v0-CN-biased","challenger_cn_importance_v0"),
+    ]
     for h in rep["grade_horizons"]:
         block = rep["by_horizon"].get(str(h))
         if not block:
             continue
-        print(f"\n── horizon {h}d " + "─" * 62)
-        header = f"  {'tape':<28} {'HIGH |excess|':>14} {'LOW |excess|':>14} "
+        print(f"\n── horizon {h}d " + "─" * 70)
+        header = f"  {'tape':<34} {'HIGH |excess|':>14} {'LOW |excess|':>14} "
         print(header + f"{'HIGH n_dates':>12}")
-        # champion
-        for label, key in (
-            ("CHAMPION hand china_news", "champion_china_news"),
-            ("CHALLENGER us_importance_v0", "challenger_us_importance_v0"),
-            ("CHALLENGER cn_importance_v0", "challenger_cn_importance_v0"),
-        ):
+        for label, key in _tape_rows:
             slc = block.get(key, {})
             hi = slc.get("HIGH", {})
             lo = slc.get("LOW", {})
-            print(f"  {label:<28} {_fmt_pct(hi.get('mean_abs_excess')):>14} "
+            print(f"  {label:<34} {_fmt_pct(hi.get('mean_abs_excess')):>14} "
                   f"{_fmt_pct(lo.get('mean_abs_excess')):>14} "
                   f"{str(hi.get('n_dates', 0)):>12}  [{hi.get('state','?')}]")
         pb = block.get("placebo", {})
-        print(f"  {'PLACEBO null (overall)':<28} {_fmt_pct(pb.get('mean_abs_excess')):>14} "
+        print(f"  {'PLACEBO null (overall)':<34} {_fmt_pct(pb.get('mean_abs_excess')):>14} "
               f"{'—':>14} {str(pb.get('n_dates', 0)):>12}  [{pb.get('state','?')}]")
 
-        # verdict line: does any HIGH band clear placebo AND its own LOW?
+        # verdict line
         pb_x = pb.get("mean_abs_excess")
         verdicts = []
-        for label, key in (("hand", "champion_china_news"),
-                           ("v0-US", "challenger_us_importance_v0"),
-                           ("v0-CN", "challenger_cn_importance_v0")):
+        for label, key in _verdict_tapes:
             slc = block.get(key, {})
             hi = (slc.get("HIGH") or {}).get("mean_abs_excess")
             lo = (slc.get("LOW") or {}).get("mean_abs_excess")
@@ -181,13 +204,14 @@ def _print_report(rep: dict) -> None:
             beats_placebo = (pb_x is not None and hi > pb_x)
             beats_low = (lo is not None and hi > lo)
             verdicts.append(
-                f"{label}: HIGH>{'placebo ✓' if beats_placebo else 'placebo ✗'}"
-                f" {'LOW ✓' if beats_low else 'LOW ✗'}")
+                f"{label}: HIGH>{'placebo v' if beats_placebo else 'placebo x'}"
+                f" {'LOW v' if beats_low else 'LOW x'}")
         print("  verdict: " + " | ".join(verdicts))
-    print("\n" + "=" * 78)
-    print("Kill criterion (D6): novelty-v0 must open a HIGH−LOW gap the hand")
-    print("formula cannot, AND clear the placebo null, over n_dates ≥ 25.")
-    print("=" * 78)
+    print("\n" + "=" * 86)
+    print("Kill criterion (D6): novelty-v0 (_pit) must open a HIGH-LOW gap the hand")
+    print("formula cannot, AND clear the placebo null, over n_dates >= 25.")
+    print("Bias check: compare _pit vs biased [W3] to quantify look-ahead inflation.")
+    print("=" * 86)
 
 
 def main() -> int:

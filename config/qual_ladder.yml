@@ -228,6 +228,86 @@ novelty_v0.importance_score:
     Eligible for CONFIRMER after n_dates>=25 with wilson_ci_low>0 vs matched control.
 
 # ---------------------------------------------------------------------------
+# NOVELTY-V0 US/CN CHALLENGER TAPES — shadow_importance_v0 claim families
+# (registered by scripts/shadow_importance_v0.py at claim_family level)
+# ---------------------------------------------------------------------------
+us_importance_v0:
+  field: importance_v0
+  artifact_glob: "data/qledger/claims.jsonl"
+  producer: scripts/shadow_importance_v0.py
+  claim_family: us_importance_v0
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    US lane novelty-v0 challenger claims. Registered per covered ticker+band (HIGH/LOW)
+    per horizon (5d/21d). Graded nightly against SPY. SUPERSEDED by
+    us_importance_v0_pit below (W3 backfill had echo_stats look-ahead: future
+    corroboration items inflated the breadth/corroboration score). Retained for
+    audit trail only — the duel report reads _pit families.
+  superseded_by: us_importance_v0_pit
+  superseded_reason: >
+    W3 backfill ran echo_stats WITHOUT asof filter; future corroborators (items
+    crawled after the item's seendate) could inflate corroboration (W_CORROBORATION=0.28
+    weight), biasing importance_v0 scores upward. Fixed in W4 (qbus.echo_stats now
+    takes asof parameter; importance_v0.score_components passes it).
+
+cn_importance_v0:
+  field: importance_v0
+  artifact_glob: "data/qledger/claims.jsonl"
+  producer: scripts/shadow_importance_v0.py
+  claim_family: cn_importance_v0
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    CN lane novelty-v0 challenger claims. Registered per covered ticker+band (HIGH/LOW)
+    per horizon (5d/21d). Graded nightly against 510300.SS. SUPERSEDED by
+    cn_importance_v0_pit below for the same look-ahead reason as us_importance_v0.
+  superseded_by: cn_importance_v0_pit
+  superseded_reason: >
+    Same echo_stats look-ahead as us_importance_v0 (W4 fix). Additionally the W3
+    backfill ran pd.to_datetime without utc=True, coercing the 938-row CN lane's
+    tz-aware seendate strings to NaT, so the entire CN novelty lane silently
+    returned novelty_z=None. Both bugs are now fixed in qbus._subject_daily_counts.
+
+# ---------------------------------------------------------------------------
+# NOVELTY-V0 PIT-CORRECT TAPES — clean re-backfill after W4 bug fixes
+# These are the tapes that should be used for the duel report going forward.
+# ---------------------------------------------------------------------------
+us_importance_v0_pit:
+  field: importance_v0
+  artifact_glob: "data/qledger/claims.jsonl"
+  producer: scripts/shadow_importance_v0_pit.py
+  claim_family: us_importance_v0_pit
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    US lane novelty-v0 PIT-correct challenger claims (W4 re-backfill). Uses
+    qbus.echo_stats with asof filter (no future corroboration look-ahead) and
+    qbus._subject_daily_counts with utc=True tz normalisation. These are the
+    correct challenger claims for the duel scoreboard.
+
+cn_importance_v0_pit:
+  field: importance_v0
+  artifact_glob: "data/qledger/claims.jsonl"
+  producer: scripts/shadow_importance_v0_pit.py
+  claim_family: cn_importance_v0_pit
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    CN lane novelty-v0 PIT-correct challenger claims (W4 re-backfill). Uses
+    utc=True tz normalisation so CN seendate strings are no longer coerced to NaT,
+    and echo_stats asof filter prevents future-corroboration inflation. These are
+    the correct challenger claims for the duel scoreboard.
+
+# ---------------------------------------------------------------------------
 # EPU / GPR / SF-FED — D7 one-shot re-aim harness (SHADOW pending single run)
 # ---------------------------------------------------------------------------
 lexical.epu_z:
