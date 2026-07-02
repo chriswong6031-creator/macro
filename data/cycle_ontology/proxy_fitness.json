@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "verdicts": {
+    "memory": {
+      "cycle": "memory",
+      "band": "intermediate",
+      "ref": "yahoo:MU",
+      "kind": "dram",
+      "n_hand": 10,
+      "n_engine": 61,
+      "matched": 8,
+      "match_rate": 0.8,
+      "match_rate_wilson_lo": 0.49,
+      "median_offset_months": 1.62,
+      "tol_years": 0.438,
+      "gate": {
+        "match_rate_min": 0.7,
+        "offset_max_months": 6
+      },
+      "pass": true,
+      "demote": false,
+      "low_confidence": true,
+      "detail": [
+        {
+          "hand": "2006-06",
+          "kind": "peak",
+          "engine": "2006-09",
+          "offset_months": 2.8,
+          "matched": true
+        },
+        {
+          "hand": "2008-12",
+          "kind": "trough",
+          "engine": "2008-11",
+          "offset_months": 0.9,
+          "matched": true
+        },
+        {
+          "hand": "2010-06",
+          "kind": "peak",
+          "engine": "2010-04",
+          "offset_months": 2.1,
+          "matched": true
+        },
+        {
+          "hand": "2013-01",
+          "kind": "trough",
+          "engine": "2012-10",
+          "offset_months": 2.7,
+          "matched": true
+        },
+        {
+          "hand": "2014-12",
+          "kind": "peak",
+          "engine": "2014-12",
+          "offset_months": 0.4,
+          "matched": true
+        },
+        {
+          "hand": "2016-06",
+          "kind": "trough",
+          "engine": "2016-05",
+          "offset_months": 1.1,
+          "matched": true
+        },
+        {
+          "hand": "2018-10",
+          "kind": "peak",
+          "engine": "2018-05",
+          "offset_months": 4.6,
+          "matched": true
+        },
+        {
+          "hand": "2019-09",
+          "kind": "trough",
+          "engine": "2020-03",
+          "offset_months": 6.0,
+          "matched": false
+        },
+        {
+          "hand": "2021-12",
+          "kind": "peak",
+          "engine": "2022-01",
+          "offset_months": 0.9,
+          "matched": true
+        },
+        {
+          "hand": "2023-06",
+          "kind": "trough",
+          "engine": "2022-09",
+          "offset_months": 8.7,
+          "matched": false
+        }
+      ]
+    },
+    "uranium": {
+      "cycle": "uranium",
+      "band": "intermediate",
+      "ref": "yahoo:CCJ",
+      "kind": "u3o8",
+      "n_hand": 4,
+      "n_engine": 50,
+      "matched": 4,
+      "match_rate": 1.0,
+      "match_rate_wilson_lo": 0.51,
+      "median_offset_months": 0.59,
+      "tol_years": 1.0,
+      "gate": {
+        "match_rate_min": 0.7,
+        "offset_max_months": 6
+      },
+      "pass": true,
+      "demote": false,
+      "low_confidence": true,
+      "detail": [
+        {
+          "hand": "2007-06",
+          "kind": "peak",
+          "engine": "2007-06",
+          "offset_months": 0.1,
+          "matched": true
+        },
+        {
+          "hand": "2016-11",
+          "kind": "trough",
+          "engine": "2016-11",
+          "offset_months": 0.5,
+          "matched": true
+        },
+        {
+          "hand": "2024-01",
+          "kind": "peak",
+          "engine": "2024-05",
+          "offset_months": 4.5,
+          "matched": true
+        },
+        {
+          "hand": "2025-03",
+          "kind": "trough",
+          "engine": "2025-04",
+          "offset_months": 0.7,
+          "matched": true
+        }
+      ]
+    }
+  }
+}
