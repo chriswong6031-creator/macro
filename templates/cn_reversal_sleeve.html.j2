@@ -1,0 +1,236 @@
+{# ===================================================================== #}
+{#  CN Reversal Sleeve — SHADOW preview (cn_reversal_sleeve.html)         #}
+{#  UNLINKED: deliberately NOT in _navlinks. noindex. Preview-only.       #}
+{#  The validated within-sector 3M reversal edge at its OWN product unit: #}
+{#  a monthly-rebalanced, no-gate, EW, small-per-name BASKET (a PORTFOLIO,#}
+{#  not stock tips). Sleeve-level stats only; per-member context chips    #}
+{#  are DISPLAY ONLY. Standalone page (theme.css only) — no shared nav.   #}
+{# ===================================================================== #}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{# tone class helper: semantic .pos / .neg (zh flips color at :root) #}
+{% macro signed(v, pct=false, dp=2) -%}
+{% if v is not none %}<span class="{{ 'pos' if v >= 0 else 'neg' }}">{{ ('%+.'~dp~'f')|format(v) }}{{ '%' if pct else '' }}</span>{% else %}—{% endif %}
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>CN Reversal Sleeve — shadow preview (portfolio, not tips)</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||'';if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1360px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:22px; margin:0 0 2px; }
+  h2 { font-size:16px; margin:0; }
+  .lead-p { color:var(--muted); font-size:13px; margin:0 0 12px; max-width:940px; }
+  .shadow-tag { display:inline-block; font-size:11px; font-weight:800; letter-spacing:.04em;
+    color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line));
+    background:color-mix(in srgb,var(--warn) 12%,transparent); padding:2px 8px; border-radius:7px; margin-left:8px; }
+  .pos { color:var(--up); font-variant-numeric:tabular-nums; }
+  .neg { color:var(--down); font-variant-numeric:tabular-nums; }
+  /* sleeve-size chip */
+  .sleeve-chip { display:inline-flex; align-items:center; gap:8px; font-size:13px; font-weight:700;
+    padding:6px 13px; border-radius:10px; border:1px solid var(--line); background:var(--panel); margin:0 0 12px; }
+  .sleeve-chip .fac { font-size:16px; font-variant-numeric:tabular-nums; }
+  .sleeve-chip[data-state="caution"] { border-color:color-mix(in srgb,var(--warn) 45%,var(--line)); }
+  .sleeve-chip[data-state="elevated"],.sleeve-chip[data-state="risk_off"] { border-color:color-mix(in srgb,var(--down) 45%,var(--line)); }
+  .sleeve-chip .prov { font-size:11px; font-weight:500; color:var(--muted); }
+  /* stat strip */
+  .strip { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:0 0 14px; }
+  .stat { font-size:12px; color:var(--muted); padding:5px 12px; border:1px solid var(--line); border-radius:9px; background:var(--panel); }
+  .stat b { color:var(--text); font-size:14px; font-variant-numeric:tabular-nums; }
+  /* disclosure box */
+  .disc { font-size:12.5px; color:var(--muted); border:1px dashed var(--line); border-radius:10px;
+    padding:11px 13px; margin:0 0 14px; max-width:960px; }
+  .disc b { color:var(--text); }
+  .disc ul { margin:6px 0 0; padding-left:18px; } .disc li { margin:2px 0; }
+  .disc.warn { border-style:solid; border-color:color-mix(in srgb,var(--warn) 40%,var(--line)); }
+  /* section heads */
+  .sec { display:flex; align-items:baseline; gap:10px; margin:22px 0 6px; }
+  .sec .cnt { color:var(--muted); font-size:12.5px; font-variant-numeric:tabular-nums; }
+  .sub { color:var(--muted); font-size:12.5px; margin:0 0 8px; max-width:900px; }
+  /* backcast NAV */
+  .nav-wrap { border:1px solid var(--line); border-radius:12px; background:var(--panel); padding:12px 14px; max-width:980px; }
+  .nav-legend { display:flex; gap:16px; font-size:12px; color:var(--muted); margin:0 0 6px; }
+  .nav-legend .k { display:inline-flex; align-items:center; gap:6px; }
+  .nav-legend .sw { width:14px; height:3px; border-radius:2px; display:inline-block; }
+  .bc-stats { display:flex; flex-wrap:wrap; gap:14px; font-size:12.5px; color:var(--muted); margin:8px 0 0; font-variant-numeric:tabular-nums; }
+  .bc-stats b { color:var(--text); }
+  /* members table */
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  th,td { text-align:left; padding:6px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; font-size:11.5px; }
+  td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .tk { font-weight:800; }
+  .revz { font-weight:700; }
+  .chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
+  .chip { font-size:10.5px; padding:1px 6px; border-radius:6px; border:1px solid var(--line); color:var(--muted); }
+  .chip.warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
+  .chip.prob { color:var(--muted); border-style:dashed; }
+  .empty { color:var(--muted); font-size:13px; padding:14px; border:1px dashed var(--line); border-radius:10px; }
+  .pass { font-size:11.5px; color:var(--muted); margin:8px 0 0; }
+  .foot { color:var(--muted); font-size:11.5px; margin-top:26px; border-top:1px solid var(--line); padding-top:12px; }
+  code { font-size:11px; background:color-mix(in srgb,var(--muted) 12%,transparent); padding:1px 4px; border-radius:4px; }
+</style>
+</head>
+<body>
+<h1>{{ t('CN Reversal Sleeve','A股反转组合') }}<span class="shadow-tag">SHADOW · not live</span></h1>
+<p class="lead-p">{{ t(
+  'The validated A-share edge — deepest-quintile 3-month WITHIN-SECTOR reversal — shipped at its own product unit: a MONTHLY-rebalanced, EQUAL-WEIGHT, small-per-name BASKET with NO confirmation gate (every gate tested flips the edge negative). This is a PORTFOLIO, not stock tips. Sleeve-level stats only.',
+  '已验证的A股优势——季度内“同板块最深回撤”反转（最深五分位）——以其自身产品单元交付：按月再平衡、等权、单只小仓位的组合，且无任何确认门槛（每一个门槛都会让优势转负）。这是一个组合，不是个股建议。仅展示组合层面统计。') }}</p>
+
+{# ---- SLEEVE SIZE chip (risk_radar_intl — SLEEVE-level, never per-name) ---- #}
+<div class="sleeve-chip" data-state="{{ d.sizing.radar_state or 'unknown' }}">
+  <span class="fac">×{{ '%.2f'|format(d.sizing.sleeve_factor) }}</span>
+  <span>{{ t('sleeve gross','组合仓位') }}</span>
+  <span class="prov">· {{ t('CN drawdown radar','A股回撤雷达') }}: {{ d.sizing.radar_state or '—' }}
+    · can_force <code>{{ 'yes' if d.sizing.can_force else 'no' }}</code>
+    {% if d.sizing.radar_as_of %}· {{ d.sizing.radar_as_of }}{% endif %}</span>
+</div>
+
+<div class="strip">
+  <span class="stat">{{ t('as of','截至') }} <b>{{ d.as_of }}</b></span>
+  <span class="stat">{{ t('data through','数据截至') }} <b>{{ d.data_through }}</b></span>
+  <span class="stat">{{ t('members','成分') }} <b>{{ d.n_members }}</b></span>
+  <span class="stat">{{ t('universe','可选池') }} <b>{{ d.n_universe }}</b></span>
+  <span class="stat">{{ t('sectors','行业') }} <b>{{ d.sectors|length }}</b></span>
+  <span class="stat">{{ t('equal weight','等权') }} <b>{{ (d.equal_weight*100)|round(2) }}%</b></span>
+  <span class="stat">{{ t('rebalance','再平衡') }} <b>{{ t('monthly','按月') }}</b></span>
+</div>
+
+{# ---- HONEST DISCLOSURE (portfolio, not tips) ---- #}
+<div class="disc warn">
+  <b>{{ t('Read this as a portfolio, not stock tips.','请把它当作组合，而非个股建议。') }}</b>
+  <ul>
+    <li>{{ t('Per-name drawdowns are deep — the validated construction saw','单只回撤很深——已验证构造的历史') }}
+      <span class="neg">{{ '%.1f'|format(d.presentation.maxdd_disclosure_pct) }}%</span>
+      {{ t('maximum drawdown. It BUYS into weakness.','最大回撤。它是在买入弱势。') }}</li>
+    <li>{{ t('Expected monthly hit rate ≈','预期月度胜率约') }} <b>{{ d.presentation.expected_monthly_hit_pct }}%</b>
+      — {{ t('roughly a coin-flip that beats the index each month; the edge is small and cumulative.','约等于每月略胜指数的概率；优势小而累积。') }}</li>
+    <li>{{ d.presentation.one_bet_note }}</li>
+    <li>{{ d.presentation.fill_note }}</li>
+    <li><b>{{ t('Historical stats below are an UPPER BOUND','下方历史统计为上界') }}</b> —
+      {{ t('reconstructed on the current plane, which under-represents delisted / dropped names (survivorship). The forward ledger is the real record.','在当前面板上重建，低估了退市/剔除的名称（幸存者偏差）。前瞻记录簿才是真实记录。') }}</li>
+  </ul>
+</div>
+
+{# ---- BACKCAST NAV vs CSI300 (reconstruction, upper bound) ---- #}
+<div class="sec"><h2>{{ t('Backcast — NAV vs CSI300','回测——净值 vs 沪深300') }}</h2>
+  <span class="cnt">{% if d.backcast %}{{ d.backcast.n_legs }} {{ t('rebalances','次再平衡') }} · {{ d.backcast.months }}m{% endif %}</span></div>
+<p class="sub">{{ t('Reconstruction of the trailing ~24 monthly rebalances on the current (upper-bound) plane — clearly marked reconstruction, not a live record.','在当前（上界）面板上重建近约24次月度再平衡——明确标注为重建，而非真实记录。') }}</p>
+{% if d.backcast and d.backcast.nav and d.backcast.nav.dates|length > 1 %}
+{% set nav = d.backcast.nav %}
+{% set allv = nav.sleeve + nav.csi300 %}
+{% set vmax = allv|max %}{% set vmin = allv|min %}
+{% set span = (vmax - vmin) if (vmax - vmin) > 0 else 1 %}
+{% set W = 940 %}{% set H = 210 %}{% set n = nav.dates|length %}
+<div class="nav-wrap">
+  <div class="nav-legend">
+    <span class="k"><span class="sw" style="background:var(--up)"></span>{{ t('Sleeve','组合') }}</span>
+    <span class="k"><span class="sw" style="background:var(--muted)"></span>{{ t('CSI300','沪深300') }}</span>
+    <span class="k">{{ t('start = 1.00','起点=1.00') }}</span>
+  </div>
+  <svg viewBox="0 0 {{ W }} {{ H }}" width="100%" preserveAspectRatio="none" role="img"
+       aria-label="Sleeve NAV versus CSI300">
+    <line x1="0" y1="{{ H }}" x2="{{ W }}" y2="{{ H }}" stroke="var(--line)"/>
+    {# baseline at NAV=1.0 #}
+    {% set y1 = (H - ((1.0 - vmin) / span) * (H - 14) - 7) %}
+    <line x1="0" y1="{{ '%.1f'|format(y1) }}" x2="{{ W }}" y2="{{ '%.1f'|format(y1) }}" stroke="var(--line)" stroke-dasharray="3 4"/>
+    {% set pts_b = [] %}
+    {% for v in nav.csi300 %}{% set x = loop.index0 / (n-1) * W %}{% set y = H - ((v - vmin)/span)*(H-14) - 7 %}{% set _ = pts_b.append('%.1f,%.1f'|format(x, y)) %}{% endfor %}
+    <polyline fill="none" stroke="var(--muted)" stroke-width="1.6" points="{{ pts_b|join(' ') }}"/>
+    {% set pts_s = [] %}
+    {% for v in nav.sleeve %}{% set x = loop.index0 / (n-1) * W %}{% set y = H - ((v - vmin)/span)*(H-14) - 7 %}{% set _ = pts_s.append('%.1f,%.1f'|format(x, y)) %}{% endfor %}
+    <polyline fill="none" stroke="var(--up)" stroke-width="2.1" points="{{ pts_s|join(' ') }}"/>
+  </svg>
+  <div class="bc-stats">
+    <span>{{ t('excess / mo','月度超额') }} {{ signed(d.backcast.excess_mo_pct, pct=true) }}</span>
+    <span>{{ t('Sharpe (ann.)','夏普(年化)') }} <b>{{ d.backcast.sharpe if d.backcast.sharpe is not none else '—' }}</b></span>
+    <span>{{ t('max drawdown','最大回撤') }} <span class="neg">{{ '%.1f'|format(d.backcast.maxdd_pct) }}%</span></span>
+    <span>{{ t('hit','胜率') }} <b>{{ d.backcast.hit_pct }}%</b></span>
+    <span>{{ t('graded on','评分基准') }} <code>{{ d.backcast.graded_on }}</code></span>
+  </div>
+  <div class="bc-stats">
+    <span>{{ t('Reference (validated, 1990→2026)','参考（已验证，1990→2026）') }}:
+      {{ t('excess','超额') }} <b>+{{ d.reference.excess_mo_pct }}%/mo</b> ·
+      Sharpe <b>{{ d.reference.sharpe }}</b> · maxDD <span class="neg">{{ d.reference.maxdd_pct }}%</span> ·
+      {{ t('hit','胜率') }} <b>{{ d.reference.hit_pct }}%</b> · n={{ d.reference.n_rebalances }}</span>
+  </div>
+  <p class="pass">{{ t('Passport','护照') }}: basis <code>{{ d.presentation.passport.basis }}</code> ·
+    frame <code>{{ d.presentation.passport.frame }}</code> · n <code>{{ d.presentation.passport.n }}</code> ·
+    <span class="neg">{{ t('UPPER BOUND','上界') }}</span> · {{ d.backcast.caveat }}</p>
+</div>
+{% else %}
+<div class="empty">{{ t('Backcast unavailable (plane too short).','回测不可用（面板过短）。') }}</div>
+{% endif %}
+
+{# ---- FORWARD LEDGER (the real record) ---- #}
+<div class="sec"><h2>{{ t('Forward ledger — the real record','前瞻记录簿——真实记录') }}</h2>
+  <span class="cnt">{{ d.ledger.rows }} {{ t('rows','行') }}</span></div>
+<p class="sub">{{ t('Every rebalance is registered to its own point-in-time parquet and graded CSI300-relative, fill-realistic (T+1, locked-limit excluded). This is what the sleeve is judged on — not the backcast.','每次再平衡都登记到自有的时点parquet，并按沪深300相对、真实成交（T+1、排除一字板）评分。组合以此为准——而非回测。') }}</p>
+{% set lg = (d.ledger.graded or {}).get('graded') or {} %}
+{% if lg.get('mean_excess_per_rebalance') is not none %}
+<div class="bc-stats">
+  <span>{{ t('rebalances graded','已评分再平衡') }} <b>{{ lg.n_rebalances }}</b></span>
+  <span>{{ t('mean excess / rebalance','每次超额均值') }} {{ signed((lg.mean_excess_per_rebalance*100), pct=true) }}</span>
+  <span>{{ t('hit vs CSI300','对沪深300胜率') }} <b>{{ (lg.hit_vs_csi300*100)|round(1) }}%</b></span>
+</div>
+{% else %}
+<div class="empty">{{ t('Accruing — the sleeve grades once enough rebalances mature (conventions locked in from day 1).','累积中——待足够再平衡成熟后开始评分（评分惯例自第一天锁定）。') }}
+  <code>n={{ lg.get('n_rebalances', 0) }}</code></div>
+{% endif %}
+<p class="pass">{{ t('Conventions','惯例') }}: <code>{{ d.ledger.conventions }}</code> · <code>{{ d.ledger.artifact }}</code></p>
+
+{# ---- CURRENT MEMBERSHIP ---- #}
+<div class="sec"><h2>{{ t('Current membership','当前成分') }}</h2>
+  <span class="cnt">{{ d.n_members }} {{ t('names','只') }} · {{ t('EW','等权') }} · {{ t('no gate','无门槛') }}</span></div>
+<p class="sub">{{ t('Deepest-quintile within-sector 3M reversal fuel (rev_z). Universe hygiene only: ST fail-closed, real-mktcap floor, ADV floor. Context chips are DISPLAY ONLY — they do NOT affect membership or weights.','同板块3个月反转燃料最深五分位（rev_z）。仅做基础净化：ST一律排除、真实市值下限、成交额下限。上下文标签仅供展示——不影响成分或权重。') }}
+  <br>{{ t('screened out','已筛除') }}: ST {{ d.screened.st }} · {{ t('mcap','市值') }} {{ d.screened.mcap }} · ADV {{ d.screened.adv }}</p>
+{% if d.members %}
+<table>
+  <thead><tr>
+    <th>#</th><th>{{ t('Ticker','代码') }}</th><th>{{ t('Name','名称') }}</th><th>{{ t('Sector','行业') }}</th>
+    <th class="num">rev_z</th><th class="num">{{ t('3M ret','3月涨幅') }}</th>
+    <th class="num">{{ t('sec rank','行业排名') }}</th><th class="num">{{ t('mcap 亿','市值亿') }}</th><th class="num">{{ t('wt','权重') }}</th>
+  </tr></thead>
+  <tbody>
+  {% for m in d.members %}
+  <tr>
+    <td class="num">{{ loop.index }}</td>
+    <td class="tk">{{ m.ticker }}</td>
+    <td>{{ m.name }}
+      {% if m.context_chips %}
+      <div class="chips">
+        {% for dm in m.context_chips.demotions or [] %}<span class="chip warn" title="{{ dm.measured }}">{{ t(dm.label_en, dm.label_zh) }}</span>{% endfor %}
+        {% if m.context_chips.probationary %}{% for k, pv in m.context_chips.probationary.items() %}<span class="chip prob" title="{{ pv.passport.measured if pv.passport else '' }}">{{ k }}</span>{% endfor %}{% endif %}
+      </div>
+      {% endif %}
+    </td>
+    <td>{{ m.sector }}</td>
+    <td class="num revz">{{ '%.2f'|format(m.rev_z) }}</td>
+    <td class="num">{{ signed(m.ret_3m, pct=true, dp=1) }}</td>
+    <td class="num">{{ m.sector_rank }}/{{ m.sector_n }}</td>
+    <td class="num">{{ m.mktcap_yi|round|int if m.mktcap_yi is not none else '—' }}</td>
+    <td class="num">{{ (m.weight*100)|round(2) }}%</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">{{ t('No members today (plane unavailable).','今日无成分（面板不可用）。') }}</div>
+{% endif %}
+
+<div class="foot">
+  {{ t('SHADOW product','影子产品') }} · <code>site/factordata/cn_reversal_sleeve.json</code> ·
+  {{ t('built','构建于') }} {{ built }} ·
+  {{ t('This replaces the current baskets framing only when its forward ledger beats the baskets on measured CSI300-relative hit + Sharpe.','仅当其前瞻记录簿在实测沪深300相对胜率与夏普上胜过现有篮子框架时，才取代现有篮子。') }}
+</div>
+</body>
+</html>

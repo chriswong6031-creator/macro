@@ -115,6 +115,10 @@ jobs:
           run_py "china A-share thematic baskets (build_baskets_china)"    scripts.build_baskets_china
           run_py "china THS concept baskets (build_baskets_china_ths)"     scripts.build_baskets_china_ths
           run_py "hong kong thematic baskets (build_baskets_hk)"           scripts.build_baskets_hk
+          # W6-CN CN-5: CN Reversal Sleeve (SHADOW). Runs AFTER the china builds so the
+          # china_search plane + risk_radar_intl chip are fresh; asia lane so the forward
+          # ledger persists (lane-gated). Failure-isolated: the script always exits 0.
+          CN_SLEEVE_LANE=asia run_py "cn reversal sleeve (build_cn_reversal_sleeve)" scripts.build_cn_reversal_sleeve
           exit 0
       - name: rebuild China/HK stock-search libraries (resilient — guarantees the analyzers ship)
         run: |
