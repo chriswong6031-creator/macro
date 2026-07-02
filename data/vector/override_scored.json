@@ -1,0 +1,68 @@
+{
+  "schema": "btc_override_ledger.v1",
+  "as_of": "2026-07-01",
+  "override_id": "midterm_blackout",
+  "graded_year": 2026,
+  "gate_start": "2026-01-01",
+  "gate_release": "2026-11-03",
+  "window_start": "2026-10-01",
+  "window_end": "2026-12-10",
+  "frozen_spec_version": "v1",
+  "grading_spec_source": "frozen_v1 (registry pending W0)",
+  "subclaims": {
+    "drawdown_deepens_into_window": {
+      "status": "PENDING",
+      "observed": null,
+      "resolved_on": null,
+      "eta": "2026-12-10",
+      "reason": "not yet reached window_end",
+      "p_raw": null,
+      "p_bh": null,
+      "significant_at_q10": null,
+      "definition": "The minimum BTC price in the thesis bottom-window is lower than the minimum price between gate-start and window-open (the window is the genuine trough, not a mid-gate noise dip)."
+    },
+    "no_new_high": {
+      "status": "PENDING",
+      "observed": null,
+      "resolved_on": null,
+      "eta": "2026-11-03",
+      "reason": "gate not yet elapsed",
+      "p_raw": null,
+      "p_bh": null,
+      "significant_at_q10": null,
+      "definition": "BTC does not print a new all-time high (above ATH at gate-start) at any point during the gate period [GS, election-day]. An ATH breach is the Class-1 invalidation trigger for the midterm-blackout thesis."
+    },
+    "bottom_lands_in_window": {
+      "status": "PENDING",
+      "observed": null,
+      "resolved_on": null,
+      "eta": "2027-03-10",
+      "reason": "not yet reached window_end + 90d",
+      "p_raw": null,
+      "p_bh": null,
+      "significant_at_q10": null,
+      "definition": "The lowest BTC close from gate-start through window-close+90d falls inside the thesis bottom-window [window_start, window_close], confirming the cycle-clock timing claim."
+    },
+    "re_entry_captures_recovery": {
+      "status": "PENDING",
+      "observed": null,
+      "resolved_on": null,
+      "eta": "2027-05-02",
+      "reason": "not yet reached gate_release + 180d",
+      "p_raw": null,
+      "p_bh": null,
+      "significant_at_q10": null,
+      "definition": "BTC closes on election-day are lower than at gate-start (the gate protected against a declining tape), AND BTC close 180d after election-day exceeds the election-day close (the post-gate rally materialises \u2014 the opportunity cost of the gate was negative)."
+    }
+  },
+  "family_size": 4,
+  "fdr": "Benjamini-Hochberg step-up, q=0.1, family m=4 fixed a-priori",
+  "bootstrap": {
+    "block": 21,
+    "B": 2000,
+    "seed": 7,
+    "null": "circular block bootstrap of pre-gate log returns"
+  },
+  "authority": "MONITORING ONLY \u2014 zero allocation authority. Nothing in sizing/allocation reads this file.",
+  "n_ledger_rows": 1
+}
