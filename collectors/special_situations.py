@@ -679,6 +679,231 @@ def enrich_summaries(limit: int | None = None) -> pd.DataFrame:
     return df
 
 
+# --------------------------------------------------------------------------- #
+# W5 extraction lane — qual_extraction.v1 on the 8-K body (§2.4, P5)
+# --------------------------------------------------------------------------- #
+
+def _extraction_importance_slice(df: pd.DataFrame, percentile: int) -> pd.DataFrame:
+    """Return the top-N-percentile importance slice of 8-K rows that have a full body.
+
+    Priority ranking (deterministic, no LLM needed):
+      3 — High-confidence structured/LLM-verified situations (SC 13D/E-3, merger proxy,
+          LLM-verified with high/medium confidence)
+      2 — Decisively-classified 8-K situations (item 1.03/3.01 + other decisive items)
+      1 — Text/keyword-classified situations
+      0 — Uncovered / deferred / skip rows
+
+    The top `percentile` % of rows by this score are eligible for extraction.
+    """
+    if df is None or df.empty:
+        return df if df is not None else pd.DataFrame()
+
+    high_conf_forms = {"SC 13D", "SC 13D/A", "SC 13E3", "SC 13E3/A", "DEFM14A", "PREM14A",
+                       "DEFC14A", "PREC14A", "SC TO-T", "SC TO-T/A"}
+    decisive_items = {"1.03", "3.01"}
+
+    def _prio(row) -> int:
+        ft = str(row.get("form_type") or "")
+        if ft in high_conf_forms:
+            return 3
+        if str(row.get("llm_confidence") or "").lower() in ("high", "medium"):
+            return 3
+        items = str(row.get("items") or "")
+        if any(it in items for it in decisive_items):
+            return 2
+        if str(row.get("status") or "") == "ok":
+            return 1
+        return 0
+
+    df = df.copy()
+    df["_prio"] = df.apply(_prio, axis=1)
+    # take rows above the percentile threshold (e.g. top 20% = priority >= threshold)
+    # using a simple quantile cut on the priority score
+    threshold = df["_prio"].quantile(percentile / 100.0)
+    eligible = df[df["_prio"] >= threshold].copy()
+    eligible = eligible.drop(columns=["_prio"], errors="ignore")
+    return eligible
+
+
+def enrich_extraction(limit: int | None = None) -> pd.DataFrame:
+    """W5 §2.4 — qual_extraction.v1 structured extraction for 8-K filings.
+
+    Extends the existing LLM-annotation pipeline (llm_category / llm_role /
+    llm_confidence / llm_terms / summary) with citation-verified structured fields:
+    v1_direction, v1_magnitude, v1_horizon, v1_reversibility, v1_importance_raw,
+    v1_confidence, v1_evidence (JSON string), v1_degraded_reason, v1_brain_usable.
+
+    OLD columns (llm_* / summary) are UNTOUCHED. New v1_* columns are appended.
+
+    Cost guard: only the top-importance slice (~20% by default, config-gated) is
+    extracted; a per-build cap (extract_per_build) prevents runaway spend.
+
+    Also registers a salience-only qledger claim (direction != unknown AND resolvable
+    ticker) in the extraction_8k claim family at SHADOW state (desk=extraction_8k).
+    """
+    from engine import qual_extraction as qex
+    cfg = _cfg()
+    df = _read_events()
+    if df is None or df.empty:
+        return df if df is not None else pd.DataFrame()
+
+    # Gate: module enabled + API key present
+    if not qex.enabled():
+        log.info("special_situations extraction lane: gated off (qual_extraction disabled)")
+        return df
+
+    # Ensure v1_* columns exist
+    v1_cols = ["v1_direction", "v1_magnitude", "v1_horizon", "v1_reversibility",
+               "v1_importance_raw", "v1_confidence", "v1_evidence",
+               "v1_degraded_reason", "v1_brain_usable", "v1_source_id",
+               "v1_model_id", "v1_extracted_at"]
+    for col in v1_cols:
+        if col not in df.columns:
+            df[col] = pd.NA
+
+    # Candidates: 8-K filings with a body text (doc_cache exists) that have not yet
+    # been extracted (v1_source_id is NA).
+    need_extraction = df[
+        df.form_type.isin({"8-K", "8-K/A"}) &
+        df.v1_source_id.isna()
+    ].copy()
+
+    if need_extraction.empty:
+        log.info("special_situations extraction lane: nothing to extract")
+        return df
+
+    # Top-importance slice
+    pct = int(cfg.get("qual_extraction_importance_percentile",
+                      config.load().get("qual_extraction", {}).get("importance_percentile", 80)))
+    eligible = _extraction_importance_slice(need_extraction, percentile=pct)
+
+    # Most recent first; honour per-build cap
+    eligible = eligible.sort_values("date_filed", ascending=False)
+    cap = limit if limit is not None else int(
+        config.load().get("qual_extraction", {}).get("extract_per_build", 100))
+    eligible = eligible.head(cap)
+
+    if eligible.empty:
+        log.info("special_situations extraction lane: empty after importance slice")
+        return df
+
+    # Extract
+    updates: dict[str, dict] = {}
+    for _, row in eligible.iterrows():
+        body = _fetch_filing_text(str(row.get("cik") or ""), str(row.get("accession") or ""))
+        if not body:
+            # Body not available — record attempt so we don't retry on every build
+            updates[row["id"]] = {
+                "v1_source_id": "no_body",
+                "v1_degraded_reason": "body_not_fetched",
+                "v1_brain_usable": False,
+            }
+            continue
+        context = (f"8-K filing: {row.get('company')} (form_type={row.get('form_type')}, "
+                   f"items={row.get('items') or '—'}, date={row.get('date_filed')})")
+        result = qex.extract(body, context=context, source_lane="edgar_8k",
+                             extraction_tier="full")
+        if result is None:
+            # Module gated off mid-run (shouldn't happen, but defend)
+            continue
+        fields = result.get("fields") or {}
+        updates[row["id"]] = {
+            "v1_source_id": result.get("source_id", ""),
+            "v1_model_id": result.get("model_id", ""),
+            "v1_extracted_at": result.get("extracted_at", ""),
+            "v1_direction": fields.get("direction", "unknown"),
+            "v1_magnitude": fields.get("magnitude", "unknown"),
+            "v1_horizon": fields.get("horizon", "unknown"),
+            "v1_reversibility": fields.get("reversibility", "unknown"),
+            "v1_importance_raw": fields.get("importance_raw", 0),
+            "v1_confidence": fields.get("confidence", "low"),
+            "v1_evidence": json.dumps(result.get("evidence", [])),
+            "v1_degraded_reason": result.get("degraded_reason"),
+            "v1_brain_usable": bool(result.get("brain_usable", False)),
+        }
+
+    if not updates:
+        log.info("special_situations extraction lane: 0 records updated")
+        return df
+
+    # Write updates back to events.parquet
+    for col in v1_cols:
+        mask = df.id.isin(updates)
+        if mask.any():
+            df.loc[mask, col] = df.loc[mask, "id"].map(lambda i: updates.get(i, {}).get(col, pd.NA))
+    df.to_parquet(_events_path(), index=False)
+    extracted = sum(1 for v in updates.values() if v.get("v1_brain_usable"))
+    log.info("special_situations extraction lane: %d attempted, %d brain_usable",
+             len(updates), extracted)
+
+    # Register salience-only qledger claims for usable extractions with a known ticker
+    # and a non-unknown direction. direction=0 (salience-only per §2.3/D5) because the
+    # extraction quality is at SHADOW — no directional bet until the §3 gate clears.
+    _register_extraction_claims(df, updates)
+
+    return df
+
+
+def _register_extraction_claims(df: pd.DataFrame, updates: dict[str, dict]) -> None:
+    """Register qledger salience-only claims for extracted 8-K events.
+
+    Only rows where:
+    - v1_brain_usable = True
+    - v1_direction != "unknown"  (the model had enough evidence to call a direction)
+    - ticker is resolvable
+
+    direction=0 (salience-only) — extraction_8k is at SHADOW; the direction sign
+    does not feed any trade until the §3 gate clears (§2.3, D5).
+    """
+    try:
+        from engine import qledger
+    except ImportError:
+        log.debug("special_situations: qledger not available; skipping claim registration")
+        return
+
+    registered = 0
+    for fid, upd in updates.items():
+        if not upd.get("v1_brain_usable"):
+            continue
+        if upd.get("v1_direction", "unknown") == "unknown":
+            continue
+        row_mask = df.id == fid
+        if not row_mask.any():
+            continue
+        row = df.loc[row_mask].iloc[0]
+        ticker = str(row.get("ticker") or "").strip().upper()
+        if not ticker or ticker in ("NAN", "NONE", ""):
+            continue
+        asof = str(row.get("date_filed") or "").strip()
+        if not asof:
+            continue
+        try:
+            claim = qledger.make_claim(
+                desk="extraction_8k",
+                asof=asof,
+                scope_type="entity",
+                scope_key=ticker,
+                direction=0,           # salience-only; §2.3 / D5 / SHADOW state
+                horizon_d=5,           # shortest gradeable horizon; accrual starts immediately
+                timestamp_quality="DISCLOSURE_DATE",  # 8-K = SEC regulatory disclosure
+                claim_family="extraction_8k",
+                extra={
+                    "source_id": upd.get("v1_source_id"),
+                    "v1_direction": upd.get("v1_direction"),
+                    "v1_importance_raw": upd.get("v1_importance_raw"),
+                    "v1_model_id": upd.get("v1_model_id"),
+                    "filing_id": fid,
+                },
+            )
+            qledger.register(claim)
+            registered += 1
+        except Exception as e:  # noqa: BLE001 — claim registration must never abort the pipeline
+            log.debug("special_situations: claim registration failed for %s: %s", fid, e)
+
+    if registered:
+        log.info("special_situations extraction lane: registered %d qledger claims", registered)
+
+
 def enrich_classify(limit: int | None = None) -> pd.DataFrame:
     """P1.1 — let the LLM VERIFY the category for the ambiguous filings the deterministic
     classifier deferred (8-K 1.01/1.02/2.01/8.01, 6-K, 424B5). One call returns the verified
