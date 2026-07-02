@@ -73,8 +73,18 @@ VERDICT_WORD = {
 
 def _row(name, name_zh, market, tier, why, why_zh, source, *, horizon="",
          ic=None, ic_ir=None, t_hac=None, q_fdr=None, dsr=None, sharpe=None,
-         hit=None, n=None, fdr_survivor=None, wired="", extra=None) -> dict:
-    """One scorecard row. Numeric fields are floats or None (None => '—')."""
+         hit=None, n=None, fdr_survivor=None, wired="", extra=None,
+         dsr_family=None, dsr_n_trials=None, dsr_basis=None, dsr_expiry=None) -> dict:
+    """One scorecard row. Numeric fields are floats or None (None => '—').
+
+    DSR PROVENANCE (W1d, audit #21): a quoted DSR is only honest if its multiple-testing
+    n_trials reflects the real search space. ``dsr_family`` names the Trial-Ledger family the
+    n_trials should come from; ``dsr_n_trials`` is the number as quoted in ``source``;
+    ``dsr_basis`` stamps how that number was fixed — ``'ledger'`` (sourced live at build from
+    the ledger), ``'frozen-quote'`` (a hardcoded quote pending re-derivation) — and
+    ``dsr_expiry`` date-stamps a frozen-quote per the passport rule. ``build_scorecard``
+    prefers the live ledger count when ``dsr_family`` resolves, else surfaces the frozen quote
+    with its expiry so a stale self-certifying number is visibly stale rather than trusted."""
     return {
         "name": name, "name_zh": name_zh, "market": market, "tier": tier,
         "horizon": horizon, "ic": ic, "ic_ir": ic_ir, "t_hac": t_hac,
@@ -82,6 +92,8 @@ def _row(name, name_zh, market, tier, why, why_zh, source, *, horizon="",
         "fdr_survivor": fdr_survivor, "wired": wired,
         "why": why, "why_zh": why_zh, "source": source,
         "extra": extra or [],   # list of (label, value_str) quoted context stats
+        "dsr_family": dsr_family, "dsr_n_trials": dsr_n_trials,
+        "dsr_basis": dsr_basis, "dsr_expiry": dsr_expiry,
     }
 
 
@@ -101,6 +113,10 @@ REGISTRY: list[dict] = [
                 "两半一致、置换零假设技能 p=0.0，且在真实时点（ALFRED）数据上仍成立。边际在回撤与夏普，而非 CAGR。",
          source="spvector-phase1/2/3-audit/pit.md", horizon="allocation (daily)",
          dsr=0.9994, sharpe=0.92, wired="spvector.html / vector_allocation",
+         # W1d passport: the "n_trials=30" is sourced LIVE from the spvector Trial-Ledger family
+         # when calibrate_spvector* has run into the persistent ledger; otherwise it renders as
+         # a frozen quote with an expiry (not a self-certifying constant).
+         dsr_family="spvector", dsr_n_trials=30, dsr_basis="frozen-quote", dsr_expiry="2026-09-30",
          extra=[("MaxDD", "−33.2% vs −55.2% B&H"), ("Sharpe 95% CI", "[0.61, 0.93, 1.25]"),
                 ("split-half", "0.83 / 1.02"), ("perm-null skill p", "0.0"),
                 ("PIT (ALFRED) Sharpe", "0.90")]),
@@ -438,22 +454,32 @@ REGISTRY: list[dict] = [
     _row("Bitcoin Vector — `optimal` momentum×risk allocation",
          "比特币向量 — optimal 动量×风险配置", "BTC", "scored",
          why="The one NEW scored win — a fully-wired live BTC allocation whose drawdown/Sharpe payoff survives "
-             "every fatal-mode attack. Mechanical (momentum + on-chain risk_index) long/flat grid: Sharpe 1.44 "
-             "vs HODL 1.03, MaxDD −37.5% vs −83.8% (2.23× cut), net 10bps 2015-2026. DSR 0.9965 (n=50; 0.9953 at "
-             "live n=65), bootstrap P(Sharpe>0)=1.0 (CI [0.79,1.45,2.07]), DD-cut holds in BOTH split-halves "
-             "(+46/+45pp) and every leave-one-crisis-out, and it beats a brake-matched 200dma on BOTH Sharpe "
-             "(1.44>1.13) and DD. Decomposition proves it is NOT a brake artifact (the momentum,risk grid alone = "
-             "1.39/−42.5%). SCORE THE DRAWDOWN/SHARPE ONLY — raw CAGR is near-flat (61.6 vs 59.1%) and direction "
-             "is a coin-flip (P(7d up|long) 0.579 vs 0.546). Honest-N ~4 crash episodes.",
-         why_zh="本轮唯一新增计分项——已上线的比特币配置，其回撤/夏普收益经全部致命检验仍成立。夏普 1.44 对 HODL 1.03，"
-                "最大回撤 −37.5% 对 −83.8%（缩小2.23倍），DSR 0.9965，自举 P(夏普>0)=1.0，两半与逐危机均成立，"
-                "且在夏普与回撤上均跑赢刹车匹配的200日均线。仅计回撤/夏普；方向为掷硬币。诚实样本约4次崩盘。",
-         source="btc-vector-optimal-phase0.md (scripts/btc_vector_optimal_phase0.py); engine/btc_signals.py allocation()",
-         horizon="allocation (daily)", dsr=0.9965, sharpe=1.44, n=4187,
-         wired="vector.html / vector_allocation — alloc_optimal (LIVE)",
-         extra=[("MaxDD", "−37.5% vs −83.8% (2.23× cut)"), ("bootstrap P(Sh>0)", "1.0 · CI [0.79,1.45,2.07]"),
-                ("split-half DD cut", "+46 / +45pp"), ("direction", "coin-flip — NOT scored"),
-                ("honest-N", "~4 crash episodes")]),
+             "every fatal-mode attack. Mechanical (momentum + on-chain risk_index) long/flat grid. "
+             "PROVENANCE: pre-gate figure (DSR 0.9965, Sharpe 1.44) retired 2026-07 — it certified a strategy "
+             "that baked the midterm-blackout human override into every backtest bar. Fresh dual-track as of 2026-07: "
+             "RAW (pure engine, ungated) Sharpe 1.43 vs HODL 1.01, MaxDD −41.2% vs −83.8% (2.04× cut), "
+             "DSR 0.9945 (n=68 = 65 base + 3 override dof_cost), dsr_effN 0.9236 (T_eff=2523 vs T_raw=4200). "
+             "GATED (live behavior, midterm blackout active through 2026) Sharpe 1.56, MaxDD −32.3%, DSR 0.9986, "
+             "dsr_effN 0.9622. Bootstrap P(Sharpe>0)=1.0 (CI [0.95,1.57,2.17]). DD-cut holds in both split-halves "
+             "and every leave-one-crisis-out. Beats brake-matched 200dma. Decomposition proves NOT a brake artifact. "
+             "SCORE THE DRAWDOWN/SHARPE ONLY — direction is a coin-flip (P(7d up|long) ~0.58). Honest-N ~4 crises.",
+         why_zh="本轮唯一新增计分项——已上线的比特币配置，其回撤/夏普收益经全部致命检验仍成立。"
+                "溯源注：旧数字（DSR 0.9965，夏普 1.44）于2026-07退役——中期选举人工覆盖污染了回测。"
+                "双轨新数字（2026-07）：原始（纯引擎/未覆盖）夏普 1.43 对 HODL 1.01，最大回撤 −41.2% 对 −83.8%（缩小2.04倍），"
+                "DSR 0.9945（n=68=65基础+3覆盖自由度），dsr_effN 0.9236。"
+                "带覆盖（实盘，含中期选举封锁）夏普 1.56，回撤 −32.3%，DSR 0.9986。仅计回撤/夏普；方向为掷硬币。",
+         source="btc-vector-optimal-phase0.md (scripts/btc_vector_optimal_phase0.py); engine/btc_signals.py allocation(); "
+                "W1 N7 dual-track calibration 2026-07",
+         horizon="allocation (daily)", dsr=0.9945, sharpe=1.43, n=4200,
+         wired="vector.html / vector_allocation — alloc_optimal (LIVE, midterm-gated); alloc_optimal_raw (pure engine)",
+         extra=[("RAW MaxDD", "−41.2% vs −83.8% (2.04× cut)"),
+                ("GATED Sharpe / MaxDD", "1.56 / −32.3% (midterm blackout active through 2026)"),
+                ("DSR gated / raw", "0.9986 / 0.9945 (n=68, incl. override dof_cost=3)"),
+                ("dsr_effN gated / raw", "0.9622 / 0.9236 (T_eff≈2520 vs T_raw=4200)"),
+                ("bootstrap P(Sh>0)", "1.0 · CI [0.95,1.57,2.17]"),
+                ("direction", "coin-flip — NOT scored"),
+                ("honest-N", "~4 crash episodes"),
+                ("provenance", "pre-gate figure 0.9965 retired 2026-07; dual-track as of W1 N7")]),
     _row("Mastermind GTAA (Moderate) — diversified-leverage book",
          "Mastermind 全球配置（均衡）— 多元杠杆组合", "Multi-asset", "confirmer",
          why="Live levered vol-targeted cross-asset GTAA (~1.21× lev) beats SPY on risk-adjusted terms over 19.1y: "
@@ -619,22 +645,28 @@ REGISTRY: list[dict] = [
     _row("ETH Vector — BTC-Vector optimal grid ported to ETH",
          "以太坊向量 — BTC向量最优网格移植到ETH", "ETH", "confirmer",
          why="Faithful port of the live BTC Vector builders (momentum × risk-index long/flat grid + drawdown brake) "
-             "to ETH price + a causal MVRV overlay. Drawdown protection is real and robust: MaxDD −46.8% vs HODL "
-             "−94.0% (2.01× cut), holds in every leave-one-crisis-out and both split-halves, and is NOT a pure "
-             "brake artifact (the raw grid alone cuts DD to −51.6% and out-Sharpes HODL). BUT it does NOT clear "
-             "scored like BTC: DSR 0.55 fails the haircut (vs BTC 0.9965), bootstrap P(Sharpe>0)=0.983 (not 1.0), "
-             "and a brake-matched 200dma TIES its Sharpe (0.82) — the incremental edge over a trivial trend filter "
-             "is DD-only and concentrated in the 2022 LUNA/3AC/FTX cascade (drop-2022 Sharpe edge → −0.04). ETH "
-             "starts 2017-11 (~2-3 cycles); direction is a coin-flip (never claimed). Crypto tail-insurance aligned "
-             "with the scored BTC Vector, not a 2nd scored sleeve.",
-         why_zh="将上线的 BTC 向量构件（动量×风险指数多/空网格+回撤刹车）忠实移植到 ETH。回撤保护真实稳健（−46.8% 对 HODL −94.0%，缩小2.01倍，"
-                "逐危机与两半均成立）。但不像 BTC 达到计分：DSR 0.55，刹车匹配的200日均线持平其夏普，增量仅回撤且集中于2022级联。"
-                "ETH 仅约2-3周期；方向掷硬币。与计分的 BTC 向量对齐的加密尾部保险，非第二个计分项。",
-         source="eth-vector-phase0.md (scripts/eth_vector_phase0.py); engine/btc_signals.py allocation()",
-         horizon="allocation (daily)", dsr=0.5546, sharpe=0.82, hit=0.551, n=3144,
+             "to ETH price (MVRV overlay unavailable this run — grid without valuation overlay). "
+             "PROVENANCE: prior figure (DSR 0.5546, Sharpe 0.82) inherited the BTC midterm-election blackout with "
+             "NO ETH evidence basis — that override is now explicitly disabled for the ETH run (W0 W1 N7 decontam). "
+             "FRESH RERUN (ungated, 2026-07): Sharpe 0.796 vs HODL 0.647, MaxDD −46.6% vs −94.0% (2.02× cut), "
+             "n=3157 (2017-11 → 2026-07). DSR 0.5345 (n=50) FAILS the haircut — confirmer status unchanged. "
+             "Bootstrap P(Sharpe>0)=0.98 (not 1.0); a brake-matched 200dma BEATS it on Sharpe (0.82 vs 0.80). "
+             "DD-cut holds both split-halves and every leave-one-crisis-out (DD-only edge). "
+             "Sharpe edge fails drop-2022 (−0.05). ETH starts 2017-11 (~2-3 cycles). "
+             "Direction coin-flip (never claimed). Confirmer status: unchanged.",
+         why_zh="将上线的 BTC 向量构件（动量×风险指数多/空网格+回撤刹车）忠实移植到 ETH（无 MVRV 叠加）。"
+                "溯源注：旧数字（DSR 0.5546）继承了 BTC 中期选举封锁（无 ETH 依据）——已解除（W0/W1 N7 去污）。"
+                "最新重跑（2026-07，无封锁）：夏普 0.796 对 HODL 0.647，最大回撤 −46.6% 对 −94.0%（缩小2.02倍），n=3157。"
+                "DSR 0.5345 仍未达门槛，确认项状态不变。刹车匹配200日均线在夏普上仍持平甚至压制。仅约2-3周期；方向掷硬币。",
+         source="eth-vector-phase0.md (scripts/eth_vector_phase0.py); engine/btc_signals.py allocation(); "
+                "W1 N7 rerun 2026-07 (BTC midterm gate explicitly disabled — no ETH evidence basis)",
+         horizon="allocation (daily)", dsr=0.5345, sharpe=0.796, hit=0.549, n=3157,
          wired="signal_lab confirmer — crypto tail-insurance (BTC-Vector aligned), not sized standalone",
-         extra=[("MaxDD", "−46.8% vs −94.0% HODL (2.01× cut)"), ("vs BTC DSR", "0.55 vs 0.9965"),
-                ("brake-matched 200dma", "TIES Sharpe 0.82"), ("drop-2022 Sharpe edge", "−0.04 (concentrated)"),
+         extra=[("MaxDD", "−46.6% vs −94.0% HODL (2.02× cut)"),
+                ("vs BTC DSR (raw)", "0.5345 vs 0.9945"),
+                ("brake-matched 200dma", "BEATS ETH on Sharpe (0.82 vs 0.80)"),
+                ("drop-2022 Sharpe edge", "−0.05 (concentrated in 2022)"),
+                ("provenance", "prior DSR 0.5546 inherited BTC midterm gate with no ETH basis — now decontaminated"),
                 ("direction", "coin-flip — NOT claimed")]),
     _row("Intl macro stress overlay (pooled JP/EZ/GB/KR)",
          "国际宏观压力叠加（JP/EZ/GB/KR 合并）", "Intl macro", "confirmer",
@@ -752,6 +784,45 @@ _FACTOR_LABEL = {
 }
 
 
+def _resolve_dsr_provenance(registry: list[dict]) -> None:
+    """Stamp each row's DSR n_trials with a live-ledger or frozen-quote passport (W1d).
+
+    For a row carrying ``dsr_family``: if that family has a budget in the persistent Trial
+    Ledger, use the live ``effective_n`` (basis ``'ledger'``) — the number is now maintained,
+    not asserted. Otherwise fall back to the row's frozen ``dsr_n_trials`` with its
+    ``dsr_expiry``, and flag it EXPIRED once today is past the expiry (basis ``'frozen-quote'``
+    / ``'expired'``). Mutates rows in place, adding a ``dsr_provenance`` dict the template can
+    render. Degrade-safe: any ledger error leaves the frozen quote in place."""
+    try:
+        from datetime import date
+        from engine.trial_ledger import TrialLedger
+        led = TrialLedger()
+        today = date.today().isoformat()
+    except Exception:  # noqa: BLE001
+        led = None
+        today = None
+    for r in registry:
+        fam = r.get("dsr_family")
+        if not fam:
+            continue
+        live_n = 0
+        if led is not None:
+            try:
+                live_n = led.effective_n(fam) if led.declared_budget(fam) or led.literal_n(fam) else 0
+            except Exception:  # noqa: BLE001
+                live_n = 0
+        if live_n:
+            r["dsr_provenance"] = {"n_trials": live_n, "basis": "ledger", "family": fam}
+        else:
+            exp = r.get("dsr_expiry")
+            expired = bool(exp and today and today > exp)
+            r["dsr_provenance"] = {
+                "n_trials": r.get("dsr_n_trials"),
+                "basis": "expired" if expired else (r.get("dsr_basis") or "frozen-quote"),
+                "family": fam, "expiry": exp, "expired": expired,
+            }
+
+
 def build_scorecard() -> dict:
     """Assemble the full Signal Lab payload for the template. Pure assembler."""
     ft = _load_factor_table()
@@ -770,6 +841,10 @@ def build_scorecard() -> dict:
             })
         # sort by IC descending so the (failing) leaders sit on top
         factor_rows.sort(key=lambda r: (r["ic"] is None, -(r["ic"] or 0)))
+
+    # W1d: resolve each DSR quote's multiple-testing n_trials from the Trial Ledger (live) or
+    # surface it as a stamped frozen-quote with an expiry — no more self-certifying constants.
+    _resolve_dsr_provenance(REGISTRY)
 
     # group the curated registry by tier, preserving TIERS order
     by_tier: dict[str, list[dict]] = {t["key"]: [] for t in TIERS}

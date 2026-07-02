@@ -20,6 +20,15 @@ The tiers, strongest/most-confirmed → earliest/least-confirmed:
 | **T3 earlier** | 2D MACD-RSI **projected ≤1-2d** **&** 3D StochRSI **already crossed** (= `early_now`) | 1616 | 42.3 | 38.2 | 6.16 | 42.0 | 7.9 |
 | **T4 earliest** | 2D MACD-RSI projected **&** 2D StochRSI crossed **&** above-200MA | 1142 | 43.1 | 37.4 | 5.97 | 32.0 | 7.8 |
 
+> **2026-07-01 re-grade (W1c, audit #15).** Re-ran `tuning_stops.py --stop 0.05` on the current
+> (219-name) panel. The held-out stop-out rates reproduce and the monotone gradient holds:
+> **base3d 39.5% · m2d_s3d 42.5% · m2d_s3d_early 41.8%** (vs the documented T1 38.3 / T2 40.6 /
+> T3 42.3 — within ~1-2pp on the larger panel). The cascade harness already fills **next-bar**
+> (`f = i + 1` in `tuning_harness.py`), so these numbers were never contaminated by the same-bar
+> bias the audit flagged; W1c aligned the *live* graders (`track_record`, `sector_signals`,
+> `meta_label`, `name_score_grader`, `sector_central_grader`) to this same convention via
+> `engine/grading.py`, so the live surface can no longer disagree with the validated claim.
+
 ---
 
 ## 1. Verdict — the cascade is SOUND

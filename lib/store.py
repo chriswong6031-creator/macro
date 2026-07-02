@@ -58,10 +58,22 @@ def _quarantine(group: str, name: str, rows: pd.DataFrame, reason: str) -> None:
 
 
 def upsert(group: str, name: str, new: pd.DataFrame, outlier_col: str | None = None,
-           normalize_index: bool = True) -> pd.DataFrame:
+           normalize_index: bool = True, overwrite_overlap: bool = False) -> pd.DataFrame:
     """Merge new rows into the stored series. New values win on date collision;
     rows present only on disk are always kept (append-only history guarantee).
-    normalize_index=False preserves intraday timestamps (hourly candles)."""
+    normalize_index=False preserves intraday timestamps (hourly candles).
+
+    overwrite_overlap=True — for DIVIDEND/SPLIT-ADJUSTED series (yfinance
+    auto_adjust=True). An adjusted history is a coherent whole: after an ex-dividend
+    every prior bar is re-scaled, so a fresh pull's values for the overlapping window
+    are the corrected truth and the stored ones are stale. Plain combine_first keeps
+    old values wherever the fresh pull did not re-cover them, leaving a PERMANENT basis
+    STEP at the refresh edge (measured 17/300 A-share names >0.4%, worst 40%, May-dividend
+    clustered) that seasonally biases rev_z and can fabricate MACD/StochRSI crosses.
+    With overwrite_overlap=True the fresh pull FULLY OVERWRITES its own date span
+    [new.index.min(), new.index.max()]; only stored rows OUTSIDE that span (older deep
+    history the short refresh window did not reach) are carried forward. See
+    research/ENGINE_FIX_MASTERPLAN.md §W6-CN fix 2."""
     if new is None or new.empty:
         raise ValueError(f"upsert called with empty frame for {group}/{name}")
     new = new.copy()
@@ -76,6 +88,13 @@ def upsert(group: str, name: str, new: pd.DataFrame, outlier_col: str | None = N
 
     if old is None or old.empty:
         merged = new
+    elif overwrite_overlap:
+        # Keep only stored rows strictly OLDER than the fresh pull's window; the fresh
+        # pull owns its whole overlapping span (no combine_first seam).
+        lo = new.index.min()
+        kept_old = old[old.index < lo]
+        merged = (pd.concat([kept_old, new]) if not kept_old.empty else new)
+        merged = merged[~merged.index.duplicated(keep="last")].sort_index()
     else:
         merged = new.combine_first(old)  # new wins where both exist; old-only rows kept
         merged = merged.sort_index()

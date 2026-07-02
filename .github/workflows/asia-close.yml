@@ -63,6 +63,8 @@ jobs:
           key: hk-stocks-ohlc-${{ github.run_id }}
           restore-keys: hk-stocks-ohlc-
       - name: collect China/HK data (graceful degradation — never fails on one source)
+        env:
+          TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}  # unfreezes the gated tushare plane (dead since 2026-06-21: collectors silently no-op without it — see CHINA_ENGINE_REASSESSMENT)
         run: python -m scripts.collect --group asia
       - name: commit collected asia data
         run: |
@@ -81,6 +83,9 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CN_LANE: asia   # explicit asia-lane gate: the ONLY lane that may persist the board ledger
+                          # (this job runs after the A-share close and commits data/). Render lanes
+                          # leave CN_LANE unset/non-asia so china_standout_track.append_board refuses.
         run: |
           set +e
           run_py() {
@@ -104,6 +109,18 @@ jobs:
           run_py "capital flow velocity — CN/HK (build_flow_velocity)" scripts.build_flow_velocity
           run_py "china subsector confluence (build_subsector_confluence --china)" scripts.build_subsector_confluence --china
           run_py "build hong kong / hang seng (build_hk)"             scripts.build_hk
+          # W6-CN Fix 4 (lane unification): baskets_china/_ths/baskets_hk previously built
+          # in the nightly 02:00 UTC lane (via build_vector.py) on the PRIOR asia close, making
+          # them one full CN session behind their sibling pages ~19.5h/day. Moved here so all
+          # five China surfaces share one session. build_vector.py's hook skips gracefully if
+          # as_of already matches (idempotent guard). See research/CHINA_ENGINE_REASSESSMENT.md.
+          run_py "china A-share thematic baskets (build_baskets_china)"    scripts.build_baskets_china
+          run_py "china THS concept baskets (build_baskets_china_ths)"     scripts.build_baskets_china_ths
+          run_py "hong kong thematic baskets (build_baskets_hk)"           scripts.build_baskets_hk
+          # W6-CN CN-5: CN Reversal Sleeve (SHADOW). Runs AFTER the china builds so the
+          # china_search plane + risk_radar_intl chip are fresh; asia lane so the forward
+          # ledger persists (lane-gated). Failure-isolated: the script always exits 0.
+          CN_SLEEVE_LANE=asia run_py "cn reversal sleeve (build_cn_reversal_sleeve)" scripts.build_cn_reversal_sleeve
           exit 0
       - name: rebuild China/HK stock-search libraries (resilient — guarantees the analyzers ship)
         run: |

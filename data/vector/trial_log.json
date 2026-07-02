@@ -1,6 +1,10 @@
 {
-  "asof": "2026-06-13",
-  "n_trials_declared": 50,
+  "asof": "2026-07-01",
+  "n_trials_config": 65,
+  "overrides_dof": {
+    "midterm_blackout": 3
+  },
+  "n_trials_declared": 68,
   "cost_bps_one_way": 10.0,
   "allocation_variants_tested": [
     "conservative",
@@ -43,5 +47,6 @@
     "vrp"
   ],
   "n_signal_families": 32,
-  "note": "Point-in-time trial ledger (overwritten each run). n_trials_declared is an upper-bound count of independent strategy configs explored across the hunt, used to deflate the headline Sharpe. Raise it as you try more."
+  "fdr_note": "The 32-family band-edge screen is a multiple-comparison surface \u2014 at screen strength expect ~1-2 spuriously CONFIRMED families out of 32 under the null. Verdicts are hypothesis-generating only and should be treated as directional priors, not causal proofs. Sizing authority flows solely through the DSR-gated allocation backtest, whose N these signal families inflate via n_trials.",
+  "note": "Point-in-time trial ledger (overwritten each run). n_trials_declared = n_trials_config (upper-bound of configs explored) + sum(dof_cost) across registered overrides. Raise n_trials_config as you try more; each new override must declare its dof_cost, which is ADDED here."
 }

@@ -446,15 +446,15 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <div class="cmd-act">
         <div class="a"><div class="k">{{ t('Risk Index','风险指数') }}</div><div class="v" style="color:{{ 'var(--blue)' if risk_on else 'var(--r3)' }}">{{ risk_index }}</div><div class="h">{{ td(risk_label) }}</div></div>
         {% if env and env.risk and env.risk.tail is not none %}<div class="a"><div class="k">{{ t('Next-7d drawdown','未来7天回撤') }}</div><div class="v" style="color:var(--r3)">{{ env.risk.avg }}%</div><div class="h">{{ t('worst','极端') }} {{ env.risk.tail }}%</div></div>{% else %}<div class="a"><div class="k">{{ t('Momentum','动量') }}</div><div class="v">{{ momentum }}</div><div class="h">{{ td(momentum_state) }}</div></div>{% endif %}
-        <div class="a"><div class="k">{{ t('Model allocation','模型仓位') }}</div><div class="v" style="color:{{ 'var(--blue)' if alloc_pct>=50 else 'var(--r3)' }}">{{ alloc_pct }}%</div><div class="h">{% if midterm and midterm.active %}{{ t('cycle timer','周期计时') }}{% elif sizing %}Kelly {{ sizing.size_pct }}%{% else %}BTC{% endif %}</div></div>
+        <div class="a"><div class="k">{{ t('Model allocation','模型仓位') }}</div><div class="v" style="color:{{ 'var(--blue)' if alloc_pct>=50 else 'var(--r3)' }}">{{ alloc_pct }}%</div><div class="h">{% if gate.active %}{{ t('cycle timer','周期计时') }}{% elif sizing %}Kelly {{ sizing.size_pct }}%{% else %}BTC{% endif %}</div></div>
       </div>
     </div>
   </div>
   {# ---------------- THE RECOMMENDATION (the actionable decision) ---------------- #}
-  {# Fix #34: suppress the recommendation card during a midterm blackout — mirrors the
-     guard in vector_allocation.html.j2 (line: and not (midterm and midterm.active)).
-     Both templates now read rec.suppressed_by_blackout (stamped in build_vector.py)
-     so the guard cannot drift between the two pages. #}
+  {# Fix #34 + W3: suppress the recommendation card during a blackout. Both pages read
+     rec.suppressed_by_blackout, stamped in build_vector.py from the ONE gate_state()
+     object (engine.btc_signals) — no per-template re-derivation, so the guard cannot
+     drift between pages. #}
   {% if rec and rec.ok and not rec.suppressed_by_blackout %}
   {% set rt = rec.tone %}
   {% set L = rec.levels %}
@@ -797,10 +797,10 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
     <!-- allocation (next to the long-term scorecard) -->
     <div class="card">
       <h2>{{ t('BTC Allocation · Optimal strategy', 'BTC 仓位 · 最优策略') }}</h2>
-      {% if midterm and midterm.active %}
+      {% if gate.active %}
       <div style="margin:2px 0 12px;padding:11px 13px;border:1px solid var(--amber);border-radius:11px;background:color-mix(in srgb, var(--amber) 9%, transparent)">
         <div style="font-weight:700;font-size:13.5px;color:var(--amber)">⏳ {{ t('Proprietary cycle timer · holding cash', '专有周期计时器 · 持有现金') }}</div>
-        <div class="sub" style="margin-top:5px;font-size:12.5px">{{ t('Our cycle timing flags this as a stay-out window for BTC, so the tactical model is overridden to 0% — sitting in cash and re-engaging around', '我们的周期择时判定当前为 BTC 的回避窗口，因此战术模型被覆盖为 0% — 持有现金，并将在以下时间前后重新参与') }} <b>{{ midterm.release or '—' }}</b>.</div>
+        <div class="sub" style="margin-top:5px;font-size:12.5px">{{ t('Our cycle timing flags this as a stay-out window for BTC, so the tactical model is overridden to 0% — sitting in cash and re-engaging around', '我们的周期择时判定当前为 BTC 的回避窗口，因此战术模型被覆盖为 0% — 持有现金，并将在以下时间前后重新参与') }} <b>{{ gate.release or '—' }}</b>.</div>
       </div>
       {% endif %}
       <div class="allocbar">
@@ -810,11 +810,11 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <div class="sub" style="margin-top:10px">{{ t('Market mode:', '市场模式：') }}
         <span class="chip {{ 'chip-strategic' if market_mode=='Strategic' else 'chip-tactical' }}">{{ td(market_mode) }}</span>
         · {{ t('BTC vs Alts leader:', 'BTC vs 山寨币 领先：') }} <b>{{ td(alt_leader) }}</b></div>
-      {% if sizing and not (midterm and midterm.active) %}
+      {% if sizing and not gate.active %}
       <div class="mini" style="margin-top:12px;border-top:1px solid var(--grid);padding-top:11px"><div class="lab" style="border:none;padding-top:0"><span>{{ t('Risk-budgeted Kelly size','风险预算 Kelly 仓位') }}{{ qmark('Position size from the edge and the drawdown you can stomach. ½-Kelly = half the theoretically optimal bet, then capped by a drawdown budget. Direction is a coin-flip, so this sizes the regime, not the week.','根据优势与可承受回撤决定仓位。半 Kelly = 理论最优下注的一半，再受回撤预算限制。方向接近抛硬币，故仓位针对格局而非本周。') }} <span class="faint" style="font-size:11px">({{ '½' if sizing.kelly_frac==0.5 else (sizing.kelly_frac|string) }}-Kelly, {{ sizing.dd_budget }}% {{ t('DD budget','回撤预算') }})</span></span><span><b style="font-size:17px;color:{{ 'var(--blue)' if sizing.size_pct>=40 else 'var(--r3)' }}">{{ sizing.size_pct }}%</b></span></div></div>
       <div class="sub faint" style="margin-top:4px;font-size:12px">{{ t('Sized off a','基于') }} <b>{{ '%+0.0f'|format(sizing.edge_90) }}%/90d</b> {{ t('edge in the','优势，处于') }} {{ td(sizing.stance|capitalize) }} {{ t('regime (σ','格局（σ') }} {{ sizing.vol_90 }}%){% if sizing.binding=='tail' %} · {{ t('held back by the','受限于') }} {{ sizing.tail_90 }}% {{ t('worst-case dip','极端回撤') }}{% endif %}.</div>
       {% endif %}
-      {% if alloc_sizing and not (midterm and midterm.active) %}
+      {% if alloc_sizing and not gate.active %}
       <div class="mini" style="margin-top:12px;border-top:1px solid var(--grid);padding-top:11px"><div class="lab" style="border:none;padding-top:0"><span>{{ t('Bottom-detector overlay','底部探测叠加') }} <span class="faint" style="font-size:11px">({{ t('adds size at washout lows','洗盘低点加仓') }})</span></span><span><b style="font-size:16px;color:{{ 'var(--blue)' if alloc_sizing.bottom_active else 'var(--muted)' }}">{{ t('Pressure','压力') }} {{ alloc_sizing.bottom_pressure }}/100{% if alloc_sizing.bottom_active %} · +{{ alloc_sizing.bottom_add }}%{% endif %}</b></span></div></div>
       <div class="sub faint" style="margin-top:4px;font-size:12px">{% if alloc_sizing.bottom_active %}{{ t('A washout bottom is forming across timeframes — the overlay is adding','多周期洗盘底部正在形成 — 叠加正在加仓') }} <b>+{{ alloc_sizing.bottom_add }}%</b> {{ t('to buy in lower.','以更低价买入。') }}{% else %}{{ t('Dormant. At a deep drawdown with StochRSI washed-out across all timeframes, it buys back the exposure the drawdown brake skips — the brake protects on the way down, this re-enters at the low.','休眠中。在深度回撤、且 StochRSI 跨周期超卖时，叠加会买回回撤刹车跳过的仓位 — 刹车在下跌时保护，本叠加在低点重新入场。') }}{% endif %} {{ t('Backtested +15.6% return at the same Sharpe; passes the same checks.','回测回报 +15.6%，夏普持平；通过相同检验。') }}</div>
       {% endif %}
@@ -1353,7 +1353,10 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       {% set fli = {'ok':'✓','watch':'▲','alert':'✕'} %}
       <h3>{{ t('Cycle Thesis Monitor','周期论点监测') }}
         <b style="color:{{ tsc.get(ct.thesis_status,'var(--muted)') }}"> · {{ t(ct.thesis_status|upper, tsz.get(ct.thesis_status,'—')) }}</b>
-        {% if ct.accumulate %}<b style="color:var(--blue)"> · {{ t('ACCUMULATION ZONE','吸筹区') }}</b>{% endif %}</h3>
+        {#- W3: buy-side badge — suppressed under the gate via the SAME stamped key the rec
+           card uses (build_vector.py), else Oct–Nov 2026 would flash "ACCUMULATION ZONE"
+           beside a forced-flat 0% allocation. #}
+        {% if ct.accumulate and not ct.suppressed_by_blackout %}<b style="color:var(--blue)"> · {{ t('ACCUMULATION ZONE','吸筹区') }}</b>{% endif %}</h3>
       {% if ct.drawdown_from_peak is not none %}
       <div class="mini"><div class="lab"><span>{{ t('Drawdown from cycle peak','较周期顶部回撤') }} <span class="faint">({{ ct.peak_date }})</span></span><span><b style="color:var(--r3)">{{ (ct.drawdown_from_peak*100)|round|int }}%</b>{% if ct.prior_bear_mean is not none %} <span class="faint">{{ t('vs','对比') }} {{ (ct.prior_bear_mean*100)|round|int }}% {{ t('prior-bear avg','历史熊市均值') }}</span>{% endif %}</span></div></div>
       {% endif %}

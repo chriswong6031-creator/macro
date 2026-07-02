@@ -193,30 +193,47 @@ def main():
     a_cycle = cycle_alloc(close, pivots)
     a_risk = risk_alloc(close)
 
+    # W1 N7 dual scorecard: compute BOTH with-gate and without-gate for the Risk
+    # Allocation strategy. Owner decision D2: subscriber-facing wording stays
+    # "Proprietary cycle timer" — the dual sub-line uses "cycle timer" phrasing.
+    # Raw (ungated) allocations for the dual comparison:
+    a_cycle_raw = a_cycle.copy()    # cycle timer's own down-phase already avoids midterms
+    a_risk_raw = a_risk.copy()      # raw risk allocation (no calendar gate)
+
     # House rule (mirrors the live Bitcoin Vector allocation): stand aside through US
     # midterm-election years until ~the vote — historically the worst window for BTC. Reuse
     # the SAME gate the Vector uses so the page and the live engine agree. (For the cycle
     # timer this is ~a no-op — its down-phase already brackets the midterms — but it adds a
     # real dodge to the trend/risk strategy.)
+    gate_live = {"active": False}   # W3: the ONE stamped gated-state flag (display side)
+    gate_active_days = 0
     try:
-        from engine.btc_signals import midterm_blackout
+        from engine.btc_signals import gate_state, midterm_blackout
         from lib import config
         mg = (config.load().get("vector", {}).get("allocation", {}) or {}).get("midterm_gate") \
             or {"enabled": True}
         gate = midterm_blackout(close.index, mg)
         a_cycle = a_cycle.where(~gate, 0.0)
         a_risk = a_risk.where(~gate, 0.0)
-        log.info("midterm-election blackout active on %d days", int(gate.sum()))
+        gate_live = gate_state(close.index[-1], mg)
+        gate_active_days = int(gate.sum())
+        log.info("midterm-election blackout active on %d days", gate_active_days)
     except Exception as e:  # pragma: no cover - never break the page over the overlay
         log.warning("midterm blackout overlay skipped (%s)", e)
 
     hodl = (1 + close.pct_change().fillna(0)).cumprod()
     eq_cycle = simulate(close, a_cycle, lev=1.0, borrow_apr=0.0)
     eq_risk = simulate(close, a_risk, lev=1.0, borrow_apr=0.0)
+    # Without cycle timer (raw allocations — for the dual sub-line)
+    eq_cycle_raw = simulate(close, a_cycle_raw, lev=1.0, borrow_apr=0.0)
+    eq_risk_raw = simulate(close, a_risk_raw, lev=1.0, borrow_apr=0.0)
 
     m_hodl = metrics(hodl, pd.Series(1.0, index=close.index))
     m_cycle = metrics(eq_cycle, a_cycle)
     m_risk = metrics(eq_risk, a_risk)
+    # W1 N7: raw (without cycle timer) metrics for the dual comparison sub-line
+    m_cycle_raw = metrics(eq_cycle_raw, a_cycle_raw)
+    m_risk_raw = metrics(eq_risk_raw, a_risk_raw)
 
     # leverage variants for the cycle strategy (honest: borrow drag + liquidation)
     lev_rows = []
@@ -285,6 +302,7 @@ def main():
                        "capitulating in the trough — so the timer is in cash through midterm years until "
                        "the vote. The exact timing model is proprietary."),
             "metrics": m_cycle,
+            "metrics_raw": m_cycle_raw,  # W1 N7: without cycle timer, for dual sub-line
             "vs": {kk: m_cycle[kk] - m_hodl[kk] for kk in ("cagr", "sharpe", "maxdd")},
             "svg": svg_cycle,
             "rules": [
@@ -313,6 +331,7 @@ def main():
                        "calendar timing — and, reflecting the house view, it stands aside through US "
                        "midterm-election years until the vote, the period that has been hardest on BTC."),
             "metrics": m_risk,
+            "metrics_raw": m_risk_raw,  # W1 N7: without cycle timer, for dual sub-line
             "vs": {kk: m_risk[kk] - m_hodl[kk] for kk in ("cagr", "sharpe", "maxdd")},
             "svg": svg_risk,
             "rules": [
@@ -339,6 +358,9 @@ def main():
         "phase": phase,
         "hodl": m_hodl,
         "strategies": strategies,
+        # W3 (Override-Registry N6): the ONE stamped gated-state flag — any live gate copy
+        # this template family ever shows must read ctx.gate, never re-derive the window.
+        "gate": gate_live,
     }
 
     env = Environment(loader=FileSystemLoader(str(ROOT / "templates")),

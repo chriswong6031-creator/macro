@@ -158,28 +158,51 @@ maltese.greydeercapital.com {
 }
 
 # ---- greydeercapital.com — Grey Deer Capital brand site (static) + intake API ----
-# The static site lives in /opt/greydeercapital (its OWN repo,
-# chriswong6031-creator/greydeercapital, deployed via that repo's deploy/deploy.sh).
-# /api/* is the self-hosted inquiry intake service (greydeercapital-intake.service)
-# on loopback :8110. Behind Cloudflare (SSL "Full"), so `tls internal`. Like maltese,
-# this block MUST live in THIS repo file — macro-update reinstalls /etc/caddy/Caddyfile
-# from here on every main commit, so a box-only edit gets wiped within ~3 minutes.
+# Behind Cloudflare (proxied, SSL mode "Full"): `tls internal` serves a self-signed
+# origin cert so the edge<->origin hop is encrypted, matching mastermind-x.com.
+# Static files live in /opt/greydeercapital; /api/* is the self-hosted inquiry
+# intake service (greydeercapital-intake.service) on loopback :8110.
 greydeercapital.com, www.greydeercapital.com {
 	root * /opt/greydeercapital
 	encode zstd gzip
+
 	reverse_proxy /api/* 127.0.0.1:8110
+
 	file_server {
 		index index.html
 	}
+
 	handle_errors {
 		rewrite * /404.html
 		file_server
 	}
+
+	# Caching — fonts/vendor are content-addressed (immutable); assets daily; HTML short
+	@immutable {
+		path /assets/fonts/* /assets/vendor/*
+	}
+	@assets {
+		path /assets/*
+		not path /assets/fonts/* /assets/vendor/*
+	}
+	@html {
+		path *.html /
+	}
+	header @immutable Cache-Control "public, max-age=31536000, immutable"
+	header @assets   Cache-Control "public, max-age=86400"
+	header @html     Cache-Control "public, max-age=300, must-revalidate"
+
 	header {
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Strict-Transport-Security "max-age=31536000"
+		# No third-party origins remain after font self-hosting (2026-07-01).
+		# 'unsafe-inline' required: head bootstrap script + inline style attrs.
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		X-Frame-Options "DENY"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
 		-Server
 	}
+
 	tls internal
 }

@@ -117,7 +117,11 @@ def base_alloc() -> pd.Series:
     # The shipped optimal allocation is the ground truth (the engine's allocation()
     # has evolved — drawdown brake etc.); use it directly rather than replicate, so
     # overlay candidates test "what if we ADD this to the CURRENT allocation".
-    return _frame()["alloc_optimal"]
+    # Override-Registry (W0): prefer alloc_optimal_raw (pure engine) so candidates
+    # are compared against the engine's actual conviction, not the override-flattened
+    # 0% base.  A floor that "beats" a 0% base in 2026 is not a factor footprint.
+    sig = _frame()
+    return sig["alloc_optimal_raw"] if "alloc_optimal_raw" in sig.columns else sig["alloc_optimal"]
 
 
 def candidate_alloc(spec: dict) -> pd.Series:
@@ -126,7 +130,10 @@ def candidate_alloc(spec: dict) -> pd.Series:
     acfg = cfg["allocation"]
     t = spec["type"]
     if t in ("alloc_floor", "alloc_cap", "alloc_full"):
-        raw = sig["alloc_optimal"].copy()
+        # Override-Registry (W0): base the candidate on the pure-engine series so
+        # a floor does not spuriously beat a 0% override-suppressed base in 2026.
+        raw_col = "alloc_optimal_raw" if "alloc_optimal_raw" in sig.columns else "alloc_optimal"
+        raw = sig[raw_col].copy()
         mask = _cond(sig, spec["cond"])
         to = spec.get("to", 1.0 if t == "alloc_full" else 0.5)
         if t == "alloc_cap":
@@ -142,6 +149,9 @@ def candidate_alloc(spec: dict) -> pd.Series:
         rk = risk(_inputs(), mom, rcfg)["risk_index"].reindex(sig.index)
         valcols = [c for c in ("mvrv_z", "nupl", "mayer", "reserve_risk") if c in sig]
         al = allocation(mom, rk, acfg, sig[valcols], close=sig["close"])
+        # allocation() is now pure-engine; use alloc_optimal_raw if present (co-built
+        # by btc_overrides.apply when called via compute_all); here we call allocation()
+        # directly so only the plain alloc_optimal column is available.
         return al["alloc_optimal"]
     raise ValueError(f"unknown candidate type: {t}")
 
@@ -170,15 +180,28 @@ def evaluate(spec: dict) -> dict:
     close = sig["close"]
     base = base_alloc()
     alloc = candidate_alloc(spec)
+    # Override-Registry (W0): exclude bars where the midterm-election override is
+    # active from the pre-footprint check and the regime-Sharpe deltas.  A floor
+    # candidate that "defeats" a 0% override base in 2026 is not a factor footprint
+    # — the override is the baseline, not the engine.  Guard: column is absent in
+    # pre-W0 snapshots, so fall back to a False mask (no exclusion).
+    override_active = sig.get("override_active", pd.Series(False, index=sig.index))
+    clean_mask = ~override_active.astype(bool)  # True on non-override bars
+
+    # Filter close and alloc series to non-override bars for footprint check only.
+    close_clean = close[clean_mask]
+    alloc_clean = alloc[clean_mask]
+    base_clean = base[clean_mask]
+
     periods = [("full", None, None), ("pre2021", None, SPLIT),
                ("post2021", SPLIT, None), ("etf_era", ETF_START, None)]
     rows, deltas = {}, {}
     for name, lo, hi in periods + [(n, lo, hi) for n, lo, hi in REGIMES]:
-        b, c = _metrics(close, base, lo, hi), _metrics(close, alloc, lo, hi)
+        b, c = _metrics(close_clean, base_clean, lo, hi), _metrics(close_clean, alloc_clean, lo, hi)
         if b and c:
             rows[name] = {"base": b, "cand": c}
             deltas[name] = round(c["sharpe"] - b["sharpe"], 3)
-    pre_footprint = bool(((alloc != base) & (sig.index < pd.Timestamp(SPLIT))).any())
+    pre_footprint = bool(((alloc_clean != base_clean) & (alloc_clean.index < pd.Timestamp(SPLIT))).any())
     reg_deltas = [deltas.get(n) for n, _, _ in REGIMES if deltas.get(n) is not None]
     reg_pos = sum(1 for d in reg_deltas if d > 0.02)
     full_d = deltas.get("full", 0.0)

@@ -62,16 +62,80 @@ def _dial(latest: dict, internals: dict) -> dict:
         reasons.append(("-", "Stagflation is the dangerous quad — defensives/banks/upstream hold up best; it is regime-unstable in China.",
                         "滞胀是最危险的象限 — 防御／银行／上游相对抗跌；在中国周期不稳定。"))
 
+    # --- MONETARY-CONDITIONS: ONE VOTE (max contribution ±1) ---
+    # Collapsed from three co-moving PBoC-aggregate legs (M2-accel, M1−M2 scissors, TSF
+    # credit-impulse) to a single monetary-conditions vote per research/CHINA_ENGINE_REASSESSMENT.md
+    # §W6-CN Fix 5. Root cause: all three legs derive from the same monthly PBoC aggregates;
+    # counting them separately let "easing = 3 legs × +1 = AGGRESSIVE" with zero tape confirmation.
+    # The "china_leads" canonical module (W3-CN plan) will own the final computation; this dial
+    # uses the same monthly inputs but caps at ONE monetary-conditions vote.
+    #
+    # SYMMETRIC BANDS (fixes the old scissors asymmetry: was +1 at ≥0 but −1 only at ≤−5):
+    #   scissors < −2 → bearish vote; scissors > +2 → bullish vote; −2..+2 → neutral.
+    # Vote = sign-vote of the MAJORITY of available legs (majority rules, 1-vote cap).
+    _monetary_legs: list[int] = []   # each leg contributes −1, 0, or +1
+
     liq = latest.get("liquidity_overlay")
     if liq == "expanding":
-        score += 1
-        reasons.append(("+", "PBoC liquidity expanding (M2 accelerating) — the one cleanly measured tailwind in the China backtest.",
-                        "央行流动性扩张（M2 加速）— 中国回测中唯一被干净衡量的顺风。"))
+        _monetary_legs.append(1)
     elif liq == "contracting":
-        score -= 1
-        reasons.append(("-", "PBoC liquidity contracting — a persistent headwind; be choosier.",
-                        "央行流动性收缩 — 持续逆风；需更挑剔。"))
+        _monetary_legs.append(-1)
+    else:
+        _monetary_legs.append(0)
 
+    c = (internals or {}).get("credit")
+    _SCISSORS_THR = 2.0     # symmetric band: ±2pp threshold
+    if c and c.get("scissors") is not None:
+        sc = float(c["scissors"])
+        if sc >= _SCISSORS_THR:
+            _monetary_legs.append(1)
+        elif sc <= -_SCISSORS_THR:
+            _monetary_legs.append(-1)
+        else:
+            _monetary_legs.append(0)
+
+    if c and c.get("credit_impulse") is not None and c.get("credit_impulse_6mo") is not None:
+        ci, ci6 = float(c["credit_impulse"]), float(c["credit_impulse_6mo"])
+        if ci > ci6 and ci > 0:
+            _monetary_legs.append(1)
+        elif ci < ci6 and ci < 0:
+            _monetary_legs.append(-1)
+        else:
+            _monetary_legs.append(0)
+
+    # Majority-rules vote (ties → 0), capped at ONE score point.
+    _positive = sum(1 for v in _monetary_legs if v > 0)
+    _negative = sum(1 for v in _monetary_legs if v < 0)
+    _n_avail = len(_monetary_legs)
+    if _n_avail > 0 and _positive > _negative:
+        score += 1
+        _all_agree = _positive == _n_avail
+        reasons.append(("+", (
+            "PBoC monetary conditions easing — M2 accelerating, scissors positive, credit impulse rising "
+            f"({_positive}/{_n_avail} legs agree). ONE monetary-conditions vote "
+            "(§W6-CN: collapsed from three co-moving legs to prevent triple-count)."
+            if _all_agree else
+            f"PBoC monetary conditions tilting easing ({_positive}/{_n_avail} legs). "
+            "ONE monetary-conditions vote (§W6-CN: triple-count collapse)."
+        ), (
+            f"央行货币条件趋宽（{_positive}/{_n_avail}项指标同意）— 综合M2/剪刀差/社融的单次货币投票。"
+        )))
+    elif _n_avail > 0 and _negative > _positive:
+        score -= 1
+        reasons.append(("-", (
+            f"PBoC monetary conditions tightening ({_negative}/{_n_avail} legs agree). "
+            "ONE monetary-conditions vote (§W6-CN: triple-count collapse)."
+        ), (
+            f"央行货币条件趋紧（{_negative}/{_n_avail}项指标同意）— 综合M2/剪刀差/社融的单次货币投票。"
+        )))
+    else:
+        if _n_avail > 0:
+            reasons.append(("i", (
+                f"PBoC monetary conditions mixed ({_positive} easing / {_negative} tightening / "
+                f"{_n_avail - _positive - _negative} neutral) — no net vote."
+            ), "央行货币条件分歧 — 无净投票。"))
+
+    # --- NON-MONETARY CONTEXT LEGS (unchanged) ---
     m = (internals or {}).get("margin")
     if m and m.get("pctile") is not None:
         if m["pctile"] >= 85:
@@ -93,27 +157,6 @@ def _dial(latest: dict, internals: dict) -> dict:
             score -= 1
             reasons.append(("-", "Southbound selling — mainland money leaning risk-off.",
                             "南向资金净卖出 — 内地资金偏向避险。"))
-
-    c = (internals or {}).get("credit")
-    if c and c.get("scissors") is not None:
-        if c["scissors"] >= 0:
-            score += 1
-            reasons.append(("+", "M1−M2 scissors positive — money turning active (animal spirits rising).",
-                            "M1−M2 剪刀差转正 — 资金趋于活化（风险偏好上升）。"))
-        elif c["scissors"] <= -5:
-            score -= 1
-            reasons.append(("-", "M1−M2 scissors deeply negative — cash hoarded, weak risk appetite.",
-                            "M1−M2 剪刀差深度为负 — 资金囤积，风险偏好疲弱。"))
-    if c and c.get("credit_impulse") is not None and c.get("credit_impulse_6mo") is not None:
-        ci, ci6 = c["credit_impulse"], c["credit_impulse_6mo"]
-        if ci > ci6 and ci > 0:
-            score += 1
-            reasons.append(("+", "Credit impulse rising (社融脉冲 accelerating) — historically leads risk assets up by ~2 quarters.",
-                            "社融信贷脉冲回升（加速）— 历史上领先风险资产约两个季度上行。"))
-        elif ci < ci6 and ci < 0:
-            score -= 1
-            reasons.append(("-", "Credit impulse rolling over (社融脉冲 decelerating) — a bearish ~2-quarter lead for risk assets.",
-                            "社融信贷脉冲见顶回落（减速）— 对风险资产构成约两个季度的看跌领先。"))
 
     idx = max(0, min(4, 2 + score))
     return {"posture": _POSTURES[idx], "score": score, "reasons": reasons}

@@ -119,6 +119,14 @@ def main() -> int:
     narr = _load_narratives(root)
     dna = _load_dna(root)
 
+    # Validated sleeve-size chip (W6-CN Fix 1) — thread risk_radar_intl gross_factor into the
+    # sector cycles data payload as a DISPLAY chip. Regime sizes sleeves, never vetoes names.
+    try:
+        from engine.risk_radar_intl import cn_sleeve_chip
+        data["sleeve_chip"] = cn_sleeve_chip()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("sector_cycles_china: sleeve chip failed (%s)", e)
+
     # data JS (loaded directly by the page — no fetch, works on file:// + preview)
     payload = ("window.SECTOR_CYCLES=" + json.dumps(data, separators=(",", ":"), ensure_ascii=False) + ";\n"
                + "window.SECTOR_NARR=" + json.dumps(narr, separators=(",", ":"), ensure_ascii=False) + ";\n"

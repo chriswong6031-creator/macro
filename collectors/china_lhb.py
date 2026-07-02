@@ -31,11 +31,13 @@ import logging
 import pandas as pd
 
 from lib import config, store
+from collectors import _drip
 from collectors.china_analyst import to_ticker, _num
 
 log = logging.getLogger("china_lhb")
 
-OUT = config.data_dir() / "china_lhb" / "detail.parquet"
+OUT = config.data_dir() / "china_lhb" / "detail.parquet"          # append-only PIT aggregate (per asof)
+EVENTS = config.data_dir() / "china_lhb" / "events.parquet"       # append-only raw per-appearance tape
 WINDOW_TD = 5  # trailing trading-day window for the 龙虎榜 pull
 
 
@@ -162,27 +164,16 @@ def _agg_inst(df: pd.DataFrame) -> dict[str, dict]:
     return out
 
 
-def refresh() -> int:
-    """Pull the trailing-window 龙虎榜 detail + institutional-seat tables and bake a
-    per-ticker parquet. Best-effort: returns names written (0 on failure). Idempotent
-    within a UTC day (a cache already stamped with today's date is left untouched)."""
-    today = pd.Timestamp.utcnow().strftime("%Y-%m-%d")
-    if OUT.exists():
-        try:
-            if str(pd.read_parquet(OUT, columns=["asof"])["asof"].max()) >= today:
-                log.info("china lhb: cache already fresh (%s)", today)
-                return 0
-        except Exception:  # noqa: BLE001
-            pass
-    start, end = _trading_window()
+def _agg_rows(start: str, end: str, asof: str) -> list[dict]:
+    """The per-ticker aggregate rows for the [start, end] window, stamped with ``asof``."""
     detail = _fetch_detail(start, end)
     if detail is None:
-        return 0
+        return []
     det = _agg_detail(detail)
     inst_df = _fetch_inst(start, end)
     inst = _agg_inst(inst_df) if inst_df is not None else {}
     if not det:
-        return 0
+        return []
     rows = []
     for t, d in det.items():
         i = inst.get(t, {})
@@ -197,19 +188,89 @@ def refresh() -> int:
             "n_inst_sell": int(i.get("n_inst_sell", 0)),
             "reasons": json.dumps(d.get("reasons", []), ensure_ascii=False),
             "last_date": last,
-            "asof": today,
+            "asof": asof,
         })
+    return rows
+
+
+def _raw_events(start: str, end: str) -> list[dict]:
+    """The raw per-appearance 龙虎榜 tape (one row per name×上榜日) for [start, end] — the natural PIT
+    event record backfillable via akshare's ranged detail call (~21k events 2024-07→2026-06)."""
+    detail = _fetch_detail(start, end)
+    if detail is None:
+        return []
+    cols = list(detail.columns)
+    c_code = _col(cols, "代码"); c_name = _col(cols, "名称")
+    c_net = _col(cols, "净买额", "净额"); c_date = _col(cols, "上榜日")
+    c_reason = _col(cols, "上榜原因", "原因")
+    if not c_code or c_net is None:
+        return []
+    out = []
+    for _, r in detail.iterrows():
+        t = to_ticker(r.get(c_code))
+        if not t:
+            continue
+        net = _num(r.get(c_net))
+        try:
+            d = pd.to_datetime(r.get(c_date)).strftime("%Y-%m-%d") if c_date else None
+        except Exception:  # noqa: BLE001
+            d = None
+        out.append({"ticker": t, "name": str(r.get(c_name) or "") if c_name else "",
+                    "net_buy_yi": round((net or 0) / 1e8, 4), "date": d,
+                    "reason": str(r.get(c_reason) or "").strip() if c_reason else ""})
+    return out
+
+
+def refresh() -> int:
+    """Pull the trailing-window 龙虎榜 detail + institutional-seat tables and APPEND the per-ticker
+    aggregate to the point-in-time history (keep-last per ``asof``). Also appends the raw per-
+    appearance tape. Best-effort: returns names in the latest snapshot (0 on failure). Idempotent
+    within a UTC day (an aggregate already stamped with today's asof is left untouched)."""
+    today = pd.Timestamp.utcnow().strftime("%Y-%m-%d")
+    if OUT.exists():
+        try:
+            if str(pd.read_parquet(OUT, columns=["asof"])["asof"].max()) >= today:
+                log.info("china lhb: aggregate already fresh (%s)", today)
+                return 0
+        except Exception:  # noqa: BLE001
+            pass
+    start, end = _trading_window()
+    rows = _agg_rows(start, end, today)
     if not rows:
         return 0
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(rows).to_parquet(OUT, index=False)
-    log.info("china lhb: wrote %s (%d names, %s..%s)", OUT, len(rows), start, end)
-    return len(rows)
+    n = _drip.append_snapshot(OUT, rows, date_col="asof")
+    ev = _raw_events(start, end)
+    if ev:
+        _drip.append_snapshot(EVENTS, ev, date_col="date")
+    log.info("china lhb: appended %s (%d names, %s..%s) + %d raw events", OUT, n, start, end, len(ev))
+    return n
+
+
+def backfill(start: str, end: str, chunk_days: int = 30) -> int:
+    """Range-backfill the raw per-appearance 龙虎榜 tape for [start, end] (YYYY-MM-DD). akshare's
+    stock_lhb_detail_em serves ranged history, so the whole 2024-07→2026-06 tape (~21k events) is
+    fetchable in minutes. Appends to events.parquet (keep-last per (date, ticker)). Returns events
+    appended. (The aggregate is a rolling read; the raw tape is the durable PIT record.)"""
+    total = 0
+    for lo in pd.date_range(start, end, freq=f"{chunk_days}D"):
+        hi = min(lo + pd.Timedelta(days=chunk_days - 1), pd.Timestamp(end))
+        ev = _raw_events(lo.strftime("%Y%m%d"), hi.strftime("%Y%m%d"))
+        if ev:
+            _drip.append_snapshot(EVENTS, ev, date_col="date")
+            total += len(ev)
+            log.info("china lhb backfill: %s..%s → %d events", lo.date(), hi.date(), len(ev))
+    log.info("china lhb backfill: %d raw events [%s..%s]", total, start, end)
+    return total
 
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    argparse.ArgumentParser().parse_args()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--backfill", nargs=2, metavar=("START", "END"),
+                    help="range-backfill the raw 龙虎榜 event tape for [START END] (YYYY-MM-DD)")
+    a = ap.parse_args()
+    if a.backfill:
+        return 0 if backfill(a.backfill[0], a.backfill[1]) else 0
     return 0 if refresh() else 1
 
 

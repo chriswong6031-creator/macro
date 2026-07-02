@@ -100,19 +100,26 @@ COL_TO_VINTAGED_SID: dict[str, str] = {c: s for s, c in VINTAGED_SID_TO_COL.item
 # cadence : reference cadence, informs where "period end" is anchored.
 # note    : provenance of the prior.
 # --------------------------------------------------------------------------- #
+# `lag_bd_measured` (business-day conversion of the #809 ALFRED-measured median
+# calendar lag, ~5/7) is added where the vintage backfill (macro#809, addendum in
+# research/PIT_LEAKAGE_TAX.md) produced a true initial-release lag. It refines but
+# never silently replaces the documented prior — `_effective_lag_bd()` prefers, in
+# order: config override > learned (pit_lag_recorder) > measured (#809) > prior.
+# The measured lags are LARGER than the old priors for CPI/PCE/ECI (the old priors
+# were optimistic); using them tightens the non-vintaged 'release' fallback.
 DEFAULT_RELEASE_LAGS: dict[str, dict] = {
     # --- monthly BLS/BEA/Fed econ prints (these ARE vintaged; lags here document
     #     the prior and serve as a fallback if a vintage row is missing) ---
     "payrolls":       {"lag_bd": 5,  "cadence": "M", "note": "BLS Employment Situation ~first Friday of following month (~3 bd after month end)"},
     "indpro":         {"lag_bd": 11, "cadence": "M", "note": "Fed G.17 Industrial Production ~day 15-17 of following month"},
-    "headline_cpi":   {"lag_bd": 8,  "cadence": "M", "note": "BLS CPI ~day 10-13 of following month"},
-    "core_cpi":       {"lag_bd": 8,  "cadence": "M", "note": "BLS CPI ~day 10-13 of following month"},
+    "headline_cpi":   {"lag_bd": 8,  "lag_bd_measured": 32, "cadence": "M", "note": "BLS CPI; #809 ALFRED median 45 cal d (~32 bd), the old ~8 bd prior was optimistic"},
+    "core_cpi":       {"lag_bd": 8,  "lag_bd_measured": 32, "cadence": "M", "note": "BLS core CPI; #809 ALFRED median 45 cal d (~32 bd)"},
     "cpi_core_services": {"lag_bd": 8, "cadence": "M", "note": "BLS CPI detail, same release as CPI"},
     "cpi_shelter":    {"lag_bd": 8,  "cadence": "M", "note": "BLS CPI detail, same release as CPI"},
-    "headline_pce":   {"lag_bd": 20, "cadence": "M", "note": "BEA Personal Income & Outlays ~day 26-30 of following month (~1 month lag)"},
-    "core_pce":       {"lag_bd": 20, "cadence": "M", "note": "BEA PCE ~day 26-30 of following month; the Fed's target series"},
-    "ppi_final_demand": {"lag_bd": 9, "cadence": "M", "note": "BLS PPI ~day 11-14 of following month (day before/after CPI)"},
-    "ppi_core":       {"lag_bd": 9,  "cadence": "M", "note": "BLS PPI ~day 11-14 of following month"},
+    "headline_pce":   {"lag_bd": 20, "lag_bd_measured": 42, "cadence": "M", "note": "BEA Personal Income & Outlays; #809 ALFRED median 59 cal d (~42 bd)"},
+    "core_pce":       {"lag_bd": 20, "lag_bd_measured": 42, "cadence": "M", "note": "BEA core PCE (Fed's target); #809 ALFRED median 59 cal d (~42 bd)"},
+    "ppi_final_demand": {"lag_bd": 9, "lag_bd_measured": 31, "cadence": "M", "note": "BLS PPI; #809 ALFRED median 43 cal d (~31 bd)"},
+    "ppi_core":       {"lag_bd": 9,  "lag_bd_measured": 31, "cadence": "M", "note": "BLS core PPI; #809 ALFRED median 43 cal d (~31 bd)"},
     "sticky_cpi":     {"lag_bd": 9,  "cadence": "M", "note": "Atlanta Fed sticky CPI, released with the BLS CPI it is built from"},
     "core_sticky_cpi": {"lag_bd": 9, "cadence": "M", "note": "Atlanta Fed core-sticky CPI, released with BLS CPI"},
     "flex_cpi":       {"lag_bd": 9,  "cadence": "M", "note": "Atlanta Fed flexible CPI, released with BLS CPI"},
@@ -122,13 +129,13 @@ DEFAULT_RELEASE_LAGS: dict[str, dict] = {
     "sahm":           {"lag_bd": 5,  "cadence": "M", "note": "Sahm real-time rule, released with the unemployment rate (Employment Situation)"},
     "recession_prob": {"lag_bd": 45, "cadence": "M", "note": "NY Fed 12-mo-ahead recession prob, ~6-week publication lag on the reference month"},
     # --- quarterly ---
-    "eci_comp":       {"lag_bd": 20, "cadence": "Q", "note": "BLS Employment Cost Index ~1 month after quarter end"},
-    "eci_wages":      {"lag_bd": 20, "cadence": "Q", "note": "BLS ECI wages ~1 month after quarter end"},
+    "eci_comp":       {"lag_bd": 20, "lag_bd_measured": 86, "cadence": "Q", "note": "BLS Employment Cost Index; #809 ALFRED median 121 cal d (~86 bd) — the largest look-ahead in the axis, quarterly"},
+    "eci_wages":      {"lag_bd": 20, "lag_bd_measured": 86, "cadence": "Q", "note": "BLS ECI wages; #809 ALFRED median 120 cal d (~86 bd)"},
     "gdpnow":         {"lag_bd": 0,  "cadence": "M", "note": "Atlanta Fed GDPNow nowcast, ~real-time (updated within days); 0 bd is a conservative bound"},
     # --- weekly ---
-    "initial_claims":   {"lag_bd": 5,  "cadence": "W", "note": "DOL weekly jobless claims, Thursday for the week ending prior Saturday (~5 bd)"},
-    "initial_claims_4wk": {"lag_bd": 5, "cadence": "W", "note": "4-week moving avg, same DOL release"},
-    "continued_claims": {"lag_bd": 10, "cadence": "W", "note": "continued claims lag initial by one week (~1 extra week)"},
+    "initial_claims":   {"lag_bd": 5,  "cadence": "W", "note": "DOL weekly jobless claims, Thursday for the week ending prior Saturday (~5 bd; #809 confirms ~5 cal d)"},
+    "initial_claims_4wk": {"lag_bd": 5, "cadence": "W", "note": "4-week moving avg, same DOL release (#809 confirms ~5 cal d)"},
+    "continued_claims": {"lag_bd": 10, "lag_bd_measured": 9, "cadence": "W", "note": "continued claims lag initial by one week; #809 ALFRED median 12 cal d (~9 bd)"},
     "wei":            {"lag_bd": 4,  "cadence": "W", "note": "NY Fed Weekly Economic Index ~Thursday for the week ending prior Saturday"},
     "term_premium_10y": {"lag_bd": 3, "cadence": "D", "note": "ACM term premium, ~2-3 bd publication lag on daily data"},
     "stlfsi":         {"lag_bd": 6,  "cadence": "W", "note": "St. Louis Financial Stress Index, weekly ~Thursday for prior week"},
@@ -171,6 +178,19 @@ def _release_lags(use_learned: bool = True) -> dict[str, dict]:
     return out
 
 
+def _effective_lag_bd(spec: dict) -> int:
+    """Resolve the business-day release lag to use, in ascending precedence:
+    documented prior `lag_bd` < #809-measured `lag_bd_measured` < accrued
+    `lag_bd_learned` (from pit_lag_recorder, injected by _release_lags). An explicit
+    config `lag_bd` override, if present, has already replaced the prior in `spec`."""
+    lag = spec.get("lag_bd", 0)
+    if spec.get("lag_bd_measured") is not None:
+        lag = spec["lag_bd_measured"]
+    if spec.get("lag_bd_learned") is not None:
+        lag = spec["lag_bd_learned"]
+    return int(round(float(lag)))
+
+
 _VINTAGE_CACHE: dict[str, pd.DataFrame | None] = {}
 
 
@@ -198,6 +218,23 @@ def has_vintage(col: str, vintages: pd.DataFrame | None = None) -> bool:
         return False
     v = vintages if vintages is not None else _vintages()
     return bool(v is not None and not v.empty and (v["series"] == sid).any())
+
+
+def release_provenance(col: str) -> dict:
+    """Per-leg release-lag provenance for the passport/freshness ledger: the effective
+    business-day lag actually used on the 'release' basis, its source (vintage vs the
+    lag calendar), the cadence, and the human note. Consumed by engine.regime_one."""
+    spec = _release_lags().get(col, {})
+    src = "vintage" if has_vintage(col) else ("calendar" if spec else "reference")
+    return {
+        "lag_bd_effective": _effective_lag_bd(spec) if spec else 0,
+        "lag_bd_prior": spec.get("lag_bd"),
+        "lag_bd_measured": spec.get("lag_bd_measured"),
+        "lag_bd_learned": spec.get("lag_bd_learned"),
+        "cadence": spec.get("cadence"),
+        "basis_source": src,   # 'vintage' = true as-of join; 'calendar' = modelled shift
+        "note": spec.get("note"),
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -283,7 +320,7 @@ def _modelled_release(col: str) -> pd.Series:
         log.debug("PIT: no release-lag prior for %s — assuming reference availability", col)
         return ref
     cadence = spec.get("cadence", "M")
-    lag_bd = int(spec.get("lag_bd", 0))
+    lag_bd = _effective_lag_bd(spec)
     pend = _period_end(pd.DatetimeIndex(ref.index), cadence)
     rel = pend + (lag_bd * pd.offsets.BDay())
     out = pd.Series(ref.to_numpy(), index=rel)

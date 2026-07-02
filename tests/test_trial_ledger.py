@@ -189,3 +189,67 @@ def test_legacy_positional_callers_unaffected():
     assert deflated_sharpe(0.05, 0.0, 3.0, 2, 50) is None       # T < 3
     sr, sk, ku, n = _strong_series()
     assert deflated_sharpe(sr, sk, ku, n, 10)["n_trials"] == 10
+
+
+# --------------------------------------------------------------------------- #
+# register_trials — the W1d budget-declaration decorator / context manager
+# --------------------------------------------------------------------------- #
+def test_register_trials_context_writes_declared_budget(tmp_path):
+    from engine.trial_ledger import register_trials
+    led = TrialLedger(tmp_path / "t.jsonl")
+    with register_trials("fam_ctx", budget=40, reason="8x5 grid", ledger=led):
+        pass
+    # a fresh ledger on the same file must see the declared budget as a floor on N
+    led2 = TrialLedger(tmp_path / "t.jsonl")
+    assert led2.declared_budget("fam_ctx") == 40
+    assert led2.effective_n("fam_ctx") == 40
+
+
+def test_register_trials_decorator_writes_and_runs(tmp_path):
+    from engine.trial_ledger import register_trials
+    led = TrialLedger(tmp_path / "t.jsonl")
+
+    @register_trials("fam_dec", budget=12, ledger=led)
+    def harness():
+        return "ran"
+
+    assert harness.__trial_family__ == "fam_dec"
+    assert harness.__trial_budget__ == 12
+    assert harness() == "ran"                    # the wrapped fn still runs
+    led2 = TrialLedger(tmp_path / "t.jsonl")
+    assert led2.declared_budget("fam_dec") == 12
+
+
+def test_register_trials_basis_and_expiry_stamped_in_reason(tmp_path):
+    from engine.trial_ledger import register_trials
+    led = TrialLedger(tmp_path / "t.jsonl")
+    with register_trials("fam_fz", budget=30, reason="spvector quote",
+                         basis="frozen-quote", expiry="2026-09-30", ledger=led):
+        pass
+    # the reason note carries the basis + expiry passport
+    import json
+    rows = [json.loads(l) for l in (tmp_path / "t.jsonl").read_text().splitlines() if l.strip()]
+    decl = [r for r in rows if r.get("kind") == "declared_budget" and r["family"] == "fam_fz"]
+    assert decl and "frozen-quote" in decl[0]["reason"] and "2026-09-30" in decl[0]["reason"]
+
+
+def test_register_trials_is_idempotent(tmp_path):
+    from engine.trial_ledger import register_trials
+    led = TrialLedger(tmp_path / "t.jsonl")
+    for _ in range(3):
+        with register_trials("fam_idem", budget=20, reason="same", ledger=led):
+            pass
+    import json
+    rows = [json.loads(l) for l in (tmp_path / "t.jsonl").read_text().splitlines() if l.strip()]
+    decl = [r for r in rows if r.get("kind") == "declared_budget" and r["family"] == "fam_idem"]
+    assert len(decl) == 1                         # re-running does NOT inflate N
+
+
+def test_register_trials_rejects_empty_family():
+    from engine.trial_ledger import register_trials
+    try:
+        register_trials("", budget=10)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("empty family must raise")

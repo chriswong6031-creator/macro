@@ -598,7 +598,9 @@ def test_vol_squeeze_fired_up_lifts_entry_fired_down_trims():
     assert "vol-squeeze" in pu
 
 
-def test_gex_confirm_lifts_caution_trims_neutral_noop():
+def test_gex_confirm_lifts_caution_trims_neutral_noop(monkeypatch):
+    # gate OPEN (validate-before-weight, #782): the tilt applies once validate_gex passes
+    monkeypatch.setattr(ss, "_gex_gate_scored", lambda: True)
     base = _entry_base()
     z0, _, _ = ss._axis_entry(base)
     conf, pc, _ = ss._axis_entry({**base, "gex_confirm": {"verdict": "confirm"}})
@@ -609,6 +611,16 @@ def test_gex_confirm_lifts_caution_trims_neutral_noop():
     assert "options" in pc
 
 
+def test_gex_confirm_is_display_only_while_gate_closed(monkeypatch):
+    # gate CLOSED (the shipped default until validate_gex passes): no entry tilt at all
+    monkeypatch.setattr(ss, "_gex_gate_scored", lambda: False)
+    base = _entry_base()
+    z0, _, _ = ss._axis_entry(base)
+    conf, _, _ = ss._axis_entry({**base, "gex_confirm": {"verdict": "confirm"}})
+    caut, _, _ = ss._axis_entry({**base, "gex_confirm": {"verdict": "caution"}})
+    assert conf == z0 == caut
+
+
 def test_trend_quality_tilt_direction():
     base = _entry_base()
     up, _, _ = ss._axis_entry({**base, "tech": {**base["tech"], "adx14": 30, "adx_trend": "up"}})
@@ -616,8 +628,10 @@ def test_trend_quality_tilt_direction():
     assert up > dn
 
 
-def test_confirmer_nudge_is_bounded():
+def test_confirmer_nudge_is_bounded(monkeypatch):
     # even a maximally-bullish confirmer stack lifts the entry by a bounded amount
+    # (gate open so the GEX leg is live — the stack must stay bounded even then)
+    monkeypatch.setattr(ss, "_gex_gate_scored", lambda: True)
     base = _entry_base()
     z0, _, _ = ss._axis_entry(base)
     stacked, _, _ = ss._axis_entry({
@@ -627,8 +641,10 @@ def test_confirmer_nudge_is_bounded():
     assert 0 < (stacked - z0) <= ss._ENTRY_CONFIRM_CAP * 1.6 + 1e-9
 
 
-def test_confirmer_cannot_rescue_a_blocked_or_extended_name():
+def test_confirmer_cannot_rescue_a_blocked_or_extended_name(monkeypatch):
     # parabolic + over-extended + the strongest possible options/squeeze confirm: still no buy
+    # (gate open so the GEX confirm is actually live, not silently inert)
+    monkeypatch.setattr(ss, "_gex_gate_scored", lambda: True)
     rec = {"sue": 2.6, "insider_bps": 30.0, "alpha": 2.0,
            "ext": {"grade": "parabolic", "ext_z": 2.6},
            "ladder": {"state": "RALLY ON", "entry": {"urgency": "now"}},
@@ -651,13 +667,22 @@ def test_hard_penalty_not_diluted_by_good_urgency():
     assert z_para < 0 < z_good            # the -1.0 penalty survives, not averaged away
 
 
-def test_risk_idio_gex_vol_regime_and_backcompat():
+def test_risk_idio_gex_vol_regime_and_backcompat(monkeypatch):
+    # gate OPEN (validate-before-weight, #782): GEX carries its 0.10 risk weight
+    monkeypatch.setattr(ss, "_gex_gate_scored", lambda: True)
     short = ss._risk_idio({"gex_confirm": {"levels": {"regime": "short", "vol_hole_state": "EXPANSION"}}})[0]
     coiled = ss._risk_idio({"gex_confirm": {"levels": {"regime": "long", "vol_hole_state": "COILED_UP"}}})[0]
     pin = ss._risk_idio({"gex_confirm": {"levels": {"regime": "long", "vol_hole_state": "IN_HOLE"}}})[0]
     assert short > coiled > pin
     # back-compat: a raw gamma_regime (no confirmer) still reads as risk
     assert ss._risk_idio({"gex": {"gamma_regime": "short"}})[0] > 0
+
+
+def test_risk_idio_gex_is_zero_weight_while_gate_closed(monkeypatch):
+    # gate CLOSED (the shipped default until validate_gex passes): GEX never touches risk
+    monkeypatch.setattr(ss, "_gex_gate_scored", lambda: False)
+    assert ss._risk_idio({"gex_confirm": {"levels": {"regime": "short", "vol_hole_state": "EXPANSION"}}})[0] == 0.0
+    assert ss._risk_idio({"gex": {"gamma_regime": "short"}})[0] == 0.0
 
 
 def test_normalize_rec_passes_the_confirmers_through():

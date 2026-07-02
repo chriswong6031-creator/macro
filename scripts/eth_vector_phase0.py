@@ -117,6 +117,12 @@ def build_eth_signals():
         print("  (MVRV overlay unavailable:", e, ") — running grid WITHOUT valuation overlay")
 
     acfg = dict(vc["allocation"])
+    # Override-Registry (W0): ETH has no midterm-mechanism evidence — the BTC
+    # political-calendar rule must NOT leak into ETH validation.  allocation() is
+    # now pure-engine and does not apply the gate, so this line is already clean;
+    # we still explicitly disable midterm_gate here to document intent and to guard
+    # against any future config change that might inadvertently re-enable it.
+    acfg["midterm_gate"] = {"enabled": False}
     close = px["close"]
     alloc = btc_signals.allocation(mom_df["momentum"], risk_df["risk_index"], acfg,
                                    val=val, close=close)

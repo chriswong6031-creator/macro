@@ -272,16 +272,42 @@ def daily_state_events(sig: pd.DataFrame) -> list[dict]:
                        detail_zh=f"动量评分 {m:+.2f}（{_z(frm)} → {_z(to)}）；±0.5 为触发区间。"))
 
     alloc = sig["alloc_optimal"]
+    # override_active column is present when signals.parquet was built with the
+    # W0 Override-Registry pipeline; fall back to a False-filled series for
+    # backwards compatibility with older parquet snapshots.
+    override_active = sig.get("override_active", pd.Series(False, index=sig.index))
+    override_id_col = sig.get("override_id", pd.Series("", index=sig.index))
     for ts, frm, to in _transitions(alloc):
         pct = int(round(float(to) * 100))
         frm_pct = int(float(frm) * 100)
+        # Attribution: if the override was active on either side of the transition
+        # the move is override-driven, not momentum/grid driven.  Use subscriber-
+        # safe wording (owner decision D2: no n=3 or 'discretionary' in public copy).
+        oa_frm = bool(override_active.get(ts, False))
+        oa_to = bool(override_active.get(ts, False))
+        # also check the *previous* bar (frm side) by looking one step back
+        ts_idx = alloc.index.get_loc(ts)
+        if ts_idx > 0:
+            prev_ts = alloc.index[ts_idx - 1]
+            oa_frm = bool(override_active.get(prev_ts, False))
+        override_driven = oa_frm or oa_to
+        if override_driven:
+            # One or both sides of the transition are override-suppressed.
+            # Name the override honestly without leaking owner-only details
+            # (subscriber-facing copy per D2; Zh mirrors the En change).
+            attrib_en = "(proprietary cycle timer)"
+            attrib_zh = "（专有周期计时器）"
+        else:
+            # Both sides are pure engine output — attribute to the grid.
+            attrib_en = "(momentum × risk grid)"
+            attrib_zh = "（动量 × 风险网格）"
         out.append(_ev("allocation_change", ts, "medium",
                        f"Allocation changed to {pct}% BTC",
                        f"Optimal strategy moved {frm_pct}% → {pct}% BTC "
-                       f"(momentum × risk grid).",
+                       f"{attrib_en}.",
                        {"alloc_pct": pct}, str(to),
                        headline_zh=f"配置调整为 {pct}% BTC",
-                       detail_zh=f"最优策略从 {frm_pct}% 调整为 {pct}% BTC（动量 × 风险网格）。"))
+                       detail_zh=f"最优策略从 {frm_pct}% 调整为 {pct}% BTC{attrib_zh}。"))
 
     if "bfi_zone" in sig.columns:
         for ts, frm, to in _transitions(sig["bfi_zone"]):

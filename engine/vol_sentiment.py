@@ -59,7 +59,10 @@ def _vix_term() -> dict:
     if (v is not None and v3 is not None and "close" in v.columns and "close" in v3.columns):
         a, b = v["close"].dropna().align(v3["close"].dropna(), join="inner")
         if len(a):
-            ratio = float(a.iloc[-1] / b.iloc[-1]) if b.iloc[-1] else None
+            # canon.vix_term_scalar (audit #12): the ONE VIX/VIX3M basis (shared with
+            # vol_regime.ts_slope / conditions.vix_term). vol_shock reads this term_ratio.
+            from engine import canon
+            ratio = canon.vix_term_scalar(a.iloc[-1], b.iloc[-1])
             out["term_ratio"] = _r(ratio, 3)
             if ratio is not None:
                 out["term_state"] = ("backwardation" if ratio >= 1.0

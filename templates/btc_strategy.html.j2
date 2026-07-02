@@ -118,21 +118,25 @@
         <div class="k">{{ t('Total return','总回报') }}</div>
         <div class="v {{ 'win' if s.metrics.total>=hodl.total else 'lose' }}">{{ "{:,.0f}".format(s.metrics.total) }}×</div>
         <div class="sub">{{ t('buy &amp; hold','买入持有') }} {{ "{:,.0f}".format(hodl.total) }}×</div>
+        {% if s.metrics_raw is defined and s.metrics_raw.total != s.metrics.total %}<div class="sub" style="color:var(--muted);font-size:11px">{{ t('without cycle timer','不含周期计时器') }}: {{ "{:,.0f}".format(s.metrics_raw.total) }}×</div>{% endif %}
       </div>
       <div class="card score">
         <div class="k">CAGR</div>
         <div class="v {{ 'win' if s.metrics.cagr>=hodl.cagr else 'lose' }}">{{ "%.0f"|format(s.metrics.cagr) }}%</div>
         <div class="sub">{{ t('buy &amp; hold','买入持有') }} {{ "%.0f"|format(hodl.cagr) }}%</div>
+        {% if s.metrics_raw is defined and s.metrics_raw.cagr != s.metrics.cagr %}<div class="sub" style="color:var(--muted);font-size:11px">{{ t('without cycle timer','不含周期计时器') }}: {{ "%.0f"|format(s.metrics_raw.cagr) }}%</div>{% endif %}
       </div>
       <div class="card score">
         <div class="k">{{ t('Sharpe','夏普') }}</div>
         <div class="v {{ 'win' if s.metrics.sharpe>=hodl.sharpe else 'lose' }}">{{ "%.2f"|format(s.metrics.sharpe) }}</div>
         <div class="sub">{{ t('buy &amp; hold','买入持有') }} {{ "%.2f"|format(hodl.sharpe) }}</div>
+        {% if s.metrics_raw is defined and s.metrics_raw.sharpe != s.metrics.sharpe %}<div class="sub" style="color:var(--muted);font-size:11px">{{ t('without cycle timer','不含周期计时器') }}: {{ "%.2f"|format(s.metrics_raw.sharpe) }}</div>{% endif %}
       </div>
       <div class="card score">
         <div class="k">{{ t('Max drawdown','最大回撤') }}</div>
         <div class="v {{ 'win' if s.metrics.maxdd>=hodl.maxdd else 'lose' }}">{{ "%.0f"|format(s.metrics.maxdd) }}%</div>
         <div class="sub">{{ t('buy &amp; hold','买入持有') }} {{ "%.0f"|format(hodl.maxdd) }}% · {{ t('in mkt','在场') }} {{ "%.0f"|format(s.metrics.timein) }}%</div>
+        {% if s.metrics_raw is defined and s.metrics_raw.maxdd != s.metrics.maxdd %}<div class="sub" style="color:var(--muted);font-size:11px">{{ t('without cycle timer','不含周期计时器') }}: {{ "%.0f"|format(s.metrics_raw.maxdd) }}%</div>{% endif %}
       </div>
     </div>
 

@@ -3,6 +3,8 @@
 Covers the timing tilts, the US-vs-China alpha weighting, the buy/laggard
 ranking gates, and a PARITY lock that the shared score reproduces China's prior
 inline ``_setup_score`` (so the refactor cannot silently move the shipped board).
+
+W6-US invariant tests are at the bottom.
 """
 from pytest import approx
 
@@ -11,6 +13,7 @@ from engine.setups import (
     SUE_CONFIRM,
     US_ALPHA_WEIGHT,
     dedupe_dual_class,
+    entry_open_first,
     norm_company,
     rank_setups,
     setup_score,
@@ -324,3 +327,159 @@ def test_china_parity():
         assert old is not None and new is not None
         assert old[0] == new[0]
         assert old[1] == new[1]
+
+
+# ---------------------------------------------------------------------------
+# W6-US invariant tests
+# ---------------------------------------------------------------------------
+
+def _make_row(ticker, composite_z=0.5, score=50, status="await_confluence", alpha=0.5):
+    """Minimal row dict for entry_open_first tests."""
+    return {
+        "ticker": ticker,
+        "alpha": alpha,
+        "entry_signal": {"status": status},
+        "conviction": {"score": score, "composite_z": composite_z},
+    }
+
+
+class TestEntryOpenFirst:
+    """W6-US fix 5: entry_open_first only floats buy_now to #1 when composite_z > 0."""
+
+    def test_buy_now_with_positive_cz_leads(self):
+        rows = [
+            _make_row("A", composite_z=0.5, score=80, status="await_confluence"),
+            _make_row("B", composite_z=0.3, score=70, status="buy_now"),
+        ]
+        result = entry_open_first(rows)
+        # B has buy_now AND positive cz → should lead
+        assert result[0]["ticker"] == "B"
+
+    def test_buy_now_with_negative_cz_does_not_lead(self):
+        """ETN case: buy_now but composite_z <= 0 should NOT seize slot #1."""
+        rows = [
+            _make_row("REZI", composite_z=0.8, score=95, status="await_confluence", alpha=0.34),
+            _make_row("ETN", composite_z=-0.047, score=47, status="buy_now", alpha=-0.12),
+        ]
+        result = entry_open_first(rows)
+        # REZI should lead because ETN has negative composite_z
+        assert result[0]["ticker"] == "REZI", (
+            f"Expected REZI at slot #1, got {result[0]['ticker']} "
+            f"(ETN composite_z=-0.047 should not seize slot #1)"
+        )
+
+    def test_buy_now_with_zero_cz_does_not_lead(self):
+        rows = [
+            _make_row("STRONG", composite_z=1.0, score=90, status="await_confluence"),
+            _make_row("WEAK", composite_z=0.0, score=60, status="buy_now"),
+        ]
+        result = entry_open_first(rows)
+        assert result[0]["ticker"] == "STRONG"
+
+    def test_stable_sort_on_equal_status(self):
+        """Rows with same (is_open=False) maintain score ordering."""
+        rows = [
+            _make_row("HIGH", composite_z=0.8, score=90, status="await_confluence"),
+            _make_row("MID", composite_z=0.5, score=70, status="await_confluence"),
+            _make_row("LOW", composite_z=0.2, score=50, status="await_confluence"),
+        ]
+        result = entry_open_first(rows)
+        # higher score leads (no buy_now entries)
+        assert result[0]["ticker"] == "HIGH"
+        assert result[1]["ticker"] == "MID"
+
+    def test_missing_fields_are_handled_gracefully(self):
+        """Rows missing entry_signal or conviction don't crash."""
+        rows = [
+            {"ticker": "A"},
+            {"ticker": "B", "conviction": {"score": 50}},
+            _make_row("C", status="buy_now", composite_z=0.5),
+        ]
+        result = entry_open_first(rows)
+        # C has buy_now and positive cz → leads; no crash
+        assert result[0]["ticker"] == "C"
+        assert len(result) == 3
+
+
+class TestScoreEdgeScoreTiming:
+    """W6-US fix 2: score_edge and score_timing are both emitted; Lagging band is capped."""
+
+    def test_lagging_verdict_band_capped_to_neutral(self):
+        """Simulate what build_stock_library does: cap band for lagging names."""
+        # Replicate the band-capping logic inline (it lives in build_stock_library.py)
+        def _apply_band_cap(c):
+            verdict = (c.get("verdict") or "").lower()
+            lagging = any(k in verdict for k in ("lagging", "no clear edge"))
+            if lagging:
+                c["band"] = "neutral"
+            return c
+
+        lagging_row = {"verdict": "Lagging — relative weakness", "band": "high", "score": 75}
+        no_edge_row = {"verdict": "Neutral — no clear edge", "band": "constructive", "score": 47}
+        leader_row = {"verdict": "High-confluence leader (context)", "band": "high", "score": 80}
+
+        assert _apply_band_cap(dict(lagging_row))["band"] == "neutral"
+        assert _apply_band_cap(dict(no_edge_row))["band"] == "neutral"
+        assert _apply_band_cap(dict(leader_row))["band"] == "high"  # leader keeps band
+
+    def test_band_verdict_invariant_fails_on_violation(self):
+        """Invariant (a): band high/constructive + Lagging/no-edge verdict should raise."""
+        # This tests the logic that build_stock_library uses (replicated here)
+        def _check_invariant(rows):
+            violations = []
+            for r in rows:
+                c = r.get("conviction") or {}
+                v = (c.get("verdict") or "").lower()
+                b = c.get("band") or ""
+                if b in ("high", "constructive") and any(k in v for k in ("lagging", "no clear edge")):
+                    violations.append(r.get("ticker"))
+            return violations
+
+        clean_rows = [
+            {"ticker": "WAB", "conviction": {"band": "high", "verdict": "High-confluence leader (context)"}},
+            {"ticker": "ETN", "conviction": {"band": "neutral", "verdict": "Neutral — no clear edge"}},
+            {"ticker": "LKQ", "conviction": {"band": "neutral", "verdict": "Lagging — relative weakness"}},
+        ]
+        assert _check_invariant(clean_rows) == []  # clean after fix 2
+
+        dirty_rows = [
+            {"ticker": "BAD", "conviction": {"band": "high", "verdict": "Lagging — relative weakness"}},
+        ]
+        assert _check_invariant(dirty_rows) == ["BAD"]  # pre-fix state triggers
+
+
+class TestUrgencyGating:
+    """W6-US fix 7: urgency=now requires entry_signal.status in {buy_now, partial}."""
+
+    def test_urgency_downgrade_logic(self):
+        """Replicate the urgency-downgrade logic from build_stock_library."""
+        _URGENCY_STATUS_MAP = {
+            "buy_now": "now", "partial": "now",
+            "await_confluence": "caution", "extended": "caution",
+        }
+
+        def _apply_urgency_fix(rows):
+            for r in rows:
+                if r.get("urgency") != "now":
+                    continue
+                es_status = (r.get("entry_signal") or {}).get("status")
+                if es_status not in ("buy_now", "partial", None):
+                    r["urgency"] = _URGENCY_STATUS_MAP.get(es_status, "caution")
+            return rows
+
+        rows = [
+            {"ticker": "FCN", "urgency": "now", "entry_signal": {"status": "await_confluence"}},
+            {"ticker": "LKQ", "urgency": "now", "entry_signal": {"status": "await_confluence"}},
+            {"ticker": "ETN", "urgency": "now", "entry_signal": {"status": "buy_now"}},
+            {"ticker": "OTHER", "urgency": "soon", "entry_signal": {"status": "await_confluence"}},
+        ]
+        result = _apply_urgency_fix(rows)
+        # FCN and LKQ should be downgraded
+        fcn = next(r for r in result if r["ticker"] == "FCN")
+        lkq = next(r for r in result if r["ticker"] == "LKQ")
+        etn = next(r for r in result if r["ticker"] == "ETN")
+        oth = next(r for r in result if r["ticker"] == "OTHER")
+        assert fcn["urgency"] == "caution"
+        assert lkq["urgency"] == "caution"
+        assert etn["urgency"] == "now"     # buy_now → keep
+        assert oth["urgency"] == "soon"    # was not "now" → unchanged

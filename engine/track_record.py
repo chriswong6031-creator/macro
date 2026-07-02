@@ -16,6 +16,17 @@ NO LOOK-AHEAD rule (CHARTER §3): every entry-time feature uses ONLY daily data 
 index ≤ the marker date; forward metrics use ONLY data > the marker date — in *index*
 terms there is no look-ahead.
 
+FILL CONVENTION (W1c, audit #15): a signal that fires on the close of the marker bar is
+FILLED at the NEXT bar's close — the honest convention matching the VALIDATED research
+harness (research/signal_engine/tuning_harness.py enters at f=i+1) and validation.py's
+alloc.shift(1) "act next bar". `entry_price` is the fill bar (marker bar + 1); forward
+returns/drawdowns are measured from that fill; the strictly-forward window never includes
+the entry bar. The forward/fill math is centralized in engine.grading so this logger, the
+sector graders, and the desk graders all use ONE convention. Same-bar fills flatter short
+mean-reversion signals most (you buy the exact trough), so the pre-W1c same-bar version was
+optimistic in exactly the direction that over-sizes a mechanical system; a shadow same-bar
+column (fwd_mdd_60_samebar) is emitted alongside so the correction is measurable, not hidden.
+
 Price-store caveat (honest framing, not a fatal leak): the daily store is back-adjusted
 (CHARTER §5; data/stocks `close` is split- AND dividend-back-adjusted total-return,
 verified empirically — AAPL has no gap across the 2020 4:1 split). Splits are a constant
@@ -49,6 +60,8 @@ import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+
+from engine import grading  # W1c: one shared next-bar/survivorship-aware grader
 
 logger = logging.getLogger(__name__)
 
@@ -92,10 +105,12 @@ _MATURATION_COLS = [
     "fwd_price_20", # float/null  close[t+20]
     "fwd_price_60",
     "fwd_price_180",
-    "fwd_mdd_20",   # float/null  min(0, min(close[t+1..t+20])/entry − 1)  (≤0)  THE §3 METRIC
+    "fwd_mdd_20",   # float/null  min(0, min(close[fill+1..fill+20])/entry − 1)  (≤0)  THE §3 METRIC
     "fwd_mdd_60",
     "fwd_mdd_180",
-    "trade_mae",    # float/null  min(0, min(close[t+1..exit])/entry − 1)  (≤0, trade-level §3-faithful)
+    "fwd_mdd_60_samebar",  # float/null  W1c shadow: the OLD same-bar-fill 60d MDD — for measuring the next-bar correction
+    "fill_offset",  # int/null  bars from marker to fill (1 = honest next-bar; 0 = same-bar legacy/unfillable)
+    "trade_mae",    # float/null  min(0, min(close[fill+1..exit])/entry − 1)  (≤0, trade-level §3-faithful)
     "outcome",      # str/null  win / loss / still_held
     "exit_date",    # str/null
     "exit_type",    # str/null  sell / cut
@@ -207,36 +222,28 @@ def _kaufman_er_at(close: pd.Series, date: str, n: int = 20) -> float | None:
 def _forward_metrics(
     close: pd.Series, entry_date: str, horizons: list[int]
 ) -> dict[str, Any]:
-    """Compute fixed-horizon forward returns + drawdowns using ONLY data > entry_date.
+    """Fixed-horizon forward returns + drawdowns on the NEXT-BAR fill (W1c, audit #15).
 
-    Returns a flat dict with keys fwd_ret_{H}, fwd_price_{H}, fwd_mdd_{H} for each
-    horizon H in horizons.  Any horizon not yet available has value None.
-
-    fwd_mdd_{H} = min(0, min(close[t+1 .. t+H]) / entry_price - 1)  (≤ 0)  — THE §3 METRIC.
-    Floored at 0: if the trade never traded below entry it incurred NO drawdown from
-    entry, so the "max drawdown from entry" is 0 (a positive trough is not a drawdown).
+    Routes through engine.grading.forward_metrics: entry = the bar STRICTLY AFTER the
+    marker bar; the drawdown window is strictly forward of that fill. Returns the flat
+    fwd_ret_{H}/fwd_price_{H}/fwd_mdd_{H} dict PLUS `fill_offset` and the shadow
+    `fwd_mdd_60_samebar` (the old same-bar-fill 60d MDD) so the next-bar correction is
+    measurable rather than hidden. Any horizon not yet matured is None.
     """
-    loc = _snap_loc(close, entry_date)
+    m = grading.forward_metrics(close, entry_date, horizons=tuple(horizons))
     result: dict[str, Any] = {}
     for h in horizons:
-        for k in (f"fwd_ret_{h}", f"fwd_price_{h}", f"fwd_mdd_{h}"):
-            result[k] = None
+        result[f"fwd_ret_{h}"]   = m.get(f"fwd_ret_{h}")
+        result[f"fwd_price_{h}"] = m.get(f"fwd_price_{h}")
+        result[f"fwd_mdd_{h}"]   = m.get(f"fwd_mdd_{h}")
+    result["fill_offset"] = m.get("fill_offset")
 
-    if loc is None:
-        return result
-
-    entry_price = float(close.iloc[loc])
-    # forward window: strictly after entry bar
-    fwd = close.iloc[loc + 1:]  # 1-indexed forward slice
-
-    for h in horizons:
-        if len(fwd) >= h:
-            p_h = float(fwd.iloc[h - 1])
-            result[f"fwd_ret_{h}"]   = p_h / entry_price - 1.0
-            result[f"fwd_price_{h}"] = p_h
-            window = fwd.iloc[:h]
-            result[f"fwd_mdd_{h}"]   = min(0.0, float(window.min()) / entry_price - 1.0)
-
+    # shadow same-bar 60d MDD — the pre-W1c number, for the before/after audit only.
+    if 60 in horizons:
+        sb = grading.forward_metrics(close, entry_date, horizons=(60,), same_bar=True)
+        result["fwd_mdd_60_samebar"] = sb.get("fwd_mdd_60")
+    else:
+        result["fwd_mdd_60_samebar"] = None
     return result
 
 
@@ -273,9 +280,15 @@ def _build_row(
     date = marker["date"]
     mtype = marker["type"]
 
-    # Snap to nearest prior daily bar
-    loc = _snap_loc(close, date)
-    entry_price = float(close.iloc[loc]) if loc is not None else float("nan")
+    # NEXT-BAR fill (W1c): entry price = close of the bar STRICTLY AFTER the marker bar.
+    # Falls back to the marker bar itself ONLY when there is no next bar yet (the fill has
+    # not happened) — that row then carries entry NaN and stays un-matured, which is honest.
+    fill = grading.fill_index(close, date)
+    if fill is not None:
+        entry_price = float(close.iloc[fill])
+    else:
+        loc = _snap_loc(close, date)
+        entry_price = float(close.iloc[loc]) if loc is not None else float("nan")
 
     regime, above200, rising = _regime_at(close, date)
     vol_annual = _vol_annual_at(close, date)
@@ -298,6 +311,7 @@ def _build_row(
         "fwd_ret_20": None, "fwd_ret_60": None, "fwd_ret_180": None,
         "fwd_price_20": None, "fwd_price_60": None, "fwd_price_180": None,
         "fwd_mdd_20": None, "fwd_mdd_60": None, "fwd_mdd_180": None,
+        "fwd_mdd_60_samebar": None, "fill_offset": None,
         "trade_mae": None, "outcome": None,
         "exit_date": None, "exit_type": None, "exit_price": None,
         "trade_ret": None,
@@ -364,12 +378,16 @@ def _fill_maturation(
         outcome = row.get("outcome")
         provisional = _is_null(outcome) or outcome == "still_held"
         if provisional:
-            loc_entry = _snap_loc(close, date)
+            # NEXT-BAR fill (W1c): entry = the bar AFTER the marker, EXIT = the bar AFTER
+            # the sell/cut marker — symmetric with the forward-metric convention. entry_price_f
+            # is already the fill-bar price, so the MAE window / trade_ret are measured from it.
+            loc_entry = grading.fill_index(close, date)
             exit_date, exit_type = _resolve_exit(markers, marker_idx)
-            loc_exit = _snap_loc(close, exit_date) if exit_date is not None else None
+            loc_exit = grading.fill_index(close, exit_date) if exit_date is not None else None
 
             if loc_entry is not None and loc_exit is not None and loc_exit > loc_entry:
                 # Closed trade — final MAE/outcome (resolves any provisional still_held).
+                # Window is strictly forward of the entry fill: [fill+1 .. exit_fill].
                 window = close.iloc[loc_entry + 1: loc_exit + 1]
                 exit_price = float(close.iloc[loc_exit])
                 if len(window) > 0:
@@ -534,6 +552,13 @@ def update_track_record(
     skipped_pending = 0
     matured_rows = 0
 
+    # dead-name terminal store (8-K Item 1.03 bankruptcy imputation) — a name that
+    # delisted mid-horizon still grades at its loss instead of vanishing (W1c, audit #15).
+    try:
+        dead_prices = grading.load_dead_prices()
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        dead_prices = {}
+
     # --- process each ticker's signal file ---
     for ticker, markers in _iter_marker_files(signals_dir):
         # Load daily close for this ticker (skip gracefully if absent).
@@ -545,6 +570,11 @@ def update_track_record(
             close = pd.read_parquet(stock_fp)["close"].dropna()
             close = close.sort_index()
         except Exception:
+            close = None
+        # extend with (or fall back to) the dead-name terminal series so a delisting is
+        # graded as a loss rather than dropping the row silently.
+        close = grading.resolve_series(ticker, close, dead_prices=dead_prices)
+        if close is None or close.empty:
             logger.debug("No price data for %s — skipping", ticker)
             continue
 

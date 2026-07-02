@@ -584,6 +584,21 @@ def _gex_gate_scored() -> bool:
     return False
 
 
+@functools.lru_cache(maxsize=1)
+def _iv_spread_gate_scored() -> bool:
+    """IV-spread confirmer may enter the score only after validate_options_ivspread.py
+    writes data/options_ivspread/validation_gate.json with scored=true. Until then
+    it is display-only. Cached: gate cannot change mid-build."""
+    try:
+        from lib import config
+        p = config.data_dir() / "options_ivspread" / "validation_gate.json"
+        if p.exists():
+            return bool(json.loads(p.read_text()).get("scored", False))
+    except Exception:  # noqa: BLE001
+        pass
+    return False
+
+
 def _risk_idio(rec: dict) -> tuple[float, dict]:
     """0..1 idiosyncratic risk + the present components (renormalized over what is present)."""
     comps: dict[str, float] = {}
@@ -1314,12 +1329,18 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         "axes": axes,
         # the two new VERIFIERS, surfaced for the card chips (display; they also fed a small
         # bounded tilt into the entry axis above — never the selection rank).
-        "gex_confirm": rec.get("gex_confirm"),
+        # W6-US fix 4: attach gate_scored to GEX and IV-spread chips so the template can
+        # hide them when the gate is scored:false (unvalidated — accruing history).
+        "gex_confirm": {**(rec.get("gex_confirm") or {}),
+                        "gate_scored": _gex_gate_scored()} if rec.get("gex_confirm") else None,
         "vol_squeeze": rec.get("vol_squeeze"),
         # Cremers-Weinbaum call−put IV-spread confirmer (directional options lean) — DISPLAY-ONLY
         # context; unlike the gex tilt it does NOT yet touch the score (gated on
         # validate_options_ivspread earning a verdict — the chain panel is still accruing).
-        "iv_spread_confirm": rec.get("iv_spread_confirm"),
+        # W6-US fix 4: iv_spread gate_scored from its own validation_gate.json.
+        "iv_spread_confirm": ({**(rec.get("iv_spread_confirm") or {}),
+                               "gate_scored": _iv_spread_gate_scored()}
+                              if rec.get("iv_spread_confirm") else None),
         "notes": notes or None,       # honesty notes: percentile-rank caveat + favourable-cone read
         "n_axes": n_axes,
         "cycle_blocked": blocked,

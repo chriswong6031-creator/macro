@@ -928,18 +928,18 @@ class TestRebuys:
 # ---------------------------------------------------------------------------
 
 class TestEntryPrice:
-    """entry_price is the daily close on the marker date (or nearest prior bar
-    if the exact date is not in the price series — e.g. weekend/holiday)."""
+    """entry_price is the NEXT-BAR fill (W1c, audit #15): a signal firing on the marker
+    bar is filled at the close of the bar STRICTLY AFTER it — the validated convention."""
 
-    def test_entry_price_from_close_on_date(self, tmp_path):
+    def test_entry_price_is_next_bar_fill(self, tmp_path):
         stocks_dir  = tmp_path / "stocks";  stocks_dir.mkdir()
         signals_dir = tmp_path / "signals"; signals_dir.mkdir()
         arch = tmp_path / "track_record.parquet"
 
         close = _daily_close(500)
-        # Pick a date definitely in the series
+        # Pick a date definitely in the series (with a next bar available)
         entry_date = str(close.index[100].date())
-        expected_price = float(close.iloc[100])
+        expected_price = float(close.iloc[101])   # NEXT bar — the honest fill
 
         _write_prices(stocks_dir, "UNH", close)
         _write_signals(signals_dir, "UNH", entry_date, [
@@ -950,4 +950,6 @@ class TestEntryPrice:
 
         row = df[(df["ticker"] == "UNH") & (df["type"] == "buy")].iloc[0]
         assert abs(row["entry_price"] - expected_price) < 1e-6, (
-            f"entry_price {row['entry_price']:.4f} != expected {expected_price:.4f}")
+            f"entry_price {row['entry_price']:.4f} != next-bar expected {expected_price:.4f}")
+        # fill_offset provenance: 1 = honest next-bar
+        assert int(row["fill_offset"]) == 1, f"fill_offset {row['fill_offset']} != 1 (next-bar)"

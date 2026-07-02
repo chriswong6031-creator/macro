@@ -2072,7 +2072,7 @@ def build_allocation_page(env, site: Path, sig: pd.DataFrame, cards: dict,
                           recommend_d: dict | None = None, cones: dict | None = None,
                           sizing: dict | None = None, catalyst: dict | None = None,
                           breadth: dict | None = None, env_d: dict | None = None,
-                          midterm: dict | None = None,
+                          gate: dict | None = None,
                           **_ignored) -> None:
     """The allocation deep-dive page: the Master Signal recommendation + Kelly sizing +
     forward cones (shared with vector.html), AND the altcoin-cycle / ETH allocation keyed
@@ -2111,7 +2111,7 @@ def build_allocation_page(env, site: Path, sig: pd.DataFrame, cards: dict,
         "grid": rec, "grid_full": grid, "regime": regime, "regime_label": lad.get("regime_label"),
         "regime_label_zh": lad.get("regime_label_zh"), "verdict": verdict,
         "alloc_pct": alloc_pct,
-        "midterm": midterm or {"active": False},
+        "gate": gate or {"active": False},   # W3: the ONE stamped gated-state flag
         "cards": cards,
         # shared command-center decision layer (reused from vector.html). NOTE: the local
         # `rec` above is the BTC/ETH/alts/cash SPLIT — the recommendation is `recommend_d`.
@@ -2138,7 +2138,232 @@ def build_allocation_page(env, site: Path, sig: pd.DataFrame, cards: dict,
     log.info("wrote %s/vector_allocation.html (%d KB)", site, len(html) // 1024)
 
 
-def vector_timeline(sig: pd.DataFrame, ladder: pd.DataFrame) -> dict:
+def _override_falsifier_health(ct: dict, gate: dict, vcfg: dict) -> dict:
+    """Falsifier health WITH EVALUABILITY (Override-Registry W3/N6). The subscriber card
+    shows the four thesis falsifiers as green/amber/red; the owner view must additionally
+    say which of them can structurally FIRE while the gate is on — "4/4 green" is a lie
+    when two of the four are built so they cannot trip in-window. This is the honest
+    pre-W2 read; W2 repairs the falsifiers themselves, after which the structural entries
+    below flip to evaluable and this map degrades to a no-op annotation."""
+    cpc = vcfg.get("cycle_phase_clock") or {}
+    ws, we = ct.get("window_start") or "—", ct.get("window_end") or "—"
+    rel = gate.get("release") or "—"
+    dn = int(cpc.get("down_days", 364))
+    # key -> (status, why). status: "evaluable" = can fire today; "in_window" = time-gated
+    # but CAN fire inside the gate window (counts as evaluable); "structural" = cannot fire
+    # in-window as built (the W2 repair list).
+    known = {
+        "dampening": ("in_window",
+                      f"Fires only once the projected bottom window opens ({ws}) — a "
+                      f"fair-comparison guard, and that date is inside the gate window."),
+        "structure": ("evaluable",
+                      "1064/364 invalidation can fire any day (anchor-dependent until W2's "
+                      "running-ATH rewrite, but it does fire)."),
+        "timing": ("structural",
+                   f"OVERDUE can only fire after the window closes ({we}) — by then the gate "
+                   f"has already self-released ({rel}). W2 re-derives the window from halving "
+                   f"structure so it can fire in-window."),
+        "desync": ("structural",
+                   f"Computes the projected bottom as peak+{dn}d and never reads the halving "
+                   f"clock it claims to police — as built it is a constant. W2 anchors it to "
+                   f"the actual halving date."),
+    }
+    items = []
+    for f in ct.get("flags") or []:
+        status, why = known.get(f.get("key"), ("evaluable", ""))
+        items.append({"key": f.get("key"), "level": f.get("level"), "text": f.get("en"),
+                      "evaluability": status, "evaluable": status != "structural",
+                      "why": why})
+    n_eval = sum(1 for i in items if i["evaluable"])
+    return {
+        "items": items, "evaluable": n_eval, "total": len(items),
+        "headline": f"{n_eval}/{len(items)} evaluable" if items else "monitor unavailable",
+        "all_green_is_honest": bool(items) and n_eval == len(items),
+        "note": ("Pre-W2: green on a falsifier that cannot structurally fire in-window is "
+                 "vacuous, not reassuring. W2 (falsifier repair) makes all four evaluable."),
+    }
+
+
+def build_override_shadow(sig: pd.DataFrame, gate: dict, ct: dict, acfg: dict,
+                          vcfg: dict) -> None:
+    """OWNER-ONLY honesty artifact (Override-Registry W3/N6; owner decisions D2/D3):
+    writes data/vector/override_shadow.json, consumed by the admin console's BTC Override
+    panel (admin/vector_override.py). Subscriber surfaces keep the "Proprietary cycle
+    timer" scrub (D2) — this file carries the full payload that scrub hides: provenance
+    (n=3, in-sample pivot MAE, amplitude dampening), the discretionary-override status,
+    the ungated counterfactual, falsifier health WITH evaluability, and the live
+    gated-vs-raw shadow strip, ALWAYS both-sides framed with no action affordances (D3).
+
+    W3 STUB of the W1 measurement artifact (`stub: true`): every number is computed live
+    from the committed signals or labeled in-sample — nothing here is banked as
+    validation. W0's dual series (alloc_*_raw) is preferred over the local ungated
+    recompute the moment it lands in signals.parquet; W1 replaces the shadow/attribution
+    stats with the measured artifacts + dual DSR."""
+    import copy
+
+    from engine import btc_signals
+
+    close = sig["close"]
+    asof = pd.Timestamp(sig.index[-1])
+    mg_cfg = acfg.get("midterm_gate") or {}
+
+    # ---- ungated (raw) allocation: W0 dual series when present, local recompute until --
+    if "alloc_optimal_raw" in sig.columns:
+        raw = pd.DataFrame({v: sig[f"alloc_{v}_raw"] for v in acfg["variants"]
+                            if f"alloc_{v}_raw" in sig.columns})
+        raw.columns = [f"alloc_{c}" for c in raw.columns]
+        raw_source = "signals.parquet alloc_*_raw (W0 dual series)"
+    else:
+        rcfg = copy.deepcopy(acfg)
+        rcfg["midterm_gate"] = {"enabled": False}
+        val_cols = [c for c in ("mvrv_z", "nupl", "mayer", "reserve_risk") if c in sig.columns]
+        raw = btc_signals.allocation(
+            sig["momentum"], sig["risk_index"], rcfg,
+            val=sig[val_cols] if val_cols else None,
+            close=close, bottom_sig=sig.get("bottom_pressure"))
+        raw_source = "local ungated recompute (pre-W0; same inputs, midterm_gate disabled)"
+    gate_mask = btc_signals.midterm_blackout(sig.index, mg_cfg)
+    # parity: re-masking raw with the gate must reproduce the live gated series — if this
+    # ever breaks, the recompute has drifted from allocation() and the panel says so.
+    try:
+        _re = raw["alloc_optimal"].mask(gate_mask, 0.0)
+        parity_ok = bool(np.allclose(_re.fillna(-9), sig["alloc_optimal"].fillna(-9), atol=1e-9))
+    except Exception:  # noqa: BLE001
+        parity_ok = False
+
+    last_raw = raw.iloc[-1]
+    ylab = str(asof.year)
+    yraw = raw["alloc_optimal"].loc[ylab] if ylab in raw.index.strftime("%Y") else raw["alloc_optimal"].iloc[0:0]
+    counterfactual = {
+        "asof": asof.strftime("%Y-%m-%d"),
+        "gated_pct": {v: _r(100 * sig[f"alloc_{v}"].iloc[-1], 1) for v in acfg["variants"]},
+        "raw_pct": {v: (_r(100 * last_raw[f"alloc_{v}"], 1) if f"alloc_{v}" in last_raw.index
+                        else None) for v in acfg["variants"]},
+        "raw_source": raw_source,
+        "parity_ok": parity_ok,
+        "ytd_raw_mean_pct": _r(100 * yraw.mean(), 1) if len(yraw) else None,
+        "ytd_raw_days_gt0": int((yraw > 0).sum()) if len(yraw) else None,
+        "ytd_days": int(len(yraw)) if len(yraw) else None,
+    }
+
+    # ---- provenance: n, amplitude dampening, in-sample pivot-fit MAE ------------------
+    cpc = vcfg.get("cycle_phase_clock") or {}
+    bots = [pd.Timestamp(str(d)[:10]) for d in (cpc.get("bottoms") or [])]
+    tops = [pd.Timestamp(str(d)[:10]) for d in (cpc.get("tops") or [])]
+    up_d, dn_d = float(cpc.get("up_days", 1064)), float(cpc.get("down_days", 364))
+    errs = []
+    for b in bots:
+        nt = next((t for t in tops if t > b), None)
+        if nt is not None:
+            errs.append(abs((nt - b).days - up_d))
+    for t in tops:
+        nb = next((x for x in bots if x > t), None)
+        if nb is not None:
+            errs.append(abs((nb - t).days - dn_d))
+    mae = _r(float(np.mean(errs)), 1) if errs else None
+    dampening_path = [_r(100 * b["depth"], 0) for b in (ct.get("prior_bears") or [])]
+    if ct.get("drawdown_from_peak") is not None:
+        dampening_path.append(_r(100 * ct["drawdown_from_peak"], 0))
+    provenance = {
+        "basis_n": len(bots),
+        "basis": "midterm-year cycle bottoms " + ", ".join(b.strftime("%Y-%m-%d") for b in bots)
+                 + " — a soft prior riding the halving clock (n=3; overlapping, not independent)",
+        "prior_bears": ct.get("prior_bears"),
+        "dampening_path_pct": dampening_path,
+        "dampening_note": ("Amplitude is dampening cycle-over-cycle (institutionalisation) — "
+                           "the last leg is the CURRENT drawdown, still open, never banked."),
+        "pivot_fit_mae_days": mae,
+        "pivot_fit_note": ("IN-SAMPLE: the same pivots also set the 1064/364 parameters — "
+                           "this is fit quality, not forecast skill."),
+    }
+
+    # ---- falsifier health with evaluability -------------------------------------------
+    falsifiers = _override_falsifier_health(ct if isinstance(ct, dict) else {}, gate, vcfg)
+
+    # ---- live shadow strip (D3: owner-only, both-sides, no affordances) ----------------
+    shadow: dict = {"ok": False}
+    try:
+        eq_g = alloc_equity(close, sig["alloc_optimal"])
+        eq_r = alloc_equity(close, raw["alloc_optimal"])
+        t0 = pd.Timestamp(year=int(asof.year), month=1, day=1)
+        if bool(gate.get("active")) and close.index.min() <= t0:
+            seg_g, seg_r = eq_g.loc[eq_g.index >= t0], eq_r.loc[eq_r.index >= t0]
+            g_ret = 100 * (seg_g.iloc[-1] / seg_g.iloc[0] - 1)
+            r_ret = 100 * (seg_r.iloc[-1] / seg_r.iloc[0] - 1)
+            rebased = pd.DataFrame({"gated": seg_g / seg_g.iloc[0],
+                                    "raw": seg_r / seg_r.iloc[0]}).resample("W").last()
+            elapsed = int((asof - t0).days)
+            prior = []
+            for y in sorted({int(b.year) for b in bots} | {2018, 2022}):
+                j1 = pd.Timestamp(year=y, month=1, day=1)
+                if not (int(y) % 4 == 2 and close.index.min() <= j1 and j1 < asof - pd.Timedelta(days=400)):
+                    continue
+                rel_y = btc_signals._us_election_date(y) - pd.Timedelta(
+                    days=int(mg_cfg.get("buy_lead_days", 0)))
+                w = eq_r.loc[(eq_r.index >= j1) & (eq_r.index <= j1 + pd.Timedelta(days=elapsed))]
+                fw = eq_r.loc[(eq_r.index >= j1) & (eq_r.index <= rel_y)]
+                if len(w) < 30 or len(fw) < 30:
+                    continue
+                prior.append({
+                    "year": y,
+                    "raw_at_same_elapsed_pct": _r(100 * (w.iloc[-1] / w.iloc[0] - 1), 1),
+                    "raw_by_release_pct": _r(100 * (fw.iloc[-1] / fw.iloc[0] - 1), 1),
+                })
+            regret = _r(r_ret - g_ret, 1)
+            prior_txt = "; ".join(
+                f"in {p['year']} the ungated engine was {p['raw_at_same_elapsed_pct']:+.1f}% at this "
+                f"same point and finished the gate window at {p['raw_by_release_pct']:+.1f}%"
+                for p in prior) or "no prior gate window has full price coverage"
+            shadow = {
+                "ok": True,
+                "since": t0.strftime("%Y-%m-%d"),
+                "gated_return_pct": _r(g_ret, 1),
+                "raw_return_pct": _r(r_ret, 1),
+                "regret_pp": regret,
+                "series": [{"d": d.strftime("%Y-%m-%d"), "gated": _r(g, 4), "raw": _r(r, 4)}
+                           for d, g, r in zip(rebased.index, rebased["gated"], rebased["raw"])
+                           if pd.notna(g) and pd.notna(r)],
+                "prior_cycles": prior,
+                "framing": (f"Both sides (D3): the gate is {'behind' if regret and regret > 0 else 'ahead of'} "
+                            f"the ungated engine by {abs(regret or 0):.1f}pp since {t0:%b %-d}; {prior_txt}."),
+                "no_action_affordances": True,
+            }
+        else:
+            shadow = {"ok": False, "reason": "gate not engaged (or no coverage) — strip renders when active"}
+    except Exception as e:  # noqa: BLE001 — the strip is optional, the artifact is not
+        log.warning("override shadow strip failed (%s)", e)
+        shadow = {"ok": False, "reason": str(e)}
+
+    payload = {
+        "schema": "override_shadow.v0",
+        "stub": True,
+        "stub_note": ("W3 stub of the W1 measurement artifact — live-computed, in-sample-"
+                      "labeled, never banked. W1 replaces with per-cycle attribution, "
+                      "breakeven CI fan and dual DSR/CV."),
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        "audience": "OWNER ONLY (D2) — subscriber surfaces keep the 'Proprietary cycle timer' scrub",
+        "override": {
+            "id": gate.get("override_id"),
+            "declared_in": "config.yml vector.allocation.midterm_gate (W0 re-declares as vector.overrides[0])",
+            "status": "DISCRETIONARY — human conviction override; sizes money, never graded (W1 grades it)",
+            "active": bool(gate.get("active")),
+            "year": gate.get("year"),
+            "release": gate.get("release"),
+            "graded": False,
+        },
+        "provenance": provenance,
+        "counterfactual": counterfactual,
+        "falsifiers": falsifiers,
+        "shadow": shadow,
+    }
+    out = config.data_dir() / "vector" / "override_shadow.json"
+    out.write_text(json.dumps(payload, indent=1))
+    log.info("wrote %s (owner honesty artifact; raw optimal %.1f%% vs gated %.1f%%)",
+             out, counterfactual["raw_pct"].get("optimal") or 0,
+             counterfactual["gated_pct"].get("optimal") or 0)
+
+
+def vector_timeline(sig: pd.DataFrame, ladder: pd.DataFrame, gate_cfg: dict | None = None) -> dict:
     """Compact columnar JSON tape for the cycle time machine (vector_timemachine.js).
     Merges the per-day CAUSAL signals (already point-in-time in signals.parquet) with
     the backtested ladder state/regime (scripts/backtest_ladder_history.py). Starts
@@ -2149,6 +2374,17 @@ def vector_timeline(sig: pd.DataFrame, ladder: pd.DataFrame) -> dict:
     df, lad = sig[keep], lad[keep]
     # cycle_position 0..1 -> stage index 0..3 (Defensive/Fragile/Recovery/Expansion)
     stage = (df["cycle_position"].clip(0, 0.999).fillna(0.0) * 4).astype(int)
+
+    # W5 Time-Machine honesty: mark spans where the proprietary cycle timer overrides allocation.
+    # Spans where override_active is True (post-W0 dual-series column) must not present as organic
+    # engine output. If that column is missing, recompute the gate deterministically from config.
+    if "override_active" in df.columns:
+        g = df["override_active"].fillna(False).astype(bool)
+    else:
+        from engine.btc_signals import midterm_blackout
+        if gate_cfg is None:
+            gate_cfg = (config.load()["vector"].get("allocation") or {}).get("midterm_gate")
+        g = midterm_blackout(df.index, gate_cfg)
 
     def cat(s, default=""):
         return [default if pd.isna(v) else str(v) for v in s]
@@ -2170,6 +2406,7 @@ def vector_timeline(sig: pd.DataFrame, ladder: pd.DataFrame) -> dict:
         "composite": cat(df["composite_state"], "NEUTRAL"),
         "risk": num(df["risk_index"]),
         "alloc": num(df["alloc_optimal"], 100),
+        "gated": [1 if v else 0 for v in g],  # spans where override pins allocation — not organic
     }
 
 
@@ -2231,20 +2468,46 @@ def main() -> int:
              for v in ("conservative", "moderate", "aggressive", "optimal")}
     # Midterm-election blackout state for the live readout (the "proprietary cycle timer"
     # that overrides the tactical allocation to cash through a midterm year until ~the vote).
+    # W3 (Override-Registry N6): ONE stamped gated-state object — engine.btc_signals.gate_state —
+    # consumed by vector.html.j2 / vector_allocation.html.j2 / btc_strategy; templates read
+    # gate.active and never re-derive the window per-template.
     _mg_cfg = _acfg.get("midterm_gate") or {}
-    _last_dt = pd.Timestamp(sig.index[-1])
-    _mt_active = bool(btc_signals.midterm_blackout([_last_dt], _mg_cfg).iloc[0])
-    _mt_release = None
-    if _mt_active:
-        _mt_release = (btc_signals._us_election_date(_last_dt.year)
-                       - pd.Timedelta(days=int(_mg_cfg.get("buy_lead_days", 0)))).strftime("%Y-%m-%d")
-    midterm = {"active": _mt_active, "year": _last_dt.year if _mt_active else None, "release": _mt_release}
+    gate = btc_signals.gate_state(sig.index[-1], _mg_cfg)
 
     # Cycle-thesis MONITOR (engine/btc_cycle_thesis.py): turns the halving/midterm-cycle
     # conviction into a watched thesis — projected bottom window + falsifier flags (dampening /
     # timing / desync / structure). Reuses the committed cycle config + the PIT 1064/364 status.
     from engine import btc_cycle_thesis
     cycle_thesis = btc_cycle_thesis.monitor(close, cfg=config.load()["vector"], sig=sig)
+    # W3: the monitor's ACCUMULATION-ZONE badge is buy-side — while the gate forces the
+    # allocation to 0% it must suppress exactly like the rec card does (same stamped key,
+    # same source of truth). Without this, Oct 1–Nov 3 2026 would show "ACCUMULATION ZONE"
+    # next to a forced-flat 0% allocation.
+    if isinstance(cycle_thesis, dict):
+        cycle_thesis["suppressed_by_blackout"] = bool(gate.get("active"))
+
+    # OWNER-ONLY honesty artifact (W3, D2/D3): data/vector/override_shadow.json → the
+    # admin console's BTC Override panel. Never breaks the subscriber build.
+    try:
+        build_override_shadow(sig, gate, cycle_thesis, _acfg, config.load()["vector"])
+    except Exception as e:  # noqa: BLE001
+        log.error("override_shadow artifact failed (%s)", e)
+    # W1 measurement overlay: MERGES the measured shadow (weekly gated-vs-raw series,
+    # prior-cycle same-point context, cum gap) INTO the W3 v0 payload above — single
+    # artifact, panel keys preserved, stub -> measured. Runs AFTER the stub by design.
+    try:
+        from scripts.build_override_shadow import build as _w1_shadow_merge
+        _w1_shadow_merge(sig)
+    except Exception as _shadow_err:  # noqa: BLE001 — shadow is optional; never fatal
+        log.warning("override shadow W1 overlay failed (%s)", _shadow_err)
+
+    # W5 override forward-grading ledger (monitoring only)
+    try:
+        from engine import btc_override_ledger
+        btc_override_ledger.stamp(sig=sig, thesis=cycle_thesis)
+        btc_override_ledger.score()
+    except Exception as _ol:  # noqa: BLE001 — monitoring leaf, never breaks the build
+        log.warning("override ledger skipped (%s)", _ol)
 
     # raw OHLC for scenarios
     raw = store.read("coinbase", "btc_daily")
@@ -2399,7 +2662,7 @@ def main() -> int:
         # flag and cannot drift. When suppressed, ok stays True so the object is valid, but
         # templates check `rec.suppressed_by_blackout` before rendering the action card.
         if isinstance(recommendation, dict) and recommendation.get("ok"):
-            recommendation["suppressed_by_blackout"] = bool(midterm.get("active"))
+            recommendation["suppressed_by_blackout"] = bool(gate.get("active"))
         else:
             recommendation["suppressed_by_blackout"] = False
     except Exception as e:  # noqa: BLE001 — decision layer is optional
@@ -2469,7 +2732,7 @@ def main() -> int:
         "market_mode": last["market_mode"],
         "alloc_pct": round(100 * last["alloc_optimal"]),
         "alloc_sizing": asizing,
-        "midterm": midterm,                      # proprietary cycle-timer blackout state
+        "gate": gate,                            # W3: the ONE stamped gated-state flag
 
         # ---- accuracy-upgrade layers (Tier 1/1b/2) ----
         "composite_state": last.get("composite_state", "NEUTRAL"),
@@ -2736,7 +2999,7 @@ def main() -> int:
         build_allocation_page(env, site, sig, cards, mtf_a, verdict,
                               master=master, recommend_d=recommendation, cones=cones,
                               sizing=sizing, catalyst=catalyst, breadth=breadth, env_d=envd,
-                              midterm=midterm)
+                              gate=gate)
     except Exception as e:  # noqa: BLE001 — never let the sub-page break the main build
         log.error("allocation page failed (%s)", e)
     try:
@@ -2797,26 +3060,56 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.error("canada dashboard (via build_vector) failed (%s)", e)
     # (build_intl ran concurrently as the background subprocess launched above; joined below.)
-    try:  # China A-share thematic baskets page — like build_canada, no dedicated daily.yml
-          # step yet (PAT lacks `workflow` scope), so it is built here off the china_search
-          # cache that the collectors already refresh. Self-sufficient + returns 0; additive.
-          # TODO: promote to a proper daily.yml `build_baskets_china` step beside build_baskets.
-        from scripts import build_baskets_china as _build_baskets_china
-        _build_baskets_china.main()
-    except Exception as e:  # noqa: BLE001
-        log.error("china baskets (via build_vector) failed (%s)", e)
-    try:  # 同花顺 (Tonghuashun) concept-board baskets page — the machine-maintained sibling, off
-          # the same china_search cache + data/baskets_china_ths/membership.json (seeded out-of-band
-          # by scripts.seed_china_ths_baskets since THS IP-throttles bursty scraping). Additive.
-        from scripts import build_baskets_china_ths as _build_baskets_china_ths
-        _build_baskets_china_ths.main()
-    except Exception as e:  # noqa: BLE001
-        log.error("china THS baskets (via build_vector) failed (%s)", e)
-    try:  # Hong Kong thematic baskets page — same pattern, off the hk_search cache.
-        from scripts import build_baskets_hk as _build_baskets_hk
-        _build_baskets_hk.main()
-    except Exception as e:  # noqa: BLE001
-        log.error("hk baskets (via build_vector) failed (%s)", e)
+    # W6-CN Fix 4 (lane unification): baskets_china/_ths/baskets_hk are now PRIMARILY built
+    # in asia-close.yml (after the china builds, sharing one CN session). This hook is the
+    # FALLBACK for the nightly 02:00 UTC lane (daily.yml via build_vector) — it runs only if
+    # the asia lane did not already build today's version (idempotent by as_of date).
+    # Idempotent guard: read the as_of from the committed chinabasketdata/baskets.json;
+    # if it matches today's UTC date, the asia lane already ran and we skip.
+    import datetime as _dt
+    _today_utc = str(_dt.date.today())
+
+    def _asia_already_built(json_path: str) -> bool:
+        """Return True if the committed basket JSON has today's as_of (asia lane ran first)."""
+        try:
+            import json as _json
+            p = config.ROOT / "site" / json_path
+            if not p.exists():
+                return False
+            d = _json.loads(p.read_text())
+            return str(d.get("as_of", "")).startswith(_today_utc)
+        except Exception:  # noqa: BLE001
+            return False
+
+    if _asia_already_built("chinabasketdata/baskets.json"):
+        log.info("build_vector: china baskets already built by asia lane today (%s) — skipping", _today_utc)
+    else:
+        try:  # China A-share thematic baskets page — fallback if asia lane did not run.
+              # Promoted to asia-close.yml (W6-CN Fix 4); this is the nightly fallback.
+            from scripts import build_baskets_china as _build_baskets_china
+            _build_baskets_china.main()
+        except Exception as e:  # noqa: BLE001
+            log.error("china baskets (via build_vector) failed (%s)", e)
+
+    if _asia_already_built("chinabasketdata/baskets_ths.json"):
+        log.info("build_vector: china THS baskets already built by asia lane today (%s) — skipping", _today_utc)
+    else:
+        try:  # 同花顺 (Tonghuashun) concept-board baskets page — fallback if asia lane did not run.
+              # Promoted to asia-close.yml (W6-CN Fix 4); this is the nightly fallback.
+            from scripts import build_baskets_china_ths as _build_baskets_china_ths
+            _build_baskets_china_ths.main()
+        except Exception as e:  # noqa: BLE001
+            log.error("china THS baskets (via build_vector) failed (%s)", e)
+
+    if _asia_already_built("hkbasketdata/baskets.json"):
+        log.info("build_vector: HK baskets already built by asia lane today (%s) — skipping", _today_utc)
+    else:
+        try:  # Hong Kong thematic baskets page — fallback if asia lane did not run.
+              # Promoted to asia-close.yml (W6-CN Fix 4); this is the nightly fallback.
+            from scripts import build_baskets_hk as _build_baskets_hk
+            _build_baskets_hk.main()
+        except Exception as e:  # noqa: BLE001
+            log.error("hk baskets (via build_vector) failed (%s)", e)
     try:  # Canada / S&P-TSX thematic baskets page — same pattern, off the canada_search cache.
         from scripts import build_baskets_canada as _build_baskets_canada
         _build_baskets_canada.main()

@@ -227,25 +227,39 @@ def trend_stack(broad: pd.Series | None, cfg: dict) -> dict | None:
 # 6 · USD liquidity (net Fed liquidity rate-of-change)
 # --------------------------------------------------------------------------- #
 def liquidity(fed_bs: pd.Series | None, on_rrp: pd.Series | None,
-              idx: pd.Index, cfg: dict) -> dict | None:
-    """Net Fed liquidity = WALCL ($mn) - RRP ($bn), as a rate-of-change. Falling net
-    liquidity drains dollars and is USD-supportive — slow, regime-conditional, context
-    only (the level<->dollar link is largely spurious; we use the de-trended RoC)."""
+              idx: pd.Index, cfg: dict, tga: pd.Series | None = None) -> dict | None:
+    """USD-framed net-Fed-liquidity rate-of-change (audit #12/#28/#40).
+
+    Net liquidity is the CANONICAL 3-term ``WALCL − RRP − TGA`` (billions) — this desk
+    previously DROPPED TGA (a bug: TGA is a large, volatile drain) and re-derived netliq
+    inline, diverging from the regime overlay's series. Now it calls ``engine.canon``:
+      * ``canon.net_liquidity_bn`` for the ONE 3-term series (WALCL/1000 and TGA/1000 to
+        billions; RRP already billions);
+      * ``canon.dollar_liquidity_roc`` for the intentional DOLLAR sign framing — falling
+        net liquidity drains dollars and is USD-SUPPORTIVE, so this desk reads the
+        NEGATED change (supportive ⇒ positive roc). That sign flip is a framing of the
+        SAME liquidity series, not a different one (the #12 "divergent formula" fix).
+    Slow, regime-conditional, context only (the level↔dollar link is largely spurious)."""
+    from engine import canon
     if fed_bs is None or fed_bs.empty:
         return None
     bs_bn = (fed_bs.reindex(idx).ffill() / 1000.0)            # millions -> billions
-    rrp_bn = on_rrp.reindex(idx).ffill() if on_rrp is not None else 0.0
-    net = (bs_bn - rrp_bn).dropna()
+    rrp_bn = on_rrp.reindex(idx).ffill() if on_rrp is not None else None
+    tga_bn = (tga.reindex(idx).ffill() / 1000.0) if tga is not None else None  # millions->bn
+    net = canon.net_liquidity_bn(bs_bn, rrp_bn, tga_bn).dropna()
     if net.empty:
         return None
     w = cfg.get("chg_window_d", 63)
-    chg = _last(net.diff(w))
-    z = _last(fxs._zraw(net.diff(w), cfg.get("z_lookback_d", 252)))
+    # DOLLAR framing: supportive when liquidity is FALLING → roc = −Δnet (canon transform).
+    roc = canon.dollar_liquidity_roc(net, w)
+    chg = _last(roc)
+    z = _last(fxs._zraw(roc, cfg.get("z_lookback_d", 252)))
     if chg is None:
         return None
-    direction = "supportive" if chg < 0 else ("soft" if chg > 0 else "neutral")
+    # chg > 0 now means liquidity draining (USD supportive); keep the desk's word contract.
+    direction = "supportive" if chg > 0 else ("soft" if chg < 0 else "neutral")
     return {"net_chg_bn": round(chg, 0), "z": round(z, 2) if z is not None else None,
-            "dir": direction, "window_d": w}
+            "dir": direction, "window_d": w, "tga_included": tga is not None}
 
 
 # --------------------------------------------------------------------------- #
@@ -320,7 +334,8 @@ def dollar_desk(dol: pd.DataFrame, drivers: dict, extra: dict, cfg: dict) -> dic
         po = positioning(extra.get("cot_dollar"), idx, dcfg["positioning"])
         va = valuation(drivers.get("reer_us"), dcfg["valuation"], idx)
         tr = trend_stack(drivers.get("broad_dollar"), dcfg["trend"])
-        lq = liquidity(drivers.get("fed_bs"), drivers.get("on_rrp"), idx, dcfg["liquidity"])
+        lq = liquidity(drivers.get("fed_bs"), drivers.get("on_rrp"), idx, dcfg["liquidity"],
+                       tga=drivers.get("tga"))   # audit #28: TGA drain no longer dropped
         sm = smile_confirm(dol, rr, tr, lq, drivers, dcfg["smile"])
 
         # balance of context flags -> a descriptive LEAN word (explicitly NOT a score)

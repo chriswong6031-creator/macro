@@ -51,7 +51,7 @@ async function logout() {
 }
 
 const TABS = [
-  ["overview", "Overview"], ["experiments", "Experiments"], ["analytics", "Analytics"], ["users", "Users"],
+  ["overview", "Overview"], ["experiments", "Experiments"], ["vector", "BTC Override"], ["analytics", "Analytics"], ["users", "Users"],
   ["system", "System"], ["health", "Health"], ["features", "Features"],
   ["brief", "AI Brief"], ["deploy", "Build & Deploy"], ["cost", "AI Cost"], ["content", "Content"],
 ];
@@ -210,6 +210,78 @@ RENDER.experiments = async () => {
     </tbody></table>
     ${d.note ? `<div class="sub" style="margin-top:10px">${esc(d.note)}</div>` : ""}`;
   v.innerHTML = html;
+};
+
+/* ---- BTC OVERRIDE (owner view — Override-Registry W3, D2/D3) ------------- */
+/* The full honesty payload the subscriber "Proprietary cycle timer" scrub hides.
+   OWNER-ONLY (D2). Both-sides framing, numbers only, NO action affordances (D3). */
+const EVAL_PILL = (s) => {
+  const cls = s === "evaluable" ? "s-ok" : s === "in_window" ? "s-warn" : "s-bad";
+  const lbl = s === "evaluable" ? "evaluable" : s === "in_window" ? "evaluable in-window" : "cannot fire (W2)";
+  return `<span class="statpill ${cls}">${esc(lbl)}</span>`;
+};
+const LEVEL_PILL = (l) => `<span class="statpill ${l === "ok" ? "s-ok" : l === "watch" ? "s-warn" : "s-bad"}">${esc(l || "?")}</span>`;
+function shadowSvg(series) {
+  if (!series || series.length < 2) return "";
+  const w = 640, hh = 90, pad = 4;
+  const vals = series.flatMap(p => [p.gated, p.raw]);
+  const lo = Math.min(...vals), hi = Math.max(...vals), span = (hi - lo) || 1;
+  const x = (i) => pad + i * (w - 2 * pad) / (series.length - 1);
+  const y = (v) => hh - pad - (v - lo) * (hh - 2 * pad) / span;
+  const line = (k) => series.map((p, i) => `${x(i).toFixed(1)},${y(p[k]).toFixed(1)}`).join(" ");
+  return `<svg viewBox="0 0 ${w} ${hh}" style="width:100%;height:90px;display:block" preserveAspectRatio="none" role="img" aria-label="gated vs ungated equity">
+    <polyline points="${line("raw")}" fill="none" stroke="var(--warn)" stroke-width="1.8"/>
+    <polyline points="${line("gated")}" fill="none" stroke="var(--ok)" stroke-width="1.8"/>
+  </svg>
+  <div class="sub" style="display:flex;gap:14px"><span><i style="display:inline-block;width:10px;height:3px;background:var(--ok);vertical-align:middle"></i> gated (live, 0%)</span>
+  <span><i style="display:inline-block;width:10px;height:3px;background:var(--warn);vertical-align:middle"></i> ungated engine</span></div>`;
+}
+RENDER.vector = async () => {
+  const v = $("#view");
+  const d = await api("/api/vector_override");
+  if (!d.ok) { v.innerHTML = card("BTC Override — owner view", `<div class="sub">${esc(d.reason || "not available")}</div>`); return; }
+  const o = d.override || {}, cf = d.counterfactual || {}, pv = d.provenance || {}, fl = d.falsifiers || {}, sh = d.shadow || {};
+  const rawOpt = cf.raw_pct && cf.raw_pct.optimal, gatedOpt = cf.gated_pct && cf.gated_pct.optimal;
+  const damp = (pv.dampening_path_pct || []).map(x => `${x}%`).join(" → ");
+  v.innerHTML = `
+    <div class="sub" style="margin-bottom:10px">Owner view (D2) — subscribers keep the "Proprietary cycle timer" scrub. Everything below is the payload that scrub hides. Both-sides framing, no actions (D3).${d.stub ? ` <span class="statpill s-warn">W3 stub — W1 replaces with measured artifacts</span>` : ""}</div>
+    <div class="grid">
+      ${card("Override status", `<div class="big" style="color:${o.active ? "var(--warn)" : "var(--ok)"}">${o.active ? "ACTIVE" : "off"}</div>
+        <div class="sub">${esc(o.id || "?")} · ${o.active ? `releases ${esc(o.release || "?")}` : "not engaged"} · <b>${o.graded ? "graded" : "never graded"}</b></div>
+        <div class="note">${esc(o.status || "")}</div>`)}
+      ${card("Engine wants vs gate", `<div class="big">${rawOpt == null ? "—" : rawOpt + "%"}<span class="sub"> vs ${gatedOpt == null ? "—" : gatedOpt + "%"}</span></div>
+        <div class="sub">ungated optimal vs live gated · YTD ungated mean ${cf.ytd_raw_mean_pct == null ? "—" : cf.ytd_raw_mean_pct + "%"} · &gt;0 on ${cf.ytd_raw_days_gt0 ?? "—"}/${cf.ytd_days ?? "—"} days</div>
+        <div class="note">${esc(cf.raw_source || "")}${cf.parity_ok === false ? ' · <b style="color:var(--bad)">PARITY BROKEN — recompute drifted from the live engine</b>' : ""}</div>`)}
+      ${card("Falsifier health", `<div class="big" style="color:${fl.evaluable === fl.total ? "var(--ok)" : "var(--warn)"}">${esc(fl.headline || "—")}</div>
+        <div class="sub">${(fl.items || []).filter(i => i.level !== "ok").length ? (fl.items || []).filter(i => i.level !== "ok").length + " flag(s) non-green" : "all shown flags green"} — but green on a falsifier that cannot fire is vacuous</div>`)}
+      ${card("Thesis basis", `<div class="big">n=${pv.basis_n ?? "?"}</div>
+        <div class="sub">dampening ${esc(damp || "—")} · pivot-fit MAE ${pv.pivot_fit_mae_days ?? "—"}d <b>(in-sample)</b></div>`)}
+    </div>
+    <div class="section">Live shadow — gated vs ungated equity ${sh.since ? `since ${esc(sh.since)}` : ""}</div>
+    <div class="card">
+      ${sh.ok ? `
+        ${shadowSvg(sh.series)}
+        <div class="kv"><span>Gated (live) return</span><b>${sh.gated_return_pct}%</b></div>
+        <div class="kv"><span>Ungated engine return</span><b>${sh.raw_return_pct}%</b></div>
+        <div class="kv"><span>Regret (ungated − gated)</span><b style="color:${(sh.regret_pp || 0) > 0 ? "var(--warn)" : "var(--ok)"}">${sh.regret_pp > 0 ? "+" : ""}${sh.regret_pp}pp</b></div>
+        ${(sh.prior_cycles || []).map(p => `<div class="kv"><span>${p.year} at same elapsed / by release</span><b>${p.raw_at_same_elapsed_pct > 0 ? "+" : ""}${p.raw_at_same_elapsed_pct}% / ${p.raw_by_release_pct > 0 ? "+" : ""}${p.raw_by_release_pct}%</b></div>`).join("")}
+        <div class="note" style="margin-top:8px">${esc(sh.framing || "")}</div>
+      ` : `<div class="sub">${esc(sh.reason || "no shadow data")}</div>`}
+    </div>
+    <div class="section">Falsifiers — health × evaluability</div>
+    <table><thead><tr><th>Falsifier</th><th>Level</th><th>Can it fire?</th><th>Reading</th></tr></thead><tbody>
+      ${(fl.items || []).map(i => `<tr><td><b>${esc(i.key)}</b></td><td>${LEVEL_PILL(i.level)}</td><td>${EVAL_PILL(i.evaluability)}<div class="note" style="max-width:340px">${esc(i.why || "")}</div></td>
+        <td class="sub" style="max-width:380px">${esc(i.text || "")}</td></tr>`).join("")}
+    </tbody></table>
+    <div class="sub" style="margin-top:8px">${esc(fl.note || "")}</div>
+    <div class="section">Provenance</div>
+    <div class="grid">
+      ${card("Prior midterm-year bears", `${(pv.prior_bears || []).map(b => `<div class="kv"><span class="mono">${esc(b.top)} → ${esc(b.bottom)}</span><b>${Math.round(100 * b.depth)}% · ${b.down_days}d</b></div>`).join("") || "<span class='muted'>—</span>"}
+        <div class="note" style="margin-top:6px">${esc(pv.basis || "")}</div>`)}
+      ${card("Honesty notes", `<div class="note">${esc(pv.dampening_note || "")}</div><div class="note" style="margin-top:6px">${esc(pv.pivot_fit_note || "")}</div>
+        <div class="note" style="margin-top:6px">${esc(d.stub_note || "")}</div>
+        <div class="note mono muted" style="margin-top:6px">artifact ${esc(d.generated_at || "?")} · ${fmtAge(d.age_hours)} old · ${esc(o.declared_in || "")}</div>`)}
+    </div>`;
 };
 
 /* ---- ANALYTICS (Umami) -------------------------------------------------- */

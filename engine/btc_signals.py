@@ -480,18 +480,45 @@ def midterm_blackout(index, cfg: dict | None) -> pd.Series:
     return mask
 
 
+def gate_state(asof, cfg: dict | None) -> dict:
+    """The ONE stamped gated-state object every display surface consumes
+    (Override-Registry W3/N6). Builders stamp this dict onto their page context
+    (and onto buy-side objects as `suppressed_by_blackout`); templates read
+    `gate.active` / `gate.release` and NEVER re-derive the window by hand — the
+    hand-copied `and not (midterm and midterm.active)` guards are how the pages
+    drifted. W0 re-declares the gate as `vector.overrides[0]`; `override_id`
+    here is the registry id it will carry."""
+    dt = pd.Timestamp(asof)
+    cfg = cfg or {}
+    active = bool(midterm_blackout([dt], cfg).iloc[0])
+    release = None
+    if active:
+        release = (_us_election_date(dt.year)
+                   - pd.Timedelta(days=int(cfg.get("buy_lead_days", 0)))).strftime("%Y-%m-%d")
+    return {"override_id": "midterm_blackout", "active": active,
+            "year": int(dt.year) if active else None, "release": release}
+
+
 def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
                val: pd.DataFrame | None = None,
                close: pd.Series | None = None,
                bottom_sig: pd.Series | None = None) -> pd.DataFrame:
-    """Strategy grids on (momentum, risk) -> {0, 0.5, 1.0}, then Point-4 sizing:
-    a CONTINUOUS conviction multiplier scales the grid (EDGE sizes larger than a LEAN
-    than a TOSS-UP — size BY conviction, not just label it) and, when `close` is given,
-    an ENFORCED drawdown brake caps exposure as the strategy goes underwater (cap risk).
-    Both are config-gated (vector.allocation.*) and modulate SIZE only — the grid still
-    owns direction, and the whipsaw guard runs on the DISCRETE grid before scaling.
-    Backward-compatible: omit `close` and leave the new keys unset for the legacy
-    stepped grid."""
+    """PURE ENGINE: strategy grids on (momentum, risk) -> {0, 0.5, 1.0}, then
+    Point-4 sizing: a CONTINUOUS conviction multiplier scales the grid (EDGE sizes
+    larger than a LEAN than a TOSS-UP — size BY conviction, not just label it) and,
+    when `close` is given, an ENFORCED drawdown brake caps exposure as the strategy
+    goes underwater (cap risk).  Both are config-gated (vector.allocation.*) and
+    modulate SIZE only — the grid still owns direction, and the whipsaw guard runs
+    on the DISCRETE grid before scaling.
+
+    OVERRIDE-REGISTRY (W0): human conviction overrides NO LONGER live here.
+    The midterm-election blackout (and any future overrides) are applied by
+    engine.btc_overrides.apply() AFTER allocation() returns.  This function
+    emits the PURE engine output; callers that need the final (gated) series
+    must pass the result through btc_overrides.apply().  See compute_all().
+
+    Backward-compatible: omit `close` and leave the new keys unset for the
+    legacy stepped grid."""
     out = pd.DataFrame(index=mom.index)
     deep_value = overvalued = None
     if val is not None and cfg.get("use_valuation_overlay"):
@@ -522,10 +549,6 @@ def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
     # drags it); fill the warm-up gap with a coin-flip (sizes the floor, never NaN).
     score = cycle_stage(mom, risk_idx).fillna(0.5) if conv_on else None
     ret = close.pct_change() if brake_on else None
-    # Midterm-election blackout: the FINAL word over the grid/conviction/brake/overlay —
-    # force every variant flat (cash) through a midterm year until ~the vote.
-    gate = midterm_blackout(mom.index, cfg.get("midterm_gate"))
-    gate_on = bool(gate.any())
     for name, v in cfg["variants"].items():
         full = (mom > v["mom_full"]) & (risk_idx < v["risk_full"])
         half = (mom > v["mom_half"]) & (risk_idx < v["risk_half"])
@@ -542,8 +565,9 @@ def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
             # add size at washout bottoms the brake would otherwise sit out (magnitude
             # only; never reduces exposure). cap=1.0 -> no leverage.
             raw = (raw + b_boost * b_strength).clip(0.0, b_cap)
-        if gate_on:
-            raw = raw.mask(gate, 0.0)   # midterm-election blackout: flat (cash) until ~the vote
+        # NOTE: the midterm-election blackout is no longer applied here.
+        # It is applied by engine.btc_overrides.apply() after this function
+        # returns, so callers receive the PURE engine output.  See compute_all().
         out[f"alloc_{name}"] = raw.clip(lower=0.0)
     return out
 
@@ -1546,7 +1570,11 @@ def macro_overlay(inputs: dict, cfg: dict) -> pd.DataFrame:
     drivers = {}
     walcl, rrp, tga = s("walcl"), s("rrp"), s("tga")
     if walcl is not None and tga is not None:
-        netliq = walcl / 1000 - (rrp.fillna(0) if rrp is not None else 0) - tga / 1000
+        # Canonical 3-term net liquidity (audit #12/#28) — WALCL & TGA millions→billions,
+        # RRP already billions. The guard (needs walcl AND tga) is kept: the BTC vector
+        # only arms this leg when both spine components are present.
+        from engine import canon
+        netliq = canon.net_liquidity_bn(walcl / 1000, rrp, tga / 1000)
         out["net_liquidity_bn"] = netliq
         roc = netliq.pct_change(cfg["netliq_roc_window_d"])
         out["net_liq_roc"] = roc * 100
@@ -1700,6 +1728,14 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     bp = bottom_pressure(inputs["price"])
     al = allocation(mom["momentum"], rk["risk_index"], cfg["allocation"], va,
                     close=inputs["price"]["close"], bottom_sig=bp)
+    # Override-Registry (W0): apply the declared overrides (midterm blackout
+    # and any future entries) after the pure engine runs.  This emits the final
+    # alloc_<name> columns (identical to pre-W0 live values), plus the new
+    # alloc_<name>_raw, override_active, and override_id companion columns.
+    # Net result: gated alloc_* values are bit-identical to before; new columns
+    # ride along transparently through signals.parquet to all consumers.
+    from engine import btc_overrides
+    al = btc_overrides.apply(al, cfg["allocation"])
     al["bottom_pressure"] = bp
 
     out = pd.concat([inputs["price"][["close"]], mom, rk, bf, st, gg, al,

@@ -19,6 +19,19 @@ on:
       - "scripts/build_signal_quality.py"
       - "engine/signal_quality.py"
       - "tests/test_validate_signals.py"
+      # W1d trial-budget gate: any new multiple-testing harness must register its budget.
+      - "scripts/*_phase0.py"
+      - "scripts/*_phase1.py"
+      - "scripts/validate_*.py"
+      - "scripts/check_trial_registration.py"
+      - "engine/trial_ledger.py"
+      - "engine/grading.py"
+      - "engine/track_record.py"
+      - "engine/sector_signals.py"
+      - "engine/meta_label.py"
+      - "tests/test_grading.py"
+      - "tests/test_trial_ledger.py"
+      - "tests/test_trial_registration_lint.py"
   workflow_dispatch:
 
 permissions:
@@ -72,3 +85,21 @@ jobs:
         run: pip install jsonschema pytest pandas numpy pyyaml
       - name: signal §7 contract tests
         run: python -m pytest tests/test_validate_signals.py -q
+
+  trial-budgets:
+    # W1d (audit #21): every multiple-testing harness must REGISTER its trial budget, or the
+    # DSR/kill/FDR deflation it feeds is a lie. A NEW validate_*/*_phase0 script that deflates a
+    # Sharpe without registering fails RED here (the ~33 pre-existing offenders are grandfathered
+    # in an allowlist that only shrinks). Also runs the grading-rebuild + ledger test suites.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: trial-registration lint (no new unregistered harness)
+        run: python3 scripts/check_trial_registration.py
+      - name: grading rebuild + trial ledger tests
+        run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py -q

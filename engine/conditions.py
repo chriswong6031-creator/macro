@@ -216,9 +216,12 @@ def conditions_frame(f: pd.DataFrame) -> pd.DataFrame:
         out["vrp_pctile"] = pct_rank_window(out["vrp"], vcfg["pctile_lookback_d"])
 
     # VIX term structure ------------------------------------------------------
+    # canon.vix_term (audit #12): the ONE VIX/VIX3M basis, shared with vol_regime.ts_slope
+    # and vol_shock._f_vix_term so the three surfaces read one series, not three copies.
     vix3m = _col(f, "vix3m")
     if vix is not None and vix3m is not None:
-        out["vix_term"] = vix / vix3m
+        from engine import canon
+        out["vix_term"] = canon.vix_term(vix, vix3m)
 
     # SKEW --------------------------------------------------------------------
     skew = _col(f, "skew")

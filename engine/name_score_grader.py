@@ -21,6 +21,7 @@ import logging
 import numpy as np
 import pandas as pd
 
+from engine import grading  # W1c: shared next-bar/survivorship-aware grader
 from lib import config, store
 
 log = logging.getLogger(__name__)
@@ -73,17 +74,35 @@ def append_name_calls(calls: list[dict], market: str = "CN", asof: str | None = 
 
 
 def _fwd_return(market: str, ticker: str, d0: pd.Timestamp, h: int) -> float | None:
+    """Forward return of a call, NEXT-BAR filled + survivorship-aware (W1c, audit #15).
+
+    Pre-W1c this did ``s.iloc[h] / s.iloc[0]`` — a SAME-BAR fill (the score's own as-of
+    close is the denominator) and it silently dropped a name that delisted (``store.read``
+    returns None → survivorship in the accountability loop). Now it routes through
+    engine.grading: the call fires on d0's close but is FILLED on the next bar, the forward
+    return is measured to h bars past that fill, and a delisted name is extended by its
+    dead-name terminal close (US only for now — the dead-name store is US-side) so its loss
+    is graded instead of vanishing."""
     try:
         df = store.read(_FWD_GROUP.get((market or "CN").upper(), "china"), str(ticker))
-        if df is None or "close" not in df:
-            return None
-        s = pd.to_numeric(df["close"], errors="coerce").dropna()
-        s = s[s.index >= d0]
-        if len(s) <= h:
-            return None
-        return float(s.iloc[h] / s.iloc[0] - 1.0)
+        s = pd.to_numeric(df["close"], errors="coerce").dropna() if (
+            df is not None and "close" in df) else None
     except Exception:  # noqa: BLE001
+        s = None
+    # US has the 8-K bankruptcy dead-name store; other markets have none → resolve_series
+    # simply returns the live series unchanged there.
+    if (market or "").upper() == "US":
+        try:
+            s = grading.resolve_series(str(ticker), s)
+        except Exception:  # noqa: BLE001
+            pass
+    if s is None or s.empty:
         return None
+    s = s.sort_index()
+    # Snap to the call bar (nearest bar <= d0), fill next bar, measure h bars past the fill.
+    # NOTE: this credits the call to the score's OWN as-of bar even if the price series
+    # begins after d0-slicing would; grading._snap_loc handles the nearest-prior mapping.
+    return grading.grade_next_bar_return(s, str(pd.Timestamp(d0).date()), h)
 
 
 def grade(market: str = "CN") -> dict | None:
