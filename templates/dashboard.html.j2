@@ -682,6 +682,9 @@
              background: color-mix(in srgb, var(--warn) 12%, var(--panel)); }
   .nb-dmnd.dmnd-rk { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line));
              background: color-mix(in srgb, var(--down) 11%, var(--panel)); }
+  /* COILED wave-2-validated cohort-washout ranking bonus chip (display-only, US standouts) */
+  .nb-coiled{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--link) 14%,transparent);color:var(--link);border:1px solid color-mix(in srgb,var(--link) 36%,transparent)}
+  .nb-coiled.star{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,transparent)}
   .ts-sue { font-weight: 800; font-size: 10px; color: var(--info); white-space: nowrap;
             padding: 0 4px; border-radius: 6px; font-variant-numeric: tabular-nums;
             background: color-mix(in srgb, var(--info) 13%, var(--panel)); }
@@ -2410,6 +2413,7 @@
             <span class="nb-tk">{{ n.ticker }}</span>
             <span class="nb-nm">{{ n.name }}</span>
             {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
+            {% if n.get('coiled') and n.get('coiled').get('coiled') %}<span class="nb-coiled{% if n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">⚡ Coiled{% if n.get('coiled').get('star') %} ★{% endif %}</span><span class="l-zh">⚡ 蓄势{% if n.get('coiled').get('star') %} ★{% endif %}</span></span>{% endif %}
             {% if n.get('price') is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="us">${{ '%.2f'|format(n.price) }}</span>{% endif %}
           </div>
           {# Context line LEADS with the specific narrative basket (de-blurs "Technology"
