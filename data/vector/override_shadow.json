@@ -2,7 +2,7 @@
   "schema": "override_shadow.v1",
   "stub": false,
   "stub_note": "v1: W1 measured overlay merged onto the W3 panel payload (weekly gated-vs-raw series, prior-cycle same-point context, cum gap). Per-cycle attribution + breakeven fan live in data/vector/gate_attribution.json.",
-  "generated_at": "2026-07-02 07:43 UTC",
+  "generated_at": "2026-07-02 09:50 UTC",
   "audience": "owner-only",
   "override": {
     "id": "midterm_blackout",

@@ -86,14 +86,14 @@
         "as_of": "2026-07-02",
         "n_records": 264,
         "coverage": 264,
-        "fingerprint": "90abb11fef46b337",
+        "fingerprint": "0ade15164dccba83",
         "scores": {
           "edge_score": {
             "n_sub": 246,
             "pop": 246,
-            "uniq": 58,
-            "mean": 19.630081300813007,
-            "std": 19.896616679172944
+            "uniq": 59,
+            "mean": 19.601626016260163,
+            "std": 19.868158877799157
           }
         }
       }
@@ -139,29 +139,29 @@
       "fails": [],
       "warns": [],
       "as_of": "2026-07-02",
-      "n": 660,
-      "coverage": 383,
+      "n": 667,
+      "coverage": 387,
       "row": {
         "run_date": "2026-07-02",
         "surface": "news",
         "as_of": "2026-07-02",
-        "n_records": 660,
-        "coverage": 383,
-        "fingerprint": "ca2bd884e017f4b6",
+        "n_records": 667,
+        "coverage": 387,
+        "fingerprint": "0a144d35fcc8ce96",
         "scores": {
           "n_recent": {
-            "n_sub": 383,
-            "pop": 383,
+            "n_sub": 387,
+            "pop": 387,
             "uniq": 6,
-            "mean": 1.5691906005221932,
-            "std": 1.2134111866126698
+            "mean": 1.5762273901808785,
+            "std": 1.2120212813876658
           },
           "sentiment_score": {
-            "n_sub": 383,
-            "pop": 383,
+            "n_sub": 387,
+            "pop": 387,
             "uniq": 4,
-            "mean": 0.37023498694516976,
-            "std": 0.7519872347174534
+            "mean": 0.3612403100775194,
+            "std": 0.7549639426185647
           }
         }
       }
@@ -217,5 +217,5 @@
     "intel_hub"
   ],
   "missing": [],
-  "evaluated_at": "2026-07-02T07:57:13.587041+00:00"
+  "evaluated_at": "2026-07-02T09:59:02.065263+00:00"
 }

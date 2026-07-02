@@ -18,7 +18,7 @@
       "name": "Policy Intent",
       "slug": "policy_intent",
       "scored": 0,
-      "open": 7,
+      "open": 11,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -54,7 +54,7 @@
       "name": "Stock Desk",
       "slug": "stock_desk",
       "scored": 0,
-      "open": 75,
+      "open": 76,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -153,6 +153,12 @@
         "itemized": 0,
         "declared": 18,
         "effective_n": 18
+      },
+      {
+        "family": "provisional_cn_blend",
+        "itemized": 0,
+        "declared": 16,
+        "effective_n": 16
       },
       {
         "family": "active_commodity_lev_phase0",
@@ -327,10 +333,22 @@
         "itemized": 4,
         "declared": 0,
         "effective_n": 4
+      },
+      {
+        "family": "provisional_fresh_ticks_cn",
+        "itemized": 4,
+        "declared": 4,
+        "effective_n": 4
+      },
+      {
+        "family": "provisional_fresh_ticks_us",
+        "itemized": 4,
+        "declared": 4,
+        "effective_n": 4
       }
     ],
-    "total_families": 41,
-    "total_effective_n": 906
+    "total_families": 44,
+    "total_effective_n": 930
   },
   "summary_note": "0/6 desk loops live; 6 still cold (windows maturing). Display-only \u2014 track records calibrate conviction, never size a position."
 }

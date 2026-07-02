@@ -260,320 +260,7 @@
       "chg_20d_pct": 3.04
     }
   },
-  "alerts": [
-    {
-      "rule": "net_liquidity_roc_flip",
-      "severity": "warn",
-      "message": "Net liquidity 4-week RoC flipped negative (contracting) and held 2d: +9bn -> -48bn",
-      "message_zh": "\u51c0\u6d41\u52a8\u6027 4 \u5468 RoC \u8f6c\u4e3anegative (contracting)\u5e76\u6301\u7eed 2 \u5929\uff1a+9bn -> -48bn"
-    },
-    {
-      "rule": "gex_flip_cross",
-      "severity": "warn",
-      "message": "GEX: spot crossed the gamma flip (net +58bn, spot vs flip -1.8%)",
-      "message_zh": "GEX\uff1aspot crossed the gamma flip\uff08\u51c0 +58bn\uff0c\u73b0\u4ef7\u76f8\u5bf9\u7ffb\u8f6c\u70b9 -1.8%\uff09"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "warn",
-      "message": "XLC: OMC weight +1.41pp beyond price (\u2248+$313M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle BOTTOMING\u00b7BUY SETUP",
-      "message_zh": "XLC\uff1aOMC \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +1.41pp\uff08\u2248+$313M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f BOTTOMING\u00b7BUY SETUP"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "warn",
-      "message": "XLC: TKO weight +0.86pp beyond price (\u2248+$192M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle BOTTOMING\u00b7BUY SETUP",
-      "message_zh": "XLC\uff1aTKO \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.86pp\uff08\u2248+$192M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f BOTTOMING\u00b7BUY SETUP"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "warn",
-      "message": "XLC: CHTR weight +0.80pp beyond price (\u2248+$179M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle UPTREND\u00b7HOLD",
-      "message_zh": "XLC\uff1aCHTR \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.80pp\uff08\u2248+$179M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f UPTREND\u00b7HOLD"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "warn",
-      "message": "XLK: LRCX weight +0.43pp beyond price (\u2248+$534M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle BOTTOMING\u00b7BUY SETUP",
-      "message_zh": "XLK\uff1aLRCX \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.43pp\uff08\u2248+$534M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f BOTTOMING\u00b7BUY SETUP"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "warn",
-      "message": "XLK: SNDK weight +0.26pp beyond price (\u2248+$326M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle BOTTOMING\u00b7BUY SETUP",
-      "message_zh": "XLK\uff1aSNDK \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.26pp\uff08\u2248+$326M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f BOTTOMING\u00b7BUY SETUP"
-    },
-    {
-      "rule": "holdings_active_change",
-      "severity": "info",
-      "message": "ARKK: manager cut BABA by -92% of position (2026-06-24..2026-07-01, flow-normalized)",
-      "message_zh": "ARKK\uff1a\u7ecf\u7406 cut BABA \u4ed3\u4f4d -92%\uff082026-06-24..2026-07-01\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
-    },
-    {
-      "rule": "holdings_active_change",
-      "severity": "info",
-      "message": "ARKK: manager cut ROKU by -52% of position (2026-06-24..2026-07-01, flow-normalized)",
-      "message_zh": "ARKK\uff1a\u7ecf\u7406 cut ROKU \u4ed3\u4f4d -52%\uff082026-06-24..2026-07-01\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
-    },
-    {
-      "rule": "holdings_active_change",
-      "severity": "info",
-      "message": "ARKK: manager added CBRS by +53% of position (2026-06-24..2026-07-01, flow-normalized)",
-      "message_zh": "ARKK\uff1a\u7ecf\u7406 added CBRS \u4ed3\u4f4d +53%\uff082026-06-24..2026-07-01\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
-    },
-    {
-      "rule": "holdings_active_change",
-      "severity": "info",
-      "message": "ARKW: manager cut BABA by -91% of position (2026-06-24..2026-07-01, flow-normalized)",
-      "message_zh": "ARKW\uff1a\u7ecf\u7406 cut BABA \u4ed3\u4f4d -91%\uff082026-06-24..2026-07-01\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
-    },
-    {
-      "rule": "holdings_active_change",
-      "severity": "info",
-      "message": "ARKW: manager cut ROKU by -24% of position (2026-06-24..2026-07-01, flow-normalized)",
-      "message_zh": "ARKW\uff1a\u7ecf\u7406 cut ROKU \u4ed3\u4f4d -24%\uff082026-06-24..2026-07-01\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
-    },
-    {
-      "rule": "holdings_active_change",
-      "severity": "info",
-      "message": "ARKW: manager added CBRS by +49% of position (2026-06-24..2026-07-01, flow-normalized)",
-      "message_zh": "ARKW\uff1a\u7ecf\u7406 added CBRS \u4ed3\u4f4d +49%\uff082026-06-24..2026-07-01\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLC: META weight -2.61pp beyond price (\u2248-$581M est. rebalance flow) (trimming), 2026-06-25..2026-06-30 \u2014 cycle UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY",
-      "message_zh": "XLC\uff1aMETA \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -2.61pp\uff08\u2248-$581M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLE: XOM weight -2.43pp beyond price (\u2248-$867M est. rebalance flow) (trimming), 2026-06-25..2026-06-30 \u2014 cycle DOWNTREND\u00b7AVOID",
-      "message_zh": "XLE\uff1aXOM \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -2.43pp\uff08\u2248-$867M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLK: NVDA weight -2.03pp beyond price (\u2248-$2.5B est. rebalance flow) (trimming), 2026-06-25..2026-06-30 \u2014 cycle UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY",
-      "message_zh": "XLK\uff1aNVDA \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -2.03pp\uff08\u2248-$2.5B \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLK: AAPL weight -1.77pp beyond price (\u2248-$2.2B est. rebalance flow) (trimming), 2026-06-25..2026-06-30 \u2014 cycle UPTREND\u00b7HOLD",
-      "message_zh": "XLK\uff1aAAPL \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -1.77pp\uff08\u2248-$2.2B \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f UPTREND\u00b7HOLD"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLC: GOOGL weight -1.72pp beyond price (\u2248-$382M est. rebalance flow) (trimming), 2026-06-25..2026-06-30 \u2014 cycle UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY",
-      "message_zh": "XLC\uff1aGOOGL \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -1.72pp\uff08\u2248-$382M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLE: CVX weight -1.71pp beyond price (\u2248-$612M est. rebalance flow) (trimming), 2026-06-25..2026-06-30 \u2014 cycle DOWNTREND\u00b7AVOID",
-      "message_zh": "XLE\uff1aCVX \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -1.71pp\uff08\u2248-$612M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLC: GOOG weight -1.37pp beyond price (\u2248-$305M est. rebalance flow) (trimming), 2026-06-25..2026-06-30 \u2014 cycle UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY",
-      "message_zh": "XLC\uff1aGOOG \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -1.37pp\uff08\u2248-$305M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLK: MSFT weight -1.16pp beyond price (\u2248-$1.4B est. rebalance flow) (trimming), 2026-06-25..2026-06-30 \u2014 cycle UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY",
-      "message_zh": "XLK\uff1aMSFT \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -1.16pp\uff08\u2248-$1.4B \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLC: LYV weight +1.12pp beyond price (\u2248+$249M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle NEARING A HIGH\u00b7TAKE PROFITS",
-      "message_zh": "XLC\uff1aLYV \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +1.12pp\uff08\u2248+$249M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f NEARING A HIGH\u00b7TAKE PROFITS"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLC: ECHO weight +0.94pp beyond price (\u2248+$210M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle DOWNTREND\u00b7AVOID",
-      "message_zh": "XLC\uff1aECHO \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.94pp\uff08\u2248+$210M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLK: AVGO weight -0.75pp beyond price (\u2248-$927M est. rebalance flow) (trimming), 2026-06-25..2026-06-30 \u2014 cycle DOWNTREND\u00b7AVOID",
-      "message_zh": "XLK\uff1aAVGO \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.75pp\uff08\u2248-$927M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLK: MU weight -0.75pp beyond price (\u2248-$927M est. rebalance flow) (trimming), 2026-06-25..2026-06-30 \u2014 cycle BOTTOMING\u00b7BUY SETUP",
-      "message_zh": "XLK\uff1aMU \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.75pp\uff08\u2248-$927M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f BOTTOMING\u00b7BUY SETUP"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLC: FOXA weight +0.71pp beyond price (\u2248+$158M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY",
-      "message_zh": "XLC\uff1aFOXA \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.71pp\uff08\u2248+$158M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLE: COP weight -0.71pp beyond price (\u2248-$253M est. rebalance flow) (trimming), 2026-06-25..2026-06-30 \u2014 cycle DOWNTREND\u00b7AVOID",
-      "message_zh": "XLE\uff1aCOP \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.71pp\uff08\u2248-$253M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLC: NWSA weight +0.61pp beyond price (\u2248+$137M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle NEARING A HIGH\u00b7TAKE PROFITS",
-      "message_zh": "XLC\uff1aNWSA \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.61pp\uff08\u2248+$137M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f NEARING A HIGH\u00b7TAKE PROFITS"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLE: KMI weight +0.59pp beyond price (\u2248+$211M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30",
-      "message_zh": "XLE\uff1aKMI \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.59pp\uff08\u2248+$211M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLK: AMD weight -0.57pp beyond price (\u2248-$711M est. rebalance flow) (trimming), 2026-06-25..2026-06-30 \u2014 cycle UPTREND\u00b7HOLD",
-      "message_zh": "XLK\uff1aAMD \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.57pp\uff08\u2248-$711M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f UPTREND\u00b7HOLD"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLC: TTWO weight -0.56pp beyond price (\u2248-$125M est. rebalance flow) (trimming), 2026-06-25..2026-06-30 \u2014 cycle UPTREND\u00b7HOLD",
-      "message_zh": "XLC\uff1aTTWO \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.56pp\uff08\u2248-$125M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f UPTREND\u00b7HOLD"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLE: TRGP weight +0.54pp beyond price (\u2248+$195M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle TOPPING\u00b7SELL SETUP",
-      "message_zh": "XLE\uff1aTRGP \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.54pp\uff08\u2248+$195M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f TOPPING\u00b7SELL SETUP"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLE: WMB weight -0.53pp beyond price (\u2248-$189M est. rebalance flow) (trimming), 2026-06-25..2026-06-30 \u2014 cycle NEARING A LOW\u00b7GET READY",
-      "message_zh": "XLE\uff1aWMB \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.53pp\uff08\u2248-$189M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f NEARING A LOW\u00b7GET READY"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLK: INTC weight +0.52pp beyond price (\u2248+$650M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle TOPPING\u00b7SELL SETUP",
-      "message_zh": "XLK\uff1aINTC \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.52pp\uff08\u2248+$650M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f TOPPING\u00b7SELL SETUP"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLC: TTD weight +0.52pp beyond price (\u2248+$117M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY",
-      "message_zh": "XLC\uff1aTTD \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.52pp\uff08\u2248+$117M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLE: OKE weight +0.52pp beyond price (\u2248+$184M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle TOPPING\u00b7SELL SETUP",
-      "message_zh": "XLE\uff1aOKE \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.52pp\uff08\u2248+$184M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f TOPPING\u00b7SELL SETUP"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLE: BKR weight +0.51pp beyond price (\u2248+$184M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle DOWNTREND\u00b7AVOID",
-      "message_zh": "XLE\uff1aBKR \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.51pp\uff08\u2248+$184M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLK: AMAT weight +0.45pp beyond price (\u2248+$560M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle NEARING A HIGH\u00b7TAKE PROFITS",
-      "message_zh": "XLK\uff1aAMAT \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.45pp\uff08\u2248+$560M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f NEARING A HIGH\u00b7TAKE PROFITS"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLE: DVN weight +0.45pp beyond price (\u2248+$159M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle DOWNTREND\u00b7AVOID",
-      "message_zh": "XLE\uff1aDVN \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.45pp\uff08\u2248+$159M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLE: SLB weight +0.44pp beyond price (\u2248+$156M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle DOWNTREND\u00b7AVOID",
-      "message_zh": "XLE\uff1aSLB \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.44pp\uff08\u2248+$156M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLK: CSCO weight +0.37pp beyond price (\u2248+$455M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY",
-      "message_zh": "XLK\uff1aCSCO \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.37pp\uff08\u2248+$455M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLC: NFLX weight -0.36pp beyond price (\u2248-$81M est. rebalance flow) (trimming), 2026-06-25..2026-06-30 \u2014 cycle UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY",
-      "message_zh": "XLC\uff1aNFLX \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.36pp\uff08\u2248-$81M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLE: OXY weight +0.33pp beyond price (\u2248+$120M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle DOWNTREND\u00b7AVOID",
-      "message_zh": "XLE\uff1aOXY \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.33pp\uff08\u2248+$120M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLE: FANG weight +0.32pp beyond price (\u2248+$114M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle DOWNTREND\u00b7AVOID",
-      "message_zh": "XLE\uff1aFANG \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.32pp\uff08\u2248+$114M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLE: PSX weight +0.32pp beyond price (\u2248+$114M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle NEARING A HIGH\u00b7TAKE PROFITS",
-      "message_zh": "XLE\uff1aPSX \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.32pp\uff08\u2248+$114M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f NEARING A HIGH\u00b7TAKE PROFITS"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLK: KLAC weight +0.32pp beyond price (\u2248+$395M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle NEARING A HIGH\u00b7TAKE PROFITS",
-      "message_zh": "XLK\uff1aKLAC \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.32pp\uff08\u2248+$395M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f NEARING A HIGH\u00b7TAKE PROFITS"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLE: EQT weight +0.31pp beyond price (\u2248+$110M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY",
-      "message_zh": "XLE\uff1aEQT \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.31pp\uff08\u2248+$110M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLC: TMUS weight +0.30pp beyond price (\u2248+$66M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle DOWNTREND\u00b7AVOID",
-      "message_zh": "XLC\uff1aTMUS \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.30pp\uff08\u2248+$66M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLE: EOG weight +0.30pp beyond price (\u2248+$106M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle DOWNTREND\u00b7AVOID",
-      "message_zh": "XLE\uff1aEOG \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.30pp\uff08\u2248+$106M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLC: VZ weight +0.29pp beyond price (\u2248+$65M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle DOWNTREND\u00b7AVOID",
-      "message_zh": "XLC\uff1aVZ \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.29pp\uff08\u2248+$65M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLC: T weight +0.29pp beyond price (\u2248+$64M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle DOWNTREND\u00b7AVOID",
-      "message_zh": "XLC\uff1aT \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.29pp\uff08\u2248+$64M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
-    },
-    {
-      "rule": "sector_holdings_accumulation",
-      "severity": "info",
-      "message": "XLE: HAL weight +0.26pp beyond price (\u2248+$95M est. rebalance flow) (accumulating), 2026-06-25..2026-06-30 \u2014 cycle DOWNTREND\u00b7AVOID",
-      "message_zh": "XLE\uff1aHAL \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.26pp\uff08\u2248+$95M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-25..2026-06-30 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
-    }
-  ],
+  "alerts": [],
   "conditions": {
     "financial_conditions": {
       "nfci": -0.504,
@@ -8494,9 +8181,9 @@
       "note": "forward reads are ACCRUING \u2014 display-only until the graded ledgers mature and scripts/validate_regime_fwd.py issues a go."
     },
     "fused_risk": {
-      "label": "risk-on",
-      "label_en": "Risk-on (regime supportive)",
-      "label_zh": "\u504frisk-on\uff08\u4f53\u5236\u652f\u6301\uff09",
+      "label": "neutral",
+      "label_en": "Neutral",
+      "label_zh": "\u4e2d\u6027",
       "gross_factor": 1.0,
       "gross_mapping_version": "2026-07-01.v1",
       "confidence": 0.277,
@@ -8509,9 +8196,9 @@
       },
       "degraded": false,
       "quad_prior_state": "risk-on",
-      "risk_state_state": "risk-on",
-      "risk_state_score": 19.7,
-      "positioning_override": false,
+      "risk_state_state": "neutral",
+      "risk_state_score": 28.1,
+      "positioning_override": true,
       "favor_entries": false,
       "cap_leadership": false,
       "note": "5-state fused risk = MAX-CAUTIOUS(quad prior, live equity-internal risk_state) + inflection uncertainty; gross via the single versioned RISK_STATE_GROSS table. The risk_state leg is the positioning/blow-off detector built after 2026-06-23, so fused_risk can escalate when the quad stays benign.",
@@ -8537,7 +8224,7 @@
         "liquidity": "expanding",
         "basis": "fused_risk",
         "gross_mapping_version": "2026-07-01.v1",
-        "fused_label": "risk-on"
+        "fused_label": "neutral"
       }
     },
     "flip_attribution": {
@@ -9093,7 +8780,7 @@
   },
   "fed_path": {
     "asof": "2026-07-01",
-    "built": "2026-07-02T06:47:24.509534+00:00",
+    "built": "2026-07-02T08:57:14.478426+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -12810,7 +12497,7 @@
     "note": "display-only; T3 guidance-gap LANGUAGE leg \u2014 8-K 'raising/lowering guidance' language leads the consensus revision (T4) by days-to-weeks. Coarse directional band, not a numeric beat/miss; >=2 filers to leave NEUTRAL. The numeric gap (vs whisper) is the paid upgrade."
   },
   "altdata_confirmers": {
-    "asof": "2026-07-01",
+    "asof": "2026-07-02",
     "n_themes": 8,
     "themes": {
       "nuclear_power": {
@@ -12844,18 +12531,18 @@
         "insider_cluster": [],
         "gov_accel": [],
         "context": {
-          "patent_cluster": [
-            "NVDA",
-            "QCOM"
-          ],
           "13f_add": [
             "NVDA",
             "AVGO"
+          ],
+          "patent_cluster": [
+            "NVDA",
+            "QCOM"
           ]
         },
         "n_leading": 0,
         "leading_members": [],
-        "summary": "2 patent cluster \u00b7 2 13f add"
+        "summary": "2 13f add \u00b7 2 patent cluster"
       },
       "cybersecurity": {
         "name": "Cybersecurity",
@@ -13072,7 +12759,7 @@
         "guidance_net": null,
         "guidance_raisers": null,
         "guidance_cutters": null,
-        "altdata_summary": "2 patent cluster \u00b7 2 13f add",
+        "altdata_summary": "2 13f add \u00b7 2 patent cluster",
         "n_altdata_leading": 0,
         "altdata_members": [],
         "glut_band": "AWAITING_DATA",
@@ -14984,7 +14671,7 @@
     },
     "note_en": "Bonds & FX cross-check: does the fast-family complex (bonds + FX) agree with the equity/macro regime? DISPLAY-ONLY \u2014 never scored. Most legs are coincident confirmation / fragility gauges; only credit/EBP and the curve have a (noisy) leading horizon. Divergences are attention flags, not forecasts.",
     "note_zh": "\u503a\u5238\u4e0e\u5916\u6c47\u4ea4\u53c9\u9a8c\u8bc1\uff1a\u5feb\u7aef\u677f\u5757\uff08\u503a\u5238+\u5916\u6c47\uff09\u662f\u5426\u4e0e\u80a1\u7968/\u5b8f\u89c2\u5468\u671f\u4e00\u81f4\uff1f\u4ec5\u4f9b\u5c55\u793a \u2014 \u4ece\u4e0d\u8bc4\u5206\u3002\u591a\u6570\u4e3a\u540c\u6b65\u786e\u8ba4/\u8106\u5f31\u6027\u8ba1\u91cf\uff1b\u4ec5\u4fe1\u7528/EBP\u4e0e\u66f2\u7ebf\u5177\uff08\u5608\u6742\u7684\uff09\u9886\u5148\u6027\u3002\u80cc\u79bb\u4e3a\u5173\u6ce8\u4fe1\u53f7\uff0c\u975e\u9884\u6d4b\u3002",
-    "asof": "2026-06-30"
+    "asof": "2026-07-01"
   },
   "macro_risk": {
     "score": 0.0587,
@@ -15083,12 +14770,12 @@
   "risk_state": {
     "schema": "risk_state.v1",
     "asof": "2026-07-01",
-    "score": 19.7,
-    "state": "risk-on",
-    "label_en": "Risk-on (calm)",
-    "label_zh": "\u504frisk-on\uff08\u5e73\u9759\uff09",
-    "headline_en": "Risk-on: drawdown risk low (20/100). Drivers: complacency=watch (steep contango, HY widening), HY OAS +4bp/21d; HYG/TLT -0.1%/20d, indexes rolling over / breaking down (17%).",
-    "headline_zh": "Risk-on\uff1a\u56de\u64a4\u98ce\u9669\u4f4e\uff0820/100\uff09\u3002",
+    "score": 28.1,
+    "state": "neutral",
+    "label_en": "Neutral",
+    "label_zh": "\u4e2d\u6027",
+    "headline_en": "Neutral: drawdown risk contained (28/100). Drivers: complacency=watch (steep contango, HY widening), indexes rolling over / breaking down (50%), HY OAS +4bp/21d; HYG/TLT -0.1%/20d.",
+    "headline_zh": "\u4e2d\u6027\uff1a\u56de\u64a4\u98ce\u9669\u53ef\u63a7\uff0828/100\uff09\u3002",
     "drivers": [
       {
         "key": "complacency",
@@ -15099,6 +14786,14 @@
         "detail_zh": "\u81ea\u6ee1\u5ea6=watch"
       },
       {
+        "key": "technical",
+        "intensity": 0.5,
+        "weight": 0.8,
+        "contribution": 0.4,
+        "detail_en": "indexes rolling over / breaking down (50%)",
+        "detail_zh": "\u6307\u6570\u591a\u5468\u671f\u8d70\u5f31/\u7834\u4f4d"
+      },
+      {
         "key": "credit",
         "intensity": 0.518,
         "weight": 0.6,
@@ -15107,12 +14802,12 @@
         "detail_zh": "\u4fe1\u7528"
       },
       {
-        "key": "technical",
-        "intensity": 0.167,
-        "weight": 0.8,
-        "contribution": 0.134,
-        "detail_en": "indexes rolling over / breaking down (17%)",
-        "detail_zh": "\u6307\u6570\u591a\u5468\u671f\u8d70\u5f31/\u7834\u4f4d"
+        "key": "dealer_gamma",
+        "intensity": 0.25,
+        "weight": 0.9,
+        "contribution": 0.225,
+        "detail_en": "SPX: in volatility hole",
+        "detail_zh": "\u505a\u5e02\u5546Gamma"
       },
       {
         "key": "cross_asset",
@@ -15166,18 +14861,18 @@
       },
       "dealer_gamma": {
         "available": true,
-        "intensity": 0.0,
+        "intensity": 0.25,
         "weight": 0.9,
-        "contribution": 0.0,
-        "detail_en": "SPX: dealers long gamma (stabilizing)",
+        "contribution": 0.225,
+        "detail_en": "SPX: in volatility hole",
         "detail_zh": "\u505a\u5e02\u5546Gamma"
       },
       "technical": {
         "available": true,
-        "intensity": 0.167,
+        "intensity": 0.5,
         "weight": 0.8,
-        "contribution": 0.134,
-        "detail_en": "indexes rolling over / breaking down (17%)",
+        "contribution": 0.4,
+        "detail_en": "indexes rolling over / breaking down (50%)",
         "detail_zh": "\u6307\u6570\u591a\u5468\u671f\u8d70\u5f31/\u7834\u4f4d"
       },
       "extension": {
@@ -15220,7 +14915,7 @@
     "cap_leadership": false,
     "alert": false,
     "n_legs": 9,
-    "reader_contract": "Normal exposure; trend-following intact.",
+    "reader_contract": "Normal exposure; watch the building legs.",
     "is_context_only": false,
     "disclaimer": "Conjunction-based early-warning composite; legs vary in validation (see research/RISK_LAYER_DESIGN.md \u00a710). De-risk response is sizing, not stock selection. Does not alter the validated regime quad."
   },
@@ -15483,8 +15178,8 @@
     }
   },
   "vol_shock": {
-    "score": 53.1,
-    "score_int": 53,
+    "score": 53.8,
+    "score_int": 54,
     "band": "elevated",
     "band_zh": "\u5347\u9ad8",
     "asof": "2026-07-01",
@@ -15527,12 +15222,12 @@
           "note": "dealer long-call/short-put SIGN is unobservable from OI alone; single-name regimes are near-constant product attributes and the validator's MIN_PER_BUCKET is structurally unreachable for them. Weighted 0 in the score until the gate opens."
         },
         "products_disagree": {
-          "spy_regime": "long",
+          "spy_regime": "short",
           "spx_regime": "long",
           "spy_asof": null,
           "spx_asof": null,
-          "disagree": false,
-          "note": "SPY and SPX agree on the gamma-regime sign today."
+          "disagree": true,
+          "note": "SPY and SPX report OPPOSITE dealer-gamma regimes on the same underlying (the long-call/short-put sign is an unobservable assumption) \u2014 neither is canonical; read the gamma regime as assumption-driven, not observed."
         }
       },
       {
@@ -15565,14 +15260,14 @@
         "key": "put_call",
         "label": "Put/call positioning",
         "label_zh": "\u770b\u8dcc/\u770b\u6da8\u6301\u4ed3",
-        "value": 0.3,
+        "value": 0.1,
         "weight": 0.175,
         "available": true,
-        "sub": 70.0,
-        "note": "balanced put/call \u00b7 young series (n=20), down-weighted",
-        "note_zh": "balanced put/call \u00b7 young series (n=20), down-weighted",
+        "sub": 90.5,
+        "note": "complacent call-buying (low put/call) \u00b7 young series (n=21), down-weighted",
+        "note_zh": "complacent call-buying (low put/call) \u00b7 young series (n=21), down-weighted",
         "color": "#d04545",
-        "points": 2.5
+        "points": 3.2
       },
       {
         "key": "complacency",
@@ -15631,12 +15326,12 @@
     "why_zh": "\u8de8\u8d44\u4ea7\u96c6\u4e2d\u5ea6\uff08\u8de8\u8d44\u4ea7\u4e0b\u632b\u76f8\u4e92\u53e0\u52a0\uff08\u5438\u6536\u6bd4\u7387\u5904\u4e8e\u9ad8\u4f4d\uff09\uff09\uff1b\u6ce2\u52a8\u6ea2\u4ef7\u538b\u7f29 / \u504f\u5ea6\u5c3e\u90e8\uff08\u6ce2\u52a8\u98ce\u9669\u6ea2\u4ef7\u88ab\u538b\u7f29\uff09",
     "gex_gate_scored": false,
     "gex_products_disagree": {
-      "spy_regime": "long",
+      "spy_regime": "short",
       "spx_regime": "long",
       "spy_asof": null,
       "spx_asof": null,
-      "disagree": false,
-      "note": "SPY and SPX agree on the gamma-regime sign today."
+      "disagree": true,
+      "note": "SPY and SPX report OPPOSITE dealer-gamma regimes on the same underlying (the long-call/short-put sign is an unobservable assumption) \u2014 neither is canonical; read the gamma regime as assumption-driven, not observed."
     },
     "horizon_d": 10,
     "outcome_label_en": "realized SPY drawdown \u2264 \u22125% OR VIX intraday-high \u2265 1.4\u00d7 within 10d",
@@ -15725,14 +15420,14 @@
           "key": "A5_rr",
           "label": "Index put-skew (hedging bid) \u2014 context",
           "label_zh": "\u6307\u6570\u770b\u8dcc\u504f\u5ea6",
-          "value": 0.029,
+          "value": 0.024,
           "sub": null,
           "weight": 0.0,
           "available": false,
           "scored": false,
           "points": null,
-          "note": "index put-skew 0.029 (put_iv \u2212 call_iv) \u00b7 hedging-bid context, scored 0",
-          "note_zh": "\u6307\u6570\u770b\u8dcc\u504f\u5ea6 0.029\uff08\u770b\u8dccIV \u2212 \u770b\u6da8IV\uff09\u00b7 \u5bf9\u51b2\u4e70\u76d8\u80cc\u666f\uff0c\u8ba1 0",
+          "note": "index put-skew 0.024 (put_iv \u2212 call_iv) \u00b7 hedging-bid context, scored 0",
+          "note_zh": "\u6307\u6570\u770b\u8dcc\u504f\u5ea6 0.024\uff08\u770b\u8dccIV \u2212 \u770b\u6da8IV\uff09\u00b7 \u5bf9\u51b2\u4e70\u76d8\u80cc\u666f\uff0c\u8ba1 0",
           "color": "#888",
           "pill": "accruing",
           "thin": false
@@ -18262,7 +17957,7 @@
   },
   "freshness": {
     "asof": "2026-07-01",
-    "built_at": "2026-07-02T06:47:28Z",
+    "built_at": "2026-07-02T08:57:17Z",
     "age_days": 1,
     "age_sessions": 1,
     "max_age_sessions": 1,
@@ -21555,8 +21250,8 @@
     ]
   },
   "risk_coherence": {
-    "ok": false,
-    "hard_fail": true,
+    "ok": true,
+    "hard_fail": false,
     "checks": {
       "gross_tables_agree": {
         "ok": true,
@@ -21571,7 +21266,7 @@
         "basis": "MRS",
         "computed": true,
         "risk_on": 0.88,
-        "ms_verdict": "RISK_OFF",
+        "ms_verdict": "MIXED",
         "radar_state": "caution"
       },
       "fused_gate_shadow": {
@@ -21580,23 +21275,19 @@
         "shadow": true
       },
       "directional": {
-        "stress_signals": [
-          "banner=RISK_OFF"
-        ],
-        "stress_day": true,
+        "stress_signals": [],
+        "stress_day": false,
         "live_gate_factor": 1.0,
         "live_gate_cautious": false,
         "shadow_fused_gate_factor": 1.0,
         "shadow_fused_cautious": false,
-        "banner_vs_gate_divergence": true,
+        "banner_vs_gate_divergence": false,
         "divergence_basis": "known-residual (no-flip): MRS gate vs radar-aware banner",
         "c1_fused_would_have_caught": false,
         "c2_both_bases_disclosed": true,
-        "c3_envelope_breach": true
+        "c3_envelope_breach": false
       }
     },
-    "reasons": [
-      "C3 ENVELOPE: live gate 1.0 is wide-open (>0.98) on a risk-off banner day \u2014 wider than the no-flip replay envelope; a genuine regression, not a known residual."
-    ]
+    "reasons": []
   }
 }

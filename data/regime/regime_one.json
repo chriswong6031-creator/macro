@@ -2028,9 +2028,9 @@
     "note": "forward reads are ACCRUING \u2014 display-only until the graded ledgers mature and scripts/validate_regime_fwd.py issues a go."
   },
   "fused_risk": {
-    "label": "risk-on",
-    "label_en": "Risk-on (regime supportive)",
-    "label_zh": "\u504frisk-on\uff08\u4f53\u5236\u652f\u6301\uff09",
+    "label": "neutral",
+    "label_en": "Neutral",
+    "label_zh": "\u4e2d\u6027",
     "gross_factor": 1.0,
     "gross_mapping_version": "2026-07-01.v1",
     "confidence": 0.277,
@@ -2043,9 +2043,9 @@
     },
     "degraded": false,
     "quad_prior_state": "risk-on",
-    "risk_state_state": "risk-on",
-    "risk_state_score": 19.7,
-    "positioning_override": false,
+    "risk_state_state": "neutral",
+    "risk_state_score": 28.1,
+    "positioning_override": true,
     "favor_entries": false,
     "cap_leadership": false,
     "note": "5-state fused risk = MAX-CAUTIOUS(quad prior, live equity-internal risk_state) + inflection uncertainty; gross via the single versioned RISK_STATE_GROSS table. The risk_state leg is the positioning/blow-off detector built after 2026-06-23, so fused_risk can escalate when the quad stays benign.",
@@ -2071,7 +2071,7 @@
       "liquidity": "expanding",
       "basis": "fused_risk",
       "gross_mapping_version": "2026-07-01.v1",
-      "fused_label": "risk-on"
+      "fused_label": "neutral"
     }
   },
   "flip_attribution": {
