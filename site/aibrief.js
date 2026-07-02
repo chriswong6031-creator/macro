@@ -38,7 +38,17 @@
   function render(panel, b) {
     var body = panel.querySelector("[data-brief-body]");
     if (!body || !b) return;
-    if (b.degraded_reason && !b.regime_read) return;   // nothing usable -> stay hidden
+    // Degraded state: render explicitly per spec §2.4 (not silently hidden).
+    if (b.degraded_reason && !b.regime_read) {
+      var lang2 = document.documentElement.getAttribute("data-lang") === "zh" ? "zh" : "en";
+      body.innerHTML = '<p class="mb-deg">' + esc(
+        lang2 === "zh"
+          ? "AI 简报不可用（确定性模式）· " + b.degraded_reason
+          : "AI brief unavailable (deterministic only) · " + b.degraded_reason
+      ) + "</p>";
+      panel.style.display = "";
+      return;
+    }
     var h = "";
     if (b.summary) h += '<p class="mb-sum">' + field(b, "summary") + "</p>";
     if (b.regime_read) h += sec(lbl("regime"), "<p>" + field(b, "regime_read") + "</p>");
