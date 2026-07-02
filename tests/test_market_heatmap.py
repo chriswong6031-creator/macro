@@ -106,3 +106,24 @@ def test_empty_constituents_returns_empty_payload():
 def test_unknown_market_raises():
     with pytest.raises(KeyError):
         mh.build_market_heatmap("japan", _constituents(), _closes())
+
+
+def test_hk_name_zh_map_wellformed():
+    import re
+    m = mh.HK_NAME_ZH
+    # spot-check the marquee names
+    assert m["0700.HK"] == "腾讯控股"
+    assert m["9988.HK"] == "阿里巴巴"
+    assert m["1398.HK"] == "工商银行"
+    # every key is a padded 4-digit .HK code; every value is non-empty Chinese
+    for t, nm in m.items():
+        assert re.fullmatch(r"\d{4}\.HK", t), t
+        assert nm and any("一" <= ch <= "鿿" for ch in nm), (t, nm)
+
+
+def test_hk_names_zh_applied_to_tiles():
+    # the engine copies a supplied zh name onto the tile when it differs from EN
+    names_zh = {"601398.SS": "工商银行"}
+    p = mh.build_market_heatmap("hk", _constituents(), _closes(), names_zh=names_zh)
+    icbc = next(t for t in p["tiles"] if t["t"] == "601398.SS")
+    assert icbc["name_zh"] == "工商银行"

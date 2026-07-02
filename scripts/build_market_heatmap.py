@@ -127,7 +127,14 @@ def _load_hk() -> tuple[pd.DataFrame, pd.DataFrame, dict, dict, dict]:
     if missing:
         log.warning("hk heatmap: no turnover for %d/%d names (sized at floor): %s",
                     len(missing), len(cons.index), ", ".join(missing[:12]))
-    return cons, closes, turnover, {}, {}
+    # Chinese tile labels from the curated map (HK has no zh-name feed). Names
+    # absent from the map fall back to the English name in the renderer.
+    names_zh = {t: hm.HK_NAME_ZH[t] for t in cons.index if t in hm.HK_NAME_ZH}
+    no_zh = [t for t in cons.index if t not in hm.HK_NAME_ZH]
+    if no_zh:
+        log.info("hk heatmap: %d/%d names have no zh label (English fallback): %s",
+                 len(no_zh), len(cons.index), ", ".join(no_zh[:12]))
+    return cons, closes, turnover, {}, names_zh
 
 
 # --------------------------------------------------------------------------- #
