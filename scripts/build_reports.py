@@ -62,13 +62,13 @@ REPORTS: list[dict] = [
                   "industrial policy and becomes the refinancing of the United States — a "
                   "physical-stock strategy that is bubble-dependent by design. A full decode of "
                   "the five levers, why the state went long its own bubble, and where the losses "
-                  "are pre-routed — with a predictive pathway revised July 2: the market read the "
-                  "schedule and began front-running it, so the blow-off is resequenced from into "
-                  "the midterms to after the midterm low.",
+                  "are pre-routed — with a predictive pathway that maps how the market is "
+                  "front-running the administration’s schedule: distribution now, a midterm-year "
+                  "low, and the blow-off deferred to 2027.",
         "dek_zh": "剥开白宫《AI 行动计划》看机制，它就不再是产业政策，而是美国的再融资工程 —— 一套在设计上依赖"
                   "泡沫的“物理存量”战略。全面解码五个杠杆、国家为何做多自己的泡沫、损失被预先路由到何处 —— "
-                  "并附 7 月 2 日修订的预测路径：市场已看懂时间表并开始抢跑，于是那场“blow-off 冲顶”被从"
-                  "“冲进中期选举”重排到“中期选举筑底之后”。",
+                  "并附一条预测路径，剖析市场如何抢跑政府的时间表：当下派发、中期选举年的低点，以及被推迟"
+                  "至 2027 年的“blow-off 冲顶”。",
         "tags": [
             _tag("ai", "AI", "AI"),
             _tag("macro", "Macro", "宏观"),
