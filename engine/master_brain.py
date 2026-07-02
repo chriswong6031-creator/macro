@@ -25,6 +25,7 @@ config if that matters.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from datetime import datetime, timezone
@@ -108,6 +109,15 @@ MASTER_SYSTEM_TMPL = (
     "Kong, commodities, FX, BONDS (the leading-family credit / curve / rates-vol / "
     "sovereign read), and Bitcoin, plus an optional FOMC catalyst digest. Your job is "
     "SYNTHESIS across them — not to recompute or invent numbers.\n\n"
+    "SAME-TAPE RULE (critical): every input block carries `_tape_family` and `_lead_lag` "
+    "metadata. Blocks sharing the SAME `_tape_family` (e.g. price_regime) are derived "
+    "from the SAME underlying price series — they are ONE observation of that series, "
+    "not independent confirmation. Do NOT count them as separate evidence: `macro`, "
+    "`forex`, `commodity`, `cross_asset_confirm`, `btc`, and `entry_quality_breadth` are "
+    "all price_regime reads. A conflict between them is a DECOMPOSITION of one tape, not "
+    "a cross-asset disagreement. True independence only exists across tape families "
+    "(price_regime vs rates_credit vs policy_text). `_lead_lag: leading` means a "
+    "defensible but noisy forward horizon exists; `coincident` means moves-with, not ahead-of.\n\n"
     "Rules:\n"
     "- Use ONLY the provided state. Never fabricate a level, score, or signal. If "
     "something isn't in the state, say it's not available.\n"
@@ -815,53 +825,126 @@ def breadth_from_leaf(leaf: dict | None, macro: dict | None) -> dict | None:
 
 def gather_state(root: Path | None = None) -> dict:
     """Compact cross-asset state assembled from each dashboard's latest.json.
-    Excludes holdings / watchlist composition by design. (macro lens)"""
+    Excludes holdings / watchlist composition by design. (macro lens)
+
+    #35 same-tape labeling (W7): each block carries two metadata fields so the
+    synthesis LLM knows which inputs share a root cause:
+      tape_family — the underlying series family the block derives from.
+        price_regime     : US price/momentum tape (quad legs, equity breadth, FX risk-off,
+                           commodity, BTC are all different reads of the SAME price series)
+        price_regime_cn  : China price tape
+        price_regime_hk  : HK price tape
+        rates_credit     : rates, credit spreads (EBP, HY-OAS) — partially leading
+        policy_text      : forward-looking policy documents (FOMC text, Fed guidance, WH intel)
+      lead_lag — this block's documented temporal relationship to equity returns:
+        coincident : moves with prices (no forward-predictive edge documented for this block)
+        leading    : has a defensible (though noisy) leading horizon on this price tape
+    These tags are NOT an IC claim — they are honest provenance so the Brain cannot
+    count five price-regime reads as five independent observations of the same signal.
+    """
     root = Path(root) if root else config.ROOT
     macro = _read_json(root / "data/regime/latest.json") or {}
-    state: dict = {"macro": _macro_summary(macro)}
+    macro_sum = _macro_summary(macro)
+    # Attach tape provenance to the macro block (W7 #35)
+    macro_sum["_tape_family"] = "price_regime"
+    macro_sum["_lead_lag"] = "coincident"
+    macro_sum["_tape_note"] = (
+        "US equity/macro quad — 73% market-proxy legs (copper-gold, XLY/XLP, breadth). "
+        "Coincident: moves with and re-encodes the price tape it is derived from."
+    )
+    state: dict = {"macro": macro_sum}
     ch = _read_json(root / "data/china_regime/latest.json")
     if ch:
-        state["china"] = {k: ch.get(k) for k in (
+        ch_block = {k: ch.get(k) for k in (
             "date", "quad", "quad_name", "growth_score", "inflation_score",
             "liquidity_overlay", "cycle_tag", "pending_quad")}
+        ch_block["_tape_family"] = "price_regime_cn"
+        ch_block["_lead_lag"] = "coincident"
+        state["china"] = ch_block
     hk = _read_json(root / "data/hk_regime/latest.json")
     if hk:
-        state["hk"] = {k: hk.get(k) for k in (
+        hk_block = {k: hk.get(k) for k in (
             "date", "quad", "quad_name", "global_score", "risk_state",
             "peg_state", "peg_distance", "liquidity_overlay")}
+        hk_block["_tape_family"] = "price_regime_hk"
+        hk_block["_lead_lag"] = "coincident"
+        state["hk"] = hk_block
     co = _read_json(root / "data/commodity/latest.json")
     if co:
-        state["commodity"] = {k: co.get(k) for k in ("date", "regime", "favored")}
+        co_block = {k: co.get(k) for k in ("date", "regime", "favored")}
+        co_block["_tape_family"] = "price_regime"
+        co_block["_lead_lag"] = "coincident"
+        state["commodity"] = co_block
     fx = _read_json(root / "data/forex/latest.json")
     if fx:
-        state["forex"] = {k: fx.get(k) for k in
-                          ("date", "regime", "favored", "risk", "dollar_desk", "transmission")}
+        fx_block = {k: fx.get(k) for k in
+                    ("date", "regime", "favored", "risk", "dollar_desk", "transmission")}
+        fx_block["_tape_family"] = "price_regime"
+        fx_block["_lead_lag"] = "coincident"
+        fx_block["_tape_note"] = (
+            "FX risk-off/dollar read is a COINCIDENT fragility gauge — moves with prices, "
+            "not ahead of them. Do not treat it as independent of the equity regime."
+        )
+        state["forex"] = fx_block
     # Bonds: the leading-family credit/curve/rates-vol backdrop — built (drivers_for)
     # for exactly this synthesis, but never wired in until now.
     bonds = _bonds_backdrop(root)
     if bonds:
+        bonds["_tape_family"] = "rates_credit"
+        bonds["_lead_lag"] = "leading"
+        bonds["_tape_note"] = (
+            "Credit/EBP and the curve (NTFS) have a defensible but noisy LEADING horizon. "
+            "Rates-vol-vs-VIX and FX carry are COINCIDENT. The stock-bond correlation is a "
+            "slow regime descriptor. Treat partial leading — do not claim bonds predict equities."
+        )
         state["bonds"] = bonds
     # Cross-asset confirmation: do bonds + FX confirm or diverge from the equity regime?
     conf = _confirm_summary(macro)
     if conf:
+        conf["_tape_family"] = "price_regime"
+        conf["_lead_lag"] = "coincident"
+        conf["_tape_note"] = (
+            "SAME tape as `macro` and `forex` — bonds+FX vs equity regime divergence. "
+            "This is ONE observation of the price_regime tape, not independent confirmation."
+        )
         state["cross_asset_confirm"] = conf
     # Rate & inflation transmission: the current rate/inflation state + which assets it
     # is a headwind/tailwind for + which causal chains are active (display-only context).
     tr = _transmission_summary(macro)
     if tr:
+        tr["_tape_family"] = "rates_credit"
+        tr["_lead_lag"] = "coincident"
+        tr["_tape_note"] = (
+            "Rate/inflation read — rates are coincident to growth/inflation realizations. "
+            "Scored=False: gate found no leg robust enough to time returns."
+        )
         state["rate_inflation_transmission"] = tr
     btc = _btc_summary(root)
     if btc:
+        btc["_tape_family"] = "price_regime"
+        btc["_lead_lag"] = "coincident"
         state["btc"] = btc
     if macro.get("catalyst_tone"):
-        state["catalyst_tone"] = macro.get("catalyst_tone")
+        ct_block = dict(macro["catalyst_tone"])
+        ct_block["_tape_family"] = "policy_text"
+        ct_block["_lead_lag"] = "leading"
+        ct_block["_tape_note"] = (
+            "FOMC text digest — forward-looking policy signal, independent of price tape. "
+            "Context only; shock_reversible read is the binding use case."
+        )
+        state["catalyst_tone"] = ct_block
     # explicit Fed reaction-function stance (display-only leaf) + the realpolitik policy layer
     if macro.get("fed_stance"):
         fsd = macro["fed_stance"]
-        state["fed_stance"] = {k: fsd.get(k) for k in
-                               ("stance", "label_en", "guidance", "implied_cuts_12m", "market_vs_fed_en")}
+        fed_block = {k: fsd.get(k) for k in
+                     ("stance", "label_en", "guidance", "implied_cuts_12m", "market_vs_fed_en")}
+        fed_block["_tape_family"] = "policy_text"
+        fed_block["_lead_lag"] = "leading"
+        state["fed_stance"] = fed_block
     pol = _policy_intel_summary(root)
     if pol:
+        pol["_tape_family"] = "policy_text"
+        pol["_lead_lag"] = "leading"
         state["policy_intel"] = pol
     # event-driven special situations (display-only leaf): macro-level landscape only.
     # Per-ticker situation context is consumed directly from site/allocationdata/
@@ -880,6 +963,12 @@ def gather_state(root: Path | None = None) -> dict:
     # CONFLICTS with the macro regime read; one input among many, never scored.
     eqb = entry_quality_breadth(macro, root)
     if eqb and eqb.get("calibration_check"):
+        eqb["_tape_family"] = "price_regime"
+        eqb["_lead_lag"] = "coincident"
+        eqb["_tape_note"] = (
+            "MTF buy-filter breadth — derived from the SAME US price tape as `macro`. "
+            "SAME tape_family = one observation, not independent confirmation."
+        )
         state["entry_quality_breadth"] = eqb
     return state
 
@@ -1013,6 +1102,45 @@ def _thesis_for(lens: str, cfg: dict) -> str:
 
 
 # --------------------------------------------------------------------------- #
+# content-hash reply cache — determinism kit (W7 #33)
+#
+# master_brain synthesis is CONVERSATIONAL/NARRATIVE (not graded → not in a
+# ledger), BUT its output shapes the daily brief users act on and the producer
+# theses land in theses.jsonl (a graded ledger). Temperature=0 + seed=0 makes
+# the call as deterministic as the provider allows. The content-hash cache gives
+# a HARD guarantee: the same state JSON on the same day → identical brief, even
+# if the provider's temperature=0 isn't perfectly deterministic.
+# --------------------------------------------------------------------------- #
+def _mb_prompt_hash(model: str, system: str, user: str) -> str:
+    h = hashlib.sha256()
+    for part in (model, system, user):
+        h.update(part.encode("utf-8"))
+    return h.hexdigest()
+
+
+def _mb_reply_cache_path(prompt_hash: str, cfg: dict):
+    from pathlib import Path as _P
+    cdir = config.ROOT / cfg.get("reply_cache_dir", "data/master_brain/reply_cache")
+    _P(cdir).mkdir(parents=True, exist_ok=True)
+    return _P(cdir) / f"{prompt_hash}.txt"
+
+
+def _mb_reply_cache_get(prompt_hash: str, cfg: dict) -> str | None:
+    p = _mb_reply_cache_path(prompt_hash, cfg)
+    try:
+        return p.read_text() if p.exists() else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _mb_reply_cache_put(prompt_hash: str, text: str, cfg: dict) -> None:
+    try:
+        _mb_reply_cache_path(prompt_hash, cfg).write_text(text)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+# --------------------------------------------------------------------------- #
 # the model call (DeepSeek V4 Pro via the Anthropic-compatible endpoint)
 # --------------------------------------------------------------------------- #
 def _client(cfg: dict):
@@ -1032,22 +1160,45 @@ def _client(cfg: dict):
 
 
 def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | None]:
-    """Return (reply_text, degraded_reason). Never raises."""
+    """Return (reply_text, degraded_reason). Never raises.
+
+    Determinism kit (W7 #33): temperature=0 + seed=0 for greedy/deterministic
+    sampling. Content-hash cache: SHA-256(model‖system‖user) → cached reply text;
+    same inputs always yield the same output so the same day's theses ledger rows
+    are not polluted by sampling noise across re-runs.
+    """
     client = _client(cfg)
     if client is None:
         return None, "no_client_or_key"
+    model = cfg.get("llm_model", "deepseek-v4-pro")
+    # content-hash cache check (graded producer theses land in a ledger)
+    phash = _mb_prompt_hash(model, system, user)
+    cached = _mb_reply_cache_get(phash, cfg)
+    if cached is not None:
+        log.debug("master_brain: reply cache HIT (%s)", phash[:12])
+        return cached, None
     try:
-        resp = client.messages.create(
-            model=cfg.get("llm_model", "deepseek-v4-pro"),
-            max_tokens=int(cfg.get("max_tokens", 4000)),
-            system=system,
-            messages=[{"role": "user", "content": user}])
+        kw: dict = {
+            "model": model,
+            "max_tokens": int(cfg.get("max_tokens", 4000)),
+            "system": system,
+            "messages": [{"role": "user", "content": user}],
+            "temperature": 0,          # determinism kit: greedy decode where supported
+        }
+        try:
+            kw["seed"] = 0
+            resp = client.messages.create(**kw)
+        except TypeError:
+            del kw["seed"]
+            resp = client.messages.create(**kw)
         sr = getattr(resp, "stop_reason", None)
         if sr == "refusal":
             return None, "stop_refusal"
         text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
         if not text:
             return None, "empty_reply"
+        if text:
+            _mb_reply_cache_put(phash, text, cfg)  # cache successful reply
         return text, ("truncated" if sr == "max_tokens" else None)
     except Exception as e:  # noqa: BLE001 — degrade, never raise
         log.warning("master_brain model call failed (%s)", e)
