@@ -192,6 +192,13 @@ greydeercapital.com, www.greydeercapital.com {
 	header @assets   Cache-Control "public, max-age=86400"
 	header @html     Cache-Control "public, max-age=300, must-revalidate"
 
+	# file_server has no MIME mapping for .webmanifest, so it served the manifest
+	# with NO Content-Type. Combined with the nosniff header below, iOS Safari
+	# refuses to type it, downloads it as "document.txt", and the page renders
+	# white (2026-07-02 mobile bug). Serve the spec Content-Type explicitly.
+	@webmanifest path /site.webmanifest
+	header @webmanifest Content-Type "application/manifest+json"
+
 	header {
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
