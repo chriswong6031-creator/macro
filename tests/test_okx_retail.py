@@ -141,9 +141,10 @@ def test_bilingual_render():
     assert "OKX taker buy/sell flow" in html and "OKX 主动买卖盘占比" in html   # EN + ZH
     assert "crowded longs (contrarian caution, not a buy)" in html            # contrarian EN
     assert "多头拥挤（反向警示，非买入信号）" in html                              # contrarian ZH
-    # the DISPLAY-ONLY honesty caveat ships bilingual in the template body
-    assert "DISPLAY-ONLY positioning context" in tmpl
-    assert "仅作拥挤度背景，不参与仓位或评分" in tmpl
+    # the display-only honesty caveat ships bilingual in the template body
+    # (prose gets copy-edited — pin the load-bearing phrases, case-insensitive EN)
+    assert "display-only positioning context" in tmpl.lower()
+    assert "不参与仓位或评分" in tmpl
 
 
 if __name__ == "__main__":
