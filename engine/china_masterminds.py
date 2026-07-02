@@ -31,6 +31,16 @@ DISPLAY-ONLY / experimental: a NEW scored multi-asset book on PRIORS-based knobs
 is a fast-follow, mirroring how Canada/TSX shipped). Net of 3 bps + 1% financing on the levered
 part; weekly rebalance. Benchmark = CSI 300 buy-&-hold (and a China 40/60 equity/bond for the
 conservative tier). The OOS split-half honesty panel is wired through aa.split_half_oos.
+
+KNOWN BIASES (documented, not yet corrected):
+  SESSION-LAG (tsmom_alloc, xmom cross-asset):  CN/HK closes are aligned to the US calendar
+    via _cnclose() -> yfinance, which returns date-indexed prices.  The CN/HK market closes
+    ~7 hours before US equities on the SAME calendar date, so the US-calendar join is effectively
+    contemporaneous — no lead/lag artefact for the daily rebalance cadence, but any intraday
+    inferences would be wrong.  For the weekly rebalance this is a minor second-order effect;
+    direction: none (a one-session lead would not systematically favour CN over US or vice-versa
+    in the multi-week momentum lookbacks used here).  If this engine ever moves to daily
+    rebalance, a one-session lag correction should be added to tsmom_alloc / xmom.
 """
 from __future__ import annotations
 
@@ -64,23 +74,45 @@ PROFILES: dict[str, dict] = {
                      "goal_en": "Preserve capital", "goal_zh": "保全资本",
                      "thesis_en": "Capital-preservation GTAA across A-shares, China bonds & gold — no leverage, diversified, leans on the credit-impulse & vol regime, not price trend.",
                      "thesis_zh": "横跨 A 股、国债与黄金的资本保全型全球配置——零杠杆、分散，依靠信用脉冲与波动率体制，而非价格趋势。",
-                     "blurb_en": "The risk dials are turned all the way down: a low 5% target volatility, NO leverage (1.0× cap) and a 35% per-name limit force broad diversification across A-shares, China govt bonds and gold. The goal is not to win the next A-share rally — it is to compound through China's violent boom-bust cycles with a fraction of the drawdown, beating a China 40/60 (CSI 300 / govt bond) portfolio on risk-adjusted terms.",
-                     "blurb_zh": "风险旋钮全部调到最低：5% 的低目标波动率、零杠杆（1.0× 上限）、35% 单一上限，强制在 A 股、国债与黄金间广泛分散。目标不是赢下下一轮 A 股行情——而是以极小的回撤穿越中国剧烈的繁荣-萧条周期复利增长，在风险调整后跑赢中国 40/60（沪深300 / 国债）组合。"},
+                     "blurb_en": "The risk dials are turned all the way down: a low 5% target volatility, NO leverage (1.0× cap) and a 35% per-name limit force broad diversification across A-shares, China govt bonds and gold. The goal is not to win the next A-share rally — it is to compound through China's violent boom-bust cycles with a fraction of the drawdown. Basis: prior-set weights (uncalibrated); split-half OOS on hand-set priors over a short A-share sample (~2013–present, one full boom-bust) — treat the panel numbers as directional, not precise.",
+                     "blurb_zh": "风险旋钮全部调到最低：5% 的低目标波动率、零杠杆（1.0× 上限）、35% 单一上限，强制在 A 股、国债与黄金间广泛分散。目标不是赢下下一轮 A 股行情——而是以极小的回撤穿越中国剧烈的繁荣-萧条周期复利增长。⚠️ 基础：手设先验权重（尚未校准）；在短样本上的半样本外测试，结果为方向性参考，非精确度量。"},
     "moderate": {"target_vol": 0.09, "max_lev": 1.3, "w_cap": 0.40, "icon": "⚖️",
                  "label_en": "Moderate", "label_zh": "均衡", "bench": "csi300",
                  "goal_en": "Balanced growth", "goal_zh": "均衡增长",
                  "thesis_en": "Balanced China GTAA — the full A-share + bond + gold + metals book, lightly levered to the highest-conviction sleeves; aims to beat CSI 300 on risk-adjusted return with a far shallower drawdown.",
                  "thesis_zh": "均衡型中国全球配置——A 股＋国债＋黄金＋有色的完整组合，对最高信念的资产轻杠杆；力求在风险调整后收益上跑赢沪深300，回撤浅得多。",
-                 "blurb_en": "The balanced setting: a 9% target volatility, up to 1.3× leverage and a 40% per-name cap. It aims to beat CSI 300's long-run return while taking far less risk to get it — leaning on the credit / vol / margin regime rather than chasing price trend, for several times the index's Sharpe at well under half its worst drawdown. The flagship default.",
-                 "blurb_zh": "均衡设定：9% 目标波动率、最高 1.3× 杠杆、40% 单一上限。目标是在承担远更低风险的前提下跑赢沪深300 的长期收益——靠信用／波动率／融资体制而非追逐价格趋势，换来数倍于指数的夏普、且最大回撤远不到其一半。旗舰默认档。"},
+                 "blurb_en": "The balanced setting: a 9% target volatility, up to 1.3× leverage and a 40% per-name cap. It aims to beat CSI 300's long-run return while taking far less risk to get it — leaning on the credit / vol / margin regime rather than chasing price trend. ⚠️ Basis: prior-set weights (uncalibrated — calibration is a planned fast-follow). Split-half OOS numbers are on hand-set priors over a short, regime-poor A-share sample (~2013–present); at 1.3× leverage any overfit in weights is magnified. Treat the OOS Sharpe / drawdown panel as directional, not precise edge. The flagship default.",
+                 "blurb_zh": "均衡设定：9% 目标波动率、最高 1.3× 杠杆、40% 单一上限。目标是在承担远更低风险的前提下跑赢沪深300 的长期收益——靠信用／波动率／融资体制而非追逐价格趋势。⚠️ 基础：手设先验权重（尚未校准，校准为近期跟进计划）。半样本外结果基于短周期、体制不充分的 A 股样本（约 2013 年至今）；1.3× 杠杆下，权重过拟合风险被放大。请将 OOS 夏普／最大回撤面板视为方向性参考，而非精确度量。旗舰默认档。"},
     "aggressive": {"target_vol": 0.15, "max_lev": 1.8, "w_cap": 0.50, "icon": "🚀",
                    "label_en": "Aggressive", "label_zh": "进取", "bench": "csi300",
                    "goal_en": "Maximum growth", "goal_zh": "增长最大化",
                    "thesis_en": "Maximum-growth China GTAA — levers the strongest A-share / metals trends while the credit & vol regime allows, rotating hard to bonds + gold when it flips to de-risk.",
                    "thesis_zh": "增长最大化中国全球配置——在信用与波动率体制许可时，对最强的 A 股／有色趋势加杠杆；体制转为降险时则大举转向国债与黄金。",
-                   "blurb_en": "The dials are opened up: a 15% target volatility, up to 1.8× leverage and a 50% per-name cap let the book lever the strongest A-share and metals trends WHILE the credit & vol regime allows — then rotate hard into China govt bonds and gold the moment it flips to de-risk. Built to out-compound CSI 300 on raw CAGR at a Sharpe still well above the index. The vol target and leverage are deliberately one notch below the US flagship — A-shares are more volatile and mean-reverting.",
-                   "blurb_zh": "旋钮全部打开：15% 目标波动率、最高 1.8× 杠杆、50% 单一上限，让组合在信用与波动率体制许可时，对最强的 A 股与有色趋势加杠杆——一旦转为降险便立即大举转向国债与黄金。旨在以原始年化跑赢沪深300，而夏普仍远高于指数。波动率目标与杠杆刻意比美国旗舰低一档——A 股更波动、更易均值回归。"},
+                   "blurb_en": "The dials are opened up: a 15% target volatility, up to 1.8× leverage and a 50% per-name cap let the book lever the strongest A-share and metals trends WHILE the credit & vol regime allows — then rotate hard into China govt bonds and gold the moment it flips to de-risk. The vol target and leverage are deliberately one notch below the US flagship — A-shares are more volatile and mean-reverting. ⚠️ Basis: prior-set weights (uncalibrated). At 1.8× leverage, any overfit in the conviction weights is directly magnified in drawdowns. Split-half OOS panel covers a short, one-cycle A-share sample (~2013–present); treat all Sharpe / drawdown figures as highly uncertain, not confirmed edge. Do not size real capital against these numbers until weights are calibrated.",
+                   "blurb_zh": "旋钮全部打开：15% 目标波动率、最高 1.8× 杠杆、50% 单一上限，让组合在信用与波动率体制许可时，对最强 A 股与有色趋势加杠杆——一旦转为降险便立即大举转向国债与黄金。波动率目标与杠杆刻意比美国旗舰低一档——A 股更波动、更易均值回归。⚠️ 基础：手设先验权重（尚未校准）。1.8× 杠杆下，信念权重中的任何过拟合都将直接放大回撤。半样本外面板仅覆盖短周期、单一繁荣-萧条循环的 A 股样本（约 2013 年至今）；所有夏普／最大回撤数字均具高度不确定性，非已验证优势。在权重完成校准前，请勿以此为依据进行实际资金配置。"},
 }
+# ─────────────────────────────────────────────────────────────────────────────
+# Honest basis passport — rendered as a chip next to OOS scorecard panels.
+# Prevents the split-half numbers being read as fully validated edge.
+# ─────────────────────────────────────────────────────────────────────────────
+PASSPORT = {
+    "basis": "prior",
+    "calibrated": False,
+    "calibration_status": "planned fast-follow (weights are hand-set priors, not fit)",
+    "sample_start": "2013-08-01",
+    "sample_note": "~one A-share boom-bust cycle; regime-poor short history",
+    "session_lag_corrected": False,
+    "session_lag_note": (
+        "CN/HK closes aligned to US calendar date (same-day close, ~7h before US). "
+        "Negligible for weekly rebalance; would need correction for daily frequency."
+    ),
+    "leverage_warning": (
+        "At 1.3–1.8× leverage any weight overfit is directly amplified in drawdowns. "
+        "Treat OOS Sharpe / MaxDD as highly uncertain until weights are calibrated."
+    ),
+    "display_only": True,
+}
+
 DEFAULT_PROFILE = "moderate"
 _START = pd.Timestamp("2013-08-01")        # CGB(2013-03) + gold(2013-07) spine live
 _REBAL = 5                                 # weekly rebalance (trading days)

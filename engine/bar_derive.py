@@ -33,10 +33,24 @@ from pathlib import Path
 
 import pandas as pd
 
+import logging
+import re
+import warnings
+
 from lib import config
+
+log = logging.getLogger(__name__)
 
 GROUP = "intraday"
 _DEFAULT_TZ = "America/New_York"   # US session day boundary for daily roll-up
+
+# Ticker suffix patterns that indicate a non-US session; feeding these to
+# derive_daily_close() WITHOUT an explicit ``tz`` will silently mis-bucket
+# bars onto the NY calendar (e.g. a Shanghai 09:30 CST bar becomes a Monday
+# NY midnight cross instead of a Tuesday CN trading date).
+_NON_US_SUFFIX_RE = re.compile(
+    r"\.(SS|SZ|HK|T|TO|AX|L|PA|DE|MI|MC|BR|BO|NS)$", re.IGNORECASE
+)
 
 
 # --------------------------------------------------------------------- io ----
@@ -79,13 +93,51 @@ def load_intraday(ticker: str, root: Path | None = None) -> pd.DataFrame | None:
 
 # -------------------------------------------------------------- derivers ----
 
-def derive_daily_close(intraday: pd.DataFrame, tz: str = _DEFAULT_TZ) -> pd.Series:
+def derive_daily_close(intraday: pd.DataFrame, tz: str = _DEFAULT_TZ,
+                       ticker: str = "") -> pd.Series:
     """Intraday bars -> a DAILY CLOSE Series shaped exactly like the nightly store's
     ``['close'].dropna()`` so it is a drop-in for ``engine.signal_quality.analyze``.
 
     The last bar of each session day (in market tz) is the day's close. Index is the
     tz-naive, midnight-normalised session date named 'Date'; dtype float64; sorted; no
-    NaN. Weekends/holidays have no bars and simply do not appear."""
+    NaN. Weekends/holidays have no bars and simply do not appear.
+
+    Parameters
+    ----------
+    intraday : pd.DataFrame
+        UTC-indexed intraday OHLCV with a 'close' column.
+    tz : str
+        The *market* timezone used to determine which calendar day each
+        intraday bar belongs to.  Defaults to ``America/New_York`` (correct
+        for US equities).  **MUST be supplied explicitly for non-US markets**:
+        use ``Asia/Shanghai`` for CN (A-shares on SS/SZ), ``Asia/Hong_Kong``
+        for HK, ``America/Toronto`` for CA, etc.  Feeding an Asia-session
+        ticker through the NY-default will mis-bucket bars onto the wrong
+        calendar date — a bar that prints at 09:30 CST (01:30 UTC) will be
+        rolled into the *previous* NY business day.
+    ticker : str
+        Optional — the ticker symbol.  When the suffix matches a known non-US
+        exchange (e.g. ``.SS``, ``.HK``, ``.TO``) and ``tz`` is still the
+        NY default, a loud ``UserWarning`` is raised so the mis-bucketing
+        does not go unnoticed.
+    """
+    # ---- tz / region guard --------------------------------------------------
+    if tz == _DEFAULT_TZ and ticker and _NON_US_SUFFIX_RE.search(ticker):
+        warnings.warn(
+            f"derive_daily_close: ticker={ticker!r} appears to be a non-US symbol "
+            f"but tz defaulted to {_DEFAULT_TZ!r}.  Intraday bars will be bucketed "
+            f"on the NY calendar, producing wrong session dates for this market.  "
+            f"Pass the correct market tz (e.g. 'Asia/Shanghai', 'Asia/Hong_Kong', "
+            f"'America/Toronto') via the ``tz`` parameter.",
+            UserWarning,
+            stacklevel=2,
+        )
+        log.warning(
+            "derive_daily_close tz mismatch: ticker=%r suffix matches non-US exchange "
+            "but tz=%r (NY default) — session dates will be mis-bucketed",
+            ticker, tz,
+        )
+    # -------------------------------------------------------------------------
     if intraday is None or intraday.empty or "close" not in intraday.columns:
         return pd.Series(dtype="float64", index=pd.DatetimeIndex([], name="Date"))
     px = intraday["close"].dropna()
@@ -116,9 +168,19 @@ def resample_ohlcv(df: pd.DataFrame, rule: str) -> pd.DataFrame:
     return out
 
 
-def derive_daily_ohlcv(intraday: pd.DataFrame, tz: str = _DEFAULT_TZ) -> pd.DataFrame:
+def derive_daily_ohlcv(intraday: pd.DataFrame, tz: str = _DEFAULT_TZ,
+                       ticker: str = "") -> pd.DataFrame:
     """Intraday -> DAILY OHLCV candles (open/high/low/close/volume), 'Date' index
-    (tz-naive midnight). Supplementary candle frame for the grid; NOT a signal input."""
+    (tz-naive midnight). Supplementary candle frame for the grid; NOT a signal input.
+    Pass ``ticker`` to trigger the non-US tz guard (same contract as
+    ``derive_daily_close``)."""
+    if tz == _DEFAULT_TZ and ticker and _NON_US_SUFFIX_RE.search(ticker):
+        warnings.warn(
+            f"derive_daily_ohlcv: ticker={ticker!r} appears to be a non-US symbol "
+            f"but tz defaulted to {_DEFAULT_TZ!r}.  Pass the correct market tz.",
+            UserWarning,
+            stacklevel=2,
+        )
     if intraday is None or intraday.empty:
         return pd.DataFrame()
     df = intraday.copy()

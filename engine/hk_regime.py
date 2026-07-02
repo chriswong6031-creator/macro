@@ -105,8 +105,11 @@ def classify(f: pd.DataFrame) -> pd.DataFrame:
     out["liquidity"] = liquidity_overlay(f)
     out["cycle"] = cycle_tag(f)
 
-    # global risk overlay (HK's primary driver) — attach state + composite + peg
-    gov = hk_global.composite(f.index)
+    # global risk overlay (HK's primary driver) — attach state + composite + peg.
+    # Pass asof=f.index.max() so that the global composite is computed with the
+    # same data horizon as the rest of the regime: no factor bar that arrived
+    # after the last row of the input frame can influence historical labels.
+    gov = hk_global.composite(f.index, asof=f.index.max())
     for col in ["global_score", "risk_state", "peg_distance", "peg_pressure", "peg_state"]:
         out[col] = gov[col] if col in gov.columns else np.nan
 
