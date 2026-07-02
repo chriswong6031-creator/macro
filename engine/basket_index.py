@@ -132,6 +132,12 @@ def _load_member_ohlcv(ticker: str) -> pd.DataFrame | None:
             out = out[[c for c in OHLCV_COLS if c in out.columns]].copy()
             out.index = pd.DatetimeIndex(out.index)
             out = out[~out.index.duplicated(keep="last")].sort_index()
+            # zero/negative "prices" are vendor placeholders, not trades (e.g. DEC ships
+            # 3y of all-zero OHLC before its US listing) — through close/prev_close they
+            # manufacture an inf return that poisons the basket level from that day on.
+            # Mask them so the member simply isn't live until it has a real tape.
+            px = [c for c in ("open", "high", "low", "close") if c in out.columns]
+            out[px] = out[px].where(out[px] > 0)
     except Exception as e:  # noqa: BLE001
         log.warning("basket member OHLCV unreadable %s: %s", ticker, e)
         out = None

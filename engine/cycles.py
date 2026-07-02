@@ -1623,6 +1623,11 @@ def entry_quality(close: pd.Series, cyc: dict, mtf: dict, early: dict,
     if state == "COUNTERTREND BOUNCE":
         score = float(np.clip(score, -30, 30))
     score = float(np.clip(score, -100, 100))
+    # a NaN anywhere in the inputs (bad tape, non-finite pivot price) propagates
+    # here — omit the badge entirely rather than hand NaN to entry_quality_fields
+    # (int(round(nan)) raises and would drop the whole record upstream)
+    if not all(np.isfinite(v) for v in (score, long_eq, short_eq, pct_low)):
+        return {}
     return {"score": round(score, 1), "long": round(long_eq * 100, 1),
             "short": round(short_eq * 100, 1),
             "pct_from_low": round(pct_low * 100, 1)}

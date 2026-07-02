@@ -412,7 +412,9 @@ def build_basket(bid: str, bmeta: dict, win_start: pd.Timestamp, last_ts: pd.Tim
         return None
     if cand is None or "close" not in cand:
         return None
-    full = cand["close"].dropna()
+    # inf-poisoned rows (a member's 0→real price jump) crash the cycle math with
+    # NaN scores downstream — strip them so the basket renders on its clean tape
+    full = cand["close"].replace([np.inf, -np.inf], np.nan).dropna()
     if len(full) < 300:
         return None
     core = _record_core(full, win_start, last_ts, pct=_zz_pct_for(full))
