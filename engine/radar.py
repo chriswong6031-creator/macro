@@ -41,7 +41,17 @@ log = logging.getLogger(__name__)
 SCHEMA = "radar.v2"
 
 CON_Z = 0.5              # |robust-z of 60d rel| >= this -> price clearly leading/lagging
-HORIZON_D = 63           # ~3 trading months for the falsifiable watch-hypothesis
+
+# Radar clock constants — keep these in sync with radar_ic._HORIZON_D (the grader).
+# SEED_HORIZON_D: the forward window we promise when seeding a watch-hypothesis (~3 trading
+#   months = 63 business days).  radar_ic grades at this same horizon to close the loop.
+# CHECK_BY_PAD_D: calendar days to deadline stamped on each hypothesis.  91 ≈ SEED_HORIZON_D
+#   + ~28d slippage for weekends, holidays, and price-data latency.
+SEED_HORIZON_D = 63      # ~3 trading months — the seeded falsifiable horizon
+CHECK_BY_PAD_D = 91      # calendar-day pad to check_by (seed horizon + slippage)
+
+# Back-compat alias so callers that imported HORIZON_D continue to work.
+HORIZON_D = SEED_HORIZON_D
 
 _robust_z = robust_z     # back-compat alias (tests + older callers)
 
@@ -236,9 +246,14 @@ def compute_radar(baskets_payload: dict, obligations: pd.DataFrame | None = None
 
 def _hypotheses(flags: list[dict], mem: dict, asof: str) -> list[dict]:
     """A POSITIVE_DIVERGENCE seeds a falsifiable, gradeable watch-hypothesis: the theme's
-    ETF proxy should not UNDER-perform SPY by >5% over ~3 months."""
+    ETF proxy should not UNDER-perform SPY by >5% over ~3 months.
+
+    Each hypothesis carries `horizon_d` (= SEED_HORIZON_D) so radar_ic can grade it at
+    the correct horizon.  `check_by` is asof + CHECK_BY_PAD_D calendar days (adds slippage
+    buffer on top of the trading-day horizon).
+    """
     try:
-        check_by = (pd.Timestamp(asof) + pd.Timedelta(days=91)).date().isoformat()
+        check_by = (pd.Timestamp(asof) + pd.Timedelta(days=CHECK_BY_PAD_D)).date().isoformat()
     except Exception:  # noqa: BLE001
         check_by = None
     out = []
@@ -247,12 +262,13 @@ def _hypotheses(flags: list[dict], mem: dict, asof: str) -> list[dict]:
             continue
         proxy = _proxy_for(f["basket"], mem)
         check = ({"kind": "rel_return", "subject_ticker": proxy, "vs": "SPY",
-                  "op": "<", "threshold": -0.05, "horizon_d": HORIZON_D}
+                  "op": "<", "threshold": -0.05, "horizon_d": SEED_HORIZON_D}
                  if proxy else {"kind": "soft", "reason": "no ETF proxy to score"})
         out.append({
             "id": f"{asof}-radar-{f['basket']}",
             "subject": f["basket"], "subject_ticker": proxy,
-            "lean": "positive_divergence", "horizon_d": HORIZON_D,
+            "lean": "positive_divergence",
+            "horizon_d": SEED_HORIZON_D,   # stamped at seed time for grader
             "thesis": f["note"],
             "falsifier": {
                 "text": (f"{proxy or f['basket']} under-performs SPY by more than 5% over ~3 months "

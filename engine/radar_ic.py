@@ -47,7 +47,10 @@ log = logging.getLogger(__name__)
 
 SCHEMA = "radar_ic.v1"
 _SNAPSHOTS_FILE = ("data", "radar", "edge_snapshots.jsonl")
-_HORIZON_D = 21        # default ~1 trading month
+# Default IC grading horizon.  Brief §9: grader now supports multiple horizons;
+# the 21d horizon remains the legacy default so that existing consumers of
+# radar_ic.json top-level fields (ic_all, n_matured, etc.) are unaffected.
+_HORIZON_D = 21        # default ~1 trading month (kept as legacy default)
 _ROLLING_N = 90        # rolling window (obs count, not calendar days)
 _BENCH = "SPY"
 
@@ -177,6 +180,13 @@ def snapshot(today: date | str | None = None, root: Path | None = None) -> int:
             try:
                 rd = json.loads(radar_p.read_text())
                 mem = _load_membership(root)
+                # Build basket→horizon_d map from hypotheses (stamped by radar.py at seed time).
+                # Allows compute_ic to grade each snapshot at the correct horizon.
+                hyp_horizon: dict[str, int] = {
+                    h["subject"]: int(h["horizon_d"])
+                    for h in rd.get("hypotheses", [])
+                    if h.get("horizon_d") and h.get("subject")
+                }
                 for flag in rd.get("flags", []):
                     state = flag.get("state", "")
                     if state == "QUIET":
@@ -196,6 +206,10 @@ def snapshot(today: date | str | None = None, root: Path | None = None) -> int:
                         "edge_score": int(es),
                         "state": state,
                     }
+                    # Stamp horizon_d when available so grader can match the seeded clock.
+                    # Legacy snapshots lacking this field are treated as gradeable at all horizons.
+                    if basket_id in hyp_horizon:
+                        row["horizon_d"] = hyp_horizon[basket_id]
                     key = _snapshot_key(row)
                     if key not in existing:
                         new_rows.append(row)
@@ -275,13 +289,146 @@ def _proxy_for(basket_id: str, mem: dict) -> str | None:
 # IC computation
 # ---------------------------------------------------------------------------
 
+def _compute_ic_for_horizon(
+    rows: list[dict], root: Path, horizon_d: int, today_dt: date,
+) -> dict:
+    """Inner helper: compute IC stats for a single horizon.
+
+    Snapshots with an explicit `horizon_d` field are only considered for the
+    matching horizon.  Legacy snapshots lacking `horizon_d` are eligible at
+    every horizon (backward-compatible behaviour — treat as gradeable at all).
+
+    Returns a dict with keys: n_matured, ic_all, ic_rolling, by_bucket, by_state, note.
+    Never raises.
+    """
+    # Filter to rows eligible for this horizon (legacy rows have no horizon_d)
+    eligible = [
+        r for r in rows
+        if r.get("horizon_d") is None or r.get("horizon_d") == horizon_d
+    ]
+    matured = [r for r in eligible if _is_matured(r, root, horizon_d, today_dt)]
+
+    enriched: list[dict] = []
+    for r in matured:
+        fwd = _fwd_rel_return(r["ticker"], root, r["date"], horizon_d)
+        if fwd is None:
+            continue
+        enriched.append({**r, "fwd_rel_return": fwd})
+
+    n_matured = len(enriched)
+
+    if n_matured < 3:
+        accruing_note = (
+            f"Accruing — {n_matured} matured observations so far "
+            f"(need ≥3 for IC; grows as the {horizon_d}d horizon elapses)."
+        )
+        return {
+            "n_matured": n_matured,
+            "ic_all": None,
+            f"ic_rolling_{_ROLLING_N}": None,
+            "by_bucket": {label: {"n": 0, "hit_rate": None, "mean_fwd_ret": None}
+                          for label, *_ in _BUCKETS},
+            "by_state": {},
+            "note": accruing_note,
+        }
+
+    scores = [r["edge_score"] for r in enriched]
+    returns = [r["fwd_rel_return"] for r in enriched]
+    ic_all = _spearman_ic(scores, returns)
+
+    # Rolling IC over last _ROLLING_N obs (by append order)
+    if n_matured >= _ROLLING_N:
+        recent = enriched[-_ROLLING_N:]
+        ic_rolling = _spearman_ic(
+            [r["edge_score"] for r in recent],
+            [r["fwd_rel_return"] for r in recent],
+        )
+    else:
+        ic_rolling = ic_all  # use all when fewer than the window
+
+    # Hit-rate by edge bucket
+    by_bucket: dict[str, dict] = {}
+    for label, lo, hi in _BUCKETS:
+        bucket_rows = [r for r in enriched if lo <= r["edge_score"] < hi]
+        n_b = len(bucket_rows)
+        if n_b == 0:
+            by_bucket[label] = {"n": 0, "hit_rate": None, "mean_fwd_ret": None}
+            continue
+        hits = 0
+        for r in bucket_rows:
+            state = r.get("state", "")
+            fwd = r["fwd_rel_return"]
+            if state in _BULLISH_STATES and fwd > 0:
+                hits += 1
+            elif state in _BEARISH_STATES and fwd < 0:
+                hits += 1
+            # CONFIRMED/neutral states — skip from directional hit count
+        mean_ret = sum(r["fwd_rel_return"] for r in bucket_rows) / n_b
+        by_bucket[label] = {
+            "n": n_b,
+            "hit_rate": round(hits / n_b, 3),
+            "mean_fwd_ret": round(mean_ret, 4),
+        }
+
+    # Directional accuracy by state
+    by_state: dict[str, dict] = {}
+    for state in (*_BULLISH_STATES, *_BEARISH_STATES):
+        state_rows = [r for r in enriched if r.get("state") == state]
+        n_s = len(state_rows)
+        if n_s == 0:
+            continue
+        if state in _BULLISH_STATES:
+            correct = sum(1 for r in state_rows if r["fwd_rel_return"] > 0)
+        else:
+            correct = sum(1 for r in state_rows if r["fwd_rel_return"] < 0)
+        by_state[state] = {
+            "n": n_s,
+            "dir_accuracy": round(correct / n_s, 3),
+            "mean_fwd_ret": round(sum(r["fwd_rel_return"] for r in state_rows) / n_s, 4),
+        }
+
+    note = (
+        f"{n_matured} matured observations (horizon={horizon_d}d). "
+        f"IC_all={ic_all}, IC_rolling_{_ROLLING_N}={ic_rolling}. "
+        "CONTEXT-ONLY — never fed into a score/size/allocation."
+    ) if n_matured >= 10 else (
+        f"ACCRUING — only {n_matured} matured obs (need ~30+ for reliable IC). "
+        "Treat these early numbers as provisional. "
+        "Context-only, never a trade signal."
+    )
+
+    return {
+        "n_matured": n_matured,
+        "ic_all": ic_all,
+        f"ic_rolling_{_ROLLING_N}": ic_rolling,
+        "by_bucket": by_bucket,
+        "by_state": by_state,
+        "note": note,
+    }
+
+
 def compute_ic(today: date | str | None = None, horizon_d: int = _HORIZON_D,
+               horizons: list[int] | None = None,
                root: Path | None = None) -> dict:
     """Compute Spearman IC + hit-rate across all matured snapshots.
+
+    Now horizon-parametric: pass `horizons=[21, 63]` (default) to get per-horizon
+    blocks under `by_horizon`.  The legacy top-level fields (n_matured, ic_all,
+    ic_rolling_90, by_bucket, by_state, note) always reflect the 21d horizon so
+    existing consumers of radar_ic.json are unaffected.
+
+    `horizon_d` (single int, legacy) is still accepted; when passed alone it sets
+    the primary horizon only — `horizons` takes precedence when given.
 
     Degrades safely: if no snapshots or none matured yet, returns a valid dict
     with n_matured:0 and an "accruing" note. Never raises.
     """
+    if horizons is None:
+        horizons = [21, 63]  # default multi-horizon (21d legacy + 63d SEED_HORIZON_D)
+    # Ensure the legacy primary horizon is always computed (backward compat)
+    if horizon_d not in horizons:
+        horizons = [horizon_d] + list(horizons)
+
     try:
         root = Path(root) if root else config.ROOT
         today_dt = (pd.Timestamp(today).date() if today else date.today())
@@ -290,128 +437,68 @@ def compute_ic(today: date | str | None = None, horizon_d: int = _HORIZON_D,
         rows = _load_snapshots(root)
         n_total = len(rows)
 
-        # Filter to matured
-        matured = [r for r in rows if _is_matured(r, root, horizon_d, today_dt)]
+        # Compute per-horizon blocks
+        by_horizon: dict[str, dict] = {}
+        for h in horizons:
+            by_horizon[str(h)] = _compute_ic_for_horizon(rows, root, h, today_dt)
 
-        # Compute forward returns for each matured row
-        enriched: list[dict] = []
-        for r in matured:
-            fwd = _fwd_rel_return(r["ticker"], root, r["date"], horizon_d)
-            if fwd is None:
-                continue
-            enriched.append({**r, "fwd_rel_return": fwd})
-
-        n_matured = len(enriched)
-
-        _accruing_note = (
-            f"Accruing — {n_matured} matured observations so far "
-            f"(need ≥3 for IC; grows as the {horizon_d}d horizon elapses)."
-        )
-
-        if n_matured < 3:
-            return _empty_result(today_str, n_total, n_matured, horizon_d, _accruing_note)
-
-        scores = [r["edge_score"] for r in enriched]
-        returns = [r["fwd_rel_return"] for r in enriched]
-
-        ic_all = _spearman_ic(scores, returns)
-
-        # Rolling IC over last _ROLLING_N obs (by index order = append order)
-        ic_rolling = None
-        if n_matured >= _ROLLING_N:
-            recent = enriched[-_ROLLING_N:]
-            ic_rolling = _spearman_ic(
-                [r["edge_score"] for r in recent],
-                [r["fwd_rel_return"] for r in recent],
-            )
-        elif n_matured >= 3:
-            # Use all when fewer than window
-            ic_rolling = ic_all
-
-        # Hit-rate by bucket
-        by_bucket: dict[str, dict] = {}
-        for label, lo, hi in _BUCKETS:
-            bucket_rows = [r for r in enriched if lo <= r["edge_score"] < hi]
-            n_b = len(bucket_rows)
-            if n_b == 0:
-                by_bucket[label] = {"n": 0, "hit_rate": None, "mean_fwd_ret": None}
-                continue
-            # Hit = positive fwd rel-return for bullish states; negative for bearish
-            hits = 0
-            for r in bucket_rows:
-                state = r.get("state", "")
-                fwd = r["fwd_rel_return"]
-                if state in _BULLISH_STATES and fwd > 0:
-                    hits += 1
-                elif state in _BEARISH_STATES and fwd < 0:
-                    hits += 1
-                # CONFIRMED states — both count directionally
-                elif state not in _BEARISH_STATES and state not in _BULLISH_STATES:
-                    pass  # neutral — skip from hit count
-            mean_ret = sum(r["fwd_rel_return"] for r in bucket_rows) / n_b
-            by_bucket[label] = {
-                "n": n_b,
-                "hit_rate": round(hits / n_b, 3),
-                "mean_fwd_ret": round(mean_ret, 4),
-            }
-
-        # Directional accuracy by state
-        by_state: dict[str, dict] = {}
-        for state in (*_BULLISH_STATES, *_BEARISH_STATES):
-            state_rows = [r for r in enriched if r.get("state") == state]
-            n_s = len(state_rows)
-            if n_s == 0:
-                continue
-            if state in _BULLISH_STATES:
-                correct = sum(1 for r in state_rows if r["fwd_rel_return"] > 0)
-            else:
-                correct = sum(1 for r in state_rows if r["fwd_rel_return"] < 0)
-            by_state[state] = {
-                "n": n_s,
-                "dir_accuracy": round(correct / n_s, 3),
-                "mean_fwd_ret": round(sum(r["fwd_rel_return"] for r in state_rows) / n_s, 4),
-            }
-
-        note = (
-            f"{n_matured} matured observations (horizon={horizon_d}d). "
-            f"IC_all={ic_all}, IC_rolling_{_ROLLING_N}={ic_rolling}. "
-            "CONTEXT-ONLY — never fed into a score/size/allocation."
-        ) if n_matured >= 10 else (
-            f"ACCRUING — only {n_matured} matured obs (need ~30+ for reliable IC). "
-            "Treat these early numbers as provisional. "
-            "Context-only, never a trade signal."
-        )
+        # Legacy primary horizon block (horizon_d, default 21d)
+        primary = by_horizon[str(horizon_d)]
+        n_matured = primary["n_matured"]
+        ic_all = primary["ic_all"]
+        ic_rolling = primary[f"ic_rolling_{_ROLLING_N}"]
 
         return {
             "schema": SCHEMA,
             "as_of": today_str,
             "generated_at": _now_iso(),
-            "horizon_d": horizon_d,
+            "horizon_d": horizon_d,            # legacy primary horizon
+            "horizons": horizons,              # all computed horizons
             "n_snapshots": n_total,
+            # Legacy top-level fields = primary (21d) horizon — consumers unaffected
             "n_matured": n_matured,
             "ic_all": ic_all,
             f"ic_rolling_{_ROLLING_N}": ic_rolling,
-            "by_bucket": by_bucket,
-            "by_state": by_state,
-            "note": note,
+            "by_bucket": primary["by_bucket"],
+            "by_state": primary["by_state"],
+            "note": primary["note"],
+            # Per-horizon detail blocks (W1 scoreboard reads from here)
+            "by_horizon": by_horizon,
         }
 
     except Exception as e:  # noqa: BLE001
         log.warning("compute_ic failed: %s", e)
+        as_of_str = (today.isoformat() if hasattr(today, "isoformat")
+                     else str(today or date.today()))
         return _empty_result(
-            (today.isoformat() if hasattr(today, "isoformat") else str(today or date.today())),
-            0, 0, horizon_d,
+            as_of_str, 0, 0, horizon_d,
             f"compute_ic error: {e} — accruing, degrade-safe.",
         )
 
 
+def _empty_horizon_block(horizon_d: int, note: str) -> dict:
+    return {
+        "n_matured": 0,
+        "ic_all": None,
+        f"ic_rolling_{_ROLLING_N}": None,
+        "by_bucket": {label: {"n": 0, "hit_rate": None, "mean_fwd_ret": None}
+                      for label, *_ in _BUCKETS},
+        "by_state": {},
+        "note": note,
+    }
+
+
 def _empty_result(as_of: str, n_snapshots: int, n_matured: int,
                   horizon_d: int, note: str) -> dict:
+    horizons = [21, 63]
+    if horizon_d not in horizons:
+        horizons = [horizon_d] + horizons
     return {
         "schema": SCHEMA,
         "as_of": as_of,
         "generated_at": _now_iso(),
         "horizon_d": horizon_d,
+        "horizons": horizons,
         "n_snapshots": n_snapshots,
         "n_matured": n_matured,
         "ic_all": None,
@@ -420,4 +507,5 @@ def _empty_result(as_of: str, n_snapshots: int, n_matured: int,
                       for label, *_ in _BUCKETS},
         "by_state": {},
         "note": note,
+        "by_horizon": {str(h): _empty_horizon_block(h, note) for h in horizons},
     }
