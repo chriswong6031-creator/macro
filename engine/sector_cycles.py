@@ -33,6 +33,7 @@ import numpy as np
 import pandas as pd
 
 from engine import basket_index, cycles
+from engine import cycle_ontology as onto
 from engine.inputs import yahoo_closes
 from lib import config
 
@@ -243,29 +244,21 @@ def _classify_phase(pos: float, slope: float, w: dict, t3: dict,
 
 
 def _project_next(swings: list[dict], last_ts: pd.Timestamp) -> dict | None:
-    """Next-turn projection from the sector's own median half-cycle length."""
-    if len(swings) < 3:
-        return None
-    xs = [s["x"] for s in swings]
-    halves = [xs[n] - xs[n - 1] for n in range(1, len(xs))]
-    if not halves:
-        return None
-    med = float(np.median(halves))
-    lo_h, hi_h = float(np.percentile(halves, 25)), float(np.percentile(halves, 75))
-    last = swings[-1]
-    next_kind = "peak" if last["k"] == "trough" else "trough"
-    base_x = _yf(last_ts)                       # project from TODAY, not the lagged pivot
-    since = base_x - last["x"]
-    central = base_x + max(0.05, med - since)
-    return {
-        "nextTurn": next_kind,
-        "central": _x_to_ym(central),
-        "low": _x_to_ym(base_x + max(0.0, lo_h - since)),
-        "high": _x_to_ym(base_x + max(0.1, hi_h - since)),
-        "central_x": round(central, 3),
-        "period_yrs": {"median": round(med * 2, 2), "lo": round(lo_h * 2, 2),
-                       "hi": round(hi_h * 2, 2)},
-    }
+    """Next-turn projection — W1.6 overdue rewrite.
+
+    PRIOR BEHAVIOUR (BUG): projected from TODAY with a max(0.05, med−since) floor,
+    making overdue cycles appear perpetually "imminent" (the receding-horizon pathology
+    from NP-1 / D1 §4.5 and _project_next comment above).
+
+    FIX: delegate entirely to onto.project_next() which anchors at the last CONFIRMED
+    turn and emits overdue / overdue_frac instead of silently walking the date forward.
+    The lo/hi band edges are ALSO anchored at last_confirmed + IQR_half (not today).
+    All existing output keys (central, low, high, central_x, nextTurn, period_yrs)
+    are preserved so JS consumers see zero breaking changes; new keys (overdue,
+    overdue_frac, last_confirmed_x, last_confirmed_t) are additive.
+    """
+    today_x = _yf(last_ts)
+    return onto.project_next(swings, today_x)
 
 
 def _x_to_ym(x: float) -> str:
@@ -342,10 +335,31 @@ def _zz_pct_for(full: pd.Series) -> float:
 
 
 def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp,
-                 pct: float = _ZZ_PCT) -> dict | None:
+                 pct: float = _ZZ_PCT, *, series_id: str = "",
+                 _phase_pending: dict | None = None) -> dict | None:
     """Shared cycle math for ANY close/level series (a sector ETF or a basket index):
     rebased-to-100 price + 0–100 oscillator series (weekly), ZigZag turns, the
-    weekly/3-day MACD-confirmed phase, and the median-half-cycle projection."""
+    weekly/3-day MACD-confirmed phase, and the median-half-cycle projection.
+
+    W1.6 additions (data-only, no UI change):
+    - pos_v2         : canonical_position() (100·Φ(z)) alongside legacy pos (range-stoch)
+    - phase_v2       : classify_phase() from the ontology (hysteresis via _phase_pending)
+    - phase_v2_age_bars: bars since last phase_v2 transition (placeholder; always 0 at
+                        this single-bar call; the full phase_age_bars is computed in the
+                        backfill wave W2.3 which replays the series bar-by-bar)
+    - stance         : resolve_state() stance key
+    - divergence     : resolve_state() divergence flag
+    - tone           : stance tone (bullish|bearish|neutral|caution|anticipatory)
+    - overdue        : whether the projection's central date has passed (new proj field)
+    Legacy fields (phase, pos, signal, timing_state, ...) are byte-identical to W0.3.
+
+    Parameters
+    ----------
+    _phase_pending : mutable hysteresis dict, caller-owned (per-series). Pass None to
+                     start fresh (default). The dict is mutated in-place by classify_phase;
+                     callers that want hysteresis persistence across build iterations
+                     should hold and pass the same dict per series.
+    """
     win = full[full.index >= win_start]
     if len(win) < 60:
         return None
@@ -381,10 +395,64 @@ def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp
     # DOWN = SELL (the extremes turning, e.g. Utilities buy / Tech sell)
     signal = ("BUY" if pos_now <= 45 and osc_slope > 0.5
               else "SELL" if pos_now >= 55 and osc_slope < -0.5 else None)
+
+    # ── W1.6: new ontology fields (additive; legacy fields above unchanged) ──
+    # pos_v2: canonical 100·Φ(z) position from the ontology
+    try:
+        pos_v2_series = onto.canonical_position(full, freq="D")
+        pos_v2_clean = pos_v2_series.dropna()
+        pos_v2 = round(float(pos_v2_clean.iloc[-1]), 2) if len(pos_v2_clean) else None
+    except Exception:  # noqa: BLE001
+        pos_v2 = None
+
+    # phase_v2 + hysteresis: classify_phase from the ontology with the caller's
+    # mutable pending dict so hysteresis state persists within this series's computation.
+    # confirm_persist=0 (OFF) preserves behavioral continuity per D1 §2.1 / M-plan note.
+    pending = _phase_pending if _phase_pending is not None else {}
+    ph_read: dict = {}
+    try:
+        ph_read = onto.classify_phase(
+            pos_now, osc_slope,
+            mtf.get("W") or {}, mtf.get("3D") or {},
+            confirm_persist=0, pending=pending,
+        )
+        phase_v2 = ph_read["phase"]
+        # phase_v2_age_bars: 0 here (single-bar call); W2.3 backfill wave computes this
+        # properly by replaying the series bar-by-bar. Placeholder value shipped as 0.
+        phase_v2_age_bars = 0
+        if _phase_pending is not None:
+            _phase_pending.clear()
+            _phase_pending.update(ph_read.get("pending") or {})
+    except Exception:  # noqa: BLE001
+        phase_v2 = phase  # fall back to legacy phase
+        phase_v2_age_bars = 0
+
+    # resolve_state: full stance/divergence/tone from the 5×8 crosswalk
+    ladder_state = lad.get("state") or ""
+    dc_phase = (res.get("cycle") or {}).get("dc_phase")
+    failed_cycle = bool((res.get("cycle") or {}).get("failed_cycle"))
+    try:
+        if ladder_state in onto.LADDER:
+            rs_out = onto.resolve_state(
+                pos=pos_now, phase=phase_v2,
+                phase_dir=ph_read.get("phase_dir", "rising"),
+                ladder_state=ladder_state,
+                dc_phase=dc_phase,
+                failed_cycle=failed_cycle,
+            )
+            stance = rs_out["stance"]
+            divergence = rs_out["divergence"]
+            tone = rs_out["tone"]
+        else:
+            stance = divergence = tone = None
+    except Exception:  # noqa: BLE001
+        stance = divergence = tone = None
+
     return {
         "price": price_pts, "osc": osc_pts, "turns": swings, "proj": proj,
         "n_turns_all": len(swings_all),
         "now": {
+            # ── Legacy fields (byte-identical to W0.3) ──
             "phase": phase, "phaseLabel": phase_label, "pos": round(pos_now, 1),
             "signal": signal, "osc_slope": round(osc_slope, 1),
             "timing_state": lad.get("state") or "", "action": lad.get("action") or "",
@@ -392,10 +460,17 @@ def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp
             "t3_macd_up": bool((mtf.get("3D") or {}).get("macd_pos")),
             "lastTrough": last_trough, "lastPeak": last_peak,
             "above200d": above200, "ret_win_pct": ret_win,
-            "dc_phase": (res.get("cycle") or {}).get("dc_phase"),
+            "dc_phase": dc_phase,
             # W0.3: engine-owned read generated in build_sector/build_basket after RS is
             # available (set to None here; overwritten by _set_engine_read).
             "read": None, "read_zh": None,
+            # ── W1.6: new ontology fields (additive) ──
+            "pos_v2":          pos_v2,
+            "phase_v2":        phase_v2,
+            "phase_v2_age_bars": phase_v2_age_bars,
+            "stance":          stance,
+            "divergence":      divergence,
+            "tone":            tone,
         },
     }
 

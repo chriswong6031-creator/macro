@@ -25,9 +25,17 @@ Schema stored in `data/<engine>/forward_log.parquet` (append-only, keep-FIRST pe
   proj_central str|None   projected turn date, YYYY-MM
   proj_lo      str|None   lower edge of the projection band (Q25 half-cycle), YYYY-MM
   proj_hi      str|None   upper edge of the projection band (Q75 half-cycle), YYYY-MM
+  pos_v2       float|None ontology canonical_position() 100·Φ(z)  (W1.6)
+  phase_v2     str|None   ontology classify_phase() phase label    (W1.6)
+  stance       str|None   resolve_state() stance key               (W1.6)
+  divergence   bool|None  resolve_state() divergence flag          (W1.6)
+  overdue      bool|None  True when projected central date < today (W1.6)
 
 NEW columns (proj_lo / proj_hi) fix the N-D2-1 gap: the cone-edge data hole that
 makes prospective cone-coverage grading impossible without them.
+
+W1.6 adds five new columns for the ontology live-in-data milestone.  All are additive
+(keep-FIRST untouched for existing columns).
 
 Discipline: append-only, keep-FIRST per (date, id). A past day's stamp is NEVER
 rewritten — this is the PIT invariant. The grader re-enforces this on read;
@@ -71,6 +79,12 @@ def _extract_rows(data: dict) -> list[dict]:
             "proj_central": pr.get("central"),   # YYYY-MM string
             "proj_lo": pr.get("low"),             # Q25 edge  — "low" key in _project_next
             "proj_hi": pr.get("high"),            # Q75 edge  — "high" key in _project_next
+            # W1.6 ontology fields (additive — keep-FIRST invariant unchanged)
+            "pos_v2":    nw.get("pos_v2"),        # canonical_position() 100·Φ(z)
+            "phase_v2":  nw.get("phase_v2"),      # classify_phase() from ontology
+            "stance":    nw.get("stance"),         # resolve_state() stance key
+            "divergence": nw.get("divergence"),   # resolve_state() divergence flag
+            "overdue":   pr.get("overdue"),        # projection overdue flag
         })
     return rows
 
