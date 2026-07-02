@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+{# Cycle Intelligence Measurement Hub — W3.7
+   Honest scorecard hub for the three promise-grader primitives:
+     turn P/R · cone coverage · reliability/Brier
+   Data loaded via script-tag (ruling A11: zero fetch, zero runtime compute).
+   BACKTEST and LIVE cohorts never blended (ruling A6).
+   §6.6: the scorecards ARE the story — render failures straight.
+#}
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Cycle Measurement Hub — Mastermind</title>
+<meta name="description" content="First real self-measurement for the Cycle Intelligence program: turn P/R, cone coverage, reliability/Brier — honestly reported including all failed gates.">
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ── Measurement Hub — page-specific styles ──────────────────────────────── */
+body{margin:0;padding-top:24px}
+.mh-wrap{max-width:1100px;margin:0 auto;padding:0 16px 80px}
+.mh-hero{padding:40px 0 28px;border-bottom:1px solid var(--border,rgba(255,255,255,.08));margin-bottom:32px}
+.mh-kicker{font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted,#8899aa);margin-bottom:10px}
+.mh-kicker .hb{display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:var(--warn,#f59e0b);margin-right:6px}
+.mh-title{font-size:clamp(1.5rem,4vw,2.2rem);font-weight:800;line-height:1.2;
+  margin:0 0 12px;color:var(--text,#e2e8f0)}
+.mh-doctrine{font-size:.92rem;line-height:1.65;color:var(--muted,#8899aa);
+  max-width:800px;margin:0 0 16px}
+.mh-verdict{background:color-mix(in srgb,var(--warn,#f59e0b) 8%,var(--surface,#0f1629));
+  border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 25%,transparent);
+  border-radius:10px;padding:16px 20px;margin-top:20px;
+  font-size:.88rem;line-height:1.6;color:var(--text,#e2e8f0)}
+.mh-verdict strong{color:var(--warn,#f59e0b)}
+
+/* ── Section headings ────────────────────────────────────────────────────── */
+.mh-section{margin-bottom:48px}
+.mh-sh{display:flex;align-items:baseline;gap:12px;margin:0 0 16px}
+.mh-sh h2{font-size:1.15rem;font-weight:700;margin:0;color:var(--text,#e2e8f0)}
+.mh-sh .mh-sh-sub{font-size:.78rem;color:var(--muted,#8899aa)}
+
+/* ── Engine tabs ─────────────────────────────────────────────────────────── */
+.mh-tabs{display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap}
+.mh-tab{padding:7px 14px;border-radius:7px;border:1px solid var(--border,rgba(255,255,255,.1));
+  background:transparent;color:var(--muted,#8899aa);font-size:.82rem;cursor:pointer;
+  transition:all .15s}
+.mh-tab.on{background:var(--blue,#3b82f6);border-color:var(--blue,#3b82f6);
+  color:#fff;font-weight:600}
+
+/* ── Engine panel ────────────────────────────────────────────────────────── */
+.mh-engine{display:none}
+.mh-engine.on{display:block}
+.mh-eng-hd{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.mh-eng-name{font-size:1rem;font-weight:700;color:var(--text,#e2e8f0)}
+.mh-eng-epoch{font-size:.72rem;color:var(--muted,#8899aa);
+  background:color-mix(in srgb,var(--text) 8%,transparent);
+  padding:3px 8px;border-radius:4px;font-family:monospace}
+
+/* ── Cohort badges ───────────────────────────────────────────────────────── */
+.mh-cohorts{display:grid;grid-template-columns:repeat(auto-fit,minmax(480px,1fr));gap:20px}
+.mh-cohort{border:1px solid var(--border,rgba(255,255,255,.08));border-radius:10px;
+  padding:20px;background:var(--card,rgba(255,255,255,.03))}
+.mh-cohort-hd{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.mh-cohort-badge{font-size:.7rem;font-weight:700;letter-spacing:.1em;
+  padding:3px 8px;border-radius:4px}
+.badge-backtest{background:color-mix(in srgb,var(--blue,#3b82f6) 20%,transparent);
+  color:var(--blue,#3b82f6);border:1px solid color-mix(in srgb,var(--blue) 35%,transparent)}
+.badge-live{background:color-mix(in srgb,var(--up,#22c55e) 20%,transparent);
+  color:var(--up,#22c55e);border:1px solid color-mix(in srgb,var(--up) 35%,transparent)}
+.mh-cohort-meta{font-size:.75rem;color:var(--muted,#8899aa)}
+
+/* ── Primitive blocks ────────────────────────────────────────────────────── */
+.mh-primitive{margin-bottom:18px;padding:14px;border-radius:8px;
+  background:color-mix(in srgb,var(--text) 4%,transparent)}
+.mh-prim-title{font-size:.78rem;font-weight:700;color:var(--text,#e2e8f0);
+  margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.mh-prim-gate{font-size:.68rem;font-family:monospace;padding:2px 6px;border-radius:3px;
+  background:color-mix(in srgb,var(--muted) 15%,transparent);color:var(--muted,#8899aa)}
+
+/* ── Verdict badges ──────────────────────────────────────────────────────── */
+.verdict{display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:700;
+  padding:3px 8px;border-radius:4px;letter-spacing:.05em}
+.verdict::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%}
+.verdict-fail{background:color-mix(in srgb,var(--down,#ef4444) 18%,transparent);
+  color:var(--down,#ef4444);border:1px solid color-mix(in srgb,var(--down) 35%,transparent)}
+.verdict-fail::before{background:var(--down,#ef4444)}
+.verdict-miscal{background:color-mix(in srgb,var(--warn,#f59e0b) 18%,transparent);
+  color:var(--warn,#f59e0b);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+.verdict-miscal::before{background:var(--warn,#f59e0b)}
+.verdict-pass{background:color-mix(in srgb,var(--up,#22c55e) 18%,transparent);
+  color:var(--up,#22c55e);border:1px solid color-mix(in srgb,var(--up) 35%,transparent)}
+.verdict-pass::before{background:var(--up,#22c55e)}
+.verdict-accruing{background:color-mix(in srgb,var(--blue,#3b82f6) 18%,transparent);
+  color:var(--blue,#3b82f6);border:1px solid color-mix(in srgb,var(--blue) 35%,transparent)}
+.verdict-accruing::before{background:var(--blue,#3b82f6)}
+.verdict-none{background:color-mix(in srgb,var(--muted) 18%,transparent);
+  color:var(--muted,#8899aa);border:1px solid color-mix(in srgb,var(--muted) 25%,transparent)}
+.verdict-none::before{background:var(--muted,#8899aa)}
+
+/* ── Metric rows ─────────────────────────────────────────────────────────── */
+.mh-metric-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.mh-metric{padding:10px 12px;border-radius:6px;
+  background:color-mix(in srgb,var(--text) 3%,transparent);
+  border:1px solid var(--border,rgba(255,255,255,.06))}
+.mh-metric-label{font-size:.68rem;color:var(--muted,#8899aa);margin-bottom:4px}
+.mh-metric-val{font-size:.95rem;font-weight:700;color:var(--text,#e2e8f0)}
+.mh-metric-ci{font-size:.68rem;color:var(--muted,#8899aa)}
+.mh-metric-note{font-size:.68rem;color:var(--muted,#8899aa);margin-top:4px;line-height:1.4}
+
+/* ── Gate ledger table ───────────────────────────────────────────────────── */
+.mh-gate-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.mh-gate-table{width:100%;min-width:560px;border-collapse:collapse;font-size:.8rem}
+.mh-gate-table th{text-align:left;padding:8px 12px;font-size:.72rem;font-weight:700;
+  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
+  text-transform:uppercase;letter-spacing:.08em}
+.mh-gate-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
+  color:var(--text,#e2e8f0);vertical-align:top;line-height:1.45}
+.mh-gate-table tr:last-child td{border-bottom:none}
+.mh-gate-table .gate-id{font-family:monospace;font-size:.75rem;font-weight:700;
+  white-space:nowrap;color:var(--text,#e2e8f0)}
+.mh-gate-table .gate-result{font-size:.75rem;color:var(--muted,#8899aa);
+  max-width:340px;line-height:1.4}
+.mh-gate-fam{font-size:.68rem;font-family:monospace;
+  padding:2px 6px;border-radius:3px;
+  background:color-mix(in srgb,var(--text) 8%,transparent);
+  color:var(--muted,#8899aa)}
+.mh-gate-sec{padding:12px 0 6px;font-size:.72rem;font-weight:700;letter-spacing:.1em;
+  color:var(--muted,#8899aa);text-transform:uppercase;border-top:1px solid var(--border,rgba(255,255,255,.06));
+  margin-top:8px;grid-column:1/-1}
+
+/* ── Collinearity panel ──────────────────────────────────────────────────── */
+.mh-collin{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
+@media(max-width:640px){.mh-collin{grid-template-columns:1fr}}
+.mh-collin-block{padding:14px;border-radius:8px;
+  background:color-mix(in srgb,var(--text) 4%,transparent);
+  border:1px solid var(--border,rgba(255,255,255,.06))}
+.mh-collin-block h4{font-size:.8rem;font-weight:700;margin:0 0 8px;
+  color:var(--text,#e2e8f0)}
+.mh-collin-block ul{margin:0;padding-left:18px;font-size:.8rem;
+  color:var(--muted,#8899aa);line-height:1.7}
+.mh-collin-block li{margin-bottom:2px}
+.mh-collin-block li strong{color:var(--text,#e2e8f0)}
+
+/* ── Accruing experiments table ──────────────────────────────────────────── */
+.mh-exp-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.mh-exp-table{width:100%;min-width:480px;border-collapse:collapse;font-size:.8rem}
+.mh-exp-table th{text-align:left;padding:8px 12px;font-size:.72rem;font-weight:700;
+  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
+  text-transform:uppercase;letter-spacing:.08em}
+.mh-exp-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
+  color:var(--text,#e2e8f0);vertical-align:top}
+.mh-exp-table tr:last-child td{border-bottom:none}
+.mh-exp-name{font-weight:600;font-size:.82rem;color:var(--text,#e2e8f0)}
+.mh-exp-what{font-size:.75rem;color:var(--muted,#8899aa);margin-top:3px}
+.mh-exp-cb{font-family:monospace;font-size:.75rem}
+
+/* ── Provenance footer ───────────────────────────────────────────────────── */
+.mh-provenance{margin-top:48px;padding:20px;border-radius:10px;
+  border:1px solid var(--border,rgba(255,255,255,.07));
+  background:color-mix(in srgb,var(--text) 3%,transparent)}
+.mh-prov-title{font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted,#8899aa);margin-bottom:14px}
+.mh-prov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.mh-prov-cell{font-size:.75rem}
+.mh-prov-cell dt{color:var(--muted,#8899aa);margin-bottom:2px}
+.mh-prov-cell dd{font-family:monospace;color:var(--text,#e2e8f0);word-break:break-all}
+
+/* ── Cone recal info ─────────────────────────────────────────────────────── */
+.mh-recal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:12px}
+.mh-recal-card{padding:16px;border-radius:8px;
+  background:color-mix(in srgb,var(--warn,#f59e0b) 6%,transparent);
+  border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 20%,transparent)}
+.mh-recal-card h4{font-size:.82rem;font-weight:700;color:var(--text,#e2e8f0);margin:0 0 10px}
+.mh-recal-stat{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:.8rem;margin-bottom:5px}
+.mh-recal-stat .lbl{color:var(--muted,#8899aa)}
+.mh-recal-stat .val{font-weight:700;color:var(--warn,#f59e0b)}
+.mh-recal-note{font-size:.72rem;color:var(--muted,#8899aa);margin-top:10px;line-height:1.4}
+
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
+@media(max-width:600px){
+  .mh-cohorts{grid-template-columns:1fr}
+  .mh-metric-grid{grid-template-columns:1fr 1fr}
+  .mh-gate-table,.mh-exp-table{font-size:.73rem}
+  .mh-gate-table td,.mh-exp-table td{padding:7px 8px}
+}
+</style>
+</head>
+<body>
+{% include "_site_nav.html.j2" %}
+
+<div class="mh-wrap">
+
+  {# ── HERO ─────────────────────────────────────────────────────────────── #}
+  <header class="mh-hero">
+    <div class="mh-kicker"><span class="hb"></span> <span class="l-en">Cycle Intelligence · Measurement Hub</span><span class="l-zh">周期智慧 · 测量中心</span></div>
+    <h1 class="mh-title"><span class="l-en">Measured, not asserted</span><span class="l-zh">已测量，而非断言</span></h1>
+    <p class="mh-doctrine">
+      <span class="l-en">This program's measurement doctrine: every number the platform plots must be backed by a
+      stored, leak-free, pre-registered artifact — or it does not ship with the word "validated."
+      Backfilled and prospective cohorts are always reported separately (ruling A6).
+      A bad number honestly measured is the product; a good number laundered through imprecise language is a liability.
+      The scorecards below are the first real walk-forward track record for the Cycle Intelligence suite —
+      12,519 PIT month-end stamps across US sectors, country ETFs and China Shenwan sectors, 2010–2026,
+      price basis (epoch: price_v1 / zz14_v0).</span>
+      <span class="l-zh">本程序的测量原则：平台展示的每一个数字，必须有存储的、无前视偏差的、预注册的文物作支撑——否则不得使用"已验证"一词。
+      回测与实盘队列始终分开报告（规则A6）。
+      诚实测量出的差数据就是产品；经过模糊语言掩饰的好数据才是负债。
+      以下记分卡是周期智慧套件的首份真实前向跟踪记录——
+      涵盖美国板块、国家ETF及中国申万板块，共12,519个逐点时间戳，
+      2010–2026年，价格基准（版本：price_v1 / zz14_v0）。</span>
+    </p>
+
+    <div class="mh-verdict">
+      <strong><span class="l-en">Consolidated verdict (§6.6)</span><span class="l-zh">综合裁定（§6.6）</span>：</strong>
+      <span class="l-en">Descriptive structure (confirmed turns, phase wheel, risk/vol clustering) has measurable substance.
+      Every predictive claim tested — position deciles, ladder ordering, turn projections, directional labels —
+      fails its pre-registered gate. Phase 3 (honest surfaces + tripwires + regime context) is the product.
+      Predictive and sizing outputs proceed only through their pre-registered gates, feature-set bound by the collinearity verdict.</span>
+      <span class="l-zh">描述性结构（已确认拐点、阶段轮盘、风险/波动聚集）具有可测量的实质。
+      迄今测试的所有预测性主张——仓位十分位、阶梯排序、拐点推演、方向标签——均未通过其预注册门槛。
+      第三阶段（诚实展示 + 预警触点 + 周期背景）即为产品本身。
+      预测与仓位信号仅在通过其已注册门槛后方可发布，特征集以共线性裁定为约束。</span>
+    </div>
+  </header>
+
+  {# ── THE SCORECARDS ───────────────────────────────────────────────────── #}
+  <section class="mh-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">The Scorecards</span><span class="l-zh">记分卡</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Per engine — US / Country / China — never pooled (A6)</span><span class="l-zh">按引擎分类——美国/国家/中国——不混合（A6）</span></span>
+    </div>
+
+    <div class="mh-tabs" id="mh-eng-tabs" role="tablist">
+      {% for eng in engines %}
+      {% if not eng.get('missing') %}
+      <button class="mh-tab{% if loop.first %} on{% endif %}"
+              data-eng="{{ eng.engine }}"
+              role="tab"
+              aria-selected="{{ 'true' if loop.first else 'false' }}">
+        <span class="l-en">{{ eng.label_en }}</span><span class="l-zh">{{ eng.label_zh }}</span>
+      </button>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    {% for eng in engines %}
+    {% if not eng.get('missing') %}
+    <div class="mh-engine{% if loop.first %} on{% endif %}" id="mh-eng-{{ eng.engine }}">
+      <div class="mh-eng-hd">
+        <span class="mh-eng-name"><span class="l-en">{{ eng.label_en }}</span><span class="l-zh">{{ eng.label_zh }}</span></span>
+        <span class="mh-eng-epoch">
+          basis={{ eng.epoch.basis_version }} · zz={{ eng.epoch.zz_version }} · fp={{ eng.epoch.engine_fingerprint }}
+        </span>
+        <span class="mh-metric-note" style="margin-left:auto">
+          <span class="l-en">{{ eng.n_stamps_total }} total stamps</span><span class="l-zh">共 {{ eng.n_stamps_total }} 个时间戳</span>
+        </span>
+      </div>
+
+      <div class="mh-cohorts">
+        {% for cohort_name, cohort in eng.cohorts.items() %}
+        <div class="mh-cohort">
+          <div class="mh-cohort-hd">
+            <span class="mh-cohort-badge badge-{{ cohort_name.lower() }}">
+              {{ cohort_name }} n={{ cohort.n_stamps }}
+            </span>
+            <span class="mh-cohort-meta">
+              <span class="l-en">{{ cohort.n_months }}m · {{ cohort.n_instruments }} instruments</span><span class="l-zh">{{ cohort.n_months }}个月 · {{ cohort.n_instruments }}个标的</span>
+            </span>
+          </div>
+
+          {# ── Turn P/R ──────────────────────────────────────────────── #}
+          {% set pr = cohort.turn_pr %}
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Turn Precision / Recall</span><span class="l-zh">拐点精准率 / 召回率</span>
+              <span class="mh-prim-gate">{{ pr.gate_id }}</span>
+              {% if pr.verdict %}
+              <span class="verdict {{ pr.verdict_class }}">
+                <span class="l-en">{{ pr.verdict | upper }}</span><span class="l-zh">{% if pr.verdict == 'falsified' %}已证伪{% elif pr.verdict == 'accruing' %}积累中{% elif pr.verdict == 'earning' %}有效{% elif pr.verdict == 'inconclusive' %}不确定{% else %}{{ pr.verdict }}{% endif %}</span>
+              </span>
+              {% endif %}
+            </div>
+            {% if pr.precision is not none %}
+            <div class="mh-metric-grid">
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Precision</span><span class="l-zh">精准率</span></div>
+                <div class="mh-metric-val">{{ pr.precision_pct }}</div>
+                <div class="mh-metric-ci">{{ pr.precision_ci_str }}</div>
+              </div>
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Recall</span><span class="l-zh">召回率</span></div>
+                <div class="mh-metric-val">{{ pr.recall_pct }}</div>
+                <div class="mh-metric-ci">{{ pr.recall_ci_str }}</div>
+              </div>
+              {% if pr.timing_err and pr.timing_err.get('n', 0) > 0 %}
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Timing error (median/IQR)</span><span class="l-zh">时间误差（中位/四分距）</span></div>
+                <div class="mh-metric-val">{{ pr.timing_err.median }}m / {{ pr.timing_err.iqr }}m</div>
+                <div class="mh-metric-ci"><span class="l-en">n={{ pr.timing_err.n }} matched turns</span><span class="l-zh">n={{ pr.timing_err.n }} 匹配拐点</span></div>
+              </div>
+              {% endif %}
+              {% if pr.n_eff %}
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">n_eff</span><span class="l-zh">有效样本n</span></div>
+                <div class="mh-metric-val">{{ pr.n_eff }}</div>
+                <div class="mh-metric-ci"><span class="l-en">month-block bootstrap</span><span class="l-zh">月块自助法</span></div>
+              </div>
+              {% endif %}
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Bar: precision & recall Wilson-lo &gt; 0.5. Independent truth: realized-extrema oracle (ruling A6) — not the same ZigZag detector.</span>
+              <span class="l-zh">门槛：精准率与召回率威尔逊下界 &gt; 0.5。独立真值：已实现极值预言机（规则A6）——非同一ZigZag检测器。</span>
+            </div>
+            {% else %}
+            <div class="mh-metric-note">
+              <span class="l-en">ACCRUING — live cohort not yet matured (n_eff &lt; 40)</span>
+              <span class="l-zh">积累中——实盘队列尚未成熟（n_eff &lt; 40）</span>
+            </div>
+            {% endif %}
+          </div>
+
+          {# ── Cone Coverage ─────────────────────────────────────────── #}
+          {% set cone = cohort.cone %}
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Cone Coverage vs {{ (cone.nominal * 100) | int }}% nominal</span><span class="l-zh">锥形覆盖率 vs {{ (cone.nominal * 100) | int }}% 名义值</span>
+              <span class="mh-prim-gate">{{ cone.gate_id }}</span>
+              {% if cone.verdict %}
+              <span class="verdict {{ cone.verdict_class }}">
+                <span class="l-en">{{ cone.verdict | upper | replace('_', ' ') }}</span><span class="l-zh">{% if cone.verdict == 'too_tight' %}锥形过窄{% elif cone.verdict == 'miscalibrated' %}未校准{% elif cone.verdict == 'pass' %}通过{% else %}{{ cone.verdict }}{% endif %}</span>
+              </span>
+              {% endif %}
+            </div>
+            {% if cone.empirical is not none %}
+            <div class="mh-metric-grid">
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Coverage (headline)</span><span class="l-zh">覆盖率（整体）</span></div>
+                <div class="mh-metric-val">{{ cone.empirical_pct }}</div>
+                <div class="mh-metric-ci">{{ cone.ci_str }} n={{ cone.n }}</div>
+              </div>
+              {% if cone.forward_only.empirical is not none %}
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Coverage (fwd-only)</span><span class="l-zh">覆盖率（仅前向）</span></div>
+                <div class="mh-metric-val">{{ cone.forward_only.empirical_pct }}</div>
+                <div class="mh-metric-ci">{{ cone.forward_only.ci_str }} n={{ cone.forward_only.n }}</div>
+              </div>
+              {% endif %}
+              {% if cone.recal_multiplier %}
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Recal multiplier</span><span class="l-zh">重校倍数</span></div>
+                <div class="mh-metric-val">{{ cone.recal_multiplier }}×</div>
+                <div class="mh-metric-ci"><span class="l-en">to reach {{ (cone.nominal*100)|int }}% coverage</span><span class="l-zh">达到 {{ (cone.nominal*100)|int }}% 覆盖率</span></div>
+              </div>
+              {% endif %}
+              {% if cone.overdue_fraction is not none %}
+              <div class="mh-metric">
+                <div class="mh-metric-label"><span class="l-en">Overdue fraction</span><span class="l-zh">过期比例</span></div>
+                <div class="mh-metric-val">{{ cone.overdue_pct }}</div>
+                <div class="mh-metric-ci"><span class="l-en">projections past proj_central date</span><span class="l-zh">推演日期已过的比例</span></div>
+              </div>
+              {% endif %}
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Headline coverage dominated by overdue projections (re-anchoring repaint, cycles-core-4). Forward-only slice isolates cone calibration from projection-engine pathology — watch this once projection model is replaced (D5).</span>
+              <span class="l-zh">整体覆盖率受过期推演影响较大（重锚化重绘，cycles-core-4）。仅前向切片将锥形校准与推演引擎缺陷隔离——推演模型更换后（D5）请关注此指标。</span>
+            </div>
+            {% else %}
+            <div class="mh-metric-note">
+              <span class="l-en">ACCRUING</span><span class="l-zh">积累中</span>
+            </div>
+            {% endif %}
+          </div>
+
+          {# ── Reliability ───────────────────────────────────────────── #}
+          {% set rel = cohort.reliability %}
+          <div class="mh-primitive">
+            <div class="mh-prim-title">
+              <span class="l-en">Reliability / Brier Skill vs Base Rate</span><span class="l-zh">可靠性 / 布莱尔技能分 vs 基础率</span>
+              <span class="mh-prim-gate">{{ rel.gate_id }}</span>
+            </div>
+            {% set sig = rel.signal %}
+            {% set sta = rel.stance %}
+            <div class="mh-metric-grid">
+              {% if sig.n %}
+              <div class="mh-metric">
+                <div class="mh-metric-label">
+                  <span class="l-en">Signal skill score</span><span class="l-zh">信号技能分</span>
+                  {% if sig.verdict %}<span class="verdict {{ sig.verdict_class }}" style="margin-left:4px;font-size:.65rem">{{ sig.verdict | upper }}</span>{% endif %}
+                </div>
+                <div class="mh-metric-val">{{ sig.skill_str }}</div>
+                <div class="mh-metric-ci"><span class="l-en">hit {{ sig.hit_rate_pct }} vs base {{ sig.base_pct }} (n={{ sig.n }})</span><span class="l-zh">命中率 {{ sig.hit_rate_pct }} vs 基础率 {{ sig.base_pct }}（n={{ sig.n }}）</span></div>
+              </div>
+              {% endif %}
+              {% if sta.n %}
+              <div class="mh-metric">
+                <div class="mh-metric-label">
+                  <span class="l-en">Stance skill score</span><span class="l-zh">姿态技能分</span>
+                  {% if sta.verdict %}<span class="verdict {{ sta.verdict_class }}" style="margin-left:4px;font-size:.65rem">{{ sta.verdict | upper }}</span>{% endif %}
+                </div>
+                <div class="mh-metric-val">{{ sta.skill_str }}</div>
+                <div class="mh-metric-ci"><span class="l-en">hit {{ sta.hit_rate_pct }} vs base {{ sta.base_pct }} (n={{ sta.n }})</span><span class="l-zh">命中率 {{ sta.hit_rate_pct }} vs 基础率 {{ sta.base_pct }}（n={{ sta.n }}）</span></div>
+              </div>
+              {% endif %}
+              {% if not sig.n and not sta.n %}
+              <div class="mh-metric-note">
+                <span class="l-en">ACCRUING — not yet matured</span><span class="l-zh">积累中——尚未成熟</span>
+              </div>
+              {% endif %}
+            </div>
+            <div class="mh-metric-note" style="margin-top:8px">
+              <span class="l-en">Skill vs per-instrument base rate (63d horizon). Negative skill = directional labels do not beat an always-predict-majority coin. Reported honestly, not hidden.</span>
+              <span class="l-zh">技能分相对各标的自身基础率（63天窗口）。负技能分 = 方向标签未能超越永远预测多数方向的随机策略。如实报告，不作掩盖。</span>
+            </div>
+          </div>
+
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </section>
+
+  {# ── CONE RECALIBRATION ───────────────────────────────────────────────── #}
+  {% if cone_recalibration.engines %}
+  <section class="mh-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Cone Recalibration Multipliers</span><span class="l-zh">锥形重校倍数</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Replaces lerp(1.5,13) hand constants — bound to realized timing-error distribution</span><span class="l-zh">替换 lerp(1.5,13) 手动常数——基于实测时间误差分布</span></span>
+    </div>
+    <p style="font-size:.82rem;color:var(--muted,#8899aa);max-width:700px;margin:0 0 16px;line-height:1.6">
+      <span class="l-en">The new cone half-width = quantile(|timing_err|, 0.80) from the realized turn-timing error distribution.
+      Headline multipliers are dominated by chronically overdue projections; the forward-only multiplier is the number to watch once a gated projection model replaces the current median-half-cycle engine (D5).</span>
+      <span class="l-zh">新锥形半宽 = 实测拐点时间误差分布的 quantile(|时间误差|, 0.80)。
+      整体倍数受慢性过期推演影响偏大；一旦门控推演模型取代当前中位半周期引擎（D5），请关注仅前向倍数。</span>
+    </p>
+    <div class="mh-recal-grid">
+      {% for eng_key, eng_recal in cone_recalibration.engines.items() %}
+      <div class="mh-recal-card">
+        <h4>{{ eng_key.replace('_', ' ').title() }}</h4>
+        <div class="mh-recal-stat">
+          <span class="lbl"><span class="l-en">Headline mult</span><span class="l-zh">整体倍数</span></span>
+          <span class="val">{{ eng_recal.headline.recal_multiplier }}×</span>
+        </div>
+        <div class="mh-recal-stat">
+          <span class="lbl"><span class="l-en">Forward-only mult</span><span class="l-zh">仅前向倍数</span></span>
+          <span class="val">{{ eng_recal.forward_only.recal_multiplier }}×</span>
+        </div>
+        <div class="mh-recal-stat">
+          <span class="lbl"><span class="l-en">Empirical coverage</span><span class="l-zh">实测覆盖率</span></span>
+          <span class="val" style="color:var(--down,#ef4444)">{{ (eng_recal.headline.empirical * 100) | round(1) }}%</span>
+        </div>
+        <div class="mh-recal-stat">
+          <span class="lbl"><span class="l-en">Overdue fraction</span><span class="l-zh">过期比例</span></span>
+          <span class="val" style="color:var(--warn,#f59e0b)">{{ (eng_recal.overdue_fraction * 100) | round(1) }}%</span>
+        </div>
+        <div class="mh-recal-note">
+          <span class="l-en">Epoch: {{ eng_recal.epoch.basis_version }} / {{ eng_recal.epoch.zz_version }}. BACKTEST cohort. Ships to cone_recalibration.json — replaces lerp hand constants at build.</span>
+          <span class="l-zh">版本：{{ eng_recal.epoch.basis_version }} / {{ eng_recal.epoch.zz_version }}。回测队列。已写入 cone_recalibration.json——在构建时替换手动常数。</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── GATE LEDGER ──────────────────────────────────────────────────────── #}
+  <section class="mh-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Gate Ledger</span><span class="l-zh">门槛台账</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Pre-registered gates — criteria frozen at W0.4 (2026-07-02). Criteria never move after data is seen.</span><span class="l-zh">预注册门槛——标准于W0.4冻结（2026-07-02）。数据可见后标准不得更改。</span></span>
+    </div>
+    <p style="font-size:.82rem;color:var(--muted,#8899aa);max-width:700px;margin:0 0 16px;line-height:1.6">
+      <span class="l-en">BH-FDR applied within each gate family (q=0.10). A gate whose success threshold, judging data, or FDR family is edited after data has been seen is void — the edit itself is the finding. All FAILED gates are rendered as FAILED, not omitted.</span>
+      <span class="l-zh">本-霍克斯伯格FDR在每个门槛族内应用（q=0.10）。若门槛成功阈值、判据数据或FDR族在数据可见后被修改，则该门槛作废——修改行为本身即为发现。所有失败门槛均如实展示为失败，不予省略。</span>
+    </p>
+    <div class="mh-gate-wrap">
+    <table class="mh-gate-table">
+      <thead>
+        <tr>
+          <th><span class="l-en">Gate</span><span class="l-zh">门槛</span></th>
+          <th><span class="l-en">Family</span><span class="l-zh">族</span></th>
+          <th><span class="l-en">Claim</span><span class="l-zh">主张</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+          <th><span class="l-en">Result / Notes</span><span class="l-zh">结果/备注</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set last_family = namespace(val='') %}
+        {% for gate in gate_ledger %}
+        <tr>
+          <td class="gate-id">{{ gate.id }}</td>
+          <td><span class="mh-gate-fam">{{ gate.family }}</span></td>
+          <td style="font-size:.78rem">{{ gate.claim }}</td>
+          <td>
+            {% if gate.status == 'pass' %}
+            <span class="verdict verdict-pass"><span class="l-en">PASS</span><span class="l-zh">通过</span></span>
+            {% elif gate.status == 'fail' %}
+            <span class="verdict verdict-fail"><span class="l-en">FAIL</span><span class="l-zh">失败</span></span>
+            {% elif gate.status == 'accruing' %}
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            {% else %}
+            <span class="verdict verdict-none">{{ gate.status }}</span>
+            {% endif %}
+          </td>
+          <td class="gate-result">{{ gate.result or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>{# end .mh-gate-wrap #}
+  </section>
+
+  {# ── COLLINEARITY ─────────────────────────────────────────────────────── #}
+  {% if collinearity.study_date %}
+  <section class="mh-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Collinearity Verdict (W2.5)</span><span class="l-zh">共线性裁定（W2.5）</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Binding for W4.2 (hazard) + W4.6 (calibration) feature sets</span><span class="l-zh">约束W4.2（风险）与W4.6（校准）的特征集</span></span>
+    </div>
+    <p style="font-size:.82rem;color:var(--muted,#8899aa);max-width:700px;margin:0 0 16px;line-height:1.6">
+      <span class="l-en">Pooled panel: {{ collinearity.n_pooled }} PIT monthly stamps (2010–2026). State_score × pos_osc ρ=−0.968 (VIF~30): confluence was ONE price signal in three coats. The de-duplicated feature set is now binding for all downstream hazard and calibration waves.</span>
+      <span class="l-zh">合并面板：{{ collinearity.n_pooled }} 个逐点月度时间戳（2010–2026）。state_score × pos_osc ρ=−0.968（VIF~30）：汇聚度实为一个价格信号披着三件外衣。去重后特征集现对所有下游风险与校准波次具有约束力。</span>
+    </p>
+    <div class="mh-collin">
+      <div class="mh-collin-block">
+        <h4><span class="l-en">Redundant legs (|rho|&gt;0.8 or VIF&gt;5)</span><span class="l-zh">冗余腿（|相关系数|&gt;0.8 或 VIF&gt;5）</span></h4>
+        <ul>
+          {% if collinearity.redundant_pairs %}
+          {% for pair in collinearity.redundant_pairs %}
+          <li><strong>{{ pair.pair }}</strong> — ρ={{ pair.rho }}</li>
+          {% endfor %}
+          {% endif %}
+          {% if collinearity.high_vif_legs %}
+          {% for item in collinearity.high_vif_legs %}
+          <li><strong>{{ item.leg }}</strong> — VIF={{ item.vif }}</li>
+          {% endfor %}
+          {% endif %}
+        </ul>
+      </div>
+      <div class="mh-collin-block">
+        <h4><span class="l-en">Risk-channel survivors (partial-corr CI excl. 0)</span><span class="l-zh">风险信道幸存者（偏相关CI不含0）</span></h4>
+        <ul>
+          {% for leg in collinearity.risk_channel_survivors %}
+          <li><strong>{{ leg }}</strong></li>
+          {% endfor %}
+        </ul>
+        {% if collinearity.n_pcs_for_90pct %}
+        <div style="margin-top:10px;font-size:.78rem;color:var(--muted,#8899aa)">
+          <span class="l-en">PCA: {{ collinearity.n_pcs_for_90pct }} of 8 legs explain ≥90% variance — dimension reduction justified.</span>
+          <span class="l-zh">PCA：8条腿中的{{ collinearity.n_pcs_for_90pct }}条解释≥90%方差——维度压缩有依据。</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── ACCRUING EXPERIMENTS ─────────────────────────────────────────────── #}
+  {% if accruing_experiments %}
+  <section class="mh-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Accruing Measurements</span><span class="l-zh">积累中的测量</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Cycle-measurement entries from the experiments registry</span><span class="l-zh">实验注册表中的周期测量条目</span></span>
+    </div>
+    <div class="mh-exp-wrap">
+    <table class="mh-exp-table">
+      <thead>
+        <tr>
+          <th><span class="l-en">Experiment</span><span class="l-zh">实验</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+          <th><span class="l-en">Come-back date</span><span class="l-zh">复查日期</span></th>
+          <th><span class="l-en">Next step</span><span class="l-zh">下一步</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for exp in accruing_experiments %}
+        <tr>
+          <td>
+            <div class="mh-exp-name">{{ exp.name }}</div>
+            {% if exp.what %}<div class="mh-exp-what">{{ exp.what }}</div>{% endif %}
+          </td>
+          <td>
+            {% if exp.status == 'measuring' %}
+            <span class="verdict verdict-accruing"><span class="l-en">MEASURING</span><span class="l-zh">测量中</span></span>
+            {% elif exp.status == 'accruing' %}
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            {% elif exp.status == 'proven' %}
+            <span class="verdict verdict-pass"><span class="l-en">PROVEN</span><span class="l-zh">已证实</span></span>
+            {% else %}
+            <span class="verdict verdict-none">{{ exp.status }}</span>
+            {% endif %}
+          </td>
+          <td class="mh-exp-cb">{{ exp.come_back_on or '—' }}</td>
+          <td style="font-size:.76rem;color:var(--muted,#8899aa)">{{ exp.next_step or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>{# end .mh-exp-wrap #}
+  </section>
+  {% endif %}
+
+  {# ── PROVENANCE FOOTER ────────────────────────────────────────────────── #}
+  <div class="mh-provenance">
+    <div class="mh-prov-title"><span class="l-en">Provenance</span><span class="l-zh">来源溯源</span></div>
+    <div class="mh-prov-grid">
+      <dl class="mh-prov-cell">
+        <dt><span class="l-en">Build date</span><span class="l-zh">构建日期</span></dt>
+        <dd>{{ build_date }}</dd>
+      </dl>
+      <dl class="mh-prov-cell">
+        <dt><span class="l-en">Generated at (UTC)</span><span class="l-zh">生成时间（UTC）</span></dt>
+        <dd>{{ generated_at }}</dd>
+      </dl>
+      {% for eng_name, epoch in provenance.epochs.items() %}
+      <dl class="mh-prov-cell">
+        <dt>{{ eng_name }}</dt>
+        <dd>{{ epoch.basis_version }} / {{ epoch.zz_version }} / fp:{{ epoch.engine_fingerprint }}</dd>
+      </dl>
+      {% endfor %}
+      <dl class="mh-prov-cell">
+        <dt><span class="l-en">Fingerprint consistent</span><span class="l-zh">指纹一致</span></dt>
+        <dd>{{ 'YES' if provenance.fingerprint_consistent else 'NO — engines diverged' }}</dd>
+      </dl>
+    </div>
+    <div style="margin-top:12px;font-size:.72rem;color:var(--muted,#8899aa);line-height:1.5">
+      <span class="l-en">Ruling A6: BACKTEST (provenance=backfilled, price_v1 basis) and LIVE (provenance=prospective) cohorts never blended in one number. A BACKTEST number never promotes a user-facing MEASURED badge; only a matured LIVE cohort (n_eff≥40) can. All artifacts: data/&lt;engine&gt;/scorecards/. Builder: scripts/build_measurement.py.</span>
+      <span class="l-zh">规则A6：回测（来源=回填，price_v1基准）与实盘（来源=前瞻）队列不得混入同一数值。回测数字不得推动用户可见的"已测量"徽章；仅成熟的实盘队列（n_eff≥40）可晋升。所有文物：data/&lt;engine&gt;/scorecards/。构建器：scripts/build_measurement.py。</span>
+    </div>
+  </div>
+
+</div>{# end .mh-wrap #}
+
+<script src="measurementdata/measurement_data.js"></script>
+<script>
+(function(){
+  "use strict";
+  // Engine tab switching
+  var tabs = document.querySelectorAll('.mh-tab');
+  var panels = document.querySelectorAll('.mh-engine');
+  tabs.forEach(function(tab){
+    tab.addEventListener('click', function(){
+      var eng = tab.getAttribute('data-eng');
+      tabs.forEach(function(t){ t.classList.remove('on'); t.setAttribute('aria-selected','false'); });
+      panels.forEach(function(p){ p.classList.remove('on'); });
+      tab.classList.add('on');
+      tab.setAttribute('aria-selected','true');
+      var panel = document.getElementById('mh-eng-' + eng);
+      if(panel) panel.classList.add('on');
+    });
+  });
+
+  // Verify data loaded
+  if(typeof window.MEASUREMENT === 'undefined'){
+    console.error('measurement.html: window.MEASUREMENT not loaded — check measurementdata/measurement_data.js');
+  } else {
+    var d = window.MEASUREMENT;
+    var engs = d.engines || [];
+    // A6 assertion: confirm BACKTEST and LIVE are separate
+    engs.forEach(function(eng){
+      if(eng.missing) return;
+      var cohorts = eng.cohorts || {};
+      if(cohorts.BACKTEST && cohorts.LIVE){
+        var bt = cohorts.BACKTEST, lv = cohorts.LIVE;
+        if(bt.n_stamps === lv.n_stamps && bt.n_stamps > 0){
+          console.error('A6 VIOLATION: ' + eng.engine + ' BACKTEST n==' + bt.n_stamps + ' equals LIVE n — cohorts may be blended!');
+        }
+      }
+    });
+    console.log('measurement.html: MEASUREMENT loaded; ' + engs.length + ' engines; ' + (d.gate_ledger||[]).length + ' gates');
+  }
+
+  // Mobile horizontal-overflow guard (375px)
+  try{
+    var sw = document.body.scrollWidth, vw = window.innerWidth;
+    if(sw > vw + 4) console.warn('measurement.html: horizontal overflow at ' + vw + 'px (scrollWidth=' + sw + ')');
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
