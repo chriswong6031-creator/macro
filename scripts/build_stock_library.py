@@ -1445,18 +1445,44 @@ def main() -> int:
     # within-market percentile display score (mutates the conviction blocks in place;
     # rec['conviction'] is the SAME object, so the per-stock JSONs pick it up below).
     stock_score.attach_panel_scores(profiles)
-    # US DISPLAYED score = the POTENTIAL (buy-readiness, edge-blended), not the comp-z
-    # percentile. Keep the percentile as rank_pctile; drop the now-inaccurate "within-board
-    # RANK" note. The board now ranks by front-running buy-readiness that still respects the
-    # validated event edge (it is blended in), framed as an experimental screen (forward-graded).
+    # W6-US fix 2: emit BOTH scores as first-class fields so nothing is hidden.
+    #   score_edge   = the within-market composite_z percentile (monotone with edge; the
+    #                  "how good is this name" read). This is what attach_panel_scores wrote
+    #                  into c["score"] before we overwrite it.
+    #   score_timing = the potential_score (buy-readiness blend: washout × trigger × survive
+    #                  × edge_mult). This is what the card historically displayed as "score".
+    # The PRIMARY displayed number stays score_timing (= legacy c["score"]) for continuity,
+    # but score_edge is emitted and the template can render it as a separate "edge percentile"
+    # meter. The band/color is now forced to agree with the verdict so a Lagging name with a
+    # high washout score can never wear a green/high band (build-time invariant enforced below).
+    # Backward-compat: the old "score" field = score_timing so downstream code reading
+    # c["score"] still gets the timing number; nothing outside us_stocks.html reads score_edge.
     for _safe, _rec in to_write:
         _c = _rec.get("conviction") or {}
         _pot = _c.get("potential")
         if not _pot:
             continue
+        # score_edge = the honest edge-percentile (overwritten by potential below)
+        _c["score_edge"] = _c.get("score")
+        # score_timing = the buy-readiness blend (legacy "score" for continuity)
+        _c["score_timing"] = _pot["score"]
+        # The PRIMARY displayed number is score_timing (buy-readiness), kept in "score"
+        # for backward-compat. The band is forced to the verdict-derived cap so the
+        # band color never contradicts the absolute edge verdict.
         _c["rank_pctile"] = _c.get("score")
         _c["score"] = _pot["score"]
-        _c["band"], _c["band_en"], _c["band_zh"] = _pot["band"], _pot["band_en"], _pot["band_zh"]
+        # Verdict-anchored band: never green/constructive/high on a Lagging or no-edge name.
+        # The potential band is used as-is for names with a positive verdict;
+        # for Lagging / no-clear-edge verdicts we cap at "neutral".
+        _verdict = (_c.get("verdict") or "").lower()
+        _lagging = any(k in _verdict for k in ("lagging", "no clear edge"))
+        if _lagging:
+            # cap to neutral regardless of washout depth
+            _c["band"] = "neutral"
+            _c["band_en"] = "neutral"
+            _c["band_zh"] = "中性"
+        else:
+            _c["band"], _c["band_en"], _c["band_zh"] = _pot["band"], _pot["band_en"], _pot["band_zh"]
         _notes = _c.get("notes")
         if _notes:
             _c["notes"] = [n for n in _notes if n.get("kind") != "rank"] or None

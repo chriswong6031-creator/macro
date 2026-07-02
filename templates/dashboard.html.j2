@@ -2429,7 +2429,13 @@
           {{ n.spark_svg }}
           {% if c %}
           <div class="nb-conv">
-            {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Timing / readiness score (gauge 1) — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank. · 择时/就绪度（量表1）——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">{{ c.score }}</span>{% endif %}
+            {# PRIMARY: score_timing (buy-readiness blend). Band is verdict-anchored:
+               never green/constructive/high for Lagging or no-clear-edge names. #}
+            {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank. · 择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">{{ c.score }}</span>{% endif %}
+            {# SECONDARY: score_edge (within-market edge percentile, honest cross-sectional rank).
+               Shown as a small muted "edge" label so a leader like WAB (edge pct 98) is visible
+               alongside a laggard like LKQ (edge pct 46) without confusion. #}
+            {% if c.score_edge is defined and c.score_edge is not none %}<span class="nb-edge-pct muted" title="Edge percentile — within-market rank by the multi-factor conviction composite (selection + entry + tailwind + quality). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. NOT the timing readiness score above. · 优势百分位——按多因子信念综合（选股+入场+顺风+质量）的市场内排名。这是单调的横截面排名；此处 WAB 排98/100，而深度回调的落后者排名较低。并非上方的择时就绪度。">{{ t('edge', '优势') }} {{ c.score_edge }}%ile</span>{% endif %}
             <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
             {% if c.valuation_band %}<span class="nb-val val-{{ c.valuation_band }}" title="{{ c.valuation_note }} · {{ c.valuation_note_zh }}">{{ t(c.valuation_band, {'cheap':'便宜','fair':'合理','stretched':'偏贵','extreme':'昂贵'}[c.valuation_band] if c.valuation_band in ['cheap','fair','stretched','extreme'] else c.valuation_band) }}</span>{% endif %}
           </div>
