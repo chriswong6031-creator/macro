@@ -2492,6 +2492,14 @@ def main() -> int:
         build_override_shadow(sig, gate, cycle_thesis, _acfg, config.load()["vector"])
     except Exception as e:  # noqa: BLE001
         log.error("override_shadow artifact failed (%s)", e)
+    # W1 measurement overlay: MERGES the measured shadow (weekly gated-vs-raw series,
+    # prior-cycle same-point context, cum gap) INTO the W3 v0 payload above — single
+    # artifact, panel keys preserved, stub -> measured. Runs AFTER the stub by design.
+    try:
+        from scripts.build_override_shadow import build as _w1_shadow_merge
+        _w1_shadow_merge(sig)
+    except Exception as _shadow_err:  # noqa: BLE001 — shadow is optional; never fatal
+        log.warning("override shadow W1 overlay failed (%s)", _shadow_err)
 
     # W5 override forward-grading ledger (monitoring only)
     try:

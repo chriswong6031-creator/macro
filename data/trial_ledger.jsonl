@@ -52,3 +52,7 @@
 {"ts": "2026-07-02T03:11:22.500560+00:00", "family": "turn_of_month_phase0", "kind": "declared_budget", "n": 8, "reason": "[estimated] in-code n_trials\u22481 \u00d73 research specs (floor 8); retrospective upper bound", "config_hash": "d2a78cc41b7eb353"}
 {"ts": "2026-07-02T03:11:22.501832+00:00", "family": "value_growth_phase0", "kind": "declared_budget", "n": 8, "reason": "[estimated] in-code n_trials\u22481 \u00d73 research specs (floor 8); retrospective upper bound", "config_hash": "4a7f473ecf42c5da"}
 {"ts": "2026-07-02T03:30:48.967730+00:00", "family": "vector", "kind": "declared_budget", "n": 68, "reason": "cfg.calibration.n_trials (65) + override dof_cost {'midterm_blackout': 3} \u2014 declared upper-bound (calibrate_vector W5)", "config_hash": "f572ead7d38141d0"}
+{"ts": "2026-07-02T03:43:12.815019+00:00", "family": "vector", "config_hash": "0692c70992c525bb", "config": {"variant": "conservative"}, "source": "alloc_variant", "info_cutoff": null, "note": null}
+{"ts": "2026-07-02T03:43:12.815204+00:00", "family": "vector", "config_hash": "8018a48758dddb05", "config": {"variant": "moderate"}, "source": "alloc_variant", "info_cutoff": null, "note": null}
+{"ts": "2026-07-02T03:43:12.815276+00:00", "family": "vector", "config_hash": "3fe71a26c76dfed9", "config": {"variant": "aggressive"}, "source": "alloc_variant", "info_cutoff": null, "note": null}
+{"ts": "2026-07-02T03:43:12.815329+00:00", "family": "vector", "config_hash": "911496757c3b4247", "config": {"variant": "optimal"}, "source": "alloc_variant", "info_cutoff": null, "note": null}

@@ -439,6 +439,75 @@ def ensemble_promotion(df, fwd, halves, folds, SIGNALS, cost_bps, n_trials):
 
 
 # --------------------------------------------------------------------------- #
+# W1 N7 — autocorrelation-adjusted effective-N for the DSR
+# --------------------------------------------------------------------------- #
+_EFFN_MAX_LAG = 20   # K=20 lags for the Newey-West style sum
+
+
+def _effective_T(returns: pd.Series, k: int = _EFFN_MAX_LAG) -> float:
+    """Newey-West style effective sample size.
+
+    T_eff = T / (1 + 2 * sum_{j=1..k} rho_j)
+
+    where rho_j is the lag-j autocorrelation of `returns`.  Positive
+    autocorrelation (trend) inflates the raw T; this deflates it back to the
+    honest independent count.  Block-bootstrap refinement is W5.
+    """
+    r = returns.dropna()
+    T = len(r)
+    if T < k + 10:
+        return float(T)
+    rho_sum = 0.0
+    for lag in range(1, k + 1):
+        rho = float(r.autocorr(lag=lag))
+        if not np.isfinite(rho):
+            continue
+        rho_sum += rho
+    denom = 1.0 + 2.0 * rho_sum
+    denom = max(denom, 0.5)   # guard against extreme negative autocorr
+    return float(T) / denom
+
+
+def _dsr_with_effN(m: dict, net_returns: pd.Series, n_trials: int,
+                   sr_var: float | None) -> dict | None:
+    """Compute DSR on both raw T and effective T, return a compact dict.
+
+    Returns a dict with keys: dsr_raw_T, dsr_eff_T, T_raw, T_eff,
+    rho_sum_K20, note.  Block-bootstrap refinement is deferred to W5.
+    """
+    T_raw = int(m.get("n_obs") or len(net_returns.dropna()))
+    T_eff = _effective_T(net_returns)
+    # Build synthetic moments using T_eff instead of the raw T so the DSR
+    # haircut accounts for the reduced independent information.
+    m_eff = dict(m)
+    m_eff["n_obs"] = max(int(T_eff), 2)
+    dsr_eff = deflated_sharpe(m_eff.get("sharpe_daily"), m_eff.get("skew"),
+                               m_eff.get("kurt"), m_eff["n_obs"],
+                               n_trials, sr_variance=sr_var,
+                               trading_year=TRADING_YEAR)
+    dsr_raw_T = deflated_sharpe(m.get("sharpe_daily"), m.get("skew"),
+                                 m.get("kurt"), T_raw,
+                                 n_trials, sr_variance=sr_var,
+                                 trading_year=TRADING_YEAR)
+    r = net_returns.dropna()
+    rho_sum = sum(
+        float(r.autocorr(lag=j))
+        for j in range(1, _EFFN_MAX_LAG + 1)
+        if np.isfinite(r.autocorr(lag=j))
+    )
+    return {
+        "dsr_legacy": round(dsr_raw_T["dsr"], 4) if dsr_raw_T else None,
+        "dsr_effN": round(dsr_eff["dsr"], 4) if dsr_eff else None,
+        "T_raw": T_raw,
+        "T_eff": round(T_eff, 1),
+        "rho_sum_K20": round(rho_sum, 4),
+        "note": (f"Newey-West effective-N: T_eff={T_eff:.0f} vs raw T={T_raw} "
+                 f"(rho_sum_K20={rho_sum:.4f}). dsr_effN is the haircut using T_eff; "
+                 f"dsr_legacy uses raw T. Block-bootstrap refinement deferred to W5."),
+    }
+
+
+# --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
 def main() -> int:
@@ -645,19 +714,34 @@ def main() -> int:
     # precedent — ships without a config.yml edit). 10 bps ≈ a realistic BTC-spot
     # round-trip leg; n_trials is a manual UPPER-BOUND of configs explored.
     cost_bps = float(cfg.get("cost_bps", 10.0))
+    # n_trials = the CONFIG upper-bound of configs explored. Override dof_cost is
+    # added downstream via _override_dof() -> n_declared (W5 schema) — do NOT fold
+    # it in here or it double-counts (masterplan §4 N7: registry DOF accounting).
     n_trials = int(cfg.get("n_trials", 50))
+    full_cfg = config.load()
 
-    for variant in config.load()["vector"]["allocation"]["variants"]:
+    # W1 N7: DUAL-TRACK grading — grade BOTH the final gated alloc_<v> AND the
+    # pure alloc_<v>_raw series. The gated series is the live-behavior certificate
+    # (kept in `allocation` for schema back-compat); the raw series goes into
+    # `allocation_raw` for honest provenance (pre-gate figure retired).
+    variants_list = full_cfg["vector"]["allocation"]["variants"]
+    for variant in variants_list:
         col = f"alloc_{variant}"
+        col_raw = f"alloc_{variant}_raw"
         if col in df.columns:
             report["allocation"][variant] = backtest(close, df[col], cost_bps=cost_bps)
+        if col_raw in df.columns:
+            report.setdefault("allocation_raw", {})[variant] = backtest(
+                close, df[col_raw], cost_bps=cost_bps)
 
     # ---- multiple-testing haircut (Deflated Sharpe on the SHIPPED variant) ---- #
     # The published Sharpe is the MAX over the variants/thresholds we tried, so it
     # is upward-biased; the DSR deflates it for n_trials, sample length, skew and
     # fat tails. We estimate the cross-trial SR variance from the variants actually
     # backtested (falls back to the SR-estimator proxy if only one exists).
+    # W1 N7: compute BOTH gated and raw DSR / effective-N.
     va = report["allocation"]
+    va_raw = report.get("allocation_raw", {})
     if va:
         sel = ("optimal" if "optimal" in va else
                max(va, key=lambda k: va[k]["cagr"] if pd.notna(va[k]["cagr"]) else -1e9))
@@ -697,8 +781,48 @@ def main() -> int:
                            "vector.calibration.n_trials as you try more. "
                            "The DSR statistic now uses a block-bootstrap effective sample size "
                            "(T_eff) instead of raw sqrt(T-1), so autocorrelated daily returns "
-                           "no longer overstate confidence.")
+                           "no longer overstate confidence. GATED series (live behavior).")
+            # W1 N7 companion diagnostic: Newey-West effective-N alongside the
+            # native block-bootstrap t_eff above (two independent autocorrelation
+            # corrections; agreement = robustness, divergence = investigate).
+            # Uses n_declared so the deflation is override-DOF-inclusive.
+            dsr["dsr_effN"] = _dsr_with_effN(m, net_series.dropna(), n_declared, sr_var)
         report["multiple_testing"] = dsr or {"dsr": None, "verdict": "insufficient data"}
+
+        # W1 N7: Raw-series DSR — the pure engine without gate contamination.
+        if sel in va_raw and va_raw[sel].get("sharpe_daily") is not None:
+            mr = va_raw[sel]
+            daily_srs_raw = [v["sharpe_daily"] for v in va_raw.values()
+                             if v.get("sharpe_daily") is not None]
+            sr_var_raw = float(np.var(daily_srs_raw, ddof=1)) if len(daily_srs_raw) >= 2 else None
+            # Raw track mirrors the gated track's honesty: override-DOF-inclusive
+            # n_declared + its own block-bootstrap effective-T.
+            col_raw_sel = f"alloc_{sel}_raw"
+            net_raw = (backtest_core(close, df[col_raw_sel], cost_bps=cost_bps)["net"]
+                       if col_raw_sel in df.columns else None)
+            eff_raw = bootstrap_effective_t(net_raw) if net_raw is not None else None
+            dsr_raw = deflated_sharpe(mr.get("sharpe_daily"), mr.get("skew"), mr.get("kurt"),
+                                      mr.get("n_obs"), n_declared, sr_variance=sr_var_raw,
+                                      trading_year=TRADING_YEAR,
+                                      t_eff=(eff_raw or {}).get("t_eff"))
+            if dsr_raw is not None:
+                dsr_raw["selected_variant"] = sel
+                dsr_raw["sr_variance_source"] = (
+                    "max(cross-variant dispersion, null SR-sampling proxy)"
+                    if sr_var_raw else "null SR-sampling proxy")
+                dsr_raw["verdict"] = (
+                    "SURVIVES multiple-testing (DSR≥0.95)" if dsr_raw["dsr"] >= 0.95
+                    else "MARGINAL (0.90≤DSR<0.95)" if dsr_raw["dsr"] >= 0.90
+                    else "FAILS multiple-testing haircut (DSR<0.90)")
+                dsr_raw["note"] = (
+                    "DSR on the RAW (ungated) series — pure engine without override contamination. "
+                    "Pre-gate figure (0.9965) retired; this is the fresh dual-track compute "
+                    "as of 2026-07. n_trials includes override dof_cost. RAW series.")
+                dsr_raw["effective_t"] = eff_raw if eff_raw else {"note": "raw column absent"}
+                if net_raw is not None:
+                    dsr_raw["dsr_effN"] = _dsr_with_effN(mr, net_raw.dropna(), n_declared, sr_var_raw)
+            report["multiple_testing_raw"] = dsr_raw or {"dsr": None, "verdict": "insufficient data"}
+
         report["trial_log"] = {
             "asof": str(df.index.max().date()),
             "n_trials_config": n_trials,
@@ -715,9 +839,10 @@ def main() -> int:
                 "priors, not causal proofs. Sizing authority flows solely through the DSR-gated "
                 "allocation backtest, whose N these signal families inflate via n_trials."
             ),
-            "note": ("Point-in-time trial ledger (overwritten each run). n_trials_declared is "
-                     "an upper-bound count of independent strategy configs explored across the "
-                     "hunt, used to deflate the headline Sharpe. Raise it as you try more."),
+            "note": ("Point-in-time trial ledger (overwritten each run). n_trials_declared = "
+                     "n_trials_config (upper-bound of configs explored) + sum(dof_cost) across "
+                     "registered overrides. Raise n_trials_config as you try more; each new "
+                     "override must declare its dof_cost, which is ADDED here."),
         }
 
     for sig in ("momentum_state", "risk_regime", "structure_state", "market_mode", "alt_cycle_leader"):
@@ -844,7 +969,7 @@ def _summary(report: dict) -> str:
             cols = "  ".join(f"{k}={r[k]}" for k in r if k not in ("band",))
             L.append(f"     {r['band']:10s} {cols}")
     _cb = next(iter(report["allocation"].values()), {}).get("cost_bps", 0)
-    L.append(f"\nALLOCATION BACKTEST vs HODL (NET of {_cb}bps one-way cost):")
+    L.append(f"\nALLOCATION BACKTEST vs HODL — GATED (NET of {_cb}bps one-way cost):")
     for v, m in report["allocation"].items():
         L.append(f"  {v:13s} CAGR {m['cagr']:>6}% net (gross {m.get('cagr_gross')}%, "
                  f"drag {m.get('cost_drag_pp')}pp; HODL {m['hodl_cagr']}%)  "
@@ -852,12 +977,31 @@ def _summary(report: dict) -> str:
                  f"MaxDD {m['maxdd']}% (HODL {m['hodl_maxdd']}%)  "
                  f"inMkt {m['time_in_market']}%  turn {m.get('turnover_annual')}x/yr  "
                  f"xHODL {m['final_vs_hodl']}")
+    if report.get("allocation_raw"):
+        L.append(f"\nALLOCATION BACKTEST vs HODL — RAW/ungated (NET of {_cb}bps one-way cost):")
+        for v, m in report["allocation_raw"].items():
+            L.append(f"  {v:13s} CAGR {m['cagr']:>6}% net  "
+                     f"Sharpe {m['sharpe']} (HODL {m['hodl_sharpe']})  "
+                     f"MaxDD {m['maxdd']}%  xHODL {m['final_vs_hodl']}")
     mt = report.get("multiple_testing")
     if mt and mt.get("dsr") is not None:
-        L.append(f"\nDEFLATED SHARPE [{mt['selected_variant']}]: DSR={mt['dsr']}  "
+        effN = mt.get("dsr_effN") or {}
+        L.append(f"\nDEFLATED SHARPE (GATED) [{mt['selected_variant']}]: DSR={mt['dsr']}  "
                  f"(SR {mt['sr_annual']} ann vs haircut SR0 {mt['sr0_annual']} ann; "
                  f"N={mt['n_trials']} trials, T={mt['T']}d, skew={mt['skew']}, kurt={mt['kurt']})")
         L.append(f"  => {mt['verdict']}")
+        if effN:
+            L.append(f"  dsr_effN={effN.get('dsr_effN')} (T_eff={effN.get('T_eff')} vs T_raw={effN.get('T_raw')}) "
+                     f"rho_sum_K20={effN.get('rho_sum_K20')}")
+    mt_raw = report.get("multiple_testing_raw")
+    if mt_raw and mt_raw.get("dsr") is not None:
+        effN_r = mt_raw.get("dsr_effN") or {}
+        L.append(f"\nDEFLATED SHARPE (RAW/ungated) [{mt_raw['selected_variant']}]: DSR={mt_raw['dsr']}  "
+                 f"(SR {mt_raw['sr_annual']} ann vs haircut SR0 {mt_raw['sr0_annual']} ann; "
+                 f"N={mt_raw['n_trials']} trials, T={mt_raw['T']}d)")
+        L.append(f"  => {mt_raw['verdict']}")
+        if effN_r:
+            L.append(f"  dsr_effN={effN_r.get('dsr_effN')} (T_eff={effN_r.get('T_eff')} vs T_raw={effN_r.get('T_raw')})")
     L.append("\nWHIPSAW (state flips < max_days):")
     for s, w in report["whipsaw"].items():
         L.append(f"  {s:18s} {w['changes']:4d} changes, {w['pct']}% whipsaw")
@@ -924,16 +1068,23 @@ def _write_markdown(report: dict) -> None:
         t = pd.DataFrame(e["full"])
         lines.append(t.to_markdown(index=False))
     _cb = next(iter(report["allocation"].values()), {}).get("cost_bps", 0)
-    lines.append(f"\n## Allocation backtest vs HODL (NET of {_cb}bps one-way cost)\n")
+    lines.append(f"\n## Allocation backtest vs HODL — GATED series (NET of {_cb}bps one-way cost)\n")
     lines.append(f"`cagr` is net of transaction cost (the honest headline); `cagr_gross` "
                  f"and `cost_drag_pp` show the cost bite, `turnover_annual` the one-way "
-                 f"turnover/yr driving it.\n")
+                 f"turnover/yr driving it. **GATED** = final live behavior (midterm blackout active).\n")
     cols = ["cagr", "cagr_gross", "cost_drag_pp", "hodl_cagr", "sharpe", "hodl_sharpe",
             "sortino", "hodl_sortino", "maxdd", "hodl_maxdd", "time_in_market",
             "turnover_annual", "final_vs_hodl"]
     at = pd.DataFrame(report["allocation"]).T
     at = at[[c for c in cols if c in at.columns]]
     lines.append(at.to_markdown())
+    if report.get("allocation_raw"):
+        lines.append(f"\n## Allocation backtest vs HODL — RAW (ungated) series\n")
+        lines.append(f"Pure engine without midterm-blackout override. Pre-gate figures retired as of "
+                     f"2026-07; fresh dual-track compute (W1 N7).\n")
+        at_raw = pd.DataFrame(report["allocation_raw"]).T
+        at_raw = at_raw[[c for c in cols if c in at_raw.columns]]
+        lines.append(at_raw.to_markdown())
     ab = report.get("allocation_bootstrap")
     if ab:
         lines.append(f"\n**Block-bootstrap 95% CI** [{ab['variant']}, {ab['B']} resamples, "
@@ -973,21 +1124,48 @@ def _write_markdown(report: dict) -> None:
             lines.append(f"| {p['a']} | {p['b']} | {p['corr']} |")
     mt = report.get("multiple_testing")
     if mt and mt.get("dsr") is not None:
-        lines.append("\n## Deflated Sharpe Ratio (multiple-testing haircut)\n")
-        lines.append(f"**{mt['verdict']}** — shipped variant `{mt['selected_variant']}`.\n")
-        lines.append(f"- DSR — P(true Sharpe > 0) after deflation: **{mt['dsr']}**")
+        lines.append("\n## Deflated Sharpe Ratio — GATED series (multiple-testing haircut)\n")
+        lines.append(f"**{mt['verdict']}** — shipped variant `{mt['selected_variant']}` (GATED / live behavior).\n")
+        lines.append(f"- DSR (gated) — P(true Sharpe > 0): **{mt['dsr']}**")
         lines.append(f"- Observed Sharpe {mt['sr_annual']} ann ({mt['sr_daily']}/day); "
                      f"haircut threshold SR0 {mt['sr0_annual']} ann")
-        lines.append(f"- N={mt['n_trials']} trials (upper-bound) · T={mt['T']}d · "
+        lines.append(f"- N={mt['n_trials']} trials (upper-bound, incl. override dof_cost) · T={mt['T']}d · "
                      f"skew={mt['skew']} · kurt={mt['kurt']} · SR-variance: {mt['sr_variance_source']}")
+        effN = mt.get("dsr_effN") or {}
+        if effN:
+            lines.append(f"- **Effective-N haircut**: T_eff={effN.get('T_eff')} vs raw T={effN.get('T_raw')} "
+                         f"(rho_sum_K20={effN.get('rho_sum_K20')}); dsr_effN={effN.get('dsr_effN')} "
+                         f"(dsr_legacy={effN.get('dsr_legacy')}). Block-bootstrap refinement: W5.")
         lines.append(f"\n> {mt['note']}")
+    mt_raw = report.get("multiple_testing_raw")
+    if mt_raw and mt_raw.get("dsr") is not None:
+        lines.append("\n## Deflated Sharpe Ratio — RAW (ungated) series\n")
+        lines.append(f"**{mt_raw['verdict']}** — variant `{mt_raw['selected_variant']}` (RAW / pure engine).\n")
+        lines.append(f"> Pre-gate figure (0.9965) retired as of 2026-07. This is the fresh dual-track compute. "
+                     f"Raw series excludes midterm-blackout contamination.")
+        lines.append(f"- DSR (raw) — P(true Sharpe > 0): **{mt_raw['dsr']}**")
+        lines.append(f"- Observed Sharpe {mt_raw['sr_annual']} ann; SR0 {mt_raw['sr0_annual']} ann")
+        lines.append(f"- N={mt_raw['n_trials']} trials · T={mt_raw['T']}d · "
+                     f"skew={mt_raw['skew']} · kurt={mt_raw['kurt']}")
+        effN_r = mt_raw.get("dsr_effN") or {}
+        if effN_r:
+            lines.append(f"- **Effective-N haircut**: T_eff={effN_r.get('T_eff')}, "
+                         f"dsr_effN={effN_r.get('dsr_effN')} (dsr_legacy={effN_r.get('dsr_legacy')})")
+        lines.append(f"\n> {mt_raw['note']}")
     tl = report.get("trial_log")
     if tl:
-        lines.append("\n## Trial log\n")
-        lines.append(f"As-of {tl['asof']}: **{tl['n_trials_declared']}** declared independent "
-                     f"trials (upper-bound); {tl['n_signal_families']} signal families screened; "
+        lines.append("\n## Trial log (N7 — n_trials breakdown)\n")
+        lines.append(f"As-of {tl['asof']}: "
+                     f"**n_trials_declared={tl['n_trials_declared']}** = "
+                     f"n_trials_config={tl['n_trials_config']} (config upper-bound) "
+                     f"+ override dof_cost (registry).")
+        if tl.get("overrides_dof"):
+            for oid, cost in tl["overrides_dof"].items():
+                lines.append(f"  - override `{oid}`: dof_cost={cost}")
+        lines.append(f"{tl['n_signal_families']} signal families screened; "
                      f"allocation variants: {', '.join(tl['allocation_variants_tested'])}; "
                      f"transaction cost {tl['cost_bps_one_way']}bps one-way.")
+        lines.append(f"\n> {tl['note']}")
     ep = report.get("ensemble_promotion")
     if ep and ep.get("net_sharpe"):
         lines.append("\n## Ensemble capstone — does combining beat the heuristic?\n")

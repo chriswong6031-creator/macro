@@ -1,7 +1,7 @@
 """TRACK-A verification of the BTC Vector `optimal` allocation (signal_lab SCORED claim).
 
 READ-ONLY research. Re-runs the LIVE engine (engine/btc_signals.compute_all →
-alloc_optimal) over 2015-01..present net of 10bps and computes EVERY gate the
+alloc_optimal_raw) over 2015-01..present net of 10bps and computes EVERY gate the
 SCORED tier requires, reusing engine/validation.py primitives:
 
   - allocation backtest vs HODL (Sharpe / MaxDD payoff = the SCORED claim)
@@ -12,6 +12,16 @@ SCORED tier requires, reusing engine/validation.py primitives:
   - beats the DUMB baseline (200dma long/flat, buy&hold)
   - honest-N: count INDEPENDENT crises, not raw rows
   - direction = coin-flip (Brier) — reported as the NON-claim
+
+PROVENANCE NOTE (W1 N7 decontamination):
+  The SCORED re-run grades the RAW series (`alloc_optimal_raw` from compute_all —
+  pure engine without any override contamination).  The gated series (`alloc_optimal`)
+  is printed as a labeled COMPARISON line only, never the headline.  This matters
+  because compute_all() now emits dual columns via engine/btc_overrides.apply():
+    alloc_optimal      = final (midterm-blackout applied — 0% through 2026)
+    alloc_optimal_raw  = pure engine output (what the signals actually want)
+  Grading the gated series would certify a strategy that is 0% for 10+ months of
+  the backtest window due to a human override, not signal quality.
 
 Prints results + writes reports/btc-vector-optimal-phase0.md.
 """
@@ -85,36 +95,64 @@ def main() -> int:
     df = btc_signals.compute_all()
     df = df.loc[df.index >= pd.Timestamp(start)]
     close = df["close"].astype(float)
-    alloc = df["alloc_optimal"].astype(float)
-    print(f"  engine rows in window: {len(df)}  ({df.index.min().date()} -> {df.index.max().date()})")
 
-    # ---- 1. headline backtest ------------------------------------------------
+    # W1 N7 decontamination: SCORED run must use the RAW (ungated) series.
+    # The gated series is printed as a labeled comparison — not the headline.
+    if "alloc_optimal_raw" not in df.columns:
+        raise RuntimeError(
+            "alloc_optimal_raw column missing from compute_all() output. "
+            "W0 must be merged before running this script. "
+            "Check engine/btc_overrides.py::apply() is wired into compute_all()."
+        )
+    alloc = df["alloc_optimal_raw"].astype(float)          # SCORED headline: RAW
+    alloc_gated = df["alloc_optimal"].astype(float)        # comparison only
+    print(f"  engine rows in window: {len(df)}  ({df.index.min().date()} -> {df.index.max().date()})")
+    print(f"  GRADING: alloc_optimal_raw (pure engine; W1 N7 decontamination)")
+
+    # ---- gated comparison (labeled, not headline) ----------------------------
+    gated_full = summarize(close, alloc_gated, cost_bps)
+    print(f"\n[0] GATED COMPARISON (alloc_optimal — midterm blackout applied; NOT headline)")
+    print(f"  Sharpe {gated_full['sharpe']:.3f}  MaxDD {gated_full['maxdd']*100:.1f}%  "
+          f"CAGR {gated_full['cagr']*100:.1f}%  (gated 0% through 2026 midterm window)")
+
+    # ---- 1. headline backtest (RAW series) -----------------------------------
     full = summarize(close, alloc, cost_bps)
     dd_cut = full["hodl_maxdd"] / full["maxdd"]  # how many x the DD is cut
-    print("\n[1] HEADLINE (net of cost)")
+    print("\n[1] HEADLINE — RAW/ungated (net of cost; this is the SCORED read)")
     print(f"  Sharpe   strat {full['sharpe']:.3f}  vs HODL {full['hodl_sharpe']:.3f}  "
-          f"(spec ~1.41 vs ~1.03)")
+          f"(prior spec ~1.41 vs ~1.03 — pre-gate figure retired 2026-07)")
     print(f"  MaxDD    strat {full['maxdd']*100:.1f}%  vs HODL {full['hodl_maxdd']*100:.1f}%  "
-          f"(spec ~-42.8 vs -83.8;  >=2x cut? cut={dd_cut:.2f}x)")
+          f"(prior spec ~-42.8 vs -83.8;  >=2x cut? cut={dd_cut:.2f}x)")
     print(f"  CAGR     strat {full['cagr']*100:.1f}%  vs HODL {full['hodl_cagr']*100:.1f}%")
     print(f"  final/HODL {full['final_vs_hodl']:.2f}  time-in-mkt {full['time_in_market']*100:.1f}%  "
           f"turnover/yr {full['turnover_annual']:.1f}")
 
-    # ---- 2. Deflated Sharpe --------------------------------------------------
-    # cross-variant SR dispersion floor (same recipe calibrate_vector uses)
-    variants = config.load()["vector"]["allocation"]["variants"]
+    # ---- 2. Deflated Sharpe (RAW series) ------------------------------------
+    # cross-variant SR dispersion floor (same recipe calibrate_vector uses).
+    # Use RAW variants to avoid gate contaminating the SR-variance estimate.
+    full_cfg = config.load()
+    overrides_cfg = full_cfg.get("vector", {}).get("overrides", []) or []
+    n_trials_overrides = sum(int(o.get("dof_cost", 0)) for o in overrides_cfg)
+    n_trials_total = n_trials + n_trials_overrides
+    variants = full_cfg["vector"]["allocation"]["variants"]
     daily_srs = []
     for v in variants:
-        s = summarize(close, df[f"alloc_{v}"].astype(float), cost_bps)
-        daily_srs.append(s["sharpe_daily"])
+        col_r = f"alloc_{v}_raw"
+        if col_r in df.columns:
+            s = summarize(close, df[col_r].astype(float), cost_bps)
+        else:
+            s = summarize(close, df[f"alloc_{v}"].astype(float), cost_bps)
+        if s["sharpe_daily"] is not None:
+            daily_srs.append(s["sharpe_daily"])
     sr_var = float(np.var(daily_srs, ddof=1)) if len(daily_srs) > 1 else None
     dsr50 = deflated_sharpe(full["sharpe_daily"], full["skew"], full["kurt"],
                             full["n_obs"], 50, sr_variance=sr_var, trading_year=TRADING_YEAR)
     dsrN = deflated_sharpe(full["sharpe_daily"], full["skew"], full["kurt"],
-                           full["n_obs"], n_trials, sr_variance=sr_var, trading_year=TRADING_YEAR)
-    print("\n[2] DEFLATED SHARPE (multiple-testing haircut)")
+                           full["n_obs"], n_trials_total, sr_variance=sr_var, trading_year=TRADING_YEAR)
+    print("\n[2] DEFLATED SHARPE (multiple-testing haircut; RAW series)")
     print(f"  n_trials=50  DSR={dsr50['dsr']:.4f}  SR0_ann={dsr50['sr0_annual']:.2f}  -> {dsr_verdict(dsr50['dsr'])}")
-    print(f"  n_trials={n_trials} (live cfg)  DSR={dsrN['dsr']:.4f}  SR0_ann={dsrN['sr0_annual']:.2f}  -> {dsr_verdict(dsrN['dsr'])}")
+    print(f"  n_trials={n_trials_total} (live cfg {n_trials} + override dof {n_trials_overrides})  "
+          f"DSR={dsrN['dsr']:.4f}  SR0_ann={dsrN['sr0_annual']:.2f}  -> {dsr_verdict(dsrN['dsr'])}")
     print(f"  skew={dsrN['skew']}  kurt(Pearson)={dsrN['kurt']}  T={dsrN['T']}")
 
     # ---- 3. block-bootstrap CI ----------------------------------------------
@@ -233,11 +271,24 @@ def main() -> int:
     # ---- write report -------------------------------------------------------
     lines = []
     lines.append("# BTC Vector `optimal` — Track-A SCORED verification (phase-0)\n")
-    lines.append(f"Re-ran the LIVE engine (`engine/btc_signals.compute_all` → `alloc_optimal`) over "
+    lines.append(
+        f"**W1 N7 decontamination**: grading `alloc_optimal_raw` (pure engine) as the headline. "
+        f"Pre-gate figures (0.9965 DSR, Sharpe 1.44) were computed before the midterm-blackout "
+        f"override was wired into compute_all — they certified a strategy that no longer exists. "
+        f"Fresh dual-track compute as of 2026-07. `alloc_optimal` (gated) shown as comparison only.\n"
+    )
+    lines.append(f"Re-ran the LIVE engine (`engine/btc_signals.compute_all` → `alloc_optimal_raw`) over "
                  f"{df.index.min().date()}..{df.index.max().date()}, net of {cost_bps}bps one-way. "
                  f"NO rebuild — same code path build_vector ships.\n")
-    lines.append("## Headline\n")
-    lines.append("| | strat | HODL | spec |")
+    lines.append("## Gated comparison (alloc_optimal — midterm blackout active)\n")
+    lines.append("| | gated strat | HODL |")
+    lines.append("|---|--:|--:|")
+    lines.append(f"| Sharpe | {gated_full['sharpe']:.2f} | {gated_full['hodl_sharpe']:.2f} |")
+    lines.append(f"| MaxDD | {gated_full['maxdd']*100:.1f}% | {gated_full['hodl_maxdd']*100:.1f}% |")
+    lines.append(f"| CAGR | {gated_full['cagr']*100:.1f}% | {gated_full['hodl_cagr']*100:.1f}% |")
+    lines.append(f"\n*Gated is 0% through the 2026 midterm-blackout window by human override, not signal.*\n")
+    lines.append("## Headline — RAW (ungated, SCORED)\n")
+    lines.append("| | RAW strat | HODL | prior spec (retired) |")
     lines.append("|---|--:|--:|---|")
     lines.append(f"| Sharpe | {full['sharpe']:.2f} | {full['hodl_sharpe']:.2f} | ~1.41 vs ~1.03 |")
     lines.append(f"| MaxDD | {full['maxdd']*100:.1f}% | {full['hodl_maxdd']*100:.1f}% | ~-42.8 vs -83.8 |")
@@ -245,8 +296,9 @@ def main() -> int:
     lines.append(f"| DD cut | {dd_cut:.2f}x | | >=2x |")
     lines.append(f"| final/HODL | {full['final_vs_hodl']:.2f} | | |\n")
     lines.append("## Gates\n")
-    lines.append(f"- **DSR** n=50: **{dsr50['dsr']:.4f}** ({dsr_verdict(dsr50['dsr'])}); "
-                 f"n={n_trials} live cfg: {dsrN['dsr']:.4f}. SR0_ann={dsr50['sr0_annual']:.2f}, "
+    lines.append(f"- **DSR (RAW)** n=50: **{dsr50['dsr']:.4f}** ({dsr_verdict(dsr50['dsr'])}); "
+                 f"n={n_trials_total} (live cfg {n_trials} + override dof {n_trials_overrides}): "
+                 f"{dsrN['dsr']:.4f}. SR0_ann={dsr50['sr0_annual']:.2f}, "
                  f"skew={dsr50['skew']}, kurt={dsr50['kurt']}, T={dsr50['T']}.")
     lines.append(f"- **Block-bootstrap**: Sharpe CI {boot['sharpe_ci']}, MaxDD CI% {boot['maxdd_ci_pct']}, "
                  f"P(Sharpe>0)={boot['sharpe_gt0_prob']} (lower CI>0: {boot_lower_pos}).")
@@ -263,8 +315,9 @@ def main() -> int:
                  f"(daily rows={full['n_obs']} overstate the effective N for the claim).")
     lines.append(f"- **Direction (NON-claim)**: P(7d up|long)={p_up_long:.3f} vs base {base_up:.3f} — coin-flip.\n")
     lines.append("## Verdict\n")
-    lines.append(f"SCORED core gates pass: **{scored_core}**. "
-                 "The SCORED claim is the drawdown/Sharpe payoff ONLY; direction is a coin-flip and not claimed.")
+    lines.append(f"SCORED core gates pass (RAW series): **{scored_core}**. "
+                 "The SCORED claim is the drawdown/Sharpe payoff ONLY; direction is a coin-flip and not claimed. "
+                 "Pre-gate figures (DSR 0.9965, Sharpe 1.44) retired 2026-07; fresh dual-track as of this run.")
     with open("reports/btc-vector-optimal-phase0.md", "w") as f:
         f.write("\n".join(lines) + "\n")
     print("\nwrote reports/btc-vector-optimal-phase0.md")
