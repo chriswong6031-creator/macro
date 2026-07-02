@@ -47,6 +47,17 @@ log = logging.getLogger(__name__)
 SHADOW_GRID: dict[str, list] = {
     "lang_z_cutoff":  [1.0, 1.5, 2.0],
     "broad_hi_pctile": [70.0, 80.0, 90.0],
+    # W4a (PROVISIONAL) heat_threshold candidates for the convergence board.
+    # The live value is 0.40 (engine/foresight_convergence.HEAT_HOT), set as
+    # provisional pending shadow calibration.  These candidates accrue evidence
+    # so the threshold can be promoted when the forward evidence clears the BY-FDR
+    # bar.  NOTE: heat_threshold is a DISPLAY threshold on the convergence board,
+    # not a stage parameter — wiring it into _compute_stage_for_param would require
+    # a convergence-board recompute (not a stage recompute), so it is registered here
+    # as the NEXT registry entry but NOT yet wired into _stage_under_candidate.
+    # When wired, the shadow log rows should carry "type": "heat" to distinguish them
+    # from the stage-level shadow rows already in shadow_log.jsonl.
+    # "heat_threshold": [0.30, 0.40, 0.50],   # NEXT entry — not yet wired
 }
 
 # Live values (imported from the engines that own them — never duplicated here)

@@ -287,38 +287,67 @@
   </div>
   {% endif %}
 
-  {# ---- CONVERGENCE: the "what's heating up early" board (the neural web) ---- #}
+  {# ---- CONVERGENCE: the "what's heating up early" board (the neural web) — W4a rebuild ---- #}
   {% if convergence and convergence.ranked %}
   <div class="fx-web">
     <div class="fx-web-h">
       <span class="fx-web-t">🔥 {{ t('What\'s heating up early', '正在早期升温的') }}</span>
-      <span class="fx-web-sub">{{ t('independent leading surfaces converging', '独立领先面在何处共振') }} · {{ t('max', '最多') }} {{ convergence.max_signals }}</span>
+      <span class="fx-web-sub">{{ t('distinct data sources converging', '独立数据源共振') }} · {{ t('max', '最多') }} {{ convergence.max_sources or convergence.max_signals }} {{ t('sources', '数据源') }}</span>
     </div>
+
+    {# ---- meta-driver cards (§3.5): ≥3 co-heating same-cluster themes ---- #}
+    {% if convergence.meta_drivers %}
+    <div style="margin-bottom:10px;">
+      {% for md in convergence.meta_drivers %}
+      <div class="fx-hot" style="--c:var(--warn); margin-bottom:7px;">
+        <div class="fx-hot-top">
+          <span class="fx-hot-nm">{{ t(md.cluster_name, md.cluster_name) }}</span>
+          <span class="fx-hot-heat" style="font-size:15px;">{{ t('meta-driver', '元驱动') }}</span>
+        </div>
+        <div class="fx-hot-sig">
+          {% for src in md.shared_sources %}<span class="fx-sig">{{ src.replace('_',' ') }}</span>{% endfor %}
+        </div>
+        <div class="fx-hot-meta">
+          {{ md.n_members }} {{ t('themes', '主题') }}: {{ md.member_names|join(' · ') }} ·
+          {{ t('combined heat', '综合热度') }} {{ (md.combined_heat*100)|round|int }} ·
+          {{ t('shared sources', '共享数据源') }}: {{ md.shared_sources|join(', ') if md.shared_sources else t('none', '无') }}
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:5px;font-style:italic;">{{ md.driver_sentence }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
     {% if convergence.heating_up %}
     <div class="fx-web-grid">
       {% for it in convergence.heating_up %}
       <div class="fx-hot stg-{{ it.stage }}">
         <div class="fx-hot-top"><span class="fx-hot-nm">{{ it.name }}</span><span class="fx-hot-heat">{{ (it.heat*100)|round|int }}</span></div>
-        <div class="fx-hot-sig">{% for s in it.signals %}<span class="fx-sig">{{ s.replace('_',' ') }}</span>{% endfor %}</div>
-        <div class="fx-hot-meta">{{ it.n_signals }}/{{ convergence.max_signals }} {{ t('surfaces', '面') }} · {{ t('earliness', '早期度') }} {{ (it.earliness*100)|round|int }}%{% if it.physical_confirmed %} · ✅ {{ t('physical', '物理') }}{% endif %}</div>
+        <div class="fx-hot-sig">{% for s in (it.lit_sources or it.signals) %}<span class="fx-sig">{{ s.replace('_',' ') }}</span>{% endfor %}</div>
+        <div class="fx-hot-meta">
+          {{ it.n_lit or it.n_signals }}/{{ it.n_available or convergence.max_sources }} {{ t('sources lit', '数据源点亮') }}
+          {%- if it.earliness is not none %} · {{ t('earliness', '早期度') }} {{ (it.earliness*100)|round|int }}%{% elif it.earliness_absent %} · {{ t('earliness absent', '早期度缺失') }}{% endif %}
+          {%- if it.physical_confirmed %} · ✅ {{ t('physical', '物理') }}{% endif %}
+        </div>
       </div>
       {% endfor %}
     </div>
     {% else %}
     <div class="fx-web-none">{{ t(
-      'Nothing is converging hot right now — no theme pairs multiple independent leading surfaces with an un-priced (early) revision read and a physical correlate. That is an honest read, not a gap: when the leading signals genuinely stack up early, they surface here first. Top partial convergences below.',
-      '目前没有强共振——没有任何主题同时具备多个独立领先面、尚未被定价（早期）的预期读数与物理佐证。这是诚实读数而非缺漏：当领先信号真正在早期叠加时，会首先在此出现。下方为当前部分共振。') }}</div>
+      'Nothing is converging hot right now — no theme clears the provisional 40% heat threshold across available data sources. Dark sources are excluded from the denominator (no outage penalty). That is an honest read: when independent leading sources genuinely stack up early, they surface here first. Top partial convergences below.',
+      '目前没有强共振——没有主题在可用数据源中超过暂定40%热度门槛。暗数据源已从分母中排除（无停机惩罚）。这是诚实读数：当独立领先源真正在早期叠加时，会首先在此出现。下方为当前部分共振。') }}</div>
     <div class="fx-web-partial">
-      {% for it in convergence.ranked[:6] %}{% if it.n_signals >= 1 %}
-      <span class="fx-pc" title="{{ it.signals|join(', ') }}"><b>{{ it.name }}</b> · {{ it.n_signals }} {{ t('surface', '面') }}{{ 's' if it.n_signals > 1 else '' }} · {{ t('heat', '热度') }} {{ (it.heat*100)|round|int }}</span>
+      {% for it in convergence.ranked[:6] %}{% if (it.n_lit or it.n_signals or 0) >= 1 %}
+      <span class="fx-pc" title="{{ (it.lit_sources or it.signals)|join(', ') }}"><b>{{ it.name }}</b> · {{ it.n_lit or it.n_signals }}/{{ it.n_available or convergence.max_sources }} {{ t('sources', '源') }} · {{ t('heat', '热度') }} {{ (it.heat*100)|round|int }}</span>
       {% endif %}{% endfor %}
     </div>
     {% endif %}
     <div class="fx-web-foot">{{ t(
-      'HEAT = independent leading surfaces (physical bottleneck · demand · guidance · insider/award · subsector scarcity · discovery echo) converging on one theme, weighted by earliness (inverse to how priced the revisions already are) and gated by a physical correlate. Multi-surface agreement raises precision; earliness keeps it ahead of the crowd. Not a return forecast — forward-graded like every leg.',
-      '热度＝独立领先面（物理瓶颈·需求·指引·内部人/中标·子行业短缺·发现回声）在单一主题上的共振，按早期度（与预期被定价程度相反）加权，并以物理佐证为门槛。多面一致提升精度；早期度使其领先人群。非收益预测——与每条腿一样前瞻评分。') }}</div>
+      'W4a: HEAT = n_lit_sources / n_available_sources × earliness. 5 distinct data sources (physical · demand · guidance · altdata · edgar-scarcity — the old subsector-scarcity + discovery-echo counted the same EDGAR parquet twice; now one source). Dark sources leave the denominator — no outage penalty. Earliness from attention engine (Q3); absent below 2 usable legs → neutral 0.5. Numeric physical bonus ×1.15. Threshold 0.40 PROVISIONAL pending shadow calibration.',
+      'W4a：热度＝点亮数据源数/可用数据源数×早期度。5个独立数据源（物理·需求·指引·替代数据·edgar稀缺——原子行业稀缺+发现回声使用同一EDGAR数据集，现计为一个）。暗数据源排除在分母外。早期度来自注意力引擎（Q3）；少于2个可用腿时缺失→中性0.5。数字物理奖励×1.15。阈值0.40暂定，待影子校准。') }}</div>
 
     {# ---- AI analyst reasoning over the convergence (lights up when a credential is present) ---- #}
+    {# W4b owns this block — no changes here per worktree isolation rule #}
     {% if analyst and analyst.regime_read %}
     <div class="fx-ai">
       <div class="fx-ai-h">🧠 {{ t('AI analyst read', 'AI 分析师解读') }}{% if monitor and (monitor.n_broken or monitor.n_weakening) %} <span class="fx-ai-mon">{% if monitor.n_broken %}{{ monitor.n_broken }} {{ t('thesis broken', '论点失效') }}{% endif %}{% if monitor.n_weakening %}{% if monitor.n_broken %} · {% endif %}{{ monitor.n_weakening }} {{ t('weakening', '走弱') }}{% endif %}</span>{% endif %}</div>
@@ -367,13 +396,22 @@
     {% endif %}{% endfor %}
   </div>
 
-  {# ---- sizing & concentration (the posture overlay — where HBM won / ARK lost) ---- #}
+  {# ---- sizing & concentration — W4a: ENB line + cluster dilution (P2-C) ---- #}
   {% if cascade.sizing %}
   <div class="fx-sizing {{ 'concentrated' if cascade.sizing.concentration_flag else '' }}">
     <span class="fx-sizing-k">⚖ {{ t('Sizing & concentration', '仓位与集中度') }}</span>
     <span class="fx-sizing-v">{{ cascade.sizing.effective_note }}</span>
     {% if cascade.sizing.n_derisk %}<span class="fx-sizing-derisk">⚠️ {{ cascade.sizing.n_derisk }} {{ t('forced de-risk', '强制减仓') }}</span>{% endif %}
   </div>
+  {%- if cascade.sizing.enb_note %}
+  <div class="fx-sizing" style="border-left-color:var(--muted);font-size:11.5px;padding:6px 14px;margin-top:4px;">
+    <span class="fx-sizing-k">📐 {{ t('ENB', 'ENB') }}</span>
+    <span class="fx-sizing-v" style="color:var(--muted);">{{ cascade.sizing.enb_note }}</span>
+    {%- if cascade.sizing.concentration_flag %}
+    <span style="color:var(--warn);font-weight:700;font-size:11px;">⚠ {{ t('concentrated', '集中') }}</span>
+    {%- endif %}
+  </div>
+  {%- endif %}
   {% endif %}
 
   {# ---- reading guide ---- #}
