@@ -1546,7 +1546,11 @@ def macro_overlay(inputs: dict, cfg: dict) -> pd.DataFrame:
     drivers = {}
     walcl, rrp, tga = s("walcl"), s("rrp"), s("tga")
     if walcl is not None and tga is not None:
-        netliq = walcl / 1000 - (rrp.fillna(0) if rrp is not None else 0) - tga / 1000
+        # Canonical 3-term net liquidity (audit #12/#28) — WALCL & TGA millions→billions,
+        # RRP already billions. The guard (needs walcl AND tga) is kept: the BTC vector
+        # only arms this leg when both spine components are present.
+        from engine import canon
+        netliq = canon.net_liquidity_bn(walcl / 1000, rrp, tga / 1000)
         out["net_liquidity_bn"] = netliq
         roc = netliq.pct_change(cfg["netliq_roc_window_d"])
         out["net_liq_roc"] = roc * 100

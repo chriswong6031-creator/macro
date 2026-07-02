@@ -26,7 +26,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from engine import forward_dist, index_direction, indicators, velocity, vol_forecast
+from engine import canon, forward_dist, index_direction, indicators, velocity, vol_forecast
 
 # (lo_td, hi_td, representative_window_td) — ranges justified in research/ANTICIPATION_ENGINE.md
 HORIZONS = {"short": (1, 10, 5), "medium": (21, 63, 42), "long": (126, 252, 189)}
@@ -81,30 +81,15 @@ def name_direction_scored(gate: dict | None = None) -> bool:
 
 
 def _net_liquidity_bn(idx: pd.Index) -> dict[str, pd.Series]:
-    """The CANONICAL 3-term Net Fed Liquidity in BILLIONS, mirroring
-    engine.inputs.py:279 (`walcl_bn - rrp_bn - tga_bn`). Returns the three scaled
-    components AND the composite so the mixed-unit invariant is directly testable.
+    """The CANONICAL 3-term Net Fed Liquidity in BILLIONS — now delegated to
+    ``engine.canon`` (audit #12/#28: one source of truth).  The #808 fix that inlined
+    the 3-term billions formula here has MIGRATED to canon; this thin wrapper keeps the
+    call site and the components-return shape so the Phase-0 harness needs no change.
 
-    Unit contract (the bug this fixes, audit #28):
-      * WALCL is FRED MILLIONS -> /1000 => billions. The old code used /1e6
-        (TRILLIONS); subtracting a billions-scale RRP then annihilated the
-        balance-sheet trend, reducing `m_netliq_vel` to a pure -RRP-velocity proxy.
-      * RRP (RRPONTSYD) is ALREADY billions -> no scaling.
-      * TGA (Treasury General Account) is millions -> /1000 => billions, and was
-        previously DROPPED entirely.
-    Missing RRP/TGA history contributes 0 (must not annihilate netliq pre-history).
-    """
-    F = Path("data/fred")
-    R = lambda s: s.reindex(idx).ffill()
-    col0 = lambda p: (lambda d: d[d.columns[0]])(pd.read_parquet(p))
-    walcl_bn = R(col0(F / "WALCL.parquet")) / 1000.0
-    rrp_bn = R(col0(F / "RRPONTSYD.parquet")).fillna(0.0)
-    try:
-        tga_bn = (R(col0(Path("data/treasury/tga.parquet"))) / 1000.0).fillna(0.0)
-    except Exception:
-        tga_bn = pd.Series(0.0, index=idx)
-    return {"walcl_bn": walcl_bn, "rrp_bn": rrp_bn, "tga_bn": tga_bn,
-            "netliq_bn": walcl_bn - rrp_bn - tga_bn}
+    See ``engine.canon.load_net_liquidity_components`` for the full unit contract (WALCL
+    millions→billions, RRP already billions, TGA millions→billions and no longer dropped)
+    and the mixed-unit invariant that fails loudly on a trillions−billions subtraction."""
+    return canon.load_net_liquidity_components(idx)
 
 
 def macro_legs_frame() -> pd.DataFrame:

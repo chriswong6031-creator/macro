@@ -1,0 +1,92 @@
+{
+ "schema": "artifact_manifest/v1",
+ "as_of": "2026-07-01",
+ "cadence_basis": "trading_calendar",
+ "note": "Per-artifact expected freshness in TRADING-calendar days. A consumer compares the artifact's as_of against `today` counting only trading days; older than expected_max_age_td \u21d2 abstain + flag (fail-closed on genuine staleness, audit #9). Benign weekend/holiday lag is NOT stale because the cadence excludes non-trading days.",
+ "artifacts": [
+  {
+   "artifact": "site/stockdata/<SYM>.json",
+   "kind": "per_stock_intel",
+   "expected_max_age_td": 2,
+   "as_of_field": "asof",
+   "consumers": [
+    "terminal:pull_macro_intel",
+    "bot:conviction"
+   ],
+   "note": "per-stock decision/conviction/gex intel; the Terminal intel bridge reads this"
+  },
+  {
+   "artifact": "site/signals/<SYM>.json",
+   "kind": "per_stock_signal",
+   "expected_max_age_td": 2,
+   "as_of_field": "asof",
+   "consumers": [
+    "terminal:chart_markers"
+   ],
+   "note": "confluence signal state + markers (BUY/SELL/cut) per stock"
+  },
+  {
+   "artifact": "site/factordata/us_standouts.json",
+   "kind": "board",
+   "expected_max_age_td": 2,
+   "as_of_field": "as_of",
+   "consumers": [
+    "bot:lenses",
+    "bot:strategist",
+    "terminal:screener"
+   ],
+   "note": "US Buy Board \u2014 sizes the autonomous book's US candidate universe"
+  },
+  {
+   "artifact": "site/factordata/china_standouts.json",
+   "kind": "board",
+   "expected_max_age_td": 3,
+   "as_of_field": "as_of",
+   "consumers": [
+    "bot:china_book"
+   ],
+   "note": "China Standout board; CN calendar has more holidays \u2192 wider cadence"
+  },
+  {
+   "artifact": "site/factordata/canada_standouts.json",
+   "kind": "board",
+   "expected_max_age_td": 2,
+   "as_of_field": "as_of",
+   "consumers": [
+    "bot:canada_book"
+   ],
+   "note": "Canada Standout board"
+  },
+  {
+   "artifact": "site/regime_timeline.json",
+   "kind": "regime",
+   "expected_max_age_td": 2,
+   "as_of_field": null,
+   "consumers": [
+    "bot:macro_risk",
+    "terminal:regime_banner"
+   ],
+   "note": "US regime/quad timeline; as_of = last entry of the `dates` array"
+  },
+  {
+   "artifact": "site/china_regime_timeline.json",
+   "kind": "regime",
+   "expected_max_age_td": 3,
+   "as_of_field": null,
+   "consumers": [
+    "bot:china_book"
+   ],
+   "note": "China regime timeline"
+  },
+  {
+   "artifact": "site/hk_regime_timeline.json",
+   "kind": "regime",
+   "expected_max_age_td": 3,
+   "as_of_field": null,
+   "consumers": [
+    "bot:hk_book"
+   ],
+   "note": "HK regime timeline"
+  }
+ ]
+}

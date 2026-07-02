@@ -65,14 +65,20 @@ def _price_rs(etf: str, lookback: int = 63):
 def _sig_credit_impulse():
     try:
         import pandas as pd
+        from engine import canon
         df = store.read("china_credit", "tsf")
         if df is None or "tsf_total" not in df.columns:
             return None
         s = pd.to_numeric(df["tsf_total"], errors="coerce").dropna()
-        roll = s.rolling(12).sum().dropna()          # 12m TSF sum
-        if len(roll) < 18:
+        if s.rolling(12).sum().dropna().shape[0] < 18:
             return None
-        impulse = roll.pct_change(6).dropna()        # 6m change of the 12m sum (the impulse)
+        # Credit-impulse LEVEL (1st-derivative) via the canon (audit #12) — the "6m chg of
+        # the 12m sum". This is a DIFFERENT series than china_strategies' credit-impulse
+        # ACCEL (2nd-derivative); the shared "credit impulse" label used to hide that.
+        # Byte-identical to the prior local.
+        impulse = canon.credit_impulse_level(s).dropna()
+        if impulse.empty:
+            return None
         cur = float(impulse.iloc[-1])
         sd = float(impulse.tail(36).std(ddof=0))
         strength = min(1.0, abs(cur) / (2 * sd)) if sd > 1e-9 else 0.4
