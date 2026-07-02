@@ -1,7 +1,7 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-07-01",
-  "generated_at": "2026-07-02T08:02:17.712699+00:00",
+  "generated_at": "2026-07-02T10:02:29.449725+00:00",
   "degraded": null,
   "notes": [
     {
@@ -10,23 +10,22 @@
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The deterministic verdict is Neutral with no clear edge; while a fresh earnings surprise (SUE z=1.02) and constructive entry signals exist, negative momentum and the Non-AI Software basket caution (drawdown gate) cap upside, suggesting no reliable outperformance relative to the market.",
+      "horizon_d": 21,
+      "thesis": "Despite a fresh SUE spike and clean quality, the engine flags no clear edge; negative momentum and a bearish non-AI software basket narrative argue for a flat relative return.",
       "evidence": [
-        "verdict: 'Neutral \u2014 no clear edge'",
-        "caution: narrative basket (Non-AI Software) below long-term trend, validated drawdown gate",
-        "selection axis: momentum z=-1.6, offsetting the fresh SUE edge",
-        "board state: FRESH BUY urgency 'now', but deep off-high (-47.4%) indicates potential value trap"
+        "verdict Neutral \u2014 no clear edge",
+        "cautions: Non-AI Software basket below trend",
+        "alpha z -1.6, selection z -0.03"
       ],
-      "dissent": "The SUE signal is only 2 days fresh, and insider buying (event-edge tier) could accumulate as the stock builds a base\u2014mean reversion from an extended drawdown might surprise.",
+      "dissent": "The +1.02 SUE only two days out may signal a fundamental surprise that has not yet been reflected, and price could reprice higher quickly.",
       "falsifier": {
-        "text": "If WDAY's total return exceeds the S&P 500 by more than 10% over the next 20 trading days, the neutral lean is invalidated.",
+        "text": "WDAY closes above $140 (decisively above its 50-day moving average) and its 20-day alpha turns positive.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-07-29",
+      "check_by": "2026-07-30",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
@@ -35,23 +34,22 @@
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The engine rates this Neutral with no edge; a stale SUE (32 days old) and strong negative momentum (z=-1.49) overwhelm the marginal revision tailwind, while the TURN SIGNALED board state lacks urgency, keeping the risk/reward symmetric.",
+      "horizon_d": 21,
+      "thesis": "Mixed signals with stale SUE and strong negative momentum; the engine sees no clear edge and lacks any positive drivers, so relative performance likely to track the market.",
       "evidence": [
-        "verdict: 'Neutral \u2014 no clear edge'",
-        "selection axis: momentum z=-1.49, SUE z=0.49 but 32 days stale",
-        "entry axis: z=0.05, nearly flat, board urgency 'caution'",
-        "no drivers identified, cautions absent"
+        "verdict Neutral \u2014 no clear edge",
+        "drivers array empty",
+        "alpha z -1.49, selection z only 0.14"
       ],
-      "dissent": "The stock is deeply off its high (-47.6%) and could experience a sharp technical bounce if a catalyst emerges, as the event-edge tier flags insider buying context that may be underestimated.",
+      "dissent": "Estimate revision z of 0.9 suggests analysts are raising forecasts, which could eventually lift the stock if the macro backdrop improves.",
       "falsifier": {
-        "text": "If MORN outperforms the S&P 500 by more than 10% over the next 20 trading days, the neutral lean is challenged.",
+        "text": "MORN closes above $170 (near prior resistance) with a 20-day alpha crossover above zero and volume confirmation.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-07-29",
+      "check_by": "2026-07-30",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
@@ -59,28 +57,28 @@
       "ticker": "REZI",
       "name": null,
       "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The engine's constructive verdict is supported by insider buying (validated z=1.5) and positive revisions (z=0.74) amid a base-building phase, but the low-quality score (z=-0.985, accounting watch) enforces a size-down risk control, tempering conviction.",
+      "conviction": "medium",
+      "horizon_d": 21,
+      "thesis": "Insider buying and positive revisions support a base-building pattern, entry signal is imminent, but caution due to accounting watch and low quality factor.",
       "evidence": [
-        "verdict: 'Constructive \u2014 building a base'",
-        "selection axis: insider z=1.5 (validated), revisions z=0.74",
-        "entry axis: z=0.43, board urgency 'imminent', off-high -30.1%",
-        "caution: accounting watch flag, quality axis z=-0.985"
+        "verdict Constructive \u2014 building a base",
+        "insider buying z 1.5 (validated)",
+        "entry urgency imminent, off-high -30%",
+        "tailwind spotlight positive"
       ],
-      "dissent": "The negative SUE (z=-0.21) and accounting concerns could signal fundamental deterioration, leading to a breakdown of the base if earnings disappoint further, outweighing insider confidence.",
+      "dissent": "The quality axis z is -0.985 with an accounting watch flag; this could be a value trap and a negative earnings surprise might crush the base.",
       "falsifier": {
-        "text": "If REZI closes below $29 on above-average volume within the next 10 trading days, the constructive lean is proven wrong.",
+        "text": "REZI closes below $28 (the recent base low) or reports a significant negative earnings surprise in the next quarterly report.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "REZI",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 20
+          "horizon_d": 21
         }
       },
-      "check_by": "2026-07-29",
+      "check_by": "2026-07-30",
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
@@ -89,27 +87,26 @@
       "name": null,
       "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The Lagging verdict reflects strong relative weakness driven by deeply negative momentum (z=-1.58) and slight negative revisions; the entry axis alone (z=0.29) is insufficient to offset the downtrend, making the TURN SIGNALED state likely a false dawn.",
+      "horizon_d": 10,
+      "thesis": "The name is lagging with severely negative momentum and weak earnings revisions; the TURN SIGNAL may be a false dawn, so a cautious stance is warranted.",
       "evidence": [
-        "verdict: 'Lagging \u2014 relative weakness'",
-        "selection axis: momentum z=-1.58, revisions z=-0.22, SUE z=-0.1",
-        "board state: TURN SIGNALED but urgency 'caution', off-high -46.4%",
-        "caution: accounting watch, quality axis neutral but flagged"
+        "verdict Lagging \u2014 relative weakness",
+        "alpha z -1.58, revision z -0.22",
+        "accounting watch flag"
       ],
-      "dissent": "The deep drawdown and oversold conditions could trigger a sharp counter-trend rally; the entry signals (urgency, off-high, RSI) hint at an exhaustion point, which might surprise to the upside.",
+      "dissent": "Off-high -46% and a turn signal could mark a wash-out bottom; a quick reversal could leave a cautious stance behind.",
       "falsifier": {
-        "text": "If BSY closes above its 50-day simple moving average on expanding volume, confirming a trend reversal, the cautious lean would be invalidated.",
+        "text": "BSY closes above $34 (a recent pivot high) and its 20-day alpha becomes positive.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "BSY",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
-          "horizon_d": 20
+          "horizon_d": 10
         }
       },
-      "check_by": "2026-07-29",
+      "check_by": "2026-07-15",
       "engine_verdict": "Lagging \u2014 relative weakness"
     },
     {
@@ -118,23 +115,22 @@
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The Neutral verdict is appropriate given the lack of a clear edge: positive entry signals (FRESH BUY) are offset by a negative momentum leg (z=-1.1) and absence of a live SUE catalyst, leaving the stock without a validated directional bias.",
+      "horizon_d": 21,
+      "thesis": "The entry axis is strong (FRESH BUY, urgency now) but the selection edge is absent (negative momentum, no insider/SUE), so no clear relative advantage.",
       "evidence": [
-        "verdict: 'Neutral \u2014 no clear edge'",
-        "selection axis: no SUE, momentum z=-1.1, revisions modest (z=0.43)",
-        "entry axis: z=0.48, board state FRESH BUY urgency 'now'",
-        "quality axis: z=-0.35, low price ($6.72) may reflect value or distress"
+        "verdict Neutral \u2014 no clear edge",
+        "drivers: only 'entry'",
+        "alpha z -1.1, selection z -0.09"
       ],
-      "dissent": "The FRESH BUY signal with immediate urgency could precede a swift upside break if a catalyst (e.g., insider buying, earnings beat) materializes; low price may attract value buyers.",
+      "dissent": "A high entry z combined with FRESH BUY urgency often signals a successful mean-reversion bounce in share price, which could outperform the S&P 500 in the short run.",
       "falsifier": {
-        "text": "If ADT closes above $7.50 on above-average volume within the next 15 trading days, the neutral lean would be overturned.",
+        "text": "ADT closes above $7.20 (a breakout above recent high) and its 20-day alpha becomes positive.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-07-29",
+      "check_by": "2026-07-30",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
@@ -142,28 +138,28 @@
       "ticker": "FCN",
       "name": null,
       "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The constructive base-building verdict is underpinned by strong estimate revisions (z=0.78) and robust entry signals (z=0.48, vol-squeeze), but the lack of a confirmed insider catalyst and flat SUE keep conviction low, consistent with the mixed regime.",
+      "conviction": "medium",
+      "horizon_d": 21,
+      "thesis": "Constructive base-building with strong revision momentum and positive entry/tailwind signals, though SUE is flat and alpha slightly negative; expect relative outperformance if the base holds.",
       "evidence": [
-        "verdict: 'Constructive \u2014 building a base'",
-        "selection axis: revisions z=0.78, SUE z=-0.01 (flat), momentum z=-0.46",
-        "entry axis: z=0.48, board state TURN SIGNALED urgency 'caution', off-high -20.1%",
-        "drivers: earnings\u00b7insider\u00b7revisions, entry, tailwind (though insider leg not in basis)"
+        "verdict Constructive \u2014 building a base",
+        "revisions z 0.78",
+        "entry z 0.48, off-high -20%, vol squeeze",
+        "tailwind spotlight positive"
       ],
-      "dissent": "The absence of actual insider buying and the slightly negative momentum could mean the 'base' is just a consolidation before further downside, especially if the macro regime turns hostile.",
+      "dissent": "Alpha is still -0.46 and SUE near zero; without an immediate earnings catalyst, the base could fail and underperform the market.",
       "falsifier": {
-        "text": "If FCN breaks below $142 and fails to reclaim that level within 5 trading days, the constructive lean is falsified.",
+        "text": "FCN closes below $140 (the base low) and its 20-day alpha deteriorates further below -0.5.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "FCN",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 20
+          "horizon_d": 21
         }
       },
-      "check_by": "2026-07-29",
+      "check_by": "2026-07-30",
       "engine_verdict": "Constructive \u2014 building a base"
     }
   ],
