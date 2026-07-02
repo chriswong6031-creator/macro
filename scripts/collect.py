@@ -682,6 +682,19 @@ def main() -> int:
     from scripts.grade_qledger import run_as_collect_step as _grade_qledger
     _grade_qledger()
 
+    # CCTV 新闻联播 backfill-finalization watcher (W4/D5) — drives a three-state
+    # machine (SCRAPING → FINALIZING → FINALIZED) that monitors the long-running
+    # backfill process, self-heals stalls, and runs the idempotent finalize pipeline
+    # once coverage ≥ 97 %.  On the FINALIZED transition it removes the gitignore
+    # shard line so the subsequent `git add data/` in the nightly workflow picks up
+    # the one-time ~43–60 MB shard payload.  Idempotent forever after (cheap no-op).
+    # Non-fatal: a watcher crash must not abort the collection run.
+    try:
+        from scripts.cctv_finalize_watcher import run_as_collect_step as _cctv_watcher
+        _cctv_watcher()
+    except Exception as e:  # noqa: BLE001 — a watcher crash must not abort the run
+        log.error("[cctv_watcher] step crashed (non-fatal): %s", e)
+
     return 0 if ok > 0 else 1
 
 
