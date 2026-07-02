@@ -28,6 +28,29 @@
   .fx-sub b { color:var(--text); font-weight:700; }
   .fx-asof { color:var(--muted); font-size:11.5px; margin-top:8px; }
 
+  /* ── data-health status strip (P0-D) ── */
+  .fx-health { margin:10px 0 4px; }
+  .fx-health-chips { display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+  .fx-hchip { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700;
+              padding:3px 8px; border-radius:7px; border:1px solid var(--line);
+              background:var(--panel2); color:var(--muted); cursor:help; }
+  .fx-hchip.hl-LIVE    { color:var(--up);   border-color:color-mix(in srgb,var(--up)   35%,transparent); background:color-mix(in srgb,var(--up)   10%,var(--panel)); }
+  .fx-hchip.hl-PARTIAL { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,transparent); background:color-mix(in srgb,var(--warn) 10%,var(--panel)); }
+  .fx-hchip.hl-DARK    { color:var(--muted); }
+  .fx-hchip .hdot { width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .fx-health-mode { font-size:11.5px; font-weight:700; color:var(--warn);
+                    border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);
+                    background:color-mix(in srgb,var(--warn) 10%,var(--panel));
+                    border-radius:8px; padding:4px 11px; display:inline-block; margin-top:7px; }
+  .fx-health-mode.mode-FULL { color:var(--up);
+                    border-color:color-mix(in srgb,var(--up) 35%,transparent);
+                    background:color-mix(in srgb,var(--up) 10%,var(--panel)); }
+  .fx-confirmer-banner { border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);
+                         background:color-mix(in srgb,var(--warn) 8%,var(--panel));
+                         border-radius:10px; padding:9px 14px; margin:8px 0 4px;
+                         font-size:12.5px; color:var(--text); line-height:1.5; }
+  .fx-confirmer-banner b { color:var(--warn); }
+
   /* convergence "neural web" board */
   .fx-web { border:1px solid var(--line); border-left:5px solid var(--down); border-radius:14px;
             background:var(--panel); padding:15px 17px; margin:16px 0 6px; }
@@ -218,6 +241,51 @@
       '在主题处于<b>诱发临界点</b>时提前布局，在盈利预期普遍上修<b>之前</b>转化为决策。物理供给紧张（T1）<b>领先</b>预期修正；客户资本开支（T2）与预期上修广度（T4）<b>确认</b>；买点交由错位回调触发。范例：2024年6月 13D 的 HBM/DRAM 判断——售罄、集中、被低估，正确且早约9个月。') }}</p>
     <div class="fx-asof">{{ t('Revisions as of', '预期数据截至') }} {{ asof or '—' }} · {{ t('generated', '生成于') }} {{ generated_utc }}</div>
   </header>
+
+  {# ── P0-D data-health status strip ── #}
+  {% if health %}
+  <div class="fx-health">
+    {%- set _leg_labels = {
+      't1_fred':    'T1 FRED',
+      't1_text':    'T1 text',
+      't2_demand':  'T2 demand',
+      't3_guidance':'T3 guidance',
+      't4_level':   'T4 level',
+      't4_accel':   'T4 accel',
+      'glut':       'glut',
+      'power':      'power',
+      'confirmers': 'confirmers',
+      'analyst':    'analyst',
+      'monitor':    'monitor',
+      'grading':    'grading',
+    } -%}
+    <div class="fx-health-chips">
+      {% for key, label in _leg_labels.items() %}
+      {%- set lg = health.legs.get(key) if health.legs else none -%}
+      {%- set st = (lg.status if lg else 'DARK') -%}
+      {%- set why = (lg.why if lg else 'no data') -%}
+      {%- set det = (lg.detail if lg else none) -%}
+      <span class="fx-hchip hl-{{ st }}" title="{{ why }}">
+        <span class="hdot"></span>{{ label }}{% if det %} <span style="opacity:.7">{{ det }}</span>{% endif %}
+      </span>
+      {% endfor %}
+    </div>
+    <span class="fx-health-mode mode-{{ health.mode }}">
+      {%- if health.mode == 'FULL' -%}
+      {{ t('FULL mode', '完整模式') }}
+      {%- else -%}
+      {{ t('CONFIRMER-ONLY mode', '仅确认模式') }}
+      {%- endif -%}
+    </span>
+    {% if health.mode == 'CONFIRMER-ONLY' %}
+    <div class="fx-confirmer-banner">
+      <b>{{ t('Leading legs dark', '领先腿暗') }}</b> —
+      {{ t('the desk is currently running in CONFIRMER-ONLY mode (revision-breadth screener). Stage calls below cannot reach PRECIPICE/BROADENING until a physical leg lights.',
+          '本台当前运行在仅确认模式（预期上修广度筛选器）。在物理腿激活之前，以下阶段判断无法达到 PRECIPICE / BROADENING。') }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
 
   {# ---- CONVERGENCE: the "what's heating up early" board (the neural web) ---- #}
   {% if convergence and convergence.ranked %}
