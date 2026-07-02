@@ -54,6 +54,8 @@ _DEFAULTS = {
     "enabled": False,
     "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
     "api_key_env": "ANTHROPIC_API_KEY",
+    # model ids: prefer config["llm_models"]["reasoning"] (version-pinned); these are
+    # the emergency fallback when the llm_models block is absent (W5 migration).
     "models": {"reasoning": "claude-opus-4-8", "tagging": "claude-haiku-4-5-20251001"},
     "max_clusters": 12,
     "max_tokens": 8000,
@@ -62,6 +64,27 @@ _DEFAULTS = {
     "interval_days": 1,
     "min_weighted": 0.9,
 }
+
+
+def _reasoning_model(cfg: dict) -> str:
+    """Return the version-pinned reasoning model id.
+
+    Resolution order (W5 migration — P5 R5):
+    1. config['llm_models']['reasoning']   (version-pinned, authoritative)
+    2. cfg['models']['reasoning']          (per-section override / legacy)
+    3. hardcoded default                   (emergency fallback only)
+
+    A missing llm_models block logs a warning but does NOT raise — altdata_brain
+    predates the W5 requirement and must keep working during the transition.
+    """
+    llm_models = config.load().get("llm_models") or {}
+    if llm_models.get("reasoning"):
+        return str(llm_models["reasoning"])
+    from_cfg = (cfg.get("models") or {}).get("reasoning")
+    if from_cfg:
+        return str(from_cfg)
+    log.warning("altdata_brain: llm_models.reasoning missing from config; using hardcoded default")
+    return "claude-opus-4-8"
 
 DISCLAIMER = (
     "An AI reading of the desk's own deterministic convergence — accountable and falsifiable, "
@@ -152,7 +175,7 @@ def _make_call(cfg: dict):
     client = _client(cfg)
     if client is None:
         return None
-    model = (cfg.get("models") or {}).get("reasoning", "claude-opus-4-8")
+    model = _reasoning_model(cfg)
     max_tokens = int(cfg.get("max_tokens", 8000))
 
     def call(system: str, user: str):
@@ -322,7 +345,7 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
     brief = {
         "schema": SCHEMA, "is_context_only": False, "actionable": True,
         "generated_at": datetime.now(timezone.utc).isoformat(), "state_asof": asof,
-        "model": (cfg.get("models") or {}).get("reasoning", "claude-opus-4-8"),
+        "model": _reasoning_model(cfg),
         "regime_read": None, "regime_read_zh": None, "theses": [],
         "track_record": state.get("track_record"),
         "confidence": "low", "n_clusters": state.get("n_clusters"),

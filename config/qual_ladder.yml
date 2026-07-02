@@ -419,3 +419,52 @@ missing_tape.divergence_z:
     tone spread. NaN until ≥ 5 data points. High z (≥ 1.5) = risk-off flag
     (suppression-suspect). GDELT sourcelang cleanly separates populations
     [P4]. 1req/5s pacing. Context-only; never a direction input.
+
+# ---------------------------------------------------------------------------
+# EXTRACTION_8K — W5 qual_extraction.v1 on the 8-K lane (§2.4, P5)
+# ---------------------------------------------------------------------------
+# Salience-only at SHADOW; direction=0 in qledger (§2.3/D5). Accrues a forward
+# record from day one — extraction quality grades are the deliverable.
+# Promotion to CONFIRMER requires n_dates>=25, wilson_ci_low>0 vs matched control,
+# and regime-stratification (§3). Until then: SHADOW only, never a scored read.
+# ---------------------------------------------------------------------------
+extraction_8k.direction:
+  field: v1_direction
+  artifact_glob: "data/special_situations/events.parquet"
+  producer: collectors/special_situations.py
+  claim_family: extraction_8k
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    qual_extraction.v1 direction field from 8-K filing body. direction=0 in
+    qledger (salience-only per §2.3/D5) until the §3 gate clears at n_dates>=25.
+    Citation-verified: field collapses to "unknown" without a verbatim quote_span.
+
+extraction_8k.importance_raw:
+  field: v1_importance_raw
+  artifact_glob: "data/special_situations/events.parquet"
+  producer: collectors/special_situations.py
+  claim_family: extraction_8k
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    LLM-extracted importance score (0-100). Salience proxy for the 8-K event;
+    grounds the top-importance slice selection (P5 cost table). Graded vs placebo
+    tape (D3) at 5d horizon.
+
+extraction_8k.magnitude:
+  field: v1_magnitude
+  artifact_glob: "data/special_situations/events.parquet"
+  producer: collectors/special_situations.py
+  claim_family: extraction_8k
+  ladder_state: SHADOW
+  max_weight: null
+  grandfathered: false
+  scored_consumers: []
+  notes: >
+    LLM-extracted event magnitude (large/medium/small/unknown). Citation-verified.
+    SHADOW only — no arithmetic consumption permitted until §3 gate clears.

@@ -32,10 +32,31 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
+# Fallback literals — used when config['llm_models'] block is absent (W5 migration).
+# Prefer config['llm_models']['classify'] at runtime via _classify_model().
 DEFAULT_HAIKU = "claude-haiku-4-5"
 DEFAULT_DEEPSEEK = "deepseek-chat"
 DEEPSEEK_BASE = "https://api.deepseek.com/anthropic"
 OAUTH_BETA = "oauth-2025-04-20"
+
+
+def _classify_model() -> str:
+    """Return the version-pinned classify model id (W5 — P5 R5).
+
+    Resolution order:
+    1. config['llm_models']['classify']  (version-pinned, authoritative)
+    2. config['news_llm']['anthropic_model']  (per-section override)
+    3. DEFAULT_HAIKU                     (emergency fallback)
+
+    Does NOT raise on absence — news_llm predates the W5 requirement.
+    """
+    llm_models = config.load().get("llm_models") or {}
+    if llm_models.get("classify"):
+        return str(llm_models["classify"])
+    cfg_model = (_cfg() or {}).get("anthropic_model")
+    if cfg_model:
+        return str(cfg_model)
+    return DEFAULT_HAIKU
 
 SYSTEM = (
     "You compress financial/market headlines for a dashboard. For each numbered item you are "
@@ -71,7 +92,7 @@ def _provider() -> tuple[str, str, str] | None:
     provider ∈ {"oauth", "anthropic", "deepseek"}."""
     cfg = _cfg()
     order = cfg.get("provider_order") or ["oauth", "anthropic", "deepseek"]
-    haiku = cfg.get("anthropic_model", DEFAULT_HAIKU)
+    haiku = _classify_model()
     for p in order:
         if p == "oauth":
             tok = config.secret(cfg.get("oauth_token_env", "CLAUDE_CODE_OAUTH_TOKEN"))

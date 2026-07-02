@@ -118,6 +118,8 @@ def build(refresh: bool = True) -> str:
             col.enrich_filers(limit=int(ss.get("filer_per_build", 250)))     # P3.2 13D cover-page reporting person
             col.enrich_classify(limit=int(ss.get("classify_per_build", 150)))  # P1.1 LLM-verify (gated; no-op w/o key)
             col.enrich_summaries(limit=int(ss.get("summary_per_build", 200)))  # P1.3 LLM summary (gated; no-op w/o key)
+            col.enrich_extraction(limit=int(                                 # W5 qual_extraction.v1 on top-importance 8-Ks
+                _config.load().get("qual_extraction", {}).get("extract_per_build", 100)))
             colnews.fetch_news_situations()                      # P2.1 newswire form-absent categories (gated)
             colintl.fetch_intl_situations()                      # Phase 4 UK/Canada intl lanes (gated per market)
             from collectors import special_prices as colpx
