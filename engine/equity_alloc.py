@@ -204,8 +204,9 @@ def after_tax(close: pd.Series, alloc: pd.Series, cash_yield: pd.Series,
 # zoo), folded into a 0-100 risk score by a renormalized weighted mean (a missing
 # leg drops out of both numerator and denominator). Every leg is already computed
 # and (where measured) validated in the repo on the house rule (forward DRAWDOWN):
-#   drawdown_risk  — macro-stress gauge, P(>=10% dd/63d) monotone 8->38% (conditions.py)
-#   recession_risk — Sahm+recession-prob+EBP+term-premium-adjusted curve (conditions.py)
+#   drawdown_risk  — macro-stress gauge, P(>=10% dd/63d) monotone 19->49% base->extreme
+#                    (PIT frame + claims composition, audit #39; conditions.py)
+#   recession_risk — claims(labor)+recession-prob+EBP+term-premium-adjusted curve (conditions.py)
 #   nfci           — tight AND tightening (level>0 & 13w change>0) percentile
 #   hy_widening    — HY-OAS 63d rate-of-change percentile (credit stress, the RoC not level)
 #   liquidity      — net-liquidity CONTRACTING (regime_history; the one trend-orthogonal gate)

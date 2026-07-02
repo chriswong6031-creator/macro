@@ -1,0 +1,165 @@
+{
+  "target": "P(SPY max drawdown >= 10% within 63d) by drawdown_risk band",
+  "frames": {
+    "latest": {
+      "available": true,
+      "span": [
+        "1993-01-29",
+        "2026-06-30"
+      ],
+      "bands": {
+        "low": {
+          "n_obs": 5783,
+          "n_hits": 646,
+          "hit_pct": 11.2,
+          "ci90_lo": 10.4,
+          "ci90_hi": 12.0
+        },
+        "elevated": {
+          "n_obs": 1641,
+          "n_hits": 414,
+          "hit_pct": 25.2,
+          "ci90_lo": 23.2,
+          "ci90_hi": 27.4
+        },
+        "high": {
+          "n_obs": 334,
+          "n_hits": 130,
+          "hit_pct": 38.9,
+          "ci90_lo": 33.8,
+          "ci90_hi": 44.2
+        },
+        "extreme": {
+          "n_obs": 960,
+          "n_hits": 494,
+          "hit_pct": 51.5,
+          "ci90_lo": 48.3,
+          "ci90_hi": 54.6
+        },
+        "_base": {
+          "n_obs": 8718,
+          "n_hits": 1684,
+          "hit_pct": 19.3,
+          "ci90_lo": 18.5,
+          "ci90_hi": 20.2
+        }
+      },
+      "monotone": true
+    },
+    "release": {
+      "available": true,
+      "span": [
+        "1993-01-29",
+        "2026-06-30"
+      ],
+      "bands": {
+        "low": {
+          "n_obs": 5777,
+          "n_hits": 605,
+          "hit_pct": 10.5,
+          "ci90_lo": 9.7,
+          "ci90_hi": 11.3
+        },
+        "elevated": {
+          "n_obs": 1373,
+          "n_hits": 389,
+          "hit_pct": 28.3,
+          "ci90_lo": 26.0,
+          "ci90_hi": 30.8
+        },
+        "high": {
+          "n_obs": 615,
+          "n_hits": 220,
+          "hit_pct": 35.8,
+          "ci90_lo": 32.1,
+          "ci90_hi": 39.6
+        },
+        "extreme": {
+          "n_obs": 953,
+          "n_hits": 470,
+          "hit_pct": 49.3,
+          "ci90_lo": 46.2,
+          "ci90_hi": 52.5
+        },
+        "_base": {
+          "n_obs": 8718,
+          "n_hits": 1684,
+          "hit_pct": 19.3,
+          "ci90_lo": 18.5,
+          "ci90_hi": 20.2
+        }
+      },
+      "monotone": true
+    },
+    "reference": {
+      "available": true,
+      "span": [
+        "1993-01-29",
+        "2026-06-30"
+      ],
+      "bands": {
+        "low": {
+          "n_obs": 5783,
+          "n_hits": 646,
+          "hit_pct": 11.2,
+          "ci90_lo": 10.4,
+          "ci90_hi": 12.0
+        },
+        "elevated": {
+          "n_obs": 1641,
+          "n_hits": 414,
+          "hit_pct": 25.2,
+          "ci90_lo": 23.2,
+          "ci90_hi": 27.4
+        },
+        "high": {
+          "n_obs": 334,
+          "n_hits": 130,
+          "hit_pct": 38.9,
+          "ci90_lo": 33.8,
+          "ci90_hi": 44.2
+        },
+        "extreme": {
+          "n_obs": 960,
+          "n_hits": 494,
+          "hit_pct": 51.5,
+          "ci90_lo": 48.3,
+          "ci90_hi": 54.6
+        },
+        "_base": {
+          "n_obs": 8718,
+          "n_hits": 1684,
+          "hit_pct": 19.3,
+          "ci90_lo": 18.5,
+          "ci90_hi": 20.2
+        }
+      },
+      "monotone": true
+    }
+  },
+  "passport": {
+    "basis": "measured",
+    "labor_leg": "claims",
+    "gauge_components": [
+      "recession_risk",
+      "nfci",
+      "ebp",
+      "hy_oas"
+    ],
+    "horizon_d": 63,
+    "dd_threshold": 0.1,
+    "measure_start": "1993-01-01",
+    "weekly_decorrelated": false,
+    "band_cuts": {
+      "low": 0.0,
+      "elevated": 60.0,
+      "high": 80.0,
+      "extreme": 90.0
+    },
+    "claims_pit_true_asof_from": "2009-06-04",
+    "pre_asof_fallback": "release rows before the claims vintage start fall back to the modelled-release lag calendar (initial_claims ~5 bd), NOT a true as-of join; documented, not silent.",
+    "overlap_caveat": "Forward windows overlap (horizon-day), so raw N over-counts independent observations by ~horizon; treat Wilson CIs as a lower bound on the true interval width. Bands are contiguous score regions, not disjoint events.",
+    "sample_starvation": "Only ~2-3 recession/deep-drawdown episodes sit inside the PIT era; the extreme/high bands are dominated by 2008/2020/2022, so their hit-rates are episode-driven, not IID. A recession-RISK read, not a crash oracle."
+  },
+  "reconciliation": "The live gauge fires on the 'latest' frame with the CLAIMS labor leg. 'release' is the leak-free PIT re-measurement of the SAME gauge and composition. The re-issued band table (below) is the number that now describes the signal that fires today; the old 8/26/36/38 table was measured on the pre-claims (Sahm) composition and revised data."
+}

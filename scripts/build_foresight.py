@@ -139,13 +139,33 @@ def main() -> int:
     for r in themes:
         stage_counts[r.get("stage", "UNKNOWN")] = stage_counts.get(r.get("stage", "UNKNOWN"), 0) + 1
 
+    # P0-D: data-health surface — derive per-leg status from the payloads themselves
+    try:
+        from engine.foresight_health import compute_foresight_health
+        health = compute_foresight_health(
+            cascade=cascade,
+            emergence=emergence,
+            subsectors=subsectors,
+            convergence=convergence,
+            power=power,
+            analyst=analyst,
+            monitor=monitor,
+            track=_track_record(),
+        )
+    except Exception as e:  # noqa: BLE001
+        log.warning("foresight_health failed (non-fatal): %s", e)
+        health = None
+
     site = config.ROOT / "site"
-    # also emit the JSON for any client consumer
+    # also emit the JSON for any client consumer (health included so any consumer can read it)
     try:
         bd = site / "basketdata"
         bd.mkdir(parents=True, exist_ok=True)
+        cascade_out = dict(cascade)
+        if health is not None:
+            cascade_out["health"] = health
         (bd / "foresight_cascade.json").write_text(
-            json.dumps(cascade, separators=(",", ":"), default=str))
+            json.dumps(cascade_out, separators=(",", ":"), default=str))
     except Exception as e:  # noqa: BLE001
         log.warning("foresight_cascade.json emit failed: %s", e)
 
@@ -167,6 +187,7 @@ def main() -> int:
             power=power,
             analyst=analyst,
             monitor=monitor,
+            health=health,
             asof=cascade.get("asof"),
             generated_utc=built,
             nav_prefix="",

@@ -24,10 +24,10 @@ fear, and the 2022 inflation/rate-hike scare (which the *actual* Conference Boar
 also flagged as a recession for ~18 months). A genuine business-cycle gauge SHOULD light
 up in those episodes — that it lights up in exactly those and nowhere else is a feature.
 
-## Current reading (as of 2026-06-30)
+## Current reading (as of 2026-07-31)
 
 - **Recession signal: OFF** — no recession signal.
-- Leading 6-month momentum **+0.55** (rising), diffusion **75** — phase: **recovery**.
+- Leading 6-month momentum **+0.04** (rising), diffusion **100** — phase: **recovery**.
 - Threshold to fire is -1.25 with diffusion ≤ 50; today it is neither deep nor broad enough, so the model does **not** corroborate an imminent recession.
 
 
@@ -65,6 +65,14 @@ up in those episodes — that it lights up in exactly those and nowhere else is 
   backtest to full point-in-time.
 - **COVID-2020 is exogenous** — no business-cycle model leads a pandemic. It is shown
   but excluded from the lead statistics.
+- **Live publication lag (audit #39):** these stats were measured at a
+  1-month publication lag on the natively-monthly legs, and the LIVE
+  snapshot now fires at the SAME lag (`config engine.business_cycle.live_lag_m`) so the
+  advertised lead/FP numbers describe the signal that fires today. Running live at lag 0
+  leaked ~1 month of look-ahead (May payrolls aren't knowable in May) AND flipped the
+  phase clock (contraction↔recovery). A lag-0 re-fit "improves" the median lead by ~1
+  month, but that gain IS the leak. The pre-fix lag-0 reading ships as a marked shadow
+  for one cycle. Daily leading legs (S&P/curve/HY) are knowable intramonth → unshifted.
 - **Compare to the conditions layer:** this signal is intentionally separate from the
   `conditions.recession_risk` 0–100 blend; keeping Leading / Coincident / Lagging apart
   is what makes the lead-lag *sequence* legible.

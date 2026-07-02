@@ -460,6 +460,16 @@
   /* ---- standout-stock cards ------------------------------------------------- */
   .nbgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
             gap: 10px; margin-top: 11px; }
+  /* mobile: pack the standout cards 2-up so the list doesn't scroll on and on (paired with the
+     3-row cap via data-showmore-rows + theme.js). Cards are already overflow-guarded + compact. */
+  @media (max-width:680px){
+    .nbgrid[data-showmore-rows]{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .nbgrid[data-showmore-rows] .nb-tk{ font-size:13px; }
+    .nbgrid[data-showmore-rows] .nb-px{ font-size:12px; }
+    /* let the header wrap so the signal badge + price drop to a new line instead of being
+       clipped by the card's overflow:hidden when the column is this narrow. */
+    .nbgrid[data-showmore-rows] .nb-top{ flex-wrap:wrap; row-gap:2px; }
+  }
   a.nbcard { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
             padding: 9px 11px 10px; border-left: 3px solid var(--muted);
             display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow: hidden;
@@ -2402,7 +2412,7 @@
         {{ t('Board', '榜单') }}: {{ _conc.n_names }} {{ t('names across', '个标的分布在') }} {{ _conc.n_sectors }} {{ t('sectors', '个行业') }} — {{ t('effective bets ≈', '有效押注 ≈') }} {{ _conc.n_sectors }}. {{ t('Top-2 sectors:', '前两大行业：') }} {{ '%d'|format((100 * _conc.top2_sector_share)|round|int) }}% {{ t('of board.', '的榜单。') }}{% if _conc.overflow_count %} {{ _conc.overflow_count }} {{ t('overflow names → watch strip.', '个溢出标的 → 观察名单。') }}{% endif %}
       </div>
       {% endif %}{% endif %}
-      <div class="nbgrid" data-showmore="12">
+      <div class="nbgrid" data-showmore-rows="3">
       {% if _su %}
       {# BOTTOMING-ALIGNED board: shows only names whose weekly/3-day/daily cycles are
          aligned to the upside (engine.cycles.mtf_alignment), ranked by

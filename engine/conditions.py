@@ -7,11 +7,12 @@ risk that the price-based quad lacks:
 
   • Financial Conditions  — Chicago Fed NFCI (+ risk/credit/leverage subindices)
                             and St. Louis stress: one broad z-scored gauge.
-  • Recession risk        — a 0..100 composite of the Sahm rule (concurrent),
-                            the smoothed recession probability, the Excess Bond
-                            Premium model prob + level, and a term-premium-
-                            ADJUSTED curve slope (strips the 2022-24 false
-                            inversion driven by a low/negative term premium).
+  • Recession risk        — a 0..100 composite of jobless CLAIMS (the validated
+                            labor leg; Sahm is the graceful fallback only when the
+                            claims feed is absent), the smoothed recession
+                            probability, the Excess Bond Premium model prob + level,
+                            and a term-premium-ADJUSTED curve slope (strips the
+                            2022-24 false inversion from a low/negative term premium).
   • Growth nowcast        — Weekly Economic Index + Atlanta Fed GDPNow.
   • Labor / real-activity — high-frequency leading reads that front-run the
                             monthly, revised payrolls: weekly jobless claims,
@@ -31,11 +32,57 @@ See research/QUANT_FACTOR_EXPANSION.md.
 """
 from __future__ import annotations
 
+import functools
+import json
+
 import numpy as np
 import pandas as pd
 
 from engine.indicators import pct_rank_window
 from lib import config, store
+
+
+# --- drawdown-risk band table: the PIT-frame RE-ISSUED numbers (audit #39) -----
+# The band P(>=10% dd / 63d) table was re-measured on the leak-free PIT frame ('release')
+# with the LIVE composition (jobless CLAIMS, not the retired Sahm leg) by
+# scripts/validate_drawdown_risk_pit.py. The old 8/26/36/38 table was measured on
+# latest-revised data + the pre-claims composition and reproduced NEITHER the live frame
+# NOR the live definition (it also implicitly used a point-to-point return, while the
+# label says "drawdown"). The re-issued table is stronger AND monotone. These constants
+# are the committed fallback; if the artifact is present it is read live so a re-run
+# updates the site without a code change. Passport travels with the numbers.
+_DRAWDOWN_BAND_PIT_FALLBACK = {
+    "base": 19, "low": 11, "elevated": 28, "high": 36, "extreme": 49,
+    "frame": "pit", "measure_span": "1993-2026",
+    "n_base": 8718, "n_extreme": 953,
+}
+
+
+@functools.lru_cache(maxsize=1)
+def _drawdown_band_table() -> dict:
+    """Re-issued per-band P(>=10% dd/63d) on the PIT ('release') frame, read from the
+    committed artifact (data/regime/drawdown_risk_pit.json) if present, else the pinned
+    fallback. Carries a measured-basis passport {basis, frame, n, span}."""
+    try:
+        p = config.data_dir() / "regime" / "drawdown_risk_pit.json"
+        if p.exists():
+            d = json.loads(p.read_text())
+            rel = d.get("frames", {}).get("release", {}).get("bands", {})
+            pas = d.get("passport", {})
+            if rel and rel.get("extreme", {}).get("hit_pct") is not None:
+                return {
+                    "base": round(rel["_base"]["hit_pct"]),
+                    "low": round(rel["low"]["hit_pct"]),
+                    "elevated": round(rel["elevated"]["hit_pct"]),
+                    "high": round(rel["high"]["hit_pct"]),
+                    "extreme": round(rel["extreme"]["hit_pct"]),
+                    "n_base": rel["_base"]["n_obs"], "n_extreme": rel["extreme"]["n_obs"],
+                    "frame": "pit", "labor_leg": pas.get("labor_leg", "claims"),
+                    "measure_span": "–".join(d["frames"]["release"].get("span", [])) or None,
+                }
+    except Exception:  # noqa: BLE001 — artifact is best-effort; fall back to pinned
+        pass
+    return dict(_DRAWDOWN_BAND_PIT_FALLBACK)
 
 
 # --- small helpers -----------------------------------------------------------
@@ -281,7 +328,8 @@ def conditions_frame(f: pd.DataFrame) -> pd.DataFrame:
         out["vol_target_scalar"] = (tcfg["target_vol_pct"] / rv).clip(tcfg["floor"], tcfg["cap"])
 
     # Drawdown-risk gauge (lean 4-factor macro stress, 0..100) ----------------
-    # MEASURED: >=80 -> P(>=10% dd/63d) ~45% vs ~13% base (research §6). Each
+    # RE-ISSUED (audit #39, PIT frame + claims composition): extreme band ->
+    # P(>=10% dd/63d) ~49% vs ~19% base (scripts/validate_drawdown_risk_pit.py). Each
     # component z-scored (causal, expanding-capped rolling), averaged, mapped to
     # an expanding percentile so the gauge is 0..100 with no look-ahead.
     dcfg = cfg["drawdown_risk"]
@@ -558,14 +606,18 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
                                  ("optimistic" if (g("news_sentiment") or 0) > 0 else "pessimistic")),
     }
 
-    # drawdown-risk gauge (MEASURED §6: >=80 -> P(>=10% dd/63d) ~45% vs 13% base)
-    # HONESTY (research/RISK_FLIP_2026-06-22.md): this is a SLOW macro/credit
-    # composite (recession_risk, NFCI, EBP, HY OAS) — it LAGS price. The low-band
-    # dd10 figure equals the UNCONDITIONAL base rate, so a "low" read here is NOT a
-    # forward all-clear on price/vol risk (which the leading gauges carry). The
-    # conditional probability only carries information in the elevated/high/extreme
-    # bands. Tagged lagging + relabelled so consumers don't read 8% as "calm".
+    # drawdown-risk gauge — RE-ISSUED on the PIT frame + live composition (audit #39).
+    # The per-band P(>=10% dd/63d) table is now the leak-free measurement (claims leg, not
+    # Sahm) from scripts/validate_drawdown_risk_pit.py: base ~19% -> low 11% -> elevated 28%
+    # -> high 36% -> extreme 49% (max-drawdown definition, matching the label). The old
+    # 8/26/36/38 table was measured on revised data + the retired Sahm composition and
+    # reproduced neither the live frame nor the live definition; see the report.
+    # HONESTY (research/RISK_FLIP_2026-06-22.md): still a SLOW macro/credit composite
+    # (recession_risk, NFCI, EBP, HY OAS) — it LAGS price. The low band no longer equals
+    # the base rate (11% low vs 19% base): a "low" read carries mild information, but is NOT
+    # a forward all-clear on price/vol risk (the leading gauges carry that). Tagged lagging.
     dcfg = cfg["drawdown_risk"]
+    _dbt = _drawdown_band_table()
     dr = g("drawdown_risk")
     dr_band = (None if dr is None else
                ("extreme" if dr >= dcfg["extreme"] else
@@ -574,19 +626,28 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
     drawdown = {
         "score": dr,
         "band": dr_band,
-        # measured P(>=10% drawdown in 63d) per band (this engine's own backtest);
-        # in the LOW band this equals base_rate_pct (no edge) — see is_base_rate.
-        "dd10_prob_pct": (None if dr is None else
-                          (38 if dr >= dcfg["extreme"] else (36 if dr >= dcfg["high"]
-                           else (26 if dr >= dcfg["elevated"] else 8)))),
-        "base_rate_pct": 8,
+        # re-issued PIT-frame P(>=10% drawdown in 63d) per band (claims composition).
+        "dd10_prob_pct": (None if dr_band is None else _dbt[dr_band]),
+        "base_rate_pct": _dbt["base"],
         # lead/lag honesty: slow macro/credit composite, lags price.
         "lead_lag": "lagging",
         "basis": "macro/credit composite (recession_risk, NFCI, EBP, HY OAS)",
-        # the dd10 probability is only informative above the low band; in the low
-        # band it is the unconditional base rate, NOT a forward all-clear.
-        "is_base_rate": bool(dr_band == "low"),
-        "dd10_prob_informative": bool(dr_band is not None and dr_band != "low"),
+        # low band now sits BELOW base (mild info), so it is no longer a bare base-rate read.
+        "is_base_rate": False,
+        "dd10_prob_informative": bool(dr_band is not None),
+        # passport: this band table is MEASURED on the PIT frame with the live composition.
+        "stat_passport": {
+            "basis": "measured", "frame": _dbt.get("frame", "pit"),
+            "labor_leg": _dbt.get("labor_leg", "claims"),
+            "n_base": _dbt.get("n_base"), "n_extreme": _dbt.get("n_extreme"),
+            "span": _dbt.get("measure_span"),
+            "definition": "max peak-to-trough SPY decline over the next 63 trading days",
+            "note": ("Re-measured on the leak-free PIT ('release') frame with the jobless-claims "
+                     "labor leg; replaces the stale 8/26/36/38 (Sahm-era, revised-frame) table. "
+                     "Live gauge fires on 'latest'; its bands are within CI of PIT. "
+                     "Overlap-inflated N + episode-driven high/extreme bands — a risk read, not a "
+                     "crash oracle."),
+        },
         "label": "Macro/credit drawdown pressure (lagging)",
         "label_zh": "宏观/信用回撤压力（滞后）",
     }
