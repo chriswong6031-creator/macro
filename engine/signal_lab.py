@@ -798,7 +798,7 @@ REGISTRY: list[dict] = [
                 ("FXI MaxDD cut", "strat -39.3% vs bench -72.7%"),
                 ("panel", "23 ETFs 1996-03-18 to 2026-07-01; min-panel=10 threshold")]),
 
-    # ---- INTL BRIDGE remaining entries (C1 + C2 CONTEXT display graveyard; C4/C8 pending) ----
+    # ---- INTL BRIDGE remaining entries (C1/C2/C5/C8 CONTEXT + C4c INVERTED display graveyard; C4a CONFIRMED confirmer) ----
     _row("China per-name global-beta size-dampener  (C1 — the v1 flagship)",
          "中国个股全球贝塔仓位抑制器（C1 — v1 旗舰）", "China A", "display",
          why="MEASURED and REFUTED as a de-risk timing signal (W2). Port of hk_global_beta to the "
@@ -910,6 +910,60 @@ REGISTRY: list[dict] = [
          extra=[("residual vs raw usdcnh leg", "+0.121 (WRONG sign for a de-risk leg)"),
                 ("rank-IC vs FXI fwd DD", "~0 (0.0003); split-half sign-flips"),
                 ("crisis-indep ES", "−0.0095 (fails)")]),
+    _row("Global cost-of-capital de-risk leg  (global 10y + US premium — C5)",
+         "全球资本成本降险腿（全球10年期 + 美国溢价 — C5）", "Global rates", "display",
+         why="W3 VERDICT: CONTEXT — do NOT wire. The GDP-weighted global 10y level + US-vs-world "
+             "premium are reconstructed causally by engine.global_rates from the sovereign 10y "
+             "roster (the display card dead-ends both in bond_health.json with no history — "
+             "INTL-15). The honest prior — the global 10y is ~US 10y + noise — is confirmed by "
+             "MEASUREMENT: the C5 global-10y rise signal correlates 0.948 with the US-only 10y "
+             "momentum (US is a 0.42-weight roster leg), so it carries no orthogonal duration edge "
+             "over the existing US curve/credit MRS legs. The binding gate is drawdown-reduction "
+             "over the signal-active era (from 1963): the long/flat strategy cuts SPY MaxDD only "
+             "1.1pp (−55.7% vs −56.8% B&H) while HALVING total return (Calmar 0.115 < 0.137 B&H — "
+             "not cost-justified). DSR 0.98 is SPY drift, not an edge. weight_cap 0, kill=True — "
+             "conditions._macro_risk_legs UNCHANGED.",
+         why_zh="W3 结论：CONTEXT——不接线。GDP加权全球10年期水平 + 美国对世界溢价由 engine.global_rates "
+                "从主权10年期名单因果重建（展示卡将两者困在 bond_health.json 无历史——INTL-15）。诚实先验"
+                "——全球10年期≈美国10年期+噪声——经测量确认：C5 全球10年期上行信号与纯美国10年期动量相关 "
+                "0.948（美国占名单0.42权重），故相对现有美国曲线/信用MRS腿无正交久期边际。约束门为降险时代"
+                "（自1963起）的回撤削减：多/空策略仅削减 SPY 回撤 1.1pp（−55.7% 对 −56.8%），却使总回报腰斩"
+                "（Calmar 0.115 < 0.137，不划算）。DSR 0.98 是 SPY 漂移，非边际。权重上限0，kill=True——"
+                "conditions._macro_risk_legs 未变。",
+         source="scripts/c5_global_rates.py + scripts/intl_phase0.py (grade, W3 C5); "
+                "engine/global_rates.py; data/intl_bridge/ledger.json (C5)",
+         horizon="21/42d fwd drawdown", ic=-0.064, dsr=0.9797,
+         wired="not wired — CONTEXT (global 10y ≈ US 10y, corr 0.948; DD-cut not cost-justified)",
+         extra=[("global-10y vs US-10y mom corr", "0.948 (≈ US 10y + noise)"),
+                ("residual DD partial vs US legs", "−0.129 (survives but weak)"),
+                ("SPY MaxDD cut (signal era)", "+1.1pp (−55.7% vs −56.8% B&H)"),
+                ("Calmar strat vs B&H", "0.115 < 0.137 (return halved — not cost-justified)")]),
+    _row("Cross-asset leading-caution votes booster  (credit+rates-vol+dollar — C8)",
+         "跨资产领先警戒票增强器（信用+利率波动+美元 — C8）", "Cross-asset", "display",
+         why="W3 VERDICT: CONTEXT — do NOT wire. The three cross-asset caution votes (credit "
+             "HY-band/widening, rates-vol MOVE-band/leads-VIX, dollar risk-off bid) are "
+             "reconstructed causally from their on-disk inputs (no vote history on disk — "
+             "INTL-46). The votes>=2 while-equities-calm 'diverge' booster is CONTEXT on two "
+             "counts: the credit/rates-vol votes are near-duplicates of the nfci/recession MRS "
+             "legs (residual DD partial only −0.090), and over the signal-active era (from 2007) "
+             "the de-risk strategy cuts SPY MaxDD only 0.6pp (−56.2% vs −56.8% B&H — below the "
+             "1pp door) while cratering return (Calmar 0.105 < 0.153 B&H). It flattens out of "
+             "good days without avoiding the bad ones. DSR 0.98 is SPY drift. weight_cap 0, "
+             "kill=True — conditions._macro_risk_legs UNCHANGED.",
+         why_zh="W3 结论：CONTEXT——不接线。三张跨资产警戒票（信用 HY 带/走阔、利率波动 MOVE 带/领先VIX、"
+                "美元避险买盘）从磁盘输入因果重建（磁盘无投票历史——INTL-46）。票数≥2 且股市平静的'背离'增强器"
+                "两点均属 CONTEXT：信用/利率波动票与 nfci/衰退 MRS 腿近乎重复（残差回撤偏相关仅 −0.090），"
+                "且在降险时代（自2007起）降险策略仅削减 SPY 回撤 0.6pp（−56.2% 对 −56.8%，低于1pp门），"
+                "却使回报暴跌（Calmar 0.105 < 0.153）。它在好日子空仓却躲不开坏日子。DSR 0.98 是 SPY 漂移。"
+                "权重上限0，kill=True——conditions._macro_risk_legs 未变。",
+         source="scripts/c8_leading_votes.py + scripts/intl_phase0.py (grade, W3 C8); "
+                "engine/cross_asset_confirm.py (vote defs); data/intl_bridge/ledger.json (C8)",
+         horizon="21/42d fwd drawdown", ic=-0.047, dsr=0.981,
+         wired="not wired — CONTEXT (votes ≈ nfci/recession legs; DD-cut below door + return-killing)",
+         extra=[("residual DD partial vs US legs", "−0.090 (near-dup of nfci/recession)"),
+                ("SPY MaxDD cut (signal era)", "+0.6pp (below the 1pp door)"),
+                ("Calmar strat vs B&H", "0.105 < 0.153 (return crushed)"),
+                ("diverge-fire frequency", "~3% of days (votes≥2 + equities calm)")]),
     _row("Intl trend de-risk overlays  (price + total-return ETFs — C3)",
          "国际趋势降险叠加（价格指数 + 总回报ETF — C3）", "Intl ETF", "display",
          why="Two ports, one honest verdict: trend on tradeable intl is dead. The PRICE-index "
